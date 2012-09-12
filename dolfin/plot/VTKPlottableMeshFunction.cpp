@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-21
-// Last changed: 2012-09-10
+// Last changed: 2012-09-12
 
 #ifdef HAS_VTK
 
@@ -61,10 +61,10 @@ void VTKPlottableMeshFunction<T>::update(boost::shared_ptr<const Variable> var, 
 // Instantiate valid types for VTKPlottableMeshFunction
 //---------------------------------------------------------------------------
 
-template class dolfin::VTKPlottableMeshFunction<bool>;
-template class dolfin::VTKPlottableMeshFunction<double>;
-template class dolfin::VTKPlottableMeshFunction<float>;
-template class dolfin::VTKPlottableMeshFunction<int>;
-template class dolfin::VTKPlottableMeshFunction<dolfin::uint>;
+template class VTKPlottableMeshFunction<bool>;
+template class VTKPlottableMeshFunction<double>;
+template class VTKPlottableMeshFunction<float>;
+template class VTKPlottableMeshFunction<int>;
+template class VTKPlottableMeshFunction<uint>;
 
 #endif

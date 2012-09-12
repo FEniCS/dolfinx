@@ -84,7 +84,7 @@ namespace // anonymous
 }
 //----------------------------------------------------------------------------
 template <class T>
-VTKPlotter::VTKPlotter(boost::shared_ptr<const T> t)
+VTKPlotter::VTKPlotter(boost::shared_ptr<T> t)
   : _initialized(false),
     _plottable(CreateVTKPlottable(t)),
     vtk_pipeline(new VTKWindowOutputStage()),
@@ -686,7 +686,7 @@ namespace dolfin
 }
 
 template <class T>
-VTKPlotter::VTKPlotter(boost::shared_ptr<const T> t) { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<T> t) { init(); }
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> e,
 		       boost::shared_ptr<const Mesh> mesh)  { init(); }
 VTKPlotter::~VTKPlotter() {}
@@ -730,13 +730,19 @@ bool VTKPlotter::run_to_end = false;
 // Instantiate constructors for valid types
 //---------------------------------------------------------------------------
 
-template dolfin::VTKPlotter::VTKPlotter(boost::shared_ptr<const dolfin::CSGGeometry>);
-template dolfin::VTKPlotter::VTKPlotter(boost::shared_ptr<const dolfin::DirichletBC>);
-template dolfin::VTKPlotter::VTKPlotter(boost::shared_ptr<const dolfin::ExpressionWrapper>);
-template dolfin::VTKPlotter::VTKPlotter(boost::shared_ptr<const dolfin::Function>);
-template dolfin::VTKPlotter::VTKPlotter(boost::shared_ptr<const dolfin::Mesh>);
-template dolfin::VTKPlotter::VTKPlotter(boost::shared_ptr<const dolfin::MeshFunction<bool> >);
-template dolfin::VTKPlotter::VTKPlotter(boost::shared_ptr<const dolfin::MeshFunction<double> >);
-template dolfin::VTKPlotter::VTKPlotter(boost::shared_ptr<const dolfin::MeshFunction<float> >);
-template dolfin::VTKPlotter::VTKPlotter(boost::shared_ptr<const dolfin::MeshFunction<int> >);
-template dolfin::VTKPlotter::VTKPlotter(boost::shared_ptr<const dolfin::MeshFunction<dolfin::uint> >);
+// Must instantiate both const and non-const shared_ptr<T>s, no implicit conversion; see
+// http://stackoverflow.com/questions/5600150/c-template-instantiation-with-shared-ptr-to-const-t
+#define INSTANTIATE(T)                                                  \
+  template VTKPlotter::VTKPlotter(boost::shared_ptr<const T >); \
+  template VTKPlotter::VTKPlotter(boost::shared_ptr<T >);
+
+INSTANTIATE(CSGGeometry)
+INSTANTIATE(DirichletBC)
+INSTANTIATE(ExpressionWrapper)
+INSTANTIATE(Function)
+INSTANTIATE(Mesh)
+INSTANTIATE(MeshFunction<bool>)
+INSTANTIATE(MeshFunction<double>)
+INSTANTIATE(MeshFunction<float>)
+INSTANTIATE(MeshFunction<int>)
+INSTANTIATE(MeshFunction<uint>)

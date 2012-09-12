@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2007-05-02
-// Last changed: 2012-09-06
+// Last changed: 2012-09-12
 
 #ifndef __PLOT_H
 #define __PLOT_H
@@ -56,7 +56,7 @@ namespace dolfin
 
   /// Plot variable (shared_ptr version)
   template <class T>
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const T> t,
+  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<T> t,
 				     std::string title,
 				     std::string mode="auto");
 
@@ -67,7 +67,7 @@ namespace dolfin
 
   /// Plot variable (parameter, shared_ptr version)
   template <class T>
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const T> t,
+  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<T> t,
 				     boost::shared_ptr<const Parameters> parameters);
 
   //---------------------------------------------------------------------------

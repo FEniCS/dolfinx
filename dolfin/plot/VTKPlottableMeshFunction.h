@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-21
-// Last changed: 2012-09-11
+// Last changed: 2012-09-12
 
 #ifndef __VTK_PLOTTABLE_MESH_FUNCTION_H
 #define __VTK_PLOTTABLE_MESH_FUNCTION_H
@@ -64,6 +64,12 @@ namespace dolfin
 
   template <typename T>
   VTKPlottableMeshFunction<T> *CreateVTKPlottable(boost::shared_ptr<const MeshFunction<T> > meshfunc)
+  {
+    return new VTKPlottableMeshFunction<T>(meshfunc);
+  }
+
+  template <typename T>
+  VTKPlottableMeshFunction<T> *CreateVTKPlottable(boost::shared_ptr<MeshFunction<T> > meshfunc)
   {
     return new VTKPlottableMeshFunction<T>(meshfunc);
   }

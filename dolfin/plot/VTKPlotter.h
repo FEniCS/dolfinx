@@ -19,7 +19,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-09-11
+// Last changed: 2012-09-12
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -141,7 +141,7 @@ namespace dolfin
 
     /// Create plotter for a variable
     template <class T>
-    explicit VTKPlotter(boost::shared_ptr<const T>);
+    explicit VTKPlotter(boost::shared_ptr<T>);
 
     /// Create plotter for an Expression with associated Mesh
     explicit VTKPlotter(boost::shared_ptr<const Expression> expression,
