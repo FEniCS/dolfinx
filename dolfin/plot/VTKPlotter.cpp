@@ -44,7 +44,7 @@
 #include "VTKPlottableDirichletBC.h"
 #include "VTKPlottableCSGGeometry.h"
 
-#ifdef HAS_QT4
+#ifdef HAS_QVTK
 #include <QApplication>
 #include <QtGlobal>
 #endif
@@ -140,7 +140,7 @@ void VTKPlotter::plot(boost::shared_ptr<const Variable> variable)
   {
     interactive();
   }
-#ifdef HAS_QT4
+#ifdef HAS_QVTK
   else
   {
     qApp->processEvents();
@@ -289,7 +289,7 @@ std::string VTKPlotter::get_helptext()
   text << "   Q: Continue to end\n";
   text << " C-C: Abort execution\n";
   text << "\n";
-#ifdef HAS_QT4
+#ifdef HAS_QVTK
   text << "Window control:\n";
   text << " C-w: Close plot window\n";
   text << " C-q: Close all plot windows\n";

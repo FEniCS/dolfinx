@@ -245,10 +245,6 @@ if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
       )
   endif()
 
-  if (DOLFIN_ENABLE_QT AND QT_FOUND)
-    list(APPEND VTK_LIBRARIES QVTK)
-  endif()
-
   # Loop over libs and get full path
   foreach (lib ${VTK_LIBRARIES})
     find_library(VTK_LIB_${lib} ${lib} HINTS ${VTK_LIBRARY_DIRS})
@@ -256,6 +252,17 @@ if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
       list(APPEND DOLFIN_VTK_LIBRARIES ${VTK_LIB_${lib}})
     endif()
   endforeach()
+
+  # Check if the QVTK library is found
+  if (DOLFIN_ENABLE_QT AND QT_FOUND)
+    find_library(VTK_LIB_QVTK QVTK HINTS ${VTK_LIBRARY_DIRS})
+    if (VTK_LIB_QVTK)
+      list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_QVTK")
+      list(APPEND DOLFIN_VTK_LIBRARIES ${VTK_LIB_QVTK})
+    else()
+      message(WARNING "QVTK not found, disabling QT for plotting")
+    endif()
+  endif()
 
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${DOLFIN_VTK_LIBRARIES})
 endif()

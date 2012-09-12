@@ -22,7 +22,7 @@
 
 #ifdef HAS_VTK
 
-#ifdef HAS_QT4
+#ifdef HAS_QVTK
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QVTKWidget.h>
@@ -100,7 +100,7 @@ namespace // anonymous
   };
   vtkStandardNewMacro(PrivateVTKInteractorStyle)
   //----------------------------------------------------------------------------
-#ifdef HAS_QT4
+#ifdef HAS_QVTK
   void create_qApp()
   {
     if (!qApp)
@@ -146,7 +146,7 @@ VTKWindowOutputStage::~VTKWindowOutputStage()
 
   std::cout << "Pipeline destroyed\n";
 
-#ifdef HAS_QT4
+#ifdef HAS_QVTK
   widget.reset(NULL);
 #endif
 
@@ -175,7 +175,7 @@ void VTKWindowOutputStage::init(VTKPlotter *parent, const Parameters &parameters
     vtkSmartPointer<PrivateVTKInteractorStyle>::New();
   style->_plotter = parent;
 
-#ifdef HAS_QT4
+#ifdef HAS_QVTK
   // Set up widget -- make sure a QApplication exists first
   create_qApp();
   widget.reset(new QVTKWidget());
@@ -271,7 +271,7 @@ void VTKWindowOutputStage::set_helptext(std::string text)
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::set_window_title(std::string title)
 {
-#ifdef HAS_QT4
+#ifdef HAS_QVTK
   widget->setWindowTitle(title.c_str());
 #else
   _renderWindow->SetWindowName(title.c_str());
@@ -280,7 +280,7 @@ void VTKWindowOutputStage::set_window_title(std::string title)
 //----------------------------------------------------------------------------
 std::string VTKWindowOutputStage::get_window_title()
 {
-#ifdef HAS_QT4
+#ifdef HAS_QVTK
   return widget->windowTitle().toStdString();
 #else
   return _renderWindow->GetWindowName();
@@ -289,7 +289,7 @@ std::string VTKWindowOutputStage::get_window_title()
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::close_window()
 {
-#ifdef HAS_QT4
+#ifdef HAS_QVTK
   widget->close();
 #else
   warning("Window close not implemented on VTK event loop");
@@ -298,7 +298,7 @@ void VTKWindowOutputStage::close_window()
 //----------------------------------------------------------------------------
 bool VTKWindowOutputStage::resurrect_window()
 {
-#ifdef HAS_QT4
+#ifdef HAS_QVTK
   if (widget->isHidden())
   {
     widget->show();
@@ -314,7 +314,7 @@ void VTKWindowOutputStage::start_interaction(bool enter_eventloop)
   render();
   if (enter_eventloop)
   {
-#ifdef HAS_QT4
+#ifdef HAS_QVTK
     qApp->exec();
 #else
     get_interactor()->Start();
@@ -324,7 +324,7 @@ void VTKWindowOutputStage::start_interaction(bool enter_eventloop)
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::stop_interaction()
 {
-#ifdef HAS_QT4
+#ifdef HAS_QVTK
   qApp->quit();
 #else
   get_interactor()->TerminateApp();
@@ -426,7 +426,7 @@ void VTKWindowOutputStage::render()
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::get_window_size(int& width, int& height)
 {
-#ifdef HAS_QT4
+#ifdef HAS_QVTK
   QSize size = widget->frameSize();
   width = size.width();
   height = size.height();
@@ -440,7 +440,7 @@ void VTKWindowOutputStage::get_window_size(int& width, int& height)
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::get_screen_size(int& width, int& height)
 {
-#ifdef HAS_QT4
+#ifdef HAS_QVTK
   QRect geom = QApplication::desktop()->availableGeometry();
   width = geom.width();
   height = geom.height();
@@ -453,7 +453,7 @@ void VTKWindowOutputStage::get_screen_size(int& width, int& height)
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::place_window(int x, int y)
 {
-#ifdef HAS_QT4
+#ifdef HAS_QVTK
   widget->move(x, y);
   widget->show();
 #else

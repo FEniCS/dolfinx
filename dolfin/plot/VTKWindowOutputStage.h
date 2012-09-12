@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-09-10
-// Last changed: 2012-09-10
+// Last changed: 2012-09-12
 
 #ifndef __VTK_WINDOW_OUTPUT_STAGE_H
 #define __VTK_WINDOW_OUTPUT_STAGE_H
@@ -88,7 +88,7 @@ namespace dolfin
     vtkSmartPointer<vtkBalloonRepresentation> balloonRep;
     vtkSmartPointer<vtkBalloonWidget> balloonwidget;
 
-#ifdef HAS_QT4
+#ifdef HAS_QVTK
     boost::scoped_ptr<QVTKWidget> widget;
 #endif
 
