@@ -125,6 +125,8 @@ namespace dolfin
 
     void reset_camera();
 
+    void reset_camera_clipping_range();
+
     void set_scalar_range(double *range);
 
     void cycle_representation(int new_rep=0);

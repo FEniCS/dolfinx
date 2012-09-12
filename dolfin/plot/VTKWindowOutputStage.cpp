@@ -392,6 +392,13 @@ void VTKWindowOutputStage::reset_camera()
   _axesActor->SetVisibility(false);
   _renderer->ResetCamera();
   _axesActor->SetVisibility(true);
+  // but don't clip it
+  reset_camera_clipping_range();
+}
+//----------------------------------------------------------------------------
+void VTKWindowOutputStage::reset_camera_clipping_range()
+{
+  _renderer->ResetCameraClippingRange();
 }
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::set_scalar_range(double *range)

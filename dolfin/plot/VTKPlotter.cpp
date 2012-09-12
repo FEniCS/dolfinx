@@ -510,21 +510,23 @@ void VTKPlotter::azimuth(double angle)
 void VTKPlotter::elevate(double angle)
 {
   vtk_pipeline->get_camera()->Elevation(angle);
+  vtk_pipeline->reset_camera_clipping_range();
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::dolly(double value)
 {
   vtk_pipeline->get_camera()->Dolly(value);
+  vtk_pipeline->reset_camera_clipping_range();
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::set_viewangle(double angle)
 {
   vtk_pipeline->get_camera()->SetViewAngle(angle);
+  vtk_pipeline->reset_camera_clipping_range();
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::set_min_max(double min, double max)
 {
-  parameters["autorange"] = false;
   parameters["range_min"] = min;
   parameters["range_max"] = max;
 }
