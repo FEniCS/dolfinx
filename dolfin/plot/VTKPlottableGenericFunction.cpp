@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-09-12
+// Last changed: 2012-09-13
 
 #ifdef HAS_VTK
 
@@ -171,7 +171,7 @@ void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var, 
 
   // Update the values on the mesh
   const Function *func = dynamic_cast<const Function *>(_function.get());
-  if (func && func->vector()->local_size() == grid()->GetNumberOfCells())
+  if (func && func->vector()->local_size() == (uint)grid()->GetNumberOfCells())
   {
     // Hack to display DG0 functions. Should really be implemented using
     // duplicate points (one point per vertex per cell), so that warping
