@@ -18,7 +18,7 @@
 // Split from VTKPlotter.h, Joachim B Haga, 2012-09-10
 //
 // First added:  2012-09-10
-// Last changed: 2012-09-12
+// Last changed: 2012-09-13
 
 #ifdef HAS_VTK
 
@@ -405,8 +405,8 @@ void VTKWindowOutputStage::set_scalar_range(double *range)
 {
   _mapper->SetScalarRange(range);
   // Not required, the mapper controls the range.
-  _lut->SetRange(range);
-  _lut->Build();
+  //_lut->SetRange(range);
+  //_lut->Build();
 }
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::cycle_representation(int new_rep)

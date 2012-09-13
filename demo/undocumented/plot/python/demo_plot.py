@@ -22,11 +22,12 @@
 # Modified by Joachim B Haga 2012
 #
 # First added:  2007-05-29
-# Last changed: 2012-08-31
+# Last changed: 2012-09-13
 
 from dolfin import *
 import os.path
 from math import sqrt
+import numpy
 
 import sys
 
@@ -43,12 +44,12 @@ if 0 in demos:
     H = 0.025
     X = 0.3
     Y = 0.4
-    dX = H
-    dY = 1.5*H
+    dX = 0.5*H
+    dY = 0.75*H
     coordinates = mesh.coordinates()
     original = coordinates.copy()
 
-    for i in xrange(100):
+    for i in xrange(200):
 
         if X < H or X > 1.0 - H:
             dX = -dX
@@ -57,16 +58,27 @@ if 0 in demos:
         X += dX
         Y += dY
 
-        for j in xrange(mesh.num_vertices()):
-            x, y = coordinates[j]
-            r = sqrt((x - X)**2 + (y - Y)**2)
-            if r < R:
-                coordinates[j] = [X + (r/R)**2*(x - X), Y + (r/R)**2*(y - Y)]
+
+        if 0:
+            # Straight-forward (slow) loop implementation
+            for j in xrange(mesh.num_vertices()):
+                x, y = coordinates[j]
+                r = sqrt((x - X)**2 + (y - Y)**2)
+                if r < R:
+                    coordinates[j] = [X + (r/R)**2*(x - X), Y + (r/R)**2*(y - Y)]
+        else:
+            # numpy (fast) vectorised implementation
+            translated = coordinates - [X,Y]
+            r = numpy.sqrt(numpy.sum(translated**2, axis=1))
+            r2 = (r/R)**2
+            translated[:,0] *= r2
+            translated[:,1] *= r2
+            newcoords = [X,Y] + translated
+            coordinates[r<R] = newcoords[r<R]
 
         plot(mesh, title="Plotting mesh")
 
-        for j in xrange(mesh.num_vertices()):
-            coordinates[j] = original[j]
+        coordinates[:] = original
 
 # Plot scalar function
 if 1 in demos:
