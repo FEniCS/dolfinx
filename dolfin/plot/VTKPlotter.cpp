@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-09-12
+// Last changed: 2012-09-13
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
@@ -653,30 +653,31 @@ void VTKPlotter::update_pipeline(boost::shared_ptr<const Variable> variable)
 //----------------------------------------------------------------------------
 bool VTKPlotter::is_compatible(boost::shared_ptr<const Variable> variable) const
 {
-  return (!variable || _plottable->is_compatible(*variable));
+  return (no_plot || !variable || _plottable->is_compatible(*variable));
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::all_interactive(bool really)
 {
   if (active_plotters->size() == 0)
-    warning("No plots have been shown yet. Ignoring call to interactive().");
-  else
   {
-    if (really)
-    {
-      run_to_end = false;
-    }
-
-    // Prepare interactiveness on every plotter but the first
-    foreach (VTKPlotter *plotter, *active_plotters)
-    {
-      if (plotter != *active_plotters->begin())
-        plotter->interactive(false);
-    }
-
-    // Start the (global) event loop on the first plotter
-    (*active_plotters->begin())->interactive(true);
+    warning("No plots have been shown yet. Ignoring call to interactive().");
+    return;
   }
+
+  if (really)
+  {
+    run_to_end = false;
+  }
+
+  // Prepare interactiveness on every plotter but the first
+  foreach (VTKPlotter *plotter, *active_plotters)
+  {
+    if (plotter != *active_plotters->begin())
+      plotter->interactive(false);
+  }
+
+  // Start the (global) event loop on the first plotter
+  (*active_plotters->begin())->interactive(true);
 }
 
 
