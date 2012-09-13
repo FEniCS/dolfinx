@@ -21,7 +21,7 @@
 # Modified by Garth N. Wells 2009-2011
 #
 # First added:  2006-08-09
-# Last changed: 2011-11-21
+# Last changed: 2012-09-13
 
 import sys, os, re
 import platform
@@ -74,6 +74,9 @@ else:
 # Allow to disable parallel testing
 if "DISABLE_PARALLEL_TESTING" in os.environ:
     prefixes = [""]
+
+# Set non-interactive
+os.putenv('DOLFIN_NOPLOT', '1')
 
 failed = []
 # Run tests in serial, then in parallel
