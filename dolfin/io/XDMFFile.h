@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-08-02
+// Last changed: 2012-08-24
 
 #ifndef __DOLFIN_XDMFFILE_H
 #define __DOLFIN_XDMFFILE_H
@@ -70,9 +70,6 @@ namespace dolfin
     void operator<<(const std::pair<const Function*, double> ut);
 
   private:
-
-    // Write out a cell-centred function
-    void write_cell_function(const std::pair<const Function*, double> ut);
 
     // Change file suffix from .xdmf to .h5
     std::string HDF5Filename() const;

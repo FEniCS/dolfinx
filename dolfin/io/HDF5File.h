@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-08-02
+// Last changed: 2012-08-24
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -31,6 +31,7 @@
 #include "GenericFile.h"
 
 #define HDF5_FAIL -1
+#define HDF5_MAXSTRLEN 80
 
 namespace dolfin
 {
@@ -87,11 +88,22 @@ namespace dolfin
                const uint width);
 
     template <typename T>
-    void write(T& data, const std::pair<uint,uint>& range,
+    void write(const T& data, const std::pair<uint,uint>& range,
                const std::string& dataset_name, const int h5type,
                const uint width) const;
 
-    //Check existence of dataset in file
+    template <typename T>
+    void read(T& data, const std::pair<uint,uint>& range,
+               const std::string& dataset_name, const int h5type,
+               const uint width) const;
+
+    // Get dimensions of 2D dataset
+    std::pair<uint,uint> dataset_dimensions(const std::string& dataset_name);
+
+    // List all datasets in a group
+    std::vector<std::string> list(const std::string& group_name);
+
+    // Check existence of dataset in file
     bool exists(const std::string& dataset_name);
 
     // Add/get a string attribute to/from a dataset
@@ -102,6 +114,7 @@ namespace dolfin
     std::string get_attribute(const std::string& dataset_name,
 			                        const std::string& attribute_name);
 
+    // Generate HDF5 dataset names for mesh topology and coordinates
     std::string mesh_coords_dataset_name(const Mesh& mesh);
     std::string mesh_topo_dataset_name(const Mesh& mesh);
 

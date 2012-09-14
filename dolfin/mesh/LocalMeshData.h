@@ -128,6 +128,7 @@ namespace dolfin
 
     // Friends
     friend class XMLLocalMeshSAX;
+    friend class HDF5File;
     friend class MeshPartitioning;
     friend class GraphBuilder;
     friend class ParMETIS;
