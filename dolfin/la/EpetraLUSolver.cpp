@@ -22,6 +22,9 @@
 
 #ifdef HAS_TRILINOS
 
+// Included here to avoid a C++ problem with some MPI implementations                                                                                                                         
+#include <dolfin/common/MPI.h>
+
 #include <Amesos.h>
 #include <Amesos_BaseSolver.h>
 #include <Amesos_ConfigDefs.h>

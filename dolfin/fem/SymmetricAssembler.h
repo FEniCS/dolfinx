@@ -27,6 +27,7 @@
 #include <dolfin/common/types.h>
 #include "Form.h"
 #include "DirichletBC.h"
+#include "AssemblerBase.h"
 
 namespace dolfin
 {
@@ -54,9 +55,12 @@ namespace dolfin
   ///        A_n.mult(b, b_mod);
   ///        b -= b_mod;
 
-  class SymmetricAssembler
+  class SymmetricAssembler : public AssemblerBase
   {
   public:
+
+    /// Constructor
+    SymmetricAssembler() {}
 
     /// Assemble A and apply Dirichlet boundary conditions. Returns two
     /// matrices, where the second contains the symmetric modifications
@@ -64,18 +68,14 @@ namespace dolfin
     ///
     /// Note: row_bcs and col_bcs will normally be the same, but are different
     /// for e.g. off-diagonal block matrices in a mixed PDE.
-    static void assemble(GenericMatrix &A,
-                         GenericMatrix &A_nonsymm,
-                         const Form &a,
-                         const std::vector<const DirichletBC*> &row_bcs,
-                         const std::vector<const DirichletBC*> &col_bcs,
-                         const MeshFunction<uint> *cell_domains=NULL,
-                         const MeshFunction<uint> *exterior_facet_domains=NULL,
-                         const MeshFunction<uint> *interior_facet_domains=NULL,
-                         bool reset_sparsity=true,
-                         bool add_values=false,
-                         bool finalize_tensor=true,
-                         bool keep_diagonal=false);
+    void assemble(GenericMatrix &A,
+                  GenericMatrix &A_nonsymm,
+                  const Form &a,
+                  const std::vector<const DirichletBC*> row_bcs,
+                  const std::vector<const DirichletBC*> col_bcs,
+                  const MeshFunction<uint> *cell_domains=NULL,
+                  const MeshFunction<uint> *exterior_facet_domains=NULL,
+                  const MeshFunction<uint> *interior_facet_domains=NULL);
 
   private:
 

@@ -38,7 +38,7 @@ class DirichletBCTest(unittest.TestCase):
         bc0 = DirichletBC(V, 1, "x[0]<0")
         bc1 = DirichletBC(bc0)
         self.assertTrue(bc0.function_space() == bc1.function_space())
-    
+
     def test_director_lifetime(self):
         """Test for any problems with objects with directors going out
         of scope"""
@@ -67,20 +67,6 @@ class DirichletBCTest(unittest.TestCase):
         V = FunctionSpace(mesh, "CG", 1)
         bc = DirichletBC(V, 0.0, upper)
         bc_values = bc.get_boundary_values()
-
-        # The following test does not seem to make sense. A dof may be
-        # inside the domain but not be included in the list of boundary
-        # conditions if the facet it belongs to is not recognized as a
-        # Dirichlet facet.
-        #for cell in cells(mesh):
-        #    V.dofmap().tabulate_dofs(dofs, cell)
-        #    coords = V.dofmap().tabulate_coordinates(cell)
-        #    for i, dof in enumerate(dofs):
-        #        if upper(coords[i, :], None):
-        #            self.assertTrue(dof in bc_values)
-        #            self.assertAlmostEqual(bc_values[dof], 0.0)
-        #        else:
-        #            self.assertTrue(dof not in bc_values)
 
     def test_meshdomain_bcs(self):
         """Test application of Dirichlet boundary conditions stored as

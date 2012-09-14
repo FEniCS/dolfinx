@@ -22,6 +22,7 @@
 #define __DOLFIN_BOOST_GRAPH_RENUMBERING_H
 
 #include <vector>
+#include <dolfin/common/types.h>
 #include "Graph.h"
 
 namespace dolfin
@@ -40,6 +41,9 @@ namespace dolfin
     /// Compute renumbering (map[old] -> new) using King algorithm
     static std::vector<uint> compute_king(const Graph& graph);
 
+    /// Compute renumbering (map[old] -> new) using King algorithm
+    static std::vector<uint> compute_king(const std::vector<std::vector<uint> >& graph);
+
     /// Compute renumbering (map[old] -> new) using minimum degree algorithm
     static std::vector<uint> compute_minimum_degree(const Graph& graph,
                                                     const int delta=0);
@@ -47,12 +51,12 @@ namespace dolfin
   private:
 
     // Build Boost undirected graph
-    template<typename T>
-    static T build_undirected_graph(const Graph& graph);
+    template<typename T, typename X>
+    static T build_undirected_graph(const X& graph);
 
     // Build Boost directed graph
-    template<typename T>
-    static T build_directed_graph(const Graph& graph);
+    template<typename T, typename X>
+    static T build_directed_graph(const X& graph);
 
   };
 

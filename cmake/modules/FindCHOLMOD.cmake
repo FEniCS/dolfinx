@@ -39,10 +39,10 @@ message(STATUS "Checking for package 'CHOLMOD'")
 # Find packages that CHOLMOD depends on
 set(CMAKE_LIBRARY_PATH ${BLAS_DIR}/lib $ENV{BLAS_DIR}/lib ${CMAKE_LIBRARY_PATH})
 set(CMAKE_LIBRARY_PATH ${LAPACK_DIR}/lib $ENV{LAPACK_DIR}/lib ${CMAKE_LIBRARY_PATH})
-find_package(AMD)
-find_package(BLAS)
-find_package(LAPACK)
-find_package(ParMETIS)
+find_package(AMD QUIET)
+find_package(BLAS QUIET)
+find_package(LAPACK QUIET)
+find_package(ParMETIS QUIET)
 
 # FIXME: Should we have separate FindXX modules for CAMD, COLAMD, and CCOLAMD?
 # FIXME: find_package(CAMD)

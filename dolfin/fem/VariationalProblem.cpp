@@ -41,7 +41,7 @@ VariationalProblem::VariationalProblem(const Form& form_0,
 //-----------------------------------------------------------------------------
 VariationalProblem::VariationalProblem(const Form& form_0,
                                        const Form& form_1,
-                                       const std::vector<const BoundaryCondition*>& bcs)
+                                       const std::vector<const BoundaryCondition*> bcs)
 {
   error_message();
 }

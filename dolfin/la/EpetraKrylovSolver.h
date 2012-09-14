@@ -88,6 +88,9 @@ namespace dolfin
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);
 
+    /// Return residual from most recent solve
+    double residual(const std::string residualtype) const;
+
     /// Return a list of available solver methods
     static std::vector<std::pair<std::string, std::string> > methods();
 
@@ -127,6 +130,10 @@ namespace dolfin
     boost::shared_ptr<const EpetraMatrix> P;
 
     bool preconditioner_set;
+
+    // Residuals
+    double relative_residual;
+    double absolute_residual;
 
   };
 

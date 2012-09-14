@@ -454,7 +454,9 @@ namespace dolfin
     reqs.push_back(comm.isend(dest, 0, send_value));
     reqs.push_back(comm.irecv(source, 0, recv_value));
   #else
-    MPI::error_no_mpi("call MPINonblocking::send_recv");
+    dolfin_error("MPI.h",
+                  "call MPINonblocking::send_recv",
+                  "DOLFIN has been configured without MPI support");
   #endif
   }
 

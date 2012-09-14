@@ -66,11 +66,11 @@ NewtonSolver::NewtonSolver(std::string solver_type, std::string pc_type)
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(GenericLinearSolver& solver,
+NewtonSolver::NewtonSolver(boost::shared_ptr<GenericLinearSolver> solver,
                            LinearAlgebraFactory& factory)
   : Variable("Newton solver", "unamed"),
     newton_iteration(0), _residual(0.0), residual0(0.0),
-    solver(reference_to_no_delete_pointer(solver)),
+    solver(solver),
     A(factory.create_matrix()),
     dx(factory.create_vector()),
     b(factory.create_vector())

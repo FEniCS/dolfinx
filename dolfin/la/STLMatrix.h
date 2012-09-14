@@ -159,6 +159,13 @@ namespace dolfin
 
     ///--- STLMatrix interface ---
 
+    void sort()
+    {
+      std::vector<std::vector<std::pair<uint, double> > >::iterator row;
+      for (row = _values.begin(); row < _values.end(); ++row)
+        std::sort(row->begin(), row->end());
+    }
+
     /// Return matrix in CSR format
     template<typename T>
     void csr(std::vector<double>& vals, std::vector<T>& cols,
@@ -200,12 +207,8 @@ namespace dolfin
     // storage)
     uint num_codim_entities;
 
-    // Storage of columns (row-wise storgae) / row (column-wise storgae)
-    // indices
-    std::vector<std::vector<uint> > codim_indices;
-
-    // Storage of values
-    std::vector<std::vector<double> > _vals;
+    // Storage of non-zero matrix values
+    std::vector<std::vector<std::pair<uint, double> > > _values;
 
     // Off-process data ([i, j], value)
     boost::unordered_map<std::pair<uint, uint>, double> off_processs_data;
@@ -259,8 +262,8 @@ namespace dolfin
     local_to_global_row.clear();
 
     // Reserve memory
-    row_ptr.reserve(codim_indices.size() + 1);
-    local_to_global_row.reserve(codim_indices.size());
+    row_ptr.reserve(_values.size() + 1);
+    local_to_global_row.reserve(_values.size());
 
     // Build CSR data structures
     row_ptr.push_back(0);
@@ -269,7 +272,7 @@ namespace dolfin
     const std::size_t _local_nnz = local_nnz();
 
     // Number of local rows (columns)
-    const std::size_t num_local_rows = codim_indices.size();
+    const std::size_t num_local_rows = _values.size();
 
     if (!symmetric)
     {
@@ -280,11 +283,14 @@ namespace dolfin
       // Build data structures
       for (std::size_t local_row = 0; local_row < num_local_rows; ++local_row)
       {
-        vals.insert(vals.end(), _vals[local_row].begin(), _vals[local_row].end());
-        cols.insert(cols.end(), codim_indices[local_row].begin(), codim_indices[local_row].end());
+        for (std::size_t column = 0; column < _values[local_row].size(); ++column)
+        {
+          cols.push_back(_values[local_row][column].first);
+          vals.push_back(_values[local_row][column].second);
 
-        row_ptr.push_back(row_ptr.back() + codim_indices[local_row].size());
-        local_to_global_row.push_back(_local_range.first + local_row);
+          row_ptr.push_back(row_ptr.back() + _values[local_row].size());
+          local_to_global_row.push_back(_local_range.first + local_row);
+        }
       }
     }
     else
@@ -294,16 +300,16 @@ namespace dolfin
       cols.reserve((_local_nnz - num_local_rows)/2 + num_local_rows);
 
       // Build data structures
-      for (std::size_t local_row = 0; local_row < codim_indices.size(); ++local_row)
+      for (std::size_t local_row = 0; local_row < _values.size(); ++local_row)
       {
         const uint global_row_index = local_row + _local_range.first;
         std::size_t counter = 0;
-        for (std::size_t i = 0; i < codim_indices[local_row].size(); ++i)
+        for (std::size_t i = 0; i < _values[local_row].size(); ++i)
         {
-          const std::size_t index = codim_indices[local_row][i];
+          const std::size_t index = _values[local_row][i].first;
           if (index >= global_row_index)
           {
-            vals.push_back(_vals[local_row][i]);
+            vals.push_back(_values[local_row][i].second);
             cols.push_back(index);
             ++counter;
           }

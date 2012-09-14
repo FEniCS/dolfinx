@@ -23,6 +23,9 @@ from a common mesh."""
 
 from dolfin import *
 
+print "This demo is presently broken. See https://bugs.launchpad.net/dolfin/+bug/1047641"
+exit()
+
 # Structure sub domain
 class Structure(SubDomain):
     def inside(self, x, on_boundary):

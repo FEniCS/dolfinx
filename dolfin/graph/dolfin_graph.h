@@ -6,5 +6,6 @@
 #include <dolfin/graph/Graph.h>
 #include <dolfin/graph/GraphBuilder.h>
 #include <dolfin/graph/BoostGraphRenumbering.h>
+#include <dolfin/graph/SCOTCH.h>
 
 #endif

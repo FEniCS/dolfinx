@@ -32,7 +32,7 @@
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/SubDomain.h>
-#include "AssemblerTools.h"
+#include "AssemblerBase.h"
 #include "DirichletBC.h"
 #include "FiniteElement.h"
 #include "Form.h"
@@ -44,54 +44,35 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
-                               const Form& a, const Form& L,
-                               bool reset_sparsity,
-                               bool add_values,
-                               bool finalize_tensor,
-                               bool keep_diagonal)
+                               const Form& a, const Form& L)
 {
   std::vector<const DirichletBC*> bcs;
-  assemble(A, b, a, L, bcs, 0, 0, 0, 0,
-           reset_sparsity, add_values, finalize_tensor, keep_diagonal);
+  assemble(A, b, a, L, bcs, 0, 0, 0, 0);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                const Form& a, const Form& L,
-                               const DirichletBC& bc,
-                               bool reset_sparsity,
-                               bool add_values,
-                               bool finalize_tensor,
-                               bool keep_diagonal)
+                               const DirichletBC& bc)
 {
   std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc);
-  assemble(A, b, a, L, bcs, 0, 0, 0, 0,
-           reset_sparsity, add_values, finalize_tensor, keep_diagonal);
+  assemble(A, b, a, L, bcs, 0, 0, 0, 0);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                const Form& a, const Form& L,
-                               const std::vector<const DirichletBC*>& bcs,
-                               bool reset_sparsity,
-                               bool add_values,
-                               bool finalize_tensor,
-                               bool keep_diagonal)
+                               const std::vector<const DirichletBC*> bcs)
 {
-  assemble(A, b, a, L, bcs, 0, 0, 0, 0,
-           reset_sparsity, add_values, finalize_tensor, keep_diagonal);
+  assemble(A, b, a, L, bcs, 0, 0, 0, 0);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                const Form& a, const Form& L,
-                               const std::vector<const DirichletBC*>& bcs,
+                               const std::vector<const DirichletBC*> bcs,
                                const MeshFunction<uint>* cell_domains,
                                const MeshFunction<uint>* exterior_facet_domains,
                                const MeshFunction<uint>* interior_facet_domains,
-                               const GenericVector* x0,
-                               bool reset_sparsity,
-                               bool add_values,
-                               bool finalize_tensor,
-                               bool keep_diagonal)
+                               const GenericVector* x0)
 {
   // Set timer
   Timer timer("Assemble system");
@@ -103,38 +84,72 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   // Get cell domains
   if (!cell_domains || cell_domains->empty())
   {
-    if (a.cell_domains_shared_ptr().get() || L.cell_domains_shared_ptr().get())
+    if (a.cell_domains_shared_ptr() || L.cell_domains_shared_ptr())
     {
-      warning("Ignoring cell domains defined as part of form in system assembler.");
+      if (a.cell_domains_shared_ptr() && L.cell_domains_shared_ptr())
+      {
+        if (a.cell_domains_shared_ptr() != L.cell_domains_shared_ptr())
+          warning("Bilinear and linear form must have same attached cell subdomains in SystemAssembler.");
+      }
+      else if (a.cell_domains_shared_ptr())
+        cell_domains = a.cell_domains_shared_ptr().get();
+      else
+        cell_domains = L.cell_domains_shared_ptr().get();
+
+      if (mesh.domains().facet_domains(mesh))
+        warning("Ignoring cell domains defined as part of mesh in system assembler.");
     }
-    cell_domains = mesh.domains().cell_domains(mesh).get();
+    else
+      cell_domains = mesh.domains().cell_domains(mesh).get();
   }
 
   // Get exterior facet domains
   if (!exterior_facet_domains || exterior_facet_domains->empty())
   {
-    if (a.exterior_facet_domains_shared_ptr().get() ||
-        L.exterior_facet_domains_shared_ptr().get())
+    if (a.exterior_facet_domains_shared_ptr() || L.exterior_facet_domains_shared_ptr())
     {
-      warning("Ignoring exterior facet domains defined as part of form in system assembler.");
+      if (a.exterior_facet_domains_shared_ptr() && L.exterior_facet_domains_shared_ptr())
+      {
+        if (a.exterior_facet_domains_shared_ptr() != L.exterior_facet_domains_shared_ptr())
+          warning("Bilinear and linear form must have same attached exterior facet subdomains in SystemAssembler.");
+      }
+      else if (a.exterior_facet_domains_shared_ptr())
+        exterior_facet_domains = a.exterior_facet_domains_shared_ptr().get();
+      else
+        exterior_facet_domains = L.exterior_facet_domains_shared_ptr().get();
+
+      if (mesh.domains().facet_domains(mesh))
+        warning("Ignoring exterior facet domains defined as part of mesh in system assembler.");
     }
-    exterior_facet_domains = mesh.domains().facet_domains(mesh).get();
+    else
+      exterior_facet_domains = mesh.domains().facet_domains(mesh).get();
   }
 
   // Get interior facet domains
   if (!interior_facet_domains || interior_facet_domains->empty())
   {
-    if (a.interior_facet_domains_shared_ptr().get() ||
-        L.interior_facet_domains_shared_ptr().get())
+    if (a.interior_facet_domains_shared_ptr() || L.interior_facet_domains_shared_ptr())
     {
-      warning("Ignoring interior facet domains defined as part of form in system assembler.");
+      if (a.interior_facet_domains_shared_ptr() && L.interior_facet_domains_shared_ptr())
+      {
+        if (a.interior_facet_domains_shared_ptr() != L.interior_facet_domains_shared_ptr())
+          warning("Bilinear and linear form must have same attached interior facet subdomains in SystemAssembler.");
+      }
+      else if (a.interior_facet_domains_shared_ptr())
+        interior_facet_domains = a.interior_facet_domains_shared_ptr().get();
+      else
+        interior_facet_domains = L.interior_facet_domains_shared_ptr().get();
+
+      if (mesh.domains().facet_domains(mesh))
+        warning("Ignoring interior facet domains defined as part of mesh in system assembler.");
     }
-    interior_facet_domains = mesh.domains().facet_domains(mesh).get();
+    else
+      interior_facet_domains = mesh.domains().facet_domains(mesh).get();
   }
 
   // Check forms
-  AssemblerTools::check(a);
-  AssemblerTools::check(L);
+  AssemblerBase::check(a);
+  AssemblerBase::check(L);
 
   // Check that we have a bilinear and a linear form
   dolfin_assert(a.rank() == 2);
@@ -165,10 +180,8 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
 
   // Initialize global tensors
   const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > periodic_master_slave_dofs;
-  AssemblerTools::init_global_tensor(A, a, periodic_master_slave_dofs,
-                                     reset_sparsity, add_values, keep_diagonal);
-  AssemblerTools::init_global_tensor(b, L, periodic_master_slave_dofs,
-                                     reset_sparsity, add_values, keep_diagonal);
+  init_global_tensor(A, a, periodic_master_slave_dofs);
+  init_global_tensor(b, L, periodic_master_slave_dofs);
 
   // Allocate data
   Scratch data(a, L);

@@ -152,6 +152,10 @@ namespace dolfin
 
     //--- Special PETScFunctions ---
 
+    /// Set (approximate) null space of the matrix. This is used by
+    /// some preconditioners.
+    void set_near_nullspace(const std::vector<const GenericVector*> nullspace);
+
     /// Return norm of matrix
     double norm(std::string norm_type) const;
 
@@ -162,6 +166,14 @@ namespace dolfin
     void binary_dump(std::string file_name) const;
 
   private:
+
+    // Null space vectors
+    std::vector<PETScVector> _nullspace;
+
+    // PETSc null space. Would like this to be a scoped_ptr, but it
+    // doesn't support custom deleters. Change to std::unique_ptr in
+    // the future.
+    boost::shared_ptr<MatNullSpace> petsc_nullspace;
 
     // PETSc norm types
     static const std::map<std::string, NormType> norm_types;

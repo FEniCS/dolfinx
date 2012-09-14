@@ -30,6 +30,9 @@ using namespace dolfin;
 
 int main()
 {
+  cout <<"This demo is presently broken. See https://bugs.launchpad.net/dolfin/+bug/1047641" << endl;
+  return 0;
+
   // Create mesh
   UnitSquare mesh(20, 20);
 

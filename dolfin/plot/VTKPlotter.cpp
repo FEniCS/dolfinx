@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-07-26
+// Last changed: 2012-08-11
 
 
 #include <dolfin/common/Array.h>
@@ -288,11 +288,11 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_functio
 //----------------------------------------------------------------------------
 VTKPlotter::~VTKPlotter()
 {
-  for (std::list<VTKPlotter*>::iterator it = plotter_cache.begin(); it != plotter_cache.end(); it++)
+  for (std::list<VTKPlotter*>::iterator it = all_plotters->begin(); it != all_plotters->end(); it++)
   {
     if (*it == this)
     {
-      plotter_cache.erase(it);
+      all_plotters->erase(it);
       return;
     }
   }
@@ -383,8 +383,23 @@ void VTKPlotter::init()
     no_plot = (noplot_env != NULL && strcmp(noplot_env, "0") != 0 && strcmp(noplot_env, "") != 0);
   }
 
+  // Create plotter pool if needed (ie. this is the first plotter object)
+  if (all_plotters.get() == NULL)
+  {
+    log(TRACE, "Creating global VTKPlotter pool");
+    all_plotters.reset(new std::list<VTKPlotter*>);
+  }
+
+  // Add plotter to pool
+  all_plotters->push_back(this);
+
+  // Add a local shared_ptr to the pool. See comment in VTKPlotter.h
+  all_plotters_local_copy = all_plotters;
+  log(TRACE, "Size of plotter pool is %d.", all_plotters->size());
+
+
   // Adjust window position to not completely overlap previous plots
-  dolfin::uint num_old_plots = VTKPlotter::plotter_cache.size();
+  dolfin::uint num_old_plots = VTKPlotter::all_plotters->size()-1;
   int width, height;
   get_window_size(width, height);
 
@@ -392,10 +407,6 @@ void VTKPlotter::init()
   // 2 x 2 pattern on the screen. Might not look good with more than 4 plot
   // windows
   set_window_position((num_old_plots%2)*width, (num_old_plots/2)*height);
-
-  // Add plotter to cache
-  plotter_cache.push_back(this);
-  log(TRACE, "Size of plotter cache is %d.", plotter_cache.size());
 
   // We first initialize the part of the pipeline that the plotter controls.
   // This is the part from the Poly data mapper and out, including actor,
@@ -406,9 +417,6 @@ void VTKPlotter::init()
 
   // Let the plottable initialize its part of the pipeline
   _plottable->init_pipeline();
-
-  // That's it for the initialization! Now we wait until the user wants to
-  // plot something
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::set_title(const std::string& name, const std::string& label)
@@ -659,6 +667,23 @@ void VTKPlotter::update(boost::shared_ptr<const MeshFunction<unsigned int> > mes
 void VTKPlotter::update(boost::shared_ptr<const MeshFunction<int> > mesh_function) { update(); }
 void VTKPlotter::update(boost::shared_ptr<const MeshFunction<double> > mesh_function){ update(); }
 void VTKPlotter::update(boost::shared_ptr<const MeshFunction<bool> > mesh_function){ update(); }
+//----------------------------------------------------------------------------
+void VTKPlotter::all_interactive()
+{
+  if (all_plotters.get() == NULL || all_plotters->size() == 0)
+    warning("No plots have been shown yet. Ignoring call to interactive().");
+  else
+  {
+    // Prepare interactiveness on every plotter
+    std::list<VTKPlotter*>::iterator it;
+    for (it = all_plotters->begin(); it != all_plotters->end(); it++)
+      (*it)->interactive(false);
+
+    // Start the vtk eventloop on one of the plotter objects
+    (*all_plotters->begin())->start_eventloop();
+  }
+}
+
 
 #else
 
@@ -718,8 +743,10 @@ void VTKPlotter::set_viewangle      (double){}
 void VTKPlotter::set_min_max        (double, double){}
 void VTKPlotter::add_polygon(const Array<double>&){}
 
+void VTKPlotter::all_interactive() {}
+
 #endif
 
 // Define the static members
-std::list<VTKPlotter*> VTKPlotter::plotter_cache;
+boost::shared_ptr<std::list<VTKPlotter*> > VTKPlotter::all_plotters;
 int VTKPlotter::hardcopy_counter = 0;

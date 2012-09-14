@@ -35,6 +35,7 @@ option(BUILD_SHARED_LIBS "Build DOLFIN with shared libraries." ON)
 option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." OFF)
 option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath." ON)
 option(CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects." OFF)
+option(DOLFIN_AUTO_DETECT_MPI "Detect MPI automatically - turn this off to use the MPI compiler wrappers directly via setting CXX, CXX, FC." ON)
 option(DOLFIN_DEBUG_UBLAS "Use extra uBLAS debugging." OFF)
 option(DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage." OFF)
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
@@ -111,12 +112,6 @@ if (HAVE_PEDANTIC)
   set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wall -Werror -pedantic ${DOLFIN_CXX_DEVELOPER_FLAGS}")
 endif()
 
-# Disable strict checks that fail for inlcuded 3rd party libraries
-CHECK_CXX_COMPILER_FLAG(-Wno-long-long HAVE_DISABLE_PEDANTIC_CHECKS)
-if (HAVE_DISABLE_PEDANTIC_CHECKS)
-  set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wno-long-long ${DOLFIN_CXX_DEVELOPER_FLAGS}")
-endif()
-
 CHECK_CXX_COMPILER_FLAG(-std=c++98 HAVE_STD)
 if (HAVE_STD AND CMAKE_COMPILER_IS_GNUCXX)
   set(DOLFIN_CXX_DEVELOPER_FLAGS "-std=c++98 ${DOLFIN_CXX_DEVELOPER_FLAGS}")
@@ -156,8 +151,14 @@ if (DOLFIN_ENABLE_CODE_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 # Disable some warnings for Intel compilers
-if(${CMAKE_CXX_COMPILER} MATCHES "icpc")
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd161,488,654,858,1125,1170")
+endif()
+
+# Set system include flags to get around CMake bug on OSX
+# See http://public.kitware.com/Bug/print_bug_page.php?bug_id=10837
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
 endif()
 
 #------------------------------------------------------------------------------
@@ -176,7 +177,17 @@ endif()
 # FIXME: Should be set CMake to use the MPI compiler wrappers?
 
 if (DOLFIN_ENABLE_MPI)
-  find_package(MPI)
+  if (DOLFIN_AUTO_DETECT_MPI)
+    find_package(MPI)
+    if (MPI_CXX_FOUND)
+      set(MPI_FOUND TRUE)
+    endif()
+  else()
+    # Assume user has set MPI compiler wrappers (via CXX, etc or CMAKE_CXX_COMPILER, etc)
+    set(MPI_FOUND TRUE)
+    set(MPI_CXX_FOUND TRUE)
+    set(MPI_C_FOUND TRUE)
+  endif()
 endif()
 
 if (DOLFIN_ENABLE_OPENMP)
@@ -200,10 +211,15 @@ endif()
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0 1.44 1.44.0 1.45 1.45.0 1.46 1.46.0 1.46.1 1.47 1.47.0 1.48 1.48.0 1.49 1.49.0 1.50 1.50.0)
 
-if (DOLFIN_ENABLE_MPI AND MPI_FOUND)
+if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
   find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams math_tr1 mpi serialization REQUIRED)
 else()
   find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams math_tr1 REQUIRED)
+endif()
+
+# Boost timer was not a separate Boost component until version 1.48
+if ("${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}" VERSION_GREATER "1.47")
+  find_package(Boost 1.36 COMPONENTS timer REQUIRED)
 endif()
 
 # Check for required packages
@@ -243,26 +259,26 @@ if (DOLFIN_ENABLE_PYTHON)
 endif()
 
 # Check for ParMETIS and SCOTCH
-if (DOLFIN_ENABLE_MPI AND MPI_FOUND)
+if (DOLFIN_ENABLE_MPI AND MPI_C_FOUND)
   if (DOLFIN_ENABLE_PARMETIS)
     find_package(ParMETIS)
   endif()
 
   if (DOLFIN_ENABLE_SCOTCH)
-    find_package(ScotchPT)
+    find_package(SCOTCH)
   endif()
 endif()
 
 # Check for UMFPACK
 if (DOLFIN_ENABLE_UMFPACK)
-  find_package(AMD)
-  find_package(BLAS)
-  find_package(UMFPACK)
+  find_package(AMD QUIET)
+  find_package(BLAS QUIET)
+  find_package(UMFPACK QUIET)
 endif()
 
 # Check for CHOLMOD
 if (DOLFIN_ENABLE_CHOLMOD)
-  find_package(CHOLMOD)
+  find_package(CHOLMOD QUIET)
 endif()
 
 # Check for HDF5
@@ -342,9 +358,9 @@ endif()
 
 # Check for PETSc and SLEPc
 if (DOLFIN_ENABLE_PETSC)
-  find_package(PETSc)
+  find_package(PETSc 3.2)
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
-    find_package(SLEPc)
+    find_package(SLEPc 3.2)
   endif()
 endif()
 
@@ -370,7 +386,16 @@ endif()
 
 # Check for VTK
 if (DOLFIN_ENABLE_VTK)
-  find_package(VTK 5.8 HINTS ${VTK_DIR} $ENV{VTK_DIR})
+  find_package(VTK QUIET HINTS ${VTK_DIR} $ENV{VTK_DIR})
+  set(VTK_VERSION "${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}")
+  if (VTK_FOUND)
+    if ("${VTK_VERSION}" VERSION_LESS "5.8")
+      set(VTK_FOUND FALSE)
+      message(WARNING "Unable to find VTK (>= 5.8)")
+    else()
+      message(STATUS "Found VTK: ${VTK_DIR} (found version \"${VTK_VERSION}\")")
+    endif()
+  endif()
 endif()
 
 #------------------------------------------------------------------------------

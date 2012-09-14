@@ -24,6 +24,9 @@
 
 #ifdef HAS_TRILINOS
 
+// Included here to avoid a C++ problem with some MPI implementations
+#include <dolfin/common/MPI.h>
+
 #include <cstring>
 #include <iostream>
 #include <iomanip>
@@ -320,6 +323,24 @@ void EpetraMatrix::add(const double* block,
                        uint n, const uint* cols)
 {
   dolfin_assert(A);
+  const std::pair<uint, uint> local_row_range = local_range(0);
+  for (uint i = 0; i < m; ++i)
+  {
+    const uint row = rows[i];
+    if (row >= local_row_range.first && row < local_row_range.second)
+    {
+      A->Epetra_CrsMatrix::SumIntoGlobalValues((int) row, n, block + i*n,
+                                          reinterpret_cast<const int*>(cols));
+    }
+    else
+    {
+      A->SumIntoGlobalValues(1, reinterpret_cast<const int*>(rows + i),
+                             n, reinterpret_cast<const int*>(cols), block + i*n,
+                             Epetra_FECrsMatrix::ROW_MAJOR);
+    }
+  }
+
+  /*
   const int err = A->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows),
                                          n, reinterpret_cast<const int*>(cols), block,
                                          Epetra_FECrsMatrix::ROW_MAJOR);
@@ -329,6 +350,7 @@ void EpetraMatrix::add(const double* block,
                  "add block of values to Epetra matrix",
                  "Did not manage to perform Epetra_FECrsMatrix::SumIntoGlobalValues");
   }
+  */
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)

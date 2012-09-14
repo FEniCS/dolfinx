@@ -83,7 +83,7 @@ namespace dolfin
     /// Set basis for the null space of the operator. Setting this
     /// is critical to the performance of some preconditioners, e.g. ML.
     /// The vectors spanning the null space are copied.
-    void set_null_space(const std::vector<const GenericVector*>& null_space);
+    void set_null_space(const std::vector<const GenericVector*> null_space);
 
     /// Return preconditioner name
     std::string name() const;

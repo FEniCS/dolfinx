@@ -229,5 +229,75 @@ if MPI.num_processes() == 1:
         def testIntersectMesh3D(self):
             pass
 
+        def testIntersectedCellWithSingleCellMesh(self):
+
+            # 2D
+            mesh = UnitTriangle()
+
+            # Point Intersection
+            point = Point(0.3, 0.3)
+            id = mesh.intersected_cell(point)
+            self.assertEqual(id, 0)
+            cells = mesh.intersected_cells([point, point, point])
+            self.assertEqual(len(cells), 1)
+            self.assertEqual(cells[0], 0)
+
+            # Entity intersection
+            v = Vertex(mesh, 0)
+            id = mesh.intersected_cells(v)
+            self.assertEqual(id, 0)
+
+            # No intersection
+            point = Point(1.2, 1.2)
+            id = mesh.intersected_cell(point)
+            self.assertEqual(id, -1)
+            cells = mesh.intersected_cells([point, point, point])
+            self.assertEqual(len(cells), 0)
+
+            # 3D
+            mesh = UnitTetrahedron()
+
+            # Point intersection
+            point = Point(0.3, 0.3, 0.3)
+            id = mesh.intersected_cell(point)
+            self.assertEqual(id, 0)
+            cells = mesh.intersected_cells([point, point, point])
+            self.assertEqual(len(cells), 1)
+            self.assertEqual(cells[0], 0)
+
+            # Entity intersection
+            v = Vertex(mesh, 0)
+            id = mesh.intersected_cells(v)
+            self.assertEqual(id, 0)
+
+            # No intersection
+            point = Point(1.2, 1.2, 1.2)
+            id = mesh.intersected_cell(point)
+            self.assertEqual(id, -1)
+            cells = mesh.intersected_cells([point, point, point])
+            self.assertEqual(len(cells), 0)
+
+        def testClosestCellWithSingleCellMesh(self):
+            mesh = UnitTriangle()
+
+            point = Point(0.3, 0.3)
+            id = mesh.closest_cell(point)
+            self.assertEqual(id, 0)
+
+            point = Point(1.2, 1.2)
+            id = mesh.closest_cell(point)
+            self.assertEqual(id, 0)
+
+            mesh = UnitTetrahedron()
+
+            point = Point(0.3, 0.3, 0.3)
+            id = mesh.closest_cell(point)
+            self.assertEqual(id, 0)
+
+            point = Point(1.2, 1.2, 1.2)
+            id = mesh.closest_cell(point)
+            self.assertEqual(id, 0)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -26,6 +26,8 @@
 #include <boost/lexical_cast.hpp>
 #include <petscksp.h>
 #include <petscmat.h>
+#include <petscpcmg.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/log/dolfin_log.h>
@@ -95,14 +97,46 @@ Parameters PETScPreconditioner::default_parameters()
   Parameters p(KrylovSolver::default_parameters()("preconditioner"));
   p.rename("petsc_preconditioner");
 
-  // Hypre/parasails parameters
+  // General parameters
+  //p.add("view", false);
+
+  // Generic multigrid parameters
+  Parameters p_mg("mg");
+  p_mg.add<uint>("num_levels");
+  p_mg.add<uint>("num_sweeps");
+  p.add(p_mg);
+
+  // ML package parameters
+  Parameters p_ml("ml");
+  p_ml.add<uint>("max_coarse_size");
+  p_ml.add<double>("aggregation_damping_factor");
+  p_ml.add<uint>("max_num_levels");
+
+  std::set<std::string> aggregation_schemes;
+  aggregation_schemes.insert("Uncoupled");
+  aggregation_schemes.insert("Coupled");
+  aggregation_schemes.insert("MIS");
+  aggregation_schemes.insert("METIS");
+  p_ml.add<std::string>("aggregation_scheme", aggregation_schemes);
+  p.add(p_ml);
+
+  // Hypre/ParaSails parameters
   Parameters p_parasails("parasails");
-  p_parasails.add("threshold", 0.1);
-  p_parasails.add("levels", 1);
+  p_parasails.add<double>("threshold");
+  p_parasails.add<uint>("levels");
+
+  // Hypre/BoomerAMG parameters
+  Parameters p_boomeramg("BoomerAMG");
+  p_boomeramg.add<std::string>("cycle_type"); // "V" or "W"
+  p_boomeramg.add<uint>("max_levels");
+  p_boomeramg.add<double>("strong_threshold");
+  p_boomeramg.add<double>("relaxation_weight");
+  p_boomeramg.add<uint>("agressive_coarsening_levels");
 
   // Hypre package parameters
   Parameters p_hypre("hypre");
   p_hypre.add(p_parasails);
+  p_hypre.add(p_boomeramg);
   p.add(p_hypre);
 
   return p;
@@ -149,21 +183,64 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     #endif
 
     if (type == "hypre_amg" || type == "amg")
+    {
       PCHYPRESetType(pc, "boomeramg");
+      if (parameters("mg")["num_sweeps"].is_set())
+      {
+        const uint num_sweeps = parameters("mg")["num_sweeps"];
+        PetscOptionsSetValue("-pc_hypre_boomeramg_grid_sweeps_all",
+                         boost::lexical_cast<std::string>(num_sweeps).c_str());
+      }
+      if (parameters("hypre")("BoomerAMG")["cycle_type"].is_set())
+      {
+        const std::string cycle = parameters("hypre")("BoomerAMG")["cycle_type"];
+        PetscOptionsSetValue("-pc_hypre_boomeramg_cycle_type", cycle.c_str());
+      }
+      if (parameters("hypre")("BoomerAMG")["max_levels"].is_set())
+      {
+        const uint max_levels = parameters("hypre")("BoomerAMG")["max_levels"];
+        PetscOptionsSetValue("-pc_hypre_boomeramg_max_levels",
+                          boost::lexical_cast<std::string>(max_levels).c_str());
+      }
+      if (parameters("hypre")("BoomerAMG")["strong_threshold"].is_set())
+      {
+        const double threshold = parameters("hypre")("BoomerAMG")["strong_threshold"];
+        PetscOptionsSetValue("-pc_hypre_boomeramg_strong_threshold",
+                          boost::lexical_cast<std::string>(threshold).c_str());
+      }
+      if (parameters("hypre")("BoomerAMG")["relaxation_weight"].is_set())
+      {
+        const double relax = parameters("hypre")("BoomerAMG")["strong_theshold"];
+        PetscOptionsSetValue("-pc_hypre_boomeramg_relax_weight_all",
+                            boost::lexical_cast<std::string>(relax).c_str() );
+      }
+      if (parameters("hypre")("BoomerAMG")["agressive_coarsening_levels"].is_set())
+      {
+        const uint levels = parameters("hypre")("BoomerAMG")["agressive_coarsening_levels"];
+        PetscOptionsSetValue("-pc_hypre_boomeramg_agg_nl",
+                            boost::lexical_cast<std::string>(levels).c_str() );
+      }
+    }
     else if (type == "hypre_parasails")
     {
       PCHYPRESetType(pc, "parasails");
-      const double thresh = parameters("hypre")("parasails")["threshold"];
-      const int levels = parameters("hypre")("parasails")["levels"];
-
-      PetscOptionsSetValue("-pc_hypre_parasails_thresh", boost::lexical_cast<std::string>(thresh).c_str());
-      PetscOptionsSetValue("-pc_hypre_parasails_nlevels", boost::lexical_cast<std::string>(levels).c_str());
+      if (parameters("hypre")("parasails")["threshold"].is_set())
+      {
+        const double thresh = parameters("hypre")("parasails")["threshold"];
+        PetscOptionsSetValue("-pc_hypre_parasails_thresh", boost::lexical_cast<std::string>(thresh).c_str());
+      }
+      if (parameters("hypre")("parasails")["levels"].is_set())
+      {
+        const int levels = parameters("hypre")("parasails")["levels"];
+        PetscOptionsSetValue("-pc_hypre_parasails_nlevels", boost::lexical_cast<std::string>(levels).c_str());
+      }
     }
     else if (type == "hypre_euclid")
     {
       PCHYPRESetType(pc, "euclid");
       const uint ilu_level = parameters("ilu")["fill_level"];
-      PetscOptionsSetValue("-pc_hypre_euclid_levels", boost::lexical_cast<std::string>(ilu_level).c_str());
+      PetscOptionsSetValue("-pc_hypre_euclid_levels",
+                          boost::lexical_cast<std::string>(ilu_level).c_str());
     }
     else
     {
@@ -178,16 +255,111 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
             "For performance, installation of HYPRE is recommended.");
     #endif
   }
-  else if (type == "amg_ml")
+  else if (type == "amg_ml" || type == "ml_amg")
   {
     #if PETSC_HAVE_ML
+
+    // Set preconditioner to ML
     PCSetType(pc, PCML);
-      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
-      PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
-      PCFactorSetShiftAmount(pc, PETSC_DECIDE);
-      #else
-      PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
-      #endif
+
+    // Set some parameters before set-up. These parameters can:
+    // (i)  Only be set via the PETSc parameters system; or
+    // (ii) Cannot be changed once once the preconditioner has been
+    //      setup. The is tricky because we don't know how many levels ML
+    //      will create until we've called PCSetUp
+
+    // --- ML parameters
+
+    // Maximum number of levels
+    if (parameters("ml")["max_num_levels"].is_set())
+    {
+      const uint max_levels = parameters("ml")["max_num_levels"];
+      PetscOptionsSetValue("-pc_ml_maxNlevels",
+                           boost::lexical_cast<std::string>(max_levels).c_str());
+    }
+
+    // Aggregation scheme (Uncoupled, Coupled, MIS, . . .)
+    if (parameters("ml")["aggregation_scheme"].is_set())
+    {
+      const std::string scheme = parameters("ml")["aggregation_scheme"];
+      PetscOptionsSetValue("-pc_ml_CoarsenScheme", scheme.c_str());
+    }
+
+    // Aggregation damping factor
+    if (parameters("ml")["aggregation_damping_factor"].is_set())
+    {
+      const double damping = parameters("ml")["aggregation_damping_factor"];
+      PetscOptionsSetValue("-pc_ml_DampingFactor",
+                           boost::lexical_cast<std::string>(damping).c_str());
+    }
+
+    // Maximum coarse level problem size
+    if (parameters("ml")["max_coarse_size"].is_set())
+    {
+      const uint max_size = parameters("ml")["max_coarse_size"];
+      PetscOptionsSetValue("-pc_ml_maxCoarseSize",
+                            boost::lexical_cast<std::string>(max_size).c_str());
+    }
+
+    //PetscOptionsSetValue("-pc_ml_Threshold",
+    //                      boost::lexical_cast<std::string>(2).c_str());
+
+    //PetscOptionsSetValue("-pc_ml_PrintLevel",
+    //                      boost::lexical_cast<std::string>(6).c_str());
+
+    // --- PETSc parameters
+
+    // Number of smmoother applications
+    if (parameters("mg")["num_sweeps"].is_set())
+    {
+      const uint num_sweeps = parameters("mg")["num_sweeps"];
+      PetscOptionsSetValue("-pc_mg_smoothup",
+                           boost::lexical_cast<std::string>(num_sweeps).c_str());
+      PetscOptionsSetValue("-pc_mg_smoothdown",
+                           boost::lexical_cast<std::string>(num_sweeps).c_str());
+    }
+
+    // Cycle type (v or w)
+    //PetscOptionsSetValue("-pc_mg_cycles",
+    //                      boost::lexical_cast<std::string>(v).c_str());
+
+    // Coarse level solver
+    #if PETSC_HAVE_MUMPS
+    PetscOptionsSetValue("-mg_coarse_ksp_type", "preonly");
+    PetscOptionsSetValue("-mg_coarse_pc_type", "lu");
+    PetscOptionsSetValue("-mg_coarse_pc_factor_mat_solver_package", "mumps");
+    #endif
+
+    // Smoother on all levels
+    PetscOptionsSetValue("-mg_levels_ksp_type", "chebyshev");
+    //PetscOptionsSetValue("mg_levels_ksp_chebyshev_estimate_eigenvalues",
+    //                      "0.0,1.1");
+    //PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
+    PetscOptionsSetValue("-mg_levels_ksp_max_it",
+                          boost::lexical_cast<std::string>(3).c_str());
+
+    //PetscOptionsSetValue("-mg_levels_pc_type", "none");
+    PetscOptionsSetValue("-mg_levels_pc_type", "jacobi");
+    //PetscOptionsSetValue("-mg_levels_pc_type", "sor");
+    //PetscOptionsSetValue("-mg_levels_1_pc_sor_its",
+    //                      boost::lexical_cast<std::string>(2).c_str());
+
+    // Level 1 smoother (0 is coarse, N is finest)
+    PetscOptionsSetValue("-mg_levels_1_ksp_type", "chebyshev");
+    PetscOptionsSetValue("-mg_levels_1_ksp_max_it",
+                          boost::lexical_cast<std::string>(1).c_str());
+    PetscOptionsSetValue("-mg_levels_1_pc_type", "sor");
+    PetscOptionsSetValue("-mg_levels_1_pc_sor_its",
+                          boost::lexical_cast<std::string>(2).c_str());
+
+    // Level 2  smoother
+    PetscOptionsSetValue("-mg_levels_2_ksp_type", "chebyshev");
+    PetscOptionsSetValue("-mg_levels_2_ksp_max_it",
+                          boost::lexical_cast<std::string>(1).c_str());
+    PetscOptionsSetValue("-mg_levels_2_pc_type", "sor");
+    PetscOptionsSetValue("-mg_levels_2_pc_sor_its",
+			 boost::lexical_cast<std::string>(1).c_str());
+
     #else
     warning("PETSc has not been compiled with the ML library for   "
             "algerbraic multigrid. Default PETSc solver will be used. "
@@ -200,10 +372,8 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     PCSetType(pc, _methods.find("additive_schwarz")->second);
     PCASMSetOverlap(pc, parameters("schwarz")["overlap"]);
 
-    // Make sure the data structures have been constructed
-    KSPSetUp(*solver.ksp());
-
     // Get sub-solvers and set sub-solver parameters
+    /*
     KSP* sub_ksps;
     int num_local(0), first(0);
     PCASMGetSubKSP(pc, &num_local, &first, &sub_ksps);
@@ -226,6 +396,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
 		//                      parameters["divergence_limit"],
 		//                      100);
     //KSPMonitorSet(sub_ksps[0], KSPMonitorTrueResidualNorm, 0, 0);
+    */
   }
   else if (type != "default")
   {
@@ -243,8 +414,15 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   // Make sure options are set
   PCSetFromOptions(pc);
 
-  if (parameters["report"])
+  // Print preconditioner information
+  /*
+  const bool report = parameters["report"];
+  if (report);
+  {
+    PCSetUp(pc);
     PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
+  }
+  */
 }
 //-----------------------------------------------------------------------------
 std::string PETScPreconditioner::str(bool verbose) const

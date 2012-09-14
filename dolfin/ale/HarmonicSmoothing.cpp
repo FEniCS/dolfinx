@@ -40,6 +40,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
 {
+  error("The function HarmonicSmoothing::move is broken. See https://bugs.launchpad.net/dolfin/+bug/1047641.");
+
   not_working_in_parallel("ALE::move");
 
   const uint D = mesh.topology().dim();
@@ -70,9 +72,10 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
 
   // Assemble matrix
   Matrix A;
-  Assembler::assemble(A, *form);
+  Assembler assembler;
+  assembler.assemble(A, *form);
 
-  // Initialize vector
+  // Initialize RHS vector
   const uint N = mesh.num_vertices();
   Vector b(N);
 
@@ -82,6 +85,7 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
   const uint* dofs = vertex_map.values();
 
   // Modify matrix (insert 1 on diagonal)
+
   A.ident(num_dofs, dofs);
   A.apply("insert");
 

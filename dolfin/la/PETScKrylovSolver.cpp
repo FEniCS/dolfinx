@@ -24,6 +24,8 @@
 
 #ifdef HAS_PETSC
 
+#include <petsclog.h>
+
 #include <boost/assign/list_of.hpp>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
@@ -38,6 +40,8 @@
 #include "PETScVector.h"
 #include "PETScKrylovSolver.h"
 
+#include <dolfin/common/timing.h>
+
 using namespace dolfin;
 
 // Utility function
@@ -49,13 +53,7 @@ namespace dolfin
     void operator() (KSP* _ksp)
     {
       if (_ksp)
-      {
-        #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
-        KSPDestroy(*_ksp);
-        #else
         KSPDestroy(_ksp);
-        #endif
-      }
       delete _ksp;
     }
   };
@@ -99,7 +97,18 @@ Parameters PETScKrylovSolver::default_parameters()
   Parameters p(KrylovSolver::default_parameters());
   p.rename("petsc_krylov_solver");
 
+  // Preconditioing side
   p.add("preconditioner_side", "left");
+
+  // Norm type used in covergence test
+  std::set<std::string> allowed_norm_types;
+  allowed_norm_types.insert("preconditioned");
+  allowed_norm_types.insert("true");
+  allowed_norm_types.insert("none");
+  p.add("convergence_norm_type", allowed_norm_types);
+
+  // Control PETSc performance profiling
+  p.add("profile", false);
 
   return p;
 }
@@ -127,7 +136,6 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
                                      PETScPreconditioner& preconditioner)
   : preconditioner(reference_to_no_delete_pointer(preconditioner)),
     preconditioner_set(false)
-
 {
   // Set parameter values
   parameters = default_parameters();
@@ -136,9 +144,8 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
-                                     boost::shared_ptr<PETScPreconditioner> preconditioner)
-  : preconditioner(preconditioner),
-    preconditioner_set(false)
+  boost::shared_ptr<PETScPreconditioner> preconditioner)
+  : preconditioner(preconditioner), preconditioner_set(false)
 
 {
   // Set parameter values
@@ -158,7 +165,7 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
-                                     boost::shared_ptr<PETScUserPreconditioner> preconditioner)
+  boost::shared_ptr<PETScUserPreconditioner> preconditioner)
   : pc_dolfin(preconditioner.get()), preconditioner_set(false)
 {
   // Set parameter values
@@ -289,13 +296,34 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     info("Using hack to get around PETScCusp bug: ||b|| = %g", b.norm("l2"));
   }
 
+  // Set convergence norm type
+  if (parameters["convergence_norm_type"].is_set())
+  {
+    const std::string convergence_norm_type = parameters["convergence_norm_type"];
+    if (convergence_norm_type == "true")
+      KSPSetNormType(*_ksp, KSP_NORM_UNPRECONDITIONED);
+    else if (convergence_norm_type == "preconditioned")
+      KSPSetNormType(*_ksp, KSP_NORM_PRECONDITIONED);
+    else if (convergence_norm_type == "none")
+      KSPSetNormType(*_ksp, KSP_NORM_NONE);
+  }
+
   // Solve linear system
   if (MPI::process_number() == 0)
   {
     log(PROGRESS, "PETSc Krylov solver starting to solve %i x %i system.",
         A->size(0), A->size(1));
   }
-  KSPSolve(*_ksp, *b.vec(), *x.vec());
+
+  const bool profile_performance = parameters["profile"];
+  if (profile_performance)
+  {
+    PetscLogBegin();
+    KSPSolve(*_ksp, *b.vec(), *x.vec());
+    PetscLogView(PETSC_VIEWER_STDOUT_WORLD);
+  }
+  else
+    KSPSolve(*_ksp, *b.vec(), *x.vec());
 
   // Get the number of iterations
   int num_iterations = 0;
@@ -484,7 +512,7 @@ void PETScKrylovSolver::write_report(int num_iterations,
         pc_type, sub_ksp_type, sub_pc_type);
   }
 
-#if PETSC_HAVE_HYPRE
+  #if PETSC_HAVE_HYPRE
   if (pc_type_str == PCHYPRE)
   {
     const char* hypre_sub_type;
@@ -492,7 +520,7 @@ void PETScKrylovSolver::write_report(int num_iterations,
 
     log(PROGRESS, "  Hypre preconditioner method: %s", hypre_sub_type);
   }
-#endif
+  #endif
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::check_dimensions(const PETScBaseMatrix& A,

@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2011-11-09
-# Last changed: 2011-11-09
+# Last changed: 2012-08-06
 
 # Begin demo
 
@@ -93,7 +93,7 @@ F = (inner(a0*grad(u), grad(v))*dx(0) + inner(a1*grad(u), grad(v))*dx(1)
      - g_L*v*ds(1) - g_R*v*ds(3)
      - f*v*dx(0) - f*v*dx(1))
 
-# Separete left and right hand sides of equation
+# Separate left and right hand sides of equation
 a, L = lhs(F), rhs(F)
 
 # Solve problem

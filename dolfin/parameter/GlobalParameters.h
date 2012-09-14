@@ -61,6 +61,12 @@ namespace dolfin
       // Threaded computation
       p.add("num_threads", 0);                               // Number of threads to run, 0 = run serial version
 
+      // DOF reordering
+      p.add("reorder_dofs", true);
+
+      // Print the level of thread support provided by the MPI library
+      p.add("print_mpi_thread_support_level", false);
+
       // Graph partitioner
       std::set<std::string> allowed_mesh_partitioners;
       std::string default_mesh_partitioner("ParMETIS");
@@ -98,7 +104,7 @@ namespace dolfin
       allowed_backends.insert("PETSc");
       default_backend = "PETSc";
       p.add("use_petsc_signal_handler", false);
-      
+
       #endif
       #ifdef HAS_PETSC_CUSP
       allowed_backends.insert("PETScCusp");
