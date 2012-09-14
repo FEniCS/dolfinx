@@ -34,9 +34,7 @@
 #include <dolfin/parameter/Parameters.h>
 
 class vtkObject;
-
-// Forward declarations
-class QWidget;
+class QVTKWidget;
 
 namespace dolfin
 {
@@ -94,7 +92,8 @@ namespace dolfin
   ///  scalarbar      Boolean     False for       Hide/show the colormapping bar
   ///                             meshes, else
   ///                             true
-  ///  axes           Boolean     False           Show axes
+  ///  axes           Boolean     False           Show axes.
+  ///
   ///  rescale        Boolean     True            Enable/disable recomputation
   ///                                             of the scalar to color mapping
   ///                                             on every iteration when performing
@@ -115,6 +114,8 @@ namespace dolfin
   ///                                             in pixels
   ///  window_height  Integer     400             The height of the plotting window
   ///                                             in pixels
+  ///  tile_windows   Boolean     True            Automatically tile plot windows.
+  ///
   ///  key            String                      Key to the plot window, used to
   ///                                             decide if a new plotter should be
   ///                                             created or a current one updated
@@ -142,14 +143,18 @@ namespace dolfin
   {
   public:
 
-    /// Create plotter for a variable
+    /// Create plotter for a variable. If a widget is supplied, this widget
+    /// will be used for drawing, instead of a new top-level widget. Ownership
+    /// is transferred.
     template <class T>
-    explicit VTKPlotter(boost::shared_ptr<T>, QWidget *parent = NULL);
+    explicit VTKPlotter(boost::shared_ptr<T>, QVTKWidget *widget = NULL);
 
-    /// Create plotter for an Expression with associated Mesh
+    /// Create plotter for an Expression with associated Mesh. If a widget is
+    /// supplied, this widget will be used for drawing, instead of a new
+    /// top-level widget. Ownership is transferred.
     explicit VTKPlotter(boost::shared_ptr<const Expression> expression,
                         boost::shared_ptr<const Mesh> mesh,
-                        QWidget *parent = NULL);
+                        QVTKWidget *wiget = NULL);
 
     /// Destructor
     ~VTKPlotter();
@@ -178,6 +183,7 @@ namespace dolfin
       p.add("helptext", true);
       p.add("window_width",  600, /*min*/ 50, /*max*/ 5000);
       p.add("window_height", 400, /*min*/ 50, /*max*/ 5000);
+      p.add("tile_windows", true);
 
       p.add<std::string>("key");
       p.add<double>("hide_below");
@@ -244,6 +250,9 @@ namespace dolfin
     // but intended for internal (and subclass) use. Returns true if the
     // keypress is handled.
     virtual bool key_pressed(int modifiers, char key, std::string keysym);
+
+    // Returns the QVTKWidget that contains the plot (when compiled with Qt).
+    QVTKWidget *get_widget() const;
 
   private:
 

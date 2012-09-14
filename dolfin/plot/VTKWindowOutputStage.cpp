@@ -143,15 +143,10 @@ namespace // anonymous
 //----------------------------------------------------------------------------
 // Class VTKWindowOutputStage
 //----------------------------------------------------------------------------
-VTKWindowOutputStage::VTKWindowOutputStage(QWidget *parent)
+VTKWindowOutputStage::VTKWindowOutputStage(QVTKWidget *user_widget)
 {
 #ifdef HAS_QVTK
-  if (parent)
-  {
-    // If there's a parent then it means the qapplication exists. Might as well
-    // create the widget now, while we have the parent...
-    widget.reset(new QVTKWidget(parent));
-  }
+  widget.reset(user_widget);
 #endif
 
   vtkMapper::GlobalImmediateModeRenderingOn(); // FIXME: Check if faster or not
@@ -220,10 +215,20 @@ void VTKWindowOutputStage::init(VTKPlotter *parent, const Parameters &parameters
   _renderWindow->SetInteractor(widget->GetInteractor());
 
   widget->SetRenderWindow(_renderWindow);
-  widget->resize(parameters["window_width"], parameters["window_height"]);
+  if (widget->parentWidget())
+  {
+    widget->resize(widget->parentWidget()->size());
+  }
+  else
+  {
+    widget->resize(parameters["window_width"], parameters["window_height"]);
+  }
 #else
   _renderWindow->SetInteractor(vtkSmartPointer<vtkRenderWindowInteractor>::New());
-  _renderWindow->SetSize(parameters["window_width"], parameters["window_height"]);
+  if (width > 0 && height > 0)
+  {
+    _renderWindow->SetSize(parameters["window_width"], parameters["window_height"]);
+  }
 #endif
   _renderWindow->GetInteractor()->SetInteractorStyle(style);
   style->SetCurrentRenderer(_renderer);
@@ -323,6 +328,11 @@ std::string VTKWindowOutputStage::get_window_title()
 #else
   return _renderWindow->GetWindowName();
 #endif
+}
+//----------------------------------------------------------------------------
+QVTKWidget *VTKWindowOutputStage::get_widget() const
+{
+  return widget.get();
 }
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::close_window()

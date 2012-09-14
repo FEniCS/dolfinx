@@ -84,10 +84,10 @@ namespace // anonymous
 }
 //----------------------------------------------------------------------------
 template <class T>
-VTKPlotter::VTKPlotter(boost::shared_ptr<T> t, QWidget *parent)
+VTKPlotter::VTKPlotter(boost::shared_ptr<T> t, QVTKWidget *widget)
   : _initialized(false),
     _plottable(CreateVTKPlottable(t)),
-    vtk_pipeline(new VTKWindowOutputStage(parent)),
+    vtk_pipeline(new VTKWindowOutputStage(widget)),
     _frame_counter(0),
     _key(to_key(*t))
 {
@@ -97,10 +97,10 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<T> t, QWidget *parent)
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
-    boost::shared_ptr<const Mesh> mesh, QWidget *parent)
+    boost::shared_ptr<const Mesh> mesh, QVTKWidget *widget)
   : _initialized(false),
     _plottable(CreateVTKPlottable(expression, mesh)),
-    vtk_pipeline(new VTKWindowOutputStage(parent)),
+    vtk_pipeline(new VTKWindowOutputStage(widget)),
     _frame_counter(0),
     _key(to_key(*expression))
 {
@@ -218,26 +218,33 @@ void VTKPlotter::init()
   dolfin_assert(vtk_pipeline);
   vtk_pipeline->init(this, parameters);
 
-  // Adjust window position to not completely overlap previous plots.
-  dolfin::uint num_old_plots = active_plotters->size()-1;
-
-  int row=0, col=0, width=0, height=0;
-  if (num_old_plots > 0)
+  if (parameters["tile_windows"])
   {
-    // Get the size of a window that's already decorated, otherwise the frame
-    // size may be not include all decoration (on X)
-    (*active_plotters->begin())->vtk_pipeline->get_window_size(width, height);
+    // Adjust window position to not completely overlap previous plots.
+    dolfin::uint num_old_plots = active_plotters->size()-1;
 
-    int swidth, sheight;
-    vtk_pipeline->get_screen_size(swidth, sheight);
+    int row=0, col=0, width=0, height=0;
+    if (num_old_plots > 0)
+    {
+      // Get the size of a window that's already decorated, otherwise the frame
+      // size may be not include all decoration (on X)
+      (*active_plotters->begin())->vtk_pipeline->get_window_size(width, height);
 
-    // Tile windows horizontally across screen
-    int num_rows = swidth/width;
-    int num_cols = sheight/height;
-    row = num_old_plots % num_rows;
-    col = (num_old_plots / num_rows) % num_cols;
+      int swidth, sheight;
+      vtk_pipeline->get_screen_size(swidth, sheight);
+
+      // Tile windows horizontally across screen
+      int num_rows = swidth/width;
+      int num_cols = sheight/height;
+      row = num_old_plots % num_rows;
+      col = (num_old_plots / num_rows) % num_cols;
+    }
+    vtk_pipeline->place_window(row*width, col*height);
   }
-  vtk_pipeline->place_window(row*width, col*height);
+  else
+  {
+    vtk_pipeline->resurrect_window();
+  }
 
   // Let the plottable initialize its part of the pipeline
   _plottable->init_pipeline(parameters);
@@ -431,6 +438,11 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
 
   // Not handled
   return false;
+}
+//----------------------------------------------------------------------------
+QVTKWidget *VTKPlotter::get_widget() const
+{
+  return vtk_pipeline->get_widget();
 }
 //----------------------------------------------------------------------------
 void VTKPlotter::write_png(std::string filename)
@@ -710,11 +722,12 @@ void VTKPlotter::add_polygon  (const Array<double>&)              {}
 void VTKPlotter::all_interactive(bool)                            {}
 void VTKPlotter::set_key(std::string key)                         {}
 
-bool VTKPlotter::keypressCallback()                                     { return false; }
+bool VTKPlotter::key_pressed(int, char, std::string)                    { return false; }
 bool VTKPlotter::is_compatible(boost::shared_ptr<const Variable>) const { return false; }
 
 std::string        VTKPlotter::to_key(const Variable &) { return ""; }
 const std::string& VTKPlotter::key() const              { return _key; }
+QVTKWidget *       VTKPlotter::get_widget() const       { return NULL; }
 
 #endif // HAS_VTK
 
@@ -730,8 +743,8 @@ bool VTKPlotter::run_to_end = false;
 // Must instantiate both const and non-const shared_ptr<T>s, no implicit conversion; see
 // http://stackoverflow.com/questions/5600150/c-template-instantiation-with-shared-ptr-to-const-t
 #define INSTANTIATE(T)                                                  \
-  template VTKPlotter::VTKPlotter(boost::shared_ptr<const T >, QWidget*); \
-  template VTKPlotter::VTKPlotter(boost::shared_ptr<T >, QWidget*);
+  template VTKPlotter::VTKPlotter(boost::shared_ptr<const T >, QVTKWidget*); \
+  template VTKPlotter::VTKPlotter(boost::shared_ptr<T >, QVTKWidget*);
 
 INSTANTIATE(CSGGeometry)
 INSTANTIATE(DirichletBC)

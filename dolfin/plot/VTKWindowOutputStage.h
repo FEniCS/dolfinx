@@ -43,9 +43,6 @@ class vtkScalarBarActor;
 class vtkTextActor;
 class vtkProp;
 
-// Forward declarations
-class QWidget;
-
 namespace dolfin
 {
 
@@ -60,7 +57,8 @@ namespace dolfin
 
   public:
 
-    VTKWindowOutputStage(QWidget *parent = NULL);
+    /// If a widget is supplied, this widget will be used for drawing, instead of a new top-level widget. Ownership is transferred.
+    VTKWindowOutputStage(QVTKWidget *widget = NULL);
 
     ~VTKWindowOutputStage();
 
@@ -77,6 +75,10 @@ namespace dolfin
     void set_window_title(std::string title);
 
     std::string get_window_title();
+
+    /// Return a pointer to the plotting widget. The pointer is valid from
+    /// after init() is called (if no widget was passed in the contructor).
+    QVTKWidget *get_widget() const;
 
     void close_window();
 
