@@ -80,6 +80,12 @@ boost::shared_ptr<TensorLayout> EpetraFactory::create_layout(uint rank) const
   return pattern;
 }
 //-----------------------------------------------------------------------------
+boost::shared_ptr<GenericLinearOperator> EpetraFactory::create_linear_operator() const
+{
+  boost::shared_ptr<GenericLinearOperator> A(new NotImplementedLinearOperator);
+  return A;
+}
+//-----------------------------------------------------------------------------
 boost::shared_ptr<GenericLUSolver> EpetraFactory::create_lu_solver(std::string method) const
 {
   boost::shared_ptr<GenericLUSolver> solver(new EpetraLUSolver(method));

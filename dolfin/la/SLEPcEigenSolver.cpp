@@ -16,12 +16,12 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Ola Skavhaug 2008
-// Modified by Anders Logg 2008-2011
+// Modified by Anders Logg 2008-2012
 // Modified by Marie Rognes 2009
 // Modified by Fredrik Valdmanis 2011
 //
 // First added:  2005-08-31
-// Last changed: 2011-11-11
+// Last changed: 2012-02-22
 
 #ifdef HAS_SLEPC
 
@@ -37,7 +37,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A)
-      : A(reference_to_no_delete_pointer(const_cast<PETScMatrix&>(A)))
+  : A(reference_to_no_delete_pointer(const_cast<PETScMatrix&>(A)))
 {
   dolfin_assert(A.size(0) == A.size(1));
 
@@ -172,8 +172,8 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc) const
 void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
                                      GenericVector& r, GenericVector& c) const
 {
-  PETScVector& _r = r.down_cast<PETScVector>();
-  PETScVector& _c = c.down_cast<PETScVector>();
+  PETScVector& _r = as_type<PETScVector>(r);
+  PETScVector& _c = as_type<PETScVector>(c);
   get_eigenpair(lr, lc, _r, _c, 0);
 }
 //-----------------------------------------------------------------------------
@@ -211,8 +211,8 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
                                      GenericVector& r, GenericVector& c,
                                      uint i) const
 {
-  PETScVector& _r = r.down_cast<PETScVector>();
-  PETScVector& _c = c.down_cast<PETScVector>();
+  PETScVector& _r = as_type<PETScVector>(r);
+  PETScVector& _c = as_type<PETScVector>(c);
   get_eigenpair(lr, lc, _r, _c, i);
 }
 //-----------------------------------------------------------------------------

@@ -209,7 +209,7 @@ std::pair<dolfin::uint, dolfin::uint> EpetraMatrix::local_range(uint dim) const
   return std::make_pair(row_map.MinMyGID(), row_map.MaxMyGID() + 1);
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::resize(GenericVector& y, uint dim) const
+void EpetraMatrix::resize(GenericVector& z, uint dim) const
 {
   dolfin_assert(A);
 
@@ -227,8 +227,8 @@ void EpetraMatrix::resize(GenericVector& y, uint dim) const
   }
 
   // Reset vector with new map
-  EpetraVector& _y = y.down_cast<EpetraVector>();
-  _y.reset(*map);
+  EpetraVector& _z = as_type<EpetraVector>(z);
+  _z.reset(*map);
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::get(double* block, uint m, const uint* rows,
@@ -355,7 +355,7 @@ void EpetraMatrix::add(const double* block,
 //-----------------------------------------------------------------------------
 void EpetraMatrix::axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
 {
-  const EpetraMatrix* AA = &A.down_cast<EpetraMatrix>();
+  const EpetraMatrix* AA = &as_type<const EpetraMatrix>(A);
   if (!AA->mat()->Filled())
   {
     dolfin_error("EpetraMatrix.cpp",
@@ -570,8 +570,8 @@ void EpetraMatrix::zero(uint m, const uint* rows)
 void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
 {
   dolfin_assert(A);
-  const EpetraVector& x = x_.down_cast<EpetraVector>();
-  EpetraVector& Ax = Ax_.down_cast<EpetraVector>();
+  const EpetraVector& x = as_type<const EpetraVector>(x_);
+  EpetraVector& Ax = as_type<EpetraVector>(Ax_);
 
   if (x.size() != size(1))
   {
@@ -607,8 +607,8 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
 void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
 {
   dolfin_assert(A);
-  const EpetraVector& x = x_.down_cast<EpetraVector>();
-  EpetraVector& Ax = Ax_.down_cast<EpetraVector>();
+  const EpetraVector& x = as_type<const EpetraVector>(x_);
+  EpetraVector& Ax = as_type<EpetraVector>(Ax_);
 
   if (x.size() != size(0))
   {
@@ -694,7 +694,7 @@ void EpetraMatrix::setrow(uint row, const std::vector<uint>& columns,
     set(&values[i], 1, &row, 1, &columns[i]);
 }
 //-----------------------------------------------------------------------------
-LinearAlgebraFactory& EpetraMatrix::factory() const
+GenericLinearAlgebraFactory& EpetraMatrix::factory() const
 {
   return EpetraFactory::instance();
 }
@@ -732,7 +732,7 @@ const EpetraMatrix& EpetraMatrix::operator/= (double a)
 //-----------------------------------------------------------------------------
 const GenericMatrix& EpetraMatrix::operator= (const GenericMatrix& A)
 {
-  *this = A.down_cast<EpetraMatrix>();
+  *this = as_type<const EpetraMatrix>(A);
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -746,4 +746,5 @@ const EpetraMatrix& EpetraMatrix::operator= (const EpetraMatrix& A)
   return *this;
 }
 //-----------------------------------------------------------------------------
+
 #endif

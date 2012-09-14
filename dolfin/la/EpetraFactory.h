@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2011
+// Modified by Anders Logg 2011-2012
 //
 // First added:  2008-04-21
-// Last changed: 2011-10-19
+// Last changed: 2012-08-20
 
 #ifdef HAS_TRILINOS
 
@@ -33,7 +33,7 @@
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
 #include "TensorLayout.h"
-#include "LinearAlgebraFactory.h"
+#include "GenericLinearAlgebraFactory.h"
 
 // Forwad declarations
 class Epetra_MpiComm;
@@ -44,14 +44,14 @@ namespace dolfin
 
   class GenericLinearSolver;
 
-  class EpetraFactory : public LinearAlgebraFactory
+  class EpetraFactory : public GenericLinearAlgebraFactory
   {
   public:
 
     /// Destructor
     virtual ~EpetraFactory();
 
-    /// --- LinearAlgebraFactory interface
+    /// --- GenericLinearAlgebraFactory interface
 
     /// Create empty matrix
     boost::shared_ptr<GenericMatrix> create_matrix() const;
@@ -64,6 +64,9 @@ namespace dolfin
 
     /// Create empty tensor layout
     boost::shared_ptr<TensorLayout> create_layout(uint rank) const;
+
+    /// Create empty linear operator
+    boost::shared_ptr<GenericLinearOperator> create_linear_operator() const;
 
     /// Create LU solver
     boost::shared_ptr<GenericLUSolver> create_lu_solver(std::string method) const;

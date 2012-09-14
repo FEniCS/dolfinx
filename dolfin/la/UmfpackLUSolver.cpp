@@ -15,15 +15,17 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2006-2011
+// Modified by Anders Logg 2006-2012
 // Modified by Dag Lindbo 2008
 //
 // First added:  2006-06-01
-// Last changed: 2011-11-11
+// Last changed: 2012-08-20
+
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
 #include "UmfpackLUSolver.h"
+#include "GenericLinearOperator.h"
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "KrylovSolver.h"
@@ -109,7 +111,7 @@ UmfpackLUSolver::UmfpackLUSolver()
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-UmfpackLUSolver::UmfpackLUSolver(boost::shared_ptr<const GenericMatrix> A)
+UmfpackLUSolver::UmfpackLUSolver(boost::shared_ptr<const GenericLinearOperator> A)
                                : A(A)
 {
   // Set parameter values
@@ -121,7 +123,7 @@ UmfpackLUSolver::~UmfpackLUSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
+void UmfpackLUSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
 {
   symbolic.reset();
   numeric.reset();
@@ -129,7 +131,7 @@ void UmfpackLUSolver::set_operator(const boost::shared_ptr<const GenericMatrix> 
   dolfin_assert(this->A);
 }
 //-----------------------------------------------------------------------------
-const GenericMatrix& UmfpackLUSolver::get_operator() const
+const GenericLinearOperator& UmfpackLUSolver::get_operator() const
 {
   if (!A)
   {
@@ -164,10 +166,10 @@ dolfin::uint UmfpackLUSolver::solve(GenericVector& x, const GenericVector& b)
   return solve_factorized(x, b);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x,
+dolfin::uint UmfpackLUSolver::solve(const GenericLinearOperator& A, GenericVector& x,
                                     const GenericVector& b)
 {
-  boost::shared_ptr<const GenericMatrix> _A(&A, NoDeleter());
+  boost::shared_ptr<const GenericLinearOperator> _A(&A, NoDeleter());
   set_operator(_A);
   return solve(x, b);
 }
@@ -185,16 +187,19 @@ void UmfpackLUSolver::symbolic_factorize()
   symbolic.reset();
   numeric.reset();
 
+  // Need matrix data
+  boost::shared_ptr<const GenericMatrix> _A = require_matrix(A);
+
   // Get matrix data
-  boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A->data();
+  boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> data = _A->data();
   const std::size_t* Ap  = boost::tuples::get<0>(data);
   const std::size_t* Ai  = boost::tuples::get<1>(data);
   const double*      Ax  = boost::tuples::get<2>(data);
   const uint         nnz = boost::tuples::get<3>(data);
 
   // Check dimensions and get number of non-zeroes
-  const uint M   = A->size(0);
-  const uint N   = A->size(1);
+  const uint M   = _A->size(0);
+  const uint N   = _A->size(1);
   dolfin_assert(nnz >= M);
 
   // Factorize and solve
@@ -213,16 +218,19 @@ void UmfpackLUSolver::numeric_factorize()
                  "Operator has not been set");
   }
 
+  // Need matrix data
+  boost::shared_ptr<const GenericMatrix> _A = require_matrix(A);
+
   // Get matrix data
-  boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A->data();
+  boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> data = _A->data();
   const std::size_t* Ap  = boost::tuples::get<0>(data);
   const std::size_t* Ai  = boost::tuples::get<1>(data);
   const double*      Ax  = boost::tuples::get<2>(data);
   const uint         nnz = boost::tuples::get<3>(data);
 
   // Check dimensions and get number of non-zeroes
-  const uint M   = A->size(0);
-  const uint N   = A->size(1);
+  const uint M   = _A->size(0);
+  const uint N   = _A->size(1);
   dolfin_assert(nnz >= M);
 
   // Factorize and solve
@@ -245,12 +253,15 @@ dolfin::uint UmfpackLUSolver::solve_factorized(GenericVector& x,
                  "Operator has not been set");
   }
 
-  dolfin_assert(A->size(0) == A->size(0));
-  dolfin_assert(A->size(0) == b.size());
+  // Need matrix data
+  const boost::shared_ptr<const GenericMatrix> _A = require_matrix(A);
+
+  dolfin_assert(_A->size(0) == _A->size(0));
+  dolfin_assert(_A->size(0) == b.size());
 
   // Resize x if required
-  if (A->size(1) != x.size())
-    x.resize(A->size(1));
+  if (_A->size(1) != x.size())
+    x.resize(_A->size(1));
 
   if (!symbolic)
   {
@@ -267,13 +278,13 @@ dolfin::uint UmfpackLUSolver::solve_factorized(GenericVector& x,
   }
 
   // Get matrix data
-  boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A->data();
+  boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> data = _A->data();
   const std::size_t* Ap  = boost::tuples::get<0>(data);
   const std::size_t* Ai  = boost::tuples::get<1>(data);
   const double*      Ax  = boost::tuples::get<2>(data);
 
   log(PROGRESS, "Solving linear system of size %d x %d (UMFPACK LU solver).",
-      A->size(0), A->size(1));
+      _A->size(0), _A->size(1));
 
   // Solve for tranpose since we use compressed rows and UMFPACK expected compressed columns
   umfpack_solve(Ap, Ai, Ax, x.data(), b.data(), numeric.get());

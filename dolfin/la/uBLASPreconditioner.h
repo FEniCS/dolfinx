@@ -29,7 +29,7 @@ namespace dolfin
 {
 
   class uBLASVector;
-  class uBLASKrylovMatrix;
+  class uBLASLinearOperator;
   template<typename Mat> class uBLASMatrix;
 
   /// This class specifies the interface for preconditioners for the
@@ -62,11 +62,11 @@ namespace dolfin
     }
 
     /// Initialise preconditioner (virtual matrix)
-    virtual void init(const uBLASKrylovMatrix& P)
+    virtual void init(const uBLASLinearOperator& P)
     {
       dolfin_error("uBLASPreconditioner",
                    "initialize uBLAS preconditioner",
-                   "No init() function for preconditioner uBLASKrylovMatrix");
+                   "No init() function for preconditioner uBLASLinearOperator");
     }
 
     /// Solve linear system (M^-1)Ax = y

@@ -52,7 +52,15 @@ Compute renumbering (map[old] -> new) using Cuthill-McKee algorithm
 ";
 
 %feature("docstring")  dolfin::BoostGraphRenumbering::compute_king "
-Compute renumbering (map[old] -> new) using King algorithm
+**Overloaded versions**
+
+* compute_king\ (graph)
+
+  Compute renumbering (map[old] -> new) using King algorithm
+
+* compute_king\ (graph)
+
+  Compute renumbering (map[old] -> new) using King algorithm
 ";
 
 %feature("docstring")  dolfin::BoostGraphRenumbering::compute_minimum_degree "

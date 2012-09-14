@@ -66,7 +66,6 @@ list(APPEND OPTIONAL_PACKAGES "MPI")
 list(APPEND OPTIONAL_PACKAGES "PETSc")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
 list(APPEND OPTIONAL_PACKAGES "Trilinos")
-list(APPEND OPTIONAL_PACKAGES "MTL4")
 list(APPEND OPTIONAL_PACKAGES "UMFPACK")
 list(APPEND OPTIONAL_PACKAGES "CHOLMOD")
 list(APPEND OPTIONAL_PACKAGES "PaStiX")
@@ -349,11 +348,6 @@ if (DOLFIN_ENABLE_TRILINOS)
   else()
     message(STATUS "Trilinos could not be found")
   endif()
-endif()
-
-# Check for MTL4
-if (DOLFIN_ENABLE_MTL4)
-  find_package(MTL4)
 endif()
 
 # Check for PETSc and SLEPc
