@@ -21,6 +21,7 @@
 // Last changed: 2012-08-03
 
 #ifdef HAS_HDF5
+
 #include <ostream>
 #include <sstream>
 #include <vector>
@@ -36,7 +37,6 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/common/Timer.h>
-
 #include "HDF5File.h"
 #include "XDMFFile.h"
 
@@ -56,18 +56,18 @@ XDMFFile::~XDMFFile()
 void XDMFFile::operator<<(const Function& u)
 {
   std::pair<const Function*, double> ut(&u, (double)counter);
-  operator << (ut);
+  operator << ut;
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 {
   // Save a Function to XDMF/HDF files for visualisation.
-  // Downgrading may occur due to collecting the values 
+  // Downgrading may occur due to collecting the values
   // to vertices using compute_vertex_values()
-  // 
-  // Creates an HDF5 file for storing Mesh and Vertex/Cell Values, 
+  //
+  // Creates an HDF5 file for storing Mesh and Vertex/Cell Values,
   // and an associated XDMF file for metadata.
-  // Subsequent calls will store additional Vertex/Cell Values 
+  // Subsequent calls will store additional Vertex/Cell Values
   // in the same HDF5 file, and update the XDMF metadata
   // to represent a time series.
 
@@ -75,59 +75,65 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   const Function &u = *(ut.first);
   const double time_step = ut.second;
 
-  Timer hdf5timer("Write XDMF (mesh+data) vertex");
+  Timer hdf5timer("Write XDMF (mesh + data) vertex");
 
+  // Update any ghost values
   u.update();
+
   dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
+
   dolfin_assert(u.function_space()->dofmap());
   const GenericDofMap& dofmap= *u.function_space()->dofmap();
 
   const uint vrank = u.value_rank();
   const uint vsize = u.value_size();
   const uint cell_dim = mesh.topology().dim();
-  uint vsize_io=vsize; //output size may be padded 2D -> 3D for paraview
+  uint vsize_io = vsize; // output size may be padded 2D -> 3D for paraview
 
-  // test for cell-centred data
+  // Test for cell-centred data
   uint cell_based_dim = 1;
   for (uint i = 0; i < vrank; i++)
     cell_based_dim *= cell_dim;
 
   std::string data_centre;
   if (dofmap.max_cell_dimension() == cell_based_dim)
-    data_centre="Cell";
+    data_centre = "Cell";
   else
-    data_centre="Node"; // usual case - vertex-centred data
+    data_centre = "Node"; // Vertex-centred data
 
   // Tensors of rank > 2 not supported
-  if (vrank > 2) {
+  if (vrank > 2)
+  {
     dolfin_error("XDMFFile.cpp",
-		 "write data to XDMF file",
-		 "Output of tensors with rank > 2 not yet supported");
+		             "write data to XDMF file",
+		             "Output of tensors with rank > 2 not yet supported");
   }
 
-  if(cell_dim==1) {
+  if (cell_dim ==1 )
+  {
     dolfin_error("XDMFFile.cpp",
-		 "write data to XDMF file",
-		 "Output of 1D datasets not supported");
+		             "write data to XDMF file",
+		             "Output of 1D datasets not supported");
   }
-  
+
   const uint num_local_cells = mesh.num_cells();
   const uint num_local_vertices = mesh.num_vertices();
   const uint num_global_vertices = MPI::sum(num_local_vertices);
   const uint num_global_cells = MPI::sum(num_local_cells);
 
+  // Get Function data
   std::vector<double> data_values;
   uint num_local_entities=0;
-
-  if(data_centre=="Node") {
-
-    num_local_entities=num_local_vertices;
+  if (data_centre == "Node")
+  {
+    num_local_entities = num_local_vertices;
     u.compute_vertex_values(data_values, mesh);
 
-  } else if(data_centre=="Cell") {
-
-    num_local_entities=num_local_cells;
+  }
+  else if (data_centre == "Cell")
+  {
+    num_local_entities = num_local_cells;
     const GenericVector& v = *u.vector();
     v.get_local(data_values);
 
@@ -139,27 +145,34 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   // Need to interleave the values (e.g. if vector or tensor field)
   // Also pad 2D vectors and tensors to 3D.
 
-  if(vrank>0) {
+  if (vrank > 0)
+  {
     std::vector<double> tmp;
     tmp.reserve(vsize*num_local_entities);
-    for(uint i = 0; i < num_local_entities; i++) {
-      for(uint j = 0; j < vsize; j++) {
-	tmp.push_back(data_values[i + j*num_local_entities]);
-	if(j==1 && vsize==4) tmp.push_back(0.0);
+    for(uint i = 0; i < num_local_entities; i++)
+    {
+      for (uint j = 0; j < vsize; j++)
+      {
+        tmp.push_back(data_values[i + j*num_local_entities]);
+        if(j==1 && vsize==4)
+          tmp.push_back(0.0);
       }
-      if(vsize==2)    // 2D->3D vector
-	tmp.push_back(0.0);
-      if(vsize==4) {  // 2D->3D tensor
-	tmp.push_back(0.0);
-	tmp.push_back(0.0);
-	tmp.push_back(0.0);
-	tmp.push_back(0.0);
+      if (vsize == 2)    // 2D->3D vector
+        tmp.push_back(0.0);
+      if(vsize == 4) // 2D->3D tensor
+      {
+        tmp.push_back(0.0);
+        tmp.push_back(0.0);
+        tmp.push_back(0.0);
+        tmp.push_back(0.0);
       }
     }
     data_values.resize(tmp.size()); // 2D->3D padding increases size
     std::copy(tmp.begin(), tmp.end(), data_values.begin());
-    if(vsize==2) vsize_io=3;
-    if(vsize==4) vsize_io=9;
+    if (vsize == 2)
+      vsize_io = 3;
+    if (vsize == 4)
+      vsize_io=9;
   }
 
   // Initialise HDF5 file and save mesh
@@ -169,13 +182,13 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   std::string mc_name=h5file.mesh_coords_dataset_name(mesh);
   std::string mt_name=h5file.mesh_topo_dataset_name(mesh);
 
-  if(counter == 0) {
+  if (counter == 0)
+  {
     h5file.create();
     h5file << mesh;
-  } 
-  else if( !h5file.exists(mc_name) || !h5file.exists(mt_name) ) {
-    h5file << mesh;
   }
+  else if (!h5file.exists(mc_name) || !h5file.exists(mt_name))
+    h5file << mesh;
 
   // Vertex values are saved in the hdf5 'folder' /DataVector
   // as distinct from /Vector which is used for solution vectors.
@@ -185,18 +198,19 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   s << "/DataVector/" << counter;
   h5file.write(data_values[0], data_range, s.str().c_str(), vsize_io);
 
-  // remove path from filename_data
-  std::size_t lastslash=filename_data.rfind('/');
-  filename_data.erase(0,lastslash+1);
+  // FIXME: Use Boost filesystem to make this platform-independent
+  // Remove path from filename_data
+  std::size_t lastslash = filename_data.rfind('/');
+  filename_data.erase(0, lastslash + 1);
 
-  // Write the XML meta description - see www.xdmf.org
-  if(MPI::process_number()==0)
+  // Write the XML meta description - see http://www.xdmf.org
+  if (MPI::process_number() == 0)
   {
     pugi::xml_document xml_doc;
     pugi::xml_node xdmf_timegrid;
     pugi::xml_node xdmf_timedata;
 
-    if(counter==0)
+    if (counter == 0)
     {
       // First time step - create document template, adding a mesh and an empty time-series.
 
@@ -263,12 +277,12 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 
     xdmf_topo.append_attribute("NumberOfElements") = num_global_cells;
     pugi::xml_node xdmf_topo_data = xdmf_topo.append_child("DataItem");
-    
+
     xdmf_topo_data.append_attribute("Format") = "HDF";
     std::stringstream s;
     s << num_global_cells << " " << (cell_dim + 1);
     xdmf_topo_data.append_attribute("Dimensions") = s.str().c_str();
-    
+
     s.str("");
     s << filename_data << ":" << mt_name;
     xdmf_topo_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
@@ -278,12 +292,12 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     pugi::xml_node xdmf_geom = xdmf_grid.append_child("Geometry");
     xdmf_geom.append_attribute("GeometryType") = "XYZ";
     pugi::xml_node xdmf_geom_data = xdmf_geom.append_child("DataItem");
-    
+
     xdmf_geom_data.append_attribute("Format")="HDF";
     s.str("");
     s << num_global_vertices << " 3";
     xdmf_geom_data.append_attribute("Dimensions") = s.str().c_str();
-    
+
     s.str("");
     s << filename_data << ":" << mc_name;
     xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
@@ -307,9 +321,9 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     s.str("");
     if(data_centre=="Node") {
       s << num_global_vertices << " " << vsize_io;
-    } else if(data_centre=="Cell") {
+    else if(data_centre=="Cell")
       s << num_global_cells << " " << vsize_io;
-    }
+
     xdmf_data.append_attribute("Dimensions")=s.str().c_str();
     s.str("");
     s<< filename_data << ":/DataVector/" << counter;
@@ -324,7 +338,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 void XDMFFile::operator<<(const Mesh& mesh)
 {
   // Save a mesh for visualisation, with e.g. ParaView
-  // Creates a HDF5 file to store the mesh, 
+  // Creates a HDF5 file to store the mesh,
   // and a related XDMF file with metadata.
 
   Timer hdf5timer("HDF5+XDMF Output (mesh)");
@@ -344,7 +358,7 @@ void XDMFFile::operator<<(const Mesh& mesh)
   h5file << mesh;
 
   // Write the XML meta description
-  if(MPI::process_number() == 0)
+  if (MPI::process_number() == 0)
   {
     pugi::xml_document xml_doc;
 
@@ -359,15 +373,15 @@ void XDMFFile::operator<<(const Mesh& mesh)
 
     pugi::xml_node xdmf_topo = xdmf_grid.append_child("Topology");
 
-    if(cell_dim==2)
+    if (cell_dim == 2)
       xdmf_topo.append_attribute("TopologyType")="Triangle";
-    else if(cell_dim==3)
+    else if (cell_dim == 3)
       xdmf_topo.append_attribute("TopologyType")="Tetrahedron";
 
     xdmf_topo.append_attribute("NumberOfElements") = num_global_cells;
     pugi::xml_node xdmf_topo_data = xdmf_topo.append_child("DataItem");
 
-    xdmf_topo_data.append_attribute("Format")="HDF";
+    xdmf_topo_data.append_attribute("Format") = "HDF";
     std::stringstream s;
     s << num_global_cells << " " << (cell_dim + 1);
     xdmf_topo_data.append_attribute("Dimensions") = s.str().c_str();
@@ -390,7 +404,6 @@ void XDMFFile::operator<<(const Mesh& mesh)
     xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
 
     xml_doc.save_file(filename.c_str(), "  ");
-
   }
 }
 //----------------------------------------------------------------------------

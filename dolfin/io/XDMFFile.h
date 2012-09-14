@@ -24,6 +24,7 @@
 #define __DOLFIN_XDMFFILE_H
 
 #ifdef HAS_HDF5
+
 #include <string>
 #include <utility>
 #include <boost/shared_ptr.hpp>
@@ -52,26 +53,23 @@ namespace dolfin
     ~XDMFFile();
 
     /// Save Mesh to file
-    /// data in .h5, xml description in .xdmf
-    ///
+    /// data in .h5 (HDF5), XML description in .xdmf
     void operator<<(const Mesh& mesh);
 
-    /// Save Function to file 
-    /// data in .h5, xml description in .xdmf
-    ///
+    /// Save Function to file
+    /// data in .h5 (HDF5), XML description in .xdmf
     void operator<<(const Function& u);
 
     /// Save Function + time stamp to file
-    /// data in .h5, xml description in .xdmf
-    ///
+    /// data in .h5 (HDF5), XML description in .xdmf
     void operator<<(const std::pair<const Function*, double> ut);
 
   private:
 
-    /// Write out a cell-centred function
+    // Write out a cell-centred function
     void write_cell_function(const std::pair<const Function*, double> ut);
 
-    /// change file suffix from .xdmf to .h5
+    // Change file suffix from .xdmf to .h5
     std::string HDF5Filename() const;
 
   };
