@@ -185,7 +185,7 @@ void HDF5File::operator<<(const Mesh& mesh)
   std::stringstream s;
   s << mesh_coords_dataset_name(mesh);
   if (!exists(s.str()))
-    write(vtx_coords[0], vertex_range, s.str(), 3); //xyz coords
+    write(vertex_coords[0], vertex_range, s.str(), 3); //xyz coords
 
   s.str("");
   s << mesh_topo_dataset_name(mesh);
@@ -225,24 +225,6 @@ void HDF5File::operator>> (GenericVector& input)
   std::vector<double> data(range.second-range.first);
   read(data[0], range, "/Vector/0", H5T_NATIVE_DOUBLE, 1);
   input.set_local(data);
-}
-//-----------------------------------------------------------------------------
-void HDF5File::write(const double& data, const std::pair<uint,uint>& range,
-                     const std::string& dataset_name, const uint width)
-{
-  // Write data to existing HDF file as defined by range blocks on each process
-  // range: the local range on this processor
-  // width: is the width of the dataitem (e.g. 3 for x,y,z data)
-  write(data,range,dataset_name,H5T_NATIVE_DOUBLE,width);
-}
-//-----------------------------------------------------------------------------
-void HDF5File::write(const uint& data, const std::pair<uint,uint>& range,
-                     const std::string& dataset_name, const uint width)
-{
-  // Write data to existing HDF file as defined by range blocks on each process
-  // range: the local range on this processor
-  // width: is the width of the dataitem (e.g. 3 for x,y,z data)
-  write(data,range,dataset_name,H5T_NATIVE_INT,width);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::create()
@@ -372,7 +354,8 @@ void HDF5File::read(T& data,  const std::pair<uint, uint>& range,
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  input.set_local(data);
+  // FIXME: what is this?
+  //input.set_local(data);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write(const double& data, const std::pair<uint, uint>& range,
@@ -391,51 +374,6 @@ void HDF5File::write(const uint& data, const std::pair<uint, uint>& range,
   // range: the local range on this processor
   // width: is the width of the dataitem (e.g. 3 for x, y, z data)
   write(data, range, dataset_name, H5T_NATIVE_INT, width);
-}
-//-----------------------------------------------------------------------------
-void HDF5File::create()
-{
-  // make empty HDF5 file
-  // overwriting any existing file
-  // create some default 'folders' for storing different datasets
-
-  hid_t       file_id;         /* file and dataset identifiers */
-  hid_t	      plist_id;           /* property list identifier */
-  hid_t       group_id;
-  herr_t      status;
-
-  MPICommunicator comm;
-  MPIInfo info;
-
-  plist_id = H5Pcreate(H5P_FILE_ACCESS);
-  status = H5Pset_fapl_mpio(plist_id, *comm, *info);
-  dolfin_assert(status != HDF5_FAIL);
-  file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
-  dolfin_assert(file_id != HDF5_FAIL);
-
-  // create subgroups suitable for storing different types of data.
-  // DataVector - values for visualisation
-  group_id = H5Gcreate(file_id, "/DataVector", H5P_DEFAULT);
-  dolfin_assert(group_id != HDF5_FAIL);
-  status = H5Gclose (group_id);
-  dolfin_assert(status != HDF5_FAIL);
-
-  // Vector - for checkpointing etc
-  group_id = H5Gcreate(file_id, "/Vector", H5P_DEFAULT);
-  dolfin_assert(group_id != HDF5_FAIL);
-  status = H5Gclose (group_id);
-  assert(status != HDF5_FAIL);
-
-  // Mesh
-  group_id = H5Gcreate(file_id, "/Mesh", H5P_DEFAULT);
-  dolfin_assert(group_id != HDF5_FAIL);
-  status = H5Gclose (group_id);
-  dolfin_assert(status != HDF5_FAIL);
-
-  status = H5Pclose(plist_id);
-  dolfin_assert(status != HDF5_FAIL);
-  status = H5Fclose(file_id);
-  dolfin_assert(status != HDF5_FAIL);
 }
 //-----------------------------------------------------------------------------
 template <typename T>
