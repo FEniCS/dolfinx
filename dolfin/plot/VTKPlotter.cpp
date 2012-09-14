@@ -92,7 +92,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<T> t)
     _key(to_key(*t))
 {
   parameters = default_parameters();
-  parameters.update(_plottable->default_parameters());
+  _plottable->modify_default_parameters(parameters);
   set_title_from(*t);
 }
 //----------------------------------------------------------------------------
@@ -105,7 +105,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
     _key(to_key(*expression))
 {
   parameters = default_parameters();
-  parameters.update(_plottable->default_parameters());
+  _plottable->modify_default_parameters(parameters);
   set_title_from(*expression);
 }
 //----------------------------------------------------------------------------
@@ -204,6 +204,11 @@ void VTKPlotter::init()
   {
     return;
   }
+
+  // Let the plottable set default parameters that depend on user parameters
+  // (like scalar-warped 2d plots, which should be elevated only if user
+  // doesn't set "mode=off").
+  _plottable->modify_user_parameters(parameters);
 
   // We first initialize the part of the pipeline that the plotter controls.
   // This is the part from the Poly data mapper and out, including actor,
@@ -392,7 +397,6 @@ bool VTKPlotter::keypressCallback()
     {
       vtk_pipeline->cycle_representation();
       vtk_pipeline->render();
-      parameters["wireframe"].reset(); // Don't override in plot()
       return true;
     }
 
@@ -598,10 +602,19 @@ void VTKPlotter::update_pipeline(boost::shared_ptr<const Variable> variable)
   Timer timer("VTK update");
 
   // Process some parameters
+
   Parameter &wireframe = parameters["wireframe"];
   if (wireframe.is_set())
   {
     vtk_pipeline->cycle_representation(wireframe ? VTK_WIREFRAME : VTK_SURFACE);
+    wireframe.reset();
+  }
+
+  Parameter &elevation = parameters["elevate"];
+  if (elevation.is_set())
+  {
+    elevate(elevation);
+    elevation.reset();
   }
 
   vtk_pipeline->set_window_title(parameters["title"]);

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-27
-// Last changed: 2012-09-11
+// Last changed: 2012-09-13
 
 #ifndef __VTK_PLOTTABLE_CSGGEOMETRY_H
 #define __VTK_PLOTTABLE_CSGGEOMETRY_H
@@ -40,12 +40,10 @@ namespace dolfin
     VTKPlottableCSGGeometry(boost::shared_ptr<const CSGGeometry> geometry);
 
     /// Additional parameters for VTKPlottableCSGGeometry
-    virtual Parameters default_parameters()
+    virtual void modify_default_parameters(Parameters &parameters)
     {
-      Parameters p;
-      p.add("wireframe", true);
-      p.add("scalarbar", false);
-      return p;
+      parameters["wireframe"] = true;
+      parameters["scalarbar"] = false;
     }
 
     /// Update the plottable data

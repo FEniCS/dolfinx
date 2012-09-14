@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-09-11
+// Last changed: 2012-09-13
 
 #ifndef __VTK_PLOTTABLE_MESH_H
 #define __VTK_PLOTTABLE_MESH_H
@@ -63,12 +63,10 @@ namespace dolfin
     //--- Implementation of the GenericVTKPlottable interface ---
 
     /// Additional parameters for VTKPlottableMesh
-    virtual Parameters default_parameters()
+    virtual void modify_default_parameters(Parameters &parameters)
     {
-      Parameters p;
-      p.add("wireframe", true);
-      p.add("scalarbar", false);
-      return p;
+      parameters["wireframe"] = true;
+      parameters["scalarbar"] = false;
     }
 
     /// Initialize the parts of the pipeline that this class controls

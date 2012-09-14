@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-09-11
-// Last changed: 2012-09-11
+// Last changed: 2012-09-13
 
 #ifndef __VTK_PLOTTABLE_GENERICFUNCTION_1D_H
 #define __VTK_PLOTTABLE_GENERICFUNCTION_1D_H
@@ -54,11 +54,9 @@ namespace dolfin
     //--- Implementation of the GenericVTKPlottable interface ---
 
     /// Additional parameters for VTKPlottableGenericFunction1D
-    virtual Parameters default_parameters()
+    virtual void modify_default_parameters(Parameters &parameters)
     {
-      Parameters p;
-      p.add("scalarbar", false);
-      return p;
+      parameters["scalarbar"] = false;
     }
 
     /// Initialize the parts of the pipeline that this class controls

@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-09-11
+// Last changed: 2012-09-13
 
 #ifndef __GENERIC_VTK_PLOTTABLE_H
 #define __GENERIC_VTK_PLOTTABLE_H
@@ -45,8 +45,15 @@ namespace dolfin
   {
   public:
 
-    /// To be redefined in classes that require special parameters
-    virtual Parameters default_parameters() = 0;
+    /// To be redefined in classes that require special parameters. Called once
+    /// with the default parameters.
+    virtual void modify_default_parameters(Parameters &parameters) = 0;
+
+    /// To be redefined in classes that require special parameters. Called once
+    /// with user-specified parameters, but before init_pipeline.
+    virtual void modify_user_parameters(Parameters &parameters)
+    {
+    }
 
     /// Initialize the parts of the pipeline that this class controls
     virtual void init_pipeline(const Parameters& parameters) = 0;

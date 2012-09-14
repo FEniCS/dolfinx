@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-09-11
+// Last changed: 2012-09-13
 
 #ifndef __VTK_PLOTTABLE_GENERIC_FUNCTION_H
 #define __VTK_PLOTTABLE_GENERIC_FUNCTION_H
@@ -64,9 +64,18 @@ namespace dolfin
     //--- Implementation of the GenericVTKPlottable interface ---
 
     /// Additional parameters for VTKPlottableGenericFunction
-    virtual Parameters default_parameters()
+    virtual void modify_default_parameters(Parameters &parameters)
     {
-      return Parameters();
+    }
+
+    virtual void modify_user_parameters(Parameters &parameters)
+    {
+      std::string mode = parameters["mode"];
+      Parameter &elevate = parameters["elevate"];
+      if (dim() < 3 && value_rank() == 0 && mode != "off" && !elevate.is_set())
+      {
+        elevate = -65.0;
+      }
     }
 
     /// Initialize the parts of the pipeline that this class controls
@@ -110,6 +119,9 @@ namespace dolfin
 
     // Mode flag
     std::string _mode;
+
+    uint value_rank() const;
+
   };
 
   VTKPlottableGenericFunction *CreateVTKPlottable(boost::shared_ptr<const Function>);

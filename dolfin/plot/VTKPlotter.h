@@ -19,7 +19,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-09-12
+// Last changed: 2012-09-13
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -72,7 +72,8 @@ namespace dolfin
   ///  mode           String        "auto"        For vector valued functions,
   ///                                             this parameter may be set to
   ///                                             "warp" to enable vector warping
-  ///                                             visualization
+  ///                                             visualization, or "off" to turn
+  ///                                             all warping.
   ///  interactive    Boolean     False           Enable/disable interactive mode
   ///                                             for the rendering window.
   ///                                             For repeated plots of the same
@@ -96,6 +97,9 @@ namespace dolfin
   ///                                             on every iteration when performing
   ///                                             repeated/animated plots of the same
   ///                                             data
+  ///  elevate        Double      -65.0 for 2D    Set camera elevation.
+  ///                             warped scalars,
+  ///                             0.0 otherwise
   ///  prefix         String      "dolfin_plot_"  Filename prefix used when
   ///                                             saving plots to file in
   ///                                             interactive mode. An integer
@@ -115,10 +119,6 @@ namespace dolfin
   ///                                             plot() interface (in plot.h).
   ///                                             If not set, the object's unique
   ///                                             id is used.
-  ///  hide_below     Double                      If set, the values above/below the
-  ///  hide_above                                 limits are hidden. Can be used for
-  ///                                             example to show only true (==1.0)
-  ///                                             values in MeshFunctions.
   /// ============= ============ =============== =================================
   ///
   /// The default visualization mode for the different plot types are as follows:
@@ -166,6 +166,7 @@ namespace dolfin
       p.add("scale", 1.0);
       p.add("scalarbar", true);
       p.add("axes", false);
+      p.add<double>("elevate");
       p.add<double>("range_min");
       p.add<double>("range_max");
       p.add("rescale", true);

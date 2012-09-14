@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-21
-// Last changed: 2012-09-12
+// Last changed: 2012-09-13
 
 #ifndef __VTK_PLOTTABLE_MESH_FUNCTION_H
 #define __VTK_PLOTTABLE_MESH_FUNCTION_H
@@ -43,9 +43,8 @@ namespace dolfin
     //--- Implementation of the GenericVTKPlottable interface ---
 
     /// Additional parameters for VTKPlottableMeshFunction
-    virtual Parameters default_parameters()
+    virtual void modify_default_parameters(Parameters &parameters)
     {
-      return Parameters();
     }
 
     /// Update the plottable data

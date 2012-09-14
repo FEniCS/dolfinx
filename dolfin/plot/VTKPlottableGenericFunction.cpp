@@ -55,6 +55,11 @@ VTKPlottableGenericFunction::VTKPlottableGenericFunction(boost::shared_ptr<const
   // Do nothing
 }
 //----------------------------------------------------------------------------
+uint VTKPlottableGenericFunction::value_rank() const
+{
+  return _function->value_rank();
+}
+//----------------------------------------------------------------------------
 void VTKPlottableGenericFunction::init_pipeline(const Parameters &parameters)
 {
   _warpscalar = vtkSmartPointer<vtkWarpScalar>::New();
@@ -62,6 +67,8 @@ void VTKPlottableGenericFunction::init_pipeline(const Parameters &parameters)
   _glyphs = vtkSmartPointer<vtkGlyph3D>::New();
 
   VTKPlottableMesh::init_pipeline(parameters);
+
+  _mode = (std::string)parameters["mode"];
 
   switch (_function->value_rank())
   {
@@ -71,7 +78,7 @@ void VTKPlottableGenericFunction::init_pipeline(const Parameters &parameters)
       if (mesh()->topology().dim() < 3)
       {
         // In 1D and 2D, we warp the mesh according to the scalar values
-        if ((std::string)parameters["mode"] != "off")
+        if (_mode != "off")
         {
           insert_filter(_warpscalar);
         }
@@ -88,7 +95,7 @@ void VTKPlottableGenericFunction::init_pipeline(const Parameters &parameters)
   case 1:
     {
       // Setup pipeline for warp visualization
-      if ((std::string)parameters["mode"] != "off")
+      if (_mode != "off")
       {
         insert_filter(_warpvector);
       }
