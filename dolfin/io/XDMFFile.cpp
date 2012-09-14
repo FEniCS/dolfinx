@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-08-03
+// Last changed: 2012-09-14
 
 #ifdef HAS_HDF5
 
@@ -99,19 +99,18 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 
   const bool vertex_data = !(dofmap.max_cell_dimension() == cell_based_dim);
 
-  // Tensors of rank > 2 not supported
-  if (vrank > 2)
+  if (vrank > 2) 
   {
     dolfin_error("XDMFFile.cpp",
 		             "write data to XDMF file",
 		             "Output of tensors with rank > 2 not yet supported");
   }
 
-  if (cell_dim == 1)
+  if (cell_dim == 1) 
   {
     dolfin_error("XDMFFile.cpp",
-		             "write data to XDMF file",
-		             "Output of 1D datasets not supported");
+                             "write data to XDMF file",
+                             "Output of 1D datasets not supported");
   }
 
   const uint num_local_cells = mesh.num_cells();
@@ -354,7 +353,7 @@ void XDMFFile::operator<<(const Mesh& mesh)
     xml_doc.append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
     pugi::xml_node xdmf = xml_doc.append_child("Xdmf");
     xdmf.append_attribute("Version") = "2.0";
-    xdmf.append_attribute("xmlns:xi") = "\"http://www.w3.org/2001/XInclude\"";
+    xdmf.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
     pugi::xml_node xdmf_domn = xdmf.append_child("Domain");
     pugi::xml_node xdmf_grid = xdmf_domn.append_child("Grid");
     xdmf_grid.append_attribute("Name") = "dolfin_grid";
