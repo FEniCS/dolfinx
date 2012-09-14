@@ -52,14 +52,14 @@ namespace dolfin
   // Return true if DOLFIN is compiled with Cholmod
   bool has_cholmod();
 
-  // Return true if DOLFIN is compiled with parmetis
+  // Return true if DOLFIN is compiled with ParMETIS
   bool has_parmetis();
-
-  // Return true if DOLFIN is compiled with GMP
-  bool has_gmp();
 
   // Return true if DOLFIN is compiled with ZLIB
   bool has_zlib();
+
+  // Return true if DOLFIN is compiled with HDF5
+  bool has_hdf5();
 
 }
 

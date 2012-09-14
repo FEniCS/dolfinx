@@ -56,7 +56,7 @@ XDMFFile::~XDMFFile()
 void XDMFFile::operator<<(const Function& u)
 {
   std::pair<const Function*, double> ut(&u, (double)counter);
-  operator << ut;
+  *this << ut;
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
@@ -319,7 +319,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     pugi::xml_node xdmf_data=xdmf_vals.append_child("DataItem");
     xdmf_data.append_attribute("Format")="HDF";
     s.str("");
-    if(data_centre=="Node") {
+    if(data_centre=="Node")
       s << num_global_vertices << " " << vsize_io;
     else if(data_centre=="Cell")
       s << num_global_cells << " " << vsize_io;
