@@ -85,18 +85,44 @@ namespace // anonymous
     {
       // Only call keypressCallback for non-ascii, to avoid calling twice
       const char key = Interactor->GetKeyCode();
-      if (key || !_plotter->keypressCallback())
+      if (key || !handle_keypress())
         vtkInteractorStyleTrackballCamera::OnKeyPress();
     }
 
     virtual void OnChar()
     {
-      if (!_plotter->keypressCallback())
+      if (!handle_keypress())
         vtkInteractorStyleTrackballCamera::OnChar();
+    }
+
+    bool handle_keypress()
+    {
+      // Note: ALT key doesn't seem to be usable as a modifier.
+      std::string keysym = Interactor->GetKeySym();
+      char key = Interactor->GetKeyCode();
+      int modifiers = (VTKPlotter::SHIFT   * !!Interactor->GetShiftKey() +
+                       VTKPlotter::ALT     * !!Interactor->GetAltKey()   +
+                       VTKPlotter::CONTROL * !!Interactor->GetControlKey());
+      if (keysym.size() == 1)
+      {
+        // Fix for things like shift+control+q which isn't sent correctly
+        key = keysym[0];
+      }
+
+      key = tolower(key);
+      if (key && key == toupper(key))
+      {
+        // Things like '+', '&' which are not really shifted
+        modifiers &= ~VTKPlotter::SHIFT;
+      }
+
+      std::cout << "Keypress: " << key << "|" << modifiers << " (" << keysym << ")\n";
+      return _plotter->key_pressed(modifiers, key, keysym);
     }
 
     // A reference to the parent plotter
     VTKPlotter *_plotter;
+
   };
   vtkStandardNewMacro(PrivateVTKInteractorStyle)
   //----------------------------------------------------------------------------

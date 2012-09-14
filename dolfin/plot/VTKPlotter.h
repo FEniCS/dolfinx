@@ -232,9 +232,18 @@ namespace dolfin
     // mode is entered even if 'Q' has been pressed.
     static void all_interactive(bool really=false);
 
-    // Keypress callback; return true if handled. Public, but intended for
-    // internal (library) use.
-    bool keypressCallback();
+    enum Modifiers
+    {
+      // Zero low byte, so that a char can be added
+      SHIFT    = 0x100,
+      ALT      = 0x200,
+      CONTROL  = 0x400
+    };
+
+    // Called (from within VTKWindowOutputStage) when a key is pressed. Public,
+    // but intended for internal (and subclass) use. Returns true if the
+    // keypress is handled.
+    virtual bool key_pressed(int modifiers, char key, std::string keysym);
 
   private:
 

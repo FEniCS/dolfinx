@@ -302,33 +302,8 @@ std::string VTKPlotter::get_helptext()
   return text.str();
 }
 //----------------------------------------------------------------------------
-bool VTKPlotter::keypressCallback()
+bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
 {
-  static const int SHIFT   = 0x100; // Preserve the low word so a char can be added
-  static const int ALT     = 0x200;
-  static const int CONTROL = 0x400;
-
-  // Note: ALT key doesn't seem to be usable as a modifier.
-  std::string keysym = vtk_pipeline->get_interactor()->GetKeySym();
-  char key = vtk_pipeline->get_interactor()->GetKeyCode();
-  int modifiers = (SHIFT   * !!vtk_pipeline->get_interactor()->GetShiftKey() +
-                   ALT     * !!vtk_pipeline->get_interactor()->GetAltKey()   +
-                   CONTROL * !!vtk_pipeline->get_interactor()->GetControlKey());
-  if (keysym.size() == 1)
-  {
-    // Fix for things like shift+control+q which isn't sent correctly
-    key = keysym[0];
-  }
-
-  key = tolower(key);
-  if (key && key == toupper(key))
-  {
-    // Things like '+', '&' which are not really shifted
-    modifiers &= ~SHIFT;
-  }
-
-  std::cout << "Keypress: " << key << "|" << modifiers << " (" << keysym << ")\n";
-
   switch (modifiers + key)
   {
   case '+':

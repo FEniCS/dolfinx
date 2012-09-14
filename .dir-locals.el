@@ -12,6 +12,7 @@
 	      (indent-tabs-mode      . nil)
 	      (c-file-offsets        . (
 				        (substatement-open . 0)
+					(brace-list-open   . 0)
 					))
 	      (time-stamp-start      . "Last changed: "); start of pattern
 	      (time-stamp-end        . "\n")            ; end of pattern
@@ -28,6 +29,7 @@
 	    (indent-tabs-mode      . nil)
 	    (c-file-offsets        . (
 				      (substatement-open . 0)
+				      (brace-list-open   . 0)
 				      ))
 	    (time-stamp-start      . "Last changed: "); start of pattern
 	    (time-stamp-end        . "\n")            ; end of pattern
