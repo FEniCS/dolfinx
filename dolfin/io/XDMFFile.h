@@ -42,6 +42,14 @@ namespace dolfin
   class Function;
   class Mesh;
 
+  /// This class supports the output of meshes and functions in XDMF
+  /// (http://www.xdmf.org) format. It creates an XML file that describes
+  /// the data and points to a HDF5 file that stores the actual problem
+  /// data. Output of data in parallel is supported.
+  ///
+  /// XDMF is not suitable for checkpointing as it may decimate
+  /// some data.
+
   class XDMFFile: public GenericFile
   {
   public:
@@ -53,15 +61,12 @@ namespace dolfin
     ~XDMFFile();
 
     /// Save Mesh to file
-    /// data in .h5 (HDF5), XML description in .xdmf
     void operator<<(const Mesh& mesh);
 
     /// Save Function to file
-    /// data in .h5 (HDF5), XML description in .xdmf
     void operator<<(const Function& u);
 
     /// Save Function + time stamp to file
-    /// data in .h5 (HDF5), XML description in .xdmf
     void operator<<(const std::pair<const Function*, double> ut);
 
   private:
