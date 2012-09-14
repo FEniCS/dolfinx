@@ -62,6 +62,9 @@ HDF5File::~HDF5File()
 //-----------------------------------------------------------------------------
 void HDF5File::operator>>(Mesh& mesh)
 {
+  // FIXME: Figure out how to handle multiple meshes in file
+
+  // Check that mesh topology exists
   if (!exists("/Mesh/Topology"))
   {
     dolfin_error("HDF5File.cpp",
@@ -69,6 +72,7 @@ void HDF5File::operator>>(Mesh& mesh)
                  "Mesh Topology dataset missing");
   }
 
+  // Check that mesh coordinates exist
   if (!exists("/Mesh/Coordinates"))
   {
     dolfin_error("HDF5File.cpp",
@@ -76,17 +80,14 @@ void HDF5File::operator>>(Mesh& mesh)
                  "Mesh Coordinates dataset missing");
   }
 
+  // Reading meshes not supported yet, so throw error.
   dolfin_error("HDF5File.cpp",
-               "read mesh from .h5 file",
+               "read mesh from HDF5 file",
                "Not implemented");
 }
 //-----------------------------------------------------------------------------
 void HDF5File::operator<<(const Mesh& mesh)
 {
-  // Write a Mesh to an existing HDF5 file.
-  // Used by XDMFFile to add mesh to an existing HDF5
-  // Also may be called to just save a mesh to .h5
-
   // if no existing file, create...
   // FIXME: better way to check? MPI safe?
   if(boost::filesystem::file_size(filename.c_str())==0)
@@ -100,25 +101,25 @@ void HDF5File::operator<<(const Mesh& mesh)
   const std::string cell_type = CellType::type2string(_cell_type);
 
   // Get offset and size of local cell topology usage in global terms
-  uint offset = MPI::global_offset(num_local_cells, true);
-  std::pair<uint, uint>topo_range(offset, offset + num_local_cells);
+  const uint cell_offset = MPI::global_offset(num_local_cells, true);
+  std::pair<uint, uint>topo_range(cell_offset, cell_offset + num_local_cells);
 
   // get offset and size of local vertex usage in global terms
-  offset = MPI::global_offset(num_local_vertices, true);
-  std::pair<uint, uint>vertex_range(offset, offset + num_local_vertices);
+  comst uin vertex_offset = MPI::global_offset(num_local_vertices, true);
+  std::pair<uint, uint>vertex_range(vertex_offset, vertex_offset + num_local_vertices);
 
-  std::vector<uint> topo_data;
+  std::vector<uint> topological_data;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     for (VertexIterator v(*cell); !v.end(); ++v)
-        topo_data.push_back(v->index() + vertex_range.first);
+      topological_data.push_back(v->index() + vertex_range.first);
 
-  std::vector<double>vtx_coords;
+  std::vector<double> vertex_coords;
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     const Point p = v->point();
-    vtx_coords.push_back(p.x());
-    vtx_coords.push_back(p.y());
-    vtx_coords.push_back(p.z());
+    vertex_coords.push_back(p.x());
+    vertex_coords.push_back(p.y());
+    vertex_coords.push_back(p.z());
   }
 
   std::stringstream s;
@@ -130,7 +131,7 @@ void HDF5File::operator<<(const Mesh& mesh)
   s << mesh_topo_dataset_name(mesh);
   if (!exists(s.str()))
   {
-    write(topo_data[0], topo_range, s.str(), cell_dim + 1); //connectivity
+    write(topological_data[0], topo_range, s.str(), cell_dim + 1); //connectivity
     add_attribute(s.str(),"celltype", cell_type);
   }
 }
@@ -182,7 +183,7 @@ void HDF5File::operator>> (GenericVector& input)
   count[1]  = 1;
 
   // Setup file access template
-  plist_id = H5Pcreate (H5P_FILE_ACCESS);
+  plist_id = H5Pcreate(H5P_FILE_ACCESS);
   dolfin_assert(plist_id != HDF5_FAIL);
 
   // Set Parallel access with communicator
@@ -190,7 +191,7 @@ void HDF5File::operator>> (GenericVector& input)
   dolfin_assert(status != HDF5_FAIL);
 
   // Open the file collectively
-  file_id = H5Fopen(filename.c_str(),H5F_ACC_RDWR,plist_id);
+  file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR,plist_id);
   dolfin_assert(file_id != HDF5_FAIL);
 
   // Release file-access template
@@ -247,22 +248,22 @@ void HDF5File::operator>> (GenericVector& input)
   input.set_local(data);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::write(const double& data, const std::pair<uint,uint>& range,
+void HDF5File::write(const double& data, const std::pair<uint, uint>& range,
                      const std::string& dataset_name, const uint width)
 {
   // Write data to existing HDF file as defined by range blocks on each process
   // range: the local range on this processor
-  // width: is the width of the dataitem (e.g. 3 for x,y,z data)
-  write(data,range,dataset_name,H5T_NATIVE_DOUBLE,width);
+  // width: is the width of the dataitem (e.g. 3 for x, y, z data)
+  write(data, range, dataset_name, H5T_NATIVE_DOUBLE, width);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::write(const uint& data, const std::pair<uint,uint>& range,
+void HDF5File::write(const uint& data, const std::pair<uint, uint>& range,
                      const std::string& dataset_name, const uint width)
 {
   // Write data to existing HDF file as defined by range blocks on each process
   // range: the local range on this processor
-  // width: is the width of the dataitem (e.g. 3 for x,y,z data)
-  write(data,range,dataset_name,H5T_NATIVE_INT,width);
+  // width: is the width of the dataitem (e.g. 3 for x, y, z data)
+  write(data, range, dataset_name, H5T_NATIVE_INT, width);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::create()
@@ -469,7 +470,6 @@ void HDF5File::add_attribute(const std::string& dataset_name,
   dolfin_assert(status != HDF5_FAIL);
 }
 //-----------------------------------------------------------------------------
-
 std::string HDF5File::get_attribute(const std::string& dataset_name,
 				    const std::string& attribute_name)
 {
@@ -516,7 +516,6 @@ std::string HDF5File::get_attribute(const std::string& dataset_name,
 
   return std::string(&str[0]);
 }
-
 //-----------------------------------------------------------------------------
 std::string HDF5File::mesh_coords_dataset_name(const Mesh& mesh)
 {
@@ -525,7 +524,6 @@ std::string HDF5File::mesh_coords_dataset_name(const Mesh& mesh)
 	  << std::hex << std::setw(8) << mesh.coordinates_hash();
   return mc_name.str();
 }
-
 //-----------------------------------------------------------------------------
 std::string HDF5File::mesh_topo_dataset_name(const Mesh& mesh)
 {
@@ -534,5 +532,6 @@ std::string HDF5File::mesh_topo_dataset_name(const Mesh& mesh)
 	  << std::hex << std::setw(8) << mesh.topology_hash();
   return mc_name.str();
 }
+//-----------------------------------------------------------------------------
 
 #endif
