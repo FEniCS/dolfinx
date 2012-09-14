@@ -16,14 +16,16 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg 2011
+// Modified by Johannes Ring 2012
 //
 // First added:  2010-07-19
-// Last changed: 2011-11-14
+// Last changed: 2012-09-14
 
 #include <fstream>
 #include <ostream>
 #include <sstream>
 #include <vector>
+#include <iomanip>
 #include <boost/detail/endian.hpp>
 
 #include <dolfin/fem/GenericDofMap.h>
