@@ -96,11 +96,11 @@ namespace dolfin
 
     // Add/get a string attribute to/from a dataset
     void add_attribute(const std::string& dataset_name,
-		       const std::string& attribute_name,
-		       const std::string& attribute_value);
+		                   const std::string& attribute_name,
+		                   const std::string& attribute_value);
 
     std::string get_attribute(const std::string& dataset_name,
-			      const std::string& attribute_name);
+			                        const std::string& attribute_name);
 
     std::string mesh_coords_dataset_name(const Mesh& mesh);
     std::string mesh_topo_dataset_name(const Mesh& mesh);
