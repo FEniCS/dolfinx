@@ -148,9 +148,6 @@ if (DOLFIN_ENABLE_CGAL AND CGAL_FOUND)
     endif()
   endif()
 
-  # Add flag to disable a g++-specific extension in CGAL
-  #list(APPEND DOLFIN_CXX_DEFINITIONS "-DCGAL_CFG_ARRAY_MEMBER_INITIALIZATION_BUG")
-
 endif()
 
 # ZLIB

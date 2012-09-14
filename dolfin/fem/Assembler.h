@@ -26,6 +26,7 @@
 
 #include <vector>
 #include <dolfin/common/types.h>
+#include "AssemblerBase.h"
 
 namespace dolfin
 {
@@ -63,9 +64,11 @@ namespace dolfin
   ///
   /// Note that (1) overrides (2), which overrides (3).
 
-  class Assembler
+  class Assembler : public AssemblerBase
   {
   public:
+
+    Assembler() {}
 
     /// Assemble tensor from given form
     ///
@@ -74,25 +77,7 @@ namespace dolfin
     ///         The tensor to assemble.
     ///     a (_Form_)
     ///         The form to assemble the tensor from.
-    ///     reset_sparsity (bool)
-    ///         Optional argument: Default value is true.
-    ///         This controls whether the sparsity pattern of the
-    ///         given tensor is reset prior to assembly.
-    ///     add_values (bool)
-    ///         Optional argument: Default value is false.
-    ///         This controls whether values are added to the given
-    ///         tensor or if it is zeroed prior to assembly.
-    ///     finalize_tensor (bool)
-    ///         Optional argument: Default value is true.
-    ///         This controls whether the assembler finalizes the
-    ///         given tensor after assembly is completed by calling
-    ///         A.apply().
-    static void assemble(GenericTensor& A,
-                         const Form& a,
-                         bool reset_sparsity=true,
-                         bool add_values=false,
-                         bool finalize_tensor=true,
-                         bool keep_diagonal=false);
+    void assemble(GenericTensor& A, const Form& a);
 
     /// Assemble tensor from given form on subdomain
     ///
@@ -103,26 +88,8 @@ namespace dolfin
     ///         The form to assemble the tensor from.
     ///     sub_domain (_SubDomain_)
     ///         The subdomain to assemble on.
-    ///     reset_sparsity (bool)
-    ///         Optional argument: Default value is true.
-    ///         This controls whether the sparsity pattern of the
-    ///         given tensor is reset prior to assembly.
-    ///     add_values (bool)
-    ///         Optional argument: Default value is false.
-    ///         This controls whether values are added to the given
-    ///         tensor or if it is zeroed prior to assembly.
-    ///     finalize_tensor (bool)
-    ///         Optional argument: Default value is true.
-    ///         This controls whether the assembler finalizes the
-    ///         given tensor after assembly is completed by calling
-    ///         A.apply().
-    static void assemble(GenericTensor& A,
-                         const Form& a,
-                         const SubDomain& sub_domain,
-                         bool reset_sparsity=true,
-                         bool add_values=false,
-                         bool finalize_tensor=true,
-                         bool keep_diagonal=false);
+    void assemble(GenericTensor& A, const Form& a,
+                  const SubDomain& sub_domain);
 
     /// Assemble tensor from given form on subdomains
     ///
@@ -137,54 +104,32 @@ namespace dolfin
     ///         The exterior facet domains.
     ///     interior_facet_domains (_MeshFunction_ <uint>)
     ///         The interior facet domains.
-    ///     reset_sparsity (bool)
-    ///         Optional argument: Default value is true.
-    ///         This controls whether the sparsity pattern of the
-    ///         given tensor is reset prior to assembly.
-    ///     add_values (bool)
-    ///         Optional argument: Default value is false.
-    ///         This controls whether values are added to the given
-    ///         tensor or if it is zeroed prior to assembly.
-    ///     finalize_tensor (bool)
-    ///         Optional argument: Default value is true.
-    ///         This controls whether the assembler finalizes the
-    ///         given tensor after assembly is completed by calling
-    ///         A.apply().
-    static void assemble(GenericTensor& A,
-                         const Form& a,
-                         const MeshFunction<uint>* cell_domains,
-                         const MeshFunction<uint>* exterior_facet_domains,
-                         const MeshFunction<uint>* interior_facet_domains,
-                         bool reset_sparsity=true,
-                         bool add_values=false,
-                         bool finalize_tensor=true,
-                         bool keep_diagonal=false);
+    void assemble(GenericTensor& A, const Form& a,
+                  const MeshFunction<uint>* cell_domains,
+                  const MeshFunction<uint>* exterior_facet_domains,
+                  const MeshFunction<uint>* interior_facet_domains);
 
     /// Assemble tensor from given form over cells. This function is
     /// provided for users who wish to build a customized assembler.
-    static void assemble_cells(GenericTensor& A,
-                               const Form& a,
-                               UFC& ufc,
-                               const MeshFunction<uint>* domains,
-                               std::vector<double>* values);
+    void assemble_cells(GenericTensor& A, const Form& a, UFC& ufc,
+                        const MeshFunction<uint>* domains,
+                        std::vector<double>* values);
 
     /// Assemble tensor from given form over exterior facets. This
     /// function is provided for users who wish to build a customized
     /// assembler.
-    static void assemble_exterior_facets(GenericTensor& A,
-                                         const Form& a,
-                                         UFC& ufc,
-                                         const MeshFunction<uint>* domains,
-                                         std::vector<double>* values);
+    void assemble_exterior_facets(GenericTensor& A, const Form& a,
+                                  UFC& ufc,
+                                  const MeshFunction<uint>* domains,
+                                  std::vector<double>* values);
 
     /// Assemble tensor from given form over interior facets. This
     /// function is provided for users who wish to build a customized
     /// assembler.
-    static void assemble_interior_facets(GenericTensor& A,
-                                         const Form& a,
-                                         UFC& ufc,
-                                         const MeshFunction<uint>* domains,
-                                         std::vector<double>* values);
+    void assemble_interior_facets(GenericTensor& A, const Form& a,
+                                  UFC& ufc,
+                                  const MeshFunction<uint>* domains,
+                                  std::vector<double>* values);
 
   };
 

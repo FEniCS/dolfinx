@@ -4,6 +4,7 @@
  - Rename down_cast --> as_type in C++ / as_backend_type in Python
  - Remove KrylovMatrix interface
  - Remove quadrature classes
+ - JIT compiled C++ code can now include a dolfin namespace
  - Expression string parsing now understand C++ namespace such as std::cosh
  - Fix bug in Expression so one can pass min, max
  - Fix bug in SystemAssembler, where mesh.init(D-1, D) was not called before assemble

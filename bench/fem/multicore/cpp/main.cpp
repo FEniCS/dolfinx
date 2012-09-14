@@ -25,7 +25,7 @@
 #include <cstdlib>
 
 #include <dolfin.h>
-#include <dolfin/fem/AssemblerTools.h>
+#include <dolfin/fem/AssemblerBase.h>
 #include "Poisson.h"
 #include "NavierStokes.h"
 
@@ -94,12 +94,14 @@ double bench(std::string form, boost::shared_ptr<const Form> a)
   typedef std::pair<dolfin::uint, dolfin::uint> DofOwnerPair;
   typedef std::pair<DofOwnerPair, DofOwnerPair> MasterSlavePair;
   std::vector<MasterSlavePair> periodic_dof_pairs;
-  AssemblerTools::init_global_tensor(A, *a, periodic_dof_pairs, true, false, false);
+  AssemblerBase::init_global_tensor(A, *a, periodic_dof_pairs, true, false, false);
 
   // Assemble
   Timer timer("Total time");
+  Assembler assembler;
+  assembler.reset_sparsity = false;
   for (dolfin::uint i = 0; i < NUM_REPS; ++i)
-    assemble(A, *a, false);
+    assemble(A, *a);
   const double t = timer.stop();
 
   // Write summary
