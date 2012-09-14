@@ -28,7 +28,7 @@
 #include <dolfin/io/File.h>
 #include <dolfin/io/BinaryFile.h>
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/la/LinearAlgebraFactory.h>
+#include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include "TimeSeries.h"
 
 using namespace dolfin;

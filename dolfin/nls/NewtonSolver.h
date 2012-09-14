@@ -33,7 +33,7 @@ namespace dolfin
 
   // Forward declarations
   class GenericLinearSolver;
-  class LinearAlgebraFactory;
+  class GenericLinearAlgebraFactory;
   class GenericMatrix;
   class GenericVector;
   class NonlinearProblem;
@@ -56,10 +56,10 @@ namespace dolfin
     /// *Arguments*
     ///     solver (_GenericLinearSolver_)
     ///         The linear solver.
-    ///     factory (_LinearAlgebraFactory_)
+    ///     factory (_GenericLinearAlgebraFactory_)
     ///         The factory.
     NewtonSolver(boost::shared_ptr<GenericLinearSolver> solver,
-                 LinearAlgebraFactory& factory);
+                 GenericLinearAlgebraFactory& factory);
 
     /// Destructor
     virtual ~NewtonSolver();

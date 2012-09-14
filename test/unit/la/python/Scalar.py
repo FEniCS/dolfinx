@@ -32,9 +32,9 @@ class ScalarTest(unittest.TestCase):
         a.apply("add")
         self.assertAlmostEqual(a.getval(), b*MPI.num_processes())
 
-
 if __name__ == "__main__":
-    # Turn of DOLFIN output
+
+    # Turn off DOLFIN output
     set_log_active(False)
 
     print ""

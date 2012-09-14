@@ -86,7 +86,7 @@ class AbstractBaseTest(object):
             if v.owns_index(t(0)): self.assertAlmostEqual(v[t(0)], 2.0)
 
         A = v.copy()
-        B = down_cast(v.copy())
+        B = as_backend_type(v.copy())
         if A.owns_index(5): self.assertAlmostEqual(A[5], B[5])
 
         B *= 0.5
@@ -282,14 +282,14 @@ class DataNotWorkingTester:
         A,B = self.assemble_matrices()
         self.assertRaises(RuntimeError,A.data)
 
-        A = down_cast(A)
+        A = as_backend_type(A)
         self.assertRaises(RuntimeError,A.data)
 
     def test_vector_data(self):
         v,w = self.assemble_vectors()
         self.assertRaises(RuntimeError,v.data)
 
-        v = down_cast(v)
+        v = as_backend_type(v)
         def no_attribute():
             v.data()
         self.assertRaises(AttributeError,no_attribute)
@@ -319,8 +319,8 @@ if MPI.num_processes() == 1:
         class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
             backend    = "PETScCusp"
 
-
 if __name__ == "__main__":
+
     # Turn off DOLFIN output
     set_log_active(False);
 

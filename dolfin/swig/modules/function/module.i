@@ -36,6 +36,7 @@
 #include "dolfin/common/Hierarchical.h"
 
 // #include types from la submodule of module la
+#include "dolfin/la/LinearAlgebraObject.h"
 #include "dolfin/la/GenericTensor.h"
 #include "dolfin/la/GenericVector.h"
 #include "dolfin/la/Vector.h"
@@ -90,6 +91,7 @@ import_array();
 
 // %import types from submodule la of SWIG module la
 %include "dolfin/swig/la/pre.i"
+%import(module="la") "dolfin/la/LinearAlgebraObject.h"
 %import(module="la") "dolfin/la/GenericTensor.h"
 %import(module="la") "dolfin/la/GenericVector.h"
 %import(module="la") "dolfin/la/Vector.h"

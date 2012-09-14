@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2010 Anders Logg
+// Copyright (C) 2007-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Ola Skavhaug, 2007.
-// Modified by Garth N. Wells, 2007, 2009.
-// Modified by Ilmar Wilbers, 2008.
+// Modified by Ola Skavhaug 2007
+// Modified by Garth N. Wells 2007, 2009
+// Modified by Ilmar Wilbers 2008
 //
 // First added:  2007-01-17
-// Last changed: 2011-10-29
+// Last changed: 2012-08-20
 
 #ifndef __DOLFIN_STL_MATRIX_H
 #define __DOLFIN_STL_MATRIX_H
@@ -90,10 +90,14 @@ namespace dolfin
       return A;
     }
 
-    /// Resize vector y such that is it compatible with matrix for
-    /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
-    /// case, size and layout are important.
-    virtual void resize(GenericVector& y, uint dim) const
+    /// Resize vector z to be compatible with the matrix-vector product
+    /// y = Ax. In the parallel case, both size and layout are
+    /// important.
+    ///
+    /// *Arguments*
+    ///     dim (uint)
+    ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
+    virtual void resize(GenericVector& z, uint dim) const
     { dolfin_not_implemented(); }
 
     /// Get block of values
@@ -155,7 +159,7 @@ namespace dolfin
     ///--- Specialized matrix functions ---
 
     /// Return linear algebra backend factory
-    virtual LinearAlgebraFactory& factory() const;
+    virtual GenericLinearAlgebraFactory& factory() const;
 
     ///--- STLMatrix interface ---
 

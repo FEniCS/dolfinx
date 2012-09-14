@@ -40,11 +40,11 @@ namespace dolfin
 {
 
   // Forward declarations
-  class GenericMatrix;
+  class GenericLinearOperator;
   class GenericVector;
   class EpetraMatrix;
   class EpetraVector;
-  class EpetraKrylovMatrix;
+  class EpetraLinearOperator;
   class EpetraUserPreconditioner;
   class TrilinosPreconditioner;
 
@@ -67,14 +67,14 @@ namespace dolfin
     ~EpetraKrylovSolver();
 
     /// Set the operator (matrix)
-    void set_operator(const boost::shared_ptr<const GenericMatrix> A);
+    void set_operator(const boost::shared_ptr<const GenericLinearOperator> A);
 
     /// Set the operator (matrix)
-    void set_operators(const boost::shared_ptr<const GenericMatrix> A,
-                       const boost::shared_ptr<const GenericMatrix> P);
+    void set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
+                       const boost::shared_ptr<const GenericLinearOperator> P);
 
     /// Get the operator (matrix)
-    const GenericMatrix& get_operator() const;
+    const GenericLinearOperator& get_operator() const;
 
     /// Solve linear system Ax = b and return number of iterations
     uint solve(GenericVector& x, const GenericVector& b);
@@ -83,7 +83,7 @@ namespace dolfin
     uint solve(EpetraVector& x, const EpetraVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
+    uint solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);

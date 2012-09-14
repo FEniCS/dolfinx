@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2006.
-// Modified by Dag Lindbo 2008.
+// Modified by Anders Logg 2006, 2012
+// Modified by Dag Lindbo 2008
 //
 // First added:  2006-05-31
-// Last changed: 2011-03-24
+// Last changed: 2012-08-20
 
 #ifndef __UMFPACK_LU_SOLVER_H
 #define __UMFPACK_LU_SOLVER_H
@@ -34,9 +34,9 @@ namespace dolfin
 
   /// Forward declarations
   class GenericVector;
-  class GenericMatrix;
+  class GenericLinearOperator;
   class uBLASVector;
-  class uBLASKrylovMatrix;
+  class uBLASLinearOperator;
   template<typename Mat> class uBLASMatrix;
 
   /// This class implements the direct solution (LU factorization) of
@@ -52,22 +52,22 @@ namespace dolfin
     UmfpackLUSolver();
 
     /// Constructor
-    UmfpackLUSolver(boost::shared_ptr<const GenericMatrix> A);
+    UmfpackLUSolver(boost::shared_ptr<const GenericLinearOperator> A);
 
     /// Destructor
     ~UmfpackLUSolver();
 
     /// Set operator (matrix)
-    void set_operator(const boost::shared_ptr<const GenericMatrix> A);
+    void set_operator(const boost::shared_ptr<const GenericLinearOperator> A);
 
     /// Return the operator (matrix)
-    const GenericMatrix& get_operator() const;
+    const GenericLinearOperator& get_operator() const;
 
     /// Solve linear system Ax = b for a sparse matrix using UMFPACK if installed
     uint solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system
-    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
+    uint solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
 
     /// Default parameter values
     static Parameters default_parameters();
@@ -106,7 +106,7 @@ namespace dolfin
     boost::shared_ptr<void> numeric;
 
     // Operator (the matrix)
-    boost::shared_ptr<const GenericMatrix> A;
+    boost::shared_ptr<const GenericLinearOperator> A;
 
   };
 

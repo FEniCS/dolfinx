@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2011
+// Modified by Anders Logg 2011-2012
 //
 // First added:  2010-07-11
-// Last changed: 2011-11-11
+// Last changed: 2012-08-20
 
 #ifndef __GENERIC_LU_SOLVER_H
 #define __GENERIC_LU_SOLVER_H
@@ -32,7 +32,7 @@ namespace dolfin
 
   /// Forward declarations
   class GenericVector;
-  class GenericMatrix;
+  class GenericLinearOperator;
 
   /// This a base class for LU solvers
 
@@ -42,13 +42,14 @@ namespace dolfin
   public:
 
     /// Set operator (matrix)
-    virtual void set_operator(const boost::shared_ptr<const GenericMatrix> A) = 0;
+    virtual void set_operator(const boost::shared_ptr<const GenericLinearOperator> A) = 0;
 
     /// Solve linear system Ax = b
     virtual uint solve(GenericVector& x, const GenericVector& b) = 0;
 
     /// Solve linear system Ax = b
-    virtual uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
+    virtual uint solve(const GenericLinearOperator& A,
+                       GenericVector& x, const GenericVector& b)
     {
       dolfin_error("GenericLLUSolver.h",
                    "solve linear system",

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-09-30
-// Last changed: 2012-01-17
+// Last changed: 2012-08-21
 //
 // Unit tests Selected methods for GenericVector
 
@@ -31,7 +31,7 @@ class TestVector : public CppUnit::TestFixture
   CPPUNIT_TEST(test_backends);
   CPPUNIT_TEST_SUITE_END();
 
-public: 
+public:
 
   void test_backends()
   {
@@ -40,30 +40,30 @@ public:
     parameters["linear_algebra_backend"] = "uBLAS";
     _test_operators();
 
-    // FIXME: Outcommented STL backend to circumvent infinite loops as 
+    // FIXME: Outcommented STL backend to circumvent infinite loops as
     // FIXME: seen on one buildbot
     // STL
     //parameters["linear_algebra_backend"] = "STL";
     //_test_operators();
-    
+
     // PETSc
     #ifdef HAS_PETSC
     parameters["linear_algebra_backend"] = "PETSc";
     _test_operators();
     #endif
-    
+
     // Epetra
     #ifdef HAS_EPETRA
     parameters["linear_algebra_backend"] = "Epetra";
     _test_operators();
     #endif
-    
+
     // MTL4
     #ifdef HAS_MTL4
     parameters["linear_algebra_backend"] = "MTL4";
     _test_operators();
     #endif
-    
+
 
   }
 
@@ -73,11 +73,11 @@ public:
     v = 0.0;
     u = 0.0;
     CPPUNIT_ASSERT(v.sum() == 0.0);
-    
+
     // operator=(double a)
     v = 1.0;
     CPPUNIT_ASSERT(v.sum() == v.size());
-    
+
     // operator=(const GenericVector& x)
     u = v;
     CPPUNIT_ASSERT(u.sum() == u.size());
@@ -85,12 +85,12 @@ public:
     // operator+=(const GenericVector& x)
     u += v;
     CPPUNIT_ASSERT(u.sum() == 2*u.size());
-    
+
     // operator-=(const GenericVector& x)
     u -= v;
     u -= v;
     CPPUNIT_ASSERT(u.sum() == 0.0);
-    
+
     // operator*=(double a)
     v *= 5.0;
     CPPUNIT_ASSERT(v.sum() == v.size()*5.0);
@@ -98,14 +98,14 @@ public:
     // operator/=(double a)
     v /= 2.0;
     CPPUNIT_ASSERT(v.sum() == 2.5*v.size());
-    
+
     // operator*=(const GenericVector& x)
     u = 2.0;
     v*=u;
     CPPUNIT_ASSERT(v.sum() == v.size()*5.0);
 
   }
-   
+
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(TestVector);

@@ -395,7 +395,7 @@ std::string STLMatrix::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-LinearAlgebraFactory& STLMatrix::factory() const
+GenericLinearAlgebraFactory& STLMatrix::factory() const
 {
   if (primary_dim == 0)
     return STLFactory::instance();

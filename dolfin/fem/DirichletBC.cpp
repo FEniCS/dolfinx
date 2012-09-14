@@ -49,7 +49,7 @@
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/la/LinearAlgebraFactory.h>
+#include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include "GenericDofMap.h"
 #include "FiniteElement.h"
 #include "UFCMesh.h"

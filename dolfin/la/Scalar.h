@@ -146,7 +146,7 @@ namespace dolfin
     //--- Special functions
 
     /// Return a factory for the default linear algebra backend
-    LinearAlgebraFactory& factory() const
+    GenericLinearAlgebraFactory& factory() const
     {
       DefaultFactory f;
       return f.factory();

@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2009-2011
+// Modified by Anders Logg 2009-2012
 //
 // First added:  2007-12-06
-// Last changed: 2011-10-19
+// Last changed: 2012-08-21
 
 #ifdef HAS_PETSC
 
@@ -26,6 +26,7 @@
 #include "PETScLUSolver.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
+#include "PETScLinearOperator.h"
 #include "PETScFactory.h"
 
 using namespace dolfin;
@@ -59,6 +60,12 @@ boost::shared_ptr<TensorLayout> PETScFactory::create_layout(uint rank) const
     sparsity = true;
   boost::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
   return pattern;
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<GenericLinearOperator> PETScFactory::create_linear_operator() const
+{
+  boost::shared_ptr<GenericLinearOperator> A(new PETScLinearOperator);
+  return A;
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<GenericLUSolver> PETScFactory::create_lu_solver(std::string method) const

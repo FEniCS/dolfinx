@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Dag Lindbo
+// Copyright (C) 2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,18 +15,21 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2008.
-//
-// First added:  2008-07-06
-// Last changed: 2008-08-08
+// First added:  2012-08-17
+// Last changed: 2012-08-17
 
-#ifdef HAS_MTL4
-
-#include "MTL4Factory.h"
+#include "TensorProductVector.h"
 
 using namespace dolfin;
 
-// Singleton instance
-MTL4Factory MTL4Factory::factory;
+//-----------------------------------------------------------------------------
+TensorProductVector::TensorProductVector(const std::vector<uint>& dims)
+{
 
-#endif
+}
+//-----------------------------------------------------------------------------
+std::string TensorProductVector::str(bool verbose) const
+{
+  return "test";
+}
+//-----------------------------------------------------------------------------

@@ -15,15 +15,15 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Johan Jansson 2006.
-// Modified by Anders Logg 2006-2011
+// Modified by Johan Jansson 2006
+// Modified by Anders Logg 2006-2012
 // Modified by Ola Skavhaug 2007-2008
 // Modified by Kent-Andre Mardal 2008
 // Modified by Martin Alnæs 2008
 // Modified by Mikael Mortensen 2011
 //
 // First added:  2006-04-24
-// Last changed: 2011-11-25
+// Last changed: 2012-08-20
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -31,6 +31,7 @@
 #include <boost/tuple/tuple.hpp>
 #include <vector>
 #include "GenericTensor.h"
+#include "GenericLinearOperator.h"
 
 namespace dolfin
 {
@@ -40,7 +41,7 @@ namespace dolfin
 
   /// This class defines a common interface for matrices.
 
-  class GenericMatrix : public GenericTensor
+  class GenericMatrix : public GenericTensor, public GenericLinearOperator
   {
   public:
 
@@ -49,7 +50,7 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
-    /// Initialize zero tensor tensor layout
+    /// Initialize zero tensor using tensor layout
     virtual void init(const TensorLayout& tensor_layout) = 0;
 
     /// Return tensor rank (number of dimensions)
@@ -99,10 +100,14 @@ namespace dolfin
     /// Return copy of matrix
     virtual boost::shared_ptr<GenericMatrix> copy() const = 0;
 
-    /// Resize vector y such that is it compatible with matrix for
-    /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x). In parallel
-    /// case, size and layout are important.
-    virtual void resize(GenericVector& y, uint dim) const = 0;
+    /// Resize vector z to be compatible with the matrix-vector
+    /// product y = Ax. In the parallel case, both size and layout are
+    /// important.
+    ///
+    /// *Arguments*
+    ///     dim (uint)
+    ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
+    virtual void resize(GenericVector& z, uint dim) const = 0;
 
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows, uint n,
@@ -137,10 +142,6 @@ namespace dolfin
     /// Set given rows to identity matrix
     virtual void ident(uint m, const uint* rows) = 0;
 
-    /// Matrix-vector product, y = Ax. The y vector must either be zero-sized
-    /// or have correct size and parallel layout.
-    virtual void mult(const GenericVector& x, GenericVector& y) const = 0;
-
     /// Matrix-vector product, y = A^T x. The y vector must either be
     /// zero-sized or have correct size and parallel layout.
     virtual void transpmult(const GenericVector& x, GenericVector& y) const = 0;
@@ -172,13 +173,13 @@ namespace dolfin
     /// For compressed row storage, data = (row_pointer[#rows +1],
     /// column_index[#nz], matrix_values[#nz], nz)
     virtual boost::tuples::tuple<const std::size_t*, const std::size_t*,
-                            const double*, int> data() const
+                                 const double*, int> data() const
     {
       dolfin_error("GenericMatrix.h",
                    "return pointers to underlying matrix data",
                    "Not implemented by current linear algebra backend");
       return boost::tuples::tuple<const std::size_t*, const std::size_t*,
-                                               const double*, int>(0, 0, 0, 0);
+                                  const double*, int>(0, 0, 0, 0);
     }
 
     //--- Convenience functions ---
@@ -205,4 +206,5 @@ namespace dolfin
   };
 
 }
+
 #endif

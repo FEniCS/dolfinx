@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Anders Logg and Garth N. Wells
+// Copyright (C) 2011-2012 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-02-11
-// Last changed:
+// Last changed: 2012-08-22
 
 #ifdef HAS_PETSC
 
@@ -70,15 +70,15 @@ std::pair<dolfin::uint, dolfin::uint> PETScBaseMatrix::local_range(uint dim) con
     return std::make_pair(0, 0);
 }
 //-----------------------------------------------------------------------------
-void PETScBaseMatrix::resize(GenericVector& y, uint dim) const
+void PETScBaseMatrix::resize(GenericVector& z, uint dim) const
 {
   dolfin_assert(A);
 
   // Downcast vector
-  PETScVector& _y = y.down_cast<PETScVector>();
+  PETScVector& _z = as_type<PETScVector>(z);
 
   // Clear data
-  _y.reset();
+  _z.reset();
 
   // Create new PETSc vector
   boost::shared_ptr<Vec> x(new Vec(0), PETScVectorDeleter());
@@ -93,8 +93,8 @@ void PETScBaseMatrix::resize(GenericVector& y, uint dim) const
                  "Dimension must be 0 or 1, not %d", dim);
   }
 
-  // Associate new PETSc vector with _y
-  _y.x = x;
+  // Associate new PETSc vector with _z
+  _z.x = x;
 }
 //-----------------------------------------------------------------------------
 
