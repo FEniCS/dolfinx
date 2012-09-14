@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-09-10
-// Last changed: 2012-09-12
+// Last changed: 2012-09-14
 
 #ifndef __VTK_WINDOW_OUTPUT_STAGE_H
 #define __VTK_WINDOW_OUTPUT_STAGE_H
@@ -43,6 +43,9 @@ class vtkScalarBarActor;
 class vtkTextActor;
 class vtkProp;
 
+// Forward declarations
+class QWidget;
+
 namespace dolfin
 {
 
@@ -55,45 +58,11 @@ namespace dolfin
   class VTKWindowOutputStage
   {
 
-  protected:
-
-    // The depth sorting filter
-    vtkSmartPointer<vtkDepthSortPolyData> _depthSort;
-
-    // The poly data mapper
-    vtkSmartPointer<vtkPolyDataMapper> _mapper;
-
-    // The input port (either the mapper or depth sorter)
-    vtkSmartPointer<vtkAlgorithm> _input;
-
-    // The lookup table
-    vtkSmartPointer<vtkLookupTable> _lut;
-
-    // The main actor
-    vtkSmartPointer<vtkActor> _actor;
-
-    // The renderer
-    vtkSmartPointer<vtkRenderer> _renderer;
-
-    // The render window
-    vtkSmartPointer<vtkRenderWindow> _renderWindow;
-
-    // The scalar bar that gives the viewer the mapping from color to
-    // scalar value
-    vtkSmartPointer<vtkScalarBarActor> _scalarBar;
-
-    vtkSmartPointer<vtkAxesActor> _axesActor;
-
-    vtkSmartPointer<vtkTextActor> helptextActor;
-    vtkSmartPointer<vtkBalloonRepresentation> balloonRep;
-    vtkSmartPointer<vtkBalloonWidget> balloonwidget;
-
-#ifdef HAS_QVTK
-    boost::scoped_ptr<QVTKWidget> widget;
-#endif
-
   public:
-    VTKWindowOutputStage();
+
+    VTKWindowOutputStage(QWidget *parent = NULL);
+
+    ~VTKWindowOutputStage();
 
     void init(VTKPlotter *parent, const Parameters &parameters);
 
@@ -145,7 +114,42 @@ namespace dolfin
 
     void set_translucent(bool onoff, uint topo_dim=3, uint geom_dim=3);
 
-    ~VTKWindowOutputStage();
+  protected:
+
+    // The depth sorting filter
+    vtkSmartPointer<vtkDepthSortPolyData> _depthSort;
+
+    // The poly data mapper
+    vtkSmartPointer<vtkPolyDataMapper> _mapper;
+
+    // The input port (either the mapper or depth sorter)
+    vtkSmartPointer<vtkAlgorithm> _input;
+
+    // The lookup table
+    vtkSmartPointer<vtkLookupTable> _lut;
+
+    // The main actor
+    vtkSmartPointer<vtkActor> _actor;
+
+    // The renderer
+    vtkSmartPointer<vtkRenderer> _renderer;
+
+    // The render window
+    vtkSmartPointer<vtkRenderWindow> _renderWindow;
+
+    // The scalar bar that gives the viewer the mapping from color to
+    // scalar value
+    vtkSmartPointer<vtkScalarBarActor> _scalarBar;
+
+    vtkSmartPointer<vtkAxesActor> _axesActor;
+
+    vtkSmartPointer<vtkTextActor> helptextActor;
+    vtkSmartPointer<vtkBalloonRepresentation> balloonRep;
+    vtkSmartPointer<vtkBalloonWidget> balloonwidget;
+
+#ifdef HAS_QVTK
+    boost::scoped_ptr<QVTKWidget> widget;
+#endif
 
   };
 

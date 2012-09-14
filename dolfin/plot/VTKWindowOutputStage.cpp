@@ -18,7 +18,7 @@
 // Split from VTKPlotter.h, Joachim B Haga, 2012-09-10
 //
 // First added:  2012-09-10
-// Last changed: 2012-09-13
+// Last changed: 2012-09-14
 
 #ifdef HAS_VTK
 
@@ -117,9 +117,18 @@ namespace // anonymous
 //----------------------------------------------------------------------------
 // Class VTKWindowOutputStage
 //----------------------------------------------------------------------------
-VTKWindowOutputStage::VTKWindowOutputStage()
+VTKWindowOutputStage::VTKWindowOutputStage(QWidget *parent)
 {
-  vtkMapper::GlobalImmediateModeRenderingOn();
+#ifdef HAS_QVTK
+  if (parent)
+  {
+    // If there's a parent then it means the qapplication exists. Might as well
+    // create the widget now, while we have the parent...
+    widget.reset(new QVTKWidget(parent));
+  }
+#endif
+
+  vtkMapper::GlobalImmediateModeRenderingOn(); // FIXME: Check if faster or not
 
   // Initialize objects
   _scalarBar = vtkSmartPointer<vtkScalarBarActor>::New();
@@ -176,9 +185,12 @@ void VTKWindowOutputStage::init(VTKPlotter *parent, const Parameters &parameters
   style->_plotter = parent;
 
 #ifdef HAS_QVTK
-  // Set up widget -- make sure a QApplication exists first
-  create_qApp();
-  widget.reset(new QVTKWidget());
+  if (!widget)
+  {
+    // Create new top-level widget -- make sure a QApplication exists first
+    create_qApp();
+    widget.reset(new QVTKWidget());
+  }
   _renderWindow->SetInteractor(widget->GetInteractor());
 
   widget->SetRenderWindow(_renderWindow);

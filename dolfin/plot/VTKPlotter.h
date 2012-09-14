@@ -19,7 +19,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-09-13
+// Last changed: 2012-09-14
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -34,6 +34,9 @@
 #include <dolfin/parameter/Parameters.h>
 
 class vtkObject;
+
+// Forward declarations
+class QWidget;
 
 namespace dolfin
 {
@@ -141,11 +144,12 @@ namespace dolfin
 
     /// Create plotter for a variable
     template <class T>
-    explicit VTKPlotter(boost::shared_ptr<T>);
+    explicit VTKPlotter(boost::shared_ptr<T>, QWidget *parent = NULL);
 
     /// Create plotter for an Expression with associated Mesh
     explicit VTKPlotter(boost::shared_ptr<const Expression> expression,
-                        boost::shared_ptr<const Mesh> mesh);
+                        boost::shared_ptr<const Mesh> mesh,
+                        QWidget *parent = NULL);
 
     /// Destructor
     ~VTKPlotter();

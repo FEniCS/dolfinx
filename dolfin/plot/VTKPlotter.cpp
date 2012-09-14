@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-09-13
+// Last changed: 2012-09-14
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
@@ -84,10 +84,10 @@ namespace // anonymous
 }
 //----------------------------------------------------------------------------
 template <class T>
-VTKPlotter::VTKPlotter(boost::shared_ptr<T> t)
+VTKPlotter::VTKPlotter(boost::shared_ptr<T> t, QWidget *parent)
   : _initialized(false),
     _plottable(CreateVTKPlottable(t)),
-    vtk_pipeline(new VTKWindowOutputStage()),
+    vtk_pipeline(new VTKWindowOutputStage(parent)),
     _frame_counter(0),
     _key(to_key(*t))
 {
@@ -97,10 +97,10 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<T> t)
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
-    boost::shared_ptr<const Mesh> mesh)
+    boost::shared_ptr<const Mesh> mesh, QWidget *parent)
   : _initialized(false),
     _plottable(CreateVTKPlottable(expression, mesh)),
-    vtk_pipeline(new VTKWindowOutputStage()),
+    vtk_pipeline(new VTKWindowOutputStage(parent)),
     _frame_counter(0),
     _key(to_key(*expression))
 {
@@ -755,8 +755,8 @@ bool VTKPlotter::run_to_end = false;
 // Must instantiate both const and non-const shared_ptr<T>s, no implicit conversion; see
 // http://stackoverflow.com/questions/5600150/c-template-instantiation-with-shared-ptr-to-const-t
 #define INSTANTIATE(T)                                                  \
-  template VTKPlotter::VTKPlotter(boost::shared_ptr<const T >); \
-  template VTKPlotter::VTKPlotter(boost::shared_ptr<T >);
+  template VTKPlotter::VTKPlotter(boost::shared_ptr<const T >, QWidget*); \
+  template VTKPlotter::VTKPlotter(boost::shared_ptr<T >, QWidget*);
 
 INSTANTIATE(CSGGeometry)
 INSTANTIATE(DirichletBC)
