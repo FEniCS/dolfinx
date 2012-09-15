@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-09-14
+// Last changed: 2012-09-15
 
 #ifdef HAS_HDF5
 
@@ -80,9 +80,9 @@ void HDF5File::operator>>(Mesh& input_mesh)
                  "read mesh from file",
                  "Invalid number of Mesh datasets in HDF5 file");
   }
-
+  
   LocalMeshData mesh_data;
-
+  
   // Clear mesh data
   mesh_data.clear();
 
@@ -106,7 +106,7 @@ void HDF5File::operator>>(Mesh& input_mesh)
   read(data[0], vertex_range, coords_name, H5T_NATIVE_DOUBLE, 3);
 
   for(uint i = 0; i < nv*3; i++)
-    std::cout << data[i] << std::endl;
+      std::cout << data[i] << std::endl;
 
   //  for(){
   //    mesh_data.vertex_coordinates.push_back(v);
@@ -164,7 +164,7 @@ void HDF5File::operator<<(const Mesh& mesh)
   const uint cell_offset = MPI::global_offset(num_local_cells, true);
   std::pair<uint, uint>topo_range(cell_offset, cell_offset + num_local_cells);
 
-  // get offset and size of local vertex usage in global terms
+  // Get offset and size of local vertex usage in global terms
   const uint vertex_offset = MPI::global_offset(num_local_vertices, true);
   std::pair<uint, uint>vertex_range(vertex_offset, vertex_offset + num_local_vertices);
 
@@ -234,7 +234,7 @@ void HDF5File::create()
   // create some default 'folders' for storing different datasets
 
   hid_t       file_id;         /* file and dataset identifiers */
-  hid_t	      plist_id;           /* property list identifier */
+  hid_t              plist_id;           /* property list identifier */
   hid_t       group_id;
   herr_t      status;
 
@@ -283,10 +283,10 @@ void HDF5File::read(T& data,  const std::pair<uint, uint>& range,
   // Read input in parallel. Assumes the input vector
   // is correctly allocated to receive the data.
 
-  hid_t file_id;		  // HDF5 file ID
-  hid_t plist_id;		  // File access template
-  hid_t filespace;	  // File dataspace ID
-  hid_t memspace;	    // memory dataspace ID
+  hid_t file_id;                  // HDF5 file ID
+  hid_t plist_id;                  // File access template
+  hid_t filespace;          // File dataspace ID
+  hid_t memspace;            // memory dataspace ID
   hid_t dset_id;      // Dataset ID
   hsize_t count[2];   // hyperslab selection parameters
   hsize_t offset[2];
@@ -387,9 +387,9 @@ void HDF5File::write(const T& data, const std::pair<uint, uint>& range,
   hid_t       file_id, dset_id;         /* file and dataset identifiers */
   hid_t       filespace, memspace;      /* file and memory dataspace identifiers */
   hsize_t     dimsf[2];                 /* dataset dimensions */
-  hsize_t     count[2];	          /* hyperslab selection parameters */
+  hsize_t     count[2];                  /* hyperslab selection parameters */
   hsize_t     offset[2];
-  hid_t	      plist_id;           /* property list identifier */
+  hid_t              plist_id;           /* property list identifier */
   herr_t      status;
 
   MPICommunicator comm;
@@ -579,8 +579,8 @@ std::pair<uint,uint> HDF5File::dataset_dimensions(const std::string& dataset_nam
 }
 //-----------------------------------------------------------------------------
 void HDF5File::add_attribute(const std::string& dataset_name,
-			     const std::string& attribute_name,
-			     const std::string& attribute_value)
+                             const std::string& attribute_name,
+                             const std::string& attribute_value)
 {
 
   MPICommunicator comm;
@@ -606,7 +606,7 @@ void HDF5File::add_attribute(const std::string& dataset_name,
   status = H5Tset_size (datatype_id, attribute_value.size());
   hid_t dataspaces_id = H5Screate (H5S_SCALAR);
   hid_t attribute_id = H5Acreate (dset_id, attribute_name.c_str(), datatype_id,
-				  dataspaces_id, H5P_DEFAULT);
+                                  dataspaces_id, H5P_DEFAULT);
   status = H5Awrite(attribute_id, datatype_id, attribute_value.c_str());
   dolfin_assert(status != HDF5_FAIL);
 
@@ -622,7 +622,7 @@ void HDF5File::add_attribute(const std::string& dataset_name,
 }
 //-----------------------------------------------------------------------------
 std::string HDF5File::get_attribute(const std::string& dataset_name,
-				    const std::string& attribute_name)
+                                    const std::string& attribute_name)
 {
   MPICommunicator comm;
   MPIInfo info;
@@ -672,7 +672,7 @@ std::string HDF5File::mesh_coords_dataset_name(const Mesh& mesh)
 {
   std::stringstream mc_name;
   mc_name << "/Mesh/Coordinates_" << std::setfill('0')
-	  << std::hex << std::setw(8) << mesh.coordinates_hash();
+          << std::hex << std::setw(8) << mesh.coordinates_hash();
   return mc_name.str();
 }
 //-----------------------------------------------------------------------------
@@ -680,7 +680,7 @@ std::string HDF5File::mesh_topo_dataset_name(const Mesh& mesh)
 {
   std::stringstream mc_name;
   mc_name << "/Mesh/Topology_" << std::setfill('0')
-	  << std::hex << std::setw(8) << mesh.topology_hash();
+          << std::hex << std::setw(8) << mesh.topology_hash();
   return mc_name.str();
 }
 //-----------------------------------------------------------------------------

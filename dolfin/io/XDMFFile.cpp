@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-09-14
+// Last changed: 2012-09-15
 
 #ifdef HAS_HDF5
 
@@ -102,15 +102,15 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   if (vrank > 2) 
   {
     dolfin_error("XDMFFile.cpp",
-		             "write data to XDMF file",
-		             "Output of tensors with rank > 2 not yet supported");
+                 "write data to XDMF file",
+                 "Output of tensors with rank > 2 not yet supported");
   }
 
   if (cell_dim == 1) 
   {
     dolfin_error("XDMFFile.cpp",
-                             "write data to XDMF file",
-                             "Output of 1D datasets not supported");
+                 "write data to XDMF file",
+                 "Output of 1D datasets not supported");
   }
 
   const uint num_local_cells = mesh.num_cells();
