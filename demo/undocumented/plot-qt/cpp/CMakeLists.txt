@@ -1,9 +1,9 @@
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
-project(demo_plot_qt)
+project(demo_plot-qt)
 
-set(SOURCES qmain.cpp Plotter.cpp PlotWidget.cpp)
+set(SOURCES main.cpp Plotter.cpp PlotWidget.cpp)
 set(HEADERS Plotter.h PlotWidget.h)
 
 # Ignore whitespace in library paths
@@ -29,13 +29,33 @@ include_directories(${DOLFIN_INCLUDE_DIRS})
 include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Qt
-find_package(Qt4 REQUIRED)
-qt4_wrap_cpp(HEADERS_MOC ${HEADERS})
-include(${QT_USE_FILE})
-add_definitions(${QT_DEFINITIONS})
+find_package(Qt4)
+if (QT_FOUND)
+  include(${QT_USE_FILE})
+  add_definitions(${QT_DEFINITIONS})
+endif()
 
-# Executable
-add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS_MOC})
+# VTK
+find_package(VTK)
+if (VTK_FOUND)
+  include(${VTK_USE_FILE})
+  find_library(QVTK_FOUND QVTK HINTS ${VTK_LIBRARY_DIRS})
+endif()
 
-# Target libraries
-target_link_libraries(${PROJECT_NAME} ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES} ${QT_LIBRARIES})
+if (QT_FOUND AND QVTK_FOUND)
+
+  # Define headers to run moc on
+  qt4_wrap_cpp(HEADERS_MOC ${HEADERS})
+
+  # Executable
+  add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS_MOC})
+
+  # Target libraries
+  target_link_libraries(${PROJECT_NAME} ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES} ${QT_LIBRARIES})
+
+else()
+
+  message(WARNING "QVTK not installed, not building " ${PROJECT_NAME})
+
+endif()
+

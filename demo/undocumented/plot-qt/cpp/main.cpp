@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-09-14
-// Last changed: 2012-09-14
+// Last changed: 2012-09-16
 //
 // This demo illustrates embedding the plot window in a Qt application.
 
@@ -46,6 +46,12 @@ public:
 
 int main(int argc, char *argv[])
 {
+  if (getenv("DOLFIN_NOPLOT"))
+  {
+    warning("DOLFIN_NOPLOT is set; not running demo_qt");
+    return 0;
+  }
+
   // Create application and top-level window
   QApplication app(argc, argv);
   QWidget window;
