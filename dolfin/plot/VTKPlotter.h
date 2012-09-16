@@ -158,6 +158,7 @@ namespace dolfin
     {
       std::set<std::string> allowed_modes;
       allowed_modes.insert("auto");
+      allowed_modes.insert("displacement");
       allowed_modes.insert("warp");
       allowed_modes.insert("off");
 
