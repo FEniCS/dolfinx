@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2007-05-02
-// Last changed: 2012-09-12
+// Last changed: 2012-09-16
 
 #ifndef __PLOT_H
 #define __PLOT_H
@@ -31,12 +31,9 @@ namespace dolfin
 {
 
   // Forward declarations
-  class CSGGeometry;
-  class DirichletBC;
-  class Function;
+  class Variable;
   class Expression;
   class Mesh;
-  template<typename T> class MeshFunction;
   class Parameters;
   class VTKPlotter;
 
@@ -49,25 +46,21 @@ namespace dolfin
   //---------------------------------------------------------------------------
 
   // Plot variable of any supported type
-  template <class T>
-  boost::shared_ptr<VTKPlotter> plot(const T& t,
+  boost::shared_ptr<VTKPlotter> plot(const Variable&,
 				     std::string title="",
 				     std::string mode="auto");
 
   /// Plot variable (shared_ptr version)
-  template <class T>
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<T> t,
+  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const Variable>,
 				     std::string title="",
 				     std::string mode="auto");
 
   /// Plot variable (parameter version)
-  template <class T>
-  boost::shared_ptr<VTKPlotter> plot(const T& t,
+  boost::shared_ptr<VTKPlotter> plot(const Variable&,
 				     const Parameters& parameters);
 
   /// Plot variable (parameter, shared_ptr version)
-  template <class T>
-  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<T> t,
+  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const Variable>,
 				     boost::shared_ptr<const Parameters> parameters);
 
   //---------------------------------------------------------------------------
@@ -97,18 +90,5 @@ namespace dolfin
 				     boost::shared_ptr<const Parameters> parameters);
 
 }
-
-#ifdef SWIG
-// Make template instantiations (in plot.cpp) available to SWIG
-%template(plot) dolfin::plot<dolfin::CSGGeometry>;
-%template(plot) dolfin::plot<dolfin::DirichletBC>;
-%template(plot) dolfin::plot<dolfin::Function>;
-%template(plot) dolfin::plot<dolfin::Mesh>;
-%template(plot) dolfin::plot<dolfin::MeshFunction<bool> >;
-%template(plot) dolfin::plot<dolfin::MeshFunction<double> >;
-//%template(plot) dolfin::plot<dolfin::MeshFunction<float> >;
-%template(plot) dolfin::plot<dolfin::MeshFunction<int> >;
-%template(plot) dolfin::plot<dolfin::MeshFunction<uint> >;
-#endif
 
 #endif

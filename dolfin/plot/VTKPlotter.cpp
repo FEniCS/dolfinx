@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-09-14
+// Last changed: 2012-09-16
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
@@ -83,17 +83,49 @@ namespace // anonymous
   }
 }
 //----------------------------------------------------------------------------
-template <class T>
-VTKPlotter::VTKPlotter(boost::shared_ptr<T> t, QVTKWidget *widget)
+namespace dolfin
+{
+  GenericVTKPlottable *CreateVTKPlottable(boost::shared_ptr<const Variable> var)
+  {
+#define DISPATCH(T) do                                                  \
+    {                                                                   \
+      boost::shared_ptr<const T > t = boost::dynamic_pointer_cast<const T >(var); \
+      if (t)                                                            \
+        return CreateVTKPlottable(t);                                   \
+    } while (0)
+
+    DISPATCH(CSGGeometry);
+    DISPATCH(DirichletBC);
+    DISPATCH(ExpressionWrapper);
+    DISPATCH(Function);
+    DISPATCH(Mesh);
+    DISPATCH(MeshFunction<bool>);
+    DISPATCH(MeshFunction<double>);
+    //DISPATCH(MeshFunction<float>);
+    DISPATCH(MeshFunction<int>);
+    DISPATCH(MeshFunction<uint>);
+
+    if (dynamic_cast<const Expression*>(var.get()))
+    {
+      dolfin_error("plot object", "dolfin::plot", "A mesh must be supplied when plotting an expression");
+    }
+
+    // Any type not listed above
+    dolfin_error("plot object", "dolfin::plot", "Object type not supported for plotting");
+    return NULL; // not reached
+  }
+}
+//----------------------------------------------------------------------------
+VTKPlotter::VTKPlotter(boost::shared_ptr<const Variable> obj, QVTKWidget *widget)
   : _initialized(false),
-    _plottable(CreateVTKPlottable(t)),
+    _plottable(CreateVTKPlottable(obj)),
     vtk_pipeline(new VTKWindowOutputStage(widget)),
     _frame_counter(0),
-    _key(to_key(*t))
+    _key(to_key(*obj))
 {
   parameters = default_parameters();
   _plottable->modify_default_parameters(parameters);
-  set_title_from(*t);
+  set_title_from(*obj);
 }
 //----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
@@ -736,23 +768,4 @@ boost::shared_ptr<std::list<VTKPlotter*> > VTKPlotter::active_plotters(new std::
 int VTKPlotter::hardcopy_counter = 0;
 bool VTKPlotter::run_to_end = false;
 
-//---------------------------------------------------------------------------
-// Instantiate constructors for valid types
-//---------------------------------------------------------------------------
-
-// Must instantiate both const and non-const shared_ptr<T>s, no implicit conversion; see
-// http://stackoverflow.com/questions/5600150/c-template-instantiation-with-shared-ptr-to-const-t
-#define INSTANTIATE(T)                                                  \
-  template VTKPlotter::VTKPlotter(boost::shared_ptr<const T >, QVTKWidget*); \
-  template VTKPlotter::VTKPlotter(boost::shared_ptr<T >, QVTKWidget*);
-
-INSTANTIATE(CSGGeometry)
-INSTANTIATE(DirichletBC)
-INSTANTIATE(ExpressionWrapper)
-INSTANTIATE(Function)
-INSTANTIATE(Mesh)
-INSTANTIATE(MeshFunction<bool>)
-INSTANTIATE(MeshFunction<double>)
-INSTANTIATE(MeshFunction<float>)
-INSTANTIATE(MeshFunction<int>)
-INSTANTIATE(MeshFunction<uint>)
+//----------------------------------------------------------------------------

@@ -19,7 +19,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-09-14
+// Last changed: 2012-09-16
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -40,16 +40,11 @@ namespace dolfin
 {
 
   // Forward declarations
-  class CSGGeometry;
-  class DirichletBC;
   class Expression;
-  class ExpressionWrapper;
-  class Function;
-  class GenericVTKPlottable;
   class Mesh;
+  class GenericVTKPlottable;
   class VTKWindowOutputStage;
   template<typename T> class Array;
-  template<typename T> class MeshFunction;
 
   /// This class enables visualization of various DOLFIN entities.
   /// It supports visualization of meshes, functions, expressions, boundary
@@ -146,8 +141,7 @@ namespace dolfin
     /// Create plotter for a variable. If a widget is supplied, this widget
     /// will be used for drawing, instead of a new top-level widget. Ownership
     /// is transferred.
-    template <class T>
-    explicit VTKPlotter(boost::shared_ptr<T>, QVTKWidget *widget = NULL);
+    explicit VTKPlotter(boost::shared_ptr<const Variable>, QVTKWidget *widget = NULL);
 
     /// Create plotter for an Expression with associated Mesh. If a widget is
     /// supplied, this widget will be used for drawing, instead of a new
@@ -305,21 +299,5 @@ namespace dolfin
   };
 
 }
-
-#ifdef SWIG
-// Make template instantiations (in VTKPlotter.cpp) available to SWIG
-%extend dolfin::VTKPlotter {
-  //%template(VTKPlotter) VTKPlotter<dolfin::CSGGeometry>;
-  %template(VTKPlotter) VTKPlotter<dolfin::DirichletBC>;
-  %template(VTKPlotter) VTKPlotter<dolfin::ExpressionWrapper>;
-  %template(VTKPlotter) VTKPlotter<dolfin::Function>;
-  %template(VTKPlotter) VTKPlotter<dolfin::Mesh>;
-  %template(VTKPlotter) VTKPlotter<dolfin::MeshFunction<bool> >;
-  %template(VTKPlotter) VTKPlotter<dolfin::MeshFunction<double> >;
-  //%template(VTKPlotter) VTKPlotter<dolfin::MeshFunction<float> >;
-  %template(VTKPlotter) VTKPlotter<dolfin::MeshFunction<int> >;
-  %template(VTKPlotter) VTKPlotter<dolfin::MeshFunction<dolfin::uint> >;
-};
-#endif
 
 #endif

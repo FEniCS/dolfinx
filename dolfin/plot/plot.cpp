@@ -20,7 +20,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2007-05-02
-// Last changed: 2012-09-12
+// Last changed: 2012-09-16
 
 #include <cstdlib>
 #include <sstream>
@@ -49,16 +49,15 @@ using namespace dolfin;
 static std::list<boost::shared_ptr<VTKPlotter> > stored_plotters;
 
 //-----------------------------------------------------------------------------
-// Template function for getting already instantiated VTKPlotter for
+// Function for getting already instantiated VTKPlotter for
 // the given object. If none is found, a new one is created.
-template <class T>
-boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<T> t, std::string key)
+boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<const Variable> obj, std::string key)
 {
   log(TRACE, "Looking for cached VTKPlotter [%s].", key.c_str());
 
   for (std::list<boost::shared_ptr<VTKPlotter> >::iterator it = stored_plotters.begin(); it != stored_plotters.end(); it++)
   {
-    if ( (*it)->key() == key && (*it)->is_compatible(t) )
+    if ( (*it)->key() == key && (*it)->is_compatible(obj) )
     {
       log(TRACE, "Found compatible cached VTKPlotter.");
       return *it;
@@ -67,16 +66,15 @@ boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<T> t, std::string ke
 
   // No previous plotter found, so create a new one
   log(TRACE, "No VTKPlotter found in cache, creating new plotter.");
-  boost::shared_ptr<VTKPlotter> plotter(new VTKPlotter(t));
+  boost::shared_ptr<VTKPlotter> plotter(new VTKPlotter(obj));
   plotter->set_key(key);
   stored_plotters.push_back(plotter);
 
   return plotter;
 }
 //-----------------------------------------------------------------------------
-// Template function for plotting objects
-template <class T>
-boost::shared_ptr<VTKPlotter> plot_object(boost::shared_ptr<T> t,
+// Function for plotting objects
+boost::shared_ptr<VTKPlotter> plot_object(boost::shared_ptr<const Variable> obj,
 					  boost::shared_ptr<const Parameters> parameters,
                                           std::string key)
 {
@@ -87,18 +85,18 @@ boost::shared_ptr<VTKPlotter> plot_object(boost::shared_ptr<T> t,
     key = (std::string)*param_key;
   }
 
-  boost::shared_ptr<VTKPlotter> plotter = get_plotter(t, key);
+  boost::shared_ptr<VTKPlotter> plotter = get_plotter(obj, key);
 
   // Set plotter parameters
   plotter->parameters.update(*parameters);
 
   // Plot
-  plotter->plot(t);
+  plotter->plot(obj);
 
   return plotter;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<Parameters> default_parameters(std::string title, std::string mode)
+boost::shared_ptr<Parameters> new_parameters(std::string title, std::string mode)
 {
   boost::shared_ptr<Parameters> parameters(new Parameters());
   if (!title.empty())
@@ -114,34 +112,30 @@ void dolfin::interactive(bool really)
   VTKPlotter::all_interactive(really);
 }
 //-----------------------------------------------------------------------------
-template <class T>
-boost::shared_ptr<VTKPlotter> dolfin::plot(const T& t,
+boost::shared_ptr<VTKPlotter> dolfin::plot(const Variable& var,
 					   std::string title,
 					   std::string mode)
 {
-  return plot(reference_to_no_delete_pointer(t), title, mode);
+  return plot(reference_to_no_delete_pointer(var), title, mode);
 }
 //-----------------------------------------------------------------------------
-template <class T>
-boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<T> t,
+boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Variable> var,
 					   std::string title, std::string mode)
 {
-  return plot(t, default_parameters(title, mode));
+  return plot(var, new_parameters(title, mode));
 }
 //-----------------------------------------------------------------------------
-template <class T>
-boost::shared_ptr<VTKPlotter> dolfin::plot(const T& t,
+boost::shared_ptr<VTKPlotter> dolfin::plot(const Variable& var,
 					   const Parameters& parameters)
 {
-  return plot(reference_to_no_delete_pointer(t),
+  return plot(reference_to_no_delete_pointer(var),
 	      reference_to_no_delete_pointer(parameters));
 }
 //-----------------------------------------------------------------------------
-template <class T>
-boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<T> t,
+boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Variable> var,
 					   boost::shared_ptr<const Parameters> parameters)
 {
-  return plot_object(t, parameters, VTKPlotter::to_key(*t));
+  return plot_object(var, parameters, VTKPlotter::to_key(*var));
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<VTKPlotter> dolfin::plot(const Expression& expression,
@@ -156,7 +150,7 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Expression> e
 					   boost::shared_ptr<const Mesh> mesh,
 					   std::string title, std::string mode)
 {
-  return plot(expression, mesh, default_parameters(title, mode));
+  return plot(expression, mesh, new_parameters(title, mode));
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<VTKPlotter> dolfin::plot(const Expression& expression,
@@ -176,33 +170,3 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Expression> e
     wrapper(new ExpressionWrapper(expression, mesh));
   return plot_object(wrapper, parameters, VTKPlotter::to_key(*expression));
 }
-
-//---------------------------------------------------------------------------
-// Instantiate function templates for valid types
-//---------------------------------------------------------------------------
-
-// Must instantiate both const and non-const shared_ptr<T>s, no implicit conversion; see
-// http://stackoverflow.com/questions/5600150/c-template-instantiation-with-shared-ptr-to-const-t
-#define INSTANTIATE(T)                                                  \
-  template boost::shared_ptr<VTKPlotter> dolfin::plot(const T&,         \
-                                                      std::string, std::string); \
-  template boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const T >, \
-                                                      std::string, std::string); \
-  template boost::shared_ptr<VTKPlotter> dolfin::plot(const T&,         \
-                                                      const Parameters&); \
-  template boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const T >, \
-                                                      boost::shared_ptr<const Parameters>); \
-  template boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<T >, \
-                                                      std::string, std::string); \
-  template boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<T >, \
-                                                      boost::shared_ptr<const Parameters>);
-
-INSTANTIATE(CSGGeometry)
-INSTANTIATE(DirichletBC)
-INSTANTIATE(Function)
-INSTANTIATE(Mesh)
-INSTANTIATE(MeshFunction<bool>)
-INSTANTIATE(MeshFunction<double>)
-//INSTANTIATE(MeshFunction<float>)
-INSTANTIATE(MeshFunction<int>)
-INSTANTIATE(MeshFunction<uint>)
