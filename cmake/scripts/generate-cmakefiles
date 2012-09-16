@@ -82,6 +82,8 @@ main_file_names = dict(test="test.cpp",
                        demo="main.cpp",
                        bench="main.cpp")
 
+# Projects that use custom CMakeLists.txt (shouldn't overwrite)
+exclude_projects = ['demo_plot-qt', 'demo_csg']
 
 def generate_cmake_files(subdirectory):
     """Search for C++ code and write CMakeLists.txt files"""
@@ -96,7 +98,6 @@ def generate_cmake_files(subdirectory):
         if "cpp" in dirs:
             cpp_files = []
             program_dir = root + "/cpp"
-            cmakelist_file = program_dir + "/CMakeLists.txt"
             program_name = os.path.split(root)[-1]
             if executable_prefix == "bench_":
                 program_name = program_dir[program_dir.find("bench")+6:].replace(os.path.sep, "_")
@@ -114,13 +115,10 @@ def generate_cmake_files(subdirectory):
             if not cpp_files:
                 continue
 
-            # Skip manually created cmake files
-            if os.path.exists(cmakelist_file):
-                with open(cmakelist_file, 'r') as f:
-                    firstline = f.readline()
-                    if not "automatically generated" in firstline:
-                        print "Skipping " + cmakelist_file + " (not automatically generated)"
-                        continue
+            # If project uses custom CMakeLists, don't overwrite.
+            if name_forms["project_name"] in exclude_projects:
+                print "Skipping custom CMakeLists.txt file:", program_name
+                continue
 
             # Name of demo and cpp source files
             if main_file_name in cpp_files:
@@ -151,7 +149,7 @@ def generate_cmake_files(subdirectory):
                 print "Warning: duplicate executable names found when generating CMakeLists.txt files."
 
             # Write file
-            with open(cmakelist_file, 'w') as f:
+            with open(program_dir + "/CMakeLists.txt", 'w') as f:
                 print "Creating CMakeLists.txt file:", program_name, program_dir
                 f.write( cmakelists_str % name_forms )
 
