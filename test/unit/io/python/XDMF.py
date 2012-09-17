@@ -90,13 +90,13 @@ class XDMF_Vertex_Function_Output(unittest.TestCase):
         file = File("u_3D.xdmf")
 
         u.vector()[:] = 1.0
-        file << u
+        file << (u, 0.1)
 
         u.vector()[:] = 2.0
-        file << u
+        file << (u, 0.2)
 
         u.vector()[:] = 3.0
-        file << u
+        file << (u, 0.3)
 
     # FFC fails for tensor spaces in 1D
     #def test_save_1d_tensor(self):

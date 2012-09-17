@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Chris N. Richardson
+// Copyright (C) 2012 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -81,12 +81,8 @@ namespace dolfin
 
   private:
 
-    // Change file suffix from .xdmf to .h5
-    std::string HDF5Filename() const;
-
     // HDF5 data file
     boost::scoped_ptr<HDF5File> hdf5_file;
-
 
   };
 

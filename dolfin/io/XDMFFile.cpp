@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Chris N. Richardson
+// Copyright (C) 2012 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -26,6 +26,8 @@
 #include <sstream>
 #include <vector>
 #include <boost/filesystem.hpp>
+#include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include "pugixml.hpp"
 
@@ -48,24 +50,19 @@ XDMFFile::XDMFFile(const std::string filename) : GenericFile(filename, "XDMF")
 {
   // Do nothing
 
-  // FIXME: Open HDF5 storage file here
-  // Generate .h5 from .xdmf filename
-
   // Name of HDF5 file
   boost::filesystem::path p(filename);
   p.replace_extension(".h5");
-  //const std::string hdf5_filename = p.string();
 
-  // Create HDF5 file and save mesh
+  // Create HDF5 file
   hdf5_file.reset(new HDF5File(p.string()));
-
+  dolfin_assert(hdf5_file);
+  hdf5_file->create();
 }
 //----------------------------------------------------------------------------
 XDMFFile::~XDMFFile()
 {
   // Do nothing
-
-  // FIXME: Close HDF5  storage file here
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<<(const Function& u)
@@ -91,7 +88,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 
   // Get DOF map
   dolfin_assert(u.function_space()->dofmap());
-  const GenericDofMap& dofmap= *u.function_space()->dofmap();
+  const GenericDofMap& dofmap = *u.function_space()->dofmap();
 
   const uint value_rank = u.value_rank();
   const uint value_size = u.value_size();
@@ -120,7 +117,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
                  "Output of 1D datasets not supported");
   }
 
-  // Get nmber of local/global cells/vertices
+  // Get number of local/global cells/vertices
   // FIXME: num_global_vertices is not correct
   const uint num_local_cells = mesh.num_cells();
   const uint num_local_vertices = mesh.num_vertices();
@@ -175,23 +172,22 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   }
 
   dolfin_assert(hdf5_file);
-  const std::string mc_name = hdf5_file->mesh_coords_dataset_name(mesh);
-  const std::string mt_name = hdf5_file->mesh_topo_dataset_name(mesh);
+  const std::string mesh_coords_name = hdf5_file->mesh_coords_dataset_name(mesh);
+  const std::string mesh_topology_name = hdf5_file->mesh_topo_dataset_name(mesh);
   if (counter == 0)
-  {
-    hdf5_file->create();
     *(hdf5_file) << mesh;
-  }
-  else if (!hdf5_file->exists(mc_name) || !hdf5_file->exists(mt_name))
+  else if (!hdf5_file->exists(mesh_coords_name) || !hdf5_file->exists(mesh_topology_name))
     *(hdf5_file) << mesh;
+
+  // Working data structure for formatting XML file
+  std::string s;
 
   // Vertex values are saved in the hdf5 'folder' /DataVector
   // as distinct from /Vector which is used for solution vectors.
 
   // Save actual data values to HDF5 file
-  std::stringstream s("");
-  s << "/DataVector/" << counter;
-  hdf5_file->write(data_values[0], data_range, s.str().c_str(), value_size_io);
+  s = "/DataVector/" + boost::lexical_cast<std::string>(counter);
+  hdf5_file->write(data_values[0], data_range, s.c_str(), value_size_io);
 
   // Write the XML meta description - see http://www.xdmf.org
   if (MPI::process_number() == 0)
@@ -202,25 +198,24 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 
     if (counter == 0)
     {
-      // First time step - create document template, adding a mesh and an empty time-series.
-
+      // First time step - create document template, adding a mesh and
+      // an empty time-series
       xml_doc.append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
       pugi::xml_node xdmf = xml_doc.append_child("Xdmf");
-      xdmf.append_attribute("Version")="2.0";
-      xdmf.append_attribute("xmlns:xi")="http://www.w3.org/2001/XInclude";
-
+      xdmf.append_attribute("Version") = "2.0";
+      xdmf.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
       pugi::xml_node xdmf_domn = xdmf.append_child("Domain");
 
-      //     /Xdmf/Domain/Grid - actually a TimeSeries, not a spatial grid
+      //  /Xdmf/Domain/Grid - actually a TimeSeries, not a spatial grid
       xdmf_timegrid = xdmf_domn.append_child("Grid");
       xdmf_timegrid.append_attribute("Name") = "TimeSeries";
       xdmf_timegrid.append_attribute("GridType") = "Collection";
       xdmf_timegrid.append_attribute("CollectionType") = "Temporal";
 
-      //     /Xdmf/Domain/Grid/Time
+      //  /Xdmf/Domain/Grid/Time
       pugi::xml_node xdmf_time = xdmf_timegrid.append_child("Time");
       xdmf_time.append_attribute("TimeType") = "List";
-      xdmf_timedata=xdmf_time.append_child("DataItem");
+      xdmf_timedata = xdmf_time.append_child("DataItem");
       xdmf_timedata.append_attribute("Format") = "XML";
       xdmf_timedata.append_attribute("Dimensions") = "1";
       xdmf_timedata.append_child(pugi::node_pcdata);
@@ -245,23 +240,17 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
       xdmf_timedata = xdmf_timegrid.child("Time").child("DataItem");
     }
 
+    // Add an time step to the TimeSeries List
+    xdmf_timedata.attribute("Dimensions").set_value(counter + 1);
+    s = boost::lexical_cast<std::string>(xdmf_timedata.first_child().value()) + " "
+          + boost::str((boost::format("%d") % time_step));
+    xdmf_timedata.first_child().set_value(s.c_str());
 
-    // FIXME: This is confusing. Why are string streams necessary?
-    //        Can use Boost Lexical cast, if necessary
-    // Add an extra timestep to the TimeSeries List
-    s.str("");
-    s << xdmf_timedata.first_child().value() << " " << time_step;
-    xdmf_timedata.first_child().set_value(s.str().c_str());
-
-    s.str("");
-    s << (counter + 1);
-    xdmf_timedata.attribute("Dimensions").set_value(s.str().c_str());
 
     //    /Xdmf/Domain/Grid/Grid - the actual data for this timestep
     pugi::xml_node xdmf_grid = xdmf_timegrid.append_child("Grid");
-    s.str("");
-    s << u.name() << "_" << counter;
-    xdmf_grid.append_attribute("Name") = s.str().c_str();
+    s = u.name() + "_" + boost::lexical_cast<std::string>(counter);
+    xdmf_grid.append_attribute("Name") = s.c_str();
     xdmf_grid.append_attribute("GridType") = "Uniform";
 
     // Grid/Topology
@@ -275,13 +264,12 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     pugi::xml_node xdmf_topology_data = xdmf_topology.append_child("DataItem");
 
     xdmf_topology_data.append_attribute("Format") = "HDF";
-    std::stringstream s;
-    s << num_global_cells << " " << (cell_dim + 1);
-    xdmf_topology_data.append_attribute("Dimensions") = s.str().c_str();
+    s = boost::lexical_cast<std::string>(num_global_cells) + " "
+          + boost::lexical_cast<std::string>(cell_dim + 1);
+    xdmf_topology_data.append_attribute("Dimensions") = s.c_str();
 
-    s.str("");
-    s << hdf5_file->filename << ":" << mt_name;
-    xdmf_topology_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
+    s = hdf5_file->filename + ":" + mesh_topology_name;
+    xdmf_topology_data.append_child(pugi::node_pcdata).set_value(s.c_str());
 
     // Grid/Geometry
     pugi::xml_node xdmf_geom = xdmf_grid.append_child("Geometry");
@@ -289,13 +277,11 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     pugi::xml_node xdmf_geom_data = xdmf_geom.append_child("DataItem");
 
     xdmf_geom_data.append_attribute("Format")="HDF";
-    s.str("");
-    s << num_global_vertices << " 3";
-    xdmf_geom_data.append_attribute("Dimensions") = s.str().c_str();
+    s = boost::lexical_cast<std::string>(num_global_vertices) + " 3";
+    xdmf_geom_data.append_attribute("Dimensions") = s.c_str();
 
-    s.str("");
-    s << hdf5_file->filename << ":" << mc_name;
-    xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
+    s = hdf5_file->filename + ":" + mesh_coords_name;
+    xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.c_str());
 
     // Grid/Attribute (Function value data)
     pugi::xml_node xdmf_vals = xdmf_grid.append_child("Attribute");
@@ -315,16 +301,20 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 
     pugi::xml_node xdmf_data = xdmf_vals.append_child("DataItem");
     xdmf_data.append_attribute("Format") = "HDF";
-    s.str("");
     if(vertex_data)
-      s << num_global_vertices << " " << value_size_io;
+    {
+      s = boost::lexical_cast<std::string>(num_global_vertices) + " "
+          + boost::lexical_cast<std::string>(value_size_io);
+    }
     else
-      s << num_global_cells << " " << value_size_io;
+    {
+      s = boost::lexical_cast<std::string>(num_global_cells) + " "
+          + boost::lexical_cast<std::string>(value_size_io);
+    }
+    xdmf_data.append_attribute("Dimensions") = s.c_str();
 
-    xdmf_data.append_attribute("Dimensions") = s.str().c_str();
-    s.str("");
-    s<< hdf5_file->filename << ":/DataVector/" << counter;
-    xdmf_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
+    s = hdf5_file->filename + ":/DataVector/" + boost::lexical_cast<std::string>(counter);
+    xdmf_data.append_child(pugi::node_pcdata).set_value(s.c_str());
     xml_doc.save_file(filename.c_str(), "  ");
   }
 
@@ -335,18 +325,17 @@ void XDMFFile::operator<<(const Mesh& mesh)
 {
   Timer hdf5timer("HDF5+XDMF Output (mesh)");
 
+  // Write Mesh to HDF5 file
+  dolfin_assert(hdf5_file);
+  hdf5_file->create();
+  *(hdf5_file) << mesh;
+
+  // Get number of local/global cells/vertices
   const uint cell_dim = mesh.topology().dim();
   const uint num_local_cells = mesh.num_cells();
   const uint num_local_vertices = mesh.num_vertices();
   const uint num_global_vertices = MPI::sum(num_local_vertices);
   const uint num_global_cells = MPI::sum(num_local_cells);
-
-  std::string filename_data(HDF5Filename());
-
-  // Create a new HDF5 file and save the mesh
-  HDF5File h5file(filename_data);
-  h5file.create();
-  h5file << mesh;
 
   // Write the XML meta description
   if (MPI::process_number() == 0)
@@ -372,38 +361,30 @@ void XDMFFile::operator<<(const Mesh& mesh)
     xdmf_topology.append_attribute("NumberOfElements") = num_global_cells;
     pugi::xml_node xdmf_topology_data = xdmf_topology.append_child("DataItem");
 
-    xdmf_topology_data.append_attribute("Format") = "HDF";
-    std::stringstream s;
-    s << num_global_cells << " " << (cell_dim + 1);
-    xdmf_topology_data.append_attribute("Dimensions") = s.str().c_str();
+    // String for formatting XML entries
+    std::string s;
 
-    s.str("");
-    s<< filename_data << ":" << h5file.mesh_topo_dataset_name(mesh);
-    xdmf_topology_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
+    xdmf_topology_data.append_attribute("Format") = "HDF";
+    s = boost::lexical_cast<std::string>(num_global_cells) + " "
+          + boost::lexical_cast<std::string>(cell_dim + 1);
+    xdmf_topology_data.append_attribute("Dimensions") = s.c_str();
+
+    s = hdf5_file->filename + ":" + hdf5_file->mesh_topo_dataset_name(mesh);
+    xdmf_topology_data.append_child(pugi::node_pcdata).set_value(s.c_str());
 
     pugi::xml_node xdmf_geom = xdmf_grid.append_child("Geometry");
     xdmf_geom.append_attribute("GeometryType") = "XYZ";
     pugi::xml_node xdmf_geom_data = xdmf_geom.append_child("DataItem");
 
     xdmf_geom_data.append_attribute("Format") = "HDF";
-    s.str("");
-    s << num_global_vertices << " 3";
-    xdmf_geom_data.append_attribute("Dimensions") = s.str().c_str();
+    s = boost::lexical_cast<std::string>(num_global_vertices) + " 3";
+    xdmf_geom_data.append_attribute("Dimensions") = s.c_str();
 
-    s.str("");
-    s << filename_data << ":" << h5file.mesh_coords_dataset_name(mesh);
-    xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
+    s = hdf5_file->filename + ":" + hdf5_file->mesh_coords_dataset_name(mesh);
+    xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.c_str());
 
     xml_doc.save_file(filename.c_str(), "  ");
   }
-}
-//----------------------------------------------------------------------------
-std::string XDMFFile::HDF5Filename() const
-{
-  // Generate .h5 from .xdmf filename
-  boost::filesystem::path p(filename);
-  p.replace_extension(".h5");
-  return p.string();
 }
 //----------------------------------------------------------------------------
 #endif
