@@ -273,7 +273,14 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
           + boost::lexical_cast<std::string>(cell_dim + 1);
     xdmf_topology_data.append_attribute("Dimensions") = s.c_str();
 
-    s = hdf5_file->filename + ":" + mesh_topology_name;
+    // Need to remove path from filename
+    // so that xdmf filenames such as "results/data.xdmf" correctly
+    // index h5 files in the same directory
+
+    boost::filesystem::path p(hdf5->filename);
+    std::string hdf5_short_filename = p.filename().string();
+    
+    s = hdf5_short_filename + ":" + mesh_topology_name;
     xdmf_topology_data.append_child(pugi::node_pcdata).set_value(s.c_str());
 
     // Grid/Geometry
@@ -285,7 +292,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     s = boost::lexical_cast<std::string>(num_global_vertices) + " 3";
     xdmf_geom_data.append_attribute("Dimensions") = s.c_str();
 
-    s = hdf5_file->filename + ":" + mesh_coords_name;
+    s = hdf5_short_filename + ":" + mesh_coords_name;
     xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.c_str());
 
     // Grid/Attribute (Function value data)
@@ -318,7 +325,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     }
     xdmf_data.append_attribute("Dimensions") = s.c_str();
 
-    s = hdf5_file->filename + ":/DataVector/" + boost::lexical_cast<std::string>(counter);
+    s = hdf5_short_filename + ":/DataVector/" + boost::lexical_cast<std::string>(counter);
     xdmf_data.append_child(pugi::node_pcdata).set_value(s.c_str());
 
     // Write XML file
