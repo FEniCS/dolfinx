@@ -186,10 +186,9 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   s << "/DataVector/" << counter;
   h5file.write(data_values[0], data_range, s.str().c_str(), vsize_io);
 
-  // FIXME: Use Boost filesystem to make this platform-independent
   // Remove path from filename_data
-  std::size_t lastslash = filename_data.rfind('/');
-  filename_data.erase(0, lastslash + 1);
+  boost::filesystem::path p(filename_data);
+  filename_data = p.filename().string();
 
   // Write the XML meta description - see http://www.xdmf.org
   if (MPI::process_number() == 0)

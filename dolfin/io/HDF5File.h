@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-09-15
+// Last changed: 2012-09-17
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -116,6 +116,7 @@ namespace dolfin
 
     // Generate HDF5 dataset names for mesh topology and coordinates
     std::string mesh_coords_dataset_name(const Mesh& mesh);
+    std::string mesh_index_dataset_name(const Mesh& mesh);
     std::string mesh_topo_dataset_name(const Mesh& mesh);
 
     // Friend
