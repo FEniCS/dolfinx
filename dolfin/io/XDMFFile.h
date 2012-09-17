@@ -27,7 +27,7 @@
 
 #include <string>
 #include <utility>
-#include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 #include "GenericFile.h"
 
 namespace pugi
@@ -40,6 +40,7 @@ namespace dolfin
 
   // Forward declarations
   class Function;
+  class HDF5File;
   class Mesh;
 
   /// This class supports the output of meshes and functions in XDMF
@@ -60,10 +61,19 @@ namespace dolfin
     /// Destructor
     ~XDMFFile();
 
-    /// Save Mesh to file
+    /// Save a mesh for visualisation, with e.g. ParaView. Creates a HDF5
+    /// file to store the mesh, and a related XDMF file with metadata.
     void operator<<(const Mesh& mesh);
 
-    /// Save Function to file
+    /// Save a Function to XDMF/HDF files for visualisation.
+    /// Downgrading may occur due to collecting the values
+    /// to vertices using compute_vertex_values()
+    ///
+    /// Creates an HDF5 file for storing Mesh and Vertex/Cell Values,
+    /// and an associated XDMF file for metadata.
+    /// Subsequent calls will store additional Vertex/Cell Values
+    /// in the same HDF5 file, and update the XDMF metadata
+    /// to represent a time series.
     void operator<<(const Function& u);
 
     /// Save Function + time stamp to file
@@ -73,6 +83,10 @@ namespace dolfin
 
     // Change file suffix from .xdmf to .h5
     std::string HDF5Filename() const;
+
+    // HDF5 data file
+    boost::scoped_ptr<HDF5File> hdf5_file;
+
 
   };
 
