@@ -57,6 +57,8 @@ using namespace dolfin;
 HDF5File::HDF5File(const std::string filename) : GenericFile(filename, "H5")
 {
   // Do nothing
+
+  // FIXME: Creat file here in constructor
 }
 //-----------------------------------------------------------------------------
 HDF5File::~HDF5File()
@@ -71,6 +73,7 @@ void HDF5File::operator>>(Mesh& input_mesh)
   // List all datasets in the /Mesh folder - should be 3, one starting
   // with "Topology" and one starting with "Coordinates", also "GlobalIndex"
 
+  // FIXME: Use more specific variable names, i.e. not 'listing'
   std::vector<std::string> listing;
   listing = list("/Mesh");
 
@@ -81,7 +84,7 @@ void HDF5File::operator>>(Mesh& input_mesh)
                  "read mesh from file",
                  "Invalid number of Mesh datasets in HDF5 file");
   }
-  
+
   LocalMeshData mesh_data;
   mesh_data.clear();
 
@@ -89,11 +92,14 @@ void HDF5File::operator>>(Mesh& input_mesh)
 
   std::string coords_name("/Mesh/");
   coords_name.append(listing[0]); // hopefully 'Coordinates' - need to make more robust
-  std::pair<uint,uint> coords_dim = dataset_dimensions(coords_name);
+  std::pair<uint, uint> coords_dim = dataset_dimensions(coords_name);
 
+  // FIXME: This looks weird
   const uint num_global_vertices = coords_dim.first;
-  mesh_data.num_global_vertices = num_global_vertices;
+  mesh_data.num_global_vertices  = num_global_vertices;
 
+
+  // FIXME: Document what's going on
   std::pair<uint,uint> vertex_range = MPI::local_range(num_global_vertices);
   uint num_local_vertices = vertex_range.second-vertex_range.first;
   mesh_data.vertex_indices.reserve(num_local_vertices);
@@ -101,13 +107,13 @@ void HDF5File::operator>>(Mesh& input_mesh)
   std::vector<double> data;
   data.reserve(num_local_vertices*3); // Mesh always saved in 3D regardless, so may need to decimate
   read(data[0], vertex_range, coords_name, H5T_NATIVE_DOUBLE, 3);
-  
+
   std::string global_index_name("/Mesh/");
   global_index_name.append(listing[1]); //With luck...
   std::vector<uint> global_index_data;
   global_index_data.reserve(num_local_vertices*2);
   read(global_index_data[0], vertex_range, global_index_name, H5T_NATIVE_INT, 2);
-  
+
   printf("Loading %d vertices\n", num_local_vertices);
 
   for(uint i = 0; i < num_local_vertices; i++)
@@ -116,13 +122,13 @@ void HDF5File::operator>>(Mesh& input_mesh)
     mesh_data.vertex_coordinates.push_back(v);
     mesh_data.vertex_indices.push_back(global_index_data[i*2]);
   }
-  
+
   // Topology
 
   // FIXME: get these from somewhere
   mesh_data.gdim = 2;
   mesh_data.tdim = 2;
-  
+
   std::string topo_name("/Mesh/");
   topo_name.append(listing[2]); // Make this more robust
   std::pair<uint,uint> topo_dim = dataset_dimensions(topo_name);
@@ -141,22 +147,33 @@ void HDF5File::operator>>(Mesh& input_mesh)
   topo_data.reserve(num_local_cells*num_vertices_per_cell);
   read(topo_data[0], cell_range, topo_name, H5T_NATIVE_INT, num_vertices_per_cell);
 
-  const uint vertex_offset = MPI::global_offset(num_local_vertices, true); // this only works if the partitioning is the same as when it was saved, i.e. the same number of processes
-  const uint cell_offset = MPI::global_offset(num_local_cells, true); // this only works if the partitioning is the same as when it was saved, i.e. the same number of processes
+  // FIXME: The same number of processes *does not* guarantee the same
+  // partitioning. At different partitioning might be used, and
+  // partitioners often use a random seed.
 
-  uint ci=cell_offset;
-  for(std::vector<uint>::iterator i = topo_data.begin(); i != topo_data.end(); i += num_vertices_per_cell)
+  // This only works if the partitioning is the same as when it was saved,
+  // i.e. the same number of processes
+  const uint vertex_offset = MPI::global_offset(num_local_vertices, true);
+
+  // This only works if the partitioning is the same as when it was saved,
+  // i.e. the same number of processes
+  const uint cell_offset = MPI::global_offset(num_local_cells, true);
+
+  // FIXME: Do not use i, j, k, etc for iterators. Use meaningful name
+  // FIXME: Use meaningful names, i.e. not 'ci'
+  uint ci = cell_offset;
+  for(std::vector<uint>::iterator i = topo_data.begin();
+          i != topo_data.end(); i += num_vertices_per_cell)
   {
     std::vector<uint> cell;
     mesh_data.global_cell_indices.push_back(ci);
     ci++;
-    
+
     for(uint j = 0; j < num_vertices_per_cell; j++)
     {
-      uint idx = *(i+j)-vertex_offset;
+      uint idx = *(i + j) - vertex_offset;
       cell.push_back(mesh_data.vertex_indices[idx]);
     }
-    
     mesh_data.cell_vertices.push_back(cell);
   }
 
@@ -165,29 +182,28 @@ void HDF5File::operator>>(Mesh& input_mesh)
   s << "MPI: " << MPI::process_number() << std::endl;
   s << "Cells" << std::endl;
 
-  for(uint i=0;i<num_local_cells;i++)
+  for(uint i = 0; i < num_local_cells; i++)
   {
     s << "[" << mesh_data.global_cell_indices[i] << "] ";
-    for(uint j=0;j<num_vertices_per_cell;j++)
+    for(uint j = 0; j < num_vertices_per_cell; j++)
       s << mesh_data.cell_vertices[i][j] << ",";
     s << std::endl;
-    
+
   }
-  
+
   s << "Vertices" << std::endl;
 
-  for(uint i=0;i<num_local_vertices;i++)
+  for(uint i = 0; i < num_local_vertices; i++)
   {
     s << "[" << mesh_data.vertex_indices[i] << "] ";
-    for(uint j=0;j<mesh_data.tdim;j++)
+    for(uint j = 0; j < mesh_data.tdim; j++)
       s << mesh_data.vertex_coordinates[i][j] << ",";
     s << std::endl;
-    
-  }
 
+  }
   std::cout << s.str();
-    
-    
+
+  // Build distributed mesh
   MeshPartitioning::build_distributed_mesh(input_mesh, mesh_data);
 }
 //-----------------------------------------------------------------------------
@@ -214,7 +230,7 @@ void HDF5File::operator<<(const Mesh& mesh)
   std::pair<uint, uint>vertex_range(vertex_offset, vertex_offset + num_local_vertices);
 
   std::vector<uint>global_vertex_indices;
-  
+
   if(MPI::num_processes() == 1)
   {
     for(uint i = 0; i < num_local_vertices; i++)
@@ -222,8 +238,8 @@ void HDF5File::operator<<(const Mesh& mesh)
       global_vertex_indices.push_back(i);
       global_vertex_indices.push_back(0);
     }
-  } 
-  else 
+  }
+  else
   {
     const MeshFunction<uint> gv = mesh.parallel_data().global_entity_indices(0);
     for(uint i = 0; i < gv.size(); i++)
@@ -231,7 +247,7 @@ void HDF5File::operator<<(const Mesh& mesh)
       global_vertex_indices.push_back(gv[i]);
       global_vertex_indices.push_back(MPI::process_number());
     }
-    
+
   }
 
   std::vector<uint> topological_data;
@@ -254,14 +270,13 @@ void HDF5File::operator<<(const Mesh& mesh)
     write(vertex_coords[0], vertex_range, s, 3); //xyz coords
     write(global_vertex_indices[0], vertex_range, mesh_index_dataset_name(mesh),2); // global mapping
   }
-  
+
   s = mesh_topo_dataset_name(mesh);
   if (!exists(s))
   {
     write(topological_data[0], topo_range, s, cell_dim + 1); //connectivity
     add_attribute(s,"celltype", cell_type);
   }
-
 }
 //-----------------------------------------------------------------------------
 void HDF5File::operator<< (const GenericVector& output)
