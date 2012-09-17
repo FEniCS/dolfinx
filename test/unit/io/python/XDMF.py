@@ -41,8 +41,8 @@ class XDMF_Mesh_Output(unittest.TestCase):
         File("mesh.xdmf") << mesh
 
 
-class XDMF_Point_Function_Output(unittest.TestCase):
-    """Test output of point-based Functions to XDMF files"""
+class XDMF_Vertex_Function_Output(unittest.TestCase):
+    """Test output of vertex-based Functions to XDMF files"""
 
     # Disabled because 1D not supported yet
     def xtest_save_1d_scalar(self):
@@ -83,6 +83,20 @@ class XDMF_Point_Function_Output(unittest.TestCase):
         u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
         u.vector()[:] = 1.0
         File("u.xdmf") << u
+
+    def test_save_3d_vector_series(self):
+        mesh = UnitCube(8, 8, 8)
+        u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
+        file = File("u_3D.xdmf")
+
+        u.vector()[:] = 1.0
+        file << u
+
+        u.vector()[:] = 2.0
+        file << u
+
+        u.vector()[:] = 3.0
+        file << u
 
     # FFC fails for tensor spaces in 1D
     #def test_save_1d_tensor(self):
