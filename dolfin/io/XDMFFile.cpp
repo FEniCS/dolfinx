@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-09-15
+// Last changed: 2012-09-17
 
 #ifdef HAS_HDF5
 
@@ -399,7 +399,7 @@ std::string XDMFFile::HDF5Filename() const
 {
   // Generate .h5 from .xdmf filename
   boost::filesystem::path p(filename);
-  p.replace_extension("h5");
+  p.replace_extension(".h5");
   return p.string();
 }
 //----------------------------------------------------------------------------
