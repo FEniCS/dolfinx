@@ -73,6 +73,9 @@ namespace dolfin
 
   private:
 
+    // Friend
+    friend class XDMFFile;
+
     // Create an empty file (truncate if existing)
     void create();
 
@@ -118,8 +121,6 @@ namespace dolfin
     std::string mesh_coords_dataset_name(const Mesh& mesh);
     std::string mesh_topo_dataset_name(const Mesh& mesh);
 
-    // Friend
-    friend class XDMFFile;
   };
 
 }

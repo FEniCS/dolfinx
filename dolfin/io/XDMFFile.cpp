@@ -54,7 +54,10 @@ XDMFFile::XDMFFile(const std::string filename) : GenericFile(filename, "XDMF")
   // Name of HDF5 file
   boost::filesystem::path p(filename);
   p.replace_extension(".h5");
-  const std::string hdf5_filename = p.string();
+  //const std::string hdf5_filename = p.string();
+
+  // Create HDF5 file and save mesh
+  hdf5_file.reset(new HDF5File(p.string()));
 
 }
 //----------------------------------------------------------------------------
@@ -171,19 +174,16 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
       value_size_io = 9;
   }
 
-  // Create HDF5 file and save mesh
-  std::string filename_data(HDF5Filename());
-  HDF5File h5file(filename_data);
-  std::string mc_name = h5file.mesh_coords_dataset_name(mesh);
-  std::string mt_name = h5file.mesh_topo_dataset_name(mesh);
-
+  dolfin_assert(hdf5_file);
+  const std::string mc_name = hdf5_file->mesh_coords_dataset_name(mesh);
+  const std::string mt_name = hdf5_file->mesh_topo_dataset_name(mesh);
   if (counter == 0)
   {
-    h5file.create();
-    h5file << mesh;
+    hdf5_file->create();
+    *(hdf5_file) << mesh;
   }
-  else if (!h5file.exists(mc_name) || !h5file.exists(mt_name))
-    h5file << mesh;
+  else if (!hdf5_file->exists(mc_name) || !hdf5_file->exists(mt_name))
+    *(hdf5_file) << mesh;
 
   // Vertex values are saved in the hdf5 'folder' /DataVector
   // as distinct from /Vector which is used for solution vectors.
@@ -191,12 +191,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   // Save actual data values to HDF5 file
   std::stringstream s("");
   s << "/DataVector/" << counter;
-  h5file.write(data_values[0], data_range, s.str().c_str(), value_size_io);
-
-  // FIXME: Use Boost filesystem to make this platform-independent
-  // Remove path from filename_data
-  std::size_t lastslash = filename_data.rfind('/');
-  filename_data.erase(0, lastslash + 1);
+  hdf5_file->write(data_values[0], data_range, s.str().c_str(), value_size_io);
 
   // Write the XML meta description - see http://www.xdmf.org
   if (MPI::process_number() == 0)
@@ -285,7 +280,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     xdmf_topology_data.append_attribute("Dimensions") = s.str().c_str();
 
     s.str("");
-    s << filename_data << ":" << mt_name;
+    s << hdf5_file->filename << ":" << mt_name;
     xdmf_topology_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
 
     // Grid/Geometry
@@ -299,7 +294,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     xdmf_geom_data.append_attribute("Dimensions") = s.str().c_str();
 
     s.str("");
-    s << filename_data << ":" << mc_name;
+    s << hdf5_file->filename << ":" << mc_name;
     xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
 
     // Grid/Attribute (Function value data)
@@ -319,7 +314,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
       xdmf_vals.append_attribute("Center") = "Cell";
 
     pugi::xml_node xdmf_data = xdmf_vals.append_child("DataItem");
-    xdmf_data.append_attribute("Format")="HDF";
+    xdmf_data.append_attribute("Format") = "HDF";
     s.str("");
     if(vertex_data)
       s << num_global_vertices << " " << value_size_io;
@@ -328,7 +323,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 
     xdmf_data.append_attribute("Dimensions") = s.str().c_str();
     s.str("");
-    s<< filename_data << ":/DataVector/" << counter;
+    s<< hdf5_file->filename << ":/DataVector/" << counter;
     xdmf_data.append_child(pugi::node_pcdata).set_value(s.str().c_str());
     xml_doc.save_file(filename.c_str(), "  ");
   }

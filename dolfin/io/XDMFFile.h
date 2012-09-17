@@ -27,7 +27,7 @@
 
 #include <string>
 #include <utility>
-#include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 #include "GenericFile.h"
 
 namespace pugi
@@ -40,6 +40,7 @@ namespace dolfin
 
   // Forward declarations
   class Function;
+  class HDF5File;
   class Mesh;
 
   /// This class supports the output of meshes and functions in XDMF
@@ -82,6 +83,10 @@ namespace dolfin
 
     // Change file suffix from .xdmf to .h5
     std::string HDF5Filename() const;
+
+    // HDF5 data file
+    boost::scoped_ptr<HDF5File> hdf5_file;
+
 
   };
 
