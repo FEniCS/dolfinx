@@ -18,7 +18,7 @@
 // Split from VTKPlotter.h, Joachim B Haga, 2012-09-10
 //
 // First added:  2012-09-10
-// Last changed: 2012-09-14
+// Last changed: 2012-09-16
 
 #ifdef HAS_VTK
 
@@ -332,7 +332,11 @@ std::string VTKWindowOutputStage::get_window_title()
 //----------------------------------------------------------------------------
 QVTKWidget *VTKWindowOutputStage::get_widget() const
 {
+#ifdef HAS_QVTK
   return widget.get();
+#else
+  return NULL;
+#endif
 }
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::close_window()

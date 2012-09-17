@@ -726,10 +726,9 @@ namespace dolfin
   class VTKWindowOutputStage {}; // dummy class
 }
 
-template <class T>
-VTKPlotter::VTKPlotter(boost::shared_ptr<T> t) { init(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> e,
-		       boost::shared_ptr<const Mesh> mesh)  { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const Variable>, QVTKWidget*) { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression>,
+		       boost::shared_ptr<const Mesh>, QVTKWidget*)  { init(); }
 VTKPlotter::~VTKPlotter() {}
 
 // (Ab)use init() to issue a warning.
@@ -744,6 +743,7 @@ void VTKPlotter::init()
 void VTKPlotter::plot         (boost::shared_ptr<const Variable>) {}
 void VTKPlotter::interactive  (bool)                              {}
 void VTKPlotter::write_png    (std::string)                       {}
+void VTKPlotter::write_pdf    (std::string)                       {}
 void VTKPlotter::azimuth      (double)                            {}
 void VTKPlotter::elevate      (double)                            {}
 void VTKPlotter::dolly        (double)                            {}

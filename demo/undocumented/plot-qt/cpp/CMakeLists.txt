@@ -42,7 +42,7 @@ if (VTK_FOUND)
   find_library(QVTK_FOUND QVTK HINTS ${VTK_LIBRARY_DIRS})
 endif()
 
-if (QT_FOUND AND QVTK_FOUND)
+if (DOLFIN_ENABLE_QT AND QT_FOUND AND DOLFIN_ENABLE_VTK AND QVTK_FOUND)
 
   # Define headers to run moc on
   qt4_wrap_cpp(HEADERS_MOC ${HEADERS})
@@ -55,7 +55,7 @@ if (QT_FOUND AND QVTK_FOUND)
 
 else()
 
-  message(WARNING "QVTK not installed, not building " ${PROJECT_NAME})
+  message(WARNING "Qt / QVTK not enabled, not building " ${PROJECT_NAME})
 
 endif()
 
