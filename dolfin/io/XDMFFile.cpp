@@ -95,12 +95,6 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   const uint cell_dim = mesh.topology().dim();
   uint value_size_io = value_size; // output size may be padded 2D -> 3D for paraview
 
-  // Test for cell-centred data
-  uint cell_based_dim = 1;
-  for (uint i = 0; i < value_rank; i++)
-    cell_based_dim *= cell_dim;
-  const bool vertex_data = !(dofmap.max_cell_dimension() == cell_based_dim);
-
   // Throw error for higher rank tensors
   if (value_rank > 2)
   {
@@ -117,6 +111,12 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
                  "Output of 1D datasets not supported");
   }
 
+  // Test for cell-centred data
+  uint cell_based_dim = 1;
+  for (uint i = 0; i < value_rank; i++)
+    cell_based_dim *= cell_dim;
+  const bool vertex_data = !(dofmap.max_cell_dimension() == cell_based_dim);
+
   // Get number of local/global cells/vertices
   // FIXME: num_global_vertices is not correct
   const uint num_local_cells = mesh.num_cells();
@@ -124,7 +124,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   const uint num_global_vertices = MPI::sum(num_local_vertices);
   const uint num_global_cells = MPI::sum(num_local_cells);
 
-  // Get Function data
+  // Get Function data at vertices/cell centres
   std::vector<double> data_values;
   uint num_local_entities = 0;
   if (vertex_data)
@@ -143,8 +143,8 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   const uint offset = MPI::global_offset(num_local_entities, true);
   const std::pair<uint, uint> data_range(offset, offset + num_local_entities);
 
-  // Need to interleave the values (e.g. if vector or tensor field)
-  // Also pad 2D vectors and tensors to 3D
+  // Interleave the values for vector or tensor fields and pad 2D vectors
+  // and tensors to 3D
   if (value_rank > 0)
   {
     if (value_size == 2)
@@ -159,21 +159,24 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
       for (uint j = 0; j < value_size; j++)
       {
         tmp.push_back(data_values[i + j*num_local_entities]);
-        if(j == 1 && value_size == 4)
+        if (j == 1 && value_size == 4)
           tmp.push_back(0.0);
       }
       if (value_size == 2)    // 2D -> 3D vector
         tmp.push_back(0.0);
-      if(value_size == 4) // 2D -> 3D tensor
+      if (value_size == 4)    // 2D -> 3D tensor
         tmp.insert(tmp.end(), 4, 0.0);
     }
     data_values.resize(tmp.size()); // 2D->3D padding increases size
     std::copy(tmp.begin(), tmp.end(), data_values.begin());
   }
 
+  // Get names of mesh data sets used in the HDF5 file
   dolfin_assert(hdf5_file);
   const std::string mesh_coords_name = hdf5_file->mesh_coords_dataset_name(mesh);
   const std::string mesh_topology_name = hdf5_file->mesh_topo_dataset_name(mesh);
+
+  // Write mesh to HDF5 file
   if (counter == 0)
     *(hdf5_file) << mesh;
   else if (!hdf5_file->exists(mesh_coords_name) || !hdf5_file->exists(mesh_topology_name))
@@ -185,11 +188,11 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   // Vertex values are saved in the hdf5 'folder' /DataVector
   // as distinct from /Vector which is used for solution vectors.
 
-  // Save actual data values to HDF5 file
+  // Save data values to HDF5 file
   s = "/DataVector/" + boost::lexical_cast<std::string>(counter);
   hdf5_file->write(data_values[0], data_range, s.c_str(), value_size_io);
 
-  // Write the XML meta description - see http://www.xdmf.org
+  // Write the XML meta description (see http://www.xdmf.org) on process 0
   if (MPI::process_number() == 0)
   {
     pugi::xml_document xml_doc;
@@ -317,9 +320,12 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 
     s = hdf5_file->filename + ":/DataVector/" + boost::lexical_cast<std::string>(counter);
     xdmf_data.append_child(pugi::node_pcdata).set_value(s.c_str());
-    xml_doc.save_file(filename.c_str(), "  ");
+
+    // Write XML file
+    xml_doc.save_file(filename.c_str(), "    ");
   }
 
+  // Increment counter
   counter++;
 }
 //----------------------------------------------------------------------------
@@ -333,15 +339,20 @@ void XDMFFile::operator<<(const Mesh& mesh)
   *(hdf5_file) << mesh;
 
   // Get number of local/global cells/vertices
-  const uint cell_dim = mesh.topology().dim();
   const uint num_local_cells = mesh.num_cells();
   const uint num_local_vertices = mesh.num_vertices();
   const uint num_global_vertices = MPI::sum(num_local_vertices);
   const uint num_global_cells = MPI::sum(num_local_cells);
 
-  // Write the XML meta description
+  // Write the XML meta description on process zero
   if (MPI::process_number() == 0)
   {
+    const uint cell_dim = mesh.topology().dim();
+    if (cell_dim == 2)
+      xdmf_topology.append_attribute("TopologyType") = "Triangle";
+    else if (cell_dim == 3)
+      xdmf_topology.append_attribute("TopologyType") = "Tetrahedron";
+
     pugi::xml_document xml_doc;
 
     xml_doc.append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
@@ -354,12 +365,6 @@ void XDMFFile::operator<<(const Mesh& mesh)
     xdmf_grid.append_attribute("GridType") = "Uniform";
 
     pugi::xml_node xdmf_topology = xdmf_grid.append_child("Topology");
-
-    if (cell_dim == 2)
-      xdmf_topology.append_attribute("TopologyType") = "Triangle";
-    else if (cell_dim == 3)
-      xdmf_topology.append_attribute("TopologyType") = "Tetrahedron";
-
     xdmf_topology.append_attribute("NumberOfElements") = num_global_cells;
     pugi::xml_node xdmf_topology_data = xdmf_topology.append_child("DataItem");
 
@@ -385,7 +390,7 @@ void XDMFFile::operator<<(const Mesh& mesh)
     s = hdf5_file->filename + ":" + hdf5_file->mesh_coords_dataset_name(mesh);
     xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.c_str());
 
-    xml_doc.save_file(filename.c_str(), "  ");
+    xml_doc.save_file(filename.c_str(), "    ");
   }
 }
 //----------------------------------------------------------------------------
