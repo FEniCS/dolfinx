@@ -80,12 +80,12 @@ namespace dolfin
     void create();
 
     // Write functions for int, double, etc. Used by XDMFFile
-    void write(const double& data,
+    void write(const std::vector<double>& data,
                const std::pair<uint, uint>& range,
                const std::string& dataset_name,
                const uint width);
 
-    void write(const uint& data,
+    void write(const std::vector<uint>& data,
                const std::pair<uint, uint>& range,
                const std::string& dataset_name,
                const uint width);
