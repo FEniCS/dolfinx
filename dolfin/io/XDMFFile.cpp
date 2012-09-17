@@ -141,12 +141,17 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 
   // FIXME: Should this be in the HDF5 code
   const uint offset = MPI::global_offset(num_local_entities, true);
-  const std::pair<uint,uint> data_range(offset, offset + num_local_entities);
+  const std::pair<uint, uint> data_range(offset, offset + num_local_entities);
 
   // Need to interleave the values (e.g. if vector or tensor field)
   // Also pad 2D vectors and tensors to 3D
   if (value_rank > 0)
   {
+    if (value_size == 2)
+      value_size_io = 3;
+    if (value_size == 4)
+      value_size_io = 9;
+
     std::vector<double> tmp;
     tmp.reserve(value_size*num_local_entities);
     for(uint i = 0; i < num_local_entities; i++)
@@ -164,11 +169,6 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     }
     data_values.resize(tmp.size()); // 2D->3D padding increases size
     std::copy(tmp.begin(), tmp.end(), data_values.begin());
-
-    if (value_size == 2)
-      value_size_io = 3;
-    if (value_size == 4)
-      value_size_io = 9;
   }
 
   dolfin_assert(hdf5_file);
@@ -246,12 +246,14 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
           + boost::str((boost::format("%d") % time_step));
     xdmf_timedata.first_child().set_value(s.c_str());
 
-
     //    /Xdmf/Domain/Grid/Grid - the actual data for this timestep
     pugi::xml_node xdmf_grid = xdmf_timegrid.append_child("Grid");
     s = u.name() + "_" + boost::lexical_cast<std::string>(counter);
     xdmf_grid.append_attribute("Name") = s.c_str();
     xdmf_grid.append_attribute("GridType") = "Uniform";
+
+
+    // FIXME: Add option to re-write mesh
 
     // Grid/Topology
     pugi::xml_node xdmf_topology = xdmf_grid.append_child("Topology");
