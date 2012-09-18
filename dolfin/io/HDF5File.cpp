@@ -70,16 +70,13 @@ void HDF5File::operator>>(Mesh& input_mesh)
 {
   // FIXME: Figure out how to handle multiple meshes in file
 
-  // List all datasets in the /Mesh folder - should be 3, one starting
-  // with "Topology" and one starting with "Coordinates", also "GlobalIndex"
+  // Get list all datasets in the /Mesh folder
+  std::vector<std::string> _dataset_list = dataset_list("/Mesh");
 
-  // FIXME: Use more specific variable names, i.e. not 'listing'
-  std::vector<std::string> listing;
-  listing = list("/Mesh");
-
-  // FIXME: Document
   // TODO: should do a more comprehensive check
-  if(listing.size() != 3)
+  // Check that there are thres data sets (should be starting with
+  // "Topology", "Coordinates" and "GlobalIndex"
+  if(_dataset_list.size() != 3)
   {
     dolfin_error("HDF5File.cpp",
                  "read mesh from file",
@@ -92,7 +89,8 @@ void HDF5File::operator>>(Mesh& input_mesh)
 
   // Coordinates
   std::string coords_name("/Mesh/");
-  coords_name.append(listing[0]); // hopefully 'Coordinates' - need to make more robust
+  // FIXME:  // hopefully 'Coordinates' - need to make more robust
+  coords_name.append(_dataset_list[0]);
   std::pair<uint, uint> coords_dim = dataset_dimensions(coords_name);
 
   // FIXME: This looks weird
@@ -109,7 +107,8 @@ void HDF5File::operator>>(Mesh& input_mesh)
   read(data[0], vertex_range, coords_name, H5T_NATIVE_DOUBLE, 3);
 
   std::string global_index_name("/Mesh/");
-  global_index_name.append(listing[1]); //With luck...
+  // FIXME: With luck...
+  global_index_name.append(_dataset_list[1]);
   std::vector<uint> global_index_data;
   global_index_data.reserve(num_local_vertices*2);
   read(global_index_data[0], vertex_range, global_index_name, H5T_NATIVE_INT, 2);
@@ -130,8 +129,10 @@ void HDF5File::operator>>(Mesh& input_mesh)
   mesh_data.tdim = 2;
 
   std::string topo_name("/Mesh/");
-  topo_name.append(listing[2]); // Make this more robust
-  std::pair<uint,uint> topo_dim = dataset_dimensions(topo_name);
+  // FIXME: Make this more robust
+  // FIXME: Use better names, i.e. not 'topo'
+  topo_name.append(_dataset_list[2]);
+  std::pair<uint, uint> topo_dim = dataset_dimensions(topo_name);
 
   const uint num_global_cells = topo_dim.first;
   mesh_data.num_global_cells = num_global_cells;
@@ -530,7 +531,7 @@ void HDF5File::write(const std::vector<T>& data,
   dolfin_assert(status != HDF5_FAIL);
 }
 //-----------------------------------------------------------------------------
-bool HDF5File::exists(const std::string dataset_name)
+bool HDF5File::exists(const std::string dataset_name) const
 {
   MPICommunicator comm;
   MPIInfo info;
@@ -555,13 +556,13 @@ bool HDF5File::exists(const std::string dataset_name)
   status = H5Eset_auto(NULL, NULL);
   dolfin_assert(status != HDF5_FAIL);
 
-  //try to open dataset - returns HDF5_FAIL if non-existent
+  // try to open dataset - returns HDF5_FAIL if non-existent
   hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
 
   if(dset_id != HDF5_FAIL)
     H5Dclose(dset_id);
 
-  //re-enable error reporting
+  // re-enable error reporting
   status = H5Eset_auto(old_func, old_client_data);
   dolfin_assert(status != HDF5_FAIL);
 
@@ -571,7 +572,7 @@ bool HDF5File::exists(const std::string dataset_name)
   return (dset_id != HDF5_FAIL);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::string> HDF5File::list(const std::string group_name)
+std::vector<std::string> HDF5File::dataset_list(const std::string group_name) const
 {
   char namebuf[HDF5_MAXSTRLEN];
 
@@ -617,7 +618,7 @@ std::vector<std::string> HDF5File::list(const std::string group_name)
   return lvec;
 }
 //-----------------------------------------------------------------------------
-std::pair<uint, uint> HDF5File::dataset_dimensions(const std::string dataset_name)
+std::pair<uint, uint> HDF5File::dataset_dimensions(const std::string dataset_name) const
 {
   // Get dimensions of a 2D dataset
 
@@ -699,7 +700,7 @@ void HDF5File::add_attribute(const std::string dataset_name,
 }
 //-----------------------------------------------------------------------------
 std::string HDF5File::get_attribute(const std::string dataset_name,
-                                    const std::string attribute_name)
+                                    const std::string attribute_name) const
 {
   MPICommunicator comm;
   MPIInfo info;
@@ -745,7 +746,7 @@ std::string HDF5File::get_attribute(const std::string dataset_name,
   return std::string(&str[0]);
 }
 //-----------------------------------------------------------------------------
-std::string HDF5File::mesh_coords_dataset_name(const Mesh& mesh)
+std::string HDF5File::mesh_coords_dataset_name(const Mesh& mesh) const
 {
   std::stringstream mc_name;
   mc_name << "/Mesh/Coordinates_" << std::setfill('0')
@@ -753,7 +754,7 @@ std::string HDF5File::mesh_coords_dataset_name(const Mesh& mesh)
   return mc_name.str();
 }
 //-----------------------------------------------------------------------------
-std::string HDF5File::mesh_index_dataset_name(const Mesh& mesh)
+std::string HDF5File::mesh_index_dataset_name(const Mesh& mesh) const
 {
   std::stringstream mc_name;
   mc_name << "/Mesh/GlobalIndex_" << std::setfill('0')
@@ -761,7 +762,7 @@ std::string HDF5File::mesh_index_dataset_name(const Mesh& mesh)
   return mc_name.str();
 }
 //-----------------------------------------------------------------------------
-std::string HDF5File::mesh_topo_dataset_name(const Mesh& mesh)
+std::string HDF5File::mesh_topo_dataset_name(const Mesh& mesh) const
 {
   std::stringstream mc_name;
   mc_name << "/Mesh/Topology_" << std::setfill('0')
