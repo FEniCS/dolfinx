@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-09-17
+// Last changed: 2012-09-18
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -87,6 +87,12 @@ namespace dolfin
     // width: is the width of the data item (dim 1, e.g. 3 for x, y, z data)
     void write(const std::vector<double>& data,
                const std::pair<uint, uint> range,
+               const std::string dataset_name, const uint width);
+
+    // Write data to existing HDF file contiguously from each process
+    // the range being set by the data size
+    // width: is the width of the data item (dim 1, e.g. 3 for x, y, z data)
+    void write(const std::vector<double>& data,
                const std::string dataset_name, const uint width);
 
     // Write data to existing HDF file as defined by range blocks on each

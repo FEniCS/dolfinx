@@ -192,11 +192,8 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   // as distinct from /Vector which is used for solution vectors.
 
   // Save data values to HDF5 file
-  // FIXME: Should this be in the HDF5 code?
-  const uint offset = MPI::global_offset(num_local_entities, true);
-  const std::pair<uint, uint> data_range(offset, offset + num_local_entities);
   s = "/DataVector/" + boost::lexical_cast<std::string>(counter);
-  hdf5_file->write(data_values, data_range, s.c_str(), value_size_io);
+  hdf5_file->write(data_values, s.c_str(), value_size_io);
 
   // Write the XML meta description (see http://www.xdmf.org) on process 0
   if (MPI::process_number() == 0)

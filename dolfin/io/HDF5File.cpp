@@ -145,7 +145,7 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
 
   // Get cell connectivity
   // NOTE: For visualisation via XDMF, the vertex indices correspond
-  //       to the local vertex poistion, and not the true vertex indices.
+  //       to the local vertex position, and not the true vertex indices.
   std::vector<uint> topological_data;
   if (true_topology_indices)
   {
@@ -325,6 +325,18 @@ void HDF5File::read(std::vector<T>& data,  const std::pair<uint, uint> range,
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 }
+//-----------------------------------------------------------------------------
+void HDF5File::write(const std::vector<double>& data,
+                     const std::string dataset_name,
+                     const uint width)
+{
+  // Write data contiguously from each process 
+  uint num_items = data.size()/width;
+  uint offset = MPI::global_offset(num_items,true);
+  std::pair<uint,uint> range(offset, offset + num_items);
+  write(data, range, dataset_name, H5T_NATIVE_DOUBLE, width);
+}
+
 //-----------------------------------------------------------------------------
 void HDF5File::write(const std::vector<double>& data,
                      const std::pair<uint, uint> range,
@@ -662,8 +674,14 @@ std::string HDF5File::get_attribute(const std::string dataset_name,
   status = H5Tset_size(memtype,string_length);
   dolfin_assert(status != HDF5_FAIL);
 
+  // Close attribute type
+  status = H5Tclose(attr_type);
+  dolfin_assert(status != HDF5_FAIL);
+  
   // FIXME: messy
-  // Copy string value
+  // Copy string value into temporary vector
+  // std::vector::data can be copied into
+  // (std::string::data cannot)
   std::vector<char> attribute_value(string_length);
   status = H5Aread(attr_id, memtype, attribute_value.data());
 
