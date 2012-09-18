@@ -70,148 +70,11 @@ HDF5File::~HDF5File()
 //-----------------------------------------------------------------------------
 void HDF5File::operator>>(Mesh& input_mesh)
 {
-  // FIXME: Figure out how to handle multiple meshes in file
 
-  // Get list all datasets in the /Mesh folder
-  std::vector<std::string> _dataset_list = dataset_list("/Mesh");
+  dolfin_error("HDF5File.cpp",
+               "read mesh from file",
+               "Mesh input is not supported yet");
 
-  // TODO: should do a more comprehensive check
-  // Check that there are thres data sets (should be starting with
-  // "Topology", "Coordinates" and "GlobalIndex"
-  if(_dataset_list.size() != 3)
-  {
-    dolfin_error("HDF5File.cpp",
-                 "read mesh from file",
-                 "Invalid number of Mesh datasets in HDF5 file");
-  }
-
-  // FIXME: Is this function only for distributed meshes?
-  LocalMeshData mesh_data;
-  mesh_data.clear();
-
-  // Coordinates
-  std::string coords_name("/Mesh/");
-  // FIXME:  // hopefully 'Coordinates' - need to make more robust
-  coords_name.append(_dataset_list[0]);
-  std::pair<uint, uint> coords_dim = dataset_dimensions(coords_name);
-
-  // FIXME: This looks weird
-  const uint num_global_vertices = coords_dim.first;
-  mesh_data.num_global_vertices  = num_global_vertices;
-
-  // FIXME: Document what's going on
-  const std::pair<uint, uint> vertex_range = MPI::local_range(num_global_vertices);
-  uint num_local_vertices = vertex_range.second-vertex_range.first;
-  mesh_data.vertex_indices.reserve(num_local_vertices);
-  std::cout << "Reserved space for " << num_local_vertices << " vertices" << std::endl;
-  std::vector<double> data;
-
-  // FIXME: This looks seriously broken HDF5::read does not resize data
-  data.reserve(num_local_vertices*3); // Mesh always saved in 3D regardless, so may need to decimate
-  read(data, vertex_range, coords_name, H5T_NATIVE_DOUBLE, 3);
-
-  std::string global_index_name("/Mesh/");
-  // FIXME: With luck...
-  global_index_name.append(_dataset_list[1]);
-  std::vector<uint> global_index_data;
-
-  // FIXME: This looks seriously broken HDF5::read does not resize data
-  global_index_data.reserve(num_local_vertices*2);
-  read(global_index_data, vertex_range, global_index_name, H5T_NATIVE_INT, 2);
-
-  printf("Loading %d vertices\n", num_local_vertices);
-
-  for(uint i = 0; i < num_local_vertices; i++)
-  {
-    std::vector<double> v(&data[i*3], &data[i*3 + coords_dim.second]); // copy correct width (2D or 3D)
-    mesh_data.vertex_coordinates.push_back(v);
-    mesh_data.vertex_indices.push_back(global_index_data[i*2]);
-  }
-
-  // Topology
-
-  // FIXME: get these from somewhere
-  mesh_data.gdim = 2;
-  mesh_data.tdim = 2;
-
-  std::string topo_name("/Mesh/");
-  // FIXME: Make this more robust
-  // FIXME: Use better names, i.e. not 'topo'
-  topo_name.append(_dataset_list[2]);
-  std::pair<uint, uint> topo_dim = dataset_dimensions(topo_name);
-
-  const uint num_global_cells = topo_dim.first;
-  mesh_data.num_global_cells = num_global_cells;
-
-  std::pair<uint,uint> cell_range = MPI::local_range(num_global_cells);
-  uint num_local_cells = cell_range.second-cell_range.first;
-  mesh_data.global_cell_indices.reserve(num_local_cells);
-  mesh_data.cell_vertices.reserve(num_local_cells);
-  uint num_vertices_per_cell = topo_dim.second;
-  mesh_data.num_vertices_per_cell = num_vertices_per_cell;
-
-  std::vector<uint> topo_data(num_local_cells*num_vertices_per_cell);
-
-  // FIXME: This looks seriously broken HDF5::read does not resize data
-  topo_data.reserve(num_local_cells*num_vertices_per_cell);
-  read(topo_data, cell_range, topo_name, H5T_NATIVE_INT, num_vertices_per_cell);
-
-  // FIXME: The same number of processes *does not* guarantee the same
-  // partitioning. At different partitioning might be used, and
-  // partitioners often use a random seed.
-
-  // This only works if the partitioning is the same as when it was saved,
-  // i.e. the same number of processes
-  const uint vertex_offset = MPI::global_offset(num_local_vertices, true);
-
-  // This only works if the partitioning is the same as when it was saved,
-  // i.e. the same number of processes
-  const uint cell_offset = MPI::global_offset(num_local_cells, true);
-
-  // FIXME: Do not use i, j, k, etc for iterators. Use meaningful name
-  // FIXME: Use meaningful names, i.e. not 'ci'
-  uint ci = cell_offset;
-  for(std::vector<uint>::iterator i = topo_data.begin();
-          i != topo_data.end(); i += num_vertices_per_cell)
-  {
-    std::vector<uint> cell;
-    mesh_data.global_cell_indices.push_back(ci);
-    ci++;
-
-    for(uint j = 0; j < num_vertices_per_cell; j++)
-    {
-      uint idx = *(i + j) - vertex_offset;
-      cell.push_back(mesh_data.vertex_indices[idx]);
-    }
-    mesh_data.cell_vertices.push_back(cell);
-  }
-
-  std::stringstream s;
-  s << "MPI: " << MPI::process_number() << std::endl;
-  s << "Cells" << std::endl;
-
-  for(uint i = 0; i < num_local_cells; i++)
-  {
-    s << "[" << mesh_data.global_cell_indices[i] << "] ";
-    for(uint j = 0; j < num_vertices_per_cell; j++)
-      s << mesh_data.cell_vertices[i][j] << ",";
-    s << std::endl;
-
-  }
-
-  s << "Vertices" << std::endl;
-  for(uint i = 0; i < num_local_vertices; i++)
-  {
-    s << "[" << mesh_data.vertex_indices[i] << "] ";
-    for(uint j = 0; j < mesh_data.tdim; j++)
-      s << mesh_data.vertex_coordinates[i][j] << ",";
-    s << std::endl;
-
-  }
-  std::cout << s.str();
-
-  // Build distributed mesh
-  MeshPartitioning::build_distributed_mesh(input_mesh, mesh_data);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::operator<<(const Mesh& mesh)
@@ -590,28 +453,29 @@ bool HDF5File::dataset_exists(const std::string dataset_name) const
   status = H5Pclose(plist_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  // disable error reporting
+  // Disable error reporting
   herr_t (*old_func)(void*);
   void *old_client_data;
   H5Eget_auto(&old_func, &old_client_data);
 
-  // redirect error reporting (to none)
+  // Redirect error reporting (to none)
   status = H5Eset_auto(NULL, NULL);
   dolfin_assert(status != HDF5_FAIL);
 
-  // try to open dataset - returns HDF5_FAIL if non-existent
+  // Try to open dataset - returns HDF5_FAIL if non-existent
   hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
-
   if(dset_id != HDF5_FAIL)
     H5Dclose(dset_id);
 
-  // re-enable error reporting
+  // Re-enable error reporting
   status = H5Eset_auto(old_func, old_client_data);
   dolfin_assert(status != HDF5_FAIL);
 
+  // Close file
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 
+  // Return true if dataset exists
   return (dset_id != HDF5_FAIL);
 }
 //-----------------------------------------------------------------------------
@@ -632,40 +496,38 @@ std::vector<std::string> HDF5File::dataset_list(const std::string group_name) co
   hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
   dolfin_assert(file_id != HDF5_FAIL);
 
-  // FIXME: document
   // Release file-access template 
   status = H5Pclose(plist_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  // FIXME: document
+  // Open group by name group_name
   hid_t group_id = H5Gopen(file_id,group_name.c_str());
   dolfin_assert(group_id != HDF5_FAIL);
 
-  // count how many datasets in the group
-  hsize_t num_obj;
-  status = H5Gget_num_objs(group_id, &num_obj);
+  // Count how many datasets in the group
+  hsize_t num_datasets;
+  status = H5Gget_num_objs(group_id, &num_datasets);
   dolfin_assert(status != HDF5_FAIL);
 
-  // FIXME: document
-  std::vector<std::string> lvec;
+  // Iterate through group collecting all dataset names
+  std::vector<std::string> list_of_datasets;
   std::string str;
-  // go through all objects
-  for(hsize_t i=0; i<num_obj; i++)
+  for(hsize_t i=0; i<num_datasets; i++)
   {
     H5Gget_objname_by_idx(group_id, i, namebuf, HDF5_MAXSTRLEN);
     str=namebuf;
-    lvec.push_back(str);
+    list_of_datasets.push_back(str);
   }
 
-  // FIXME: document
+  // Close group
   status = H5Gclose(group_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  // FIXME: document
+  // Close file
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  return lvec;
+  return list_of_datasets;
 }
 //-----------------------------------------------------------------------------
 std::pair<uint, uint> HDF5File::dataset_dimensions(const std::string dataset_name) const
@@ -690,25 +552,25 @@ std::pair<uint, uint> HDF5File::dataset_dimensions(const std::string dataset_nam
   hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
   dolfin_assert(file_id != HDF5_FAIL);
 
-  // FIXME: document
   // Release file-access template 
   status = H5Pclose(plist_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  // FIXME: document
+  // Open named dataset
   hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
   dolfin_assert(dset_id != HDF5_FAIL);
 
-  // Create a file dataspace independently
+  // Get the dataspace of the dataset 
   space = H5Dget_space(dset_id);
+  // Enquire dimensions of the dataspace
   ndims = H5Sget_simple_extent_dims(space, cur_size, max_size);
   dolfin_assert(ndims == 2);
 
-  // close dataset collectively
+  // Close dataset collectively
   status = H5Dclose(dset_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  // FIXME: document
+  // Close file
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 
@@ -732,34 +594,36 @@ void HDF5File::add_attribute(const std::string dataset_name,
   hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
   dolfin_assert(file_id != HDF5_FAIL);
 
-  // FIXME: document
   // Release file-access template 
   status = H5Pclose(plist_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  // FIXME: document
+  // Open named dataset
   hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
   dolfin_assert(dset_id != HDF5_FAIL);
 
-  // add string attribute
-  // FIXME: document better
-  hid_t datatype_id = H5Tcopy (H5T_C_S1);
-  status = H5Tset_size (datatype_id, attribute_value.size());
+  // Add string attribute to dataset
+  // Copy basic string type from HDF5 types
+  hid_t datatype_id = H5Tcopy(H5T_C_S1);
+  // Set length of string and create a scalar dataspace to hold it
+  status = H5Tset_size(datatype_id, attribute_value.size());
   hid_t dataspaces_id = H5Screate (H5S_SCALAR);
-  hid_t attribute_id = H5Acreate (dset_id, attribute_name.c_str(), datatype_id,
+  // Create attribute in the dataspace with the given string
+  hid_t attribute_id = H5Acreate(dset_id, attribute_name.c_str(), datatype_id,
                                   dataspaces_id, H5P_DEFAULT);
+  // Write attribute to dataset
   status = H5Awrite(attribute_id, datatype_id, attribute_value.c_str());
   dolfin_assert(status != HDF5_FAIL);
 
-  // FIXME: document
+  // Close attribute
   status = H5Aclose(attribute_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  // close dataset collectively
+  // Close dataset 
   status = H5Dclose(dset_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  // FIXME: document
+  // Close file
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 }
@@ -780,41 +644,40 @@ std::string HDF5File::get_attribute(const std::string dataset_name,
   hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
   dolfin_assert(file_id != HDF5_FAIL);
 
-  // FIXME: document
   // Release file-access template 
   status = H5Pclose(plist_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  // FIXME: document
+  // Open dataset by name
   hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
   dolfin_assert(dset_id != HDF5_FAIL);
 
-  // FIXME: document
+  // Open attribute by name and get its type
   hid_t attr_id = H5Aopen(dset_id, attribute_name.c_str(), H5P_DEFAULT);
-  hid_t filetype = H5Aget_type(attr_id);
-  int slen = H5Tget_size(filetype);
-  slen++;
+  hid_t attr_type = H5Aget_type(attr_id);
 
-  //  hid_t space_id = H5Aget_space(attr_id);
-  hid_t memtype = H5Tcopy (H5T_C_S1);
+  // FIXME: should check here that it is of string type... how?
 
-  // FIXME: document
-  status = H5Tset_size(memtype,slen);
+  // Copy string type from HDF5 types and set length accordingly
+  hid_t memtype = H5Tcopy(H5T_C_S1);
+  int string_length = H5Tget_size(attr_type)+1;
+  status = H5Tset_size(memtype,string_length);
   dolfin_assert(status != HDF5_FAIL);
 
-  // FIXME: document
-  std::vector<char> str(slen);
+  // FIXME: messy
+  // Copy string to local 
+  std::vector<char> str(string_length);
   status = H5Aread(attr_id, memtype, &str[0]);
 
-  // FIXME: document
+  // Close attribute
   status = H5Aclose(attr_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  // close dataset collectively
+  // Close dataset 
   status = H5Dclose(dset_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  // FIXME: document
+  // Close file
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 
