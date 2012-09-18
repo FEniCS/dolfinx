@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-09-17
+// Last changed: 2012-09-18
 
 #ifdef HAS_HDF5
 
@@ -748,26 +748,26 @@ std::string HDF5File::get_attribute(const std::string dataset_name,
 //-----------------------------------------------------------------------------
 std::string HDF5File::mesh_coords_dataset_name(const Mesh& mesh) const
 {
-  std::stringstream mc_name;
-  mc_name << "/Mesh/Coordinates_" << std::setfill('0')
+  std::stringstream dataset_name;
+  dataset_name << "/Mesh/Coordinates_" << std::setfill('0')
           << std::hex << std::setw(8) << mesh.coordinates_hash();
-  return mc_name.str();
+  return dataset_name.str();
 }
 //-----------------------------------------------------------------------------
 std::string HDF5File::mesh_index_dataset_name(const Mesh& mesh) const
 {
-  std::stringstream mc_name;
-  mc_name << "/Mesh/GlobalIndex_" << std::setfill('0')
+  std::stringstream dataset_name;
+  dataset_name << "/Mesh/GlobalIndex_" << std::setfill('0')
           << std::hex << std::setw(8) << mesh.coordinates_hash();
-  return mc_name.str();
+  return dataset_name.str();
 }
 //-----------------------------------------------------------------------------
 std::string HDF5File::mesh_topo_dataset_name(const Mesh& mesh) const
 {
-  std::stringstream mc_name;
-  mc_name << "/Mesh/Topology_" << std::setfill('0')
+  std::stringstream dataset_name;
+  dataset_name << "/Mesh/Topology_" << std::setfill('0')
           << std::hex << std::setw(8) << mesh.topology_hash();
-  return mc_name.str();
+  return dataset_name.str();
 }
 //-----------------------------------------------------------------------------
 
