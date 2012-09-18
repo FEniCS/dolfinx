@@ -27,7 +27,6 @@
 
 #include <string>
 #include <utility>
-#include <vector>
 #include "dolfin/common/types.h"
 #include "GenericFile.h"
 
@@ -55,15 +54,18 @@ namespace dolfin
     /// saves into HDF5 folder 'Vector'
     /// multiple calls will save in the same file
     /// with incrementing dataset names
+    ///
     void operator<< (const GenericVector& output);
 
     /// Read vector from file
     /// looks in HDF5 folder 'Vector' for last dataset
+    ///
     void operator>> (GenericVector& input);
 
     /// Write Mesh to file
     /// Saves into folder 'Mesh' as two datasets,
     /// 'Topology' and 'Coordinates'
+    ///
     void operator<< (const Mesh& mesh);
 
     /// Read Mesh from file
@@ -78,46 +80,47 @@ namespace dolfin
     void create();
 
     // Write functions for int, double, etc. Used by XDMFFile
-    void write(const std::vector<double>& data,
-               const std::pair<uint, uint> range,
-               const std::string dataset_name, const uint width);
+    void write(const double& data,
+               const std::pair<uint, uint>& range,
+               const std::string& dataset_name,
+               const uint width);
 
-    void write(const std::vector<uint>& data,
-               const std::pair<uint, uint> range,
-               const std::string dataset_name, const uint width);
-
-    template <typename T>
-    void write(const std::vector<T>& data,
-               const std::pair<uint, uint> range,
-               const std::string dataset_name,
-               const int h5type, const uint width) const;
+    void write(const uint& data,
+               const std::pair<uint, uint>& range,
+               const std::string& dataset_name,
+               const uint width);
 
     template <typename T>
-    void read(T& data, const std::pair<uint, uint> range,
-              const std::string dataset_name, const int h5type,
-              const uint width) const;
+    void write(const T& data, const std::pair<uint,uint>& range,
+               const std::string& dataset_name, const int h5type,
+               const uint width) const;
+
+    template <typename T>
+    void read(T& data, const std::pair<uint,uint>& range,
+               const std::string& dataset_name, const int h5type,
+               const uint width) const;
 
     // Get dimensions of 2D dataset
-    std::pair<uint, uint> dataset_dimensions(const std::string dataset_name) const;
+    std::pair<uint,uint> dataset_dimensions(const std::string& dataset_name);
 
-    // List of all datasets in a group
-    std::vector<std::string> dataset_list(const std::string group_name) const;
+    // List all datasets in a group
+    std::vector<std::string> list(const std::string& group_name);
 
     // Check existence of dataset in file
-    bool dataset_exists(const std::string dataset_name) const;
+    bool exists(const std::string& dataset_name);
 
     // Add/get a string attribute to/from a dataset
-    void add_attribute(const std::string dataset_name,
-                       const std::string attribute_name,
-                       const std::string attribute_value);
+    void add_attribute(const std::string& dataset_name,
+                       const std::string& attribute_name,
+                       const std::string& attribute_value);
 
-    std::string get_attribute(const std::string dataset_name,
-                              const std::string attribute_name) const;
+    std::string get_attribute(const std::string& dataset_name,
+                              const std::string& attribute_name);
 
     // Generate HDF5 dataset names for mesh topology and coordinates
-    std::string mesh_coords_dataset_name(const Mesh& mesh) const;
-    std::string mesh_index_dataset_name(const Mesh& mesh) const;
-    std::string mesh_topo_dataset_name(const Mesh& mesh) const;
+    std::string mesh_coords_dataset_name(const Mesh& mesh);
+    std::string mesh_index_dataset_name(const Mesh& mesh);
+    std::string mesh_topo_dataset_name(const Mesh& mesh);
 
   };
 
