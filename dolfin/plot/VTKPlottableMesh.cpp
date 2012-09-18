@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-09-12
+// Last changed: 2012-09-17
 
 #ifdef HAS_VTK
 
@@ -39,7 +39,7 @@
 #include <vtkUnstructuredGrid.h>
 #include <vtkVectorNorm.h>
 
-#if (VTK_VERSION_MAJOR == 5) && (VTK_VERSION_MINOR >= 4)
+#if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 4)
 #include <vtkLabeledDataMapper.h>
 #include <vtkPointSetToLabelHierarchy.h>
 #endif
@@ -266,7 +266,7 @@ void VTKPlottableMesh::build_id_filter()
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor(vtkSmartPointer<vtkRenderer> renderer)
 {
-#if (VTK_VERSION_MAJOR == 5) && (VTK_VERSION_MINOR >= 4)
+#if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 4)
   // Return actor if already created
   if (!_vertexLabelActor)
   {
@@ -301,7 +301,7 @@ vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor(vtkSmartPoi
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_cell_label_actor(vtkSmartPointer<vtkRenderer> renderer)
 {
-#if (VTK_VERSION_MAJOR == 5) && (VTK_VERSION_MINOR >= 4)
+#if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 4)
   if (!_cellLabelActor)
   {
     build_id_filter();

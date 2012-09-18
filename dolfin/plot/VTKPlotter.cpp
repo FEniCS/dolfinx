@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-09-16
+// Last changed: 2012-09-17
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
@@ -420,7 +420,7 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
   case CONTROL + SHIFT + 's':
     // shift/control may be mouse-interaction modifiers
     {
-#if (VTK_VERSION_MAJOR == 5) && (VTK_VERSION_MINOR >= 6)
+#if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 6)
       vtkCamera* camera = vtk_pipeline->get_camera();
       foreach (VTKPlotter *other, *active_plotters)
       {
