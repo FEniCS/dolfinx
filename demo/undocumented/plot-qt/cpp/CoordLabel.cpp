@@ -18,36 +18,32 @@
 // First added:  2012-09-14
 // Last changed: 2012-09-18
 
-#include "PlotWidget.h"
-#include <QMouseEvent>
+#include "CoordLabel.h"
 
 //----------------------------------------------------------------------------
-PlotWidget::PlotWidget(QWidget *parent)
-  : QVTKWidget(parent)
+CoordLabel::CoordLabel(const char *format, QWidget *parent)
+  : QLabel(parent), _format(format)
 {
-  setMouseTracking(true);
 }
 //----------------------------------------------------------------------------
-void PlotWidget::mouseMoveEvent(QMouseEvent *event)
+void CoordLabel::setNum(int x)
 {
-  emit mouseMoved(event->x(), event->y());
-  button1_click_in_progress = false;
-  QVTKWidget::mouseMoveEvent(event);
+  QString txt;
+  txt.sprintf(_format, x);
+  setText(txt);
 }
 //----------------------------------------------------------------------------
-void PlotWidget::mousePressEvent(QMouseEvent *event)
+void CoordLabel::setNum(int x, int y)
 {
-  button1_click_in_progress = (event->buttons() == Qt::LeftButton);
-  QVTKWidget::mousePressEvent(event);
+  QString txt;
+  txt.sprintf(_format, x, y);
+  setText(txt);
 }
 //----------------------------------------------------------------------------
-void PlotWidget::mouseReleaseEvent(QMouseEvent *event)
+void CoordLabel::setNum(double x, double y, double z)
 {
-  if (button1_click_in_progress && event->buttons() == Qt::NoButton)
-  {
-    emit mouseClick(event->x(), event->y());
-  }
-  QVTKWidget::mouseReleaseEvent(event);
+  QString txt;
+  txt.sprintf(_format, x, y, z);
+  setText(txt);
 }
 //----------------------------------------------------------------------------
-

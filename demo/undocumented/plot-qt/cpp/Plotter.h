@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-09-14
-// Last changed: 2012-09-14
+// Last changed: 2012-09-18
 
 #ifndef __PLOTTER__H
 #define __PLOTTER_H
@@ -30,34 +30,44 @@ class Plotter : public QObject, public dolfin::VTKPlotter
 {
   Q_OBJECT
 
+  /// Extends VTKPlotter with signals and slots. Additionally adds a cell
+  /// picker interface.
+
 public:
 
-  template <class T>
-  Plotter(boost::shared_ptr<T> t,
-          QWidget *parent=NULL)
-    : VTKPlotter(t, new PlotWidget(parent))
-  {
-    init();
-  }
+  Plotter(boost::shared_ptr<const Variable> obj,
+          QWidget *parent=NULL);
 
   Plotter(boost::shared_ptr<const dolfin::Expression> e,
           boost::shared_ptr<const dolfin::Mesh> m,
-          QWidget *parent=NULL)
-    : VTKPlotter(e, m, new PlotWidget(parent))
-  {
-    init();
-  }
+          QWidget *parent=NULL);
 
   virtual bool key_pressed(int modifiers, char key, std::string keysym);
+
+private slots:
+
+  void receiveMouseMoved(int x, int y);
+  void receiveMousePress(int x, int y);
 
 public slots:
 
   void toggleMesh();
 
+  void update();
+
+signals:
+
+  void cellId(int);
+
+  void cellPicked(int);
+
+  void worldPos(double,double,double);
+
 private:
 
   void init();
 
+  int cur_cell;
 };
 
 #endif

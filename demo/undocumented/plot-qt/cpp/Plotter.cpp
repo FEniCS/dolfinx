@@ -16,12 +16,31 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-09-14
-// Last changed: 2012-09-14
+// Last changed: 2012-09-18
+
+#include <vtkNew.h>
+#include <vtkCellPicker.h>
+#include <vtkRenderer.h>
+
+#include <dolfin/plot/VTKWindowOutputStage.h>
 
 #include "Plotter.h"
 
 using namespace dolfin;
 
+//----------------------------------------------------------------------------
+Plotter::Plotter(boost::shared_ptr<const Variable> obj, QWidget *parent)
+  : VTKPlotter(obj, new PlotWidget(parent))
+{
+  init();
+}
+//----------------------------------------------------------------------------
+Plotter::Plotter(boost::shared_ptr<const Expression> e, boost::shared_ptr<const Mesh> m, QWidget *parent)
+  : VTKPlotter(e, m, new PlotWidget(parent))
+{
+  init();
+}
+//----------------------------------------------------------------------------
 bool Plotter::key_pressed(int modifiers, char key, std::string keysym)
 {
   switch (modifiers + key)
@@ -33,17 +52,58 @@ bool Plotter::key_pressed(int modifiers, char key, std::string keysym)
 
   return VTKPlotter::key_pressed(modifiers, key, keysym);
 }
-
+//----------------------------------------------------------------------------
 void Plotter::init()
 {
+  cur_cell = -1;
+
+  // Use a cell picker (default is prop picker)
+  //vtk_pipeline->get_interactor()->SetPicker(vtkSmartPointer<vtkCellPicker>::New());
+
+  // Receive cursor-position signals
+  get_widget()->setMouseTracking(true);
+  connect(get_widget(), SIGNAL(mouseMoved(int,int)), SLOT(receiveMouseMoved(int,int)));
+  connect(get_widget(), SIGNAL(mouseClick(int,int)), SLOT(receiveMousePress(int,int)));
+
   // Prevent window move/resize
   parameters["tile_windows"] = false;
-
-  get_widget()->setMouseTracking(true);
 }
+//----------------------------------------------------------------------------
+void Plotter::receiveMouseMoved(int x, int y)
+{
+  const QSize size = get_widget()->size();
 
+  vtkNew<vtkCellPicker> picker;
+  if (picker->Pick(x, size.height()-y-1, 0, vtk_pipeline->get_renderer()))
+  {
+    cur_cell = picker->GetCellId();
+    double *c = picker->GetMapperPosition();
+    emit worldPos(c[0], c[1], c[2]);
+  }
+  else
+  {
+    cur_cell = -1;
+  }
+
+  emit cellId(cur_cell);
+}
+//----------------------------------------------------------------------------
+void Plotter::receiveMousePress(int x, int y)
+{
+  if (cur_cell >= 0)
+  {
+    emit cellPicked(cur_cell);
+  }
+}
+//----------------------------------------------------------------------------
 void Plotter::toggleMesh()
 {
   // FIXME: Lazy + ugly
   VTKPlotter::key_pressed(0, 'm', "m");
 }
+//----------------------------------------------------------------------------
+void Plotter::update()
+{
+  VTKPlotter::plot();
+}
+//----------------------------------------------------------------------------

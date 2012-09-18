@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 2.8)
 
 project(demo_plot-qt)
 
-set(SOURCES main.cpp Plotter.cpp PlotWidget.cpp)
-set(HEADERS Plotter.h PlotWidget.h)
+set(SOURCES main.cpp Plotter.cpp PlotWidget.cpp CoordLabel.cpp BoundaryMeshFunction.cpp)
+set(HEADERS Plotter.h PlotWidget.h CoordLabel.h BoundaryMeshFunction.h)
 
 # Ignore whitespace in library paths
 cmake_policy(SET CMP0004 OLD)

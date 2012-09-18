@@ -19,7 +19,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-09-16
+// Last changed: 2012-09-17
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -249,7 +249,7 @@ namespace dolfin
     // Returns the QVTKWidget that contains the plot (when compiled with Qt).
     QVTKWidget *get_widget() const;
 
-  private:
+  protected:
 
     void update_pipeline(boost::shared_ptr<const Variable> variable=boost::shared_ptr<const Variable>());
 

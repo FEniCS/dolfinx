@@ -18,40 +18,20 @@
 // First added:  2012-09-14
 // Last changed: 2012-09-18
 
-#ifndef __PLOT_WIDGET_H
-#define __PLOT_WIDGET_H
+#include "BoundaryMeshFunction.h"
 
-#include <QVTKWidget.h>
+using namespace dolfin;
 
-class PlotWidget : public QVTKWidget
+//----------------------------------------------------------------------------
+BoundaryMeshFunction::BoundaryMeshFunction(const Mesh& mesh)
+  : _bmesh(mesh)
 {
-  Q_OBJECT
-
-  /// Extends QVTKWidget to send signals on mouse move and click.
-
-public:
-
-  PlotWidget(QWidget *parent=NULL);
-
-protected:
-
-  virtual void mouseMoveEvent(QMouseEvent *);
-
-  virtual void mousePressEvent(QMouseEvent *);
-
-  virtual void mouseReleaseEvent(QMouseEvent *);
-
-signals:
-
-  void mouseMoved(int x, int y);
-
-  void mouseClick(int x, int y);
-
-private:
-
-  // Used to decide which mouse event is a click
-  bool button1_click_in_progress;
-
-};
-
-#endif
+  MeshFunction<bool>::init(_bmesh, _bmesh.topology().dim());
+  set_all(false);
+}
+//----------------------------------------------------------------------------
+void BoundaryMeshFunction::toggleCell(int id)
+{
+  (*this)[id] = !(*this)[id];
+}
+//----------------------------------------------------------------------------

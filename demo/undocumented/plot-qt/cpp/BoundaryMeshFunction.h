@@ -15,42 +15,33 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2012-09-14
+// First added:  2012-09-18
 // Last changed: 2012-09-18
 
-#ifndef __PLOT_WIDGET_H
-#define __PLOT_WIDGET_H
+#ifndef __BOUNDARY_MESH_FUNCTION_H
+#define __BOUNDARY_MESH_FUNCTION_H
 
-#include <QVTKWidget.h>
+#include <dolfin.h>
+#include <QObject>
 
-class PlotWidget : public QVTKWidget
+class BoundaryMeshFunction : public QObject, public dolfin::MeshFunction<bool>
 {
   Q_OBJECT
 
-  /// Extends QVTKWidget to send signals on mouse move and click.
+  /// A MeshFunction<bool> on the boundary of a Mesh. The purpose of this class
+  /// is to acceps a toggle signal, which changes the value of a single cell.
 
 public:
 
-  PlotWidget(QWidget *parent=NULL);
+  BoundaryMeshFunction(const dolfin::Mesh&);
 
-protected:
+public slots:
 
-  virtual void mouseMoveEvent(QMouseEvent *);
-
-  virtual void mousePressEvent(QMouseEvent *);
-
-  virtual void mouseReleaseEvent(QMouseEvent *);
-
-signals:
-
-  void mouseMoved(int x, int y);
-
-  void mouseClick(int x, int y);
+  void toggleCell(int);
 
 private:
 
-  // Used to decide which mouse event is a click
-  bool button1_click_in_progress;
+  dolfin::BoundaryMesh _bmesh;
 
 };
 

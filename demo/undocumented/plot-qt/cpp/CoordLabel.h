@@ -15,42 +15,34 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2012-09-14
+// First added:  2012-09-18
 // Last changed: 2012-09-18
 
-#ifndef __PLOT_WIDGET_H
-#define __PLOT_WIDGET_H
+#ifndef __COORD_LABEL_H
+#define __COORD_LABEL_H
 
-#include <QVTKWidget.h>
+#include <QLabel>
 
-class PlotWidget : public QVTKWidget
+class CoordLabel : public QLabel
 {
   Q_OBJECT
 
-  /// Extends QVTKWidget to send signals on mouse move and click.
+  /// A simple wrapper around QLabel, to create simple gui elements for
+  /// formatted display of numbers. Add setNum() slots as required.
 
 public:
 
-  PlotWidget(QWidget *parent=NULL);
+  CoordLabel(const char *format, QWidget *parent=NULL);
 
-protected:
+public slots:
 
-  virtual void mouseMoveEvent(QMouseEvent *);
-
-  virtual void mousePressEvent(QMouseEvent *);
-
-  virtual void mouseReleaseEvent(QMouseEvent *);
-
-signals:
-
-  void mouseMoved(int x, int y);
-
-  void mouseClick(int x, int y);
+  void setNum(int);
+  void setNum(int,int);
+  void setNum(double,double,double);
 
 private:
 
-  // Used to decide which mouse event is a click
-  bool button1_click_in_progress;
+  const char *_format;
 
 };
 
