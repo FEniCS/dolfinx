@@ -81,41 +81,43 @@ namespace dolfin
 
     // Write functions for int, double, etc. Used by XDMFFile
     void write(const std::vector<double>& data,
-               const std::pair<uint, uint>& range,
-               const std::string& dataset_name,
+               const std::pair<uint, uint> range,
+               const std::string dataset_name,
                const uint width);
 
     void write(const std::vector<uint>& data,
-               const std::pair<uint, uint>& range,
-               const std::string& dataset_name,
+               const std::pair<uint, uint> range,
+               const std::string dataset_name,
                const uint width);
 
     template <typename T>
-    void write(const T& data, const std::pair<uint,uint>& range,
-               const std::string& dataset_name, const int h5type,
+    void write(const std::vector<T>& data,
+               const std::pair<uint, uint> range,
+               const std::string dataset_name,
+               const int h5type,
                const uint width) const;
 
     template <typename T>
-    void read(T& data, const std::pair<uint,uint>& range,
-               const std::string& dataset_name, const int h5type,
+    void read(T& data, const std::pair<uint,uint> range,
+               const std::string dataset_name, const int h5type,
                const uint width) const;
 
     // Get dimensions of 2D dataset
-    std::pair<uint,uint> dataset_dimensions(const std::string& dataset_name);
+    std::pair<uint,uint> dataset_dimensions(const std::string dataset_name);
 
     // List all datasets in a group
-    std::vector<std::string> list(const std::string& group_name);
+    std::vector<std::string> list(const std::string group_name);
 
     // Check existence of dataset in file
-    bool exists(const std::string& dataset_name);
+    bool exists(const std::string dataset_name);
 
     // Add/get a string attribute to/from a dataset
-    void add_attribute(const std::string& dataset_name,
-                       const std::string& attribute_name,
-                       const std::string& attribute_value);
+    void add_attribute(const std::string dataset_name,
+                       const std::string attribute_name,
+                       const std::string attribute_value);
 
-    std::string get_attribute(const std::string& dataset_name,
-                              const std::string& attribute_name);
+    std::string get_attribute(const std::string dataset_name,
+                              const std::string attribute_name);
 
     // Generate HDF5 dataset names for mesh topology and coordinates
     std::string mesh_coords_dataset_name(const Mesh& mesh);

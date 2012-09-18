@@ -190,7 +190,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 
   // Save data values to HDF5 file
   s = "/DataVector/" + boost::lexical_cast<std::string>(counter);
-  hdf5_file->write(data_values[0], data_range, s.c_str(), value_size_io);
+  hdf5_file->write(data_values, data_range, s.c_str(), value_size_io);
 
   // Write the XML meta description (see http://www.xdmf.org) on process 0
   if (MPI::process_number() == 0)
@@ -276,10 +276,8 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     // Need to remove path from filename
     // so that xdmf filenames such as "results/data.xdmf" correctly
     // index h5 files in the same directory
-
-    boost::filesystem::path p(hdf5->filename);
+    boost::filesystem::path p(hdf5_file->filename);
     std::string hdf5_short_filename = p.filename().string();
-    
     s = hdf5_short_filename + ":" + mesh_topology_name;
     xdmf_topology_data.append_child(pugi::node_pcdata).set_value(s.c_str());
 
@@ -354,14 +352,10 @@ void XDMFFile::operator<<(const Mesh& mesh)
   // Write the XML meta description on process zero
   if (MPI::process_number() == 0)
   {
-    const uint cell_dim = mesh.topology().dim();
-    if (cell_dim == 2)
-      xdmf_topology.append_attribute("TopologyType") = "Triangle";
-    else if (cell_dim == 3)
-      xdmf_topology.append_attribute("TopologyType") = "Tetrahedron";
-
+    // Create XML document
     pugi::xml_document xml_doc;
 
+    // XML headers
     xml_doc.append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
     pugi::xml_node xdmf = xml_doc.append_child("Xdmf");
     xdmf.append_attribute("Version") = "2.0";
@@ -373,6 +367,14 @@ void XDMFFile::operator<<(const Mesh& mesh)
 
     pugi::xml_node xdmf_topology = xdmf_grid.append_child("Topology");
     xdmf_topology.append_attribute("NumberOfElements") = num_global_cells;
+
+    const uint cell_dim = mesh.topology().dim();
+    if (cell_dim == 2)
+      xdmf_topology.append_attribute("TopologyType") = "Triangle";
+    else if (cell_dim == 3)
+      xdmf_topology.append_attribute("TopologyType") = "Tetrahedron";
+
+
     pugi::xml_node xdmf_topology_data = xdmf_topology.append_child("DataItem");
 
     // String for formatting XML entries
