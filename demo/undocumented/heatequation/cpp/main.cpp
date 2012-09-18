@@ -77,6 +77,7 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   // Temporary until this works
+  cout << "This demo is not yet working" << endl;
   return 0;
 
   // Create mesh and function space
