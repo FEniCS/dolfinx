@@ -330,14 +330,8 @@ namespace dolfin
     // Add vertex, common part
     void add_vertex_common(uint v, uint dim);
 
-    // Add higher order vertex, common part
-    void add_higher_order_vertex_common(uint v, uint dim);
-
     // Add cell, common part
     void add_cell_common(uint v, uint dim);
-
-    // Add higher order cell, common part
-    void add_higher_order_cell_common(uint v, uint dim);
 
     // Compute boundary indicators (exterior facets)
     void compute_boundary_indicators();
@@ -371,23 +365,6 @@ namespace dolfin
 
     // Temporary storage for local cell data
     std::vector<uint> vertices;
-
-    // NEW HIGHER ORDER MESH STUFF
-
-    // Number of higher order vertices
-    uint num_higher_order_vertices;
-
-    // Number of higher order cells <--- should be the same as num_cells!  good for error checking
-    uint num_higher_order_cells;
-
-    // Next available higher order vertex
-    uint next_higher_order_vertex;
-
-    // Next available higher order cell
-    uint next_higher_order_cell;
-
-    // Temporary storage for local higher order cell data
-    std::vector<uint> higher_order_cell_data;
 
   };
 
