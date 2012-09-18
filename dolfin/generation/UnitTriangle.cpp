@@ -42,9 +42,13 @@ UnitTriangle::UnitTriangle() : Mesh()
 
   // Create vertices
   editor.init_vertices(3);
-  editor.add_vertex(0, 0, 0);
-  editor.add_vertex(1, 1, 0);
-  editor.add_vertex(2, 0, 1);
+  std::vector<double> x(2);
+  x[0] = 0.0; x[1] = 0.0;
+  editor.add_vertex(0, x);
+  x[0] = 1.0; x[1] = 0.0;
+  editor.add_vertex(1, x);
+  x[0] = 0.0; x[1] = 1.0;
+  editor.add_vertex(2, x);
 
   // Create cells
   editor.init_cells(1);

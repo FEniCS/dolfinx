@@ -66,17 +66,17 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
   // Create vertices and cells:
   if (diagonal == "crossed")
   {
-    editor.init_vertices((nx+1)*(ny+1) + nx*ny);
+    editor.init_vertices((nx + 1)*(ny + 1) + nx*ny);
     editor.init_cells(4*nx*ny);
   }
   else
   {
-    editor.init_vertices((nx+1)*(ny+1));
+    editor.init_vertices((nx + 1)*(ny + 1));
     editor.init_cells(2*nx*ny);
   }
 
   // Storage for vertices
-  std::vector<double> x(3);
+  std::vector<double> x(2);
 
   // Create main vertices:
   uint vertex = 0;
@@ -95,10 +95,10 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
   {
     for (uint iy = 0; iy < ny; iy++)
     {
-      x[1] = c +(static_cast<double>(iy) + 0.5)*(d-c)/ static_cast<double>(ny);
+      x[1] = c +(static_cast<double>(iy) + 0.5)*(d - c)/ static_cast<double>(ny);
       for (uint ix = 0; ix < nx; ix++)
       {
-        x[0] = a + (static_cast<double>(ix) + 0.5)*(b-a)/ static_cast<double>(nx);
+        x[0] = a + (static_cast<double>(ix) + 0.5)*(b - a)/ static_cast<double>(nx);
         editor.add_vertex(vertex++, x);
       }
     }

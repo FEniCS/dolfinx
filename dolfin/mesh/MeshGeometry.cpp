@@ -83,8 +83,8 @@ void MeshGeometry::init(uint dim, uint size)
   coordinates.resize(dim*size);
 
   // Allocate new data
-  local_indices.resize(size);
-  global_indices.resize(size);
+  //local_indices.resize(size);
+  //global_indices.resize(size);
 
   // Save dimension and size
   _dim = dim;
@@ -103,8 +103,8 @@ void MeshGeometry::set(uint n, const std::vector<double>& x)
   //  coordinates[n*_dim + i] = x[i];
   dolfin_assert(x.size() == _dim);
   std::copy(x.begin(), x.end(), coordinates.begin() + n*_dim);
-  local_indices[n]  = n;
-  global_indices[n] = n;
+  //local_indices[n]  = n;
+  //global_indices[n] = n;
 }
 //-----------------------------------------------------------------------------
 std::string MeshGeometry::str(bool verbose) const

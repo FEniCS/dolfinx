@@ -60,19 +60,22 @@ Box::Box(double x0, double y0, double z0,
   MeshEditor editor;
   editor.open(*this, CellType::tetrahedron, 3, 3);
 
+  // Storage for vertex coordinates
+  std::vector<double> x(3);
+
   // Create vertices
-  editor.init_vertices((nx+1)*(ny+1)*(nz+1));
+  editor.init_vertices((nx + 1)*(ny + 1)*(nz + 1));
   uint vertex = 0;
   for (uint iz = 0; iz <= nz; iz++)
   {
-    const double z = e + (static_cast<double>(iz))*(f-e) / static_cast<double>(nz);
+    x[2] = e + (static_cast<double>(iz))*(f-e) / static_cast<double>(nz);
     for (uint iy = 0; iy <= ny; iy++)
     {
-      const double y = c + (static_cast<double>(iy))*(d-c) / static_cast<double>(ny);
+      x[1] = c + (static_cast<double>(iy))*(d-c) / static_cast<double>(ny);
       for (uint ix = 0; ix <= nx; ix++)
       {
-        const double x = a + (static_cast<double>(ix))*(b-a) / static_cast<double>(nx);
-        editor.add_vertex(vertex++, x, y, z);
+        x[0] = a + (static_cast<double>(ix))*(b-a) / static_cast<double>(nx);
+        editor.add_vertex(vertex++, x);
       }
     }
   }

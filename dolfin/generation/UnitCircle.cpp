@@ -36,7 +36,11 @@ UnitCircle::UnitCircle(uint n, std::string diagonal,
                        std::string transformation) : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
+  if (MPI::is_receiver())
+  {
+    MeshPartitioning::build_distributed_mesh(*this);
+    return;
+  }
 
   if (diagonal != "left" && diagonal != "right" && diagonal != "crossed")
   {
@@ -72,26 +76,28 @@ UnitCircle::UnitCircle(uint n, std::string diagonal,
   // Create vertices and cells:
   if (diagonal == "crossed")
   {
-    editor.init_vertices((nx+1)*(ny+1) + nx*ny);
+    editor.init_vertices((nx + 1)*(ny + 1) + nx*ny);
     editor.init_cells(4*nx*ny);
   }
   else
   {
-    editor.init_vertices((nx+1)*(ny+1));
+    editor.init_vertices((nx + 1)*(ny + 1));
     editor.init_cells(2*nx*ny);
   }
 
+  // Data structure for creating vertices
+  std::vector<double> x(2);
+
   // Create main vertices
   uint vertex = 0;
-  double x_trans[2];
   for (uint iy = 0; iy <= ny; iy++)
   {
-    const double y = -1.0 + static_cast<double>(iy)*2.0 / static_cast<double>(ny);
+    x[1] = -1.0 + static_cast<double>(iy)*2.0/static_cast<double>(ny);
     for (uint ix = 0; ix <= nx; ix++)
     {
-      const double x = -1.0 + static_cast<double>(ix)*2.0 / static_cast<double>(nx);
-      transform(x_trans, x, y, transformation);
-      editor.add_vertex(vertex++, x_trans[0], x_trans[1]);
+      x[0] = -1.0 + static_cast<double>(ix)*2.0 / static_cast<double>(nx);
+      const std::vector<double> x_trans = transform(x, transformation);
+      editor.add_vertex(vertex++, x_trans);
     }
   }
 
@@ -100,12 +106,12 @@ UnitCircle::UnitCircle(uint n, std::string diagonal,
   {
     for (uint iy = 0; iy < ny; iy++)
     {
-      const double y = -1.0 + (static_cast<double>(iy) + 0.5)*2.0 / static_cast<double>(ny);
+      x[1] = -1.0 + (static_cast<double>(iy) + 0.5)*2.0 / static_cast<double>(ny);
       for (uint ix = 0; ix < nx; ix++)
       {
-        const double x = -1.0 + (static_cast<double>(ix) + 0.5)*2.0 / static_cast<double>(nx);
-        transform(x_trans, x, y, transformation);
-        editor.add_vertex(vertex++, x_trans[0], x_trans[1]);
+        x[0] = -1.0 + (static_cast<double>(ix) + 0.5)*2.0 / static_cast<double>(nx);
+        const std::vector<double> x_trans = transform(x, transformation);
+        editor.add_vertex(vertex++, x_trans);
       }
     }
   }
@@ -157,30 +163,35 @@ UnitCircle::UnitCircle(uint n, std::string diagonal,
     }
   }
   else
+  {
     dolfin_error("UnitCircle.cpp",
                  "create unit circle",
                  "Unknown mesh diagonal definition: Allowed options are \"left\", \"right\" and \"crossed\"");
+  }
 
   // Close mesh editor
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster()) { MeshPartitioning::build_distributed_mesh(*this); return; }
-}
-//-----------------------------------------------------------------------------
-void UnitCircle::transform(double* trans, double x, double y, std::string transformation)
-{
-  if (std::abs(x) < DOLFIN_EPS && std::abs(y) < DOLFIN_EPS)
+  if (MPI::is_broadcaster())
   {
-    trans[0] = x;
-    trans[1] = y;
+    MeshPartitioning::build_distributed_mesh(*this);
     return;
   }
+}
+//-----------------------------------------------------------------------------
+std::vector<double> UnitCircle::transform(const std::vector<double>& x,
+                                          const std::string transformation)
+{
+  if (std::abs(x[0]) < DOLFIN_EPS && std::abs(x[1]) < DOLFIN_EPS)
+    return x;
 
+  std::vector<double> x_trans(2);
+  const double dist = sqrt(x[0]*x[0] + x[1]*x[1]);
   if(transformation == "maxn")
   {
-    trans[0] = x*max(std::abs(x),std::abs(y)) / sqrt(x*x+y*y);
-    trans[1] = y*max(std::abs(x),std::abs(y)) / sqrt(x*x+y*y);
+    x_trans[0] = x[0]*max(x)/dist;
+    x_trans[1] = x[1]*max(x)/dist;
   }
   else if (transformation == "sumn")
   {
@@ -188,20 +199,24 @@ void UnitCircle::transform(double* trans, double x, double y, std::string transf
     dolfin_error("UnitCircle.cpp",
                  "transform to unit circle",
                  "'sumn' mapping for a UnitCircle is broken");
-    trans[0] = x*(std::abs(x)+std::abs(y)) / sqrt(x*x+y*y);
-    trans[1] = y*(std::abs(x)+std::abs(y)) / sqrt(x*x+y*y);
+    x_trans[0] = x[0]*(std::abs(x[0]) + std::abs(x[1]))/dist;
+    x_trans[1] = x[1]*(std::abs(x[0]) + std::abs(x[1]))/dist;
   }
   else if (transformation == "rotsumn")
   {
-    double xx = 0.5*(x+y);
-    double yy = 0.5*(-x+y);
-    trans[0] = xx*(std::abs(xx)+std::abs(yy)) / sqrt(xx*xx+yy*yy);
-    trans[1] = yy*(std::abs(xx)+std::abs(yy)) / sqrt(xx*xx+yy*yy);
+    const double xx = 0.5*(x[0] + x[1]);
+    const double yy = 0.5*(-x[0] + x[1]);
+    x_trans[0] = xx*(std::abs(xx) + std::abs(yy))/sqrt(xx*xx+yy*yy);
+    x_trans[1] = yy*(std::abs(xx) + std::abs(yy))/sqrt(xx*xx+yy*yy);
   }
   else
+  {
     dolfin_error("UnitCircle.cpp",
                  "transform to unit circle",
                  "Unknown transformation '%s' in UnitCircle. Allowed options are \"maxn\", \"sumn\" and \"rotsumn\"",
                  transformation.c_str());
+  }
+
+  return x_trans;
 }
 //-----------------------------------------------------------------------------

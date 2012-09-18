@@ -52,19 +52,22 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
   MeshEditor editor;
   editor.open(*this, CellType::tetrahedron, 3, 3);
 
+  // Storage for vertex coordinates
+  std::vector<double> x(3);
+
   // Create vertices
   editor.init_vertices((nx+1)*(ny+1)*(nz+1));
   uint vertex = 0;
   for (uint iz = 0; iz <= nz; iz++)
   {
-    const double z = static_cast<double>(iz) / static_cast<double>(nz);
+    x[2] = static_cast<double>(iz) / static_cast<double>(nz);
     for (uint iy = 0; iy <= ny; iy++)
     {
-      const double y = static_cast<double>(iy) / static_cast<double>(ny);
+      x[1] = static_cast<double>(iy) / static_cast<double>(ny);
       for (uint ix = 0; ix <= nx; ix++)
       {
-        const double x = static_cast<double>(ix) / static_cast<double>(nx);
-        editor.add_vertex(vertex++, x, y, z);
+        x[0] = static_cast<double>(ix) / static_cast<double>(nx);
+        editor.add_vertex(vertex++, x);
       }
     }
   }

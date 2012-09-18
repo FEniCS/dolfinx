@@ -114,12 +114,14 @@ std::vector<double> UnitSphere::transform(const std::vector<double>& x) const
   if (x[0] || x[1] || x[2])
   {
     const double dist = sqrt(x[0]*x[0]+x[1]*x[1]+x[2]*x[2]);
-    x_trans[0] = x[0]*std::max(x)/dist;
-    x_trans[1] = x[1]*std::max(x)/dist;
-    x_trans[2] = x[2]*std::max(x))/dist;
+    x_trans[0] = x[0]*max(x)/dist;
+    x_trans[1] = x[1]*max(x)/dist;
+    x_trans[2] = x[2]*max(x)/dist;
   }
   else
     x_trans = x;
+
+  return x_trans;
 }
 //-----------------------------------------------------------------------------
 double UnitSphere::max(const std::vector<double>& x) const

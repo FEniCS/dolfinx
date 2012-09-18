@@ -153,7 +153,7 @@ void MeshEditor::add_vertex(uint v, const Point& p)
 void MeshEditor::add_vertex(uint v, const std::vector<double>& x)
 {
   // Add vertex
-  add_vertex_common(v, 1);
+  add_vertex_common(v, x.size());
 
   // Set coordinate
   mesh->_geometry.set(v, x);

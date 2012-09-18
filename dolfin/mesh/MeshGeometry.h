@@ -122,11 +122,14 @@ namespace dolfin
     // Coordinates for all vertices stored as a contiguous array
     std::vector<double> coordinates;
 
-    // Local coordinate indices
-    std::vector<uint> local_indices;
+    // Local coordinate indices (array position -> index)
+    std::vector<uint> position_to_local_index;
 
-    // Global coordinate indices
-    std::vector<uint> global_indices;
+    // Local coordinate indices (array position -> index)
+    std::vector<uint> local_index_to_position;
+
+    // Local-to-global coordinate indices
+    std::vector<uint> local_to_global;
 
   };
 
