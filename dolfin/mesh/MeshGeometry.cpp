@@ -47,7 +47,11 @@ const MeshGeometry& MeshGeometry::operator= (const MeshGeometry& geometry)
 {
   // Copy data
   _dim = geometry._dim;
-  coordinates = geometry.coordinates;
+  coordinates             = geometry.coordinates;
+  position_to_local_index = geometry.position_to_local_index;
+  local_index_to_position = geometry.local_index_to_position;
+  local_to_global         = geometry.local_to_global;
+
   return *this;
 }
 //-----------------------------------------------------------------------------

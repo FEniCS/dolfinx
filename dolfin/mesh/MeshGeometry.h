@@ -74,24 +74,30 @@ namespace dolfin
     /// Return value of coordinate with local index n in direction i
     double& x(uint n, uint i)
     {
-      dolfin_assert(n < size() && i < _dim);
+      dolfin_assert(n < local_index_to_position.size() && i < _dim);
       return coordinates[local_index_to_position[n]*_dim + i];
     }
 
     /// Return value of coordinate with local index n in direction i
     double x(uint n, uint i) const
     {
-      dolfin_assert(n < size() && i < _dim);
+      dolfin_assert(n < local_index_to_position.size() && i < _dim);
       return coordinates[local_index_to_position[n]*_dim + i];
     }
 
     /// Return array of values for coordinate with local index n
     double* x(uint n)
-    { return &coordinates[local_index_to_position[n]*_dim]; }
+    {
+      dolfin_assert(n < local_index_to_position.size());
+      return &coordinates[local_index_to_position[n]*_dim];
+    }
 
     /// Return array of values for coordinate with local index n
     const double* x(uint n) const
-    { return &coordinates[local_index_to_position[n]*_dim]; }
+    {
+      dolfin_assert(n < local_index_to_position.size());
+      return &coordinates[local_index_to_position[n]*_dim];
+    }
 
     /// Return array of values for all coordinates
     double* x()
