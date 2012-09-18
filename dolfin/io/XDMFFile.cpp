@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-09-17
+// Last changed: 2012-09-18
 
 #ifdef HAS_HDF5
 
@@ -119,6 +119,10 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 
   // Get number of local/global cells/vertices
   // FIXME: num_global_vertices is not correct
+  // Either rename to num_total_vertices, or redesign file layout?
+  // At present, each process saves its local vertices 
+  // sequentially in the HDF5 file, resulting in some duplication
+
   const uint num_local_cells = mesh.num_cells();
   const uint num_local_vertices = mesh.num_vertices();
   const uint num_global_vertices = MPI::sum(num_local_vertices);
@@ -139,7 +143,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     v.get_local(data_values);
   }
 
-  // FIXME: Should this be in the HDF5 code
+  // FIXME: Should this be in the HDF5 code?
   const uint offset = MPI::global_offset(num_local_entities, true);
   const std::pair<uint, uint> data_range(offset, offset + num_local_entities);
 
@@ -179,18 +183,21 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   // Write mesh to HDF5 file
   if (counter == 0)
     *(hdf5_file) << mesh;
-  else if (!hdf5_file->exists(mesh_coords_name) || !hdf5_file->exists(mesh_topology_name))
+  else if (!hdf5_file->dataset_exists(mesh_coords_name)
+      || !hdf5_file->dataset_exists(mesh_topology_name))
+  {
     *(hdf5_file) << mesh;
+  }
 
   // Working data structure for formatting XML file
   std::string s;
 
-  // Vertex values are saved in the hdf5 'folder' /DataVector
+  // Vertex/cell values are saved in the hdf5 group /DataVector
   // as distinct from /Vector which is used for solution vectors.
 
   // Save data values to HDF5 file
   s = "/DataVector/" + boost::lexical_cast<std::string>(counter);
-  hdf5_file->write(data_values[0], data_range, s.c_str(), value_size_io);
+  hdf5_file->write(data_values, data_range, s.c_str(), value_size_io);
 
   // Write the XML meta description (see http://www.xdmf.org) on process 0
   if (MPI::process_number() == 0)
@@ -243,20 +250,23 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
       xdmf_timedata = xdmf_timegrid.child("Time").child("DataItem");
     }
 
-    // Add an time step to the TimeSeries List
+    //  Add a time step to the TimeSeries List
     xdmf_timedata.attribute("Dimensions").set_value(counter + 1);
     s = boost::lexical_cast<std::string>(xdmf_timedata.first_child().value()) + " "
           + boost::str((boost::format("%d") % time_step));
     xdmf_timedata.first_child().set_value(s.c_str());
 
-    //    /Xdmf/Domain/Grid/Grid - the actual data for this timestep
+    //   /Xdmf/Domain/Grid/Grid - the actual data for this timestep
     pugi::xml_node xdmf_grid = xdmf_timegrid.append_child("Grid");
     s = u.name() + "_" + boost::lexical_cast<std::string>(counter);
     xdmf_grid.append_attribute("Name") = s.c_str();
     xdmf_grid.append_attribute("GridType") = "Uniform";
 
 
-    // FIXME: Add option to re-write mesh
+    // FIXME: Add option to re-write mesh ??
+    // Mesh is referenced at each timestep, so
+    // as long as each different mesh has a different dataset name
+    // the mesh will change automatically.
 
     // Grid/Topology
     pugi::xml_node xdmf_topology = xdmf_grid.append_child("Topology");
@@ -276,10 +286,8 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     // Need to remove path from filename
     // so that xdmf filenames such as "results/data.xdmf" correctly
     // index h5 files in the same directory
-
     boost::filesystem::path p(hdf5_file->filename);
     std::string hdf5_short_filename = p.filename().string();
-
     s = hdf5_short_filename + ":" + mesh_topology_name;
     xdmf_topology_data.append_child(pugi::node_pcdata).set_value(s.c_str());
 
@@ -354,8 +362,10 @@ void XDMFFile::operator<<(const Mesh& mesh)
   // Write the XML meta description on process zero
   if (MPI::process_number() == 0)
   {
+    // Create XML document
     pugi::xml_document xml_doc;
 
+    // XML headers
     xml_doc.append_child(pugi::node_doctype).set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
     pugi::xml_node xdmf = xml_doc.append_child("Xdmf");
     xdmf.append_attribute("Version") = "2.0";
@@ -367,13 +377,15 @@ void XDMFFile::operator<<(const Mesh& mesh)
 
     pugi::xml_node xdmf_topology = xdmf_grid.append_child("Topology");
     xdmf_topology.append_attribute("NumberOfElements") = num_global_cells;
-    pugi::xml_node xdmf_topology_data = xdmf_topology.append_child("DataItem");
 
     const uint cell_dim = mesh.topology().dim();
     if (cell_dim == 2)
       xdmf_topology.append_attribute("TopologyType") = "Triangle";
     else if (cell_dim == 3)
       xdmf_topology.append_attribute("TopologyType") = "Tetrahedron";
+
+
+    pugi::xml_node xdmf_topology_data = xdmf_topology.append_child("DataItem");
 
     // String for formatting XML entries
     std::string s;
@@ -383,7 +395,11 @@ void XDMFFile::operator<<(const Mesh& mesh)
           + boost::lexical_cast<std::string>(cell_dim + 1);
     xdmf_topology_data.append_attribute("Dimensions") = s.c_str();
 
-    s = hdf5_file->filename + ":" + hdf5_file->mesh_topo_dataset_name(mesh);
+    // trim path from filename
+    boost::filesystem::path p(hdf5_file->filename);
+    std::string hdf5_short_filename=p.filename().string();
+
+    s = hdf5_short_filename + ":" + hdf5_file->mesh_topo_dataset_name(mesh);
     xdmf_topology_data.append_child(pugi::node_pcdata).set_value(s.c_str());
 
     pugi::xml_node xdmf_geom = xdmf_grid.append_child("Geometry");
@@ -394,7 +410,7 @@ void XDMFFile::operator<<(const Mesh& mesh)
     s = boost::lexical_cast<std::string>(num_global_vertices) + " 3";
     xdmf_geom_data.append_attribute("Dimensions") = s.c_str();
 
-    s = hdf5_file->filename + ":" + hdf5_file->mesh_coords_dataset_name(mesh);
+    s = hdf5_short_filename + ":" + hdf5_file->mesh_coords_dataset_name(mesh);
     xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.c_str());
 
     xml_doc.save_file(filename.c_str(), "    ");
