@@ -167,6 +167,7 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
   if (!dataset_exists(topology_dataset))
   {
     write(topological_data, cell_range, topology_dataset, cell_dim + 1);
+    add_attribute(topology_dataset, "true_indexing", (true_topology_indices ? 1 : 0) );
     add_attribute(topology_dataset, "celltype", cell_type);
   }
 }
@@ -352,7 +353,7 @@ void HDF5File::write(const std::vector<uint>& data,
                      const std::pair<uint, uint> range,
                      const std::string dataset_name, const uint width)
 {
-  write(data, range, dataset_name, H5T_NATIVE_INT, width);
+  write(data, range, dataset_name, H5T_NATIVE_UINT, width);
 }
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -587,6 +588,57 @@ std::pair<uint, uint> HDF5File::dataset_dimensions(const std::string dataset_nam
   return std::pair<uint,uint>(cur_size[0],cur_size[1]);
 }
 //-----------------------------------------------------------------------------
+void HDF5File::add_attribute(const std::string dataset_name,
+                             const std::string attribute_name,
+                             uint attribute_value)
+{
+  MPICommunicator comm;
+  MPIInfo info;
+  herr_t status;
+
+  // Set parallel access with communicator
+  hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
+  status = H5Pset_fapl_mpio(plist_id,*comm, *info);
+  dolfin_assert(status != HDF5_FAIL);
+
+  // Try to open existing HDF5 file
+  hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
+  dolfin_assert(file_id != HDF5_FAIL);
+
+  // Release file-access template 
+  status = H5Pclose(plist_id);
+  dolfin_assert(status != HDF5_FAIL);
+
+  // Open named dataset
+  hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
+  dolfin_assert(dset_id != HDF5_FAIL);
+
+  // Add uint attribute to dataset
+  hid_t datatype_id = H5Tcopy(H5T_NATIVE_UINT);
+  hid_t dataspace_id = H5Screate (H5S_SCALAR);
+  hid_t attribute_id = H5Acreate(dset_id, attribute_name.c_str(), datatype_id,
+                                  dataspace_id, H5P_DEFAULT);
+  // Write attribute to dataset
+  status = H5Awrite(attribute_id, datatype_id, &attribute_value);
+  dolfin_assert(status != HDF5_FAIL);
+
+  // Close attribute
+  status = H5Aclose(attribute_id);
+  dolfin_assert(status != HDF5_FAIL);
+
+  // Close dataset 
+  status = H5Dclose(dset_id);
+  dolfin_assert(status != HDF5_FAIL);
+
+  // Close file
+  status = H5Fclose(file_id);
+  dolfin_assert(status != HDF5_FAIL);
+  
+}
+
+//-----------------------------------------------------------------------------
+
+
 void HDF5File::add_attribute(const std::string dataset_name,
                              const std::string attribute_name,
                              const std::string attribute_value)

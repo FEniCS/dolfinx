@@ -127,6 +127,11 @@ namespace dolfin
     // Check existence of dataset in file
     bool dataset_exists(const std::string dataset_name) const;
 
+    // Add an integer attribute to a dataset
+    void HDF5File::add_attribute(const std::string dataset_name,
+                                 const std::string attribute_name,
+                                 uint attribute_value);
+    
     // Add/get a string attribute to/from a dataset
     void add_attribute(const std::string dataset_name,
                        const std::string attribute_name,
