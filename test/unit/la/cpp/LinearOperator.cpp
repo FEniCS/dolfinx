@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-21
-// Last changed: 2012-08-30
+// Last changed: 2012-09-03
 //
 // Unit tests for matrix-free linear solvers (LinearOperator)
 
@@ -46,11 +46,15 @@ public:
     public:
 
       MyLinearOperator(Form& a_action, Function& u)
-        : LinearOperator(u.function_space()->dim(),
-                         u.function_space()->dim()),
+        : LinearOperator(),
           a_action(a_action), u(u)
       {
         // Do nothing
+      }
+
+      uint size(uint dim) const
+      {
+        return u.function_space()->dim();
       }
 
       void mult(const GenericVector& x, GenericVector& y) const
