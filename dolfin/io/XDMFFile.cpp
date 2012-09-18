@@ -120,7 +120,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   // Get number of local/global cells/vertices
   // FIXME: num_global_vertices is not correct
   // Either rename to num_total_vertices, or redesign file layout?
-  // At present, each process saves its local vertices 
+  // At present, each process saves its local vertices
   // sequentially in the HDF5 file, resulting in some duplication
 
   const uint num_local_cells = mesh.num_cells();
@@ -359,6 +359,14 @@ void XDMFFile::operator<<(const Mesh& mesh)
   const uint num_global_vertices = MPI::sum(num_local_vertices);
   const uint num_global_cells = MPI::sum(num_local_cells);
 
+  // MPI collective calls
+  boost::filesystem::path p(hdf5_file->filename);
+  const std::string hdf5_short_filename = p.filename().string();
+  const std::string topology_hash_name
+      = hdf5_short_filename + ":" + hdf5_file->mesh_topo_dataset_name(mesh);
+  const std::string coords_hash_name
+      = hdf5_short_filename + ":" + hdf5_file->mesh_coords_dataset_name(mesh);
+
   // Write the XML meta description on process zero
   if (MPI::process_number() == 0)
   {
@@ -384,34 +392,24 @@ void XDMFFile::operator<<(const Mesh& mesh)
     else if (cell_dim == 3)
       xdmf_topology.append_attribute("TopologyType") = "Tetrahedron";
 
-
     pugi::xml_node xdmf_topology_data = xdmf_topology.append_child("DataItem");
 
-    // String for formatting XML entries
-    std::string s;
-
     xdmf_topology_data.append_attribute("Format") = "HDF";
-    s = boost::lexical_cast<std::string>(num_global_cells) + " "
-          + boost::lexical_cast<std::string>(cell_dim + 1);
-    xdmf_topology_data.append_attribute("Dimensions") = s.c_str();
+    const std::string cell_dims = boost::lexical_cast<std::string>(num_global_cells)
+          + " " + boost::lexical_cast<std::string>(cell_dim + 1);
+    xdmf_topology_data.append_attribute("Dimensions") = cell_dims.c_str();
 
-    // trim path from filename
-    boost::filesystem::path p(hdf5_file->filename);
-    std::string hdf5_short_filename=p.filename().string();
-
-    s = hdf5_short_filename + ":" + hdf5_file->mesh_topo_dataset_name(mesh);
-    xdmf_topology_data.append_child(pugi::node_pcdata).set_value(s.c_str());
+    xdmf_topology_data.append_child(pugi::node_pcdata).set_value(topology_hash_name.c_str());
 
     pugi::xml_node xdmf_geom = xdmf_grid.append_child("Geometry");
     xdmf_geom.append_attribute("GeometryType") = "XYZ";
     pugi::xml_node xdmf_geom_data = xdmf_geom.append_child("DataItem");
 
     xdmf_geom_data.append_attribute("Format") = "HDF";
-    s = boost::lexical_cast<std::string>(num_global_vertices) + " 3";
-    xdmf_geom_data.append_attribute("Dimensions") = s.c_str();
+    const std::string vertices_dims = boost::lexical_cast<std::string>(num_global_vertices) + " 3";
+    xdmf_geom_data.append_attribute("Dimensions") = vertices_dims.c_str();
 
-    s = hdf5_short_filename + ":" + hdf5_file->mesh_coords_dataset_name(mesh);
-    xdmf_geom_data.append_child(pugi::node_pcdata).set_value(s.c_str());
+    xdmf_geom_data.append_child(pugi::node_pcdata).set_value(coords_hash_name.c_str());
 
     xml_doc.save_file(filename.c_str(), "    ");
   }

@@ -218,6 +218,8 @@ void HDF5File::operator<<(const Mesh& mesh)
   if(counter == 0)
     create();
 
+  cout << "Get mesh info" << endl;
+
   // Get local mesh data
   const uint cell_dim = mesh.topology().dim();
   const uint num_local_cells = mesh.num_cells();
@@ -311,6 +313,7 @@ void HDF5File::operator<<(const Mesh& mesh)
     write(topological_data, cell_range, topology_dataset, cell_dim + 1);
     add_attribute(topology_dataset, "celltype", cell_type);
   }
+  cout << "Done" << endl;
 }
 //-----------------------------------------------------------------------------
 void HDF5File::operator<< (const GenericVector& x)
