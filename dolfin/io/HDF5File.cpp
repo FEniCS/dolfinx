@@ -210,49 +210,50 @@ void HDF5File::operator<<(const Mesh& mesh)
 {
   // if no existing file, create...
   // FIXME: better way to check? MPI safe?
-  if(boost::filesystem::file_size(filename.c_str()) == 0)
+  //if(boost::filesystem::file_size(filename.c_str()) == 0)
+  //  create();
+
+  // Clear file when writing to for the first time
+  if(counter == 0)
     create();
 
+  // Get local mesh data
   const uint cell_dim = mesh.topology().dim();
   const uint num_local_cells = mesh.num_cells();
   const uint num_local_vertices = mesh.num_vertices();
-
   const CellType::Type _cell_type = mesh.type().cell_type();
   const std::string cell_type = CellType::type2string(_cell_type);
 
-  // Get offset and size of local cell topology usage in global terms
+  // Get cell offset and size of local cell topology usage in global terms
   const uint cell_offset = MPI::global_offset(num_local_cells, true);
-  std::pair<uint, uint>topo_range(cell_offset, cell_offset + num_local_cells);
+  const std::pair<uint, uint> cell_range(cell_offset, cell_offset + num_local_cells);
 
-  // Get offset and size of local vertex usage in global terms
+  // Get vertex offset and size of local vertex usage in global terms
   const uint vertex_offset = MPI::global_offset(num_local_vertices, true);
-  std::pair<uint, uint>vertex_range(vertex_offset, vertex_offset + num_local_vertices);
+  const std::pair<uint, uint> vertex_range(vertex_offset, vertex_offset + num_local_vertices);
 
+  // Get vertex indices
   std::vector<uint>global_vertex_indices;
-
   if(MPI::num_processes() == 1)
   {
+    global_vertex_indices.reserve(2*num_local_vertices);
     for(uint i = 0; i < num_local_vertices; i++)
     {
+      // Cell vertex index and process number
       global_vertex_indices.push_back(i);
       global_vertex_indices.push_back(0);
     }
   }
   else
   {
-    const MeshFunction<uint> gv = mesh.parallel_data().global_entity_indices(0);
-    for(uint i = 0; i < gv.size(); i++)
+    const MeshFunction<uint> vertex_indices = mesh.parallel_data().global_entity_indices(0);
+    const uint process_number = MPI::process_number();
+    for(uint i = 0; i < vertex_indices.size(); i++)
     {
-      global_vertex_indices.push_back(gv[i]);
-      global_vertex_indices.push_back(MPI::process_number());
+      global_vertex_indices.push_back(vertex_indices[i]);
+      global_vertex_indices.push_back(process_number);
     }
-
   }
-
-  std::vector<uint> topological_data;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-    for (VertexIterator v(*cell); !v.end(); ++v)
-      topological_data.push_back(v->index() + vertex_range.first);
 
   std::vector<double> vertex_coords;
   for (VertexIterator v(mesh); !v.end(); ++v)
@@ -263,17 +264,25 @@ void HDF5File::operator<<(const Mesh& mesh)
     vertex_coords.push_back(p.z());
   }
 
+  // Write vertex data to HDF5 file
   std::string s = mesh_coords_dataset_name(mesh);
-  if (!exists(s))
+  if (!dataset_exists(s))
   {
+    write(global_vertex_indices, vertex_range, mesh_index_dataset_name(mesh), 2); // global mapping
     write(vertex_coords, vertex_range, s, 3); //xyz coords
-    write(global_vertex_indices, vertex_range, mesh_index_dataset_name(mesh),2); // global mapping
   }
 
+  // Get connectivity
+  std::vector<uint> topological_data;
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+    for (VertexIterator v(*cell); !v.end(); ++v)
+      topological_data.push_back(v->index() + vertex_range.first);
+
+  // Write connectivity to HDF5 file
   s = mesh_topo_dataset_name(mesh);
-  if (!exists(s))
+  if (!dataset_exists(s))
   {
-    write(topological_data, topo_range, s, cell_dim + 1); //connectivity
+    write(topological_data, cell_range, s, cell_dim + 1); //connectivity
     add_attribute(s,"celltype", cell_type);
   }
 }
@@ -531,7 +540,7 @@ void HDF5File::write(const std::vector<T>& data,
   dolfin_assert(status != HDF5_FAIL);
 }
 //-----------------------------------------------------------------------------
-bool HDF5File::exists(const std::string dataset_name) const
+bool HDF5File::dataset_exists(const std::string dataset_name) const
 {
   MPICommunicator comm;
   MPIInfo info;

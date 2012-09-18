@@ -179,8 +179,11 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   // Write mesh to HDF5 file
   if (counter == 0)
     *(hdf5_file) << mesh;
-  else if (!hdf5_file->exists(mesh_coords_name) || !hdf5_file->exists(mesh_topology_name))
+  else if (!hdf5_file->dataset_exists(mesh_coords_name)
+      || !hdf5_file->dataset_exists(mesh_topology_name))
+  {
     *(hdf5_file) << mesh;
+  }
 
   // Working data structure for formatting XML file
   std::string s;
