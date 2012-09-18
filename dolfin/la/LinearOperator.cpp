@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-20
-// Last changed: 2012-08-23
+// Last changed: 2012-09-03
 
 #include "DefaultFactory.h"
 #include "LinearOperator.h"
@@ -24,19 +24,61 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LinearOperator::LinearOperator(uint M, uint N)
+LinearOperator::LinearOperator()
 {
+  // Initialization is postponed until the backend is accessed to
+  // enable accessing the member function size() to extract the size.
+  // The size would otherwise need to be passed to the constructor of
+  // LinearOperator which is often unpractical for subclasses.
+}
+//-----------------------------------------------------------------------------
+std::string LinearOperator::str(bool verbose) const
+{
+  return "<User-defined linear operator>";
+}
+//-----------------------------------------------------------------------------
+const GenericLinearOperator* LinearOperator::instance() const
+{
+  // const cast required here to enable delayed initialization.
+  const_cast<LinearOperator*>(this)->init();
+
+  return _A.get();
+}
+//-----------------------------------------------------------------------------
+GenericLinearOperator* LinearOperator::instance()
+{
+  init();
+  return _A.get();
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<const LinearAlgebraObject> LinearOperator::shared_instance() const
+{
+  // const cast required here to enable delayed initialization
+  const_cast<LinearOperator*>(this)->init();
+
+  return _A;
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<LinearAlgebraObject> LinearOperator::shared_instance()
+{
+  init();
+  return _A;
+}
+//-----------------------------------------------------------------------------
+void LinearOperator::init()
+{
+  // Check whether we need to initialize
+  if (_A)
+    return;
+
+  info("Calling init() for LinearOperator");
+
   // Create concrete implementation
   DefaultFactory factory;
   _A = factory.create_linear_operator();
   dolfin_assert(_A);
 
   // Initialize implementation
-  _A->init(M, N, this);
-}
-//-----------------------------------------------------------------------------
-std::string LinearOperator::str(bool verbose) const
-{
-  return "<User-defined linear operator>";
+  _A->init(size(0), size(1), this);
 }
 //-----------------------------------------------------------------------------

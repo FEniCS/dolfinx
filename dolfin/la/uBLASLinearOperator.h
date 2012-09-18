@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-06-30
-// Last changed: 2012-08-23
+// Last changed: 2012-08-31
 
 #ifndef __UBLAS_LINEAR_OPERATOR_H
 #define __UBLAS_LINEAR_OPERATOR_H
@@ -42,10 +42,10 @@ namespace dolfin
     /// Constructor
     uBLASLinearOperator();
 
-    /// Return size of given dimension
-    uint size(uint dim) const;
-
     //--- Implementation of the GenericLinearOperator interface ---
+
+    /// Return size of given dimension
+    virtual uint size(uint dim) const;
 
     /// Compute matrix-vector product y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const;

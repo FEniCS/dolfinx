@@ -66,6 +66,11 @@ PETScLinearOperator::PETScLinearOperator() : _wrapper(0)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+dolfin::uint PETScLinearOperator::size(uint dim) const
+{
+  return PETScBaseMatrix::size(dim);
+}
+//-----------------------------------------------------------------------------
 void PETScLinearOperator::mult(const GenericVector& x, GenericVector& y) const
 {
   dolfin_not_implemented();
