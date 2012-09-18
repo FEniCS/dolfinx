@@ -34,12 +34,12 @@ class XDMF_Mesh_Output(unittest.TestCase):
 
     def test_save_2d_mesh(self):
         mesh = UnitSquare(32, 32)
-        File("mesh.xdmf") << mesh
+        File("mesh_2D.xdmf") << mesh
         print "Done", MPI.process_number()
 
     def xtest_save_3d_mesh(self):
         mesh = UnitCube(8, 8, 8)
-        File("mesh.xdmf") << mesh
+        File("mesh_3D.xdmf") << mesh
 
 
 class XDMF_Vertex_Function_Output(unittest.TestCase):

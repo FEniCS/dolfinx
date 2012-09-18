@@ -209,16 +209,14 @@ void HDF5File::operator>>(Mesh& input_mesh)
 //-----------------------------------------------------------------------------
 void HDF5File::operator<<(const Mesh& mesh)
 {
-  // if no existing file, create...
-  // FIXME: better way to check? MPI safe?
-  //if(boost::filesystem::file_size(filename.c_str()) == 0)
-  //  create();
-
-  // Clear file when writing to for the first time
+  write_mesh(mesh, true);
+}
+//-----------------------------------------------------------------------------
+void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
+{
+  // Clear file when writing to file for the first time
   if(counter == 0)
     create();
-
-  cout << "Get mesh info" << endl;
 
   // Get local mesh data
   const uint cell_dim = mesh.topology().dim();
@@ -234,31 +232,6 @@ void HDF5File::operator<<(const Mesh& mesh)
   // Get vertex offset and local vertex range
   const uint vertex_offset = MPI::global_offset(num_local_vertices, true);
   const std::pair<uint, uint> vertex_range(vertex_offset, vertex_offset + num_local_vertices);
-
-  /*
-  // Get vertex indices
-  std::vector<uint> vertex_indices;
-  vertex_indices.reserve(2*num_local_vertices);
-  if(MPI::num_processes() == 1)
-  {
-    for(uint i = 0; i < num_local_vertices; i++)
-    {
-      // Cell vertex index and process number
-      vertex_indices.push_back(i);
-      vertex_indices.push_back(0);
-    }
-  }
-  else
-  {
-    const MeshFunction<uint> v_indices = mesh.parallel_data().global_entity_indices(0);
-    const uint process_number = MPI::process_number();
-    for(uint i = 0; i < vertex_indices.size(); i++)
-    {
-      vertex_indices.push_back(v_indices[i]);
-      vertex_indices.push_back(process_number);
-    }
-  }
-  */
 
   // FIXME: This is a bit clumsy because of lack of good support in DOLFIN
   //        for local/global indices. Replace when support in DOLFIN is
@@ -301,10 +274,23 @@ void HDF5File::operator<<(const Mesh& mesh)
   }
 
   // Get cell connectivity
+  // NOTE: For visualisation via XDMF, the vertex indices correspond
+  //       to the local vertex poistion, and not the true vertex indices.
   std::vector<uint> topological_data;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-    for (VertexIterator v(*cell); !v.end(); ++v)
-      topological_data.push_back(v_indices[*v]);
+  if (true_topology_indices)
+  {
+    // Build connectivity using true vertex indices
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+      for (VertexIterator v(*cell); !v.end(); ++v)
+        topological_data.push_back(v_indices[*v]);
+  }
+  else
+  {
+    // Build connectivity using contiguous vertex indices
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+      for (VertexIterator v(*cell); !v.end(); ++v)
+        topological_data.push_back(v->index() + vertex_range.first);
+  }
 
   // Write connectivity to HDF5 file
   const std::string topology_dataset = mesh_topo_dataset_name(mesh);
@@ -313,7 +299,6 @@ void HDF5File::operator<<(const Mesh& mesh)
     write(topological_data, cell_range, topology_dataset, cell_dim + 1);
     add_attribute(topology_dataset, "celltype", cell_type);
   }
-  cout << "Done" << endl;
 }
 //-----------------------------------------------------------------------------
 void HDF5File::operator<< (const GenericVector& x)

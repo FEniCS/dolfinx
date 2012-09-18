@@ -62,9 +62,13 @@ namespace dolfin
     void operator>> (GenericVector& input);
 
     /// Write Mesh to file
-    /// Saves into folder 'Mesh' as two datasets,
-    /// 'Topology' and 'Coordinates'
     void operator<< (const Mesh& mesh);
+
+    /// Write Mesh to file. 'true_topology_indices' indicares
+    /// whether the true vertex indices should be used for the connectivity
+    /// or the position of the vertex in the list. The latter is required
+    /// for visualisation and the former for reading a Mesh from file.
+    void write_mesh(const Mesh& mesh, bool true_topology_indices=true);
 
     /// Read Mesh from file
     void operator>> (Mesh& mesh);

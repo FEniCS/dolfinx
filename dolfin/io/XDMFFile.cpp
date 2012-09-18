@@ -181,12 +181,12 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   const std::string mesh_topology_name = hdf5_file->mesh_topo_dataset_name(mesh);
 
   // Write mesh to HDF5 file
-  if (counter == 0)
-    *(hdf5_file) << mesh;
+  if (counter == 0 )
+    hdf5_file->write_mesh(mesh, false);
   else if (!hdf5_file->dataset_exists(mesh_coords_name)
       || !hdf5_file->dataset_exists(mesh_topology_name))
   {
-    *(hdf5_file) << mesh;
+    hdf5_file->write_mesh(mesh, false);
   }
 
   // Working data structure for formatting XML file
@@ -346,12 +346,12 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
 //----------------------------------------------------------------------------
 void XDMFFile::operator<<(const Mesh& mesh)
 {
-  Timer hdf5timer("HDF5+XDMF Output (mesh)");
+  Timer hdf5timer("HDF5 + XDMF Output (mesh)");
 
-  // Write Mesh to HDF5 file
+  // Write Mesh to HDF5 file (use contiguous vertex indices for topology)
   dolfin_assert(hdf5_file);
   hdf5_file->create();
-  *(hdf5_file) << mesh;
+  hdf5_file->write_mesh(mesh, false);
 
   // Get number of local/global cells/vertices
   const uint num_local_cells = mesh.num_cells();
@@ -386,6 +386,7 @@ void XDMFFile::operator<<(const Mesh& mesh)
     pugi::xml_node xdmf_topology = xdmf_grid.append_child("Topology");
     xdmf_topology.append_attribute("NumberOfElements") = num_global_cells;
 
+    // Cell type
     const uint cell_dim = mesh.topology().dim();
     if (cell_dim == 2)
       xdmf_topology.append_attribute("TopologyType") = "Triangle";
