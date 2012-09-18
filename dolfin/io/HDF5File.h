@@ -97,7 +97,7 @@ namespace dolfin
                const int h5type, const uint width) const;
 
     template <typename T>
-    void read(T& data, const std::pair<uint, uint> range,
+    void read(std::vector<T>& data, const std::pair<uint, uint> range,
               const std::string dataset_name, const int h5type,
               const uint width) const;
 

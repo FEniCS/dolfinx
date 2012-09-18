@@ -99,26 +99,30 @@ void HDF5File::operator>>(Mesh& input_mesh)
   mesh_data.num_global_vertices  = num_global_vertices;
 
   // FIXME: Document what's going on
-  std::pair<uint, uint> vertex_range = MPI::local_range(num_global_vertices);
+  const std::pair<uint, uint> vertex_range = MPI::local_range(num_global_vertices);
   uint num_local_vertices = vertex_range.second-vertex_range.first;
   mesh_data.vertex_indices.reserve(num_local_vertices);
   std::cout << "Reserved space for " << num_local_vertices << " vertices" << std::endl;
   std::vector<double> data;
+
+  // FIXME: This looks seriously broken HDF5::read does not resize data
   data.reserve(num_local_vertices*3); // Mesh always saved in 3D regardless, so may need to decimate
-  read(data[0], vertex_range, coords_name, H5T_NATIVE_DOUBLE, 3);
+  read(data, vertex_range, coords_name, H5T_NATIVE_DOUBLE, 3);
 
   std::string global_index_name("/Mesh/");
   // FIXME: With luck...
   global_index_name.append(_dataset_list[1]);
   std::vector<uint> global_index_data;
+
+  // FIXME: This looks seriously broken HDF5::read does not resize data
   global_index_data.reserve(num_local_vertices*2);
-  read(global_index_data[0], vertex_range, global_index_name, H5T_NATIVE_INT, 2);
+  read(global_index_data, vertex_range, global_index_name, H5T_NATIVE_INT, 2);
 
   printf("Loading %d vertices\n", num_local_vertices);
 
   for(uint i = 0; i < num_local_vertices; i++)
   {
-    std::vector<double> v(&data[i*3],&data[i*3+coords_dim.second]); // copy correct width (2D or 3D)
+    std::vector<double> v(&data[i*3], &data[i*3 + coords_dim.second]); // copy correct width (2D or 3D)
     mesh_data.vertex_coordinates.push_back(v);
     mesh_data.vertex_indices.push_back(global_index_data[i*2]);
   }
@@ -146,8 +150,10 @@ void HDF5File::operator>>(Mesh& input_mesh)
   mesh_data.num_vertices_per_cell = num_vertices_per_cell;
 
   std::vector<uint> topo_data(num_local_cells*num_vertices_per_cell);
+
+  // FIXME: This looks seriously broken HDF5::read does not resize data
   topo_data.reserve(num_local_cells*num_vertices_per_cell);
-  read(topo_data[0], cell_range, topo_name, H5T_NATIVE_INT, num_vertices_per_cell);
+  read(topo_data, cell_range, topo_name, H5T_NATIVE_INT, num_vertices_per_cell);
 
   // FIXME: The same number of processes *does not* guarantee the same
   // partitioning. At different partitioning might be used, and
@@ -330,7 +336,7 @@ void HDF5File::operator>> (GenericVector& input)
 {
   const std::pair<uint, uint> range = input.local_range(0);
   std::vector<double> data(range.second - range.first);
-  read(data[0], range, "/Vector/0", H5T_NATIVE_DOUBLE, 1);
+  read(data, range, "/Vector/0", H5T_NATIVE_DOUBLE, 1);
   input.set_local(data);
 }
 //-----------------------------------------------------------------------------
@@ -380,10 +386,12 @@ void HDF5File::create()
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void HDF5File::read(T& data,  const std::pair<uint, uint> range,
+void HDF5File::read(std::vector<T>& data,  const std::pair<uint, uint> range,
                      const std::string dataset_name,
                      const int h5type, const uint width) const
 {
+  // FIXME: Need to check size of data and re-size
+
   // read a generic block of 2D data from a HDF5 dataset
 
   // Read input in parallel. Assumes the input vector
@@ -445,7 +453,7 @@ void HDF5File::read(T& data,  const std::pair<uint, uint> range,
   // read data independently
 
   status = H5Dread(dset_id, h5type, memspace, filespace,
-                   H5P_DEFAULT, &data);
+                   H5P_DEFAULT, data.data());
   dolfin_assert(status != HDF5_FAIL);
 
   // close dataset collectively
