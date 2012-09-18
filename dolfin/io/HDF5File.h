@@ -55,11 +55,11 @@ namespace dolfin
     /// saves into HDF5 folder 'Vector'
     /// multiple calls will save in the same file
     /// with incrementing dataset names
-    void operator<< (const GenericVector& output);
+    void operator<< (const GenericVector& x);
 
     /// Read vector from file
     /// looks in HDF5 folder 'Vector' for last dataset
-    void operator>> (GenericVector& input);
+    void operator>> (GenericVector& x);
 
     /// Write Mesh to file
     void operator<< (const Mesh& mesh);
@@ -81,15 +81,26 @@ namespace dolfin
     // Create an empty file (truncate if existing)
     void create();
 
-    // Write functions for int, double, etc. Used by XDMFFile
+    // Write data to existing HDF file as defined by range blocks on each
+    // process
+    // range: the local range on this processor (dim 0)
+    // width: is the width of the data item (dim 1, e.g. 3 for x, y, z data)
     void write(const std::vector<double>& data,
                const std::pair<uint, uint> range,
                const std::string dataset_name, const uint width);
 
+    // Write data to existing HDF file as defined by range blocks on each
+    // process
+    // range: the local range on this processor (dim 0)
+    // width: is the width of the data item (dim 1, e.g. 3 for x, y, z data)
     void write(const std::vector<uint>& data,
                const std::pair<uint, uint> range,
                const std::string dataset_name, const uint width);
 
+    // Write data to existing HDF file as defined by range blocks on each
+    // process
+    // range: the local range on this processor (dim 0)
+    // width: is the width of the data item (dim 1, e.g. 3 for x, y, z data)
     template <typename T>
     void write(const std::vector<T>& data,
                const std::pair<uint, uint> range,

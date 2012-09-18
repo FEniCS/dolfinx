@@ -27,6 +27,7 @@
 #include <iostream>
 #include <iomanip>
 #include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
 
 // Use version 1.6 API for stability
 // Fairly easy to switch to later version
@@ -309,9 +310,6 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
 //-----------------------------------------------------------------------------
 void HDF5File::operator<< (const GenericVector& x)
 {
-  // Create HDF File and add a dataset
-  // Allow multiple vectors within one file
-
   // Get local range;
   std::pair<uint, uint> range = x.local_range(0);
 
@@ -325,8 +323,8 @@ void HDF5File::operator<< (const GenericVector& x)
 
   // Write to HDF5 file
   std::stringstream s("");
-  s << "/Vector/" << counter;
-  write(data, range, s.str().c_str(), 1);
+  const std::string name = "/Vector/" + boost::lexical_cast<std::string>(counter);
+  write(data, range, name.c_str(), 1);
 
   // Increment counter
   counter++;
@@ -483,9 +481,6 @@ void HDF5File::write(const std::vector<uint>& data,
                      const std::pair<uint, uint> range,
                      const std::string dataset_name, const uint width)
 {
-  // Write data to existing HDF file as defined by range blocks on each process
-  // range: the local range on this processor
-  // width: is the width of the dataitem (e.g. 3 for x, y, z data)
   write(data, range, dataset_name, H5T_NATIVE_INT, width);
 }
 //-----------------------------------------------------------------------------
@@ -495,70 +490,87 @@ void HDF5File::write(const std::vector<T>& data,
                      const std::string dataset_name,
                      const int h5type, const uint width) const
 {
-  // write a generic block of 2D data into a HDF5 dataset
-  // in parallel. Pre-existing file.
+  // File and dataset identifiers
+  hid_t file_id, dset_id;
 
-  hid_t       file_id, dset_id;         /* file and dataset identifiers */
-  hid_t       filespace, memspace;      /* file and memory dataspace identifiers */
-  hsize_t     dimsf[2];                 /* dataset dimensions */
-  hsize_t     count[2];                  /* hyperslab selection parameters */
-  hsize_t     offset[2];
-  hid_t              plist_id;           /* property list identifier */
-  herr_t      status;
+  // File and memory dataspace identifiers
+  hid_t filespace, memspace;
 
+  // Hyperslab selection parameters
+  hsize_t count[2]  = {range.second - range.first, width};
+  hsize_t offset[2] = {range.first, 0};
+
+  // Dataset dimensions
+  hsize_t dimsf[2] = {MPI::sum(count[0]), width} ;
+
+  // Property list identifier
+  hid_t  plist_id;
+  herr_t status;
+
+  // Get MPI objects
   MPICommunicator comm;
   MPIInfo info;
 
-  offset[0] = range.first;
-  offset[1] = 0;
-  count[0] = range.second-range.first;
-  count[1] = width;
-  dimsf[0] = MPI::sum((int)count[0]);
-  dimsf[1] = width;
-
+  // FIXME: document
   plist_id = H5Pcreate(H5P_FILE_ACCESS);
-  status = H5Pset_fapl_mpio(plist_id,*comm, *info);
+  status = H5Pset_fapl_mpio(plist_id, *comm, *info);
   dolfin_assert(status != HDF5_FAIL);
 
   // Try to open existing HDF5 file
   file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
   dolfin_assert(file_id != HDF5_FAIL);
 
+  // FIXME: document
   status = H5Pclose(plist_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  // define a 2D dataset
+  // Create a 2D data space
   filespace = H5Screate_simple(2, dimsf, NULL);
   assert(filespace != HDF5_FAIL);
 
+  // Create data set (using datset name)
   dset_id = H5Dcreate(file_id, dataset_name.c_str(), h5type, filespace,
                       H5P_DEFAULT);
   dolfin_assert(dset_id != HDF5_FAIL);
 
+  // Close data space
   status = H5Sclose(filespace);
   dolfin_assert(status != HDF5_FAIL);
 
+  // FIXME: document
   memspace = H5Screate_simple(2, count, NULL);
 
+  // FIXME: document
   filespace = H5Dget_space(dset_id);
   status = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL, count, NULL);
   dolfin_assert(status != HDF5_FAIL);
 
+  // FIXME: document
   plist_id = H5Pcreate(H5P_DATASET_XFER);
   status = H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
   assert(status != HDF5_FAIL);
 
+  // FIXME: document
   status = H5Dwrite(dset_id, h5type, memspace, filespace, plist_id, data.data());
   dolfin_assert(status != HDF5_FAIL);
 
+  // FIXME: document
   status = H5Dclose(dset_id);
   dolfin_assert(status != HDF5_FAIL);
+
+  // FIXME: document
   status = H5Sclose(filespace);
   dolfin_assert(status != HDF5_FAIL);
+
+  // FIXME: document
   status = H5Sclose(memspace);
   dolfin_assert(status != HDF5_FAIL);
+
+  // FIXME: document
   status = H5Pclose(plist_id);
   dolfin_assert(status != HDF5_FAIL);
+
+  // FIXME: document
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 }
@@ -569,6 +581,7 @@ bool HDF5File::dataset_exists(const std::string dataset_name) const
   MPIInfo info;
   herr_t status;
 
+  // FIXME: document
   hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
   status = H5Pset_fapl_mpio(plist_id,*comm, *info);
   dolfin_assert(status != HDF5_FAIL);
@@ -577,6 +590,7 @@ bool HDF5File::dataset_exists(const std::string dataset_name) const
   hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
   dolfin_assert(file_id != HDF5_FAIL);
 
+  // FIXME: document
   status = H5Pclose(plist_id);
   dolfin_assert(status != HDF5_FAIL);
 
@@ -585,6 +599,7 @@ bool HDF5File::dataset_exists(const std::string dataset_name) const
   void *old_client_data;
   H5Eget_auto(&old_func, &old_client_data);
 
+  // FIXME: document
   status = H5Eset_auto(NULL, NULL);
   dolfin_assert(status != HDF5_FAIL);
 
@@ -612,6 +627,7 @@ std::vector<std::string> HDF5File::dataset_list(const std::string group_name) co
   MPIInfo info;
   herr_t status;
 
+  // FIXME: document
   hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
   status = H5Pset_fapl_mpio(plist_id,*comm, *info);
   dolfin_assert(status != HDF5_FAIL);
@@ -620,9 +636,11 @@ std::vector<std::string> HDF5File::dataset_list(const std::string group_name) co
   hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
   dolfin_assert(file_id != HDF5_FAIL);
 
+  // FIXME: document
   status = H5Pclose(plist_id);
   dolfin_assert(status != HDF5_FAIL);
 
+  // FIXME: document
   hid_t group_id = H5Gopen(file_id,group_name.c_str());
   dolfin_assert(group_id != HDF5_FAIL);
 
@@ -631,6 +649,7 @@ std::vector<std::string> HDF5File::dataset_list(const std::string group_name) co
   status = H5Gget_num_objs(group_id, &num_obj);
   dolfin_assert(status != HDF5_FAIL);
 
+  // FIXME: document
   std::vector<std::string> lvec;
   std::string str;
   // go through all objects
@@ -641,9 +660,11 @@ std::vector<std::string> HDF5File::dataset_list(const std::string group_name) co
     lvec.push_back(str);
   }
 
+  // FIXME: document
   status = H5Gclose(group_id);
   dolfin_assert(status != HDF5_FAIL);
 
+  // FIXME: document
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 
@@ -663,6 +684,7 @@ std::pair<uint, uint> HDF5File::dataset_dimensions(const std::string dataset_nam
   MPIInfo info;
   herr_t status;
 
+  // FIXME: document
   hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
   status = H5Pset_fapl_mpio(plist_id,*comm, *info);
   dolfin_assert(status != HDF5_FAIL);
@@ -671,19 +693,24 @@ std::pair<uint, uint> HDF5File::dataset_dimensions(const std::string dataset_nam
   hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
   dolfin_assert(file_id != HDF5_FAIL);
 
+  // FIXME: document
   status = H5Pclose(plist_id);
   dolfin_assert(status != HDF5_FAIL);
 
+  // FIXME: document
   hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
   dolfin_assert(dset_id != HDF5_FAIL);
 
+  // FIXME: document
   space = H5Dget_space(dset_id);
   ndims = H5Sget_simple_extent_dims(space, cur_size, max_size);
   dolfin_assert(ndims == 2);
 
+  // FIXME: document
   status = H5Dclose(dset_id);
   dolfin_assert(status != HDF5_FAIL);
 
+  // FIXME: document
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 
@@ -698,6 +725,7 @@ void HDF5File::add_attribute(const std::string dataset_name,
   MPIInfo info;
   herr_t status;
 
+  // FIXME: document
   hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
   status = H5Pset_fapl_mpio(plist_id,*comm, *info);
   dolfin_assert(status != HDF5_FAIL);
@@ -706,13 +734,16 @@ void HDF5File::add_attribute(const std::string dataset_name,
   hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
   dolfin_assert(file_id != HDF5_FAIL);
 
+  // FIXME: document
   status = H5Pclose(plist_id);
   dolfin_assert(status != HDF5_FAIL);
 
+  // FIXME: document
   hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
   dolfin_assert(dset_id != HDF5_FAIL);
 
   // add string attribute
+  // FIXME: document better
   hid_t datatype_id = H5Tcopy (H5T_C_S1);
   status = H5Tset_size (datatype_id, attribute_value.size());
   hid_t dataspaces_id = H5Screate (H5S_SCALAR);
@@ -721,12 +752,15 @@ void HDF5File::add_attribute(const std::string dataset_name,
   status = H5Awrite(attribute_id, datatype_id, attribute_value.c_str());
   dolfin_assert(status != HDF5_FAIL);
 
+  // FIXME: document
   status = H5Aclose(attribute_id);
   dolfin_assert(status != HDF5_FAIL);
 
+  // FIXME: document
   status = H5Dclose(dset_id);
   dolfin_assert(status != HDF5_FAIL);
 
+  // FIXME: document
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 }
@@ -738,6 +772,7 @@ std::string HDF5File::get_attribute(const std::string dataset_name,
   MPIInfo info;
   herr_t status;
 
+  // FIXME: document
   hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
   status = H5Pset_fapl_mpio(plist_id,*comm, *info);
   dolfin_assert(status != HDF5_FAIL);
@@ -746,12 +781,15 @@ std::string HDF5File::get_attribute(const std::string dataset_name,
   hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
   dolfin_assert(file_id != HDF5_FAIL);
 
+  // FIXME: document
   status = H5Pclose(plist_id);
   dolfin_assert(status != HDF5_FAIL);
 
+  // FIXME: document
   hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
   dolfin_assert(dset_id != HDF5_FAIL);
 
+  // FIXME: document
   hid_t attr_id = H5Aopen(dset_id, attribute_name.c_str(), H5P_DEFAULT);
   hid_t filetype = H5Aget_type(attr_id);
   int slen = H5Tget_size(filetype);
@@ -760,18 +798,23 @@ std::string HDF5File::get_attribute(const std::string dataset_name,
   //  hid_t space_id = H5Aget_space(attr_id);
   hid_t memtype = H5Tcopy (H5T_C_S1);
 
+  // FIXME: document
   status = H5Tset_size(memtype,slen);
   dolfin_assert(status != HDF5_FAIL);
 
+  // FIXME: document
   std::vector<char> str(slen);
   status = H5Aread(attr_id, memtype, &str[0]);
 
+  // FIXME: document
   status = H5Aclose(attr_id);
   dolfin_assert(status != HDF5_FAIL);
 
+  // FIXME: document
   status = H5Dclose(dset_id);
   dolfin_assert(status != HDF5_FAIL);
 
+  // FIXME: document
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 
