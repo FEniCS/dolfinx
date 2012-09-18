@@ -38,6 +38,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/log.h>
@@ -224,40 +225,65 @@ void HDF5File::operator<<(const Mesh& mesh)
   const CellType::Type _cell_type = mesh.type().cell_type();
   const std::string cell_type = CellType::type2string(_cell_type);
 
-  // Get cell offset and size of local cell topology usage in global terms
+  // Get cell offset and local cell range
   const uint cell_offset = MPI::global_offset(num_local_cells, true);
   const std::pair<uint, uint> cell_range(cell_offset, cell_offset + num_local_cells);
 
-  // Get vertex offset and size of local vertex usage in global terms
+  // Get vertex offset and local vertex range
   const uint vertex_offset = MPI::global_offset(num_local_vertices, true);
   const std::pair<uint, uint> vertex_range(vertex_offset, vertex_offset + num_local_vertices);
 
+  /*
   // Get vertex indices
-  std::vector<uint>global_vertex_indices;
+  std::vector<uint> vertex_indices;
+  vertex_indices.reserve(2*num_local_vertices);
   if(MPI::num_processes() == 1)
   {
-    global_vertex_indices.reserve(2*num_local_vertices);
     for(uint i = 0; i < num_local_vertices; i++)
     {
       // Cell vertex index and process number
-      global_vertex_indices.push_back(i);
-      global_vertex_indices.push_back(0);
+      vertex_indices.push_back(i);
+      vertex_indices.push_back(0);
     }
   }
   else
   {
-    const MeshFunction<uint> vertex_indices = mesh.parallel_data().global_entity_indices(0);
+    const MeshFunction<uint> v_indices = mesh.parallel_data().global_entity_indices(0);
     const uint process_number = MPI::process_number();
     for(uint i = 0; i < vertex_indices.size(); i++)
     {
-      global_vertex_indices.push_back(vertex_indices[i]);
-      global_vertex_indices.push_back(process_number);
+      vertex_indices.push_back(v_indices[i]);
+      vertex_indices.push_back(process_number);
     }
   }
+  */
 
+  // FIXME: This is a bit clumsy because of lack of good support in DOLFIN
+  //        for local/global indices. Replace when support in DOLFIN is
+  //        improved
+  // Get global vertex indices
+  MeshFunction<uint> v_indices(mesh, 0);
+  if (MPI::num_processes() == 1)
+  {
+    for (VertexIterator v(mesh); !v.end(); ++v)
+      v_indices[*v] = v->index();
+  }
+  else
+    v_indices = mesh.parallel_data().global_entity_indices(0);
+
+  // Get vertex indices
+  std::vector<uint> vertex_indices;
   std::vector<double> vertex_coords;
+  vertex_indices.reserve(2*num_local_vertices);
+  vertex_coords.reserve(3*num_local_vertices);
+  const uint process_number = MPI::process_number();
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
+    // Vertex gloabl index and process number
+    vertex_indices.push_back(v_indices[*v]);
+    vertex_indices.push_back(process_number);
+
+    // Vertex coordinates
     const Point p = v->point();
     vertex_coords.push_back(p.x());
     vertex_coords.push_back(p.y());
@@ -265,47 +291,50 @@ void HDF5File::operator<<(const Mesh& mesh)
   }
 
   // Write vertex data to HDF5 file
-  std::string s = mesh_coords_dataset_name(mesh);
-  if (!dataset_exists(s))
+  const std::string coord_dataset = mesh_coords_dataset_name(mesh);
+  if (!dataset_exists(coord_dataset))
   {
-    write(global_vertex_indices, vertex_range, mesh_index_dataset_name(mesh), 2); // global mapping
-    write(vertex_coords, vertex_range, s, 3); //xyz coords
+    write(vertex_indices, vertex_range, mesh_index_dataset_name(mesh), 2);
+    write(vertex_coords, vertex_range, coord_dataset, 3);
   }
 
-  // Get connectivity
+  // Get cell connectivity
   std::vector<uint> topological_data;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     for (VertexIterator v(*cell); !v.end(); ++v)
-      topological_data.push_back(v->index() + vertex_range.first);
+      topological_data.push_back(v_indices[*v]);
 
   // Write connectivity to HDF5 file
-  s = mesh_topo_dataset_name(mesh);
-  if (!dataset_exists(s))
+  const std::string topology_dataset = mesh_topo_dataset_name(mesh);
+  if (!dataset_exists(topology_dataset))
   {
-    write(topological_data, cell_range, s, cell_dim + 1); //connectivity
-    add_attribute(s,"celltype", cell_type);
+    write(topological_data, cell_range, topology_dataset, cell_dim + 1);
+    add_attribute(topology_dataset, "celltype", cell_type);
   }
 }
 //-----------------------------------------------------------------------------
-void HDF5File::operator<< (const GenericVector& output)
+void HDF5File::operator<< (const GenericVector& x)
 {
   // Create HDF File and add a dataset
   // Allow multiple vectors within one file
 
-  uint dim = 0;
-  std::pair<uint, uint> range;
+  // Get local range;
+  std::pair<uint, uint> range = x.local_range(0);
+
+  // Get all local data
   std::vector<double> data;
+  x.get_local(data);
 
-  range = output.local_range(dim);
-  output.get_local(data);
-
+  // Overwrite any existing file
   if (counter == 0)
-    create(); //overwrite any existing file
+    create();
 
+  // Write to HDF5 file
   std::stringstream s("");
   s << "/Vector/" << counter;
   write(data, range, s.str().c_str(), 1);
 
+  // Increment counter
   counter++;
 }
 //-----------------------------------------------------------------------------
@@ -361,7 +390,6 @@ void HDF5File::create()
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 }
-
 //-----------------------------------------------------------------------------
 template <typename T>
 void HDF5File::read(T& data,  const std::pair<uint, uint> range,
@@ -443,7 +471,6 @@ void HDF5File::read(T& data,  const std::pair<uint, uint> range,
   // close the file collectively
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
-
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write(const std::vector<double>& data,
