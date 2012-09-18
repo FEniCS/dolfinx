@@ -38,9 +38,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::Mesh
-MeshRenumbering::renumber_by_color(const Mesh& mesh,
-                                   const std::vector<unsigned int> coloring_type)
+dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
+                                 const std::vector<unsigned int> coloring_type)
 {
   // Start timer
   Timer timer("Renumber mesh by color");
@@ -53,9 +52,11 @@ MeshRenumbering::renumber_by_color(const Mesh& mesh,
 
   // Check that requested coloring is a cell coloring
   if (coloring_type[0] != tdim)
+  {
     dolfin_error("MeshRenumbering.cpp",
                  "renumber mesh by color",
                  "Coloring is not a cell coloring: only cell colorings are supported");
+  }
 
   // Compute renumbering
   std::vector<double> new_coordinates;
@@ -102,9 +103,11 @@ MeshRenumbering::renumber_by_color(const Mesh& mesh,
   ConstMeshColoringData mesh_coloring
     = mesh.parallel_data().coloring.find(coloring_type);
   if (mesh_coloring == mesh.parallel_data().coloring.end())
+  {
     dolfin_error("MeshRenumbering.cpp",
                  "renumber mesh by color",
                  "Requested mesh coloring has not been computed");
+  }
 
   // Get old coloring data
   const MeshFunction<uint>& colors = mesh_coloring->second.first;
@@ -196,7 +199,7 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
   dolfin_assert(!entities_of_color_old.empty());
 
   // Get coordinates
-  const double* coordinates = mesh.geometry().coordinates;
+  const std::vector<double>& coordinates = mesh.geometry().coordinates;
 
   // New vertex indices, -1 if not yet renumbered
   std::vector<int> new_vertex_indices(num_vertices, -1);
@@ -229,8 +232,8 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
         // Renumber and copy coordinate data if vertex is not yet renumbered
         if (new_vertex_indices[vertex_index] == -1)
         {
-          std::copy(coordinates + vertex_index*gdim,
-                    coordinates + (vertex_index + 1)*gdim,
+          std::copy(coordinates.begin() + vertex_index*gdim,
+                    coordinates.begin() + (vertex_index + 1)*gdim,
                     new_coordinates.begin() + current_vertex*gdim);
           new_vertex_indices[vertex_index] = current_vertex++;
         }

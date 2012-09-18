@@ -54,63 +54,88 @@ namespace dolfin
     const MeshGeometry& operator= (const MeshGeometry& geometry);
 
     /// Return Euclidean dimension of coordinate system
-    uint dim() const { return _dim; }
+    uint dim() const
+    { return _dim; }
 
     /// Return number of coordinates
-    uint size() const { return _size; }
+    uint size() const
+    {
+      dolfin_assert(coordinates.size() % _dim == 0);
+      return coordinates.size()/_dim;
+    }
 
     /// Return value of coordinate n in direction i
-    double& x(uint n, uint i) { dolfin_assert(n < _size && i < _dim); return coordinates[n*_dim + i]; }
+    double& x(uint n, uint i)
+    {
+      dolfin_assert(n < size() && i < _dim);
+      return coordinates[n*_dim + i];
+    }
 
     /// Return value of coordinate n in direction i
-    double x(uint n, uint i) const { dolfin_assert(n < _size && i < _dim); return coordinates[n*_dim + i]; }
+    double x(uint n, uint i) const
+    {
+      dolfin_assert(n < size() && i < _dim);
+      return coordinates[n*_dim + i];
+    }
 
     /// Return array of values for coordinate n
-    double* x(uint n) { return coordinates + n*_dim; }
+    double* x(uint n)
+    { return &coordinates[n*_dim]; }
 
     /// Return array of values for coordinate n
-    const double* x(uint n) const { return coordinates + n*_dim; }
+    const double* x(uint n) const
+    { return &coordinates[n*_dim]; }
 
     /// Return array of values for all coordinates
-    double* x() { return coordinates; }
+    double* x()
+    { return coordinates.data(); }
 
     /// Return array of values for all coordinates
-    const double* x() const { return coordinates; }
+    const double* x() const
+    { return coordinates.data(); }
 
     /// Return array of values for higher order coordinate n
-    double* higher_order_x(uint n) { return higher_order_coordinates + n*_dim; }
+    double* higher_order_x(uint n)
+    { return &higher_order_coordinates[n*_dim]; }
 
     /// Return array of values for higher order coordinate n
-    const double* higher_order_x(uint n) const { return higher_order_coordinates + n*_dim; }
+    const double* higher_order_x(uint n) const
+    { return &higher_order_coordinates[n*_dim]; }
 
     /// Return array of values for all higher order coordinates
-    double* higher_order_x() { return higher_order_coordinates; }
+    double* higher_order_x()
+    { return higher_order_coordinates.data(); }
 
     /// Return array of values for all higher order coordinates
-    const double* higher_order_x() const { return higher_order_coordinates; }
+    const double* higher_order_x() const
+    { return higher_order_coordinates.data(); }
 
     /// Return number of vertices used (per cell) to represent the higher order geometry
-    uint num_higher_order_vertices_per_cell() const { return _higher_order_num_dof; }
+    uint num_higher_order_vertices_per_cell() const
+    { return _higher_order_num_dof; }
 
     /// Return array of higher order vertex indices for a specific higher order cell
     uint* higher_order_cell(uint c)
-    { return (higher_order_cell_data + (c*_higher_order_num_dof)); }
+    { return &higher_order_cell_data[c*_higher_order_num_dof]; }
 
     /// Return array of higher order vertex indices for a specific higher order cell
     const uint* higher_order_cell(uint c) const
-    { return (higher_order_cell_data + (c*_higher_order_num_dof)); }
+    { return &higher_order_cell_data[c*_higher_order_num_dof]; }
 
     /// Return array of values for all higher order cell data
-    uint* higher_order_cells() { return higher_order_cell_data; }
+    uint* higher_order_cells()
+    { return higher_order_cell_data.data(); }
 
     /// Return array of values for all higher order cell data
-    const uint* higher_order_cells() const { return higher_order_cell_data; }
+    const uint* higher_order_cells() const
+    { return higher_order_cell_data.data(); }
 
     /// Return coordinate n as a 3D point value
     Point point(uint n) const;
 
     /// Return pointer to boolean affine indicator array
-    bool* affine_cell_bool() { return affine_cell; }
+    std::vector<bool>& affine_cell_bool()
+    { return affine_cell; }
 
     /// Clear all data
     void clear();
@@ -151,18 +176,15 @@ namespace dolfin
     // Euclidean dimension
     uint _dim;
 
-    // Number of coordinates
-    uint _size;
-
     // Coordinates for all vertices stored as a contiguous array
-    double* coordinates;
+    std::vector<double> coordinates;
 
     // Number of higher order coordinates
     uint _size_higher_order;
 
     // Higher order mesh coordinates (stored just like coordinates)
     // note: this may seem redundant, but needs to stay this way!
-    double* higher_order_coordinates;
+    std::vector<double> higher_order_coordinates;
 
     // should eventually have some kind of indicator for the TYPE of higher order cell data!
     // i.e. P2 Lagrange, etc...  For now we will assume P2 Lagrange only!
@@ -173,11 +195,11 @@ namespace dolfin
 
     // Higher order cell data
     // note: this may seem redundant, but needs to stay this way!
-    uint* higher_order_cell_data;
+    std::vector<uint> higher_order_cell_data;
 
     // Boolean indicator for whether a cell is affinely mapped (or not), i.e. straight or not.
     // note: this is used in conjunction with the higher order stuff
-    bool* affine_cell;
+    std::vector<bool> affine_cell;
 
   };
 

@@ -28,18 +28,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshGeometry::MeshGeometry() :
-  _dim(0), _size(0), coordinates(0), _size_higher_order(0),
-  higher_order_coordinates(0), _higher_order_num_cells(0),
-  _higher_order_num_dof(0), higher_order_cell_data(0), affine_cell(0)
+MeshGeometry::MeshGeometry() : _dim(0), _size_higher_order(0),
+  _higher_order_num_cells(0), _higher_order_num_dof(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-MeshGeometry::MeshGeometry(const MeshGeometry& geometry) :
-  _dim(0), _size(0), coordinates(0), _size_higher_order(0),
-  higher_order_coordinates(0), _higher_order_num_cells(0),
-  _higher_order_num_dof(0), higher_order_cell_data(0), affine_cell(0)
+MeshGeometry::MeshGeometry(const MeshGeometry& geometry) : _dim(0),
+  _size_higher_order(0), _higher_order_num_cells(0), _higher_order_num_dof(0)
 {
   *this = geometry;
 }
@@ -54,47 +50,30 @@ const MeshGeometry& MeshGeometry::operator= (const MeshGeometry& geometry)
   // Clear old data if any
   clear();
 
-  // Allocate data
-  _dim = geometry._dim;
-  _size = geometry._size;
-  const uint n = _dim*_size;
-  coordinates = new double[n];
   // Copy data
-  for (uint i = 0; i < n; i++)
-    coordinates[i] = geometry.coordinates[i];
+  _dim = geometry._dim;
+  coordinates = geometry.coordinates;
 
   // higher order mesh data
   _size_higher_order         = geometry._size_higher_order;
   _higher_order_num_cells    = geometry._higher_order_num_cells;
   _higher_order_num_dof      = geometry._higher_order_num_dof;
-  const uint hon   = _dim*_size_higher_order;
-  const uint honcd = _higher_order_num_dof*_higher_order_num_cells;
-  if ( (_size_higher_order>0) && (_higher_order_num_cells>0) && (_higher_order_num_dof>0) )
-  	{
-	higher_order_coordinates = new double[hon];
-	higher_order_cell_data = new uint[honcd];
-	affine_cell = new bool[_higher_order_num_cells];
-
-	/** COPY: higher order mesh data **/
-	// higher order coordinate data
-	for (uint i = 0; i < hon; i++)
-	higher_order_coordinates[i] = geometry.higher_order_coordinates[i];
-	// higher order cell data
-	for (uint i = 0; i < honcd; i++)
-	higher_order_cell_data[i] = geometry.higher_order_cell_data[i];
-	// indicator array for whether each cell is affine or not
-	for (uint i = 0; i < _higher_order_num_cells; i++)
-	affine_cell[i] = geometry.affine_cell[i];
-  	}
+  if ( (_size_higher_order > 0) && (_higher_order_num_cells > 0) && (_higher_order_num_dof > 0) )
+  {
+    /** COPY: higher order mesh data **/
+    higher_order_coordinates = geometry.higher_order_coordinates;
+    higher_order_cell_data = geometry.higher_order_cell_data;
+    affine_cell = geometry.affine_cell;
+  }
   else
-  	{
-	_size_higher_order        = 0;
-	_higher_order_num_cells   = 0;
-	_higher_order_num_dof     = 0;
-	higher_order_coordinates  = 0;
-	higher_order_cell_data    = 0;
-	affine_cell               = 0;
-  	}
+  {
+    _size_higher_order        = 0;
+    _higher_order_num_cells   = 0;
+    _higher_order_num_dof     = 0;
+    higher_order_coordinates.clear();
+    higher_order_cell_data.clear();
+    affine_cell.clear();
+  }
 
   return *this;
 }
@@ -119,20 +98,14 @@ Point MeshGeometry::point(uint n) const
 void MeshGeometry::clear()
 {
   _dim  = 0;
-  _size = 0;
   _size_higher_order      = 0;
   _higher_order_num_cells = 0;
   _higher_order_num_dof   = 0;
 
-  delete [] coordinates;
-  delete [] higher_order_coordinates;
-  delete [] higher_order_cell_data;
-  delete [] affine_cell;
-
-  coordinates               = 0;
-  higher_order_coordinates  = 0;
-  higher_order_cell_data    = 0;
-  affine_cell               = 0;
+  coordinates.clear();
+  higher_order_coordinates.clear();
+  higher_order_cell_data.clear();
+  affine_cell.clear();
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::init(uint dim, uint size)
@@ -141,19 +114,18 @@ void MeshGeometry::init(uint dim, uint size)
   clear();
 
   // Allocate new data
-  coordinates = new double[dim*size];
-  higher_order_coordinates = 0; // this will be set by another routine
+  coordinates.resize(dim*size);
+  higher_order_coordinates.clear(); // this will be set by another routine
 
   // Save dimension and size
   _dim = dim;
-  _size = size;
   _size_higher_order = 0; // this will be set by another routine
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::init_higher_order_vertices(uint dim, uint size_higher_order)
 {
   // Allocate new data
-  higher_order_coordinates = new double[dim*size_higher_order];
+  higher_order_coordinates.resize(dim*size_higher_order);
 
   // Save size
   _size_higher_order = size_higher_order;
@@ -162,7 +134,7 @@ void MeshGeometry::init_higher_order_vertices(uint dim, uint size_higher_order)
 void MeshGeometry::init_higher_order_cells(uint num_cells, uint num_dof)
 {
   // Allocate new data
-  higher_order_cell_data = new uint[num_dof*num_cells];
+  higher_order_cell_data.resize(num_dof*num_cells);
 
   // Save size
   _higher_order_num_cells = num_cells;
@@ -171,15 +143,7 @@ void MeshGeometry::init_higher_order_cells(uint num_cells, uint num_dof)
 //-----------------------------------------------------------------------------
 void MeshGeometry::init_affine_indicator(uint num_cells)
 {
-  // Clear it if it was already allocated
-  delete affine_cell;
-
-  // Allocate new data
-  affine_cell = new bool[num_cells];
-
-  // Initialize all cells to be affine
-  for (uint i = 0; i < num_cells; i++)
-    affine_cell[i] = true;
+  affine_cell = std::vector<bool>(num_cells, true);
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::set_affine_indicator(uint i, bool value)
@@ -206,12 +170,10 @@ void MeshGeometry::set_higher_order_cell_data(uint N, std::vector<uint> vector_c
 std::string MeshGeometry::str(bool verbose) const
 {
   std::stringstream s;
-
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-
-    for (uint i = 0; i < _size; i++)
+    for (uint i = 0; i < size(); i++)
     {
       s << "  " << i << ":";
       for (uint d = 0; d < _dim; d++)
@@ -221,9 +183,7 @@ std::string MeshGeometry::str(bool verbose) const
     s << std::endl;
   }
   else
-  {
-    s << "<MeshGeometry of dimension " << _dim << " and size " << _size << ">";
-  }
+    s << "<MeshGeometry of dimension " << _dim << " and size " << size() << ">";
 
   return s.str();
 }

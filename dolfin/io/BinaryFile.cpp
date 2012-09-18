@@ -110,9 +110,9 @@ void BinaryFile::operator>> (Mesh& mesh)
   // Read mesh geometry (ignoring higher order stuff)
   MeshGeometry& g = mesh._geometry;
   g._dim = read_uint();
-  g._size = read_uint();
-  g.coordinates = new double[g._dim * g._size];
-  read_array(g._dim * g._size, g.coordinates);
+  const uint size = read_uint();
+  g.coordinates.resize(g._dim*size);
+  read_array(g._dim*size, g.coordinates.data());
 
   // Read cell type
   mesh._cell_type = CellType::create(static_cast<CellType::Type>(read_uint()));
@@ -199,8 +199,8 @@ void BinaryFile::operator<< (const Mesh& mesh)
   // Write mesh geometry (ignoring higher order stuff)
   const MeshGeometry& g = mesh._geometry;
   write_uint(g._dim);
-  write_uint(g._size);
-  write_array(g._dim * g._size, g.coordinates);
+  write_uint(g.size());
+  write_array(g._dim*g.size(), g.coordinates.data());
 
   // Write cell type
   write_uint(static_cast<uint>(mesh._cell_type->cell_type()));
