@@ -67,15 +67,18 @@ UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
     editor.init_cells(2*nx*ny);
   }
 
+  // Storage for vertex coordinates
+  std::vector<double> x(2);
+
   // Create main vertices:
   uint vertex = 0;
   for (uint iy = 0; iy <= ny; iy++)
   {
-    const double y = static_cast<double>(iy)/static_cast<double>(ny);
+    x[1] = static_cast<double>(iy)/static_cast<double>(ny);
     for (uint ix = 0; ix <= nx; ix++)
     {
-      const double x = static_cast<double>(ix)/static_cast<double>(nx);
-      editor.add_vertex(vertex++, x, y);
+      x[0] = static_cast<double>(ix)/static_cast<double>(nx);
+      editor.add_vertex(vertex++, x);
     }
   }
 
@@ -84,11 +87,11 @@ UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
   {
     for (uint iy = 0; iy < ny; iy++)
     {
-      const double y = (static_cast<double>(iy) + 0.5) / static_cast<double>(ny);
+      x[1] = (static_cast<double>(iy) + 0.5) / static_cast<double>(ny);
       for (uint ix = 0; ix < nx; ix++)
       {
-        const double x = (static_cast<double>(ix) + 0.5) / static_cast<double>(nx);
-        editor.add_vertex(vertex++, x, y);
+        x[0] = (static_cast<double>(ix) + 0.5) / static_cast<double>(nx);
+        editor.add_vertex(vertex++, x);
       }
     }
   }

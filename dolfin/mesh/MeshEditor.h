@@ -106,13 +106,6 @@ namespace dolfin
     ///
     void init_vertices(uint num_vertices);
 
-    /// Specify number of vertices
-    ///
-    /// *Arguments*
-    ///     num_higher_order_vertices (uint)
-    ///         The number of higher order vertices.
-    void init_higher_order_vertices(uint num_higher_order_vertices);
-
     /// Specify number of cells
     ///
     /// *Arguments*
@@ -129,18 +122,6 @@ namespace dolfin
     ///
     void init_cells(uint num_cells);
 
-    /// Specify number of cells
-    ///
-    /// *Arguments*
-    ///     num_higher_order_cells (uint)
-    ///         The number of higher order cells.
-    ///     num_higher_order_cell_dof (uint)
-    ///         The number of cell dofs.
-    void init_higher_order_cells(uint num_higher_order_cells, uint num_higher_order_cell_dof);
-
-    /// Set boolean indicator inside MeshGeometry
-    void set_affine_cell_indicator(uint c, const std::string affine_str);
-
     /// Add vertex v at given point p
     ///
     /// *Arguments*
@@ -155,82 +136,9 @@ namespace dolfin
     /// *Arguments*
     ///     v (uint)
     ///         The vertex (index).
-    ///     x (double)
-    ///         The x-coordinate.
-    void add_vertex(uint v, double x);
-
-    /// Add vertex v at given coordinate (x, y)
-    ///
-    /// *Arguments*
-    ///     v (uint)
-    ///         The vertex (index).
-    ///     x (double)
-    ///         The x-coordinate.
-    ///     y (double)
-    ///         The y-coordinate.
-    ///
-    /// *Example*
-    ///     .. code-block:: c++
-    ///
-    ///         MeshEditor editor;
-    ///         editor.add_vertex(0, 0.0, 0.0);
-    ///
-    void add_vertex(uint v, double x, double y);
-
-    /// Add vertex v at given coordinate (x, y, z)
-    ///
-    /// *Arguments*
-    ///     v (uint)
-    ///         The vertex (index).
-    ///     x (double)
-    ///         The x-coordinate.
-    ///     y (double)
-    ///         The y-coordinate.
-    ///     z (double)
-    ///         The z-coordinate.
-    void add_vertex(uint v, double x, double y, double z);
-
-    /// Add vertex v at given point p
-    ///
-    /// *Arguments*
-    ///     v (uint)
-    ///         The vertex (index).
-    ///     p (_Point_)
-    ///         The point.
-    void add_higher_order_vertex(uint v, const Point& p);
-
-    /// Add vertex v at given coordinate x
-    ///
-    /// *Arguments*
-    ///     v (uint)
-    ///         The vertex (index).
-    ///     x (double)
-    ///         The x-coordinate.
-    void add_higher_order_vertex(uint v, double x);
-
-    /// Add vertex v at given coordinate (x, y)
-    ///
-    /// *Arguments*
-    ///     v (uint)
-    ///         The vertex (index).
-    ///     x (double)
-    ///         The x-coordinate.
-    ///     y (double)
-    ///         The y-coordinate.
-    void add_higher_order_vertex(uint v, double x, double y);
-
-    /// Add vertex v at given coordinate (x, y, z)
-    ///
-    /// *Arguments*
-    ///     v (uint)
-    ///         The vertex (index).
-    ///     x (double)
-    ///         The x-coordinate.
-    ///     y (double)
-    ///         The y-coordinate.
-    ///     z (double)
-    ///         The z-coordinate.
-    void add_higher_order_vertex(uint v, double x, double y, double z);
+    ///     x (std::vector<double>)
+    ///         The x-coordinates.
+    void add_vertex(uint v, const std::vector<double>& x);
 
     /// Add cell with given vertices
     ///
@@ -286,25 +194,6 @@ namespace dolfin
     ///     v3 (uint)
     ///         Index of the fourth vertex.
     void add_cell(uint c, uint v0, uint v1, uint v2, uint v3);
-
-    /// Add higher order cell data (assume P2 triangle for now)
-    ///
-    /// *Arguments*
-    ///     c (uint)
-    ///         The cell (index).
-    ///     v0 (uint)
-    ///         Index of the first vertex.
-    ///     v1 (uint)
-    ///         Index of the second vertex.
-    ///     v2 (uint)
-    ///         Index of the third vertex.
-    ///     v3 (uint)
-    ///         Index of the fourth vertex.
-    ///     v4 (uint)
-    ///         Index of the fifth vertex.
-    ///     v5 (uint)
-    ///         Index of the sixth vertex.
-    void add_higher_order_cell_data(uint c, uint v0, uint v1, uint v2, uint v3, uint v4, uint v5);
 
     /// Close mesh, finish editing, and order entities locally
     ///

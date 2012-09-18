@@ -118,8 +118,12 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
 
   // Modify mesh coordinates
   MeshGeometry& geometry = mesh.geometry();
-  for (uint dim = 0; dim < d; dim++)
-    for (uint i = 0; i < N; i++)
-      geometry.set(i, dim, new_coordinates[dim*N + i]);
+  std::vector<double> coord(d);
+  for (uint i = 0; i < N; i++)
+  {
+    for (uint dim = 0; dim < d; dim++)
+      coord[dim] = new_coordinates[dim*N + i];
+    geometry.set(i, coord);
+  }
 }
 //-----------------------------------------------------------------------------

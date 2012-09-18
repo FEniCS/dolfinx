@@ -77,8 +77,10 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
   dolfin_assert(new_coordinates.size() == num_vertices*gdim);
   for (uint i = 0; i < num_vertices; ++i)
   {
-    const Point p(gdim, &new_coordinates[i*gdim]);
-    editor.add_vertex(i, p);
+    std::vector<double> x(gdim);
+    for (uint j = 0; j < gdim; ++j)
+      x[j] = new_coordinates[i*gdim + j];
+    editor.add_vertex(i, x);
   }
 
   // Add cells

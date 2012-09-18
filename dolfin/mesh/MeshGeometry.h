@@ -104,7 +104,8 @@ namespace dolfin
     void init(uint dim, uint size);
 
     /// Set value of coordinate n in direction i
-    void set(uint n, uint i, double x);
+    //void set(uint n, uint i, double x);
+    void set(uint n, const std::vector<double>& x);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -120,6 +121,13 @@ namespace dolfin
 
     // Coordinates for all vertices stored as a contiguous array
     std::vector<double> coordinates;
+
+    // Local coordinate indices
+    std::vector<uint> local_indices;
+
+    // Global coordinate indices
+    std::vector<uint> global_indices;
+
   };
 
 }

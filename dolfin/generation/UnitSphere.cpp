@@ -52,22 +52,23 @@ UnitSphere::UnitSphere(uint n) : Mesh()
   MeshEditor editor;
   editor.open(*this, CellType::tetrahedron, 3, 3);
 
+  // Storage for vertices
+  std::vector<double> x(3);
+
   // Create vertices
   editor.init_vertices((nx + 1)*(ny+1)*(nz+1));
   uint vertex = 0;
   for (uint iz = 0; iz <= nz; iz++)
   {
-    const double z = -1.0+ static_cast<double>(iz)*2.0 / static_cast<double>(nz);
+    x[2] = -1.0 + static_cast<double>(iz)*2.0/static_cast<double>(nz);
     for (uint iy = 0; iy <= ny; iy++)
     {
-      const double y =-1.0+ static_cast<double>(iy)*2.0 / static_cast<double>(ny);
+      x[1]  = -1.0 + static_cast<double>(iy)*2.0/static_cast<double>(ny);
       for (uint ix = 0; ix <= nx; ix++)
       {
-        const double x = -1.0+static_cast<double>(ix)*2.0 / static_cast<double>(nx);
-        double trns_x = transformx(x, y, z);
-        double trns_y = transformy(x, y, z);
-        double trns_z = transformz(x, y, z);
-        editor.add_vertex(vertex++, trns_x, trns_y, trns_z);
+        x[0] = -1.0 + static_cast<double>(ix)*2.0/static_cast<double>(nx);
+        const std::vector<double> trans_x = transform(x);
+        editor.add_vertex(vertex++, trans_x);
       }
     }
   }
@@ -107,37 +108,27 @@ UnitSphere::UnitSphere(uint n) : Mesh()
   if (MPI::is_broadcaster()) { MeshPartitioning::build_distributed_mesh(*this); }
 }
 //-----------------------------------------------------------------------------
-double UnitSphere::transformx(double x, double y, double z)
+std::vector<double> UnitSphere::transform(const std::vector<double>& x) const
 {
-  if (x || y || z)
-    return x*max(std::abs(x), std::abs(y), std::abs(z)) / sqrt(x*x+y*y+z*z);
+  std::vector<double> x_trans(3);
+  if (x[0] || x[1] || x[2])
+  {
+    const double dist = sqrt(x[0]*x[0]+x[1]*x[1]+x[2]*x[2]);
+    x_trans[0] = x[0]*std::max(x)/dist;
+    x_trans[1] = x[1]*std::max(x)/dist;
+    x_trans[2] = x[2]*std::max(x))/dist;
+  }
   else
-    return x;
+    x_trans = x;
 }
 //-----------------------------------------------------------------------------
-double UnitSphere::transformy(double x, double y, double z)
+double UnitSphere::max(const std::vector<double>& x) const
 {
-  if (x || y || z)
-    return y*max(std::abs(x),std::abs(y),std::abs(z)) / sqrt(x*x+y*y+z*z);
+  if ((std::abs(x[0]) >= std::abs(x[1]))*(std::abs(x[0]) >= std::abs(x[2])))
+    return std::abs(x[0]);
+  else if ((std::abs(x[1]) >= std::abs(x[0]))*(std::abs(x[1]) >= std::abs(x[2])))
+    return std::abs(x[1]);
   else
-    return y;
-}
-//-----------------------------------------------------------------------------
-double UnitSphere::transformz(double x, double y, double z)
-{
-  if (x || y || z)
-    return z*max(std::abs(x), std::abs(y), std::abs(z)) / sqrt(x*x+y*y+z*z);
-  else
-    return z;
-}
-//-----------------------------------------------------------------------------
-double UnitSphere::max(double x, double y, double z)
-{
-  if ((x >= y)*(x >= z))
-    return x;
-  else if ((y >= x)*(y >= z))
-    return y;
-  else
-    return z;
+    return std::abs(x[2]);
 }
 //-----------------------------------------------------------------------------

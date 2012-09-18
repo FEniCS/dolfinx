@@ -170,7 +170,7 @@ void DynamicMeshEditor::close(bool order)
   editor.init_cells(num_cells);
 
   // Add vertices
-  Point p;
+  std::vector<double> p(gdim);
   for (uint v = 0; v < num_vertices; v++)
   {
     const uint offset = v*gdim;

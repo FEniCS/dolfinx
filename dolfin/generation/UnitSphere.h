@@ -48,13 +48,9 @@ namespace dolfin
 
   private:
 
-    double transformx(double x,double y,double z);
+    std::vector<double> transform(const std::vector<double>& x) const;
 
-    double transformy(double x,double y,double z);
-
-    double transformz(double x,double y,double z);
-
-    double max(double x,double y,double z);
+    double max(const std::vector<double>& x) const;
 
   };
 

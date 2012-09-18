@@ -140,45 +140,23 @@ void MeshEditor::init_cells(uint num_cells)
 //-----------------------------------------------------------------------------
 void MeshEditor::add_vertex(uint v, const Point& p)
 {
+  const uint gdim = mesh->geometry().dim();
+
   // Add vertex
-  add_vertex_common(v, mesh->geometry().dim());
+  add_vertex_common(v, gdim);
 
   // Set coordinate
-  for (uint i = 0; i < mesh->geometry().dim(); i++)
-    mesh->_geometry.set(v, i, p[i]);
+  std::vector<double> x(p.coordinates(), p.coordinates() + gdim);
+  mesh->_geometry.set(v, x);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_vertex(uint v, double x)
+void MeshEditor::add_vertex(uint v, const std::vector<double>& x)
 {
   // Add vertex
   add_vertex_common(v, 1);
 
-  // Set coordinate, next_vertex doesn't seem to work right
-  // mesh->_geometry.set(next_vertex, 0, x);
-
   // Set coordinate
-  mesh->_geometry.set(v, 0, x);
-}
-//-----------------------------------------------------------------------------
-void MeshEditor::add_vertex(uint v, double x, double y)
-{
-  // Add vertex
-  add_vertex_common(v, 2);
-
-  // Set coordinate
-  mesh->_geometry.set(v, 0, x);
-  mesh->_geometry.set(v, 1, y);
-}
-//-----------------------------------------------------------------------------
-void MeshEditor::add_vertex(uint v, double x, double y, double z)
-{
-  // Add vertex
-  add_vertex_common(v, 3);
-
-  // Set coordinate
-  mesh->_geometry.set(v, 0, x);
-  mesh->_geometry.set(v, 1, y);
-  mesh->_geometry.set(v, 2, z);
+  mesh->_geometry.set(v, x);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::add_cell(uint c, const std::vector<uint>& v)
@@ -196,10 +174,6 @@ void MeshEditor::add_cell(uint c, const std::vector<uint>& v)
 //-----------------------------------------------------------------------------
 void MeshEditor::add_cell(uint c, uint v0, uint v1)
 {
-  // Check vertices
-  //check_vertex(v0);
-  //check_vertex(v1);
-
   // Add cell
   add_cell_common(c, 1);
 
