@@ -180,7 +180,7 @@ namespace dolfin
         p[2] = cgal_vertex->point()[2];
 
       // Add mesh vertex
-      mesh_editor.add_vertex(vertex_index, p);
+      mesh_editor.add_vertex(vertex_index, vertex_index, p);
 
       // Attach index to vertex and increment
       cgal_vertex->info() = vertex_index++;
@@ -227,7 +227,7 @@ namespace dolfin
       p[2] = v->point()[2];
 
       // Add mesh vertex
-      mesh_editor.add_vertex(vertex_index, p);
+      mesh_editor.add_vertex(vertex_index, vertex_index, p);
 
       // Attach index to vertex and increment
       v->info() = vertex_index++;
@@ -305,8 +305,9 @@ namespace dolfin
           // Get vertex coordinates and add vertex to the mesh
           Point p;
           for (uint j = 0; j < 3; ++j)
-            p[j] = c->first->vertex( (c->second + i)%4 )->point()[j];
-          mesh_editor.add_vertex(vertex_index++, p);
+            p[j] = c->first->vertex((c->second + i) % 4)->point()[j];
+          mesh_editor.add_vertex(vertex_index, vertex_index, p);
+          ++vertex_index;
         }
       }
 
@@ -359,7 +360,7 @@ namespace dolfin
       p[2] = v->point()[2];
 
       // Add mesh vertex
-      mesh_editor.add_vertex(vertex_index, p);
+      mesh_editor.add_vertex(vertex_index, vertex_index, p);
 
       // Attach index to vertex and increment
       v->info() = vertex_index++;

@@ -138,25 +138,26 @@ void MeshEditor::init_cells(uint num_cells)
   mesh->_topology(tdim, 0).init(num_cells, mesh->type().num_vertices(tdim));
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_vertex(uint v, const Point& p)
+void MeshEditor::add_vertex(uint local_index, uint global_index, const Point& p)
 {
   const uint gdim = mesh->geometry().dim();
 
   // Add vertex
-  add_vertex_common(v, gdim);
+  add_vertex_common(local_index, gdim);
 
   // Set coordinate
   std::vector<double> x(p.coordinates(), p.coordinates() + gdim);
-  mesh->_geometry.set(v, x);
+  mesh->_geometry.set(local_index, global_index, x);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_vertex(uint v, const std::vector<double>& x)
+void MeshEditor::add_vertex(uint local_index, uint global_index,
+                            const std::vector<double>& x)
 {
   // Add vertex
-  add_vertex_common(v, x.size());
+  add_vertex_common(local_index, x.size());
 
   // Set coordinate
-  mesh->_geometry.set(v, x);
+  mesh->_geometry.set(local_index, global_index, x);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::add_cell(uint c, const std::vector<uint>& v)

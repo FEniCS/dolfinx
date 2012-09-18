@@ -40,15 +40,18 @@ UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
 
   if (diagonal != "left" && diagonal != "right" && diagonal != "right/left"
       && diagonal != "left/right"  && diagonal != "crossed")
+  {
     dolfin_error("UnitSquare.cpp",
                  "create unit square",
                  "Unknown mesh diagonal definition: allowed options are \"left\", \"right\", \"left/right\", \"right/left\" and \"crossed\"");
+  }
 
   if (nx < 1 || ny < 1)
+  {
     dolfin_error("UnitSquare.cpp",
                  "create unit square",
                  "Unit square has non-positive number of vertices in some dimension: number of vertices must be at least 1 in each dimension");
-
+  }
   rename("mesh", "Mesh of the unit square (0,1) x (0,1)");
 
   // Open mesh for editing
@@ -78,7 +81,8 @@ UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
     for (uint ix = 0; ix <= nx; ix++)
     {
       x[0] = static_cast<double>(ix)/static_cast<double>(nx);
-      editor.add_vertex(vertex++, x);
+      editor.add_vertex(vertex, vertex, x);
+      ++vertex;
     }
   }
 
@@ -91,7 +95,8 @@ UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
       for (uint ix = 0; ix < nx; ix++)
       {
         x[0] = (static_cast<double>(ix) + 0.5) / static_cast<double>(nx);
-        editor.add_vertex(vertex++, x);
+        editor.add_vertex(vertex, vertex, x);
+        ++vertex;
       }
     }
   }

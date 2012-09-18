@@ -251,22 +251,29 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   // Set vertex coordinates
   uint current_vertex = 0;
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-    editor.add_vertex(current_vertex++, vertex->point());
+  {
+    editor.add_vertex(current_vertex, current_vertex, vertex->point());
+    current_vertex++;
+  }
   for (uint i = 0; i < marked_edges.size(); i++)
   {
     Edge edge(mesh, marked_edges[i]);
-    editor.add_vertex(current_vertex++, edge.midpoint());
+    editor.add_vertex(current_vertex, current_vertex, edge.midpoint());
+    current_vertex++;
   }
 
   // Get bisection data for old mesh
-  boost::shared_ptr<const MeshFunction<unsigned int> > bisection_twins = mesh.data().mesh_function("bisection_twins");
+  boost::shared_ptr<const MeshFunction<unsigned int> > bisection_twins
+        = mesh.data().mesh_function("bisection_twins");
 
-  // Markers for bisected cells pointing to their bisection twins in refined mesh
+  // Markers for bisected cells pointing to their bisection twins in
+  // refined mesh
   std::vector<uint> refined_bisection_twins(num_cells);
   for (uint i = 0; i < num_cells; i++)
     refined_bisection_twins[i] = i;
 
-  // Mapping from old to new unrefined cells (-1 means refined or not yet processed)
+  // Mapping from old to new unrefined cells (-1 means refined or not
+  // yet processed)
   std::vector<int> unrefined_cells(mesh.num_cells());
   std::fill(unrefined_cells.begin(), unrefined_cells.end(), -1);
 

@@ -35,12 +35,18 @@ UnitSphere::UnitSphere(uint n) : Mesh()
           "It generates meshes of very bad quality (very thin tetrahedra).");
 
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
+  if (MPI::is_receiver())
+  {
+    MeshPartitioning::build_distributed_mesh(*this);
+    return;
+  }
 
   if (n < 1)
+  {
     dolfin_error("UnitSphere.cpp",
                  "create unit sphere",
                  "Size of unit sphere must be at least 1");
+  }
 
   const uint nx = n;
   const uint ny = n;
@@ -63,12 +69,13 @@ UnitSphere::UnitSphere(uint n) : Mesh()
     x[2] = -1.0 + static_cast<double>(iz)*2.0/static_cast<double>(nz);
     for (uint iy = 0; iy <= ny; iy++)
     {
-      x[1]  = -1.0 + static_cast<double>(iy)*2.0/static_cast<double>(ny);
+      x[1] = -1.0 + static_cast<double>(iy)*2.0/static_cast<double>(ny);
       for (uint ix = 0; ix <= nx; ix++)
       {
         x[0] = -1.0 + static_cast<double>(ix)*2.0/static_cast<double>(nx);
         const std::vector<double> trans_x = transform(x);
-        editor.add_vertex(vertex++, trans_x);
+        editor.add_vertex(vertex, vertex, trans_x);
+        ++vertex;
       }
     }
   }

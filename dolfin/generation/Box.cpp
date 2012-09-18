@@ -75,7 +75,8 @@ Box::Box(double x0, double y0, double z0,
       for (uint ix = 0; ix <= nx; ix++)
       {
         x[0] = a + (static_cast<double>(ix))*(b-a) / static_cast<double>(nx);
-        editor.add_vertex(vertex++, x);
+        editor.add_vertex(vertex, vertex, x);
+        vertex++;
       }
     }
   }

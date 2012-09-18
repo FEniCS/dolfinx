@@ -29,7 +29,11 @@ using namespace dolfin;
 UnitTetrahedron::UnitTetrahedron() : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
+  if (MPI::is_receiver())
+  {
+    MeshPartitioning::build_distributed_mesh(*this);
+    return;
+  }
 
   // Open mesh for editing
   MeshEditor editor;
@@ -39,16 +43,16 @@ UnitTetrahedron::UnitTetrahedron() : Mesh()
   editor.init_vertices(4);
   std::vector<double> x(3);
   x[0] = 0.0; x[1] = 0.0; x[2] = 0.0;
-  editor.add_vertex(0, x);
+  editor.add_vertex(0, 0, x);
 
   x[0] = 1.0; x[1] = 0.0; x[2] = 0.0;
-  editor.add_vertex(1, x);
+  editor.add_vertex(1, 3, x);
 
   x[0] = 0.0; x[1] = 1.0; x[2] = 0.0;
-  editor.add_vertex(2, x);
+  editor.add_vertex(2, 3, x);
 
   x[0] = 0.0; x[1] = 0.0; x[2] = 1.0;
-  editor.add_vertex(3, x);
+  editor.add_vertex(3, 3, x);
 
   // Create cells
   editor.init_cells(1);

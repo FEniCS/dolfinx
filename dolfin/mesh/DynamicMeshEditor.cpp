@@ -28,8 +28,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DynamicMeshEditor::DynamicMeshEditor()
-  : mesh(0), tdim(0), gdim(0), cell_type(0)
+DynamicMeshEditor::DynamicMeshEditor() : mesh(0), tdim(0), gdim(0),
+                                         cell_type(0)
 {
   // Do nothing
 }
@@ -39,7 +39,8 @@ DynamicMeshEditor::~DynamicMeshEditor()
   clear();
 }
 //-----------------------------------------------------------------------------
-void DynamicMeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim)
+void DynamicMeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim,
+                             uint gdim)
 {
   // Clear old data
   mesh.clear();
@@ -176,7 +177,7 @@ void DynamicMeshEditor::close(bool order)
     const uint offset = v*gdim;
     for (uint i = 0; i < gdim; i++)
       p[i] = vertex_coordinates[offset + i];
-    editor.add_vertex(v, p);
+    editor.add_vertex(v, v, p);
   }
 
   // Add cells

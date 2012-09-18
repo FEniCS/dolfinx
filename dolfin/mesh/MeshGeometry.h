@@ -64,27 +64,34 @@ namespace dolfin
       return coordinates.size()/_dim;
     }
 
-    /// Return value of coordinate n in direction i
+    /// Return global index associated with local coordinate
+    uint global_index(uint local_index) const
+    {
+      dolfin_assert(local_index < local_to_global.size());
+      return local_to_global[local_index];
+    }
+
+    /// Return value of coordinate with local index n in direction i
     double& x(uint n, uint i)
     {
       dolfin_assert(n < size() && i < _dim);
-      return coordinates[n*_dim + i];
+      return coordinates[local_index_to_position[n]*_dim + i];
     }
 
-    /// Return value of coordinate n in direction i
+    /// Return value of coordinate with local index n in direction i
     double x(uint n, uint i) const
     {
       dolfin_assert(n < size() && i < _dim);
-      return coordinates[n*_dim + i];
+      return coordinates[local_index_to_position[n]*_dim + i];
     }
 
-    /// Return array of values for coordinate n
+    /// Return array of values for coordinate with local index n
     double* x(uint n)
-    { return &coordinates[n*_dim]; }
+    { return &coordinates[local_index_to_position[n]*_dim]; }
 
-    /// Return array of values for coordinate n
+    /// Return array of values for coordinate with local index n
     const double* x(uint n) const
-    { return &coordinates[n*_dim]; }
+    { return &coordinates[local_index_to_position[n]*_dim]; }
 
     /// Return array of values for all coordinates
     double* x()
@@ -94,7 +101,7 @@ namespace dolfin
     const double* x() const
     { return coordinates.data(); }
 
-    /// Return coordinate n as a 3D point value
+    /// Return coordinate with local index n as a 3D point value
     Point point(uint n) const;
 
     /// Clear all data
@@ -103,9 +110,10 @@ namespace dolfin
     /// Initialize coordinate list to given dimension and size
     void init(uint dim, uint size);
 
-    /// Set value of coordinate n in direction i
+    /// Set value of coordinate with local and global indices in
+    // direction i
     //void set(uint n, uint i, double x);
-    void set(uint n, const std::vector<double>& x);
+    void set(uint local_index, uint global_index, const std::vector<double>& x);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -125,7 +133,7 @@ namespace dolfin
     // Local coordinate indices (array position -> index)
     std::vector<uint> position_to_local_index;
 
-    // Local coordinate indices (array position -> index)
+    // Local coordinate indices (local index -> array position)
     std::vector<uint> local_index_to_position;
 
     // Local-to-global coordinate indices

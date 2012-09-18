@@ -259,13 +259,13 @@ class TestPage12(unittest.TestCase):
 
         from numpy import array
         coords = array([0.0, 0.0])
-        editor.add_vertex(0, coords)
+        editor.add_vertex(0, 0, coords)
         coords = array([1.0, 0.0])
-        editor.add_vertex(1, coords)
+        editor.add_vertex(1, 1, coords)
         coords = array([1.0, 1.0])
-        editor.add_vertex(2, coords)
+        editor.add_vertex(2, 2, coords)
         coords = array([0.0, 1.0])
-        editor.add_vertex(3, coords)
+        editor.add_vertex(3, 3, coords)
         #editor.add_vertex(0, 0.0, 0.0)
         #editor.add_vertex(1, 1.0, 0.0)
         #editor.add_vertex(2, 1.0, 1.0)

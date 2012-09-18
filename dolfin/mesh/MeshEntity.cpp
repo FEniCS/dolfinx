@@ -89,9 +89,11 @@ dolfin::uint MeshEntity::index(const MeshEntity& entity) const
 {
   // Must be in the same mesh to be incident
   if ( _mesh != entity._mesh )
+  {
     dolfin_error("MeshEntity.cpp",
                  "compute index of mesh entity",
                  "Mesh entity is defined on a different mesh");
+  }
 
   // Get list of entities for given topological dimension
   const uint* entities = _mesh->topology()(_dim, entity._dim)(_index);
@@ -128,7 +130,6 @@ Point MeshEntity::midpoint() const
     x += v->point().x();
     y += v->point().y();
     z += v->point().z();
-
     num_vertices++;
   }
 

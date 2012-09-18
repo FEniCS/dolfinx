@@ -30,20 +30,26 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Interval::Interval(uint nx, double a, double b) : Mesh()
 {
-  if ( std::abs(a - b) < DOLFIN_EPS )
+  if (std::abs(a - b) < DOLFIN_EPS)
+  {
     dolfin_error("Interval.cpp",
                  "create interval",
                  "Length of interval is zero. Consider checking your dimensions");
+  }
 
-  if ( b < a )
+  if (b < a)
+  {
     dolfin_error("Interval.cpp",
                  "create interval",
                  "Length of interval is negative. Consider checking the order of your arguments");
+  }
 
-  if ( nx < 1 )
+  if (nx < 1)
+  {
     dolfin_error("Interval.cpp",
                  "create interval",
                  "Number of points on interval is (%d), it must be at least 1", nx);
+  }
 
   rename("mesh", "Mesh of the interval (a, b)");
 
@@ -58,8 +64,8 @@ Interval::Interval(uint nx, double a, double b) : Mesh()
   // Create main vertices:
   for (uint ix = 0; ix <= nx; ix++)
   {
-    const std::vector<double> x(1, a + (static_cast<double>(ix)*(b-a) / static_cast<double>(nx)));
-    editor.add_vertex(ix, x);
+    const std::vector<double> x(1, a + (static_cast<double>(ix)*(b - a)/static_cast<double>(nx)));
+    editor.add_vertex(ix, ix, x);
   }
 
   // Create intervals

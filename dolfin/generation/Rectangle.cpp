@@ -39,9 +39,11 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
 
   // Check options
   if (diagonal != "left" && diagonal != "right" && diagonal != "right/left" && diagonal != "left/right" && diagonal != "crossed")
+  {
     dolfin_error("Rectangle.cpp",
                  "create rectangle",
                  "Unknown mesh diagonal definition: allowed options are \"left\", \"right\", \"left/right\", \"right/left\" and \"crossed\"");
+  }
 
   const double a = x0;
   const double b = x1;
@@ -49,14 +51,18 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
   const double d = y1;
 
   if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS)
+  {
     dolfin_error("Rectangle.cpp",
                  "create rectangle",
                  "Rectangle seems to have zero width, height or depth. Consider checking your dimensions");
+  }
 
   if (nx < 1 || ny < 1)
+  {
     dolfin_error("Rectangle.cpp",
                  "create rectangle",
                  "Rectangle has non-positive number of vertices in some dimension: number of vertices must be at least 1 in each dimension");
+  }
 
   rename("mesh", "Mesh of the unit square (a,b) x (c,d)");
   // Open mesh for editing
@@ -86,7 +92,8 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
     for (uint ix = 0; ix <= nx; ix++)
     {
       x[0] = a + ((static_cast<double>(ix))*(b - a)/static_cast<double>(nx));
-      editor.add_vertex(vertex++, x);
+      editor.add_vertex(vertex, vertex, x);
+      vertex++;
     }
   }
 
@@ -99,7 +106,8 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
       for (uint ix = 0; ix < nx; ix++)
       {
         x[0] = a + (static_cast<double>(ix) + 0.5)*(b - a)/ static_cast<double>(nx);
-        editor.add_vertex(vertex++, x);
+        editor.add_vertex(vertex, vertex, x);
+        vertex++;
       }
     }
   }

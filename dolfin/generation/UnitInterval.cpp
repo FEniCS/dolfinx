@@ -55,8 +55,8 @@ UnitInterval::UnitInterval(uint nx) : Mesh()
   // Create main vertices:
   for (uint ix = 0; ix <= nx; ix++)
   {
-    const double x = static_cast<double>(ix) / static_cast<double>(nx);
-    editor.add_vertex(ix, x);
+    const double x = static_cast<double>(ix)/static_cast<double>(nx);
+    editor.add_vertex(ix, ix, x);
   }
 
   // Create intervals

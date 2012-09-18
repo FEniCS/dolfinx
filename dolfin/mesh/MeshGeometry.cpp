@@ -72,6 +72,9 @@ void MeshGeometry::clear()
 {
   _dim  = 0;
   coordinates.clear();
+  position_to_local_index.clear();
+  local_index_to_position.clear();
+  local_to_global.clear();
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::init(uint dim, uint size)
@@ -83,28 +86,28 @@ void MeshGeometry::init(uint dim, uint size)
   coordinates.resize(dim*size);
 
   // Allocate new data
-  //local_indices.resize(size);
-  //global_indices.resize(size);
+  position_to_local_index.resize(size);
+  local_index_to_position.resize(size);
+  local_to_global.resize(size);
 
   // Save dimension and size
   _dim = dim;
 }
 //-----------------------------------------------------------------------------
-//void MeshGeometry::set(uint n, uint i, double x)
-//{
-//  coordinates[n*_dim + i] = x;
-//  //local_indices[n.resize(size);
-//  //global_indices.resize(size);
-//}
-//-----------------------------------------------------------------------------
-void MeshGeometry::set(uint n, const std::vector<double>& x)
+void MeshGeometry::set(uint local_index, uint global_index,
+                       const std::vector<double>& x)
 {
-  //for (uint i = 0; i < x.size(); ++i)
-  //  coordinates[n*_dim + i] = x[i];
   dolfin_assert(x.size() == _dim);
-  std::copy(x.begin(), x.end(), coordinates.begin() + n*_dim);
-  //local_indices[n]  = n;
-  //global_indices[n] = n;
+  std::copy(x.begin(), x.end(), coordinates.begin() + local_index*_dim);
+
+  dolfin_assert(local_index < position_to_local_index.size());
+  position_to_local_index[local_index] = local_index;
+
+  dolfin_assert(local_index < local_index_to_position.size());
+  local_index_to_position[local_index] = local_index;
+
+  dolfin_assert(local_index < local_to_global.size());
+  local_to_global[local_index] = global_index;
 }
 //-----------------------------------------------------------------------------
 std::string MeshGeometry::str(bool verbose) const

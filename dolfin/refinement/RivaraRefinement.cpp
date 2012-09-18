@@ -186,16 +186,17 @@ void RivaraRefinement::DMesh::export_mesh(Mesh& mesh,
   // Add vertices
   uint current_vertex = 0;
   for (std::list<DVertex*>::iterator it = vertices.begin();
-      it != vertices.end(); ++it)
+        it != vertices.end(); ++it)
   {
     DVertex* dv = *it;
-    editor.add_vertex(current_vertex++, dv->p);
+    editor.add_vertex(current_vertex, current_vertex, dv->p);
+    current_vertex++;
   }
 
   std::vector<uint> cell_vertices(cell_type->num_entities(0));
   uint current_cell = 0;
   for (std::list<DCell*>::iterator it = cells.begin();
-      it != cells.end(); ++it)
+        it != cells.end(); ++it)
   {
     const DCell* dc = *it;
 

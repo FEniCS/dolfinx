@@ -27,8 +27,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshTopology::MeshTopology()
-  : _dim(0), num_entities(0), connectivity(0)
+MeshTopology::MeshTopology() : _dim(0), num_entities(0), connectivity(0)
 
 {
   // Do nothing

@@ -125,20 +125,25 @@ namespace dolfin
     /// Add vertex v at given point p
     ///
     /// *Arguments*
-    ///     v (uint)
-    ///         The vertex (index).
+    ///     local_index (uint)
+    ///         The vertex (local index).
+    ///     global_index (uint)
+    ///         The vertex (global_index).
     ///     p (_Point_)
     ///         The point.
-    void add_vertex(uint v, const Point& p);
+    void add_vertex(uint local_index, uint global_index, const Point& p);
 
     /// Add vertex v at given coordinate x
     ///
     /// *Arguments*
-    ///     v (uint)
-    ///         The vertex (index).
+    ///     local_index (uint)
+    ///         The vertex (local index).
+    ///     global_index (uint)
+    ///         The vertex (global_index).
     ///     x (std::vector<double>)
     ///         The x-coordinates.
-    void add_vertex(uint v, const std::vector<double>& x);
+    void add_vertex(uint local_index, uint global_index,
+                    const std::vector<double>& x);
 
     /// Add cell with given vertices
     ///

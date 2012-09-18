@@ -97,7 +97,8 @@ UnitCircle::UnitCircle(uint n, std::string diagonal,
     {
       x[0] = -1.0 + static_cast<double>(ix)*2.0 / static_cast<double>(nx);
       const std::vector<double> x_trans = transform(x, transformation);
-      editor.add_vertex(vertex++, x_trans);
+      editor.add_vertex(vertex, vertex, x_trans);
+      vertex++;
     }
   }
 
@@ -111,7 +112,8 @@ UnitCircle::UnitCircle(uint n, std::string diagonal,
       {
         x[0] = -1.0 + (static_cast<double>(ix) + 0.5)*2.0 / static_cast<double>(nx);
         const std::vector<double> x_trans = transform(x, transformation);
-        editor.add_vertex(vertex++, x_trans);
+        editor.add_vertex(vertex, vertex, x_trans);
+        vertex++;
       }
     }
   }

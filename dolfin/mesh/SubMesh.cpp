@@ -109,7 +109,10 @@ void SubMesh::init(const Mesh& mesh,
        it != local_vertex_indices.end(); ++it)
   {
     Vertex vertex(mesh, it->first);
-    editor.add_vertex(it->second, vertex.point());
+    if (MPI::num_processes() > 1)
+      error("SubMesh::init not working in parallel");
+    // FIXME: Get global vertex index
+    editor.add_vertex(it->second, it->second, vertex.point());
   }
 
   // Close editor

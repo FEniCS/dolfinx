@@ -123,7 +123,7 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
   {
     for (uint dim = 0; dim < d; dim++)
       coord[dim] = new_coordinates[dim*N + i];
-    geometry.set(i, coord);
+    geometry.set(i, i, coord);
   }
 }
 //-----------------------------------------------------------------------------
