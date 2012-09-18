@@ -118,14 +118,13 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   const bool vertex_data = !(dofmap.max_cell_dimension() == cell_based_dim);
 
   // Get number of local/global cells/vertices
-  // FIXME: num_global_vertices is not correct
-  // Either rename to num_total_vertices, or redesign file layout?
+
   // At present, each process saves its local vertices
   // sequentially in the HDF5 file, resulting in some duplication
 
   const uint num_local_cells = mesh.num_cells();
   const uint num_local_vertices = mesh.num_vertices();
-  const uint num_global_vertices = MPI::sum(num_local_vertices);
+  const uint num_all_local_vertices = MPI::sum(num_local_vertices);
   const uint num_global_cells = MPI::sum(num_local_cells);
 
   // Get Function data at vertices/cell centres
@@ -143,9 +142,6 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     v.get_local(data_values);
   }
 
-  // FIXME: Should this be in the HDF5 code?
-  const uint offset = MPI::global_offset(num_local_entities, true);
-  const std::pair<uint, uint> data_range(offset, offset + num_local_entities);
 
   // Interleave the values for vector or tensor fields and pad 2D vectors
   // and tensors to 3D
@@ -196,6 +192,9 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
   // as distinct from /Vector which is used for solution vectors.
 
   // Save data values to HDF5 file
+  // FIXME: Should this be in the HDF5 code?
+  const uint offset = MPI::global_offset(num_local_entities, true);
+  const std::pair<uint, uint> data_range(offset, offset + num_local_entities);
   s = "/DataVector/" + boost::lexical_cast<std::string>(counter);
   hdf5_file->write(data_values, data_range, s.c_str(), value_size_io);
 
@@ -241,13 +240,13 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
                      "XML parsing error when reading from existing file");
       }
 
-      // FIXME: Test that these exist
-
       // Get data node
       xdmf_timegrid = xml_doc.child("Xdmf").child("Domain").child("Grid");
+      dolfin_assert(xdmf_timegrid);
 
       // Get time series node
       xdmf_timedata = xdmf_timegrid.child("Time").child("DataItem");
+      dolfin_assert(xdmf_timedata);
     }
 
     //  Add a time step to the TimeSeries List
@@ -262,11 +261,10 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     xdmf_grid.append_attribute("Name") = s.c_str();
     xdmf_grid.append_attribute("GridType") = "Uniform";
 
-
-    // FIXME: Add option to re-write mesh ??
-    // Mesh is referenced at each timestep, so
-    // as long as each different mesh has a different dataset name
-    // the mesh will change automatically.
+    // Mesh is referenced in XDMF separately at each timestep.
+    // Any changes to the mesh will be reflected in the hashes,
+    // which will result in different dataset names, thus supporting
+    // time-varying meshes.
 
     // Grid/Topology
     pugi::xml_node xdmf_topology = xdmf_grid.append_child("Topology");
@@ -297,7 +295,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     pugi::xml_node xdmf_geom_data = xdmf_geom.append_child("DataItem");
 
     xdmf_geom_data.append_attribute("Format")="HDF";
-    s = boost::lexical_cast<std::string>(num_global_vertices) + " 3";
+    s = boost::lexical_cast<std::string>(num_all_local_vertices) + " 3";
     xdmf_geom_data.append_attribute("Dimensions") = s.c_str();
 
     s = hdf5_short_filename + ":" + mesh_coords_name;
@@ -323,7 +321,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     xdmf_data.append_attribute("Format") = "HDF";
     if(vertex_data)
     {
-      s = boost::lexical_cast<std::string>(num_global_vertices) + " "
+      s = boost::lexical_cast<std::string>(num_all_local_vertices) + " "
           + boost::lexical_cast<std::string>(value_size_io);
     }
     else
@@ -356,7 +354,7 @@ void XDMFFile::operator<<(const Mesh& mesh)
   // Get number of local/global cells/vertices
   const uint num_local_cells = mesh.num_cells();
   const uint num_local_vertices = mesh.num_vertices();
-  const uint num_global_vertices = MPI::sum(num_local_vertices);
+  const uint num_all_local_vertices = MPI::sum(num_local_vertices);
   const uint num_global_cells = MPI::sum(num_local_cells);
 
   // MPI collective calls
@@ -407,7 +405,7 @@ void XDMFFile::operator<<(const Mesh& mesh)
     pugi::xml_node xdmf_geom_data = xdmf_geom.append_child("DataItem");
 
     xdmf_geom_data.append_attribute("Format") = "HDF";
-    const std::string vertices_dims = boost::lexical_cast<std::string>(num_global_vertices) + " 3";
+    const std::string vertices_dims = boost::lexical_cast<std::string>(num_all_local_vertices) + " 3";
     xdmf_geom_data.append_attribute("Dimensions") = vertices_dims.c_str();
 
     xdmf_geom_data.append_child(pugi::node_pcdata).set_value(coords_hash_name.c_str());

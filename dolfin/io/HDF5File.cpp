@@ -124,7 +124,7 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
   const uint process_number = MPI::process_number();
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
-    // Vertex gloabl index and process number
+    // Vertex global index and process number
     vertex_indices.push_back(v_indices[*v]);
     vertex_indices.push_back(process_number);
 
@@ -511,12 +511,10 @@ std::vector<std::string> HDF5File::dataset_list(const std::string group_name) co
 
   // Iterate through group collecting all dataset names
   std::vector<std::string> list_of_datasets;
-  std::string str;
   for(hsize_t i=0; i<num_datasets; i++)
   {
     H5Gget_objname_by_idx(group_id, i, namebuf, HDF5_MAXSTRLEN);
-    str=namebuf;
-    list_of_datasets.push_back(str);
+    list_of_datasets.push_back(std::string(namebuf));
   }
 
   // Close group
@@ -665,9 +663,9 @@ std::string HDF5File::get_attribute(const std::string dataset_name,
   dolfin_assert(status != HDF5_FAIL);
 
   // FIXME: messy
-  // Copy string to local 
-  std::vector<char> str(string_length);
-  status = H5Aread(attr_id, memtype, &str[0]);
+  // Copy string value
+  std::vector<char> attribute_value(string_length);
+  status = H5Aread(attr_id, memtype, attribute_value.data());
 
   // Close attribute
   status = H5Aclose(attr_id);
@@ -681,7 +679,7 @@ std::string HDF5File::get_attribute(const std::string dataset_name,
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  return std::string(&str[0]);
+  return std::string(attribute_value.data());
 }
 //-----------------------------------------------------------------------------
 std::string HDF5File::mesh_coords_dataset_name(const Mesh& mesh) const
