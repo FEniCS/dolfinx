@@ -100,7 +100,7 @@ void HDF5File::operator>>(Mesh& input_mesh)
 
   // FIXME: Document what's going on
   const std::pair<uint, uint> vertex_range = MPI::local_range(num_global_vertices);
-  uint num_local_vertices = vertex_range.second-vertex_range.first;
+  uint num_local_vertices = vertex_range.second - vertex_range.first;
   mesh_data.vertex_indices.reserve(num_local_vertices);
   std::cout << "Reserved space for " << num_local_vertices << " vertices" << std::endl;
   std::vector<double> data;
@@ -344,12 +344,12 @@ void HDF5File::create()
 {
   // make empty HDF5 file
   // overwriting any existing file
-  // create some default 'folders' for storing different datasets
+  // create some default groups for storing different datasets
 
   hid_t  file_id;     // file and dataset identifiers
   hid_t  plist_id;    // property list identifier
-  hid_t  group_id;
-  herr_t status;
+  hid_t  group_id;    // group identifier
+  herr_t status;      // generic return value
 
   MPICommunicator comm;
   MPIInfo info;
@@ -360,7 +360,7 @@ void HDF5File::create()
   file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
   dolfin_assert(file_id != HDF5_FAIL);
 
-  // create subgroups suitable for storing different types of data.
+  // create groups suitable for storing different types of data.
   // DataVector - values for visualisation
   group_id = H5Gcreate(file_id, "/DataVector", H5P_DEFAULT);
   dolfin_assert(group_id != HDF5_FAIL);
@@ -371,7 +371,7 @@ void HDF5File::create()
   group_id = H5Gcreate(file_id, "/Vector", H5P_DEFAULT);
   dolfin_assert(group_id != HDF5_FAIL);
   status = H5Gclose (group_id);
-  assert(status != HDF5_FAIL);
+  dolfin_assert(status != HDF5_FAIL);
 
   // Mesh
   group_id = H5Gcreate(file_id, "/Mesh", H5P_DEFAULT);
@@ -390,39 +390,34 @@ void HDF5File::read(std::vector<T>& data,  const std::pair<uint, uint> range,
                      const std::string dataset_name,
                      const int h5type, const uint width) const
 {
-  // FIXME: Need to check size of data and re-size
+  // read a generic block of 2D data from a HDF5 dataset in parallel.
 
-  // read a generic block of 2D data from a HDF5 dataset
+  dolfin_assert(data);
 
-  // Read input in parallel. Assumes the input vector
-  // is correctly allocated to receive the data.
+  if(data.size() != range.second - range.first)
+    data.resize(range.second - range.first);
 
-  hid_t file_id;                  // HDF5 file ID
-  hid_t plist_id;                  // File access template
-  hid_t filespace;          // File dataspace ID
-  hid_t memspace;            // memory dataspace ID
+  hid_t file_id;      // HDF5 file ID
+  hid_t plist_id;     // File access template
+  hid_t filespace;    // File dataspace ID
+  hid_t memspace;     // memory dataspace ID
   hid_t dset_id;      // Dataset ID
   hsize_t count[2];   // hyperslab selection parameters
-  hsize_t offset[2];
+  hsize_t offset[2];  
   herr_t status;      // Generic return value
   MPICommunicator comm;
   MPIInfo info;
-
 
   offset[0] = range.first;
   offset[1] = 0;
   count[0] = range.second - range.first;
   count[1] = width;
 
-  std::cout << dataset_name << std::endl;
-  std::cout << offset[0] << " " << offset[1] << std::endl;
-  std::cout << count[0] << " " << count[1] << std::endl;
-
-  /* setup file access template */
+  // Setup file access template 
   plist_id = H5Pcreate(H5P_FILE_ACCESS);
   dolfin_assert(plist_id != HDF5_FAIL);
 
-  /* set Parallel access with communicator */
+  // Set parallel access with communicator 
   status = H5Pset_fapl_mpio(plist_id, *comm, *info);
   dolfin_assert(status != HDF5_FAIL);
 
@@ -430,15 +425,15 @@ void HDF5File::read(std::vector<T>& data,  const std::pair<uint, uint> range,
   file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR,plist_id);
   dolfin_assert(file_id != HDF5_FAIL);
 
-  /* Release file-access template */
+  // Release file-access template
   status = H5Pclose(plist_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  // open the dataset collectively
+  // Open the dataset collectively
   dset_id = H5Dopen(file_id, dataset_name.c_str());
   dolfin_assert(dset_id != HDF5_FAIL);
 
-  // create a file dataspace independently
+  // Create a file dataspace independently
   filespace = H5Dget_space (dset_id);
   dolfin_assert(filespace != HDF5_FAIL);
 
@@ -446,25 +441,25 @@ void HDF5File::read(std::vector<T>& data,  const std::pair<uint, uint> range,
                                count, NULL);
   dolfin_assert(status != HDF5_FAIL);
 
-  // create a memory dataspace independently
+  // Create a memory dataspace independently
   memspace = H5Screate_simple (2, count, NULL);
   dolfin_assert (memspace != HDF5_FAIL);
 
-  // read data independently
+  // Read data independently
 
   status = H5Dread(dset_id, h5type, memspace, filespace,
                    H5P_DEFAULT, data.data());
   dolfin_assert(status != HDF5_FAIL);
 
-  // close dataset collectively
+  // Close dataset collectively
   status = H5Dclose(dset_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  // release all IDs created
+  // Release all IDs created
   status = H5Sclose(filespace);
   dolfin_assert(status != HDF5_FAIL);
 
-  // close the file collectively
+  // Close the file collectively
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 }
@@ -529,7 +524,7 @@ void HDF5File::write(const std::vector<T>& data,
 
   // define a 2D dataset
   filespace = H5Screate_simple(2, dimsf, NULL);
-  assert(filespace != HDF5_FAIL);
+  dolfin_assert(filespace != HDF5_FAIL);
 
   dset_id = H5Dcreate(file_id, dataset_name.c_str(), h5type, filespace,
                       H5P_DEFAULT);
@@ -546,7 +541,7 @@ void HDF5File::write(const std::vector<T>& data,
 
   plist_id = H5Pcreate(H5P_DATASET_XFER);
   status = H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
-  assert(status != HDF5_FAIL);
+  dolfin_assert(status != HDF5_FAIL);
 
   status = H5Dwrite(dset_id, h5type, memspace, filespace, plist_id, data.data());
   dolfin_assert(status != HDF5_FAIL);
