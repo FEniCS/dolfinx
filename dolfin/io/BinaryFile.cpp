@@ -84,9 +84,8 @@ void BinaryFile::operator>> (Mesh& mesh)
   // Read mesh topology
   MeshTopology& t = mesh._topology;
   uint D = read_uint();
-  t._dim = D;
-  t.num_entities = new uint[D + 1];
-  read_array(D + 1, t.num_entities);
+  t.num_entities.resize(D + 1);
+  read_array(D + 1, t.num_entities.data());
   t.connectivity = new MeshConnectivity**[D + 1];
   for (uint i = 0; i <= D; i++)
   {
@@ -160,10 +159,10 @@ void BinaryFile::operator<< (const Mesh& mesh)
 
   // Write mesh topology
   const MeshTopology& t = mesh._topology;
-  const uint D = t._dim;
+  const uint D = t.dim();
   write_uint(D);
   if (_store_connectivity)
-    write_array(D + 1, t.num_entities);
+    write_array(D + 1, t.num_entities.data());
   else
   {
     for (uint i = 0; i <= D; i++)
