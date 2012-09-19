@@ -146,8 +146,9 @@ namespace dolfin
 
     // Distribute vertices
     static void distribute_vertices(std::vector<uint>& vertex_indices,
-                  std::vector<std::vector<double> > vertex_coordinates,
+                  std::vector<std::vector<double> >& vertex_coordinates,
                   std::map<uint, uint>& glob2loc,
+                  const std::vector<std::vector<uint> >& cell_vertices,
                   const LocalMeshData& data);
 
     // Build mesh
