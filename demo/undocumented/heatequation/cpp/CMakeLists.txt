@@ -5,7 +5,7 @@
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
-project(demo_quadrature)
+project(demo_heatequation)
 
 # Set verbose output while testing CMake
 #set(CMAKE_VERBOSE_MAKEFILE 1)
@@ -33,7 +33,7 @@ include_directories(${DOLFIN_INCLUDE_DIRS})
 include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
-add_executable(demo_quadrature main.cpp)
+add_executable(demo_heatequation main.cpp)
 
 # Target libraries
-target_link_libraries(demo_quadrature ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
+target_link_libraries(demo_heatequation ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})

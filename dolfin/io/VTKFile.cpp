@@ -19,13 +19,15 @@
 // Modified by Kristian Oelgaard 2006
 // Modified by Martin Alnes 2008
 // Modified by Niclas Jansson 2009
+// Modified by Johannes Ring 2012
 //
 // First added:  2005-07-05
-// Last changed: 2011-11-14
+// Last changed: 2012-09-14
 
 #include <ostream>
 #include <sstream>
 #include <vector>
+#include <iomanip>
 #include <boost/cstdint.hpp>
 #include <boost/detail/endian.hpp>
 

@@ -28,9 +28,9 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/log/Table.h>
 #include <dolfin/log/LogStream.h>
-#include "GenericMatrix.h"
+#include "GenericLinearOperator.h"
 #include "GenericVector.h"
-#include "LinearAlgebraFactory.h"
+#include "GenericLinearAlgebraFactory.h"
 #include "DefaultFactory.h"
 #include "LinearSolver.h"
 #include "solve.h"
@@ -38,7 +38,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::uint dolfin::solve(const GenericMatrix& A,
+dolfin::uint dolfin::solve(const GenericLinearOperator& A,
                            GenericVector& x,
                            const GenericVector& b,
                            std::string method,
@@ -177,11 +177,11 @@ bool dolfin::has_krylov_solver_preconditioner(std::string preconditioner)
   return false;
 }
 //-----------------------------------------------------------------------------
-double dolfin::residual(const GenericMatrix& A,
+double dolfin::residual(const GenericLinearOperator& A,
                         const GenericVector& x,
                         const GenericVector& b)
 {
-  boost::shared_ptr<GenericVector> y = A.factory().create_vector();
+  boost::shared_ptr<GenericVector> y = x.factory().create_vector();
   A.mult(x, *y);
   *y -= b;
   return y->norm("l2");
@@ -253,14 +253,6 @@ bool dolfin::has_linear_algebra_backend(std::string backend)
     return false;
 #endif
   }
-  else if (backend == "MTL4")
-  {
-#ifdef HAS_MTL4
-    return true;
-#else
-    return false;
-#endif
-  }
   else if (backend == "STL")
   {
     return true;
@@ -314,10 +306,6 @@ std::vector<std::pair<std::string, std::string> > dolfin::linear_algebra_backend
   #ifdef HAS_TRILINOS
   backends.push_back(std::make_pair("Epetra", "Powerful MPI parallel linear algebra"
 				    " library" + default_backend["Epetra"]));
-  #endif
-  #ifdef HAS_MTL4
-  backends.push_back(std::make_pair("MTL4", "Template based basic linear algebra"
-				   " backend"));
   #endif
 
   return backends;

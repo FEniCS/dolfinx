@@ -205,11 +205,10 @@ void SymmetricAssembler::PImpl::assemble()
     coefficients[i]->update();
 
   // Initialize global tensors
-  const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > periodic_master_slave_dofs;
-  AssemblerBase::init_global_tensor(A, a, periodic_master_slave_dofs,
-                                     reset_sparsity, add_values, keep_diagonal);
-  AssemblerBase::init_global_tensor(A_asymm, a, periodic_master_slave_dofs,
-                                     reset_sparsity, add_values, keep_diagonal);
+  error("SymmetricAssembler is presently broken. It will be removed soon.");
+  //const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > periodic_master_slave_dofs;
+  //init_global_tensor(A, a, periodic_master_slave_dofs);
+  //init_global_tensor(A_asymm, a, periodic_master_slave_dofs);
 
   // Get dofs that are local to this processor
   processor_dof_range = A.local_range(0);

@@ -35,7 +35,7 @@
 #include <dolfin/common/Array.h>
 #include "uBLASVector.h"
 #include "uBLASFactory.h"
-#include "LinearAlgebraFactory.h"
+#include "GenericLinearAlgebraFactory.h"
 
 #ifdef HAS_PETSC
 #include "PETScVector.h"
@@ -177,7 +177,7 @@ void uBLASVector::gather(GenericVector& x, const std::vector<uint>& indices) con
   dolfin_assert(this->size() >= _size);
 
   x.resize(_size);
-  ublas_vector& _x = x.down_cast<uBLASVector>().vec();
+  ublas_vector& _x = as_type<uBLASVector>(x).vec();
   for (uint i = 0; i < _size; i++)
     _x(i) = (*this->x)(indices[i]);
 }
@@ -285,7 +285,7 @@ void uBLASVector::axpy(double a, const GenericVector& y)
                  "Vectors are not of the same size");
   }
 
-  (*x) += a * y.down_cast<uBLASVector>().vec();
+  (*x) += a * as_type<const uBLASVector>(y).vec();
 }
 //-----------------------------------------------------------------------------
 void uBLASVector::abs()
@@ -298,12 +298,12 @@ void uBLASVector::abs()
 //-----------------------------------------------------------------------------
 double uBLASVector::inner(const GenericVector& y) const
 {
-  return ublas::inner_prod(*x, y.down_cast<uBLASVector>().vec());
+  return ublas::inner_prod(*x, as_type<const uBLASVector>(y).vec());
 }
 //-----------------------------------------------------------------------------
 const GenericVector& uBLASVector::operator= (const GenericVector& v)
 {
-  *this = v.down_cast<uBLASVector>();
+  *this = as_type<const uBLASVector>(v);
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -336,7 +336,7 @@ const uBLASVector& uBLASVector::operator*= (const double a)
 //-----------------------------------------------------------------------------
 const uBLASVector& uBLASVector::operator*= (const GenericVector& y)
 {
-  *x = ublas::element_prod(*x,y.down_cast<uBLASVector>().vec());
+  *x = ublas::element_prod(*x, as_type<const uBLASVector>(y).vec());
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -348,7 +348,7 @@ const uBLASVector& uBLASVector::operator/= (const double a)
 //-----------------------------------------------------------------------------
 const uBLASVector& uBLASVector::operator+= (const GenericVector& y)
 {
-  *x += y.down_cast<uBLASVector>().vec();
+  *x += as_type<const uBLASVector>(y).vec();
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -361,7 +361,7 @@ const uBLASVector& uBLASVector::operator+= (double a)
 //-----------------------------------------------------------------------------
 const uBLASVector& uBLASVector::operator-= (const GenericVector& y)
 {
-  *x -= y.down_cast<uBLASVector>().vec();
+  *x -= as_type<const uBLASVector>(y).vec();
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -399,7 +399,7 @@ std::string uBLASVector::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-LinearAlgebraFactory& uBLASVector::factory() const
+GenericLinearAlgebraFactory& uBLASVector::factory() const
 {
   return uBLASFactory<>::instance();
 }
