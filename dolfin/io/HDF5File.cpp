@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-09-18
+// Last changed: 2012-09-19
 
 #ifdef HAS_HDF5
 
@@ -61,6 +61,8 @@ HDF5File::HDF5File(const std::string filename) : GenericFile(filename, "H5")
   // Do nothing
 
   // FIXME: Create file here in constructor?
+  // Not all instatiations of HDF5File create a new file.
+  // Could possibly open file descriptor here.
 }
 //-----------------------------------------------------------------------------
 HDF5File::~HDF5File()
@@ -590,7 +592,7 @@ std::pair<uint, uint> HDF5File::dataset_dimensions(const std::string dataset_nam
 //-----------------------------------------------------------------------------
 void HDF5File::add_attribute(const std::string dataset_name,
                              const std::string attribute_name,
-                             uint attribute_value)
+                             const uint attribute_value)
 {
   MPICommunicator comm;
   MPIInfo info;
@@ -637,7 +639,6 @@ void HDF5File::add_attribute(const std::string dataset_name,
 }
 
 //-----------------------------------------------------------------------------
-
 
 void HDF5File::add_attribute(const std::string dataset_name,
                              const std::string attribute_name,
@@ -690,8 +691,9 @@ void HDF5File::add_attribute(const std::string dataset_name,
   dolfin_assert(status != HDF5_FAIL);
 }
 //-----------------------------------------------------------------------------
-std::string HDF5File::get_attribute(const std::string dataset_name,
-                                    const std::string attribute_name) const
+void HDF5File::get_attribute(const std::string dataset_name,
+                             const std::string attribute_name,
+                             std::string &attribute_value) const
 {
   MPICommunicator comm;
   MPIInfo info;
@@ -734,9 +736,10 @@ std::string HDF5File::get_attribute(const std::string dataset_name,
   // Copy string value into temporary vector
   // std::vector::data can be copied into
   // (std::string::data cannot)
-  std::vector<char> attribute_value(string_length);
-  status = H5Aread(attr_id, memtype, attribute_value.data());
-
+  std::vector<char> attribute_data(string_length);
+  status = H5Aread(attr_id, memtype, attribute_data.data());
+  attribute_value.assign(attribute_data.data());
+  
   // Close attribute
   status = H5Aclose(attr_id);
   dolfin_assert(status != HDF5_FAIL);
@@ -749,8 +752,61 @@ std::string HDF5File::get_attribute(const std::string dataset_name,
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  return std::string(attribute_value.data());
 }
+
+//-----------------------------------------------------------------------------
+
+void HDF5File::get_attribute(const std::string dataset_name,
+                             const std::string attribute_name,
+                             uint &attribute_value) const
+{
+  MPICommunicator comm;
+  MPIInfo info;
+  herr_t status;
+
+  // Set parallel access with communicator
+  hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
+  status = H5Pset_fapl_mpio(plist_id,*comm, *info);
+  dolfin_assert(status != HDF5_FAIL);
+
+  // Try to open existing HDF5 file
+  hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
+  dolfin_assert(file_id != HDF5_FAIL);
+
+  // Release file-access template 
+  status = H5Pclose(plist_id);
+  dolfin_assert(status != HDF5_FAIL);
+
+  // Open dataset by name
+  hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
+  dolfin_assert(dset_id != HDF5_FAIL);
+
+  // Open attribute by name and get its type
+  hid_t attr_id = H5Aopen(dset_id, attribute_name.c_str(), H5P_DEFAULT);
+  hid_t attr_type = H5Aget_type(attr_id);
+
+  // FIXME: should check here that it is of uint type... how?
+
+  // Close attribute type
+  status = H5Tclose(attr_type);
+  dolfin_assert(status != HDF5_FAIL);
+
+  // Read value
+  status = H5Aread(attr_id, H5T_NATIVE_UINT, &attribute_value);
+
+  // Close attribute
+  status = H5Aclose(attr_id);
+  dolfin_assert(status != HDF5_FAIL);
+
+  // Close dataset 
+  status = H5Dclose(dset_id);
+  dolfin_assert(status != HDF5_FAIL);
+
+  // Close file
+  status = H5Fclose(file_id);
+  dolfin_assert(status != HDF5_FAIL);
+}
+
 //-----------------------------------------------------------------------------
 std::string HDF5File::mesh_coords_dataset_name(const Mesh& mesh) const
 {
