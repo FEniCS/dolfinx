@@ -328,6 +328,7 @@ void HDF5File::read(std::vector<T>& data,  const std::pair<uint, uint> range,
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 }
+
 //-----------------------------------------------------------------------------
 void HDF5File::write(const std::vector<double>& data,
                      const std::string dataset_name,
@@ -339,9 +340,7 @@ void HDF5File::write(const std::vector<double>& data,
   std::pair<uint,uint> range(offset, offset + num_items);
   write(data, range, dataset_name, H5T_NATIVE_DOUBLE, width);
 }
-
 //-----------------------------------------------------------------------------
-
 void HDF5File::write(const std::vector<uint>& data,
                      const std::string dataset_name,
                      const uint width)
@@ -352,6 +351,18 @@ void HDF5File::write(const std::vector<uint>& data,
   std::pair<uint,uint> range(offset, offset + num_items);
 
   write(data, range, dataset_name, H5T_NATIVE_UINT, width);
+}
+//-----------------------------------------------------------------------------
+void HDF5File::write(const std::vector<int>& data,
+                     const std::string dataset_name,
+                     const uint width)
+{
+  // Write data contiguously from each process 
+  uint num_items = data.size()/width;
+  uint offset = MPI::global_offset(num_items,true);
+  std::pair<uint,uint> range(offset, offset + num_items);
+
+  write(data, range, dataset_name, H5T_NATIVE_INT, width);
 }
 
 //-----------------------------------------------------------------------------
@@ -372,6 +383,14 @@ void HDF5File::write(const std::vector<uint>& data,
   write(data, range, dataset_name, H5T_NATIVE_UINT, width);
 }
 //-----------------------------------------------------------------------------
+void HDF5File::write(const std::vector<int>& data,
+                     const std::pair<uint, uint> range,
+                     const std::string dataset_name, const uint width)
+{
+  write(data, range, dataset_name, H5T_NATIVE_INT, width);
+}
+//-----------------------------------------------------------------------------
+
 template <typename T>
 void HDF5File::write(const std::vector<T>& data,
                      const std::pair<uint, uint> range,

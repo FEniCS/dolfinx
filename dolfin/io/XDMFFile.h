@@ -82,6 +82,7 @@ namespace dolfin
     /// Save MeshFunction to file
     /// Data is stored in an HDF5 file along with the Mesh
     /// An XML description is stored in an associated XDMF file
+    void operator<<(const MeshFunction<int>& meshfunction);
     void operator<<(const MeshFunction<uint>& meshfunction);
     void operator<<(const MeshFunction<double>& meshfunction);
 

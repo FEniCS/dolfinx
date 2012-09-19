@@ -81,31 +81,31 @@ namespace dolfin
     // Create an empty file (truncate if existing)
     void create();
 
-    // Write data to existing HDF file as defined by range blocks on each
-    // process
+    // Write data to existing HDF file contiguously from each process,
+    // the range being set by the data size
+    // width: is the width of the data item (dim 1, e.g. 3 for x, y, z data)
+    void write(const std::vector<double>& data,
+               const std::string dataset_name, const uint width);
+
+    void write(const std::vector<uint>& data,
+               const std::string dataset_name, const uint width);
+
+    void write(const std::vector<int>& data,
+               const std::string dataset_name, const uint width);
+
+    // Write data to existing HDF file as 
+    // defined by range blocks on each process
     // range: the local range on this processor (dim 0)
     // width: is the width of the data item (dim 1, e.g. 3 for x, y, z data)
     void write(const std::vector<double>& data,
                const std::pair<uint, uint> range,
                const std::string dataset_name, const uint width);
 
-    // Write data to existing HDF file contiguously from each process
-    // the range being set by the data size
-    // width: is the width of the data item (dim 1, e.g. 3 for x, y, z data)
-    void write(const std::vector<double>& data,
+    void write(const std::vector<uint>& data,
+               const std::pair<uint, uint> range,
                const std::string dataset_name, const uint width);
 
-    // Write data to existing HDF file contiguously from each process
-    // the range being set by the data size
-    // width: is the width of the data item (dim 1, e.g. 3 for x, y, z data)
-    void write(const std::vector<uint>& data,
-               const std::string dataset_name, const uint width);
-
-    // Write data to existing HDF file as defined by range blocks on each
-    // process
-    // range: the local range on this processor (dim 0)
-    // width: is the width of the data item (dim 1, e.g. 3 for x, y, z data)
-    void write(const std::vector<uint>& data,
+    void write(const std::vector<int>& data,
                const std::pair<uint, uint> range,
                const std::string dataset_name, const uint width);
 
@@ -119,6 +119,9 @@ namespace dolfin
                const std::string dataset_name,
                const int h5type, const uint width) const;
 
+    // Read from HDF5 file into data as defined by range blocks
+    // range: the local range on this processor (dim 0)
+    // width: is the width of the data item (dim 1, e.g. 3 for x, y, z data)
     template <typename T>
     void read(std::vector<T>& data, const std::pair<uint, uint> range,
               const std::string dataset_name, const int h5type,

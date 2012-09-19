@@ -142,9 +142,8 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
     v.get_local(data_values);
   }
 
-
-  // Interleave the values for vector or tensor fields and pad 2D vectors
-  // and tensors to 3D
+  // Interleave the values for vector or tensor fields 
+  // and pad 2D vectors and tensors to 3D
   if (value_rank > 0)
   {
     if (value_size == 2)
@@ -159,7 +158,7 @@ void XDMFFile::operator<<(const std::pair<const Function*, double> ut)
       for (uint j = 0; j < value_size; j++)
       {
         tmp.push_back(data_values[i + j*num_local_entities]);
-        if (j == 1 && value_size == 4)
+        if (j == 1 && value_size == 4) // 2D -> 3D tensor
           tmp.push_back(0.0);
       }
       if (value_size == 2)    // 2D -> 3D vector
@@ -411,7 +410,11 @@ void XDMFFile::operator<<(const Mesh& mesh)
   }
 }
 
-// FIXME: this is messy - how can it be done better
+//----------------------------------------------------------------------------
+void XDMFFile::operator<<(const MeshFunction<int>& meshfunction)
+{
+  write_mesh_function(meshfunction);
+}
 //----------------------------------------------------------------------------
 void XDMFFile::operator<<(const MeshFunction<uint>& meshfunction)
 {
@@ -447,8 +450,6 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 
   // Collate data
   std::vector<T> data_values(meshfunction.values(),meshfunction.values()+meshfunction.size());
-  //  for (MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
-  //    data_values.push_back(meshfunction[cell->index()]);
 
   if(meshfunction.size()==0)
   {
