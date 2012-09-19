@@ -83,14 +83,15 @@ namespace dolfin
     /// Data is stored in an HDF5 file along with the Mesh
     /// An XML description is stored in an associated XDMF file
     void operator<<(const MeshFunction<uint>& meshfunction);
+    void operator<<(const MeshFunction<double>& meshfunction);
 
   private:
 
     // HDF5 data file
     boost::scoped_ptr<HDF5File> hdf5_file;
     
-    template<typename T>
-    void write_mesh_function(T& meshfunction);
+    template<typename T, typename U>
+      void write_mesh_function(T& meshfunction,U& data_type);
 
   };
 

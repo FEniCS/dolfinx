@@ -410,15 +410,23 @@ void XDMFFile::operator<<(const Mesh& mesh)
     xml_doc.save_file(filename.c_str(), "    ");
   }
 }
+
+// FIXME: this is messy - how can it be done better
 //----------------------------------------------------------------------------
 void XDMFFile::operator<<(const MeshFunction<uint>& meshfunction)
 {
-  write_mesh_function(meshfunction);
+  uint a=1;
+  write_mesh_function(meshfunction,a);
 }
 //----------------------------------------------------------------------------
-
-template<typename T>
-void XDMFFile::write_mesh_function(T& meshfunction)
+void XDMFFile::operator<<(const MeshFunction<double>& meshfunction)
+{
+  double a=1.0;
+  write_mesh_function(meshfunction,a);
+}
+//----------------------------------------------------------------------------
+template<typename T, typename U>
+void XDMFFile::write_mesh_function(T& meshfunction, U& data_type)
 {
   const Mesh& mesh = meshfunction.mesh();
   const uint cell_dim = meshfunction.dim();
@@ -440,11 +448,11 @@ void XDMFFile::write_mesh_function(T& meshfunction)
   }
 
   // Collate data
-  std::vector<uint> data_values;
-  for (MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
-    data_values.push_back(meshfunction[cell->index()]);
-  
-  if(data_values.size()==0)
+  std::vector<U> data_values(meshfunction.values(),meshfunction.values()+meshfunction.size());
+  //  for (MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
+  //    data_values.push_back(meshfunction[cell->index()]);
+
+  if(meshfunction.size()==0)
   {
     dolfin_error("XDMFFile.cpp",
                  "save empty MeshFunction",
