@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-08-24
+// Last changed: 2012-09-19
 
 #ifndef __DOLFIN_XDMFFILE_H
 #define __DOLFIN_XDMFFILE_H
@@ -79,10 +79,18 @@ namespace dolfin
     /// Save Function + time stamp to file
     void operator<<(const std::pair<const Function*, double> ut);
 
+    /// Save MeshFunction to file
+    /// Data is stored in an HDF5 file along with the Mesh
+    /// An XML description is stored in an associated XDMF file
+    void operator<<(const MeshFunction<uint>& meshfunction);
+
   private:
 
     // HDF5 data file
     boost::scoped_ptr<HDF5File> hdf5_file;
+    
+    template<typename T>
+    void write_mesh_function(T& meshfunction);
 
   };
 

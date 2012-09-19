@@ -165,7 +165,7 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
   }
 
   // Write connectivity to HDF5 file
-  const std::string topology_dataset = mesh_topo_dataset_name(mesh);
+  const std::string topology_dataset = mesh_topology_dataset_name(mesh);
   if (!dataset_exists(topology_dataset))
   {
     write(topological_data, cell_range, topology_dataset, cell_dim + 1);
@@ -338,6 +338,20 @@ void HDF5File::write(const std::vector<double>& data,
   uint offset = MPI::global_offset(num_items,true);
   std::pair<uint,uint> range(offset, offset + num_items);
   write(data, range, dataset_name, H5T_NATIVE_DOUBLE, width);
+}
+
+//-----------------------------------------------------------------------------
+
+void HDF5File::write(const std::vector<uint>& data,
+                     const std::string dataset_name,
+                     const uint width)
+{
+  // Write data contiguously from each process 
+  uint num_items = data.size()/width;
+  uint offset = MPI::global_offset(num_items,true);
+  std::pair<uint,uint> range(offset, offset + num_items);
+
+  write(data, range, dataset_name, H5T_NATIVE_UINT, width);
 }
 
 //-----------------------------------------------------------------------------
@@ -824,7 +838,7 @@ std::string HDF5File::mesh_index_dataset_name(const Mesh& mesh) const
   return dataset_name.str();
 }
 //-----------------------------------------------------------------------------
-std::string HDF5File::mesh_topo_dataset_name(const Mesh& mesh) const
+std::string HDF5File::mesh_topology_dataset_name(const Mesh& mesh) const
 {
   std::stringstream dataset_name;
   dataset_name << "/Mesh/Topology_" << std::setfill('0')

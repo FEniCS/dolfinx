@@ -95,6 +95,12 @@ namespace dolfin
     void write(const std::vector<double>& data,
                const std::string dataset_name, const uint width);
 
+    // Write data to existing HDF file contiguously from each process
+    // the range being set by the data size
+    // width: is the width of the data item (dim 1, e.g. 3 for x, y, z data)
+    void write(const std::vector<uint>& data,
+               const std::string dataset_name, const uint width);
+
     // Write data to existing HDF file as defined by range blocks on each
     // process
     // range: the local range on this processor (dim 0)
@@ -127,20 +133,22 @@ namespace dolfin
     // Check existence of dataset in file
     bool dataset_exists(const std::string dataset_name) const;
 
-    // Add an integer attribute to a dataset
+    // Add an unsigned integer attribute to a dataset
     void add_attribute(const std::string dataset_name,
                        const std::string attribute_name,
                        const uint attribute_value);
     
-    // Add/get a string attribute to/from a dataset
+    // Add a string attribute to a dataset
     void add_attribute(const std::string dataset_name,
                        const std::string attribute_name,
                        const std::string attribute_value);
-
+    
+    // Get a string attribute of a dataset
     void get_attribute(const std::string dataset_name,
-                              const std::string attribute_name,
-                              std::string &attribute_value) const;
+                       const std::string attribute_name,
+                       std::string &attribute_value) const;
 
+    // Get a uint attribute of a dataset
     void get_attribute(const std::string dataset_name,
                        const std::string attribute_name,
                        uint &attribute_value) const;
@@ -148,7 +156,7 @@ namespace dolfin
     // Generate HDF5 dataset names for mesh topology and coordinates
     std::string mesh_coords_dataset_name(const Mesh& mesh) const;
     std::string mesh_index_dataset_name(const Mesh& mesh) const;
-    std::string mesh_topo_dataset_name(const Mesh& mesh) const;
+    std::string mesh_topology_dataset_name(const Mesh& mesh) const;
 
   };
 
