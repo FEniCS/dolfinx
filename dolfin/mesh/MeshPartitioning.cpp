@@ -86,12 +86,13 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
-                                              LocalMeshData& local_data)
+                                              const LocalMeshData& local_data)
 {
   // Partition mesh
   partition(mesh, local_data);
 
   // Create MeshDomains from local_data
+  // FIXME: check local_data
   build_mesh_domains(mesh, local_data);
 
   // Number facets (see https://bugs.launchpad.net/dolfin/+bug/733834)
@@ -288,7 +289,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   }
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
+void MeshPartitioning::partition(Mesh& mesh, const LocalMeshData& mesh_data)
 {
   // Compute cell partition
   std::vector<uint> cell_partition;
@@ -306,15 +307,24 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
 
   // Distribute cells
   Timer timer("PARALLEL 2: Distribute mesh (cells and vertices)");
-  distribute_cells(mesh_data, cell_partition);
+  std::vector<uint> global_cell_indices;
+  std::vector<std::vector<uint> > cell_vertices;
+  distribute_cells(global_cell_indices, cell_vertices, mesh_data,
+                   cell_partition);
 
   // Distribute vertices
+  std::vector<uint> vertex_indices;
+  std::vector<std::vector<double> > vertex_coordinates;
   std::map<uint, uint> vertex_global_to_local;
-  distribute_vertices(mesh_data, vertex_global_to_local);
+  distribute_vertices(vertex_indices, vertex_coordinates,
+                      vertex_global_to_local, mesh_data);
   timer.stop();
 
   // Build mesh
-  build_mesh(mesh, mesh_data, vertex_global_to_local);
+  build_mesh(mesh, global_cell_indices, cell_vertices, vertex_indices,
+             vertex_coordinates, vertex_global_to_local,
+             mesh_data.tdim, mesh_data.gdim, mesh_data.num_global_cells,
+             mesh_data.num_global_vertices);
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_mesh_domains(Mesh& mesh,
@@ -338,7 +348,8 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
     dolfin_assert(mesh.domains().markers(dim));
     MeshValueCollection<uint>& markers = *(mesh.domains().markers(dim));
 
-    const std::vector< std::pair<std::pair<dolfin::uint, dolfin::uint>, dolfin::uint> >& local_value_data = dim_data->second;
+    const std::vector< std::pair<std::pair<dolfin::uint, dolfin::uint>, dolfin::uint> >&
+        local_value_data = dim_data->second;
     build_mesh_value_collection(mesh, local_value_data, markers);
   }
 }
@@ -607,20 +618,18 @@ void MeshPartitioning::compute_final_entity_ownership(std::map<std::vector<uint>
   }
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
-                                        const std::vector<uint>& cell_partition)
+void MeshPartitioning::distribute_cells(std::vector<uint>& global_cell_indices,
+  std::vector<std::vector<uint> >& cell_vertices,
+  const LocalMeshData& mesh_data, const std::vector<uint>& cell_partition)
 {
   // This function takes the partition computed by the partitioner
   // (which tells us to which process each of the local cells stored in
   // LocalMeshData on this process belongs. We use MPI::distribute to
   // redistribute all cells (the global vertex indices of all cells).
 
-  // Get global cell indices
-  const std::vector<uint>& global_cell_indices = mesh_data.global_cell_indices;
-
   // Get dimensions of local mesh_data
   const uint num_local_cells = mesh_data.cell_vertices.size();
-  dolfin_assert(global_cell_indices.size() == num_local_cells);
+  dolfin_assert(mesh_data.global_cell_indices.size() == num_local_cells);
   const uint num_cell_vertices = mesh_data.num_vertices_per_cell;
   if (!mesh_data.cell_vertices.empty())
   {
@@ -638,7 +647,7 @@ void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
   destinations_cell_vertices.reserve(num_local_cells*(num_cell_vertices + 1));
   for (uint i = 0; i < num_local_cells; i++)
   {
-    send_cell_vertices.push_back(global_cell_indices[i]);
+    send_cell_vertices.push_back(mesh_data.global_cell_indices[i]);
     destinations_cell_vertices.push_back(cell_partition[i]);
     for (uint j = 0; j < num_cell_vertices; j++)
     {
@@ -654,28 +663,25 @@ void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
   dolfin_assert(received_cell_vertices.size() % (num_cell_vertices + 1) == 0);
   destinations_cell_vertices.clear();
 
-  // Clear mesh data
-  mesh_data.cell_vertices.clear();
-  mesh_data.global_cell_indices.clear();
-
   // Put mesh_data back into mesh_data.cell_vertices
   const uint num_new_local_cells = received_cell_vertices.size()/(num_cell_vertices + 1);
-  mesh_data.cell_vertices.reserve(num_new_local_cells);
-  mesh_data.global_cell_indices.reserve(num_new_local_cells);
+  cell_vertices.resize(num_new_local_cells);
+  global_cell_indices.resize(num_new_local_cells);
 
   // Loop over new cells
   for (uint i = 0; i < num_new_local_cells; ++i)
   {
-    mesh_data.global_cell_indices.push_back(received_cell_vertices[i*(num_cell_vertices + 1)]);
+    global_cell_indices[i] = received_cell_vertices[i*(num_cell_vertices + 1)];
     std::vector<uint> cell(num_cell_vertices);
     for (uint j = 0; j < num_cell_vertices; ++j)
       cell[j] = received_cell_vertices[i*(num_cell_vertices + 1) + j + 1];
-    mesh_data.cell_vertices.push_back(cell);
+    cell_vertices[i] = cell;
   }
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
-                                           std::map<uint, uint>& glob2loc)
+void MeshPartitioning::distribute_vertices(std::vector<uint>& vertex_indices,
+  std::vector<std::vector<double> > vertex_coordinates,
+  std::map<uint, uint>& glob2loc, const LocalMeshData& mesh_data)
 {
   // This function distributes all vertices (coordinates and local-to-global
   // mapping) according to the cells that are stored on each process. This
@@ -739,8 +745,8 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
   std::vector<uint> index_counters(num_processes, 0);
 
   // Clear data
-  mesh_data.vertex_coordinates.clear();
-  mesh_data.vertex_indices.clear();
+  vertex_coordinates.clear();
+  vertex_indices.clear();
   glob2loc.clear();
 
   // Store coordinates and construct global to local mapping
@@ -750,7 +756,7 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
     std::vector<double> vertex(vertex_size);
     for (uint j = 0; j < vertex_size; ++j)
       vertex[j] = received_vertex_coordinates[i*vertex_size+j];
-    mesh_data.vertex_coordinates.push_back(vertex);
+    vertex_coordinates.push_back(vertex);
 
     const uint sender_process = sources_vertex_coordinates[i*vertex_size];
     const uint global_vertex_index = vertex_location[sender_process][index_counters[sender_process]++];
@@ -759,8 +765,12 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_mesh(Mesh& mesh,
-                                  const LocalMeshData& mesh_data,
-                                  std::map<uint, uint>& glob2loc)
+  const std::vector<uint>& global_cell_indices,
+  const std::vector<std::vector<uint> >& cell_vertices,
+  const std::vector<uint>& vertex_indices,
+  const std::vector<std::vector<double> >& vertex_coordinates,
+  const std::map<uint, uint>& vertex_global_to_local,
+  uint tdim, uint gdim, uint num_global_cells, uint num_global_vertices)
 {
   Timer timer("PARALLEL 3: Build mesh (from local mesh data)");
 
@@ -771,53 +781,76 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // Open mesh for editing
   mesh.clear();
   MeshEditor editor;
-  editor.open(mesh, mesh_data.gdim, mesh_data.tdim);
+  editor.open(mesh, gdim, tdim);
 
   // Add vertices
-  editor.init_vertices(mesh_data.vertex_coordinates.size());
-  Point p(mesh_data.gdim);
-  for (uint i = 0; i < mesh_data.vertex_coordinates.size(); ++i)
+  editor.init_vertices(vertex_coordinates.size());
+  Point p(gdim);
+  for (uint i = 0; i < vertex_coordinates.size(); ++i)
   {
-    for (uint j = 0; j < mesh_data.gdim; ++j)
-      p[j] = mesh_data.vertex_coordinates[i][j];
+    for (uint j = 0; j < gdim; ++j)
+      p[j] = vertex_coordinates[i][j];
     editor.add_vertex(i, i, p);
   }
 
-  // Add cells
-  editor.init_cells(mesh_data.cell_vertices.size());
-  const uint num_cell_vertices = mesh_data.tdim + 1;
-  std::vector<uint> cell(num_cell_vertices);
-  for (uint i = 0; i < mesh_data.cell_vertices.size(); ++i)
+
+  MPI::barrier();
+  std::map<uint, uint>::const_iterator iter0;
+  for (iter0 = vertex_global_to_local.begin();  iter0 != vertex_global_to_local.end(); ++iter0)
   {
+    cout << "Test: " << iter0->second << ", " << iter0->first << ", " << endl;
+  }
+
+  MPI::barrier();
+  // Add cells
+  editor.init_cells(cell_vertices.size());
+  const uint num_cell_vertices = tdim + 1;
+  std::vector<uint> cell(num_cell_vertices);
+  for (uint i = 0; i < cell_vertices.size(); ++i)
+  {
+    cout << "Test: i: " << i << endl;
     for (uint j = 0; j < num_cell_vertices; ++j)
-      cell[j] = glob2loc[mesh_data.cell_vertices[i][j]];
+    {
+      cout << "     j: " << j << ", " << cell_vertices[i][j] << endl;
+      //std::cout << "--------- Test size: " << vertex_global_to_local.size() << std::endl;
+      std::map<uint, uint>::const_iterator iter = vertex_global_to_local.find(cell_vertices[i][j]);
+      dolfin_assert(iter != vertex_global_to_local.end());
+      cell[j] = iter->second;
+      //cell[j] = glob2loc[mesh_data.cell_vertices[i][j]];
+    }
     editor.add_cell(i, cell);
   }
 
-  // Construct local to global mapping based on the global to local mapping
-  MeshFunction<unsigned int>& global_vertex_indices = mesh.parallel_data().global_entity_indices(0);
-  for (std::map<uint, uint>::const_iterator iter = glob2loc.begin(); iter != glob2loc.end(); ++iter)
+  // Construct local to global mapping based on the global to local
+  // mapping
+  MeshFunction<unsigned int>& global_vertex_indices
+      = mesh.parallel_data().global_entity_indices(0);
+  std::map<uint, uint>::const_iterator iter;
+  for (iter = vertex_global_to_local.begin();  iter != vertex_global_to_local.end(); ++iter)
+  {
     global_vertex_indices[iter->second] = iter->first;
+    cout << "Test: " << iter->second << ", " << iter->first << ", " << vertex_indices[iter->second] << endl;
+  }
 
-  // Construct local to global mapping for cells
-  MeshFunction<unsigned int>& global_cell_indices = mesh.parallel_data().global_entity_indices(mesh_data.tdim);
-  const std::vector<uint>& gci = mesh_data.global_cell_indices;
-  dolfin_assert(!global_cell_indices.empty());
-  dolfin_assert(global_cell_indices.size() == gci.size());
-  for(uint i = 0; i < gci.size(); ++i)
-    global_cell_indices[i] = gci[i];
+  // Copy local to global mapping for cells into parallel mesh data
+  MeshFunction<unsigned int>& _global_cell_indices = mesh.parallel_data().global_entity_indices(tdim);
+  dolfin_assert(_global_cell_indices.size() == global_cell_indices.size());
+  for(uint i = 0; i < global_cell_indices.size(); ++i)
+    _global_cell_indices[i] = global_cell_indices[i];
 
-  // Close mesh: Note that this must be done after creating the global vertex map or
-  // otherwise the ordering in mesh.close() will be wrong (based on local numbers).
+  // Close mesh: Note that this must be done after creating the global
+  // vertex map or otherwise the ordering in mesh.close() will be wrong
+  // (based on local numbers).
   editor.close();
 
-  // Construct array of length topology().dim() that holds the number of global mesh entities
+  // Construct array of length topology().dim() that holds the number
+  // of global mesh entities
   std::vector<uint>& num_global_entities = mesh.parallel_data().num_global_entities();
-  num_global_entities.resize(mesh_data.tdim + 1);
+  num_global_entities.resize(tdim + 1);
   std::fill(num_global_entities.begin(), num_global_entities.end(), 0);
 
-  num_global_entities[0] = mesh_data.num_global_vertices;
-  num_global_entities[mesh_data.tdim] = mesh_data.num_global_cells;
+  num_global_entities[0] = num_global_vertices;
+  num_global_entities[tdim] = num_global_cells;
 
   /// Communicate global number of boundary vertices to all processes
 
@@ -828,7 +861,8 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   const uint boundary_size = boundary_vertex_map.size();
 
 
-  // Build sorted array of global boundary vertex indices (global numbering)
+  // Build sorted array of global boundary vertex indices (global
+  // numbering)
   std::vector<uint> global_vertex_send(boundary_size);
   for (uint i = 0; i < boundary_size; ++i)
     global_vertex_send[i] = global_vertex_indices[boundary_vertex_map[i]];
@@ -841,7 +875,8 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // Recieve buffer
   std::vector<uint> global_vertex_recv;
 
-  // Create shared_vertices data structure: mapping from shared vertices to list of neighboring processes
+  // Create shared_vertices data structure: mapping from shared vertices
+  // to list of neighboring processes
   std::map<uint, std::vector<uint> >& shared_vertices
         = mesh.parallel_data().shared_vertices();
   shared_vertices.clear();
