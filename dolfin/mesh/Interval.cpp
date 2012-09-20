@@ -71,9 +71,9 @@ Interval::Interval(uint nx, double a, double b) : Mesh()
   // Create intervals
   for (uint ix = 0; ix < nx; ix++)
   {
-    const uint v0 = ix;
-    const uint v1 = v0 + 1;
-    editor.add_cell(ix, v0, v1);
+    std::vector<uint> cell(2);
+    cell[0] = ix; cell[1] = ix + 1;
+    editor.add_cell(ix, cell);
   }
 
   // Close mesh editor

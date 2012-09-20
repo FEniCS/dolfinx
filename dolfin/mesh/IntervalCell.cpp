@@ -105,8 +105,13 @@ void IntervalCell::refine_cell(Cell& cell, MeshEditor& editor,
   const uint e0 = offset + cell.index();
 
   // Add the two new cells
-  editor.add_cell(current_cell++, v0, e0);
-  editor.add_cell(current_cell++, e0, v1);
+  std::vector<uint> new_cell(2);
+
+  new_cell[0] = v0; new_cell[1] = e0;
+  editor.add_cell(current_cell++, new_cell);
+
+  new_cell[0] = e0; new_cell[1] = v1;
+  editor.add_cell(current_cell++, new_cell);
 }
 //-----------------------------------------------------------------------------
 double IntervalCell::volume(const MeshEntity& interval) const

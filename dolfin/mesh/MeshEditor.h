@@ -154,17 +154,6 @@ namespace dolfin
     ///         The vertex indices
     void add_cell(uint c, const std::vector<uint>& v);
 
-    /// Add cell (interval) with given vertices
-    ///
-    /// *Arguments*
-    ///     c (uint)
-    ///         The cell (index).
-    ///     v0 (uint)
-    ///         Index of the first vertex.
-    ///     v1 (uint)
-    ///         Index of the second vertex.
-    void add_cell(uint c, uint v0, uint v1);
-
     /// Add cell (triangle) with given vertices
     ///
     /// *Arguments*
