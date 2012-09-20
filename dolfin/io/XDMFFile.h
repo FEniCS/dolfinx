@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-09-19
+// Last changed: 2012-09-20
 
 #ifndef __DOLFIN_XDMFFILE_H
 #define __DOLFIN_XDMFFILE_H
@@ -63,7 +63,7 @@ namespace dolfin
 
     /// Save a mesh for visualisation, with e.g. ParaView. Creates a HDF5
     /// file to store the mesh, and a related XDMF file with metadata.
-    void operator<<(const Mesh& mesh);
+    void operator<< (const Mesh& mesh);
 
     /// Save a Function to XDMF/HDF files for visualisation.
     /// Downgrading may occur due to collecting the values
@@ -74,23 +74,25 @@ namespace dolfin
     /// Subsequent calls will store additional Vertex/Cell Values
     /// in the same HDF5 file, and update the XDMF metadata
     /// to represent a time series.
-    void operator<<(const Function& u);
+    void operator<< (const Function& u);
 
     /// Save Function + time stamp to file
-    void operator<<(const std::pair<const Function*, double> ut);
+    void operator<< (const std::pair<const Function*, double> ut);
 
     /// Save MeshFunction to file
     /// Data is stored in an HDF5 file along with the Mesh
     /// An XML description is stored in an associated XDMF file
-    void operator<<(const MeshFunction<int>& meshfunction);
-    void operator<<(const MeshFunction<uint>& meshfunction);
-    void operator<<(const MeshFunction<double>& meshfunction);
+    void operator<< (const MeshFunction<bool>& meshfunction);
+    void operator<< (const MeshFunction<int>& meshfunction);
+    void operator<< (const MeshFunction<uint>& meshfunction);
+    void operator<< (const MeshFunction<double>& meshfunction);
 
   private:
 
     // HDF5 data file
     boost::scoped_ptr<HDF5File> hdf5_file;
     
+    // Generic MeshFunction writer
     template<typename T>
       void write_mesh_function(const MeshFunction<T>& meshfunction);
     

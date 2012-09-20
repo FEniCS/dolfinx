@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-09-19
+// Last changed: 2012-09-20
 
 #ifdef HAS_HDF5
 
@@ -70,7 +70,7 @@ HDF5File::~HDF5File()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void HDF5File::operator>>(Mesh& input_mesh)
+void HDF5File::operator>> (Mesh& input_mesh)
 {
 
   dolfin_error("HDF5File.cpp",
@@ -79,7 +79,7 @@ void HDF5File::operator>>(Mesh& input_mesh)
 
 }
 //-----------------------------------------------------------------------------
-void HDF5File::operator<<(const Mesh& mesh)
+void HDF5File::operator<< (const Mesh& mesh)
 {
   write_mesh(mesh, true);
 }
