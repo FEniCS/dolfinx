@@ -261,8 +261,8 @@ void HDF5File::read(std::vector<T>& data,  const std::pair<uint, uint> range,
   // read a generic block of 2D data from a HDF5 dataset in parallel
 
   dolfin_assert(data);
-  if(data.size() != range.second - range.first)
-    data.resize(range.second - range.first);
+  if(data.size() != (range.second - range.first) * width)
+    data.resize( (range.second - range.first) * width );
   
   hid_t file_id;      // HDF5 file ID
   hid_t plist_id;     // File access template

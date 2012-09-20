@@ -77,7 +77,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   const Function &u = *(ut.first);
   const double time_step = ut.second;
 
-  Timer hdf5timer("Write XDMF (mesh + data) vertex");
+  Timer XDMFtimer("Write XDMF Function");
 
   // Update any ghost values
   u.update();
@@ -340,7 +340,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const Mesh& mesh)
 {
-  Timer hdf5timer("HDF5 + XDMF Output (mesh)");
+  Timer XDMFtimer("XDMF Output Mesh");
 
   // Write Mesh to HDF5 file (use contiguous vertex indices for topology)
   dolfin_assert(hdf5_file);
