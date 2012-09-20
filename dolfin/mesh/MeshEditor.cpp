@@ -140,6 +140,7 @@ void MeshEditor::init_cells(uint num_cells)
 //-----------------------------------------------------------------------------
 void MeshEditor::add_vertex(uint local_index, uint global_index, const Point& p)
 {
+  // Geometric dimension
   const uint gdim = mesh->geometry().dim();
 
   // Add vertex
@@ -162,6 +163,8 @@ void MeshEditor::add_vertex(uint local_index, uint global_index,
 //-----------------------------------------------------------------------------
 void MeshEditor::add_cell(uint c, const std::vector<uint>& v)
 {
+  dolfin_assert(v.size() == tdim + 1);
+
   // Check vertices
   for (uint i = 0; i < v.size(); i++)
     check_vertex(v[i]);
@@ -171,23 +174,6 @@ void MeshEditor::add_cell(uint c, const std::vector<uint>& v)
 
   // Set data
   mesh->_topology(tdim, 0).set(c, v);
-}
-//-----------------------------------------------------------------------------
-void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2)
-{
-  // Check vertices
-  check_vertex(v0);
-  check_vertex(v1);
-  check_vertex(v2);
-
-  // Add cell
-  add_cell_common(c, 2);
-
-  // Set data
-  vertices[0] = v0;
-  vertices[1] = v1;
-  vertices[2] = v2;
-  mesh->_topology(tdim, 0).set(c, vertices);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2, uint v3)

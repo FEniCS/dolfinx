@@ -22,6 +22,8 @@
 // First added:  2005-12-02
 // Last changed: 2009-09-29
 
+#include <boost/assign.hpp>
+
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/MeshPartitioning.h>
@@ -126,11 +128,19 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
         const uint v3 = v1 + (nx + 1);
         const uint vmid = (nx + 1)*(ny + 1) + iy*nx + ix;
 
+        // Data structure to hold cells
+        std::vector<std::vector<uint> > cells;
+
         // Note that v0 < v1 < v2 < v3 < vmid.
-        editor.add_cell(cell++, v0, v1, vmid);
-        editor.add_cell(cell++, v0, v2, vmid);
-        editor.add_cell(cell++, v1, v3, vmid);
-        editor.add_cell(cell++, v2, v3, vmid);
+        cells.push_back(boost::assign::list_of(v0)(v1)(vmid));
+        cells.push_back(boost::assign::list_of(v0)(v2)(vmid));
+        cells.push_back(boost::assign::list_of(v1)(v3)(vmid));
+        cells.push_back(boost::assign::list_of(v2)(v3)(vmid));
+
+        // Add cells
+        std::vector<std::vector<uint> >::const_iterator _cell;
+        for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
+          editor.add_cell(cell++, *_cell);
       }
     }
   }
@@ -161,34 +171,38 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
         const uint v1 = v0 + 1;
         const uint v2 = v0 + (nx + 1);
         const uint v3 = v1 + (nx + 1);
+        std::vector<uint> cell_data;
 
         if(local_diagonal == "left")
         {
-          editor.add_cell(cell++, v0, v1, v2);
-          editor.add_cell(cell++, v1, v2, v3);
+          cell_data = boost::assign::list_of(v0)(v1)(v2);
+          editor.add_cell(cell++, cell_data);
+          cell_data = boost::assign::list_of(v1)(v2)(v3);
+          editor.add_cell(cell++, cell_data);
           if (diagonal == "right/left" || diagonal == "left/right")
             local_diagonal = "right";
         }
         else
         {
-          editor.add_cell(cell++, v0, v1, v3);
-          editor.add_cell(cell++, v0, v2, v3);
+          cell_data = boost::assign::list_of(v0)(v1)(v3);
+          editor.add_cell(cell++, cell_data);
+          cell_data = boost::assign::list_of(v0)(v2)(v3);
+          editor.add_cell(cell++, cell_data);
           if (diagonal == "right/left" || diagonal == "left/right")
             local_diagonal = "left";
         }
       }
     }
   }
-  else
-    // NB: This seems unnecessary, already checked.
-    dolfin_error("Rectangle.cpp",
-                 "create rectangle",
-                 "Unknown mesh diagonal definition: allowed options are \"left\", \"right\", \"left/right\", \"right/left\" and \"crossed\"");
 
   // Close mesh editor
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster()) { MeshPartitioning::build_distributed_mesh(*this); return; }
+  if (MPI::is_broadcaster())
+  {
+    MeshPartitioning::build_distributed_mesh(*this);
+    return;
+  }
 }
 //-----------------------------------------------------------------------------

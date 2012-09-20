@@ -24,6 +24,7 @@
 // Last changed: 2011-11-14
 
 #include <algorithm>
+#include <boost/assign.hpp>
 #include <dolfin/log/dolfin_log.h>
 #include "Cell.h"
 #include "MeshEditor.h"
@@ -128,11 +129,17 @@ void TriangleCell::refine_cell(Cell& cell, MeshEditor& editor,
   const uint e1 = offset + e[find_edge(1, cell)];
   const uint e2 = offset + e[find_edge(2, cell)];
 
-  // Add the four new cells
-  editor.add_cell(current_cell++, v0, e2, e1);
-  editor.add_cell(current_cell++, v1, e0, e2);
-  editor.add_cell(current_cell++, v2, e1, e0);
-  editor.add_cell(current_cell++, e0, e1, e2);
+  // Create four new cells
+  std::vector<std::vector<uint> > cells;
+  cells.push_back(boost::assign::list_of(v0)(e2)(e1));
+  cells.push_back(boost::assign::list_of(v1)(e0)(e2));
+  cells.push_back(boost::assign::list_of(v2)(e1)(e0));
+  cells.push_back(boost::assign::list_of(e0)(e1)(e2));
+
+  // Add cells
+  std::vector<std::vector<uint> >::const_iterator _cell;
+  for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
+    editor.add_cell(current_cell++, *_cell);
 }
 //-----------------------------------------------------------------------------
 double TriangleCell::volume(const MeshEntity& triangle) const

@@ -271,8 +271,15 @@ class TestPage12(unittest.TestCase):
         #editor.add_vertex(2, 1.0, 1.0)
         #editor.add_vertex(3, 0.0, 1.0)
 
-        editor.add_cell(0, 0, 1, 2)
-        editor.add_cell(1, 0, 2, 3)
+        import numpy
+        cell = array([0, 1, 2], dtype=numpy.uintc)
+        editor.add_cell(0, cell)
+
+        cell = array([0, 2, 3], dtype=numpy.uintc)
+        editor.add_cell(0, cell)
+
+        #editor.add_cell(0, 0, 1, 2)
+        #editor.add_cell(1, 0, 2, 3)
         editor.close()
 
     def test_box_2(self):

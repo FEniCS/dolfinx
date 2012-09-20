@@ -151,28 +151,8 @@ namespace dolfin
     ///     c (uint)
     ///         The cell (index).
     ///     v (std::vector<uint>)
-    ///         The vertex indices
+    ///         The vertex indices (local indices)
     void add_cell(uint c, const std::vector<uint>& v);
-
-    /// Add cell (triangle) with given vertices
-    ///
-    /// *Arguments*
-    ///     c (uint)
-    ///         The cell (index).
-    ///     v0 (uint)
-    ///         Index of the first vertex.
-    ///     v1 (uint)
-    ///         Index of the second vertex.
-    ///     v2 (uint)
-    ///         Index of the third vertex.
-    ///
-    /// *Example*
-    ///     .. code-block:: c++
-    ///
-    ///         MeshEditor editor;
-    ///         editor.add_cell(0, 0, 1, 2);
-    ///
-    void add_cell(uint c, uint v0, uint v1, uint v2);
 
     /// Add cell (tetrahedron) with given vertices
     ///

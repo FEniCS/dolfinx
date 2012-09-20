@@ -44,7 +44,8 @@ class MeshEditorTest(unittest.TestCase):
         editor.add_vertex(2, 2, p)
 
         # Add cell
-        editor.add_cell(0, 0, 1, 2)
+        cell = numpy.array([0, 1, 2], dtype=numpy.uintc)
+        editor.add_cell(0, cell)
 
         # Close editor
         editor.close()

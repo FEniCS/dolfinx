@@ -23,6 +23,8 @@
 // First added:  2005-12-02
 // Last changed: 2012-03-06
 
+#include <boost/assign.hpp>
+
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/MeshPartitioning.h>
@@ -132,11 +134,20 @@ UnitCircle::UnitCircle(uint n, std::string diagonal,
         const uint v3 = v1 + (nx + 1);
         const uint vmid = (nx + 1)*(ny + 1) + iy*nx + ix;
 
+        // Data structure to hold cells
+        std::vector<std::vector<uint> > cells;
+
         // Note that v0 < v1 < v2 < v3 < vmid.
-        editor.add_cell(cell++, v0, v1, vmid);
-        editor.add_cell(cell++, v0, v2, vmid);
-        editor.add_cell(cell++, v1, v3, vmid);
-        editor.add_cell(cell++, v2, v3, vmid);
+        cells.push_back(boost::assign::list_of(v0)(v1)(vmid));
+        cells.push_back(boost::assign::list_of(v0)(v2)(vmid));
+        cells.push_back(boost::assign::list_of(v1)(v3)(vmid));
+        cells.push_back(boost::assign::list_of(v2)(v3)(vmid));
+
+        // Add cells
+        std::vector<std::vector<uint> >::const_iterator _cell;
+        for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
+          editor.add_cell(cell++, *_cell);
+
       }
     }
   }
@@ -150,16 +161,21 @@ UnitCircle::UnitCircle(uint n, std::string diagonal,
         const uint v1 = v0 + 1;
         const uint v2 = v0 + (nx + 1);
         const uint v3 = v1 + (nx + 1);
+        std::vector<uint> cell_data;
 
         if(diagonal == "left")
         {
-          editor.add_cell(cell++, v0, v1, v2);
-          editor.add_cell(cell++, v1, v2, v3);
+          cell_data = boost::assign::list_of(v0)(v1)(v2);
+          editor.add_cell(cell++, cell_data);
+          cell_data = boost::assign::list_of(v1)(v2)(v3);
+          editor.add_cell(cell++, cell_data);
         }
         else
         {
-          editor.add_cell(cell++, v0, v1, v3);
-          editor.add_cell(cell++, v0, v2, v3);
+          cell_data = boost::assign::list_of(v0)(v1)(v3);
+          editor.add_cell(cell++, cell_data);
+          cell_data = boost::assign::list_of(v0)(v2)(v3);
+          editor.add_cell(cell++, cell_data);
         }
       }
     }

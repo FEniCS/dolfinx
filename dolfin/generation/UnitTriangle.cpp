@@ -52,7 +52,9 @@ UnitTriangle::UnitTriangle() : Mesh()
 
   // Create cells
   editor.init_cells(1);
-  editor.add_cell(0, 0, 1, 2);
+  std::vector<uint> cell_data(3);
+  cell_data[0] = 0; cell_data[1] = 1; cell_data[2] = 2;
+  editor.add_cell(0, cell_data);
 
   // Close mesh editor
   editor.close();

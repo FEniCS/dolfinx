@@ -104,9 +104,10 @@ namespace dolfin
       typename CGAL::Triangulation_2<X, Y>::Finite_faces_iterator cgal_cell;
       for (cgal_cell = t.finite_faces_begin(); cgal_cell != t.finite_faces_end(); ++cgal_cell)
       {
-        mesh_editor.add_cell(cell_index++, cgal_cell->vertex(0)->info(),
-                                           cgal_cell->vertex(1)->info(),
-                                           cgal_cell->vertex(2)->info());
+        std::vector<uint> cell_data(3);
+        for (uint i = 0; i < 3; ++i)
+          cell_data[i] = cgal_cell->vertex(i)->info();
+        mesh_editor.add_cell(cell_index++, cell_data);
       }
     }
 
@@ -122,9 +123,10 @@ namespace dolfin
         // Add cell if it is in the domain
         if(cgal_cell->is_in_domain())
         {
-          mesh_editor.add_cell(cell_index++, cgal_cell->vertex(0)->info(),
-                                             cgal_cell->vertex(1)->info(),
-                                             cgal_cell->vertex(2)->info());
+          std::vector<uint> cell_data(3);
+          for (uint i = 0; i < 3; ++i)
+            cell_data[i] = cgal_cell->vertex(i)->info();
+          mesh_editor.add_cell(cell_index++, cell_data);
         }
       }
     }
@@ -138,10 +140,10 @@ namespace dolfin
       typename CGAL::Triangulation_3<X, Y>::Finite_cells_iterator cgal_cell;
       for (cgal_cell = t.finite_cells_begin(); cgal_cell != t.finite_cells_end(); ++cgal_cell)
       {
-        mesh_editor.add_cell(cell_index++, cgal_cell->vertex(0)->info(),
-                                           cgal_cell->vertex(1)->info(),
-                                           cgal_cell->vertex(2)->info(),
-                                           cgal_cell->vertex(3)->info());
+        std::vector<uint> cell_data(4);
+        for (uint i = 0; i < 4; ++i)
+          cell_data[i] = cgal_cell->vertex(i)->info();
+        mesh_editor.add_cell(cell_index++, cell_data);
       }
     }
 
@@ -244,10 +246,10 @@ namespace dolfin
       // Add cell if in CGAL mesh, and increment index
       if (cgal_mesh.is_in_complex(c))
       {
-        mesh_editor.add_cell(cell_index++, c->vertex(0)->info(),
-                                           c->vertex(1)->info(),
-                                           c->vertex(2)->info(),
-                                           c->vertex(3)->info());
+        std::vector<uint> cell_data(4);
+        for (uint i = 0; i < 4; ++i)
+          cell_data[i] = c->vertex(i)->info();
+        mesh_editor.add_cell(cell_index++, cell_data);
       }
     }
 
