@@ -56,7 +56,9 @@ UnitTetrahedron::UnitTetrahedron() : Mesh()
 
   // Create cells
   editor.init_cells(1);
-  editor.add_cell(0, 0, 1, 2, 3);
+  std::vector<uint> cell_data(4);
+  cell_data[0] = 0; cell_data[1] = 1; cell_data[2] = 2; cell_data[3] = 3;
+  editor.add_cell(0, cell_data);
 
   // Close mesh editor
   editor.close();

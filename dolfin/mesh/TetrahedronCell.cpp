@@ -24,6 +24,7 @@
 // Last changed: 2011-11-21
 
 #include <algorithm>
+#include <boost/assign.hpp>
 #include <dolfin/log/dolfin_log.h>
 #include "Cell.h"
 #include "Facet.h"
@@ -166,42 +167,46 @@ void TetrahedronCell::refine_cell(Cell& cell, MeshEditor& editor,
   const double d14 = p1.distance(p4);
   const double d23 = p2.distance(p3);
 
+  // Data structure to hold cells
+  std::vector<std::vector<uint> > cells;
+
   // First create the 4 congruent tetrahedra at the corners
-  editor.add_cell(current_cell++, v0, e3, e4, e5);
-  editor.add_cell(current_cell++, v1, e1, e2, e5);
-  editor.add_cell(current_cell++, v2, e0, e2, e4);
-  editor.add_cell(current_cell++, v3, e0, e1, e3);
+  cells.push_back(boost::assign::list_of(v0)(e3)(e4)(e5));
+  cells.push_back(boost::assign::list_of(v1)(e1)(e2)(e5));
+  cells.push_back(boost::assign::list_of(v2)(e0)(e2)(e4));
+  cells.push_back(boost::assign::list_of(v3)(e0)(e1)(e3));
 
   // Then divide the remaining octahedron into 4 tetrahedra
   if (d05 <= d14 && d14 <= d23)
   {
-    //cout << "Cutting along e0 - e5" << endl;
-    editor.add_cell(current_cell++, e0, e1, e2, e5);
-    editor.add_cell(current_cell++, e0, e1, e3, e5);
-    editor.add_cell(current_cell++, e0, e2, e4, e5);
-    editor.add_cell(current_cell++, e0, e3, e4, e5);
+    cells.push_back(boost::assign::list_of(e0)(e1)(e2)(e5));
+    cells.push_back(boost::assign::list_of(e0)(e1)(e3)(e5));
+    cells.push_back(boost::assign::list_of(e0)(e2)(e4)(e5));
+    cells.push_back(boost::assign::list_of(e0)(e3)(e4)(e5));
   }
   else if (d14 <= d23)
   {
-    //cout << "Cutting along e1 - e4" << endl;
-    editor.add_cell(current_cell++, e0, e1, e2, e4);
-    editor.add_cell(current_cell++, e0, e1, e3, e4);
-    editor.add_cell(current_cell++, e1, e2, e4, e5);
-    editor.add_cell(current_cell++, e1, e3, e4, e5);
+    cells.push_back(boost::assign::list_of(e0)(e1)(e2)(e4));
+    cells.push_back(boost::assign::list_of(e0)(e1)(e3)(e4));
+    cells.push_back(boost::assign::list_of(e1)(e2)(e4)(e5));
+    cells.push_back(boost::assign::list_of(e1)(e3)(e4)(e5));
   }
   else
   {
-    //cout << "Cutting along e2 - e3" << endl;
-    editor.add_cell(current_cell++, e0, e1, e2, e3);
-    editor.add_cell(current_cell++, e0, e2, e3, e4);
-    editor.add_cell(current_cell++, e1, e2, e3, e5);
-    editor.add_cell(current_cell++, e2, e3, e4, e5);
+    cells.push_back(boost::assign::list_of(e0)(e1)(e2)(e3));
+    cells.push_back(boost::assign::list_of(e0)(e2)(e3)(e4));
+    cells.push_back(boost::assign::list_of(e1)(e2)(e3)(e5));
+    cells.push_back(boost::assign::list_of(e2)(e3)(e4)(e5));
   }
+
+  // Add cells
+  std::vector<std::vector<uint> >::const_iterator _cell;
+  for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
+    editor.add_cell(current_cell++, *_cell);
 }
 //-----------------------------------------------------------------------------
 void TetrahedronCell::refine_cellIrregular(Cell& cell, MeshEditor& editor,
-				      uint& current_cell, uint refinement_rule,
-				      uint* marked_edges) const
+  uint& current_cell, uint refinement_rule, uint* marked_edges) const
 {
   dolfin_not_implemented();
 
@@ -318,9 +323,11 @@ double TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
 
   // Only know how to compute the volume when embedded in R^3
   if (geometry.dim() != 3)
+  {
     dolfin_error("TetrahedronCell.cpp",
                  "compute diameter",
                  "Tetrahedron is not embedded in R^3, only know how to compute diameter in that case");
+  }
 
   // Get the coordinates of the four vertices
   const uint* vertices = tetrahedron.entities(0);

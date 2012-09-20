@@ -20,8 +20,9 @@
 // First added:  2005-12-02
 // Last changed: 2010-10-19
 
-#include <dolfin/common/timing.h>
+#include <boost/assign.hpp>
 
+#include <dolfin/common/timing.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshEditor.h>
@@ -41,9 +42,11 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
 
   // Check input
   if ( nx < 1 || ny < 1 || nz < 1 )
+  {
     dolfin_error("UnitCube.cpp",
                  "create unit cube",
                  "Cube has non-positive number of vertices in some dimension: number of vertices must be at least 1 in each dimension");
+  }
 
   // Set name
   rename("mesh", "Mesh of the unit cube (0,1) x (0,1) x (0,1)");
@@ -91,12 +94,21 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
         const uint v6 = v2 + (nx + 1)*(ny + 1);
         const uint v7 = v3 + (nx + 1)*(ny + 1);
 
-        editor.add_cell(cell++, v0, v1, v3, v7);
-        editor.add_cell(cell++, v0, v1, v7, v5);
-        editor.add_cell(cell++, v0, v5, v7, v4);
-        editor.add_cell(cell++, v0, v3, v2, v7);
-        editor.add_cell(cell++, v0, v6, v4, v7);
-        editor.add_cell(cell++, v0, v2, v6, v7);
+        // Data structure to hold cells
+        std::vector<std::vector<uint> > cells;
+
+        // Note that v0 < v1 < v2 < v3 < vmid.
+        cells.push_back(boost::assign::list_of(v0)(v1)(v3)(v7));
+        cells.push_back(boost::assign::list_of(v0)(v1)(v7)(v5));
+        cells.push_back(boost::assign::list_of(v0)(v5)(v7)(v4));
+        cells.push_back(boost::assign::list_of(v0)(v3)(v2)(v7));
+        cells.push_back(boost::assign::list_of(v0)(v6)(v4)(v7));
+        cells.push_back(boost::assign::list_of(v0)(v2)(v6)(v7));
+
+        // Add cells
+        std::vector<std::vector<uint> >::const_iterator _cell;
+        for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
+          editor.add_cell(cell++, *_cell);
       }
     }
   }

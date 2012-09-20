@@ -154,21 +154,6 @@ namespace dolfin
     ///         The vertex indices (local indices)
     void add_cell(uint c, const std::vector<uint>& v);
 
-    /// Add cell (tetrahedron) with given vertices
-    ///
-    /// *Arguments*
-    ///     c (uint)
-    ///         The cell (index).
-    ///     v0 (uint)
-    ///         Index of the first vertex.
-    ///     v1 (uint)
-    ///         Index of the second vertex.
-    ///     v2 (uint)
-    ///         Index of the third vertex.
-    ///     v3 (uint)
-    ///         Index of the fourth vertex.
-    void add_cell(uint c, uint v0, uint v1, uint v2, uint v3);
-
     /// Close mesh, finish editing, and order entities locally
     ///
     /// *Arguments*

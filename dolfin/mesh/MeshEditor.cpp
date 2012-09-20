@@ -176,25 +176,6 @@ void MeshEditor::add_cell(uint c, const std::vector<uint>& v)
   mesh->_topology(tdim, 0).set(c, v);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2, uint v3)
-{
-  // Check vertices
-  check_vertex(v0);
-  check_vertex(v1);
-  check_vertex(v2);
-  check_vertex(v3);
-
-  // Add cell
-  add_cell_common(c, 3);
-
-  // Set data
-  vertices[0] = v0;
-  vertices[1] = v1;
-  vertices[2] = v2;
-  vertices[3] = v3;
-  mesh->_topology(tdim, 0).set(c, vertices);
-}
-//-----------------------------------------------------------------------------
 void MeshEditor::close(bool order)
 {
   // Order mesh if requested
