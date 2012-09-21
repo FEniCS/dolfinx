@@ -150,8 +150,8 @@ namespace dolfin
     /// *Arguments*
     ///     global_vertex_indices (_MeshFunction_ <uint>)
     ///         The global vertex indices.
-    void order(const MeshFunction<uint>* global_vertex_indices)
-    { _mesh->type().order(*this, global_vertex_indices); }
+    void order(const std::vector<uint>& local_to_global_vertex_indices)
+    { _mesh->type().order(*this, local_to_global_vertex_indices); }
 
     /// Check if entities are ordered
     ///
@@ -162,8 +162,8 @@ namespace dolfin
     /// *Returns*
     ///     bool
     ///         True if ordered.
-    bool ordered(const MeshFunction<uint>* global_vertex_indices) const
-    { return _mesh->type().ordered(*this, global_vertex_indices); }
+    bool ordered(const std::vector<uint>& local_to_global_vertex_indices) const
+    { return _mesh->type().ordered(*this, local_to_global_vertex_indices); }
 
   };
 

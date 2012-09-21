@@ -71,6 +71,10 @@ namespace dolfin
       return local_to_global[local_index];
     }
 
+    /// Return local-to global indices for all local vertices
+    const std::vector<uint>& local_to_global_indices() const
+    { return local_to_global; }
+
     /// Return value of coordinate with local index n in direction i
     double& x(uint n, uint i)
     {

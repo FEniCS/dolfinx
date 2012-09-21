@@ -46,6 +46,13 @@ ParallelData::~ParallelData()
 //-----------------------------------------------------------------------------
 bool ParallelData::have_global_entity_indices(uint d) const
 {
+  if (d == 0)
+  {
+    dolfin_error("ParallelData.cpp",
+                 "checking for global entity indices ofdim 0",
+                 "ParallelData no longer stores local-to-global maps for vertices. Global vertex indices are stored inMeshGeometry::local_to_global_indices");
+  }
+
   if (_global_entity_indices.find(d) != _global_entity_indices.end())
     return true;
   else
@@ -54,6 +61,13 @@ bool ParallelData::have_global_entity_indices(uint d) const
 //-----------------------------------------------------------------------------
 MeshFunction<dolfin::uint>& ParallelData::global_entity_indices(uint d)
 {
+  if (d == 0)
+  {
+    dolfin_error("ParallelData.cpp",
+                 "get global entity indices for dim 0",
+                 "Do not use ParallelData::global_entity_indices for vertices. Use Vertex::global_index()");
+  }
+
   if (!have_global_entity_indices(d))
     _global_entity_indices[d] = MeshFunction<uint>(mesh, d);
   return _global_entity_indices.find(d)->second;
@@ -61,6 +75,13 @@ MeshFunction<dolfin::uint>& ParallelData::global_entity_indices(uint d)
 //-----------------------------------------------------------------------------
 const MeshFunction<dolfin::uint>& ParallelData::global_entity_indices(uint d) const
 {
+  if (d == 0)
+  {
+    dolfin_error("ParallelData.cpp",
+                 "get global entity indices for dim 0",
+                 "Do not use ParallelData::global_entity_indices for vertices. Use Vertex::global_index() or MeshGeometry::local_to_global_indices");
+  }
+
   dolfin_assert(have_global_entity_indices(d));
   return _global_entity_indices.find(d)->second;
 }
@@ -73,6 +94,13 @@ std::vector<dolfin::uint> ParallelData::global_entity_indices_as_vector(uint d) 
 //-----------------------------------------------------------------------------
 const std::map<dolfin::uint, dolfin::uint>& ParallelData::global_to_local_entity_indices(uint d)
 {
+  if (d == 0)
+  {
+    dolfin_error("ParallelData.cpp",
+                 "get global entity indices for dim 0",
+                 "Do not use ParallelData::global_to_local_entity_indices for vertices. Use MeshGeometry instead");
+  }
+
   std::map<uint, std::map<uint, uint> >::iterator it;
   it = _global_to_local_entity_indices.find(d);
   if (it == _global_to_local_entity_indices.end())
@@ -97,6 +125,13 @@ const std::map<dolfin::uint, dolfin::uint>& ParallelData::global_to_local_entity
 //-----------------------------------------------------------------------------
 const std::map<dolfin::uint, dolfin::uint>& ParallelData::global_to_local_entity_indices(uint d) const
 {
+  if (d == 0)
+  {
+    dolfin_error("ParallelData.cpp",
+                 "get global entity indices for dim 0",
+                 "Do not use ParallelData::global_entity_indices for vertices. Use Vertex::global_index() or MeshGeometry::local_to_global_indices");
+  }
+
   std::map<uint, std::map<uint, uint> >::const_iterator it;
   it = _global_to_local_entity_indices.find(d);
   if (it == _global_to_local_entity_indices.end())

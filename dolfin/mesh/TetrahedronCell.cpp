@@ -436,7 +436,7 @@ double TetrahedronCell::facet_area(const Cell& cell, uint facet) const
 }
 //-----------------------------------------------------------------------------
 void TetrahedronCell::order(Cell& cell,
-                            const MeshFunction<uint>* global_vertex_indices) const
+                 const std::vector<uint>& local_to_global_vertex_indices) const
 {
   // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1, 3 - 0, 3 - 1, 3 - 2
 
@@ -455,7 +455,7 @@ void TetrahedronCell::order(Cell& cell,
     for (uint i = 0; i < 6; i++)
     {
       uint* edge_vertices = const_cast<uint*>(topology(1, 0)(cell_edges[i]));
-      sort_entities(2, edge_vertices, global_vertex_indices);
+      sort_entities(2, edge_vertices, local_to_global_vertex_indices);
     }
   }
 
@@ -471,7 +471,7 @@ void TetrahedronCell::order(Cell& cell,
     for (uint i = 0; i < 4; i++)
     {
       uint* facet_vertices = const_cast<uint*>(topology(2, 0)(cell_facets[i]));
-      sort_entities(3, facet_vertices, global_vertex_indices);
+      sort_entities(3, facet_vertices, local_to_global_vertex_indices);
     }
   }
 
@@ -523,7 +523,7 @@ void TetrahedronCell::order(Cell& cell,
   if (!topology(3, 0).empty())
   {
     uint* cell_vertices = const_cast<uint*>(cell.entities(0));
-    sort_entities(4, cell_vertices, global_vertex_indices);
+    sort_entities(4, cell_vertices, local_to_global_vertex_indices);
   }
 
   // Sort local edges on cell after non-incident vertex tuble, connectivity 3-1

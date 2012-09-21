@@ -79,7 +79,8 @@ namespace dolfin
     double facet_area(const Cell& cell, uint facet) const;
 
     /// Order entities locally
-    void order(Cell& cell, const MeshFunction<uint>* global_vertex_indices) const;
+    void order(Cell& cell,
+               const std::vector<uint>& local_to_global_vertex_indices) const;
 
     /// Return description of cell type
     std::string description(bool plural) const;
