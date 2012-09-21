@@ -19,7 +19,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-09-17
+// Last changed: 2012-09-19
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -118,6 +118,9 @@ namespace dolfin
   ///                                             plot() interface (in plot.h).
   ///                                             If not set, the object's unique
   ///                                             id is used.
+  ///  input_keys     String      ""              Synthesize these key presses.
+  ///                                             For example: "wwm" for point+mesh
+  ///                                             view.
   /// ============= ============ =============== =================================
   ///
   /// The default visualization mode for the different plot types are as follows:
@@ -183,6 +186,7 @@ namespace dolfin
       p.add<std::string>("key");
       p.add<double>("hide_below");
       p.add<double>("hide_above");
+      p.add<std::string>("input_keys");
       return p;
     }
 

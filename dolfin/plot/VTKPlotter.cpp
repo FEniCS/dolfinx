@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-09-17
+// Last changed: 2012-09-19
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
@@ -167,6 +167,20 @@ void VTKPlotter::plot(boost::shared_ptr<const Variable> variable)
   vtk_pipeline->render();
 
   _frame_counter++;
+
+  // Synthesize key presses from parameters
+  Parameter &param_keys = parameters["input_keys"];
+  if (param_keys.is_set())
+  {
+    std::string keys = param_keys;
+    for (uint i = 0; i < keys.size(); i++)
+    {
+      const char c = tolower(keys[i]);
+      const int modifiers = (c == keys[i] ? 0 : SHIFT);
+      key_pressed(modifiers, c, std::string(&c, 1));
+    }
+    param_keys.reset();
+  }
 
   if (parameters["interactive"])
   {
