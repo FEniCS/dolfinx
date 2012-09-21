@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-09-20
+// Last changed: 2012-09-21
 
 #ifdef HAS_HDF5
 
@@ -87,8 +87,10 @@ void HDF5File::operator<< (const Mesh& mesh)
 void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
 {
   // Clear file when writing to file for the first time
+
   if(counter == 0)
     create();
+  counter++; 
 
   // Get local mesh data
   const uint cell_dim = mesh.topology().dim();
@@ -753,8 +755,9 @@ void HDF5File::get_attribute(const std::string dataset_name,
   hid_t attr_id = H5Aopen(dset_id, attribute_name.c_str(), H5P_DEFAULT);
   hid_t attr_type = H5Aget_type(attr_id);
 
-  // FIXME: should check here that it is of string type... how?
-
+  // Check this attribute is a string
+  dolfin_assert(H5Tget_class(attr_type)==H5T_STRING);
+  
   // Copy string type from HDF5 types and set length accordingly
   hid_t memtype = H5Tcopy(H5T_C_S1);
   int string_length = H5Tget_size(attr_type)+1;
@@ -818,7 +821,8 @@ void HDF5File::get_attribute(const std::string dataset_name,
   hid_t attr_id = H5Aopen(dset_id, attribute_name.c_str(), H5P_DEFAULT);
   hid_t attr_type = H5Aget_type(attr_id);
 
-  // FIXME: should check here that it is of uint type... how?
+  // FIXME: more complete check of type
+  dolfin_assert(H5Tget_class(attr_type)==H5T_INTEGER);
 
   // Close attribute type
   status = H5Tclose(attr_type);
