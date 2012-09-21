@@ -18,7 +18,7 @@
 // Split from VTKPlotter.h, Joachim B Haga, 2012-09-10
 //
 // First added:  2012-09-10
-// Last changed: 2012-09-16
+// Last changed: 2012-09-19
 
 #ifdef HAS_VTK
 
@@ -139,6 +139,9 @@ namespace // anonymous
   }
 #endif
   //----------------------------------------------------------------------------
+  unsigned char gauss_120[256*4] = {
+#include "gauss_120.dat"
+  };
 }
 //----------------------------------------------------------------------------
 // Class VTKWindowOutputStage
@@ -196,6 +199,12 @@ void VTKWindowOutputStage::init(VTKPlotter *parent, const Parameters &parameters
   _actor->SetMapper(_mapper);
   _renderer->AddActor(_actor);
   _renderWindow->AddRenderer(_renderer);
+
+  // Load the lookup table
+  vtkSmartPointer<vtkUnsignedCharArray> lut_data = vtkSmartPointer<vtkUnsignedCharArray>::New();
+  lut_data->SetNumberOfComponents(4);
+  lut_data->SetArray(gauss_120, 256*4, 1);
+  _lut->SetTable(lut_data.GetPointer());
 
   // Connect the depth-sort filter to the camera
   _depthSort->SetCamera(_renderer->GetActiveCamera());
