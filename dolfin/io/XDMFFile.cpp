@@ -103,14 +103,6 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
                  "Output of tensors with rank > 2 not yet supported");
   }
 
-  // Throw error for 1D data sets
-  if (cell_dim == 1)
-  {
-    dolfin_error("XDMFFile.cpp",
-                 "write data to XDMF file",
-                 "Output of 1D datasets not supported");
-  }
-
   // Test for cell-centred data
   uint cell_based_dim = 1;
   for (uint i = 0; i < value_rank; i++)
@@ -264,7 +256,12 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
     // Grid/Topology
     pugi::xml_node xdmf_topology = xdmf_grid.append_child("Topology");
-    if (cell_dim == 2)
+    if (cell_dim == 1)
+    {
+      xdmf_topology.append_attribute("TopologyType") = "PolyLine";
+      xdmf_topology.append_attribute("NodesPerElement") = "2";
+    }
+    else if (cell_dim == 2)
       xdmf_topology.append_attribute("TopologyType") = "Triangle";
     else if (cell_dim == 3)
       xdmf_topology.append_attribute("TopologyType") = "Tetrahedron";
@@ -384,7 +381,12 @@ void XDMFFile::operator<< (const Mesh& mesh)
 
     // Cell type
     const uint cell_dim = mesh.topology().dim();
-    if (cell_dim == 2)
+    if (cell_dim == 1)
+    {
+      xdmf_topology.append_attribute("TopologyType") = "PolyLine";
+      xdmf_topology.append_attribute("NodesPerElement") = "2";
+    }
+    else if (cell_dim == 2)
       xdmf_topology.append_attribute("TopologyType") = "Triangle";
     else if (cell_dim == 3)
       xdmf_topology.append_attribute("TopologyType") = "Tetrahedron";
@@ -448,13 +450,6 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   const uint cell_dim = meshfunction.dim();
 
   // Only allow cell-based MeshFunctions
-  // Only allow 2D and 3D
-
-  if(mesh.topology().dim() == 1){
-    dolfin_error("XDMFFile.cpp",
-                 "write 1D mesh function",
-                 "One dimensional datasets not supported");
-  }
 
   if(mesh.topology().dim() != cell_dim)
   {
@@ -517,7 +512,12 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
     xdmf_topology.append_attribute("NumberOfElements") = num_global_cells;
 
     // Cell type
-    if (cell_dim == 2)
+    if (cell_dim == 1)
+    {
+      xdmf_topology.append_attribute("TopologyType") = "PolyLine";
+      xdmf_topology.append_attribute("NodesPerElement") = "2";
+    }
+    else if (cell_dim == 2)
       xdmf_topology.append_attribute("TopologyType") = "Triangle";
     else if (cell_dim == 3)
       xdmf_topology.append_attribute("TopologyType") = "Tetrahedron";
