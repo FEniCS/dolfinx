@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-09-13
+// Last changed: 2012-09-19
 
 #ifdef HAS_VTK
 
@@ -204,15 +204,17 @@ void VTKPlottableGenericFunction::rescale(double range[2], const Parameters &par
   _glyphs->SetScaleFactor(scale);
 
   // Compute the scale factor for scalar warping
+  double* bounds = grid()->GetBounds();
+  double grid_h = std::max(bounds[1]-bounds[0], bounds[3]-bounds[2]);
+
+  // Set the default warp such that the max warp is one fourth of the longest
+  // axis of the mesh.
+  double scale_factor = grid_h / 4.0;
   if (range[1] > range[0])
   {
-    double* bounds = grid()->GetBounds();
-    double grid_h = std::max(bounds[1]-bounds[0], bounds[3]-bounds[2]);
-
-    // Set the default warp such that the max warp is one fourth of the longest
-    // axis of the mesh.
-    _warpscalar->SetScaleFactor(grid_h/(range[1]-range[0])/4.0 * scale);
+    scale_factor /= (range[1] - range[0]);
   }
+  _warpscalar->SetScaleFactor(scale * scale_factor);
 }
 //----------------------------------------------------------------------------
 void VTKPlottableGenericFunction::update_range(double range[2])

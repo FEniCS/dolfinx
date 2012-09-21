@@ -465,9 +465,9 @@ void VTKWindowOutputStage::reset_camera_clipping_range()
 void VTKWindowOutputStage::set_scalar_range(double *range)
 {
   _mapper->SetScalarRange(range);
-  // Not required, the mapper controls the range.
-  //_lut->SetRange(range);
-  //_lut->Build();
+  // Normally the mapper controls the lut range. But if the mapper isn't
+  // activated (no visible actors), then the lut update will be delayed.
+  _lut->SetRange(range);
 }
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::cycle_representation(int new_rep)
