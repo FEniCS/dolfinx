@@ -55,7 +55,8 @@ namespace dolfin
                          const uint* v) const;
 
     /// Order entities locally (connectivity 1-0, 2-0, 2-1)
-    void order(Cell& cell, const MeshFunction<uint>* global_vertex_indices) const;
+    void order(Cell& cell,
+               const std::vector<uint>& local_to_global_vertex_indices) const;
 
     /// Refine cell uniformly
     void refine_cell(Cell& cell, MeshEditor& editor, uint& current_cell) const;

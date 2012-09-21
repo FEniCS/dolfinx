@@ -133,7 +133,7 @@ double PointCell::facet_area(const Cell& cell, uint facet) const
 }
 //-----------------------------------------------------------------------------
 void PointCell::order(Cell& cell,
-                      const MeshFunction<uint>* global_vertex_indices) const
+                 const std::vector<uint>& local_to_global_vertex_indices) const
 {
   dolfin_error("PointCell.cpp",
                "order cell",
