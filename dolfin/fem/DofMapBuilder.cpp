@@ -29,6 +29,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/graph/BoostGraphRenumbering.h>
 #include <dolfin/graph/GraphBuilder.h>
+#include <dolfin/graph/SCOTCH.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/Facet.h>
@@ -99,6 +100,9 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& dolfin_mesh,
       // Reorder graph (reverse Cuthill-McKee)
       const std::vector<uint> dof_remap
           = BoostGraphRenumbering::compute_cuthill_mckee(graph, true);
+
+      // Reorder graph (SCOTCH minimum degree)
+      //const std::vector<uint> dof_remap = SCOTCH::compute_renumbering(graph);
 
       // Reorder dof map
       dolfin_assert(dofmap.ufc_map_to_dofmap.empty());
