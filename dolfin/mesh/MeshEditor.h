@@ -187,8 +187,8 @@ namespace dolfin
     // Clear all data
     void clear();
 
-    // Check that vertex is in range
-    void check_vertex(uint v);
+    // Check that vertices are in range
+    void check_vertices(const std::vector<uint>& v) const;
 
     // The mesh
     Mesh* mesh;

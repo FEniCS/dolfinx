@@ -166,8 +166,7 @@ void MeshEditor::add_cell(uint c, const std::vector<uint>& v)
   dolfin_assert(v.size() == tdim + 1);
 
   // Check vertices
-  for (uint i = 0; i < v.size(); i++)
-    check_vertex(v[i]);
+  check_vertices(v);
 
   // Add cell
   add_cell_common(c, tdim);
@@ -280,13 +279,16 @@ void MeshEditor::clear()
   vertices.clear();
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::check_vertex(uint v)
+void MeshEditor::check_vertices(const std::vector<uint>& v) const
 {
-  if (num_vertices > 0 && v >= num_vertices)
+  for (uint i = 0; i < v.size(); ++i)
   {
-    dolfin_error("MeshEditor.cpp",
-                 "add cell using mesh editor",
-                 "Vertex index (%d) out of range [0, %d)", v, num_vertices);
+    if (num_vertices > 0 && v[i] >= num_vertices)
+    {
+      dolfin_error("MeshEditor.cpp",
+                   "add cell using mesh editor",
+                   "Vertex index (%d) out of range [0, %d)", v[i], num_vertices);
+    }
   }
 }
 //-----------------------------------------------------------------------------

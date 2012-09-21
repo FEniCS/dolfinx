@@ -21,7 +21,6 @@
 // First added:  2005-12-02
 // Last changed: 2009-09-29
 
-#include <boost/assign.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshEditor.h>
@@ -106,6 +105,7 @@ UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
   uint cell = 0;
   if (diagonal == "crossed")
   {
+    std::vector<std::vector<uint> > cells(4, std::vector<uint>(3));
     for (uint iy = 0; iy < ny; iy++)
     {
       for (uint ix = 0; ix < nx; ix++)
@@ -116,14 +116,11 @@ UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
         const uint v3 = v1 + (nx + 1);
         const uint vmid = (nx + 1)*(ny + 1) + iy*nx + ix;
 
-        // Data structure to hold cells
-        std::vector<std::vector<uint> > cells;
-
         // Note that v0 < v1 < v2 < v3 < vmid.
-        cells.push_back(boost::assign::list_of(v0)(v1)(vmid));
-        cells.push_back(boost::assign::list_of(v0)(v2)(vmid));
-        cells.push_back(boost::assign::list_of(v1)(v3)(vmid));
-        cells.push_back(boost::assign::list_of(v2)(v3)(vmid));
+        cells[0][0] = v0; cells[0][1] = v1; cells[0][2] = vmid;
+        cells[1][0] = v0; cells[1][1] = v2; cells[1][2] = vmid;
+        cells[2][0] = v1; cells[2][1] = v3; cells[2][2] = vmid;
+        cells[3][0] = v2; cells[3][1] = v3; cells[3][2] = vmid;
 
         // Add cells
         std::vector<std::vector<uint> >::const_iterator _cell;
@@ -135,6 +132,7 @@ UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
   else if (diagonal == "left" || diagonal == "right" || diagonal == "right/left" || diagonal == "left/right")
   {
     std::string local_diagonal = diagonal;
+    std::vector<std::vector<uint> > cells(2, std::vector<uint>(3));
     for (uint iy = 0; iy < ny; iy++)
     {
       // Set up alternating diagonal
@@ -159,33 +157,32 @@ UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
         const uint v1 = v0 + 1;
         const uint v2 = v0 + (nx + 1);
         const uint v3 = v1 + (nx + 1);
-        std::vector<uint> cell_data;
 
         if(local_diagonal == "left")
         {
-          cell_data = boost::assign::list_of(v0)(v1)(v2);
-          editor.add_cell(cell++, cell_data);
-          cell_data = boost::assign::list_of(v1)(v2)(v3);
-          editor.add_cell(cell++, cell_data);
+          cells[0][0] = v0; cells[0][1] = v1; cells[0][2] = v2;
+          cells[1][0] = v1; cells[1][1] = v2; cells[1][2] = v3;
           if (diagonal == "right/left" || diagonal == "left/right")
             local_diagonal = "right";
         }
         else
         {
-          cell_data = boost::assign::list_of(v0)(v1)(v3);
-          editor.add_cell(cell++, cell_data);
-          cell_data = boost::assign::list_of(v0)(v2)(v3);
-          editor.add_cell(cell++, cell_data);
+          cells[0][0] = v0; cells[0][1] = v1; cells[0][2] = v3;
+          cells[1][0] = v0; cells[1][1] = v2; cells[1][2] = v3;
           if (diagonal == "right/left" || diagonal == "left/right")
             local_diagonal = "left";
         }
+        editor.add_cell(cell++, cells[0]);
+        editor.add_cell(cell++, cells[1]);
       }
     }
   }
   else
+  {
     dolfin_error("UnitSquare.cpp",
                  "create unit square",
                  "Unknown mesh diagonal definition: allowed options are \"left\", \"right\", \"left/right\", \"right/left\" and \"crossed\"");
+  }
 
   // Close mesh editor
   editor.close();
