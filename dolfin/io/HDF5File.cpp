@@ -206,6 +206,33 @@ void HDF5File::operator>> (GenericVector& input)
   input.set_local(data);
 }
 //-----------------------------------------------------------------------------
+// HDF5 calls to open a file descriptor on multiple processes
+// Common file opening sequence
+hid_t HDF5File::open_parallel_file() const
+{
+  MPICommunicator comm;
+  MPIInfo info;
+  herr_t status;
+  
+  // Set parallel access with communicator
+  hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
+  dolfin_assert(plist_id != HDF5_FAIL);
+  status = H5Pset_fapl_mpio(plist_id,*comm, *info);
+  dolfin_assert(status != HDF5_FAIL);
+
+  // Try to open existing HDF5 file
+  hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
+  dolfin_assert(file_id != HDF5_FAIL);
+
+  // Release file-access template 
+  status = H5Pclose(plist_id);
+  dolfin_assert(status != HDF5_FAIL);
+
+  return file_id;
+}
+
+//-----------------------------------------------------------------------------
+
 void HDF5File::create()
 {
   // make empty HDF5 file
@@ -222,10 +249,11 @@ void HDF5File::create()
 
   // Set parallel access with communicator
   plist_id = H5Pcreate(H5P_FILE_ACCESS);
+  dolfin_assert(plist_id != HDF5_FAIL);
   status = H5Pset_fapl_mpio(plist_id, *comm, *info);
   dolfin_assert(status != HDF5_FAIL);
 
-
+  // Overwrite any existing file
   file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
   dolfin_assert(file_id != HDF5_FAIL);
 
@@ -251,6 +279,8 @@ void HDF5File::create()
   // Release file-access template 
   status = H5Pclose(plist_id);
   dolfin_assert(status != HDF5_FAIL);
+
+  // Close file
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 }
@@ -273,36 +303,19 @@ void HDF5File::read(std::vector<T>& data,  const std::pair<uint, uint> range,
   hid_t dset_id;      // Dataset ID
   herr_t status;      // Generic return value
 
-  // MPI
-  MPICommunicator comm;
-  MPIInfo info;
-
   // Hyperslab selection
   hsize_t offset[2] = {range.first, 0};
   hsize_t count[2] = {range.second - range.first, width};
   
-  // Setup file access template
-  plist_id = H5Pcreate(H5P_FILE_ACCESS);
-  dolfin_assert(plist_id != HDF5_FAIL);
-
-  // Set parallel access with communicator
-  status = H5Pset_fapl_mpio(plist_id, *comm, *info);
-  dolfin_assert(status != HDF5_FAIL);
-
   // Open the file collectively
-  file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR,plist_id);
-  dolfin_assert(file_id != HDF5_FAIL);
-
-  // Release file-access template 
-  status = H5Pclose(plist_id);
-  dolfin_assert(status != HDF5_FAIL);
+  file_id = open_parallel_file();
 
   // open the dataset collectively
   dset_id = H5Dopen(file_id, dataset_name.c_str());
   dolfin_assert(dset_id != HDF5_FAIL);
 
   // Create a file dataspace independently
-  filespace = H5Dget_space (dset_id);
+  filespace = H5Dget_space(dset_id);
   dolfin_assert(filespace != HDF5_FAIL);
 
   status = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL,
@@ -399,12 +412,6 @@ void HDF5File::write(const std::vector<T>& data,
                      const std::string dataset_name,
                      const int h5type, const uint width) const
 {
-  // File and dataset identifiers
-  hid_t file_id, dset_id;
-
-  // File and memory dataspace identifiers
-  hid_t filespace, memspace;
-
   // Hyperslab selection parameters
   hsize_t count[2]  = {range.second - range.first, width};
   hsize_t offset[2] = {range.first, 0};
@@ -412,34 +419,19 @@ void HDF5File::write(const std::vector<T>& data,
   // Dataset dimensions
   hsize_t dimsf[2] = {MPI::sum(count[0]), width} ;
 
-  // Property list identifier
-  hid_t  plist_id;
+  // Reporting
   herr_t status;
 
-  // Get MPI objects
-  MPICommunicator comm;
-  MPIInfo info;
-
-  // Set parallel access with communicator
-  plist_id = H5Pcreate(H5P_FILE_ACCESS);
-  status = H5Pset_fapl_mpio(plist_id, *comm, *info);
-  dolfin_assert(status != HDF5_FAIL);
-
   // Try to open existing HDF5 file
-  file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
-  dolfin_assert(file_id != HDF5_FAIL);
-
-  // Release file-access template 
-  status = H5Pclose(plist_id);
-  dolfin_assert(status != HDF5_FAIL);
+  hid_t file_id = open_parallel_file();
 
   // Create a global 2D data space
-  filespace = H5Screate_simple(2, dimsf, NULL);
+  hid_t filespace = H5Screate_simple(2, dimsf, NULL);
   dolfin_assert(filespace != HDF5_FAIL);
 
   // Create global dataset (using dataset_name)
-  dset_id = H5Dcreate(file_id, dataset_name.c_str(), h5type, filespace,
-                      H5P_DEFAULT);
+  hid_t dset_id = H5Dcreate(file_id, dataset_name.c_str(), h5type, filespace,
+                            H5P_DEFAULT);
   dolfin_assert(dset_id != HDF5_FAIL);
 
   // Close global data space
@@ -447,15 +439,16 @@ void HDF5File::write(const std::vector<T>& data,
   dolfin_assert(status != HDF5_FAIL);
 
   // Create a local 2D data space
-  memspace = H5Screate_simple(2, count, NULL);
+  hid_t memspace = H5Screate_simple(2, count, NULL);
 
-  // Create a file dataspace within the global space - a hyperslab
+  // Create a new file dataspace within the global space - a hyperslab
   filespace = H5Dget_space(dset_id);
   status = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL, count, NULL);
   dolfin_assert(status != HDF5_FAIL);
 
   // Set parallel access with communicator
-  plist_id = H5Pcreate(H5P_DATASET_XFER);
+  hid_t plist_id = H5Pcreate(H5P_DATASET_XFER);
+  dolfin_assert(plist_id != HDF5_FAIL);
   status = H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
   dolfin_assert(status != HDF5_FAIL);
 
@@ -484,24 +477,12 @@ void HDF5File::write(const std::vector<T>& data,
   dolfin_assert(status != HDF5_FAIL);
 }
 //-----------------------------------------------------------------------------
+
 bool HDF5File::dataset_exists(const std::string dataset_name) const
 {
-  MPICommunicator comm;
-  MPIInfo info;
   herr_t status;
 
-  // Set parallel access with communicator
-  hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
-  status = H5Pset_fapl_mpio(plist_id,*comm, *info);
-  dolfin_assert(status != HDF5_FAIL);
-
-  // Try to open existing HDF5 file
-  hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
-  dolfin_assert(file_id != HDF5_FAIL);
-
-  // Release file-access template 
-  status = H5Pclose(plist_id);
-  dolfin_assert(status != HDF5_FAIL);
+  hid_t file_id = open_parallel_file();
 
   // Disable error reporting
   herr_t (*old_func)(void*);
@@ -532,23 +513,9 @@ bool HDF5File::dataset_exists(const std::string dataset_name) const
 std::vector<std::string> HDF5File::dataset_list(const std::string group_name) const
 {
   char namebuf[HDF5_MAXSTRLEN];
-
-  MPICommunicator comm;
-  MPIInfo info;
   herr_t status;
 
-  // Set parallel access with communicator
-  hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
-  status = H5Pset_fapl_mpio(plist_id,*comm, *info);
-  dolfin_assert(status != HDF5_FAIL);
-
-  // Try to open existing HDF5 file
-  hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
-  dolfin_assert(file_id != HDF5_FAIL);
-
-  // Release file-access template 
-  status = H5Pclose(plist_id);
-  dolfin_assert(status != HDF5_FAIL);
+  hid_t file_id = open_parallel_file();
 
   // Open group by name group_name
   hid_t group_id = H5Gopen(file_id,group_name.c_str());
@@ -587,22 +554,9 @@ std::pair<uint, uint> HDF5File::dataset_dimensions(const std::string dataset_nam
   hid_t   space;         // data space
   int     ndims;         // dimensionality
 
-  MPICommunicator comm;
-  MPIInfo info;
   herr_t status;
 
-  // Set parallel access with communicator
-  hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
-  status = H5Pset_fapl_mpio(plist_id,*comm, *info);
-  dolfin_assert(status != HDF5_FAIL);
-
-  // Try to open existing HDF5 file
-  hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
-  dolfin_assert(file_id != HDF5_FAIL);
-
-  // Release file-access template 
-  status = H5Pclose(plist_id);
-  dolfin_assert(status != HDF5_FAIL);
+  hid_t file_id = open_parallel_file();
 
   // Open named dataset
   hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
@@ -629,22 +583,9 @@ void HDF5File::add_attribute(const std::string dataset_name,
                              const std::string attribute_name,
                              const uint attribute_value)
 {
-  MPICommunicator comm;
-  MPIInfo info;
   herr_t status;
 
-  // Set parallel access with communicator
-  hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
-  status = H5Pset_fapl_mpio(plist_id,*comm, *info);
-  dolfin_assert(status != HDF5_FAIL);
-
-  // Try to open existing HDF5 file
-  hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
-  dolfin_assert(file_id != HDF5_FAIL);
-
-  // Release file-access template 
-  status = H5Pclose(plist_id);
-  dolfin_assert(status != HDF5_FAIL);
+  hid_t file_id = open_parallel_file();
 
   // Open named dataset
   hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
@@ -679,22 +620,9 @@ void HDF5File::add_attribute(const std::string dataset_name,
                              const std::string attribute_name,
                              const std::string attribute_value)
 {
-  MPICommunicator comm;
-  MPIInfo info;
   herr_t status;
 
-  // Set parallel access with communicator
-  hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
-  status = H5Pset_fapl_mpio(plist_id,*comm, *info);
-  dolfin_assert(status != HDF5_FAIL);
-
-  // Try to open existing HDF5 file
-  hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
-  dolfin_assert(file_id != HDF5_FAIL);
-
-  // Release file-access template 
-  status = H5Pclose(plist_id);
-  dolfin_assert(status != HDF5_FAIL);
+  hid_t file_id = open_parallel_file();
 
   // Open named dataset
   hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
@@ -730,22 +658,10 @@ void HDF5File::get_attribute(const std::string dataset_name,
                              const std::string attribute_name,
                              std::string &attribute_value) const
 {
-  MPICommunicator comm;
-  MPIInfo info;
   herr_t status;
 
-  // Set parallel access with communicator
-  hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
-  status = H5Pset_fapl_mpio(plist_id,*comm, *info);
-  dolfin_assert(status != HDF5_FAIL);
-
   // Try to open existing HDF5 file
-  hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
-  dolfin_assert(file_id != HDF5_FAIL);
-
-  // Release file-access template 
-  status = H5Pclose(plist_id);
-  dolfin_assert(status != HDF5_FAIL);
+  hid_t file_id = open_parallel_file();
 
   // Open dataset by name
   hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
@@ -796,23 +712,10 @@ void HDF5File::get_attribute(const std::string dataset_name,
                              const std::string attribute_name,
                              uint &attribute_value) const
 {
-  MPICommunicator comm;
-  MPIInfo info;
   herr_t status;
 
-  // Set parallel access with communicator
-  hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
-  status = H5Pset_fapl_mpio(plist_id,*comm, *info);
-  dolfin_assert(status != HDF5_FAIL);
-
-  // Try to open existing HDF5 file
-  hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
-  dolfin_assert(file_id != HDF5_FAIL);
-
-  // Release file-access template 
-  status = H5Pclose(plist_id);
-  dolfin_assert(status != HDF5_FAIL);
-
+  hid_t file_id = open_parallel_file();
+    
   // Open dataset by name
   hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
   dolfin_assert(dset_id != HDF5_FAIL);

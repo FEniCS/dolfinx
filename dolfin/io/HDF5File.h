@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-09-19
+// Last changed: 2012-09-21
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -30,6 +30,9 @@
 #include <vector>
 #include "dolfin/common/types.h"
 #include "GenericFile.h"
+
+#define H5_USE_16_API
+#include <hdf5.h>
 
 #define HDF5_FAIL -1
 #define HDF5_MAXSTRLEN 80
@@ -160,6 +163,10 @@ namespace dolfin
     std::string mesh_coords_dataset_name(const Mesh& mesh) const;
     std::string mesh_index_dataset_name(const Mesh& mesh) const;
     std::string mesh_topology_dataset_name(const Mesh& mesh) const;
+
+    // Return a HDF5 file descriptor suitable for parallel access
+    hid_t HDF5File::open_parallel_file() const;
+    
 
   };
 
