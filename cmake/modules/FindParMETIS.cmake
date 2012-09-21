@@ -4,6 +4,7 @@
 #  PARMETIS_FOUND        - system has ParMETIS
 #  PARMETIS_INCLUDE_DIRS - include directories for ParMETIS
 #  PARMETIS_LIBRARIES    - libraries for ParMETIS
+#  PARMETIS_VERSION      - version for ParMETIS
 
 #=============================================================================
 # Copyright (C) 2010 Garth N. Wells, Anders Logg and Johannes Ring
@@ -62,6 +63,54 @@ if (MPI_CXX_FOUND)
     set(CMAKE_REQUIRED_INCLUDES ${PARMETIS_INCLUDE_DIRS} ${MPI_CXX_INCLUDE_PATH})
     set(CMAKE_REQUIRED_LIBRARIES ${PARMETIS_LIBRARIES}  ${MPI_CXX_LIBRARIES})
 
+    # Check ParMETIS version
+    set(PARMETIS_CONFIG_TEST_VERSION_CPP
+      "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/parmetis_config_test_version.cpp")
+    file(WRITE ${PARMETIS_CONFIG_TEST_VERSION_CPP} "
+#include <iostream>
+#include \"parmetis.h\"
+
+int main() {
+#ifdef PARMETIS_SUBMINOR_VERSION
+  std::cout << PARMETIS_MAJOR_VERSION << \".\"
+	    << PARMETIS_MINOR_VERSION << \".\"
+            << PARMETIS_SUBMINOR_VERSION;
+#else
+  std::cout << PARMETIS_MAJOR_VERSION << \".\"
+	    << PARMETIS_MINOR_VERSION;
+#endif
+  return 0;
+}
+")
+
+    try_run(
+      PARMETIS_CONFIG_TEST_VERSION_EXITCODE
+      PARMETIS_CONFIG_TEST_VERSION_COMPILED
+      ${CMAKE_CURRENT_BINARY_DIR}
+      ${PARMETIS_CONFIG_TEST_VERSION_CPP}
+      CMAKE_FLAGS
+        "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
+	"-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
+      COMPILE_OUTPUT_VARIABLE PARMETIS_CONFIG_TEST_VERSION_COMPILE_OUTPUT
+      RUN_OUTPUT_VARIABLE PARMETIS_CONFIG_TEST_VERSION_OUTPUT
+      )
+
+    if (PARMETIS_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
+      set(PARMETIS_VERSION ${PARMETIS_CONFIG_TEST_VERSION_OUTPUT} CACHE TYPE STRING)
+      mark_as_advanced(PARMETIS_VERSION)
+    endif()
+
+    if (ParMETIS_FIND_VERSION)
+      # Check if version found is >= required version
+      if (NOT "${PARMETIS_VERSION}" VERSION_LESS "${ParMETIS_FIND_VERSION}")
+	set(PARMETIS_VERSION_OK TRUE)
+      endif()
+    else()
+      # No specific version requested
+      set(PARMETIS_VERSION_OK TRUE)
+    endif()
+    mark_as_advanced(PARMETIS_VERSION_OK)
+
     # Build and run test program
     include(CheckCXXSourceRuns)
     check_cxx_source_runs("
@@ -91,4 +140,6 @@ find_package_handle_standard_args(ParMETIS
                                   "ParMETIS could not be found/configured."
                                   PARMETIS_LIBRARIES
                                   PARMETIS_TEST_RUNS
-                                  PARMETIS_INCLUDE_DIRS)
+                                  PARMETIS_INCLUDE_DIRS
+				  PARMETIS_VERSION
+				  PARMETIS_VERSION_OK)
