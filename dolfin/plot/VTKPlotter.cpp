@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-09-19
+// Last changed: 2012-09-20
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
@@ -339,6 +339,7 @@ std::string VTKPlotter::get_helptext()
   text << "   v: Toggle vertex indices\n";
   text << "   w: Toggle wireframe/point/surface view\n";
   text << "  +-: Resize points and lines\n";
+  text << "C-+-: Rescale plot (glyphs and warping)\n";
   text << "   h: Save plot to png (raster) file\n";
 #ifdef VTK_USE_GL2PS
   text << "   H: Save plot to pdf (vector) file\n";
@@ -366,6 +367,15 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
   case '-':
     vtk_pipeline->scale_points_lines(1.0/1.2);
     vtk_pipeline->render();
+    return true;
+
+  case CONTROL + '+':
+    parameters["scale"] = (double)parameters["scale"] * 1.2;
+    plot();
+    return true;
+  case CONTROL + '-':
+    parameters["scale"] = (double)parameters["scale"] / 1.2;
+    plot();
     return true;
 
   case 'h': // Save plot to file

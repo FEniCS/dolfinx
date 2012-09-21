@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-09-19
+// Last changed: 2012-09-20
 
 #ifdef HAS_VTK
 
@@ -200,21 +200,26 @@ void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var, 
 void VTKPlottableGenericFunction::rescale(double range[2], const Parameters &parameters)
 {
   const double scale = parameters["scale"];
-  _warpvector->SetScaleFactor(scale);
-  _glyphs->SetScaleFactor(scale);
 
-  // Compute the scale factor for scalar warping
-  double* bounds = grid()->GetBounds();
-  double grid_h = std::max(bounds[1]-bounds[0], bounds[3]-bounds[2]);
+  const double* bounds = grid()->GetBounds();
+  const double length[3] = {bounds[1]-bounds[0], bounds[3]-bounds[2], bounds[5]-bounds[4]};
 
-  // Set the default warp such that the max warp is one fourth of the longest
-  // axis of the mesh.
-  double scale_factor = grid_h / 4.0;
-  if (range[1] > range[0])
-  {
-    scale_factor /= (range[1] - range[0]);
-  }
-  _warpscalar->SetScaleFactor(scale * scale_factor);
+  const double bbox_diag = std::sqrt(length[0]*length[0] + length[1]*length[1] + length[2]*length[2]);
+
+  // Compute the scale for vector warping, so that the longest arrows cover
+  // about two cells
+  double vector_scale = scale * mesh()->hmax() * 2.0;
+  vector_scale /= (range[1] > 0 ? range[1] : 1.0);
+
+  _warpvector->SetScaleFactor(vector_scale);
+  _glyphs->SetScaleFactor(vector_scale);
+
+  // Set the default warp such that the max warp is one sixth of the
+  // diagonal of the mesh
+  double scalar_scale = scale * bbox_diag / 6.0;
+  scalar_scale /= (range[1] > range[0] ? range[1] - range[0] : 1.0);
+
+  _warpscalar->SetScaleFactor(scalar_scale);
 }
 //----------------------------------------------------------------------------
 void VTKPlottableGenericFunction::update_range(double range[2])
