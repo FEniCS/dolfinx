@@ -451,6 +451,7 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
         if (other != this)
         {
           other->vtk_pipeline->get_camera()->DeepCopy(camera);
+          other->vtk_pipeline->reset_camera_clipping_range();
           other->vtk_pipeline->render();
         }
       }

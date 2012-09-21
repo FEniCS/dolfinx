@@ -77,15 +77,38 @@ void VTKPlottableGenericFunction::init_pipeline(const Parameters &parameters)
     {
       if (mesh()->topology().dim() < 3)
       {
-        // In 1D and 2D, we warp the mesh according to the scalar values
-        if (_mode != "off")
+        if (_mode == "auto")
+        {
+          // Default mode for 2D scalars
+          _mode = "warp";
+        }
+        if (_mode != "color" && _mode != "warp")
+        {
+          warning("Mode not valid for 2D scalar plot: "+_mode);
+          _mode = "warp";
+        }
+
+        // In 2D, we warp the mesh according to the scalar values
+        // (1D is normally plotted by separate Plottable class)
+        if (_mode == "warp")
         {
           insert_filter(_warpscalar);
         }
       }
       else
       {
-        // In 3D, we just show the scalar values as colors on the mesh
+        if (_mode == "auto")
+        {
+          // In 3D, we just show the scalar values as colors on the mesh
+          _mode = "color";
+        }
+        if (_mode != "color")
+        {
+          warning("Mode not valid for 3D scalar plot: "+_mode);
+          _mode = "color";
+        }
+
+        // Nothing to do
       }
     }
     break;
@@ -94,8 +117,19 @@ void VTKPlottableGenericFunction::init_pipeline(const Parameters &parameters)
     // mapper
   case 1:
     {
+      if (_mode == "auto")
+      {
+        // Default mode is glyphs for vectors (2D and 3D)
+        _mode = "glyphs";
+      }
+      if (_mode != "color" && _mode != "glyphs" && _mode != "displacement")
+      {
+        warning("Mode not valid for vector plot: "+_mode);
+        _mode = "glyphs";
+      }
+
       // Setup pipeline for warp visualization
-      if (_mode != "off")
+      if (_mode == "displacement")
       {
         insert_filter(_warpvector);
       }
@@ -178,11 +212,12 @@ void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var, 
 
   // Update the values on the mesh
   const Function *func = dynamic_cast<const Function *>(_function.get());
-  if (func && func->vector()->local_size() == (uint)grid()->GetNumberOfCells())
+  if (func && func->vector()->local_size() == (uint)grid()->GetNumberOfCells()
+      && dim() > 1)
   {
     // Hack to display DG0 functions. Should really be implemented using
-    // duplicate points (one point per vertex per cell), so that warping
-    // and DG1 work as expected.
+    // duplicate points (one point per vertex per cell), so that warping.
+    // DG1 and 1D work as expected.
     // Also: How do we find out if a FunctionSpace is discontinuous?
     insert_filter(NULL); // expel the warpscalar filter
     std::vector<double> cell_values;
@@ -206,12 +241,14 @@ void VTKPlottableGenericFunction::rescale(double range[2], const Parameters &par
 
   const double bbox_diag = std::sqrt(length[0]*length[0] + length[1]*length[1] + length[2]*length[2]);
 
-  // Compute the scale for vector warping, so that the longest arrows cover
+  // The scale for displacements is absolute
+  _warpvector->SetScaleFactor(scale);
+
+  // Compute the scale for vector glyphs, so that the longest arrows cover
   // about two cells
   double vector_scale = scale * mesh()->hmax() * 2.0;
   vector_scale /= (range[1] > 0 ? range[1] : 1.0);
 
-  _warpvector->SetScaleFactor(vector_scale);
   _glyphs->SetScaleFactor(vector_scale);
 
   // Set the default warp such that the max warp is one sixth of the
@@ -231,7 +268,7 @@ void VTKPlottableGenericFunction::update_range(double range[2])
 vtkSmartPointer<vtkAlgorithmOutput> VTKPlottableGenericFunction::get_output() const
 {
   // In the 3D glyph case, return the glyphs' output
-  if (_function->value_rank() == 1 && _mode != "warp")
+  if (_function->value_rank() == 1 && _mode == "glyphs")
   {
     return _glyphs->GetOutputPort();
   }

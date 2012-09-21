@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-09-12
+// Last changed: 2012-09-20
 
 #ifdef HAS_VTK
 
@@ -42,7 +42,7 @@ VTKPlottableDirichletBC::VTKPlottableDirichletBC(boost::shared_ptr<const Dirichl
 void VTKPlottableDirichletBC::init_pipeline(const Parameters& parameters)
 {
   Parameters new_parameters = parameters;
-  new_parameters["mode"] = "off";
+  new_parameters["mode"] = "color";
   VTKPlottableGenericFunction::init_pipeline(new_parameters);
 }
 //----------------------------------------------------------------------------

@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-09-13
+// Last changed: 2012-09-20
 
 #ifndef __VTK_PLOTTABLE_GENERIC_FUNCTION_H
 #define __VTK_PLOTTABLE_GENERIC_FUNCTION_H
@@ -72,7 +72,7 @@ namespace dolfin
     {
       std::string mode = parameters["mode"];
       Parameter &elevate = parameters["elevate"];
-      if (dim() < 3 && value_rank() == 0 && mode != "off" && !elevate.is_set())
+      if (dim() < 3 && value_rank() == 0 && mode != "color" && !elevate.is_set())
       {
         elevate = -65.0;
       }

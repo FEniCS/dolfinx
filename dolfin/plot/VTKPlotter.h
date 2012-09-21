@@ -19,7 +19,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-09-19
+// Last changed: 2012-09-20
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -67,9 +67,11 @@ namespace dolfin
   /// ============= ============ =============== =================================
   ///  mode           String        "auto"        For vector valued functions,
   ///                                             this parameter may be set to
-  ///                                             "warp" to enable vector warping
-  ///                                             visualization, or "off" to turn
-  ///                                             all warping.
+  ///                                             "glyphs" or "displacement".
+  ///                                             Scalars may be set to "warp" in
+  ///                                             2D only. A value of "color" is
+  ///                                             valid in all cases; for vectors,
+  ///                                             the norms are used.
   ///  interactive    Boolean     False           Enable/disable interactive mode
   ///                                             for the rendering window.
   ///                                             For repeated plots of the same
@@ -129,9 +131,10 @@ namespace dolfin
   ///  Plot type                  Default visualization mode   Alternatives
   /// =========================  ============================ ===================
   ///  Meshes                     Wireframe rendering           None
-  ///  2D scalar functions        Scalar warping                None
+  ///  2D scalar functions        Scalar warping                Color mapping
   ///  3D scalar functions        Color mapping                 None
-  ///  2D/3D vector functions     Glyphs (vector arrows)        Vector warping
+  ///  2D/3D vector functions     Glyphs (vector arrows)        Displacements,
+  ///                                                           Color mapping (norm)
   /// =========================  ============================ ===================
   ///
   /// Expressions and boundary conditions are also visualized according to the
@@ -163,7 +166,8 @@ namespace dolfin
       allowed_modes.insert("auto");
       allowed_modes.insert("displacement");
       allowed_modes.insert("warp");
-      allowed_modes.insert("off");
+      allowed_modes.insert("glyphs");
+      allowed_modes.insert("color");
 
       Parameters p("vtk_plotter");
       p.add("mode", "auto", allowed_modes);
