@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-09-21
+// Last changed: 2012-09-22
 
 #ifdef HAS_HDF5
 
@@ -190,7 +190,6 @@ void HDF5File::operator<< (const GenericVector& x)
     create();
 
   // Write to HDF5 file
-  std::stringstream s("");
   const std::string name = "/Vector/" + boost::lexical_cast<std::string>(counter);
   write(data, range, name.c_str(), 1);
 
@@ -676,7 +675,7 @@ void HDF5File::get_attribute(const std::string dataset_name,
   
   // Copy string type from HDF5 types and set length accordingly
   hid_t memtype = H5Tcopy(H5T_C_S1);
-  int string_length = H5Tget_size(attr_type)+1;
+  int string_length = H5Tget_size(attr_type)+1; // +1 for C \0 terminator
   status = H5Tset_size(memtype,string_length);
   dolfin_assert(status != HDF5_FAIL);
 
@@ -688,7 +687,7 @@ void HDF5File::get_attribute(const std::string dataset_name,
   // Copy string value into temporary vector
   // std::vector::data can be copied into
   // (std::string::data cannot)
-  std::vector<char> attribute_data(string_length);
+  std::vector<unsigned char> attribute_data(string_length);
   status = H5Aread(attr_id, memtype, attribute_data.data());
   attribute_value.assign(attribute_data.data());
   

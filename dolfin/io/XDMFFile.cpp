@@ -468,15 +468,15 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   }
 
 }
-
-// Add mesh topology references to an XML node
-// FIXME: Move to another file as a static class member?
+//----------------------------------------------------------------------------
 void XDMFFile::XML_mesh_topology(pugi::xml_node &xdmf_topology, 
                                  const uint cell_dim,
                                  const uint num_global_cells,
                                  const std::string topology_dataset_name
                                  ) 
 {
+  // Add mesh topology references to an XML node
+  // FIXME: Move to another file as a static class member?
 
   xdmf_topology.append_attribute("NumberOfElements") = num_global_cells;
   
@@ -507,13 +507,16 @@ void XDMFFile::XML_mesh_topology(pugi::xml_node &xdmf_topology,
   xdmf_topology_data.append_child(pugi::node_pcdata).set_value(topology_reference.c_str());
 }
 
-// Add mesh geometry references to an XML node
-// FIXME: Move to another file as a static class member?
+//----------------------------------------------------------------------------
+
 void XDMFFile::XML_mesh_geometry(pugi::xml_node &xdmf_geometry, 
                                  const uint num_all_local_vertices,
                                  const std::string geometry_dataset_name
                                  ) 
 {
+  // Add mesh geometry references to an XML node
+  // FIXME: Move to another file as a static class member?
+ 
   xdmf_geometry.append_attribute("GeometryType") = "XYZ";
   pugi::xml_node xdmf_geom_data = xdmf_geometry.append_child("DataItem");
   
