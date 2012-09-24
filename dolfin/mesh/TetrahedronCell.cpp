@@ -24,7 +24,6 @@
 // Last changed: 2011-11-21
 
 #include <algorithm>
-#include <boost/assign.hpp>
 #include <dolfin/log/dolfin_log.h>
 #include "Cell.h"
 #include "Facet.h"
@@ -168,35 +167,35 @@ void TetrahedronCell::refine_cell(Cell& cell, MeshEditor& editor,
   const double d23 = p2.distance(p3);
 
   // Data structure to hold cells
-  std::vector<std::vector<uint> > cells;
+  std::vector<std::vector<uint> > cells(8, std::vector<uint>(4));
 
   // First create the 4 congruent tetrahedra at the corners
-  cells.push_back(boost::assign::list_of(v0)(e3)(e4)(e5));
-  cells.push_back(boost::assign::list_of(v1)(e1)(e2)(e5));
-  cells.push_back(boost::assign::list_of(v2)(e0)(e2)(e4));
-  cells.push_back(boost::assign::list_of(v3)(e0)(e1)(e3));
+  cells[0][0] = v0; cells[0][1] = e3; cells[0][2] = e4; cells[0][3] = e5;
+  cells[1][0] = v1; cells[1][1] = e1; cells[1][2] = e2; cells[1][3] = e5;
+  cells[2][0] = v2; cells[2][1] = e0; cells[2][2] = e2; cells[2][3] = e4;
+  cells[3][0] = v3; cells[3][1] = e0; cells[3][2] = e1; cells[3][3] = e3;
 
   // Then divide the remaining octahedron into 4 tetrahedra
   if (d05 <= d14 && d14 <= d23)
   {
-    cells.push_back(boost::assign::list_of(e0)(e1)(e2)(e5));
-    cells.push_back(boost::assign::list_of(e0)(e1)(e3)(e5));
-    cells.push_back(boost::assign::list_of(e0)(e2)(e4)(e5));
-    cells.push_back(boost::assign::list_of(e0)(e3)(e4)(e5));
+    cells[4][0] = e0; cells[4][1] = e1; cells[4][2] = e2; cells[4][3] = e5;
+    cells[5][0] = e0; cells[5][1] = e1; cells[5][2] = e3; cells[5][3] = e5;
+    cells[6][0] = e0; cells[6][1] = e2; cells[6][2] = e4; cells[6][3] = e5;
+    cells[7][0] = e0; cells[7][1] = e3; cells[7][2] = e4; cells[7][3] = e5;
   }
   else if (d14 <= d23)
   {
-    cells.push_back(boost::assign::list_of(e0)(e1)(e2)(e4));
-    cells.push_back(boost::assign::list_of(e0)(e1)(e3)(e4));
-    cells.push_back(boost::assign::list_of(e1)(e2)(e4)(e5));
-    cells.push_back(boost::assign::list_of(e1)(e3)(e4)(e5));
+    cells[4][0] = e0; cells[4][1] = e1; cells[4][2] = e2; cells[4][3] = e4;
+    cells[5][0] = e0; cells[5][1] = e1; cells[5][2] = e3; cells[5][3] = e4;
+    cells[6][0] = e1; cells[6][1] = e2; cells[6][2] = e4; cells[6][3] = e5;
+    cells[7][0] = e1; cells[7][1] = e3; cells[7][2] = e4; cells[7][3] = e5;
   }
   else
   {
-    cells.push_back(boost::assign::list_of(e0)(e1)(e2)(e3));
-    cells.push_back(boost::assign::list_of(e0)(e2)(e3)(e4));
-    cells.push_back(boost::assign::list_of(e1)(e2)(e3)(e5));
-    cells.push_back(boost::assign::list_of(e2)(e3)(e4)(e5));
+    cells[4][0] = e0; cells[4][1] = e1; cells[4][2] = e2; cells[4][3] = e3;
+    cells[5][0] = e0; cells[5][1] = e2; cells[5][2] = e3; cells[5][3] = e4;
+    cells[6][0] = e1; cells[6][1] = e2; cells[6][2] = e3; cells[6][3] = e5;
+    cells[7][0] = e2; cells[7][1] = e3; cells[7][2] = e4; cells[7][3] = e5;
   }
 
   // Add cells

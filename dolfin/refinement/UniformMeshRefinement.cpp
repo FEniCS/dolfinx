@@ -44,9 +44,11 @@ void UniformMeshRefinement::refine(Mesh& refined_mesh,
 
   // Check that refined_mesh and mesh are not the same
   if (&refined_mesh == &mesh)
+  {
     dolfin_error("UniformMeshRefinement.cpp",
                  "refine mesh",
                  "Refined_mesh and mesh point to the same object");
+  }
 
   // Generate cell - edge connectivity if not generated
   mesh.init(mesh.topology().dim(), 1);
