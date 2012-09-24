@@ -52,6 +52,8 @@ int main(int argc, char* argv[])
   info("Assembly for various forms and backends");
   set_log_active(false);
 
+  parameters["reorder_dofs"] = false;
+
   // Forms
   std::vector<std::string> forms;
   forms.push_back("poisson1");
