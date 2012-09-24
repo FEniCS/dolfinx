@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-09-22
+// Last changed: 2012-09-24
 
 #ifdef HAS_HDF5
 
@@ -184,7 +184,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   // Save data values to HDF5 file
   s = "/DataVector/" + boost::lexical_cast<std::string>(counter);
-  hdf5_file->write(data_values, s.c_str(), value_size_io);
+  hdf5_file->write(s.c_str(), data_values, value_size_io);
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero
   if (MPI::process_number() == 0)
@@ -424,7 +424,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 
   // Write mesh and values to HDF5
   hdf5_file->write_mesh(mesh, false);
-  hdf5_file->write(data_values, dataset_basic_name, 1);
+  hdf5_file->write(dataset_basic_name, data_values, 1);
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero
   if (MPI::process_number() == 0)

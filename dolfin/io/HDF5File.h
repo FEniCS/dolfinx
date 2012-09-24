@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-09-21
+// Last changed: 2012-09-24
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -30,12 +30,6 @@
 #include <vector>
 #include "dolfin/common/types.h"
 #include "GenericFile.h"
-
-#define H5_USE_16_API
-#include <hdf5.h>
-
-#define HDF5_FAIL -1
-#define HDF5_MAXSTRLEN 80
 
 namespace dolfin
 {
@@ -87,86 +81,29 @@ namespace dolfin
     // Write data to existing HDF file contiguously from each process,
     // the range being set by the data size
     // width: is the width of the data item (dim 1, e.g. 3 for x, y, z data)
-    void write(const std::vector<double>& data,
-               const std::string dataset_name, const uint width);
+    void write(const std::string dataset_name,
+               const std::vector<double>& data,
+               const uint width);
 
-    void write(const std::vector<uint>& data,
-               const std::string dataset_name, const uint width);
+    void write(const std::string dataset_name,
+               const std::vector<uint>& data,
+               const uint width);
 
-    void write(const std::vector<int>& data,
-               const std::string dataset_name, const uint width);
+    void write(const std::string dataset_name, 
+               const std::vector<int>& data,
+               const uint width);
 
-    // Write data to existing HDF file as 
-    // defined by range blocks on each process
-    // range: the local range on this processor (dim 0)
-    // width: is the width of the data item (dim 1, e.g. 3 for x, y, z data)
-    void write(const std::vector<double>& data,
-               const std::pair<uint, uint> range,
-               const std::string dataset_name, const uint width);
-
-    void write(const std::vector<uint>& data,
-               const std::pair<uint, uint> range,
-               const std::string dataset_name, const uint width);
-
-    void write(const std::vector<int>& data,
-               const std::pair<uint, uint> range,
-               const std::string dataset_name, const uint width);
-
-    // Write data to existing HDF file as defined by range blocks on each
-    // process
-    // range: the local range on this processor (dim 0)
-    // width: is the width of the data item (dim 1, e.g. 3 for x, y, z data)
-    template <typename T>
-    void write(const std::vector<T>& data,
-               const std::pair<uint, uint> range,
-               const std::string dataset_name,
-               const int h5type, const uint width) const;
-
-    // Read from HDF5 file into data as defined by range blocks
-    // range: the local range on this processor (dim 0)
-    // width: is the width of the data item (dim 1, e.g. 3 for x, y, z data)
-    template <typename T>
-    void read(std::vector<T>& data, const std::pair<uint, uint> range,
-              const std::string dataset_name, const int h5type,
-              const uint width) const;
-
-    // Get dimensions of 2D dataset
-    std::pair<uint, uint> dataset_dimensions(const std::string dataset_name) const;
-
-    // List of all datasets in a group
-    std::vector<std::string> dataset_list(const std::string group_name) const;
-
-    // Check existence of dataset in file
-    bool dataset_exists(const std::string dataset_name) const;
-
-    // Add an unsigned integer attribute to a dataset
-    void add_attribute(const std::string dataset_name,
-                       const std::string attribute_name,
-                       const uint attribute_value);
+    // Check if dataset exists in this file
+    bool dataset_exists(const std::string &dataset_name);
     
-    // Add a string attribute to a dataset
-    void add_attribute(const std::string dataset_name,
-                       const std::string attribute_name,
-                       const std::string attribute_value);
-    
-    // Get a string attribute of a dataset
-    void get_attribute(const std::string dataset_name,
-                       const std::string attribute_name,
-                       std::string &attribute_value) const;
-
-    // Get a uint attribute of a dataset
-    void get_attribute(const std::string dataset_name,
-                       const std::string attribute_name,
-                       uint &attribute_value) const;
+    // Search through list of datasets for one beginning with search_term
+    std::string search_list(std::vector<std::string> &list_of_strings, 
+                            const std::string &search_term) const;
 
     // Generate HDF5 dataset names for mesh topology and coordinates
     std::string mesh_coords_dataset_name(const Mesh& mesh) const;
     std::string mesh_index_dataset_name(const Mesh& mesh) const;
     std::string mesh_topology_dataset_name(const Mesh& mesh) const;
-
-    // Return a HDF5 file descriptor suitable for parallel access
-    hid_t HDF5File::open_parallel_file() const;
-    
 
   };
 
