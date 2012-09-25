@@ -18,7 +18,7 @@
 // 
 // 
 // First Added: 2012-09-21
-// Last Changed: 2012-09-24
+// Last Changed: 2012-09-25
 // 
 // 
 
@@ -114,7 +114,7 @@ void HDF5Interface::create(const std::string &filename)
 // Write data to existing HDF file as defined by range blocks on each process
 // range: the local range on this processor
 // width: is the width of the dataitem (e.g. 3 for x, y, z data)
-// Versions for uint, int and double
+// Versions for double, uint and int
 
 void HDF5Interface::write(const std::string &filename,
                           const std::string dataset_name, 
@@ -219,7 +219,7 @@ void HDF5Interface::write(const std::string &filename,
 // Read data from a HDF5 dataset as defined by range blocks on each process
 // range: the local range on this processor
 // width: is the width of the dataitem (e.g. 3 for x, y, z data)
-// Versions for uint and double
+// Versions for double and uint
 void HDF5Interface::read(const std::string &filename,
                          const std::string dataset_name,
                          std::vector<double>& data, const std::pair<uint, uint> range,

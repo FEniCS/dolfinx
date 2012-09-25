@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-09-24
+// Last changed: 2012-09-25
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -55,13 +55,13 @@ namespace dolfin
     void operator<< (const GenericVector& x);
 
     /// Read vector from file
-    /// looks in HDF5 folder 'Vector' for last dataset
+    /// looks in HDF5 folder 'Vector' for dataset 0
     void operator>> (GenericVector& x);
 
     /// Write Mesh to file
     void operator<< (const Mesh& mesh);
 
-    /// Write Mesh to file. 'true_topology_indices' indicares
+    /// Write Mesh to file. 'true_topology_indices' indicates
     /// whether the true vertex indices should be used for the connectivity
     /// or the position of the vertex in the list. The latter is required
     /// for visualisation and the former for reading a Mesh from file.
@@ -81,16 +81,9 @@ namespace dolfin
     // Write data to existing HDF file contiguously from each process,
     // the range being set by the data size
     // width: is the width of the data item (dim 1, e.g. 3 for x, y, z data)
+    template <typename T>
     void write(const std::string dataset_name,
-               const std::vector<double>& data,
-               const uint width);
-
-    void write(const std::string dataset_name,
-               const std::vector<uint>& data,
-               const uint width);
-
-    void write(const std::string dataset_name, 
-               const std::vector<int>& data,
+               const std::vector<T>& data,
                const uint width);
 
     // Check if dataset exists in this file

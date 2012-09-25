@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-09-24
+// Last changed: 2012-09-25
 
 #ifdef HAS_HDF5
 
@@ -224,8 +224,9 @@ void HDF5File::operator>> (GenericVector& input)
   input.set_local(data);
 }
 //-----------------------------------------------------------------------------
+template <typename T>
 void HDF5File::write(const std::string dataset_name,
-                     const std::vector<double>& data,
+                     const std::vector<T>& data,
                      const uint width)
 {
   // Write data contiguously from each process 
@@ -234,31 +235,6 @@ void HDF5File::write(const std::string dataset_name,
   std::pair<uint,uint> range(offset, offset + num_items);
   HDF5Interface::write(filename, dataset_name, data, range, width);
 }
-//-----------------------------------------------------------------------------
-void HDF5File::write(const std::string dataset_name,
-                     const std::vector<uint>& data,
-                     const uint width)
-{
-  // Write data contiguously from each process 
-  uint num_items = data.size()/width;
-  uint offset = MPI::global_offset(num_items,true);
-  std::pair<uint,uint> range(offset, offset + num_items);
-
-  HDF5Interface::write(filename, dataset_name, data, range, width);
-}
-//-----------------------------------------------------------------------------
-void HDF5File::write(const std::string dataset_name,
-                     const std::vector<int>& data,
-                     const uint width)
-{
-  // Write data contiguously from each process 
-  uint num_items = data.size()/width;
-  uint offset = MPI::global_offset(num_items,true);
-  std::pair<uint,uint> range(offset, offset + num_items);
-
-  HDF5Interface::write(filename, dataset_name, data, range, width);
-}
-
 //-----------------------------------------------------------------------------
 bool HDF5File::dataset_exists(const std::string &dataset_name)
 {
