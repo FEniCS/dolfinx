@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-09-24
+// Last changed: 2012-09-25
 
 #ifdef HAS_HDF5
 
@@ -406,6 +406,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   std::vector<T> data_values(meshfunction.values(),meshfunction.values()+meshfunction.size());
   
   dolfin_assert(hdf5_file);
+  hdf5_file->create(); //erase any existing file
 
   // Get counts of mesh cells and vertices
   const uint num_local_cells = mesh.num_cells();

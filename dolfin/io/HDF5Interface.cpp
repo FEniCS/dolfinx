@@ -18,7 +18,7 @@
 // 
 // 
 // First Added: 2012-09-21
-// Last Changed: 2012-09-25
+// Last Changed: 2012-09-26
 // 
 // 
 
@@ -557,7 +557,9 @@ void HDF5Interface::get_attribute(const std::string &filename,
 
 //-----------------------------------------------------------------------------
 // Internal code for getting a uint from a dataset attribute
-void _get_attribute_value(const hid_t &attr_type,const hid_t &attr_id, uint &attribute_value)
+void HDF5Interface::_get_attribute_value(const hid_t &attr_type,
+                                         const hid_t &attr_id,
+                                         uint &attribute_value)
 {
   // FIXME: more complete check of type
   dolfin_assert(H5Tget_class(attr_type)==H5T_INTEGER);
@@ -569,7 +571,9 @@ void _get_attribute_value(const hid_t &attr_type,const hid_t &attr_id, uint &att
 
 //-----------------------------------------------------------------------------
 // Internal code for getting a string from a dataset attribute
-void _get_attribute_value(const hid_t &attr_type,const hid_t &attr_id, std::string &attribute_value)
+void HDF5Interface::_get_attribute_value(const hid_t &attr_type,
+                                         const hid_t &attr_id, 
+                                         std::string &attribute_value)
 {
   // Check this attribute is a string
   dolfin_assert(H5Tget_class(attr_type)==H5T_STRING);
