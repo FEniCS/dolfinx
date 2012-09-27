@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-09-25
+// Last changed: 2012-09-27
 
 #ifdef HAS_HDF5
 
@@ -161,6 +161,12 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
   {
     write(mesh_index_dataset_name(mesh), vertex_indices, 2);
     write(coord_dataset, vertex_coords, 3);
+
+    // Write partitions as an attribute
+    std::vector<uint> partitions;
+    MPI::gather(vertex_offset, partitions);
+    MPI::broadcast(partitions);
+    HDF5Interface::add_attribute(filename, coord_dataset, "partition", partitions);
   }
 
   // Get cell connectivity
@@ -190,6 +196,12 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
     uint topology_indicator = (true_topology_indices ? 1 : 0);
     HDF5Interface::add_attribute(filename, topology_dataset, "true_indexing", topology_indicator);
     HDF5Interface::add_attribute(filename, topology_dataset, "celltype", cell_type);
+
+    // Write partitions as an attribute
+    std::vector<uint> partitions;
+    MPI::gather(cell_offset, partitions);
+    MPI::broadcast(partitions);
+    HDF5Interface::add_attribute(filename, topology_dataset, "partition", partitions);
   }
 }
 //-----------------------------------------------------------------------------
@@ -224,13 +236,32 @@ void HDF5File::operator>> (GenericVector& input)
   input.set_local(data);
 }
 //-----------------------------------------------------------------------------
+// Write data contiguously from each process in parallel into a 2D array
+// data contains local portion of data vector
+// width is the second dimension of the array (e.g. 3 for xyz data)
+// data in XYZXYZXYZ order
+template void HDF5File::write(const std::string dataset_name,
+                              const std::vector<int>& data,
+                              const uint width);
+
+template void HDF5File::write(const std::string dataset_name,
+                              const std::vector<uint>& data,
+                              const uint width);
+
+template void HDF5File::write(const std::string dataset_name,
+                              const std::vector<double>& data,
+                              const uint width);
+
 template <typename T>
 void HDF5File::write(const std::string dataset_name,
                      const std::vector<T>& data,
                      const uint width)
 {
-  // Write data contiguously from each process 
+  // Checks on width and size of data
+  dolfin_assert(width != 0);
   uint num_items = data.size()/width;
+  dolfin_assert( data.size() == num_items*width);
+  
   uint offset = MPI::global_offset(num_items,true);
   std::pair<uint,uint> range(offset, offset + num_items);
   HDF5Interface::write(filename, dataset_name, data, range, width);

@@ -18,7 +18,7 @@
 // 
 // 
 // First Added: 2012-09-21
-// Last Changed: 2012-09-26
+// Last Changed: 2012-09-27
 // 
 // 
 
@@ -423,6 +423,12 @@ template void HDF5Interface::add_attribute(const std::string &filename,
                                            const uint &attribute_value);
 
 //-----------------------------------------------------------------------------
+template void HDF5Interface::add_attribute(const std::string &filename,
+                                           const std::string &dataset_name,
+                                           const std::string &attribute_name,
+                                           const std::vector<uint> &attribute_value);
+
+//-----------------------------------------------------------------------------
 template <typename T> 
 void HDF5Interface::add_attribute(const std::string &filename,
                                   const std::string &dataset_name,
@@ -438,11 +444,8 @@ void HDF5Interface::add_attribute(const std::string &filename,
   hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
   dolfin_assert(dset_id != HDF5_FAIL);
 
-  // Create a scalar dataspace
-  hid_t dataspace_id = H5Screate (H5S_SCALAR);
-
   // Add attribute of appropriate type
-  _add_attribute_value(dset_id, dataspace_id, attribute_name, attribute_value);
+  _add_attribute_value(dset_id, attribute_name, attribute_value);
   
   // Close dataset 
   status = H5Dclose(dset_id);
@@ -455,11 +458,13 @@ void HDF5Interface::add_attribute(const std::string &filename,
 
 //-----------------------------------------------------------------------------
 void HDF5Interface::_add_attribute_value(const hid_t &dset_id,
-                                   const hid_t &dataspace_id,
                                    const std::string &attribute_name, 
                                    const uint &attribute_value)
 {
   // Add uint attribute to dataset
+
+  // Create a scalar dataspace
+  hid_t dataspace_id = H5Screate(H5S_SCALAR);
 
   // Copy uint type from H5 types and create attribute
   hid_t datatype_id = H5Tcopy(H5T_NATIVE_UINT);
@@ -474,13 +479,38 @@ void HDF5Interface::_add_attribute_value(const hid_t &dset_id,
   dolfin_assert(status != HDF5_FAIL);
 
 }
+
 //-----------------------------------------------------------------------------
 void HDF5Interface::_add_attribute_value(const hid_t &dset_id,
-                                   const hid_t &dataspace_id,
+                                         const std::string &attribute_name, 
+                                         const std::vector<uint> &attribute_value)
+{
+  hsize_t dimsf = attribute_value.size();
+  hid_t dataspace_id = H5Screate_simple(1, &dimsf, NULL);
+
+  hid_t attribute_id = H5Acreate(dset_id, attribute_name.c_str(), H5T_NATIVE_UINT,
+                                  dataspace_id, H5P_DEFAULT);
+
+  // Write attribute to dataset
+  herr_t status = H5Awrite(attribute_id, H5T_NATIVE_UINT, &attribute_value[0]);
+  dolfin_assert(status != HDF5_FAIL);
+
+  // Close attribute
+  status = H5Aclose(attribute_id);
+  dolfin_assert(status != HDF5_FAIL);
+
+}
+
+
+//-----------------------------------------------------------------------------
+void HDF5Interface::_add_attribute_value(const hid_t &dset_id,
                                    const std::string &attribute_name, 
                                    const std::string &attribute_value)
 {
   // Add string attribute to dataset
+
+  // Create a scalar dataspace
+  hid_t dataspace_id = H5Screate(H5S_SCALAR);
 
   // Copy basic string type from HDF5 types
   hid_t datatype_id = H5Tcopy(H5T_C_S1);
@@ -507,6 +537,12 @@ template void HDF5Interface::get_attribute(const std::string &filename,
                                            const std::string &dataset_name,
                                            const std::string &attribute_name,
                                            uint  &attribute_value);
+
+//-----------------------------------------------------------------------------
+template void HDF5Interface::get_attribute(const std::string &filename,
+                                           const std::string &dataset_name,
+                                           const std::string &attribute_name,
+                                           std::vector<uint> &attribute_value);
 
 //-----------------------------------------------------------------------------
 template void HDF5Interface::get_attribute(const std::string &filename,
@@ -592,4 +628,27 @@ void HDF5Interface::_get_attribute_value(const hid_t &attr_type,
   dolfin_assert(status != HDF5_FAIL);
   
   attribute_value.assign(attribute_data.data());
+}
+
+//-----------------------------------------------------------------------------
+// Internal code for getting a std::vector<uint> from a dataset attribute
+void HDF5Interface::_get_attribute_value(const hid_t &attr_type,const hid_t &attr_id, std::vector<uint> &attribute_value)
+{
+  // FIXME: more complete check of type
+  dolfin_assert(H5Tget_class(attr_type)==H5T_INTEGER);
+
+  // get dimensions of attribute array, check it is one-dimensional
+  hid_t dataspace = H5Aget_space(attr_id);
+  dolfin_assert(dataspace != HDF5_FAIL);
+  hsize_t cur_size[10];
+  hsize_t max_size[10];
+  int ndims = H5Sget_simple_extent_dims(dataspace, cur_size, max_size);
+  dolfin_assert(ndims == 1);
+
+  attribute_value.resize(cur_size[0]);
+
+  // Read value to vector
+  herr_t status = H5Aread(attr_id, H5T_NATIVE_UINT, attribute_value.data());
+  dolfin_assert(status != HDF5_FAIL);
+  
 }
