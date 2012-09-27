@@ -256,30 +256,12 @@ class TestPage12(unittest.TestCase):
         editor.open(mesh, 2, 2)
         editor.init_vertices(4)
         editor.init_cells(2)
-
-        from numpy import array
-        coords = array([0.0, 0.0])
-        editor.add_vertex(0, 0, coords)
-        coords = array([1.0, 0.0])
-        editor.add_vertex(1, 1, coords)
-        coords = array([1.0, 1.0])
-        editor.add_vertex(2, 2, coords)
-        coords = array([0.0, 1.0])
-        editor.add_vertex(3, 3, coords)
-        #editor.add_vertex(0, 0.0, 0.0)
-        #editor.add_vertex(1, 1.0, 0.0)
-        #editor.add_vertex(2, 1.0, 1.0)
-        #editor.add_vertex(3, 0.0, 1.0)
-
-        import numpy
-        cell = array([0, 1, 2], dtype=numpy.uintc)
-        editor.add_cell(0, cell)
-
-        cell = array([0, 2, 3], dtype=numpy.uintc)
-        editor.add_cell(0, cell)
-
-        #editor.add_cell(0, 0, 1, 2)
-        #editor.add_cell(1, 0, 2, 3)
+        editor.add_vertex(0, 0.0, 0.0)
+        editor.add_vertex(1, 1.0, 0.0)
+        editor.add_vertex(2, 1.0, 1.0)
+        editor.add_vertex(3, 0.0, 1.0)
+        editor.add_cell(0, 0, 1, 2)
+        editor.add_cell(1, 0, 2, 3)
         editor.close()
 
     def test_box_2(self):
