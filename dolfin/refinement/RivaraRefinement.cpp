@@ -189,7 +189,7 @@ void RivaraRefinement::DMesh::export_mesh(Mesh& mesh,
         it != vertices.end(); ++it)
   {
     DVertex* dv = *it;
-    editor.add_vertex(current_vertex, current_vertex, dv->p);
+    editor.add_vertex(current_vertex, dv->p);
     current_vertex++;
   }
 

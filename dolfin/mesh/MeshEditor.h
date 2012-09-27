@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2009 Anders Logg
+// Copyright (C) 2006-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-05-16
-// Last changed: 2011-07-18
+// Last changed: 2012-09-27
 
 #ifndef __MESH_EDITOR_H
 #define __MESH_EDITOR_H
@@ -125,13 +125,64 @@ namespace dolfin
     /// Add vertex v at given point p
     ///
     /// *Arguments*
+    ///     index (uint)
+    ///         The vertex (index).
+    ///     p (_Point_)
+    ///         The point.
+    void add_vertex(uint index, const Point& p);
+
+    /// Add vertex v at given coordinate x
+    ///
+    /// *Arguments*
+    ///     index (uint)
+    ///         The vertex (index).
+    ///     x (std::vector<double>)
+    ///         The x-coordinates.
+    void add_vertex(uint index, const std::vector<double>& x);
+
+    /// Add vertex v at given point x (for a 1D mesh)
+    ///
+    /// *Arguments*
+    ///     index (uint)
+    ///         The vertex (index).
+    ///     x (double)
+    ///         The x-coordinate.
+    void add_vertex(uint index, double x);
+
+    /// Add vertex v at given point (x, y) (for a 2D mesh)
+    ///
+    /// *Arguments*
+    ///     index (uint)
+    ///         The vertex (index).
+    ///     x (double)
+    ///         The x-coordinate.
+    ///     y (double)
+    ///         The y-coordinate.
+    void add_vertex(uint index, double x, double y);
+
+    /// Add vertex v at given point (x, y, z) (for a 3D mesh)
+    ///
+    /// *Arguments*
+    ///     index (uint)
+    ///         The vertex (index).
+    ///     x (double)
+    ///         The x-coordinate.
+    ///     y (double)
+    ///         The y-coordinate.
+    ///     z (double)
+    ///         The z-coordinate.
+    void add_vertex(uint index, double x, double y, double z);
+
+    /// Add vertex v at given point p
+    ///
+    /// *Arguments*
     ///     local_index (uint)
     ///         The vertex (local index).
     ///     global_index (uint)
     ///         The vertex (global_index).
     ///     p (_Point_)
     ///         The point.
-    void add_vertex(uint local_index, uint global_index, const Point& p);
+    void add_vertex_global(uint local_index, uint global_index, const Point& p);
 
     /// Add vertex v at given coordinate x
     ///
@@ -142,8 +193,47 @@ namespace dolfin
     ///         The vertex (global_index).
     ///     x (std::vector<double>)
     ///         The x-coordinates.
-    void add_vertex(uint local_index, uint global_index,
-                    const std::vector<double>& x);
+    void add_vertex_global(uint local_index, uint global_index,
+                           const std::vector<double>& x);
+
+    /// Add cell with given vertices (1D)
+    ///
+    /// *Arguments*
+    ///     c (uint)
+    ///         The cell (index).
+    ///     v0 (std::vector<uint>)
+    ///         The first vertex (local index).
+    ///     v1 (std::vector<uint>)
+    ///         The second vertex (local index).
+    void add_cell(uint c, uint v0, uint v1);
+
+    /// Add cell with given vertices (2D)
+    ///
+    /// *Arguments*
+    ///     c (uint)
+    ///         The cell (index).
+    ///     v0 (std::vector<uint>)
+    ///         The first vertex (local index).
+    ///     v1 (std::vector<uint>)
+    ///         The second vertex (local index).
+    ///     v2 (std::vector<uint>)
+    ///         The third vertex (local index).
+    void add_cell(uint c, uint v0, uint v1, uint v2);
+
+    /// Add cell with given vertices (3D)
+    ///
+    /// *Arguments*
+    ///     c (uint)
+    ///         The cell (index).
+    ///     v0 (std::vector<uint>)
+    ///         The first vertex (local index).
+    ///     v1 (std::vector<uint>)
+    ///         The second vertex (local index).
+    ///     v2 (std::vector<uint>)
+    ///         The third vertex (local index).
+    ///     v3 (std::vector<uint>)
+    ///         The fourth vertex (local index).
+    void add_cell(uint c, uint v0, uint v1, uint v2, uint v3);
 
     /// Add cell with given vertices
     ///

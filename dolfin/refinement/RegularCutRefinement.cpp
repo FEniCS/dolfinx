@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-02-07
-// Last changed: 2011-11-15
+// Last changed: 2012-09-27
 
 #include <vector>
 #include <boost/assign.hpp>
@@ -259,13 +259,13 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   uint current_vertex = 0;
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
-    editor.add_vertex(current_vertex, current_vertex, vertex->point());
+    editor.add_vertex(current_vertex, vertex->point());
     current_vertex++;
   }
   for (uint i = 0; i < marked_edges.size(); i++)
   {
     Edge edge(mesh, marked_edges[i]);
-    editor.add_vertex(current_vertex, current_vertex, edge.midpoint());
+    editor.add_vertex(current_vertex, edge.midpoint());
     current_vertex++;
   }
 

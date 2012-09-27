@@ -65,7 +65,7 @@ Interval::Interval(uint nx, double a, double b) : Mesh()
   for (uint ix = 0; ix <= nx; ix++)
   {
     const std::vector<double> x(1, a + (static_cast<double>(ix)*(b - a)/static_cast<double>(nx)));
-    editor.add_vertex(ix, ix, x);
+    editor.add_vertex(ix, x);
   }
 
   // Create intervals

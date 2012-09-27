@@ -81,7 +81,7 @@ UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
     for (uint ix = 0; ix <= nx; ix++)
     {
       x[0] = static_cast<double>(ix)/static_cast<double>(nx);
-      editor.add_vertex(vertex, vertex, x);
+      editor.add_vertex(vertex, x);
       ++vertex;
     }
   }
@@ -95,7 +95,7 @@ UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
       for (uint ix = 0; ix < nx; ix++)
       {
         x[0] = (static_cast<double>(ix) + 0.5) / static_cast<double>(nx);
-        editor.add_vertex(vertex, vertex, x);
+        editor.add_vertex(vertex, x);
         ++vertex;
       }
     }

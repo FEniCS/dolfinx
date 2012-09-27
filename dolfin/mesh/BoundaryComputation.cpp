@@ -144,7 +144,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
 
       // Add vertex
       // FIXME: Get global vertex index
-      editor.add_vertex(vertex_index, vertex_index, v->point());
+      editor.add_vertex(vertex_index, v->point());
     }
   }
 

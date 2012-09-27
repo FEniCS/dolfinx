@@ -94,7 +94,7 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
     for (uint ix = 0; ix <= nx; ix++)
     {
       x[0] = a + ((static_cast<double>(ix))*(b - a)/static_cast<double>(nx));
-      editor.add_vertex(vertex, vertex, x);
+      editor.add_vertex(vertex, x);
       vertex++;
     }
   }
@@ -108,7 +108,7 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
       for (uint ix = 0; ix < nx; ix++)
       {
         x[0] = a + (static_cast<double>(ix) + 0.5)*(b - a)/ static_cast<double>(nx);
-        editor.add_vertex(vertex, vertex, x);
+        editor.add_vertex(vertex, x);
         vertex++;
       }
     }

@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2011 Anders Logg
+// Copyright (C) 2006-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-05-16
-// Last changed: 2011-11-15
+// Last changed: 2012-09-27
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/dolfin_parameter.h>
@@ -138,7 +138,45 @@ void MeshEditor::init_cells(uint num_cells)
   mesh->_topology(tdim, 0).init(num_cells, mesh->type().num_vertices(tdim));
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_vertex(uint local_index, uint global_index, const Point& p)
+void MeshEditor::add_vertex(uint index, const Point& p)
+{
+  add_vertex_global(index, index, p);
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::add_vertex(uint index, const std::vector<double>& x)
+{
+  add_vertex_global(index, index, x);
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::add_vertex(uint index, double x)
+{
+  dolfin_assert(gdim == 1);
+  std::vector<double> p(1);
+  p[0] = x;
+  add_vertex(index, p);
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::add_vertex(uint index, double x, double y)
+{
+  dolfin_assert(gdim == 2);
+  std::vector<double> p(2);
+  p[0] = x;
+  p[1] = y;
+  add_vertex(index, p);
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::add_vertex(uint index, double x, double y, double z)
+{
+  dolfin_assert(gdim == 3);
+  std::vector<double> p(3);
+  p[0] = x;
+  p[1] = y;
+  p[2] = z;
+  add_vertex(index, p);
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::add_vertex_global(uint local_index, uint global_index,
+                                   const Point& p)
 {
   // Geometric dimension
   const uint gdim = mesh->geometry().dim();
@@ -151,14 +189,44 @@ void MeshEditor::add_vertex(uint local_index, uint global_index, const Point& p)
   mesh->_geometry.set(local_index, global_index, x);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_vertex(uint local_index, uint global_index,
-                            const std::vector<double>& x)
+void MeshEditor::add_vertex_global(uint local_index, uint global_index,
+                                   const std::vector<double>& x)
 {
   // Add vertex
   add_vertex_common(local_index, x.size());
 
   // Set coordinate
   mesh->_geometry.set(local_index, global_index, x);
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::add_cell(uint c, uint v0, uint v1)
+{
+  dolfin_assert(tdim == 1);
+  std::vector<uint> vertices(2);
+  vertices[0] = v0;
+  vertices[1] = v1;
+  add_cell(c, vertices);
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2)
+{
+  dolfin_assert(tdim == 2);
+  std::vector<uint> vertices(3);
+  vertices[0] = v0;
+  vertices[1] = v1;
+  vertices[2] = v2;
+  add_cell(c, vertices);
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2, uint v3)
+{
+  dolfin_assert(tdim == 3);
+  std::vector<uint> vertices(4);
+  vertices[0] = v0;
+  vertices[1] = v1;
+  vertices[2] = v2;
+  vertices[2] = v3;
+  add_cell(c, vertices);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::add_cell(uint c, const std::vector<uint>& v)

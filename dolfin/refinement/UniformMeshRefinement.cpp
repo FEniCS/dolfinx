@@ -83,14 +83,14 @@ void UniformMeshRefinement::refine(Mesh& refined_mesh,
   uint vertex = 0;
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
-    editor.add_vertex(vertex, vertex, v->point());
+    editor.add_vertex(vertex, v->point());
     vertex++;
   }
 
   // Add new vertices
   for (EdgeIterator e(mesh); !e.end(); ++e)
   {
-    editor.add_vertex(vertex, vertex, e->midpoint());
+    editor.add_vertex(vertex, e->midpoint());
     vertex++;
   }
 

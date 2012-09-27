@@ -115,7 +115,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
     p[0] = it->attribute("x").as_double();
     p[1] = it->attribute("y").as_double();
     p[2] = it->attribute("z").as_double();
-    editor.add_vertex(index, index, p);
+    editor.add_vertex(index, p);
   }
 
   // Get cells node

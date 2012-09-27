@@ -796,7 +796,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   {
     for (uint j = 0; j < gdim; ++j)
       p[j] = vertex_coordinates[i][j];
-    editor.add_vertex(i, vertex_indices[i], p);
+    editor.add_vertex_global(i, vertex_indices[i], p);
   }
 
   // Add cells

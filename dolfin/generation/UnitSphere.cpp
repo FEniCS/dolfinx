@@ -76,7 +76,7 @@ UnitSphere::UnitSphere(uint n) : Mesh()
       {
         x[0] = -1.0 + static_cast<double>(ix)*2.0/static_cast<double>(nx);
         const std::vector<double> trans_x = transform(x);
-        editor.add_vertex(vertex, vertex, trans_x);
+        editor.add_vertex(vertex, trans_x);
         ++vertex;
       }
     }

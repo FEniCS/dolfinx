@@ -80,7 +80,7 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
     std::vector<double> x(gdim);
     for (uint j = 0; j < gdim; ++j)
       x[j] = new_coordinates[i*gdim + j];
-    editor.add_vertex(i, i, x);
+    editor.add_vertex(i, x);
   }
 
   cout << "Done adding vertices" << endl;

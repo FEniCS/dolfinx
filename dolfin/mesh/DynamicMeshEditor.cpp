@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-09-22
-// Last changed: 2011-11-14
+// Last changed: 2012-09-27
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/dolfin_parameter.h>
@@ -177,7 +177,7 @@ void DynamicMeshEditor::close(bool order)
     const uint offset = v*gdim;
     for (uint i = 0; i < gdim; i++)
       p[i] = vertex_coordinates[offset + i];
-    editor.add_vertex(v, v, p);
+    editor.add_vertex(v, p);
   }
 
   // Add cells

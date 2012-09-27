@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-11-23
-// Last changed: 2011-11-22
+// Last changed: 2012-09-27
 
 #include <boost/assign.hpp>
 #include <dolfin/common/MPI.h>
@@ -57,7 +57,7 @@ UnitInterval::UnitInterval(uint nx) : Mesh()
   for (uint ix = 0; ix <= nx; ix++)
   {
     const double x = static_cast<double>(ix)/static_cast<double>(nx);
-    editor.add_vertex(ix, ix, x);
+    editor.add_vertex(ix, x);
   }
 
   // Create intervals
