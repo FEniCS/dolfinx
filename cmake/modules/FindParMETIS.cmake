@@ -67,6 +67,7 @@ if (MPI_CXX_FOUND)
     set(PARMETIS_CONFIG_TEST_VERSION_CPP
       "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/parmetis_config_test_version.cpp")
     file(WRITE ${PARMETIS_CONFIG_TEST_VERSION_CPP} "
+#define MPICH_IGNORE_CXX_SEEK 1
 #include <iostream>
 #include \"parmetis.h\"
 
