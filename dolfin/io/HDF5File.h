@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-09-25
+// Last changed: 2012-09-28
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -97,6 +97,15 @@ namespace dolfin
     std::string mesh_coords_dataset_name(const Mesh& mesh) const;
     std::string mesh_index_dataset_name(const Mesh& mesh) const;
     std::string mesh_topology_dataset_name(const Mesh& mesh) const;
+
+    // Reorganise data into global order as defined by global_index
+    // global_index contains the global index positions
+    // local_vector contains the items to be redistributed
+    // global_vector is the result: the local part of the new global vector created.
+    template <typename T>
+    void redistribute_by_global_index(const std::vector<uint>& global_index,
+                                      const std::vector<T>& local_vector,
+                                      std::vector<T>& global_vector);
 
   };
 
