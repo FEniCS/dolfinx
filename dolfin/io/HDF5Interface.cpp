@@ -423,7 +423,7 @@ void HDF5Interface::add_attribute(const std::string &filename,
   dolfin_assert(dset_id != HDF5_FAIL);
 
   // Add attribute of appropriate type
-  _add_attribute_value(dset_id, attribute_name, attribute_value);
+  add_attribute_value(dset_id, attribute_name, attribute_value);
 
   // Close dataset
   status = H5Dclose(dset_id);
@@ -435,7 +435,7 @@ void HDF5Interface::add_attribute(const std::string &filename,
 }
 
 //-----------------------------------------------------------------------------
-void HDF5Interface::_add_attribute_value(const hid_t &dset_id,
+void HDF5Interface::add_attribute_value(const hid_t &dset_id,
                                    const std::string &attribute_name,
                                    const uint &attribute_value)
 {
@@ -460,7 +460,7 @@ void HDF5Interface::_add_attribute_value(const hid_t &dset_id,
 
 }
 //-----------------------------------------------------------------------------
-void HDF5Interface::_add_attribute_value(const hid_t& dset_id,
+void HDF5Interface::add_attribute_value(const hid_t& dset_id,
                                       const std::string& attribute_name,
                                       const std::vector<uint> &attribute_value)
 {
@@ -481,12 +481,9 @@ void HDF5Interface::_add_attribute_value(const hid_t& dset_id,
   // Close attribute
   status = H5Aclose(attribute_id);
   dolfin_assert(status != HDF5_FAIL);
-
 }
-
-
 //-----------------------------------------------------------------------------
-void HDF5Interface::_add_attribute_value(const hid_t& dset_id,
+void HDF5Interface::add_attribute_value(const hid_t& dset_id,
                                          const std::string& attribute_name,
                                          const std::string& attribute_value)
 {
@@ -559,7 +556,7 @@ void HDF5Interface::get_attribute(const std::string &filename,
   dolfin_assert(attr_type != HDF5_FAIL);
 
   // Specific code for each type of data template
-  _get_attribute_value(attr_type, attr_id, attribute_value);
+  get_attribute_value(attr_type, attr_id, attribute_value);
 
   // Close attribute type
   status = H5Tclose(attr_type);
@@ -580,7 +577,7 @@ void HDF5Interface::get_attribute(const std::string &filename,
 }
 
 //-----------------------------------------------------------------------------
-void HDF5Interface::_get_attribute_value(const hid_t &attr_type,
+void HDF5Interface::get_attribute_value(const hid_t &attr_type,
                                          const hid_t &attr_id,
                                          uint &attribute_value)
 {
@@ -593,7 +590,7 @@ void HDF5Interface::_get_attribute_value(const hid_t &attr_type,
 }
 
 //-----------------------------------------------------------------------------
-void HDF5Interface::_get_attribute_value(const hid_t &attr_type,
+void HDF5Interface::get_attribute_value(const hid_t &attr_type,
                                          const hid_t &attr_id,
                                          std::string &attribute_value)
 {
@@ -616,7 +613,7 @@ void HDF5Interface::_get_attribute_value(const hid_t &attr_type,
   attribute_value.assign(attribute_data.data());
 }
 //-----------------------------------------------------------------------------
-void HDF5Interface::_get_attribute_value(const hid_t& attr_type,
+void HDF5Interface::get_attribute_value(const hid_t& attr_type,
                                          const hid_t& attr_id,
                                          std::vector<uint>& attribute_value)
 {
@@ -628,7 +625,7 @@ void HDF5Interface::_get_attribute_value(const hid_t& attr_type,
   dolfin_assert(dataspace != HDF5_FAIL);
   hsize_t cur_size[10];
   hsize_t max_size[10];
-  int ndims = H5Sget_simple_extent_dims(dataspace, cur_size, max_size);
+  const int ndims = H5Sget_simple_extent_dims(dataspace, cur_size, max_size);
   dolfin_assert(ndims == 1);
 
   attribute_value.resize(cur_size[0]);
@@ -636,6 +633,5 @@ void HDF5Interface::_get_attribute_value(const hid_t& attr_type,
   // Read value to vector
   herr_t status = H5Aread(attr_id, H5T_NATIVE_UINT, attribute_value.data());
   dolfin_assert(status != HDF5_FAIL);
-
 }
 //-----------------------------------------------------------------------------

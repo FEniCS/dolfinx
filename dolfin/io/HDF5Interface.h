@@ -116,32 +116,32 @@ namespace dolfin
     static hid_t open_parallel_file(const std::string &filename);
 
     // Internal uint-specific code to add an attribute
-    static void _add_attribute_value(const hid_t &dset_id,
+    static void add_attribute_value(const hid_t &dset_id,
                                     const std::string &attribute_name,
                                     const uint &attribute_value);
 
     // Internal vector<uint>-specific code to add an attribute
-    static void _add_attribute_value(const hid_t &dset_id,
+    static void add_attribute_value(const hid_t &dset_id,
                                      const std::string &attribute_name,
                                      const std::vector<uint> &attribute_value);
 
     // Internal string-specific code to add an attribute
-    static void _add_attribute_value(const hid_t &dset_id,
+    static void add_attribute_value(const hid_t &dset_id,
                                     const std::string &attribute_name,
                                     const std::string &attribute_value);
 
     // Internal code for getting a uint from a dataset attribute
-    static void _get_attribute_value(const hid_t& attr_type,
+    static void get_attribute_value(const hid_t& attr_type,
                                      const hid_t& attr_id,
                                      uint &attribute_value);
 
     // Internal vector<uint>-specific code to get an attribute
-    static void _get_attribute_value(const hid_t& attr_type,
+    static void get_attribute_value(const hid_t& attr_type,
                                      const hid_t& attr_id,
                                      std::vector<uint> &attribute_value);
 
     // Internal string-specific code to get an attribute
-    static void _get_attribute_value(const hid_t& attr_type,
+    static void get_attribute_value(const hid_t& attr_type,
                                      const hid_t& attr_id,
                                      std::string& attribute_value);
 

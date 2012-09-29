@@ -88,7 +88,6 @@ void HDF5File::operator>> (Mesh& input_mesh)
   dolfin_error("HDF5File.cpp",
                "read mesh from file",
                "Mesh input is not supported yet");
-
 }
 //-----------------------------------------------------------------------------
 void HDF5File::operator<< (const Mesh& mesh)
