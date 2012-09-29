@@ -70,13 +70,12 @@ void HDF5File::create()
   HDF5Interface::create(filename);
 }
 //-----------------------------------------------------------------------------
-std::string HDF5File::search_list(std::vector<std::string> &list_of_strings, 
+std::string HDF5File::search_list(std::vector<std::string> &list_of_strings,
                                   const std::string &search_term) const
 {
   // Search through a list of names for a name beginning with search_term
   for(std::vector<std::string>::iterator list_iterator = list_of_strings.begin();
-      list_iterator != list_of_strings.end();
-      ++list_iterator)
+      list_iterator != list_of_strings.end(); ++list_iterator)
   {
     if(list_iterator->find(search_term) != std::string::npos)
       return *list_iterator;
@@ -84,20 +83,18 @@ std::string HDF5File::search_list(std::vector<std::string> &list_of_strings,
   return std::string("");
 }
 //-----------------------------------------------------------------------------
-// Mesh input not yet supported
 void HDF5File::operator>> (Mesh& input_mesh)
 {
-
   dolfin_error("HDF5File.cpp",
                "read mesh from file",
                "Mesh input is not supported yet");
 
 }
-
 //-----------------------------------------------------------------------------
 void HDF5File::operator<< (const Mesh& mesh)
 {
-  // Mesh output with true global indices - not currently useable for visualisation
+  // Mesh output with true global indices - not currently useable for
+  // visualisation
   write_mesh(mesh, true);
 }
 //-----------------------------------------------------------------------------
@@ -141,7 +138,6 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
   std::vector<double> vertex_coords;
   vertex_indices.reserve(2*num_local_vertices);
   vertex_coords.reserve(3*num_local_vertices);
-  const uint process_number = MPI::process_number();
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     // Vertex global index and process number
@@ -199,14 +195,14 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
       write(coord_dataset, vertex_coords, 3);
       // Write GlobalIndex mapping of coordinates to global vector position
       write(mesh_index_dataset_name(mesh), vertex_indices, 1);
-      
+
       // Write partitions as an attribute
       std::vector<uint> partitions;
       MPI::gather(vertex_offset, partitions);
       MPI::broadcast(partitions);
       HDF5Interface::add_attribute(filename, coord_dataset, "partition", partitions);
     }
-    
+
     uint indexing_indicator = (true_topology_indices ? 1 : 0);
     HDF5Interface::add_attribute(filename, coord_dataset, "true_indexing", indexing_indicator);
   }
@@ -249,9 +245,6 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
 //-----------------------------------------------------------------------------
 void HDF5File::operator<< (const GenericVector& x)
 {
-  // Get local range;
-  std::pair<uint, uint> range = x.local_range(0);
-
   // Get all local data
   std::vector<double> data;
   x.get_local(data);
@@ -262,7 +255,7 @@ void HDF5File::operator<< (const GenericVector& x)
 
   // Write to HDF5 file
   const std::string name = "/Vector/" + boost::lexical_cast<std::string>(counter);
-  write(name.c_str(),data, 1);
+  write(name.c_str(), data, 1);
 
   // Increment counter
   counter++;
@@ -303,7 +296,7 @@ void HDF5File::write(const std::string dataset_name,
   dolfin_assert(width != 0);
   uint num_items = data.size()/width;
   dolfin_assert( data.size() == num_items*width);
-  
+
   uint offset = MPI::global_offset(num_items,true);
   std::pair<uint,uint> range(offset, offset + num_items);
   HDF5Interface::write(filename, dataset_name, data, range, width);
@@ -314,7 +307,6 @@ bool HDF5File::dataset_exists(const std::string &dataset_name)
   // Check for existence of dataset - used by XDMFFile
   return HDF5Interface::dataset_exists(filename, dataset_name);
 }
-
 //-----------------------------------------------------------------------------
 // Work out the names to use for topology and coordinate datasets
 // These routines need MPI to work out the hash
@@ -365,8 +357,8 @@ void HDF5File::redistribute_by_global_index(const std::vector<uint>& global_inde
   std::vector<uint> partitions;
   MPI::gather(range.first, partitions);
   MPI::broadcast(partitions);
-  partitions.push_back(global_vector_size); // add end of last partition 
-  
+  partitions.push_back(global_vector_size); // add end of last partition
+
   // Go through each remote process number, finding local values with a global index
   // in the remote partition range, and add to a list.
   std::vector<std::vector<std::pair<uint,T> > > values_to_send(num_processes);
@@ -377,11 +369,11 @@ void HDF5File::redistribute_by_global_index(const std::vector<uint>& global_inde
   // Set up destination vector for communication with remote processes
   for(uint process_j = 0; process_j < num_processes ; ++process_j)
   {
-    destinations.push_back(process_j);  
+    destinations.push_back(process_j);
     //    std::vector<std::pair<uint,T> > send_to_process_j;
     //    values_to_send.push_back(send_to_process_j);
   }
-  
+
   // Go through local vector and append value to the appropriate list to send to correct process
   for(uint i = 0; i < local_vector.size() ; ++i)
   {
@@ -402,7 +394,7 @@ void HDF5File::redistribute_by_global_index(const std::vector<uint>& global_inde
     }
 
   }
-  
+
   // redistribute the values to the appropriate process
   std::vector<std::vector<std::pair<uint,T> > > received_values;
   MPI::distribute(values_to_send, destinations, received_values);
@@ -432,10 +424,7 @@ void HDF5File::redistribute_by_global_index(const std::vector<uint>& global_inde
       }
     }
   }
-  
-  
 }
-
 //-----------------------------------------------------------------------------
 
 #endif

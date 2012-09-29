@@ -230,13 +230,11 @@ void HDF5Interface::read(const std::string& filename,
                          const std::pair<uint, uint> range,
                          const int h5type, const uint width)
 {
-  // read a generic block of 2D data from a HDF5 dataset in parallel
+  // Resize data
+  data.resize((range.second - range.first)*width);
 
-  dolfin_assert(data);
-  if(data.size() != (range.second - range.first) * width)
-    data.resize((range.second - range.first) * width);
-
-  herr_t status;      // Generic return value
+  // Generic return value
+  herr_t status;
 
   // Hyperslab selection
   hsize_t offset[2] = {range.first, 0};
@@ -283,8 +281,6 @@ void HDF5Interface::read(const std::string& filename,
 bool HDF5Interface::dataset_exists(const std::string& filename,
                                    const std::string& dataset_name)
 {
-  // Check if a named dataset exists in this file
-
   herr_t status;
 
   // Try to open existing HDF5 file
@@ -317,7 +313,7 @@ bool HDF5Interface::dataset_exists(const std::string& filename,
 }
 //-----------------------------------------------------------------------------
 std::vector<std::string> HDF5Interface::dataset_list(const std::string& filename,
-                                                     const std::string& group_name)
+                                                 const std::string& group_name)
 {
   // List all member datasets of a group by name
   char namebuf[HDF5_MAXSTRLEN];
@@ -338,7 +334,7 @@ std::vector<std::string> HDF5Interface::dataset_list(const std::string& filename
 
   // Iterate through group collecting all dataset names
   std::vector<std::string> list_of_datasets;
-  for(hsize_t i=0; i<num_datasets; i++)
+  for(hsize_t i = 0; i < num_datasets; i++)
   {
     H5Gget_objname_by_idx(group_id, i, namebuf, HDF5_MAXSTRLEN);
     list_of_datasets.push_back(std::string(namebuf));
@@ -390,11 +386,8 @@ std::pair<uint, uint>
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  return std::pair<uint,uint>(cur_size[0],cur_size[1]);
+  return std::pair<uint, uint>(cur_size[0],cur_size[1]);
 }
-
-// Add uint or string type attributes to a dataset
-// Template below, with type specific code below that
 //-----------------------------------------------------------------------------
 template void HDF5Interface::add_attribute(const std::string &filename,
                                            const std::string &dataset_name,
