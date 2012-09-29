@@ -35,12 +35,12 @@ class HDF5_Vector(unittest.TestCase):
     def test_save_and_read_vector(self):
         x = Vector(305)
         x[:] = 1.0
-        vector_file = File("x.h5")
+        vector_file = File("vector.h5")
         vector_file << x
         del vector_file
 
         y = Vector()
-        vector_file = File("x.h5")
+        vector_file = File("vector.h5")
         vector_file >> y
         self.assertEqual(y.size(), x.size())
         self.assertEqual((x - y).norm("l1"), 0.0)

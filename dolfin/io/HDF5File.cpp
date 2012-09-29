@@ -64,10 +64,48 @@ HDF5File::~HDF5File()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void HDF5File::create()
+void HDF5File::operator<< (const GenericVector& x)
 {
-  // Create new new HDF5 file (used by XDMFFile)
-  HDF5Interface::create(filename);
+  // Get all local data
+  std::vector<double> data;
+  x.get_local(data);
+
+  // Overwrite any existing file
+  if (counter == 0)
+    HDF5Interface::create(filename);
+
+  // Write to HDF5 file
+  const std::string name = "/Vector/" + boost::lexical_cast<std::string>(counter);
+  write_data(name.c_str(), data, 1);
+
+  // Increment counter
+  counter++;
+}
+//-----------------------------------------------------------------------------
+void HDF5File::operator>> (GenericVector& input)
+{
+  const uint size = input.size();
+  if (size == 0)
+  {
+    // FIXME: Resize
+  }
+  else
+  {
+    // FIXME: make sure size matches
+    cout << "size: " << size << endl;
+  }
+
+  // Get local range
+  const std::pair<uint, uint> range = input.local_range(0);
+
+  // Allocate data
+  std::vector<double> data(range.second - range.first);
+
+  // Read data
+  HDF5Interface::read(filename, "/Vector/0", data, range, 1);
+
+  // Set data
+  input.set_local(data);
 }
 //-----------------------------------------------------------------------------
 std::string HDF5File::search_list(const std::vector<std::string>& list,
@@ -94,6 +132,12 @@ void HDF5File::operator<< (const Mesh& mesh)
   // Mesh output with true global indices - not currently useable for
   // visualisation
   write_mesh(mesh, true);
+}
+//-----------------------------------------------------------------------------
+void HDF5File::create()
+{
+  // Create new new HDF5 file (used by XDMFFile)
+  HDF5Interface::create(filename);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
@@ -228,34 +272,6 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
     MPI::broadcast(partitions);
     HDF5Interface::add_attribute(filename, topology_dataset, "partition", partitions);
   }
-}
-//-----------------------------------------------------------------------------
-void HDF5File::operator<< (const GenericVector& x)
-{
-  // Get all local data
-  std::vector<double> data;
-  x.get_local(data);
-
-  // Overwrite any existing file
-  if (counter == 0)
-    HDF5Interface::create(filename);
-
-  // Write to HDF5 file
-  const std::string name = "/Vector/" + boost::lexical_cast<std::string>(counter);
-  write_data(name.c_str(), data, 1);
-
-  // Increment counter
-  counter++;
-}
-//-----------------------------------------------------------------------------
-void HDF5File::operator>> (GenericVector& input)
-{
-  // Read vector from file, assuming partitioning is already known.
-  // FIXME: should abort if not input is not allocated
-  const std::pair<uint, uint> range = input.local_range(0);
-  std::vector<double> data(range.second - range.first);
-  HDF5Interface::read(filename, "/Vector/0", data, range, 1);
-  input.set_local(data);
 }
 //-----------------------------------------------------------------------------
 std::string HDF5File::mesh_coords_dataset_name(const Mesh& mesh) const

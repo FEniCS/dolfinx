@@ -222,14 +222,14 @@ namespace dolfin
     const int h5type = hdf5_type<T>();
 
     // Resize data
-    data.resize((range.second - range.first)*width);
+    data.resize(width*(range.second - range.first));
 
     // Generic return value
     herr_t status;
 
     // Hyperslab selection
     hsize_t offset[2] = {range.first, 0};
-    hsize_t count[2] = {range.second - range.first, width};
+    hsize_t count[2]  = {range.second - range.first, width};
 
     // Open file descriptor in parallel
     const hid_t file_id = open_parallel_file(filename);
@@ -255,7 +255,7 @@ namespace dolfin
                      H5P_DEFAULT, data.data());
     dolfin_assert(status != HDF5_FAIL);
 
-    // close dataset collectively
+    // Close dataset collectively
     status = H5Dclose(dset_id);
     dolfin_assert(status != HDF5_FAIL);
 
