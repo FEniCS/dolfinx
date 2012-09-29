@@ -69,7 +69,7 @@ namespace dolfin
                      const std::pair<uint, uint> range,
                      const uint width);
 
-    /// Check for existence of dataset in file
+    /// Check for existence of dataset in HDF5 file
     static bool dataset_exists(const HDF5File& hdf5_file,
                                const std::string dataset_name);
 
@@ -77,6 +77,7 @@ namespace dolfin
     static std::vector<std::string> dataset_list(const std::string filename,
                                                  const std::string group_name);
 
+    // FIXME: Size of dimension?
     /// Get dimensions (NX, NY) of 2D dataset
     static std::pair<uint, uint> dataset_dimensions(const std::string filename,
                                                const std::string dataset_name);

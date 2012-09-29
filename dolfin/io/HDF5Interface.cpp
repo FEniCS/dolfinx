@@ -159,26 +159,27 @@ std::pair<dolfin::uint, dolfin::uint>
   HDF5Interface::dataset_dimensions(const std::string filename,
                                     const std::string dataset_name)
 {
-  // Get dimensions of a 2D dataset
+  // Current dataset dimensions
+  hsize_t cur_size[10];
 
-  hsize_t cur_size[10];   // current dataset dimensions
-  hsize_t max_size[10];   // maximum dataset dimensions
+  // Maximum dataset dimensions
+  hsize_t max_size[10];
 
   herr_t status;
 
   // Try to open existing HDF5 file
-  hid_t file_id = open_parallel_file(filename);
+  const hid_t file_id = open_parallel_file(filename);
 
   // Open named dataset
-  hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
+  const hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
   dolfin_assert(dset_id != HDF5_FAIL);
 
   // Get the dataspace of the dataset
-  hid_t space = H5Dget_space(dset_id);
+  const hid_t space = H5Dget_space(dset_id);
   dolfin_assert(space != HDF5_FAIL);
 
   // Enquire dimensions of the dataspace
-  int ndims = H5Sget_simple_extent_dims(space, cur_size, max_size);
+  const int ndims = H5Sget_simple_extent_dims(space, cur_size, max_size);
   dolfin_assert(ndims == 2); // ensure it is a 2D dataset
 
   // Close dataset collectively
@@ -201,16 +202,16 @@ void HDF5Interface::get_attribute(const std::string filename,
   herr_t status;
 
   // Try to open existing HDF5 file
-  hid_t file_id = open_parallel_file(filename);
+  const hid_t file_id = open_parallel_file(filename);
 
   // Open dataset by name
-  hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
+  const hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
   dolfin_assert(dset_id != HDF5_FAIL);
 
   // Open attribute by name and get its type
-  hid_t attr_id = H5Aopen(dset_id, attribute_name.c_str(), H5P_DEFAULT);
+  const hid_t attr_id = H5Aopen(dset_id, attribute_name.c_str(), H5P_DEFAULT);
   dolfin_assert(attr_id != HDF5_FAIL);
-  hid_t attr_type = H5Aget_type(attr_id);
+  const hid_t attr_type = H5Aget_type(attr_id);
   dolfin_assert(attr_type != HDF5_FAIL);
 
   // Specific code for each type of data template
@@ -240,13 +241,13 @@ hid_t HDF5Interface::open_parallel_file(const std::string filename)
   herr_t status;
 
   // Set parallel access with communicator
-  hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
+  const hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
   dolfin_assert(plist_id != HDF5_FAIL);
   status = H5Pset_fapl_mpio(plist_id,*comm, *info);
   dolfin_assert(status != HDF5_FAIL);
 
   // Try to open existing HDF5 file
-  hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
+  const hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
   dolfin_assert(file_id != HDF5_FAIL);
 
   // Release file-access template
