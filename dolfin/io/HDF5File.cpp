@@ -163,8 +163,7 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
       for(std::vector<double>::iterator i = vertex_coords.begin(); i != vertex_coords.end(); i += 3)
         local_vertex_coords.push_back(std::vector<double>(i,i+3));
 
-      redistribute_by_global_index(vertex_indices,
-                                   local_vertex_coords,
+      redistribute_by_global_index(vertex_indices, local_vertex_coords,
                                    global_vertex_coords);
 
       vertex_coords.clear();
@@ -186,12 +185,12 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
       MPI::gather(new_vertex_offset, partitions);
       MPI::broadcast(partitions);
       HDF5Interface::add_attribute(filename, coord_dataset, "partition", partitions);
-
     }
     else
     {
       // Write coordinates contiguously from each process
       write(coord_dataset, vertex_coords, 3);
+
       // Write GlobalIndex mapping of coordinates to global vector position
       write(mesh_index_dataset_name(mesh), vertex_indices, 1);
 
@@ -230,7 +229,7 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
   if (!dataset_exists(topology_dataset))
   {
     write(topology_dataset, topological_data, cell_dim + 1);
-    uint indexing_indicator = (true_topology_indices ? 1 : 0);
+    const uint indexing_indicator = (true_topology_indices ? 1 : 0);
     HDF5Interface::add_attribute(filename, topology_dataset, "true_indexing", indexing_indicator);
     HDF5Interface::add_attribute(filename, topology_dataset, "celltype", cell_type);
 
