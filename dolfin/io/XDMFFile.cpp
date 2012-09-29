@@ -134,7 +134,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     v.get_local(data_values);
   }
 
-  // Interleave the values for vector or tensor fields 
+  // Interleave the values for vector or tensor fields
   // and pad 2D vectors and tensors to 3D
   if (value_rank > 0)
   {
@@ -179,11 +179,11 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   // Working data structure for formatting XML file
   std::string s;
 
-  // Vertex/cell values are saved in the hdf5 group /DataVector
+  // Vertex/cell values are saved in the hdf5 group /VisualisationVector
   // as distinct from /Vector which is used for solution vectors.
 
   // Save data values to HDF5 file
-  s = "/DataVector/" + boost::lexical_cast<std::string>(counter);
+  s = "/VisualisationVector/" + boost::lexical_cast<std::string>(counter);
   hdf5_file->write(s.c_str(), data_values, value_size_io);
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero
@@ -257,7 +257,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     // Grid/Topology
     pugi::xml_node xdmf_topology = xdmf_grid.append_child("Topology");
     XML_mesh_topology(xdmf_topology, cell_dim, num_global_cells, mesh_topology_name);
-    
+
     // Grid/Geometry
     pugi::xml_node xdmf_geometry = xdmf_grid.append_child("Geometry");
     XML_mesh_geometry(xdmf_geometry, num_all_local_vertices, mesh_coords_name);
@@ -293,7 +293,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     xdmf_data.append_attribute("Dimensions") = s.c_str();
 
     boost::filesystem::path p(hdf5_file->filename);
-    s = p.filename().string() + ":/DataVector/" + boost::lexical_cast<std::string>(counter);
+    s = p.filename().string() + ":/VisualisationVector/" + boost::lexical_cast<std::string>(counter);
     xdmf_data.append_child(pugi::node_pcdata).set_value(s.c_str());
 
     // Write XML file
@@ -347,7 +347,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
     // Describe geometric coordinates
     pugi::xml_node xdmf_geometry = xdmf_grid.append_child("Geometry");
     XML_mesh_geometry(xdmf_geometry, num_all_local_vertices, mesh_coords_name);
-    
+
     xml_doc.save_file(filename.c_str(), "    ");
   }
 }
@@ -404,7 +404,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 
   // Collate data
   std::vector<T> data_values(meshfunction.values(),meshfunction.values()+meshfunction.size());
-  
+
   dolfin_assert(hdf5_file);
   hdf5_file->create(); //erase any existing file
 
@@ -416,11 +416,11 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 
   // Work out HDF5 dataset names
   const std::string mesh_coords_name = hdf5_file->mesh_coords_dataset_name(mesh);
-  const std::string mesh_topology_name = hdf5_file->mesh_topology_dataset_name(mesh);  
+  const std::string mesh_topology_name = hdf5_file->mesh_topology_dataset_name(mesh);
 
   boost::filesystem::path p(hdf5_file->filename);
   std::string dataset_basic_name = "/Mesh/MeshFunction_"+meshfunction.name();
-  const std::string mesh_function_dataset_name = 
+  const std::string mesh_function_dataset_name =
     p.filename().string() + ":" + dataset_basic_name;
 
   // Write mesh and values to HDF5
@@ -443,11 +443,11 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
     xdmf_grid.append_attribute("Name") = "dolfin_mesh";
     xdmf_grid.append_attribute("GridType") = "Uniform";
 
-    // Topological connectivity 
+    // Topological connectivity
     pugi::xml_node xdmf_topology = xdmf_grid.append_child("Topology");
     XML_mesh_topology(xdmf_topology, cell_dim, num_global_cells, mesh_topology_name);
 
-    // Geometric coordinate positions 
+    // Geometric coordinate positions
     pugi::xml_node xdmf_geometry = xdmf_grid.append_child("Geometry");
     XML_mesh_geometry(xdmf_geometry, num_all_local_vertices, mesh_coords_name);
 
@@ -470,17 +470,17 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 
 }
 //----------------------------------------------------------------------------
-void XDMFFile::XML_mesh_topology(pugi::xml_node &xdmf_topology, 
+void XDMFFile::XML_mesh_topology(pugi::xml_node &xdmf_topology,
                                  const uint cell_dim,
                                  const uint num_global_cells,
                                  const std::string topology_dataset_name
-                                 ) 
+                                 )
 {
   // Add mesh topology references to an XML node
   // FIXME: Move to another file as a static class member?
 
   xdmf_topology.append_attribute("NumberOfElements") = num_global_cells;
-  
+
   // Cell type
   if (cell_dim == 1)
   {
@@ -491,7 +491,7 @@ void XDMFFile::XML_mesh_topology(pugi::xml_node &xdmf_topology,
     xdmf_topology.append_attribute("TopologyType") = "Triangle";
   else if (cell_dim == 3)
     xdmf_topology.append_attribute("TopologyType") = "Tetrahedron";
-  
+
   // Refer to all cells and dimensions
   pugi::xml_node xdmf_topology_data = xdmf_topology.append_child("DataItem");
   xdmf_topology_data.append_attribute("Format") = "HDF";
@@ -510,26 +510,25 @@ void XDMFFile::XML_mesh_topology(pugi::xml_node &xdmf_topology,
 
 //----------------------------------------------------------------------------
 
-void XDMFFile::XML_mesh_geometry(pugi::xml_node &xdmf_geometry, 
+void XDMFFile::XML_mesh_geometry(pugi::xml_node &xdmf_geometry,
                                  const uint num_all_local_vertices,
                                  const std::string geometry_dataset_name
-                                 ) 
+                                 )
 {
   // Add mesh geometry references to an XML node
   // FIXME: Move to another file as a static class member?
- 
+
   xdmf_geometry.append_attribute("GeometryType") = "XYZ";
   pugi::xml_node xdmf_geom_data = xdmf_geometry.append_child("DataItem");
-  
+
   xdmf_geom_data.append_attribute("Format")="HDF";
   std::string geom_dim = boost::lexical_cast<std::string>(num_all_local_vertices) + " 3";
   xdmf_geom_data.append_attribute("Dimensions") = geom_dim.c_str();
-  
+
   boost::filesystem::path p(hdf5_file->filename);
   const std::string geometry_reference = p.filename().string() + ":" + geometry_dataset_name;
   xdmf_geom_data.append_child(pugi::node_pcdata).set_value(geometry_reference.c_str());
 }
 
-  
+
 #endif
-  

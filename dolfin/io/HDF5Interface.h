@@ -34,6 +34,7 @@ namespace dolfin
 
   class HDF5Interface
   {
+  #define HDF5_FAIL -1
   public:
 
     /// FIXME: Add description
@@ -105,7 +106,28 @@ namespace dolfin
     static void add_attribute(const std::string filename,
                               const std::string dataset_name,
                               const std::string attribute_name,
-                              const T& attribute_value);
+                              const T& attribute_value)
+    {
+      // Open file
+      hid_t file_id = open_parallel_file(filename);
+
+      // Open named dataset
+      hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
+      dolfin_assert(dset_id != HDF5_FAIL);
+
+      // Add attribute of appropriate type
+      add_attribute_value(dset_id, attribute_name, attribute_value);
+
+      herr_t status;
+
+      // Close dataset
+      status = H5Dclose(dset_id);
+      dolfin_assert(status != HDF5_FAIL);
+
+      // Close file
+      status = H5Fclose(file_id);
+      dolfin_assert(status != HDF5_FAIL);
+    }
 
   private:
 
@@ -153,7 +175,6 @@ namespace dolfin
   //-----------------------------------------------------------------------------
   // Specialised member functions (must be inlined to avoid link errors)
   //-----------------------------------------------------------------------------
-  #define HDF5_FAIL -1
   template<>
   inline void HDF5Interface::add_attribute_value(const hid_t dset_id,
                                           const std::string attribute_name,
