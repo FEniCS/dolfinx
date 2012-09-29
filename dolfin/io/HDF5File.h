@@ -30,6 +30,7 @@
 #include <vector>
 #include "dolfin/common/types.h"
 #include "GenericFile.h"
+#include "HDF5Interface.h"
 
 namespace dolfin
 {
@@ -48,14 +49,11 @@ namespace dolfin
     /// Destructor
     ~HDF5File();
 
-    /// Write vector to file
-    /// saves into HDF5 folder 'Vector'
-    /// multiple calls will save in the same file
-    /// with incrementing dataset names
+    /// Write vector to file in HDF5 folder 'Vector'. Multiple calls
+    /// will save in the same file with incrementing dataset names
     void operator<< (const GenericVector& x);
 
-    /// Read vector from file
-    /// looks in HDF5 folder 'Vector' for dataset 0
+    /// Read vector from file in HDF5 folder 'Vector' for dataset 0
     void operator>> (GenericVector& x);
 
     /// Write Mesh to file
@@ -75,23 +73,31 @@ namespace dolfin
     // Friend
     friend class XDMFFile;
 
-    // Create an empty file (truncate if existing)
+    // Create an empty HDF5 file (truncate if existing)
     void create();
 
-    // Write data to existing HDF file contiguously from each process,
-    // the range being set by the data size
-    // width: is the width of the data item (dim 1, e.g. 3 for x, y, z data)
+    // Write data contiguously from each process in parallel into a 2D array
+    // data contains local portion of data vector
+    // width is the second dimension of the array (e.g. 3 for xyz data)
+    // data in XYZXYZXYZ order
     template <typename T>
-    void write(const std::string dataset_name,
-               const std::vector<T>& data,
-               const uint width);
+    void write_data(const std::string dataset_name, const std::vector<T>& data,
+                    const uint width)
+    {
+      // Checks on width and size of data
+      dolfin_assert(width != 0);
+      dolfin_assert(data.size() % width == 0);
+      const uint num_items = data.size()/width;
 
-    // Check if dataset exists in this file
-    bool dataset_exists(const std::string &dataset_name);
-    
-    // Search through list of datasets for one beginning with search_term
-    std::string search_list(std::vector<std::string> &list_of_strings, 
-                            const std::string &search_term) const;
+      const uint offset = MPI::global_offset(num_items, true);
+      std::pair<uint, uint> range(offset, offset + num_items);
+      HDF5Interface::write(filename, dataset_name, data, range, width);
+    }
+
+    // Search through list of dataset names for one beginning with
+    // search_term
+    std::string search_list(const std::vector<std::string>& list,
+                            const std::string& search_term) const;
 
     // Generate HDF5 dataset names for mesh topology and coordinates
     std::string mesh_coords_dataset_name(const Mesh& mesh) const;

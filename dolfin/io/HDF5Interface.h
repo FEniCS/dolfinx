@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Chris Richardson and Garth N. Wells
+// Copyright (C) 2012 Chris N. Richardson and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -18,19 +18,24 @@
 // First added:  2012-09-21
 // Last changed:
 
-#ifndef __HDF5_INTERFACE_H
-#define __HDF5_INTERFACE_H
+#ifndef __DOLFIN_HDF5_INTERFACE_H
+#define __DOLFIN_HDF5_INTERFACE_H
 
 // Use 1.6 API for stability
-// Could update to latest version
-// requires adding a few extra arguments to calls
-// for little obvious benefit
+// Could update to latest version, whichrequires adding a few extra
+// arguments to calls for little obvious benefit
 #define H5_USE_16_API
 
+#include <vector>
+#include <string>
 #include <hdf5.h>
+#include <dolfin/common/types.h>
+#include <dolfin/log/log.h>
 
 namespace dolfin
 {
+
+  class HDF5File;
 
   // FIXME: Add class description
 
@@ -48,10 +53,10 @@ namespace dolfin
     /// width: is the width of the dataitem (e.g. 3 for x, y, z data)
     template <typename T>
     static void write(const std::string filename,
-                           const std::string dataset_name,
-                           const std::vector<T>& data,
-                           const std::pair<uint, uint> range,
-                           const uint width);
+                      const std::string dataset_name,
+                      const std::vector<T>& data,
+                      const std::pair<uint, uint> range,
+                      const uint width);
 
     /// Read data from a HDF5 dataset as defined by range blocks on
     /// each process
@@ -65,7 +70,7 @@ namespace dolfin
                      const uint width);
 
     /// Check for existence of dataset in file
-    static bool dataset_exists(const std::string filename,
+    static bool dataset_exists(const HDF5File& hdf5_file,
                                const std::string dataset_name);
 
     /// Return list all datasets in named group of file

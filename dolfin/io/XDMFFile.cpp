@@ -41,6 +41,7 @@
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/common/Timer.h>
 #include "HDF5File.h"
+#include "HDF5Interface.h"
 #include "XDMFFile.h"
 
 using namespace dolfin;
@@ -170,8 +171,8 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   // Write mesh to HDF5 file
   if (counter == 0 )
     hdf5_file->write_mesh(mesh, false);
-  else if (!hdf5_file->dataset_exists(mesh_coords_name)
-      || !hdf5_file->dataset_exists(mesh_topology_name))
+  else if (!HDF5Interface::dataset_exists(*hdf5_file, mesh_coords_name)
+      || !HDF5Interface::dataset_exists(*hdf5_file, mesh_topology_name))
   {
     hdf5_file->write_mesh(mesh, false);
   }
@@ -184,7 +185,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   // Save data values to HDF5 file
   s = "/VisualisationVector/" + boost::lexical_cast<std::string>(counter);
-  hdf5_file->write(s.c_str(), data_values, value_size_io);
+  hdf5_file->write_data(s.c_str(), data_values, value_size_io);
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero
   if (MPI::process_number() == 0)
@@ -425,7 +426,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 
   // Write mesh and values to HDF5
   hdf5_file->write_mesh(mesh, false);
-  hdf5_file->write(dataset_basic_name, data_values, 1);
+  hdf5_file->write_data(dataset_basic_name, data_values, 1);
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero
   if (MPI::process_number() == 0)

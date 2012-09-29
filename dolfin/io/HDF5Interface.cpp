@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Chris N. Richardson
+// Copyright (C) 2012 Chris N. Richardson and Garth N. Wells
 //
 //
 // This file is part of DOLFIN.
@@ -18,13 +18,12 @@
 //
 //
 // First Added: 2012-09-21
-// Last Changed: 2012-09-28
+// Last Changed: 2012-09-29
 
 #include <dolfin/common/types.h>
-#include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
-
+#include "HDF5File.h"
 #include "HDF5Interface.h"
 
 #define HDF5_FAIL -1
@@ -81,9 +80,11 @@ void HDF5Interface::create(const std::string filename)
   dolfin_assert(status != HDF5_FAIL);
 }
 //-----------------------------------------------------------------------------
-bool HDF5Interface::dataset_exists(const std::string filename,
+bool HDF5Interface::dataset_exists(const HDF5File& hdf5_file,
                                    const std::string dataset_name)
 {
+  const std::string filename = hdf5_file.name();
+
   herr_t status;
 
   // Try to open existing HDF5 file
