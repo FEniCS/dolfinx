@@ -260,7 +260,7 @@ endif()
 # Check for ParMETIS and SCOTCH
 if (DOLFIN_ENABLE_MPI AND MPI_C_FOUND)
   if (DOLFIN_ENABLE_PARMETIS)
-    find_package(ParMETIS)
+    find_package(ParMETIS 3.2)
   endif()
 
   if (DOLFIN_ENABLE_SCOTCH)

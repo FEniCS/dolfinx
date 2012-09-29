@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-09-22
-// Last changed: 2011-11-14
+// Last changed: 2012-09-27
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/dolfin_parameter.h>
@@ -28,8 +28,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DynamicMeshEditor::DynamicMeshEditor()
-  : mesh(0), tdim(0), gdim(0), cell_type(0)
+DynamicMeshEditor::DynamicMeshEditor() : mesh(0), tdim(0), gdim(0),
+                                         cell_type(0)
 {
   // Do nothing
 }
@@ -39,7 +39,8 @@ DynamicMeshEditor::~DynamicMeshEditor()
   clear();
 }
 //-----------------------------------------------------------------------------
-void DynamicMeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim)
+void DynamicMeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim,
+                             uint gdim)
 {
   // Clear old data
   mesh.clear();
@@ -170,7 +171,7 @@ void DynamicMeshEditor::close(bool order)
   editor.init_cells(num_cells);
 
   // Add vertices
-  Point p;
+  std::vector<double> p(gdim);
   for (uint v = 0; v < num_vertices; v++)
   {
     const uint offset = v*gdim;

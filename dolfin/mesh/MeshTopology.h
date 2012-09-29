@@ -21,6 +21,7 @@
 #ifndef __MESH_TOPOLOGY_H
 #define __MESH_TOPOLOGY_H
 
+#include <vector>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -86,11 +87,8 @@ namespace dolfin
     // Friends
     friend class BinaryFile;
 
-    // Topological dimension
-    uint _dim;
-
     // Number of mesh entities for each topological dimension
-    uint* num_entities;
+    std::vector<uint> num_entities;
 
     // Connectivity for pairs of topological dimensions
     MeshConnectivity*** connectivity;

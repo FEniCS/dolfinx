@@ -60,19 +60,23 @@ Box::Box(double x0, double y0, double z0,
   MeshEditor editor;
   editor.open(*this, CellType::tetrahedron, 3, 3);
 
+  // Storage for vertex coordinates
+  std::vector<double> x(3);
+
   // Create vertices
-  editor.init_vertices((nx+1)*(ny+1)*(nz+1));
+  editor.init_vertices((nx + 1)*(ny + 1)*(nz + 1));
   uint vertex = 0;
   for (uint iz = 0; iz <= nz; iz++)
   {
-    const double z = e + (static_cast<double>(iz))*(f-e) / static_cast<double>(nz);
+    x[2] = e + (static_cast<double>(iz))*(f-e) / static_cast<double>(nz);
     for (uint iy = 0; iy <= ny; iy++)
     {
-      const double y = c + (static_cast<double>(iy))*(d-c) / static_cast<double>(ny);
+      x[1] = c + (static_cast<double>(iy))*(d-c) / static_cast<double>(ny);
       for (uint ix = 0; ix <= nx; ix++)
       {
-        const double x = a + (static_cast<double>(ix))*(b-a) / static_cast<double>(nx);
-        editor.add_vertex(vertex++, x, y, z);
+        x[0] = a + (static_cast<double>(ix))*(b-a) / static_cast<double>(nx);
+        editor.add_vertex(vertex, x);
+        vertex++;
       }
     }
   }
@@ -80,6 +84,7 @@ Box::Box(double x0, double y0, double z0,
   // Create tetrahedra
   editor.init_cells(6*nx*ny*nz);
   uint cell = 0;
+  std::vector<std::vector<uint> > cells(6, std::vector<uint>(4));
   for (uint iz = 0; iz < nz; iz++)
   {
     for (uint iy = 0; iy < ny; iy++)
@@ -95,12 +100,18 @@ Box::Box(double x0, double y0, double z0,
         const uint v6 = v2 + (nx + 1)*(ny + 1);
         const uint v7 = v3 + (nx + 1)*(ny + 1);
 
-        editor.add_cell(cell++, v0, v1, v3, v7);
-        editor.add_cell(cell++, v0, v1, v7, v5);
-        editor.add_cell(cell++, v0, v5, v7, v4);
-        editor.add_cell(cell++, v0, v3, v2, v7);
-        editor.add_cell(cell++, v0, v6, v4, v7);
-        editor.add_cell(cell++, v0, v2, v6, v7);
+        // Note that v0 < v1 < v2 < v3 < vmid.
+        cells[0][0] = v0; cells[0][1] = v1; cells[0][2] = v3; cells[0][3] = v7;
+        cells[1][0] = v0; cells[1][1] = v1; cells[1][2] = v7; cells[1][3] = v5;
+        cells[2][0] = v0; cells[2][1] = v5; cells[2][2] = v7; cells[2][3] = v4;
+        cells[3][0] = v0; cells[3][1] = v3; cells[3][2] = v2; cells[3][3] = v7;
+        cells[4][0] = v0; cells[4][1] = v6; cells[4][2] = v4; cells[4][3] = v7;
+        cells[5][0] = v0; cells[5][1] = v2; cells[5][2] = v6; cells[5][3] = v7;
+
+        // Add cells
+        std::vector<std::vector<uint> >::const_iterator _cell;
+        for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
+          editor.add_cell(cell++, *_cell);
       }
     }
   }

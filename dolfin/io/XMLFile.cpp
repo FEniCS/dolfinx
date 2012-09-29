@@ -237,8 +237,14 @@ template<typename T> void XMLFile::read_mesh_function(MeshFunction<T>& t,
                                                   const std::string type) const
 {
   pugi::xml_document xml_doc;
-  load_xml_doc(xml_doc);
-  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
+
+  // Open file on process 0 only
+  pugi::xml_node dolfin_node;
+  if (MPI::process_number() == 0)
+  {
+    load_xml_doc(xml_doc);
+    dolfin_node = get_dolfin_xml_node(xml_doc);
+  }
   XMLMeshFunction::read(t, type, dolfin_node);
 }
 //-----------------------------------------------------------------------------

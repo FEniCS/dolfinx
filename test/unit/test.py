@@ -17,11 +17,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Modified by Johannes Ring 2009, 2011
+# Modified by Johannes Ring 2009, 2011-2012
 # Modified by Garth N. Wells 2009-2011
 #
 # First added:  2006-08-09
-# Last changed: 2011-11-21
+# Last changed: 2012-09-25
 
 import sys, os, re
 import platform
@@ -95,8 +95,12 @@ for prefix in prefixes:
                 status, output = getstatusoutput("cd %s%scpp && %s .%s%s" % \
                                    (test, os.path.sep, prefix, os.path.sep, cpptest_executable))
                 if status == 0 and "OK" in output:
-                    num_tests = int(re.search("OK \((\d+)\)", output).groups()[0])
-                    print "OK (%d tests)" % num_tests
+                    print "OK",
+                    match = re.search("OK \((\d+)\)", output)
+                    if match:
+                        num_tests = int(match.groups()[0])
+                        print "(%d tests)" % num_tests,
+                    print
                 else:
                     print "*** Failed"
                     failed += [(test, subtest, "C++", output)]
@@ -106,8 +110,12 @@ for prefix in prefixes:
                 status, output = getstatusoutput("cd %s%spython && %s python .%s%s.py" % \
                                    (test, os.path.sep, prefix, os.path.sep, subtest))
                 if status == 0 and "OK" in output:
-                    num_tests = int(re.search("Ran (\d+) test", output).groups()[0])
-                    print "OK (%d tests)" % num_tests
+                    print "OK",
+                    match = re.search("Ran (\d+) test", output)
+                    if match:
+                        num_tests = int(match.groups()[0])
+                        print "(%d tests)" % num_tests,
+                    print
                 else:
                     print "*** Failed"
                     failed += [(test, subtest, "Python", output)]

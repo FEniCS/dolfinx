@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Johannes Ring 2012
+//
 // First added:  2012-08-21
-// Last changed: 2012-08-30
+// Last changed: 2012-09-19
 //
 // Unit tests for matrix-free linear solvers (LinearOperator)
 
@@ -46,11 +48,15 @@ public:
     public:
 
       MyLinearOperator(Form& a_action, Function& u)
-        : LinearOperator(u.function_space()->dim(),
-                         u.function_space()->dim()),
+        : LinearOperator(),
           a_action(a_action), u(u)
       {
         // Do nothing
+      }
+
+      dolfin::uint size(dolfin::uint dim) const
+      {
+        return u.function_space()->dim();
       }
 
       void mult(const GenericVector& x, GenericVector& y) const

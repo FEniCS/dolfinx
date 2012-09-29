@@ -105,8 +105,13 @@ void IntervalCell::refine_cell(Cell& cell, MeshEditor& editor,
   const uint e0 = offset + cell.index();
 
   // Add the two new cells
-  editor.add_cell(current_cell++, v0, e0);
-  editor.add_cell(current_cell++, e0, v1);
+  std::vector<uint> new_cell(2);
+
+  new_cell[0] = v0; new_cell[1] = e0;
+  editor.add_cell(current_cell++, new_cell);
+
+  new_cell[0] = e0; new_cell[1] = v1;
+  editor.add_cell(current_cell++, new_cell);
 }
 //-----------------------------------------------------------------------------
 double IntervalCell::volume(const MeshEntity& interval) const
@@ -184,7 +189,7 @@ double IntervalCell::facet_area(const Cell& cell, uint facet) const
 }
 //-----------------------------------------------------------------------------
 void IntervalCell::order(Cell& cell,
-                         const MeshFunction<uint>* global_vertex_indices) const
+                 const std::vector<uint>& local_to_global_vertex_indices) const
 {
   // Sort i - j for i > j: 1 - 0
 
@@ -195,7 +200,7 @@ void IntervalCell::order(Cell& cell,
   if (!topology(1, 0).empty())
   {
     uint* cell_vertices = const_cast<uint*>(cell.entities(0));
-    sort_entities(2, cell_vertices, global_vertex_indices);
+    sort_entities(2, cell_vertices, local_to_global_vertex_indices);
   }
 }
 //-----------------------------------------------------------------------------

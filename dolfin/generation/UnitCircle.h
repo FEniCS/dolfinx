@@ -53,13 +53,12 @@ namespace dolfin
 
   private:
 
-    void transform(double* x_trans, double x, double y, std::string transformation);
+    std::vector<double> transform(const std::vector<double>& x,
+                                  const std::string transformation);
 
-    double transformx(double x, double y, std::string transformation);
-    double transformy(double x, double y, std::string transformation);
+    double max(const std::vector<double>& x)
+    { return ((std::abs(x[0]) > std::abs(x[1])) ? std::abs(x[0]) : std::abs(x[1])); };
 
-    inline double max(double x, double y)
-    { return ((x>y) ? x : y); };
   };
 
 }

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-02-11
-// Last changed: 2011-08-23
+// Last changed: 2012-09-27
 
 #include <map>
 #include <vector>
@@ -109,6 +109,9 @@ void SubMesh::init(const Mesh& mesh,
        it != local_vertex_indices.end(); ++it)
   {
     Vertex vertex(mesh, it->first);
+    if (MPI::num_processes() > 1)
+      error("SubMesh::init not working in parallel");
+    // FIXME: Get global vertex index
     editor.add_vertex(it->second, vertex.point());
   }
 

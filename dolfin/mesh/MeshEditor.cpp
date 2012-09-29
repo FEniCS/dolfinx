@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2011 Anders Logg
+// Copyright (C) 2006-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-05-16
-// Last changed: 2011-11-15
+// Last changed: 2012-09-27
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/dolfin_parameter.h>
@@ -29,12 +29,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshEditor::MeshEditor()
-  : mesh(0), tdim(0), gdim(0),
-    num_vertices(0), num_cells(0),
-    next_vertex(0), next_cell(0),
-    num_higher_order_vertices(0), num_higher_order_cells(0),
-    next_higher_order_vertex(0), next_higher_order_cell(0)
+MeshEditor::MeshEditor() : mesh(0), tdim(0), gdim(0), num_vertices(0),
+                           num_cells(0), next_vertex(0), next_cell(0)
 {
   // Do nothing
 }
@@ -90,13 +86,6 @@ void MeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim)
   // Initialize temporary storage for local cell data
   vertices.resize(mesh.type().num_vertices(tdim));
   std::fill(vertices.begin(), vertices.end(), 0);
-
-  // in the future, could set a string in MeshGeometry that indicates the type of
-  //      higher order mesh... for now we assume P2 triangle!
-
-  // Initialize temporary storage for local higher order cell data
-  higher_order_cell_data.resize(6); // assume P2 triangle!
-  std::fill(higher_order_cell_data.begin(), higher_order_cell_data.end(), 0);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::open(Mesh& mesh, std::string type, uint tdim, uint gdim)
@@ -133,21 +122,6 @@ void MeshEditor::init_vertices(uint num_vertices)
   mesh->_geometry.init(gdim, num_vertices);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::init_higher_order_vertices(uint num_higher_order_vertices)
-{
-  // Check if we are currently editing a mesh
-  if (!mesh)
-  {
-    dolfin_error("MeshEditor.cpp",
-                 "initialize higher order vertices in mesh editor",
-                 "No mesh opened, unable to edit");
-  }
-
-  // Initialize mesh data
-  this->num_higher_order_vertices = num_higher_order_vertices;
-  mesh->_geometry.init_higher_order_vertices(gdim, num_higher_order_vertices);
-}
-//-----------------------------------------------------------------------------
 void MeshEditor::init_cells(uint num_cells)
 {
   // Check if we are currently editing a mesh
@@ -164,206 +138,109 @@ void MeshEditor::init_cells(uint num_cells)
   mesh->_topology(tdim, 0).init(num_cells, mesh->type().num_vertices(tdim));
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::init_higher_order_cells(uint num_higher_order_cells,
-                                         uint num_higher_order_cell_dof)
+void MeshEditor::add_vertex(uint index, const Point& p)
 {
-  // Check if we are currently editing a mesh
-  if (!mesh)
-  {
-    dolfin_error("MeshEditor.cpp",
-                 "initialize higher order cells in mesh editor",
-                 "No mesh opened, unable to edit");
-  }
-
-  // Initialize higher order mesh data
-  this->num_higher_order_cells = num_higher_order_cells;
-  mesh->_geometry.init_higher_order_cells(num_higher_order_cells, num_higher_order_cell_dof);
-
-  // Initalize a boolean array that indicates whether cells are affinely mapped or not
-  mesh->_geometry.init_affine_indicator(num_higher_order_cells);
+  add_vertex_global(index, index, p);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::set_affine_cell_indicator(uint c, const std::string affine_str)
+void MeshEditor::add_vertex(uint index, const std::vector<double>& x)
 {
-  bool affine_value = true; // init
-
-  if (affine_str=="false")
-    affine_value = false;
-
-  // Set affine indicator for specific cell
-  mesh->_geometry.set_affine_indicator(c, affine_value);
+  add_vertex_global(index, index, x);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_vertex(uint v, const Point& p)
+void MeshEditor::add_vertex(uint index, double x)
 {
+  dolfin_assert(gdim == 1);
+  std::vector<double> p(1);
+  p[0] = x;
+  add_vertex(index, p);
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::add_vertex(uint index, double x, double y)
+{
+  dolfin_assert(gdim == 2);
+  std::vector<double> p(2);
+  p[0] = x;
+  p[1] = y;
+  add_vertex(index, p);
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::add_vertex(uint index, double x, double y, double z)
+{
+  dolfin_assert(gdim == 3);
+  std::vector<double> p(3);
+  p[0] = x;
+  p[1] = y;
+  p[2] = z;
+  add_vertex(index, p);
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::add_vertex_global(uint local_index, uint global_index,
+                                   const Point& p)
+{
+  // Geometric dimension
+  const uint gdim = mesh->geometry().dim();
+
   // Add vertex
-  add_vertex_common(v, mesh->geometry().dim());
+  add_vertex_common(local_index, gdim);
 
   // Set coordinate
-  for (uint i = 0; i < mesh->geometry().dim(); i++)
-    mesh->_geometry.set(v, i, p[i]);
+  std::vector<double> x(p.coordinates(), p.coordinates() + gdim);
+  mesh->_geometry.set(local_index, global_index, x);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_vertex(uint v, double x)
+void MeshEditor::add_vertex_global(uint local_index, uint global_index,
+                                   const std::vector<double>& x)
 {
   // Add vertex
-  add_vertex_common(v, 1);
-
-  // Set coordinate, next_vertex doesn't seem to work right
-  // mesh->_geometry.set(next_vertex, 0, x);
+  add_vertex_common(local_index, x.size());
 
   // Set coordinate
-  mesh->_geometry.set(v, 0, x);
+  mesh->_geometry.set(local_index, global_index, x);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_vertex(uint v, double x, double y)
+void MeshEditor::add_cell(uint c, uint v0, uint v1)
 {
-  // Add vertex
-  add_vertex_common(v, 2);
-
-  // Set coordinate
-  mesh->_geometry.set(v, 0, x);
-  mesh->_geometry.set(v, 1, y);
+  dolfin_assert(tdim == 1);
+  std::vector<uint> vertices(2);
+  vertices[0] = v0;
+  vertices[1] = v1;
+  add_cell(c, vertices);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_vertex(uint v, double x, double y, double z)
+void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2)
 {
-  // Add vertex
-  add_vertex_common(v, 3);
-
-  // Set coordinate
-  mesh->_geometry.set(v, 0, x);
-  mesh->_geometry.set(v, 1, y);
-  mesh->_geometry.set(v, 2, z);
+  dolfin_assert(tdim == 2);
+  std::vector<uint> vertices(3);
+  vertices[0] = v0;
+  vertices[1] = v1;
+  vertices[2] = v2;
+  add_cell(c, vertices);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_higher_order_vertex(uint v, const Point& p)
+void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2, uint v3)
 {
-  // Add vertex
-  add_higher_order_vertex_common(v, mesh->geometry().dim());
-
-  // Set coordinate
-  for (uint i = 0; i < mesh->geometry().dim(); i++)
-    mesh->_geometry.set_higher_order_coordinates(v, i, p[i]);
-}
-//-----------------------------------------------------------------------------
-void MeshEditor::add_higher_order_vertex(uint v, double x)
-{
-  // Add vertex
-  add_higher_order_vertex_common(v, 1);
-
-  // Set coordinate
-  mesh->_geometry.set_higher_order_coordinates(v, 0, x);
-}
-//-----------------------------------------------------------------------------
-void MeshEditor::add_higher_order_vertex(uint v, double x, double y)
-{
-  // Add vertex
-  add_higher_order_vertex_common(v, 2);
-
-  // Set coordinate
-  mesh->_geometry.set_higher_order_coordinates(v, 0, x);
-  mesh->_geometry.set_higher_order_coordinates(v, 1, y);
-}
-//-----------------------------------------------------------------------------
-void MeshEditor::add_higher_order_vertex(uint v, double x, double y, double z)
-{
-  // Add vertex
-  add_higher_order_vertex_common(v, 3);
-
-  // Set coordinate
-  mesh->_geometry.set_higher_order_coordinates(v, 0, x);
-  mesh->_geometry.set_higher_order_coordinates(v, 1, y);
-  mesh->_geometry.set_higher_order_coordinates(v, 2, z);
+  dolfin_assert(tdim == 3);
+  std::vector<uint> vertices(4);
+  vertices[0] = v0;
+  vertices[1] = v1;
+  vertices[2] = v2;
+  vertices[2] = v3;
+  add_cell(c, vertices);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::add_cell(uint c, const std::vector<uint>& v)
 {
+  dolfin_assert(v.size() == tdim + 1);
+
   // Check vertices
-  for (uint i = 0; i < v.size(); i++)
-    check_vertex(v[i]);
+  check_vertices(v);
 
   // Add cell
   add_cell_common(c, tdim);
 
   // Set data
   mesh->_topology(tdim, 0).set(c, v);
-}
-//-----------------------------------------------------------------------------
-void MeshEditor::add_cell(uint c, uint v0, uint v1)
-{
-  // Check vertices
-  //check_vertex(v0);
-  //check_vertex(v1);
-
-  // Add cell
-  add_cell_common(c, 1);
-
-  // Set data
-  vertices[0] = v0;
-  vertices[1] = v1;
-  mesh->_topology(tdim, 0).set(c, vertices);
-}
-//-----------------------------------------------------------------------------
-void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2)
-{
-  // Check vertices
-  check_vertex(v0);
-  check_vertex(v1);
-  check_vertex(v2);
-
-  // Add cell
-  add_cell_common(c, 2);
-
-  // Set data
-  vertices[0] = v0;
-  vertices[1] = v1;
-  vertices[2] = v2;
-  mesh->_topology(tdim, 0).set(c, vertices);
-}
-//-----------------------------------------------------------------------------
-void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2, uint v3)
-{
-  // Check vertices
-  check_vertex(v0);
-  check_vertex(v1);
-  check_vertex(v2);
-  check_vertex(v3);
-
-  // Add cell
-  add_cell_common(c, 3);
-
-  // Set data
-  vertices[0] = v0;
-  vertices[1] = v1;
-  vertices[2] = v2;
-  vertices[3] = v3;
-  mesh->_topology(tdim, 0).set(c, vertices);
-}
-//-----------------------------------------------------------------------------
-void MeshEditor::add_higher_order_cell_data(uint c,
-                                            uint v0, uint v1, uint v2,
-                                            uint v3, uint v4, uint v5)
-{
-  // Check vertices
-  check_vertex(v0);
-  check_vertex(v1);
-  check_vertex(v2);
-  check_vertex(v3);
-  check_vertex(v4);
-  check_vertex(v5);
-
-  // Add cell
-  add_higher_order_cell_common(c, 6);
-
-  // Set data
-  higher_order_cell_data[0] = v0;
-  higher_order_cell_data[1] = v1;
-  higher_order_cell_data[2] = v2;
-  higher_order_cell_data[3] = v3;
-  higher_order_cell_data[4] = v4;
-  higher_order_cell_data[5] = v5;
-  mesh->_geometry.set_higher_order_cell_data(c, higher_order_cell_data);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::close(bool order)
@@ -418,47 +295,6 @@ void MeshEditor::add_vertex_common(uint v, uint gdim)
   next_vertex++;
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_higher_order_vertex_common(uint v, uint gdim)
-{
-  // Check if we are currently editing a mesh
-  if (!mesh)
-  {
-    dolfin_error("MeshEditor.cpp",
-                 "add higher order vertex to mesh using mesh editor",
-                 "No mesh opened, unable to edit");
-  }
-
-  // Check that the dimension matches
-  if (gdim != this->gdim)
-  {
-    dolfin_error("MeshEditor.cpp",
-                 "add higher order vertex to mesh using mesh editor",
-                 "Illegal dimension for vertex coordinate (%d), expecting %d",
-                 gdim, this->gdim);
-  }
-
-  // Check value of vertex index
-  if (v >= num_higher_order_vertices)
-  {
-    dolfin_error("MeshEditor.cpp",
-                 "add higher order vertex to mesh using mesh editor",
-                 "Vertex index (%d) out of range [0, %d)",
-                 v, num_higher_order_vertices);
-  }
-
-  // Check if there is room for more vertices
-  if (next_higher_order_vertex >= num_higher_order_vertices)
-  {
-    dolfin_error("MeshEditor.cpp",
-                 "add higher order vertex to mesh using mesh editor",
-                 "Vertex list is full, %d vertices already specified",
-                 num_higher_order_vertices);
-  }
-
-  // Step to next vertex
-  next_higher_order_vertex++;
-}
-//-----------------------------------------------------------------------------
 void MeshEditor::add_cell_common(uint c, uint tdim)
 {
   // Check if we are currently editing a mesh
@@ -499,47 +335,6 @@ void MeshEditor::add_cell_common(uint c, uint tdim)
   next_cell++;
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_higher_order_cell_common(uint c, uint tdim)
-{
-  // Check if we are currently editing a mesh
-  if (!mesh)
-  {
-    dolfin_error("MeshEditor.cpp",
-                 "add higher order cell to mesh using mesh editor",
-                 "No mesh opened, unable to edit");
-  }
-
-  // Check that the dimension matches
-  if (tdim != 6)
-  {
-    dolfin_error("MeshEditor.cpp",
-                 "add higher order cell to mesh using mesh editor",
-                 "Illegal dimension for higher order cell (%d), expecting %d",
-                 tdim, 6);
-  }
-
-  // Check value of cell index
-  if (c >= num_higher_order_cells)
-  {
-    dolfin_error("MeshEditor.cpp",
-                 "add higher order cell to mesh using mesh editor",
-                 "Higher order cell index (%d) out of range [0, %d)",
-                 c, num_higher_order_cells);
-  }
-
-  // Check if there is room for more cells
-  if (next_higher_order_cell >= num_higher_order_cells)
-  {
-    dolfin_error("MeshEditor.cpp",
-                 "add higher order cell to mesh using mesh editor",
-                 "Higher order cell list is full, %d cells already specified",
-                 num_higher_order_cells);
-  }
-
-  // Step to next cell
-  next_higher_order_cell++;
-}
-//-----------------------------------------------------------------------------
 void MeshEditor::clear()
 {
   tdim = 0;
@@ -548,22 +343,20 @@ void MeshEditor::clear()
   num_cells = 0;
   next_vertex = 0;
   next_cell = 0;
-  num_higher_order_vertices = 0;
-  num_higher_order_cells = 0;
-  next_higher_order_vertex = 0;
-  next_higher_order_cell = 0;
   mesh = 0;
   vertices.clear();
-  higher_order_cell_data.clear();
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::check_vertex(uint v)
+void MeshEditor::check_vertices(const std::vector<uint>& v) const
 {
-  if (num_vertices > 0 && v >= num_vertices)
+  for (uint i = 0; i < v.size(); ++i)
   {
-    dolfin_error("MeshEditor.cpp",
-                 "add cell using mesh editor",
-                 "Vertex index (%d) out of range [0, %d)", v, num_vertices);
+    if (num_vertices > 0 && v[i] >= num_vertices)
+    {
+      dolfin_error("MeshEditor.cpp",
+                   "add cell using mesh editor",
+                   "Vertex index (%d) out of range [0, %d)", v[i], num_vertices);
+    }
   }
 }
 //-----------------------------------------------------------------------------

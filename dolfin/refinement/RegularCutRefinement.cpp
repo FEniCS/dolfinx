@@ -16,7 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-02-07
-// Last changed: 2011-11-15
+// Last changed: 2012-09-27
+
+#include <vector>
+#include <boost/assign.hpp>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/types.h>
@@ -219,6 +222,10 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   // Count the number of cells in refined mesh
   uint num_cells = 0;
 
+  // Data structure to hold a cell
+  std::vector<uint> cell_data;
+
+
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     const int marker = refinement_markers[cell->index()];
@@ -251,22 +258,29 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   // Set vertex coordinates
   uint current_vertex = 0;
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-    editor.add_vertex(current_vertex++, vertex->point());
+  {
+    editor.add_vertex(current_vertex, vertex->point());
+    current_vertex++;
+  }
   for (uint i = 0; i < marked_edges.size(); i++)
   {
     Edge edge(mesh, marked_edges[i]);
-    editor.add_vertex(current_vertex++, edge.midpoint());
+    editor.add_vertex(current_vertex, edge.midpoint());
+    current_vertex++;
   }
 
   // Get bisection data for old mesh
-  boost::shared_ptr<const MeshFunction<unsigned int> > bisection_twins = mesh.data().mesh_function("bisection_twins");
+  boost::shared_ptr<const MeshFunction<unsigned int> > bisection_twins
+        = mesh.data().mesh_function("bisection_twins");
 
-  // Markers for bisected cells pointing to their bisection twins in refined mesh
+  // Markers for bisected cells pointing to their bisection twins in
+  // refined mesh
   std::vector<uint> refined_bisection_twins(num_cells);
   for (uint i = 0; i < num_cells; i++)
     refined_bisection_twins[i] = i;
 
-  // Mapping from old to new unrefined cells (-1 means refined or not yet processed)
+  // Mapping from old to new unrefined cells (-1 means refined or not
+  // yet processed)
   std::vector<int> unrefined_cells(mesh.num_cells());
   std::fill(unrefined_cells.begin(), unrefined_cells.end(), -1);
 
@@ -326,11 +340,17 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       const uint e1 = offset + marked_edges.find(e[1]);
       const uint e2 = offset + marked_edges.find(e[2]);
 
-      // Add the four new cells
-      editor.add_cell(current_cell++, v0, e2, e1);
-      editor.add_cell(current_cell++, v1, e0, e2);
-      editor.add_cell(current_cell++, v2, e1, e0);
-      editor.add_cell(current_cell++, e0, e1, e2);
+      // Create four new cells
+      std::vector<std::vector<uint> > cells;
+      cells.push_back(boost::assign::list_of(v0)(e2)(e1));
+      cells.push_back(boost::assign::list_of(v1)(e0)(e2));
+      cells.push_back(boost::assign::list_of(v2)(e1)(e0));
+      cells.push_back(boost::assign::list_of(e0)(e1)(e2));
+
+      // Add cells
+      std::vector<std::vector<uint> >::const_iterator _cell;
+      for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
+        editor.add_cell(current_cell++, *_cell);
     }
 
     // Special case: backtrack bisected cells
@@ -387,19 +407,24 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
         E1 = offset + marked_edges.find(edges_1[bisection_edges.second]);
 
       // Add middle two cells (always)
-      editor.add_cell(current_cell++, e0, e1, e2);
-      editor.add_cell(current_cell++, v2, e1, e0);
+      cell_data = boost::assign::list_of(e0)(e1)(e2);
+      editor.add_cell(current_cell++, cell_data);
+      cell_data = boost::assign::list_of(v2)(e1)(e0);
+      editor.add_cell(current_cell++, cell_data);
 
       // Add one or two remaining cells in current cell (left)
       if (marker == backtrack_bisection)
       {
-        editor.add_cell(current_cell++, v0, e2, e1);
+        cell_data = boost::assign::list_of(v0)(e2)(e1);
+        editor.add_cell(current_cell++, cell_data);
       }
       else
       {
         // Add the two cells
-        editor.add_cell(current_cell++, v0, E0, e1);
-        editor.add_cell(current_cell++, E0, e2, e1);
+        cell_data = boost::assign::list_of(v0)(E0)(e1);
+        editor.add_cell(current_cell++, cell_data);
+        cell_data = boost::assign::list_of(E0)(e2)(e1);
+        editor.add_cell(current_cell++, cell_data);
 
         // Set bisection twins
         refined_bisection_twins[current_cell - 2] = current_cell - 1;
@@ -409,13 +434,16 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       // Add one or two remaining cells in twin cell (right)
       if (twin_marker == backtrack_bisection)
       {
-        editor.add_cell(current_cell++, v1, e0, e2);
+        cell_data = boost::assign::list_of(v1)(e0)(e2);
+        editor.add_cell(current_cell++, cell_data);
       }
       else
       {
         // Add the two cells
-        editor.add_cell(current_cell++, v1, e0, E1);
-        editor.add_cell(current_cell++, e0, e2, E1);
+        cell_data = boost::assign::list_of(v1)(e0)(E1);
+        editor.add_cell(current_cell++, cell_data);
+        cell_data = boost::assign::list_of(e0)(e2)(E1);
+        editor.add_cell(current_cell++, cell_data);
 
         // Set bisection twins
         refined_bisection_twins[current_cell - 2] = current_cell - 1;
@@ -443,18 +471,27 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       // Add the two new cells
       if (local_edge_index == 0)
       {
-        editor.add_cell(current_cell++, v[0], ee, v[1]);
-        editor.add_cell(current_cell++, v[0], ee, v[2]);
+        cell_data = boost::assign::list_of(v[0])(ee)(v[1]);
+        editor.add_cell(current_cell++, cell_data);
+
+        cell_data = boost::assign::list_of(v[0])(ee)(v[2]);
+        editor.add_cell(current_cell++, cell_data);
       }
       else if (local_edge_index == 1)
       {
-        editor.add_cell(current_cell++, v[1], ee, v[0]);
-        editor.add_cell(current_cell++, v[1], ee, v[2]);
+        cell_data = boost::assign::list_of(v[1])(ee)(v[0]);
+        editor.add_cell(current_cell++, cell_data);
+
+        cell_data = boost::assign::list_of(v[1])(ee)(v[2]);
+        editor.add_cell(current_cell++, cell_data);
       }
       else
       {
-        editor.add_cell(current_cell++, v[2], ee, v[0]);
-        editor.add_cell(current_cell++, v[2], ee, v[1]);
+        cell_data = boost::assign::list_of(v[2])(ee)(v[0]);
+        editor.add_cell(current_cell++, cell_data);
+
+        cell_data = boost::assign::list_of(v[2])(ee)(v[1]);
+        editor.add_cell(current_cell++, cell_data);
       }
 
       // Set bisection twins

@@ -18,18 +18,18 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Anders Logg, 2008-2009.
-# Modified by Johannes Ring, 2009, 2011.
+# Modified by Johannes Ring, 2009, 2011-2012.
 # Modified by Johan Hake, 2009.
 #
 # First added:  2008-04-08
-# Last changed: 2011-06-23
+# Last changed: 2012-09-21
 
 import sys, os, re
 import platform
 import instant
 from time import time
 from dolfin_utils.commands import getstatusoutput
-from dolfin import has_mpi, has_parmetis
+from dolfin import has_mpi, has_parmetis, has_scotch
 
 # Location of all demos
 demodir = os.path.join(os.curdir, "..", "..", "demo")
@@ -147,7 +147,7 @@ if only_python:
 # Build prefix list
 prefixes = [""]
 mpi_prefix = "mpirun -np 3 "
-if has_mpi() and has_parmetis():
+if has_mpi() and (has_parmetis() or has_scotch()):
     prefixes.append(mpi_prefix)
 else:
     print "Not running regression tests in parallel."

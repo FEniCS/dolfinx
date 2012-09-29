@@ -29,8 +29,8 @@
 #include "Poisson.h"
 #include "NavierStokes.h"
 
-#define MAX_NUM_THREADS 6
-#define SIZE 64
+#define MAX_NUM_THREADS 1
+#define SIZE 32
 #define NUM_REPS 10
 
 using namespace dolfin;
@@ -39,7 +39,7 @@ class PoissonFactory
 {
   public:
 
-  static boost::shared_ptr<Form> a(const Mesh& mesh, bool renumber)
+  static boost::shared_ptr<Form> a(const Mesh& mesh)
   {
     // Create function space
     boost::shared_ptr<FunctionSpace> _V(new Poisson::FunctionSpace(mesh));
@@ -53,7 +53,7 @@ class NavierStokesFactory
 {
   public:
 
-  static boost::shared_ptr<Form> a(const Mesh& mesh, bool renumber)
+  static boost::shared_ptr<Form> a(const Mesh& mesh)
   {
     boost::shared_ptr<FunctionSpace> _V(new NavierStokes::FunctionSpace(mesh));
 
@@ -113,10 +113,6 @@ int main(int argc, char* argv[])
   // Parse command-line arguments
   parameters.parse(argc, argv);
 
-  //SubSystemsManager::init_petsc();
-  //PetscInfoAllow(PETSC_TRUE, PETSC_NULL);
-  //PetscOptionsSetValue("-mat_inode_limit", "5");
-
   // Set backend
   //parameters["linear_algebra_backend"] = "Epetra";
 
@@ -125,12 +121,13 @@ int main(int argc, char* argv[])
   old_mesh.color("vertex");
   Mesh mesh = old_mesh.renumber_by_color();
 
-  const bool renumber = true;
+  // Disable dof reordering because the NS dof maps are very large
+  parameters["reorder_dofs"] = false;
 
   // Test cases
   std::vector<std::pair<std::string, boost::shared_ptr<const Form> > > forms;
-  forms.push_back(std::make_pair("Poisson", PoissonFactory::a(mesh, renumber)));
-  forms.push_back(std::make_pair("NavierStokes", NavierStokesFactory::a(mesh, renumber)));
+  forms.push_back(std::make_pair("Poisson", PoissonFactory::a(mesh)));
+  forms.push_back(std::make_pair("NavierStokes", NavierStokesFactory::a(mesh)));
 
   // If parameter num_threads has been set, just run once
   if (parameters["num_threads"].change_count() > 0)

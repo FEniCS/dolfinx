@@ -15,7 +15,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-20
-// Last changed: 2012-08-23
+// Last changed: 2012-09-03
 
 #ifndef __LINEAR_OPERATOR_H
 #define __LINEAR_OPERATOR_H
@@ -40,11 +40,14 @@ namespace dolfin
   {
   public:
 
-    /// Create linear operator of dimensions M x N
-    LinearOperator(uint M, uint N);
+    /// Create linear operator
+    LinearOperator();
 
     /// Destructor
     virtual ~LinearOperator() {}
+
+    /// Return size of given dimension
+    virtual uint size(uint dim) const = 0;
 
     /// Compute matrix-vector product y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const = 0;
@@ -55,20 +58,21 @@ namespace dolfin
     //--- Special functions, intended for library use only ---
 
     /// Return concrete instance / unwrap (const version)
-    virtual const GenericLinearOperator* instance() const
-    { return _A.get() ; }
+    virtual const GenericLinearOperator* instance() const;
 
     /// Return concrete instance / unwrap (non-const version)
-    virtual GenericLinearOperator* instance()
-    { return _A.get(); }
+    virtual GenericLinearOperator* instance();
 
-    virtual boost::shared_ptr<const LinearAlgebraObject> shared_instance() const
-    { return _A; }
+    /// Return concrete instance / unwrap (const shared pointer version)
+    virtual boost::shared_ptr<const LinearAlgebraObject> shared_instance() const;
 
-    virtual boost::shared_ptr<LinearAlgebraObject> shared_instance()
-    { return _A; }
+    /// Return concrete instance / unwrap (shared pointer version)
+    virtual boost::shared_ptr<LinearAlgebraObject> shared_instance();
 
   private:
+
+    // Initialize backend
+    void init();
 
     // Pointer to concrete implementation
     boost::shared_ptr<GenericLinearOperator> _A;

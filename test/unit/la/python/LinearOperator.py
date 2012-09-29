@@ -42,11 +42,12 @@ class TestLinearOperator(unittest.TestCase):
         class MyLinearOperator(LinearOperator):
 
             def __init__(self, a_action, u):
+                LinearOperator.__init__(self)
                 self.a_action = a_action
                 self.u = u
-                LinearOperator.__init__(self,
-                                        u.function_space().dim(),
-                                        u.function_space().dim())
+
+            def size(self, dim):
+                return self.u.function_space().dim()
 
             def mult(self, x, y):
 
@@ -86,5 +87,5 @@ if __name__ == "__main__":
 
     print ""
     print "Testing DOLFIN la/LinearOperator (matrix-free) interface"
-    print "------------------------------------------------------"
+    print "--------------------------------------------------------"
     unittest.main()

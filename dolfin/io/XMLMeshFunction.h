@@ -68,23 +68,33 @@ namespace dolfin
                                     const pugi::xml_node xml_mesh)
   {
     // Check for old tag
-    std::string tag_name("mesh_function");
-    if (xml_mesh.child("meshfunction"))
+    bool new_format = false;
+    std::string tag_name = "mesh_function";
+    const pugi::xml_node xml_meshfunction = xml_mesh.child(tag_name.c_str());
+    if (MPI::process_number() == 0)
     {
-      warning("The XML tag <meshfunction> has been changed to <mesh_function>. "
-              "I'll be nice and read your XML data anyway, for now, but you will "
-              "need to update your XML files (a simple search and replace) to use "
-              "future versions of DOLFIN.");
-      tag_name = "meshfunction";
+      if (xml_mesh.child("meshfunction"))
+      {
+        warning("The XML tag <meshfunction> has been changed to <mesh_function>. "
+                "I'll be nice and read your XML data anyway, for now, but you will "
+                "need to update your XML files (a simple search and replace) to use "
+                "future versions of DOLFIN.");
+        tag_name = "meshfunction";
+      }
+
+      // Read main tag
+      if (!xml_meshfunction)
+        std::cout << "Not a DOLFIN MeshFunction XML file." << std::endl;
+
+     if (xml_meshfunction.attributes_begin() == xml_meshfunction.attributes_end())
+      new_format = true;
     }
 
-    // Read main tag
-    const pugi::xml_node xml_meshfunction = xml_mesh.child(tag_name.c_str());
-    if (!xml_meshfunction)
-      std::cout << "Not a DOLFIN MeshFunction XML file." << std::endl;
+    // Broadcast format type from zero process
+    MPI::broadcast(new_format);
 
     // Check for new (MeshValueCollection) / old storage
-    if (xml_meshfunction.attributes_begin() == xml_meshfunction.attributes_end())
+    if (new_format)
     {
       const Mesh& mesh = mesh_function.mesh();
 
@@ -110,7 +120,6 @@ namespace dolfin
         MeshPartitioning::build_distributed_value_collection<T>(mesh_value_collection,
                                                                local_data, mesh);
       }
-
 
       // Assign collection to mesh function (this is a local operation)
       mesh_function = mesh_value_collection;
