@@ -1,26 +1,26 @@
 // Copyright (C) 2012 Chris N. Richardson
-// 
-// 
+//
+//
 // This file is part of DOLFIN.
-// 
+//
 // DOLFIN is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // DOLFIN is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-// 
-// 
+//
+//
 // First Added: 2012-09-21
 // Last Changed: 2012-09-28
-// 
-// 
+//
+//
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
@@ -34,14 +34,13 @@
 
 using namespace dolfin;
 
-// HDF5 calls to open a file descriptor on multiple processes
-// Common file opening sequence
+//-----------------------------------------------------------------------------
 hid_t HDF5Interface::open_parallel_file(const std::string &filename)
 {
   MPICommunicator comm;
   MPIInfo info;
   herr_t status;
-  
+
   // Set parallel access with communicator
   hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
   dolfin_assert(plist_id != HDF5_FAIL);
@@ -52,15 +51,13 @@ hid_t HDF5Interface::open_parallel_file(const std::string &filename)
   hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
   dolfin_assert(file_id != HDF5_FAIL);
 
-  // Release file-access template 
+  // Release file-access template
   status = H5Pclose(plist_id);
   dolfin_assert(status != HDF5_FAIL);
 
   return file_id;
 }
-
 //-----------------------------------------------------------------------------
-
 void HDF5Interface::create(const std::string &filename)
 {
   // make empty HDF5 file
@@ -103,7 +100,7 @@ void HDF5Interface::create(const std::string &filename)
   status = H5Gclose (group_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  // Release file-access template 
+  // Release file-access template
   status = H5Pclose(plist_id);
   dolfin_assert(status != HDF5_FAIL);
   status = H5Fclose(file_id);
@@ -111,13 +108,8 @@ void HDF5Interface::create(const std::string &filename)
 }
 
 //-----------------------------------------------------------------------------
-// Write data to existing HDF file as defined by range blocks on each process
-// range: the local range on this processor
-// width: is the width of the dataitem (e.g. 3 for x, y, z data)
-// Versions for double, uint and int
-
 void HDF5Interface::write(const std::string &filename,
-                          const std::string dataset_name, 
+                          const std::string dataset_name,
                           const std::vector<double>& data,
                           const std::pair<uint, uint> range,
                           const uint width)
@@ -126,7 +118,7 @@ void HDF5Interface::write(const std::string &filename,
 }
 //-----------------------------------------------------------------------------
 void HDF5Interface::write(const std::string &filename,
-                          const std::string dataset_name, 
+                          const std::string dataset_name,
                           const std::vector<uint>& data,
                           const std::pair<uint, uint> range,
                           const uint width)
@@ -135,7 +127,7 @@ void HDF5Interface::write(const std::string &filename,
 }
 //-----------------------------------------------------------------------------
 void HDF5Interface::write(const std::string &filename,
-                          const std::string dataset_name, 
+                          const std::string dataset_name,
                           const std::vector<int>& data,
                           const std::pair<uint, uint> range,
                           const uint width)
@@ -143,7 +135,6 @@ void HDF5Interface::write(const std::string &filename,
   write(filename, dataset_name, data, range, H5T_NATIVE_INT, width);
 }
 //-----------------------------------------------------------------------------
-
 template <typename T>
 void HDF5Interface::write(const std::string &filename,
                           const std::string dataset_name,
@@ -162,7 +153,7 @@ void HDF5Interface::write(const std::string &filename,
   herr_t status;
 
   hid_t file_id = open_parallel_file(filename);
-  
+
   // Create a global 2D data space
   hid_t filespace = H5Screate_simple(2, dimsf, NULL);
   dolfin_assert(filespace != HDF5_FAIL);
@@ -206,7 +197,7 @@ void HDF5Interface::write(const std::string &filename,
   status = H5Sclose(memspace);
   dolfin_assert(status != HDF5_FAIL);
 
-  // Release file-access template 
+  // Release file-access template
   status = H5Pclose(plist_id);
   dolfin_assert(status != HDF5_FAIL);
 
@@ -216,10 +207,6 @@ void HDF5Interface::write(const std::string &filename,
 }
 
 //-----------------------------------------------------------------------------
-// Read data from a HDF5 dataset as defined by range blocks on each process
-// range: the local range on this processor
-// width: is the width of the dataitem (e.g. 3 for x, y, z data)
-// Versions for double and uint
 void HDF5Interface::read(const std::string &filename,
                          const std::string dataset_name,
                          std::vector<double>& data, const std::pair<uint, uint> range,
@@ -237,9 +224,10 @@ void HDF5Interface::read(const std::string &filename,
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void HDF5Interface::read(const std::string &filename,
+void HDF5Interface::read(const std::string& filename,
                          const std::string dataset_name,
-                         std::vector<T>& data,  const std::pair<uint, uint> range,
+                         std::vector<T>& data,
+                         const std::pair<uint, uint> range,
                          const int h5type, const uint width)
 {
   // read a generic block of 2D data from a HDF5 dataset in parallel
@@ -247,13 +235,13 @@ void HDF5Interface::read(const std::string &filename,
   dolfin_assert(data);
   if(data.size() != (range.second - range.first) * width)
     data.resize((range.second - range.first) * width);
-  
+
   herr_t status;      // Generic return value
 
   // Hyperslab selection
   hsize_t offset[2] = {range.first, 0};
   hsize_t count[2] = {range.second - range.first, width};
-  
+
   // Open file descriptor in parallel
   hid_t file_id = open_parallel_file(filename);
 
@@ -292,7 +280,8 @@ void HDF5Interface::read(const std::string &filename,
 }
 
 //-----------------------------------------------------------------------------
-bool HDF5Interface::dataset_exists(const std::string &filename,const std::string &dataset_name)
+bool HDF5Interface::dataset_exists(const std::string& filename,
+                                   const std::string& dataset_name)
 {
   // Check if a named dataset exists in this file
 
@@ -327,8 +316,8 @@ bool HDF5Interface::dataset_exists(const std::string &filename,const std::string
   return (dset_id != HDF5_FAIL);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::string> HDF5Interface::dataset_list(const std::string &filename,
-                                                     const std::string &group_name) 
+std::vector<std::string> HDF5Interface::dataset_list(const std::string& filename,
+                                                     const std::string& group_name)
 {
   // List all member datasets of a group by name
   char namebuf[HDF5_MAXSTRLEN];
@@ -367,10 +356,9 @@ std::vector<std::string> HDF5Interface::dataset_list(const std::string &filename
 }
 
 //-----------------------------------------------------------------------------
-
-std::pair<uint, uint> HDF5Interface::dataset_dimensions(
-                      const std::string &filename,
-                      const std::string &dataset_name) 
+std::pair<uint, uint>
+  HDF5Interface::dataset_dimensions(const std::string& filename,
+                                    const std::string& dataset_name)
 {
   // Get dimensions of a 2D dataset
 
@@ -386,7 +374,7 @@ std::pair<uint, uint> HDF5Interface::dataset_dimensions(
   hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
   dolfin_assert(dset_id != HDF5_FAIL);
 
-  // Get the dataspace of the dataset 
+  // Get the dataspace of the dataset
   hid_t space = H5Dget_space(dset_id);
   dolfin_assert(space != HDF5_FAIL);
 
@@ -426,7 +414,7 @@ template void HDF5Interface::add_attribute(const std::string &filename,
                                            const std::vector<uint> &attribute_value);
 
 //-----------------------------------------------------------------------------
-template <typename T> 
+template <typename T>
 void HDF5Interface::add_attribute(const std::string &filename,
                                   const std::string &dataset_name,
                                   const std::string &attribute_name,
@@ -443,8 +431,8 @@ void HDF5Interface::add_attribute(const std::string &filename,
 
   // Add attribute of appropriate type
   _add_attribute_value(dset_id, attribute_name, attribute_value);
-  
-  // Close dataset 
+
+  // Close dataset
   status = H5Dclose(dset_id);
   dolfin_assert(status != HDF5_FAIL);
 
@@ -455,7 +443,7 @@ void HDF5Interface::add_attribute(const std::string &filename,
 
 //-----------------------------------------------------------------------------
 void HDF5Interface::_add_attribute_value(const hid_t &dset_id,
-                                   const std::string &attribute_name, 
+                                   const std::string &attribute_name,
                                    const uint &attribute_value)
 {
   // Add uint attribute to dataset
@@ -478,11 +466,10 @@ void HDF5Interface::_add_attribute_value(const hid_t &dset_id,
   dolfin_assert(status != HDF5_FAIL);
 
 }
-
 //-----------------------------------------------------------------------------
-void HDF5Interface::_add_attribute_value(const hid_t &dset_id,
-                                         const std::string &attribute_name, 
-                                         const std::vector<uint> &attribute_value)
+void HDF5Interface::_add_attribute_value(const hid_t& dset_id,
+                                      const std::string& attribute_name,
+                                      const std::vector<uint> &attribute_value)
 {
   // Create a vector dataspace
   hsize_t dimsf = attribute_value.size();
@@ -506,9 +493,9 @@ void HDF5Interface::_add_attribute_value(const hid_t &dset_id,
 
 
 //-----------------------------------------------------------------------------
-void HDF5Interface::_add_attribute_value(const hid_t &dset_id,
-                                   const std::string &attribute_name, 
-                                   const std::string &attribute_value)
+void HDF5Interface::_add_attribute_value(const hid_t& dset_id,
+                                         const std::string& attribute_name,
+                                         const std::string& attribute_value)
 {
   // Add string attribute to dataset
 
@@ -557,7 +544,7 @@ template void HDF5Interface::get_attribute(const std::string &filename,
                                            std::string &attribute_value);
 
 //-----------------------------------------------------------------------------
-template <typename T> 
+template <typename T>
 void HDF5Interface::get_attribute(const std::string &filename,
                              const std::string &dataset_name,
                              const std::string &attribute_name,
@@ -580,16 +567,16 @@ void HDF5Interface::get_attribute(const std::string &filename,
 
   // Specific code for each type of data template
   _get_attribute_value(attr_type, attr_id, attribute_value);
-  
+
   // Close attribute type
   status = H5Tclose(attr_type);
   dolfin_assert(status != HDF5_FAIL);
-    
+
   // Close attribute
   status = H5Aclose(attr_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  // Close dataset 
+  // Close dataset
   status = H5Dclose(dset_id);
   dolfin_assert(status != HDF5_FAIL);
 
@@ -600,7 +587,6 @@ void HDF5Interface::get_attribute(const std::string &filename,
 }
 
 //-----------------------------------------------------------------------------
-// Internal code for getting a uint from a dataset attribute
 void HDF5Interface::_get_attribute_value(const hid_t &attr_type,
                                          const hid_t &attr_id,
                                          uint &attribute_value)
@@ -610,13 +596,12 @@ void HDF5Interface::_get_attribute_value(const hid_t &attr_type,
   // Read value
   herr_t status = H5Aread(attr_id, H5T_NATIVE_UINT, &attribute_value);
   dolfin_assert(status != HDF5_FAIL);
-  
+
 }
 
 //-----------------------------------------------------------------------------
-// Internal code for getting a string from a dataset attribute
 void HDF5Interface::_get_attribute_value(const hid_t &attr_type,
-                                         const hid_t &attr_id, 
+                                         const hid_t &attr_id,
                                          std::string &attribute_value)
 {
   // Check this attribute is a string
@@ -634,13 +619,13 @@ void HDF5Interface::_get_attribute_value(const hid_t &attr_type,
   std::vector<char> attribute_data(string_length);
   status = H5Aread(attr_id, memtype, attribute_data.data());
   dolfin_assert(status != HDF5_FAIL);
-  
+
   attribute_value.assign(attribute_data.data());
 }
-
 //-----------------------------------------------------------------------------
-// Internal code for getting a std::vector<uint> from a dataset attribute
-void HDF5Interface::_get_attribute_value(const hid_t &attr_type,const hid_t &attr_id, std::vector<uint> &attribute_value)
+void HDF5Interface::_get_attribute_value(const hid_t& attr_type,
+                                         const hid_t& attr_id,
+                                         std::vector<uint>& attribute_value)
 {
   // FIXME: more complete check of type
   dolfin_assert(H5Tget_class(attr_type)==H5T_INTEGER);
@@ -658,5 +643,6 @@ void HDF5Interface::_get_attribute_value(const hid_t &attr_type,const hid_t &att
   // Read value to vector
   herr_t status = H5Aread(attr_id, H5T_NATIVE_UINT, attribute_value.data());
   dolfin_assert(status != HDF5_FAIL);
-  
+
 }
+//-----------------------------------------------------------------------------
