@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Garth N. Wells
+// Copyright (C) 2012 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -26,6 +26,7 @@
 // requires adding a few extra arguments to calls
 // for little obvious benefit
 #define H5_USE_16_API
+
 #include <hdf5.h>
 
 namespace dolfin
@@ -54,8 +55,7 @@ namespace dolfin
     static void write(const std::string& filename,
                       const std::string dataset_name,
                       const std::vector<int>& data,
-                      const std::pair<uint, uint> range,
-                      const uint width);
+                      const std::pair<uint, uint> range, const uint width);
 
     /// Write data to existing HDF file as defined by range blocks on
     /// each process
@@ -64,36 +64,33 @@ namespace dolfin
     static void write(const std::string& filename,
                       const std::string dataset_name,
                       const std::vector<uint>& data,
-                      const std::pair<uint, uint> range,
-                      const uint width);
+                      const std::pair<uint, uint> range, const uint width);
 
     /// Read data from a HDF5 dataset as defined by range blocks on
     /// each process
     /// range: the local range on this processor
     /// width: is the width of the dataitem (e.g. 3 for x, y, z data)
-    static void read(const std::string &filename,
+    static void read(const std::string& filename,
                      const std::string dataset_name,
                      std::vector<double>& data,
-                     const std::pair<uint, uint> range,
-                     const uint width);
+                     const std::pair<uint, uint> range, const uint width);
 
     // Read uint dataset
-    static void read(const std::string &filename,
-                     const std::string dataset_name,
-                     std::vector<uint>& data,
-                     const std::pair<uint, uint> range,
-                     const uint width);
+    static void read(const std::string& filename,
+                     const std::string dataset_name, std::vector<uint>& data,
+                     const std::pair<uint, uint> range, const uint width);
 
     // Check for existence of dataset in file
-    static bool dataset_exists(const std::string &filename,const std::string &dataset_name);
+    static bool dataset_exists(const std::string& filename,
+                               const std::string& dataset_name);
 
     // List all datasets in named group of file
-    static std::vector<std::string> dataset_list(const std::string &filename,
-                                                 const std::string &group_name);
+    static std::vector<std::string> dataset_list(const std::string& filename,
+                                                 const std::string& group_name);
 
     // Get dimensions (NX,NY) of 2D dataset
-    static std::pair<uint, uint> dataset_dimensions(const std::string &filename,
-                                                    const std::string &dataset_name);
+    static std::pair<uint, uint> dataset_dimensions(const std::string& filename,
+                                               const std::string& dataset_name);
 
     // Get a named attribute of a dataset
     template <typename T>
@@ -104,10 +101,10 @@ namespace dolfin
 
     // Generic add attribute to dataset
     template <typename T>
-    static void add_attribute(const std::string &filename,
-                              const std::string &dataset_name,
-                              const std::string &attribute_name,
-                              const T &attribute_value);
+    static void add_attribute(const std::string& filename,
+                              const std::string& dataset_name,
+                              const std::string& attribute_name,
+                              const T& attribute_value);
 
   private:
 
@@ -121,24 +118,24 @@ namespace dolfin
                                     const uint &attribute_value);
 
     // Internal vector<uint>-specific code to add an attribute
-    static void add_attribute_value(const hid_t &dset_id,
-                                     const std::string &attribute_name,
-                                     const std::vector<uint> &attribute_value);
+    static void add_attribute_value(const hid_t& dset_id,
+                                     const std::string& attribute_name,
+                                     const std::vector<uint>& attribute_value);
 
     // Internal string-specific code to add an attribute
-    static void add_attribute_value(const hid_t &dset_id,
-                                    const std::string &attribute_name,
-                                    const std::string &attribute_value);
+    static void add_attribute_value(const hid_t& dset_id,
+                                    const std::string& attribute_name,
+                                    const std::string& attribute_value);
 
     // Internal code for getting a uint from a dataset attribute
     static void get_attribute_value(const hid_t& attr_type,
                                      const hid_t& attr_id,
-                                     uint &attribute_value);
+                                     uint& attribute_value);
 
     // Internal vector<uint>-specific code to get an attribute
     static void get_attribute_value(const hid_t& attr_type,
                                      const hid_t& attr_id,
-                                     std::vector<uint> &attribute_value);
+                                     std::vector<uint>& attribute_value);
 
     // Internal string-specific code to get an attribute
     static void get_attribute_value(const hid_t& attr_type,
@@ -148,17 +145,17 @@ namespace dolfin
     // Generic read from a dataset - given range and width, type.
     template <typename T>
     static void read(const std::string& filename,
-                     const std::string dataset_name,
-                     std::vector<T>& data, const std::pair<uint, uint> range,
-                     const int h5type, const uint width);
+                     const std::string dataset_name, std::vector<T>& data,
+                     const std::pair<uint, uint> range, const int h5type,
+                     const uint width);
 
     // Generic write to a dataset - given range and width, type.
     template <typename T>
     static void write(const std::string& filename,
                       const std::string dataset_name,
                       const std::vector<T>& data,
-                      const std::pair<uint, uint> range,
-                      const int h5type, const uint width);
+                      const std::pair<uint, uint> range, const int h5type,
+                      const uint width);
 
   };
 

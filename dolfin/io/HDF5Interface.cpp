@@ -515,6 +515,7 @@ void HDF5Interface::add_attribute_value(const hid_t& dset_id,
 
 }
 //-----------------------------------------------------------------------------
+/*
 template void HDF5Interface::get_attribute(const std::string& filename,
                                            const std::string& dataset_name,
                                            const std::string& attribute_name,
@@ -531,7 +532,7 @@ template void HDF5Interface::get_attribute(const std::string& filename,
                                            const std::string& dataset_name,
                                            const std::string& attribute_name,
                                            std::string& attribute_value);
-
+*/
 //-----------------------------------------------------------------------------
 template <typename T>
 void HDF5Interface::get_attribute(const std::string& filename,
