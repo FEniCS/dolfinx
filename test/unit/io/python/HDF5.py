@@ -40,14 +40,10 @@ class HDF5_Vector(unittest.TestCase):
         del vector_file
 
         y = Vector()
-        self.assertEqual(y.size(), x.size())
         vector_file = File("x.h5")
         vector_file >> y
-
+        self.assertEqual(y.size(), x.size())
         self.assertEqual((x - y).norm("l1"), 0.0)
-
-
-
 
 if __name__ == "__main__":
     if has_hdf5():
