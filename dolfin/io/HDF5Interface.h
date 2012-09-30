@@ -44,6 +44,10 @@ namespace dolfin
   #define HDF5_FAIL -1
   public:
 
+    /// Open HDF5 and return file descriptor
+    static hid_t open_file(const std::string filename, const bool truncate,
+                           const bool use_mpi_io);
+
     /// FIXME: Add description
     static void create(const std::string filename, const bool mpiio);
 
@@ -103,9 +107,8 @@ namespace dolfin
 
   private:
 
-    // HDF5 calls to open a file descriptor on multiple processes
-    // Common file opening sequence
-    static hid_t open_parallel_file(const std::string filename,
+    // HDF5 calls to open a file descriptor
+    static hid_t open_file(const std::string filename,
                                     const bool use_mpiio);
 
     template <typename T>
@@ -162,7 +165,7 @@ namespace dolfin
     herr_t status;
 
     // Open file
-    const hid_t file_id = open_parallel_file(filename, use_mpi_io);
+    const hid_t file_id = open_file(filename, use_mpi_io);
 
     // Create a global 2D data space
     const hid_t filespace0 = H5Screate_simple(2, dimsf, NULL);
@@ -241,8 +244,8 @@ namespace dolfin
     hsize_t offset[2] = {range.first, 0};
     hsize_t count[2]  = {range.second - range.first, width};
 
-    // Open file descriptor in parallel
-    const hid_t file_id = open_parallel_file(filename, use_mpi_io);
+    // Open file descriptor
+    const hid_t file_id = open_file(filename, use_mpi_io);
 
     // Open the dataset collectively
     const hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
@@ -286,7 +289,7 @@ namespace dolfin
                                            const bool use_mpi_io)
   {
     // Open file
-    hid_t file_id = open_parallel_file(filename, use_mpi_io);
+    hid_t file_id = open_file(filename, use_mpi_io);
 
     // Open named dataset
     hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());

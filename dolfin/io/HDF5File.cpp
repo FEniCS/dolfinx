@@ -52,18 +52,20 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 HDF5File::HDF5File(const std::string filename, const bool use_mpiio)
   : GenericFile(filename, "H5"),
+    hdf5_file_open(false), hdf5_file_id(0),
     mpi_io(MPI::num_processes() > 1 && use_mpiio ? true : false)
 {
   // Do nothing
-
-  // FIXME: Create file here in constructor?
-  // Not all instatiations of HDF5File create a new file.
-  // Could possibly open file descriptor here.
 }
 //-----------------------------------------------------------------------------
 HDF5File::~HDF5File()
 {
-  // Do nothing
+  // Close file
+  if (hdf5_file_open)
+  {
+    herr_t status = H5Fclose(hdf5_file_id);
+    dolfin_assert(status != HDF5_FAIL);
+  }
 }
 //-----------------------------------------------------------------------------
 void HDF5File::operator<< (const GenericVector& x)
@@ -72,9 +74,12 @@ void HDF5File::operator<< (const GenericVector& x)
   std::vector<double> data;
   x.get_local(data);
 
-  // Overwrite any existing file
+  // Open file (overwrite any existing file)
   if (counter == 0)
-    HDF5Interface::create(filename, mpi_io);
+  {
+    dolfin_assert(!hdf5_file_open);
+    hdf5_file_id = HDF5Interface::open_file(filename, true, mpi_io);
+  }
 
   // Write to HDF5 file
   const std::string name = "/Vector/" + boost::lexical_cast<std::string>(counter);

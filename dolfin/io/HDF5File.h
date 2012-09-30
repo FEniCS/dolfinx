@@ -118,6 +118,10 @@ namespace dolfin
                                       std::vector<T>& global_vector);
 
 
+    // HDF5 file descriptor/handle
+    bool hdf5_file_open;
+    hid_t hdf5_file_id;
+
     // Parallel mode
     const bool mpi_io;
 
