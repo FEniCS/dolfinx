@@ -74,6 +74,16 @@ namespace dolfin
     /// range: the local range on this processor
     /// width: is the width of the dataitem (e.g. 3 for x, y, z data)
     template <typename T>
+    static void read_dataset(const hid_t file_handle,
+                             const std::string dataset_name,
+                             const std::pair<uint, uint> range,
+                             std::vector<T>& data);
+
+    /// Read data from a HDF5 dataset as defined by range blocks on
+    /// each process
+    /// range: the local range on this processor
+    /// width: is the width of the dataitem (e.g. 3 for x, y, z data)
+    template <typename T>
     static void read_data(const std::string filename,
                      const std::string dataset_name,
                      std::vector<T>& data,
@@ -88,10 +98,18 @@ namespace dolfin
     static void add_group(const hid_t hdf5_file_handle,
                                 const std::string dataset_name);
 
+    /// Get dataset rank
+    static uint dataset_rank(const hid_t hdf5_file_handle,
+                             const std::string dataset_name);
+
     /// Check for existence of dataset in HDF5 file
     static bool dataset_exists(const HDF5File& hdf5_file,
                                const std::string dataset_name,
                                const bool use_mpi_io);
+
+    /// Get dataset size (size of each dimension)
+    static std::vector<uint> get_dataset_size(const hid_t hdf5_file_handle,
+                                              const std::string dataset_name);
 
     /// Return list all datasets in named group of file
     static std::vector<std::string> dataset_list(const hid_t hdf5_file_handle,
@@ -170,6 +188,8 @@ namespace dolfin
                                            const std::pair<uint, uint> range,
                                            const uint width, bool use_mpi_io)
   {
+    const uint rank = 1;
+
     // Get HDF5 data type
     const int h5type = hdf5_type<T>();
 
@@ -183,8 +203,8 @@ namespace dolfin
     // Generic status report
     herr_t status;
 
-    // Create a global 2D data space
-    const hid_t filespace0 = H5Screate_simple(2, dimsf, NULL);
+    // Create a global data space
+    const hid_t filespace0 = H5Screate_simple(rank, dimsf, NULL);
     dolfin_assert(filespace0 != HDF5_FAIL);
 
     // Create global dataset (using dataset_name)
@@ -196,8 +216,8 @@ namespace dolfin
     status = H5Sclose(filespace0);
     dolfin_assert(status != HDF5_FAIL);
 
-    // Create a local 2D data space
-    const hid_t memspace = H5Screate_simple(2, count, NULL);
+    // Create a local data space
+    const hid_t memspace = H5Screate_simple(rank, count, NULL);
     dolfin_assert(memspace != HDF5_FAIL);
 
     // Create a file dataspace within the global space - a hyperslab
@@ -313,6 +333,77 @@ namespace dolfin
 
     // Close file
     status = H5Fclose(file_id);
+    dolfin_assert(status != HDF5_FAIL);
+  }
+  //-----------------------------------------------------------------------------
+  template <typename T>
+  inline void HDF5Interface::read_dataset(const hid_t file_handle,
+                                          const std::string dataset_name,
+                                          const std::pair<uint, uint> range,
+                                          std::vector<T>& data)
+  {
+    // Open the dataset
+    const hid_t dset_id = H5Dopen(file_handle, dataset_name.c_str());
+    dolfin_assert(dset_id != HDF5_FAIL);
+
+    // Open dataspace
+    const hid_t dataspace = H5Dget_space(dset_id);
+    dolfin_assert(dataspace != HDF5_FAIL);
+
+    // Get rank of data set
+    const int rank = H5Sget_simple_extent_ndims(dataspace);
+    dolfin_assert(rank >= 0);
+
+    if (rank > 1)
+      warning("HDF5Interface::read_dataset untested for rank > 1.");
+
+    if (rank > 2)
+      warning("HDF5Interface::read_dataset not configured for rank > 2.");
+
+    // Allocate data for size of each dimension
+    std::vector<hsize_t> dimensions_size(rank);
+
+    // Get size in each dimension
+    const int ndims = H5Sget_simple_extent_dims(dataspace,
+                                                dimensions_size.data(), NULL);
+    dolfin_assert(ndims == rank);
+
+    // Hyperslab selection
+    std::vector<hsize_t> offset(rank, 0);
+    offset[0]= range.first;
+    std::vector<hsize_t> count(rank);
+    count[0] = range.second - range.first;
+    if (rank == 2)
+      count[1] = dimensions_size[1];
+
+    // FIXME: document this call
+    herr_t status = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET,
+                                        offset.data(), NULL, count.data(),
+                                        NULL);
+    dolfin_assert(status != HDF5_FAIL);
+
+    // Create a memory dataspace
+    const hid_t memspace = H5Screate_simple(rank, count.data(), NULL);
+    dolfin_assert (memspace != HDF5_FAIL);
+
+    // Resize local data to read into
+    uint data_size = 1;
+    for (uint i = 0; i < count.size(); ++i)
+      data_size *= count[i];
+    data.resize(data_size);
+
+    // Read data on each process
+    const int h5type = hdf5_type<T>();
+    status = H5Dread(dset_id, h5type, memspace, dataspace, H5P_DEFAULT,
+                     data.data());
+    dolfin_assert(status != HDF5_FAIL);
+
+    // Close dataspace
+    status = H5Sclose(dataspace);
+    dolfin_assert(status != HDF5_FAIL);
+
+    // Close dataset
+    status = H5Dclose(dset_id);
     dolfin_assert(status != HDF5_FAIL);
   }
   //-----------------------------------------------------------------------------

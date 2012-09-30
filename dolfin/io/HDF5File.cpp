@@ -70,12 +70,15 @@ HDF5File::~HDF5File()
 //-----------------------------------------------------------------------------
 void HDF5File::operator<< (const GenericVector& x)
 {
+  dolfin_assert(x.size() > 0);
+
   // Open file on first write and add Vector group (overwrite any existing file)
   if (counter == 0)
   {
     // Open file
     dolfin_assert(!hdf5_file_open);
     hdf5_file_id = HDF5Interface::open_file(filename, true, mpi_io);
+    hdf5_file_open = true;
 
     // Add group
     HDF5Interface::add_group(hdf5_file_id, "/Vector");
@@ -86,7 +89,7 @@ void HDF5File::operator<< (const GenericVector& x)
   std::vector<double> local_data;
   x.get_local(local_data);
 
-  // Form HDF5 file tag
+  // Form HDF5 dataset tag
   const std::string dataset_name
       = "/Vector/" + boost::lexical_cast<std::string>(counter);
 
@@ -98,30 +101,46 @@ void HDF5File::operator<< (const GenericVector& x)
   counter++;
 }
 //-----------------------------------------------------------------------------
-void HDF5File::operator>> (GenericVector& input)
+void HDF5File::operator>> (GenericVector& x)
 {
-  const uint size = input.size();
-  if (size == 0)
+  // Open HDF5 file
+  if (!hdf5_file_open)
   {
-    // FIXME: Resize
+    // Open file
+    dolfin_assert(!hdf5_file_open);
+    hdf5_file_id = HDF5Interface::open_file(filename, false, mpi_io);
+    hdf5_file_open = true;
   }
-  else
+  dolfin_assert(HDF5Interface::has_group(hdf5_file_id, "/Vector"));
+
+  // Get dataset rank
+  const uint rank = HDF5Interface::dataset_rank(hdf5_file_id, "/Vector/0");
+  dolfin_assert(rank == 1);
+
+  // Get global dataset size
+  const std::vector<uint> data_size
+      = HDF5Interface::get_dataset_size(hdf5_file_id, "/Vector/0");
+  dolfin_assert(data_size.size() == 1);
+
+  // Check input vector, and re-size if not already sized
+  if (x.size() == 0)
+    x.resize(data_size[0]);
+  else if (x.size() != data_size[0])
   {
-    // FIXME: make sure size matches
-    cout << "size: " << size << endl;
+    dolfin_error("HDF5File.cpp",
+                 "read vector from file",
+                 "Size mis-match between vector in file and input vector");
   }
 
   // Get local range
-  const std::pair<uint, uint> range = input.local_range(0);
-
-  // Allocate data
-  std::vector<double> data(range.second - range.first);
+  const std::pair<uint, uint> local_range = x.local_range();
 
   // Read data
-  HDF5Interface::read_data(filename, "/Vector/0", data, range, 1, mpi_io);
+  std::vector<double> data;
+  HDF5Interface::read_dataset(hdf5_file_id, "/Vector/0", local_range, data);
 
   // Set data
-  input.set_local(data);
+  x.set_local(data);
 }
 //-----------------------------------------------------------------------------
 std::string HDF5File::search_list(const std::vector<std::string>& list,

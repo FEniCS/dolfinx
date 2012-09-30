@@ -24,7 +24,7 @@ import unittest
 from dolfin import *
 
 class HDF5_Vector(unittest.TestCase):
-    """Test input/output of Vectir to HDF5 files"""
+    """Test input/output of Vector to HDF5 files"""
 
     def test_save_vector(self):
         x = Vector(305)
@@ -32,9 +32,9 @@ class HDF5_Vector(unittest.TestCase):
         vector_file = File("x.h5")
         vector_file << x
 
-    def xtest_save_and_read_vector(self):
+    def test_save_and_read_vector(self):
         x = Vector(305)
-        x[:] = 1.0
+        x[:] = 1.2
         vector_file = File("vector.h5")
         vector_file << x
         del vector_file

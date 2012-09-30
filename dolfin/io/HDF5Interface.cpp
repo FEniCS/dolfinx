@@ -60,8 +60,7 @@ hid_t HDF5Interface::open_file(const std::string filename, const bool truncate,
   }
   else
   {
-    file_id = H5Fcreate(filename.c_str(), H5F_ACC_RDWR, H5P_DEFAULT,
-                        plist_id);
+    file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
   }
   dolfin_assert(file_id != HDF5_FAIL);
 
@@ -142,11 +141,59 @@ bool HDF5Interface::has_group(const hid_t hdf5_file_handle,
 void HDF5Interface::add_group(const hid_t hdf5_file_handle,
                               const std::string dataset_name)
 {
-    hid_t group_id_vis = H5Gcreate(hdf5_file_handle, dataset_name.c_str(), H5P_DEFAULT);
-    dolfin_assert(group_id_vis != HDF5_FAIL);
+  hid_t group_id_vis = H5Gcreate(hdf5_file_handle, dataset_name.c_str(), H5P_DEFAULT);
+  dolfin_assert(group_id_vis != HDF5_FAIL);
 
-    herr_t status = H5Gclose(group_id_vis);
-    dolfin_assert(status != HDF5_FAIL);
+  herr_t status = H5Gclose(group_id_vis);
+  dolfin_assert(status != HDF5_FAIL);
+}
+//-----------------------------------------------------------------------------
+uint HDF5Interface::dataset_rank(const hid_t hdf5_file_handle,
+                         const std::string dataset_name)
+{
+  // Open dataset
+  const hid_t dset_id = H5Dopen(hdf5_file_handle, dataset_name.c_str());
+  dolfin_assert(dset_id != HDF5_FAIL);
+
+  // Get the dataspace of the dataset
+  const hid_t space = H5Dget_space(dset_id);
+  dolfin_assert(space != HDF5_FAIL);
+
+  // Get dataset rank
+  const int rank = H5Sget_simple_extent_ndims(space);
+  dolfin_assert(rank >= 0);
+  return rank;
+}
+//-----------------------------------------------------------------------------
+std::vector<dolfin::uint>
+      HDF5Interface::get_dataset_size(const hid_t hdf5_file_handle,
+                                      const std::string dataset_name)
+{
+  // Open named dataset
+  const hid_t dset_id = H5Dopen(hdf5_file_handle, dataset_name.c_str());
+  dolfin_assert(dset_id != HDF5_FAIL);
+
+  // Get the dataspace of the dataset
+  const hid_t space = H5Dget_space(dset_id);
+  dolfin_assert(space != HDF5_FAIL);
+
+  // Get rank
+  const int rank = H5Sget_simple_extent_ndims(space);
+
+  // Allocate data
+  std::vector<hsize_t> size(rank);
+
+  // Get size in each dimension
+  const int ndims = H5Sget_simple_extent_dims(space, size.data(), NULL);
+  dolfin_assert(ndims == rank);
+
+  // Close dataspace and dataset
+  herr_t status = H5Sclose(space);
+  dolfin_assert(status != HDF5_FAIL);
+  status = H5Dclose(dset_id);
+  dolfin_assert(status != HDF5_FAIL);
+
+  return std::vector<uint>(size.begin(), size.end());
 }
 //-----------------------------------------------------------------------------
 bool HDF5Interface::dataset_exists(const HDF5File& hdf5_file,
