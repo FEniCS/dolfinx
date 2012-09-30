@@ -45,7 +45,7 @@ void HDF5Interface::create(const std::string filename, bool use_mpiio)
   const hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
   if (use_mpiio)
   {
-    #ifdef HAVE_MPI
+    #ifdef HAS_MPI
     MPICommunicator comm;
     MPIInfo info;
     status = H5Pset_fapl_mpio(plist_id, *comm, *info);
@@ -257,7 +257,7 @@ hid_t HDF5Interface::open_parallel_file(const std::string filename,
   dolfin_assert(plist_id != HDF5_FAIL);
   if (use_mpiio)
   {
-    #ifdef HAVE_MPI
+    #ifdef HAS_MPI
     MPICommunicator comm;
     MPIInfo info;
     status = H5Pset_fapl_mpio(plist_id, *comm, *info);
