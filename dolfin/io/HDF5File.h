@@ -56,6 +56,9 @@ namespace dolfin
     /// Read vector from file in HDF5 folder 'Vector' for dataset 0
     void operator>> (GenericVector& x);
 
+    /// Read vector from HDF5 file
+    void read(const std::string dataset_name, GenericVector& x);
+
     /// Write Mesh to file
     void operator<< (const Mesh& mesh);
 

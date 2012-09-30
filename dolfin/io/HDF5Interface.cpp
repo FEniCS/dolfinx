@@ -234,6 +234,18 @@ bool HDF5Interface::dataset_exists(const HDF5File& hdf5_file,
   return (dset_id != HDF5_FAIL);
 }
 //-----------------------------------------------------------------------------
+dolfin::uint HDF5Interface::num_datasets_in_group(const hid_t hdf5_file_handle,
+                                                  const std::string group_name)
+{
+  // Get group info by name
+  H5G_info_t group_info;
+  hid_t lapl_id = H5Pcreate(H5P_LINK_ACCESS);
+  herr_t status = H5Gget_info_by_name(hdf5_file_handle, group_name.c_str(),
+                                      &group_info, lapl_id);
+  dolfin_assert(status != HDF5_FAIL);
+  return group_info.nlinks;
+}
+//-----------------------------------------------------------------------------
 std::vector<std::string> HDF5Interface::dataset_list(const hid_t hdf5_file_handle,
                                                      const std::string group_name)
 {

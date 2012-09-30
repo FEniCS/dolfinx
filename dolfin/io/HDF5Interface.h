@@ -107,6 +107,10 @@ namespace dolfin
                                const std::string dataset_name,
                                const bool use_mpi_io);
 
+    /// Return number of data sets in a group
+    static uint num_datasets_in_group(const hid_t hdf5_file_handle,
+                                      const std::string group_name);
+
     /// Get dataset size (size of each dimension)
     static std::vector<uint> get_dataset_size(const hid_t hdf5_file_handle,
                                               const std::string dataset_name);

@@ -103,6 +103,35 @@ void HDF5File::operator<< (const GenericVector& x)
 //-----------------------------------------------------------------------------
 void HDF5File::operator>> (GenericVector& x)
 {
+  // Open file
+  if (!hdf5_file_open)
+  {
+    dolfin_assert(!hdf5_file_open);
+    hdf5_file_id = HDF5Interface::open_file(filename, false, mpi_io);
+    hdf5_file_open = true;
+  }
+
+  // Check that 'Vector' group exists
+  dolfin_assert(HDF5Interface::has_group(hdf5_file_id, "/Vector") == 1);
+
+  /*
+  // Check that there is only one dataset in group 'Vector'
+  dolfin_assert(HDF5Interface::num_datasets_in_group(hdf5_file_id, "/Vector") == 1);
+  */
+
+  // Get list all datasets in group
+  const std::vector<std::string> datasets
+      = HDF5Interface::dataset_list(hdf5_file_id, "/Vector");
+
+  // Make sure there is oly one datset
+  dolfin_assert(datasets.size() == 1);
+
+  // Read data set
+  read("/Vector/" + datasets[0], x);
+}
+//-----------------------------------------------------------------------------
+void HDF5File::read(const std::string dataset_name, GenericVector& x)
+{
   // Open HDF5 file
   if (!hdf5_file_open)
   {
@@ -111,15 +140,15 @@ void HDF5File::operator>> (GenericVector& x)
     hdf5_file_id = HDF5Interface::open_file(filename, false, mpi_io);
     hdf5_file_open = true;
   }
-  dolfin_assert(HDF5Interface::has_group(hdf5_file_id, "/Vector"));
+  dolfin_assert(HDF5Interface::has_group(hdf5_file_id, dataset_name));
 
   // Get dataset rank
-  const uint rank = HDF5Interface::dataset_rank(hdf5_file_id, "/Vector/0");
+  const uint rank = HDF5Interface::dataset_rank(hdf5_file_id, dataset_name);
   dolfin_assert(rank == 1);
 
   // Get global dataset size
   const std::vector<uint> data_size
-      = HDF5Interface::get_dataset_size(hdf5_file_id, "/Vector/0");
+      = HDF5Interface::get_dataset_size(hdf5_file_id, dataset_name);
   dolfin_assert(data_size.size() == 1);
 
   // Check input vector, and re-size if not already sized
@@ -137,7 +166,7 @@ void HDF5File::operator>> (GenericVector& x)
 
   // Read data
   std::vector<double> data;
-  HDF5Interface::read_dataset(hdf5_file_id, "/Vector/0", local_range, data);
+  HDF5Interface::read_dataset(hdf5_file_id, dataset_name, local_range, data);
 
   // Set data
   x.set_local(data);
