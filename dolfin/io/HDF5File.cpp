@@ -60,7 +60,7 @@ HDF5File::HDF5File(const std::string filename, const bool use_mpiio)
 //-----------------------------------------------------------------------------
 HDF5File::~HDF5File()
 {
-  // Close file
+  // Close HDF5 file
   if (hdf5_file_open)
   {
     herr_t status = H5Fclose(hdf5_file_id);
@@ -70,22 +70,29 @@ HDF5File::~HDF5File()
 //-----------------------------------------------------------------------------
 void HDF5File::operator<< (const GenericVector& x)
 {
-  // Get all local data
-  std::vector<double> data;
-  x.get_local(data);
-
-  // Open file (overwrite any existing file)
+  // Open file on first write and add Vector group (overwrite any existing file)
   if (counter == 0)
   {
+    // Open file
     dolfin_assert(!hdf5_file_open);
     hdf5_file_id = HDF5Interface::open_file(filename, true, mpi_io);
-  }
 
-  // Write to HDF5 file
-  const std::string name = "/Vector/" + boost::lexical_cast<std::string>(counter);
-  cout << "Write data" << endl;
-  write_data(name.c_str(), data, 1);
-  cout << "End write data" << endl;
+    // Add group
+    HDF5Interface::add_group(hdf5_file_id, "/Vector");
+  }
+  dolfin_assert(HDF5Interface::has_group(hdf5_file_id, "/Vector"));
+
+  // Get all local data
+  std::vector<double> local_data;
+  x.get_local(local_data);
+
+  // Form HDF5 file tag
+  const std::string dataset_name
+      = "/Vector/" + boost::lexical_cast<std::string>(counter);
+
+  // Write data to file
+  HDF5Interface::write_dataset(hdf5_file_id, dataset_name, local_data,
+                               x.local_range(), 1, mpi_io);
 
   // Increment counter
   counter++;

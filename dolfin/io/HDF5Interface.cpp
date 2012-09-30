@@ -128,6 +128,27 @@ void HDF5Interface::create(const std::string filename, bool use_mpiio)
   dolfin_assert(status != HDF5_FAIL);
 }
 //-----------------------------------------------------------------------------
+bool HDF5Interface::has_group(const hid_t hdf5_file_handle,
+                                    const std::string group_name)
+{
+   herr_t status = H5Eset_auto(NULL, NULL);
+   status = H5Gget_objinfo (hdf5_file_handle, group_name.c_str(), 0, NULL);
+   if (status == 0)
+    return true;
+   else
+    return false;
+}
+//-----------------------------------------------------------------------------
+void HDF5Interface::add_group(const hid_t hdf5_file_handle,
+                              const std::string dataset_name)
+{
+    hid_t group_id_vis = H5Gcreate(hdf5_file_handle, dataset_name.c_str(), H5P_DEFAULT);
+    dolfin_assert(group_id_vis != HDF5_FAIL);
+
+    herr_t status = H5Gclose(group_id_vis);
+    dolfin_assert(status != HDF5_FAIL);
+}
+//-----------------------------------------------------------------------------
 bool HDF5Interface::dataset_exists(const HDF5File& hdf5_file,
                                    const std::string dataset_name,
                                    const bool use_mpi_io)
@@ -164,6 +185,38 @@ bool HDF5Interface::dataset_exists(const HDF5File& hdf5_file,
 
   // Return true if dataset exists
   return (dset_id != HDF5_FAIL);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::string> HDF5Interface::dataset_list(const hid_t hdf5_file_handle,
+                                                     const std::string group_name)
+{
+  // List all member datasets of a group by name
+  char namebuf[HDF5_MAXSTRLEN];
+
+  herr_t status;
+
+  // Open group by name group_name
+  hid_t group_id = H5Gopen(hdf5_file_handle, group_name.c_str());
+  dolfin_assert(group_id != HDF5_FAIL);
+
+  // Count how many datasets in the group
+  hsize_t num_datasets;
+  status = H5Gget_num_objs(group_id, &num_datasets);
+  dolfin_assert(status != HDF5_FAIL);
+
+  // Iterate through group collecting all dataset names
+  std::vector<std::string> list_of_datasets;
+  for(hsize_t i = 0; i < num_datasets; i++)
+  {
+    H5Gget_objname_by_idx(group_id, i, namebuf, HDF5_MAXSTRLEN);
+    list_of_datasets.push_back(std::string(namebuf));
+  }
+
+  // Close group
+  status = H5Gclose(group_id);
+  dolfin_assert(status != HDF5_FAIL);
+
+  return list_of_datasets;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::string> HDF5Interface::dataset_list(const std::string filename,
@@ -288,7 +341,7 @@ void HDF5Interface::get_attribute(const std::string filename,
 }
 //-----------------------------------------------------------------------------
 hid_t HDF5Interface::open_file(const std::string filename,
-                                        const bool use_mpiio)
+                               const bool use_mpiio)
 {
   herr_t status;
 

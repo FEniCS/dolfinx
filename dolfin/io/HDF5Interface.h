@@ -56,6 +56,13 @@ namespace dolfin
     /// range: the local range on this processor
     /// width: is the width of the dataitem (e.g. 3 for x, y, z data)
     template <typename T>
+    static void write_dataset(const hid_t file_handle,
+                              const std::string dataset_name,
+                              const std::vector<T>& data,
+                              const std::pair<uint, uint> range,
+                              const uint width, bool use_mpio);
+
+    template <typename T>
     static void write_data(const std::string filename,
                       const std::string dataset_name,
                       const std::vector<T>& data,
@@ -73,10 +80,22 @@ namespace dolfin
                      const std::pair<uint, uint> range,
                      const uint width, const bool use_mpio);
 
+    /// Check for existence group in HDF5 file
+    static bool has_group(const hid_t hdf5_file_handle,
+                         const std::string group_name);
+
+    /// Add group to HDF5 file
+    static void add_group(const hid_t hdf5_file_handle,
+                                const std::string dataset_name);
+
     /// Check for existence of dataset in HDF5 file
     static bool dataset_exists(const HDF5File& hdf5_file,
                                const std::string dataset_name,
                                const bool use_mpi_io);
+
+    /// Return list all datasets in named group of file
+    static std::vector<std::string> dataset_list(const hid_t hdf5_file_handle,
+                                                 const std::string group_name);
 
     /// Return list all datasets in named group of file
     static std::vector<std::string> dataset_list(const std::string filename,
@@ -143,6 +162,79 @@ namespace dolfin
 
   };
 
+  //-----------------------------------------------------------------------------
+  template <typename T>
+  inline void HDF5Interface::write_dataset(const hid_t file_handle,
+                                           const std::string dataset_name,
+                                           const std::vector<T>& data,
+                                           const std::pair<uint, uint> range,
+                                           const uint width, bool use_mpi_io)
+  {
+    // Get HDF5 data type
+    const int h5type = hdf5_type<T>();
+
+    // Hyperslab selection parameters
+    const hsize_t count[2]  = {range.second - range.first, width};
+    const hsize_t offset[2] = {range.first, 0};
+
+    // Dataset dimensions
+    const hsize_t dimsf[2] = {MPI::sum(count[0]), width};
+
+    // Generic status report
+    herr_t status;
+
+    // Create a global 2D data space
+    const hid_t filespace0 = H5Screate_simple(2, dimsf, NULL);
+    dolfin_assert(filespace0 != HDF5_FAIL);
+
+    // Create global dataset (using dataset_name)
+    const hid_t dset_id = H5Dcreate(file_handle, dataset_name.c_str(), h5type,
+                                    filespace0, H5P_DEFAULT);
+    dolfin_assert(dset_id != HDF5_FAIL);
+
+    // Close global data space
+    status = H5Sclose(filespace0);
+    dolfin_assert(status != HDF5_FAIL);
+
+    // Create a local 2D data space
+    const hid_t memspace = H5Screate_simple(2, count, NULL);
+    dolfin_assert(memspace != HDF5_FAIL);
+
+    // Create a file dataspace within the global space - a hyperslab
+    const hid_t filespace1 = H5Dget_space(dset_id);
+    status = H5Sselect_hyperslab(filespace1, H5S_SELECT_SET, offset, NULL,
+                                 count, NULL);
+    dolfin_assert(status != HDF5_FAIL);
+
+    // Set parallel access with communicator
+    const hid_t plist_id = H5Pcreate(H5P_DATASET_XFER);
+    if (use_mpi_io)
+    {
+      status = H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+      dolfin_assert(status != HDF5_FAIL);
+    }
+
+    // Write local dataset into selected hyperslab
+    status = H5Dwrite(dset_id, h5type, memspace, filespace1, plist_id,
+                      data.data());
+    dolfin_assert(status != HDF5_FAIL);
+
+    // Close dataset collectively
+    status = H5Dclose(dset_id);
+    dolfin_assert(status != HDF5_FAIL);
+
+    // Close hyperslab
+    status = H5Sclose(filespace1);
+    dolfin_assert(status != HDF5_FAIL);
+
+    // Close local dataset
+    status = H5Sclose(memspace);
+    dolfin_assert(status != HDF5_FAIL);
+
+    // Release file-access template
+    status = H5Pclose(plist_id);
+    dolfin_assert(status != HDF5_FAIL);
+  }
   //-----------------------------------------------------------------------------
   template <typename T>
   inline void HDF5Interface::write_data(const std::string filename,
