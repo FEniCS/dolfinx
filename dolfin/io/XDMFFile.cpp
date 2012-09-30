@@ -171,8 +171,8 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   // Write mesh to HDF5 file
   if (counter == 0 )
     hdf5_file->write_mesh(mesh, false);
-  else if (!HDF5Interface::dataset_exists(*hdf5_file, mesh_coords_name)
-      || !HDF5Interface::dataset_exists(*hdf5_file, mesh_topology_name))
+  else if (!hdf5_file->dataset_exists(mesh_coords_name)
+      || !hdf5_file->dataset_exists(mesh_topology_name))
   {
     hdf5_file->write_mesh(mesh, false);
   }
@@ -311,8 +311,11 @@ void XDMFFile::operator<< (const Mesh& mesh)
 
   // Write Mesh to HDF5 file (use contiguous vertex indices for topology)
   dolfin_assert(hdf5_file);
+  cout << "Create HDF5 file" << endl;
   hdf5_file->create();
+  cout << "Write mesh" << endl;
   hdf5_file->write_mesh(mesh, false);
+  cout << "End write mesh" << endl;
 
   // Get number of local/global cells/vertices
   const uint num_local_cells = mesh.num_cells();

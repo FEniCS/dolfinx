@@ -44,7 +44,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    HDF5File(const std::string filename);
+    HDF5File(const std::string filename, const bool use_mpiio=true);
 
     /// Destructor
     ~HDF5File();
@@ -67,6 +67,9 @@ namespace dolfin
 
     /// Read Mesh from file
     void operator>> (Mesh& mesh);
+
+    /// Check is dataset with given name exists
+    bool dataset_exists(const std::string dataset_name) const;
 
   private:
 
@@ -91,7 +94,8 @@ namespace dolfin
 
       const uint offset = MPI::global_offset(num_items, true);
       std::pair<uint, uint> range(offset, offset + num_items);
-      HDF5Interface::write(filename, dataset_name, data, range, width);
+      HDF5Interface::write_data(filename, dataset_name, data, range, width,
+                                mpi_io);
     }
 
     // Search through list of dataset names for one beginning with
@@ -112,6 +116,10 @@ namespace dolfin
     void redistribute_by_global_index(const std::vector<uint>& global_index,
                                       const std::vector<T>& local_vector,
                                       std::vector<T>& global_vector);
+
+
+    // Parallel mode
+    const bool mpi_io;
 
   };
 

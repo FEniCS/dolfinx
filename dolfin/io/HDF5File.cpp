@@ -50,7 +50,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-HDF5File::HDF5File(const std::string filename) : GenericFile(filename, "H5")
+HDF5File::HDF5File(const std::string filename, const bool use_mpiio)
+  : GenericFile(filename, "H5"),
+    mpi_io(MPI::num_processes() > 1 && use_mpiio ? true : false)
 {
   // Do nothing
 
@@ -72,11 +74,13 @@ void HDF5File::operator<< (const GenericVector& x)
 
   // Overwrite any existing file
   if (counter == 0)
-    HDF5Interface::create(filename);
+    HDF5Interface::create(filename, mpi_io);
 
   // Write to HDF5 file
   const std::string name = "/Vector/" + boost::lexical_cast<std::string>(counter);
+  cout << "Write data" << endl;
   write_data(name.c_str(), data, 1);
+  cout << "End write data" << endl;
 
   // Increment counter
   counter++;
@@ -102,14 +106,14 @@ void HDF5File::operator>> (GenericVector& input)
   std::vector<double> data(range.second - range.first);
 
   // Read data
-  HDF5Interface::read(filename, "/Vector/0", data, range, 1);
+  HDF5Interface::read_data(filename, "/Vector/0", data, range, 1, mpi_io);
 
   // Set data
   input.set_local(data);
 }
 //-----------------------------------------------------------------------------
 std::string HDF5File::search_list(const std::vector<std::string>& list,
-                                  const std::string &search_term) const
+                                  const std::string& search_term) const
 {
   std::vector<std::string>::const_iterator it;
   for (it = list.begin(); it != list.end(); ++it)
@@ -137,15 +141,18 @@ void HDF5File::operator<< (const Mesh& mesh)
 void HDF5File::create()
 {
   // Create new new HDF5 file (used by XDMFFile)
-  HDF5Interface::create(filename);
+  HDF5Interface::create(filename, mpi_io);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
 {
   // Clear file when writing to file for the first time
+  cout << "Create file in HDF5File::write_mesh" << endl;
   if(counter == 0)
-    HDF5Interface::create(filename);
+    HDF5Interface::create(filename, mpi_io);
   counter++;
+
+  cout << "End create file in HDF5File::write_mesh" << endl;
 
   // Get local mesh data
   const uint cell_dim = mesh.topology().dim();
@@ -181,7 +188,7 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
 
   // Write vertex data to HDF5 file if not already there
   const std::string coord_dataset = mesh_coords_dataset_name(mesh);
-  if (!HDF5Interface::dataset_exists(*this, coord_dataset))
+  if (!HDF5Interface::dataset_exists(*this, coord_dataset, mpi_io))
   {
     if(true_topology_indices)
     {
@@ -212,11 +219,12 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
 
       // Write partitions as an attribute
       const uint new_vertex_offset = MPI::global_offset(global_vertex_coords.size(),
-                                                         true);
+                                                        true);
       std::vector<uint> partitions;
       MPI::gather(new_vertex_offset, partitions);
       MPI::broadcast(partitions);
-      HDF5Interface::add_attribute(filename, coord_dataset, "partition", partitions);
+      HDF5Interface::add_attribute(filename, coord_dataset, "partition",
+                                   partitions, mpi_io);
     }
     else
     {
@@ -230,11 +238,13 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
       std::vector<uint> partitions;
       MPI::gather(vertex_offset, partitions);
       MPI::broadcast(partitions);
-      HDF5Interface::add_attribute(filename, coord_dataset, "partition", partitions);
+      HDF5Interface::add_attribute(filename, coord_dataset, "partition",
+                                   partitions, mpi_io);
     }
 
     const uint indexing_indicator = (true_topology_indices ? 1 : 0);
-    HDF5Interface::add_attribute(filename, coord_dataset, "true_indexing", indexing_indicator);
+    HDF5Interface::add_attribute(filename, coord_dataset, "true_indexing",
+                                 indexing_indicator, mpi_io);
   }
 
   // Get cell connectivity
@@ -259,19 +269,27 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
 
   // Write connectivity to HDF5 file if not already there
   const std::string topology_dataset = mesh_topology_dataset_name(mesh);
-  if (!HDF5Interface::dataset_exists(*this, topology_dataset))
+  if (!HDF5Interface::dataset_exists(*this, topology_dataset, mpi_io))
   {
     write_data(topology_dataset, topological_data, cell_dim + 1);
     const uint indexing_indicator = (true_topology_indices ? 1 : 0);
-    HDF5Interface::add_attribute(filename, topology_dataset, "true_indexing", indexing_indicator);
-    HDF5Interface::add_attribute(filename, topology_dataset, "celltype", cell_type);
+    HDF5Interface::add_attribute(filename, topology_dataset, "true_indexing",
+                                 indexing_indicator, mpi_io);
+    HDF5Interface::add_attribute(filename, topology_dataset, "celltype",
+                                 cell_type, mpi_io);
 
     // Write partitions as an attribute
     std::vector<uint> partitions;
     MPI::gather(cell_offset, partitions);
     MPI::broadcast(partitions);
-    HDF5Interface::add_attribute(filename, topology_dataset, "partition", partitions);
+    HDF5Interface::add_attribute(filename, topology_dataset, "partition",
+                                 partitions, mpi_io);
   }
+}
+//-----------------------------------------------------------------------------
+bool HDF5File::dataset_exists(const std::string dataset_name) const
+{
+  return HDF5Interface::dataset_exists(*this, dataset_name, mpi_io);
 }
 //-----------------------------------------------------------------------------
 std::string HDF5File::mesh_coords_dataset_name(const Mesh& mesh) const
