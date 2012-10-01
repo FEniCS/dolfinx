@@ -88,8 +88,8 @@ class XDMF_Vertex_Function_Output(unittest.TestCase):
         u.vector()[:] = 2.0
         file << (u, 0.2)
 
-        u.vector()[:] = 3.0
-        file << (u, 0.3)
+        #u.vector()[:] = 3.0
+        #file << (u, 0.3)
 
     def xtest_save_2d_tensor(self):
         mesh = UnitSquare(16, 16)

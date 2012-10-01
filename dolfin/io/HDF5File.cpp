@@ -233,18 +233,21 @@ void HDF5File::operator<< (const Mesh& mesh)
   write_mesh(mesh, true);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::create()
-{
+//void HDF5File::open_file(bool truncate)
+//{
   // Create new new HDF5 file (used by XDMFFile)
-  HDF5Interface::create(filename, mpi_io);
-}
+  //HDF5Interface::create(filename, truncate, mpi_io);
+//}
 //-----------------------------------------------------------------------------
 void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
 {
   // Clear file when writing to file for the first time
   cout << "Create file in HDF5File::write_mesh" << endl;
-  if(counter == 0)
-    HDF5Interface::create(filename, mpi_io);
+  if(!hdf5_file_open)
+  {
+    hdf5_file_id = HDF5Interface::open_file(filename, false, mpi_io);
+    hdf5_file_open = true;
+  }
   counter++;
 
   cout << "End create file in HDF5File::write_mesh" << endl;
@@ -384,7 +387,24 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
 //-----------------------------------------------------------------------------
 bool HDF5File::dataset_exists(const std::string dataset_name) const
 {
+  dolfin_assert(hdf5_file_open);
+  //cout << "**** Testing for: " <<  dataset_name << endl;
+  //bool test0 = HDF5Interface::dataset_exists(*this, dataset_name, mpi_io);
+  //cout << "Testing0: " << test0 << endl;
+
+  //bool test1 = HDF5Interface::has_group(hdf5_file_id, dataset_name);
+  //bool test1 = HDF5Interface::has_dataset(hdf5_file_id, dataset_name);
+  //cout << "Testing1: " << test1 << endl;
+
   return HDF5Interface::dataset_exists(*this, dataset_name, mpi_io);
+}
+//-----------------------------------------------------------------------------
+void HDF5File::open_hdf5_file(bool truncate)
+{
+  // Open file
+  dolfin_assert(!hdf5_file_open);
+  hdf5_file_id = HDF5Interface::open_file(filename, truncate, mpi_io);
+  hdf5_file_open = true;
 }
 //-----------------------------------------------------------------------------
 std::string HDF5File::mesh_coords_dataset_name(const Mesh& mesh) const

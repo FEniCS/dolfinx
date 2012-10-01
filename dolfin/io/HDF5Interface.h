@@ -49,7 +49,7 @@ namespace dolfin
                            const bool use_mpi_io);
 
     /// Create a new file
-    static void create(const std::string filename, const bool mpiio);
+    //static void create(const std::string filename, const bool mpiio);
 
     /// Write data to existing HDF file as defined by range blocks on
     /// each process
@@ -91,9 +91,13 @@ namespace dolfin
                      const std::pair<uint, uint> range,
                      const uint width, const bool use_mpio);
 
-    /// Check for existence group in HDF5 file
+    /// Check for existence of group in HDF5 file
     static bool has_group(const hid_t hdf5_file_handle,
                           const std::string group_name);
+
+    /// Check for existence of dataset in HDF5 file
+    static bool has_dataset(const hid_t hdf5_file_handle,
+                            const std::string dataset_name);
 
     /// Add group to HDF5 file
     static void add_group(const hid_t hdf5_file_handle,
@@ -165,8 +169,8 @@ namespace dolfin
   private:
 
     // HDF5 calls to open a file descriptor
-    static hid_t open_file(const std::string filename,
-                                    const bool use_mpiio);
+    //static hid_t open_file(const std::string filename,
+    //                                const bool use_mpiio);
 
     template <typename T>
     static void add_attribute_value(const hid_t dset_id,
@@ -330,7 +334,7 @@ namespace dolfin
     herr_t status;
 
     // Open file
-    const hid_t file_id = open_file(filename, use_mpi_io);
+    const hid_t file_id = open_file(filename, false, use_mpi_io);
 
     // Create a global 2D data space
     const hid_t filespace0 = H5Screate_simple(2, dimsf, NULL);
@@ -481,7 +485,7 @@ namespace dolfin
     hsize_t count[2]  = {range.second - range.first, width};
 
     // Open file descriptor
-    const hid_t file_id = open_file(filename, use_mpi_io);
+    const hid_t file_id = open_file(filename, false, use_mpi_io);
 
     // Open the dataset collectively
     const hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
@@ -550,11 +554,8 @@ namespace dolfin
     // Close dataset
     status = H5Dclose(dset_id);
     dolfin_assert(status != HDF5_FAIL);
-
   }
-
-//-----------------------------------------------------------------------------
-
+  //---------------------------------------------------------------------------
   template <typename T>
   inline void HDF5Interface::get_attribute(const std::string filename,
                                   const std::string dataset_name,
@@ -565,7 +566,7 @@ namespace dolfin
     herr_t status;
 
     // Try to open existing HDF5 file
-    const hid_t file_id = open_file(filename, use_mpio);
+    const hid_t file_id = open_file(filename, false, use_mpio);
 
     get_attribute(file_id, dataset_name, attribute_name, attribute_value);
 
@@ -573,8 +574,7 @@ namespace dolfin
     status = H5Fclose(file_id);
     dolfin_assert(status != HDF5_FAIL);
   }
-
-  //-----------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
   template <typename T>
   inline void HDF5Interface::add_attribute(const hid_t hdf5_file_handle,
                                            const std::string dataset_name,
@@ -592,10 +592,8 @@ namespace dolfin
     // Close dataset
     herr_t status = H5Dclose(dset_id);
     dolfin_assert(status != HDF5_FAIL);
-
   }
-
-  //-----------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
   template <typename T>
   inline void HDF5Interface::add_attribute(const std::string filename,
                                            const std::string dataset_name,
@@ -604,7 +602,7 @@ namespace dolfin
                                            const bool use_mpi_io)
   {
     // Open file
-    hid_t file_id = open_file(filename, use_mpi_io);
+    hid_t file_id = open_file(filename, false, use_mpi_io);
 
     add_attribute(file_id, dataset_name, attribute_name, attribute_value);
 

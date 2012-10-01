@@ -71,6 +71,7 @@ hid_t HDF5Interface::open_file(const std::string filename, const bool truncate,
   return file_id;
 }
 //-----------------------------------------------------------------------------
+/*
 void HDF5Interface::create(const std::string filename, bool use_mpiio)
 {
   // make empty HDF5 file
@@ -126,6 +127,7 @@ void HDF5Interface::create(const std::string filename, bool use_mpiio)
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 }
+*/
 //-----------------------------------------------------------------------------
 bool HDF5Interface::has_group(const hid_t hdf5_file_handle,
                                     const std::string group_name)
@@ -136,6 +138,15 @@ bool HDF5Interface::has_group(const hid_t hdf5_file_handle,
     return true;
    else
     return false;
+}
+//-----------------------------------------------------------------------------
+bool HDF5Interface::has_dataset(const hid_t hdf5_file_handle,
+                                const std::string dataset_name)
+{
+  hid_t lapl_id = H5Pcreate(H5P_LINK_ACCESS);
+  htri_t status = H5Lexists(hdf5_file_handle, dataset_name.c_str(), lapl_id);
+  dolfin_assert(status >= 0);
+  return status;
 }
 //-----------------------------------------------------------------------------
 void HDF5Interface::add_group(const hid_t hdf5_file_handle,
@@ -208,7 +219,7 @@ bool HDF5Interface::dataset_exists(const HDF5File& hdf5_file,
   herr_t status;
 
   // Try to open existing HDF5 file
-  hid_t file_id = open_file(filename, use_mpi_io);
+  hid_t file_id = open_file(filename, false, use_mpi_io);
 
   // Disable error reporting
   herr_t (*old_func)(void*);
@@ -290,7 +301,7 @@ std::vector<std::string> HDF5Interface::dataset_list(const std::string filename,
   herr_t status;
 
   // Try to open existing HDF5 file
-  hid_t file_id = open_file(filename, use_mpi_io);
+  hid_t file_id = open_file(filename, false, use_mpi_io);
 
   // Open group by name group_name
   hid_t group_id = H5Gopen(file_id,group_name.c_str());
@@ -334,7 +345,7 @@ std::pair<dolfin::uint, dolfin::uint>
   herr_t status;
 
   // Try to open existing HDF5 file
-  const hid_t file_id = open_file(filename, use_mpi_io);
+  const hid_t file_id = open_file(filename, false, use_mpi_io);
 
   // Open named dataset
   const hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
@@ -359,6 +370,7 @@ std::pair<dolfin::uint, dolfin::uint>
   return std::pair<uint, uint>(cur_size[0],cur_size[1]);
 }
 //-----------------------------------------------------------------------------
+/*
 hid_t HDF5Interface::open_file(const std::string filename,
                                const bool use_mpiio)
 {
@@ -391,4 +403,5 @@ hid_t HDF5Interface::open_file(const std::string filename,
 
   return file_id;
 }
+*/
 //-----------------------------------------------------------------------------

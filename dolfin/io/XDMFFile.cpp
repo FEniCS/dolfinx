@@ -49,8 +49,6 @@ using namespace dolfin;
 //----------------------------------------------------------------------------
 XDMFFile::XDMFFile(const std::string filename) : GenericFile(filename, "XDMF")
 {
-  // Do nothing
-
   // Name of HDF5 file
   boost::filesystem::path p(filename);
   p.replace_extension(".h5");
@@ -58,7 +56,7 @@ XDMFFile::XDMFFile(const std::string filename) : GenericFile(filename, "XDMF")
   // Create HDF5 file
   hdf5_file.reset(new HDF5File(p.string()));
   dolfin_assert(hdf5_file);
-  hdf5_file->create();
+  hdf5_file->open_hdf5_file(true);
 }
 //----------------------------------------------------------------------------
 XDMFFile::~XDMFFile()
@@ -311,8 +309,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
 
   // Write Mesh to HDF5 file (use contiguous vertex indices for topology)
   dolfin_assert(hdf5_file);
-  cout << "Create HDF5 file" << endl;
-  hdf5_file->create();
+
   cout << "Write mesh" << endl;
   hdf5_file->write_mesh(mesh, false);
   cout << "End write mesh" << endl;
@@ -410,7 +407,6 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   std::vector<T> data_values(meshfunction.values(),meshfunction.values()+meshfunction.size());
 
   dolfin_assert(hdf5_file);
-  hdf5_file->create(); //erase any existing file
 
   // Get counts of mesh cells and vertices
   const uint num_local_cells = mesh.num_cells();
@@ -471,14 +467,12 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
     // Output to storage
     xml_doc.save_file(filename.c_str(), "    ");
   }
-
 }
 //----------------------------------------------------------------------------
 void XDMFFile::XML_mesh_topology(pugi::xml_node &xdmf_topology,
                                  const uint cell_dim,
                                  const uint num_global_cells,
-                                 const std::string topology_dataset_name
-                                 )
+                                 const std::string topology_dataset_name)
 {
   // Add mesh topology references to an XML node
   // FIXME: Move to another file as a static class member?
@@ -511,9 +505,7 @@ void XDMFFile::XML_mesh_topology(pugi::xml_node &xdmf_topology,
   std::string topology_reference = p.filename().string() + ":" + topology_dataset_name;
   xdmf_topology_data.append_child(pugi::node_pcdata).set_value(topology_reference.c_str());
 }
-
 //----------------------------------------------------------------------------
-
 void XDMFFile::XML_mesh_geometry(pugi::xml_node &xdmf_geometry,
                                  const uint num_all_local_vertices,
                                  const std::string geometry_dataset_name
@@ -533,6 +525,7 @@ void XDMFFile::XML_mesh_geometry(pugi::xml_node &xdmf_geometry,
   const std::string geometry_reference = p.filename().string() + ":" + geometry_dataset_name;
   xdmf_geom_data.append_child(pugi::node_pcdata).set_value(geometry_reference.c_str());
 }
+//----------------------------------------------------------------------------
 
 
 #endif

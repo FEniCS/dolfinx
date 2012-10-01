@@ -97,8 +97,8 @@ namespace dolfin
     // Friend
     friend class XDMFFile;
 
-    // Create an empty HDF5 file (truncate if existing)
-    void create();
+    // Open HDF5 file
+    void open_hdf5_file(bool truncate);
 
     // Write data contiguously from each process in parallel into a 2D array
     // data contains local portion of data vector
