@@ -507,6 +507,64 @@ namespace dolfin
     status = H5Fclose(file_id);
     dolfin_assert(status != HDF5_FAIL);
   }
+
+//-----------------------------------------------------------------------------
+  template <typename T>
+  inline void HDF5Interface::get_attribute(hid_t hdf5_file_handle,
+                                  const std::string dataset_name,
+                                  const std::string attribute_name,
+                                  T& attribute_value)
+  {
+    herr_t status;
+    
+    // Open dataset by name
+    const hid_t dset_id = H5Dopen(hdf5_file_handle, dataset_name.c_str());
+    dolfin_assert(dset_id != HDF5_FAIL);
+    
+    // Open attribute by name and get its type
+    const hid_t attr_id = H5Aopen(dset_id, attribute_name.c_str(), H5P_DEFAULT);
+    dolfin_assert(attr_id != HDF5_FAIL);
+    const hid_t attr_type = H5Aget_type(attr_id);
+    dolfin_assert(attr_type != HDF5_FAIL);
+    
+    // Specific code for each type of data template
+    get_attribute_value(attr_type, attr_id, attribute_value);
+
+    // Close attribute type
+    status = H5Tclose(attr_type);
+    dolfin_assert(status != HDF5_FAIL);
+    
+    // Close attribute
+    status = H5Aclose(attr_id);
+    dolfin_assert(status != HDF5_FAIL);
+    
+    // Close dataset
+    status = H5Dclose(dset_id);
+    dolfin_assert(status != HDF5_FAIL);
+    
+  }
+
+//-----------------------------------------------------------------------------
+
+  template <typename T>
+  inline void HDF5Interface::get_attribute(const std::string filename,
+                                  const std::string dataset_name,
+                                  const std::string attribute_name,
+                                  T& attribute_value,
+                                  const bool use_mpio)
+  {
+    herr_t status;
+    
+    // Try to open existing HDF5 file
+    const hid_t file_id = open_file(filename, use_mpio);
+    
+    get_attribute(file_id, dataset_name, attribute_name, attribute_value);
+    
+    // Close file
+    status = H5Fclose(file_id);
+    dolfin_assert(status != HDF5_FAIL);
+  }
+
   //-----------------------------------------------------------------------------
   template <typename T>
   inline void HDF5Interface::add_attribute(const hid_t hdf5_file_handle,
