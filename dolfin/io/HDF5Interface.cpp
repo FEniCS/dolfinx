@@ -18,7 +18,7 @@
 //
 //
 // First Added: 2012-09-21
-// Last Changed: 2012-09-29
+// Last Changed: 2012-10-01
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/MPI.h>
@@ -139,9 +139,11 @@ bool HDF5Interface::has_group(const hid_t hdf5_file_handle,
 }
 //-----------------------------------------------------------------------------
 void HDF5Interface::add_group(const hid_t hdf5_file_handle,
-                              const std::string dataset_name)
+                              const std::string group_name)
 {
-  hid_t group_id_vis = H5Gcreate(hdf5_file_handle, dataset_name.c_str(), H5P_DEFAULT);
+  if(has_group(hdf5_file_handle, group_name)) return;
+
+  hid_t group_id_vis = H5Gcreate(hdf5_file_handle, group_name.c_str(), H5P_DEFAULT);
   dolfin_assert(group_id_vis != HDF5_FAIL);
 
   herr_t status = H5Gclose(group_id_vis);

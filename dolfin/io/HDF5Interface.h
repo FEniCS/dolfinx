@@ -48,7 +48,7 @@ namespace dolfin
     static hid_t open_file(const std::string filename, const bool truncate,
                            const bool use_mpi_io);
 
-    /// FIXME: Add description
+    /// Create a new file
     static void create(const std::string filename, const bool mpiio);
 
     /// Write data to existing HDF file as defined by range blocks on
@@ -60,7 +60,8 @@ namespace dolfin
                               const std::string dataset_name,
                               const std::vector<T>& data,
                               const std::pair<uint, uint> range,
-                              const uint width, bool use_mpio);
+                              const uint width, bool use_mpio,
+                              bool use_chunking);
 
     template <typename T>
     static void write_data(const std::string filename,
@@ -198,7 +199,8 @@ namespace dolfin
                                            const std::string dataset_name,
                                            const std::vector<T>& data,
                                            const std::pair<uint, uint> range,
-                                           const uint width, bool use_mpi_io)
+                                           const uint width, bool use_mpi_io,
+                                           bool use_chunking)
   {
 
     // Use 1D or 2D dataset depending on width
@@ -224,9 +226,8 @@ namespace dolfin
     // Set chunking parameters
 
     hid_t chunking_properties;
-    bool chunking = true;
     
-    if(chunking)
+    if(use_chunking)
     {
       // Set chunk size and limit to 1MB
       hsize_t chunk_size = dimsf[0];
@@ -412,7 +413,7 @@ namespace dolfin
     if (rank == 2)
       count[1] = dimensions_size[1];
 
-    // FIXME: document this call
+    // Select a block in the dataset beginning at offset[], with size=count[]
     herr_t status = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET,
                                         offset.data(), NULL, count.data(),
                                         NULL);
