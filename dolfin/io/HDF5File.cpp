@@ -174,6 +174,23 @@ void HDF5File::read(const std::string dataset_name, GenericVector& x)
   // Get local range
   const std::pair<uint, uint> local_range = x.local_range();
 
+  // Retrieve prior partitioning information
+  bool retrieve_partitioning = false;
+  if(retrieve_partitioning)
+  {
+    std::vector<uint> partitions;
+    HDF5Interface::get_attribute(hdf5_file_id, dataset_name, "partition", partitions);
+    if(MPI::num_processes() != partitions.size())
+    {
+      dolfin_error("HDF5File.cpp",
+                   "read Vector from file",
+                   "Different number of processes used when writing. Cannot restore partitioning");
+    }
+    partitions.push_back(data_size[0]);
+    uint process_num = MPI::process_number();
+    local_range=std::make_pair(partitions[process_num],partitions[process_num+1]);
+  }
+  
   // Read data
   std::vector<double> data;
   HDF5Interface::read_dataset(hdf5_file_id, dataset_name, local_range, data);

@@ -139,6 +139,13 @@ namespace dolfin
                               T &attribute_value,
                               const bool use_mpio);
 
+    /// Get a named attribute of a dataset
+    template <typename T>
+    static void get_attribute(const hid_t hdf5_file_handle,
+                              const std::string dataset_name,
+                              const std::string attribute_name,
+                              T &attribute_value);
+    
     /// Add attribute to dataset
     template <typename T>
     static void add_attribute(const std::string filename,
@@ -177,7 +184,7 @@ namespace dolfin
                                     T& attribute_value)
     {
       dolfin_error("HDF5Interface.cpp",
-                   "gate attribute data",
+                   "get attribute data",
                    "No specialised function fot this data type");
     }
 

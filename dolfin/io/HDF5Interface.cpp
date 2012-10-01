@@ -360,16 +360,12 @@ std::pair<dolfin::uint, dolfin::uint>
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void HDF5Interface::get_attribute(const std::string filename,
+void HDF5Interface::get_attribute(hid_t hdf5_file_handle,
                                   const std::string dataset_name,
                                   const std::string attribute_name,
-                                  T& attribute_value,
-                                  const bool use_mpio)
+                                  T& attribute_value)
 {
   herr_t status;
-
-  // Try to open existing HDF5 file
-  const hid_t file_id = open_file(filename, use_mpio);
 
   // Open dataset by name
   const hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
@@ -396,11 +392,30 @@ void HDF5Interface::get_attribute(const std::string filename,
   status = H5Dclose(dset_id);
   dolfin_assert(status != HDF5_FAIL);
 
+}
+//-----------------------------------------------------------------------------
+template <typename T>
+void HDF5Interface::get_attribute(const std::string filename,
+                                  const std::string dataset_name,
+                                  const std::string attribute_name,
+                                  T& attribute_value,
+                                  const bool use_mpio)
+{
+  herr_t status;
+
+  // Try to open existing HDF5 file
+  const hid_t file_id = open_file(filename, use_mpio);
+
+  get_attribute(file_id, dataset_name, attribute_name, attribute_value);
+
   // Close file
   status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 }
 //-----------------------------------------------------------------------------
+
+
+
 hid_t HDF5Interface::open_file(const std::string filename,
                                const bool use_mpiio)
 {
