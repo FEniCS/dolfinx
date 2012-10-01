@@ -43,6 +43,7 @@ option(DOLFIN_ENABLE_UNIT_TESTS "Enable unit tests." ON)
 option(DOLFIN_ENABLE_TESTING "Enable testing." OFF)
 option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
 option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
+option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests." OFF)
 
 #option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." ON)
 

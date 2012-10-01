@@ -216,22 +216,28 @@ dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Write a pre-solve message
   pre_report(*A);
 
-  // FIXME: Check for solver type
+  // Get package used to solve sytem
+  PC pc;
+  KSPGetPC(*_ksp, &pc);
+  const MatSolverPackage solver_package;
+  PCFactorGetMatSolverPackage(pc, &solver_package);
+
   // Set number of threads if using PaStiX
-  if (parameters["num_threads"].is_set())
+  if (strcmp(solver_package, MATSOLVERPASTIX) == 0)
   {
-    // Use number of threads specified for LU solver
-    // FIXME: This option is not used by PETSc 3.2
-    PetscOptionsSetValue("-mat_pastix_threadnbr",
-                         parameters["num_threads"].value_str().c_str());
+    if (parameters["num_threads"].is_set())
+    {
+      // Use number of threads specified for LU solver
+      PetscOptionsSetValue("-mat_pastix_threadnbr",
+                           parameters["num_threads"].value_str().c_str());
+    }
+    else
+    {
+      // Use global number of threads
+      PetscOptionsSetValue("-mat_pastix_threadnbr",
+                           dolfin::parameters["num_threads"].value_str().c_str());
+    }
   }
-  else
-  {
-    // Use global number of threads
-    PetscOptionsSetValue("-mat_pastix_threadnbr",
-                         dolfin::parameters["num_threads"].value_str().c_str());
-  }
-  //PetscOptionsSetValue("-mat_pastix_verbose", "2");
 
   // Solve linear system
   KSPSolve(*_ksp, *_b.vec(), *_x.vec());
@@ -362,12 +368,8 @@ void PETScLUSolver::init_solver(std::string& method)
   PCFactorSetMatSolverPackage(pc, solver_package);
 
   // Allow matrices with zero diagonals to be solved
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
   PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
   PCFactorSetShiftAmount(pc, PETSC_DECIDE);
-  #else
-  PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
-  #endif
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::set_petsc_operators()
