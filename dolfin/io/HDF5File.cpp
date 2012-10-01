@@ -103,10 +103,10 @@ void HDF5File::operator<< (const GenericVector& x)
   std::vector<uint> partitions;
   MPI::gather(local_range.first, partitions);
   MPI::broadcast(partitions);
-        
+
   HDF5Interface::add_attribute(hdf5_file_id, dataset_name, "partition",
                                partitions);
-  
+
   // Increment counter
   counter++;
 }
@@ -123,11 +123,6 @@ void HDF5File::operator>> (GenericVector& x)
 
   // Check that 'Vector' group exists
   dolfin_assert(HDF5Interface::has_group(hdf5_file_id, "/Vector") == 1);
-
-  /*
-  // Check that there is only one dataset in group 'Vector'
-  dolfin_assert(HDF5Interface::num_datasets_in_group(hdf5_file_id, "/Vector") == 1);
-  */
 
   // Get list all datasets in group
   const std::vector<std::string> datasets
@@ -190,9 +185,9 @@ void HDF5File::read(const std::string dataset_name, GenericVector& x)
     uint process_num = MPI::process_number();
     local_range=std::make_pair(partitions[process_num],partitions[process_num+1]);
     x.resize(local_range);
-    
+
   }
-  
+
   // Read data
   std::vector<double> data;
   HDF5Interface::read_dataset(hdf5_file_id, dataset_name, local_range, data);

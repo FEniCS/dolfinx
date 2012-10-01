@@ -125,7 +125,7 @@ namespace dolfin
                                                  const std::string group_name,
                                                  const bool use_mpi_io);
 
-    // FIXME: Size of dimension?
+    // FIXME: Size or dimension?
     /// Get dimensions (NX, NY) of 2D dataset
     static std::pair<uint, uint> dataset_dimensions(const std::string filename,
                                                const std::string dataset_name,
@@ -145,7 +145,7 @@ namespace dolfin
                               const std::string dataset_name,
                               const std::string attribute_name,
                               T &attribute_value);
-    
+
     /// Add attribute to dataset
     template <typename T>
     static void add_attribute(const std::string filename,
@@ -161,7 +161,7 @@ namespace dolfin
                               const std::string dataset_name,
                               const std::string attribute_name,
                               const T& attribute_value);
-    
+
   private:
 
     // HDF5 calls to open a file descriptor
@@ -209,7 +209,6 @@ namespace dolfin
                                            const uint width, bool use_mpi_io,
                                            bool use_chunking)
   {
-
     // Use 1D or 2D dataset depending on width
     const uint rank = 1 + ( (width > 1) ? 1 : 0);
 
@@ -231,25 +230,20 @@ namespace dolfin
     dolfin_assert(filespace0 != HDF5_FAIL);
 
     // Set chunking parameters
-
     hid_t chunking_properties;
-    
-    if(use_chunking)
+    if (use_chunking)
     {
       // Set chunk size and limit to 1MB
       hsize_t chunk_size = dimsf[0];
-      if(chunk_size > 1048576)
+      if (chunk_size > 1048576)
         chunk_size = 1048576;
-      
-      hsize_t chunk_dims[2]={chunk_size, 1};
+
+      hsize_t chunk_dims[2] = {chunk_size, 1};
       chunking_properties = H5Pcreate(H5P_DATASET_CREATE);
       H5Pset_chunk(chunking_properties, rank, chunk_dims);
     }
     else
-    {
       chunking_properties = H5P_DEFAULT;
-    }
-    
 
     // Create global dataset (using dataset_name)
     const hid_t dset_id = H5Dcreate(file_handle, dataset_name.c_str(), h5type,
@@ -516,32 +510,32 @@ namespace dolfin
                                   T& attribute_value)
   {
     herr_t status;
-    
+
     // Open dataset by name
     const hid_t dset_id = H5Dopen(hdf5_file_handle, dataset_name.c_str());
     dolfin_assert(dset_id != HDF5_FAIL);
-    
+
     // Open attribute by name and get its type
     const hid_t attr_id = H5Aopen(dset_id, attribute_name.c_str(), H5P_DEFAULT);
     dolfin_assert(attr_id != HDF5_FAIL);
     const hid_t attr_type = H5Aget_type(attr_id);
     dolfin_assert(attr_type != HDF5_FAIL);
-    
+
     // Specific code for each type of data template
     get_attribute_value(attr_type, attr_id, attribute_value);
 
     // Close attribute type
     status = H5Tclose(attr_type);
     dolfin_assert(status != HDF5_FAIL);
-    
+
     // Close attribute
     status = H5Aclose(attr_id);
     dolfin_assert(status != HDF5_FAIL);
-    
+
     // Close dataset
     status = H5Dclose(dset_id);
     dolfin_assert(status != HDF5_FAIL);
-    
+
   }
 
 //-----------------------------------------------------------------------------
@@ -554,12 +548,12 @@ namespace dolfin
                                   const bool use_mpio)
   {
     herr_t status;
-    
+
     // Try to open existing HDF5 file
     const hid_t file_id = open_file(filename, use_mpio);
-    
+
     get_attribute(file_id, dataset_name, attribute_name, attribute_value);
-    
+
     // Close file
     status = H5Fclose(file_id);
     dolfin_assert(status != HDF5_FAIL);
@@ -585,7 +579,7 @@ namespace dolfin
     dolfin_assert(status != HDF5_FAIL);
 
   }
-  
+
   //-----------------------------------------------------------------------------
   template <typename T>
   inline void HDF5Interface::add_attribute(const std::string filename,
