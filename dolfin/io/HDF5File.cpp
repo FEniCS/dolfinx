@@ -95,9 +95,10 @@ void HDF5File::operator<< (const GenericVector& x)
 
   // Write data to file
   std::pair<uint,uint> local_range = x.local_range();
-  bool chunking = true;
+  const bool chunking = true;
+  const std::vector<uint> global_size(1, x.size());
   HDF5Interface::write_dataset(hdf5_file_id, dataset_name, local_data,
-                               local_range, 1, mpi_io, chunking);
+                               local_range, global_size, mpi_io, chunking);
 
   // Add partitioning attribute to dataset
   std::vector<uint> partitions;

@@ -60,8 +60,8 @@ namespace dolfin
                               const std::string dataset_name,
                               const std::vector<T>& data,
                               const std::pair<uint, uint> range,
-                              const uint width, bool use_mpio,
-                              bool use_chunking);
+                              const std::vector<uint> global_size,
+                              bool use_mpio, bool use_chunking);
 
     template <typename T>
     static void write_data(const std::string filename,
@@ -206,27 +206,42 @@ namespace dolfin
                                            const std::string dataset_name,
                                            const std::vector<T>& data,
                                            const std::pair<uint, uint> range,
-                                           const uint width, bool use_mpi_io,
-                                           bool use_chunking)
+                                           const std::vector<uint> global_size,
+                                           bool use_mpi_io, bool use_chunking)
   {
-    // Use 1D or 2D dataset depending on width
-    const uint rank = 1 + ( (width > 1) ? 1 : 0);
+    // Data rank
+    const uint rank = global_size.size();
+    dolfin_assert(rank != 0);
+
+    if (rank > 2)
+    {
+      dolfin_error("HDF5Interface.cpp",
+                   "write dataset to HDF5 file",
+                   "Only rank 1 and rank 2 datsset are supported");
+    }
 
     // Get HDF5 data type
     const int h5type = hdf5_type<T>();
 
     // Hyperslab selection parameters
-    const hsize_t count[2]  = {range.second - range.first, width};
-    const hsize_t offset[2] = {range.first, 0};
+    std::vector<hsize_t> count(global_size.begin(), global_size.end());
+    count[0] = range.second - range.first;
+
+    // Data offsets
+    std::vector<hsize_t> offset(rank, 0);
+    offset[0] = range.first;
 
     // Dataset dimensions
-    const hsize_t dimsf[2] = {MPI::sum(count[0]), width};
+    const std::vector<hsize_t> dimsf(global_size.begin(), global_size.end());
+
+    // Check sizes
+    dolfin_assert(MPI::sum(count[0]) == global_size[0]);
 
     // Generic status report
     herr_t status;
 
     // Create a global data space
-    const hid_t filespace0 = H5Screate_simple(rank, dimsf, NULL);
+    const hid_t filespace0 = H5Screate_simple(rank, dimsf.data(), NULL);
     dolfin_assert(filespace0 != HDF5_FAIL);
 
     // Set chunking parameters
@@ -255,13 +270,13 @@ namespace dolfin
     dolfin_assert(status != HDF5_FAIL);
 
     // Create a local data space
-    const hid_t memspace = H5Screate_simple(rank, count, NULL);
+    const hid_t memspace = H5Screate_simple(rank, count.data(), NULL);
     dolfin_assert(memspace != HDF5_FAIL);
 
     // Create a file dataspace within the global space - a hyperslab
     const hid_t filespace1 = H5Dget_space(dset_id);
-    status = H5Sselect_hyperslab(filespace1, H5S_SELECT_SET, offset, NULL,
-                                 count, NULL);
+    status = H5Sselect_hyperslab(filespace1, H5S_SELECT_SET, offset.data(), NULL,
+                                 count.data(), NULL);
     dolfin_assert(status != HDF5_FAIL);
 
     // Set parallel access with communicator
