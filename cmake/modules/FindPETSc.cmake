@@ -173,7 +173,11 @@ show :
 endif()
 
 # Build PETSc test program
-if (FOUND_PETSC_CONF)
+if (DOLFIN_SKIP_BUILD_TESTS)
+  set(PETSC_TEST_RUNS TRUE)
+  set(PETSC_VERSION "UNKNOWN")
+  set(PETSC_VERSION_OK TRUE)
+elseif (FOUND_PETSC_CONF)
 
   # Set flags for building test program
   set(CMAKE_REQUIRED_INCLUDES ${PETSC_INCLUDE_DIRS})
@@ -274,7 +278,7 @@ int main()
   if (PETSC_CUSP_FOUND)
     message(STATUS "PETSc configured with Cusp support")
   else()
-      message(STATUS "PETSc configured without Cusp support")
+    message(STATUS "PETSc configured without Cusp support")
   endif()
 
 endif()
