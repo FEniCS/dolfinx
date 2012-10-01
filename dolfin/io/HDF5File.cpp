@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-09-28
+// Last changed: 2012-10-01
 
 #ifdef HAS_HDF5
 
@@ -94,9 +94,18 @@ void HDF5File::operator<< (const GenericVector& x)
       = "/Vector/" + boost::lexical_cast<std::string>(counter);
 
   // Write data to file
+  std::pair<uint,uint> local_range = x.local_range();
   HDF5Interface::write_dataset(hdf5_file_id, dataset_name, local_data,
-                               x.local_range(), 1, mpi_io);
+                               local_range, 1, mpi_io);
 
+  // Add partitioning attribute to dataset
+  std::vector<uint> partitions;
+  MPI::gather(local_range.first, partitions);
+  MPI::broadcast(partitions);
+        
+  HDF5Interface::add_attribute(hdf5_file_id, dataset_name, "partition",
+                               partitions);
+  
   // Increment counter
   counter++;
 }
@@ -123,7 +132,7 @@ void HDF5File::operator>> (GenericVector& x)
   const std::vector<std::string> datasets
       = HDF5Interface::dataset_list(hdf5_file_id, "/Vector");
 
-  // Make sure there is oly one datset
+  // Make sure there is only one dataset
   dolfin_assert(datasets.size() == 1);
 
   // Read data set
@@ -407,11 +416,7 @@ void HDF5File::redistribute_by_global_index(const std::vector<uint>& global_inde
 
   // Set up destination vector for communication with remote processes
   for(uint process_j = 0; process_j < num_processes ; ++process_j)
-  {
     destinations.push_back(process_j);
-    //    std::vector<std::pair<uint,T> > send_to_process_j;
-    //    values_to_send.push_back(send_to_process_j);
-  }
 
   // Go through local vector and append value to the appropriate list
   // to send to correct process

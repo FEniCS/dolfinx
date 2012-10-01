@@ -146,6 +146,14 @@ namespace dolfin
                               const T& attribute_value,
                               const bool use_mpi_io);
 
+
+    /// Add attribute to dataset
+    template <typename T>
+    static void add_attribute(const hid_t hdf5_file_handle,
+                              const std::string dataset_name,
+                              const std::string attribute_name,
+                              const T& attribute_value);
+    
   private:
 
     // HDF5 calls to open a file descriptor
@@ -192,7 +200,9 @@ namespace dolfin
                                            const std::pair<uint, uint> range,
                                            const uint width, bool use_mpi_io)
   {
-    const uint rank = 1;
+
+    // Use 1D or 2D dataset depending on width
+    const uint rank = 1 + ( (width > 1) ? 1 : 0);
 
     // Get HDF5 data type
     const int h5type = hdf5_type<T>();
@@ -211,9 +221,31 @@ namespace dolfin
     const hid_t filespace0 = H5Screate_simple(rank, dimsf, NULL);
     dolfin_assert(filespace0 != HDF5_FAIL);
 
+    // Set chunking parameters
+
+    hid_t chunking_properties;
+    bool chunking = true;
+    
+    if(chunking)
+    {
+      // Set chunk size and limit to 1MB
+      hsize_t chunk_size = dimsf[0];
+      if(chunk_size > 1048576)
+        chunk_size = 1048576;
+      
+      hsize_t chunk_dims[2]={chunk_size, 1};
+      chunking_properties = H5Pcreate(H5P_DATASET_CREATE);
+      H5Pset_chunk(chunking_properties, rank, chunk_dims);
+    }
+    else
+    {
+      chunking_properties = H5P_DEFAULT;
+    }
+    
+
     // Create global dataset (using dataset_name)
     const hid_t dset_id = H5Dcreate(file_handle, dataset_name.c_str(), h5type,
-                                    filespace0, H5P_DEFAULT);
+                                    filespace0, chunking_properties);
     dolfin_assert(dset_id != HDF5_FAIL);
 
     // Close global data space
@@ -469,6 +501,27 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <typename T>
+  inline void HDF5Interface::add_attribute(const hid_t hdf5_file_handle,
+                                           const std::string dataset_name,
+                                           const std::string attribute_name,
+                                           const T& attribute_value)
+  {
+
+    // Open named dataset
+    hid_t dset_id = H5Dopen(hdf5_file_handle, dataset_name.c_str());
+    dolfin_assert(dset_id != HDF5_FAIL);
+
+    // Add attribute of appropriate type
+    add_attribute_value(dset_id, attribute_name, attribute_value);
+
+    // Close dataset
+    herr_t status = H5Dclose(dset_id);
+    dolfin_assert(status != HDF5_FAIL);
+
+  }
+  
+  //-----------------------------------------------------------------------------
+  template <typename T>
   inline void HDF5Interface::add_attribute(const std::string filename,
                                            const std::string dataset_name,
                                            const std::string attribute_name,
@@ -478,21 +531,10 @@ namespace dolfin
     // Open file
     hid_t file_id = open_file(filename, use_mpi_io);
 
-    // Open named dataset
-    hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
-    dolfin_assert(dset_id != HDF5_FAIL);
-
-    // Add attribute of appropriate type
-    add_attribute_value(dset_id, attribute_name, attribute_value);
-
-    herr_t status;
-
-    // Close dataset
-    status = H5Dclose(dset_id);
-    dolfin_assert(status != HDF5_FAIL);
+    add_attribute(file_id, dataset_name, attribute_name, attribute_value);
 
     // Close file
-    status = H5Fclose(file_id);
+    herr_t status = H5Fclose(file_id);
     dolfin_assert(status != HDF5_FAIL);
   }
   //-----------------------------------------------------------------------------
@@ -527,6 +569,7 @@ namespace dolfin
                                         const std::string attribute_name,
                                         const std::vector<uint>& attribute_value)
   {
+
     // Create a vector dataspace
     const hsize_t dimsf = attribute_value.size();
     const hid_t dataspace_id = H5Screate_simple(1, &dimsf, NULL);
