@@ -93,11 +93,11 @@ namespace dolfin
 
     /// Check for existence group in HDF5 file
     static bool has_group(const hid_t hdf5_file_handle,
-                         const std::string group_name);
+                          const std::string group_name);
 
     /// Add group to HDF5 file
     static void add_group(const hid_t hdf5_file_handle,
-                                const std::string dataset_name);
+                          const std::string dataset_name);
 
     /// Get dataset rank
     static uint dataset_rank(const hid_t hdf5_file_handle,
@@ -279,7 +279,7 @@ namespace dolfin
                                  count.data(), NULL);
     dolfin_assert(status != HDF5_FAIL);
 
-    // Set parallel access with communicator
+    // Set parallel access
     const hid_t plist_id = H5Pcreate(H5P_DATASET_XFER);
     if (use_mpi_io)
     {

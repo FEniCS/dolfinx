@@ -136,7 +136,8 @@ void HDF5File::operator>> (GenericVector& x)
   read("/Vector/" + datasets[0], x);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::read(const std::string dataset_name, GenericVector& x)
+void HDF5File::read(const std::string dataset_name, GenericVector& x,
+                    const bool use_partition_from_file)
 {
   // Open HDF5 file
   if (!hdf5_file_open)
@@ -155,11 +156,39 @@ void HDF5File::read(const std::string dataset_name, GenericVector& x)
   // Get global dataset size
   const std::vector<uint> data_size
       = HDF5Interface::get_dataset_size(hdf5_file_id, dataset_name);
+
+  // Check that rank is 1
   dolfin_assert(data_size.size() == 1);
 
   // Check input vector, and re-size if not already sized
   if (x.size() == 0)
-    x.resize(data_size[0]);
+  {
+    // Resize vector
+    if (use_partition_from_file)
+    {
+      // Get partition from file
+      std::vector<uint> partitions;
+      HDF5Interface::get_attribute(hdf5_file_id, dataset_name, "partition", partitions);
+
+      // Check that number of MPI processes matches partitioning
+      if(MPI::num_processes() != partitions.size())
+      {
+        dolfin_error("HDF5File.cpp",
+                     "read vector from file",
+                     "Different number of processes used when writing. Cannot restore partitioning");
+      }
+
+      // Add global size at end of partition vectors
+      partitions.push_back(data_size[0]);
+
+      // Initialise vector
+      const uint process_num = MPI::process_number();
+      const std::pair<uint, uint> local_range(partitions[process_num], partitions[process_num + 1]);
+      x.resize(local_range);
+    }
+    else
+      x.resize(data_size[0]);
+  }
   else if (x.size() != data_size[0])
   {
     dolfin_error("HDF5File.cpp",
@@ -168,28 +197,9 @@ void HDF5File::read(const std::string dataset_name, GenericVector& x)
   }
 
   // Get local range
-  std::pair<uint, uint> local_range = x.local_range();
+  const std::pair<uint, uint> local_range = x.local_range();
 
-  // Retrieve prior partitioning information
-  bool retrieve_partitioning = false;
-  if(retrieve_partitioning)
-  {
-    std::vector<uint> partitions;
-    HDF5Interface::get_attribute(hdf5_file_id, dataset_name, "partition", partitions);
-    if(MPI::num_processes() != partitions.size())
-    {
-      dolfin_error("HDF5File.cpp",
-                   "read vector from file",
-                   "Different number of processes used when writing. Cannot restore partitioning");
-    }
-    partitions.push_back(data_size[0]);
-    uint process_num = MPI::process_number();
-    local_range=std::make_pair(partitions[process_num],partitions[process_num+1]);
-    x.resize(local_range);
-
-  }
-
-  // Read data
+  // Read data from file
   std::vector<double> data;
   HDF5Interface::read_dataset(hdf5_file_id, dataset_name, local_range, data);
 

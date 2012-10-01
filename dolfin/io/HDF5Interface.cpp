@@ -131,7 +131,7 @@ bool HDF5Interface::has_group(const hid_t hdf5_file_handle,
                                     const std::string group_name)
 {
    herr_t status = H5Eset_auto(NULL, NULL);
-   status = H5Gget_objinfo (hdf5_file_handle, group_name.c_str(), 0, NULL);
+   status = H5Gget_objinfo(hdf5_file_handle, group_name.c_str(), 0, NULL);
    if (status == 0)
     return true;
    else
@@ -359,9 +359,6 @@ std::pair<dolfin::uint, dolfin::uint>
   return std::pair<uint, uint>(cur_size[0],cur_size[1]);
 }
 //-----------------------------------------------------------------------------
-
-
-
 hid_t HDF5Interface::open_file(const std::string filename,
                                const bool use_mpiio)
 {

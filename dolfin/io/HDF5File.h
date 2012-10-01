@@ -57,7 +57,8 @@ namespace dolfin
     void operator>> (GenericVector& x);
 
     /// Read vector from HDF5 file
-    void read(const std::string dataset_name, GenericVector& x);
+    void read(const std::string dataset_name, GenericVector& x,
+              const bool use_partition_from_file=true);
 
     /// Write Mesh to file (using true topology indices)
     void operator<< (const Mesh& mesh);
@@ -65,22 +66,24 @@ namespace dolfin
     /// Write Mesh to file. 'true_topology_indices' indicates
     /// whether the true global vertex indices should be used when saving
 
-    /// With true_topology_indices=true 
+    /// With true_topology_indices=true
     /// ===============================
     /// Vertex coordinates are reordered into global order before saving
     /// Topological connectivity uses global indices
-    /// * may exhibit poor scaling due to MPI distribute of vertex coordinates
+    /// * may exhibit poor scaling due to MPI distribute of vertex
+    /// coordinates
     /// * can be read back in by any number of processes
 
     /// With true_topology_indices=false
     /// ================================
     /// Vertex coordinates are in local order, with an offset
-    /// Topological connectivity uses the local+offset values for indexing
+    /// Topological connectivity uses the local + offset values for indexing
     /// * some duplication of vertices => larger file size
     /// * reduced MPI communication when saving
-    /// * more difficult to read back in, especially if nprocs > than when writing
-    /// * efficient to read back in if nprocs is the same, and partitioning is the same
-
+    /// * more difficult to read back in, especially if nprocs > than
+    ///   when writing
+    /// * efficient to read back in if nprocs is the same, and
+    ///   partitioning is the same
     void write_mesh(const Mesh& mesh, bool true_topology_indices=true);
 
     /// Read Mesh from file
