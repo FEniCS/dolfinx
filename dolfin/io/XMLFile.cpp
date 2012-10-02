@@ -54,14 +54,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLFile::XMLFile(const std::string filename)
-  : GenericFile(filename, "XML")
+XMLFile::XMLFile(const std::string filename) : GenericFile(filename, "XML")
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-XMLFile::XMLFile(std::ostream& s)
-  : GenericFile("", "XML"), outstream(&s, NoDeleter())
+XMLFile::XMLFile(std::ostream& s) : GenericFile("", "XML"),
+  outstream(&s, NoDeleter())
 {
   // Do nothing
 }
@@ -319,9 +318,11 @@ void XMLFile::load_xml_doc(pugi::xml_document& xml_doc) const
     result = xml_doc.load_file(filename.c_str());
 
   if (!result)
+  {
     dolfin_error("XMLFile.cpp",
                  "read data from XML file",
                  "Error while parsing XML");
+  }
 }
 //-----------------------------------------------------------------------------
 void XMLFile::save_xml_doc(const pugi::xml_document& xml_doc) const
@@ -354,9 +355,11 @@ const pugi::xml_node XMLFile::get_dolfin_xml_node(pugi::xml_document& xml_doc) c
   // Check that we have a DOLFIN XML file
   const pugi::xml_node dolfin_node = xml_doc.child("dolfin");
   if (!dolfin_node)
+  {
     dolfin_error("XMLFile.cpp",
                  "read data from XML file",
                  "Not a DOLFIN XML file");
+  }
   return dolfin_node;
 }
 //-----------------------------------------------------------------------------

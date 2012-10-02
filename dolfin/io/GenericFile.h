@@ -112,6 +112,10 @@ namespace dolfin
     void read();
     virtual void write();
 
+    // Return filename
+    std::string name() const
+    { return filename; }
+
   protected:
 
     void read_not_impl(const std::string object) const;

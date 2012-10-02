@@ -42,6 +42,7 @@ namespace dolfin
 {
 
   #ifdef HAS_MPI
+
   class MPICommunicator
   {
 
@@ -61,6 +62,19 @@ namespace dolfin
     MPI_Comm communicator;
 
   };
+
+  class MPIInfo
+  {
+  public:
+    MPIInfo();
+    ~MPIInfo();
+    MPI_Info& operator*();
+  private:
+
+    MPI_Info info;
+
+  };
+
   #endif
 
   /// This class provides stateful (single communicator) non-blocking MPI functionality.

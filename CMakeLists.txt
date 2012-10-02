@@ -76,6 +76,7 @@ list(APPEND OPTIONAL_PACKAGES "CGAL")
 list(APPEND OPTIONAL_PACKAGES "zlib")
 list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "Sphinx")
+list(APPEND OPTIONAL_PACKAGES "HDF5")
 list(APPEND OPTIONAL_PACKAGES "VTK")
 
 # Add options
@@ -278,6 +279,11 @@ endif()
 # Check for CHOLMOD
 if (DOLFIN_ENABLE_CHOLMOD)
   find_package(CHOLMOD QUIET)
+endif()
+
+# Check for HDF5
+if (DOLFIN_ENABLE_HDF5)
+  find_package(HDF5)
 endif()
 
 # Check for PaStiX
