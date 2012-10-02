@@ -84,7 +84,9 @@ namespace dolfin
     ///   when writing
     /// * efficient to read back in if nprocs is the same, and
     ///   partitioning is the same
-    void write_mesh(const Mesh& mesh, bool true_topology_indices=true);
+    void write_mesh(const Mesh& mesh);
+
+    void write_mesh(const Mesh& mesh, const uint cell_dim);
 
     /// Read Mesh from file
     void operator>> (Mesh& mesh);

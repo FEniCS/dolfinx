@@ -131,11 +131,11 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   // Write mesh to HDF5 file
   if (counter == 0 )
-    hdf5_file->write_mesh(mesh, false);
+    hdf5_file->write_mesh(mesh);
   else if (!hdf5_file->dataset_exists(mesh_coords_name)
                 || !hdf5_file->dataset_exists(mesh_topology_name))
   {
-    hdf5_file->write_mesh(mesh, false);
+    hdf5_file->write_mesh(mesh);
   }
 
   // Working data structure for formatting XML file
@@ -280,7 +280,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
   // Write Mesh to HDF5 file (use contiguous vertex indices for topology)
   dolfin_assert(hdf5_file);
 
-  hdf5_file->write_mesh(mesh, false);
+  hdf5_file->write_mesh(mesh);
 
   // Get number of local/global cells/vertices
   const uint num_local_cells = mesh.num_cells();
@@ -380,7 +380,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
                  "No values in MeshFunction");
   }
 
-  // Collate data
+  // Collate data in a vector
   std::vector<T> data_values(meshfunction.values(),
                              meshfunction.values() + meshfunction.size());
 
@@ -402,7 +402,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
     p.filename().string() + ":" + dataset_basic_name;
 
   // Write mesh to HDF5
-  hdf5_file->write_mesh(mesh, false);
+  hdf5_file->write_mesh(mesh);
 
   // Write values to HDF5
   const std::vector<uint> global_size(1, MPI::sum(data_values.size()));
