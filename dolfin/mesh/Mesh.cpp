@@ -20,9 +20,10 @@
 // Modified by Niclas Jansson 2008
 // Modified by Kristoffer Selim 2008
 // Modified by Andre Massing 2009-2010
+// Modified by Johannes Ring 2012
 //
 // First added:  2006-05-09
-// Last changed: 2012-08-02
+// Last changed: 2012-10-02
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Timer.h>
@@ -531,7 +532,7 @@ std::string Mesh::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-uint Mesh::coordinates_hash() const
+dolfin::uint Mesh::coordinates_hash() const
 {
   std::vector<double>coords;
   for (VertexIterator v(*this); !v.end(); ++v)
@@ -556,7 +557,7 @@ uint Mesh::coordinates_hash() const
 
 }
 //-----------------------------------------------------------------------------
-uint Mesh::topology_hash() const
+dolfin::uint Mesh::topology_hash() const
 {
   std::vector<uint> topo;
   for (CellIterator cell(*this); !cell.end(); ++cell)
