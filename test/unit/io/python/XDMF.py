@@ -27,17 +27,16 @@ class XDMF_Mesh_Output(unittest.TestCase):
     """Test output of Meshes to XDMF files"""
 
     # Disabled because 1D not supported yet
-    def xtest_save_1d_mesh(self):
-        if MPI.num_processes() == 1:
-            mesh = UnitInterval(32)
-            File("mesh.xdmf") << mesh
+    def test_save_1d_mesh(self):
+        mesh = UnitInterval(32)
+        File("mesh.xdmf") << mesh
 
     def test_save_2d_mesh(self):
         mesh = UnitSquare(32, 32)
         File("mesh_2D.xdmf") << mesh
         print "Done", MPI.process_number()
 
-    def xtest_save_3d_mesh(self):
+    def test_save_3d_mesh(self):
         mesh = UnitCube(8, 8, 8)
         File("mesh_3D.xdmf") << mesh
 
@@ -46,26 +45,25 @@ class XDMF_Vertex_Function_Output(unittest.TestCase):
     """Test output of vertex-based Functions to XDMF files"""
 
     # Disabled because 1D not supported yet
-    def xtest_save_1d_scalar(self):
-        if MPI.num_processes() == 1:
-            mesh = UnitInterval(32)
-            u = Function(FunctionSpace(mesh, "Lagrange", 2))
-            u.vector()[:] = 1.0
-            File("u.xdmf") << u
+    def test_save_1d_scalar(self):
+        mesh = UnitInterval(32)
+        u = Function(FunctionSpace(mesh, "Lagrange", 2))
+        u.vector()[:] = 1.0
+        File("u.xdmf") << u
 
-    def xtest_save_2d_scalar(self):
+    def test_save_2d_scalar(self):
         mesh = UnitSquare(16, 16)
         u = Function(FunctionSpace(mesh, "Lagrange", 2))
         u.vector()[:] = 1.0
         File("u.xdmf") << u
 
-    def xtest_save_3d_scalar(self):
+    def test_save_3d_scalar(self):
         mesh = UnitCube(8, 8, 8)
         u = Function(FunctionSpace(mesh, "Lagrange", 2))
         u.vector()[:] = 1.0
         File("u.xdmf") << u
 
-    def xtest_save_2d_vector(self):
+    def test_save_2d_vector(self):
         mesh = UnitSquare(16, 16)
         u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
         u.vector()[:] = 1.0
@@ -77,7 +75,7 @@ class XDMF_Vertex_Function_Output(unittest.TestCase):
         u.vector()[:] = 1.0
         File("u.xdmf") << u
 
-    def xtest_save_3d_vector_series(self):
+    def test_save_3d_vector_series(self):
         mesh = UnitCube(8, 8, 8)
         u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
         file = File("u_3D.xdmf")
@@ -88,8 +86,8 @@ class XDMF_Vertex_Function_Output(unittest.TestCase):
         u.vector()[:] = 2.0
         file << (u, 0.2)
 
-        #u.vector()[:] = 3.0
-        #file << (u, 0.3)
+        u.vector()[:] = 3.0
+        file << (u, 0.3)
 
     def xtest_save_2d_tensor(self):
         mesh = UnitSquare(16, 16)

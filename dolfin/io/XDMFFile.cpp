@@ -49,11 +49,11 @@ using namespace dolfin;
 //----------------------------------------------------------------------------
 XDMFFile::XDMFFile(const std::string filename) : GenericFile(filename, "XDMF")
 {
-  // Name of HDF5 file
+  // Make name for HDF5 file (used to store data)
   boost::filesystem::path p(filename);
   p.replace_extension(".h5");
 
-  // Create HDF5 file
+  // Create HDF5 file (truncate)
   hdf5_file.reset(new HDF5File(p.string()));
   dolfin_assert(hdf5_file);
   hdf5_file->open_hdf5_file(true);
@@ -110,8 +110,8 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   // Get number of local/global cells/vertices
 
-  // At present, each process saves its local vertices
-  // sequentially in the HDF5 file, resulting in some duplication
+  // At present, each process saves its local vertices sequentially
+  // in the HDF5 file, resulting in some duplication
 
   const uint num_local_cells = mesh.num_cells();
   const uint num_local_vertices = mesh.num_vertices();
@@ -175,6 +175,8 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     hdf5_file->write_mesh(mesh, false);
   }
 
+  cout << "Finished wrting mesh" << endl;
+
   // Working data structure for formatting XML file
   std::string s;
 
@@ -183,7 +185,12 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   // Save data values to HDF5 file
   s = "/VisualisationVector/" + boost::lexical_cast<std::string>(counter);
-  hdf5_file->write_data(s.c_str(), data_values, value_size_io);
+  std::vector<uint> global_size(value_rank + 1);
+  global_size[0] = MPI::sum(num_local_entities);
+  if (value_rank == 1)
+    global_size[1] = value_size_io;
+
+  hdf5_file->write_data("/VisualisationVector", s.c_str(), data_values, global_size);
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero
   if (MPI::process_number() == 0)
@@ -310,9 +317,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
   // Write Mesh to HDF5 file (use contiguous vertex indices for topology)
   dolfin_assert(hdf5_file);
 
-  cout << "Write mesh" << endl;
   hdf5_file->write_mesh(mesh, false);
-  cout << "End write mesh" << endl;
 
   // Get number of local/global cells/vertices
   const uint num_local_cells = mesh.num_cells();
@@ -356,6 +361,8 @@ void XDMFFile::operator<< (const Mesh& mesh)
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const MeshFunction<bool>& meshfunction)
 {
+  error("Not working");
+  /*
   // HDF5 does not support a Boolean type, so copy to a uint with values 1 and 0
   const Mesh& mesh = meshfunction.mesh();
   const uint cell_dim = meshfunction.dim();
@@ -364,21 +371,25 @@ void XDMFFile::operator<< (const MeshFunction<bool>& meshfunction)
     uint_meshfunction[cell->index()] = (meshfunction[cell->index()] ? 1 : 0);
 
   write_mesh_function(uint_meshfunction);
+  */
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const MeshFunction<int>& meshfunction)
 {
-  write_mesh_function(meshfunction);
+  error("Not working");
+  //write_mesh_function(meshfunction);
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const MeshFunction<uint>& meshfunction)
 {
-  write_mesh_function(meshfunction);
+  error("Not working");
+  //write_mesh_function(meshfunction);
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const MeshFunction<double>& meshfunction)
 {
-  write_mesh_function(meshfunction);
+  error("Not working");
+  //write_mesh_function(meshfunction);
 }
 //----------------------------------------------------------------------------
 template<typename T>

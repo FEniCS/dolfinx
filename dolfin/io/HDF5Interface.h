@@ -48,9 +48,6 @@ namespace dolfin
     static hid_t open_file(const std::string filename, const bool truncate,
                            const bool use_mpi_io);
 
-    /// Create a new file
-    //static void create(const std::string filename, const bool mpiio);
-
     /// Write data to existing HDF file as defined by range blocks on
     /// each process
     /// range: the local range on this processor
@@ -129,35 +126,12 @@ namespace dolfin
                                                  const std::string group_name,
                                                  const bool use_mpi_io);
 
-    // FIXME: Size or dimension?
-    /// Get dimensions (NX, NY) of 2D dataset
-    static std::pair<uint, uint> dataset_dimensions(const std::string filename,
-                                               const std::string dataset_name,
-                                               const bool use_mpio);
-
-    /// Get a named attribute of a dataset
-    template <typename T>
-    static void get_attribute(const std::string filename,
-                              const std::string dataset_name,
-                              const std::string attribute_name,
-                              T &attribute_value,
-                              const bool use_mpio);
-
     /// Get a named attribute of a dataset
     template <typename T>
     static void get_attribute(const hid_t hdf5_file_handle,
                               const std::string dataset_name,
                               const std::string attribute_name,
                               T &attribute_value);
-
-    /// Add attribute to dataset
-    template <typename T>
-    static void add_attribute(const std::string filename,
-                              const std::string dataset_name,
-                              const std::string attribute_name,
-                              const T& attribute_value,
-                              const bool use_mpi_io);
-
 
     /// Add attribute to dataset
     template <typename T>
@@ -557,25 +531,6 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  inline void HDF5Interface::get_attribute(const std::string filename,
-                                  const std::string dataset_name,
-                                  const std::string attribute_name,
-                                  T& attribute_value,
-                                  const bool use_mpio)
-  {
-    herr_t status;
-
-    // Try to open existing HDF5 file
-    const hid_t file_id = open_file(filename, false, use_mpio);
-
-    get_attribute(file_id, dataset_name, attribute_name, attribute_value);
-
-    // Close file
-    status = H5Fclose(file_id);
-    dolfin_assert(status != HDF5_FAIL);
-  }
-  //---------------------------------------------------------------------------
-  template <typename T>
   inline void HDF5Interface::add_attribute(const hid_t hdf5_file_handle,
                                            const std::string dataset_name,
                                            const std::string attribute_name,
@@ -594,23 +549,6 @@ namespace dolfin
     dolfin_assert(status != HDF5_FAIL);
   }
   //---------------------------------------------------------------------------
-  template <typename T>
-  inline void HDF5Interface::add_attribute(const std::string filename,
-                                           const std::string dataset_name,
-                                           const std::string attribute_name,
-                                           const T& attribute_value,
-                                           const bool use_mpi_io)
-  {
-    // Open file
-    hid_t file_id = open_file(filename, false, use_mpi_io);
-
-    add_attribute(file_id, dataset_name, attribute_name, attribute_value);
-
-    // Close file
-    herr_t status = H5Fclose(file_id);
-    dolfin_assert(status != HDF5_FAIL);
-  }
-  //-----------------------------------------------------------------------------
   // Specialised member functions (must be inlined to avoid link errors)
   //-----------------------------------------------------------------------------
   template<>

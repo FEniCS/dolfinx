@@ -105,18 +105,28 @@ namespace dolfin
     // width is the second dimension of the array (e.g. 3 for xyz data)
     // data in XYZXYZXYZ order
     template <typename T>
-    void write_data(const std::string dataset_name, const std::vector<T>& data,
-                    const uint width)
+    void write_data(const std::string group_name,
+                    const std::string dataset_name,
+                    const std::vector<T>& data,
+                    const std::vector<uint> global_size)
     {
-      // Checks on width and size of data
-      dolfin_assert(width != 0);
-      dolfin_assert(data.size() % width == 0);
-      const uint num_items = data.size()/width;
+      //FIXME: Get groups from dataset_name and recursively create groups
 
-      const uint offset = MPI::global_offset(num_items, true);
-      std::pair<uint, uint> range(offset, offset + num_items);
-      HDF5Interface::write_data(filename, dataset_name, data, range, width,
-                                mpi_io);
+      // Check that group exists and create is required
+      if (!HDF5Interface::has_group(hdf5_file_id, group_name))
+        HDF5Interface::add_group(hdf5_file_id, group_name);
+
+      dolfin_assert(global_size.size() > 0);
+      uint num_local_items = 1;
+      for (uint i = 1; i < global_size.size(); ++i)
+        num_local_items *= global_size[i];
+      num_local_items = data.size()/num_local_items;
+
+      const uint offset = MPI::global_offset(num_local_items, true);
+      std::pair<uint, uint> range(offset, offset + num_local_items);
+      dolfin_assert(hdf5_file_open);
+      HDF5Interface::write_dataset(hdf5_file_id, dataset_name, data,
+                                   range, global_size, mpi_io, false);
     }
 
     // Search through list of dataset names for one beginning with
