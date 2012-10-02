@@ -1,4 +1,6 @@
 1.1.0 [not yet released]
+ - Add function Function::compute_vertex_values not needing a mesh argument
+ - Add support for XDMF and HDF5
  - Add new interface LinearOperator for matrix-free linear systems
  - Remove MTL4 linear algebra backend
  - Rename down_cast --> as_type in C++ / as_backend_type in Python
