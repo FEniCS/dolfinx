@@ -21,7 +21,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2012-08-21
+// Last changed: 2012-10-02
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -310,6 +310,13 @@ namespace dolfin
     ///         The mesh.
     virtual void compute_vertex_values(std::vector<double>& vertex_values,
                                        const Mesh& mesh) const;
+
+    /// Compute values at all mesh vertices
+    ///
+    /// *Arguments*
+    ///     vertex_values (_Array_ <double>)
+    ///         The values at all vertices.
+    void compute_vertex_values(std::vector<double>& vertex_values);
 
     /// Update off-process ghost coefficients
     virtual void update() const;
