@@ -864,10 +864,9 @@ def get_tensor_type(tensor):
     for k, v in _has_type_map.items():
         if v(tensor):
             return k
-    common.dolfin_error("Compatability check of tensor failed.",
-                        "Most probably you are trying to do something with "
-                        "a uBLAS Matrix. Tensor type: '%s'" % type(tensor).__name__,
-                        "dolfin/swig/la/post.i")
+    common.dolfin_error("dolfin/swig/la/post.i",
+                        "extract backend type for %s" % type(tensor).__name__,
+                        "This apparently doesn't work for uBLAS..")
 
 def has_type(tensor, subclass):
     "Return wether tensor is of the given subclass."
