@@ -366,11 +366,12 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   const uint cell_dim = meshfunction.dim();
 
   // Only allow cell-based MeshFunctions
-  if (mesh.topology().dim() != cell_dim)
+  dolfin_assert(cell_dim <= mesh.topology().dim());
+  if (cell_dim < (mesh.topology().dim() - 1))
   {
     dolfin_error("XDMFFile.cpp",
                  "write mesh function to XDMF file",
-                 "XDMF output of mesh functions only available for cell-based functions");
+                 "XDMF output of mesh functions only available for cell-based or facet-based functions");
   }
 
   if (meshfunction.size() == 0)
@@ -387,7 +388,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   dolfin_assert(hdf5_file);
 
   // Get counts of mesh cells and vertices
-  const uint num_local_cells = mesh.num_cells();
+  const uint num_local_cells = mesh.num_entities(cell_dim);
   const uint num_local_vertices = mesh.num_vertices();
   const uint num_global_cells = MPI::sum(num_local_cells);
   const uint num_all_local_vertices = MPI::sum(num_local_vertices);
@@ -402,7 +403,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
     p.filename().string() + ":" + dataset_basic_name;
 
   // Write mesh to HDF5
-  hdf5_file->write_mesh(mesh);
+  hdf5_file->write_mesh(mesh, cell_dim);
 
   // Write values to HDF5
   const std::vector<uint> global_size(1, MPI::sum(data_values.size()));
@@ -514,6 +515,5 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
   xdmf_geom_data.append_child(pugi::node_pcdata).set_value(geometry_reference.c_str());
 }
 //----------------------------------------------------------------------------
-
 
 #endif

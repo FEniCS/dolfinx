@@ -124,6 +124,21 @@ class XDMF_MeshFunction_Output(unittest.TestCase):
             mf[cell] = cell.index()
         File("output/mf_3D.xdmf") << mf
 
+    def test_save_2D_facet_function(self):
+        mesh = UnitSquare(32, 32)
+        mf = FacetFunction("uint", mesh)
+        for facet in facets(mesh):
+            mf[facet] = facet.index()
+        File("output/mf_facet_2D.xdmf") << mf
+
+
+    def test_save_3D_facet_function(self):
+        mesh = UnitCube(8, 8, 8)
+        mf = FacetFunction("uint", mesh)
+        for facet in facets(mesh):
+            mf[facet] = facet.index()
+        File("output/mf_facet_3D.xdmf") << mf
+
 
 if __name__ == "__main__":
     if has_hdf5():

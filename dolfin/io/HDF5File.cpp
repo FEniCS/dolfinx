@@ -255,7 +255,19 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
   // Get local mesh data
   const uint num_local_cells = mesh.num_cells();
   const uint num_local_vertices = mesh.num_vertices();
-  const CellType::Type _cell_type = mesh.type().cell_type();
+  //const CellType::Type _cell_type = mesh.type().cell_type();
+  CellType::Type _cell_type = mesh.type().cell_type();
+  if (cell_dim == mesh.topology().dim())
+    _cell_type = mesh.type().cell_type();
+  else if (cell_dim == mesh.topology().dim() - 1)
+    _cell_type = mesh.type().facet_type();
+  else
+  {
+    dolfin_error("HDF5File.cpp",
+                 "write mesh to file",
+                 "Only Mesh for Mesh facets can be written to file");
+  }
+
   const std::string cell_type = CellType::type2string(_cell_type);
 
   // Get cell offset and local cell range
@@ -279,70 +291,26 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
   const std::string coord_dataset = mesh_coords_dataset_name(mesh);
   if (!HDF5Interface::dataset_exists(*this, coord_dataset, mpi_io))
   {
+    // Write coordinates contiguously from each process
+    std::vector<uint> global_size(2);
+    global_size[0] = MPI::sum(vertex_coords.size()/gdim);
+    global_size[1] = gdim;
+    write_data("/Mesh", coord_dataset, vertex_coords, global_size);
+
+    // Write GlobalIndex mapping of coordinates to global vector position
     /*
-    if (true_topology_indices)
-    {
-      // Reorder local coordinates into global order and distribute
-      // FIXME: optimise this section
-
-      std::vector<std::vector<double> > global_vertex_coords;
-      std::vector<std::vector<double> > local_vertex_coords;
-      for(std::vector<double>::iterator i = vertex_coords.begin(); i != vertex_coords.end(); i += 3)
-        local_vertex_coords.push_back(std::vector<double>(i, i + 3));
-
-      redistribute_by_global_index(vertex_indices, local_vertex_coords,
-                                   global_vertex_coords);
-
-      vertex_coords.clear();
-      vertex_coords.reserve(global_vertex_coords.size()*3);
-      for(std::vector<std::vector<double> >::iterator i = global_vertex_coords.begin();
-            i != global_vertex_coords.end(); i++)
-      {
-        const std::vector<double>& v = *i;
-        vertex_coords.push_back(v[0]);
-        vertex_coords.push_back(v[1]);
-        vertex_coords.push_back(v[2]);
-      }
-
-      // Write out coordinates - no need for GlobalIndex map
-      std::vector<uint> global_size(2);
-      global_size[0] = MPI::sum(vertex_coords.size()/gdim);
-      global_size[1] = gdim;
-      write_data("/Mesh", coord_dataset, vertex_coords, global_size);
-
-      // Write partitions as an attribute
-      const uint new_vertex_offset
-          = MPI::global_offset(global_vertex_coords.size(), true);
-      std::vector<uint> partitions;
-      MPI::gather(new_vertex_offset, partitions);
-      MPI::broadcast(partitions);
-      HDF5Interface::add_attribute(hdf5_file_id, coord_dataset, "partition",
-                                   partitions);
-    }
-    else
+    std::vector<uint> global_size_map(1);
+    global_size_map[0] = MPI::sum(num_local_vertices);
+    write_data("/Mesh", mesh_index_dataset_name(mesh), vertex_indices,
+               global_size_map);
     */
-    {
-      // Write coordinates contiguously from each process
-      std::vector<uint> global_size(2);
-      global_size[0] = MPI::sum(vertex_coords.size()/gdim);
-      global_size[1] = gdim;
-      write_data("/Mesh", coord_dataset, vertex_coords, global_size);
 
-      // Write GlobalIndex mapping of coordinates to global vector position
-      /*
-      std::vector<uint> global_size_map(1);
-      global_size_map[0] = MPI::sum(num_local_vertices);
-      write_data("/Mesh", mesh_index_dataset_name(mesh), vertex_indices,
-                 global_size_map);
-      */
-
-      // Write partitions as an attribute
-      std::vector<uint> partitions;
-      MPI::gather(vertex_offset, partitions);
-      MPI::broadcast(partitions);
-      HDF5Interface::add_attribute(hdf5_file_id, coord_dataset, "partition",
-                                   partitions);
-    }
+    // Write partitions as an attribute
+    std::vector<uint> partitions;
+    MPI::gather(vertex_offset, partitions);
+    MPI::broadcast(partitions);
+    HDF5Interface::add_attribute(hdf5_file_id, coord_dataset, "partition",
+                                 partitions);
 
     //const uint indexing_indicator = (true_topology_indices ? 1 : 0);
     const uint indexing_indicator = 0;
