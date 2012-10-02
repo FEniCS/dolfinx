@@ -116,6 +116,13 @@ namespace dolfin
       if (!HDF5Interface::has_group(hdf5_file_id, group_name))
         HDF5Interface::add_group(hdf5_file_id, group_name);
 
+      if (global_size.size() > 2)
+      {
+        dolfin_error("HDF5File.h",
+                     "write data set to HDF5 file",
+                     "Writing data of rank > 2 is not yet supported. It will be fixed soon");
+      }
+
       dolfin_assert(global_size.size() > 0);
       uint num_local_items = 1;
       for (uint i = 1; i < global_size.size(); ++i)

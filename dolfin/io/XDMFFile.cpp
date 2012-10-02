@@ -175,8 +175,6 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     hdf5_file->write_mesh(mesh, false);
   }
 
-  cout << "Finished wrting mesh" << endl;
-
   // Working data structure for formatting XML file
   std::string s;
 

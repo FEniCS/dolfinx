@@ -233,12 +233,6 @@ void HDF5File::operator<< (const Mesh& mesh)
   write_mesh(mesh, true);
 }
 //-----------------------------------------------------------------------------
-//void HDF5File::open_file(bool truncate)
-//{
-  // Create new new HDF5 file (used by XDMFFile)
-  //HDF5Interface::create(filename, truncate, mpi_io);
-//}
-//-----------------------------------------------------------------------------
 void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
 {
   // Clear file when writing to file for the first time
@@ -314,7 +308,6 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
       }
 
       // Write out coordinates - no need for GlobalIndex map
-      //write_data(coord_dataset, vertex_coords, 3);
       std::vector<uint> global_size(2);
       global_size[0] = MPI::sum(vertex_coords.size()/3);
       global_size[1] = 3;
@@ -332,12 +325,10 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
     else
     {
       // Write coordinates contiguously from each process
-      cout << "Write coordinates" << endl;
       std::vector<uint> global_size(2);
       global_size[0] = MPI::sum(vertex_coords.size()/3);
       global_size[1] = 3;
       write_data("/Mesh", coord_dataset, vertex_coords, global_size);
-      cout << "End write coordinates" << endl;
 
       // Write GlobalIndex mapping of coordinates to global vector position
       std::vector<uint> global_size_map(1);

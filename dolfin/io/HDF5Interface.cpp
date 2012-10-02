@@ -71,64 +71,6 @@ hid_t HDF5Interface::open_file(const std::string filename, const bool truncate,
   return file_id;
 }
 //-----------------------------------------------------------------------------
-/*
-void HDF5Interface::create(const std::string filename, bool use_mpiio)
-{
-  // make empty HDF5 file
-  // overwriting any existing file
-  // create some default 'folders' for storing different datasets
-
-  // Return satus
-  herr_t status;
-
-  // Set parallel access with communicator
-  const hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
-  if (use_mpiio)
-  {
-    #ifdef HAS_MPI
-    MPICommunicator comm;
-    MPIInfo info;
-    status = H5Pset_fapl_mpio(plist_id, *comm, *info);
-    dolfin_assert(status != HDF5_FAIL);
-    #else
-    dolfin_error("HDF5Interface.cpp",
-                 "create file",
-                 "Cannot use MPI-IO output if DOLFIN is not configured with MPI");
-    #endif
-  }
-
-  // Create file (overwriting existing file, if present)
-  const hid_t file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC,
-                                  H5P_DEFAULT, plist_id);
-  dolfin_assert(file_id != HDF5_FAIL);
-
-  // Create subgroups suitable for storing different types of data.
-  // VisualisationVector - values for visualisation
-  const hid_t group_id_vis = H5Gcreate(file_id, "/VisualisationVector", H5P_DEFAULT);
-  dolfin_assert(group_id_vis != HDF5_FAIL);
-  status = H5Gclose(group_id_vis);
-  dolfin_assert(status != HDF5_FAIL);
-
-  // Vector - for checkpointing, etc
-  const hid_t group_id_vector = H5Gcreate(file_id, "/Vector", H5P_DEFAULT);
-  dolfin_assert(group_id_vector != HDF5_FAIL);
-  status = H5Gclose(group_id_vector);
-  dolfin_assert(status != HDF5_FAIL);
-
-  // Mesh
-  const hid_t group_id_mesh = H5Gcreate(file_id, "/Mesh", H5P_DEFAULT);
-  dolfin_assert(group_id_mesh != HDF5_FAIL);
-  status = H5Gclose(group_id_mesh);
-  dolfin_assert(status != HDF5_FAIL);
-
-  // Release file-access template
-  status = H5Pclose(plist_id);
-  dolfin_assert(status != HDF5_FAIL);
-  status = H5Fclose(file_id);
-  dolfin_assert(status != HDF5_FAIL);
-}
-*/
-//-----------------------------------------------------------------------------
 bool HDF5Interface::has_group(const hid_t hdf5_file_handle,
                                     const std::string group_name)
 {
