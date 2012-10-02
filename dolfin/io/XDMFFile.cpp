@@ -328,35 +328,31 @@ void XDMFFile::operator<< (const Mesh& mesh)
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const MeshFunction<bool>& meshfunction)
 {
-  error("Not working");
-  /*
-  // HDF5 does not support a Boolean type, so copy to a uint with values 1 and 0
   const Mesh& mesh = meshfunction.mesh();
   const uint cell_dim = meshfunction.dim();
-  MeshFunction<uint> uint_meshfunction(mesh,cell_dim);
+
+  // HDF5 does not support a Boolean type, so copy to a uint with values
+  // 1 and 0
+  MeshFunction<uint> uint_meshfunction(mesh, cell_dim);
   for (MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
     uint_meshfunction[cell->index()] = (meshfunction[cell->index()] ? 1 : 0);
 
   write_mesh_function(uint_meshfunction);
-  */
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const MeshFunction<int>& meshfunction)
 {
-  error("Not working");
-  //write_mesh_function(meshfunction);
+  write_mesh_function(meshfunction);
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const MeshFunction<uint>& meshfunction)
 {
-  error("Not working");
-  //write_mesh_function(meshfunction);
+  write_mesh_function(meshfunction);
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const MeshFunction<double>& meshfunction)
 {
-  error("Not working");
-  //write_mesh_function(meshfunction);
+  write_mesh_function(meshfunction);
 }
 //----------------------------------------------------------------------------
 template<typename T>
@@ -385,7 +381,8 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   }
 
   // Collate data
-  std::vector<T> data_values(meshfunction.values(),meshfunction.values()+meshfunction.size());
+  std::vector<T> data_values(meshfunction.values(),
+                             meshfunction.values() + meshfunction.size());
 
   dolfin_assert(hdf5_file);
 
@@ -400,13 +397,16 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   const std::string mesh_topology_name = hdf5_file->mesh_topology_dataset_name(mesh);
 
   boost::filesystem::path p(hdf5_file->filename);
-  std::string dataset_basic_name = "/Mesh/MeshFunction_"+meshfunction.name();
+  std::string dataset_basic_name = "/Mesh/MeshFunction_" + meshfunction.name();
   const std::string mesh_function_dataset_name =
     p.filename().string() + ":" + dataset_basic_name;
 
-  // Write mesh and values to HDF5
+  // Write mesh to HDF5
   hdf5_file->write_mesh(mesh, false);
-  hdf5_file->write_data(dataset_basic_name, data_values, 1);
+
+  // Write values to HDF5
+  const std::vector<uint> global_size(1, MPI::sum(data_values.size()));
+  hdf5_file->write_data("/Mesh", dataset_basic_name, data_values, global_size);
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero
   if (MPI::process_number() == 0)

@@ -26,7 +26,6 @@ from dolfin import *
 class XDMF_Mesh_Output(unittest.TestCase):
     """Test output of Meshes to XDMF files"""
 
-    # Disabled because 1D not supported yet
     def test_save_1d_mesh(self):
         mesh = UnitInterval(32)
         File("output/mesh.xdmf") << mesh
@@ -43,7 +42,6 @@ class XDMF_Mesh_Output(unittest.TestCase):
 class XDMF_Vertex_Function_Output(unittest.TestCase):
     """Test output of vertex-based Functions to XDMF files"""
 
-    # Disabled because 1D not supported yet
     def test_save_1d_scalar(self):
         mesh = UnitInterval(32)
         u = Function(FunctionSpace(mesh, "Lagrange", 2))
@@ -99,6 +97,33 @@ class XDMF_Vertex_Function_Output(unittest.TestCase):
         u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
         u.vector()[:] = 1.0
         File("output/u.xdmf") << u
+
+
+class XDMF_MeshFunction_Output(unittest.TestCase):
+    """Test output of Meshes to XDMF files"""
+
+    # FIXME: 1D seems to be broken
+    def xtest_save_1d_mesh(self):
+        mesh = UnitInterval(32)
+        mf = CellFunction("uint", mesh)
+        for cell in cells(mesh):
+            mf[cell] = cell.index()
+        File("output/mf_1D.xdmf") << mf
+
+    def test_save_2D_cell_function(self):
+        mesh = UnitSquare(32, 32)
+        mf = CellFunction("uint", mesh)
+        for cell in cells(mesh):
+            mf[cell] = cell.index()
+        File("output/mf_2D.xdmf") << mf
+
+    def test_save_3D_cell_function(self):
+        mesh = UnitCube(8, 8, 8)
+        mf = CellFunction("uint", mesh)
+        for cell in cells(mesh):
+            mf[cell] = cell.index()
+        File("output/mf_3D.xdmf") << mf
+
 
 if __name__ == "__main__":
     if has_hdf5():

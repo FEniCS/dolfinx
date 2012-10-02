@@ -288,7 +288,6 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
   vertex_indices.reserve(2*num_local_vertices);
 
   std::vector<double> vertex_coords;
-  //std::vector<double> vertex_coords(gdim*num_local_vertices);
   vertex_coords.reserve(gdim*num_local_vertices);
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
@@ -296,13 +295,8 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
     vertex_indices.push_back(v->global_index());
 
     // Vertex coordinates
-    //const Point p = v->point();
     for (uint i = 0; i < gdim; ++i)
       vertex_coords.push_back(v->x(i));
-
-    //vertex_coords.push_back(p.x());
-    //vertex_coords.push_back(p.y());
-    //vertex_coords.push_back(p.z());
   }
 
   // Write vertex data to HDF5 file if not already there
