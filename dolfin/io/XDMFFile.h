@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-09-22
+// Last changed: 2012-10-02
 
 #ifndef __DOLFIN_XDMFFILE_H
 #define __DOLFIN_XDMFFILE_H
@@ -42,6 +42,7 @@ namespace dolfin
   class Function;
   class HDF5File;
   class Mesh;
+  template<typename T> class MeshFunction;
 
   /// This class supports the output of meshes and functions in XDMF
   /// (http://www.xdmf.org) format. It creates an XML file that describes
@@ -66,22 +67,12 @@ namespace dolfin
     void operator<< (const Mesh& mesh);
 
     /// Save a Function to XDMF/HDF files for visualisation.
-    /// Downgrading may occur due to collecting the values
-    /// to vertices using compute_vertex_values()
-    ///
-    /// Creates an HDF5 file for storing Mesh and Vertex/Cell Values,
-    /// and an associated XDMF file for metadata.
-    /// Subsequent calls will store additional Vertex/Cell Values
-    /// in the same HDF5 file, and update the XDMF metadata
-    /// to represent a time series.
     void operator<< (const Function& u);
 
     /// Save Function + time stamp to file
     void operator<< (const std::pair<const Function*, double> ut);
 
     /// Save MeshFunction to file
-    /// Data is stored in an HDF5 file along with the Mesh
-    /// An XML description is stored in an associated XDMF file
     void operator<< (const MeshFunction<bool>& meshfunction);
     void operator<< (const MeshFunction<int>& meshfunction);
     void operator<< (const MeshFunction<uint>& meshfunction);
@@ -96,17 +87,17 @@ namespace dolfin
     template<typename T>
       void write_mesh_function(const MeshFunction<T>& meshfunction);
 
-    // Helper to add topology reference to XML
-    void XML_mesh_topology(pugi::xml_node &xdmf_topology,
+    // Helper function to add topology reference to XDMF XML file
+    void xml_mesh_topology(pugi::xml_node& xdmf_topology,
                            const uint cell_dim,
                            const uint num_global_cells,
-                           const std::string topology_dataset_name);
+                           const std::string topology_dataset_name) const;
 
-    // Helper to add geometric reference to XML
-    void XML_mesh_geometry(pugi::xml_node &xdmf_geometry,
+    // Helper function to add geometry section to XDMF XML file
+    void xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
                            const uint num_all_local_cells,
-                           const std::string geometry_dataset_name);
-
+                           const uint gdim,
+                           const std::string geometry_dataset_name) const;
 
   };
 

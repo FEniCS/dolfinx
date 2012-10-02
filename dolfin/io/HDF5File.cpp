@@ -263,6 +263,7 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
   const std::pair<uint, uint> vertex_range(vertex_offset, vertex_offset + num_local_vertices);
 
   // Get vertex indices
+  /*
   std::vector<uint> vertex_indices;
   std::vector<double> vertex_coords;
   vertex_indices.reserve(2*num_local_vertices);
@@ -278,12 +279,37 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
     vertex_coords.push_back(p.y());
     vertex_coords.push_back(p.z());
   }
+  */
+
+  // Get vertex indices
+  std::vector<uint> vertex_indices;
+
+  const uint gdim = mesh.geometry().dim();
+  vertex_indices.reserve(2*num_local_vertices);
+
+  std::vector<double> vertex_coords;
+  //std::vector<double> vertex_coords(gdim*num_local_vertices);
+  vertex_coords.reserve(gdim*num_local_vertices);
+  for (VertexIterator v(mesh); !v.end(); ++v)
+  {
+    // Vertex global index and process number
+    vertex_indices.push_back(v->global_index());
+
+    // Vertex coordinates
+    //const Point p = v->point();
+    for (uint i = 0; i < gdim; ++i)
+      vertex_coords.push_back(v->x(i));
+
+    //vertex_coords.push_back(p.x());
+    //vertex_coords.push_back(p.y());
+    //vertex_coords.push_back(p.z());
+  }
 
   // Write vertex data to HDF5 file if not already there
   const std::string coord_dataset = mesh_coords_dataset_name(mesh);
   if (!HDF5Interface::dataset_exists(*this, coord_dataset, mpi_io))
   {
-    if(true_topology_indices)
+    if (true_topology_indices)
     {
       // Reorder local coordinates into global order and distribute
       // FIXME: optimise this section
@@ -309,8 +335,8 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
 
       // Write out coordinates - no need for GlobalIndex map
       std::vector<uint> global_size(2);
-      global_size[0] = MPI::sum(vertex_coords.size()/3);
-      global_size[1] = 3;
+      global_size[0] = MPI::sum(vertex_coords.size()/gdim);
+      global_size[1] = gdim;
       write_data("/Mesh", coord_dataset, vertex_coords, global_size);
 
       // Write partitions as an attribute
@@ -326,8 +352,8 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
     {
       // Write coordinates contiguously from each process
       std::vector<uint> global_size(2);
-      global_size[0] = MPI::sum(vertex_coords.size()/3);
-      global_size[1] = 3;
+      global_size[0] = MPI::sum(vertex_coords.size()/gdim);
+      global_size[1] = gdim;
       write_data("/Mesh", coord_dataset, vertex_coords, global_size);
 
       // Write GlobalIndex mapping of coordinates to global vector position

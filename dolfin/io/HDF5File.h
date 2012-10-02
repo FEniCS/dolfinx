@@ -39,7 +39,7 @@ namespace dolfin
   class GenericVector;
   class Mesh;
 
-  class HDF5File: public GenericFile
+  class HDF5File : public GenericFile
   {
   public:
 
@@ -53,7 +53,7 @@ namespace dolfin
     /// will save in the same file with incrementing dataset names
     void operator<< (const GenericVector& x);
 
-    /// Read vector from file in HDF5 folder 'Vector' for dataset 0
+    /// Read vector from file (in HDF5 folder 'Vector' for dataset 0)
     void operator>> (GenericVector& x);
 
     /// Read vector from HDF5 file
@@ -89,7 +89,7 @@ namespace dolfin
     /// Read Mesh from file
     void operator>> (Mesh& mesh);
 
-    /// Check is dataset with given name exists
+    /// Check is dataset with given name exists in HDF5 file
     bool dataset_exists(const std::string dataset_name) const;
 
   private:
@@ -100,44 +100,15 @@ namespace dolfin
     // Open HDF5 file
     void open_hdf5_file(bool truncate);
 
-    // Write data contiguously from each process in parallel into a 2D array
-    // data contains local portion of data vector
-    // width is the second dimension of the array (e.g. 3 for xyz data)
-    // data in XYZXYZXYZ order
+    // Write contiguous data to HDF5 data set. Data is flattened into
+    // a 1D array, e.g. [x0, y0, z0, x1, y1, z1] for a vector in 3D
     template <typename T>
     void write_data(const std::string group_name,
                     const std::string dataset_name,
                     const std::vector<T>& data,
-                    const std::vector<uint> global_size)
-    {
-      //FIXME: Get groups from dataset_name and recursively create groups
+                    const std::vector<uint> global_size);
 
-      // Check that group exists and create is required
-      if (!HDF5Interface::has_group(hdf5_file_id, group_name))
-        HDF5Interface::add_group(hdf5_file_id, group_name);
-
-      if (global_size.size() > 2)
-      {
-        dolfin_error("HDF5File.h",
-                     "write data set to HDF5 file",
-                     "Writing data of rank > 2 is not yet supported. It will be fixed soon");
-      }
-
-      dolfin_assert(global_size.size() > 0);
-      uint num_local_items = 1;
-      for (uint i = 1; i < global_size.size(); ++i)
-        num_local_items *= global_size[i];
-      num_local_items = data.size()/num_local_items;
-
-      const uint offset = MPI::global_offset(num_local_items, true);
-      std::pair<uint, uint> range(offset, offset + num_local_items);
-      dolfin_assert(hdf5_file_open);
-      HDF5Interface::write_dataset(hdf5_file_id, dataset_name, data,
-                                   range, global_size, mpi_io, false);
-    }
-
-    // Search through list of dataset names for one beginning with
-    // search_term
+    // Search dataset names for one beginning with search_term
     std::string search_list(const std::vector<std::string>& list,
                             const std::string& search_term) const;
 
@@ -164,6 +135,49 @@ namespace dolfin
     const bool mpi_io;
 
   };
+
+  //---------------------------------------------------------------------------
+  template <typename T>
+  void HDF5File::write_data(const std::string group_name,
+                            const std::string dataset_name,
+                            const std::vector<T>& data,
+                            const std::vector<uint> global_size)
+  {
+    dolfin_assert(hdf5_file_open);
+
+    //FIXME: Get groups from dataset_name and recursively create groups
+
+    // Check that group exists and create is required
+    if (!HDF5Interface::has_group(hdf5_file_id, group_name))
+      HDF5Interface::add_group(hdf5_file_id, group_name);
+
+    /*
+    if (global_size.size() > 2)
+    {
+      dolfin_error("HDF5File.h",
+                   "write data set to HDF5 file",
+                   "Writing data of rank > 2 is not yet supported. It will be fixed soon");
+    }
+    */
+
+    dolfin_assert(global_size.size() > 0);
+
+    // Get number of 'items'
+    uint num_local_items = 1;
+    for (uint i = 1; i < global_size.size(); ++i)
+      num_local_items *= global_size[i];
+    num_local_items = data.size()/num_local_items;
+
+    // Compute offet
+    const uint offset = MPI::global_offset(num_local_items, true);
+    std::pair<uint, uint> range(offset, offset + num_local_items);
+
+    // Write data to HDF5 file
+    HDF5Interface::write_dataset(hdf5_file_id, dataset_name, data,
+                                 range, global_size, mpi_io, false);
+  }
+  //---------------------------------------------------------------------------
+
 
 }
 #endif
