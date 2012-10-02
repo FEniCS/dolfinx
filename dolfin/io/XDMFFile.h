@@ -91,23 +91,23 @@ namespace dolfin
 
     // HDF5 data file
     boost::scoped_ptr<HDF5File> hdf5_file;
-    
+
     // Generic MeshFunction writer
     template<typename T>
       void write_mesh_function(const MeshFunction<T>& meshfunction);
 
     // Helper to add topology reference to XML
-    void XML_mesh_topology(pugi::xml_node &xdmf_topology, 
+    void XML_mesh_topology(pugi::xml_node &xdmf_topology,
                            const uint cell_dim,
                            const uint num_global_cells,
                            const std::string topology_dataset_name);
-    
+
     // Helper to add geometric reference to XML
-    void XML_mesh_geometry(pugi::xml_node &xdmf_geometry, 
+    void XML_mesh_geometry(pugi::xml_node &xdmf_geometry,
                            const uint num_all_local_cells,
                            const std::string geometry_dataset_name);
-    
-    
+
+
   };
 
 

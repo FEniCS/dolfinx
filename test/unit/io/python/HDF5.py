@@ -18,13 +18,13 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2012-09-14
-# Last changed:
+# Last changed: 2012-10-02
 
 import unittest
 from dolfin import *
 
 class HDF5_Vector(unittest.TestCase):
-    """Test input/output of Vectir to HDF5 files"""
+    """Test input/output of Vector to HDF5 files"""
 
     def test_save_vector(self):
         x = Vector(305)
@@ -34,7 +34,7 @@ class HDF5_Vector(unittest.TestCase):
 
     def test_save_and_read_vector(self):
         x = Vector(305)
-        x[:] = 1.0
+        x[:] = 1.2
         vector_file = File("vector.h5")
         vector_file << x
         del vector_file

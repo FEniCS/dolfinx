@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-09-28
+// Last changed: 2012-10-01
 
 #ifdef HAS_HDF5
 
@@ -50,66 +50,165 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-HDF5File::HDF5File(const std::string filename) : GenericFile(filename, "H5")
+HDF5File::HDF5File(const std::string filename, const bool use_mpiio)
+  : GenericFile(filename, "H5"),
+    hdf5_file_open(false), hdf5_file_id(0),
+    mpi_io(MPI::num_processes() > 1 && use_mpiio ? true : false)
 {
   // Do nothing
-
-  // FIXME: Create file here in constructor?
-  // Not all instatiations of HDF5File create a new file.
-  // Could possibly open file descriptor here.
 }
 //-----------------------------------------------------------------------------
 HDF5File::~HDF5File()
 {
-  // Do nothing
+  // Close HDF5 file
+  if (hdf5_file_open)
+  {
+    herr_t status = H5Fclose(hdf5_file_id);
+    dolfin_assert(status != HDF5_FAIL);
+  }
 }
 //-----------------------------------------------------------------------------
 void HDF5File::operator<< (const GenericVector& x)
 {
-  // Get all local data
-  std::vector<double> data;
-  x.get_local(data);
+  dolfin_assert(x.size() > 0);
 
-  // Overwrite any existing file
+  // Open file on first write and add Vector group (overwrite any existing file)
   if (counter == 0)
-    HDF5Interface::create(filename);
+  {
+    // Open file
+    dolfin_assert(!hdf5_file_open);
+    hdf5_file_id = HDF5Interface::open_file(filename, true, mpi_io);
+    hdf5_file_open = true;
 
-  // Write to HDF5 file
-  const std::string name = "/Vector/" + boost::lexical_cast<std::string>(counter);
-  write_data(name.c_str(), data, 1);
+    // Add group
+    HDF5Interface::add_group(hdf5_file_id, "/Vector");
+  }
+  dolfin_assert(HDF5Interface::has_group(hdf5_file_id, "/Vector"));
+
+  // Get all local data
+  std::vector<double> local_data;
+  x.get_local(local_data);
+
+  // Form HDF5 dataset tag
+  const std::string dataset_name
+      = "/Vector/" + boost::lexical_cast<std::string>(counter);
+
+  // Write data to file
+  std::pair<uint,uint> local_range = x.local_range();
+  const bool chunking = true;
+  const std::vector<uint> global_size(1, x.size());
+  HDF5Interface::write_dataset(hdf5_file_id, dataset_name, local_data,
+                               local_range, global_size, mpi_io, chunking);
+
+  // Add partitioning attribute to dataset
+  std::vector<uint> partitions;
+  MPI::gather(local_range.first, partitions);
+  MPI::broadcast(partitions);
+
+  HDF5Interface::add_attribute(hdf5_file_id, dataset_name, "partition",
+                               partitions);
 
   // Increment counter
   counter++;
 }
 //-----------------------------------------------------------------------------
-void HDF5File::operator>> (GenericVector& input)
+void HDF5File::operator>> (GenericVector& x)
 {
-  const uint size = input.size();
-  if (size == 0)
+  // Open file
+  if (!hdf5_file_open)
   {
-    // FIXME: Resize
+    dolfin_assert(!hdf5_file_open);
+    hdf5_file_id = HDF5Interface::open_file(filename, false, mpi_io);
+    hdf5_file_open = true;
   }
-  else
+
+  // Check that 'Vector' group exists
+  dolfin_assert(HDF5Interface::has_group(hdf5_file_id, "/Vector") == 1);
+
+  // Get list all datasets in group
+  const std::vector<std::string> datasets
+      = HDF5Interface::dataset_list(hdf5_file_id, "/Vector");
+
+  // Make sure there is only one dataset
+  dolfin_assert(datasets.size() == 1);
+
+  // Read data set
+  read("/Vector/" + datasets[0], x);
+}
+//-----------------------------------------------------------------------------
+void HDF5File::read(const std::string dataset_name, GenericVector& x,
+                    const bool use_partition_from_file)
+{
+  // Open HDF5 file
+  if (!hdf5_file_open)
   {
-    // FIXME: make sure size matches
-    cout << "size: " << size << endl;
+    // Open file
+    dolfin_assert(!hdf5_file_open);
+    hdf5_file_id = HDF5Interface::open_file(filename, false, mpi_io);
+    hdf5_file_open = true;
+  }
+  dolfin_assert(HDF5Interface::has_group(hdf5_file_id, dataset_name));
+
+  // Get dataset rank
+  const uint rank = HDF5Interface::dataset_rank(hdf5_file_id, dataset_name);
+  dolfin_assert(rank == 1);
+
+  // Get global dataset size
+  const std::vector<uint> data_size
+      = HDF5Interface::get_dataset_size(hdf5_file_id, dataset_name);
+
+  // Check that rank is 1
+  dolfin_assert(data_size.size() == 1);
+
+  // Check input vector, and re-size if not already sized
+  if (x.size() == 0)
+  {
+    // Resize vector
+    if (use_partition_from_file)
+    {
+      // Get partition from file
+      std::vector<uint> partitions;
+      HDF5Interface::get_attribute(hdf5_file_id, dataset_name, "partition", partitions);
+
+      // Check that number of MPI processes matches partitioning
+      if(MPI::num_processes() != partitions.size())
+      {
+        dolfin_error("HDF5File.cpp",
+                     "read vector from file",
+                     "Different number of processes used when writing. Cannot restore partitioning");
+      }
+
+      // Add global size at end of partition vectors
+      partitions.push_back(data_size[0]);
+
+      // Initialise vector
+      const uint process_num = MPI::process_number();
+      const std::pair<uint, uint> local_range(partitions[process_num], partitions[process_num + 1]);
+      x.resize(local_range);
+    }
+    else
+      x.resize(data_size[0]);
+  }
+  else if (x.size() != data_size[0])
+  {
+    dolfin_error("HDF5File.cpp",
+                 "read vector from file",
+                 "Size mis-match between vector in file and input vector");
   }
 
   // Get local range
-  const std::pair<uint, uint> range = input.local_range(0);
+  const std::pair<uint, uint> local_range = x.local_range();
 
-  // Allocate data
-  std::vector<double> data(range.second - range.first);
-
-  // Read data
-  HDF5Interface::read(filename, "/Vector/0", data, range, 1);
+  // Read data from file
+  std::vector<double> data;
+  HDF5Interface::read_dataset(hdf5_file_id, dataset_name, local_range, data);
 
   // Set data
-  input.set_local(data);
+  x.set_local(data);
 }
 //-----------------------------------------------------------------------------
 std::string HDF5File::search_list(const std::vector<std::string>& list,
-                                  const std::string &search_term) const
+                                  const std::string& search_term) const
 {
   std::vector<std::string>::const_iterator it;
   for (it = list.begin(); it != list.end(); ++it)
@@ -134,18 +233,19 @@ void HDF5File::operator<< (const Mesh& mesh)
   write_mesh(mesh, true);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::create()
-{
-  // Create new new HDF5 file (used by XDMFFile)
-  HDF5Interface::create(filename);
-}
-//-----------------------------------------------------------------------------
 void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
 {
   // Clear file when writing to file for the first time
-  if(counter == 0)
-    HDF5Interface::create(filename);
+  if(!hdf5_file_open)
+  {
+    hdf5_file_id = HDF5Interface::open_file(filename, false, mpi_io);
+    hdf5_file_open = true;
+  }
   counter++;
+
+  // Create Mesh group in HDF5 file
+  if (!HDF5Interface::has_group(hdf5_file_id, "/Mesh"))
+    HDF5Interface::add_group(hdf5_file_id, "/Mesh");
 
   // Get local mesh data
   const uint cell_dim = mesh.topology().dim();
@@ -181,7 +281,7 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
 
   // Write vertex data to HDF5 file if not already there
   const std::string coord_dataset = mesh_coords_dataset_name(mesh);
-  if (!HDF5Interface::dataset_exists(*this, coord_dataset))
+  if (!HDF5Interface::dataset_exists(*this, coord_dataset, mpi_io))
   {
     if(true_topology_indices)
     {
@@ -201,40 +301,52 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
       for(std::vector<std::vector<double> >::iterator i = global_vertex_coords.begin();
             i != global_vertex_coords.end(); i++)
       {
-        const std::vector<double>&v = *i;
+        const std::vector<double>& v = *i;
         vertex_coords.push_back(v[0]);
         vertex_coords.push_back(v[1]);
         vertex_coords.push_back(v[2]);
       }
 
       // Write out coordinates - no need for GlobalIndex map
-      write_data(coord_dataset, vertex_coords, 3);
+      std::vector<uint> global_size(2);
+      global_size[0] = MPI::sum(vertex_coords.size()/3);
+      global_size[1] = 3;
+      write_data("/Mesh", coord_dataset, vertex_coords, global_size);
 
       // Write partitions as an attribute
-      const uint new_vertex_offset = MPI::global_offset(global_vertex_coords.size(),
-                                                         true);
+      const uint new_vertex_offset
+          = MPI::global_offset(global_vertex_coords.size(), true);
       std::vector<uint> partitions;
       MPI::gather(new_vertex_offset, partitions);
       MPI::broadcast(partitions);
-      HDF5Interface::add_attribute(filename, coord_dataset, "partition", partitions);
+      HDF5Interface::add_attribute(hdf5_file_id, coord_dataset, "partition",
+                                   partitions);
     }
     else
     {
       // Write coordinates contiguously from each process
-      write_data(coord_dataset, vertex_coords, 3);
+      std::vector<uint> global_size(2);
+      global_size[0] = MPI::sum(vertex_coords.size()/3);
+      global_size[1] = 3;
+      write_data("/Mesh", coord_dataset, vertex_coords, global_size);
 
       // Write GlobalIndex mapping of coordinates to global vector position
-      write_data(mesh_index_dataset_name(mesh), vertex_indices, 1);
+      std::vector<uint> global_size_map(1);
+      global_size_map[0] = MPI::sum(vertex_indices.size());
+      write_data("/Mesh", mesh_index_dataset_name(mesh), vertex_indices,
+                 global_size_map);
 
       // Write partitions as an attribute
       std::vector<uint> partitions;
       MPI::gather(vertex_offset, partitions);
       MPI::broadcast(partitions);
-      HDF5Interface::add_attribute(filename, coord_dataset, "partition", partitions);
+      HDF5Interface::add_attribute(hdf5_file_id, coord_dataset, "partition",
+                                   partitions);
     }
 
     const uint indexing_indicator = (true_topology_indices ? 1 : 0);
-    HDF5Interface::add_attribute(filename, coord_dataset, "true_indexing", indexing_indicator);
+    HDF5Interface::add_attribute(hdf5_file_id, coord_dataset, "true_indexing",
+                                 indexing_indicator);
   }
 
   // Get cell connectivity
@@ -259,19 +371,40 @@ void HDF5File::write_mesh(const Mesh& mesh, bool true_topology_indices)
 
   // Write connectivity to HDF5 file if not already there
   const std::string topology_dataset = mesh_topology_dataset_name(mesh);
-  if (!HDF5Interface::dataset_exists(*this, topology_dataset))
+  if (!HDF5Interface::dataset_exists(*this, topology_dataset, mpi_io))
   {
-    write_data(topology_dataset, topological_data, cell_dim + 1);
+    std::vector<uint> global_size(2);
+    global_size[0] = MPI::sum(topological_data.size()/(cell_dim + 1));
+    global_size[1] = cell_dim + 1;
+    write_data("/Mesh", topology_dataset, topological_data, global_size);
+
     const uint indexing_indicator = (true_topology_indices ? 1 : 0);
-    HDF5Interface::add_attribute(filename, topology_dataset, "true_indexing", indexing_indicator);
-    HDF5Interface::add_attribute(filename, topology_dataset, "celltype", cell_type);
+    HDF5Interface::add_attribute(hdf5_file_id, topology_dataset,
+                                 "true_indexing", indexing_indicator);
+    HDF5Interface::add_attribute(hdf5_file_id, topology_dataset, "celltype",
+                                 cell_type);
 
     // Write partitions as an attribute
     std::vector<uint> partitions;
     MPI::gather(cell_offset, partitions);
     MPI::broadcast(partitions);
-    HDF5Interface::add_attribute(filename, topology_dataset, "partition", partitions);
+    HDF5Interface::add_attribute(hdf5_file_id, topology_dataset, "partition",
+                                 partitions);
   }
+}
+//-----------------------------------------------------------------------------
+bool HDF5File::dataset_exists(const std::string dataset_name) const
+{
+  dolfin_assert(hdf5_file_open);
+  return HDF5Interface::has_dataset(hdf5_file_id, dataset_name);
+}
+//-----------------------------------------------------------------------------
+void HDF5File::open_hdf5_file(bool truncate)
+{
+  // Open file
+  dolfin_assert(!hdf5_file_open);
+  hdf5_file_id = HDF5Interface::open_file(filename, truncate, mpi_io);
+  hdf5_file_open = true;
 }
 //-----------------------------------------------------------------------------
 std::string HDF5File::mesh_coords_dataset_name(const Mesh& mesh) const
@@ -329,11 +462,7 @@ void HDF5File::redistribute_by_global_index(const std::vector<uint>& global_inde
 
   // Set up destination vector for communication with remote processes
   for(uint process_j = 0; process_j < num_processes ; ++process_j)
-  {
     destinations.push_back(process_j);
-    //    std::vector<std::pair<uint,T> > send_to_process_j;
-    //    values_to_send.push_back(send_to_process_j);
-  }
 
   // Go through local vector and append value to the appropriate list
   // to send to correct process

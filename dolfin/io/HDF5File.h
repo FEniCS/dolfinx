@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-09-28
+// Last changed: 2012-10-01
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -44,7 +44,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    HDF5File(const std::string filename);
+    HDF5File(const std::string filename, const bool use_mpiio=true);
 
     /// Destructor
     ~HDF5File();
@@ -56,42 +56,84 @@ namespace dolfin
     /// Read vector from file in HDF5 folder 'Vector' for dataset 0
     void operator>> (GenericVector& x);
 
-    /// Write Mesh to file
+    /// Read vector from HDF5 file
+    void read(const std::string dataset_name, GenericVector& x,
+              const bool use_partition_from_file=true);
+
+    /// Write Mesh to file (using true topology indices)
     void operator<< (const Mesh& mesh);
 
     /// Write Mesh to file. 'true_topology_indices' indicates
-    /// whether the true vertex indices should be used for the connectivity
-    /// or the position of the vertex in the list. The latter is required
-    /// for visualisation and the former for reading a Mesh from file.
+    /// whether the true global vertex indices should be used when saving
+
+    /// With true_topology_indices=true
+    /// ===============================
+    /// Vertex coordinates are reordered into global order before saving
+    /// Topological connectivity uses global indices
+    /// * may exhibit poor scaling due to MPI distribute of vertex
+    /// coordinates
+    /// * can be read back in by any number of processes
+
+    /// With true_topology_indices=false
+    /// ================================
+    /// Vertex coordinates are in local order, with an offset
+    /// Topological connectivity uses the local + offset values for indexing
+    /// * some duplication of vertices => larger file size
+    /// * reduced MPI communication when saving
+    /// * more difficult to read back in, especially if nprocs > than
+    ///   when writing
+    /// * efficient to read back in if nprocs is the same, and
+    ///   partitioning is the same
     void write_mesh(const Mesh& mesh, bool true_topology_indices=true);
 
     /// Read Mesh from file
     void operator>> (Mesh& mesh);
+
+    /// Check is dataset with given name exists
+    bool dataset_exists(const std::string dataset_name) const;
 
   private:
 
     // Friend
     friend class XDMFFile;
 
-    // Create an empty HDF5 file (truncate if existing)
-    void create();
+    // Open HDF5 file
+    void open_hdf5_file(bool truncate);
 
     // Write data contiguously from each process in parallel into a 2D array
     // data contains local portion of data vector
     // width is the second dimension of the array (e.g. 3 for xyz data)
     // data in XYZXYZXYZ order
     template <typename T>
-    void write_data(const std::string dataset_name, const std::vector<T>& data,
-                    const uint width)
+    void write_data(const std::string group_name,
+                    const std::string dataset_name,
+                    const std::vector<T>& data,
+                    const std::vector<uint> global_size)
     {
-      // Checks on width and size of data
-      dolfin_assert(width != 0);
-      dolfin_assert(data.size() % width == 0);
-      const uint num_items = data.size()/width;
+      //FIXME: Get groups from dataset_name and recursively create groups
 
-      const uint offset = MPI::global_offset(num_items, true);
-      std::pair<uint, uint> range(offset, offset + num_items);
-      HDF5Interface::write(filename, dataset_name, data, range, width);
+      // Check that group exists and create is required
+      if (!HDF5Interface::has_group(hdf5_file_id, group_name))
+        HDF5Interface::add_group(hdf5_file_id, group_name);
+
+      if (global_size.size() > 2)
+      {
+        dolfin_error("HDF5File.h",
+                     "write data set to HDF5 file",
+                     "Writing data of rank > 2 is not yet supported. It will be fixed soon");
+      }
+
+      dolfin_assert(global_size.size() > 0);
+      uint num_local_items = 1;
+      for (uint i = 1; i < global_size.size(); ++i)
+        num_local_items *= global_size[i];
+      num_local_items = data.size()/num_local_items;
+
+      const uint offset = MPI::global_offset(num_local_items, true);
+      std::pair<uint, uint> range(offset, offset + num_local_items);
+      dolfin_assert(hdf5_file_open);
+      HDF5Interface::write_dataset(hdf5_file_id, dataset_name, data,
+                                   range, global_size, mpi_io, false);
     }
 
     // Search through list of dataset names for one beginning with
@@ -112,6 +154,14 @@ namespace dolfin
     void redistribute_by_global_index(const std::vector<uint>& global_index,
                                       const std::vector<T>& local_vector,
                                       std::vector<T>& global_vector);
+
+
+    // HDF5 file descriptor/handle
+    bool hdf5_file_open;
+    hid_t hdf5_file_id;
+
+    // Parallel mode
+    const bool mpi_io;
 
   };
 

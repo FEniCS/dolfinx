@@ -284,6 +284,14 @@ endif()
 # Check for HDF5
 if (DOLFIN_ENABLE_HDF5)
   find_package(HDF5)
+
+  # Check that HDF5 has parallel support
+  if (DOLFIN_ENABLE_MPI)
+    if (NOT HDF5_IS_PARALLEL)
+      message(STATUS "HDF5 has been found, but is missing parallel support. It will not be enabled.")
+      set(HDF5_FOUND false)
+    endif()
+  endif()
 endif()
 
 # Check for PaStiX
