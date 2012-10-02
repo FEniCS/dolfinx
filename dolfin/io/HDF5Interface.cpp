@@ -26,6 +26,8 @@
 #include "HDF5File.h"
 #include "HDF5Interface.h"
 
+#ifdef HAS_HDF5
+
 #define HDF5_FAIL -1
 #define HDF5_MAXSTRLEN 80
 
@@ -273,3 +275,5 @@ std::vector<std::string> HDF5Interface::dataset_list(const std::string filename,
   return list_of_datasets;
 }
 //-----------------------------------------------------------------------------
+
+#endif

@@ -21,6 +21,8 @@
 #ifndef __DOLFIN_HDF5_INTERFACE_H
 #define __DOLFIN_HDF5_INTERFACE_H
 
+#ifdef HAS_HDF5
+
 // Use 1.6 API for stability
 // Could update to latest version, whichrequires adding a few extra
 // arguments to calls for little obvious benefit
@@ -704,5 +706,7 @@ namespace dolfin
   //-----------------------------------------------------------------------------
 
 }
+
+#endif
 
 #endif

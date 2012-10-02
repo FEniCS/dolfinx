@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2012-09-14
-# Last changed:
+# Last changed: 2012-10-02
 
 import unittest
 from dolfin import *
