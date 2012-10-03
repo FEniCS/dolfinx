@@ -73,14 +73,17 @@ hid_t HDF5Interface::open_file(const std::string filename, const bool truncate,
 }
 //-----------------------------------------------------------------------------
 bool HDF5Interface::has_group(const hid_t hdf5_file_handle,
-                                    const std::string group_name)
+                              const std::string group_name)
 {
+  return has_dataset(hdf5_file_handle, group_name);
+  /*
    herr_t status = H5Eset_auto(NULL, NULL);
    status = H5Gget_objinfo(hdf5_file_handle, group_name.c_str(), 0, NULL);
    if (status == 0)
     return true;
    else
     return false;
+  */
 }
 //-----------------------------------------------------------------------------
 bool HDF5Interface::has_dataset(const hid_t hdf5_file_handle,
@@ -95,9 +98,11 @@ bool HDF5Interface::has_dataset(const hid_t hdf5_file_handle,
 void HDF5Interface::add_group(const hid_t hdf5_file_handle,
                               const std::string group_name)
 {
-  if(has_group(hdf5_file_handle, group_name)) return;
+  if(has_group(hdf5_file_handle, group_name))
+    return;
 
-  hid_t group_id_vis = H5Gcreate(hdf5_file_handle, group_name.c_str(), H5P_DEFAULT);
+  hid_t group_id_vis = H5Gcreate(hdf5_file_handle, group_name.c_str(),
+                                 H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   dolfin_assert(group_id_vis != HDF5_FAIL);
 
   herr_t status = H5Gclose(group_id_vis);
@@ -108,7 +113,8 @@ uint HDF5Interface::dataset_rank(const hid_t hdf5_file_handle,
                          const std::string dataset_name)
 {
   // Open dataset
-  const hid_t dset_id = H5Dopen(hdf5_file_handle, dataset_name.c_str());
+  const hid_t dset_id = H5Dopen(hdf5_file_handle, dataset_name.c_str(),
+                                H5P_DEFAULT);
   dolfin_assert(dset_id != HDF5_FAIL);
 
   // Get the dataspace of the dataset
@@ -126,7 +132,8 @@ std::vector<dolfin::uint>
                                       const std::string dataset_name)
 {
   // Open named dataset
-  const hid_t dset_id = H5Dopen(hdf5_file_handle, dataset_name.c_str());
+  const hid_t dset_id = H5Dopen(hdf5_file_handle, dataset_name.c_str(),
+                                H5P_DEFAULT);
   dolfin_assert(dset_id != HDF5_FAIL);
 
   // Get the dataspace of the dataset
@@ -173,7 +180,7 @@ std::vector<std::string> HDF5Interface::dataset_list(const hid_t hdf5_file_handl
   herr_t status;
 
   // Open group by name group_name
-  hid_t group_id = H5Gopen(hdf5_file_handle, group_name.c_str());
+  hid_t group_id = H5Gopen(hdf5_file_handle, group_name.c_str(), H5P_DEFAULT);
   dolfin_assert(group_id != HDF5_FAIL);
 
   // Count how many datasets in the group

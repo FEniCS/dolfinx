@@ -23,11 +23,6 @@
 
 #ifdef HAS_HDF5
 
-// Use 1.6 API for stability
-// Could update to latest version, whichrequires adding a few extra
-// arguments to calls for little obvious benefit
-#define H5_USE_16_API
-
 #include <vector>
 #include <string>
 #include <hdf5.h>
@@ -210,7 +205,8 @@ namespace dolfin
 
     // Create global dataset (using dataset_name)
     const hid_t dset_id = H5Dcreate(file_handle, dataset_name.c_str(), h5type,
-                                    filespace0, chunking_properties);
+                                    filespace0, H5P_DEFAULT,
+                                    chunking_properties, H5P_DEFAULT);
     dolfin_assert(dset_id != HDF5_FAIL);
 
     // Close global data space
@@ -264,7 +260,7 @@ namespace dolfin
                                           std::vector<T>& data)
   {
     // Open the dataset
-    const hid_t dset_id = H5Dopen(file_handle, dataset_name.c_str());
+    const hid_t dset_id = H5Dopen(file_handle, dataset_name.c_str(), H5P_DEFAULT);
     dolfin_assert(dset_id != HDF5_FAIL);
 
     // Open dataspace
@@ -337,7 +333,7 @@ namespace dolfin
     herr_t status;
 
     // Open dataset by name
-    const hid_t dset_id = H5Dopen(hdf5_file_handle, dataset_name.c_str());
+    const hid_t dset_id = H5Dopen(hdf5_file_handle, dataset_name.c_str(), H5P_DEFAULT);
     dolfin_assert(dset_id != HDF5_FAIL);
 
     // Open attribute by name and get its type
@@ -370,7 +366,7 @@ namespace dolfin
   {
 
     // Open named dataset
-    hid_t dset_id = H5Dopen(hdf5_file_handle, dataset_name.c_str());
+    hid_t dset_id = H5Dopen(hdf5_file_handle, dataset_name.c_str(), H5P_DEFAULT);
     dolfin_assert(dset_id != HDF5_FAIL);
 
     // Add attribute of appropriate type
@@ -394,8 +390,8 @@ namespace dolfin
 
     // Create attribute of type uint
     hid_t attribute_id = H5Acreate(dset_id, attribute_name.c_str(),
-                                   H5T_NATIVE_UINT,
-                                   dataspace_id, H5P_DEFAULT);
+                                   H5T_NATIVE_UINT, dataspace_id,
+                                   H5P_DEFAULT, H5P_DEFAULT);
     dolfin_assert(attribute_id != HDF5_FAIL);
 
     // Write attribute to dataset
@@ -420,7 +416,8 @@ namespace dolfin
 
     // Create an attribute of type uint in the dataspace
     const hid_t attribute_id = H5Acreate(dset_id, attribute_name.c_str(),
-                                   H5T_NATIVE_UINT, dataspace_id, H5P_DEFAULT);
+                                         H5T_NATIVE_UINT, dataspace_id,
+                                         H5P_DEFAULT, H5P_DEFAULT);
     dolfin_assert(attribute_id != HDF5_FAIL);
 
     // Write attribute to dataset
@@ -447,8 +444,9 @@ namespace dolfin
     dolfin_assert(status != HDF5_FAIL);
 
     // Create attribute in the dataspace with the given string
-    const hid_t attribute_id = H5Acreate(dset_id, attribute_name.c_str(), datatype_id,
-                                    dataspace_id, H5P_DEFAULT);
+    const hid_t attribute_id = H5Acreate(dset_id, attribute_name.c_str(),
+                                         datatype_id, dataspace_id,
+                                         H5P_DEFAULT, H5P_DEFAULT);
     dolfin_assert(attribute_id != HDF5_FAIL);
 
     // Write attribute to dataset
@@ -462,8 +460,8 @@ namespace dolfin
   //-----------------------------------------------------------------------------
   template<>
   inline void HDF5Interface::get_attribute_value(const hid_t attr_type,
-                                          const hid_t attr_id,
-                                          uint& attribute_value)
+                                                 const hid_t attr_id,
+                                                 uint& attribute_value)
   {
     // FIXME: more complete check of type
     dolfin_assert(H5Tget_class(attr_type) == H5T_INTEGER);
