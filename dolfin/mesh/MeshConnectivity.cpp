@@ -49,7 +49,7 @@ const MeshConnectivity& MeshConnectivity::operator= (const MeshConnectivity& con
   d0 = connectivity.d0;
   d1 = connectivity.d1;
   connections = connectivity.connections;
-  offsets = connectivity.offsets;
+  index_to_position = connectivity.index_to_position;
 
   return *this;
 }
@@ -57,7 +57,7 @@ const MeshConnectivity& MeshConnectivity::operator= (const MeshConnectivity& con
 void MeshConnectivity::clear()
 {
   connections.clear();
-  offsets.clear();
+  index_to_position.clear();
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::init(uint num_entities, uint num_connections)
@@ -70,11 +70,11 @@ void MeshConnectivity::init(uint num_entities, uint num_connections)
 
   // Allocate data
   connections = std::vector<uint>(size, 0);
-  offsets.resize(num_entities + 1);
+  index_to_position.resize(num_entities + 1);
 
   // Initialize data
-  for (uint e = 0; e < offsets.size(); e++)
-    offsets[e] = e*num_connections;
+  for (uint e = 0; e < index_to_position.size(); e++)
+    index_to_position[e] = e*num_connections;
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::init(std::vector<uint>& num_connections)
@@ -84,14 +84,14 @@ void MeshConnectivity::init(std::vector<uint>& num_connections)
 
   // Initialize offsets and compute total size
   const uint num_entities = num_connections.size();
-  offsets.resize(num_entities + 1);
+  index_to_position.resize(num_entities + 1);
   uint size = 0;
   for (uint e = 0; e < num_entities; e++)
   {
-    offsets[e] = size;
+    index_to_position[e] = size;
     size += num_connections[e];
   }
-  offsets[num_entities] = size;
+  index_to_position[num_entities] = size;
 
   // Initialize connections
   connections = std::vector<uint>(size, 0);
@@ -99,31 +99,42 @@ void MeshConnectivity::init(std::vector<uint>& num_connections)
 //-----------------------------------------------------------------------------
 void MeshConnectivity::set(uint entity, uint connection, uint pos)
 {
-  dolfin_assert((entity + 1) < offsets.size());
-  dolfin_assert(pos < offsets[entity + 1] - offsets[entity]);
-
-  connections[offsets[entity] + pos] = connection;
+  dolfin_assert((entity + 1) < index_to_position.size());
+  dolfin_assert(pos < index_to_position[entity + 1] - index_to_position[entity]);
+  connections[index_to_position[entity] + pos] = connection;
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::set(uint entity, const std::vector<uint>& connections)
 {
-  dolfin_assert((entity + 1) < offsets.size());
-  dolfin_assert(connections.size() == offsets[entity + 1] - offsets[entity]);
+  dolfin_assert((entity + 1) < index_to_position.size());
+  dolfin_assert(connections.size() == index_to_position[entity + 1] - index_to_position[entity]);
 
   // Copy data
-  for (uint i = 0; i < connections.size(); i++)
-    this->connections[offsets[entity] + i] = connections[i];
+  std::copy(connections.begin(), connections.end(),
+            this->connections.begin() + index_to_position[entity]);
+}
+//-----------------------------------------------------------------------------
+void MeshConnectivity::set(uint local_index, uint global_index,
+                           const std::vector<uint>& connections)
+{
+  dolfin_assert((local_index + 1) < index_to_position.size());
+  dolfin_assert(connections.size() == index_to_position[local_index + 1] - index_to_position[local_index]);
+
+  // Copy data
+  std::copy(connections.begin(), connections.end(),
+            this->connections.begin() + index_to_position[local_index]);
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::set(uint entity, uint* connections)
 {
-  dolfin_assert((entity + 1) < offsets.size());
+  dolfin_assert((entity + 1) < index_to_position.size());
   dolfin_assert(connections);
 
   // Copy data
-  const uint num_connections = offsets[entity + 1] - offsets[entity];
-  for (uint i = 0; i < num_connections; i++)
-    this->connections[offsets[entity] + i] = connections[i];
+  const uint num_connections = index_to_position[entity + 1]
+                                        - index_to_position[entity];
+  std::copy(connections, connections + num_connections,
+            this->connections.begin() + index_to_position[entity]);
 }
 //-----------------------------------------------------------------------------
 std::string MeshConnectivity::str(bool verbose) const
@@ -134,17 +145,18 @@ std::string MeshConnectivity::str(bool verbose) const
   {
     s << str(false) << std::endl << std::endl;
 
-    for (uint e = 0; e < offsets.size() - 1; e++)
+    for (uint e = 0; e < index_to_position.size() - 1; e++)
     {
       s << "  " << e << ":";
-      for (uint i = offsets[e]; i < offsets[e + 1]; i++)
+      for (uint i = index_to_position[e]; i < index_to_position[e + 1]; i++)
         s << " " << connections[i];
       s << std::endl;
     }
   }
   else
   {
-    s << "<MeshConnectivity " << d0 << " -- " << d1 << " of size " << connections.size() << ">";
+    s << "<MeshConnectivity " << d0 << " -- " << d1 << " of size "
+          << connections.size() << ">";
   }
 
   return s.str();

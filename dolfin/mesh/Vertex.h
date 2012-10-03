@@ -48,19 +48,19 @@ namespace dolfin
 
     /// Return global index of vertex
     uint global_index() const
-    { return _mesh->geometry().global_index(_index); }
+    { return _mesh->geometry().global_index(_local_index); }
 
     /// Return value of vertex coordinate i
     double x(uint i) const
-    { return _mesh->geometry().x(_index, i); }
+    { return _mesh->geometry().x(_local_index, i); }
 
     /// Return vertex coordinates as a 3D point value
     Point point() const
-    { return _mesh->geometry().point(_index); }
+    { return _mesh->geometry().point(_local_index); }
 
     /// Return array of vertex coordinates (const version)
     const double* x() const
-    { return _mesh->geometry().x(_index); }
+    { return _mesh->geometry().x(_local_index); }
 
   };
 

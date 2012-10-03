@@ -49,7 +49,7 @@ namespace dolfin
   public:
 
     /// Default Constructor
-    MeshEntity() : _mesh(0), _dim(0), _index(0) {}
+    MeshEntity() : _mesh(0), _dim(0), _local_index(0) {}
 
     /// Constructor
     ///
@@ -85,8 +85,8 @@ namespace dolfin
     /// *Returns*
     ///     bool
     ///         True if the two mesh entities are equal.
-    bool operator==(const MeshEntity& another) const
-    { return (_mesh == another._mesh && _dim == another._dim && _index == another._index); }
+    bool operator==(const MeshEntity& e) const
+    { return (_mesh == e._mesh && _dim == e._dim && _local_index == e._local_index); }
 
     /// Comparision Operator
     ///
@@ -97,8 +97,8 @@ namespace dolfin
     /// *Returns*
     ///     bool
     ///         True if the two mesh entities are NOT equal.
-    bool operator!=(const MeshEntity& another) const
-    { return !operator==(another); }
+    bool operator!=(const MeshEntity& e) const
+    { return !operator==(e); }
 
     /// Return mesh associated with mesh entity
     ///
@@ -122,7 +122,7 @@ namespace dolfin
     ///     uint
     ///         The index.
     uint index() const
-    { return _index; }
+    { return _local_index; }
 
     /// Return number of incident mesh entities of given topological dimension
     ///
@@ -134,7 +134,7 @@ namespace dolfin
     ///     uint
     ///         The number of incident MeshEntity objects of given dimension.
     uint num_entities(uint dim) const
-    { return _mesh->topology()(_dim, dim).size(_index); }
+    { return _mesh->topology()(_dim, dim).size(_local_index); }
 
     /// Return array of indices for incident mesh entitites of given
     /// topological dimension
@@ -147,7 +147,7 @@ namespace dolfin
     ///     uint
     ///         The index for incident mesh entities of given dimension.
     const uint* entities(uint dim) const
-    { return _mesh->topology()(_dim, dim)(_index); }
+    { return _mesh->topology()(_dim, dim)(_local_index); }
 
     /// Return unique mesh ID
     ///
@@ -192,7 +192,7 @@ namespace dolfin
     ///     bool
     ///         True if the given entity intersects.
     bool intersects(const MeshEntity& entity) const
-    { return PrimitiveIntersector::do_intersect(*this,entity); }
+    { return PrimitiveIntersector::do_intersect(*this, entity); }
 
     /// Check if given point intersects (using exact numerics)
     ///
@@ -204,7 +204,7 @@ namespace dolfin
     ///     bool
     ///         True if the given point intersects.
     bool intersects_exactly(const Point& point) const
-    { return PrimitiveIntersector::do_intersect_exact(*this,point); }
+    { return PrimitiveIntersector::do_intersect_exact(*this, point); }
 
     /// Check if given entity intersects (using exact numerics)
     ///
@@ -216,7 +216,7 @@ namespace dolfin
     ///     bool
     ///         True if the given entity intersects.
     bool intersects_exactly(const MeshEntity& entity) const
-    { return PrimitiveIntersector::do_intersect_exact(*this,entity); }
+    { return PrimitiveIntersector::do_intersect_exact(*this, entity); }
 
     /// Compute local index of given incident entity (error if not
     /// found)
@@ -270,7 +270,7 @@ namespace dolfin
     uint _dim;
 
     // Index of entity within topological dimension
-    uint _index;
+    uint _local_index;
 
   };
 

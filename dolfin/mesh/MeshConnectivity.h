@@ -63,11 +63,17 @@ namespace dolfin
 
     /// Return number of connections for given entity
     uint size(uint entity) const
-    { return ( (entity + 1) < offsets.size() ? offsets[entity + 1] - offsets[entity] : 0); }
+    {
+      return ( (entity + 1) < index_to_position.size()
+          ? index_to_position[entity + 1] - index_to_position[entity] : 0);
+    }
 
     /// Return array of connections for given entity
     const uint* operator() (uint entity) const
-    { return ((entity + 1) < offsets.size() ? &connections[offsets[entity]] : 0); }
+    {
+      return ((entity + 1) < index_to_position.size()
+        ? &connections[index_to_position[entity]] : 0);
+    }
 
     /// Return contiguous array of connections for all entities
     const uint* operator() () const
@@ -91,6 +97,10 @@ namespace dolfin
     void set(uint entity, const std::vector<uint>& connections);
 
     /// Set all connections for given entity
+    void set(uint local_index, uint global_index,
+             const std::vector<uint>& connections);
+
+    /// Set all connections for given entity
     void set(uint entity, uint* connections);
 
     /// Set all connections for all entities (T is a container, e.g.
@@ -102,14 +112,14 @@ namespace dolfin
       clear();
 
       // Initialize offsets and compute total size
-      offsets.resize(connections.size() + 1);
+      index_to_position.resize(connections.size() + 1);
       uint size = 0;
       for (uint e = 0; e < connections.size(); e++)
       {
-        offsets[e] = size;
+        index_to_position[e] = size;
         size += connections[e].size();
       }
-      offsets[connections.size()] = size;
+      index_to_position[connections.size()] = size;
 
       // Initialize connections
       this->connections.reserve(size);
@@ -133,8 +143,11 @@ namespace dolfin
     // Connections for all entities stored as a contiguous array
     std::vector<uint> connections;
 
-    // Offset for first connection for each entity
-    std::vector<uint> offsets;
+    // Position of first connection for each entity (using local index)
+    std::vector<uint> index_to_position;
+
+    // Global index (local-to-global)
+    std::vector<uint> global_index;
 
   };
 

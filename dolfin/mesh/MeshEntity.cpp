@@ -31,7 +31,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MeshEntity::MeshEntity(const Mesh& mesh, uint dim, uint index)
-  : _mesh(0), _dim(0), _index(0)
+  : _mesh(0), _dim(0), _local_index(0)
 {
   init(mesh, dim, index);
 }
@@ -41,7 +41,7 @@ void MeshEntity::init(const Mesh& mesh, uint dim, uint index)
   // Store variables
   _mesh = &mesh; // Yes, we should probably use a shared pointer here...
   _dim = dim;
-  _index = index;
+  _local_index = index;
 
   // Check index range
   if (index < _mesh->num_entities(dim))
@@ -73,12 +73,12 @@ bool MeshEntity::incident(const MeshEntity& entity) const
     return false;
 
   // Get list of entities for given topological dimension
-  const uint* entities = _mesh->topology()(_dim, entity._dim)(_index);
-  const uint num_entities = _mesh->topology()(_dim, entity._dim).size(_index);
+  const uint* entities = _mesh->topology()(_dim, entity._dim)(_local_index);
+  const uint num_entities = _mesh->topology()(_dim, entity._dim).size(_local_index);
 
   // Check if any entity matches
   for (uint i = 0; i < num_entities; ++i)
-    if ( entities[i] == entity._index )
+    if (entities[i] == entity._local_index)
       return true;
 
   // Entity was not found
@@ -88,7 +88,7 @@ bool MeshEntity::incident(const MeshEntity& entity) const
 dolfin::uint MeshEntity::index(const MeshEntity& entity) const
 {
   // Must be in the same mesh to be incident
-  if ( _mesh != entity._mesh )
+  if (_mesh != entity._mesh)
   {
     dolfin_error("MeshEntity.cpp",
                  "compute index of mesh entity",
@@ -96,12 +96,12 @@ dolfin::uint MeshEntity::index(const MeshEntity& entity) const
   }
 
   // Get list of entities for given topological dimension
-  const uint* entities = _mesh->topology()(_dim, entity._dim)(_index);
-  const uint num_entities = _mesh->topology()(_dim, entity._dim).size(_index);
+  const uint* entities = _mesh->topology()(_dim, entity._dim)(_local_index);
+  const uint num_entities = _mesh->topology()(_dim, entity._dim).size(_local_index);
 
   // Check if any entity matches
   for (uint i = 0; i < num_entities; ++i)
-    if ( entities[i] == entity._index )
+    if (entities[i] == entity._local_index)
       return i;
 
   // Entity was not found
@@ -116,7 +116,7 @@ Point MeshEntity::midpoint() const
 {
   // Special case: a vertex is its own midpoint (don't check neighbors)
   if (_dim == 0)
-    return _mesh->geometry().point(_index);
+    return _mesh->geometry().point(_local_index);
 
   // Other wise iterate over incident vertices and compute average
   uint num_vertices = 0;
