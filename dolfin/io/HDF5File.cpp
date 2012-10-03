@@ -289,7 +289,7 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
 
   // Write vertex data to HDF5 file if not already there
   const std::string coord_dataset = mesh_coords_dataset_name(mesh);
-  if (!HDF5Interface::dataset_exists(*this, coord_dataset, mpi_io))
+  if (!HDF5Interface::has_dataset(hdf5_file_id, coord_dataset))
   {
     // Write coordinates contiguously from each process
     std::vector<uint> global_size(2);
@@ -298,12 +298,10 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
     write_data("/Mesh", coord_dataset, vertex_coords, global_size);
 
     // Write GlobalIndex mapping of coordinates to global vector position
-    /*
-    std::vector<uint> global_size_map(1);
-    global_size_map[0] = MPI::sum(num_local_vertices);
-    write_data("/Mesh", mesh_index_dataset_name(mesh), vertex_indices,
-               global_size_map);
-    */
+    //std::vector<uint> global_size_map(1);
+    //global_size_map[0] = MPI::sum(num_local_vertices);
+    //write_data("/Mesh", mesh_index_dataset_name(mesh), vertex_indices,
+    //           global_size_map);
 
     // Write partitions as an attribute
     std::vector<uint> partitions;
@@ -318,35 +316,18 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
                                  indexing_indicator);
   }
 
-  // Get cell connectivity
-  // NOTE: For visualisation via XDMF, the vertex indices correspond
-  //       to the local vertex position, and not the true vertex indices.
-  std::vector<uint> topological_data;
-  /*
-  if (true_topology_indices)
-  {
-    // Build connectivity using true vertex indices
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
-      for (VertexIterator v(*cell); !v.end(); ++v)
-        topological_data.push_back(v->global_index());
-  }
-  else
-  */
-  {
-    // FIXME: No guarantee that local numbering will be contiguous
-    // Build connectivity using contiguous local vertex indices
-    //for (CellIterator cell(mesh); !cell.end(); ++cell)
-    //  for (VertexIterator v(*cell); !v.end(); ++v)
-    //    topological_data.push_back(v->index() + vertex_range.first);
+  // FIXME: No guarantee that local numbering will be contiguous. Is
+  //        this a problem?
 
-    for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
-      for (VertexIterator v(*c); !v.end(); ++v)
-        topological_data.push_back(v->index() + vertex_range.first);
-  }
+  // Get cell connectivity (local indices)
+  std::vector<uint> topological_data;
+  for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
+    for (VertexIterator v(*c); !v.end(); ++v)
+      topological_data.push_back(v->index() + vertex_range.first);
 
   // Write connectivity to HDF5 file if not already there
   const std::string topology_dataset = mesh_topology_dataset_name(mesh);
-  if (!HDF5Interface::dataset_exists(*this, topology_dataset, mpi_io))
+  if (!HDF5Interface::has_dataset(hdf5_file_id, topology_dataset))
   {
     std::vector<uint> global_size(2);
     global_size[0] = MPI::sum(topological_data.size()/(cell_dim + 1));
@@ -377,7 +358,6 @@ bool HDF5File::dataset_exists(const std::string dataset_name) const
 //-----------------------------------------------------------------------------
 void HDF5File::open_hdf5_file(bool truncate)
 {
-  // Open file
   dolfin_assert(!hdf5_file_open);
   hdf5_file_id = HDF5Interface::open_file(filename, truncate, mpi_io);
   hdf5_file_open = true;

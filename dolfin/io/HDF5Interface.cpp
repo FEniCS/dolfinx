@@ -1,6 +1,5 @@
 // Copyright (C) 2012 Chris N. Richardson and Garth N. Wells
 //
-//
 // This file is part of DOLFIN.
 //
 // DOLFIN is free software: you can redistribute it and/or modify
@@ -153,44 +152,6 @@ std::vector<dolfin::uint>
   return std::vector<uint>(size.begin(), size.end());
 }
 //-----------------------------------------------------------------------------
-bool HDF5Interface::dataset_exists(const HDF5File& hdf5_file,
-                                   const std::string dataset_name,
-                                   const bool use_mpi_io)
-{
-  // HDF5 filename
-  const std::string filename = hdf5_file.name();
-
-  herr_t status;
-
-  // Try to open existing HDF5 file
-  hid_t file_id = open_file(filename, false, use_mpi_io);
-
-  // Disable error reporting
-  herr_t (*old_func)(void*);
-  void *old_client_data;
-  H5Eget_auto(&old_func, &old_client_data);
-
-  // Redirect error reporting (to none)
-  status = H5Eset_auto(NULL, NULL);
-  dolfin_assert(status != HDF5_FAIL);
-
-  // Try to open dataset - returns HDF5_FAIL if non-existent
-  hid_t dset_id = H5Dopen(file_id, dataset_name.c_str());
-  if(dset_id != HDF5_FAIL)
-    H5Dclose(dset_id);
-
-  // Re-enable error reporting
-  status = H5Eset_auto(old_func, old_client_data);
-  dolfin_assert(status != HDF5_FAIL);
-
-  // Close file
-  status = H5Fclose(file_id);
-  dolfin_assert(status != HDF5_FAIL);
-
-  // Return true if dataset exists
-  return (dset_id != HDF5_FAIL);
-}
-//-----------------------------------------------------------------------------
 dolfin::uint HDF5Interface::num_datasets_in_group(const hid_t hdf5_file_handle,
                                                   const std::string group_name)
 {
@@ -230,46 +191,6 @@ std::vector<std::string> HDF5Interface::dataset_list(const hid_t hdf5_file_handl
 
   // Close group
   status = H5Gclose(group_id);
-  dolfin_assert(status != HDF5_FAIL);
-
-  return list_of_datasets;
-}
-//-----------------------------------------------------------------------------
-std::vector<std::string> HDF5Interface::dataset_list(const std::string filename,
-                                                 const std::string group_name,
-                                                 const bool use_mpi_io)
-{
-  // List all member datasets of a group by name
-  char namebuf[HDF5_MAXSTRLEN];
-
-  herr_t status;
-
-  // Try to open existing HDF5 file
-  hid_t file_id = open_file(filename, false, use_mpi_io);
-
-  // Open group by name group_name
-  hid_t group_id = H5Gopen(file_id,group_name.c_str());
-  dolfin_assert(group_id != HDF5_FAIL);
-
-  // Count how many datasets in the group
-  hsize_t num_datasets;
-  status = H5Gget_num_objs(group_id, &num_datasets);
-  dolfin_assert(status != HDF5_FAIL);
-
-  // Iterate through group collecting all dataset names
-  std::vector<std::string> list_of_datasets;
-  for(hsize_t i = 0; i < num_datasets; i++)
-  {
-    H5Gget_objname_by_idx(group_id, i, namebuf, HDF5_MAXSTRLEN);
-    list_of_datasets.push_back(std::string(namebuf));
-  }
-
-  // Close group
-  status = H5Gclose(group_id);
-  dolfin_assert(status != HDF5_FAIL);
-
-  // Close file
-  status = H5Fclose(file_id);
   dolfin_assert(status != HDF5_FAIL);
 
   return list_of_datasets;
