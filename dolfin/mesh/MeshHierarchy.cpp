@@ -24,8 +24,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshHierarchy::MeshHierarchy(const Mesh& mesh)
-  : meshes(0), num_meshes(0)
+MeshHierarchy::MeshHierarchy(const Mesh& mesh) : meshes(0), num_meshes(0)
 {
   // Allocate data
   num_meshes = 1;
@@ -35,8 +34,7 @@ MeshHierarchy::MeshHierarchy(const Mesh& mesh)
   meshes[0] = mesh;
 }
 //-----------------------------------------------------------------------------
-MeshHierarchy::MeshHierarchy()
-  : meshes(0), num_meshes(0)
+MeshHierarchy::MeshHierarchy() : meshes(0), num_meshes(0)
 {
   // Do nothing
 }
@@ -64,7 +62,8 @@ void MeshHierarchy::clear()
   // Clear data
   num_meshes = 0;
 
-  if ( meshes ){
+  if ( meshes )
+  {
     delete [] meshes;
     meshes = 0;
   }
@@ -103,10 +102,7 @@ void MeshHierarchy::add(const Mesh& mesh)
     delete [] tmp_array;
   }
   else
-  {
     init(mesh);
-  }
-
 }
 //-----------------------------------------------------------------------------
 void MeshHierarchy::remove()
@@ -156,5 +152,3 @@ Mesh& MeshHierarchy::operator[](uint k) const
   return meshes[k];
 }
 //-----------------------------------------------------------------------------
-
-

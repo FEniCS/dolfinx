@@ -91,7 +91,7 @@ namespace dolfin
     std::vector<uint> num_entities;
 
     // Connectivity for pairs of topological dimensions
-    MeshConnectivity*** connectivity;
+    std::vector<std::vector<MeshConnectivity> > connectivity;
 
   };
 
