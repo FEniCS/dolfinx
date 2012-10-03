@@ -54,10 +54,12 @@ namespace dolfin
     const MeshConnectivity& operator= (const MeshConnectivity& connectivity);
 
     /// Return true if the total number of connections is equal to zero
-    bool empty() const { return connections.empty(); }
+    bool empty() const
+    { return connections.empty(); }
 
     /// Return total number of connections
-    uint size() const { return connections.size(); }
+    uint size() const
+    { return connections.size(); }
 
     /// Return number of connections for given entity
     uint size(uint entity) const
@@ -74,10 +76,12 @@ namespace dolfin
     /// Clear all data
     void clear();
 
-    /// Initialize number of entities and number of connections (equal for all)
+    /// Initialize number of entities and number of connections (equal
+    /// for all)
     void init(uint num_entities, uint num_connections);
 
-    /// Initialize number of entities and number of connections (individually)
+    /// Initialize number of entities and number of connections
+    /// (individually)
     void init(std::vector<uint>& num_connections);
 
     /// Set given connection for given entity

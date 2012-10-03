@@ -54,7 +54,8 @@ namespace dolfin
   /// data, at that point corresponding to topologically connected
   /// meshes instead of local mesh data.
 
-  // FIXME: Provide a better public interface rather than using 'friend class'
+  // FIXME: Provide a better public interface rather than using 'friend
+  //        class'
 
   class LocalMeshData : public Variable
   {
@@ -74,16 +75,17 @@ namespace dolfin
 
   private:
 
-    /// Clear all data
+    // Clear all data
     void clear();
 
-    /// Copy data from mesh
+    // Copy data from mesh
     void extract_mesh_data(const Mesh& mesh);
 
-    /// Broadcast mesh data from main process
+    // Broadcast mesh data from main process (used when Mesh is created
+    // on one process)
     void broadcast_mesh_data();
 
-    /// Receive mesh data from main process
+    // Receive mesh data from main process
     void receive_mesh_data();
 
     // Unpack received vertex coordinates
@@ -95,40 +97,40 @@ namespace dolfin
     // Unpack received cell vertices
     void unpack_cell_vertices(const std::vector<uint>& values);
 
-    /// Coordinates for all vertices stored on local processor
+    // Coordinates for all vertices stored on local processor
     std::vector<std::vector<double> > vertex_coordinates;
 
-    /// Global vertex indices for all vertices stored on local processor
+    // Global vertex indices for all vertices stored on local processor
     std::vector<uint> vertex_indices;
 
-    /// Global vertex indices for all cells stored on local processor
+    // Global vertex indices for all cells stored on local processor
     std::vector<std::vector<uint> > cell_vertices;
 
-    /// Global cell numbers for all cells stored on local processor
+    // Global cell numbers for all cells stored on local processor
     std::vector<uint> global_cell_indices;
 
-    /// Global number of vertices
+    // Global number of vertices
     uint num_global_vertices;
 
-    /// Global number of cells
+    // Global number of cells
     uint num_global_cells;
 
-    /// Number of vertices per cell
+    // Number of vertices per cell
     uint num_vertices_per_cell;
 
-    /// Geometrical dimension
+    // Geometrical dimension
     uint gdim;
 
-    /// Topological dimension
+    // Topological dimension
     uint tdim;
 
     // Mesh domain data [dim](line, (cell_index, local_index, value))
-    //std::map<uint, std::vector<std::vector<dolfin::uint> > > domain_data;
-    std::map<uint, std::vector< std::pair<std::pair<dolfin::uint, dolfin::uint>, dolfin::uint> > > domain_data;
+    std::map<uint, std::vector< std::pair<std::pair<dolfin::uint, dolfin::uint>, dolfin::uint> > >
+        domain_data;
 
     // Friends
     friend class XMLLocalMeshSAX;
-    friend class HDF5File;
+    //friend class HDF5File;
     friend class MeshPartitioning;
     friend class GraphBuilder;
     friend class ParMETIS;

@@ -27,13 +27,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshTopology::MeshTopology() : connectivity(0)
+MeshTopology::MeshTopology()
 
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-MeshTopology::MeshTopology(const MeshTopology& topology) : connectivity(0)
+MeshTopology::MeshTopology(const MeshTopology& topology)
 {
   *this = topology;
 }
@@ -50,28 +50,7 @@ const MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
 
   // Copy data
   num_entities = topology.num_entities;
-  const uint _dim = num_entities.size() - 1;
-
-  // Allocate data
-  //_dim = topology._dim;
-  //num_entities = new uint[_dim + 1];
-  connectivity = new MeshConnectivity**[_dim + 1];
-  for (uint d0 = 0; d0 <= _dim; d0++)
-  {
-    connectivity[d0] = new MeshConnectivity*[_dim + 1];
-    for (uint d1 = 0; d1 <= _dim; d1++)
-      connectivity[d0][d1] = new MeshConnectivity(d0, d1);
-  }
-
-  // Copy data
-  if (num_entities.size() > 0)
-  {
-    for (uint d = 0; d <= _dim; d++)
-      num_entities[d] = topology.num_entities[d];
-    for (uint d0 = 0; d0 <= _dim; d0++)
-      for (uint d1 = 0; d1 <= _dim; d1++)
-        *connectivity[d0][d1] = *topology.connectivity[d0][d1];
-  }
+  connectivity = topology.connectivity;
 
   return *this;
 }
@@ -86,38 +65,22 @@ dolfin::uint MeshTopology::size(uint dim) const
   if (num_entities.size() == 0)
     return 0;
 
-  dolfin_assert(dim <= (num_entities.size() - 1));
+  dolfin_assert(dim < num_entities.size());
   return num_entities[dim];
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::clear()
 {
-  const uint _dim = num_entities.size() - 1;
-
-  // Clear number of mesh entities
+  // Clear data
   num_entities.clear();
-
-  // Delete mesh connectivity
-  if (connectivity)
-  {
-    for (uint d0 = 0; d0 <= _dim; d0++)
-    {
-      for (uint d1 = 0; d1 <= _dim; d1++)
-        delete connectivity[d0][d1];
-      delete [] connectivity[d0];
-    }
-    delete [] connectivity;
-  }
-  connectivity = 0;
+  connectivity.clear();
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::clear(uint d0, uint d1)
 {
-  const uint _dim = num_entities.size() - 1;
-  dolfin_assert(d0 <= _dim);
-  dolfin_assert(d1 <= _dim);
-  dolfin_assert(connectivity[d0][d1]);
-  connectivity[d0][d1]->clear();
+  dolfin_assert(d0 < connectivity.size());
+  dolfin_assert(d1 < connectivity[d0].size());
+  connectivity[d0][d1].clear();
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::init(uint dim)
@@ -129,38 +92,30 @@ void MeshTopology::init(uint dim)
   num_entities = std::vector<uint>(dim + 1, 0);
 
   // Initialize mesh connectivity
-  connectivity = new MeshConnectivity**[dim + 1];
+  connectivity.resize(dim + 1);
   for (uint d0 = 0; d0 <= dim; d0++)
-  {
-    connectivity[d0] = new MeshConnectivity*[dim + 1];
     for (uint d1 = 0; d1 <= dim; d1++)
-      connectivity[d0][d1] = new MeshConnectivity(d0, d1);
-  }
+      connectivity[d0].push_back(MeshConnectivity(d0, d1));
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::init(uint dim, uint size)
 {
-  const uint _dim = num_entities.size() - 1;
-  dolfin_assert(dim <= _dim);
+  dolfin_assert(dim < num_entities.size());
   num_entities[dim] = size;
 }
 //-----------------------------------------------------------------------------
 dolfin::MeshConnectivity& MeshTopology::operator() (uint d0, uint d1)
 {
-  const uint _dim = num_entities.size() - 1;
-  dolfin_assert(connectivity);
-  dolfin_assert(d0 <= _dim && d1 <= _dim);
-  dolfin_assert(connectivity[d0][d1]);
-  return *connectivity[d0][d1];
+  dolfin_assert(d0 < connectivity.size());
+  dolfin_assert(d1 < connectivity[d0].size());
+  return connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------
 const dolfin::MeshConnectivity& MeshTopology::operator() (uint d0, uint d1) const
 {
-  const uint _dim = num_entities.size() - 1;
-  dolfin_assert(connectivity);
-  dolfin_assert(d0 <= _dim && d1 <= _dim);
-  dolfin_assert(connectivity[d0][d1]);
-  return *connectivity[d0][d1];
+  dolfin_assert(d0 < connectivity.size());
+  dolfin_assert(d1 < connectivity[d0].size());
+  return connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------
 std::string MeshTopology::str(bool verbose) const
@@ -186,7 +141,7 @@ std::string MeshTopology::str(bool verbose) const
       s << "    " << d0;
       for (uint d1 = 0; d1 <= _dim; d1++)
       {
-        if ( !connectivity[d0][d1]->empty() )
+        if ( !connectivity[d0][d1].empty() )
           s << " x";
         else
           s << " -";
@@ -199,9 +154,9 @@ std::string MeshTopology::str(bool verbose) const
     {
       for (uint d1 = 0; d1 <= _dim; d1++)
       {
-        if ( connectivity[d0][d1]->empty() )
+        if ( connectivity[d0][d1].empty() )
           continue;
-        s << indent(connectivity[d0][d1]->str(true));
+        s << indent(connectivity[d0][d1].str(true));
         s << std::endl;
       }
     }

@@ -86,14 +86,13 @@ void BinaryFile::operator>> (Mesh& mesh)
   uint D = read_uint();
   t.num_entities.resize(D + 1);
   read_array(D + 1, t.num_entities.data());
-  t.connectivity = new MeshConnectivity**[D + 1];
+  t.connectivity.resize(D + 1);
   for (uint i = 0; i <= D; i++)
   {
-    t.connectivity[i] = new MeshConnectivity*[D + 1];
     for (uint j = 0; j <= D; j++)
     {
-      t.connectivity[i][j] = new MeshConnectivity(i, j);
-      MeshConnectivity& c = *t.connectivity[i][j];
+      t.connectivity[i].push_back(MeshConnectivity(i, j));
+      MeshConnectivity& c = t.connectivity[i][j];
       const uint size = read_uint();
       if (size > 0)
       {
@@ -177,7 +176,7 @@ void BinaryFile::operator<< (const Mesh& mesh)
   {
     for (uint j = 0; j <= D; j++)
     {
-      const MeshConnectivity& c = *t.connectivity[i][j];
+      const MeshConnectivity& c = t.connectivity[i][j];
 
       // If store all connectivity or if storing cell connectivity
       if (_store_connectivity || (i == D && j == 0))
