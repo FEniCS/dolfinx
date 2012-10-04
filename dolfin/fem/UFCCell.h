@@ -105,8 +105,8 @@ namespace dolfin
       entity_indices = new uint*[topological_dimension + 1];
       for (uint d = 0; d < topological_dimension; d++)
       {
-        // Store number of cell entities allocated for (this can change between
-        // init() and update() which is why it's stored)
+        // Store number of cell entities allocated for (this can change
+        // between init() and update() which is why it's stored)
         num_cell_entities.push_back(cell.num_entities(d));
         if (cell.num_entities(d) > 0)
           entity_indices[d] = new uint[cell.num_entities(d)];
@@ -162,8 +162,47 @@ namespace dolfin
       // Set local facet (-1 means no local facet set)
       this->local_facet = local_facet;
 
-      // Copy local entity indices from mesh
       const uint D = topological_dimension;
+      if (use_global_indices)
+      {
+        const MeshTopology& topology = cell.mesh().topology();
+        for (uint d = 0; d < D; ++d)
+        {
+          if (topology.have_global_indices(d))
+          {
+            std::cout << "Copying cell data (X): " << d << std::endl;
+            const std::vector<uint> global_indices = topology.global_indices(d);
+            for (uint i = 0; i < num_cell_entities[d]; ++i)
+              entity_indices[d][i] = global_indices[cell.entities(d)[i]];
+          }
+        }
+
+        // Set cell index
+        entity_indices[D][0] = cell.global_index();
+        std::cout << "Done Copying cell data (X): "  << std::endl;
+      }
+      else
+      {
+        for (uint d = 0; d < D; ++d)
+        {
+          std::cout << "Copying cell data: " << d << std::endl;
+          for (uint i = 0; i < num_cell_entities[d]; ++i)
+            entity_indices[d][i] = cell.entities(d)[i];
+        }
+
+        // Set cell index
+        //entity_indices[D][0] = cell.index();
+      }
+
+      // Set cell index
+      entity_indices[D][0] = cell.index();
+      index = entity_indices[D][0];
+
+
+
+      /*
+      // Copy local entity indices from mesh
+      //const uint D = topological_dimension;
       for (uint d = 0; d < D; ++d)
       {
         for (uint i = 0; i < num_cell_entities[d]; ++i)
@@ -173,19 +212,7 @@ namespace dolfin
       // Set cell index
       entity_indices[D][0] = cell.index();
       index = cell.index();
-
-      // Map to global entity indices (if any)
-      for (uint d = 0; d < D; ++d)
-      {
-        if (use_global_indices && cell.mesh().topology().have_global_indices(d))
-        {
-          const std::vector<uint> global_indices = cell.mesh().topology().global_indices(d);
-          for (uint i = 0; i < num_cell_entities[d]; ++i)
-            entity_indices[d][i] = global_indices[entity_indices[d][i]];
-        }
-      }
-      if (use_global_indices && cell.mesh().topology().have_global_indices(D))
-        entity_indices[D][0] = cell.mesh().topology().global_indices(D)[entity_indices[D][0]];
+      */
 
       // Set vertex coordinates
       const uint* vertices = cell.entities(0);
