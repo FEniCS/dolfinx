@@ -230,7 +230,7 @@ namespace dolfin
     ///         No example code available for this function.
     const uint* cells() const { return _topology(_topology.dim(), 0)(); }
 
-    /// Get number of entities of given topological dimension.
+    /// Get number of local entities of given topological dimension.
     ///
     /// *Arguments*
     ///     dim (uint)
@@ -238,13 +238,29 @@ namespace dolfin
     ///
     /// *Returns*
     ///     uint
-    ///         Number of entities of topological dimension d.
+    ///         Number of local entities of topological dimension d.
     ///
     /// *Example*
     ///     .. note::
     ///
     ///         No example code available for this function.
     uint size(uint dim) const { return _topology.size(dim); }
+
+    /// Get global number of entities of given topological dimension.
+    ///
+    /// *Arguments*
+    ///     dim (uint)
+    ///         Topological dimension.
+    ///
+    /// *Returns*
+    ///     uint
+    ///         Global number of entities of topological dimension d.
+    ///
+    /// *Example*
+    ///     .. note::
+    ///
+    ///         No example code available for this function.
+    uint size_global(uint dim) const { return _topology.size_global(dim); }
 
     /// Get mesh topology.
     ///
@@ -643,7 +659,7 @@ namespace dolfin
     std::string str(bool verbose) const;
 
     /// Hash of coordinate values
-    /// 
+    ///
     /// *Returns*
     ///     uint
     ///         A tree-hashed value of the coordinates over all MPI processes
@@ -651,7 +667,7 @@ namespace dolfin
     uint coordinates_hash() const;
 
     /// Hash of cell vertex indices
-    /// 
+    ///
     /// *Returns*
     ///     uint
     ///         A tree-hashed value of the topology over all MPI processes

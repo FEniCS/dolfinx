@@ -20,6 +20,7 @@
 
 #include <sstream>
 #include <dolfin/log/log.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/utils.h>
 #include "MeshConnectivity.h"
 #include "MeshTopology.h"
@@ -50,6 +51,7 @@ const MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
 
   // Copy data
   num_entities = topology.num_entities;
+  global_num_entities = topology.global_num_entities;
   connectivity = topology.connectivity;
   _global_indices = topology._global_indices;
 
@@ -70,10 +72,20 @@ dolfin::uint MeshTopology::size(uint dim) const
   return num_entities[dim];
 }
 //-----------------------------------------------------------------------------
+dolfin::uint MeshTopology::size_global(uint dim) const
+{
+  if (global_num_entities.empty())
+    return 0;
+
+  dolfin_assert(dim < global_num_entities.size());
+  return global_num_entities[dim];
+}
+//-----------------------------------------------------------------------------
 void MeshTopology::clear()
 {
   // Clear data
   num_entities.clear();
+  global_num_entities.clear();
   connectivity.clear();
   _global_indices.clear();
 }
@@ -92,6 +104,7 @@ void MeshTopology::init(uint dim)
 
   // Initialize number of mesh entities
   num_entities = std::vector<uint>(dim + 1, 0);
+  global_num_entities = std::vector<uint>(dim + 1, 0);
 
   // Initialize storage for global indices
   _global_indices.resize(dim + 1);
@@ -103,10 +116,19 @@ void MeshTopology::init(uint dim)
       connectivity[d0].push_back(MeshConnectivity(d0, d1));
 }
 //-----------------------------------------------------------------------------
-void MeshTopology::init(uint dim, uint size)
+void MeshTopology::init(uint dim, uint local_size)
 {
   dolfin_assert(dim < num_entities.size());
-  num_entities[dim] = size;
+  num_entities[dim] = local_size;
+
+  if (MPI::num_processes() == 1)
+    init_global(dim, local_size);
+}
+//-----------------------------------------------------------------------------
+void MeshTopology::init_global(uint dim, uint global_size)
+{
+  dolfin_assert(dim < global_num_entities.size());
+  global_num_entities[dim] = global_size;
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::init_global_indices(uint dim, uint size)

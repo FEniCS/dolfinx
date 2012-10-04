@@ -61,6 +61,9 @@ namespace dolfin
     /// Return number of entities for given dimension
     uint size(uint dim) const;
 
+    /// Return global number of entities for given dimension
+    uint size_global(uint dim) const;
+
     /// Clear all data
     void clear();
 
@@ -70,10 +73,16 @@ namespace dolfin
     /// Initialize topology of given maximum dimension
     void init(uint dim);
 
-    /// Set number of entities (size) for given topological dimension
-    void init(uint dim, uint size);
+    /// Set number of local entities (local_size) for given topological
+    /// dimension
+    void init(uint dim, uint local_size);
 
-    /// Initialize global enity numbering for entities of dimension dim
+    /// Set number of global entities (global_size) for given topological
+    /// dimension
+    void init_global(uint dim, uint global_size);
+
+    /// Initialize storage for global entity numbering for entities of
+    /// dimension dim
     void init_global_indices(uint dim, uint size);
 
     /// Set global index for entity of dimension dim and with local index
@@ -114,6 +123,9 @@ namespace dolfin
 
     // Number of mesh entities for each topological dimension
     std::vector<uint> num_entities;
+
+    // Global number of mesh entities for each topological dimension
+    std::vector<uint> global_num_entities;
 
     // Global indices for mesh entities (empty if not set)
     std::vector<std::vector<uint> > _global_indices;

@@ -65,13 +65,3 @@ const MeshFunction<bool>& ParallelData::exterior_facet() const
   return *_exterior_facet;
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::uint>& ParallelData::num_global_entities()
-{
-  return _num_global_entities;
-}
-//-----------------------------------------------------------------------------
-const std::vector<dolfin::uint>& ParallelData::num_global_entities() const
-{
-  return _num_global_entities;
-}
-//-----------------------------------------------------------------------------

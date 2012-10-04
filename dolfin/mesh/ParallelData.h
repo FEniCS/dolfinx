@@ -64,12 +64,6 @@ namespace dolfin
     /// false otherwise (const version)
     const MeshFunction<bool>& exterior_facet() const;
 
-    // Return the number of global entities of each dimension
-    std::vector<unsigned int>& num_global_entities();
-
-    // Return the number of global entities of each dimension (const version)
-    const std::vector<unsigned int>& num_global_entities() const;
-
 
     //--- Data for shared memory parallelism (multicore) ---
 
