@@ -163,56 +163,30 @@ namespace dolfin
       this->local_facet = local_facet;
 
       const uint D = topological_dimension;
-      if (use_global_indices)
+      const MeshTopology& topology = cell.mesh().topology();
+      for (uint d = 0; d < D; ++d)
       {
-        const MeshTopology& topology = cell.mesh().topology();
-        for (uint d = 0; d < D; ++d)
+        if (use_global_indices && topology.have_global_indices(d))
         {
-          if (topology.have_global_indices(d))
-          {
-            std::cout << "Copying cell data (X): " << d << std::endl;
-            const std::vector<uint> global_indices = topology.global_indices(d);
-            for (uint i = 0; i < num_cell_entities[d]; ++i)
-              entity_indices[d][i] = global_indices[cell.entities(d)[i]];
-          }
+          const std::vector<uint> global_indices = topology.global_indices(d);
+          for (uint i = 0; i < num_cell_entities[d]; ++i)
+            entity_indices[d][i] = global_indices[cell.entities(d)[i]];
         }
-
-        // Set cell index
-        entity_indices[D][0] = cell.global_index();
-        std::cout << "Done Copying cell data (X): "  << std::endl;
-      }
-      else
-      {
-        for (uint d = 0; d < D; ++d)
+        else
         {
-          std::cout << "Copying cell data: " << d << std::endl;
           for (uint i = 0; i < num_cell_entities[d]; ++i)
             entity_indices[d][i] = cell.entities(d)[i];
         }
-
-        // Set cell index
-        //entity_indices[D][0] = cell.index();
       }
 
       // Set cell index
-      entity_indices[D][0] = cell.index();
-      index = entity_indices[D][0];
+      if (use_global_indices && topology.have_global_indices(D))
+        entity_indices[D][0] = cell.global_index();
+      else
+        entity_indices[D][0] = cell.index();
 
-
-
-      /*
-      // Copy local entity indices from mesh
-      //const uint D = topological_dimension;
-      for (uint d = 0; d < D; ++d)
-      {
-        for (uint i = 0; i < num_cell_entities[d]; ++i)
-          entity_indices[d][i] = cell.entities(d)[i];
-      }
-
-      // Set cell index
-      entity_indices[D][0] = cell.index();
+      // Local cell index
       index = cell.index();
-      */
 
       // Set vertex coordinates
       const uint* vertices = cell.entities(0);
@@ -222,7 +196,7 @@ namespace dolfin
 
   private:
 
-    // True it global entity indices should be used
+    // True if global entity indices should be used
     const bool use_global_indices;
 
     // Number of cell vertices
