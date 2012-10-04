@@ -50,25 +50,6 @@ namespace dolfin
 
     //--- Data for distributed memory parallelism ---
 
-    /// Return true if global indices have been computed for entity of
-    /// dimension d
-    bool have_global_entity_indices(uint d) const;
-
-    /// Return global indices (local-to-global) for entity of dimension d
-    MeshFunction<unsigned int>& global_entity_indices(uint d);
-
-    /// Return global indices (local-to-global) for entity of dimension d (const version)
-    const MeshFunction<unsigned int>& global_entity_indices(uint d) const;
-
-    /// Return global indices (local-to-global) for entity of dimension d in a vector
-    std::vector<uint> global_entity_indices_as_vector(uint d) const;
-
-    /// Return global-to-local indices for entity of dimension d
-    const std::map<unsigned int, unsigned int>& global_to_local_entity_indices(uint d);
-
-    /// Return global-to-local indices for entity of dimension d (const version)
-    const std::map<unsigned int, unsigned int>& global_to_local_entity_indices(uint d) const;
-
     /// FIXME: Add description and use better name
     std::map<unsigned int, std::vector<unsigned int> >& shared_vertices();
 
@@ -105,12 +86,6 @@ namespace dolfin
     // Mesh
     const Mesh& mesh;
 
-    // For entity of dimension d, MeshFunction holding global indices
-    std::map<uint, MeshFunction<unsigned int> > _global_entity_indices;
-
-    // Global-to-local maps For entity of dimension d, MeshFunction holding global indices
-    std::map<uint, std::map<uint, uint> > _global_to_local_entity_indices;
-
     // FIXME: Use better name
     // FIXME: Use unordered map?
     // FIXME: Use std::set instead of std::vector (the vector is sorted at some point in the code)
@@ -124,23 +99,6 @@ namespace dolfin
 
     // True if a facet is an exterior facet, false otherwise
     boost::scoped_ptr<MeshFunction<bool> >_exterior_facet;
-
-    /*
-    // Some typedefs for complex types
-    typedef boost::tuple<uint, uint, uint> tuple_type;
-    typedef std::map<tuple_type, MeshFunction<uint> > entity_colors_map_type;
-    typedef std::map<tuple_type, std::vector<std::vector<uint> > > colored_entities_map_type;
-
-    // The mesh
-    const Mesh& _mesh;
-
-    // Map to entity colors
-    entity_colors_map_type _entity_colors;
-
-    // Map to colored entities
-    colored_entities_map_type _colored_entities;
-
-    */
 
   };
 

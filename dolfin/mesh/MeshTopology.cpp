@@ -51,6 +51,7 @@ const MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
   // Copy data
   num_entities = topology.num_entities;
   connectivity = topology.connectivity;
+  _global_indices = topology._global_indices;
 
   return *this;
 }
@@ -74,6 +75,7 @@ void MeshTopology::clear()
   // Clear data
   num_entities.clear();
   connectivity.clear();
+  _global_indices.clear();
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::clear(uint d0, uint d1)
@@ -91,6 +93,9 @@ void MeshTopology::init(uint dim)
   // Initialize number of mesh entities
   num_entities = std::vector<uint>(dim + 1, 0);
 
+  // Initialize storage for global indices
+  _global_indices.resize(dim + 1);
+
   // Initialize mesh connectivity
   connectivity.resize(dim + 1);
   for (uint d0 = 0; d0 <= dim; d0++)
@@ -102,6 +107,12 @@ void MeshTopology::init(uint dim, uint size)
 {
   dolfin_assert(dim < num_entities.size());
   num_entities[dim] = size;
+}
+//-----------------------------------------------------------------------------
+void MeshTopology::init_global_indices(uint dim, uint size)
+{
+  dolfin_assert(dim < _global_indices.size());
+  _global_indices[dim] = std::vector<uint>(size);
 }
 //-----------------------------------------------------------------------------
 dolfin::MeshConnectivity& MeshTopology::operator() (uint d0, uint d1)

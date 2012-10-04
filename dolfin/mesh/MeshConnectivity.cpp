@@ -114,17 +114,6 @@ void MeshConnectivity::set(uint entity, const std::vector<uint>& connections)
             this->connections.begin() + index_to_position[entity]);
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::set(uint local_index, uint global_index,
-                           const std::vector<uint>& connections)
-{
-  dolfin_assert((local_index + 1) < index_to_position.size());
-  dolfin_assert(connections.size() == index_to_position[local_index + 1] - index_to_position[local_index]);
-
-  // Copy data
-  std::copy(connections.begin(), connections.end(),
-            this->connections.begin() + index_to_position[local_index]);
-}
-//-----------------------------------------------------------------------------
 void MeshConnectivity::set(uint entity, uint* connections)
 {
   dolfin_assert((entity + 1) < index_to_position.size());

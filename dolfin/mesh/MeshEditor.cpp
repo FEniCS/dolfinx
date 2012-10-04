@@ -119,6 +119,7 @@ void MeshEditor::init_vertices(uint num_vertices)
   // Initialize mesh data
   this->num_vertices = num_vertices;
   mesh->_topology.init(0,    num_vertices);
+  mesh->_topology.init_global_indices(0, num_vertices);
   mesh->_geometry.init(gdim, num_vertices);
 }
 //-----------------------------------------------------------------------------
@@ -135,6 +136,7 @@ void MeshEditor::init_cells(uint num_cells)
   // Initialize mesh data
   this->num_cells = num_cells;
   mesh->_topology.init(tdim, num_cells);
+  mesh->_topology.init_global_indices(tdim, num_cells);
   mesh->_topology(tdim, 0).init(num_cells, mesh->type().num_vertices(tdim));
 }
 //-----------------------------------------------------------------------------
@@ -187,6 +189,7 @@ void MeshEditor::add_vertex_global(uint local_index, uint global_index,
   // Set coordinate
   std::vector<double> x(p.coordinates(), p.coordinates() + gdim);
   mesh->_geometry.set(local_index, global_index, x);
+  mesh->_topology.set_global_index(0, local_index, global_index);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::add_vertex_global(uint local_index, uint global_index,
@@ -205,7 +208,7 @@ void MeshEditor::add_cell(uint c, uint v0, uint v1)
   std::vector<uint> vertices(2);
   vertices[0] = v0;
   vertices[1] = v1;
-  add_cell(c, vertices);
+  add_cell(c, c, vertices);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2)
@@ -215,7 +218,7 @@ void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2)
   vertices[0] = v0;
   vertices[1] = v1;
   vertices[2] = v2;
-  add_cell(c, vertices);
+  add_cell(c, c, vertices);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2, uint v3)
@@ -226,10 +229,16 @@ void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2, uint v3)
   vertices[1] = v1;
   vertices[2] = v2;
   vertices[2] = v3;
-  add_cell(c, vertices);
+  add_cell(c, c, vertices);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::add_cell(uint c, const std::vector<uint>& v)
+{
+  add_cell(c, c, v);
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::add_cell(uint local_index, uint global_index,
+                          const std::vector<uint>& v)
 {
   dolfin_assert(v.size() == tdim + 1);
 
@@ -237,10 +246,11 @@ void MeshEditor::add_cell(uint c, const std::vector<uint>& v)
   check_vertices(v);
 
   // Add cell
-  add_cell_common(c, tdim);
+  add_cell_common(local_index, tdim);
 
   // Set data
-  mesh->_topology(tdim, 0).set(c, v);
+  mesh->_topology(tdim, 0).set(local_index, v);
+  mesh->_topology.set_global_index(tdim, local_index, global_index);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::close(bool order)

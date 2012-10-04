@@ -216,7 +216,7 @@ namespace dolfin
       ldata = local_value_data;
 
     // Get local local-to-global map
-    if (!mesh.parallel_data().have_global_entity_indices(D))
+    if (!mesh.topology().have_global_indices(D))
     {
       dolfin_error("MeshPartitioning.h",
                    "build mesh value collection",
@@ -224,8 +224,10 @@ namespace dolfin
     }
 
     // Get global indices on local process
+    //const std::vector<uint> global_entity_indices
+    //  = mesh.parallel_data().global_entity_indices_as_vector(D);
     const std::vector<uint> global_entity_indices
-      = mesh.parallel_data().global_entity_indices_as_vector(D);
+      = mesh.topology().global_indices(D);
 
     // Add local (to this process) data to domain marker
     std::vector<uint>::iterator it;

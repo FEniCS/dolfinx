@@ -97,10 +97,6 @@ namespace dolfin
     void set(uint entity, const std::vector<uint>& connections);
 
     /// Set all connections for given entity
-    void set(uint local_index, uint global_index,
-             const std::vector<uint>& connections);
-
-    /// Set all connections for given entity
     void set(uint entity, uint* connections);
 
     /// Set all connections for all entities (T is a container, e.g.
@@ -145,10 +141,6 @@ namespace dolfin
 
     // Position of first connection for each entity (using local index)
     std::vector<uint> index_to_position;
-
-    // Global index (local-to-global)
-    std::vector<uint> global_index;
-
   };
 
 }

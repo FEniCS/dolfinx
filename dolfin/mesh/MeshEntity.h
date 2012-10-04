@@ -124,6 +124,15 @@ namespace dolfin
     uint index() const
     { return _local_index; }
 
+    /// Return global index of mesh entity
+    ///
+    /// *Returns*
+    ///     int
+    ///         The global index. Set to -1 if global index has not been
+    ///         computed
+    uint global_index() const
+    { return _mesh->topology().global_indices(_dim)[_local_index]; }
+
     /// Return number of incident mesh entities of given topological dimension
     ///
     /// *Arguments*
