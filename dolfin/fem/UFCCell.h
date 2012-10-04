@@ -115,21 +115,6 @@ namespace dolfin
       }
       entity_indices[topological_dimension] = new uint[1];
 
-      /*
-      // Get global entity indices (if any) (d > 0, cell, vertices are handled
-      // differently)
-      global_entities.resize(topological_dimension + 1);
-      const ParallelData& parallel_data = mesh.parallel_data();
-      //for (uint d = 1; d <= topological_dimension; ++d)
-      for (uint d = 1; d < topological_dimension; ++d)
-      {
-        if (parallel_data.have_global_entity_indices(d))
-          global_entities[d] = &(parallel_data.global_entity_indices(d));
-        else
-          global_entities[d] = 0;
-      }
-      */
-
       // Allocate vertex coordinates
       coordinates = new double*[num_vertices];
 
@@ -178,15 +163,8 @@ namespace dolfin
       this->local_facet = local_facet;
 
       // Copy local entity indices from mesh
-      // Special handling of vertcies and cells while global indices
-      // are being moved into the entity classes
-      const std::vector<uint>& local_to_global_vertex_indices
-          = cell.mesh().geometry().local_to_global_indices();
-      for (uint i = 0; i < num_cell_entities[0]; ++i)
-        entity_indices[0][i] = local_to_global_vertex_indices[cell.entities(0)[i]];
-
       const uint D = topological_dimension;
-      for (uint d = 1; d < D; ++d)
+      for (uint d = 0; d < D; ++d)
       {
         for (uint i = 0; i < num_cell_entities[d]; ++i)
           entity_indices[d][i] = cell.entities(d)[i];
@@ -197,7 +175,7 @@ namespace dolfin
       index = cell.index();
 
       // Map to global entity indices (if any)
-      for (uint d = 1; d < D; ++d)
+      for (uint d = 0; d < D; ++d)
       {
         if (use_global_indices && cell.mesh().topology().have_global_indices(d))
         {

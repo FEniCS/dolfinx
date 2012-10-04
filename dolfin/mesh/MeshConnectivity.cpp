@@ -120,8 +120,8 @@ void MeshConnectivity::set(uint entity, uint* connections)
   dolfin_assert(connections);
 
   // Copy data
-  const uint num_connections = index_to_position[entity + 1]
-                                        - index_to_position[entity];
+  const uint num_connections
+    = index_to_position[entity + 1] - index_to_position[entity];
   std::copy(connections, connections + num_connections,
             this->connections.begin() + index_to_position[entity]);
 }

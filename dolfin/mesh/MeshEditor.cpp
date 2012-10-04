@@ -188,7 +188,7 @@ void MeshEditor::add_vertex_global(uint local_index, uint global_index,
 
   // Set coordinate
   std::vector<double> x(p.coordinates(), p.coordinates() + gdim);
-  mesh->_geometry.set(local_index, global_index, x);
+  mesh->_geometry.set(local_index, x);
   mesh->_topology.set_global_index(0, local_index, global_index);
 }
 //-----------------------------------------------------------------------------
@@ -199,7 +199,8 @@ void MeshEditor::add_vertex_global(uint local_index, uint global_index,
   add_vertex_common(local_index, x.size());
 
   // Set coordinate
-  mesh->_geometry.set(local_index, global_index, x);
+  mesh->_geometry.set(local_index, x);
+  mesh->_topology.set_global_index(0, local_index, global_index);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::add_cell(uint c, uint v0, uint v1)

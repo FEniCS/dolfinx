@@ -278,7 +278,7 @@ namespace dolfin
     // Topological dimension
     uint _dim;
 
-    // Index of entity within topological dimension
+    // Local index of entity within topological dimension
     uint _local_index;
 
   };

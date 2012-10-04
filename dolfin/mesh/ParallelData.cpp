@@ -31,7 +31,6 @@ ParallelData::ParallelData(const Mesh& mesh) : mesh(mesh),
 }
 //-----------------------------------------------------------------------------
 ParallelData::ParallelData(const ParallelData& data) : mesh(data.mesh),
-  _global_entity_indices(data._global_entity_indices),
   _shared_vertices(data._shared_vertices),
   _num_global_entities(data._num_global_entities),
   _exterior_facet(new MeshFunction<bool>(*data._exterior_facet))

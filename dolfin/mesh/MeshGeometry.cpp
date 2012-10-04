@@ -50,7 +50,6 @@ const MeshGeometry& MeshGeometry::operator= (const MeshGeometry& geometry)
   coordinates             = geometry.coordinates;
   position_to_local_index = geometry.position_to_local_index;
   local_index_to_position = geometry.local_index_to_position;
-  local_to_global         = geometry.local_to_global;
 
   return *this;
 }
@@ -78,7 +77,6 @@ void MeshGeometry::clear()
   coordinates.clear();
   position_to_local_index.clear();
   local_index_to_position.clear();
-  local_to_global.clear();
 }
 //-----------------------------------------------------------------------------
 void MeshGeometry::init(uint dim, uint size)
@@ -92,13 +90,12 @@ void MeshGeometry::init(uint dim, uint size)
   // Allocate new data
   position_to_local_index.resize(size);
   local_index_to_position.resize(size);
-  local_to_global.resize(size);
 
   // Save dimension and size
   _dim = dim;
 }
 //-----------------------------------------------------------------------------
-void MeshGeometry::set(uint local_index, uint global_index,
+void MeshGeometry::set(uint local_index,
                        const std::vector<double>& x)
 {
   dolfin_assert(x.size() == _dim);
@@ -110,8 +107,6 @@ void MeshGeometry::set(uint local_index, uint global_index,
   dolfin_assert(local_index < local_index_to_position.size());
   local_index_to_position[local_index] = local_index;
 
-  dolfin_assert(local_index < local_to_global.size());
-  local_to_global[local_index] = global_index;
 }
 //-----------------------------------------------------------------------------
 std::string MeshGeometry::str(bool verbose) const

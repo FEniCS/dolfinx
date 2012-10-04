@@ -46,10 +46,6 @@ namespace dolfin
     /// Destructor
     ~Vertex() {}
 
-    /// Return global index of vertex
-    uint global_index() const
-    { return _mesh->geometry().global_index(_local_index); }
-
     /// Return value of vertex coordinate i
     double x(uint i) const
     { return _mesh->geometry().x(_local_index, i); }

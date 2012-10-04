@@ -141,6 +141,7 @@ namespace dolfin
 
     // Position of first connection for each entity (using local index)
     std::vector<uint> index_to_position;
+
   };
 
 }
