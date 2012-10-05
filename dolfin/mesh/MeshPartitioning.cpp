@@ -188,6 +188,11 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
     exterior_facets.init(d);
     mark_nonshared(entities, shared_entity_indices, ignored_entity_indices,
                    exterior_facets);
+
+    std::vector<uint> num_global_entities;
+    mark_nonshared_new(mesh, entities, shared_entity_indices,
+                       ignored_entity_indices, num_global_entities);
+    mesh.topology()(d, mesh.topology().dim()).set_global_size(num_global_entities);
   }
 
   // Compute global number of entities and process offset
@@ -924,5 +929,34 @@ void MeshPartitioning::mark_nonshared(const std::map<std::vector<uint>, uint>& e
     exterior[entities.find(it->first)->second] = false;
   for (it = ignored_entity_indices.begin(); it != ignored_entity_indices.end(); ++it)
     exterior[entities.find(it->first)->second] = false;
+}
+//-----------------------------------------------------------------------------
+void MeshPartitioning::mark_nonshared_new(const Mesh& mesh,
+               const std::map<std::vector<uint>, uint>& entities,
+               const std::map<std::vector<uint>, uint>& shared_entity_indices,
+               const std::map<std::vector<uint>, uint>& ignored_entity_indices,
+               std::vector<uint>& num_global_neighbors)
+{
+  // Set all to false (not exterior)
+  const uint D = mesh.topology().dim();
+
+  num_global_neighbors.resize(mesh.num_facets());
+  std::fill(num_global_neighbors.begin(), num_global_neighbors.end(), 2);
+
+  // FIXME: Check that everything is correctly initalised
+
+  // Add facets that are connected to one cell only
+  for (FacetIterator facet(mesh); !facet.end(); ++facet)
+  {
+    if (facet->num_entities(D) == 1)
+      num_global_neighbors[facet->index()] = 1;
+  }
+
+  // Remove all entities on internal partition boundaries
+  std::map<std::vector<uint>, uint>::const_iterator it;
+  for (it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
+    num_global_neighbors[entities.find(it->first)->second] = 2;
+  for (it = ignored_entity_indices.begin(); it != ignored_entity_indices.end(); ++it)
+    num_global_neighbors[entities.find(it->first)->second] = 2;
 }
 //-----------------------------------------------------------------------------

@@ -133,7 +133,7 @@ namespace dolfin
     uint global_index() const
     { return _mesh->topology().global_indices(_dim)[_local_index]; }
 
-    /// Return number of incident mesh entities of given topological dimension
+    /// Return local number of incident mesh entities of given topological dimension
     ///
     /// *Arguments*
     ///     dim (uint)
@@ -141,9 +141,21 @@ namespace dolfin
     ///
     /// *Returns*
     ///     uint
-    ///         The number of incident MeshEntity objects of given dimension.
+    ///         The number of local incident MeshEntity objects of given dimension.
     uint num_entities(uint dim) const
     { return _mesh->topology()(_dim, dim).size(_local_index); }
+
+    /// Return global number of incident mesh entities of given topological dimension
+    ///
+    /// *Arguments*
+    ///     dim (uint)
+    ///         The topological dimension.
+    ///
+    /// *Returns*
+    ///     uint
+    ///         The number of global incident MeshEntity objects of given dimension.
+    uint num_global_entities(uint dim) const
+    { return _mesh->topology()(_dim, dim).size_global(_local_index); }
 
     /// Return array of indices for incident mesh entitites of given
     /// topological dimension
