@@ -542,9 +542,9 @@ dolfin::uint Mesh::coordinates_hash() const
     coords.push_back(p.y());
     coords.push_back(p.z());
   }
-  
+
   boost::hash<std::vector<double> > dhash;
-  
+
   uint local_hash=dhash(coords);
   std::vector<uint>all_hashes;
   MPI::gather(local_hash, all_hashes);
@@ -553,7 +553,7 @@ dolfin::uint Mesh::coordinates_hash() const
   uint total_hash=uhash(all_hashes);
   MPI::broadcast(total_hash);
 
-  return total_hash; 
+  return total_hash;
 
 }
 //-----------------------------------------------------------------------------
@@ -571,6 +571,6 @@ dolfin::uint Mesh::topology_hash() const
   uint total_hash=uhash(all_hashes);
   MPI::broadcast(total_hash);
 
-  return total_hash; 
+  return total_hash;
 
 }

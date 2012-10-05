@@ -50,12 +50,6 @@ namespace dolfin
 
     //--- Data for distributed memory parallelism ---
 
-    /// FIXME: Add description and use better name
-    std::map<unsigned int, std::vector<unsigned int> >& shared_vertices();
-
-    /// FIXME: Add description and use better name
-    const std::map<unsigned int, std::vector<unsigned int> >& shared_vertices() const;
-
     /// Return MeshFunction that is true for globally exterior facets,
     /// false otherwise
     MeshFunction<bool>& exterior_facet();
@@ -76,20 +70,6 @@ namespace dolfin
              std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > > coloring;
 
   private:
-
-    // Mesh
-    const Mesh& mesh;
-
-    // FIXME: Use better name
-    // FIXME: Use unordered map?
-    // FIXME: Use std::set instead of std::vector (the vector is sorted at some point in the code)
-
-    // Maps each shared vertex to a list of the processes sharing
-    // the vertex
-    std::map<uint, std::vector<uint> > _shared_vertices;
-
-    // Global number of entities of dimension d
-    std::vector<uint> _num_global_entities;
 
     // True if a facet is an exterior facet, false otherwise
     boost::scoped_ptr<MeshFunction<bool> >_exterior_facet;

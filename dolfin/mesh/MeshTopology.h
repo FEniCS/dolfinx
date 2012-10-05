@@ -21,6 +21,7 @@
 #ifndef __MESH_TOPOLOGY_H
 #define __MESH_TOPOLOGY_H
 
+#include <map>
 #include <vector>
 #include <dolfin/common/types.h>
 
@@ -107,6 +108,15 @@ namespace dolfin
       return !_global_indices[dim].empty();
     }
 
+    /// Return map from shared entiies to process that share the entity
+    std::map<unsigned int, std::set<unsigned int> >&
+      shared_entities(uint dim);
+
+    /// Return map from shared entiies to process that share the entity
+    /// (const version)
+    const std::map<unsigned int, std::set<unsigned int> >&
+      shared_entities(uint dim) const;
+
     /// Return connectivity for given pair of topological dimensions
     dolfin::MeshConnectivity& operator() (uint d0, uint d1);
 
@@ -129,6 +139,10 @@ namespace dolfin
 
     // Global indices for mesh entities (empty if not set)
     std::vector<std::vector<uint> > _global_indices;
+
+    // Maps each shared vertex (entity of dim 0) to a list of the
+    // processes sharing the vertex
+    std::map<uint, std::set<uint> > _shared_vertices;
 
     // Connectivity for pairs of topological dimensions
     std::vector<std::vector<MeshConnectivity> > connectivity;

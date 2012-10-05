@@ -24,16 +24,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ParallelData::ParallelData(const Mesh& mesh) : mesh(mesh),
-    _exterior_facet(new MeshFunction<bool>(mesh))
+ParallelData::ParallelData(const Mesh& mesh)
+  : _exterior_facet(new MeshFunction<bool>(mesh))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-ParallelData::ParallelData(const ParallelData& data) : mesh(data.mesh),
-  _shared_vertices(data._shared_vertices),
-  _num_global_entities(data._num_global_entities),
-  _exterior_facet(new MeshFunction<bool>(*data._exterior_facet))
+ParallelData::ParallelData(const ParallelData& data)
+  : _exterior_facet(new MeshFunction<bool>(*data._exterior_facet))
 {
   // Do nothing
 }
@@ -41,16 +39,6 @@ ParallelData::ParallelData(const ParallelData& data) : mesh(data.mesh),
 ParallelData::~ParallelData()
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-std::map<dolfin::uint, std::vector<dolfin::uint> >& ParallelData::shared_vertices()
-{
-  return _shared_vertices;
-}
-//-----------------------------------------------------------------------------
-const std::map<dolfin::uint, std::vector<dolfin::uint> >& ParallelData::shared_vertices() const
-{
-  return _shared_vertices;
 }
 //-----------------------------------------------------------------------------
 MeshFunction<bool>& ParallelData::exterior_facet()

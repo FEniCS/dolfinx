@@ -25,6 +25,7 @@
 #include <iterator>
 #include <map>
 #include <numeric>
+#include <set>
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
@@ -126,13 +127,13 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   const uint process_number = MPI::process_number();
 
   // Get shared vertices
-  std::map<uint, std::vector<uint> >& shared_vertices
-                            = mesh.parallel_data().shared_vertices();
+  std::map<uint, std::set<uint> >& shared_vertices
+                            = mesh.topology().shared_entities(0);
 
   // Sort shared vertices
-  std::map<uint, std::vector<uint> >::iterator it0;
-  for (it0 = shared_vertices.begin(); it0 != shared_vertices.end(); ++it0)
-    std::sort(it0->second.begin(), it0->second.end());
+  //std::map<uint, std::vector<uint> >::iterator it0;
+  //for (it0 = shared_vertices.begin(); it0 != shared_vertices.end(); ++it0)
+  //  std::sort(it0->second.begin(), it0->second.end());
 
   // Build entity-to-global-vertex-number information
   std::map<std::vector<uint>, uint> entities;
@@ -149,7 +150,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   /// number and send to other processes. Entities shared by two or
   /// more processes are numbered by the lower ranked process.
 
-  // Entities to number
+  // Entities to br numbered
   std::map<std::vector<uint>, uint> owned_entity_indices;
 
   // Candidates to number and send to other, higher rank processes
@@ -374,7 +375,7 @@ std::pair<unsigned int, unsigned int>
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::compute_preliminary_entity_ownership(const std::map<std::vector<uint>, uint>& entities,
-  const std::map<uint, std::vector<uint> >& shared_vertices,
+  const std::map<uint, std::set<uint> >& shared_vertices,
   std::map<std::vector<uint>, uint>& owned_entity_indices,
   std::map<std::vector<uint>, uint>& shared_entity_indices,
   std::map<std::vector<uint>, std::vector<uint> >& shared_entity_processes,
@@ -391,7 +392,8 @@ void MeshPartitioning::compute_preliminary_entity_ownership(const std::map<std::
   const uint process_number = MPI::process_number();
 
   // Iterate over all entities
-  for (std::map<std::vector<uint>, uint>::const_iterator it = entities.begin(); it != entities.end(); ++it)
+  std::map<std::vector<uint>, uint>::const_iterator it;
+  for (it = entities.begin(); it != entities.end(); ++it)
   {
     const std::vector<uint>& entity = it->first;
     const uint local_entity_index = it->second;
@@ -400,16 +402,19 @@ void MeshPartitioning::compute_preliminary_entity_ownership(const std::map<std::
     std::vector<uint> entity_processes;
     if (in_overlap(entity, shared_vertices))
     {
-      std::vector<uint> intersection = shared_vertices.find(entity[0])->second;
+      std::vector<uint> intersection(shared_vertices.find(entity[0])->second.begin(),
+                                     shared_vertices.find(entity[0])->second.end());
       std::vector<uint>::iterator intersection_end = intersection.end();
 
       for (uint i = 1; i < entity.size(); ++i)
       {
         const uint v = entity[i];
-        const std::vector<uint>& shared_vertices_v = shared_vertices.find(v)->second;
-        intersection_end = std::set_intersection(intersection.begin(),
-                                   intersection_end, shared_vertices_v.begin(),
-                                   shared_vertices_v.end(), intersection.begin());
+        const std::set<uint>& shared_vertices_v = shared_vertices.find(v)->second;
+
+        intersection_end
+          = std::set_intersection(intersection.begin(), intersection_end,
+                                  shared_vertices_v.begin(), shared_vertices_v.end(),
+                                  intersection.begin());
       }
       entity_processes = std::vector<uint>(intersection.begin(), intersection_end);
     }
@@ -849,8 +854,8 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
   // Create shared_vertices data structure: mapping from shared vertices
   // to list of neighboring processes
-  std::map<uint, std::vector<uint> >& shared_vertices
-        = mesh.parallel_data().shared_vertices();
+  std::map<uint, std::set<uint> >& shared_vertices
+        = mesh.topology().shared_entities(0);
   shared_vertices.clear();
 
   // Distribute boundaries and build mappings
@@ -875,12 +880,12 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     // Fill shared vertices information
     std::vector<uint>::const_iterator index;
     for (index = intersection.begin(); index != intersection_end; ++index)
-      shared_vertices[*index].push_back(q);
+      shared_vertices[*index].insert(q);
   }
 }
 //-----------------------------------------------------------------------------
 bool MeshPartitioning::in_overlap(const std::vector<uint>& entity,
-                             const std::map<uint, std::vector<uint> >& shared)
+                                  const std::map<uint, std::set<uint> >& shared)
 {
   std::vector<uint>::const_iterator e;
   for (e = entity.begin(); e != entity.end(); ++e)

@@ -124,7 +124,7 @@ namespace dolfin
 
     // Build preliminary 'guess' of shared enties
     static void compute_preliminary_entity_ownership(const std::map<std::vector<uint>, uint>& entities,
-          const std::map<uint, std::vector<uint> >& shared_vertices,
+          const std::map<uint, std::set<uint> >& shared_vertices,
           std::map<std::vector<uint>, uint>& owned_entity_indices,
           std::map<std::vector<uint>, uint>& shared_entity_indices,
           std::map<std::vector<uint>, std::vector<uint> >& shared_entity_processes,
@@ -163,7 +163,7 @@ namespace dolfin
 
     // Check if all entity vertices are in overlap
     static bool in_overlap(const std::vector<uint>& entity_vertices,
-                           const std::map<uint, std::vector<uint> >& overlap);
+                           const std::map<uint, std::set<uint> >& overlap);
 
     // Mark non-shared mesh entities
     static void mark_nonshared(const std::map<std::vector<uint>, uint>& entities,
