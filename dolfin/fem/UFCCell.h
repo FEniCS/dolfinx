@@ -105,8 +105,8 @@ namespace dolfin
       entity_indices = new uint*[topological_dimension + 1];
       for (uint d = 0; d < topological_dimension; d++)
       {
-        // Store number of cell entities allocated for (this can change between
-        // init() and update() which is why it's stored)
+        // Store number of cell entities allocated for (this can change
+        // between init() and update() which is why it's stored)
         num_cell_entities.push_back(cell.num_entities(d));
         if (cell.num_entities(d) > 0)
           entity_indices[d] = new uint[cell.num_entities(d)];
@@ -114,18 +114,6 @@ namespace dolfin
           entity_indices[d] = 0;
       }
       entity_indices[topological_dimension] = new uint[1];
-
-      // Get global entity indices (if any) (d > 0, vertices are handled
-      // differently)
-      global_entities.resize(topological_dimension + 1);
-      const ParallelData& parallel_data = mesh.parallel_data();
-      for (uint d = 1; d <= topological_dimension; ++d)
-      {
-        if (parallel_data.have_global_entity_indices(d))
-          global_entities[d] = &(parallel_data.global_entity_indices(d));
-        else
-          global_entities[d] = 0;
-      }
 
       // Allocate vertex coordinates
       coordinates = new double*[num_vertices];
@@ -144,8 +132,6 @@ namespace dolfin
       }
       delete [] entity_indices;
       entity_indices = 0;
-
-      global_entities.clear();
 
       delete [] coordinates;
       coordinates = 0;
@@ -176,36 +162,31 @@ namespace dolfin
       // Set local facet (-1 means no local facet set)
       this->local_facet = local_facet;
 
-      // Copy local entity indices from mesh
-      // Special handling of vertcies while global indices are
-      // being moved into the entity classes
-      const std::vector<uint>& local_to_global_vertex_indices
-          = cell.mesh().geometry().local_to_global_indices();
-      for (uint i = 0; i < num_cell_entities[0]; ++i)
-        entity_indices[0][i] = local_to_global_vertex_indices[cell.entities(0)[i]];
-
       const uint D = topological_dimension;
-      for (uint d = 1; d < D; ++d)
+      const MeshTopology& topology = cell.mesh().topology();
+      for (uint d = 0; d < D; ++d)
       {
-        for (uint i = 0; i < num_cell_entities[d]; ++i)
-          entity_indices[d][i] = cell.entities(d)[i];
+        if (use_global_indices && topology.have_global_indices(d))
+        {
+          const std::vector<uint> global_indices = topology.global_indices(d);
+          for (uint i = 0; i < num_cell_entities[d]; ++i)
+            entity_indices[d][i] = global_indices[cell.entities(d)[i]];
+        }
+        else
+        {
+          for (uint i = 0; i < num_cell_entities[d]; ++i)
+            entity_indices[d][i] = cell.entities(d)[i];
+        }
       }
 
       // Set cell index
-      entity_indices[D][0] = cell.index();
-      index = cell.index();
+      if (use_global_indices && topology.have_global_indices(D))
+        entity_indices[D][0] = cell.global_index();
+      else
+        entity_indices[D][0] = cell.index();
 
-      // Map to global entity indices (if any)
-      for (uint d = 1; d < D; ++d)
-      {
-        if (use_global_indices && global_entities[d])
-        {
-          for (uint i = 0; i < num_cell_entities[d]; ++i)
-            entity_indices[d][i] = (*global_entities[d])[entity_indices[d][i]];
-        }
-      }
-      if (use_global_indices && global_entities[D])
-        entity_indices[D][0] = (*global_entities[D])[entity_indices[D][0]];
+      // Local cell index
+      index = cell.index();
 
       // Set vertex coordinates
       const uint* vertices = cell.entities(0);
@@ -215,14 +196,11 @@ namespace dolfin
 
   private:
 
-    // True it global entity indices should be used
+    // True if global entity indices should be used
     const bool use_global_indices;
 
     // Number of cell vertices
     uint num_vertices;
-
-    // Mappings from local to global entity indices (if any)
-    std::vector<const MeshFunction<uint>* > global_entities;
 
     // Number of cell entities of dimension d at initialisation
     std::vector<uint> num_cell_entities;

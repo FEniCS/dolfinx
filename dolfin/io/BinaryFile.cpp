@@ -99,8 +99,8 @@ void BinaryFile::operator>> (Mesh& mesh)
         const uint num_entities = read_uint();
         c.connections = std::vector<uint>(size);
         read_array(size, &(c.connections)[0]);
-        c.offsets.resize(num_entities + 1);
-        read_array(c.offsets.size(), &(c.offsets[0]));
+        c.index_to_position.resize(num_entities + 1);
+        read_array(c.index_to_position.size(), &(c.index_to_position[0]));
       }
     }
   }
@@ -184,9 +184,9 @@ void BinaryFile::operator<< (const Mesh& mesh)
         write_uint(c.size());
         if (!c.empty())
         {
-          write_uint(c.offsets.size() - 1);
+          write_uint(c.index_to_position.size() - 1);
           write_array(c.size(), &(c.connections)[0]);
-          write_array(c.offsets.size(), &(c.offsets[0]));
+          write_array(c.index_to_position.size(), &(c.index_to_position[0]));
         }
       }
       else

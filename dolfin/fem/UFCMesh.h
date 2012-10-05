@@ -46,6 +46,7 @@ namespace dolfin
       // Set geometric dimension
       geometric_dimension = mesh.geometric_dimension;
 
+      // Number of entities
       num_entities = new uint[topological_dimension + 1];
       for (uint d = 0; d <= topological_dimension; d++)
         num_entities[d] = mesh.num_entities[d];
@@ -53,15 +54,11 @@ namespace dolfin
 
     /// Create UFC mesh from DOLFIN mesh
     UFCMesh(const Mesh& mesh) : ufc::mesh()
-    {
-      init(mesh);
-    }
+    { init(mesh); }
 
     /// Destructor
     ~UFCMesh()
-    {
-      clear();
-    }
+    { clear(); }
 
     /// Initialize UFC cell data
     void init(const Mesh& mesh)
@@ -79,14 +76,9 @@ namespace dolfin
       num_entities = new uint[mesh.topology().dim() + 1];
 
       // Use number of global entities if available (when running in parallel)
-      const std::vector<uint>& num_global_entities = mesh.parallel_data().num_global_entities();
-      if (!num_global_entities.empty())
-        std::copy(num_global_entities.begin(), num_global_entities.end(), num_entities);
-      else
-      {
-        for (uint d = 0; d <= mesh.topology().dim(); d++)
-          num_entities[d] = mesh.size(d);
-      }
+      const MeshTopology& topology = mesh.topology();
+      for (uint d = 0; d <= topology.dim(); d++)
+        num_entities[d] = mesh.size_global(d);
     }
 
     // Clear UFC cell data

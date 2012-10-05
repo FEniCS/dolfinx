@@ -244,6 +244,18 @@ namespace dolfin
     ///         The vertex indices (local indices)
     void add_cell(uint c, const std::vector<uint>& v);
 
+    /// Add cell with given vertices
+    ///
+    /// *Arguments*
+    ///     local_index (uint)
+    ///         The cell (index).
+    ///     global_index (uint)
+    ///         The global (user) cell index.
+    ///     v (std::vector<uint>)
+    ///         The vertex indices (local indices)
+    void add_cell(uint local_index, uint global_index,
+                  const std::vector<uint>& v);
+
     /// Close mesh, finish editing, and order entities locally
     ///
     /// *Arguments*

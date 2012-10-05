@@ -38,14 +38,10 @@ void MeshOrdering::order(Mesh& mesh)
   if (mesh.num_cells() == 0)
     return;
 
-  // Get global vertex numbering (important when running in parallel)
-  //const MeshFunction<unsigned int>* global_vertex_indices = 0;
-  //if (mesh.parallel_data().have_global_entity_indices(0))
-  //  global_vertex_indices = &(mesh.parallel_data().global_entity_indices(0));
-
   // Get global vertex numbering
+  dolfin_assert(mesh.topology().have_global_indices(0));
   const std::vector<uint>& local_to_global_vertex_indices
-    = mesh.geometry().local_to_global_indices();
+    = mesh.topology().global_indices(0);
 
   // Skip ordering for dimension 0
   if (mesh.topology().dim() == 0)
@@ -67,8 +63,9 @@ bool MeshOrdering::ordered(const Mesh& mesh)
     return true;
 
   // Get global vertex numbering
+  dolfin_assert(mesh.topology().have_global_indices(0));
   const std::vector<uint>& local_to_global_vertex_indices
-    = mesh.geometry().local_to_global_indices();
+    = mesh.topology().global_indices(0);
 
   // Check if all cells are ordered
   Progress p("Checking mesh ordering", mesh.num_cells());

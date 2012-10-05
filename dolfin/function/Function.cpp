@@ -350,8 +350,8 @@ void Function::eval(Array<double>& values,
                     const Cell& dolfin_cell,
                     const ufc::cell& ufc_cell) const
 {
-  // Developer note: work arrays/vectors are re-created each time this function
-  //                 is called for thread-safety
+  // Developer note: work arrays/vectors are re-created each time this
+  //                 function is called for thread-safety
 
   dolfin_assert(_function_space->element());
   const FiniteElement& element = *_function_space->element();

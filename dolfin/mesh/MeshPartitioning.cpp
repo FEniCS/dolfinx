@@ -40,6 +40,7 @@
 #include "MeshEditor.h"
 #include "MeshEntityIterator.h"
 #include "MeshFunction.h"
+#include "MeshTopology.h"
 #include "MeshValueCollection.h"
 #include "ParallelData.h"
 #include "Point.h"
@@ -92,7 +93,6 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   partition(mesh, local_data);
 
   // Create MeshDomains from local_data
-  // FIXME: check local_data
   build_mesh_domains(mesh, local_data);
 
   // Number facets (see https://bugs.launchpad.net/dolfin/+bug/733834)
@@ -115,7 +115,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   }
 
   // Return if global entity indices are already calculated
-  if (mesh.parallel_data().have_global_entity_indices(d))
+  if (mesh.topology().have_global_indices(d))
     return;
 
   // Initialize entities of dimension d
@@ -126,11 +126,13 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   const uint process_number = MPI::process_number();
 
   // Get shared vertices
-  std::map<uint, std::vector<uint> >& shared_vertices = mesh.parallel_data().shared_vertices();
+  std::map<uint, std::vector<uint> >& shared_vertices
+                            = mesh.parallel_data().shared_vertices();
 
   // Sort shared vertices
-  for (std::map<uint, std::vector<uint> >::iterator it = shared_vertices.begin(); it != shared_vertices.end(); ++it)
-    std::sort(it->second.begin(), it->second.end());
+  std::map<uint, std::vector<uint> >::iterator it0;
+  for (it0 = shared_vertices.begin(); it0 != shared_vertices.end(); ++it0)
+    std::sort(it0->second.begin(), it0->second.end());
 
   // Build entity-to-global-vertex-number information
   std::map<std::vector<uint>, uint> entities;
@@ -188,15 +190,17 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   }
 
   // Compute global number of entities and process offset
-  const uint num_local_entities = owned_entity_indices.size() + shared_entity_indices.size();
+  const uint num_local_entities
+      = owned_entity_indices.size() + shared_entity_indices.size();
   const std::pair<uint, uint> num_global_entities
       = compute_num_global_entities(num_local_entities, num_processes,
                                     process_number);
+
   // Extract offset
   uint offset = num_global_entities.second;
 
   // Store number of global entities
-  mesh.parallel_data().num_global_entities()[d] = num_global_entities.first;
+  mesh.topology().init_global(d, num_global_entities.first);
 
 
   /// ---- Numbering
@@ -273,16 +277,14 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   }
 
   // Create mesh data
-  MeshFunction<unsigned int>& global_entity_indices = mesh.parallel_data().global_entity_indices(d);
+  mesh.topology().init_global_indices(d, entity_indices.size());
   for (uint i = 0; i < entity_indices.size(); ++i)
   {
     if (entity_indices[i] < 0)
       log(WARNING, "Missing global number for local entity (%d, %d).", d, i);
 
     dolfin_assert(entity_indices[i] >= 0);
-    dolfin_assert(i < global_entity_indices.size());
-
-    global_entity_indices[i] = static_cast<uint>(entity_indices[i]);
+    mesh.topology().set_global_index(d, i, entity_indices[i]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -811,28 +813,17 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
       dolfin_assert(iter != vertex_global_to_local.end());
       cell[j] = iter->second;
     }
-    editor.add_cell(i, cell);
+    editor.add_cell(i, global_cell_indices[i], cell);
   }
-
-  // Copy local-to-global mapping for cells into parallel mesh data
-  MeshFunction<unsigned int>& _global_cell_indices = mesh.parallel_data().global_entity_indices(tdim);
-  dolfin_assert(_global_cell_indices.size() == global_cell_indices.size());
-  for(uint i = 0; i < global_cell_indices.size(); ++i)
-    _global_cell_indices[i] = global_cell_indices[i];
 
   // Close mesh: Note that this must be done after creating the global
   // vertex map or otherwise the ordering in mesh.close() will be wrong
   // (based on local numbers).
   editor.close();
 
-  // Construct array of length topology().dim() that holds the number
-  // of global mesh entities
-  std::vector<uint>& num_global_entities = mesh.parallel_data().num_global_entities();
-  num_global_entities.resize(tdim + 1);
-  std::fill(num_global_entities.begin(), num_global_entities.end(), 0);
-
-  num_global_entities[0] = num_global_vertices;
-  num_global_entities[tdim] = num_global_cells;
+  // Set global number of cells and vertices
+  mesh.topology().init_global(0, num_global_vertices);
+  mesh.topology().init_global(tdim,  num_global_cells);
 
   /// Communicate global number of boundary vertices to all processes
 
@@ -876,10 +867,10 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
     // Compute intersection of global indices
     std::vector<uint> intersection(std::min(global_vertex_send.size(), global_vertex_recv.size()));
-    std::vector<uint>::iterator intersection_end = std::set_intersection(
-         global_vertex_send.begin(), global_vertex_send.end(),
-         global_vertex_recv.begin(), global_vertex_recv.end(),
-         intersection.begin());
+    std::vector<uint>::iterator intersection_end
+      = std::set_intersection(global_vertex_send.begin(), global_vertex_send.end(),
+                              global_vertex_recv.begin(), global_vertex_recv.end(),
+                              intersection.begin());
 
     // Fill shared vertices information
     std::vector<uint>::const_iterator index;

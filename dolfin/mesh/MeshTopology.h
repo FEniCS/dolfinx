@@ -61,6 +61,9 @@ namespace dolfin
     /// Return number of entities for given dimension
     uint size(uint dim) const;
 
+    /// Return global number of entities for given dimension
+    uint size_global(uint dim) const;
+
     /// Clear all data
     void clear();
 
@@ -70,8 +73,39 @@ namespace dolfin
     /// Initialize topology of given maximum dimension
     void init(uint dim);
 
-    /// Set number of entities (size) for given topological dimension
-    void init(uint dim, uint size);
+    /// Set number of local entities (local_size) for given topological
+    /// dimension
+    void init(uint dim, uint local_size);
+
+    /// Set number of global entities (global_size) for given topological
+    /// dimension
+    void init_global(uint dim, uint global_size);
+
+    /// Initialize storage for global entity numbering for entities of
+    /// dimension dim
+    void init_global_indices(uint dim, uint size);
+
+    /// Set global index for entity of dimension dim and with local index
+    void set_global_index(uint dim, uint local_index, uint global_index)
+    {
+      dolfin_assert(dim < _global_indices.size());
+      dolfin_assert(local_index < _global_indices[dim].size());
+      _global_indices[dim][local_index] = global_index;
+    }
+
+    /// Get local-to-global index map for entities of topological dimension d
+    const std::vector<uint>& global_indices(uint d) const
+    {
+      dolfin_assert(d < _global_indices.size());
+      return _global_indices[d];
+    }
+
+    /// Check if global indices are available for entiries of dimension dim
+    bool have_global_indices(uint dim) const
+    {
+      dolfin_assert(dim < _global_indices.size());
+      return !_global_indices[dim].empty();
+    }
 
     /// Return connectivity for given pair of topological dimensions
     dolfin::MeshConnectivity& operator() (uint d0, uint d1);
@@ -89,6 +123,12 @@ namespace dolfin
 
     // Number of mesh entities for each topological dimension
     std::vector<uint> num_entities;
+
+    // Global number of mesh entities for each topological dimension
+    std::vector<uint> global_num_entities;
+
+    // Global indices for mesh entities (empty if not set)
+    std::vector<std::vector<uint> > _global_indices;
 
     // Connectivity for pairs of topological dimensions
     std::vector<std::vector<MeshConnectivity> > connectivity;

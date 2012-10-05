@@ -199,7 +199,7 @@ namespace dolfin
 
     /// Evaluate all basis functions at given point in cell
     void evaluate_basis_all(double* values, const double* coordinates,
-			    const Cell& cell) const
+                            const Cell& cell) const
     {
       dolfin_assert(_ufc_element);
       UFCCell ufc_cell(cell, false);

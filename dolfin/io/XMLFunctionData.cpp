@@ -184,16 +184,15 @@ void XMLFunctionData::build_global_to_cell_dof(
 
   if (MPI::num_processes() > 1)
   {
-    // Get local-to-global cell numbering
-    dolfin_assert(mesh.parallel_data().have_global_entity_indices(mesh.topology().dim()));
-    const MeshFunction<uint>& global_cell_indices
-      = mesh.parallel_data().global_entity_indices(mesh.topology().dim());
+    // Check that local-to-global cell numbering is available
+    const uint D = mesh.topology().dim();
+    dolfin_assert(mesh.topology().have_global_indices(D));
 
     // Build dof map data with global cell indices
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       const uint local_cell_index = cell->index();
-      const uint global_cell_index = global_cell_indices[*cell];
+      const uint global_cell_index = cell->global_index();
       local_dofmap[local_cell_index] = dofmap.cell_dofs(local_cell_index);
       local_dofmap[local_cell_index].push_back(global_cell_index);
     }
@@ -241,23 +240,22 @@ void XMLFunctionData::build_dof_map(std::vector<std::vector<uint> >& dof_map,
   const Mesh& mesh = *V.mesh();
   const GenericDofMap& dofmap = *V.dofmap();
 
+  // Get global number of cells
   const uint num_cells = MPI::sum(mesh.num_cells());
 
   std::vector<std::vector<std::vector<uint > > > gathered_dofmap;
   std::vector<std::vector<uint > > local_dofmap(mesh.num_cells());
-
   if (MPI::num_processes() > 1)
   {
-    // Get local-to-global cell numbering
-    dolfin_assert(mesh.parallel_data().have_global_entity_indices(mesh.topology().dim()));
-    const MeshFunction<uint>& global_cell_indices
-      = mesh.parallel_data().global_entity_indices(mesh.topology().dim());
+    // Check that local-to-global cell numbering is available
+    const uint D = mesh.topology().dim();
+    dolfin_assert(mesh.topology().have_global_indices(D));
 
     // Build dof map data with global cell indices
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       const uint local_cell_index = cell->index();
-      const uint global_cell_index = global_cell_indices[*cell];
+      const uint global_cell_index = cell->global_index();
       local_dofmap[local_cell_index] = dofmap.cell_dofs(local_cell_index);
       local_dofmap[local_cell_index].push_back(global_cell_index);
     }
@@ -275,7 +273,6 @@ void XMLFunctionData::build_dof_map(std::vector<std::vector<uint> >& dof_map,
 
   // Gather dof map data on root process
   MPI::gather(local_dofmap, gathered_dofmap);
-
 
   // Build global dofmap on root process
   if (MPI::process_number() == 0)
