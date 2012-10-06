@@ -41,6 +41,7 @@ ParallelData::~ParallelData()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+/*
 MeshFunction<bool>& ParallelData::exterior_facet()
 {
   dolfin_assert(_exterior_facet);
@@ -52,4 +53,5 @@ const MeshFunction<bool>& ParallelData::exterior_facet() const
   dolfin_assert(_exterior_facet);
   return *_exterior_facet;
 }
+*/
 //-----------------------------------------------------------------------------

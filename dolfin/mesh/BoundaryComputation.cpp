@@ -74,11 +74,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
 
   // Temporary array for assignment of indices to vertices on the boundary
   const uint num_vertices = mesh.num_vertices();
-  std::vector<uint> boundary_vertices(num_vertices);
-  std::fill(boundary_vertices.begin(), boundary_vertices.end(), num_vertices);
-
-  // Extract exterior (non shared) facets markers
-  const MeshFunction<bool>& exterior = mesh.parallel_data().exterior_facet();
+  std::vector<uint> boundary_vertices(num_vertices, num_vertices);
 
   // Determine boundary facet, count boundary vertices and facets,
   // and assign vertex indices
@@ -90,17 +86,11 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
     // Boundary facets are connected to exactly one cell
     if (f->num_entities(D) == 1)
     {
-      // Determine if we have a boundary facet
-      if (exterior.empty())
+      bool global_exterior_facet = (f->num_global_entities(D) == 1);
+      if (global_exterior_facet && !interior_boundary)
         boundary_facet[*f] = true;
-      else
-      {
-        bool exterior_facet = exterior[*f];
-        if (exterior_facet && !interior_boundary)
-          boundary_facet[*f] = true;
-        else if ( !exterior_facet && interior_boundary )
-          boundary_facet[*f] = true;
-      }
+      else if (!global_exterior_facet && interior_boundary)
+        boundary_facet[*f] = true;
 
       if (boundary_facet[*f])
       {
@@ -143,7 +133,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
         vertex_map[vertex_index] = v->index();
 
       // Add vertex
-      // FIXME: Get global vertex index
+      // FIXME: Get global vertex index?
       editor.add_vertex(vertex_index, v->point());
     }
   }

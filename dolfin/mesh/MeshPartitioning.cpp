@@ -43,7 +43,6 @@
 #include "MeshFunction.h"
 #include "MeshTopology.h"
 #include "MeshValueCollection.h"
-#include "ParallelData.h"
 #include "Point.h"
 #include "Vertex.h"
 #include "MeshPartitioning.h"
@@ -185,11 +184,6 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   // Create mesh markers for exterior facets
   if (d == (mesh.topology().dim() - 1))
   {
-    MeshFunction<bool>& exterior_facets = mesh.parallel_data().exterior_facet();
-    exterior_facets.init(d);
-    mark_nonshared(entities, shared_entity_indices, ignored_entity_indices,
-                   exterior_facets);
-
     std::vector<uint> num_global_entities;
     mark_nonshared_new(mesh, entities, shared_entity_indices,
                        ignored_entity_indices, num_global_entities);

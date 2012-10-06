@@ -22,13 +22,14 @@
 #define __MESH_TOPOLOGY_H
 
 #include <map>
+#include <utility>
 #include <vector>
 #include <dolfin/common/types.h>
+#include "MeshConnectivity.h"
+#include "MeshFunction.h"
 
 namespace dolfin
 {
-
-  class MeshConnectivity;
 
   /// MeshTopology stores the topology of a mesh, consisting of mesh entities
   /// and connectivity (incidence relations for the mesh entities). Note that
@@ -125,6 +126,17 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
+
+    /// Mesh entity colors, if computed. First vector is
+    ///
+    ///    (colored entity dim - dim1 - dim2 - ... -  colored entity dim)
+    ///
+    /// MeshFunction stores mesh entity colors and the vector<vector> is a list
+    /// of all mesh entity indices of the same color,
+    /// e.g. vector<vector>[col][i] is the index of the ith entity of
+    /// color 'col'.
+    std::map<const std::vector<uint>,
+     std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > > coloring;
 
   private:
 

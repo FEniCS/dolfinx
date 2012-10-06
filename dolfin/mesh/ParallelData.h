@@ -52,11 +52,11 @@ namespace dolfin
 
     /// Return MeshFunction that is true for globally exterior facets,
     /// false otherwise
-    MeshFunction<bool>& exterior_facet();
+    //MeshFunction<bool>& exterior_facet();
 
     /// Return MeshFunction that is true for globally exterior facets,
     /// false otherwise (const version)
-    const MeshFunction<bool>& exterior_facet() const;
+    //const MeshFunction<bool>& exterior_facet() const;
 
 
     //--- Data for shared memory parallelism (multicore) ---
