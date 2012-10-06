@@ -204,7 +204,7 @@ namespace dolfin
       chunking_properties = H5P_DEFAULT;
 
     // Create global dataset (using dataset_name)
-    const hid_t dset_id = H5Dcreate(file_handle, dataset_name.c_str(), h5type,
+    const hid_t dset_id = H5Dcreate2(file_handle, dataset_name.c_str(), h5type,
                                     filespace0, H5P_DEFAULT,
                                     chunking_properties, H5P_DEFAULT);
     dolfin_assert(dset_id != HDF5_FAIL);
@@ -260,7 +260,7 @@ namespace dolfin
                                           std::vector<T>& data)
   {
     // Open the dataset
-    const hid_t dset_id = H5Dopen(file_handle, dataset_name.c_str(), H5P_DEFAULT);
+    const hid_t dset_id = H5Dopen2(file_handle, dataset_name.c_str(), H5P_DEFAULT);
     dolfin_assert(dset_id != HDF5_FAIL);
 
     // Open dataspace
@@ -333,7 +333,8 @@ namespace dolfin
     herr_t status;
 
     // Open dataset by name
-    const hid_t dset_id = H5Dopen(hdf5_file_handle, dataset_name.c_str(), H5P_DEFAULT);
+    const hid_t dset_id = H5Dopen2(hdf5_file_handle, dataset_name.c_str(),
+                                   H5P_DEFAULT);
     dolfin_assert(dset_id != HDF5_FAIL);
 
     // Open attribute by name and get its type
@@ -366,7 +367,8 @@ namespace dolfin
   {
 
     // Open named dataset
-    hid_t dset_id = H5Dopen(hdf5_file_handle, dataset_name.c_str(), H5P_DEFAULT);
+    hid_t dset_id = H5Dopen2(hdf5_file_handle, dataset_name.c_str(),
+                             H5P_DEFAULT);
     dolfin_assert(dset_id != HDF5_FAIL);
 
     // Add attribute of appropriate type
@@ -389,7 +391,7 @@ namespace dolfin
     dolfin_assert(dataspace_id != HDF5_FAIL);
 
     // Create attribute of type uint
-    hid_t attribute_id = H5Acreate(dset_id, attribute_name.c_str(),
+    hid_t attribute_id = H5Acreate2(dset_id, attribute_name.c_str(),
                                    H5T_NATIVE_UINT, dataspace_id,
                                    H5P_DEFAULT, H5P_DEFAULT);
     dolfin_assert(attribute_id != HDF5_FAIL);
@@ -415,7 +417,7 @@ namespace dolfin
     dolfin_assert(dataspace_id != HDF5_FAIL);
 
     // Create an attribute of type uint in the dataspace
-    const hid_t attribute_id = H5Acreate(dset_id, attribute_name.c_str(),
+    const hid_t attribute_id = H5Acreate2(dset_id, attribute_name.c_str(),
                                          H5T_NATIVE_UINT, dataspace_id,
                                          H5P_DEFAULT, H5P_DEFAULT);
     dolfin_assert(attribute_id != HDF5_FAIL);
@@ -444,7 +446,7 @@ namespace dolfin
     dolfin_assert(status != HDF5_FAIL);
 
     // Create attribute in the dataspace with the given string
-    const hid_t attribute_id = H5Acreate(dset_id, attribute_name.c_str(),
+    const hid_t attribute_id = H5Acreate2(dset_id, attribute_name.c_str(),
                                          datatype_id, dataspace_id,
                                          H5P_DEFAULT, H5P_DEFAULT);
     dolfin_assert(attribute_id != HDF5_FAIL);

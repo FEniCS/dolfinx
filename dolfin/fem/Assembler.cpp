@@ -18,9 +18,10 @@
 // Modified by Garth N. Wells 2007-2009
 // Modified by Ola Skavhaug 2007-2009
 // Modified by Kent-Andre Mardal 2008
+// Modified by Joachim B Haga 2012
 //
 // First added:  2007-01-17
-// Last changed: 2011-09-29
+// Last changed: 2012-10-04
 
 #include <boost/scoped_ptr.hpp>
 
@@ -236,7 +237,7 @@ void Assembler::assemble_cells(GenericTensor& A,
     if (values && ufc.form.rank() == 0)
       (*values)[cell->index()] = ufc.A[0];
     else
-      A.add(&ufc.A[0], dofs);
+      add_to_global_tensor(A, ufc.A, dofs);
 
     p++;
   }
@@ -322,7 +323,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
     integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell, local_facet);
 
     // Add entries to global tensor
-    A.add(&ufc.A[0], dofs);
+    add_to_global_tensor(A, ufc.A, dofs);
 
     p++;
   }
@@ -353,8 +354,13 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   for (uint i = 0; i < form_rank; ++i)
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
-  // Vector to hold dofs for cells
+  // Vector to hold dofs for cells, and a vector holding pointers to same
   std::vector<std::vector<uint> > macro_dofs(form_rank);
+  std::vector<const std::vector<uint>* > macro_dof_ptrs(form_rank);
+  for (uint i = 0; i < form_rank; i++)
+  {
+    macro_dof_ptrs[i] = &macro_dofs[i];
+  }
 
   // Interior facet integral
   dolfin_assert(!ufc.interior_facet_integrals.empty());
@@ -439,9 +445,16 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
                               local_facet0, local_facet1);
 
     // Add entries to global tensor
-    A.add(&ufc.macro_A[0], macro_dofs);
+    add_to_global_tensor(A, ufc.macro_A, macro_dof_ptrs);
 
     p++;
   }
+}
+//-----------------------------------------------------------------------------
+void Assembler::add_to_global_tensor(GenericTensor& A,
+                                     std::vector<double>& cell_tensor,
+                                     std::vector<const std::vector<uint>* >& dofs)
+{
+  A.add(&cell_tensor[0], dofs);
 }
 //-----------------------------------------------------------------------------

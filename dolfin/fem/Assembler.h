@@ -17,9 +17,10 @@
 //
 // Modified by Garth N. Wells, 2007-2008.
 // Modified by Ola Skavhaug, 2008.
+// Modified by Joachim B Haga, 2012.
 //
 // First added:  2007-01-17
-// Last changed: 2011-09-29
+// Last changed: 2012-10-04
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
@@ -130,6 +131,14 @@ namespace dolfin
                                   UFC& ufc,
                                   const MeshFunction<uint>* domains,
                                   std::vector<double>* values);
+
+  protected:
+
+    /// Add cell tensor to global tensor. Hook to allow the SymmetricAssembler
+    /// to split the cell tensor into symmetric/antisymmetric parts.
+    virtual void add_to_global_tensor(GenericTensor& A,
+                                      std::vector<double>& cell_tensor,
+                                      std::vector<const std::vector<uint>* >& dofs);
 
   };
 
