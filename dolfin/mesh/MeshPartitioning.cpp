@@ -78,12 +78,10 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
   if (MPI::num_processes() > 1)
   {
     // Create and distribute local mesh data
-    dolfin_debug("creating local mesh data");
     LocalMeshData local_mesh_data(mesh);
-    dolfin_debug("created local mesh data");
 
-    // Partition mesh based on local mesh data
-    partition(mesh, local_mesh_data);
+    // Build distributed mesh
+    build_distributed_mesh(mesh, local_mesh_data);
   }
 }
 //-----------------------------------------------------------------------------
@@ -95,6 +93,9 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
 
   // Create MeshDomains from local_data
   build_mesh_domains(mesh, local_data);
+
+  if (mesh.topology().dim() == 1)
+    not_working_in_parallel("Distributed mesh in 1D");
 
   // Number facets (see https://bugs.launchpad.net/dolfin/+bug/733834)
   number_entities(mesh, mesh.topology().dim() - 1);

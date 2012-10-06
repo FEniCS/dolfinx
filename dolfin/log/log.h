@@ -117,10 +117,12 @@ namespace dolfin
   /// This function is deprecated, use list_timings
   void summary(bool reset=false);
 
-  /// Return timing (average) for given task, optionally clearing timing for task
+  /// Return timing (average) for given task, optionally clearing timing
+  /// for task
   double timing(std::string task, bool reset=false);
 
-  /// Report that functionality has not (yet) been implemented to work in parallel
+  /// Report that functionality has not (yet) been implemented to work
+  /// in parallel
   void not_working_in_parallel(std::string what);
 
   // Helper function for dolfin_debug macro
