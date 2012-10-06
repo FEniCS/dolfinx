@@ -20,7 +20,7 @@
 // First added:  2010-11-16
 // Last changed: 2011-11-14
 
-// Included here to avoid a C++ problem with some MPI implementations                                                                                                                         
+// Included here to avoid a C++ problem with some MPI implementations
 #include <dolfin/common/MPI.h>
 
 #include <boost/foreach.hpp>
@@ -34,7 +34,7 @@ using namespace dolfin;
 #ifdef HAS_TRILINOS
 //-----------------------------------------------------------------------------
 dolfin::uint ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
-                                                            Array<uint>& colors)
+                                                     std::vector<uint>& colors)
 {
   if (colors.size() != graph.size())
   {

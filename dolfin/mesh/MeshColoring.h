@@ -31,7 +31,6 @@ namespace dolfin
 {
 
    class Mesh;
-   template<typename T> class MeshFunction;
 
   /// This class computes colorings for a local mesh. It supports
   /// vertex, edge, and facet-based colorings.
@@ -42,17 +41,17 @@ namespace dolfin
 
     /// Color the cells of a mesh for given coloring type, which can
     /// be one of "vertex", "edge" or "facet".
-    static const MeshFunction<uint>& color_cells(Mesh& mesh,
+    static const std::vector<uint>& color_cells(Mesh& mesh,
                                                  std::string coloring_type);
 
     /// Color the cells of a mesh for given coloring type specified by
     /// topological dimension, which can be one of 0, 1 or D - 1.
-    static const MeshFunction<uint>& color(Mesh& mesh,
-                                           std::vector<uint> coloring_type);
+    static const std::vector<uint>& color(Mesh& mesh,
+                                          std::vector<uint> coloring_type);
 
     /// Compute cell colors for given coloring type specified by
     /// topological dimension, which can be one of 0, 1 or D - 1.
-    static uint compute_colors(MeshFunction<uint>& colors,
+    static uint compute_colors(const Mesh& mesh, std::vector<uint>& colors,
                                const std::vector<uint> coloring_type);
 
     /// Convert coloring type to topological dimension

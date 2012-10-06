@@ -474,7 +474,7 @@ namespace dolfin
     /// *Returns*
     ///     MeshFunction<unsigned int>
     ///         The colors as a mesh function over the cells of the mesh.
-    const MeshFunction<unsigned int>& color(std::string coloring_type) const;
+    const std::vector<unsigned int>& color(std::string coloring_type) const;
 
     /// Color the cells of the mesh such that no two neighboring cells
     /// share the same color. A colored mesh keeps a
@@ -489,7 +489,7 @@ namespace dolfin
     /// *Returns*
     ///     MeshFunction<unsigned int>
     ///         The colors as a mesh function over entities of the mesh.
-    const MeshFunction<unsigned int>& color(std::vector<unsigned int> coloring_type) const;
+    const std::vector<unsigned int>& color(std::vector<unsigned int> coloring_type) const;
 
     /// Compute all cells which are intersected by the given point.
     ///

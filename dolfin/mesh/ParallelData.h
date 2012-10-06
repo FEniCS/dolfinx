@@ -50,15 +50,6 @@ namespace dolfin
 
     //--- Data for distributed memory parallelism ---
 
-    /// Return MeshFunction that is true for globally exterior facets,
-    /// false otherwise
-    //MeshFunction<bool>& exterior_facet();
-
-    /// Return MeshFunction that is true for globally exterior facets,
-    /// false otherwise (const version)
-    //const MeshFunction<bool>& exterior_facet() const;
-
-
     //--- Data for shared memory parallelism (multicore) ---
 
     /// First vector is (colored entity dim - dim0 - .. -  colored entity dim).
@@ -66,8 +57,8 @@ namespace dolfin
     /// of all mesh entity indices of the same color,
     /// e.g. vector<vector>[col][i] is the index of the ith entity of
     /// color 'col'.
-    std::map<const std::vector<uint>,
-             std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > > coloring;
+    //std::map<const std::vector<uint>,
+    //         std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > > coloring;
 
   private:
 

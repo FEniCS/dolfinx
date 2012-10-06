@@ -43,6 +43,7 @@
 #include "MeshFunction.h"
 #include "MeshTopology.h"
 #include "MeshValueCollection.h"
+#include "ParallelData.h"
 #include "Point.h"
 #include "Vertex.h"
 #include "MeshPartitioning.h"

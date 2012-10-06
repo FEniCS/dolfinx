@@ -86,7 +86,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
     // Boundary facets are connected to exactly one cell
     if (f->num_entities(D) == 1)
     {
-      bool global_exterior_facet = (f->num_global_entities(D) == 1);
+      const bool global_exterior_facet =  (f->num_global_entities(D) == 1);
       if (global_exterior_facet && !interior_boundary)
         boundary_facet[*f] = true;
       else if (!global_exterior_facet && interior_boundary)
@@ -133,7 +133,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
         vertex_map[vertex_index] = v->index();
 
       // Add vertex
-      // FIXME: Get global vertex index?
+      // FIXME: Get global vertex index
       editor.add_vertex(vertex_index, v->point());
     }
   }

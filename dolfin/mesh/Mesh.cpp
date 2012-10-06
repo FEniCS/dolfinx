@@ -328,8 +328,7 @@ void Mesh::snap_boundary(const SubDomain& sub_domain, bool harmonic_smoothing)
   MeshSmoothing::snap_boundary(*this, sub_domain, harmonic_smoothing);
 }
 //-----------------------------------------------------------------------------
-const dolfin::MeshFunction<dolfin::uint>&
-Mesh::color(std::string coloring_type) const
+const std::vector<dolfin::uint>& Mesh::color(std::string coloring_type) const
 {
   // Define graph type
   const uint dim = MeshColoring::type_to_dim(coloring_type, *this);
@@ -341,15 +340,14 @@ Mesh::color(std::string coloring_type) const
   return color(_coloring_type);
 }
 //-----------------------------------------------------------------------------
-const dolfin::MeshFunction<dolfin::uint>&
-Mesh::color(std::vector<uint> coloring_type) const
+const std::vector<dolfin::uint>& Mesh::color(std::vector<uint> coloring_type) const
 {
   // Find color data
-  std::map<const std::vector<uint>, std::pair<MeshFunction<uint>,
+  std::map<const std::vector<uint>, std::pair<std::vector<uint>,
            std::vector<std::vector<uint> > > >::const_iterator coloring_data;
-  coloring_data = this->parallel_data().coloring.find(coloring_type);
+  coloring_data = this->topology().coloring.find(coloring_type);
 
-  if (coloring_data != this->parallel_data().coloring.end())
+  if (coloring_data != this->topology().coloring.end())
   {
     dolfin_debug("Mesh has already been colored, not coloring again.");
     return coloring_data->second.first;

@@ -33,6 +33,7 @@
 #include "LocalMeshValueCollection.h"
 #include "Mesh.h"
 #include "MeshDistributed.h"
+#include "ParallelData.h"
 
 namespace dolfin
 {
@@ -230,6 +231,8 @@ namespace dolfin
     }
 
     // Get global indices on local process
+    //const std::vector<uint> global_entity_indices
+    //  = mesh.parallel_data().global_entity_indices_as_vector(D);
     const std::vector<uint> global_entity_indices
       = mesh.topology().global_indices(D);
 

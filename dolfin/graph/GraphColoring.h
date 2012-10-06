@@ -21,14 +21,13 @@
 #ifndef __GRAPH_COLORING_H
 #define __GRAPH_COLORING_H
 
+
+#include <vector>
 #include <dolfin/common/types.h>
 #include "Graph.h"
 
 namespace dolfin
 {
-
-  template<typename T> class Array;
-  class Mesh;
 
   /// This class provides a common interface to graph coloring libraries
 
@@ -39,7 +38,7 @@ namespace dolfin
 
     /// Compute vertex colors
     static uint compute_local_vertex_coloring(const Graph& graph,
-                                              Array<uint>& colors);
+                                              std::vector<uint>& colors);
 
   };
 }

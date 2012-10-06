@@ -151,9 +151,9 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
 
   // Get coloring data
   std::map<const std::vector<uint>,
-           std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
-  mesh_coloring = mesh.parallel_data().coloring.find(coloring_type);
-  if (mesh_coloring == mesh.parallel_data().coloring.end())
+           std::pair<std::vector<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
+  mesh_coloring = mesh.topology().coloring.find(coloring_type);
+  if (mesh_coloring == mesh.topology().coloring.end())
   {
     dolfin_error("OpenMPAssembler.cpp",
                  "perform multithreaded assembly using OpenMP assembler",
@@ -228,7 +228,6 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
     const double scalar_sum = std::accumulate(scalars.begin(), scalars.end(), 0.0);
     A.add(&scalar_sum, dofs);
   }
-
 }
 //-----------------------------------------------------------------------------
 void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
@@ -283,9 +282,9 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 
   // Get coloring data
   std::map<const std::vector<uint>,
-           std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
-  mesh_coloring = mesh.parallel_data().coloring.find(coloring_type);
-  if (mesh_coloring == mesh.parallel_data().coloring.end())
+           std::pair<std::vector<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
+  mesh_coloring = mesh.topology().coloring.find(coloring_type);
+  if (mesh_coloring == mesh.topology().coloring.end())
   {
     dolfin_error("OpenMPAssembler.cpp",
                  "perform multithreaded assembly using OpenMP assembler",
@@ -477,12 +476,14 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
   }
 
   // Get coloring data
+  //std::map<const std::vector<uint>,
+  //         std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
   std::map<const std::vector<uint>,
-           std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
-  mesh_coloring = mesh.parallel_data().coloring.find(coloring_type);
+           std::pair<std::vector<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
+  mesh_coloring = mesh.topology().coloring.find(coloring_type);
 
   // Check that requested coloring has been computed
-  if (mesh_coloring == mesh.parallel_data().coloring.end())
+  if (mesh_coloring == mesh.topology().coloring.end())
   {
     dolfin_error("OpenMPAssembler.cpp",
                  "perform multithreaded assembly using OpenMP assembler",

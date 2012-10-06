@@ -35,7 +35,6 @@
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"
-#include "MeshFunction.h"
 #include "ParallelData.h"
 #include "Vertex.h"
 #include "MeshColoring.h"
@@ -43,7 +42,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color_cells(Mesh& mesh,
+const std::vector<dolfin::uint>& MeshColoring::color_cells(Mesh& mesh,
                                                      std::string coloring_type)
 {
   // Define graph type
@@ -55,37 +54,35 @@ const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color_cells(Mesh& mesh,
   return color(mesh, _coloring_type);
 }
 //-----------------------------------------------------------------------------
-const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color(Mesh& mesh,
+const std::vector<dolfin::uint>& MeshColoring::color(Mesh& mesh,
                                                std::vector<uint> coloring_type)
 {
   // Convenience typedefs
-  typedef std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > ColorData;
+  typedef std::pair<std::vector<uint>, std::vector<std::vector<uint> > > ColorData;
 
   info("Coloring mesh.");
-
-  // Get mesh data
-  ParallelData& data = mesh.parallel_data();
 
   // Create empty coloring data
   ColorData _color_data;
 
   // Clear any old data
-  data.coloring.erase(coloring_type);
+  mesh.topology().coloring.erase(coloring_type);
 
   // Create coloring data
-  data.coloring.insert(std::make_pair(coloring_type, _color_data));
+  mesh.topology().coloring.insert(std::make_pair(coloring_type, _color_data));
 
   // Convenience references to data
-  dolfin_assert(data.coloring.find(coloring_type) != data.coloring.end());
-  ColorData& color_data = data.coloring.find(coloring_type)->second;
+  dolfin_assert(mesh.topology().coloring.find(coloring_type) != mesh.topology().coloring.end());
+  ColorData& color_data = mesh.topology().coloring.find(coloring_type)->second;
 
-  MeshFunction<uint>& colors = color_data.first;
+  std::vector<uint>& colors = color_data.first;
   std::vector<std::vector<uint> >& entities_of_color = color_data.second;
 
   // Initialise mesh function for colors and compute coloring
   const uint colored_entity_dim = coloring_type[0];
-  colors.init(mesh, colored_entity_dim);
-  const uint num_colors = MeshColoring::compute_colors(colors, coloring_type);
+  colors.resize(mesh.num_entities(colored_entity_dim));
+  const uint num_colors = MeshColoring::compute_colors(mesh, colors,
+                                                       coloring_type);
 
   // Build lists of entities for each color
   entities_of_color.resize(num_colors);
@@ -99,16 +96,9 @@ const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color(Mesh& mesh,
   return colors;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint MeshColoring::compute_colors(MeshFunction<uint>& colors,
+dolfin::uint MeshColoring::compute_colors(const Mesh& mesh, std::vector<uint>& colors,
                                           const std::vector<uint> coloring_type)
 {
-  // Get the mesh
-  const Mesh& mesh(colors.mesh());
-
-  // Get number of graph vertices
-  const uint colored_vertex_dim = coloring_type[0];
-  //const uint num_verticies = mesh.num_entities(colored_vertex_dim);
-
   if (coloring_type.front() != coloring_type.back())
   {
     dolfin_error("MeshColoring.cpp",
@@ -116,33 +106,15 @@ dolfin::uint MeshColoring::compute_colors(MeshFunction<uint>& colors,
                  "Mesh coloring does not support dim i - j coloring");
   }
 
-  // Check that mesh function has right dimension
-  if (colors.dim() != colored_vertex_dim)
-  {
-    dolfin_error("MeshColoring.cpp",
-                 "compute mesh colors",
-                 "Wrong dimension of mesh function");
-  }
-
   // Create graph
-  /*
-  BoostBidirectionalGraph graph;
-  if (coloring_type.size() == 3)
-    graph = boost_graph(mesh, coloring_type[0], coloring_type[1]);
-  else
-    graph = boost_graph(mesh, coloring_type);
-  */
   Graph graph;
   if (coloring_type.size() == 3)
     graph = GraphBuilder::local_graph(mesh, coloring_type[0], coloring_type[1]);
   else
     graph = GraphBuilder::local_graph(mesh, coloring_type);
 
-  // Wrap MeshFunction values
-  Array<uint> _colors(colors.size(), colors.values());
-
   // Color graph
-  return GraphColoring::compute_local_vertex_coloring(graph, _colors);
+  return GraphColoring::compute_local_vertex_coloring(graph, colors);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint MeshColoring::type_to_dim(std::string coloring_type,

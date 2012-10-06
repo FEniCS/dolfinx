@@ -26,7 +26,7 @@
 #include <vector>
 #include <dolfin/common/types.h>
 #include "MeshConnectivity.h"
-#include "MeshFunction.h"
+//#include "MeshFunction.h"
 
 namespace dolfin
 {
@@ -135,8 +135,10 @@ namespace dolfin
     /// of all mesh entity indices of the same color,
     /// e.g. vector<vector>[col][i] is the index of the ith entity of
     /// color 'col'.
+    // Developer note: std::vector is used in place of a MeshFunction
+    //                 to avoid circular dependencies in the header files
     std::map<const std::vector<uint>,
-     std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > > coloring;
+     std::pair<std::vector<uint>, std::vector<std::vector<uint> > > > coloring;
 
   private:
 
