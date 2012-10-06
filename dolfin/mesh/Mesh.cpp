@@ -353,7 +353,6 @@ void Mesh::intersected_cells(const Point& point,
     const Cell cell(*this, 0);
     if (cell.intersects(point))
       cells.insert(0);
-
   }
 }
 //-----------------------------------------------------------------------------

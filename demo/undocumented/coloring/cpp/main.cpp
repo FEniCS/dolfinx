@@ -33,31 +33,34 @@ int main()
   // Create mesh
   UnitCube mesh(24, 24, 24);
 
-  /*
   // Compute vertex-based coloring
-  const MeshFunction<dolfin::uint> colors_vertex = mesh.color("vertex");
+  mesh.color("vertex");
+  const MeshFunction<dolfin::uint> colors_vertex = MeshColoring::cell_colors(mesh, "vertex");
   plot(colors_vertex, "Vertex-based cell coloring");
 
   // Compute edge-based coloring
-  const MeshFunction<dolfin::uint> colors_edge = mesh.color("edge");
+  mesh.color("edge");
+  const CellFunction<dolfin::uint> colors_edge = MeshColoring::cell_colors(mesh, "edge");
   plot(colors_edge, "Edge-based cell coloring");
 
   // Compute facet-based coloring
-  const MeshFunction<dolfin::uint> colors_facet = mesh.color("facet");
+  mesh.color("facet");
+  const CellFunction<dolfin::uint> colors_facet = MeshColoring::cell_colors(mesh, "facet");
   plot(colors_facet, "Facet-based cell coloring");
 
   // Compute facet-based coloring with distance 2
   std::vector<dolfin::uint> coloring_type;
   coloring_type.push_back(mesh.topology().dim());
-  coloring_type.push_back(mesh.topology().dim()-1);
+  coloring_type.push_back(mesh.topology().dim() - 1);
   coloring_type.push_back(mesh.topology().dim());
-  coloring_type.push_back(mesh.topology().dim()-1);
+  coloring_type.push_back(mesh.topology().dim() - 1);
   coloring_type.push_back(mesh.topology().dim());
-  const MeshFunction<dolfin::uint>& colors_vertex_2 = mesh.color(coloring_type);
+  mesh.color(coloring_type);
+  const CellFunction<dolfin::uint> colors_vertex_2
+      = MeshColoring::cell_colors(mesh, coloring_type);
   plot(colors_vertex_2, "Facet-based cell coloring with distance 2");
 
   interactive();
-  */
 
   return 0;
 }
