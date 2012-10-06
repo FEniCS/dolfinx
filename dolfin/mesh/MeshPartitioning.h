@@ -33,7 +33,6 @@
 #include "LocalMeshValueCollection.h"
 #include "Mesh.h"
 #include "MeshDistributed.h"
-#include "ParallelData.h"
 
 namespace dolfin
 {

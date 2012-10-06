@@ -52,7 +52,6 @@ namespace dolfin
   class LocalMeshData;
   class MeshEntity;
   template <typename T> class MeshFunction;
-  class ParallelData;
   class SubDomain;
 
   /// A _Mesh_ consists of a set of connected and numbered mesh entities.
@@ -311,16 +310,6 @@ namespace dolfin
 
     /// Get mesh data (const version).
     const MeshData& data() const;
-
-    /// Get parallel mesh data.
-    ///
-    /// *Returns*
-    ///     _ParallelData_
-    ///         The parallel data object associated with the mesh.
-    ParallelData& parallel_data();
-
-    /// Get parallel mesh data (const version).
-    const ParallelData& parallel_data() const;
 
     /// Get mesh cell type.
     ///
@@ -693,9 +682,6 @@ namespace dolfin
 
     // Auxiliary mesh data
     MeshData _data;
-
-    // Auxiliary parallel mesh data
-    boost::scoped_ptr<ParallelData> _parallel_data;
 
     // Cell type
     CellType* _cell_type;

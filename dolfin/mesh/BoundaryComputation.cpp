@@ -35,7 +35,6 @@
 #include "MeshFunction.h"
 #include "MeshGeometry.h"
 #include "MeshTopology.h"
-#include "ParallelData.h"
 #include "Vertex.h"
 #include "BoundaryComputation.h"
 

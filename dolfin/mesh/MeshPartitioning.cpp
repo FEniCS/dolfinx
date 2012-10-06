@@ -43,7 +43,6 @@
 #include "MeshFunction.h"
 #include "MeshTopology.h"
 #include "MeshValueCollection.h"
-#include "ParallelData.h"
 #include "Point.h"
 #include "Vertex.h"
 #include "MeshPartitioning.h"
@@ -130,11 +129,6 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   // Get shared vertices
   std::map<uint, std::set<uint> >& shared_vertices
                             = mesh.topology().shared_entities(0);
-
-  // Sort shared vertices
-  //std::map<uint, std::vector<uint> >::iterator it0;
-  //for (it0 = shared_vertices.begin(); it0 != shared_vertices.end(); ++it0)
-  //  std::sort(it0->second.begin(), it0->second.end());
 
   // Build entity-to-global-vertex-number information
   std::map<std::vector<uint>, uint> entities;

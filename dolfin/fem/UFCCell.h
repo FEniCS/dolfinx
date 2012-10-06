@@ -32,7 +32,6 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/ParallelData.h>
 #include <dolfin/fem/ufcexp.h>
 
 namespace dolfin

@@ -22,7 +22,6 @@
 
 #include "Cell.h"
 #include "MeshTopology.h"
-#include "ParallelData.h"
 #include "Point.h"
 #include "Facet.h"
 

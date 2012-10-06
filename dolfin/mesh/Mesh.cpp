@@ -42,7 +42,6 @@
 #include "MeshRenumbering.h"
 #include "MeshSmoothing.h"
 #include "MeshTransformation.h"
-#include "ParallelData.h"
 #include "TopologyComputation.h"
 #include "Vertex.h"
 #include "Mesh.h"
@@ -55,7 +54,6 @@ using namespace dolfin;
 Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
                Hierarchical<Mesh>(*this),
                _data(*this),
-               _parallel_data(new ParallelData(*this)),
                _cell_type(0),
                _intersection_operator(*this),
                _ordered(false)
@@ -66,7 +64,6 @@ Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
 Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
                                Hierarchical<Mesh>(*this),
                                _data(*this),
-                               _parallel_data(new ParallelData(*this)),
                                _cell_type(0),
                                _intersection_operator(*this),
                                _ordered(false)
@@ -77,7 +74,6 @@ Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
 Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
                                    Hierarchical<Mesh>(*this),
                                    _data(*this),
-                                   _parallel_data(new ParallelData(*this)),
                                    _cell_type(0),
                                    _intersection_operator(*this),
                                    _ordered(false)
@@ -90,7 +86,6 @@ Mesh::Mesh(LocalMeshData& local_mesh_data)
                                  : Variable("mesh", "DOLFIN mesh"),
                                    Hierarchical<Mesh>(*this),
                                    _data(*this),
-                                   _parallel_data(new ParallelData(*this)),
                                    _cell_type(0),
                                    _intersection_operator(*this),
                                    _ordered(false)
@@ -113,7 +108,6 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
   _geometry = mesh._geometry;
   _domains = mesh._domains;
   _data = mesh._data;
-  _parallel_data.reset(new ParallelData(*mesh._parallel_data));
   if (mesh._cell_type)
     _cell_type = CellType::create(mesh._cell_type->cell_type());
 
@@ -134,18 +128,6 @@ MeshData& Mesh::data()
 const MeshData& Mesh::data() const
 {
   return _data;
-}
-//-----------------------------------------------------------------------------
-ParallelData& Mesh::parallel_data()
-{
-  dolfin_assert(_parallel_data);
-  return *_parallel_data;
-}
-//-----------------------------------------------------------------------------
-const ParallelData& Mesh::parallel_data() const
-{
-  dolfin_assert(_parallel_data);
-  return *_parallel_data;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Mesh::init(uint dim) const
@@ -241,7 +223,6 @@ void Mesh::clear()
   _topology.clear();
   _geometry.clear();
   _data.clear();
-  _parallel_data.reset(new ParallelData(*this));
   delete _cell_type;
   _cell_type = 0;
   _intersection_operator.clear();

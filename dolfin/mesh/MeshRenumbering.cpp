@@ -33,7 +33,6 @@
 #include "MeshTopology.h"
 #include "MeshGeometry.h"
 #include "MeshRenumbering.h"
-#include "ParallelData.h"
 
 using namespace dolfin;
 
