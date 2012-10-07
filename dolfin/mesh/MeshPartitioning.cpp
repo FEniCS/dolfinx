@@ -93,8 +93,8 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   // Create MeshDomains from local_data
   build_mesh_domains(mesh, local_data);
 
-  if (mesh.topology().dim() == 1)
-    not_working_in_parallel("Distributed mesh in 1D");
+  //if (mesh.topology().dim() == 1)
+  //  not_working_in_parallel("Distributed mesh in 1D");
 
   // Number facets (see https://bugs.launchpad.net/dolfin/+bug/733834)
   number_entities(mesh, mesh.topology().dim() - 1);
@@ -102,13 +102,14 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
 //-----------------------------------------------------------------------------
 void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
 {
-  // FIXME: Break up this function
+  // FIXME: Break up this function into (a) ownership determination,
+  // global entity count, etc and (b) numering
 
   Timer timer("PARALLEL x: Number mesh entities");
   Mesh& mesh = const_cast<Mesh&>(_mesh);
 
   // Check for vertices
-  if (d == 0)
+  if (d == 0 && mesh.topology().dim() > 1)
   {
     dolfin_error("MeshPartitioning.cpp",
                  "number mesh entities",
@@ -132,13 +133,26 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
 
   // Build entity-to-global-vertex-number information
   std::map<std::vector<uint>, uint> entities;
-  for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
+  if (d > 0)
   {
-    std::vector<uint> entity;
-    for (VertexIterator vertex(*e); !vertex.end(); ++vertex)
-      entity.push_back(vertex->global_index());
-    std::sort(entity.begin(), entity.end());
-    entities[entity] = e->index();
+    std::vector<uint> entity(mesh.type().num_vertices(d));
+    for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
+    {
+      uint i = 0;
+      for (VertexIterator vertex(*e); !vertex.end(); ++vertex)
+        entity[i++] = vertex->global_index();
+      std::sort(entity.begin(), entity.end());
+      entities[entity] = e->index();
+    }
+  }
+  else
+  {
+    std::vector<uint> entity(1);
+    for (VertexIterator v(mesh); !v.end(); ++v)
+    {
+      entity[0] = v->global_index();
+      entities[entity] = v->index();
+    }
   }
 
   /// Find out which entities to ignore, which to number and which to
@@ -198,6 +212,11 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   // Store number of global entities
   mesh.topology().init_global(d, num_global_entities.first);
 
+  // If we have vertices (i.e. a 1D mesh), return now because we just
+  // needed to compute global connectivity (marking facets). No need to
+  // renumber
+  if (d == 0)
+    return;
 
   /// ---- Numbering
 
@@ -828,7 +847,8 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   /// Communicate global number of boundary vertices to all processes
 
   // Construct boundary mesh
-  BoundaryMesh bmesh(mesh);
+  BoundaryMesh bmesh;
+  bmesh.init_interior_boundary(mesh);
 
   const MeshFunction<unsigned int>& boundary_vertex_map = bmesh.vertex_map();
   const uint boundary_size = boundary_vertex_map.size();
