@@ -98,6 +98,12 @@ File::File(const std::string filename, Type type, std::string encoding)
 {
   switch (type)
   {
+  case xdmf:
+    file.reset(new XDMFFile(filename));
+    break;
+  case hdf5:
+    file.reset(new HDF5File(filename));
+    break;
   case xml:
     file.reset(new XMLFile(filename));
     break;

@@ -30,16 +30,10 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GenericFile::GenericFile(std::string filename,
-                         std::string filetype)
- : filename(filename),
-   filetype(filetype),
-   opened_read(false),
-   opened_write(false),
-   check_header(false),
-   counter(0),
-   counter1(0),
-   counter2(0)
+GenericFile::GenericFile(std::string filename, std::string filetype)
+ : filename(filename), filetype(filetype),
+   opened_read(false),  opened_write(false), check_header(false),
+   counter(0), counter1(0), counter2(0)
 {
   // Do nothing
 }

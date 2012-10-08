@@ -535,7 +535,7 @@ dolfin::uint Mesh::coordinates_hash() const
 
   // Hash the received hash keys
   boost::hash<std::vector<uint> > uhash;
-  const uint global_hash = uhash(all_hashes);
+  uint global_hash = uhash(all_hashes);
 
   // Broadcast hash key
   MPI::broadcast(global_hash);
@@ -548,25 +548,25 @@ dolfin::uint Mesh::topology_hash() const
   // FIXME: Avoid building topology data structure - expensive
 
   // Build topology data structure for hashing
-  std::vector<uint> topo;
+  std::vector<uint> topology;
   for (CellIterator cell(*this); !cell.end(); ++cell)
       for (VertexIterator v(*cell); !v.end(); ++v)
-        topo.push_back(v->index());
+        topology.push_back(v->index());
 
   // Compute local hash key
   boost::hash<std::vector<uint> > uhash;
-  const uint local_hash = uhash(topo);
+  const uint local_hash = uhash(topology);
 
   // Gather all hash keys
   std::vector<uint> all_hashes;
   MPI::gather(local_hash, all_hashes);
 
   // Hash the received hash keys
-  const uint global_hash = uhash(all_hashes);
+  uint global_hash = uhash(all_hashes);
 
   // Broadcast hash key
   MPI::broadcast(global_hash);
 
-  return total_hash;
+  return global_hash;
 }
 //-----------------------------------------------------------------------------
