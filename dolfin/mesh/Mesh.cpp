@@ -25,6 +25,8 @@
 // First added:  2006-05-09
 // Last changed: 2012-10-02
 
+#include <boost/functional/hash.hpp>
+
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
@@ -45,8 +47,6 @@
 #include "TopologyComputation.h"
 #include "Vertex.h"
 #include "Mesh.h"
-
-#include <boost/functional/hash.hpp>
 
 using namespace dolfin;
 
@@ -512,7 +512,11 @@ std::string Mesh::str(bool verbose) const
 //-----------------------------------------------------------------------------
 dolfin::uint Mesh::coordinates_hash() const
 {
+  // FIXME: Avoid building coordinate data structure - expensive
+
+  // Build coordinate data structure for hashing
   std::vector<double>coords;
+  //coords.reserve(3*mesh.num_vertices());
   for (VertexIterator v(*this); !v.end(); ++v)
   {
     const Point p = v->point();
@@ -521,34 +525,48 @@ dolfin::uint Mesh::coordinates_hash() const
     coords.push_back(p.z());
   }
 
+  // Compute local hash
   boost::hash<std::vector<double> > dhash;
+  const uint local_hash = dhash(coords);
 
-  uint local_hash=dhash(coords);
-  std::vector<uint>all_hashes;
+  // Gather hash keys from all processes
+  std::vector<uint> all_hashes;
   MPI::gather(local_hash, all_hashes);
 
+  // Hash the received hash keys
   boost::hash<std::vector<uint> > uhash;
-  uint total_hash=uhash(all_hashes);
-  MPI::broadcast(total_hash);
+  const uint global_hash = uhash(all_hashes);
 
-  return total_hash;
+  // Broadcast hash key
+  MPI::broadcast(global_hash);
 
+  return global_hash;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Mesh::topology_hash() const
 {
+  // FIXME: Avoid building topology data structure - expensive
+
+  // Build topology data structure for hashing
   std::vector<uint> topo;
   for (CellIterator cell(*this); !cell.end(); ++cell)
       for (VertexIterator v(*cell); !v.end(); ++v)
         topo.push_back(v->index());
-  boost::hash<std::vector<uint> > uhash;
-  uint local_hash=uhash(topo);
 
-  std::vector<uint>all_hashes;
+  // Compute local hash key
+  boost::hash<std::vector<uint> > uhash;
+  const uint local_hash = uhash(topo);
+
+  // Gather all hash keys
+  std::vector<uint> all_hashes;
   MPI::gather(local_hash, all_hashes);
-  uint total_hash=uhash(all_hashes);
-  MPI::broadcast(total_hash);
+
+  // Hash the received hash keys
+  const uint global_hash = uhash(all_hashes);
+
+  // Broadcast hash key
+  MPI::broadcast(global_hash);
 
   return total_hash;
-
 }
+//-----------------------------------------------------------------------------
