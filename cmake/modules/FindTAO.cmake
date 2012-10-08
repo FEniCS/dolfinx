@@ -55,8 +55,6 @@ set(tao_dir_locations "")
 list(APPEND tao_dir_locations "/usr/local/lib/tao")
 list(APPEND tao_dir_locations "$ENV{HOME}/tao")
 list(APPEND tao_dir_locations "$TAO_DIR")
-list(APPEND tao_dir_locations "/opt/HPC/FEniCS-dev/FEniCS-dev-g")
-
 
 # Add other possible locations for TAO_DIR
 set(_SYSTEM_LIB_PATHS "${CMAKE_SYSTEM_LIBRARY_PATH};${CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES}")
@@ -68,7 +66,7 @@ endforeach()
 
 # Try to figure out TAO_DIR by finding tao.h
 find_path(TAO_DIR include/tao.h
-  HINTS ${TAOC_DIR} $ENV{TAO_DIR}
+  HINTS ${TAO_DIR} $ENV{TAO_DIR}
   PATHS ${tao_dir_locations}
   DOC "tao directory")
 
