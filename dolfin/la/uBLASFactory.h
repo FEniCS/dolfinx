@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells 2008
-// Modified by Anders Logg 2011
+// Modified by Anders Logg 2011-2012
 //
 // First added:  2007-12-06
-// Last changed: 2011-10-19
+// Last changed: 2012-08-20
 
 #ifndef __UBLAS_FACTORY_H
 #define __UBLAS_FACTORY_H
@@ -32,7 +32,7 @@
 #include "uBLASVector.h"
 #include "TensorLayout.h"
 #include "UmfpackLUSolver.h"
-#include "LinearAlgebraFactory.h"
+#include "GenericLinearAlgebraFactory.h"
 
 namespace dolfin
 {
@@ -40,7 +40,7 @@ namespace dolfin
   class GenericLinearSolver;
 
   template<typename Mat = ublas_sparse_matrix>
-  class uBLASFactory : public LinearAlgebraFactory
+  class uBLASFactory : public GenericLinearAlgebraFactory
   {
   public:
 
@@ -76,6 +76,13 @@ namespace dolfin
         sparsity = true;
       boost::shared_ptr<TensorLayout> pattern(new TensorLayout(0, sparsity));
       return pattern;
+    }
+
+    /// Create empty linear operator
+    boost::shared_ptr<GenericLinearOperator> create_linear_operator() const
+    {
+      boost::shared_ptr<GenericLinearOperator> A(new uBLASLinearOperator);
+      return A;
     }
 
     /// Create LU solver

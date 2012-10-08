@@ -32,7 +32,7 @@
 namespace dolfin
 {
 
-  class GenericMatrix;
+  class GenericLinearOperator;
   class GenericVector;
   class LUSolver;
   class KrylovSolver;
@@ -51,14 +51,15 @@ namespace dolfin
     ~LinearSolver();
 
     /// Set the operator (matrix)
-    void set_operator(const boost::shared_ptr<const GenericMatrix> A);
+    void set_operator(const boost::shared_ptr<const GenericLinearOperator> A);
 
     /// Set the operator (matrix) and preconitioner matrix
-    void set_operators(const boost::shared_ptr<const GenericMatrix> A,
-                       const boost::shared_ptr<const GenericMatrix> P);
+    void set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
+                       const boost::shared_ptr<const GenericLinearOperator> P);
 
     /// Solve linear system Ax = b
-    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
+    uint solve(const GenericLinearOperator& A,
+               GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b
     uint solve(GenericVector& x, const GenericVector& b);

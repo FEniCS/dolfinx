@@ -7,27 +7,32 @@
 
 # Check for PaStiX header file
 find_path(PASTIX_INCLUDE_DIRS pastix.h
-  HINTS ${PASTIX_DIR} $ENV{PASTIX_DIR} ${PASTIX_DIR}/include $ENV{PASTIX_DIR}/include
+  HINTS ${PASTIX_DIR}/include $ENV{PASTIX_DIR}/include ${PASTIX_DIR} $ENV{PASTIX_DIR}
   PATH_SUFFIXES install
   DOC "Directory where the PaStiX header is located"
  )
 
 # Check for PaStiX library
 find_library(PASTIX_LIBRARY pastix
-  HINTS ${PASTIX_DIR} $ENV{PASTIX_DIR} ${PASTIX_DIR}/lib $ENV{PASTIX_DIR}/lib
+  HINTS ${PASTIX_DIR}/lib $ENV{PASTIX_DIR}/lib ${PASTIX_DIR} $ENV{PASTIX_DIR}
   PATH_SUFFIXES install
   DOC "The PaStiX library"
   )
 
-# Check for rt library
-find_library(RT_LIBRARY rt
-  DOC "The RT library"
-  )
+set(PASTIX_LIBRARIES ${PASTIX_LIBRARY})
 
-# Check for rt header
-find_library(RT_LIBRARY rt
-  DOC "The RT library"
-  )
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  # Check for rt library
+  find_library(RT_LIBRARY rt
+    DOC "The RT library"
+    )
+
+  # Check for rt header
+  find_library(RT_LIBRARY rt
+    DOC "The RT library"
+    )
+  set(PASTIX_LIBRARIES ${PASTIX_LIBRARIES} ${RT_LIBRARY})
+endif()
 
 # Check for hwloc header
 find_path(HWLOC_INCLUDE_DIRS hwloc.h
@@ -41,21 +46,22 @@ find_library(HWLOC_LIBRARY hwloc
   DOC "The hwloc library"
   )
 
+set(PASTIX_LIBRARIES ${PASTIX_LIBRARIES} ${HWLOC_LIBRARY})
+
 # Add BLAS libs if BLAS has been found
 set(CMAKE_LIBRARY_PATH ${BLAS_DIR}/lib $ENV{BLAS_DIR}/lib ${CMAKE_LIBRARY_PATH})
 find_package(BLAS)
+set(PASTIX_LIBRARIES ${PASTIX_LIBRARIES} ${BLAS_LIBRARIES})
 
-# Collect libraries
-#set(PASTIX_LIBRARIES ${PASTIX_LIBRARY} ${RT_LIBRARY} ${HWLOC_LIBRARY} ${BLAS_LIBRARIES})
-set(PASTIX_LIBRARIES ${PASTIX_LIBRARY} ${HWLOC_LIBRARY} ${BLAS_LIBRARIES})
-
-find_program(GFORTRAN_EXECUTABLE gfortran)
-if (GFORTRAN_EXECUTABLE)
-  execute_process(COMMAND ${GFORTRAN_EXECUTABLE} -print-file-name=libgfortran.so
-    OUTPUT_VARIABLE GFORTRAN_LIBRARY
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  if (EXISTS "${GFORTRAN_LIBRARY}")
-    set(PASTIX_LIBRARIES ${PASTIX_LIBRARIES} ${GFORTRAN_LIBRARY})
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  find_program(GFORTRAN_EXECUTABLE gfortran)
+  if (GFORTRAN_EXECUTABLE)
+    execute_process(COMMAND ${GFORTRAN_EXECUTABLE} -print-file-name=libgfortran.so
+      OUTPUT_VARIABLE GFORTRAN_LIBRARY
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if (EXISTS "${GFORTRAN_LIBRARY}")
+      set(PASTIX_LIBRARIES ${PASTIX_LIBRARIES} ${GFORTRAN_LIBRARY})
+    endif()
   endif()
 endif()
 
@@ -67,12 +73,14 @@ mark_as_advanced(
   )
 
 # Try to run a test program that uses PaStiX
-if (PASTIX_INCLUDE_DIRS AND PASTIX_LIBRARIES)
+if (DOLFIN_SKIP_BUILD_TESTS)
+  set(PASTIX_TEST_RUNS TRUE)
+elseif (PASTIX_INCLUDE_DIRS AND PASTIX_LIBRARIES)
 
   set(CMAKE_REQUIRED_INCLUDES  ${PASTIX_INCLUDE_DIRS})
   set(CMAKE_REQUIRED_LIBRARIES ${PASTIX_LIBRARIES})
 
- # Add SCOTCH variables if SCOTCH has been found                                                                                                                                                       
+ # Add SCOTCH variables if SCOTCH has been found
   if (SCOTCH_FOUND)
     set(CMAKE_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES} ${SCOTCH_INCLUDE_DIRS})
     set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${SCOTCH_LIBRARIES})

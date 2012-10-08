@@ -166,9 +166,9 @@ PETScLUSolver::~PETScLUSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PETScLUSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
+void PETScLUSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
 {
-  this->A = GenericTensor::down_cast<const PETScMatrix>(A);
+  this->A = as_type<const PETScMatrix>(require_matrix(A));
   dolfin_assert(this->A);
 }
 //-----------------------------------------------------------------------------
@@ -178,7 +178,7 @@ void PETScLUSolver::set_operator(const boost::shared_ptr<const PETScMatrix> A)
   dolfin_assert(this->A);
 }
 //-----------------------------------------------------------------------------
-const GenericMatrix& PETScLUSolver::get_operator() const
+const GenericLinearOperator& PETScLUSolver::get_operator() const
 {
   if (!A)
   {
@@ -195,8 +195,8 @@ dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   dolfin_assert(A);
 
   // Downcast matrix and vectors
-  const PETScVector& _b = b.down_cast<PETScVector>();
-  PETScVector& _x = x.down_cast<PETScVector>();
+  const PETScVector& _b = as_type<const PETScVector>(b);
+  PETScVector& _x = as_type<PETScVector>(x);
 
   // Check dimensions
   if (A->size(0) != b.size())
@@ -216,20 +216,28 @@ dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Write a pre-solve message
   pre_report(*A);
 
-  // FIXME: Check for solver type
+  // Get package used to solve sytem
+  PC pc;
+  KSPGetPC(*_ksp, &pc);
+  const MatSolverPackage solver_package;
+  PCFactorGetMatSolverPackage(pc, &solver_package);
+
   // Set number of threads if using PaStiX
-  if (parameters["num_threads"].is_set())
+  if (strcmp(solver_package, MATSOLVERPASTIX) == 0)
   {
-    // Use number of threads specified for LU solver
-    // FIXME: This option is not used by PETSc 3.2
-    PetscOptionsSetValue("-mat_pastix_threadnbr", parameters["num_threads"].value_str().c_str());
+    if (parameters["num_threads"].is_set())
+    {
+      // Use number of threads specified for LU solver
+      PetscOptionsSetValue("-mat_pastix_threadnbr",
+                           parameters["num_threads"].value_str().c_str());
+    }
+    else
+    {
+      // Use global number of threads
+      PetscOptionsSetValue("-mat_pastix_threadnbr",
+                           dolfin::parameters["num_threads"].value_str().c_str());
+    }
   }
-  else
-  {
-    // Use global number of threads
-    PetscOptionsSetValue("-mat_pastix_threadnbr", dolfin::parameters["num_threads"].value_str().c_str());
-  }
-  //PetscOptionsSetValue("-mat_pastix_verbose", "2");
 
   // Solve linear system
   KSPSolve(*_ksp, *_b.vec(), *_x.vec());
@@ -237,11 +245,13 @@ dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScLUSolver::solve(const GenericMatrix& A, GenericVector& x,
+dolfin::uint PETScLUSolver::solve(const GenericLinearOperator& A,
+                                  GenericVector& x,
                                   const GenericVector& b)
 {
-  return solve(A.down_cast<PETScMatrix>(), x.down_cast<PETScVector>(),
-               b.down_cast<PETScVector>());
+  return solve(as_type<const PETScMatrix>(require_matrix(A)),
+               as_type<PETScVector>(x),
+               as_type<const PETScVector>(b));
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
@@ -358,12 +368,8 @@ void PETScLUSolver::init_solver(std::string& method)
   PCFactorSetMatSolverPackage(pc, solver_package);
 
   // Allow matrices with zero diagonals to be solved
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
   PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
   PCFactorSetShiftAmount(pc, PETSC_DECIDE);
-  #else
-  PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
-  #endif
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::set_petsc_operators()

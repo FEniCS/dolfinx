@@ -37,6 +37,15 @@
 
 using namespace dolfin;
 
+struct CompareIndex
+{
+  CompareIndex(unsigned int index) : index(index) {}
+  bool operator()(const std::pair<unsigned int, double>& entry) const
+  { return index == entry.first; }
+  private:
+    const unsigned int index;
+};
+
 //-----------------------------------------------------------------------------
 void STLMatrix::init(const TensorLayout& tensor_layout)
 {
@@ -57,8 +66,8 @@ void STLMatrix::init(const TensorLayout& tensor_layout)
   num_codim_entities = tensor_layout.size(primary_codim);
 
   const uint num_primary_entiries = _local_range.second - _local_range.first;
-  codim_indices.resize(num_primary_entiries);
-  _vals.resize(num_primary_entiries);
+
+  _values.resize(num_primary_entiries);
 
   // FIXME: Add function to sparsity pattern to get nnz per row to
   //        to reserve space for vectors
@@ -114,9 +123,11 @@ std::pair<dolfin::uint, dolfin::uint> STLMatrix::local_range(uint dim) const
 //-----------------------------------------------------------------------------
 void STLMatrix::zero()
 {
-  std::vector<std::vector<double> >::iterator slice;
-  for (slice = _vals.begin(); slice != _vals.end(); ++slice)
-    std::fill(slice->begin(), slice->end(), 0.0);
+  std::vector<std::vector<std::pair<uint, double> > >::iterator slice;
+  std::vector<std::pair<uint, double> >::iterator entry;
+  for (slice = _values.begin(); slice != _values.end(); ++slice)
+    for (entry = slice->begin(); entry != slice->end(); ++entry)
+      entry->second = 0.0;
 }
 //-----------------------------------------------------------------------------
 void STLMatrix::add(const double* block, uint m, const uint* rows, uint n,
@@ -150,30 +161,26 @@ void STLMatrix::add(const double* block, uint m, const uint* rows, uint n,
     if (I < _local_range.second && I >= _local_range.first)
     {
       const uint I_local = I - _local_range.first;
-      assert(I_local < codim_indices.size());
-      assert(I_local < _vals.size());
 
-      std::vector<uint>& slice = codim_indices[I_local];
-      std::vector<double>& slice_vals = _vals[I_local];
+      assert(I_local < _values.size());
+      std::vector<std::pair<uint, double> >& slice = _values[I_local];
 
       // Iterate over co-dimension
       for (uint j = 0; j < codim; j++)
       {
-        //const uint pos = i*n + j;
         const uint pos = i*map1 + j*map0;
 
         // Global index
         const uint J = secondary_slice[j];
 
         // Check if entry exists and insert
-        const std::vector<uint>::const_iterator entry = std::find(slice.begin(), slice.end(), J);
+        //const std::vector<uint>::const_iterator entry = std::find(slice.begin(), slice.end(), J);
+        std::vector<std::pair<uint, double> >::iterator entry
+              = std::find_if(slice.begin(), slice.end(), CompareIndex(J));
         if (entry != slice.end())
-          slice_vals[entry - slice.begin()] += block[pos];
+          entry->second += block[pos];
         else
-        {
-          slice.push_back(J);
-          slice_vals.push_back(block[pos]);
-        }
+          slice.push_back(std::make_pair(J, block[pos]));
       }
     }
     else
@@ -250,22 +257,15 @@ void STLMatrix::apply(std::string mode)
   {
     dolfin_assert(received_non_local_rows[i] < _local_range.second && received_non_local_rows[i] >= _local_range.first);
     const uint I_local = received_non_local_rows[i] - _local_range.first;
-    assert(I_local < codim_indices.size());
-    assert(I_local < _vals.size());
+    assert(I_local < _values.size());
 
-    std::vector<uint>& rcols = codim_indices[I_local];
-    std::vector<double>& rvals = _vals[I_local];
     const uint J = received_non_local_cols[i];
-
-    // Check if column entry exists and insert
-    const std::vector<uint>::const_iterator column = std::find(rcols.begin(), rcols.end(), J);
-    if (column != rcols.end())
-      rvals[column - rcols.begin()] += received_non_local_vals[i];
+    std::vector<std::pair<uint, double> >::iterator entry
+          = std::find_if(_values[I_local].begin(), _values[I_local].end(), CompareIndex(J));
+    if (entry != _values[I_local].end())
+      entry->second += received_non_local_vals[i];
     else
-    {
-      rcols.push_back(J);
-      rvals.push_back(received_non_local_vals[i]);
-    }
+      _values[I_local].push_back(std::make_pair(J, received_non_local_vals[i]));
   }
 }
 //-----------------------------------------------------------------------------
@@ -275,10 +275,10 @@ double STLMatrix::norm(std::string norm_type) const
     error("Do not know to comput %s norm for STLMatrix", norm_type.c_str());
 
   double _norm = 0.0;
-  for (uint i = 0; i < _vals.size(); ++i)
+  for (uint i = 0; i < _values.size(); ++i)
   {
-    for (uint j = 0; j < _vals[i].size(); ++j)
-      _norm += _vals[i][j]*_vals[i][j];
+    for (uint j = 0; j < _values[i].size(); ++j)
+      _norm += _values[i][j].second*_values[i][j].second;
   }
   return std::sqrt(dolfin::MPI::sum(_norm));
 }
@@ -295,8 +295,14 @@ void STLMatrix::getrow(uint row, std::vector<uint>& columns,
 
   dolfin_assert(row < _local_range.second && row >= _local_range.first);
   const uint local_row = row - _local_range.first;
-  columns = codim_indices[local_row];
-  values  = _vals[local_row];
+  dolfin_assert(local_row < _values.size());
+  columns.resize(_values[local_row].size());
+  values.resize(_values[local_row].size());
+  for (uint i = 0; i < _values.size(); ++i)
+  {
+    columns[i] = _values[local_row][i].first;
+    values[i]  = _values[local_row][i].second;
+  }
 }
 //-----------------------------------------------------------------------------
 void STLMatrix::ident(uint m, const uint* rows)
@@ -315,33 +321,30 @@ void STLMatrix::ident(uint m, const uint* rows)
     if (global_row >= row_range.first && global_row < row_range.second)
     {
       const uint local_row = global_row - row_range.first;
-      std::vector<uint>& rcols   = codim_indices[local_row];
-      std::vector<double>& rvals = _vals[local_row];
-
-      // Zero row
-      std::fill(rvals.begin(), rvals.end(), 0.0);
+      dolfin_assert(local_row < _values.size());
+      for (uint i = 0; i < _values[local_row].size(); ++i)
+        _values[local_row][i].second = 0.0;
 
       // Place one on diagonal
-      std::vector<uint>::const_iterator column = std::find(rcols.begin(), rcols.end(), global_row);
-      if (column != rcols.end())
-        rvals[column - rcols.begin()] = 1.0;
+      std::vector<std::pair<uint, double> >::iterator diagonal
+          = std::find_if(_values[local_row].begin(), _values[local_row].end(),
+                         CompareIndex(global_row));
+
+      if (diagonal != _values[local_row].end())
+        diagonal->second = 1.0;
       else
-      {
-        rcols.push_back(global_row);
-        rvals.push_back(1.0);
-      }
+        _values[local_row].push_back(std::make_pair(global_row, 1.0));
     }
   }
 }
 //-----------------------------------------------------------------------------
 const STLMatrix& STLMatrix::operator*= (double a)
 {
-  std::vector<std::vector<double> >::iterator row;
-  for (row = _vals.begin(); row != _vals.end(); ++row)
-  {
-    std::transform(row->begin(), row->end(), row->begin(),
-                   std::bind1st(std::multiplies<double>(), a));
-  }
+  std::vector<std::vector<std::pair<uint, double> > >::iterator row;
+  std::vector<std::pair<uint, double> >::iterator entry;
+  for (row = _values.begin(); row != _values.end(); ++row)
+    for (entry = row->begin(); entry != row->end(); ++entry)
+      entry->second *=a;
 
   return *this;
 }
@@ -368,10 +371,7 @@ std::string STLMatrix::str(bool verbose) const
     for (uint i = 0; i < _local_range.second - _local_range.first; i++)
     {
       // Sort row data by colmun index
-      const uint num_entries = codim_indices[i].size();
-      std::vector<std::pair<uint, double> > data(num_entries);
-      for (uint k = 0; k < num_entries; k++)
-        data[i] = std::make_pair(codim_indices[i][k], _vals[i][k]);
+      std::vector<std::pair<uint, double> > data = _values[i];
       std::sort(data.begin(), data.end());
 
       // Set precision
@@ -395,7 +395,7 @@ std::string STLMatrix::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-LinearAlgebraFactory& STLMatrix::factory() const
+GenericLinearAlgebraFactory& STLMatrix::factory() const
 {
   if (primary_dim == 0)
     return STLFactory::instance();
@@ -411,8 +411,8 @@ dolfin::uint STLMatrix::nnz() const
 dolfin::uint STLMatrix::local_nnz() const
 {
   uint _nnz = 0;
-  for (uint i = 0; i < codim_indices.size(); ++i)
-    _nnz += codim_indices[i].size();
+  for (uint i = 0; i < _values.size(); ++i)
+    _nnz += _values[i].size();
   return _nnz;
 }
 //-----------------------------------------------------------------------------

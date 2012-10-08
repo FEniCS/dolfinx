@@ -50,7 +50,7 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
   }
 
   // Check that global numbers have been computed.
-  if (!mesh.parallel_data().have_global_entity_indices(dim))
+  if (!mesh.topology().have_global_indices(dim))
   {
     dolfin_error("MeshDistributed.cpp",
                  "compute off-process indices",
@@ -58,7 +58,7 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
   }
 
   // Check that global numbers have been computed.
-  if (!mesh.parallel_data().have_global_entity_indices(D))
+  if (!mesh.topology().have_global_indices(D))
   {
     dolfin_error("MeshDistributed.cpp",
                  "compute off-process indices",
@@ -67,7 +67,7 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
 
   // Get global cell entity indices on this process
   const std::vector<uint> global_entity_indices
-      = mesh.parallel_data().global_entity_indices_as_vector(dim);
+      = mesh.topology().global_indices(dim);
 
   dolfin_assert(global_entity_indices.size() == mesh.num_cells());
 

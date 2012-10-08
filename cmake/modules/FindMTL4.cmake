@@ -52,7 +52,9 @@ if (BLAS_FOUND)
 endif()
 
 # Try compiling and running test program
-if (MTL4_INCLUDE_DIRS)
+if (DOLFIN_SKIP_BUILD_TESTS)
+  set(MTL4_TEST_RUNS TRUE)
+elseif (MTL4_INCLUDE_DIRS)
 
   # Find Boost, needed by MTL4
   set(BOOST_ROOT $ENV{BOOST_DIR})

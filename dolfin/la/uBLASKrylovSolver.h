@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2006-2011
+// Modified by Anders Logg 2006-2012
 //
 // First added:  2006-05-31
-// Last changed: 2011-11-11
+// Last changed: 2012-08-20
 
 #ifndef __UBLAS_KRYLOV_SOLVER_H
 #define __UBLAS_KRYLOV_SOLVER_H
@@ -29,7 +29,7 @@
 #include <dolfin/common/types.h>
 #include "ublas.h"
 #include "GenericLinearSolver.h"
-#include "uBLASKrylovMatrix.h"
+#include "uBLASLinearOperator.h"
 #include "uBLASMatrix.h"
 #include "uBLASVector.h"
 #include "uBLASPreconditioner.h"
@@ -37,7 +37,7 @@
 namespace dolfin
 {
 
-  class GenericMatrix;
+  class GenericLinearOperator;
   class GenericVector;
 
   /// This class implements Krylov methods for linear systems
@@ -62,17 +62,17 @@ namespace dolfin
     ~uBLASKrylovSolver();
 
     /// Solve the operator (matrix)
-    void set_operator(const boost::shared_ptr<const GenericMatrix> A)
+    void set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
     { set_operators(A, A); }
 
     /// Set operator (matrix) and preconditioner matrix
-    void set_operators(const boost::shared_ptr<const GenericMatrix> A,
-                       const boost::shared_ptr<const GenericMatrix> P)
+    void set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
+                       const boost::shared_ptr<const GenericLinearOperator> P)
     { this->A = A; this->P = P; }
 
 
     /// Return the operator (matrix)
-    const GenericMatrix& get_operator() const
+    const GenericLinearOperator& get_operator() const
     {
       if (!A)
       {
@@ -87,10 +87,7 @@ namespace dolfin
     uint solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
-
-    /// Solve linear system Ax = b and return number of iterations (virtual matrix)
-    uint solve(const uBLASKrylovMatrix& A, uBLASVector& x, const uBLASVector& b);
+    uint solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
 
     /// Return a list of available solver methods
     static std::vector<std::pair<std::string, std::string> > methods();
@@ -104,9 +101,11 @@ namespace dolfin
   private:
 
     /// Select solver and solve linear system Ax = b and return number of iterations
-    template<typename Mat>
-    uint solve_krylov(const Mat& A, uBLASVector& x, const uBLASVector& b,
-                      const Mat& P);
+    template<typename MatA, typename MatP>
+    uint solve_krylov(const MatA& A,
+                      uBLASVector& x,
+                      const uBLASVector& b,
+                      const MatP& P);
 
     /// Solve linear system Ax = b using CG
     template<typename Mat>
@@ -141,20 +140,20 @@ namespace dolfin
     bool report;
 
     /// Operator (the matrix)
-    boost::shared_ptr<const GenericMatrix> A;
+    boost::shared_ptr<const GenericLinearOperator> A;
 
     /// Matrix used to construct the preconditoner
-    boost::shared_ptr<const GenericMatrix> P;
+    boost::shared_ptr<const GenericLinearOperator> P;
 
   };
   //---------------------------------------------------------------------------
   // Implementation of template functions
   //---------------------------------------------------------------------------
-  template<typename Mat>
-  dolfin::uint uBLASKrylovSolver::solve_krylov(const Mat& A,
+  template<typename MatA, typename MatP>
+  dolfin::uint uBLASKrylovSolver::solve_krylov(const MatA& A,
                                                uBLASVector& x,
                                                const uBLASVector& b,
-                                               const Mat& P)
+                                               const MatP& P)
   {
     // Check dimensions
     uint M = A.size(0);
@@ -388,7 +387,8 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template<typename Mat>
-  dolfin::uint uBLASKrylovSolver::solveBiCGStab(const Mat& A, uBLASVector& x,
+  dolfin::uint uBLASKrylovSolver::solveBiCGStab(const Mat& A,
+                                                uBLASVector& x,
                                                 const uBLASVector& b,
                                                 bool& converged) const
   {

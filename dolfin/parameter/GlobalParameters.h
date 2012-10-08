@@ -115,9 +115,6 @@ namespace dolfin
         default_backend = "Epetra";
         #endif
       #endif
-      #ifdef HAS_MTL4
-      allowed_backends.insert("MTL4");
-      #endif
       p.add("linear_algebra_backend",
             default_backend,
             allowed_backends);

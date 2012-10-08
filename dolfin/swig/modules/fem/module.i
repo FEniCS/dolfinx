@@ -39,6 +39,8 @@
 #include "dolfin/parameter/Parameters.h"
 
 // #include types from la submodule of module la
+#include "dolfin/la/LinearAlgebraObject.h"
+#include "dolfin/la/GenericLinearOperator.h"
 #include "dolfin/la/GenericTensor.h"
 #include "dolfin/la/GenericMatrix.h"
 #include "dolfin/la/GenericSparsityPattern.h"
@@ -67,11 +69,6 @@
 // Include types from present module fem
 
 // #include types from quadrature submodule
-#include "dolfin/quadrature/Quadrature.h"
-#include "dolfin/quadrature/GaussianQuadrature.h"
-#include "dolfin/quadrature/GaussQuadrature.h"
-#include "dolfin/quadrature/RadauQuadrature.h"
-#include "dolfin/quadrature/LobattoQuadrature.h"
 #include "dolfin/quadrature/BarycenterQuadrature.h"
 
 // #include types from fem submodule
@@ -87,6 +84,7 @@
 #include "dolfin/fem/assemble.h"
 #include "dolfin/fem/solve.h"
 #include "dolfin/fem/Form.h"
+#include "dolfin/fem/AssemblerBase.h"
 #include "dolfin/fem/Assembler.h"
 #include "dolfin/fem/SparsityPatternBuilder.h"
 #include "dolfin/fem/SymmetricAssembler.h"
@@ -137,6 +135,8 @@ import_array();
 
 // %import types from submodule la of SWIG module la
 %include "dolfin/swig/la/pre.i"
+%import(module="la") "dolfin/la/LinearAlgebraObject.h"
+%import(module="la") "dolfin/la/GenericLinearOperator.h"
 %import(module="la") "dolfin/la/GenericTensor.h"
 %import(module="la") "dolfin/la/GenericMatrix.h"
 %import(module="la") "dolfin/la/GenericSparsityPattern.h"
@@ -172,11 +172,6 @@ import_array();
 %include "dolfin/swig/adaptivity/docstrings.i"
 
 // %include types from submodule quadrature
-%include "dolfin/quadrature/Quadrature.h"
-%include "dolfin/quadrature/GaussianQuadrature.h"
-%include "dolfin/quadrature/GaussQuadrature.h"
-%include "dolfin/quadrature/RadauQuadrature.h"
-%include "dolfin/quadrature/LobattoQuadrature.h"
 %include "dolfin/quadrature/BarycenterQuadrature.h"
 
 // %include types from submodule fem
@@ -193,6 +188,7 @@ import_array();
 %include "dolfin/fem/assemble.h"
 %include "dolfin/fem/solve.h"
 %include "dolfin/fem/Form.h"
+%include "dolfin/fem/AssemblerBase.h"
 %include "dolfin/fem/Assembler.h"
 %include "dolfin/fem/SparsityPatternBuilder.h"
 %include "dolfin/fem/SymmetricAssembler.h"

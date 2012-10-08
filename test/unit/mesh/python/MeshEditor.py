@@ -36,12 +36,9 @@ class MeshEditorTest(unittest.TestCase):
         editor.init_cells(1)
 
         # Add vertices
-        p = Point(0.0, 0.0)
-        editor.add_vertex(0, p)
-        p = Point(1.0, 0.0)
-        editor.add_vertex(1, p)
-        p = Point(0.0, 1.0)
-        editor.add_vertex(2, p)
+        editor.add_vertex(0, 0.0, 0.0)
+        editor.add_vertex(1, 1.0, 0.0)
+        editor.add_vertex(2, 0.0, 1.0)
 
         # Add cell
         editor.add_cell(0, 0, 1, 2)

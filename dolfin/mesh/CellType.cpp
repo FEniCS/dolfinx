@@ -43,11 +43,12 @@ namespace dolfin
   {
   public:
 
-    GlobalSort(const MeshFunction<uint>& global_vertex_indices) : g(global_vertex_indices) {}
+    GlobalSort(const std::vector<uint>& local_to_global_vertex_indices)
+        : g(local_to_global_vertex_indices) {}
 
     bool operator() (const uint& l, const uint& r) { return g[l] < g[r]; }
 
-    const MeshFunction<uint>& g;
+    const std::vector<uint>& g;
 
   };
 
@@ -131,7 +132,7 @@ std::string CellType::type2string(Type type)
 }
 //-----------------------------------------------------------------------------
 bool CellType::ordered(const Cell& cell,
-                       const MeshFunction<uint>* global_vertex_indices) const
+                 const std::vector<uint>& local_to_global_vertex_indices) const
 {
   // Get mesh topology
   const MeshTopology& topology = cell.mesh().topology();
@@ -144,7 +145,7 @@ bool CellType::ordered(const Cell& cell,
   dolfin_assert(vertices);
 
   // Check that vertices are in ascending order
-  if (!increasing(num_vertices, vertices, global_vertex_indices))
+  if (!increasing(num_vertices, vertices, local_to_global_vertex_indices))
     return false;
 
   // Note the comparison below: d + 1 < dim, not d < dim - 1
@@ -155,7 +156,8 @@ bool CellType::ordered(const Cell& cell,
   {
     // Check if entities exist, otherwise skip
     const MeshConnectivity& connectivity = topology(d, 0);
-    if (connectivity.empty()) continue;
+    if (connectivity.empty())
+      continue;
 
     // Get entities
     const uint num_entities = topology(dim, d).size(c);
@@ -175,7 +177,7 @@ bool CellType::ordered(const Cell& cell,
       const uint* v1 = connectivity(e1);
 
       // Check ordering of entities
-      if (!increasing(n0, v0, n1, v1, num_vertices, vertices, global_vertex_indices))
+      if (!increasing(n0, v0, n1, v1, num_vertices, vertices, local_to_global_vertex_indices))
         return false;
     }
   }
@@ -184,51 +186,33 @@ bool CellType::ordered(const Cell& cell,
 }
 //-----------------------------------------------------------------------------
 void CellType::sort_entities(uint num_vertices,
-                             uint* vertices,
-                             const MeshFunction<uint>* global_vertex_indices)
+                        uint* local_vertices,
+                       const std::vector<uint>& local_to_global_vertex_indices)
 {
   // Two cases here, either sort vertices directly (when running in serial)
   // or sort based on the global indices (when running in parallel)
 
-  if (!global_vertex_indices)
-  {
-    // Serial case, just sort
-    std::sort(vertices, vertices + num_vertices);
-  }
-  else
-  {
-    // Parallel case, sort on global indices
-    GlobalSort global_sort(*global_vertex_indices);
-    std::sort(vertices, vertices + num_vertices, global_sort);
-  }
+    // Sort on global vertex indices
+    GlobalSort global_sort(local_to_global_vertex_indices);
+    std::sort(local_vertices, local_vertices + num_vertices, global_sort);
 }
 //-----------------------------------------------------------------------------
-bool CellType::increasing(uint num_vertices, const uint* vertices,
-                          const MeshFunction<uint>* global_vertex_indices)
+bool CellType::increasing(uint num_vertices, const uint* local_vertices,
+                       const std::vector<uint>& local_to_global_vertex_indices)
 {
   // Two cases here, either check vertices directly (when running in serial)
   // or check based on the global indices (when running in parallel)
 
-  if (!global_vertex_indices)
-  {
-    for (uint v = 1; v < num_vertices; v++)
-      if (vertices[v - 1] >= vertices[v])
-        return false;
-  }
-  else
-  {
-    for (uint v = 1; v < num_vertices; v++)
-      if ((*global_vertex_indices)[vertices[v - 1]] >= (*global_vertex_indices)[vertices[v]])
-        return false;
-  }
-
+  for (uint v = 1; v < num_vertices; v++)
+    if (local_to_global_vertex_indices[local_vertices[v - 1]] >= local_to_global_vertex_indices[local_vertices[v]])
+      return false;
   return true;
 }
 //-----------------------------------------------------------------------------
 bool CellType::increasing(uint n0, const uint* v0,
-                          uint n1, const uint* v1,
-                          uint num_vertices, const uint* vertices,
-                          const MeshFunction<uint>* global_vertex_indices)
+                       uint n1, const uint* v1,
+                       uint num_vertices, const uint* local_vertices,
+                       const std::vector<uint>& local_to_global_vertex_indices)
 {
   dolfin_assert(n0 == n1);
   dolfin_assert(num_vertices > n0);
@@ -239,7 +223,7 @@ bool CellType::increasing(uint n0, const uint* v0,
   uint k = 0;
   for (uint i = 0; i < num_vertices; i++)
   {
-    const uint v = vertices[i];
+    const uint v = local_vertices[i];
     bool incident = false;
     for (uint j = 0; j < n0; j++)
     {
@@ -259,7 +243,7 @@ bool CellType::increasing(uint n0, const uint* v0,
   k = 0;
   for (uint i = 0; i < num_vertices; i++)
   {
-    const uint v = vertices[i];
+    const uint v = local_vertices[i];
     bool incident = false;
     for (uint j = 0; j < n1; j++)
     {
@@ -278,20 +262,10 @@ bool CellType::increasing(uint n0, const uint* v0,
   // Compare lexicographic ordering of w0 and w1
   for (uint k = 0; k < num_non_incident; k++)
   {
-    if (!global_vertex_indices)
-    {
-      if (w0[k] < w1[k])
-        return true;
-      else if (w0[k] > w1[k])
-        return false;
-    }
-    else
-    {
-      if ((*global_vertex_indices)[w0[k]] < (*global_vertex_indices)[w1[k]])
-        return true;
-      else if ((*global_vertex_indices)[w0[k]] > (*global_vertex_indices)[w1[k]])
-        return false;
-    }
+    if (local_to_global_vertex_indices[w0[k]] < local_to_global_vertex_indices[w1[k]])
+      return true;
+    else if (local_to_global_vertex_indices[w0[k]] > local_to_global_vertex_indices[w1[k]])
+      return false;
   }
 
   return true;

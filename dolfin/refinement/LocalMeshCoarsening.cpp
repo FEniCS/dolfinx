@@ -358,7 +358,8 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
     {
       //cout << "adding old vertex at: " << v->point() << endl;
       old2new_vertex[v->index()] = vertex;
-      editor.add_vertex(vertex++, v->point());
+      editor.add_vertex(vertex, v->point());
+      vertex++;
     }
   }
 

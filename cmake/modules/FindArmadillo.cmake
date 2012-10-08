@@ -60,9 +60,7 @@ find_library(ARMADILLO_LIBRARIES
   HINTS ${ARMADILLO_DIR}/lib $ENV{ARMADILLO_DIR}/lib
   DOC "The Armadillo library"
   )
-mark_as_advanced(ARMA
-
-DILLO_LIBRARIES)
+mark_as_advanced(ARMADILLO_LIBRARIES)
 
 set(${ARMADILLO_LIBRARIES} "${ARMADILLO_LIBRARIES}")
 
@@ -80,7 +78,9 @@ if (APPLE)
   endif()
 endif()
 
-if (ARMADILLO_INCLUDE_DIRS AND ARMADILLO_LIBRARIES)
+if (DOLFIN_SKIP_BUILD_TESTS)
+  set(ARMADILLO_TEST_RUNS TRUE)
+elseif (ARMADILLO_INCLUDE_DIRS AND ARMADILLO_LIBRARIES)
   include(CheckCXXSourceRuns)
 
   # Armadillo needs the location of the Boost header files

@@ -31,7 +31,7 @@
 namespace dolfin
 {
 
-  class GenericMatrix;
+  class GenericLinearOperator;
   class GenericVector;
 
   /// This class defines an interface for a Krylov solver. The approproiate solver
@@ -46,7 +46,7 @@ namespace dolfin
                  std::string preconditioner="default");
 
     /// Constructor
-    KrylovSolver(boost::shared_ptr<const GenericMatrix> A,
+    KrylovSolver(boost::shared_ptr<const GenericLinearOperator> A,
                  std::string method="default",
                  std::string preconditioner="default");
 
@@ -54,17 +54,18 @@ namespace dolfin
     ~KrylovSolver();
 
     /// Set operator (matrix)
-    void set_operator(const boost::shared_ptr<const GenericMatrix> A);
+    void set_operator(const boost::shared_ptr<const GenericLinearOperator> A);
 
     /// Set operator (matrix) and preconditioner matrix
-    void set_operators(const boost::shared_ptr<const GenericMatrix> A,
-                       const boost::shared_ptr<const GenericMatrix> P);
+    void set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
+                       const boost::shared_ptr<const GenericLinearOperator> P);
 
     /// Solve linear system Ax = b
     uint solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b
-    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
+    uint solve(const GenericLinearOperator& A,
+               GenericVector& x, const GenericVector& b);
 
     /// Default parameter values
     static Parameters default_parameters();

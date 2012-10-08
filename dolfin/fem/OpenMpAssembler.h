@@ -28,6 +28,7 @@
 
 #include <vector>
 #include <dolfin/common/types.h>
+#include "AssemblerBase.h"
 
 namespace dolfin
 {
@@ -49,52 +50,40 @@ namespace dolfin
   /// used to specify that the tensor should be assembled over the
   /// entire set of cells or facets.
 
-  class OpenMpAssembler
+  class OpenMpAssembler : public AssemblerBase
   {
   public:
 
+    /// Constructor
+    OpenMpAssembler() {}
+
     /// Assemble tensor from given form
-    static void assemble(GenericTensor& A,
-                         const Form& a,
-                         bool reset_sparsity=true,
-                         bool add_values=false,
-                         bool finalize_tensor=true,
-                         bool keep_diagonal=false);
+    void assemble(GenericTensor& A, const Form& a);
 
   private:
 
     friend class Assembler;
 
     /// Assemble tensor from given form on sub domains
-    static void assemble(GenericTensor& A,
-                         const Form& a,
-                         const MeshFunction<uint>* cell_domains,
-                         const MeshFunction<uint>* exterior_facet_domains,
-                         const MeshFunction<uint>* interior_facet_domains,
-                         bool reset_sparsity=true,
-                         bool add_values=false,
-                         bool finalize_tensor=true,
-                         bool keep_diagonal=false);
+    void assemble(GenericTensor& A, const Form& a,
+                  const MeshFunction<uint>* cell_domains,
+                  const MeshFunction<uint>* exterior_facet_domains,
+                  const MeshFunction<uint>* interior_facet_domains);
 
     // Assemble over cells
-    static void assemble_cells(GenericTensor& A,
-                               const Form& a,
-                               UFC& ufc,
-                               const MeshFunction<uint>* domains,
-                               std::vector<double>* values);
+    void assemble_cells(GenericTensor& A, const Form& a, UFC& ufc,
+                        const MeshFunction<uint>* domains,
+                        std::vector<double>* values);
 
     // Assemble over exterior facets
-    static void assemble_cells_and_exterior_facets(GenericTensor& A,
-                                  const Form& a, UFC& ufc,
-                                  const MeshFunction<uint>* cell_domains,
+    void assemble_cells_and_exterior_facets(GenericTensor& A,
+          const Form& a, UFC& ufc, const MeshFunction<uint>* cell_domains,
 				  const MeshFunction<uint>* exterior_facet_domains,
 				  std::vector<double>* values);
 
     // Assemble over interior facets
-    static void assemble_interior_facets(GenericTensor& A,
-					 const Form& a, UFC& ufc,
-                                         const MeshFunction<uint>* domains,
-					 std::vector<double>* values);
+    void assemble_interior_facets(GenericTensor& A, const Form& a, UFC& ufc,
+          const MeshFunction<uint>* domains, std::vector<double>* values);
 
   };
 

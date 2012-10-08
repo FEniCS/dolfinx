@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2005-2012.
-// Modified by Garth N. Wells, 2005-2010.
-// Modified by Fredrik Valdmanis, 2011
+// Modified by Anders Logg 2005-2012
+// Modified by Garth N. Wells 2005-2010
+// Modified by Fredrik Valdmanis 2011
 //
 // First added:  2005-12-02
-// Last changed: 2012-05-07
+// Last changed: 2012-08-20
 
 #ifdef HAS_PETSC
 
@@ -136,7 +136,6 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
                                      PETScPreconditioner& preconditioner)
   : preconditioner(reference_to_no_delete_pointer(preconditioner)),
     preconditioner_set(false)
-
 {
   // Set parameter values
   parameters = default_parameters();
@@ -145,9 +144,8 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
-                                     boost::shared_ptr<PETScPreconditioner> preconditioner)
-  : preconditioner(preconditioner),
-    preconditioner_set(false)
+  boost::shared_ptr<PETScPreconditioner> preconditioner)
+  : preconditioner(preconditioner), preconditioner_set(false)
 
 {
   // Set parameter values
@@ -167,7 +165,7 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
-                                     boost::shared_ptr<PETScUserPreconditioner> preconditioner)
+  boost::shared_ptr<PETScUserPreconditioner> preconditioner)
   : pc_dolfin(preconditioner.get()), preconditioner_set(false)
 {
   // Set parameter values
@@ -188,7 +186,7 @@ PETScKrylovSolver::~PETScKrylovSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
+void PETScKrylovSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
 {
   set_operators(A, A);
 }
@@ -198,12 +196,11 @@ void PETScKrylovSolver::set_operator(const boost::shared_ptr<const PETScBaseMatr
   set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operators(const boost::shared_ptr<const GenericMatrix> A,
-                                      const boost::shared_ptr<const GenericMatrix> P)
+void PETScKrylovSolver::set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
+                                      const boost::shared_ptr<const GenericLinearOperator> P)
 {
-  boost::shared_ptr<const PETScBaseMatrix> _A = GenericTensor::down_cast<const PETScMatrix>(A);
-  boost::shared_ptr<const PETScBaseMatrix> _P = GenericTensor::down_cast<const PETScMatrix>(P);
-  set_operators(_A, _P);
+  set_operators(as_type<const PETScBaseMatrix>(A),
+                as_type<const PETScBaseMatrix>(P));
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_operators(const boost::shared_ptr<const PETScBaseMatrix> A,
@@ -229,15 +226,17 @@ const PETScBaseMatrix& PETScKrylovSolver::get_operator() const
 dolfin::uint PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
   //check_dimensions(*A, x, b);
-  return solve(x.down_cast<PETScVector>(), b.down_cast<PETScVector>());
+  return solve(as_type<PETScVector>(x), as_type<const PETScVector>(b));
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
+dolfin::uint PETScKrylovSolver::solve(const GenericLinearOperator& A,
+                                      GenericVector& x,
                                       const GenericVector& b)
 {
   //check_dimensions(A, x, b);
-  return solve(A.down_cast<PETScBaseMatrix>(), x.down_cast<PETScVector>(),
-               b.down_cast<PETScVector>());
+  return solve(as_type<const PETScBaseMatrix>(A),
+               as_type<PETScVector>(x),
+               as_type<const PETScVector>(b));
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
@@ -246,13 +245,14 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   dolfin_assert(_ksp);
 
   // Check dimensions
-  const uint N = A->size(1);
   const uint M = A->size(0);
-  if (N != b.size())
+  const uint N = A->size(1);
+  if (A->size(0) != b.size())
   {
     dolfin_error("PETScKrylovSolver.cpp",
-                 "solve linear system using PETSc Krylov solver",
-                 "Non-matching dimensions for linear system");
+                 "unable to solve linear system with PETSc Krylov solver",
+                 "Non-matching dimensions for linear system (matrix has %d rows and right-hand side vector has %d rows)",
+                 A->size(0), b.size());
   }
 
   // Write a message
@@ -319,15 +319,13 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
 
   const bool profile_performance = parameters["profile"];
   if (profile_performance)
-    PetscLogBegin();
-
-  // Solve
-  KSPSolve(*_ksp, *b.vec(), *x.vec());
-
-  if (profile_performance)
   {
+    PetscLogBegin();
+    KSPSolve(*_ksp, *b.vec(), *x.vec());
     PetscLogView(PETSC_VIEWER_STDOUT_WORLD);
   }
+  else
+    KSPSolve(*_ksp, *b.vec(), *x.vec());
 
   // Get the number of iterations
   int num_iterations = 0;
@@ -361,22 +359,15 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   return num_iterations;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovSolver::solve(const PETScBaseMatrix& A, PETScVector& x,
+dolfin::uint PETScKrylovSolver::solve(const PETScBaseMatrix& A,
+                                      PETScVector& x,
                                       const PETScVector& b)
 {
-  // Check dimensions
-  const uint N = A.size(1);
-  if (N != b.size())
-  {
-    dolfin_error("PETScKrylovSolver.cpp",
-                 "solve linear system using PETSc Krylov solver",
-                 "Non-matching dimensions for linear system");
-  }
-
   // Set operator
   boost::shared_ptr<const PETScBaseMatrix> _A(&A, NoDeleter());
   set_operator(_A);
 
+  // Call solve
   return solve(x, b);
 }
 //-----------------------------------------------------------------------------

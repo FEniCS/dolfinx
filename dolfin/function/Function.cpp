@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2011 Anders Logg
+// Copyright (C) 2003-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -20,7 +20,7 @@
 // Modified by Andre Massing 2009
 //
 // First added:  2003-11-28
-// Last changed: 2011-11-14
+// Last changed: 2012-10-02
 
 #include <algorithm>
 #include <map>
@@ -350,8 +350,8 @@ void Function::eval(Array<double>& values,
                     const Cell& dolfin_cell,
                     const ufc::cell& ufc_cell) const
 {
-  // Developer note: work arrays/vectors are re-created each time this function
-  //                 is called for thread-safety
+  // Developer note: work arrays/vectors are re-created each time this
+  //                 function is called for thread-safety
 
   dolfin_assert(_function_space->element());
   const FiniteElement& element = *_function_space->element();
@@ -582,6 +582,13 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
       }
     }
   }
+}
+//-----------------------------------------------------------------------------
+void Function::compute_vertex_values(std::vector<double>& vertex_values)
+{
+  dolfin_assert(_function_space);
+  dolfin_assert(_function_space->mesh());
+  compute_vertex_values(vertex_values, *_function_space->mesh());
 }
 //-----------------------------------------------------------------------------
 void Function::update() const

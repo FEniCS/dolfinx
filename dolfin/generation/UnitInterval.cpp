@@ -16,8 +16,9 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-11-23
-// Last changed: 2011-11-22
+// Last changed: 2012-09-27
 
+#include <boost/assign.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshEditor.h>
@@ -55,15 +56,15 @@ UnitInterval::UnitInterval(uint nx) : Mesh()
   // Create main vertices:
   for (uint ix = 0; ix <= nx; ix++)
   {
-    const double x = static_cast<double>(ix) / static_cast<double>(nx);
+    const double x = static_cast<double>(ix)/static_cast<double>(nx);
     editor.add_vertex(ix, x);
   }
 
   // Create intervals
-  for (uint ix = 0; ix < nx; ix++) {
-    const uint v0 = ix;
-    const uint v1 = v0 + 1;
-    editor.add_cell(ix, v0, v1);
+  for (uint ix = 0; ix < nx; ix++)
+  {
+    std::vector<uint> cell_data = boost::assign::list_of(ix)(ix + 1);
+    editor.add_cell(ix, cell_data);
   }
 
   // Close mesh editor

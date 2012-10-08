@@ -137,7 +137,7 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
   num_global_cells = mesh.num_cells();
   num_vertices_per_cell = mesh.type().num_entities(0);
 
-  /// Get coordinates for all vertices stored on local processor
+  // Get coordinates for all vertices stored on local processor
   vertex_coordinates.reserve(mesh.num_vertices());
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
@@ -147,12 +147,12 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
     vertex_coordinates.push_back(coordinates);
   }
 
-  /// Get global vertex indices for all vertices stored on local processor
+  // Get global vertex indices for all vertices stored on local processor
   vertex_indices.reserve(mesh.num_vertices());
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
     vertex_indices.push_back(vertex->index());
 
-  /// Get global vertex indices for all cells stored on local processor
+  // Get global vertex indices for all cells stored on local processor
   cell_vertices.reserve(mesh.num_cells());
   global_cell_indices.reserve(mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -173,7 +173,6 @@ void LocalMeshData::broadcast_mesh_data()
   // Get number of processes
   const uint num_processes = MPI::num_processes();
 
-  dolfin_debug("check");
   // Broadcast simple scalar data
   {
     std::vector<uint> values;
@@ -185,13 +184,13 @@ void LocalMeshData::broadcast_mesh_data()
     MPI::broadcast(values);
   }
 
-  dolfin_debug("check");
-  /// Broadcast coordinates for vertices
+  // Broadcast coordinates for vertices
   {
     std::vector<std::vector<double> > send_values(num_processes);
     for (uint p = 0; p < num_processes; p++)
     {
-      const std::pair<uint, uint> local_range = MPI::local_range(p, num_global_vertices);
+      const std::pair<uint, uint> local_range
+          = MPI::local_range(p, num_global_vertices);
       log(TRACE, "Sending %d vertices to process %d, range is (%d, %d)",
           local_range.second - local_range.first, p, local_range.first, local_range.second);
       for (uint i = local_range.first; i < local_range.second; i++)
@@ -205,8 +204,7 @@ void LocalMeshData::broadcast_mesh_data()
     unpack_vertex_coordinates(values);
   }
 
-  dolfin_debug("check");
-  /// Broadcast global vertex indices
+  // Broadcast global vertex indices
   {
     std::vector<std::vector<uint> > send_values(num_processes);
     for (uint p = 0; p < num_processes; p++)
@@ -221,7 +219,7 @@ void LocalMeshData::broadcast_mesh_data()
   }
 
   dolfin_debug("check");
-  /// Broadcast cell vertices
+  // Broadcast cell vertices
   {
     std::vector<std::vector<uint> > send_values(num_processes);
     for (uint p = 0; p < num_processes; p++)
@@ -258,7 +256,7 @@ void LocalMeshData::receive_mesh_data()
   }
 
   dolfin_debug("check");
-  /// Receive coordinates for vertices
+  // Receive coordinates for vertices
   {
     std::vector<std::vector<double> > send_values;
     std::vector<double> values;
@@ -267,7 +265,7 @@ void LocalMeshData::receive_mesh_data()
   }
 
   dolfin_debug("check");
-  /// Receive global vertex indices
+  // Receive global vertex indices
   {
     std::vector<std::vector<uint> > send_values;
     std::vector<uint> values;

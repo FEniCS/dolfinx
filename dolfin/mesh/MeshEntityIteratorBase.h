@@ -118,7 +118,7 @@ namespace dolfin
 
     /// Member access operator
     T* operator->()
-    { entity._index = (index ? index[_pos] : _pos); return &entity; }
+    { entity._local_index = (index ? index[_pos] : _pos); return &entity; }
 
     /// Random access operator
     T& operator[] (uint pos)

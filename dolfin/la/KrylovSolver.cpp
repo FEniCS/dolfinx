@@ -16,13 +16,14 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Ola Skavhaug 2008
-// Modified by Anders Logg 2008-2011
+// Modified by Anders Logg 2008-2012
 //
 // First added:  2007-07-03
-// Last changed: 2011-10-21
+// Last changed: 2012-08-21
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/Parameters.h>
+#include <dolfin/log/LogStream.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "DefaultFactory.h"
@@ -40,7 +41,7 @@ Parameters KrylovSolver::default_parameters()
   p.add("absolute_tolerance",      1.0e-15);
   p.add("divergence_limit",        1.0e4);
   p.add("maximum_iterations",      10000);
-  p.add("report",                  true); /* deprecate? */
+  p.add("report",                  true);
   p.add("monitor_convergence",     false);
   p.add("error_on_nonconvergence", true);
   p.add("nonzero_initial_guess",   false);
@@ -84,7 +85,7 @@ KrylovSolver::KrylovSolver(std::string method, std::string preconditioner)
   init(method, preconditioner);
 }
 //-----------------------------------------------------------------------------
-KrylovSolver::KrylovSolver(boost::shared_ptr<const GenericMatrix> A,
+KrylovSolver::KrylovSolver(boost::shared_ptr<const GenericLinearOperator> A,
                            std::string method,
                            std::string preconditioner)
 {
@@ -100,15 +101,15 @@ KrylovSolver::~KrylovSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
+void KrylovSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
 {
   dolfin_assert(solver);
   solver->parameters.update(parameters);
   solver->set_operator(A);
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::set_operators(const boost::shared_ptr<const GenericMatrix> A,
-                                 const boost::shared_ptr<const GenericMatrix> P)
+void KrylovSolver::set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
+                                 const boost::shared_ptr<const GenericLinearOperator> P)
 {
   dolfin_assert(solver);
   solver->parameters.update(parameters);
@@ -125,7 +126,7 @@ dolfin::uint KrylovSolver::solve(GenericVector& x, const GenericVector& b)
   return solver->solve(x, b);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint KrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
+dolfin::uint KrylovSolver::solve(const GenericLinearOperator& A, GenericVector& x,
                                  const GenericVector& b)
 {
   dolfin_assert(solver);

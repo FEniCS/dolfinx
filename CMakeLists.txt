@@ -43,6 +43,7 @@ option(DOLFIN_ENABLE_UNIT_TESTS "Enable unit tests." ON)
 option(DOLFIN_ENABLE_TESTING "Enable testing." OFF)
 option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
 option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
+option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests." OFF)
 
 #option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." ON)
 
@@ -67,7 +68,6 @@ list(APPEND OPTIONAL_PACKAGES "PETSc")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
 list(APPEND OPTIONAL_PACKAGES "TAO")
 list(APPEND OPTIONAL_PACKAGES "Trilinos")
-list(APPEND OPTIONAL_PACKAGES "MTL4")
 list(APPEND OPTIONAL_PACKAGES "UMFPACK")
 list(APPEND OPTIONAL_PACKAGES "CHOLMOD")
 list(APPEND OPTIONAL_PACKAGES "PaStiX")
@@ -77,6 +77,7 @@ list(APPEND OPTIONAL_PACKAGES "CGAL")
 list(APPEND OPTIONAL_PACKAGES "zlib")
 list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "Sphinx")
+list(APPEND OPTIONAL_PACKAGES "HDF5")
 list(APPEND OPTIONAL_PACKAGES "VTK")
 
 # Add options
@@ -261,7 +262,7 @@ endif()
 # Check for ParMETIS and SCOTCH
 if (DOLFIN_ENABLE_MPI AND MPI_C_FOUND)
   if (DOLFIN_ENABLE_PARMETIS)
-    find_package(ParMETIS)
+    find_package(ParMETIS 3.2)
   endif()
 
   if (DOLFIN_ENABLE_SCOTCH)
@@ -271,14 +272,27 @@ endif()
 
 # Check for UMFPACK
 if (DOLFIN_ENABLE_UMFPACK)
-  find_package(AMD)
-  find_package(BLAS)
-  find_package(UMFPACK)
+  find_package(AMD QUIET)
+  find_package(BLAS QUIET)
+  find_package(UMFPACK QUIET)
 endif()
 
 # Check for CHOLMOD
 if (DOLFIN_ENABLE_CHOLMOD)
-  find_package(CHOLMOD)
+  find_package(CHOLMOD QUIET)
+endif()
+
+# Check for HDF5
+if (DOLFIN_ENABLE_HDF5)
+  find_package(HDF5)
+
+  # Check that HDF5 has parallel support
+  if (DOLFIN_ENABLE_MPI)
+    if (NOT HDF5_IS_PARALLEL)
+      message(STATUS "HDF5 has been found, but is missing parallel support. It will not be enabled.")
+      set(HDF5_FOUND false)
+    endif()
+  endif()
 endif()
 
 # Check for PaStiX
@@ -344,11 +358,6 @@ if (DOLFIN_ENABLE_TRILINOS)
   else()
     message(STATUS "Trilinos could not be found")
   endif()
-endif()
-
-# Check for MTL4
-if (DOLFIN_ENABLE_MTL4)
-  find_package(MTL4)
 endif()
 
 # Check for PETSc, SLEPc and TAO

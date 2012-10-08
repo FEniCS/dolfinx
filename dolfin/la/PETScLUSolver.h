@@ -35,9 +35,9 @@
 namespace dolfin
 {
   /// Forward declarations
-  class GenericMatrix;
+  class GenericLinearOperator;
   class GenericVector;
-  class PETScKrylovMatrix;
+  class PETScLinearOperator;
   class PETScMatrix;
   class PETScVector;
 
@@ -60,19 +60,19 @@ namespace dolfin
     ~PETScLUSolver();
 
     /// Set operator (matrix)
-    void set_operator(const boost::shared_ptr<const GenericMatrix> A);
+    void set_operator(const boost::shared_ptr<const GenericLinearOperator> A);
 
     /// Set operator (matrix)
     void set_operator(const boost::shared_ptr<const PETScMatrix> A);
 
     /// Get operator (matrix)
-    const GenericMatrix& get_operator() const;
+    const GenericLinearOperator& get_operator() const;
 
     /// Solve linear system Ax = b
     uint solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b
-    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
+    uint solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b
     uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b);

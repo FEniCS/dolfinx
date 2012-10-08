@@ -52,6 +52,8 @@ int main(int argc, char* argv[])
   info("Assembly for various forms and backends");
   set_log_active(false);
 
+  parameters["reorder_dofs"] = false;
+
   // Forms
   std::vector<std::string> forms;
   forms.push_back("poisson1");
@@ -67,7 +69,6 @@ int main(int argc, char* argv[])
   backends.push_back("uBLAS");
   backends.push_back("PETSc");
   backends.push_back("Epetra");
-  backends.push_back("MTL4");
   backends.push_back("STL");
 
   // Override forms and backends with command-line arguments

@@ -550,7 +550,9 @@ void DofMap::check_dimensional_consistency(const ufc::dofmap& dofmap,
   {
     dolfin_error("DofMap.cpp",
                  "create mapping of degrees of freedom",
-                 "Geometric dimension of the UFC dofmap and the mesh do not match");
+                 "Geometric dimension of the UFC dofmap (dim = %d) and the mesh (dim = %d) do not match",
+                 dofmap.geometric_dimension(),
+                 mesh.geometry().dim());
   }
 
   // Check topological dimension
@@ -558,7 +560,9 @@ void DofMap::check_dimensional_consistency(const ufc::dofmap& dofmap,
   {
     dolfin_error("DofMap.cpp",
                  "create mapping of degrees of freedom",
-                 "Topological dimension of the UFC dofmap and the mesh do not match");
+                 "Topological dimension of the UFC dofmap (dim = %d) and the mesh (dim = %d) do not match",
+                 dofmap.topological_dimension(),
+                 mesh.topology().dim());
   }
 }
 //-----------------------------------------------------------------------------

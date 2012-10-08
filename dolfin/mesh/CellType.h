@@ -112,11 +112,11 @@ namespace dolfin
 
     /// Order entities locally
     virtual void order(Cell& cell,
-                    const MeshFunction<uint>* global_vertex_indices) const = 0;
+            const std::vector<uint>& local_to_global_vertex_indices) const = 0;
 
     /// Check if entities are ordered
     bool ordered(const Cell& cell,
-                 const MeshFunction<uint>* global_vertex_indices) const;
+                 const std::vector<uint>& local_to_global_vertex_indices) const;
 
     /// Return description of cell type
     virtual std::string description(bool plural) const = 0;
@@ -128,20 +128,20 @@ namespace dolfin
 
     // Sort vertices based on global entity indices
     static void sort_entities(uint num_vertices,
-                              uint* vertices,
-                              const MeshFunction<uint>* global_vertex_indices);
+                      uint* vertices,
+                      const std::vector<uint>& local_to_global_vertex_indices);
 
   private:
 
     // Check if list of vertices is increasing
     static bool increasing(uint num_vertices, const uint* vertices,
-                           const MeshFunction<uint>* global_vertex_indices);
+                     const std::vector<uint>& local_to_global_vertex_indices);
 
     // Check that <entity e0 with vertices v0> <= <entity e1 with vertices v1>
     static bool increasing(uint n0, const uint* v0,
-                           uint n1, const uint* v1,
-                           uint num_vertices, const uint* vertices,
-                           const MeshFunction<uint>* global_vertex_indices);
+                       uint n1, const uint* v1,
+                       uint num_vertices, const uint* vertices,
+                       const std::vector<uint>& local_to_global_vertex_indices);
 
   };
 

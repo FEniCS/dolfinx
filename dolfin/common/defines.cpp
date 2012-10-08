@@ -104,18 +104,18 @@ bool dolfin::has_parmetis()
 #endif
 }
 //-------------------------------------------------------------------------
-bool dolfin::has_gmp()
+bool dolfin::has_zlib()
 {
-#ifdef HAS_GMP
+#ifdef HAS_ZLIB
   return true;
 #else
   return false;
 #endif
 }
 //-------------------------------------------------------------------------
-bool dolfin::has_zlib()
+bool dolfin::has_hdf5()
 {
-#ifdef HAS_ZLIB
+#ifdef HAS_HDF5
   return true;
 #else
   return false;

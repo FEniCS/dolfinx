@@ -38,7 +38,7 @@ namespace dolfin
 
   /// Forward declarations
   class GenericVector;
-  class GenericMatrix;
+  class GenericLinearOperator;
 
   /// This class implements the direct solution (Cholesky
   /// factorization) of linear systems of the form Ax = b. Sparse
@@ -54,13 +54,13 @@ namespace dolfin
     CholmodCholeskySolver();
 
     /// Constructor
-    CholmodCholeskySolver(boost::shared_ptr<const GenericMatrix> A);
+    CholmodCholeskySolver(boost::shared_ptr<const GenericLinearOperator> A);
 
     /// Destructor
     ~CholmodCholeskySolver();
 
     /// Solve the operator (matrix)
-    void set_operator(const boost::shared_ptr<const GenericMatrix> A)
+    void set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
     {
       dolfin_error("CholmodCholeskySolver.h",
                    "set operator for CHOLMOD Cholesky solver",
@@ -68,10 +68,10 @@ namespace dolfin
     }
 
     /// Solve linear system Ax = b for a sparse matrix using CHOLMOD
-    virtual uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
+    virtual uint solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
 
     /// Cholesky-factor sparse matrix A if CHOLMOD is installed
-    virtual uint factorize(const GenericMatrix& A);
+    virtual uint factorize(const GenericLinearOperator& A);
 
     /// Solve factorized system (CHOLMOD).
     virtual uint factorized_solve(GenericVector& x, const GenericVector& b);
@@ -82,7 +82,7 @@ namespace dolfin
   private:
 
     // Operator (the matrix)
-    boost::shared_ptr<const GenericMatrix> _A;
+    boost::shared_ptr<const GenericLinearOperator> _A;
 
 #ifdef HAS_CHOLMOD
     // Data for Cholesky factorization of sparse ublas matrix (cholmod only)

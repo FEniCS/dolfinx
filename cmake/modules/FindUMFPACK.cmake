@@ -9,9 +9,9 @@ message(STATUS "Checking for package 'UMFPACK'")
 
 # Find packages that UMFPACK depends on
 set(CMAKE_LIBRARY_PATH ${BLAS_DIR}/lib $ENV{BLAS_DIR}/lib ${CMAKE_LIBRARY_PATH})
-find_package(AMD)
-find_package(BLAS)
-find_package(CHOLMOD)
+find_package(AMD QUIET)
+find_package(BLAS QUIET)
+find_package(CHOLMOD QUIET)
 
 # Check for header file
 find_path(UMFPACK_INCLUDE_DIRS umfpack.h
@@ -63,7 +63,9 @@ if (GFORTRAN_EXECUTABLE)
 endif()
 
 # Try compiling and running test program
-if (UMFPACK_INCLUDE_DIRS AND UMFPACK_LIBRARIES AND AMD_LIBRARIES)
+if (DOLFIN_SKIP_BUILD_TESTS)
+  set(UMFPACK_TEST_RUNS TRUE)
+elseif (UMFPACK_INCLUDE_DIRS AND UMFPACK_LIBRARIES AND AMD_LIBRARIES)
 
   # Set flags for building test program
   set(CMAKE_REQUIRED_INCLUDES ${UMFPACK_INCLUDE_DIRS})

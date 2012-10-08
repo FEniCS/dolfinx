@@ -21,6 +21,8 @@
 // First added:  2005-12-02
 // Last changed: 2011-08-23
 
+#include <boost/assign.hpp>
+
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshEditor.h>
@@ -35,12 +37,18 @@ UnitSphere::UnitSphere(uint n) : Mesh()
           "It generates meshes of very bad quality (very thin tetrahedra).");
 
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
+  if (MPI::is_receiver())
+  {
+    MeshPartitioning::build_distributed_mesh(*this);
+    return;
+  }
 
   if (n < 1)
+  {
     dolfin_error("UnitSphere.cpp",
                  "create unit sphere",
                  "Size of unit sphere must be at least 1");
+  }
 
   const uint nx = n;
   const uint ny = n;
@@ -52,22 +60,24 @@ UnitSphere::UnitSphere(uint n) : Mesh()
   MeshEditor editor;
   editor.open(*this, CellType::tetrahedron, 3, 3);
 
+  // Storage for vertices
+  std::vector<double> x(3);
+
   // Create vertices
   editor.init_vertices((nx + 1)*(ny+1)*(nz+1));
   uint vertex = 0;
   for (uint iz = 0; iz <= nz; iz++)
   {
-    const double z = -1.0+ static_cast<double>(iz)*2.0 / static_cast<double>(nz);
+    x[2] = -1.0 + static_cast<double>(iz)*2.0/static_cast<double>(nz);
     for (uint iy = 0; iy <= ny; iy++)
     {
-      const double y =-1.0+ static_cast<double>(iy)*2.0 / static_cast<double>(ny);
+      x[1] = -1.0 + static_cast<double>(iy)*2.0/static_cast<double>(ny);
       for (uint ix = 0; ix <= nx; ix++)
       {
-        const double x = -1.0+static_cast<double>(ix)*2.0 / static_cast<double>(nx);
-        double trns_x = transformx(x, y, z);
-        double trns_y = transformy(x, y, z);
-        double trns_z = transformz(x, y, z);
-        editor.add_vertex(vertex++, trns_x, trns_y, trns_z);
+        x[0] = -1.0 + static_cast<double>(ix)*2.0/static_cast<double>(nx);
+        const std::vector<double> trans_x = transform(x);
+        editor.add_vertex(vertex, trans_x);
+        ++vertex;
       }
     }
   }
@@ -75,6 +85,7 @@ UnitSphere::UnitSphere(uint n) : Mesh()
   // Create tetrahedra
   editor.init_cells(6*nx*ny*nz);
   uint cell = 0;
+  std::vector<std::vector<uint> > cells(6, std::vector<uint>(4));
   for (uint iz = 0; iz < nz; iz++)
   {
     for (uint iy = 0; iy < ny; iy++)
@@ -90,12 +101,18 @@ UnitSphere::UnitSphere(uint n) : Mesh()
         const uint v6 = v2 + (nx + 1)*(ny + 1);
         const uint v7 = v3 + (nx + 1)*(ny + 1);
 
-        editor.add_cell(cell++, v0, v1, v3, v7);
-        editor.add_cell(cell++, v0, v1, v7, v5);
-        editor.add_cell(cell++, v0, v5, v7, v4);
-        editor.add_cell(cell++, v0, v3, v2, v7);
-        editor.add_cell(cell++, v0, v6, v4, v7);
-        editor.add_cell(cell++, v0, v2, v6, v7);
+        // Note that v0 < v1 < v2 < v3 < vmid.
+        cells[0][0] = v0; cells[0][1] = v1; cells[0][2] = v3; cells[0][3] = v7;
+        cells[1][0] = v0; cells[1][1] = v1; cells[1][2] = v7; cells[1][3] = v5;
+        cells[2][0] = v0; cells[2][1] = v5; cells[2][2] = v7; cells[2][3] = v4;
+        cells[3][0] = v0; cells[3][1] = v3; cells[3][2] = v2; cells[3][3] = v7;
+        cells[4][0] = v0; cells[4][1] = v6; cells[4][2] = v4; cells[4][3] = v7;
+        cells[5][0] = v0; cells[5][1] = v2; cells[5][2] = v6; cells[5][3] = v7;
+
+        // Add cells
+        std::vector<std::vector<uint> >::const_iterator _cell;
+        for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
+          editor.add_cell(cell++, *_cell);
       }
     }
   }
@@ -107,37 +124,29 @@ UnitSphere::UnitSphere(uint n) : Mesh()
   if (MPI::is_broadcaster()) { MeshPartitioning::build_distributed_mesh(*this); }
 }
 //-----------------------------------------------------------------------------
-double UnitSphere::transformx(double x, double y, double z)
+std::vector<double> UnitSphere::transform(const std::vector<double>& x) const
 {
-  if (x || y || z)
-    return x*max(std::abs(x), std::abs(y), std::abs(z)) / sqrt(x*x+y*y+z*z);
+  std::vector<double> x_trans(3);
+  if (x[0] || x[1] || x[2])
+  {
+    const double dist = sqrt(x[0]*x[0]+x[1]*x[1]+x[2]*x[2]);
+    x_trans[0] = x[0]*max(x)/dist;
+    x_trans[1] = x[1]*max(x)/dist;
+    x_trans[2] = x[2]*max(x)/dist;
+  }
   else
-    return x;
+    x_trans = x;
+
+  return x_trans;
 }
 //-----------------------------------------------------------------------------
-double UnitSphere::transformy(double x, double y, double z)
+double UnitSphere::max(const std::vector<double>& x) const
 {
-  if (x || y || z)
-    return y*max(std::abs(x),std::abs(y),std::abs(z)) / sqrt(x*x+y*y+z*z);
+  if ((std::abs(x[0]) >= std::abs(x[1]))*(std::abs(x[0]) >= std::abs(x[2])))
+    return std::abs(x[0]);
+  else if ((std::abs(x[1]) >= std::abs(x[0]))*(std::abs(x[1]) >= std::abs(x[2])))
+    return std::abs(x[1]);
   else
-    return y;
-}
-//-----------------------------------------------------------------------------
-double UnitSphere::transformz(double x, double y, double z)
-{
-  if (x || y || z)
-    return z*max(std::abs(x), std::abs(y), std::abs(z)) / sqrt(x*x+y*y+z*z);
-  else
-    return z;
-}
-//-----------------------------------------------------------------------------
-double UnitSphere::max(double x, double y, double z)
-{
-  if ((x >= y)*(x >= z))
-    return x;
-  else if ((y >= x)*(y >= z))
-    return y;
-  else
-    return z;
+    return std::abs(x[2]);
 }
 //-----------------------------------------------------------------------------
