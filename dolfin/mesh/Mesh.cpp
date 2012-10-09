@@ -516,7 +516,7 @@ dolfin::uint Mesh::coordinates_hash() const
 
   // Build coordinate data structure for hashing
   std::vector<double>coords;
-  //coords.reserve(3*mesh.num_vertices());
+  coords.reserve(3*num_vertices());
   for (VertexIterator v(*this); !v.end(); ++v)
   {
     const Point p = v->point();
