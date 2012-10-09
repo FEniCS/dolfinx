@@ -26,6 +26,7 @@
 %template(max) dolfin::MPI::max<double>;
 %template(min) dolfin::MPI::min<double>;
 %template(sum) dolfin::MPI::sum<double>;
+%template(sum) dolfin::MPI::sum<unsigned int>;
 
 //-----------------------------------------------------------------------------
 // Ignore const array interface (Used if the Array type is a const)

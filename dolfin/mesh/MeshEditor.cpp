@@ -71,8 +71,8 @@ void MeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim)
 
   // Save mesh and dimension
   this->mesh = &mesh;
-  this->tdim = tdim;
   this->gdim = gdim;
+  this->tdim = tdim;
 
   // Set cell type
   mesh._cell_type = CellType::create(type);
