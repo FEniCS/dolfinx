@@ -324,5 +324,25 @@ class GmshTest(_ConverterTest):
         meshconvert.convert(fname, handler)
         return handler
 
+class TriangleTester(_TestCase):
+    def test_convert(self):
+        from dolfin import Mesh, MPI
+        if MPI.num_processes() != 1:
+            return
+        fname = os.path.join("data", "triangle")
+        dfname = fname+".xml"
+        
+        # Read triangle file and convert to a dolfin xml mesh file
+        meshconvert.triangle2xml(fname, dfname)
+
+        # Read in dolfin mesh and check number of cells and vertices
+        mesh = Mesh(dfname)
+        self.assertEqual(mesh.num_vertices(), 96)
+        self.assertEqual(mesh.num_cells(), 159)
+
+        # Clean up
+        os.unlink(dfname)
+
 if __name__ == "__main__":
     unittest.main()
+    meshconvert

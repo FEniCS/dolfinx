@@ -160,10 +160,17 @@
 %ignore dolfin::GenericMatrix::operator+=;
 %ignore dolfin::GenericMatrix::operator-=;
 
+%ignore dolfin::GenericMatrix::set(const double*, const uint*,
+				   const uint * const *);
+%ignore dolfin::GenericMatrix::add(const double*, const uint*,
+				   const uint * const * rows);
+%ignore dolfin::GenericMatrix::get(double*, const uint*,
+				   const uint * const *) const;
 %ignore dolfin::GenericMatrix::data;
 %ignore dolfin::GenericMatrix::getitem;
 %ignore dolfin::GenericMatrix::setitem;
 %ignore dolfin::GenericMatrix::operator();
+
 
 //-----------------------------------------------------------------------------
 // Modify uBLAS matrices, as these are not renamed by the GenericMatrix rename
