@@ -20,9 +20,11 @@
 // First added:  2007-11-23
 // Last changed: 2008-11-13
 
+#include "dolfin/common/MPI.h"
 #include "dolfin/common/constants.h"
 #include "dolfin/mesh/CellType.h"
 #include "dolfin/mesh/MeshEditor.h"
+#include "dolfin/mesh/MeshPartitioning.h"
 #include "Interval.h"
 
 using namespace dolfin;

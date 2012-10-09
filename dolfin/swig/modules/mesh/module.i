@@ -88,9 +88,9 @@
 #include "dolfin/mesh/SubMesh.h"
 #include "dolfin/mesh/DomainBoundary.h"
 #include "dolfin/mesh/BoundaryMesh.h"
-#include "dolfin/mesh/Interval.h"
 
 // #include types from generation submodule
+#include "dolfin/generation/Interval.h"
 #include "dolfin/generation/PolygonalMeshGenerator.h"
 #include "dolfin/generation/PolyhedralMeshGenerator.h"
 #include "dolfin/generation/Triangulate.h"
@@ -200,10 +200,10 @@ import_array();
 %include "dolfin/mesh/SubMesh.h"
 %include "dolfin/mesh/DomainBoundary.h"
 %include "dolfin/mesh/BoundaryMesh.h"
-%include "dolfin/mesh/Interval.h"
 %include "dolfin/swig/mesh/post.i"
 
 // %include types from submodule generation
+%include "dolfin/generation/Interval.h"
 %include "dolfin/generation/PolygonalMeshGenerator.h"
 %include "dolfin/generation/PolyhedralMeshGenerator.h"
 %include "dolfin/generation/Triangulate.h"
