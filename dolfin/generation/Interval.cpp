@@ -21,8 +21,8 @@
 // Last changed: 2008-11-13
 
 #include "dolfin/common/constants.h"
-#include "CellType.h"
-#include "MeshEditor.h"
+#include "dolfin/mesh/CellType.h"
+#include "dolfin/mesh/MeshEditor.h"
 #include "Interval.h"
 
 using namespace dolfin;
@@ -30,6 +30,13 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Interval::Interval(uint nx, double a, double b) : Mesh()
 {
+  // Receive mesh according to parallel policy
+  if (MPI::is_receiver())
+  {
+    MeshPartitioning::build_distributed_mesh(*this);
+    return;
+  }
+
   if (std::abs(a - b) < DOLFIN_EPS)
   {
     dolfin_error("Interval.cpp",
@@ -78,5 +85,12 @@ Interval::Interval(uint nx, double a, double b) : Mesh()
 
   // Close mesh editor
   editor.close();
+
+  // Broadcast mesh according to parallel policy
+  if (MPI::is_broadcaster())
+  {
+    MeshPartitioning::build_distributed_mesh(*this);
+    return;
+  }
 }
 //-----------------------------------------------------------------------------

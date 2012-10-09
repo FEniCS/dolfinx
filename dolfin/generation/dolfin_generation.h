@@ -3,6 +3,7 @@
 
 // DOLFIN mesh generation interface
 
+#include <dolfin/mesh/Interval.h>
 #include <dolfin/generation/PolygonalMeshGenerator.h>
 #include <dolfin/generation/PolyhedralMeshGenerator.h>
 #include <dolfin/generation/Triangulate.h>

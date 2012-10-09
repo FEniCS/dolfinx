@@ -35,6 +35,5 @@
 #include <dolfin/mesh/SubMesh.h>
 #include <dolfin/mesh/DomainBoundary.h>
 #include <dolfin/mesh/BoundaryMesh.h>
-#include <dolfin/mesh/Interval.h>
 
 #endif
