@@ -65,7 +65,6 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
 
   // Open boundary mesh for editing
   const uint D = mesh.topology().dim();
-  dolfin_assert(D > 0);
   MeshEditor editor;
   editor.open(boundary, mesh.type().facet_type(), D - 1, mesh.geometry().dim());
 
@@ -81,9 +80,9 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   uint num_boundary_vertices = 0;
   uint num_boundary_cells = 0;
   MeshFunction<bool> boundary_facet(mesh, D - 1, false);
-
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
+    // Boundary facets are connected to exactly one cell
     if (f->num_entities(D) == 1)
     {
       const bool global_exterior_facet =  (f->num_global_entities(D) == 1);
@@ -92,24 +91,12 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
       else if (!global_exterior_facet && interior_boundary)
         boundary_facet[*f] = true;
 
-      boundary_facet[*f] = true;
-
       if (boundary_facet[*f])
       {
         // Count boundary vertices and assign indices
-        if (D > 1)
+        for (VertexIterator v(*f); !v.end(); ++v)
         {
-          for (VertexIterator v(*f); !v.end(); ++v)
-          {
-            const uint vertex_index = v->index();
-            if (boundary_vertices[vertex_index] == num_vertices)
-              boundary_vertices[vertex_index] = num_boundary_vertices++;
-          }
-        }
-        else
-        {
-          // Special handling when Facet is a Point (D=1)
-          const uint vertex_index = f->index();
+          const uint vertex_index = v->index();
           if (boundary_vertices[vertex_index] == num_vertices)
             boundary_vertices[vertex_index] = num_boundary_vertices++;
         }
@@ -157,19 +144,13 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   {
     if (boundary_facet[*f])
     {
-      // Compute new vertex numbers for cell (with special handling for D=1)
-      if (D > 1)
-      {
-        const uint* vertices = f->entities(0);
-        dolfin_assert(vertices);
-        for (uint i = 0; i < cell.size(); i++)
-          cell[i] = boundary_vertices[vertices[i]];
+      // Compute new vertex numbers for cell
+      const uint* vertices = f->entities(0);
+      for (uint i = 0; i < cell.size(); i++)
+        cell[i] = boundary_vertices[vertices[i]];
 
-        // Reorder vertices so facet is right-oriented w.r.t. facet normal
-        reorder(cell, *f);
-      }
-      else
-        cell[0] = boundary_vertices[f->index()];
+      // Reorder vertices so facet is right-oriented w.r.t. facet normal
+      reorder(cell, *f);
 
       // Create mapping from boundary cell to mesh facet if requested
       if (!cell_map.empty())

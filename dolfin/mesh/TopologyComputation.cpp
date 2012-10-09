@@ -63,20 +63,19 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
   {
     // Make sure we really have the connectivity
     if ((ce.empty() && dim != topology.dim()) || (ev.empty() && dim != 0))
-    {
       dolfin_error("TopologyComputation.cpp",
                    "compute topological entities",
                    "Entities of topological dimension %d exist but connectivity is missing", dim);
-    }
+
     return topology.size(dim);
   }
 
   // Make sure connectivity does not already exist
   if (!ce.empty() || !ev.empty())
   {
-    dolfin_error("TopologyComputation.cpp",
-                 "compute topological entities",
-                 "Connectivity for topological dimension %d exists but entities are missing", dim);
+      dolfin_error("TopologyComputation.cpp",
+                   "compute topological entities",
+                   "Connectivity for topological dimension %d exists but entities are missing", dim);
   }
 
   //info("Computing mesh entities of topological dimension %d.", dim);
@@ -232,14 +231,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, uint d0, uint d1)
   Timer timer("compute connectivity " + to_string(d0) + " - " + to_string(d1));
 
   // Decide how to compute the connectivity
-  if (d0 == 0 && d1 == 0)
-  {
-    std::vector<std::vector<uint> > connectivity(topology.size(0), std::vector<uint>(1));
-    for (MeshEntityIterator v(mesh, 0); !v.end(); ++v)
-      connectivity[v->index()][0] = v->index();
-    topology(0, 0).set(connectivity);
-  }
-  else if (d0 < d1)
+  if (d0 < d1)
   {
     // Compute connectivity d1 - d0 and take transpose
     compute_connectivity(mesh, d1, d0);
@@ -251,11 +243,9 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, uint d0, uint d1)
     dolfin_assert(!(d0 > 0 && d1 == 0));
 
     // Choose how to take intersection
-    dolfin_assert(d0 != 0);
-    dolfin_assert(d1 != 0);
     uint d = 0;
-    //if (d0 == 0 && d1 == 0)
-    //  d = mesh.topology().dim();
+    if (d0 == 0 && d1 == 0)
+      d = mesh.topology().dim();
 
     // Compute connectivity d0 - d - d1 and take intersection
     compute_connectivity(mesh, d0, d);
