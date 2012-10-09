@@ -44,8 +44,8 @@ endif()
 
 if (DOLFIN_ENABLE_QT AND QT_FOUND AND DOLFIN_ENABLE_VTK AND QVTK_FOUND)
 
-  # Define headers to run moc on
-  qt4_wrap_cpp(HEADERS_MOC ${HEADERS})
+  # Define headers to run moc on. The OPTIONS ... works around a problem with moc+boost (QT bug #22829).
+  qt4_wrap_cpp(HEADERS_MOC ${HEADERS} OPTIONS -DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED)
 
   # Executable
   add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS_MOC})
