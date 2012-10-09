@@ -29,6 +29,33 @@ from dolfin import *
 
 class Assembly(unittest.TestCase):
 
+    def test_cell_assembly_1D(self):
+
+        mesh = UnitInterval(48)
+        V = FunctionSpace(mesh, "CG", 1)
+
+        v = TestFunction(V)
+        u = TrialFunction(V)
+        f = Constant(10.0)
+
+        a = inner(grad(v), grad(u))*dx
+        L = inner(v, f)*dx
+
+        A_frobenius_norm = 811.75365721381274397572
+        b_l2_norm = 1.43583841167606474087
+
+        # Assemble A and b
+        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
+
+        # Assemble A and b multi-threaded
+        if MPI.num_processes() == 1:
+            parameters["num_threads"] = 4
+            self.assertAlmostEqual(assemble(a).norm("frobenius"),
+                                   A_frobenius_norm, 10)
+            self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
+            parameters["num_threads"] = 0
+
     def test_cell_assembly(self):
 
         mesh = UnitCube(4, 4, 4)

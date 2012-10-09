@@ -93,9 +93,6 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   // Create MeshDomains from local_data
   build_mesh_domains(mesh, local_data);
 
-  if (mesh.topology().dim() == 1)
-    not_working_in_parallel("Distributed mesh in 1D");
-
   // Number facets (see https://bugs.launchpad.net/dolfin/+bug/733834)
   number_entities(mesh, mesh.topology().dim() - 1);
 }
@@ -108,15 +105,16 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   Mesh& mesh = const_cast<Mesh&>(_mesh);
 
   // Check for vertices
-  if (d == 0)
+  if (d == 0 && mesh.topology().dim() > 1)
   {
     dolfin_error("MeshPartitioning.cpp",
                  "number mesh entities",
                  "Vertex indices do not exist; need vertices to number entities of dimension 0");
   }
 
-  // Return if global entity indices are already calculated
-  if (mesh.topology().have_global_indices(d))
+  // Return if global entity indices are already calculated (proceed if
+  // d is a facet because facets will be marked)
+  if (d != (mesh.topology().dim() - 1) && mesh.topology().have_global_indices(d))
     return;
 
   // Initialize entities of dimension d
@@ -198,6 +196,9 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   // Store number of global entities
   mesh.topology().init_global(d, num_global_entities.first);
 
+  // Return if global entity indices are already calculated
+  if (mesh.topology().have_global_indices(d))
+    return;
 
   /// ---- Numbering
 
