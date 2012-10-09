@@ -113,6 +113,14 @@ namespace dolfin
     //void set(uint n, uint i, double x);
     void set(uint local_index, const std::vector<double>& x);
 
+    /// Hash of coordinate values
+    ///
+    /// *Returns*
+    ///     uint
+    ///         A tree-hashed value of the coordinates over all MPI processes
+    ///
+    uint hash() const;
+
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 

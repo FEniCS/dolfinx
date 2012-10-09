@@ -25,7 +25,6 @@
 // First added:  2006-05-09
 // Last changed: 2012-10-02
 
-#include <boost/functional/hash.hpp>
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Timer.h>
@@ -508,65 +507,5 @@ std::string Mesh::str(bool verbose) const
   }
 
   return s.str();
-}
-//-----------------------------------------------------------------------------
-dolfin::uint Mesh::coordinates_hash() const
-{
-  // FIXME: Avoid building coordinate data structure - expensive
-
-  // Build coordinate data structure for hashing
-  std::vector<double>coords;
-  coords.reserve(3*num_vertices());
-  for (VertexIterator v(*this); !v.end(); ++v)
-  {
-    const Point p = v->point();
-    coords.push_back(p.x());
-    coords.push_back(p.y());
-    coords.push_back(p.z());
-  }
-
-  // Compute local hash
-  boost::hash<std::vector<double> > dhash;
-  const uint local_hash = dhash(coords);
-
-  // Gather hash keys from all processes
-  std::vector<uint> all_hashes;
-  MPI::gather(local_hash, all_hashes);
-
-  // Hash the received hash keys
-  boost::hash<std::vector<uint> > uhash;
-  uint global_hash = uhash(all_hashes);
-
-  // Broadcast hash key
-  MPI::broadcast(global_hash);
-
-  return global_hash;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint Mesh::topology_hash() const
-{
-  // FIXME: Avoid building topology data structure - expensive
-
-  // Build topology data structure for hashing
-  std::vector<uint> topology;
-  for (CellIterator cell(*this); !cell.end(); ++cell)
-      for (VertexIterator v(*cell); !v.end(); ++v)
-        topology.push_back(v->index());
-
-  // Compute local hash key
-  boost::hash<std::vector<uint> > uhash;
-  const uint local_hash = uhash(topology);
-
-  // Gather all hash keys
-  std::vector<uint> all_hashes;
-  MPI::gather(local_hash, all_hashes);
-
-  // Hash the received hash keys
-  uint global_hash = uhash(all_hashes);
-
-  // Broadcast hash key
-  MPI::broadcast(global_hash);
-
-  return global_hash;
 }
 //-----------------------------------------------------------------------------

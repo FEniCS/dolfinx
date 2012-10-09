@@ -22,6 +22,7 @@
 #define __MESH_CONNECTIVITY_H
 
 #include <vector>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
 
@@ -142,6 +143,9 @@ namespace dolfin
       dolfin_assert(num_global_connections.size() == index_to_position.size() - 1);
       this->num_global_connections = num_global_connections;
     }
+
+    /// Hash of connections
+    uint hash() const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;

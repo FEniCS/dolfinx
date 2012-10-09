@@ -647,22 +647,6 @@ namespace dolfin
     ///         No example code available for this function.
     std::string str(bool verbose) const;
 
-    /// Hash of coordinate values
-    ///
-    /// *Returns*
-    ///     uint
-    ///         A tree-hashed value of the coordinates over all MPI processes
-    ///
-    uint coordinates_hash() const;
-
-    /// Hash of cell vertex indices
-    ///
-    /// *Returns*
-    ///     uint
-    ///         A tree-hashed value of the topology over all MPI processes
-    ///
-    uint topology_hash() const;
-
   private:
 
     // Friends
