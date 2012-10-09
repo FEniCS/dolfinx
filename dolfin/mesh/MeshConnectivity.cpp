@@ -127,18 +127,19 @@ void MeshConnectivity::set(uint entity, uint* connections)
             this->connections.begin() + index_to_position[entity]);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint MeshConnectivity::hash() const
+std::size_t MeshConnectivity::hash() const
 {
   // Compute local hash key
   boost::hash<std::vector<uint> > uhash;
-  const uint local_hash = uhash(connections);
+  const std::size_t local_hash = uhash(connections);
 
   // Gather all hash keys
-  std::vector<uint> all_hashes;
+  std::vector<std::size_t> all_hashes;
   MPI::gather(local_hash, all_hashes);
 
   // Hash the received hash keys
-  uint global_hash = uhash(all_hashes);
+  boost::hash<std::vector<size_t> > sizet_hash;
+  std::size_t global_hash = sizet_hash(all_hashes);
 
   // Broadcast hash key
   MPI::broadcast(global_hash);

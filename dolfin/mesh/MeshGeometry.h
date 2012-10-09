@@ -119,7 +119,7 @@ namespace dolfin
     ///     uint
     ///         A tree-hashed value of the coordinates over all MPI processes
     ///
-    uint hash() const;
+    std::size_t hash() const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
