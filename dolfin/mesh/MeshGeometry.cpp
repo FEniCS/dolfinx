@@ -111,19 +111,19 @@ void MeshGeometry::set(uint local_index,
 
 }
 //-----------------------------------------------------------------------------
-uint MeshGeometry::hash() const
+std::size_t MeshGeometry::hash() const
 {
   // Compute local hash
   boost::hash<std::vector<double> > dhash;
-  const uint local_hash = dhash(coordinates);
+  const std::size_t local_hash = dhash(coordinates);
 
   // Gather hash keys from all processes
-  std::vector<uint> all_hashes;
+  std::vector<std::size_t> all_hashes;
   MPI::gather(local_hash, all_hashes);
 
   // Hash the received hash keys
-  boost::hash<std::vector<uint> > uhash;
-  uint global_hash = uhash(all_hashes);
+  boost::hash<std::vector<std::size_t> > sizet_hash;
+  std::size_t global_hash = sizet_hash(all_hashes);
 
   // Broadcast hash key
   MPI::broadcast(global_hash);

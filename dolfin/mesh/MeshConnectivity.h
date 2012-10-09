@@ -145,7 +145,7 @@ namespace dolfin
     }
 
     /// Hash of connections
-    uint hash() const;
+    std::size_t hash() const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
