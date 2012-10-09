@@ -217,9 +217,11 @@ else()
   find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams math_tr1 REQUIRED)
 endif()
 
-# Boost timer was not a separate Boost component until version 1.48
-if ("${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}" VERSION_GREATER "1.47")
-  find_package(Boost 1.36 COMPONENTS timer REQUIRED)
+if (WIN32)
+  # Boost timer was not a separate Boost component until version 1.48
+  if ("${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}" VERSION_GREATER "1.47")
+    find_package(Boost COMPONENTS timer REQUIRED)
+  endif()
 endif()
 
 # Check for required packages
