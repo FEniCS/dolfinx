@@ -24,6 +24,7 @@
 #include <iomanip>
 #include <iostream>
 #include <vector>
+#include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
@@ -330,16 +331,16 @@ void XMLMesh::write_mesh(const Mesh& mesh, pugi::xml_node mesh_node)
     switch (mesh.geometry().dim())
     {
       case 1:
-        vertex_node.append_attribute("x") = p.x();
+        vertex_node.append_attribute("x") = boost::str((boost::format("%.16d") % p.x())).c_str();
         break;
       case 2:
-        vertex_node.append_attribute("x") = p.x();
-        vertex_node.append_attribute("y") = p.y();
+        vertex_node.append_attribute("x") = boost::str((boost::format("%.16d") % p.x())).c_str();
+        vertex_node.append_attribute("y") = boost::str((boost::format("%.16d") % p.y())).c_str();
         break;
       case 3:
-        vertex_node.append_attribute("x") = p.x();
-        vertex_node.append_attribute("y") = p.y();
-        vertex_node.append_attribute("z") = p.z();
+        vertex_node.append_attribute("x") = boost::str((boost::format("%.16d") % p.x())).c_str();
+        vertex_node.append_attribute("y") = boost::str((boost::format("%.16d") % p.y())).c_str();
+        vertex_node.append_attribute("z") = boost::str((boost::format("%.16d") % p.z())).c_str();
         break;
       default:
         dolfin_error("XMLMesh.cpp",
