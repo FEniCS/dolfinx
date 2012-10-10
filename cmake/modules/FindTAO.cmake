@@ -51,23 +51,29 @@ endforeach()
 
 # List of possible locations for TAO_DIR
 set(tao_dir_locations "")
-
 list(APPEND tao_dir_locations "/usr/local/lib/tao")
 list(APPEND tao_dir_locations "$ENV{HOME}/tao")
 list(APPEND tao_dir_locations "$ENV{TAO_DIR}")
+list(APPEND tao_dir_locations "${TAO_DIR}")
+#list(APPEND tao_dir_locations "/opt/HPC/FEniCS/src/tao-2.1-p0/")
 
+# Check for PaStiX header file
+find_path(PASTIX_INCLUDE_DIRS pastix.h
+  HINTS ${PASTIX_DIR}/include $ENV{PASTIX_DIR}/include ${PASTIX_DIR} $ENV{PASTIX_DIR}
+  PATH_SUFFIXES install
+  DOC "Directory where the PaStiX header is located"
+ )
 
-# Add other possible locations for TAO_DIR
-set(_SYSTEM_LIB_PATHS "${CMAKE_SYSTEM_LIBRARY_PATH};${CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES}")
-string(REGEX REPLACE ":" ";" libdirs ${_SYSTEM_LIB_PATHS})
-foreach (libdir ${libdirs})
-  get_filename_component(tao_dir_location "${libdir}/" PATH)
-  list(APPEND tao_dir_locations ${tao_dir_location})
-endforeach()
+# Check for PaStiX library
+find_library(PASTIX_LIBRARY pastix
+  HINTS ${PASTIX_DIR}/lib $ENV{PASTIX_DIR}/lib ${PASTIX_DIR} $ENV{PASTIX_DIR}
+  PATH_SUFFIXES install
+  DOC "The PaStiX library"
+  )
 
 # Try to figure out TAO_DIR by finding tao.h
-find_path(TAO_DIR include/tao.h
-  HINTS ${TAO_DIR} $ENV{TAO_DIR}
+find_path(TAO_DIR /include/tao.h
+  HINTS ${TAO_DIR} $ENV{TAO_DIR} 
   PATHS ${tao_dir_locations}
   DOC "tao directory")
 

@@ -327,14 +327,9 @@ void TAOLinearBoundSolver::set_ksp_options()
         }
     }               
 }
-//-------------------------------------------------------------------------------------------
-// Auxiliary non-member functions required by Tao to assemble gradient and hessian of the goal functional 
-// This is implemented only for a quadratic functional (the hessian is constant)
-// The should should be more properly 
-//-------------------------------------------------------------------------------------------
-namespace dolfin
-{
-PetscErrorCode __TAOFormFunctionGradientQuadraticProblem(TaoSolver tao, Vec X, PetscReal *ener, Vec G, void *ptr)
+//-----------------------------------------------------------------------------
+
+PetscErrorCode TAOLinearBoundSolver::__TAOFormFunctionGradientQuadraticProblem(TaoSolver tao, Vec X, PetscReal *ener, Vec G, void *ptr)
 { 
    PetscReal 				 AXX, bX;
    TAOLinearBoundSolver* 	 solver=(TAOLinearBoundSolver*)ptr;
@@ -362,7 +357,7 @@ PetscErrorCode __TAOFormFunctionGradientQuadraticProblem(TaoSolver tao, Vec X, P
 }
 
 //-----------------------------------------------------------------------------
-PetscErrorCode __TAOFormHessianQuadraticProblem(TaoSolver tao,Vec X,Mat *H, Mat *Hpre, MatStructure *flg, void *ptr)
+PetscErrorCode TAOLinearBoundSolver::__TAOFormHessianQuadraticProblem(TaoSolver tao,Vec X,Mat *H, Mat *Hpre, MatStructure *flg, void *ptr)
 {
 
    TAOLinearBoundSolver* 		 solver=(TAOLinearBoundSolver*)ptr;
@@ -376,9 +371,7 @@ PetscErrorCode __TAOFormHessianQuadraticProblem(TaoSolver tao,Vec X,Mat *H, Mat 
 }
 
 //-------------------------------------------------------------------------------------------
-// Auxiliary function to set the output of the TaoMonitor 
-//-------------------------------------------------------------------------------------------
-PetscErrorCode __TAOMonitor(TaoSolver tao, void *ctx)
+PetscErrorCode TAOLinearBoundSolver::__TAOMonitor(TaoSolver tao, void *ctx)
 {
   PetscInt its;
   PetscReal f,gnorm,cnorm,xdiff;
@@ -386,7 +379,7 @@ PetscErrorCode __TAOMonitor(TaoSolver tao, void *ctx)
   TaoGetSolutionStatus(tao, &its, &f, &gnorm, &cnorm, &xdiff, &reason);
   PetscPrintf(PETSC_COMM_WORLD,"TAO iteration = %3D \tf=%-10G\tgnorm=%-10G\tcnorm=%-10G\txdiff=%G\n",its,f,gnorm,cnorm,xdiff);
 }
-}
+
 #endif
 #endif
 

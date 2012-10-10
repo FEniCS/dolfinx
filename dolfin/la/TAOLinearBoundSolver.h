@@ -177,28 +177,26 @@ namespace dolfin
     boost::shared_ptr<const PETScVector> b;   
     
     bool preconditioner_set;   
+        
+    /// Computes the value of the objective function and its gradient. 
+    static PetscErrorCode __TAOFormFunctionGradientQuadraticProblem(TaoSolver tao, Vec X, PetscReal *ener, Vec G, void *ptr);
+    
+    /// Computes the hessian of the quadratic objective function 
+    static PetscErrorCode __TAOFormHessianQuadraticProblem(TaoSolver tao,Vec X,Mat *H, Mat *Hpre, MatStructure *flg, void *ptr);
+    
+    //-----------------------------------------------------------------------------
+    //  Monitor the state of the solution at each iteration. The output printed to the screen is:
+    //
+    //	iterate 	- the current iterate number (>=0)
+    //	f 	- the current function value
+    //	gnorm 	- the square of the gradient norm, duality gap, or other measure indicating distance from optimality.
+    //	cnorm 	- the infeasibility of the current solution with regard to the constraints.
+    //	xdiff 	- the step length or trust region radius of the most recent iterate. 
+    //-----------------------------------------------------------------------------
+    static PetscErrorCode __TAOMonitor(TaoSolver tao, void *ctx);
+ 
   };
-//-----------------------------------------------------------------------------
-/// Computes the value of the objective function and its gradient. 
 
-PetscErrorCode __TAOFormFunctionGradientQuadraticProblem(TaoSolver tao, Vec X, PetscReal *ener, Vec G, void *ptr);
-
-//-----------------------------------------------------------------------------
-/// Computes the hessian of the quadratic objective function 
-/// Notice that the objective function in this problem is quadratic (therefore a constant hessian). 
-
-PetscErrorCode __TAOFormHessianQuadraticProblem(TaoSolver tao,Vec X,Mat *H, Mat *Hpre, MatStructure *flg, void *ptr);
-
-//-----------------------------------------------------------------------------
-//  Monitor the state of the solution at each iteration. The output printed to the screen is:
-//
-//	iterate 	- the current iterate number (>=0)
-//	f 	- the current function value
-//	gnorm 	- the square of the gradient norm, duality gap, or other measure indicating distance from optimality.
-//	cnorm 	- the infeasibility of the current solution with regard to the constraints.
-//	xdiff 	- the step length or trust region radius of the most recent iterate. 
-PetscErrorCode __TAOMonitor(TaoSolver tao, void *ctx);
-//-----------------------------------------------------------------------------
 }
 #endif
 
