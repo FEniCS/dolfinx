@@ -710,6 +710,8 @@ if (DOLFIN_ENABLE_TESTING)
     PATTERN "*.msh"
     PATTERN "*.supp"
     PATTERN "*.rst"
+    PATTERN "*.ele"
+    PATTERN "*.node"
     PATTERN "CMakeFiles" EXCLUDE)
 
   # Add target "run_memorytests" for running memory tests
