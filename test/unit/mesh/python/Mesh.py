@@ -27,7 +27,8 @@ from dolfin import *
 class MeshConstruction(unittest.TestCase):
 
     def setUp(self):
-        self.interval = UnitInterval(10)
+        if MPI.num_processes() == 1:
+            self.interval = UnitInterval(10)
         self.circle = UnitCircle(5)
         self.square = UnitSquare(5, 5)
         self.rectangle = Rectangle(0, 0, 2, 2, 5, 5)
@@ -37,7 +38,8 @@ class MeshConstruction(unittest.TestCase):
 
     def testUFLCell(self):
         import ufl
-        self.assertEqual(ufl.interval, self.interval.ufl_cell())
+        if MPI.num_processes() == 1:
+            self.assertEqual(ufl.interval, self.interval.ufl_cell())
         self.assertEqual(ufl.triangle, self.circle.ufl_cell())
         self.assertEqual(ufl.triangle, self.square.ufl_cell())
         self.assertEqual(ufl.triangle, self.rectangle.ufl_cell())

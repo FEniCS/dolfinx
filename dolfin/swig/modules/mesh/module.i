@@ -61,7 +61,6 @@
 #include "dolfin/mesh/MeshGeometry.h"
 #include "dolfin/mesh/MeshDomains.h"
 #include "dolfin/mesh/MeshData.h"
-#include "dolfin/mesh/ParallelData.h"
 #include "dolfin/mesh/Mesh.h"
 #include "dolfin/mesh/MeshEntity.h"
 #include "dolfin/mesh/MeshEntityIterator.h"
@@ -89,9 +88,9 @@
 #include "dolfin/mesh/SubMesh.h"
 #include "dolfin/mesh/DomainBoundary.h"
 #include "dolfin/mesh/BoundaryMesh.h"
-#include "dolfin/mesh/Interval.h"
 
 // #include types from generation submodule
+#include "dolfin/generation/Interval.h"
 #include "dolfin/generation/PolygonalMeshGenerator.h"
 #include "dolfin/generation/PolyhedralMeshGenerator.h"
 #include "dolfin/generation/Triangulate.h"
@@ -174,7 +173,6 @@ import_array();
 %include "dolfin/mesh/MeshGeometry.h"
 %include "dolfin/mesh/MeshDomains.h"
 %include "dolfin/mesh/MeshData.h"
-%include "dolfin/mesh/ParallelData.h"
 %include "dolfin/mesh/Mesh.h"
 %include "dolfin/mesh/MeshEntity.h"
 %include "dolfin/mesh/MeshEntityIterator.h"
@@ -202,10 +200,10 @@ import_array();
 %include "dolfin/mesh/SubMesh.h"
 %include "dolfin/mesh/DomainBoundary.h"
 %include "dolfin/mesh/BoundaryMesh.h"
-%include "dolfin/mesh/Interval.h"
 %include "dolfin/swig/mesh/post.i"
 
 // %include types from submodule generation
+%include "dolfin/generation/Interval.h"
 %include "dolfin/generation/PolygonalMeshGenerator.h"
 %include "dolfin/generation/PolyhedralMeshGenerator.h"
 %include "dolfin/generation/Triangulate.h"

@@ -154,6 +154,9 @@ endif()
 # Disable some warnings for Intel compilers
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd161,488,654,858,1125,1170")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -wd161,488,654,858,1125,1170")
+  set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -wd161,488,654,858,1125,1170")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -wd161,488,654,858,1125,1170")
 endif()
 
 # Set system include flags to get around CMake bug on OSX
@@ -220,7 +223,7 @@ endif()
 
 # Boost timer was not a separate Boost component until version 1.48
 if ("${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}" VERSION_GREATER "1.47")
-  find_package(Boost 1.36 COMPONENTS timer REQUIRED)
+  find_package(Boost COMPONENTS timer REQUIRED)
 endif()
 
 # Check for required packages
@@ -303,7 +306,7 @@ endif()
 # Check for Trilinos and the requires Trilinos packages
 if (DOLFIN_ENABLE_TRILINOS)
   message(STATUS "Checking for Trilinos")
-  find_package(Trilinos 10.10.0 PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
+  find_package(Trilinos PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
   set(DOLFIN_TRILINOS_PACKAGES "Epetra;Zoltan;ML;Ifpack;Amesos")
 
   # Check for required packages
@@ -709,6 +712,8 @@ if (DOLFIN_ENABLE_TESTING)
     PATTERN "*.msh"
     PATTERN "*.supp"
     PATTERN "*.rst"
+    PATTERN "*.ele"
+    PATTERN "*.node"
     PATTERN "CMakeFiles" EXCLUDE)
 
   # Add target "run_memorytests" for running memory tests

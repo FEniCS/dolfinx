@@ -24,7 +24,6 @@
 #include <dolfin/log/log.h>
 #include "Cell.h"
 #include "Mesh.h"
-#include "ParallelData.h"
 #include "MeshOrdering.h"
 
 using namespace dolfin;

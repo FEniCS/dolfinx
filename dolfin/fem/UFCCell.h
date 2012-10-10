@@ -32,7 +32,6 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/ParallelData.h>
 #include <dolfin/fem/ufcexp.h>
 
 namespace dolfin
@@ -168,7 +167,7 @@ namespace dolfin
       {
         if (use_global_indices && topology.have_global_indices(d))
         {
-          const std::vector<uint> global_indices = topology.global_indices(d);
+          const std::vector<uint>& global_indices = topology.global_indices(d);
           for (uint i = 0; i < num_cell_entities[d]; ++i)
             entity_indices[d][i] = global_indices[cell.entities(d)[i]];
         }

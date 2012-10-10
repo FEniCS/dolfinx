@@ -33,7 +33,6 @@
 #include "MeshTopology.h"
 #include "MeshGeometry.h"
 #include "MeshRenumbering.h"
-#include "ParallelData.h"
 
 using namespace dolfin;
 
@@ -102,13 +101,13 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
   cout << "Close editor" << endl;
 
   // Initialise coloring data
-  typedef std::map<const std::vector<uint>, std::pair<MeshFunction<uint>,
+  typedef std::map<const std::vector<uint>, std::pair<std::vector<uint>,
            std::vector<std::vector<uint> > > >::const_iterator ConstMeshColoringData;
 
   // Get old coloring
   ConstMeshColoringData mesh_coloring
-    = mesh.parallel_data().coloring.find(coloring_type);
-  if (mesh_coloring == mesh.parallel_data().coloring.end())
+    = mesh.topology().coloring.find(coloring_type);
+  if (mesh_coloring == mesh.topology().coloring.end())
   {
     dolfin_error("MeshRenumbering.cpp",
                  "renumber mesh by color",
@@ -116,7 +115,7 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
   }
 
   // Get old coloring data
-  const MeshFunction<uint>& colors = mesh_coloring->second.first;
+  const std::vector<uint>& colors = mesh_coloring->second.first;
   const std::vector<std::vector<uint> >&
     entities_of_color = mesh_coloring->second.second;
   dolfin_assert(colors.size() == num_cells);
@@ -124,8 +123,8 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
   const uint num_colors = entities_of_color.size();
 
   // New coloring data
-  dolfin_assert(new_mesh.parallel_data().coloring.empty());
-  MeshFunction<uint> new_colors(mesh, tdim);
+  dolfin_assert(new_mesh.topology().coloring.empty());
+  std::vector<uint> new_colors(colors.size());
   std::vector<std::vector<uint> > new_entities_of_color(num_colors);
 
   uint current_cell = 0;
@@ -146,7 +145,7 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
 
   // Set new coloring mesh data
   std::pair<ConstMeshColoringData, bool> insert
-    = new_mesh.parallel_data().coloring.insert(std::make_pair(coloring_type,
+    = new_mesh.topology().coloring.insert(std::make_pair(coloring_type,
                           std::make_pair(new_colors, new_entities_of_color)));
   dolfin_assert(insert.second);
 
@@ -174,7 +173,7 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
   const uint coordinates_size = mesh.geometry().size()*mesh.geometry().dim();
   new_coordinates.resize(coordinates_size);
 
-  typedef std::map<const std::vector<uint>, std::pair<MeshFunction<uint>,
+  typedef std::map<const std::vector<uint>, std::pair<std::vector<uint>,
            std::vector<std::vector<uint> > > >::const_iterator MeshColoringData;
 
   info("Renumbering mesh by cell colors.");
@@ -189,10 +188,10 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
   }
 
   // Get coloring
-  MeshColoringData mesh_coloring = mesh.parallel_data().coloring.find(coloring_type);
+  MeshColoringData mesh_coloring = mesh.topology().coloring.find(coloring_type);
 
   // Check that requested coloring has been computed
-  if (mesh_coloring == mesh.parallel_data().coloring.end())
+  if (mesh_coloring == mesh.topology().coloring.end())
   {
     dolfin_error("MeshRenumbering.cpp",
                  "compute renumbering of mesh",
@@ -200,7 +199,7 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
   }
 
   // Get coloring data (copies since the data will be deleted mesh.clear())
-  const MeshFunction<uint>& colors_old = mesh_coloring->second.first;
+  const std::vector<uint>& colors_old = mesh_coloring->second.first;
   const std::vector<std::vector<uint> >&
     entities_of_color_old = mesh_coloring->second.second;
   dolfin_assert(colors_old.size() == num_cells);

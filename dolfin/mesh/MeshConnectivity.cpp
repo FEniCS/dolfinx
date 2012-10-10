@@ -18,6 +18,7 @@
 // First added:  2006-05-09
 // Last changed: 2010-11-25
 
+#include <boost/functional/hash.hpp>
 #include <dolfin/log/dolfin_log.h>
 #include "MeshConnectivity.h"
 
@@ -124,6 +125,26 @@ void MeshConnectivity::set(uint entity, uint* connections)
     = index_to_position[entity + 1] - index_to_position[entity];
   std::copy(connections, connections + num_connections,
             this->connections.begin() + index_to_position[entity]);
+}
+//-----------------------------------------------------------------------------
+std::size_t MeshConnectivity::hash() const
+{
+  // Compute local hash key
+  boost::hash<std::vector<uint> > uhash;
+  const std::size_t local_hash = uhash(connections);
+
+  // Gather all hash keys
+  std::vector<std::size_t> all_hashes;
+  MPI::gather(local_hash, all_hashes);
+
+  // Hash the received hash keys
+  boost::hash<std::vector<size_t> > sizet_hash;
+  std::size_t global_hash = sizet_hash(all_hashes);
+
+  // Broadcast hash key
+  MPI::broadcast(global_hash);
+
+  return global_hash;
 }
 //-----------------------------------------------------------------------------
 std::string MeshConnectivity::str(bool verbose) const

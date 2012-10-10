@@ -367,7 +367,7 @@ std::string HDF5File::mesh_coords_dataset_name(const Mesh& mesh) const
 {
   std::stringstream dataset_name;
   dataset_name << "/Mesh/Coordinates_" << std::setfill('0')
-          << std::hex << std::setw(8) << mesh.coordinates_hash();
+          << std::hex << std::setw(8) << mesh.geometry().hash();
   return dataset_name.str();
 }
 //-----------------------------------------------------------------------------
@@ -375,15 +375,16 @@ std::string HDF5File::mesh_index_dataset_name(const Mesh& mesh) const
 {
   std::stringstream dataset_name;
   dataset_name << "/Mesh/GlobalIndex_" << std::setfill('0')
-          << std::hex << std::setw(8) << mesh.coordinates_hash();
+          << std::hex << std::setw(8) << mesh.geometry().hash();
   return dataset_name.str();
 }
 //-----------------------------------------------------------------------------
 std::string HDF5File::mesh_topology_dataset_name(const Mesh& mesh) const
 {
+  const uint D = mesh.topology().dim();
   std::stringstream dataset_name;
   dataset_name << "/Mesh/Topology_" << std::setfill('0')
-          << std::hex << std::setw(8) << mesh.topology_hash();
+          << std::hex << std::setw(8) << mesh.topology()(D, D).hash();
   return dataset_name.str();
 }
 //-----------------------------------------------------------------------------

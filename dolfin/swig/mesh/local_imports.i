@@ -54,4 +54,3 @@
 %import(module="mesh") "dolfin/mesh/SubMesh.h"
 %import(module="mesh") "dolfin/mesh/DomainBoundary.h"
 %import(module="mesh") "dolfin/mesh/BoundaryMesh.h"
-%import(module="mesh") "dolfin/mesh/Interval.h"

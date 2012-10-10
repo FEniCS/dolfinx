@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2009.
 //
 // First added:  2009-09-11
-// Last changed: 2011-11-11
+// Last changed: 2012-10-09
 
 #ifndef __INTERSECTIONOPERATORIMPLEMENTATION_H
 #define __INTERSECTIONOPERATORIMPLEMENTATION_H
@@ -54,6 +54,9 @@ namespace dolfin
 
     // Only default constructor, since the search tree has a dimension dependent type, hence encapsulates in the
     // inheriting IntersectionOperatorImplementation_d!
+
+    // Virtual destructor
+    virtual ~IntersectionOperatorImplementation() {}
 
     virtual void all_intersected_entities(const Point & point, std::set<uint> & ids_result) const = 0;
     virtual void all_intersected_entities(const std::vector<Point> & points, std::set<uint> & ids_result) const = 0;
@@ -96,6 +99,12 @@ namespace dolfin
     {
       // Build CGAL AABB tree
       build_tree(labels, label);
+    }
+
+    /// Destructor which ensures to reset AABB tree
+    virtual ~IntersectionOperatorImplementation_d()
+    {
+      tree.reset();
     }
 
     virtual void all_intersected_entities(const Point& point, std::set<uint>& ids_result) const;

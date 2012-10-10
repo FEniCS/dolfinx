@@ -43,7 +43,6 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/mesh/ParallelData.h>
 #include <dolfin/mesh/Point.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "Expression.h"

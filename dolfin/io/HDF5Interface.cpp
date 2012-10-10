@@ -15,9 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Johannes Ring, 2012
 //
 // First Added: 2012-09-21
-// Last Changed: 2012-10-01
+// Last Changed: 2012-10-09
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/MPI.h>
@@ -109,8 +110,8 @@ void HDF5Interface::add_group(const hid_t hdf5_file_handle,
   dolfin_assert(status != HDF5_FAIL);
 }
 //-----------------------------------------------------------------------------
-uint HDF5Interface::dataset_rank(const hid_t hdf5_file_handle,
-                         const std::string dataset_name)
+dolfin::uint HDF5Interface::dataset_rank(const hid_t hdf5_file_handle,
+					 const std::string dataset_name)
 {
   // Open dataset
   const hid_t dset_id = H5Dopen2(hdf5_file_handle, dataset_name.c_str(),

@@ -36,7 +36,7 @@ UnitInterval::UnitInterval(uint nx) : Mesh()
     return;
   }
 
-  if ( nx < 1 )
+  if (nx < 1)
   {
     dolfin_error("UnitInterval.cpp",
                  "create unit interval",

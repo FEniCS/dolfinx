@@ -21,7 +21,7 @@
 // Last changed: 2011-11-14
 
 #include "Cell.h"
-#include "ParallelData.h"
+#include "MeshTopology.h"
 #include "Point.h"
 #include "Facet.h"
 
@@ -62,10 +62,11 @@ Point Facet::normal() const
 //-----------------------------------------------------------------------------
 bool Facet::exterior() const
 {
-  if (!_mesh->parallel_data().exterior_facet().empty())
-    return _mesh->parallel_data().exterior_facet()[this->index()];
+  const uint D = _mesh->topology().dim();
+  if (this->num_global_entities(D) == 1)
+    return true;
   else
-    return num_entities(dim() + 1) == 1;
+    return false;
 }
 //-----------------------------------------------------------------------------
 std::pair<const Cell, const Cell>

@@ -105,7 +105,9 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     Progress p("Building sparsity pattern over interior facets", mesh.num_facets());
     for (FacetIterator facet(mesh); !facet.end(); ++facet)
     {
-      const bool exterior_facet = facet->exterior();
+      bool exterior_facet = false;
+      if (facet->num_global_entities(D) == 1)
+        exterior_facet = true;
 
       // Check facet type
       if (exterior_facets && exterior_facet && !cells)

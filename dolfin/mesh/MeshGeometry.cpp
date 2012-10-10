@@ -21,8 +21,10 @@
 // First added:  2006-05-19
 // Last changed: 2010-04-29
 
+#include <boost/functional/hash.hpp>
+
+#include <dolfin/common/MPI.h>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/function/Function.h>
 #include "MeshGeometry.h"
 
 using namespace dolfin;
@@ -107,6 +109,26 @@ void MeshGeometry::set(uint local_index,
   dolfin_assert(local_index < local_index_to_position.size());
   local_index_to_position[local_index] = local_index;
 
+}
+//-----------------------------------------------------------------------------
+std::size_t MeshGeometry::hash() const
+{
+  // Compute local hash
+  boost::hash<std::vector<double> > dhash;
+  const std::size_t local_hash = dhash(coordinates);
+
+  // Gather hash keys from all processes
+  std::vector<std::size_t> all_hashes;
+  MPI::gather(local_hash, all_hashes);
+
+  // Hash the received hash keys
+  boost::hash<std::vector<std::size_t> > sizet_hash;
+  std::size_t global_hash = sizet_hash(all_hashes);
+
+  // Broadcast hash key
+  MPI::broadcast(global_hash);
+
+  return global_hash;
 }
 //-----------------------------------------------------------------------------
 std::string MeshGeometry::str(bool verbose) const

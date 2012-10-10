@@ -151,6 +151,30 @@ const dolfin::MeshConnectivity& MeshTopology::operator() (uint d0, uint d1) cons
   return connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------
+std::map<unsigned int, std::set<unsigned int> >&
+  MeshTopology::shared_entities(uint dim)
+{
+  if (dim != 0)
+  {
+    dolfin_error("MeshTopology.cpp",
+                 "get shared mesh entities",
+                 "Shared mesh entities are available for dim 0 (vertices) only");
+  }
+  return _shared_vertices;
+}
+//-----------------------------------------------------------------------------
+const std::map<unsigned int, std::set<unsigned int> >&
+  MeshTopology::shared_entities(uint dim) const
+{
+  if (dim != 0)
+  {
+    dolfin_error("MeshTopology.cpp",
+                 "get shared mesh entities",
+                 "Shared mesh entities are available for dim 0 (vertices) only");
+  }
+  return _shared_vertices;
+}
+//-----------------------------------------------------------------------------
 std::string MeshTopology::str(bool verbose) const
 {
   const uint _dim = num_entities.size() - 1;

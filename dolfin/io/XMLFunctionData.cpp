@@ -39,7 +39,6 @@
 #include "dolfin/log/log.h"
 #include "dolfin/mesh/Mesh.h"
 #include "dolfin/mesh/MeshTopology.h"
-#include "dolfin/mesh/ParallelData.h"
 #include "XMLFunctionData.h"
 
 using namespace dolfin;

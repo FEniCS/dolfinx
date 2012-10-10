@@ -26,12 +26,12 @@
 #include <string>
 #include <vector>
 #include <dolfin/common/types.h>
+#include "Cell.h"
 
 namespace dolfin
 {
 
-   class Mesh;
-   template<typename T> class MeshFunction;
+  class Mesh;
 
   /// This class computes colorings for a local mesh. It supports
   /// vertex, edge, and facet-based colorings.
@@ -41,19 +41,30 @@ namespace dolfin
   public:
 
     /// Color the cells of a mesh for given coloring type, which can
-    /// be one of "vertex", "edge" or "facet".
-    static const MeshFunction<uint>& color_cells(Mesh& mesh,
+    /// be one of "vertex", "edge" or "facet". Coloring is saved in the
+    /// mesh topology
+    static const std::vector<uint>& color_cells(Mesh& mesh,
                                                  std::string coloring_type);
 
     /// Color the cells of a mesh for given coloring type specified by
-    /// topological dimension, which can be one of 0, 1 or D - 1.
-    static const MeshFunction<uint>& color(Mesh& mesh,
-                                           std::vector<uint> coloring_type);
+    /// topological dimension, which can be one of 0, 1 or D - 1. Coloring
+    /// is saved in the mesh topology
+    static const std::vector<uint>& color(Mesh& mesh,
+                                       const std::vector<uint>& coloring_type);
 
     /// Compute cell colors for given coloring type specified by
     /// topological dimension, which can be one of 0, 1 or D - 1.
-    static uint compute_colors(MeshFunction<uint>& colors,
-                               const std::vector<uint> coloring_type);
+    static uint compute_colors(const Mesh& mesh, std::vector<uint>& colors,
+                               const std::vector<uint>& coloring_type);
+
+    /// Return a MeshFunction with the cell colors (used for visualisation)
+    static CellFunction<unsigned int> cell_colors(const Mesh& mesh,
+                                           std::string coloring_type);
+
+    /// Return a MeshFunction with the cell colors (used for visualisation)
+    static CellFunction<unsigned int> cell_colors(const Mesh& mesh,
+                              const std::vector<unsigned int> coloring_type);
+
 
     /// Convert coloring type to topological dimension
     static uint type_to_dim(std::string coloring_type, const Mesh& mesh);

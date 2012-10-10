@@ -95,7 +95,7 @@ int main()
 
   // Solve PDE
   Function u(V);
-  solve(a ==L, u, bc);
+  solve(a == L, u, bc);
 
   // Save solution in VTK format
   File file_u("poisson.pvd");

@@ -21,13 +21,14 @@
 #ifndef __MESH_TOPOLOGY_H
 #define __MESH_TOPOLOGY_H
 
+#include <map>
+#include <utility>
 #include <vector>
 #include <dolfin/common/types.h>
+#include "MeshConnectivity.h"
 
 namespace dolfin
 {
-
-  class MeshConnectivity;
 
   /// MeshTopology stores the topology of a mesh, consisting of mesh entities
   /// and connectivity (incidence relations for the mesh entities). Note that
@@ -107,6 +108,15 @@ namespace dolfin
       return !_global_indices[dim].empty();
     }
 
+    /// Return map from shared entiies to process that share the entity
+    std::map<unsigned int, std::set<unsigned int> >&
+      shared_entities(uint dim);
+
+    /// Return map from shared entiies to process that share the entity
+    /// (const version)
+    const std::map<unsigned int, std::set<unsigned int> >&
+      shared_entities(uint dim) const;
+
     /// Return connectivity for given pair of topological dimensions
     dolfin::MeshConnectivity& operator() (uint d0, uint d1);
 
@@ -115,6 +125,19 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
+
+    /// Mesh entity colors, if computed. First vector is
+    ///
+    ///    (colored entity dim - dim1 - dim2 - ... -  colored entity dim)
+    ///
+    /// The first vector in the pair stores mesh entity colors and the
+    /// vector<vector> is a list of all mesh entity indices of the same
+    /// color, e.g. vector<vector>[col][i] is the index of the ith entity
+    /// of color 'col'.
+    // Developer note: std::vector is used in place of a MeshFunction
+    //                 to avoid circular dependencies in the header files
+    std::map<const std::vector<uint>,
+     std::pair<std::vector<uint>, std::vector<std::vector<uint> > > > coloring;
 
   private:
 
@@ -129,6 +152,10 @@ namespace dolfin
 
     // Global indices for mesh entities (empty if not set)
     std::vector<std::vector<uint> > _global_indices;
+
+    // Maps each shared vertex (entity of dim 0) to a list of the
+    // processes sharing the vertex
+    std::map<uint, std::set<uint> > _shared_vertices;
 
     // Connectivity for pairs of topological dimensions
     std::vector<std::vector<MeshConnectivity> > connectivity;

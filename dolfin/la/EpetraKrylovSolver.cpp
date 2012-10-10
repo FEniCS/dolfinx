@@ -218,7 +218,8 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   solver->SetAztecOption(AZ_conv, AZ_rhs);
 
   // Start solve
-  solver->Iterate(parameters["maximum_iterations"], parameters["relative_tolerance"]);
+  solver->Iterate(static_cast<int>(parameters["maximum_iterations"]),
+                  parameters["relative_tolerance"]);
 
   // Check solve status
   const double* status = solver->GetAztecStatus();

@@ -64,20 +64,6 @@ namespace dolfin
       return coordinates.size()/_dim;
     }
 
-    /// Return global index associated with local coordinate
-    /*
-    uint global_index(uint local_index) const
-    {
-      dolfin_assert(local_index < local_to_global.size());
-      return local_to_global[local_index];
-    }
-
-
-    /// Return local-to global indices for all local vertices
-    const std::vector<uint>& local_to_global_indices() const
-    { return local_to_global; }
-    */
-
     /// Return value of coordinate with local index n in direction i
     double& x(uint n, uint i)
     {
@@ -127,6 +113,14 @@ namespace dolfin
     //void set(uint n, uint i, double x);
     void set(uint local_index, const std::vector<double>& x);
 
+    /// Hash of coordinate values
+    ///
+    /// *Returns*
+    ///     uint
+    ///         A tree-hashed value of the coordinates over all MPI processes
+    ///
+    std::size_t hash() const;
+
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
@@ -147,9 +141,6 @@ namespace dolfin
 
     // Local coordinate indices (local index -> array position)
     std::vector<uint> local_index_to_position;
-
-    // Local-to-global coordinate indices
-    //std::vector<uint> local_to_global;
 
   };
 

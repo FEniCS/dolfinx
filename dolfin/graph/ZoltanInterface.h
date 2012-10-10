@@ -21,11 +21,12 @@
 #ifndef __DOLFIN_ZOLTAN_GRAPH_COLORING_H
 #define __DOLFIN_ZOLTAN_GRAPH_COLORING_H
 
+#include <vector>
+
 #ifdef HAS_TRILINOS
 #include <zoltan_cpp.h>
 #endif
 
-#include <dolfin/common/Array.h>
 #include <dolfin/common/types.h>
 #include "Graph.h"
 
@@ -43,7 +44,8 @@ namespace dolfin
   public:
 
     /// Compute vertex colors
-    static uint compute_local_vertex_coloring(const Graph& graph, Array<uint>& colors);
+    static uint compute_local_vertex_coloring(const Graph& graph,
+                                              std::vector<uint>& colors);
 
   private:
 

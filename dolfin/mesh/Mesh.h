@@ -52,7 +52,6 @@ namespace dolfin
   class LocalMeshData;
   class MeshEntity;
   template <typename T> class MeshFunction;
-  class ParallelData;
   class SubDomain;
 
   /// A _Mesh_ consists of a set of connected and numbered mesh entities.
@@ -312,16 +311,6 @@ namespace dolfin
     /// Get mesh data (const version).
     const MeshData& data() const;
 
-    /// Get parallel mesh data.
-    ///
-    /// *Returns*
-    ///     _ParallelData_
-    ///         The parallel data object associated with the mesh.
-    ParallelData& parallel_data();
-
-    /// Get parallel mesh data (const version).
-    const ParallelData& parallel_data() const;
-
     /// Get mesh cell type.
     ///
     /// *Returns*
@@ -474,7 +463,7 @@ namespace dolfin
     /// *Returns*
     ///     MeshFunction<unsigned int>
     ///         The colors as a mesh function over the cells of the mesh.
-    const MeshFunction<unsigned int>& color(std::string coloring_type) const;
+    const std::vector<unsigned int>& color(std::string coloring_type) const;
 
     /// Color the cells of the mesh such that no two neighboring cells
     /// share the same color. A colored mesh keeps a
@@ -489,7 +478,7 @@ namespace dolfin
     /// *Returns*
     ///     MeshFunction<unsigned int>
     ///         The colors as a mesh function over entities of the mesh.
-    const MeshFunction<unsigned int>& color(std::vector<unsigned int> coloring_type) const;
+    const std::vector<unsigned int>& color(std::vector<unsigned int> coloring_type) const;
 
     /// Compute all cells which are intersected by the given point.
     ///
@@ -658,22 +647,6 @@ namespace dolfin
     ///         No example code available for this function.
     std::string str(bool verbose) const;
 
-    /// Hash of coordinate values
-    ///
-    /// *Returns*
-    ///     uint
-    ///         A tree-hashed value of the coordinates over all MPI processes
-    ///
-    uint coordinates_hash() const;
-
-    /// Hash of cell vertex indices
-    ///
-    /// *Returns*
-    ///     uint
-    ///         A tree-hashed value of the topology over all MPI processes
-    ///
-    uint topology_hash() const;
-
   private:
 
     // Friends
@@ -693,9 +666,6 @@ namespace dolfin
 
     // Auxiliary mesh data
     MeshData _data;
-
-    // Auxiliary parallel mesh data
-    boost::scoped_ptr<ParallelData> _parallel_data;
 
     // Cell type
     CellType* _cell_type;

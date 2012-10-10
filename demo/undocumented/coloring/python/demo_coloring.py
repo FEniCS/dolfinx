@@ -30,19 +30,23 @@ from dolfin import *
 mesh = UnitCube(24, 24, 24)
 
 # Compute vertex-based coloring
-colors = mesh.color("vertex")
+mesh.color("vertex");
+colors = MeshColoring.cell_colors(mesh, "vertex")
 plot(colors, title="Vertex-based cell coloring", interactive=True)
 
 # Compute edge-based coloring
-colors = mesh.color("edge")
+mesh.color("edge");
+colors = MeshColoring.cell_colors(mesh, "edge")
 plot(colors, title="Edge-based cell coloring", interactive=True)
 
 # Compute facet-based coloring
-colors = mesh.color("facet")
+mesh.color("facet");
+colors = MeshColoring.cell_colors(mesh, "facet")
 plot(colors, title="Facet-based cell coloring", interactive=True)
 
 # Compute facet-based coloring with distance 2
 dim = mesh.topology().dim()
 coloring_type = (dim, dim - 1, dim, dim - 1, dim)
-colors = mesh.color(coloring_type)
+mesh.color(coloring_type);
+colors = MeshColoring.cell_colors(mesh, coloring_type)
 plot(colors, title="Facet-based cell coloring with distance 2", interactive=True)

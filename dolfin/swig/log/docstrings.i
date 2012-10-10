@@ -129,11 +129,13 @@ This function is deprecated, use list_timings
 ";
 
 %feature("docstring")  dolfin::timing "
-Return timing (average) for given task, optionally clearing timing for task
+Return timing (average) for given task, optionally clearing timing
+for task
 ";
 
 %feature("docstring")  dolfin::not_working_in_parallel "
-Report that functionality has not (yet) been implemented to work in parallel
+Report that functionality has not (yet) been implemented to work
+in parallel
 ";
 
 // Documentation extracted from: (module=log, header=Event.h)
