@@ -19,7 +19,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-09-20
+// Last changed: 2012-10-10
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -71,14 +71,16 @@ namespace dolfin
   ///                                             Scalars may be set to "warp" in
   ///                                             2D only. A value of "color" is
   ///                                             valid in all cases; for vectors,
-  ///                                             the norms are used.
+  ///                                             the norms are used. See below for
+  ///                                             a summary of default modes,
+  ///                                             used when set to "auto".
   ///  interactive    Boolean     False           Enable/disable interactive mode
   ///                                             for the rendering window.
   ///                                             For repeated plots of the same
   ///                                             object (animated plots), this
-  ///                                             parameter must be set to false
+  ///                                             parameter should be set to false.
   ///  wireframe      Boolean     True for        Enable/disable wireframe
-  ///                             meshes, else    rendering of the object
+  ///                             meshes, else    rendering of the object.
   ///                             false
   ///  title          String      Inherited       The title of the rendering
   ///                             from the        window
@@ -89,13 +91,21 @@ namespace dolfin
   ///  scalarbar      Boolean     False for       Hide/show the colormapping bar
   ///                             meshes, else
   ///                             true
-  ///  axes           Boolean     False           Show axes.
+  ///  axes           Boolean     False           Show X-Y-Z axes.
   ///
   ///  rescale        Boolean     True            Enable/disable recomputation
   ///                                             of the scalar to color mapping
   ///                                             on every iteration when performing
   ///                                             repeated/animated plots of the same
-  ///                                             data
+  ///                                             data. If both range_min and
+  ///                                             range_max are set, this parameter
+  ///                                             is ignored.
+  ///  range_min      Double                      Set lower range of data values.
+  ///                                             Disables automatic (re-)computation
+  ///                                             of the lower range.
+  ///  range_max      Double                      Set upper range of data values.
+  ///                                             Disables automatic (re-)computation
+  ///                                             of the upper range.
   ///  elevate        Double      -65.0 for 2D    Set camera elevation.
   ///                             warped scalars,
   ///                             0.0 otherwise
@@ -113,16 +123,19 @@ namespace dolfin
   ///                                             in pixels
   ///  tile_windows   Boolean     True            Automatically tile plot windows.
   ///
-  ///  key            String                      Key to the plot window, used to
+  ///  key            String                      Key (id) of the plot window, used to
   ///                                             decide if a new plotter should be
   ///                                             created or a current one updated
   ///                                             when called through the static
   ///                                             plot() interface (in plot.h).
   ///                                             If not set, the object's unique
-  ///                                             id is used.
-  ///  input_keys     String      ""              Synthesize these key presses.
-  ///                                             For example: "wwm" for point+mesh
-  ///                                             view.
+  ///                                             id (Variable::id) is used.
+  ///  input_keys     String      ""              Synthesize key presses, as if these
+  ///                                             keys are pressed by the user in
+  ///                                             the plot window.
+  ///                                             For example: "ww++m" shows the data
+  ///                                             as large points on a wireframe
+  ///                                             mesh.
   /// ============= ============ =============== =================================
   ///
   /// The default visualization mode for the different plot types are as follows:
@@ -188,8 +201,8 @@ namespace dolfin
       p.add("tile_windows", true);
 
       p.add<std::string>("key");
-      p.add<double>("hide_below");
-      p.add<double>("hide_above");
+      p.add<double>("hide_below"); // Undocumented on purpose, may be removed
+      p.add<double>("hide_above"); // Undocumented on purpose, may be removed
       p.add<std::string>("input_keys");
       return p;
     }
