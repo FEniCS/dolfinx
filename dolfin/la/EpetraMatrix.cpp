@@ -466,7 +466,7 @@ void EpetraMatrix::ident(uint m, const uint* rows)
   std::vector<uint> non_local_rows;
   for (uint i = 0; i < m; ++i)
   {
-    if (A->MyGlobalRow(rows[i]))
+    if (A->MyGlobalRow(static_cast<int>(rows[i])))
       local_rows.insert(rows[i]);
     else
       non_local_rows.push_back(rows[i]);
@@ -496,7 +496,7 @@ void EpetraMatrix::ident(uint m, const uint* rows)
     {
       // Insert row into set if it's local
       const uint new_index = received_data[i];
-      if (A->MyGlobalRow(new_index))
+      if (A->MyGlobalRow(static_cast<int>(new_index)))
         local_rows.insert(new_index);
     }
   }
@@ -507,7 +507,7 @@ void EpetraMatrix::ident(uint m, const uint* rows)
   for (global_row = local_rows.begin(); global_row != local_rows.end(); ++global_row)
   {
     // Get local row index
-    const int local_row = A->LRID(*global_row);
+    const int local_row = A->LRID(static_cast<int>(*global_row));
 
     // If this process owns row, then zero row
     if (local_row >= 0)
@@ -645,7 +645,7 @@ void EpetraMatrix::getrow(uint row, std::vector<uint>& columns,
   dolfin_assert(A);
 
   // Get local row index
-  const int local_row_index = A->LRID(row);
+  const int local_row_index = A->LRID(static_cast<int>(row));
 
   // If this process has part of the row, get values
   if (local_row_index >= 0)
