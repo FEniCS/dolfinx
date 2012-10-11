@@ -332,7 +332,7 @@ void TAOLinearBoundSolver::set_ksp_options()
 PetscErrorCode TAOLinearBoundSolver::__TAOFormFunctionGradientQuadraticProblem(TaoSolver tao, Vec X, PetscReal *ener, Vec G, void *ptr)
 { 
    PetscReal 				 AXX, bX;
-   TAOLinearBoundSolver* 	 solver=(TAOLinearBoundSolver*)ptr;
+   const TAOLinearBoundSolver*   solver = static_cast<TAOLinearBoundSolver*> (ptr);
    const PETScMatrix*        A = solver->get_matrix().get();
    const PETScVector*        b = solver->get_vector().get();
    
@@ -360,7 +360,7 @@ PetscErrorCode TAOLinearBoundSolver::__TAOFormFunctionGradientQuadraticProblem(T
 PetscErrorCode TAOLinearBoundSolver::__TAOFormHessianQuadraticProblem(TaoSolver tao,Vec X,Mat *H, Mat *Hpre, MatStructure *flg, void *ptr)
 {
 
-   TAOLinearBoundSolver* 		 solver=(TAOLinearBoundSolver*)ptr;
+   const TAOLinearBoundSolver*   solver = static_cast<TAOLinearBoundSolver*> (ptr);
    const PETScMatrix*            A = solver->get_matrix().get();
    
    dolfin_assert(A);
