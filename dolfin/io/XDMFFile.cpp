@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-09-25
+// Last changed: 2012-10-11
 
 #ifdef HAS_HDF5
 
@@ -96,6 +96,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   const uint value_rank = u.value_rank();
   const uint value_size = u.value_size();
   const uint cell_dim = mesh.topology().dim();
+  uint value_size_io = value_size;
 
   // Test for cell-centred data
   uint cell_based_dim = 1;
@@ -124,6 +125,34 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     v.get_local(data_values);
   }
 
+  // Interleave the values for vector or tensor fields 
+  // and pad 2D vectors and tensors to 3D
+  if (value_rank > 0)
+  {
+    if (value_size == 2)
+      value_size_io = 3;
+    //    if (value_size == 4)
+    //      value_size_io = 9;
+
+    std::vector<double> tmp;
+    tmp.reserve(value_size*num_local_entities);
+    for(uint i = 0; i < num_local_entities; i++)
+    {
+      for (uint j = 0; j < value_size; j++)
+      {
+        tmp.push_back(data_values[i + j*num_local_entities]);
+        //        if (j == 1 && value_size == 4) // 2D -> 3D tensor
+        //          tmp.push_back(0.0);
+      }
+      if (value_size == 2)    // 2D -> 3D vector
+        tmp.push_back(0.0);
+      //      if (value_size == 4)    // 2D -> 3D tensor
+      //        tmp.insert(tmp.end(), 4, 0.0);
+    }
+    data_values.resize(tmp.size()); // 2D->3D padding increases size
+    std::copy(tmp.begin(), tmp.end(), data_values.begin());
+  }
+
   // Get names of mesh data sets used in the HDF5 file
   dolfin_assert(hdf5_file);
   const std::string mesh_coords_name = hdf5_file->mesh_coords_dataset_name(mesh);
@@ -148,7 +177,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   s = "/VisualisationVector/" + boost::lexical_cast<std::string>(counter);
   std::vector<uint> global_size(2);
   global_size[0] = MPI::sum(num_local_entities);
-  global_size[1] = value_size;
+  global_size[1] = value_size_io;
 
   hdf5_file->write_data("/VisualisationVector", s.c_str(), data_values, global_size);
 
@@ -251,12 +280,12 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     if(vertex_data)
     {
       s = boost::lexical_cast<std::string>(num_all_local_vertices) + " "
-          + boost::lexical_cast<std::string>(value_size);
+          + boost::lexical_cast<std::string>(value_size_io);
     }
     else
     {
       s = boost::lexical_cast<std::string>(num_global_cells) + " "
-          + boost::lexical_cast<std::string>(value_size);
+          + boost::lexical_cast<std::string>(value_size_io);
     }
     xdmf_data.append_attribute("Dimensions") = s.c_str();
 
