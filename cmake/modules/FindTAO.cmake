@@ -55,21 +55,6 @@ list(APPEND tao_dir_locations "/usr/local/lib/tao")
 list(APPEND tao_dir_locations "$ENV{HOME}/tao")
 list(APPEND tao_dir_locations "$ENV{TAO_DIR}")
 list(APPEND tao_dir_locations "${TAO_DIR}")
-#list(APPEND tao_dir_locations "/opt/HPC/FEniCS/src/tao-2.1-p0/")
-
-# Check for PaStiX header file
-find_path(PASTIX_INCLUDE_DIRS pastix.h
-  HINTS ${PASTIX_DIR}/include $ENV{PASTIX_DIR}/include ${PASTIX_DIR} $ENV{PASTIX_DIR}
-  PATH_SUFFIXES install
-  DOC "Directory where the PaStiX header is located"
- )
-
-# Check for PaStiX library
-find_library(PASTIX_LIBRARY pastix
-  HINTS ${PASTIX_DIR}/lib $ENV{PASTIX_DIR}/lib ${PASTIX_DIR} $ENV{PASTIX_DIR}
-  PATH_SUFFIXES install
-  DOC "The PaStiX library"
-  )
 
 # Try to figure out TAO_DIR by finding tao.h
 find_path(TAO_DIR /include/tao.h
