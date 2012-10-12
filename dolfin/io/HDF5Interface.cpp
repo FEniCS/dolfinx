@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First Added: 2012-09-21
-// Last Changed: 2012-10-09
+// Last Changed: 2012-10-12
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/MPI.h>
@@ -73,6 +73,15 @@ hid_t HDF5Interface::open_file(const std::string filename, const bool truncate,
   return file_id;
 }
 //-----------------------------------------------------------------------------
+
+void HDF5Interface::flush_file(const hid_t hdf5_file_handle)
+{
+  herr_t status = H5Fflush(hdf5_file_handle,H5F_SCOPE_GLOBAL);
+  dolfin_assert(status != HDF5_FAIL);
+}
+
+//-----------------------------------------------------------------------------
+
 bool HDF5Interface::has_group(const hid_t hdf5_file_handle,
                               const std::string group_name)
 {

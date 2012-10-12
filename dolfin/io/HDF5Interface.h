@@ -45,6 +45,10 @@ namespace dolfin
     static hid_t open_file(const std::string filename, const bool truncate,
                            const bool use_mpi_io);
 
+
+    /// Flush data to file to improve data integrity after interruption
+    static void flush_file(const hid_t hdf5_file_handle);
+
     /// Write data to existing HDF file as defined by range blocks on
     /// each process
     /// range: the local range on this processor

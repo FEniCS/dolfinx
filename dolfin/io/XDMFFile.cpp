@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-10-11
+// Last changed: 2012-10-12
 
 #ifdef HAS_HDF5
 
@@ -180,6 +180,10 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   global_size[1] = value_size_io;
 
   hdf5_file->write_data("/VisualisationVector", s.c_str(), data_values, global_size);
+
+  // Flush file to OS. Improves chances of recovering data if interrupted.
+  // FIXME: this should be optional?
+  HDF5Interface::flush_file(hdf5_file->hdf5_file_id);
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero
   if (MPI::process_number() == 0)
