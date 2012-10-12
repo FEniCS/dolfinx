@@ -193,7 +193,7 @@ namespace dolfin
                         const Cell& cell) const
     {
       dolfin_assert(_ufc_element);
-      UFCCell ufc_cell(cell, false);
+      UFCCell ufc_cell(cell);
       _ufc_element->evaluate_basis(i, values, x, ufc_cell);
     }
 
@@ -202,7 +202,7 @@ namespace dolfin
                             const Cell& cell) const
     {
       dolfin_assert(_ufc_element);
-      UFCCell ufc_cell(cell, false);
+      UFCCell ufc_cell(cell);
       _ufc_element->evaluate_basis_all(values, coordinates, ufc_cell);
     }
 

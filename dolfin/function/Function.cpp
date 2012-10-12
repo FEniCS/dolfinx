@@ -338,7 +338,7 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
 
   // Create cell that contains point
   const Cell cell(mesh, id);
-  const UFCCell ufc_cell(cell, false);
+  const UFCCell ufc_cell(cell);
 
   // Call evaluate function
   eval(values, x, cell, ufc_cell);
@@ -486,7 +486,7 @@ void Function::non_matching_eval(Array<double>& values,
 
   // Create cell that contains point
   const Cell cell(mesh, id);
-  const UFCCell new_ufc_cell(cell, false);
+  const UFCCell new_ufc_cell(cell);
 
   // Call evaluate function
   eval(values, x, cell, new_ufc_cell);
@@ -555,9 +555,9 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   // Create vector for expansion coefficients
   std::vector<double> coefficients(element.space_dimension());
 
-  // Interpolate vertex values on each cell (using last computed value if not
-  // continuous, e.g. discontinuous Galerkin methods)
-  UFCCell ufc_cell(mesh, false);
+  // Interpolate vertex values on each cell (using last computed value
+  // if not continuous, e.g. discontinuous Galerkin methods)
+  UFCCell ufc_cell(mesh);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update to current cell
