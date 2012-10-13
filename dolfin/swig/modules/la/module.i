@@ -209,4 +209,5 @@ import_array();
 %include "dolfin/swig/nls/pre.i"
 %include "dolfin/nls/NonlinearProblem.h"
 %include "dolfin/nls/NewtonSolver.h"
+%include "dolfin/nls/PETScSNESSolver.h"
 
