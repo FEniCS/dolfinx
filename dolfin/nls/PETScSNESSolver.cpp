@@ -22,6 +22,7 @@
 #ifdef HAS_PETSC
 
 #include "PETScSNESSolver.h"
+#include <boost/assign/list_of.hpp>
 
 using namespace dolfin;
 
@@ -30,30 +31,35 @@ const std::map<std::string, const SNESType> PETScSNESSolver::_methods
   = boost::assign::map_list_of("default",  "")
                               ("ls",          SNESLS)
                               ("tr",          SNESTR)
-                              ("nrichardson", SNESNRICHARDSON)
-                              ("virs",        SNESVIRS)
-                              ("ngmres",      SNESNGMRES)
-                              ("qn",          SNESQN)
-                              ("ncg",         SNESNCG)
-                              ("fas",         SNESFAS)
-                              ("ms",          SNESMS);
+                              ("ngmres",      SNESNGMRES);
+
+// These later ones are only available from PETSc 3.3 on, I think
+// but at the moment we support PETSc >= 3.2
+// so I'm leaving them commented out.
+//                              ("nrichardson", SNESNRICHARDSON)
+//                              ("virs",        SNESVIRS)
+//                              ("qn",          SNESQN)
+//                              ("ncg",         SNESNCG)
+//                              ("fas",         SNESFAS)
+//                              ("ms",          SNESMS);
 
 // Mapping from method string to description
 const std::vector<std::pair<std::string, std::string> >
-  PETScKrylovSolver::_methods_descr = boost::assign::pair_list_of
+  PETScSNESSolver::_methods_descr = boost::assign::pair_list_of
     ("default",     "default SNES method")
     ("ls",          "Line search method")
     ("tr",          "Trust region method")
-    ("nrichardson", "Richardson nonlinear method (Picard iteration)")
-    ("virs",        "Reduced space active set solver method")
-    ("ngmres",      "Nonlinear generalised minimum residual method")
-    ("qn",          "Limited memory quasi-Newton")
-    ("ncg",         "Nonlinear conjugate gradient method")
-    ("fas",         "Full Approximation Scheme nonlinear multigrid method")
-    ("ms",          "Multistage smoothers");
+    ("ngmres",      "Nonlinear generalised minimum residual method");
+//    ("nrichardson", "Richardson nonlinear method (Picard iteration)")
+//    ("virs",        "Reduced space active set solver method")
+//    ("qn",          "Limited memory quasi-Newton")
+//    ("ncg",         "Nonlinear conjugate gradient method")
+//    ("fas",         "Full Approximation Scheme nonlinear multigrid method")
+//    ("ms",          "Multistage smoothers");
+
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
-PETScKrylovSolver::methods()
+PETScSNESSolver::methods()
 {
   return PETScSNESSolver::_methods_descr;
 }
@@ -67,7 +73,7 @@ PETScSNESSolver::PETScSNESSolver(std::string nls_type,
   {
     dolfin_error("PETScSNESSolver.cpp",
                  "create PETSc SNES solver",
-                 "Unknown SNES method \"%s\"", method.c_str());
+                 "Unknown SNES method \"%s\"", nls_type.c_str());
   }
 }
 //-----------------------------------------------------------------------------

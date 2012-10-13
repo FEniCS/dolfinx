@@ -24,7 +24,8 @@
 
 #ifdef HAS_PETSC
 
-#include <utility>
+#include <map>
+#include <petscsnes.h>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/nls/NewtonSolver.h>
 
@@ -45,7 +46,7 @@ namespace dolfin
                     std::string pc_type="default");
 
     /// Destructor
-    virtual ~NewtonSolver();
+    virtual ~PETScSNESSolver();
 
     /// Return a list of available solver methods
     static std::vector<std::pair<std::string, std::string> > methods();
@@ -61,7 +62,9 @@ namespace dolfin
     // Available solvers descriptions
     static const std::vector<std::pair<std::string, std::string> > _methods_descr;
 
-  }
+  };
+
+}
 
 #endif
 
