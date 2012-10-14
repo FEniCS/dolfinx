@@ -20,7 +20,7 @@
 // Modified by Andre Massing 2009
 //
 // First added:  2003-11-28
-// Last changed: 2012-10-02
+// Last changed: 2012-10-13
 
 #include <algorithm>
 #include <map>
@@ -30,6 +30,7 @@
 
 #include <dolfin/adaptivity/Extrapolation.h>
 #include <dolfin/common/utils.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/FiniteElement.h>
@@ -598,6 +599,8 @@ void Function::update() const
 //-----------------------------------------------------------------------------
 void Function::init_vector()
 {
+  Timer timer("Init dof vector");
+
   // Check that function space is not a subspace (view)
   dolfin_assert(_function_space);
   if (_function_space->dofmap()->is_view())
@@ -616,7 +619,7 @@ void Function::init_vector()
 
   // Determine ghost vertices if dof map is distributed
   std::vector<uint> ghost_indices;
-  if (N  > local_size)
+  if (N > local_size)
     compute_ghost_indices(range, ghost_indices);
 
   // Create vector of dofs
