@@ -23,8 +23,24 @@
 
 #include "PETScSNESSolver.h"
 #include <boost/assign/list_of.hpp>
+#include <dolfin/common/MPI.h>
 
 using namespace dolfin;
+
+// Utility function
+namespace dolfin
+{
+  class PETScSNESDeleter
+  {
+  public:
+    void operator() (SNES* _snes)
+    {
+      if (_snes)
+        SNESDestroy(_snes);
+      delete _snes;
+    }
+  };
+}
 
 // Mapping from method string to PETSc
 const std::map<std::string, const SNESType> PETScSNESSolver::_methods
@@ -64,9 +80,21 @@ PETScSNESSolver::methods()
   return PETScSNESSolver::_methods_descr;
 }
 //-----------------------------------------------------------------------------
+Parameters PETScSNESSolver::default_parameters()
+{
+  Parameters p(NewtonSolver::default_parameters());
+  p.rename("petsc_snes_solver");
+
+  // Control PETSc performance profiling
+  p.add("profile", false);
+
+  return p;
+}
+//-----------------------------------------------------------------------------
 PETScSNESSolver::PETScSNESSolver(std::string nls_type,
                                  std::string solver_type,
                                  std::string pc_type)
+   : _solver_type(solver_type), _pc_type(pc_type)
 {
   // Check that the requested method is known
   if (_methods.count(nls_type) == 0)
@@ -75,11 +103,41 @@ PETScSNESSolver::PETScSNESSolver(std::string nls_type,
                  "create PETSc SNES solver",
                  "Unknown SNES method \"%s\"", nls_type.c_str());
   }
+
+  // Set parameter values
+  parameters = default_parameters();
+
+  init(nls_type);
 }
 //-----------------------------------------------------------------------------
 PETScSNESSolver::~PETScSNESSolver()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+void PETScSNESSolver::init(const std::string& method)
+{
+  // Check that nobody else shares this solver
+  if (_snes && !_snes.unique())
+  {
+    dolfin_error("PETScSNESSolver.cpp",
+                 "initialize PETSc SNES solver",
+                 "More than one object points to the underlying PETSc object");
+  }
+
+  _snes.reset(new SNES, PETScSNESDeleter());
+
+  if (MPI::num_processes() > 1)
+    SNESCreate(PETSC_COMM_WORLD, _snes.get());
+  else
+    SNESCreate(PETSC_COMM_SELF, _snes.get());
+
+  // Set some options
+  SNESSetFromOptions(*_snes);
+
+  // Set solver type
+  if (method != "default")
+    SNESSetType(*_snes, _methods.find(method)->second);
 }
 
 #endif

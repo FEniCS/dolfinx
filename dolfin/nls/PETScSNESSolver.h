@@ -51,16 +51,26 @@ namespace dolfin
     /// Return a list of available solver methods
     static std::vector<std::pair<std::string, std::string> > methods();
 
+    /// Default parameter values
+    static Parameters default_parameters();
+
   private:
 
     /// PETSc solver pointer
     boost::shared_ptr<SNES> _snes;
+
+    /// Initialize SNES solver
+    void init(const std::string& method);
 
     // Available solvers
     static const std::map<std::string, const SNESType> _methods;
 
     // Available solvers descriptions
     static const std::vector<std::pair<std::string, std::string> > _methods_descr;
+
+    // Passed in solver and preconditioner information
+    std::string _solver_type;
+    std::string _pc_type;
 
   };
 
