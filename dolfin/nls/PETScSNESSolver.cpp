@@ -165,13 +165,12 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
   snes_ctx.nonlinear_problem = &nonlinear_problem;
   snes_ctx.dx = &x.down_cast<PETScVector>();
 
-  //SNESSetFunction(*_snes, *f.vec(), PETScSNESSolver::FormFunction, &snes_ctx); // FIXME: why does this make it crash inside PETSc?
-  SNESSetFunction(*_snes, PETSC_NULL, PETScSNESSolver::FormFunction, &snes_ctx);
+  SNESSetFunction(*_snes, *f.vec(), PETScSNESSolver::FormFunction, &snes_ctx);
   SNESSetJacobian(*_snes, *A.mat(), *A.mat(), PETScSNESSolver::FormJacobian, &snes_ctx);
 
   SNESMonitorSet(*_snes, SNESMonitorDefault, PETSC_NULL, PETSC_NULL);
 
-  SNESSolve(*_snes, *f.vec(), *snes_ctx.dx->vec());
+  SNESSolve(*_snes, PETSC_NULL, *snes_ctx.dx->vec());
 
   SNESGetIterationNumber(*_snes, &its);
   SNESGetConvergedReason(*_snes, &reason);
