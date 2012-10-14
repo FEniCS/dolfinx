@@ -210,7 +210,6 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
   nonlinear_problem->form(A, df, *dx);
   nonlinear_problem->F(df, *dx);
 
-  VecDuplicate(*df.vec(), &f);
   VecCopy(*df.vec(), f);
 
   return 0;
