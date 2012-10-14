@@ -85,6 +85,9 @@ namespace dolfin
     // Available solvers descriptions
     static const std::vector<std::pair<std::string, std::string> > _methods_descr;
 
+    // The callback for PETSc to compute F
+    PetscErrorCode FormFunction(SNES snes, Vec x, Vec f, void* ctx);
+
   };
 
 }
