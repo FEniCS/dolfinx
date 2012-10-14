@@ -25,6 +25,7 @@
 #include <ostream>
 #include <sstream>
 #include <vector>
+#include <boost/assign.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
@@ -57,6 +58,13 @@ XDMFFile::XDMFFile(const std::string filename) : GenericFile(filename, "XDMF")
   hdf5_file.reset(new HDF5File(p.string()));
   dolfin_assert(hdf5_file);
   hdf5_file->open_hdf5_file(true);
+
+  // Parameters
+
+  // Re-write mesh (true, false or auto, with auto based on detecting
+  // changes in a hash key)
+  std::set<std::string> mesh_modes = boost::assign::list_of("true")("false")("auto");
+  parameters.add("rewrite_mesh", "auto", mesh_modes);
 }
 //----------------------------------------------------------------------------
 XDMFFile::~XDMFFile()
@@ -96,7 +104,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   const uint value_rank = u.value_rank();
   const uint value_size = u.value_size();
   const uint cell_dim = mesh.topology().dim();
-  uint value_size_io = value_size;
+  uint padded_value_size = value_size;
 
   // Test for cell-centred data
   uint cell_based_dim = 1;
@@ -125,32 +133,24 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     v.get_local(data_values);
   }
 
-  // Interleave the values for vector or tensor fields 
-  // and pad 2D vectors and tensors to 3D
+
+
+  // Interleave the values for vector or tensor fields and pad 2D
+  // vectors and tensors to 3D
   if (value_rank > 0)
   {
     if (value_size == 2)
-      value_size_io = 3;
-    //    if (value_size == 4)
-    //      value_size_io = 9;
+      padded_value_size = 3;
+    if (value_size == 4)
+      padded_value_size = 9;
 
-    std::vector<double> tmp;
-    tmp.reserve(value_size*num_local_entities);
+    std::vector<double> _data_values(padded_value_size*num_local_entities, 0.0);
     for(uint i = 0; i < num_local_entities; i++)
     {
       for (uint j = 0; j < value_size; j++)
-      {
-        tmp.push_back(data_values[i + j*num_local_entities]);
-        //        if (j == 1 && value_size == 4) // 2D -> 3D tensor
-        //          tmp.push_back(0.0);
-      }
-      if (value_size == 2)    // 2D -> 3D vector
-        tmp.push_back(0.0);
-      //      if (value_size == 4)    // 2D -> 3D tensor
-      //        tmp.insert(tmp.end(), 4, 0.0);
+        _data_values[i*padded_value_size + j] = data_values[i + j*num_local_entities];
     }
-    data_values.resize(tmp.size()); // 2D->3D padding increases size
-    std::copy(tmp.begin(), tmp.end(), data_values.begin());
+    data_values = _data_values;
   }
 
   // Get names of mesh data sets used in the HDF5 file
@@ -159,7 +159,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   const std::string mesh_topology_name = hdf5_file->mesh_topology_dataset_name(mesh);
 
   // Write mesh to HDF5 file
-  if (counter == 0 )
+  if (counter == 0)
     hdf5_file->write_mesh(mesh);
   else if (!hdf5_file->dataset_exists(mesh_coords_name)
                 || !hdf5_file->dataset_exists(mesh_topology_name))
@@ -177,7 +177,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   s = "/VisualisationVector/" + boost::lexical_cast<std::string>(counter);
   std::vector<uint> global_size(2);
   global_size[0] = MPI::sum(num_local_entities);
-  global_size[1] = value_size_io;
+  global_size[1] = padded_value_size;
 
   hdf5_file->write_data("/VisualisationVector", s.c_str(), data_values, global_size);
 
@@ -284,12 +284,12 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     if(vertex_data)
     {
       s = boost::lexical_cast<std::string>(num_all_local_vertices) + " "
-          + boost::lexical_cast<std::string>(value_size_io);
+          + boost::lexical_cast<std::string>(padded_value_size);
     }
     else
     {
       s = boost::lexical_cast<std::string>(num_global_cells) + " "
-          + boost::lexical_cast<std::string>(value_size_io);
+          + boost::lexical_cast<std::string>(padded_value_size);
     }
     xdmf_data.append_attribute("Dimensions") = s.c_str();
 
