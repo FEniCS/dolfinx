@@ -47,6 +47,22 @@ namespace dolfin
     /// Destructor
     virtual ~PETScSNESSolver();
 
+    /// Solve abstract nonlinear problem :math:`F(x) = 0` for given
+    /// :math:`F` and Jacobian :math:`\dfrac{\partial F}{\partial x}`.
+    ///
+    /// *Arguments*
+    ///     nonlinear_function (_NonlinearProblem_)
+    ///         The nonlinear problem.
+    ///     x (_GenericVector_)
+    ///         The vector.
+    ///
+    /// *Returns*
+    ///     std::pair<uint, bool>
+    ///         Pair of number of Newton iterations, and whether
+    ///         iteration converged)
+    std::pair<uint, bool> solve(NonlinearProblem& nonlinear_function,
+                                GenericVector& x);
+
     /// Return a list of available solver methods
     static std::vector<std::pair<std::string, std::string> > methods();
 

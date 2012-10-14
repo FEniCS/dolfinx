@@ -24,6 +24,9 @@
 #include "PETScSNESSolver.h"
 #include <boost/assign/list_of.hpp>
 #include <dolfin/common/MPI.h>
+#include <dolfin/la/PETScVector.h>
+#include <dolfin/la/PETScMatrix.h>
+#include "NonlinearProblem.h"
 
 using namespace dolfin;
 
@@ -135,6 +138,19 @@ void PETScSNESSolver::init(const std::string& method)
   // Set solver type
   if (method != "default")
     SNESSetType(*_snes, _methods.find(method)->second);
+}
+//-----------------------------------------------------------------------------
+std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
+                                                  GenericVector& x)
+{
+  PETScVector f;
+  PETScMatrix A;
+
+  // Compute F(u)
+  nonlinear_problem.form(A, f, x);
+  nonlinear_problem.F(f, x);
+
+  return std::make_pair(10, true);
 }
 
 #endif
