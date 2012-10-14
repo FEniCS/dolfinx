@@ -45,6 +45,12 @@ namespace dolfin
   };
 }
 
+struct snes_ctx_t
+{
+  NonlinearProblem* nonlinear_problem;
+  PETScVector* dx;
+};
+
 // Mapping from method string to PETSc
 const std::map<std::string, const SNESType> PETScSNESSolver::_methods
   = boost::assign::map_list_of("default",  "")
@@ -149,20 +155,23 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
   PETScMatrix A;
   int its;
   SNESConvergedReason reason;
+  struct snes_ctx_t snes_ctx;
 
   // Compute F(u)
   nonlinear_problem.form(A, f, x);
   nonlinear_problem.F(f, x);
   nonlinear_problem.J(A, x);
 
-  //SNESSetFunction(*_snes, *f.vec(), PETScSNESSolver::FormFunction, &nonlinear_problem); // FIXME: why does this make it crash inside PETSc?
-  SNESSetFunction(*_snes, PETSC_NULL, PETScSNESSolver::FormFunction, &nonlinear_problem);
-  SNESSetJacobian(*_snes, *A.mat(), *A.mat(), PETScSNESSolver::FormJacobian, &nonlinear_problem);
+  snes_ctx.nonlinear_problem = &nonlinear_problem;
+  snes_ctx.dx = &x.down_cast<PETScVector>();
+
+  //SNESSetFunction(*_snes, *f.vec(), PETScSNESSolver::FormFunction, &snes_ctx); // FIXME: why does this make it crash inside PETSc?
+  SNESSetFunction(*_snes, PETSC_NULL, PETScSNESSolver::FormFunction, &snes_ctx);
+  SNESSetJacobian(*_snes, *A.mat(), *A.mat(), PETScSNESSolver::FormJacobian, &snes_ctx);
 
   SNESMonitorSet(*_snes, SNESMonitorDefault, PETSC_NULL, PETSC_NULL);
 
-  PETScVector dx = PETScVector(x.down_cast<PETScVector>());
-  SNESSolve(*_snes, *f.vec(), *dx.vec());
+  SNESSolve(*_snes, *f.vec(), *snes_ctx.dx->vec());
 
   SNESGetIterationNumber(*_snes, &its);
   SNESGetConvergedReason(*_snes, &reason);
@@ -187,18 +196,19 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
 //-----------------------------------------------------------------------------
 PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
 {
-  NonlinearProblem* nonlinear_problem = (NonlinearProblem*) ctx;
+  struct snes_ctx_t snes_ctx = *(struct snes_ctx_t*) ctx;
+  NonlinearProblem* nonlinear_problem = snes_ctx.nonlinear_problem;
+  PETScVector* dx = snes_ctx.dx;
 
   PETScMatrix A;
   PETScVector df;
-  PETScVector dx;
 
-  VecDuplicate(x, &(*dx.vec()));
-  VecCopy(x, *dx.vec());
+  VecDuplicate(x, &(*dx->vec()));
+  VecCopy(x, *dx->vec());
 
   // Compute F(u)
-  nonlinear_problem->form(A, df, dx);
-  nonlinear_problem->F(df, dx);
+  nonlinear_problem->form(A, df, *dx);
+  nonlinear_problem->F(df, *dx);
 
   VecDuplicate(*df.vec(), &f);
   VecCopy(*df.vec(), f);
@@ -208,17 +218,18 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
 //-----------------------------------------------------------------------------
 PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* B, MatStructure* flag, void* ctx)
 {
-  NonlinearProblem* nonlinear_problem = (NonlinearProblem*) ctx;
+  struct snes_ctx_t snes_ctx = *(struct snes_ctx_t*) ctx;
+  NonlinearProblem* nonlinear_problem = snes_ctx.nonlinear_problem;
+  PETScVector* dx = snes_ctx.dx;
 
-  PETScVector dx;
   PETScVector f;
   PETScMatrix dA;
 
-  VecDuplicate(x, &(*dx.vec()));
-  VecCopy(x, *dx.vec());
+  VecDuplicate(x, &(*dx->vec()));
+  VecCopy(x, *dx->vec());
 
-  nonlinear_problem->form(dA, f, dx);
-  nonlinear_problem->J(dA, dx);
+  nonlinear_problem->form(dA, f, *dx);
+  nonlinear_problem->J(dA, *dx);
 
   MatCopy(*dA.mat(), *A, SAME_NONZERO_PATTERN);
   if (B != A)
