@@ -214,10 +214,18 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* B, M
   PETScVector f;
   PETScMatrix dA;
 
+  VecDuplicate(x, &(*dx.vec()));
+  VecCopy(x, *dx.vec());
+
   nonlinear_problem->form(dA, f, dx);
   nonlinear_problem->J(dA, dx);
 
   MatCopy(*dA.mat(), *A, SAME_NONZERO_PATTERN);
+  if (B != A)
+  {
+    MatCopy(*dA.mat(), *B, SAME_NONZERO_PATTERN);
+  }
+  *flag = SAME_NONZERO_PATTERN;
 
   return 0;
 }
