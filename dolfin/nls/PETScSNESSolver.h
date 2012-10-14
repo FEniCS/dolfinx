@@ -42,7 +42,7 @@ namespace dolfin
   public:
 
     /// Create SNES solver for a particular method
-    PETScSNESSolver(std::string nls_type="ls");
+    PETScSNESSolver(std::string nls_type="default");
 
     /// Destructor
     virtual ~PETScSNESSolver();

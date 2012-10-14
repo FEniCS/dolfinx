@@ -95,9 +95,12 @@ Parameters PETScSNESSolver::default_parameters()
 {
   Parameters p(NewtonSolver::default_parameters());
   p.rename("petsc_snes_solver");
-
-  // Control PETSc performance profiling
-  p.add("profile", false);
+  p.add("solution_tolerance", 1.0e-16);
+  p.add("maximum_residual_evaluations", 2000);
+  p.remove("convergence_criterion");
+  p.remove("relaxation_parameter");
+  p.remove("method");
+  p.add("method", "default");
 
   return p;
 }
@@ -165,10 +168,23 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
   snes_ctx.nonlinear_problem = &nonlinear_problem;
   snes_ctx.dx = &x.down_cast<PETScVector>();
 
+  if (std::string(parameters["method"]) != "default")
+  {
+    info("Overriding nonlinear solver method with value %s from parameters.", std::string(parameters["method"]).c_str());
+    SNESSetType(*_snes, _methods.find(std::string(parameters["method"]))->second);
+  }
+
   SNESSetFunction(*_snes, *f.vec(), PETScSNESSolver::FormFunction, &snes_ctx);
   SNESSetJacobian(*_snes, *A.mat(), *A.mat(), PETScSNESSolver::FormJacobian, &snes_ctx);
 
-  SNESMonitorSet(*_snes, SNESMonitorDefault, PETSC_NULL, PETSC_NULL);
+  // Set some options from the parameters
+  if (parameters["report"])
+  {
+    SNESMonitorSet(*_snes, SNESMonitorDefault, PETSC_NULL, PETSC_NULL);
+  }
+
+  // Tolerances
+  SNESSetTolerances(*_snes, parameters["absolute_tolerance"], parameters["relative_tolerance"], parameters["solution_tolerance"], parameters["maximum_iterations"], parameters["maximum_residual_evaluations"]);
 
   SNESSolve(*_snes, PETSC_NULL, *snes_ctx.dx->vec());
 
@@ -188,6 +204,13 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
     {
       warning("PETSc SNES solver diverged in %d iterations with divergence reason %d.", its, reason);
     }
+  }
+
+  if (parameters["error_on_nonconvergence"] && reason < 0)
+  {
+    dolfin_error("PETScSNESSolver.cpp",
+                 "solve nonlinear system with PETScSNESSolver",
+                 "Solver did not converge. Bummer");
   }
 
   return std::make_pair(its, reason > 0);
