@@ -20,7 +20,7 @@
 // Modified by Andre Massing 2009
 //
 // First added:  2003-11-28
-// Last changed: 2012-10-02
+// Last changed: 2012-10-13
 
 #include <algorithm>
 #include <map>
@@ -30,6 +30,7 @@
 
 #include <dolfin/adaptivity/Extrapolation.h>
 #include <dolfin/common/utils.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/FiniteElement.h>
@@ -338,7 +339,7 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
 
   // Create cell that contains point
   const Cell cell(mesh, id);
-  const UFCCell ufc_cell(cell, false);
+  const UFCCell ufc_cell(cell);
 
   // Call evaluate function
   eval(values, x, cell, ufc_cell);
@@ -486,7 +487,7 @@ void Function::non_matching_eval(Array<double>& values,
 
   // Create cell that contains point
   const Cell cell(mesh, id);
-  const UFCCell new_ufc_cell(cell, false);
+  const UFCCell new_ufc_cell(cell);
 
   // Call evaluate function
   eval(values, x, cell, new_ufc_cell);
@@ -555,9 +556,9 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   // Create vector for expansion coefficients
   std::vector<double> coefficients(element.space_dimension());
 
-  // Interpolate vertex values on each cell (using last computed value if not
-  // continuous, e.g. discontinuous Galerkin methods)
-  UFCCell ufc_cell(mesh, false);
+  // Interpolate vertex values on each cell (using last computed value
+  // if not continuous, e.g. discontinuous Galerkin methods)
+  UFCCell ufc_cell(mesh);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update to current cell
@@ -598,6 +599,8 @@ void Function::update() const
 //-----------------------------------------------------------------------------
 void Function::init_vector()
 {
+  Timer timer("Init dof vector");
+
   // Check that function space is not a subspace (view)
   dolfin_assert(_function_space);
   if (_function_space->dofmap()->is_view())
@@ -616,7 +619,7 @@ void Function::init_vector()
 
   // Determine ghost vertices if dof map is distributed
   std::vector<uint> ghost_indices;
-  if (N  > local_size)
+  if (N > local_size)
     compute_ghost_indices(range, ghost_indices);
 
   // Create vector of dofs

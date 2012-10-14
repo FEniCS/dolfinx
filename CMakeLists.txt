@@ -305,7 +305,7 @@ endif()
 # Check for Trilinos and the requires Trilinos packages
 if (DOLFIN_ENABLE_TRILINOS)
   message(STATUS "Checking for Trilinos")
-  find_package(Trilinos 10.10.0 PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
+  find_package(Trilinos PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
   set(DOLFIN_TRILINOS_PACKAGES "Epetra;Zoltan;ML;Ifpack;Amesos")
 
   # Check for required packages

@@ -217,20 +217,18 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
 
       if (shared_owned_dofs.find(received_dof) != shared_owned_dofs.end())
       {
-        // Move dofs with higher ownership votes from shared to shared but not owned
+        // Move dofs with higher ownership votes from shared to shared
+        // but not owned
         if (received_vote < dof_vote[received_dof])
         {
           shared_unowned_dofs.insert(received_dof);
           shared_owned_dofs.erase(received_dof);
         }
-        else if (received_vote == dof_vote[received_dof])
+        else if (received_vote == dof_vote[received_dof] && proc_num > src)
         {
-          // FIXME: Eventually replace this with a more robust condition. It's
-          // good for testing that ownership of shared dofs is spread roughly
-          // equally
-          dolfin_error("DofMapBuilder.cpp",
-                       "compute mapping of degrees of freedom",
-                       "Cannot decide on dof ownership; votes are equal");
+          // If votes are equal, let lower rank process take ownership
+          shared_unowned_dofs.insert(received_dof);
+          shared_owned_dofs.erase(received_dof);
         }
 
         // Remember the sharing of the dof
@@ -315,13 +313,6 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   // Build vector of owned dofs
   const std::vector<uint> my_dofs(owned_dofs.begin(), owned_dofs.end());
 
-  /*
-  cout << "Num cells: " << mesh.num_cells() << endl;
-  cout << "Local of map dim: " << old_dofmap.size() << endl;
-  cout << "my dofs dim: " << my_dofs.size() << endl;
-  cout << "Number of owned dofs: " << owned_dofs.size() << endl;
-  */
-
   // Create contiguous local numbering for locally owned dofs
   uint my_counter = 0;
   boost::unordered_map<uint, uint> my_old_to_new_dof_index;
@@ -361,17 +352,6 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   const std::vector<uint> dof_remap
       = BoostGraphRenumbering::compute_cuthill_mckee(graph, true);
 
-  //cout << "(1) Min, max, size: " << *std::min_element(dof_remap.begin(), dof_remap.end())
-  //  << ", " <<  *std::max_element(dof_remap.begin(), dof_remap.end()) << ", " << dof_remap.size() << endl;
-  //std::set<uint> tmp(dof_remap.begin(), dof_remap.end());
-  //cout << "Duplicate test: " << tmp.size() << ", " <<  dof_remap.size() << endl;
-
-  /*
-  std::vector<uint> dof_remap(owned_dofs.size());
-  for (uint i = 0; i < dof_remap.size(); ++i)
-    dof_remap[i] = i;
-  */
-
   // Map from old to new index for dofs
   boost::unordered_map<uint, uint> old_to_new_dof_index;
 
@@ -382,11 +362,9 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   for (set_iterator owned_dof = owned_dofs.begin(); owned_dof != owned_dofs.end(); ++owned_dof, counter++)
   {
     // Set new dof number
-    //old_to_new_dof_index[*owned_dof] = process_offset + counter;
     old_to_new_dof_index[*owned_dof] = process_offset + dof_remap[counter];
 
     // Update UFC-to-renumbered map for new number
-    //dofmap.ufc_map_to_dofmap[*owned_dof] = process_offset + counter;
     dofmap.ufc_map_to_dofmap[*owned_dof] = process_offset + dof_remap[counter];
 
     // If this dof is shared and owned, buffer old and new index for sending
