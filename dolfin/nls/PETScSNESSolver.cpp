@@ -50,6 +50,7 @@ const std::map<std::string, const SNESType> PETScSNESSolver::_methods
   = boost::assign::map_list_of("default",  "")
                               ("ls",          SNESLS)
                               ("tr",          SNESTR)
+                              ("test",        SNESTEST)
                               ("ngmres",      SNESNGMRES);
 
 // These later ones are only available from PETSc 3.3 on, I think
@@ -68,6 +69,7 @@ const std::vector<std::pair<std::string, std::string> >
     ("default",     "default SNES method")
     ("ls",          "Line search method")
     ("tr",          "Trust region method")
+    ("test",        "Tool to verify Jacobian approximation")
     ("ngmres",      "Nonlinear generalised minimum residual method");
 //    ("nrichardson", "Richardson nonlinear method (Picard iteration)")
 //    ("virs",        "Reduced space active set solver method")
@@ -145,26 +147,42 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
 {
   PETScVector f;
   PETScMatrix A;
-  PetscErrorCode ierr;
   int its;
+  SNESConvergedReason reason;
 
   // Compute F(u)
   nonlinear_problem.form(A, f, x);
   nonlinear_problem.F(f, x);
   nonlinear_problem.J(A, x);
 
-  //SNESSetFunction(*_snes, *f.vec(), PETScSNESSolver::FormFunction, &nonlinear_problem);
+  //SNESSetFunction(*_snes, *f.vec(), PETScSNESSolver::FormFunction, &nonlinear_problem); // FIXME: why does this make it crash inside PETSc?
   SNESSetFunction(*_snes, PETSC_NULL, PETScSNESSolver::FormFunction, &nonlinear_problem);
   SNESSetJacobian(*_snes, *A.mat(), *A.mat(), PETScSNESSolver::FormJacobian, &nonlinear_problem);
 
   SNESMonitorSet(*_snes, SNESMonitorDefault, PETSC_NULL, PETSC_NULL);
 
   PETScVector dx = PETScVector(x.down_cast<PETScVector>());
-  ierr = SNESSolve(*_snes, *f.vec(), *dx.vec());
+  SNESSolve(*_snes, *f.vec(), *dx.vec());
 
   SNESGetIterationNumber(*_snes, &its);
+  SNESGetConvergedReason(*_snes, &reason);
 
-  return std::make_pair(its, ierr == 0);
+  if (reason > 0)
+  {
+    if (dolfin::MPI::process_number() == 0)
+    {
+      info("PETSc SNES solver converged in %d iterations with convergence reason %d.", its, reason);
+    }
+  }
+  else
+  {
+    if (dolfin::MPI::process_number() == 0)
+    {
+      warning("PETSc SNES solver diverged in %d iterations with divergence reason %d.", its, reason);
+    }
+  }
+
+  return std::make_pair(its, reason > 0);
 }
 //-----------------------------------------------------------------------------
 PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
