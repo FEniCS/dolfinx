@@ -63,7 +63,8 @@ class XDMF_Vertex_Function_Output(unittest.TestCase):
     def test_save_2d_vector(self):
         mesh = UnitSquare(16, 16)
         u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
-        u.vector()[:] = 1.0
+        c = Constant((1.0, 2.0))
+        u.interpolate(c)
         File("output/u_2dv.xdmf") << u
 
     def xtest_save_3d_vector(self):
