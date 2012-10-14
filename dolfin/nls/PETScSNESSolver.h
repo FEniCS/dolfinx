@@ -79,15 +79,17 @@ namespace dolfin
     /// Initialize SNES solver
     void init(const std::string& method);
 
-    // Available solvers
+    /// Available solvers
     static const std::map<std::string, const SNESType> _methods;
 
-    // Available solvers descriptions
+    /// Available solvers descriptions
     static const std::vector<std::pair<std::string, std::string> > _methods_descr;
 
-    // The callback for PETSc to compute F
+    /// The callback for PETSc to compute F
     static PetscErrorCode FormFunction(SNES snes, Vec x, Vec f, void* ctx);
 
+    /// The callback for PETSc to compute A
+    static PetscErrorCode FormJacobian(SNES snes, Vec x, Mat* A, Mat* B, MatStructure* flag, void* ctx);
   };
 
 }

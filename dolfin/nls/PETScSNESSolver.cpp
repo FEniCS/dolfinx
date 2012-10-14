@@ -151,6 +151,7 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
   nonlinear_problem.F(f, x);
 
   SNESSetFunction(*_snes, *f.vec(), PETScSNESSolver::FormFunction, &nonlinear_problem);
+  SNESSetJacobian(*_snes, *A.mat(), *A.mat(), PETScSNESSolver::FormJacobian, &nonlinear_problem);
 
   return std::make_pair(10, true);
 }
@@ -172,5 +173,23 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
 
   return 0;
 }
+//-----------------------------------------------------------------------------
+PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* B, MatStructure* flag, void* ctx)
+{
+  NonlinearProblem* nonlinear_problem = (NonlinearProblem*) ctx;
+
+  boost::shared_ptr<Vec> px(&x);
+  PETScVector dx(px);
+  PETScVector f;
+
+  boost::shared_ptr<Mat> pA(A);
+  PETScMatrix dA(pA);
+
+  nonlinear_problem->form(dA, f, dx);
+  nonlinear_problem->J(dA, dx);
+
+  return 0;
+}
+
 
 #endif
