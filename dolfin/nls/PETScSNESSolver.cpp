@@ -150,7 +150,7 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
   nonlinear_problem.form(A, f, x);
   nonlinear_problem.F(f, x);
 
-  //SNESSetFunction(*_snes, *f.vec(), FormFunction, &nonlinear_problem);
+  SNESSetFunction(*_snes, *f.vec(), PETScSNESSolver::FormFunction, &nonlinear_problem);
 
   return std::make_pair(10, true);
 }
