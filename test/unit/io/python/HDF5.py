@@ -33,12 +33,14 @@ class HDF5_Vector(unittest.TestCase):
         vector_file << x
 
     def test_save_and_read_vector(self):
+        # Write to file
         x = Vector(305)
         x[:] = 1.2
         vector_file = File("vector.h5")
         vector_file << x
         del vector_file
 
+        # Read from file
         y = Vector()
         vector_file = File("vector.h5")
         vector_file >> y

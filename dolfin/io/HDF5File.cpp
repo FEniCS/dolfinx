@@ -51,8 +51,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 HDF5File::HDF5File(const std::string filename, const bool use_mpiio)
-  : GenericFile(filename, "H5"),
-    hdf5_file_open(false), hdf5_file_id(0),
+  : GenericFile(filename, "H5"), hdf5_file_open(false), hdf5_file_id(0),
     mpi_io(MPI::num_processes() > 1 && use_mpiio ? true : false)
 {
   // Do nothing
