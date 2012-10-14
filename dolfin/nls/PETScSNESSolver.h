@@ -27,6 +27,7 @@
 #include <map>
 #include <petscsnes.h>
 #include <boost/shared_ptr.hpp>
+#include <dolfin/parameter/Parameters.h>
 #include <dolfin/nls/NewtonSolver.h>
 
 namespace dolfin
@@ -36,14 +37,12 @@ namespace dolfin
   /// via PETSc's SNES interface. It includes line search and trust
   /// region techniques for globalising the convergence of the
   /// nonlinear iteration.
-  class PETScSNESSolver : public NewtonSolver
+  class PETScSNESSolver
   {
   public:
 
     /// Create SNES solver for a particular method
-    PETScSNESSolver(std::string nls_type="ls",
-                    std::string solver_type="lu",
-                    std::string pc_type="default");
+    PETScSNESSolver(std::string nls_type="ls");
 
     /// Destructor
     virtual ~PETScSNESSolver();
@@ -53,6 +52,8 @@ namespace dolfin
 
     /// Default parameter values
     static Parameters default_parameters();
+
+    Parameters parameters;
 
   private:
 
@@ -67,10 +68,6 @@ namespace dolfin
 
     // Available solvers descriptions
     static const std::vector<std::pair<std::string, std::string> > _methods_descr;
-
-    // Passed in solver and preconditioner information
-    std::string _solver_type;
-    std::string _pc_type;
 
   };
 

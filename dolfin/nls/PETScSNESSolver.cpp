@@ -91,10 +91,7 @@ Parameters PETScSNESSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-PETScSNESSolver::PETScSNESSolver(std::string nls_type,
-                                 std::string solver_type,
-                                 std::string pc_type)
-   : _solver_type(solver_type), _pc_type(pc_type)
+PETScSNESSolver::PETScSNESSolver(std::string nls_type)
 {
   // Check that the requested method is known
   if (_methods.count(nls_type) == 0)
