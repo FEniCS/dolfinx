@@ -145,6 +145,9 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
 {
   PETScVector f;
   PETScMatrix A;
+  PetscErrorCode ierr;
+  int its;
+  PETScVector dx;
 
   // Compute F(u)
   nonlinear_problem.form(A, f, x);
@@ -153,7 +156,14 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
   SNESSetFunction(*_snes, *f.vec(), PETScSNESSolver::FormFunction, &nonlinear_problem);
   SNESSetJacobian(*_snes, *A.mat(), *A.mat(), PETScSNESSolver::FormJacobian, &nonlinear_problem);
 
-  return std::make_pair(10, true);
+  SNESMonitorSet(*_snes, SNESMonitorDefault, PETSC_NULL, PETSC_NULL);
+
+  dx = x.down_cast<PETScVector>();
+  ierr = SNESSolve(*_snes, *f.vec(), *dx.vec());
+
+  SNESGetIterationNumber(*_snes, &its);
+
+  return std::make_pair(its, ierr == 0);
 }
 //-----------------------------------------------------------------------------
 PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
