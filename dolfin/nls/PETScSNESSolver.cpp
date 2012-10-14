@@ -147,18 +147,19 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
   PETScMatrix A;
   PetscErrorCode ierr;
   int its;
-  PETScVector dx;
 
   // Compute F(u)
   nonlinear_problem.form(A, f, x);
   nonlinear_problem.F(f, x);
+  nonlinear_problem.J(A, x);
 
-  SNESSetFunction(*_snes, *f.vec(), PETScSNESSolver::FormFunction, &nonlinear_problem);
+  //SNESSetFunction(*_snes, *f.vec(), PETScSNESSolver::FormFunction, &nonlinear_problem);
+  SNESSetFunction(*_snes, PETSC_NULL, PETScSNESSolver::FormFunction, &nonlinear_problem);
   SNESSetJacobian(*_snes, *A.mat(), *A.mat(), PETScSNESSolver::FormJacobian, &nonlinear_problem);
 
   SNESMonitorSet(*_snes, SNESMonitorDefault, PETSC_NULL, PETSC_NULL);
 
-  dx = x.down_cast<PETScVector>();
+  PETScVector dx = PETScVector(x.down_cast<PETScVector>());
   ierr = SNESSolve(*_snes, *f.vec(), *dx.vec());
 
   SNESGetIterationNumber(*_snes, &its);
@@ -171,15 +172,18 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
   NonlinearProblem* nonlinear_problem = (NonlinearProblem*) ctx;
 
   PETScMatrix A;
+  PETScVector df;
+  PETScVector dx;
 
-  boost::shared_ptr<Vec> px(&x);
-  boost::shared_ptr<Vec> pf(&f);
-  PETScVector df(pf);
-  PETScVector dx(px);
+  VecDuplicate(x, &(*dx.vec()));
+  VecCopy(x, *dx.vec());
 
   // Compute F(u)
   nonlinear_problem->form(A, df, dx);
   nonlinear_problem->F(df, dx);
+
+  VecDuplicate(*df.vec(), &f);
+  VecCopy(*df.vec(), f);
 
   return 0;
 }
@@ -188,15 +192,14 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* B, M
 {
   NonlinearProblem* nonlinear_problem = (NonlinearProblem*) ctx;
 
-  boost::shared_ptr<Vec> px(&x);
-  PETScVector dx(px);
+  PETScVector dx;
   PETScVector f;
-
-  boost::shared_ptr<Mat> pA(A);
-  PETScMatrix dA(pA);
+  PETScMatrix dA;
 
   nonlinear_problem->form(dA, f, dx);
   nonlinear_problem->J(dA, dx);
+
+  MatCopy(*dA.mat(), *A, SAME_NONZERO_PATTERN);
 
   return 0;
 }
