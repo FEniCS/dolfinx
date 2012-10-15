@@ -516,13 +516,11 @@ void DirichletBC::apply(GenericMatrix* A,
     // Get values (these must reside in local portion (including ghost
     // values) of the vector
     std::vector<double> x_values(size);
-    x->get_local(x_values);
+    x->get_local(&x_values[0], dofs.size(), &dofs[0]);
 
     // Modify RHS entries
     for (uint i = 0; i < size; i++)
-    {
-      values[i] = x_values[dofs[i]] - values[i];
-    }
+      values[i] = x_values[i] - values[i];
   }
 
   log(PROGRESS, "Applying boundary conditions to linear system.");
