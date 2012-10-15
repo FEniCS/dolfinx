@@ -192,7 +192,7 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
   SNESGetIterationNumber(*_snes, &its);
   SNESGetConvergedReason(*_snes, &reason);
 
-  if (reason > 0)
+  if (reason > 0 && parameters["report"])
   {
     if (dolfin::MPI::process_number() == 0)
     {
