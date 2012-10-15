@@ -65,6 +65,9 @@ XDMFFile::XDMFFile(const std::string filename) : GenericFile(filename, "XDMF")
   // changes in a hash key)
   std::set<std::string> mesh_modes = boost::assign::list_of("true")("false")("auto");
   parameters.add("rewrite_mesh", "auto", mesh_modes);
+  // Flush datasets to disk at each timestep, improves reliability. Option to turn off.
+  parameters.add("xdmf_flush_output", true);
+  
 
 }
 //----------------------------------------------------------------------------
@@ -185,8 +188,10 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   hdf5_file->write_data("/VisualisationVector", s.c_str(), data_values, global_size);
 
   // Flush file to OS. Improves chances of recovering data if interrupted.
-  // FIXME: this should be optional?
-  HDF5Interface::flush_file(hdf5_file->hdf5_file_id);
+  // Also makes file somewhat readable between writes.
+  // FIXME: should this use HDF5Interface, or should HDF5File provide a flush function?
+  if(parameters["xdmf_flush_output"])
+    HDF5Interface::flush_file(hdf5_file->hdf5_file_id);
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero
   if (MPI::process_number() == 0)

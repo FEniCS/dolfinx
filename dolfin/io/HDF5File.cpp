@@ -59,6 +59,8 @@ HDF5File::HDF5File(const std::string filename, const bool use_mpiio)
   // Add parameter to save GlobalIndex (not required for visualisation meshes
   // but needed to make the mesh intelligible for re-reading into dolfin
   parameters.add("hdf5_global_index", false);
+  // Chunking seems to improve performance generally, option to turn it off.
+  parameters.add("hdf5_chunking", true);
 
 }
 //-----------------------------------------------------------------------------
@@ -99,7 +101,7 @@ void HDF5File::operator<< (const GenericVector& x)
 
   // Write data to file
   std::pair<uint,uint> local_range = x.local_range();
-  const bool chunking = true;
+  const bool chunking = parameters["hdf5_chunking"];
   const std::vector<uint> global_size(1, x.size());
   HDF5Interface::write_dataset(hdf5_file_id, dataset_name, local_data,
                                local_range, global_size, mpi_io, chunking);
