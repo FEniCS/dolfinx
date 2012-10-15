@@ -65,6 +65,7 @@ XDMFFile::XDMFFile(const std::string filename) : GenericFile(filename, "XDMF")
   // changes in a hash key)
   std::set<std::string> mesh_modes = boost::assign::list_of("true")("false")("auto");
   parameters.add("rewrite_mesh", "auto", mesh_modes);
+
 }
 //----------------------------------------------------------------------------
 XDMFFile::~XDMFFile()

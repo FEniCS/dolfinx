@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-10-02
+// Last changed: 2012-10-15
 
 #ifndef __DOLFIN_XDMFFILE_H
 #define __DOLFIN_XDMFFILE_H
@@ -28,7 +28,7 @@
 #include <string>
 #include <utility>
 #include <boost/scoped_ptr.hpp>
-#include "dolfin/common/Variable.h"
+// #include "dolfin/common/Variable.h"
 #include "GenericFile.h"
 
 namespace pugi

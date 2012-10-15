@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-10-01
+// Last changed: 2012-10-15
 
 #ifdef HAS_HDF5
 
@@ -43,6 +43,7 @@
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/parameter/GlobalParameters.h>
 
 #include "HDF5File.h"
 #include "HDF5Interface.h"
@@ -54,7 +55,11 @@ HDF5File::HDF5File(const std::string filename, const bool use_mpiio)
   : GenericFile(filename, "H5"), hdf5_file_open(false), hdf5_file_id(0),
     mpi_io(MPI::num_processes() > 1 && use_mpiio ? true : false)
 {
-  // Do nothing
+
+  // Add parameter to save GlobalIndex (not required for visualisation meshes
+  // but needed to make the mesh intelligible for re-reading into dolfin
+  parameters.add("hdf5_global_index", false);
+
 }
 //-----------------------------------------------------------------------------
 HDF5File::~HDF5File()
@@ -227,8 +232,6 @@ void HDF5File::operator>> (Mesh& input_mesh)
 //-----------------------------------------------------------------------------
 void HDF5File::operator<< (const Mesh& mesh)
 {
-  // Mesh output with true global indices - not currently useable for
-  // visualisation
   write_mesh(mesh);
 }
 //-----------------------------------------------------------------------------
@@ -280,8 +283,11 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
   const uint gdim = mesh.geometry().dim();
   std::vector<double> vertex_coords;
   vertex_coords.reserve(gdim*num_local_vertices);
+  std::vector<uint> vertex_indices;
+  vertex_indices.reserve(num_local_vertices);
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
+    vertex_indices.push_back(v->global_index());
     for (uint i = 0; i < gdim; ++i)
       vertex_coords.push_back(v->x(i));
   }
@@ -297,10 +303,14 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
     write_data("/Mesh", coord_dataset, vertex_coords, global_size);
 
     // Write GlobalIndex mapping of coordinates to global vector position
-    //std::vector<uint> global_size_map(1);
-    //global_size_map[0] = MPI::sum(num_local_vertices);
-    //write_data("/Mesh", mesh_index_dataset_name(mesh), vertex_indices,
-    //           global_size_map);
+    // Without these, the mesh cannot be read back in... optional output
+    if(parameters["hdf5_global_index"])
+    {
+      std::vector<uint> global_size_map(1);
+      global_size_map[0] = MPI::sum(num_local_vertices);
+      write_data("/Mesh", mesh_index_dataset_name(mesh), vertex_indices,
+                 global_size_map);
+    }
 
     // Write partitions as an attribute
     std::vector<uint> partitions;
@@ -309,7 +319,7 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
     HDF5Interface::add_attribute(hdf5_file_id, coord_dataset, "partition",
                                  partitions);
 
-    //const uint indexing_indicator = (true_topology_indices ? 1 : 0);
+    // const uint indexing_indicator = (true_topology_indices ? 1 : 0);
     const uint indexing_indicator = 0;
     HDF5Interface::add_attribute(hdf5_file_id, coord_dataset, "true_indexing",
                                  indexing_indicator);

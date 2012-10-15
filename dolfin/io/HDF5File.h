@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-10-01
+// Last changed: 2012-10-15
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -84,6 +84,7 @@ namespace dolfin
     ///   when writing
     /// * efficient to read back in if nprocs is the same, and
     ///   partitioning is the same
+
     void write_mesh(const Mesh& mesh);
 
     void write_mesh(const Mesh& mesh, const uint cell_dim);
