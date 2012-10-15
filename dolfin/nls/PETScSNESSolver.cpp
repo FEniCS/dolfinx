@@ -27,6 +27,9 @@
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/PETScMatrix.h>
+#include <dolfin/la/PETScKrylovSolver.h>
+#include <dolfin/la/PETScLUSolver.h>
+#include <dolfin/la/PETScPreconditioner.h>
 #include "NonlinearProblem.h"
 
 using namespace dolfin;
@@ -265,6 +268,85 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* B, M
   *flag = SAME_NONZERO_PATTERN;
 
   return 0;
+}
+//-----------------------------------------------------------------------------
+void PETScSNESSolver::set_linear_solver_parameters(Parameters ksp_parameters)
+{
+  KSP ksp;
+  PC pc;
+
+  SNESGetKSP(*_snes, &ksp);
+
+  std::string linear_solver  = std::string(ksp_parameters["linear_solver"]);
+  std::string preconditioner = std::string(ksp_parameters["preconditioner"]);
+
+  if (linear_solver == "default")
+  {
+    ; // Do nothing
+  }
+  else if (PETScKrylovSolver::_methods.count(linear_solver) != 0)
+  {
+    KSPSetType(ksp, PETScKrylovSolver::_methods.find(linear_solver)->second);
+    KSPGetPC(ksp, &pc);
+    if (preconditioner != "default" && PETScPreconditioner::_methods.count(preconditioner) != 0)
+    {
+      PCSetType(pc, PETScPreconditioner::_methods.find(preconditioner)->second);
+    }
+  }
+  else if (linear_solver == "lu" || PETScLUSolver::_methods.count(linear_solver) != 0)
+  {
+    std::string lu_method;
+
+    if (PETScLUSolver::_methods.count(linear_solver) != 0)
+      lu_method = linear_solver;
+    else
+    {
+      if (MPI::num_processes() == 1)
+      {
+        #if PETSC_HAVE_UMFPACK
+        lu_method = "umfpack";
+        #elif PETSC_HAVE_MUMPS
+        lu_method = "mumps";
+        #elif PETSC_HAVE_PASTIX
+        lu_method = "pastix";
+        #elif PETSC_HAVE_SUPERLU
+        lu_method = "superlu";
+        #elif PETSC_HAVE_SPOOLES
+        lu_method = "spooles";
+        #else
+        lu_method = "petsc";
+        warning("Using PETSc native LU solver. Consider configuring PETSc with an efficient LU solver (e.g. UMFPACK, MUMPS).");
+        #endif
+      }
+      else
+      {
+        #if PETSC_HAVE_MUMPS
+        lu_method = "mumps";
+        #elif PETSC_HAVE_PASTIX
+        lu_method = "pastix";
+        #elif PETSC_HAVE_SPOOLES
+        lu_method = "spooles";
+        #elif PETSC_HAVE_SUPERLU_DIST
+        lu_method = "superlu_dist";
+        #else
+        dolfin_error("PETScSNESSolver.cpp",
+                     "solve linear system using PETSc LU solver",
+                     "No suitable solver for parallel LU found. Consider configuring PETSc with MUMPS or SPOOLES");
+        #endif
+      }
+    }
+
+    KSPSetType(ksp, KSPPREONLY);
+    KSPGetPC(ksp, &pc);
+    PCSetType(pc, PCLU);
+    PCFactorSetMatSolverPackage(pc, PETScLUSolver::_methods.find(lu_method)->second);
+  }
+  else
+  {
+    dolfin_error("PETScSNESSolver.cpp",
+                 "set linear solver options",
+                 "Unknown KSP method \"%s\"", linear_solver.c_str());
+  }
 }
 
 

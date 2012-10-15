@@ -69,6 +69,9 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters();
 
+    /// Update the linear solver with the Parameters for a linear solver
+    void set_linear_solver_parameters(Parameters ksp_parameters);
+
     Parameters parameters;
 
   private:

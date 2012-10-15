@@ -101,6 +101,7 @@ std::pair<dolfin::uint, bool>  NonlinearVariationalSolver::solve()
       snes_solver = boost::shared_ptr<PETScSNESSolver>(new PETScSNESSolver());
     }
     snes_solver->parameters.update(parameters("snes_solver"));
+    snes_solver->set_linear_solver_parameters(parameters);
 
     // Solve nonlinear problem using PETSc's SNES
     dolfin_assert(u->vector());
