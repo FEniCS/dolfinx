@@ -24,6 +24,7 @@
 #include "PETScSNESSolver.h"
 #include <boost/assign/list_of.hpp>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/PETScMatrix.h>
 #include "NonlinearProblem.h"
@@ -226,12 +227,17 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
   PETScVector df;
 
   VecCopy(x, *dx->vec());
+  cout << "Evaluating the residual at " << endl;
+  VecView(*dx->vec(), PETSC_VIEWER_STDOUT_WORLD);
 
   // Compute F(u)
   nonlinear_problem->form(A, df, *dx);
   nonlinear_problem->F(df, *dx);
 
   VecCopy(*df.vec(), f);
+
+  cout << "The resulting residual: " << endl;
+  VecView(f, PETSC_VIEWER_STDOUT_WORLD);
 
   return 0;
 }
@@ -245,8 +251,10 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* B, M
   PETScVector f;
   PETScMatrix dA;
 
-  VecDuplicate(x, &(*dx->vec()));
-  VecCopy(x, *dx->vec());
+  boost::shared_ptr<Vec> vptr(&x, NoDeleter());
+  PETScVector x_wrap(vptr);
+
+  *dx = x_wrap;
 
   nonlinear_problem->form(dA, f, *dx);
   nonlinear_problem->J(dA, *dx);
