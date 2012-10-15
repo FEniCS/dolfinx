@@ -65,6 +65,7 @@ namespace dolfin
 
       std::set<std::string> nonlinear_solvers;
       nonlinear_solvers.insert("newton");
+      std::string default_nonlinear_solver = "newton";
 
       p.add("print_rhs", false);
       p.add("print_matrix", false);
@@ -76,9 +77,10 @@ namespace dolfin
 #ifdef HAS_PETSC
       p.add(PETScSNESSolver::default_parameters());
       nonlinear_solvers.insert("snes");
+      default_nonlinear_solver = "snes";
 #endif
 
-      p.add("nonlinear_solver", "newton", nonlinear_solvers);
+      p.add("nonlinear_solver", default_nonlinear_solver, nonlinear_solvers);
 
       return p;
     }

@@ -196,14 +196,14 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
   {
     if (dolfin::MPI::process_number() == 0)
     {
-      info("PETSc SNES solver converged in %d iterations with convergence reason %d.", its, reason);
+      info("PETSc SNES solver converged in %d iterations with convergence reason %s.", its, SNESConvergedReasons[reason]);
     }
   }
   else
   {
     if (dolfin::MPI::process_number() == 0)
     {
-      warning("PETSc SNES solver diverged in %d iterations with divergence reason %d.", its, reason);
+      warning("PETSc SNES solver diverged in %d iterations with divergence reason %s.", its, SNESConvergedReasons[reason]);
     }
   }
 
