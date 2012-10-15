@@ -226,18 +226,16 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
   PETScMatrix A;
   PETScVector df;
 
-  VecCopy(x, *dx->vec());
-  cout << "Evaluating the residual at " << endl;
-  VecView(*dx->vec(), PETSC_VIEWER_STDOUT_WORLD);
+  boost::shared_ptr<Vec> vptr(&x, NoDeleter());
+  PETScVector x_wrap(vptr);
+
+  *dx = x_wrap;
 
   // Compute F(u)
   nonlinear_problem->form(A, df, *dx);
   nonlinear_problem->F(df, *dx);
 
   VecCopy(*df.vec(), f);
-
-  cout << "The resulting residual: " << endl;
-  VecView(f, PETSC_VIEWER_STDOUT_WORLD);
 
   return 0;
 }
@@ -265,8 +263,6 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* B, M
     MatCopy(*dA.mat(), *B, SAME_NONZERO_PATTERN);
   }
   *flag = SAME_NONZERO_PATTERN;
-
-  //MatView(*A, PETSC_VIEWER_STDOUT_WORLD);
 
   return 0;
 }
