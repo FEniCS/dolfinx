@@ -225,7 +225,6 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
   PETScMatrix A;
   PETScVector df;
 
-  VecDuplicate(x, &(*dx->vec()));
   VecCopy(x, *dx->vec());
 
   // Compute F(u)
@@ -258,6 +257,8 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* B, M
     MatCopy(*dA.mat(), *B, SAME_NONZERO_PATTERN);
   }
   *flag = SAME_NONZERO_PATTERN;
+
+  //MatView(*A, PETSC_VIEWER_STDOUT_WORLD);
 
   return 0;
 }
