@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-10-12
+// Last changed: 2012-10-15
 
 #ifdef HAS_HDF5
 
@@ -133,8 +133,6 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     v.get_local(data_values);
   }
 
-
-
   // Interleave the values for vector or tensor fields and pad 2D
   // vectors and tensors to 3D
   if (value_rank > 0)
@@ -148,7 +146,11 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     for(uint i = 0; i < num_local_entities; i++)
     {
       for (uint j = 0; j < value_size; j++)
-        _data_values[i*padded_value_size + j] = data_values[i + j*num_local_entities];
+      {
+        uint tensor_2d_offset = (uint)(j>1 && value_size == 4);
+        _data_values[i*padded_value_size + j + tensor_2d_offset] 
+          = data_values[i + j*num_local_entities];
+      }
     }
     data_values = _data_values;
   }
