@@ -115,18 +115,47 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
   // Construct communicator (copy of MPI_COMM_WORLD)
   MPICommunicator comm;
 
-  // Call ParMETIS to partition mesh
   dolfin_assert(!elmdist.empty());
   dolfin_assert(!eptr.empty());
   dolfin_assert(!eind.empty());
+
+  // Build dual graph from mesh
+  idx_t* xadj = 0;
+  idx_t* adjncy = 0;
+  int err = ParMETIS_V3_Mesh2Dual(&elmdist[0], &eptr[0], &eind[0],
+                                  &numflag, &ncommonnodes,
+                                  &xadj, &adjncy,
+                                  &(*comm));
+  dolfin_assert(err == METIS_OK);
+
+  // Call ParMETIS to partition graph
   dolfin_assert(!tpwgts.empty());
   dolfin_assert(!ubvec.empty());
   dolfin_assert(!part.empty());
-  ParMETIS_V3_PartMeshKway(&elmdist[0], &eptr[0], &eind[0],
-                           elmwgt, &wgtflag, &numflag, &ncon,
-                           &ncommonnodes, &nparts,
-                           &tpwgts[0], &ubvec[0], options,
-                           &edgecut, &part[0], &(*comm));
+  err = ParMETIS_V3_PartKway(&elmdist[0], xadj, adjncy, elmwgt,
+                             NULL, &wgtflag, &numflag, &ncon, &nparts,
+                             &tpwgts[0], &ubvec[0], options,
+                             &edgecut, &part[0], &(*comm));
+
+  //status = ParMETIS_V3_PartKway(elmdist, xadj, adjncy, elmwgt, NULL, wgtflag,
+  //             numflag, ncon, nparts, tpwgts, ubvec, options, edgecut, part,
+  //             &(ctrl->comm));
+
+
+  dolfin_assert(err == METIS_OK);
+
+  METIS_Free(xadj);
+  METIS_Free(adjncy);
+
+  /*
+  // Call ParMETIS to partition mesh
+  err = ParMETIS_V3_PartMeshKway(&elmdist[0], &eptr[0], &eind[0],
+                                 elmwgt, &wgtflag, &numflag, &ncon,
+                                 &ncommonnodes, &nparts,
+                                 &tpwgts[0], &ubvec[0], options,
+                                 &edgecut, &part[0], &(*comm));
+  dolfin_assert(err == METIS_OK);
+  */
   info("Partitioned mesh, edge cut is %d.", edgecut);
 
   // Copy mesh_data
