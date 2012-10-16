@@ -57,9 +57,9 @@ HDF5File::HDF5File(const std::string filename, const bool use_mpiio)
 
   // Add parameter to save GlobalIndex (not required for visualisation meshes
   // but needed to make the mesh intelligible for re-reading into dolfin
-  parameters.add("hdf5_global_index", false);
+  parameters.add("global_indexing", false);
   // Chunking seems to improve performance generally, option to turn it off.
-  parameters.add("hdf5_chunking", true);
+  parameters.add("chunking", true);
 
 }
 //-----------------------------------------------------------------------------
@@ -255,9 +255,6 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
   if (!HDF5Interface::has_group(hdf5_file_id, "/Mesh"))
     HDF5Interface::add_group(hdf5_file_id, "/Mesh");
 
-  // Parameter determines type of output
-  bool global_indexing = parameters["hdf5_global_index"];
-
   // Get local mesh data
   const uint num_local_cells = mesh.num_cells();
   const uint num_local_vertices = mesh.num_vertices();
@@ -291,6 +288,10 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
   for (VertexIterator v(mesh); !v.end(); ++v)
     for (uint i = 0; i < gdim; ++i)
         vertex_coords.push_back(v->x(i));
+
+  // Parameter determines indexing method used.
+  // Global indexing is not needed for visualisation.
+  bool global_indexing = parameters["global_indexing"];
 
   std::vector<uint> vertex_indices;
   if(global_indexing)

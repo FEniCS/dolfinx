@@ -66,7 +66,7 @@ XDMFFile::XDMFFile(const std::string filename) : GenericFile(filename, "XDMF")
   
   // Flush datasets to disk at each timestep
   //  improves reliability. Option to turn off.
-  parameters.add("xdmf_flush_output", true);
+  parameters.add("flush_output", true);
   
 }
 //----------------------------------------------------------------------------
@@ -189,7 +189,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   // Flush file to OS. Improves chances of recovering data if interrupted.
   // Also makes file somewhat readable between writes.
   // FIXME: should this use HDF5Interface, or should HDF5File provide a flush function?
-  if(parameters["xdmf_flush_output"])
+  if(parameters["flush_output"])
     HDF5Interface::flush_file(hdf5_file->hdf5_file_id);
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero

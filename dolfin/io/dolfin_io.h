@@ -4,5 +4,6 @@
 // DOLFIN io interface
 
 #include <dolfin/io/File.h>
+#include <dolfin/io/XDMFFile.h>
 
 #endif
