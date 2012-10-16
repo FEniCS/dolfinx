@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-10-15
+// Last changed: 2012-10-16
 
 #ifdef HAS_HDF5
 
@@ -443,7 +443,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
     p.filename().string() + ":" + dataset_basic_name;
 
   // Write mesh to HDF5
-  hdf5_file->write_mesh(mesh, cell_dim);
+  hdf5_file->write_mesh(mesh, cell_dim, false);
 
   // Write values to HDF5
   const std::vector<uint> global_size(1, MPI::sum(data_values.size()));

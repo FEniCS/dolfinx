@@ -28,6 +28,7 @@
 #include <iomanip>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/assign.hpp>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
@@ -57,7 +58,9 @@ HDF5File::HDF5File(const std::string filename, const bool use_mpiio)
 
   // Add parameter to save GlobalIndex (not required for visualisation meshes
   // but needed to make the mesh intelligible for re-reading into dolfin)
-  parameters.add("global_indexing", false);
+  std::set<std::string> index_modes =  boost::assign::list_of("true")("false")("auto");
+  parameters.add("global_indexing", "auto");
+
   // Chunking seems to improve performance generally, option to turn it off.
   parameters.add("chunking", true);
 
@@ -226,11 +229,20 @@ std::string HDF5File::search_list(const std::vector<std::string>& list,
 //-----------------------------------------------------------------------------
 void HDF5File::operator>> (Mesh& input_mesh)
 {
+
   warning("HDF5 Mesh input is still experimental");
   warning("HDF5 Mesh input will always repartition the mesh");
 
   // FIXME: this works, but is not thoroughly checked
   // or optimised in any way
+
+  // Open file
+  if (!hdf5_file_open)
+  {
+    dolfin_assert(!hdf5_file_open);
+    hdf5_file_id = HDF5Interface::open_file(filename, false, mpi_io);
+    hdf5_file_open = true;
+  }
 
   // Get list of all datasets in the /Mesh group
   std::vector<std::string> _dataset_list = HDF5Interface::dataset_list(hdf5_file_id, "/Mesh");
@@ -367,15 +379,25 @@ void HDF5File::operator>> (Mesh& input_mesh)
 //-----------------------------------------------------------------------------
 void HDF5File::operator<< (const Mesh& mesh)
 {
-  write_mesh(mesh);
+  // Parameter determines indexing method used.
+  // Global indexing is not needed for visualisation.
+  // If parameter is "auto" or "true", then use global_indexing for raw h5 files.
+  bool global_indexing = (std::string(parameters["global_indexing"])!="false");
+
+  write_mesh(mesh, mesh.topology().dim(), global_indexing);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write_mesh(const Mesh& mesh)
 {
-  write_mesh(mesh, mesh.topology().dim());
+  // Parameter determines indexing method used.
+  // Global indexing is not needed for visualisation.
+  // If parameter is "auto" or "false", then do not use global indexing here.  
+  bool global_indexing = (std::string(parameters["global_indexing"])=="true");
+  
+  write_mesh(mesh, mesh.topology().dim(), global_indexing);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
+void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim, const bool global_indexing)
 {
   // Clear file when writing to file for the first time
   if(!hdf5_file_open)
@@ -422,10 +444,6 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
   for (VertexIterator v(mesh); !v.end(); ++v)
     for (uint i = 0; i < gdim; ++i)
         vertex_coords.push_back(v->x(i));
-
-  // Parameter determines indexing method used.
-  // Global indexing is not needed for visualisation.
-  bool global_indexing = parameters["global_indexing"];
 
   std::vector<uint> vertex_indices;
   if(global_indexing)

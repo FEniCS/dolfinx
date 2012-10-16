@@ -5,5 +5,6 @@
 
 #include <dolfin/io/File.h>
 #include <dolfin/io/XDMFFile.h>
+#include <dolfin/io/HDF5File.h>
 
 #endif
