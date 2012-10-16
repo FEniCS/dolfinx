@@ -179,10 +179,7 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
   snes_ctx.dx = &x.down_cast<PETScVector>();
 
   if (std::string(parameters["method"]) != "default")
-  {
-    info("Overriding nonlinear solver method with value %s from parameters.", std::string(parameters["method"]).c_str());
     SNESSetType(*_snes, _methods.find(std::string(parameters["method"]))->second);
-  }
 
   SNESSetFunction(*_snes, *f.vec(), PETScSNESSolver::FormFunction, &snes_ctx);
   SNESSetJacobian(*_snes, *A.mat(), *A.mat(), PETScSNESSolver::FormJacobian, &snes_ctx);
