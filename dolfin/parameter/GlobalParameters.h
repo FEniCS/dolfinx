@@ -55,8 +55,9 @@ namespace dolfin
       p.add("allow_extrapolation", false);                   // Allow extrapolation in function interpolation
       p.add("exact_interpolation", true);                    // Use exact or linear interpolation in ODESolution::eval()
 
-      // Ouput
+      // Output
       p.add("std_out_all_processes", true);                  // Print stanard output on all processes
+
 
       // Threaded computation
       p.add("num_threads", 0);                               // Number of threads to run, 0 = run serial version

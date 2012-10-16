@@ -29,6 +29,7 @@
 #include <utility>
 #include <vector>
 #include "dolfin/common/types.h"
+#include "dolfin/common/Variable.h"
 #include "GenericFile.h"
 #include "HDF5Interface.h"
 
@@ -39,7 +40,7 @@ namespace dolfin
   class GenericVector;
   class Mesh;
 
-  class HDF5File : public GenericFile
+  class HDF5File : public GenericFile, public Variable
   {
   public:
 

@@ -43,7 +43,6 @@
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/parameter/GlobalParameters.h>
 
 #include "HDF5File.h"
 #include "HDF5Interface.h"
@@ -256,6 +255,9 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
   if (!HDF5Interface::has_group(hdf5_file_id, "/Mesh"))
     HDF5Interface::add_group(hdf5_file_id, "/Mesh");
 
+  // Parameter determines type of output
+  bool global_indexing = parameters["hdf5_global_index"];
+
   // Get local mesh data
   const uint num_local_cells = mesh.num_cells();
   const uint num_local_vertices = mesh.num_vertices();
@@ -285,14 +287,18 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
   const uint gdim = mesh.geometry().dim();
   std::vector<double> vertex_coords;
   vertex_coords.reserve(gdim*num_local_vertices);
-  std::vector<uint> vertex_indices;
-  vertex_indices.reserve(num_local_vertices);
+
   for (VertexIterator v(mesh); !v.end(); ++v)
-  {
-    vertex_indices.push_back(v->global_index());
     for (uint i = 0; i < gdim; ++i)
-      vertex_coords.push_back(v->x(i));
-  }
+        vertex_coords.push_back(v->x(i));
+
+  std::vector<uint> vertex_indices;
+  if(global_indexing)
+    {
+      vertex_indices.reserve(num_local_vertices);
+      for (VertexIterator v(mesh); !v.end(); ++v)
+        vertex_indices.push_back(v->global_index());
+    }
 
   // Write vertex data to HDF5 file if not already there
   const std::string coord_dataset = mesh_coords_dataset_name(mesh);
@@ -306,7 +312,7 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
 
     // Write GlobalIndex mapping of coordinates to global vector position
     // Without these, the mesh cannot be read back in... optional output
-    if(parameters["hdf5_global_index"])
+    if(global_indexing)
     {
       std::vector<uint> global_size_map(1);
       global_size_map[0] = MPI::sum(num_local_vertices);
@@ -330,11 +336,21 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
   // FIXME: No guarantee that local numbering will be contiguous. Is
   //        this a problem?
 
-  // Get cell connectivity (local indices)
+  // Get cell connectivity (local or global indices)
   std::vector<uint> topological_data;
-  for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
-    for (VertexIterator v(*c); !v.end(); ++v)
-      topological_data.push_back(v->index() + vertex_range.first);
+  topological_data.reserve(num_local_cells*(cell_dim - 1));
+  if(global_indexing)
+  {
+    for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
+      for (VertexIterator v(*c); !v.end(); ++v)
+        topological_data.push_back(v->global_index());      
+  }
+  else
+  {
+    for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
+      for (VertexIterator v(*c); !v.end(); ++v)
+       topological_data.push_back(v->index() + vertex_range.first);
+  }
 
   // Write connectivity to HDF5 file if not already there
   const std::string topology_dataset = mesh_topology_dataset_name(mesh);
@@ -345,8 +361,7 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
     global_size[1] = cell_dim + 1;
     write_data("/Mesh", topology_dataset, topological_data, global_size);
 
-    //const uint indexing_indicator = (true_topology_indices ? 1 : 0);
-    const uint indexing_indicator = 0;
+    const uint indexing_indicator = (global_indexing ? 1 : 0);
     HDF5Interface::add_attribute(hdf5_file_id, topology_dataset,
                                  "true_indexing", indexing_indicator);
     HDF5Interface::add_attribute(hdf5_file_id, topology_dataset, "celltype",

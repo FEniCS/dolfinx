@@ -40,7 +40,7 @@
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/common/Timer.h>
+// #include <dolfin/common/Timer.h>
 #include "HDF5File.h"
 #include "HDF5Interface.h"
 #include "XDMFFile.h"
@@ -59,16 +59,15 @@ XDMFFile::XDMFFile(const std::string filename) : GenericFile(filename, "XDMF")
   dolfin_assert(hdf5_file);
   hdf5_file->open_hdf5_file(true);
 
-  // Parameters
-
   // Re-write mesh (true, false or auto, with auto based on detecting
   // changes in a hash key)
-  std::set<std::string> mesh_modes = boost::assign::list_of("true")("false")("auto");
+  std::set<std::string> mesh_modes =  boost::assign::list_of("true")("false")("auto");
   parameters.add("rewrite_mesh", "auto", mesh_modes);
-  // Flush datasets to disk at each timestep, improves reliability. Option to turn off.
+  
+  // Flush datasets to disk at each timestep
+  //  improves reliability. Option to turn off.
   parameters.add("xdmf_flush_output", true);
   
-
 }
 //----------------------------------------------------------------------------
 XDMFFile::~XDMFFile()
@@ -88,7 +87,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   const Function &u = *(ut.first);
   const double time_step = ut.second;
 
-  Timer XDMFtimer("Write XDMF Function");
+  //  Timer XDMFtimer("Write XDMF Function");
 
   // Update any ghost values
   u.update();
@@ -151,9 +150,9 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     {
       for (uint j = 0; j < value_size; j++)
       {
-        uint tensor_2d_offset = (uint)(j>1 && value_size == 4);
+        uint tensor_2d_offset = (j>1 && value_size == 4) ? 1 : 0 ;
         _data_values[i*padded_value_size + j + tensor_2d_offset] 
-          = data_values[i + j*num_local_entities];
+                         = data_values[i + j*num_local_entities];
       }
     }
     data_values = _data_values;
@@ -316,7 +315,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const Mesh& mesh)
 {
-  Timer XDMFtimer("XDMF Output Mesh");
+  //  Timer XDMFtimer("XDMF Output Mesh");
 
   // Write Mesh to HDF5 file (use contiguous vertex indices for topology)
   dolfin_assert(hdf5_file);
