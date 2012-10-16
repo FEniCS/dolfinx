@@ -105,6 +105,12 @@ Parameters PETScSNESSolver::default_parameters()
   p.remove("relaxation_parameter");
   p.remove("method");
   p.add("method", "default");
+  
+  std::set<std::string> line_searches;
+  line_searches.insert("basic");
+  line_searches.insert("quadratic");
+  line_searches.insert("cubic");
+  p.add("line_search", "basic", line_searches);
 
   return p;
 }
@@ -185,7 +191,20 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
   if (parameters["report"])
   {
     SNESMonitorSet(*_snes, SNESMonitorDefault, PETSC_NULL, PETSC_NULL);
+    SNESLineSearchSetMonitor(*_snes, PETSC_TRUE);
   }
+
+  std::string line_search = std::string(parameters["line_search"]);
+  if (line_search == "basic")
+    SNESLineSearchSet(*_snes, SNESLineSearchNo, PETSC_NULL);
+  else if (line_search == "quadratic")
+    SNESLineSearchSet(*_snes, SNESLineSearchQuadratic, PETSC_NULL);
+  else if (line_search == "cubic")
+    SNESLineSearchSet(*_snes, SNESLineSearchCubic, PETSC_NULL);
+  else
+    dolfin_error("PETScSNESSolver.cpp",
+                 "set line search algorithm",
+                 "Unknown line search \"%s\"", line_search.c_str());
 
   // Tolerances
   SNESSetTolerances(*_snes, parameters["absolute_tolerance"], parameters["relative_tolerance"], parameters["solution_tolerance"], parameters["maximum_iterations"], parameters["maximum_residual_evaluations"]);
