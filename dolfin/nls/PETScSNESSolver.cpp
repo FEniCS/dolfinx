@@ -330,6 +330,10 @@ void PETScSNESSolver::set_linear_solver_parameters(Parameters ksp_parameters)
   PC pc;
 
   SNESGetKSP(*_snes, &ksp);
+  KSPGetPC(ksp, &pc);
+
+  if (parameters["report"])
+    KSPMonitorSet(ksp, KSPMonitorDefault, PETSC_NULL, PETSC_NULL);
 
   std::string linear_solver  = std::string(ksp_parameters["linear_solver"]);
   std::string preconditioner = std::string(ksp_parameters["preconditioner"]);
@@ -341,7 +345,6 @@ void PETScSNESSolver::set_linear_solver_parameters(Parameters ksp_parameters)
   else if (PETScKrylovSolver::_methods.count(linear_solver) != 0)
   {
     KSPSetType(ksp, PETScKrylovSolver::_methods.find(linear_solver)->second);
-    KSPGetPC(ksp, &pc);
     if (preconditioner != "default" && PETScPreconditioner::_methods.count(preconditioner) != 0)
     {
       PCSetType(pc, PETScPreconditioner::_methods.find(preconditioner)->second);
@@ -391,7 +394,6 @@ void PETScSNESSolver::set_linear_solver_parameters(Parameters ksp_parameters)
     }
 
     KSPSetType(ksp, KSPPREONLY);
-    KSPGetPC(ksp, &pc);
     PCSetType(pc, PCLU);
     PCFactorSetMatSolverPackage(pc, PETScLUSolver::_methods.find(lu_method)->second);
   }
