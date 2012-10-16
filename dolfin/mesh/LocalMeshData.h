@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2008-11-28
-// Last changed: 2011-03-25
+// Last changed: 2012-10-16
 //
 // Modified by Anders Logg, 2008-2009.
 // Modified by Kent-Andre Mardal, 2011.
@@ -130,7 +130,7 @@ namespace dolfin
 
     // Friends
     friend class XMLLocalMeshSAX;
-    //friend class HDF5File;
+    friend class HDF5File;
     friend class MeshPartitioning;
     friend class GraphBuilder;
     friend class ParMETIS;

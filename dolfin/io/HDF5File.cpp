@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-10-15
+// Last changed: 2012-10-16
 
 #ifdef HAS_HDF5
 
@@ -56,7 +56,7 @@ HDF5File::HDF5File(const std::string filename, const bool use_mpiio)
 {
 
   // Add parameter to save GlobalIndex (not required for visualisation meshes
-  // but needed to make the mesh intelligible for re-reading into dolfin
+  // but needed to make the mesh intelligible for re-reading into dolfin)
   parameters.add("global_indexing", false);
   // Chunking seems to improve performance generally, option to turn it off.
   parameters.add("chunking", true);
@@ -226,10 +226,144 @@ std::string HDF5File::search_list(const std::vector<std::string>& list,
 //-----------------------------------------------------------------------------
 void HDF5File::operator>> (Mesh& input_mesh)
 {
-  dolfin_error("HDF5File.cpp",
-               "read mesh from file",
-               "Mesh input is not supported yet");
+  warning("HDF5 Mesh input is still experimental");
+  warning("HDF5 Mesh input will always repartition the mesh");
+
+  // FIXME: this works, but is not thoroughly checked
+  // or optimised in any way
+
+  // Get list of all datasets in the /Mesh group
+  std::vector<std::string> _dataset_list = HDF5Interface::dataset_list(hdf5_file_id, "/Mesh");
+
+  // Look for Topology dataset
+  std::string topology_name=search_list(_dataset_list,"Topology");
+  if(topology_name.size()==0)
+  {
+    dolfin_error("HDF5File.cpp",
+                 "read topology dataset",
+                 "Dataset not found");
+  }
+  topology_name = "/Mesh/" + topology_name;
+
+  // Look for Coordinates dataset
+  std::string coords_name=search_list(_dataset_list,"Coordinates");
+  if(coords_name.size()==0)
+  {
+    dolfin_error("HDF5File.cpp",
+                 "read coordinates dataset",
+                 "Dataset not found");
+  }
+  coords_name = "/Mesh/" + coords_name;
+
+  // Look for GlobalIndex dataset - mapping local vertices to global order
+  std::string global_index_name = search_list(_dataset_list, "GlobalIndex");
+  if(global_index_name.size() == 0)
+  {
+    dolfin_error("HDF5File.cpp",
+                 "read mesh from file",
+                 "Cannot find GlobalIndex dataset");
+  }
+  global_index_name = "/Mesh/" + global_index_name;
+
+  uint true_indexing;
+  HDF5Interface::get_attribute(hdf5_file_id, topology_name, "true_indexing", true_indexing);
+  if(true_indexing != 1)
+  {
+    dolfin_error("HDF5File.cpp",
+                 "read topology dataset",
+                 "Incompatible indexing method. Mesh must be saved with global indexing.");
+  }
+
+  // Structure to store local mesh
+  LocalMeshData mesh_data;
+  mesh_data.clear();
+
+  // --- Topology ---
+  // Discover size of topology dataset
+  std::vector<uint> topology_dim = HDF5Interface::get_dataset_size(hdf5_file_id, topology_name);
+
+  // Get total number of cells, as number of rows in topology dataset
+  const uint num_global_cells = topology_dim[0];
+  mesh_data.num_global_cells = num_global_cells;
+
+  // Get dimensionality from number of columns in topology
+  // FIXME: not very satisfactory
+  mesh_data.gdim = topology_dim[1] - 1; 
+  mesh_data.tdim = topology_dim[1] - 1;
+  
+  // Divide up cells equally between processes
+  std::pair<uint,uint> cell_range = MPI::local_range(num_global_cells);
+  uint num_local_cells = cell_range.second - cell_range.first;
+  mesh_data.global_cell_indices.reserve(num_local_cells);
+  mesh_data.cell_vertices.reserve(num_local_cells);
+
+  // Set vertices-per-cell from width of array
+  uint num_vertices_per_cell = topology_dim[1];
+  mesh_data.num_vertices_per_cell = num_vertices_per_cell;
+
+  // Read a block of cells
+  std::vector<uint> topology_data;
+  topology_data.reserve(num_local_cells*num_vertices_per_cell);
+  HDF5Interface::read_dataset(hdf5_file_id, topology_name, cell_range, topology_data);
+  
+  // Work through cells, reindexing vertices with global index
+  const uint cell_offset = MPI::global_offset(num_local_cells, true);
+  uint cell_index = cell_offset;
+  for(std::vector<uint>::iterator cell_i = topology_data.begin();
+      cell_i != topology_data.end(); cell_i += num_vertices_per_cell)
+  {
+    std::vector<uint> cell;
+    mesh_data.global_cell_indices.push_back(cell_index);
+    cell_index++;
+
+    for(uint j = 0; j < num_vertices_per_cell; j++)
+      cell.push_back(*(cell_i + j));
+
+    mesh_data.cell_vertices.push_back(cell);
+  }
+
+  // --- Coordinates ---
+  // Get dimensions of coordinate dataset
+  std::vector<uint> coords_dim = HDF5Interface::get_dataset_size(hdf5_file_id, coords_name);
+
+  // Divide range into equal blocks for each process
+  const std::pair<uint, uint> vertex_range = MPI::local_range(coords_dim[0]);
+  const uint num_input_vertices = vertex_range.second - vertex_range.first;
+  const uint vertex_dim = coords_dim[1];
+
+  // Read vertex data to temporary vector
+  std::vector<double> tmp_vertex_data;
+  tmp_vertex_data.reserve(num_input_vertices*vertex_dim);
+  HDF5Interface::read_dataset(hdf5_file_id, coords_name, vertex_range, tmp_vertex_data);
+  // Copy to vector<vector>
+  std::vector<std::vector<double> > local_vertex_coordinates;
+  for(uint i = 0; i < num_input_vertices ; ++i)
+    local_vertex_coordinates.push_back(std::vector<double>(&tmp_vertex_data[i*vertex_dim],&tmp_vertex_data[(i+1)*vertex_dim]));
+  
+  // Read global index from file
+  std::vector<uint> global_index_data;
+  global_index_data.reserve(num_input_vertices);
+  HDF5Interface::read_dataset(hdf5_file_id, global_index_name, vertex_range, global_index_data);
+
+  // Reorganise the vertices into global order and copy into mesh_data
+  // eliminating any duplicate vertices
+  redistribute_by_global_index(global_index_data,
+                               local_vertex_coordinates, 
+                               mesh_data.vertex_coordinates);
+
+  const uint num_local_vertices = mesh_data.vertex_coordinates.size();  
+  mesh_data.num_global_vertices = MPI::sum(num_local_vertices);
+
+  // Fill vertex indices with values 
+  mesh_data.vertex_indices.resize(num_local_vertices);
+  const uint local_vertex_offset = MPI::global_offset(num_local_vertices, true);
+  for(uint i = 0; i < mesh_data.vertex_coordinates.size(); ++i)
+    mesh_data.vertex_indices[i] = local_vertex_offset + i;
+    
+  // Build distributed mesh
+  MeshPartitioning::build_distributed_mesh(input_mesh, mesh_data);
 }
+
 //-----------------------------------------------------------------------------
 void HDF5File::operator<< (const Mesh& mesh)
 {
@@ -328,8 +462,7 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
     HDF5Interface::add_attribute(hdf5_file_id, coord_dataset, "partition",
                                  partitions);
 
-    // const uint indexing_indicator = (true_topology_indices ? 1 : 0);
-    const uint indexing_indicator = 0;
+    const uint indexing_indicator = (global_indexing ? 1 : 0);
     HDF5Interface::add_attribute(hdf5_file_id, coord_dataset, "true_indexing",
                                  indexing_indicator);
   }
