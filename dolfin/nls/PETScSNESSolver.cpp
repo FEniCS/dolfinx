@@ -55,23 +55,36 @@ struct snes_ctx_t
   PETScVector* dx;
 };
 
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2 // PETSc 3.2
+// Mapping from method string to PETSc
+const std::map<std::string, const SNESType> PETScSNESSolver::_methods
+  = boost::assign::map_list_of("default",  "")
+                              ("ls",          SNESLS)
+                              ("tr",          SNESTR)
+                              ("test",        SNESTEST);
+
+// Mapping from method string to description
+const std::vector<std::pair<std::string, std::string> >
+  PETScSNESSolver::_methods_descr = boost::assign::pair_list_of
+    ("default",     "default SNES method")
+    ("ls",          "Line search method")
+    ("tr",          "Trust region method")
+    ("test",        "Tool to verify Jacobian approximation");
+
+#else // PETSc 3.3 and above
 // Mapping from method string to PETSc
 const std::map<std::string, const SNESType> PETScSNESSolver::_methods
   = boost::assign::map_list_of("default",  "")
                               ("ls",          SNESLS)
                               ("tr",          SNESTR)
                               ("test",        SNESTEST)
-                              ("ngmres",      SNESNGMRES);
-
-// These later ones are only available from PETSc 3.3 on, I think
-// but at the moment we support PETSc >= 3.2
-// so I'm leaving them commented out.
-//                              ("nrichardson", SNESNRICHARDSON)
-//                              ("virs",        SNESVIRS)
-//                              ("qn",          SNESQN)
-//                              ("ncg",         SNESNCG)
-//                              ("fas",         SNESFAS)
-//                              ("ms",          SNESMS);
+                              ("ngmres",      SNESNGMRES)
+                              ("nrichardson", SNESNRICHARDSON)
+                              ("virs",        SNESVIRS)
+                              ("qn",          SNESQN)
+                              ("ncg",         SNESNCG)
+                              ("fas",         SNESFAS)
+                              ("ms",          SNESMS);
 
 // Mapping from method string to description
 const std::vector<std::pair<std::string, std::string> >
@@ -80,13 +93,15 @@ const std::vector<std::pair<std::string, std::string> >
     ("ls",          "Line search method")
     ("tr",          "Trust region method")
     ("test",        "Tool to verify Jacobian approximation")
-    ("ngmres",      "Nonlinear generalised minimum residual method");
-//    ("nrichardson", "Richardson nonlinear method (Picard iteration)")
-//    ("virs",        "Reduced space active set solver method")
-//    ("qn",          "Limited memory quasi-Newton")
-//    ("ncg",         "Nonlinear conjugate gradient method")
-//    ("fas",         "Full Approximation Scheme nonlinear multigrid method")
-//    ("ms",          "Multistage smoothers");
+    ("ngmres",      "Nonlinear generalised minimum residual method")
+    ("nrichardson", "Richardson nonlinear method (Picard iteration)")
+    ("virs",        "Reduced space active set solver method")
+    ("qn",          "Limited memory quasi-Newton")
+    ("ncg",         "Nonlinear conjugate gradient method")
+    ("fas",         "Full Approximation Scheme nonlinear multigrid method")
+    ("ms",          "Multistage smoothers");
+#endif
+
 
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
@@ -105,12 +120,21 @@ Parameters PETScSNESSolver::default_parameters()
   p.remove("relaxation_parameter");
   p.remove("method");
   p.add("method", "default");
-  
+
+// The line search business changed completely from PETSc 3.2 to 3.3.
   std::set<std::string> line_searches;
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
   line_searches.insert("basic");
   line_searches.insert("quadratic");
   line_searches.insert("cubic");
   p.add("line_search", "basic", line_searches);
+#else
+  line_searches.insert("basic");
+  line_searches.insert("bt");
+  line_searches.insert("l2");
+  line_searches.insert("cp");
+  p.add("line_search", "basic", line_searches);
+#endif
 
   return p;
 }
@@ -186,10 +210,12 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
 
   // Set some options from the parameters
   if (parameters["report"])
-  {
     SNESMonitorSet(*_snes, SNESMonitorDefault, PETSC_NULL, PETSC_NULL);
+
+// The line search business changed completely from PETSc 3.2 to 3.3.
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
+  if (parameters["report"])
     SNESLineSearchSetMonitor(*_snes, PETSC_TRUE);
-  }
 
   std::string line_search = std::string(parameters["line_search"]);
   if (line_search == "basic")
@@ -202,6 +228,18 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
     dolfin_error("PETScSNESSolver.cpp",
                  "set line search algorithm",
                  "Unknown line search \"%s\"", line_search.c_str());
+#else
+  SNESLineSearch linesearch;
+  SNESGetSNESLineSearch(*_snes, &linesearch);
+
+  if (parameters["report"])
+    SNESLineSearchSetMonitor(linesearch, PETSC_TRUE);
+
+  std::string line_search_type = std::string(parameters["line_search"]);
+  SNESLineSearchSetType(linesearch, line_search_type.c_str());
+#endif
+
+
 
   // Tolerances
   SNESSetTolerances(*_snes, parameters["absolute_tolerance"], parameters["relative_tolerance"], parameters["solution_tolerance"], parameters["maximum_iterations"], parameters["maximum_residual_evaluations"]);
