@@ -318,6 +318,14 @@ void HDF5File::read_mesh_with_local_topology_repartition(Mesh &input_mesh,
                                     const std::string topology_name,
                                     const std::string global_index_name)
 {
+
+  // FIXME:
+  // This function is experimental, and not checked or optimised
+
+  warning("HDF5 Mesh read is still experimental");
+  warning("HDF5 Mesh read will repartition this mesh");
+  warning("HDF5 Mesh read may crash");
+
   const uint num_processes = MPI::num_processes();
   const uint process_number = MPI::process_number();
 
@@ -399,6 +407,7 @@ void HDF5File::read_mesh_with_local_topology_repartition(Mesh &input_mesh,
   for(uint i = 0; i < num_input_vertices ; ++i)
     local_vertex_coordinates.push_back(std::vector<double>(&tmp_vertex_data[i*vertex_dim],&tmp_vertex_data[(i+1)*vertex_dim]));
 
+
   // Read global index from file
   std::vector<uint> global_index_data;
   global_index_data.reserve(num_input_vertices);
@@ -423,10 +432,25 @@ void HDF5File::read_mesh_with_local_topology_repartition(Mesh &input_mesh,
     mesh_data.cell_vertices.push_back(cell);
   }
 
-  dolfin_error("HDF5File.cpp",
-               "read mesh",
-               "Reading locally indexed mesh is not yet supported. Try saving your mesh with global topology indexing.");
- 
+  // Reorganise the vertices into global order and copy into mesh_data
+  redistribute_by_global_index(global_index_data,
+                               local_vertex_coordinates, 
+                               mesh_data.vertex_coordinates);
+
+  // Duplicates have been elimiated, so num_local_vertices will be different
+  // from num_input_vertices
+  const uint num_local_vertices = mesh_data.vertex_coordinates.size();  
+  mesh_data.num_global_vertices = MPI::sum(num_local_vertices);
+
+  // Fill vertex indices with values 
+  mesh_data.vertex_indices.resize(num_local_vertices);
+  const uint local_vertex_offset = MPI::global_offset(num_local_vertices, true);
+  for(uint i = 0; i < mesh_data.vertex_coordinates.size(); ++i)
+    mesh_data.vertex_indices[i] = local_vertex_offset + i;
+  
+  // Build distributed mesh
+  MeshPartitioning::build_distributed_mesh(input_mesh, mesh_data);
+
 }
 
 //-----------------------------------------------------------------------------
@@ -436,6 +460,9 @@ void HDF5File::read_mesh_with_global_topology_repartition(Mesh &input_mesh,
                                     const std::string topology_name,
                                     const std::string global_index_name)
 {                                        
+  // FIXME:
+  // This function is experimental, and not checked or optimised
+
   warning("HDF5 Mesh read is still experimental");
   warning("HDF5 Mesh read will repartition this mesh");
 
@@ -480,6 +507,7 @@ void HDF5File::read_mesh_with_global_topology_repartition(Mesh &input_mesh,
     mesh_data.global_cell_indices.push_back(cell_index);
     cell_index++;
 
+    // FIXME: inefficient
     for(uint j = 0; j < num_vertices_per_cell; j++)
       cell.push_back(*(cell_i + j));
 
