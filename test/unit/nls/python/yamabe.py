@@ -63,10 +63,10 @@ snes_solver_parameters   = {"snes_solver": {"maximum_iterations": 100, "sign": "
 class SNESSolverTester(unittest.TestCase):
   def test_snes_solver(self):
     solve(F == 0, u, bcs, solver_parameters=snes_solver_parameters)
-    self.assertTrue(min(u.vector()) >= 0)
+    self.assertTrue(u.vector().min() >= 0)
   def test_newton_solver(self):
     solve(F == 0, u, bcs, solver_parameters=newton_solver_parameters)
-    self.assertTrue(min(u.vector()) < 0)
+    self.assertTrue(u.vector().min() < 0)
 
 if __name__ == "__main__":
   # Turn off DOLFIN output
@@ -74,5 +74,5 @@ if __name__ == "__main__":
 
   print ""
   print "Testing DOLFIN nls/PETScSNESSolver interface"
-  print "----------------------------------------"
+  print "--------------------------------------------"
   unittest.main()
