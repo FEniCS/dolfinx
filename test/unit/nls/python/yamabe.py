@@ -19,6 +19,18 @@
 #
 # First added:  2012-10-17
 
+"""Solve the Yamabe PDE which arises in the differential geometry of general
+relativity. http://arxiv.org/abs/1107.0360.
+
+The Yamabe equation is highly nonlinear and supports many solutions. However,
+only one of these is of physical relevance -- the positive solution.
+
+This unit test demonstrates the capability of the SNES solver to accept bounds
+on the resulting solution. The plain Newton method converges to an unphysical
+negative solution, while the SNES solution with {sign: nonnegative} converges
+to the physical positive solution.
+"""
+
 from dolfin import *
 import unittest
 
@@ -44,14 +56,17 @@ F = (8*inner(grad(u), grad(v))*dx +
      rho * inner(u**5, v)*dx +
      (-1.0/8.0)*inner(u, v)*dx)
 
-newton_solver_parameters = {"newton_solver": {"maximum_iterations": 100}, "nonlinear_solver": "newton", "linear_solver": "lu"}
-snes_solver_parameters   = {"snes_solver": {"maximum_iterations": 100, "sign": "nonnegative"}, "nonlinear_solver": "snes", "linear_solver": "lu"}
+newton_solver_parameters = {"newton_solver": {"maximum_iterations": 100, "report": False}, "nonlinear_solver": "newton", "linear_solver": "lu"}
+snes_solver_parameters   = {"snes_solver": {"maximum_iterations": 100, "sign": "nonnegative", "report": False}, "nonlinear_solver": "snes", "linear_solver": "lu"}
 
-solve(F == 0, u, bcs, solver_parameters=snes_solver_parameters)
 
 class SNESSolverTester(unittest.TestCase):
   def test_snes_solver(self):
+    solve(F == 0, u, bcs, solver_parameters=snes_solver_parameters)
     self.assertTrue(min(u.vector()) >= 0)
+  def test_newton_solver(self):
+    solve(F == 0, u, bcs, solver_parameters=newton_solver_parameters)
+    self.assertTrue(min(u.vector()) < 0)
 
 if __name__ == "__main__":
   # Turn off DOLFIN output
