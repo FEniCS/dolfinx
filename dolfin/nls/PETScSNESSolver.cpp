@@ -81,6 +81,7 @@ const std::map<std::string, const SNESType> PETScSNESSolver::_methods
                               ("ngmres",      SNESNGMRES)
                               ("nrichardson", SNESNRICHARDSON)
                               ("virs",        SNESVIRS)
+                              ("viss",        SNESVISS)
                               ("qn",          SNESQN)
                               ("ncg",         SNESNCG)
                               ("fas",         SNESFAS)
@@ -96,6 +97,7 @@ const std::vector<std::pair<std::string, std::string> >
     ("ngmres",      "Nonlinear generalised minimum residual method")
     ("nrichardson", "Richardson nonlinear method (Picard iteration)")
     ("virs",        "Reduced space active set solver method")
+    ("viss",        "Reduced space active set solver method")
     ("qn",          "Limited memory quasi-Newton")
     ("ncg",         "Nonlinear conjugate gradient method")
     ("fas",         "Full Approximation Scheme nonlinear multigrid method")
@@ -135,6 +137,12 @@ Parameters PETScSNESSolver::default_parameters()
   line_searches.insert("cp");
   p.add("line_search", "basic", line_searches);
 #endif
+
+  std::set<std::string> bound_types;
+  bound_types.insert("default");
+  bound_types.insert("nonnegative");
+  bound_types.insert("nonpositive");
+  p.add("sign", "default", bound_types);
 
   return p;
 }
@@ -202,15 +210,19 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
   snes_ctx.nonlinear_problem = &nonlinear_problem;
   snes_ctx.dx = &x.down_cast<PETScVector>();
 
-  if (std::string(parameters["method"]) != "default")
-    SNESSetType(*_snes, _methods.find(std::string(parameters["method"]))->second);
-
   SNESSetFunction(*_snes, *f.vec(), PETScSNESSolver::FormFunction, &snes_ctx);
   SNESSetJacobian(*_snes, *A.mat(), *A.mat(), PETScSNESSolver::FormJacobian, &snes_ctx);
 
   // Set some options from the parameters
   if (parameters["report"])
     SNESMonitorSet(*_snes, SNESMonitorDefault, PETSC_NULL, PETSC_NULL);
+
+  // Set the bounds, if any
+  set_bounds(x);
+
+  // Set the method
+  if (std::string(parameters["method"]) != "default")
+    SNESSetType(*_snes, _methods.find(std::string(parameters["method"]))->second);
 
 // The line search business changed completely from PETSc 3.2 to 3.3.
 #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
@@ -239,11 +251,12 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
   SNESLineSearchSetType(linesearch, line_search_type.c_str());
 #endif
 
-
-
   // Tolerances
-  SNESSetTolerances(*_snes, parameters["absolute_tolerance"], parameters["relative_tolerance"], parameters["solution_tolerance"], parameters["maximum_iterations"], parameters["maximum_residual_evaluations"]);
+  SNESSetTolerances(*_snes, parameters["absolute_tolerance"], parameters["relative_tolerance"],
+                            parameters["solution_tolerance"], parameters["maximum_iterations"],
+                            parameters["maximum_residual_evaluations"]);
 
+  SNESView(*_snes, PETSC_VIEWER_STDOUT_WORLD);
   SNESSolve(*_snes, PETSC_NULL, *snes_ctx.dx->vec());
 
   SNESGetIterationNumber(*_snes, &its);
@@ -404,6 +417,64 @@ void PETScSNESSolver::set_linear_solver_parameters(Parameters ksp_parameters)
                  "Unknown KSP method \"%s\"", linear_solver.c_str());
   }
 }
+//-----------------------------------------------------------------------------
 
+PetscErrorCode  SNESMonitorVI(SNES snes,PetscInt its,PetscReal fgnorm,void *dummy); // I can't believe I need to do this. For some reason it's not publicly declared by PETSc.
+
+void PETScSNESSolver::set_bounds(GenericVector& x)
+{
+
+  // Here, x is the model vector from which we make our Vecs
+  // that tell PETSc the bounds.
+
+  std::string sign = parameters["sign"];
+
+  if (sign != "default")
+  {
+    std::string method = parameters["method"];
+    if (method != std::string("virs") && method != std::string("viss"))
+    {
+      dolfin_error("PETScSNESSolver.cpp",
+                   "set variational inequality bounds",
+                   "Need to use virs or viss methods if bounds are set");
+    }
+
+    Vec ub;
+    Vec lb;
+
+    PETScVector dx = x.down_cast<PETScVector>();
+    VecDuplicate(*dx.vec(), &ub);
+    VecDuplicate(*dx.vec(), &lb);
+
+    if (sign == "nonnegative")
+    {
+      VecSet(lb, 0.0);
+      VecSet(ub, SNES_VI_INF);
+    }
+    else if (sign == "nonpositive")
+    {
+      VecSet(ub, 0.0);
+      VecSet(lb, SNES_VI_NINF);
+    }
+    else
+    {
+      dolfin_error("PETScSNESSolver.cpp",
+                   "set PETSc SNES solver bounds",
+                   "Unknown bound type \"%s\"", sign.c_str());
+
+    }
+
+    SNESVISetVariableBounds(*_snes, lb, ub);
+
+    if (parameters["report"])
+    {
+      SNESMonitorCancel(*_snes);
+      SNESMonitorSet(*_snes, SNESMonitorVI, PETSC_NULL, PETSC_NULL);
+    }
+
+    VecDestroy(&ub);
+    VecDestroy(&lb);
+  }
+}
 
 #endif

@@ -93,6 +93,10 @@ namespace dolfin
 
     /// The callback for PETSc to compute A
     static PetscErrorCode FormJacobian(SNES snes, Vec x, Mat* A, Mat* B, MatStructure* flag, void* ctx);
+
+    /// Set the bounds on the problem from the parameters, if desired
+    void set_bounds(GenericVector& x);
+
   };
 
 }
