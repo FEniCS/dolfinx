@@ -223,6 +223,8 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
   // Set the method
   if (std::string(parameters["method"]) != "default")
     SNESSetType(*_snes, _methods.find(std::string(parameters["method"]))->second);
+  else if (std::string(parameters["method"]) == std::string("default") && std::string(parameters["sign"]) != "default")
+    SNESSetType(*_snes, _methods.find(std::string("viss"))->second);
 
 // The line search business changed completely from PETSc 3.2 to 3.3.
 #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
@@ -432,7 +434,7 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
   if (sign != "default")
   {
     std::string method = parameters["method"];
-    if (method != std::string("virs") && method != std::string("viss"))
+    if (method != std::string("virs") && method != std::string("viss") && method != std::string("default"))
     {
       dolfin_error("PETScSNESSolver.cpp",
                    "set variational inequality bounds",
