@@ -28,12 +28,12 @@
 #include <dolfin/log/log.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/common/Timer.h>
 #include "GraphBuilder.h"
 
 using namespace dolfin;
@@ -198,6 +198,8 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
                                 std::vector<std::set<uint> >& local_graph,
                                 std::set<uint>& ghost_vertices)
 {
+  Timer timer("Compute dual graph");
+
   const uint num_mpi_procs = MPI::num_processes();
 
   // List of cell vertices

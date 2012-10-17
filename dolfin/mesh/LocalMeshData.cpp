@@ -21,6 +21,7 @@
 // Last changed: 2011-11-14
 
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/log/log.h>
 #include "Cell.h"
 #include "Mesh.h"
@@ -40,6 +41,8 @@ LocalMeshData::LocalMeshData() : num_global_vertices(0), num_global_cells(0),
 LocalMeshData::LocalMeshData(const Mesh& mesh) : num_global_vertices(0),
                num_global_cells(0), num_vertices_per_cell(0), gdim(0), tdim(0)
 {
+  Timer timer("build LocalMeshData");
+
   // Extract data on main process and split among processes
   if (MPI::is_broadcaster())
   {
