@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-10-16
+// Last changed: 2012-10-17
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -72,6 +72,9 @@ namespace dolfin
     /// Read Mesh from file
     void operator>> (Mesh& mesh);
 
+    /// Read Mesh from file 
+    void read_mesh(Mesh &mesh);
+    
     /// Check is dataset with given name exists in HDF5 file
     bool dataset_exists(const std::string dataset_name) const;
 
@@ -82,6 +85,19 @@ namespace dolfin
 
     // Open HDF5 file
     void open_hdf5_file(bool truncate);
+
+    // Read a mesh which has locally indexed topology
+    void read_mesh_with_local_topology(Mesh &input_mesh, 
+                                       const std::string coordinates_name,
+                                       const std::string topology_name,
+                                       const std::string global_index_name);
+
+    // Read a mesh which has globally indexed topology
+    void read_mesh_with_global_topology(Mesh &input_mesh, 
+                                       const std::string coordinates_name,
+                                       const std::string topology_name,
+                                       const std::string global_index_name);
+    
 
     // Write contiguous data to HDF5 data set. Data is flattened into
     // a 1D array, e.g. [x0, y0, z0, x1, y1, z1] for a vector in 3D
