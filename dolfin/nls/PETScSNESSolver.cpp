@@ -61,6 +61,7 @@ const std::map<std::string, const SNESType> PETScSNESSolver::_methods
   = boost::assign::map_list_of("default",  "")
                               ("ls",          SNESLS)
                               ("tr",          SNESTR)
+                              ("vi",          SNESVI)
                               ("test",        SNESTEST);
 
 // Mapping from method string to description
@@ -69,6 +70,7 @@ const std::vector<std::pair<std::string, std::string> >
     ("default",     "default SNES method")
     ("ls",          "Line search method")
     ("tr",          "Trust region method")
+    ("vi",          "Reduced space active set solver method (for bounds)")
     ("test",        "Tool to verify Jacobian approximation");
 
 #else // PETSc 3.3 and above
@@ -96,8 +98,8 @@ const std::vector<std::pair<std::string, std::string> >
     ("test",        "Tool to verify Jacobian approximation")
     ("ngmres",      "Nonlinear generalised minimum residual method")
     ("nrichardson", "Richardson nonlinear method (Picard iteration)")
-    ("virs",        "Reduced space active set solver method")
-    ("viss",        "Reduced space active set solver method")
+    ("virs",        "Reduced space active set solver method (for bounds)")
+    ("viss",        "Reduced space active set solver method (for bounds)")
     ("qn",          "Limited memory quasi-Newton")
     ("ncg",         "Nonlinear conjugate gradient method")
     ("fas",         "Full Approximation Scheme nonlinear multigrid method")
@@ -228,8 +230,13 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
   // AND  b) the user has not set a solver (method == default)
   // THEN set a good method that supports bounds
   // (most methods do not support bounds)
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
+  else if (std::string(parameters["method"]) == std::string("default") && std::string(parameters["sign"]) != "default")
+    SNESSetType(*_snes, _methods.find(std::string("vi"))->second);
+#else
   else if (std::string(parameters["method"]) == std::string("default") && std::string(parameters["sign"]) != "default")
     SNESSetType(*_snes, _methods.find(std::string("viss"))->second);
+#endif
 
 // The line search business changed completely from PETSc 3.2 to 3.3.
 #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
