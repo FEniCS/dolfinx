@@ -86,14 +86,14 @@ namespace dolfin
     // Open HDF5 file
     void open_hdf5_file(bool truncate);
 
-    // Read a mesh which has locally indexed topology
-    void read_mesh_with_local_topology(Mesh &input_mesh, 
+    // Read a mesh which has locally indexed topology and repartition
+    void read_mesh_with_local_topology_repartition(Mesh &input_mesh, 
                                        const std::string coordinates_name,
                                        const std::string topology_name,
                                        const std::string global_index_name);
 
-    // Read a mesh which has globally indexed topology
-    void read_mesh_with_global_topology(Mesh &input_mesh, 
+    // Read a mesh which has globally indexed topology and repartition
+    void read_mesh_with_global_topology_repartition(Mesh &input_mesh, 
                                        const std::string coordinates_name,
                                        const std::string topology_name,
                                        const std::string global_index_name);
