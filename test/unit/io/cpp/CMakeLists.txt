@@ -5,7 +5,8 @@
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
-project(test_io)
+set(PROJECT_NAME test_io)
+project(${PROJECT_NAME})
 
 # Set verbose output while testing CMake
 #set(CMAKE_VERBOSE_MAKEFILE 1)

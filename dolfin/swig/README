@@ -1,19 +1,39 @@
-
 Automatic regeneration of SWIG interface
 ========================================
 
 The SWIG interface of DOLFIN is partly generated automatically.
 
-  * Run generateswigcode.py to regenerate the SWIG interface
+  * Run cmake/scripts/generate-swig-interface to regenerate the SWIG
+    interface
 
 The SWIG interface should be regenerated whenever new header files are
 included in DOLFIN or new documentation is added in a header file.
 
-generateswigcode.py, is not run, yet, by the build system so all
+generate-swig-interface, is not run, yet, by the build system so all
 generated files need to be committed to the bazaar repository.
 
   * Commit changed or added files to launchpad whenever
-    generateswigcode.py has been run.
+    generate-swig-interface has been run.
+
+Extending the swig interface with new classes or functions
+==========================================================
+
+SWIG parses header files to generate the Python interface. To add new
+classes or function, the header file that declares the functionality,
+needs to be exposed to SWIG. This is done by adding the file as an
+#include to the corresponding
+
+  dolfin/{la,function,aso}/dolfin_{la,function,aso}.h
+
+file. Then you need to regenerate the SWIG interface by running
+generate-swig-interface.
+
+CMake might have trouble figuring out that something has been added,
+so to force a recompilation of the SWIG interface you can remove the
+generated files in the build directory.
+
+  rm -rf build/dolfin/swig/modules
+
 
 Modularized interface
 =====================
@@ -35,12 +55,12 @@ Combined modules
 
 A combined module consist of the interface of one or several modules,
 mention above. What modules are included in a combined modules is defined
-in generateswigcode.py. All interface files declaring these files are
-automatically generated when generateswigcode.py is run.
+in generate-swig-interface. All interface files declaring these files are
+automatically generated when generate-swig-interface is run.
 
   * If a combined module is added/removed, the corresponding
     subdirectory needs to be added/removed too, and it should
-    added/removed in generateswigcode.py.
+    added/removed in generate-swig-interface.
 
   * If a combined module is added a CMakeList.txt need to be added to
     that directory. These are all module independent so just copy one

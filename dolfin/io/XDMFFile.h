@@ -28,6 +28,7 @@
 #include <string>
 #include <utility>
 #include <boost/scoped_ptr.hpp>
+#include "dolfin/common/Variable.h"
 #include "GenericFile.h"
 
 namespace pugi
@@ -52,7 +53,7 @@ namespace dolfin
   /// XDMF is not suitable for checkpointing as it may decimate
   /// some data.
 
-  class XDMFFile: public GenericFile
+  class XDMFFile : public GenericFile, public Variable
   {
   public:
 

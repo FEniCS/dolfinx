@@ -128,7 +128,6 @@ namespace dolfin
                                       const std::vector<T>& local_vector,
                                       std::vector<T>& global_vector);
 
-
     // HDF5 file descriptor/handle
     bool hdf5_file_open;
     hid_t hdf5_file_id;
@@ -179,7 +178,6 @@ namespace dolfin
                                  range, global_size, mpi_io, false);
   }
   //---------------------------------------------------------------------------
-
 
 }
 #endif

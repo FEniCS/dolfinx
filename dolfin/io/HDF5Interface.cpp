@@ -18,7 +18,9 @@
 // Modified by Johannes Ring, 2012
 //
 // First Added: 2012-09-21
-// Last Changed: 2012-10-09
+// Last Changed: 2012-10-12
+
+#include <boost/filesystem.hpp>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/MPI.h>
@@ -48,20 +50,29 @@ hid_t HDF5Interface::open_file(const std::string filename, const bool truncate,
     dolfin_assert(status != HDF5_FAIL);
     #else
     dolfin_error("HDF5Interface.cpp",
-                 "create file",
+                 "create HDF5 file",
                  "Cannot use MPI-IO output if DOLFIN is not configured with MPI");
     #endif
   }
 
-  // Create file (overwriting existing file, if present)
   hid_t file_id;
   if (truncate)
   {
+    // Create file, (overwriting existing file, if present)
     file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT,
                         plist_id);
   }
   else
   {
+    // Check that file exists
+    if (!boost::filesystem::is_regular_file(filename))
+    {
+      dolfin_error("HDF5Interface.cpp",
+                   "open HDF5 file",
+                   "File does not exist");
+    }
+
+    // Open file existing file
     file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
   }
   dolfin_assert(file_id != HDF5_FAIL);
@@ -73,18 +84,16 @@ hid_t HDF5Interface::open_file(const std::string filename, const bool truncate,
   return file_id;
 }
 //-----------------------------------------------------------------------------
+void HDF5Interface::flush_file(const hid_t hdf5_file_handle)
+{
+  herr_t status = H5Fflush(hdf5_file_handle, H5F_SCOPE_GLOBAL);
+  dolfin_assert(status != HDF5_FAIL);
+}
+//-----------------------------------------------------------------------------
 bool HDF5Interface::has_group(const hid_t hdf5_file_handle,
                               const std::string group_name)
 {
   return has_dataset(hdf5_file_handle, group_name);
-  /*
-   herr_t status = H5Eset_auto(NULL, NULL);
-   status = H5Gget_objinfo(hdf5_file_handle, group_name.c_str(), 0, NULL);
-   if (status == 0)
-    return true;
-   else
-    return false;
-  */
 }
 //-----------------------------------------------------------------------------
 bool HDF5Interface::has_dataset(const hid_t hdf5_file_handle,
@@ -99,7 +108,7 @@ bool HDF5Interface::has_dataset(const hid_t hdf5_file_handle,
 void HDF5Interface::add_group(const hid_t hdf5_file_handle,
                               const std::string group_name)
 {
-  if(has_group(hdf5_file_handle, group_name))
+  if (has_group(hdf5_file_handle, group_name))
     return;
 
   hid_t group_id_vis = H5Gcreate2(hdf5_file_handle, group_name.c_str(),
