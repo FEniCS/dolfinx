@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-10-13
-// Last changed: 2012-10-13
+// Last changed: 2012-10-17
 
 #ifdef HAS_PETSC
 
@@ -223,6 +223,11 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
   // Set the method
   if (std::string(parameters["method"]) != "default")
     SNESSetType(*_snes, _methods.find(std::string(parameters["method"]))->second);
+  // If
+  //      a) the user has set bounds (sign != default)
+  // AND  b) the user has not set a solver (method == default)
+  // THEN set a good method that supports bounds
+  // (most methods do not support bounds)
   else if (std::string(parameters["method"]) == std::string("default") && std::string(parameters["sign"]) != "default")
     SNESSetType(*_snes, _methods.find(std::string("viss"))->second);
 
@@ -258,33 +263,23 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
                             parameters["solution_tolerance"], parameters["maximum_iterations"],
                             parameters["maximum_residual_evaluations"]);
 
-  SNESView(*_snes, PETSC_VIEWER_STDOUT_WORLD);
+  if (parameters["report"])
+    SNESView(*_snes, PETSC_VIEWER_STDOUT_WORLD);
+
   SNESSolve(*_snes, PETSC_NULL, *snes_ctx.dx->vec());
 
   SNESGetIterationNumber(*_snes, &its);
   SNESGetConvergedReason(*_snes, &reason);
 
-  if (reason > 0 && parameters["report"])
-  {
-    if (dolfin::MPI::process_number() == 0)
-    {
-      info("PETSc SNES solver converged in %d iterations with convergence reason %s.", its, SNESConvergedReasons[reason]);
-    }
-  }
-  else
-  {
-    if (dolfin::MPI::process_number() == 0)
-    {
-      warning("PETSc SNES solver diverged in %d iterations with divergence reason %s.", its, SNESConvergedReasons[reason]);
-    }
-  }
+  if (reason > 0 && parameters["report"] && dolfin::MPI::process_number() == 0)
+    info("PETSc SNES solver converged in %d iterations with convergence reason %s.", its, SNESConvergedReasons[reason]);
+  else if (reason < 0 && dolfin::MPI::process_number() == 0)
+    warning("PETSc SNES solver diverged in %d iterations with divergence reason %s.", its, SNESConvergedReasons[reason]);
 
   if (parameters["error_on_nonconvergence"] && reason < 0)
-  {
     dolfin_error("PETScSNESSolver.cpp",
                  "solve nonlinear system with PETScSNESSolver",
                  "Solver did not converge. Bummer");
-  }
 
   return std::make_pair(its, reason > 0);
 }
@@ -298,6 +293,7 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
   PETScMatrix A;
   PETScVector df;
 
+  // Cast from the PETSc Vec type to dolfin's PETScVector
   boost::shared_ptr<Vec> vptr(&x, NoDeleter());
   PETScVector x_wrap(vptr);
 
@@ -321,6 +317,7 @@ PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* B, M
   PETScVector f;
   PETScMatrix dA;
 
+  // Cast from the PETSc Vec type to dolfin's PETScVector
   boost::shared_ptr<Vec> vptr(&x, NoDeleter());
   PETScVector x_wrap(vptr);
 
@@ -420,9 +417,6 @@ void PETScSNESSolver::set_linear_solver_parameters(Parameters ksp_parameters)
   }
 }
 //-----------------------------------------------------------------------------
-
-PetscErrorCode  SNESMonitorVI(SNES snes,PetscInt its,PetscReal fgnorm,void *dummy); // I can't believe I need to do this. For some reason it's not publicly declared by PETSc.
-
 void PETScSNESSolver::set_bounds(GenericVector& x)
 {
 

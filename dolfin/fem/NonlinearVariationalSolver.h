@@ -77,7 +77,6 @@ namespace dolfin
 #ifdef HAS_PETSC
       p.add(PETScSNESSolver::default_parameters());
       nonlinear_solvers.insert("snes");
-      default_nonlinear_solver = "snes";
 #endif
 
       p.add("nonlinear_solver", default_nonlinear_solver, nonlinear_solvers);
