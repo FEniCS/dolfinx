@@ -228,11 +228,13 @@ void LocalMeshData::broadcast_mesh_data()
       const std::pair<uint, uint> local_range = MPI::local_range(p, num_global_cells);
       log(TRACE, "Sending %d cells to process %d, range is (%d, %d)",
           local_range.second - local_range.first, p, local_range.first, local_range.second);
+      const uint range = local_range.second - local_range.first;
+      send_values[p].reserve(range*(num_vertices_per_cell + 1));
       for (uint i = local_range.first; i < local_range.second; i++)
       {
         send_values[p].push_back(global_cell_indices[i]);
-        for (uint j = 0; j < cell_vertices[i].size(); j++)
-          send_values[p].push_back(cell_vertices[i][j]);
+        send_values[p].insert(send_values[p].end(),
+                              cell_vertices[i].begin(), cell_vertices[i].end());
       }
     }
     std::vector<uint> values;
@@ -285,15 +287,13 @@ void LocalMeshData::receive_mesh_data()
 void LocalMeshData::unpack_vertex_coordinates(const std::vector<double>& values)
 {
   dolfin_assert(values.size() % gdim == 0);
-  vertex_coordinates.clear();
-  const uint num_vertices = values.size() / gdim;
-  uint k = 0;
+  const uint num_vertices = values.size()/gdim;
+  vertex_coordinates
+    = std::vector<std::vector<double> >(num_vertices, std::vector<double>(gdim));
   for (uint i = 0; i < num_vertices; i++)
   {
-    std::vector<double> coordinates(gdim);
-    for (uint j = 0; j < gdim; j++)
-      coordinates[j] = values[k++];
-    vertex_coordinates.push_back(coordinates);
+    std::copy(values.begin() + i*gdim, values.begin() + (i + 1)*gdim,
+              vertex_coordinates[i].begin());
   }
 
   log(TRACE, "Received %d vertex coordinates", vertex_coordinates.size());
@@ -304,7 +304,7 @@ void LocalMeshData::unpack_cell_vertices(const std::vector<uint>& values)
   dolfin_assert(values.size() % (tdim + 2) == 0);
   cell_vertices.clear();
   global_cell_indices.clear();
-  const uint num_cells = values.size() / (tdim + 2);
+  const uint num_cells = values.size()/(tdim + 2);
   uint k = 0;
   for (uint i = 0; i < num_cells; i++)
   {
