@@ -1,0 +1,121 @@
+
+
+Finite element mesh (GridFE):
+
+  Number of space dim. =   3  embedded in physical space with dimension 3
+  Number of elements   =  48
+  Number of nodes      =  27
+
+  All elements are of the same type : true
+  Max number of nodes in an element: 4
+  Only one material                : true
+  Lattice data                     ? 0
+
+
+
+  12 boundary indicators: 
+    pressure_LV
+    pressure_RV
+    pressure_epi
+    traction_1
+    traction_2
+    u=0
+    v=0
+    w=0
+    u1=u1_0
+    u2=u2_0
+    u3=u3_0
+    free
+
+
+  Nodal coordinates and nodal boundary indicators,
+  the columns contain:
+   - node number
+   - coordinates
+   - no of boundary indicators that are set (ON)
+   - the boundary indicators that are set (ON) if any.
+# 
+   1  ( 0.00000e+00, 0.00000e+00, 0.00000e+00)  [3]  6  7  8  
+   2  ( 1.00000e+00, 0.00000e+00, 0.00000e+00)  [1]  3  
+   3  ( 0.00000e+00, 1.00000e+00, 0.00000e+00)  [1]  6  
+   4  ( 1.00000e+00, 1.00000e+00, 0.00000e+00)  [1]  3  
+   5  ( 0.00000e+00, 0.00000e+00, 1.00000e+00)  [2]  6  7  
+   6  ( 1.00000e+00, 0.00000e+00, 1.00000e+00)  [1]  3  
+   7  ( 0.00000e+00, 1.00000e+00, 1.00000e+00)  [1]  6  
+   8  ( 1.00000e+00, 1.00000e+00, 1.00000e+00)  [1]  3  
+   9  ( 5.00000e-01, 5.00000e-01, 5.00000e-01)  [0]  
+  10  ( 5.00000e-01, 5.00000e-01, 0.00000e+00)  [0]  
+  11  ( 1.00000e+00, 0.00000e+00, 5.00000e-01)  [1]  3  
+  12  ( 5.00000e-01, 0.00000e+00, 5.00000e-01)  [0]  
+  13  ( 0.00000e+00, 5.00000e-01, 0.00000e+00)  [1]  6  
+  14  ( 5.00000e-01, 0.00000e+00, 0.00000e+00)  [0]  
+  15  ( 5.00000e-01, 0.00000e+00, 1.00000e+00)  [0]  
+  16  ( 0.00000e+00, 5.00000e-01, 5.00000e-01)  [1]  6  
+  17  ( 0.00000e+00, 0.00000e+00, 5.00000e-01)  [2]  6  7  
+  18  ( 5.00000e-01, 5.00000e-01, 1.00000e+00)  [0]  
+  19  ( 0.00000e+00, 1.00000e+00, 5.00000e-01)  [1]  6  
+  20  ( 0.00000e+00, 5.00000e-01, 1.00000e+00)  [1]  6  
+  21  ( 5.00000e-01, 1.00000e+00, 0.00000e+00)  [0]  
+  22  ( 1.00000e+00, 5.00000e-01, 5.00000e-01)  [1]  3  
+  23  ( 1.00000e+00, 5.00000e-01, 0.00000e+00)  [1]  3  
+  24  ( 5.00000e-01, 1.00000e+00, 5.00000e-01)  [0]  
+  25  ( 1.00000e+00, 5.00000e-01, 1.00000e+00)  [1]  3  
+  26  ( 1.00000e+00, 1.00000e+00, 5.00000e-01)  [1]  3  
+  27  ( 5.00000e-01, 1.00000e+00, 1.00000e+00)  [0]  
+
+  Element types and connectivity
+  the columns contain:
+   - element number
+   - element type
+   - material number
+   - the global node numbers of the nodes in the element.
+#
+  1  ElmT4n3D  1         6   9  11  12
+  2  ElmT4n3D  1         9   3  10  13
+  3  ElmT4n3D  1        11  10   2  14
+  4  ElmT4n3D  1        12  13  14   1
+  5  ElmT4n3D  1        13  12  10   9
+  6  ElmT4n3D  1        13  12  14  10
+  7  ElmT4n3D  1        11  10  14  12
+  8  ElmT4n3D  1        11  10  12   9
+  9  ElmT4n3D  1         6   9  12  15
+ 10  ElmT4n3D  1         9   3  13  16
+ 11  ElmT4n3D  1        12  13   1  17
+ 12  ElmT4n3D  1        15  16  17   5
+ 13  ElmT4n3D  1        12  13  16   9
+ 14  ElmT4n3D  1        12  13  17  16
+ 15  ElmT4n3D  1        16  15  17  12
+ 16  ElmT4n3D  1        16  15  12   9
+ 17  ElmT4n3D  1         6   9  15  18
+ 18  ElmT4n3D  1         9   3  16  19
+ 19  ElmT4n3D  1        15  16   5  20
+ 20  ElmT4n3D  1        18  19  20   7
+ 21  ElmT4n3D  1        19  18  16   9
+ 22  ElmT4n3D  1        19  18  20  16
+ 23  ElmT4n3D  1        15  16  20  18
+ 24  ElmT4n3D  1        15  16  18   9
+ 25  ElmT4n3D  1         6   9  22  11
+ 26  ElmT4n3D  1         9   3  21  10
+ 27  ElmT4n3D  1        22  21   4  23
+ 28  ElmT4n3D  1        11  10  23   2
+ 29  ElmT4n3D  1        22  21  10   9
+ 30  ElmT4n3D  1        22  21  23  10
+ 31  ElmT4n3D  1        10  11  23  22
+ 32  ElmT4n3D  1        10  11  22   9
+ 33  ElmT4n3D  1         6   9  25  22
+ 34  ElmT4n3D  1         9   3  24  21
+ 35  ElmT4n3D  1        25  24   8  26
+ 36  ElmT4n3D  1        22  21  26   4
+ 37  ElmT4n3D  1        21  22  24   9
+ 38  ElmT4n3D  1        21  22  26  24
+ 39  ElmT4n3D  1        25  24  26  22
+ 40  ElmT4n3D  1        25  24  22   9
+ 41  ElmT4n3D  1         6   9  18  25
+ 42  ElmT4n3D  1         9   3  19  24
+ 43  ElmT4n3D  1        18  19   7  27
+ 44  ElmT4n3D  1        25  24  27   8
+ 45  ElmT4n3D  1        18  19  24   9
+ 46  ElmT4n3D  1        18  19  27  24
+ 47  ElmT4n3D  1        24  25  27  18
+ 48  ElmT4n3D  1        24  25  18   9
+
