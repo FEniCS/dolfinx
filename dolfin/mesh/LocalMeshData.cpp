@@ -84,12 +84,12 @@ std::string LocalMeshData::str(bool verbose) const
       s << "    " << i << ": " << vertex_indices[i] << std::endl;
     s << std::endl;
 
-    s << "  Cell vertces" << std::endl;
+    s << "  Cell vertices" << std::endl;
     s << "  ------------" << std::endl;
-    for (uint i = 0; i < cell_vertices.size(); i++)
+    for (uint i = 0; i < cell_vertices.shape()[0]; i++)
     {
       s << "    " << i << ":";
-      for (uint j = 0; j < cell_vertices[i].size(); j++)
+      for (uint j = 0; j < cell_vertices.shape()[1]; j++)
         s << " " << cell_vertices[i][j];
       s << std::endl;
     }
@@ -101,7 +101,7 @@ std::string LocalMeshData::str(bool verbose) const
       << MPI::process_number() << " with "
       << vertex_coordinates.size() << " vertices (out of "
       << num_global_vertices << ") and "
-      << cell_vertices.size() << " cells (out of "
+      << cell_vertices.shape()[0] << " cells (out of "
       << num_global_cells << ")>";
   }
 
@@ -112,7 +112,7 @@ void LocalMeshData::clear()
 {
   vertex_coordinates.clear();
   vertex_indices.clear();
-  cell_vertices.clear();
+  cell_vertices.resize(boost::extents[0][0]);
   global_cell_indices.clear();
   num_global_vertices = 0;
   num_global_cells = 0;
@@ -155,8 +155,7 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
     vertex_indices.push_back(vertex->index());
 
   // Get global vertex indices for all cells stored on local processor
-  cell_vertices
-    = std::vector<std::vector<uint> >(mesh.num_cells(), std::vector<uint>(num_vertices_per_cell));
+  cell_vertices.resize(boost::extents[mesh.num_cells()][num_vertices_per_cell]);
   global_cell_indices.reserve(mesh.num_cells());
   std::vector<uint> vertices(num_vertices_per_cell);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -305,18 +304,16 @@ void LocalMeshData::unpack_vertex_coordinates(const std::vector<double>& values)
 //-----------------------------------------------------------------------------
 void LocalMeshData::unpack_cell_vertices(const std::vector<uint>& values)
 {
-  dolfin_assert(values.size() % (tdim + 2) == 0);
-  cell_vertices.clear();
-  global_cell_indices.clear();
   const uint num_cells = values.size()/(tdim + 2);
+  dolfin_assert(values.size() % (tdim + 2) == 0);
+  cell_vertices.resize(boost::extents[num_cells][num_vertices_per_cell]);
+  global_cell_indices.clear();
   uint k = 0;
-  std::vector<uint> vertices(tdim + 1);
   for (uint i = 0; i < num_cells; i++)
   {
     global_cell_indices.push_back(values[k++]);
     for (uint j = 0; j < tdim + 1; j++)
-      vertices[j] = values[k++];
-    cell_vertices.push_back(vertices);
+      cell_vertices[i][j] = values[k++];
   }
 
   log(TRACE, "Received %d cell vertices", cell_vertices.size());

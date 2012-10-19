@@ -79,6 +79,8 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
     // Create and distribute local mesh data
     LocalMeshData local_mesh_data(mesh);
 
+    //return;
+
     // Build distributed mesh
     build_distributed_mesh(mesh, local_mesh_data);
   }
