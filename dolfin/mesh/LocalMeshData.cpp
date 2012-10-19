@@ -213,6 +213,7 @@ void LocalMeshData::broadcast_mesh_data()
     for (uint p = 0; p < num_processes; p++)
     {
       const std::pair<uint, uint> local_range = MPI::local_range(p, num_global_vertices);
+      send_values[p].reserve(local_range.second - local_range.first);
       for (uint i = local_range.first; i < local_range.second; i++)
         send_values[p].push_back(vertex_indices[i]);
     }
@@ -306,10 +307,10 @@ void LocalMeshData::unpack_cell_vertices(const std::vector<uint>& values)
   global_cell_indices.clear();
   const uint num_cells = values.size()/(tdim + 2);
   uint k = 0;
+  std::vector<uint> vertices(tdim + 1);
   for (uint i = 0; i < num_cells; i++)
   {
     global_cell_indices.push_back(values[k++]);
-    std::vector<uint> vertices(tdim + 1);
     for (uint j = 0; j < tdim + 1; j++)
       vertices[j] = values[k++];
     cell_vertices.push_back(vertices);
