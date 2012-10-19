@@ -143,7 +143,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   /// number and send to other processes. Entities shared by two or
   /// more processes are numbered by the lower ranked process.
 
-  // Entities to br numbered
+  // Entities to be numbered
   std::map<std::vector<uint>, uint> owned_entity_indices;
 
   // Candidates to number and send to other, higher rank processes
