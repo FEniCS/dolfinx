@@ -93,8 +93,6 @@ int main()
     }
   };
 
-  parameters["mesh_partitioner"] = "SCOTCH";
-
   // Read mesh and create function space
   Mesh mesh("gear.xml.gz");
   Elasticity::FunctionSpace V(mesh);
