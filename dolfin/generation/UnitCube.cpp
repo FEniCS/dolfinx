@@ -80,7 +80,7 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
   // Create tetrahedra
   editor.init_cells(6*nx*ny*nz);
   uint cell = 0;
-  std::vector<std::vector<uint> > cells(6, std::vector<uint>(4));
+  std::vector<uint> cells(4);
   for (uint iz = 0; iz < nz; iz++)
   {
     for (uint iy = 0; iy < ny; iy++)
@@ -97,17 +97,23 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
         const uint v7 = v3 + (nx + 1)*(ny + 1);
 
         // Note that v0 < v1 < v2 < v3 < vmid.
-        cells[0][0] = v0; cells[0][1] = v1; cells[0][2] = v3; cells[0][3] = v7;
-        cells[1][0] = v0; cells[1][1] = v1; cells[1][2] = v7; cells[1][3] = v5;
-        cells[2][0] = v0; cells[2][1] = v5; cells[2][2] = v7; cells[2][3] = v4;
-        cells[3][0] = v0; cells[3][1] = v3; cells[3][2] = v2; cells[3][3] = v7;
-        cells[4][0] = v0; cells[4][1] = v6; cells[4][2] = v4; cells[4][3] = v7;
-        cells[5][0] = v0; cells[5][1] = v2; cells[5][2] = v6; cells[5][3] = v7;
+        cells[0] = v0; cells[1] = v1; cells[2] = v3; cells[3] = v7;
+        editor.add_cell(cell++, cells);
 
-        // Add cells
-        std::vector<std::vector<uint> >::const_iterator _cell;
-        for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
-          editor.add_cell(cell++, *_cell);
+        cells[0] = v0; cells[1] = v1; cells[2] = v7; cells[3] = v5;
+        editor.add_cell(cell++, cells);
+
+        cells[0] = v0; cells[1] = v5; cells[2] = v7; cells[3] = v4;
+        editor.add_cell(cell++, cells);
+
+        cells[0] = v0; cells[1] = v3; cells[2] = v2; cells[3] = v7;
+        editor.add_cell(cell++, cells);
+
+        cells[0] = v0; cells[1] = v6; cells[2] = v4; cells[3] = v7;
+        editor.add_cell(cell++, cells);
+
+        cells[0] = v0; cells[1] = v2; cells[2] = v6; cells[3] = v7;
+        editor.add_cell(cell++, cells);
       }
     }
   }
