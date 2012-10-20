@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-10-19
+// Last changed: 2012-10-20
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -99,7 +99,10 @@ namespace dolfin
                                        const std::string global_index_name);
     
 
-    void remove_duplicate_vertices(Mesh &mesh);
+    void remove_duplicate_vertices(const Mesh &mesh);
+
+    template <typename T>
+    void remove_duplicate_values(const Mesh &mesh, std::vector<T>& values);
 
     // Write contiguous data to HDF5 data set. Data is flattened into
     // a 1D array, e.g. [x0, y0, z0, x1, y1, z1] for a vector in 3D

@@ -229,8 +229,8 @@ std::string HDF5File::search_list(const std::vector<std::string>& list,
 //-----------------------------------------------------------------------------
 void HDF5File::operator>> (Mesh& input_mesh)
 {
-  //  remove_duplicate_vertices(input_mesh); 
-  read_mesh(Mesh &input_mesh);
+  remove_duplicate_vertices(input_mesh); 
+  // read_mesh(Mesh &input_mesh);
   
 }
 
@@ -755,7 +755,7 @@ std::string HDF5File::mesh_topology_dataset_name(const Mesh& mesh) const
 }
 //-----------------------------------------------------------------------------
 
-void HDF5File::remove_duplicate_vertices(Mesh &mesh)
+void HDF5File::remove_duplicate_vertices(const Mesh &mesh)
 {
 
   const uint num_processes = MPI::num_processes();
@@ -765,23 +765,32 @@ void HDF5File::remove_duplicate_vertices(Mesh &mesh)
   const std::map<uint, std::set<uint> >& shared_vertices
     = mesh.topology().shared_entities(0);
 
-  // Create global => local map for all local vertices
+  // Create global => local map for shared vertices only
   std::map<uint, uint> local;
   for (VertexIterator v(mesh); !v.end(); ++v)
-    local[v->global_index()] = v->index();
-
-  // New local indexing after removing duplicates
+  {
+    uint global_index = v->global_index();
+    if(shared_vertices.count(global_index) != 0)
+      local[global_index] = v->index();
+  }
+  
+  // New local indexing vector "remap" after removing duplicates
   // Initialise to '1' and mark removed vertices with '0'
   std::vector<uint> remap(num_local_vertices, 1);
 
   // Structures for MPI::distribute
-  std::vector<uint> destinations(num_processes);
+  // list all processes, though some may get nothing from here
+  std::vector<uint> destinations;
+  destinations.reserve(num_processes);
+  for(uint j = 0; j < num_processes; j++)
+    destinations.push_back(j);  
   std::vector<std::vector<std::pair<uint,uint> > > values_to_send(num_processes);
 
   // Go through shared vertices looking for vertices which are
   // on a lower numbered process. Mark these as being off-process.
-  // Meanwhile, create a list of processes to tell about locally owned
-  // shared vertices.
+  // Meanwhile, push locally owned shared vertices to values_to_send to 
+  // remote processes.
+
   uint count = num_local_vertices;
   for(std::map<uint, std::set<uint> >::const_iterator 
       shared_v_it = shared_vertices.begin();
@@ -794,48 +803,92 @@ void HDF5File::remove_duplicate_vertices(Mesh &mesh)
     // Determine whether this vertex is also on a lower numbered process
     if(*(procs.begin()) < process_number) 
     {
+      // mark for excision on this process
       remap[local_index] = 0;
       count--;
     } 
-    else
+    else // locally owned.
     {
+      // send std::pair(global, local) indices to each sharing process
+      const std::pair<uint, uint> global_local(global_index, local_index);
       for(std::set<uint>::iterator proc = procs.begin(); 
           proc != procs.end(); ++proc)
-      {
-        std::pair<uint, uint> global_to_local(global_index, local_index);
-        values_to_send[*proc].push_back(global_to_local);
-      }
+        values_to_send[*proc].push_back(global_local);
     }
   }
 
-  const uint vertex_offset = MPI::global_offset(count, true);
-  const std::pair<uint, uint> vertex_range(vertex_offset, vertex_offset + count);
 
-  std::stringstream s;      
-  s << "nv=" << MPI::sum(count) << std::endl;  
+  // make vertex_coords
+  std::vector<double> vertex_coords;
+  const uint gdim = mesh.geometry().dim();
+  vertex_coords.reserve(gdim*num_local_vertices);
+
+  for (VertexIterator v(mesh); !v.end(); ++v)
+    if(remap[v->index()] != 0)
+      for (uint i = 0; i < gdim; ++i)
+        vertex_coords.push_back(v->x(i));
 
   // Remap local indices to account for missing vertices
-  count = vertex_range.first - 1;
+  // Also add offset
+  const uint vertex_offset = MPI::global_offset(count, true);
+  uint new_index = vertex_offset - 1;
   for(uint i = 0; i < num_local_vertices; i++)
   {
-    count += remap[i];
-    remap[i] = count;
-
-    s << i << "=" <<  remap[i] << std::endl;
+    new_index += remap[i]; 
+    remap[i] = new_index;
   }
 
-  // Now need to remap shared vertices in values_to_send
+  // Second value of pairs contains local index. Now revise
+  // to contain the new local index + vertex_offset
+  for(std::vector<std::vector<std::pair<uint,uint> > >::iterator 
+        p = values_to_send.begin(); p != values_to_send.end(); ++p)
+    for(std::vector<std::pair<uint,uint> >::iterator lmap = p->begin();
+        lmap != p->end(); ++lmap)
+      lmap->second = remap[lmap->second];
 
   // Redistribute the values to the appropriate process
   std::vector<std::vector<std::pair<uint,uint> > > received_values;
   MPI::distribute(values_to_send, destinations, received_values);
 
-  // flatten and insert global remapping into remap
-  for(std::vector<std::vector<std::pair<uint, uint> > >::iterator rv=received_values.begin(); rv != received_values.end(); ++rv)
-    for(std::vector<std::pair<uint, uint> >::iterator f=rv->begin(); f != rv->end(); ++f)
-      remap[local[f->first]] = f->second;
+  // flatten and insert received global remappings into remap
+  for(std::vector<std::vector<std::pair<uint, uint> > >::iterator p=received_values.begin(); p != received_values.end(); ++p)
+    for(std::vector<std::pair<uint, uint> >::iterator lmap=p->begin(); lmap != p->end(); ++lmap)
+      remap[local[lmap->first]] = lmap->second;
   
-  std::cout << s.str() ;
+  // remap should now contain the appropriate mapping
+  // which can be used to reindex the topology
+
+}
+
+template <typename T>
+void HDF5File::remove_duplicate_values(const Mesh &mesh, std::vector<T>& values)
+{
+  const uint process_number = MPI::process_number();
+  
+  const std::map<uint, std::set<uint> >& shared_vertices
+    = mesh.topology().shared_entities(0);
+
+  // Create global => local map for shared vertices only
+  std::map<uint, uint> local;
+  for (VertexIterator v(mesh); !v.end(); ++v)
+  {
+    uint global_index = v->global_index();
+    if(shared_vertices.count(global_index) != 0)
+      local[global_index] = v->index();
+  }
+  
+  for(std::map<uint, std::set<uint> >::const_iterator 
+      shared_v_it = shared_vertices.begin();
+      shared_v_it != shared_vertices.end();
+      shared_v_it++)
+  {
+    const uint global_index = shared_v_it->first;
+    const uint local_index = local[global_index];
+    const std::set<uint>& procs = shared_v_it->second;
+    // Determine whether this vertex is also on a lower numbered process
+    if(*(procs.begin()) < process_number) 
+      values.erase(values.begin()+local_index);  // FIXME: erase inefficient?
+  }
 
 }
 
@@ -886,7 +939,7 @@ void HDF5File::redistribute_by_global_index(const std::vector<uint>& global_inde
     if(global_i >= partitions[process_i] && global_i < partitions[process_i + 1])
     {
       // Send the global index along with the value
-      values_to_send[process_i].push_back(make_pair(global_i,local_vector[i]));
+      values_to_send[process_i].push_back(std::make_pair(global_i,local_vector[i]));
     }
     else
     {
