@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-10-17
+// Last changed: 2012-10-20
 
 #ifdef HAS_HDF5
 
@@ -229,7 +229,9 @@ std::string HDF5File::search_list(const std::vector<std::string>& list,
 //-----------------------------------------------------------------------------
 void HDF5File::operator>> (Mesh& input_mesh)
 {
-  read_mesh(input_mesh); 
+  //  remove_duplicate_vertices(input_mesh); 
+  read_mesh(Mesh &input_mesh);
+  
 }
 
 void HDF5File::read_mesh(Mesh &input_mesh)
@@ -752,6 +754,91 @@ std::string HDF5File::mesh_topology_dataset_name(const Mesh& mesh) const
   return dataset_name.str();
 }
 //-----------------------------------------------------------------------------
+
+void HDF5File::remove_duplicate_vertices(Mesh &mesh)
+{
+
+  const uint num_processes = MPI::num_processes();
+  const uint process_number = MPI::process_number();
+  const uint num_local_vertices = mesh.num_vertices();
+  
+  const std::map<uint, std::set<uint> >& shared_vertices
+    = mesh.topology().shared_entities(0);
+
+  // Create global => local map for all local vertices
+  std::map<uint, uint> local;
+  for (VertexIterator v(mesh); !v.end(); ++v)
+    local[v->global_index()] = v->index();
+
+  // New local indexing after removing duplicates
+  // Initialise to '1' and mark removed vertices with '0'
+  std::vector<uint> remap(num_local_vertices, 1);
+
+  // Structures for MPI::distribute
+  std::vector<uint> destinations(num_processes);
+  std::vector<std::vector<std::pair<uint,uint> > > values_to_send(num_processes);
+
+  // Go through shared vertices looking for vertices which are
+  // on a lower numbered process. Mark these as being off-process.
+  // Meanwhile, create a list of processes to tell about locally owned
+  // shared vertices.
+  uint count = num_local_vertices;
+  for(std::map<uint, std::set<uint> >::const_iterator 
+      shared_v_it = shared_vertices.begin();
+      shared_v_it != shared_vertices.end();
+      shared_v_it++)
+  {
+    const uint global_index = shared_v_it->first;
+    const uint local_index = local[global_index];
+    const std::set<uint>& procs = shared_v_it->second;
+    // Determine whether this vertex is also on a lower numbered process
+    if(*(procs.begin()) < process_number) 
+    {
+      remap[local_index] = 0;
+      count--;
+    } 
+    else
+    {
+      for(std::set<uint>::iterator proc = procs.begin(); 
+          proc != procs.end(); ++proc)
+      {
+        std::pair<uint, uint> global_to_local(global_index, local_index);
+        values_to_send[*proc].push_back(global_to_local);
+      }
+    }
+  }
+
+  const uint vertex_offset = MPI::global_offset(count, true);
+  const std::pair<uint, uint> vertex_range(vertex_offset, vertex_offset + count);
+
+  std::stringstream s;      
+  s << "nv=" << MPI::sum(count) << std::endl;  
+
+  // Remap local indices to account for missing vertices
+  count = vertex_range.first - 1;
+  for(uint i = 0; i < num_local_vertices; i++)
+  {
+    count += remap[i];
+    remap[i] = count;
+
+    s << i << "=" <<  remap[i] << std::endl;
+  }
+
+  // Now need to remap shared vertices in values_to_send
+
+  // Redistribute the values to the appropriate process
+  std::vector<std::vector<std::pair<uint,uint> > > received_values;
+  MPI::distribute(values_to_send, destinations, received_values);
+
+  // flatten and insert global remapping into remap
+  for(std::vector<std::vector<std::pair<uint, uint> > >::iterator rv=received_values.begin(); rv != received_values.end(); ++rv)
+    for(std::vector<std::pair<uint, uint> >::iterator f=rv->begin(); f != rv->end(); ++f)
+      remap[local[f->first]] = f->second;
+  
+  std::cout << s.str() ;
+
+}
+
 template <typename T>
 void HDF5File::redistribute_by_global_index(const std::vector<uint>& global_index,
                                             const std::vector<T>& local_vector,
