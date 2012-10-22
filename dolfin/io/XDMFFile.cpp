@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-10-16
+// Last changed: 2012-10-22
 
 #ifdef HAS_HDF5
 
@@ -117,9 +117,9 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   // Get number of local/global cells/vertices
   const uint num_local_cells = mesh.num_cells();
-  const uint num_local_vertices = mesh.num_vertices();
+  const uint num_local_vertices = mesh.num_owned_vertices();
   const uint num_global_cells = MPI::sum(num_local_cells);
-  const uint num_all_local_vertices = MPI::sum(num_local_vertices);
+  const uint num_global_vertices = MPI::sum(num_local_vertices);
 
   // Get Function data at vertices/cell centres
   std::vector<double> data_values;
@@ -267,7 +267,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
     // Grid/Geometry
     pugi::xml_node xdmf_geometry = xdmf_grid.append_child("Geometry");
-    xml_mesh_geometry(xdmf_geometry, num_all_local_vertices, gdim,
+    xml_mesh_geometry(xdmf_geometry, num_global_vertices, gdim,
                       mesh_coords_name);
 
     // Grid/Attribute (Function value data)
@@ -290,7 +290,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     xdmf_data.append_attribute("Format") = "HDF";
     if(vertex_data)
     {
-      s = boost::lexical_cast<std::string>(num_all_local_vertices) + " "
+      s = boost::lexical_cast<std::string>(num_global_vertices) + " "
           + boost::lexical_cast<std::string>(padded_value_size);
     }
     else
@@ -324,9 +324,9 @@ void XDMFFile::operator<< (const Mesh& mesh)
 
   // Get number of local/global cells/vertices
   const uint num_local_cells = mesh.num_cells();
-  const uint num_local_vertices = mesh.num_vertices();
+  const uint num_local_vertices = mesh.num_owned_vertices();
   const uint num_global_cells = MPI::sum(num_local_cells);
-  const uint sum_num_local_vertices = MPI::sum(num_local_vertices);
+  const uint num_global_vertices = MPI::sum(num_local_vertices);
   const uint cell_dim = mesh.topology().dim();
 
   // Get geometric dimension
@@ -359,7 +359,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
 
     // Describe geometric coordinates
     pugi::xml_node xdmf_geometry = xdmf_grid.append_child("Geometry");
-    xml_mesh_geometry(xdmf_geometry, sum_num_local_vertices, gdim,
+    xml_mesh_geometry(xdmf_geometry, num_global_vertices, gdim,
                       mesh_coords_name);
 
     xml_doc.save_file(filename.c_str(), "    ");
@@ -429,9 +429,9 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 
   // Get counts of mesh cells and vertices
   const uint num_local_cells = mesh.num_entities(cell_dim);
-  const uint num_local_vertices = mesh.num_vertices();
+  const uint num_local_vertices = mesh.num_owned_vertices();
   const uint num_global_cells = MPI::sum(num_local_cells);
-  const uint num_all_local_vertices = MPI::sum(num_local_vertices);
+  const uint num_global_vertices = MPI::sum(num_local_vertices);
 
   // Work out HDF5 dataset names
   const std::string mesh_coords_name = hdf5_file->mesh_coords_dataset_name(mesh);
@@ -472,7 +472,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 
     // Geometric coordinate positions
     pugi::xml_node xdmf_geometry = xdmf_grid.append_child("Geometry");
-    xml_mesh_geometry(xdmf_geometry, num_all_local_vertices, gdim,
+    xml_mesh_geometry(xdmf_geometry, num_global_vertices, gdim,
                       mesh_coords_name);
 
     // Make reference to MeshFunction value data and dimensions
@@ -528,14 +528,14 @@ void XDMFFile::xml_mesh_topology(pugi::xml_node &xdmf_topology,
 }
 //----------------------------------------------------------------------------
 void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
-                                 const uint num_all_local_vertices,
+                                 const uint num_global_vertices,
                                  const uint gdim,
                                  const std::string geometry_dataset_name) const
 {
   dolfin_assert(0 < gdim && gdim <= 3);
   std::string geometry_type;
   if (gdim == 1)
-    geometry_type = "X";
+    geometry_type = "X"; // FIXME: not standard. Is this actually supported anywhere?
   else if (gdim == 2)
     geometry_type = "XY";
   else if (gdim == 3)
@@ -545,7 +545,7 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
   pugi::xml_node xdmf_geom_data = xdmf_geometry.append_child("DataItem");
 
   xdmf_geom_data.append_attribute("Format") = "HDF";
-  std::string geom_dim = boost::lexical_cast<std::string>(num_all_local_vertices)
+  std::string geom_dim = boost::lexical_cast<std::string>(num_global_vertices)
     + " " + boost::lexical_cast<std::string>(gdim) ;
   xdmf_geom_data.append_attribute("Dimensions") = geom_dim.c_str();
 
