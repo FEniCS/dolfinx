@@ -293,10 +293,6 @@ void HDF5File::read_mesh(Mesh &input_mesh)
   //  HDF5Interface::get_attribute(hdf5_file_id, topology_name, "partition", partition_data);
   //  const uint num_partitions = partition_data.size();
 
-  std::cout << coordinates_name << std::endl;
-  std::cout << topology_name << std::endl;
-  
-
   read_mesh_repartition(input_mesh, coordinates_name, 
                                    topology_name);
 

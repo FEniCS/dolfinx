@@ -98,7 +98,7 @@ namespace dolfin
     
     // Eliminate elements of value vector corresponding to eliminated vertices
     template <typename T>
-    void remove_duplicate_values(const Mesh &mesh, std::vector<T>& values);
+    void remove_duplicate_values(const Mesh &mesh, std::vector<T>& values, const uint value_size);
 
     // Write contiguous data to HDF5 data set. Data is flattened into
     // a 1D array, e.g. [x0, y0, z0, x1, y1, z1] for a vector in 3D
@@ -134,7 +134,7 @@ namespace dolfin
 
   };
 
-  //---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
   template <typename T>
   void HDF5File::write_data(const std::string dataset_name,
                             const std::vector<T>& data,
@@ -145,7 +145,7 @@ namespace dolfin
     //FIXME: Get groups from dataset_name and recursively create groups
     const std::string group_name(dataset_name, 0, dataset_name.rfind('/'));
 
-    // Check that group exists and create is required
+    // Check that group exists and create if required
     if (!HDF5Interface::has_group(hdf5_file_id, group_name))
       HDF5Interface::add_group(hdf5_file_id, group_name);
 
@@ -174,15 +174,16 @@ namespace dolfin
     HDF5Interface::write_dataset(hdf5_file_id, dataset_name, data,
                                  range, global_size, mpi_io, false);
   }
-  //---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
   template <typename T>
-  void HDF5File::remove_duplicate_values(const Mesh &mesh, std::vector<T>& values)
+  void HDF5File::remove_duplicate_values(const Mesh &mesh, std::vector<T>& values, const uint value_size)
   {
+    // FIXME: use value_size to correctly remove non-scalar values
+
     const uint process_number = MPI::process_number();
 
-    // Copy map of shared vertices
-    std::map<uint, std::set<uint> > shared_vertices = mesh.topology().shared_entities(0);
+    const std::map<uint, std::set<uint> >& shared_vertices = mesh.topology().shared_entities(0);
 
     std::vector<T> result;
     result.reserve(values.size());
@@ -192,7 +193,7 @@ namespace dolfin
       uint local_index = v->index();
       if(shared_vertices.count(global_index) != 0)
       {
-        const std::set<uint>& procs = shared_vertices[global_index];
+        const std::set<uint>& procs = shared_vertices.find(global_index)->second;
         // Determine whether this vertex is first on a higher numbered process. If so, it is owned here.
         if(*(procs.begin()) > process_number)     
           result.push_back(values[local_index]);
