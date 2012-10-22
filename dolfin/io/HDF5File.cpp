@@ -468,7 +468,7 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim,
     std::vector<uint> global_size(2);
     global_size[0] = MPI::sum(num_local_vertices);
     global_size[1] = gdim;
-    write_data("/Mesh", coord_dataset, vertex_coords, global_size);
+    write_data(coord_dataset, vertex_coords, global_size);
 
     // Write partitions as an attribute
     std::vector<uint> partitions;
@@ -489,7 +489,7 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim,
     std::vector<uint> global_size(2);
     global_size[0] = MPI::sum(topological_data.size()/(cell_dim + 1));
     global_size[1] = cell_dim + 1;
-    write_data("/Mesh", topology_dataset, topological_data, global_size);
+    write_data(topology_dataset, topological_data, global_size);
 
     const uint indexing_indicator = (global_topology_indexing ? 1 : 0);
     HDF5Interface::add_attribute(hdf5_file_id, topology_dataset,
@@ -663,120 +663,5 @@ void HDF5File::remove_duplicate_vertices(const Mesh &mesh,
   
 }
 
-template <typename T>
-void HDF5File::remove_duplicate_values(const Mesh &mesh, std::vector<T>& values)
-{
-  const uint process_number = MPI::process_number();
-  
-  const std::map<uint, std::set<uint> >& shared_vertices
-    = mesh.topology().shared_entities(0);
-
-  // Create global => local map for shared vertices only
-  std::map<uint, uint> local;
-  for (VertexIterator v(mesh); !v.end(); ++v)
-  {
-    uint global_index = v->global_index();
-    if(shared_vertices.count(global_index) != 0)
-      local[global_index] = v->index();
-  }
-  
-  for(std::map<uint, std::set<uint> >::const_iterator 
-      shared_v_it = shared_vertices.begin();
-      shared_v_it != shared_vertices.end();
-      shared_v_it++)
-  {
-    const uint global_index = shared_v_it->first;
-    const uint local_index = local[global_index];
-    const std::set<uint>& procs = shared_v_it->second;
-    // Determine whether this vertex is also on a lower numbered process
-    if(*(procs.begin()) < process_number) 
-      values.erase(values.begin()+local_index);  // FIXME: erase inefficient?
-  }
-
-}
-
-template <typename T>
-void HDF5File::redistribute_by_global_index(const std::vector<uint>& global_index,
-                                            const std::vector<T>& local_vector,
-                                            std::vector<T>& global_vector)
-{
-  dolfin_assert(local_vector.size() == global_index.size());
-
-  // Get number of processes
-  const uint num_processes = MPI::num_processes();
-
-  // Calculate size of overall global vector by finding max index value
-  // anywhere
-  const uint global_vector_size
-    = MPI::max(*std::max_element(global_index.begin(), global_index.end())) + 1;
-
-  // Divide up the global vector into local chunks and distribute the
-  // partitioning information
-  std::pair<uint, uint> range = MPI::local_range(global_vector_size);
-  std::vector<uint> partitions;
-  MPI::gather(range.first, partitions);
-  MPI::broadcast(partitions);
-  partitions.push_back(global_vector_size); // add end of last partition
-
-  // Go through each remote process number, finding local values with
-  // a global index in the remote partition range, and add to a list.
-  std::vector<std::vector<std::pair<uint,T> > > values_to_send(num_processes);
-  std::vector<uint> destinations;
-  destinations.reserve(num_processes);
-
-  // Set up destination vector for communication with remote processes
-  for(uint process_j = 0; process_j < num_processes ; ++process_j)
-    destinations.push_back(process_j);
-
-  // Go through local vector and append value to the appropriate list
-  // to send to correct process
-  for(uint i = 0; i < local_vector.size() ; ++i)
-  {
-    const uint global_i = global_index[i];
-
-    // Identify process which needs this value, by searching through
-    // partitioning
-    const uint process_i
-       = (uint)(std::upper_bound(partitions.begin(), partitions.end(), global_i) - partitions.begin()) - 1;
-
-    if(global_i >= partitions[process_i] && global_i < partitions[process_i + 1])
-    {
-      // Send the global index along with the value
-      values_to_send[process_i].push_back(std::make_pair(global_i,local_vector[i]));
-    }
-    else
-    {
-      dolfin_error("HDF5File.cpp",
-                   "work out which process to send data to",
-                   "This should not happen");
-    }
-  }
-
-  // Redistribute the values to the appropriate process
-  std::vector<std::vector<std::pair<uint,T> > > received_values;
-  MPI::distribute(values_to_send, destinations, received_values);
-
-  // When receiving, just go through all received values
-  // and place them in global_vector, which is the local
-  // partition of the global vector.
-  global_vector.resize(range.second - range.first);
-  for(uint i = 0; i < received_values.size(); ++i)
-  {
-    const std::vector<std::pair<uint, T> >& received_global_data = received_values[i];
-    for(uint j = 0; j < received_global_data.size(); ++j)
-    {
-      const uint global_i = received_global_data[j].first;
-      if(global_i >= range.first && global_i < range.second)
-        global_vector[global_i - range.first] = received_global_data[j].second;
-      else
-      {
-        dolfin_error("HDF5File.cpp",
-                     "unpack values in vector redistribution",
-                     "This should not happen");
-      }
-    }
-  }
-}
-//-----------------------------------------------------------------------------
 
 #endif

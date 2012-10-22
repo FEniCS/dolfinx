@@ -152,7 +152,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
       {
         uint tensor_2d_offset = (j>1 && value_size == 4) ? 1 : 0 ;
         _data_values[i*padded_value_size + j + tensor_2d_offset] 
-                         = data_values[i + j*num_local_entities];
+       = data_values[i + j*num_local_entities];
       }
     }
     data_values = _data_values;
@@ -172,19 +172,18 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     hdf5_file->write_mesh(mesh);
   }
 
-  // Working data structure for formatting XML file
-  std::string s;
-
   // Vertex/cell values are saved in the hdf5 group /VisualisationVector
   // as distinct from /Vector which is used for solution vectors.
 
   // Save data values to HDF5 file
-  s = "/VisualisationVector/" + boost::lexical_cast<std::string>(counter);
   std::vector<uint> global_size(2);
   global_size[0] = MPI::sum(num_local_entities);
   global_size[1] = padded_value_size;
 
-  hdf5_file->write_data("/VisualisationVector", s.c_str(), data_values, global_size);
+  // FIXME: functionality should not be in HDF5File, but in Mesh somewhere...
+  hdf5_file->remove_duplicate_values(mesh, data_values);
+  hdf5_file->write_data("/VisualisationVector/" + boost::lexical_cast<std::string>(counter),
+                        data_values, global_size);
 
   // Flush file to OS. Improves chances of recovering data if interrupted.
   // Also makes file somewhat readable between writes.
@@ -195,6 +194,9 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   // Write the XML meta description (see http://www.xdmf.org) on process zero
   if (MPI::process_number() == 0)
   {
+    // Working data structure for formatting XML file
+    std::string s;
+
     pugi::xml_document xml_doc;
     pugi::xml_node xdmf_timegrid;
     pugi::xml_node xdmf_timedata;
@@ -447,7 +449,10 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 
   // Write values to HDF5
   const std::vector<uint> global_size(1, MPI::sum(data_values.size()));
-  hdf5_file->write_data("/Mesh", dataset_basic_name, data_values, global_size);
+
+  // FIXME: functionality should not be in HDF5File, but in Mesh somewhere
+  hdf5_file->remove_duplicate_values(mesh, data_values);
+  hdf5_file->write_data(dataset_basic_name, data_values, global_size);
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero
   if (MPI::process_number() == 0)

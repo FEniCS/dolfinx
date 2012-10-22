@@ -103,8 +103,7 @@ namespace dolfin
     // Write contiguous data to HDF5 data set. Data is flattened into
     // a 1D array, e.g. [x0, y0, z0, x1, y1, z1] for a vector in 3D
     template <typename T>
-    void write_data(const std::string group_name,
-                    const std::string dataset_name,
+    void write_data(const std::string dataset_name,
                     const std::vector<T>& data,
                     const std::vector<uint> global_size);
 
@@ -137,14 +136,14 @@ namespace dolfin
 
   //---------------------------------------------------------------------------
   template <typename T>
-  void HDF5File::write_data(const std::string group_name,
-                            const std::string dataset_name,
+  void HDF5File::write_data(const std::string dataset_name,
                             const std::vector<T>& data,
                             const std::vector<uint> global_size)
   {
     dolfin_assert(hdf5_file_open);
 
     //FIXME: Get groups from dataset_name and recursively create groups
+    const std::string group_name(dataset_name, 0, dataset_name.rfind('/'));
 
     // Check that group exists and create is required
     if (!HDF5Interface::has_group(hdf5_file_id, group_name))
@@ -176,6 +175,42 @@ namespace dolfin
                                  range, global_size, mpi_io, false);
   }
   //---------------------------------------------------------------------------
+
+  template <typename T>
+    void HDF5File::remove_duplicate_values(const Mesh &mesh, std::vector<T>& values)
+  {
+    const uint process_number = MPI::process_number();
+    
+    const std::map<uint, std::set<uint> >& shared_vertices
+      = mesh.topology().shared_entities(0);
+    
+    // Create global => local map for shared vertices only
+    std::map<uint, uint> local;
+    for (VertexIterator v(mesh); !v.end(); ++v)
+    {
+      uint global_index = v->global_index();
+      if(shared_vertices.count(global_index) != 0)
+        local[global_index] = v->index();
+    }
+    
+    for(std::map<uint, std::set<uint> >::const_iterator 
+          shared_v_it = shared_vertices.begin();
+        shared_v_it != shared_vertices.end();
+        shared_v_it++)
+    {
+      const uint global_index = shared_v_it->first;
+      const uint local_index = local[global_index];
+      const std::set<uint>& procs = shared_v_it->second;
+      // Determine whether this vertex is also on a lower numbered process
+      if(*(procs.begin()) < process_number) 
+        values.erase(values.begin()+local_index);  // FIXME: erase inefficient?
+    }
+
+  }
+  
+//-----------------------------------------------------------------------------
+
+
 
 }
 #endif
