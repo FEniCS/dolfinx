@@ -126,7 +126,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   uint num_local_entities = 0;
   if (vertex_data)
   {
-    num_local_entities = num_local_vertices;
+    num_local_entities = mesh.num_vertices(); // includes duplicates
     u.compute_vertex_values(data_values, mesh);
   }
   else
@@ -175,13 +175,16 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   // Vertex/cell values are saved in the hdf5 group /VisualisationVector
   // as distinct from /Vector which is used for solution vectors.
 
+  // FIXME: functionality should not be in HDF5File, but in Mesh somewhere...
+  // FIXME: does not work if value_size != 1  
+  warning("broken for value_size >1");
+  hdf5_file->remove_duplicate_values(mesh, data_values);
+
   // Save data values to HDF5 file
   std::vector<uint> global_size(2);
-  global_size[0] = MPI::sum(num_local_entities);
+  global_size[0] = MPI::sum(num_local_vertices);
   global_size[1] = padded_value_size;
 
-  // FIXME: functionality should not be in HDF5File, but in Mesh somewhere...
-  hdf5_file->remove_duplicate_values(mesh, data_values);
   hdf5_file->write_data("/VisualisationVector/" + boost::lexical_cast<std::string>(counter),
                         data_values, global_size);
 
@@ -447,11 +450,11 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   // Write mesh to HDF5
   hdf5_file->write_mesh(mesh, cell_dim, false);
 
+  // FIXME: functionality should not be in HDF5File, but in Mesh somewhere
+  //  hdf5_file->remove_duplicate_values(mesh, data_values);
+
   // Write values to HDF5
   const std::vector<uint> global_size(1, MPI::sum(data_values.size()));
-
-  // FIXME: functionality should not be in HDF5File, but in Mesh somewhere
-  hdf5_file->remove_duplicate_values(mesh, data_values);
   hdf5_file->write_data(dataset_basic_name, data_values, global_size);
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero

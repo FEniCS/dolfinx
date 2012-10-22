@@ -229,9 +229,7 @@ std::string HDF5File::search_list(const std::vector<std::string>& list,
 //-----------------------------------------------------------------------------
 void HDF5File::operator>> (Mesh& input_mesh)
 {
-  //  remove_duplicate_vertices(input_mesh, vv, topo); 
-  // read_mesh(Mesh &input_mesh);
-  
+  read_mesh(input_mesh);
 }
 
 void HDF5File::read_mesh(Mesh &input_mesh)
@@ -295,6 +293,10 @@ void HDF5File::read_mesh(Mesh &input_mesh)
   //  HDF5Interface::get_attribute(hdf5_file_id, topology_name, "partition", partition_data);
   //  const uint num_partitions = partition_data.size();
 
+  std::cout << coordinates_name << std::endl;
+  std::cout << topology_name << std::endl;
+  
+
   read_mesh_repartition(input_mesh, coordinates_name, 
                                    topology_name);
 
@@ -302,7 +304,7 @@ void HDF5File::read_mesh(Mesh &input_mesh)
 
 //-----------------------------------------------------------------------------
 void HDF5File::read_mesh_repartition(Mesh &input_mesh, 
-                                    const std::string coordinates_name,
+                                     const std::string coordinates_name,
                                      const std::string topology_name)
 {
 

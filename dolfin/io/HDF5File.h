@@ -177,34 +177,32 @@ namespace dolfin
   //---------------------------------------------------------------------------
 
   template <typename T>
-    void HDF5File::remove_duplicate_values(const Mesh &mesh, std::vector<T>& values)
+  void HDF5File::remove_duplicate_values(const Mesh &mesh, std::vector<T>& values)
   {
     const uint process_number = MPI::process_number();
-    
-    const std::map<uint, std::set<uint> >& shared_vertices
-      = mesh.topology().shared_entities(0);
-    
-    // Create global => local map for shared vertices only
-    std::map<uint, uint> local;
+
+    // Copy map of shared vertices
+    std::map<uint, std::set<uint> > shared_vertices = mesh.topology().shared_entities(0);
+
+    std::vector<T> result;
+    result.reserve(values.size());
     for (VertexIterator v(mesh); !v.end(); ++v)
     {
       uint global_index = v->global_index();
+      uint local_index = v->index();
       if(shared_vertices.count(global_index) != 0)
-        local[global_index] = v->index();
+      {
+        const std::set<uint>& procs = shared_vertices[global_index];
+        // Determine whether this vertex is first on a higher numbered process. If so, it is owned here.
+        if(*(procs.begin()) > process_number)     
+          result.push_back(values[local_index]);
+      }
+      else // not a shared vertex
+        result.push_back(values[local_index]);
     }
     
-    for(std::map<uint, std::set<uint> >::const_iterator 
-          shared_v_it = shared_vertices.begin();
-        shared_v_it != shared_vertices.end();
-        shared_v_it++)
-    {
-      const uint global_index = shared_v_it->first;
-      const uint local_index = local[global_index];
-      const std::set<uint>& procs = shared_v_it->second;
-      // Determine whether this vertex is also on a lower numbered process
-      if(*(procs.begin()) < process_number) 
-        values.erase(values.begin()+local_index);  // FIXME: erase inefficient?
-    }
+    values.resize(result.size());
+    std::copy(result.begin(), result.end(), values.begin());
 
   }
   
