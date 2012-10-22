@@ -117,7 +117,7 @@ void EpetraMatrix::init(const TensorLayout& tensor_layout)
   // Create row map
   EpetraFactory& f = EpetraFactory::instance();
   Epetra_MpiComm comm = f.get_mpi_comm();
-  Epetra_Map row_map(tensor_layout.size(0), num_local_rows, 0, comm);
+  Epetra_Map row_map((int) tensor_layout.size(0), (int) num_local_rows, 0, comm);
 
   // For rectangular matrices with more columns than rows, the columns which are
   // larger than those in row_map are marked as nonlocal (and assembly fails).
@@ -125,7 +125,7 @@ void EpetraMatrix::init(const TensorLayout& tensor_layout)
   // FIXME: Needs attention in the parallel case. Maybe range_map is also req'd.
   const std::pair<uint, uint> colrange = tensor_layout.local_range(1);
   const int num_local_cols = colrange.second - colrange.first;
-  Epetra_Map domain_map(tensor_layout.size(1), num_local_cols, 0, comm);
+  Epetra_Map domain_map((int) tensor_layout.size(1), (int) num_local_cols, 0, comm);
 
   // Create Epetra_FECrsGraph
   Epetra_CrsGraph matrix_map(Copy, row_map, reinterpret_cast<int*>(&num_nonzeros[0]));
