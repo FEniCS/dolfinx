@@ -85,7 +85,6 @@ void SCOTCH::compute_renumbering(const Graph& graph,
     _graph[i].set().erase(std::remove(_graph[i].set().begin(), _graph[i].set().end(), i), _graph[i].set().end());
   }
 
-
   // Number of local graph vertices (cells)
   const int vertnbr = _graph.size();
 
@@ -93,6 +92,7 @@ void SCOTCH::compute_renumbering(const Graph& graph,
   std::vector<SCOTCH_Num> verttab;
   verttab.reserve(vertnbr + 1);
   std::vector<SCOTCH_Num> edgetab;
+  edgetab.reserve(10*vertnbr);
 
   // Build local graph input for SCOTCH
   // (number of local + ghost graph vertices (cells),
@@ -122,24 +122,24 @@ void SCOTCH::compute_renumbering(const Graph& graph,
   }
 
   // Build SCOTCH graph
-  info("Start SCOTCH graph building.");
   if (SCOTCH_graphBuild(&scotch_graph, baseval,
                         vertnbr, &verttab[0], &verttab[1], NULL, NULL,
-                              edgenbr, &edgetab[0], NULL) )
+                        edgenbr, &edgetab[0], NULL))
   {
     dolfin_error("SCOTCH.cpp",
                  "partition mesh using SCOTCH",
                  "Error building SCOTCH graph");
   }
-  info("End SCOTCH graph building.");
 
   // Check graph data for consistency
-  if (SCOTCH_graphCheck(&scotch_graph))
+  #ifdef DEBUG
+  if (SCOTCH_graphCheck(&scotch_dsadgraph))
   {
     dolfin_error("SCOTCH.cpp",
                  "partition mesh using SCOTCH",
                  "Consistency error in SCOTCH graph");
   }
+  #endif
 
   // Renumbering strategy
   SCOTCH_Strat strat;
@@ -153,7 +153,6 @@ void SCOTCH::compute_renumbering(const Graph& graph,
   SCOTCH_randomReset();
 
   // Compute re-ordering
-  info("Start SCOTCH re-ordering.");
   if (SCOTCH_graphOrder(&scotch_graph, &strat, permutation_indices.data(),
                         inverse_permutation_indices.data(), NULL, NULL, NULL))
   {
@@ -161,7 +160,6 @@ void SCOTCH::compute_renumbering(const Graph& graph,
                  "re-order graph using SCOTCH",
                  "Error during re-ordering");
   }
-  info("End SCOTCH re-ordering.");
 
   // Clean up SCOTCH objects
   SCOTCH_graphExit(&scotch_graph);
@@ -177,10 +175,10 @@ void SCOTCH::compute_renumbering(const Graph& graph,
 }
 //-----------------------------------------------------------------------------
 void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
-               const std::set<uint>& ghost_vertices,
-               const std::vector<uint>& global_cell_indices,
-               const uint num_global_vertices,
-               std::vector<uint>& cell_partition)
+                       const std::set<uint>& ghost_vertices,
+                       const std::vector<uint>& global_cell_indices,
+                       const uint num_global_vertices,
+                       std::vector<uint>& cell_partition)
 {
   Timer timer("Partition graph (calling SCOTCH)");
 
@@ -317,12 +315,14 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   info("End SCOTCH graph building.");
 
   // Check graph data for consistency
+  #ifdef DEBUG
   if (SCOTCH_dgraphCheck(&dgrafdat))
   {
     dolfin_error("SCOTCH.cpp",
                  "partition mesh using SCOTCH",
                  "Consistency error in SCOTCH graph");
   }
+  #endif
 
   // Number of partitions (set equal to number of processes)
   const int npart = num_processes;
