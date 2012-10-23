@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2008-2011
 //
 // First added:  2008-11-28
-// Last changed: 2011-11-14
+// Last changed: 2012-10-23
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>

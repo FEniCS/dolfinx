@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-10-22
+// Last changed: 2012-10-23
 
 #ifdef HAS_HDF5
 
@@ -330,7 +330,6 @@ void HDF5File::read_mesh_repartition(Mesh &input_mesh,
   const std::pair<uint,uint> cell_range = MPI::local_range(num_global_cells);
   const uint num_local_cells = cell_range.second - cell_range.first;
   mesh_data.global_cell_indices.reserve(num_local_cells);
-  mesh_data.cell_vertices.reserve(num_local_cells);
 
   // Set vertices-per-cell from width of array
   const uint num_vertices_per_cell = topology_dim[1];
@@ -339,22 +338,17 @@ void HDF5File::read_mesh_repartition(Mesh &input_mesh,
   // Read a block of cells
   std::vector<uint> topology_data;
   topology_data.reserve(num_local_cells*num_vertices_per_cell);
+  mesh_data.cell_vertices.resize(boost::extents[num_local_cells][num_vertices_per_cell]);  
   HDF5Interface::read_dataset(hdf5_file_id, topology_name, cell_range, topology_data);
 
-  // Work through cells
-  uint cell_index = cell_range.first;
-  for(std::vector<uint>::iterator cell_i = topology_data.begin();
-      cell_i != topology_data.end(); cell_i += num_vertices_per_cell)
+  // Copy to boost::multi_array 
+  // FIXME: there should be a more efficient way to do this.
+  for(uint i = 0; i < num_local_cells; i++)
   {
-    std::vector<uint> cell;
-    mesh_data.global_cell_indices.push_back(cell_index);
-    cell_index++;
-
-    // FIXME: inefficient
+    mesh_data.global_cell_indices.push_back(cell_range.first + i);
+  
     for(uint j = 0; j < num_vertices_per_cell; j++)
-      cell.push_back(*(cell_i + j));
-
-    mesh_data.cell_vertices.push_back(cell);
+      mesh_data.cell_vertices[i][j] = topology_data[i*num_vertices_per_cell + j];
   }
 
   // --- Coordinates ---

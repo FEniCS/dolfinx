@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-10-22
+// Last changed: 2012-10-23
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -176,42 +176,42 @@ namespace dolfin
     HDF5Interface::write_dataset(hdf5_file_id, dataset_name, data,
                                  range, global_size, mpi_io, false);
   }
-  //---------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------
   template <typename T>
-  void HDF5File::remove_duplicate_values(const Mesh &mesh,
-                                         std::vector<T>& values,
+  void HDF5File::remove_duplicate_values(const Mesh &mesh, std::vector<T>& values, 
                                          const uint value_size)
   {
-    // FIXME: use value_size to correctly remove non-scalar values
-
+    
     const uint process_number = MPI::process_number();
+    const std::map<uint, std::set<uint> >& shared_vertices = mesh.topology().shared_entities(0);
 
-    const std::map<uint, std::set<uint> >& shared_vertices
-                                    = mesh.topology().shared_entities(0);
-
-    std::vector<T> result;
+    std::vector<T> result;    
     result.reserve(values.size());
+    // overestimate
     for (VertexIterator v(mesh); !v.end(); ++v)
     {
-      const uint global_index = v->global_index();
-      const uint local_index = v->index();
+      uint global_index = v->global_index();
+      typename std::vector<T>::iterator local_it = values.begin() + value_size*v->index();
+      
       if(shared_vertices.count(global_index) != 0)
       {
-        const std::set<uint>& procs
-          = shared_vertices.find(global_index)->second;
-        // Determine whether this vertex is first on a higher numbered
-        // process. If so, it is owned here.
+        const std::set<uint>& procs = 
+          shared_vertices.find(global_index)->second;
+        
+        // Determine whether this vertex is first on a higher numbered process.
+        // If so, it is owned here.
         if(*(procs.begin()) > process_number)
-          result.push_back(values[local_index]);
+          result.insert(result.end(), local_it, local_it + value_size);
       }
       else // not a shared vertex
-        result.push_back(values[local_index]);
+        result.insert(result.end(), local_it, local_it + value_size);
+      
     }
-
+    
     values.resize(result.size());
     std::copy(result.begin(), result.end(), values.begin());
   }
-  //---------------------------------------------------------------------------
 
 }
 #endif
