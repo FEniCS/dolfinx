@@ -28,6 +28,7 @@
 
 #include <map>
 #include <vector>
+#include <boost/multi_array.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include "CellType.h"
@@ -91,9 +92,6 @@ namespace dolfin
     // Unpack received vertex coordinates
     void unpack_vertex_coordinates(const std::vector<double>& values);
 
-    // Unpack received vertex indices
-    void unpack_vertex_indices(const std::vector<uint>& values);
-
     // Unpack received cell vertices
     void unpack_cell_vertices(const std::vector<uint>& values);
 
@@ -104,7 +102,7 @@ namespace dolfin
     std::vector<uint> vertex_indices;
 
     // Global vertex indices for all cells stored on local processor
-    std::vector<std::vector<uint> > cell_vertices;
+    boost::multi_array<uint, 2> cell_vertices;
 
     // Global cell numbers for all cells stored on local processor
     std::vector<uint> global_cell_indices;
@@ -130,7 +128,6 @@ namespace dolfin
 
     // Friends
     friend class XMLLocalMeshSAX;
-    //friend class HDF5File;
     friend class MeshPartitioning;
     friend class GraphBuilder;
     friend class ParMETIS;

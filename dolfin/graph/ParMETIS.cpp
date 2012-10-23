@@ -43,7 +43,7 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
   // since ParMETIS has the worst possible interface), calls
   // ParMETIS, and then collects the results from ParMETIS.
 
-  Timer timer("PARALLEL 1: Compute partition (calling ParMETIS)");
+  Timer timer0("PARALLEL 1a: Build distributed dual graph (calling ParMETIS)");
 
   // Get number of processes and process number
   const uint num_processes = MPI::num_processes();
@@ -115,25 +115,43 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
   // Construct communicator (copy of MPI_COMM_WORLD)
   MPICommunicator comm;
 
-  // Call ParMETIS to partition mesh
   dolfin_assert(!elmdist.empty());
   dolfin_assert(!eptr.empty());
   dolfin_assert(!eind.empty());
+
+  // Build dual graph from mesh
+  idx_t* xadj = 0;
+  idx_t* adjncy = 0;
+  int err = ParMETIS_V3_Mesh2Dual(&elmdist[0], &eptr[0], &eind[0],
+                                  &numflag, &ncommonnodes,
+                                  &xadj, &adjncy,
+                                  &(*comm));
+  dolfin_assert(err == METIS_OK);
+  timer0.stop();
+
+  Timer timer1("PARALLEL 1b: Compute graph partition (calling ParMETIS)");
+
+  // Call ParMETIS to partition graph
   dolfin_assert(!tpwgts.empty());
   dolfin_assert(!ubvec.empty());
   dolfin_assert(!part.empty());
-  ParMETIS_V3_PartMeshKway(&elmdist[0], &eptr[0], &eind[0],
-                           elmwgt, &wgtflag, &numflag, &ncon,
-                           &ncommonnodes, &nparts,
-                           &tpwgts[0], &ubvec[0], options,
-                           &edgecut, &part[0], &(*comm));
-  info("Partitioned mesh, edge cut is %d.", edgecut);
+  err = ParMETIS_V3_PartKway(&elmdist[0], xadj, adjncy, elmwgt,
+                             NULL, &wgtflag, &numflag, &ncon, &nparts,
+                             &tpwgts[0], &ubvec[0], options,
+                             &edgecut, &part[0], &(*comm));
+  dolfin_assert(err == METIS_OK);
 
-  // Copy mesh_data
-  cell_partition.clear();
-  cell_partition.reserve(num_local_cells);
-  for (uint i = 0; i < num_local_cells; i++)
-    cell_partition.push_back(static_cast<uint>(part[i]));
+  // Length of xadj = # local nodes + 1
+  // Length of adjncy = xadj[-1]
+
+
+  METIS_Free(xadj);
+  METIS_Free(adjncy);
+
+  //info("Partitioned mesh, edge cut is %d.", edgecut);
+
+  // Copy cell partition data
+  cell_partition = std::vector<uint>(part.begin(), part.end());
 }
 //-----------------------------------------------------------------------------
 #else
@@ -145,5 +163,4 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
                "DOLFIN has been configured without support for ParMETIS");
 }
 //-----------------------------------------------------------------------------
-
 #endif

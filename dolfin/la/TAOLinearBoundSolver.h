@@ -57,7 +57,7 @@ namespace dolfin
   //    tao_blmvm	- Limited memory variable metric method for bound constrained minimization + tao_pounders - Model-based algorithm pounder extended for nonlinear least squares
   ///   The method "tao_gpcg" is set to default
   ///
-  ///  - "monitor"
+  ///  - "monitor_convergence"
   /// This parameter controls the visualization of the convergence tests at each iteration of the solver. 
   /// Possible values are true or false
   /// 
@@ -133,6 +133,7 @@ namespace dolfin
       p.add("gradient_relative_tol"  , 1.0e-8  );
       p.add("gradient_t_tol"         , 0.      );
       p.add("error_on_nonconvergence", true    );
+      p.add("maximum_iterations"     , 100     );
       
       Parameters ksp("krylov_solver");
       ksp = KrylovSolver::default_parameters();

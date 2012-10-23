@@ -1,6 +1,6 @@
 """Unit tests for Dirichlet boundary conditions"""
 
-# Copyright (C) 2011 Garth N. Wells
+# Copyright (C) 2011-2012 Garth N. Wells
 #
 # This file is part of DOLFIN.
 #
@@ -19,9 +19,10 @@
 #
 # Modified by Kent-Andre Mardal 2011
 # Modified by Anders Logg 2011
+# Modified by Martin Alnaes 2012
 #
 # First added:  2011-09-19
-# Last changed: 2011-09-19
+# Last changed: 2012-10-16
 
 import unittest
 import numpy
@@ -96,7 +97,7 @@ class DirichletBCTest(unittest.TestCase):
         u = Function(V)
         solve(a == L, u, bcs)
 
-        self.assertAlmostEqual(u.vector().norm("l2"), 98.9500304934, 10)
+        self.assertAlmostEqual(u.vector().norm("l2"), 171.3032089576118, 10)
 
 if __name__ == "__main__":
     print ""

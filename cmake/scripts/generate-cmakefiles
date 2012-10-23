@@ -31,7 +31,8 @@ cmakelists_str = \
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
-project(%(project_name)s)
+set(PROJECT_NAME %(project_name)s)
+project(${PROJECT_NAME})
 
 # Set verbose output while testing CMake
 #set(CMAKE_VERBOSE_MAKEFILE 1)
@@ -112,7 +113,7 @@ def generate_cmake_files(subdirectory):
             # If no .cpp continue
             if not cpp_files:
                 continue
-            
+
             # Name of demo and cpp source files
             if main_file_name in cpp_files:
 
@@ -120,10 +121,10 @@ def generate_cmake_files(subdirectory):
                 # executable should be generated for this directory and all other
                 # .cpp files should be linked to this
                 name_forms["executables"] = executable_str % \
-                                            (name_forms["project_name"],
+                                            ("${PROJECT_NAME}",
                                              ' '.join(cpp_files))
                 name_forms["target_libraries"] = target_link_libraries_str % \
-                                                 name_forms["project_name"]
+                                                 "${PROJECT_NAME}"
             else:
                 # If no main file in source files, we assume each source should
                 # be compiled as an executable
@@ -134,7 +135,7 @@ def generate_cmake_files(subdirectory):
                     target_link_libraries_str % (\
                         executable_prefix + f.replace(".cpp", "")) \
                     for f in cpp_files)
-                
+
             # Check for duplicate executable names
             if program_name not in executable_names:
                 executable_names.add(program_name)
@@ -144,12 +145,11 @@ def generate_cmake_files(subdirectory):
             # Write file
             with open(program_dir + "/CMakeLists.txt", 'w') as f:
                 print "Creating CMakeLists.txt file:", program_name, program_dir
-                f.write( cmakelists_str % name_forms )
+                f.write(cmakelists_str % name_forms)
 
             # FIXME: add command line option for adding files
             # Add to version control
             #subprocess.call(["bzr", "add", program_dir + "/CMakeLists.txt"])
-
 
 # Generate CMakeLists.text files
 for subdirectory in sub_directories:

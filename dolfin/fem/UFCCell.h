@@ -46,15 +46,13 @@ namespace dolfin
   public:
 
     /// Create UFC cell from DOLFIN cell
-    UFCCell(const Cell& cell, bool use_global_indices=true) : ufcexp::cell(),
-        use_global_indices(use_global_indices), num_vertices(0)
+    UFCCell(const Cell& cell) : ufcexp::cell(), num_vertices(0)
     {
       init(cell);
     }
 
     /// Create UFC cell for first DOLFIN cell in mesh
-    UFCCell(const Mesh& mesh, bool use_global_indices=true) : ufcexp::cell(),
-        use_global_indices(use_global_indices), num_vertices(0)
+    UFCCell(const Mesh& mesh) : ufcexp::cell(), num_vertices(0)
     {
       CellIterator cell(mesh);
       init(*cell);
@@ -165,7 +163,8 @@ namespace dolfin
       const MeshTopology& topology = cell.mesh().topology();
       for (uint d = 0; d < D; ++d)
       {
-        if (use_global_indices && topology.have_global_indices(d))
+        //if (use_global_indices && topology.have_global_indices(d))
+        if (topology.have_global_indices(d))
         {
           const std::vector<uint>& global_indices = topology.global_indices(d);
           for (uint i = 0; i < num_cell_entities[d]; ++i)
@@ -179,11 +178,13 @@ namespace dolfin
       }
 
       // Set cell index
-      if (use_global_indices && topology.have_global_indices(D))
-        entity_indices[D][0] = cell.global_index();
-      else
+      //if (use_global_indices && topology.have_global_indices(D))
+      //  entity_indices[D][0] = cell.global_index();
+      //else
         entity_indices[D][0] = cell.index();
 
+      // FIXME: Using the local cell index is inconsistent with UFC, but
+      //        necessary to make DOLFIN run
       // Local cell index
       index = cell.index();
 
@@ -196,7 +197,7 @@ namespace dolfin
   private:
 
     // True if global entity indices should be used
-    const bool use_global_indices;
+    //const bool use_global_indices;
 
     // Number of cell vertices
     uint num_vertices;

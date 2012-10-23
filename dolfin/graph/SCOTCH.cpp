@@ -182,6 +182,8 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
                const uint num_global_vertices,
                std::vector<uint>& cell_partition)
 {
+  Timer timer("Partition graph (calling SCOTCH)");
+
   // C-style array indexing
   const int baseval = 0;
 

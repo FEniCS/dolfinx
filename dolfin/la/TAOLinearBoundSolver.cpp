@@ -53,6 +53,7 @@ const std::map<std::string, const KSPType> TAOLinearBoundSolver::_ksp_methods
                               ("minres",     KSPMINRES  )
                               ("tfqmr",      KSPTFQMR   )
                               ("richardson", KSPRICHARDSON)
+                              ("stcg",       KSPSTCG     )
                               ("bicgstab",   KSPBCGS    );                              
 //-----------------------------------------------------------------------------
 // Mapping from method string to description
@@ -168,6 +169,9 @@ dolfin::uint TAOLinearBoundSolver::solve(const PETScMatrix& A1, PETScVector& x, 
   // Check for any tao command line options
   TaoSetFromOptions(*_tao); 
   
+  // Clear previous monitors 
+  TaoCancelMonitors(*_tao);
+  
   // Set the monitor
   if (parameters["monitor_convergence"])
   { 
@@ -194,6 +198,7 @@ dolfin::uint TAOLinearBoundSolver::solve(const PETScMatrix& A1, PETScVector& x, 
   int num_iterations = 0;
   TaoGetMaximumIterations(*_tao, &num_iterations);
   
+  
   // Report number of iterations
   if (reason >= 0)
   {
@@ -207,7 +212,7 @@ dolfin::uint TAOLinearBoundSolver::solve(const PETScMatrix& A1, PETScVector& x, 
       //const char *reason_str = TaoGetTerminationReason[reason];
       dolfin_error("TAOLinearBoundSolver.cpp",
                    "solve linear system using Tao solver",
-                   "Solution failed to converge in %i iterations (PETSc reason %s, norm %e)",
+                   "Solution failed to converge in %i iterations (TAO reason %d)",
                    num_iterations, reason);
     }
     else
@@ -255,7 +260,7 @@ boost::shared_ptr<const PETScVector> TAOLinearBoundSolver::get_vector() const
 //-----------------------------------------------------------------------------
 void TAOLinearBoundSolver::read_parameters()
 {
-  // Set tao method
+  // Set tolerances
   TaoSetTolerances(*_tao, 
                             parameters["function_absolute_tol"],
                             parameters["function_relative_tol"],
@@ -263,7 +268,12 @@ void TAOLinearBoundSolver::read_parameters()
                             parameters["gradient_relative_tol"],
                             parameters["gradient_t_tol"]
                    );
-  // Set ksp solver parameters
+                   
+  // Set TAO solver maximum iterations  
+  int maxits = parameters["maximum_iterations"];
+  TaoSetMaximumIterations(*_tao,maxits);
+  
+  // Set ksp_options
   set_ksp_options();
 }
 //-----------------------------------------------------------------------------

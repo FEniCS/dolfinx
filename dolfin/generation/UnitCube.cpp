@@ -20,8 +20,8 @@
 // First added:  2005-12-02
 // Last changed: 2010-10-19
 
-#include <dolfin/common/timing.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshEditor.h>
 #include "UnitCube.h"
@@ -31,6 +31,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
 {
+  Timer timer("generate unit cube mesh");
+
   // Receive mesh according to parallel policy
   if (MPI::is_receiver())
   {
