@@ -211,6 +211,11 @@ class AbstractBaseTest(object):
             self.assertAlmostEqual(A.sum(),A2.sum())
             self.assertAlmostEqual(I.sum(),I2.sum())
 
+            def wrong_assign(A, ind):
+                A[ind[::2]] = ind[::2]
+
+            self.assertRaises(RuntimeError, wrong_assign, A, ind2)
+
     def test_matrix_vector(self, use_backend=False):
         from numpy import dot, absolute
 
