@@ -133,7 +133,7 @@ void SCOTCH::compute_renumbering(const Graph& graph,
 
   // Check graph data for consistency
   #ifdef DEBUG
-  if (SCOTCH_graphCheck(&scotch_dsadgraph))
+  if (SCOTCH_graphCheck(&scotch_graph))
   {
     dolfin_error("SCOTCH.cpp",
                  "partition mesh using SCOTCH",
