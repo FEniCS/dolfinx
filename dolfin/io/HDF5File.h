@@ -30,6 +30,8 @@
 #include <vector>
 #include "dolfin/common/types.h"
 #include "dolfin/common/Variable.h"
+#include "dolfin/mesh/Mesh.h"
+#include "dolfin/mesh/Vertex.h"
 #include "GenericFile.h"
 #include "HDF5Interface.h"
 
@@ -38,7 +40,6 @@ namespace dolfin
 
   class Function;
   class GenericVector;
-  class Mesh;
 
   class HDF5File : public GenericFile, public Variable
   {
@@ -67,14 +68,15 @@ namespace dolfin
     /// Write Mesh to file (with local indices by default)
     void write_mesh(const Mesh& mesh);
 
-    void write_mesh(const Mesh& mesh, const uint cell_dim, bool global_indexing);
+    void write_mesh(const Mesh& mesh, const uint cell_dim,
+                    bool global_indexing);
 
     /// Read Mesh from file
     void operator>> (Mesh& mesh);
 
-    /// Read Mesh from file 
-    void read_mesh(Mesh &mesh);
-    
+    /// Read Mesh from file
+    void read_mesh(Mesh &mesh) const;
+
     /// Check is dataset with given name exists in HDF5 file
     bool dataset_exists(const std::string dataset_name) const;
 
@@ -87,18 +89,19 @@ namespace dolfin
     void open_hdf5_file(bool truncate);
 
     // Read a mesh which has locally indexed topology and repartition
-    void read_mesh_repartition(Mesh &input_mesh, 
+    void read_mesh_repartition(Mesh &input_mesh,
                                 const std::string coordinates_name,
                                 const std::string topology_name);
-    
+
     // Return vertex and topological data with duplicates removed
     void remove_duplicate_vertices(const Mesh &mesh,
                                    std::vector<double>& vertex_data,
                                    std::vector<uint>& topological_data);
-    
+
     // Eliminate elements of value vector corresponding to eliminated vertices
     template <typename T>
-    void remove_duplicate_values(const Mesh &mesh, std::vector<T>& values, const uint value_size);
+    void remove_duplicate_values(const Mesh &mesh, std::vector<T>& values,
+                                 const uint value_size);
 
     // Write contiguous data to HDF5 data set. Data is flattened into
     // a 1D array, e.g. [x0, y0, z0, x1, y1, z1] for a vector in 3D
@@ -133,8 +136,7 @@ namespace dolfin
     const bool mpi_io;
 
   };
-
-//---------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
   template <typename T>
   void HDF5File::write_data(const std::string dataset_name,
                             const std::vector<T>& data,
@@ -174,42 +176,41 @@ namespace dolfin
     HDF5Interface::write_dataset(hdf5_file_id, dataset_name, data,
                                  range, global_size, mpi_io, false);
   }
-//---------------------------------------------------------------------------
-
+  //---------------------------------------------------------------------------
   template <typename T>
-  void HDF5File::remove_duplicate_values(const Mesh &mesh, std::vector<T>& values, const uint value_size)
+  void HDF5File::remove_duplicate_values(const Mesh &mesh,
+                                         std::vector<T>& values,
+                                         const uint value_size)
   {
     // FIXME: use value_size to correctly remove non-scalar values
 
     const uint process_number = MPI::process_number();
 
-    const std::map<uint, std::set<uint> >& shared_vertices = mesh.topology().shared_entities(0);
+    const std::map<uint, std::set<uint> >& shared_vertices
+                                    = mesh.topology().shared_entities(0);
 
     std::vector<T> result;
     result.reserve(values.size());
     for (VertexIterator v(mesh); !v.end(); ++v)
     {
-      uint global_index = v->global_index();
-      uint local_index = v->index();
+      const uint global_index = v->global_index();
+      const uint local_index = v->index();
       if(shared_vertices.count(global_index) != 0)
       {
         const std::set<uint>& procs = shared_vertices.find(global_index)->second;
-        // Determine whether this vertex is first on a higher numbered process. If so, it is owned here.
-        if(*(procs.begin()) > process_number)     
+        // Determine whether this vertex is first on a higher numbered
+        // process. If so, it is owned here.
+        if(*(procs.begin()) > process_number)
           result.push_back(values[local_index]);
       }
       else // not a shared vertex
         result.push_back(values[local_index]);
     }
-    
+
     values.resize(result.size());
     std::copy(result.begin(), result.end(), values.begin());
-
   }
-  
-//-----------------------------------------------------------------------------
-
-
+  //---------------------------------------------------------------------------
 
 }
 #endif

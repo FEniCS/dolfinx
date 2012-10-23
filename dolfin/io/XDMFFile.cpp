@@ -63,11 +63,11 @@ XDMFFile::XDMFFile(const std::string filename) : GenericFile(filename, "XDMF")
   // changes in a hash key)
   std::set<std::string> mesh_modes =  boost::assign::list_of("true")("false")("auto");
   parameters.add("rewrite_mesh", "auto", mesh_modes);
-  
+
   // Flush datasets to disk at each timestep
   //  improves reliability. Option to turn off.
   parameters.add("flush_output", true);
-  
+
 }
 //----------------------------------------------------------------------------
 XDMFFile::~XDMFFile()
@@ -151,7 +151,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
       for (uint j = 0; j < value_size; j++)
       {
         uint tensor_2d_offset = (j>1 && value_size == 4) ? 1 : 0 ;
-        _data_values[i*padded_value_size + j + tensor_2d_offset] 
+        _data_values[i*padded_value_size + j + tensor_2d_offset]
        = data_values[i + j*num_local_entities];
       }
     }
@@ -161,9 +161,9 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   // For vertex centred data, remove any values which are on duplicate vertices,
   // and readjust num_local_entities
   if(vertex_data)
-  {  
+  {
     // FIXME: functionality should not be in HDF5File, but in Mesh somewhere...
-    // FIXME: does not work if value_size != 1  
+    // FIXME: does not work if value_size != 1
     warning("broken for value_size > 1");
     hdf5_file->remove_duplicate_values(mesh, data_values, padded_value_size);
     num_local_entities = num_local_vertices;
@@ -186,7 +186,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   // Vertex/cell values are saved in the hdf5 group /VisualisationVector
   // as distinct from /Vector which is used for solution vectors.
-  
+
   // Save data values to HDF5 file
   std::vector<uint> global_size(2);
   global_size[0] = MPI::sum(num_local_entities);
