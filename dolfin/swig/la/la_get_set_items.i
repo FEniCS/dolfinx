@@ -266,8 +266,8 @@ void _set_vector_items_array_of_float( dolfin::GenericVector* self, PyObject* op
   bool casted = false;
 
   // Check type of values
-  if ( !(other != Py_None and PyArray_Check(other) and PyArray_ISNUMBER(other) and PyArray_NDIM(other) == 1 ))
-    throw std::runtime_error("expected a 1D numpy array of numbers");
+  if ( !(other != Py_None and PyArray_Check(other) and PyArray_TYPE(other) == NPY_DOUBLE and PyArray_NDIM(other) == 1 and PyArray_ISCONTIGUOUS(other)))
+    throw std::runtime_error("contiguous numpy array of 'double' expected. Make sure that the numpy array is contiguous, and uses dtype=float_");
   if (PyArray_TYPE(other)!=NPY_DOUBLE)
   {
     casted = true;
