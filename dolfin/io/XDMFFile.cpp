@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-10-22
+// Last changed: 2012-10-23
 
 #ifdef HAS_HDF5
 
@@ -161,13 +161,10 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   // and readjust num_local_entities
   if(vertex_data)
   {
-    // FIXME: functionality should not be in HDF5File, but in Mesh somewhere...
-    // FIXME: does not work if value_size != 1
-    warning("broken for value_size > 1");
+    // FIXME: functionality should not be in HDF5File, but in Mesh or here somewhere...
     hdf5_file->remove_duplicate_values(mesh, data_values, padded_value_size);
     num_local_entities = num_local_vertices;
   }
-
 
   // Get names of mesh data sets used in the HDF5 file
   dolfin_assert(hdf5_file);

@@ -29,6 +29,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/assign.hpp>
+#include <boost/multi_array.hpp>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
@@ -55,12 +56,6 @@ HDF5File::HDF5File(const std::string filename, const bool use_mpiio)
   : GenericFile(filename, "H5"), hdf5_file_open(false), hdf5_file_id(0),
     mpi_io(MPI::num_processes() > 1 && use_mpiio ? true : false)
 {
-
-  // Add parameter to save GlobalIndex (not required for visualisation meshes
-  // but needed to make the mesh intelligible for re-reading into dolfin)
-  std::set<std::string> index_modes =  boost::assign::list_of("true")("false")("auto");
-  parameters.add("global_topology_indexing", "auto");
-
   // Chunking seems to improve performance generally, option to turn it off.
   parameters.add("chunking", true);
 }
@@ -275,24 +270,6 @@ void HDF5File::read_mesh(Mesh &input_mesh)
   }
   coordinates_name = "/Mesh/" + coordinates_name;
 
-  // Look for GlobalIndex dataset - mapping local vertices to global order
-  //  std::string global_index_name = search_list(_dataset_list, "GlobalIndex");
-  //  if(global_index_name.size() == 0)
-  //  {
-  //    dolfin_error("HDF5File.cpp",
-  //                 "read mesh from file",
-  //                 "Cannot find GlobalIndex dataset");
-  //  }
-  //  global_index_name = "/Mesh/" + global_index_name;
-
-  //   uint global_topology_indexing;
-  //  HDF5Interface::get_attribute(hdf5_file_id, topology_name, "global_indexing",
-  //                               global_topology_indexing);
-
-  //  std::vector<uint> partition_data;
-  //  HDF5Interface::get_attribute(hdf5_file_id, topology_name, "partition", partition_data);
-  //  const uint num_partitions = partition_data.size();
-
   read_mesh_repartition(input_mesh, coordinates_name,
                                    topology_name);
 }
@@ -306,7 +283,6 @@ void HDF5File::read_mesh_repartition(Mesh &input_mesh,
 
   warning("HDF5 Mesh read is still experimental");
   warning("HDF5 Mesh read will repartition this mesh");
-  warning("HDF5 Mesh read may crash");
 
   // Structure to store local mesh
   LocalMeshData mesh_data;
@@ -329,7 +305,6 @@ void HDF5File::read_mesh_repartition(Mesh &input_mesh,
   // Divide up cells ~equally between processes
   const std::pair<uint,uint> cell_range = MPI::local_range(num_global_cells);
   const uint num_local_cells = cell_range.second - cell_range.first;
-  mesh_data.global_cell_indices.reserve(num_local_cells);
 
   // Set vertices-per-cell from width of array
   const uint num_vertices_per_cell = topology_dim[1];
@@ -342,13 +317,17 @@ void HDF5File::read_mesh_repartition(Mesh &input_mesh,
   HDF5Interface::read_dataset(hdf5_file_id, topology_name, cell_range, topology_data);
 
   // Copy to boost::multi_array 
-  // FIXME: there should be a more efficient way to do this.
+  // FIXME: there should be a more efficient way to do this?
+  mesh_data.global_cell_indices.reserve(num_local_cells);
+  std::vector<uint>::iterator topology_it = topology_data.begin();
   for(uint i = 0; i < num_local_cells; i++)
   {
     mesh_data.global_cell_indices.push_back(cell_range.first + i);
-  
-    for(uint j = 0; j < num_vertices_per_cell; j++)
-      mesh_data.cell_vertices[i][j] = topology_data[i*num_vertices_per_cell + j];
+
+    std::copy(topology_it, topology_it + num_vertices_per_cell,
+              mesh_data.cell_vertices[i].begin());
+    topology_it += num_vertices_per_cell;
+    
   }
 
   // --- Coordinates ---
@@ -369,6 +348,7 @@ void HDF5File::read_mesh_repartition(Mesh &input_mesh,
                               tmp_vertex_data);
 
   // Copy to vector<vector>
+  mesh_data.vertex_coordinates.reserve(num_local_vertices);
   for(std::vector<double>::iterator v = tmp_vertex_data.begin();
       v != tmp_vertex_data.end(); v += vertex_dim)
   {
@@ -386,28 +366,15 @@ void HDF5File::read_mesh_repartition(Mesh &input_mesh,
 //-----------------------------------------------------------------------------
 void HDF5File::operator<< (const Mesh& mesh)
 {
-  // Parameter determines indexing method used.
-  // Global topology indexing cannot be used for visualisation.
-  // If parameter is "auto" or "true", then use global_indexing for raw h5 files.
-  const bool global_topology_indexing
-    = std::string(parameters["global_topology_indexing"]) != "false";
-
-  write_mesh(mesh, mesh.topology().dim(), global_topology_indexing);
+  write_mesh(mesh, mesh.topology().dim());
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write_mesh(const Mesh& mesh)
 {
-  // Parameter determines indexing method used.
-  // Global topology indexing cannot be used for visualisation.
-  // If parameter is "auto" or "false", then do not use global indexing here.
-  const bool global_topology_indexing
-    = std::string(parameters["global_topology_indexing"]) == "true";
-
-  write_mesh(mesh, mesh.topology().dim(), global_topology_indexing);
+  write_mesh(mesh, mesh.topology().dim());
 }
 //-----------------------------------------------------------------------------
-void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim,
-                          const bool global_topology_indexing)
+void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
 {
   // Clear file when writing to file for the first time
   if(!hdf5_file_open)
@@ -416,9 +383,6 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim,
     hdf5_file_open = true;
   }
   counter++;
-
-  // Always save the GlobalIndex dataset
-  const bool global_indexing_dataset = true;
 
   // Create Mesh group in HDF5 file
   if (!HDF5Interface::has_group(hdf5_file_id, "/Mesh"))
@@ -470,10 +434,6 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim,
     MPI::broadcast(partitions);
     HDF5Interface::add_attribute(hdf5_file_id, coord_dataset, "partition",
                                  partitions);
-
-    const uint indexing_indicator = (global_indexing_dataset ? 1 : 0);
-    HDF5Interface::add_attribute(hdf5_file_id, coord_dataset, "global_indexing_dataset",
-                                 indexing_indicator);
   }
 
   // Write connectivity to HDF5 file if not already there
@@ -485,9 +445,6 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim,
     global_size[1] = cell_dim + 1;
     write_data(topology_dataset, topological_data, global_size);
 
-    const uint indexing_indicator = (global_topology_indexing ? 1 : 0);
-    HDF5Interface::add_attribute(hdf5_file_id, topology_dataset,
-                                 "global_indexing", indexing_indicator);
     HDF5Interface::add_attribute(hdf5_file_id, topology_dataset, "celltype",
                                  cell_type);
 

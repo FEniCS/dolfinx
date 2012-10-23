@@ -62,14 +62,14 @@ namespace dolfin
     void read(const std::string dataset_name, GenericVector& x,
               const bool use_partition_from_file=true);
 
-    /// Write Mesh to file (with global topological indices by default)
+    /// Write Mesh to file
     void operator<< (const Mesh& mesh);
 
-    /// Write Mesh to file (with local indices by default)
+    /// Write Mesh to file
     void write_mesh(const Mesh& mesh);
 
-    void write_mesh(const Mesh& mesh, const uint cell_dim,
-                    bool global_indexing);
+    /// Write Mesh of given cell dimension to file
+    void write_mesh(const Mesh& mesh, const uint cell_dim);
 
     /// Read Mesh from file
     void operator>> (Mesh& mesh);
