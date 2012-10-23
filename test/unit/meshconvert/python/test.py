@@ -3,6 +3,7 @@
 from unittest import TestCase as _TestCase
 import unittest
 import os
+import glob 
 import tempfile
 
 from dolfin_utils.meshconvert import meshconvert
@@ -340,6 +341,35 @@ class TriangleTester(_TestCase):
         self.assertEqual(mesh.num_vertices(), 96)
         self.assertEqual(mesh.num_cells(), 159)
 
+        # Clean up
+        os.unlink(dfname)
+
+class DiffPackTester(_TestCase):
+    def test_convert(self):
+        from dolfin import Mesh, MPI, MeshFunction
+        if MPI.num_processes() != 1:
+            return
+        fname = os.path.join("data", "diffpack_tet")
+        dfname = fname+".xml"
+        
+        # Read triangle file and convert to a dolfin xml mesh file
+        meshconvert.diffpack2xml(fname+".grid", dfname)
+
+        # Read in dolfin mesh and check number of cells and vertices
+        mesh = Mesh(dfname)
+        self.assertEqual(mesh.num_vertices(), 27)
+        self.assertEqual(mesh.num_cells(), 48)
+        self.assertEqual(mesh.domains().markers(3).size(), 48)
+        self.assertEqual(mesh.domains().markers(2).size(), 16)
+
+        mf_basename = dfname.replace(".xml", "_marker_%d.xml")
+        for marker, num in [(3, 9), (6, 9), (7, 3), (8, 1)]:
+
+            mf_name = mf_basename % marker
+            mf = MeshFunction("uint", mesh, mf_name)
+            self.assertEqual(sum(mf.array()==marker), num)
+            os.unlink(mf_name)
+        
         # Clean up
         os.unlink(dfname)
 

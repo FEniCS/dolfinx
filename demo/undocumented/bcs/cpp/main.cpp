@@ -20,7 +20,7 @@
 //
 // This demo illustrates how to set boundary conditions for meshes
 // that include boundary indicators. The mesh used in this demo was
-// generated with VMTK (http://villacamozzi.marionegri.it/~luca/vmtk/).
+// generated with VMTK (http://www.vmtk.org/).
 
 #include <dolfin.h>
 #include "Poisson.h"
