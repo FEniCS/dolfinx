@@ -75,7 +75,7 @@ namespace dolfin
     void operator>> (Mesh& mesh);
 
     /// Read Mesh from file
-    void read_mesh(Mesh &mesh) const;
+    void read_mesh(Mesh &mesh);
 
     /// Check is dataset with given name exists in HDF5 file
     bool dataset_exists(const std::string dataset_name) const;
@@ -111,8 +111,8 @@ namespace dolfin
                     const std::vector<uint> global_size);
 
     // Search dataset names for one beginning with search_term
-    std::string search_list(const std::vector<std::string>& list,
-                            const std::string& search_term) const;
+    static std::string search_list(const std::vector<std::string>& list,
+                                   const std::string& search_term);
 
     // Generate HDF5 dataset names for mesh topology and coordinates
     std::string mesh_coords_dataset_name(const Mesh& mesh) const;
@@ -197,7 +197,8 @@ namespace dolfin
       const uint local_index = v->index();
       if(shared_vertices.count(global_index) != 0)
       {
-        const std::set<uint>& procs = shared_vertices.find(global_index)->second;
+        const std::set<uint>& procs
+          = shared_vertices.find(global_index)->second;
         // Determine whether this vertex is first on a higher numbered
         // process. If so, it is owned here.
         if(*(procs.begin()) > process_number)

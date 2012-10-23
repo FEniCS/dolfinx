@@ -40,7 +40,6 @@
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
-// #include <dolfin/common/Timer.h>
 #include "HDF5File.h"
 #include "HDF5Interface.h"
 #include "XDMFFile.h"
@@ -374,7 +373,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
     xml_mesh_geometry(xdmf_geometry, num_global_vertices, gdim,
                       mesh_coords_name);
 
-    xml_doc.save_file(filename.c_str(), "    ");
+    xml_doc.save_file(filename.c_str(), "  ");
   }
 }
 //----------------------------------------------------------------------------
@@ -451,8 +450,8 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 
   boost::filesystem::path p(hdf5_file->filename);
   std::string dataset_basic_name = "/Mesh/MeshFunction_" + meshfunction.name();
-  const std::string mesh_function_dataset_name =
-    p.filename().string() + ":" + dataset_basic_name;
+  const std::string mesh_function_dataset_name
+    = p.filename().string() + ":" + dataset_basic_name;
 
   // Write mesh to HDF5
   hdf5_file->write_mesh(mesh, cell_dim, false);

@@ -216,7 +216,7 @@ void HDF5File::read(const std::string dataset_name, GenericVector& x,
 }
 //-----------------------------------------------------------------------------
 std::string HDF5File::search_list(const std::vector<std::string>& list,
-                                  const std::string& search_term) const
+                                  const std::string& search_term)
 {
   std::vector<std::string>::const_iterator it;
   for (it = list.begin(); it != list.end(); ++it)
@@ -232,7 +232,7 @@ void HDF5File::operator>> (Mesh& input_mesh)
   read_mesh(input_mesh);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::read_mesh(Mesh &input_mesh) const
+void HDF5File::read_mesh(Mesh &input_mesh)
 {
   warning("HDF5 Mesh input is still experimental");
   warning("HDF5 Mesh input will always repartition the mesh");
@@ -252,11 +252,12 @@ void HDF5File::read_mesh(Mesh &input_mesh) const
   }
 
   // Get list of all datasets in the /Mesh group
-  std::vector<std::string> _dataset_list = HDF5Interface::dataset_list(hdf5_file_id, "/Mesh");
+  std::vector<std::string> _dataset_list
+      = HDF5Interface::dataset_list(hdf5_file_id, "/Mesh");
 
   // Look for Topology dataset
-  std::string topology_name=search_list(_dataset_list,"Topology");
-  if(topology_name.size()==0)
+  std::string topology_name = search_list(_dataset_list,"Topology");
+  if (topology_name.size() == 0)
   {
     dolfin_error("HDF5File.cpp",
                  "read topology dataset",
@@ -294,15 +295,12 @@ void HDF5File::read_mesh(Mesh &input_mesh) const
 
   read_mesh_repartition(input_mesh, coordinates_name,
                                    topology_name);
-
 }
-
 //-----------------------------------------------------------------------------
 void HDF5File::read_mesh_repartition(Mesh &input_mesh,
                                      const std::string coordinates_name,
                                      const std::string topology_name)
 {
-
   // FIXME:
   // This function is experimental, and not checked or optimised
 
@@ -316,7 +314,8 @@ void HDF5File::read_mesh_repartition(Mesh &input_mesh,
 
   // --- Topology ---
   // Discover size of topology dataset
-  std::vector<uint> topology_dim = HDF5Interface::get_dataset_size(hdf5_file_id, topology_name);
+  std::vector<uint> topology_dim
+      = HDF5Interface::get_dataset_size(hdf5_file_id, topology_name);
 
   // Get total number of cells, as number of rows in topology dataset
   const uint num_global_cells = topology_dim[0];
@@ -360,7 +359,8 @@ void HDF5File::read_mesh_repartition(Mesh &input_mesh,
 
   // --- Coordinates ---
   // Get dimensions of coordinate dataset
-  std::vector<uint> coords_dim = HDF5Interface::get_dataset_size(hdf5_file_id, coordinates_name);
+  std::vector<uint> coords_dim
+    = HDF5Interface::get_dataset_size(hdf5_file_id, coordinates_name);
   mesh_data.num_global_vertices = coords_dim[0];
 
   // Divide range into equal blocks for each process
@@ -371,11 +371,15 @@ void HDF5File::read_mesh_repartition(Mesh &input_mesh,
   // Read vertex data to temporary vector
   std::vector<double> tmp_vertex_data;
   tmp_vertex_data.reserve(num_local_vertices*vertex_dim);
-  HDF5Interface::read_dataset(hdf5_file_id, coordinates_name, vertex_range, tmp_vertex_data);
+  HDF5Interface::read_dataset(hdf5_file_id, coordinates_name, vertex_range,
+                              tmp_vertex_data);
+
   // Copy to vector<vector>
   for(std::vector<double>::iterator v = tmp_vertex_data.begin();
       v != tmp_vertex_data.end(); v += vertex_dim)
+  {
     mesh_data.vertex_coordinates.push_back(std::vector<double>(v, v + vertex_dim));
+  }
 
   // Fill vertex indices with values
   mesh_data.vertex_indices.resize(num_local_vertices);
@@ -385,15 +389,14 @@ void HDF5File::read_mesh_repartition(Mesh &input_mesh,
   // Build distributed mesh
   MeshPartitioning::build_distributed_mesh(input_mesh, mesh_data);
 }
-
 //-----------------------------------------------------------------------------
 void HDF5File::operator<< (const Mesh& mesh)
 {
   // Parameter determines indexing method used.
   // Global topology indexing cannot be used for visualisation.
   // If parameter is "auto" or "true", then use global_indexing for raw h5 files.
-  bool global_topology_indexing =
-    (std::string(parameters["global_topology_indexing"])!="false");
+  const bool global_topology_indexing
+    = std::string(parameters["global_topology_indexing"]) != "false";
 
   write_mesh(mesh, mesh.topology().dim(), global_topology_indexing);
 }
@@ -403,8 +406,8 @@ void HDF5File::write_mesh(const Mesh& mesh)
   // Parameter determines indexing method used.
   // Global topology indexing cannot be used for visualisation.
   // If parameter is "auto" or "false", then do not use global indexing here.
-  bool global_topology_indexing =
-    (std::string(parameters["global_topology_indexing"])=="true");
+  const bool global_topology_indexing
+    = std::string(parameters["global_topology_indexing"]) == "true";
 
   write_mesh(mesh, mesh.topology().dim(), global_topology_indexing);
 }
@@ -541,12 +544,10 @@ std::string HDF5File::mesh_topology_dataset_name(const Mesh& mesh) const
   return dataset_name.str();
 }
 //-----------------------------------------------------------------------------
-
 void HDF5File::remove_duplicate_vertices(const Mesh &mesh,
                                          std::vector<double>& vertex_data,
                                          std::vector<uint>& topological_data)
 {
-
   const uint num_processes = MPI::num_processes();
   const uint process_number = MPI::process_number();
   const uint num_local_vertices = mesh.num_vertices();
@@ -613,10 +614,13 @@ void HDF5File::remove_duplicate_vertices(const Mesh &mesh,
   vertex_data.reserve(gdim*num_local_vertices);
 
   for (VertexIterator v(mesh); !v.end(); ++v)
+  {
     if(remap[v->index()] != 0)
+    {
       for (uint i = 0; i < gdim; ++i)
         vertex_data.push_back(v->x(i));
-
+    }
+  }
   //  std::cout << "total vertices = " << MPI::sum(vertex_data.size())/gdim << std::endl;
 
   // Remap local indices to account for missing vertices
@@ -633,19 +637,26 @@ void HDF5File::remove_duplicate_vertices(const Mesh &mesh,
   // to contain the new local index + vertex_offset
   for(std::vector<std::vector<std::pair<uint,uint> > >::iterator
         p = values_to_send.begin(); p != values_to_send.end(); ++p)
+  {
     for(std::vector<std::pair<uint,uint> >::iterator lmap = p->begin();
-        lmap != p->end(); ++lmap)
+          lmap != p->end(); ++lmap)
+    {
       lmap->second = remap[lmap->second];
+    }
+  }
 
   // Redistribute the values to the appropriate process
   std::vector<std::vector<std::pair<uint,uint> > > received_values;
   MPI::distribute(values_to_send, destinations, received_values);
 
   // flatten and insert received global remappings into remap
-  for(std::vector<std::vector<std::pair<uint, uint> > >::iterator p=received_values.begin(); p != received_values.end(); ++p)
-    for(std::vector<std::pair<uint, uint> >::iterator lmap=p->begin(); lmap != p->end(); ++lmap)
+  std::vector<std::vector<std::pair<uint, uint> > >::iterator p;
+  for(p = received_values.begin(); p != received_values.end(); ++p)
+  {
+    std::vector<std::pair<uint, uint> >::const_iterator lmap;
+    for(lmap = p->begin(); lmap != p->end(); ++lmap)
       remap[local[lmap->first]] = lmap->second;
-
+  }
   // remap should now contain the appropriate mapping
   // which can be used to reindex the topology
 
@@ -657,8 +668,7 @@ void HDF5File::remove_duplicate_vertices(const Mesh &mesh,
   for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
     for (VertexIterator v(*c); !v.end(); ++v)
       topological_data.push_back(remap[v->index()]);
-
 }
-
+//-----------------------------------------------------------------------------
 
 #endif
