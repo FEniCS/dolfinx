@@ -1,4 +1,4 @@
-# - Try to find SLEPC
+# - Try to find TAO
 # Once done this will define
 #
 #  TAO_FOUND        - system has SLEPc

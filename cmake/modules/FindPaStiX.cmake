@@ -21,18 +21,18 @@ find_library(PASTIX_LIBRARY pastix
 
 set(PASTIX_LIBRARIES ${PASTIX_LIBRARY})
 
-#if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-#  # Check for rt library
-#  find_library(RT_LIBRARY rt
-#    DOC "The RT library"
-#    )
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  # Check for rt library
+  find_library(RT_LIBRARY rt
+    DOC "The RT library"
+    )
 
-#  # Check for rt header
-#  find_library(RT_LIBRARY rt
-#    DOC "The RT library"
-#    )
-#  set(PASTIX_LIBRARIES ${PASTIX_LIBRARIES} ${RT_LIBRARY})
-#endif()
+  # Check for rt header
+  find_library(RT_LIBRARY rt
+    DOC "The RT library"
+    )
+  set(PASTIX_LIBRARIES ${PASTIX_LIBRARIES} ${RT_LIBRARY})
+endif()
 
 # Check for hwloc header
 find_path(HWLOC_INCLUDE_DIRS hwloc.h
