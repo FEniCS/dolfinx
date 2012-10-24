@@ -18,8 +18,8 @@
 // First added:  2010-11-15
 // Last changed:
 
-#ifndef __DOLFIN_ZOLTAN_RENUMBERING_H
-#define __DOLFIN_ZOLTAN_RENUMBERING_H
+#ifndef __DOLFIN_ZOLTAN_ORDERING_H
+#define __DOLFIN_ZOLTAN_ORDERING_H
 
 #ifdef HAS_TRILINOS
 
@@ -38,16 +38,16 @@ namespace dolfin
   /// representation of a sparse matrix. It uses Zoltan, which is part of
   /// Trilinos.
 
-  class GraphRenumbering
+  class GraphOrdering
   {
 
   public:
 
     /// Constructor
-    GraphRenumbering(const TensorLayout& tensor_layout);
+    GraphOrdering(const TensorLayout& tensor_layout);
 
-    /// Compute renumbering for process (map[old] -> new)
-    std::vector<uint> compute_local_renumbering_map();
+    /// Compute re-ordering for process (map[old] -> new)
+    std::vector<uint> compute_local_reordering_map();
 
   private:
 

@@ -22,47 +22,47 @@
 
 #ifdef HAS_TRILINOS
 
-// Included here to avoid a C++ problem with some MPI implementations                                                                                                                         
+// Included here to avoid a C++ problem with some MPI implementations
 #include <dolfin/common/MPI.h>
 
 #include <boost/scoped_array.hpp>
 #include <zoltan_cpp.h>
 
-#include "dolfin/log/log.h"
 #include "dolfin/common/MPI.h"
 #include "dolfin/la/GenericSparsityPattern.h"
 #include "dolfin/la/TensorLayout.h"
-#include "GraphRenumbering.h"
+#include "dolfin/log/log.h"
+#include "GraphOrdering.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GraphRenumbering::GraphRenumbering(const TensorLayout& tensor_layout)
+GraphOrdering::GraphOrdering(const TensorLayout& tensor_layout)
       : tensor_layout(tensor_layout)
 {
   if (tensor_layout.rank() != 2)
   {
-    dolfin_error("GraphRenumbering.cpp",
-                 "create matrix renumbering",
-                 "Zoltan object for sparsity pattern renumbering can only be used for rank 2 tensors");
+    dolfin_error("GraphOrdering.cpp",
+                 "create matrix re-ordering",
+                 "Zoltan object for sparsity pattern re-ordering can only be used for rank 2 tensors");
   }
 
   if (!tensor_layout.sparsity_pattern())
   {
-    dolfin_error("GraphRenumbering.cpp",
-                 "create matrix renumbering",
+    dolfin_error("GraphOrdering.cpp",
+                 "create matrix re-ordering",
                  "TensorLayout object must a have sparsity pattern");
   }
 
   if (tensor_layout.size(0) != tensor_layout.size(1))
   {
-    dolfin_error("GraphRenumbering.cpp",
-                 "create matrix renumbering",
-                 "Zoltan object for sparsity pattern renumbering can only be used for square matrices");
+    dolfin_error("GraphOrdering.cpp",
+                 "create matrix re-ordering",
+                 "Zoltan object for sparsity pattern re-ordering can only be used for square matrices");
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::uint> GraphRenumbering::compute_local_renumbering_map()
+std::vector<dolfin::uint> GraphOrdering::compute_local_reordering_map()
 {
   // Initialise Zoltan
   float version;
@@ -71,7 +71,6 @@ std::vector<dolfin::uint> GraphRenumbering::compute_local_renumbering_map()
   Zoltan_Initialize(argc, argv, &version);
 
   // Create Zoltan object
-  //Zoltan zoltan(MPI::COMM_WORLD);
   Zoltan zoltan;
 
   // Set parameters
@@ -82,17 +81,17 @@ std::vector<dolfin::uint> GraphRenumbering::compute_local_renumbering_map()
   zoltan.Set_Param( "OBJ_WEIGHT_DIM", "0");   // omit object weights
 
   // Set call-back functions
-  zoltan.Set_Num_Obj_Fn(GraphRenumbering::get_number_of_objects, this);
-  zoltan.Set_Obj_List_Fn(GraphRenumbering::get_object_list, this);
-  zoltan.Set_Num_Edges_Multi_Fn(GraphRenumbering::get_number_edges, this);
-  zoltan.Set_Edge_List_Multi_Fn(GraphRenumbering::get_all_edges, this);
+  zoltan.Set_Num_Obj_Fn(GraphOrdering::get_number_of_objects, this);
+  zoltan.Set_Obj_List_Fn(GraphOrdering::get_object_list, this);
+  zoltan.Set_Num_Edges_Multi_Fn(GraphOrdering::get_number_edges, this);
+  zoltan.Set_Edge_List_Multi_Fn(GraphOrdering::get_all_edges, this);
 
-  // Create array for global ids that should be renumbered
+  // Create array for global ids that should be re-ordered
   std::vector<ZOLTAN_ID_TYPE> global_ids(num_global_objects());
   for (uint i = 0; i < global_ids.size(); ++i)
     global_ids[i] = i;
 
-  // Create array for renumbered vertices
+  // Create array for re-ordered vertices
   std::vector<ZOLTAN_ID_TYPE> new_id(num_global_objects());
 
   // Compute re-ordering
@@ -101,52 +100,52 @@ std::vector<dolfin::uint> GraphRenumbering::compute_local_renumbering_map()
   // Check for errors
   if (rc != ZOLTAN_OK)
   {
-    dolfin_error("GraphRenumbering.cpp",
-                 "compute matrix renumbering",
+    dolfin_error("GraphOrdering.cpp",
+                 "compute matrix re-ordering",
                  "Zoltan partitioning failed");
   }
 
-  // Copy renumber into a vector (in case Zoltan uses something other than uint)
+  // Copy re-ordering into a vector (in case Zoltan uses something other than uint)
   std::vector<uint> map(new_id.begin(), new_id.end());
 
   return map;
 }
 //-----------------------------------------------------------------------------
-int GraphRenumbering::num_global_objects() const
+int GraphOrdering::num_global_objects() const
 {
   return tensor_layout.size(0);
 }
 //-----------------------------------------------------------------------------
-int GraphRenumbering::num_local_objects() const
+int GraphOrdering::num_local_objects() const
 {
   return tensor_layout.size(0);
 }
 //-----------------------------------------------------------------------------
-void GraphRenumbering::num_edges_per_vertex(std::vector<uint>& num_edges) const
+void GraphOrdering::num_edges_per_vertex(std::vector<uint>& num_edges) const
 {
   dolfin_assert(tensor_layout.sparsity_pattern());
   tensor_layout.sparsity_pattern()->num_nonzeros_diagonal(num_edges);
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::vector<dolfin::uint> > GraphRenumbering::edges() const
+const std::vector<std::vector<dolfin::uint> > GraphOrdering::edges() const
 {
   dolfin_assert(tensor_layout.sparsity_pattern());
   return tensor_layout.sparsity_pattern()->diagonal_pattern(GenericSparsityPattern::unsorted);
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-int GraphRenumbering::get_number_of_objects(void *data, int *ierr)
+int GraphOrdering::get_number_of_objects(void *data, int *ierr)
 {
-  GraphRenumbering *objs = (GraphRenumbering *)data;
+  GraphOrdering *objs = (GraphOrdering *)data;
   *ierr = ZOLTAN_OK;
   return objs->num_local_objects();
 }
 //-----------------------------------------------------------------------------
-void GraphRenumbering::get_object_list(void *data, int sizeGID, int sizeLID,
-          ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
-          int wgt_dim, float *obj_wgts, int *ierr)
+void GraphOrdering::get_object_list(void *data, int sizeGID, int sizeLID,
+                                ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
+                                int wgt_dim, float *obj_wgts, int *ierr)
 {
-  GraphRenumbering *objs = (GraphRenumbering *)data;
+  GraphOrdering *objs = (GraphOrdering *)data;
   *ierr = ZOLTAN_OK;
   for (int i = 0; i< objs->num_local_objects(); i++)
   {
@@ -155,18 +154,13 @@ void GraphRenumbering::get_object_list(void *data, int sizeGID, int sizeLID,
   }
 }
 //-----------------------------------------------------------------------------
-void GraphRenumbering::get_number_edges(void *data, int num_gid_entries,
+void GraphOrdering::get_number_edges(void *data, int num_gid_entries,
                                        int num_lid_entries,
                                        int num_obj, ZOLTAN_ID_PTR global_ids,
                                        ZOLTAN_ID_PTR local_ids, int *num_edges,
                                        int *ierr)
 {
-  GraphRenumbering *objs = (GraphRenumbering *)data;
-
-  //std::cout << "Testing global id entires: " << num_gid_entries << "  " << objs->num_global_objects() << std::endl;
-  //std::cout << "Testing local id entires: "  << num_lid_entries << "  " << objs->num_local_objects() << std::endl;
-  //dolfin_assert(num_gid_entries == objs->num_global_objects());
-  //dolfin_assert(num_lid_entries == objs->num_local_objects());
+  GraphOrdering *objs = (GraphOrdering *)data;
 
   // Get number of edges for each graph vertex
   std::vector<uint> number_edges;
@@ -177,16 +171,16 @@ void GraphRenumbering::get_number_edges(void *data, int num_gid_entries,
     num_edges[i] = number_edges[i];
 }
 //-----------------------------------------------------------------------------
-void GraphRenumbering::get_all_edges(void *data, int num_gid_entries,
-                              int num_lid_entries, int num_obj,
-                              ZOLTAN_ID_PTR global_ids,
-                              ZOLTAN_ID_PTR local_ids,
-                              int *num_edges,
-                              ZOLTAN_ID_PTR nbor_global_id,
-                              int *nbor_procs, int wgt_dim,
-                              float *ewgts, int *ierr)
+void GraphOrdering::get_all_edges(void *data, int num_gid_entries,
+                                  int num_lid_entries, int num_obj,
+                                  ZOLTAN_ID_PTR global_ids,
+                                  ZOLTAN_ID_PTR local_ids,
+                                  int *num_edges,
+                                  ZOLTAN_ID_PTR nbor_global_id,
+                                  int *nbor_procs, int wgt_dim,
+                                  float *ewgts, int *ierr)
 {
-  GraphRenumbering *objs = (GraphRenumbering *)data;
+  GraphOrdering *objs = (GraphOrdering *)data;
   const std::vector<std::vector<uint> > edges = objs->edges();
 
   uint sum = 0;
