@@ -83,33 +83,28 @@ TAOLinearBoundSolver::preconditioners()
   return PETScPreconditioner::preconditioners();
 }
 //-----------------------------------------------------------------------------
-TAOLinearBoundSolver::TAOLinearBoundSolver(std::string method, 
-                                           std::string ksp_type, 
-                                           std::string pc_type) 
-        : preconditioner(new PETScPreconditioner(pc_type)), preconditioner_set(false) 
+TAOLinearBoundSolver::TAOLinearBoundSolver(const std::string method, 
+                                           const std::string ksp_type, 
+                                           const std::string pc_type) 
+         : preconditioner(new PETScPreconditioner(pc_type)), preconditioner_set(false) 
+
 {
   // Set parameter values
   parameters = default_parameters();
   
   //Initialize the Tao solver
   init(method);
-    
-  // Set ksp type
-  if (ksp_type != "default")
+  
+  //Set the PETSC KSP used by TAO
+  set_ksp(ksp_type);
+     
+  // Some preconditioners may lead to errors because not compatible with TAO.
+  if ((pc_type != "default") or (ksp_type != "default") or (method != "default"))
   {
-    KSP ksp; 
-    TaoGetKSP(*_tao, &ksp);
-    if (ksp) 
-    KSPSetType(ksp, _ksp_methods.find(ksp_type)->second);   
-    else
-    log(WARNING,"The tao solver %s does not allow to set a specific Krylov solver. Options (%s,%s) are ignored", method.c_str(), ksp_type.c_str(), pc_type.c_str());
-   }
-   
-   // Some preconditioners may lead to errors because not compatible with TAO.
-   if ((pc_type != "default") or (ksp_type != "default") or (method != "default"))
-   {
-   log(WARNING,"Warning: some preconditioners may be not applicable to TAO and generate errors.");
-   }
+  log(WARNING,
+  "Some preconditioners may be not be applicable to TAO solvers and generate errors.");
+  }
+
 }
 //-----------------------------------------------------------------------------
 TAOLinearBoundSolver::~TAOLinearBoundSolver()
@@ -120,8 +115,8 @@ TAOLinearBoundSolver::~TAOLinearBoundSolver()
 void TAOLinearBoundSolver::set_operators(const boost::shared_ptr<const GenericMatrix> A,
                                       const boost::shared_ptr<const GenericVector> b)
 {
-  boost::shared_ptr<const PETScMatrix> _A = GenericTensor::down_cast<const PETScMatrix>(A);
-  boost::shared_ptr<const PETScVector> _b = GenericTensor::down_cast<const PETScVector>(b);
+  boost::shared_ptr<const PETScMatrix> _A=GenericTensor::down_cast<const PETScMatrix>(A);
+  boost::shared_ptr<const PETScVector> _b=GenericTensor::down_cast<const PETScVector>(b);
   set_operators(_A, _b);
 }
 //-----------------------------------------------------------------------------
@@ -134,12 +129,24 @@ void TAOLinearBoundSolver::set_operators(const boost::shared_ptr<const PETScMatr
   		dolfin_assert(this->b);
 	}
 //-----------------------------------------------------------------------------
-dolfin::uint TAOLinearBoundSolver::solve(const GenericMatrix& A1, GenericVector& x, const GenericVector& b1, const GenericVector& xl, const GenericVector& xu)
+dolfin::uint TAOLinearBoundSolver::solve(const GenericMatrix& A1,
+                                               GenericVector& x , 
+                                         const GenericVector& b1, 
+                                         const GenericVector& xl, 
+                                         const GenericVector& xu )
 {
-  return solve(A1.down_cast<PETScMatrix>(), x.down_cast<PETScVector>(), b1.down_cast<PETScVector>(), xl.down_cast<PETScVector>(), xu.down_cast<PETScVector>());
+  return solve(A1.down_cast<PETScMatrix>(), 
+                x.down_cast<PETScVector>(), 
+                b1.down_cast<PETScVector>(), 
+                xl.down_cast<PETScVector>(), 
+                xu.down_cast<PETScVector>());
 }
 //-----------------------------------------------------------------------------
-dolfin::uint TAOLinearBoundSolver::solve(const PETScMatrix& A1, PETScVector& x, const PETScVector& b1, const PETScVector& xl, const PETScVector& xu)
+dolfin::uint TAOLinearBoundSolver::solve(const PETScMatrix& A1, 
+                                               PETScVector& x , 
+                                         const PETScVector& b1, 
+                                         const PETScVector& xl, 
+                                         const PETScVector& xu )
 {
  
   // Check symmetry
@@ -209,6 +216,7 @@ dolfin::uint TAOLinearBoundSolver::solve(const PETScMatrix& A1, PETScVector& x, 
     bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
     if (error_on_nonconvergence)
     { 
+      TaoView(*_tao,PETSC_VIEWER_STDOUT_WORLD); 
       //const char *reason_str = TaoGetTerminationReason[reason];
       dolfin_error("TAOLinearBoundSolver.cpp",
                    "solve linear system using Tao solver",
@@ -216,7 +224,10 @@ dolfin::uint TAOLinearBoundSolver::solve(const PETScMatrix& A1, PETScVector& x, 
                    num_iterations, reason);
     }
     else
-      log(WARNING, "Tao solver %s failed to converge. Try a different TAO method, adjust some parameters", tao_type);
+      log(WARNING, 
+        "Tao solver %s failed to converge. \
+        Try a different TAO method, adjust some parameters",
+      tao_type);
    }
 }
 //-----------------------------------------------------------------------------
@@ -241,6 +252,22 @@ void TAOLinearBoundSolver::set_solver(const std::string& method)
                   "set solver for TAO solver",
                    "Unknown solver type (\"%s\")", method.c_str());
     }  
+}
+//-----------------------------------------------------------------------------
+void TAOLinearBoundSolver::set_ksp(std::string ksp_type)        
+{  
+  // Set ksp type
+  if (ksp_type != "default")
+  {
+    KSP ksp; 
+    TaoGetKSP(*_tao, &ksp);
+    if (ksp) 
+    KSPSetType(ksp, _ksp_methods.find(ksp_type)->second);   
+    else
+    log(WARNING,
+    "The selected tao solver does not allow to set a specific Krylov solver.\
+     Option %s is ignored", ksp_type.c_str());
+   }
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<TaoSolver> TAOLinearBoundSolver::tao() const

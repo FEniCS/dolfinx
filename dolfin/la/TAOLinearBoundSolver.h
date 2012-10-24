@@ -45,59 +45,45 @@ namespace dolfin
   ///
   /// It is a wrapper for the TAO bound constrained solver.
   ///
-  /// The following parameters may be specified to control the solver.
-  ///
-  /// - "solver"
-  ///
-  /// This parameter controls the type of minimization algorithm used by TAO .
-  /// Possible values for bound constrained solvers are:
-  ///	tao_tron	- Newton Trust Region method for bound constrained minimization
-  ///	tao_gpcg	- Gradient Projection Conjugate Gradient for quadratic bound constrained minimization
-  ///   tao_bqpip   - Interior Point Newton Algorithm"
-  //    tao_blmvm	- Limited memory variable metric method for bound constrained minimization + tao_pounders - Model-based algorithm pounder extended for nonlinear least squares
-  ///   The method "tao_gpcg" is set to default
-  ///
-  ///  - "monitor_convergence"
-  /// This parameter controls the visualization of the convergence tests at each iteration of the solver. 
-  /// Possible values are true or false
+  /// Python example:
   /// 
-  ///  - "report"
-  /// This parameter controls the report of the final state of the solver at the end of the solving process. 
-  //  Possible values are true or false
-  /// 
-  ///  - tolerances of the solver: "fatol", "frtol", "gatol", "grtol", "gttol"
+  ///  ----------------------------------------------------------------------
+  ///  Begin of python example
+  ///  ----------------------------------------------------------------------
+  ///  # Assemble the linear system
+  ///     A, b = assemble_system(a, L, bc)
+  ///  # Define the constraints
+  ///     constraint_u = Constant(1.)
+  ///     constraint_l = Constant(0.)
+  ///     u_min = interpolate(constraint_l, V)
+  ///     u_max = interpolate(constraint_u, V)
+  ///  # Define the function to store the solution 
+  ///     usol=Function(V)
+  ///  # Create the TAOLinearBoundSolver
+  ///    solver=TAOLinearBoundSolver("tao_gpcg","gmres")
+  ///  # Set some parameters
+  ///    solver.parameters["monitor_convergence"]=True
+  ///    solver.parameters["report"]=True
+  ///  # Solve the problem
+  ///    solver.solve(A, usol.vector(), b , u_min.vector(), u_max.vector())
+  ///  ----------------------------------------------------------------------
+  ///  End of python example
+  ///  ----------------------------------------------------------------------
   ///
-  /// These parameters control the tolerances used by TAO.
-  /// Possible values are positive double numbers. below their definition and default values 
-  /// where f is the function to minimize and g its gradient
+  /// To get a list of available parameters: 
   ///
-  /// f(X) - f(X*) (estimated)            <= fatol, default = 1e-10  
-  /// |f(X) - f(X*)| (estimated) / |f(X)| <= frtol, default = 1e-10 
-  /// ||g(X)||                            <= gatol, default = 1e-8 
-  /// ||g(X)|| / |f(X)|                   <= grtol, default = 1e-8 
-  /// ||g(X)|| / ||g(X0)||                <= gttol, default = 0   
+  /// info(solver.parameters,True)
   ///
-  /// - "krylov_solver"
-  /// This parameter set contains parameters to configure the PETSc Krylov solver used by Tao
-  /// 
    class TAOLinearBoundSolver : public Variable, public PETScObject
   {
   public:
     /// Create TAO bound constrained solver 
-    TAOLinearBoundSolver(std::string method   = "default" ,
-                         std::string ksp_type = "default" , 
-                         std::string pc_type  = "default" );
+    TAOLinearBoundSolver(const std::string method   = "default" ,
+                         const std::string ksp_type = "default" , 
+                         const std::string pc_type  = "default" );
 
     /// Destructor
     ~TAOLinearBoundSolver();
-
-	// Set operators with GenericMatrix and GenericVector
-	void set_operators(const boost::shared_ptr<const GenericMatrix> A,
-                                      const boost::shared_ptr<const GenericVector> b);
-
-	// Set operators with shared pointer to PETSc objects
-	void set_operators(const boost::shared_ptr<const PETScMatrix> A,
-                                      const boost::shared_ptr<const PETScVector> b); 
 	     
     /// Solve linear system Ax = b with xl =< x <= xu 
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b, const GenericVector& xl, const GenericVector& xu);
@@ -105,8 +91,11 @@ namespace dolfin
     /// Solve linear system Ax = b with xl =< x <= xu 
     uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b, const PETScVector& xl, const PETScVector& xu);
         
-    // Set the solver type
+    // Set the TAO solver type
 	void set_solver(const std::string&);
+	
+   /// Set PETSC Krylov Solver (ksp) used by TAO
+    void set_ksp( const std::string ksp_type = "default");     	
 	    	
 	// Return TAO solver pointer
     boost::shared_ptr<TaoSolver> tao() const;
@@ -151,6 +140,13 @@ namespace dolfin
 
   private:
     
+    // Set operators with GenericMatrix and GenericVector
+	void set_operators(const boost::shared_ptr<const GenericMatrix> A,
+                                      const boost::shared_ptr<const GenericVector> b);
+
+	// Set operators with shared pointer to PETSc objects
+	void set_operators(const boost::shared_ptr<const PETScMatrix> A,
+                                      const boost::shared_ptr<const PETScVector> b); 
         
     // Callback for changes in parameter values
     void read_parameters();
