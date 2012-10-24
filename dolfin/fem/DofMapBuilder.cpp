@@ -348,9 +348,15 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
     }
   }
 
-  // Reorder dofs
+  // Reorder dofs locally
+  #ifdef HAS_SCOTCH
+  const std::vector<uint> dof_remap = SCOTCH::compute_renumbering(graph);
+  #else
   const std::vector<uint> dof_remap
       = BoostGraphRenumbering::compute_cuthill_mckee(graph, true);
+  //const std::vector<uint> dof_remap
+  //    = BoostGraphRenumbering::compute_king(graph, true);
+  #endif
 
   // Map from old to new index for dofs
   boost::unordered_map<uint, uint> old_to_new_dof_index;
@@ -438,7 +444,8 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   dofmap._dofmap = new_dofmap;
 
   // Set ownership range
-  dofmap._ownership_range = std::make_pair<uint, uint>(process_offset, process_offset + owned_dofs.size());
+  dofmap._ownership_range = std::make_pair<uint, uint>(process_offset,
+                                          process_offset + owned_dofs.size());
 
   log(TRACE, "Finished renumbering dofs for parallel dof map");
 }
