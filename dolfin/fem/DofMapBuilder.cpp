@@ -349,16 +349,14 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   }
 
   // Reorder dofs locally
-  //#ifdef HAS_SCOTCH
-  //const std::vector<uint> dof_remap = SCOTCH::compute_renumbering(graph);
-  //#else
+  #ifdef HAS_SCOTCH
+  const std::vector<uint> dof_remap = SCOTCH::compute_renumbering(graph);
+  #else
   const std::vector<uint> dof_remap
       = BoostGraphRenumbering::compute_cuthill_mckee(graph, true);
   //const std::vector<uint> dof_remap
   //    = BoostGraphRenumbering::compute_king(graph, true);
-  //#endif
-
-  return;
+  #endif
 
   // Map from old to new index for dofs
   boost::unordered_map<uint, uint> old_to_new_dof_index;
