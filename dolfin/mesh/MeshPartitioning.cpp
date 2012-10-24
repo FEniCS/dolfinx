@@ -848,7 +848,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   std::vector<uint> boundary_sizes;
   MPI::all_gather(boundary_size, boundary_sizes);
 
-  // Recieve buffer
+  // Receive buffer
   std::vector<uint> global_vertex_recv;
 
   // Create shared_vertices data structure: mapping from shared vertices
