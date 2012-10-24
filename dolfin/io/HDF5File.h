@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-10-23
+// Last changed: 2012-10-24
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -179,40 +179,31 @@ namespace dolfin
 
 //---------------------------------------------------------------------------
   template <typename T>
-  void HDF5File::remove_duplicate_values(const Mesh &mesh, std::vector<T>& values, 
+  void HDF5File::remove_duplicate_values(const Mesh &mesh, 
+                                         std::vector<T>& values, 
                                          const uint value_size)
   {
-    
-    const uint process_number = MPI::process_number();
-    const std::map<uint, std::set<uint> >& shared_vertices = mesh.topology().shared_entities(0);
+
+    // Get list of locally owned vertices, with local index
+    const std::vector<uint> owned_vertices = mesh.owned_vertices();
 
     std::vector<T> result;    
-    result.reserve(values.size());
-    // overestimate
-    for (VertexIterator v(mesh); !v.end(); ++v)
+    result.reserve(values.size()); //overestimate
+
+    // only copy local values
+    for(uint i = 0; i < owned_vertices.size(); i++)
     {
-      uint global_index = v->global_index();
-      typename std::vector<T>::iterator local_it = values.begin() + value_size*v->index();
-      
-      if(shared_vertices.count(global_index) != 0)
-      {
-        const std::set<uint>& procs = 
-          shared_vertices.find(global_index)->second;
-        
-        // Determine whether this vertex is first on a higher numbered process.
-        // If so, it is owned here.
-        if(*(procs.begin()) > process_number)
-          result.insert(result.end(), local_it, local_it + value_size);
-      }
-      else // not a shared vertex
-        result.insert(result.end(), local_it, local_it + value_size);
-      
+      typename std::vector<T>::iterator owned_it = 
+        values.begin() + value_size*owned_vertices[i];
+      result.insert(result.end(), owned_it, owned_it + value_size);
     }
     
+    // copy back into values and resize 
     values.resize(result.size());
     std::copy(result.begin(), result.end(), values.begin());
   }
-
+  
 }
+
 #endif
 #endif

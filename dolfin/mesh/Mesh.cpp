@@ -23,7 +23,7 @@
 // Modified by Johannes Ring 2012
 //
 // First added:  2006-05-09
-// Last changed: 2012-10-22
+// Last changed: 2012-10-24
 
 
 #include <dolfin/ale/ALE.h>
@@ -511,6 +511,8 @@ std::string Mesh::str(bool verbose) const
 //-----------------------------------------------------------------------------
 uint Mesh::num_owned_vertices() const
 {
+  Timer t("Calculate num owned vertices");
+
   const std::map<uint, std::set<uint> >& shared_vertices
     = topology().shared_entities(0);
 
@@ -532,3 +534,36 @@ uint Mesh::num_owned_vertices() const
   return num_local_vertices;
 }
 
+//-----------------------------------------------------------------------------
+std::vector<uint> Mesh::owned_vertices() const
+{
+  Timer t("Calculate owned vertices");
+
+  const std::map<uint, std::set<uint> >& shared_vertices
+    = topology().shared_entities(0);
+
+  const uint process_number = MPI::process_number();
+
+  std::vector<uint>result;
+  result.reserve(num_vertices());
+  
+  for(VertexIterator v(*this); !v.end(); ++v)
+  {
+    uint global_index = v->global_index();
+    if(shared_vertices.count(global_index) != 0)
+    {
+      const std::set<uint>& procs = 
+        shared_vertices.find(global_index)->second;
+        
+      // Determine whether the first element of 
+      // this set refers to a higher numbered process.
+      // If so, the vertex is owned here.
+      if(*(procs.begin()) > process_number)
+        result.push_back(v->index());
+    }
+    else // not a shared vertex
+      result.push_back(v->index());
+  }
+
+  return result;
+}

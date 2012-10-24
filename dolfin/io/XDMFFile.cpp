@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-10-23
+// Last changed: 2012-10-24
 
 #ifdef HAS_HDF5
 
@@ -451,7 +451,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
     = p.filename().string() + ":" + dataset_basic_name;
 
   // Write mesh to HDF5
-  hdf5_file->write_mesh(mesh, cell_dim, false);
+  hdf5_file->write_mesh(mesh, cell_dim);
 
   // FIXME: functionality should not be in HDF5File, but in Mesh somewhere or here.
   hdf5_file->remove_duplicate_values(mesh, data_values, 1);

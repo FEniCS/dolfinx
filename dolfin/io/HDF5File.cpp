@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-10-23
+// Last changed: 2012-10-24
 
 #ifdef HAS_HDF5
 
@@ -35,6 +35,7 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/log.h>
@@ -499,6 +500,8 @@ void HDF5File::remove_duplicate_vertices(const Mesh &mesh,
                                          std::vector<double>& vertex_data,
                                          std::vector<uint>& topological_data)
 {
+  Timer t("remove duplicate vertices");
+ 
   const uint num_processes = MPI::num_processes();
   const uint process_number = MPI::process_number();
   const uint num_local_vertices = mesh.num_vertices();
