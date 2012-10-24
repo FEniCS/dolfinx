@@ -444,7 +444,8 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   dofmap._dofmap = new_dofmap;
 
   // Set ownership range
-  dofmap._ownership_range = std::make_pair<uint, uint>(process_offset, process_offset + owned_dofs.size());
+  dofmap._ownership_range = std::make_pair<uint, uint>(process_offset,
+                                          process_offset + owned_dofs.size());
 
   log(TRACE, "Finished renumbering dofs for parallel dof map");
 }
