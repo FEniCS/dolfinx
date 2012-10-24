@@ -29,15 +29,15 @@
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
 # are met:
-# 
+#
 # 1. Redistributions of source code must retain the copyright
 #    notice, this list of conditions and the following disclaimer.
 # 2. Redistributions in binary form must reproduce the copyright
 #    notice, this list of conditions and the following disclaimer in the
 #    documentation and/or other materials provided with the distribution.
-# 3. The name of the author may not be used to endorse or promote products 
+# 3. The name of the author may not be used to endorse or promote products
 #    derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
 # IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 # OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -61,6 +61,16 @@ endif (NOT _LANGUAGES_ MATCHES Fortran)
 
 set(LAPACK_FOUND FALSE)
 set(LAPACK95_FOUND FALSE)
+
+# FIXME: Testing to make configure againts Dorsal-built ATLAS work
+# Search LAPACK_DIR and CMAKE_PREFIX_PATH
+#if (CMAKE_PREFIX_PATH AND NOT LAPACK_DIR)
+#  set(LAPACK_DIR ${CMAKE_PREFIX_PATH})
+#  message(STATUS "Setting LAPACK_DIR to ${LAPACK_DIR}")
+#endif ()
+#if (LAPACK_DIR)
+#  set(LAPACK_LIBRARIES:FILEPATH "${LAPACK_DIR}/lib/liblapack.a")
+#endif ()
 
 # TODO: move this stuff to separate module
 

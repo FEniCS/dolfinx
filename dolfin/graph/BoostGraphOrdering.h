@@ -18,8 +18,8 @@
 // First added:  2012-07-06
 // Last changed:
 
-#ifndef __DOLFIN_BOOST_GRAPH_RENUMBERING_H
-#define __DOLFIN_BOOST_GRAPH_RENUMBERING_H
+#ifndef __DOLFIN_BOOST_GRAPH_ORDERING_H
+#define __DOLFIN_BOOST_GRAPH_ORDERING_H
 
 #include <vector>
 #include <dolfin/common/types.h>
@@ -30,21 +30,22 @@ namespace dolfin
 
   /// This class computes graph re-orderings. It uses Boost Graph.
 
-  class BoostGraphRenumbering
+  class BoostGraphOrdering
   {
 
   public:
 
-    /// Compute renumbering (map[old] -> new) using Cuthill-McKee algorithm
-    static std::vector<uint> compute_cuthill_mckee(const Graph& graph, bool reverse=false);
+    /// Compute re-ordering (map[old] -> new) using Cuthill-McKee algorithm
+    static std::vector<uint> compute_cuthill_mckee(const Graph& graph,
+                                                   bool reverse=false);
 
-    /// Compute renumbering (map[old] -> new) using King algorithm
+    /// Compute re-ordering (map[old] -> new) using King algorithm
     static std::vector<uint> compute_king(const Graph& graph);
 
-    /// Compute renumbering (map[old] -> new) using King algorithm
+    /// Compute re-ordering (map[old] -> new) using King algorithm
     static std::vector<uint> compute_king(const std::vector<std::vector<uint> >& graph);
 
-    /// Compute renumbering (map[old] -> new) using minimum degree algorithm
+    /// Compute re-ordering (map[old] -> new) using minimum degree algorithm
     static std::vector<uint> compute_minimum_degree(const Graph& graph,
                                                     const int delta=0);
 

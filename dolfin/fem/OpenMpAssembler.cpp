@@ -168,6 +168,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
 
   // Assemble over cells (loop over colours, then cells of same color)
   const uint num_colors = entities_of_color.size();
+  Progress p("Assembling cells (threaded)", num_colors);
   for (uint color = 0; color < num_colors; ++color)
   {
     // Get the array of cell indices of current color
@@ -177,7 +178,6 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
     const int num_cells = colored_cells.size();
 
     // OpenMP test loop over cells of the same color
-    Progress p(AssemblerBase::progress_message(A.rank(), "cells"), num_colors);
     #pragma omp parallel for schedule(guided, 20) firstprivate(ufc, dofs, integral)
     for (int cell_index = 0; cell_index < num_cells; ++cell_index)
     {
