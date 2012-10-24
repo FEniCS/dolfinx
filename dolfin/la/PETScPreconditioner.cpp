@@ -424,14 +424,12 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   PCSetFromOptions(pc);
 
   // Print preconditioner information
-  /*
   const bool report = parameters["report"];
-  if (report);
+  if (report)
   {
     PCSetUp(pc);
     PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
   }
-  */
 }
 //-----------------------------------------------------------------------------
 std::string PETScPreconditioner::str(bool verbose) const
