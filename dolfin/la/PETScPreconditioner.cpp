@@ -111,6 +111,7 @@ Parameters PETScPreconditioner::default_parameters()
   p_ml.add<uint>("max_coarse_size");
   p_ml.add<double>("aggregation_damping_factor");
   p_ml.add<uint>("max_num_levels");
+  p_ml.add<uint>("print_level", 0, 10);
 
   std::set<std::string> aggregation_schemes;
   aggregation_schemes.insert("Uncoupled");
@@ -269,6 +270,14 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     //      will create until we've called PCSetUp
 
     // --- ML parameters
+
+    // Output level
+    if (parameters("ml")["print_level"].is_set())
+    {
+      const uint print_level = parameters("ml")["print_level"];
+      PetscOptionsSetValue("-pc_ml_PrintLevel",
+                           boost::lexical_cast<std::string>(print_level).c_str());
+    }
 
     // Maximum number of levels
     if (parameters("ml")["max_num_levels"].is_set())
