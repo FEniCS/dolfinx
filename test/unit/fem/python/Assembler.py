@@ -392,8 +392,8 @@ class Assembly(unittest.TestCase):
 
             # NOTE: This test is not robust as it relies on specific
             #       DOF order, which cannot be guaranteed
-            reorder_dofs = parameters["reorder_dofs"]
-            parameters["reorder_dofs"] = False
+            reorder_dofs = parameters["reorder_dofs_serial"]
+            parameters["reorder_dofs_serial"] = False
 
             # Load reference mesh (just a simple tetrahedron)
             mesh = Mesh("tetrahedron.xml.gz");
@@ -425,7 +425,7 @@ class Assembly(unittest.TestCase):
             D = M - M0
             self.assertAlmostEqual(D.norm("frobenius"), 0.0)
 
-            parameters["reorder_dofs"] = reorder_dofs
+            parameters["reorder_dofs_serial"] = reorder_dofs
 
 if __name__ == "__main__":
     print ""
