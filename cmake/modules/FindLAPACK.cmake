@@ -62,16 +62,6 @@ endif (NOT _LANGUAGES_ MATCHES Fortran)
 set(LAPACK_FOUND FALSE)
 set(LAPACK95_FOUND FALSE)
 
-# FIXME: Testing to make configure againts Dorsal-built ATLAS work
-# Search LAPACK_DIR and CMAKE_PREFIX_PATH
-#if (CMAKE_PREFIX_PATH AND NOT LAPACK_DIR)
-#  set(LAPACK_DIR ${CMAKE_PREFIX_PATH})
-#  message(STATUS "Setting LAPACK_DIR to ${LAPACK_DIR}")
-#endif ()
-#if (LAPACK_DIR)
-#  set(LAPACK_LIBRARIES:FILEPATH "${LAPACK_DIR}/lib/liblapack.a")
-#endif ()
-
 # TODO: move this stuff to separate module
 
 macro(Check_Lapack_Libraries LIBRARIES _prefix _name _flags _list _blas _threads)
