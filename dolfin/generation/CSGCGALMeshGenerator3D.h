@@ -51,6 +51,10 @@ namespace dolfin
     static Parameters default_parameters()
     {
       Parameters p("csg_cgal_meshgenerator");
+      p.add("perturb_optimize", false);
+      p.add("exude_optimize", false);
+      p.add("lloyd_optimize", false);
+      p.add("odt_optimize", false);
       p.add("edge_size", 0.025);
       p.add("facet_angle", 25.0);
       p.add("facet_size", 0.05);
