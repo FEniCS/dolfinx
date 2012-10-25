@@ -44,6 +44,17 @@
 
 using namespace dolfin;
 
+class PETScMatNullSpaceDeleter
+{
+public:
+  void operator() (MatNullSpace* ns)
+  {
+    if (*ns)
+      MatNullSpaceDestroy(ns);
+    delete ns;
+  }
+};
+
 const std::map<std::string, NormType> PETScMatrix::norm_types
   = boost::assign::map_list_of("l1",        NORM_1)
                               ("linf",      NORM_INFINITY)
@@ -409,6 +420,45 @@ void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
   }
 
   MatMultTranspose(*A, *xx.vec(), *yy.vec());
+}
+//-----------------------------------------------------------------------------
+void PETScMatrix::set_near_nullspace(std::vector<const GenericVector*> nullspace)
+{
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR < 3
+  dolfin_error("PETScMatrix.cpp",
+               "set approximate null space for PETSc matrix",
+               "This is supported by PETSc version > 3.2");
+  #else
+  warning("PETScMatrix::set_near_nullspace is experimental and is likely to be re-named or moved in the future.");
+
+  dolfin_assert(nullspace.size() > 0);
+
+  // Copy vectors
+  _nullspace.clear();
+  for (uint i = 0; i < nullspace.size(); ++i)
+  {
+    dolfin_assert(nullspace[i]);
+    const PETScVector& x = nullspace[i]->down_cast<PETScVector>();
+
+    // Copy vector
+    _nullspace.push_back(x);
+  }
+
+  // Get pointers to underlying PETSc objects
+  std::vector<Vec> petsc_vec(nullspace.size());
+  for (uint i = 0; i < nullspace.size(); ++i)
+    petsc_vec[i] = *(_nullspace[i].vec().get());
+
+  // Create null space
+  petsc_nullspace.reset(new MatNullSpace, PETScMatNullSpaceDeleter());
+  MatNullSpaceCreate(PETSC_COMM_SELF, PETSC_FALSE, nullspace.size(),
+                     &petsc_vec[0], petsc_nullspace.get());
+
+  //MatSetNullSpace(*(this->A), petsc_nullspace);
+
+  // Set null space that is used by some preconditioners
+  MatSetNearNullSpace(*(this->A), *petsc_nullspace);
+  #endif
 }
 //-----------------------------------------------------------------------------
 double PETScMatrix::norm(std::string norm_type) const

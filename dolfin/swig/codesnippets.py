@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2012-01-17
-# Last changed: 2012-01-18
+# Last changed: 2012-07-03
 
 copyright_statement = r"""%(comment)s Auto generated SWIG file for Python interface of DOLFIN
 %(comment)s
@@ -50,13 +50,18 @@ copyright_statement = r"""%(comment)s Auto generated SWIG file for Python interf
 """
 
 # Template code for all combined SWIG modules
-combined_module_template = r"""
+module_template = r"""
 // The PyDOLFIN extension module for the %(module)s module
 %%module(package="dolfin.cpp.%(module)s", directors="1") %(module)s
 
+// Define module name for conditional includes
+#define %(MODULE)sMODULE
+
 %%{
-#include <dolfin/dolfin.h>
-#define PY_ARRAY_UNIQUE_SYMBOL PyDOLIN_%(MODULE)s
+%(headers)s
+
+// NumPy includes
+#define PY_ARRAY_UNIQUE_SYMBOL PyDOLFIN_%(MODULE)s
 #include <numpy/arrayobject.h>
 %%}
 
@@ -67,16 +72,12 @@ import_array();
 // Include global SWIG interface files:
 // Typemaps, shared_ptr declarations, exceptions, version
 %%include "dolfin/swig/globalincludes.i"
-
-// Import types from other combined modules
-%(module_imports)s
+%(imports)s
 
 // Turn on SWIG generated signature documentation and include doxygen
 // generated docstrings
 //%%feature("autodoc", "1");
 %(docstrings)s
-
-// Include generated include files for the DOLFIN headers for this module
 %(includes)s
 
 """

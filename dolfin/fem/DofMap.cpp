@@ -86,7 +86,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
                _ownership_range(0, 0), _is_view(true),
                _distributed(distributed)
 {
-  // Ownership range is set to zero since dofmap is a view
+  // NOTE: Ownership range is set to zero since dofmap is a view
 
   dolfin_assert(!component.empty());
 
@@ -281,7 +281,7 @@ std::pair<unsigned int, unsigned int> DofMap::ownership_range() const
   {
     dolfin_error("DofMap.cpp",
                  "access ownership range of degree of freedom mapping",
-                 "Cannot determine ownership range for submaps");
+                 "Cannot determine ownership range for sub-dofmaps");
   }
 
   return _ownership_range;
@@ -318,8 +318,8 @@ void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
       coordinates.shape()[1] != geometric_dimension())
   {
     boost::multi_array<double, 2>::extent_gen extents;
-    coordinates.resize(extents[cell_dimension(ufc_cell.index)]
-		       [geometric_dimension()]);
+    const uint cell_dim = cell_dimension(ufc_cell.index);
+    coordinates.resize(extents[cell_dim][geometric_dimension()]);
   }
 
   // Set vertex coordinates
@@ -364,6 +364,31 @@ void DofMap::set(GenericVector& x, double value) const
   {
     std::vector<double> _value(cell_dofs->size(), value);
     x.set(_value.data(), cell_dofs->size(), cell_dofs->data());
+  }
+  x.apply("add");
+}
+//-----------------------------------------------------------------------------
+void DofMap::set_x(GenericVector& x, const Mesh& mesh, uint component) const
+{
+  std::vector<double> values;
+  boost::multi_array<double, 2> coordinates;
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Get local-to-global map
+    const std::vector<uint>& dofs = cell_dofs(cell->index());
+
+    // Tabulate dof coordinates
+    tabulate_coordinates(coordinates, *cell);
+    dolfin_assert(coordinates.shape()[0] == dofs.size());
+    dolfin_assert(component < coordinates.shape()[1]);
+
+    // Copy coordinate (it may be possible to avoid this)
+    values.resize(dofs.size());
+    for (uint i = 0; i < coordinates.shape()[0]; ++i)
+      values[i] = coordinates[i][component];
+
+    // Set x[component] values in vector
+    x.set(values.data(), dofs.size(), dofs.data());
   }
   x.apply("add");
 }

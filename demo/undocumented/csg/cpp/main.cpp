@@ -17,9 +17,10 @@
 //
 // Modified by Benjamin Kehlet, 2012
 // Modified by Johannes Ring, 2012
+// Modified by Joachim B Haga, 2012
 //
 // First added:  2012-04-13
-// Last changed: 2012-08-08
+// Last changed: 2012-09-06
 
 #include <dolfin.h>
 
@@ -29,7 +30,6 @@ using namespace dolfin;
 
 int main()
 {
-
   // Define 2D geometry
   csg::Rectangle r(0.5, 0.5, 1.5, 1.5);
   csg::Circle c(1, 1, 1);
@@ -42,13 +42,14 @@ int main()
   info("\nVerbose output of 2D geometry:");
   info(*g2d, true);
 
-  // Generate mesh
+  // Plot geometry
+  plot(g2d, "2D Geometry (boundary)");
+
+  // Generate and plot mesh
   Mesh mesh2d(g2d);
-
-  // Plot meshes
   plot(mesh2d, "2D mesh");
-  interactive();
 
+  interactive();
   return 0;
 }
 

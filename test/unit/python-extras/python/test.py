@@ -38,9 +38,9 @@ class ErrorNorm(unittest.TestCase):
         u = Expression("x[0]*x[0]", element=V.ufl_element())
 
         # Norm of error
-        e = errornorm(u_h, u)
+        e = errornorm(u, u_h)
 
-        self.assertAlmostEqual(e, sqrt(1.0 / 5.0))
+        self.assertAlmostEqual(e, sqrt(1.0/5.0))
 
 if __name__ == "__main__":
     print ""

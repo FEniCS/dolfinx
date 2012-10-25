@@ -15,15 +15,16 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells 2007
+// Modified by Garth N. Wells 2007-2012
 // Modified by Johan Hake 2009
 //
 // First added:  2007-07-08
-// Last changed: 2009-10-21
+// Last changed: 2012-08-18
 
 #ifndef __PERIODIC_BC_H
 #define __PERIODIC_BC_H
 
+#include <vector>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 #include "BoundaryCondition.h"
@@ -34,11 +35,11 @@
 namespace dolfin
 {
 
-  class Mesh;
-  class SubDomain;
   class Form;
   class GenericMatrix;
   class GenericVector;
+  class Mesh;
+  class SubDomain;
 
   /// This class specifies the interface for setting periodic boundary
   /// conditions for partial differential equations,
@@ -140,13 +141,27 @@ namespace dolfin
     ///         Another vector (nonlinear problem).
     void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x) const;
 
+    /// Return shared pointer to subdomain
+    ///
+    /// *Returns*
+    ///     _SubDomain_
+    ///         Shared pointer to subdomain.
+    boost::shared_ptr<const SubDomain> sub_domain() const;
+
     /// Rebuild mapping between dofs
     void rebuild();
 
     // FIXME: This should find only pairs for which this process owns
     //        the slave dof
     /// Compute dof pairs (master dof, slave dof)
+    std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >
+        compute_dof_pairs() const;
+
+    // FIXME: This should find only pairs for which this process owns
+    //        the slave dof
+    /// Compute dof pairs (master dof, slave dof)
     void compute_dof_pairs(std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs) const;
+
 
   private:
 
@@ -163,7 +178,7 @@ namespace dolfin
       std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs) const;
 
     // The subdomain
-    boost::shared_ptr<const SubDomain> sub_domain;
+    boost::shared_ptr<const SubDomain> _sub_domain;
 
     // Array of master dofs (size = num_dof_pairs)
     std::vector<uint> master_dofs;

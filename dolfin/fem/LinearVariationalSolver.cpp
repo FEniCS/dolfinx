@@ -136,6 +136,7 @@ void LinearVariationalSolver::solve()
       }
     }
 
+
     // Intialise matrix, taking into account periodic dofs
     AssemblerTools::init_global_tensor(*A, *a, dof_pairs, true, false, false);
 

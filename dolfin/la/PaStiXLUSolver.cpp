@@ -66,6 +66,9 @@ Parameters PaStiXLUSolver::default_parameters()
   // Check matrix for consistency
   p.add("check_matrix", false);
 
+  // Renumber
+  p.add("renumber", true);
+
   return p;
 }
 //-----------------------------------------------------------------------------
@@ -103,16 +106,14 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   if (symmetric)
   {
     iparm[IPARM_SYM] = API_SYM_YES;
-    iparm[IPARM_FACTORIZATION] = API_FACT_LDLT;
+    //iparm[IPARM_FACTORIZATION] = API_FACT_LDLT;
+    iparm[IPARM_FACTORIZATION] = API_FACT_LLT;
   }
   else
   {
     iparm[IPARM_SYM] = API_SYM_NO;
     iparm[IPARM_FACTORIZATION] = API_FACT_LU;
   }
-
-  // Do not renumber
-  //iparm[IPARM_ORDERING] = API_ORDER_PERSONAL;
 
   // Block sizes (affects performance)
   const uint min_block_size = parameters["min_block_size"];
@@ -128,6 +129,7 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
 
   dolfin_assert(local_to_global_cols.size() > 0);
 
+  // Copy local-to-global
   const std::vector<pastix_int_t> local_to_global_cols_ref = local_to_global_cols;
 
   pastix_int_t* _col_ptr = col_ptr.data();
@@ -173,11 +175,20 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   std::vector<pastix_int_t> perm(local_to_global_cols.size());
   std::vector<pastix_int_t> invp(local_to_global_cols.size());
 
-  //for (uint i = 0; i < local_to_global_cols.size(); ++i)
-  //{
-  //  perm[i] = i + 1;
-  //  invp[i] = i + 1;
-  //}
+
+  // Renumbering
+  const bool renumber = parameters["renumber"];
+  if (!renumber)
+  {
+    iparm[IPARM_ORDERING] = API_ORDER_PERSONAL;
+    iparm[IPARM_LEVEL_OF_FILL] = -1;
+    iparm[IPARM_AMALGAMATION_LEVEL]  = 10;
+    for (uint i = 0; i < local_to_global_cols.size(); ++i)
+    {
+      perm[i] = i + 1;
+      std::copy(perm.begin(), perm.end(), invp.begin());
+    }
+  }
 
   // Number of RHS vectors
   const pastix_int_t nrhs = 1;

@@ -17,9 +17,10 @@
 //
 // Modified by Benjamin Kehlet, 2012
 // Modified by Johannes Ring, 2012
+// Modified by Joachim B Haga, 2012
 //
 // First added:  2012-04-13
-// Last changed: 2012-08-08
+// Last changed: 2012-09-05
 
 #include <dolfin.h>
 
@@ -34,7 +35,7 @@ int main()
   csg::Sphere sphere(Point(0, 0, 0), 0.3);
   csg::Cone cone(Point(0, 0, -1), Point(0, 0, 1), .5, .5);
 
-  const boost::shared_ptr<CSGGeometry> g3d = box + cone - sphere;;
+  const boost::shared_ptr<CSGGeometry> g3d = box + cone - sphere;
 
 
   // Test printing
@@ -43,11 +44,13 @@ int main()
   info("\nVerbose output of 3D geometry:");
   info(*g3d, true);
 
-  // Generate mesh
-  Mesh mesh3d(g3d);
+  // Plot geometry
+  plot(g3d, "3D geometry (surface)");
 
-  // Plot meshes
+  // Generate and plot mesh
+  Mesh mesh3d(g3d);
   plot(mesh3d, "3D mesh");
+
   interactive();
 
   return 0;

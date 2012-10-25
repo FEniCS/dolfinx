@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-05-12
-// Last changed: 2011-08-22
+// Last changed: 2012-08-09
 //
 // ===========================================================================
 // SWIG directives for the DOLFIN parameter kernel module (post)
@@ -311,6 +311,7 @@ Parameters.__init__ = __new_Parameter_init__
 // Expose the global variable parameters for the Python interface
 // NOTE: Because parameters are stored using shared_ptr we need to 
 //       wrap the global parameters as a shared_ptr
+%fragment("NoDelete");
 %inline %{
 SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::Parameters> get_global_parameters()
  {

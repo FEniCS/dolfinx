@@ -20,6 +20,7 @@
 // First added:  2011-08-29
 // Last changed: 2011-04-03
 
+#include <limits>
 #include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
 #include "MeshFunction.h"
@@ -27,6 +28,8 @@
 #include "MeshDomains.h"
 
 using namespace dolfin;
+
+const unsigned int MeshDomains::default_unset_value = std::numeric_limits<unsigned int>::max();
 
 //-----------------------------------------------------------------------------
 MeshDomains::MeshDomains()

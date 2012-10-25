@@ -108,9 +108,15 @@ namespace dolfin
     virtual GenericDofMap* collapse(boost::unordered_map<uint, uint>& collapsed_map,
                                     const Mesh& mesh) const = 0;
 
-    /// Set dof values in vector to a specified value. Parallel layout of
-    /// vector must be consistent with dof map range
+    /// Set dof entries in vector to a specified value. Parallel layout
+    /// of vector must be consistent with dof map range.
     virtual void set(GenericVector& x, double value) const = 0;
+
+    /// Set dof entries in vector to the x[i] coordinate of the dof
+    /// spatial coordinate. Parallel layout of vector must be consistent
+    /// with dof map range.
+    virtual void set_x(GenericVector& x, const Mesh& mesh,
+                       uint component) const = 0;
 
     /// Return the set of dof indices
     virtual boost::unordered_set<uint> dofs() const = 0;

@@ -22,6 +22,8 @@
 
 #ifdef HAS_TRILINOS
 
+#include "dolfin/common/MPI.h"
+
 #include <Epetra_MpiComm.h>
 #include <Epetra_SerialComm.h>
 

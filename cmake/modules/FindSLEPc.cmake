@@ -5,6 +5,7 @@
 #  SLEPC_INCLUDE_DIR  - include directories for SLEPc
 #  SLEPC_LIBARIES     - libraries for SLEPc
 #  SLEPC_DIR          - directory where SLEPc is built
+#  SLEPC_VERSION      - version of SLEPc
 #
 # Assumes that PETSC_DIR and PETSC_ARCH has been set by
 # alredy calling find_package(PETSc)
@@ -130,11 +131,53 @@ show :
   set(CMAKE_REQUIRED_LIBRARIES ${SLEPC_LIBRARIES} ${PETSC_LIBRARIES})
 
   # Add MPI variables if MPI has been found
-  if (MPI_FOUND)
-    set(CMAKE_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES} ${MPI_INCLUDE_PATH})
-    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${MPI_LIBRARIES})
-    set(CMAKE_REQUIRED_FLAGS     "${CMAKE_REQUIRED_FLAGS} ${MPI_COMPILE_FLAGS}")
+  if (MPI_C_FOUND)
+    set(CMAKE_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_PATH})
+    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${MPI_C_LIBRARIES})
+    set(CMAKE_REQUIRED_FLAGS     "${CMAKE_REQUIRED_FLAGS} ${MPI_C_COMPILE_FLAGS}")
   endif()
+
+  # Check SLEPc version
+  set(SLEPC_CONFIG_TEST_VERSION_CPP
+    "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/slepc_config_test_version.cpp")
+  file(WRITE ${SLEPC_CONFIG_TEST_VERSION_CPP} "
+#include <iostream>
+#include \"slepcversion.h\"
+
+int main() {
+  std::cout << SLEPC_VERSION_MAJOR << \".\"
+	    << SLEPC_VERSION_MINOR << \".\"
+	    << SLEPC_VERSION_SUBMINOR;
+  return 0;
+}
+")
+
+  try_run(
+    SLEPC_CONFIG_TEST_VERSION_EXITCODE
+    SLEPC_CONFIG_TEST_VERSION_COMPILED
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${SLEPC_CONFIG_TEST_VERSION_CPP}
+    CMAKE_FLAGS
+      "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
+    COMPILE_OUTPUT_VARIABLE COMPILE_OUTPUT
+    RUN_OUTPUT_VARIABLE OUTPUT
+    )
+
+  if (SLEPC_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
+    set(SLEPC_VERSION ${OUTPUT} CACHE TYPE STRING)
+    mark_as_advanced(SLEPC_VERSION)
+  endif()
+
+  if (SLEPc_FIND_VERSION)
+    # Check if version found is >= required version
+    if (NOT "${SLEPC_VERSION}" VERSION_LESS "${SLEPc_FIND_VERSION}")
+      set(SLEPC_VERSION_OK TRUE)
+    endif()
+  else()
+    # No specific version requested
+    set(SLEPC_VERSION_OK TRUE)
+  endif()
+  mark_as_advanced(SLEPC_VERSION_OK)
 
   # Run SLEPc test program
   include(CheckCXXSourceRuns)
@@ -172,4 +215,5 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(SLEPc
   "SLEPc could not be found. Be sure to set SLEPC_DIR, PETSC_DIR, and PETSC_ARCH."
-  SLEPC_LIBRARIES SLEPC_DIR SLEPC_INCLUDE_DIRS SLEPC_TEST_RUNS)
+  SLEPC_LIBRARIES SLEPC_DIR SLEPC_INCLUDE_DIRS SLEPC_TEST_RUNS
+  SLEPC_VERSION SLEPC_VERSION_OK)

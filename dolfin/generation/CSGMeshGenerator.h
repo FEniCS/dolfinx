@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Benjamin Kehlet, 2012
+// Modified by Joachim B Haga, 2012
 //
 // First added:  2012-04-13
-// Last changed: 2012-04-19
+// Last changed: 2012-09-06
 
 #ifndef __CSG_MESH_GENERATOR_H
 #define __CSG_MESH_GENERATOR_H
@@ -30,7 +31,7 @@ namespace dolfin
 
   // Forward declarations
   class Mesh;
-
+  class BoundaryMesh;
 
   /// Mesh generator for Constructive Solid Geometry (CSG)
 
@@ -40,6 +41,9 @@ namespace dolfin
 
     /// Generate mesh from CSG geometry
     static void generate(Mesh& mesh, const CSGGeometry& geometry);
+
+    /// Generate boundary mesh from the surface of a CSG geometry
+    static void generate(BoundaryMesh& mesh, const CSGGeometry& geometry);
   };
 
 }

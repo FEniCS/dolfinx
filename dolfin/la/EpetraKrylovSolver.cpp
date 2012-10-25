@@ -89,7 +89,8 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
                                        std::string preconditioner)
   : method(method), solver(new AztecOO),
     preconditioner(new TrilinosPreconditioner(preconditioner)),
-    preconditioner_set(false)
+    preconditioner_set(false), relative_residual(0.0), absolute_residual(0.0)
+
 {
   parameters = default_parameters();
 
@@ -110,7 +111,7 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
                                        TrilinosPreconditioner& preconditioner)
   : method(method), solver(new AztecOO),
     preconditioner(reference_to_no_delete_pointer(preconditioner)),
-    preconditioner_set(false)
+    preconditioner_set(false), relative_residual(0.0), absolute_residual(0.0)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -206,7 +207,7 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   else
     solver->SetAztecOption(AZ_output, AZ_none);
 
-  assert(P);
+  dolfin_assert(P);
   preconditioner->set(*this, *P);
 
   // Set covergence check method
@@ -239,6 +240,11 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
           method.c_str(), preconditioner->name().c_str(), solver->NumIters());
   }
 
+  // Update residuals
+  absolute_residual = solver->TrueResidual();
+  relative_residual = solver->ScaledResidual();
+
+  // Return number of iterations
   return solver->NumIters();
 }
 //-----------------------------------------------------------------------------
@@ -255,6 +261,21 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   boost::shared_ptr<const EpetraMatrix> _A(&A, NoDeleter());
   set_operator(_A);
   return solve(x, b);
+}
+//-----------------------------------------------------------------------------
+double EpetraKrylovSolver::residual(const std::string residual_type) const
+{
+  if (residual_type == "relative")
+    return relative_residual;
+  else if (residual_type == "absolute")
+    return absolute_residual;
+  else
+  {
+    dolfin_error("EpetraKrylovSolver.cpp",
+                 "compute residual of Epetra Krylov solver",
+                 "Unknown residual type: \"%s\"", residual_type.c_str());
+    return 0.0;
+  }
 }
 //-----------------------------------------------------------------------------
 std::string EpetraKrylovSolver::str(bool verbose) const

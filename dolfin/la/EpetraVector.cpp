@@ -23,6 +23,9 @@
 
 #ifdef HAS_TRILINOS
 
+// Included here to avoid a C++ problem with some MPI implementations                                                                                                                         
+#include <dolfin/common/MPI.h>
+
 #include <cmath>
 #include <cstring>
 #include <numeric>

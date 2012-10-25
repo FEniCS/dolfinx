@@ -280,8 +280,8 @@ namespace dolfin
     DofMap* collapse(boost::unordered_map<uint, uint>& collapsed_map,
                      const Mesh& mesh) const;
 
-    /// Set dof values in vector to a specified value. Parallel layout
-    /// of vector must be consistent with dof map range
+    /// Set dof entries in vector to a specified value. Parallel layout
+    /// of vector must be consistent with dof map range.
     ///
     /// *Arguments*
     ///     vector (_GenericVector_)
@@ -289,6 +289,19 @@ namespace dolfin
     ///     value (double)
     ///         The value to set.
     void set(GenericVector& x, double value) const;
+
+    /// Set dof entries in vector to the x[i] coordinate of the dof
+    /// spatial coordinate. Parallel layout of vector must be consistent
+    /// with dof map range.
+    ///
+    /// *Arguments*
+    ///     vector (_GenericVector_)
+    ///         The vector to set.
+    ///     mesh (_Mesh_)
+    ///         The mesh.
+    ///     component (uint)
+    ///         The coordinate index.
+    void set_x(GenericVector& x, const Mesh& mesh, uint component) const;
 
     /// Return the set of dof indices
     ///

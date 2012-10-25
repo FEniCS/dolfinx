@@ -51,7 +51,6 @@
 //-----------------------------------------------------------------------------
 // Make DOLFIN aware of the types defined in UFC
 //-----------------------------------------------------------------------------
-// UFC
 %shared_ptr(ufc::cell_integral)
 %shared_ptr(ufc::dofmap)
 %shared_ptr(ufc::finite_element)

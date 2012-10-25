@@ -16,6 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Johannes Ring, 2012
+// Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-04-11
 // Last changed: 2012-08-08
@@ -180,7 +181,9 @@ namespace dolfin
       ///
       /// *Arguments*
       ///     vertices (std::vector<_Point_>)
-      ///         A vector of _Point_ objects.
+      ///         A vector of _Point_ objects. 
+      ///         The points must be given in clockwise order
+      ///         and the polygon can not self intersect.
       Polygon(const std::vector<Point>& vertices);
 
       /// Informal string representation
@@ -188,7 +191,7 @@ namespace dolfin
       Type getType() const { return CSGGeometry::Polygon; }
 
       /// Return vertices in polygon
-      std::vector<Point> vertices() const { return _vertices; }
+      const std::vector<Point>& vertices() const { return _vertices; }
 
     private:
 

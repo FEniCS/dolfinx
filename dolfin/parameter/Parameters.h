@@ -192,6 +192,13 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
+    // Return pointer to parameter for given key and 0 if not found
+    Parameter* find_parameter(std::string key) const;
+
+    // Return pointer to parameter set for given key and 0 if not found
+    Parameters* find_parameter_set(std::string key) const;
+
+
   protected:
 
     /// Parse filtered options (everything except PETSc options)
@@ -211,12 +218,6 @@ namespace dolfin
     void read_vm(boost::program_options::variables_map& vm,
                  Parameters &parameters,
                  std::string base_name="");
-
-    // Return pointer to parameter for given key and 0 if not found
-    Parameter* find_parameter(std::string key) const;
-
-    // Return pointer to parameter set for given key and 0 if not found
-    Parameters* find_parameter_set(std::string key) const;
 
     // Parameter set key
     std::string _key;
