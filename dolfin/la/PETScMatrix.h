@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Johan Hoffman, Johan Jansson and Anders Logg
+// Copyright (C) 2004-2012 Johan Hoffman, Johan Jansson and Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,14 +15,14 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Andy R. Terrel, 2005.
-// Modified by Garth N. Wells, 2006-2009.
-// Modified by Kent-Andre Mardal, 2008.
-// Modified by Ola Skavhaug, 2008.
-// Modified by Fredrik Valdmanis, 2011.
+// Modified by Andy R. Terrel 2005
+// Modified by Garth N. Wells 2006-2009
+// Modified by Kent-Andre Mardal 2008
+// Modified by Ola Skavhaug 2008
+// Modified by Fredrik Valdmanis 2011
 //
 // First added:  2004-01-01
-// Last changed: 2011-09-29
+// Last changed: 2012-08-22
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -68,7 +68,7 @@ namespace dolfin
 
     //--- Implementation of the GenericTensor interface ---
 
-    /// Initialize zero tensor using sparsity pattern
+    /// Initialize zero tensor using tensor layout
     virtual void init(const TensorLayout& tensor_layout);
 
     /// Return size of given dimension
@@ -100,29 +100,40 @@ namespace dolfin
     /// Resize matrix to M x N
     //virtual void resize(uint M, uint N);
 
-    /// Resize vector y such that is it compatible with matrix for
-    /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
-    /// case, size and layout are important.
-    void resize(GenericVector& y, uint dim) const
-    { PETScBaseMatrix::resize(y, dim); }
+    /// Resize vector z to be compatible with the matrix-vector product
+    /// y = Ax. In the parallel case, both size and layout are
+    /// important.
+    ///
+    /// *Arguments*
+    ///     dim (uint)
+    ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
+    virtual void resize(GenericVector& z, uint dim) const
+    { PETScBaseMatrix::resize(z, dim); }
 
     /// Get block of values
-    virtual void get(double* block, uint m, const uint* rows, uint n, const uint* cols) const;
+    virtual void get(double* block, uint m, const uint* rows, uint n,
+                     const uint* cols) const;
 
     /// Set block of values
-    virtual void set(const double* block, uint m, const uint* rows, uint n, const uint* cols);
+    virtual void set(const double* block, uint m, const uint* rows, uint n,
+                     const uint* cols);
 
     /// Add block of values
-    virtual void add(const double* block, uint m, const uint* rows, uint n, const uint* cols);
+    virtual void add(const double* block, uint m, const uint* rows, uint n,
+                     const uint* cols);
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern);
 
     /// Get non-zero values of given row
-    virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const;
+    virtual void getrow(uint row,
+                        std::vector<uint>& columns,
+                        std::vector<double>& values) const;
 
     /// Set values for given row
-    virtual void setrow(uint row, const std::vector<uint>& columns, const std::vector<double>& values);
+    virtual void setrow(uint row,
+                        const std::vector<uint>& columns,
+                        const std::vector<double>& values);
 
     /// Set given rows to zero
     virtual void zero(uint m, const uint* rows);
@@ -148,13 +159,13 @@ namespace dolfin
     //--- Special functions ---
 
     /// Return linear algebra backend factory
-    virtual LinearAlgebraFactory& factory() const;
+    virtual GenericLinearAlgebraFactory& factory() const;
 
     //--- Special PETScFunctions ---
 
     /// Set (approximate) null space of the matrix. This is used by
     /// some preconditioners.
-    void set_near_nullspace(std::vector<const GenericVector*> nullspace);
+    void set_near_nullspace(const std::vector<const GenericVector*> nullspace);
 
     /// Return norm of matrix
     double norm(std::string norm_type) const;

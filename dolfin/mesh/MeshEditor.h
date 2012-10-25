@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2009 Anders Logg
+// Copyright (C) 2006-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-05-16
-// Last changed: 2011-07-18
+// Last changed: 2012-09-27
 
 #ifndef __MESH_EDITOR_H
 #define __MESH_EDITOR_H
@@ -106,13 +106,6 @@ namespace dolfin
     ///
     void init_vertices(uint num_vertices);
 
-    /// Specify number of vertices
-    ///
-    /// *Arguments*
-    ///     num_higher_order_vertices (uint)
-    ///         The number of higher order vertices.
-    void init_higher_order_vertices(uint num_higher_order_vertices);
-
     /// Specify number of cells
     ///
     /// *Arguments*
@@ -129,58 +122,48 @@ namespace dolfin
     ///
     void init_cells(uint num_cells);
 
-    /// Specify number of cells
-    ///
-    /// *Arguments*
-    ///     num_higher_order_cells (uint)
-    ///         The number of higher order cells.
-    ///     num_higher_order_cell_dof (uint)
-    ///         The number of cell dofs.
-    void init_higher_order_cells(uint num_higher_order_cells, uint num_higher_order_cell_dof);
-
-    /// Set boolean indicator inside MeshGeometry
-    void set_affine_cell_indicator(uint c, const std::string affine_str);
-
     /// Add vertex v at given point p
     ///
     /// *Arguments*
-    ///     v (uint)
+    ///     index (uint)
     ///         The vertex (index).
     ///     p (_Point_)
     ///         The point.
-    void add_vertex(uint v, const Point& p);
+    void add_vertex(uint index, const Point& p);
 
     /// Add vertex v at given coordinate x
     ///
     /// *Arguments*
-    ///     v (uint)
+    ///     index (uint)
+    ///         The vertex (index).
+    ///     x (std::vector<double>)
+    ///         The x-coordinates.
+    void add_vertex(uint index, const std::vector<double>& x);
+
+    /// Add vertex v at given point x (for a 1D mesh)
+    ///
+    /// *Arguments*
+    ///     index (uint)
     ///         The vertex (index).
     ///     x (double)
     ///         The x-coordinate.
-    void add_vertex(uint v, double x);
+    void add_vertex(uint index, double x);
 
-    /// Add vertex v at given coordinate (x, y)
+    /// Add vertex v at given point (x, y) (for a 2D mesh)
     ///
     /// *Arguments*
-    ///     v (uint)
+    ///     index (uint)
     ///         The vertex (index).
     ///     x (double)
     ///         The x-coordinate.
     ///     y (double)
     ///         The y-coordinate.
-    ///
-    /// *Example*
-    ///     .. code-block:: c++
-    ///
-    ///         MeshEditor editor;
-    ///         editor.add_vertex(0, 0.0, 0.0);
-    ///
-    void add_vertex(uint v, double x, double y);
+    void add_vertex(uint index, double x, double y);
 
-    /// Add vertex v at given coordinate (x, y, z)
+    /// Add vertex v at given point (x, y, z) (for a 3D mesh)
     ///
     /// *Arguments*
-    ///     v (uint)
+    ///     index (uint)
     ///         The vertex (index).
     ///     x (double)
     ///         The x-coordinate.
@@ -188,49 +171,69 @@ namespace dolfin
     ///         The y-coordinate.
     ///     z (double)
     ///         The z-coordinate.
-    void add_vertex(uint v, double x, double y, double z);
+    void add_vertex(uint index, double x, double y, double z);
 
     /// Add vertex v at given point p
     ///
     /// *Arguments*
-    ///     v (uint)
-    ///         The vertex (index).
+    ///     local_index (uint)
+    ///         The vertex (local index).
+    ///     global_index (uint)
+    ///         The vertex (global_index).
     ///     p (_Point_)
     ///         The point.
-    void add_higher_order_vertex(uint v, const Point& p);
+    void add_vertex_global(uint local_index, uint global_index, const Point& p);
 
     /// Add vertex v at given coordinate x
     ///
     /// *Arguments*
-    ///     v (uint)
-    ///         The vertex (index).
-    ///     x (double)
-    ///         The x-coordinate.
-    void add_higher_order_vertex(uint v, double x);
+    ///     local_index (uint)
+    ///         The vertex (local index).
+    ///     global_index (uint)
+    ///         The vertex (global_index).
+    ///     x (std::vector<double>)
+    ///         The x-coordinates.
+    void add_vertex_global(uint local_index, uint global_index,
+                           const std::vector<double>& x);
 
-    /// Add vertex v at given coordinate (x, y)
+    /// Add cell with given vertices (1D)
     ///
     /// *Arguments*
-    ///     v (uint)
-    ///         The vertex (index).
-    ///     x (double)
-    ///         The x-coordinate.
-    ///     y (double)
-    ///         The y-coordinate.
-    void add_higher_order_vertex(uint v, double x, double y);
+    ///     c (uint)
+    ///         The cell (index).
+    ///     v0 (std::vector<uint>)
+    ///         The first vertex (local index).
+    ///     v1 (std::vector<uint>)
+    ///         The second vertex (local index).
+    void add_cell(uint c, uint v0, uint v1);
 
-    /// Add vertex v at given coordinate (x, y, z)
+    /// Add cell with given vertices (2D)
     ///
     /// *Arguments*
-    ///     v (uint)
-    ///         The vertex (index).
-    ///     x (double)
-    ///         The x-coordinate.
-    ///     y (double)
-    ///         The y-coordinate.
-    ///     z (double)
-    ///         The z-coordinate.
-    void add_higher_order_vertex(uint v, double x, double y, double z);
+    ///     c (uint)
+    ///         The cell (index).
+    ///     v0 (std::vector<uint>)
+    ///         The first vertex (local index).
+    ///     v1 (std::vector<uint>)
+    ///         The second vertex (local index).
+    ///     v2 (std::vector<uint>)
+    ///         The third vertex (local index).
+    void add_cell(uint c, uint v0, uint v1, uint v2);
+
+    /// Add cell with given vertices (3D)
+    ///
+    /// *Arguments*
+    ///     c (uint)
+    ///         The cell (index).
+    ///     v0 (std::vector<uint>)
+    ///         The first vertex (local index).
+    ///     v1 (std::vector<uint>)
+    ///         The second vertex (local index).
+    ///     v2 (std::vector<uint>)
+    ///         The third vertex (local index).
+    ///     v3 (std::vector<uint>)
+    ///         The fourth vertex (local index).
+    void add_cell(uint c, uint v0, uint v1, uint v2, uint v3);
 
     /// Add cell with given vertices
     ///
@@ -238,73 +241,20 @@ namespace dolfin
     ///     c (uint)
     ///         The cell (index).
     ///     v (std::vector<uint>)
-    ///         The vertex indices
+    ///         The vertex indices (local indices)
     void add_cell(uint c, const std::vector<uint>& v);
 
-    /// Add cell (interval) with given vertices
+    /// Add cell with given vertices
     ///
     /// *Arguments*
-    ///     c (uint)
+    ///     local_index (uint)
     ///         The cell (index).
-    ///     v0 (uint)
-    ///         Index of the first vertex.
-    ///     v1 (uint)
-    ///         Index of the second vertex.
-    void add_cell(uint c, uint v0, uint v1);
-
-    /// Add cell (triangle) with given vertices
-    ///
-    /// *Arguments*
-    ///     c (uint)
-    ///         The cell (index).
-    ///     v0 (uint)
-    ///         Index of the first vertex.
-    ///     v1 (uint)
-    ///         Index of the second vertex.
-    ///     v2 (uint)
-    ///         Index of the third vertex.
-    ///
-    /// *Example*
-    ///     .. code-block:: c++
-    ///
-    ///         MeshEditor editor;
-    ///         editor.add_cell(0, 0, 1, 2);
-    ///
-    void add_cell(uint c, uint v0, uint v1, uint v2);
-
-    /// Add cell (tetrahedron) with given vertices
-    ///
-    /// *Arguments*
-    ///     c (uint)
-    ///         The cell (index).
-    ///     v0 (uint)
-    ///         Index of the first vertex.
-    ///     v1 (uint)
-    ///         Index of the second vertex.
-    ///     v2 (uint)
-    ///         Index of the third vertex.
-    ///     v3 (uint)
-    ///         Index of the fourth vertex.
-    void add_cell(uint c, uint v0, uint v1, uint v2, uint v3);
-
-    /// Add higher order cell data (assume P2 triangle for now)
-    ///
-    /// *Arguments*
-    ///     c (uint)
-    ///         The cell (index).
-    ///     v0 (uint)
-    ///         Index of the first vertex.
-    ///     v1 (uint)
-    ///         Index of the second vertex.
-    ///     v2 (uint)
-    ///         Index of the third vertex.
-    ///     v3 (uint)
-    ///         Index of the fourth vertex.
-    ///     v4 (uint)
-    ///         Index of the fifth vertex.
-    ///     v5 (uint)
-    ///         Index of the sixth vertex.
-    void add_higher_order_cell_data(uint c, uint v0, uint v1, uint v2, uint v3, uint v4, uint v5);
+    ///     global_index (uint)
+    ///         The global (user) cell index.
+    ///     v (std::vector<uint>)
+    ///         The vertex indices (local indices)
+    void add_cell(uint local_index, uint global_index,
+                  const std::vector<uint>& v);
 
     /// Close mesh, finish editing, and order entities locally
     ///
@@ -330,14 +280,8 @@ namespace dolfin
     // Add vertex, common part
     void add_vertex_common(uint v, uint dim);
 
-    // Add higher order vertex, common part
-    void add_higher_order_vertex_common(uint v, uint dim);
-
     // Add cell, common part
     void add_cell_common(uint v, uint dim);
-
-    // Add higher order cell, common part
-    void add_higher_order_cell_common(uint v, uint dim);
 
     // Compute boundary indicators (exterior facets)
     void compute_boundary_indicators();
@@ -345,8 +289,8 @@ namespace dolfin
     // Clear all data
     void clear();
 
-    // Check that vertex is in range
-    void check_vertex(uint v);
+    // Check that vertices are in range
+    void check_vertices(const std::vector<uint>& v) const;
 
     // The mesh
     Mesh* mesh;
@@ -371,23 +315,6 @@ namespace dolfin
 
     // Temporary storage for local cell data
     std::vector<uint> vertices;
-
-    // NEW HIGHER ORDER MESH STUFF
-
-    // Number of higher order vertices
-    uint num_higher_order_vertices;
-
-    // Number of higher order cells <--- should be the same as num_cells!  good for error checking
-    uint num_higher_order_cells;
-
-    // Next available higher order vertex
-    uint next_higher_order_vertex;
-
-    // Next available higher order cell
-    uint next_higher_order_cell;
-
-    // Temporary storage for local higher order cell data
-    std::vector<uint> higher_order_cell_data;
 
   };
 

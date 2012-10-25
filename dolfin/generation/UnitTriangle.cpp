@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-10-19
-// Last changed: 2010-10-19
+// Last changed: 2012-09-27
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/CellType.h>
@@ -42,13 +42,19 @@ UnitTriangle::UnitTriangle() : Mesh()
 
   // Create vertices
   editor.init_vertices(3);
-  editor.add_vertex(0, 0, 0);
-  editor.add_vertex(1, 1, 0);
-  editor.add_vertex(2, 0, 1);
+  std::vector<double> x(2);
+  x[0] = 0.0; x[1] = 0.0;
+  editor.add_vertex(0, x);
+  x[0] = 1.0; x[1] = 0.0;
+  editor.add_vertex(1, x);
+  x[0] = 0.0; x[1] = 1.0;
+  editor.add_vertex(2, x);
 
   // Create cells
   editor.init_cells(1);
-  editor.add_cell(0, 0, 1, 2);
+  std::vector<uint> cell_data(3);
+  cell_data[0] = 0; cell_data[1] = 1; cell_data[2] = 2;
+  editor.add_cell(0, cell_data);
 
   // Close mesh editor
   editor.close();

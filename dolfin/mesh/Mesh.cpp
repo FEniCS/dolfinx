@@ -20,9 +20,11 @@
 // Modified by Niclas Jansson 2008
 // Modified by Kristoffer Selim 2008
 // Modified by Andre Massing 2009-2010
+// Modified by Johannes Ring 2012
 //
 // First added:  2006-05-09
-// Last changed: 2011-11-14
+// Last changed: 2012-10-02
+
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Timer.h>
@@ -42,7 +44,6 @@
 #include "MeshRenumbering.h"
 #include "MeshSmoothing.h"
 #include "MeshTransformation.h"
-#include "ParallelData.h"
 #include "TopologyComputation.h"
 #include "Vertex.h"
 #include "Mesh.h"
@@ -53,7 +54,6 @@ using namespace dolfin;
 Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
                Hierarchical<Mesh>(*this),
                _data(*this),
-               _parallel_data(new ParallelData(*this)),
                _cell_type(0),
                _intersection_operator(*this),
                _ordered(false)
@@ -64,7 +64,6 @@ Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
 Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
                                Hierarchical<Mesh>(*this),
                                _data(*this),
-                               _parallel_data(new ParallelData(*this)),
                                _cell_type(0),
                                _intersection_operator(*this),
                                _ordered(false)
@@ -75,7 +74,6 @@ Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
 Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
                                    Hierarchical<Mesh>(*this),
                                    _data(*this),
-                                   _parallel_data(new ParallelData(*this)),
                                    _cell_type(0),
                                    _intersection_operator(*this),
                                    _ordered(false)
@@ -85,13 +83,12 @@ Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(LocalMeshData& local_mesh_data)
-  : Variable("mesh", "DOLFIN mesh"),
-    Hierarchical<Mesh>(*this),
-    _data(*this),
-    _parallel_data(new ParallelData(*this)),
-    _cell_type(0),
-    _intersection_operator(*this),
-    _ordered(false)
+                                 : Variable("mesh", "DOLFIN mesh"),
+                                   Hierarchical<Mesh>(*this),
+                                   _data(*this),
+                                   _cell_type(0),
+                                   _intersection_operator(*this),
+                                   _ordered(false)
 {
   MeshPartitioning::build_distributed_mesh(*this, local_mesh_data);
 }
@@ -136,7 +133,6 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
   _geometry = mesh._geometry;
   _domains = mesh._domains;
   _data = mesh._data;
-  _parallel_data.reset(new ParallelData(*mesh._parallel_data));
   if (mesh._cell_type)
     _cell_type = CellType::create(mesh._cell_type->cell_type());
 
@@ -157,18 +153,6 @@ MeshData& Mesh::data()
 const MeshData& Mesh::data() const
 {
   return _data;
-}
-//-----------------------------------------------------------------------------
-ParallelData& Mesh::parallel_data()
-{
-  dolfin_assert(_parallel_data);
-  return *_parallel_data;
-}
-//-----------------------------------------------------------------------------
-const ParallelData& Mesh::parallel_data() const
-{
-  dolfin_assert(_parallel_data);
-  return *_parallel_data;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Mesh::init(uint dim) const
@@ -264,7 +248,6 @@ void Mesh::clear()
   _topology.clear();
   _geometry.clear();
   _data.clear();
-  _parallel_data.reset(new ParallelData(*this));
   delete _cell_type;
   _cell_type = 0;
   _intersection_operator.clear();
@@ -351,8 +334,7 @@ void Mesh::snap_boundary(const SubDomain& sub_domain, bool harmonic_smoothing)
   MeshSmoothing::snap_boundary(*this, sub_domain, harmonic_smoothing);
 }
 //-----------------------------------------------------------------------------
-const dolfin::MeshFunction<dolfin::uint>&
-Mesh::color(std::string coloring_type) const
+const std::vector<dolfin::uint>& Mesh::color(std::string coloring_type) const
 {
   // Define graph type
   const uint dim = MeshColoring::type_to_dim(coloring_type, *this);
@@ -364,15 +346,14 @@ Mesh::color(std::string coloring_type) const
   return color(_coloring_type);
 }
 //-----------------------------------------------------------------------------
-const dolfin::MeshFunction<dolfin::uint>&
-Mesh::color(std::vector<uint> coloring_type) const
+const std::vector<dolfin::uint>& Mesh::color(std::vector<uint> coloring_type) const
 {
   // Find color data
-  std::map<const std::vector<uint>, std::pair<MeshFunction<uint>,
+  std::map<const std::vector<uint>, std::pair<std::vector<uint>,
            std::vector<std::vector<uint> > > >::const_iterator coloring_data;
-  coloring_data = this->parallel_data().coloring.find(coloring_type);
+  coloring_data = this->topology().coloring.find(coloring_type);
 
-  if (coloring_data != this->parallel_data().coloring.end())
+  if (coloring_data != this->topology().coloring.end())
   {
     dolfin_debug("Mesh has already been colored, not coloring again.");
     return coloring_data->second.first;
@@ -388,25 +369,68 @@ Mesh::color(std::vector<uint> coloring_type) const
 void Mesh::intersected_cells(const Point& point,
                              std::set<uint>& cells) const
 {
-  _intersection_operator.all_intersected_entities(point, cells);
+  // CGAL needs mesh with more than 1 cell
+  if (num_cells() > 1)
+    _intersection_operator.all_intersected_entities(point, cells);
+  else
+  {
+    // Num cells == 1
+    const Cell cell(*this, 0);
+    if (cell.intersects(point))
+      cells.insert(0);
+  }
 }
 //-----------------------------------------------------------------------------
 void Mesh::intersected_cells(const std::vector<Point>& points,
                              std::set<uint>& cells) const
 {
-  _intersection_operator.all_intersected_entities(points, cells);
+  // CGAL needs mesh with more than 1 cell
+  if (num_cells() > 1)
+    _intersection_operator.all_intersected_entities(points, cells);
+  else
+  {
+    // Num cells == 1
+    const Cell cell(*this, 0);
+    for (std::vector<Point>::const_iterator p = points.begin(); p != points.end(); ++p)
+    {
+      if (cell.intersects(*p))
+	cells.insert(0);
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 void Mesh::intersected_cells(const MeshEntity & entity,
                              std::vector<uint>& cells) const
 {
-  _intersection_operator.all_intersected_entities(entity, cells);
+  // CGAL needs mesh with more than 1 cell
+  if (num_cells() > 1)
+    _intersection_operator.all_intersected_entities(entity, cells);
+  else
+  {
+    // Num cells == 1
+    const Cell cell(*this, 0);
+    if (cell.intersects(entity))
+      cells.push_back(0);
+  }
 }
 //-----------------------------------------------------------------------------
 void Mesh::intersected_cells(const std::vector<MeshEntity>& entities,
                              std::set<uint>& cells) const
 {
-  _intersection_operator.all_intersected_entities(entities, cells);
+  // CGAL needs mesh with more than 1 cell
+  if (num_cells() > 1)
+    _intersection_operator.all_intersected_entities(entities, cells);
+  else
+  {
+    // Num cells == 1
+    const Cell cell(*this, 0);
+    for (std::vector<MeshEntity>::const_iterator entity = entities.begin();
+	 entity != entities.end(); ++entity)
+    {
+      if (cell.intersects(*entity))
+	cells.insert(0);
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 void Mesh::intersected_cells(const Mesh& another_mesh,
@@ -417,7 +441,13 @@ void Mesh::intersected_cells(const Mesh& another_mesh,
 //-----------------------------------------------------------------------------
 int Mesh::intersected_cell(const Point& point) const
 {
-  return _intersection_operator.any_intersected_entity(point);
+  // CGAL needs mesh with more than 1 cell
+  if (num_cells() > 1)
+    return  _intersection_operator.any_intersected_entity(point);
+
+  // Num cells == 1
+  const Cell cell(*this, 0);
+  return cell.intersects(point) ? 0 : -1;
 }
 //-----------------------------------------------------------------------------
 Point Mesh::closest_point(const Point& point) const
@@ -427,7 +457,13 @@ Point Mesh::closest_point(const Point& point) const
 //-----------------------------------------------------------------------------
 dolfin::uint Mesh::closest_cell(const Point & point) const
 {
-  return _intersection_operator.closest_cell(point);
+  // CGAL exits with an assertion error whilst performing
+  // the closest cell query if num_cells() == 1
+  if (num_cells() > 1)
+    return _intersection_operator.closest_cell(point);
+
+  // Num cells == 1
+  return 0;
 }
 //-----------------------------------------------------------------------------
 std::pair<Point,dolfin::uint>

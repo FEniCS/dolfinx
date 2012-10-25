@@ -48,7 +48,7 @@ namespace dolfin
   template<typename T> class MeshFunction;
   template<typename T> class MeshValueCollection;
 
-  class XMLFile: public GenericFile
+  class XMLFile : public GenericFile
   {
   public:
 

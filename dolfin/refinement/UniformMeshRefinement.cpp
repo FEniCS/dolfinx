@@ -44,9 +44,11 @@ void UniformMeshRefinement::refine(Mesh& refined_mesh,
 
   // Check that refined_mesh and mesh are not the same
   if (&refined_mesh == &mesh)
+  {
     dolfin_error("UniformMeshRefinement.cpp",
                  "refine mesh",
                  "Refined_mesh and mesh point to the same object");
+  }
 
   // Generate cell - edge connectivity if not generated
   mesh.init(mesh.topology().dim(), 1);
@@ -80,11 +82,17 @@ void UniformMeshRefinement::refine(Mesh& refined_mesh,
   // Add old vertices
   uint vertex = 0;
   for (VertexIterator v(mesh); !v.end(); ++v)
-    editor.add_vertex(vertex++, v->point());
+  {
+    editor.add_vertex(vertex, v->point());
+    vertex++;
+  }
 
   // Add new vertices
   for (EdgeIterator e(mesh); !e.end(); ++e)
-    editor.add_vertex(vertex++, e->midpoint());
+  {
+    editor.add_vertex(vertex, e->midpoint());
+    vertex++;
+  }
 
   // Add cells
   uint current_cell = 0;

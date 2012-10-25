@@ -26,9 +26,12 @@ using namespace dolfin;
 
 int main()
 {
-  UnitInterval interval(10);
-  info("Plotting a UnitInterval");
-  plot(interval, "Unit interval");
+  if (dolfin::MPI::num_processes() == 1)
+  {
+    UnitInterval interval(10);
+    info("Plotting a UnitInterval");
+    plot(interval, "Unit interval");
+  }
 
   UnitSquare square_default(10, 10);
   info("Plotting a UnitSquare");
@@ -79,6 +82,6 @@ int main()
   plot(sphere, "Unit sphere");
 
   interactive();
-  
+
   return 0;
 }

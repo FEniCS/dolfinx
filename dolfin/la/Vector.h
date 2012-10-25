@@ -235,7 +235,7 @@ namespace dolfin
     //--- Special functions ---
 
     /// Return linear algebra backend factory
-    virtual LinearAlgebraFactory& factory() const
+    virtual GenericLinearAlgebraFactory& factory() const
     { return vector->factory(); }
 
     //--- Special functions, intended for library use only ---
@@ -248,10 +248,10 @@ namespace dolfin
     virtual GenericVector* instance()
     { return vector.get(); }
 
-    virtual boost::shared_ptr<const GenericTensor> shared_instance() const
+    virtual boost::shared_ptr<const LinearAlgebraObject> shared_instance() const
     { return vector; }
 
-    virtual boost::shared_ptr<GenericTensor> shared_instance()
+    virtual boost::shared_ptr<LinearAlgebraObject> shared_instance()
     { return vector; }
 
     //--- Special Vector functions ---

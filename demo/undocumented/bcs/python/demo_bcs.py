@@ -1,8 +1,8 @@
 """This demo illustrates how to set boundary conditions for meshes
 that include boundary indicators. The mesh used in this demo was
-generated with VMTK (http://villacamozzi.marionegri.it/~luca/vmtk/)."""
+generated with VMTK (http://www.vmtk.org/)."""
 
-# Copyright (C) 2008-2011 Anders Logg
+# Copyright (C) 2008-2012 Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -19,8 +19,10 @@ generated with VMTK (http://villacamozzi.marionegri.it/~luca/vmtk/)."""
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Martin Alnaes 2012
+#
 # First added:  2008-05-23
-# Last changed: 2011-06-28
+# Last changed: 2012-10-16
 
 from dolfin import *
 

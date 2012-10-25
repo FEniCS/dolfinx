@@ -23,7 +23,7 @@
 // Modified by Andre Massing 2009-2010
 //
 // First added:  2006-05-08
-// Last changed: 2012-01-16
+// Last changed: 2012-08-02
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -53,7 +53,6 @@ namespace dolfin
   class LocalMeshData;
   class MeshEntity;
   template <typename T> class MeshFunction;
-  class ParallelData;
   class SubDomain;
   class CSGGeometry;
 
@@ -246,7 +245,7 @@ namespace dolfin
     ///         No example code available for this function.
     const uint* cells() const { return _topology(_topology.dim(), 0)(); }
 
-    /// Get number of entities of given topological dimension.
+    /// Get number of local entities of given topological dimension.
     ///
     /// *Arguments*
     ///     dim (uint)
@@ -254,13 +253,29 @@ namespace dolfin
     ///
     /// *Returns*
     ///     uint
-    ///         Number of entities of topological dimension d.
+    ///         Number of local entities of topological dimension d.
     ///
     /// *Example*
     ///     .. note::
     ///
     ///         No example code available for this function.
     uint size(uint dim) const { return _topology.size(dim); }
+
+    /// Get global number of entities of given topological dimension.
+    ///
+    /// *Arguments*
+    ///     dim (uint)
+    ///         Topological dimension.
+    ///
+    /// *Returns*
+    ///     uint
+    ///         Global number of entities of topological dimension d.
+    ///
+    /// *Example*
+    ///     .. note::
+    ///
+    ///         No example code available for this function.
+    uint size_global(uint dim) const { return _topology.size_global(dim); }
 
     /// Get mesh topology.
     ///
@@ -311,16 +326,6 @@ namespace dolfin
 
     /// Get mesh data (const version).
     const MeshData& data() const;
-
-    /// Get parallel mesh data.
-    ///
-    /// *Returns*
-    ///     _ParallelData_
-    ///         The parallel data object associated with the mesh.
-    ParallelData& parallel_data();
-
-    /// Get parallel mesh data (const version).
-    const ParallelData& parallel_data() const;
 
     /// Get mesh cell type.
     ///
@@ -474,7 +479,7 @@ namespace dolfin
     /// *Returns*
     ///     MeshFunction<unsigned int>
     ///         The colors as a mesh function over the cells of the mesh.
-    const MeshFunction<unsigned int>& color(std::string coloring_type) const;
+    const std::vector<unsigned int>& color(std::string coloring_type) const;
 
     /// Color the cells of the mesh such that no two neighboring cells
     /// share the same color. A colored mesh keeps a
@@ -489,7 +494,7 @@ namespace dolfin
     /// *Returns*
     ///     MeshFunction<unsigned int>
     ///         The colors as a mesh function over entities of the mesh.
-    const MeshFunction<unsigned int>& color(std::vector<unsigned int> coloring_type) const;
+    const std::vector<unsigned int>& color(std::vector<unsigned int> coloring_type) const;
 
     /// Compute all cells which are intersected by the given point.
     ///
@@ -677,9 +682,6 @@ namespace dolfin
 
     // Auxiliary mesh data
     MeshData _data;
-
-    // Auxiliary parallel mesh data
-    boost::scoped_ptr<ParallelData> _parallel_data;
 
     // Cell type
     CellType* _cell_type;

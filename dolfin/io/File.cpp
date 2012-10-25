@@ -35,6 +35,8 @@
 #include "VTKFile.h"
 #include "XMLFile.h"
 #include "XYZFile.h"
+#include "HDF5File.h"
+#include "XDMFFile.h"
 #include "File.h"
 
 using namespace dolfin;
@@ -77,6 +79,12 @@ File::File(const std::string filename, std::string encoding)
     file.reset(new XYZFile(filename));
   else if (extension == ".bin")
     file.reset(new BinaryFile(filename));
+#ifdef HAS_HDF5
+  else if (extension == ".h5")
+    file.reset(new HDF5File(filename));
+  else if (extension == ".xdmf")
+    file.reset(new XDMFFile(filename));
+#endif
   else
   {
     dolfin_error("File.cpp",
@@ -90,6 +98,16 @@ File::File(const std::string filename, Type type, std::string encoding)
 {
   switch (type)
   {
+  case xdmf:
+#ifdef HAS_HDF5
+    file.reset(new XDMFFile(filename));
+    break;
+#endif
+  case hdf5:
+#ifdef HAS_HDF5
+    file.reset(new HDF5File(filename));
+    break;
+#endif
   case xml:
     file.reset(new XMLFile(filename));
     break;

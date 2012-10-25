@@ -27,6 +27,7 @@
 #include <vector>
 #include <dolfin/common/types.h>
 #include "DirichletBC.h"
+#include "AssemblerBase.h"
 
 namespace dolfin
 {
@@ -50,56 +51,43 @@ namespace dolfin
   /// time (leading to better performance) and in that it applies
   /// boundary conditions at the time of assembly.
 
-  class SystemAssembler
+  class SystemAssembler : public AssemblerBase
   {
   public:
 
+    /// Constructor
+    SystemAssembler() {}
+
     /// Assemble system (A, b)
-    static void assemble(GenericMatrix& A,
+    void assemble(GenericMatrix& A,
                          GenericVector& b,
                          const Form& a,
-                         const Form& L,
-                         bool reset_sparsity=true,
-                         bool add_values=false,
-                         bool finalize_tensor=true,
-                         bool keep_diagonal=false);
+                         const Form& L);
 
     /// Assemble system (A, b) and apply Dirichlet boundary condition
-    static void assemble(GenericMatrix& A,
+    void assemble(GenericMatrix& A,
                          GenericVector& b,
                          const Form& a,
                          const Form& L,
-                         const DirichletBC& bc,
-                         bool reset_sparsity=true,
-                         bool add_values=true,
-                         bool finalize_tensor=true,
-                         bool keep_diagonal=false);
+                         const DirichletBC& bc);
 
     /// Assemble system (A, b) and apply Dirichlet boundary conditions
-    static void assemble(GenericMatrix& A,
+    void assemble(GenericMatrix& A,
                          GenericVector& b,
                          const Form& a,
                          const Form& L,
-                         const std::vector<const DirichletBC*>& bcs,
-                         bool reset_sparsity=true,
-                         bool add_values=false,
-                         bool finalize_tensor=true,
-                         bool keep_diagonal=false);
+                         const std::vector<const DirichletBC*> bcs);
 
     /// Assemble system (A, b) and apply Dirichlet boundary conditions
-    static void assemble(GenericMatrix& A,
+    void assemble(GenericMatrix& A,
                          GenericVector& b,
                          const Form& a,
                          const Form& L,
-                         const std::vector<const DirichletBC*>& bcs,
+                         const std::vector<const DirichletBC*> bcs,
                          const MeshFunction<uint>* cell_domains,
                          const MeshFunction<uint>* exterior_facet_domains,
                          const MeshFunction<uint>* interior_facet_domains,
-                         const GenericVector* x0,
-                         bool reset_sparsity=true,
-                         bool add_values=false,
-                         bool finalize_tensor=true,
-                         bool keep_diagonal=false);
+                         const GenericVector* x0);
 
   private:
 

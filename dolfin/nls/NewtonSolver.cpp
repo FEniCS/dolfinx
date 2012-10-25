@@ -67,7 +67,7 @@ NewtonSolver::NewtonSolver(std::string solver_type, std::string pc_type)
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(boost::shared_ptr<GenericLinearSolver> solver,
-                           LinearAlgebraFactory& factory)
+                           GenericLinearAlgebraFactory& factory)
   : Variable("Newton solver", "unamed"),
     newton_iteration(0), _residual(0.0), residual0(0.0),
     solver(solver),

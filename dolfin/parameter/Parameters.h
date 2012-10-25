@@ -117,6 +117,28 @@ namespace dolfin
                    "Type '%s' is not allowed", key.c_str());
     }
 
+    /// Add an unset parameter of type T with allows parameters. For
+    /// example, to create a unset parameter of type bool, do
+    /// parameters.add<bool>("my_setting")
+    template<typename T>
+    void add(std::string key, T min, T max)
+    {
+      dolfin_error("Parameters.h",
+                   "create parameter of requested type",
+                   "Type '%s' is not allowed", key.c_str());
+    }
+
+    /// Add an unset parameter of type T with allows parameters. For
+    /// example, to create a unset parameter of type bool, do
+    /// parameters.add<bool>("my_setting")
+    template<typename T>
+    void add(std::string key, std::set<T> valid_values)
+    {
+      dolfin_error("Parameters.h",
+                   "create parameter of requested type",
+                   "Type '%s' is not allowed", key.c_str());
+    }
+
     /// Add int-valued parameter
     void add(std::string key, int value);
 
@@ -234,14 +256,38 @@ namespace dolfin
   template<> inline void Parameters::add<uint>(std::string key)
   { _parameters[key] = new IntParameter(key); }
 
+  template<> inline void Parameters::add<uint>(std::string key, uint min, uint max)
+  {
+    _parameters[key] = new IntParameter(key);
+    _parameters[key]->set_range((int) min, (int) max);
+  }
+
   template<> inline void Parameters::add<int>(std::string key)
   { _parameters[key] = new IntParameter(key); }
+
+  template<> inline void Parameters::add<int>(std::string key, int min, int max)
+  {
+    _parameters[key] = new IntParameter(key);
+    _parameters[key]->set_range(min, max);
+  }
 
   template<> inline void Parameters::add<double>(std::string key)
   { _parameters[key] = new DoubleParameter(key); }
 
+  template<> inline void Parameters::add<double>(std::string key, double min, double max)
+  {
+    _parameters[key] = new DoubleParameter(key);
+    _parameters[key]->set_range(min, max);
+  }
+
   template<> inline void Parameters::add<std::string>(std::string key)
   { _parameters[key] = new StringParameter(key); }
+
+  template<> inline void Parameters::add(std::string key, std::set<std::string> valid_values)
+  {
+    _parameters[key] = new StringParameter(key);
+    _parameters[key]->set_range(valid_values);
+  }
 
   template<> inline void Parameters::add<bool>(std::string key)
   { _parameters[key] = new BoolParameter(key); }

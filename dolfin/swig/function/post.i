@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-11-02
-// Last changed: 2012-01-30
+// Last changed: 2012-10-02
 
 //-----------------------------------------------------------------------------
 // Extend FunctionSpace so one can check if a Function is in a FunctionSpace
@@ -37,7 +37,7 @@ def __contains__(self,u):
 /*
 %extend dolfin::GenericFunction {
 %pythoncode %{
-def compute_vertex_values(self, mesh):
+def compute_vertex_values(self, mesh=None):
     """
     Compute values at all mesh vertices
 
@@ -47,6 +47,16 @@ def compute_vertex_values(self, mesh):
         mesh (_Mesh_)
             The mesh.
     """
+
+    # Check that we get a mesh if we need it
+    if mesh is None:
+        if not isinstance(self, Function):
+            common.dolfin_error("dolfin/swig/function/post.i",
+                                "compute vertex values",
+                                "You need to supply a mesh");
+        elif:
+            mesh = self.function_space().mesh()
+
     # Argument checks
     #from numpy import ndarray, zeros
     #if not isinstance(values, ndarray) or len(values.shape) != 1:
@@ -60,7 +70,7 @@ def compute_vertex_values(self, mesh):
 		#	    "compute values at the vertices",
 		#	    "The provided array need to be of size value_size()*mesh.num_vertices()")
 
-    # Call the actuall method
+    # Call the actual method
     #self._compute_vertex_values(values, mesh)
 
     return self._compute_vertex_values(mesh)

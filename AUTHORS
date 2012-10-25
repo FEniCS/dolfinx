@@ -1,47 +1,69 @@
 Authors/contributors in alphabetical order:
 
-  Martin Sandve Alnæs   <martinal@simula.no>
-  Fredrik Bengzon       <bengzon@math.chalmers.se>
-  Rolv Erlend Bredesen  <rolv@simula.no>
-  Jed Brown             <fenics@59A2.org>
-  Niklas Ericsson       <nen@math.chalmers.se>
-  Georgios Foufas       <foufas@math.chalmers.se>
-  Joachim B Haga        <jobh@broadpark.no>
-  Johan Hake            <hake@simula.no>
-  Rasmus Hemph          <PDE project course 2001/2002>
-  David Heintz          <david.heintz@comhem.se>
-  Johan Hoffman         <hoffman@csc.kth.se>
-  Par Ingelstrom        <pi@elmagn.chalmers.se>
-  Johan Jansson         <johanjan@math.chalmers.se>
-  Niclas Jansson        <njansson@kth.se>
-  Alexander Jarosch     <alexanj@hi.is>
-  Kristen Kaasbjerg     <cosby@fys.ku.dk>
-  Karin Kraft           <kakr@math.chalmers.se>
-  Aleksandra Krusper    <PDE project course 2001/2002>
-  Dag Lindbo            <dag@csc.kth.se>
-  Glenn Terje Lines     <glennli@simula.no>
-  Anders Logg           <logg@simula.no>
-  Kent-Andre Mardal     <kent-and@simula.no>
-  Andreas Mark          <f00anma@dd.chalmers.se>
-  Pablo De Napoli       <pdenapo@gmail.com>
-  Andreas Nilsson       <f99anni@dd.chalmers.se>
-  Minh Do-Quang         <minh@mech.kth.se>
-  Johannes Ring         <johannr@simula.no>
-  Marie E. Rognes       <meg@simula.no>
-  Bartosz Sawicki       <sawickib@iem.pw.edu.pl>
-  Angelo Simone         <a.simone@tudelft.nl>
-  Ola Skavhaug          <skavhaug@simula.no>
-  Thomas Svedberg       <thsv@am.chalmers.se>
-  Erik Svensson         <eriksv@math.chalmers.se>
-  Harald Svensson       <harald.s@home.se>
-  Andy Terrel           <aterrel@uchicago.edu>
-  Jim Tilander          <jt@dd.chalmers.se>
-  Fredrik Valdmanis     <fredrik@valdmanis.com>
-  Walter Villanueva     <PDE project course 2001/2002>
-  Garth N. Wells        <gnw20@cam.ac.uk>
-  Ilmar Wilbers         <ilmarw@simula.dot.no>
-  Åsmund Ødegård        <aasmund@simula.no>
-  Kristian Ølgaard      <k.b.oelgaard@tudelft.nl>
+  Ido Akkerman          <I.Akkerman@tudelft.nl>             (-)
+  Martin Sandve Alnæs   <martinal@simula.no>                (C)
+  Fredrik Bengzon       <bengzon@math.chalmers.se>          (-)
+  Rolv Erlend Bredesen  <rolv@simula.no>                    (C)
+  Jed Brown             <fenics@59A2.org>                   (C)
+  Niklas Ericsson       <nen@math.chalmers.se>              (-)
+  Patrick Farrell       <patrick.farrell06@imperial.ac.uk>  (C)
+  Georgios Foufas       <foufas@math.chalmers.se>           (C)
+  Joachim B Haga        <jobh@broadpark.no>                 (C)
+  Johan Hake            <hake@simula.no>                    (C)
+  Jack S. Hale          <j.hale09@imperial.ac.uk>           (C)
+  Rasmus Hemph          <PDE project course 2001/2002>      (-)
+  David Heintz          <david.heintz@comhem.se>            (-)
+  Johan Hoffman         <hoffman@csc.kth.se>                (C)
+  Par Ingelstrom        <pi@elmagn.chalmers.se>             (-)
+  Anders E. Johansen    <andersej@math.uio.no>              (!)
+  Johan Jansson         <johanjan@math.chalmers.se>         (C)
+  Niclas Jansson        <njansson@kth.se>                   (C)
+  Alexander Jarosch     <alexanj@hi.is>                     (C)
+  Kristen Kaasbjerg     <cosby@fys.ku.dk>                   (C)
+  Benjamin Kehlet       <benjamik@simula.no>                (C)
+  Arve Knudsen          <arvenk@simula.no>                  (C)
+  Karin Kraft           <kakr@math.chalmers.se>             (-)
+  Aleksandra Krusper    <PDE project course 2001/2002>      (-)
+  Evan Lezar            <mail@evanlezar.com>                (C)
+  Dag Lindbo            <dag@csc.kth.se>                    (C)
+  Glenn Terje Lines     <glennli@simula.no>                 (C)
+  Anders Logg           <logg@simula.no>                    (C)
+  Nuno Lopes            <ndl@ptmat.fc.ul.pt>                (C)
+  Kent-Andre Mardal     <kent-and@simula.no>                (C)
+  Andreas Mark          <f00anma@dd.chalmers.se>            (-)
+  Andre Massing         <massing@simula.no>                 (C)
+  Marco Morandini       <morandini@aero.polimi.it>          (C)
+  Mikael Mortensen      <mikael.mortensen@gmail.com>        (!)
+  Pablo De Napoli       <pdenapo@gmail.com>                 (-)
+  Harish Narayanan      <hnarayanan@gmail.com>              (C)
+  Andreas Nilsson       <f99anni@dd.chalmers.se>            (-)
+  Minh Do-Quang         <minh@mech.kth.se>                  (-)
+  Chris Richardson      <chris@bpi.cam.ac.uk>               (!)
+  Johannes Ring         <johannr@simula.no>                 (C)
+  Marie E. Rognes       <meg@simula.no>                     (C)
+  John Rudge            <jfr23@cam.ac.uk>                   (-)
+  Bartosz Sawicki       <sawickib@iem.pw.edu.pl>            (C)
+  Kristoffer Selim      <selim@simula.no>                   (C)
+  Angelo Simone         <a.simone@tudelft.nl>               (C)
+  Ola Skavhaug          <skavhaug@simula.no>                (C)
+  Thomas Svedberg       <thsv@am.chalmers.se>               (-)
+  Erik Svensson         <eriksv@math.chalmers.se>           (C)
+  Harald Svensson       <harald.s@home.se>                  (-)
+  Andy Terrel           <aterrel@uchicago.edu>              (C)
+  Jim Tilander          <jt@dd.chalmers.se>                 (C)
+  Fredrik Valdmanis     <fredrik@valdmanis.com>             (C)
+  Magnus Vikstrøm       <gustavv@ifi.uio.no>                (C)
+  Walter Villanueva     <PDE project course 2001/2002>      (-)
+  Shawn Walker          <walker@cims.nyu.edu>               (C)
+  Garth N. Wells        <gnw20@cam.ac.uk>                   (C)
+  Ilmar Wilbers         <ilmarw@simula.dot.no>              (C)
+  Cian Wilson           <cwilson@ldeo.columbia.edu>         (C)
+  Åsmund Ødegård        <aasmund@simula.no>                 (C)
+  Kristian Ølgaard      <k.b.oelgaard@tudelft.nl>           (C)
+
+(C) = copyright form signed
+(!) = missing copyright form!
+(-) = minor change, copyright form not signed
 
 Missing credits? Tell us and we will fix it.
 Send an email to dolfin@lists.launchpad.net.

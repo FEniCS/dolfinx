@@ -8,7 +8,6 @@
 #include <dolfin/mesh/MeshGeometry.h>
 #include <dolfin/mesh/MeshDomains.h>
 #include <dolfin/mesh/MeshData.h>
-#include <dolfin/mesh/ParallelData.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
@@ -36,6 +35,5 @@
 #include <dolfin/mesh/SubMesh.h>
 #include <dolfin/mesh/DomainBoundary.h>
 #include <dolfin/mesh/BoundaryMesh.h>
-#include <dolfin/mesh/Interval.h>
 
 #endif

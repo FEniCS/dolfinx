@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2008-2012
 //
 // First added:  2008-01-07
-// Last changed: 2012-04-04
+// Last changed: 2012-10-13
 
 #ifdef HAS_MPI
 #define MPICH_IGNORE_CXX_SEEK 1
@@ -36,6 +36,7 @@
 
 #include <libxml/parser.h>
 #include <dolfin/common/constants.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/log/dolfin_log.h>
 #include "SubSystemsManager.h"
@@ -77,43 +78,50 @@ void SubSystemsManager::init_mpi()
   if( MPI::Is_initialized() )
     return;
 
-  // Initialise MPI and take responsibility
-  MPI::Init();
+  // Init MPI with highest level of thread support and take responsibility
+  char* c;
+  SubSystemsManager::init_mpi(0, &c, MPI_THREAD_MULTIPLE);
   singleton().control_mpi = true;
   #else
   // Do nothing
   #endif
 }
 //-----------------------------------------------------------------------------
-int SubSystemsManager::init_mpi_threaded(int argc, char* argv[],
-                                         int required_level)
+int SubSystemsManager::init_mpi(int argc, char* argv[],
+                                int required_thread_level)
 {
+  Timer timer("Init MPI");
+
   #ifdef HAS_MPI
   if (MPI::Is_initialized())
     return -100;
 
   // Initialise MPI and take responsibility
   int provided = -1;
-  MPI_Init_thread(&argc, &argv, required_level, &provided);
+  MPI_Init_thread(&argc, &argv, required_thread_level, &provided);
   singleton().control_mpi = true;
 
-  switch (provided)
-    {
-    case MPI_THREAD_SINGLE:
-      printf("MPI_Init_thread level = MPI_THREAD_SINGLE\n");
-      break;
-    case MPI_THREAD_FUNNELED:
-      printf("MPI_Init_thread level = MPI_THREAD_FUNNELED\n");
-      break;
-    case MPI_THREAD_SERIALIZED:
-      printf("MPI_Init_thread level = MPI_THREAD_SERIALIZED\n");
-      break;
-    case MPI_THREAD_MULTIPLE:
-      printf("MPI_Init_thread level = MPI_THREAD_MULTIPLE\n");
-      break;
-    default:
-      printf("MPI_Init_thread level = ???\n");
-    }
+  const bool print_thread_support = dolfin::parameters["print_mpi_thread_support_level"];
+  if (print_thread_support)
+  {
+    switch (provided)
+      {
+      case MPI_THREAD_SINGLE:
+        printf("MPI_Init_thread level = MPI_THREAD_SINGLE\n");
+        break;
+      case MPI_THREAD_FUNNELED:
+        printf("MPI_Init_thread level = MPI_THREAD_FUNNELED\n");
+        break;
+      case MPI_THREAD_SERIALIZED:
+        printf("MPI_Init_thread level = MPI_THREAD_SERIALIZED\n");
+        break;
+      case MPI_THREAD_MULTIPLE:
+        printf("MPI_Init_thread level = MPI_THREAD_MULTIPLE\n");
+        break;
+      default:
+        printf("MPI_Init_thread level = unkown\n");
+      }
+  }
 
   return provided;
   #else
@@ -123,7 +131,7 @@ int SubSystemsManager::init_mpi_threaded(int argc, char* argv[],
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc()
 {
-#ifdef HAS_PETSC
+  #ifdef HAS_PETSC
   if ( singleton().petsc_initialized )
     return;
 
@@ -136,17 +144,19 @@ void SubSystemsManager::init_petsc()
 
   // Initialize PETSc
   init_petsc(argc, argv);
-#else
+  #else
   dolfin_error("SubSystemsManager.cpp",
                "initialize PETSc subsystem",
                "DOLFIN has not been configured with PETSc support");
-#endif
+  #endif
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc(int argc, char* argv[])
 {
+  Timer timer("Init PETSc");
+
 #ifdef HAS_PETSC
-  if ( singleton().petsc_initialized )
+  if (singleton().petsc_initialized)
     return;
 
   // Get status of MPI before PETSc initialisation
@@ -175,6 +185,7 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   // Determine if PETSc initialised MPI (and is therefore responsible for MPI finalization)
   if (mpi_initialized() and !mpi_init_status)
     singleton().control_mpi = false;
+
 #else
   dolfin_error("SubSystemsManager.cpp",
                "initialize PETSc subsystem",

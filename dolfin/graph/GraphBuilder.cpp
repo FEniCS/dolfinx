@@ -28,12 +28,12 @@
 #include <dolfin/log/log.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/common/Timer.h>
 #include "GraphBuilder.h"
 
 using namespace dolfin;
@@ -198,10 +198,12 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
                                 std::vector<std::set<uint> >& local_graph,
                                 std::set<uint>& ghost_vertices)
 {
+  Timer timer("Compute dual graph");
+
   const uint num_mpi_procs = MPI::num_processes();
 
   // List of cell vertices
-  const std::vector<std::vector<uint> >& cell_vertices = mesh_data.cell_vertices;
+  const boost::multi_array<uint, 2>& cell_vertices = mesh_data.cell_vertices;
 
   const uint num_local_cells    = mesh_data.global_cell_indices.size();
   const uint topological_dim    = mesh_data.tdim;
@@ -232,7 +234,6 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   // The rest only applies when running in parallel
   //-----------------------------------------------
 
-
   // Determine candidate ghost cells (graph ghost vertices)
   info("Preparing data to to send off-process.");
   std::vector<uint> local_boundary_cells;
@@ -256,7 +257,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     connected_cell_data.push_back(local_boundary_cells[i] + process_offset);
 
     // Candidate cell vertices
-    const std::vector<uint>& vertices = cell_vertices[local_boundary_cells[i]];
+    boost::multi_array<uint, 2>::const_subarray<1>::type vertices = cell_vertices[local_boundary_cells[i]];
     for (uint j = 0; j < num_cell_vertices; ++j)
       connected_cell_data.push_back(vertices[j]);
   }
@@ -338,15 +339,15 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   info("Finish compute graph ghost edges.");;
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_connectivity(const std::vector<std::vector<uint> >& cell_vertices,
+void GraphBuilder::compute_connectivity(const boost::multi_array<uint, 2>& cell_vertices,
                                   uint num_facet_vertices, uint offset,
                                   std::vector<std::set<uint> >& local_graph)
 {
   // FIXME: Continue to make this function more efficient
 
   // Declare iterators
-  std::vector<std::vector<uint> >::const_iterator c_vertices;
-  std::vector<uint>::const_iterator vertex;
+  boost::multi_array<uint, 2>::const_iterator c_vertices;
+  boost::multi_array<uint, 2>::const_subarray<1>::type::const_iterator vertex;
   std::vector<uint>::const_iterator c_vertex;
   std::vector<uint>::const_iterator connected_cell;
 
@@ -367,47 +368,9 @@ void GraphBuilder::compute_connectivity(const std::vector<std::vector<uint> >& c
   tt = time() - tt;
   info("Time to build vertex-cell connectivity map: %g", tt);
 
-  /*
-  tt = time();
-  // Iterate over all cells
-  for (c_vertices = cell_vertices.begin(); c_vertices != cell_vertices.end(); ++c_vertices)
-  {
-     const uint index0 = c_vertices - cell_vertices.begin();
-
-    // Iterate over cell vertices
-    for (c_vertex = c_vertices->begin(); c_vertex != c_vertices->end(); ++c_vertex)
-    {
-      // Iterate over cells connected to this vertex
-      for (connected_cell = vertex_connectivity[*c_vertex].begin(); connected_cell != vertex_connectivity[*c_vertex].end(); ++connected_cell)
-      {
-        const uint index1 = *connected_cell;
-        if (index0 == index1)
-          break;
-
-        // Vertices of candidate neighbour
-        const std::vector<uint>& candidate_vertices = cell_vertices[*connected_cell];
-
-        uint num_common_vertices = 0;
-        for (vertex = c_vertices->begin(); vertex != c_vertices->end(); ++vertex)
-        {
-          if (std::find(candidate_vertices.begin(), candidate_vertices.end(), *vertex) != candidate_vertices.end())
-            ++num_common_vertices;
-          if (num_common_vertices == num_facet_vertices)
-          {
-            local_graph[index0].insert(index1 + offset);
-            local_graph[index1].insert(index0 + offset);
-            break;
-          }
-        }
-      }
-    }
-  }
-  tt = time() - tt;
-  */
-
   std::vector<uint>::const_iterator connected_cell0;
   std::vector<uint>::const_iterator connected_cell1;
-  std::vector<uint>::const_iterator cell_vertex;
+  boost::multi_array<uint, 2>::const_subarray<1>::type::const_iterator cell_vertex;
 
   tt = time();
   // Iterate over all vertices
@@ -421,8 +384,8 @@ void GraphBuilder::compute_connectivity(const std::vector<std::vector<uint> >& c
     {
       for (connected_cell1 = connected_cell0 + 1; connected_cell1 != cell_list.end(); ++connected_cell1)
       {
-        const std::vector<uint>& cell0_vertices = cell_vertices[*connected_cell0];
-        const std::vector<uint>& cell1_vertices = cell_vertices[*connected_cell1];
+        boost::multi_array<uint, 2>::const_subarray<1>::type cell0_vertices = cell_vertices[*connected_cell0];
+        boost::multi_array<uint, 2>::const_subarray<1>::type cell1_vertices = cell_vertices[*connected_cell1];
 
         uint num_common_vertices = 0;
         for (cell_vertex = cell1_vertices.begin(); cell_vertex != cell1_vertices.end(); ++cell_vertex)
@@ -444,20 +407,20 @@ void GraphBuilder::compute_connectivity(const std::vector<std::vector<uint> >& c
   info("Time to build local dual graph: : %g", tt);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint GraphBuilder::compute_ghost_connectivity(const std::vector<std::vector<uint> >& cell_vertices,
-                                          const std::vector<uint>& local_boundary_cells,
-                                          const std::vector<std::vector<uint> >& candidate_ghost_vertices,
-                                          const std::vector<uint>& candidate_ghost_global_indices,
-                                          uint num_facet_vertices,
-                                          std::vector<std::set<uint> >& local_graph,
-                                          std::set<uint>& ghost_cells)
+dolfin::uint GraphBuilder::compute_ghost_connectivity(const boost::multi_array<uint, 2>& cell_vertices,
+                  const std::vector<uint>& local_boundary_cells,
+                  const std::vector<std::vector<uint> >& candidate_ghost_vertices,
+                  const std::vector<uint>& candidate_ghost_global_indices,
+                  uint num_facet_vertices,
+                  std::vector<std::set<uint> >& local_graph,
+                  std::set<uint>& ghost_cells)
 {
   const uint num_ghost_vertices_0 = ghost_cells.size();
 
   // Declare iterators
-  std::vector<std::vector<uint> >::const_iterator c_vertices;
-  std::vector<uint>::const_iterator vertex;
-  std::vector<uint>::const_iterator c_vertex;
+  boost::multi_array<uint, 2>::const_iterator c_vertices;
+  boost::multi_array<uint, 2>::const_subarray<1>::type::const_iterator vertex;
+  boost::multi_array<uint, 2>::const_subarray<1>::type::const_iterator c_vertex;
   std::vector<uint>::const_iterator connected_cell;
 
   boost::unordered_map<uint, std::pair<std::vector<uint>, std::vector<uint> > > vertex_connectivity;
@@ -468,7 +431,7 @@ dolfin::uint GraphBuilder::compute_ghost_connectivity(const std::vector<std::vec
   std::vector<uint>::const_iterator local_cell;
   for (local_cell = local_boundary_cells.begin(); local_cell != local_boundary_cells.end(); ++local_cell)
   {
-    const std::vector<uint>& c_vertices = cell_vertices[*local_cell];
+    boost::multi_array<uint, 2>::const_subarray<1>::type c_vertices = cell_vertices[*local_cell];
     for (vertex = c_vertices.begin(); vertex != c_vertices.end(); ++vertex)
     {
       std::pair<std::vector<uint>, std::vector<uint> > tmp;
@@ -481,9 +444,10 @@ dolfin::uint GraphBuilder::compute_ghost_connectivity(const std::vector<std::vec
 
   // Build off-process boundary (global vertex)-(local cell) connectivity
   tt = time();
-  for (c_vertices = candidate_ghost_vertices.begin(); c_vertices != candidate_ghost_vertices.end(); ++c_vertices)
+  for (std::vector<std::vector<uint> >::const_iterator c_vertices = candidate_ghost_vertices.begin(); c_vertices != candidate_ghost_vertices.end(); ++c_vertices)
   {
     const uint cell_index = c_vertices - candidate_ghost_vertices.begin();
+    std::vector<uint>::const_iterator vertex;
     for (vertex = c_vertices->begin(); vertex != c_vertices->end(); ++vertex)
     {
       std::pair<std::vector<uint>, std::vector<uint> > tmp;
@@ -498,7 +462,7 @@ dolfin::uint GraphBuilder::compute_ghost_connectivity(const std::vector<std::vec
   tt = time();
   for (local_cell = local_boundary_cells.begin(); local_cell != local_boundary_cells.end(); ++local_cell)
   {
-    const std::vector<uint>& c_vertices = cell_vertices[*local_cell];
+    boost::multi_array<uint, 2>::const_subarray<1>::type c_vertices = cell_vertices[*local_cell];
 
     // Iterate over local cell vertices
     for (c_vertex = c_vertices.begin(); c_vertex != c_vertices.end(); ++c_vertex)

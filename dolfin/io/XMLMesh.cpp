@@ -24,6 +24,7 @@
 #include <iomanip>
 #include <iostream>
 #include <vector>
+#include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
@@ -330,16 +331,22 @@ void XMLMesh::write_mesh(const Mesh& mesh, pugi::xml_node mesh_node)
     switch (mesh.geometry().dim())
     {
       case 1:
-        vertex_node.append_attribute("x") = p.x();
+        vertex_node.append_attribute("x")
+            = boost::str(boost::format("%.15e") % p.x()).c_str();
         break;
       case 2:
-        vertex_node.append_attribute("x") = p.x();
-        vertex_node.append_attribute("y") = p.y();
+        vertex_node.append_attribute("x")
+            = boost::str(boost::format("%.15e") % p.x()).c_str();
+        vertex_node.append_attribute("y")
+            = boost::str(boost::format("%.15e") % p.y()).c_str();
         break;
       case 3:
-        vertex_node.append_attribute("x") = p.x();
-        vertex_node.append_attribute("y") = p.y();
-        vertex_node.append_attribute("z") = p.z();
+        vertex_node.append_attribute("x")
+            = boost::str(boost::format("%.15e") % p.x()).c_str();
+        vertex_node.append_attribute("y")
+            = boost::str(boost::format("%.15e") % p.y()).c_str();
+        vertex_node.append_attribute("z")
+            = boost::str(boost::format("%.15e") % p.z()).c_str();
         break;
       default:
         dolfin_error("XMLMesh.cpp",
@@ -426,8 +433,7 @@ void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
   typedef std::map<std::string,
                    boost::shared_ptr<std::vector<uint> > >
     ::const_iterator array_iterator;
-  for (array_iterator it = data.arrays.begin();
-       it != data.arrays.end(); ++it)
+  for (array_iterator it = data.arrays.begin(); it != data.arrays.end(); ++it)
   {
     std::string name = it->first;
     boost::shared_ptr<std::vector<unsigned int> > array = it->second;

@@ -76,7 +76,7 @@ F = v*(u-u0)*dx + dt*(v*dot(velocity, grad(u_mid))*dx + c*dot(grad(v), grad(u_mi
 
 # Add SUPG stabilisation terms
 vnorm = sqrt(dot(velocity, velocity))
-F += (h/2.0*vnorm)*dot(velocity, grad(v))*r*dx
+F += h/(2.0*vnorm)*dot(velocity, grad(v))*r*dx
 
 # Create bilinear and linear forms
 a = lhs(F)

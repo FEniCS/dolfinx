@@ -27,10 +27,12 @@ Unless specified explicitly, the format is determined by the
 file name suffix.
 A list of objects that can be read/written to file can be found in
 GenericFile.h. Compatible file formats include:
-    * XML (.xml)
-    * VTK (.pvd)
-    * RAW (.raw)
-    * XYZ (.xyz)
+    * XDMF   (.xdmf)
+    * HDF5   (.h5)
+    * XML    (.xml)
+    * VTK    (.pvd)
+    * RAW    (.raw)
+    * XYZ    (.xyz)
     * Binary (.bin)
 ";
 

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-08-19
-// Last changed: 2011-11-14
+// Last changed: 2012-09-03
 
 #ifndef __ERROR_CONTROL_H
 #define __ERROR_CONTROL_H
@@ -39,6 +39,8 @@ namespace dolfin
   class FunctionSpace;
   class SpecialFacetFunction;
   class Vector;
+
+  template <typename T> class MeshFunction;
 
   /// (Goal-oriented) Error Control class.
 
@@ -119,12 +121,13 @@ namespace dolfin
     /// Compute error indicators
     ///
     /// *Arguments*
-    ///     indicators (_Vector_)
+    ///     indicators (_MeshFunction_ <double>)
     ///         the error indicators (to be computed)
     ///
     ///     u (_Function_)
     ///         the primal approximation
-    void compute_indicators(Vector& indicators, const Function& u);
+    void compute_indicators(MeshFunction<double>& indicators,
+                            const Function& u);
 
     /// Compute strong representation (strong cell and facet
     /// residuals) of the weak residual.
@@ -196,8 +199,6 @@ namespace dolfin
     friend const ErrorControl& adapt(const ErrorControl& ec,
                                      boost::shared_ptr<const Mesh> adapted_mesh,
                                      bool adapt_coefficients);
-
-    //friend dolfin::adapt;
 
   private:
 

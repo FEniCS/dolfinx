@@ -16,14 +16,16 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders Logg 2011
+// Modified by Johannes Ring 2012
 //
 // First added:  2010-07-19
-// Last changed: 2011-11-14
+// Last changed: 2012-09-14
 
 #include <fstream>
 #include <ostream>
 #include <sstream>
 #include <vector>
+#include <iomanip>
 #include <boost/detail/endian.hpp>
 
 #include <dolfin/fem/GenericDofMap.h>
@@ -81,12 +83,13 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
 
   // Open file
   std::ofstream fp(filename.c_str(), std::ios_base::app);
+  fp.precision(16);
 
   // Write headers
   if (rank == 0)
   {
     fp << "<CellData  Scalars=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  format=\""<< encode_string <<"\">";
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  format=\""<< encode_string <<"\">";
   }
   else if (rank == 1)
   {
@@ -97,7 +100,7 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
                    "Don't know how to handle vector function with dimension other than 2 or 3");
     }
     fp << "<CellData  Vectors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">";
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">";
   }
   else if (rank == 2)
   {
@@ -108,7 +111,7 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
                    "Don't know how to handle tensor function with dimension other than 4 or 9");
     }
     fp << "<CellData  Tensors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">";
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">";
   }
 
   // Allocate memory for function values at cell centres
@@ -152,6 +155,7 @@ std::string VTKWriter::ascii_cell_data(const Mesh& mesh,
 {
   std::ostringstream ss;
   ss << std::scientific;
+  ss << std::setprecision(16);
   std::vector<uint>::const_iterator cell_offset = offset.begin();
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
@@ -205,7 +209,7 @@ std::string VTKWriter::base64_cell_data(const Mesh& mesh,
   const uint num_total_data_points = num_cells*num_data_per_point;
 
   std::vector<uint>::const_iterator cell_offset = offset.begin();
-  std::vector<float> data(num_total_data_points, 0);
+  std::vector<double> data(num_total_data_points, 0);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     const uint index = cell->index();
@@ -228,6 +232,7 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, uint cell_dim,
 
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);
+  file.precision(16);
   if (!file.is_open())
   {
     dolfin_error("VTKWriter.cpp",
@@ -237,7 +242,7 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, uint cell_dim,
 
   // Write vertex positions
   file << "<Points>" << std::endl;
-  file << "<DataArray  type=\"Float32\"  NumberOfComponents=\"3\"  format=\"" << "ascii" << "\">";
+  file << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\"" << "ascii" << "\">";
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     Point p = v->point();
@@ -284,6 +289,7 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, uint cell_dim,
 
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);
+  file.precision(16);
   if ( !file.is_open() )
   {
     dolfin_error("VTKWriter.cpp",
@@ -293,9 +299,9 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, uint cell_dim,
 
   // Write vertex positions
   file << "<Points>" << std::endl;
-  file << "<DataArray  type=\"Float32\"  NumberOfComponents=\"3\"  format=\"" << "binary" << "\">" << std::endl;
-  std::vector<float> vertex_data(3*mesh.num_vertices());
-  std::vector<float>::iterator vertex_entry = vertex_data.begin();
+  file << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\"" << "binary" << "\">" << std::endl;
+  std::vector<double> vertex_data(3*mesh.num_vertices());
+  std::vector<double>::iterator vertex_entry = vertex_data.begin();
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     const Point p = v->point();

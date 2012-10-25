@@ -18,18 +18,18 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Anders Logg, 2008-2009.
-# Modified by Johannes Ring, 2009, 2011.
+# Modified by Johannes Ring, 2009, 2011-2012.
 # Modified by Johan Hake, 2009.
 #
 # First added:  2008-04-08
-# Last changed: 2011-06-23
+# Last changed: 2012-09-21
 
 import sys, os, re
 import platform
 import instant
 from time import time
 from dolfin_utils.commands import getstatusoutput
-from dolfin import has_mpi, has_parmetis
+from dolfin import has_mpi, has_parmetis, has_scotch
 
 # Location of all demos
 demodir = os.path.join(os.curdir, "..", "..", "demo")
@@ -90,6 +90,8 @@ if platform.system() == 'Windows':
 not_working_in_parallel = \
   [os.path.join(demodir, 'pde',          'biharmonic',                  'cpp'),    \
    os.path.join(demodir, 'pde',          'biharmonic',                  'python'), \
+   os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'python'), \
    os.path.join(demodir, 'undocumented', 'ale',                         'cpp'),    \
    os.path.join(demodir, 'undocumented', 'ale',                         'python'), \
    os.path.join(demodir, 'undocumented', 'auto-adaptive-navier-stokes', 'cpp'),    \
@@ -102,32 +104,32 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'dg-poisson',                  'python'), \
    os.path.join(demodir, 'undocumented', 'eval',                        'cpp'),    \
    os.path.join(demodir, 'undocumented', 'eval',                        'python'), \
-   os.path.join(demodir, 'undocumented', 'meshfunction',                'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'meshfunction',                'python'), \
-   os.path.join(demodir, 'undocumented', 'refinement',                  'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'refinement',                  'python'), \
    os.path.join(demodir, 'undocumented', 'extrapolation',               'cpp'),    \
    os.path.join(demodir, 'undocumented', 'extrapolation',               'python'), \
-   os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'python'), \
-   os.path.join(demodir, 'undocumented', 'time-series',                 'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'time-series',                 'python'), \
-   os.path.join(demodir, 'undocumented', 'subdomains',                  'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'subdomains',                  'python'), \
+   os.path.join(demodir, 'undocumented', 'meshfunction',                'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'meshfunction',                'python'), \
    os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'cpp'),    \
    os.path.join(demodir, 'undocumented', 'meshfunction-refinement',     'python'), \
+   os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'python'), \
    os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'cpp'),    \
    os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'python'), \
+   os.path.join(demodir, 'undocumented', 'poisson1D',                   'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'poisson1D',                   'python'), \
+   os.path.join(demodir, 'undocumented', 'refinement',                  'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'refinement',                  'python'), \
    os.path.join(demodir, 'undocumented', 'simple',                      'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'simple'      ,                'python'), \
-   os.path.join(demodir, 'undocumented', 'triangulate',                 'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'triangulate'      ,           'python'), \
-   os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'adaptive-poisson',            'python'), \
+   os.path.join(demodir, 'undocumented', 'simple',                      'python'), \
    os.path.join(demodir, 'undocumented', 'smoothing',                   'cpp'),    \
    os.path.join(demodir, 'undocumented', 'smoothing',                   'python'), \
+   os.path.join(demodir, 'undocumented', 'subdomains',                  'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'subdomains',                  'python'), \
    os.path.join(demodir, 'undocumented', 'submesh',                     'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'submesh',                     'python')]
+   os.path.join(demodir, 'undocumented', 'submesh',                     'python'),  \
+   os.path.join(demodir, 'undocumented', 'time-series',                 'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'time-series',                 'python'), \
+   os.path.join(demodir, 'undocumented', 'triangulate',                 'cpp'),    \
+   os.path.join(demodir, 'undocumented', 'triangulate',                 'python')]
 
 
 failed = []
@@ -147,7 +149,7 @@ if only_python:
 # Build prefix list
 prefixes = [""]
 mpi_prefix = "mpirun -np 3 "
-if has_mpi() and has_parmetis():
+if has_mpi() and (has_parmetis() or has_scotch()):
     prefixes.append(mpi_prefix)
 else:
     print "Not running regression tests in parallel."

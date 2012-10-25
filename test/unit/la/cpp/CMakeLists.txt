@@ -5,7 +5,8 @@
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
-project(test_la)
+set(PROJECT_NAME test_la)
+project(${PROJECT_NAME})
 
 # Set verbose output while testing CMake
 #set(CMAKE_VERBOSE_MAKEFILE 1)
@@ -34,6 +35,8 @@ include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
 add_executable(test_Vector Vector.cpp)
+add_executable(test_LinearOperator LinearOperator.cpp)
 
 # Target libraries
 target_link_libraries(test_Vector ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
+target_link_libraries(test_LinearOperator ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})

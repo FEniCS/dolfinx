@@ -32,6 +32,7 @@
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include "DofMapBuilder.h"
 #include "UFCCell.h"
 #include "UFCMesh.h"
@@ -78,7 +79,8 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh);
 
   // Build dof map
-  DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, _distributed);
+  const bool reorder = dolfin::parameters["reorder_dofs_serial"];
+  DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, reorder, _distributed);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
@@ -203,7 +205,8 @@ DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
   init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, mesh);
 
   // Build dof map
-  DofMapBuilder::build(*this, mesh, ufc_mesh, _distributed);
+  const bool reorder = dolfin::parameters["reorder_dofs_serial"];
+  DofMapBuilder::build(*this, mesh, ufc_mesh, reorder, _distributed);
 
   // Dimension checks
   dolfin_assert(dofmap_view._dofmap.size() == mesh.num_cells());
@@ -228,9 +231,17 @@ DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& dofmap)
 {
-  dolfin_error("DofMap.cpp",
-               "create mapping of degrees of freedom",
-               "Degree of freedom mappings cannot be copied");
+  // Copy data
+  _dofmap = dofmap._dofmap;
+  _ufc_dofmap.reset(dofmap._ufc_dofmap->create());
+  ufc_map_to_dofmap = dofmap.ufc_map_to_dofmap;
+  ufc_offset = dofmap.ufc_offset;
+  _ownership_range = dofmap._ownership_range;
+  _off_process_owner = dofmap._off_process_owner;
+  _shared_dofs = dofmap._shared_dofs;
+  _neighbours = dofmap._neighbours;
+  _is_view = dofmap. _is_view;
+  _distributed = dofmap._distributed;
 }
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()
@@ -339,10 +350,16 @@ void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
   tabulate_coordinates(coordinates, ufc_cell);
 }
 //-----------------------------------------------------------------------------
-DofMap* DofMap::copy(const Mesh& mesh) const
+boost::shared_ptr<GenericDofMap> DofMap::copy() const
 {
+  return boost::shared_ptr<GenericDofMap>(new DofMap(*this));
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<GenericDofMap> DofMap::build(const Mesh& new_mesh) const
+{
+  // Get copy of underlying UFC dof mapo
   boost::shared_ptr<const ufc::dofmap> ufc_dof_map(_ufc_dofmap->create());
-  return new DofMap(ufc_dof_map, mesh);
+  return boost::shared_ptr<GenericDofMap>(new DofMap(ufc_dof_map, new_mesh));
 }
 //-----------------------------------------------------------------------------
 DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
@@ -498,34 +515,6 @@ boost::unordered_set<dolfin::uint> DofMap::dofs() const
   return dof_list;
 }
 //-----------------------------------------------------------------------------
-void DofMap::renumber(const std::vector<uint>& renumbering_map)
-{
-  // FIXME: Need to handle/invalidate sub-dofmaps
-
-  dolfin_assert(MPI::num_processes() == 1);
-  dolfin_assert(global_dimension() == renumbering_map.size());
-
-  // Update or build ufc-to-dofmap
-  if (ufc_map_to_dofmap.empty())
-  {
-    for (uint i = 0; i < global_dimension(); ++i)
-      ufc_map_to_dofmap[i] = renumbering_map[i];
-  }
-  else
-  {
-    boost::unordered_map<dolfin::uint, uint>::iterator index_pair;
-    for (index_pair = ufc_map_to_dofmap.begin(); index_pair != ufc_map_to_dofmap.end(); ++index_pair)
-      index_pair->second = renumbering_map[index_pair->second];
-  }
-
-  // Re-number dofs for cell
-  std::vector<std::vector<uint> >::iterator cell_map;
-  std::vector<uint>::iterator dof;
-  for (cell_map = _dofmap.begin(); cell_map != _dofmap.end(); ++cell_map)
-    for (dof = cell_map->begin(); dof != cell_map->end(); ++dof)
-      *dof = renumbering_map[*dof];
-}
-//-----------------------------------------------------------------------------
 std::string DofMap::str(bool verbose) const
 {
   // TODO: Display information on parallel stuff
@@ -561,7 +550,9 @@ void DofMap::check_dimensional_consistency(const ufc::dofmap& dofmap,
   {
     dolfin_error("DofMap.cpp",
                  "create mapping of degrees of freedom",
-                 "Geometric dimension of the UFC dofmap and the mesh do not match");
+                 "Geometric dimension of the UFC dofmap (dim = %d) and the mesh (dim = %d) do not match",
+                 dofmap.geometric_dimension(),
+                 mesh.geometry().dim());
   }
 
   // Check topological dimension
@@ -569,7 +560,9 @@ void DofMap::check_dimensional_consistency(const ufc::dofmap& dofmap,
   {
     dolfin_error("DofMap.cpp",
                  "create mapping of degrees of freedom",
-                 "Topological dimension of the UFC dofmap and the mesh do not match");
+                 "Topological dimension of the UFC dofmap (dim = %d) and the mesh (dim = %d) do not match",
+                 dofmap.topological_dimension(),
+                 mesh.topology().dim());
   }
 }
 //-----------------------------------------------------------------------------

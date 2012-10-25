@@ -5,7 +5,8 @@
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
-project(demo_cahn-hilliard)
+set(PROJECT_NAME demo_cahn-hilliard)
+project(${PROJECT_NAME})
 
 # Set verbose output while testing CMake
 #set(CMAKE_VERBOSE_MAKEFILE 1)
@@ -33,7 +34,7 @@ include_directories(${DOLFIN_INCLUDE_DIRS})
 include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
-add_executable(demo_cahn-hilliard CahnHilliard3D.cpp CahnHilliard2D.cpp main.cpp)
+add_executable(${PROJECT_NAME} CahnHilliard2D.cpp CahnHilliard3D.cpp main.cpp)
 
 # Target libraries
-target_link_libraries(demo_cahn-hilliard ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})

@@ -39,10 +39,10 @@ message(STATUS "Checking for package 'CHOLMOD'")
 # Find packages that CHOLMOD depends on
 set(CMAKE_LIBRARY_PATH ${BLAS_DIR}/lib $ENV{BLAS_DIR}/lib ${CMAKE_LIBRARY_PATH})
 set(CMAKE_LIBRARY_PATH ${LAPACK_DIR}/lib $ENV{LAPACK_DIR}/lib ${CMAKE_LIBRARY_PATH})
-find_package(AMD)
-find_package(BLAS)
-find_package(LAPACK)
-find_package(ParMETIS)
+find_package(AMD QUIET)
+find_package(BLAS QUIET)
+find_package(LAPACK QUIET)
+find_package(ParMETIS 3.2 QUIET)
 
 # FIXME: Should we have separate FindXX modules for CAMD, COLAMD, and CCOLAMD?
 # FIXME: find_package(CAMD)
@@ -83,11 +83,29 @@ find_library(CCOLAMD_LIBRARY ccolamd
   DOC "The CCOLAMD library"
   )
 
+# Check for SUITESPARSECONFIG library
+find_library(SUITESPARSE_LIBRARY suitesparseconfig
+  HINTS ${CHOLMOD_DIR}/lib ${CCOLAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib $ENV{CCOLAMD_DIR}/lib
+  DOC "The SUITESPARSECONFIG library"
+  )
+
 # Collect libraries (order is important)
 if (AMD_FOUND)
   set(CHOLMOD_LIBRARIES ${CHOLMOD_LIBRARY} ${AMD_LIBRARIES})
 endif()
-set(CHOLMOD_LIBRARIES ${CHOLMOD_LIBRARIES} ${CAMD_LIBRARY} ${COLAMD_LIBRARY} ${CCOLAMD_LIBRARY})
+if (CAMD_LIBRARY)
+  set(CHOLMOD_LIBRARIES ${CHOLMOD_LIBRARIES} ${CAMD_LIBRARY})
+endif()
+if (COLAMD_LIBRARY)
+  set(CHOLMOD_LIBRARIES ${CHOLMOD_LIBRARIES} ${COLAMD_LIBRARY})
+endif()
+if (CCOLAMD_LIBRARY)
+  set(CHOLMOD_LIBRARIES ${CHOLMOD_LIBRARIES} ${CCOLAMD_LIBRARY})
+endif()
+if (SUITESPARSE_LIBRARY)
+  set(CHOLMOD_LIBRARIES ${CHOLMOD_LIBRARIES} ${SUITESPARSE_LIBRARY})
+endif()
+
 if (PARMETIS_FOUND)
   set(CHOLMOD_LIBRARIES ${CHOLMOD_LIBRARIES} ${PARMETIS_LIBRARIES})
 endif()
@@ -108,10 +126,13 @@ mark_as_advanced(
   )
 
 # Try to run a test program that uses CHOLMOD
-if (CHOLMOD_INCLUDE_DIRS AND CHOLMOD_LIBRARIES AND AMD_FOUND)
+if (DOLFIN_SKIP_BUILD_TESTS)
+  set(CHOLMOD_TEST_RUNS TRUE)
+elseif (CHOLMOD_INCLUDE_DIRS AND CHOLMOD_LIBRARIES AND AMD_FOUND)
 
   set(CMAKE_REQUIRED_INCLUDES  ${CHOLMOD_INCLUDE_DIRS} ${AMD_INCLUDE_DIRS})
   set(CMAKE_REQUIRED_LIBRARIES ${CHOLMOD_LIBRARIES})
+#  message("Cholmod libraries ${CHOLMOD_LIBRARIES}")
 
   # Build and run test program
   include(CheckCXXSourceRuns)

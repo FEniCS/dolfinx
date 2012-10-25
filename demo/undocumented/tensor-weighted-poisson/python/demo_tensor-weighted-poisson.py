@@ -72,11 +72,10 @@ public:
   Conductivity() : Expression(3) {}
 
   // Function for evaluating expression on each cell
-  //void eval(Array<double>& values, const Data& data) const
-  void eval(Array<double>& values, const Array<double>& x,  const ufc::cell& cell) const
+  void eval(Array<double>& values, const Array<double>& x, const ufc::cell& cell) const
   {
     const uint D = cell.topological_dimension;
-    const uint cell_index = cell.entity_indices[D][0];
+    const uint cell_index = cell.index;
     values[0] = (*c00)[cell_index];
     values[1] = (*c01)[cell_index];
     values[2] = (*c11)[cell_index];

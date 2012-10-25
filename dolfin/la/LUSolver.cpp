@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2011
+// Modified by Anders Logg 2011-2012
 //
 // First added:  2010-07-11
-// Last changed: 2011-10-20
+// Last changed: 2012-08-20
 
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/common/NoDeleter.h>
@@ -36,7 +36,7 @@ LUSolver::LUSolver(std::string method)
   init(method);
 }
 //-----------------------------------------------------------------------------
-LUSolver::LUSolver(boost::shared_ptr<const GenericMatrix> A,
+LUSolver::LUSolver(boost::shared_ptr<const GenericLinearOperator> A,
                    std::string method)
 {
   // Initialize solver
@@ -51,7 +51,7 @@ LUSolver::~LUSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void LUSolver::set_operator(const boost::shared_ptr<const GenericMatrix> A)
+void LUSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
 {
   dolfin_assert(solver);
   solver->parameters.update(parameters);
@@ -67,7 +67,7 @@ dolfin::uint LUSolver::solve(GenericVector& x, const GenericVector& b)
   return solver->solve(x, b);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint LUSolver::solve(const GenericMatrix& A, GenericVector& x,
+dolfin::uint LUSolver::solve(const GenericLinearOperator& A, GenericVector& x,
                              const GenericVector& b)
 {
   dolfin_assert(solver);

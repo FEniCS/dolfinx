@@ -22,6 +22,7 @@
 #define __MESH_CONNECTIVITY_H
 
 #include <vector>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
 
@@ -54,18 +55,38 @@ namespace dolfin
     const MeshConnectivity& operator= (const MeshConnectivity& connectivity);
 
     /// Return true if the total number of connections is equal to zero
-    bool empty() const { return connections.empty(); }
+    bool empty() const
+    { return connections.empty(); }
 
     /// Return total number of connections
-    uint size() const { return connections.size(); }
+    uint size() const
+    { return connections.size(); }
 
     /// Return number of connections for given entity
     uint size(uint entity) const
-    { return ( (entity + 1) < offsets.size() ? offsets[entity + 1] - offsets[entity] : 0); }
+    {
+      return ( (entity + 1) < index_to_position.size()
+          ? index_to_position[entity + 1] - index_to_position[entity] : 0);
+    }
+
+    /// Return global number of connections for given entity
+    uint size_global(uint entity) const
+    {
+      if (num_global_connections.empty())
+        return size(entity);
+      else
+      {
+        dolfin_assert(entity < num_global_connections.size());
+        return num_global_connections[entity];
+      }
+    }
 
     /// Return array of connections for given entity
     const uint* operator() (uint entity) const
-    { return ((entity + 1) < offsets.size() ? &connections[offsets[entity]] : 0); }
+    {
+      return ((entity + 1) < index_to_position.size()
+        ? &connections[index_to_position[entity]] : 0);
+    }
 
     /// Return contiguous array of connections for all entities
     const uint* operator() () const
@@ -74,10 +95,12 @@ namespace dolfin
     /// Clear all data
     void clear();
 
-    /// Initialize number of entities and number of connections (equal for all)
+    /// Initialize number of entities and number of connections (equal
+    /// for all)
     void init(uint num_entities, uint num_connections);
 
-    /// Initialize number of entities and number of connections (individually)
+    /// Initialize number of entities and number of connections
+    /// (individually)
     void init(std::vector<uint>& num_connections);
 
     /// Set given connection for given entity
@@ -98,14 +121,14 @@ namespace dolfin
       clear();
 
       // Initialize offsets and compute total size
-      offsets.resize(connections.size() + 1);
+      index_to_position.resize(connections.size() + 1);
       uint size = 0;
       for (uint e = 0; e < connections.size(); e++)
       {
-        offsets[e] = size;
+        index_to_position[e] = size;
         size += connections[e].size();
       }
-      offsets[connections.size()] = size;
+      index_to_position[connections.size()] = size;
 
       // Initialize connections
       this->connections.reserve(size);
@@ -113,6 +136,16 @@ namespace dolfin
       for (e = connections.begin(); e != connections.end(); ++e)
         this->connections.insert(this->connections.end(), e->begin(), e->end());
     }
+
+    /// Set global number of connections for all local entities
+    void set_global_size(const std::vector<uint>& num_global_connections)
+    {
+      dolfin_assert(num_global_connections.size() == index_to_position.size() - 1);
+      this->num_global_connections = num_global_connections;
+    }
+
+    /// Hash of connections
+    std::size_t hash() const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -129,8 +162,12 @@ namespace dolfin
     // Connections for all entities stored as a contiguous array
     std::vector<uint> connections;
 
-    // Offset for first connection for each entity
-    std::vector<uint> offsets;
+    // Global number of connections for all entities (possibly not
+    // computed)
+    std::vector<uint> num_global_connections;
+
+    // Position of first connection for each entity (using local index)
+    std::vector<uint> index_to_position;
 
   };
 

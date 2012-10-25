@@ -84,25 +84,23 @@ void BinaryFile::operator>> (Mesh& mesh)
   // Read mesh topology
   MeshTopology& t = mesh._topology;
   uint D = read_uint();
-  t._dim = D;
-  t.num_entities = new uint[D + 1];
-  read_array(D + 1, t.num_entities);
-  t.connectivity = new MeshConnectivity**[D + 1];
+  t.num_entities.resize(D + 1);
+  read_array(D + 1, t.num_entities.data());
+  t.connectivity.resize(D + 1);
   for (uint i = 0; i <= D; i++)
   {
-    t.connectivity[i] = new MeshConnectivity*[D + 1];
     for (uint j = 0; j <= D; j++)
     {
-      t.connectivity[i][j] = new MeshConnectivity(i, j);
-      MeshConnectivity& c = *t.connectivity[i][j];
+      t.connectivity[i].push_back(MeshConnectivity(i, j));
+      MeshConnectivity& c = t.connectivity[i][j];
       const uint size = read_uint();
       if (size > 0)
       {
         const uint num_entities = read_uint();
         c.connections = std::vector<uint>(size);
         read_array(size, &(c.connections)[0]);
-        c.offsets.resize(num_entities + 1);
-        read_array(c.offsets.size(), &(c.offsets[0]));
+        c.index_to_position.resize(num_entities + 1);
+        read_array(c.index_to_position.size(), &(c.index_to_position[0]));
       }
     }
   }
@@ -110,9 +108,9 @@ void BinaryFile::operator>> (Mesh& mesh)
   // Read mesh geometry (ignoring higher order stuff)
   MeshGeometry& g = mesh._geometry;
   g._dim = read_uint();
-  g._size = read_uint();
-  g.coordinates = new double[g._dim * g._size];
-  read_array(g._dim * g._size, g.coordinates);
+  const uint size = read_uint();
+  g.coordinates.resize(g._dim*size);
+  read_array(g._dim*size, g.coordinates.data());
 
   // Read cell type
   mesh._cell_type = CellType::create(static_cast<CellType::Type>(read_uint()));
@@ -160,10 +158,10 @@ void BinaryFile::operator<< (const Mesh& mesh)
 
   // Write mesh topology
   const MeshTopology& t = mesh._topology;
-  const uint D = t._dim;
+  const uint D = t.dim();
   write_uint(D);
   if (_store_connectivity)
-    write_array(D + 1, t.num_entities);
+    write_array(D + 1, t.num_entities.data());
   else
   {
     for (uint i = 0; i <= D; i++)
@@ -178,7 +176,7 @@ void BinaryFile::operator<< (const Mesh& mesh)
   {
     for (uint j = 0; j <= D; j++)
     {
-      const MeshConnectivity& c = *t.connectivity[i][j];
+      const MeshConnectivity& c = t.connectivity[i][j];
 
       // If store all connectivity or if storing cell connectivity
       if (_store_connectivity || (i == D && j == 0))
@@ -186,9 +184,9 @@ void BinaryFile::operator<< (const Mesh& mesh)
         write_uint(c.size());
         if (!c.empty())
         {
-          write_uint(c.offsets.size() - 1);
+          write_uint(c.index_to_position.size() - 1);
           write_array(c.size(), &(c.connections)[0]);
-          write_array(c.offsets.size(), &(c.offsets[0]));
+          write_array(c.index_to_position.size(), &(c.index_to_position[0]));
         }
       }
       else
@@ -199,8 +197,8 @@ void BinaryFile::operator<< (const Mesh& mesh)
   // Write mesh geometry (ignoring higher order stuff)
   const MeshGeometry& g = mesh._geometry;
   write_uint(g._dim);
-  write_uint(g._size);
-  write_array(g._dim * g._size, g.coordinates);
+  write_uint(g.size());
+  write_array(g._dim*g.size(), g.coordinates.data());
 
   // Write cell type
   write_uint(static_cast<uint>(mesh._cell_type->cell_type()));

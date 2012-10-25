@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2005-2009.
-// Modified by Johan Hoffman, 2005.
-// Modified by Andy R. Terrel, 2005.
-// Modified by Garth N. Wells, 2005-2010.
+// Modified by Anders Logg 2005-2012
+// Modified by Johan Hoffman 2005
+// Modified by Andy R. Terrel 2005
+// Modified by Garth N. Wells 2005-2010
 //
 // First added:  2005-12-02
-// Last changed: 2011-10-19
+// Last changed: 2012-08-20
 
 #ifndef __DOLFIN_PETSC_KRYLOV_SOLVER_H
 #define __DOLFIN_PETSC_KRYLOV_SOLVER_H
@@ -65,7 +65,7 @@ namespace dolfin
 
     /// Create Krylov solver for a particular method and PETScPreconditioner
     /// shared_ptr version
-    PETScKrylovSolver(std::string method, 
+    PETScKrylovSolver(std::string method,
 		      boost::shared_ptr<PETScPreconditioner> preconditioner);
 
     /// Create Krylov solver for a particular method and PETScPreconditioner
@@ -73,7 +73,7 @@ namespace dolfin
 
     /// Create Krylov solver for a particular method and PETScPreconditioner
     /// shared_ptr version
-    PETScKrylovSolver(std::string method, 
+    PETScKrylovSolver(std::string method,
 		      boost::shared_ptr<PETScUserPreconditioner> preconditioner);
 
     /// Create solver from given PETSc KSP pointer
@@ -83,14 +83,14 @@ namespace dolfin
     ~PETScKrylovSolver();
 
     /// Set operator (matrix)
-    void set_operator(const boost::shared_ptr<const GenericMatrix> A);
+    void set_operator(const boost::shared_ptr<const GenericLinearOperator> A);
 
     /// Set operator (matrix)
     void set_operator(const boost::shared_ptr<const PETScBaseMatrix> A);
 
     /// Set operator (matrix) and preconditioner matrix
-    void set_operators(const boost::shared_ptr<const GenericMatrix> A,
-                       const boost::shared_ptr<const GenericMatrix> P);
+    void set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
+                       const boost::shared_ptr<const GenericLinearOperator> P);
 
     /// Set operator (matrix) and preconditioner matrix
     void set_operators(const boost::shared_ptr<const PETScBaseMatrix> A,
@@ -106,7 +106,7 @@ namespace dolfin
     uint solve(PETScVector& x, const PETScVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
+    uint solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const PETScBaseMatrix& A, PETScVector& x, const PETScVector& b);

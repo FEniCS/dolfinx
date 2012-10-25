@@ -24,9 +24,10 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/la/LinearAlgebraFactory.h>
+#include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include <dolfin/la/LinearSolver.h>
-#include "AssemblerTools.h"
+#include "Assembler.h"
+#include "AssemblerBase.h"
 #include "assemble.h"
 #include "DirichletBC.h"
 #include "PeriodicBC.h"
@@ -138,10 +139,12 @@ void LinearVariationalSolver::solve()
 
 
     // Intialise matrix, taking into account periodic dofs
-    AssemblerTools::init_global_tensor(*A, *a, dof_pairs, true, false, false);
+    Assembler assembler;
+    assembler.init_global_tensor(*A, *a, dof_pairs);
+    assembler.reset_sparsity = false;
 
     // Assemble linear system
-    assemble(*A, *a, false);
+    assembler.assemble(*A, *a);
     if (L->ufc_form())
       assemble(*b, *L);
     else

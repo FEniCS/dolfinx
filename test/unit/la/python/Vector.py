@@ -248,6 +248,22 @@ class AbstractBaseTest(object):
         v0 += v1
         self.assertEqual(v0.sum(), n)
 
+    def test_scalar_add(self):
+        #if self.backend == "Epetra":
+        #    return
+        n = 301
+        v0 = Vector(n)
+        v1 = Vector(n)
+        v0[:] = -1.0
+        v0 += 2.0
+        self.assertEqual(v0.sum(), n)
+        v0 -= 2.0
+        self.assertEqual(v0.sum(), -n)
+        v0 = v0 + 3.0
+        self.assertEqual(v0.sum(), 2*n)
+        v0 = v0 - 1.0
+        self.assertEqual(v0.sum(), n)
+
     def test_vector_subtract(self):
         n = 301
         v0 = Vector(n)
@@ -317,8 +333,8 @@ class DataTester:
             data[0] = 1
         self.assertRaises(RuntimeError, write_data, data)
 
-        # Test for down_casted Vector
-        v = down_cast(v)
+        # Test for as_backend_typeed Vector
+        v = as_backend_type(v)
         data = v.data()
         self.assertTrue((data==array).all())
 
@@ -328,7 +344,7 @@ class DataNotWorkingTester:
         v = Vector(301)
         self.assertRaises(RuntimeError, v.data)
 
-        v = down_cast(v)
+        v = as_backend_type(v)
         def no_attribute():
             v.data()
         self.assertRaises(AttributeError,no_attribute)
@@ -362,7 +378,8 @@ class STLTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
     backend    = "STL"
 
 if __name__ == "__main__":
-    # Turn of DOLFIN output
+
+    # Turn off DOLFIN output
     set_log_active(False)
 
     print ""

@@ -42,6 +42,7 @@ namespace dolfin
 {
 
   #ifdef HAS_MPI
+
   class MPICommunicator
   {
 
@@ -61,6 +62,19 @@ namespace dolfin
     MPI_Comm communicator;
 
   };
+
+  class MPIInfo
+  {
+  public:
+    MPIInfo();
+    ~MPIInfo();
+    MPI_Info& operator*();
+  private:
+
+    MPI_Info info;
+
+  };
+
   #endif
 
   /// This class provides stateful (single communicator) non-blocking MPI functionality.
@@ -440,7 +454,9 @@ namespace dolfin
     reqs.push_back(comm.isend(dest, 0, send_value));
     reqs.push_back(comm.irecv(source, 0, recv_value));
   #else
-    MPI::error_no_mpi("call MPINonblocking::send_recv");
+    dolfin_error("MPI.h",
+                  "call MPINonblocking::send_recv",
+                  "DOLFIN has been configured without MPI support");
   #endif
   }
 

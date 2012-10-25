@@ -73,10 +73,14 @@ namespace dolfin
     /// Return local range along dimension dim
     std::pair<uint, uint> local_range(uint dim) const;
 
-    /// Resize vector y such that is it compatible with matrix for
-    /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
-    /// case, size and layout are important.
-    void resize(GenericVector& y, uint dim) const;
+    /// Resize matrix to be compatible with the matrix-vector product
+    /// y = Ax. In the parallel case, both size and layout are
+    /// important.
+    ///
+    /// *Arguments*
+    ///     dim (uint)
+    ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
+    void resize(GenericVector& z, uint dim) const;
 
     /// Return PETSc Mat pointer
     boost::shared_ptr<Mat> mat() const
@@ -89,6 +93,7 @@ namespace dolfin
 
     // PETSc Mat pointer
     boost::shared_ptr<Mat> A;
+
   };
 
 }

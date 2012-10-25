@@ -32,18 +32,17 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UFC::UFC(const Form& form)
- : form(*form.ufc_form()), cell(form.mesh(), false), cell0(form.mesh(), false),
-   cell1(form.mesh(), false), coefficients(form.coefficients()), dolfin_form(form)
+UFC::UFC(const Form& form) : form(*form.ufc_form()), cell(form.mesh()),
+  cell0(form.mesh()), cell1(form.mesh()),
+  coefficients(form.coefficients()), dolfin_form(form)
 {
   dolfin_assert(form.ufc_form());
   init(form);
 }
 //-----------------------------------------------------------------------------
-UFC::UFC(const UFC& ufc) : form(ufc.form),
-   cell(ufc.dolfin_form.mesh(), false),  cell0(ufc.dolfin_form.mesh(), false),
-   cell1(ufc.dolfin_form.mesh(), false), coefficients(ufc.dolfin_form.coefficients()),
-   dolfin_form(ufc.dolfin_form)
+UFC::UFC(const UFC& ufc) : form(ufc.form), cell(ufc.dolfin_form.mesh()),
+   cell0(ufc.dolfin_form.mesh()), cell1(ufc.dolfin_form.mesh()),
+   coefficients(ufc.dolfin_form.coefficients()), dolfin_form(ufc.dolfin_form)
 {
   this->init(ufc.dolfin_form);
 }

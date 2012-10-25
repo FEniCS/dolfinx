@@ -20,7 +20,7 @@
 // First added:  2010-11-16
 // Last changed: 2011-11-14
 
-// Included here to avoid a C++ problem with some MPI implementations                                                                                                                         
+// Included here to avoid a C++ problem with some MPI implementations
 #include <dolfin/common/MPI.h>
 
 #include <boost/foreach.hpp>
@@ -34,7 +34,7 @@ using namespace dolfin;
 #ifdef HAS_TRILINOS
 //-----------------------------------------------------------------------------
 dolfin::uint ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
-                                                            Array<uint>& colors)
+                                                     std::vector<uint>& colors)
 {
   if (colors.size() != graph.size())
   {
@@ -67,7 +67,7 @@ dolfin::uint ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
   zoltan.Set_Num_Edges_Multi_Fn(ZoltanInterface::ZoltanGraphInterface::get_number_edges, &zoltan_graph);
   zoltan.Set_Edge_List_Multi_Fn(ZoltanInterface::ZoltanGraphInterface::get_all_edges, &zoltan_graph);
 
-  // Create array for global ids that should be renumbered
+  // Create array for global ids that should be re-ordered
   std::vector<ZOLTAN_ID_TYPE> global_ids(graph.size());
   for (uint i = 0; i < global_ids.size(); ++i)
     global_ids[i] = i;
@@ -96,7 +96,7 @@ dolfin::uint ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
 //-----------------------------------------------------------------------------
 #else
 dolfin::uint ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
-                                                    Array<uint>& colors)
+                                                    std::vector<uint>& colors)
 {
   dolfin_error("ZoltanInterface.cpp",
                "color mesh using Zoltan",

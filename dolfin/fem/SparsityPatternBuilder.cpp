@@ -37,7 +37,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
                    const Mesh& mesh,
-                   const std::vector<const GenericDofMap*>& dofmaps,
+                   const std::vector<const GenericDofMap*> dofmaps,
                    const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& master_slave_dofs,
                    bool cells, bool interior_facets, bool exterior_facets, bool diagonal)
 {
@@ -57,8 +57,8 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   // Initialise sparsity pattern
   sparsity_pattern.init(global_dimensions, local_range, off_process_owner);
 
-  // Only build for rank >= 2 (matrices and higher order tensors) that require
-  // sparsity details
+  // Only build for rank >= 2 (matrices and higher order tensors) that
+  // require sparsity details
   if (rank < 2)
     return;
 
@@ -105,7 +105,9 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     Progress p("Building sparsity pattern over interior facets", mesh.num_facets());
     for (FacetIterator facet(mesh); !facet.end(); ++facet)
     {
-      const bool exterior_facet = facet->exterior();
+      bool exterior_facet = false;
+      if (facet->num_global_entities(D) == 1)
+        exterior_facet = true;
 
       // Check facet type
       if (exterior_facets && exterior_facet && !cells)
@@ -157,7 +159,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   {
     Progress p("Building sparsity pattern over diagonal", local_range[0].second-local_range[0].first);
 
-    std::vector<uint> diagonal_dof(1,0);
+    std::vector<uint> diagonal_dof(1, 0);
     for (uint i = 0; i < rank; ++i)
       dofs[i] = &diagonal_dof;
 

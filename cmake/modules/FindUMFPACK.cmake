@@ -9,9 +9,9 @@ message(STATUS "Checking for package 'UMFPACK'")
 
 # Find packages that UMFPACK depends on
 set(CMAKE_LIBRARY_PATH ${BLAS_DIR}/lib $ENV{BLAS_DIR}/lib ${CMAKE_LIBRARY_PATH})
-find_package(AMD)
-find_package(BLAS)
-find_package(CHOLMOD)
+find_package(AMD QUIET)
+find_package(BLAS QUIET)
+find_package(CHOLMOD QUIET)
 
 # Check for header file
 find_path(UMFPACK_INCLUDE_DIRS umfpack.h
@@ -28,6 +28,15 @@ find_library(UMFPACK_LIBRARY umfpack
   )
 mark_as_advanced(UMFPACK_LIBRARY)
 
+#  Check for SUITESPARSE library on Apple
+if (APPLE)
+  find_library(SUITESPARSE_LIBRARY SuiteSparse
+    PATHS ${UMFPACK_DIR}/lib $ENV{UMFPACK_DIR}/lib
+    DOC "The SUITESPARSE library"
+  )
+  mark_as_advanced(SUITESPARSE_LIBRARY)
+endif()
+
 # Collect libraries
 if (AMD_FOUND)
   set(UMFPACK_LIBRARIES ${UMFPACK_LIBRARY} ${AMD_LIBRARIES})
@@ -37,6 +46,10 @@ if (BLAS_FOUND)
 endif()
 if (CHOLMOD_FOUND)
   set(UMFPACK_LIBRARIES ${UMFPACK_LIBRARIES} ${CHOLMOD_LIBRARIES})
+endif()
+
+if (SUITESPARSE_LIBRARY)
+  set(UMFPACK_LIBRARIES ${UMFPACK_LIBRARIES} ${SUITESPARSE_LIBRARY})
 endif()
 
 find_program(GFORTRAN_EXECUTABLE gfortran)
@@ -50,7 +63,9 @@ if (GFORTRAN_EXECUTABLE)
 endif()
 
 # Try compiling and running test program
-if (UMFPACK_INCLUDE_DIRS AND UMFPACK_LIBRARIES AND AMD_LIBRARIES)
+if (DOLFIN_SKIP_BUILD_TESTS)
+  set(UMFPACK_TEST_RUNS TRUE)
+elseif (UMFPACK_INCLUDE_DIRS AND UMFPACK_LIBRARIES AND AMD_LIBRARIES)
 
   # Set flags for building test program
   set(CMAKE_REQUIRED_INCLUDES ${UMFPACK_INCLUDE_DIRS})

@@ -32,7 +32,6 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/ParallelData.h>
 #include <dolfin/fem/ufcexp.h>
 
 namespace dolfin
@@ -47,17 +46,13 @@ namespace dolfin
   public:
 
     /// Create UFC cell from DOLFIN cell
-    UFCCell(const Cell& cell, bool use_global_indices=true) : ufcexp::cell(),
-        use_global_indices(use_global_indices),
-        num_vertices(0), num_higher_order_vertices(0)
+    UFCCell(const Cell& cell) : ufcexp::cell(), num_vertices(0)
     {
       init(cell);
     }
 
     /// Create UFC cell for first DOLFIN cell in mesh
-    UFCCell(const Mesh& mesh, bool use_global_indices=true) : ufcexp::cell(),
-        use_global_indices(use_global_indices),
-        num_vertices(0), num_higher_order_vertices(0)
+    UFCCell(const Mesh& mesh) : ufcexp::cell(), num_vertices(0)
     {
       CellIterator cell(mesh);
       init(*cell);
@@ -107,8 +102,8 @@ namespace dolfin
       entity_indices = new uint*[topological_dimension + 1];
       for (uint d = 0; d < topological_dimension; d++)
       {
-        // Store number of cell entities allocated for (this can change between
-        // init() and update() which is why it's stored)
+        // Store number of cell entities allocated for (this can change
+        // between init() and update() which is why it's stored)
         num_cell_entities.push_back(cell.num_entities(d));
         if (cell.num_entities(d) > 0)
           entity_indices[d] = new uint[cell.num_entities(d)];
@@ -117,23 +112,8 @@ namespace dolfin
       }
       entity_indices[topological_dimension] = new uint[1];
 
-      // Get global entity indices (if any)
-      global_entities.resize(topological_dimension + 1);
-      const ParallelData& parallel_data = mesh.parallel_data();
-      for (uint d = 0; d <= topological_dimension; ++d)
-      {
-        if (parallel_data.have_global_entity_indices(d))
-          global_entities[d] = &(parallel_data.global_entity_indices(d));
-        else
-          global_entities[d] = 0;
-      }
-
       // Allocate vertex coordinates
       coordinates = new double*[num_vertices];
-
-      // Allocate higher order vertex coordinates
-      num_higher_order_vertices = cell.mesh().geometry().num_higher_order_vertices_per_cell();
-      higher_order_coordinates = new double*[num_higher_order_vertices];
 
       // Update cell data
       update(cell);
@@ -150,13 +130,8 @@ namespace dolfin
       delete [] entity_indices;
       entity_indices = 0;
 
-      global_entities.clear();
-
       delete [] coordinates;
       coordinates = 0;
-
-      delete [] higher_order_coordinates;
-      higher_order_coordinates = 0;
 
       cell_shape = ufc::interval;
       topological_dimension = 0;
@@ -184,58 +159,48 @@ namespace dolfin
       // Set local facet (-1 means no local facet set)
       this->local_facet = local_facet;
 
-      // Copy local entity indices from mesh
       const uint D = topological_dimension;
+      const MeshTopology& topology = cell.mesh().topology();
       for (uint d = 0; d < D; ++d)
       {
-        for (uint i = 0; i < num_cell_entities[d]; ++i)
-          entity_indices[d][i] = cell.entities(d)[i];
+        //if (use_global_indices && topology.have_global_indices(d))
+        if (topology.have_global_indices(d))
+        {
+          const std::vector<uint>& global_indices = topology.global_indices(d);
+          for (uint i = 0; i < num_cell_entities[d]; ++i)
+            entity_indices[d][i] = global_indices[cell.entities(d)[i]];
+        }
+        else
+        {
+          for (uint i = 0; i < num_cell_entities[d]; ++i)
+            entity_indices[d][i] = cell.entities(d)[i];
+        }
       }
 
       // Set cell index
-      entity_indices[D][0] = cell.index();
-      index = cell.index();
+      //if (use_global_indices && topology.have_global_indices(D))
+      //  entity_indices[D][0] = cell.global_index();
+      //else
+        entity_indices[D][0] = cell.index();
 
-      // Map to global entity indices (if any)
-      for (uint d = 0; d < D; ++d)
-      {
-        if (use_global_indices && global_entities[d])
-        {
-          for (uint i = 0; i < num_cell_entities[d]; ++i)
-            entity_indices[d][i] = (*global_entities[d])[entity_indices[d][i]];
-        }
-      }
-      if (use_global_indices && global_entities[D])
-        entity_indices[D][0] = (*global_entities[D])[entity_indices[D][0]];
+      // FIXME: Using the local cell index is inconsistent with UFC, but
+      //        necessary to make DOLFIN run
+      // Local cell index
+      index = cell.index();
 
       // Set vertex coordinates
       const uint* vertices = cell.entities(0);
       for (uint i = 0; i < num_vertices; i++)
         coordinates[i] = const_cast<double*>(cell.mesh().geometry().x(vertices[i]));
-
-      // Set higher order vertex coordinates
-      if (num_higher_order_vertices > 0)
-      {
-        const uint current_cell_index = cell.index();
-        const uint* higher_order_vertex_indices = cell.mesh().geometry().higher_order_cell(current_cell_index);
-        for (uint i = 0; i < num_higher_order_vertices; i++)
-          higher_order_coordinates[i] = const_cast<double*>(cell.mesh().geometry().higher_order_x(higher_order_vertex_indices[i]));
-      }
     }
 
   private:
 
-    // True it global entity indices should be used
-    const bool use_global_indices;
+    // True if global entity indices should be used
+    //const bool use_global_indices;
 
     // Number of cell vertices
     uint num_vertices;
-
-    // Number of higher order cell vertices
-    uint num_higher_order_vertices;
-
-    // Mappings from local to global entity indices (if any)
-    std::vector<const MeshFunction<uint>* > global_entities;
 
     // Number of cell entities of dimension d at initialisation
     std::vector<uint> num_cell_entities;

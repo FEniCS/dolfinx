@@ -100,7 +100,7 @@ namespace dolfin
 
     /// Member access operator
     MeshEntity* operator->()
-    { entity._index = *it; return &entity; }
+    { entity._local_index = *it; return &entity; }
 
     /// Check if iterator has reached the end
     bool end() const

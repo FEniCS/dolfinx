@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2009 Anders Logg
+// Copyright (C) 2003-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -21,7 +21,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2011-03-15
+// Last changed: 2012-10-02
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -311,7 +311,14 @@ namespace dolfin
     virtual void compute_vertex_values(std::vector<double>& vertex_values,
                                        const Mesh& mesh) const;
 
-    /// U[date off-process ghost coefficients
+    /// Compute values at all mesh vertices
+    ///
+    /// *Arguments*
+    ///     vertex_values (_Array_ <double>)
+    ///         The values at all vertices.
+    void compute_vertex_values(std::vector<double>& vertex_values);
+
+    /// Update off-process ghost coefficients
     virtual void update() const;
 
   private:

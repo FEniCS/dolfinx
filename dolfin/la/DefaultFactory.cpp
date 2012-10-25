@@ -25,7 +25,6 @@
 #include "PETScFactory.h"
 #include "PETScCuspFactory.h"
 #include "EpetraFactory.h"
-#include "MTL4Factory.h"
 #include "STLFactory.h"
 #include "DefaultFactory.h"
 
@@ -50,6 +49,11 @@ boost::shared_ptr<GenericVector> DefaultFactory::create_local_vector() const
 boost::shared_ptr<TensorLayout> DefaultFactory::create_layout(uint rank) const
 {
   return factory().create_layout(rank);
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<GenericLinearOperator> DefaultFactory::create_linear_operator() const
+{
+  return factory().create_linear_operator();
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<GenericLUSolver>
@@ -83,7 +87,7 @@ std::vector<std::pair<std::string, std::string> >
   return factory().krylov_solver_preconditioners();
 }
 //-----------------------------------------------------------------------------
-LinearAlgebraFactory& DefaultFactory::factory()
+GenericLinearAlgebraFactory& DefaultFactory::factory()
 {
   // Fallback
   const std::string default_backend = "uBLAS";
@@ -125,16 +129,6 @@ LinearAlgebraFactory& DefaultFactory::factory()
     dolfin_error("DefaultFactory.cpp",
                  "access linear algebra backend",
                  "Trilinos linear algebra backend is not available");
-    #endif
-  }
-  else if (backend == "MTL4")
-  {
-    #ifdef HAS_MTL4
-    return MTL4Factory::instance();
-    #else
-    dolfin_error("DefaultFactory.cpp",
-                 "access linear algebra backend",
-                 "MTL4 linear algebra backend is not available");
     #endif
   }
   else if (backend == "STL")

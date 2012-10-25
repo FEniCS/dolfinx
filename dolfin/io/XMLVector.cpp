@@ -29,7 +29,6 @@
 #include "dolfin/function/FunctionSpace.h"
 #include "dolfin/la/GenericVector.h"
 #include "dolfin/mesh/Mesh.h"
-#include "dolfin/mesh/ParallelData.h"
 #include "XMLArray.h"
 #include "XMLVector.h"
 

@@ -26,6 +26,7 @@
 #include <ostream>
 #include <string>
 #include <vector>
+#include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include "dolfin/common/Array.h"
 #include "dolfin/log/log.h"
@@ -109,7 +110,8 @@ namespace dolfin
       element_node.append_attribute("index") = i;
       // NOTE: Casting to a string to avoid loss of precision when
       //       pugixml performs double-to-char conversion
-      element_node.append_attribute("value") = boost::lexical_cast<std::string>(x[i]).c_str();
+      element_node.append_attribute("value")
+        = boost::str(boost::format("%.15e") % x[i]).c_str();
     }
   }
   //-----------------------------------------------------------------------------

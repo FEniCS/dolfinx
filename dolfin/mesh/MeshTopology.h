@@ -21,12 +21,14 @@
 #ifndef __MESH_TOPOLOGY_H
 #define __MESH_TOPOLOGY_H
 
+#include <map>
+#include <utility>
+#include <vector>
 #include <dolfin/common/types.h>
+#include "MeshConnectivity.h"
 
 namespace dolfin
 {
-
-  class MeshConnectivity;
 
   /// MeshTopology stores the topology of a mesh, consisting of mesh entities
   /// and connectivity (incidence relations for the mesh entities). Note that
@@ -60,6 +62,9 @@ namespace dolfin
     /// Return number of entities for given dimension
     uint size(uint dim) const;
 
+    /// Return global number of entities for given dimension
+    uint size_global(uint dim) const;
+
     /// Clear all data
     void clear();
 
@@ -69,8 +74,48 @@ namespace dolfin
     /// Initialize topology of given maximum dimension
     void init(uint dim);
 
-    /// Set number of entities (size) for given topological dimension
-    void init(uint dim, uint size);
+    /// Set number of local entities (local_size) for given topological
+    /// dimension
+    void init(uint dim, uint local_size);
+
+    /// Set number of global entities (global_size) for given topological
+    /// dimension
+    void init_global(uint dim, uint global_size);
+
+    /// Initialize storage for global entity numbering for entities of
+    /// dimension dim
+    void init_global_indices(uint dim, uint size);
+
+    /// Set global index for entity of dimension dim and with local index
+    void set_global_index(uint dim, uint local_index, uint global_index)
+    {
+      dolfin_assert(dim < _global_indices.size());
+      dolfin_assert(local_index < _global_indices[dim].size());
+      _global_indices[dim][local_index] = global_index;
+    }
+
+    /// Get local-to-global index map for entities of topological dimension d
+    const std::vector<uint>& global_indices(uint d) const
+    {
+      dolfin_assert(d < _global_indices.size());
+      return _global_indices[d];
+    }
+
+    /// Check if global indices are available for entiries of dimension dim
+    bool have_global_indices(uint dim) const
+    {
+      dolfin_assert(dim < _global_indices.size());
+      return !_global_indices[dim].empty();
+    }
+
+    /// Return map from shared entiies to process that share the entity
+    std::map<unsigned int, std::set<unsigned int> >&
+      shared_entities(uint dim);
+
+    /// Return map from shared entiies to process that share the entity
+    /// (const version)
+    const std::map<unsigned int, std::set<unsigned int> >&
+      shared_entities(uint dim) const;
 
     /// Return connectivity for given pair of topological dimensions
     dolfin::MeshConnectivity& operator() (uint d0, uint d1);
@@ -81,19 +126,39 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
+    /// Mesh entity colors, if computed. First vector is
+    ///
+    ///    (colored entity dim - dim1 - dim2 - ... -  colored entity dim)
+    ///
+    /// The first vector in the pair stores mesh entity colors and the
+    /// vector<vector> is a list of all mesh entity indices of the same
+    /// color, e.g. vector<vector>[col][i] is the index of the ith entity
+    /// of color 'col'.
+    // Developer note: std::vector is used in place of a MeshFunction
+    //                 to avoid circular dependencies in the header files
+    std::map<const std::vector<uint>,
+     std::pair<std::vector<uint>, std::vector<std::vector<uint> > > > coloring;
+
   private:
 
     // Friends
     friend class BinaryFile;
 
-    // Topological dimension
-    uint _dim;
-
     // Number of mesh entities for each topological dimension
-    uint* num_entities;
+    std::vector<uint> num_entities;
+
+    // Global number of mesh entities for each topological dimension
+    std::vector<uint> global_num_entities;
+
+    // Global indices for mesh entities (empty if not set)
+    std::vector<std::vector<uint> > _global_indices;
+
+    // Maps each shared vertex (entity of dim 0) to a list of the
+    // processes sharing the vertex
+    std::map<uint, std::set<uint> > _shared_vertices;
 
     // Connectivity for pairs of topological dimensions
-    MeshConnectivity*** connectivity;
+    std::vector<std::vector<MeshConnectivity> > connectivity;
 
   };
 

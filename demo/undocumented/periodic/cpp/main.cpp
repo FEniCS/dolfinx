@@ -26,15 +26,12 @@
 // at y = 0, 1 and periodic boundary conditions at x = 0, 1.
 
 #include <dolfin.h>
-#include <dolfin/fem/AssemblerTools.h>
 #include "Poisson.h"
 
 using namespace dolfin;
 
 int main()
 {
-  parameters["linear_algebra_backend"] = "Epetra";
-
   // Source term
   class Source : public Expression
   {

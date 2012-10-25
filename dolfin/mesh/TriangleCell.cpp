@@ -128,11 +128,17 @@ void TriangleCell::refine_cell(Cell& cell, MeshEditor& editor,
   const uint e1 = offset + e[find_edge(1, cell)];
   const uint e2 = offset + e[find_edge(2, cell)];
 
-  // Add the four new cells
-  editor.add_cell(current_cell++, v0, e2, e1);
-  editor.add_cell(current_cell++, v1, e0, e2);
-  editor.add_cell(current_cell++, v2, e1, e0);
-  editor.add_cell(current_cell++, e0, e1, e2);
+  // Create four new cells
+  std::vector<std::vector<uint> > cells(4, std::vector<uint>(3));
+  cells[0][0] = v0; cells[0][1] = e2; cells[0][2] = e1;
+  cells[1][0] = v1; cells[1][1] = e0; cells[1][2] = e2;
+  cells[2][0] = v2; cells[2][1] = e1; cells[2][2] = e0;
+  cells[3][0] = e0; cells[3][1] = e1; cells[3][2] = e2;
+
+  // Add cells
+  std::vector<std::vector<uint> >::const_iterator _cell;
+  for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
+    editor.add_cell(current_cell++, *_cell);
 }
 //-----------------------------------------------------------------------------
 double TriangleCell::volume(const MeshEntity& triangle) const
@@ -291,7 +297,7 @@ double TriangleCell::facet_area(const Cell& cell, uint facet) const
 }
 //-----------------------------------------------------------------------------
 void TriangleCell::order(Cell& cell,
-                         const MeshFunction<uint>* global_vertex_indices) const
+                 const std::vector<uint>& local_to_global_vertex_indices) const
 {
   // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1
 
@@ -303,14 +309,14 @@ void TriangleCell::order(Cell& cell,
   {
     dolfin_assert(!topology(2, 1).empty());
 
-    // Get edges
+    // Get edge indices (local)
     const uint* cell_edges = cell.entities(1);
 
     // Sort vertices on each edge
     for (uint i = 0; i < 3; i++)
     {
       uint* edge_vertices = const_cast<uint*>(topology(1, 0)(cell_edges[i]));
-      sort_entities(2, edge_vertices, global_vertex_indices);
+      sort_entities(2, edge_vertices, local_to_global_vertex_indices);
     }
   }
 
@@ -318,7 +324,7 @@ void TriangleCell::order(Cell& cell,
   if (!topology(2, 0).empty())
   {
     uint* cell_vertices = const_cast<uint*>(cell.entities(0));
-    sort_entities(3, cell_vertices, global_vertex_indices);
+    sort_entities(3, cell_vertices, local_to_global_vertex_indices);
   }
 
   // Sort local edges on cell after non-incident vertex, connectivity 2 - 1
@@ -326,7 +332,7 @@ void TriangleCell::order(Cell& cell,
   {
     dolfin_assert(!topology(2, 1).empty());
 
-    // Get cell vertices and edges
+    // Get cell vertiex and edge indices (local)
     const uint* cell_vertices = cell.entities(0);
     uint* cell_edges = const_cast<uint*>(cell.entities(1));
 

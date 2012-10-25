@@ -28,12 +28,12 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <boost/multi_array.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 #include "LocalMeshValueCollection.h"
 #include "Mesh.h"
 #include "MeshDistributed.h"
-#include "ParallelData.h"
 
 namespace dolfin
 {
@@ -93,7 +93,7 @@ namespace dolfin
     static void build_distributed_mesh(Mesh& mesh);
 
     /// Build a partitioned mesh based on local mesh data
-    static void build_distributed_mesh(Mesh& mesh, LocalMeshData& data);
+    static void build_distributed_mesh(Mesh& mesh, const LocalMeshData& data);
 
     template<typename T>
     static void build_distributed_value_collection(MeshValueCollection<T>& values,
@@ -105,7 +105,7 @@ namespace dolfin
   private:
 
     /// Create a partitioned mesh based on local mesh data
-    static void partition(Mesh& mesh, LocalMeshData& data);
+    static void partition(Mesh& mesh, const LocalMeshData& data);
 
     /// Create and attach distributed MeshDomains from local_data
     static void build_mesh_domains(Mesh& mesh, const LocalMeshData& local_data);
@@ -124,7 +124,7 @@ namespace dolfin
 
     // Build preliminary 'guess' of shared enties
     static void compute_preliminary_entity_ownership(const std::map<std::vector<uint>, uint>& entities,
-          const std::map<uint, std::vector<uint> >& shared_vertices,
+          const std::map<uint, std::set<uint> >& shared_vertices,
           std::map<std::vector<uint>, uint>& owned_entity_indices,
           std::map<std::vector<uint>, uint>& shared_entity_indices,
           std::map<std::vector<uint>, std::vector<uint> >& shared_entity_processes,
@@ -139,26 +139,44 @@ namespace dolfin
           std::map<std::vector<uint>, std::vector<uint> >& ignored_entity_processes);
 
     // Distribute cells
-    static void distribute_cells(LocalMeshData& data,
+    static void distribute_cells(std::vector<uint>& global_cell_indices,
+                                 boost::multi_array<uint, 2>& cell_vertices,
+                                 const LocalMeshData& data,
                                  const std::vector<uint>& cell_partition);
 
     // Distribute vertices
-    static void distribute_vertices(LocalMeshData& data,
-                                    std::map<uint, uint>& glob2loc);
+    static void distribute_vertices(std::vector<uint>& vertex_indices,
+                  boost::multi_array<double, 2>& vertex_coordinates,
+                  std::map<uint, uint>& glob2loc,
+                  const boost::multi_array<uint, 2>& cell_vertices,
+                  const LocalMeshData& data);
 
     // Build mesh
-    static void build_mesh(Mesh& mesh, const LocalMeshData& data,
-                           std::map<uint, uint>& glob2loc);
+    static void build_mesh(Mesh& mesh,
+                   const std::vector<uint>& global_cell_indices,
+                   const boost::multi_array<uint, 2>& cell_vertices,
+                   const std::vector<uint>& vertex_indices,
+                   const boost::multi_array<double, 2>& vertex_coordinates,
+                   const std::map<uint, uint>& glob2loc,
+                   uint tdim, uint gdim, uint num_global_cells,
+                   uint num_global_vertices);
 
     // Check if all entity vertices are in overlap
     static bool in_overlap(const std::vector<uint>& entity_vertices,
-                           const std::map<uint, std::vector<uint> >& overlap);
+                           const std::map<uint, std::set<uint> >& overlap);
 
     // Mark non-shared mesh entities
     static void mark_nonshared(const std::map<std::vector<uint>, uint>& entities,
                const std::map<std::vector<uint>, uint>& shared_entity_indices,
                const std::map<std::vector<uint>, uint>& ignored_entity_indices,
                MeshFunction<bool>& exterior_facets);
+
+    // Mark non-shared mesh entities
+    static void mark_nonshared_new(const Mesh& mesh,
+               const std::map<std::vector<uint>, uint>& entities,
+               const std::map<std::vector<uint>, uint>& shared_entity_indices,
+               const std::map<std::vector<uint>, uint>& ignored_entity_indices,
+               std::vector<uint>& exterior_facets);
   };
 
   //---------------------------------------------------------------------------
@@ -205,7 +223,7 @@ namespace dolfin
       ldata = local_value_data;
 
     // Get local local-to-global map
-    if (!mesh.parallel_data().have_global_entity_indices(D))
+    if (!mesh.topology().have_global_indices(D))
     {
       dolfin_error("MeshPartitioning.h",
                    "build mesh value collection",
@@ -213,8 +231,10 @@ namespace dolfin
     }
 
     // Get global indices on local process
+    //const std::vector<uint> global_entity_indices
+    //  = mesh.parallel_data().global_entity_indices_as_vector(D);
     const std::vector<uint> global_entity_indices
-      = mesh.parallel_data().global_entity_indices_as_vector(D);
+      = mesh.topology().global_indices(D);
 
     // Add local (to this process) data to domain marker
     std::vector<uint>::iterator it;

@@ -134,7 +134,7 @@ namespace dolfin
     { return _pos; }
 
     /// Comparison operator.
-    bool operator==(const MeshEntityIterator & it) const
+    bool operator==(const MeshEntityIterator& it) const
     {
       // Use const_cast to use operator* inside comparison, which automatically
       // updates the entity index corresponding to pos *before* comparison (since
@@ -155,7 +155,7 @@ namespace dolfin
 
     /// Member access operator
     MeshEntity* operator->()
-    { entity._index = (index ? index[_pos] : _pos); return &entity; }
+    { entity._local_index = (index ? index[_pos] : _pos); return &entity; }
 
     /// Random access operator
     MeshEntity& operator[] (uint pos)

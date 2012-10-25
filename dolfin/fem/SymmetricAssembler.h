@@ -15,21 +15,20 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2012-01-26 (jobh@simula.no)
-// Last changed: 2012-03-03
+// First added:  2012-01-26
+// Last changed: 2012-10-04
 
 #ifndef __SYMMETRIC_ASSEMBLER_H
 #define __SYMMETRIC_ASSEMBLER_H
 
-#include <map>
-#include <vector>
-#include <boost/scoped_ptr.hpp>
-#include <dolfin/common/types.h>
-#include "Form.h"
-#include "DirichletBC.h"
+#include "Assembler.h"
 
 namespace dolfin
 {
+
+  // Forward declarations
+  class GenericMatrix;
+  class DirichletBC;
 
   /// This class provides implements an assembler for systems
   /// of the form Ax = b. Its assembly algorithms are similar to SystemAssember's,
@@ -54,32 +53,57 @@ namespace dolfin
   ///        A_n.mult(b, b_mod);
   ///        b -= b_mod;
 
-  class SymmetricAssembler
+  class SymmetricAssembler : public Assembler
   {
   public:
 
-    /// Assemble A and apply Dirichlet boundary conditions. Returns two
+    /// Constructor
+    SymmetricAssembler() {}
+
+    /// Assemble a and apply Dirichlet boundary conditions. Returns two
     /// matrices, where the second contains the symmetric modifications
     /// suitable for modifying RHS vectors.
     ///
     /// Note: row_bcs and col_bcs will normally be the same, but are different
     /// for e.g. off-diagonal block matrices in a mixed PDE.
-    static void assemble(GenericMatrix &A,
-                         GenericMatrix &A_nonsymm,
-                         const Form &a,
-                         const std::vector<const DirichletBC*> &row_bcs,
-                         const std::vector<const DirichletBC*> &col_bcs,
-                         const MeshFunction<uint> *cell_domains=NULL,
-                         const MeshFunction<uint> *exterior_facet_domains=NULL,
-                         const MeshFunction<uint> *interior_facet_domains=NULL,
-                         bool reset_sparsity=true,
-                         bool add_values=false,
-                         bool finalize_tensor=true,
-                         bool keep_diagonal=false);
+    void assemble(GenericMatrix& A,
+                  GenericMatrix& B,
+                  const Form& a,
+                  const std::vector<const DirichletBC*> row_bcs,
+                  const std::vector<const DirichletBC*> col_bcs,
+                  const MeshFunction<uint>* cell_domains=NULL,
+                  const MeshFunction<uint>* exterior_facet_domains=NULL,
+                  const MeshFunction<uint>* interior_facet_domains=NULL);
+
+    /// Assemble a and apply Dirichlet boundary conditions. Returns two
+    /// matrices, where the second contains the symmetric modifications
+    /// suitable for modifying RHS vectors.
+    ///
+    /// Note: row_bcs and col_bcs will normally be the same, but are different
+    /// for e.g. off-diagonal block matrices in a mixed PDE.
+    void assemble(GenericMatrix& A,
+                  GenericMatrix& B,
+                  const Form& a,
+                  const std::vector<const DirichletBC*> row_bcs,
+                  const std::vector<const DirichletBC*> col_bcs,
+                  const SubDomain& sub_domain);
+
+  protected:
+
+    /// Add cell tensor to global tensor. Hook to allow the SymmetricAssembler
+    /// to split the cell tensor into symmetric/antisymmetric parts.
+    virtual void add_to_global_tensor(GenericTensor& A,
+                                      std::vector<double>& local_A,
+                                      std::vector<const std::vector<uint>* >& dofs);
 
   private:
 
-    class PImpl;
+    // Parameters and methods used in add_to_global_tensor. The parameters
+    // are stored (by the assemble() method) in this instance, since the
+    // add_to_global_tensor interface is fixed.
+
+    class Private;
+    Private *impl;
 
   };
 

@@ -135,14 +135,14 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
 
     //--- Stage 2: Compute error indicators
     begin("Stage %d.2: Computing error indicators...", i);
-    Vector indicators(mesh.num_cells());
-    dolfin_assert(u);
     timer.start();
+    MeshFunction<double> indicators(mesh, mesh.topology().dim());
+    dolfin_assert(u);
     ec.compute_indicators(indicators, *u);
     datum->add("time_compute_indicators", timer.stop());
     if (parameters["save_data"])
     {
-      series.store(indicators, i);
+      //series.store(indicators, i); // No TimeSeries storage of MeshFunction
       series.store(mesh, i);
     }
     end();

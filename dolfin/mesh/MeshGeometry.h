@@ -54,63 +54,54 @@ namespace dolfin
     const MeshGeometry& operator= (const MeshGeometry& geometry);
 
     /// Return Euclidean dimension of coordinate system
-    uint dim() const { return _dim; }
+    uint dim() const
+    { return _dim; }
 
     /// Return number of coordinates
-    uint size() const { return _size; }
+    uint size() const
+    {
+      dolfin_assert(coordinates.size() % _dim == 0);
+      return coordinates.size()/_dim;
+    }
 
-    /// Return value of coordinate n in direction i
-    double& x(uint n, uint i) { dolfin_assert(n < _size && i < _dim); return coordinates[n*_dim + i]; }
+    /// Return value of coordinate with local index n in direction i
+    double& x(uint n, uint i)
+    {
+      dolfin_assert(n < local_index_to_position.size() && i < _dim);
+      return coordinates[local_index_to_position[n]*_dim + i];
+    }
 
-    /// Return value of coordinate n in direction i
-    double x(uint n, uint i) const { dolfin_assert(n < _size && i < _dim); return coordinates[n*_dim + i]; }
+    /// Return value of coordinate with local index n in direction i
+    double x(uint n, uint i) const
+    {
+      dolfin_assert(n < local_index_to_position.size() && i < _dim);
+      return coordinates[local_index_to_position[n]*_dim + i];
+    }
 
-    /// Return array of values for coordinate n
-    double* x(uint n) { return coordinates + n*_dim; }
+    /// Return array of values for coordinate with local index n
+    double* x(uint n)
+    {
+      dolfin_assert(n < local_index_to_position.size());
+      return &coordinates[local_index_to_position[n]*_dim];
+    }
 
-    /// Return array of values for coordinate n
-    const double* x(uint n) const { return coordinates + n*_dim; }
+    /// Return array of values for coordinate with local index n
+    const double* x(uint n) const
+    {
+      dolfin_assert(n < local_index_to_position.size());
+      return &coordinates[local_index_to_position[n]*_dim];
+    }
 
     /// Return array of values for all coordinates
-    double* x() { return coordinates; }
+    double* x()
+    { return coordinates.data(); }
 
     /// Return array of values for all coordinates
-    const double* x() const { return coordinates; }
+    const double* x() const
+    { return coordinates.data(); }
 
-    /// Return array of values for higher order coordinate n
-    double* higher_order_x(uint n) { return higher_order_coordinates + n*_dim; }
-
-    /// Return array of values for higher order coordinate n
-    const double* higher_order_x(uint n) const { return higher_order_coordinates + n*_dim; }
-
-    /// Return array of values for all higher order coordinates
-    double* higher_order_x() { return higher_order_coordinates; }
-
-    /// Return array of values for all higher order coordinates
-    const double* higher_order_x() const { return higher_order_coordinates; }
-
-    /// Return number of vertices used (per cell) to represent the higher order geometry
-    uint num_higher_order_vertices_per_cell() const { return _higher_order_num_dof; }
-
-    /// Return array of higher order vertex indices for a specific higher order cell
-    uint* higher_order_cell(uint c)
-    { return (higher_order_cell_data + (c*_higher_order_num_dof)); }
-
-    /// Return array of higher order vertex indices for a specific higher order cell
-    const uint* higher_order_cell(uint c) const
-    { return (higher_order_cell_data + (c*_higher_order_num_dof)); }
-
-    /// Return array of values for all higher order cell data
-    uint* higher_order_cells() { return higher_order_cell_data; }
-
-    /// Return array of values for all higher order cell data
-    const uint* higher_order_cells() const { return higher_order_cell_data; }
-
-    /// Return coordinate n as a 3D point value
+    /// Return coordinate with local index n as a 3D point value
     Point point(uint n) const;
-
-    /// Return pointer to boolean affine indicator array
-    bool* affine_cell_bool() { return affine_cell; }
 
     /// Clear all data
     void clear();
@@ -118,26 +109,17 @@ namespace dolfin
     /// Initialize coordinate list to given dimension and size
     void init(uint dim, uint size);
 
-    /// Initialize higher order coordinate list to given dimension and size
-    void init_higher_order_vertices(uint dim, uint size_higher_order);
+    /// Set value of coordinate
+    //void set(uint n, uint i, double x);
+    void set(uint local_index, const std::vector<double>& x);
 
-    /// Initialize higher order cell data list to given number of cells and dofs
-    void init_higher_order_cells(uint num_cells, uint num_dof);
-
-    /// Initialize the affine indicator array
-    void init_affine_indicator(uint num_cells);
-
-    /// set affine indicator at index i
-    void set_affine_indicator(uint i, bool value);
-
-    /// Set value of coordinate n in direction i
-    void set(uint n, uint i, double x);
-
-    /// Set value of higher order coordinate N in direction i
-    void set_higher_order_coordinates(uint N, uint i, double x);
-
-    /// Set higher order cell data for cell # N in direction i
-    void set_higher_order_cell_data(uint N, std::vector<uint> vector_cell_data);
+    /// Hash of coordinate values
+    ///
+    /// *Returns*
+    ///     uint
+    ///         A tree-hashed value of the coordinates over all MPI processes
+    ///
+    std::size_t hash() const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -151,33 +133,14 @@ namespace dolfin
     // Euclidean dimension
     uint _dim;
 
-    // Number of coordinates
-    uint _size;
-
     // Coordinates for all vertices stored as a contiguous array
-    double* coordinates;
+    std::vector<double> coordinates;
 
-    // Number of higher order coordinates
-    uint _size_higher_order;
+    // Local coordinate indices (array position -> index)
+    std::vector<uint> position_to_local_index;
 
-    // Higher order mesh coordinates (stored just like coordinates)
-    // note: this may seem redundant, but needs to stay this way!
-    double* higher_order_coordinates;
-
-    // should eventually have some kind of indicator for the TYPE of higher order cell data!
-    // i.e. P2 Lagrange, etc...  For now we will assume P2 Lagrange only!
-
-    // Higher order cell size info
-    uint _higher_order_num_cells;
-    uint _higher_order_num_dof;
-
-    // Higher order cell data
-    // note: this may seem redundant, but needs to stay this way!
-    uint* higher_order_cell_data;
-
-    // Boolean indicator for whether a cell is affinely mapped (or not), i.e. straight or not.
-    // note: this is used in conjunction with the higher order stuff
-    bool* affine_cell;
+    // Local coordinate indices (local index -> array position)
+    std::vector<uint> local_index_to_position;
 
   };
 

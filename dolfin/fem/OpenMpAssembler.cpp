@@ -48,31 +48,20 @@
 #include "Form.h"
 #include "UFC.h"
 #include "FiniteElement.h"
-#include "AssemblerTools.h"
 #include "OpenMpAssembler.h"
 
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-void OpenMpAssembler::assemble(GenericTensor& A,
-                               const Form& a,
-                               bool reset_sparsity,
-                               bool add_values,
-                               bool finalize_tensor,
-                               bool keep_diagonal)
+void OpenMpAssembler::assemble(GenericTensor& A, const Form& a)
 {
-  assemble(A, a, 0, 0, 0, reset_sparsity, add_values, finalize_tensor, keep_diagonal);
+  assemble(A, a, 0, 0, 0);
 }
 //-----------------------------------------------------------------------------
-void OpenMpAssembler::assemble(GenericTensor& A,
-                               const Form& a,
+void OpenMpAssembler::assemble(GenericTensor& A, const Form& a,
                                const MeshFunction<uint>* cell_domains,
                                const MeshFunction<uint>* exterior_facet_domains,
-                               const MeshFunction<uint>* interior_facet_domains,
-                               bool reset_sparsity,
-                               bool add_values,
-                               bool finalize_tensor,
-                               bool keep_diagonal)
+                               const MeshFunction<uint>* interior_facet_domains)
 {
   if (MPI::num_processes() > 1)
   {
@@ -90,7 +79,7 @@ void OpenMpAssembler::assemble(GenericTensor& A,
   // interface.
 
   // Check form
-  AssemblerTools::check(a);
+  AssemblerBase::check(a);
 
   // Create data structure for local assembly data
   UFC ufc(a);
@@ -102,8 +91,7 @@ void OpenMpAssembler::assemble(GenericTensor& A,
 
   // Initialize global tensor
   const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > periodic_master_slave_dofs;
-  AssemblerTools::init_global_tensor(A, a, periodic_master_slave_dofs,
-                                     reset_sparsity, add_values, keep_diagonal);
+  init_global_tensor(A, a, periodic_master_slave_dofs);
 
   // FIXME: The below selections should be made robust
 
@@ -121,8 +109,7 @@ void OpenMpAssembler::assemble(GenericTensor& A,
     A.apply("add");
 }
 //-----------------------------------------------------------------------------
-void OpenMpAssembler::assemble_cells(GenericTensor& A,
-                                     const Form& a,
+void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
                                      UFC& _ufc,
                                      const MeshFunction<uint>* domains,
                                      std::vector<double>* values)
@@ -164,9 +151,9 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
 
   // Get coloring data
   std::map<const std::vector<uint>,
-           std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
-  mesh_coloring = mesh.parallel_data().coloring.find(coloring_type);
-  if (mesh_coloring == mesh.parallel_data().coloring.end())
+           std::pair<std::vector<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
+  mesh_coloring = mesh.topology().coloring.find(coloring_type);
+  if (mesh_coloring == mesh.topology().coloring.end())
   {
     dolfin_error("OpenMPAssembler.cpp",
                  "perform multithreaded assembly using OpenMP assembler",
@@ -181,6 +168,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
 
   // Assemble over cells (loop over colours, then cells of same color)
   const uint num_colors = entities_of_color.size();
+  Progress p("Assembling cells (threaded)", num_colors);
   for (uint color = 0; color < num_colors; ++color)
   {
     // Get the array of cell indices of current color
@@ -190,7 +178,6 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
     const int num_cells = colored_cells.size();
 
     // OpenMP test loop over cells of the same color
-    Progress p(AssemblerTools::progress_message(A.rank(), "cells"), num_colors);
     #pragma omp parallel for schedule(guided, 20) firstprivate(ufc, dofs, integral)
     for (int cell_index = 0; cell_index < num_cells; ++cell_index)
     {
@@ -241,14 +228,13 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
     const double scalar_sum = std::accumulate(scalars.begin(), scalars.end(), 0.0);
     A.add(&scalar_sum, dofs);
   }
-
 }
 //-----------------------------------------------------------------------------
 void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 			     const Form& a, UFC& _ufc,
 			     const MeshFunction<uint>* cell_domains,
 			     const MeshFunction<uint>* exterior_facet_domains,
-                             std::vector<double>* values)
+           std::vector<double>* values)
 {
   Timer timer("Assemble cells and exterior facets");
 
@@ -296,9 +282,9 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 
   // Get coloring data
   std::map<const std::vector<uint>,
-           std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
-  mesh_coloring = mesh.parallel_data().coloring.find(coloring_type);
-  if (mesh_coloring == mesh.parallel_data().coloring.end())
+           std::pair<std::vector<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
+  mesh_coloring = mesh.topology().coloring.find(coloring_type);
+  if (mesh_coloring == mesh.topology().coloring.end())
   {
     dolfin_error("OpenMPAssembler.cpp",
                  "perform multithreaded assembly using OpenMP assembler",
@@ -322,7 +308,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
     const int num_cell_in_color = colored_cells.size();
 
     // OpenMP test loop over cells of the same color
-    Progress p(AssemblerTools::progress_message(A.rank(), "cells"), num_colors);
+    Progress p(AssemblerBase::progress_message(A.rank(), "cells"), num_colors);
     #pragma omp parallel for schedule(guided, 20) firstprivate(ufc, dofs, cell_integral, facet_integral)
     for (int index = 0; index < num_cell_in_color; ++index)
     {
@@ -424,8 +410,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
-                                         const Form& a,
+void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
                                          UFC& _ufc,
                                          const MeshFunction<uint>* domains,
                                          std::vector<double>* values)
@@ -491,12 +476,14 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
   }
 
   // Get coloring data
+  //std::map<const std::vector<uint>,
+  //         std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
   std::map<const std::vector<uint>,
-           std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
-  mesh_coloring = mesh.parallel_data().coloring.find(coloring_type);
+           std::pair<std::vector<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
+  mesh_coloring = mesh.topology().coloring.find(coloring_type);
 
   // Check that requested coloring has been computed
-  if (mesh_coloring == mesh.parallel_data().coloring.end())
+  if (mesh_coloring == mesh.topology().coloring.end())
   {
     dolfin_error("OpenMPAssembler.cpp",
                  "perform multithreaded assembly using OpenMP assembler",
@@ -517,7 +504,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
     const int num_facets = colored_facets.size();
 
     // OpenMP test loop over cells of the same color
-    Progress p(AssemblerTools::progress_message(A.rank(), "interior facets"), mesh.num_facets());
+    Progress p(AssemblerBase::progress_message(A.rank(), "interior facets"), mesh.num_facets());
     #pragma omp parallel for schedule(guided, 20) firstprivate(ufc, macro_dofs, integral)
     for (int facet_index = 0; facet_index < num_facets; ++facet_index)
     {

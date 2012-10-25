@@ -43,6 +43,7 @@ option(DOLFIN_ENABLE_UNIT_TESTS "Enable unit tests." ON)
 option(DOLFIN_ENABLE_TESTING "Enable testing." OFF)
 option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
 option(DOLFIN_ENABLE_DOCS "Enable generation of documentation." ON)
+option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests." OFF)
 
 #option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." ON)
 
@@ -66,7 +67,6 @@ list(APPEND OPTIONAL_PACKAGES "MPI")
 list(APPEND OPTIONAL_PACKAGES "PETSc")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
 list(APPEND OPTIONAL_PACKAGES "Trilinos")
-list(APPEND OPTIONAL_PACKAGES "MTL4")
 list(APPEND OPTIONAL_PACKAGES "UMFPACK")
 list(APPEND OPTIONAL_PACKAGES "CHOLMOD")
 list(APPEND OPTIONAL_PACKAGES "PaStiX")
@@ -76,6 +76,7 @@ list(APPEND OPTIONAL_PACKAGES "CGAL")
 list(APPEND OPTIONAL_PACKAGES "zlib")
 list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "Sphinx")
+list(APPEND OPTIONAL_PACKAGES "HDF5")
 list(APPEND OPTIONAL_PACKAGES "VTK")
 list(APPEND OPTIONAL_PACKAGES "QT")
 
@@ -110,12 +111,6 @@ endif()
 CHECK_CXX_COMPILER_FLAG("-Wall -Werror -pedantic" HAVE_PEDANTIC)
 if (HAVE_PEDANTIC)
   set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wall -Werror -pedantic ${DOLFIN_CXX_DEVELOPER_FLAGS}")
-endif()
-
-# Disable strict checks that fail for inlcuded 3rd party libraries
-CHECK_CXX_COMPILER_FLAG(-Wno-long-long HAVE_DISABLE_PEDANTIC_CHECKS)
-if (HAVE_DISABLE_PEDANTIC_CHECKS)
-  set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wno-long-long ${DOLFIN_CXX_DEVELOPER_FLAGS}")
 endif()
 
 CHECK_CXX_COMPILER_FLAG(-std=c++98 HAVE_STD)
@@ -157,8 +152,17 @@ if (DOLFIN_ENABLE_CODE_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 # Disable some warnings for Intel compilers
-if(${CMAKE_CXX_COMPILER} MATCHES "icpc")
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd161,488,654,858,1125,1170")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -wd161,488,654,858,1125,1170")
+  set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -wd161,488,654,858,1125,1170")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -wd161,488,654,858,1125,1170")
+endif()
+
+# Set system include flags to get around CMake bug on OSX
+# See http://public.kitware.com/Bug/print_bug_page.php?bug_id=10837
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
 endif()
 
 #------------------------------------------------------------------------------
@@ -176,16 +180,18 @@ endif()
 
 # FIXME: Should be set CMake to use the MPI compiler wrappers?
 
-if (DOLFIN_ENABLE_MPI AND DOLFIN_AUTO_DETECT_MPI)
-  find_package(MPI)
-  if (MPI_CXX_FOUND)
+if (DOLFIN_ENABLE_MPI)
+  if (DOLFIN_AUTO_DETECT_MPI)
+    find_package(MPI)
+    if (MPI_CXX_FOUND)
+      set(MPI_FOUND TRUE)
+    endif()
+  else()
+    # Assume user has set MPI compiler wrappers (via CXX, etc or CMAKE_CXX_COMPILER, etc)
     set(MPI_FOUND TRUE)
+    set(MPI_CXX_FOUND TRUE)
+    set(MPI_C_FOUND TRUE)
   endif()
-else()
-  # Assume user has set MPI compiler wrappers (via CXX, etc ot CMAKE_CXX_COMPILER, etc)
-  set(MPI_FOUND TRUE)
-  set(MPI_CXX_FOUND TRUE)
-  set(MPI_C_FOUND TRUE)
 endif()
 
 if (DOLFIN_ENABLE_OPENMP)
@@ -217,10 +223,10 @@ endif()
 
 # Boost timer was not a separate Boost component until version 1.48
 if ("${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}" VERSION_GREATER "1.47")
-  find_package(Boost 1.36 COMPONENTS timer REQUIRED)
+  find_package(Boost COMPONENTS timer REQUIRED)
 endif()
 
-# Check for required packages
+# Check for required package UFC
 find_package(UFC 2.0.2 QUIET HINTS ${UFC_DIR})
 if (NOT UFC_FOUND)
   message(FATAL_ERROR "Could not find a configuration file for package UFC that is "
@@ -230,7 +236,10 @@ else()
   message(STATUS "UFC version: ${UFC_VERSION_STRING}")
 endif()
 
+# Check for required package Armadillo
 find_package(Armadillo REQUIRED)
+
+# Check for required package LibXml2
 find_package(LibXml2 REQUIRED)
 
 #------------------------------------------------------------------------------
@@ -259,7 +268,7 @@ endif()
 # Check for ParMETIS and SCOTCH
 if (DOLFIN_ENABLE_MPI AND MPI_C_FOUND)
   if (DOLFIN_ENABLE_PARMETIS)
-    find_package(ParMETIS)
+    find_package(ParMETIS 3.2)
   endif()
 
   if (DOLFIN_ENABLE_SCOTCH)
@@ -269,14 +278,27 @@ endif()
 
 # Check for UMFPACK
 if (DOLFIN_ENABLE_UMFPACK)
-  find_package(AMD)
-  find_package(BLAS)
-  find_package(UMFPACK)
+  find_package(AMD QUIET)
+  find_package(BLAS QUIET)
+  find_package(UMFPACK QUIET)
 endif()
 
 # Check for CHOLMOD
 if (DOLFIN_ENABLE_CHOLMOD)
-  find_package(CHOLMOD)
+  find_package(CHOLMOD QUIET)
+endif()
+
+# Check for HDF5
+if (DOLFIN_ENABLE_HDF5)
+  find_package(HDF5)
+
+  # Check that HDF5 has parallel support
+  if (DOLFIN_ENABLE_MPI)
+    if (NOT HDF5_IS_PARALLEL)
+      message(STATUS "HDF5 has been found, but is missing parallel support. It will not be enabled.")
+      set(HDF5_FOUND false)
+    endif()
+  endif()
 endif()
 
 # Check for PaStiX
@@ -287,7 +309,7 @@ endif()
 # Check for Trilinos and the requires Trilinos packages
 if (DOLFIN_ENABLE_TRILINOS)
   message(STATUS "Checking for Trilinos")
-  find_package(Trilinos 10.10.0 PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
+  find_package(Trilinos PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
   set(DOLFIN_TRILINOS_PACKAGES "Epetra;Zoltan;ML;Ifpack;Amesos")
 
   # Check for required packages
@@ -342,11 +364,6 @@ if (DOLFIN_ENABLE_TRILINOS)
   else()
     message(STATUS "Trilinos could not be found")
   endif()
-endif()
-
-# Check for MTL4
-if (DOLFIN_ENABLE_MTL4)
-  find_package(MTL4)
 endif()
 
 # Check for PETSc and SLEPc
@@ -700,6 +717,9 @@ if (DOLFIN_ENABLE_TESTING)
     PATTERN "*.msh"
     PATTERN "*.supp"
     PATTERN "*.rst"
+    PATTERN "*.ele"
+    PATTERN "*.node"
+    PATTERN "*.grid"
     PATTERN "CMakeFiles" EXCLUDE)
 
   # Add target "run_memorytests" for running memory tests

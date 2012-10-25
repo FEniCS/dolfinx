@@ -39,7 +39,7 @@ namespace dolfin
     FiniteElement(boost::shared_ptr<const ufc::finite_element> element);
 
     /// Destructor
-    ~FiniteElement() {}
+    virtual ~FiniteElement() {}
 
     //--- Direct wrappers for ufc::finite_element ---
 
@@ -193,16 +193,16 @@ namespace dolfin
                         const Cell& cell) const
     {
       dolfin_assert(_ufc_element);
-      UFCCell ufc_cell(cell, false);
+      UFCCell ufc_cell(cell);
       _ufc_element->evaluate_basis(i, values, x, ufc_cell);
     }
 
     /// Evaluate all basis functions at given point in cell
     void evaluate_basis_all(double* values, const double* coordinates,
-			    const Cell& cell) const
+                            const Cell& cell) const
     {
       dolfin_assert(_ufc_element);
-      UFCCell ufc_cell(cell, false);
+      UFCCell ufc_cell(cell);
       _ufc_element->evaluate_basis_all(values, coordinates, ufc_cell);
     }
 

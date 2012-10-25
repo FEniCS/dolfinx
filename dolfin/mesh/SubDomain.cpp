@@ -27,7 +27,6 @@
 #include "MeshData.h"
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"
-#include "ParallelData.h"
 #include "Vertex.h"
 #include "MeshFunction.h"
 #include "MeshValueCollection.h"
@@ -129,9 +128,11 @@ dolfin::uint SubDomain::geometric_dimension() const
 {
   // Check that dim has been set
   if (_geometric_dimension == 0)
+  {
     dolfin_error("SubDomain.cpp",
                  "get geometric dimension",
                  "Dimension of subdomain has not been specified");
+  }
 
   return _geometric_dimension;
 }
@@ -157,12 +158,6 @@ void SubDomain::apply_markers(S& sub_domains,
   // Set geometric dimension (needed for SWIG interface)
   _geometric_dimension = mesh.geometry().dim();
 
-  // Always false when not marking facets
-  bool on_boundary = false;
-
-  // Extract exterior (non shared) facets markers
-  const MeshFunction<bool>& exterior = mesh.parallel_data().exterior_facet();
-
   // Speed up the computation by only checking each vertex once (or twice if it
   // is on the boundary for some but not all facets).
   RangedIndexSet boundary_visited(mesh.num_vertices());
@@ -170,16 +165,16 @@ void SubDomain::apply_markers(S& sub_domains,
   std::vector<bool> boundary_inside(mesh.num_vertices());
   std::vector<bool> interior_inside(mesh.num_vertices());
 
+  // Always false when not marking facets
+  bool on_boundary = false;
+
   // Compute sub domain markers
   Progress p("Computing sub domain markers", mesh.num_entities(dim));
   for (MeshEntityIterator entity(mesh, dim); !entity.end(); ++entity)
   {
     // Check if entity is on the boundary if entity is a facet
     if (dim == D - 1)
-    {
-      on_boundary = entity->num_entities(D) == 1 &&
-        (exterior.empty() || exterior[*entity]);
-    }
+      on_boundary = (entity->num_global_entities(D) == 1);
 
     // Select the visited-cache to use for this facet (or entity)
     RangedIndexSet&    is_visited = (on_boundary ? boundary_visited : interior_visited);
