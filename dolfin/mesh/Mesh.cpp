@@ -97,7 +97,6 @@ Mesh::Mesh(const CSGGeometry& geometry)
   : Variable("mesh", "DOLFIN mesh"),
     Hierarchical<Mesh>(*this),
     _data(*this),
-    _parallel_data(new ParallelData(*this)),
     _cell_type(0),
     _intersection_operator(*this),
     _ordered(false)
@@ -109,7 +108,6 @@ Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry)
   : Variable("mesh", "DOLFIN mesh"),
     Hierarchical<Mesh>(*this),
     _data(*this),
-    _parallel_data(new ParallelData(*this)),
     _cell_type(0),
     _intersection_operator(*this),
     _ordered(false)
