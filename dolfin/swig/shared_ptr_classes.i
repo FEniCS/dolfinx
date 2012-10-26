@@ -19,9 +19,10 @@
 // Modified by Anders logg, 2009.
 // Modified by Garth N. Wells, 2009.
 // Modified by Fredrik Valdmanis, 2012.
+// Modified by Patrick E. Farrell, 2012.
 //
 // First added:  2007-11-25
-// Last changed: 2012-06-21
+// Last changed: 2012-10-13
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -222,6 +223,7 @@
 
 // nls
 %shared_ptr(dolfin::NewtonSolver)
+%shared_ptr(dolfin::PETScSNESSolver)
 
 // plot
 %shared_ptr(dolfin::VTKPlotter)

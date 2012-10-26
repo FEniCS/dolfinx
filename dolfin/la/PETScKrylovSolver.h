@@ -47,6 +47,7 @@ namespace dolfin
   class PETScVector;
   class PETScPreconditioner;
   class PETScUserPreconditioner;
+  class PETScSNESSolver;
 
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b. It is a wrapper for the Krylov solvers
@@ -125,6 +126,8 @@ namespace dolfin
 
     /// Default parameter values
     static Parameters default_parameters();
+
+    friend class PETScSNESSolver;
 
   private:
 
