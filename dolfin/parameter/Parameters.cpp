@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011 Anders Logg
+// Copyright (C) 2009-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2011-10-24
+// Last changed: 2012-10-26
 
 #include <sstream>
 #include <stdio.h>
@@ -431,7 +431,7 @@ std::string Parameters::str(bool verbose) const
     {
       Parameter* p = it->second;
       t(p->key(), "type") = p->type_str();
-      t(p->key(), "value") = p->value_str();
+      t(p->key(), "value") = (p->is_set() ? p->value_str() : "<unset>");
       t(p->key(), "range") = p->range_str();
       t(p->key(), "access") = p->access_count();
       t(p->key(), "change") = p->change_count();
