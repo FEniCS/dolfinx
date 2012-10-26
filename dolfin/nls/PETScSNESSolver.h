@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-10-13
-// Last changed: 2012-10-13
+// Last changed: 2012-10-25
 
 #ifndef __PETSC_SNES_SOLVER_H
 #define __PETSC_SNES_SOLVER_H
@@ -30,7 +30,8 @@
 #include <dolfin/parameter/Parameters.h>
 #include <dolfin/nls/NewtonSolver.h>
 
-// Declare the function prototype for SNESMonitorVI. It's a PETSc bug that it isn't declared publicly.
+// Declare the function prototype for SNESMonitorVI. It's a PETSc bug
+// that it isn't declared publicly.
 PetscErrorCode  SNESMonitorVI(SNES snes, PetscInt its, PetscReal fgnorm, void* dummy);
 
 namespace dolfin

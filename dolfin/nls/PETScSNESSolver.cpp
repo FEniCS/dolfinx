@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-10-13
-// Last changed: 2012-10-17
+// Last changed: 2012-10-25
 
 #ifdef HAS_PETSC
 
@@ -479,5 +479,6 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
     VecDestroy(&lb);
   }
 }
+//-----------------------------------------------------------------------------
 
 #endif
