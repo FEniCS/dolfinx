@@ -47,7 +47,7 @@ bcs = [DirichletBC(V, 1.0, "on_boundary")]
 
 u = Function(V)
 v = TestFunction(V)
-u.interpolate(Constant(-10.0))
+u.interpolate(Constant(-1000.0))
 
 r = sqrt(triangle.x[0]**2 + triangle.x[1]**2)
 rho = 1.0/r**3
