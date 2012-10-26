@@ -17,7 +17,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2012-10-17
-# Last changed: 2012-10-25
+# Last changed: 2012-10-26
 
 """Solve the Yamabe PDE which arises in the differential geometry of general
 relativity. http://arxiv.org/abs/1107.0360.
@@ -47,7 +47,7 @@ bcs = [DirichletBC(V, 1.0, "on_boundary")]
 
 u = Function(V)
 v = TestFunction(V)
-u.interpolate(Constant(-10.0))
+u.interpolate(Constant(-1000.0))
 
 r = sqrt(triangle.x[0]**2 + triangle.x[1]**2)
 rho = 1.0/r**3

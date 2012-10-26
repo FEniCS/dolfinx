@@ -465,15 +465,6 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
 
     SNESVISetVariableBounds(*_snes, lb, ub);
 
-    if (parameters["report"])
-    {
-      SNESMonitorCancel(*_snes);
-      dolfin_error("PETScSNESSolver.cpp",
-                   "monitor SNES solver",
-                   "See https://bugs.launchpad.net/dolfin/+bug/1071629");
-      //SNESMonitorSet(*_snes, SNESMonitorVI, PETSC_NULL, PETSC_NULL);
-    }
-
     VecDestroy(&ub);
     VecDestroy(&lb);
   }
