@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-05-08
-// Last changed: 2011-11-15
+// Last changed: 2012-10-25
 
 #include <sstream>
 #include <dolfin/log/log.h>
@@ -173,6 +173,11 @@ const std::map<unsigned int, std::set<unsigned int> >&
                  "Shared mesh entities are available for dim 0 (vertices) only");
   }
   return _shared_vertices;
+}
+//-----------------------------------------------------------------------------
+size_t MeshTopology::hash() const
+{
+  return (*this)(dim(), 0).hash();
 }
 //-----------------------------------------------------------------------------
 std::string MeshTopology::str(bool verbose) const

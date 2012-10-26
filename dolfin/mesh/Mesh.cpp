@@ -481,6 +481,14 @@ double Mesh::hmax() const
   return h;
 }
 //-----------------------------------------------------------------------------
+std::size_t Mesh::hash() const
+{
+  // Compute hash based on the Cantor pairing function
+  size_t k1 = _topology.hash();
+  size_t k2 = _geometry.hash();
+  return (k1 + k2)*(k1 + k2 + 1) / 2 + k2;
+}
+//-----------------------------------------------------------------------------
 std::string Mesh::str(bool verbose) const
 {
   std::stringstream s;
