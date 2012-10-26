@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-10-13
-// Last changed: 2012-10-25
+// Last changed: 2012-10-26
 
 #ifndef __PETSC_SNES_SOLVER_H
 #define __PETSC_SNES_SOLVER_H
@@ -35,6 +35,7 @@
 // that it isn't declared publicly.
 //PetscErrorCode  SNESMonitorVI(SNES snes, PetscInt its, PetscReal fgnorm,
 //                               void* dummy);
+//PetscErrorCode SNESMonitorVI(SNES snes, PetscInt its, PetscReal fgnorm, void* dummy);
 
 namespace dolfin
 {

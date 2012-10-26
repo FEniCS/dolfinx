@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-10-13
-// Last changed: 2012-10-25
+// Last changed: 2012-10-26
 
 #ifdef HAS_PETSC
 
@@ -471,7 +471,6 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
       dolfin_error("PETScSNESSolver.cpp",
                    "monitor SNES solver",
                    "See https://bugs.launchpad.net/dolfin/+bug/1071629");
-
       //SNESMonitorSet(*_snes, SNESMonitorVI, PETSC_NULL, PETSC_NULL);
     }
 
