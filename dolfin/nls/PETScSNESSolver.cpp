@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-10-13
-// Last changed: 2012-10-25
+// Last changed: 2012-10-26
 
 #ifdef HAS_PETSC
 
@@ -472,7 +472,7 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
     if (parameters["report"])
     {
       SNESMonitorCancel(*_snes);
-      SNESMonitorSet(*_snes, SNESMonitorVI, PETSC_NULL, PETSC_NULL);
+      //SNESMonitorSet(*_snes, SNESMonitorVI, PETSC_NULL, PETSC_NULL);
     }
 
     VecDestroy(&ub);
