@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-10-13
-// Last changed: 2012-10-13
+// Last changed: 2012-10-26
 
 #ifndef __PETSC_SNES_SOLVER_H
 #define __PETSC_SNES_SOLVER_H
@@ -30,8 +30,12 @@
 #include <dolfin/parameter/Parameters.h>
 #include <dolfin/nls/NewtonSolver.h>
 
-// Declare the function prototype for SNESMonitorVI. It's a PETSc bug that it isn't declared publicly.
-PetscErrorCode  SNESMonitorVI(SNES snes, PetscInt its, PetscReal fgnorm, void* dummy);
+// See https://bugs.launchpad.net/dolfin/+bug/1071629
+// Declare the function prototype for SNESMonitorVI. It's a PETSc bug
+// that it isn't declared publicly.
+//PetscErrorCode  SNESMonitorVI(SNES snes, PetscInt its, PetscReal fgnorm,
+//                               void* dummy);
+//PetscErrorCode SNESMonitorVI(SNES snes, PetscInt its, PetscReal fgnorm, void* dummy);
 
 namespace dolfin
 {
@@ -95,7 +99,8 @@ namespace dolfin
     static PetscErrorCode FormFunction(SNES snes, Vec x, Vec f, void* ctx);
 
     /// The callback for PETSc to compute A, the Jacobian
-    static PetscErrorCode FormJacobian(SNES snes, Vec x, Mat* A, Mat* B, MatStructure* flag, void* ctx);
+    static PetscErrorCode FormJacobian(SNES snes, Vec x, Mat* A, Mat* B,
+                                       MatStructure* flag, void* ctx);
 
     /// Set the bounds on the problem from the parameters, if desired
     /// Here, x is passed in as a model vector from which we make our Vecs

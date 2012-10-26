@@ -28,6 +28,7 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <boost/multi_array.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 #include "LocalMeshValueCollection.h"
@@ -139,23 +140,23 @@ namespace dolfin
 
     // Distribute cells
     static void distribute_cells(std::vector<uint>& global_cell_indices,
-                                 std::vector<std::vector<uint> >& cell_vertices,
+                                 boost::multi_array<uint, 2>& cell_vertices,
                                  const LocalMeshData& data,
                                  const std::vector<uint>& cell_partition);
 
     // Distribute vertices
     static void distribute_vertices(std::vector<uint>& vertex_indices,
-                  std::vector<std::vector<double> >& vertex_coordinates,
+                  boost::multi_array<double, 2>& vertex_coordinates,
                   std::map<uint, uint>& glob2loc,
-                  const std::vector<std::vector<uint> >& cell_vertices,
+                  const boost::multi_array<uint, 2>& cell_vertices,
                   const LocalMeshData& data);
 
     // Build mesh
     static void build_mesh(Mesh& mesh,
                    const std::vector<uint>& global_cell_indices,
-                   const std::vector<std::vector<uint> >& cell_vertices,
+                   const boost::multi_array<uint, 2>& cell_vertices,
                    const std::vector<uint>& vertex_indices,
-                   const std::vector<std::vector<double> >& vertex_coordinates,
+                   const boost::multi_array<double, 2>& vertex_coordinates,
                    const std::map<uint, uint>& glob2loc,
                    uint tdim, uint gdim, uint num_global_cells,
                    uint num_global_vertices);

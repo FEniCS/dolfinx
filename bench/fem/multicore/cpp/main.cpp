@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
   Mesh mesh = old_mesh.renumber_by_color();
 
   // Disable dof reordering because the NS dof maps are very large
-  parameters["reorder_dofs"] = false;
+  parameters["reorder_dofs_serial"] = false;
 
   // Test cases
   std::vector<std::pair<std::string, boost::shared_ptr<const Form> > > forms;

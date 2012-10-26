@@ -23,7 +23,7 @@
 
 #ifdef HAS_TRILINOS
 
-// Included here to avoid a C++ problem with some MPI implementations                                                                                                                         
+// Included here to avoid a C++ problem with some MPI implementations
 #include <dolfin/common/MPI.h>
 
 #include <cmath>
@@ -216,7 +216,7 @@ std::pair<dolfin::uint, dolfin::uint> EpetraVector::local_range() const
 //-----------------------------------------------------------------------------
 bool EpetraVector::owns_index(uint i) const
 {
-  return x->Map().MyGID(i);
+  return x->Map().MyGID((int) i);
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::zero()
@@ -458,7 +458,7 @@ void EpetraVector::get_local(double* block, uint m, const uint* rows) const
       {
         // FIXME: Check if look-up in std::map is faster than Epetra_BlockMap::LID
         // Get local index
-        const int local_index = ghost_map.LID(rows[i]);
+        const int local_index = ghost_map.LID((int) rows[i]);
         dolfin_assert(local_index != -1);
 
         //boost::unordered_map<uint, uint>::const_iterator _local_index = ghost_global_to_local.find(rows[i]);

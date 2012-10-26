@@ -61,8 +61,8 @@ namespace dolfin
       // Threaded computation
       p.add("num_threads", 0);                               // Number of threads to run, 0 = run serial version
 
-      // DOF reordering
-      p.add("reorder_dofs", true);
+      // DOF reordering when running in serial
+      p.add("reorder_dofs_serial", true);
 
       // Print the level of thread support provided by the MPI library
       p.add("print_mpi_thread_support_level", false);

@@ -263,6 +263,14 @@ void Parameters::update(const Parameters& parameters)
       continue;
     }
 
+    // Skip unset parameters
+    if (!other.is_set())
+    {
+      warning("Ignoring unset parameter \"%s\" in parameter set \"%s\" when updating parameter set \"%s\".",
+              other.key().c_str(), parameters.name().c_str(), name().c_str());
+      continue;
+    }
+
     // Set value (will give an error if the type is wrong)
     if (other.type_str() == "int")
       *self = static_cast<int>(other);

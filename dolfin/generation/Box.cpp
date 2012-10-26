@@ -23,6 +23,7 @@
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshEditor.h>
 #include "Box.h"
@@ -34,8 +35,14 @@ Box::Box(double x0, double y0, double z0,
          double x1, double y1, double z1,
          uint nx, uint ny, uint nz) : Mesh()
 {
+  Timer timer("generate unit cube mesh");
+
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
+  if (MPI::is_receiver())
+  {
+    MeshPartitioning::build_distributed_mesh(*this);
+  return;
+  }
 
   const double a = x0;
   const double b = x1;
@@ -120,6 +127,10 @@ Box::Box(double x0, double y0, double z0,
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster()) { MeshPartitioning::build_distributed_mesh(*this); return; }
+  if (MPI::is_broadcaster())
+  {
+    MeshPartitioning::build_distributed_mesh(*this);
+    return;
+  }
 }
 //-----------------------------------------------------------------------------

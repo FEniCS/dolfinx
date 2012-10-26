@@ -79,7 +79,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh);
 
   // Build dof map
-  const bool reorder = dolfin::parameters["reorder_dofs"];
+  const bool reorder = dolfin::parameters["reorder_dofs_serial"];
   DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, reorder, _distributed);
 }
 //-----------------------------------------------------------------------------
@@ -205,7 +205,7 @@ DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
   init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, mesh);
 
   // Build dof map
-  const bool reorder = dolfin::parameters["reorder_dofs"];
+  const bool reorder = dolfin::parameters["reorder_dofs_serial"];
   DofMapBuilder::build(*this, mesh, ufc_mesh, reorder, _distributed);
 
   // Dimension checks

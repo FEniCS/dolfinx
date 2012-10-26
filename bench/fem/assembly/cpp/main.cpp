@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
   info("Assembly for various forms and backends");
   set_log_active(false);
 
-  parameters["reorder_dofs"] = false;
+  parameters["reorder_dofs_serial"] = false;
 
   // Forms
   std::vector<std::string> forms;

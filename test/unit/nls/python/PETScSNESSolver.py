@@ -1,5 +1,4 @@
 """Unit test for the SNES nonlinear solver"""
-
 # Copyright (C) 2012 Patrick E. Farrell
 #
 # This file is part of DOLFIN.
@@ -18,6 +17,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2012-10-17
+# Last changed: 2012-10-25
 
 """Solve the Yamabe PDE which arises in the differential geometry of general
 relativity. http://arxiv.org/abs/1107.0360.
@@ -34,20 +34,20 @@ to the physical positive solution.
 from dolfin import *
 import unittest
 
-parameters["form_compiler"]["quadrature_degree"] = 5
-
 try:
   parameters["linear_algebra_backend"] = "PETSc"
 except RuntimeError:
   import sys; sys.exit(0)
 
+parameters["form_compiler"]["quadrature_degree"] = 5
+
 mesh = Mesh("doughnut.xml.gz")
 V = FunctionSpace(mesh, "CG", 1)
-
 bcs = [DirichletBC(V, 1.0, "on_boundary")]
 
-u = Function(V); u.interpolate(Constant(-10.0))
+u = Function(V)
 v = TestFunction(V)
+u.interpolate(Constant(-10.0))
 
 r = sqrt(triangle.x[0]**2 + triangle.x[1]**2)
 rho = 1.0/r**3
@@ -56,14 +56,23 @@ F = (8*inner(grad(u), grad(v))*dx +
      rho * inner(u**5, v)*dx +
      (-1.0/8.0)*inner(u, v)*dx)
 
-newton_solver_parameters = {"newton_solver": {"maximum_iterations": 100, "report": False}, "nonlinear_solver": "newton", "linear_solver": "lu"}
-snes_solver_parameters   = {"snes_solver": {"maximum_iterations": 100, "sign": "nonnegative", "report": False}, "nonlinear_solver": "snes", "linear_solver": "lu"}
+newton_solver_parameters = {"nonlinear_solver": "newton",
+                            "linear_solver": "lu",
+                            "newton_solver": {"maximum_iterations": 100,
+                                              "report": False}}
 
+snes_solver_parameters = {"nonlinear_solver": "snes",
+                          "linear_solver": "lu",
+                          "snes_solver": {"maximum_iterations": 100,
+                                          "sign": "nonnegative",
+                                          "report": False}}
 
 class SNESSolverTester(unittest.TestCase):
+
   def test_snes_solver(self):
     solve(F == 0, u, bcs, solver_parameters=snes_solver_parameters)
     self.assertTrue(u.vector().min() >= 0)
+
   def test_newton_solver(self):
     solve(F == 0, u, bcs, solver_parameters=newton_solver_parameters)
     self.assertTrue(u.vector().min() < 0)
