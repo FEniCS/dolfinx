@@ -1,4 +1,5 @@
 1.1.0 [not yet released]
+ - Compare mesh hash in interpolate_vertex_values
  - Add hash() for Mesh and MeshTopology
  - Expose GenericVector::operator{+=,-=,+,-}(double) to Python
  - Add function Function::compute_vertex_values not needing a mesh argument
