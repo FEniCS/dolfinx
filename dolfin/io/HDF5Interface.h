@@ -35,7 +35,7 @@ namespace dolfin
   class HDF5File;
 
   /// This class wraps HDF5 function calls. HDF5 function calls should
-  /// only appear in member function of this class and not elsewhere in
+  /// only appear in a member function of this class and not elsewhere in
   /// the library.
 
   class HDF5Interface

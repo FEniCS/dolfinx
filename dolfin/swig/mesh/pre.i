@@ -38,13 +38,13 @@
   PyObject* _coordinates() {
     return %make_numpy_array(2, double)(self->num_vertices(),
 					self->geometry().dim(),
-					self->coordinates(), true);
+					&(self->coordinates())[0], true);
   }
 
   PyObject* _cells() {
     // FIXME: Works only for Mesh with Intervals, Triangles and Tetrahedrons
     return %make_numpy_array(2, uint)(self->num_cells(), self->topology().dim()+1,
-				      self->cells(), false);
+				      &(self->cells()[0]), false);
   }
 }
 
@@ -189,11 +189,13 @@ MESHENTITYITERATORBASE(Vertex, vertices)
 %ignore dolfin::MeshEntity::entities;
 
 %extend dolfin::MeshConnectivity {
-  PyObject* __call__() {
-    return %make_numpy_array(1, uint)(self->size(), (*self)(), false);
+  PyObject* __call__()
+  {
+    return %make_numpy_array(1, uint)(self->size(), &(*self)()[0], false);
   }
 
-  PyObject* __call__(dolfin::uint entity) {
+  PyObject* __call__(dolfin::uint entity)
+  {
     return %make_numpy_array(1, uint)(self->size(entity), (*self)(entity), false);
   }
 }
@@ -246,4 +248,3 @@ FORWARD_DECLARE_MESHFUNCTIONS(bool, Bool)
 // Add director classes
 //-----------------------------------------------------------------------------
 %feature("director") dolfin::SubDomain;
-

@@ -138,6 +138,20 @@ namespace dolfin
     ///         No example code available for this function.
     uint num_vertices() const { return _topology.size(0); }
 
+    /// Get number of locally owned vertices
+    /// *Returns*
+    ///     uint
+    ///         Number of locally owned vertices.
+    ///
+    /// *Example*
+    ///     .. note::
+    ///
+    ///         No example code available for this function.
+    uint num_owned_vertices() const;
+
+    std::vector<uint> owned_vertices() const;
+
+
     /// Get number of edges in mesh.
     ///
     /// *Returns*
@@ -205,17 +219,17 @@ namespace dolfin
     /// Get vertex coordinates.
     ///
     /// *Returns*
-    ///     double*
+    ///     std::vector<double>&
     ///         Coordinates of all vertices.
     ///
     /// *Example*
     ///     .. note::
     ///
     ///         No example code available for this function.
-    double* coordinates() { return _geometry.x(); }
+    std::vector<double>& coordinates() { return _geometry.x(); }
 
     /// Return coordinates of all vertices (const version).
-    const double* coordinates() const { return _geometry.x(); }
+    const std::vector<double>& coordinates() const { return _geometry.x(); }
 
     /// Get cell connectivity.
     ///
@@ -227,7 +241,7 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    const uint* cells() const { return _topology(_topology.dim(), 0)(); }
+    const std::vector<uint>& cells() const { return _topology(_topology.dim(), 0)(); }
 
     /// Get number of local entities of given topological dimension.
     ///
