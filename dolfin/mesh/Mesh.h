@@ -23,7 +23,7 @@
 // Modified by Andre Massing 2009-2010
 //
 // First added:  2006-05-08
-// Last changed: 2012-10-24
+// Last changed: 2012-10-25
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -150,7 +150,7 @@ namespace dolfin
     uint num_owned_vertices() const;
 
     std::vector<uint> owned_vertices() const;
-    
+
 
     /// Get number of edges in mesh.
     ///
@@ -644,6 +644,15 @@ namespace dolfin
     ///
     ///         No example code available for this function.
     double hmax() const;
+
+    /// Compute hash of mesh, currently based on the has of the mesh
+    /// geometry and mesh topology.
+    ///
+    /// *Returns*
+    ///     uint
+    ///         A tree-hashed value of the coordinates over all MPI processes
+    ///
+    std::size_t hash() const;
 
     /// Informal string representation.
     ///

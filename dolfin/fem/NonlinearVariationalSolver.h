@@ -25,6 +25,7 @@
 
 #include <dolfin/nls/NonlinearProblem.h>
 #include <dolfin/nls/NewtonSolver.h>
+#include <dolfin/nls/PETScSNESSolver.h>
 #include <dolfin/la/LUSolver.h>
 #include <dolfin/la/KrylovSolver.h>
 #include "NonlinearVariationalProblem.h"
@@ -62,12 +63,23 @@ namespace dolfin
       p.add("symmetric", false);
       p.add("reset_jacobian", true);
 
+      std::set<std::string> nonlinear_solvers;
+      nonlinear_solvers.insert("newton");
+      std::string default_nonlinear_solver = "newton";
+
       p.add("print_rhs", false);
       p.add("print_matrix", false);
 
       p.add(NewtonSolver::default_parameters());
       p.add(LUSolver::default_parameters());
       p.add(KrylovSolver::default_parameters());
+
+#ifdef HAS_PETSC
+      p.add(PETScSNESSolver::default_parameters());
+      nonlinear_solvers.insert("snes");
+#endif
+
+      p.add("nonlinear_solver", default_nonlinear_solver, nonlinear_solvers);
 
       return p;
     }
@@ -111,6 +123,11 @@ namespace dolfin
 
     // The Newton solver
     boost::shared_ptr<NewtonSolver> newton_solver;
+
+#ifdef HAS_PETSC
+    // Or, alternatively, the SNES solver
+    boost::shared_ptr<PETScSNESSolver> snes_solver;
+#endif
 
   };
 

@@ -225,7 +225,7 @@ endif()
 #   find_package(Boost COMPONENTS timer REQUIRED)
 # endif()
 
-# Check for required packages
+# Check for required package UFC
 find_package(UFC 2.0.2 QUIET HINTS ${UFC_DIR})
 if (NOT UFC_FOUND)
   message(FATAL_ERROR "Could not find a configuration file for package UFC that is "
@@ -235,7 +235,10 @@ else()
   message(STATUS "UFC version: ${UFC_VERSION_STRING}")
 endif()
 
+# Check for required package Armadillo
 find_package(Armadillo REQUIRED)
+
+# Check for required package LibXml2
 find_package(LibXml2 REQUIRED)
 
 #------------------------------------------------------------------------------

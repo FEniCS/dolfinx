@@ -57,8 +57,8 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   // Initialise sparsity pattern
   sparsity_pattern.init(global_dimensions, local_range, off_process_owner);
 
-  // Only build for rank >= 2 (matrices and higher order tensors) that require
-  // sparsity details
+  // Only build for rank >= 2 (matrices and higher order tensors) that
+  // require sparsity details
   if (rank < 2)
     return;
 
@@ -159,7 +159,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   {
     Progress p("Building sparsity pattern over diagonal", local_range[0].second-local_range[0].first);
 
-    std::vector<uint> diagonal_dof(1,0);
+    std::vector<uint> diagonal_dof(1, 0);
     for (uint i = 0; i < rank; ++i)
       dofs[i] = &diagonal_dof;
 

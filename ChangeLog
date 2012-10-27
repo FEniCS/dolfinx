@@ -1,4 +1,7 @@
 1.1.0 [not yet released]
+ - Add memory usage monitor: monitor_memory_usage()
+ - Compare mesh hash in interpolate_vertex_values
+ - Add hash() for Mesh and MeshTopology
  - Expose GenericVector::operator{+=,-=,+,-}(double) to Python
  - Add function Function::compute_vertex_values not needing a mesh argument
  - Add support for XDMF and HDF5

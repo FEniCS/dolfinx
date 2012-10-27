@@ -43,6 +43,7 @@ tests = {
                        "XMLMeshValueCollection", "XMLVector", "XMLLocalMeshData"],
     "jit":            ["test"],
     "la":             ["test", "solve", "Matrix", "Scalar", "Vector", "KrylovSolver"],
+    "nls":            ["yamabe"],
     "math":           ["test"],
     "meshconvert":    ["test"],
     "mesh":           ["Edge", "Face", "MeshData", "MeshEditor",
