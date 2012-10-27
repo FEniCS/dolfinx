@@ -98,7 +98,7 @@ void HDF5File::operator<< (const GenericVector& x)
 
   // Write data to file
   std::pair<uint,uint> local_range = x.local_range();
-  const bool chunking = parameters["hdf5_chunking"];
+  const bool chunking = parameters["chunking"];
   const std::vector<uint> global_size(1, x.size());
   HDF5Interface::write_dataset(hdf5_file_id, dataset_name, local_data,
                                local_range, global_size, mpi_io, chunking);
@@ -228,7 +228,7 @@ void HDF5File::operator>> (Mesh& input_mesh)
   read_mesh(input_mesh);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::read_mesh(Mesh &input_mesh)
+void HDF5File::read_mesh(Mesh& input_mesh)
 {
   warning("HDF5 Mesh input is still experimental");
   warning("HDF5 Mesh input will always repartition the mesh");
@@ -275,7 +275,7 @@ void HDF5File::read_mesh(Mesh &input_mesh)
                                    topology_name);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::read_mesh_repartition(Mesh &input_mesh,
+void HDF5File::read_mesh_repartition(Mesh& input_mesh,
                                      const std::string coordinates_name,
                                      const std::string topology_name)
 {
@@ -328,7 +328,6 @@ void HDF5File::read_mesh_repartition(Mesh &input_mesh,
     std::copy(topology_it, topology_it + num_vertices_per_cell,
               mesh_data.cell_vertices[i].begin());
     topology_it += num_vertices_per_cell;
-
   }
 
   // --- Coordinates ---
@@ -507,13 +506,6 @@ void HDF5File::write_visualisation_mesh(const Mesh& mesh, const uint cell_dim,
   {
     const uint gdim = mesh.geometry().dim();
     const std::vector<double>& vertex_coords = mesh.coordinates();
-    /*
-    std::vector<double> vertex_coords;
-    vertex_coords.reserve(gdim*num_local_vertices);
-    for (VertexIterator v(mesh); !v.end(); ++v)
-      for (uint i = 0; i < gdim; ++i)
-        vertex_coords.push_back(v->x(i));
-    */
 
     // Write coordinates contiguously from each process
     std::vector<uint> global_size(2);
@@ -523,12 +515,26 @@ void HDF5File::write_visualisation_mesh(const Mesh& mesh, const uint cell_dim,
   }
 
   // Write connectivity to HDF5 file (using local indices + offset)
-  const std::string topology_dataset = name + "/topology";
   {
-    std::vector<uint> topological_data = mesh.cells();
-    std::transform(topological_data.begin(), topological_data.end(),
-                   topological_data.begin(), std::bind2nd(std::plus<uint>(), vertex_offset));
+    // Get/build topology data
+    std::vector<uint> topological_data;
+    if (cell_dim == mesh.topology().dim())
+    {
+      topological_data = mesh.cells();
+      std::transform(topological_data.begin(), topological_data.end(),
+                     topological_data.begin(),
+                     std::bind2nd(std::plus<uint>(), vertex_offset));
+    }
+    else
+    {
+      topological_data.reserve(mesh.num_cells()*(cell_dim - 1));
+      for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
+        for (VertexIterator v(*c); !v.end(); ++v)
+         topological_data.push_back(v->index() + vertex_offset);
+    }
 
+    // Write topology data
+    const std::string topology_dataset = name + "/topology";
     std::vector<uint> global_size(2);
     global_size[0] = MPI::sum(topological_data.size()/(cell_dim + 1));
     global_size[1] = cell_dim + 1;

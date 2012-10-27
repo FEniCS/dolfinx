@@ -138,20 +138,6 @@ namespace dolfin
     ///         No example code available for this function.
     uint num_vertices() const { return _topology.size(0); }
 
-    /// Get number of locally owned vertices
-    /// *Returns*
-    ///     uint
-    ///         Number of locally owned vertices.
-    ///
-    /// *Example*
-    ///     .. note::
-    ///
-    ///         No example code available for this function.
-    uint num_owned_vertices() const;
-
-    std::vector<uint> owned_vertices() const;
-
-
     /// Get number of edges in mesh.
     ///
     /// *Returns*

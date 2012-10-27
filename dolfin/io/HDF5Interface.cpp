@@ -134,6 +134,13 @@ dolfin::uint HDF5Interface::dataset_rank(const hid_t hdf5_file_handle,
   // Get dataset rank
   const int rank = H5Sget_simple_extent_ndims(space);
   dolfin_assert(rank >= 0);
+
+  // Close dataspace and dataset
+  herr_t status = H5Sclose(space);
+  dolfin_assert(status != HDF5_FAIL);
+  status = H5Dclose(dset_id);
+  dolfin_assert(status != HDF5_FAIL);
+
   return rank;
 }
 //-----------------------------------------------------------------------------

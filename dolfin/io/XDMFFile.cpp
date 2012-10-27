@@ -115,7 +115,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   // Get number of local/global cells/vertices
   const uint num_local_cells = mesh.num_cells();
-  const uint num_local_vertices = mesh.num_owned_vertices();
+  const uint num_local_vertices = mesh.num_vertices();
   const uint num_global_cells = MPI::sum(num_local_cells);
   const uint num_global_vertices = MPI::sum(num_local_vertices);
 
@@ -156,23 +156,12 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     data_values = _data_values;
   }
 
-  // For vertex centred data, remove any values which are on duplicate vertices,
-  // and readjust num_local_entities
-  /*
-  if (vertex_data)
-  {
-    // FIXME: functionality should not be in HDF5File, but in Mesh or here somewhere...
-    hdf5_file->remove_duplicate_values(mesh, data_values, padded_value_size);
-    num_local_entities = num_local_vertices;
-  }
-  */
-
   // FIXME: Below is messy. Should query file for existing mesh name
   // Write mesh to HDF5 file
   if (parameters["rewrite_function_mesh"])
   {
-    current_mesh_name = "/VisualisationMesh/" + boost::lexical_cast<std::string>(counter);
-    hdf5_file->write_visualisation_mesh(mesh, current_mesh_name);
+    //current_mesh_name = "/VisualisationMesh/" + boost::lexical_cast<std::string>(counter);
+    //hdf5_file->write_visualisation_mesh(mesh, current_mesh_name);
   }
 
   // Vertex/cell values are saved in the hdf5 group /VisualisationVector
@@ -192,8 +181,6 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   //        a flush function?
   if(parameters["flush_output"])
     HDF5Interface::flush_file(hdf5_file->hdf5_file_id);
-
-  return;
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero
   if (MPI::process_number() == 0)
@@ -435,25 +422,22 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 
   // Get counts of mesh cells and vertices
   const uint num_local_cells = mesh.num_entities(cell_dim);
-  const uint num_local_vertices = mesh.num_owned_vertices();
+  const uint num_local_vertices = mesh.num_vertices();
   const uint num_global_cells = MPI::sum(num_local_cells);
   const uint num_global_vertices = MPI::sum(num_local_vertices);
 
   // Work out HDF5 dataset names
-  const std::string name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
+  const std::string name = "/VisualisationMesh/" + boost::lexical_cast<std::string>(counter);
   const std::string mesh_topology_name = name + "/topology";
   const std::string mesh_coords_name = name + "/coordinates";
 
   boost::filesystem::path p(hdf5_file->filename);
-  std::string dataset_basic_name = "/Mesh/MeshFunction_" + meshfunction.name();
+  std::string dataset_basic_name = "/VisualisationMesh/MeshFunction_" + meshfunction.name();
   const std::string mesh_function_dataset_name
     = p.filename().string() + ":" + dataset_basic_name;
 
   // Write mesh to HDF5
-  hdf5_file->write_mesh(mesh, cell_dim, mesh_function_dataset_name);
-
-  // FIXME: functionality should not be in HDF5File, but in Mesh somewhere or here.
-  //hdf5_file->remove_duplicate_values(mesh, data_values, 1);
+  hdf5_file->write_visualisation_mesh(mesh, cell_dim, name);
 
   // Write values to HDF5
   const std::vector<uint> global_size(1, MPI::sum(data_values.size()));
@@ -528,10 +512,9 @@ void XDMFFile::xml_mesh_topology(pugi::xml_node &xdmf_topology,
     + " " + boost::lexical_cast<std::string>(cell_dim + 1);
   xdmf_topology_data.append_attribute("Dimensions") = cell_dims.c_str();
 
-  // For XDMF file need to remove path from filename
-  // so that xdmf filenames such as "results/data.xdmf" correctly
-  // index h5 files in the same directory
-
+  // For XDMF file need to remove path from filename so that xdmf
+  // filenames such as "results/data.xdmf" correctly index h5 files in
+  // the same directory
   boost::filesystem::path p(hdf5_file->filename);
   std::string topology_reference = p.filename().string() + ":" + topology_dataset_name;
   xdmf_topology_data.append_child(pugi::node_pcdata).set_value(topology_reference.c_str());

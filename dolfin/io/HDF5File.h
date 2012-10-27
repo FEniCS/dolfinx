@@ -181,14 +181,13 @@ namespace dolfin
     HDF5Interface::write_dataset(hdf5_file_id, dataset_name, data,
                                  range, global_size, mpi_io, false);
   }
-
-//---------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
   template <typename T>
   void HDF5File::remove_duplicate_values(const Mesh &mesh,
                                          std::vector<T>& values,
                                          const uint value_size)
   {
-
+    /*
     // Get list of locally owned vertices, with local index
     const std::vector<uint> owned_vertices = mesh.owned_vertices();
 
@@ -206,7 +205,9 @@ namespace dolfin
     // copy back into values and resize
     values.resize(result.size());
     std::copy(result.begin(), result.end(), values.begin());
+  */
   }
+  //---------------------------------------------------------------------------
 
 }
 
