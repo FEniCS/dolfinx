@@ -100,6 +100,10 @@ namespace dolfin
                            const uint gdim,
                            const std::string geometry_dataset_name) const;
 
+
+    // Most recent mesh name
+    std::string current_mesh_name;
+
   };
 
 

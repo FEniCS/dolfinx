@@ -60,13 +60,12 @@ XDMFFile::XDMFFile(const std::string filename) : GenericFile(filename, "XDMF")
 
   // Re-write mesh (true, false or auto, with auto based on detecting
   // changes in a hash key)
-  std::set<std::string> mesh_modes =  boost::assign::list_of("true")("false")("auto");
-  parameters.add("rewrite_mesh", "auto", mesh_modes);
+  //std::set<std::string> mesh_modes =  boost::assign::list_of("true")("false")("auto");
+  //parameters.add("rewrite_mesh", "auto", mesh_modes);
+  parameters.add("rewrite_function_mesh", true);
 
   // Flush datasets to disk at each timestep
-  //  improves reliability. Option to turn off.
-  parameters.add("flush_output", true);
-
+  parameters.add("flush_output", false);
 }
 //----------------------------------------------------------------------------
 XDMFFile::~XDMFFile()
@@ -82,11 +81,11 @@ void XDMFFile::operator<< (const Function& u)
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 {
+  // FIXME: Split up this function?
+
   dolfin_assert(ut.first);
   const Function &u = *(ut.first);
   const double time_step = ut.second;
-
-  //  Timer XDMFtimer("Write XDMF Function");
 
   // Update any ghost values
   u.update();
@@ -149,9 +148,9 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     {
       for (uint j = 0; j < value_size; j++)
       {
-        uint tensor_2d_offset = (j>1 && value_size == 4) ? 1 : 0 ;
+        uint tensor_2d_offset = (j > 1 && value_size == 4) ? 1 : 0;
         _data_values[i*padded_value_size + j + tensor_2d_offset]
-       = data_values[i + j*num_local_entities];
+            = data_values[i + j*num_local_entities];
       }
     }
     data_values = _data_values;
@@ -159,25 +158,19 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   // For vertex centred data, remove any values which are on duplicate vertices,
   // and readjust num_local_entities
-  if(vertex_data)
+  if (vertex_data)
   {
     // FIXME: functionality should not be in HDF5File, but in Mesh or here somewhere...
     hdf5_file->remove_duplicate_values(mesh, data_values, padded_value_size);
     num_local_entities = num_local_vertices;
   }
 
-  // Get names of mesh data sets used in the HDF5 file
-  dolfin_assert(hdf5_file);
-  const std::string mesh_coords_name = hdf5_file->mesh_coords_dataset_name(mesh);
-  const std::string mesh_topology_name = hdf5_file->mesh_topology_dataset_name(mesh);
-
+  // FIXME: Below is messy. Should query file for existing mesh name
   // Write mesh to HDF5 file
-  if (counter == 0)
-    hdf5_file->write_mesh(mesh);
-  else if (!hdf5_file->dataset_exists(mesh_coords_name)
-                || !hdf5_file->dataset_exists(mesh_topology_name))
+  if (parameters["rewrite_function_mesh"])
   {
-    hdf5_file->write_mesh(mesh);
+    current_mesh_name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
+    hdf5_file->write_mesh(mesh, current_mesh_name);
   }
 
   // Vertex/cell values are saved in the hdf5 group /VisualisationVector
@@ -191,18 +184,20 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   hdf5_file->write_data("/VisualisationVector/" + boost::lexical_cast<std::string>(counter),
                         data_values, global_size);
 
-  // Flush file to OS. Improves chances of recovering data if interrupted.
-  // Also makes file somewhat readable between writes.
-  // FIXME: should this use HDF5Interface, or should HDF5File provide a flush function?
+  // Flush file. Improves chances of recovering data if interrupted. Also
+  // makes file somewhat readable between writes.
+  // FIXME: should this use HDF5Interface, or should HDF5File provide
+  //        a flush function?
   if(parameters["flush_output"])
     HDF5Interface::flush_file(hdf5_file->hdf5_file_id);
+
+  return;
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero
   if (MPI::process_number() == 0)
   {
     // Working data structure for formatting XML file
     std::string s;
-
     pugi::xml_document xml_doc;
     pugi::xml_node xdmf_timegrid;
     pugi::xml_node xdmf_timedata;
@@ -271,12 +266,12 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     // Grid/Topology
     pugi::xml_node xdmf_topology = xdmf_grid.append_child("Topology");
     xml_mesh_topology(xdmf_topology, cell_dim, num_global_cells,
-                      mesh_topology_name);
+                      current_mesh_name + "/topology");
 
     // Grid/Geometry
     pugi::xml_node xdmf_geometry = xdmf_grid.append_child("Geometry");
     xml_mesh_geometry(xdmf_geometry, num_global_vertices, gdim,
-                      mesh_coords_name);
+                      current_mesh_name + "/coordinates");
 
     // Grid/Attribute (Function value data)
     pugi::xml_node xdmf_values = xdmf_grid.append_child("Attribute");
@@ -323,12 +318,14 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const Mesh& mesh)
 {
-  //  Timer XDMFtimer("XDMF Output Mesh");
+  //Timer XDMFtimer("XDMF Output Mesh");
 
   // Write Mesh to HDF5 file (use contiguous vertex indices for topology)
   dolfin_assert(hdf5_file);
 
-  hdf5_file->write_mesh(mesh);
+  // Output data name
+  const std::string name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
+  hdf5_file->write_mesh(mesh, name);
 
   // Get number of local/global cells/vertices
   const uint num_local_cells = mesh.num_cells();
@@ -340,9 +337,10 @@ void XDMFFile::operator<< (const Mesh& mesh)
   // Get geometric dimension
   const uint gdim = mesh.geometry().dim();
 
-  // MPI collective calls
-  const std::string mesh_topology_name = hdf5_file->mesh_topology_dataset_name(mesh);
-  const std::string mesh_coords_name = hdf5_file->mesh_coords_dataset_name(mesh);
+  // FIXME: Names should be returned by HDF5::write_mesh
+  // Mesh data set names
+  const std::string mesh_topology_name = name + "/topology";
+  const std::string mesh_coords_name = name + "/coordinates";
 
   // Write the XML meta description on process zero
   if (MPI::process_number() == 0)
@@ -379,7 +377,7 @@ void XDMFFile::operator<< (const MeshFunction<bool>& meshfunction)
   const Mesh& mesh = meshfunction.mesh();
   const uint cell_dim = meshfunction.dim();
 
-  // HDF5 does not support a Boolean type, so copy to a uint with values
+  // HDF5 does not support a boolean type, so copy to a uint with values
   // 1 and 0
   MeshFunction<uint> uint_meshfunction(mesh, cell_dim);
   for (MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
@@ -442,8 +440,9 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   const uint num_global_vertices = MPI::sum(num_local_vertices);
 
   // Work out HDF5 dataset names
-  const std::string mesh_coords_name = hdf5_file->mesh_coords_dataset_name(mesh);
-  const std::string mesh_topology_name = hdf5_file->mesh_topology_dataset_name(mesh);
+  const std::string name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
+  const std::string mesh_topology_name = name + "/topology";
+  const std::string mesh_coords_name = name + "/coordinates";
 
   boost::filesystem::path p(hdf5_file->filename);
   std::string dataset_basic_name = "/Mesh/MeshFunction_" + meshfunction.name();
@@ -451,7 +450,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
     = p.filename().string() + ":" + dataset_basic_name;
 
   // Write mesh to HDF5
-  hdf5_file->write_mesh(mesh, cell_dim);
+  //hdf5_file->write_mesh(mesh, cell_dim);
 
   // FIXME: functionality should not be in HDF5File, but in Mesh somewhere or here.
   hdf5_file->remove_duplicate_values(mesh, data_values, 1);

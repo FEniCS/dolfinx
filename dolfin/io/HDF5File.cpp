@@ -57,8 +57,8 @@ HDF5File::HDF5File(const std::string filename, const bool use_mpiio)
   : GenericFile(filename, "H5"), hdf5_file_open(false), hdf5_file_id(0),
     mpi_io(MPI::num_processes() > 1 && use_mpiio ? true : false)
 {
-  // Chunking seems to improve performance generally, option to turn it off.
-  parameters.add("chunking", true);
+  // HDF5 chunking
+  parameters.add("chunking", false);
 }
 //-----------------------------------------------------------------------------
 HDF5File::~HDF5File()
@@ -314,10 +314,10 @@ void HDF5File::read_mesh_repartition(Mesh &input_mesh,
   // Read a block of cells
   std::vector<uint> topology_data;
   topology_data.reserve(num_local_cells*num_vertices_per_cell);
-  mesh_data.cell_vertices.resize(boost::extents[num_local_cells][num_vertices_per_cell]);  
+  mesh_data.cell_vertices.resize(boost::extents[num_local_cells][num_vertices_per_cell]);
   HDF5Interface::read_dataset(hdf5_file_id, topology_name, cell_range, topology_data);
 
-  // Copy to boost::multi_array 
+  // Copy to boost::multi_array
   // FIXME: there should be a more efficient way to do this?
   mesh_data.global_cell_indices.reserve(num_local_cells);
   std::vector<uint>::iterator topology_it = topology_data.begin();
@@ -328,7 +328,7 @@ void HDF5File::read_mesh_repartition(Mesh &input_mesh,
     std::copy(topology_it, topology_it + num_vertices_per_cell,
               mesh_data.cell_vertices[i].begin());
     topology_it += num_vertices_per_cell;
-    
+
   }
 
   // --- Coordinates ---
@@ -367,15 +367,17 @@ void HDF5File::read_mesh_repartition(Mesh &input_mesh,
 //-----------------------------------------------------------------------------
 void HDF5File::operator<< (const Mesh& mesh)
 {
-  write_mesh(mesh, mesh.topology().dim());
+  const std::string name = boost::lexical_cast<std::string>(counter);
+  write_mesh(mesh, mesh.topology().dim(), name);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::write_mesh(const Mesh& mesh)
+void HDF5File::write_mesh(const Mesh& mesh, const std::string name)
 {
-  write_mesh(mesh, mesh.topology().dim());
+  write_mesh(mesh, mesh.topology().dim(), name);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
+void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim,
+                          const std::string name)
 {
   // Clear file when writing to file for the first time
   if(!hdf5_file_open)
@@ -419,9 +421,8 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
   const uint vertex_offset = MPI::global_offset(num_local_vertices, true);
   const std::pair<uint, uint> vertex_range(vertex_offset, vertex_offset + num_local_vertices);
 
-  // Write vertex data to HDF5 file if not already there
-  const std::string coord_dataset = mesh_coords_dataset_name(mesh);
-  if (!HDF5Interface::has_dataset(hdf5_file_id, coord_dataset))
+  // Write vertex data to HDF5 file
+  const std::string coord_dataset = name + "/coordinates";
   {
     // Write coordinates contiguously from each process
     std::vector<uint> global_size(2);
@@ -437,9 +438,8 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
                                  partitions);
   }
 
-  // Write connectivity to HDF5 file if not already there
-  const std::string topology_dataset = mesh_topology_dataset_name(mesh);
-  if (!HDF5Interface::has_dataset(hdf5_file_id, topology_dataset))
+  // Write connectivity to HDF5 file
+  const std::string topology_dataset = name + "/topology";
   {
     std::vector<uint> global_size(2);
     global_size[0] = MPI::sum(topological_data.size()/(cell_dim + 1));
@@ -458,7 +458,7 @@ void HDF5File::write_mesh(const Mesh& mesh, const uint cell_dim)
   }
 }
 //-----------------------------------------------------------------------------
-bool HDF5File::dataset_exists(const std::string dataset_name) const
+bool HDF5File::has_dataset(const std::string dataset_name) const
 {
   dolfin_assert(hdf5_file_open);
   return HDF5Interface::has_dataset(hdf5_file_id, dataset_name);
@@ -471,37 +471,12 @@ void HDF5File::open_hdf5_file(bool truncate)
   hdf5_file_open = true;
 }
 //-----------------------------------------------------------------------------
-std::string HDF5File::mesh_coords_dataset_name(const Mesh& mesh) const
-{
-  std::stringstream dataset_name;
-  dataset_name << "/Mesh/Coordinates_" << std::setfill('0')
-          << std::hex << std::setw(8) << mesh.geometry().hash();
-  return dataset_name.str();
-}
-//-----------------------------------------------------------------------------
-std::string HDF5File::mesh_index_dataset_name(const Mesh& mesh) const
-{
-  std::stringstream dataset_name;
-  dataset_name << "/Mesh/GlobalIndex_" << std::setfill('0')
-          << std::hex << std::setw(8) << mesh.geometry().hash();
-  return dataset_name.str();
-}
-//-----------------------------------------------------------------------------
-std::string HDF5File::mesh_topology_dataset_name(const Mesh& mesh) const
-{
-  const uint D = mesh.topology().dim();
-  std::stringstream dataset_name;
-  dataset_name << "/Mesh/Topology_" << std::setfill('0')
-          << std::hex << std::setw(8) << mesh.topology()(D, D).hash();
-  return dataset_name.str();
-}
-//-----------------------------------------------------------------------------
 void HDF5File::remove_duplicate_vertices(const Mesh &mesh,
                                          std::vector<double>& vertex_data,
                                          std::vector<uint>& topological_data)
 {
   Timer t("remove duplicate vertices");
- 
+
   const uint num_processes = MPI::num_processes();
   const uint process_number = MPI::process_number();
   const uint num_local_vertices = mesh.num_vertices();
@@ -528,7 +503,7 @@ void HDF5File::remove_duplicate_vertices(const Mesh &mesh,
   destinations.reserve(num_processes);
   for(uint j = 0; j < num_processes; j++)
     destinations.push_back(j);
-  std::vector<std::vector<std::pair<uint,uint> > > values_to_send(num_processes);
+  std::vector<std::vector<std::pair<uint, uint> > > values_to_send(num_processes);
 
   // Go through shared vertices looking for vertices which are
   // on a lower numbered process. Mark these as being off-process.
