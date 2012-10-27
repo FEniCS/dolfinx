@@ -115,7 +115,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   // Get number of local/global cells/vertices
   const uint num_local_cells = mesh.num_cells();
-  const uint num_local_vertices = mesh.num_owned_vertices();
+  const uint num_local_vertices = mesh.num_vertices();
   const uint num_global_cells = MPI::sum(num_local_cells);
   const uint num_global_vertices = MPI::sum(num_local_vertices);
 
@@ -422,7 +422,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 
   // Get counts of mesh cells and vertices
   const uint num_local_cells = mesh.num_entities(cell_dim);
-  const uint num_local_vertices = mesh.num_owned_vertices();
+  const uint num_local_vertices = mesh.num_vertices();
   const uint num_global_cells = MPI::sum(num_local_cells);
   const uint num_global_vertices = MPI::sum(num_local_vertices);
 
