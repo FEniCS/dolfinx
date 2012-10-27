@@ -61,7 +61,7 @@ void _monitor_memory_usage(dolfin::Logger* logger)
 
   // Get process ID and page size
   const dolfin::uint pid = getpid();
-  const dolfin::uint page_size = getpagesize();
+  const long unsigned int page_size = getpagesize();
 
   // Print some info
   std::stringstream s;
@@ -83,12 +83,12 @@ void _monitor_memory_usage(dolfin::Logger* logger)
     statm.open(filename.str().c_str());
     if (!statm)
       logger->error("Unable to open statm file for process.");
-    dolfin::uint num_pages;
+    long unsigned int num_pages;
     statm >> num_pages;
     statm.close();
 
     // Convert to MB and report memory usage
-    const dolfin::uint num_mb = num_pages*page_size / (1024*1024);
+    const long unsigned int num_mb = num_pages*page_size / (1024*1024);
     logger->_report_memory_usage(num_mb);
   }
 }
@@ -348,13 +348,13 @@ void Logger::monitor_memory_usage()
 #endif
 }
 //-----------------------------------------------------------------------------
-void Logger::_report_memory_usage(uint num_mb)
+void Logger::_report_memory_usage(long unsigned int num_mb)
 {
   std::stringstream s;
   s << "Memory usage: " << num_mb << " MB";
   log(s.str());
   _maximum_memory_usage = std::max(_maximum_memory_usage,
-                                   static_cast<int>(num_mb));
+                                   static_cast<long int>(num_mb));
 }
 //-----------------------------------------------------------------------------
 void Logger::__debug(std::string msg) const

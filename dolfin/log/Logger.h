@@ -105,7 +105,7 @@ namespace dolfin
     void monitor_memory_usage();
 
     /// Helper function for reporting memory usage
-    void _report_memory_usage(uint num_mb);
+    void _report_memory_usage(long unsigned int num_mb);
 
     /// Helper function for dolfin_debug macro
     void __debug(std::string msg) const;
@@ -142,7 +142,7 @@ namespace dolfin
     boost::thread* _thread_monitor_memory_usage;
 
     // Maximum memory usage so far
-    int _maximum_memory_usage;
+    long int _maximum_memory_usage;
 
   };
 
