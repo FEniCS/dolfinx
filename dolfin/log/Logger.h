@@ -105,7 +105,7 @@ namespace dolfin
     void monitor_memory_usage();
 
     /// Helper function for reporting memory usage
-    void _report_memory_usage(long unsigned int num_mb);
+    void _report_memory_usage(size_t num_mb);
 
     /// Helper function for dolfin_debug macro
     void __debug(std::string msg) const;
