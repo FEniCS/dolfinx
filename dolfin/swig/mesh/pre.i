@@ -38,7 +38,7 @@
   PyObject* _coordinates() {
     return %make_numpy_array(2, double)(self->num_vertices(),
 					self->geometry().dim(),
-					self->coordinates(), true);
+					&(self->coordinates())[0], true);
   }
 
   PyObject* _cells() {

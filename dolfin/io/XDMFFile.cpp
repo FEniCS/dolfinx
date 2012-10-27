@@ -311,7 +311,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     xdmf_data.append_child(pugi::node_pcdata).set_value(s.c_str());
 
     // Write XML file
-    xml_doc.save_file(filename.c_str(), "    ");
+    xml_doc.save_file(filename.c_str(), "  ");
   }
 
   // Increment counter
@@ -450,10 +450,10 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
     = p.filename().string() + ":" + dataset_basic_name;
 
   // Write mesh to HDF5
-  //hdf5_file->write_mesh(mesh, cell_dim);
+  hdf5_file->write_mesh(mesh, cell_dim, mesh_function_dataset_name);
 
   // FIXME: functionality should not be in HDF5File, but in Mesh somewhere or here.
-  hdf5_file->remove_duplicate_values(mesh, data_values, 1);
+  //hdf5_file->remove_duplicate_values(mesh, data_values, 1);
 
   // Write values to HDF5
   const std::vector<uint> global_size(1, MPI::sum(data_values.size()));
@@ -499,7 +499,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
     xdmf_data.append_child(pugi::node_pcdata).set_value(mesh_function_dataset_name.c_str());
 
     // Output to storage
-    xml_doc.save_file(filename.c_str(), "    ");
+    xml_doc.save_file(filename.c_str(), "  ");
   }
 }
 //----------------------------------------------------------------------------

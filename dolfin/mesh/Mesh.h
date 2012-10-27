@@ -219,17 +219,17 @@ namespace dolfin
     /// Get vertex coordinates.
     ///
     /// *Returns*
-    ///     double*
+    ///     std::vector<double>&
     ///         Coordinates of all vertices.
     ///
     /// *Example*
     ///     .. note::
     ///
     ///         No example code available for this function.
-    double* coordinates() { return _geometry.x(); }
+    std::vector<double>& coordinates() { return _geometry.x(); }
 
     /// Return coordinates of all vertices (const version).
-    const double* coordinates() const { return _geometry.x(); }
+    const std::vector<double>& coordinates() const { return _geometry.x(); }
 
     /// Get cell connectivity.
     ///

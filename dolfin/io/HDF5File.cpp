@@ -506,11 +506,14 @@ void HDF5File::write_visualisation_mesh(const Mesh& mesh, const uint cell_dim,
   const std::string coord_dataset = name + "/coordinates";
   {
     const uint gdim = mesh.geometry().dim();
+    const std::vector<double>& vertex_coords = mesh.coordinates();
+    /*
     std::vector<double> vertex_coords;
     vertex_coords.reserve(gdim*num_local_vertices);
     for (VertexIterator v(mesh); !v.end(); ++v)
       for (uint i = 0; i < gdim; ++i)
         vertex_coords.push_back(v->x(i));
+    */
 
     // Write coordinates contiguously from each process
     std::vector<uint> global_size(2);
