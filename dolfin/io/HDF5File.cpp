@@ -98,7 +98,7 @@ void HDF5File::operator<< (const GenericVector& x)
 
   // Write data to file
   std::pair<uint,uint> local_range = x.local_range();
-  const bool chunking = parameters["hdf5_chunking"];
+  const bool chunking = parameters["chunking"];
   const std::vector<uint> global_size(1, x.size());
   HDF5Interface::write_dataset(hdf5_file_id, dataset_name, local_data,
                                local_range, global_size, mpi_io, chunking);
@@ -228,7 +228,7 @@ void HDF5File::operator>> (Mesh& input_mesh)
   read_mesh(input_mesh);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::read_mesh(Mesh &input_mesh)
+void HDF5File::read_mesh(Mesh& input_mesh)
 {
   warning("HDF5 Mesh input is still experimental");
   warning("HDF5 Mesh input will always repartition the mesh");
@@ -275,7 +275,7 @@ void HDF5File::read_mesh(Mesh &input_mesh)
                                    topology_name);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::read_mesh_repartition(Mesh &input_mesh,
+void HDF5File::read_mesh_repartition(Mesh& input_mesh,
                                      const std::string coordinates_name,
                                      const std::string topology_name)
 {
@@ -328,7 +328,6 @@ void HDF5File::read_mesh_repartition(Mesh &input_mesh,
     std::copy(topology_it, topology_it + num_vertices_per_cell,
               mesh_data.cell_vertices[i].begin());
     topology_it += num_vertices_per_cell;
-
   }
 
   // --- Coordinates ---
