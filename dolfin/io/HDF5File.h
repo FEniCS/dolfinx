@@ -65,6 +65,15 @@ namespace dolfin
     void write_mesh(const Mesh& mesh, const uint cell_dim,
                     const std::string name);
 
+    /// Write Mesh to file for visualisation (may contain duplicate
+    /// entities and will not preserve global indices)
+    void write_visualisation_mesh(const Mesh& mesh, const std::string name);
+
+    /// Write Mesh of given cell dimension to file for visualisation (may
+    /// contain duplicate entities and will not preserve global indices)
+    void write_visualisation_mesh(const Mesh& mesh, const uint cell_dim,
+                                  const std::string name);
+
     /// Read vector from file (in HDF5 folder 'Vector' for dataset 0)
     void operator>> (GenericVector& x);
 
@@ -76,7 +85,7 @@ namespace dolfin
     void operator>> (Mesh& mesh);
 
     /// Read Mesh from file
-    void read_mesh(Mesh &mesh);
+    void read_mesh(Mesh& mesh);
 
     /// Check if dataset exists in HDF5 file
     bool has_dataset(const std::string dataset_name) const;

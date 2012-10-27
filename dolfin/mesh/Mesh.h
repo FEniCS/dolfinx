@@ -241,7 +241,7 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    const uint* cells() const { return _topology(_topology.dim(), 0)(); }
+    const std::vector<uint>& cells() const { return _topology(_topology.dim(), 0)(); }
 
     /// Get number of local entities of given topological dimension.
     ///

@@ -158,19 +158,21 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   // For vertex centred data, remove any values which are on duplicate vertices,
   // and readjust num_local_entities
+  /*
   if (vertex_data)
   {
     // FIXME: functionality should not be in HDF5File, but in Mesh or here somewhere...
     hdf5_file->remove_duplicate_values(mesh, data_values, padded_value_size);
     num_local_entities = num_local_vertices;
   }
+  */
 
   // FIXME: Below is messy. Should query file for existing mesh name
   // Write mesh to HDF5 file
   if (parameters["rewrite_function_mesh"])
   {
-    current_mesh_name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
-    hdf5_file->write_mesh(mesh, current_mesh_name);
+    current_mesh_name = "/VisualisationMesh/" + boost::lexical_cast<std::string>(counter);
+    hdf5_file->write_visualisation_mesh(mesh, current_mesh_name);
   }
 
   // Vertex/cell values are saved in the hdf5 group /VisualisationVector
@@ -318,19 +320,17 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const Mesh& mesh)
 {
-  //Timer XDMFtimer("XDMF Output Mesh");
-
   // Write Mesh to HDF5 file (use contiguous vertex indices for topology)
   dolfin_assert(hdf5_file);
 
   // Output data name
-  const std::string name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
-  hdf5_file->write_mesh(mesh, name);
+  const std::string name = "/VisualisationMesh/" + boost::lexical_cast<std::string>(counter);
+  hdf5_file->write_visualisation_mesh(mesh, name);
 
   // Get number of local/global cells/vertices
   const uint num_local_cells = mesh.num_cells();
-  const uint num_local_vertices = mesh.num_owned_vertices();
   const uint num_global_cells = MPI::sum(num_local_cells);
+  const uint num_local_vertices = mesh.num_vertices();
   const uint num_global_vertices = MPI::sum(num_local_vertices);
   const uint cell_dim = mesh.topology().dim();
 

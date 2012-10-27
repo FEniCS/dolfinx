@@ -89,8 +89,8 @@ namespace dolfin
     }
 
     /// Return contiguous array of connections for all entities
-    const uint* operator() () const
-    { return &connections[0]; }
+    const std::vector<uint>& operator() () const
+    { return connections; }
 
     /// Clear all data
     void clear();

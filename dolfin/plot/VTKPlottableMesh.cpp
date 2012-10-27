@@ -85,7 +85,7 @@ void VTKPlottableMesh::update(const Parameters& parameters, int framecounter)
   // Add mesh cells to VTK cell array. Note: Preallocation of storage
   // in cell array did not give speedups when testing during development
   vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
-  const uint *connectivity = _mesh->cells();
+  const std::vector<uint>& connectivity = _mesh->cells();
   uint spatial_dim = _mesh->topology().dim();
 
   for (uint i = 0; i < _mesh->num_cells(); ++i)
@@ -120,7 +120,7 @@ void VTKPlottableMesh::update(const Parameters& parameters, int framecounter)
       // Should never be reached
       break;
   }
-  
+
   // Is this needed?
   // _grid->Modified();
   // _geometryFilter->Modified();
