@@ -156,12 +156,13 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     data_values = _data_values;
   }
 
-  // FIXME: Below is messy. Should query file for existing mesh name
+  // FIXME: Below is messy. Should query HDF5 file writer for existing
+  //        mesh name
   // Write mesh to HDF5 file
   if (parameters["rewrite_function_mesh"])
   {
-    //current_mesh_name = "/VisualisationMesh/" + boost::lexical_cast<std::string>(counter);
-    //hdf5_file->write_visualisation_mesh(mesh, current_mesh_name);
+    current_mesh_name = "/VisualisationMesh/" + boost::lexical_cast<std::string>(counter);
+    hdf5_file->write_visualisation_mesh(mesh, current_mesh_name);
   }
 
   // Vertex/cell values are saved in the hdf5 group /VisualisationVector
