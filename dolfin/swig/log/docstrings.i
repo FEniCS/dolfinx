@@ -133,6 +133,11 @@ Return timing (average) for given task, optionally clearing timing
 for task
 ";
 
+%feature("docstring")  dolfin::monitor_memory_usage "
+Monitor memory usage. Call this function at the start of a
+program to continuously monitor the memory usage of the process.
+";
+
 %feature("docstring")  dolfin::not_working_in_parallel "
 Report that functionality has not (yet) been implemented to work
 in parallel

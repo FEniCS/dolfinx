@@ -121,6 +121,10 @@ namespace dolfin
   /// for task
   double timing(std::string task, bool reset=false);
 
+  /// Monitor memory usage. Call this function at the start of a
+  /// program to continuously monitor the memory usage of the process.
+  void monitor_memory_usage();
+
   /// Report that functionality has not (yet) been implemented to work
   /// in parallel
   void not_working_in_parallel(std::string what);

@@ -20,7 +20,7 @@
 // Modified by Andre Massing 2009
 //
 // First added:  2003-11-28
-// Last changed: 2012-10-13
+// Last changed: 2012-10-25
 
 #include <algorithm>
 #include <map>
@@ -526,8 +526,10 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->mesh());
 
-  // Check that the mesh matches
-  if (&mesh != _function_space->mesh().get())
+  // Check that the mesh matches. Notice that the hash is only
+  // compared if the pointers are not matching.
+  if (&mesh != _function_space->mesh().get() &&
+      mesh.hash() != _function_space->mesh()->hash())
   {
     dolfin_error("Function.cpp",
                  "interpolate function values at vertices",

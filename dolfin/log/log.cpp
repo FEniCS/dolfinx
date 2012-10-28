@@ -209,6 +209,11 @@ double dolfin::timing(std::string task, bool reset)
   return LogManager::logger.timing(task, reset);
 }
 //-----------------------------------------------------------------------------
+void dolfin::monitor_memory_usage()
+{
+  LogManager::logger.monitor_memory_usage();
+}
+//-----------------------------------------------------------------------------
 void dolfin::not_working_in_parallel(std::string what)
 {
   if (MPI::num_processes() > 1)

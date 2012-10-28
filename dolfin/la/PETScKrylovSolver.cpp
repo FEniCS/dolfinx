@@ -79,6 +79,7 @@ const std::vector<std::pair<std::string, std::string> >
     ("tfqmr",      "Transpose-free quasi-minimal residual method")
     ("richardson", "Richardson method")
     ("bicgstab",   "Biconjugate gradient stabilized method");
+
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
 PETScKrylovSolver::methods()

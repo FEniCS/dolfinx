@@ -27,7 +27,7 @@
 #include <boost/unordered_map.hpp>
 
 #include <dolfin/common/Timer.h>
-#include <dolfin/graph/BoostGraphRenumbering.h>
+#include <dolfin/graph/BoostGraphOrdering.h>
 #include <dolfin/graph/GraphBuilder.h>
 #include <dolfin/graph/SCOTCH.h>
 #include <dolfin/log/log.h>
@@ -73,7 +73,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& dolfin_mesh,
                                       ufc_mesh, ufc_cell);
   }
 
-  // Build (renumber) dofmap when running in parallel
+  // Build (re-order) dofmap when running in parallel
   if (distributed)
   {
     // Build set of global dofs
@@ -99,10 +99,10 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& dolfin_mesh,
 
       // Reorder graph (reverse Cuthill-McKee)
       const std::vector<uint> dof_remap
-          = BoostGraphRenumbering::compute_cuthill_mckee(graph, true);
+          = BoostGraphOrdering::compute_cuthill_mckee(graph, true);
 
       // Reorder graph (SCOTCH minimum degree)
-      //const std::vector<uint> dof_remap = SCOTCH::compute_renumbering(graph);
+      //const std::vector<uint> dof_remap = SCOTCH::compute_reorder(graph);
 
       // Reorder dof map
       dolfin_assert(dofmap.ufc_map_to_dofmap.empty());
@@ -350,19 +350,17 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
 
   // Reorder dofs locally
   #ifdef HAS_SCOTCH
-  const std::vector<uint> dof_remap = SCOTCH::compute_renumbering(graph);
+  const std::vector<uint> dof_remap = SCOTCH::compute_reordering(graph);
   #else
   const std::vector<uint> dof_remap
-      = BoostGraphRenumbering::compute_cuthill_mckee(graph, true);
-  //const std::vector<uint> dof_remap
-  //    = BoostGraphRenumbering::compute_king(graph, true);
+      = BoostGraphOrdering::compute_cuthill_mckee(graph, true);
   #endif
 
   // Map from old to new index for dofs
   boost::unordered_map<uint, uint> old_to_new_dof_index;
 
-  // Renumber owned dofs and buffer dofs that are owned but shared with another
-  // process
+  // Renumber owned dofs and buffer dofs that are owned but shared with
+  // another process
   uint counter = 0;
   std::vector<uint> send_buffer;
   for (set_iterator owned_dof = owned_dofs.begin(); owned_dof != owned_dofs.end(); ++owned_dof, counter++)

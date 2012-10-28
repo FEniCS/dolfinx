@@ -39,6 +39,12 @@
 #include "dolfin/parameter/Parameter.h"
 #include "dolfin/parameter/Parameters.h"
 
+// #include types from la submodule of module la
+#include "dolfin/la/LinearAlgebraObject.h"
+#include "dolfin/la/GenericTensor.h"
+#include "dolfin/la/GenericVector.h"
+#include "dolfin/la/Vector.h"
+
 // #include types from mesh submodule of module mesh
 #include "dolfin/mesh/Mesh.h"
 #include "dolfin/mesh/MeshFunction.h"
@@ -61,6 +67,8 @@
 
 // #include types from io submodule
 #include "dolfin/io/File.h"
+#include "dolfin/io/XDMFFile.h"
+#include "dolfin/io/HDF5File.h"
 
 // NumPy includes
 #define PY_ARRAY_UNIQUE_SYMBOL PyDOLFIN_IO
@@ -86,6 +94,13 @@ import_array();
 %include "dolfin/swig/parameter/pre.i"
 %import(module="common") "dolfin/parameter/Parameter.h"
 %import(module="common") "dolfin/parameter/Parameters.h"
+
+// %import types from submodule la of SWIG module la
+%include "dolfin/swig/la/pre.i"
+%import(module="la") "dolfin/la/LinearAlgebraObject.h"
+%import(module="la") "dolfin/la/GenericTensor.h"
+%import(module="la") "dolfin/la/GenericVector.h"
+%import(module="la") "dolfin/la/Vector.h"
 
 // %import types from submodule mesh of SWIG module mesh
 %include "dolfin/swig/mesh/pre.i"
@@ -116,5 +131,7 @@ import_array();
 
 // %include types from submodule io
 %include "dolfin/io/File.h"
+%include "dolfin/io/XDMFFile.h"
+%include "dolfin/io/HDF5File.h"
 %include "dolfin/swig/io/post.i"
 

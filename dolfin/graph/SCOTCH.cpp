@@ -67,16 +67,16 @@ void SCOTCH::compute_partition(std::vector<uint>& cell_partition,
   info("Finished computing partitions using SCOTCH");
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::uint> SCOTCH::compute_renumbering(const Graph& graph)
+std::vector<dolfin::uint> SCOTCH::compute_reordering(const Graph& graph)
 {
   std::vector<uint> permutation, inverse_permutation;
-  compute_renumbering(graph, permutation, inverse_permutation);
+  compute_reordering(graph, permutation, inverse_permutation);
   return permutation;
 }
 //-----------------------------------------------------------------------------
-void SCOTCH::compute_renumbering(const Graph& graph,
-                                 std::vector<uint>& permutation,
-                                 std::vector<uint>& inverse_permutation)
+void SCOTCH::compute_reordering(const Graph& graph,
+                               std::vector<uint>& permutation,
+                               std::vector<uint>& inverse_permutation)
 {
   // Remove graph loops
   Graph _graph = graph;
@@ -117,7 +117,7 @@ void SCOTCH::compute_renumbering(const Graph& graph,
   if (SCOTCH_graphInit(&scotch_graph) != 0)
   {
     dolfin_error("SCOTCH.cpp",
-                 "renumber graph using SCOTCH",
+                 "re-order graph using SCOTCH",
                  "Error initializing SCOTCH graph");
   }
 
@@ -141,7 +141,7 @@ void SCOTCH::compute_renumbering(const Graph& graph,
   }
   #endif
 
-  // Renumbering strategy
+  // Re-ordering strategy
   SCOTCH_Strat strat;
   SCOTCH_stratInit(&strat);
 
@@ -388,7 +388,7 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
                "DOLFIN has been configured without support for SCOTCH");
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::uint> SCOTCH::compute_renumbering(const Graph& graph)
+std::vector<dolfin::uint> SCOTCH::compute_reordering(const Graph& graph)
 {
   dolfin_error("SCOTCH.cpp",
                "re-order graph using SCOTCH",
@@ -397,7 +397,7 @@ std::vector<dolfin::uint> SCOTCH::compute_renumbering(const Graph& graph)
   return x;
 }
 //-----------------------------------------------------------------------------
-void SCOTCH::compute_renumbering(const Graph& graph,
+void SCOTCH::compute_reordering(const Graph& graph,
                                  std::vector<uint>& permutation,
                                  std::vector<uint>& inverse_permutation)
 {

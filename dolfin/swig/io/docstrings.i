@@ -120,3 +120,107 @@ Check if file exists
         Name of file / path.
 ";
 
+// Documentation extracted from: (module=io, header=XDMFFile.h)
+%feature("docstring")  dolfin::XDMFFile "
+This class supports the output of meshes and functions in XDMF
+(http://www.xdmf.org) format. It creates an XML file that describes
+the data and points to a HDF5 file that stores the actual problem
+data. Output of data in parallel is supported.
+
+XDMF is not suitable for checkpointing as it may decimate
+some data.
+";
+
+%feature("docstring")  dolfin::XDMFFile::XDMFFile "
+Constructor
+";
+
+%feature("docstring")  dolfin::XDMFFile::operator<< "
+**Overloaded versions**
+
+* operator<<\ (mesh)
+
+  Save a mesh for visualisation, with e.g. ParaView. Creates a HDF5
+  file to store the mesh, and a related XDMF file with metadata.
+
+* operator<<\ (u)
+
+  Save a Function to XDMF/HDF files for visualisation.
+
+* operator<<\ (Function*, ut)
+
+  Save Function + time stamp to file
+
+* operator<<\ (meshfunction)
+
+  Save MeshFunction to file
+";
+
+// Documentation extracted from: (module=io, header=HDF5File.h)
+%feature("docstring")  dolfin::HDF5File::HDF5File "
+Constructor
+";
+
+%feature("docstring")  dolfin::HDF5File::operator<< "
+**Overloaded versions**
+
+* operator<<\ (x)
+
+  Write vector to file in HDF5 folder 'Vector'. Multiple calls
+  will save in the same file with incrementing dataset names
+
+* operator<<\ (mesh)
+
+  Write Mesh to file
+";
+
+%feature("docstring")  dolfin::HDF5File::write_mesh "
+**Overloaded versions**
+
+* write_mesh\ (mesh, name)
+
+  Write Mesh to file
+
+* write_mesh\ (mesh, cell_dim, name)
+
+  Write Mesh of given cell dimension to file
+";
+
+%feature("docstring")  dolfin::HDF5File::write_visualisation_mesh "
+**Overloaded versions**
+
+* write_visualisation_mesh\ (mesh, name)
+
+  Write Mesh to file for visualisation (may contain duplicate
+  entities and will not preserve global indices)
+
+* write_visualisation_mesh\ (mesh, cell_dim, name)
+
+  Write Mesh of given cell dimension to file for visualisation (may
+  contain duplicate entities and will not preserve global indices)
+";
+
+%feature("docstring")  dolfin::HDF5File::operator>> "
+**Overloaded versions**
+
+* operator>>\ (x)
+
+  Read vector from file (in HDF5 folder 'Vector' for dataset 0)
+
+* operator>>\ (mesh)
+
+  Read Mesh from file
+";
+
+%feature("docstring")  dolfin::HDF5File::read "
+Read vector from HDF5 file
+";
+
+%feature("docstring")  dolfin::HDF5File::read_mesh "
+Read Mesh from file
+";
+
+%feature("docstring")  dolfin::HDF5File::has_dataset "
+Check if dataset exists in HDF5 file
+";
+

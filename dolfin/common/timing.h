@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2005-12-21
-// Last changed: 2010-05-03
+// Last changed: 2012-10-26
 
 #ifndef __TIMING_H
 #define __TIMING_H

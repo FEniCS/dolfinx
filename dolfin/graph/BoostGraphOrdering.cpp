@@ -27,7 +27,7 @@
 
 #include "dolfin/common/types.h"
 #include "Graph.h"
-#include "BoostGraphRenumbering.h"
+#include "BoostGraphOrdering.h"
 
 #include "dolfin/log/LogStream.h"
 #include "dolfin/common/timing.h"
@@ -36,7 +36,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 std::vector<dolfin::uint>
-  BoostGraphRenumbering::compute_cuthill_mckee(const Graph& graph, bool reverse)
+  BoostGraphOrdering::compute_cuthill_mckee(const Graph& graph, bool reverse)
 {
   // Typedef for Boost undirected graph
   typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> UndirectedGraph;
@@ -47,7 +47,7 @@ std::vector<dolfin::uint>
   // Build Boost graph
   UndirectedGraph boost_graph = build_undirected_graph<UndirectedGraph>(graph);
 
-  // Renumber graph
+  // Compute graph re-ordering
   std::vector<uint> inv_perm(n);
   if (!reverse)
     boost::cuthill_mckee_ordering(boost_graph, inv_perm.begin());
@@ -66,7 +66,7 @@ std::vector<dolfin::uint>
   return map;
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::uint> BoostGraphRenumbering::compute_king(const Graph& graph)
+std::vector<dolfin::uint> BoostGraphOrdering::compute_king(const Graph& graph)
 {
   // Typedef for Boost undirected graph
   typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> UndirectedGraph;
@@ -77,7 +77,7 @@ std::vector<dolfin::uint> BoostGraphRenumbering::compute_king(const Graph& graph
   // Build Boost graph
   UndirectedGraph boost_graph = build_undirected_graph<UndirectedGraph>(graph);
 
-  // Renumber graph
+  // Compute graph re-ordering
   std::vector<uint> inv_perm(n);
   boost::king_ordering(boost_graph, inv_perm.rbegin());
 
@@ -93,7 +93,7 @@ std::vector<dolfin::uint> BoostGraphRenumbering::compute_king(const Graph& graph
   return map;
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::uint> BoostGraphRenumbering::compute_king(const std::vector<std::vector<uint> >& graph)
+std::vector<dolfin::uint> BoostGraphOrdering::compute_king(const std::vector<std::vector<uint> >& graph)
 {
   // Typedef for Boost undirected graph
   typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> UndirectedGraph;
@@ -104,7 +104,7 @@ std::vector<dolfin::uint> BoostGraphRenumbering::compute_king(const std::vector<
   // Build Boost graph
   UndirectedGraph boost_graph = build_undirected_graph<UndirectedGraph>(graph);
 
-  // Renumber graph
+  // Compute graph re-ordering
   std::vector<uint> inv_perm(n);
   boost::king_ordering(boost_graph, inv_perm.rbegin());
 
@@ -121,7 +121,7 @@ std::vector<dolfin::uint> BoostGraphRenumbering::compute_king(const std::vector<
 }
 //-----------------------------------------------------------------------------
 std::vector<dolfin::uint>
-  BoostGraphRenumbering::compute_minimum_degree(const Graph& graph, const int delta)
+  BoostGraphOrdering::compute_minimum_degree(const Graph& graph, const int delta)
 {
   // Typedef for Boost directed graph
   typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS> BoostGraph;
@@ -136,7 +136,7 @@ std::vector<dolfin::uint>
   boost::property_map<BoostGraph, boost::vertex_index_t>::type
     boost_index_map = get(boost::vertex_index, boost_graph);
 
-  // Renumber graph
+  // Compute graph re-ordering
   std::vector<int> inv_perm(n, 0), perm(n, 0), degree(n, 0);
   std::vector<int> supernode_sizes(n, 1);
   boost::minimum_degree_ordering(boost_graph,
@@ -154,7 +154,7 @@ std::vector<dolfin::uint>
 }
 //-----------------------------------------------------------------------------
 template<typename T, typename X>
-T BoostGraphRenumbering::build_undirected_graph(const X& graph)
+T BoostGraphOrdering::build_undirected_graph(const X& graph)
 {
   // Graph size
   const uint n = graph.size();
@@ -177,7 +177,7 @@ T BoostGraphRenumbering::build_undirected_graph(const X& graph)
 }
 //-----------------------------------------------------------------------------
 template<typename T, typename X>
-T BoostGraphRenumbering::build_directed_graph(const X& graph)
+T BoostGraphOrdering::build_directed_graph(const X& graph)
 {
   // Graph size
   const uint n = graph.size();
