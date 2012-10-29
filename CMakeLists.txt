@@ -311,6 +311,11 @@ if (DOLFIN_ENABLE_TRILINOS)
   find_package(Trilinos PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
   set(DOLFIN_TRILINOS_PACKAGES "Epetra;Zoltan;ML;Ifpack;Amesos")
 
+  if ("${Trilinos_VERSION}" VERSION_LESS "10.8.1")
+    set(Trilinos_FOUND FALSE)
+    message(WARNING "Unable to find Trilinos (>= 10.8.1)")
+  endif()
+
   # Check for required packages
   set(DOLFIN_TRILINOS_PACKAGES_FOUND false)
   if (Trilinos_FOUND)
