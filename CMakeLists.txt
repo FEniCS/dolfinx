@@ -289,7 +289,12 @@ endif()
 
 # Check for HDF5
 if (DOLFIN_ENABLE_HDF5)
-  find_package(HDF5 HINTS ${HDF5_DIR} $ENV{HDF5_DIR})
+  find_package(HDF5)
+
+  if (NOT HDF5_FOUND)
+    # Give some hints and try again
+    find_package(HDF5 HINTS ${HDF5_DIR} $ENV{HDF5_DIR})
+  endif()
 
   # Check that HDF5 has parallel support
   if (DOLFIN_ENABLE_MPI)
