@@ -15,7 +15,7 @@ Bash shell).
 
 To update your environment variables, run the following command:
 
-    source ${CMAKE_INSTALL_PREFIX}/${DOLFIN_SHARE_DIR}/dolfin.conf
+    source ${CMAKE_INSTALL_PREFIX}/${DOLFIN_ETC_DIR}/dolfin.conf
 
 For future reference, we recommend that you add this command to your
 configuration (.bashrc, .profile or similar).

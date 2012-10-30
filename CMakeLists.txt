@@ -574,6 +574,7 @@ set(DOLFIN_PKGCONFIG_DIR "lib/pkgconfig" CACHE PATH "pkg-config file installatio
 set(DOLFIN_SHARE_DIR "share/dolfin" CACHE PATH "Shared data installation directory.")
 set(DOLFIN_MAN_DIR "share/man" CACHE PATH "Manual page installation directory.")
 set(DOLFIN_DOC_DIR "${DOLFIN_SHARE_DIR}/doc" CACHE PATH "DOLFIN Documentation directory.")
+set(DOLFIN_ETC_DIR "etc" CACHE PATH "Configuration file directory.")
 
 # Add source directory
 add_subdirectory(dolfin)
@@ -614,7 +615,7 @@ endif()
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.conf.in
                ${CMAKE_BINARY_DIR}/dolfin.conf @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
-        DESTINATION ${DOLFIN_SHARE_DIR}
+        DESTINATION ${DOLFIN_ETC_DIR}
         COMPONENT Development)
 
 #------------------------------------------------------------------------------
