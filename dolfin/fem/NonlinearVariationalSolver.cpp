@@ -72,23 +72,51 @@ std::pair<dolfin::uint, bool>  NonlinearVariationalSolver::solve()
                                              reference_to_no_delete_pointer(*this)));
   }
 
-  // Create Newton solver and set parameters
-  if (newton_solver || reset_jacobian)
+
+  std::pair<uint, bool> ret;
+
+  if (std::string(parameters["nonlinear_solver"]) == "newton")
   {
     // Create Newton solver and set parameters
-    newton_solver = boost::shared_ptr<NewtonSolver>(new NewtonSolver(parameters["linear_solver"],
-                                                        parameters["preconditioner"]));
-  }
-  newton_solver->parameters.update(parameters("newton_solver"));
+    if (newton_solver || reset_jacobian)
+    {
+      // Create Newton solver and set parameters
+      newton_solver = boost::shared_ptr<NewtonSolver>(new NewtonSolver(parameters["linear_solver"],
+                                                          parameters["preconditioner"]));
+    }
+    newton_solver->parameters.update(parameters("newton_solver"));
 
-  // Solve nonlinear problem using Newton's method
-  dolfin_assert(u->vector());
-  dolfin_assert(nonlinear_problem);
-  const std::pair<uint, bool> ret
-    = newton_solver->solve(*nonlinear_problem, *u->vector());
+    // Solve nonlinear problem using Newton's method
+    dolfin_assert(u->vector());
+    dolfin_assert(nonlinear_problem);
+    ret = newton_solver->solve(*nonlinear_problem, *u->vector());
+  }
+#ifdef HAS_PETSC
+  else if (std::string(parameters["nonlinear_solver"]) == "snes")
+  {
+    // Create SNES solver and set parameters
+    if (snes_solver || reset_jacobian)
+    {
+      // Create Newton solver and set parameters
+      snes_solver = boost::shared_ptr<PETScSNESSolver>(new PETScSNESSolver());
+    }
+    snes_solver->parameters.update(parameters("snes_solver"));
+    snes_solver->set_linear_solver_parameters(parameters);
+
+    // Solve nonlinear problem using PETSc's SNES
+    dolfin_assert(u->vector());
+    dolfin_assert(nonlinear_problem);
+    ret = snes_solver->solve(*nonlinear_problem, *u->vector());
+  }
+#endif
+  else
+  {
+    dolfin_error("NonlinearVariationalSolver.cpp",
+                 "solve nonlinear variational problem",
+                 "Unknown nonlinear solver type");
+  }
 
   end();
-
   return ret;
 }
 //-----------------------------------------------------------------------------

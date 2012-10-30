@@ -178,31 +178,18 @@ void VTKPlottableMesh::build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &gr
   // Add mesh cells to VTK cell array. Note: Preallocation of storage
   // in cell array did not give speedups when testing during development
   vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
-  const MeshTopology &topo = _mesh->topology();
-  const uint *connectivity = topo(_entity_dim, 0)();
-  const uint vertices_per_entity = _mesh->type().num_vertices(_entity_dim);
-  const uint num_entities = topo.size(_entity_dim);
 
-  if (_entity_dim > 0)
+  const std::vector<uint>& connectivity = _mesh->cells();
+  uint spatial_dim = _mesh->topology().dim();
+
+  for (uint i = 0; i < _mesh->num_cells(); ++i)
   {
-    for (uint i = 0; i < num_entities; ++i)
-    {
-      // Insert all vertex indices for a given cell. For a simplex cell in nD,
-      // n+1 indices are inserted. The connectivity array must be indexed at
-      // (nv x cell_number + idx_offset)
-      cells->InsertNextCell(vertices_per_entity);
-      for(uint j = 0; j < vertices_per_entity; ++j) {
-        cells->InsertCellPoint(connectivity[i*vertices_per_entity + j]);
-      }
-    }
-  }
-  else
-  {
-    for (uint i = 0; i < num_entities; ++i)
-    {
-      // Cells equals vertices, connectivity is NULL
-      cells->InsertNextCell(1);
-      cells->InsertCellPoint(i);
+    // Insert all vertex indices for a given cell. For a simplex cell in nD,
+    // n+1 indices are inserted. The connectivity array must be indexed at
+    // ((n+1) x cell_number + idx_offset)
+    cells->InsertNextCell(spatial_dim+1);
+    for(uint j = 0; j <= spatial_dim; ++j) {
+      cells->InsertCellPoint(connectivity[(spatial_dim+1)*i + j]);
     }
   }
 
@@ -228,7 +215,7 @@ void VTKPlottableMesh::build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &gr
       dolfin_error("VTKPlottableMesh.cpp", "initialise cells", "Not implemented for dim>3");
       break;
   }
-  
+
   // Is this needed?
   // _grid->Modified();
   // _geometryFilter->Modified();

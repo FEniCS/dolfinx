@@ -34,7 +34,7 @@ public:
 
   void eval(Array<double>& values, const Array<double>& x) const
   {
-    values[0] = t * 100 * exp(-10.0 * (pow(x[0] - t, 2) + pow(x[1] - t, 2)));
+    values[0] = t*100*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)));
   }
 
   double t;
@@ -67,10 +67,10 @@ int main()
   const double H = 0.025;
   double X = 0.3;
   double Y = 0.4;
-  double dX = 0.5*H;
-  double dY = 0.75*H;
-  double* coordinates = mesh.coordinates();
-  const std::vector<double> original(coordinates, coordinates + 2*mesh.num_vertices());
+  double dX = H;
+  double dY = 1.5*H;
+  std::vector<double>& coordinates = mesh.coordinates();
+  const std::vector<double> original = coordinates;
 
   for (dolfin::uint i = 0; i < 200; i++)
   {
@@ -97,7 +97,7 @@ int main()
 
     plot(mesh, "Plotting mesh");
 
-    std::copy(original.begin(), original.end(), coordinates);
+    coordinates = original;
   }
 
   // Plot scalar function

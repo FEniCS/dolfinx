@@ -211,7 +211,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
       }
       if (parameters("hypre")("BoomerAMG")["relaxation_weight"].is_set())
       {
-        const double relax = parameters("hypre")("BoomerAMG")["strong_theshold"];
+        const double relax = parameters("hypre")("BoomerAMG")["relaxation_weight"];
         PetscOptionsSetValue("-pc_hypre_boomeramg_relax_weight_all",
                             boost::lexical_cast<std::string>(relax).c_str() );
       }

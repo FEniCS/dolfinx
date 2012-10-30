@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2011 Anders Logg
+// Copyright (C) 2003-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -21,11 +21,21 @@
 // First added:  2003-03-13
 // Last changed: 2011-11-15
 
+#include <unistd.h>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <stdexcept>
 #include <string>
+
+#ifdef __linux__
+#include <sys/types.h>
+#include <unistd.h>
+#include <boost/thread.hpp>
+#include <boost/bind.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#endif
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
@@ -40,17 +50,73 @@ using namespace dolfin;
 typedef std::map<std::string, std::pair<dolfin::uint, double> >::iterator map_iterator;
 typedef std::map<std::string, std::pair<dolfin::uint, double> >::const_iterator const_map_iterator;
 
+// Function for monitoring memory usage, called by thread
+#ifdef __linux__
+void _monitor_memory_usage(dolfin::Logger* logger)
+{
+  assert(logger);
+
+  // Open statm
+  //std::fstream
+
+  // Get process ID and page size
+  const dolfin::uint pid = getpid();
+  const size_t page_size = getpagesize();
+
+  // Print some info
+  std::stringstream s;
+  s << "Initializing memory monitor for process " << pid << ".";
+  logger->log(s.str());
+
+  // Prepare statm file
+  std::stringstream filename;
+  filename << "/proc/" << pid << "/statm";
+  std::ifstream statm;
+
+  // Enter loop
+  while (true)
+  {
+    // Sleep for a while
+    boost::this_thread::sleep(boost::posix_time::seconds(1));
+
+    // Read number of pages from statm
+    statm.open(filename.str().c_str());
+    if (!statm)
+      logger->error("Unable to open statm file for process.");
+    size_t num_pages;
+    statm >> num_pages;
+    statm.close();
+
+    // Convert to MB and report memory usage
+    const size_t num_mb = num_pages*page_size / (1024*1024);
+    logger->_report_memory_usage(num_mb);
+  }
+}
+#endif
+
 //-----------------------------------------------------------------------------
 Logger::Logger()
   : active(true), log_level(INFO), indentation_level(0), logstream(&std::cout),
-    num_processes(0), process_number(0)
+    num_processes(0), process_number(0),
+    _thread_monitor_memory_usage(0), _maximum_memory_usage(-1)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Logger::~Logger()
 {
-  // Do nothing
+  // Uncommenting the following lines leads to an MPI error:
+  //
+  //*** The MPI_Comm_rank() function was called after MPI_FINALIZE was invoked.
+  //*** This is disallowed by the MPI standard.
+  //*** Your MPI job will now abort.
+
+  // Join memory monitor thread if it exists
+  //  if (_thread_monitor_memory_usage)
+  // {
+  //  _thread_monitor_memory_usage->join();
+  //  delete _thread_monitor_memory_usage;
+  //}
 }
 //-----------------------------------------------------------------------------
 void Logger::log(std::string msg, int log_level) const
@@ -199,12 +265,14 @@ void Logger::register_timing(std::string task, double elapsed_time)
 //-----------------------------------------------------------------------------
 void Logger::summary(bool reset)
 {
+  // Check if timings are empty
   if (timings.empty())
   {
     log("Timings: no timings to report.");
     return;
   }
 
+  // Print summary as a table
   log("");
   Table table("Summary of timings");
   for (const_map_iterator it = timings.begin(); it != timings.end(); ++it)
@@ -219,6 +287,14 @@ void Logger::summary(bool reset)
     table(task, "Reps")         = num_timings;
   }
   log(table.str(true));
+
+  // Print maximum memory usage if available
+  if (_maximum_memory_usage >= 0)
+  {
+    std::stringstream s;
+    s << "\nMaximum memory usage: " << _maximum_memory_usage << " MB";
+    log(s.str());
+  }
 
   // Clear timings
   if (reset)
@@ -247,6 +323,38 @@ double Logger::timing(std::string task, bool reset)
   timings.erase(it);
 
   return average_time;
+}
+//-----------------------------------------------------------------------------
+void Logger::monitor_memory_usage()
+{
+#ifndef __linux__
+
+  warning("Unable to initialize memory monitor; only available on GNU/Linux.");
+  return;
+
+#else
+
+  // Check that thread has not alrady been started
+  if (_thread_monitor_memory_usage)
+  {
+    log("Memory monitor already initialize.");
+    return;
+  }
+
+  // Create thread
+  _thread_monitor_memory_usage
+    = new boost::thread(boost::bind(&_monitor_memory_usage, this));
+
+#endif
+}
+//-----------------------------------------------------------------------------
+void Logger::_report_memory_usage(size_t num_mb)
+{
+  std::stringstream s;
+  s << "Memory usage: " << num_mb << " MB";
+  log(s.str());
+  _maximum_memory_usage = std::max(_maximum_memory_usage,
+                                   static_cast<long int>(num_mb));
 }
 //-----------------------------------------------------------------------------
 void Logger::__debug(std::string msg) const

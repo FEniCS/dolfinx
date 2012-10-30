@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-05-08
-// Last changed: 2011-09-01
+// Last changed: 2012-10-25
 
 #ifndef __MESH_TOPOLOGY_H
 #define __MESH_TOPOLOGY_H
@@ -123,6 +123,9 @@ namespace dolfin
     /// Return connectivity for given pair of topological dimensions
     const dolfin::MeshConnectivity& operator() (uint d0, uint d1) const;
 
+    /// Return hash based on the hash of cell-vertex connectivity
+    size_t hash() const;
+
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
@@ -137,7 +140,7 @@ namespace dolfin
     // Developer note: std::vector is used in place of a MeshFunction
     //                 to avoid circular dependencies in the header files
     std::map<const std::vector<uint>,
-     std::pair<std::vector<uint>, std::vector<std::vector<uint> > > > coloring;
+      std::pair<std::vector<uint>, std::vector<std::vector<uint> > > > coloring;
 
   private:
 

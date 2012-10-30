@@ -292,9 +292,14 @@ endif()
 if (DOLFIN_ENABLE_HDF5)
   find_package(HDF5)
 
+  if (NOT HDF5_FOUND)
+    # Give some hints and try again
+    find_package(HDF5 HINTS ${HDF5_DIR} $ENV{HDF5_DIR})
+  endif()
+
   # Check that HDF5 has parallel support
   if (DOLFIN_ENABLE_MPI)
-    if (NOT HDF5_IS_PARALLEL)
+    if (NOT (HDF5_IS_PARALLEL OR HDF5_ENABLE_PARALLEL))
       message(STATUS "HDF5 has been found, but is missing parallel support. It will not be enabled.")
       set(HDF5_FOUND false)
     endif()
@@ -311,6 +316,11 @@ if (DOLFIN_ENABLE_TRILINOS)
   message(STATUS "Checking for Trilinos")
   find_package(Trilinos PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
   set(DOLFIN_TRILINOS_PACKAGES "Epetra;Zoltan;ML;Ifpack;Amesos")
+
+  if ("${Trilinos_VERSION}" VERSION_LESS "10.8.1")
+    set(Trilinos_FOUND FALSE)
+    message(WARNING "Unable to find Trilinos (>= 10.8.1)")
+  endif()
 
   # Check for required packages
   set(DOLFIN_TRILINOS_PACKAGES_FOUND false)

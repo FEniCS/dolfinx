@@ -23,7 +23,7 @@
 // Modified by Johannes Ring 2012
 //
 // First added:  2006-05-09
-// Last changed: 2012-10-02
+// Last changed: 2012-10-24
 
 
 #include <dolfin/ale/ALE.h>
@@ -503,6 +503,14 @@ double Mesh::hmax() const
     h = std::max(h, cell->diameter());
 
   return h;
+}
+//-----------------------------------------------------------------------------
+std::size_t Mesh::hash() const
+{
+  // Compute hash based on the Cantor pairing function
+  const std::size_t k1 = _topology.hash();
+  const std::size_t k2 = _geometry.hash();
+  return (k1 + k2)*(k1 + k2 + 1)/2 + k2;
 }
 //-----------------------------------------------------------------------------
 std::string Mesh::str(bool verbose) const

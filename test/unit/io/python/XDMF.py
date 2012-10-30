@@ -133,7 +133,6 @@ class XDMF_MeshFunction_Output(unittest.TestCase):
             mf[facet] = facet.index()
         File("output/mf_facet_2D.xdmf") << mf
 
-
     def test_save_3D_facet_function(self):
         mesh = UnitCube(8, 8, 8)
         mf = FacetFunction("uint", mesh)

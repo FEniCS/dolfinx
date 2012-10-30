@@ -39,6 +39,7 @@ namespace dolfin
 
   // Forward declarations
   class PETScKrylovSolver;
+  class PETScSNESSolver;
 
 
   /// This class is a wrapper for configuring PETSc preconditioners. It does
@@ -66,6 +67,8 @@ namespace dolfin
 
     /// Default parameter values
     static Parameters default_parameters();
+
+    friend class PETScSNESSolver;
 
   private:
 
