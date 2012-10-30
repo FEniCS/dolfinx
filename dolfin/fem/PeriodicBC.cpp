@@ -32,6 +32,7 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/log/log.h>
 #include <dolfin/la/GenericMatrix.h>
+#include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
@@ -214,6 +215,20 @@ void PeriodicBC::rebuild()
 void PeriodicBC::apply(GenericMatrix* A, GenericVector* b,
                        const GenericVector* x) const
 {
+
+  // The current handling of periodic boundary conditions adds entries in the matrix that
+  // were not accounted for in the original sparsity pattern. This causes PETSc to crash,
+  // since by default it will not let you do this (as it requires extra memory allocation
+  // and is very inefficient). However, until that's fixed, this hack should stay in, so
+  // that we can run these problems at all.
+#ifdef HAS_PETSC
+  if (A && has_type<PETScMatrix>(*A))
+  {
+    PETScMatrix petsc_A = A->down_cast<PETScMatrix>();
+    MatSetOption(*petsc_A.mat(), MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
+  }
+#endif
+
   if (MPI::num_processes() > 1)
   {
     parallel_apply(A, b, x);
