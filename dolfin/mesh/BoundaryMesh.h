@@ -19,7 +19,7 @@
 // Modified by Joachim B Haga 2012.
 //
 // First added:  2006-06-21
-// Last changed: 2012-09-05
+// Last changed: 2012-10-30
 
 #ifndef __BOUNDARY_MESH_H
 #define __BOUNDARY_MESH_H
@@ -30,10 +30,6 @@
 
 namespace dolfin
 {
-
-  // Forward declarations
-  class CSGGeometry;
-
   /// A BoundaryMesh is a mesh over the boundary of some given mesh.
   /// The cells of the boundary mesh (facets of the original mesh) are
   /// oriented to produce outward pointing normals relative to the
@@ -59,20 +55,6 @@ namespace dolfin
     ///         facets (outward-pointing unit normals). The default
     ///         value is true.
     BoundaryMesh(const Mesh& mesh, bool order=true);
-
-    /// Create boundary (surface) mesh defined by Constructive Solid Geometry (CSG)
-    ///
-    /// *Arguments*
-    ///     geometry (CSGGeometry)
-    ///         The CSG geometry
-    explicit BoundaryMesh(const CSGGeometry& geometry);
-
-    /// Create boundary (surface) mesh defined by Constructive Solid Geometry (CSG)
-    ///
-    /// *Arguments*
-    ///     geometry (CSGGeometry)
-    ///         The CSG geometry
-    explicit BoundaryMesh(boost::shared_ptr<const CSGGeometry> geometry);
 
     /// Destructor
     ~BoundaryMesh();

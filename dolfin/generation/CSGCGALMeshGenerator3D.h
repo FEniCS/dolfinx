@@ -31,7 +31,6 @@ namespace dolfin
 
   // Forward declarations
   class Mesh;
-  class BoundaryMesh;
   class CSGGeometry;
 
   /// Mesh generator for Constructive Solid Geometry (CSG)
@@ -44,10 +43,6 @@ namespace dolfin
     CSGCGALMeshGenerator3D(boost::shared_ptr<const CSGGeometry> geometry);
     ~CSGCGALMeshGenerator3D();
     void generate(Mesh& mesh) const;
-
-    // TODO: This just copies the surface of the cgal polyhedron and 
-    // should not belong to the mesh generation class.
-    void generate(BoundaryMesh& mesh) const;
     void save_off(std::string filename) const;
 
     /// Default parameter values

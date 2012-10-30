@@ -160,23 +160,6 @@ void CSGCGALMeshGenerator3D::generate(Mesh& mesh) const
   build_dolfin_mesh(c3t3, mesh);
 }
 //-----------------------------------------------------------------------------
-void CSGCGALMeshGenerator3D::generate(BoundaryMesh& mesh) const
-{
-  csg::Polyhedron_3 p;
-
-  cout << "Converting geometry to cgal types." << endl;
-  GeometryToCGALConverter::convert(*geometry, p);
-
-  if (!p.is_pure_triangle())
-  {
-    CGAL::triangulate_polyhedron(p);
-  }
-
-  // FIXME!
-  // Build DOLFIN mesh from CGAL mesh/triangulation
-  //CGALMeshBuilder::build_surface_mesh_poly(mesh, p);
-}
-//-----------------------------------------------------------------------------
 void CSGCGALMeshGenerator3D::save_off(std::string filename) const
 {
   csg::Polyhedron_3 p;

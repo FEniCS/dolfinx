@@ -24,7 +24,6 @@
 #include <iostream>
 
 #include <dolfin/log/log.h>
-#include <dolfin/generation/CSGMeshGenerator.h>
 #include "BoundaryComputation.h"
 #include "BoundaryMesh.h"
 
@@ -44,17 +43,6 @@ BoundaryMesh::BoundaryMesh(const Mesh& mesh, bool order) : Mesh()
   // Order mesh if requested
   if (order)
     this->order();
-}
-//-----------------------------------------------------------------------------
-BoundaryMesh::BoundaryMesh(const CSGGeometry& geometry) : Mesh()
-{
-  CSGMeshGenerator::generate(*this, geometry);
-}
-//-----------------------------------------------------------------------------
-BoundaryMesh::BoundaryMesh(boost::shared_ptr<const CSGGeometry> geometry) : Mesh()
-{
-  assert(geometry);
-  CSGMeshGenerator::generate(*this, *geometry);
 }
 //-----------------------------------------------------------------------------
 BoundaryMesh::~BoundaryMesh()
