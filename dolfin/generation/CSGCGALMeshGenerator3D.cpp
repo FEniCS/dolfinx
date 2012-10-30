@@ -24,14 +24,68 @@
 #include "CSGCGALMeshGenerator3D.h"
 #include "CSGGeometry.h"
 #include "GeometryToCGALConverter.h"
-#include "CGALMeshBuilder.h"
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/BoundaryMesh.h>
+#include <dolfin/mesh/MeshEditor.h>
 #include "cgal_csg3d.h"
 #include <dolfin/generation/triangulate_polyhedron.h>
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+static void build_dolfin_mesh(const csg::C3t3& c3t3, Mesh& mesh)
+{
+  typedef csg::C3t3 C3T3;
+  typedef typename C3T3::Triangulation Triangulation;
+  typedef typename Triangulation::Vertex_handle Vertex_handle;
+
+  // CGAL triangulation
+  const Triangulation& triangulation = c3t3.triangulation();
+
+  // Clear mesh
+  mesh.clear();
+
+  // Create and initialize mesh editor
+  dolfin::MeshEditor mesh_editor;
+  mesh_editor.open(mesh, 3, 3);
+  mesh_editor.init_vertices(triangulation.number_of_vertices());
+  mesh_editor.init_cells(triangulation.number_of_cells());
+
+  // Add vertices to mesh
+  dolfin::uint vertex_index = 0;
+  std::map<Vertex_handle, dolfin::uint> vertex_id_map;
+
+  for (typename Triangulation::Finite_vertices_iterator 
+         cgal_vertex = triangulation.finite_vertices_begin();
+       cgal_vertex != triangulation.finite_vertices_end(); ++cgal_vertex)
+  {
+    vertex_id_map[cgal_vertex] = vertex_index;
+    
+      // Get vertex coordinates and add vertex to the mesh
+    Point p(cgal_vertex->point()[0], cgal_vertex->point()[1], cgal_vertex->point()[2]);
+    mesh_editor.add_vertex(vertex_index, p);
+
+    ++vertex_index;
+  }
+
+  // Add cells to mesh 
+  dolfin::uint cell_index = 0;
+  for(typename csg::C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin();
+      cit != c3t3.cells_in_complex_end();
+      ++cit) 
+  {
+    mesh_editor.add_cell(cell_index,
+                         vertex_id_map[cit->vertex(0)],
+                         vertex_id_map[cit->vertex(1)],
+                         vertex_id_map[cit->vertex(2)],
+                         vertex_id_map[cit->vertex(3)]);
+
+    ++cell_index;
+  }
+
+  // Close mesh editor
+  mesh_editor.close();
+}
 //-----------------------------------------------------------------------------
 CSGCGALMeshGenerator3D::CSGCGALMeshGenerator3D(const CSGGeometry& geometry)
 {
@@ -45,8 +99,6 @@ CSGCGALMeshGenerator3D::CSGCGALMeshGenerator3D(boost::shared_ptr<const CSGGeomet
 {
   parameters = default_parameters();
 }
-
-
 //-----------------------------------------------------------------------------
 CSGCGALMeshGenerator3D::~CSGCGALMeshGenerator3D() {}
 //-----------------------------------------------------------------------------
@@ -105,8 +157,7 @@ void CSGCGALMeshGenerator3D::generate(Mesh& mesh) const
     exude_mesh_3(c3t3);
   }
 
-  // Build DOLFIN mesh from CGAL mesh/triangulation
-  CGALMeshBuilder::build_from_mesh(mesh, c3t3);
+  build_dolfin_mesh(c3t3, mesh);
 }
 //-----------------------------------------------------------------------------
 void CSGCGALMeshGenerator3D::generate(BoundaryMesh& mesh) const
@@ -121,8 +172,9 @@ void CSGCGALMeshGenerator3D::generate(BoundaryMesh& mesh) const
     CGAL::triangulate_polyhedron(p);
   }
 
+  // FIXME!
   // Build DOLFIN mesh from CGAL mesh/triangulation
-  CGALMeshBuilder::build_surface_mesh_poly(mesh, p);
+  //CGALMeshBuilder::build_surface_mesh_poly(mesh, p);
 }
 //-----------------------------------------------------------------------------
 void CSGCGALMeshGenerator3D::save_off(std::string filename) const
