@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Benjamin Kehlet, 2012
+//
 // First added:  2012-09-04
-// Last changed: 2012-09-06
+// Last changed: 2012-10-30
 
 #ifdef HAS_VTK
 

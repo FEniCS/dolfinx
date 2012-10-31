@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-10
-// Last changed: 2012-09-05
+// Last changed: 2012-10-30
 
 
 #include "CSGCGALMeshGenerator3D.h"
@@ -45,11 +45,20 @@ static void build_dolfin_mesh(const csg::C3t3& c3t3, Mesh& mesh)
   // Clear mesh
   mesh.clear();
 
+  // Count cells in complex
+  uint num_cells = 0;
+  for(typename csg::C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin();
+      cit != c3t3.cells_in_complex_end();
+      ++cit) 
+  {
+    num_cells++;
+  }
+
   // Create and initialize mesh editor
   dolfin::MeshEditor mesh_editor;
   mesh_editor.open(mesh, 3, 3);
   mesh_editor.init_vertices(triangulation.number_of_vertices());
-  mesh_editor.init_cells(triangulation.number_of_cells());
+  mesh_editor.init_cells(num_cells);
 
   // Add vertices to mesh
   dolfin::uint vertex_index = 0;
@@ -107,7 +116,7 @@ void CSGCGALMeshGenerator3D::generate(Mesh& mesh) const
   csg::Polyhedron_3 p;
 
   cout << "Converting geometry to cgal types." << endl;
-  GeometryToCGALConverter::convert(*geometry, p);
+  GeometryToCGALConverter::convert(*geometry, p, parameters["remove_degenerated"]);
 
   dolfin_assert(p.is_pure_triangle());
 
@@ -135,8 +144,6 @@ void CSGCGALMeshGenerator3D::generate(Mesh& mesh) const
     cout << "Optimizing mesh by odt optimization" << endl;
     odt_optimize_mesh_3(c3t3, domain);
   }
-
-
 
   if (parameters["lloyd_optimize"])
   {
