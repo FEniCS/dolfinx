@@ -98,11 +98,8 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& dolfin_mesh,
       }
 
       // Reorder graph (reverse Cuthill-McKee)
-      const std::vector<uint> dof_remap
+      const std::vector<std::size_t> dof_remap
           = BoostGraphOrdering::compute_cuthill_mckee(graph, true);
-
-      // Reorder graph (SCOTCH minimum degree)
-      //const std::vector<uint> dof_remap = SCOTCH::compute_reorder(graph);
 
       // Reorder dof map
       dolfin_assert(dofmap.ufc_map_to_dofmap.empty());
@@ -349,12 +346,8 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   }
 
   // Reorder dofs locally
-  #ifdef HAS_SCOTCH
-  const std::vector<uint> dof_remap = SCOTCH::compute_reordering(graph);
-  #else
-  const std::vector<uint> dof_remap
+  const std::vector<std::size_t> dof_remap
       = BoostGraphOrdering::compute_cuthill_mckee(graph, true);
-  #endif
 
   // Map from old to new index for dofs
   boost::unordered_map<uint, uint> old_to_new_dof_index;
