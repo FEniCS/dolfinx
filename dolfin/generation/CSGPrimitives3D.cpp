@@ -152,3 +152,12 @@ std::string csg::Tetrahedron::str(bool verbose) const
 
   return s.str();
 }
+//-----------------------------------------------------------------------------
+csg::Surface3D::Surface3D(std::string filename)
+  : filename(filename)
+{}
+//-----------------------------------------------------------------------------
+std::string csg::Surface3D::str(bool verbose) const
+{
+  return std::string("Surface3D from file ") + filename;
+}

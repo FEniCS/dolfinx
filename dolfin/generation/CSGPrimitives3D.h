@@ -172,7 +172,22 @@ namespace dolfin
 
       Point x0, x1, x2, x3;
     };
+  
+    /// This class describes a 3D surface loaded from file.
+    /// The supported file types
+    class Surface3D : public CSGPrimitive3D
+    {
+    public:
+      Surface3D(std::string filename);
 
+      /// Informal string representation
+      std::string str(bool verbose) const;
+
+      Type getType() const
+      { return CSGGeometry::Surface3D; }
+
+      std::string filename;
+    };
   }
 }
 #endif

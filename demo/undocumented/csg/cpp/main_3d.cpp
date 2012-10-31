@@ -28,15 +28,16 @@ using namespace dolfin;
 
 #ifdef HAS_CGAL
 
-int main()
+int main(int argc, char** argv)
 {
   // Define 3D geometry
-  csg::Box box(0, 0, 0, 1, 1, 1);
-  csg::Sphere sphere(Point(0, 0, 0), 0.3);
-  csg::Cone cone(Point(0, 0, -1), Point(0, 0, 1), .5, .5);
+  // csg::Box box(0, 0, 0, 1, 1, 1);
+  // csg::Sphere sphere(Point(0, 0, 0), 0.3);
+  // csg::Cone cone(Point(0, 0, -1), Point(0, 0, 1), .5, .5);
 
-  const boost::shared_ptr<CSGGeometry> g3d = box + cone - sphere;
+  // const boost::shared_ptr<CSGGeometry> g3d = box + cone - sphere;
 
+  const boost::shared_ptr<CSGGeometry> g3d(new csg::Surface3D(argv[1]));
 
   // Test printing
   info("\nCompact output of 3D geometry:");
@@ -49,6 +50,7 @@ int main()
 
   // Generate and plot mesh
   Mesh mesh3d(g3d);
+  cout << "Done generating mesh" << endl;
   plot(mesh3d, "3D mesh");
 
   interactive();

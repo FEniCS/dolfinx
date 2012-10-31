@@ -26,6 +26,7 @@
 #include "GeometryToCGALConverter.h"
 #include "CSGGeometry.h"
 #include "CSGOperators.h"
+#include "SurfaceFileReader.h"
 #include "CSGPrimitives3D.h"
 #include <dolfin/mesh/Point.h>
 #include <dolfin/log/LogStream.h>
@@ -934,6 +935,15 @@ csg::Nef_polyhedron_3 make_cone(const csg::Cone* c)
   return csg::Nef_polyhedron_3(P);
 }
 //-----------------------------------------------------------------------------
+static csg::Nef_polyhedron_3 make_surface3D(const csg::Surface3D* s)
+{
+  csg::Exact_Polyhedron_3 p;
+
+  csg::SurfaceFileReader::readSurfaceFile(s->filename, p);
+
+  return csg::Nef_polyhedron_3(p);
+}
+//-----------------------------------------------------------------------------
 static csg::Nef_polyhedron_3 convertSubTree(const CSGGeometry *geometry)
 {
   switch (geometry->getType()) {
@@ -986,6 +996,13 @@ static csg::Nef_polyhedron_3 convertSubTree(const CSGGeometry *geometry)
     const csg::Tetrahedron* b = dynamic_cast<const csg::Tetrahedron*>(geometry);
     dolfin_assert(b);
     return make_tetrahedron(b);
+    break;
+  }
+  case CSGGeometry::Surface3D :
+  {
+    const csg::Surface3D* b = dynamic_cast<const csg::Surface3D*>(geometry);
+    dolfin_assert(b);
+    return make_surface3D(b);
     break;
   }
   default:
