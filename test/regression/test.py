@@ -71,6 +71,10 @@ for s in cppslow:
 # Remove demos that need command-line arguments
 pyremoves  = [os.path.join(demodir,  'undocumented', 'quadrature', 'python')]
 cppremoves = [os.path.join(demodir,  'undocumented', 'quadrature', 'cpp')]
+
+# Remove demos that crash
+pyremoves.append(os.path.join(demodir,  'undocumented', 'netgen', 'python'))
+
 for demo in pyremoves:
     if demo in pydemos:
         pydemos.remove(demo)

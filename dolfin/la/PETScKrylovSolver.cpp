@@ -215,10 +215,6 @@ void PETScKrylovSolver::set_operators(const boost::shared_ptr<const PETScBaseMat
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_nullspace(const std::vector<const GenericVector*> nullspace)
 {
-  dolfin_error("PETScKrylovSolver.h",
-               "set nullspace for operator",
-               "Not implemented yet");
-
   // Copy vectors
   _nullspace.clear();
   for (uint i = 0; i < nullspace.size(); ++i)
@@ -230,18 +226,26 @@ void PETScKrylovSolver::set_nullspace(const std::vector<const GenericVector*> nu
     _nullspace.push_back(x);
   }
 
-  // Get pointers to underlying PETSc objects
+  // Get pointers to underlying PETSc objects and normalize vectors
   std::vector<Vec> petsc_vec(nullspace.size());
   for (uint i = 0; i < nullspace.size(); ++i)
+  {
     petsc_vec[i] = *(_nullspace[i].vec().get());
+    PetscReal val = 0.0;
+    VecNormalize(petsc_vec[i], &val);
+  }
 
   // Create null space (does not not store vectors)
-  petsc_nullspace.reset(new MatNullSpace, PETScMatNullSpaceDeleter());
-  MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE, nullspace.size(),
-                     &petsc_vec[0], petsc_nullspace.get());
+  MatNullSpace petsc_nullspace;
+  MatNullSpaceCreate(PETSC_COMM_SELF, PETSC_FALSE, nullspace.size(),
+                     &petsc_vec[0], &petsc_nullspace);
 
-  // Set null space that is used by some preconditioners
-  KSPSetNullSpace(*_ksp, *petsc_nullspace);
+  // Set null space
+  dolfin_assert(_ksp);
+  KSPSetNullSpace(*_ksp, petsc_nullspace);
+
+  // Clean up null space
+  MatNullSpaceDestroy(&petsc_nullspace);
 }
 //-----------------------------------------------------------------------------
 const PETScBaseMatrix& PETScKrylovSolver::get_operator() const
@@ -326,9 +330,7 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   // https://bugs.launchpad.net/dolfin/+bug/988494
   const bool use_petsc_cusp_hack = parameters["use_petsc_cusp_hack"];
   if (use_petsc_cusp_hack)
-  {
     info("Using hack to get around PETScCusp bug: ||b|| = %g", b.norm("l2"));
-  }
 
   // Set convergence norm type
   if (parameters["convergence_norm_type"].is_set())
@@ -433,6 +435,7 @@ void PETScKrylovSolver::init(const std::string& method)
   }
 
   // Create new KSP object
+  cout << "**** reset" << endl;
   _ksp.reset(new KSP, PETScKSPDeleter());
 
   // Set up solver environment
