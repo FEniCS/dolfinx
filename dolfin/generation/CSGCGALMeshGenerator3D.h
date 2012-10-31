@@ -59,6 +59,7 @@ namespace dolfin
       p.add("facet_distance", 0.005);
       p.add("cell_radius_edge_ratio", 3.0);
       p.add("cell_size", 0.05);
+      p.add("remove_degenerated", true);
 
       return p;
     }
