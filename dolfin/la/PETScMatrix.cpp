@@ -44,17 +44,6 @@
 
 using namespace dolfin;
 
-class PETScMatNullSpaceDeleter
-{
-public:
-  void operator() (MatNullSpace* ns)
-  {
-    if (*ns)
-      MatNullSpaceDestroy(ns);
-    delete ns;
-  }
-};
-
 const std::map<std::string, NormType> PETScMatrix::norm_types
   = boost::assign::map_list_of("l1",        NORM_1)
                               ("linf",      NORM_INFINITY)
@@ -431,10 +420,8 @@ void PETScMatrix::set_near_nullspace(const std::vector<const GenericVector*> nul
 
   // Create null space
   petsc_nullspace.reset(new MatNullSpace, PETScMatNullSpaceDeleter());
-  MatNullSpaceCreate(PETSC_COMM_SELF, PETSC_FALSE, nullspace.size(),
+  MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE, nullspace.size(),
                      &petsc_vec[0], petsc_nullspace.get());
-
-  //MatSetNullSpace(*(this->A), petsc_nullspace);
 
   // Set null space that is used by some preconditioners
   MatSetNearNullSpace(*(this->A), *petsc_nullspace);

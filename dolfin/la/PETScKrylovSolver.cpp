@@ -213,6 +213,37 @@ void PETScKrylovSolver::set_operators(const boost::shared_ptr<const PETScBaseMat
   dolfin_assert(this->P);
 }
 //-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_nullspace(const std::vector<const GenericVector*> nullspace)
+{
+  dolfin_error("PETScKrylovSolver.h",
+               "set nullspace for operator",
+               "Not implemented yet");
+
+  // Copy vectors
+  _nullspace.clear();
+  for (uint i = 0; i < nullspace.size(); ++i)
+  {
+    dolfin_assert(nullspace[i]);
+    const PETScVector& x = nullspace[i]->down_cast<PETScVector>();
+
+    // Copy vector
+    _nullspace.push_back(x);
+  }
+
+  // Get pointers to underlying PETSc objects
+  std::vector<Vec> petsc_vec(nullspace.size());
+  for (uint i = 0; i < nullspace.size(); ++i)
+    petsc_vec[i] = *(_nullspace[i].vec().get());
+
+  // Create null space (does not not store vectors)
+  petsc_nullspace.reset(new MatNullSpace, PETScMatNullSpaceDeleter());
+  MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE, nullspace.size(),
+                     &petsc_vec[0], petsc_nullspace.get());
+
+  // Set null space that is used by some preconditioners
+  KSPSetNullSpace(*_ksp, *petsc_nullspace);
+}
+//-----------------------------------------------------------------------------
 const PETScBaseMatrix& PETScKrylovSolver::get_operator() const
 {
   if (!A)

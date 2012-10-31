@@ -21,10 +21,23 @@
 #ifndef __PETSC_OBJECT_H
 #define __PETSC_OBJECT_H
 
+#include <petscmat.h>
 #include <dolfin/common/SubSystemsManager.h>
 
 namespace dolfin
 {
+  class PETScMatNullSpaceDeleter
+  {
+  public:
+    void operator() (MatNullSpace* ns)
+    {
+      if (*ns)
+        MatNullSpaceDestroy(ns);
+      delete ns;
+    }
+  };
+
+
   /// This class calls SubSystemsManager to initialise PETSc.
   ///
   /// All PETSc objects must be derived from this class.
