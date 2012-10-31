@@ -17,8 +17,8 @@ required, for instance
 
   \int u = 0
 
-This is accomplished in this demop by using a Krylov iterative solver that
-remove component in the null space from the solution vector.
+This is accomplished in this demo by using a Krylov iterative solver
+that removes the component in the null space from the solution vector.
 """
 
 # Copyright (C) 2012 Garth N. Rognes
@@ -61,7 +61,7 @@ L = f*v*dx + g*v*ds
 A = assemble(a)
 b = assemble(L)
 
-# Solution vector
+# Solution Function
 u = Function(V)
 
 # Create Krylov solver
@@ -72,6 +72,7 @@ null_space = Vector(u.vector())
 V.dofmap().set(null_space, 1.0)
 solver.set_nullspace([null_space])
 
+# Solve
 solver.solve(u.vector(), b)
 
 # Plot solution

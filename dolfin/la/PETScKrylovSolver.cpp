@@ -435,7 +435,6 @@ void PETScKrylovSolver::init(const std::string& method)
   }
 
   // Create new KSP object
-  cout << "**** reset" << endl;
   _ksp.reset(new KSP, PETScKSPDeleter());
 
   // Set up solver environment
