@@ -65,7 +65,7 @@ b = assemble(L)
 u = Function(V)
 
 # Create Krylov solver
-solver = KrylovSolver(A, "gmres", "ilu")
+solver = KrylovSolver(A, "gmres")
 
 # Create null space basis and attach to Krylov solver
 null_space = Vector(u.vector())

@@ -88,7 +88,7 @@ int main()
   Function u(V);
 
   // Create Krylov solver
-  KrylovSolver solver(A, "gmres", "ilu");
+  KrylovSolver solver(A, "gmres");
 
   // Create null space basis and attach to Krylov solver
   Vector null_space0(*u.vector());
