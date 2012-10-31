@@ -8,6 +8,10 @@
 #define CGAL_MESH_3_NO_DEPRECATED_C3T3_ITERATORS
 
 #include <CGAL/basic.h>
+
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <CGAL/Nef_polyhedron_3.h>
+
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
 #include <CGAL/Mesh_triangulation_3.h>
@@ -26,6 +30,16 @@ namespace dolfin
 {
   namespace csg
   {
+
+  // Exact polyhedron
+  typedef CGAL::Exact_predicates_exact_constructions_kernel Exact_Kernel;
+  typedef CGAL::Nef_polyhedron_3<Exact_Kernel> Nef_polyhedron_3;
+  typedef CGAL::Polyhedron_3<Exact_Kernel> Exact_Polyhedron_3;
+  typedef Exact_Polyhedron_3::HalfedgeDS Exact_HalfedgeDS;
+  typedef Nef_polyhedron_3::Point_3 Exact_Point_3;
+
+
+
     // Domain 
     typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
     typedef CGAL::Mesh_polyhedron_3<K>::type Polyhedron_3;
