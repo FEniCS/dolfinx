@@ -43,6 +43,11 @@ that removes the component in the null space from the solution vector.
 
 from dolfin import *
 
+# Test for PETSc
+if not has_linear_algebra_backend("PETSc"):
+    info("DOLFIN has not been configured with TPETSc. Exiting.")
+    exit()
+
 parameters["linear_algebra_backend"] = "PETSc"
 
 # Create mesh and define function space

@@ -44,6 +44,8 @@
 
 using namespace dolfin;
 
+#if defined(HAS_PETSC)
+
 // Source term (right-hand side)
 class Source : public Expression
 {
@@ -106,3 +108,5 @@ int main()
 
   return 0;
 }
+
+#endif
