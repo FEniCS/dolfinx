@@ -224,7 +224,7 @@ void PeriodicBC::apply(GenericMatrix* A, GenericVector* b,
 #ifdef HAS_PETSC
   if (A && has_type<PETScMatrix>(*A))
   {
-    PETScMatrix petsc_A = A->down_cast<PETScMatrix>();
+    PETScMatrix& petsc_A = A->down_cast<PETScMatrix>();
     MatSetOption(*petsc_A.mat(), MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
   }
 #endif
