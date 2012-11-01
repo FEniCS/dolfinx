@@ -1035,6 +1035,7 @@ static void triangulate_polyhedron(csg::Polyhedron_3& p)
 //-----------------------------------------------------------------------------
 void GeometryToCGALConverter::convert(const CSGGeometry& geometry, csg::Polyhedron_3& p, bool remove_degenerated)
 {
+  cout << "Convert to nef polyhedron" << endl;
   csg::Nef_polyhedron_3 cgal_geometry = convertSubTree(&geometry);
 
   dolfin_assert(cgal_geometry.is_valid());
@@ -1045,6 +1046,7 @@ void GeometryToCGALConverter::convert(const CSGGeometry& geometry, csg::Polyhedr
 
   if (remove_degenerated)
   {
+    cout << "Removing degenerated facets" << endl;
     remove_degenerate_facets(p_exact, DOLFIN_SQRT_EPS);
   }
 
