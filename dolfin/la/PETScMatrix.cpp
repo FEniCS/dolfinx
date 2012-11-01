@@ -419,12 +419,15 @@ void PETScMatrix::set_near_nullspace(const std::vector<const GenericVector*> nul
     petsc_vec[i] = *(_nullspace[i].vec().get());
 
   // Create null space
-  petsc_nullspace.reset(new MatNullSpace, PETScMatNullSpaceDeleter());
+  MatNullSpace petsc_nullspace;
   MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE, nullspace.size(),
-                     &petsc_vec[0], petsc_nullspace.get());
+                     &petsc_vec[0], &petsc_nullspace);
 
   // Set null space that is used by some preconditioners
-  MatSetNearNullSpace(*(this->A), *petsc_nullspace);
+  MatSetNearNullSpace(*(this->A), petsc_nullspace);
+
+  // Clean up null space
+  MatNullSpaceDestroy(&petsc_nullspace);
   #endif
 }
 //-----------------------------------------------------------------------------
