@@ -22,6 +22,7 @@
 
 import unittest
 from dolfin import *
+import ufl
 
 mesh = UnitCube(8, 8, 8)
 R = FunctionSpace(mesh, 'R', 0)
@@ -54,12 +55,35 @@ class Interface(unittest.TestCase):
     def test_float_conversion(self):
         c = Function(R)
         self.assertTrue(float(c) == 0.0)
+
         c.vector()[:] = 1.23
         self.assertTrue(float(c) == 1.23)
+
         c.assign(Constant(2.34))
         self.assertTrue(float(c) == 2.34)
+
         c = Constant(3.45)
         self.assertTrue(float(c) == 3.45)
+
+    def test_scalar_conditions(self):
+        c = Function(R)
+        c.vector()[:] = 1.5
+
+        # Float conversion does not interfere with boolean ufl expressions
+        self.assertTrue(isinstance(lt(c, 3), ufl.classes.LT))
+        self.assertFalse(isinstance(lt(c, 3), bool))
+
+        # Float conversion is not implicit in boolean python expressions
+        self.assertFalse(isinstance(c < 3, ufl.classes.LT))
+        self.assertTrue(isinstance(c < 3, bool))
+
+        # This looks bad, but there is a very good reason for this behaviour :)
+        # Put shortly, the reason is that boolean operators are used for comparison
+        # and ordering of ufl expressions in python data structures.
+        self.assertTrue((c < 2) == (c < 1))
+        self.assertTrue((c > 2) == (c > 1))
+        self.assertTrue((c < 2) == (not c > 1))
+
 
 class Interpolate(unittest.TestCase):
 
