@@ -24,6 +24,7 @@ import unittest
 from dolfin import *
 
 mesh = UnitCube(8, 8, 8)
+R = FunctionSpace(mesh, 'R', 0)
 V = FunctionSpace(mesh, 'CG', 1)
 W = VectorFunctionSpace(mesh, 'CG', 1)
 
@@ -50,6 +51,16 @@ class Interface(unittest.TestCase):
 
         self.assertTrue(all(u_values==1))
 
+    def test_float_conversion(self):
+        c = Function(R)
+        self.assertTrue(float(c) == 0.0)
+        c.vector()[:] = 1.23
+        self.assertTrue(float(c) == 1.23)
+        c.assign(Constant(2.34))
+        self.assertTrue(float(c) == 2.34)
+        c = Constant(3.45)
+        self.assertTrue(float(c) == 3.45)
+
 class Interpolate(unittest.TestCase):
 
     def test_interpolation_mismatch_rank0(self):
@@ -74,12 +85,12 @@ class Interpolate(unittest.TestCase):
         if MPI.num_processes() == 1:
             mesh1 = UnitSquare(3,3)
             V1 = FunctionSpace(mesh1, "CG", 1)
-            
+
             parameters["allow_extrapolation"] = True
             f1 = Function(V1)
             f1.vector()[:] = 1.0
             self.assertAlmostEqual(f1(0.,-1), 1.0)
-        
+
             mesh2 = UnitTriangle()
             V2 = FunctionSpace(mesh2, "CG", 1)
 
