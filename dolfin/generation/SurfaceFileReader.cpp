@@ -21,12 +21,14 @@
 #include "SurfaceFileReader.h"
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
+#include <dolfin/common/constants.h>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
 
 #include <CGAL/Polyhedron_incremental_builder_3.h>
+#include <CGAL/squared_distance_3.h> 
 
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include <boost/filesystem.hpp>
@@ -79,7 +81,6 @@ public:
     std::string line;
     const boost::char_separator<char> sep(" ");
 
-
     // Read the first line and trim away whitespaces
     std::getline(file, line);
     boost::algorithm::trim(line);
@@ -96,10 +97,7 @@ public:
     
     while (file.good())
     {
-      // Read the line "facet normal n1 n2 n3"
-    
-      cout << "Read line: " << line << endl;
-
+      // Read the line "facet normal n1 n2 n3"    
       {
         tokenizer tokens(line, sep);
         tokenizer::iterator tok_iter = tokens.begin();
@@ -110,9 +108,10 @@ public:
                        "Expected keyword \"facet\"");
         ++tok_iter;
 
-        bool has_normal = false;
+        // bool has_normal = false;
         csg::Exact_Point_3 normal;
 
+        // Check if a normal different from zero is given
         if (tok_iter != tokens.end())
         {
           if  (*tok_iter != "normal")
@@ -121,28 +120,26 @@ public:
                          "Expected keyword \"normal\"");
           ++tok_iter;
 
-          has_normal = true;
           for (uint i = 0; i < 3; ++i)
           {
             normal[i] = strToDouble(*tok_iter);
             ++tok_iter;
           }
+
+          // if ((normal - CGAL::ORIGIN).squared_length() > DOLFIN_EPS)
+          //   has_normal = true;
+
           if (tok_iter != tokens.end())
             dolfin_error("SurfaceFileReader.cpp",
                          "open .stl file to read 3D surface",
                          "Expected end of line");
         }
-
-        if (has_normal)
-          cout << "Has normal" << endl;
       }
 
       // Read "outer loop" line
       {
         std::getline(file, line);
         boost::algorithm::trim(line);
-
-        cout << "Read line: " << line << endl;
         
         if (line != "outer loop")
           dolfin_error("SurfaceFileReader.cpp",
@@ -157,8 +154,6 @@ public:
       {
         std::getline(file, line);
         boost::algorithm::trim(line);
-
-        cout << "vertex line : " << line << endl;
 
         tokenizer tokens(line, sep);
         tokenizer::iterator tok_iter = tokens.begin();
@@ -175,32 +170,22 @@ public:
         const double y = strToDouble(*tok_iter); ++tok_iter;
         const double z = strToDouble(*tok_iter); ++tok_iter;
 
-        cout << "x = " << x << ", y = " << y << ", z = " << z << endl;
-
         boost::tuple<double, double, double> v(x, y, z);
       
-        cout << "Read vertex: " << v << endl;
-
         if (vertex_map.count(v) > 0)
         {
           v_indices[i] = vertex_map[v];
-          cout << i << ": Found vertex: " << v << " : " << v_indices[i] << endl;
         }
         else
         {
           vertex_map[v] = num_vertices;
           v_indices[i] = num_vertices;
-          cout << i << ": Adding vertex (" << num_vertices << ") = " << v << endl;
           B.add_vertex(csg::Exact_Point_3(x, y, z));
           num_vertices++;
         }
       }
 
-      // TODO: Register
-      cout << "Found triangle: "
-           << v_indices[0] << " " 
-           << v_indices[1] << " " 
-           << v_indices[2] << endl;
+      // TODO: Check normal
 
       B.add_facet ( v_indices, &v_indices[3]);
 
