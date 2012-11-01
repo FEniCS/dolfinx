@@ -615,7 +615,7 @@ endif()
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.conf.in
                ${CMAKE_BINARY_DIR}/dolfin.conf @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
-        DESTINATION ${DOLFIN_ETC_DIR}
+        DESTINATION ${DOLFIN_SHARE_DIR}
         COMPONENT Development)
 
 #------------------------------------------------------------------------------
