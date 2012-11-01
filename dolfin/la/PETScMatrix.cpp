@@ -147,10 +147,10 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     // Set matrix type according to chosen architecture
     if (!_use_gpu)
       MatSetType(*A, MATSEQAIJ);
-#ifdef HAS_PETSC_CUSP
+    #ifdef HAS_PETSC_CUSP
     else
       MatSetType(*A, MATSEQAIJCUSP);
-#endif
+    #endif
 
     // FIXME: Change to MatSeqAIJSetPreallicationCSR for improved performance?
     // Allocate space (using data from sparsity pattern)
@@ -563,10 +563,10 @@ GenericLinearAlgebraFactory& PETScMatrix::factory() const
 {
   if (!_use_gpu)
     return PETScFactory::instance();
-#ifdef HAS_PETSC_CUSP
+  #ifdef HAS_PETSC_CUSP
   else
     return PETScCuspFactory::instance();
-#endif
+  #endif
 
   // Return something to keep the compiler happy. Code will never be reached.
   return PETScFactory::instance();

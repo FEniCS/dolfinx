@@ -44,7 +44,6 @@
 
 using namespace dolfin;
 
-#if defined(HAS_PETSC)
 
 // Source term (right-hand side)
 class Source : public Expression
@@ -68,6 +67,7 @@ class Flux : public Expression
 
 int main()
 {
+  #ifdef HAS_PETSC
   // Create mesh and function space
   UnitSquare mesh(64, 64);
   Poisson::FunctionSpace V(mesh);
@@ -106,7 +106,11 @@ int main()
   plot(u);
   interactive();
 
+  #else
+  cout << "This demo requires DOLFIN to be confugured with PETSc." << endl;
+  #endif
+
   return 0;
 }
 
-#endif
+
