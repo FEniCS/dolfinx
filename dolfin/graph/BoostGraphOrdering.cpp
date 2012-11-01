@@ -37,7 +37,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 std::vector<std::size_t>
-  BoostGraphOrdering::compute_cuthill_mckee(Graph& graph, bool reverse)
+  BoostGraphOrdering::compute_cuthill_mckee(const Graph& graph, bool reverse)
 {
   // Number of vertices
   const std::size_t n = graph.size();
