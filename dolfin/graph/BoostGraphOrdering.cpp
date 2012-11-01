@@ -60,7 +60,7 @@ std::vector<std::size_t>
       edges.push_back(std::make_pair(vertex - graph.begin(), *edge));
 
   // Build Boost graph
-  BoostGraph boost_graph(boost::edges_are_unsorted,
+  BoostGraph boost_graph(boost::edges_are_unsorted_multi_pass,
                          edges.begin(), edges.end(), n);
 
   // Boost vertex -> index map
