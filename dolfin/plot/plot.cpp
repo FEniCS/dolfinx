@@ -31,7 +31,6 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/Expression.h>
-#include <dolfin/generation/CSGGeometry.h>
 #include <dolfin/io/File.h>
 #include <dolfin/log/log.h>
 #include <dolfin/parameter/GlobalParameters.h>

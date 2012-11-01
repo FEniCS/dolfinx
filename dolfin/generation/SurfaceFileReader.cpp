@@ -76,8 +76,9 @@ public:
 
     int num_vertices = 0;
     std::map<boost::tuple<double, double, double>, uint > vertex_map;
-    std::vector<uint[3]> triangles;
     std::string line;
+    const boost::char_separator<char> sep(" ");
+
 
     // Read the first line and trim away whitespaces
     std::getline(file, line);
@@ -100,9 +101,7 @@ public:
       cout << "Read line: " << line << endl;
 
       {
-        boost::char_separator<char> sep(" ");
         tokenizer tokens(line, sep);
-
         tokenizer::iterator tok_iter = tokens.begin();
 
         if (*tok_iter != "facet")
@@ -161,9 +160,7 @@ public:
 
         cout << "vertex line : " << line << endl;
 
-        boost::char_separator<char> sep(" ");
         tokenizer tokens(line, sep);
-
         tokenizer::iterator tok_iter = tokens.begin();
 
         if (*tok_iter != "vertex")
@@ -231,9 +228,7 @@ public:
     }
 
     // Read the 'endsolid' line
-    boost::char_separator<char> sep(" ");
     tokenizer tokens(line, sep);
-
     tokenizer::iterator tok_iter = tokens.begin();
   
     if (*tok_iter != "endsolid")
