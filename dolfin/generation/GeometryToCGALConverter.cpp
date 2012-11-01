@@ -594,18 +594,15 @@ class Build_sphere : public CGAL::Modifier_base<csg::Exact_HalfedgeDS>
 	f.push_back( top_offset + (i+1)%num_sectors );
 	add_facet(builder, f);
       }      
-
     }
-
     builder.end_surface();
-
   }
 
   private:
   const csg::Sphere& sphere;
 };
 //-----------------------------------------------------------------------------
-static csg::Nef_polyhedron_3 make_sphere(const csg::Sphere* s)
+static boost::shared_ptr<csg::Nef_polyhedron_3> make_sphere(const csg::Sphere* s)
 {
   csg::Exact_Polyhedron_3 P;
   Build_sphere builder(*s);
@@ -615,7 +612,7 @@ static csg::Nef_polyhedron_3 make_sphere(const csg::Sphere* s)
 
   //printStat(P, "Sphere");
 
-  return csg::Nef_polyhedron_3(P);
+  return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
 }
 //-----------------------------------------------------------------------------
 class Build_box : public CGAL::Modifier_base<csg::Exact_HalfedgeDS> 
@@ -748,7 +745,8 @@ class Build_box : public CGAL::Modifier_base<csg::Exact_HalfedgeDS>
 
   const csg::Box* box;
 };
-static csg::Nef_polyhedron_3 make_box(const csg::Box* b)
+//-----------------------------------------------------------------------------
+static boost::shared_ptr<csg::Nef_polyhedron_3> make_box(const csg::Box* b)
 {
   csg::Exact_Polyhedron_3 P;
   Build_box builder(b);
@@ -758,11 +756,10 @@ static csg::Nef_polyhedron_3 make_box(const csg::Box* b)
 
   //printStat(P, "Box");
 
-  return csg::Nef_polyhedron_3(P);;
+  return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
 }
-
 //-----------------------------------------------------------------------------
-static csg::Nef_polyhedron_3 make_tetrahedron(const csg::Tetrahedron* b)
+static boost::shared_ptr<csg::Nef_polyhedron_3> make_tetrahedron(const csg::Tetrahedron* b)
 {
   csg::Exact_Polyhedron_3 P;
   P.make_tetrahedron( csg::Exact_Point_3(b->x0.x(), b->x0.y(), b->x0.z()), 
@@ -772,10 +769,10 @@ static csg::Nef_polyhedron_3 make_tetrahedron(const csg::Tetrahedron* b)
   
   //printStat(P, "Tetrahedron");
 
-  return csg::Nef_polyhedron_3(P);
+  return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
 }
 //-----------------------------------------------------------------------------
-// // Return some vector orthogonal to a
+// Return some vector orthogonal to a
 static Point generate_orthogonal(const Point& a)
 {
   const Point b(0, 1, 0);
@@ -923,7 +920,7 @@ private:
   const csg::Cone* cone;
 };
 //-----------------------------------------------------------------------------
-csg::Nef_polyhedron_3 make_cone(const csg::Cone* c)
+static boost::shared_ptr<csg::Nef_polyhedron_3> make_cone(const csg::Cone* c)
 {
   csg::Exact_Polyhedron_3 P;
   Build_cone builder(c);
@@ -932,19 +929,19 @@ csg::Nef_polyhedron_3 make_cone(const csg::Cone* c)
   dolfin_assert(P.is_valid());
 
   //printStat(P, "Cone");
-  return csg::Nef_polyhedron_3(P);
+  return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
 }
 //-----------------------------------------------------------------------------
-static csg::Nef_polyhedron_3 make_surface3D(const csg::Surface3D* s)
+static boost::shared_ptr<csg::Nef_polyhedron_3> make_surface3D(const csg::Surface3D* s)
 {
   csg::Exact_Polyhedron_3 p;
 
   csg::SurfaceFileReader::readSurfaceFile(s->filename, p);
 
-  return csg::Nef_polyhedron_3(p);
+  return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(p));
 }
 //-----------------------------------------------------------------------------
-static csg::Nef_polyhedron_3 convertSubTree(const CSGGeometry *geometry)
+static boost::shared_ptr<csg::Nef_polyhedron_3> convertSubTree(const CSGGeometry *geometry)
 {
   switch (geometry->getType()) {
 
@@ -952,21 +949,31 @@ static csg::Nef_polyhedron_3 convertSubTree(const CSGGeometry *geometry)
   {
     const CSGUnion* u = dynamic_cast<const CSGUnion*>(geometry);
     dolfin_assert(u);
-    return convertSubTree(u->_g0.get()) + convertSubTree(u->_g1.get());
+    boost::shared_ptr<csg::Nef_polyhedron_3> g0 = convertSubTree(u->_g0.get());
+    boost::shared_ptr<csg::Nef_polyhedron_3> g1 = convertSubTree(u->_g1.get());
+    (*g0) += (*g1);
+    return g0;
+
     break;
   }
   case CSGGeometry::Intersection :
   {
     const CSGIntersection* u = dynamic_cast<const CSGIntersection*>(geometry);
     dolfin_assert(u);
-    return convertSubTree(u->_g0.get()) * convertSubTree(u->_g1.get());
+    boost::shared_ptr<csg::Nef_polyhedron_3> g0 = convertSubTree(u->_g0.get());
+    boost::shared_ptr<csg::Nef_polyhedron_3> g1 = convertSubTree(u->_g1.get());    
+    (*g0) *= (*g1);
+    return g0;
     break;
   }
   case CSGGeometry::Difference :
   {
     const CSGDifference* u = dynamic_cast<const CSGDifference*>(geometry);
     dolfin_assert(u);
-    return convertSubTree(u->_g0.get()) - convertSubTree(u->_g1.get());
+    boost::shared_ptr<csg::Nef_polyhedron_3> g0 = convertSubTree(u->_g0.get());
+    boost::shared_ptr<csg::Nef_polyhedron_3> g1 = convertSubTree(u->_g1.get());    
+    (*g0) -= (*g1);
+    return g0;
     break;
   }
   case CSGGeometry::Cone :
@@ -1010,8 +1017,9 @@ static csg::Nef_polyhedron_3 convertSubTree(const CSGGeometry *geometry)
 		 "converting geometry to cgal polyhedron",
 		 "Unhandled primitive type");
   }
-    // Make compiler happy.
-  return csg::Nef_polyhedron_3();
+
+  // Make compiler happy.
+  return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3);
 }
 //-----------------------------------------------------------------------------
 static void triangulate_polyhedron(csg::Polyhedron_3& p)
@@ -1035,14 +1043,16 @@ static void triangulate_polyhedron(csg::Polyhedron_3& p)
 //-----------------------------------------------------------------------------
 void GeometryToCGALConverter::convert(const CSGGeometry& geometry, csg::Polyhedron_3& p, bool remove_degenerated)
 {
-  cout << "Convert to nef polyhedron" << endl;
-  csg::Nef_polyhedron_3 cgal_geometry = convertSubTree(&geometry);
 
-  dolfin_assert(cgal_geometry.is_valid());
-  dolfin_assert(cgal_geometry.is_simple());
+  // TODO: Possible optimization: Check if there is only one primitive in th
+  cout << "Convert to nef polyhedron" << endl;
+  boost::shared_ptr<csg::Nef_polyhedron_3> cgal_geometry = convertSubTree(&geometry);
+
+  dolfin_assert(cgal_geometry->is_valid());
+  dolfin_assert(cgal_geometry->is_simple());
 
   csg::Exact_Polyhedron_3 p_exact;
-  cgal_geometry.convert_to_polyhedron(p_exact);
+  cgal_geometry->convert_to_polyhedron(p_exact);
 
   if (remove_degenerated)
   {
