@@ -37,7 +37,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 std::vector<std::size_t>
-  BoostGraphOrdering::compute_cuthill_mckee(const Graph& graph, bool reverse)
+  BoostGraphOrdering::compute_cuthill_mckee(Graph& graph, bool reverse)
 {
   // Number of vertices
   const std::size_t n = graph.size();
@@ -60,7 +60,7 @@ std::vector<std::size_t>
       edges.push_back(std::make_pair(vertex - graph.begin(), *edge));
 
   // Build Boost graph
-  BoostGraph boost_graph(boost::edges_are_unsorted,
+  BoostGraph boost_graph(boost::edges_are_unsorted_multi_pass,
                          edges.begin(), edges.end(), n);
 
   // Boost vertex -> index map
@@ -77,6 +77,36 @@ std::vector<std::size_t>
   // Build old-to-new vertex map
   std::vector<std::size_t> map(n);
   for (std::size_t i = 0; i < n; ++i)
+    map[boost_index_map[inv_perm[i]]] = i;
+
+  return map;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::size_t>
+  BoostGraphOrdering::compute_cuthill_mckee(const std::set<std::pair<std::size_t, std::size_t> >& edges,
+                                            std::size_t size, bool reverse)
+{
+  // Typedef for Boost compressed sparse row graph
+  typedef boost::compressed_sparse_row_graph<boost::directedS> BoostGraph;
+
+  // Build Boost graph
+  BoostGraph boost_graph(boost::edges_are_sorted,
+                         edges.begin(), edges.end(), size);
+
+  // Boost vertex -> index map
+  boost::property_map<BoostGraph, boost::vertex_index_t>::type
+    boost_index_map = get(boost::vertex_index, boost_graph);
+
+  // Compute graph re-ordering
+  std::vector<std::size_t> inv_perm(size);
+  if (!reverse)
+    boost::cuthill_mckee_ordering(boost_graph, inv_perm.begin());
+  else
+    boost::cuthill_mckee_ordering(boost_graph, inv_perm.rbegin());
+
+  // Build old-to-new vertex map
+  std::vector<std::size_t> map(size);
+  for (std::size_t i = 0; i < size; ++i)
     map[boost_index_map[inv_perm[i]]] = i;
 
   return map;
