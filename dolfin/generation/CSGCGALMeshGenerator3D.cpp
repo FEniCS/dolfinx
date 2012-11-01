@@ -122,8 +122,11 @@ void CSGCGALMeshGenerator3D::generate(Mesh& mesh) const
 
   csg::Mesh_domain domain(p);
 
-  cout << "Detecting sharp features" << endl;
-  domain.detect_features();
+  if (parameters["detect_sharp_features"])
+  {
+    cout << "Detecting sharp features" << endl;
+    domain.detect_features();
+  }
 
   // Mesh criteria
   csg::Mesh_criteria criteria(CGAL::parameters::edge_size = parameters["edge_size"],
