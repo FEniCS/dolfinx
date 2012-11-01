@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2003-12-21
-// Last changed: 2011-11-15
+// Last changed: 2012-11-01
 
 // Uncomment this for testing std::clock
 //#define _WIN32
@@ -27,7 +27,9 @@
 #include <sys/time.h>
 #endif
 
+#include "MPI.h"
 #include <dolfin/log/log.h>
+#include <dolfin/log/LogManager.h>
 #include "timing.h"
 
 // We use boost::timer (std::clock) on Windows and otherwise the
@@ -82,5 +84,34 @@ double dolfin::time()
   }
   return static_cast<double>(tv.tv_sec) + static_cast<double>(tv.tv_usec)*1e-6;
 #endif
+}
+//-----------------------------------------------------------------------------
+void dolfin::list_timings(bool reset)
+{
+  // Optimization
+  if (!LogManager::logger.is_active())
+    return;
+
+  // Only print summary for process 0
+  if (MPI::process_number() != 0)
+    return;
+
+  LogManager::logger.list_timings(reset);
+}
+//-----------------------------------------------------------------------------
+Table dolfin::timings(bool reset)
+{
+  return LogManager::logger.timings(reset);
+}
+//-----------------------------------------------------------------------------
+void dolfin::summary(bool reset)
+{
+  warning("The summary() function is deprecated, use list_timings().");
+  list_timings(reset);
+}
+//-----------------------------------------------------------------------------
+double dolfin::timing(std::string task, bool reset)
+{
+  return LogManager::logger.timing(task, reset);
 }
 //-----------------------------------------------------------------------------

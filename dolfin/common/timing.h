@@ -16,12 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2005-12-21
-// Last changed: 2012-10-26
+// Last changed: 2012-11-01
 
 #ifndef __TIMING_H
 #define __TIMING_H
 
 #include <dolfin/common/types.h>
+#include <dolfin/log/Table.h>
 
 namespace dolfin
 {
@@ -37,6 +38,20 @@ namespace dolfin
 
   /// Return current CPU time used by process
   double time();
+
+  /// Return a summary of timings and tasks in a Table, optionally clearing
+  /// stored timings
+  Table timings(bool reset=false);
+
+  /// List a summary of timings and tasks, optionally clearing stored timings
+  void list_timings(bool reset=false);
+
+  /// This function is deprecated, use list_timings
+  void summary(bool reset=false);
+
+  /// Return timing (average) for given task, optionally clearing timing
+  /// for task
+  double timing(std::string task, bool reset=false);
 
 }
 
