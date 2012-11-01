@@ -38,7 +38,7 @@ namespace dolfin
   public:
 
     /// Compute re-ordering (map[old] -> new) using Cuthill-McKee algorithm
-    static std::vector<std::size_t> compute_cuthill_mckee(Graph& graph,
+    static std::vector<std::size_t> compute_cuthill_mckee(const Graph& graph,
                                                    bool reverse=false);
 
     /// Compute re-ordering (map[old] -> new) using Cuthill-McKee algorithm
