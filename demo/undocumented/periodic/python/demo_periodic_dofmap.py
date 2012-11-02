@@ -74,7 +74,6 @@ bcs = [bc0]
 # Define variational problem
 u = TrialFunction(V)
 v = TestFunction(V)
-u_ = Function(V)
 
 f = Source()
 a = dot(grad(u), grad(v))*dx
@@ -82,11 +81,14 @@ L = f*v*dx
 
 # Compute solution
 u = Function(V)
-solve(a == L, u_, bcs)
+solve(a == L, u, bcs)
 
 # Save solution to file
 file = File("periodic_dofmap.pvd")
-file << u_
+file << u
 
 # Plot solution
-plot(u_, interactive=True)
+plot(u, interactive=True)
+
+list_timings()
+
