@@ -210,7 +210,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   // Set some options
 
   // Do not allow more entries than have been pre-allocated
-  MatSetOption(*A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
+  MatSetOption(*A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
 
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
   MatSetOption(*A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);

@@ -115,6 +115,48 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& dolfin_mesh,
     }
     dofmap._ownership_range = std::make_pair(0, dofmap.global_dimension());
   }
+  
+  // Periodic modification. Replace all slaves with masters
+  if (!dolfin_mesh.facet_pairs.empty())
+  {
+    typedef std::map<uint, std::pair<uint, uint> > dof_pairs;
+    typedef dof_pairs::iterator dof_pairs_iterator;
+    dof_pairs _slave_master_map;
+    std::pair<uint, uint> ownership_range = dofmap._ownership_range;
+    extract_dof_pairs(dofmap, dolfin_mesh, _slave_master_map, ownership_range);
+    dofmap._slave_master_map = _slave_master_map;    
+    
+    for (dof_pairs_iterator it = _slave_master_map.begin();
+                            it != _slave_master_map.end(); ++it)
+    {
+      if (it->second.second == MPI::process_number())
+      {
+        dofmap._masters.push_back(it->second.first);
+        dofmap._slaves.push_back(it->first);
+      }
+      //cout << "master " << it->second.first << " owner " << it->second.second << " slave " << it->first << endl;
+    }
+    
+    // Modify the dofmap by putting the master in all locations where a slave i found
+    for (uint i=0; i<dofmap._dofmap.size(); i++)
+    {
+      const std::vector<uint>& global_dofs = dofmap.cell_dofs(i); 
+      for (uint j=0; j<dofmap.max_cell_dimension(); j++)
+      {
+        const uint dof = global_dofs[j];
+        for (dof_pairs_iterator it = _slave_master_map.begin();
+                              it != _slave_master_map.end(); ++it)
+        {
+          if (dof == it->first)
+          {
+            dofmap._dofmap[i][j] = it->second.first;
+            dofmap._off_process_owner[it->second.first] = it->second.second; 
+            break;
+          }
+        }
+      }
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::build_distributed(DofMap& dofmap,
@@ -523,3 +565,238 @@ void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
   }
 }
 //-----------------------------------------------------------------------------
+typedef std::pair<uint, uint> dof_pair;
+typedef std::map<uint, uint> uint_map_type;
+typedef std::map<uint, dof_pair> dof_pair_map;
+typedef dof_pair_map::iterator dof_pair_map_iterator;
+
+void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh, 
+                                      dof_pair_map& _slave_master_map,
+                                      std::pair<uint, uint> ownership_range)
+{
+  const uint num_sub_dofmaps = dofmap._ufc_dofmap->num_sub_dofmaps();
+  if (num_sub_dofmaps > 0)
+  {
+    // Call recursively for all sub_dofmaps
+    std::vector<uint> component(1);
+    for (uint i=0; i<num_sub_dofmaps; i++)
+    {
+      component[0] = i;
+      DofMap* sub_dofmap = dofmap.extract_sub_dofmap(component, mesh);
+      extract_dof_pairs(*sub_dofmap, mesh, _slave_master_map, ownership_range);
+    }
+  }
+  else
+  {    
+    // Get facet-to-facet map from mesh class
+    std::vector<std::pair< std::pair<int, int>, std::pair<int, int> > > facet_pairs = mesh.facet_pairs;
+    const uint num_periodic_faces = facet_pairs.size();
+    
+    // Get dimensions
+    const uint tdim = mesh.topology().dim();
+    const uint gdim = mesh.geometry().dim();
+    
+    // Arrays used for mapping coordinates
+    std::vector<double> x(gdim);
+    std::vector<double> y(gdim);
+    std::vector<double> dx(gdim);    
+    
+    // Declare some variables used to map dofs
+    std::vector<uint> local_master_dofs(dofmap.num_facet_dofs());
+    std::vector<uint> local_slave_dofs(dofmap.num_facet_dofs());
+    typedef boost::multi_array<double, 2> coors;
+    coors master_coor(boost::extents[dofmap.max_cell_dimension()][gdim]);
+    coors slave_coor(boost::extents[dofmap.max_cell_dimension()][gdim]);      
+        
+    std::set<uint> communicating_processors;
+    std::map<uint, std::vector<double> > x_map;
+    std::map<uint, std::vector<double> > received_y;
+    std::map<uint, std::vector<uint> > glob_map;
+    std::map<uint, std::vector<uint> > slave_map;
+    std::vector<uint> glob_vec(1);
+    std::vector<uint> global_master_dofs;
+    std::vector<uint> global_slave_dofs;
+
+    const uint process_number = MPI::process_number();
+        
+    // Vectors to hold global dofs on the master/slave facets
+    std::vector<uint> global_master_dofs_on_facet;
+    std::vector<uint> global_slave_dofs_on_facet;
+    
+    // Loop over periodic face maps and extract dof pairs
+    for (uint i=0; i<num_periodic_faces; i++)
+    {   
+      // There are two connected periodic facets that could live on different processes
+      const uint master_process = facet_pairs[i].first.second;
+      const uint slave_process = facet_pairs[i].second.second;
+      bool parallel_process = (master_process != slave_process);
+      
+      global_master_dofs_on_facet.clear();
+      global_slave_dofs_on_facet.clear();
+      global_master_dofs.clear();
+      global_slave_dofs.clear();
+      received_y.clear();
+      x_map.clear();
+      glob_map.clear();
+      slave_map.clear();
+      communicating_processors.clear();
+      
+      // All processes except master_process and slave_process simply pass by this loop
+      //if (process_number == master_process || process_number == slave_process)
+      {
+        if (master_process == process_number)
+        {
+          // Get info from master facet: cell, dofs, coordinates
+          const Facet master_facet(mesh, facet_pairs[i].first.first);
+          const Cell master_cell(mesh, master_facet.entities(tdim)[0]);        
+          global_master_dofs = dofmap.cell_dofs(master_cell.index());
+          dofmap.tabulate_coordinates(master_coor, master_cell);
+          const uint local_master_facet = master_cell.index(master_facet);
+          dofmap.tabulate_facet_dofs(&local_master_dofs[0], local_master_facet); 
+          const Point midpoint = master_facet.midpoint();   
+          for (uint i=0; i<gdim; i++)
+            x[i] = midpoint[i];
+          communicating_processors.insert(slave_process);
+        }
+        if (slave_process == process_number)
+        {
+          // Get info from slave facet: cell, dofs, coordinates
+          const Facet slave_facet(mesh, facet_pairs[i].second.first);      
+          const Cell slave_cell(mesh, slave_facet.entities(tdim)[0]);
+          global_slave_dofs = dofmap.cell_dofs(slave_cell.index());
+          dofmap.tabulate_coordinates(slave_coor, slave_cell);
+          const uint local_slave_facet = slave_cell.index(slave_facet);
+          dofmap.tabulate_facet_dofs(&local_slave_dofs[0], local_slave_facet); 
+          const Point midpoint = slave_facet.midpoint();
+          for (uint i=0; i<gdim; i++)
+            y[i] = midpoint[i];
+          communicating_processors.insert(master_process);
+          x_map[master_process] = y;
+        }
+        
+        // Exchange info with slave if parallel
+        if (parallel_process)
+        {
+          MPI::distribute(communicating_processors, x_map, received_y);
+          if (process_number == master_process)
+          {
+            y.assign(received_y[slave_process].begin(), received_y[slave_process].end());
+          }
+        }
+        communicating_processors.clear();
+        received_y.clear();
+        x_map.clear();
+        glob_map.clear();
+        
+        // The distance dx is used to match master and slave dofs
+        for (uint j=0; j<gdim; j++)
+          dx[j] = y[j] - x[j];
+
+        // Match master and slave dofs and put pair in map
+        for (uint j=0; j<dofmap.num_facet_dofs(); j++)
+        {
+          uint global_master_dof;
+          uint global_slave_dof;
+          if (master_process == process_number)
+          {
+            // Get global master dof and coordinates
+            global_master_dof = global_master_dofs[local_master_dofs[j]];
+            std::copy(master_coor[local_master_dofs[j]].begin(),
+                      master_coor[local_master_dofs[j]].end(), x.begin());
+          
+            communicating_processors.insert(slave_process);            
+          }          
+          for (uint k=0; k<dofmap.num_facet_dofs(); k++)
+          {   
+            if (slave_process == process_number)
+            {
+              // Get global slave dof and coordinates
+              global_slave_dof = global_slave_dofs[local_slave_dofs[k]];
+              std::copy(slave_coor[local_slave_dofs[k]].begin(),
+                        slave_coor[local_slave_dofs[k]].end(), y.begin());
+              communicating_processors.insert(master_process);
+              x_map[master_process] = y;
+              glob_vec[0] = global_slave_dof;
+              glob_map[master_process] = glob_vec;
+            }
+            // Exchange info with master_process
+            if (parallel_process)
+            {
+              MPI::distribute(communicating_processors, x_map, received_y);
+              MPI::distribute(communicating_processors, glob_map, slave_map);
+              if (process_number == master_process)
+              {
+                y.assign(received_y[slave_process].begin(), received_y[slave_process].end());
+                global_slave_dof = slave_map[slave_process][0];
+              }
+            }
+            
+            // Look for a match in coordinates at the master process
+            if (master_process == process_number)
+            {              
+              for(uint l=0; l<gdim; l++) 
+                y[l] = y[l] - dx[l];         // Should be zero for match
+              
+              double error = 0.;
+              for(uint l=0; l<gdim; l++) 
+                error += pow(y[l] - x[l], 2);
+              
+              if (error < 1e-12) // Match! Store master and slave in vectors
+              {  
+                global_master_dofs_on_facet.push_back(global_master_dof);
+                global_slave_dofs_on_facet.push_back(global_slave_dof);
+              }
+            }
+          }
+        }  // Finished on facet
+      }    // Move to next periodic face pair
+      
+      // At this point there should be a match between dofs on master facet and slave facet
+      // Put this information on all processes
+      MPI::broadcast(global_master_dofs_on_facet, master_process);
+      MPI::broadcast(global_slave_dofs_on_facet, master_process);
+      
+      // Add to the global _slave_master_map
+      for (uint j=0; j<global_master_dofs_on_facet.size(); j++)
+      {
+        uint master_dof = global_master_dofs_on_facet[j]; 
+        uint slave_dof  = global_slave_dofs_on_facet[j];
+        uint dof_owner = 0;
+        if (master_dof >= ownership_range.first && master_dof < ownership_range.second)
+          dof_owner = process_number;        
+        dof_pair pair(master_dof, MPI::max(dof_owner));
+        
+        // At this point we need to do something clever in case of more than one periodic direction
+        // If slave does not exist, add to slave_master map. But check also
+        // if the slave has been used as master before.
+        if (_slave_master_map.find(slave_dof) == _slave_master_map.end())
+        {
+          _slave_master_map[slave_dof] = pair;
+          for (dof_pair_map_iterator it = _slave_master_map.begin();
+                                     it != _slave_master_map.end(); ++it)
+          {
+            if (it->second.first == slave_dof) // Has been previously used as master
+            {
+              _slave_master_map[it->first] = pair; // Use latest master value for previous as well
+              break;
+            }
+          }
+        }
+        else // The slave_dof exists as slave from before
+        {
+          // Check if the master_dof has been used previously as slave
+          //if (_slave_master_map.find(master_dof) != _slave_master_map.end())
+          for (dof_pair_map_iterator it = _slave_master_map.begin();
+                                     it != _slave_master_map.end(); ++it)
+          {
+            if (it->first == master_dof)
+            {
+              _slave_master_map[slave_dof] = it->second;
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+}

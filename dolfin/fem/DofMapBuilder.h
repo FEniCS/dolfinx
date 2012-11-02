@@ -62,6 +62,9 @@ namespace dolfin
                       const UFCMesh& ufc_mesh, bool reorder,
                       bool distributed);
 
+    static void extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh, 
+                                  std::map<uint, std::pair<uint, uint> >& _slave_master_map,
+                                  std::pair<uint, uint> ownership_range);
 
   private:
 

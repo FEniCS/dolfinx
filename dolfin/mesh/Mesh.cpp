@@ -25,7 +25,9 @@
 // First added:  2006-05-09
 // Last changed: 2012-10-24
 
-
+#include <boost/serialization/map.hpp>
+#include <dolfin/common/Array.h>
+#include <dolfin/mesh/Facet.h>
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
@@ -517,3 +519,168 @@ std::string Mesh::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
+void Mesh::add_periodic_direction(const SubDomain& sub_domain)
+{
+  _periodic_sub_domain = reference_to_no_delete_pointer(sub_domain);
+  compute_facet_pairs();
+}
+
+void Mesh::add_periodic_direction(boost::shared_ptr<const SubDomain> sub_domain)
+{
+  _periodic_sub_domain = sub_domain;
+  compute_facet_pairs();
+}
+
+// Comparison operator for hashing coordinates. Note that two
+// coordinates are considered equal if equal to within round-off.
+struct lt_coordinate
+{
+  bool operator() (const std::vector<double>& x, const std::vector<double>& y) const
+  {
+    unsigned int n = std::max(x.size(), y.size());
+    for (unsigned int i = 0; i < n; ++i)
+    {
+      double xx = 0.0;
+      double yy = 0.0;
+
+      if (i < x.size())
+        xx = x[i];
+      if (i < y.size())
+        yy = y[i];
+
+      if (xx < (yy - 1.0e-12))
+        return true;
+      else if (xx > (yy + 1.0e-12))
+        return false;
+    }
+
+    return false;
+  }
+};
+typedef std::pair<int, int> facet_data;
+typedef std::pair<facet_data, facet_data> facet_pair;
+typedef std::map<std::vector<double>, facet_pair, lt_coordinate> coordinate_map;
+typedef coordinate_map::iterator coordinate_iterator;
+struct merge_coordinate_map
+{
+  coordinate_map operator() (coordinate_map x, coordinate_map y)
+  {
+    coordinate_map z;
+    for (coordinate_iterator it = x.begin(); it != x.end(); ++it)
+      z[it->first] = it->second;
+
+    for (coordinate_iterator it = y.begin(); it != y.end(); ++it)
+    {
+      coordinate_iterator match = z.find(it->first);
+      if (match != z.end())
+      {
+        // Copy the degree of freedom indices and their parallel owners
+        match->second.first.first
+          = std::max(it->second.first.first, match->second.first.first);
+        match->second.first.second
+          = std::max(it->second.first.second, match->second.first.second);
+        match->second.second.first
+          = std::max(it->second.second.first, match->second.second.first);
+        match->second.second.second
+          = std::max(it->second.second.second, match->second.second.second);
+      }
+      else
+        z[it->first] = it->second;
+    }
+
+    return z;
+  }
+};
+
+void Mesh::compute_facet_pairs()
+{
+  const uint tdim = topology().dim();
+  const uint gdim = geometry().dim();
+  
+  // Arrays used for mapping coordinates
+  std::vector<double> x(gdim);
+  std::vector<double> y(gdim);
+
+  // Wrap x and y (Array view of x and y)
+  Array<double> _x(gdim, &x[0]);
+  Array<double> _y(gdim, &y[0]);
+  Point facet_midpoint;
+  
+  // Initialize mesh facets
+  init(tdim - 1, tdim);
+  
+  // MPI process number
+  const int process_number = MPI::process_number();
+  
+  coordinate_map coordinate_facet_pairs;
+  
+  Progress p("Finding periodic face pairs", size(tdim - 1));
+  for (FacetIterator facet(*this); !facet.end(); ++facet)
+  {
+    if (!facet->exterior())
+    {
+      p++;
+      continue;
+    }
+    facet_midpoint = facet->midpoint();
+    for (uint i=0; i<gdim; i++)
+    {
+      x[i] = facet_midpoint[i];
+    }
+
+    _periodic_sub_domain->map(_x, _y);
+    if (_periodic_sub_domain->inside(_x, true))
+    {
+      coordinate_iterator it = coordinate_facet_pairs.find(x);
+      if (it != coordinate_facet_pairs.end())
+      {
+        it->second.first = facet_data(facet->index(), process_number);
+      }
+      else
+      {
+        facet_data g_facet(facet->index(), process_number);        
+        facet_data l_facet(-1, -1);
+        facet_pair pair(g_facet, l_facet);
+        coordinate_facet_pairs[x] = pair;
+      }
+    }
+    else if(_periodic_sub_domain->inside(_y, true))
+    {
+      coordinate_iterator it = coordinate_facet_pairs.find(y);
+      if (it != coordinate_facet_pairs.end())
+      {
+        it->second.second = facet_data(facet->index(), process_number);
+      }
+      else
+      {
+        facet_data l_facet(facet->index(), process_number);        
+        facet_data g_facet(-1, -1);
+        facet_pair pair(g_facet, l_facet);
+        coordinate_facet_pairs[y] = pair;
+      }      
+    }
+  }
+    
+  #ifdef HAS_MPI
+  coordinate_map final_coordinate_facet_pairs
+      = MPI::all_reduce(coordinate_facet_pairs, merge_coordinate_map());
+  #else
+  coordinate_map final_coordinate_facet_pairs = coordinate_facet_pairs;
+  #endif
+  
+  for (coordinate_iterator it = final_coordinate_facet_pairs.begin();
+                           it != final_coordinate_facet_pairs.end(); ++it)
+  {
+    facet_pair pair = it->second;
+    facet_pairs.push_back(pair);
+  }
+    
+  cout << "Facet pairs " << facet_pairs.size() << endl;
+  for (uint i=0; i<facet_pairs.size(); i++)
+  {
+    facet_pair pair = facet_pairs[i];
+    cout << " (" << pair.first.first << ", " << pair.first.second << ")"
+              ", (" << pair.second.first << ", " << pair.second.second << ")" << endl;
+  }  
+}
+

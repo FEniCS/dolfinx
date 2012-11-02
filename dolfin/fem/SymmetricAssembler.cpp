@@ -91,6 +91,12 @@ void SymmetricAssembler::assemble(GenericMatrix& A,
 
   // Assemble
   assemble(A, B, a, row_bcs, col_bcs, cell_domains.get(), facet_domains.get(), facet_domains.get());
+  
+  // Periodic modification
+  if (!mesh.facet_pairs.empty())
+  {
+      A.ident_zeros();
+  }
 }
 //-----------------------------------------------------------------------------
 void SymmetricAssembler::assemble(GenericMatrix& A,

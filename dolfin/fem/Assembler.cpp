@@ -171,6 +171,15 @@ void Assembler::assemble(GenericTensor& A,
   // Finalize assembly of global tensor
   if (finalize_tensor)
     A.apply("add");
+  
+  // Periodic modification
+  if (!a.mesh().facet_pairs.empty())
+  {
+    if (ufc.form.rank() == 2)
+    {
+      A.down_cast<GenericMatrix>().ident_zeros();
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble_cells(GenericTensor& A,

@@ -566,3 +566,11 @@ void DofMap::check_dimensional_consistency(const ufc::dofmap& dofmap,
   }
 }
 //-----------------------------------------------------------------------------
+void DofMap::update_slaves(GenericVector& x) const
+{
+  std::vector<double> values;
+  x.gather(values, _masters);  
+  x.set(values.data(), _masters.size(), _slaves.data());
+  x.apply("insert");
+}
+

@@ -328,6 +328,14 @@ namespace dolfin
     ///         An informal representation of the function space.
     std::string str(bool verbose) const;
 
+    void update_slaves(GenericVector& x) const;
+    
+    std::map<uint, std::pair<uint, uint> > _slave_master_map;
+    
+    std::vector<uint> _masters;
+    
+    std::vector<uint> _slaves;
+
   private:
 
     // Friends

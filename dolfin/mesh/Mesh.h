@@ -42,6 +42,7 @@
 #include "MeshConnectivity.h"
 #include "MeshTopology.h"
 #include "MeshDomains.h"
+#include "SubDomain.h"
 
 namespace dolfin
 {
@@ -655,6 +656,15 @@ namespace dolfin
     ///
     ///         No example code available for this function.
     std::string str(bool verbose) const;
+    
+        /// /// Periodicity  ///
+    void add_periodic_direction(const SubDomain& sub_domain);
+    
+    void add_periodic_direction(boost::shared_ptr<const SubDomain> sub_domain);
+    
+    std::vector<std::pair< std::pair<int, int>, std::pair<int, int> > > facet_pairs;
+    
+    void compute_facet_pairs();
 
   private:
 
@@ -684,6 +694,8 @@ namespace dolfin
 
     // True if mesh has been ordered
     mutable bool _ordered;
+    
+    boost::shared_ptr<const SubDomain> _periodic_sub_domain;
 
   };
 

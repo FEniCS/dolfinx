@@ -131,6 +131,9 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;
 
+    /// Update periodic slave values
+    virtual void update_slaves(GenericVector& x) const = 0;
+
   };
 
 }
