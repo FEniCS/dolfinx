@@ -218,6 +218,12 @@
 // log
 %shared_ptr(dolfin::Table)
 
+// io
+%shared_ptr(dolfin::GenericFile)
+%shared_ptr(dolfin::File)
+%shared_ptr(dolfin::XDMFFile)
+%shared_ptr(dolfin::HDF5File)
+
 // math
 %shared_ptr(dolfin::Lagrange)
 
