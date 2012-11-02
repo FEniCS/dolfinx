@@ -110,7 +110,7 @@ outfile.write("<h2>All benchmarks</h2><p>\n")
 outfile.write("<center>\n")
 outfile.write("<table border=\"0\">\n")
 
-def get_maxtime(dates, min_date, max_date, timings):
+def get_maxtime(dates, min_date, max_date, run_timings):
     """Return the maximum time between min_date and max_date"""
     max_time = 0
     for i, date in enumerate(dates):
@@ -119,8 +119,8 @@ def get_maxtime(dates, min_date, max_date, timings):
         elif date > max_date:
             break
         else:
-            if max_time < timings[i]:
-                max_time = timings[i]
+            if max_time < run_timings[i]:
+                max_time = run_timings[i]
     return max_time
 
 # Create normalized plots with all benchmarks in same plot for
@@ -134,12 +134,12 @@ for last, locator, date_fmt, xmin in zip(lasts, locators, date_fmts, xmins):
     for benchmark, values in benchmarks.items():
         num += 1
         dates = values[0]
-        timings = values[1]/numpy.linalg.norm(values[1])
-        ax.plot(dates, timings,
+        run_timings = values[1]/numpy.linalg.norm(values[1])
+        ax.plot(dates, run_timings,
                 marker=markers[num % len(markers)], markersize=3,
                 label=benchmark)
         ax.hold(True)
-        maxtime = get_maxtime(dates, xmin, today, timings)
+        maxtime = get_maxtime(dates, xmin, today, run_timings)
         if maxtime > ymax:
             ymax = maxtime
     ax.xaxis.set_major_locator(locator)
@@ -184,7 +184,7 @@ for benchmark, values in benchmarks.items():
     outfile.write("<table border=\"0\">\n")
 
     dates = values[0]
-    timings = values[1]
+    run_timings = values[1]
     description = values[2]
     # Wrap the lines in the description
     description = textwrap.fill(description, width=30)
@@ -193,9 +193,9 @@ for benchmark, values in benchmarks.items():
     for last, locator, date_fmt, xmin in zip(lasts, locators, date_fmts, xmins):
         fig = plt.figure()
         ax = fig.gca()
-        ax.plot(dates, timings, marker='o', markersize=3)
+        ax.plot(dates, run_timings, marker='o', markersize=3)
         ax.set_ylabel("time (seconds)")
-        maxtime = get_maxtime(dates, xmin, today, timings)
+        maxtime = get_maxtime(dates, xmin, today, run_timings)
         ax.set_ylim(0, maxtime + maxtime/2)
         ax.legend((description,), loc='best')        
         ax.xaxis.set_major_locator(locator)
