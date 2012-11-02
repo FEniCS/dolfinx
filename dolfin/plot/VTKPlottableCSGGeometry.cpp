@@ -34,6 +34,8 @@ using namespace dolfin;
 
 static boost::shared_ptr<dolfin::Mesh> getBoundaryMesh(const CSGGeometry& geometry)
 {
+  #ifdef HAS_CGAL
+
   if (geometry.dim() == 3)
   {
     // Convert geometry to a CGAL polyhedron 
@@ -43,7 +45,9 @@ static boost::shared_ptr<dolfin::Mesh> getBoundaryMesh(const CSGGeometry& geomet
     boost::shared_ptr<dolfin::Mesh> mesh(new Mesh);
 
     // copy the boundary of polyhedron to a dolfin mesh
+    dolfin::cout << "Building surface mesh from cgal polyhedron" << dolfin::endl;
     CGALMeshBuilder::build_surface_mesh_poly(*mesh, p);
+    dolfin::cout << "  Done" << dolfin::endl;
     return mesh;
 
   } else 
@@ -59,6 +63,10 @@ static boost::shared_ptr<dolfin::Mesh> getBoundaryMesh(const CSGGeometry& geomet
     generator.generate(m);
     return boost::shared_ptr<dolfin::Mesh>(new BoundaryMesh(m));
   }
+
+  #else
+    return boost::shared_ptr<dolfin::Mesh>(new Mesh);
+  #endif
 }
 //-----------------------------------------------------------------------------
 
