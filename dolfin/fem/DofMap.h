@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2012 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -21,7 +21,7 @@
 // Modified by Joachim B Haga, 2012
 //
 // First added:  2007-03-01
-// Last changed: 2012-02-29
+// Last changed: 2012-11-02
 
 #ifndef __DOLFIN_DOF_MAP_H
 #define __DOLFIN_DOF_MAP_H
@@ -63,7 +63,24 @@ namespace dolfin
     ///         The ufc::dofmap.
     ///     mesh (_Mesh_)
     ///         The mesh.
-    DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh);
+    DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
+           const Mesh& mesh);
+
+    /// Create restricted dof map on mesh (data is not shared)
+    ///
+    /// *Arguments*
+    ///     ufc_dofmap (ufc::dofmap)
+    ///         The ufc::dofmap.
+    ///     mesh (_Mesh_)
+    ///         The mesh.
+    ///     domain_markers (_MeshFunction_ <uint>)
+    ///         Domain markers for the cells of the mesh.
+    ///     domain (uint)
+    ///         Identifier for domain.
+    DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
+           const Mesh& mesh,
+           const MeshFunction<uint>& domain_markers,
+           uint domain);
 
   private:
 

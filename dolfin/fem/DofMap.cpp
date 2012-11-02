@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2012 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -22,7 +22,7 @@
 // Modified by Joachim B Haga, 2012
 //
 // First added:  2007-03-01
-// Last changed: 2012-02-29
+// Last changed: 2012-11-02
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
@@ -42,10 +42,58 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
-               const Mesh& dolfin_mesh) : _ufc_dofmap(ufc_dofmap->create()),
-               ufc_offset(0), _is_view(false),
-               _distributed(MPI::num_processes() > 1)
+               const Mesh& dolfin_mesh)
+  : _ufc_dofmap(ufc_dofmap->create()),
+    ufc_offset(0), _is_view(false),
+    _distributed(MPI::num_processes() > 1)
 {
+  dolfin_assert(_ufc_dofmap);
+
+  // Check for dimensional consistency between the dofmap and mesh
+  check_dimensional_consistency(*_ufc_dofmap, dolfin_mesh);
+
+  // Check that mesh has been ordered
+  if (!dolfin_mesh.ordered())
+  {
+     dolfin_error("DofMap.cpp",
+                  "create mapping of degrees of freedom",
+                  "Mesh is not ordered according to the UFC numbering convention. "
+                  "Consider calling mesh.order()");
+  }
+
+  // Generate and number all mesh entities
+  const uint D = dolfin_mesh.topology().dim();
+  for (uint d = 1; d <= D; ++d)
+  {
+    if (_ufc_dofmap->needs_mesh_entities(d) || (_distributed && d == (D - 1)))
+    {
+      dolfin_mesh.init(d);
+      if (_distributed)
+        MeshPartitioning::number_entities(dolfin_mesh, d);
+    }
+  }
+
+  // Create the UFC mesh
+  const UFCMesh ufc_mesh(dolfin_mesh);
+
+  // Initialize the UFC dofmap
+  init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh);
+
+  // Build dof map
+  const bool reorder = dolfin::parameters["reorder_dofs_serial"];
+  DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, reorder, _distributed);
+}
+//-----------------------------------------------------------------------------
+DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
+               const Mesh& dolfin_mesh,
+               const MeshFunction<uint>& domain_markers,
+               uint domain)
+  : _ufc_dofmap(ufc_dofmap->create()),
+    ufc_offset(0), _is_view(false),
+    _distributed(MPI::num_processes() > 1)
+{
+  warning("Just ignoring restriction for now. Creating standard dof map.");
+
   dolfin_assert(_ufc_dofmap);
 
   // Check for dimensional consistency between the dofmap and mesh

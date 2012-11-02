@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-10-12
-// Last changed: 2012-10-12
+// Last changed: 2012-11-02
 
 #include <dolfin.h>
 #include "Poisson.h"
@@ -28,10 +28,10 @@ class Domain : public SubDomain
 {
   bool inside(const Array<double>& x, bool on_boundary) const
   {
-    return (x[0] >= 0.25 - DOLFIN_EPS &&
-            x[0] <= 0.75 + DOLFIN_EPS &&
-            x[1] >= 0.25 - DOLFIN_EPS &&
-            x[1] <= 0.75 + DOLFIN_EPS);
+    return (x[0] > 0.25 - DOLFIN_EPS &&
+            x[0] < 0.75 + DOLFIN_EPS &&
+            x[1] > 0.25 - DOLFIN_EPS &&
+            x[1] < 0.75 + DOLFIN_EPS);
   }
 };
 
@@ -41,8 +41,8 @@ class Boundary : public SubDomain
   bool inside(const Array<double>& x, bool on_boundary) const
   {
     return (std::abs(x[0] - 0.25) < DOLFIN_EPS &&
-            x[1] >= 0.25 - DOLFIN_EPS &&
-            x[1] <= 0.75 + DOLFIN_EPS);
+            x[1] > 0.25 - DOLFIN_EPS &&
+            x[1] < 0.75 + DOLFIN_EPS);
   }
 };
 
@@ -52,6 +52,10 @@ int main()
   UnitSquare mesh(32, 32);
 
   // Create restricted function space
+  Domain domain;
+  CellFunction<uint> domain_markers(mesh);
+  domain_markers.set_all(1);
+  domain.mark(domain_markers, 0);
   Poisson::FunctionSpace V(mesh);
 
   // Create forms and attach coefficients
