@@ -34,7 +34,9 @@ namespace dolfin
 
   class HDF5File;
 
-  // FIXME: Add class description
+  /// This class wraps HDF5 function calls. HDF5 function calls should
+  /// only appear in a member function of this class and not elsewhere in
+  /// the library.
 
   class HDF5Interface
   {
@@ -44,6 +46,10 @@ namespace dolfin
     /// Open HDF5 and return file descriptor
     static hid_t open_file(const std::string filename, const bool truncate,
                            const bool use_mpi_io);
+
+
+    /// Flush data to file to improve data integrity after interruption
+    static void flush_file(const hid_t hdf5_file_handle);
 
     /// Write data to existing HDF file as defined by range blocks on
     /// each process
@@ -100,7 +106,7 @@ namespace dolfin
     static void get_attribute(const hid_t hdf5_file_handle,
                               const std::string dataset_name,
                               const std::string attribute_name,
-                              T &attribute_value);
+                              T& attribute_value);
 
     /// Add attribute to dataset
     template <typename T>
@@ -205,8 +211,8 @@ namespace dolfin
 
     // Create global dataset (using dataset_name)
     const hid_t dset_id = H5Dcreate2(file_handle, dataset_name.c_str(), h5type,
-                                    filespace0, H5P_DEFAULT,
-                                    chunking_properties, H5P_DEFAULT);
+                                     filespace0, H5P_DEFAULT,
+                                     chunking_properties, H5P_DEFAULT);
     dolfin_assert(dset_id != HDF5_FAIL);
 
     // Close global data space

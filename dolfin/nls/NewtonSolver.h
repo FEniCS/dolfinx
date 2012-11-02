@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2006-2011.
-// Modified by Anders E. Johansen 2011.
+// Modified by Anders Logg 2006-2011
+// Modified by Anders E. Johansen 2011
 //
 // First added:  2005-10-23
 // Last changed: 2011-07-11

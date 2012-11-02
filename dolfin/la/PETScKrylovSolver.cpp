@@ -79,6 +79,7 @@ const std::vector<std::pair<std::string, std::string> >
     ("tfqmr",      "Transpose-free quasi-minimal residual method")
     ("richardson", "Richardson method")
     ("bicgstab",   "Biconjugate gradient stabilized method");
+
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
 PETScKrylovSolver::methods()
@@ -212,6 +213,41 @@ void PETScKrylovSolver::set_operators(const boost::shared_ptr<const PETScBaseMat
   dolfin_assert(this->P);
 }
 //-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_nullspace(const std::vector<const GenericVector*> nullspace)
+{
+  // Copy vectors
+  _nullspace.clear();
+  for (uint i = 0; i < nullspace.size(); ++i)
+  {
+    dolfin_assert(nullspace[i]);
+    const PETScVector& x = nullspace[i]->down_cast<PETScVector>();
+
+    // Copy vector
+    _nullspace.push_back(x);
+  }
+
+  // Get pointers to underlying PETSc objects and normalize vectors
+  std::vector<Vec> petsc_vec(nullspace.size());
+  for (uint i = 0; i < nullspace.size(); ++i)
+  {
+    petsc_vec[i] = *(_nullspace[i].vec().get());
+    PetscReal val = 0.0;
+    VecNormalize(petsc_vec[i], &val);
+  }
+
+  // Create null space (does not not store vectors)
+  MatNullSpace petsc_nullspace;
+  MatNullSpaceCreate(PETSC_COMM_SELF, PETSC_FALSE, nullspace.size(),
+                     &petsc_vec[0], &petsc_nullspace);
+
+  // Set null space
+  dolfin_assert(_ksp);
+  KSPSetNullSpace(*_ksp, petsc_nullspace);
+
+  // Clean up null space
+  MatNullSpaceDestroy(&petsc_nullspace);
+}
+//-----------------------------------------------------------------------------
 const PETScBaseMatrix& PETScKrylovSolver::get_operator() const
 {
   if (!A)
@@ -294,9 +330,7 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   // https://bugs.launchpad.net/dolfin/+bug/988494
   const bool use_petsc_cusp_hack = parameters["use_petsc_cusp_hack"];
   if (use_petsc_cusp_hack)
-  {
     info("Using hack to get around PETScCusp bug: ||b|| = %g", b.norm("l2"));
-  }
 
   // Set convergence norm type
   if (parameters["convergence_norm_type"].is_set())

@@ -44,17 +44,6 @@
 
 using namespace dolfin;
 
-class PETScMatNullSpaceDeleter
-{
-public:
-  void operator() (MatNullSpace* ns)
-  {
-    if (*ns)
-      MatNullSpaceDestroy(ns);
-    delete ns;
-  }
-};
-
 const std::map<std::string, NormType> PETScMatrix::norm_types
   = boost::assign::map_list_of("l1",        NORM_1)
                               ("linf",      NORM_INFINITY)
@@ -158,10 +147,10 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     // Set matrix type according to chosen architecture
     if (!_use_gpu)
       MatSetType(*A, MATSEQAIJ);
-#ifdef HAS_PETSC_CUSP
+    #ifdef HAS_PETSC_CUSP
     else
       MatSetType(*A, MATSEQAIJCUSP);
-#endif
+    #endif
 
     // FIXME: Change to MatSeqAIJSetPreallicationCSR for improved performance?
     // Allocate space (using data from sparsity pattern)
@@ -430,14 +419,15 @@ void PETScMatrix::set_near_nullspace(const std::vector<const GenericVector*> nul
     petsc_vec[i] = *(_nullspace[i].vec().get());
 
   // Create null space
-  petsc_nullspace.reset(new MatNullSpace, PETScMatNullSpaceDeleter());
-  MatNullSpaceCreate(PETSC_COMM_SELF, PETSC_FALSE, nullspace.size(),
-                     &petsc_vec[0], petsc_nullspace.get());
-
-  //MatSetNullSpace(*(this->A), petsc_nullspace);
+  MatNullSpace petsc_nullspace;
+  MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE, nullspace.size(),
+                     &petsc_vec[0], &petsc_nullspace);
 
   // Set null space that is used by some preconditioners
-  MatSetNearNullSpace(*(this->A), *petsc_nullspace);
+  MatSetNearNullSpace(*(this->A), petsc_nullspace);
+
+  // Clean up null space
+  MatNullSpaceDestroy(&petsc_nullspace);
   #endif
 }
 //-----------------------------------------------------------------------------
@@ -573,10 +563,10 @@ GenericLinearAlgebraFactory& PETScMatrix::factory() const
 {
   if (!_use_gpu)
     return PETScFactory::instance();
-#ifdef HAS_PETSC_CUSP
+  #ifdef HAS_PETSC_CUSP
   else
     return PETScCuspFactory::instance();
-#endif
+  #endif
 
   // Return something to keep the compiler happy. Code will never be reached.
   return PETScFactory::instance();

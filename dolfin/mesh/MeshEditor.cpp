@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Benjamin Kehlet, 2012
+//
 // First added:  2006-05-16
-// Last changed: 2012-09-27
+// Last changed: 2012-10-30
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/dolfin_parameter.h>
@@ -229,7 +231,7 @@ void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2, uint v3)
   vertices[0] = v0;
   vertices[1] = v1;
   vertices[2] = v2;
-  vertices[2] = v3;
+  vertices[3] = v3;
   add_cell(c, c, vertices);
 }
 //-----------------------------------------------------------------------------

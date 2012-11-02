@@ -225,7 +225,7 @@ if ("${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}" VERSION_GREATER "1.47")
   find_package(Boost COMPONENTS timer REQUIRED)
 endif()
 
-# Check for required packages
+# Check for required package UFC
 find_package(UFC 2.0.2 QUIET HINTS ${UFC_DIR})
 if (NOT UFC_FOUND)
   message(FATAL_ERROR "Could not find a configuration file for package UFC that is "
@@ -235,7 +235,10 @@ else()
   message(STATUS "UFC version: ${UFC_VERSION_STRING}")
 endif()
 
+# Check for required package Armadillo
 find_package(Armadillo REQUIRED)
+
+# Check for required package LibXml2
 find_package(LibXml2 REQUIRED)
 
 #------------------------------------------------------------------------------
@@ -264,7 +267,7 @@ endif()
 # Check for ParMETIS and SCOTCH
 if (DOLFIN_ENABLE_MPI AND MPI_C_FOUND)
   if (DOLFIN_ENABLE_PARMETIS)
-    find_package(ParMETIS 3.2)
+    find_package(ParMETIS 4.0.2)
   endif()
 
   if (DOLFIN_ENABLE_SCOTCH)
@@ -288,9 +291,14 @@ endif()
 if (DOLFIN_ENABLE_HDF5)
   find_package(HDF5)
 
+  if (NOT HDF5_FOUND)
+    # Give some hints and try again
+    find_package(HDF5 HINTS ${HDF5_DIR} $ENV{HDF5_DIR})
+  endif()
+
   # Check that HDF5 has parallel support
   if (DOLFIN_ENABLE_MPI)
-    if (NOT HDF5_IS_PARALLEL)
+    if (NOT (HDF5_IS_PARALLEL OR HDF5_ENABLE_PARALLEL))
       message(STATUS "HDF5 has been found, but is missing parallel support. It will not be enabled.")
       set(HDF5_FOUND false)
     endif()
@@ -307,6 +315,11 @@ if (DOLFIN_ENABLE_TRILINOS)
   message(STATUS "Checking for Trilinos")
   find_package(Trilinos PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
   set(DOLFIN_TRILINOS_PACKAGES "Epetra;Zoltan;ML;Ifpack;Amesos")
+
+  if ("${Trilinos_VERSION}" VERSION_LESS "10.8.1")
+    set(Trilinos_FOUND FALSE)
+    message(WARNING "Unable to find Trilinos (>= 10.8.1)")
+  endif()
 
   # Check for required packages
   set(DOLFIN_TRILINOS_PACKAGES_FOUND false)
@@ -561,6 +574,7 @@ set(DOLFIN_PKGCONFIG_DIR "lib/pkgconfig" CACHE PATH "pkg-config file installatio
 set(DOLFIN_SHARE_DIR "share/dolfin" CACHE PATH "Shared data installation directory.")
 set(DOLFIN_MAN_DIR "share/man" CACHE PATH "Manual page installation directory.")
 set(DOLFIN_DOC_DIR "${DOLFIN_SHARE_DIR}/doc" CACHE PATH "DOLFIN Documentation directory.")
+set(DOLFIN_ETC_DIR "etc" CACHE PATH "Configuration file directory.")
 
 # Add source directory
 add_subdirectory(dolfin)
@@ -710,6 +724,7 @@ if (DOLFIN_ENABLE_TESTING)
     PATTERN "*.rst"
     PATTERN "*.ele"
     PATTERN "*.node"
+    PATTERN "*.grid"
     PATTERN "CMakeFiles" EXCLUDE)
 
   # Add target "run_memorytests" for running memory tests

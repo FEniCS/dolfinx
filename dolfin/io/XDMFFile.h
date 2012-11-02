@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-10-02
+// Last changed: 2012-10-15
 
 #ifndef __DOLFIN_XDMFFILE_H
 #define __DOLFIN_XDMFFILE_H
@@ -28,6 +28,7 @@
 #include <string>
 #include <utility>
 #include <boost/scoped_ptr.hpp>
+#include "dolfin/common/Variable.h"
 #include "GenericFile.h"
 
 namespace pugi
@@ -52,7 +53,7 @@ namespace dolfin
   /// XDMF is not suitable for checkpointing as it may decimate
   /// some data.
 
-  class XDMFFile: public GenericFile
+  class XDMFFile : public GenericFile, public Variable
   {
   public:
 
@@ -98,6 +99,10 @@ namespace dolfin
                            const uint num_all_local_cells,
                            const uint gdim,
                            const std::string geometry_dataset_name) const;
+
+
+    // Most recent mesh name
+    std::string current_mesh_name;
 
   };
 

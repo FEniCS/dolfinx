@@ -40,6 +40,7 @@ namespace dolfin
   class PETScLinearOperator;
   class PETScMatrix;
   class PETScVector;
+  class PETScSNESSolver;
 
   /// This class implements the direct solution (LU factorization) for
   /// linear systems of the form Ax = b. It is a wrapper for the LU
@@ -88,6 +89,8 @@ namespace dolfin
 
     /// Default parameter values
     static Parameters default_parameters();
+
+    friend class PETScSNESSolver;
 
   private:
 

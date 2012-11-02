@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-22
-// Last changed: 2011-09-23
+// Last changed: 2012-11-02
 
 #ifndef __SOLVE_FEM_H
 #define __SOLVE_FEM_H
@@ -31,6 +31,7 @@ namespace dolfin
   class Equation;
   class Function;
   class BoundaryCondition;
+  class Form;
 
   //--- Linear / nonlinear problems (no Jacobian specified) ---
 

@@ -107,6 +107,7 @@
 // #include types from nls submodule
 #include "dolfin/nls/NonlinearProblem.h"
 #include "dolfin/nls/NewtonSolver.h"
+#include "dolfin/nls/PETScSNESSolver.h"
 
 // NumPy includes
 #define PY_ARRAY_UNIQUE_SYMBOL PyDOLFIN_LA
@@ -208,4 +209,5 @@ import_array();
 %include "dolfin/swig/nls/pre.i"
 %include "dolfin/nls/NonlinearProblem.h"
 %include "dolfin/nls/NewtonSolver.h"
+%include "dolfin/nls/PETScSNESSolver.h"
 

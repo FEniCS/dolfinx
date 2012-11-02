@@ -248,6 +248,22 @@ class AbstractBaseTest(object):
         v0 += v1
         self.assertEqual(v0.sum(), n)
 
+    def test_scalar_add(self):
+        #if self.backend == "Epetra":
+        #    return
+        n = 301
+        v0 = Vector(n)
+        v1 = Vector(n)
+        v0[:] = -1.0
+        v0 += 2.0
+        self.assertEqual(v0.sum(), n)
+        v0 -= 2.0
+        self.assertEqual(v0.sum(), -n)
+        v0 = v0 + 3.0
+        self.assertEqual(v0.sum(), 2*n)
+        v0 = v0 - 1.0
+        self.assertEqual(v0.sum(), n)
+
     def test_vector_subtract(self):
         n = 301
         v0 = Vector(n)

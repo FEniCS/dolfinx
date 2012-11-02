@@ -93,12 +93,12 @@ namespace dolfin
     }
 
     /// Return array of values for all coordinates
-    double* x()
-    { return coordinates.data(); }
+    std::vector<double>& x()
+    { return coordinates; }
 
     /// Return array of values for all coordinates
-    const double* x() const
-    { return coordinates.data(); }
+    const std::vector<double>& x() const
+    { return coordinates; }
 
     /// Return coordinate with local index n as a 3D point value
     Point point(uint n) const;

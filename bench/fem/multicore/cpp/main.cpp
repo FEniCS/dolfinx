@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-11-11
-// Last changed: 2012-09-14
+// Last changed: 2012-11-02
 //
 // If run without command-line arguments, this benchmark iterates from
 // zero to MAX_NUM_THREADS. If a command-line argument --num_threads n
@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
   Mesh mesh = old_mesh.renumber_by_color();
 
   // Disable dof reordering because the NS dof maps are very large
-  parameters["reorder_dofs"] = false;
+  parameters["reorder_dofs_serial"] = false;
 
   // Test cases
   std::vector<std::pair<std::string, boost::shared_ptr<const Form> > > forms;
@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
   // Otherwise, iterate from 1 to MAX_NUM_THREADS
   else
   {
-    Table timings("Timings");
+    Table run_timings("Timings");
     Table speedups("Speedups");
 
     // Iterate over number of threads
@@ -157,18 +157,18 @@ int main(int argc, char* argv[])
         // Store results and scale to get speedups
         std::stringstream s;
         s << num_threads << " threads";
-        timings(s.str(), forms[i].first) = t;
-        speedups(s.str(), forms[i].first) = timings.get_value("0 threads", forms[i].first) / t;
+        run_timings(s.str(), forms[i].first) = t;
+        speedups(s.str(), forms[i].first) = run_timings.get_value("0 threads", forms[i].first) / t;
         if (num_threads == 0)
           speedups(s.str(), "(rel 1 thread " + forms[i].first + ")") = "-";
         else
-          speedups(s.str(),  "(rel 1 thread " + forms[i].first + ")") = timings.get_value("1 threads", forms[i].first) / t;
+          speedups(s.str(),  "(rel 1 thread " + forms[i].first + ")") = run_timings.get_value("1 threads", forms[i].first) / t;
       }
     }
 
     // Display results
     info("");
-    info(timings, true);
+    info(run_timings, true);
     info("");
     info(speedups, true);
   }

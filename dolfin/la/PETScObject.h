@@ -25,6 +25,7 @@
 
 namespace dolfin
 {
+
   /// This class calls SubSystemsManager to initialise PETSc.
   ///
   /// All PETSc objects must be derived from this class.

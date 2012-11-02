@@ -131,6 +131,11 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 %feature("docstring") dolfin::GenericVector::_vec_mul "Missing docstring";
 %extend dolfin::GenericVector
 {
+  void _iadd_scalar(double a)
+  {
+    (*self) += a;
+  }
+
   void _scale(double a)
   {
     (*self) *= a;
@@ -280,21 +285,31 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
     def __add__(self, other):
         """x.__add__(y) <==> x+y"""
-        if self.__is_compatible(other):
+        from numpy import isscalar
+        if isscalar(other):
+            ret = self.copy()
+            ret._iadd_scalar(other)
+            return ret
+        elif self.__is_compatible(other):
             ret = self.copy()
             ret.axpy(1.0, other)
             return ret
         return NotImplemented
 
-    def __sub__(self,other):
+    def __sub__(self, other):
         """x.__sub__(y) <==> x-y"""
-        if self.__is_compatible(other):
+        from numpy import isscalar
+        if isscalar(other):
+            ret = self.copy()
+            ret._iadd_scalar(-other)
+            return ret
+        elif self.__is_compatible(other):
             ret = self.copy()
             ret.axpy(-1.0, other)
             return ret
         return NotImplemented
 
-    def __mul__(self,other):
+    def __mul__(self, other):
         """x.__mul__(y) <==> x*y"""
         from numpy import isscalar
         if isscalar(other):
@@ -339,14 +354,22 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
     def __iadd__(self, other):
         """x.__iadd__(y) <==> x+y"""
-        if self.__is_compatible(other):
+        from numpy import isscalar
+        if isscalar(other):
+            self._iadd_scalar(other)
+            return self
+        elif self.__is_compatible(other):
             self.axpy(1.0, other)
             return self
         return NotImplemented
 
     def __isub__(self, other):
         """x.__isub__(y) <==> x-y"""
-        if self.__is_compatible(other):
+        from numpy import isscalar
+        if isscalar(other):
+            self._iadd_scalar(-other)
+            return self
+        elif self.__is_compatible(other):
             self.axpy(-1.0, other)
             return self
         return NotImplemented

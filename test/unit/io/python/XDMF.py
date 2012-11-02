@@ -63,14 +63,16 @@ class XDMF_Vertex_Function_Output(unittest.TestCase):
     def test_save_2d_vector(self):
         mesh = UnitSquare(16, 16)
         u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
-        u.vector()[:] = 1.0
+        c = Constant((1.0, 2.0))
+        u.interpolate(c)
         File("output/u_2dv.xdmf") << u
 
-    def xtest_save_3d_vector(self):
-        mesh = UnitCube(8, 8, 8)
-        u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
-        u.vector()[:] = 1.0
-        File("output/u.xdmf") << u
+    def test_save_3d_vector(self):
+        mesh = UnitCube(1, 1, 1)
+        u = Function(VectorFunctionSpace(mesh, "Lagrange", 1))
+        c = Constant((1.0, 2.0, 3.0))
+        u.interpolate(c)
+        File("output/u_3Dv.xdmf") << u
 
     def test_save_3d_vector_series(self):
         mesh = UnitCube(8, 8, 8)
@@ -92,7 +94,7 @@ class XDMF_Vertex_Function_Output(unittest.TestCase):
         u.vector()[:] = 1.0
         File("output/tensor.xdmf") << u
 
-    def xtest_save_3d_tensor(self):
+    def test_save_3d_tensor(self):
         mesh = UnitCube(8, 8, 8)
         u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
         u.vector()[:] = 1.0
@@ -130,7 +132,6 @@ class XDMF_MeshFunction_Output(unittest.TestCase):
         for facet in facets(mesh):
             mf[facet] = facet.index()
         File("output/mf_facet_2D.xdmf") << mf
-
 
     def test_save_3D_facet_function(self):
         mesh = UnitCube(8, 8, 8)

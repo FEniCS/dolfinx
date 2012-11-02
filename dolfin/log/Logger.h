@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2011 Anders Logg
+// Copyright (C) 2003-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -20,7 +20,7 @@
 // Modified by Ola Skavhaug 2007, 2009
 //
 // First added:  2003-03-13
-// Last changed: 2011-11-17
+// Last changed: 2012-10-26
 
 #ifndef __LOGGER_H
 #define __LOGGER_H
@@ -29,10 +29,15 @@
 #include <ostream>
 #include <string>
 #include <dolfin/common/types.h>
+#include "Table.h"
 #include "LogLevel.h"
+
+// Forward declarations
+namespace boost { class thread; }
 
 namespace dolfin
 {
+
   class Logger
   {
   public:
@@ -90,11 +95,22 @@ namespace dolfin
     /// Register timing (for later summary)
     void register_timing(std::string task, double elapsed_time);
 
+    /// Return a summary of timings and tasks as a Table, optionally clearing 
+    /// stored timings
+    Table timings(bool reset=false);
+
     /// Print summary of timings and tasks, optionally clearing stored timings
-    void summary(bool reset=false);
+    void list_timings(bool reset=false);
 
     /// Return timing (average) for given task, optionally clearing timing for task
     double timing(std::string task, bool reset=false);
+
+    /// Monitor memory usage. Call this function at the start of a
+    /// program to continuously monitor the memory usage of the process.
+    void monitor_memory_usage();
+
+    /// Helper function for reporting memory usage
+    void _report_memory_usage(size_t num_mb);
 
     /// Helper function for dolfin_debug macro
     void __debug(std::string msg) const;
@@ -121,11 +137,17 @@ namespace dolfin
     std::ostream* logstream;
 
     // List of timings for tasks, map from string to (num_timings, total_time)
-    std::map<std::string, std::pair<uint, double> > timings;
+    std::map<std::string, std::pair<uint, double> > _timings;
 
     // MPI data (initialized to 0)
     mutable uint num_processes;
     mutable uint process_number;
+
+    // Thread used for monitoring memory usage
+    boost::thread* _thread_monitor_memory_usage;
+
+    // Maximum memory usage so far
+    long int _maximum_memory_usage;
 
   };
 

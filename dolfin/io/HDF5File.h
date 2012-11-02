@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-10-01
+// Last changed: 2012-10-24
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -29,6 +29,9 @@
 #include <utility>
 #include <vector>
 #include "dolfin/common/types.h"
+#include "dolfin/common/Variable.h"
+#include "dolfin/mesh/Mesh.h"
+#include "dolfin/mesh/Vertex.h"
 #include "GenericFile.h"
 #include "HDF5Interface.h"
 
@@ -37,9 +40,8 @@ namespace dolfin
 
   class Function;
   class GenericVector;
-  class Mesh;
 
-  class HDF5File : public GenericFile
+  class HDF5File : public GenericFile, public Variable
   {
   public:
 
@@ -53,6 +55,25 @@ namespace dolfin
     /// will save in the same file with incrementing dataset names
     void operator<< (const GenericVector& x);
 
+    /// Write Mesh to file
+    void operator<< (const Mesh& mesh);
+
+    /// Write Mesh to file
+    void write_mesh(const Mesh& mesh, const std::string name);
+
+    /// Write Mesh of given cell dimension to file
+    void write_mesh(const Mesh& mesh, const uint cell_dim,
+                    const std::string name);
+
+    /// Write Mesh to file for visualisation (may contain duplicate
+    /// entities and will not preserve global indices)
+    void write_visualisation_mesh(const Mesh& mesh, const std::string name);
+
+    /// Write Mesh of given cell dimension to file for visualisation (may
+    /// contain duplicate entities and will not preserve global indices)
+    void write_visualisation_mesh(const Mesh& mesh, const uint cell_dim,
+                                  const std::string name);
+
     /// Read vector from file (in HDF5 folder 'Vector' for dataset 0)
     void operator>> (GenericVector& x);
 
@@ -60,39 +81,14 @@ namespace dolfin
     void read(const std::string dataset_name, GenericVector& x,
               const bool use_partition_from_file=true);
 
-    /// Write Mesh to file (using true topology indices)
-    void operator<< (const Mesh& mesh);
-
-    /// Write Mesh to file. 'true_topology_indices' indicates
-    /// whether the true global vertex indices should be used when saving
-
-    /// With true_topology_indices=true
-    /// ===============================
-    /// Vertex coordinates are reordered into global order before saving
-    /// Topological connectivity uses global indices
-    /// * may exhibit poor scaling due to MPI distribute of vertex
-    /// coordinates
-    /// * can be read back in by any number of processes
-
-    /// With true_topology_indices=false
-    /// ================================
-    /// Vertex coordinates are in local order, with an offset
-    /// Topological connectivity uses the local + offset values for indexing
-    /// * some duplication of vertices => larger file size
-    /// * reduced MPI communication when saving
-    /// * more difficult to read back in, especially if nprocs > than
-    ///   when writing
-    /// * efficient to read back in if nprocs is the same, and
-    ///   partitioning is the same
-    void write_mesh(const Mesh& mesh);
-
-    void write_mesh(const Mesh& mesh, const uint cell_dim);
-
     /// Read Mesh from file
     void operator>> (Mesh& mesh);
 
-    /// Check is dataset with given name exists in HDF5 file
-    bool dataset_exists(const std::string dataset_name) const;
+    /// Read Mesh from file
+    void read_mesh(Mesh& mesh);
+
+    /// Check if dataset exists in HDF5 file
+    bool has_dataset(const std::string dataset_name) const;
 
   private:
 
@@ -102,22 +98,31 @@ namespace dolfin
     // Open HDF5 file
     void open_hdf5_file(bool truncate);
 
+    // Read a mesh which has locally indexed topology and repartition
+    void read_mesh_repartition(Mesh &input_mesh,
+                               const std::string coordinates_name,
+                               const std::string topology_name);
+
+    // Return vertex and topological data with duplicates removed
+    void remove_duplicate_vertices(const Mesh& mesh,
+                                   std::vector<double>& vertex_data,
+                                   std::vector<uint>& topological_data);
+
+    // Eliminate elements of value vector corresponding to eliminated vertices
+    template <typename T>
+    void remove_duplicate_values(const Mesh &mesh, std::vector<T>& values,
+                                 const uint value_size);
+
     // Write contiguous data to HDF5 data set. Data is flattened into
     // a 1D array, e.g. [x0, y0, z0, x1, y1, z1] for a vector in 3D
     template <typename T>
-    void write_data(const std::string group_name,
-                    const std::string dataset_name,
+    void write_data(const std::string dataset_name,
                     const std::vector<T>& data,
                     const std::vector<uint> global_size);
 
     // Search dataset names for one beginning with search_term
-    std::string search_list(const std::vector<std::string>& list,
-                            const std::string& search_term) const;
-
-    // Generate HDF5 dataset names for mesh topology and coordinates
-    std::string mesh_coords_dataset_name(const Mesh& mesh) const;
-    std::string mesh_index_dataset_name(const Mesh& mesh) const;
-    std::string mesh_topology_dataset_name(const Mesh& mesh) const;
+    static std::string search_list(const std::vector<std::string>& list,
+                                   const std::string& search_term);
 
     // Reorganise data into global order as defined by global_index
     // global_index contains the global index positions
@@ -128,7 +133,6 @@ namespace dolfin
                                       const std::vector<T>& local_vector,
                                       std::vector<T>& global_vector);
 
-
     // HDF5 file descriptor/handle
     bool hdf5_file_open;
     hid_t hdf5_file_id;
@@ -137,19 +141,18 @@ namespace dolfin
     const bool mpi_io;
 
   };
-
   //---------------------------------------------------------------------------
   template <typename T>
-  void HDF5File::write_data(const std::string group_name,
-                            const std::string dataset_name,
+  void HDF5File::write_data(const std::string dataset_name,
                             const std::vector<T>& data,
                             const std::vector<uint> global_size)
   {
     dolfin_assert(hdf5_file_open);
 
     //FIXME: Get groups from dataset_name and recursively create groups
+    const std::string group_name(dataset_name, 0, dataset_name.rfind('/'));
 
-    // Check that group exists and create is required
+    // Check that group exists and create if required
     if (!HDF5Interface::has_group(hdf5_file_id, group_name))
       HDF5Interface::add_group(hdf5_file_id, group_name);
 
@@ -179,8 +182,34 @@ namespace dolfin
                                  range, global_size, mpi_io, false);
   }
   //---------------------------------------------------------------------------
+  template <typename T>
+  void HDF5File::remove_duplicate_values(const Mesh &mesh,
+                                         std::vector<T>& values,
+                                         const uint value_size)
+  {
+    /*
+    // Get list of locally owned vertices, with local index
+    const std::vector<uint> owned_vertices = mesh.owned_vertices();
 
+    std::vector<T> result;
+    result.reserve(values.size()); //overestimate
+
+    // only copy local values
+    for(uint i = 0; i < owned_vertices.size(); i++)
+    {
+      typename std::vector<T>::iterator owned_it =
+        values.begin() + value_size*owned_vertices[i];
+      result.insert(result.end(), owned_it, owned_it + value_size);
+    }
+
+    // copy back into values and resize
+    values.resize(result.size());
+    std::copy(result.begin(), result.end(), values.begin());
+  */
+  }
+  //---------------------------------------------------------------------------
 
 }
+
 #endif
 #endif

@@ -185,28 +185,9 @@ int dolfin::get_log_level()
   return LogManager::logger.get_log_level();
 }
 //-----------------------------------------------------------------------------
-void dolfin::list_timings(bool reset)
+void dolfin::monitor_memory_usage()
 {
-  // Optimization
-  if (!LogManager::logger.is_active())
-    return;
-
-  // Only print summary for process 0
-  if (MPI::process_number() != 0)
-    return;
-
-  LogManager::logger.summary(reset);
-}
-//-----------------------------------------------------------------------------
-void dolfin::summary(bool reset)
-{
-  warning("The summary() function is deprecated, use list_timings().");
-  list_timings(reset);
-}
-//-----------------------------------------------------------------------------
-double dolfin::timing(std::string task, bool reset)
-{
-  return LogManager::logger.timing(task, reset);
+  LogManager::logger.monitor_memory_usage();
 }
 //-----------------------------------------------------------------------------
 void dolfin::not_working_in_parallel(std::string what)

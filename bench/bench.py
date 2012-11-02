@@ -70,22 +70,22 @@ def run_bench(arg, directory, files):
 
     # Get timings (if any)
     f = open(logfile)
-    timings = [("", elapsed_time)]
+    run_timings = [("", elapsed_time)]
     for line in [line for line in f.read().split("\n") if "BENCH" in line]:
         words = [word.strip() for word in line.split(" ")]
         # Override total time
         if len(words) == 2:
-            timings[0] = ("", float(words[1]))
+            run_timings[0] = ("", float(words[1]))
         # Add sub timing
         elif len(words) == 3:
-            timings.append((words[1].lower(), float(words[2])))
+            run_timings.append((words[1].lower(), float(words[2])))
     f.close()
 
     # Append to log file
     d = time.gmtime()
     date = str((d.tm_year, d.tm_mon, d.tm_mday, d.tm_hour, d.tm_min, d.tm_sec))
     f = open(os.path.join("logs", "bench.log"), "a")
-    for (postfix, timing) in timings:
+    for (postfix, timing) in run_timings:
         if postfix == "":
             n = name
             d = description

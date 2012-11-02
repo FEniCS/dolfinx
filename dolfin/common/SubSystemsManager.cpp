@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2008-2012
 //
 // First added:  2008-01-07
-// Last changed: 2012-04-04
+// Last changed: 2012-10-13
 
 #ifdef HAS_MPI
 #define MPICH_IGNORE_CXX_SEEK 1
@@ -36,6 +36,7 @@
 
 #include <libxml/parser.h>
 #include <dolfin/common/constants.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/log/dolfin_log.h>
 #include "SubSystemsManager.h"
@@ -89,6 +90,8 @@ void SubSystemsManager::init_mpi()
 int SubSystemsManager::init_mpi(int argc, char* argv[],
                                 int required_thread_level)
 {
+  Timer timer("Init MPI");
+
   #ifdef HAS_MPI
   if (MPI::Is_initialized())
     return -100;
@@ -150,8 +153,10 @@ void SubSystemsManager::init_petsc()
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc(int argc, char* argv[])
 {
+  Timer timer("Init PETSc");
+
 #ifdef HAS_PETSC
-  if ( singleton().petsc_initialized )
+  if (singleton().petsc_initialized)
     return;
 
   // Get status of MPI before PETSc initialisation
@@ -180,6 +185,7 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   // Determine if PETSc initialised MPI (and is therefore responsible for MPI finalization)
   if (mpi_initialized() and !mpi_init_status)
     singleton().control_mpi = false;
+
 #else
   dolfin_error("SubSystemsManager.cpp",
                "initialize PETSc subsystem",
