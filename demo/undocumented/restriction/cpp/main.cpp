@@ -51,12 +51,14 @@ int main()
   // Create mesh
   UnitSquare mesh(32, 32);
 
-  // Create restricted function space
+  // Create domain markers for subdomain
   Domain domain;
   CellFunction<uint> domain_markers(mesh);
   domain_markers.set_all(1);
   domain.mark(domain_markers, 0);
-  Poisson::FunctionSpace V(mesh);
+
+  // Create restricted function space
+  Poisson::FunctionSpace V(mesh, domain_markers, 0);
 
   // Create forms and attach coefficients
   Poisson::BilinearForm a(V, V);
