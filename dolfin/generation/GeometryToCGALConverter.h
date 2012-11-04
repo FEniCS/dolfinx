@@ -25,6 +25,8 @@
 #ifndef __CSG_GEOMETRY_TO_CGAL_CONVERTER_H
 #define __CSG_GEOMETRY_TO_CGAL_CONVERTER_H
 
+#ifdef HAS_CGAL
+
 #include "cgal_csg3d.h"
 
 namespace dolfin
@@ -37,5 +39,7 @@ namespace dolfin
     static void convert(const CSGGeometry& geometry, csg::Polyhedron_3& p, bool remove_degenerated=true);
   };
 }
+
+#endif
 
 #endif

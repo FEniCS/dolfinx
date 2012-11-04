@@ -36,6 +36,7 @@ namespace dolfin
     public:
       static void readSurfaceFile(std::string filename, Exact_Polyhedron_3& p);
       static void readSTLFile(std::string filename, Exact_Polyhedron_3& p);
+      static bool has_self_intersections(Exact_Polyhedron_3& p);
     };
   }
 }

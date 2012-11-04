@@ -31,14 +31,13 @@ namespace dolfin
   namespace csg
   {
 
-  // Exact polyhedron
-  typedef CGAL::Exact_predicates_exact_constructions_kernel Exact_Kernel;
-  typedef CGAL::Nef_polyhedron_3<Exact_Kernel> Nef_polyhedron_3;
-  typedef CGAL::Polyhedron_3<Exact_Kernel> Exact_Polyhedron_3;
-  typedef Exact_Polyhedron_3::HalfedgeDS Exact_HalfedgeDS;
-  typedef Nef_polyhedron_3::Point_3 Exact_Point_3;
-
-
+    // Exact polyhedron
+    typedef CGAL::Exact_predicates_exact_constructions_kernel Exact_Kernel;
+    typedef Exact_Kernel::Triangle_3 Exact_Triangle_3;
+    typedef CGAL::Nef_polyhedron_3<Exact_Kernel> Nef_polyhedron_3;
+    typedef CGAL::Polyhedron_3<Exact_Kernel> Exact_Polyhedron_3;
+    typedef Exact_Polyhedron_3::HalfedgeDS Exact_HalfedgeDS;
+    typedef Nef_polyhedron_3::Point_3 Exact_Point_3;
 
     // Domain 
     typedef CGAL::Exact_predicates_inexact_constructions_kernel K;

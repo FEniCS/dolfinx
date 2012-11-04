@@ -21,6 +21,8 @@
 // This class is capable of converting a 3D dolfin::CSGGeometry to a 
 // CGAL::Polyhedron_3
 
+#ifdef HAS_CGAL
+
 #include <limits>
 
 #include "GeometryToCGALConverter.h"
@@ -938,7 +940,27 @@ static boost::shared_ptr<csg::Nef_polyhedron_3> make_surface3D(const csg::Surfac
 
   csg::SurfaceFileReader::readSurfaceFile(s->filename, p);
 
-  return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(p));
+  if (!p.is_valid())
+    dolfin_error("GeometryToCGALConverter.cpp",
+		 "parsing polyhedron from file",
+		 "Polyhedron is not valid");  
+
+  if (!p.is_closed())
+    dolfin_error("GeometryToCGALConverter.cpp",
+		 "parsing polyhedron from file",
+		 "Polyhedron is not closed");
+
+
+
+  if (csg::SurfaceFileReader::has_self_intersections(p))
+    dolfin_error("GeometryToCGALConverter.cpp",
+		 "parsing polyhedron from file",
+		 "Polyhedron is self intersecting");
+
+  cout << "Converting to Nef Polyhedron" << endl;
+  boost::shared_ptr<csg::Nef_polyhedron_3> nef(new csg::Nef_polyhedron_3(p));
+  cout << "Done" << endl;
+  return nef;
 }
 //-----------------------------------------------------------------------------
 static boost::shared_ptr<csg::Nef_polyhedron_3> convertSubTree(const CSGGeometry *geometry)
@@ -1070,3 +1092,4 @@ void GeometryToCGALConverter::convert(const CSGGeometry& geometry, csg::Polyhedr
   cout << "Number of vertices: " << p.size_of_vertices() << endl;
   cout << "Number of facets:   " << p.size_of_facets() << endl;
 }
+#endif

@@ -19,16 +19,18 @@
 // Last changed: 2012-10-31
 
 #include "SurfaceFileReader.h"
+#include "self_intersect.h"
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/constants.h>
+#include <dolfin/mesh/Point.h>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <algorithm>
 
 #include <CGAL/Polyhedron_incremental_builder_3.h>
-#include <CGAL/squared_distance_3.h> 
 
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include <boost/filesystem.hpp>
@@ -39,11 +41,14 @@
 
 using namespace dolfin;
 
-static inline double strToDouble(const std::string& s)
+static inline double strToDouble(const std::string& s, bool print=false)
 {
   std::istringstream is(s);
   double val;
   is >> val;
+
+  if (print)
+    cout << "to_double " << s << " : " << val << endl;
 
   return val;
 }
@@ -62,8 +67,8 @@ public:
   {
     cout << "Reading surface from " << filename << endl;
 
-    CGAL::Polyhedron_incremental_builder_3<HDS> B( hds, true);
-    B.begin_surface(0, 0);
+    CGAL::Polyhedron_incremental_builder_3<HDS> builder( hds, true);
+    builder.begin_surface(100000, 100000);
 
 
     typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
@@ -76,8 +81,9 @@ public:
                    "Failed to open file");
     }
 
-    int num_vertices = 0;
-    std::map<boost::tuple<double, double, double>, uint > vertex_map;
+    std::size_t num_vertices = 0;
+    std::map<boost::tuple<double, double, double>, std::size_t> vertex_map;
+    std::vector<std::vector<std::size_t> > facets;
     std::string line;
     const boost::char_separator<char> sep(" ");
 
@@ -97,6 +103,10 @@ public:
     
     while (file.good())
     {
+
+      //bool has_normal = false;
+      //Point normal;
+
       // Read the line "facet normal n1 n2 n3"    
       {
         tokenizer tokens(line, sep);
@@ -108,52 +118,55 @@ public:
                        "Expected keyword \"facet\"");
         ++tok_iter;
 
-        // bool has_normal = false;
-        csg::Exact_Point_3 normal;
-
         // Check if a normal different from zero is given
         if (tok_iter != tokens.end())
         {
+          //cout << "Expecting normal" << endl;
+
           if  (*tok_iter != "normal")
             dolfin_error("SurfaceFileReader.cpp",
                          "open .stl file to read 3D surface",
                          "Expected keyword \"normal\"");
           ++tok_iter;
 
-          for (uint i = 0; i < 3; ++i)
-          {
-            normal[i] = strToDouble(*tok_iter);
-            ++tok_iter;
-          }
+          //cout << "Read line: " << line << endl;
+          
+          // for (uint i = 0; i < 3; ++i)
+          // {
+          //   normal[i] = strToDouble(*tok_iter);
+          //   ++tok_iter;
+          // }
 
-          // if ((normal - CGAL::ORIGIN).squared_length() > DOLFIN_EPS)
+
+          //cout << "Normal: " << normal << endl;
+          // if (normal.norm() > DOLFIN_EPS)
           //   has_normal = true;
-
-          if (tok_iter != tokens.end())
-            dolfin_error("SurfaceFileReader.cpp",
-                         "open .stl file to read 3D surface",
-                         "Expected end of line");
+          
+          // if (tok_iter != tokens.end())
+          //   dolfin_error("SurfaceFileReader.cpp",
+          //                "open .stl file to read 3D surface",
+          //                "Expected end of line");
         }
       }
 
       // Read "outer loop" line
-      {
-        std::getline(file, line);
-        boost::algorithm::trim(line);
+      std::getline(file, line);
+      boost::algorithm::trim(line);
         
-        if (line != "outer loop")
-          dolfin_error("SurfaceFileReader.cpp",
-                       "open .stl file to read 3D surface",
-                       "Expected key word outer loop");
-      }
+      if (line != "outer loop")
+        dolfin_error("SurfaceFileReader.cpp",
+                     "open .stl file to read 3D surface",
+                     "Expected key word outer loop");
 
-      uint v_indices[3];
+      std::vector<std::size_t> v_indices(3);
 
       // Read lines with vertices
       for (uint i = 0; i < 3; ++i)
       {
         std::getline(file, line);
         boost::algorithm::trim(line);
+
+        //cout << "read line: " << line << endl;
 
         tokenizer tokens(line, sep);
         tokenizer::iterator tok_iter = tokens.begin();
@@ -180,15 +193,22 @@ public:
         {
           vertex_map[v] = num_vertices;
           v_indices[i] = num_vertices;
-          B.add_vertex(csg::Exact_Point_3(x, y, z));
+          //cout << "Adding vertex " << num_vertices << " : " << x << " " << y << " " << z << endl;
+          builder.add_vertex(csg::Exact_Point_3(x, y, z));
+          //cout << "Done adding vertex" << endl;
           num_vertices++;
         }
       }
 
-      // TODO: Check normal
-
-      B.add_facet ( v_indices, &v_indices[3]);
-
+      // TODO
+      // if (has_normal)
+      // {
+      //   cout << "Has normal" << endl;
+      // }
+      
+      //cout << "Adding facet : " << v_indices[0] << " " << v_indices[1] << " " << v_indices[2] << endl;
+      builder.add_facet(v_indices.begin(), v_indices.end());
+      //facets.push_back(v_indices);
 
       // Read 'endloop' line
       std::getline(file, line);
@@ -223,13 +243,21 @@ public:
 
     ++tok_iter;
 
-    B.end_surface();
+    // Add all the facets
+    //cout << "Inputting facets" << endl;
+    // for (std::vector<std::vector<std::size_t> >::iterator it = facets.begin();
+    //      it != facets.end(); it++)
+    // {
+    //   builder.add_facet(it->begin(), it->end());
+    // }
 
+    builder.end_surface();
+    
     // TODO: Check name of solid
+    
     cout << "Done reading surface" << endl;
   }
-
-  std::string filename;
+    std::string filename;
 };
 //-----------------------------------------------------------------------------
 void csg::SurfaceFileReader::readSurfaceFile(std::string filename, Exact_Polyhedron_3& p)
@@ -255,4 +283,22 @@ void csg::SurfaceFileReader::readSTLFile(std::string filename, Exact_Polyhedron_
 {
   BuildFromSTL<csg::Exact_HalfedgeDS> stl_builder(filename);
   p.delegate(stl_builder);
+}
+//-----------------------------------------------------------------------------
+bool csg::SurfaceFileReader::has_self_intersections(csg::Exact_Polyhedron_3& p)
+{
+  // compute self-intersections
+  typedef std::list<csg::Exact_Triangle_3>::iterator Iterator;
+  typedef CGAL::Box_intersection_d::Box_with_handle_d<double,3,Iterator> Box;
+  typedef std::back_insert_iterator<std::list<csg::Exact_Triangle_3> > OutputIterator;
+
+  std::list<csg::Exact_Triangle_3> triangles; // intersecting triangles
+  ::self_intersect<csg::Exact_Polyhedron_3, csg::Exact_Kernel,OutputIterator>(p, std::back_inserter(triangles));
+
+  if(triangles.size() != 0)
+    cout << "Found " << triangles.size() << " found." << endl;
+  else 
+    cout << "The polyhedron does not self-intersect." << endl;
+
+  return triangles.size() > 0;
 }
