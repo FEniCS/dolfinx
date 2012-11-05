@@ -73,6 +73,11 @@ void GenericFile::operator>> (MeshFunction<int>& mesh_function)
   read_not_impl("MeshFunction<int>");
 }
 //-----------------------------------------------------------------------------
+void GenericFile::operator>> (MeshFunction<std::size_t>& mesh_function)
+{
+  read_not_impl("MeshFunction<std::size_t>");
+}
+//-----------------------------------------------------------------------------
 void GenericFile::operator>> (MeshFunction<unsigned int>& mesh_function)
 {
   read_not_impl("MeshFunction<unsigned int>");
@@ -191,6 +196,11 @@ void GenericFile::operator<< (const LocalMeshData& data)
 void GenericFile::operator<< (const MeshFunction<int>& mesh_function)
 {
   write_not_impl("MeshFunction<int>");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator<< (const MeshFunction<std::size_t>& mesh_function)
+{
+  write_not_impl("MeshFunction<std::size_t>");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator<< (const MeshFunction<unsigned int>& mesh_function)

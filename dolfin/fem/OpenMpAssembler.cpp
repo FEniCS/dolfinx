@@ -151,7 +151,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
 
   // Get coloring data
   std::map<const std::vector<uint>,
-           std::pair<std::vector<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
+           std::pair<std::vector<std::size_t>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
   mesh_coloring = mesh.topology().coloring.find(coloring_type);
   if (mesh_coloring == mesh.topology().coloring.end())
   {
@@ -282,7 +282,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 
   // Get coloring data
   std::map<const std::vector<uint>,
-           std::pair<std::vector<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
+           std::pair<std::vector<std::size_t>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
   mesh_coloring = mesh.topology().coloring.find(coloring_type);
   if (mesh_coloring == mesh.topology().coloring.end())
   {
@@ -479,7 +479,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
   //std::map<const std::vector<uint>,
   //         std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
   std::map<const std::vector<uint>,
-           std::pair<std::vector<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
+           std::pair<std::vector<std::size_t>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
   mesh_coloring = mesh.topology().coloring.find(coloring_type);
 
   // Check that requested coloring has been computed

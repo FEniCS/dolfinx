@@ -60,6 +60,7 @@ namespace dolfin
     virtual void operator>> (GenericDofMap& dofmap);
     virtual void operator>> (LocalMeshData& data);
     virtual void operator>> (MeshFunction<int>& mesh_function);
+    virtual void operator>> (MeshFunction<std::size_t>& mesh_function);
     virtual void operator>> (MeshFunction<unsigned int>& mesh_function);
     virtual void operator>> (MeshFunction<double>& mesh_function);
     virtual void operator>> (MeshFunction<bool>& mesh_function);
@@ -86,6 +87,7 @@ namespace dolfin
     virtual void operator<< (const GenericDofMap& dofmap);
     virtual void operator<< (const LocalMeshData& data);
     virtual void operator<< (const MeshFunction<int>& mesh_function);
+    virtual void operator<< (const MeshFunction<std::size_t>& mesh_function);
     virtual void operator<< (const MeshFunction<unsigned int>& mesh_function);
     virtual void operator<< (const MeshFunction<double>& mesh_function);
     virtual void operator<< (const MeshFunction<bool>& mesh_function);

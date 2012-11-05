@@ -135,10 +135,18 @@
 %shared_ptr(dolfin::LocalMeshData)
 %shared_ptr(dolfin::MeshData)
 
-// NOTE: Most of the MeshFunctions are declared sharepointers in
+// NOTE: Most of the MeshFunctions are declared sharef pointers in
 // NOTE: mesh_pre.i, mesh_post.i
+%shared_ptr(dolfin::Hierarchical<dolfin::MeshFunction<std::size_t> >)
+%shared_ptr(dolfin::MeshFunction<std::size_t>)
 %shared_ptr(dolfin::Hierarchical<dolfin::MeshFunction<dolfin::uint> >)
 %shared_ptr(dolfin::MeshFunction<dolfin::uint>)
+
+%shared_ptr(dolfin::CellFunction<std::size_t>)
+%shared_ptr(dolfin::EdgeFunction<std::size_t>)
+%shared_ptr(dolfin::FaceFunction<std::size_t>)
+%shared_ptr(dolfin::FacetFunction<std::size_t>)
+%shared_ptr(dolfin::VertexFunction<std::size_t>)
 
 // FIXME: Do we need to declare dolfin::uint?
 %shared_ptr(dolfin::CellFunction<dolfin::uint>)

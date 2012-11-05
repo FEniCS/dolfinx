@@ -115,6 +115,7 @@ def array(self):
 //-----------------------------------------------------------------------------
 // Run Macros to declare the different MeshFunctions
 //-----------------------------------------------------------------------------
+DECLARE_MESHFUNCTION(std::size_t, Sizet)
 DECLARE_MESHFUNCTION(unsigned int, UInt)
 DECLARE_MESHFUNCTION(int, Int)
 DECLARE_MESHFUNCTION(double, Double)
@@ -128,7 +129,7 @@ _doc_string += """
   *Arguments*
     tp (str)
       String defining the type of the MeshFunction
-      Allowed: 'int', 'uint', 'double', and 'bool'
+      Allowed: 'int', 'size_t', 'uint', 'double', and 'bool'
     mesh (_Mesh_)
       A DOLFIN mesh.
       Optional.
@@ -149,6 +150,8 @@ class MeshFunction(object):
             return MeshFunctionInt(*args)
         if tp == "uint":
             return MeshFunctionUInt(*args)
+        elif tp == "sizet":
+            return MeshFunctionSizet(*args)
         elif tp == "double":
             return MeshFunctionDouble(*args)
         elif tp == "bool":
@@ -167,6 +170,8 @@ def _new_closure(MeshType):
             return eval("%sInt(mesh, value)"%MeshType)
         if tp == "uint":
             return eval("%sUInt(mesh, value)"%MeshType)
+        if tp == "size_t":
+            return eval("%sSizet(mesh, value)"%MeshType)
         elif tp == "double":
             return eval("%sDouble(mesh, float(value))"%MeshType)
         elif tp == "bool":
