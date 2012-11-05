@@ -59,11 +59,11 @@ namespace dolfin
                                const std::vector<uint>& coloring_type);
 
     /// Return a MeshFunction with the cell colors (used for visualisation)
-    static CellFunction<std::size_t> cell_colors(const Mesh& mesh,
+    static CellFunction<unsigned long int> cell_colors(const Mesh& mesh,
                                            std::string coloring_type);
 
     /// Return a MeshFunction with the cell colors (used for visualisation)
-    static CellFunction<std::size_t> cell_colors(const Mesh& mesh,
+    static CellFunction<unsigned long int> cell_colors(const Mesh& mesh,
                               const std::vector<unsigned int> coloring_type);
 
 

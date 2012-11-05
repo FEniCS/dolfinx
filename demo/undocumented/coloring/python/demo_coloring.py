@@ -32,21 +32,22 @@ mesh = UnitCube(24, 24, 24)
 # Compute vertex-based coloring
 mesh.color("vertex");
 colors = MeshColoring.cell_colors(mesh, "vertex")
+#colors = CellFunction("uint", mesh)
 plot(colors, title="Vertex-based cell coloring", interactive=True)
 
 # Compute edge-based coloring
-mesh.color("edge");
-colors = MeshColoring.cell_colors(mesh, "edge")
-plot(colors, title="Edge-based cell coloring", interactive=True)
+#mesh.color("edge");
+#colors = MeshColoring.cell_colors(mesh, "edge")
+#plot(colors, title="Edge-based cell coloring", interactive=True)
 
 # Compute facet-based coloring
-mesh.color("facet");
-colors = MeshColoring.cell_colors(mesh, "facet")
-plot(colors, title="Facet-based cell coloring", interactive=True)
+#mesh.color("facet");
+#colors = MeshColoring.cell_colors(mesh, "facet")
+#plot(colors, title="Facet-based cell coloring", interactive=True)
 
 # Compute facet-based coloring with distance 2
-dim = mesh.topology().dim()
-coloring_type = (dim, dim - 1, dim, dim - 1, dim)
-mesh.color(coloring_type);
-colors = MeshColoring.cell_colors(mesh, coloring_type)
-plot(colors, title="Facet-based cell coloring with distance 2", interactive=True)
+#dim = mesh.topology().dim()
+#coloring_type = (dim, dim - 1, dim, dim - 1, dim)
+#mesh.color(coloring_type);
+#colors = MeshColoring.cell_colors(mesh, coloring_type)
+#plot(colors, title="Facet-based cell coloring with distance 2", interactive=True)

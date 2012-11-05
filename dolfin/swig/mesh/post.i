@@ -129,7 +129,7 @@ _doc_string += """
   *Arguments*
     tp (str)
       String defining the type of the MeshFunction
-      Allowed: 'int', 'long_uint', 'uint', 'double', and 'bool'
+      Allowed: 'int', 'longuint', 'uint', 'double', and 'bool'
     mesh (_Mesh_)
       A DOLFIN mesh.
       Optional.
@@ -150,7 +150,7 @@ class MeshFunction(object):
             return MeshFunctionInt(*args)
         if tp == "uint":
             return MeshFunctionUInt(*args)
-        elif tp == "long_uint":
+        elif tp == "longuint":
             return MeshFunctionLongUInt(*args)
         elif tp == "double":
             return MeshFunctionDouble(*args)
@@ -170,7 +170,7 @@ def _new_closure(MeshType):
             return eval("%sInt(mesh, value)"%MeshType)
         if tp == "uint":
             return eval("%sUInt(mesh, value)"%MeshType)
-        if tp == "long_uint":
+        if tp == "longuint":
             return eval("%sLongUInt(mesh, value)"%MeshType)
         elif tp == "double":
             return eval("%sDouble(mesh, float(value))"%MeshType)
@@ -246,7 +246,7 @@ _meshvaluecollection_doc_string += """
   *Arguments*
       tp (str)
          String defining the type of the MeshValueCollection
-          Allowed: 'int', 'uint', 'long_uint', 'double', and 'bool'
+          Allowed: 'int', 'uint', 'longuint', 'double', and 'bool'
       dim (uint)
           The topological dimension of the MeshValueCollection.
           Optional.
@@ -273,7 +273,7 @@ class MeshValueCollection(object):
             return MeshValueCollectionInt(*args)
         if tp == "uint":
             return MeshValueCollectionUInt(*args)
-        elif tp == "long_uint":
+        elif tp == "longuint":
             return MeshValueCollectionLongUInt(*args)
         elif tp == "double":
             return MeshValueCollectionDouble(*args)
