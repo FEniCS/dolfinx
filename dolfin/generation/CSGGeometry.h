@@ -19,7 +19,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2012-04-11
-// Last changed: 2012-05-03
+// Last changed: 2012-11-05
 
 #ifndef __CSG_GEOMETRY_H
 #define __CSG_GEOMETRY_H
@@ -51,6 +51,8 @@ namespace dolfin
 
     enum Type { Box, Sphere, Cone, Tetrahedron, Surface3D, Circle, Ellipse, Rectangle, Polygon, Union, Intersection, Difference };
     virtual Type getType() const = 0;
+
+    virtual bool is_operator() const = 0;
   };
 
 }

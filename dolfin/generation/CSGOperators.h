@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-04-13
-// Last changed: 2012-05-10
+// Last changed: 2012-11-05
 
 #ifndef __CSG_OPERATORS_H
 #define __CSG_OPERATORS_H
@@ -32,9 +32,14 @@ namespace dolfin
 {
 
   //--- Operator classes (nodes) ---
+  class CSGOperator : public CSGGeometry
+  {
+   public:
+    virtual bool is_operator() const { return true; }
+  };
 
   /// Union of CSG geometries
-  class CSGUnion : public CSGGeometry
+  class CSGUnion : public CSGOperator
   {
   public:
 
@@ -56,7 +61,7 @@ namespace dolfin
   };
 
   /// Difference of CSG geometries
-  class CSGDifference : public CSGGeometry
+  class CSGDifference : public CSGOperator
   {
   public:
 
@@ -79,7 +84,7 @@ namespace dolfin
 
 
   /// Intersection of CSG geometries
-  class CSGIntersection : public CSGGeometry
+  class CSGIntersection : public CSGOperator
   {
   public:
 

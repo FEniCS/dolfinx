@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Benjamin Kehlet, 2012
+//
 // First added:  2012-04-11
-// Last changed: 2012-04-13
+// Last changed: 2012-11-05
 
 #ifndef __CSG_PRIMITIVE_H
 #define __CSG_PRIMITIVE_H
@@ -31,7 +33,7 @@ namespace dolfin
   class CSGPrimitive : public CSGGeometry
   {
   public:
-
+    virtual bool is_operator() const { return false; }
   };
 
 }
