@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Split from VTKPlotter.h, Joachim B Haga, 2012-09-10
+// Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-09-10
-// Last changed: 2012-09-19
+// Last changed: 2012-11-05
 
 #ifdef HAS_VTK
 
@@ -234,9 +235,11 @@ void VTKWindowOutputStage::init(VTKPlotter *parent, const Parameters &parameters
   }
 #else
   _renderWindow->SetInteractor(vtkSmartPointer<vtkRenderWindowInteractor>::New());
+  const int width  = parameters["window_width"];
+  const int height = parameters["window_height"];
   if (width > 0 && height > 0)
   {
-    _renderWindow->SetSize(parameters["window_width"], parameters["window_height"]);
+    _renderWindow->SetSize(width, height);
   }
 #endif
   _renderWindow->GetInteractor()->SetInteractorStyle(style);
