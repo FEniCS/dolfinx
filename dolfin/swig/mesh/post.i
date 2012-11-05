@@ -115,7 +115,7 @@ def array(self):
 //-----------------------------------------------------------------------------
 // Run Macros to declare the different MeshFunctions
 //-----------------------------------------------------------------------------
-DECLARE_MESHFUNCTION(long unsigned int, LongUint)
+DECLARE_MESHFUNCTION(long unsigned int, LongUInt)
 DECLARE_MESHFUNCTION(unsigned int, UInt)
 DECLARE_MESHFUNCTION(int, Int)
 DECLARE_MESHFUNCTION(double, Double)
@@ -151,7 +151,7 @@ class MeshFunction(object):
         if tp == "uint":
             return MeshFunctionUInt(*args)
         elif tp == "long_uint":
-            return MeshFunctionLongUint(*args)
+            return MeshFunctionLongUInt(*args)
         elif tp == "double":
             return MeshFunctionDouble(*args)
         elif tp == "bool":

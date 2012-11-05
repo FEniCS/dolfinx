@@ -238,11 +238,11 @@ MESHENTITYITERATORBASE(Vertex, vertices)
 %shared_ptr(dolfin::MeshValueCollection<TYPE>)
 %enddef
 
-FORWARD_DECLARE_MESHFUNCTIONS(long unsigned int, LongUInt)
 FORWARD_DECLARE_MESHFUNCTIONS(unsigned int, UInt)
 FORWARD_DECLARE_MESHFUNCTIONS(int, Int)
 FORWARD_DECLARE_MESHFUNCTIONS(double, Double)
 FORWARD_DECLARE_MESHFUNCTIONS(bool, Bool)
+FORWARD_DECLARE_MESHFUNCTIONS(long unsigned int, LongUInt)
 
 // Exclude from ifdef as it is used by other modules
 %template (HierarchicalMesh) dolfin::Hierarchical<dolfin::Mesh>;
