@@ -68,7 +68,8 @@ ALL_VALUES(dolfin::MeshFunction<int>, int)
 ALL_VALUES(dolfin::MeshFunction<bool>, bool)
 ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, uint)
 ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
-ALL_VALUES(dolfin::MeshFunction<std::size_t>, sizet)
+ALL_VALUES(dolfin::MeshFunction<long unsigned int>, long_uint)
+//ALL_VALUES(dolfin::MeshFunction<std::size_t>, sizet)
 
 //-----------------------------------------------------------------------------
 // Ignore methods that is superseded by extended versions
@@ -237,7 +238,7 @@ MESHENTITYITERATORBASE(Vertex, vertices)
 %shared_ptr(dolfin::MeshValueCollection<TYPE>)
 %enddef
 
-FORWARD_DECLARE_MESHFUNCTIONS(std::size_t, Sizet)
+FORWARD_DECLARE_MESHFUNCTIONS(long unsigned int, LongUint)
 FORWARD_DECLARE_MESHFUNCTIONS(unsigned int, UInt)
 FORWARD_DECLARE_MESHFUNCTIONS(int, Int)
 FORWARD_DECLARE_MESHFUNCTIONS(double, Double)
