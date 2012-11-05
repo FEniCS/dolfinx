@@ -151,7 +151,7 @@ class MeshFunction(object):
         if tp == "uint":
             return MeshFunctionUInt(*args)
         elif tp == "sizet":
-            return MeshFunctionSizet(*args)
+            return MeshFunctionSize_t(*args)
         elif tp == "double":
             return MeshFunctionDouble(*args)
         elif tp == "bool":
@@ -170,8 +170,8 @@ def _new_closure(MeshType):
             return eval("%sInt(mesh, value)"%MeshType)
         if tp == "uint":
             return eval("%sUInt(mesh, value)"%MeshType)
-        if tp == "size_t":
-            return eval("%sSizet(mesh, value)"%MeshType)
+        if tp == "sizet":
+            return eval("%sSize_t(mesh, value)"%MeshType)
         elif tp == "double":
             return eval("%sDouble(mesh, float(value))"%MeshType)
         elif tp == "bool":
