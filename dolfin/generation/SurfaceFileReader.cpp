@@ -302,3 +302,21 @@ bool csg::SurfaceFileReader::has_self_intersections(csg::Exact_Polyhedron_3& p)
 
   return triangles.size() > 0;
 }
+//-----------------------------------------------------------------------------
+CGAL::Bbox_3 csg::SurfaceFileReader::getBoundingBox(csg::Polyhedron_3& polyhedron)
+{
+  csg::Polyhedron_3::Vertex_iterator it=polyhedron.vertices_begin();
+
+  // Initialize bounding box with the first point
+  csg::Polyhedron_3::Point_3 p = it->point();
+  CGAL::Bbox_3 b(p[0],p[1],p[2],p[0],p[1],p[2]);
+  ++it;
+
+  for (; it != polyhedron.vertices_end(); ++it)
+  {
+    csg::Polyhedron_3::Point_3 p = it->point();
+    b = b + CGAL::Bbox_3(p[0],p[1],p[2],p[0],p[1],p[2]);
+  }
+
+  return b;
+}
