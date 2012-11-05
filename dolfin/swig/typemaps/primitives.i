@@ -30,6 +30,7 @@
 // Ensure typefragments
 %ensure_type_fragments(double)
 %ensure_type_fragments(unsigned int)
+%ensure_type_fragments(std::size_t)
 
 //-----------------------------------------------------------------------------
 // A home brewed type check for checking integers

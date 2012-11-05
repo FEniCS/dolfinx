@@ -410,10 +410,10 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
   PyObject* _data() {
 
-    PyObject* rows = %make_numpy_array(1, ulong)(self->size(0)+1,
+    PyObject* rows = %make_numpy_array(1, sizet)(self->size(0)+1,
 						 boost::tuples::get<0>(self->data()),
 						 false);
-    PyObject* cols = %make_numpy_array(1, ulong)(boost::tuples::get<3>(self->data()),
+    PyObject* cols = %make_numpy_array(1, sizet)(boost::tuples::get<3>(self->data()),
 						 boost::tuples::get<1>(self->data()),
 						 false);
     PyObject* values = %make_numpy_array(1, double)(boost::tuples::get<3>(self->data()),

@@ -115,7 +115,7 @@ def array(self):
 //-----------------------------------------------------------------------------
 // Run Macros to declare the different MeshFunctions
 //-----------------------------------------------------------------------------
-DECLARE_MESHFUNCTION(long unsigned int, LongUInt)
+DECLARE_MESHFUNCTION(std::size_t, Sizet)
 DECLARE_MESHFUNCTION(unsigned int, UInt)
 DECLARE_MESHFUNCTION(int, Int)
 DECLARE_MESHFUNCTION(double, Double)
@@ -129,7 +129,7 @@ _doc_string += """
   *Arguments*
     tp (str)
       String defining the type of the MeshFunction
-      Allowed: 'int', 'long_uint', 'uint', 'double', and 'bool'
+      Allowed: 'int', 'sizet', 'uint', 'double', and 'bool'
     mesh (_Mesh_)
       A DOLFIN mesh.
       Optional.
@@ -150,8 +150,8 @@ class MeshFunction(object):
             return MeshFunctionInt(*args)
         if tp == "uint":
             return MeshFunctionUInt(*args)
-        elif tp == "long_uint":
-            return MeshFunctionLongUInt(*args)
+        elif tp == "sizet":
+            return MeshFunctionSizet(*args)
         elif tp == "double":
             return MeshFunctionDouble(*args)
         elif tp == "bool":
@@ -170,8 +170,8 @@ def _new_closure(MeshType):
             return eval("%sInt(mesh, value)"%MeshType)
         if tp == "uint":
             return eval("%sUInt(mesh, value)"%MeshType)
-        if tp == "long_uint":
-            return eval("%sLongUInt(mesh, value)"%MeshType)
+        if tp == "sizet":
+            return eval("%sSizet(mesh, value)"%MeshType)
         elif tp == "double":
             return eval("%sDouble(mesh, float(value))"%MeshType)
         elif tp == "bool":
@@ -232,7 +232,7 @@ CellFunction = type("CellFunction", (),\
 //-----------------------------------------------------------------------------
 // Run macros for declaring MeshValueCollection
 //-----------------------------------------------------------------------------
-DECLARE_MESHVALUECOLLECTION(long unsigned int, LongUInt)
+DECLARE_MESHVALUECOLLECTION(std::size_t, Sizet)
 DECLARE_MESHVALUECOLLECTION(unsigned int, UInt)
 DECLARE_MESHVALUECOLLECTION(int, Int)
 DECLARE_MESHVALUECOLLECTION(double, Double)
@@ -246,7 +246,7 @@ _meshvaluecollection_doc_string += """
   *Arguments*
       tp (str)
          String defining the type of the MeshValueCollection
-          Allowed: 'int', 'uint', 'long_uint', 'double', and 'bool'
+          Allowed: 'int', 'uint', 'sizet', 'double', and 'bool'
       dim (uint)
           The topological dimension of the MeshValueCollection.
           Optional.
@@ -273,8 +273,8 @@ class MeshValueCollection(object):
             return MeshValueCollectionInt(*args)
         if tp == "uint":
             return MeshValueCollectionUInt(*args)
-        elif tp == "long_uint":
-            return MeshValueCollectionLongUInt(*args)
+        elif tp == "sizet":
+            return MeshValueCollectionSizet(*args)
         elif tp == "double":
             return MeshValueCollectionDouble(*args)
         elif tp == "bool":

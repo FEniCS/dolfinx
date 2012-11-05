@@ -67,9 +67,8 @@ ALL_VALUES(dolfin::MeshFunction<double>, double)
 ALL_VALUES(dolfin::MeshFunction<int>, int)
 ALL_VALUES(dolfin::MeshFunction<bool>, bool)
 ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, uint)
-ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
-ALL_VALUES(dolfin::MeshFunction<std::size_t>, ulong)
-ALL_VALUES(dolfin::MeshFunction<long unsigned int>, ulong)
+ALL_VALUES(dolfin::MeshFunction<std::size_t>, sizet)
+
 
 //-----------------------------------------------------------------------------
 // Ignore methods that is superseded by extended versions
@@ -242,7 +241,7 @@ FORWARD_DECLARE_MESHFUNCTIONS(unsigned int, UInt)
 FORWARD_DECLARE_MESHFUNCTIONS(int, Int)
 FORWARD_DECLARE_MESHFUNCTIONS(double, Double)
 FORWARD_DECLARE_MESHFUNCTIONS(bool, Bool)
-FORWARD_DECLARE_MESHFUNCTIONS(long unsigned int, LongUInt)
+FORWARD_DECLARE_MESHFUNCTIONS(std::size_t, Sizet)
 
 // Exclude from ifdef as it is used by other modules
 %template (HierarchicalMesh) dolfin::Hierarchical<dolfin::Mesh>;
