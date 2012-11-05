@@ -98,6 +98,11 @@ void GenericFile::operator>> (MeshValueCollection<int>& mesh_markers)
   read_not_impl("MeshValueCollection<int>");
 }
 //-----------------------------------------------------------------------------
+void GenericFile::operator>> (MeshValueCollection<std::size_t>& mesh_markers)
+{
+  read_not_impl("MeshValueCollection<std::size_t>");
+}
+//-----------------------------------------------------------------------------
 void GenericFile::operator>> (MeshValueCollection<unsigned int>& mesh_markers)
 {
   read_not_impl("MeshValueCollection<unsigned int>");
@@ -221,6 +226,11 @@ void GenericFile::operator<< (const MeshFunction<bool>& mesh_function)
 void GenericFile::operator<< (const MeshValueCollection<int>& mesh_markers)
 {
   write_not_impl("MeshValueCollection<int>");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator<< (const MeshValueCollection<std::size_t>& mesh_markers)
+{
+  write_not_impl("MeshValueCollection<std::size_t>");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator<< (const MeshValueCollection<unsigned int>& mesh_markers)

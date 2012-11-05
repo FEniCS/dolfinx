@@ -171,7 +171,7 @@ def _new_closure(MeshType):
         if tp == "uint":
             return eval("%sUInt(mesh, value)"%MeshType)
         if tp == "long_uint":
-            return eval("%sLongUint(mesh, value)"%MeshType)
+            return eval("%sLongUInt(mesh, value)"%MeshType)
         elif tp == "double":
             return eval("%sDouble(mesh, float(value))"%MeshType)
         elif tp == "bool":
@@ -232,6 +232,7 @@ CellFunction = type("CellFunction", (),\
 //-----------------------------------------------------------------------------
 // Run macros for declaring MeshValueCollection
 //-----------------------------------------------------------------------------
+DECLARE_MESHVALUECOLLECTION(long unsigned int, LongUInt)
 DECLARE_MESHVALUECOLLECTION(unsigned int, UInt)
 DECLARE_MESHVALUECOLLECTION(int, Int)
 DECLARE_MESHVALUECOLLECTION(double, Double)
