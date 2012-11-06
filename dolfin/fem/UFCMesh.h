@@ -42,43 +42,8 @@ namespace dolfin
       num_entities = 0;
     }
 
-    /// Copy constructor
-    UFCMesh(const UFCMesh& mesh) : ufc::mesh()
-    {
-      topological_dimension = 0;
-      geometric_dimension = 0;
-      num_entities = 0;
-      *this = mesh;
-    }
-
-    // Assignment operator
-    const UFCMesh& operator= (const UFCMesh& mesh)
-    {
-      // Clear old data
-      clear();
-
-      // Set topological and geometric dimensions
-      topological_dimension = mesh.topological_dimension;
-      geometric_dimension = mesh.geometric_dimension;
-
-      // Set number of entities of each dimension
-      num_entities = new uint[topological_dimension + 1];
-      for (uint d = 0; d <= topological_dimension; d++)
-        num_entities[d] = mesh.num_entities[d];
-
-      return *this;
-    }
-
     /// Create UFC mesh from DOLFIN mesh
     UFCMesh(const Mesh& mesh) : ufc::mesh()
-    { pinit(mesh); }
-
-    /// Destructor
-    ~UFCMesh()
-    { clear(); }
-
-    /// Initialize UFC mesh from DOLFIN mesh
-    void pinit(const Mesh& mesh)
     {
       // Clear old data
       clear();
@@ -94,7 +59,40 @@ namespace dolfin
         num_entities[d] = mesh.size_global(d);
     }
 
-    // Clear UFC cell data
+    /// Copy constructor
+    UFCMesh(const UFCMesh& mesh) : ufc::mesh()
+    {
+      topological_dimension = 0;
+      geometric_dimension = 0;
+      num_entities = 0;
+      *this = mesh;
+    }
+
+    // Assignment operator
+    const UFCMesh& operator= (const UFCMesh& mesh)
+    {
+      // Clear all data
+      clear();
+
+      // Set topological and geometric dimensions
+      topological_dimension = mesh.topological_dimension;
+      geometric_dimension = mesh.geometric_dimension;
+
+      // Set number of entities of each dimension
+      num_entities = new uint[topological_dimension + 1];
+      for (uint d = 0; d <= topological_dimension; d++)
+        num_entities[d] = mesh.num_entities[d];
+
+      return *this;
+    }
+
+    /// Destructor
+    ~UFCMesh()
+    { clear(); }
+
+  private:
+
+    // Clear all data
     void clear()
     {
       topological_dimension = 0;
