@@ -32,6 +32,7 @@ mesh = UnitCube(24, 24, 24)
 # Compute vertex-based coloring
 mesh.color("vertex");
 colors = MeshColoring.cell_colors(mesh, "vertex")
+#colors = CellFunction("uint", mesh)
 plot(colors, title="Vertex-based cell coloring", interactive=True)
 
 # Compute edge-based coloring

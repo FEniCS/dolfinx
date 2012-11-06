@@ -142,7 +142,6 @@
 %shared_ptr(dolfin::Hierarchical<dolfin::MeshFunction<dolfin::uint> >)
 %shared_ptr(dolfin::MeshFunction<dolfin::uint>)
 
-//%shared_ptr(dolfin::CellFunction<unsigned long int>)
 %shared_ptr(dolfin::CellFunction<std::size_t>)
 %shared_ptr(dolfin::EdgeFunction<std::size_t>)
 %shared_ptr(dolfin::FaceFunction<std::size_t>)
