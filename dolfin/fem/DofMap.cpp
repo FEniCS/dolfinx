@@ -108,8 +108,16 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
                   "Consider calling mesh.order()");
   }
 
-  // Generate and number all mesh entities
+  // Check that we get cell markers, extend later
   const uint D = dolfin_mesh.topology().dim();
+  if (domain_markers.dim() != D)
+  {
+    dolfin_error("DofMap.cpp",
+                 "create mapping of degrees of freedom",
+                 "Only cell-based restricted function spaces are currently supported. ");
+  }
+
+  // Generate and number all mesh entities
   for (uint d = 1; d <= D; ++d)
   {
     if (_ufc_dofmap->needs_mesh_entities(d) || (_distributed && d == (D - 1)))
@@ -120,13 +128,18 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
     }
   }
 
+  // FIXME: Should be OK up to here
+
   // Create the UFC mesh
+  // FIXME: May need to count the number of entities of each dimension
   const UFCMesh ufc_mesh(dolfin_mesh);
 
   // Initialize the UFC dofmap
+  // FIXME: Send domain_markers so we can iterate only over subset
   init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh);
 
   // Build dof map
+  // FIXME: Need to build better dofmap
   const bool reorder = dolfin::parameters["reorder_dofs_serial"];
   DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, reorder, _distributed);
 }

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-03-01
-// Last changed: 2007-03-01
+// Last changed: 2012-11-05
 
 #ifndef __UFC_MESH_H
 #define __UFC_MESH_H
@@ -35,49 +35,62 @@ namespace dolfin
   public:
 
     /// Create empty UFC mesh
-    UFCMesh() : ufc::mesh() {}
+    UFCMesh() : ufc::mesh()
+    {
+      topological_dimension = 0;
+      geometric_dimension = 0;
+      num_entities = 0;
+    }
 
     /// Copy constructor
     UFCMesh(const UFCMesh& mesh) : ufc::mesh()
     {
-      // Set topological dimension
-      topological_dimension = mesh.topological_dimension;
+      topological_dimension = 0;
+      geometric_dimension = 0;
+      num_entities = 0;
+      *this = mesh;
+    }
 
-      // Set geometric dimension
+    // Assignment operator
+    const UFCMesh& operator= (const UFCMesh& mesh)
+    {
+      // Clear old data
+      clear();
+
+      // Set topological and geometric dimensions
+      topological_dimension = mesh.topological_dimension;
       geometric_dimension = mesh.geometric_dimension;
 
-      // Number of entities
+      // Set number of entities of each dimension
       num_entities = new uint[topological_dimension + 1];
       for (uint d = 0; d <= topological_dimension; d++)
         num_entities[d] = mesh.num_entities[d];
+
+      return *this;
     }
 
     /// Create UFC mesh from DOLFIN mesh
     UFCMesh(const Mesh& mesh) : ufc::mesh()
-    { init(mesh); }
+    { pinit(mesh); }
 
     /// Destructor
     ~UFCMesh()
     { clear(); }
 
-    /// Initialize UFC cell data
-    void init(const Mesh& mesh)
+    /// Initialize UFC mesh from DOLFIN mesh
+    void pinit(const Mesh& mesh)
     {
       // Clear old data
       clear();
 
-      // Set topological dimension
+      // Set topological and geometric dimensions
       topological_dimension = mesh.topology().dim();
-
-      // Set geometric dimension
       geometric_dimension = mesh.geometry().dim();
 
-      // Set number of entities for each topological dimension
-      num_entities = new uint[mesh.topology().dim() + 1];
-
-      // Use number of global entities if available (when running in parallel)
-      const MeshTopology& topology = mesh.topology();
-      for (uint d = 0; d <= topology.dim(); d++)
+      // Set number of entities of each topological dimension, using
+      // the number of global entities if available (in parallel)
+      num_entities = new uint[topological_dimension + 1];
+      for (uint d = 0; d <= topological_dimension; d++)
         num_entities[d] = mesh.size_global(d);
     }
 

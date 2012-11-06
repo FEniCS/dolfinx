@@ -55,7 +55,8 @@ UFC::~UFC()
 void UFC::init(const Form& form)
 {
   // Initialize mesh
-  this->mesh.init(form.mesh());
+  UFCMesh ufc_mesh(form.mesh());
+  this->mesh = ufc_mesh;
 
   // Get function spaces for arguments
   std::vector<boost::shared_ptr<const FunctionSpace> > V = form.function_spaces();
