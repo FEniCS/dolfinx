@@ -128,14 +128,13 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
     }
   }
 
-  // FIXME: Should be OK up to here
-
   // Create the UFC mesh
   const UFCMesh ufc_mesh(dolfin_mesh, domain_markers, domain);
 
   // Initialize the UFC dofmap
-  // FIXME: Send domain_markers so we can iterate only over subset
-  init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh);
+  init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh, domain_markers, domain);
+
+  // FIXME: Should be OK up to here
 
   // Build dof map
   // FIXME: Need to build better dofmap
@@ -557,6 +556,49 @@ void DofMap::init_ufc_dofmap(ufc::dofmap& dofmap,
     UFCCell ufc_cell(dolfin_mesh);
     for (CellIterator cell(dolfin_mesh); !cell.end(); ++cell)
     {
+      ufc_cell.update(*cell);
+      dofmap.init_cell(ufc_mesh, ufc_cell);
+    }
+    dofmap.init_cell_finalize();
+  }
+}
+//-----------------------------------------------------------------------------
+void DofMap::init_ufc_dofmap(ufc::dofmap& dofmap,
+                             const ufc::mesh ufc_mesh,
+                             const Mesh& dolfin_mesh,
+                             const MeshFunction<uint>& domain_markers,
+                             uint domain)
+{
+  // Check that we get cell markers, extend later
+  if (domain_markers.dim() != dolfin_mesh.topology().dim())
+  {
+    dolfin_error("DofMap.cpp",
+                 "create mapping of degrees of freedom",
+                 "Only cell-based restricted function spaces are currently supported. ");
+  }
+
+  // FIXME: Not yet working in parallel
+  not_working_in_parallel("Restricted of function spaces");
+
+  // Check that we have all mesh entities
+  for (uint d = 0; d <= dolfin_mesh.topology().dim(); ++d)
+  {
+    if (dofmap.needs_mesh_entities(d) && dolfin_mesh.num_entities(d) == 0)
+      dolfin_error("DofMap.cpp",
+                   "initialize mapping of degrees of freedom",
+                   "Missing entities of dimension %d. Try calling mesh.init(%d)", d, d);
+  }
+
+  // Initialize UFC dof map
+  const bool init_cells = dofmap.init_mesh(ufc_mesh);
+  if (init_cells)
+  {
+    UFCCell ufc_cell(dolfin_mesh);
+    for (CellIterator cell(dolfin_mesh); !cell.end(); ++cell)
+    {
+      // FIXME: Check whether this makes sense in parallel
+      if (domain_markers[cell->index()] != domain)
+        continue;
       ufc_cell.update(*cell);
       dofmap.init_cell(ufc_mesh, ufc_cell);
     }

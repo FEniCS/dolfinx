@@ -21,7 +21,7 @@
 // Modified by Joachim B Haga, 2012
 //
 // First added:  2007-03-01
-// Last changed: 2012-11-02
+// Last changed: 2012-11-0
 
 #ifndef __DOLFIN_DOF_MAP_H
 #define __DOLFIN_DOF_MAP_H
@@ -357,9 +357,17 @@ namespace dolfin
                                             const ufc::mesh ufc_mesh,
                                             const Mesh& dolfin_mesh);
 
-    // Initialize the UFC dofmap
-    static void init_ufc_dofmap(ufc::dofmap& dofmap, const ufc::mesh ufc_mesh,
+    // Initialize UFC dofmap
+    static void init_ufc_dofmap(ufc::dofmap& dofmap,
+                                const ufc::mesh ufc_mesh,
                                 const Mesh& dolfin_mesh);
+
+    // Initialize UFC dofmap for restricted space
+    static void init_ufc_dofmap(ufc::dofmap& dofmap,
+                                const ufc::mesh ufc_mesh,
+                                const Mesh& dolfin_mesh,
+                                const MeshFunction<uint>& domain_markers,
+                                uint domain);
 
     // Check dimensional consistency between UFC dofmap and the mesh
     static void check_dimensional_consistency(const ufc::dofmap& dofmap,
