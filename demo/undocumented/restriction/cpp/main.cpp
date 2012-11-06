@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-10-12
-// Last changed: 2012-11-02
+// Last changed: 2012-11-05
 
 #include <dolfin.h>
 #include "Poisson.h"
@@ -49,7 +49,7 @@ class Boundary : public SubDomain
 int main()
 {
   // Create mesh
-  UnitSquare mesh(32, 32);
+  UnitSquare mesh(8, 8);
 
   // Create domain markers for subdomain
   Domain domain;

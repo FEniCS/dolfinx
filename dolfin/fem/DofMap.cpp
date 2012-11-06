@@ -131,8 +131,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   // FIXME: Should be OK up to here
 
   // Create the UFC mesh
-  // FIXME: May need to count the number of entities of each dimension
-  const UFCMesh ufc_mesh(dolfin_mesh);
+  const UFCMesh ufc_mesh(dolfin_mesh, domain_markers, domain);
 
   // Initialize the UFC dofmap
   // FIXME: Send domain_markers so we can iterate only over subset

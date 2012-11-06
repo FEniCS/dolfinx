@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Anders Logg
+// Copyright (C) 2007-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -58,6 +58,11 @@ namespace dolfin
       for (uint d = 0; d <= topological_dimension; d++)
         num_entities[d] = mesh.size_global(d);
     }
+
+    // Create UFC mesh from restricted DOLFIN mesh
+    UFCMesh(const Mesh& mesh,
+            const MeshFunction<uint>& domain_markers,
+            uint domain);
 
     /// Copy constructor
     UFCMesh(const UFCMesh& mesh) : ufc::mesh()
