@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-10-24
+// Last changed: 2012-11-06
 
 #ifdef HAS_HDF5
 
@@ -69,6 +69,12 @@ HDF5File::~HDF5File()
     herr_t status = H5Fclose(hdf5_file_id);
     dolfin_assert(status != HDF5_FAIL);
   }
+}
+//-----------------------------------------------------------------------------
+void HDF5File::flush()
+{
+  dolfin_assert(hdf5_file_open);
+  HDF5Interface::flush_file(hdf5_file_id);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::operator<< (const GenericVector& x)
@@ -260,6 +266,16 @@ void HDF5File::read_mesh(Mesh& input_mesh)
                  "Dataset not found");
   }
   topology_name = "/Mesh/" + topology_name;
+
+  // Look for GlobalIndex dataset
+  std::string global_index_name = search_list(_dataset_list,"GlobalIndex");
+  if (global_index_name.size() == 0)
+  {
+    dolfin_error("HDF5File.cpp",
+                 "read global index dataset",
+                 "Dataset not found");
+  }
+  global_index_name = "/Mesh/" + global_index_name;
 
   // Look for Coordinates dataset
   std::string coordinates_name=search_list(_dataset_list,"Coordinates");

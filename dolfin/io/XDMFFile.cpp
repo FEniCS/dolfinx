@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-10-24
+// Last changed: 2012-11-06
 
 #ifdef HAS_HDF5
 
@@ -178,10 +178,8 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   // Flush file. Improves chances of recovering data if interrupted. Also
   // makes file somewhat readable between writes.
-  // FIXME: should this use HDF5Interface, or should HDF5File provide
-  //        a flush function?
   if(parameters["flush_output"])
-    HDF5Interface::flush_file(hdf5_file->hdf5_file_id);
+    hdf5_file->flush();
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero
   if (MPI::process_number() == 0)
@@ -529,7 +527,7 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
   dolfin_assert(0 < gdim && gdim <= 3);
   std::string geometry_type;
   if (gdim == 1)
-    geometry_type = "X"; // FIXME: not standard. Is this actually supported anywhere?
+    geometry_type = "XY"; // geometry "X" not supported => need to pad 1D geometry
   else if (gdim == 2)
     geometry_type = "XY";
   else if (gdim == 3)
@@ -540,7 +538,7 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
 
   xdmf_geom_data.append_attribute("Format") = "HDF";
   std::string geom_dim = boost::lexical_cast<std::string>(num_global_vertices)
-    + " " + boost::lexical_cast<std::string>(gdim) ;
+    + " " + boost::lexical_cast<std::string>(gdim + (gdim == 1) ? 1 : 0);
   xdmf_geom_data.append_attribute("Dimensions") = geom_dim.c_str();
 
   boost::filesystem::path p(hdf5_file->filename);

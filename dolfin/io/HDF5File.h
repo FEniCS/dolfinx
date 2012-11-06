@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-10-24
+// Last changed: 2012-11-06
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -89,6 +89,9 @@ namespace dolfin
 
     /// Check if dataset exists in HDF5 file
     bool has_dataset(const std::string dataset_name) const;
+
+    /// Flush buffered I/O to disk
+    void flush();
 
   private:
 
