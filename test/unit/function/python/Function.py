@@ -73,16 +73,20 @@ class Interface(unittest.TestCase):
         self.assertTrue(isinstance(lt(c, 3), ufl.classes.LT))
         self.assertFalse(isinstance(lt(c, 3), bool))
 
-        # Float conversion is not implicit in boolean python expressions
-        self.assertFalse(isinstance(c < 3, ufl.classes.LT))
-        self.assertTrue(isinstance(c < 3, bool))
+
+        # Below are commented out following UFL change,
+        # see http://bazaar.launchpad.net/~ufl-core/ufl/main/revision/1459
+
+        # Float conversion is not implicit in boolean Python expressions
+        #self.assertFalse(isinstance(c < 3, ufl.classes.LT))
+        #self.assertTrue(isinstance(c < 3, bool))
 
         # This looks bad, but there is a very good reason for this behaviour :)
         # Put shortly, the reason is that boolean operators are used for comparison
         # and ordering of ufl expressions in python data structures.
-        self.assertTrue((c < 2) == (c < 1))
-        self.assertTrue((c > 2) == (c > 1))
-        self.assertTrue((c < 2) == (not c > 1))
+        #self.assertTrue((c < 2) == (c < 1))
+        #self.assertTrue((c > 2) == (c > 1))
+        #self.assertTrue((c < 2) == (not c > 1))
 
 
 class Interpolate(unittest.TestCase):
