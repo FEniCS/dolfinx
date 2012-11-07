@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-11-06
+// Last changed: 2012-11-07
 
 #ifdef HAS_HDF5
 
@@ -527,7 +527,7 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
   dolfin_assert(0 < gdim && gdim <= 3);
   std::string geometry_type;
   if (gdim == 1)
-    geometry_type = "XY"; // geometry "X" not supported => need to pad 1D geometry
+    geometry_type = "X"; // geometry "X" not supported?
   else if (gdim == 2)
     geometry_type = "XY";
   else if (gdim == 3)
@@ -538,7 +538,7 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
 
   xdmf_geom_data.append_attribute("Format") = "HDF";
   std::string geom_dim = boost::lexical_cast<std::string>(num_global_vertices)
-    + " " + boost::lexical_cast<std::string>(gdim + (gdim == 1) ? 1 : 0);
+    + " " + boost::lexical_cast<std::string>(gdim);
   xdmf_geom_data.append_attribute("Dimensions") = geom_dim.c_str();
 
   boost::filesystem::path p(hdf5_file->filename);
