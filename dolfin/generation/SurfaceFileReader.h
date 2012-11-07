@@ -38,6 +38,7 @@ namespace dolfin
       static void readSTLFile(std::string filename, Exact_Polyhedron_3& p);
       static bool has_self_intersections(Exact_Polyhedron_3& p);
       static CGAL::Bbox_3 getBoundingBox(csg::Polyhedron_3& polyhedron);
+      static double getBoundingSphereRadius(csg::Polyhedron_3& polyhedron);
     };
   }
 }

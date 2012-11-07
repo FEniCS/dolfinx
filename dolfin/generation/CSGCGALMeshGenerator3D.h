@@ -49,6 +49,7 @@ namespace dolfin
     static Parameters default_parameters()
     {
       Parameters p("csg_cgal_meshgenerator");
+      p.add("mesh_resolution", 64);
       p.add("perturb_optimize", false);
       p.add("exude_optimize", false);
       p.add("lloyd_optimize", false);

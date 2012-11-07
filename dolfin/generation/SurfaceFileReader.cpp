@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-10-31
-// Last changed: 2012-10-31
+// Last changed: 2012-11-07
 
 #include "SurfaceFileReader.h"
 #include "self_intersect.h"
@@ -31,6 +31,8 @@
 #include <algorithm>
 
 #include <CGAL/Polyhedron_incremental_builder_3.h>
+#include <CGAL/Min_sphere_of_spheres_d.h>
+#include <CGAL/Min_sphere_of_spheres_d_traits_3.h>
 
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include <boost/filesystem.hpp>
@@ -319,4 +321,27 @@ CGAL::Bbox_3 csg::SurfaceFileReader::getBoundingBox(csg::Polyhedron_3& polyhedro
   }
 
   return b;
+}
+//-----------------------------------------------------------------------------
+double csg::SurfaceFileReader::getBoundingSphereRadius(csg::Polyhedron_3& polyhedron)
+{
+  typedef CGAL::Min_sphere_of_spheres_d_traits_3<csg::Polyhedron_3::Traits, double> Traits;
+  typedef Traits::Sphere Sphere;
+  typedef CGAL::Min_sphere_of_spheres_d<Traits> Min_sphere;
+
+  std::vector<Sphere> s(polyhedron.size_of_vertices());
+
+  // Initialize bounding box with the first point
+  for (csg::Polyhedron_3::Vertex_iterator it=polyhedron.vertices_begin(); 
+       it != polyhedron.vertices_end(); ++it)
+  {
+    const csg::Polyhedron_3::Point_3 p = it->point();
+    s.push_back(Sphere(p, 0.0));
+  }
+
+  Min_sphere ms(s.begin(),s.end());
+
+  dolfin_assert(ms.is_valid());
+  
+  return CGAL::to_double(ms.radius());
 }

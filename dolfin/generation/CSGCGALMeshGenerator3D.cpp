@@ -24,6 +24,7 @@
 #include "CSGCGALMeshGenerator3D.h"
 #include "CSGGeometry.h"
 #include "GeometryToCGALConverter.h"
+#include "SurfaceFileReader.h"
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/MeshEditor.h>
@@ -120,6 +121,36 @@ void CSGCGALMeshGenerator3D::generate(Mesh& mesh) const
 
   dolfin_assert(p.is_pure_triangle());
 
+  csg::Mesh_criteria criteria;
+  int mesh_resolution = parameters["mesh_resolution"];
+  if (mesh_resolution > 0)
+  {
+    // Try to compute reasonable parameters
+    std::cout << "Bounding box of domain: " << csg::SurfaceFileReader::getBoundingBox(p) << std::endl;
+    std::cout << "Radius of bounding sphere: " << csg::SurfaceFileReader::getBoundingSphereRadius(p) << std::endl;
+    const double cell_size = csg::SurfaceFileReader::getBoundingSphereRadius(p)/mesh_resolution;
+
+    criteria = csg::Mesh_criteria (CGAL::parameters::edge_size = parameters["edge_size"],
+                                   CGAL::parameters::facet_angle = parameters["facet_angle"], 
+                                   CGAL::parameters::facet_size = parameters["facet_size"], 
+                                   CGAL::parameters::facet_distance = parameters["facet_distance"],
+                                   CGAL::parameters::cell_radius_edge_ratio = parameters["cell_radius_edge_ratio"], 
+                                   CGAL::parameters::cell_size = parameters["cell_size"]);
+
+  }
+  else
+  {
+    // Mesh criteria
+    criteria = csg::Mesh_criteria (CGAL::parameters::edge_size = parameters["edge_size"],
+                                   CGAL::parameters::facet_angle = parameters["facet_angle"], 
+                                   CGAL::parameters::facet_size = parameters["facet_size"], 
+                                   CGAL::parameters::facet_distance = parameters["facet_distance"],
+                                   CGAL::parameters::cell_radius_edge_ratio = parameters["cell_radius_edge_ratio"], 
+                                   CGAL::parameters::cell_size = parameters["cell_size"]);
+  }
+
+
+
   csg::Mesh_domain domain(p);
 
   if (parameters["detect_sharp_features"])
@@ -128,13 +159,6 @@ void CSGCGALMeshGenerator3D::generate(Mesh& mesh) const
     domain.detect_features();
   }
 
-  // Mesh criteria
-  csg::Mesh_criteria criteria(CGAL::parameters::edge_size = parameters["edge_size"],
-			      CGAL::parameters::facet_angle = parameters["facet_angle"], 
-			      CGAL::parameters::facet_size = parameters["facet_size"], 
-			      CGAL::parameters::facet_distance = parameters["facet_distance"],
-			      CGAL::parameters::cell_radius_edge_ratio = parameters["cell_radius_edge_ratio"], 
-			      CGAL::parameters::cell_size = parameters["cell_size"]);
   
   // Mesh generation
   cout << "Generating mesh" << endl;
