@@ -52,18 +52,23 @@ class Interface(unittest.TestCase):
 
         self.assertTrue(all(u_values==1))
 
-    def xtest_float_conversion(self):
+    def xtest_float_conversion1(self): # TODO: Check if this works in parallell
         c = Function(R)
         self.assertTrue(float(c) == 0.0)
 
-        c.vector()[:] = 1.23
-        self.assertTrue(float(c) == 1.23)
-
+    def xtest_float_conversion2(self): # TODO: Check if this works in parallell
+        c = Function(R)
         c.assign(Constant(2.34))
         self.assertTrue(float(c) == 2.34)
 
+    def xtest_float_conversion3(self): # TODO: Check if this works in parallell
         c = Constant(3.45)
         self.assertTrue(float(c) == 3.45)
+
+    def xtest_float_conversion4(self): # TODO: Check if this works in parallell
+        c = Function(R)
+        c.vector()[:] = 1.23
+        self.assertTrue(float(c) == 1.23)
 
     def test_scalar_conditions(self):
         c = Function(R)
@@ -73,21 +78,17 @@ class Interface(unittest.TestCase):
         self.assertTrue(isinstance(lt(c, 3), ufl.classes.LT))
         self.assertFalse(isinstance(lt(c, 3), bool))
 
-
-        # Below are commented out following UFL change,
-        # see http://bazaar.launchpad.net/~ufl-core/ufl/main/revision/1459
-
         # Float conversion is not implicit in boolean Python expressions
-        #self.assertFalse(isinstance(c < 3, ufl.classes.LT))
-        #self.assertTrue(isinstance(c < 3, bool))
+        self.assertTrue(isinstance(c < 3, ufl.classes.LT))
+        self.assertFalse(isinstance(c < 3, bool))
 
-        # This looks bad, but there is a very good reason for this behaviour :)
-        # Put shortly, the reason is that boolean operators are used for comparison
-        # and ordering of ufl expressions in python data structures.
-        #self.assertTrue((c < 2) == (c < 1))
-        #self.assertTrue((c > 2) == (c > 1))
-        #self.assertTrue((c < 2) == (not c > 1))
-
+        # == is used in ufl to compare equivalent representations,
+        # <,> result in LT/GT expressions, bool conversion is illegal
+        # Note that 1.5 < 0 == False == 1.5 < 1, but that is not what we compare here:
+        self.assertFalse((c < 0) == (c < 1))
+        # This protects from "if c < 0: ..." misuse:
+        self.assertRaises(ufl.UFLException, lambda: bool(c < 0))
+        self.assertRaises(ufl.UFLException, lambda: not c < 0)
 
 class Interpolate(unittest.TestCase):
 
