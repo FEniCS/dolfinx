@@ -269,13 +269,6 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
     A.apply("add");
     b.apply("add");
   }
-  
-    // Periodic modification
-  if (!a.mesh().facet_pairs.empty())
-  {
-      A.ident_zeros();
-  }
-
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,

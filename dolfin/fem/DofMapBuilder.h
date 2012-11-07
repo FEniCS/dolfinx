@@ -66,6 +66,8 @@ namespace dolfin
                                   std::map<uint, std::pair<uint, uint> >& _slave_master_map,
                                   std::pair<uint, uint> ownership_range);
 
+    static void periodic_modification(DofMap& dofmap, const Mesh& dolfin_mesh);
+
   private:
 
     // Build distributed dof map
@@ -98,7 +100,6 @@ namespace dolfin
     static void compute_global_dofs(set& global_dofs, uint& offset,
                             boost::shared_ptr<const ufc::dofmap> dofmap,
                             const Mesh& dolfin_mesh, const UFCMesh& ufc_mesh);
-
 
   };
 

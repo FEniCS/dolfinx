@@ -54,7 +54,7 @@ namespace dolfin
 
     /// True if dof map is a view into another map (is a sub-dofmap)
     virtual bool is_view() const = 0;
-
+    
     /// Return true iff mesh entities of topological dimension d are needed
     virtual bool needs_mesh_entities(unsigned int d) const = 0;
 
@@ -130,9 +130,6 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;
-
-    /// Update periodic slave values
-    virtual void update_slaves(GenericVector& x) const = 0;
 
   };
 

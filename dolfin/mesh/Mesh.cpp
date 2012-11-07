@@ -594,6 +594,8 @@ struct merge_coordinate_map
 
 void Mesh::compute_facet_pairs()
 {
+  Timer t0("Mesh compute facet pairs");
+  
   const uint tdim = topology().dim();
   const uint gdim = geometry().dim();
   
@@ -624,9 +626,7 @@ void Mesh::compute_facet_pairs()
     }
     facet_midpoint = facet->midpoint();
     for (uint i=0; i<gdim; i++)
-    {
       x[i] = facet_midpoint[i];
-    }
 
     _periodic_sub_domain->map(_x, _y);
     if (_periodic_sub_domain->inside(_x, true))

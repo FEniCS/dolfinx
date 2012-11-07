@@ -43,11 +43,11 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& dolfin_mesh) : _ufc_dofmap(ufc_dofmap->create()),
-               ufc_offset(0), _is_view(false),
-               _distributed(MPI::num_processes() > 1)
+               ufc_offset(0), _is_view(false), 
+               _distributed(MPI::num_processes() > 1), _num_slaves(0)
 {
   dolfin_assert(_ufc_dofmap);
-
+  
   // Check for dimensional consistency between the dofmap and mesh
   check_dimensional_consistency(*_ufc_dofmap, dolfin_mesh);
 
@@ -77,16 +77,19 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 
   // Initialize the UFC dofmap
   init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh);
+  
+  // Set the global dimension of the dofmap. This will be modified for a periodic mesh
+  _global_dim = _ufc_dofmap->global_dimension();
 
   // Build dof map
   const bool reorder = dolfin::parameters["reorder_dofs_serial"];
-  DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, reorder, _distributed);
+  DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, reorder, _distributed);  
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
                const Mesh& mesh, bool distributed) : ufc_offset(0),
                _ownership_range(0, 0), _is_view(true),
-               _distributed(distributed)
+               _distributed(distributed), _num_slaves(0)
 {
   // NOTE: Ownership range is set to zero since dofmap is a view
 
@@ -177,6 +180,24 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
       }
     }
   }
+  
+  // Set the global dimension of newly created dofmap
+  if (!mesh.facet_pairs.empty())
+  {
+    boost::unordered_set<dolfin::uint> alldofs = dofs();
+    uint sumdofs = 0;
+    for (boost::unordered_set<dolfin::uint>::iterator it = alldofs.begin();
+        it != alldofs.end(); ++it)
+    {
+      if (*it >= parent_dofmap._ownership_range.first && *it < parent_dofmap._ownership_range.second)
+        sumdofs += 1;
+    }
+    _global_dim = MPI::sum(sumdofs);
+  }
+  else
+  {
+    _global_dim = _ufc_dofmap->global_dimension();
+  }
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
@@ -185,7 +206,7 @@ DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
                _is_view(false), _distributed(distributed)
 {
   dolfin_assert(_ufc_dofmap);
-
+  
   // Check for dimensional consistency between the dofmap and mesh
   check_dimensional_consistency(*_ufc_dofmap, mesh);
 
@@ -242,6 +263,8 @@ DofMap::DofMap(const DofMap& dofmap)
   _neighbours = dofmap._neighbours;
   _is_view = dofmap. _is_view;
   _distributed = dofmap._distributed;
+  _num_slaves = dofmap._num_slaves;
+  _global_dim = dofmap._global_dim;
 }
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()
@@ -259,7 +282,8 @@ unsigned int DofMap::global_dimension() const
 {
   dolfin_assert(_ufc_dofmap);
   dolfin_assert(_ufc_dofmap->global_dimension() > 0);
-  return _ufc_dofmap->global_dimension();
+  
+  return _global_dim;
 }
 //-----------------------------------------------------------------------------
 unsigned int DofMap::cell_dimension(uint cell_index) const
@@ -566,11 +590,4 @@ void DofMap::check_dimensional_consistency(const ufc::dofmap& dofmap,
   }
 }
 //-----------------------------------------------------------------------------
-void DofMap::update_slaves(GenericVector& x) const
-{
-  std::vector<double> values;
-  x.gather(values, _masters);  
-  x.set(values.data(), _masters.size(), _slaves.data());
-  x.apply("insert");
-}
 

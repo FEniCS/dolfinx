@@ -327,15 +327,7 @@ namespace dolfin
     ///     std::string
     ///         An informal representation of the function space.
     std::string str(bool verbose) const;
-
-    void update_slaves(GenericVector& x) const;
     
-    std::map<uint, std::pair<uint, uint> > _slave_master_map;
-    
-    std::vector<uint> _masters;
-    
-    std::vector<uint> _slaves;
-
   private:
 
     // Friends
@@ -386,9 +378,14 @@ namespace dolfin
 
     // True iff running in parallel
     bool _distributed;
-
+    
+    // Number of slaves in periodic dofmap
+    uint _num_slaves;
+    
+    uint _global_dim;
+    
+    std::vector<uint> _num_slaves_on_component;
   };
-
 }
 
 #endif
