@@ -141,10 +141,13 @@ namespace dolfin
     /// Create plotter for Dirichlet B.C.
     explicit VTKPlotter(boost::shared_ptr<const DirichletBC> bc);
 
+    /// Create plotter for a std::size_t valued mesh function
+    explicit VTKPlotter(boost::shared_ptr<const MeshFunction<std::size_t> > mesh_function);
+
     /// Create plotter for an uint valued mesh function
     explicit VTKPlotter(boost::shared_ptr<const MeshFunction<unsigned int> > mesh_function);
 
-    /// Create plotter for an intr valued mesh function
+    /// Create plotter for an int valued mesh function
     explicit VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function);
 
     /// Create plotter for a double valued mesh function
@@ -198,6 +201,7 @@ namespace dolfin
     void update(boost::shared_ptr<const ExpressionWrapper> expression);
     void update(boost::shared_ptr<const Expression> expression, boost::shared_ptr<const Mesh> mesh);
     void update(boost::shared_ptr<const DirichletBC> bc);
+    void update(boost::shared_ptr<const MeshFunction<std::size_t> > mesh_function);
     void update(boost::shared_ptr<const MeshFunction<unsigned int> > mesh_function);
     void update(boost::shared_ptr<const MeshFunction<int> > mesh_function);
     void update(boost::shared_ptr<const MeshFunction<double> > mesh_function);
@@ -242,11 +246,10 @@ namespace dolfin
 
     // The pool of plotter objects. Objects register
     // themselves in the list when created and remove themselves when
-    // destroyed. 
+    // destroyed.
     // Used when calling interactive() (which should have effect on
     // all plot windows)
     static boost::shared_ptr<std::list<VTKPlotter*> > all_plotters;
-
 
     // Initialization common to all constructors.
     // Setup all pipeline objects and connect them.

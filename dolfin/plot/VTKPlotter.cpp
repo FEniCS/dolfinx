@@ -233,6 +233,20 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) :
   init();
 }
 //----------------------------------------------------------------------------
+VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<std::size_t> > mesh_function) :
+  _plottable(boost::shared_ptr<GenericVTKPlottable>(
+        new VTKPlottableMeshFunction<std::size_t>(mesh_function))),
+  vtk_pipeline(new PrivateVTKPipeline),
+  _frame_counter(0),
+  _id(mesh_function->id()),
+  _toggle_vertex_labels(false)
+{
+  // FIXME: A different lookuptable should be set when plotting MeshFunctions
+  parameters = default_parameters();
+  set_title(mesh_function->name(), mesh_function->label());
+  init();
+}
+//----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
         new VTKPlottableMeshFunction<uint>(mesh_function))),
@@ -663,6 +677,7 @@ void VTKPlotter::update(boost::shared_ptr<const Function> function) { update(); 
 void VTKPlotter::update(boost::shared_ptr<const ExpressionWrapper> expression) { update(); }
 void VTKPlotter::update(boost::shared_ptr<const Expression> expression, boost::shared_ptr<const Mesh> mesh) { update(); }
 void VTKPlotter::update(boost::shared_ptr<const DirichletBC> bc) { update(); }
+void VTKPlotter::update(boost::shared_ptr<const MeshFunction<std::size_t> > mesh_function) { update(); }
 void VTKPlotter::update(boost::shared_ptr<const MeshFunction<unsigned int> > mesh_function) { update(); }
 void VTKPlotter::update(boost::shared_ptr<const MeshFunction<int> > mesh_function) { update(); }
 void VTKPlotter::update(boost::shared_ptr<const MeshFunction<double> > mesh_function){ update(); }
@@ -702,6 +717,7 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression) : 
 VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
 		       boost::shared_ptr<const Mesh> mesh) : _id(expression->id())                                          { init(); }
 VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) : _id(bc->id())                                 { init(); }
+VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<std::size_t> > mesh_function) : _id(mesh_function->id())   { init(); }
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) : _id(mesh_function->id())   { init(); }
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function) : _id(mesh_function->id())    { init(); }
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) : _id(mesh_function->id()) { init(); }
@@ -724,6 +740,7 @@ void VTKPlotter::update(boost::shared_ptr<const Function> function){}
 void VTKPlotter::update(boost::shared_ptr<const ExpressionWrapper> expression){}
 void VTKPlotter::update(boost::shared_ptr<const Expression> expression, boost::shared_ptr<const Mesh> mesh){}
 void VTKPlotter::update(boost::shared_ptr<const DirichletBC> bc){}
+void VTKPlotter::update(boost::shared_ptr<const MeshFunction<std::size_t> > mesh_function){}
 void VTKPlotter::update(boost::shared_ptr<const MeshFunction<unsigned int> > mesh_function){}
 void VTKPlotter::update(boost::shared_ptr<const MeshFunction<int> > mesh_function){}
 void VTKPlotter::update(boost::shared_ptr<const MeshFunction<double> > mesh_function){}

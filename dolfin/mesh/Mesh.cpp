@@ -311,7 +311,7 @@ void Mesh::snap_boundary(const SubDomain& sub_domain, bool harmonic_smoothing)
   MeshSmoothing::snap_boundary(*this, sub_domain, harmonic_smoothing);
 }
 //-----------------------------------------------------------------------------
-const std::vector<dolfin::uint>& Mesh::color(std::string coloring_type) const
+const std::vector<std::size_t>& Mesh::color(std::string coloring_type) const
 {
   // Define graph type
   const uint dim = MeshColoring::type_to_dim(coloring_type, *this);
@@ -323,10 +323,10 @@ const std::vector<dolfin::uint>& Mesh::color(std::string coloring_type) const
   return color(_coloring_type);
 }
 //-----------------------------------------------------------------------------
-const std::vector<dolfin::uint>& Mesh::color(std::vector<uint> coloring_type) const
+const std::vector<std::size_t>& Mesh::color(std::vector<uint> coloring_type) const
 {
   // Find color data
-  std::map<const std::vector<uint>, std::pair<std::vector<uint>,
+  std::map<const std::vector<uint>, std::pair<std::vector<std::size_t>,
            std::vector<std::vector<uint> > > >::const_iterator coloring_data;
   coloring_data = this->topology().coloring.find(coloring_type);
 
@@ -343,8 +343,7 @@ const std::vector<dolfin::uint>& Mesh::color(std::vector<uint> coloring_type) co
   return MeshColoring::color(*_mesh, coloring_type);
 }
 //-----------------------------------------------------------------------------
-void Mesh::intersected_cells(const Point& point,
-                             std::set<uint>& cells) const
+void Mesh::intersected_cells(const Point& point, std::set<uint>& cells) const
 {
   // CGAL needs mesh with more than 1 cell
   if (num_cells() > 1)

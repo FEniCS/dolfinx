@@ -34,7 +34,7 @@ using namespace dolfin;
 #ifdef HAS_TRILINOS
 //-----------------------------------------------------------------------------
 dolfin::uint ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
-                                                     std::vector<uint>& colors)
+                                               std::vector<std::size_t>& colors)
 {
   if (colors.size() != graph.size())
   {

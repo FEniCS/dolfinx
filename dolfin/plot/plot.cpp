@@ -195,7 +195,7 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const DirichletBC> 
   return plot(bc, reference_to_no_delete_pointer(parameters));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<VTKPlotter> dolfin::plot(const DirichletBC& bc, 
+boost::shared_ptr<VTKPlotter> dolfin::plot(const DirichletBC& bc,
 					   const Parameters& parameters)
 {
   return plot(reference_to_no_delete_pointer(bc),
@@ -206,6 +206,33 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const DirichletBC> 
 					   boost::shared_ptr<const Parameters> parameters)
 {
   return plot_object(bc, parameters);
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<VTKPlotter> dolfin::plot(const MeshFunction<std::size_t>& mesh_function,
+					   std::string title)
+{
+  return plot(reference_to_no_delete_pointer(mesh_function), title);
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const MeshFunction<std::size_t> > mesh_function,
+					   std::string title)
+{
+  Parameters parameters;
+  parameters.add("title", title);
+  return plot(mesh_function, reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<VTKPlotter> dolfin::plot(const MeshFunction<std::size_t>& mesh_function,
+					   const Parameters& parameters)
+{
+  return plot(reference_to_no_delete_pointer(mesh_function),
+       reference_to_no_delete_pointer(parameters));
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const MeshFunction<std::size_t> > mesh_function,
+					   boost::shared_ptr<const Parameters> parameters)
+{
+  return plot_object(mesh_function, parameters);
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<VTKPlotter> dolfin::plot(const MeshFunction<uint>& mesh_function,

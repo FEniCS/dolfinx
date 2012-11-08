@@ -44,14 +44,14 @@ namespace dolfin
 
     /// Compute vertex colors
     static uint compute_local_vertex_coloring(const Graph& graph,
-                                              std::vector<uint>& colors);
+                                              std::vector<std::size_t>& colors);
 
     /// Compute vertex colors
     template<typename T>
-    static uint compute_local_vertex_coloring(const T& graph, std::vector<uint>& colors)
+    static uint compute_local_vertex_coloring(const T& graph, std::vector<std::size_t>& colors)
     {
       // Number of vertices in graph
-      const uint num_vertices = boost::num_vertices(graph);
+      const std::size_t num_vertices = boost::num_vertices(graph);
       dolfin_assert(num_vertices == colors.size());
 
       typedef typename boost::graph_traits<T>::vertex_descriptor vert_descriptor;
@@ -59,19 +59,13 @@ namespace dolfin
       typedef typename boost::graph_traits<T>::vertices_size_type vert_size_type;
       typedef typename boost::property_map<T, boost::vertex_index_t>::const_type vert_index_map;
 
-      // Create vector to hold colors
-      std::vector<vert_size_type> color_vec(num_vertices);
+      // Resize to hold colors
+      colors.resize(num_vertices);
 
       // Color vertices
-      std::cout << "Start Boost coloring." <<  std::endl;
-      boost::iterator_property_map<vert_size_type*, vert_index_map> color(&color_vec.front(), get(boost::vertex_index, graph));
+      boost::iterator_property_map<vert_size_type*, vert_index_map>
+          color(&colors.front(), get(boost::vertex_index, graph));
       const vert_size_type num_colors = sequential_vertex_coloring(graph, color);
-      std::cout << "Boost coloring finished." <<  std::endl;
-
-      // Copy result into Array
-      dolfin_assert(colors.size() == color_vec.size());
-      for (uint i = 0; i < num_vertices; ++i)
-        colors[i] = color_vec[i];
 
       std::cout << "Number of colors: " << num_colors << std::endl;
       return num_colors;

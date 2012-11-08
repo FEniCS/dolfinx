@@ -110,6 +110,22 @@ namespace dolfin
   boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const DirichletBC> bc,
 				     boost::shared_ptr<const Parameters> parameters);
 
+  /// Plot std::size_t-valued mesh function
+  boost::shared_ptr<VTKPlotter> plot(const MeshFunction<std::size_t>& mesh_function,
+				     std::string title="DOLFIN MeshFunction<unsigned int>");
+
+  /// Plot std::size_t-valued mesh function (shared_ptr version)
+  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const MeshFunction<std::size_t> > mesh_function,
+				     std::string title="DOLFIN MeshFunction<unsigned int>");
+
+  /// Plot std::size_t-valued mesh function (parameter version)
+  boost::shared_ptr<VTKPlotter> plot(const MeshFunction<std::size_t>& mesh_function,
+				     const Parameters& parameters);
+
+  /// Plot std::size_t-valued mesh function (parameter, shared_ptr version)
+  boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const MeshFunction<std::size_t> > mesh_function,
+				     boost::shared_ptr<const Parameters> parameters);
+
   /// Plot uint-valued mesh function
   boost::shared_ptr<VTKPlotter> plot(const MeshFunction<unsigned int>& mesh_function,
 				     std::string title="DOLFIN MeshFunction<unsigned int>");
@@ -165,7 +181,7 @@ namespace dolfin
   /// Plot boolean-valued mesh function (shared_ptr version)
   boost::shared_ptr<VTKPlotter> plot(boost::shared_ptr<const MeshFunction<bool> > mesh_function,
 				     std::string title="MeshFunction<bool>");
-  
+
   /// Plot boolean-valued mesh function (parameter version)
   boost::shared_ptr<VTKPlotter> plot(const MeshFunction<bool>& mesh_function,
 				     const Parameters& parameters);

@@ -101,7 +101,7 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
   cout << "Close editor" << endl;
 
   // Initialise coloring data
-  typedef std::map<const std::vector<uint>, std::pair<std::vector<uint>,
+  typedef std::map<const std::vector<uint>, std::pair<std::vector<std::size_t>,
            std::vector<std::vector<uint> > > >::const_iterator ConstMeshColoringData;
 
   // Get old coloring
@@ -115,7 +115,7 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
   }
 
   // Get old coloring data
-  const std::vector<uint>& colors = mesh_coloring->second.first;
+  const std::vector<std::size_t>& colors = mesh_coloring->second.first;
   const std::vector<std::vector<uint> >&
     entities_of_color = mesh_coloring->second.second;
   dolfin_assert(colors.size() == num_cells);
@@ -124,7 +124,7 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
 
   // New coloring data
   dolfin_assert(new_mesh.topology().coloring.empty());
-  std::vector<uint> new_colors(colors.size());
+  std::vector<std::size_t> new_colors(colors.size());
   std::vector<std::vector<uint> > new_entities_of_color(num_colors);
 
   uint current_cell = 0;
@@ -173,7 +173,7 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
   const uint coordinates_size = mesh.geometry().size()*mesh.geometry().dim();
   new_coordinates.resize(coordinates_size);
 
-  typedef std::map<const std::vector<uint>, std::pair<std::vector<uint>,
+  typedef std::map<const std::vector<uint>, std::pair<std::vector<std::size_t>,
            std::vector<std::vector<uint> > > >::const_iterator MeshColoringData;
 
   info("Renumbering mesh by cell colors.");
@@ -199,7 +199,7 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
   }
 
   // Get coloring data (copies since the data will be deleted mesh.clear())
-  const std::vector<uint>& colors_old = mesh_coloring->second.first;
+  const std::vector<std::size_t>& colors_old = mesh_coloring->second.first;
   const std::vector<std::vector<uint> >&
     entities_of_color_old = mesh_coloring->second.second;
   dolfin_assert(colors_old.size() == num_cells);
