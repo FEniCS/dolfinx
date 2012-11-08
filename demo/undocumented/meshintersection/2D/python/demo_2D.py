@@ -97,7 +97,7 @@ print "Maximum value is max(x()): ", max(x)
 # Iterate over angle
 theta = 0.0
 dtheta = 0.1*DOLFIN_PI
-intersection = MeshFunction("uint", background_mesh, background_mesh.topology().dim())
+intersection = MeshFunction("sizet", background_mesh, background_mesh.topology().dim())
 _first = True
 
 while theta < 2*DOLFIN_PI + dtheta:

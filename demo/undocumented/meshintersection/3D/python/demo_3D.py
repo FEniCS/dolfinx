@@ -47,7 +47,7 @@ t = -0.61
 x *= 0.7
 x += t
 
-intersection = MeshFunction("uint", cube, cube.topology().dim())
+intersection = MeshFunction("sizet", cube, cube.topology().dim())
 _first = True
 
 counter = 0
@@ -74,7 +74,7 @@ while t < 1.4 :
     else:
         plot(intersection)
 
-        
+
     #Propagate sphere along the line t(1,1,1).
     x[:,0] += dt
     x[:,1] += dt
