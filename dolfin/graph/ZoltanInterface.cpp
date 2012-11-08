@@ -96,7 +96,7 @@ dolfin::uint ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
 //-----------------------------------------------------------------------------
 #else
 dolfin::uint ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
-                                                    std::vector<uint>& colors)
+                                                    std::vector<std::size_t>& colors)
 {
   dolfin_error("ZoltanInterface.cpp",
                "color mesh using Zoltan",
