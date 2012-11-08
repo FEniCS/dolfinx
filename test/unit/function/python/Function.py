@@ -52,47 +52,22 @@ class Interface(unittest.TestCase):
 
         self.assertTrue(all(u_values==1))
 
+
+class ScalarFunctions(unittest.TestCase):
     def test_constant_float_conversion(self):
         c = Constant(3.45)
         self.assertTrue(float(c) == 3.45)
 
-    def xtest_real_function_vector_gather(self): # FIXME: Fails because of swig wrapping issues?
-        import numpy
-        c = Function(R)
-        c.assign(Constant(2.34))
-
-        values = numpy.zeros(1, dtype='d')
-        vec = c.vector()
-
-        # Gather value directly from vector in a parallell safe way
-        indices = numpy.zeros(1, dtype='i')
-        vec.gather(values, indices)
-
-        self.assertEqual(float(values[0]), 2.34)
-
-    def xtest_real_function_vector_getlocal(self): # FIXME: Fails because of swig wrapping issues?
-        import numpy
-        c = Function(R)
-        c.assign(Constant(2.34))
-
-        values = numpy.zeros(1, dtype='d')
-        vec = c.vector()
-
-        # Get value directly from local vector
-        vec.get_local(values)
-
-        self.assertEqual(float(values[0]), 2.34)
-
-    def xtest_real_function_float_conversion1(self): # FIXME: Does not work in parallell
+    def test_real_function_float_conversion1(self):
         c = Function(R)
         self.assertTrue(float(c) == 0.0)
 
-    def xtest_real_function_float_conversion2(self): # FIXME: Does not work in parallell
+    def test_real_function_float_conversion2(self):
         c = Function(R)
         c.assign(Constant(2.34))
         self.assertTrue(float(c) == 2.34)
 
-    def xtest_real_function_float_conversion3(self): # FIXME: Does not work in parallell
+    def test_real_function_float_conversion3(self):
         c = Function(R)
         c.vector()[:] = 1.23
         self.assertTrue(float(c) == 1.23)
@@ -116,6 +91,7 @@ class Interface(unittest.TestCase):
         # This protects from "if c < 0: ..." misuse:
         self.assertRaises(ufl.UFLException, lambda: bool(c < 0))
         self.assertRaises(ufl.UFLException, lambda: not c < 0)
+
 
 class Interpolate(unittest.TestCase):
 
