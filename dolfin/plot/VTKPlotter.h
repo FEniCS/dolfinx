@@ -199,7 +199,6 @@ namespace dolfin
     void update(boost::shared_ptr<const Expression> expression, boost::shared_ptr<const Mesh> mesh);
     void update(boost::shared_ptr<const DirichletBC> bc);
     void update(boost::shared_ptr<const MeshFunction<std::size_t> > mesh_function);
-    void update(boost::shared_ptr<const MeshFunction<unsigned int> > mesh_function);
     void update(boost::shared_ptr<const MeshFunction<int> > mesh_function);
     void update(boost::shared_ptr<const MeshFunction<double> > mesh_function);
     void update(boost::shared_ptr<const MeshFunction<bool> > mesh_function);
