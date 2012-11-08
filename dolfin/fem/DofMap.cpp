@@ -195,6 +195,10 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
     }
     _global_dim = MPI::sum(sumdofs);
   }
+  else
+  {
+    _global_dim = _ufc_dofmap->global_dimension();
+  }
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
@@ -221,6 +225,9 @@ DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
 
   // Initialize the UFC dofmap
   init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, mesh);
+  
+  // Set the global dimension of the dofmap. This will be modified for a periodic mesh
+  _global_dim = _ufc_dofmap->global_dimension();
 
   // Build dof map
   const bool reorder = dolfin::parameters["reorder_dofs_serial"];
