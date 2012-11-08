@@ -45,13 +45,13 @@ int main()
     x[2] = x[2]*0.7 + t;
   }
 
-  boost::shared_ptr<dolfin::MeshFunction<unsigned int> >intersection(new dolfin::MeshFunction<unsigned int>(cube, cube.topology().dim()));
+  boost::shared_ptr<dolfin::MeshFunction<std::size_t> >intersection(new dolfin::MeshFunction<std::size_t>(cube, cube.topology().dim()));
 
   VTKPlotter p(intersection);
   p.parameters["scalarbar"] = false;
 
   bool first = true;
-  while (t < 1.4) 
+  while (t < 1.4)
   {
     // Compute intersection with boundary of square
     BoundaryMesh boundary(sphere);

@@ -247,20 +247,6 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<std::size_t> > mesh_
   init();
 }
 //----------------------------------------------------------------------------
-VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) :
-  _plottable(boost::shared_ptr<GenericVTKPlottable>(
-        new VTKPlottableMeshFunction<uint>(mesh_function))),
-  vtk_pipeline(new PrivateVTKPipeline),
-  _frame_counter(0),
-  _id(mesh_function->id()),
-  _toggle_vertex_labels(false)
-{
-  // FIXME: A different lookuptable should be set when plotting MeshFunctions
-  parameters = default_parameters();
-  set_title(mesh_function->name(), mesh_function->label());
-  init();
-}
-//----------------------------------------------------------------------------
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function) :
   _plottable(boost::shared_ptr<GenericVTKPlottable>(
     new VTKPlottableMeshFunction<int>(mesh_function))),

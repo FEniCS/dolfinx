@@ -144,9 +144,6 @@ namespace dolfin
     /// Create plotter for a std::size_t valued mesh function
     explicit VTKPlotter(boost::shared_ptr<const MeshFunction<std::size_t> > mesh_function);
 
-    /// Create plotter for an uint valued mesh function
-    explicit VTKPlotter(boost::shared_ptr<const MeshFunction<unsigned int> > mesh_function);
-
     /// Create plotter for an int valued mesh function
     explicit VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function);
 

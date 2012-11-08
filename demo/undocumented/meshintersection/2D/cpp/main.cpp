@@ -33,7 +33,7 @@ int main()
   UnitCircle omega0(20);
   UnitSquare omega1(20, 20);
 
-  boost::shared_ptr<dolfin::MeshFunction<unsigned int> >intersection1(new dolfin::MeshFunction<unsigned int>(omega0, omega0.topology().dim()));
+  boost::shared_ptr<dolfin::MeshFunction<std::size_t> >intersection1(new dolfin::MeshFunction<std::size_t>(omega0, omega0.topology().dim()));
 
   VTKPlotter p(intersection1);
   p.parameters["rescale"] = true;
@@ -97,7 +97,7 @@ int main()
 
   // Repeat the same with the rotator in the cavity example.
   Rectangle background_mesh(-2.0, -2.0, 2.0, 2.0, 30, 30);
-  boost::shared_ptr<dolfin::MeshFunction<unsigned int> >intersection2(new dolfin::MeshFunction<unsigned int>(background_mesh, background_mesh.topology().dim()));
+  boost::shared_ptr<dolfin::MeshFunction<std::size_t> >intersection2(new dolfin::MeshFunction<std::size_t>(background_mesh, background_mesh.topology().dim()));
 
   VTKPlotter p2(intersection2);
   p2.parameters["rescale"] = true;
