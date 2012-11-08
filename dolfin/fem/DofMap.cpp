@@ -385,9 +385,10 @@ void DofMap::set(GenericVector& x, double value) const
   x.apply("add");
 }
 //-----------------------------------------------------------------------------
-void DofMap::set_x(GenericVector& x, const Mesh& mesh, uint component) const
+void DofMap::set_x(GenericVector& x, double value, uint component,
+                   const Mesh& mesh) const
 {
-  std::vector<double> values;
+  std::vector<double> x_values;
   boost::multi_array<double, 2> coordinates;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
@@ -400,14 +401,13 @@ void DofMap::set_x(GenericVector& x, const Mesh& mesh, uint component) const
     dolfin_assert(component < coordinates.shape()[1]);
 
     // Copy coordinate (it may be possible to avoid this)
-    values.resize(dofs.size());
+    x_values.resize(dofs.size());
     for (uint i = 0; i < coordinates.shape()[0]; ++i)
-      values[i] = coordinates[i][component];
+      x_values[i] = value*coordinates[i][component];
 
     // Set x[component] values in vector
-    x.set(values.data(), dofs.size(), dofs.data());
+    x.set(x_values.data(), dofs.size(), dofs.data());
   }
-  x.apply("add");
 }
 //-----------------------------------------------------------------------------
 ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,

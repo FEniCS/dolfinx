@@ -239,7 +239,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
     }
   }
 
-  // Add/remove global dofs to relevant sets (process 0 owns local dofs)
+  // Add/remove global dofs to relevant sets (process 0 owns global dofs)
   if (MPI::process_number() == 0)
   {
     shared_owned_dofs.insert(global_dofs.begin(), global_dofs.end());

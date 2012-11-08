@@ -295,11 +295,14 @@ namespace dolfin
     /// *Arguments*
     ///     vector (_GenericVector_)
     ///         The vector to set.
-    ///     mesh (_Mesh_)
-    ///         The mesh.
+    ///     value (double)
+    ///         The value to multiply to coordinate by.
     ///     component (uint)
     ///         The coordinate index.
-    void set_x(GenericVector& x, const Mesh& mesh, uint component) const;
+    ///     mesh (_Mesh_)
+    ///         The mesh.
+    void set_x(GenericVector& x, double value, uint component,
+               const Mesh& mesh) const;
 
     /// Return the set of dof indices
     ///
