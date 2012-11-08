@@ -623,7 +623,7 @@ void Mesh::add_facet_pairs(boost::shared_ptr<const SubDomain> sub_domain)
       continue;
     }
     facet_midpoint = facet->midpoint();
-    for (uint i=0; i<gdim; i++)
+    for (uint i = 0; i < gdim; i++)
       x[i] = facet_midpoint[i];
 
     sub_domain->map(_x, _y);
