@@ -235,6 +235,7 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const MeshFunction<
   return plot_object(mesh_function, parameters);
 }
 //-----------------------------------------------------------------------------
+/*
 boost::shared_ptr<VTKPlotter> dolfin::plot(const MeshFunction<uint>& mesh_function,
 					   std::string title)
 {
@@ -262,6 +263,7 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const MeshFunction<
   return plot_object(mesh_function, parameters);
 }
 //-----------------------------------------------------------------------------
+*/
 boost::shared_ptr<VTKPlotter> dolfin::plot(const MeshFunction<int>& mesh_function,
 					   std::string title)
 {
