@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-10-15
+// Last changed: 2012-11-08
 
 #ifndef __DOLFIN_XDMFFILE_H
 #define __DOLFIN_XDMFFILE_H

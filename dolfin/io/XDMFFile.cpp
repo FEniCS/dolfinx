@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-11-07
+// Last changed: 2012-11-08
 
 #ifdef HAS_HDF5
 
@@ -116,20 +116,27 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   // Get number of local/global cells/vertices
   const uint num_local_cells = mesh.num_cells();
   const uint num_local_vertices = mesh.num_vertices();
+
+  // FIXME: should use mesh.size_global(cell_dim) ?
   const uint num_global_cells = MPI::sum(num_local_cells);
-  const uint num_global_vertices = MPI::sum(num_local_vertices);
+  // num_total_vertices includes duplicates, so is not the same as mesh.size_global(0)
+  const uint num_total_vertices = MPI::sum(num_local_vertices);
 
   // Get Function data at vertices/cell centres
   std::vector<double> data_values;
   uint num_local_entities = 0;
+  uint num_total_entities = 0;
+
   if (vertex_data)
   {
-    num_local_entities = mesh.num_vertices(); // includes duplicates
+    num_local_entities = num_local_vertices; // includes duplicates
+    num_total_entities = num_total_vertices;
     u.compute_vertex_values(data_values, mesh);
   }
   else
   {
     num_local_entities = num_local_cells;
+    num_total_entities = num_global_cells;
     const GenericVector& v = *u.vector();
     v.get_local(data_values);
   }
@@ -170,7 +177,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   // Save data values to HDF5 file
   std::vector<uint> global_size(2);
-  global_size[0] = MPI::sum(num_local_entities);
+  global_size[0] = num_total_entities;
   global_size[1] = padded_value_size;
 
   hdf5_file->write_data("/VisualisationVector/" + boost::lexical_cast<std::string>(counter),
@@ -258,7 +265,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
     // Grid/Geometry
     pugi::xml_node xdmf_geometry = xdmf_grid.append_child("Geometry");
-    xml_mesh_geometry(xdmf_geometry, num_global_vertices, gdim,
+    xml_mesh_geometry(xdmf_geometry, num_total_vertices, gdim,
                       current_mesh_name + "/coordinates");
 
     // Grid/Attribute (Function value data)
@@ -279,16 +286,10 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
     pugi::xml_node xdmf_data = xdmf_values.append_child("DataItem");
     xdmf_data.append_attribute("Format") = "HDF";
-    if(vertex_data)
-    {
-      s = boost::lexical_cast<std::string>(num_global_vertices) + " "
-          + boost::lexical_cast<std::string>(padded_value_size);
-    }
-    else
-    {
-      s = boost::lexical_cast<std::string>(num_global_cells) + " "
-          + boost::lexical_cast<std::string>(padded_value_size);
-    }
+    
+    s = boost::lexical_cast<std::string>(num_total_entities) + " "
+      + boost::lexical_cast<std::string>(padded_value_size);
+
     xdmf_data.append_attribute("Dimensions") = s.c_str();
 
     boost::filesystem::path p(hdf5_file->filename);
@@ -303,6 +304,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   // Increment counter
   counter++;
 }
+
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const Mesh& mesh)
 {
@@ -317,7 +319,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
   const uint num_local_cells = mesh.num_cells();
   const uint num_global_cells = MPI::sum(num_local_cells);
   const uint num_local_vertices = mesh.num_vertices();
-  const uint num_global_vertices = MPI::sum(num_local_vertices);
+  const uint num_total_vertices = MPI::sum(num_local_vertices);
   const uint cell_dim = mesh.topology().dim();
 
   // Get geometric dimension
@@ -351,7 +353,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
 
     // Describe geometric coordinates
     pugi::xml_node xdmf_geometry = xdmf_grid.append_child("Geometry");
-    xml_mesh_geometry(xdmf_geometry, num_global_vertices, gdim,
+    xml_mesh_geometry(xdmf_geometry, num_total_vertices, gdim,
                       mesh_coords_name);
 
     xml_doc.save_file(filename.c_str(), "  ");
@@ -423,7 +425,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   const uint num_local_cells = mesh.num_entities(cell_dim);
   const uint num_local_vertices = mesh.num_vertices();
   const uint num_global_cells = MPI::sum(num_local_cells);
-  const uint num_global_vertices = MPI::sum(num_local_vertices);
+  const uint num_total_vertices = MPI::sum(num_local_vertices);
 
   // Work out HDF5 dataset names
   const std::string name = "/VisualisationMesh/" + boost::lexical_cast<std::string>(counter);
@@ -465,7 +467,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 
     // Geometric coordinate positions
     pugi::xml_node xdmf_geometry = xdmf_grid.append_child("Geometry");
-    xml_mesh_geometry(xdmf_geometry, num_global_vertices, gdim,
+    xml_mesh_geometry(xdmf_geometry, num_total_vertices, gdim,
                       mesh_coords_name);
 
     // Make reference to MeshFunction value data and dimensions
@@ -520,7 +522,7 @@ void XDMFFile::xml_mesh_topology(pugi::xml_node &xdmf_topology,
 }
 //----------------------------------------------------------------------------
 void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
-                                 const uint num_global_vertices,
+                                 const uint num_total_vertices,
                                  const uint gdim,
                                  const std::string geometry_dataset_name) const
 {
@@ -537,7 +539,7 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
   pugi::xml_node xdmf_geom_data = xdmf_geometry.append_child("DataItem");
 
   xdmf_geom_data.append_attribute("Format") = "HDF";
-  std::string geom_dim = boost::lexical_cast<std::string>(num_global_vertices)
+  std::string geom_dim = boost::lexical_cast<std::string>(num_total_vertices)
     + " " + boost::lexical_cast<std::string>(gdim);
   xdmf_geom_data.append_attribute("Dimensions") = geom_dim.c_str();
 
