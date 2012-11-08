@@ -21,6 +21,7 @@
 // Modified by Niclas Jansson 2008
 // Modified by Kristoffer Selim 2008
 // Modified by Andre Massing 2009-2010
+// Modified by Mikael Mortensen 2012
 //
 // First added:  2006-05-08
 // Last changed: 2012-10-25
@@ -657,14 +658,36 @@ namespace dolfin
     ///         No example code available for this function.
     std::string str(bool verbose) const;
     
-        /// /// Periodicity  ///
+    /// Add Periodicity to the mesh
+    ///
+    /// *Arguments*
+    ///     sub_domain (_SubDomain_)
+    ///         The subdomain.
     void add_periodic_direction(const SubDomain& sub_domain);
     
+    /// Add Periodicity to the mesh
+    ///
+    /// *Arguments*
+    ///     sub_domain (_SubDomain_)
+    ///         The subdomain.
     void add_periodic_direction(boost::shared_ptr<const SubDomain> sub_domain);
+            
+    /// Return periodic facet-to-facet map
+    ///
+    /// *Returns*
+    ///     std::vector<std::pair< std::pair<uint, uint>, std::pair<uint, uint> > >
+    ///         The periodic facet-to-facet map. First pair is master, second is slave. 
+    ///         First item of pairs is global facet index, second item is the process 
+    ///         number where the facets live.
+    std::vector<std::pair< std::pair<uint, uint>, std::pair<uint, uint> > > get_facet_pairs() const;
     
-    std::vector<std::pair< std::pair<int, int>, std::pair<int, int> > > facet_pairs;
-    
-    void compute_facet_pairs();
+    /// Check if mesh has one or more periodic directions
+    ///
+    /// *Returns*
+    ///     bool
+    ///         The return value is True if one or more periodic directions has 
+    ///         been added to the mesh
+    bool is_periodic() const;
 
   private:
 
@@ -695,7 +718,11 @@ namespace dolfin
     // True if mesh has been ordered
     mutable bool _ordered;
     
-    boost::shared_ptr<const SubDomain> _periodic_sub_domain;
+    // The periodic facet-to-facet map. Contains facet number and process where it lives
+    std::vector<std::pair< std::pair<uint, uint>, std::pair<uint, uint> > > _facet_pairs;
+
+    // Add facet pairs of subdomain to _facet_pairs
+    void add_facet_pairs(boost::shared_ptr<const SubDomain> sub_domain);
 
   };
 

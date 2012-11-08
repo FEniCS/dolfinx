@@ -21,6 +21,7 @@
 // Modified by Kristoffer Selim 2008
 // Modified by Andre Massing 2009-2010
 // Modified by Johannes Ring 2012
+// Modified by Mikael Mortensen 2012
 //
 // First added:  2006-05-09
 // Last changed: 2012-10-24
@@ -521,14 +522,12 @@ std::string Mesh::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void Mesh::add_periodic_direction(const SubDomain& sub_domain)
 {
-  _periodic_sub_domain = reference_to_no_delete_pointer(sub_domain);
-  compute_facet_pairs();
+  add_facet_pairs(reference_to_no_delete_pointer(sub_domain));
 }
 
 void Mesh::add_periodic_direction(boost::shared_ptr<const SubDomain> sub_domain)
 {
-  _periodic_sub_domain = sub_domain;
-  compute_facet_pairs();
+  add_facet_pairs(sub_domain);
 }
 
 // Comparison operator for hashing coordinates. Note that two
@@ -592,7 +591,7 @@ struct merge_coordinate_map
   }
 };
 
-void Mesh::compute_facet_pairs()
+void Mesh::add_facet_pairs(boost::shared_ptr<const SubDomain> sub_domain)
 {
   Timer t0("Mesh compute facet pairs");
   
@@ -628,8 +627,8 @@ void Mesh::compute_facet_pairs()
     for (uint i=0; i<gdim; i++)
       x[i] = facet_midpoint[i];
 
-    _periodic_sub_domain->map(_x, _y);
-    if (_periodic_sub_domain->inside(_x, true))
+    sub_domain->map(_x, _y);
+    if (sub_domain->inside(_x, true))
     {
       coordinate_iterator it = coordinate_facet_pairs.find(x);
       if (it != coordinate_facet_pairs.end())
@@ -644,7 +643,7 @@ void Mesh::compute_facet_pairs()
         coordinate_facet_pairs[x] = pair;
       }
     }
-    else if(_periodic_sub_domain->inside(_y, true))
+    else if(sub_domain->inside(_y, true))
     {
       coordinate_iterator it = coordinate_facet_pairs.find(y);
       if (it != coordinate_facet_pairs.end())
@@ -672,15 +671,26 @@ void Mesh::compute_facet_pairs()
                            it != final_coordinate_facet_pairs.end(); ++it)
   {
     facet_pair pair = it->second;
-    facet_pairs.push_back(pair);
+    _facet_pairs.push_back(pair);
   }
     
-  cout << "Facet pairs " << facet_pairs.size() << endl;
-  for (uint i=0; i<facet_pairs.size(); i++)
-  {
-    facet_pair pair = facet_pairs[i];
-    cout << " (" << pair.first.first << ", " << pair.first.second << ")"
-              ", (" << pair.second.first << ", " << pair.second.second << ")" << endl;
-  }  
+//   cout << "Facet pairs " << _facet_pairs.size() << endl;
+//   for (uint i=0; i<_facet_pairs.size(); i++)
+//   {
+//     facet_pair pair = _facet_pairs[i];
+//     cout << " (" << pair.first.first << ", " << pair.first.second << ")"
+//               ", (" << pair.second.first << ", " << pair.second.second << ")" << endl;
+//   }  
 }
-
+//-----------------------------------------------------------------------------
+std::vector<std::pair< std::pair<uint, uint>, std::pair<uint, uint> > > 
+  Mesh::get_facet_pairs() const
+{
+  return _facet_pairs;
+}
+//-----------------------------------------------------------------------------
+bool Mesh::is_periodic() const
+{
+  return !_facet_pairs.empty();
+}
+//-----------------------------------------------------------------------------

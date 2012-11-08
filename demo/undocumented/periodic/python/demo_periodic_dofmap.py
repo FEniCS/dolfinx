@@ -25,9 +25,10 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Anders Logg 2011
+# Modified by Mikael Mortensen 2012
 #
 # First added:  2007-11-15
-# Last changed: 2011-11-18
+# Last changed: 2012-11-8
 
 from dolfin import *
 

@@ -20,6 +20,7 @@
 // Modified by Ola Skavhaug, 2009
 // Modified by Niclas Jansson, 2009
 // Modified by Joachim B Haga, 2012
+// Modified by Mikael Mortensen, 2012
 //
 // First added:  2007-03-01
 // Last changed: 2012-02-29
@@ -44,7 +45,7 @@ using namespace dolfin;
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& dolfin_mesh) : _ufc_dofmap(ufc_dofmap->create()),
                ufc_offset(0), _is_view(false), 
-               _distributed(MPI::num_processes() > 1), _num_slaves(0)
+               _distributed(MPI::num_processes() > 1)
 {
   dolfin_assert(_ufc_dofmap);
   
@@ -89,7 +90,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
                const Mesh& mesh, bool distributed) : ufc_offset(0),
                _ownership_range(0, 0), _is_view(true),
-               _distributed(distributed), _num_slaves(0)
+               _distributed(distributed)
 {
   // NOTE: Ownership range is set to zero since dofmap is a view
 
@@ -182,21 +183,17 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   }
   
   // Set the global dimension of newly created dofmap
-  if (!mesh.facet_pairs.empty())
+  if (mesh.is_periodic())
   {
     boost::unordered_set<dolfin::uint> alldofs = dofs();
     uint sumdofs = 0;
     for (boost::unordered_set<dolfin::uint>::iterator it = alldofs.begin();
-        it != alldofs.end(); ++it)
+         it != alldofs.end(); ++it)
     {
       if (*it >= parent_dofmap._ownership_range.first && *it < parent_dofmap._ownership_range.second)
         sumdofs += 1;
     }
     _global_dim = MPI::sum(sumdofs);
-  }
-  else
-  {
-    _global_dim = _ufc_dofmap->global_dimension();
   }
 }
 //-----------------------------------------------------------------------------
@@ -263,7 +260,6 @@ DofMap::DofMap(const DofMap& dofmap)
   _neighbours = dofmap._neighbours;
   _is_view = dofmap. _is_view;
   _distributed = dofmap._distributed;
-  _num_slaves = dofmap._num_slaves;
   _global_dim = dofmap._global_dim;
 }
 //-----------------------------------------------------------------------------

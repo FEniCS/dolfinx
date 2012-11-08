@@ -155,7 +155,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     }
   }
 
-  if (diagonal || !mesh.facet_pairs.empty())
+  if (diagonal)
   {
     Progress p("Building sparsity pattern over diagonal", local_range[0].second-local_range[0].first);
 

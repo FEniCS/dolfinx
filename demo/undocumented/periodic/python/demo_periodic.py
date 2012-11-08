@@ -88,3 +88,5 @@ file << u
 
 # Plot solution
 plot(u, interactive=True)
+
+list_timings()

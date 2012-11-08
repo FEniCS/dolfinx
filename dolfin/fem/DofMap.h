@@ -19,6 +19,7 @@
 // Modified by Kent-Andre Mardal, 2009
 // Modified by Ola Skavhaug, 2009
 // Modified by Joachim B Haga, 2012
+// Modified by Mikael Mortensen, 2012
 //
 // First added:  2007-03-01
 // Last changed: 2012-02-29
@@ -379,12 +380,9 @@ namespace dolfin
     // True iff running in parallel
     bool _distributed;
     
-    // Number of slaves in periodic dofmap
-    uint _num_slaves;
-    
-    uint _global_dim;
-    
-    std::vector<uint> _num_slaves_on_component;
+    // Global dimension of the finite element function space, modified
+    // for the number of eliminated periodic slaves.
+    uint _global_dim;    
   };
 }
 

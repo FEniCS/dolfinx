@@ -16,6 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Niclas Jansson 2009.
+// Modified by Mikael Mortensen 2012.
 //
 // First added:  2008-08-12
 // Last changed: 2009-11-04
@@ -55,18 +56,18 @@ namespace dolfin
 
     typedef std::vector<dolfin::uint>::const_iterator vector_it;
     typedef boost::unordered_map<uint, std::vector<uint> > vec_map;
+    
+    typedef std::pair<uint, uint> ui_pair;
+    typedef std::map<uint, ui_pair> ui_pair_map;
+    typedef std::vector<ui_pair> vector_of_pairs;
+    typedef ui_pair_map::iterator ui_pair_map_iterator;
+    typedef std::vector<std::pair<ui_pair, ui_pair> > facet_pair_type;
 
   public:
 
     static void build(DofMap& dofmap, const Mesh& dolfin_mesh,
                       const UFCMesh& ufc_mesh, bool reorder,
                       bool distributed);
-
-    static void extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh, 
-                                  std::map<uint, std::pair<uint, uint> >& _slave_master_map,
-                                  std::pair<uint, uint> ownership_range);
-
-    static void periodic_modification(DofMap& dofmap, const Mesh& dolfin_mesh);
 
   private:
 
@@ -101,8 +102,15 @@ namespace dolfin
                             boost::shared_ptr<const ufc::dofmap> dofmap,
                             const Mesh& dolfin_mesh, const UFCMesh& ufc_mesh);
 
-  };
+    // Iterate recursively over all sub-dof maps to build a global
+    // map from slave dofs to master dofs
+    static void extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh, 
+                            std::map<uint, std::pair<uint, uint> >& _slave_master_map,
+                            std::pair<uint, uint> ownership_range);
 
+    // Make all necessary modifications to dofmap due to periodicity of the mesh
+    static void periodic_modification(DofMap& dofmap, const Mesh& dolfin_mesh);
+  };
 }
 
 #endif
