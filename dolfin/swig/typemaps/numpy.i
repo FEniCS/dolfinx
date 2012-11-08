@@ -250,7 +250,7 @@ NUMPY_ARRAY_FRAGMENTS(dolfin::uint, NPY_UINT, uint)
 NUMPY_ARRAY_FRAGMENTS(double, NPY_DOUBLE, double)
 NUMPY_ARRAY_FRAGMENTS(int, NPY_INT, int)
 NUMPY_ARRAY_FRAGMENTS(bool, NPY_BOOL, bool)
-NUMPY_ARRAY_FRAGMENTS(std::size_t, NPY_ULONG, ulong)
+NUMPY_ARRAY_FRAGMENTS(std::size_t, NPY_ULONG, sizet)
 
 //-----------------------------------------------------------------------------
 // Typecheck for function expecting two-dimensional NumPy arrays of double

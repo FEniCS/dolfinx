@@ -64,7 +64,7 @@ namespace dolfin
 
     /// Return a MeshFunction with the cell colors (used for visualisation)
     static CellFunction<std::size_t> cell_colors(const Mesh& mesh,
-                              const std::vector<unsigned int> coloring_type);
+						 const std::vector<unsigned int> coloring_type);
 
 
     /// Convert coloring type to topological dimension
