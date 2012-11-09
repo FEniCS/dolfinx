@@ -16,9 +16,9 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-10-31
-// Last changed: 2012-11-07
+// Last changed: 2012-11-09
 
-#include "SurfaceFileReader.h"
+#include "PolyhedronUtils.h"
 #include "self_intersect.h"
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
@@ -78,7 +78,7 @@ public:
     std::ifstream file(filename.c_str());
     if (!file.is_open())
     {
-      dolfin_error("SurfaceFileReader.cpp",
+      dolfin_error("PolyhedronUtils.cpp",
                    "open .stl file to read 3D surface",
                    "Failed to open file");
     }
@@ -94,7 +94,7 @@ public:
     boost::algorithm::trim(line);
   
     if (line.substr(0, 5) != "solid")
-      dolfin_error("SurfaceFileReader.cpp",
+      dolfin_error("PolyhedronUtils.cpp",
                    "open .stl file to read 3D surface",
                    "File does not start with \"solid\"");
 
@@ -115,7 +115,7 @@ public:
         tokenizer::iterator tok_iter = tokens.begin();
 
         if (*tok_iter != "facet")
-          dolfin_error("SurfaceFileReader.cpp",
+          dolfin_error("PolyhedronUtils.cpp",
                        "open .stl file to read 3D surface",
                        "Expected keyword \"facet\"");
         ++tok_iter;
@@ -126,7 +126,7 @@ public:
           //cout << "Expecting normal" << endl;
 
           if  (*tok_iter != "normal")
-            dolfin_error("SurfaceFileReader.cpp",
+            dolfin_error("PolyhedronUtils.cpp",
                          "open .stl file to read 3D surface",
                          "Expected keyword \"normal\"");
           ++tok_iter;
@@ -145,7 +145,7 @@ public:
           //   has_normal = true;
           
           // if (tok_iter != tokens.end())
-          //   dolfin_error("SurfaceFileReader.cpp",
+          //   dolfin_error("PolyhedronUtils.cpp",
           //                "open .stl file to read 3D surface",
           //                "Expected end of line");
         }
@@ -156,7 +156,7 @@ public:
       boost::algorithm::trim(line);
         
       if (line != "outer loop")
-        dolfin_error("SurfaceFileReader.cpp",
+        dolfin_error("PolyhedronUtils.cpp",
                      "open .stl file to read 3D surface",
                      "Expected key word outer loop");
 
@@ -174,7 +174,7 @@ public:
         tokenizer::iterator tok_iter = tokens.begin();
 
         if (*tok_iter != "vertex")
-          dolfin_error("SurfaceFileReader.cpp",
+          dolfin_error("PolyhedronUtils.cpp",
                        "open .stl file to read 3D surface",
                        "Expected key word vertex");
 
@@ -216,14 +216,14 @@ public:
       std::getline(file, line);
       boost::algorithm::trim(line);
       if (line != "endloop")
-        dolfin_error("SurfaceFileReader.cpp",
+        dolfin_error("PolyhedronUtils.cpp",
                      "open .stl file to read 3D surface",
                      "Expected key word endloop");
 
       std::getline(file, line);
       boost::algorithm::trim(line);
       if (line != "endfacet")
-        dolfin_error("SurfaceFileReader.cpp",
+        dolfin_error("PolyhedronUtils.cpp",
                      "open .stl file to read 3D surface",
                      "Expected key word endfacet");
 
@@ -239,7 +239,7 @@ public:
     tokenizer::iterator tok_iter = tokens.begin();
   
     if (*tok_iter != "endsolid")
-      dolfin_error("SurfaceFileReader.cpp",
+      dolfin_error("PolyhedronUtils.cpp",
                    "open .stl file to read 3D surface",
                    "Expected key word endsolid");
 
@@ -262,7 +262,7 @@ public:
     std::string filename;
 };
 //-----------------------------------------------------------------------------
-void csg::SurfaceFileReader::readSurfaceFile(std::string filename, Exact_Polyhedron_3& p)
+void PolyhedronUtils::readSurfaceFile(std::string filename, csg::Exact_Polyhedron_3& p)
 {
   boost::filesystem::path fpath(filename);
   if (fpath.extension() == ".stl")
@@ -275,19 +275,19 @@ void csg::SurfaceFileReader::readSurfaceFile(std::string filename, Exact_Polyhed
   } 
   else
   {
-    dolfin_error("SurfaceFileReader.cpp",
+    dolfin_error("PolyhedronUtils.cpp",
                  "open file to read 3D surface",
                  "Unknown file type");
   }
 }
 //-----------------------------------------------------------------------------
-void csg::SurfaceFileReader::readSTLFile(std::string filename, Exact_Polyhedron_3& p)
+void PolyhedronUtils::readSTLFile(std::string filename, csg::Exact_Polyhedron_3& p)
 {
   BuildFromSTL<csg::Exact_HalfedgeDS> stl_builder(filename);
   p.delegate(stl_builder);
 }
 //-----------------------------------------------------------------------------
-bool csg::SurfaceFileReader::has_self_intersections(csg::Exact_Polyhedron_3& p)
+bool PolyhedronUtils::has_self_intersections(csg::Exact_Polyhedron_3& p)
 {
   // compute self-intersections
   typedef std::list<csg::Exact_Triangle_3>::iterator Iterator;
@@ -305,7 +305,7 @@ bool csg::SurfaceFileReader::has_self_intersections(csg::Exact_Polyhedron_3& p)
   return triangles.size() > 0;
 }
 //-----------------------------------------------------------------------------
-CGAL::Bbox_3 csg::SurfaceFileReader::getBoundingBox(csg::Polyhedron_3& polyhedron)
+CGAL::Bbox_3 PolyhedronUtils::getBoundingBox(csg::Polyhedron_3& polyhedron)
 {
   csg::Polyhedron_3::Vertex_iterator it=polyhedron.vertices_begin();
 
@@ -323,7 +323,7 @@ CGAL::Bbox_3 csg::SurfaceFileReader::getBoundingBox(csg::Polyhedron_3& polyhedro
   return b;
 }
 //-----------------------------------------------------------------------------
-double csg::SurfaceFileReader::getBoundingSphereRadius(csg::Polyhedron_3& polyhedron)
+double PolyhedronUtils::getBoundingSphereRadius(csg::Polyhedron_3& polyhedron)
 {
   typedef CGAL::Min_sphere_of_spheres_d_traits_3<csg::Polyhedron_3::Traits, double> Traits;
   typedef Traits::Sphere Sphere;

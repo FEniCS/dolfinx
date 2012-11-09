@@ -16,30 +16,26 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-10-31
-// Last changed: 2012-10-31
+// Last changed: 2012-11-09
 
-// This class is capable of parsing surface file to a cgal polyhedron
-// .off files are parsed by cgal
+// Some utilities for working with cgal polyhedrons
 
 
-#ifndef __SURFACE_FILE_READER_H
-#define __SURFACE_FILE_READER_H
+#ifndef __POLYHEDRON_UTILS_H
+#define __POLYHEDRON_UTILS_H
 
 #include "cgal_csg3d.h"
 
 namespace dolfin
 {
-  namespace csg
+  class PolyhedronUtils 
   {
-    class SurfaceFileReader 
-    {
-    public:
-      static void readSurfaceFile(std::string filename, Exact_Polyhedron_3& p);
-      static void readSTLFile(std::string filename, Exact_Polyhedron_3& p);
-      static bool has_self_intersections(Exact_Polyhedron_3& p);
-      static CGAL::Bbox_3 getBoundingBox(csg::Polyhedron_3& polyhedron);
-      static double getBoundingSphereRadius(csg::Polyhedron_3& polyhedron);
-    };
-  }
+  public:
+    static void readSurfaceFile(std::string filename, csg::Exact_Polyhedron_3& p);
+    static void readSTLFile(std::string filename, csg::Exact_Polyhedron_3& p);
+    static bool has_self_intersections(csg::Exact_Polyhedron_3& p);
+    static CGAL::Bbox_3 getBoundingBox(csg::Polyhedron_3& polyhedron);
+    static double getBoundingSphereRadius(csg::Polyhedron_3& polyhedron);
+  };
 }
 #endif

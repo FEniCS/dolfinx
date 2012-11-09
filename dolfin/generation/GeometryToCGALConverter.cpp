@@ -28,7 +28,7 @@
 #include "GeometryToCGALConverter.h"
 #include "CSGGeometry.h"
 #include "CSGOperators.h"
-#include "SurfaceFileReader.h"
+#include "PolyhedronUtils.h"
 #include "CSGPrimitives3D.h"
 #include <dolfin/mesh/Point.h>
 #include <dolfin/log/LogStream.h>
@@ -917,7 +917,7 @@ static void make_cone(const csg::Cone* c, csg::Exact_Polyhedron_3& P)
 //-----------------------------------------------------------------------------
 static void make_surface3D(const csg::Surface3D* s, csg::Exact_Polyhedron_3& P)
 {
-  csg::SurfaceFileReader::readSurfaceFile(s->filename, P);
+  PolyhedronUtils::readSurfaceFile(s->filename, P);
 
   // if (P.is_valid())
   //   dolfin_error("GeometryToCGALConverter.cpp",
@@ -931,7 +931,7 @@ static void make_surface3D(const csg::Surface3D* s, csg::Exact_Polyhedron_3& P)
 
 
 
-  // if (csg::SurfaceFileReader::has_self_intersections(P))
+  // if (PolyhedronUtils::has_self_intersections(P))
   //   dolfin_error("GeometryToCGALConverter.cpp",
   //       	 "parsing polyhedron from file",
   //       	 "Polyhedron is self intersecting");

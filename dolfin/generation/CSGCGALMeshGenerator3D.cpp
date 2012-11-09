@@ -18,13 +18,13 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-10
-// Last changed: 2012-10-30
+// Last changed: 2012-11-09
 
 
 #include "CSGCGALMeshGenerator3D.h"
 #include "CSGGeometry.h"
 #include "GeometryToCGALConverter.h"
-#include "SurfaceFileReader.h"
+#include "PolyhedronUtils.h"
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/MeshEditor.h>
@@ -138,8 +138,7 @@ void CSGCGALMeshGenerator3D::generate(Mesh& mesh) const
   if (mesh_resolution > 0)
   {
     // Try to compute reasonable parameters
-    std::cout << "Bounding box of domain: " << csg::SurfaceFileReader::getBoundingBox(p) << std::endl;
-    const double r = csg::SurfaceFileReader::getBoundingSphereRadius(p);
+    const double r = PolyhedronUtils::getBoundingSphereRadius(p);
     //cout << "Radius of bounding sphere: " << r << endl;
     //cout << "Mesh resolution" << mesh_resolution << endl;
     const double cell_size = r/static_cast<double>(mesh_resolution);
