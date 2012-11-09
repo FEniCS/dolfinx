@@ -40,7 +40,7 @@ namespace dolfin
   public :
 
     /// Generate mesh from CSG geometry
-    static void generate(Mesh& mesh, const CSGGeometry& geometry);
+    static void generate(Mesh& mesh, const CSGGeometry& geometry, uint resolution);
 
     /// Generate boundary mesh from the surface of a CSG geometry
     static void generate(BoundaryMesh& mesh, const CSGGeometry& geometry);

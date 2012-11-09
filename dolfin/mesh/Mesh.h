@@ -123,14 +123,14 @@ namespace dolfin
     /// *Arguments*
     ///     geometry (CSGGeometry)
     ///         The CSG geometry
-    explicit Mesh(const CSGGeometry& geometry);
+    explicit Mesh(const CSGGeometry& geometry, uint mesh_resolution);
 
     /// Create mesh defined by Constructive Solid Geometry (CSG)
     ///
     /// *Arguments*
     ///     geometry (CSGGeometry)
     ///         The CSG geometry
-    explicit Mesh(boost::shared_ptr<const CSGGeometry> geometry);
+    explicit Mesh(boost::shared_ptr<const CSGGeometry> geometry, uint resolution);
 
     /// Destructor.
     ~Mesh();

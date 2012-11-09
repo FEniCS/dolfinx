@@ -93,7 +93,7 @@ Mesh::Mesh(LocalMeshData& local_mesh_data)
   MeshPartitioning::build_distributed_mesh(*this, local_mesh_data);
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(const CSGGeometry& geometry)
+Mesh::Mesh(const CSGGeometry& geometry, uint mesh_resolution)
   : Variable("mesh", "DOLFIN mesh"),
     Hierarchical<Mesh>(*this),
     _data(*this),
@@ -101,10 +101,10 @@ Mesh::Mesh(const CSGGeometry& geometry)
     _intersection_operator(*this),
     _ordered(false)
 {
-  CSGMeshGenerator::generate(*this, geometry);
+  CSGMeshGenerator::generate(*this, geometry, mesh_resolution);
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry)
+Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry, uint resolution)
   : Variable("mesh", "DOLFIN mesh"),
     Hierarchical<Mesh>(*this),
     _data(*this),
@@ -113,7 +113,7 @@ Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry)
     _ordered(false)
 {
   assert(geometry);
-  CSGMeshGenerator::generate(*this, *geometry);
+  CSGMeshGenerator::generate(*this, *geometry, resolution);
 }
 //-----------------------------------------------------------------------------
 Mesh::~Mesh()

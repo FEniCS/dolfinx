@@ -331,7 +331,6 @@ double csg::SurfaceFileReader::getBoundingSphereRadius(csg::Polyhedron_3& polyhe
 
   std::vector<Sphere> s(polyhedron.size_of_vertices());
 
-  // Initialize bounding box with the first point
   for (csg::Polyhedron_3::Vertex_iterator it=polyhedron.vertices_begin(); 
        it != polyhedron.vertices_end(); ++it)
   {

@@ -30,6 +30,7 @@
 #include <dolfin/mesh/MeshEditor.h>
 #include "cgal_csg3d.h"
 #include <dolfin/generation/triangulate_polyhedron.h>
+#include <boost/scoped_ptr.hpp>
 
 using namespace dolfin;
 
@@ -118,51 +119,53 @@ void CSGCGALMeshGenerator3D::generate(Mesh& mesh) const
 
   cout << "Converting geometry to cgal types." << endl;
   GeometryToCGALConverter::convert(*geometry, p, parameters["remove_degenerated"]);
-
   dolfin_assert(p.is_pure_triangle());
-
-  csg::Mesh_criteria criteria;
-  int mesh_resolution = parameters["mesh_resolution"];
-  if (mesh_resolution > 0)
-  {
-    // Try to compute reasonable parameters
-    std::cout << "Bounding box of domain: " << csg::SurfaceFileReader::getBoundingBox(p) << std::endl;
-    std::cout << "Radius of bounding sphere: " << csg::SurfaceFileReader::getBoundingSphereRadius(p) << std::endl;
-    const double cell_size = csg::SurfaceFileReader::getBoundingSphereRadius(p)/mesh_resolution;
-
-    criteria = csg::Mesh_criteria (CGAL::parameters::edge_size = parameters["edge_size"],
-                                   CGAL::parameters::facet_angle = parameters["facet_angle"], 
-                                   CGAL::parameters::facet_size = parameters["facet_size"], 
-                                   CGAL::parameters::facet_distance = parameters["facet_distance"],
-                                   CGAL::parameters::cell_radius_edge_ratio = parameters["cell_radius_edge_ratio"], 
-                                   CGAL::parameters::cell_size = parameters["cell_size"]);
-
-  }
-  else
-  {
-    // Mesh criteria
-    criteria = csg::Mesh_criteria (CGAL::parameters::edge_size = parameters["edge_size"],
-                                   CGAL::parameters::facet_angle = parameters["facet_angle"], 
-                                   CGAL::parameters::facet_size = parameters["facet_size"], 
-                                   CGAL::parameters::facet_distance = parameters["facet_distance"],
-                                   CGAL::parameters::cell_radius_edge_ratio = parameters["cell_radius_edge_ratio"], 
-                                   CGAL::parameters::cell_size = parameters["cell_size"]);
-  }
-
-
 
   csg::Mesh_domain domain(p);
 
   if (parameters["detect_sharp_features"])
   {
     cout << "Detecting sharp features" << endl;
+    //const int feature_threshold = parameters["feature_threshold"];
     domain.detect_features();
   }
 
+  // Workaround, cgal segfaulted when assigning new mesh criterias
+  // within the if-else blocks.
+  boost::scoped_ptr<csg::Mesh_criteria> criteria;
+
+  int mesh_resolution = parameters["mesh_resolution"];
+  if (mesh_resolution > 0)
+  {
+    // Try to compute reasonable parameters
+    std::cout << "Bounding box of domain: " << csg::SurfaceFileReader::getBoundingBox(p) << std::endl;
+    const double r = csg::SurfaceFileReader::getBoundingSphereRadius(p);
+    //cout << "Radius of bounding sphere: " << r << endl;
+    //cout << "Mesh resolution" << mesh_resolution << endl;
+    const double cell_size = r/static_cast<double>(mesh_resolution);
+    //cout << "Cell size: " << cell_size << endl;
+
+    criteria.reset(new csg::Mesh_criteria(CGAL::parameters::edge_size = cell_size, // ???
+                                          CGAL::parameters::facet_angle = 30.0, 
+                                          CGAL::parameters::facet_size = cell_size, 
+                                          CGAL::parameters::facet_distance = cell_size/10.0, // ???
+                                          CGAL::parameters::cell_radius_edge_ratio = 2.5, 
+                                          CGAL::parameters::cell_size = cell_size));
+  }
+  else
+  {
+    // Mesh criteria
+    criteria.reset(new csg::Mesh_criteria(CGAL::parameters::edge_size = parameters["edge_size"],
+                                          CGAL::parameters::facet_angle = parameters["facet_angle"], 
+                                          CGAL::parameters::facet_size = parameters["facet_size"], 
+                                          CGAL::parameters::facet_distance = parameters["facet_distance"],
+                                          CGAL::parameters::cell_radius_edge_ratio = parameters["cell_radius_edge_ratio"], 
+                                          CGAL::parameters::cell_size = parameters["cell_size"]));
+  }
   
   // Mesh generation
   cout << "Generating mesh" << endl;
-  csg::C3t3 c3t3 = CGAL::make_mesh_3<csg::C3t3>(domain, criteria,
+  csg::C3t3 c3t3 = CGAL::make_mesh_3<csg::C3t3>(domain, *criteria,
                                                 CGAL::parameters::no_perturb(),
                                                 CGAL::parameters::no_exude());
 

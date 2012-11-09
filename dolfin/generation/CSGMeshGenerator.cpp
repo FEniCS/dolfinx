@@ -34,7 +34,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void CSGMeshGenerator::generate(Mesh& mesh,
-                                const CSGGeometry& geometry)
+                                const CSGGeometry& geometry,
+                                uint resolution)
 {
   if (geometry.dim() == 2)
   {
@@ -44,6 +45,7 @@ void CSGMeshGenerator::generate(Mesh& mesh,
   else if (geometry.dim() == 3)
   {
     CSGCGALMeshGenerator3D generator(geometry);
+    generator.parameters["mesh_resolution"] = static_cast<int>(resolution);
     generator.generate(mesh);
   }
   else
@@ -83,7 +85,8 @@ void CSGMeshGenerator::generate(BoundaryMesh& mesh,
 //-----------------------------------------------------------------------------
 #else
 void CSGMeshGenerator::generate(Mesh& mesh,
-                                const CSGGeometry& geometry)
+                                const CSGGeometry& geometry,
+                                uint resolution)
 {
   dolfin_error("CSGMeshGenerator.cpp",
 	       "create mesh from CSG geometry",
