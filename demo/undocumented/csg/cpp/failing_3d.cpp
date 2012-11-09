@@ -42,7 +42,7 @@ int main()
   info(*g3d, true);
 
   // Generate mesh
-  Mesh mesh3d(g3d);
+  Mesh mesh3d(g3d, 64);
 
   // Plot meshes
   plot(mesh3d, "3D mesh");

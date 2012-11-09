@@ -46,7 +46,7 @@ int main()
   plot(g2d, "2D Geometry (boundary)");
 
   // Generate and plot mesh
-  Mesh mesh2d(g2d);
+  Mesh mesh2d(g2d, 100);
   plot(mesh2d, "2D mesh");
 
   interactive();

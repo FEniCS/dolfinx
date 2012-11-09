@@ -47,7 +47,7 @@ int main(int argc, char** argv)
   plot(g3d, "3D geometry (surface)");
 
   // Generate and plot mesh
-  Mesh mesh3d(g3d);
+  Mesh mesh3d(g3d, 128);
   cout << "Done generating mesh" << endl;
   info(mesh3d);
   plot(mesh3d, "3D mesh");
