@@ -83,6 +83,8 @@ main_file_names = dict(test="test.cpp",
                        demo="main.cpp",
                        bench="main.cpp")
 
+# Projects that use custom CMakeLists.txt (shouldn't overwrite)
+exclude_projects = ['demo_plot-qt', 'demo_csg']
 
 def generate_cmake_files(subdirectory):
     """Search for C++ code and write CMakeLists.txt files"""

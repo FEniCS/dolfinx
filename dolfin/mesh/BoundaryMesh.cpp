@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Niclas Jansson 2009.
+// Modified by Joachim B Haga 2012.
 //
 // First added:  2006-06-21
-// Last changed: 2012-06-25
+// Last changed: 2012-09-05
 
 #include <iostream>
 

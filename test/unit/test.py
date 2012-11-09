@@ -77,6 +77,9 @@ else:
 if "DISABLE_PARALLEL_TESTING" in os.environ:
     prefixes = [""]
 
+# Set non-interactive
+os.putenv('DOLFIN_NOPLOT', '1')
+
 failed = []
 # Run tests in serial, then in parallel
 for prefix in prefixes:
