@@ -50,7 +50,7 @@ x += 1.0
 # Iterate over angle
 theta = 0.0
 dtheta = 0.05*DOLFIN_PI
-intersection = MeshFunction("uint", omega0, omega0.topology().dim())
+intersection = MeshFunction("sizet", omega0, omega0.topology().dim())
 _first = True
 
 p = VTKPlotter(intersection)
