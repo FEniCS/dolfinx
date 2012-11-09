@@ -703,7 +703,6 @@ VTKPlotter::VTKPlotter(boost::shared_ptr<const Expression> expression,
 		       boost::shared_ptr<const Mesh> mesh) : _id(expression->id())                                          { init(); }
 VTKPlotter::VTKPlotter(boost::shared_ptr<const DirichletBC> bc) : _id(bc->id())                                 { init(); }
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<std::size_t> > mesh_function) : _id(mesh_function->id())   { init(); }
-VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<uint> > mesh_function) : _id(mesh_function->id())   { init(); }
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function) : _id(mesh_function->id())    { init(); }
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function) : _id(mesh_function->id()) { init(); }
 VTKPlotter::VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function) : _id(mesh_function->id())   { init(); }
