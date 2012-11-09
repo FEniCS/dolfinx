@@ -19,7 +19,6 @@
 // Last changed: 2012-11-09
 
 #include "PolyhedronUtils.h"
-#include "self_intersect.h"
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/constants.h>
@@ -285,24 +284,6 @@ void PolyhedronUtils::readSTLFile(std::string filename, csg::Exact_Polyhedron_3&
 {
   BuildFromSTL<csg::Exact_HalfedgeDS> stl_builder(filename);
   p.delegate(stl_builder);
-}
-//-----------------------------------------------------------------------------
-bool PolyhedronUtils::has_self_intersections(csg::Exact_Polyhedron_3& p)
-{
-  // compute self-intersections
-  typedef std::list<csg::Exact_Triangle_3>::iterator Iterator;
-  typedef CGAL::Box_intersection_d::Box_with_handle_d<double,3,Iterator> Box;
-  typedef std::back_insert_iterator<std::list<csg::Exact_Triangle_3> > OutputIterator;
-
-  std::list<csg::Exact_Triangle_3> triangles; // intersecting triangles
-  ::self_intersect<csg::Exact_Polyhedron_3, csg::Exact_Kernel,OutputIterator>(p, std::back_inserter(triangles));
-
-  if(triangles.size() != 0)
-    cout << "Found " << triangles.size() << " found." << endl;
-  else 
-    cout << "The polyhedron does not self-intersect." << endl;
-
-  return triangles.size() > 0;
 }
 //-----------------------------------------------------------------------------
 CGAL::Bbox_3 PolyhedronUtils::getBoundingBox(csg::Polyhedron_3& polyhedron)
