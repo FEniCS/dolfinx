@@ -349,7 +349,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
                            boost::lexical_cast<std::string>(num_sweeps).c_str());
     }
 
-    if (parameters("mg")["cycle_type"].is_set())
+    if (parameters("ml")["cycle_type"].is_set())
     {
       const std::string type = parameters("mg")["cycle_type"];
       PetscOptionsSetValue("-pc_mg_cycles", type.c_str());
