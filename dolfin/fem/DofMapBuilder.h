@@ -48,11 +48,11 @@ namespace dolfin
   {
     // FIXME: Test which 'set' is most efficient
 
-    typedef std::set<dolfin::uint> set;
-    typedef std::set<dolfin::uint>::const_iterator set_iterator;
+    //typedef std::set<dolfin::uint> set;
+    //typedef std::set<dolfin::uint>::const_iterator set_iterator;
 
-    //typedef boost::unordered_set<dolfin::uint> set;
-    //typedef boost::unordered_set<dolfin::uint>::const_iterator set_iterator;
+    typedef boost::unordered_set<dolfin::uint> set;
+    typedef boost::unordered_set<dolfin::uint>::const_iterator set_iterator;
 
     typedef std::vector<dolfin::uint>::const_iterator vector_it;
     typedef boost::unordered_map<uint, std::vector<uint> > vec_map;

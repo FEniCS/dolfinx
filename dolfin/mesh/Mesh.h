@@ -47,7 +47,6 @@
 
 namespace dolfin
 {
-
   class CellType;
   class BoundaryMesh;
   class Function;
@@ -671,7 +670,28 @@ namespace dolfin
     ///     sub_domain (_SubDomain_)
     ///         The subdomain.
     void add_periodic_direction(boost::shared_ptr<const SubDomain> sub_domain);
-            
+
+    /// Add Periodicity to the mesh
+    ///
+    /// *Arguments*
+    ///     MeshFunction (_MeshFunction_)
+    ///         FacetFunction marking the two periodic subdomains
+    ///     uint
+    ///         Id of master subdomain
+    ///     uint
+    ///         Id of slave subdomain
+    void add_periodic_direction(const MeshFunction<unsigned int>& sub_domains,
+                const uint sub_domain0, const uint sub_domain1);
+
+    /// Add Periodicity to the mesh. The mesh must contain markers for subdomains
+    ///
+    /// *Arguments*
+    ///     uint
+    ///         Id of master subdomain
+    ///     uint
+    ///         Id of slave subdomain
+    void add_periodic_direction(const uint sub_domain0, const uint sub_domain1);
+
     /// Return periodic facet-to-facet map
     ///
     /// *Returns*
@@ -725,7 +745,6 @@ namespace dolfin
     void add_facet_pairs(boost::shared_ptr<const SubDomain> sub_domain);
 
   };
-
 }
 
 #endif

@@ -30,6 +30,7 @@
 #include "dolfin/common/Set.h"
 #include "dolfin/common/types.h"
 #include "GenericSparsityPattern.h"
+#include <boost/unordered_set.hpp>
 
 namespace dolfin
 {
@@ -41,7 +42,8 @@ namespace dolfin
   {
 
     // Set type used for the rows of the sparsity pattern
-    typedef dolfin::Set<uint> set_type;
+    //typedef dolfin::Set<uint> set_type;
+    typedef boost::unordered_set<dolfin::uint>   set_type;
 
   public:
 

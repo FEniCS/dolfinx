@@ -722,7 +722,7 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
   // Put the matching dof pairs on all processes
   std::vector<vector_of_pairs> allpairs;
   MPI::all_gather(global_matching_pairs, allpairs);
-      
+  
   // Add dof pairs to the global _slave_master_map
   for (uint i = 0; i < allpairs.size(); i++)
   {
@@ -757,15 +757,9 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
       else // The slave_dof exists as slave from before
       {
         // Check if the master_dof has been used previously as a slave
-        for (ui_pair_map_iterator it = _slave_master_map.begin();
-                                  it != _slave_master_map.end(); ++it)
-        {
-          if (it->first == master_dof)
-          {
-            _slave_master_map[slave_dof] = it->second; // In that case use previous master for the current slave as well
-            break;
-          }
-        }
+        // In that case use previous master for the current slave as well
+        if (_slave_master_map.find(master_dof) != _slave_master_map.end())
+          _slave_master_map[slave_dof] = _slave_master_map[master_dof]; 
       }
     }
   }
@@ -818,37 +812,30 @@ void DofMapBuilder::periodic_modification(DofMap& dofmap, const Mesh& mesh)
     for (uint j = 0; j < dofmap.max_cell_dimension(); j++)
     {
       const uint dof = global_slave_dofs[j];
-      for (ui_pair_map_iterator sit = _slave_master_map.begin();
-                                sit != _slave_master_map.end(); ++sit)
+      if (_slave_master_map.find(dof) != _slave_master_map.end())
       {
-        if (sit->first == dof)
-        {
-          dofmap._dofmap[*it][j] = sit->second.first; // Switch slave for master
-          
-          // Modify _off_process_owner if master is not owned by current process
-          if (sit->second.second != MPI::process_number())
-            dofmap._off_process_owner[sit->second.first] = sit->second.second; 
-          dofmap._off_process_owner.erase(sit->first);
-        }
+        dofmap._dofmap[*it][j] = _slave_master_map[dof].first; // Switch slave for master
+        // Modify _off_process_owner if master is not owned by current process
+        if (_slave_master_map[dof].second != MPI::process_number())
+          dofmap._off_process_owner[_slave_master_map[dof].first] = _slave_master_map[dof].second; 
+        dofmap._off_process_owner.erase(dof);
       }      
     }
-  }
-      
+  }  
+  
+  for (boost::unordered_map<uint, uint>::iterator op = dofmap.ufc_map_to_dofmap.begin();
+    op != dofmap.ufc_map_to_dofmap.end(); ++op)
+  {
+    if (_slave_master_map.find(op->second) != _slave_master_map.end())
+      dofmap.ufc_map_to_dofmap[op->first] = _slave_master_map[op->second].first;
+  }  
   for (ui_pair_map_iterator it = _slave_master_map.begin();
                             it != _slave_master_map.end(); ++it)
   {
-    // Replace slave with master in ufc_map_to_dofmap
-    for (boost::unordered_map<uint, uint>::iterator op = dofmap.ufc_map_to_dofmap.begin();
-      op != dofmap.ufc_map_to_dofmap.end(); ++op)
-    {
-      if (op->second == it->first)
-        dofmap.ufc_map_to_dofmap[op->first] = it->second.first;
-    }
-    
     // Remove slaves from _shared_dofs
     dofmap._shared_dofs.erase(it->first);
   }
-
+  
   // At this point the slaves should be completely removed from the dofmap
   // As such we can now reduce the global dimension of the dofmap.
   // To do this we 
@@ -857,7 +844,7 @@ void DofMapBuilder::periodic_modification(DofMap& dofmap, const Mesh& mesh)
   //        of eliminated slaves with a number less than the current
   //   3) Recompute ownership_range
   //   4) Recompute global_dimension (set _global_dim)
-  
+
   // Count slaves on this process and alltogether
   std::vector<uint> _slaves_on_process;
   std::vector<uint> _all_slaves;
@@ -942,4 +929,5 @@ void DofMapBuilder::periodic_modification(DofMap& dofmap, const Mesh& mesh)
     new_shared_dofs[new_dof] = op->second;
   }
   dofmap._shared_dofs = new_shared_dofs;  
+  
 }
