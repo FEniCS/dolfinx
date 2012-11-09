@@ -309,15 +309,15 @@ void DirichletBC::zero_columns(GenericMatrix& A,
   std::vector<double> b_vals;
   std::vector<uint>   b_rows;
 
-  for (uint row=rows.first; row<rows.second; row++)
+  for (uint row = rows.first; row < rows.second; row++)
   {
     // If diag_val is nonzero, the matrix is a diagonal block (nrows==ncols),
     // and we can set the whole BC row
     if (diag_val != 0.0 && is_bc_dof[row])
     {
       A.getrow(row, cols, vals);
-      for (uint j=0; j<cols.size(); j++)
-        vals[j] = (cols[j]==row) * diag_val;
+      for (uint j = 0; j <cols.size(); j++)
+        vals[j] = (cols[j] == row) * diag_val;
       A.setrow(row, cols, vals);
       A.apply("insert");
       b.setitem(row, bc_dof_val[row]*diag_val);
@@ -326,7 +326,7 @@ void DirichletBC::zero_columns(GenericMatrix& A,
     {
       A.getrow(row, cols, vals);
       bool row_changed=false;
-      for (uint j=0; j<cols.size(); j++)
+      for (uint j = 0; j < cols.size(); j++)
       {
         const uint col = cols[j];
 
