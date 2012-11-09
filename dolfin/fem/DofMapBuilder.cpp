@@ -549,6 +549,7 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
       DofMap* sub_dofmap = dofmap.extract_sub_dofmap(component, mesh);
       extract_dof_pairs(*sub_dofmap, mesh, _slave_master_map, ownership_range);
     }
+    return;
   }
   
   // Get facet-to-facet map from mesh class  
@@ -763,6 +764,12 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
       }
     }
   }
+//   cout << "Map" << endl;
+//   for (ui_pair_map_iterator it = _slave_master_map.begin();
+//                                   it != _slave_master_map.end(); ++it)
+//   {
+//     cout << "   " << it->first << " " << it->second.first << endl;
+//   }
 }
 
 void DofMapBuilder::periodic_modification(DofMap& dofmap, const Mesh& mesh)
