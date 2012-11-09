@@ -74,6 +74,11 @@ int main()
   Matrix A;
   assemble(A, a);
 
+  Vector b;
+  assemble(b, L);
+
+  bc.apply(A, b);
+
   info(A, true);
 
   // Compute solution

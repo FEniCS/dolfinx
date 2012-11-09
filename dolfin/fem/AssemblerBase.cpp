@@ -141,7 +141,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
         GenericMatrix& _A = A.down_cast<GenericMatrix>();
         std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >::const_iterator dof_pair;
         for (dof_pair = periodic_master_slave_dofs.begin();
-                    dof_pair != periodic_master_slave_dofs.end(); ++dof_pair)
+             dof_pair != periodic_master_slave_dofs.end(); ++dof_pair)
         {
           const uint dofs[2] = {dof_pair->first.first, dof_pair->second.first};
 
