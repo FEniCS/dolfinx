@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-10-12
-// Last changed: 2012-11-05
+// Last changed: 2012-11-08
 
 #include <dolfin.h>
 #include "Poisson.h"

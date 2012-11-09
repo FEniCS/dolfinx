@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Anders Logg and Ola Skavhaug
+// Copyright (C) 2008-2012 Anders Logg and Ola Skavhaug
 //
 // This file is part of DOLFIN.
 //
@@ -15,15 +15,17 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Niclas Jansson 2009.
+// Modified by Niclas Jansson 2009
+// Modified by Garth Wells 2009-2012
 //
 // First added:  2008-08-12
-// Last changed: 2009-11-04
+// Last changed: 2012-11-05
 
 #ifndef __DOF_MAP_BUILDER_H
 #define __DOF_MAP_BUILDER_H
 
 #include <set>
+#include <map>
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
 #include <dolfin/common/Set.h>
@@ -45,10 +47,14 @@ namespace dolfin
 
   class DofMapBuilder
   {
-    // FIXME: Test which 'set' is most efficient
 
+    // FIXME: Test which 'set' is most efficient
     typedef std::set<dolfin::uint> set;
     typedef std::set<dolfin::uint>::const_iterator set_iterator;
+
+    // FIXME: Test which 'map' is most efficient
+    typedef std::map<dolfin::uint, dolfin::uint> map;
+    typedef std::map<dolfin::uint, dolfin::uint>::const_iterator map_iterator;
 
     //typedef boost::unordered_set<dolfin::uint> set;
     //typedef boost::unordered_set<dolfin::uint>::const_iterator set_iterator;
@@ -58,10 +64,21 @@ namespace dolfin
 
   public:
 
-    static void build(DofMap& dofmap, const Mesh& dolfin_mesh,
-                      const UFCMesh& ufc_mesh, bool reorder,
+    // Build dofmap
+    static void build(DofMap& dofmap,
+                      const Mesh& dolfin_mesh,
+                      const UFCMesh& ufc_mesh,
+                      bool reorder,
                       bool distributed);
 
+    // Build restricted dofmap
+    static void build(DofMap& dofmap,
+                      const Mesh& dolfin_mesh,
+                      const UFCMesh& ufc_mesh,
+                      const MeshFunction<uint>& domain_markers,
+                      uint domain,
+                      bool reorder,
+                      bool distributed);
 
   private:
 

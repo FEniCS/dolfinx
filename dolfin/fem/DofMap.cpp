@@ -22,7 +22,7 @@
 // Modified by Joachim B Haga, 2012
 //
 // First added:  2007-03-01
-// Last changed: 2012-11-02
+// Last changed: 2012-11-05
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
@@ -92,7 +92,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
     ufc_offset(0), _is_view(false),
     _distributed(MPI::num_processes() > 1)
 {
-  warning("Just ignoring restriction for now. Creating standard dof map.");
+  info("Creating restricted dofmap.");
 
   dolfin_assert(_ufc_dofmap);
 
@@ -128,18 +128,26 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
     }
   }
 
+  // FIXME: Think about whether restricted UFC mesh should be created
   // Create the UFC mesh
-  const UFCMesh ufc_mesh(dolfin_mesh, domain_markers, domain);
+  //const UFCMesh ufc_mesh(dolfin_mesh, domain_markers, domain);
+  const UFCMesh ufc_mesh(dolfin_mesh);
 
+  // FIXME: Think about whether restricted UFC dofmap should be created
   // Initialize the UFC dofmap
-  init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh, domain_markers, domain);
+  //init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh, domain_markers, domain);
+  init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh);
 
   // FIXME: Should be OK up to here
 
   // Build dof map
   // FIXME: Need to build better dofmap
   const bool reorder = dolfin::parameters["reorder_dofs_serial"];
-  DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, reorder, _distributed);
+  DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh,
+                       domain_markers, domain,
+                       reorder, _distributed);
+
+  info("Restricted dofmap created.");
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,

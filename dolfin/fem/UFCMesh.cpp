@@ -65,8 +65,6 @@ UFCMesh::UFCMesh(const Mesh& mesh,
     // Count entities
     for (uint d = 0; d < topological_dimension; d++)
     {
-      info("Counting entities of dimension %d", d);
-
       // Skip if there are not entities of current dimension
       if (mesh.num_entities(d) == 0)
         continue;
@@ -83,8 +81,11 @@ UFCMesh::UFCMesh(const Mesh& mesh,
     num_entities[d] = entity_sets[d].size();
   num_entities[topological_dimension] = num_cells;
 
-  // FIXME: debugging
+  // Print some info
   for (uint d = 0; d <= topological_dimension; d++)
-    info("Number of entities of dimension %d: %d", d, num_entities[d]);
+  {
+    info("Number of entities of dimension %d for restricted mesh: %d (out of %d).",
+         d, num_entities[d], mesh.num_entities(d));
+  }
 }
 //-----------------------------------------------------------------------------
