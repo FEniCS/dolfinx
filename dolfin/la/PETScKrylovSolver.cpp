@@ -309,6 +309,15 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   // Set operators
   set_petsc_operators();
 
+  // Set (approxinate) null space for preconditioner
+  if (preconditioner)
+  {
+    dolfin_assert(P);
+    boost::shared_ptr<const MatNullSpace> pc_nullspace = preconditioner->nullspace();
+    if (pc_nullspace)
+      MatSetNearNullSpace(*(this->P->mat()), *pc_nullspace);
+  }
+
   // FIXME: Improve check for re-setting preconditoner, e.g. if parameters change
   // FIXME: Solve using matrix free matrices fails if no user provided Prec is provided
   // Set preconditioner if necessary

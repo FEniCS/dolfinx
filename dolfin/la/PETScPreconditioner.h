@@ -33,6 +33,7 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/parameter/Parameters.h>
+#include "GenericPreconditioner.h"
 
 namespace dolfin
 {
@@ -46,7 +47,7 @@ namespace dolfin
   /// not own a preconditioner. It can take a PETScKrylovSolver and set the
   /// preconditioner type and parameters.
 
-  class PETScPreconditioner : public PETScObject, public Variable
+  class PETScPreconditioner : public PETScObject, public GenericPreconditioner, public Variable
   {
   public:
 
@@ -59,10 +60,19 @@ namespace dolfin
     /// Set the precondtioner type and parameters
     virtual void set(PETScKrylovSolver& solver) const;
 
+    /// Set the (approximate) null space of the preconditioner operator
+    /// (matrix). This is required for certain preconditioner types,
+    /// e.g. smoothed aggregation multigrid
+    void set_nullspace(const std::vector<const GenericVector*> nullspace);
+
+    /// Return the PETSc null space
+    boost::shared_ptr<const MatNullSpace> nullspace() const
+    { return petsc_nullspace; }
+
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-    // Rerturn a list of available preconditioners
+    /// Rerturn a list of available preconditioners
     static std::vector<std::pair<std::string, std::string> > preconditioners();
 
     /// Default parameter values
@@ -80,6 +90,14 @@ namespace dolfin
 
     // Available preconditioner descriptions
     static const std::vector<std::pair<std::string, std::string> > _methods_descr;
+
+    // Null space vectors
+    std::vector<PETScVector> _nullspace;
+
+    // PETSc null space. Would like this to be a scoped_ptr, but it
+    // doesn't support custom deleters. Change to std::unique_ptr in
+    // the future.
+    boost::shared_ptr<MatNullSpace> petsc_nullspace;
 
   };
 
