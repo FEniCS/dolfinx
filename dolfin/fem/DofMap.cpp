@@ -44,7 +44,7 @@ using namespace dolfin;
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& dolfin_mesh)
   : _ufc_dofmap(ufc_dofmap->create()),
-    ufc_offset(0), _is_view(false),
+    _global_dimension(0), _ufc_offset(0), _is_view(false),
     _distributed(MPI::num_processes() > 1)
 {
   dolfin_assert(_ufc_dofmap);
@@ -89,7 +89,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const MeshFunction<uint>& domain_markers,
                uint domain)
   : _ufc_dofmap(ufc_dofmap->create()),
-    ufc_offset(0), _is_view(false),
+    _global_dimension(0), _ufc_offset(0), _is_view(false),
     _distributed(MPI::num_processes() > 1)
 {
   info("Creating restricted dofmap.");
@@ -151,9 +151,10 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
-               const Mesh& mesh, bool distributed) : ufc_offset(0),
-               _ownership_range(0, 0), _is_view(true),
-               _distributed(distributed)
+               const Mesh& mesh, bool distributed) :
+  _global_dimension(0), _ufc_offset(0),
+  _ownership_range(0, 0), _is_view(true),
+  _distributed(distributed)
 {
   // NOTE: Ownership range is set to zero since dofmap is a view
 
@@ -163,7 +164,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   const UFCMesh ufc_mesh(mesh);
 
   // Initialise offset from parent
-  uint offset = parent_dofmap.ufc_offset;
+  uint offset = parent_dofmap._ufc_offset;
 
   // Get parent UFC dof map
   const ufc::dofmap& parent_ufc_dofmap = *(parent_dofmap._ufc_dofmap);
@@ -177,7 +178,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   check_dimensional_consistency(*_ufc_dofmap, mesh);
 
   // Set UFC offset
-  this->ufc_offset = offset;
+  this->_ufc_offset = offset;
 
   // Initialise UFC dofmap
   init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, mesh);
@@ -248,8 +249,10 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
                const DofMap& dofmap_view, const Mesh& mesh, bool distributed)
-             : _ufc_dofmap(dofmap_view._ufc_dofmap->create()), ufc_offset(0),
-               _is_view(false), _distributed(distributed)
+             :
+  _ufc_dofmap(dofmap_view._ufc_dofmap->create()),
+  _global_dimension(0), _ufc_offset(0),
+  _is_view(false), _distributed(distributed)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -302,7 +305,8 @@ DofMap::DofMap(const DofMap& dofmap)
   _dofmap = dofmap._dofmap;
   _ufc_dofmap.reset(dofmap._ufc_dofmap->create());
   ufc_map_to_dofmap = dofmap.ufc_map_to_dofmap;
-  ufc_offset = dofmap.ufc_offset;
+  _global_dimension = dofmap._global_dimension;
+  _ufc_offset = dofmap._ufc_offset;
   _ownership_range = dofmap._ownership_range;
   _off_process_owner = dofmap._off_process_owner;
   _shared_dofs = dofmap._shared_dofs;
@@ -324,9 +328,7 @@ bool DofMap::needs_mesh_entities(unsigned int d) const
 //-----------------------------------------------------------------------------
 unsigned int DofMap::global_dimension() const
 {
-  dolfin_assert(_ufc_dofmap);
-  dolfin_assert(_ufc_dofmap->global_dimension() > 0);
-  return _ufc_dofmap->global_dimension();
+  return _global_dimension;
 }
 //-----------------------------------------------------------------------------
 unsigned int DofMap::cell_dimension(uint cell_index) const

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-10-12
-// Last changed: 2012-11-08
+// Last changed: 2012-11-09
 
 #include <dolfin.h>
 #include "Poisson.h"
@@ -71,13 +71,18 @@ int main()
   Boundary boundary;
   DirichletBC bc(V, zero, boundary);
 
+  Matrix A;
+  assemble(A, a);
+
+  info(A, true);
+
   // Compute solution
-  Function u(V);
-  solve(a == L, u, bc);
+  //Function u(V);
+  //solve(a == L, u, bc);
 
   // Plot solution
-  plot(u);
-  interactive();
+  //plot(u);
+  //interactive();
 
   return 0;
 }

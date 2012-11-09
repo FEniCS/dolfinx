@@ -73,6 +73,9 @@ void DofMapBuilder::build(DofMap& dofmap,
                                       ufc_mesh, ufc_cell);
   }
 
+  // Set global dimension
+  dofmap._global_dimension = dofmap._ufc_dofmap->global_dimension();
+
   // Build (re-order) dofmap when running in parallel
   if (distributed)
   {
@@ -176,6 +179,9 @@ void DofMapBuilder::build(DofMap& dofmap,
         dofs[i] = it->second;
     }
   }
+
+  // Set global dimension
+  dofmap._global_dimension = restricted_dofs.size();
 
   // FIXME: Debugging
   cout << "Number of restricted dofs: " << restricted_dofs.size() << endl;

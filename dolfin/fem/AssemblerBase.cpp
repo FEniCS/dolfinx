@@ -48,7 +48,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
-          const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& periodic_master_slave_dofs)
+  const std::vector<std::pair<std::pair<uint, uint>,
+                              std::pair<uint, uint> > >& periodic_master_slave_dofs)
 {
   dolfin_assert(a.ufc_form());
 
@@ -88,11 +89,12 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
     {
       GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
       SparsityPatternBuilder::build(pattern,
-                                a.mesh(), dofmaps, periodic_master_slave_dofs,
-                                a.ufc_form()->num_cell_domains(),
-                                a.ufc_form()->num_interior_facet_domains(),
-                                a.ufc_form()->num_exterior_facet_domains(),
-                                keep_diagonal);
+                                    a.mesh(),
+                                    dofmaps, periodic_master_slave_dofs,
+                                    a.ufc_form()->num_cell_domains(),
+                                    a.ufc_form()->num_interior_facet_domains(),
+                                    a.ufc_form()->num_exterior_facet_domains(),
+                                    keep_diagonal);
     }
     t0.stop();
 

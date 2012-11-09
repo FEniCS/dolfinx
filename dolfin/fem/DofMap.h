@@ -382,8 +382,12 @@ namespace dolfin
     // Map from UFC dof numbering to renumbered dof (ufc_dof, actual_dof)
     boost::unordered_map<uint, uint> ufc_map_to_dofmap;
 
+    // Global dimension. Note that this may differ from the global dimension
+    // of the UFC dofmap if the function space is restricted.
+    uint _global_dimension;
+
     // UFC dof map offset
-    unsigned int ufc_offset;
+    uint _ufc_offset;
 
     // Ownership range (dofs in this range are owned by this process)
     std::pair<uint, uint> _ownership_range;
