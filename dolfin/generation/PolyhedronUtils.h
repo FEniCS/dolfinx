@@ -36,6 +36,8 @@ namespace dolfin
     static bool has_self_intersections(csg::Exact_Polyhedron_3& p);
     static CGAL::Bbox_3 getBoundingBox(csg::Polyhedron_3& polyhedron);
     static double getBoundingSphereRadius(csg::Polyhedron_3& polyhedron);
+    static bool has_degenerate_facets(csg::Exact_Polyhedron_3& p, double threshold);
+    static void remove_degenerate_facets(csg::Exact_Polyhedron_3& p, const double threshold);
   };
 }
 #endif
