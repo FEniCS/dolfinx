@@ -155,7 +155,11 @@ bool PETScVector::distributed() const
   dolfin_assert(x);
 
   // Get type
+  #if PETSC_VERSION_RELEASE
   const VecType petsc_type;
+  #else
+  VecType petsc_type;
+  #endif
   VecGetType(*x, &petsc_type);
 
   // Return type
@@ -671,10 +675,12 @@ std::string PETScVector::str(bool verbose) const
 
   if (verbose)
   {
-    //warning("Verbose output for PETScVector not implemented, calling PETSc VecView directly.");
-
     // Get vector type
+    #if PETSC_VERSION_RELEASE
     const VecType petsc_type;
+    #else
+    VecType petsc_type;
+    #endif
     dolfin_assert(x);
     VecGetType(*x, &petsc_type);
 
@@ -704,7 +710,11 @@ void PETScVector::gather(GenericVector& y, const std::vector<uint>& indices) con
   PETScVector& _y = as_type<PETScVector>(y);
 
   // Check that y is a local vector
+  #if PETSC_VERSION_RELEASE
   const VecType petsc_type;
+  #else
+  VecType petsc_type;
+  #endif
   VecGetType(*(_y.vec()), &petsc_type);
 
   #ifndef HAS_PETSC_CUSP
