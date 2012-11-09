@@ -830,18 +830,18 @@ void DofMapBuilder::periodic_modification(DofMap& dofmap, const Mesh& mesh)
     }
   }  
   
+  // Replace slaves by master in ufc_map_to_dofmap
   for (boost::unordered_map<uint, uint>::iterator op = dofmap.ufc_map_to_dofmap.begin();
     op != dofmap.ufc_map_to_dofmap.end(); ++op)
   {
     if (_slave_master_map.find(op->second) != _slave_master_map.end())
       dofmap.ufc_map_to_dofmap[op->first] = _slave_master_map[op->second].first;
   }  
+  
+  // Remove slaves from _shared_dofs
   for (ui_pair_map_iterator it = _slave_master_map.begin();
                             it != _slave_master_map.end(); ++it)
-  {
-    // Remove slaves from _shared_dofs
     dofmap._shared_dofs.erase(it->first);
-  }
   
   // At this point the slaves should be completely removed from the dofmap
   // As such we can now reduce the global dimension of the dofmap.
@@ -883,9 +883,8 @@ void DofMapBuilder::periodic_modification(DofMap& dofmap, const Mesh& mesh)
   dofmap._ownership_range.second -= (accumulated_slaves + slaves_on_this_process);
   
   // Renumber all dofs due to deleted slave dofs
-  std::vector<uint>::iterator it;
   std::sort(_all_slaves.begin(), _all_slaves.end());
-  
+  std::vector<uint>::iterator it;  
   for (uint i = 0; i < dofmap._dofmap.size(); i++)
   {
     const std::vector<uint>& global_dofs = dofmap.cell_dofs(i); 

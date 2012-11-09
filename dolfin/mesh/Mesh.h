@@ -740,10 +740,7 @@ namespace dolfin
     
     // The periodic facet-to-facet map. Contains facet number and process where it lives
     std::vector<std::pair< std::pair<uint, uint>, std::pair<uint, uint> > > _facet_pairs;
-
-    // Add facet pairs of subdomain to _facet_pairs
-    void add_facet_pairs(boost::shared_ptr<const SubDomain> sub_domain);
-
+    
   };
 }
 

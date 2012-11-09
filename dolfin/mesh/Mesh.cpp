@@ -583,135 +583,74 @@ struct merge_coordinate_map
 //-----------------------------------------------------------------------------
 void Mesh::add_periodic_direction(const SubDomain& sub_domain)
 {
-  add_facet_pairs(reference_to_no_delete_pointer(sub_domain));
+  add_periodic_direction(reference_to_no_delete_pointer(sub_domain));
 }
 //-----------------------------------------------------------------------------
 void Mesh::add_periodic_direction(boost::shared_ptr<const SubDomain> sub_domain)
-{
-  add_facet_pairs(sub_domain);
+{  
+  const uint tdim = topology().dim();
+  const uint gdim = geometry().dim();
+
+  MeshValueCollection<uint>& mf = *(_domains.markers(tdim - 1));
+ 
+  // Choose an integer to mark the domains. If there has been some sub_domains defined
+  // previously in mf, then choose a higher number (required, e.g., for multiple periodic directions)
+  uint ii = 0;
+  if (!mf.empty())
+  {
+    std::map<std::pair<uint, uint>, uint>::const_iterator mark;
+    for (mark = mf.values().begin(); mark != mf.values().end(); ++mark)
+      ii = std::max(ii, mark->second);
+  }
+  ii = MPI::max(ii) + 1;
+  
+  // Arrays used for mapping coordinates
+  std::vector<double> x(gdim);
+  std::vector<double> y(gdim);
+  Point facet_midpoint;
+  
+  // Wrap x and y (Array view of x and y)
+  Array<double> _x(gdim, &x[0]);
+  Array<double> _y(gdim, &y[0]);
+  
+  // Initialize mesh facets
+  init(tdim - 1, tdim);
+    
+  for (FacetIterator facet(*this); !facet.end(); ++facet)
+  {
+    if (!facet->exterior())
+      continue;
+    facet_midpoint = facet->midpoint();
+    for (uint i = 0; i < gdim; i++)
+      x[i] = facet_midpoint[i];
+
+    sub_domain->map(_x, _y);
+    if (sub_domain->inside(_x, true))     // master
+    {
+      const Cell cell(*this, facet->entities(tdim)[0]);
+      mf.set_value(cell.index(), cell.index(*facet), ii);
+    }
+    else if(sub_domain->inside(_y, true)) // slave
+    {
+      const Cell cell(*this, facet->entities(tdim)[0]);
+      mf.set_value(cell.index(), cell.index(*facet), ii + 1);
+    }
+  }
+  add_periodic_direction(ii, ii + 1);  
 }
 //-----------------------------------------------------------------------------
 void Mesh::add_periodic_direction(const MeshFunction<unsigned int>& sub_domains,
                const uint sub_domain0, const uint sub_domain1)
 {
-  Timer t0("Mesh compute facet pairs");
-  
-  const uint tdim = topology().dim();
-  const uint gdim = geometry().dim();
-  
-  // Arrays used for mapping coordinates
-  std::vector<double> x(gdim);
-  std::vector<double> y(gdim);
-  std::vector<double> dx(gdim);  
-  Point facet_midpoint;
-  
-  // Initialize mesh facets
-  init(tdim - 1, tdim);
-  
-  // MPI process number
-  const int process_number = MPI::process_number();
-  
-  // Compute separation between sub_domains
-  uint count0 = 0;
-  uint count1 = 0;
-  for (FacetIterator facet(*this); !facet.end(); ++facet)
-  {
-    if ((sub_domains[*facet] != sub_domain0) && (sub_domains[*facet] != sub_domain1))
-    {
-      continue;
-    }
-    facet_midpoint = facet->midpoint();    
-    if (sub_domains[*facet] == sub_domain0)  // master
-    {
-      for (uint i = 0; i < gdim; i++)
-        x[i] += facet_midpoint[i];
-      count0++;
-    }
-    else
-    {
-      for (uint i = 0; i < gdim; i++)
-        y[i] += facet_midpoint[i];
-      count1++;
-    }
-  }
-  assert(count0 == count1);
-  
-  for (uint i = 0; i < gdim; i++)
-    dx[i] = (y[i] - x[i])/(double) count0;
-  
-  coordinate_map coordinate_facet_pairs;
-  
-  Progress p("Finding periodic face pairs", size(tdim - 1));
-  for (FacetIterator facet(*this); !facet.end(); ++facet)
-  {
-    if ((sub_domains[*facet] != sub_domain0) && (sub_domains[*facet] != sub_domain1))
-    {
-      p++;
-      continue;
-    }
-    facet_midpoint = facet->midpoint();
-    for (uint i = 0; i < gdim; i++)
-      x[i] = facet_midpoint[i];
-    
-    for (uint i = 0; i < gdim; i++)
-      y[i] = x[i] - dx[i];
-    if (sub_domains[*facet] == sub_domain0)  // master
-    {
-      coordinate_iterator it = coordinate_facet_pairs.find(x);
-      if (it != coordinate_facet_pairs.end())
-      {
-        it->second.first = facet_data(facet->index(), process_number);
-      }
-      else
-      {
-        facet_data g_facet(facet->index(), process_number);        
-        facet_data l_facet(-1, -1);
-        facet_pair pair(g_facet, l_facet);
-        coordinate_facet_pairs[x] = pair;
-      }
-    }
-    else if(sub_domains[*facet] == sub_domain1) // slave
-    {
-      coordinate_iterator it = coordinate_facet_pairs.find(y);
-      if (it != coordinate_facet_pairs.end())
-      {
-        it->second.second = facet_data(facet->index(), process_number);
-      }
-      else
-      {
-        facet_data l_facet(facet->index(), process_number);        
-        facet_data g_facet(-1, -1);
-        facet_pair pair(g_facet, l_facet);
-        coordinate_facet_pairs[y] = pair;
-      }      
-    }
-  }
-    
-  #ifdef HAS_MPI
-  coordinate_map final_coordinate_facet_pairs
-      = MPI::all_reduce(coordinate_facet_pairs, merge_coordinate_map());
-  #else
-  coordinate_map final_coordinate_facet_pairs = coordinate_facet_pairs;
-  #endif
-  
-  for (coordinate_iterator it = final_coordinate_facet_pairs.begin();
-                           it != final_coordinate_facet_pairs.end(); ++it)
-  {
-    facet_pair pair = it->second;
-    _facet_pairs.push_back(pair);
-  }
-    
-//   cout << "Facet pairs " << _facet_pairs.size() << endl;
-//   for (uint i=0; i<_facet_pairs.size(); i++)
-//   {
-//     facet_pair pair = _facet_pairs[i];
-//     cout << " (" << pair.first.first << ", " << pair.first.second << ")"
-//               ", (" << pair.second.first << ", " << pair.second.second << ")" << endl;
-//   }  
+  MeshValueCollection<uint>& mf = *(_domains.markers(topology().dim() - 1));
+  mf = sub_domains;  
+  add_periodic_direction(sub_domain0, sub_domain1);  
 }
-
+//-----------------------------------------------------------------------------
 void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1)
 {
+  // They should all end up calling this for computing the periodic facet-to-facet pairs
+  
   Timer t0("Mesh compute facet pairs");
   
   const uint tdim = topology().dim();
@@ -729,8 +668,10 @@ void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1
   // MPI process number
   const int process_number = MPI::process_number();
   
+  // Make sure the MeshValueCollection exists
   dolfin_assert(_domains.markers(tdim - 1));
   
+  // Get the facet markers 
   const std::map<std::pair<uint, uint>, uint>& 
     markers = _domains.markers(tdim - 1)->values();
   
@@ -759,14 +700,24 @@ void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1
       count1++;
     }
   }  
+  #ifdef HAS_MPI  
+  count0 = MPI::sum(count0);
+  count1 = MPI::sum(count1);
+  for (uint i = 0; i < gdim; i++)
+  {
+    x[i] = MPI::sum(x[i]);
+    y[i] = MPI::sum(y[i]);
+  }
+  #endif
   assert(count0 == count1);
   
+  // Put the distance between the periodic subdomains in dx-vector
   for (uint i = 0; i < gdim; i++)
     dx[i] = (y[i] - x[i])/(double) count0;
-  
-  coordinate_map coordinate_facet_pairs;
-  
+    
+  // Loop over both periodic subdomains and find matching pairs of facets
   Progress p("Finding periodic face pairs", size(tdim - 1));
+  coordinate_map coordinate_facet_pairs;
   for (mark = markers.begin(); mark != markers.end(); ++mark)
   {
     if ((mark->second != sub_domain0) && (mark->second != sub_domain1))
@@ -775,14 +726,13 @@ void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1
       continue;
     }
 
+    // Get coordinates of facet midpoint
     Cell cell = Cell(*this, mark->first.first);
     Facet facet = Facet(*this, cell.entities(tdim - 1)[mark->first.second]);
     facet_midpoint = facet.midpoint();
     for (uint i = 0; i < gdim; i++)
       x[i] = facet_midpoint[i];
     
-    for (uint i = 0; i < gdim; i++)
-      y[i] = x[i] - dx[i];
     if (mark->second == sub_domain0)  // master
     {
       coordinate_iterator it = coordinate_facet_pairs.find(x);
@@ -800,6 +750,10 @@ void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1
     }
     else if(mark->second == sub_domain1) // slave
     {
+      // Map coordinates of slave midpoint.
+      for (uint i = 0; i < gdim; i++)
+        y[i] = x[i] - dx[i];
+      
       coordinate_iterator it = coordinate_facet_pairs.find(y);
       if (it != coordinate_facet_pairs.end())
       {
@@ -822,98 +776,7 @@ void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1
   coordinate_map final_coordinate_facet_pairs = coordinate_facet_pairs;
   #endif
   
-  for (coordinate_iterator it = final_coordinate_facet_pairs.begin();
-                           it != final_coordinate_facet_pairs.end(); ++it)
-  {
-    facet_pair pair = it->second;
-    _facet_pairs.push_back(pair);
-  }
-    
-//   cout << "Facet pairs " << _facet_pairs.size() << endl;
-//   for (uint i=0; i<_facet_pairs.size(); i++)
-//   {
-//     facet_pair pair = _facet_pairs[i];
-//     cout << " (" << pair.first.first << ", " << pair.first.second << ")"
-//               ", (" << pair.second.first << ", " << pair.second.second << ")" << endl;
-//   }  
-}
-
-void Mesh::add_facet_pairs(boost::shared_ptr<const SubDomain> sub_domain)
-{
-  Timer t0("Mesh compute facet pairs");
-  
-  const uint tdim = topology().dim();
-  const uint gdim = geometry().dim();
-  
-  // Arrays used for mapping coordinates
-  std::vector<double> x(gdim);
-  std::vector<double> y(gdim);
-
-  // Wrap x and y (Array view of x and y)
-  Array<double> _x(gdim, &x[0]);
-  Array<double> _y(gdim, &y[0]);
-  Point facet_midpoint;
-  
-  // Initialize mesh facets
-  init(tdim - 1, tdim);
-  
-  // MPI process number
-  const int process_number = MPI::process_number();
-  
-  coordinate_map coordinate_facet_pairs;
-  
-  Progress p("Finding periodic face pairs", size(tdim - 1));
-  for (FacetIterator facet(*this); !facet.end(); ++facet)
-  {
-    if (!facet->exterior())
-    {
-      p++;
-      continue;
-    }
-    facet_midpoint = facet->midpoint();
-    for (uint i = 0; i < gdim; i++)
-      x[i] = facet_midpoint[i];
-
-    sub_domain->map(_x, _y);
-    if (sub_domain->inside(_x, true))
-    {
-      coordinate_iterator it = coordinate_facet_pairs.find(x);
-      if (it != coordinate_facet_pairs.end())
-      {
-        it->second.first = facet_data(facet->index(), process_number);
-      }
-      else
-      {
-        facet_data g_facet(facet->index(), process_number);        
-        facet_data l_facet(-1, -1);
-        facet_pair pair(g_facet, l_facet);
-        coordinate_facet_pairs[x] = pair;
-      }
-    }
-    else if(sub_domain->inside(_y, true))
-    {
-      coordinate_iterator it = coordinate_facet_pairs.find(y);
-      if (it != coordinate_facet_pairs.end())
-      {
-        it->second.second = facet_data(facet->index(), process_number);
-      }
-      else
-      {
-        facet_data l_facet(facet->index(), process_number);        
-        facet_data g_facet(-1, -1);
-        facet_pair pair(g_facet, l_facet);
-        coordinate_facet_pairs[y] = pair;
-      }      
-    }
-  }
-    
-  #ifdef HAS_MPI
-  coordinate_map final_coordinate_facet_pairs
-      = MPI::all_reduce(coordinate_facet_pairs, merge_coordinate_map());
-  #else
-  coordinate_map final_coordinate_facet_pairs = coordinate_facet_pairs;
-  #endif
-  
+  // Create the final facet-to-facet list of matching facets
   for (coordinate_iterator it = final_coordinate_facet_pairs.begin();
                            it != final_coordinate_facet_pairs.end(); ++it)
   {

@@ -59,8 +59,21 @@ class PeriodicBoundary(SubDomain):
         y[0] = x[0] - 1.0
         y[1] = x[1]
 
+class PeriodicBoundaryRight(SubDomain):
+
+    # Left boundary is "target domain" G
+    def inside(self, x, on_boundary):
+        return bool(abs(x[0]-1.) < DOLFIN_EPS and on_boundary)
+
 pbc = PeriodicBoundary()
+pbr = PeriodicBoundaryRight()
+mf = FacetFunction('uint', mesh)
+mf.set_all(0)
+pbc.mark(mf, 1)
+pbr.mark(mf, 2)
+#mesh.domains().markers(1).assign(mf)
 mesh.add_periodic_direction(pbc)
+#mesh.add_periodic_direction(1, 2)
 
 V = FunctionSpace(mesh, "CG", 1)
 
