@@ -148,23 +148,23 @@ namespace dolfin
     static void compute_entity_ownership(
           const std::map<Entity, std::size_t>& entities,
           const std::map<std::size_t, std::set<uint> >& shared_vertices,
-          std::map<Entity, EntityData>& owned_entities,
-          std::map<Entity, EntityData>& shared_entities,
-          std::map<Entity, EntityData>& ignored_entities);
+          std::map<Entity, EntityData>& owned_exclusive_entities,
+          std::map<Entity, EntityData>& owned_shared_entities,
+          std::map<Entity, EntityData>& unowned_shared_entities);
 
     // Build preliminary 'guess' of shared enties
     static void compute_preliminary_entity_ownership(
           const std::map<Entity, std::size_t>& entities,
           const std::map<std::size_t, std::set<uint> >& shared_vertices,
-          std::map<Entity, EntityData>& owned_entities,
-          std::map<Entity, EntityData>& shared_entities,
-          std::map<Entity, EntityData>& ignored_entities);
+          std::map<Entity, EntityData>& owned_exclusive_entities,
+          std::map<Entity, EntityData>& owned_shared_entities,
+          std::map<Entity, EntityData>& unowned_shared_entities);
 
     // Communicate with other processes to finalise entity ownership
     static void compute_final_entity_ownership(
-          std::map<Entity, EntityData>& owned_entities,
-          std::map<Entity, EntityData>& shared_entities,
-          std::map<Entity, EntityData>& ignored_entities);
+          std::map<Entity, EntityData>& owned_exclusively_entities,
+          std::map<Entity, EntityData>& owned_shared_entities,
+          std::map<Entity, EntityData>& unowned_shared_entities);
 
     // Distribute cells
     static void distribute_cells(std::vector<std::size_t>& global_cell_indices,
@@ -198,8 +198,8 @@ namespace dolfin
     /// cells residing on neighboring processes)
     static std::vector<unsigned int> num_connected_cells(const Mesh& mesh,
                const std::map<Entity, std::size_t>& entities,
-               const std::map<Entity, EntityData>& shared_entities,
-               const std::map<Entity, EntityData>& ignored_entities);
+               const std::map<Entity, EntityData>& owned_shared_entities,
+               const std::map<Entity, EntityData>& unowned_shared_entities);
   };
 
   //---------------------------------------------------------------------------
