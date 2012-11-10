@@ -570,11 +570,11 @@ void HDF5File::remove_duplicate_vertices(const Mesh &mesh,
   const uint process_number = MPI::process_number();
   const uint num_local_vertices = mesh.num_vertices();
 
-  const std::map<uint, std::set<uint> >& shared_vertices
+  const std::map<std::size_t, std::set<uint> >& shared_vertices
     = mesh.topology().shared_entities(0);
 
   // Create global => local map for shared vertices only
-  std::map<uint, uint> local;
+  std::map<std::size_t, std::size_t> local;
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     uint global_index = v->global_index();
@@ -600,13 +600,13 @@ void HDF5File::remove_duplicate_vertices(const Mesh &mesh,
   // remote processes.
 
   uint count = num_local_vertices;
-  for(std::map<uint, std::set<uint> >::const_iterator
+  for(std::map<std::size_t, std::set<uint> >::const_iterator
       shared_v_it = shared_vertices.begin();
       shared_v_it != shared_vertices.end();
       shared_v_it++)
   {
-    const uint global_index = shared_v_it->first;
-    const uint local_index = local[global_index];
+    const std::size_t global_index = shared_v_it->first;
+    const std::size_t local_index = local[global_index];
     const std::set<uint>& procs = shared_v_it->second;
     // Determine whether this vertex is also on a lower numbered process
     // FIXME: may change with concept of vertex ownership

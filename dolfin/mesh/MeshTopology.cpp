@@ -72,7 +72,7 @@ dolfin::uint MeshTopology::size(uint dim) const
   return num_entities[dim];
 }
 //-----------------------------------------------------------------------------
-dolfin::uint MeshTopology::size_global(uint dim) const
+std::size_t MeshTopology::size_global(uint dim) const
 {
   if (global_num_entities.empty())
     return 0;
@@ -104,7 +104,7 @@ void MeshTopology::init(uint dim)
 
   // Initialize number of mesh entities
   num_entities = std::vector<uint>(dim + 1, 0);
-  global_num_entities = std::vector<uint>(dim + 1, 0);
+  global_num_entities = std::vector<std::size_t>(dim + 1, 0);
 
   // Initialize storage for global indices
   _global_indices.resize(dim + 1);
@@ -125,7 +125,7 @@ void MeshTopology::init(uint dim, uint local_size)
     init_global(dim, local_size);
 }
 //-----------------------------------------------------------------------------
-void MeshTopology::init_global(uint dim, uint global_size)
+void MeshTopology::init_global(uint dim, std::size_t global_size)
 {
   dolfin_assert(dim < global_num_entities.size());
   global_num_entities[dim] = global_size;
@@ -134,7 +134,7 @@ void MeshTopology::init_global(uint dim, uint global_size)
 void MeshTopology::init_global_indices(uint dim, uint size)
 {
   dolfin_assert(dim < _global_indices.size());
-  _global_indices[dim] = std::vector<uint>(size);
+  _global_indices[dim] = std::vector<std::size_t>(size);
 }
 //-----------------------------------------------------------------------------
 dolfin::MeshConnectivity& MeshTopology::operator() (uint d0, uint d1)
@@ -151,7 +151,7 @@ const dolfin::MeshConnectivity& MeshTopology::operator() (uint d0, uint d1) cons
   return connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------
-std::map<unsigned int, std::set<unsigned int> >&
+std::map<std::size_t, std::set<unsigned int> >&
   MeshTopology::shared_entities(uint dim)
 {
   if (dim != 0)
@@ -163,7 +163,7 @@ std::map<unsigned int, std::set<unsigned int> >&
   return _shared_vertices;
 }
 //-----------------------------------------------------------------------------
-const std::map<unsigned int, std::set<unsigned int> >&
+const std::map<std::size_t, std::set<unsigned int> >&
   MeshTopology::shared_entities(uint dim) const
 {
   if (dim != 0)

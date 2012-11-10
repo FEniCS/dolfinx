@@ -107,7 +107,7 @@ namespace dolfin
     void set(uint entity, uint connection, uint pos);
 
     /// Set all connections for given entity
-    void set(uint entity, const std::vector<uint>& connections);
+    void set(uint entity, const std::vector<std::size_t>& connections);
 
     /// Set all connections for given entity
     void set(uint entity, uint* connections);
@@ -138,7 +138,7 @@ namespace dolfin
     }
 
     /// Set global number of connections for all local entities
-    void set_global_size(const std::vector<uint>& num_global_connections)
+    void set_global_size(const std::vector<unsigned int>& num_global_connections)
     {
       dolfin_assert(num_global_connections.size() == index_to_position.size() - 1);
       this->num_global_connections = num_global_connections;
@@ -164,7 +164,7 @@ namespace dolfin
 
     // Global number of connections for all entities (possibly not
     // computed)
-    std::vector<uint> num_global_connections;
+    std::vector<unsigned int> num_global_connections;
 
     // Position of first connection for each entity (using local index)
     std::vector<uint> index_to_position;

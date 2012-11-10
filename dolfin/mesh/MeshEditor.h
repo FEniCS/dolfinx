@@ -253,8 +253,8 @@ namespace dolfin
     ///         The global (user) cell index.
     ///     v (std::vector<uint>)
     ///         The vertex indices (local indices)
-    void add_cell(uint local_index, uint global_index,
-                  const std::vector<uint>& v);
+    void add_cell(std::size_t local_index, std::size_t global_index,
+                  const std::vector<std::size_t>& v);
 
     /// Close mesh, finish editing, and order entities locally
     ///
@@ -290,7 +290,7 @@ namespace dolfin
     void clear();
 
     // Check that vertices are in range
-    void check_vertices(const std::vector<uint>& v) const;
+    void check_vertices(const std::vector<std::size_t>& v) const;
 
     // The mesh
     Mesh* mesh;

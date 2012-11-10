@@ -208,7 +208,7 @@ void MeshEditor::add_vertex_global(uint local_index, uint global_index,
 void MeshEditor::add_cell(uint c, uint v0, uint v1)
 {
   dolfin_assert(tdim == 1);
-  std::vector<uint> vertices(2);
+  std::vector<std::size_t> vertices(2);
   vertices[0] = v0;
   vertices[1] = v1;
   add_cell(c, c, vertices);
@@ -217,7 +217,7 @@ void MeshEditor::add_cell(uint c, uint v0, uint v1)
 void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2)
 {
   dolfin_assert(tdim == 2);
-  std::vector<uint> vertices(3);
+  std::vector<std::size_t> vertices(3);
   vertices[0] = v0;
   vertices[1] = v1;
   vertices[2] = v2;
@@ -227,7 +227,7 @@ void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2)
 void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2, uint v3)
 {
   dolfin_assert(tdim == 3);
-  std::vector<uint> vertices(4);
+  std::vector<std::size_t> vertices(4);
   vertices[0] = v0;
   vertices[1] = v1;
   vertices[2] = v2;
@@ -237,11 +237,12 @@ void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2, uint v3)
 //-----------------------------------------------------------------------------
 void MeshEditor::add_cell(uint c, const std::vector<uint>& v)
 {
-  add_cell(c, c, v);
+  const std::vector<std::size_t> _v(v.begin(), v.end());
+  add_cell(c, c, _v);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_cell(uint local_index, uint global_index,
-                          const std::vector<uint>& v)
+void MeshEditor::add_cell(std::size_t local_index, std::size_t global_index,
+                          const std::vector<std::size_t>& v)
 {
   dolfin_assert(v.size() == tdim + 1);
 
@@ -360,7 +361,7 @@ void MeshEditor::clear()
   vertices.clear();
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::check_vertices(const std::vector<uint>& v) const
+void MeshEditor::check_vertices(const std::vector<std::size_t>& v) const
 {
   for (uint i = 0; i < v.size(); ++i)
   {

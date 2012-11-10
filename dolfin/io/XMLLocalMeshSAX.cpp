@@ -535,12 +535,12 @@ void XMLLocalMeshSAX::read_mesh_value_collection_entry(const xmlChar* name,
   if (domain_value_counter >= domain_value_range.first && domain_value_counter < domain_value_range.second)
   {
     // Parse values
-    std::pair<std::pair<uint, uint>, uint> entry_data;
+    std::pair<std::pair<std::size_t, uint>, uint> entry_data;
     entry_data.first.first  = SAX2AttributeParser::parse<uint>(name, attrs, "cell_index", num_attributes);
     entry_data.first.second = SAX2AttributeParser::parse<uint>(name, attrs, "local_entity", num_attributes);
     entry_data.second       = SAX2AttributeParser::parse<uint>(name, attrs, "value", num_attributes);
 
-    std::vector< std::pair<std::pair<dolfin::uint, dolfin::uint>, dolfin::uint> >& data
+    std::vector<std::pair<std::pair<std::size_t, dolfin::uint>, dolfin::uint> >& data
       = mesh_data.domain_data.find(domain_dim)->second;
     data.push_back(entry_data);
   }

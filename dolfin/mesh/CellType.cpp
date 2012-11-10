@@ -43,12 +43,12 @@ namespace dolfin
   {
   public:
 
-    GlobalSort(const std::vector<uint>& local_to_global_vertex_indices)
+    GlobalSort(const std::vector<std::size_t>& local_to_global_vertex_indices)
         : g(local_to_global_vertex_indices) {}
 
-    bool operator() (const uint& l, const uint& r) { return g[l] < g[r]; }
+    bool operator() (const std::size_t& l, const std::size_t& r) { return g[l] < g[r]; }
 
-    const std::vector<uint>& g;
+    const std::vector<std::size_t>& g;
 
   };
 
@@ -132,7 +132,7 @@ std::string CellType::type2string(Type type)
 }
 //-----------------------------------------------------------------------------
 bool CellType::ordered(const Cell& cell,
-                 const std::vector<uint>& local_to_global_vertex_indices) const
+                 const std::vector<std::size_t>& local_to_global_vertex_indices) const
 {
   // Get mesh topology
   const MeshTopology& topology = cell.mesh().topology();
@@ -186,8 +186,8 @@ bool CellType::ordered(const Cell& cell,
 }
 //-----------------------------------------------------------------------------
 void CellType::sort_entities(uint num_vertices,
-                        uint* local_vertices,
-                       const std::vector<uint>& local_to_global_vertex_indices)
+                       uint* local_vertices,
+                       const std::vector<std::size_t>& local_to_global_vertex_indices)
 {
   // Two cases here, either sort vertices directly (when running in serial)
   // or sort based on the global indices (when running in parallel)
@@ -198,7 +198,7 @@ void CellType::sort_entities(uint num_vertices,
 }
 //-----------------------------------------------------------------------------
 bool CellType::increasing(uint num_vertices, const uint* local_vertices,
-                       const std::vector<uint>& local_to_global_vertex_indices)
+                       const std::vector<std::size_t>& local_to_global_vertex_indices)
 {
   // Two cases here, either check vertices directly (when running in serial)
   // or check based on the global indices (when running in parallel)
@@ -212,7 +212,7 @@ bool CellType::increasing(uint num_vertices, const uint* local_vertices,
 bool CellType::increasing(uint n0, const uint* v0,
                        uint n1, const uint* v1,
                        uint num_vertices, const uint* local_vertices,
-                       const std::vector<uint>& local_to_global_vertex_indices)
+                       const std::vector<std::size_t>& local_to_global_vertex_indices)
 {
   dolfin_assert(n0 == n1);
   dolfin_assert(num_vertices > n0);
