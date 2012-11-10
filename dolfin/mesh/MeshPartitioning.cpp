@@ -119,6 +119,10 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   // Initialize entities of dimension d
   mesh.init(d);
 
+  // Get shared vertices (global index, [sharing processes])
+  std::map<std::size_t, std::set<uint> >& shared_vertices
+                            = mesh.topology().shared_entities(0);
+
   // Build entity(vertex list)-to-global-vertex-index map
   std::map<std::vector<std::size_t>, std::size_t> entities;
   for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
@@ -129,14 +133,6 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
     std::sort(entity.begin(), entity.end());
     entities[entity] = e->index();
   }
-
-  // Find out which entities to ignore, which to number and which to
-  // number and send to other processes. Entities shared by two or
-  // more processes are numbered by the lower ranked process.
-
-  // Get shared vertices (global index, [sharing processes])
-  std::map<std::size_t, std::set<uint> >& shared_vertices
-                            = mesh.topology().shared_entities(0);
 
   // Entities ([entity vertices], index) to be numbered
   std::map<Entity, EntityData> owned_exclusive_entities;
