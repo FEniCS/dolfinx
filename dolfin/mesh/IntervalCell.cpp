@@ -189,7 +189,7 @@ double IntervalCell::facet_area(const Cell& cell, uint facet) const
 }
 //-----------------------------------------------------------------------------
 void IntervalCell::order(Cell& cell,
-                 const std::vector<uint>& local_to_global_vertex_indices) const
+                 const std::vector<std::size_t>& local_to_global_vertex_indices) const
 {
   // Sort i - j for i > j: 1 - 0
 

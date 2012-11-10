@@ -182,7 +182,7 @@ namespace dolfin
              const LocalMeshValueCollection<T>& local_data, const Mesh& mesh)
   {
     // Extract data
-    const std::vector<std::pair<std::pair<uint, uint>, T> >& local_values
+    const std::vector<std::pair<std::pair<std::size_t, uint>, T> >& local_values
       = local_data.values();
 
     // Build MeshValueCollection from local data
@@ -228,8 +228,6 @@ namespace dolfin
     }
 
     // Get global indices on local process
-    //const std::vector<uint> global_entity_indices
-    //  = mesh.parallel_data().global_entity_indices_as_vector(D);
     const std::vector<std::size_t> global_entity_indices
       = mesh.topology().global_indices(D);
 
@@ -259,7 +257,7 @@ namespace dolfin
     }
 
     // Get destinations and local cell index at destination for off-process cells
-    const std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t> > >
+    const std::map<std::size_t, std::set<std::pair<unsigned int, std::size_t> > >
       entity_hosts = MeshDistributed::off_process_indices(off_process_global_cell_entities, D, mesh);
 
     // Pack data to send to appropriate process
@@ -267,7 +265,7 @@ namespace dolfin
     std::vector<T> send_data1;
     std::vector<uint> destinations0;
     std::vector<uint> destinations1;
-    std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t> > >::const_iterator entity_host;
+    std::map<std::size_t, std::set<std::pair<unsigned int, std::size_t> > >::const_iterator entity_host;
 
     {
       // Build a convenience map in order to speedup the loop over local data
@@ -278,7 +276,7 @@ namespace dolfin
       for (entity_host = entity_hosts.begin(); entity_host != entity_hosts.end(); ++entity_host)
       {
         const std::size_t host_global_cell_index = entity_host->first;
-        const std::set<std::pair<std::size_t, std::size_t> >& processes_data = entity_host->second;
+        const std::set<std::pair<unsigned int, std::size_t> >& processes_data = entity_host->second;
 
         // Loop over local data
         std::map<std::size_t, std::set<std::size_t> >::const_iterator ldata_it
@@ -290,7 +288,7 @@ namespace dolfin
             const std::size_t local_entity_index = ldata[*it].first.second;
             const T domain_value = ldata[*it].second;
 
-            std::set<std::pair<std::size_t, std::size_t> >::const_iterator process_data;
+            std::set<std::pair<unsigned int, std::size_t> >::const_iterator process_data;
             for (process_data = processes_data.begin(); process_data != processes_data.end(); ++process_data)
             {
               const std::size_t proc = process_data->first;

@@ -866,7 +866,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
   // Create shared_vertices data structure: mapping from shared vertices
   // to list of neighboring processes
-  std::map<std::size_t, std::set<std::size_t> >& shared_vertices
+  std::map<std::size_t, std::set<unsigned int> >& shared_vertices
         = mesh.topology().shared_entities(0);
   shared_vertices.clear();
 
@@ -899,7 +899,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 bool MeshPartitioning::in_overlap(const std::vector<std::size_t>& entity,
                 const std::map<std::size_t, std::set<unsigned int> >& shared)
 {
-  std::vector<unsigned int>::const_iterator e;
+  std::vector<std::size_t>::const_iterator e;
   for (e = entity.begin(); e != entity.end(); ++e)
   {
     if (shared.find(*e) == shared.end())

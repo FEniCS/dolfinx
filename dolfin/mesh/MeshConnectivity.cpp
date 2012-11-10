@@ -105,7 +105,7 @@ void MeshConnectivity::set(uint entity, uint connection, uint pos)
   connections[index_to_position[entity] + pos] = connection;
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::set(uint entity, const std::vector<uint>& connections)
+void MeshConnectivity::set(uint entity, const std::vector<std::size_t>& connections)
 {
   dolfin_assert((entity + 1) < index_to_position.size());
   dolfin_assert(connections.size() == index_to_position[entity + 1] - index_to_position[entity]);

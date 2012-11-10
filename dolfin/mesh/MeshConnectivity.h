@@ -107,7 +107,7 @@ namespace dolfin
     void set(uint entity, uint connection, uint pos);
 
     /// Set all connections for given entity
-    void set(uint entity, const std::vector<uint>& connections);
+    void set(uint entity, const std::vector<std::size_t>& connections);
 
     /// Set all connections for given entity
     void set(uint entity, uint* connections);

@@ -63,7 +63,7 @@ namespace dolfin
     uint size(uint dim) const;
 
     /// Return global number of entities for given dimension
-    uint size_global(uint dim) const;
+    std::size_t size_global(uint dim) const;
 
     /// Clear all data
     void clear();
@@ -95,7 +95,7 @@ namespace dolfin
     }
 
     /// Get local-to-global index map for entities of topological dimension d
-    const std::vector<uint>& global_indices(uint d) const
+    const std::vector<std::size_t>& global_indices(uint d) const
     {
       dolfin_assert(d < _global_indices.size());
       return _global_indices[d];
@@ -151,10 +151,10 @@ namespace dolfin
     std::vector<uint> num_entities;
 
     // Global number of mesh entities for each topological dimension
-    std::vector<uint> global_num_entities;
+    std::vector<std::size_t> global_num_entities;
 
     // Global indices for mesh entities (empty if not set)
-    std::vector<std::vector<uint> > _global_indices;
+    std::vector<std::vector<std::size_t> > _global_indices;
 
     // Maps each shared vertex (entity of dim 0) to a list of the
     // processes sharing the vertex

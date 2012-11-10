@@ -86,8 +86,8 @@ namespace dolfin
       if (!xml_meshfunction)
         std::cout << "Not a DOLFIN MeshFunction XML file." << std::endl;
 
-     if (xml_meshfunction.attributes_begin() == xml_meshfunction.attributes_end())
-      new_format = true;
+      if (xml_meshfunction.attributes_begin() == xml_meshfunction.attributes_end())
+        new_format = true;
     }
 
     // Broadcast format type from zero process
