@@ -43,11 +43,7 @@ namespace dolfin
     void operator() (Mat* A)
     {
       if (*A)
-        #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
-        MatDestroy(*A);
-        #else
         MatDestroy(A);
-        #endif
       delete A;
     }
   };

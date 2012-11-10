@@ -315,7 +315,15 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     dolfin_assert(P);
     boost::shared_ptr<const MatNullSpace> pc_nullspace = preconditioner->nullspace();
     if (pc_nullspace)
+    {
+      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 3
       MatSetNearNullSpace(*(this->P->mat()), *pc_nullspace);
+      #else
+      dolfin_error("PETScMatrix.cpp",
+                   "set approximate null space for PETSc matrix",
+                   "This is supported by PETSc version > 3.2");
+      #endif
+    }
   }
 
   // FIXME: Improve check for re-setting preconditoner, e.g. if parameters change

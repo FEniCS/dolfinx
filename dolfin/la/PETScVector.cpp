@@ -746,11 +746,7 @@ void PETScVector::gather(GenericVector& y, const std::vector<uint>& indices) con
 
   // Create local index sets
   IS from, to;
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 1
   ISCreateGeneral(PETSC_COMM_SELF, n, global_indices, PETSC_COPY_VALUES, &from);
-  #else
-  ISCreateGeneral(PETSC_COMM_SELF, n, global_indices,    &from);
-  #endif
   ISCreateStride(PETSC_COMM_SELF, n, 0 , 1, &to);
 
   // Resize vector if required
@@ -763,15 +759,9 @@ void PETScVector::gather(GenericVector& y, const std::vector<uint>& indices) con
   VecScatterEnd(scatter, *x, *(_y.vec()), INSERT_VALUES, SCATTER_FORWARD);
 
   // Clean up
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
-  ISDestroy(from);
-  ISDestroy(to);
-  VecScatterDestroy(scatter);
-  #else
   ISDestroy(&from);
   ISDestroy(&to);
   VecScatterDestroy(&scatter);
-  #endif
 }
 //-----------------------------------------------------------------------------
 void PETScVector::gather(std::vector<double>& x, const std::vector<uint>& indices) const
@@ -797,12 +787,7 @@ void PETScVector::gather_on_zero(std::vector<double>& x) const
 
   VecScatterBegin(scatter, *this->x, *vout, INSERT_VALUES, SCATTER_FORWARD);
   VecScatterEnd(scatter, *this->x, *vout, INSERT_VALUES, SCATTER_FORWARD);
-
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
-  VecScatterDestroy(scatter);
-  #else
   VecScatterDestroy(&scatter);
-  #endif
 
   // Wrap PETSc vector
   if (MPI::process_number() == 0)

@@ -212,15 +212,11 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   // Do not allow more entries than have been pre-allocated
   MatSetOption(*A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
 
-  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
   MatSetOption(*A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
-  #else
-  MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
-  #endif
 
   MatSetFromOptions(*A);
 
-  #if PETSC_VERSION_MAJOR==3 && PETSC_VERSION_MINOR>2
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
   MatSetUp(*A.get());
   #endif
 }
@@ -488,11 +484,7 @@ void PETScMatrix::binary_dump(std::string file_name) const
   PetscViewerBinaryOpen(PETSC_COMM_WORLD, file_name.c_str(),
                         FILE_MODE_WRITE, &view_out);
   MatView(*(A.get()), view_out);
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
-  PetscViewerDestroy(view_out);
-#else
   PetscViewerDestroy(&view_out);
-#endif
 }
 //-----------------------------------------------------------------------------
 std::string PETScMatrix::str(bool verbose) const

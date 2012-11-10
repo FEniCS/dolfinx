@@ -50,13 +50,7 @@ namespace dolfin
     void operator() (Vec* x)
     {
       if (*x)
-      {
-        #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
-        VecDestroy(*x);
-        #else
         VecDestroy(x);
-        #endif
-      }
       delete x;
     }
   };
