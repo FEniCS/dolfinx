@@ -104,6 +104,20 @@ namespace dolfin
 
   private:
 
+    typedef std::vector<std::size_t> Entity;
+
+    struct EntityData
+    {
+      // Vertices of the entity
+      std::vector<std::size_t> entity_vertices;
+
+      // Entity index
+      std::size_t index;
+
+      // Processes on which entity resides
+      std::vector<unsigned int> processes;
+    };
+
     /// Create a partitioned mesh based on local mesh data
     static void partition(Mesh& mesh, const LocalMeshData& data);
 
@@ -125,21 +139,17 @@ namespace dolfin
 
     // Build preliminary 'guess' of shared enties
     static void compute_preliminary_entity_ownership(
-          const std::map<std::vector<std::size_t>, std::size_t>& entities,
+          const std::map<Entity, std::size_t>& entities,
           const std::map<std::size_t, std::set<uint> >& shared_vertices,
-          std::map<std::vector<std::size_t>, std::size_t>& owned_entity_indices,
-          std::map<std::vector<std::size_t>, std::size_t>& shared_entity_indices,
-          std::map<std::vector<std::size_t>, std::vector<std::size_t> >& shared_entity_processes,
-          std::map<std::vector<std::size_t>, std::size_t>& ignored_entity_indices,
-          std::map<std::vector<std::size_t>, std::vector<std::size_t> >& ignored_entity_processes);
+          std::map<Entity, std::size_t>& owned_entity_indices,
+          std::map<Entity, std::pair<std::size_t, std::vector<unsigned int> > >& shared_entities,
+          std::map<Entity, std::pair<std::size_t, std::vector<unsigned int> > >& ignored_entities);
 
     // Communicate with other processes to finalise entity ownership
     static void compute_final_entity_ownership(
-          std::map<std::vector<std::size_t>, std::size_t>& owned_entity_indices,
-          std::map<std::vector<std::size_t>, std::size_t>& shared_entity_indices,
-          std::map<std::vector<std::size_t>, std::vector<std::size_t> >& shared_entity_processes,
-          std::map<std::vector<std::size_t>, std::size_t>& ignored_entity_indices,
-          std::map<std::vector<std::size_t>, std::vector<std::size_t> >& ignored_entity_processes);
+          std::map<Entity, std::size_t>& owned_entity_indices,
+          std::map<Entity, std::pair<std::size_t, std::vector<unsigned int> > >& shared_entities,
+          std::map<Entity, std::pair<std::size_t, std::vector<unsigned int> > >& ignored_entities);
 
     // Distribute cells
     static void distribute_cells(std::vector<std::size_t>& global_cell_indices,
@@ -168,12 +178,13 @@ namespace dolfin
     static bool in_overlap(const std::vector<std::size_t>& entity_vertices,
                const std::map<std::size_t, std::set<unsigned int> >& overlap);
 
-    // Mark non-shared mesh entities
-    static void mark_nonshared(const Mesh& mesh,
-               const std::map<std::vector<std::size_t>, std::size_t>& entities,
-               const std::map<std::vector<std::size_t>, std::size_t>& shared_entity_indices,
-               const std::map<std::vector<std::size_t>, std::size_t>& ignored_entity_indices,
-               std::vector<std::size_t>& exterior_facets);
+    /// Compute number of cells connected to each facet (globally). Facets
+    /// on internal boundaries will be connected to two cells (with the
+    /// cells residing on neighboring processes)
+    static std::vector<unsigned int> num_connected_cells(const Mesh& mesh,
+               const std::map<Entity, std::size_t>& entities,
+               const std::map<Entity, std::pair<std::size_t, std::vector<unsigned int> > >& shared_entities,
+               const std::map<Entity, std::pair<std::size_t, std::vector<unsigned int> > >& ignored_entities);
   };
 
   //---------------------------------------------------------------------------
