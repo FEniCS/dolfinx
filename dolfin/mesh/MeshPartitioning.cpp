@@ -51,13 +51,6 @@
 
 using namespace dolfin;
 
-// Utility functions for debugging/printing
-template<typename InputIterator>
-void print_container(std::ostream& ostr, InputIterator itbegin, InputIterator itend, const char* delimiter=", ")
-{
-  std::copy(itbegin, itend, std::ostream_iterator<typename InputIterator::value_type>(ostr, delimiter));
-}
-
 // Explicitly instantiate some templated functions to help the Python wrappers
 template void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
    const std::vector<std::pair<std::pair<std::size_t, unsigned int>, std::size_t> >& local_value_data,
@@ -140,7 +133,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   /// number and send to other processes. Entities shared by two or
   /// more processes are numbered by the lower ranked process.
 
-  // Get shared vertices
+  // Get shared vertices (global index, [sharing processes])
   std::map<std::size_t, std::set<uint> >& shared_vertices
                             = mesh.topology().shared_entities(0);
 
@@ -180,7 +173,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   {
     std::vector<std::size_t> num_global_entities;
     mark_nonshared(mesh, entities, shared_entity_indices,
-                       ignored_entity_indices, num_global_entities);
+                   ignored_entity_indices, num_global_entities);
     mesh.topology()(d, mesh.topology().dim()).set_global_size(num_global_entities);
   }
 
@@ -264,7 +257,6 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
     {
       std::stringstream msg;
       msg << "Process " << MPI::process_number() << " received illegal entity given by ";
-      print_container(msg, entity.begin(), entity.end());
       msg << " with global index " << global_index;
       msg << " from process " << p;
       dolfin_error("MeshPartitioning.cpp",
@@ -899,9 +891,12 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 bool MeshPartitioning::in_overlap(const std::vector<std::size_t>& entity,
                 const std::map<std::size_t, std::set<unsigned int> >& shared)
 {
+  // Iterate over entity vertices
   std::vector<std::size_t>::const_iterator e;
   for (e = entity.begin(); e != entity.end(); ++e)
   {
+    // Return false if an entity vertex is not in the list (map) of
+    // shared entities
     if (shared.find(*e) == shared.end())
       return false;
   }
