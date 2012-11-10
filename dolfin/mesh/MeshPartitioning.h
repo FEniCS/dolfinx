@@ -108,8 +108,13 @@ namespace dolfin
 
     struct EntityData
     {
+      // Constructor
       EntityData() : index(0) {}
 
+      // Constructor
+      explicit EntityData(std::size_t index) : index(index) {}
+
+      // Constructor
       EntityData(std::size_t index, const std::vector<unsigned int>& processes)
         : index(index), processes(processes) {}
 
@@ -139,17 +144,25 @@ namespace dolfin
                                   uint num_processes,
                                   uint process_number);
 
+    // Build entity ownership
+    static void compute_entity_ownership(
+          const std::map<Entity, std::size_t>& entities,
+          const std::map<std::size_t, std::set<uint> >& shared_vertices,
+          std::map<Entity, EntityData>& owned_entities,
+          std::map<Entity, EntityData>& shared_entities,
+          std::map<Entity, EntityData>& ignored_entities);
+
     // Build preliminary 'guess' of shared enties
     static void compute_preliminary_entity_ownership(
           const std::map<Entity, std::size_t>& entities,
           const std::map<std::size_t, std::set<uint> >& shared_vertices,
-          std::map<Entity, std::size_t>& owned_entity_indices,
+          std::map<Entity, EntityData>& owned_entities,
           std::map<Entity, EntityData>& shared_entities,
           std::map<Entity, EntityData>& ignored_entities);
 
     // Communicate with other processes to finalise entity ownership
     static void compute_final_entity_ownership(
-          std::map<Entity, std::size_t>& owned_entity_indices,
+          std::map<Entity, EntityData>& owned_entities,
           std::map<Entity, EntityData>& shared_entities,
           std::map<Entity, EntityData>& ignored_entities);
 

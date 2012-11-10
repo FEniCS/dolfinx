@@ -51,7 +51,8 @@
 
 using namespace dolfin;
 
-// Explicitly instantiate some templated functions to help the Python wrappers
+// Explicitly instantiate some templated functions to help the Python
+// wrappers
 template void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
    const std::vector<std::pair<std::pair<std::size_t, unsigned int>, std::size_t> >& local_value_data,
    MeshValueCollection<std::size_t>& mesh_values);
@@ -129,16 +130,16 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
     entities[entity] = e->index();
   }
 
-  /// Find out which entities to ignore, which to number and which to
-  /// number and send to other processes. Entities shared by two or
-  /// more processes are numbered by the lower ranked process.
+  // Find out which entities to ignore, which to number and which to
+  // number and send to other processes. Entities shared by two or
+  // more processes are numbered by the lower ranked process.
 
   // Get shared vertices (global index, [sharing processes])
   std::map<std::size_t, std::set<uint> >& shared_vertices
                             = mesh.topology().shared_entities(0);
 
   // Entities ([entity vertices], index) to be numbered
-  std::map<Entity, std::size_t> owned_entity_indices;
+  std::map<Entity, EntityData> owned_entities;
 
   // Candidate entities ([entity vertices], index) to number and send
   // number to other, higher rank processes
@@ -150,21 +151,9 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   // it ourself
   std::map<Entity, EntityData> ignored_entities;
 
-  compute_preliminary_entity_ownership(entities, shared_vertices,
-                                       owned_entity_indices,
-                                       my_shared_entities,
-                                       ignored_entities);
-
-  // Qualify boundary entities. We need to find out if the ignored
-  // (shared with lower ranked process) entities are entities of a
-  // lower ranked process.  If not, this process becomes the lower
-  // ranked process for the entity in question, and is therefore
-  // responsible for communicating values to the higher ranked
-  // processes (if any).
-
-  compute_final_entity_ownership(owned_entity_indices,
-                                 my_shared_entities,
-                                 ignored_entities);
+  // Compute entity ownership
+  compute_entity_ownership(entities, shared_vertices, owned_entities,
+                           my_shared_entities, ignored_entities);
 
   // ---- break here
 
@@ -180,17 +169,17 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   }
 
   // Compute global number of entities and process offset
-  const std::size_t num_local_entities
-      = owned_entity_indices.size() + my_shared_entities.size();
+  const std::size_t num_local_entities = owned_entities.size()
+                                        + my_shared_entities.size();
   const std::pair<std::size_t, std::size_t> num_global_entities
       = compute_num_global_entities(num_local_entities, num_processes,
                                     process_number);
 
-  // Extract offset
-  std::size_t offset = num_global_entities.second;
-
   // Store number of global entities
   mesh.topology().init_global(d, num_global_entities.first);
+
+  // Extract offset
+  std::size_t offset = num_global_entities.second;
 
   // Return if global entity indices are already calculated
   if (mesh.topology().have_global_indices(d))
@@ -201,11 +190,11 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   // Prepare list of entity numbers. Check later that nothing is -1
   std::vector<int> entity_indices(mesh.size(d), -1);
 
-  std::map<std::vector<std::size_t>, std::size_t>::const_iterator it;
+  std::map<Entity, EntityData>::const_iterator it;
 
   // Number owned entities
-  for (it = owned_entity_indices.begin();  it != owned_entity_indices.end(); ++it)
-    entity_indices[it->second] = offset++;
+  for (it = owned_entities.begin(); it != owned_entities.end(); ++it)
+    entity_indices[it->second.index] = offset++;
 
   // Number shared entities
   std::map<Entity, EntityData>::const_iterator it1;
@@ -231,7 +220,8 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
     // Prepare data for sending
     for (std::size_t j = 0; j < entity_processes.size(); ++j)
     {
-      // Store interleaved: entity index, number of vertices, global vertex indices
+      // Store interleaved: entity index, number of vertices, global
+      // vertex indices
       send_values.push_back(entity_index);
       send_values.push_back(entity.size());
       send_values.insert(send_values.end(), entity.begin(), entity.end());
@@ -368,14 +358,37 @@ std::pair<std::size_t, std::size_t>
   return std::make_pair(num_global, offset);
 }
 //-----------------------------------------------------------------------------
+void MeshPartitioning::compute_entity_ownership(
+          const std::map<Entity, std::size_t>& entities,
+          const std::map<std::size_t, std::set<uint> >& shared_vertices,
+          std::map<Entity, EntityData>& owned_entities,
+          std::map<Entity, EntityData>& shared_entities,
+          std::map<Entity, EntityData>& ignored_entities)
+{
+  // Compute preliminat ownership
+  compute_preliminary_entity_ownership(entities, shared_vertices,
+                                       owned_entities, shared_entities,
+                                       ignored_entities);
+
+  // Qualify boundary entities. We need to find out if the ignored
+  // (shared with lower ranked process) entities are entities of a
+  // lower ranked process.  If not, this process becomes the lower
+  // ranked process for the entity in question, and is therefore
+  // responsible for communicating values to the higher ranked
+  // processes (if any).
+
+  compute_final_entity_ownership(owned_entities, shared_entities,
+                                 ignored_entities);
+}
+//-----------------------------------------------------------------------------
 void MeshPartitioning::compute_preliminary_entity_ownership(
   const std::map<Entity, std::size_t>& entities,
   const std::map<std::size_t, std::set<unsigned int> >& shared_vertices,
-  std::map<Entity, std::size_t>& owned_entity_indices,
+  std::map<Entity, EntityData>& owned_entities,
   std::map<Entity, EntityData>& shared_entities,
   std::map<Entity, EntityData>& ignored_entities)
 {
-  owned_entity_indices.clear();
+  owned_entities.clear();
   shared_entities.clear();
   ignored_entities.clear();
 
@@ -424,7 +437,7 @@ void MeshPartitioning::compute_preliminary_entity_ownership(
 
     // Check cases
     if (entity_processes.empty())
-      owned_entity_indices[entity] = local_entity_index;
+      owned_entities[entity] = EntityData(local_entity_index);
     else if (ignore)
     {
       ignored_entities[entity] = EntityData(local_entity_index,
@@ -439,13 +452,14 @@ void MeshPartitioning::compute_preliminary_entity_ownership(
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::compute_final_entity_ownership(
-  std::map<Entity, std::size_t>& owned_entity_indices,
+  std::map<Entity, EntityData>& owned_entities,
   std::map<Entity, EntityData>& shared_entities,
   std::map<Entity, EntityData>& ignored_entities)
 {
   const std::size_t process_number = MPI::process_number();
 
-  // Communicate common entities, starting with the entities we think should be ignored
+  // Communicate common entities, starting with the entities we think
+  // should be ignored
   std::vector<std::size_t> send_common_entity_values;
   std::vector<unsigned int> destinations_common_entity;
   std::map<Entity, EntityData>::const_iterator it;
@@ -569,16 +583,18 @@ void MeshPartitioning::compute_final_entity_ownership(
         // Move from ignored to shared
         shared_entities[entity] = EntityData(local_entity_index, common_processes);
 
-        // Add entity to list of entities that should be removed from the ignored entity list.
+        // Add entity to list of entities that should be removed from
+        // the ignored entity list.
         unignore_entities.push_back(entity);
       }
     }
     else
     {
       // Move from ignored to owned
-      owned_entity_indices[entity] = local_entity_index;
+      owned_entities[entity] = EntityData(local_entity_index);
 
-      // Add entity to list of entities that should be removed from the ignored entity list
+      // Add entity to list of entities that should be removed from the
+      // ignored entity list
       unignore_entities.push_back(entity);
     }
   }
@@ -597,7 +613,7 @@ void MeshPartitioning::compute_final_entity_ownership(
     if (entity_processes.find(entity) == entity_processes.end())
     {
       // Move from shared to owned
-      owned_entity_indices[entity] = local_entity_index;
+      owned_entities[entity] = EntityData(local_entity_index);
       unshare_entities.push_back(entity);
     }
     else
@@ -770,13 +786,13 @@ void MeshPartitioning::distribute_vertices(std::vector<std::size_t>& vertex_indi
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_mesh(Mesh& mesh,
-                                  const std::vector<std::size_t>& global_cell_indices,
-                                  const boost::multi_array<std::size_t, 2>& cell_vertices,
-                                  const std::vector<std::size_t>& vertex_indices,
-                                  const boost::multi_array<double, 2>& vertex_coordinates,
-                                  const std::map<std::size_t, std::size_t>& vertex_global_to_local,
-                                  uint tdim, uint gdim, std::size_t num_global_cells,
-                                  std::size_t num_global_vertices)
+              const std::vector<std::size_t>& global_cell_indices,
+              const boost::multi_array<std::size_t, 2>& cell_vertices,
+              const std::vector<std::size_t>& vertex_indices,
+              const boost::multi_array<double, 2>& vertex_coordinates,
+              const std::map<std::size_t, std::size_t>& vertex_global_to_local,
+              uint tdim, uint gdim, std::size_t num_global_cells,
+              std::size_t num_global_vertices)
 {
   Timer timer("PARALLEL 3: Build mesh (from local mesh data)");
 
