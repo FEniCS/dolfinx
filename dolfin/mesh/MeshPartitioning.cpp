@@ -118,12 +118,12 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   if (d != (mesh.topology().dim() - 1) && mesh.topology().have_global_indices(d))
     return;
 
-  // Initialize entities of dimension d
-  mesh.init(d);
-
   // Get number of processes and process number
   const uint num_processes = MPI::num_processes();
   const uint process_number = MPI::process_number();
+
+  // Initialize entities of dimension d
+  mesh.init(d);
 
   // Get shared vertices
   std::map<uint, std::set<uint> >& shared_vertices
@@ -179,7 +179,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   if (d == (mesh.topology().dim() - 1))
   {
     std::vector<uint> num_global_entities;
-    mark_nonshared_new(mesh, entities, shared_entity_indices,
+    mark_nonshared(mesh, entities, shared_entity_indices,
                        ignored_entity_indices, num_global_entities);
     mesh.topology()(d, mesh.topology().dim()).set_global_size(num_global_entities);
   }
@@ -895,37 +895,7 @@ bool MeshPartitioning::in_overlap(const std::vector<uint>& entity,
   return true;
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::mark_nonshared(const std::map<std::vector<uint>, uint>& entities,
-               const std::map<std::vector<uint>, uint>& shared_entity_indices,
-               const std::map<std::vector<uint>, uint>& ignored_entity_indices,
-               MeshFunction<bool>& exterior)
-{
-  // Set all to false (not exterior)
-  exterior.set_all(false);
-
-  const Mesh& mesh = exterior.mesh();
-  const uint D = mesh.topology().dim();
-
-  dolfin_assert(exterior.dim() == D - 1);
-
-  // FIXME: Check that everything is correctly initalised
-
-  // Add facets that are connected to one cell only
-  for (FacetIterator facet(mesh); !facet.end(); ++facet)
-  {
-    if (facet->num_entities(D) == 1)
-      exterior[*facet] = true;
-  }
-
-  // Remove all entities on internal partition boundaries
-  std::map<std::vector<uint>, uint>::const_iterator it;
-  for (it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
-    exterior[entities.find(it->first)->second] = false;
-  for (it = ignored_entity_indices.begin(); it != ignored_entity_indices.end(); ++it)
-    exterior[entities.find(it->first)->second] = false;
-}
-//-----------------------------------------------------------------------------
-void MeshPartitioning::mark_nonshared_new(const Mesh& mesh,
+void MeshPartitioning::mark_nonshared(const Mesh& mesh,
                const std::map<std::vector<uint>, uint>& entities,
                const std::map<std::vector<uint>, uint>& shared_entity_indices,
                const std::map<std::vector<uint>, uint>& ignored_entity_indices,

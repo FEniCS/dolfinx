@@ -166,13 +166,7 @@ namespace dolfin
                            const std::map<uint, std::set<uint> >& overlap);
 
     // Mark non-shared mesh entities
-    static void mark_nonshared(const std::map<std::vector<uint>, uint>& entities,
-               const std::map<std::vector<uint>, uint>& shared_entity_indices,
-               const std::map<std::vector<uint>, uint>& ignored_entity_indices,
-               MeshFunction<bool>& exterior_facets);
-
-    // Mark non-shared mesh entities
-    static void mark_nonshared_new(const Mesh& mesh,
+    static void mark_nonshared(const Mesh& mesh,
                const std::map<std::vector<uint>, uint>& entities,
                const std::map<std::vector<uint>, uint>& shared_entity_indices,
                const std::map<std::vector<uint>, uint>& ignored_entity_indices,
