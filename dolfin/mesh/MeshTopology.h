@@ -80,7 +80,7 @@ namespace dolfin
 
     /// Set number of global entities (global_size) for given topological
     /// dimension
-    void init_global(uint dim, uint global_size);
+    void init_global(uint dim, std::size_t global_size);
 
     /// Initialize storage for global entity numbering for entities of
     /// dimension dim
@@ -109,12 +109,12 @@ namespace dolfin
     }
 
     /// Return map from shared entiies to process that share the entity
-    std::map<unsigned int, std::set<unsigned int> >&
+    std::map<std::size_t, std::set<unsigned int> >&
       shared_entities(uint dim);
 
     /// Return map from shared entiies to process that share the entity
     /// (const version)
-    const std::map<unsigned int, std::set<unsigned int> >&
+    const std::map<std::size_t, std::set<unsigned int> >&
       shared_entities(uint dim) const;
 
     /// Return connectivity for given pair of topological dimensions
@@ -158,7 +158,7 @@ namespace dolfin
 
     // Maps each shared vertex (entity of dim 0) to a list of the
     // processes sharing the vertex
-    std::map<uint, std::set<uint> > _shared_vertices;
+    std::map<std::size_t, std::set<uint> > _shared_vertices;
 
     // Connectivity for pairs of topological dimensions
     std::vector<std::vector<MeshConnectivity> > connectivity;

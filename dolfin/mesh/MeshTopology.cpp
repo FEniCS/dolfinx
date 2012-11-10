@@ -125,7 +125,7 @@ void MeshTopology::init(uint dim, uint local_size)
     init_global(dim, local_size);
 }
 //-----------------------------------------------------------------------------
-void MeshTopology::init_global(uint dim, uint global_size)
+void MeshTopology::init_global(uint dim, std::size_t global_size)
 {
   dolfin_assert(dim < global_num_entities.size());
   global_num_entities[dim] = global_size;
@@ -151,7 +151,7 @@ const dolfin::MeshConnectivity& MeshTopology::operator() (uint d0, uint d1) cons
   return connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------
-std::map<unsigned int, std::set<unsigned int> >&
+std::map<std::size_t, std::set<unsigned int> >&
   MeshTopology::shared_entities(uint dim)
 {
   if (dim != 0)
@@ -163,7 +163,7 @@ std::map<unsigned int, std::set<unsigned int> >&
   return _shared_vertices;
 }
 //-----------------------------------------------------------------------------
-const std::map<unsigned int, std::set<unsigned int> >&
+const std::map<std::size_t, std::set<unsigned int> >&
   MeshTopology::shared_entities(uint dim) const
 {
   if (dim != 0)

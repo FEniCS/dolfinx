@@ -30,8 +30,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::map<dolfin::uint, std::set<std::pair<dolfin::uint, dolfin::uint> > >
-MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
+std::map<unsigned int, std::set<std::pair<std::size_t, std::size_t> > >
+MeshDistributed::off_process_indices(const std::vector<std::size_t>& entity_indices,
                                      uint dim, const Mesh& mesh)
 {
   if (dim == 0)
@@ -65,34 +65,34 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
   }
 
   // Get global cell entity indices on this process
-  const std::vector<uint> global_entity_indices
+  const std::vector<std::size_t> global_entity_indices
       = mesh.topology().global_indices(dim);
 
   dolfin_assert(global_entity_indices.size() == mesh.num_cells());
 
   // Prepare map to hold process numbers
-  std::map<uint, std::set<std::pair<uint, uint> > > processes;
+  std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t> > > processes;
 
   // FIXME: work on optimising below code
 
   // List of indices to send
-  std::vector<uint> my_entities;
+  std::vector<std::size_t> my_entities;
 
   // Remove local cells from my_entities to reduce communication
   if (dim == D)
   {
     // In order to fill vector my_entities...
     // build and populate a local set for non-local cells
-    std::set<uint> set_of_my_entities(entity_indices.begin(), entity_indices.end());
+    std::set<std::size_t> set_of_my_entities(entity_indices.begin(), entity_indices.end());
 
     // FIXME: This can be made more efficient by exploiting fact that
     //        set is sorted
     // Remove local cells from set_of_my_entities to reduce communication
-    for (uint j = 0; j < global_entity_indices.size(); ++j)
+    for (std::size_t j = 0; j < global_entity_indices.size(); ++j)
       set_of_my_entities.erase(global_entity_indices[j]);
 
     // Copy entries from set_of_my_entities to my_entities
-    my_entities = std::vector<uint>(set_of_my_entities.begin(), set_of_my_entities.end());
+    my_entities = std::vector<std::size_t>(set_of_my_entities.begin(), set_of_my_entities.end());
   }
   else
     my_entities = entity_indices;
@@ -101,39 +101,39 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
   //dolfin_assert(!my_entities.empty());
 
   // Prepare data structures for send/receive
-  const uint num_proc = MPI::num_processes();
-  const uint proc_num = MPI::process_number();
-  const uint max_recv = MPI::max(my_entities.size());
-  std::vector<uint> off_process_entities(max_recv);
+  const std::size_t num_proc = MPI::num_processes();
+  const std::size_t proc_num = MPI::process_number();
+  const std::size_t max_recv = MPI::max(my_entities.size());
+  std::vector<std::size_t> off_process_entities(max_recv);
 
   // Send and receive data
-  for (uint k = 1; k < MPI::num_processes(); ++k)
+  for (std::size_t k = 1; k < MPI::num_processes(); ++k)
   {
-    const uint src  = (proc_num - k + num_proc) % num_proc;
-    const uint dest = (proc_num + k) % num_proc;
+    const std::size_t src  = (proc_num - k + num_proc) % num_proc;
+    const std::size_t dest = (proc_num + k) % num_proc;
 
     MPI::send_recv(my_entities, dest, off_process_entities, src);
 
-    const uint recv_entity_count = off_process_entities.size();
+    const std::size_t recv_entity_count = off_process_entities.size();
 
     // Check if this process owns received entities, and if so
     // store local index
-    std::vector<uint> my_hosted_entities;
+    std::vector<std::size_t> my_hosted_entities;
     {
       // Build a temporary map hosting global_entity_indices
-      std::map<uint, uint> map_of_global_entity_indices;
-      for (uint j = 0; j < global_entity_indices.size(); j++)
+      std::map<std::size_t, std::size_t> map_of_global_entity_indices;
+      for (std::size_t j = 0; j < global_entity_indices.size(); j++)
         map_of_global_entity_indices[global_entity_indices[j]] = j;
 
-      for (uint j = 0; j < recv_entity_count; j++)
+      for (std::size_t j = 0; j < recv_entity_count; j++)
       {
         // Check if this process hosts 'received_entity'
-        const uint received_entity = off_process_entities[j];
-        std::map<uint, uint>::const_iterator it;
+        const std::size_t received_entity = off_process_entities[j];
+        std::map<std::size_t, std::size_t>::const_iterator it;
         it = map_of_global_entity_indices.find(received_entity);
         if (it != map_of_global_entity_indices.end())
         {
-          const uint local_index = it->second;
+          const std::size_t local_index = it->second;
           my_hosted_entities.push_back(received_entity);
           my_hosted_entities.push_back(local_index);
         }
@@ -141,15 +141,15 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
     }
 
     // Send/receive hosted cells
-    const uint max_recv_host_proc = MPI::max(my_hosted_entities.size());
-    std::vector<uint> host_processes(max_recv_host_proc);
+    const std::size_t max_recv_host_proc = MPI::max(my_hosted_entities.size());
+    std::vector<std::size_t> host_processes(max_recv_host_proc);
     MPI::send_recv(my_hosted_entities, src, host_processes, dest);
 
-    const uint recv_hostproc_count = host_processes.size();
-    for (uint j = 0; j < recv_hostproc_count; j += 2)
+    const std::size_t recv_hostproc_count = host_processes.size();
+    for (std::size_t j = 0; j < recv_hostproc_count; j += 2)
     {
-      const uint global_index = host_processes[j];
-      const uint local_index  = host_processes[j + 1];
+      const std::size_t global_index = host_processes[j];
+      const std::size_t local_index  = host_processes[j + 1];
       processes[global_index].insert(std::make_pair(dest, local_index));
     }
 
@@ -159,8 +159,8 @@ MeshDistributed::off_process_indices(const std::vector<uint>& entity_indices,
   }
 
   // Sanity check
-  const std::set<uint> test_set(my_entities.begin(), my_entities.end());
-  const uint number_expected = test_set.size();
+  const std::set<std::size_t> test_set(my_entities.begin(), my_entities.end());
+  const std::size_t number_expected = test_set.size();
   if (number_expected != processes.size())
   {
     dolfin_error("MeshDistributed.cpp",
