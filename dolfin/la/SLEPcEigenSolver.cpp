@@ -107,7 +107,6 @@ SLEPcEigenSolver::~SLEPcEigenSolver()
   // Destroy solver environment
   if (eps)
     EPSDestroy(&eps);
-  }
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve()
