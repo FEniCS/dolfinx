@@ -25,7 +25,11 @@
 
 #include <boost/shared_ptr.hpp>
 #include <petscversion.h>
+#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
 #include <petsc-private/pcimpl.h>
+#else
+#include <private/pcimpl.h>
+#endif
 #include <dolfin/common/NoDeleter.h>
 #include "PETScVector.h"
 #include "PETScUserPreconditioner.h"
@@ -89,7 +93,6 @@ int PETScUserPreconditioner::PCCreate(PC pc)
   pc->ops->view                = 0;
   pc->ops->destroy             = 0;
   pc->ops->reset               = 0;
-
   // Set PETSc name of preconditioner
   PetscObjectChangeTypeName((PetscObject)pc, "DOLFIN");
 
