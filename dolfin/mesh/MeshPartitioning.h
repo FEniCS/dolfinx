@@ -108,8 +108,10 @@ namespace dolfin
 
     struct EntityData
     {
-      // Vertices of the entity
-      std::vector<std::size_t> entity_vertices;
+      EntityData() : index(0) {}
+
+      EntityData(std::size_t index, const std::vector<unsigned int>& processes)
+        : index(index), processes(processes) {}
 
       // Entity index
       std::size_t index;
@@ -142,14 +144,14 @@ namespace dolfin
           const std::map<Entity, std::size_t>& entities,
           const std::map<std::size_t, std::set<uint> >& shared_vertices,
           std::map<Entity, std::size_t>& owned_entity_indices,
-          std::map<Entity, std::pair<std::size_t, std::vector<unsigned int> > >& shared_entities,
-          std::map<Entity, std::pair<std::size_t, std::vector<unsigned int> > >& ignored_entities);
+          std::map<Entity, EntityData>& shared_entities,
+          std::map<Entity, EntityData>& ignored_entities);
 
     // Communicate with other processes to finalise entity ownership
     static void compute_final_entity_ownership(
           std::map<Entity, std::size_t>& owned_entity_indices,
-          std::map<Entity, std::pair<std::size_t, std::vector<unsigned int> > >& shared_entities,
-          std::map<Entity, std::pair<std::size_t, std::vector<unsigned int> > >& ignored_entities);
+          std::map<Entity, EntityData>& shared_entities,
+          std::map<Entity, EntityData>& ignored_entities);
 
     // Distribute cells
     static void distribute_cells(std::vector<std::size_t>& global_cell_indices,
@@ -183,8 +185,8 @@ namespace dolfin
     /// cells residing on neighboring processes)
     static std::vector<unsigned int> num_connected_cells(const Mesh& mesh,
                const std::map<Entity, std::size_t>& entities,
-               const std::map<Entity, std::pair<std::size_t, std::vector<unsigned int> > >& shared_entities,
-               const std::map<Entity, std::pair<std::size_t, std::vector<unsigned int> > >& ignored_entities);
+               const std::map<Entity, EntityData>& shared_entities,
+               const std::map<Entity, EntityData>& ignored_entities);
   };
 
   //---------------------------------------------------------------------------
