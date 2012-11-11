@@ -28,6 +28,7 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <boost/array.hpp>
 #include <boost/multi_array.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
@@ -104,8 +105,10 @@ namespace dolfin
 
   private:
 
+    // Data structure for a mesh entity (list of vertices)
     typedef std::vector<std::size_t> Entity;
 
+    // Data structure to mesh entity data
     struct EntityData
     {
       // Constructor
@@ -125,14 +128,14 @@ namespace dolfin
       std::vector<unsigned int> processes;
     };
 
-    /// Create a partitioned mesh based on local mesh data
+    // Create a partitioned mesh based on local mesh data
     static void partition(Mesh& mesh, const LocalMeshData& data);
 
-    /// Create and attach distributed MeshDomains from local_data
+    // Create and attach distributed MeshDomains from local_data
     static void build_mesh_domains(Mesh& mesh, const LocalMeshData& local_data);
 
-    /// Create and attach distributed MeshDomains from local_data
-    /// [entry, (cell_index, local_index, value)]
+    // Create and attach distributed MeshDomains from local_data
+    // [entry, (cell_index, local_index, value)]
     template<typename T, typename MeshValueCollection>
     static void build_mesh_value_collection(const Mesh& mesh,
       const std::vector<std::pair<std::pair<std::size_t, uint>, T> >& local_value_data,
@@ -144,40 +147,40 @@ namespace dolfin
                                   uint num_processes,
                                   uint process_number);
 
-    // Build entity ownership
-    static void compute_entity_ownership(
-          const std::map<Entity, std::size_t>& entities,
-          const std::map<std::size_t, std::set<uint> >& shared_vertices,
-          std::map<Entity, EntityData>& owned_exclusive_entities,
-          std::map<Entity, EntityData>& owned_shared_entities,
-          std::map<Entity, EntityData>& unowned_shared_entities);
+    // Compute ownership of entities ([entity vertices], data)
+    //  [0]: owned exclusively (will be numbered by this process)
+    //  [1]: owned and shared (will be numbered by this process, and number
+    //       commuicated to other processes)
+    //  [2]: not owned but shared (will be numbered by another process,
+    //       and number commuicated to this processes)
+    static boost::array<std::map<Entity, EntityData>, 3>
+          compute_entity_ownership(const std::map<Entity, std::size_t>& entities,
+               const std::map<std::size_t, std::set<uint> >& shared_vertices);
 
     // Build preliminary 'guess' of shared enties
     static void compute_preliminary_entity_ownership(
-          const std::map<Entity, std::size_t>& entities,
           const std::map<std::size_t, std::set<uint> >& shared_vertices,
-          std::map<Entity, EntityData>& owned_exclusive_entities,
-          std::map<Entity, EntityData>& owned_shared_entities,
-          std::map<Entity, EntityData>& unowned_shared_entities);
+          const std::map<Entity, std::size_t>& entities,
+          boost::array<std::map<Entity, EntityData>, 3>& entity_ownership);
 
     // Communicate with other processes to finalise entity ownership
-    static void compute_final_entity_ownership(
-          std::map<Entity, EntityData>& owned_exclusively_entities,
-          std::map<Entity, EntityData>& owned_shared_entities,
-          std::map<Entity, EntityData>& unowned_shared_entities);
+    static void compute_final_entity_ownership(boost::array<std::map<Entity, EntityData>, 3>& entity_ownership);
 
-    // Distribute cells
-    static void distribute_cells(std::vector<std::size_t>& global_cell_indices,
-                                 boost::multi_array<std::size_t, 2>& cell_vertices,
-                                 const LocalMeshData& data,
-                                 const std::vector<uint>& cell_partition);
+    // This function takes the partition computed by the partitioner
+    // (which tells us to which process each of the local cells stored in
+    // LocalMeshData on this process belongs. We use MPI::distribute to
+    //redistribute all cells (the global vertex indices of all cells).
+    static void distribute_cells(const LocalMeshData& data,
+                                 const std::vector<uint>& cell_partition,
+                                 std::vector<std::size_t>& global_cell_indices,
+                                 boost::multi_array<std::size_t, 2>& cell_vertices);
 
     // Distribute vertices
-    static void distribute_vertices(std::vector<std::size_t>& vertex_indices,
-                  boost::multi_array<double, 2>& vertex_coordinates,
-                  std::map<std::size_t, std::size_t>& glob2loc,
+    static void distribute_vertices(const LocalMeshData& data,
                   const boost::multi_array<std::size_t, 2>& cell_vertices,
-                  const LocalMeshData& data);
+                  std::vector<std::size_t>& vertex_indices,
+                  boost::multi_array<double, 2>& vertex_coordinates,
+                  std::map<std::size_t, std::size_t>& glob2loc);
 
     // Build mesh
     static void build_mesh(Mesh& mesh,
