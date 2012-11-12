@@ -67,10 +67,10 @@ namespace dolfin
     virtual void init(const TensorLayout& tensor_layout);
 
     /// Return size of given dimension
-    virtual uint size(uint dim) const;
+    virtual std::size_t size(uint dim) const;
 
     /// Return local ownership range
-    virtual std::pair<uint, uint> local_range(uint dim) const;
+    virtual std::pair<std::size_t, std::size_t> local_range(uint dim) const;
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
@@ -101,18 +101,18 @@ namespace dolfin
     { dolfin_not_implemented(); }
 
     /// Get block of values
-    virtual void get(double* block, uint m, const uint* rows, uint n,
-                     const uint* cols) const
+    virtual void get(double* block, std::size_t m, const std::size_t* rows, std::size_t n,
+                     const std::size_t* cols) const
     { dolfin_not_implemented(); }
 
     /// Set block of values
-    virtual void set(const double* block, uint m, const uint* rows, uint n,
-                     const uint* cols)
+    virtual void set(const double* block, std::size_t m, const std::size_t* rows, std::size_t n,
+                     const std::size_t* cols)
     { dolfin_not_implemented(); }
 
     /// Add block of values
-    virtual void add(const double* block, uint m, const uint* rows, uint n,
-                     const uint* cols);
+    virtual void add(const double* block, std::size_t m, const std::size_t* rows, std::size_t n,
+                     const std::size_t* cols);
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A,
@@ -123,20 +123,20 @@ namespace dolfin
     virtual double norm(std::string norm_type) const;
 
     /// Get non-zero values of given row
-    virtual void getrow(uint row, std::vector<uint>& columns,
+    virtual void getrow(std::size_t row, std::vector<std::size_t>& columns,
                         std::vector<double>& values) const;
 
     /// Set values for given row
-    virtual void setrow(uint row, const std::vector<uint>& columns,
+    virtual void setrow(std::size_t row, const std::vector<std::size_t>& columns,
                         const std::vector<double>& values)
     { dolfin_not_implemented(); }
 
     /// Set given rows to zero
-    virtual void zero(uint m, const uint* rows)
+    virtual void zero(std::size_t m, const std::size_t* rows)
     { dolfin_not_implemented(); }
 
     /// Set given rows to identity matrix
-    virtual void ident(uint m, const uint* rows);
+    virtual void ident(std::size_t m, const std::size_t* rows);
 
     // Matrix-vector product, y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const
@@ -165,7 +165,7 @@ namespace dolfin
 
     void sort()
     {
-      std::vector<std::vector<std::pair<uint, double> > >::iterator row;
+      std::vector<std::vector<std::pair<std::size_t, double> > >::iterator row;
       for (row = _values.begin(); row < _values.end(); ++row)
         std::sort(row->begin(), row->end());
     }
@@ -185,10 +185,10 @@ namespace dolfin
              bool symmetric) const;
 
     /// Return number of global non-zero entries
-    uint nnz() const;
+    std::size_t nnz() const;
 
     /// Return number of local non-zero entries
-    uint local_nnz() const;
+    std::size_t local_nnz() const;
 
   private:
 
@@ -205,17 +205,17 @@ namespace dolfin
 
     // Local ownership range (row range for row-wise storage, column
     // range for column-wise storage)
-    std::pair<uint, uint> _local_range;
+    std::pair<std::size_t, std::size_t> _local_range;
 
     // Number of columns (row-wise storage) or number of rows (column-wise
     // storage)
-    uint num_codim_entities;
+    std::size_t num_codim_entities;
 
     // Storage of non-zero matrix values
-    std::vector<std::vector<std::pair<uint, double> > > _values;
+    std::vector<std::vector<std::pair<std::size_t, double> > > _values;
 
     // Off-process data ([i, j], value)
-    boost::unordered_map<std::pair<uint, uint>, double> off_processs_data;
+    boost::unordered_map<std::pair<std::size_t, std::size_t>, double> off_processs_data;
 
   };
 
@@ -306,7 +306,7 @@ namespace dolfin
       // Build data structures
       for (std::size_t local_row = 0; local_row < _values.size(); ++local_row)
       {
-        const uint global_row_index = local_row + _local_range.first;
+        const std::size_t global_row_index = local_row + _local_range.first;
         std::size_t counter = 0;
         for (std::size_t i = 0; i < _values[local_row].size(); ++i)
         {

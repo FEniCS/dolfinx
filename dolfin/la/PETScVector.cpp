@@ -396,7 +396,7 @@ bool PETScVector::empty() const
 //-----------------------------------------------------------------------------
 std::size_t PETScVector::size() const
 {
-  long int n = 0;
+  PetscInt n = 0;
   if (x)
     VecGetSize(*x, &n);
   return static_cast<std::size_t>(n);
@@ -404,13 +404,13 @@ std::size_t PETScVector::size() const
 //-----------------------------------------------------------------------------
 std::size_t PETScVector::local_size() const
 {
-  long int n = 0;
+  PetscInt n = 0;
   if (x)
     VecGetLocalSize(*x, &n);
   return static_cast<std::size_t>(n);
 }
 //-----------------------------------------------------------------------------
-std::pair<dolfin::std::size_t, dolfin::std::size_t> PETScVector::local_range() const
+std::pair<std::size_t, std::size_t> PETScVector::local_range() const
 {
   std::pair<std::size_t, std::size_t> range;
   VecGetOwnershipRange(*x, (int*) &range.first, (int*) &range.second);

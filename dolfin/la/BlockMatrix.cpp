@@ -68,7 +68,7 @@ boost::shared_ptr<GenericMatrix> BlockMatrix::get_block(uint i, uint j)
   return matrices[i][j];
 }
 //-----------------------------------------------------------------------------
-dolfin::uint BlockMatrix::size(uint dim) const
+std::size_t BlockMatrix::size(uint dim) const
 {
   dolfin_assert(dim < 1);
   return matrices.shape()[dim];
@@ -127,7 +127,7 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
     z_tmp = matrices[0][0]->factory().create_vector();
 
   // Loop over block rows
-  for(uint row = 0; row < matrices.shape()[0]; row++)
+  for(std::size_t row = 0; row < matrices.shape()[0]; row++)
   {
     // RHS sub-vector
     GenericVector& _y = *(y.get_block(row));
@@ -143,7 +143,7 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
     _A.resize(*z_tmp, 0);
 
     // Loop over block columns
-    for(uint col = 0; col < matrices.shape()[1]; ++col)
+    for(std::size_t col = 0; col < matrices.shape()[1]; ++col)
     {
       const GenericVector& _x = *(x.get_block(col));
       dolfin_assert(matrices[row][col]);
@@ -171,15 +171,15 @@ boost::shared_ptr<GenericMatrix> BlockMatrix::schur_approximation(bool symmetry)
 
   boost::shared_ptr<GenericMatrix> S(D.copy());
 
-  std::vector<uint> cols_i;
+  std::vector<std::size_t> cols_i;
   std::vector<double> vals_i;
-  for (uint i=0; i<D.size(0); i++)
+  for (std::size_t i = 0; i < D.size(0); i++)
   {
     C.getrow(i, cols_i, vals_i);
-    double diag_ii=0;
-    for (uint k=0; k<cols_i.size(); k++)
+    double diag_ii = 0;
+    for (std::size_t k = 0; k < cols_i.size(); k++)
     {
-      const uint j=cols_i[k];
+      const std::size_t j = cols_i[k];
       const double val=vals_i[k];
       diag_ii -= val*val/A(j,j);
     }

@@ -116,17 +116,17 @@ void SingularSolver::init(const GenericMatrix& A)
   }
 
   // Get dimension
-  const uint N = A.size(0);
+  const std::size_t N = A.size(0);
 
   // Check if we have already initialized system
   if (B && B->size(0) == N + 1 && B->size(1) == N + 1)
     return;
 
   // Create sparsity pattern for B
-  std::vector<uint> dims(2);
-  std::vector<std::pair<uint, uint> > local_range(2);
-  std::vector<const boost::unordered_map<uint, uint>* > off_process_owner(2);
-  const boost::unordered_map<uint, uint> empty_off_process_owner;
+  std::vector<std::size_t> dims(2);
+  std::vector<std::pair<std::size_t, std::size_t> > local_range(2);
+  std::vector<const boost::unordered_map<std::size_t, uint>* > off_process_owner(2);
+  const boost::unordered_map<std::size_t, uint> empty_off_process_owner;
   for (uint i = 0; i < 1; ++i)
   {
     dims[i] = N + 1;
@@ -143,19 +143,19 @@ void SingularSolver::init(const GenericMatrix& A)
     s.init(dims, local_range, off_process_owner);
 
     // Copy sparsity pattern for A and last column
-    std::vector<uint> columns;
+    std::vector<std::size_t> columns;
     std::vector<double> dummy;
-    std::vector<const std::vector<uint>* > _rows(2);
-    std::vector<std::vector<uint> > rows(2);
+    std::vector<const std::vector<std::size_t>* > _rows(2);
+    std::vector<std::vector<std::size_t> > rows(2);
     rows[0].resize(1);
-    for (uint i = 0; i < N; i++)
+    for (std::size_t i = 0; i < N; i++)
     {
       // FIXME: Add function to get row sparsity pattern
       // Get row
       A.getrow(i, columns, dummy);
 
       // Copy columns to vector
-      const uint num_cols = columns.size() + 1;
+      const std::size_t num_cols = columns.size() + 1;
       rows[1].resize(num_cols);
       std::copy(columns.begin(), columns.end(), rows[1].begin());
 
@@ -172,7 +172,7 @@ void SingularSolver::init(const GenericMatrix& A)
     }
 
     // Add last row
-    const uint num_cols = N;
+    const std::size_t num_cols = N;
     rows[1].resize(num_cols);
     std::copy(columns.begin(), columns.end(), rows[1].begin());
     rows[0][0] = N;
@@ -206,10 +206,10 @@ void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
   B->zero();
 
   // Copy rows from A into B
-  const uint N = A.size(0);
-  std::vector<uint> columns;
+  const std::size_t N = A.size(0);
+  std::vector<std::size_t> columns;
   std::vector<double> values;
-  for (uint i = 0; i < N; i++)
+  for (std::size_t i = 0; i < N; i++)
   {
     A.getrow(i, columns, values);
     B->setrow(i, columns, values);
@@ -228,7 +228,7 @@ void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
     // FIXME: Do we need to zero z?
     z->zero();
     M->mult(*ones, *z);
-    for (uint i = 0; i < N; i++)
+    for (std::size_t i = 0; i < N; i++)
     {
       columns[i] = i;
       values[i] = (*z)[i];
@@ -236,7 +236,7 @@ void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
   }
   else
   {
-    for (uint i = 0; i < N; i++)
+    for (std::size_t i = 0; i < N; i++)
     {
       columns[i] = i;
       values[i] = 1.0;
@@ -247,7 +247,7 @@ void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
   B->setrow(N, columns, values);
 
   // Add last column
-  for (uint i = 0; i < N; i++)
+  for (std::size_t i = 0; i < N; i++)
     B->set(&values[i], 1, &i, 1, &N);
 
   // Copy values from b into c

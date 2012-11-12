@@ -168,7 +168,7 @@ namespace dolfin
     /// *Returns*
     ///     boost::unordered_map<unsigned int, unsigned int>
     ///         The map from non-local dofs.
-    const boost::unordered_map<std::size_t, std::size_t>& off_process_owner() const;
+    const boost::unordered_map<std::size_t, uint>& off_process_owner() const;
 
     /// Return map from all shared dofs to the processes (not including the current
     /// process) that share it.
@@ -368,7 +368,7 @@ namespace dolfin
 
     // Owner (process) of dofs in local dof map that do not belong to
     // this process
-    boost::unordered_map<std::size_t, std::size_t> _off_process_owner;
+    boost::unordered_map<std::size_t, uint> _off_process_owner;
 
     // List of processes that share a given dof
     boost::unordered_map<std::size_t, std::vector<std::size_t> > _shared_dofs;

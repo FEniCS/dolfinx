@@ -32,7 +32,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SparsityPattern::SparsityPattern(std::size_t primary_dim)
+SparsityPattern::SparsityPattern(uint primary_dim)
     : GenericSparsityPattern(primary_dim), distributed(false)
 {
   // Do nothing
@@ -40,16 +40,16 @@ SparsityPattern::SparsityPattern(std::size_t primary_dim)
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(const std::vector<std::size_t>& dims,
   const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
-  const std::vector<const boost::unordered_map<std::size_t, std::size_t>* > off_process_owner,
+  const std::vector<const boost::unordered_map<std::size_t, uint>* > off_process_owner,
     uint primary_dim)
   : GenericSparsityPattern(primary_dim), distributed(false)
 {
   init(dims, local_range, off_process_owner);
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::init(const std::vector<uint>& dims,
+void SparsityPattern::init(const std::vector<std::size_t>& dims,
   const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
-  const std::vector<const boost::unordered_map<std::size_t, std::size_t>* > off_process_owner)
+  const std::vector<const boost::unordered_map<std::size_t, uint>* > off_process_owner)
 {
   // Only rank 2 sparsity patterns are supported
   dolfin_assert(dims.size() == 2);
@@ -172,7 +172,7 @@ void SparsityPattern::insert(const std::vector<const std::vector<std::size_t>* >
   }
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::add_edges(const std::pair<std::size_t, std::size_t>& vertex,
+void SparsityPattern::add_edges(const std::pair<std::size_t, uint>& vertex,
                                 const std::vector<std::size_t>& edges)
 {
   const uint _primary_dim = primary_dim();
@@ -300,7 +300,7 @@ void SparsityPattern::apply()
       const std::size_t I = non_local[i];
 
       // Figure out which process owns the row
-      boost::unordered_map<std::size_t, std::size_t>::const_iterator non_local_index
+      boost::unordered_map<std::size_t, uint>::const_iterator non_local_index
           = off_process_owner[_primary_dim].find(I);
       dolfin_assert(non_local_index != off_process_owner[_primary_dim].end());
       const uint p = non_local_index->second;

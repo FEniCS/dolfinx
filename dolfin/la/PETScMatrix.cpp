@@ -109,12 +109,12 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
 {
   // Get global dimensions and local range
   dolfin_assert(tensor_layout.rank() == 2);
-  const uint M = tensor_layout.size(0);
-  const uint N = tensor_layout.size(1);
-  const std::pair<uint, uint> row_range = tensor_layout.local_range(0);
-  const std::pair<uint, uint> col_range = tensor_layout.local_range(1);
-  const uint m = row_range.second - row_range.first;
-  const uint n = col_range.second - col_range.first;
+  const std::size_t M = tensor_layout.size(0);
+  const std::size_t N = tensor_layout.size(1);
+  const std::pair<std::size_t, std::size_t> row_range = tensor_layout.local_range(0);
+  const std::pair<std::size_t, std::size_t> col_range = tensor_layout.local_range(1);
+  const std::size_t m = row_range.second - row_range.first;
+  const std::size_t n = col_range.second - col_range.first;
   dolfin_assert(M > 0 && N > 0 && m > 0 && n > 0);
 
   // Get sparsity payttern
@@ -135,7 +135,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   {
     // Get number of nonzeros for each row from sparsity pattern
     dolfin_assert(tensor_layout.sparsity_pattern());
-    std::vector<uint> num_nonzeros(M);
+    std::vector<std::size_t> num_nonzeros(M);
     sparsity_pattern.num_nonzeros_diagonal(num_nonzeros);
 
     // Create matrix
@@ -158,14 +158,14 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
 
     // Set column indices
     /*
-    const std::vector<std::vector<uint> > _column_indices
+    const std::vector<std::vector<std::size_t> > _column_indices
         = sparsity_pattern.diagonal_pattern(SparsityPattern::sorted);
     std::vector<int> column_indices;
     column_indices.reserve(sparsity_pattern.num_nonzeros());
-    for (uint i = 0; i < _column_indices.size(); ++i)
+    for (std::size_t i = 0; i < _column_indices.size(); ++i)
     {
       //cout << "Row: " << i << endl;
-      //for (uint j = 0; j < _column_indices[i].size(); ++j)
+      //for (std::size_t j = 0; j < _column_indices[i].size(); ++j)
       //  cout << "  Col: " << _column_indices[i][j] << endl;
       column_indices.insert(column_indices.end(), _column_indices[i].begin(), _column_indices[i].end());
     }
@@ -187,8 +187,8 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     //     row_range.first, row_range.second, col_range.first, col_range.second);
 
     // Get number of nonzeros for each row from sparsity pattern
-    std::vector<uint> num_nonzeros_diagonal;
-    std::vector<uint> num_nonzeros_off_diagonal;
+    std::vector<std::size_t> num_nonzeros_diagonal;
+    std::vector<std::size_t> num_nonzeros_off_diagonal;
     sparsity_pattern.num_nonzeros_diagonal(num_nonzeros_diagonal);
     sparsity_pattern.num_nonzeros_off_diagonal(num_nonzeros_off_diagonal);
 
@@ -221,8 +221,8 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   #endif
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::get(double* block, uint m, const uint* rows,
-                                     uint n, const uint* cols) const
+void PETScMatrix::get(double* block, std::size_t m, const std::size_t* rows,
+                                     std::size_t n, const std::size_t* cols) const
 {
   // Get matrix entries (must be on this process)
   dolfin_assert(A);
@@ -232,8 +232,8 @@ void PETScMatrix::get(double* block, uint m, const uint* rows,
                block);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set(const double* block, uint m, const uint* rows,
-                                           uint n, const uint* cols)
+void PETScMatrix::set(const double* block, std::size_t m, const std::size_t* rows,
+                                           std::size_t n, const std::size_t* cols)
 {
   dolfin_assert(A);
   MatSetValues(*A,
@@ -242,8 +242,8 @@ void PETScMatrix::set(const double* block, uint m, const uint* rows,
                block, INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::add(const double* block, uint m, const uint* rows,
-                                           uint n, const uint* cols)
+void PETScMatrix::add(const double* block, std::size_t m, const std::size_t* rows,
+                                           std::size_t n, const std::size_t* cols)
 {
   dolfin_assert(A);
   MatSetValues(*A,
@@ -264,7 +264,7 @@ void PETScMatrix::axpy(double a, const GenericMatrix& A,
     MatAXPY(*(this->A), a, *AA->mat(), DIFFERENT_NONZERO_PATTERN);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::getrow(uint row, std::vector<uint>& columns,
+void PETScMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
                          std::vector<double>& values) const
 {
   dolfin_assert(A);
@@ -281,7 +281,7 @@ void PETScMatrix::getrow(uint row, std::vector<uint>& columns,
   MatRestoreRow(*A, row, &ncols, &cols, &vals);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::setrow(uint row, const std::vector<uint>& columns,
+void PETScMatrix::setrow(std::size_t row, const std::vector<std::size_t>& columns,
                          const std::vector<double>& values)
 {
   dolfin_assert(A);
@@ -295,7 +295,7 @@ void PETScMatrix::setrow(uint row, const std::vector<uint>& columns,
   }
 
   // Handle case n = 0
-  const uint n = columns.size();
+  const std::size_t n = columns.size();
   if (n == 0)
     return;
 
@@ -303,7 +303,7 @@ void PETScMatrix::setrow(uint row, const std::vector<uint>& columns,
   set(&values[0], 1, &row, n, &columns[0]);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::zero(uint m, const uint* rows)
+void PETScMatrix::zero(std::size_t m, const std::size_t* rows)
 {
   dolfin_assert(A);
 

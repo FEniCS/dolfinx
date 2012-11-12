@@ -84,8 +84,8 @@ def next(self):
 // Extend MeshFunction interface for get and set items
 %extend dolfin::MeshFunction<TYPE>
 {
-  TYPE __getitem__(unsigned int i) { return (*self)[i]; }
-  void __setitem__(unsigned int i, TYPE val) { (*self)[i] = val; }
+  TYPE __getitem__(std::size_t i) { return (*self)[i]; }
+  void __setitem__(std::size_t i, TYPE val) { (*self)[i] = val; }
 
   TYPE __getitem__(dolfin::MeshEntity& e) { return (*self)[e]; }
   void __setitem__(dolfin::MeshEntity& e, TYPE val) { (*self)[e] = val; }

@@ -168,7 +168,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
         *dof = ufc_to_current_dof->second;
 
         // Add to off-process dof owner map
-        boost::unordered_map<std::size_t, std::size_t>::const_iterator parent_off_proc = parent_dofmap._off_process_owner.find(*dof);
+        boost::unordered_map<std::size_t, uint>::const_iterator parent_off_proc = parent_dofmap._off_process_owner.find(*dof);
         if (parent_off_proc != parent_dofmap._off_process_owner.end())
           _off_process_owner.insert(*parent_off_proc);
 
@@ -303,7 +303,7 @@ std::pair<std::size_t, std::size_t> DofMap::ownership_range() const
   return _ownership_range;
 }
 //-----------------------------------------------------------------------------
-const boost::unordered_map<std::size_t, std::size_t>& DofMap::off_process_owner() const
+const boost::unordered_map<std::size_t, uint>& DofMap::off_process_owner() const
 {
   return _off_process_owner;
 }

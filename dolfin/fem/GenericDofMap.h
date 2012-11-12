@@ -78,7 +78,7 @@ namespace dolfin
     virtual std::pair<std::size_t, std::size_t> ownership_range() const = 0;
 
     /// Return map from nonlocal-dofs (that appear in local dof map) to owning process
-    virtual const boost::unordered_map<std::size_t, std::size_t>& off_process_owner() const = 0;
+    virtual const boost::unordered_map<std::size_t, uint>& off_process_owner() const = 0;
 
     /// Local-to-global mapping of dofs on a cell
     virtual const std::vector<std::size_t>& cell_dofs(std::size_t cell_index) const = 0;

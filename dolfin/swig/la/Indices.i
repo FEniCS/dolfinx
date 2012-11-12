@@ -24,70 +24,75 @@ class Indices
 public:
 
   // Constructor
-  Indices():_index_size(0),_indices(0),_range(0){}
+  Indices() : _index_size(0), _indices(0), _range(0){}
 
   // Constructor
-  Indices(unsigned int size):_index_size(size),_indices(0),_range(0){}
+  Indices(std::size_t size) : _index_size(size), _indices(0), _range(0){}
 
   // Destructor
-  virtual ~Indices(){    
-    clear();
-  }
-  
+  virtual ~Indices()
+  { clear(); }
+
   // Clear any created array
   void clear(){
-    if (_indices) 
+    if (_indices)
       delete[] _indices;
-    if (_range) 
+    if (_range)
       delete[] _range;
   }
 
   // Returns an array of indices
-  unsigned int* indices(){
+  std::size_t* indices()
+  {
     // Construct the array if not excisting
-    if (!_indices) {
-      _indices = new unsigned int[size()];
-      for ( unsigned int i = 0; i < size(); i++)
-	_indices[i] = index(i);
+    if (!_indices)
+    {
+      _indices = new std::size_t[size()];
+      for (std::size_t i = 0; i < size(); i++)
+        _indices[i] = index(i);
     }
     return _indices;
   }
 
-  unsigned int* range(){
+  std::size_t* range()
+  {
     // Construct the array if not excisting
-    if (!_range) {
-      _range = new unsigned int[size()];
-      for ( unsigned int i = 0; i < size(); i++)
-	_range[i] = i;
+    if (!_range)
+    {
+      _range = new std::size_t[size()];
+      for (std::size_t i = 0; i < size(); i++)
+        _range[i] = i;
     }
     return _range;
   }
-  
+
   // Returns the ith index, raises RuntimeError if i is out of range
-  virtual unsigned int index( unsigned int i ) = 0;
+  virtual std::size_t index(std::size_t i) = 0;
 
   // Return the size of the indices
-  unsigned int size(){ return _index_size; }
+  std::size_t size()
+  { return _index_size; }
 
   // Check bounds of index and change from any negative to positive index
-  static unsigned int check_index(int index, unsigned int vector_size){
+  static std::size_t check_index(int index, unsigned int vector_size)
+  {
     // Check bounds
-    if ( index >= static_cast<int>(vector_size) or 
+    if (index >= static_cast<int>(vector_size) ||
          index < -static_cast<int>(vector_size) )
       throw std::runtime_error("index out of range");
-    
+
     // If a negative index is provided swap it
     if (index < 0)
       index += vector_size;
-    
-  return index;
+
+    return index;
   }
-  
+
 protected:
 
-  unsigned int _index_size;
-  unsigned int* _indices;
-  unsigned int* _range;
+  std::size_t _index_size;
+  std::size_t* _indices;
+  std::size_t* _range;
 
 };
 
@@ -97,13 +102,13 @@ class SliceIndices : public Indices
 public:
 
   // Constructor
-  SliceIndices( PyObject* op, unsigned int vector_size ):
-    Indices(),_start(0), _step(0)
+  SliceIndices(PyObject* op, std::size_t vector_size ):
+    Indices(), _start(0), _step(0)
   {
-    if ( op == Py_None or !PySlice_Check(op) )
+    if (op == Py_None or !PySlice_Check(op) )
       throw std::runtime_error("expected slice");
     Py_ssize_t stop, start, step, index_size;
-    
+
     if ( PySlice_GetIndicesEx((PySliceObject*)op, vector_size, &start, &stop, &step, &index_size) < 0 )
       throw std::runtime_error("invalid slice");
     _step  = step;
@@ -112,22 +117,22 @@ public:
   }
 
   // Destructor
-  virtual ~SliceIndices(){
-  }
-  
+  virtual ~SliceIndices() {}
+
   // Returns the ith index, raises RuntimeError if i is out of range
-  virtual unsigned int index( unsigned int i ) {
+  virtual std::size_t index(std::size_t i ) {
     if ( i >= size() )
       throw std::runtime_error("index out of range");
     return _start + i*_step;
   }
-  
+
 private:
-  unsigned int _start, _step;
+
+  std::size_t _start, _step;
 };
 
 class ListIndices : public Indices
-  /// ListIndices provides a c++ wrapper class for a Python List of integer, 
+  /// ListIndices provides a c++ wrapper class for a Python List of integer,
   /// which is ment to hold indices to a Vector
 {
 public:
@@ -139,53 +144,52 @@ public:
     if ( op == Py_None or !PyList_Check(op) )
       // FIXME: Is it OK, to throw exception in constructor?
       throw std::runtime_error("expected list");
-    
+
     // Set protected member
     _index_size = PyList_Size(op);
     if ( _index_size > vector_size)
       throw std::runtime_error("index list too large");
-    
+
     // Set members
     _vector_size = vector_size;
     _list = op;
-    
-    // Increase reference to list 
+
+    // Increase reference to list
     Py_INCREF(_list);
   }
-  
+
   // Destructor
-  virtual ~ListIndices(){
-    Py_DECREF(_list);
-  }
-  
+  virtual ~ListIndices()
+  { Py_DECREF(_list); }
+
   // Returns the ith index, raises RuntimeError if i is out of range
-  virtual unsigned int index( unsigned int i ) {
+  virtual std::size_t index(std::size_t i)
+  {
     PyObject* op = NULL;
 
     // Check size of passed index
-    if ( i >= size() )
+    if (i >= size())
       throw std::runtime_error("index out of range");
-    
+
     // Get the index
     if (!(op=PyList_GetItem(_list, i)))
       throw std::runtime_error("invalid index");
-    
+
     // Check for int
     if (!PyInteger_Check(op))
       throw std::runtime_error("invalid index, must be int");
-    
+
     // Return checked index
     return check_index(PyArray_PyIntAsInt(op));
   }
-  
+
   // Check bounds of index by calling static function in base class
-  unsigned int check_index(int index){
-    return Indices::check_index(index, _vector_size);
-  }
+  std::size_t check_index(int index)
+  { return Indices::check_index(index, _vector_size); }
 
 private:
   PyObject* _list;
-  unsigned int _vector_size;
+  std::size_t _vector_size;
 };
 
 
@@ -196,20 +200,20 @@ class IntArrayIndices : public Indices
 public:
 
   // Constructor
-  IntArrayIndices( PyObject* op, unsigned int vector_size )
+  IntArrayIndices(PyObject* op, std::size_t vector_size)
     :Indices(), _numpy_array(NULL), _vector_size(vector_size)
   {
     if ( op == Py_None or !( PyArray_Check(op) and PyTypeNum_ISINTEGER(PyArray_TYPE(op)) ) )
       throw std::runtime_error("expected numpy array of integers");
-    
+
     // An initial check of the length of the array
     if (PyArray_NDIM(op)!=1)
       throw std::runtime_error("provide an 1D array");
     _index_size = PyArray_DIM(op,0);
-    
-    if ( _index_size > vector_size)
+
+    if (_index_size > vector_size)
       throw std::runtime_error("index array too large");
-    
+
     // Set members
     _vector_size = vector_size;
     _numpy_array = op;
@@ -217,33 +221,30 @@ public:
     // Increase reference to numpy array
     Py_INCREF(_numpy_array);
   }
-  
-  // Destructor
-  virtual ~IntArrayIndices(){
-    Py_DECREF(_numpy_array);
-  }
-  
-  // Returns the ith index, raises RuntimeError if i is out of range
-  virtual unsigned int index( unsigned int i ) {
 
+  // Destructor
+  virtual ~IntArrayIndices()
+  { Py_DECREF(_numpy_array); }
+
+  // Returns the ith index, raises RuntimeError if i is out of range
+  virtual std::size_t index(std::size_t i)
+  {
     // Check size of passed index
-    if ( i >= size() )
+    if (i >= size())
       throw std::runtime_error("index out of range");
-    
+
     // Return checked index
     return check_index(*static_cast<int*>(PyArray_GETPTR1(_numpy_array,i)));
   }
-  
+
   // Check bounds of index by calling static function in base class
-  unsigned int check_index(int index){
-    return Indices::check_index(index, _vector_size);
-  }
+  std::size_t check_index(int index)
+  { return Indices::check_index(index, _vector_size); }
 
 private:
   PyObject* _numpy_array;
-  unsigned int _vector_size;
+  std::size_t _vector_size;
 };
-
 
 class BoolArrayIndices : public Indices
   /// BoolArrayIndices provides a c++ wrapper class for a NumPy array of bool,
@@ -252,74 +253,74 @@ class BoolArrayIndices : public Indices
 public:
 
   // Constructor
-  BoolArrayIndices( PyObject* op, unsigned int vector_size )
-    :Indices()
+  BoolArrayIndices(PyObject* op, std::size_t vector_size) : Indices()
   {
-    unsigned int i, nz_ind;
+    std::size_t i, nz_ind;
     npy_bool* bool_data;
     PyArrayObject* npy_op;
     PyObject* sum_res;
-    
-    if ( op == Py_None or !( PyArray_Check(op) and PyArray_ISBOOL(op) ) )
+
+    if (op == Py_None or !( PyArray_Check(op) and PyArray_ISBOOL(op) ))
       throw std::runtime_error("expected numpy array of boolean");
     npy_op = (PyArrayObject*) op;
 
     // An initial check of the length of the array
     if (PyArray_NDIM(op)!=1)
       throw std::runtime_error("provide an 1D array");
-    
-    if ( static_cast<unsigned int>(PyArray_DIM(npy_op,0)) != vector_size)
+
+    if (static_cast<std::size_t>(PyArray_DIM(npy_op,0)) != vector_size)
       throw std::runtime_error("non matching dimensions");
-    
+
     bool_data = (npy_bool *) PyArray_DATA(npy_op);
 
     // Sum the array to get the numbers of indices
-    
+
     sum_res = PyArray_Sum(npy_op, 0, NPY_INT, (PyArrayObject*)Py_None);
     _index_size = PyInt_AsLong(sum_res);
     Py_DECREF(sum_res);
-    
+
     // Construct the array and fill it with indices
-    _indices = new unsigned int[_index_size];
-    
+    _indices = new std::size_t [_index_size];
+
     nz_ind = 0;
-    for ( i = 0; i < vector_size; i++ ){
-      if ( bool_data[i] > 0){
-	_indices[nz_ind] = i;
-	nz_ind++;
+    for (i = 0; i < vector_size; i++)
+    {
+      if (bool_data[i] > 0)
+      {
+        _indices[nz_ind] = i;
+        nz_ind++;
       }
     }
   }
-  
-  // Destructor
-  virtual ~BoolArrayIndices(){
-  }
-  
-  // Returns the ith index, raises RuntimeError if i is out of range
-  virtual unsigned int index( unsigned int i ) {
 
+  // Destructor
+  virtual ~BoolArrayIndices() {}
+
+  // Returns the ith index, raises RuntimeError if i is out of range
+  virtual std::size_t index(std::size_t i)
+  {
     // Check size of passed index
-    if ( i >= size() )
+    if (i >= size())
       throw std::runtime_error("index out of range");
-    
+
     // Return index
     return _indices[i];
   }
-  
+
 };
 
 
 // Return a new Indice object correspondning to the input
-Indices* indice_chooser( PyObject* op, unsigned int vector_size )
+Indices* indice_chooser(PyObject* op, std::size_t vector_size)
 {
   //Check first for None
   if (op == Py_None)
     return 0;
   //  throw std::runtime_error("index must be either a slice, a list or a Numpy array of integer");
-  
+
   // The indices
   Indices *inds;
-    
+
   // If the provided indices are in a slice
   if (PySlice_Check(op))
     inds = new SliceIndices( op, vector_size );
@@ -331,7 +332,7 @@ Indices* indice_chooser( PyObject* op, unsigned int vector_size )
   // If the provided indices are in a Numpy array of boolean
   else if (PyArray_Check(op) and PyArray_TYPE(op) == NPY_BOOL)
     inds = new BoolArrayIndices( op, vector_size );
-  
+
   // If the provided indices are in a Numpy array of integers
   else if (PyArray_Check(op) and PyArray_ISINTEGER(op))
     inds = new IntArrayIndices( op, vector_size );
@@ -341,4 +342,3 @@ Indices* indice_chooser( PyObject* op, unsigned int vector_size )
 
   return inds;
 }
-

@@ -46,7 +46,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   // Get global dimensions and local range
   std::vector<std::size_t> global_dimensions(rank);
   std::vector<std::pair<std::size_t, std::size_t> > local_range(rank);
-  std::vector<const boost::unordered_map<std::size_t, std::size_t>* > off_process_owner(rank);
+  std::vector<const boost::unordered_map<std::size_t, uint>* > off_process_owner(rank);
   for (uint i = 0; i < rank; ++i)
   {
     global_dimensions[i] = dofmaps[i]->global_dimension();

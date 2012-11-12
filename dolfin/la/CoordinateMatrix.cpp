@@ -34,13 +34,13 @@ CoordinateMatrix::CoordinateMatrix(const GenericMatrix& A, bool symmetric,
   _size[1] = A.size(1);
 
   // Iterate over local rows
-  const std::pair<uint, uint> local_row_range = A.local_range(0);
+  const std::pair<std::size_t, std::size_t> local_row_range = A.local_range(0);
   if (!_symmetric)
   {
-    for (uint i = local_row_range.first; i < local_row_range.second; ++i)
+    for (std::size_t i = local_row_range.first; i < local_row_range.second; ++i)
     {
       // Get column and value data for row
-      std::vector<uint> columns;
+      std::vector<std::size_t> columns;
       std::vector<double> values;
       A.getrow(i, columns, values);
 
@@ -54,14 +54,14 @@ CoordinateMatrix::CoordinateMatrix(const GenericMatrix& A, bool symmetric,
   else
   {
     assert(_size[0] == _size[1]);
-    for (uint i = local_row_range.first; i < local_row_range.second; ++i)
+    for (std::size_t i = local_row_range.first; i < local_row_range.second; ++i)
     {
       // Get column and value data for row
-      std::vector<uint> columns;
+      std::vector<std::size_t> columns;
       std::vector<double> values;
       A.getrow(i, columns, values);
 
-      for (uint j = 0; j < columns.size(); ++j)
+      for (std::size_t j = 0; j < columns.size(); ++j)
       {
         if (columns[j] >= i)
         {
@@ -77,7 +77,7 @@ CoordinateMatrix::CoordinateMatrix(const GenericMatrix& A, bool symmetric,
   // Add 1 for Fortran-style indices
   if (base_one)
   {
-    for (uint i = 0; i < _cols.size(); ++i)
+    for (std::size_t i = 0; i < _cols.size(); ++i)
     {
       _rows[i]++;
       _cols[i]++;
@@ -93,12 +93,12 @@ double CoordinateMatrix::norm(std::string norm_type) const
   double _norm = 0.0;
   if (!_symmetric)
   {
-    for (uint i = 0; i < _vals.size(); ++i)
+    for (std::size_t i = 0; i < _vals.size(); ++i)
       _norm += _vals[i]*_vals[i];
   }
   else
   {
-    for (uint i = 0; i < _vals.size(); ++i)
+    for (std::size_t i = 0; i < _vals.size(); ++i)
     {
       if (_rows[i] == _cols[i])
         _norm += _vals[i]*_vals[i];
