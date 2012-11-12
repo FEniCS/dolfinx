@@ -31,6 +31,8 @@
 
 #include "VTKPlottableMeshFunction.h"
 
+#include <boost/static_assert.hpp>
+
 using namespace dolfin;
 
 //---------------------------------------------------------------------------
@@ -66,7 +68,13 @@ template class VTKPlottableMeshFunction<bool>;
 template class VTKPlottableMeshFunction<double>;
 template class VTKPlottableMeshFunction<float>;
 template class VTKPlottableMeshFunction<int>;
-template class VTKPlottableMeshFunction<dolfin::uint>;
-template class VTKPlottableMeshFunction<std::size_t>;
+
+// Note: We want to be able to plot meshfunctions of dolfin::uint and
+// std::size_t. Instansiating with these two types, however, gives
+// "error: duplicate explicit instantiation" on 32 bit platforms. The
+// following seems to work
+template class VTKPlottableMeshFunction<unsigned int>;
+template class VTKPlottableMeshFunction<unsigned long>;
+BOOST_STATIC_ASSERT(sizeof(std::size_t)==sizeof(unsigned int) || sizeof(std::size_t) == sizeof(unsigned long));
 
 #endif

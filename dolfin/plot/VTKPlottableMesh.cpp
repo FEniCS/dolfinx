@@ -475,7 +475,9 @@ INSTANTIATE(bool)
 INSTANTIATE(double)
 INSTANTIATE(float)
 INSTANTIATE(int)
-INSTANTIATE(dolfin::uint)
-INSTANTIATE(std::size_t)
+
+// Handle dolfin::uint and std::size_t. See note in VTKPlottableMeshFunction.cpp for explanation
+INSTANTIATE(unsigned int)
+INSTANTIATE(unsigned long)
 
 #endif
