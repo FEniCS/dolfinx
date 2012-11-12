@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Benjamin Kehlet
+// Copyright (C) 2005-2009 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2012-11-09
+// First added:  2005-12-02
 // Last changed: 2012-11-09
 
-#ifndef __UNIT_SQUARE_H
-#define __UNIT_SQUARE_H
+#ifndef __UNIT_SQUARE_MESH_H
+#define __UNIT_SQUARE_MESH_H
 
-#include "UnitSquareMesh.h"
+#include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
 {
@@ -33,9 +33,8 @@ namespace dolfin
   ///
   /// std::string diagonal ("left", "right", "right/left", "left/right",
   /// or "crossed") indicates the direction of the diagonals.
-  ///
-  /// This class is deprecated. Use _UnitSquareMesh_.
-  class UnitSquare : public UnitSquareMesh
+
+  class UnitSquareMesh : public Mesh
   {
   public:
 
@@ -57,11 +56,7 @@ namespace dolfin
     ///         UnitSquare mesh1(32, 32);
     ///         UnitSquare mesh2(32, 32, "crossed");
     ///
-    UnitSquare(uint nx, uint ny, std::string diagonal="right")
-      : UnitSquareMesh(nx, ny, diagonal)
-    {
-      warning("UnitSquare is deprecated. Use UnitSquareMesh.");
-    }
+    UnitSquareMesh(uint nx, uint ny, std::string diagonal="right");
 
   };
 

@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-04-12
-// Last changed: 2012-05-10
+// Last changed: 2012-11-12
 
 #include <sstream>
 #include <dolfin/math/basic.h>
@@ -30,7 +30,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 // Sphere
 //-----------------------------------------------------------------------------
-csg::Sphere::Sphere(Point c, double r, dolfin::uint slices)
+Sphere::Sphere(Point c, double r, dolfin::uint slices)
   : c(c), r(r), slices(slices)
 {
   if (r < DOLFIN_EPS)
@@ -47,7 +47,7 @@ csg::Sphere::Sphere(Point c, double r, dolfin::uint slices)
   }
 }
 //-----------------------------------------------------------------------------
-std::string csg::Sphere::str(bool verbose) const
+std::string Sphere::str(bool verbose) const
 {
   std::stringstream s;
 
@@ -66,7 +66,7 @@ std::string csg::Sphere::str(bool verbose) const
 //-----------------------------------------------------------------------------
 // Box
 //-----------------------------------------------------------------------------
-csg::Box::Box(double x0, double x1, double x2,
+Box::Box(double x0, double x1, double x2,
          double y0, double y1, double y2)
   : _x0(x0), _x1(x1), _x2(x2), _y0(y0), _y1(y1), _y2(y2)
 {
@@ -77,7 +77,7 @@ csg::Box::Box(double x0, double x1, double x2,
 		   "Box with corner (%f, %f, %f) and (%f, %f, %f) degenerated", x0, x1, x2, y0, y1, y2);
 }
 //-----------------------------------------------------------------------------
-std::string csg::Box::str(bool verbose) const
+std::string Box::str(bool verbose) const
 {
   std::stringstream s;
 
@@ -98,7 +98,7 @@ std::string csg::Box::str(bool verbose) const
 //-----------------------------------------------------------------------------
 // Cone
 //-----------------------------------------------------------------------------
-csg::Cone::Cone(Point top, Point bottom, double top_radius, double bottom_radius, dolfin::uint slices)
+Cone::Cone(Point top, Point bottom, double top_radius, double bottom_radius, dolfin::uint slices)
   : top(top), bottom(bottom), top_radius(top_radius), bottom_radius(bottom_radius), slices(slices)
 {
   if (near(top_radius, 0.0) && near(bottom_radius, 0.0))
@@ -113,7 +113,7 @@ csg::Cone::Cone(Point top, Point bottom, double top_radius, double bottom_radius
 
 }
 //-----------------------------------------------------------------------------
-std::string csg::Cone::str(bool verbose) const
+std::string Cone::str(bool verbose) const
 {
   std::stringstream s;
 
@@ -131,12 +131,12 @@ std::string csg::Cone::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-csg::Tetrahedron::Tetrahedron(Point x0, Point x1, Point x2, Point x3)
+Tetrahedron::Tetrahedron(Point x0, Point x1, Point x2, Point x3)
   : x0(x0), x1(x1), x2(x2), x3(x3)
 {}
 //-----------------------------------------------------------------------------
 /// Informal string representation
-std::string csg::Tetrahedron::str(bool verbose) const
+std::string Tetrahedron::str(bool verbose) const
 {
   std::stringstream s;
 
@@ -153,11 +153,11 @@ std::string csg::Tetrahedron::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-csg::Surface3D::Surface3D(std::string filename)
+Surface3D::Surface3D(std::string filename)
   : filename(filename)
 {}
 //-----------------------------------------------------------------------------
-std::string csg::Surface3D::str(bool verbose) const
+std::string Surface3D::str(bool verbose) const
 {
   return std::string("Surface3D from file ") + filename;
 }

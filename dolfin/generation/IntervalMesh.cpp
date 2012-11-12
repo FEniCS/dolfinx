@@ -18,19 +18,19 @@
 // Modified by N. Lopes, 2008.
 //
 // First added:  2007-11-23
-// Last changed: 2008-11-13
+// Last changed: 2012-11-12
 
 #include "dolfin/common/MPI.h"
 #include "dolfin/common/constants.h"
 #include "dolfin/mesh/CellType.h"
 #include "dolfin/mesh/MeshEditor.h"
 #include "dolfin/mesh/MeshPartitioning.h"
-#include "Interval.h"
+#include "IntervalMesh.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Interval::Interval(uint nx, double a, double b) : Mesh()
+IntervalMesh::IntervalMesh(uint nx, double a, double b) : Mesh()
 {
   // Receive mesh according to parallel policy
   if (MPI::is_receiver())

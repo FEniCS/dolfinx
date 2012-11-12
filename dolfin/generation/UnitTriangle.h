@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Anders Logg
+// Copyright (C) 2012 Benjamin Kehlet
 //
 // This file is part of DOLFIN.
 //
@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2010-10-19
-// Last changed: 2010-10-19
+// First added:  2012-11-09
+// Last changed: 2012-11-09
 
 #ifndef __UNIT_TRIANGLE_H
 #define __UNIT_TRIANGLE_H
 
-#include <dolfin/mesh/Mesh.h>
+#include "UnitTriangleMesh.h"
 
 namespace dolfin
 {
@@ -34,12 +34,15 @@ namespace dolfin
   ///
   /// This class is useful for testing.
 
-  class UnitTriangle : public Mesh
+  class UnitTriangle : public UnitTriangleMesh
   {
   public:
 
     /// Create mesh of unit triangle
-    UnitTriangle();
+    UnitTriangle()
+    {
+      warning("UnitTriangle has been deprecated. Use UnitTriangleMesh");
+    }
 
   };
 

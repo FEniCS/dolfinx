@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Johannes Ring, 2012
+// Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-04-12
-// Last changed: 2012-08-08
+// Last changed: 2012-11-12
 
 #include <sstream>
 #include <dolfin/math/basic.h>
@@ -26,7 +27,6 @@
 #include "CSGPrimitives2D.h"
 
 using namespace dolfin;
-using namespace dolfin::csg;
 
 //-----------------------------------------------------------------------------
 // Circle

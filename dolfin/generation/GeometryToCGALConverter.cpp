@@ -220,7 +220,7 @@ static void printStat(const csg::Exact_Polyhedron_3& P, std::string title)
 class Build_sphere : public CGAL::Modifier_base<csg::Exact_HalfedgeDS> 
 {
  public:
-  Build_sphere(const csg::Sphere& sphere) : sphere(sphere){}
+  Build_sphere(const Sphere& sphere) : sphere(sphere){}
 
   void operator()( csg::Exact_HalfedgeDS& hds )
   {
@@ -309,10 +309,10 @@ class Build_sphere : public CGAL::Modifier_base<csg::Exact_HalfedgeDS>
   }
 
   private:
-  const csg::Sphere& sphere;
+  const Sphere& sphere;
 };
 //-----------------------------------------------------------------------------
-static void make_sphere(const csg::Sphere* s, csg::Exact_Polyhedron_3& P)
+static void make_sphere(const Sphere* s, csg::Exact_Polyhedron_3& P)
 {
   Build_sphere builder(*s);
   P.delegate(builder);
@@ -323,7 +323,7 @@ static void make_sphere(const csg::Sphere* s, csg::Exact_Polyhedron_3& P)
 class Build_box : public CGAL::Modifier_base<csg::Exact_HalfedgeDS> 
 {
  public:
-  Build_box(const csg::Box* box) : box(box){}
+  Build_box(const Box* box) : box(box){}
 
   void operator()( csg::Exact_HalfedgeDS& hds )
   {
@@ -448,10 +448,10 @@ class Build_box : public CGAL::Modifier_base<csg::Exact_HalfedgeDS>
     builder.end_surface();
   }
 
-  const csg::Box* box;
+  const Box* box;
 };
 //-----------------------------------------------------------------------------
-static void make_box(const csg::Box* b, csg::Exact_Polyhedron_3& P)
+static void make_box(const Box* b, csg::Exact_Polyhedron_3& P)
 {
   Build_box builder(b);
   P.delegate(builder);
@@ -459,7 +459,7 @@ static void make_box(const csg::Box* b, csg::Exact_Polyhedron_3& P)
   dolfin_assert(P.is_valid());
 }
 //-----------------------------------------------------------------------------
-static void make_tetrahedron(const csg::Tetrahedron* b, csg::Exact_Polyhedron_3& P)
+static void make_tetrahedron(const Tetrahedron* b, csg::Exact_Polyhedron_3& P)
 {
   P.make_tetrahedron( csg::Exact_Point_3(b->x0.x(), b->x0.y(), b->x0.z()), 
                        csg::Exact_Point_3(b->x1.x(), b->x1.y(), b->x1.z()),
@@ -481,7 +481,7 @@ static Point generate_orthogonal(const Point& a)
 class Build_cone : public CGAL::Modifier_base<csg::Exact_HalfedgeDS> 
 {
  public:
-  Build_cone(const csg::Cone* cone) : cone(cone){}
+  Build_cone(const Cone* cone) : cone(cone){}
 
   void operator()( csg::Exact_HalfedgeDS& hds )
   {
@@ -612,10 +612,10 @@ class Build_cone : public CGAL::Modifier_base<csg::Exact_HalfedgeDS>
     builder.end_surface();
   }
 private:
-  const csg::Cone* cone;
+  const Cone* cone;
 };
 //-----------------------------------------------------------------------------
-static void make_cone(const csg::Cone* c, csg::Exact_Polyhedron_3& P)
+static void make_cone(const Cone* c, csg::Exact_Polyhedron_3& P)
 {
   Build_cone builder(c);
   P.delegate(builder);
@@ -623,7 +623,7 @@ static void make_cone(const csg::Cone* c, csg::Exact_Polyhedron_3& P)
   dolfin_assert(P.is_valid());
 }
 //-----------------------------------------------------------------------------
-static void make_surface3D(const csg::Surface3D* s, csg::Exact_Polyhedron_3& P)
+static void make_surface3D(const Surface3D* s, csg::Exact_Polyhedron_3& P)
 {
   PolyhedronUtils::readSurfaceFile(s->filename, P);
 
@@ -682,7 +682,7 @@ static boost::shared_ptr<csg::Nef_polyhedron_3> convertSubTree(const CSGGeometry
   }
   case CSGGeometry::Cone :
   {
-    const csg::Cone* c = dynamic_cast<const csg::Cone*>(geometry);
+    const Cone* c = dynamic_cast<const Cone*>(geometry);
     dolfin_assert(c);
     csg::Exact_Polyhedron_3 P;
     make_cone(c, P);
@@ -691,7 +691,7 @@ static boost::shared_ptr<csg::Nef_polyhedron_3> convertSubTree(const CSGGeometry
   }
   case CSGGeometry::Sphere :
   {
-    const csg::Sphere* s = dynamic_cast<const csg::Sphere*>(geometry);
+    const Sphere* s = dynamic_cast<const Sphere*>(geometry);
     dolfin_assert(s);
     csg::Exact_Polyhedron_3 P;
     make_sphere(s, P);
@@ -700,7 +700,7 @@ static boost::shared_ptr<csg::Nef_polyhedron_3> convertSubTree(const CSGGeometry
   }
   case CSGGeometry::Box :
   {
-    const csg::Box* b = dynamic_cast<const csg::Box*>(geometry);
+    const Box* b = dynamic_cast<const Box*>(geometry);
     dolfin_assert(b);
     csg::Exact_Polyhedron_3 P;
     make_box(b, P);
@@ -710,7 +710,7 @@ static boost::shared_ptr<csg::Nef_polyhedron_3> convertSubTree(const CSGGeometry
 
   case CSGGeometry::Tetrahedron :
   {
-    const csg::Tetrahedron* b = dynamic_cast<const csg::Tetrahedron*>(geometry);
+    const Tetrahedron* b = dynamic_cast<const Tetrahedron*>(geometry);
     dolfin_assert(b);
     csg::Exact_Polyhedron_3 P;
     make_tetrahedron(b, P);
@@ -719,7 +719,7 @@ static boost::shared_ptr<csg::Nef_polyhedron_3> convertSubTree(const CSGGeometry
   }
   case CSGGeometry::Surface3D :
   {
-    const csg::Surface3D* b = dynamic_cast<const csg::Surface3D*>(geometry);
+    const Surface3D* b = dynamic_cast<const Surface3D*>(geometry);
     dolfin_assert(b);
     csg::Exact_Polyhedron_3 P;
     make_surface3D(b, P);
@@ -768,21 +768,21 @@ void GeometryToCGALConverter::convert(const CSGGeometry& geometry, csg::Polyhedr
 
     case CSGGeometry::Cone :
     {
-      const csg::Cone* c = dynamic_cast<const csg::Cone*>(&geometry);
+      const Cone* c = dynamic_cast<const Cone*>(&geometry);
       dolfin_assert(c);
       make_cone(c, P);
       break;
     }
     case CSGGeometry::Sphere :
     {
-    const csg::Sphere* s = dynamic_cast<const csg::Sphere*>(&geometry);
+    const Sphere* s = dynamic_cast<const Sphere*>(&geometry);
     dolfin_assert(s);
     make_sphere(s, P);
     break;
     }
     case CSGGeometry::Box :
     {
-      const csg::Box* b = dynamic_cast<const csg::Box*>(&geometry);
+      const Box* b = dynamic_cast<const Box*>(&geometry);
       dolfin_assert(b);
       make_box(b, P);
       break;
@@ -790,14 +790,14 @@ void GeometryToCGALConverter::convert(const CSGGeometry& geometry, csg::Polyhedr
 
     case CSGGeometry::Tetrahedron :
     {
-      const csg::Tetrahedron* b = dynamic_cast<const csg::Tetrahedron*>(&geometry);
+      const Tetrahedron* b = dynamic_cast<const Tetrahedron*>(&geometry);
       dolfin_assert(b);
       make_tetrahedron(b, P);
       break;
     }
     case CSGGeometry::Surface3D :
     {
-      const csg::Surface3D* b = dynamic_cast<const csg::Surface3D*>(&geometry);
+      const Surface3D* b = dynamic_cast<const Surface3D*>(&geometry);
       dolfin_assert(b);
       make_surface3D(b, P);
       break;

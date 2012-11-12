@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Benjamin Kehlet
+// Copyright (C) 2007 Kristian B. Oelgaard
 //
 // This file is part of DOLFIN.
 //
@@ -15,37 +15,33 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2012-11-09
+// Modified by Anders Logg, 2010.
+// Modified by Benjamin Kehlet 2012
+//
+// First added:  2007-11-23
 // Last changed: 2012-11-09
 
-#ifndef __UNIT_TETRAHEDRON_H
-#define __UNIT_TETRAHEDRON_H
+#ifndef __UNIT_INTERVAL_MESH_H
+#define __UNIT_INTERVAL_MESH_H
 
-#include "UnitTetrahedronMesh.h"
+#include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
 {
 
-  /// A mesh consisting of a single tetrahedron with vertices at
-  ///
-  ///   (0, 0, 0)
-  ///   (1, 0, 0)
-  ///   (0, 1, 0)
-  ///   (0, 0, 1)
-  ///
-  /// This class is useful for testing.
-  ///
-  /// This class has been deprecated. Use _UnitTetrahedronMesh_.
-  class UnitTetrahedron : public UnitTetrahedronMesh
+  /// A mesh of the unit interval (0, 1) with a given number of cells
+  /// (nx) in the axial direction. The total number of intervals will
+  /// be nx and the total number of vertices will be (nx + 1).
+
+  class UnitIntervalMesh : public Mesh
   {
   public:
 
-    /// Create mesh of unit tetrahedron
-    UnitTetrahedron()
-    {
-      warning("UnitTetrahedron is deprecated. Use UnitTetrahedronMesh");
-    }
+    /// Create mesh of unit interval
+    UnitIntervalMesh(uint nx=1);
+
   };
+
 }
 
 #endif

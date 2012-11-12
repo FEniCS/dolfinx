@@ -20,9 +20,10 @@
 // Modified by Garth N. Wells, 2009.
 // Modified by Fredrik Valdmanis, 2012.
 // Modified by Patrick E. Farrell, 2012.
+// Modified by Benjamin Kehlet, 2012
 //
 // First added:  2007-11-25
-// Last changed: 2012-10-13
+// Last changed: 2012-11-12
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -117,16 +118,48 @@
 %shared_ptr(dolfin::Mesh)
 %shared_ptr(dolfin::BoundaryMesh)
 %shared_ptr(dolfin::SubMesh)
+%shared_ptr(dolfin::UnitTetrahedronMesh)
 %shared_ptr(dolfin::UnitTetrahedron)
+%shared_ptr(dolfin::UnitCubeMesh)
 %shared_ptr(dolfin::UnitCube)
+%shared_ptr(dolfin::UnitIntervalMesh)
 %shared_ptr(dolfin::UnitInterval)
+%shared_ptr(dolfin::IntervalMesh)
 %shared_ptr(dolfin::Interval)
+%shared_ptr(dolfin::UnitTriangleMesh)
 %shared_ptr(dolfin::UnitTriangle)
+%shared_ptr(dolfin::UnitSquareMesh)
 %shared_ptr(dolfin::UnitSquare)
+%shared_ptr(dolfin::UnitCircleMesh)
 %shared_ptr(dolfin::UnitCircle)
+%shared_ptr(dolfin::BoxMesh)
 %shared_ptr(dolfin::Box)
+%shared_ptr(dolfin::RectangleMesh)
 %shared_ptr(dolfin::Rectangle)
+%shared_ptr(dolfin::UnitSphereMesh)
 %shared_ptr(dolfin::UnitSphere)
+
+ //csg
+%shared_ptr(dolfin::CSGGeometry)
+%shared_ptr(dolfin::CSGOperator)
+%shared_ptr(dolfin::CSGUnion)
+%shared_ptr(dolfin::CSGDifference)
+%shared_ptr(dolfin::CSGIntersection)
+%shared_ptr(dolfin::CSGPrimitive)
+%shared_ptr(dolfin::CSGPrimitive2D)
+%shared_ptr(dolfin::CSGPrimitive3D)
+%shared_ptr(dolfin::Circle)
+%shared_ptr(dolfin::Ellipse)
+%shared_ptr(dolfin::Polygon)
+%shared_ptr(dolfin::Sphere)
+%shared_ptr(dolfin::Cone)
+%shared_ptr(dolfin::Cylinder)
+%shared_ptr(dolfin::Tetrahedron)
+%shared_ptr(dolfin::Surface3D)
+%shared_ptr(dolfin::CSGCGALMeshGenerator2D)
+%shared_ptr(dolfin::CSGCGALMeshGenerator3D)
+
+
 
 %shared_ptr(dolfin::SubDomain)
 %shared_ptr(dolfin::DomainBoundary)

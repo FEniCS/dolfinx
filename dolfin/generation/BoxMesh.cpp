@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2011 Anders Logg
+// Copyright (C) 2005-2008 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,68 +16,74 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells, 2007.
-// Modified by Nuno Lopes, 2008
+// Modified by Nuno Lopes, 2008.
 //
 // First added:  2005-12-02
-// Last changed: 2011-08-23
+// Last changed: 2012-11-12
 
-#include <boost/assign.hpp>
-
+#include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshEditor.h>
-#include "UnitSphere.h"
+#include "BoxMesh.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitSphere::UnitSphere(uint n) : Mesh()
+BoxMesh::BoxMesh(double x0, double y0, double z0,
+                 double x1, double y1, double z1,
+                 uint nx, uint ny, uint nz) : Mesh()
 {
-  warning("The UnitSphere class is broken and should not be used for computations. "
-          "It generates meshes of very bad quality (very thin tetrahedra).");
+  Timer timer("generate unit cube mesh");
 
   // Receive mesh according to parallel policy
   if (MPI::is_receiver())
   {
     MeshPartitioning::build_distributed_mesh(*this);
-    return;
+  return;
   }
 
-  if (n < 1)
-  {
-    dolfin_error("UnitSphere.cpp",
-                 "create unit sphere",
-                 "Size of unit sphere must be at least 1");
-  }
+  const double a = x0;
+  const double b = x1;
+  const double c = y0;
+  const double d = y1;
+  const double e = z0;
+  const double f = z1;
 
-  const uint nx = n;
-  const uint ny = n;
-  const uint nz = n;
+  if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS || std::abs(z0 - z1) < DOLFIN_EPS )
+    dolfin_error("BoxMesh.cpp",
+                 "create box",
+                 "Box seems to have zero width, height or depth. Consider checking your dimensions");
 
-  rename("mesh", "Mesh of the unit sphere");
+  if ( nx < 1 || ny < 1 || nz < 1 )
+    dolfin_error("BoxMesh.cpp",
+                 "create box",
+                 "BoxMesh has non-positive number of vertices in some dimension: number of vertices must be at least 1 in each dimension");
+
+  rename("mesh", "Mesh of the cuboid (a,b) x (c,d) x (e,f)");
 
   // Open mesh for editing
   MeshEditor editor;
   editor.open(*this, CellType::tetrahedron, 3, 3);
 
-  // Storage for vertices
+  // Storage for vertex coordinates
   std::vector<double> x(3);
 
   // Create vertices
-  editor.init_vertices((nx + 1)*(ny+1)*(nz+1));
+  editor.init_vertices((nx + 1)*(ny + 1)*(nz + 1));
   uint vertex = 0;
   for (uint iz = 0; iz <= nz; iz++)
   {
-    x[2] = -1.0 + static_cast<double>(iz)*2.0/static_cast<double>(nz);
+    x[2] = e + (static_cast<double>(iz))*(f-e) / static_cast<double>(nz);
     for (uint iy = 0; iy <= ny; iy++)
     {
-      x[1] = -1.0 + static_cast<double>(iy)*2.0/static_cast<double>(ny);
+      x[1] = c + (static_cast<double>(iy))*(d-c) / static_cast<double>(ny);
       for (uint ix = 0; ix <= nx; ix++)
       {
-        x[0] = -1.0 + static_cast<double>(ix)*2.0/static_cast<double>(nx);
-        const std::vector<double> trans_x = transform(x);
-        editor.add_vertex(vertex, trans_x);
-        ++vertex;
+        x[0] = a + (static_cast<double>(ix))*(b-a) / static_cast<double>(nx);
+        editor.add_vertex(vertex, x);
+        vertex++;
       }
     }
   }
@@ -121,32 +127,10 @@ UnitSphere::UnitSphere(uint n) : Mesh()
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster()) { MeshPartitioning::build_distributed_mesh(*this); }
-}
-//-----------------------------------------------------------------------------
-std::vector<double> UnitSphere::transform(const std::vector<double>& x) const
-{
-  std::vector<double> x_trans(3);
-  if (x[0] || x[1] || x[2])
+  if (MPI::is_broadcaster())
   {
-    const double dist = sqrt(x[0]*x[0]+x[1]*x[1]+x[2]*x[2]);
-    x_trans[0] = x[0]*max(x)/dist;
-    x_trans[1] = x[1]*max(x)/dist;
-    x_trans[2] = x[2]*max(x)/dist;
+    MeshPartitioning::build_distributed_mesh(*this);
+    return;
   }
-  else
-    x_trans = x;
-
-  return x_trans;
-}
-//-----------------------------------------------------------------------------
-double UnitSphere::max(const std::vector<double>& x) const
-{
-  if ((std::abs(x[0]) >= std::abs(x[1]))*(std::abs(x[0]) >= std::abs(x[2])))
-    return std::abs(x[0]);
-  else if ((std::abs(x[1]) >= std::abs(x[0]))*(std::abs(x[1]) >= std::abs(x[2])))
-    return std::abs(x[1]);
-  else
-    return std::abs(x[2]);
 }
 //-----------------------------------------------------------------------------

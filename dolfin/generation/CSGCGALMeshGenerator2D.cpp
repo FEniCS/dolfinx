@@ -144,7 +144,7 @@ CSGCGALMeshGenerator2D::CSGCGALMeshGenerator2D(const CSGGeometry& geometry)
 //-----------------------------------------------------------------------------
 CSGCGALMeshGenerator2D::~CSGCGALMeshGenerator2D() {}
 //-----------------------------------------------------------------------------
-Nef_polyhedron_2 make_circle(const csg::Circle* c)
+Nef_polyhedron_2 make_circle(const Circle* c)
 {
   std::vector<Nef_point_2> pts;
 
@@ -159,7 +159,7 @@ Nef_polyhedron_2 make_circle(const csg::Circle* c)
   return Nef_polyhedron_2(pts.begin(), pts.end(), Nef_polyhedron_2::INCLUDED);
 }
 //-----------------------------------------------------------------------------
-Nef_polyhedron_2 make_ellipse(const csg::Ellipse* e)
+Nef_polyhedron_2 make_ellipse(const Ellipse* e)
 {
   std::vector<Nef_point_2> pts;
 
@@ -174,7 +174,7 @@ Nef_polyhedron_2 make_ellipse(const csg::Ellipse* e)
   return Nef_polyhedron_2(pts.begin(), pts.end(), Nef_polyhedron_2::INCLUDED);
 }
 //-----------------------------------------------------------------------------
-Nef_polyhedron_2 make_rectangle(const csg::Rectangle* r)
+Nef_polyhedron_2 make_rectangle(const Rectangle* r)
 {
   const double x0 = std::min(r->first_corner().x(), r->first_corner().y());
   const double y0 = std::max(r->first_corner().x(), r->first_corner().y());
@@ -191,7 +191,7 @@ Nef_polyhedron_2 make_rectangle(const csg::Rectangle* r)
   return Nef_polyhedron_2(pts.begin(), pts.end(), Nef_polyhedron_2::INCLUDED);
 }
 //-----------------------------------------------------------------------------
-Nef_polyhedron_2 make_polygon(const csg::Polygon* p)
+Nef_polyhedron_2 make_polygon(const Polygon* p)
 {
   std::vector<Nef_point_2> pts;
   std::vector<Point>::const_iterator v;
@@ -227,28 +227,28 @@ static Nef_polyhedron_2 convertSubTree(const CSGGeometry *geometry)
   }
   case CSGGeometry::Circle:
   {
-    const csg::Circle* c = dynamic_cast<const csg::Circle*>(geometry);
+    const Circle* c = dynamic_cast<const Circle*>(geometry);
     dolfin_assert(c);
     return make_circle(c);
     break;
   }
   case CSGGeometry::Ellipse:
   {
-    const csg::Ellipse* c = dynamic_cast<const csg::Ellipse*>(geometry);
+    const Ellipse* c = dynamic_cast<const Ellipse*>(geometry);
     dolfin_assert(c);
     return make_ellipse(c);
     break;
   }
   case CSGGeometry::Rectangle:
   {
-    const csg::Rectangle* r = dynamic_cast<const csg::Rectangle*>(geometry);
+    const Rectangle* r = dynamic_cast<const Rectangle*>(geometry);
     dolfin_assert(r);
     return make_rectangle(r);
     break;
   }
   case CSGGeometry::Polygon:
   {
-    const csg::Polygon* p = dynamic_cast<const csg::Polygon*>(geometry);
+    const Polygon* p = dynamic_cast<const Polygon*>(geometry);
     dolfin_assert(p);
     return make_polygon(p);
     break;

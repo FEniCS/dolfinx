@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-04-11
-// Last changed: 2012-08-08
+// Last changed: 2012-11-12
 
 #ifndef __CSG_PRIMITIVES_2D_H
 #define __CSG_PRIMITIVES_2D_H
@@ -32,175 +32,164 @@
 namespace dolfin
 {
 
-  // Declare all primitives inside namespace csg so they can be easily
-  // accessed and at the same time won't clutter the top level
-  // namespace where they might also conflict with existing classes
-  // like Rectangle and Box.
-
-  namespace csg
+  /// Base class for 2D primitives
+  class CSGPrimitive2D : public CSGPrimitive
   {
+  public:
 
-    /// Base class for 2D primitives
-    class CSGPrimitive2D : public CSGPrimitive
-    {
-    public:
+    /// Return dimension of geometry
+    uint dim() const { return 2; }
 
-      /// Return dimension of geometry
-      uint dim() const { return 2; }
+  };
 
-    };
+  /// This class describes a 2D circle which can be used to build
+  /// geometries using Constructive Solid Geometry (CSG).
+  class Circle : public CSGPrimitive2D
+  {
+  public:
 
-    /// This class describes a 2D circle which can be used to build
-    /// geometries using Constructive Solid Geometry (CSG).
-    class Circle : public CSGPrimitive2D
-    {
-    public:
+    /// Create circle at x = (x0, x1) with radius r.
+    ///
+    /// *Arguments*
+    ///     x0 (double)
+    ///         x0-coordinate of center.
+    ///     x1 (double)
+    ///         x1-coordinate of center.
+    ///     r (double)
+    ///         radius.
+    ///     fragments (uint)
+    ///         number of fragments.
+    Circle(double x0, double x1, double r, uint fragments=32);
 
-      /// Create circle at x = (x0, x1) with radius r.
-      ///
-      /// *Arguments*
-      ///     x0 (double)
-      ///         x0-coordinate of center.
-      ///     x1 (double)
-      ///         x1-coordinate of center.
-      ///     r (double)
-      ///         radius.
-      ///     fragments (uint)
-      ///         number of fragments.
-      Circle(double x0, double x1, double r, uint fragments=32);
+    /// Informal string representation
+    std::string str(bool verbose) const;
+    Type getType() const { return CSGGeometry::Circle; }
+    
+    /// Return center of circle
+    Point center() const { return Point(_x0, _x1); }
+    
+    /// Return radius of circle
+    double radius() const { return _r; }
+    
+    /// Return number of fragments around the circle
+    uint fragments() const { return _fragments; }
 
-      /// Informal string representation
-      std::string str(bool verbose) const;
-      Type getType() const { return CSGGeometry::Circle; }
+  private:
 
-      /// Return center of circle
-      Point center() const { return Point(_x0, _x1); }
+    double _x0, _x1, _r;
+    const uint _fragments;
 
-      /// Return radius of circle
-      double radius() const { return _r; }
+  };
 
-      /// Return number of fragments around the circle
-      uint fragments() const { return _fragments; }
+  /// This class describes a 2D ellipse which can be used to build
+  /// geometries using Constructive Solid Geometry (CSG).
+  class Ellipse : public CSGPrimitive2D
+  {
+  public:
+    
+    /// Create ellipse at x = (x0, x1) with horizontal semi-axis a and
+    /// vertical semi-axis b.
+    ///
+    /// *Arguments*
+    ///     x0 (double)
+    ///         x0-coordinate of center.
+    ///     x1 (double)
+    ///         x1-coordinate of center.
+    ///     a (double)
+    ///         horizontal semi-axis.
+    ///     b (double)
+    ///         vertical semi-axis.
+    ///     fragments (uint)
+    ///         number of fragments.
+    Ellipse(double x0, double x1, double a, double b, uint fragments=32);
 
-    private:
+    /// Informal string representation
+    std::string str(bool verbose) const;
+    Type getType() const { return CSGGeometry::Ellipse; }
 
-      double _x0, _x1, _r;
-      const uint _fragments;
+    /// Return center of ellipse
+    Point center() const { return Point(_x0, _x1); }
+    
+    /// Return horizontal semi-axis
+    double a() const { return _a; }
 
-    };
+    /// Return vertical semi-axis
+    double b() const { return _b; }
 
-    /// This class describes a 2D ellipse which can be used to build
-    /// geometries using Constructive Solid Geometry (CSG).
-    class Ellipse : public CSGPrimitive2D
-    {
-    public:
+    /// Return number of fragments around the ellipse
+    uint fragments() const { return _fragments; }
 
-      /// Create ellipse at x = (x0, x1) with horizontal semi-axis a and
-      /// vertical semi-axis b.
-      ///
-      /// *Arguments*
-      ///     x0 (double)
-      ///         x0-coordinate of center.
-      ///     x1 (double)
-      ///         x1-coordinate of center.
-      ///     a (double)
-      ///         horizontal semi-axis.
-      ///     b (double)
-      ///         vertical semi-axis.
-      ///     fragments (uint)
-      ///         number of fragments.
-      Ellipse(double x0, double x1, double a, double b, uint fragments=32);
+  private:
 
-      /// Informal string representation
-      std::string str(bool verbose) const;
-      Type getType() const { return CSGGeometry::Ellipse; }
+    double _x0, _x1, _a, _b;
+    const uint _fragments;
 
-      /// Return center of ellipse
-      Point center() const { return Point(_x0, _x1); }
+  };
 
-      /// Return horizontal semi-axis
-      double a() const { return _a; }
+  /// This class describes a 2D rectangle which can be used to build
+  /// geometries using Constructive Solid Geometry (CSG).
+  class Rectangle : public CSGPrimitive2D
+  {
+  public:
 
-      /// Return vertical semi-axis
-      double b() const { return _b; }
+    /// Create rectangle defined by two opposite corners
+    /// x = (x0, x1) and y = (y0, y1).
+    ///
+    /// *Arguments*
+    ///     x0 (double)
+    ///         x0-coordinate of first corner.
+    ///     x1 (double)
+    ///         x1-coordinate of first corner.
+    ///     y0 (double)
+    ///         y0-coordinate of second corner.
+    ///     y1 (double)
+    ///         y1-coordinate of second corner.
+    Rectangle(double x0, double x1, double y0, double y1);
 
-      /// Return number of fragments around the ellipse
-      uint fragments() const { return _fragments; }
+    /// Informal string representation
+    std::string str(bool verbose) const;
 
-    private:
+    Type getType() const { return CSGGeometry::Rectangle; }
 
-      double _x0, _x1, _a, _b;
-      const uint _fragments;
+    /// Return first corner
+    Point first_corner() const { return Point(_x0, _y0); }
 
-    };
+    /// Return second corner
+    Point second_corner() const { return Point(_x1, _y1); }
 
-    /// This class describes a 2D rectangle which can be used to build
-    /// geometries using Constructive Solid Geometry (CSG).
-    class Rectangle : public CSGPrimitive2D
-    {
-    public:
+  private:
 
-      /// Create rectangle defined by two opposite corners
-      /// x = (x0, x1) and y = (y0, y1).
-      ///
-      /// *Arguments*
-      ///     x0 (double)
-      ///         x0-coordinate of first corner.
-      ///     x1 (double)
-      ///         x1-coordinate of first corner.
-      ///     y0 (double)
-      ///         y0-coordinate of second corner.
-      ///     y1 (double)
-      ///         y1-coordinate of second corner.
-      Rectangle(double x0, double x1, double y0, double y1);
+    double _x0, _x1, _y0, _y1;
 
-      /// Informal string representation
-      std::string str(bool verbose) const;
+  };
 
-      Type getType() const { return CSGGeometry::Rectangle; }
+  /// This class describes a 2D polygon which can be used to build
+  /// geometries using Constructive Solid Geometry (CSG).
+  class Polygon : public CSGPrimitive2D
+  {
+  public:
 
-      /// Return first corner
-      Point first_corner() const { return Point(_x0, _y0); }
+    /// Create polygon defined by the given vertices.
+    ///
+    /// *Arguments*
+    ///     vertices (std::vector<_Point_>)
+    ///         A vector of _Point_ objects. 
+    ///         The points must be given in clockwise order
+    ///         and the polygon can not self intersect.
+    Polygon(const std::vector<Point>& vertices);
 
-      /// Return second corner
-      Point second_corner() const { return Point(_x1, _y1); }
+    /// Informal string representation
+    std::string str(bool verbose) const;
+    Type getType() const { return CSGGeometry::Polygon; }
+    
+    /// Return vertices in polygon
+    const std::vector<Point>& vertices() const { return _vertices; }
 
-    private:
+  private:
 
-      double _x0, _x1, _y0, _y1;
+    const std::vector<Point>& _vertices;
 
-    };
-
-    /// This class describes a 2D polygon which can be used to build
-    /// geometries using Constructive Solid Geometry (CSG).
-    class Polygon : public CSGPrimitive2D
-    {
-    public:
-
-      /// Create polygon defined by the given vertices.
-      ///
-      /// *Arguments*
-      ///     vertices (std::vector<_Point_>)
-      ///         A vector of _Point_ objects. 
-      ///         The points must be given in clockwise order
-      ///         and the polygon can not self intersect.
-      Polygon(const std::vector<Point>& vertices);
-
-      /// Informal string representation
-      std::string str(bool verbose) const;
-      Type getType() const { return CSGGeometry::Polygon; }
-
-      /// Return vertices in polygon
-      const std::vector<Point>& vertices() const { return _vertices; }
-
-    private:
-
-      const std::vector<Point>& _vertices;
-
-    };
-
-  }
-
+  };
 }
 
 #endif
