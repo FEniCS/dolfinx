@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-09-20
+// Last changed: 2012-11-12
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
@@ -104,6 +104,7 @@ namespace dolfin
     //DISPATCH(MeshFunction<float>);
     DISPATCH(MeshFunction<int>);
     DISPATCH(MeshFunction<uint>);
+    DISPATCH(MeshFunction<std::size_t>);
 
     if (dynamic_cast<const Expression*>(var.get()))
     {

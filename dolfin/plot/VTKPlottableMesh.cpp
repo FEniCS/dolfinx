@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Joachim B Haga 2012
+// Modified by Benjamin Kehlet 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-09-17
+// Last changed: 2012-11-12
 
 #ifdef HAS_VTK
 
@@ -475,5 +476,6 @@ INSTANTIATE(double)
 INSTANTIATE(float)
 INSTANTIATE(int)
 INSTANTIATE(dolfin::uint)
+INSTANTIATE(std::size_t)
 
 #endif

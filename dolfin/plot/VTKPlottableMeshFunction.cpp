@@ -67,5 +67,6 @@ template class VTKPlottableMeshFunction<double>;
 template class VTKPlottableMeshFunction<float>;
 template class VTKPlottableMeshFunction<int>;
 template class VTKPlottableMeshFunction<dolfin::uint>;
+template class VTKPlottableMeshFunction<std::size_t>;
 
 #endif
