@@ -134,6 +134,8 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     // Stop if error estimate is less than tolerance
     if (std::abs(error_estimate) < tol)
     {
+      info("Error estimate (%g) is less than tolerance (%g), returning.",
+           error_estimate, tol);
       summary();
       return;
     }
