@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-10
-// Last changed: 2012-11-09
+// Last changed: 2012-11-12
 
 
 #include "CSGCGALMeshGenerator3D.h"
@@ -48,7 +48,7 @@ static void build_dolfin_mesh(const csg::C3t3& c3t3, Mesh& mesh)
   mesh.clear();
 
   // Count cells in complex
-  uint num_cells = 0;
+  dolfin::uint num_cells = 0;
   for(typename csg::C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin();
       cit != c3t3.cells_in_complex_end();
       ++cit) 

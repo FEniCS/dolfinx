@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-10-31
-// Last changed: 2012-11-09
+// Last changed: 2012-11-12
 
 #include "PolyhedronUtils.h"
 #include <dolfin/log/log.h>
@@ -162,7 +162,7 @@ public:
       std::vector<std::size_t> v_indices(3);
 
       // Read lines with vertices
-      for (uint i = 0; i < 3; ++i)
+      for (dolfin::uint i = 0; i < 3; ++i)
       {
         std::getline(file, line);
         boost::algorithm::trim(line);

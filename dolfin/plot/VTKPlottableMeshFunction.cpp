@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Joachim B Haga 2012
+// Modified by Benjamin Kehlet 2012
 //
 // First added:  2012-06-21
-// Last changed: 2012-09-12
+// Last changed: 2012-11-12
 
 #ifdef HAS_VTK
 
@@ -65,6 +66,6 @@ template class VTKPlottableMeshFunction<bool>;
 template class VTKPlottableMeshFunction<double>;
 template class VTKPlottableMeshFunction<float>;
 template class VTKPlottableMeshFunction<int>;
-template class VTKPlottableMeshFunction<uint>;
+template class VTKPlottableMeshFunction<dolfin::uint>;
 
 #endif

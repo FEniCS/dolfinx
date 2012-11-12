@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Joachim B Haga 2012
+// Modified by Benjamin Kehlet 2012
 //
 // First added:  2012-06-20
-// Last changed: 2012-09-20
+// Last changed: 2012-11-12
 
 #ifdef HAS_VTK
 
@@ -55,7 +56,7 @@ VTKPlottableGenericFunction::VTKPlottableGenericFunction(boost::shared_ptr<const
   // Do nothing
 }
 //----------------------------------------------------------------------------
-uint VTKPlottableGenericFunction::value_rank() const
+dolfin::uint VTKPlottableGenericFunction::value_rank() const
 {
   return _function->value_rank();
 }
@@ -212,7 +213,7 @@ void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var, 
 
   // Update the values on the mesh
   const Function *func = dynamic_cast<const Function *>(_function.get());
-  if (func && func->vector()->local_size() == (uint)grid()->GetNumberOfCells()
+  if (func && func->vector()->local_size() == (dolfin::uint)grid()->GetNumberOfCells()
       && dim() > 1)
   {
     // Hack to display DG0 functions. Should really be implemented using
