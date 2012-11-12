@@ -257,43 +257,63 @@ void HDF5File::read_mesh(Mesh& input_mesh)
   // Get list of all datasets in the /Mesh group
   std::vector<std::string> _dataset_list
       = HDF5Interface::dataset_list(hdf5_file_id, "/Mesh");
+  
+  // Should return a list of groups
 
+  std::cout << _dataset_list.size() << " groups found...\n" ;
+
+  if(_dataset_list.size()==0)
+  {
+    dolfin_error("HDF5File.cpp",
+                 "open Mesh",
+                 "Dataset not found");
+  }
+  
+  if(_dataset_list.size()!=1)
+  {
+    warning("Multiple Mesh datasets found. Using first dataset.");
+  }
+  std::string mesh_group_name = "/Mesh/" + _dataset_list[0];
+  
+  _dataset_list = HDF5Interface::dataset_list(hdf5_file_id, mesh_group_name);
+      
   // Look for Topology dataset
-  std::string topology_name = search_list(_dataset_list,"Topology");
+  std::string topology_name = search_list(_dataset_list,"topology");
   if (topology_name.size() == 0)
   {
     dolfin_error("HDF5File.cpp",
                  "read topology dataset",
                  "Dataset not found");
   }
-  topology_name = "/Mesh/" + topology_name;
+  topology_name = mesh_group_name + "/" + topology_name;
 
-  // Look for GlobalIndex dataset
-  std::string global_index_name = search_list(_dataset_list,"GlobalIndex");
+  // Look for global_index dataset
+  std::string global_index_name = search_list(_dataset_list,"global_index");
   if (global_index_name.size() == 0)
   {
     dolfin_error("HDF5File.cpp",
                  "read global index dataset",
                  "Dataset not found");
   }
-  global_index_name = "/Mesh/" + global_index_name;
+  global_index_name = mesh_group_name + "/" + global_index_name;
 
   // Look for Coordinates dataset
-  std::string coordinates_name=search_list(_dataset_list,"Coordinates");
+  std::string coordinates_name=search_list(_dataset_list,"coordinates");
   if(coordinates_name.size()==0)
   {
     dolfin_error("HDF5File.cpp",
                  "read coordinates dataset",
                  "Dataset not found");
   }
-  coordinates_name = "/Mesh/" + coordinates_name;
+  coordinates_name = mesh_group_name + "/" + coordinates_name;
 
-  read_mesh_repartition(input_mesh, coordinates_name,
+  read_mesh_repartition(input_mesh, coordinates_name, global_index_name,
                                    topology_name);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::read_mesh_repartition(Mesh& input_mesh,
                                      const std::string coordinates_name,
+                                     const std::string global_index_name,
                                      const std::string topology_name)
 {
   // FIXME:
@@ -315,18 +335,16 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
   const uint num_global_cells = topology_dim[0];
   mesh_data.num_global_cells = num_global_cells;
 
+  // Set vertices-per-cell from width of array
+  const uint num_vertices_per_cell = topology_dim[1];
+  mesh_data.num_vertices_per_cell = num_vertices_per_cell;
+
   // Get dimensionality from number of columns in topology
-  // FIXME: not very satisfactory
-  mesh_data.gdim = topology_dim[1] - 1;
   mesh_data.tdim = topology_dim[1] - 1;
 
   // Divide up cells ~equally between processes
   const std::pair<uint,uint> cell_range = MPI::local_range(num_global_cells);
   const uint num_local_cells = cell_range.second - cell_range.first;
-
-  // Set vertices-per-cell from width of array
-  const uint num_vertices_per_cell = topology_dim[1];
-  mesh_data.num_vertices_per_cell = num_vertices_per_cell;
 
   // Read a block of cells
   std::vector<uint> topology_data;
@@ -341,7 +359,6 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
   for(uint i = 0; i < num_local_cells; i++)
   {
     mesh_data.global_cell_indices.push_back(cell_range.first + i);
-
     std::copy(topology_it, topology_it + num_vertices_per_cell,
               mesh_data.cell_vertices[i].begin());
     topology_it += num_vertices_per_cell;
@@ -352,18 +369,18 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
   std::vector<uint> coords_dim
     = HDF5Interface::get_dataset_size(hdf5_file_id, coordinates_name);
   mesh_data.num_global_vertices = coords_dim[0];
+  const uint vertex_dim = coords_dim[1];
+  mesh_data.gdim = vertex_dim;
 
   // Divide range into equal blocks for each process
   const std::pair<uint, uint> vertex_range = MPI::local_range(coords_dim[0]);
   const uint num_local_vertices = vertex_range.second - vertex_range.first;
-  const uint vertex_dim = coords_dim[1];
 
   // Read vertex data to temporary vector
   std::vector<double> tmp_vertex_data;
   tmp_vertex_data.reserve(num_local_vertices*vertex_dim);
   HDF5Interface::read_dataset(hdf5_file_id, coordinates_name, vertex_range,
                               tmp_vertex_data);
-
   // Copy to vector<vector>
   mesh_data.vertex_coordinates.reserve(num_local_vertices);
   for(std::vector<double>::iterator v = tmp_vertex_data.begin();
@@ -374,8 +391,8 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
 
   // Fill vertex indices with values
   mesh_data.vertex_indices.resize(num_local_vertices);
-  for(uint i = 0; i < mesh_data.vertex_coordinates.size(); ++i)
-    mesh_data.vertex_indices[i] = vertex_range.first + i;
+  HDF5Interface::read_dataset(hdf5_file_id, global_index_name, vertex_range,
+                              mesh_data.vertex_indices);
 
   // Build distributed mesh
   MeshPartitioning::build_distributed_mesh(input_mesh, mesh_data);
@@ -383,8 +400,9 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
 //-----------------------------------------------------------------------------
 void HDF5File::operator<< (const Mesh& mesh)
 {
-  const std::string name = boost::lexical_cast<std::string>(counter);
+  const std::string name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
   write_mesh_global_index(mesh, mesh.topology().dim(), name);
+  counter++;
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write_mesh(const Mesh& mesh, const std::string name)
@@ -403,7 +421,6 @@ void HDF5File::write_mesh_global_index(const Mesh& mesh, uint cell_dim, const st
     hdf5_file_id = HDF5Interface::open_file(filename, false, mpi_io);
     hdf5_file_open = true;
   }
-  counter++;
 
   // Create Mesh group in HDF5 file
   if (!HDF5Interface::has_group(hdf5_file_id, "/Mesh"))
@@ -450,11 +467,6 @@ void HDF5File::write_mesh_global_index(const Mesh& mesh, uint cell_dim, const st
 
   // ------ Topology
 
-  // Get cell offset and local cell range
-  const uint num_local_cells = mesh.num_cells();
-  //  const uint cell_offset = MPI::global_offset(num_local_cells, true);
-  //  const std::pair<uint, uint> cell_range(cell_offset, cell_offset + num_local_cells);
-
   // Get/build topology data
   std::vector<uint> topological_data;
   if (cell_dim == mesh.topology().dim())
@@ -481,13 +493,6 @@ void HDF5File::write_mesh_global_index(const Mesh& mesh, uint cell_dim, const st
   
   HDF5Interface::add_attribute(hdf5_file_id, topology_dataset, "celltype",
                                cell_type);
-
-  // Write partitions as an attribute - for information only
-  //  std::vector<uint> partitions;
-  //  MPI::gather(cell_offset, partitions);
-  //  MPI::broadcast(partitions);
-  //  HDF5Interface::add_attribute(hdf5_file_id, topology_dataset, "partition",
-  //                               partitions);
 
 }
 //-----------------------------------------------------------------------------
@@ -586,134 +591,6 @@ void HDF5File::open_hdf5_file(bool truncate)
   dolfin_assert(!hdf5_file_open);
   hdf5_file_id = HDF5Interface::open_file(filename, truncate, mpi_io);
   hdf5_file_open = true;
-}
-//-----------------------------------------------------------------------------
-void HDF5File::remove_duplicate_vertices(const Mesh &mesh,
-                                         std::vector<double>& vertex_data,
-                                         std::vector<uint>& topological_data)
-{
-  Timer t("remove duplicate vertices");
-
-  const uint num_processes = MPI::num_processes();
-  const uint process_number = MPI::process_number();
-  const uint num_local_vertices = mesh.num_vertices();
-
-  const std::map<uint, std::set<uint> >& shared_vertices
-    = mesh.topology().shared_entities(0);
-
-  // Create global => local map for shared vertices only
-  std::map<uint, uint> local;
-  for (VertexIterator v(mesh); !v.end(); ++v)
-  {
-    uint global_index = v->global_index();
-    if(shared_vertices.count(global_index) != 0)
-      local[global_index] = v->index();
-  }
-
-  // New local indexing vector "remap" after removing duplicates
-  // Initialise to '1' and mark removed vertices with '0'
-  std::vector<uint> remap(num_local_vertices, 1);
-
-  // Structures for MPI::distribute
-  // list all processes, though some may get nothing from here
-  std::vector<uint> destinations;
-  destinations.reserve(num_processes);
-  for(uint j = 0; j < num_processes; j++)
-    destinations.push_back(j);
-  std::vector<std::vector<std::pair<uint, uint> > > values_to_send(num_processes);
-
-  // Go through shared vertices looking for vertices which are
-  // on a lower numbered process. Mark these as being off-process.
-  // Meanwhile, push locally owned shared vertices to values_to_send to
-  // remote processes.
-
-  uint count = num_local_vertices;
-  for(std::map<uint, std::set<uint> >::const_iterator
-      shared_v_it = shared_vertices.begin();
-      shared_v_it != shared_vertices.end();
-      shared_v_it++)
-  {
-    const uint global_index = shared_v_it->first;
-    const uint local_index = local[global_index];
-    const std::set<uint>& procs = shared_v_it->second;
-    // Determine whether this vertex is also on a lower numbered process
-    // FIXME: may change with concept of vertex ownership
-    if(*(procs.begin()) < process_number)
-    {
-      // mark for excision on this process
-      remap[local_index] = 0;
-      count--;
-    }
-    else // locally owned.
-    {
-      // send std::pair(global, local) indices to each sharing process
-      const std::pair<uint, uint> global_local(global_index, local_index);
-      for(std::set<uint>::iterator proc = procs.begin();
-          proc != procs.end(); ++proc)
-        values_to_send[*proc].push_back(global_local);
-    }
-  }
-
-  // make vertex data
-  const uint gdim = mesh.geometry().dim();
-  vertex_data.clear();
-  vertex_data.reserve(gdim*num_local_vertices);
-
-  for (VertexIterator v(mesh); !v.end(); ++v)
-  {
-    if(remap[v->index()] != 0)
-    {
-      for (uint i = 0; i < gdim; ++i)
-        vertex_data.push_back(v->x(i));
-    }
-  }
-  //  std::cout << "total vertices = " << MPI::sum(vertex_data.size())/gdim << std::endl;
-
-  // Remap local indices to account for missing vertices
-  // Also add offset
-  const uint vertex_offset = MPI::global_offset(count, true);
-  uint new_index = vertex_offset - 1;
-  for(uint i = 0; i < num_local_vertices; i++)
-  {
-    new_index += remap[i]; // add either 1 or 0
-    remap[i] = new_index;
-  }
-
-  // Second value of pairs contains local index. Now revise
-  // to contain the new local index + vertex_offset
-  for(std::vector<std::vector<std::pair<uint,uint> > >::iterator
-        p = values_to_send.begin(); p != values_to_send.end(); ++p)
-  {
-    for(std::vector<std::pair<uint,uint> >::iterator lmap = p->begin();
-          lmap != p->end(); ++lmap)
-    {
-      lmap->second = remap[lmap->second];
-    }
-  }
-
-  // Redistribute the values to the appropriate process
-  std::vector<std::vector<std::pair<uint,uint> > > received_values;
-  MPI::distribute(values_to_send, destinations, received_values);
-
-  // flatten and insert received global remappings into remap
-  std::vector<std::vector<std::pair<uint, uint> > >::iterator p;
-  for(p = received_values.begin(); p != received_values.end(); ++p)
-  {
-    std::vector<std::pair<uint, uint> >::const_iterator lmap;
-    for(lmap = p->begin(); lmap != p->end(); ++lmap)
-      remap[local[lmap->first]] = lmap->second;
-  }
-  // remap should now contain the appropriate mapping
-  // which can be used to reindex the topology
-
-  const uint cell_dim = mesh.topology().dim(); // FIXME: facet mesh
-  const uint num_local_cells = mesh.num_cells();
-  topological_data.clear();
-  topological_data.reserve(num_local_cells*(cell_dim - 1));
-
-  for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
-    for (VertexIterator v(*c); !v.end(); ++v)
-      topological_data.push_back(remap[v->index()]);
 }
 //-----------------------------------------------------------------------------
 

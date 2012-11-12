@@ -103,17 +103,8 @@ namespace dolfin
     // Read a mesh which has locally indexed topology and repartition
     void read_mesh_repartition(Mesh &input_mesh,
                                const std::string coordinates_name,
+                               const std::string global_index_name,
                                const std::string topology_name);
-
-    // Return vertex and topological data with duplicates removed
-    void remove_duplicate_vertices(const Mesh& mesh,
-                                   std::vector<double>& vertex_data,
-                                   std::vector<uint>& topological_data);
-
-    // Eliminate elements of value vector corresponding to eliminated vertices
-    template <typename T>
-    void remove_duplicate_values(const Mesh &mesh, std::vector<T>& values,
-                                 const uint value_size);
 
     // Write contiguous data to HDF5 data set. Data is flattened into
     // a 1D array, e.g. [x0, y0, z0, x1, y1, z1] for a vector in 3D
@@ -182,32 +173,6 @@ namespace dolfin
     // Write data to HDF5 file
     HDF5Interface::write_dataset(hdf5_file_id, dataset_name, data,
                                  range, global_size, mpi_io, false);
-  }
-  //---------------------------------------------------------------------------
-  template <typename T>
-  void HDF5File::remove_duplicate_values(const Mesh &mesh,
-                                         std::vector<T>& values,
-                                         const uint value_size)
-  {
-    /*
-    // Get list of locally owned vertices, with local index
-    const std::vector<uint> owned_vertices = mesh.owned_vertices();
-
-    std::vector<T> result;
-    result.reserve(values.size()); //overestimate
-
-    // only copy local values
-    for(uint i = 0; i < owned_vertices.size(); i++)
-    {
-      typename std::vector<T>::iterator owned_it =
-        values.begin() + value_size*owned_vertices[i];
-      result.insert(result.end(), owned_it, owned_it + value_size);
-    }
-
-    // copy back into values and resize
-    values.resize(result.size());
-    std::copy(result.begin(), result.end(), values.begin());
-  */
   }
   //---------------------------------------------------------------------------
 
