@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-11-06
+// Last changed: 2012-11-12
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -61,9 +61,8 @@ namespace dolfin
     /// Write Mesh to file
     void write_mesh(const Mesh& mesh, const std::string name);
 
-    /// Write Mesh of given cell dimension to file
-    void write_mesh(const Mesh& mesh, const uint cell_dim,
-                    const std::string name);
+    /// Write Mesh of given cell dimension to file in a format suitable for re-reading
+    void write_mesh_global_index(const Mesh& mesh, const uint cell_dim, const std::string name);
 
     /// Write Mesh to file for visualisation (may contain duplicate
     /// entities and will not preserve global indices)
