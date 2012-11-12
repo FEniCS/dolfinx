@@ -62,22 +62,22 @@ namespace dolfin
 
     /// Build distributed dual graph for mesh
     static void compute_dual_graph(const LocalMeshData& mesh_data,
-                                   std::vector<std::set<uint> >& local_graph,
-                                   std::set<uint>& ghost_vertices);
+                                   std::vector<std::set<std::size_t> >& local_graph,
+                                   std::set<std::size_t>& ghost_vertices);
 
   private:
 
-    static void compute_connectivity(const boost::multi_array<uint, 2>& cell_vertices,
-                                     uint num_facet_vertices, uint offset,
-                                     std::vector<std::set<uint> >& graph);
+    static void compute_connectivity(const boost::multi_array<std::size_t, 2>& cell_vertices,
+                                     uint num_facet_vertices, std::size_t offset,
+                                     std::vector<std::set<std::size_t> >& graph);
 
-    static uint compute_ghost_connectivity(const boost::multi_array<uint, 2>& cell_vertices,
-                                     const std::vector<uint>& local_boundary_cells,
-                                     const std::vector<std::vector<uint> >& candidate_ghost_vertices,
-                                     const std::vector<uint>& candidate_ghost_global_indices,
+    static std::size_t compute_ghost_connectivity(const boost::multi_array<std::size_t, 2>& cell_vertices,
+                                     const std::vector<std::size_t>& local_boundary_cells,
+                                     const std::vector<std::vector<std::size_t> >& candidate_ghost_vertices,
+                                     const std::vector<std::size_t>& candidate_ghost_global_indices,
                                      uint num_facet_vertices,
-                                     std::vector<std::set<uint> >& ghost_graph_edges,
-                                     std::set<uint>& ghost_cells);
+                                     std::vector<std::set<std::size_t> >& ghost_graph_edges,
+                                     std::set<std::size_t>& ghost_cells);
 
   };
 

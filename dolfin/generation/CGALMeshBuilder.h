@@ -104,8 +104,8 @@ namespace dolfin
       typename CGAL::Triangulation_2<X, Y>::Finite_faces_iterator cgal_cell;
       for (cgal_cell = t.finite_faces_begin(); cgal_cell != t.finite_faces_end(); ++cgal_cell)
       {
-        std::vector<uint> cell_data(3);
-        for (uint i = 0; i < 3; ++i)
+        std::vector<std::size_t> cell_data(3);
+        for (std::size_t i = 0; i < 3; ++i)
           cell_data[i] = cgal_cell->vertex(i)->info();
         mesh_editor.add_cell(cell_index++, cell_data);
       }
@@ -123,8 +123,8 @@ namespace dolfin
         // Add cell if it is in the domain
         if(cgal_cell->is_in_domain())
         {
-          std::vector<uint> cell_data(3);
-          for (uint i = 0; i < 3; ++i)
+          std::vector<std::size_t> cell_data(3);
+          for (std::size_t i = 0; i < 3; ++i)
             cell_data[i] = cgal_cell->vertex(i)->info();
           mesh_editor.add_cell(cell_index++, cell_data);
         }
@@ -140,8 +140,8 @@ namespace dolfin
       typename CGAL::Triangulation_3<X, Y>::Finite_cells_iterator cgal_cell;
       for (cgal_cell = t.finite_cells_begin(); cgal_cell != t.finite_cells_end(); ++cgal_cell)
       {
-        std::vector<uint> cell_data(4);
-        for (uint i = 0; i < 4; ++i)
+        std::vector<std::size_t> cell_data(4);
+        for (std::size_t i = 0; i < 4; ++i)
           cell_data[i] = cgal_cell->vertex(i)->info();
         mesh_editor.add_cell(cell_index++, cell_data);
       }
@@ -159,8 +159,8 @@ namespace dolfin
     // Get various dimensions
     const uint gdim = triangulation.finite_vertices_begin()->point().dimension();
     const uint tdim = triangulation.dimension();
-    const uint num_vertices = triangulation.number_of_vertices();
-    const uint num_cells = _num_cells(triangulation);
+    const std::size_t num_vertices = triangulation.number_of_vertices();
+    const std::size_t num_cells = _num_cells(triangulation);
 
     // Create a MeshEditor and open
     dolfin::MeshEditor mesh_editor;
@@ -208,8 +208,8 @@ namespace dolfin
     // Get various dimensions
     const uint gdim = t.finite_vertices_begin()->point().dimension();
     const uint tdim = t.dimension();
-    const uint num_vertices = t.number_of_vertices();
-    const uint num_cells = cgal_mesh.number_of_cells();
+    const std::size_t num_vertices = t.number_of_vertices();
+    const std::size_t num_cells = cgal_mesh.number_of_cells();
 
     // Create a MeshEditor and open
     dolfin::MeshEditor mesh_editor;
@@ -246,8 +246,8 @@ namespace dolfin
       // Add cell if in CGAL mesh, and increment index
       if (cgal_mesh.is_in_complex(c))
       {
-        std::vector<uint> cell_data(4);
-        for (uint i = 0; i < 4; ++i)
+        std::vector<std::size_t> cell_data(4);
+        for (std::size_t i = 0; i < 4; ++i)
           cell_data[i] = c->vertex(i)->info();
         mesh_editor.add_cell(cell_index++, cell_data);
       }
@@ -272,8 +272,8 @@ namespace dolfin
     // Get various dimensions
     const uint gdim = 3;
     const uint tdim = 2;
-    const uint num_vertices = t.number_of_vertices();
-    const uint num_cells = cgal_mesh.number_of_facets();
+    const std::size_t num_vertices = t.number_of_vertices();
+    const std::size_t num_cells = cgal_mesh.number_of_facets();
 
     // Create a MeshEditor and open
     dolfin::MeshEditor mesh_editor;
@@ -314,7 +314,7 @@ namespace dolfin
       }
 
       // Get cell vertices and add to Mesh
-      std::vector<uint> vertex_indices(3);
+      std::vector<std::size_t> vertex_indices(3);
       for (uint i = 0; i < 3; ++i)
         vertex_indices[i] = c->first->vertex( (c->second + i + 1)%4 )->info();
       mesh_editor.add_cell(cell_index++, vertex_indices);
@@ -336,8 +336,8 @@ namespace dolfin
     // Get various dimensions
     const uint gdim = 3;
     const uint tdim = 2;
-    const uint num_vertices = t.number_of_vertices();
-    const uint num_cells = cgal_mesh.number_of_facets();
+    const std::size_t num_vertices = t.number_of_vertices();
+    const std::size_t num_cells = cgal_mesh.number_of_facets();
 
     cout << "gdim: " << gdim << endl;
     cout << "tdim: " << tdim << endl;
@@ -375,7 +375,7 @@ namespace dolfin
       // Add cell if in CGAL mesh, and increment index
       if (cgal_mesh.is_in_complex(*c))
       {
-        std::vector<uint> vertex_indices(3);
+        std::vector<std::size_t> vertex_indices(3);
         vertex_indices[0] = c->first->vertex( (c->second + 1)%4 )->info();
         vertex_indices[1] = c->first->vertex( (c->second + 2)%4 )->info();
         vertex_indices[2] = c->first->vertex( (c->second + 3)%4 )->info();

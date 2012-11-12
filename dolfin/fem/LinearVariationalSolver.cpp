@@ -94,7 +94,7 @@ void LinearVariationalSolver::solve()
 
     // Need to cast to DirichletBC to use assemble_system
     std::vector<const DirichletBC*> _bcs;
-    for (uint i = 0; i < bcs.size(); i++)
+    for (std::size_t i = 0; i < bcs.size(); i++)
     {
       dolfin_assert(bcs[i]);
       const DirichletBC* _bc = dynamic_cast<const DirichletBC*>(bcs[i].get());
@@ -118,10 +118,10 @@ void LinearVariationalSolver::solve()
   else
   {
     // Check for any periodic bcs
-    typedef std::pair<dolfin::uint, dolfin::uint> DofOwnerPair;
+    typedef std::pair<std::size_t, std::size_t> DofOwnerPair;
     typedef std::pair<DofOwnerPair, DofOwnerPair> MasterSlavePair;
     std::vector<MasterSlavePair> dof_pairs;
-    for (uint i = 0; i < bcs.size(); i++)
+    for (std::size_t i = 0; i < bcs.size(); i++)
     {
       dolfin_assert(bcs[i]);
       const PeriodicBC* _bc = dynamic_cast<const PeriodicBC*>(bcs[i].get());
@@ -159,7 +159,7 @@ void LinearVariationalSolver::solve()
     }
 
     // Apply boundary conditions
-    for (uint i = 0; i < bcs.size(); i++)
+    for (std::size_t i = 0; i < bcs.size(); i++)
     {
       dolfin_assert(bcs[i]);
       bcs[i]->apply(*A, *b);

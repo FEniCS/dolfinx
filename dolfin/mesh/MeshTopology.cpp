@@ -103,7 +103,7 @@ void MeshTopology::init(uint dim)
   clear();
 
   // Initialize number of mesh entities
-  num_entities = std::vector<uint>(dim + 1, 0);
+  num_entities = std::vector<std::size_t>(dim + 1, 0);
   global_num_entities = std::vector<std::size_t>(dim + 1, 0);
 
   // Initialize storage for global indices

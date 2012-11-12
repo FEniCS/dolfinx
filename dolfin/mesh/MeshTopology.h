@@ -140,7 +140,7 @@ namespace dolfin
     // Developer note: std::vector is used in place of a MeshFunction
     //                 to avoid circular dependencies in the header files
     std::map<const std::vector<uint>,
-      std::pair<std::vector<std::size_t>, std::vector<std::vector<uint> > > > coloring;
+      std::pair<std::vector<uint>, std::vector<std::vector<std::size_t> > > > coloring;
 
   private:
 
@@ -148,7 +148,7 @@ namespace dolfin
     friend class BinaryFile;
 
     // Number of mesh entities for each topological dimension
-    std::vector<uint> num_entities;
+    std::vector<std::size_t> num_entities;
 
     // Global number of mesh entities for each topological dimension
     std::vector<std::size_t> global_num_entities;

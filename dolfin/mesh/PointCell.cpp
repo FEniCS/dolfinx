@@ -75,8 +75,9 @@ dolfin::uint PointCell::orientation(const Cell& cell) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void PointCell::create_entities(std::vector<std::vector<uint> >& e, uint dim,
-                                const uint* v) const
+void PointCell::create_entities(std::vector<std::vector<std::size_t> >& e,
+                                uint dim,
+                                const std::size_t* v) const
 {
   dolfin_error("PointCell.cpp",
                "create entities",
@@ -84,7 +85,7 @@ void PointCell::create_entities(std::vector<std::vector<uint> >& e, uint dim,
 }
 //-----------------------------------------------------------------------------
 void PointCell::refine_cell(Cell& cell, MeshEditor& editor,
-                          uint& current_cell) const
+                          std::size_t& current_cell) const
 {
   dolfin_error("PointCell.cpp",
                "refine cell",

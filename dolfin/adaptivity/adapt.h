@@ -99,9 +99,9 @@ namespace dolfin
                            const FunctionSpace& S);
 
   /// Helper function for refinement of boundary conditions
-  void adapt_markers(std::vector<std::pair<unsigned int, unsigned int> >& refined_markers,
+  void adapt_markers(std::vector<std::pair<std::size_t, std::size_t> >& refined_markers,
                      const Mesh& adapted_mesh,
-                     const std::vector<std::pair<unsigned int, unsigned int> >& markers,
+                     const std::vector<std::pair<std::size_t, std::size_t> >& markers,
                      const Mesh& mesh);
 
   //--- Refinement of forms ---

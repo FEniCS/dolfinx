@@ -64,7 +64,7 @@ void SubMesh::init(const Mesh& mesh,
               mesh.topology().dim(), mesh.geometry().dim());
 
   // Extract cells
-  std::set<uint> cells;
+  std::set<std::size_t> cells;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     if (sub_domains[*cell] == sub_domain)
@@ -72,27 +72,25 @@ void SubMesh::init(const Mesh& mesh,
   }
 
   // Map to keep track of new local indices for vertices
-  std::map<uint, uint> local_vertex_indices;
+  std::map<std::size_t, std::size_t> local_vertex_indices;
 
   // Add cells
   editor.init_cells(cells.size());
-  uint current_cell = 0;
-  uint current_vertex = 0;
-  for (std::set<uint>::iterator cell_it = cells.begin();
+  std::size_t current_cell = 0;
+  std::size_t current_vertex = 0;
+  for (std::set<std::size_t>::iterator cell_it = cells.begin();
        cell_it != cells.end(); ++cell_it)
   {
-    std::vector<uint> cell_vertices;
+    std::vector<std::size_t> cell_vertices;
     Cell cell(mesh, *cell_it);
     for (VertexIterator vertex(cell); !vertex.end(); ++vertex)
     {
-      const uint parent_vertex_index = vertex->index();
+      const std::size_t parent_vertex_index = vertex->index();
       uint local_vertex_index = 0;
-      std::map<uint, uint>::iterator vertex_it
+      std::map<std::size_t, std::size_t>::iterator vertex_it
         = local_vertex_indices.find(parent_vertex_index);
       if (vertex_it != local_vertex_indices.end())
-      {
         local_vertex_index = vertex_it->second;
-      }
       else
       {
         local_vertex_index = current_vertex++;
@@ -105,12 +103,13 @@ void SubMesh::init(const Mesh& mesh,
 
   // Add vertices
   editor.init_vertices(local_vertex_indices.size());
-  for (std::map<uint, uint>::iterator it = local_vertex_indices.begin();
+  for (std::map<std::size_t, std::size_t>::iterator it = local_vertex_indices.begin();
        it != local_vertex_indices.end(); ++it)
   {
     Vertex vertex(mesh, it->first);
     if (MPI::num_processes() > 1)
       error("SubMesh::init not working in parallel");
+
     // FIXME: Get global vertex index
     editor.add_vertex(it->second, vertex.point());
   }
@@ -121,8 +120,10 @@ void SubMesh::init(const Mesh& mesh,
   // Build local-to-parent mapping for vertices
   boost::shared_ptr<MeshFunction<unsigned int> > parent_vertex_indices
     = data().create_mesh_function("parent_vertex_indices", 0);
-  for (std::map<uint, uint>::iterator it = local_vertex_indices.begin();
+  for (std::map<std::size_t, std::size_t>::iterator it = local_vertex_indices.begin();
        it != local_vertex_indices.end(); ++it)
+  {
     (*parent_vertex_indices)[it->second] = it->first;
+  }
 }
 //-----------------------------------------------------------------------------

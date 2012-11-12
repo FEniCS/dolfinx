@@ -171,7 +171,7 @@ namespace dolfin
     // LocalMeshData on this process belongs. We use MPI::distribute to
     //redistribute all cells (the global vertex indices of all cells).
     static void distribute_cells(const LocalMeshData& data,
-                                 const std::vector<uint>& cell_partition,
+                                 const std::vector<std::size_t>& cell_partition,
                                  std::vector<std::size_t>& global_cell_indices,
                                  boost::multi_array<std::size_t, 2>& cell_vertices);
 

@@ -189,7 +189,7 @@ namespace dolfin
       index = cell.index();
 
       // Set vertex coordinates
-      const uint* vertices = cell.entities(0);
+      const std::size_t* vertices = cell.entities(0);
       for (uint i = 0; i < num_vertices; i++)
         coordinates[i] = const_cast<double*>(cell.mesh().geometry().x(vertices[i]));
     }

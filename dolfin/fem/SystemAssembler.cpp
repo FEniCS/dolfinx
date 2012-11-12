@@ -179,7 +179,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   UFC A_ufc(a), b_ufc(L);
 
   // Initialize global tensors
-  const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > periodic_master_slave_dofs;
+  const std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > > periodic_master_slave_dofs;
   init_global_tensor(A, a, periodic_master_slave_dofs);
   init_global_tensor(b, L, periodic_master_slave_dofs);
 
@@ -188,7 +188,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
 
   // Get Dirichlet dofs and values for local mesh
   DirichletBC::Map boundary_values;
-  for (uint i = 0; i < bcs.size(); ++i)
+  for (std::size_t i = 0; i < bcs.size(); ++i)
   {
     bcs[i]->get_boundary_values(boundary_values);
     if (MPI::num_processes() > 1 && bcs[i]->method() != "pointwise")
@@ -203,8 +203,8 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
 
     dolfin_assert(x0->size() == a.function_space(1)->dofmap()->global_dimension());
 
-    const uint num_bc_dofs = boundary_values.size();
-    std::vector<uint> bc_indices;
+    const std::size_t num_bc_dofs = boundary_values.size();
+    std::vector<std::size_t> bc_indices;
     std::vector<double> bc_values;
     bc_indices.reserve(num_bc_dofs);
     bc_values.reserve(num_bc_dofs);
@@ -220,7 +220,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
     // Modify bc values
     std::vector<double> x0_values(num_bc_dofs);
     x0->get_local(&x0_values[0], num_bc_dofs, &bc_indices[0]);
-    for (uint i = 0; i < num_bc_dofs; i++)
+    for (std::size_t i = 0; i < num_bc_dofs; i++)
       bc_values[i] = x0_values[i] - bc_values[i];
   }
 
@@ -298,8 +298,8 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     L_dofmaps.push_back(L.function_space(i)->dofmap().get());
 
   // Vector to hold dof map for a cell
-  std::vector<const std::vector<uint>* > a_dofs(a_rank);
-  std::vector<const std::vector<uint>* > L_dofs(L_rank);
+  std::vector<const std::vector<std::size_t>* > a_dofs(a_rank);
+  std::vector<const std::vector<std::size_t>* > L_dofs(L_rank);
 
   // Create pointers to hold integral objects
   const ufc::cell_integral* A_cell_integral(0);
@@ -488,7 +488,7 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
     L_dofmaps.push_back(L.function_space(i)->dofmap().get());
 
   // Vector to hold dof map for a cell
-  std::vector<const std::vector<uint>* > a_dofs(a_rank), L_dofs(L_rank);
+  std::vector<const std::vector<std::size_t>* > a_dofs(a_rank), L_dofs(L_rank);
 
   // Iterate over facets
   Progress p("Assembling system (facet-wise)", mesh.num_facets());
@@ -573,7 +573,7 @@ void SystemAssembler::compute_tensor_on_one_interior_facet(const Form& a,
 //-----------------------------------------------------------------------------
 inline void SystemAssembler::apply_bc(double* A, double* b,
                      const DirichletBC::Map& boundary_values,
-                     const std::vector<const std::vector<uint>* >& global_dofs)
+                     const std::vector<const std::vector<std::size_t>* >& global_dofs)
 {
   // Get local dimensions
   const uint m = global_dofs[0]->size();
@@ -581,7 +581,7 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
 
   for (uint i = 0; i < n; ++i)
   {
-    const uint ii = (*global_dofs[1])[i];
+    const std::size_t ii = (*global_dofs[1])[i];
     DirichletBC::Map::const_iterator bc_value = boundary_values.find(ii);
 
     if (bc_value != boundary_values.end())
@@ -622,17 +622,17 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
                  "User-defined facet orientation is not supported by system assembler");
   }
 
-  const uint cell0_index = cell0.index();
-  const uint cell1_index = cell1.index();
+  const std::size_t cell0_index = cell0.index();
+  const std::size_t cell1_index = cell1.index();
 
   // Tabulate dofs
-  const std::vector<uint>& a0_dofs0 = a.function_space(0)->dofmap()->cell_dofs(cell0_index);
-  const std::vector<uint>& a1_dofs0 = a.function_space(1)->dofmap()->cell_dofs(cell0_index);
-  const std::vector<uint>& L_dofs0  = L.function_space(0)->dofmap()->cell_dofs(cell0_index);
+  const std::vector<std::size_t>& a0_dofs0 = a.function_space(0)->dofmap()->cell_dofs(cell0_index);
+  const std::vector<std::size_t>& a1_dofs0 = a.function_space(1)->dofmap()->cell_dofs(cell0_index);
+  const std::vector<std::size_t>& L_dofs0  = L.function_space(0)->dofmap()->cell_dofs(cell0_index);
 
-  const std::vector<uint>& a0_dofs1 = a.function_space(0)->dofmap()->cell_dofs(cell1_index);
-  const std::vector<uint>& a1_dofs1 = a.function_space(1)->dofmap()->cell_dofs(cell1_index);
-  const std::vector<uint>& L_dofs1  = L.function_space(0)->dofmap()->cell_dofs(cell1_index);
+  const std::vector<std::size_t>& a0_dofs1 = a.function_space(0)->dofmap()->cell_dofs(cell1_index);
+  const std::vector<std::size_t>& a1_dofs1 = a.function_space(1)->dofmap()->cell_dofs(cell1_index);
+  const std::vector<std::size_t>& L_dofs1  = L.function_space(0)->dofmap()->cell_dofs(cell1_index);
 
   // Cell integrals
   const ufc::cell_integral* A_cell_integral = A_ufc.cell_integrals[0].get();
@@ -699,8 +699,8 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
   }
 
   // Vector to hold dofs for cells
-  std::vector<std::vector<uint> > a_macro_dofs(2);
-  std::vector<std::vector<uint> > L_macro_dofs(1);
+  std::vector<std::vector<std::size_t> > a_macro_dofs(2);
+  std::vector<std::vector<std::size_t> > L_macro_dofs(1);
 
   // Resize dof vector
   a_macro_dofs[0].resize(a0_dofs0.size() + a0_dofs1.size());
@@ -721,7 +721,7 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
             L_macro_dofs[0].begin() + L_dofs0.size());
 
   // Modify local matrix/element for Dirichlet boundary conditions
-  std::vector<const std::vector<uint>* > _a_macro_dofs(2);
+  std::vector<const std::vector<std::size_t>* > _a_macro_dofs(2);
   _a_macro_dofs[0] = &a_macro_dofs[0];
   _a_macro_dofs[1] = &a_macro_dofs[1];
 
@@ -785,9 +785,9 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
   }
 
   // Tabulate dofs
-  const uint cell_index = cell.index();
-  std::vector<const std::vector<uint>* > a_dofs(2);
-  std::vector<const std::vector<uint>* > L_dofs(1);
+  const std::size_t cell_index = cell.index();
+  std::vector<const std::vector<std::size_t>* > a_dofs(2);
+  std::vector<const std::vector<std::size_t>* > L_dofs(1);
   a_dofs[0] = &(a.function_space(0)->dofmap()->cell_dofs(cell_index));
   a_dofs[1] = &(a.function_space(1)->dofmap()->cell_dofs(cell_index));
   L_dofs[0] = &(L.function_space(0)->dofmap()->cell_dofs(cell_index));

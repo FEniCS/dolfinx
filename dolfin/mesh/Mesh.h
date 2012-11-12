@@ -227,7 +227,7 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    const std::vector<uint>& cells() const { return _topology(_topology.dim(), 0)(); }
+    const std::vector<std::size_t>& cells() const { return _topology(_topology.dim(), 0)(); }
 
     /// Get number of local entities of given topological dimension.
     ///
@@ -259,7 +259,7 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    uint size_global(uint dim) const { return _topology.size_global(dim); }
+    std::size_t size_global(uint dim) const { return _topology.size_global(dim); }
 
     /// Get mesh topology.
     ///
@@ -463,7 +463,7 @@ namespace dolfin
     /// *Returns*
     ///     MeshFunction<unsigned int>
     ///         The colors as a mesh function over the cells of the mesh.
-    const std::vector<std::size_t>& color(std::string coloring_type) const;
+    const std::vector<uint>& color(std::string coloring_type) const;
 
     /// Color the cells of the mesh such that no two neighboring cells
     /// share the same color. A colored mesh keeps a
@@ -478,7 +478,7 @@ namespace dolfin
     /// *Returns*
     ///     MeshFunction<unsigned int>
     ///         The colors as a mesh function over entities of the mesh.
-    const std::vector<std::size_t>& color(std::vector<unsigned int> coloring_type) const;
+    const std::vector<uint>& color(std::vector<uint> coloring_type) const;
 
     /// Compute all cells which are intersected by the given point.
     ///

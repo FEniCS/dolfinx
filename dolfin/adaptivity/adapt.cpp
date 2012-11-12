@@ -462,11 +462,11 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
   else
   {
     // Extract markers
-    const std::vector<std::pair<uint, uint> >& markers = bc.markers();
+    const std::vector<std::pair<std::size_t, std::size_t> >& markers = bc.markers();
 
     // Create refined markers
     dolfin_assert(W->mesh());
-    std::vector<std::pair<uint, uint> > refined_markers;
+    std::vector<std::pair<std::size_t, std::size_t> > refined_markers;
     adapt_markers(refined_markers, *adapted_mesh, markers, *W->mesh());
 
     refined_bc.reset(new DirichletBC(V, g_ptr, refined_markers, bc.method()));
@@ -520,8 +520,8 @@ const dolfin::ErrorControl& dolfin::adapt(const ErrorControl& ec,
 }
 //-----------------------------------------------------------------------------
 const dolfin::MeshFunction<dolfin::uint>&
-dolfin::adapt(const MeshFunction<uint>& mesh_function,
-              boost::shared_ptr<const Mesh> adapted_mesh)
+  dolfin::adapt(const MeshFunction<uint>& mesh_function,
+                boost::shared_ptr<const Mesh> adapted_mesh)
 {
   // Skip refinement if already refined
   if (mesh_function.has_child())
@@ -573,9 +573,9 @@ dolfin::adapt(const MeshFunction<uint>& mesh_function,
   return *adapted_mesh_function;
 }
 //-----------------------------------------------------------------------------
-void dolfin::adapt_markers(std::vector<std::pair<uint, uint> >& refined_markers,
+void dolfin::adapt_markers(std::vector<std::pair<std::size_t, std::size_t> >& refined_markers,
                            const Mesh& adapted_mesh,
-                           const std::vector<std::pair<uint, uint> >& markers,
+                           const std::vector<std::pair<std::size_t, std::size_t> >& markers,
                            const Mesh& mesh)
 {
 
@@ -595,10 +595,10 @@ void dolfin::adapt_markers(std::vector<std::pair<uint, uint> >& refined_markers,
 
   // Create map (parent_cell, parent_local_facet) -> [(child_cell,
   // child_local_facet), ...] for boundary facets
-  std::pair<uint, uint> child;
-  std::pair<uint, uint> parent;
-  std::map< std::pair<uint, uint>,
-    std::vector< std::pair<uint, uint> > > children;
+  std::pair<std::size_t, std::size_t> child;
+  std::pair<std::size_t, std::size_t> parent;
+  std::map< std::pair<std::size_t, std::size_t>,
+    std::vector< std::pair<std::size_t, std::size_t> > > children;
 
   const uint D = mesh.topology().dim();
   for (FacetIterator facet(adapted_mesh); !facet.end(); ++facet)
@@ -609,7 +609,7 @@ void dolfin::adapt_markers(std::vector<std::pair<uint, uint> >& refined_markers,
 
     // Extract cell and local facet number
     Cell cell(adapted_mesh, facet->entities(D)[0]);
-    const uint local_facet = cell.index(*facet);
+    const std::size_t local_facet = cell.index(*facet);
 
     child.first = cell.index();
     child.second = local_facet;
@@ -618,11 +618,11 @@ void dolfin::adapt_markers(std::vector<std::pair<uint, uint> >& refined_markers,
     Cell parent_cell(mesh, (*parent_cells)[cell]);
 
     // Extract (global) index of parent facet
-    const uint parent_facet_index = (*parent_facets)[*facet];
+    const std::size_t parent_facet_index = (*parent_facets)[*facet];
 
     // Extract local number of parent facet wrt parent cell
     Facet parent_facet(mesh, parent_facet_index);
-    const uint parent_local_facet = parent_cell.index(parent_facet);
+    const std::size_t parent_local_facet = parent_cell.index(parent_facet);
 
     parent.first = parent_cell.index();
     parent.second = parent_local_facet;
@@ -633,12 +633,12 @@ void dolfin::adapt_markers(std::vector<std::pair<uint, uint> >& refined_markers,
   }
 
   // Use above map to construct refined markers
-  std::vector<std::pair<uint, uint> >  child_facets;
-  std::vector<std::pair<uint, uint> >::const_iterator it;
+  std::vector<std::pair<std::size_t, std::size_t> >  child_facets;
+  std::vector<std::pair<std::size_t, std::size_t> >::const_iterator it;
   for (it = markers.begin(); it != markers.end(); ++it)
   {
     child_facets = children[*it];
-    for (uint k = 0; k < child_facets.size(); k++)
+    for (std::size_t k = 0; k < child_facets.size(); k++)
     {
       refined_markers.push_back(child_facets[k]);
     }

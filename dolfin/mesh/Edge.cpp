@@ -30,7 +30,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 double Edge::length() const
 {
-  const uint* vertices = entities(0);
+  const std::size_t* vertices = entities(0);
   dolfin_assert(vertices);
 
   const Vertex v0(*_mesh, vertices[0]);
@@ -48,8 +48,8 @@ double Edge::length() const
 //-----------------------------------------------------------------------------
 double Edge::dot(const Edge& edge) const
 {
-  const uint* v0 = entities(0);
-  const uint* v1 = edge.entities(0);
+  const std::size_t* v0 = entities(0);
+  const std::size_t* v1 = edge.entities(0);
   dolfin_assert(v0);
   dolfin_assert(v1);
 

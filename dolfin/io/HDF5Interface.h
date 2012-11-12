@@ -59,8 +59,8 @@ namespace dolfin
     static void write_dataset(const hid_t file_handle,
                               const std::string dataset_name,
                               const std::vector<T>& data,
-                              const std::pair<uint, uint> range,
-                              const std::vector<uint> global_size,
+                              const std::pair<std::size_t, std::size_t> range,
+                              const std::vector<std::size_t> global_size,
                               bool use_mpio, bool use_chunking);
 
     /// Read data from a HDF5 dataset as defined by range blocks on
@@ -70,7 +70,7 @@ namespace dolfin
     template <typename T>
     static void read_dataset(const hid_t file_handle,
                              const std::string dataset_name,
-                             const std::pair<uint, uint> range,
+                             const std::pair<std::size_t, std::size_t> range,
                              std::vector<T>& data);
 
     /// Check for existence of group in HDF5 file
@@ -94,8 +94,8 @@ namespace dolfin
                                       const std::string group_name);
 
     /// Get dataset size (size of each dimension)
-    static std::vector<uint> get_dataset_size(const hid_t hdf5_file_handle,
-                                              const std::string dataset_name);
+    static std::vector<std::size_t> get_dataset_size(const hid_t hdf5_file_handle,
+                                                      const std::string dataset_name);
 
     /// Return list all datasets in named group of file
     static std::vector<std::string> dataset_list(const hid_t hdf5_file_handle,
@@ -154,8 +154,8 @@ namespace dolfin
   inline void HDF5Interface::write_dataset(const hid_t file_handle,
                                            const std::string dataset_name,
                                            const std::vector<T>& data,
-                                           const std::pair<uint, uint> range,
-                                           const std::vector<uint> global_size,
+                                           const std::pair<std::size_t, std::size_t> range,
+                                           const std::vector<std::size_t> global_size,
                                            bool use_mpi_io, bool use_chunking)
   {
     // Data rank
@@ -262,7 +262,7 @@ namespace dolfin
   template <typename T>
   inline void HDF5Interface::read_dataset(const hid_t file_handle,
                                           const std::string dataset_name,
-                                          const std::pair<uint, uint> range,
+                                          const std::pair<std::size_t, std::size_t> range,
                                           std::vector<T>& data)
   {
     // Open the dataset
@@ -310,8 +310,8 @@ namespace dolfin
     dolfin_assert (memspace != HDF5_FAIL);
 
     // Resize local data to read into
-    uint data_size = 1;
-    for (uint i = 0; i < count.size(); ++i)
+    std::size_t data_size = 1;
+    for (std::size_t i = 0; i < count.size(); ++i)
       data_size *= count[i];
     data.resize(data_size);
 

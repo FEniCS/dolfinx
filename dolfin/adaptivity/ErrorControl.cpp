@@ -134,7 +134,7 @@ void ErrorControl::compute_dual(Function& z,
 
   // Create dual boundary conditions by homogenizing
   std::vector<boost::shared_ptr<const BoundaryCondition> > dual_bcs;
-  for (uint i = 0; i < bcs.size(); i++)
+  for (std::size_t i = 0; i < bcs.size(); i++)
   {
     // Only handle DirichletBCs
     const DirichletBC* bc_ptr = dynamic_cast<const DirichletBC*>(bcs[i].get());
@@ -234,7 +234,7 @@ void ErrorControl::compute_indicators(MeshFunction<double>& indicators,
   // Convert DG_0 vector to mesh function over cells
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    const std::vector<uint>& dofs = dofmap.cell_dofs(cell->index());
+    const std::vector<std::size_t>& dofs = dofmap.cell_dofs(cell->index());
     dolfin_assert(dofs.size() == 1);
     indicators[cell->index()] = x[dofs[0]];
   }
@@ -292,7 +292,7 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
 
   // Define matrices for cell-residual problems
   dolfin_assert(V.element());
-  const uint N = V.element()->space_dimension();
+  const std::size_t N = V.element()->space_dimension();
   arma::mat A(N, N);
   arma::mat b(N, 1);
   arma::vec x(N);
@@ -318,7 +318,7 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
     x = arma::solve(A, b);
 
     // Get local-to-global dof map for cell
-    const std::vector<uint>& dofs = dofmap.cell_dofs(cell->index());
+    const std::vector<std::size_t>& dofs = dofmap.cell_dofs(cell->index());
 
     // Plug local solution into global vector
     dolfin_assert(R_T.vector());
@@ -337,7 +337,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   dolfin_assert(R_dT[0].function_space());
   const FunctionSpace& V = *R_dT[0].function_space();
   dolfin_assert(V.element());
-  const uint N = V.element()->space_dimension();
+  const std::size_t N = V.element()->space_dimension();
 
   // Extract mesh
   dolfin_assert(V.mesh());
@@ -375,9 +375,9 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   arma::vec x(N);
 
   // Variables to be used for the construction of the cone function
-  const uint num_cells = mesh.num_cells();
+  const std::size_t num_cells = mesh.num_cells();
   const std::vector<double> ones(num_cells, 1.0);
-  std::vector<uint> facet_dofs(num_cells);
+  std::vector<std::size_t> facet_dofs(num_cells);
 
   // Extract cell_domains etc from right-hand side form
   dolfin_assert(_L_R_T);
@@ -397,11 +397,11 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
     dolfin_assert(_cell_cone->vector());
     *(_cell_cone->vector()) = 0.0;
     facet_dofs.clear();
-    const uint local_facet_dof = local_cone_dim - (dim + 1) + local_facet;
+    const std::size_t local_facet_dof = local_cone_dim - (dim + 1) + local_facet;
     dolfin_assert(_cell_cone->function_space());
     dolfin_assert(_cell_cone->function_space()->dofmap());
     const GenericDofMap& cone_dofmap(*(_cell_cone->function_space()->dofmap()));
-    for (uint k = 0; k < num_cells; k++)
+    for (std::size_t k = 0; k < num_cells; k++)
       facet_dofs.push_back(cone_dofmap.cell_dofs(k)[local_facet_dof]);
     _cell_cone->vector()->set(&ones[0], num_cells, &facet_dofs[0]);
 
@@ -423,7 +423,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
                                exterior_facet_domains, interior_facet_domains);
 
       // Non-singularize local matrix
-      for (uint i = 0; i < N; ++i)
+      for (std::size_t i = 0; i < N; ++i)
       {
         if (std::abs(A(i, i)) < 1.0e-10)
         {
@@ -436,7 +436,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
       x = arma::solve(A, b);
 
       // Get local-to-global dof map for cell
-      const std::vector<uint>& dofs = dofmap.cell_dofs(cell->index());
+      const std::vector<std::size_t>& dofs = dofmap.cell_dofs(cell->index());
 
       // Plug local solution into global vector
       dolfin_assert(R_dT[local_facet].vector());

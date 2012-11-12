@@ -45,7 +45,7 @@ namespace dolfin
     //--- Implementation of the GenericLinearOperator interface ---
 
     /// Return size of given dimension
-    virtual uint size(uint dim) const;
+    virtual std::size_t size(uint dim) const;
 
     /// Compute matrix-vector product y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const;
@@ -56,13 +56,13 @@ namespace dolfin
   protected:
 
     // Initialization
-    void init(uint M, uint N, GenericLinearOperator* wrapper);
+    void init(std::size_t M, std::size_t N, GenericLinearOperator* wrapper);
 
     // Pointer to wrapper
     GenericLinearOperator* _wrapper;
 
     // Dimensions
-    uint M, N;
+    std::size_t M, N;
 
   };
 

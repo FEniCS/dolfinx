@@ -90,7 +90,7 @@ void OpenMpAssembler::assemble(GenericTensor& A, const Form& a,
     coefficients[i]->update();
 
   // Initialize global tensor
-  const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > periodic_master_slave_dofs;
+  const std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > > periodic_master_slave_dofs;
   init_global_tensor(A, a, periodic_master_slave_dofs);
 
   // FIXME: The below selections should be made robust
@@ -143,7 +143,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dof map for a cell
-  std::vector<const std::vector<uint>* > dofs(form_rank);
+  std::vector<const std::vector<std::size_t>* > dofs(form_rank);
 
   // Color mesh
   std::vector<uint> coloring_type = a.coloring(mesh.topology().dim());
@@ -151,7 +151,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
 
   // Get coloring data
   std::map<const std::vector<uint>,
-           std::pair<std::vector<std::size_t>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
+           std::pair<std::vector<uint>, std::vector<std::vector<std::size_t> > > >::const_iterator mesh_coloring;
   mesh_coloring = mesh.topology().coloring.find(coloring_type);
   if (mesh_coloring == mesh.topology().coloring.end())
   {
@@ -161,18 +161,18 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
   }
 
   // Get coloring data
-  const std::vector<std::vector<uint> >& entities_of_color = mesh_coloring->second.second;
+  const std::vector<std::vector<std::size_t> >& entities_of_color = mesh_coloring->second.second;
 
   // If assembling a scalar we need to ensure each threads assemble its own scalar
   std::vector<double> scalars(num_threads, 0.0);
 
   // Assemble over cells (loop over colours, then cells of same color)
-  const uint num_colors = entities_of_color.size();
+  const std::size_t num_colors = entities_of_color.size();
   Progress p("Assembling cells (threaded)", num_colors);
   for (uint color = 0; color < num_colors; ++color)
   {
     // Get the array of cell indices of current color
-    const std::vector<uint>& colored_cells = entities_of_color[color];
+    const std::vector<std::size_t>& colored_cells = entities_of_color[color];
 
     // Number of cells of current color
     const int num_cells = colored_cells.size();
@@ -182,7 +182,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
     for (int cell_index = 0; cell_index < num_cells; ++cell_index)
     {
       // Cell index
-      const uint index = colored_cells[cell_index];
+      const std::size_t index = colored_cells[cell_index];
 
       // Create cell
       const Cell cell(mesh, index);
@@ -273,7 +273,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dof maps for a cell
-  std::vector<const std::vector<uint>* > dofs(form_rank);
+  std::vector<const std::vector<std::size_t>* > dofs(form_rank);
 
   // FIXME: Pass or determine coloring type
   // Define graph type
@@ -282,7 +282,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 
   // Get coloring data
   std::map<const std::vector<uint>,
-           std::pair<std::vector<std::size_t>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
+           std::pair<std::vector<uint>, std::vector<std::vector<std::size_t> > > >::const_iterator mesh_coloring;
   mesh_coloring = mesh.topology().coloring.find(coloring_type);
   if (mesh_coloring == mesh.topology().coloring.end())
   {
@@ -292,7 +292,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   }
 
   // Get coloring data
-  const std::vector<std::vector<uint> >& entities_of_color = mesh_coloring->second.second;
+  const std::vector<std::vector<std::size_t> >& entities_of_color = mesh_coloring->second.second;
 
   // If assembling a scalar we need to ensure each threads assemble its own scalar
   std::vector<double> scalars(num_threads, 0.0);
@@ -302,7 +302,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   for (uint color = 0; color < num_colors; ++color)
   {
     // Get the array of cell indices of current color
-    const std::vector<uint>& colored_cells = entities_of_color[color];
+    const std::vector<std::size_t>& colored_cells = entities_of_color[color];
 
     // Number of cells of current color
     const int num_cell_in_color = colored_cells.size();
@@ -313,7 +313,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
     for (int index = 0; index < num_cell_in_color; ++index)
     {
       // Cell index
-      const uint cell_index = colored_cells[index];
+      const std::size_t cell_index = colored_cells[index];
 
       // Create cell
       const Cell cell(mesh, cell_index);
@@ -364,7 +364,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
         {
 
           // Get global facet index
-          const uint facet_index = connectivity(cell_index)[local_facet];
+          const std::size_t facet_index = connectivity(cell_index)[local_facet];
           const uint facet_domain = (*exterior_facet_domains)[facet_index];
 
           if (facet_domain < ufc.form.num_exterior_facet_domains())
@@ -455,7 +455,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dofs for cells
-  std::vector<std::vector<uint> > macro_dofs(form_rank);
+  std::vector<std::vector<std::size_t> > macro_dofs(form_rank);
 
   // Interior facet integral
   const ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0].get();
@@ -476,10 +476,8 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
   }
 
   // Get coloring data
-  //std::map<const std::vector<uint>,
-  //         std::pair<MeshFunction<uint>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
   std::map<const std::vector<uint>,
-           std::pair<std::vector<std::size_t>, std::vector<std::vector<uint> > > >::const_iterator mesh_coloring;
+           std::pair<std::vector<uint>, std::vector<std::vector<std::size_t> > > >::const_iterator mesh_coloring;
   mesh_coloring = mesh.topology().coloring.find(coloring_type);
 
   // Check that requested coloring has been computed
@@ -491,14 +489,14 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
   }
 
   // Get coloring data
-  const std::vector<std::vector<uint> >& entities_of_color = mesh_coloring->second.second;
+  const std::vector<std::vector<std::size_t> >& entities_of_color = mesh_coloring->second.second;
 
   // Assemble over interior facets (loop over colours, then cells of same color)
   const uint num_colors = entities_of_color.size();
   for (uint color = 0; color < num_colors; ++color)
   {
     // Get the array of facet indices of current color
-    const std::vector<uint>& colored_facets = entities_of_color[color];
+    const std::vector<std::size_t>& colored_facets = entities_of_color[color];
 
     // Number of facets of current color
     const int num_facets = colored_facets.size();
@@ -509,7 +507,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
     for (int facet_index = 0; facet_index < num_facets; ++facet_index)
     {
       // Facet index
-      const uint index = colored_facets[facet_index];
+      const std::size_t index = colored_facets[facet_index];
 
       // Create cell
       const Facet facet(mesh, index);
@@ -551,8 +549,8 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
       for (uint i = 0; i < form_rank; i++)
       {
         // Get dofs for each cell
-        const std::vector<uint>& cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
-        const std::vector<uint>& cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
+        const std::vector<std::size_t>& cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
+        const std::vector<std::size_t>& cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
 
         // Create space in macro dof vector
         macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());

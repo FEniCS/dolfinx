@@ -89,11 +89,11 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
 {
   // Get cell type and geometric dimension
   const std::string cell_type_str = mesh_node.attribute("celltype").value();
-  const unsigned int gdim = mesh_node.attribute("dim").as_uint();
+  const uint gdim = mesh_node.attribute("dim").as_uint();
 
   // Get topological dimension
   boost::scoped_ptr<CellType> cell_type(CellType::create(cell_type_str));
-  const unsigned int tdim = cell_type->dim();
+  const uint tdim = cell_type->dim();
 
   // Create mesh for editing
   MeshEditor editor;
@@ -104,7 +104,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
   dolfin_assert(xml_vertices);
 
   // Get number of vertices and init editor
-  const unsigned int num_vertices = xml_vertices.attribute("size").as_uint();
+  const std::size_t num_vertices = xml_vertices.attribute("size").as_uint();
   editor.init_vertices(num_vertices);
 
   // Iterate over vertices and add to mesh
@@ -112,7 +112,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
   for (pugi::xml_node_iterator it = xml_vertices.begin();
        it != xml_vertices.end(); ++it)
   {
-    const unsigned int index = it->attribute("index").as_uint();
+    const std::size_t index = it->attribute("index").as_uint();
     p[0] = it->attribute("x").as_double();
     p[1] = it->attribute("y").as_double();
     p[2] = it->attribute("z").as_double();
@@ -124,7 +124,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
   dolfin_assert(xml_cells);
 
   // Get number of cells and init editor
-  const unsigned int num_cells = xml_cells.attribute("size").as_uint();
+  const std::size_t num_cells = xml_cells.attribute("size").as_uint();
   editor.init_cells(num_cells);
 
   // Create list of vertex index attribute names
@@ -134,10 +134,10 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
     v_str[i] = "v" + boost::lexical_cast<std::string, unsigned int>(i);
 
   // Iterate over cells and add to mesh
-  std::vector<unsigned int> v(num_vertices_per_cell);
+  std::vector<std::size_t> v(num_vertices_per_cell);
   for (pugi::xml_node_iterator it = xml_cells.begin(); it != xml_cells.end(); ++it)
   {
-    const unsigned int index = it->attribute("index").as_uint();
+    const std::size_t index = it->attribute("index").as_uint();
     for (unsigned int i = 0; i < num_vertices_per_cell; ++i)
       v[i] = it->attribute(v_str[i].c_str()).as_uint();
     editor.add_cell(index, v);
@@ -296,13 +296,13 @@ void XMLMesh::read_array_uint(std::vector<unsigned int>& array,
   }
 
   // Get size and resize vector
-  const unsigned int size = xml_array.attribute("size").as_uint();
+  const std::size_t size = xml_array.attribute("size").as_uint();
   array.resize(size);
 
   // Iterate over array entries
   for (pugi::xml_node_iterator it = xml_array.begin(); it !=xml_array.end(); ++it)
   {
-    const unsigned int index = it->attribute("index").as_uint();
+    const std::size_t index = it->attribute("index").as_uint();
     const double value = it->attribute("value").as_uint();
     dolfin_assert(index < size);
     array[index] = value;
@@ -325,7 +325,7 @@ void XMLMesh::write_mesh(const Mesh& mesh, pugi::xml_node mesh_node)
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     pugi::xml_node vertex_node = vertices_node.append_child("vertex");
-    vertex_node.append_attribute("index") = v->index();
+    vertex_node.append_attribute("index") = (uint) v->index();
 
     const Point p = v->point();
     switch (mesh.geometry().dim())
@@ -363,27 +363,27 @@ void XMLMesh::write_mesh(const Mesh& mesh, pugi::xml_node mesh_node)
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     pugi::xml_node cell_node = cells_node.append_child(cell_type.c_str());
-    cell_node.append_attribute("index") = c->index();
+    cell_node.append_attribute("index") = (uint) c->index();
 
-    const uint* vertices = c->entities(0);
+    const std::size_t* vertices = c->entities(0);
     dolfin_assert(vertices);
 
     switch (_cell_type)
     {
     case CellType::interval:
-      cell_node.append_attribute("v0") = vertices[0];
-      cell_node.append_attribute("v1") = vertices[1];
+      cell_node.append_attribute("v0") = (uint) vertices[0];
+      cell_node.append_attribute("v1") = (uint) vertices[1];
       break;
     case CellType::triangle:
-      cell_node.append_attribute("v0") = vertices[0];
-      cell_node.append_attribute("v1") = vertices[1];
-      cell_node.append_attribute("v2") = vertices[2];
+      cell_node.append_attribute("v0") = (uint) vertices[0];
+      cell_node.append_attribute("v1") = (uint) vertices[1];
+      cell_node.append_attribute("v2") = (uint) vertices[2];
       break;
     case CellType::tetrahedron:
-      cell_node.append_attribute("v0") = vertices[0];
-      cell_node.append_attribute("v1") = vertices[1];
-      cell_node.append_attribute("v2") = vertices[2];
-      cell_node.append_attribute("v3") = vertices[3];
+      cell_node.append_attribute("v0") = (uint) vertices[0];
+      cell_node.append_attribute("v1") = (uint) vertices[1];
+      cell_node.append_attribute("v2") = (uint) vertices[2];
+      cell_node.append_attribute("v3") = (uint) vertices[3];
       break;
     default:
       dolfin_error("XMLMesh.cpp",

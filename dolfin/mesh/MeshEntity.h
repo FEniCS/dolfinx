@@ -60,7 +60,7 @@ namespace dolfin
     ///         The topological dimension.
     ///     index (uint)
     ///         The index.
-    MeshEntity(const Mesh& mesh, uint dim, uint index);
+    MeshEntity(const Mesh& mesh, uint dim, std::size_t index);
 
     /// Destructor
     virtual ~MeshEntity();
@@ -74,7 +74,7 @@ namespace dolfin
     ///         The topological dimension.
     ///     index (uint)
     ///         The index.
-    void init(const Mesh& mesh, uint dim, uint index);
+    void init(const Mesh& mesh, uint dim, std::size_t index);
 
     /// Comparision Operator
     ///
@@ -121,7 +121,7 @@ namespace dolfin
     /// *Returns*
     ///     uint
     ///         The index.
-    uint index() const
+    std::size_t index() const
     { return _local_index; }
 
     /// Return global index of mesh entity
@@ -130,7 +130,7 @@ namespace dolfin
     ///     int
     ///         The global index. Set to -1 if global index has not been
     ///         computed
-    uint global_index() const
+    std::size_t global_index() const
     { return _mesh->topology().global_indices(_dim)[_local_index]; }
 
     /// Return local number of incident mesh entities of given topological dimension
@@ -167,7 +167,7 @@ namespace dolfin
     /// *Returns*
     ///     uint
     ///         The index for incident mesh entities of given dimension.
-    const uint* entities(uint dim) const
+    const std::size_t* entities(uint dim) const
     { return _mesh->topology()(_dim, dim)(_local_index); }
 
     /// Return unique mesh ID
@@ -249,7 +249,7 @@ namespace dolfin
     /// *Returns*
     ///     uint
     ///         The local index of given entity.
-    uint index(const MeshEntity& entity) const;
+    std::size_t index(const MeshEntity& entity) const;
 
     /// Compute midpoint of cell
     ///
@@ -291,7 +291,7 @@ namespace dolfin
     uint _dim;
 
     // Local index of entity within topological dimension
-    uint _local_index;
+    std::size_t _local_index;
 
   };
 

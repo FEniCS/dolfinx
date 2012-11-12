@@ -71,38 +71,39 @@ void DynamicMeshEditor::open(Mesh& mesh, std::string type, uint tdim, uint gdim)
   }
 }
 //-----------------------------------------------------------------------------
-void DynamicMeshEditor::add_vertex(uint v, const Point& p)
+void DynamicMeshEditor::add_vertex(std::size_t v, const Point& p)
 {
   // Resize array if necessary
-  const uint offset = v*gdim;
-  const uint size = offset + gdim;
+  const std::size_t offset = v*gdim;
+  const std::size_t size = offset + gdim;
   if (size > vertex_coordinates.size())
     vertex_coordinates.resize(size, 0.0);
 
   // Set coordinates
-  for (uint i = 0; i < gdim; i++)
+  for (std::size_t i = 0; i < gdim; i++)
     vertex_coordinates[offset + i] = p[i];
 }
 //-----------------------------------------------------------------------------
-void DynamicMeshEditor::add_vertex(uint v, double x)
+void DynamicMeshEditor::add_vertex(std::size_t v, double x)
 {
   Point p(x);
   add_vertex(v, p);
 }
 //-----------------------------------------------------------------------------
-void DynamicMeshEditor::add_vertex(uint v, double x, double y)
+void DynamicMeshEditor::add_vertex(std::size_t v, double x, double y)
 {
   Point p(x, y);
   add_vertex(v, p);
 }
 //-----------------------------------------------------------------------------
-void DynamicMeshEditor::add_vertex(uint v, double x, double y, double z)
+void DynamicMeshEditor::add_vertex(std::size_t v, double x, double y, double z)
 {
   Point p(x, y, z);
   add_vertex(v, p);
 }
 //-----------------------------------------------------------------------------
-void DynamicMeshEditor::add_cell(uint c, const std::vector<uint>& v)
+void DynamicMeshEditor::add_cell(std::size_t c,
+                                 const std::vector<std::size_t>& v)
 {
   // Check size of array
   const uint vertices_per_cell = cell_type->num_vertices(tdim);
@@ -115,36 +116,39 @@ void DynamicMeshEditor::add_cell(uint c, const std::vector<uint>& v)
   }
 
   // Resize array if necessary
-  const uint offset = c*vertices_per_cell;
-  const uint size = offset + vertices_per_cell;
+  const std::size_t offset = c*vertices_per_cell;
+  const std::size_t size = offset + vertices_per_cell;
   if (size > cell_vertices.size())
     cell_vertices.resize(size, 0);
 
   // Set vertices
-  for (uint i = 0; i < vertices_per_cell; i++)
+  for (std::size_t i = 0; i < vertices_per_cell; i++)
     cell_vertices[offset + i] = v[i];
 }
 //-----------------------------------------------------------------------------
-void DynamicMeshEditor::add_cell(uint c, uint v0, uint v1)
+void DynamicMeshEditor::add_cell(std::size_t c, std::size_t v0, std::size_t v1)
 {
-  std::vector<uint> vertices;
+  std::vector<std::size_t> vertices;
   vertices.push_back(v0);
   vertices.push_back(v1);
   add_cell(c, vertices);
 }
 //-----------------------------------------------------------------------------
-void DynamicMeshEditor::add_cell(uint c, uint v0, uint v1, uint v2)
+void DynamicMeshEditor::add_cell(std::size_t c, std::size_t v0,
+                                 std::size_t v1, std::size_t v2)
 {
-  std::vector<uint> vertices;
+  std::vector<std::size_t> vertices;
   vertices.push_back(v0);
   vertices.push_back(v1);
   vertices.push_back(v2);
   add_cell(c, vertices);
 }
 //-----------------------------------------------------------------------------
-void DynamicMeshEditor::add_cell(uint c, uint v0, uint v1, uint v2, uint v3)
+void DynamicMeshEditor::add_cell(std::size_t c, std::size_t v0,
+                                 std::size_t v1, std::size_t v2,
+                                 std::size_t v3)
 {
-  std::vector<uint> vertices;
+  std::vector<std::size_t> vertices;
   vertices.push_back(v0);
   vertices.push_back(v1);
   vertices.push_back(v2);
@@ -162,30 +166,30 @@ void DynamicMeshEditor::close(bool order)
   editor.open(*mesh, cell_type->cell_type(), tdim, gdim);
 
   // Set number of vertices
-  const uint num_vertices = vertex_coordinates.size() / gdim;
+  const std::size_t num_vertices = vertex_coordinates.size() / gdim;
   editor.init_vertices(num_vertices);
 
   // Set number of cells
   const uint vertices_per_cell = cell_type->num_vertices(gdim);
-  const uint num_cells = cell_vertices.size() / vertices_per_cell;
+  const std::size_t num_cells = cell_vertices.size() / vertices_per_cell;
   editor.init_cells(num_cells);
 
   // Add vertices
   std::vector<double> p(gdim);
-  for (uint v = 0; v < num_vertices; v++)
+  for (std::size_t v = 0; v < num_vertices; v++)
   {
-    const uint offset = v*gdim;
-    for (uint i = 0; i < gdim; i++)
+    const std::size_t offset = v*gdim;
+    for (std::size_t i = 0; i < gdim; i++)
       p[i] = vertex_coordinates[offset + i];
     editor.add_vertex(v, p);
   }
 
   // Add cells
-  std::vector<uint> vertices(vertices_per_cell);
-  for (uint c = 0; c < num_cells; c++)
+  std::vector<std::size_t> vertices(vertices_per_cell);
+  for (std::size_t c = 0; c < num_cells; c++)
   {
-    const uint offset = c*vertices_per_cell;
-    for (uint i = 0; i < vertices_per_cell; i++)
+    const std::size_t offset = c*vertices_per_cell;
+    for (std::size_t i = 0; i < vertices_per_cell; i++)
       vertices[i] = cell_vertices[offset + i];
     editor.add_cell(c, vertices);
   }

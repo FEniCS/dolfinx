@@ -34,8 +34,8 @@ TensorLayout::TensorLayout(uint primary_dim, bool sparsity_pattern)
     _sparsity_pattern.reset(new SparsityPattern(primary_dim));
 }
 //-----------------------------------------------------------------------------
-TensorLayout::TensorLayout(const std::vector<uint>& dims, uint primary_dim,
-  const std::vector<std::pair<uint, uint> >& ownership_range,
+TensorLayout::TensorLayout(const std::vector<std::size_t>& dims, uint primary_dim,
+  const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range,
   bool sparsity_pattern)
   : primary_dim(primary_dim), shape(dims), ownership_range(ownership_range)
 {
@@ -50,8 +50,8 @@ TensorLayout::TensorLayout(const std::vector<uint>& dims, uint primary_dim,
     _sparsity_pattern.reset(new SparsityPattern(primary_dim));
 }
 //-----------------------------------------------------------------------------
-void TensorLayout::init(const std::vector<uint>& dims,
-  const std::vector<std::pair<uint, uint> >& ownership_range)
+void TensorLayout::init(const std::vector<std::size_t>& dims,
+  const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range)
 {
   // Only rank 2 sparsity patterns are supported
   dolfin_assert(!(_sparsity_pattern && dims.size() != 2));
@@ -71,13 +71,13 @@ dolfin::uint TensorLayout::rank() const
   return shape.size();
 }
 //-----------------------------------------------------------------------------
-dolfin::uint TensorLayout::size(uint i) const
+std::size_t TensorLayout::size(uint i) const
 {
   dolfin_assert(i < shape.size());
   return shape[i];
 }
 //-----------------------------------------------------------------------------
-std::pair<dolfin::uint, dolfin::uint> TensorLayout::local_range(uint dim) const
+std::pair<std::size_t, std::size_t> TensorLayout::local_range(uint dim) const
 {
   dolfin_assert(dim < 2);
   return ownership_range[dim];

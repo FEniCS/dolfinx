@@ -130,7 +130,7 @@ namespace dolfin
     }
 
     /// Return current position
-    uint pos() const
+    std::size_t pos() const
     { return _pos; }
 
     /// Comparison operator.
@@ -192,13 +192,13 @@ namespace dolfin
     MeshEntity entity;
 
     // Current position
-    uint _pos;
+    std::size_t _pos;
 
     // End position
-    uint pos_end;
+    std::size_t pos_end;
 
     // Mapping from pos to index (if any)
-    const uint* index;
+    const std::size_t* index;
 
   };
 

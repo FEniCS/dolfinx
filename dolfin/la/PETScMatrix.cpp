@@ -317,7 +317,7 @@ void PETScMatrix::zero(uint m, const uint* rows)
   ISDestroy(&is);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::ident(uint m, const uint* rows)
+void PETScMatrix::ident(std::size_t m, const std::size_t* rows)
 {
   dolfin_assert(A);
 

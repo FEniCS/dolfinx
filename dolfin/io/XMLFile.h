@@ -70,7 +70,7 @@ namespace dolfin
 
     // Vector
     void operator>> (GenericVector& input);
-    void read_vector(std::vector<double>& input, std::vector<uint>& indices);
+    void read_vector(std::vector<double>& input, std::vector<std::size_t>& indices);
     void operator<< (const GenericVector& output);
 
     // Parameters

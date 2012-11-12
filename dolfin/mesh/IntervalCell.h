@@ -58,10 +58,11 @@ namespace dolfin
     uint orientation(const Cell& cell) const;
 
     /// Create entities e of given topological dimension from vertices v
-    void create_entities(std::vector<std::vector<uint> >& e, uint dim, const uint* v) const;
+    void create_entities(std::vector<std::vector<std::size_t> >& e, uint dim,
+                         const std::size_t* v) const;
 
     /// Refine cell uniformly
-    void refine_cell(Cell& cell, MeshEditor& editor, uint& current_cell) const;
+    void refine_cell(Cell& cell, MeshEditor& editor, std::size_t& current_cell) const;
 
     /// Compute (generalized) volume (length) of interval
     double volume(const MeshEntity& interval) const;
