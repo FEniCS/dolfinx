@@ -212,7 +212,6 @@
 %shared_ptr(dolfin::GenericLUSolver)
 %shared_ptr(dolfin::KrylovSolver)
 %shared_ptr(dolfin::LUSolver)
-%shared_ptr(dolfin::SingularSolver)
 
 %shared_ptr(dolfin::GenericSparsityPattern)
 %shared_ptr(dolfin::SparsityPattern)
