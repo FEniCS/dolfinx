@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga, 2012
 //
 // First added:  2012-04-13
-// Last changed: 2012-09-05
+// Last changed: 2012-11-12
 
 #include <dolfin.h>
 
@@ -31,9 +31,9 @@ using namespace dolfin;
 int main(int argc, char** argv)
 {
   // Define 3D geometry
-  csg::Box box(0, 0, 0, 1, 1, 1);
-  csg::Sphere sphere(Point(0, 0, 0), 0.3);
-  csg::Cone cone(Point(0, 0, -1), Point(0, 0, 1), .5, .5);
+  Box box(0, 0, 0, 1, 1, 1);
+  Sphere sphere(Point(0, 0, 0), 0.3);
+  Cone cone(Point(0, 0, -1), Point(0, 0, 1), .5, .5);
 
   const boost::shared_ptr<CSGGeometry> g3d = box + cone - sphere;
 

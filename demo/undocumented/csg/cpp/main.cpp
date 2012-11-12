@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga, 2012
 //
 // First added:  2012-04-13
-// Last changed: 2012-09-06
+// Last changed: 2012-11-12
 
 #include <dolfin.h>
 
@@ -31,8 +31,8 @@ using namespace dolfin;
 int main()
 {
   // Define 2D geometry
-  csg::Rectangle r(0.5, 0.5, 1.5, 1.5);
-  csg::Circle c(1, 1, 1);
+  Rectangle r(0.5, 0.5, 1.5, 1.5);
+  Circle c(1, 1, 1);
   boost::shared_ptr<CSGGeometry> g2d = c - r;
 
   // Test printing
