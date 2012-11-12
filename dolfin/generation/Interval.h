@@ -53,9 +53,9 @@ namespace dolfin
     ///
     Interval(uint nx, double a, double b)
       : IntervalMesh(nx, a, b)
-      {
+    {
 	warning("Interval is deprecated. Use IntervalMesh.");
-      }
+    }
 
   };
 

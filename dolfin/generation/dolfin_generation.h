@@ -22,6 +22,8 @@
 #include <dolfin/generation/UnitSphere.h>
 #include <dolfin/generation/BoxMesh.h>
 #include <dolfin/generation/RectangleMesh.h>
+#include <dolfin/generation/IntervalMesh.h>
+#include <dolfin/generation/Interval.h>
 #include <dolfin/generation/CSGGeometry.h>
 #include <dolfin/generation/CSGMeshGenerator.h>
 #include <dolfin/generation/CSGCGALMeshGenerator2D.h>
