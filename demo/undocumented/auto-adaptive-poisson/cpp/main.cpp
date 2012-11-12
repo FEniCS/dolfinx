@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-08-19
-// Last changed: 2012-07-05
+// Last changed: 2012-11-12
 
 #include <dolfin.h>
 #include "AdaptivePoisson.h"
@@ -55,7 +55,7 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   // Create mesh and define function space
-  UnitSquare mesh(8, 8);
+  UnitSquareMesh mesh(8, 8);
   AdaptivePoisson::BilinearForm::TrialSpace V(mesh);
 
   // Define boundary condition

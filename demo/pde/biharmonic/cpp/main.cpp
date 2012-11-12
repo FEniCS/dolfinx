@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2011
 //
 // First added:  2009-06-26
-// Last changed: 2012-07-05
+// Last changed: 2012-11-12
 //
 // This demo program solves the Biharmonic equation,
 //
@@ -65,7 +65,7 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   // Create mesh
-  UnitSquare mesh(32, 32);
+  UnitSquareMesh mesh(32, 32);
 
   // Create functions
   Source f;

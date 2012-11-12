@@ -87,7 +87,7 @@ int main()
   }
 
   // Create mesh
-  UnitCube mesh(16, 16, 16);
+  UnitCubeMesh mesh(16, 16, 16);
 
   // Create function space and subspaces
   Stokes::FunctionSpace W(mesh);

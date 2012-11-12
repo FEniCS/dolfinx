@@ -36,7 +36,7 @@ A mesh is created, and a quadratic finite element function space:
 .. code-block:: python
 
     # Create mesh and define function space
-    mesh = UnitSquare(32, 32)
+    mesh = UnitSquareMesh(32, 32)
     V = FunctionSpace(mesh, "CG", 2)
 
 A subclass of :py:class:`SubDomain <dolfin.cpp.SubDomain>`,

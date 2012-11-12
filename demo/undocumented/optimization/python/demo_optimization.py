@@ -16,12 +16,12 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2008-10-17
-# Last changed: 2009-10-07
+# Last changed: 2012-11-12
 
 from dolfin import *
 
 # Create mesh
-mesh = UnitSquare(16, 16)
+mesh = UnitSquareMesh(16, 16)
 
 # Define function spaces
 P1 = FunctionSpace(mesh, "CG", 1)

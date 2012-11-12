@@ -34,7 +34,7 @@ using a discontinuous Galerkin formulation (interior penalty method).
 # Modified by Anders Logg, 2011
 #
 # First added:  2009-06-26
-# Last changed: 2011-06-28
+# Last changed: 2012-11-12
 
 # Begin demo
 
@@ -45,7 +45,7 @@ parameters["form_compiler"]["cpp_optimize"] = True
 parameters["form_compiler"]["optimize"] = True
 
 # Create mesh and define function space
-mesh = UnitSquare(32, 32)
+mesh = UnitSquareMesh(32, 32)
 V = FunctionSpace(mesh, "CG", 2)
 
 # Define Dirichlet boundary

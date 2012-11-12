@@ -52,7 +52,7 @@ vector element space):
 .. code-block:: python
 
     # Create mesh and define function space
-    mesh = UnitCube(16, 16, 16)
+    mesh = UnitCubeMesh(16, 16, 16)
     V = VectorFunctionSpace(mesh, "Lagrange", 1)
 
 Note that :py:class:`VectorFunctionSpace

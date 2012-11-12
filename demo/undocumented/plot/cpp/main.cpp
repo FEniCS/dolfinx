@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet 2012
 //
 // First added:  2007-05-29
-// Last changed: 2012-09-13
+// Last changed: 2012-11-12
 //
 // This demo illustrates basic plotting.
 
@@ -114,7 +114,7 @@ int main()
   }
 
   // Plot vector function
-  UnitSquare unit_square(16, 16);
+  UnitSquareMesh unit_square(16, 16);
   VectorExpression f_vector;
   for (dolfin::uint i = 0; i < 200; i++)
   {

@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2011
 //
 // First added:  2007-11-23
-// Last changed: 2012-07-05
+// Last changed: 2012-11-12
 //
 // This demo program solves Poisson's equation,
 //
@@ -73,7 +73,7 @@ public:
 int main()
 {
   // Create mesh
-  UnitInterval mesh(50);
+  UnitIntervalMesh mesh(50);
 
   // Create function space
   Poisson::FunctionSpace V(mesh);

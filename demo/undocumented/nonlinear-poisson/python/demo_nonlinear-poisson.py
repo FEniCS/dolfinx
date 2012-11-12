@@ -41,7 +41,7 @@ This is equivalent to solving the variational problem
 # Modified by Harish Narayanan, 2009.
 #
 # First added:  2007-11-14
-# Last changed: 2008-12-26
+# Last changed: 2012-11-12
 
 from dolfin import *
 
@@ -54,7 +54,7 @@ class DirichletBoundary(SubDomain):
         return abs(x[0] - 1.0) < DOLFIN_EPS and on_boundary
 
 # Create mesh and define function space
-mesh = UnitSquare(32, 32)
+mesh = UnitSquareMesh(32, 32)
 File("mesh.pvd") << mesh
 
 V = FunctionSpace(mesh, "CG", 1)
