@@ -145,12 +145,12 @@ MeshDomains::mesh_function(const Mesh& mesh,
   dolfin_assert(D == d || !connectivity.empty());
 
   // Iterate over all values
-  const std::map<std::pair<uint, uint>, uint> values = collection.values();
-  std::map<std::pair<uint, uint>, uint>::const_iterator it;
+  const std::map<std::pair<std::size_t, uint>, uint>& values = collection.values();
+  std::map<std::pair<std::size_t, uint>, uint>::const_iterator it;
   for (it = values.begin(); it != values.end(); ++it)
   {
     // Get marker data
-    const uint cell_index = it->first.first;
+    const std::size_t cell_index = it->first.first;
     const uint local_entity = it->first.second;
     const uint value = it->second;
 

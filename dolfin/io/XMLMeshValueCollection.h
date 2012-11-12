@@ -96,7 +96,7 @@ namespace dolfin
       for (pugi::xml_node_iterator it = mvc_node->begin();
            it != mvc_node->end(); ++it)
       {
-        const uint cell_index = it->attribute("cell_index").as_uint();
+        const std::size_t cell_index = it->attribute("cell_index").as_uint();
         const uint local_entity = it->attribute("local_entity").as_uint();
         const uint value = it->attribute("value").as_uint();
         mesh_value_collection.set_value(cell_index, local_entity, value);
@@ -107,7 +107,7 @@ namespace dolfin
       for (pugi::xml_node_iterator it = mvc_node->begin();
            it != mvc_node->end(); ++it)
       {
-        const uint cell_index = it->attribute("cell_index").as_uint();
+        const std::size_t cell_index = it->attribute("cell_index").as_uint();
         const uint local_entity = it->attribute("local_entity").as_uint();
         const int value = it->attribute("value").as_int();
         mesh_value_collection.set_value(cell_index, local_entity, value);
@@ -118,7 +118,7 @@ namespace dolfin
       for (pugi::xml_node_iterator it = mvc_node->begin();
            it != mvc_node->end(); ++it)
       {
-        const uint cell_index = it->attribute("cell_index").as_uint();
+        const std::size_t cell_index = it->attribute("cell_index").as_uint();
         const uint local_entity = it->attribute("local_entity").as_uint();
         const double value = it->attribute("value").as_double();
         mesh_value_collection.set_value(cell_index, local_entity, value);
@@ -129,7 +129,7 @@ namespace dolfin
       for (pugi::xml_node_iterator it = mvc_node->begin();
            it != mvc_node->end(); ++it)
       {
-        const uint cell_index = it->attribute("cell_index").as_uint();
+        const std::size_t cell_index = it->attribute("cell_index").as_uint();
         const uint local_entity = it->attribute("local_entity").as_uint();
         const bool value = it->attribute("value").as_bool();
         mesh_value_collection.set_value(cell_index, local_entity, value);
@@ -155,17 +155,17 @@ namespace dolfin
     mf_node.append_attribute("name") = mesh_value_collection.name().c_str();
     mf_node.append_attribute("type") = type.c_str();
     mf_node.append_attribute("dim") = mesh_value_collection.dim();
-    mf_node.append_attribute("size") = mesh_value_collection.size();
+    mf_node.append_attribute("size") = (uint) mesh_value_collection.size();
 
     // Add data
-    const std::map<std::pair<uint, uint>, T>&
+    const std::map<std::pair<std::size_t, uint>, T>&
       values = mesh_value_collection.values();
-    typename std::map<std::pair<uint, uint>, T>::const_iterator it;
+    typename std::map<std::pair<std::size_t, uint>, T>::const_iterator it;
     for (it = values.begin(); it != values.end(); ++it)
     {
       pugi::xml_node entity_node = mf_node.append_child("value");
-      entity_node.append_attribute("cell_index") = it->first.first;
-      entity_node.append_attribute("local_entity") = it->first.second;
+      entity_node.append_attribute("cell_index") = (uint) it->first.first;
+      entity_node.append_attribute("local_entity") = (uint) it->first.second;
       entity_node.append_attribute("value") = it->second;
     }
   }

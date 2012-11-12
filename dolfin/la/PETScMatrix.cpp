@@ -246,9 +246,11 @@ void PETScMatrix::add(const double* block, std::size_t m, const std::size_t* row
                                            std::size_t n, const std::size_t* cols)
 {
   dolfin_assert(A);
+  std::vector<PetscInt> _rows(rows, rows + m);
+  std::vector<PetscInt> _cols(rows, rows + n);
   MatSetValues(*A,
-               static_cast<int>(m), reinterpret_cast<const int*>(rows),
-               static_cast<int>(n), reinterpret_cast<const int*>(cols),
+               m, _rows.data(),
+               n, _cols.data(),
                block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------

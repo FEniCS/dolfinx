@@ -129,7 +129,7 @@ const MeshData& Mesh::data() const
   return _data;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Mesh::init(uint dim) const
+std::size_t Mesh::init(uint dim) const
 {
   // This function is obviously not const since it may potentially compute
   // new connectivity. However, in a sense all connectivity of a mesh always
@@ -340,7 +340,7 @@ const std::vector<dolfin::uint>& Mesh::color(std::vector<uint> coloring_type) co
   return MeshColoring::color(*_mesh, coloring_type);
 }
 //-----------------------------------------------------------------------------
-void Mesh::intersected_cells(const Point& point, std::set<uint>& cells) const
+void Mesh::intersected_cells(const Point& point, std::set<std::size_t>& cells) const
 {
   // CGAL needs mesh with more than 1 cell
   if (num_cells() > 1)
@@ -355,7 +355,7 @@ void Mesh::intersected_cells(const Point& point, std::set<uint>& cells) const
 }
 //-----------------------------------------------------------------------------
 void Mesh::intersected_cells(const std::vector<Point>& points,
-                             std::set<uint>& cells) const
+                             std::set<std::size_t>& cells) const
 {
   // CGAL needs mesh with more than 1 cell
   if (num_cells() > 1)
@@ -373,7 +373,7 @@ void Mesh::intersected_cells(const std::vector<Point>& points,
 }
 //-----------------------------------------------------------------------------
 void Mesh::intersected_cells(const MeshEntity & entity,
-                             std::vector<uint>& cells) const
+                             std::vector<std::size_t>& cells) const
 {
   // CGAL needs mesh with more than 1 cell
   if (num_cells() > 1)
@@ -388,7 +388,7 @@ void Mesh::intersected_cells(const MeshEntity & entity,
 }
 //-----------------------------------------------------------------------------
 void Mesh::intersected_cells(const std::vector<MeshEntity>& entities,
-                             std::set<uint>& cells) const
+                             std::set<std::size_t>& cells) const
 {
   // CGAL needs mesh with more than 1 cell
   if (num_cells() > 1)
@@ -407,7 +407,7 @@ void Mesh::intersected_cells(const std::vector<MeshEntity>& entities,
 }
 //-----------------------------------------------------------------------------
 void Mesh::intersected_cells(const Mesh& another_mesh,
-                             std::set<uint>& cells) const
+                             std::set<std::size_t>& cells) const
 {
   _intersection_operator.all_intersected_entities(another_mesh, cells);
 }
@@ -428,7 +428,7 @@ Point Mesh::closest_point(const Point& point) const
   return _intersection_operator.closest_point(point);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Mesh::closest_cell(const Point & point) const
+std::size_t Mesh::closest_cell(const Point & point) const
 {
   // CGAL exits with an assertion error whilst performing
   // the closest cell query if num_cells() == 1
@@ -439,7 +439,7 @@ dolfin::uint Mesh::closest_cell(const Point & point) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-std::pair<Point,dolfin::uint>
+std::pair<Point, std::size_t>
 Mesh::closest_point_and_cell(const Point & point) const
 {
   return _intersection_operator.closest_point_and_cell(point);

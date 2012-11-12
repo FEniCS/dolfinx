@@ -30,18 +30,18 @@
 
 using namespace dolfin;
 using dolfin::uint;
-  
-  template <uint dim0, uint dim1> 
-  void testEntityEntityIntersection(const Mesh & mesh)
+
+  template <uint dim0, uint dim1>
+  void testEntityEntityIntersection(const Mesh& mesh)
   {
     //Compute incidences
-    mesh.init(dim0,dim1);
-    mesh.init(dim1,dim0);
-    mesh.init(0,dim0);
+    mesh.init(dim0, dim1);
+    mesh.init(dim1, dim0);
+    mesh.init(0, dim0);
 
-    uint label = 1;
-    //Default is to mark all entities
-    MeshFunction<uint> labels(mesh,dim0,label);
+    std::size_t label = 1;
+    // Default is to mark all entities
+    MeshFunction<std::size_t> labels(mesh, dim0, label);
     IntersectionOperator io(labels, label, "ExactPredicates");
 
     // Iterator over all entities and compute self-intersection
@@ -50,7 +50,7 @@ using dolfin::uint;
     for (MeshEntityIterator entity(mesh,dim1); !entity.end(); ++entity)
     {
       // Compute intersection
-      std::vector<uint> ids_result;
+      std::vector<std::size_t> ids_result;
       io.all_intersected_entities(*entity,ids_result);
       //sort them but they are already unique.
       std::sort(ids_result.begin(),ids_result.end());
@@ -58,39 +58,39 @@ using dolfin::uint;
       // Compute intersections via vertices and connectivity
       // information. Two entities of the same only intersect
       // if they share at least one verte
-      std::vector<uint> ids_result_2;
+      std::vector<std::size_t> ids_result_2;
       if (dim1 > 0)
       {
-	for (VertexIterator vertex(*entity); !vertex.end(); ++vertex)
-	{
-	  uint num_ent = vertex->num_entities(dim0);
-	  const uint * entities = vertex->entities(dim0);
-	  for (uint i = 0; i < num_ent; ++i)
-	    ids_result_2.push_back(entities[i]);
-	}
+        for (VertexIterator vertex(*entity); !vertex.end(); ++vertex)
+        {
+          std::size_t num_ent = vertex->num_entities(dim0);
+          const std::size_t * entities = vertex->entities(dim0);
+          for (std::size_t i = 0; i < num_ent; ++i)
+            ids_result_2.push_back(entities[i]);
+        }
       }
       // If we have a vertex simply take the incidences.
       else if (dim0 > 0)
       {
-	uint num_ent = entity->num_entities(dim0);
-	const uint * entities = entity->entities(dim0);
-	for (uint i = 0; i < num_ent; ++i)
-	  ids_result_2.push_back(entities[i]);
+        std::size_t num_ent = entity->num_entities(dim0);
+        const std::size_t * entities = entity->entities(dim0);
+        for (std::size_t i = 0; i < num_ent; ++i)
+          ids_result_2.push_back(entities[i]);
       }
       else
       {
-	ids_result_2.push_back(entity->index());
+        ids_result_2.push_back(entity->index());
       }
       //Sorting and removing duplicates
       std::sort(ids_result_2.begin(),ids_result_2.end());
-      std::vector<uint>::iterator it = std::unique(ids_result_2.begin(),ids_result_2.end());
+      std::vector<std::size_t>::iterator it = std::unique(ids_result_2.begin(),ids_result_2.end());
       ids_result_2.resize(it - ids_result_2.begin());
 
       // Check against mesh incidences
-      uint last = ids_result.size() - 1;
-      CPPUNIT_ASSERT(ids_result.size() == ids_result_2.size()); 
-      CPPUNIT_ASSERT(ids_result[0] == ids_result_2[0]); 
-      CPPUNIT_ASSERT(ids_result[last] == ids_result_2[last]); 
+      std::size_t last = ids_result.size() - 1;
+      CPPUNIT_ASSERT(ids_result.size() == ids_result_2.size());
+      CPPUNIT_ASSERT(ids_result[0] == ids_result_2[0]);
+      CPPUNIT_ASSERT(ids_result[last] == ids_result_2[last]);
     }
   }
 
@@ -116,74 +116,74 @@ class IntersectionOperator3D : public CppUnit::TestFixture
 
 public:
 
-  void testCellCellIntersection() 
-  { 
-    uint N = 3;
-    UnitCube mesh(N,N,N);
-    testEntityEntityIntersection<3,3>(mesh);
-  }
-
-  void testCellFacetIntersection() 
+  void testCellCellIntersection()
   {
     uint N = 3;
-    UnitCube mesh(N,N,N);
-    testEntityEntityIntersection<3,2>(mesh);
+    UnitCube mesh(N, N, N);
+    testEntityEntityIntersection<3, 3>(mesh);
   }
 
-  void testCellEdgeIntersection() 
+  void testCellFacetIntersection()
   {
     uint N = 3;
-    UnitCube mesh(N,N,N);
-    testEntityEntityIntersection<3,1>(mesh);
+    UnitCube mesh(N, N, N);
+    testEntityEntityIntersection<3, 2>(mesh);
   }
 
-  void testCellVertexIntersection() 
+  void testCellEdgeIntersection()
   {
     uint N = 3;
-    UnitCube mesh(N,N,N);
-    testEntityEntityIntersection<3,0>(mesh);
+    UnitCube mesh(N, N, N);
+    testEntityEntityIntersection<3, 1>(mesh);
+  }
+
+  void testCellVertexIntersection()
+  {
+    uint N = 3;
+    UnitCube mesh(N, N, N);
+    testEntityEntityIntersection<3, 0>(mesh);
   }
 
   void testFacetFacetIntersection()
   {
     uint N = 3;
-    UnitCube mesh(N,N,N);
-    testEntityEntityIntersection<2,2>(mesh);
+    UnitCube mesh(N, N, N);
+    testEntityEntityIntersection<2, 2>(mesh);
   }
 
-  void testFacetEdgeIntersection() 
+  void testFacetEdgeIntersection()
   {
     uint N = 3;
-    UnitCube mesh(N,N,N);
-    testEntityEntityIntersection<2,1>(mesh);
+    UnitCube mesh(N, N, N);
+    testEntityEntityIntersection<2, 1>(mesh);
   }
 
   void testFacetVertexIntersection()
   {
     uint N = 3;
-    UnitCube mesh(N,N,N);
-    testEntityEntityIntersection<2,0>(mesh);
+    UnitCube mesh(N, N, N);
+    testEntityEntityIntersection<2, 0>(mesh);
   }
 
-  void testEdgeEdgeIntersection() 
+  void testEdgeEdgeIntersection()
   {
     uint N = 3;
-    UnitCube mesh(N,N,N);
-    testEntityEntityIntersection<1,1>(mesh);
+    UnitCube mesh(N, N, N);
+    testEntityEntityIntersection<1, 1>(mesh);
   }
 
   void testEdgeVertexIntersection()
   {
     uint N = 3;
-    UnitCube mesh(N,N,N);
-    testEntityEntityIntersection<1,0>(mesh);
+    UnitCube mesh(N, N, N);
+    testEntityEntityIntersection<1, 0>(mesh);
   }
 
-  void testVertexVertexIntersection() 
-  { 
+  void testVertexVertexIntersection()
+  {
     uint N = 3;
-    UnitCube mesh(N,N,N);
-    testEntityEntityIntersection<0,0>(mesh);
+    UnitCube mesh(N, N, N);
+    testEntityEntityIntersection<0, 0>(mesh);
   }
 
 };
@@ -205,46 +205,46 @@ class IntersectionOperator2D : public CppUnit::TestFixture
 
 public:
 
-  void testCellCellIntersection() 
-  { 
-    uint N = 6;
-    UnitSquare mesh(N,N);
-    testEntityEntityIntersection<2,2>(mesh);
-  }
-
-  void testCellEdgeIntersection() 
+  void testCellCellIntersection()
   {
     uint N = 6;
-    UnitSquare mesh(N,N);
-    testEntityEntityIntersection<2,1>(mesh);
+    UnitSquare mesh(N, N);
+    testEntityEntityIntersection<2, 2>(mesh);
   }
 
-  void testCellVertexIntersection() 
+  void testCellEdgeIntersection()
   {
     uint N = 6;
-    UnitSquare mesh(N,N);
-    testEntityEntityIntersection<2,0>(mesh);
+    UnitSquare mesh(N, N);
+    testEntityEntityIntersection<2, 1>(mesh);
   }
 
-  void testEdgeEdgeIntersection() 
+  void testCellVertexIntersection()
   {
     uint N = 6;
-    UnitSquare mesh(N,N);
-    testEntityEntityIntersection<1,1>(mesh);
+    UnitSquare mesh(N, N);
+    testEntityEntityIntersection<2, 0>(mesh);
+  }
+
+  void testEdgeEdgeIntersection()
+  {
+    uint N = 6;
+    UnitSquare mesh(N, N);
+    testEntityEntityIntersection<1, 1>(mesh);
   }
 
   void testEdgeVertexIntersection()
   {
     uint N = 6;
-    UnitSquare mesh(N,N);
-    testEntityEntityIntersection<1,0>(mesh);
+    UnitSquare mesh(N, N);
+    testEntityEntityIntersection<1, 0>(mesh);
   }
 
-  void testVertexVertexIntersection() 
-  { 
+  void testVertexVertexIntersection()
+  {
     uint N = 6;
-    UnitSquare mesh(N,N);
-    testEntityEntityIntersection<0,0>(mesh);
+    UnitSquare mesh(N, N);
+    testEntityEntityIntersection<0, 0>(mesh);
   }
 
 };
@@ -262,22 +262,22 @@ class IntersectionOperator1D : public CppUnit::TestFixture
 
 public:
 
-  void testCellCellIntersection() 
-  { 
+  void testCellCellIntersection()
+  {
     uint N = 10;
     UnitInterval mesh(N);
     testEntityEntityIntersection<1,1>(mesh);
   }
 
-  void testCellVertexIntersection() 
+  void testCellVertexIntersection()
   {
     uint N = 10;
     UnitInterval mesh(N);
     testEntityEntityIntersection<1,0>(mesh);
   }
 
-  void testVertexVertexIntersection() 
-  { 
+  void testVertexVertexIntersection()
+  {
     uint N = 10;
     UnitInterval mesh(N);
     testEntityEntityIntersection<0,0>(mesh);
@@ -296,5 +296,5 @@ int main()
   }
 
   DOLFIN_TEST;
-  
+
 }

@@ -371,7 +371,10 @@ void PETScVector::add(const double* block, std::size_t m, const std::size_t* row
   if (m == 0)
     return;
 
-  VecSetValues(*x, m, reinterpret_cast<const int*>(rows), block, ADD_VALUES);
+  //VecSetValues(*x, m, reinterpret_cast<const int*>(rows), block, ADD_VALUES);
+
+  std::vector<PetscInt> _rows(rows, rows + m);
+  VecSetValues(*x, m, _rows.data(), block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::apply(std::string mode)

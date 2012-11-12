@@ -43,9 +43,9 @@ public:
     CPPUNIT_ASSERT(dolfin::MPI::sum(markers.size()) == 6);
 
     // Check sum of values
-    const std::map<std::pair<dolfin::uint, dolfin::uint>, dolfin::uint>& values = markers.values();
-    std::map<std::pair<dolfin::uint, dolfin::uint>, dolfin::uint>::const_iterator it;
-    dolfin::uint sum = 0;
+    const std::map<std::pair<std::size_t, dolfin::uint>, dolfin::uint>& values = markers.values();
+    std::map<std::pair<std::size_t, dolfin::uint>, dolfin::uint>::const_iterator it;
+    std::size_t sum = 0;
     for (it = values.begin(); it != values.end(); ++it)
       sum += it->second;
     CPPUNIT_ASSERT(dolfin::MPI::sum(sum) == 48);

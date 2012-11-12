@@ -67,12 +67,12 @@ int main()
     {
       // Compute intersection with boundary of square
       BoundaryMesh boundary(omega1);
-      std::set<dolfin::uint> cells;
+      std::set<std::size_t> cells;
       omega0.intersected_cells(boundary, cells);
 
       // Copy values to mesh function for plotting
       *intersection1 = 0;
-      for (std::set<dolfin::uint>::const_iterator i = cells.begin(); i != cells.end(); i++)
+      for (std::set<std::size_t>::const_iterator i = cells.begin(); i != cells.end(); i++)
         (*intersection1)[*i] = 1;
 
       // Plot intersection
@@ -94,10 +94,10 @@ int main()
     }
   }
 
-
   // Repeat the same with the rotator in the cavity example.
   Rectangle background_mesh(-2.0, -2.0, 2.0, 2.0, 30, 30);
-  boost::shared_ptr<dolfin::MeshFunction<std::size_t> >intersection2(new dolfin::MeshFunction<std::size_t>(background_mesh, background_mesh.topology().dim()));
+  boost::shared_ptr<dolfin::MeshFunction<std::size_t> >
+    intersection2(new dolfin::MeshFunction<std::size_t>(background_mesh, background_mesh.topology().dim()));
 
   VTKPlotter p2(intersection2);
   p2.parameters["rescale"] = true;
@@ -116,14 +116,14 @@ int main()
     double dtheta = 0.1*DOLFIN_PI;
     while (theta < 2*DOLFIN_PI + dtheta)
     {
-      std::set<dolfin::uint> cells;
+      std::set<std::size_t> cells;
       background_mesh.intersected_cells(structure_mesh, cells);
 
       // Mark intersected values
       *intersection2 = 0;
 
       // Copy values to mesh function for plotting
-      for (std::set<dolfin::uint>::const_iterator i = cells.begin(); i != cells.end(); i++)
+      for (std::set<std::size_t>::const_iterator i = cells.begin(); i != cells.end(); i++)
         (*intersection2)[*i] = 1;
 
       p2.plot();

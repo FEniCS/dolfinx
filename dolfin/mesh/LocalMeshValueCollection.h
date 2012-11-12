@@ -90,11 +90,11 @@ namespace dolfin
       send_indices.resize(num_processes);
       send_v.resize(num_processes);
 
-      const std::map<std::pair<uint, uint>, T>& vals = values.values();
+      const std::map<std::pair<std::size_t, uint>, T>& vals = values.values();
       for (uint p = 0; p < num_processes; p++)
       {
-        const std::pair<uint, uint> local_range = MPI::local_range(p, vals.size());
-        typename std::map<std::pair<uint, uint>, T>::const_iterator it = vals.begin();
+        const std::pair<std::size_t, std::size_t> local_range = MPI::local_range(p, vals.size());
+        typename std::map<std::pair<std::size_t, uint>, T>::const_iterator it = vals.begin();
         std::advance(it, local_range.first);
         for (uint i = local_range.first; i < local_range.second; ++i)
         {

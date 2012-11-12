@@ -129,78 +129,78 @@ namespace dolfin
     /// Get number of vertices in mesh.
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         Number of vertices.
     ///
     /// *Example*
     ///     .. note::
     ///
     ///         No example code available for this function.
-    uint num_vertices() const { return _topology.size(0); }
+    std::size_t num_vertices() const { return _topology.size(0); }
 
     /// Get number of edges in mesh.
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         Number of edges.
     ///
     /// *Example*
     ///     .. note::
     ///
     ///         No example code available for this function.
-    uint num_edges() const { return _topology.size(1); }
+    std::size_t num_edges() const { return _topology.size(1); }
 
     /// Get number of faces in mesh.
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         Number of faces.
     ///
     /// *Example*
     ///     .. note::
     ///
     ///         No example code available for this function.
-    uint num_faces() const { return _topology.size(2); }
+    std::size_t num_faces() const { return _topology.size(2); }
 
     /// Get number of facets in mesh.
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         Number of facets.
     ///
     /// *Example*
     ///     .. note::
     ///
     ///         No example code available for this function.
-    uint num_facets() const { return _topology.size(_topology.dim() - 1); }
+    std::size_t num_facets() const { return _topology.size(_topology.dim() - 1); }
 
     /// Get number of cells in mesh.
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         Number of cells.
     ///
     /// *Example*
     ///     .. note::
     ///
     ///         No example code available for this function.
-    uint num_cells() const { return _topology.size(_topology.dim()); }
+    std::size_t num_cells() const { return _topology.size(_topology.dim()); }
 
     /// Get number of entities of given topological dimension.
     ///
     /// *Arguments*
-    ///     d (uint)
+    ///     d (std::size_t)
     ///         Topological dimension.
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         Number of entities of topological dimension d.
     ///
     /// *Example*
     ///     .. note::
     ///
     ///         No example code available for this function.
-    uint num_entities(uint d) const { return _topology.size(d); }
+    std::size_t num_entities(uint d) const { return _topology.size(d); }
 
     /// Get vertex coordinates.
     ///
@@ -220,7 +220,7 @@ namespace dolfin
     /// Get cell connectivity.
     ///
     /// *Returns*
-    ///     uint*
+    ///     std::vector<std::size_t>
     ///         Connectivity for all cells.
     ///
     /// *Example*
@@ -330,7 +330,7 @@ namespace dolfin
     /// *Returns*
     ///     uint
     ///         Number of created entities.
-    uint init(uint dim) const;
+    std::size_t init(uint dim) const;
 
     /// Compute connectivity between given pair of dimensions.
     ///
@@ -486,10 +486,10 @@ namespace dolfin
     ///     point (_Point_)
     ///         A _Point_ object.
     ///
-    ///     cells (std::set<uint>)
+    ///     cells (std::set<std::size_t>)
     ///         A set of indices of all intersected cells.
     void intersected_cells(const Point& point,
-                           std::set<uint>& cells) const;
+                           std::set<std::size_t>& cells) const;
 
     /// Compute all cells which are intersected by any of a vector of points.
     ///
@@ -497,10 +497,10 @@ namespace dolfin
     ///     points (std::vector<_Point_>)
     ///         A vector of _Point_ objects.
     ///
-    ///     cells (std::set<uint>)
+    ///     cells (std::set<std::size_t>)
     ///         A set of indices of all intersected cells.
     void intersected_cells(const std::vector<Point>& points,
-                           std::set<uint>& cells) const;
+                           std::set<std::size_t>& cells) const;
 
     /// Compute all cells which are intersected by the given entity.
     ///
@@ -508,10 +508,10 @@ namespace dolfin
     ///     entity (_MeshEntity_)
     ///         A _MeshEntity_ object.
     ///
-    ///     cells (std::vector<uint>)
+    ///     cells (std::vector<std::size_t>)
     ///         A vector of indices of all intersected cells.
     void intersected_cells(const MeshEntity& entity,
-                           std::vector<uint>& cells) const;
+                           std::vector<std::size_t>& cells) const;
 
     /// Compute all cells which are intersected by any of a vector of entities.
     ///
@@ -519,10 +519,10 @@ namespace dolfin
     ///     entities (std::vector<_MeshEntity_>)
     ///         A vector of _MeshEntity_ objects.
     ///
-    ///     cells (std::set<uint>)
+    ///     cells (std::set<std::size_t>)
     ///         A vector of indices of all intersected cells.
     void intersected_cells(const std::vector<MeshEntity>& entities,
-                           std::set<uint>& cells) const;
+                           std::set<std::size_t>& cells) const;
 
     /// Compute all cells which are intersected by the given mesh.
     ///
@@ -530,10 +530,10 @@ namespace dolfin
     ///     mesh (_Mesh_)
     ///         A _Mesh_ object.
     ///
-    ///     cells (std::set<uint>)
+    ///     cells (std::set<std::size_t>)
     ///         A set of indices of all intersected cells.
     void intersected_cells(const Mesh& mesh,
-                           std::set<uint>& cells) const;
+                           std::set<std::size_t>& cells) const;
 
     /// Find the cell (if any) containing the given point. If the point
     /// is contained in several cells, the first cell is returned.
@@ -566,7 +566,7 @@ namespace dolfin
     ///         A _Point_ object.
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The index of the closest cell.
     ///
     /// *Example*
@@ -579,7 +579,7 @@ namespace dolfin
     ///     output::
     ///
     ///         1
-    dolfin::uint closest_cell(const Point& point) const;
+    std::size_t closest_cell(const Point& point) const;
 
     /// Find the point and corresponding cell closest to the given point.
     ///
@@ -588,9 +588,9 @@ namespace dolfin
     ///         A _Point_ object.
     ///
     /// *Returns*
-    ///     std::pair<_Point_, uint>
+    ///     std::pair<_Point_, std::size_t>
     ///         A pair consisting of the closest point and corresponding cell index.
-    std::pair<Point, dolfin::uint> closest_point_and_cell(const Point& point) const;
+    std::pair<Point, std::size_t> closest_point_and_cell(const Point& point) const;
 
     /// Computes the distance between a given point and the mesh
     ///
@@ -635,7 +635,7 @@ namespace dolfin
     /// geometry and mesh topology.
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         A tree-hashed value of the coordinates over all MPI processes
     ///
     std::size_t hash() const;

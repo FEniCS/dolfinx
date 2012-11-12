@@ -319,7 +319,7 @@ void XMLMesh::write_mesh(const Mesh& mesh, pugi::xml_node mesh_node)
 
   // Add vertices node
   pugi::xml_node vertices_node = mesh_node.append_child("vertices");
-  vertices_node.append_attribute("size") = mesh.num_vertices();
+  vertices_node.append_attribute("size") = (uint) mesh.num_vertices();
 
   // Write each vertex
   for (VertexIterator v(mesh); !v.end(); ++v)
@@ -357,7 +357,7 @@ void XMLMesh::write_mesh(const Mesh& mesh, pugi::xml_node mesh_node)
 
   // Add cells node
   pugi::xml_node cells_node = mesh_node.append_child("cells");
-  cells_node.append_attribute("size") = mesh.num_cells();
+  cells_node.append_attribute("size") = (uint) mesh.num_cells();
 
   // Add each cell
   for (CellIterator c(mesh); !c.end(); ++c)
@@ -419,7 +419,7 @@ void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
     pugi::xml_node mf_node = data_entry_node.append_child("mesh_function");
     mf_node.append_attribute("type") = "uint";
     mf_node.append_attribute("dim") = mf->dim();
-    mf_node.append_attribute("size") = mf->size();
+    mf_node.append_attribute("size") = (uint) mf->size();
 
     for (uint i = 0; i < mf->size(); i++)
     {
