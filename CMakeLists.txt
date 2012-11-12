@@ -78,6 +78,7 @@ list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "Sphinx")
 list(APPEND OPTIONAL_PACKAGES "HDF5")
 list(APPEND OPTIONAL_PACKAGES "VTK")
+list(APPEND OPTIONAL_PACKAGES "QT")
 
 # Add options
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
@@ -403,14 +404,19 @@ if (DOLFIN_ENABLE_DOCS AND PYTHON_FOUND)
   find_package(Sphinx 1.0.7)
 endif()
 
+# Check for Qt4
+if (DOLFIN_ENABLE_QT)
+  find_package(Qt4)
+endif()
+
 # Check for VTK
 if (DOLFIN_ENABLE_VTK)
   find_package(VTK QUIET HINTS ${VTK_DIR} $ENV{VTK_DIR})
   set(VTK_VERSION "${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}")
   if (VTK_FOUND)
-    if ("${VTK_VERSION}" VERSION_LESS "5.8")
+    if ("${VTK_VERSION}" VERSION_LESS "5.2")
       set(VTK_FOUND FALSE)
-      message(WARNING "Unable to find VTK (>= 5.8)")
+      message(WARNING "Unable to find VTK (>= 5.2)")
     else()
       message(STATUS "Found VTK: ${VTK_DIR} (found version \"${VTK_VERSION}\")")
     endif()

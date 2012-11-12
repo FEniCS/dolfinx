@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Kristian B. Oelgaard
+// Copyright (C) 2012 Benjamin Kehlet
 //
 // This file is part of DOLFIN.
 //
@@ -15,15 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by N. Lopes, 2008.
-//
-// First added:  2007-11-23
-// Last changed: 2008-10-13
+// First added:  2012-11-10
+// Last changed: 2012-11-10
 
 #ifndef __INTERVAL_H
 #define __INTERVAL_H
 
-#include "dolfin/mesh/Mesh.h"
+#include "dolfin/generation/IntervalMesh.h"
 
 namespace dolfin
 {
@@ -31,8 +29,9 @@ namespace dolfin
   /// Interval mesh of the 1D line [a,b].  Given the number of cells
   /// (nx) in the axial direction, the total number of intervals will
   /// be nx and the total number of vertices will be (nx + 1).
-
-  class Interval : public Mesh
+  ///
+  /// This class is deprecated. Use _IntervalMesh_.
+  class Interval : public IntervalMesh
   {
   public:
 
@@ -52,7 +51,11 @@ namespace dolfin
     ///         // Create a mesh of 25 cells in the interval [-1,1]
     ///         Interval mesh(25, -1.0, 1.0);
     ///
-    Interval(uint nx, double a, double b);
+    Interval(uint nx, double a, double b)
+      : IntervalMesh(nx, a, b)
+      {
+	warning("Interval is deprecated. Use IntervalMesh.");
+      }
 
   };
 

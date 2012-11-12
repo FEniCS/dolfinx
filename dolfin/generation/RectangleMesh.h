@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2005-12-02
-// Last changed: 2011-12-07
+// Last changed: 2012-11-12
 
-#ifndef __RECTANGLE_H
-#define __RECTANGLE_H
+#ifndef __RECTANGLE_MESH_H
+#define __RECTANGLE_MESH_H
 
 #include <dolfin/mesh/Mesh.h>
 
@@ -54,11 +54,11 @@ namespace dolfin
   ///         // set [-1,2] x [-1,2]
   ///         Box mesh(-1, -1, 2, 2, 6, 6;
 
-  class Rectangle : public Mesh
+  class RectangleMesh : public Mesh
   {
   public:
 
-    Rectangle(double x0, double y0, double x1, double y1,
+    RectangleMesh(double x0, double y0, double x1, double y1,
               uint nx, uint ny, std::string diagonal="right");
 
   };

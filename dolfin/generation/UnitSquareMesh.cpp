@@ -16,57 +16,44 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells 2007.
-// Modified by Nuno Lopes 2008.
 // Modified by Kristian B. Oelgaard 2009.
 //
 // First added:  2005-12-02
 // Last changed: 2009-09-29
 
-#include <boost/assign.hpp>
-
-#include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshEditor.h>
-#include "Rectangle.h"
+#include "UnitSquareMesh.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Rectangle::Rectangle(double x0, double y0, double x1, double y1,
-                     uint nx, uint ny, std::string diagonal) : Mesh()
+UnitSquareMesh::UnitSquareMesh(uint nx, uint ny, std::string diagonal) : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
-
-  // Check options
-  if (diagonal != "left" && diagonal != "right" && diagonal != "right/left" && diagonal != "left/right" && diagonal != "crossed")
+  if (MPI::is_receiver())
   {
-    dolfin_error("Rectangle.cpp",
-                 "create rectangle",
-                 "Unknown mesh diagonal definition: allowed options are \"left\", \"right\", \"left/right\", \"right/left\" and \"crossed\"");
+    MeshPartitioning::build_distributed_mesh(*this);
+    return;
   }
 
-  const double a = x0;
-  const double b = x1;
-  const double c = y0;
-  const double d = y1;
-
-  if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS)
+  if (diagonal != "left" && diagonal != "right" && diagonal != "right/left"
+      && diagonal != "left/right"  && diagonal != "crossed")
   {
-    dolfin_error("Rectangle.cpp",
-                 "create rectangle",
-                 "Rectangle seems to have zero width, height or depth. Consider checking your dimensions");
+    dolfin_error("UnitSquareMesh.cpp",
+                 "create unit square",
+                 "Unknown mesh diagonal definition: allowed options are \"left\", \"right\", \"left/right\", \"right/left\" and \"crossed\"");
   }
 
   if (nx < 1 || ny < 1)
   {
-    dolfin_error("Rectangle.cpp",
-                 "create rectangle",
-                 "Rectangle has non-positive number of vertices in some dimension: number of vertices must be at least 1 in each dimension");
+    dolfin_error("UnitSquareMesh.cpp",
+                 "create unit square",
+                 "Unit square has non-positive number of vertices in some dimension: number of vertices must be at least 1 in each dimension");
   }
+  rename("mesh", "Mesh of the unit square (0,1) x (0,1)");
 
-  rename("mesh", "Mesh of the unit square (a,b) x (c,d)");
   // Open mesh for editing
   MeshEditor editor;
   editor.open(*this, CellType::triangle, 2, 2);
@@ -83,33 +70,33 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
     editor.init_cells(2*nx*ny);
   }
 
-  // Storage for vertices
+  // Storage for vertex coordinates
   std::vector<double> x(2);
 
   // Create main vertices:
   uint vertex = 0;
   for (uint iy = 0; iy <= ny; iy++)
   {
-    x[1] = c + ((static_cast<double>(iy))*(d - c)/static_cast<double>(ny));
+    x[1] = static_cast<double>(iy)/static_cast<double>(ny);
     for (uint ix = 0; ix <= nx; ix++)
     {
-      x[0] = a + ((static_cast<double>(ix))*(b - a)/static_cast<double>(nx));
+      x[0] = static_cast<double>(ix)/static_cast<double>(nx);
       editor.add_vertex(vertex, x);
-      vertex++;
+      ++vertex;
     }
   }
 
-  // Create midpoint vertices if the mesh type is crossed
+  // Create midpoint vertices if the mesh type is crisscross
   if (diagonal == "crossed")
   {
     for (uint iy = 0; iy < ny; iy++)
     {
-      x[1] = c +(static_cast<double>(iy) + 0.5)*(d - c)/ static_cast<double>(ny);
+      x[1] = (static_cast<double>(iy) + 0.5) / static_cast<double>(ny);
       for (uint ix = 0; ix < nx; ix++)
       {
-        x[0] = a + (static_cast<double>(ix) + 0.5)*(b - a)/ static_cast<double>(nx);
+        x[0] = (static_cast<double>(ix) + 0.5) / static_cast<double>(nx);
         editor.add_vertex(vertex, x);
-        vertex++;
+        ++vertex;
       }
     }
   }
@@ -170,7 +157,6 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
         const uint v1 = v0 + 1;
         const uint v2 = v0 + (nx + 1);
         const uint v3 = v1 + (nx + 1);
-        std::vector<uint> cell_data;
 
         if(local_diagonal == "left")
         {
@@ -190,6 +176,12 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
         editor.add_cell(cell++, cells[1]);
       }
     }
+  }
+  else
+  {
+    dolfin_error("UnitSquareMesh.cpp",
+                 "create unit square",
+                 "Unknown mesh diagonal definition: allowed options are \"left\", \"right\", \"left/right\", \"right/left\" and \"crossed\"");
   }
 
   // Close mesh editor

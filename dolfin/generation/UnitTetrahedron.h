@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Anders Logg
+// Copyright (C) 2012 Benjamin Kehlet
 //
 // This file is part of DOLFIN.
 //
@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2010-10-19
-// Last changed: 2010-10-19
+// First added:  2012-11-09
+// Last changed: 2012-11-09
 
 #ifndef __UNIT_TETRAHEDRON_H
 #define __UNIT_TETRAHEDRON_H
 
-#include <dolfin/mesh/Mesh.h>
+#include "UnitTetrahedronMesh.h"
 
 namespace dolfin
 {
@@ -34,16 +34,18 @@ namespace dolfin
   ///   (0, 0, 1)
   ///
   /// This class is useful for testing.
-
-  class UnitTetrahedron : public Mesh
+  ///
+  /// This class has been deprecated. Use _UnitTetrahedronMesh_.
+  class UnitTetrahedron : public UnitTetrahedronMesh
   {
   public:
 
     /// Create mesh of unit tetrahedron
-    UnitTetrahedron();
-
+    UnitTetrahedron()
+    {
+      warning("UnitTetrahedron is deprecated. Use UnitTetrahedronMesh");
+    }
   };
-
 }
 
 #endif

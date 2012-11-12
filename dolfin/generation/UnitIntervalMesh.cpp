@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Anders Logg
+// Copyright (C) 2008 Kristian B. Oelgaard
 //
 // This file is part of DOLFIN.
 //
@@ -15,19 +15,19 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2010-10-19
+// First added:  2007-11-23
 // Last changed: 2012-09-27
 
+#include <boost/assign.hpp>
 #include <dolfin/common/MPI.h>
-#include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshEditor.h>
-#include "UnitTriangle.h"
+#include "UnitIntervalMesh.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitTriangle::UnitTriangle() : Mesh()
+UnitIntervalMesh::UnitIntervalMesh(uint nx) : Mesh()
 {
   // Receive mesh according to parallel policy
   if (MPI::is_receiver())
@@ -36,25 +36,36 @@ UnitTriangle::UnitTriangle() : Mesh()
     return;
   }
 
+  if (nx < 1)
+  {
+    dolfin_error("UnitIntervalMesh.cpp",
+                 "create unit interval",
+                 "Size of unit interval must be at least 1");
+  }
+
+  rename("mesh", "Mesh of the unit interval (0,1)");
+
   // Open mesh for editing
   MeshEditor editor;
-  editor.open(*this, CellType::triangle, 2, 2);
+  editor.open(*this, CellType::interval, 1, 1);
 
-  // Create vertices
-  editor.init_vertices(3);
-  std::vector<double> x(2);
-  x[0] = 0.0; x[1] = 0.0;
-  editor.add_vertex(0, x);
-  x[0] = 1.0; x[1] = 0.0;
-  editor.add_vertex(1, x);
-  x[0] = 0.0; x[1] = 1.0;
-  editor.add_vertex(2, x);
+  // Create vertices and cells:
+  editor.init_vertices((nx+1));
+  editor.init_cells(nx);
 
-  // Create cells
-  editor.init_cells(1);
-  std::vector<uint> cell_data(3);
-  cell_data[0] = 0; cell_data[1] = 1; cell_data[2] = 2;
-  editor.add_cell(0, cell_data);
+  // Create main vertices:
+  for (uint ix = 0; ix <= nx; ix++)
+  {
+    const double x = static_cast<double>(ix)/static_cast<double>(nx);
+    editor.add_vertex(ix, x);
+  }
+
+  // Create intervals
+  for (uint ix = 0; ix < nx; ix++)
+  {
+    std::vector<uint> cell_data = boost::assign::list_of(ix)(ix + 1);
+    editor.add_cell(ix, cell_data);
+  }
 
   // Close mesh editor
   editor.close();

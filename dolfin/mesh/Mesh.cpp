@@ -32,6 +32,7 @@
 #include <dolfin/io/File.h>
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/generation/CSGMeshGenerator.h>
 #include "BoundaryMesh.h"
 #include "Cell.h"
 #include "LocalMeshData.h"
@@ -90,6 +91,29 @@ Mesh::Mesh(LocalMeshData& local_mesh_data)
                                    _ordered(false)
 {
   MeshPartitioning::build_distributed_mesh(*this, local_mesh_data);
+}
+//-----------------------------------------------------------------------------
+Mesh::Mesh(const CSGGeometry& geometry, uint mesh_resolution)
+  : Variable("mesh", "DOLFIN mesh"),
+    Hierarchical<Mesh>(*this),
+    _data(*this),
+    _cell_type(0),
+    _intersection_operator(*this),
+    _ordered(false)
+{
+  CSGMeshGenerator::generate(*this, geometry, mesh_resolution);
+}
+//-----------------------------------------------------------------------------
+Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry, uint resolution)
+  : Variable("mesh", "DOLFIN mesh"),
+    Hierarchical<Mesh>(*this),
+    _data(*this),
+    _cell_type(0),
+    _intersection_operator(*this),
+    _ordered(false)
+{
+  assert(geometry);
+  CSGMeshGenerator::generate(*this, *geometry, resolution);
 }
 //-----------------------------------------------------------------------------
 Mesh::~Mesh()

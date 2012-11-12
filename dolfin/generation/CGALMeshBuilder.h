@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Joachim B Haga 2012
+//
 // First added:  2012-02-02
-// Last changed:
+// Last changed: 2012-09-05
 
 #ifndef __DOLFIN_CGALMESHBUILDER_H
 #define __DOLFIN_CGALMESHBUILDER_H
@@ -59,6 +61,10 @@ namespace dolfin
     /// Build DOLFIN Mesh from a CGAL surface mesh (C2t3)
     template<typename T>
     static void build_surface_mesh_c2t3(Mesh& mesh, T& cgal_mesh);
+
+    /// Build DOLFIN surface mesh from a CGAL polyhedron_3
+    template<typename T>
+    static void build_surface_mesh_poly(Mesh& mesh, T& polyhedron);
 
   private:
 
@@ -383,6 +389,74 @@ namespace dolfin
         mesh_editor.add_cell(cell_index++, vertex_indices);
       }
     }
+
+    // Close mesh editor
+    mesh_editor.close();
+  }
+  //---------------------------------------------------------------------------
+  template<typename T>
+  void CGALMeshBuilder::build_surface_mesh_poly(Mesh& mesh, T& poly)
+  {
+    // Clear mesh
+    mesh.clear();
+
+    // Get various dimensions
+    const uint gdim = 3;
+    const uint tdim = 2;
+    const uint num_vertices = poly.size_of_vertices();
+    const uint num_cells = poly.size_of_facets();
+
+    cout << "gdim: " << gdim << endl;
+    cout << "tdim: " << tdim << endl;
+    cout << "num_vert: " << num_vertices << endl;
+    cout << "num_cells: " << num_cells << endl;
+
+    // The vertices have no info(), so make a separate point map (vertices
+    // aren't ordered)
+    std::map<typename T::Point_3,uint> point_map;
+
+    // Create a MeshEditor and open
+    dolfin::MeshEditor mesh_editor;
+    mesh_editor.open(mesh, tdim, gdim);
+    mesh_editor.init_vertices(num_vertices);
+    mesh_editor.init_cells(num_cells);
+
+    // Add vertices to mesh
+    uint vertex_index = 0;
+    for (typename T::Vertex_iterator
+           v = poly.vertices_begin(); v != poly.vertices_end(); ++v)
+    {
+      // Get vertex coordinates add vertex to the mesh
+      Point p;
+      p[0] = v->point()[0];
+      p[1] = v->point()[1];
+      p[2] = v->point()[2];
+
+      // Add mesh vertex
+      mesh_editor.add_vertex(vertex_index, p);
+
+      // Attach index to vertex and increment
+      point_map[v->point()] = vertex_index++;
+    }
+
+    uint cell_index = 0;
+    for (typename T::Facet_iterator
+           c = poly.facets_begin(); c != poly.facets_end(); c++)
+    {
+      std::vector<uint> vertex_indices;
+      typename T::Facet::Halfedge_around_facet_circulator halfedge(c->facet_begin());
+      do
+      {
+        vertex_indices.push_back(point_map[halfedge->vertex()->point()]);
+        halfedge++;
+      }
+      while (halfedge != c->facet_begin());
+
+      mesh_editor.add_cell(cell_index++, vertex_indices);
+    }
+
+    dolfin_assert(vertex_index == num_vertices);
+    dolfin_assert(cell_index == num_cells);
 
     // Close mesh editor
     mesh_editor.close();

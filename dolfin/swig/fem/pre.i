@@ -213,7 +213,6 @@
           dolfin::Hierarchical<dolfin::NonlinearVariationalProblem>;
 %template (HierarchicalDirichletBC) dolfin::Hierarchical<dolfin::DirichletBC>;
 #endif
-#ifdef IOMODULE // Conditional template instiantiation for IO module
-%template (HierarchicalDirichletBC) dolfin::Hierarchical<dolfin::DirichletBC>;
-
-#endif
+//#ifdef IOMODULE // Conditional template instiantiation for IO module
+//%template (HierarchicalDirichletBC) dolfin::Hierarchical<dolfin::DirichletBC>;
+//#endif

@@ -18,7 +18,7 @@
 // Modified by Nuno Lopes, 2008.
 //
 // First added:  2005-12-02
-// Last changed: 2011-12-07
+// Last changed: 2012-11-12
 
 #ifndef __BOX_H
 #define __BOX_H
@@ -33,7 +33,7 @@ namespace dolfin
   /// direction, the total number of tetrahedra will be 6*nx*ny*nz and
   /// the total number of vertices will be (nx + 1)*(ny + 1)*(nz + 1).
 
-  class Box : public Mesh
+  class BoxMesh : public Mesh
   {
   public:
 
@@ -67,7 +67,7 @@ namespace dolfin
     ///         // set [-1,2] x [-1,2] x [-1,2].
     ///         Box mesh(-1, -1, -1, 2, 2, 2, 6, 6, 6);
     ///
-    Box(double x0, double y0, double z0, double x1, double y1, double z1,
+    BoxMesh(double x0, double y0, double z0, double x1, double y1, double z1,
         uint nx, uint ny, uint nz);
 
   };
