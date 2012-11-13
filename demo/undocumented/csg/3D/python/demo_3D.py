@@ -15,10 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Modified by Benjamin Kehlet 2012
-#
 # First added:  2012-11-12
-# Last changed: 2012-11-12
+# Last changed: 2012-11-13
 
 from dolfin import *
 
@@ -38,7 +36,7 @@ g3d = box + cone - sphere;
 info("\nCompact output of 3D geometry:");
 info(g3d);
 info("\nVerbose output of 3D geometry:");
-info(g3d, true);
+info(g3d, True);
 
 # Plot geometry
 plot(g3d, "3D geometry (surface)");

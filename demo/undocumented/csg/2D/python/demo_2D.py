@@ -15,10 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Modified by Benjamin Kehlet 2012
-#
 # First added:  2012-11-12
-# Last changed: 2012-11-12
+# Last changed: 2012-11-13
 
 from dolfin import *
 
@@ -37,7 +35,7 @@ info("\nCompact output of 2D geometry:");
 info(g2d);
 info("");
 info("\nVerbose output of 2D geometry:");
-info(g2d, true);
+info(g2d, True);
 
 # Plot geometry
 plot(g2d, "2D Geometry (boundary)");
