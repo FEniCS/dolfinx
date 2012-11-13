@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-11-08
+// Last changed: 2012-11-13
 
 #ifdef HAS_HDF5
 
@@ -310,6 +310,8 @@ void XDMFFile::operator<< (const Mesh& mesh)
 {
   // Write Mesh to HDF5 file (use contiguous vertex indices for topology)
   dolfin_assert(hdf5_file);
+
+  warning("Mesh saved to XDMF is only suitable for visualisation.");
 
   // Output data name
   const std::string name = "/VisualisationMesh/" + boost::lexical_cast<std::string>(counter);
