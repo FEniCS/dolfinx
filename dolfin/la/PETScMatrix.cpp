@@ -153,8 +153,12 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     #endif
 
     // FIXME: Change to MatSeqAIJSetPreallicationCSR for improved performance?
+
     // Allocate space (using data from sparsity pattern)
-    MatSeqAIJSetPreallocation(*A, PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros[0]));
+
+    // Copy number of non-zeros to PetscInt type
+    const std::vector<PetscInt> _num_nonzeros(num_nonzeros.begin(), num_nonzeros.end());
+    MatSeqAIJSetPreallocation(*A, PETSC_NULL, &_num_nonzeros[0]);
 
     // Set column indices
     /*
@@ -202,18 +206,17 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     MatSetType(*A, MATMPIAIJ);
 
     // Allocate space (using data from sparsity pattern)
-    MatMPIAIJSetPreallocation(*A,
-           PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros_diagonal[0]),
-           PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros_off_diagonal[0]));
+    const std::vector<PetscInt> _num_nonzeros_diagonal(num_nonzeros_diagonal.begin(), num_nonzeros_diagonal.end());
+    const std::vector<PetscInt> _num_nonzeros_off_diagonal(num_nonzeros_off_diagonal.begin(), num_nonzeros_off_diagonal.end());
+    MatMPIAIJSetPreallocation(*A, PETSC_NULL, &_num_nonzeros_diagonal[0],
+                                  PETSC_NULL, &_num_nonzeros_off_diagonal[0]);
   }
 
   // Set some options
 
   // Do not allow more entries than have been pre-allocated
   MatSetOption(*A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
-
   MatSetOption(*A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
-
   MatSetFromOptions(*A);
 
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
@@ -226,32 +229,27 @@ void PETScMatrix::get(double* block, std::size_t m, const std::size_t* rows,
 {
   // Get matrix entries (must be on this process)
   dolfin_assert(A);
-  MatGetValues(*A,
-               static_cast<int>(m), reinterpret_cast<const int*>(rows),
-               static_cast<int>(n), reinterpret_cast<const int*>(cols),
-               block);
+  const std::vector<PetscInt> _rows(rows, rows + m);
+  const std::vector<PetscInt> _cols(cols, cols + n);
+  MatGetValues(*A, m, _rows.data(), n, _cols.data(), block);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::set(const double* block, std::size_t m, const std::size_t* rows,
                                            std::size_t n, const std::size_t* cols)
 {
   dolfin_assert(A);
-  MatSetValues(*A,
-               static_cast<int>(m), reinterpret_cast<const int*>(rows),
-               static_cast<int>(n), reinterpret_cast<const int*>(cols),
-               block, INSERT_VALUES);
+  const std::vector<PetscInt> _rows(rows, rows + m);
+  const std::vector<PetscInt> _cols(cols, cols + n);
+  MatSetValues(*A, m, _rows.data(), n, _cols.data(), block, INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::add(const double* block, std::size_t m, const std::size_t* rows,
                                            std::size_t n, const std::size_t* cols)
 {
   dolfin_assert(A);
-  std::vector<PetscInt> _rows(rows, rows + m);
-  std::vector<PetscInt> _cols(rows, rows + n);
-  MatSetValues(*A,
-               m, _rows.data(),
-               n, _cols.data(),
-               block, ADD_VALUES);
+  const std::vector<PetscInt> _rows(rows, rows + m);
+  const std::vector<PetscInt> _cols(rows, rows + n);
+  MatSetValues(*A, m, _rows.data(), n, _cols.data(), block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::axpy(double a, const GenericMatrix& A,
@@ -311,11 +309,9 @@ void PETScMatrix::zero(std::size_t m, const std::size_t* rows)
 
   IS is = 0;
   PetscScalar null = 0.0;
-  ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(m),
-                  reinterpret_cast<const int*>(rows),
-                  PETSC_COPY_VALUES, &is);
+  const std::vector<PetscInt> _rows(rows, rows + m);
+  ISCreateGeneral(PETSC_COMM_SELF, m, _rows.data(), PETSC_COPY_VALUES, &is);
   MatZeroRowsIS(*A, is, null, NULL, NULL);
-
   ISDestroy(&is);
 }
 //-----------------------------------------------------------------------------
@@ -325,11 +321,9 @@ void PETScMatrix::ident(std::size_t m, const std::size_t* rows)
 
   IS is = 0;
   PetscScalar one = 1.0;
-  ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(m),
-                  reinterpret_cast<const int*>(rows),
-                  PETSC_COPY_VALUES, &is);
+  const std::vector<PetscInt> _rows(rows, rows + m);
+  ISCreateGeneral(PETSC_COMM_SELF, m, _rows.data(), PETSC_COPY_VALUES, &is);
   MatZeroRowsIS(*A, is, one, NULL, NULL);
-
   ISDestroy(&is);
 }
 //-----------------------------------------------------------------------------
