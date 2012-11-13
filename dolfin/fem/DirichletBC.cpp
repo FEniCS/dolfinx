@@ -654,7 +654,7 @@ void DirichletBC::init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_do
   init_from_mesh_function(sub_domains, 0);
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::init_from_mesh_function(const MeshFunction<uint>& sub_domains,
+void DirichletBC::init_from_mesh_function(const MeshFunction<std::size_t>& sub_domains,
                                           uint sub_domain) const
 {
   dolfin_assert(facets.size() == 0);
@@ -680,7 +680,7 @@ void DirichletBC::init_from_mesh_function(const MeshFunction<uint>& sub_domains,
     const uint facet_number = cell.index(*facet);
 
     // Copy data
-    facets.push_back(std::pair<uint, uint>(cell.index(), facet_number));
+    facets.push_back(std::pair<std::size_t, uint>(cell.index(), facet_number));
   }
 }
 //-----------------------------------------------------------------------------

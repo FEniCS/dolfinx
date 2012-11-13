@@ -88,7 +88,7 @@ namespace dolfin
                                boost::shared_ptr<const Mesh> adapted_mesh);
 
   /// Refine mesh function<uint> based on mesh
-  const MeshFunction<unsigned int>& adapt(const MeshFunction<unsigned int>& mesh_function,
+  const MeshFunction<std::size_t>& adapt(const MeshFunction<std::size_t>& mesh_function,
                                   boost::shared_ptr<const Mesh> adapted_mesh);
 
   //--- Refinement of boundary conditions ---

@@ -35,7 +35,7 @@ using namespace dolfin;
 SubMesh::SubMesh(const Mesh& mesh, const SubDomain& sub_domain)
 {
   // Create mesh function and mark sub domain
-  MeshFunction<uint> sub_domains(mesh, mesh.topology().dim());
+  MeshFunction<std::size_t> sub_domains(mesh, mesh.topology().dim());
   sub_domains = 0;
   sub_domain.mark(sub_domains, 1);
 
@@ -44,7 +44,7 @@ SubMesh::SubMesh(const Mesh& mesh, const SubDomain& sub_domain)
 }
 //-----------------------------------------------------------------------------
 SubMesh::SubMesh(const Mesh& mesh,
-                 const MeshFunction<uint>& sub_domains, uint sub_domain)
+                 const MeshFunction<std::size_t>& sub_domains, std::size_t sub_domain)
 {
   // Create sub mesh
   init(mesh, sub_domains, sub_domain);
@@ -56,7 +56,7 @@ SubMesh::~SubMesh()
 }
 //-----------------------------------------------------------------------------
 void SubMesh::init(const Mesh& mesh,
-                   const MeshFunction<uint>& sub_domains, uint sub_domain)
+                   const MeshFunction<std::size_t>& sub_domains, std::size_t sub_domain)
 {
   // Open mesh for editing
   MeshEditor editor;
@@ -86,7 +86,7 @@ void SubMesh::init(const Mesh& mesh,
     for (VertexIterator vertex(cell); !vertex.end(); ++vertex)
     {
       const std::size_t parent_vertex_index = vertex->index();
-      uint local_vertex_index = 0;
+      std::size_t local_vertex_index = 0;
       std::map<std::size_t, std::size_t>::iterator vertex_it
         = local_vertex_indices.find(parent_vertex_index);
       if (vertex_it != local_vertex_indices.end())
@@ -118,7 +118,7 @@ void SubMesh::init(const Mesh& mesh,
   editor.close();
 
   // Build local-to-parent mapping for vertices
-  boost::shared_ptr<MeshFunction<unsigned int> > parent_vertex_indices
+  boost::shared_ptr<MeshFunction<std::size_t> > parent_vertex_indices
     = data().create_mesh_function("parent_vertex_indices", 0);
   for (std::map<std::size_t, std::size_t>::iterator it = local_vertex_indices.begin();
        it != local_vertex_indices.end(); ++it)

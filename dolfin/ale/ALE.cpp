@@ -44,9 +44,9 @@ void ALE::move(Mesh& mesh0, const Mesh& mesh1)
   BoundaryMesh boundary1(mesh1);
 
   // Get vertex mappings
-  boost::shared_ptr<MeshFunction<unsigned int> > local_to_global_0
+  boost::shared_ptr<MeshFunction<std::size_t> > local_to_global_0
     = mesh0.data().mesh_function("parent_vertex_indices");
-  boost::shared_ptr<MeshFunction<unsigned int> > local_to_global_1
+  boost::shared_ptr<MeshFunction<std::size_t> > local_to_global_1
     = mesh1.data().mesh_function("parent_vertex_indices");
   const MeshFunction<std::size_t>& boundary_to_mesh_0 = boundary0.vertex_map();
   const MeshFunction<std::size_t>& boundary_to_mesh_1 = boundary1.vertex_map();

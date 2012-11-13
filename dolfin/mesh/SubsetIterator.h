@@ -67,7 +67,7 @@ namespace dolfin
     }
 
     /// Copy Constructor
-    SubsetIterator(const SubsetIterator & subset_iter)
+    SubsetIterator(const SubsetIterator& subset_iter)
     : entity(subset_iter.entity),_subset(subset_iter._subset),
     subset(*_subset), it(subset_iter.it)
     {}
@@ -83,7 +83,7 @@ namespace dolfin
     }
 
     /// Comparison operator
-    bool operator==(const SubsetIterator & sub_iter) const
+    bool operator==(const SubsetIterator& sub_iter) const
     {
       return ((const_cast<SubsetIterator *>(this))->operator*()
             == (const_cast<SubsetIterator *>(&sub_iter))->operator*()

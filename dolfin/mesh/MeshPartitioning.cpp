@@ -323,7 +323,7 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
     // Get mesh value collection used for marking
     const std::size_t dim = dim_data->first;
     dolfin_assert(mesh.domains().markers(dim));
-    MeshValueCollection<uint>& markers = *(mesh.domains().markers(dim));
+    MeshValueCollection<std::size_t>& markers = *(mesh.domains().markers(dim));
 
     const std::vector< std::pair<std::pair<std::size_t, uint>, uint> >&
         local_value_data = dim_data->second;

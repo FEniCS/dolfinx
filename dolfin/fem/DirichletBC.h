@@ -421,7 +421,7 @@ namespace dolfin
     void init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_domain) const;
 
     // Initialize sub domain markers from MeshFunction
-    void init_from_mesh_function(const MeshFunction<uint>& sub_domains,
+    void init_from_mesh_function(const MeshFunction<std::size_t>& sub_domains,
                                  uint sub_domain) const;
 
     // Initialize sub domain markers from mesh
@@ -465,7 +465,7 @@ namespace dolfin
     mutable std::vector<std::pair<std::size_t, std::size_t> > facets;
 
     // User defined mesh function
-    boost::shared_ptr<const MeshFunction<uint> > _user_mesh_function;
+    boost::shared_ptr<const MeshFunction<std::size_t> > _user_mesh_function;
 
     // User defined sub domain marker for mesh or mesh function
     uint _user_sub_domain_marker;

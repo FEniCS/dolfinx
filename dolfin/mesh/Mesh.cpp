@@ -367,7 +367,7 @@ void Mesh::intersected_cells(const std::vector<Point>& points,
     for (std::vector<Point>::const_iterator p = points.begin(); p != points.end(); ++p)
     {
       if (cell.intersects(*p))
-	cells.insert(0);
+        cells.insert(0);
     }
   }
 }

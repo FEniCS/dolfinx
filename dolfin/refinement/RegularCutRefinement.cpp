@@ -86,7 +86,8 @@ void RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
   IndexSet marked_cells(mesh.num_cells());
 
   // Get bisection data
-  boost::shared_ptr<MeshFunction<unsigned int> > bisection_twins = mesh.data().mesh_function("bisection_twins");
+  boost::shared_ptr<MeshFunction<std::size_t> > bisection_twins
+      = mesh.data().mesh_function("bisection_twins");
 
   // Iterate until no more cells are marked
   cells.fill();
