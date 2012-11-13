@@ -113,6 +113,8 @@
 #include "dolfin/generation/UnitSphere.h"
 #include "dolfin/generation/BoxMesh.h"
 #include "dolfin/generation/RectangleMesh.h"
+#include "dolfin/generation/IntervalMesh.h"
+#include "dolfin/generation/Interval.h"
 #include "dolfin/generation/CSGGeometry.h"
 #include "dolfin/generation/CSGMeshGenerator.h"
 #include "dolfin/generation/CSGCGALMeshGenerator2D.h"
@@ -246,6 +248,8 @@ import_array();
 %include "dolfin/generation/UnitSphere.h"
 %include "dolfin/generation/BoxMesh.h"
 %include "dolfin/generation/RectangleMesh.h"
+%include "dolfin/generation/IntervalMesh.h"
+%include "dolfin/generation/Interval.h"
 %include "dolfin/generation/CSGGeometry.h"
 %include "dolfin/generation/CSGMeshGenerator.h"
 %include "dolfin/generation/CSGCGALMeshGenerator2D.h"
@@ -255,6 +259,7 @@ import_array();
 %include "dolfin/generation/CSGPrimitives2D.h"
 %include "dolfin/generation/CSGPrimitives3D.h"
 %include "dolfin/generation/CSGGeometries3D.h"
+%include "dolfin/swig/generation/post.i"
 
 // %include types from submodule refinement
 %include "dolfin/refinement/refine.h"
