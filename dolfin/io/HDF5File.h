@@ -150,6 +150,8 @@ namespace dolfin
 
     dolfin_assert(mesh.num_vertices()*value_size == values.size());
 
+    Timer t("HDF5: Remove dups");
+
     const std::map<uint, std::set<uint> >& shared_vertices
       = mesh.topology().shared_entities(0);
 

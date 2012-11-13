@@ -60,6 +60,8 @@ HDF5File::HDF5File(const std::string filename, const bool use_mpiio)
 {
   // HDF5 chunking
   parameters.add("chunking", false);
+  // Optional duplicate vertex suppression for H5 Mesh output
+  parameters.add("remove_duplicates", false);
 }
 //-----------------------------------------------------------------------------
 HDF5File::~HDF5File()
@@ -374,7 +376,6 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
   const std::pair<uint, uint> vertex_range = MPI::local_range(coords_dim[0]);
   const uint num_local_vertices = vertex_range.second - vertex_range.first;
 
-
   // Read vertex data to temporary vector
   std::vector<double> tmp_vertex_data;
   tmp_vertex_data.reserve(num_local_vertices*vertex_dim);
@@ -422,7 +423,7 @@ void HDF5File::write_mesh(const Mesh& mesh, const std::string name)
 void HDF5File::write_mesh_global_index(const Mesh& mesh, uint cell_dim, const std::string name)
 {
 
-  warning("Writing mesh with GlobalIndex - not suitable for visualisation");
+  warning("Writing mesh with global index - not suitable for visualisation");
   
   // Clear file when writing to file for the first time
   if(!hdf5_file_open)
@@ -453,31 +454,18 @@ void HDF5File::write_mesh_global_index(const Mesh& mesh, uint cell_dim, const st
   // ------ Output vertex coordinates and global index
 
   // Vertex numbers, ranges and offsets
-  const uint num_local_vertices = mesh.num_vertices();
-  const uint vertex_offset = MPI::global_offset(num_local_vertices, true);
 
   // Write vertex data to HDF5 file
   const std::string coord_dataset = name + "/coordinates";
   const std::string index_dataset = name + "/global_index";
   const std::vector<uint>& global_indices = mesh.topology().global_indices(0);
 
-  if(true)
+  // Optionally reduce file size by deleting duplicates
+  if(parameters["remove_duplicates"])
   {
     const uint gdim = mesh.geometry().dim();
-    const std::vector<double>& vertex_coords = mesh.coordinates();
-
-    // Write coordinates contiguously from each process
-    std::vector<uint> global_size(2);
-    global_size[0] = MPI::sum(num_local_vertices);
-    global_size[1] = gdim;
-    write_data(coord_dataset, vertex_coords, global_size);
-    global_size.resize(1); //remove second dimension
-    write_data(index_dataset, global_indices, global_size);
-  }
-  else
-  {
-    const uint gdim = mesh.geometry().dim();
-    std::vector<double>vertex_coords = mesh.coordinates();
+    // Copy coordinates and indices and remove off-process values
+    std::vector<double>vertex_coords(mesh.coordinates()); 
     remove_duplicate_values(mesh, vertex_coords, gdim);
 
     std::vector<uint>vertex_indices(global_indices);
@@ -485,14 +473,25 @@ void HDF5File::write_mesh_global_index(const Mesh& mesh, uint cell_dim, const st
 
     // Write coordinates contiguously from each process
     std::vector<uint> global_size(2);
-    global_size[0] = MPI::sum(vertex_indices.size());
+    global_size[0] = MPI::sum(vertex_indices.size()); // reduced
     global_size[1] = gdim;
     write_data(coord_dataset, vertex_coords, global_size);
     global_size.resize(1); //remove second dimension
     write_data(index_dataset, vertex_indices, global_size);
   }
-  
-    
+  else //just output in blocks - faster and less memory intensive
+  {
+    const uint gdim = mesh.geometry().dim();
+    const std::vector<double>& vertex_coords = mesh.coordinates();
+
+    // Write coordinates contiguously from each process
+    std::vector<uint> global_size(2);
+    global_size[0] = MPI::sum(mesh.num_vertices());
+    global_size[1] = gdim;
+    write_data(coord_dataset, vertex_coords, global_size);
+    global_size.resize(1); //remove second dimension
+    write_data(index_dataset, global_indices, global_size);
+  }
 
   // ------ Topology
 
@@ -630,6 +629,8 @@ void HDF5File::redistribute_by_global_index(const std::vector<uint>& global_inde
                                             std::vector<T>& global_vector)
 {
   dolfin_assert(local_vector.size() == global_index.size());
+
+  Timer t("HDF5: Redistribute");
 
   // Get number of processes
   const uint num_processes = MPI::num_processes();
