@@ -166,7 +166,7 @@ namespace dolfin
       pugi::xml_node entity_node = mf_node.append_child("value");
       entity_node.append_attribute("cell_index") = (uint) it->first.first;
       entity_node.append_attribute("local_entity") = (uint) it->first.second;
-      entity_node.append_attribute("value") = it->second;
+      entity_node.append_attribute("value") = (uint) it->second;
     }
   }
   //---------------------------------------------------------------------------
