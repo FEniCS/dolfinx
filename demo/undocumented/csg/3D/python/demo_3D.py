@@ -42,7 +42,7 @@ info(g3d, True);
 plot(g3d, "3D geometry (surface)");
 
 # Generate and plot mesh
-mesh3d = Mesh(g3d, 128);
+mesh3d = Mesh(g3d, 32);
 info(mesh3d);
 plot(mesh3d, "3D mesh");
 
