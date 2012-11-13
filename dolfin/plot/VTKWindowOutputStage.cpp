@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2012-09-10
-// Last changed: 2012-11-05
+// Last changed: 2012-11-13
 
 #ifdef HAS_VTK
 
@@ -117,7 +117,7 @@ namespace // anonymous
         modifiers &= ~VTKPlotter::SHIFT;
       }
 
-      std::cout << "Keypress: " << key << "|" << modifiers << " (" << keysym << ")\n";
+      log(DEBUG, "Keypress: %c|%d (%s)", key, modifiers, keysym.c_str());
       return _plotter->key_pressed(modifiers, key, keysym);
     }
 
@@ -178,7 +178,7 @@ VTKWindowOutputStage::~VTKWindowOutputStage()
   // destruction. This destructor tries to impose an order on the most
   // important stuff.
 
-  std::cout << "Pipeline destroyed\n";
+  log(DEBUG, "VTK pipeline destroyed");
 
 #ifdef HAS_QVTK
   widget.reset(NULL);
