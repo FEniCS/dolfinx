@@ -73,8 +73,9 @@ namespace std
 %enddef
 
 // NOTE: SWIG BUG
-// NOTE: Because of bug introduced by SWIG 2.0.5 we cannot use templated versions 
+// NOTE: Because of bug introduced by SWIG 2.0.5 we cannot use templated versions
 // NOTE: of typdefs, which means we need to use unsigned int instead of dolfin::uint
 // NOTE: in typemaps
 ARGOUT_TYPEMAP_BOOST_UNORDERED_SET_OF_PRIMITIVES(unsigned int, INT32, ids_result, NPY_INT)
-ARGOUT_TYPEMAP_BOOST_UNORDERED_SET_OF_PRIMITIVES(unsigned int, INT32, cells, NPY_INT)
+// FIXME: Second argument doesn't seem to do anything
+ARGOUT_TYPEMAP_BOOST_UNORDERED_SET_OF_PRIMITIVES(std::size_t, INT64, cells, NPY_UINTP)
