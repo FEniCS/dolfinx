@@ -153,7 +153,7 @@ void EpetraVector::resize(std::pair<std::size_t, std::size_t> range,
   Epetra_SerialComm serial_comm = f.get_serial_comm();
 
   // Compute local size
-  const std::size_t local_size = range.second - range.first;
+  const int local_size = range.second - range.first;
   dolfin_assert(int (range.second - range.first) >= 0);
 
   // Create vector
@@ -185,9 +185,9 @@ void EpetraVector::resize(std::pair<std::size_t, std::size_t> range,
 
   // Create local ghost vector
   const int num_ghost_entries = ghost_indices.size();
-  const int* ghost_entries = reinterpret_cast<const int*>(&ghost_indices[0]);
+  const std::vector<int> ghost_entries(ghost_indices.begin(), ghost_indices.end());
   Epetra_BlockMap ghost_map(num_ghost_entries, num_ghost_entries,
-                            ghost_entries, 1, 0, serial_comm);
+                            ghost_entries.data(), 1, 0, serial_comm);
   x_ghost.reset(new Epetra_Vector(ghost_map));
 }
 //-----------------------------------------------------------------------------
@@ -216,7 +216,8 @@ std::pair<std::size_t, std::size_t> EpetraVector::local_range() const
 //-----------------------------------------------------------------------------
 bool EpetraVector::owns_index(std::size_t i) const
 {
-  return x->Map().MyGID((int) i);
+  const int _i = i;
+  return x->Map().MyGID(_i);
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::zero()
@@ -224,7 +225,6 @@ void EpetraVector::zero()
   Timer("Apply (vector)");
   dolfin_assert(x);
   const int err = x->PutScalar(0.0);
-  //apply("add");
   if (err != 0)
   {
     dolfin_error("EpetraVector.cpp",
@@ -242,15 +242,17 @@ void EpetraVector::apply(std::string mode)
   // This would be simpler if we required that only local values (on
   // this process) can be set
   int err = 0;
-  if (MPI::sum(static_cast<std::size_t>(off_process_set_values.size())) > 0)
+  if (MPI::sum(off_process_set_values.size()) > 0)
   {
     // Create communicator
     EpetraFactory& f = EpetraFactory::instance();
     Epetra_MpiComm mpi_comm = f.get_mpi_comm();
     Epetra_SerialComm serial_comm = f.get_serial_comm();
 
-    std::vector<int> non_local_indices; non_local_indices.reserve(off_process_set_values.size());
-    std::vector<double> non_local_values; non_local_values.reserve(off_process_set_values.size());
+    std::vector<int> non_local_indices;
+    non_local_indices.reserve(off_process_set_values.size());
+    std::vector<double> non_local_values;
+    non_local_values.reserve(off_process_set_values.size());
     boost::unordered_map<std::size_t, double>::const_iterator entry;
     for (entry = off_process_set_values.begin(); entry != off_process_set_values.end(); ++entry)
     {
@@ -259,11 +261,11 @@ void EpetraVector::apply(std::string mode)
     }
 
     // Create map for y
-    const int* _non_local_indices = reinterpret_cast<const int*>(&non_local_indices[0]);
-    Epetra_BlockMap target_map(-1, non_local_indices.size(), _non_local_indices, 1, 0, mpi_comm);
+    Epetra_BlockMap target_map(-1, non_local_indices.size(),
+                               non_local_indices.data(), 1, 0, mpi_comm);
 
     // Create vector y (view of non_local_values)
-    Epetra_Vector y(View, target_map, &non_local_values[0]);
+    Epetra_Vector y(View, target_map, non_local_values.data());
 
     // Create importer
     Epetra_Import importer(x->Map(), target_map);
@@ -421,8 +423,8 @@ void EpetraVector::add(const double* block, std::size_t m, const std::size_t* ro
   }
 
   dolfin_assert(x);
-  int err = x->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows),
-                                   block, 0);
+  const std::vector<int> _rows(rows, rows + m);
+  int err = x->SumIntoGlobalValues(m, _rows.data(), block, 0);
 
   if (err != 0)
   {
@@ -485,8 +487,9 @@ void EpetraVector::gather(GenericVector& y,
   Epetra_SerialComm serial_comm = f.get_serial_comm();
 
   // Create map for y
-  const int* _indices = reinterpret_cast<const int*>(&indices[0]);
-  Epetra_BlockMap target_map(indices.size(), indices.size(), _indices, 1, 0, serial_comm);
+  const std::vector<int> _indices(indices.begin(), indices.end());
+  Epetra_BlockMap target_map(indices.size(), indices.size(), _indices.data(),
+                             1, 0, serial_comm);
 
   // Reset vector y
   _y.reset(target_map);
@@ -499,7 +502,8 @@ void EpetraVector::gather(GenericVector& y,
   _y.vec()->Import(*x, importer, Insert);
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::gather(std::vector<double>& x, const std::vector<std::size_t>& indices) const
+void EpetraVector::gather(std::vector<double>& x,
+                          const std::vector<std::size_t>& indices) const
 {
   const std::size_t _size = indices.size();
   x.resize(_size);
@@ -521,7 +525,7 @@ void EpetraVector::gather_on_zero(std::vector<double>& x) const
 {
   // FIXME: Is there an Epetra function for this?
 
-  std::vector<std::size_t> indices(0);
+  std::vector<std::size_t> indices;
   if (MPI::process_number() == 0)
   {
     indices.resize(size());
