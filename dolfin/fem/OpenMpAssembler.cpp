@@ -59,9 +59,9 @@ void OpenMpAssembler::assemble(GenericTensor& A, const Form& a)
 }
 //-----------------------------------------------------------------------------
 void OpenMpAssembler::assemble(GenericTensor& A, const Form& a,
-                               const MeshFunction<uint>* cell_domains,
-                               const MeshFunction<uint>* exterior_facet_domains,
-                               const MeshFunction<uint>* interior_facet_domains)
+                               const MeshFunction<std::size_t>* cell_domains,
+                               const MeshFunction<std::size_t>* exterior_facet_domains,
+                               const MeshFunction<std::size_t>* interior_facet_domains)
 {
   if (MPI::num_processes() > 1)
   {
@@ -111,7 +111,7 @@ void OpenMpAssembler::assemble(GenericTensor& A, const Form& a,
 //-----------------------------------------------------------------------------
 void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
                                      UFC& _ufc,
-                                     const MeshFunction<uint>* domains,
+                                     const MeshFunction<std::size_t>* domains,
                                      std::vector<double>* values)
 {
   // Skip assembly if there are no cell integrals
@@ -190,7 +190,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
       // Get integral for sub domain (if any)
       if (domains && !domains->empty())
       {
-        const uint domain = (*domains)[cell];
+        const std::size_t domain = (*domains)[cell];
         if (domain < ufc.form.num_cell_domains())
           integral = ufc.cell_integrals[domain].get();
         else
@@ -232,8 +232,8 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
 //-----------------------------------------------------------------------------
 void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 			     const Form& a, UFC& _ufc,
-			     const MeshFunction<uint>* cell_domains,
-			     const MeshFunction<uint>* exterior_facet_domains,
+			     const MeshFunction<std::size_t>* cell_domains,
+			     const MeshFunction<std::size_t>* exterior_facet_domains,
            std::vector<double>* values)
 {
   Timer timer("Assemble cells and exterior facets");
@@ -321,7 +321,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
       // Get integral for sub domain (if any)
       if (cell_domains && !cell_domains->empty())
       {
-        const uint cell_domain = (*cell_domains)[cell_index];
+        const std::size_t cell_domain = (*cell_domains)[cell_index];
         if (cell_domain < ufc.form.num_cell_domains())
           cell_integral = ufc.cell_integrals[cell_domain].get();
         else
@@ -365,7 +365,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 
           // Get global facet index
           const std::size_t facet_index = connectivity(cell_index)[local_facet];
-          const uint facet_domain = (*exterior_facet_domains)[facet_index];
+          const std::size_t facet_domain = (*exterior_facet_domains)[facet_index];
 
           if (facet_domain < ufc.form.num_exterior_facet_domains())
             facet_integral = ufc.exterior_facet_integrals[facet_domain].get();
@@ -412,7 +412,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 //-----------------------------------------------------------------------------
 void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
                                          UFC& _ufc,
-                                         const MeshFunction<uint>* domains,
+                                         const MeshFunction<std::size_t>* domains,
                                          std::vector<double>* values)
 {
   warning("OpenMpAssembler::assemble_interior_facets is untested.");
@@ -466,7 +466,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
   dolfin_assert(mesh.ordered());
 
   // Get interior facet directions (if any)
-  boost::shared_ptr<MeshFunction<unsigned int> > facet_orientation = mesh.data().mesh_function("facet_orientation");
+  boost::shared_ptr<MeshFunction<std::size_t> > facet_orientation = mesh.data().mesh_function("facet_orientation");
   if (facet_orientation && facet_orientation->dim() != mesh.topology().dim() - 1)
   {
     dolfin_error("OpenMPAssembler.cpp",
@@ -522,7 +522,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
       // Get integral for sub domain (if any)
       if (domains && !domains->empty())
       {
-        const uint domain = (*domains)[facet];
+        const std::size_t domain = (*domains)[facet];
         if (domain < ufc.form.num_interior_facet_domains())
           integral = ufc.interior_facet_integrals[domain].get();
         else

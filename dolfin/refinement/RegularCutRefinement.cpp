@@ -271,7 +271,7 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   }
 
   // Get bisection data for old mesh
-  boost::shared_ptr<const MeshFunction<unsigned int> > bisection_twins
+  boost::shared_ptr<const MeshFunction<std::size_t> > bisection_twins
         = mesh.data().mesh_function("bisection_twins");
 
   // Markers for bisected cells pointing to their bisection twins in

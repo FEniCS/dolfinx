@@ -86,8 +86,8 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
-                         const MeshFunction<uint>& sub_domains,
-                         uint sub_domain, std::string method)
+                         const MeshFunction<std::size_t>& sub_domains,
+                         std::size_t sub_domain, std::string method)
   : BoundaryCondition(V),
     Hierarchical<DirichletBC>(*this),
     g(reference_to_no_delete_pointer(g)),
@@ -101,8 +101,8 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          boost::shared_ptr<const GenericFunction> g,
-                         boost::shared_ptr<const MeshFunction<uint> > sub_domains,
-                         uint sub_domain,
+                         boost::shared_ptr<const MeshFunction<std::size_t> > sub_domains,
+                         std::size_t sub_domain,
                          std::string method)
   : BoundaryCondition(V),
     Hierarchical<DirichletBC>(*this),
@@ -115,7 +115,7 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
-                         uint sub_domain, std::string method)
+                         std::size_t sub_domain, std::string method)
   : BoundaryCondition(V),
     Hierarchical<DirichletBC>(*this),
     g(reference_to_no_delete_pointer(g)), _method(method),
@@ -127,7 +127,7 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          boost::shared_ptr<const GenericFunction> g,
-                         uint sub_domain, std::string method)
+                         std::size_t sub_domain, std::string method)
   : BoundaryCondition(V),
     Hierarchical<DirichletBC>(*this),
     g(g), _method(method),
@@ -209,7 +209,7 @@ void DirichletBC::gather(Map& boundary_values) const
 {
   Timer timer("DirichletBC gather");
 
-  typedef std::vector<std::pair<uint, double> > bv_vec_type;
+  typedef std::vector<std::pair<std::size_t, double> > bv_vec_type;
   typedef std::map<uint, bv_vec_type> map_type;
 
   typedef boost::unordered_map<std::size_t, std::vector<std::size_t> > shared_dof_type;
@@ -287,7 +287,7 @@ void DirichletBC::zero_columns(GenericMatrix& A,
   get_boundary_values(bv_map, _method);
 
   // Create lookup table of dofs
-  //const uint nrows = A.size(0); // should be equal to b.size()
+  //const std::size_t nrows = A.size(0); // should be equal to b.size()
   const std::size_t ncols = A.size(1); // should be equal to max possible dof+1
 
   std::pair<std::size_t, std::size_t> rows = A.local_range(0);
@@ -639,7 +639,7 @@ void DirichletBC::init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_do
   // Create mesh function for sub domain markers on facets
   const uint dim = mesh.topology().dim();
   _function_space->mesh()->init(dim - 1);
-  MeshFunction<uint> sub_domains(mesh, dim - 1);
+  MeshFunction<std::size_t> sub_domains(mesh, dim - 1);
 
   // Set geometric dimension (needed for SWIG interface)
   sub_domain->_geometric_dimension = mesh.geometry().dim();
@@ -655,7 +655,7 @@ void DirichletBC::init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_do
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::init_from_mesh_function(const MeshFunction<std::size_t>& sub_domains,
-                                          uint sub_domain) const
+                                          std::size_t sub_domain) const
 {
   dolfin_assert(facets.size() == 0);
 
@@ -684,7 +684,7 @@ void DirichletBC::init_from_mesh_function(const MeshFunction<std::size_t>& sub_d
   }
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::init_from_mesh(uint sub_domain) const
+void DirichletBC::init_from_mesh(std::size_t sub_domain) const
 {
   dolfin_assert(facets.size() == 0);
 
@@ -700,9 +700,9 @@ void DirichletBC::init_from_mesh(uint sub_domain) const
   // Assign domain numbers for each facet
   const uint D = mesh.topology().dim();
   dolfin_assert(mesh.domains().markers(D - 1));
-  const std::map<std::pair<std::size_t, uint>, uint>&
+  const std::map<std::pair<std::size_t, uint>, std::size_t>&
     markers = mesh.domains().markers(D - 1)->values();
-  std::map<std::pair<std::size_t, uint>, uint>::const_iterator mark;
+  std::map<std::pair<std::size_t, uint>, std::size_t>::const_iterator mark;
   for (mark = markers.begin(); mark != markers.end(); ++mark)
   {
     if (mark->second == sub_domain)

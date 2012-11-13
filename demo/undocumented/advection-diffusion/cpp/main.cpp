@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
   file_u >> velocity;
 
   // Read sub domain markers
-  MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
+  MeshFunction<std::size_t> sub_domains(mesh, "../subdomains.xml.gz");
 
   // Create function space
   AdvectionDiffusion::FunctionSpace V(mesh);

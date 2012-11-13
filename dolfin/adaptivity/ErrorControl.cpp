@@ -298,11 +298,11 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
   arma::vec x(N);
 
   // Extract cell_domains etc from right-hand side form
-  const MeshFunction<uint>*
+  const MeshFunction<std::size_t>*
     cell_domains = _L_R_T->cell_domains_shared_ptr().get();
-  const MeshFunction<uint>*
+  const MeshFunction<std::size_t>*
     exterior_facet_domains = _L_R_T->exterior_facet_domains_shared_ptr().get();
-  const MeshFunction<uint>*
+  const MeshFunction<std::size_t>*
     interior_facet_domains = _L_R_T->interior_facet_domains_shared_ptr().get();
 
   // Assemble and solve local linear systems
@@ -381,11 +381,11 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
 
   // Extract cell_domains etc from right-hand side form
   dolfin_assert(_L_R_T);
-  const MeshFunction<uint>*
+  const MeshFunction<std::size_t>*
     cell_domains = _L_R_T->cell_domains_shared_ptr().get();
-  const MeshFunction<uint>*
+  const MeshFunction<std::size_t>*
     exterior_facet_domains = _L_R_T->exterior_facet_domains_shared_ptr().get();
-  const MeshFunction<uint>*
+  const MeshFunction<std::size_t>*
     interior_facet_domains = _L_R_T->interior_facet_domains_shared_ptr().get();
 
   dolfin_assert(_a_R_dT);

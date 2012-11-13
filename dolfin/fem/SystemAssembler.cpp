@@ -69,9 +69,9 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
 void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                const Form& a, const Form& L,
                                const std::vector<const DirichletBC*> bcs,
-                               const MeshFunction<uint>* cell_domains,
-                               const MeshFunction<uint>* exterior_facet_domains,
-                               const MeshFunction<uint>* interior_facet_domains,
+                               const MeshFunction<std::size_t>* cell_domains,
+                               const MeshFunction<std::size_t>* exterior_facet_domains,
+                               const MeshFunction<std::size_t>* interior_facet_domains,
                                const GenericVector* x0)
 {
   // Set timer
@@ -275,8 +275,8 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
                                          const Form& a, const Form& L,
                                          UFC& A_ufc, UFC& b_ufc, Scratch& data,
                                          const DirichletBC::Map& boundary_values,
-                                         const MeshFunction<uint>* cell_domains,
-                                         const MeshFunction<uint>* exterior_facet_domains)
+                                         const MeshFunction<std::size_t>* cell_domains,
+                                         const MeshFunction<std::size_t>* exterior_facet_domains)
 {
   // FIXME: We can used some std::vectors or array pointers for the A and b
   // related terms to cut down on code repetition.
@@ -340,7 +340,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     // Get cell integrals for sub domain (if any)
     if (cell_domains && !cell_domains->empty())
     {
-      const uint domain = (*cell_domains)[*cell];
+      const std::size_t domain = (*cell_domains)[*cell];
       if (domain < A_ufc.form.num_cell_domains())
         A_cell_integral = A_ufc.cell_integrals[domain].get();
       else
@@ -388,7 +388,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
         // Get exterior facet integrals for sub domain (if any)
         if (exterior_facet_domains && !exterior_facet_domains->empty())
         {
-          const uint domain = (*exterior_facet_domains)[*facet];
+          const std::size_t domain = (*exterior_facet_domains)[*facet];
           if (domain < A_ufc.form.num_exterior_facet_domains())
             A_exterior_facet_integral = A_ufc.exterior_facet_integrals[domain].get();
           else
@@ -460,9 +460,9 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
                               const Form& a, const Form& L,
                               UFC& A_ufc, UFC& b_ufc, Scratch& data,
                               const DirichletBC::Map& boundary_values,
-                              const MeshFunction<uint>* cell_domains,
-                              const MeshFunction<uint>* exterior_facet_domains,
-                              const MeshFunction<uint>* interior_facet_domains)
+                              const MeshFunction<std::size_t>* cell_domains,
+                              const MeshFunction<std::size_t>* exterior_facet_domains,
+                              const MeshFunction<std::size_t>* interior_facet_domains)
 {
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
@@ -544,7 +544,7 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
 //-----------------------------------------------------------------------------
 void SystemAssembler::compute_tensor_on_one_interior_facet(const Form& a,
             UFC& ufc, const Cell& cell0, const Cell& cell1, const Facet& facet,
-            const MeshFunction<uint>* interior_facet_domains)
+            const MeshFunction<std::size_t>* interior_facet_domains)
 {
   const std::vector<boost::shared_ptr<const GenericFunction> > coefficients = a.coefficients();
 
@@ -554,7 +554,7 @@ void SystemAssembler::compute_tensor_on_one_interior_facet(const Form& a,
   // Get integral for sub domain (if any)
   if (interior_facet_domains && !interior_facet_domains->empty())
   {
-    const uint domain = (*interior_facet_domains)[facet];
+    const std::size_t domain = (*interior_facet_domains)[facet];
     if (domain < ufc.form.num_interior_facet_domains())
       interior_facet_integral = ufc.interior_facet_integrals[domain].get();
   }
@@ -576,10 +576,10 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
                      const std::vector<const std::vector<std::size_t>* >& global_dofs)
 {
   // Get local dimensions
-  const uint m = global_dofs[0]->size();
-  const uint n = global_dofs[1]->size();
+  const std::size_t m = global_dofs[0]->size();
+  const std::size_t n = global_dofs[1]->size();
 
-  for (uint i = 0; i < n; ++i)
+  for (std::size_t i = 0; i < n; ++i)
   {
     const std::size_t ii = (*global_dofs[1])[i];
     DirichletBC::Map::const_iterator bc_value = boundary_values.find(ii);
@@ -589,10 +589,10 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
       b[i] = bc_value->second;
 
       // Zero row (i th)
-      for (uint k = 0; k < n; ++k)
+      for (std::size_t k = 0; k < n; ++k)
         A[i*n + k] = 0.0;
 
-      for (uint j = 0; j < m; ++j)
+      for (std::size_t j = 0; j < m; ++j)
       {
         // Modify RHS
         b[j] -= A[i + j*n]*bc_value->second;
@@ -657,10 +657,10 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
     {
       A_ufc.update(cell0);
       A_cell_integral->tabulate_tensor(&A_ufc.A[0], A_ufc.w(), A_ufc.cell);
-      const uint nn = a0_dofs0.size();
-      const uint mm = a1_dofs0.size();
-      for (uint i = 0; i < mm; i++)
-        for (uint j = 0; j < nn; j++)
+      const std::size_t nn = a0_dofs0.size();
+      const std::size_t mm = a1_dofs0.size();
+      for (std::size_t i = 0; i < mm; i++)
+        for (std::size_t j = 0; j < nn; j++)
           A_ufc.macro_A[2*i*nn+j] += A_ufc.A[i*nn+j];
     }
 
@@ -668,7 +668,7 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
     {
       b_ufc.update(cell0);
       b_cell_integral->tabulate_tensor(&b_ufc.A[0], b_ufc.w(), b_ufc.cell);
-      for (uint i = 0; i < L_dofs0.size(); i++)
+      for (std::size_t i = 0; i < L_dofs0.size(); i++)
         b_ufc.macro_A[i] += b_ufc.A[i];
     }
   }
@@ -681,10 +681,10 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
       A_ufc.update(cell1);
 
       A_cell_integral->tabulate_tensor(&A_ufc.A[0], A_ufc.w(), A_ufc.cell);
-      const uint nn = a0_dofs1.size();
-      const uint mm = a1_dofs1.size();
-      for (uint i = 0; i < mm; i++)
-        for (uint j = 0; j < nn; j++)
+      const std::size_t nn = a0_dofs1.size();
+      const std::size_t mm = a1_dofs1.size();
+      for (std::size_t i = 0; i < mm; i++)
+        for (std::size_t j = 0; j < nn; j++)
           A_ufc.macro_A[2*nn*mm + 2*i*nn + nn + j] += A_ufc.A[i*nn+j];
     }
 
@@ -693,7 +693,7 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
       b_ufc.update(cell1);
 
       b_cell_integral->tabulate_tensor(&b_ufc.A[0], b_ufc.w(), b_ufc.cell);
-      for (uint i = 0; i < L_dofs0.size(); i++)
+      for (std::size_t i = 0; i < L_dofs0.size(); i++)
         b_ufc.macro_A[L_dofs0.size() + i] += b_ufc.A[i];
     }
   }

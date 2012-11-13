@@ -66,24 +66,24 @@ namespace dolfin
 
     /// Assemble tensor from given form on sub domains
     void assemble(GenericTensor& A, const Form& a,
-                  const MeshFunction<uint>* cell_domains,
-                  const MeshFunction<uint>* exterior_facet_domains,
-                  const MeshFunction<uint>* interior_facet_domains);
+                  const MeshFunction<std::size_t>* cell_domains,
+                  const MeshFunction<std::size_t>* exterior_facet_domains,
+                  const MeshFunction<std::size_t>* interior_facet_domains);
 
     // Assemble over cells
     void assemble_cells(GenericTensor& A, const Form& a, UFC& ufc,
-                        const MeshFunction<uint>* domains,
+                        const MeshFunction<std::size_t>* domains,
                         std::vector<double>* values);
 
     // Assemble over exterior facets
     void assemble_cells_and_exterior_facets(GenericTensor& A,
-          const Form& a, UFC& ufc, const MeshFunction<uint>* cell_domains,
-				  const MeshFunction<uint>* exterior_facet_domains,
+          const Form& a, UFC& ufc, const MeshFunction<std::size_t>* cell_domains,
+				  const MeshFunction<std::size_t>* exterior_facet_domains,
 				  std::vector<double>* values);
 
     // Assemble over interior facets
     void assemble_interior_facets(GenericTensor& A, const Form& a, UFC& ufc,
-          const MeshFunction<uint>* domains, std::vector<double>* values);
+          const MeshFunction<std::size_t>* domains, std::vector<double>* values);
 
   };
 

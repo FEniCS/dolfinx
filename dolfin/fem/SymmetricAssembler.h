@@ -71,9 +71,9 @@ namespace dolfin
                   const Form& a,
                   const std::vector<const DirichletBC*> row_bcs,
                   const std::vector<const DirichletBC*> col_bcs,
-                  const MeshFunction<uint>* cell_domains=NULL,
-                  const MeshFunction<uint>* exterior_facet_domains=NULL,
-                  const MeshFunction<uint>* interior_facet_domains=NULL);
+                  const MeshFunction<std::size_t>* cell_domains=NULL,
+                  const MeshFunction<std::size_t>* exterior_facet_domains=NULL,
+                  const MeshFunction<std::size_t>* interior_facet_domains=NULL);
 
     /// Assemble a and apply Dirichlet boundary conditions. Returns two
     /// matrices, where the second contains the symmetric modifications

@@ -247,7 +247,7 @@ std::string Form::coefficient_name(uint i) const
   return name.str();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const MeshFunction<dolfin::uint> >
+boost::shared_ptr<const MeshFunction<std::size_t> >
 Form::cell_domains_shared_ptr() const
 {
   return _cell_domains;

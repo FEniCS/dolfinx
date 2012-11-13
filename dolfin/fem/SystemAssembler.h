@@ -84,9 +84,9 @@ namespace dolfin
                          const Form& a,
                          const Form& L,
                          const std::vector<const DirichletBC*> bcs,
-                         const MeshFunction<uint>* cell_domains,
-                         const MeshFunction<uint>* exterior_facet_domains,
-                         const MeshFunction<uint>* interior_facet_domains,
+                         const MeshFunction<std::size_t>* cell_domains,
+                         const MeshFunction<std::size_t>* exterior_facet_domains,
+                         const MeshFunction<std::size_t>* interior_facet_domains,
                          const GenericVector* x0);
 
   private:
@@ -98,22 +98,22 @@ namespace dolfin
                                                      const Cell& cell1,
                                                      const Cell& cell2,
                                                      const Facet& facet,
-                                                     const MeshFunction<uint>* exterior_facet_domains);
+                                                     const MeshFunction<std::size_t>* exterior_facet_domains);
 
     static void cell_wise_assembly(GenericMatrix& A, GenericVector& b,
                                    const Form& a, const Form& L,
                                    UFC& A_ufc, UFC& b_ufc, Scratch& data,
                                    const DirichletBC::Map& boundary_values,
-                                   const MeshFunction<uint>* cell_domains,
-                                   const MeshFunction<uint>* exterior_facet_domains);
+                                   const MeshFunction<std::size_t>* cell_domains,
+                                   const MeshFunction<std::size_t>* exterior_facet_domains);
 
     static void facet_wise_assembly(GenericMatrix& A, GenericVector& b,
                                     const Form& a, const Form& L,
                                     UFC& A_ufc, UFC& b_ufc, Scratch& data,
                                     const DirichletBC::Map& boundary_values,
-                                    const MeshFunction<uint>* cell_domains,
-                                    const MeshFunction<uint>* exterior_facet_domains,
-                                    const MeshFunction<uint>* interior_facet_domains);
+                                    const MeshFunction<std::size_t>* cell_domains,
+                                    const MeshFunction<std::size_t>* exterior_facet_domains,
+                                    const MeshFunction<std::size_t>* interior_facet_domains);
 
     static void assemble_interior_facet(GenericMatrix& A, GenericVector& b,
                                         UFC& A_ufc, UFC& b_ufc,

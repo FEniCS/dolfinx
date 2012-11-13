@@ -63,7 +63,7 @@ int main()
 
   // Read mesh and sub domain markers
   Mesh mesh("../dolfin-2.xml.gz");
-  MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
+  MeshFunction<std::size_t> sub_domains(mesh, "../subdomains.xml.gz");
 
   // Create function space and subspaces
   Stokes::FunctionSpace W(mesh);

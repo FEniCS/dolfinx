@@ -73,19 +73,19 @@ void SymmetricAssembler::assemble(GenericMatrix& A,
   const Mesh& mesh = a.mesh();
 
   // Extract cell domains
-  boost::scoped_ptr<MeshFunction<uint> > cell_domains;
+  boost::scoped_ptr<MeshFunction<std::size_t> > cell_domains;
   if (a.ufc_form()->num_cell_domains() > 0)
   {
-    cell_domains.reset(new MeshFunction<uint>(mesh, mesh.topology().dim(), 1));
+    cell_domains.reset(new MeshFunction<std::size_t>(mesh, mesh.topology().dim(), 1));
     sub_domain.mark(*cell_domains, 0);
   }
 
   // Extract facet domains
-  boost::scoped_ptr<MeshFunction<uint> > facet_domains;
+  boost::scoped_ptr<MeshFunction<std::size_t> > facet_domains;
   if (a.ufc_form()->num_exterior_facet_domains() > 0 ||
       a.ufc_form()->num_interior_facet_domains() > 0)
   {
-    facet_domains.reset(new MeshFunction<uint>(mesh, mesh.topology().dim() - 1, 1));
+    facet_domains.reset(new MeshFunction<std::size_t>(mesh, mesh.topology().dim() - 1, 1));
     sub_domain.mark(*facet_domains, 0);
   }
 
@@ -98,9 +98,9 @@ void SymmetricAssembler::assemble(GenericMatrix& A,
                                   const Form& a,
                                   const std::vector<const DirichletBC*> row_bcs,
                                   const std::vector<const DirichletBC*> col_bcs,
-                                  const MeshFunction<uint>* cell_domains,
-                                  const MeshFunction<uint>* exterior_facet_domains,
-                                  const MeshFunction<uint>* interior_facet_domains)
+                                  const MeshFunction<std::size_t>* cell_domains,
+                                  const MeshFunction<std::size_t>* exterior_facet_domains,
+                                  const MeshFunction<std::size_t>* interior_facet_domains)
 {
   dolfin_assert(a.rank() == 2);
 

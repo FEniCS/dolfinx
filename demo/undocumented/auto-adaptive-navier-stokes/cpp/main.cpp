@@ -67,7 +67,7 @@ int main() {
   // Define boundary condition
   Constant u0(0.0, 0.0);
   Noslip noslip;
-  MeshFunction<dolfin::uint> noslip_markers(mesh, mesh.topology().dim() - 1, 1);
+  MeshFunction<std::size_t> noslip_markers(mesh, mesh.topology().dim() - 1, 1);
   noslip.mark(noslip_markers, 0);
   SubSpace W0(W, 0);
   DirichletBC bc(W0, u0, noslip_markers, 0);
@@ -89,7 +89,7 @@ int main() {
   AdaptiveNavierStokes::GoalFunctional M(mesh);
   M.w = w;
   Outflow outflow;
-  MeshFunction<dolfin::uint> outflow_markers(mesh, mesh.topology().dim()-1, 1);
+  MeshFunction<std::size_t> outflow_markers(mesh, mesh.topology().dim()-1, 1);
   outflow.mark(outflow_markers, 0);
   M.ds = outflow_markers;
 
