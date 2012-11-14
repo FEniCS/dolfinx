@@ -77,7 +77,7 @@ namespace // anonymous
     // Create a new style instead of observer callbacks, so that we can
     // intercept keypresses (like q/e) reliably.
   public:
-    PrivateVTKInteractorStyle() : _plotter(NULL) {}
+    PrivateVTKInteractorStyle() : _plotter(NULL), _highlighted(false) {}
 
     static PrivateVTKInteractorStyle* New();
     vtkTypeMacro(PrivateVTKInteractorStyle, vtkInteractorStyleTrackballCamera);
@@ -117,12 +117,15 @@ namespace // anonymous
         modifiers &= ~VTKPlotter::SHIFT;
       }
 
-      log(DEBUG, "Keypress: %c|%d (%s)", key, modifiers, keysym.c_str());
+      log(DBG, "Keypress: %c|%d (%s)", key, modifiers, keysym.c_str());
       return _plotter->key_pressed(modifiers, key, keysym);
     }
 
     // A reference to the parent plotter
     VTKPlotter *_plotter;
+
+    // A flag to indicate bounding box is visible
+    bool _highlighted;
 
   };
   vtkStandardNewMacro(PrivateVTKInteractorStyle)
@@ -178,7 +181,7 @@ VTKWindowOutputStage::~VTKWindowOutputStage()
   // destruction. This destructor tries to impose an order on the most
   // important stuff.
 
-  log(DEBUG, "VTK pipeline destroyed");
+  //log(DBG, "VTK pipeline destroyed");
 
 #ifdef HAS_QVTK
   widget.reset(NULL);
@@ -487,6 +490,16 @@ void VTKWindowOutputStage::cycle_representation(int new_rep)
     }
   }
   _actor->GetProperty()->SetRepresentation(new_rep);
+}
+//----------------------------------------------------------------------------
+void VTKWindowOutputStage::toggle_boundingbox()
+{
+  PrivateVTKInteractorStyle *style
+    = dynamic_cast<PrivateVTKInteractorStyle*>(get_interactor()->GetInteractorStyle());
+  if (style) {
+    style->_highlighted = !style->_highlighted;
+    style->HighlightProp(style->_highlighted ? _actor : NULL);
+  }
 }
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::render()

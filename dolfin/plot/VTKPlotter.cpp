@@ -336,15 +336,16 @@ std::string VTKPlotter::get_helptext()
   text << "   f: Fly to the point currently under the mouse pointer\n";
   text << "   s: Synchronize cameras (keep pressed for continuous sync)\n";
   text << "   m: Toggle mesh overlay\n";
-  text << "   p: Toggle bounding box\n";
+  text << "   b: Toggle bounding box\n";
   text << "   v: Toggle vertex indices\n";
   text << "   w: Toggle wireframe/point/surface view\n";
   text << "  +-: Resize points and lines\n";
   text << "C-+-: Rescale plot (glyphs and warping)\n";
-  text << "   h: Save plot to png (raster) file\n";
+  text << "   p: Save plot to png (raster) file\n";
 #ifdef VTK_USE_GL2PS
-  text << "   H: Save plot to pdf (vector) file\n";
+  text << "   P: Save plot to pdf (vector) file\n";
 #endif
+  text << "   h: print help to console\n";
   text << "   q: Continue\n";
   text << "   Q: Continue to end\n";
   text << " C-C: Abort execution\n";
@@ -370,20 +371,31 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
     vtk_pipeline->render();
     return true;
 
-  case CONTROL + '+':
+  case CONTROL + '+': // Up-scale glyphs, etc.
     parameters["scale"] = (double)parameters["scale"] * 1.2;
     plot();
     return true;
-  case CONTROL + '-':
+  case CONTROL + '-': // Down-scale glyphs, etc.
     parameters["scale"] = (double)parameters["scale"] / 1.2;
     plot();
     return true;
 
-  case 'h': // Save plot to file
+  case 'b': // Toggle bounding box
+    vtk_pipeline->toggle_boundingbox();
+    vtk_pipeline->render();
+    return true;
+
+  case 'h': // Show helptext
+    //vtk_pipeline->toggle_helptext();
+    //vtk_pipeline->render();
+    std::cout << get_helptext();
+    return true;
+
+  case 'p': // Save plot to file
     write_png();
     return true;
 
-  case SHIFT + 'h': // Save plot to PDF
+  case SHIFT + 'p': // Save plot to PDF
     write_pdf();
     return true;
 

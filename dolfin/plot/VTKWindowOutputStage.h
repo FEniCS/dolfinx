@@ -60,60 +60,93 @@ namespace dolfin
     /// If a widget is supplied, this widget will be used for drawing, instead of a new top-level widget. Ownership is transferred.
     VTKWindowOutputStage(QVTKWidget *widget = NULL);
 
+    /// Destructor
     ~VTKWindowOutputStage();
 
+    /// Initialise the pipeline
     void init(VTKPlotter *parent, const Parameters &parameters);
 
+    /// Get the vtkRenderWindowInteractor for the window
     vtkRenderWindowInteractor* get_interactor();
 
+    /// Get the vtkRenderer for the scene
     vtkSmartPointer<vtkRenderer> get_renderer();
 
+    /// Scale points and lines by the given factor
     void scale_points_lines(double factor);
 
+    /// Set the help text, and (re)create the popup widget
     void set_helptext(std::string text);
 
+    /// Change the window title
     void set_window_title(std::string title);
 
+    /// Retrieve the window title
     std::string get_window_title();
 
     /// Return a pointer to the plotting widget. The pointer is valid from
     /// after init() is called (if no widget was passed in the contructor).
     QVTKWidget *get_widget() const;
 
+    /// Close the plotting window (only Qt). The window is not destroyed.
     void close_window();
 
+    /// Re-open a previously closed plotting window.
     bool resurrect_window();
 
+    /// Start interaction, and optionally enter the event loop. In Qt,
+    /// interaction is allowed also before start_interaction is called,
+    /// but updates are only processed when the plot is updated.
     void start_interaction(bool enter_eventloop=true);
 
+    /// Exit the event loop
     void stop_interaction();
 
+    /// Write the current frame to raster file
     void write_png(std::string filename);
 
+    /// Write the current frame to vector file
     void write_pdf(std::string filename);
 
+    /// Retrieve the camera
     vtkCamera* get_camera();
 
+    /// Reset the camera to cover the whole scene
     void reset_camera();
 
+    /// Reset camera clipping ranges, if the scene has changed
     void reset_camera_clipping_range();
 
+    /// Set the scalar range for colorbar
     void set_scalar_range(double *range);
 
+    /// Cycle between surface--wireframe--points representation
     void cycle_representation(int new_rep=0);
 
+    /// Toggle the bounding box around the main actor
+    void toggle_boundingbox();
+
+    /// Re-render the current frame
     void render();
 
+    /// Get the size of the plot window
     void get_window_size(int& width, int& height);
 
+    /// Get the size of the screen
     void get_screen_size(int& width, int& height);
 
+    /// Place the plot window at the given coordinates
     void place_window(int x, int y);
 
+    /// Add a prop to the scene. If it is already in the scene,
+    /// it will not be re-added.
     bool add_viewprop(vtkSmartPointer<vtkProp> prop);
 
+    /// Set the input for the output stage.
     void set_input(vtkSmartPointer<vtkAlgorithmOutput> output);
 
+    /// Used by plottables to indicate whether the scene should be
+    /// treated as translucent (which requires depth sorting, etc.)
     void set_translucent(bool onoff, uint topo_dim=3, uint geom_dim=3);
 
   protected:
@@ -143,8 +176,10 @@ namespace dolfin
     // scalar value
     vtkSmartPointer<vtkScalarBarActor> _scalarBar;
 
+    // Axes
     vtkSmartPointer<vtkAxesActor> _axesActor;
 
+    // Help text popup
     vtkSmartPointer<vtkTextActor> helptextActor;
     vtkSmartPointer<vtkBalloonRepresentation> balloonRep;
     vtkSmartPointer<vtkBalloonWidget> balloonwidget;
