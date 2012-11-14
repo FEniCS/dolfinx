@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2011 Anders Logg and Marie E. Rognes
+// Copyright (C) 2010-2012 Anders Logg and Marie E. Rognes
 //
 // This file is part of DOLFIN.
 //
@@ -83,20 +83,17 @@ int main()
   // Solve equation a = L with respect to u and the given boundary
   // conditions, such that the estimated error (measured in M) is less
   // than tol
-  // solve(a == L, u, bc, tol, M);
-
-  // Alternative, more verbose version:
   LinearVariationalProblem problem(a, L, u, bc);
   AdaptiveLinearVariationalSolver solver(problem, M);
-  solver.parameters("error_control")("dual_variational_solver")["linear_solver"] = "gmres";
+  solver.parameters("error_control")("dual_variational_solver")["linear_solver"] = "cg";
   solver.solve(tol);
 
   solver.summary();
 
   // Plot final solution
-  //plot(u.root_node(), "Solution on initial mesh");
-  //plot(u.leaf_node(), "Solution on final mesh");
-  //interactive();
+  plot(u.root_node(), "Solution on initial mesh");
+  plot(u.leaf_node(), "Solution on final mesh");
+  interactive();
 
   return 0;
 }

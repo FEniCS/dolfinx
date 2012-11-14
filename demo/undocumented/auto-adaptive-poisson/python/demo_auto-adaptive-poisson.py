@@ -1,4 +1,4 @@
-# Copyright (C) 2011 Marie E. Rognes and Anders Logg
+# Copyright (C) 2011-2012 Marie E. Rognes and Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -51,12 +51,6 @@ tol = 1.e-5
 # Solve equation a = L with respect to u and the given boundary
 # conditions, such that the estimated error (measured in M) is less
 # than tol
-solver_parameters = {"error_control":
-                     {"dual_variational_solver":
-                      {"linear_solver": "gmres"}}}
-#solve(a == L, u, bc, tol=tol, M=M, solver_parameters=solver_parameters)
-
-## Alternative, more verbose version (+ illustrating how to set parameters)
 problem = LinearVariationalProblem(a, L, u, bc)
 solver = AdaptiveLinearVariationalSolver(problem, M)
 solver.parameters["error_control"]["dual_variational_solver"]["linear_solver"] = "cg"

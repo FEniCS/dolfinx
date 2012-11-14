@@ -84,7 +84,7 @@ M = u[0]*ds(0)
 tol = 1.e-05
 
 # If no more control is wanted, do:
-#solve(F == 0, w, bc, tol=tol, M=M)
+# solve(F == 0, w, bc, tol=tol, M=M)
 
 # Compute Jacobian form
 J = derivative(F, w)
@@ -101,8 +101,10 @@ solver.parameters["reference"] = 0.40863917;
 # Solve to given tolerance
 solver.solve(tol)
 
-# Write a summary
-solver.summary()
+# Show solver summary
+solver.summary();
+
+# Show all timings
 list_timings()
 
 # Extract solutions on coarsest and finest mesh:

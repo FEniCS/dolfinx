@@ -117,7 +117,7 @@ int main() {
   // Show solver summary
   solver.summary();
 
-  // Show timings
+  // Show all timings
   list_timings();
 
   // Plot solutions
