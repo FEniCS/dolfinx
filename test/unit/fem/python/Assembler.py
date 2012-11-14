@@ -310,8 +310,8 @@ class Assembly(unittest.TestCase):
 
         # Mark mesh functions
         D = mesh.topology().dim()
-        cell_domains = MeshFunction("uint", mesh, D)
-        exterior_facet_domains = MeshFunction("uint", mesh, D - 1)
+        cell_domains = MeshFunction("sizet", mesh, D)
+        exterior_facet_domains = MeshFunction("sizet", mesh, D - 1)
         cell_domains.set_all(1)
         exterior_facet_domains.set_all(1)
         my_domain.mark(cell_domains, 0)
