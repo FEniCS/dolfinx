@@ -183,7 +183,7 @@ MESHENTITYITERATORBASE(Vertex, vertices)
 //-----------------------------------------------------------------------------
 // Return NumPy arrays for MeshConnectivity() and MeshEntity.entities()
 //-----------------------------------------------------------------------------
-%ignore dolfin::MeshGeometry::x(uint n, uint i) const;
+%ignore dolfin::MeshGeometry::x(std::size_t n, uint i) const;
 %ignore dolfin::MeshConnectivity::operator();
 %ignore dolfin::MeshEntity::entities;
 

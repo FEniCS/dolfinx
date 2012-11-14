@@ -130,5 +130,5 @@ MAP_SPECIFIC_OUT_TYPEMAPS(std::map, KEY_TYPE, VALUE_TYPE, TYPENAME)
 // NOTE: in typemaps
 // NOTE: Well... to get std::size_t up and running we need to use typedefs.
 MAP_OUT_TYPEMAPS(unsigned int, unsigned int, uint)
-MAP_OUT_TYPEMAPS(unsigned int, double, double)
+MAP_OUT_TYPEMAPS(std::size_t, double, double)
 MAP_OUT_TYPEMAPS(std::size_t, std::size_t, sizet)

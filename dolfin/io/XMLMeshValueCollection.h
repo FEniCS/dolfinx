@@ -21,6 +21,7 @@
 #ifndef __XML_MESH_VALUE_COLLECTION_H
 #define __XML_MESH_VALUE_COLLECTION_H
 
+#include <boost/lexical_cast.hpp>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include "pugixml.hpp"
 #include "xmlutils.h"
@@ -166,7 +167,7 @@ namespace dolfin
       pugi::xml_node entity_node = mf_node.append_child("value");
       entity_node.append_attribute("cell_index") = (uint) it->first.first;
       entity_node.append_attribute("local_entity") = (uint) it->first.second;
-      entity_node.append_attribute("value") = (uint) it->second;
+      entity_node.append_attribute("value") = boost::lexical_cast<std::string>(it->second).c_str();
     }
   }
   //---------------------------------------------------------------------------
