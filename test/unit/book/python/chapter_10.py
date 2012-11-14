@@ -521,7 +521,7 @@ class TestPage29(unittest.TestCase):
             def inside(self, x, on_boundary):
                 return x[0] < 0.5 + DOLFIN_EPS and on_boundary
         neumann_boundary = NeumannBoundary()
-        exterior_facet_domains = FacetFunction("uint", mesh)
+        exterior_facet_domains = FacetFunction("sizet", mesh)
         exterior_facet_domains.set_all(1)
         neumann_boundary.mark(exterior_facet_domains, 0)
 
