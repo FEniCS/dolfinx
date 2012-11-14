@@ -56,8 +56,7 @@
 //-----------------------------------------------------------------------------
 #define Py_convert_frag(Type) "Py_convert_" {Type}
 
-%fragment("Py_convert_std_size_t", "header") {
-
+%fragment("Py_convert_std_size_t", "header", fragment="PyInteger_Check") {
   // A check for integer
   SWIGINTERNINLINE bool Py_convert_std_size_t(PyObject* in, std::size_t& value)
   {
