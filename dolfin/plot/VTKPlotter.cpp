@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-11-12
+// Last changed: 2012-11-14
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
@@ -793,6 +793,7 @@ void VTKPlotter::write_pdf    (std::string)                       {}
 void VTKPlotter::azimuth      (double)                            {}
 void VTKPlotter::elevate      (double)                            {}
 void VTKPlotter::dolly        (double)                            {}
+void VTKPlotter::zoom         (double)                            {}
 void VTKPlotter::set_viewangle(double)                            {}
 void VTKPlotter::set_min_max  (double, double)                    {}
 void VTKPlotter::add_polygon  (const Array<double>&)              {}
