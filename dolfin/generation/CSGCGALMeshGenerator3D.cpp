@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-10
-// Last changed: 2012-11-12
+// Last changed: 2012-11-14
 
 
 #include "CSGCGALMeshGenerator3D.h"
@@ -28,11 +28,14 @@
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/MeshEditor.h>
-#include "cgal_csg3d.h"
-#include <dolfin/generation/triangulate_polyhedron.h>
 #include <boost/scoped_ptr.hpp>
 
 using namespace dolfin;
+
+#ifdef HAS_CGAL
+
+#include "cgal_csg3d.h"
+#include <dolfin/generation/triangulate_polyhedron.h>
 
 //-----------------------------------------------------------------------------
 static void build_dolfin_mesh(const csg::C3t3& c3t3, Mesh& mesh)
@@ -209,3 +212,23 @@ void CSGCGALMeshGenerator3D::save_off(std::string filename) const
   outfile << p;
   outfile.close();
 }
+
+#else
+CSGCGALMeshGenerator3D::CSGCGALMeshGenerator3D(const CSGGeometry& geometry)
+{
+  dolfin_error("CSGCGALMeshGenerator3D.cpp",
+	       "Create mesh generator",
+	       "Dolfin must be compiled with CGAL to use this feature.");
+}
+CSGCGALMeshGenerator3D::CSGCGALMeshGenerator3D(boost::shared_ptr<const CSGGeometry> geometry)
+{
+  dolfin_error("CSGCGALMeshGenerator3D.cpp",
+	       "Create mesh generator",
+	       "Dolfin must be compiled with CGAL to use this feature.");
+}
+CSGCGALMeshGenerator3D::~CSGCGALMeshGenerator3D(){}
+void CSGCGALMeshGenerator3D::generate(Mesh& mesh) const{}
+void CSGCGALMeshGenerator3D::save_off(std::string filename) const {}
+
+
+#endif

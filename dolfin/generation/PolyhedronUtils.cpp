@@ -16,7 +16,9 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-10-31
-// Last changed: 2012-11-12
+// Last changed: 2012-11-14
+
+#ifdef HAS_CGAL
 
 #include "PolyhedronUtils.h"
 #include <dolfin/log/log.h>
@@ -614,3 +616,5 @@ bool PolyhedronUtils::has_degenerate_facets(csg::Exact_Polyhedron_3& p, double t
   }
   return false;
 }
+
+#endif

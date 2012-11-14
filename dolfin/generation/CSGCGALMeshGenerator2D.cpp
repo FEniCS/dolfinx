@@ -16,20 +16,25 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Joachim B Haga 2012
+// Modified by Benjamin Kehlet 2012
 //
 // First added:  2012-05-10
-// Last changed: 2012-09-06
+// Last changed: 2012-11-14
 
 #include <vector>
 #include <cmath>
 
 #include <dolfin/common/constants.h>
 #include <dolfin/math/basic.h>
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEditor.h>
 
 #include "CSGCGALMeshGenerator2D.h"
 #include "CSGGeometry.h"
 #include "CSGOperators.h"
 #include "CSGPrimitives2D.h"
+
+#ifdef HAS_CGAL
 #include "CGALMeshBuilder.h"
 
 #include <CGAL/basic.h>
@@ -468,4 +473,23 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   // FIXME: Why does this not work correctly?
   //CGALMeshBuilder::build(mesh, cdt);
 }
+
+#else
+namespace dolfin
+{
+  CSGCGALMeshGenerator2D::CSGCGALMeshGenerator2D(const CSGGeometry& geometry)
+    :geometry(geometry)
+  {
+    dolfin_error("CSGCGALMeshGenerator2D.cpp",
+		 "Create mesh generator",
+		 "Dolfin must be compiled with CGAL to use this feature.");
+  }
+  //-----------------------------------------------------------------------------
+  CSGCGALMeshGenerator2D::~CSGCGALMeshGenerator2D(){}
+  //-----------------------------------------------------------------------------
+  void CSGCGALMeshGenerator2D::generate(Mesh& mesh) {}
+}
+
+
+#endif
 //-----------------------------------------------------------------------------
