@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Marie E. Rognes
+// Copyright (C) 2010--2012 Marie E. Rognes
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells 2011
 //
 // First added:  2010-08-19
-// Last changed: 2011-10-04
+// Last changed: 2012-11-14
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/LinearVariationalProblem.h>
@@ -36,20 +36,31 @@ using namespace dolfin;
 
 // ----------------------------------------------------------------------------
 AdaptiveLinearVariationalSolver::
-AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem)
+AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem,
+                                GoalFunctional& goal)
   : problem(reference_to_no_delete_pointer(problem))
 {
-  // Set generic adaptive parameters
-  parameters = GenericAdaptiveVariationalSolver::default_parameters();
-
-  // Add parameters for linear variational solver
-  parameters.add(LinearVariationalSolver::default_parameters());
+  init(reference_to_no_delete_pointer(problem),
+       reference_to_no_delete_pointer(goal));
 }
 // ----------------------------------------------------------------------------
 AdaptiveLinearVariationalSolver::
-AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem)
+AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem,
+                                boost::shared_ptr<GoalFunctional> goal)
   : problem(problem)
 {
+  init(problem, goal);
+}
+// ----------------------------------------------------------------------------
+AdaptiveLinearVariationalSolver::
+AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem,
+                                boost::shared_ptr<Form> goal,
+                                boost::shared_ptr<ErrorControl> control)
+  : problem(problem)
+{
+  this->goal = goal;
+  this->control = control;
+
   // Set generic adaptive parameters
   parameters = GenericAdaptiveVariationalSolver::default_parameters();
 
@@ -57,21 +68,27 @@ AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> prob
   parameters.add(LinearVariationalSolver::default_parameters());
 }
 // ----------------------------------------------------------------------------
-void AdaptiveLinearVariationalSolver::solve(const double tol, GoalFunctional& M)
+void AdaptiveLinearVariationalSolver::
+init(boost::shared_ptr<LinearVariationalProblem> problem,
+     boost::shared_ptr<GoalFunctional> goal)
 {
-  // Initialize goal functional
+  this->goal = goal;
+
+  // Set generic adaptive parameters
+  parameters = GenericAdaptiveVariationalSolver::default_parameters();
+
+  // Add parameters for linear variational solver
+  parameters.add(LinearVariationalSolver::default_parameters());
+
+  // Extract error control from goal
   boost::shared_ptr<const Form> a = problem->bilinear_form();
   boost::shared_ptr<const Form> L = problem->linear_form();
   dolfin_assert(a);
   dolfin_assert(L);
-  M.update_ec(*a, *L);
 
-  // Extract error control from goal functional
-  dolfin_assert(M._ec);
-  ErrorControl& ec(*M._ec);
-
-  // Call solve with given error control
-  GenericAdaptiveVariationalSolver::solve(tol, M, ec);
+  // Extract and set error control from goal functional
+  goal->update_ec(*a, *L);
+  control = goal->_ec;
 }
 // ----------------------------------------------------------------------------
 boost::shared_ptr<const Function>

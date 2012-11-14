@@ -105,16 +105,19 @@ int main() {
   NonlinearVariationalProblem pde(F, w, bc, dF);
 
   // Define solver
-  AdaptiveNonlinearVariationalSolver solver(pde);
+  AdaptiveNonlinearVariationalSolver solver(pde, M);
 
   // Set (precomputed) reference in adaptive solver to evaluate
   // quality of error estimates and adaptive refinement
   solver.parameters["reference"] = 0.40863917;
 
   // Solve problem with goal-oriented error control to given tolerance
-  solver.solve(tol, M);
+  solver.solve(tol);
 
-  // Show timings
+  // Show solver summary
+  solver.summary();
+
+  // Show all timings
   list_timings();
 
   // Plot solutions
