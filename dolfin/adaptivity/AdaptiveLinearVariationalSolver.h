@@ -130,6 +130,9 @@ namespace dolfin
 
   private:
 
+    void init(boost::shared_ptr<LinearVariationalProblem> problem,
+              boost::shared_ptr<GoalFunctional> goal);
+
     // The primal problem
     boost::shared_ptr<LinearVariationalProblem> problem;
 

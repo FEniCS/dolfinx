@@ -40,28 +40,21 @@ AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem,
                                 GoalFunctional& goal)
   : problem(reference_to_no_delete_pointer(problem))
 {
-  this->goal = reference_to_no_delete_pointer(goal);
-
-  // Set generic adaptive parameters
-  parameters = GenericAdaptiveVariationalSolver::default_parameters();
-
-  // Add parameters for linear variational solver
-  parameters.add(LinearVariationalSolver::default_parameters());
-
-  // Extract error control from goal
-  boost::shared_ptr<const Form> a = problem.bilinear_form();
-  boost::shared_ptr<const Form> L = problem.linear_form();
-  dolfin_assert(a);
-  dolfin_assert(L);
-
-  // Extract and set error control from goal functional
-  goal.update_ec(*a, *L);
-  control = goal._ec;
+  init(reference_to_no_delete_pointer(problem),
+       reference_to_no_delete_pointer(goal));
 }
 // ----------------------------------------------------------------------------
 AdaptiveLinearVariationalSolver::
-AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem, boost::shared_ptr<GoalFunctional> goal)
+AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem,
+                                boost::shared_ptr<GoalFunctional> goal)
   : problem(problem)
+{
+  init(problem, goal);
+}
+// ----------------------------------------------------------------------------
+void AdaptiveLinearVariationalSolver::
+init(boost::shared_ptr<LinearVariationalProblem> problem,
+     boost::shared_ptr<GoalFunctional> goal)
 {
   this->goal = goal;
 

@@ -40,24 +40,8 @@ AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem& problem,
                                    GoalFunctional& goal)
   : problem(reference_to_no_delete_pointer(problem))
 {
-
-  this->goal = reference_to_no_delete_pointer(goal);
-
-  // Set generic adaptive parameters
-  parameters = GenericAdaptiveVariationalSolver::default_parameters();
-
-  // Add parameters for nonlinear variational solver
-  parameters.add(NonlinearVariationalSolver::default_parameters());
-
-  // Extract error control from goal
-  boost::shared_ptr<const Form> a = problem.jacobian_form();
-  boost::shared_ptr<const Form> L = problem.residual_form();
-  dolfin_assert(a);
-  dolfin_assert(L);
-
-  // Extract error control from goal functional
-  goal.update_ec(*a, *L);
-  control = goal._ec;
+  init(reference_to_no_delete_pointer(problem),
+       reference_to_no_delete_pointer(goal));
 }
 // ----------------------------------------------------------------------------
 AdaptiveNonlinearVariationalSolver::
@@ -65,7 +49,13 @@ AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem
                                    boost::shared_ptr<GoalFunctional> goal)
   : problem(problem)
 {
-
+  init(problem, goal);
+}
+// ----------------------------------------------------------------------------
+void AdaptiveNonlinearVariationalSolver::
+init(boost::shared_ptr<NonlinearVariationalProblem> problem,
+     boost::shared_ptr<GoalFunctional> goal)
+{
   this->goal = goal;
 
   // Set generic adaptive parameters
