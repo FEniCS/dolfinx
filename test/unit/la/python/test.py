@@ -234,9 +234,17 @@ class AbstractBaseTest(object):
 
         # Reference values
         v_norm  = 0.181443684651
+        w_norm  = 0.278394377377
+        A_norm  = 31.947874212
+        B_norm  = 0.11052313564
         Av_norm = 0.575896483442
         Bw_norm = 0.0149136743079
         Cv_norm = 0.00951459156865
+
+        self.assertAlmostEqual(v.norm('l2'), v_norm)
+        self.assertAlmostEqual(w.norm('l2'), w_norm)
+        self.assertAlmostEqual(A.norm('frobenius'), A_norm)
+        self.assertAlmostEqual(B.norm('frobenius'), B_norm)
 
         u = A*v
 
@@ -299,13 +307,13 @@ class DataNotWorkingTester:
             v.data()
         self.assertRaises(AttributeError,no_attribute)
 
-if has_linear_algebra_backend("PETSc"):
-    class PETScTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
-        backend    = "PETSc"
+#if has_linear_algebra_backend("PETSc"):
+#    class PETScTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+#        backend    = "PETSc"
 
-if has_linear_algebra_backend("Epetra"):
-    class EpetraTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
-        backend    = "Epetra"
+#if has_linear_algebra_backend("Epetra"):
+#    class EpetraTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+#        backend    = "Epetra"
 
 if MPI.num_processes() == 1:
     class uBLASSparseTester(AbstractBaseTest, unittest.TestCase):
@@ -315,10 +323,6 @@ if MPI.num_processes() == 1:
     class uBLASDenseTester(AbstractBaseTest, unittest.TestCase):
         backend     = "uBLAS"
         sub_backend = "Dense"
-
-    if has_linear_algebra_backend("MTL4"):
-        class MTL4Tester(AbstractBaseTest, unittest.TestCase):
-            backend    = "MTL4"
 
     if has_linear_algebra_backend("PETScCusp"):
         class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):

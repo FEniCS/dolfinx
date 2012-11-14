@@ -190,6 +190,14 @@ IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(Function)
 //-----------------------------------------------------------------------------
 // Out typemap for std::pair<TYPE,TYPE>
 //-----------------------------------------------------------------------------
+%typemap(out) std::pair<std::size_t, std::size_t>
+{
+  $result = Py_BuildValue("ii", $1.first, $1.second);
+}
+%typemap(out) std::pair<std::size_t, bool>
+{
+  $result = Py_BuildValue("ib", $1.first, $1.second);
+}
 %typemap(out) std::pair<unsigned int, unsigned int>
 {
   $result = Py_BuildValue("ii", $1.first, $1.second);

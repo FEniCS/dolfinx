@@ -86,7 +86,15 @@ SWIGINTERNINLINE PyObject* return_py_array(PyObject* obj, bool writable)
 // TYPE       : The pointer type
 // NUMPY_TYPE : The NumPy type that is going to be checked for
 // TYPE_NAME  : The name of the pointer type, 'double' for 'double', 'uint' for
-//              'dolfin::uint'
+//              'dolfin::uint', sizet for std::size_t
+//
+// Note that each invocation of this macro two functions will be inlined in 
+// the SWIG layer:
+//
+//    1) make_1d_numpy_array_{TYPE_NAME}
+//    2) make_2d_numpy_array_{TYPE_NAME}
+//
+// Here TYPE_NAME is used to name the generated C++ function.
 //-----------------------------------------------------------------------------
 %define NUMPY_ARRAY_FRAGMENTS(TYPE, NUMPY_TYPE, TYPE_NAME)
 %fragment(make_numpy_array_frag(2, TYPE_NAME), "header",
@@ -218,7 +226,7 @@ SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input,
 //-----------------------------------------------------------------------------
 // The typecheck
 //-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_ ## TYPE_UPPER ## _ARRAY) (dolfin::uint _array_dim, TYPE* _array)
+%typecheck(SWIG_TYPECHECK_ ## TYPE_UPPER ## _ARRAY) (std::size_t _array_dim, TYPE* _array)
 {
   $1 = PyArray_Check($input) ? 1 : 0;
 }
@@ -226,7 +234,8 @@ SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input,
 //-----------------------------------------------------------------------------
 // The typemap
 //-----------------------------------------------------------------------------
-%typemap(in, fragment=convert_numpy_to_array_with_check(TYPE_NAME)) (dolfin::uint _array_dim, TYPE* _array)
+%typemap(in, fragment=convert_numpy_to_array_with_check(TYPE_NAME)) \
+  (std::size_t _array_dim, TYPE* _array)
 {
   if (!convert_numpy_to_array_with_check_ ## TYPE_NAME($input,$1,$2))
     return NULL;
@@ -246,6 +255,10 @@ SAFE_NUMPY_TYPEMAPS(std::size_t,INT32,NPY_UINTP,sizet,uintp)
 SAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,float_)
 SAFE_NUMPY_TYPEMAPS(int,INT32,NPY_INT,int,cint)
 
+// Instantiate the code used by the make_numpy_array macro.
+// The first argument name the C++ type, the second the corresponding 
+// NumPy type and the third argument a shorthand name for the C++ type 
+// to identify the correct function
 NUMPY_ARRAY_FRAGMENTS(dolfin::uint, NPY_UINT, uint)
 NUMPY_ARRAY_FRAGMENTS(double, NPY_DOUBLE, double)
 NUMPY_ARRAY_FRAGMENTS(int, NPY_INT, int)
