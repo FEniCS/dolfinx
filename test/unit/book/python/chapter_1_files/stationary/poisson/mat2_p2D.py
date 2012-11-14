@@ -9,7 +9,7 @@ nx = 4;  ny = 6
 mesh = UnitSquare(nx, ny)
 
 # Define a MeshFunction over two subdomains
-subdomains = MeshFunction('uint', mesh, 2)
+subdomains = MeshFunction('sizet', mesh, 2)
 
 class Omega0(SubDomain):
     def inside(self, x, on_boundary):
@@ -66,7 +66,7 @@ Gamma_0 = DirichletBC(V, Constant(0), BottomBoundary())
 class TopBoundary(SubDomain):
     def inside(self, x, on_boundary):
         return on_boundary and abs(x[1] - 1) < tol
- 
+
 Gamma_1 = DirichletBC(V, Constant(1), TopBoundary())
 
 bcs = [Gamma_0, Gamma_1]
@@ -97,7 +97,7 @@ print 'max error:', error.max()
 #coor = mesh.coordinates()
 #for i in range(len(u_array)):
 #    print 'u(%8g,%8g) = %g, error: %.4E' % \
-#        (coor[i][0], coor[i][1], u_array[i], 
+#        (coor[i][0], coor[i][1], u_array[i],
 #         u_exact(coor[i][1]) - u_array[i])
 
 #interactive()
