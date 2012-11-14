@@ -91,6 +91,9 @@ cppremoves = [os.path.join(demodir,  'undocumented', 'quadrature', 'cpp')]
 
 # Remove demos that crash
 pyremoves.append(os.path.join(demodir,  'undocumented', 'netgen', 'python'))
+# Add these back when mesh generation from csg is working in 3D
+pyremoves.append(os.path.join(demodir,  'undocumented', 'csg', '3D', 'python'))
+pyremoves.append(os.path.join(demodir,  'undocumented', 'csg', '3D', 'cpp'))
 
 for demo in pyremoves:
     if demo in pydemos:
