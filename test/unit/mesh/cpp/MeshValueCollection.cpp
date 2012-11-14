@@ -41,7 +41,7 @@ public:
   void testAssign2DCells()
   {
     UnitSquare mesh(3, 3);
-    const dolfin::uint ncells = mesh.num_cells();
+    const std::size_t ncells = mesh.num_cells();
     MeshValueCollection<int> f(2);
     bool all_new = true;
     for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -67,7 +67,7 @@ public:
   {
     UnitSquare mesh(3, 3);
     mesh.init(2,1);
-    const dolfin::uint ncells = mesh.num_cells();
+    const std::size_t ncells = mesh.num_cells();
     MeshValueCollection<int> f(1);
     bool all_new = true;
     for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -99,7 +99,7 @@ public:
   {
     UnitSquare mesh(3, 3);
     mesh.init(2,0);
-    const dolfin::uint ncells = mesh.num_cells();
+    const std::size_t ncells = mesh.num_cells();
     MeshValueCollection<int> f(0);
     bool all_new = true;
     for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -130,7 +130,7 @@ public:
   void testMeshFunctionAssign2DCells()
   {
     UnitSquare mesh(3, 3);
-    const dolfin::uint ncells = mesh.num_cells();
+    const std::size_t ncells = mesh.num_cells();
     MeshFunction<int> f(mesh, 2, 0);
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {

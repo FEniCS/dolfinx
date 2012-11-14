@@ -28,7 +28,7 @@ uBLASLinearOperator::uBLASLinearOperator() : _wrapper(0), M(0), N(0)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBLASLinearOperator::size(uint dim) const
+std::size_t uBLASLinearOperator::size(uint dim) const
 {
   if (dim == 0)
     return M;
@@ -67,7 +67,7 @@ std::string uBLASLinearOperator::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void uBLASLinearOperator::init(uint M, uint N, GenericLinearOperator* wrapper)
+void uBLASLinearOperator::init(std::size_t M, std::size_t N, GenericLinearOperator* wrapper)
 {
   // Store dimensions
   this->M = M;

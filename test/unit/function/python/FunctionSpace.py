@@ -70,6 +70,6 @@ class Interface(unittest.TestCase):
         f0 = Function(V)
         f1 = Function(Vc)
         self.assertEqual(len(f0.vector()), len(f1.vector()))
-        
+
 if __name__ == "__main__":
     unittest.main()

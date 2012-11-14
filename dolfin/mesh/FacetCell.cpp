@@ -32,7 +32,7 @@ FacetCell::FacetCell(const BoundaryMesh& mesh, const Cell& facet)
   : Cell(mesh, 0), _facet_index(0)
 {
   // Get map from facets (boundary cells) to mesh cells
-  const MeshFunction<unsigned int>& cell_map = mesh.cell_map();
+  const MeshFunction<std::size_t>& cell_map = mesh.cell_map();
 
   // Get mesh facet corresponding to boundary cell
   Facet mesh_facet(mesh, cell_map[facet]);
@@ -51,7 +51,7 @@ FacetCell::~FacetCell()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint FacetCell::facet_index() const
+std::size_t FacetCell::facet_index() const
 {
   return _facet_index;
 }

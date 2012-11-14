@@ -46,18 +46,18 @@
 
 %ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
 					 const GenericFunction&,
-					 const MeshFunction<unsigned int>&,
-					 uint,
+					 const MeshFunction<std::size_t>&,
+					 std::size_t,
 					 std::string method="topological");
 
 %ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
 					 const GenericFunction&,
-					 uint,
+					 std::size_t,
 					 std::string method="topological");
 
 %ignore dolfin::DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace>,
 					 boost::shared_ptr<const GenericFunction>,
-					 const std::vector<std::pair<uint, uint> >&,
+					 const std::vector<std::pair<std::size_t, std::size_t> >&,
 					 std::string method="topological");
 
 %ignore dolfin::PeriodicBC::PeriodicBC(const FunctionSpace&,

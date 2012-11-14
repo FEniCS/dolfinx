@@ -71,9 +71,9 @@ namespace dolfin
                   const Form& a,
                   const std::vector<const DirichletBC*> row_bcs,
                   const std::vector<const DirichletBC*> col_bcs,
-                  const MeshFunction<uint>* cell_domains=NULL,
-                  const MeshFunction<uint>* exterior_facet_domains=NULL,
-                  const MeshFunction<uint>* interior_facet_domains=NULL);
+                  const MeshFunction<std::size_t>* cell_domains=NULL,
+                  const MeshFunction<std::size_t>* exterior_facet_domains=NULL,
+                  const MeshFunction<std::size_t>* interior_facet_domains=NULL);
 
     /// Assemble a and apply Dirichlet boundary conditions. Returns two
     /// matrices, where the second contains the symmetric modifications
@@ -94,7 +94,7 @@ namespace dolfin
     /// to split the cell tensor into symmetric/antisymmetric parts.
     virtual void add_to_global_tensor(GenericTensor& A,
                                       std::vector<double>& local_A,
-                                      std::vector<const std::vector<uint>* >& dofs);
+                                      std::vector<const std::vector<std::size_t>* >& dofs);
 
   private:
 

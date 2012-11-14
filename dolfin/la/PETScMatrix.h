@@ -72,10 +72,10 @@ namespace dolfin
     virtual void init(const TensorLayout& tensor_layout);
 
     /// Return size of given dimension
-    uint size(uint dim) const { return PETScBaseMatrix::size(dim); }
+    std::size_t size(uint dim) const { return PETScBaseMatrix::size(dim); }
 
     /// Return local ownership range
-    std::pair<uint, uint> local_range(uint dim) const
+    std::pair<std::size_t, std::size_t> local_range(uint dim) const
     { return PETScBaseMatrix::local_range(dim); };
 
     /// Set all entries to zero and keep any sparse structure
@@ -98,7 +98,7 @@ namespace dolfin
     virtual boost::shared_ptr<GenericMatrix> copy() const;
 
     /// Resize matrix to M x N
-    //virtual void resize(uint M, uint N);
+    //virtual void resize(std::size_t M, std::size_t N);
 
     /// Resize vector z to be compatible with the matrix-vector product
     /// y = Ax. In the parallel case, both size and layout are
@@ -111,35 +111,35 @@ namespace dolfin
     { PETScBaseMatrix::resize(z, dim); }
 
     /// Get block of values
-    virtual void get(double* block, uint m, const uint* rows, uint n,
-                     const uint* cols) const;
+    virtual void get(double* block, std::size_t m, const std::size_t* rows, std::size_t n,
+                     const std::size_t* cols) const;
 
     /// Set block of values
-    virtual void set(const double* block, uint m, const uint* rows, uint n,
-                     const uint* cols);
+    virtual void set(const double* block, std::size_t m, const std::size_t* rows, std::size_t n,
+                     const std::size_t* cols);
 
     /// Add block of values
-    virtual void add(const double* block, uint m, const uint* rows, uint n,
-                     const uint* cols);
+    virtual void add(const double* block, std::size_t m, const std::size_t* rows, std::size_t n,
+                     const std::size_t* cols);
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern);
 
     /// Get non-zero values of given row
-    virtual void getrow(uint row,
-                        std::vector<uint>& columns,
+    virtual void getrow(std::size_t row,
+                        std::vector<std::size_t>& columns,
                         std::vector<double>& values) const;
 
     /// Set values for given row
-    virtual void setrow(uint row,
-                        const std::vector<uint>& columns,
+    virtual void setrow(std::size_t row,
+                        const std::vector<std::size_t>& columns,
                         const std::vector<double>& values);
 
     /// Set given rows to zero
-    virtual void zero(uint m, const uint* rows);
+    virtual void zero(std::size_t m, const std::size_t* rows);
 
     /// Set given rows to identity matrix
-    virtual void ident(uint m, const uint* rows);
+    virtual void ident(std::size_t m, const std::size_t* rows);
 
     // Matrix-vector product, y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const;

@@ -62,30 +62,30 @@ namespace dolfin
                               const IndexSet& marked_edges);
 
     // Count the number of marked entries
-    static uint count_markers(const std::vector<bool>& markers);
+    static std::size_t count_markers(const std::vector<bool>& markers);
 
     // Extract index of first marked entry
-    static uint extract_edge(const std::vector<bool>& markers);
+    static std::size_t extract_edge(const std::vector<bool>& markers);
 
     // Check whether suggested refinement will produce too thin cells
     static bool too_thin(const Cell& cell,
                          const std::vector<bool>& edge_markers);
 
     // Find local indices for common edge relative to cell and twin
-    static std::pair<uint, uint> find_common_edges(const Cell& cell,
+    static std::pair<std::size_t, std::size_t> find_common_edges(const Cell& cell,
                                                    const Mesh& mesh,
-                                                   uint bisection_twin);
+                                                   std::size_t bisection_twin);
 
     // Find local indices for bisection edge relative to cell and twin
-    static std::pair<uint, uint> find_bisection_edges(const Cell& cell,
+    static std::pair<std::size_t, std::size_t> find_bisection_edges(const Cell& cell,
                                                       const Mesh& mesh,
-                                                      uint bisection_twin);
+                                                      std::size_t bisection_twin);
 
     // Find local indices for bisection vertex relative to cell and twin
-    static std::pair<uint, uint> find_bisection_vertices(const Cell& cell,
+    static std::pair<std::size_t, std::size_t> find_bisection_vertices(const Cell& cell,
                                                          const Mesh& mesh,
-                                                         uint bisection_twin,
-                                                         const std::pair<uint, uint>& bisection_edges);
+                                                         std::size_t bisection_twin,
+                                                         const std::pair<std::size_t, std::size_t>& bisection_edges);
 
   };
 

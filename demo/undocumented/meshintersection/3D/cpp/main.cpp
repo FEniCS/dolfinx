@@ -55,12 +55,12 @@ int main()
   {
     // Compute intersection with boundary of square
     BoundaryMesh boundary(sphere);
-    std::set<dolfin::uint> cells;
+    std::set<std::size_t> cells;
     cube.intersected_cells(boundary, cells);
 
     // Copy values to mesh function for plotting
     *intersection = 0;
-    for (std::set<dolfin::uint>::const_iterator i = cells.begin(); i != cells.end(); i++)
+    for (std::set<std::size_t>::const_iterator i = cells.begin(); i != cells.end(); i++)
       (*intersection)[*i] = 1;
 
     // Plot intersection

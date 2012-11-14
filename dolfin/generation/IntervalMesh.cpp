@@ -71,16 +71,16 @@ IntervalMesh::IntervalMesh(uint nx, double a, double b) : Mesh()
   editor.init_cells(nx);
 
   // Create main vertices:
-  for (uint ix = 0; ix <= nx; ix++)
+  for (std::size_t ix = 0; ix <= nx; ix++)
   {
     const std::vector<double> x(1, a + (static_cast<double>(ix)*(b - a)/static_cast<double>(nx)));
     editor.add_vertex(ix, x);
   }
 
   // Create intervals
-  for (uint ix = 0; ix < nx; ix++)
+  for (std::size_t ix = 0; ix < nx; ix++)
   {
-    std::vector<uint> cell(2);
+    std::vector<std::size_t> cell(2);
     cell[0] = ix; cell[1] = ix + 1;
     editor.add_cell(ix, cell);
   }

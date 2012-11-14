@@ -44,23 +44,23 @@ void ALE::move(Mesh& mesh0, const Mesh& mesh1)
   BoundaryMesh boundary1(mesh1);
 
   // Get vertex mappings
-  boost::shared_ptr<MeshFunction<unsigned int> > local_to_global_0
+  boost::shared_ptr<MeshFunction<std::size_t> > local_to_global_0
     = mesh0.data().mesh_function("parent_vertex_indices");
-  boost::shared_ptr<MeshFunction<unsigned int> > local_to_global_1
+  boost::shared_ptr<MeshFunction<std::size_t> > local_to_global_1
     = mesh1.data().mesh_function("parent_vertex_indices");
-  const MeshFunction<unsigned int>& boundary_to_mesh_0 = boundary0.vertex_map();
-  const MeshFunction<unsigned int>& boundary_to_mesh_1 = boundary1.vertex_map();
+  const MeshFunction<std::size_t>& boundary_to_mesh_0 = boundary0.vertex_map();
+  const MeshFunction<std::size_t>& boundary_to_mesh_1 = boundary1.vertex_map();
   dolfin_assert(local_to_global_0);
   dolfin_assert(local_to_global_1);
 
   // Build global-to-local vertex mapping for mesh
-  std::map<uint, uint> global_to_local_0;
-  for (uint i = 0; i < local_to_global_0->size(); i++)
+  std::map<std::size_t, std::size_t> global_to_local_0;
+  for (std::size_t i = 0; i < local_to_global_0->size(); i++)
     global_to_local_0[(*local_to_global_0)[i]] = i;
 
   // Build mapping from mesh vertices to boundary vertices
-  std::map<uint, uint> mesh_to_boundary_0;
-  for (uint i = 0; i < boundary_to_mesh_0.size(); i++)
+  std::map<std::size_t, std::size_t> mesh_to_boundary_0;
+  for (std::size_t i = 0; i < boundary_to_mesh_0.size(); i++)
     mesh_to_boundary_0[boundary_to_mesh_0[i]] = i;
 
   // Iterate over vertices in boundary1
@@ -68,14 +68,14 @@ void ALE::move(Mesh& mesh0, const Mesh& mesh1)
   for (VertexIterator v(boundary1); !v.end(); ++v)
   {
     // Get global vertex index (steps 1 and 2)
-    const uint global_vertex_index = (*local_to_global_1)[boundary_to_mesh_1[v->index()]];
+    const std::size_t global_vertex_index = (*local_to_global_1)[boundary_to_mesh_1[v->index()]];
 
     // Get local vertex index for mesh0 if possible (step 3)
-    std::map<uint, uint>::const_iterator it;
+    std::map<std::size_t, std::size_t>::const_iterator it;
     it = global_to_local_0.find(global_vertex_index);
     if (it == global_to_local_0.end())
       continue;
-    const uint mesh_index_0 = it->second;
+    const std::size_t mesh_index_0 = it->second;
 
     // Get vertex index on boundary0 (step 4)
     it = mesh_to_boundary_0.find(mesh_index_0);
@@ -85,7 +85,7 @@ void ALE::move(Mesh& mesh0, const Mesh& mesh1)
                    "move mesh using mesh smoothing",
                    "Non-matching vertex mappings");
     }
-    const uint boundary_index_0 = it->second;
+    const std::size_t boundary_index_0 = it->second;
 
     // Update vertex coordinate
     double* x = boundary0.geometry().x(boundary_index_0);
@@ -112,7 +112,7 @@ void ALE::move(Mesh& mesh, const Function& displacement)
   }
 
   // Interpolate at vertices
-  const uint N = mesh.num_vertices();
+  const std::size_t N = mesh.num_vertices();
   std::vector<double> vertex_values;
   displacement.compute_vertex_values(vertex_values, mesh);
 

@@ -126,6 +126,11 @@ void VTKFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
   mesh_function_write(meshfunction);
 }
 //----------------------------------------------------------------------------
+void VTKFile::operator<<(const MeshFunction<unsigned long int>& meshfunction)
+{
+  mesh_function_write(meshfunction);
+}
+//----------------------------------------------------------------------------
 void VTKFile::operator<<(const MeshFunction<int>& meshfunction)
 {
   mesh_function_write(meshfunction);

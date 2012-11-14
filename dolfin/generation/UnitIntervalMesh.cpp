@@ -54,16 +54,16 @@ UnitIntervalMesh::UnitIntervalMesh(uint nx) : Mesh()
   editor.init_cells(nx);
 
   // Create main vertices:
-  for (uint ix = 0; ix <= nx; ix++)
+  for (std::size_t ix = 0; ix <= nx; ix++)
   {
     const double x = static_cast<double>(ix)/static_cast<double>(nx);
     editor.add_vertex(ix, x);
   }
 
   // Create intervals
-  for (uint ix = 0; ix < nx; ix++)
+  for (std::size_t ix = 0; ix < nx; ix++)
   {
-    std::vector<uint> cell_data = boost::assign::list_of(ix)(ix + 1);
+    std::vector<std::size_t> cell_data = boost::assign::list_of(ix)(ix + 1);
     editor.add_cell(ix, cell_data);
   }
 

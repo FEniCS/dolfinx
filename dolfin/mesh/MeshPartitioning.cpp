@@ -270,7 +270,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
 void MeshPartitioning::partition(Mesh& mesh, const LocalMeshData& mesh_data)
 {
   // Compute cell partition
-  std::vector<uint> cell_partition;
+  std::vector<std::size_t> cell_partition;
   const std::string partitioner = parameters["mesh_partitioner"];
   if (partitioner == "SCOTCH")
     SCOTCH::compute_partition(cell_partition, mesh_data);
@@ -308,7 +308,7 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
                                           const LocalMeshData& local_data)
 {
   // Local domain data
-  const std::map<uint, std::vector< std::pair<std::pair<std::size_t, uint>, uint> > >
+  const std::map<std::size_t, std::vector< std::pair<std::pair<std::size_t, uint>, uint> > >
     domain_data = local_data.domain_data;
   if (domain_data.empty())
     return;
@@ -317,13 +317,13 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
   const uint D = mesh.topology().dim();
   mesh.domains().init(D);
 
-  std::map<uint, std::vector< std::pair<std::pair<std::size_t, uint>, uint> > >::const_iterator dim_data;
+  std::map<std::size_t, std::vector< std::pair<std::pair<std::size_t, uint>, uint> > >::const_iterator dim_data;
   for (dim_data = domain_data.begin(); dim_data != domain_data.end(); ++dim_data)
   {
     // Get mesh value collection used for marking
     const std::size_t dim = dim_data->first;
     dolfin_assert(mesh.domains().markers(dim));
-    MeshValueCollection<uint>& markers = *(mesh.domains().markers(dim));
+    MeshValueCollection<std::size_t>& markers = *(mesh.domains().markers(dim));
 
     const std::vector< std::pair<std::pair<std::size_t, uint>, uint> >&
         local_value_data = dim_data->second;
@@ -631,7 +631,7 @@ void MeshPartitioning::compute_final_entity_ownership(boost::array<std::map<Enti
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_cells(const LocalMeshData& mesh_data,
-                                   const std::vector<uint>& cell_partition,
+                                   const std::vector<std::size_t>& cell_partition,
                                    std::vector<std::size_t>& global_cell_indices,
                                    boost::multi_array<std::size_t, 2>& cell_vertices)
 {
@@ -848,7 +848,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // Construct boundary mesh
   BoundaryMesh bmesh(mesh);
 
-  const MeshFunction<unsigned int>& boundary_vertex_map = bmesh.vertex_map();
+  const MeshFunction<std::size_t>& boundary_vertex_map = bmesh.vertex_map();
   const std::size_t boundary_size = boundary_vertex_map.size();
 
   // Build sorted array of global boundary vertex indices (global

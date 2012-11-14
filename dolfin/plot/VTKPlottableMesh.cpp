@@ -179,18 +179,17 @@ void VTKPlottableMesh::build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &gr
   // Add mesh cells to VTK cell array. Note: Preallocation of storage
   // in cell array did not give speedups when testing during development
   vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
-
-  const std::vector<uint>& connectivity = _mesh->cells();
+  const std::vector<std::size_t>& connectivity = _mesh->cells();
   uint spatial_dim = _mesh->topology().dim();
 
-  for (uint i = 0; i < _mesh->num_cells(); ++i)
+  for (std::size_t i = 0; i < _mesh->num_cells(); ++i)
   {
     // Insert all vertex indices for a given cell. For a simplex cell in nD,
     // n+1 indices are inserted. The connectivity array must be indexed at
     // ((n+1) x cell_number + idx_offset)
-    cells->InsertNextCell(spatial_dim+1);
+    cells->InsertNextCell(spatial_dim + 1);
     for(uint j = 0; j <= spatial_dim; ++j) {
-      cells->InsertCellPoint(connectivity[(spatial_dim+1)*i + j]);
+      cells->InsertCellPoint(connectivity[(spatial_dim + 1)*i + j]);
     }
   }
 

@@ -156,7 +156,7 @@ namespace dolfin
       {
         for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
         {
-          const unsigned int index = it->attribute("index").as_uint();
+          const std::size_t index = it->attribute("index").as_uint();
           dolfin_assert(index < size);
           mesh_function[index] = it->attribute("value").as_uint();
         }

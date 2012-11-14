@@ -64,7 +64,7 @@ int main()
   Mesh mesh("dolfin-2.xml.gz");
 
   // Create mesh functions over the cell facets
-  MeshFunction<unsigned int> sub_domains(mesh, mesh.topology().dim() - 1);
+  MeshFunction<std::size_t> sub_domains(mesh, mesh.topology().dim() - 1);
   MeshFunction<double> sub_domains_double(mesh, mesh.topology().dim() - 1);
   MeshFunction<bool> sub_domains_bool(mesh, mesh.topology().dim() - 1);
 

@@ -101,17 +101,17 @@ void EpetraMatrix::init(const TensorLayout& tensor_layout)
   }
 
   // Get local range
-  const std::pair<uint, uint> range = tensor_layout.local_range(0);
-  const uint num_local_rows = range.second - range.first;
-  const uint n0 = range.first;
+  const std::pair<std::size_t, std::size_t> range = tensor_layout.local_range(0);
+  const std::size_t num_local_rows = range.second - range.first;
+  const std::size_t n0 = range.first;
 
   dolfin_assert(tensor_layout.sparsity_pattern());
   const SparsityPattern& _pattern = dynamic_cast<const SparsityPattern&>(*tensor_layout.sparsity_pattern());
-  const std::vector<std::vector<dolfin::uint> > d_pattern = _pattern.diagonal_pattern(SparsityPattern::unsorted);
-  const std::vector<std::vector<dolfin::uint> > o_pattern = _pattern.off_diagonal_pattern(SparsityPattern::unsorted);
+  const std::vector<std::vector<std::size_t> > d_pattern = _pattern.diagonal_pattern(SparsityPattern::unsorted);
+  const std::vector<std::vector<std::size_t> > o_pattern = _pattern.off_diagonal_pattern(SparsityPattern::unsorted);
 
   // Get number of non-zeroes per row
-  std::vector<uint> num_nonzeros;
+  std::vector<std::size_t> num_nonzeros;
   _pattern.num_local_nonzeros(num_nonzeros);
 
   // Create row map
@@ -123,29 +123,29 @@ void EpetraMatrix::init(const TensorLayout& tensor_layout)
   // larger than those in row_map are marked as nonlocal (and assembly fails).
   // The domain_map fixes that problem, at least in the serial case.
   // FIXME: Needs attention in the parallel case. Maybe range_map is also req'd.
-  const std::pair<uint, uint> colrange = tensor_layout.local_range(1);
+  const std::pair<std::size_t, std::size_t> colrange = tensor_layout.local_range(1);
   const int num_local_cols = colrange.second - colrange.first;
   Epetra_Map domain_map((int) tensor_layout.size(1), (int) num_local_cols, 0, comm);
 
   // Create Epetra_FECrsGraph
-  Epetra_CrsGraph matrix_map(Copy, row_map, reinterpret_cast<int*>(&num_nonzeros[0]));
+  const std::vector<int> _num_nonzeros(num_nonzeros.begin(), num_nonzeros.end());
+  Epetra_CrsGraph matrix_map(Copy, row_map, _num_nonzeros.data());
 
   // Add diagonal block indices
-  for (uint local_row = 0; local_row < d_pattern.size(); local_row++)
+  for (std::size_t local_row = 0; local_row < d_pattern.size(); local_row++)
   {
-    const uint global_row = local_row + n0;
-    std::vector<uint>& entries = const_cast<std::vector<uint>&>(d_pattern[local_row]);
-    matrix_map.InsertGlobalIndices(global_row, entries.size(),
-                                   reinterpret_cast<int*>(&entries[0]));
+    const std::size_t global_row = local_row + n0;
+    //std::vector<std::size_t>& entries = const_cast<std::vector<std::size_t>&>(d_pattern[local_row]);
+    std::vector<int> entries(d_pattern[local_row].begin(), d_pattern[local_row].end());
+    matrix_map.InsertGlobalIndices(global_row, entries.size(), entries.data());
   }
 
   // Add off-diagonal block indices (parallel only)
-  for (uint local_row = 0; local_row < o_pattern.size(); local_row++)
+  for (std::size_t local_row = 0; local_row < o_pattern.size(); local_row++)
   {
-    const uint global_row = local_row + n0;
-    std::vector<uint>& entries = const_cast<std::vector<uint>&>(o_pattern[local_row]);
-    matrix_map.InsertGlobalIndices(global_row, entries.size(),
-                                   reinterpret_cast<int*>(&entries[0]));
+    const std::size_t global_row = local_row + n0;
+    std::vector<int> entries(o_pattern[local_row].begin(),o_pattern[local_row].end());
+    matrix_map.InsertGlobalIndices(global_row, entries.size(), entries.data());
   }
 
   try
@@ -174,7 +174,7 @@ boost::shared_ptr<GenericMatrix> EpetraMatrix::copy() const
   return B;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint EpetraMatrix::size(uint dim) const
+std::size_t EpetraMatrix::size(uint dim) const
 {
   if (dim > 1)
   {
@@ -193,7 +193,7 @@ dolfin::uint EpetraMatrix::size(uint dim) const
     return 0;
 }
 //-----------------------------------------------------------------------------
-std::pair<dolfin::uint, dolfin::uint> EpetraMatrix::local_range(uint dim) const
+std::pair<std::size_t, std::size_t> EpetraMatrix::local_range(uint dim) const
 {
   dolfin_assert(dim < 2);
   if (dim == 1)
@@ -231,8 +231,8 @@ void EpetraMatrix::resize(GenericVector& z, uint dim) const
   _z.reset(*map);
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::get(double* block, uint m, const uint* rows,
-                       uint n, const uint* cols) const
+void EpetraMatrix::get(double* block, std::size_t m, const std::size_t* rows,
+                       std::size_t n, const std::size_t* cols) const
 {
   dolfin_assert(A);
 
@@ -241,7 +241,7 @@ void EpetraMatrix::get(double* block, uint m, const uint* rows,
   double* values;
 
   // For each row in rows
-  for(uint i = 0; i < m; ++i)
+  for(std::size_t i = 0; i < m; ++i)
   {
     // Extract the values and indices from row: rows[i]
     if (A->IndicesAreLocal())
@@ -268,13 +268,13 @@ void EpetraMatrix::get(double* block, uint m, const uint* rows,
 
     // Step the indices to the start of cols
     int k = 0;
-    while (indices[k] < static_cast<int>(cols[0]))
+    while (indices[k] < (int) cols[0])
       k++;
 
     // Fill the collumns in the block
-    for (uint j = 0; j < n; j++)
+    for (std::size_t j = 0; j < n; j++)
     {
-      if (k < num_entities and indices[k] == static_cast<int>(cols[j]))
+      if (k < num_entities and indices[k] == (int) cols[j])
       {
         block[i*n + j] = values[k];
         k++;
@@ -286,8 +286,8 @@ void EpetraMatrix::get(double* block, uint m, const uint* rows,
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::set(const double* block,
-                       uint m, const uint* rows,
-                       uint n, const uint* cols)
+                       std::size_t m, const std::size_t* rows,
+                       std::size_t n, const std::size_t* cols)
 {
   // This function is awkward and somewhat restrictive because of the
   // poor support for setting off-process values in Epetra
@@ -296,7 +296,7 @@ void EpetraMatrix::set(const double* block,
 
   // Check that all rows are local to this process
   /*
-  for (uint i = 0; i < m; ++i)
+  for (std::size_t i = 0; i < m; ++i)
   {
     if (!A->MyGRID(rows[i]))
     {
@@ -307,9 +307,10 @@ void EpetraMatrix::set(const double* block,
   }
   */
 
-  const int err = A->ReplaceGlobalValues(m,
-      reinterpret_cast<const int*>(rows), n,
-      reinterpret_cast<const int*>(cols), block, Epetra_FECrsMatrix::ROW_MAJOR);
+  const std::vector<int> _rows(rows, rows + m);
+  const std::vector<int> _cols(cols, cols + n);
+  const int err = A->ReplaceGlobalValues(m, _rows.data(), n, _cols.data(),
+                                         block, Epetra_FECrsMatrix::ROW_MAJOR);
   if (err != 0)
   {
     dolfin_error("EpetraMatrix.cpp",
@@ -319,38 +320,21 @@ void EpetraMatrix::set(const double* block,
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::add(const double* block,
-                       uint m, const uint* rows,
-                       uint n, const uint* cols)
+                       std::size_t m, const std::size_t* rows,
+                       std::size_t n, const std::size_t* cols)
 {
   dolfin_assert(A);
-  const std::pair<uint, uint> local_row_range = local_range(0);
-  for (uint i = 0; i < m; ++i)
-  {
-    const uint row = rows[i];
-    if (row >= local_row_range.first && row < local_row_range.second)
-    {
-      A->Epetra_CrsMatrix::SumIntoGlobalValues((int) row, n, block + i*n,
-                                          reinterpret_cast<const int*>(cols));
-    }
-    else
-    {
-      A->SumIntoGlobalValues(1, reinterpret_cast<const int*>(rows + i),
-                             n, reinterpret_cast<const int*>(cols), block + i*n,
-                             Epetra_FECrsMatrix::ROW_MAJOR);
-    }
-  }
 
-  /*
-  const int err = A->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows),
-                                         n, reinterpret_cast<const int*>(cols), block,
-                                         Epetra_FECrsMatrix::ROW_MAJOR);
+  const std::vector<int> _rows(rows, rows + m);
+  const std::vector<int> _cols(cols, cols + n);
+  const int err = A->SumIntoGlobalValues(m, _rows.data(), n, _cols.data(),
+                                         block, Epetra_FECrsMatrix::ROW_MAJOR);
   if (err != 0)
   {
     dolfin_error("EpetraMatrix.cpp",
                  "add block of values to Epetra matrix",
                  "Did not manage to perform Epetra_FECrsMatrix::SumIntoGlobalValues");
   }
-  */
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
@@ -448,7 +432,7 @@ std::string EpetraMatrix::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::ident(uint m, const uint* rows)
+void EpetraMatrix::ident(std::size_t m, const std::size_t* rows)
 {
   dolfin_assert(A);
   dolfin_assert(A->Filled() == true);
@@ -459,17 +443,19 @@ void EpetraMatrix::ident(uint m, const uint* rows)
   // but is due to the sparsity pattern computation). This function only
   // work for locally owned rows (the PETSc version works for any row).
 
-  typedef boost::unordered_set<uint> MySet;
+  typedef boost::unordered_set<std::size_t> MySet;
+
+  const std::vector<int> _rows(rows, rows + m);
 
   // Build lists of local and nonlocal rows
   MySet local_rows;
-  std::vector<uint> non_local_rows;
-  for (uint i = 0; i < m; ++i)
+  std::vector<int> non_local_rows;
+  for (std::size_t i = 0; i < m; ++i)
   {
-    if (A->MyGlobalRow(static_cast<int>(rows[i])))
-      local_rows.insert(rows[i]);
+    if (A->MyGlobalRow(_rows[i]))
+      local_rows.insert(_rows[i]);
     else
-      non_local_rows.push_back(rows[i]);
+      non_local_rows.push_back(_rows[i]);
   }
 
   // If parallel, send non_local rows to all processes
@@ -477,7 +463,7 @@ void EpetraMatrix::ident(uint m, const uint* rows)
   {
     // Send list of nonlocal rows to all processes
     std::vector<uint> destinations;
-    std::vector<uint> send_data;
+    std::vector<std::size_t> send_data;
     for (uint i = 0; i < MPI::num_processes(); ++i)
     {
       if (i != MPI::process_number())
@@ -488,15 +474,15 @@ void EpetraMatrix::ident(uint m, const uint* rows)
       }
     }
 
-    std::vector<uint> received_data;
+    std::vector<std::size_t> received_data;
     MPI::distribute(send_data, destinations, received_data);
 
     // Unpack data
-    for (uint i = 0; i < received_data.size(); ++i)
+    for (std::size_t i = 0; i < received_data.size(); ++i)
     {
       // Insert row into set if it's local
-      const uint new_index = received_data[i];
-      if (A->MyGlobalRow(static_cast<int>(new_index)))
+      const int new_index = received_data[i];
+      if (A->MyGlobalRow(new_index))
         local_rows.insert(new_index);
     }
   }
@@ -507,7 +493,8 @@ void EpetraMatrix::ident(uint m, const uint* rows)
   for (global_row = local_rows.begin(); global_row != local_rows.end(); ++global_row)
   {
     // Get local row index
-    const int local_row = A->LRID(static_cast<int>(*global_row));
+    const int _global_row = *global_row;
+    const int local_row = A->LRID(_global_row);
 
     // If this process owns row, then zero row
     if (local_row >= 0)
@@ -540,14 +527,14 @@ void EpetraMatrix::ident(uint m, const uint* rows)
   }
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::zero(uint m, const uint* rows)
+void EpetraMatrix::zero(std::size_t m, const std::size_t* rows)
 {
   // FIXME: This can be made more efficient by eliminating creation of
   //        some obejcts inside the loop
 
   dolfin_assert(A);
   const Epetra_CrsGraph& graph = A->Graph();
-  for (uint i = 0; i < m; ++i)
+  for (std::size_t i = 0; i < m; ++i)
   {
     const int row = rows[i];
     const int num_nz = graph.NumGlobalIndices(row);
@@ -639,13 +626,14 @@ void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
   }
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::getrow(uint row, std::vector<uint>& columns,
+void EpetraMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
                           std::vector<double>& values) const
 {
   dolfin_assert(A);
 
   // Get local row index
-  const int local_row_index = A->LRID(static_cast<int>(row));
+  const int _row = row;
+  const int local_row_index = A->LRID(_row);
 
   // If this process has part of the row, get values
   if (local_row_index >= 0)
@@ -680,17 +668,17 @@ void EpetraMatrix::getrow(uint row, std::vector<uint>& columns,
   }
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::setrow(uint row, const std::vector<uint>& columns,
+void EpetraMatrix::setrow(std::size_t row, const std::vector<std::size_t>& columns,
                           const std::vector<double>& values)
 {
-  static bool print_msg_once=true;
+  static bool print_msg_once = true;
   if (print_msg_once)
   {
     info("EpetraMatrix::setrow is implemented inefficiently");
     print_msg_once = false;
   }
 
-  for (uint i=0; i < columns.size(); i++)
+  for (std::size_t i = 0; i < columns.size(); i++)
     set(&values[i], 1, &row, 1, &columns[i]);
 }
 //-----------------------------------------------------------------------------

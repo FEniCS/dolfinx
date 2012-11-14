@@ -58,35 +58,35 @@ namespace dolfin
     { return _dim; }
 
     /// Return number of coordinates
-    uint size() const
+    std::size_t size() const
     {
       dolfin_assert(coordinates.size() % _dim == 0);
       return coordinates.size()/_dim;
     }
 
     /// Return value of coordinate with local index n in direction i
-    double& x(uint n, uint i)
+    double& x(std::size_t n, uint i)
     {
       dolfin_assert(n < local_index_to_position.size() && i < _dim);
       return coordinates[local_index_to_position[n]*_dim + i];
     }
 
     /// Return value of coordinate with local index n in direction i
-    double x(uint n, uint i) const
+    double x(std::size_t n, uint i) const
     {
       dolfin_assert(n < local_index_to_position.size() && i < _dim);
       return coordinates[local_index_to_position[n]*_dim + i];
     }
 
     /// Return array of values for coordinate with local index n
-    double* x(uint n)
+    double* x(std::size_t n)
     {
       dolfin_assert(n < local_index_to_position.size());
       return &coordinates[local_index_to_position[n]*_dim];
     }
 
     /// Return array of values for coordinate with local index n
-    const double* x(uint n) const
+    const double* x(std::size_t n) const
     {
       dolfin_assert(n < local_index_to_position.size());
       return &coordinates[local_index_to_position[n]*_dim];
@@ -101,17 +101,17 @@ namespace dolfin
     { return coordinates; }
 
     /// Return coordinate with local index n as a 3D point value
-    Point point(uint n) const;
+    Point point(std::size_t n) const;
 
     /// Clear all data
     void clear();
 
     /// Initialize coordinate list to given dimension and size
-    void init(uint dim, uint size);
+    void init(uint dim, std::size_t size);
 
     /// Set value of coordinate
     //void set(uint n, uint i, double x);
-    void set(uint local_index, const std::vector<double>& x);
+    void set(std::size_t local_index, const std::vector<double>& x);
 
     /// Hash of coordinate values
     ///
@@ -137,10 +137,10 @@ namespace dolfin
     std::vector<double> coordinates;
 
     // Local coordinate indices (array position -> index)
-    std::vector<uint> position_to_local_index;
+    std::vector<std::size_t> position_to_local_index;
 
     // Local coordinate indices (local index -> array position)
-    std::vector<uint> local_index_to_position;
+    std::vector<std::size_t> local_index_to_position;
 
   };
 

@@ -24,7 +24,6 @@
 #define __PARMETIS_PARTITIONER_H
 
 #include <vector>
-#include <dolfin/common/types.h>
 
 namespace dolfin
 {
@@ -38,7 +37,7 @@ namespace dolfin
   public:
 
     // Compute cell partition
-    static void compute_partition(std::vector<uint>& cell_partition,
+    static void compute_partition(std::vector<std::size_t>& cell_partition,
                                   const LocalMeshData& mesh_data);
 
   };

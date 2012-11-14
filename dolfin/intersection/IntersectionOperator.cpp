@@ -56,15 +56,16 @@ IntersectionOperator::IntersectionOperator(const Mesh& mesh,
 IntersectionOperator::IntersectionOperator(boost::shared_ptr<const Mesh> mesh,
                                            const std::string& kernel_type)
     : _mesh(mesh),
-    _labels(new MeshFunction<uint>()),
+    _labels(new MeshFunction<std::size_t>()),
     _label(0),
     _use_labels(false),
     _kernel_type(kernel_type)
 {
   // Do nothing
 }
-IntersectionOperator::IntersectionOperator(const MeshFunction<unsigned int>& labels,
-					   uint label,
+//-----------------------------------------------------------------------------
+IntersectionOperator::IntersectionOperator(const MeshFunction<std::size_t>& labels,
+					   std::size_t label,
 					   const std::string& kernel_type)
   : _mesh(new Mesh()),
   _labels(reference_to_no_delete_pointer(labels)),
@@ -75,8 +76,8 @@ IntersectionOperator::IntersectionOperator(const MeshFunction<unsigned int>& lab
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-IntersectionOperator::IntersectionOperator(boost::shared_ptr<const MeshFunction<unsigned int> > labels,
-					   uint label,
+IntersectionOperator::IntersectionOperator(boost::shared_ptr<const MeshFunction<std::size_t> > labels,
+					   std::size_t label,
 					   const std::string& kernel_type)
   : _mesh(new Mesh()),
   _labels(labels),
@@ -93,31 +94,31 @@ IntersectionOperator::~IntersectionOperator()
 }
 //-----------------------------------------------------------------------------
 void IntersectionOperator::all_intersected_entities(const Point& point,
-                                                    std::set<uint>& ids_result) const
+                                                    std::set<std::size_t>& ids_result) const
 {
   rImpl().all_intersected_entities(point, ids_result);
 }
 //-----------------------------------------------------------------------------
 void IntersectionOperator::all_intersected_entities(const std::vector<Point>& points,
-                                                   std::set<uint>& ids_result) const
+                                                    std::set<std::size_t>& ids_result) const
 {
   rImpl().all_intersected_entities(points, ids_result);
 }
 //-----------------------------------------------------------------------------
 void IntersectionOperator::all_intersected_entities(const MeshEntity & entity,
-						    std::vector<uint> & ids_result) const
+						    std::vector<std::size_t>& ids_result) const
 {
   rImpl().all_intersected_entities(entity,ids_result);
 }
 //-----------------------------------------------------------------------------
 void IntersectionOperator::all_intersected_entities(const std::vector<MeshEntity>& entities,
-						    std::set<uint>& ids_result) const
+						    std::set<std::size_t>& ids_result) const
 {
   rImpl().all_intersected_entities(entities, ids_result);
 }
 //-----------------------------------------------------------------------------
 void IntersectionOperator::all_intersected_entities(const Mesh& another_mesh,
-                                                    std::set<uint>& ids_result) const
+                                                    std::set<std::size_t>& ids_result) const
 {
   rImpl().all_intersected_entities(another_mesh, ids_result);
 }
@@ -132,12 +133,12 @@ Point IntersectionOperator::closest_point(const Point& point) const
   return rImpl().closest_point(point);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint IntersectionOperator::closest_cell(const Point& point) const
+std::size_t IntersectionOperator::closest_cell(const Point& point) const
 {
   return rImpl().closest_cell(point);
 }
 //-----------------------------------------------------------------------------
-std::pair<Point,dolfin::uint>
+std::pair<Point, std::size_t>
 IntersectionOperator::closest_point_and_cell(const Point& point) const
 {
   return rImpl().closest_point_and_cell(point);

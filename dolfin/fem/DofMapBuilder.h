@@ -47,14 +47,14 @@ namespace dolfin
   {
     // FIXME: Test which 'set' is most efficient
 
-    typedef std::set<dolfin::uint> set;
-    typedef std::set<dolfin::uint>::const_iterator set_iterator;
+    typedef std::set<std::size_t> set;
+    typedef std::set<std::size_t>::const_iterator set_iterator;
 
-    //typedef boost::unordered_set<dolfin::uint> set;
-    //typedef boost::unordered_set<dolfin::uint>::const_iterator set_iterator;
+    //typedef boost::unordered_set<dolfin::std::size_t> set;
+    //typedef boost::unordered_set<dolfin::std::size_t>::const_iterator set_iterator;
 
-    typedef std::vector<dolfin::uint>::const_iterator vector_it;
-    typedef boost::unordered_map<uint, std::vector<uint> > vec_map;
+    typedef std::vector<std::size_t>::const_iterator vector_it;
+    typedef boost::unordered_map<std::size_t, std::vector<std::size_t> > vec_map;
 
   public:
 
@@ -92,7 +92,7 @@ namespace dolfin
 
     // Iterate recursively over all sub-dof maps to find global
     // degrees of freedom
-    static void compute_global_dofs(set& global_dofs, uint& offset,
+    static void compute_global_dofs(set& global_dofs, std::size_t& offset,
                             boost::shared_ptr<const ufc::dofmap> dofmap,
                             const Mesh& dolfin_mesh, const UFCMesh& ufc_mesh);
 

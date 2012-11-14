@@ -85,16 +85,16 @@
 // Typemaps for GenericMatrix get and set functions
 //-----------------------------------------------------------------------------
 %typemap(in) const double* block = double* _array;
-%typemap(in) (dolfin::uint m, const dolfin::uint* rows) = (dolfin::uint _array_dim, dolfin::uint* _array);
-%typemap(in) (dolfin::uint n, const dolfin::uint* cols) = (dolfin::uint _array_dim, dolfin::uint* _array);
+%typemap(in) (std::size_t m, const std::size_t* rows) = (std::size_t _array_dim, std::size_t* _array);
+%typemap(in) (std::size_t n, const std::size_t* cols) = (std::size_t _array_dim, std::size_t* _array);
 
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (dolfin::uint m, const dolfin::uint* rows)
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (std::size_t m, const std::size_t* rows)
 {
   // rows typemap
   $1 = PyArray_Check($input);
 }
 
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (dolfin::uint n, const dolfin::uint* cols)
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (std::size_t n, const std::size_t* cols)
 {
   // cols typemap
   $1 = PyArray_Check($input);
@@ -104,13 +104,13 @@
 // Ignore low level interface
 //-----------------------------------------------------------------------------
 %ignore dolfin::LinearAlgebraObject::instance;
-%ignore dolfin::GenericTensor::get(double*, const uint*, const uint * const *) const;
-%ignore dolfin::GenericTensor::set(const double* , const uint* , const uint * const *);
-%ignore dolfin::GenericTensor::add(const double* , const uint* , const uint * const *);
+%ignore dolfin::GenericTensor::get(double*, const std::size_t*, const std::size_t * const *) const;
+%ignore dolfin::GenericTensor::set(const double* , const std::size_t* , const std::size_t * const *);
+%ignore dolfin::GenericTensor::add(const double* , const std::size_t* , const std::size_t * const *);
 %ignore dolfin::PETScLinearOperator::wrapper;
 
 //-----------------------------------------------------------------------------
-%ignore dolfin::uBLASVector::operator ()(uint i) const;
+%ignore dolfin::uBLASVector::operator ()(std::size_t i) const;
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -144,8 +144,8 @@
 // NOTE: The %ignore has to be set using the actual type used in the declaration
 // so we cannot use dolfin::uint or unsigned int for uint. Strange...
 //-----------------------------------------------------------------------------
-%ignore dolfin::GenericVector::get(double*, uint, const uint*) const;
-%ignore dolfin::GenericVector::set(const double* , uint m, const uint*);
+%ignore dolfin::GenericVector::get(double*, std::size_t, const std::size_t*) const;
+%ignore dolfin::GenericVector::set(const double* , std::size_t m, const std::size_t*);
 
 %ignore dolfin::GenericVector::data() const;
 %ignore dolfin::GenericVector::data();
@@ -160,12 +160,12 @@
 %ignore dolfin::GenericMatrix::operator+=;
 %ignore dolfin::GenericMatrix::operator-=;
 
-%ignore dolfin::GenericMatrix::set(const double*, const uint*,
-				   const uint * const *);
-%ignore dolfin::GenericMatrix::add(const double*, const uint*,
-				   const uint * const * rows);
-%ignore dolfin::GenericMatrix::get(double*, const uint*,
-				   const uint * const *) const;
+%ignore dolfin::GenericMatrix::set(const double*, const std::size_t*,
+				   const std::size_t * const *);
+%ignore dolfin::GenericMatrix::add(const double*, const std::size_t*,
+				   const std::size_t * const * rows);
+%ignore dolfin::GenericMatrix::get(double*, const std::size_t*,
+				   const std::size_t * const *) const;
 %ignore dolfin::GenericMatrix::data;
 %ignore dolfin::GenericMatrix::getitem;
 %ignore dolfin::GenericMatrix::setitem;

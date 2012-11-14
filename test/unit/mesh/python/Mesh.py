@@ -141,7 +141,7 @@ if MPI.num_processes() == 1:
                 return x[0] >= 0.5
             sd1 = AutoSubDomain(inside1)
             sd2 = AutoSubDomain(inside2)
-            cf = CellFunction('uint', self.mesh)
+            cf = CellFunction('sizet', self.mesh)
             cf.set_all(0)
             sd1.mark(cf, 1)
             sd2.mark(cf, 2)

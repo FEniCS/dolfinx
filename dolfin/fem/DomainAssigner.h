@@ -47,10 +47,10 @@ namespace dolfin
     CellDomainAssigner(Form& form) : form(form) {}
 
     // Assign reference
-    const CellDomainAssigner& operator= (const MeshFunction<uint>& domains);
+    const CellDomainAssigner& operator= (const MeshFunction<std::size_t>& domains);
 
     // Assign shared pointer
-    const CellDomainAssigner& operator= (boost::shared_ptr<const MeshFunction<uint> > domains);
+    const CellDomainAssigner& operator= (boost::shared_ptr<const MeshFunction<std::size_t> > domains);
 
   private:
 
@@ -68,10 +68,10 @@ namespace dolfin
     ExteriorFacetDomainAssigner(Form& form) : form(form) {}
 
     // Assign reference
-    const ExteriorFacetDomainAssigner& operator= (const MeshFunction<uint>& domains);
+    const ExteriorFacetDomainAssigner& operator= (const MeshFunction<std::size_t>& domains);
 
     // Assign shared pointer
-    const ExteriorFacetDomainAssigner& operator= (boost::shared_ptr<const MeshFunction<uint> > domains);
+    const ExteriorFacetDomainAssigner& operator= (boost::shared_ptr<const MeshFunction<std::size_t> > domains);
 
   private:
 
@@ -89,10 +89,10 @@ namespace dolfin
     InteriorFacetDomainAssigner(Form& form) : form(form) {}
 
     // Assign reference
-    const InteriorFacetDomainAssigner& operator= (const MeshFunction<uint>& domains);
+    const InteriorFacetDomainAssigner& operator= (const MeshFunction<std::size_t>& domains);
 
     // Assign shared pointer
-    const InteriorFacetDomainAssigner& operator= (boost::shared_ptr<const MeshFunction<uint> > domains);
+    const InteriorFacetDomainAssigner& operator= (boost::shared_ptr<const MeshFunction<std::size_t> > domains);
 
   private:
 

@@ -36,7 +36,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
+std::size_t TopologyComputation::compute_entities(Mesh& mesh, uint dim)
 {
   // Generating an entity of topological dimension dim is equivalent
   // to generating the connectivity dim - 0 (connections to vertices)
@@ -94,37 +94,37 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
   // Initialize local array of entities
   const uint m = cell_type.num_entities(dim);
   const uint n = cell_type.num_vertices(dim);
-  std::vector<std::vector<uint> > entities(m, std::vector<uint>(n, 0));
+  std::vector<std::vector<std::size_t> > entities(m, std::vector<std::size_t>(n, 0));
 
   // List of entity e indices connected to cell
-  std::vector<std::vector<uint> > connectivity_ce(mesh.num_cells());
+  std::vector<std::vector<std::size_t> > connectivity_ce(mesh.num_cells());
 
   // List of vertces indices connected to entity e
-  std::vector<std::vector<uint> > connectivity_ev;
+  std::vector<std::vector<std::size_t> > connectivity_ev;
 
   // List entities e (uint index, std::vector<uint> vertex_list) connected to each cell
-  std::vector<std::vector<std::pair<uint, std::vector<uint> > > > ce_list(mesh.num_cells());
+  std::vector<std::vector<std::pair<std::size_t, std::vector<std::size_t> > > > ce_list(mesh.num_cells());
 
-  uint current_entity = 0;
+  std::size_t current_entity = 0;
   std::size_t max_ce_connections = 1;
   for (MeshEntityIterator c(mesh, mesh.topology().dim()); !c.end(); ++c)
   {
     // Cell index
-    const uint c_index = c->index();
+    const std::size_t c_index = c->index();
 
     // Reserve space to reduce dynamic allocations
     connectivity_ce[c_index].reserve(max_ce_connections);
     ce_list[c_index].reserve(max_ce_connections);
 
     // Get vertices from cell
-    const uint* vertices = c->entities(0);
+    const std::size_t* vertices = c->entities(0);
     dolfin_assert(vertices);
 
     // Create entities
     cell_type.create_entities(entities, dim, vertices);
 
     // Iterate over the given list of entities
-    std::vector<std::vector<uint> >::iterator entity;
+    std::vector<std::vector<std::size_t> >::iterator entity;
     for (entity = entities.begin(); entity != entities.end(); ++entity)
     {
       // Sort entities (so that we can use equality testing later)
@@ -133,16 +133,16 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
       // Iterate over connected cells and look for entity
       for (MeshEntityIterator c0(*c, mesh.topology().dim()); !c0.end(); ++c0)
       {
-        const uint c0_index = c0->index();
+        const std::size_t c0_index = c0->index();
 
         // Check only previously visited cells
         if (c0_index >= c_index)
           continue;
 
         // Entities connected to c0
-        const std::vector<std::pair<uint, std::vector<uint> > >& c0_list = ce_list[c0_index];
+        const std::vector<std::pair<std::size_t, std::vector<std::size_t> > >& c0_list = ce_list[c0_index];
 
-        std::vector<std::pair<uint, std::vector<uint> > >::const_iterator other_entity;
+        std::vector<std::pair<std::size_t, std::vector<std::size_t> > >::const_iterator other_entity;
         for (other_entity = c0_list.begin(); other_entity != c0_list.end(); ++other_entity)
         {
           // Note: Comparison relies on container being ordered
@@ -234,7 +234,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, uint d0, uint d1)
   // Decide how to compute the connectivity
   if (d0 == 0 && d1 == 0)
   {
-    std::vector<std::vector<uint> > connectivity(topology.size(0), std::vector<uint>(1));
+    std::vector<std::vector<std::size_t> > connectivity(topology.size(0), std::vector<std::size_t>(1));
     for (MeshEntityIterator v(mesh, 0); !v.end(); ++v)
       connectivity[v->index()][0] = v->index();
     topology(0, 0).set(connectivity);
@@ -253,9 +253,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, uint d0, uint d1)
     // Choose how to take intersection
     dolfin_assert(d0 != 0);
     dolfin_assert(d1 != 0);
-    uint d = 0;
-    //if (d0 == 0 && d1 == 0)
-    //  d = mesh.topology().dim();
+    std::size_t d = 0;
 
     // Compute connectivity d0 - d - d1 and take intersection
     compute_connectivity(mesh, d0, d);
@@ -286,7 +284,7 @@ void TopologyComputation::compute_from_transpose(Mesh& mesh, uint d0, uint d1)
   dolfin_assert(!topology(d1, d0).empty());
 
   // Temporary array
-  std::vector<uint> tmp(topology.size(d0), 0);
+  std::vector<unsigned int> tmp(topology.size(d0), 0);
 
   // Count the number of connections
   for (MeshEntityIterator e1(mesh, d1); !e1.end(); ++e1)
@@ -320,7 +318,7 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
   dolfin_assert(!topology(d, d1).empty());
 
   // Temporary dynamic storage, later copied into static storage
-  std::vector<std::vector<uint> > connectivity(topology.size(d0));
+  std::vector<std::vector<std::size_t> > connectivity(topology.size(d0));
 
   // A bitmap used to ensure we do not store duplicates
   std::vector<bool> e1_visited(topology.size(d1));
@@ -330,14 +328,14 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
   for (MeshEntityIterator e0(mesh, d0); !e0.end(); ++e0)
   {
     // Get set of connected entities for current entity
-    std::vector<uint>& entities = connectivity[e0->index()];
+    std::vector<std::size_t>& entities = connectivity[e0->index()];
 
     // Reserve space
     entities.reserve(max_size);
 
     // Sorted list of e0 vertex indices (necessary to test for presence
     // of one list in another)
-    std::vector<uint> _e0(e0->entities(0), e0->entities(0) + e0->num_entities(0));
+    std::vector<std::size_t> _e0(e0->entities(0), e0->entities(0) + e0->num_entities(0));
     std::sort(_e0.begin(), _e0.end());
 
     // Initialise e1_visited to false for all neighbours of e0. The loop
@@ -366,7 +364,7 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
         else
         {
           // Sorted list of e1 vertex indices
-          std::vector<uint> _e1(e1->entities(0), e1->entities(0) + e1->num_entities(0));
+          std::vector<std::size_t> _e1(e1->entities(0), e1->entities(0) + e1->num_entities(0));
           std::sort(_e1.begin(), _e1.end());
 
           // Entity e1 must be completely contained in e0

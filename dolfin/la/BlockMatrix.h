@@ -53,7 +53,7 @@ namespace dolfin
     boost::shared_ptr<GenericMatrix> get_block(uint i, uint j);
 
     /// Return size of given dimension
-    uint size(uint dim) const;
+    std::size_t size(uint dim) const;
 
     /// Set all entries to zero and keep any sparse structure
     void zero();

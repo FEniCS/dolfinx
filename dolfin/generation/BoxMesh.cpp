@@ -72,14 +72,14 @@ BoxMesh::BoxMesh(double x0, double y0, double z0,
 
   // Create vertices
   editor.init_vertices((nx + 1)*(ny + 1)*(nz + 1));
-  uint vertex = 0;
-  for (uint iz = 0; iz <= nz; iz++)
+  std::size_t vertex = 0;
+  for (std::size_t iz = 0; iz <= nz; iz++)
   {
     x[2] = e + (static_cast<double>(iz))*(f-e) / static_cast<double>(nz);
-    for (uint iy = 0; iy <= ny; iy++)
+    for (std::size_t iy = 0; iy <= ny; iy++)
     {
       x[1] = c + (static_cast<double>(iy))*(d-c) / static_cast<double>(ny);
-      for (uint ix = 0; ix <= nx; ix++)
+      for (std::size_t ix = 0; ix <= nx; ix++)
       {
         x[0] = a + (static_cast<double>(ix))*(b-a) / static_cast<double>(nx);
         editor.add_vertex(vertex, x);
@@ -90,22 +90,22 @@ BoxMesh::BoxMesh(double x0, double y0, double z0,
 
   // Create tetrahedra
   editor.init_cells(6*nx*ny*nz);
-  uint cell = 0;
-  std::vector<std::vector<uint> > cells(6, std::vector<uint>(4));
-  for (uint iz = 0; iz < nz; iz++)
+  std::size_t cell = 0;
+  std::vector<std::vector<std::size_t> > cells(6, std::vector<std::size_t>(4));
+  for (std::size_t iz = 0; iz < nz; iz++)
   {
-    for (uint iy = 0; iy < ny; iy++)
+    for (std::size_t iy = 0; iy < ny; iy++)
     {
-      for (uint ix = 0; ix < nx; ix++)
+      for (std::size_t ix = 0; ix < nx; ix++)
       {
-        const uint v0 = iz*(nx + 1)*(ny + 1) + iy*(nx + 1) + ix;
-        const uint v1 = v0 + 1;
-        const uint v2 = v0 + (nx + 1);
-        const uint v3 = v1 + (nx + 1);
-        const uint v4 = v0 + (nx + 1)*(ny + 1);
-        const uint v5 = v1 + (nx + 1)*(ny + 1);
-        const uint v6 = v2 + (nx + 1)*(ny + 1);
-        const uint v7 = v3 + (nx + 1)*(ny + 1);
+        const std::size_t v0 = iz*(nx + 1)*(ny + 1) + iy*(nx + 1) + ix;
+        const std::size_t v1 = v0 + 1;
+        const std::size_t v2 = v0 + (nx + 1);
+        const std::size_t v3 = v1 + (nx + 1);
+        const std::size_t v4 = v0 + (nx + 1)*(ny + 1);
+        const std::size_t v5 = v1 + (nx + 1)*(ny + 1);
+        const std::size_t v6 = v2 + (nx + 1)*(ny + 1);
+        const std::size_t v7 = v3 + (nx + 1)*(ny + 1);
 
         // Note that v0 < v1 < v2 < v3 < vmid.
         cells[0][0] = v0; cells[0][1] = v1; cells[0][2] = v3; cells[0][3] = v7;
@@ -116,7 +116,7 @@ BoxMesh::BoxMesh(double x0, double y0, double z0,
         cells[5][0] = v0; cells[5][1] = v2; cells[5][2] = v6; cells[5][3] = v7;
 
         // Add cells
-        std::vector<std::vector<uint> >::const_iterator _cell;
+        std::vector<std::vector<std::size_t> >::const_iterator _cell;
         for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
           editor.add_cell(cell++, *_cell);
       }

@@ -109,7 +109,7 @@ namespace dolfin
     {
     public:
 
-      uint size(uint dim) const
+      std::size_t size(uint dim) const
       { return 0; }
 
       void mult(const GenericVector& x, GenericVector& y) const

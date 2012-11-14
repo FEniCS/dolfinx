@@ -87,11 +87,11 @@ RectangleMesh::RectangleMesh(double x0, double y0, double x1, double y1,
   std::vector<double> x(2);
 
   // Create main vertices:
-  uint vertex = 0;
-  for (uint iy = 0; iy <= ny; iy++)
+  std::size_t vertex = 0;
+  for (std::size_t iy = 0; iy <= ny; iy++)
   {
     x[1] = c + ((static_cast<double>(iy))*(d - c)/static_cast<double>(ny));
-    for (uint ix = 0; ix <= nx; ix++)
+    for (std::size_t ix = 0; ix <= nx; ix++)
     {
       x[0] = a + ((static_cast<double>(ix))*(b - a)/static_cast<double>(nx));
       editor.add_vertex(vertex, x);
@@ -102,10 +102,10 @@ RectangleMesh::RectangleMesh(double x0, double y0, double x1, double y1,
   // Create midpoint vertices if the mesh type is crossed
   if (diagonal == "crossed")
   {
-    for (uint iy = 0; iy < ny; iy++)
+    for (std::size_t iy = 0; iy < ny; iy++)
     {
       x[1] = c +(static_cast<double>(iy) + 0.5)*(d - c)/ static_cast<double>(ny);
-      for (uint ix = 0; ix < nx; ix++)
+      for (std::size_t ix = 0; ix < nx; ix++)
       {
         x[0] = a + (static_cast<double>(ix) + 0.5)*(b - a)/ static_cast<double>(nx);
         editor.add_vertex(vertex, x);
@@ -115,19 +115,19 @@ RectangleMesh::RectangleMesh(double x0, double y0, double x1, double y1,
   }
 
   // Create triangles
-  uint cell = 0;
+  std::size_t cell = 0;
   if (diagonal == "crossed")
   {
-    std::vector<std::vector<uint> > cells(4, std::vector<uint>(3));
-    for (uint iy = 0; iy < ny; iy++)
+    std::vector<std::vector<std::size_t> > cells(4, std::vector<std::size_t>(3));
+    for (std::size_t iy = 0; iy < ny; iy++)
     {
-      for (uint ix = 0; ix < nx; ix++)
+      for (std::size_t ix = 0; ix < nx; ix++)
       {
-        const uint v0 = iy*(nx + 1) + ix;
-        const uint v1 = v0 + 1;
-        const uint v2 = v0 + (nx + 1);
-        const uint v3 = v1 + (nx + 1);
-        const uint vmid = (nx + 1)*(ny + 1) + iy*nx + ix;
+        const std::size_t v0 = iy*(nx + 1) + ix;
+        const std::size_t v1 = v0 + 1;
+        const std::size_t v2 = v0 + (nx + 1);
+        const std::size_t v3 = v1 + (nx + 1);
+        const std::size_t vmid = (nx + 1)*(ny + 1) + iy*nx + ix;
 
         // Note that v0 < v1 < v2 < v3 < vmid.
         cells[0][0] = v0; cells[0][1] = v1; cells[0][2] = vmid;
@@ -136,7 +136,7 @@ RectangleMesh::RectangleMesh(double x0, double y0, double x1, double y1,
         cells[3][0] = v2; cells[3][1] = v3; cells[3][2] = vmid;
 
         // Add cells
-        std::vector<std::vector<uint> >::const_iterator _cell;
+        std::vector<std::vector<std::size_t> >::const_iterator _cell;
         for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
           editor.add_cell(cell++, *_cell);
       }
@@ -145,8 +145,8 @@ RectangleMesh::RectangleMesh(double x0, double y0, double x1, double y1,
   else if (diagonal == "left" || diagonal == "right" || diagonal == "right/left" || diagonal == "left/right")
   {
     std::string local_diagonal = diagonal;
-    std::vector<std::vector<uint> > cells(2, std::vector<uint>(3));
-    for (uint iy = 0; iy < ny; iy++)
+    std::vector<std::vector<std::size_t> > cells(2, std::vector<std::size_t>(3));
+    for (std::size_t iy = 0; iy < ny; iy++)
     {
       // Set up alternating diagonal
       if (diagonal == "right/left")
@@ -164,13 +164,13 @@ RectangleMesh::RectangleMesh(double x0, double y0, double x1, double y1,
           local_diagonal = "right";
       }
 
-      for (uint ix = 0; ix < nx; ix++)
+      for (std::size_t ix = 0; ix < nx; ix++)
       {
-        const uint v0 = iy*(nx + 1) + ix;
-        const uint v1 = v0 + 1;
-        const uint v2 = v0 + (nx + 1);
-        const uint v3 = v1 + (nx + 1);
-        std::vector<uint> cell_data;
+        const std::size_t v0 = iy*(nx + 1) + ix;
+        const std::size_t v1 = v0 + 1;
+        const std::size_t v2 = v0 + (nx + 1);
+        const std::size_t v3 = v1 + (nx + 1);
+        std::vector<std::size_t> cell_data;
 
         if(local_diagonal == "left")
         {

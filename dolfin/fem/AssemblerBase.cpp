@@ -48,7 +48,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
-          const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& periodic_master_slave_dofs)
+          const std::vector<std::pair<std::pair<std::size_t, std::size_t>,
+                      std::pair<std::size_t, std::size_t> > >& periodic_master_slave_dofs)
 {
   dolfin_assert(a.ufc_form());
 
@@ -73,8 +74,8 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
     boost::shared_ptr<TensorLayout> tensor_layout = A.factory().create_layout(a.rank());
     dolfin_assert(tensor_layout);
 
-    std::vector<uint> global_dimensions(a.rank());
-    std::vector<std::pair<uint, uint> > local_range(a.rank());
+    std::vector<std::size_t> global_dimensions(a.rank());
+    std::vector<std::pair<std::size_t, std::size_t> > local_range(a.rank());
     for (uint i = 0; i < a.rank(); i++)
     {
       dolfin_assert(dofmaps[i]);
@@ -112,8 +113,8 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
 
       // Loop over rows and insert 0.0 on the diagonal
       const double block = 0.0;
-      const std::pair<uint, uint> row_range = A.local_range(0);
-      for (uint i = row_range.first; i < row_range.second; i++)
+      const std::pair<std::size_t, std::size_t> row_range = A.local_range(0);
+      for (std::size_t i = row_range.first; i < row_range.second; i++)
         _A.set(&block, (uint) 1, &i, (uint) 1, &i);
       A.apply("flush");
     }
@@ -134,23 +135,23 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
                        "Modifcation of non-zero matrix pattern for periodic boundary conditions is supported row-wise matrices only");
         }
 
-        const std::pair<uint, uint> local_range = pattern.local_range(0);
+        const std::pair<std::size_t, std::size_t> local_range = pattern.local_range(0);
 
         GenericMatrix& _A = A.down_cast<GenericMatrix>();
-        std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >::const_iterator dof_pair;
+        std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > >::const_iterator dof_pair;
         for (dof_pair = periodic_master_slave_dofs.begin();
                     dof_pair != periodic_master_slave_dofs.end(); ++dof_pair)
         {
-          const uint dofs[2] = {dof_pair->first.first, dof_pair->second.first};
+          const std::size_t dofs[2] = {dof_pair->first.first, dof_pair->second.first};
 
-          std::vector<uint> edges;
+          std::vector<std::size_t> edges;
           for (uint i = 0; i < 2; ++i)
           {
             if (dofs[i] >= local_range.first && dofs[i] < local_range.second)
             {
               pattern.get_edges(dofs[i], edges);
               const std::vector<double> block(edges.size(), 0.0);
-              _A.set(&block[0], (uint) 1, &dofs[i], (uint) edges.size(), &edges[0]);
+              _A.set(&block[0], (std::size_t) 1, &dofs[i], (std::size_t) edges.size(), &edges[0]);
             }
           }
         }
@@ -233,7 +234,7 @@ void AssemblerBase::check(const Form& a)
     // auto_ptr deletes its object when it exits its scope
     boost::scoped_ptr<ufc::finite_element> fe(a.ufc_form()->create_finite_element(i + a.rank()));
 
-    // Checks outcommented since they only work for Functions, not Expressions
+    // Checks out-commented since they only work for Functions, not Expressions
     const uint r = coefficients[i]->value_rank();
     const uint fe_r = fe->value_rank();
     if (fe_r != r)
