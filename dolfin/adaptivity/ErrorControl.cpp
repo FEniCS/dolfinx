@@ -120,7 +120,7 @@ double ErrorControl::estimate_error(const Function& u,
   }
 
   // Assemble error estimate
-  info("Assembling error estimate.");
+  log(PROGRESS, "Assembling error estimate.");
   const double error_estimate = assemble(*_residual);
 
   // Return estimate
@@ -130,7 +130,7 @@ double ErrorControl::estimate_error(const Function& u,
 void ErrorControl::compute_dual(Function& z,
    const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
 {
-  info("Solving dual problem.");
+  log(PROGRESS, "Solving dual problem.");
 
   // Create dual boundary conditions by homogenizing
   std::vector<boost::shared_ptr<const BoundaryCondition> > dual_bcs;
@@ -166,7 +166,7 @@ void ErrorControl::compute_dual(Function& z,
 void ErrorControl::compute_extrapolation(const Function& z,
    const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
 {
-  info("Extrapolating dual solution.");
+  log(PROGRESS, "Extrapolating dual solution.");
 
   // Extrapolate
   dolfin_assert(_E);
@@ -245,7 +245,7 @@ void ErrorControl::residual_representation(Function& R_T,
                                            SpecialFacetFunction& R_dT,
                                            const Function& u)
 {
-  begin("Computing residual representation.");
+  begin(PROGRESS, "Computing residual representation.");
 
   // Compute cell residual
   Timer timer("Computation of residual representation");
@@ -260,7 +260,7 @@ void ErrorControl::residual_representation(Function& R_T,
 //-----------------------------------------------------------------------------
 void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
 {
-  begin("Computing cell residual representation.");
+  begin(PROGRESS, "Computing cell residual representation.");
 
   dolfin_assert(_a_R_T);
   dolfin_assert(_L_R_T);
@@ -331,7 +331,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
                                           const Function& u,
                                           const Function& R_T)
 {
-  begin("Computing facet residual representation.");
+  begin(PROGRESS, "Computing facet residual representation.");
 
   // Extract function space for facet residual approximation
   dolfin_assert(R_dT[0].function_space());

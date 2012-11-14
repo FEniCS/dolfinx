@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Marie E. Rognes
+// Copyright (C) 2010--2012 Marie E. Rognes
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-03-31
+// Last changed: 2012-11-14
 
 #ifndef __ADAPTIVE_NONLINEAR_VARIATIONAL_SOLVER_H
 #define __ADAPTIVE_NONLINEAR_VARIATIONAL_SOLVER_H
@@ -70,28 +70,38 @@ namespace dolfin
     /// *Arguments*
     ///     problem (_NonlinearVariationalProblem_)
     ///         The primal problem
-    AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem& problem);
+    ///     goal (_GoalFunctional_)
+    ///         The goal functional
+    AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem& problem,
+                                       GoalFunctional& goal);
 
-    /// Create AdaptiveNonlinearVariationalSolver
+    /// Create AdaptiveNonlinearVariationalSolver (shared ptr version)
     ///
     /// *Arguments*
     ///     problem (_NonlinearVariationalProblem_)
     ///         The primal problem
-    AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem);
+    ///     goal (_GoalFunctional_)
+    ///         The goal functional
+    AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem,
+                                       boost::shared_ptr<GoalFunctional> goal);
+
+    /// Create AdaptiveLinearVariationalSolver from variational
+    /// problem, goal form and error control instance
+    ///
+    /// *Arguments*
+    ///     problem (_NonlinearVariationalProblem_)
+    ///         The primal problem
+    ///     goal (_Form_)
+    ///         The goal functional
+    ///     control (_ErrorControl_)
+    ///         An error controller object
+    AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem,
+                                       boost::shared_ptr<Form> goal,
+                                       boost::shared_ptr<ErrorControl> control);
+
 
     /// Destructor
     ~AdaptiveNonlinearVariationalSolver() {/* Do nothing */};
-
-    /// Solve problem such that the error measured in the goal
-    /// functional 'M' is less than the given tolerance using the
-    /// GoalFunctional's ErrorControl object.
-    ///
-    /// *Arguments*
-    ///     tol  (double)
-    ///         The error tolerance
-    ///     goal  (_GoalFunctional_)
-    ///         The goal functional
-    virtual void solve(const double tol, GoalFunctional& M);
 
     /// Solve the primal problem.
     ///
@@ -138,6 +148,16 @@ namespace dolfin
     virtual uint num_dofs_primal();
 
   private:
+
+    /// Helper function for instance initialization
+    ///
+    /// *Arguments*
+    ///    problem (_NonlinearVariationalProblem_)
+    ///        The primal problem
+    ///    u (_GoalFunctional_)
+    ///        The goal functional
+    void init(boost::shared_ptr<NonlinearVariationalProblem> problem,
+              boost::shared_ptr<GoalFunctional> goal);
 
     // The problem
     boost::shared_ptr<NonlinearVariationalProblem> problem;

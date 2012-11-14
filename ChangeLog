@@ -1,4 +1,5 @@
 1.1.0 [not yet released]
+ - Change interface for auto-adaptive solvers: these now take the goal functional as a constructor argument
  - Add memory usage monitor: monitor_memory_usage()
  - Compare mesh hash in interpolate_vertex_values
  - Add hash() for Mesh and MeshTopology

@@ -44,17 +44,6 @@
 %ignore dolfin::GoalFunctional;
 
 //-----------------------------------------------------------------------------
-// Ignore solve methods of *Adaptive*VariationalSolver that take
-// GoalFunctional as input
-//-----------------------------------------------------------------------------
-%ignore dolfin::GenericAdaptiveVariationalSolver::solve(const double tol,
-                                                        GoalFunctional& M);
-%ignore dolfin::AdaptiveLinearVariationalSolver::solve(const double tol,
-                                                       GoalFunctional& M);
-%ignore dolfin::AdaptiveNonlinearVariationalSolver::solve(const double tol,
-                                                          GoalFunctional& M);
-
-//-----------------------------------------------------------------------------
 // To simplify handling of shared_ptr types in PyDOLFIN we ignore the reference
 // version of constructors to these types
 //-----------------------------------------------------------------------------
