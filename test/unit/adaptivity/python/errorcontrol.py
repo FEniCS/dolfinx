@@ -101,9 +101,9 @@ class ErrorControlTest(unittest.TestCase):
             return
 
         # Solve problem adaptively
-        solver = AdaptiveLinearVariationalSolver(self.problem)
+        solver = AdaptiveLinearVariationalSolver(self.problem, self.goal)
         tol = 0.00087
-        solver.solve(tol, self.goal)
+        solver.solve(tol)
 
         # Extract solution and update goal
         w = Function(self.u.leaf_node().function_space())
