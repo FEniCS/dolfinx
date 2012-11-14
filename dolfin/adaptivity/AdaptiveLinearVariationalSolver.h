@@ -32,6 +32,7 @@
 namespace dolfin
 {
   // Forward declarations
+  class Form;
   class Function;
   class LinearVariationalProblem;
   class GoalFunctional;
@@ -70,28 +71,18 @@ namespace dolfin
     /// *Arguments*
     ///     problem (_LinearVariationalProblem_)
     ///         The primal problem
-    AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem);
-
+    AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem,
+                                    GoalFunctional& goal);
     /// Create AdaptiveLinearVariationalSolver
     ///
     /// *Arguments*
     ///     problem (_LinearVariationalProblem_)
     ///         The primal problem
-    AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem);
+    AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem,
+                                    boost::shared_ptr<GoalFunctional> goal);
 
     /// Destructor
     ~AdaptiveLinearVariationalSolver() {/* Do nothing */};
-
-    /// Solve problem such that the error measured in the goal
-    /// functional 'M' is less than the given tolerance using the
-    /// GoalFunctional's ErrorControl object.
-    ///
-    /// *Arguments*
-    ///     tol  (double)
-    ///         The error tolerance
-    ///     goal  (_GoalFunctional_)
-    ///         The goal functional
-    virtual void solve(const double tol, GoalFunctional& M);
 
     /// Solve the primal problem.
     ///

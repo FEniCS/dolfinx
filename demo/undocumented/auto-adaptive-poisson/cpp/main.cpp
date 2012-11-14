@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-08-19
-// Last changed: 2012-07-05
+// Last changed: 2012-11-14
 
 #include <dolfin.h>
 #include "AdaptivePoisson.h"
@@ -87,14 +87,16 @@ int main()
 
   // Alternative, more verbose version:
   LinearVariationalProblem problem(a, L, u, bc);
-  AdaptiveLinearVariationalSolver solver(problem);
+  AdaptiveLinearVariationalSolver solver(problem, M);
   solver.parameters("error_control")("dual_variational_solver")["linear_solver"] = "gmres";
-  solver.solve(tol, M);
+  solver.solve(tol);
+
+  solver.summary();
 
   // Plot final solution
-  plot(u.root_node(), "Solution on initial mesh");
-  plot(u.leaf_node(), "Solution on final mesh");
-  interactive();
+  //plot(u.root_node(), "Solution on initial mesh");
+  //plot(u.leaf_node(), "Solution on final mesh");
+  //interactive();
 
   return 0;
 }

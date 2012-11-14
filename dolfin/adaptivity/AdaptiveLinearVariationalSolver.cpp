@@ -36,42 +36,50 @@ using namespace dolfin;
 
 // ----------------------------------------------------------------------------
 AdaptiveLinearVariationalSolver::
-AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem)
+AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem,
+                                GoalFunctional& goal)
   : problem(reference_to_no_delete_pointer(problem))
 {
+  this->goal = reference_to_no_delete_pointer(goal);
+
   // Set generic adaptive parameters
   parameters = GenericAdaptiveVariationalSolver::default_parameters();
 
   // Add parameters for linear variational solver
   parameters.add(LinearVariationalSolver::default_parameters());
+
+  // Extract error control from goal
+  boost::shared_ptr<const Form> a = problem.bilinear_form();
+  boost::shared_ptr<const Form> L = problem.linear_form();
+  dolfin_assert(a);
+  dolfin_assert(L);
+
+  // Extract and set error control from goal functional
+  goal.update_ec(*a, *L);
+  control = goal._ec;
 }
 // ----------------------------------------------------------------------------
 AdaptiveLinearVariationalSolver::
-AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem)
+AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem, boost::shared_ptr<GoalFunctional> goal)
   : problem(problem)
 {
+  this->goal = goal;
+
   // Set generic adaptive parameters
   parameters = GenericAdaptiveVariationalSolver::default_parameters();
 
   // Add parameters for linear variational solver
   parameters.add(LinearVariationalSolver::default_parameters());
-}
-// ----------------------------------------------------------------------------
-void AdaptiveLinearVariationalSolver::solve(const double tol, GoalFunctional& M)
-{
-  // Initialize goal functional
+
+  // Extract error control from goal
   boost::shared_ptr<const Form> a = problem->bilinear_form();
   boost::shared_ptr<const Form> L = problem->linear_form();
   dolfin_assert(a);
   dolfin_assert(L);
-  M.update_ec(*a, *L);
 
-  // Extract error control from goal functional
-  dolfin_assert(M._ec);
-  ErrorControl& ec(*M._ec);
-
-  // Call solve with given error control
-  GenericAdaptiveVariationalSolver::solve(tol, M, ec);
+  // Extract and set error control from goal functional
+  goal->update_ec(*a, *L);
+  control = goal->_ec;
 }
 // ----------------------------------------------------------------------------
 boost::shared_ptr<const Function>

@@ -70,28 +70,19 @@ namespace dolfin
     /// *Arguments*
     ///     problem (_NonlinearVariationalProblem_)
     ///         The primal problem
-    AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem& problem);
+    AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem& problem,
+                                       GoalFunctional& goal);
 
     /// Create AdaptiveNonlinearVariationalSolver
     ///
     /// *Arguments*
     ///     problem (_NonlinearVariationalProblem_)
     ///         The primal problem
-    AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem);
+    AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem,
+                                       boost::shared_ptr<GoalFunctional> goal);
 
     /// Destructor
     ~AdaptiveNonlinearVariationalSolver() {/* Do nothing */};
-
-    /// Solve problem such that the error measured in the goal
-    /// functional 'M' is less than the given tolerance using the
-    /// GoalFunctional's ErrorControl object.
-    ///
-    /// *Arguments*
-    ///     tol  (double)
-    ///         The error tolerance
-    ///     goal  (_GoalFunctional_)
-    ///         The goal functional
-    virtual void solve(const double tol, GoalFunctional& M);
 
     /// Solve the primal problem.
     ///

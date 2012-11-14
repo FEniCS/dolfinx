@@ -48,29 +48,13 @@ namespace dolfin
 
     virtual ~GenericAdaptiveVariationalSolver();
 
-    /// Solve such that the error measured in the functional 'goal' is
-    /// less than the given tolerance using the ErrorControl object
-    /// 'control'
+    /// Solve such that the error measured in the functional is
+    /// less than the given tolerance
     ///
     /// *Arguments*
     ///     tol  (double)
     ///         The error tolerance
-    ///     goal  (_Form_)
-    ///         The goal functional
-    ///     control  (_ErrorControl_)
-    ///         The error controller
-    void solve(const double tol, Form& goal, ErrorControl& control);
-
-    /// Solve such that the error measured in the goal functional 'M'
-    /// is less than the given tolerance using the GoalFunctional's
-    /// ErrorControl object. Must be overloaded in subclass.
-    ///
-    /// *Arguments*
-    ///     tol  (double)
-    ///         The error tolerance
-    ///     goal  (_GoalFunctional_)
-    ///         The goal functional
-    virtual void solve(const double tol, GoalFunctional& M) = 0;
+    void solve(const double tol);
 
     /// Solve the primal problem. Must be overloaded in subclass.
     ///
@@ -86,7 +70,7 @@ namespace dolfin
     ///     std::vector<_BoundaryCondition_>
     ///         The primal boundary conditions
     virtual std::vector<boost::shared_ptr<const BoundaryCondition> >
-    extract_bcs() const = 0;
+      extract_bcs() const = 0;
 
     /// Evaluate the goal functional. Must be overloaded in subclass.
     ///
@@ -147,13 +131,19 @@ namespace dolfin
       return p;
     }
 
+    /// Present summary of all adaptive data and parameters
+    void summary();
+
   protected:
+
+    // The goal functional
+    boost::shared_ptr<Form> goal;
+
+    // Error control object
+    boost::shared_ptr<ErrorControl> control;
 
     // A list of adaptive data
     std::vector<boost::shared_ptr<Parameters> > _adaptive_data;
-
-    /// Present summary of all adaptive data and parameters
-    void summary();
 
     /// Return the number of degrees of freedom for primal problem
     ///
@@ -162,9 +152,7 @@ namespace dolfin
     ///         The number of degrees of freedom
     virtual uint num_dofs_primal() = 0;
 
-
   };
-
 }
 
 

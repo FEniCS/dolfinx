@@ -16,12 +16,12 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-09-16
-// Last changed: 2011-07-18
+// Last changed: 2012-11-14
 
 #ifndef __GOAL_FUNCTIONAL_H
 #define __GOAL_FUNCTIONAL_H
 
-#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 #include <dolfin/fem/Form.h>
 #include "ErrorControl.h"
 
@@ -59,7 +59,7 @@ namespace dolfin
     virtual void update_ec(const Form& a, const Form& L) = 0;
 
     // Pointer to _ErrorControl_ instance
-    boost::scoped_ptr<ErrorControl> _ec;
+    boost::shared_ptr<ErrorControl> _ec;
 
   };
 

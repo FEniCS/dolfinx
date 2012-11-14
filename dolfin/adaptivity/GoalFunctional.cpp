@@ -26,7 +26,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 GoalFunctional::GoalFunctional(uint rank, uint num_coefficients)
-  : Form(rank, num_coefficients), _ec(0)
+  : Form(rank, num_coefficients)
 {
   // Check that rank is 0
   dolfin_assert(rank == 0);

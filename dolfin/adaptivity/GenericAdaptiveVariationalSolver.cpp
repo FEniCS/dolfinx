@@ -49,9 +49,7 @@ GenericAdaptiveVariationalSolver::~GenericAdaptiveVariationalSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void GenericAdaptiveVariationalSolver::solve(const double tol,
-                                             Form& goal,
-                                             ErrorControl& control)
+void GenericAdaptiveVariationalSolver::solve(const double tol)
 {
 
   log(INFO, "Solving variational problem adaptively");
@@ -77,7 +75,6 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
         && num_dofs_primal() > max_dimension)
     {
       info("Maximal number of dofs reached, finishing");
-      summary();
       return;
     }
 
@@ -94,8 +91,8 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     }
 
     // Deal with goal and error control on current mesh
-    Form& M = goal.leaf_node();
-    ErrorControl& ec = control.leaf_node();
+    Form& M = goal->leaf_node();
+    ErrorControl& ec = control->leaf_node();
     ec.parameters.update(parameters("error_control"));
 
     //--- Stage 0: Solve primal problem
@@ -136,7 +133,6 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     {
       info("Error estimate (%g) is less than tolerance (%g), returning.",
            error_estimate, tol);
-      summary();
       return;
     }
 
@@ -183,7 +179,6 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     end();
   }
 
-  summary();
   warning("Maximal number of iterations (%d) exceeded! Returning anyhow.",
           max_iterations);
 }
@@ -196,11 +191,6 @@ GenericAdaptiveVariationalSolver::adaptive_data() const
 //-----------------------------------------------------------------------------
 void GenericAdaptiveVariationalSolver::summary()
 {
-
-  const unsigned int log_level = get_log_level();
-  if (log_level > PROGRESS)
-    return;
-
   // Show parameters used
   info("");
   info("Parameters used for adaptive solve:");
