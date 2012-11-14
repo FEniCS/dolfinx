@@ -45,9 +45,9 @@
 //-----------------------------------------------------------------------------
 // Copy Array construction typemaps from NumPy typemaps
 //-----------------------------------------------------------------------------
-%typemap(in) (std::size_t N, const std::size_t* x) = (std::size_t _array_dim, std::size_t* _array);
-%typemap(in) (std::size_t N, const int* x) = (std::size_t _array_dim, int* _array);
-%typemap(in) (std::size_t N, const double* x) = (std::size_t _array_dim, double* _array);
+%typemap(in) (dolfin::uint N, const dolfin::uint* x) = (dolfin::uint _array_dim, dolfin::uint* _array);
+%typemap(in) (dolfin::uint N, const int* x) = (dolfin::uint _array_dim, int* _array);
+%typemap(in) (dolfin::uint N, const double* x) = (dolfin::uint _array_dim, double* _array);
 
 //-----------------------------------------------------------------------------
 // Ignores for Hierarchical
@@ -66,3 +66,4 @@
 %rename(root_node) dolfin::Hierarchical::root_node_shared_ptr;
 %ignore dolfin::Hierarchical::leaf_node;
 %rename(leaf_node) dolfin::Hierarchical::leaf_node_shared_ptr;
+
