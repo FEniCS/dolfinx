@@ -46,7 +46,7 @@
 
 %ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
 					 const GenericFunction&,
-					 const MeshFunction<unsigned int>&,
+					 const MeshFunction<std::size_t>&,
 					 std::size_t,
 					 std::string method="topological");
 
