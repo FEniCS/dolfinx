@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2008-12-01
-// Last changed: 2011-11-14
+// Last changed: 2012-11-14
 
 #include <algorithm>
 #include <iterator>
@@ -791,7 +791,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // Open mesh for editing
   mesh.clear();
   MeshEditor editor;
-  editor.open(mesh, gdim, tdim);
+  editor.open(mesh, tdim, gdim);
 
   // Add vertices
   editor.init_vertices(vertex_coordinates.size());

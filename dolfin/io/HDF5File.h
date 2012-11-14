@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-11-13
+// Last changed: 2012-11-14
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -84,7 +84,7 @@ namespace dolfin
     void operator>> (Mesh& mesh);
 
     /// Read Mesh from file
-    void read_mesh(Mesh& mesh);
+    void read_mesh(Mesh& mesh, const std::string name);
 
     /// Check if dataset exists in HDF5 file
     bool has_dataset(const std::string dataset_name) const;
@@ -125,7 +125,21 @@ namespace dolfin
                                            std::vector<T>& values,
                                            const uint value_size);
 
+    
+    // Go through set of coordinate and connectivity data
+    // and remove duplicate vertices between processes
+    // remapping the topology accordingly to the new
+    // global order (not the same as the global index)
+    // Not used - keeping for now until format is fixed.
+    void remove_duplicate_vertices(const Mesh &mesh,
+                                   std::vector<double>& vertex_data,
+                                   std::vector<uint>& topological_data);
+    
 
+    // Redistribute a local_vector into global order, eliminating
+    // duplicate values. global_index contains the global indexing held on
+    // each process. global_vector will be equally divided amongst the
+    // processes
     template <typename T>
     void redistribute_by_global_index(const std::vector<uint>& global_index,
                                       const std::vector<T>& local_vector,
