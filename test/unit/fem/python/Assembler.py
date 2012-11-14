@@ -407,7 +407,7 @@ class Assembly(unittest.TestCase):
 
             # Create reference matrices and set entries
             A0, M0 = uBLASDenseMatrix(4, 4), uBLASDenseMatrix(4, 4)
-            pos = numpy.array([0, 1, 2, 3], dtype=numpy.uintc)
+            pos = numpy.array([0, 1, 2, 3], dtype=numpy.uintp)
             A0.set(numpy.array([[1.0/2.0, -1.0/6.0, -1.0/6.0, -1.0/6.0],
                           [-1.0/6.0, 1.0/6.0, 0.0, 0.0],
                           [-1.0/6.0, 0.0, 1.0/6.0, 0.0],
