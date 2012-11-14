@@ -93,15 +93,16 @@ J = derivative(F, w)
 pde = NonlinearVariationalProblem(F, w, bc, J)
 
 # Define solver
-solver = AdaptiveNonlinearVariationalSolver(pde)
+solver = AdaptiveNonlinearVariationalSolver(pde, M)
 
 # Set reference value
 solver.parameters["reference"] = 0.40863917;
 
 # Solve to given tolerance
-solver.solve(tol, M)
+solver.solve(tol)
 
 # Write a summary
+solver.summary()
 list_timings()
 
 # Extract solutions on coarsest and finest mesh:

@@ -70,6 +70,15 @@ namespace dolfin
     /// *Arguments*
     ///     problem (_NonlinearVariationalProblem_)
     ///         The primal problem
+    AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem,
+                                       boost::shared_ptr<Form> goal,
+                                       boost::shared_ptr<ErrorControl> control);
+
+    /// Create AdaptiveNonlinearVariationalSolver
+    ///
+    /// *Arguments*
+    ///     problem (_NonlinearVariationalProblem_)
+    ///         The primal problem
     AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem& problem,
                                        GoalFunctional& goal);
 

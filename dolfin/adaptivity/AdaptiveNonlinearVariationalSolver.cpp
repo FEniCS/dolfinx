@@ -36,6 +36,22 @@ using namespace dolfin;
 
 // ----------------------------------------------------------------------------
 AdaptiveNonlinearVariationalSolver::
+AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem,
+                                boost::shared_ptr<Form> goal,
+                                boost::shared_ptr<ErrorControl> control)
+  : problem(problem)
+{
+  this->goal = goal;
+  this->control = control;
+
+  // Set generic adaptive parameters
+  parameters = GenericAdaptiveVariationalSolver::default_parameters();
+
+  // Add parameters for non-linear variational solver
+  parameters.add(NonlinearVariationalSolver::default_parameters());
+}
+// ----------------------------------------------------------------------------
+AdaptiveNonlinearVariationalSolver::
 AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem& problem,
                                    GoalFunctional& goal)
   : problem(reference_to_no_delete_pointer(problem))

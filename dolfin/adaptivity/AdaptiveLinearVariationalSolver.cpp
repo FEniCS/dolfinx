@@ -36,6 +36,22 @@ using namespace dolfin;
 
 // ----------------------------------------------------------------------------
 AdaptiveLinearVariationalSolver::
+AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem,
+                                boost::shared_ptr<Form> goal,
+                                boost::shared_ptr<ErrorControl> control)
+  : problem(problem)
+{
+  this->goal = goal;
+  this->control = control;
+
+  // Set generic adaptive parameters
+  parameters = GenericAdaptiveVariationalSolver::default_parameters();
+
+  // Add parameters for linear variational solver
+  parameters.add(LinearVariationalSolver::default_parameters());
+}
+// ----------------------------------------------------------------------------
+AdaptiveLinearVariationalSolver::
 AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem,
                                 GoalFunctional& goal)
   : problem(reference_to_no_delete_pointer(problem))

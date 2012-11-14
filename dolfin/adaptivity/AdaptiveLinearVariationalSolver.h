@@ -73,6 +73,7 @@ namespace dolfin
     ///         The primal problem
     AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem,
                                     GoalFunctional& goal);
+
     /// Create AdaptiveLinearVariationalSolver
     ///
     /// *Arguments*
@@ -80,6 +81,15 @@ namespace dolfin
     ///         The primal problem
     AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem,
                                     boost::shared_ptr<GoalFunctional> goal);
+
+    /// Create AdaptiveLinearVariationalSolver
+    ///
+    /// *Arguments*
+    ///     problem (_LinearVariationalProblem_)
+    ///         The primal problem
+    AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem,
+                                    boost::shared_ptr<Form> goal,
+                                    boost::shared_ptr<ErrorControl> control);
 
     /// Destructor
     ~AdaptiveLinearVariationalSolver() {/* Do nothing */};
