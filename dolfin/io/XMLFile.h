@@ -87,6 +87,12 @@ namespace dolfin
     void operator<< (const MeshFunction<unsigned int>& output)
     { write_mesh_function(output, "uint"); }
 
+    // MeshFunction (uint)
+    void operator>> (MeshFunction<unsigned long int>& input)
+    { read_mesh_function(input, "uint"); }
+    void operator<< (const MeshFunction<unsigned long int>& output)
+    { write_mesh_function(output, "uint"); }
+
     // MeshFunction (int)
     void operator>> (MeshFunction<int>& input)
     { read_mesh_function(input, "int"); }
