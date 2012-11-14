@@ -194,26 +194,26 @@ static void add_vertex(CGAL::Polyhedron_incremental_builder_3<csg::Exact_Halfedg
   vertex_no++;
 }
 //-----------------------------------------------------------------------------
-static void printStat(const csg::Exact_Polyhedron_3& P, std::string title)
-{
-  cout << title << endl;
-  cout << "Number of vertices:  " << P.size_of_vertices() << endl;
-  cout << "Number of halfedges: " << P.size_of_halfedges() << endl;
-  cout << "Number of facets in:    " << P.size_of_facets() << endl;
+// static void printStat(const csg::Exact_Polyhedron_3& P, std::string title)
+// {
+//   cout << title << endl;
+//   cout << "Number of vertices:  " << P.size_of_vertices() << endl;
+//   cout << "Number of halfedges: " << P.size_of_halfedges() << endl;
+//   cout << "Number of facets in:    " << P.size_of_facets() << endl;
 
-  bool triangles_only = true;
-  for (typename csg::Exact_Polyhedron_3::Facet_const_iterator facet = P.facets_begin(); facet != P.facets_end(); ++facet)
-  {
-    // Check if there is a non-triangular facet
-    if (!facet->is_triangle())
-    {
-      cout << "Trouble: Facet is not triangle" << endl;
-      triangles_only = false;
-    }
-  }
-  if (triangles_only) cout << "Only trangles!" << endl;
-  cout << endl;
-}
+//   bool triangles_only = true;
+//   for (csg::Exact_Polyhedron_3::Facet_const_iterator facet = P.facets_begin(); facet != P.facets_end(); ++facet)
+//   {
+//     // Check if there is a non-triangular facet
+//     if (!facet->is_triangle())
+//     {
+//       cout << "Trouble: Facet is not triangle" << endl;
+//       triangles_only = false;
+//     }
+//   }
+//   if (triangles_only) cout << "Only trangles!" << endl;
+//   cout << endl;
+// }
 //-----------------------------------------------------------------------------
 // Sphere
 //-----------------------------------------------------------------------------
@@ -736,24 +736,24 @@ static boost::shared_ptr<csg::Nef_polyhedron_3> convertSubTree(const CSGGeometry
   return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3);
 }
 //-----------------------------------------------------------------------------
-static void triangulate_polyhedron(csg::Polyhedron_3& p)
-{
-  while (!p.is_pure_triangle())
-  {
-    for (csg::Polyhedron_3::Facet_iterator facet = p.facets_begin();
-	 facet != p.facets_end(); facet++)
-    {
-      if (!facet->is_triangle())
-      {
-	cout << "Triangulating facet" << endl;
-	p.create_center_vertex(facet->halfedge());
+// static void triangulate_polyhedron(csg::Polyhedron_3& p)
+// {
+//   while (!p.is_pure_triangle())
+//   {
+//     for (csg::Polyhedron_3::Facet_iterator facet = p.facets_begin();
+// 	 facet != p.facets_end(); facet++)
+//     {
+//       if (!facet->is_triangle())
+//       {
+// 	cout << "Triangulating facet" << endl;
+// 	p.create_center_vertex(facet->halfedge());
 
-	// FIXME: Is it safe to do this without breaking the inner loop?
-	break;
-      }
-    }    
-  }
-}
+// 	// FIXME: Is it safe to do this without breaking the inner loop?
+// 	break;
+//       }
+//     }    
+//   }
+// }
 //-----------------------------------------------------------------------------
 void GeometryToCGALConverter::convert(const CSGGeometry& geometry, csg::Polyhedron_3 &p, bool remove_degenerated)
 {

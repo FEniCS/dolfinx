@@ -606,7 +606,7 @@ void PolyhedronUtils::remove_degenerate_facets(csg::Exact_Polyhedron_3& p, const
 //-----------------------------------------------------------------------------
 bool PolyhedronUtils::has_degenerate_facets(csg::Exact_Polyhedron_3& p, double threshold)
 {
-  for (typename csg::Exact_Polyhedron_3::Facet_iterator facet = p.facets_begin();
+  for (csg::Exact_Polyhedron_3::Facet_iterator facet = p.facets_begin();
        facet != p.facets_end(); facet++)
   {
     dolfin_assert(facet->is_triangle());
