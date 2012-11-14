@@ -16,13 +16,15 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-10-31
-// Last changed: 2012-11-09
+// Last changed: 2012-11-14
 
 // Some utilities for working with cgal polyhedrons
 
 
 #ifndef __POLYHEDRON_UTILS_H
 #define __POLYHEDRON_UTILS_H
+
+#ifdef HAS_CGAL
 
 #include "cgal_csg3d.h"
 #include "self_intersect.h"
@@ -58,7 +60,7 @@ namespace dolfin
       return triangles.size() > 0;
     }
   };
-
-
 }
+
+#endif 
 #endif
