@@ -15,12 +15,15 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Johannes Ring, 2012
+//
 // First added:  2012-05-12
-// Last changed: 2012-05-12
+// Last changed: 2012-05-14
 
 #ifndef __CSG_GEOMETRIES_H
 #define __CSG_GEOMETRIES_H
 
+#include <boost/shared_ptr.hpp>
 #include <dolfin/mesh/Point.h>
 #include <dolfin/generation/CSGGeometry.h>
 
