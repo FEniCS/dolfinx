@@ -55,12 +55,12 @@ obstacle = Obstacle()
 mesh = UnitSquare(64, 64)
 
 # Initialize mesh function for interior domains
-domains = CellFunction("uint", mesh)
+domains = CellFunction("sizet", mesh)
 domains.set_all(0)
 obstacle.mark(domains, 1)
 
 # Initialize mesh function for boundary domains
-boundaries = FacetFunction("uint", mesh)
+boundaries = FacetFunction("sizet", mesh)
 boundaries.set_all(0)
 left.mark(boundaries, 1)
 top.mark(boundaries, 2)
