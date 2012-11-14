@@ -32,7 +32,7 @@
 %fragment("SWIG_From_std_size_t", "header") {
   SWIGINTERNINLINE PyObject * SWIG_From_std_size_t  (std::size_t value)
   {
-    return SWIG_From_unsigned_SS_long  (static_cast< unsigned long >(value));
+    return SWIG_From_unsigned_SS_long (static_cast< unsigned long >(value));
   }
 }
 
@@ -60,7 +60,7 @@
   // A check for integer
   SWIGINTERNINLINE bool Py_convert_std_size_t(PyObject* in, std::size_t& value)
   {
-    if (!PyInteger_Check(in))
+    if (!(PyInteger_Check(in) && PyInt_AS_LONG(in)>=0))
       return false;
     value = static_cast<std::size_t>(PyInt_AS_LONG(in));
     return true;
@@ -112,6 +112,19 @@
   // NOTE: which we do not want
   // NOTE: Fixed in 2.0.7, but keep the above fix for now
   // $result = SWIG_From(unsigned int)($1);
+}
+
+//-----------------------------------------------------------------------------
+// Out typemap (std::size_t)
+//-----------------------------------------------------------------------------
+%typemap(out, fragment=SWIG_From_frag(std::size_t)) std::size_t
+{
+  // Typemap unsigned int
+  $result = PyInt_FromLong(static_cast< long >($1));
+  // NOTE: From SWIG 2.0.5 does this macro return a Python long,
+  // NOTE: which we do not want
+  // NOTE: Fixed in 2.0.7, but keep the above fix for now
+  // $result = SWIG_From(std::size_t)($1);
 }
 
 //-----------------------------------------------------------------------------
