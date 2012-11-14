@@ -82,17 +82,6 @@
   }
 }
 
-%fragment("Py_convert_sizet", "header", fragment="PyInteger_Check") {
-  // A check for int and converter to std::size_t
-  SWIGINTERNINLINE bool Py_convert_sizet(PyObject* in, std::size_t& value)
-  {
-    if (!(PyInteger_Check(in) && PyInt_AS_LONG(in)>=0))
-      return false;
-    value = static_cast<unsigned int>(PyInt_AS_LONG(in));
-    return true;
-  }
-}
-
 //-----------------------------------------------------------------------------
 // Typemaps for unsigned int and int
 //-----------------------------------------------------------------------------
@@ -104,7 +93,7 @@
 {
   // Typemap unsigned int
   $result = PyInt_FromLong(static_cast< long >($1));
-  // NOTE: From SWIG 2.0.5 does this macro return a Python long,
+  // NOTE: From SWIG 2.0.5 does this macro return a Python long, 
   // NOTE: which we do not want
   // NOTE: Fixed in 2.0.7, but keep the above fix for now
   // $result = SWIG_From(unsigned int)($1);
@@ -121,20 +110,6 @@
 %typemap(in, fragment="Py_convert_uint") unsigned int
 {
   if (!Py_convert_uint($input, $1))
-    SWIG_exception(SWIG_TypeError, "expected positive 'int' for argument $argnum");
-}
-
-//-----------------------------------------------------------------------------
-// Typecheck and in typemap (std::size_t)
-//-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_INTEGER) std::size_t
-{
-  $1 = PyInteger_Check($input) ? 1 : 0;
-}
-
-%typemap(in, fragment="Py_convert_sizet") std::size_t
-{
-  if (!Py_convert_sizet($input, $1))
     SWIG_exception(SWIG_TypeError, "expected positive 'int' for argument $argnum");
 }
 

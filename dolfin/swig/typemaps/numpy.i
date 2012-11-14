@@ -197,14 +197,13 @@ if (!convert_numpy_to_array_no_check_ ## TYPE_NAME($input,$1))
 //-----------------------------------------------------------------------------
 // Typemap function (Reducing wrapper code size)
 //-----------------------------------------------------------------------------
-SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input, dolfin::uint& _array_dim, TYPE*& _array)
+SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input, std::size_t& _array_dim, TYPE*& _array)
 {
-  std::cout << "Converting with check" << std::endl;
   if (PyArray_Check(input))
   {
     PyArrayObject *xa = reinterpret_cast<PyArrayObject*>(input);
     if (PyArray_ISCONTIGUOUS(xa) && (PyArray_TYPE(xa) == NUMPY_TYPE) &&
-	(PyArray_NDIM(xa)==1))
+          (PyArray_NDIM(xa)==1))
     {
       _array  = static_cast<TYPE*>(PyArray_DATA(xa));
       _array_dim = static_cast<dolfin::uint>(PyArray_DIM(xa,0));
@@ -221,7 +220,6 @@ SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input,
 //-----------------------------------------------------------------------------
 %typecheck(SWIG_TYPECHECK_ ## TYPE_UPPER ## _ARRAY) (dolfin::uint _array_dim, TYPE* _array)
 {
-  std::cout << "Type  check" << std::endl;
   $1 = PyArray_Check($input) ? 1 : 0;
 }
 
@@ -230,7 +228,6 @@ SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input,
 //-----------------------------------------------------------------------------
 %typemap(in, fragment=convert_numpy_to_array_with_check(TYPE_NAME)) (dolfin::uint _array_dim, TYPE* _array)
 {
-  std::cout << "Typemap in" << std::endl;
   if (!convert_numpy_to_array_with_check_ ## TYPE_NAME($input,$1,$2))
     return NULL;
 }
@@ -241,15 +238,13 @@ SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input,
 // NOTE: If a typemap is not used an error will be issued as the generated
 //       typemap function will not be used
 //-----------------------------------------------------------------------------
-UNSAFE_NUMPY_TYPEMAPS(std::size_t,INT32,NPY_UINTP,sizet,uintp)
-UNSAFE_NUMPY_TYPEMAPS(dolfin::uint,INT32,NPY_UINT,uint,uintc)
+UNSAFE_NUMPY_TYPEMAPS(std::size_t, INT32, NPY_UINTP, sizet, uintp)
 UNSAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,float_)
 //UNSAFE_NUMPY_TYPEMAPS(int,INT,NPY_INT,int,cint)
 
-SAFE_NUMPY_TYPEMAPS(dolfin::uint,INT32,NPY_UINT,uint,uintc)
+SAFE_NUMPY_TYPEMAPS(std::size_t,INT32,NPY_UINTP,sizet,uintp)
 SAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,float_)
 SAFE_NUMPY_TYPEMAPS(int,INT32,NPY_INT,int,cint)
-SAFE_NUMPY_TYPEMAPS(std::size_t,INT32,NPY_UINTP,sizet,uintp)
 
 NUMPY_ARRAY_FRAGMENTS(dolfin::uint, NPY_UINT, uint)
 NUMPY_ARRAY_FRAGMENTS(double, NPY_DOUBLE, double)
