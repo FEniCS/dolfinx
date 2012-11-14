@@ -45,7 +45,7 @@ PyObject* _attach_base_to_numpy_array(PyObject* obj, PyObject* owner)
   Py_XINCREF(owner);
   Py_XINCREF(Py_None);
 
-  // Assign the base 
+  // Assign the base
   PyArray_BASE(array) = owner;
 
   return Py_None;
@@ -71,7 +71,7 @@ SWIGINTERNINLINE PyObject* return_py_array(PyObject* obj, bool writable)
     PyErr_SetString(PyExc_TypeError, "NumPy conversion error");
     return NULL;
   }
- 
+
   // Set writable flag on numpy array
   if ( !writable )
     array->flags &= ~NPY_WRITEABLE;
@@ -89,23 +89,23 @@ SWIGINTERNINLINE PyObject* return_py_array(PyObject* obj, bool writable)
 //              'dolfin::uint'
 //-----------------------------------------------------------------------------
 %define NUMPY_ARRAY_FRAGMENTS(TYPE, NUMPY_TYPE, TYPE_NAME)
-%fragment(make_numpy_array_frag(2, TYPE_NAME), "header", 
+%fragment(make_numpy_array_frag(2, TYPE_NAME), "header",
 	  fragment="return_py_array") {
 SWIGINTERNINLINE PyObject* %make_numpy_array(2, TYPE_NAME)
   (int m, int n, const TYPE* dataptr, bool writable = true)
 {
   npy_intp adims[2] = {m, n};
-  return return_py_array(PyArray_SimpleNewFromData(2, adims, NUMPY_TYPE, 
+  return return_py_array(PyArray_SimpleNewFromData(2, adims, NUMPY_TYPE,
 						   (char *)(dataptr)), writable);
 }}
 
-%fragment(make_numpy_array_frag(1, TYPE_NAME), "header", 
+%fragment(make_numpy_array_frag(1, TYPE_NAME), "header",
 	  fragment="return_py_array") {
 SWIGINTERNINLINE PyObject* %make_numpy_array(1, TYPE_NAME)
   (int m, const TYPE* dataptr, bool writable = true)
 {
   npy_intp adims[1] = {m};
-  return return_py_array(PyArray_SimpleNewFromData(1, adims, NUMPY_TYPE, 
+  return return_py_array(PyArray_SimpleNewFromData(1, adims, NUMPY_TYPE,
 						   (char *)(dataptr)), writable);
 }}
 
@@ -116,9 +116,9 @@ SWIGINTERNINLINE PyObject* %make_numpy_array(1, TYPE_NAME)
 %enddef
 
 //-----------------------------------------------------------------------------
-// Macro for defining an unsafe in-typemap for NumPy arrays -> c arrays 
-// 
-// The typmaps defined by this macro just passes the pointer to the C array, 
+// Macro for defining an unsafe in-typemap for NumPy arrays -> c arrays
+//
+// The typmaps defined by this macro just passes the pointer to the C array,
 // contained in the NumPy array to the function. The knowledge of the length
 // of the incomming array is not used.
 //
@@ -131,7 +131,7 @@ SWIGINTERNINLINE PyObject* %make_numpy_array(1, TYPE_NAME)
 // DESCR      : The char descriptor of the NumPy type
 //-----------------------------------------------------------------------------
 
-#define convert_numpy_to_array_no_check(Type) "convert_numpy_to_array_no_check_" {Type} 
+#define convert_numpy_to_array_no_check(Type) "convert_numpy_to_array_no_check_" {Type}
 
 %define UNSAFE_NUMPY_TYPEMAPS(TYPE,TYPE_UPPER,NUMPY_TYPE,TYPE_NAME,DESCR)
 
@@ -141,7 +141,7 @@ SWIGINTERNINLINE PyObject* %make_numpy_array(1, TYPE_NAME)
 //-----------------------------------------------------------------------------
 SWIGINTERN bool convert_numpy_to_array_no_check_ ## TYPE_NAME(PyObject* input, TYPE*& ret)
 {
-  if (PyArray_Check(input)) 
+  if (PyArray_Check(input))
   {
     PyArrayObject *xa = reinterpret_cast<PyArrayObject*>(input);
     if (PyArray_ISCONTIGUOUS(xa) && PyArray_TYPE(xa) == NUMPY_TYPE)
@@ -180,8 +180,8 @@ if (!convert_numpy_to_array_no_check_ ## TYPE_NAME($input,$1))
 %enddef
 
 //-----------------------------------------------------------------------------
-// Macro for defining an safe in-typemap for NumPy arrays -> c arrays 
-// 
+// Macro for defining an safe in-typemap for NumPy arrays -> c arrays
+//
 // Type       : The pointer type
 // TYPE_UPPER : The SWIG specific name of the type used in the array type checks values
 //              SWIG use: INT32 for integer, DOUBLE for double aso.
@@ -199,10 +199,11 @@ if (!convert_numpy_to_array_no_check_ ## TYPE_NAME($input,$1))
 //-----------------------------------------------------------------------------
 SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input, dolfin::uint& _array_dim, TYPE*& _array)
 {
-  if (PyArray_Check(input)) 
+  std::cout << "Converting with check" << std::endl;
+  if (PyArray_Check(input))
   {
     PyArrayObject *xa = reinterpret_cast<PyArrayObject*>(input);
-    if (PyArray_ISCONTIGUOUS(xa) && (PyArray_TYPE(xa) == NUMPY_TYPE) && 
+    if (PyArray_ISCONTIGUOUS(xa) && (PyArray_TYPE(xa) == NUMPY_TYPE) &&
 	(PyArray_NDIM(xa)==1))
     {
       _array  = static_cast<TYPE*>(PyArray_DATA(xa));
@@ -220,6 +221,7 @@ SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input,
 //-----------------------------------------------------------------------------
 %typecheck(SWIG_TYPECHECK_ ## TYPE_UPPER ## _ARRAY) (dolfin::uint _array_dim, TYPE* _array)
 {
+  std::cout << "Type  check" << std::endl;
   $1 = PyArray_Check($input) ? 1 : 0;
 }
 
@@ -228,6 +230,7 @@ SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input,
 //-----------------------------------------------------------------------------
 %typemap(in, fragment=convert_numpy_to_array_with_check(TYPE_NAME)) (dolfin::uint _array_dim, TYPE* _array)
 {
+  std::cout << "Typemap in" << std::endl;
   if (!convert_numpy_to_array_with_check_ ## TYPE_NAME($input,$1,$2))
     return NULL;
 }
@@ -235,9 +238,10 @@ SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input,
 
 //-----------------------------------------------------------------------------
 // Run the different macros and instantiate the typemaps
-// NOTE: If a typemap is not used an error will be issued as the generated 
-//       typemap function will not be used 
+// NOTE: If a typemap is not used an error will be issued as the generated
+//       typemap function will not be used
 //-----------------------------------------------------------------------------
+UNSAFE_NUMPY_TYPEMAPS(std::size_t,INT32,NPY_UINTP,sizet,uintp)
 UNSAFE_NUMPY_TYPEMAPS(dolfin::uint,INT32,NPY_UINT,uint,uintc)
 UNSAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,float_)
 //UNSAFE_NUMPY_TYPEMAPS(int,INT,NPY_INT,int,cint)
@@ -245,17 +249,18 @@ UNSAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,float_)
 SAFE_NUMPY_TYPEMAPS(dolfin::uint,INT32,NPY_UINT,uint,uintc)
 SAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,float_)
 SAFE_NUMPY_TYPEMAPS(int,INT32,NPY_INT,int,cint)
+SAFE_NUMPY_TYPEMAPS(std::size_t,INT32,NPY_UINTP,sizet,uintp)
 
 NUMPY_ARRAY_FRAGMENTS(dolfin::uint, NPY_UINT, uint)
 NUMPY_ARRAY_FRAGMENTS(double, NPY_DOUBLE, double)
 NUMPY_ARRAY_FRAGMENTS(int, NPY_INT, int)
 NUMPY_ARRAY_FRAGMENTS(bool, NPY_BOOL, bool)
-NUMPY_ARRAY_FRAGMENTS(std::size_t, NPY_ULONG, sizet)
+NUMPY_ARRAY_FRAGMENTS(std::size_t, NPY_UINTP, sizet)
 
 //-----------------------------------------------------------------------------
 // Typecheck for function expecting two-dimensional NumPy arrays of double
 //-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (int _array_dim_0, int _array_dim_1, double* _array) 
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (int _array_dim_0, int _array_dim_1, double* _array)
 {
     $1 = PyArray_Check($input) ? 1 : 0;
 }
@@ -264,30 +269,30 @@ NUMPY_ARRAY_FRAGMENTS(std::size_t, NPY_ULONG, sizet)
 // Generic typemap to expand a two-dimensional NumPy arrays into three
 // C++ arguments: _array_dim_0, _array_dim_1, _array
 //-----------------------------------------------------------------------------
-%typemap(in) (int _array_dim_0, int _array_dim_1, double* _array) 
+%typemap(in) (int _array_dim_0, int _array_dim_1, double* _array)
 {
-  if (PyArray_Check($input)) 
+  if (PyArray_Check($input))
   {
     PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
-    if ( PyArray_TYPE(xa) == NPY_DOUBLE ) 
+    if ( PyArray_TYPE(xa) == NPY_DOUBLE )
     {
-      if ( PyArray_NDIM(xa) == 2 ) 
+      if ( PyArray_NDIM(xa) == 2 )
       {
         $1 = PyArray_DIM(xa,0);
         $2 = PyArray_DIM(xa,1);
         $3  = static_cast<double*>(PyArray_DATA(xa));
-      } 
-      else 
+      }
+      else
       {
         SWIG_exception(SWIG_ValueError, "2d Array expected");
       }
-    } 
-    else 
+    }
+    else
     {
       SWIG_exception(SWIG_TypeError, "Array of doubles expected");
     }
-  } 
-  else 
+  }
+  else
   {
     SWIG_exception(SWIG_TypeError, "Array expected");
   }
@@ -296,7 +301,7 @@ NUMPY_ARRAY_FRAGMENTS(std::size_t, NPY_ULONG, sizet)
 //-----------------------------------------------------------------------------
 // Typecheck for function expecting two-dimensional NumPy arrays of int
 //-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (int _array_dim_0, int _array_dim_1, int* _array) 
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (int _array_dim_0, int _array_dim_1, int* _array)
 {
     $1 = PyArray_Check($input) ? 1 : 0;
 }
@@ -305,7 +310,7 @@ NUMPY_ARRAY_FRAGMENTS(std::size_t, NPY_ULONG, sizet)
 // Generic typemap to expand a two-dimensional NumPy arrays into three
 // C++ arguments: _array_dim_0, _array_dim_1, _array
 //-----------------------------------------------------------------------------
-%typemap(in) (int _array_dim_0, int _array_dim_1, int* _array) 
+%typemap(in) (int _array_dim_0, int _array_dim_1, int* _array)
 {
     if PyArray_Check($input) {
         PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
@@ -326,7 +331,7 @@ NUMPY_ARRAY_FRAGMENTS(std::size_t, NPY_ULONG, sizet)
 }
 
 //-----------------------------------------------------------------------------
-// Cleaner of temporary data when passing 2D NumPy arrays to C++ functions 
+// Cleaner of temporary data when passing 2D NumPy arrays to C++ functions
 // expecting double **
 //-----------------------------------------------------------------------------
 %{
@@ -384,12 +389,12 @@ namespace __private {
 //-----------------------------------------------------------------------------
 %typemap(in) (int _matrix_dim_0, int _matrix_dim_1, double** _matrix) (__private::DppDeleter tmp)
 {
-  if PyArray_Check($input) 
+  if PyArray_Check($input)
   {
     PyArrayObject *xa = reinterpret_cast<PyArrayObject *>($input);
-    if ( PyArray_TYPE(xa) == NPY_DOUBLE ) 
+    if ( PyArray_TYPE(xa) == NPY_DOUBLE )
     {
-      if ( PyArray_NDIM(xa) == 2 ) 
+      if ( PyArray_NDIM(xa) == 2 )
       {
         int n = PyArray_DIM(xa,0);
         int m = PyArray_DIM(xa,1);
@@ -401,18 +406,18 @@ namespace __private {
             amat[i] = data + i*n;
         $3 = amat;
         tmp.amat = amat;
-      } 
-      else 
+      }
+      else
       {
         SWIG_exception(SWIG_ValueError, "2d Array expected");
       }
-    } 
-    else 
+    }
+    else
     {
       SWIG_exception(SWIG_TypeError, "Array of doubles expected");
     }
-  } 
-  else 
+  }
+  else
   {
     SWIG_exception(SWIG_TypeError, "Array expected");
   }
