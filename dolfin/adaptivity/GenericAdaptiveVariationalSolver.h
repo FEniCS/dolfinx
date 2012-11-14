@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Marie E. Rognes
+// Copyright (C) 2010--2012 Marie E. Rognes
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-11-09
+// Last changed: 2012-11-14
 
 #ifndef __GENERIC_ADAPTIVE_VARIATIONAL_SOLVER_H
 #define __GENERIC_ADAPTIVE_VARIATIONAL_SOLVER_H
@@ -41,15 +41,16 @@ namespace dolfin
 
   /// An abstract class for goal-oriented adaptive solution of
   /// variational problems.
-
+  ///
   class GenericAdaptiveVariationalSolver : public Variable
   {
   public:
 
     virtual ~GenericAdaptiveVariationalSolver();
 
-    /// Solve such that the error measured in the functional is
-    /// less than the given tolerance
+    /// Solve such that the functional error is less than the given
+    /// tolerance. Note that each call to solve is based on the
+    /// leaf-node of the variational problem
     ///
     /// *Arguments*
     ///     tol  (double)

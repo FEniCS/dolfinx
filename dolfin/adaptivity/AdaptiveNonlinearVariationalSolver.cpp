@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Marie E. Rognes
+// Copyright (C) 2010--2012 Marie E. Rognes
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells 2011
 //
 // First added:  2010-08-19
-// Last changed: 2011-11-04
+// Last changed: 2012-11-14
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/NonlinearVariationalProblem.h>
@@ -36,22 +36,6 @@ using namespace dolfin;
 
 // ----------------------------------------------------------------------------
 AdaptiveNonlinearVariationalSolver::
-AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem,
-                                boost::shared_ptr<Form> goal,
-                                boost::shared_ptr<ErrorControl> control)
-  : problem(problem)
-{
-  this->goal = goal;
-  this->control = control;
-
-  // Set generic adaptive parameters
-  parameters = GenericAdaptiveVariationalSolver::default_parameters();
-
-  // Add parameters for non-linear variational solver
-  parameters.add(NonlinearVariationalSolver::default_parameters());
-}
-// ----------------------------------------------------------------------------
-AdaptiveNonlinearVariationalSolver::
 AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem& problem,
                                    GoalFunctional& goal)
   : problem(reference_to_no_delete_pointer(problem))
@@ -66,6 +50,22 @@ AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem
   : problem(problem)
 {
   init(problem, goal);
+}
+// ----------------------------------------------------------------------------
+AdaptiveNonlinearVariationalSolver::
+AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem,
+                                boost::shared_ptr<Form> goal,
+                                boost::shared_ptr<ErrorControl> control)
+  : problem(problem)
+{
+  this->goal = goal;
+  this->control = control;
+
+  // Set generic adaptive parameters
+  parameters = GenericAdaptiveVariationalSolver::default_parameters();
+
+  // Add parameters for non-linear variational solver
+  parameters.add(NonlinearVariationalSolver::default_parameters());
 }
 // ----------------------------------------------------------------------------
 void AdaptiveNonlinearVariationalSolver::

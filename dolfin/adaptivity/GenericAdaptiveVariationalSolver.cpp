@@ -51,11 +51,7 @@ GenericAdaptiveVariationalSolver::~GenericAdaptiveVariationalSolver()
 //-----------------------------------------------------------------------------
 void GenericAdaptiveVariationalSolver::solve(const double tol)
 {
-
   log(INFO, "Solving variational problem adaptively");
-
-  // Clear adaptive data
-  _adaptive_data.clear();
 
   // Initialize storage of meshes and indicators
   std::string label = parameters["data_label"];

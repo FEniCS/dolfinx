@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Marie E. Rognes
+// Copyright (C) 2010--2012 Marie E. Rognes
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-07-05
+// Last changed: 2012-11-14
 
 #ifndef __ADAPTIVE_LINEAR_VARIATIONAL_SOLVER_H
 #define __ADAPTIVE_LINEAR_VARIATIONAL_SOLVER_H
@@ -71,22 +71,31 @@ namespace dolfin
     /// *Arguments*
     ///     problem (_LinearVariationalProblem_)
     ///         The primal problem
+    ///     goal (_GoalFunctional_)
+    ///         The goal functional
     AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem,
                                     GoalFunctional& goal);
 
-    /// Create AdaptiveLinearVariationalSolver
+    /// Create AdaptiveLinearVariationalSolver (shared ptr version)
     ///
     /// *Arguments*
     ///     problem (_LinearVariationalProblem_)
     ///         The primal problem
+    ///     goal (_GoalFunctional_)
+    ///         The goal functional
     AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem,
                                     boost::shared_ptr<GoalFunctional> goal);
 
-    /// Create AdaptiveLinearVariationalSolver
+    /// Create AdaptiveLinearVariationalSolver from variational
+    /// problem, goal form and error control instance
     ///
     /// *Arguments*
     ///     problem (_LinearVariationalProblem_)
     ///         The primal problem
+    ///     goal (_Form_)
+    ///         The goal functional
+    ///     control (_ErrorControl_)
+    ///         An error controller object
     AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem,
                                     boost::shared_ptr<Form> goal,
                                     boost::shared_ptr<ErrorControl> control);
@@ -140,6 +149,13 @@ namespace dolfin
 
   private:
 
+    /// Helper function for instance initialization
+    ///
+    /// *Arguments*
+    ///    problem (_LinearVariationalProblem_)
+    ///        The primal problem
+    ///    u (_GoalFunctional_)
+    ///        The goal functional
     void init(boost::shared_ptr<LinearVariationalProblem> problem,
               boost::shared_ptr<GoalFunctional> goal);
 
