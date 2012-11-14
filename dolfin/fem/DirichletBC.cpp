@@ -673,6 +673,9 @@ void DirichletBC::init_from_mesh_function(const MeshFunction<uint>& sub_domains,
     if (sub_domains[*facet] != sub_domain)
       continue;
 
+    // FIXME: If function space is restricted, we need to pick the
+    // right facet here
+
     // Get cell to which facet belongs (there may be two, but pick first)
     const Cell cell(mesh, facet->entities(dim)[0]);
 
