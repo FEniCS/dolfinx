@@ -348,17 +348,12 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
   mesh_data.cell_vertices.resize(boost::extents[num_local_cells][num_vertices_per_cell]);
   HDF5Interface::read_dataset(hdf5_file_id, topology_name, cell_range, topology_data);
 
-  // Copy to boost::multi_array
-  // FIXME: there should be a more efficient way to do this?
   mesh_data.global_cell_indices.reserve(num_local_cells);
-  std::vector<uint>::iterator topology_it = topology_data.begin();
   for(uint i = 0; i < num_local_cells; i++)
-  {
     mesh_data.global_cell_indices.push_back(cell_range.first + i);
-    std::copy(topology_it, topology_it + num_vertices_per_cell,
-              mesh_data.cell_vertices[i].begin());
-    topology_it += num_vertices_per_cell;
-  }
+
+  // Copy to boost::multi_array
+  std::copy(topology_data.begin(), topology_data.end(), mesh_data.cell_vertices.data());
 
   // --- Coordinates ---
   // Get dimensions of coordinate dataset
