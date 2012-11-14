@@ -52,7 +52,7 @@ bottom = Bottom()
 obstacle = Obstacle()
 
 # Define mesh
-mesh = UnitSquare(64, 64)
+mesh = UnitSquareMesh(64, 64)
 
 # Initialize mesh function for interior domains
 domains = CellFunction("uint", mesh)

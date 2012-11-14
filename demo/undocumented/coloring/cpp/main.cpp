@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2010-11-16
-// Last changed: 2012-07-05
+// Last changed: 2012-11-12
 //
 // This demo colors a given mesh entities such that entities with the
 // same color are not neighbors. 'Neighbors' can be in the sense of shared
@@ -31,7 +31,7 @@ using namespace dolfin;
 int main()
 {
   // Create mesh
-  UnitCube mesh(24, 24, 24);
+  UnitCubeMesh mesh(24, 24, 24);
 
   // Compute vertex-based coloring
   mesh.color("vertex");

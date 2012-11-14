@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-10-31
-// Last changed:
+// Last changed: 2012-11-12
 //
 // This demo program illustrates how to solve Poisson's equation
 //
@@ -69,7 +69,7 @@ int main()
 {
   #ifdef HAS_PETSC
   // Create mesh and function space
-  UnitSquare mesh(64, 64);
+  UnitSquareMesh mesh(64, 64);
   Poisson::FunctionSpace V(mesh);
 
   // Define variational problem

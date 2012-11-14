@@ -80,7 +80,7 @@ We next define a mesh of the domain:
 
 .. code-block:: python
 
-    mesh = UnitSquare(64, 64)
+    mesh = UnitSquareMesh(64, 64)
 
 The above sub-domains are defined with the sole purpose of populating
 mesh functions. (For more complicated geometries, the mesh functions

@@ -83,6 +83,10 @@ main_file_names = dict(test="test.cpp",
                        demo="main.cpp",
                        bench="main.cpp")
 
+# Projects that use custom CMakeLists.txt (shouldn't overwrite)
+exclude_projects = [os.path.join('demo', 'undocumented', 'plot-qt'), 
+                    os.path.join('demo', 'undocumented', 'csg'),
+                    os.path.join('demo', 'undocumented', 'meshintersection')]
 
 def generate_cmake_files(subdirectory):
     """Search for C++ code and write CMakeLists.txt files"""
@@ -98,6 +102,16 @@ def generate_cmake_files(subdirectory):
             cpp_files = []
             program_dir = root + "/cpp"
             program_name = os.path.split(root)[-1]
+
+            skip = False
+            for exclude in exclude_projects :
+                if exclude in root :
+                    skip = True
+
+            if skip :
+                print "Skipping custom CMakeLists.txt file:", root
+                continue
+
             if executable_prefix == "bench_":
                 program_name = program_dir[program_dir.find("bench")+6:].replace(os.path.sep, "_")
 

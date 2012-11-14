@@ -130,7 +130,7 @@ boundary condition should be applied.
 
 Inside the ``main`` function, we begin by defining a mesh of the
 domain. As the unit square is a very standard domain, we can use a
-built-in mesh provided by the class :cpp:class:`UnitSquare`. In order
+built-in mesh provided by the class :cpp:class:`UnitSquareMesh`. In order
 to create a mesh consisting of 32 x 32 squares with each square
 divided into two triangles, and the finite element space (specified in
 the form file) defined relative to this mesh, we do as follows
@@ -138,7 +138,7 @@ the form file) defined relative to this mesh, we do as follows
 .. code-block:: c++
 
     // Create mesh and function space
-    UnitSquare mesh(32, 32);
+    UnitSquareMesh mesh(32, 32);
     Poisson::FunctionSpace V(mesh);
 
 .. index:: DirichletBC

@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Johannes Ring, 2012
+//
 // First added:  2012-01-05
-// Last changed:
+// Last changed: 2012-05-03
 
 #ifndef __DOLFIN_POLYGONALMESHGENERATOR_H
 #define __DOLFIN_POLYGONALMESHGENERATOR_H
@@ -24,6 +26,7 @@
 #ifdef HAS_CGAL
 
 #include <vector>
+#include <dolfin/mesh/Point.h>
 
 namespace dolfin
 {

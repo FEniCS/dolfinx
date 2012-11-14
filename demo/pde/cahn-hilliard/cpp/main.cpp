@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2006-03-02
-// Last changed: 2012-07-05
+// Last changed: 2012-11-12
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving
 // the Cahn-Hilliard equation.
@@ -137,7 +137,7 @@ int main(int argc, char* argv[])
   init(argc, argv);
 
   // Mesh
-  UnitSquare mesh(96, 96);
+  UnitSquareMesh mesh(96, 96);
 
   // Time stepping and model parameters
   Constant dt(5.0e-6);

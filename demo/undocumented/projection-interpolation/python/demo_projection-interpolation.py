@@ -19,12 +19,12 @@ between different finite element spaces."""
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2008-10-06
-# Last changed: 2009-10-15
+# Last changed: 2012-11-12
 
 from dolfin import *
 
 # Create mesh and define function spaces
-mesh = UnitSquare(64, 64)
+mesh = UnitSquareMesh(64, 64)
 P1 = FunctionSpace(mesh, "CG", 1)
 
 # Define function

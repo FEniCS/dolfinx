@@ -22,12 +22,12 @@ vertices, edges or facets, or a user-provided tuple defintion"""
 # Modified by Anders Logg, 2010.
 #
 # First added:  2010-11-16
-# Last changed: 2010-11-17
+# Last changed: 2012-11-12
 
 from dolfin import *
 
 # Create mesh
-mesh = UnitCube(24, 24, 24)
+mesh = UnitCubeMesh(24, 24, 24)
 
 # Compute vertex-based coloring
 mesh.color("vertex");

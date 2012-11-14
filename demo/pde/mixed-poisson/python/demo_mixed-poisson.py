@@ -37,14 +37,14 @@ Original implementation: ../cpp/main.cpp by Anders Logg and Marie Rognes
 # Modified by Anders Logg 2011
 #
 # First added:  2007-11-14
-# Last changed: 2011-06-28
+# Last changed: 2012-11-12
 
 # Begin demo
 
 from dolfin import *
 
 # Create mesh
-mesh = UnitSquare(32, 32)
+mesh = UnitSquareMesh(32, 32)
 
 # Define function spaces and mixed (product) space
 BDM = FunctionSpace(mesh, "BDM", 1)

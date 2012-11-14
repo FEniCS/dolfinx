@@ -24,12 +24,12 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshEditor.h>
-#include "UnitCube.h"
+#include "UnitCubeMesh.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
+UnitCubeMesh::UnitCubeMesh(uint nx, uint ny, uint nz) : Mesh()
 {
   Timer timer("generate unit cube mesh");
 
@@ -43,7 +43,7 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
   // Check input
   if ( nx < 1 || ny < 1 || nz < 1 )
   {
-    dolfin_error("UnitCube.cpp",
+    dolfin_error("UnitCubeMesh.cpp",
                  "create unit cube",
                  "Cube has non-positive number of vertices in some dimension: number of vertices must be at least 1 in each dimension");
   }

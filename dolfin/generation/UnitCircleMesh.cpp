@@ -29,13 +29,13 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshEditor.h>
-#include "UnitCircle.h"
+#include "UnitCircleMesh.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitCircle::UnitCircle(uint n, std::string diagonal,
-                       std::string transformation) : Mesh()
+UnitCircleMesh::UnitCircleMesh(uint n, std::string diagonal,
+                               std::string transformation) : Mesh()
 {
   // Receive mesh according to parallel policy
   if (MPI::is_receiver())
@@ -46,22 +46,22 @@ UnitCircle::UnitCircle(uint n, std::string diagonal,
 
   if (diagonal != "left" && diagonal != "right" && diagonal != "crossed")
   {
-    dolfin_error("UnitCircle.cpp",
+    dolfin_error("UnitCircleMesh.cpp",
                  "create unit circle",
                  "Unknown mesh diagonal definition: Allowed options are \"left\", \"right\" and \"crossed\"");
   }
 
   if (transformation != "maxn" && transformation != "sumn" && transformation != "rotsumn")
   {
-    dolfin_error("UnitCircle.cpp",
+    dolfin_error("UnitCircleMesh.cpp",
                  "create unit circle",
-                 "Unknown transformation '%s' in UnitCircle. Allowed options are \"maxn\", \"sumn\" and \"rotsumn\"",
+                 "Unknown transformation '%s' in UnitCircleMesh. Allowed options are \"maxn\", \"sumn\" and \"rotsumn\"",
                  transformation.c_str());
   }
 
   if (n < 1)
   {
-    dolfin_error("UnitCircle.cpp",
+    dolfin_error("UnitCircleMesh.cpp",
                  "create unit circle",
                  "Size of unit square must be at least 1");
   }
@@ -179,7 +179,7 @@ UnitCircle::UnitCircle(uint n, std::string diagonal,
   }
   else
   {
-    dolfin_error("UnitCircle.cpp",
+    dolfin_error("UnitCircleMesh.cpp",
                  "create unit circle",
                  "Unknown mesh diagonal definition: Allowed options are \"left\", \"right\" and \"crossed\"");
   }
@@ -195,8 +195,8 @@ UnitCircle::UnitCircle(uint n, std::string diagonal,
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<double> UnitCircle::transform(const std::vector<double>& x,
-                                          const std::string transformation)
+std::vector<double> UnitCircleMesh::transform(const std::vector<double>& x,
+                                              const std::string transformation)
 {
   if (std::abs(x[0]) < DOLFIN_EPS && std::abs(x[1]) < DOLFIN_EPS)
     return x;
@@ -211,9 +211,9 @@ std::vector<double> UnitCircle::transform(const std::vector<double>& x,
   else if (transformation == "sumn")
   {
     // FIXME: This option should either be removed or fixed
-    dolfin_error("UnitCircle.cpp",
+    dolfin_error("UnitCircleMesh.cpp",
                  "transform to unit circle",
-                 "'sumn' mapping for a UnitCircle is broken");
+                 "'sumn' mapping for a UnitCircleMesh is broken");
     x_trans[0] = x[0]*(std::abs(x[0]) + std::abs(x[1]))/dist;
     x_trans[1] = x[1]*(std::abs(x[0]) + std::abs(x[1]))/dist;
   }
@@ -226,9 +226,9 @@ std::vector<double> UnitCircle::transform(const std::vector<double>& x,
   }
   else
   {
-    dolfin_error("UnitCircle.cpp",
+    dolfin_error("UnitCircleMesh.cpp",
                  "transform to unit circle",
-                 "Unknown transformation '%s' in UnitCircle. Allowed options are \"maxn\", \"sumn\" and \"rotsumn\"",
+                 "Unknown transformation '%s' in UnitCircleMesh. Allowed options are \"maxn\", \"sumn\" and \"rotsumn\"",
                  transformation.c_str());
   }
 

@@ -16,14 +16,14 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2010-08-19
-# Last changed: 2011-11-14
+# Last changed: 2012-11-12
 
 # Begin demo
 
 from dolfin import *
 
 # Create mesh and define function space
-mesh = UnitSquare(8, 8)
+mesh = UnitSquareMesh(8, 8)
 V = FunctionSpace(mesh, "Lagrange", 1)
 
 # Define boundary condition

@@ -32,7 +32,7 @@ edge (jump) terms and the size of the interpolation constant.
 # Modified by Anders Logg 2008-2011
 #
 # First added:  2008-04-03
-# Last changed: 2011-06-28
+# Last changed: 2012-11-12
 
 from dolfin import *
 from numpy import array, sqrt
@@ -48,7 +48,7 @@ REFINE_RATIO = 0.50  # Refine 50 % of the cells in each iteration
 MAX_ITER = 20        # Maximal number of iterations
 
 # Create initial mesh
-mesh = UnitSquare(4, 4)
+mesh = UnitSquareMesh(4, 4)
 source_str = "exp(-100.0*(pow(x[0], 2) + pow(x[1], 2)))"
 source = eval("lambda x: " + source_str)
 # Adaptive algorithm

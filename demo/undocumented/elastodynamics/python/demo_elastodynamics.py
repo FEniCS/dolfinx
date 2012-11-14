@@ -20,7 +20,7 @@
 # Modified by Anders Logg 2008-2011
 #
 # First added:  2010-04-30
-# Last changed: 2011-06-28
+# Last changed: 2012-11-12
 
 from dolfin import *
 
@@ -81,7 +81,7 @@ def right(x, on_boundary):
 
 # Load mesh and define function space
 #mesh = Mesh("dolfin-2.xml.gz")
-mesh = UnitSquare(32, 32)
+mesh = UnitSquareMesh(32, 32)
 
 # Define function space
 V = VectorFunctionSpace(mesh, "CG", 1)

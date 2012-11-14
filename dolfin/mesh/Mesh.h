@@ -31,6 +31,7 @@
 #include <string>
 #include <utility>
 #include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
@@ -53,6 +54,7 @@ namespace dolfin
   class MeshEntity;
   template <typename T> class MeshFunction;
   class SubDomain;
+  class CSGGeometry;
 
   /// A _Mesh_ consists of a set of connected and numbered mesh entities.
   ///
@@ -115,6 +117,20 @@ namespace dolfin
     ///     local_mesh_data (LocalMeshData)
     ///         Data from which to build the mesh.
     explicit Mesh(LocalMeshData& local_mesh_data);
+
+    /// Create mesh defined by Constructive Solid Geometry (CSG)
+    ///
+    /// *Arguments*
+    ///     geometry (CSGGeometry)
+    ///         The CSG geometry
+    explicit Mesh(const CSGGeometry& geometry, uint mesh_resolution);
+
+    /// Create mesh defined by Constructive Solid Geometry (CSG)
+    ///
+    /// *Arguments*
+    ///     geometry (CSGGeometry)
+    ///         The CSG geometry
+    explicit Mesh(boost::shared_ptr<const CSGGeometry> geometry, uint resolution);
 
     /// Destructor.
     ~Mesh();

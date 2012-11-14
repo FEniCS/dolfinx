@@ -127,7 +127,7 @@ V \times V` are defined:
 .. code-block:: python
 
     # Create mesh and define function spaces
-    mesh = UnitSquare(96, 96)
+    mesh = UnitSquareMesh(96, 96)
     V = FunctionSpace(mesh, "Lagrange", 1)
     ME = V*V
 

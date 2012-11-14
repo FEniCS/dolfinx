@@ -16,17 +16,17 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-10-19
-// Last changed: 2012-09-27
+// Last changed: 2012-11-09
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshEditor.h>
-#include "UnitTetrahedron.h"
+#include "UnitTetrahedronMesh.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitTetrahedron::UnitTetrahedron() : Mesh()
+UnitTetrahedronMesh::UnitTetrahedronMesh() : Mesh()
 {
   // Receive mesh according to parallel policy
   if (MPI::is_receiver())

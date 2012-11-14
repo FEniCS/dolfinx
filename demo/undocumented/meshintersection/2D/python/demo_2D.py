@@ -87,7 +87,7 @@ while theta < 2*DOLFIN_PI + dtheta:
     theta += dtheta
 
 # Repeat the same with the rotator in the cavity example.
-background_mesh = Rectangle(-2.0, -2.0, 2.0, 2.0, 30, 30)
+background_mesh = RectangleMesh(-2.0, -2.0, 2.0, 2.0, 30, 30)
 structure_mesh = Mesh("../rotator.xml.gz")
 
 # Access mesh geometry

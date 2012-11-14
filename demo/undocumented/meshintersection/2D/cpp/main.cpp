@@ -30,8 +30,8 @@ using namespace dolfin;
 int main()
 {
   // Create meshes (omega0 overlapped by omega1)
-  UnitCircle omega0(20);
-  UnitSquare omega1(20, 20);
+  UnitCircleMesh omega0(20);
+  UnitSquareMesh omega1(20, 20);
 
   boost::shared_ptr<dolfin::MeshFunction<std::size_t> >intersection1(new dolfin::MeshFunction<std::size_t>(omega0, omega0.topology().dim()));
 
@@ -96,7 +96,7 @@ int main()
 
 
   // Repeat the same with the rotator in the cavity example.
-  Rectangle background_mesh(-2.0, -2.0, 2.0, 2.0, 30, 30);
+  RectangleMesh background_mesh(-2.0, -2.0, 2.0, 2.0, 30, 30);
   boost::shared_ptr<dolfin::MeshFunction<std::size_t> >intersection2(new dolfin::MeshFunction<std::size_t>(background_mesh, background_mesh.topology().dim()));
 
   VTKPlotter p2(intersection2);

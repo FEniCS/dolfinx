@@ -17,8 +17,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Benjamin Kehlet 2012
+#
 # First added:  2006-08-08
-# Last changed: 2011-03-23
+# Last changed: 2012-11-12
 
 import unittest
 import numpy
@@ -28,13 +30,13 @@ class MeshConstruction(unittest.TestCase):
 
     def setUp(self):
         if MPI.num_processes() == 1:
-            self.interval = UnitInterval(10)
-        self.circle = UnitCircle(5)
-        self.square = UnitSquare(5, 5)
-        self.rectangle = Rectangle(0, 0, 2, 2, 5, 5)
-        self.cube = UnitCube(3, 3, 3)
-        self.sphere = UnitSphere(5)
-        self.box = Box(0, 0, 0, 2, 2, 2, 2, 2, 5)
+            self.interval = UnitIntervalMesh(10)
+        self.circle = UnitCircleMesh(5)
+        self.square = UnitSquareMesh(5, 5)
+        self.rectangle = RectangleMesh(0, 0, 2, 2, 5, 5)
+        self.cube = UnitCubeMesh(3, 3, 3)
+        self.sphere = UnitSphereMesh(5)
+        self.box = BoxMesh(0, 0, 0, 2, 2, 2, 2, 2, 5)
 
     def testUFLCell(self):
         import ufl
@@ -53,13 +55,13 @@ if MPI.num_processes() == 1:
 
         def testUnitSquare(self):
             """Create mesh of unit square."""
-            mesh = UnitSquare(5, 7)
+            mesh = UnitSquareMesh(5, 7)
             self.assertEqual(mesh.num_vertices(), 48)
             self.assertEqual(mesh.num_cells(), 70)
 
         def testUnitCube(self):
             """Create mesh of unit cube."""
-            mesh = UnitCube(5, 7, 9)
+            mesh = UnitCubeMesh(5, 7, 9)
             self.assertEqual(mesh.num_vertices(), 480)
             self.assertEqual(mesh.num_cells(), 1890)
 
@@ -67,14 +69,14 @@ if MPI.num_processes() == 1:
 
         def testRefineUnitSquare(self):
             """Refine mesh of unit square."""
-            mesh = UnitSquare(5, 7)
+            mesh = UnitSquareMesh(5, 7)
             mesh = refine(mesh)
             self.assertEqual(mesh.num_vertices(), 165)
             self.assertEqual(mesh.num_cells(), 280)
 
         def testRefineUnitCube(self):
             """Refine mesh of unit cube."""
-            mesh = UnitCube(5, 7, 9)
+            mesh = UnitCubeMesh(5, 7, 9)
             mesh = refine(mesh)
             self.assertEqual(mesh.num_vertices(), 3135)
             self.assertEqual(mesh.num_cells(), 15120)
@@ -83,14 +85,14 @@ if MPI.num_processes() == 1:
 
         def testBoundaryComputation(self):
             """Compute boundary of mesh."""
-            mesh = UnitCube(2, 2, 2)
+            mesh = UnitCubeMesh(2, 2, 2)
             boundary = BoundaryMesh(mesh)
             self.assertEqual(boundary.num_vertices(), 26)
             self.assertEqual(boundary.num_cells(), 48)
 
         def testBoundaryBoundary(self):
             """Compute boundary of boundary."""
-            mesh = UnitCube(2, 2, 2)
+            mesh = UnitCubeMesh(2, 2, 2)
             b0 = BoundaryMesh(mesh)
             b1 = BoundaryMesh(b0)
             self.assertEqual(b1.num_vertices(), 0)
@@ -99,7 +101,7 @@ if MPI.num_processes() == 1:
     class MeshFunctions(unittest.TestCase):
 
         def setUp(self):
-            self.mesh = UnitSquare(3, 3)
+            self.mesh = UnitSquareMesh(3, 3)
             self.f = MeshFunction('int', self.mesh, 0)
 
         def testAssign(self):
@@ -155,7 +157,7 @@ if MPI.num_processes() == 1:
 
         def testMeshXML2D(self):
             """Write and read 2D mesh to/from file"""
-            mesh_out = UnitSquare(3, 3)
+            mesh_out = UnitSquareMesh(3, 3)
             mesh_in  = Mesh()
             file = File("unitsquare.xml")
             file << mesh_out
@@ -164,7 +166,7 @@ if MPI.num_processes() == 1:
 
         def testMeshXML3D(self):
             """Write and read 3D mesh to/from file"""
-            mesh_out = UnitCube(3, 3, 3)
+            mesh_out = UnitCubeMesh(3, 3, 3)
             mesh_in  = Mesh()
             file = File("unitcube.xml")
             file << mesh_out
@@ -173,7 +175,7 @@ if MPI.num_processes() == 1:
 
         def testMeshFunction(self):
             """Write and read mesh function to/from file"""
-            mesh = UnitSquare(1, 1)
+            mesh = UnitSquareMesh(1, 1)
             f = MeshFunction('int', mesh, 0)
             f[0] = 2
             f[1] = 4
@@ -190,23 +192,23 @@ if MPI.num_processes() == 1:
 
         def testGetGeometricalDimension(self):
             """Get geometrical dimension of mesh"""
-            mesh = UnitSquare(5, 5)
+            mesh = UnitSquareMesh(5, 5)
             self.assertEqual(mesh.geometry().dim(), 2)
 
         def testGetCoordinates(self):
             """Get coordinates of vertices"""
-            mesh = UnitSquare(5, 5)
+            mesh = UnitSquareMesh(5, 5)
             self.assertEqual(len(mesh.coordinates()), 36)
 
         def testGetCells(self):
             """Get cells of mesh"""
-            mesh = UnitSquare(5, 5)
+            mesh = UnitSquareMesh(5, 5)
             self.assertEqual(len(mesh.cells()), 50)
 
     class IntersectionOperator(unittest.TestCase):
         def testIntersectPoint(self):
             from numpy import linspace
-            mesh = UnitSquare(10, 10)
+            mesh = UnitSquareMesh(10, 10)
             points = [Point(i+.05,.05) for i in linspace(-.4,1.4,19)]
             for p in points:
                 if p.x()<0 or p.x()>1:
@@ -216,7 +218,7 @@ if MPI.num_processes() == 1:
 
         def testIntersectPoints(self):
             from numpy import linspace
-            mesh = UnitSquare(10, 10)
+            mesh = UnitSquareMesh(10, 10)
             points = [Point(i+.05,.05) for i in linspace(-.4,1.4,19)]
             all_intersected_entities = []
             for p in points:
@@ -234,7 +236,7 @@ if MPI.num_processes() == 1:
         def testIntersectedCellWithSingleCellMesh(self):
 
             # 2D
-            mesh = UnitTriangle()
+            mesh = UnitTriangleMesh()
 
             # Point Intersection
             point = Point(0.3, 0.3)
@@ -257,7 +259,7 @@ if MPI.num_processes() == 1:
             self.assertEqual(len(cells), 0)
 
             # 3D
-            mesh = UnitTetrahedron()
+            mesh = UnitTetrahedronMesh()
 
             # Point intersection
             point = Point(0.3, 0.3, 0.3)
@@ -280,7 +282,7 @@ if MPI.num_processes() == 1:
             self.assertEqual(len(cells), 0)
 
         def testClosestCellWithSingleCellMesh(self):
-            mesh = UnitTriangle()
+            mesh = UnitTriangleMesh()
 
             point = Point(0.3, 0.3)
             id = mesh.closest_cell(point)
@@ -290,7 +292,7 @@ if MPI.num_processes() == 1:
             id = mesh.closest_cell(point)
             self.assertEqual(id, 0)
 
-            mesh = UnitTetrahedron()
+            mesh = UnitTetrahedronMesh()
 
             point = Point(0.3, 0.3, 0.3)
             id = mesh.closest_cell(point)
