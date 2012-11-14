@@ -311,18 +311,18 @@ if has_linear_algebra_backend("PETSc"):
     class PETScTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
         backend    = "PETSc"
 
-#if has_linear_algebra_backend("Epetra"):
-#    class EpetraTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
-#        backend    = "Epetra"
+if has_linear_algebra_backend("Epetra"):
+    class EpetraTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+        backend    = "Epetra"
 
 if MPI.num_processes() == 1:
     class uBLASSparseTester(AbstractBaseTest, unittest.TestCase):
         backend     = "uBLAS"
         sub_backend = "Sparse"
 
-    #class uBLASDenseTester(AbstractBaseTest, unittest.TestCase):
-    #    backend     = "uBLAS"
-    #    sub_backend = "Dense"
+    class uBLASDenseTester(AbstractBaseTest, unittest.TestCase):
+        backend     = "uBLAS"
+        sub_backend = "Dense"
 
     if has_linear_algebra_backend("PETScCusp"):
         class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):

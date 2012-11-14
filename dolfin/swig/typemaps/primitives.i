@@ -125,7 +125,7 @@
 %typemap(in, fragment="Py_convert_uint") unsigned int
 {
   if (!Py_convert_uint($input, $1))
-    SWIG_exception(SWIG_TypeError, "expected positive 'int' for argument $argnum");
+    SWIG_exception(SWIG_TypeError, "(a) expected positive 'int' for argument $argnum");
 }
 
 //-----------------------------------------------------------------------------
@@ -139,7 +139,7 @@
 %typemap(in, fragment="Py_convert_std_size_t") std::size_t
 {
   if (!Py_convert_std_size_t($input, $1))
-    SWIG_exception(SWIG_TypeError, "expected positive 'int' for argument $argnum");
+    SWIG_exception(SWIG_TypeError, "(b) expected positive 'int' for argument $argnum");
 }
 
 //-----------------------------------------------------------------------------
