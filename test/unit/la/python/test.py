@@ -307,9 +307,9 @@ class DataNotWorkingTester:
             v.data()
         self.assertRaises(AttributeError,no_attribute)
 
-#if has_linear_algebra_backend("PETSc"):
-#    class PETScTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
-#        backend    = "PETSc"
+if has_linear_algebra_backend("PETSc"):
+    class PETScTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+        backend    = "PETSc"
 
 #if has_linear_algebra_backend("Epetra"):
 #    class EpetraTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
