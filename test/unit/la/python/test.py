@@ -320,9 +320,9 @@ if MPI.num_processes() == 1:
         backend     = "uBLAS"
         sub_backend = "Sparse"
 
-    class uBLASDenseTester(AbstractBaseTest, unittest.TestCase):
-        backend     = "uBLAS"
-        sub_backend = "Dense"
+    #class uBLASDenseTester(AbstractBaseTest, unittest.TestCase):
+    #    backend     = "uBLAS"
+    #    sub_backend = "Dense"
 
     if has_linear_algebra_backend("PETScCusp"):
         class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
