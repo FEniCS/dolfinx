@@ -42,29 +42,37 @@ This class builds a Graph corresponding to various objects
 Build distributed dual graph for mesh
 ";
 
-// Documentation extracted from: (module=graph, header=BoostGraphRenumbering.h)
-%feature("docstring")  dolfin::BoostGraphRenumbering "
+// Documentation extracted from: (module=graph, header=BoostGraphOrdering.h)
+%feature("docstring")  dolfin::BoostGraphOrdering "
 This class computes graph re-orderings. It uses Boost Graph.
 ";
 
-%feature("docstring")  dolfin::BoostGraphRenumbering::compute_cuthill_mckee "
-Compute renumbering (map[old] -> new) using Cuthill-McKee algorithm
+%feature("docstring")  dolfin::BoostGraphOrdering::compute_cuthill_mckee "
+**Overloaded versions**
+
+* compute_cuthill_mckee\ (graph, reverse=false)
+
+  Compute re-ordering (map[old] -> new) using Cuthill-McKee algorithm
+
+* compute_cuthill_mckee\ (edges, size, reverse=false)
+
+  Compute re-ordering (map[old] -> new) using Cuthill-McKee algorithm
 ";
 
-%feature("docstring")  dolfin::BoostGraphRenumbering::compute_king "
+%feature("docstring")  dolfin::BoostGraphOrdering::compute_king "
 **Overloaded versions**
 
 * compute_king\ (graph)
 
-  Compute renumbering (map[old] -> new) using King algorithm
+  Compute re-ordering (map[old] -> new) using King algorithm
 
 * compute_king\ (graph)
 
-  Compute renumbering (map[old] -> new) using King algorithm
+  Compute re-ordering (map[old] -> new) using King algorithm
 ";
 
-%feature("docstring")  dolfin::BoostGraphRenumbering::compute_minimum_degree "
-Compute renumbering (map[old] -> new) using minimum degree algorithm
+%feature("docstring")  dolfin::BoostGraphOrdering::compute_minimum_degree "
+Compute re-ordering (map[old] -> new) using minimum degree algorithm
 ";
 
 // Documentation extracted from: (module=graph, header=SCOTCH.h)
