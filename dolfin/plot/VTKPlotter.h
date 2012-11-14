@@ -19,7 +19,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-10-10
+// Last changed: 2012-11-13
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -243,6 +243,7 @@ namespace dolfin
     void azimuth(double angle);
     void elevate(double angle);
     void dolly(double value);
+    void zoom(double zoomfactor);
     void set_viewangle(double angle);
 
     // Set the range of the color table

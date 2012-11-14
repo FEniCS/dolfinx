@@ -568,6 +568,12 @@ void VTKPlotter::dolly(double value)
   vtk_pipeline->reset_camera_clipping_range();
 }
 //----------------------------------------------------------------------------
+void VTKPlotter::zoom(double zoomfactor)
+{
+  vtk_pipeline->get_camera()->Zoom(zoomfactor);
+  vtk_pipeline->reset_camera_clipping_range();
+}
+//----------------------------------------------------------------------------
 void VTKPlotter::set_viewangle(double angle)
 {
   vtk_pipeline->get_camera()->SetViewAngle(angle);
