@@ -123,12 +123,12 @@ IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(Function)
 //-----------------------------------------------------------------------------
 // In typemap for std::pair<TYPE,TYPE>
 //-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_POINTER) std::pair<unsigned int, unsigned int>
+     %typecheck(SWIG_TYPECHECK_POINTER) std::pair<std::size_t, std::size_t>
 {
   $1 = PyTuple_Check($input) ? 1 : 0;
 }
 
-%typemap(in) std::pair<unsigned int, unsigned int> (std::pair<unsigned int, unsigned int> tmp_pair, long tmp)
+%typemap(in) std::pair<std::size_t, std::size_t> (std::pair<std::size_t, std::size_t> tmp_pair, long tmp)
 {
   // Check that we have a tuple
   if (!PyTuple_Check($input) || PyTuple_Size($input) != 2)
@@ -143,7 +143,7 @@ IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(Function)
   {
     tmp = static_cast<long>(PyInt_AsLong(py_first));
     if (tmp>=0)
-       tmp_pair.first = static_cast<unsigned int>(tmp);
+      tmp_pair.first = static_cast<std::size_t>(tmp);
     else
       SWIG_exception(SWIG_TypeError, "expected positive 'int' as the first tuple argument ");
   }
