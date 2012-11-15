@@ -74,8 +74,4 @@ mesh = BoxMesh(0.0, 0.0, 0.0, 10.0, 4.0, 2.0, 10, 10, 10)
 print "Plotting a Box"
 plot(mesh, title="Box")
 
-mesh = UnitSphereMesh(10)
-print "Plotting a UnitSphere"
-plot(mesh, title="Unit sphere")
-
 interactive()

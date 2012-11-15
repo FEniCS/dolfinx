@@ -26,18 +26,19 @@ using namespace dolfin;
 
 int main()
 {
-  UnitSphere sphere(20);
-  UnitCube cube(20, 20, 20);
+  Sphere sphere(Point(0, 0, 0), 1.0);
+  Mesh sphere_mesh(sphere, 16);
+  UnitCubeMesh cube_mesh(20, 20, 20);
 
   // Access mesh geometry
-  MeshGeometry& geometry = sphere.geometry();
+  MeshGeometry& geometry = sphere_mesh.geometry();
 
   // Start center and propagtion speed for the sphere.
   const double dt = 0.1;
   double t = -0.61;
 
   // Scale and move the circle.
-  for (VertexIterator vertex(sphere); !vertex.end(); ++vertex)
+  for (VertexIterator vertex(sphere_mesh); !vertex.end(); ++vertex)
   {
     double* x = geometry.x(vertex->index());
     x[0] = x[0]*0.7 + t;
@@ -45,7 +46,8 @@ int main()
     x[2] = x[2]*0.7 + t;
   }
 
-  boost::shared_ptr<dolfin::MeshFunction<std::size_t> >intersection(new dolfin::MeshFunction<std::size_t>(cube, cube.topology().dim()));
+  boost::shared_ptr<dolfin::MeshFunction<std::size_t> >
+    intersection(new dolfin::MeshFunction<std::size_t>(cube_mesh, cube_mesh.topology().dim()));
 
   VTKPlotter p(intersection);
   p.parameters["scalarbar"] = false;
@@ -54,9 +56,9 @@ int main()
   while (t < 1.4)
   {
     // Compute intersection with boundary of square
-    BoundaryMesh boundary(sphere);
+    BoundaryMesh boundary(sphere_mesh);
     std::set<std::size_t> cells;
-    cube.intersected_cells(boundary, cells);
+    cube_mesh.intersected_cells(boundary, cells);
 
     // Copy values to mesh function for plotting
     *intersection = 0;
@@ -73,7 +75,7 @@ int main()
     }
 
     // Propagate sphere along the line t(1,1,1).
-    for (VertexIterator vertex(sphere); !vertex.end(); ++vertex)
+    for (VertexIterator vertex(sphere_mesh); !vertex.end(); ++vertex)
     {
       double* x = geometry.x(vertex->index());
       x[0] += dt;
@@ -90,7 +92,6 @@ int main()
   return 0;
 }
 
-
 #else
 
 int main()
@@ -98,6 +99,5 @@ int main()
   info("DOLFIN must be compiled with CGAL to run this demo.");
   return 0;
 }
-
 
 #endif

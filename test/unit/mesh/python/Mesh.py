@@ -35,7 +35,6 @@ class MeshConstruction(unittest.TestCase):
         self.square = UnitSquareMesh(5, 5)
         self.rectangle = RectangleMesh(0, 0, 2, 2, 5, 5)
         self.cube = UnitCubeMesh(3, 3, 3)
-        self.sphere = UnitSphereMesh(5)
         self.box = BoxMesh(0, 0, 0, 2, 2, 2, 2, 2, 5)
 
     def testUFLCell(self):
@@ -46,7 +45,6 @@ class MeshConstruction(unittest.TestCase):
         self.assertEqual(ufl.triangle, self.square.ufl_cell())
         self.assertEqual(ufl.triangle, self.rectangle.ufl_cell())
         self.assertEqual(ufl.tetrahedron, self.cube.ufl_cell())
-        self.assertEqual(ufl.tetrahedron, self.sphere.ufl_cell())
         self.assertEqual(ufl.tetrahedron, self.box.ufl_cell())
 
 # FIXME: The following test breaks in parallel

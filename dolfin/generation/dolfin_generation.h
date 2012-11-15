@@ -18,8 +18,6 @@
 #include <dolfin/generation/UnitSquare.h>
 #include <dolfin/generation/UnitCircleMesh.h>
 #include <dolfin/generation/UnitCircle.h>
-#include <dolfin/generation/UnitSphereMesh.h>
-#include <dolfin/generation/UnitSphere.h>
 #include <dolfin/generation/BoxMesh.h>
 #include <dolfin/generation/RectangleMesh.h>
 #include <dolfin/generation/IntervalMesh.h>

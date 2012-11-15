@@ -35,12 +35,17 @@ elements.
 
 from dolfin import *
 
+if not has_cgal():
+    print "DOLFIN must be compiled with CGAL to run this demo."
+    exit(0)
+
 # Create mesh
-mesh = UnitSphereMesh(8)
+sphere = Sphere(Point(0, 0, 0), 1.0)
+mesh = Mesh(sphere, 16)
 
 # Define function spaces
-PN = FunctionSpace(mesh, "Nedelec 1st kind H(curl)", 1)
 P1 = VectorFunctionSpace(mesh, "CG", 1)
+PN = FunctionSpace(mesh, "Nedelec 1st kind H(curl)", 1)
 
 # Define test and trial functions
 v0 = TestFunction(PN)

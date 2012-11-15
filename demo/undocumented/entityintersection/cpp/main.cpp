@@ -35,18 +35,19 @@ int main ()
 {
 
   #if HAS_CGAL
-  UnitCubeMesh cube(3,3,2);
-  cout <<"Total number of cells in Cube:" << cube.num_cells() <<endl;
+  UnitCubeMesh cube_mesh(3,3,2);
+  cout <<"Total number of cells in Cube:" << cube_mesh.num_cells() <<endl;
 
-  UnitSphereMesh sphere(3);
-  cout <<"Total number of cells in Sphere:" << sphere.num_cells() <<endl;
+  Sphere sphere(Point(0, 0, 0), 1.0);
+  Mesh sphere_mesh(sphere, 8);
+  cout <<"Total number of cells in Sphere:" << sphere_mesh.num_cells() <<endl;
   cout <<"Intersecting pairwise cells of a cube and sphere mesh" << endl;
   cout <<"Cube cell index | Sphere cell index" << endl;
   cout <<"------------------------------" << endl;
 
-  for (CellIterator cube_cell(cube); !cube_cell.end(); ++cube_cell)
+  for (CellIterator cube_cell(cube_mesh); !cube_cell.end(); ++cube_cell)
   {
-    for (CellIterator sphere_cell(cube); !sphere_cell.end(); ++sphere_cell)
+    for (CellIterator sphere_cell(cube_mesh); !sphere_cell.end(); ++sphere_cell)
     {
       if (PrimitiveIntersector::do_intersect(*cube_cell, *sphere_cell))
         cout << cube_cell->index() << " | " << sphere_cell->index() << endl;
