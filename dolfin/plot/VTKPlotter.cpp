@@ -337,18 +337,18 @@ std::string VTKPlotter::get_helptext()
   text << "   s: Synchronize cameras (keep pressed for continuous sync)\n";
   text << "   m: Toggle mesh overlay\n";
   text << "   b: Toggle bounding box\n";
-  text << "   v: Toggle vertex indices\n";
-  text << "   w: Toggle wireframe/point/surface view\n";
-  text << "  +-: Resize points and lines\n";
+  text << "  cv: Toggle cell or vertex indices\n";
+  text << "   w: Toggle between wireframe/point/surface view\n";
+  text << "  +-: Resize widths (points and lines)\n";
   text << "C-+-: Rescale plot (glyphs and warping)\n";
-  text << "   p: Save plot to png (raster) file\n";
 #ifdef VTK_USE_GL2PS
-  text << "   P: Save plot to pdf (vector) file\n";
+  text << "  pP: Save plot to png or pdf file\n";
+#else
+  text << "   p: Save plot to png file\n";
 #endif
-  text << "   h: print help to console\n";
-  text << "   q: Continue\n";
-  text << "   Q: Continue to end\n";
-  text << " C-C: Abort execution\n";
+  text << "  hH: Show help, or print help to console\n";
+  text << "  qQ: Continue, or continue to end\n";
+  text << " C-c: Abort execution\n";
   text << "\n";
 #ifdef HAS_QVTK
   text << "Window control:\n";
@@ -385,9 +385,12 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
     vtk_pipeline->render();
     return true;
 
-  case 'h': // Show helptext
-    //vtk_pipeline->toggle_helptext();
-    //vtk_pipeline->render();
+  case 'h': // Show help overlay
+    vtk_pipeline->toggle_helptext(get_helptext());
+    vtk_pipeline->render();
+    return true;
+
+  case SHIFT + 'h': // Print helptext to console
     std::cout << get_helptext();
     return true;
 
