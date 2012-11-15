@@ -49,7 +49,7 @@ class Boundary : public SubDomain
 int main()
 {
   // Create mesh
-  UnitSquare mesh(8, 8);
+  UnitSquare mesh(32, 32);
 
   // Define restriction
   Domain domain;
@@ -69,23 +69,13 @@ int main()
   Boundary boundary;
   DirichletBC bc(V, zero, boundary);
 
-  Matrix A;
-  assemble(A, a);
-
-  Vector b;
-  assemble(b, L);
-
-  bc.apply(A, b);
-
-  info(A, true);
-
   // Compute solution
-  //Function u(V);
-  //solve(a == L, u, bc);
+  Function u(V);
+  solve(a == L, u, bc);
 
   // Plot solution
-  //plot(u);
-  //interactive();
+  plot(u);
+  interactive();
 
   return 0;
 }

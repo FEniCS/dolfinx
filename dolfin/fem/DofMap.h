@@ -75,7 +75,7 @@ namespace dolfin
     ///     restriction (_Restriction_)
     ///         The restriction.
     DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
-           const Restriction& restriction);
+           boost::shared_ptr<const Restriction> restriction);
 
   private:
 
@@ -99,7 +99,7 @@ namespace dolfin
     /// Destructor
     ~DofMap();
 
-    /// True if dof map is a view into another map
+    /// True iff dof map is a view into another map
     ///
     /// *Returns*
     ///     bool
@@ -107,6 +107,14 @@ namespace dolfin
     ///         another map).
     bool is_view() const
     { return _is_view; }
+
+    /// True iff dof map is restricted
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True iff dof map is restricted
+    bool is_restricted() const
+    { return static_cast<bool>(_restriction); }
 
     /// Return true iff mesh entities of topological dimension d are
     /// needed
@@ -165,6 +173,14 @@ namespace dolfin
     ///     unsigned int
     ///         The number of facet dofs.
     unsigned int num_facet_dofs() const;
+
+    /// Restriction if any. If the dofmap is not restricted, a null
+    /// pointer is returned.
+    ///
+    /// *Returns*
+    ///     boost::shared_ptr<const Restriction>
+    //          The restriction.
+    boost::shared_ptr<const Restriction> restriction() const;
 
     /// Return the ownership range (dofs in this range are owned by
     /// this process)
@@ -376,6 +392,9 @@ namespace dolfin
 
     // Map from UFC dof numbering to renumbered dof (ufc_dof, actual_dof)
     boost::unordered_map<uint, uint> ufc_map_to_dofmap;
+
+    // Restriction, pointer zero if not restricted
+    boost::shared_ptr<const Restriction> _restriction;
 
     // Global dimension. Note that this may differ from the global dimension
     // of the UFC dofmap if the function space is restricted.

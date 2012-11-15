@@ -86,17 +86,19 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
-               const Restriction& restriction)
+               boost::shared_ptr<const Restriction> restriction)
   : _ufc_dofmap(ufc_dofmap->create()),
+    _restriction(restriction),
     _global_dimension(0), _ufc_offset(0), _is_view(false),
     _distributed(MPI::num_processes() > 1)
 {
   info("Creating restricted dofmap.");
 
   dolfin_assert(_ufc_dofmap);
+  dolfin_assert(_restriction);
 
   // Get mesh
-  const dolfin::Mesh& dolfin_mesh(restriction.mesh());
+  const dolfin::Mesh& dolfin_mesh(restriction->mesh());
 
   // Check for dimensional consistency between the dofmap and mesh
   check_dimensional_consistency(*_ufc_dofmap, dolfin_mesh);
@@ -112,7 +114,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 
   // Check that we get cell markers, extend later
   const uint D = dolfin_mesh.topology().dim();
-  if (restriction.dim() != D)
+  if (restriction->dim() != D)
   {
     dolfin_error("DofMap.cpp",
                  "create mapping of degrees of freedom",
@@ -145,10 +147,8 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   // Build dof map
   // FIXME: Need to build better dofmap
   const bool reorder = dolfin::parameters["reorder_dofs_serial"];
-  DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, restriction,
+  DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, *restriction,
                        reorder, _distributed);
-
-  info("Restricted dofmap created.");
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
@@ -354,6 +354,11 @@ unsigned int DofMap::num_facet_dofs() const
 {
   dolfin_assert(_ufc_dofmap);
   return _ufc_dofmap->num_facet_dofs();
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<const dolfin::Restriction> DofMap::restriction() const
+{
+  return _restriction;
 }
 //-----------------------------------------------------------------------------
 std::pair<unsigned int, unsigned int> DofMap::ownership_range() const

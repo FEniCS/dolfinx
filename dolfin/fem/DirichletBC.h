@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2010 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2012 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga, 2012
 //
 // First added:  2007-04-10
-// Last changed: 2012-02-29
+// Last changed: 2012-11-14
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common
@@ -42,9 +42,11 @@
 
 namespace dolfin
 {
+
   class GenericFunction;
   class FunctionSpace;
   class Facet;
+  class Restriction;
   class GenericMatrix;
   class GenericVector;
   class SubDomain;

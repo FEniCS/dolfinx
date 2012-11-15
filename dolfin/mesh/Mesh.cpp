@@ -57,9 +57,6 @@ Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
                _ordered(false)
 {
   // Do nothing
-
-
-  cout << "Calling mesh constructor 1" << endl;
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
@@ -70,8 +67,6 @@ Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
                                _ordered(false)
 {
   *this = mesh;
-
-  cout << "Calling mesh constructor 2" << endl;
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
@@ -83,8 +78,6 @@ Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
 {
   File file(filename);
   file >> *this;
-
-  cout << "Calling mesh constructor 3" << endl;
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(LocalMeshData& local_mesh_data)
@@ -95,8 +88,6 @@ Mesh::Mesh(LocalMeshData& local_mesh_data)
                                    _intersection_operator(*this),
                                    _ordered(false)
 {
-  cout << "Calling mesh constructor 4" << endl;
-
   MeshPartitioning::build_distributed_mesh(*this, local_mesh_data);
 }
 //-----------------------------------------------------------------------------

@@ -42,6 +42,7 @@
 #include <dolfin/mesh/MeshDomains.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshValueCollection.h>
+#include <dolfin/mesh/Restriction.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
@@ -658,13 +659,18 @@ void DirichletBC::init_from_mesh_function(const MeshFunction<uint>& sub_domains,
                                           uint sub_domain) const
 {
   dolfin_assert(facets.size() == 0);
-
   dolfin_assert(_function_space->mesh());
+
+  // Get mesh
   const Mesh& mesh = *_function_space->mesh();
 
+  // Get restriction if any
+  boost::shared_ptr<const Restriction> restriction
+    = _function_space->dofmap()->restriction();
+
   // Make sure we have the facet - cell connectivity
-  const uint dim = mesh.topology().dim();
-  mesh.init(dim - 1, dim);
+  const uint D = mesh.topology().dim();
+  mesh.init(D - 1, D);
 
   // Build set of boundary facets
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
@@ -673,11 +679,29 @@ void DirichletBC::init_from_mesh_function(const MeshFunction<uint>& sub_domains,
     if (sub_domains[*facet] != sub_domain)
       continue;
 
-    // FIXME: If function space is restricted, we need to pick the
-    // right facet here
-
-    // Get cell to which facet belongs (there may be two, but pick first)
-    const Cell cell(mesh, facet->entities(dim)[0]);
+    // Get cell to which facet belongs. If mesh is restricted, make
+    // sure we pick the right cell in case there are two.
+    dolfin_assert(facet->num_entities(D) > 0);
+    const uint* cell_indices = facet->entities(D);
+    uint cell_index = 0;
+    if (restriction && facet->num_entities(D) > 1)
+    {
+      if (restriction->contains(D, cell_indices[0]))
+        cell_index = cell_indices[0];
+      else if (restriction->contains(D, cell_indices[1]))
+        cell_index = cell_indices[1];
+      else
+      {
+        dolfin_error("DirichletBC.cpp",
+                     "create Dirichlet boundary condition",
+                     "Boundary facet is not adjacent to a cell inside the restriction.");
+      }
+    }
+    else
+    {
+      cell_index = facet->entities(D)[0];
+    }
+    const Cell cell(mesh, cell_index);
 
     // Get local index of facet with respect to the cell
     const uint facet_number = cell.index(*facet);
@@ -781,6 +805,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
 
     // Tabulate dofs on cell
     const std::vector<uint>& cell_dofs = dofmap.cell_dofs(cell.index());
+    dolfin_assert(cell_dofs.size() > 0);
 
     // Tabulate which dofs are on the facet
     dofmap.tabulate_facet_dofs(&data.facet_dofs[0], facet_number);

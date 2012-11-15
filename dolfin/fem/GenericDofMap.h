@@ -44,6 +44,7 @@ namespace dolfin
   class Cell;
   class GenericVector;
   class Mesh;
+  class Restriction;
   template<typename T> class Set;
 
   /// This class provides a generic interface for dof maps
@@ -73,6 +74,10 @@ namespace dolfin
 
     /// Return number of facet dofs
     virtual unsigned int num_facet_dofs() const = 0;
+
+    /// Restriction if any. If the dofmap is not restricted, a null
+    /// pointer is returned.
+    virtual boost::shared_ptr<const Restriction> restriction() const = 0;
 
     /// Return the ownership range (dofs in this range are owned by this process)
     virtual std::pair<unsigned int, unsigned int> ownership_range() const = 0;

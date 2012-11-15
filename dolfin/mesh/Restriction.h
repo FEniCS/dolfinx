@@ -92,6 +92,13 @@ namespace dolfin
       return (*_domain_markers)[entity] == _domain_number;
     }
 
+    /// Check whether restriction contains entity (d, i)
+    bool contains(uint d, uint i) const
+    {
+      dolfin_assert(_domain_markers);
+      dolfin_assert(d == _domain_markers->dim());
+      return (*_domain_markers)[i] == _domain_number;
+    }
 
   private:
 
