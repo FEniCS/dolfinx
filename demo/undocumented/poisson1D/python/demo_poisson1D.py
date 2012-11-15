@@ -32,12 +32,12 @@ and boundary conditions given by
 # Modified by Anders Logg 2011
 #
 # First added:  2007-11-28
-# Last changed: 2011-06-28
+# Last changed: 2012-11-12
 
 from dolfin import *
 
 # Create mesh and function space
-mesh = UnitInterval(50)
+mesh = UnitIntervalMesh(50)
 V = FunctionSpace(mesh, "CG", 1)
 
 # Sub domain for Dirichlet boundary condition

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-03-30
-// Last changed: 2012-07-05
+// Last changed: 2012-11-12
 //
 // Eddy currents phenomena in low conducting body can be
 // described using electric vector potential and curl-curl operator:
@@ -80,7 +80,7 @@ int main()
   };
 
   // Create demo mesh
-  UnitSphere mesh(8);
+  UnitSphereMesh mesh(8);
 
   // Define functions
   Source dbdt;

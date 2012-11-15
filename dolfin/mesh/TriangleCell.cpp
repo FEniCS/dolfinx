@@ -91,8 +91,8 @@ dolfin::uint TriangleCell::orientation(const Cell& cell) const
   return (n.dot(p02) < 0.0 ? 1 : 0);
 }
 //-----------------------------------------------------------------------------
-void TriangleCell::create_entities(std::vector<std::vector<uint> >& e,
-                                   uint dim, const uint* v) const
+void TriangleCell::create_entities(std::vector<std::vector<std::size_t> >& e,
+                                   uint dim, const std::size_t* v) const
 {
   // We only need to know how to create edges
   if (dim != 1)
@@ -109,34 +109,34 @@ void TriangleCell::create_entities(std::vector<std::vector<uint> >& e,
 }
 //-----------------------------------------------------------------------------
 void TriangleCell::refine_cell(Cell& cell, MeshEditor& editor,
-                               uint& current_cell) const
+                               std::size_t& current_cell) const
 {
   // Get vertices and edges
-  const uint* v = cell.entities(0);
-  const uint* e = cell.entities(1);
+  const std::size_t* v = cell.entities(0);
+  const std::size_t* e = cell.entities(1);
   dolfin_assert(v);
   dolfin_assert(e);
 
   // Get offset for new vertex indices
-  const uint offset = cell.mesh().num_vertices();
+  const std::size_t offset = cell.mesh().num_vertices();
 
   // Compute indices for the six new vertices
-  const uint v0 = v[0];
-  const uint v1 = v[1];
-  const uint v2 = v[2];
-  const uint e0 = offset + e[find_edge(0, cell)];
-  const uint e1 = offset + e[find_edge(1, cell)];
-  const uint e2 = offset + e[find_edge(2, cell)];
+  const std::size_t v0 = v[0];
+  const std::size_t v1 = v[1];
+  const std::size_t v2 = v[2];
+  const std::size_t e0 = offset + e[find_edge(0, cell)];
+  const std::size_t e1 = offset + e[find_edge(1, cell)];
+  const std::size_t e2 = offset + e[find_edge(2, cell)];
 
   // Create four new cells
-  std::vector<std::vector<uint> > cells(4, std::vector<uint>(3));
+  std::vector<std::vector<std::size_t> > cells(4, std::vector<std::size_t>(3));
   cells[0][0] = v0; cells[0][1] = e2; cells[0][2] = e1;
   cells[1][0] = v1; cells[1][1] = e0; cells[1][2] = e2;
   cells[2][0] = v2; cells[2][1] = e1; cells[2][2] = e0;
   cells[3][0] = e0; cells[3][1] = e1; cells[3][2] = e2;
 
   // Add cells
-  std::vector<std::vector<uint> >::const_iterator _cell;
+  std::vector<std::vector<std::size_t> >::const_iterator _cell;
   for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
     editor.add_cell(current_cell++, *_cell);
 }
@@ -155,7 +155,7 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   const MeshGeometry& geometry = triangle.mesh().geometry();
 
   // Get the coordinates of the three vertices
-  const uint* vertices = triangle.entities(0);
+  const std::size_t* vertices = triangle.entities(0);
   const double* x0 = geometry.x(vertices[0]);
   const double* x1 = geometry.x(vertices[1]);
   const double* x2 = geometry.x(vertices[2]);
@@ -206,7 +206,7 @@ double TriangleCell::diameter(const MeshEntity& triangle) const
                  "Only know how to compute diameter when embedded in R^2 or R^3");
 
   // Get the coordinates of the three vertices
-  const uint* vertices = triangle.entities(0);
+  const std::size_t* vertices = triangle.entities(0);
   const Point p0 = geometry.point(vertices[0]);
   const Point p1 = geometry.point(vertices[1]);
   const Point p2 = geometry.point(vertices[2]);
@@ -243,11 +243,11 @@ Point TriangleCell::normal(const Cell& cell, uint facet) const
                  "Normal vector is not defined in dimension %d (only defined when the triangle is in R^2", cell.mesh().geometry().dim());
 
   // Get global index of opposite vertex
-  const uint v0 = cell.entities(0)[facet];
+  const std::size_t v0 = cell.entities(0)[facet];
 
   // Get global index of vertices on the facet
-  const uint v1 = f.entities(0)[0];
-  const uint v2 = f.entities(0)[1];
+  const std::size_t v1 = f.entities(0)[0];
+  const std::size_t v2 = f.entities(0)[1];
 
   // Get mesh geometry
   const MeshGeometry& geometry = cell.mesh().geometry();
@@ -275,8 +275,8 @@ double TriangleCell::facet_area(const Cell& cell, uint facet) const
   const Facet f(cell.mesh(), cell.entities(1)[facet]);
 
   // Get global index of vertices on the facet
-  const uint v0 = f.entities(0)[0];
-  const uint v1 = f.entities(0)[1];
+  const std::size_t v0 = f.entities(0)[0];
+  const std::size_t v1 = f.entities(0)[1];
 
   // Get mesh geometry
   const MeshGeometry& geometry = cell.mesh().geometry();
@@ -287,7 +287,7 @@ double TriangleCell::facet_area(const Cell& cell, uint facet) const
 
   // Compute distance between vertices
   double d = 0.0;
-  for (uint i = 0; i < geometry.dim(); i++)
+  for (std::size_t i = 0; i < geometry.dim(); i++)
   {
     const double dp = p0[i] - p1[i];
     d += dp*dp;
@@ -297,7 +297,7 @@ double TriangleCell::facet_area(const Cell& cell, uint facet) const
 }
 //-----------------------------------------------------------------------------
 void TriangleCell::order(Cell& cell,
-                 const std::vector<uint>& local_to_global_vertex_indices) const
+                 const std::vector<std::size_t>& local_to_global_vertex_indices) const
 {
   // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1
 
@@ -310,12 +310,12 @@ void TriangleCell::order(Cell& cell,
     dolfin_assert(!topology(2, 1).empty());
 
     // Get edge indices (local)
-    const uint* cell_edges = cell.entities(1);
+    const std::size_t* cell_edges = cell.entities(1);
 
     // Sort vertices on each edge
     for (uint i = 0; i < 3; i++)
     {
-      uint* edge_vertices = const_cast<uint*>(topology(1, 0)(cell_edges[i]));
+      std::size_t* edge_vertices = const_cast<std::size_t*>(topology(1, 0)(cell_edges[i]));
       sort_entities(2, edge_vertices, local_to_global_vertex_indices);
     }
   }
@@ -323,7 +323,7 @@ void TriangleCell::order(Cell& cell,
   // Sort local vertices on cell in ascending order, connectivity 2 - 0
   if (!topology(2, 0).empty())
   {
-    uint* cell_vertices = const_cast<uint*>(cell.entities(0));
+    std::size_t* cell_vertices = const_cast<std::size_t*>(cell.entities(0));
     sort_entities(3, cell_vertices, local_to_global_vertex_indices);
   }
 
@@ -333,8 +333,8 @@ void TriangleCell::order(Cell& cell,
     dolfin_assert(!topology(2, 1).empty());
 
     // Get cell vertiex and edge indices (local)
-    const uint* cell_vertices = cell.entities(0);
-    uint* cell_edges = const_cast<uint*>(cell.entities(1));
+    const std::size_t* cell_vertices = cell.entities(0);
+    std::size_t* cell_edges = const_cast<std::size_t*>(cell.entities(1));
 
     // Loop over vertices on cell
     for (uint i = 0; i < 3; i++)
@@ -342,13 +342,13 @@ void TriangleCell::order(Cell& cell,
       // Loop over edges on cell
       for (uint j = i; j < 3; j++)
       {
-        const uint* edge_vertices = topology(1, 0)(cell_edges[j]);
+        const std::size_t* edge_vertices = topology(1, 0)(cell_edges[j]);
 
         // Check if the ith vertex of the cell is non-incident with edge j
         if (std::count(edge_vertices, edge_vertices + 2, cell_vertices[i]) == 0)
         {
           // Swap edge numbers
-          uint tmp = cell_edges[i];
+          std::size_t tmp = cell_edges[i];
           cell_edges[i] = cell_edges[j];
           cell_edges[j] = tmp;
           break;
@@ -365,18 +365,18 @@ std::string TriangleCell::description(bool plural) const
   return "triangle";
 }
 //-----------------------------------------------------------------------------
-dolfin::uint TriangleCell::find_edge(uint i, const Cell& cell) const
+std::size_t TriangleCell::find_edge(uint i, const Cell& cell) const
 {
   // Get vertices and edges
-  const uint* v = cell.entities(0);
-  const uint* e = cell.entities(1);
+  const std::size_t* v = cell.entities(0);
+  const std::size_t* e = cell.entities(1);
   dolfin_assert(v);
   dolfin_assert(e);
 
   // Look for edge satisfying ordering convention
   for (uint j = 0; j < 3; j++)
   {
-    const uint* ev = cell.mesh().topology()(1, 0)(e[j]);
+    const std::size_t* ev = cell.mesh().topology()(1, 0)(e[j]);
     dolfin_assert(ev);
     if (ev[0] != v[i] && ev[1] != v[i])
       return j;

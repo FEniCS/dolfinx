@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
 
   // External load
   RightBoundary right_boundary;
-  MeshFunction<unsigned int> right_boundary_function(mesh, 1);
+  MeshFunction<std::size_t> right_boundary_function(mesh, 1);
   right_boundary.mark(right_boundary_function, 3);
   Pressure p(t, dt, false), p0(t, dt, true);
 

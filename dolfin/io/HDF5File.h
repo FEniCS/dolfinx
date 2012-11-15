@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-11-14
+// Last changed: 2012-11-15
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -106,12 +106,17 @@ namespace dolfin
                                const std::string global_index_name,
                                const std::string topology_name);
 
+    // Return vertex and topological data with duplicates removed
+    void remove_duplicate_vertices(const Mesh& mesh,
+                                   std::vector<double>& vertex_data,
+                                   std::vector<std::size_t>& topological_data);
+
     // Write contiguous data to HDF5 data set. Data is flattened into
     // a 1D array, e.g. [x0, y0, z0, x1, y1, z1] for a vector in 3D
     template <typename T>
     void write_data(const std::string dataset_name,
                     const std::vector<T>& data,
-                    const std::vector<uint> global_size);
+                    const std::vector<std::size_t> global_size);
 
     // Search dataset names for one beginning with search_term
     static std::string search_list(const std::vector<std::string>& list,
@@ -141,7 +146,7 @@ namespace dolfin
     // each process. global_vector will be equally divided amongst the
     // processes
     template <typename T>
-    void redistribute_by_global_index(const std::vector<uint>& global_index,
+    void redistribute_by_global_index(const std::vector<std::size_t>& global_index,
                                       const std::vector<T>& local_vector,
                                       std::vector<T>& global_vector);
 
@@ -166,7 +171,7 @@ namespace dolfin
 
     Timer t("HDF5: Remove dups");
 
-    const std::map<uint, std::set<uint> >& shared_vertices
+    const std::map<std::size_t, std::set<uint> >& shared_vertices
       = mesh.topology().shared_entities(0);
 
     const uint process_number = MPI::process_number();
@@ -205,7 +210,7 @@ namespace dolfin
   template <typename T>
   void HDF5File::write_data(const std::string dataset_name,
                             const std::vector<T>& data,
-                            const std::vector<uint> global_size)
+                            const std::vector<std::size_t> global_size)
   {
     dolfin_assert(hdf5_file_open);
 
@@ -228,14 +233,14 @@ namespace dolfin
     dolfin_assert(global_size.size() > 0);
 
     // Get number of 'items'
-    uint num_local_items = 1;
-    for (uint i = 1; i < global_size.size(); ++i)
+    std::size_t num_local_items = 1;
+    for (std::size_t i = 1; i < global_size.size(); ++i)
       num_local_items *= global_size[i];
     num_local_items = data.size()/num_local_items;
 
     // Compute offet
-    const uint offset = MPI::global_offset(num_local_items, true);
-    std::pair<uint, uint> range(offset, offset + num_local_items);
+    const std::size_t offset = MPI::global_offset(num_local_items, true);
+    std::pair<std::size_t, std::size_t> range(offset, offset + num_local_items);
 
     // Write data to HDF5 file
     HDF5Interface::write_dataset(hdf5_file_id, dataset_name, data,

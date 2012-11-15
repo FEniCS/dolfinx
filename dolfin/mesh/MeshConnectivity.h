@@ -59,7 +59,7 @@ namespace dolfin
     { return connections.empty(); }
 
     /// Return total number of connections
-    uint size() const
+    std::size_t size() const
     { return connections.size(); }
 
     /// Return number of connections for given entity
@@ -82,14 +82,14 @@ namespace dolfin
     }
 
     /// Return array of connections for given entity
-    const uint* operator() (uint entity) const
+    const std::size_t* operator() (std::size_t entity) const
     {
       return ((entity + 1) < index_to_position.size()
         ? &connections[index_to_position[entity]] : 0);
     }
 
     /// Return contiguous array of connections for all entities
-    const std::vector<uint>& operator() () const
+    const std::vector<std::size_t>& operator() () const
     { return connections; }
 
     /// Clear all data
@@ -97,20 +97,20 @@ namespace dolfin
 
     /// Initialize number of entities and number of connections (equal
     /// for all)
-    void init(uint num_entities, uint num_connections);
+    void init(std::size_t num_entities, uint num_connections);
 
     /// Initialize number of entities and number of connections
     /// (individually)
-    void init(std::vector<uint>& num_connections);
+    void init(std::vector<unsigned int>& num_connections);
 
     /// Set given connection for given entity
-    void set(uint entity, uint connection, uint pos);
+    void set(std::size_t entity, std::size_t connection, std::size_t pos);
 
     /// Set all connections for given entity
-    void set(uint entity, const std::vector<uint>& connections);
+    void set(std::size_t entity, const std::vector<std::size_t>& connections);
 
     /// Set all connections for given entity
-    void set(uint entity, uint* connections);
+    void set(std::size_t entity, std::size_t* connections);
 
     /// Set all connections for all entities (T is a container, e.g.
     /// a std::vector<uint>, std::set<uint>, etc)
@@ -122,8 +122,8 @@ namespace dolfin
 
       // Initialize offsets and compute total size
       index_to_position.resize(connections.size() + 1);
-      uint size = 0;
-      for (uint e = 0; e < connections.size(); e++)
+      std::size_t size = 0;
+      for (std::size_t e = 0; e < connections.size(); e++)
       {
         index_to_position[e] = size;
         size += connections[e].size();
@@ -138,7 +138,7 @@ namespace dolfin
     }
 
     /// Set global number of connections for all local entities
-    void set_global_size(const std::vector<uint>& num_global_connections)
+    void set_global_size(const std::vector<unsigned int>& num_global_connections)
     {
       dolfin_assert(num_global_connections.size() == index_to_position.size() - 1);
       this->num_global_connections = num_global_connections;
@@ -160,14 +160,14 @@ namespace dolfin
     uint d0, d1;
 
     // Connections for all entities stored as a contiguous array
-    std::vector<uint> connections;
+    std::vector<std::size_t> connections;
 
     // Global number of connections for all entities (possibly not
     // computed)
-    std::vector<uint> num_global_connections;
+    std::vector<unsigned int> num_global_connections;
 
     // Position of first connection for each entity (using local index)
-    std::vector<uint> index_to_position;
+    std::vector<std::size_t> index_to_position;
 
   };
 

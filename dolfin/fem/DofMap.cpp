@@ -96,7 +96,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   const UFCMesh ufc_mesh(mesh);
 
   // Initialise offset from parent
-  uint offset = parent_dofmap.ufc_offset;
+  std::size_t offset = parent_dofmap.ufc_offset;
 
   // Get parent UFC dof map
   const ufc::dofmap& parent_ufc_dofmap = *(parent_dofmap._ufc_dofmap);
@@ -118,23 +118,28 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   // Resize dofmap data structure
   _dofmap.resize(mesh.num_cells());
 
+  // Hack to get around UFC using 32-bit integers
+  std::vector<uint> tmp_dof_holder;
+
   // Build sub-map based on UFC dofmap
   UFCCell ufc_cell(mesh);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    const uint cell_index = cell->index();
+    const std::size_t cell_index = cell->index();
 
     // Update to current cell
     ufc_cell.update(*cell);
 
     // Resize list for cell
     _dofmap[cell_index].resize(_ufc_dofmap->local_dimension(ufc_cell));
+    tmp_dof_holder.resize(_ufc_dofmap->local_dimension(ufc_cell));
 
     // Tabulate sub-dofs on cell (using UFC map)
-    _ufc_dofmap->tabulate_dofs(&_dofmap[cell_index][0], ufc_mesh, ufc_cell);
+    _ufc_dofmap->tabulate_dofs(&tmp_dof_holder[0], ufc_mesh, ufc_cell);
+    std::copy(tmp_dof_holder.begin(), tmp_dof_holder.end(), _dofmap[cell_index].begin());
 
     // Add UFC offset
-    for (uint i = 0; i < _dofmap[cell_index].size(); ++i)
+    for (std::size_t i = 0; i < _dofmap[cell_index].size(); ++i)
       _dofmap[cell_index][i] += offset;
   }
 
@@ -145,9 +150,9 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   _neighbours.clear();
   if (!parent_dofmap.ufc_map_to_dofmap.empty())
   {
-    boost::unordered_map<uint, uint>::const_iterator ufc_to_current_dof;
-    std::vector<std::vector<uint> >::iterator cell_map;
-    std::vector<uint>::iterator dof;
+    boost::unordered_map<std::size_t, std::size_t>::const_iterator ufc_to_current_dof;
+    std::vector<std::vector<std::size_t> >::iterator cell_map;
+    std::vector<std::size_t>::iterator dof;
     for (cell_map = _dofmap.begin(); cell_map != _dofmap.end(); ++cell_map)
     {
       for (dof = cell_map->begin(); dof != cell_map->end(); ++dof)
@@ -163,12 +168,12 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
         *dof = ufc_to_current_dof->second;
 
         // Add to off-process dof owner map
-        boost::unordered_map<uint, uint>::const_iterator parent_off_proc = parent_dofmap._off_process_owner.find(*dof);
+        boost::unordered_map<std::size_t, uint>::const_iterator parent_off_proc = parent_dofmap._off_process_owner.find(*dof);
         if (parent_off_proc != parent_dofmap._off_process_owner.end())
           _off_process_owner.insert(*parent_off_proc);
 
         // Add to shared-dof process map, and update the set of neighbours
-        boost::unordered_map<uint, std::vector<uint> >::const_iterator parent_shared = parent_dofmap._shared_dofs.find(*dof);
+        boost::unordered_map<std::size_t, std::vector<std::size_t> >::const_iterator parent_shared = parent_dofmap._shared_dofs.find(*dof);
         if (parent_shared != parent_dofmap._shared_dofs.end())
         {
           _shared_dofs.insert(*parent_shared);
@@ -179,7 +184,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   }
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
+DofMap::DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
                const DofMap& dofmap_view, const Mesh& mesh, bool distributed)
              : _ufc_dofmap(dofmap_view._ufc_dofmap->create()), ufc_offset(0),
                _is_view(false), _distributed(distributed)
@@ -218,13 +223,13 @@ DofMap::DofMap(boost::unordered_map<uint, uint>& collapsed_map,
 
   // Build map from collapsed dof index to original dof index
   collapsed_map.clear();
-  for (uint i = 0; i < mesh.num_cells(); ++i)
+  for (std::size_t i = 0; i < mesh.num_cells(); ++i)
   {
-    const std::vector<uint>& view_cell_dofs = dofmap_view._dofmap[i];
-    const std::vector<uint>& cell_dofs = _dofmap[i];
+    const std::vector<std::size_t>& view_cell_dofs = dofmap_view._dofmap[i];
+    const std::vector<std::size_t>& cell_dofs = _dofmap[i];
     dolfin_assert(view_cell_dofs.size() == cell_dofs.size());
 
-    for (uint j = 0; j < view_cell_dofs.size(); ++j)
+    for (std::size_t j = 0; j < view_cell_dofs.size(); ++j)
       collapsed_map[cell_dofs[j]] = view_cell_dofs[j];
   }
 }
@@ -262,7 +267,7 @@ unsigned int DofMap::global_dimension() const
   return _ufc_dofmap->global_dimension();
 }
 //-----------------------------------------------------------------------------
-unsigned int DofMap::cell_dimension(uint cell_index) const
+unsigned int DofMap::cell_dimension(std::size_t cell_index) const
 {
   dolfin_assert(cell_index < _dofmap.size());
   return _dofmap[cell_index].size();
@@ -286,7 +291,7 @@ unsigned int DofMap::num_facet_dofs() const
   return _ufc_dofmap->num_facet_dofs();
 }
 //-----------------------------------------------------------------------------
-std::pair<unsigned int, unsigned int> DofMap::ownership_range() const
+std::pair<std::size_t, std::size_t> DofMap::ownership_range() const
 {
   if (is_view())
   {
@@ -298,12 +303,12 @@ std::pair<unsigned int, unsigned int> DofMap::ownership_range() const
   return _ownership_range;
 }
 //-----------------------------------------------------------------------------
-const boost::unordered_map<unsigned int, unsigned int>& DofMap::off_process_owner() const
+const boost::unordered_map<std::size_t, uint>& DofMap::off_process_owner() const
 {
   return _off_process_owner;
 }
 //-----------------------------------------------------------------------------
-const boost::unordered_map<dolfin::uint, std::vector<dolfin::uint> >& DofMap::shared_dofs() const
+const boost::unordered_map<std::size_t, std::vector<std::size_t> >& DofMap::shared_dofs() const
 {
   return _shared_dofs;
 }
@@ -368,7 +373,7 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
   return new DofMap(*this, component, mesh, _distributed);
 }
 //-----------------------------------------------------------------------------
-DofMap* DofMap::collapse(boost::unordered_map<uint, uint>& collapsed_map,
+DofMap* DofMap::collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
                          const Mesh& mesh) const
 {
   return new DofMap(collapsed_map, *this, mesh, _distributed);
@@ -376,7 +381,7 @@ DofMap* DofMap::collapse(boost::unordered_map<uint, uint>& collapsed_map,
 //-----------------------------------------------------------------------------
 void DofMap::set(GenericVector& x, double value) const
 {
-  std::vector<std::vector<uint> >::const_iterator cell_dofs;
+  std::vector<std::vector<std::size_t> >::const_iterator cell_dofs;
   for (cell_dofs = _dofmap.begin(); cell_dofs != _dofmap.end(); ++cell_dofs)
   {
     std::vector<double> _value(cell_dofs->size(), value);
@@ -385,14 +390,15 @@ void DofMap::set(GenericVector& x, double value) const
   x.apply("add");
 }
 //-----------------------------------------------------------------------------
-void DofMap::set_x(GenericVector& x, const Mesh& mesh, uint component) const
+void DofMap::set_x(GenericVector& x, double value, uint component,
+                   const Mesh& mesh) const
 {
-  std::vector<double> values;
+  std::vector<double> x_values;
   boost::multi_array<double, 2> coordinates;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get local-to-global map
-    const std::vector<uint>& dofs = cell_dofs(cell->index());
+    const std::vector<std::size_t>& dofs = cell_dofs(cell->index());
 
     // Tabulate dof coordinates
     tabulate_coordinates(coordinates, *cell);
@@ -400,18 +406,17 @@ void DofMap::set_x(GenericVector& x, const Mesh& mesh, uint component) const
     dolfin_assert(component < coordinates.shape()[1]);
 
     // Copy coordinate (it may be possible to avoid this)
-    values.resize(dofs.size());
+    x_values.resize(dofs.size());
     for (uint i = 0; i < coordinates.shape()[0]; ++i)
-      values[i] = coordinates[i][component];
+      x_values[i] = value*coordinates[i][component];
 
     // Set x[component] values in vector
-    x.set(values.data(), dofs.size(), dofs.data());
+    x.set(x_values.data(), dofs.size(), dofs.data());
   }
-  x.apply("add");
 }
 //-----------------------------------------------------------------------------
 ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
-                                            uint& offset,
+                                            std::size_t& offset,
                                             const std::vector<uint>& component,
                                             const ufc::mesh ufc_mesh,
                                             const Mesh& dolfin_mesh)
@@ -504,11 +509,11 @@ void DofMap::init_ufc_dofmap(ufc::dofmap& dofmap,
   }
 }
 //-----------------------------------------------------------------------------
-boost::unordered_set<dolfin::uint> DofMap::dofs() const
+boost::unordered_set<std::size_t> DofMap::dofs() const
 {
   // Build set of dofs
-  boost::unordered_set<dolfin::uint> dof_list;
-  std::vector<std::vector<uint> >::const_iterator cell_dofs;
+  boost::unordered_set<std::size_t> dof_list;
+  std::vector<std::vector<std::size_t> >::const_iterator cell_dofs;
   for (cell_dofs = _dofmap.begin(); cell_dofs != _dofmap.end(); ++cell_dofs)
     dof_list.insert(cell_dofs->begin(), cell_dofs->end());
 
@@ -529,12 +534,12 @@ std::string DofMap::str(bool verbose) const
   if (verbose)
   {
     // Cell loop
-    for (uint i = 0; i < _dofmap.size(); ++i)
+    for (std::size_t i = 0; i < _dofmap.size(); ++i)
     {
       s << prefix.str() << "Local cell index, cell dofmap dimension: " << i << ", " << _dofmap[i].size() << std::endl;
 
       // Local dof loop
-      for (uint j = 0; j < _dofmap[i].size(); ++j)
+      for (std::size_t j = 0; j < _dofmap[i].size(); ++j)
         s << prefix.str() <<  "  " << "Local, global dof indices: " << j << ", " << _dofmap[i][j] << std::endl;
     }
   }

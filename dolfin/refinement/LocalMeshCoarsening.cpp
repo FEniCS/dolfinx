@@ -50,8 +50,8 @@ void LocalMeshCoarsening::coarsen_mesh_by_edge_collapse(Mesh& mesh,
   log(TRACE, "Coarsen simplicial mesh by edge collapse.");
 
   // Get size of old mesh
-  //const uint num_vertices = mesh.size(0);
-  const uint num_cells = mesh.size(mesh.topology().dim());
+  //const std::size_t num_vertices = mesh.size(0);
+  const std::size_t num_cells = mesh.size(mesh.topology().dim());
 
   // Check cell marker
   if ( cell_marker.size() != num_cells )
@@ -105,7 +105,7 @@ void LocalMeshCoarsening::coarsen_mesh_by_edge_collapse(Mesh& mesh,
   while(improving)
   {
 
-    uint presize = cells_to_coarsen.size();
+    std::size_t presize = cells_to_coarsen.size();
 
     //cout << "presize: " << presize << endl;
 
@@ -153,14 +153,14 @@ void LocalMeshCoarsening::collapse_edge(Mesh& mesh, Edge& edge,
                                        std::vector<int>& old2new_vertex,
                                        std::vector<int>& old2new_cell,
                                        MeshEditor& editor,
-                                       uint& current_cell)
+                                       std::size_t& current_cell)
 {
   const CellType& cell_type = mesh.type();
-  std::vector<uint> cell_vertices(cell_type.num_entities(0));
+  std::vector<std::size_t> cell_vertices(cell_type.num_entities(0));
 
-  uint vert_slave = vertex_to_remove.index();
-  uint vert_master = 0;
-  const uint* edge_vertex = edge.entities(0);
+  std::size_t vert_slave = vertex_to_remove.index();
+  std::size_t vert_master = 0;
+  const std::size_t* edge_vertex = edge.entities(0);
   //cout << "edge vertices: " << edge_vertex[0] << " " << edge_vertex[1] << endl;
   //cout << "vertex: " << vertex_to_remove.index() << endl;
 
@@ -177,7 +177,7 @@ void LocalMeshCoarsening::collapse_edge(Mesh& mesh, Edge& edge,
   {
     if ( cell_to_remove[*c] == false )
     {
-      uint cv_idx = 0;
+      std::size_t cv_idx = 0;
       for (VertexIterator v(*c); !v.end(); ++v)
       {
         if ( v->index() == vert_slave )
@@ -204,8 +204,8 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   cout << "coarsen_cell: " << cellid << endl;
   cout << "num_cells: " << mesh.num_cells() << endl;
 
-  const uint num_vertices = mesh.size(0);
-  const uint num_cells = mesh.size(mesh.topology().dim());
+  const std::size_t num_vertices = mesh.size(0);
+  const std::size_t num_cells = mesh.size(mesh.topology().dim());
 
   // Initialise forbidden verticies
   MeshFunction<bool> vertex_forbidden(mesh);
@@ -220,7 +220,7 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
     vertex_boundary[v->index()] = false;
 
   BoundaryMesh boundary(mesh);
-  MeshFunction<unsigned int>& bnd_vertex_map = boundary.vertex_map();
+  MeshFunction<std::size_t>& bnd_vertex_map = boundary.vertex_map();
   for (VertexIterator v(boundary); !v.end(); ++v)
     vertex_boundary[bnd_vertex_map[v->index()]] = true;
 
@@ -232,10 +232,10 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   }
   // Initialise data for finding which vertex to remove
   bool _collapse_edge = false;
-  const uint* edge_vertex;
-  uint shortest_edge_index = 0;
+  const std::size_t* edge_vertex;
+  std::size_t shortest_edge_index = 0;
   double lmin, l;
-  uint num_cells_to_remove = 0;
+  std::size_t num_cells_to_remove = 0;
 
   // Get cell type
   const CellType& cell_type = mesh.type();
@@ -277,7 +277,7 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   Edge shortest_edge(mesh, shortest_edge_index);
 
   // Decide which vertex to remove
-  uint vert2remove_idx = 0;
+  std::size_t vert2remove_idx = 0;
 
   // If at least one vertex should be removed
   if ( _collapse_edge == true )
@@ -349,7 +349,7 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
     num_cells_to_remove << endl;
 
   // Add old vertices
-  uint vertex = 0;
+  std::size_t vertex = 0;
   for(VertexIterator v(mesh); !v.end(); ++v)
   {
     if(vertex_to_remove.index() == v->index())
@@ -364,9 +364,9 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   }
 
   // Add old unrefined cells
-  uint cv_idx;
-  uint current_cell = 0;
-  std::vector<uint> cell_vertices(cell_type.num_entities(0));
+  std::size_t cv_idx;
+  std::size_t current_cell = 0;
+  std::vector<std::size_t> cell_vertices(cell_type.num_entities(0));
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     if(cell_to_remove[*c] == false && cell_to_regenerate[*c] == false)
@@ -399,7 +399,7 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   // Check mesh quality (volume)
   for (CellIterator c(removed_cell); !c.end(); ++c)
   {
-    uint id = c->index();
+    std::size_t id = c->index();
     int nid = old2new_cell[id];
 
     if(nid != -1)
@@ -419,7 +419,7 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   // Checking for inverted cells
   for (CellIterator c(removed_cell); !c.end(); ++c)
   {
-    uint id = c->index();
+    std::size_t id = c->index();
     int nid = old2new_cell[id];
 
     if(nid != -1)

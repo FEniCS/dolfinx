@@ -22,7 +22,7 @@ in Python by Johan Hake following the C++ demo by Harish Narayanan"""
 # Modified by Anders Logg 2011
 #
 # First added:  2009-10-11
-# Last changed: 2010-08-28
+# Last changed: 2012-11-12
 
 # Begin demo
 
@@ -36,7 +36,7 @@ ffc_options = {"optimize": True, \
                "precompute_ip_const": True}
 
 # Create mesh and define function space
-mesh = UnitCube(16, 16, 16)
+mesh = UnitCubeMesh(16, 16, 16)
 V = VectorFunctionSpace(mesh, "Lagrange", 1)
 
 # Mark boundary subdomians

@@ -144,7 +144,7 @@ dolfin::uint HDF5Interface::dataset_rank(const hid_t hdf5_file_handle,
   return rank;
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::uint>
+std::vector<std::size_t>
       HDF5Interface::get_dataset_size(const hid_t hdf5_file_handle,
                                       const std::string dataset_name)
 {
@@ -173,7 +173,7 @@ std::vector<dolfin::uint>
   status = H5Dclose(dset_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  return std::vector<uint>(size.begin(), size.end());
+  return std::vector<std::size_t>(size.begin(), size.end());
 }
 //-----------------------------------------------------------------------------
 dolfin::uint HDF5Interface::num_datasets_in_group(const hid_t hdf5_file_handle,

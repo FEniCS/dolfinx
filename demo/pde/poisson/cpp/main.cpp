@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-02-07
-// Last changed: 2012-07-05
+// Last changed: 2012-11-12
 //
 // This demo program solves Poisson's equation
 //
@@ -68,7 +68,7 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   // Create mesh and function space
-  UnitSquare mesh(32, 32);
+  UnitSquareMesh mesh(32, 32);
   Poisson::FunctionSpace V(mesh);
 
   // Define boundary condition

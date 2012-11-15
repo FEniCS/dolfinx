@@ -1,4 +1,4 @@
-# Copyright (C) 2011 Marie E. Rognes and Anders Logg
+# Copyright (C) 2011-2012 Marie E. Rognes and Anders Logg
 #
 # This file is part of DOLFIN.
 #
@@ -16,14 +16,14 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2010-08-19
-# Last changed: 2011-11-14
+# Last changed: 2012-11-14
 
 # Begin demo
 
 from dolfin import *
 
 # Create mesh and define function space
-mesh = UnitSquare(8, 8)
+mesh = UnitSquareMesh(8, 8)
 V = FunctionSpace(mesh, "Lagrange", 1)
 
 # Define boundary condition
@@ -51,16 +51,12 @@ tol = 1.e-5
 # Solve equation a = L with respect to u and the given boundary
 # conditions, such that the estimated error (measured in M) is less
 # than tol
-solver_parameters = {"error_control":
-                     {"dual_variational_solver":
-                      {"linear_solver": "gmres"}}}
-solve(a == L, u, bc, tol=tol, M=M, solver_parameters=solver_parameters)
+problem = LinearVariationalProblem(a, L, u, bc)
+solver = AdaptiveLinearVariationalSolver(problem, M)
+solver.parameters["error_control"]["dual_variational_solver"]["linear_solver"] = "cg"
+solver.solve(tol)
 
-## Alternative, more verbose version (+ illustrating how to set parameters)
-# problem = LinearVariationalProblem(a, L, u, bc)
-# solver = AdaptiveLinearVariationalSolver(problem)
-# solver.parameters["error_control"]["dual_variational_solver"]["linear_solver"] = "cg"
-# solver.solve(tol, M)
+solver.summary()
 
 # Plot solution(s)
 plot(u.root_node(), title="Solution on initial mesh")

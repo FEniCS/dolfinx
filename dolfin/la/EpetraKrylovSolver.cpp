@@ -173,8 +173,8 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   dolfin_assert(P);
 
   // Check dimensions
-  const uint M = A->size(0);
-  const uint N = A->size(1);
+  const std::size_t M = A->size(0);
+  const std::size_t N = A->size(1);
   if (N != b.size())
   {
     dolfin_error("EpetraKrylovSolver.cpp",

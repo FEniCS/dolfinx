@@ -20,7 +20,7 @@
 // Modified by Andre Massing, 2010
 //
 // First added:  2010-02-10
-// Last changed: 2010-03-02
+// Last changed: 2012-11-12
 //
 //Author:  Andre Massing (am), massing@simula.no
 //Company:  Simula Research Laboratory, Fornebu, Norway
@@ -35,10 +35,10 @@ int main ()
 {
 
   #if HAS_CGAL
-  UnitCube cube(3,3,2);
+  UnitCubeMesh cube(3,3,2);
   cout <<"Total number of cells in Cube:" << cube.num_cells() <<endl;
 
-  UnitSphere sphere(3);
+  UnitSphereMesh sphere(3);
   cout <<"Total number of cells in Sphere:" << sphere.num_cells() <<endl;
   cout <<"Intersecting pairwise cells of a cube and sphere mesh" << endl;
   cout <<"Cube cell index | Sphere cell index" << endl;

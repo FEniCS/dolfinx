@@ -33,7 +33,7 @@ class ErrorControlTest(unittest.TestCase):
     def setUp(self):
 
         # Define variational problem
-        mesh = UnitSquare(8, 8)
+        mesh = UnitSquareMesh(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
         bc = [DirichletBC(V, 0.0, "x[0] < DOLFIN_EPS || x[0] > 1.0 - DOLFIN_EPS")]
 
@@ -101,9 +101,9 @@ class ErrorControlTest(unittest.TestCase):
             return
 
         # Solve problem adaptively
-        solver = AdaptiveLinearVariationalSolver(self.problem)
+        solver = AdaptiveLinearVariationalSolver(self.problem, self.goal)
         tol = 0.00087
-        solver.solve(tol, self.goal)
+        solver.solve(tol)
 
         # Extract solution and update goal
         w = Function(self.u.leaf_node().function_space())

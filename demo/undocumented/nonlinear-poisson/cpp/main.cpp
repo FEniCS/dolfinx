@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2005-2011.
 //
 // First added:  2005
-// Last changed: 2012-07-05
+// Last changed: 2012-11-12
 //
 // This demo illustrates how to use of DOLFIN for solving a nonlinear
 // PDE, in this case a nonlinear variant of Poisson's equation,
@@ -74,7 +74,7 @@ int main()
   #endif
 
   // Create mesh and define function space
-  UnitSquare mesh(16, 16);
+  UnitSquareMesh mesh(16, 16);
   NonlinearPoisson::FunctionSpace V(mesh);
 
   // Define boundary condition

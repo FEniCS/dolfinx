@@ -76,13 +76,13 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
   assembler.assemble(A, *form);
 
   // Initialize RHS vector
-  const uint N = mesh.num_vertices();
+  const std::size_t N = mesh.num_vertices();
   Vector b(N);
 
   // Get array of dofs for boundary vertices
-  const MeshFunction<unsigned int>& vertex_map = new_boundary.vertex_map();
-  const uint num_dofs = vertex_map.size();
-  const uint* dofs = vertex_map.values();
+  const MeshFunction<std::size_t>& vertex_map = new_boundary.vertex_map();
+  const std::size_t num_dofs = vertex_map.size();
+  const std::size_t* dofs = vertex_map.values();
 
   // Modify matrix (insert 1 on diagonal)
 

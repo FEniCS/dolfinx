@@ -20,6 +20,7 @@
 
 #define BOOST_NO_HASH
 
+#include <boost/graph/compressed_sparse_row_graph.hpp>
 #include <boost/graph/cuthill_mckee_ordering.hpp>
 #include <boost/graph/king_ordering.hpp>
 #include <boost/graph/minimum_degree_ordering.hpp>
@@ -35,32 +36,77 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::vector<dolfin::uint>
+std::vector<std::size_t>
   BoostGraphOrdering::compute_cuthill_mckee(const Graph& graph, bool reverse)
 {
-  // Typedef for Boost undirected graph
-  typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> UndirectedGraph;
+  // Number of vertices
+  const std::size_t n = graph.size();
 
-  // Graph size
-  const uint n = graph.size();
+  // Typedef for Boost compressed sparse row graph
+  typedef boost::compressed_sparse_row_graph<boost::directedS> BoostGraph;
+
+  // Count number of edges
+  Graph::const_iterator vertex;
+  std::size_t num_edges = 0;
+  for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
+    num_edges += vertex->size();
+
+  // Build list of graph edges
+  std::vector<std::pair<std::size_t, std::size_t> > edges;
+  edges.reserve(num_edges);
+  graph_set_type::const_iterator edge;
+  for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
+    for (edge = vertex->begin(); edge != vertex->end(); ++edge)
+      edges.push_back(std::make_pair(vertex - graph.begin(), *edge));
 
   // Build Boost graph
-  UndirectedGraph boost_graph = build_undirected_graph<UndirectedGraph>(graph);
+  BoostGraph boost_graph(boost::edges_are_unsorted_multi_pass,
+                         edges.begin(), edges.end(), n);
+
+  // Boost vertex -> index map
+  boost::property_map<BoostGraph, boost::vertex_index_t>::type
+    boost_index_map = get(boost::vertex_index, boost_graph);
 
   // Compute graph re-ordering
-  std::vector<uint> inv_perm(n);
+  std::vector<std::size_t> inv_perm(n);
   if (!reverse)
     boost::cuthill_mckee_ordering(boost_graph, inv_perm.begin());
   else
     boost::cuthill_mckee_ordering(boost_graph, inv_perm.rbegin());
 
+  // Build old-to-new vertex map
+  std::vector<std::size_t> map(n);
+  for (std::size_t i = 0; i < n; ++i)
+    map[boost_index_map[inv_perm[i]]] = i;
+
+  return map;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::size_t>
+  BoostGraphOrdering::compute_cuthill_mckee(const std::set<std::pair<std::size_t, std::size_t> >& edges,
+                                            std::size_t size, bool reverse)
+{
+  // Typedef for Boost compressed sparse row graph
+  typedef boost::compressed_sparse_row_graph<boost::directedS> BoostGraph;
+
+  // Build Boost graph
+  BoostGraph boost_graph(boost::edges_are_sorted,
+                         edges.begin(), edges.end(), size);
+
   // Boost vertex -> index map
-  boost::property_map<UndirectedGraph, boost::vertex_index_t>::type
+  boost::property_map<BoostGraph, boost::vertex_index_t>::type
     boost_index_map = get(boost::vertex_index, boost_graph);
 
+  // Compute graph re-ordering
+  std::vector<std::size_t> inv_perm(size);
+  if (!reverse)
+    boost::cuthill_mckee_ordering(boost_graph, inv_perm.begin());
+  else
+    boost::cuthill_mckee_ordering(boost_graph, inv_perm.rbegin());
+
   // Build old-to-new vertex map
-  std::vector<dolfin::uint> map(n);
-  for (uint i = 0; i < n; ++i)
+  std::vector<std::size_t> map(size);
+  for (std::size_t i = 0; i < size; ++i)
     map[boost_index_map[inv_perm[i]]] = i;
 
   return map;

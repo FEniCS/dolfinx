@@ -18,13 +18,13 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2008
-# Last changed: 2008
+# Last changed: 2012-11-12
 
 import time
 from dolfin import *
 
 # Create mesh and finite element
-mesh = UnitSquare(300,300)
+mesh = UnitSquareMesh(300,300)
 V = FunctionSpace(mesh, "DG", 1)
 
 # Sub domain for Dirichlet boundary condition

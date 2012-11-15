@@ -56,16 +56,17 @@ namespace dolfin
     uint orientation(const Cell& cell) const;
 
     /// Create entities e of given topological dimension from vertices v
-    void create_entities(std::vector<std::vector<uint> >& e, uint dim,
-                         const uint* v) const;
+    void create_entities(std::vector<std::vector<std::size_t> >& e, uint dim,
+                         const std::size_t* v) const;
 
     /// Regular refinement of cell
-    void refine_cell(Cell& cell, MeshEditor& editor, uint& current_cell) const;
+    void refine_cell(Cell& cell, MeshEditor& editor,
+                     std::size_t& current_cell) const;
 
     /// Irregular refinement of cell
     void refine_cellIrregular(Cell& cell, MeshEditor& editor,
-                              uint& current_cell, uint refinement_rule,
-                              uint* marked_edges) const;
+                              std::size_t& current_cell, uint refinement_rule,
+                              std::size_t* marked_edges) const;
 
     /// Compute volume of tetrahedron
     double volume(const MeshEntity& tetrahedron) const;
@@ -84,7 +85,7 @@ namespace dolfin
 
     /// Order entities locally
     void order(Cell& cell,
-               const std::vector<uint>& local_to_global_vertex_indices) const;
+               const std::vector<std::size_t>& local_to_global_vertex_indices) const;
 
     /// Return description of cell type
     std::string description(bool plural) const;
@@ -92,7 +93,7 @@ namespace dolfin
   private:
 
     // Find local index of edge i according to ordering convention
-    uint find_edge(uint i, const Cell& cell) const;
+    std::size_t find_edge(uint i, const Cell& cell) const;
 
   };
 

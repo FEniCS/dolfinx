@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-12-05
-// Last changed: 20112-07-05
+// Last changed: 2012-11-12
 //
 // This demo program solves Poisson's equation,
 //
@@ -57,7 +57,7 @@ int main()
   };
 
   // Create mesh
-  UnitSquare mesh(24, 24);
+  UnitSquareMesh mesh(24, 24);
 
   // Create functions
   Source f;

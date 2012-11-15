@@ -73,6 +73,11 @@ void GenericFile::operator>> (MeshFunction<int>& mesh_function)
   read_not_impl("MeshFunction<int>");
 }
 //-----------------------------------------------------------------------------
+void GenericFile::operator>> (MeshFunction<unsigned long int>& mesh_function)
+{
+  read_not_impl("MeshFunction<unsigned long int>");
+}
+//-----------------------------------------------------------------------------
 void GenericFile::operator>> (MeshFunction<unsigned int>& mesh_function)
 {
   read_not_impl("MeshFunction<unsigned int>");
@@ -91,6 +96,11 @@ void GenericFile::operator>> (MeshFunction<bool>& mesh_function)
 void GenericFile::operator>> (MeshValueCollection<int>& mesh_markers)
 {
   read_not_impl("MeshValueCollection<int>");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator>> (MeshValueCollection<unsigned long int>& mesh_markers)
+{
+  read_not_impl("MeshValueCollection<unsigned long int>");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator>> (MeshValueCollection<unsigned int>& mesh_markers)
@@ -193,6 +203,11 @@ void GenericFile::operator<< (const MeshFunction<int>& mesh_function)
   write_not_impl("MeshFunction<int>");
 }
 //-----------------------------------------------------------------------------
+void GenericFile::operator<< (const MeshFunction<unsigned long int>& mesh_function)
+{
+  write_not_impl("MeshFunction<unsigned long int>");
+}
+//-----------------------------------------------------------------------------
 void GenericFile::operator<< (const MeshFunction<unsigned int>& mesh_function)
 {
   write_not_impl("MeshFunction<unsigned int>");
@@ -211,6 +226,11 @@ void GenericFile::operator<< (const MeshFunction<bool>& mesh_function)
 void GenericFile::operator<< (const MeshValueCollection<int>& mesh_markers)
 {
   write_not_impl("MeshValueCollection<int>");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator<< (const MeshValueCollection<unsigned long int>& mesh_markers)
+{
+  write_not_impl("MeshValueCollection<unsigned long int>");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator<< (const MeshValueCollection<unsigned int>& mesh_markers)

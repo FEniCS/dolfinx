@@ -41,7 +41,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    Facet(const Mesh& mesh, uint index) : MeshEntity(mesh, mesh.topology().dim() - 1, index) {}
+    Facet(const Mesh& mesh, std::size_t index) : MeshEntity(mesh, mesh.topology().dim() - 1, index) {}
 
     /// Destructor
     ~Facet() {}
@@ -66,7 +66,7 @@ namespace dolfin
     /// will depend on the (arbitrary) ordering of the mesh
     /// connectivity.
     std::pair<const Cell, const Cell>
-    adjacent_cells(const MeshFunction<uint>* facet_orientation) const;
+    adjacent_cells(const MeshFunction<std::size_t>* facet_orientation) const;
 
   };
 

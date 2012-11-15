@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Nuno Lopes
+// Copyright (C) 2012 Benjamin Kehlet
 //
 // This file is part of DOLFIN.
 //
@@ -15,22 +15,20 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg 2012
-//
-// First added:  2008-07-15
-// Last changed: 2012-03-06
+// First added:  2012-11-09
+// Last changed: 2012-11-09
 
 #ifndef __UNIT_SPHERE_H
 #define __UNIT_SPHERE_H
 
-#include <dolfin/mesh/Mesh.h>
+#include "UnitSphereMesh.h"
 
 namespace dolfin
 {
 
   /// Tetrahedral mesh of the unit sphere.
-
-  class UnitSphere : public Mesh
+  /// This class has been deprecated. Use _UnitSphereMesh_.
+  class UnitSphere : public UnitSphereMesh
   {
   public:
 
@@ -44,16 +42,14 @@ namespace dolfin
     /// *Arguments*
     ///     n (uint)
     ///         Resolution of the mesh.
-    UnitSphere(uint n);
-
-  private:
-
-    std::vector<double> transform(const std::vector<double>& x) const;
-
-    double max(const std::vector<double>& x) const;
-
+    ///
+    /// This class is deprecated. Use _UnitSquareMesh_.
+    UnitSphere(uint n) 
+      : UnitSphereMesh(n)
+    {
+      warning("UnitSphere is deprecated. Use UnitSphereMesh.");
+    }
   };
-
 }
 
 #endif

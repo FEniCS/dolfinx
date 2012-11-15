@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Marie Rognes 2011
+// Modified by Joachim B Haga 2012
 //
 // First added:  2009-05-08
-// Last changed: 2011-11-15
+// Last changed: 2012-09-11
 
 #include <sstream>
 #include <dolfin/log/log.h>
@@ -55,6 +56,11 @@ std::string Parameter::description() const
 bool Parameter::is_set() const
 {
   return _is_set;
+}
+//-----------------------------------------------------------------------------
+void Parameter::reset()
+{
+  _is_set = false;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Parameter::access_count() const

@@ -17,15 +17,17 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Benjamin Kehlet 2012
+#
 # First added:  2007-05-24
-# Last changed: 2011-01-28
+# Last changed: 2012-11-12
 
 import unittest
 from dolfin import *
 from math   import sin
 from numpy  import array, zeros
 
-mesh = UnitCube(8, 8, 8)
+mesh = UnitCubeMesh(8, 8, 8)
 V = FunctionSpace(mesh, 'CG', 1)
 W = VectorFunctionSpace(mesh, 'CG', 1)
 
@@ -169,7 +171,7 @@ class Eval(unittest.TestCase):
                     x[0] = 1.0
                     values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
 
-          mesh = UnitCube(3,3,3)
+          mesh = UnitCubeMesh(3,3,3)
           f1 = F1()
           self.assertRaises(RuntimeError, lambda : assemble(f1*dx, mesh=mesh))
 

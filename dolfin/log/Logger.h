@@ -29,6 +29,7 @@
 #include <ostream>
 #include <string>
 #include <dolfin/common/types.h>
+#include "Table.h"
 #include "LogLevel.h"
 
 // Forward declarations
@@ -94,8 +95,12 @@ namespace dolfin
     /// Register timing (for later summary)
     void register_timing(std::string task, double elapsed_time);
 
+    /// Return a summary of timings and tasks as a Table, optionally clearing 
+    /// stored timings
+    Table timings(bool reset=false);
+
     /// Print summary of timings and tasks, optionally clearing stored timings
-    void summary(bool reset=false);
+    void list_timings(bool reset=false);
 
     /// Return timing (average) for given task, optionally clearing timing for task
     double timing(std::string task, bool reset=false);
@@ -132,7 +137,7 @@ namespace dolfin
     std::ostream* logstream;
 
     // List of timings for tasks, map from string to (num_timings, total_time)
-    std::map<std::string, std::pair<uint, double> > timings;
+    std::map<std::string, std::pair<uint, double> > _timings;
 
     // MPI data (initialized to 0)
     mutable uint num_processes;

@@ -19,7 +19,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2010-03-02
-# Last changed: 2010-03-02
+# Last changed: 2012-11-12
 
 from dolfin import *
 
@@ -27,8 +27,8 @@ if not has_cgal():
     print "DOLFIN must be compiled with CGAL to run this demo."
     exit(0)
 
-cube = UnitCube(3,3,2)
-sphere = UnitSphere(3)
+cube = UnitCubeMesh(3,3,2)
+sphere = UnitSphereMesh(3)
 
 #Low level interface, direct access to do_intersect.
 #exact variant without floating point errors is provided by

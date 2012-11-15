@@ -207,7 +207,7 @@ class AbstractBaseTest(object):
         n = 301
         v0 = Vector(n)
         v0[:] = -2.0
-        entries = zeros(5, dtype='I')
+        entries = zeros(5, dtype='uintp')
         self.assertEqual(v0.sum(entries), -2.0)
         entries[0] = 2
         entries[1] = 1

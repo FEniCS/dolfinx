@@ -48,16 +48,13 @@ public:
     public:
 
       MyLinearOperator(Form& a_action, Function& u)
-        : LinearOperator(),
-          a_action(a_action), u(u)
+        : LinearOperator(), a_action(a_action), u(u)
       {
         // Do nothing
       }
 
-      dolfin::uint size(dolfin::uint dim) const
-      {
-        return u.function_space()->dim();
-      }
+      std::size_t size(dolfin::uint dim) const
+      { return u.function_space()->dim(); }
 
       void mult(const GenericVector& x, GenericVector& y) const
       {

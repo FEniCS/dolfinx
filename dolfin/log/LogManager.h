@@ -28,6 +28,14 @@
 namespace dolfin
 {
 
+  /* FIXME: logging in destructors may fail at exit because the logger instance
+     may already be destroyed ("static initialization order fiasco"). The same
+     may happen at startup, if logging from constructors of static objects. The
+     logger instance should be converted to a heap-allocated (and never
+     deleted) object, with an accessor function. Like in SubSystemsManager, but
+     maybe with a static pointer rather than a static object in the accessor
+     function. */
+
   class LogManager
   {
   public:

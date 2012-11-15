@@ -89,11 +89,11 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
 {
   // Get cell type and geometric dimension
   const std::string cell_type_str = mesh_node.attribute("celltype").value();
-  const unsigned int gdim = mesh_node.attribute("dim").as_uint();
+  const uint gdim = mesh_node.attribute("dim").as_uint();
 
   // Get topological dimension
   boost::scoped_ptr<CellType> cell_type(CellType::create(cell_type_str));
-  const unsigned int tdim = cell_type->dim();
+  const uint tdim = cell_type->dim();
 
   // Create mesh for editing
   MeshEditor editor;
@@ -104,7 +104,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
   dolfin_assert(xml_vertices);
 
   // Get number of vertices and init editor
-  const unsigned int num_vertices = xml_vertices.attribute("size").as_uint();
+  const std::size_t num_vertices = xml_vertices.attribute("size").as_uint();
   editor.init_vertices(num_vertices);
 
   // Iterate over vertices and add to mesh
@@ -112,7 +112,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
   for (pugi::xml_node_iterator it = xml_vertices.begin();
        it != xml_vertices.end(); ++it)
   {
-    const unsigned int index = it->attribute("index").as_uint();
+    const std::size_t index = it->attribute("index").as_uint();
     p[0] = it->attribute("x").as_double();
     p[1] = it->attribute("y").as_double();
     p[2] = it->attribute("z").as_double();
@@ -124,7 +124,7 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
   dolfin_assert(xml_cells);
 
   // Get number of cells and init editor
-  const unsigned int num_cells = xml_cells.attribute("size").as_uint();
+  const std::size_t num_cells = xml_cells.attribute("size").as_uint();
   editor.init_cells(num_cells);
 
   // Create list of vertex index attribute names
@@ -134,10 +134,10 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
     v_str[i] = "v" + boost::lexical_cast<std::string, unsigned int>(i);
 
   // Iterate over cells and add to mesh
-  std::vector<unsigned int> v(num_vertices_per_cell);
+  std::vector<std::size_t> v(num_vertices_per_cell);
   for (pugi::xml_node_iterator it = xml_cells.begin(); it != xml_cells.end(); ++it)
   {
-    const unsigned int index = it->attribute("index").as_uint();
+    const std::size_t index = it->attribute("index").as_uint();
     for (unsigned int i = 0; i < num_vertices_per_cell; ++i)
       v[i] = it->attribute(v_str[i].c_str()).as_uint();
     editor.add_cell(index, v);
@@ -188,7 +188,7 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
       if (data_type == "uint")
       {
         // Get vector from MeshData
-        boost::shared_ptr<std::vector<unsigned int> >
+        boost::shared_ptr<std::vector<std::size_t> >
           array = data.array(data_set_name);
         if (!array)
           array = data.create_array(data_set_name);
@@ -208,7 +208,7 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
     {
       // Get MeshFunction from MeshData
       const std::string data_type = data_set.attribute("type").value();
-      boost::shared_ptr<MeshFunction<unsigned int> >
+      boost::shared_ptr<MeshFunction<std::size_t> >
         mf = data.mesh_function(data_set_name);
       if (!mf)
         mf = data.create_mesh_function(data_set_name);
@@ -274,7 +274,7 @@ void XMLMesh::read_domains(MeshDomains& domains,
   }
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::read_array_uint(std::vector<unsigned int>& array,
+void XMLMesh::read_array_uint(std::vector<std::size_t>& array,
                               const pugi::xml_node xml_array)
 {
   // Check that we have an array
@@ -296,13 +296,13 @@ void XMLMesh::read_array_uint(std::vector<unsigned int>& array,
   }
 
   // Get size and resize vector
-  const unsigned int size = xml_array.attribute("size").as_uint();
+  const std::size_t size = xml_array.attribute("size").as_uint();
   array.resize(size);
 
   // Iterate over array entries
   for (pugi::xml_node_iterator it = xml_array.begin(); it !=xml_array.end(); ++it)
   {
-    const unsigned int index = it->attribute("index").as_uint();
+    const std::size_t index = it->attribute("index").as_uint();
     const double value = it->attribute("value").as_uint();
     dolfin_assert(index < size);
     array[index] = value;
@@ -319,13 +319,13 @@ void XMLMesh::write_mesh(const Mesh& mesh, pugi::xml_node mesh_node)
 
   // Add vertices node
   pugi::xml_node vertices_node = mesh_node.append_child("vertices");
-  vertices_node.append_attribute("size") = mesh.num_vertices();
+  vertices_node.append_attribute("size") = (uint) mesh.num_vertices();
 
   // Write each vertex
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     pugi::xml_node vertex_node = vertices_node.append_child("vertex");
-    vertex_node.append_attribute("index") = v->index();
+    vertex_node.append_attribute("index") = (uint) v->index();
 
     const Point p = v->point();
     switch (mesh.geometry().dim())
@@ -357,33 +357,33 @@ void XMLMesh::write_mesh(const Mesh& mesh, pugi::xml_node mesh_node)
 
   // Add cells node
   pugi::xml_node cells_node = mesh_node.append_child("cells");
-  cells_node.append_attribute("size") = mesh.num_cells();
+  cells_node.append_attribute("size") = (uint) mesh.num_cells();
 
   // Add each cell
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     pugi::xml_node cell_node = cells_node.append_child(cell_type.c_str());
-    cell_node.append_attribute("index") = c->index();
+    cell_node.append_attribute("index") = (uint) c->index();
 
-    const uint* vertices = c->entities(0);
+    const std::size_t* vertices = c->entities(0);
     dolfin_assert(vertices);
 
     switch (_cell_type)
     {
     case CellType::interval:
-      cell_node.append_attribute("v0") = vertices[0];
-      cell_node.append_attribute("v1") = vertices[1];
+      cell_node.append_attribute("v0") = (uint) vertices[0];
+      cell_node.append_attribute("v1") = (uint) vertices[1];
       break;
     case CellType::triangle:
-      cell_node.append_attribute("v0") = vertices[0];
-      cell_node.append_attribute("v1") = vertices[1];
-      cell_node.append_attribute("v2") = vertices[2];
+      cell_node.append_attribute("v0") = (uint) vertices[0];
+      cell_node.append_attribute("v1") = (uint) vertices[1];
+      cell_node.append_attribute("v2") = (uint) vertices[2];
       break;
     case CellType::tetrahedron:
-      cell_node.append_attribute("v0") = vertices[0];
-      cell_node.append_attribute("v1") = vertices[1];
-      cell_node.append_attribute("v2") = vertices[2];
-      cell_node.append_attribute("v3") = vertices[3];
+      cell_node.append_attribute("v0") = (uint) vertices[0];
+      cell_node.append_attribute("v1") = (uint) vertices[1];
+      cell_node.append_attribute("v2") = (uint) vertices[2];
+      cell_node.append_attribute("v3") = (uint) vertices[3];
       break;
     default:
       dolfin_error("XMLMesh.cpp",
@@ -404,13 +404,13 @@ void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
 
   // Write mesh functions
   typedef std::map<std::string,
-                   boost::shared_ptr<MeshFunction<uint> > >
+                   boost::shared_ptr<MeshFunction<std::size_t> > >
     ::const_iterator mf_iterator;
   for (mf_iterator it = data.mesh_functions.begin();
        it != data.mesh_functions.end(); ++it)
   {
     std::string name = it->first;
-    boost::shared_ptr<MeshFunction<unsigned int> > mf = it->second;
+    boost::shared_ptr<MeshFunction<std::size_t> > mf = it->second;
     dolfin_assert(mf);
 
     pugi::xml_node data_entry_node = mesh_data_node.append_child("data_entry");
@@ -419,24 +419,24 @@ void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
     pugi::xml_node mf_node = data_entry_node.append_child("mesh_function");
     mf_node.append_attribute("type") = "uint";
     mf_node.append_attribute("dim") = mf->dim();
-    mf_node.append_attribute("size") = mf->size();
+    mf_node.append_attribute("size") = (uint) mf->size();
 
-    for (uint i = 0; i < mf->size(); i++)
+    for (std::size_t i = 0; i < mf->size(); i++)
     {
       pugi::xml_node entity_node = mf_node.append_child("entity");
-      entity_node.append_attribute("index") = i;
-      entity_node.append_attribute("value") = (*mf)[i];
+      entity_node.append_attribute("index") = (uint) i;
+      entity_node.append_attribute("value") = (uint) (*mf)[i];
     }
   }
 
   // Write arrays
   typedef std::map<std::string,
-                   boost::shared_ptr<std::vector<uint> > >
+                   boost::shared_ptr<std::vector<std::size_t> > >
     ::const_iterator array_iterator;
   for (array_iterator it = data.arrays.begin(); it != data.arrays.end(); ++it)
   {
     std::string name = it->first;
-    boost::shared_ptr<std::vector<unsigned int> > array = it->second;
+    boost::shared_ptr<std::vector<std::size_t> > array = it->second;
     dolfin_assert(array);
 
     pugi::xml_node data_entry_node = mesh_data_node.append_child("data_entry");
@@ -446,11 +446,11 @@ void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
     array_node.append_attribute("type") = "uint";
     array_node.append_attribute("size") = static_cast<uint>(array->size());
 
-    for (uint i = 0; i < array->size(); i++)
+    for (std::size_t i = 0; i < array->size(); i++)
     {
       pugi::xml_node element_node = array_node.append_child("element");
-      element_node.append_attribute("index") = i;
-      element_node.append_attribute("value") = (*array)[i];
+      element_node.append_attribute("index") = (uint) i;
+      element_node.append_attribute("value") = (uint) (*array)[i];
     }
   }
 }

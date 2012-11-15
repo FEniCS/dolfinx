@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-11-14
+// Last changed: 2012-11-15
 
 #ifdef HAS_HDF5
 
@@ -106,14 +106,14 @@ void HDF5File::operator<< (const GenericVector& x)
       = "/Vector/" + boost::lexical_cast<std::string>(counter);
 
   // Write data to file
-  std::pair<uint,uint> local_range = x.local_range();
+  std::pair<std::size_t, std::size_t> local_range = x.local_range();
   const bool chunking = parameters["chunking"];
-  const std::vector<uint> global_size(1, x.size());
+  const std::vector<std::size_t> global_size(1, x.size());
   HDF5Interface::write_dataset(hdf5_file_id, dataset_name, local_data,
                                local_range, global_size, mpi_io, chunking);
 
   // Add partitioning attribute to dataset
-  std::vector<uint> partitions;
+  std::vector<std::size_t> partitions;
   MPI::gather(local_range.first, partitions);
   MPI::broadcast(partitions);
 
@@ -166,7 +166,7 @@ void HDF5File::read(const std::string dataset_name, GenericVector& x,
   dolfin_assert(rank == 1);
 
   // Get global dataset size
-  const std::vector<uint> data_size
+  const std::vector<std::size_t> data_size
       = HDF5Interface::get_dataset_size(hdf5_file_id, dataset_name);
 
   // Check that rank is 1
@@ -179,7 +179,7 @@ void HDF5File::read(const std::string dataset_name, GenericVector& x,
     if (use_partition_from_file)
     {
       // Get partition from file
-      std::vector<uint> partitions;
+      std::vector<std::size_t> partitions;
       HDF5Interface::get_attribute(hdf5_file_id, dataset_name, "partition", partitions);
 
       // Check that number of MPI processes matches partitioning
@@ -195,7 +195,7 @@ void HDF5File::read(const std::string dataset_name, GenericVector& x,
 
       // Initialise vector
       const uint process_num = MPI::process_number();
-      const std::pair<uint, uint>
+      const std::pair<std::size_t, std::size_t>
           local_range(partitions[process_num], partitions[process_num + 1]);
       x.resize(local_range);
     }
@@ -210,7 +210,7 @@ void HDF5File::read(const std::string dataset_name, GenericVector& x,
   }
 
   // Get local range
-  const std::pair<uint, uint> local_range = x.local_range();
+  const std::pair<std::size_t, std::size_t> local_range = x.local_range();
 
   // Read data from file
   std::vector<double> data;
@@ -326,11 +326,11 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
 
   // --- Topology ---
   // Discover size of topology dataset
-  std::vector<uint> topology_dim
+  std::vector<std::size_t> topology_dim
       = HDF5Interface::get_dataset_size(hdf5_file_id, topology_name);
 
   // Get total number of cells, as number of rows in topology dataset
-  const uint num_global_cells = topology_dim[0];
+  const std::size_t num_global_cells = topology_dim[0];
   mesh_data.num_global_cells = num_global_cells;
 
   // Set vertices-per-cell from number of columns
@@ -339,17 +339,19 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
   mesh_data.tdim = topology_dim[1] - 1;
 
   // Divide up cells ~equally between processes
-  const std::pair<uint,uint> cell_range = MPI::local_range(num_global_cells);
-  const uint num_local_cells = cell_range.second - cell_range.first;
+  const std::pair<std::size_t,std::size_t> cell_range = MPI::local_range(num_global_cells);
+  const std::size_t num_local_cells = cell_range.second - cell_range.first;
 
   // Read a block of cells
-  std::vector<uint> topology_data;
+  std::vector<std::size_t> topology_data;
   topology_data.reserve(num_local_cells*num_vertices_per_cell);
   mesh_data.cell_vertices.resize(boost::extents[num_local_cells][num_vertices_per_cell]);
   HDF5Interface::read_dataset(hdf5_file_id, topology_name, cell_range, topology_data);
 
   mesh_data.global_cell_indices.reserve(num_local_cells);
-  for(uint i = 0; i < num_local_cells; i++)
+
+  //  std::vector<std::size_t>::iterator topology_it = topology_data.begin();
+  for(std::size_t i = 0; i < num_local_cells; i++)
     mesh_data.global_cell_indices.push_back(cell_range.first + i);
 
   // Copy to boost::multi_array
@@ -357,15 +359,15 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
 
   // --- Coordinates ---
   // Get dimensions of coordinate dataset
-  std::vector<uint> coords_dim
+  std::vector<std::size_t> coords_dim
     = HDF5Interface::get_dataset_size(hdf5_file_id, coordinates_name);
   mesh_data.num_global_vertices = coords_dim[0];
   const uint vertex_dim = coords_dim[1];
   mesh_data.gdim = vertex_dim;
 
   // Divide range into equal blocks for each process
-  const std::pair<uint, uint> vertex_range = MPI::local_range(coords_dim[0]);
-  const uint num_local_vertices = vertex_range.second - vertex_range.first;
+  const std::pair<std::size_t, std::size_t> vertex_range = MPI::local_range(coords_dim[0]);
+  const std::size_t num_local_vertices = vertex_range.second - vertex_range.first;
 
   // Read vertex data to temporary vector
   std::vector<double> tmp_vertex_data;
@@ -384,6 +386,7 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
 
   // Fill vertex indices with values - 
   mesh_data.vertex_indices.resize(num_local_vertices);
+
   HDF5Interface::read_dataset(hdf5_file_id, global_index_name, vertex_range,
                               mesh_data.vertex_indices);
 
@@ -395,6 +398,10 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
   // redistribute_by_global_index() has eliminated duplicates, so need to resize global total
   mesh_data.num_global_vertices = MPI::sum(mesh_data.vertex_coordinates.size());
   
+
+  //  for(std::size_t i = 0; i < mesh_data.vertex_coordinates.size(); ++i)
+  //    mesh_data.vertex_indices[i] = vertex_range.first + i;
+
   // Build distributed mesh
   MeshPartitioning::build_distributed_mesh(input_mesh, mesh_data);
 }
@@ -449,21 +456,21 @@ void HDF5File::write_mesh_global_index(const Mesh& mesh, uint cell_dim, const st
   // Write vertex data to HDF5 file
   const std::string coord_dataset = name + "/coordinates";
   const std::string index_dataset = name + "/global_index";
-  const std::vector<uint>& global_indices = mesh.topology().global_indices(0);
+  const std::vector<std::size_t>& global_indices = mesh.topology().global_indices(0);
 
   // Optionally reduce file size by deleting duplicates
   if(parameters["remove_duplicates"])
   {
     const uint gdim = mesh.geometry().dim();
     // Copy coordinates and indices and remove off-process values
-    std::vector<double>vertex_coords(mesh.coordinates()); 
+    std::vector<double> vertex_coords(mesh.coordinates()); 
     remove_duplicate_values(mesh, vertex_coords, gdim);
 
-    std::vector<uint>vertex_indices(global_indices);
+    std::vector<std::size_t> vertex_indices(global_indices);
     remove_duplicate_values(mesh, vertex_indices, 1);
 
     // Write coordinates contiguously from each process
-    std::vector<uint> global_size(2);
+    std::vector<std::size_t> global_size(2);
     global_size[0] = MPI::sum(vertex_indices.size()); // reduced
     global_size[1] = gdim;
     write_data(coord_dataset, vertex_coords, global_size);
@@ -476,7 +483,7 @@ void HDF5File::write_mesh_global_index(const Mesh& mesh, uint cell_dim, const st
     const std::vector<double>& vertex_coords = mesh.coordinates();
 
     // Write coordinates contiguously from each process
-    std::vector<uint> global_size(2);
+    std::vector<std::size_t> global_size(2);
     global_size[0] = MPI::sum(mesh.num_vertices());
     global_size[1] = gdim;
     write_data(coord_dataset, vertex_coords, global_size);
@@ -487,13 +494,14 @@ void HDF5File::write_mesh_global_index(const Mesh& mesh, uint cell_dim, const st
   // ------ Topology
 
   // Get/build topology data
-  std::vector<uint> topological_data;
+  std::vector<std::size_t> topological_data;
   if (cell_dim == mesh.topology().dim())
   {
     topological_data = mesh.cells();
     std::transform(topological_data.begin(), topological_data.end(),
                    topological_data.begin(),
-                   boost::bind<const uint &>(&std::vector<uint>::at, &global_indices, _1));
+    boost::bind<const std::size_t &>(&std::vector<std::size_t>::at,
+                                     &global_indices, _1));
   }
   else
   {
@@ -505,7 +513,7 @@ void HDF5File::write_mesh_global_index(const Mesh& mesh, uint cell_dim, const st
 
   // Write topology data
   const std::string topology_dataset = name + "/topology";
-  std::vector<uint> global_size(2);
+  std::vector<std::size_t> global_size(2);
   global_size[0] = MPI::sum(topological_data.size()/(cell_dim + 1));
   global_size[1] = cell_dim + 1;
   write_data(topology_dataset, topological_data, global_size);
@@ -550,8 +558,8 @@ void HDF5File::write_visualisation_mesh(const Mesh& mesh, const uint cell_dim,
   const std::string cell_type = CellType::type2string(_cell_type);
 
   // Vertex numbers, ranges and offsets
-  const uint num_local_vertices = mesh.num_vertices();
-  const uint vertex_offset = MPI::global_offset(num_local_vertices, true);
+  const std::size_t num_local_vertices = mesh.num_vertices();
+  const std::size_t vertex_offset = MPI::global_offset(num_local_vertices, true);
 
   // Write vertex data to HDF5 file
   const std::string coord_dataset = name + "/coordinates";
@@ -560,7 +568,7 @@ void HDF5File::write_visualisation_mesh(const Mesh& mesh, const uint cell_dim,
     const std::vector<double>& vertex_coords = mesh.coordinates();
     
     // Write coordinates contiguously from each process
-    std::vector<uint> global_size(2);
+    std::vector<std::size_t> global_size(2);
     global_size[0] = MPI::sum(num_local_vertices);
     global_size[1] = gdim;
     write_data(coord_dataset, vertex_coords, global_size);
@@ -569,13 +577,13 @@ void HDF5File::write_visualisation_mesh(const Mesh& mesh, const uint cell_dim,
   // Write connectivity to HDF5 file (using local indices + offset)
   {
     // Get/build topology data
-    std::vector<uint> topological_data;
+    std::vector<std::size_t> topological_data;
     if (cell_dim == mesh.topology().dim())
     {
       topological_data = mesh.cells();
       std::transform(topological_data.begin(), topological_data.end(),
                      topological_data.begin(),
-                     std::bind2nd(std::plus<uint>(), vertex_offset));
+                     std::bind2nd(std::plus<std::size_t>(), vertex_offset));
     }
     else
     {
@@ -587,7 +595,7 @@ void HDF5File::write_visualisation_mesh(const Mesh& mesh, const uint cell_dim,
 
     // Write topology data
     const std::string topology_dataset = name + "/topology";
-    std::vector<uint> global_size(2);
+    std::vector<std::size_t> global_size(2);
     global_size[0] = MPI::sum(topological_data.size()/(cell_dim + 1));
     global_size[1] = cell_dim + 1;
     write_data(topology_dataset, topological_data, global_size);
@@ -615,7 +623,7 @@ void HDF5File::open_hdf5_file(bool truncate)
 //-----------------------------------------------------------------------------
 
 template <typename T>
-void HDF5File::redistribute_by_global_index(const std::vector<uint>& global_index,
+void HDF5File::redistribute_by_global_index(const std::vector<std::size_t>& global_index,
                                             const std::vector<T>& local_vector,
                                             std::vector<T>& global_vector)
 {
@@ -701,29 +709,29 @@ void HDF5File::redistribute_by_global_index(const std::vector<uint>& global_inde
 //-----------------------------------------------------------------------------
 void HDF5File::remove_duplicate_vertices(const Mesh &mesh,
                                          std::vector<double>& vertex_data,
-                                         std::vector<uint>& topological_data)
+                                         std::vector<std::size_t>& topological_data)
 {
   Timer t("remove duplicate vertices");
 
   const uint num_processes = MPI::num_processes();
   const uint process_number = MPI::process_number();
-  const uint num_local_vertices = mesh.num_vertices();
+  const std::size_t num_local_vertices = mesh.num_vertices();
 
-  const std::map<uint, std::set<uint> >& shared_vertices
+  const std::map<std::size_t, std::set<uint> >& shared_vertices
     = mesh.topology().shared_entities(0);
 
   // Create global => local map for shared vertices only
-  std::map<uint, uint> local;
+  std::map<std::size_t, std::size_t> local;
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
-    uint global_index = v->global_index();
+    std::size_t global_index = v->global_index();
     if(shared_vertices.count(global_index) != 0)
       local[global_index] = v->index();
   }
 
   // New local indexing vector "remap" after removing duplicates
   // Initialise to '1' and mark removed vertices with '0'
-  std::vector<uint> remap(num_local_vertices, 1);
+  std::vector<std::size_t> remap(num_local_vertices, 1);
 
   // Structures for MPI::distribute
   // list all processes, though some may get nothing from here
@@ -731,21 +739,20 @@ void HDF5File::remove_duplicate_vertices(const Mesh &mesh,
   destinations.reserve(num_processes);
   for(uint j = 0; j < num_processes; j++)
     destinations.push_back(j);
-  std::vector<std::vector<std::pair<uint, uint> > > values_to_send(num_processes);
+  std::vector<std::vector<std::pair<uint, std::size_t> > > values_to_send(num_processes);
 
   // Go through shared vertices looking for vertices which are
   // on a lower numbered process. Mark these as being off-process.
   // Meanwhile, push locally owned shared vertices to values_to_send to
   // remote processes.
 
-  uint count = num_local_vertices;
-  for(std::map<uint, std::set<uint> >::const_iterator
-      shared_v_it = shared_vertices.begin();
-      shared_v_it != shared_vertices.end();
+  std::size_t count = num_local_vertices;
+  for(std::map<std::size_t, std::set<uint> >::const_iterator
+      shared_v_it = shared_vertices.begin(); shared_v_it != shared_vertices.end();
       shared_v_it++)
   {
-    const uint global_index = shared_v_it->first;
-    const uint local_index = local[global_index];
+    const std::size_t global_index = shared_v_it->first;
+    const std::size_t local_index = local[global_index];
     const std::set<uint>& procs = shared_v_it->second;
     // Determine whether this vertex is also on a lower numbered process
     // FIXME: may change with concept of vertex ownership
@@ -758,10 +765,12 @@ void HDF5File::remove_duplicate_vertices(const Mesh &mesh,
     else // locally owned.
     {
       // send std::pair(global, local) indices to each sharing process
-      const std::pair<uint, uint> global_local(global_index, local_index);
+      const std::pair<std::size_t, std::size_t> global_local(global_index, local_index);
       for(std::set<uint>::iterator proc = procs.begin();
           proc != procs.end(); ++proc)
+      {
         values_to_send[*proc].push_back(global_local);
+      }
     }
   }
 
@@ -782,9 +791,9 @@ void HDF5File::remove_duplicate_vertices(const Mesh &mesh,
 
   // Remap local indices to account for missing vertices
   // Also add offset
-  const uint vertex_offset = MPI::global_offset(count, true);
-  uint new_index = vertex_offset - 1;
-  for(uint i = 0; i < num_local_vertices; i++)
+  const std::size_t vertex_offset = MPI::global_offset(count, true);
+  std::size_t new_index = vertex_offset - 1;
+  for(std::size_t i = 0; i < num_local_vertices; i++)
   {
     new_index += remap[i]; // add either 1 or 0
     remap[i] = new_index;
@@ -792,10 +801,10 @@ void HDF5File::remove_duplicate_vertices(const Mesh &mesh,
 
   // Second value of pairs contains local index. Now revise
   // to contain the new local index + vertex_offset
-  for(std::vector<std::vector<std::pair<uint,uint> > >::iterator
+  for(std::vector<std::vector<std::pair<uint, std::size_t> > >::iterator
         p = values_to_send.begin(); p != values_to_send.end(); ++p)
   {
-    for(std::vector<std::pair<uint,uint> >::iterator lmap = p->begin();
+    for(std::vector<std::pair<uint, std::size_t> >::iterator lmap = p->begin();
           lmap != p->end(); ++lmap)
     {
       lmap->second = remap[lmap->second];
@@ -803,14 +812,14 @@ void HDF5File::remove_duplicate_vertices(const Mesh &mesh,
   }
 
   // Redistribute the values to the appropriate process
-  std::vector<std::vector<std::pair<uint,uint> > > received_values;
+  std::vector<std::vector<std::pair<uint, std::size_t> > > received_values;
   MPI::distribute(values_to_send, destinations, received_values);
 
   // flatten and insert received global remappings into remap
-  std::vector<std::vector<std::pair<uint, uint> > >::iterator p;
+  std::vector<std::vector<std::pair<uint, std::size_t> > >::iterator p;
   for(p = received_values.begin(); p != received_values.end(); ++p)
   {
-    std::vector<std::pair<uint, uint> >::const_iterator lmap;
+    std::vector<std::pair<uint, std::size_t> >::const_iterator lmap;
     for(lmap = p->begin(); lmap != p->end(); ++lmap)
       remap[local[lmap->first]] = lmap->second;
   }
@@ -818,7 +827,7 @@ void HDF5File::remove_duplicate_vertices(const Mesh &mesh,
   // which can be used to reindex the topology
 
   const uint cell_dim = mesh.topology().dim(); // FIXME: facet mesh
-  const uint num_local_cells = mesh.num_cells();
+  const std::size_t num_local_cells = mesh.num_cells();
   topological_data.clear();
   topological_data.reserve(num_local_cells*(cell_dim - 1));
 

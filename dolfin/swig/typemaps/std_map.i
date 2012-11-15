@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-09-27
-// Last changed: 2011-10-15
+// Last changed: 2012-11-14
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using
@@ -43,7 +43,7 @@ namespace boost
 }
 
 //-----------------------------------------------------------------------------
-// Help macro for defining (arg)out typemaps for either boost::unordered_map or 
+// Help macro for defining (arg)out typemaps for either boost::unordered_map or
 // std::map
 //
 //    const MAP_TYPE<KEY_TYPE, VALUE_TYPE>&, (out)
@@ -53,8 +53,8 @@ namespace boost
 //-----------------------------------------------------------------------------
 %define MAP_SPECIFIC_OUT_TYPEMAPS(MAP_TYPE, KEY_TYPE, VALUE_TYPE, TYPENAME)
 
-%typemap(out) const MAP_TYPE<KEY_TYPE, VALUE_TYPE>& 
- (MAP_TYPE<KEY_TYPE, VALUE_TYPE>::const_iterator it, 
+%typemap(out) const MAP_TYPE<KEY_TYPE, VALUE_TYPE>&
+ (MAP_TYPE<KEY_TYPE, VALUE_TYPE>::const_iterator it,
   PyObject* item0, PyObject* item1)
 {
   // const MAP_TYPE<KEY_TYPE, VALUE_TYPE>& (out)
@@ -63,13 +63,13 @@ namespace boost
     item0 = SWIG_From_dec(KEY_TYPE)(it->first);
     item1 = SWIG_From_dec(VALUE_TYPE)(it->second);
     PyDict_SetItem($result, item0, item1);
-    Py_XDECREF(item0);    
-    Py_XDECREF(item1);    
+    Py_XDECREF(item0);
+    Py_XDECREF(item1);
   }
 }
 
 %typemap(out) const MAP_TYPE<KEY_TYPE, std::vector<VALUE_TYPE> >& \
- (MAP_TYPE<KEY_TYPE, std::vector<VALUE_TYPE> >::const_iterator it, 
+ (MAP_TYPE<KEY_TYPE, std::vector<VALUE_TYPE> >::const_iterator it,
   PyObject* item0, PyObject* item1)
 {
   // const MAP_TYPE<KEY_TYPE, std::vector<VALUE_TYPE> > (out)
@@ -78,19 +78,19 @@ namespace boost
     item0 = SWIG_From_dec(KEY_TYPE)(it->first);
     item1 = %make_numpy_array(1, TYPENAME)(it->second.size(), &it->second[0], false);
     PyDict_SetItem($result, item0, item1);
-    Py_XDECREF(item0);    
-    Py_XDECREF(item1);    
+    Py_XDECREF(item0);
+    Py_XDECREF(item1);
   }
 }
 
-%typemap (in, numinputs=0) MAP_TYPE<KEY_TYPE, VALUE_TYPE>& 
+%typemap (in, numinputs=0) MAP_TYPE<KEY_TYPE, VALUE_TYPE>&
   (MAP_TYPE<KEY_TYPE, VALUE_TYPE> map_temp)
 {
   // const MAP_TYPE<KEY_TYPE, VALUE_TYPE>& (argout)
   $1 = &map_temp;
 }
 
-%typemap(argout) MAP_TYPE<KEY_TYPE, VALUE_TYPE>& 
+%typemap(argout) MAP_TYPE<KEY_TYPE, VALUE_TYPE>&
   (MAP_TYPE<KEY_TYPE, VALUE_TYPE>::const_iterator it,
    PyObject* item0, PyObject* item1)
 {
@@ -100,8 +100,8 @@ namespace boost
     item0 = SWIG_From_dec(KEY_TYPE)(it->first);
     item1 = SWIG_From_dec(VALUE_TYPE)(it->second);
     PyDict_SetItem(ret, item0, item1);
-    Py_XDECREF(item0);    
-    Py_XDECREF(item1);    
+    Py_XDECREF(item0);
+    Py_XDECREF(item1);
   }
 
   // Append the output to $result
@@ -125,8 +125,10 @@ MAP_SPECIFIC_OUT_TYPEMAPS(std::map, KEY_TYPE, VALUE_TYPE, TYPENAME)
 // Run the macro and instantiate the typemaps
 //-----------------------------------------------------------------------------
 // NOTE: SWIG BUG
-// NOTE: Because of bug introduced by SWIG 2.0.5 we cannot use templated versions 
+// NOTE: Because of bug introduced by SWIG 2.0.5 we cannot use templated versions
 // NOTE: of typdefs, which means we need to use unsigned int instead of dolfin::uint
 // NOTE: in typemaps
+// NOTE: Well... to get std::size_t up and running we need to use typedefs.
 MAP_OUT_TYPEMAPS(unsigned int, unsigned int, uint)
-MAP_OUT_TYPEMAPS(unsigned int, double, double)
+MAP_OUT_TYPEMAPS(std::size_t, double, double)
+MAP_OUT_TYPEMAPS(std::size_t, std::size_t, sizet)

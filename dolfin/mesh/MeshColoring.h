@@ -54,16 +54,17 @@ namespace dolfin
 
     /// Compute cell colors for given coloring type specified by
     /// topological dimension, which can be one of 0, 1 or D - 1.
-    static uint compute_colors(const Mesh& mesh, std::vector<uint>& colors,
+    static uint compute_colors(const Mesh& mesh,
+                               std::vector<uint>& colors,
                                const std::vector<uint>& coloring_type);
 
     /// Return a MeshFunction with the cell colors (used for visualisation)
-    static CellFunction<unsigned int> cell_colors(const Mesh& mesh,
+    static CellFunction<uint> cell_colors(const Mesh& mesh,
                                            std::string coloring_type);
 
     /// Return a MeshFunction with the cell colors (used for visualisation)
-    static CellFunction<unsigned int> cell_colors(const Mesh& mesh,
-                              const std::vector<unsigned int> coloring_type);
+    static CellFunction<uint> cell_colors(const Mesh& mesh,
+						                              const std::vector<uint> coloring_type);
 
 
     /// Convert coloring type to topological dimension

@@ -18,7 +18,7 @@
 // Modified by Benjamin Kehlet 2012
 //
 // First added:  2007-05-29
-// Last changed: 2012-07-05
+// Last changed: 2012-11-12
 //
 // This demo illustrates basic plotting.
 
@@ -29,6 +29,8 @@ using namespace dolfin;
 class ScalarExpression : public Expression
 {
 public:
+
+  ScalarExpression() : Expression(), t(0) {}
 
   void eval(Array<double>& values, const Array<double>& x) const
   {
@@ -43,7 +45,7 @@ class VectorExpression : public Expression
 {
 public:
 
-  VectorExpression() : Expression(2) {}
+  VectorExpression() : Expression(2), t(0) {}
 
   void eval(Array<double>& values, const Array<double>& x) const
   {
@@ -70,7 +72,7 @@ int main()
   std::vector<double>& coordinates = mesh.coordinates();
   const std::vector<double> original = coordinates;
 
-  for (dolfin::uint i = 0; i < 100; i++)
+  for (dolfin::uint i = 0; i < 200; i++)
   {
     if (X < H || X > 1.0 - H)
       dX = -dX;
@@ -105,19 +107,18 @@ int main()
 
   ScalarExpression f_scalar;
 
-  // FIXME: VTK sets the center and zoom incorrectly if the loop starts at 0.0
-  for (double t = 0.01; t < 1.0; t += 0.01)
+  for (dolfin::uint i = 0; i < 100; i++)
   {
-    f_scalar.t = t;
+    f_scalar.t += 0.01;
     plot(f_scalar, mesh, p);
   }
 
   // Plot vector function
-  UnitSquare unit_square(16, 16);
+  UnitSquareMesh unit_square(16, 16);
   VectorExpression f_vector;
-  for (double t = 0.0; t < 1.0; t += 0.005)
+  for (dolfin::uint i = 0; i < 200; i++)
   {
-    f_vector.t = t;
+    f_vector.t += 0.005;
     plot(f_vector, unit_square, "Plotting vector function");
   }
 

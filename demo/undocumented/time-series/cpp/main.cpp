@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-11
-// Last changed: 2012-07-05
+// Last changed: 2012-11-12
 //
 // This program demonstrates the use of the TimeSeries
 // class for storing a series of meshes and vectors.
@@ -31,7 +31,7 @@ int main()
   TimeSeries series("primal");
 
   // Create a mesh and a vector
-  UnitSquare unit_square(2, 2);
+  UnitSquareMesh unit_square(2, 2);
   Mesh mesh(unit_square);
   Vector x;
 

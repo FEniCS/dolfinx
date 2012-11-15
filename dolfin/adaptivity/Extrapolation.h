@@ -71,24 +71,25 @@ namespace dolfin
   private:
 
     // Build data structures for unique dofs on patch of given cell
-    static void build_unique_dofs(std::set<uint>& unique_dofs,
-                                  std::map<uint, std::map<uint, uint> >& cell2dof2row,
+    static void build_unique_dofs(std::set<std::size_t>& unique_dofs,
+                                  std::map<std::size_t, std::map<std::size_t, std::size_t> >& cell2dof2row,
                                   const Cell& cell0,
                                   const ufc::cell& c0,
                                   const FunctionSpace& V);
 
     // Compute unique dofs in given cell
-    static std::map<uint, uint> compute_unique_dofs(const Cell& cell, const ufc::cell& c,
-                                                    const FunctionSpace& V,
-                                                    uint& row, std::set<uint>& unique_dofs);
+    static std::map<std::size_t, std::size_t>
+        compute_unique_dofs(const Cell& cell, const ufc::cell& c,
+                            const FunctionSpace& V,
+                            std::size_t& row, std::set<std::size_t>& unique_dofs);
 
     // Compute coefficients on given cell
     static void compute_coefficients(std::vector<std::vector<double> >& coefficients,
                                      const Function&v, const FunctionSpace& V,
                                      const FunctionSpace& W, const Cell& cell0,
                                      const ufc::cell& c0,
-                                     const std::vector<uint>& dofs,
-                                     uint& offset);
+                                     const std::vector<std::size_t>& dofs,
+                                     std::size_t& offset);
 
     // Add equations for current cell
     static void add_cell_equations(arma::Mat<double>& A,
@@ -100,7 +101,7 @@ namespace dolfin
                                    const FunctionSpace& V,
                                    const FunctionSpace& W,
                                    const Function& v,
-                                   std::map<uint, uint>& dof2row);
+                                   std::map<std::size_t, std::size_t>& dof2row);
 
     // Average coefficients
     static void average_coefficients(Function& w,

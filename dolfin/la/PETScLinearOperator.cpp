@@ -66,7 +66,7 @@ PETScLinearOperator::PETScLinearOperator() : _wrapper(0)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScLinearOperator::size(uint dim) const
+std::size_t PETScLinearOperator::size(uint dim) const
 {
   return PETScBaseMatrix::size(dim);
 }
@@ -105,14 +105,14 @@ GenericLinearOperator* PETScLinearOperator::wrapper()
   return _wrapper;
 }
 //-----------------------------------------------------------------------------
-void PETScLinearOperator::init(uint M, uint N, GenericLinearOperator* wrapper)
+void PETScLinearOperator::init(std::size_t M, std::size_t N, GenericLinearOperator* wrapper)
 {
   // Store wrapper
   _wrapper = wrapper;
 
   // Compute local range
-  const std::pair<uint, uint> row_range    = MPI::local_range(M);
-  const std::pair<uint, uint> column_range = MPI::local_range(N);
+  const std::pair<std::size_t, std::size_t> row_range    = MPI::local_range(M);
+  const std::pair<std::size_t, std::size_t> column_range = MPI::local_range(N);
   const int m_local = row_range.second - row_range.first;
   const int n_local = column_range.second - column_range.first;
 

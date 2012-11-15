@@ -78,6 +78,7 @@ list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "Sphinx")
 list(APPEND OPTIONAL_PACKAGES "HDF5")
 list(APPEND OPTIONAL_PACKAGES "VTK")
+list(APPEND OPTIONAL_PACKAGES "QT")
 
 # Add options
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
@@ -215,14 +216,14 @@ set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0 1.44 1.44.0 1.45 1.45.0 1.46 1.46.0 1.46.1 1.47 1.47.0 1.48 1.48.0 1.49 1.49.0 1.50 1.50.0)
 
 if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
-  find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams math_tr1 mpi serialization timer REQUIRED)
+  find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams math_tr1 mpi serialization REQUIRED)
 else()
   find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams math_tr1 REQUIRED)
 endif()
 
 # Boost timer was not a separate Boost component until version 1.48
 # if ("${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}" VERSION_GREATER "1.47")
-#   find_package(Boost COMPONENTS timer REQUIRED)
+#  find_package(Boost COMPONENTS timer REQUIRED)
 # endif()
 
 # Check for required package UFC
@@ -267,7 +268,7 @@ endif()
 # Check for ParMETIS and SCOTCH
 if (DOLFIN_ENABLE_MPI AND MPI_C_FOUND)
   if (DOLFIN_ENABLE_PARMETIS)
-    find_package(ParMETIS 3.2)
+    find_package(ParMETIS 4.0.2)
   endif()
 
   if (DOLFIN_ENABLE_SCOTCH)
@@ -291,9 +292,14 @@ endif()
 if (DOLFIN_ENABLE_HDF5)
   find_package(HDF5)
 
+  if (NOT HDF5_FOUND)
+    # Give some hints and try again
+    find_package(HDF5 HINTS ${HDF5_DIR} $ENV{HDF5_DIR})
+  endif()
+
   # Check that HDF5 has parallel support
   if (DOLFIN_ENABLE_MPI)
-    if (NOT HDF5_IS_PARALLEL)
+    if (NOT (HDF5_IS_PARALLEL OR HDF5_ENABLE_PARALLEL))
       message(STATUS "HDF5 has been found, but is missing parallel support. It will not be enabled.")
       set(HDF5_FOUND false)
     endif()
@@ -310,6 +316,11 @@ if (DOLFIN_ENABLE_TRILINOS)
   message(STATUS "Checking for Trilinos")
   find_package(Trilinos PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
   set(DOLFIN_TRILINOS_PACKAGES "Epetra;Zoltan;ML;Ifpack;Amesos")
+
+  if ("${Trilinos_VERSION}" VERSION_LESS "10.8.1")
+    set(Trilinos_FOUND FALSE)
+    message(WARNING "Unable to find Trilinos (>= 10.8.1)")
+  endif()
 
   # Check for required packages
   set(DOLFIN_TRILINOS_PACKAGES_FOUND false)
@@ -393,14 +404,19 @@ if (DOLFIN_ENABLE_DOCS AND PYTHON_FOUND)
   find_package(Sphinx 1.0.7)
 endif()
 
+# Check for Qt4
+if (DOLFIN_ENABLE_QT)
+  find_package(Qt4)
+endif()
+
 # Check for VTK
 if (DOLFIN_ENABLE_VTK)
   find_package(VTK QUIET HINTS ${VTK_DIR} $ENV{VTK_DIR})
   set(VTK_VERSION "${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}")
   if (VTK_FOUND)
-    if ("${VTK_VERSION}" VERSION_LESS "5.8")
+    if ("${VTK_VERSION}" VERSION_LESS "5.2")
       set(VTK_FOUND FALSE)
-      message(WARNING "Unable to find VTK (>= 5.8)")
+      message(WARNING "Unable to find VTK (>= 5.2)")
     else()
       message(STATUS "Found VTK: ${VTK_DIR} (found version \"${VTK_VERSION}\")")
     endif()
@@ -564,6 +580,7 @@ set(DOLFIN_PKGCONFIG_DIR "lib/pkgconfig" CACHE PATH "pkg-config file installatio
 set(DOLFIN_SHARE_DIR "share/dolfin" CACHE PATH "Shared data installation directory.")
 set(DOLFIN_MAN_DIR "share/man" CACHE PATH "Manual page installation directory.")
 set(DOLFIN_DOC_DIR "${DOLFIN_SHARE_DIR}/doc" CACHE PATH "DOLFIN Documentation directory.")
+set(DOLFIN_ETC_DIR "etc" CACHE PATH "Configuration file directory.")
 
 # Add source directory
 add_subdirectory(dolfin)

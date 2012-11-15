@@ -53,28 +53,28 @@ namespace dolfin
     void open(Mesh& mesh, std::string type, uint tdim, uint gdim);
 
     /// Add vertex v at given point p
-    void add_vertex(uint v, const Point& p);
+    void add_vertex(std::size_t v, const Point& p);
 
     /// Add vertex v at given coordinate x
-    void add_vertex(uint v, double x);
+    void add_vertex(std::size_t v, double x);
 
     /// Add vertex v at given coordinate (x, y)
-    void add_vertex(uint v, double x, double y);
+    void add_vertex(std::size_t v, double x, double y);
 
     /// Add vertex v at given coordinate (x, y, z)
-    void add_vertex(uint v, double x, double y, double z);
+    void add_vertex(std::size_t v, double x, double y, double z);
 
     /// Add cell with given vertices
-    void add_cell(uint c, const std::vector<uint>& v);
+    void add_cell(std::size_t c, const std::vector<std::size_t>& v);
 
     /// Add cell (interval) with given vertices
-    void add_cell(uint c, uint v0, uint v1);
+    void add_cell(std::size_t c, std::size_t v0, std::size_t v1);
 
     /// Add cell (triangle) with given vertices
-    void add_cell(uint c, uint v0, uint v1, uint v2);
+    void add_cell(std::size_t c, std::size_t v0, std::size_t v1, std::size_t v2);
 
     /// Add cell (tetrahedron) with given vertices
-    void add_cell(uint c, uint v0, uint v1, uint v2, uint v3);
+    void add_cell(std::size_t c, std::size_t v0, std::size_t v1, std::size_t v2, std::size_t v3);
 
     /// Close mesh, finish editing, and order entities locally
     void close(bool order=false);
@@ -100,7 +100,7 @@ namespace dolfin
     std::vector<double> vertex_coordinates;
 
     // Dynamic storage for cells
-    std::vector<uint> cell_vertices;
+    std::vector<std::size_t> cell_vertices;
 
   };
 

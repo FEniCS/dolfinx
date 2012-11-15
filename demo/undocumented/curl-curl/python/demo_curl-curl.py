@@ -31,12 +31,12 @@ elements.
 # Modified by Anders Logg 2011
 #
 # First added:  2009-04-02
-# Last changed: 2011-06-28
+# Last changed: 2012-11-12
 
 from dolfin import *
 
 # Create mesh
-mesh = UnitSphere(8)
+mesh = UnitSphereMesh(8)
 
 # Define function spaces
 PN = FunctionSpace(mesh, "Nedelec 1st kind H(curl)", 1)

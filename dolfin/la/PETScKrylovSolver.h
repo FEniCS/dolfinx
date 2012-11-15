@@ -97,6 +97,10 @@ namespace dolfin
     void set_operators(const boost::shared_ptr<const PETScBaseMatrix> A,
                        const boost::shared_ptr<const PETScBaseMatrix> P);
 
+    /// Set null space of the operator (matrix). This is used to solve
+    /// singular systems
+    void set_nullspace(const std::vector<const GenericVector*> nullspace);
+
     /// Get operator (matrix)
     const PETScBaseMatrix& get_operator() const;
 
@@ -131,7 +135,7 @@ namespace dolfin
 
   private:
 
-    /// Initialize KSP solver
+    // Initialize KSP solver
     void init(const std::string& method);
 
     // Set PETSc operators
@@ -140,7 +144,7 @@ namespace dolfin
     // Set options
     void set_petsc_options();
 
-    /// Report the number of iterations
+    // Report the number of iterations
     void write_report(int num_iterations, KSPConvergedReason reason);
 
     void check_dimensions(const PETScBaseMatrix& A, const GenericVector& x,
@@ -152,20 +156,28 @@ namespace dolfin
     // Available solvers descriptions
     static const std::vector<std::pair<std::string, std::string> > _methods_descr;
 
-    /// DOLFIN-defined PETScUserPreconditioner
+    // DOLFIN-defined PETScUserPreconditioner
     PETScUserPreconditioner* pc_dolfin;
 
-    /// PETSc solver pointer
+    // PETSc solver pointer
     boost::shared_ptr<KSP> _ksp;
 
-    /// Preconditioner
+    // Preconditioner
     boost::shared_ptr<PETScPreconditioner> preconditioner;
 
-    /// Operator (the matrix)
+    // Operator (the matrix)
     boost::shared_ptr<const PETScBaseMatrix> A;
 
-    /// Matrix used to construct the preconditoner
+    // Matrix used to construct the preconditoner
     boost::shared_ptr<const PETScBaseMatrix> P;
+
+    // Null space vectors
+    std::vector<PETScVector> _nullspace;
+
+    // PETSc null space. Would like this to be a scoped_ptr, but it
+    //doesn't support custom deleters. Change to std::unique_ptr in
+    //the future.
+    boost::shared_ptr<MatNullSpace> petsc_nullspace;
 
     bool preconditioner_set;
 

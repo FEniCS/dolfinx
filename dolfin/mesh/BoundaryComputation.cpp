@@ -72,8 +72,8 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   mesh.init(D - 1, D);
 
   // Temporary array for assignment of indices to vertices on the boundary
-  const uint num_vertices = mesh.num_vertices();
-  std::vector<uint> boundary_vertices(num_vertices, num_vertices);
+  const std::size_t num_vertices = mesh.num_vertices();
+  std::vector<std::size_t> boundary_vertices(num_vertices, num_vertices);
 
   // Determine boundary facet, count boundary vertices and facets,
   // and assign vertex indices
@@ -112,19 +112,19 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   editor.init_cells(num_boundary_cells);
 
   // Initialize mapping from vertices in boundary to vertices in mesh
-  MeshFunction<unsigned int>& vertex_map = boundary.vertex_map();
+  MeshFunction<std::size_t>& vertex_map = boundary.vertex_map();
   if (num_boundary_vertices > 0)
     vertex_map.init(boundary, 0, num_boundary_vertices);
 
   // Initialize mapping from cells in boundary to facets in mesh
-  MeshFunction<unsigned int>& cell_map = boundary.cell_map();
+  MeshFunction<std::size_t>& cell_map = boundary.cell_map();
   if (num_boundary_cells > 0)
     cell_map.init(boundary, D - 1, num_boundary_cells);
 
   // Create vertices
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
-    const uint vertex_index = boundary_vertices[v->index()];
+    const std::size_t vertex_index = boundary_vertices[v->index()];
     if (vertex_index != mesh.num_vertices())
     {
       // Create mapping from boundary vertex to mesh vertex if requested
@@ -138,14 +138,14 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   }
 
   // Create cells (facets)
-  std::vector<uint> cell(boundary.type().num_vertices(boundary.topology().dim()));
+  std::vector<std::size_t> cell(boundary.type().num_vertices(boundary.topology().dim()));
   uint current_cell = 0;
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
     if (boundary_facet[*f])
     {
       // Compute new vertex numbers for cell
-      const uint* vertices = f->entities(0);
+      const std::size_t* vertices = f->entities(0);
       for (uint i = 0; i < cell.size(); i++)
         cell[i] = boundary_vertices[vertices[i]];
 
@@ -167,14 +167,14 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   editor.close(false);
 }
 //-----------------------------------------------------------------------------
-void BoundaryComputation::reorder(std::vector<uint>& vertices,
+void BoundaryComputation::reorder(std::vector<std::size_t>& vertices,
                                   const Facet& facet)
 {
   // Get mesh
   const Mesh& mesh = facet.mesh();
 
   // Get the vertex opposite to the facet (the one we remove)
-  uint vertex = 0;
+  std::size_t vertex = 0;
   const Cell cell(mesh, facet.entities(mesh.topology().dim())[0]);
   for (uint i = 0; i < cell.num_entities(0); i++)
   {
@@ -210,7 +210,7 @@ void BoundaryComputation::reorder(std::vector<uint>& vertices,
 
       if (n.dot(p0 - p) < 0.0)
       {
-        const uint tmp = vertices[0];
+        const std::size_t tmp = vertices[0];
         vertices[0] = vertices[1];
         vertices[1] = tmp;
       }
@@ -229,7 +229,7 @@ void BoundaryComputation::reorder(std::vector<uint>& vertices,
 
       if (n.dot(p0 - p) < 0.0)
       {
-        const uint tmp = vertices[0];
+        const std::size_t tmp = vertices[0];
         vertices[0] = vertices[1];
         vertices[1] = tmp;
       }

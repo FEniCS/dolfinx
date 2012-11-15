@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Kristian B. Oelgaard
+// Copyright (C) 2012 Benjamin Kehlet
 //
 // This file is part of DOLFIN.
 //
@@ -15,15 +15,14 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2010.
-//
-// First added:  2007-11-23
-// Last changed: 2010-10-19
+// First added:  2012-11-09
+// Last changed: 2012-11-09
 
 #ifndef __UNIT_INTERVAL_H
 #define __UNIT_INTERVAL_H
 
-#include <dolfin/mesh/Mesh.h>
+#include "UnitIntervalMesh.h"
+#include <dolfin/log/log.h>
 
 namespace dolfin
 {
@@ -31,16 +30,19 @@ namespace dolfin
   /// A mesh of the unit interval (0, 1) with a given number of cells
   /// (nx) in the axial direction. The total number of intervals will
   /// be nx and the total number of vertices will be (nx + 1).
-
-  class UnitInterval : public Mesh
+  /// 
+  /// This class has been deprecated. Use _UnitIntervalMesh_.
+  class UnitInterval : public UnitIntervalMesh
   {
   public:
 
     /// Create mesh of unit interval
-    UnitInterval(uint nx=1);
-
+    UnitInterval(uint nx=1)
+      : UnitIntervalMesh(nx)
+    {
+      warning("UnitInterval is deprecated. Use UnitIntervalMesh.");
+    }
   };
-
 }
 
 #endif

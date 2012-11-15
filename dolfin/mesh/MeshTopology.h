@@ -63,7 +63,7 @@ namespace dolfin
     uint size(uint dim) const;
 
     /// Return global number of entities for given dimension
-    uint size_global(uint dim) const;
+    std::size_t size_global(uint dim) const;
 
     /// Clear all data
     void clear();
@@ -80,7 +80,7 @@ namespace dolfin
 
     /// Set number of global entities (global_size) for given topological
     /// dimension
-    void init_global(uint dim, uint global_size);
+    void init_global(uint dim, std::size_t global_size);
 
     /// Initialize storage for global entity numbering for entities of
     /// dimension dim
@@ -95,7 +95,7 @@ namespace dolfin
     }
 
     /// Get local-to-global index map for entities of topological dimension d
-    const std::vector<uint>& global_indices(uint d) const
+    const std::vector<std::size_t>& global_indices(uint d) const
     {
       dolfin_assert(d < _global_indices.size());
       return _global_indices[d];
@@ -109,12 +109,12 @@ namespace dolfin
     }
 
     /// Return map from shared entiies to process that share the entity
-    std::map<unsigned int, std::set<unsigned int> >&
+    std::map<std::size_t, std::set<unsigned int> >&
       shared_entities(uint dim);
 
     /// Return map from shared entiies to process that share the entity
     /// (const version)
-    const std::map<unsigned int, std::set<unsigned int> >&
+    const std::map<std::size_t, std::set<unsigned int> >&
       shared_entities(uint dim) const;
 
     /// Return connectivity for given pair of topological dimensions
@@ -140,7 +140,7 @@ namespace dolfin
     // Developer note: std::vector is used in place of a MeshFunction
     //                 to avoid circular dependencies in the header files
     std::map<const std::vector<uint>,
-      std::pair<std::vector<uint>, std::vector<std::vector<uint> > > > coloring;
+      std::pair<std::vector<uint>, std::vector<std::vector<std::size_t> > > > coloring;
 
   private:
 
@@ -148,17 +148,17 @@ namespace dolfin
     friend class BinaryFile;
 
     // Number of mesh entities for each topological dimension
-    std::vector<uint> num_entities;
+    std::vector<std::size_t> num_entities;
 
     // Global number of mesh entities for each topological dimension
-    std::vector<uint> global_num_entities;
+    std::vector<std::size_t> global_num_entities;
 
     // Global indices for mesh entities (empty if not set)
-    std::vector<std::vector<uint> > _global_indices;
+    std::vector<std::vector<std::size_t> > _global_indices;
 
     // Maps each shared vertex (entity of dim 0) to a list of the
     // processes sharing the vertex
-    std::map<uint, std::set<uint> > _shared_vertices;
+    std::map<std::size_t, std::set<uint> > _shared_vertices;
 
     // Connectivity for pairs of topological dimensions
     std::vector<std::vector<MeshConnectivity> > connectivity;

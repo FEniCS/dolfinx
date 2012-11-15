@@ -57,7 +57,7 @@ namespace dolfin
 					                              bool interior_boundary);
 
     /// Reorder vertices so facet is right-oriented w.r.t. facet normal
-    static void reorder(std::vector<uint>& vertices, const Facet& facet);
+    static void reorder(std::vector<std::size_t>& vertices, const Facet& facet);
 
   };
 

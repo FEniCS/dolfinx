@@ -42,7 +42,6 @@
 #include <dolfin/common/types.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "LogLevel.h"
-#include "Table.h"
 #include "Logger.h"
 
 using namespace dolfin;
@@ -250,11 +249,11 @@ void Logger::register_timing(std::string task, double elapsed_time)
   log(line.str(), TRACE);
 
   // Store values for summary
-  map_iterator it = timings.find(task);
-  if (it == timings.end())
+  map_iterator it = _timings.find(task);
+  if (it == _timings.end())
   {
     std::pair<uint, double> timing(1, elapsed_time);
-    timings[task] = timing;
+    _timings[task] = timing;
   }
   else
   {
@@ -263,19 +262,35 @@ void Logger::register_timing(std::string task, double elapsed_time)
   }
 }
 //-----------------------------------------------------------------------------
-void Logger::summary(bool reset)
+void Logger::list_timings(bool reset)
 {
   // Check if timings are empty
-  if (timings.empty())
+  if (_timings.empty())
   {
     log("Timings: no timings to report.");
     return;
   }
+  else
+  {
+    log("");
+    log(timings(reset).str(true));
+  }
 
-  // Print summary as a table
-  log("");
+  // Print maximum memory usage if available
+  if (_maximum_memory_usage >= 0)
+  {
+    std::stringstream s;
+    s << "\nMaximum memory usage: " << _maximum_memory_usage << " MB";
+    log(s.str());
+  }
+
+}
+//-----------------------------------------------------------------------------
+Table Logger::timings(bool reset)
+{
+  // Generate timing table
   Table table("Summary of timings");
-  for (const_map_iterator it = timings.begin(); it != timings.end(); ++it)
+  for (const_map_iterator it = _timings.begin(); it != _timings.end(); ++it)
   {
     const std::string task    = it->first;
     const uint num_timings    = it->second.first;
@@ -286,26 +301,19 @@ void Logger::summary(bool reset)
     table(task, "Total time")   = total_time;
     table(task, "Reps")         = num_timings;
   }
-  log(table.str(true));
-
-  // Print maximum memory usage if available
-  if (_maximum_memory_usage >= 0)
-  {
-    std::stringstream s;
-    s << "\nMaximum memory usage: " << _maximum_memory_usage << " MB";
-    log(s.str());
-  }
 
   // Clear timings
   if (reset)
-    timings.clear();
+    _timings.clear();
+
+  return table;
 }
 //-----------------------------------------------------------------------------
 double Logger::timing(std::string task, bool reset)
 {
   // Find timing
-  map_iterator it = timings.find(task);
-  if (it == timings.end())
+  map_iterator it = _timings.find(task);
+  if (it == _timings.end())
   {
     std::stringstream line;
     line << "No timings registered for task \"" << task << "\".";
@@ -320,7 +328,7 @@ double Logger::timing(std::string task, bool reset)
   const double average_time = total_time / static_cast<double>(num_timings);
 
   // Clear timing
-  timings.erase(it);
+  _timings.erase(it);
 
   return average_time;
 }

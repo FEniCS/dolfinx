@@ -44,8 +44,8 @@ namespace dolfin
     /// (global_dof, set(process_num, local_index)). Exclusively local
     /// entities will not appear in the map. Works only for vertices and
     /// cells
-    static std::map<uint, std::set<std::pair<uint, uint> > >
-    off_process_indices(const std::vector<uint>& entity_indices, uint dim,
+    static std::map<std::size_t, std::set<std::pair<unsigned int, std::size_t> > >
+    off_process_indices(const std::vector<std::size_t>& entity_indices, uint dim,
                         const Mesh& mesh);
 
   };
