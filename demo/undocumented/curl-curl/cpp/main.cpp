@@ -36,6 +36,8 @@
 
 using namespace dolfin;
 
+#ifdef HAS_CGAL
+
 int main()
 {
   // Homogenous external magnetic field (dB/dt)
@@ -80,7 +82,8 @@ int main()
   };
 
   // Create demo mesh
-  UnitSphereMesh mesh(8);
+  Sphere sphere(Point(0, 0, 0), 1.0);
+  Mesh mesh(sphere, 16);
 
   // Define functions
   Source dbdt;
@@ -119,3 +122,13 @@ int main()
 
   return 0;
 }
+
+#else
+
+int main()
+{
+  info("DOLFIN must be compiled with CGAL to run this demo.");
+  return 0;
+}
+
+#endif

@@ -130,8 +130,6 @@
 %shared_ptr(dolfin::Box)
 %shared_ptr(dolfin::RectangleMesh)
 %shared_ptr(dolfin::Rectangle)
-%shared_ptr(dolfin::UnitSphereMesh)
-%shared_ptr(dolfin::UnitSphere)
 
  //csg
 %shared_ptr(dolfin::CSGGeometry)

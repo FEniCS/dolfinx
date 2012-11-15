@@ -33,11 +33,12 @@ if not has_cgal():
     print "DOLFIN must be compiled with CGAL to run this demo."
     exit(0)
 
-sphere = UnitSphere(20)
-cube = UnitCube(20, 20, 20)
+sphere = Sphere(Point(0, 0, 0), 1.0)
+sphere_mesh = Mesh(sphere, 16);
+cube_mesh = UnitCubeMesh(20, 20, 20)
 
 # Access mesh geometry
-x = sphere.coordinates()
+x = sphere_mesh.coordinates()
 
 # Start center and propagtion speed for the sphere.
 dt = 0.1
@@ -47,15 +48,15 @@ t = -0.61
 x *= 0.7
 x += t
 
-intersection = MeshFunction("sizet", cube, cube.topology().dim())
+intersection = MeshFunction("sizet", cube_mesh, cube_mesh.topology().dim())
 _first = True
 
 counter = 0
 while t < 1.4 :
 
     # Compute intersection with boundary of square
-    boundary = BoundaryMesh(sphere)
-    cells = cube.intersected_cells(boundary)
+    boundary = BoundaryMesh(sphere_mesh)
+    cells = cube_mesh.intersected_cells(boundary)
 
     # Mark intersected values
     intersection.array()[:] = 0
