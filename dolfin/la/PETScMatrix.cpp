@@ -206,8 +206,10 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     MatSetType(*A, MATMPIAIJ);
 
     // Allocate space (using data from sparsity pattern)
-    const std::vector<PetscInt> _num_nonzeros_diagonal(num_nonzeros_diagonal.begin(), num_nonzeros_diagonal.end());
-    const std::vector<PetscInt> _num_nonzeros_off_diagonal(num_nonzeros_off_diagonal.begin(), num_nonzeros_off_diagonal.end());
+    const std::vector<PetscInt> _num_nonzeros_diagonal(num_nonzeros_diagonal.begin(),
+                                                       num_nonzeros_diagonal.end());
+    const std::vector<PetscInt> _num_nonzeros_off_diagonal(num_nonzeros_off_diagonal.begin(),
+                                                           num_nonzeros_off_diagonal.end());
     MatMPIAIJSetPreallocation(*A, PETSC_NULL, &_num_nonzeros_diagonal[0],
                                   PETSC_NULL, &_num_nonzeros_off_diagonal[0]);
   }
@@ -263,9 +265,9 @@ void PETScMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
 {
   dolfin_assert(A);
 
-  const int *cols = 0;
+  const PetscInt *cols = 0;
   const double *vals = 0;
-  int ncols = 0;
+  PetscInt ncols = 0;
   MatGetRow(*A, row, &ncols, &cols, &vals);
 
   // Assign values to std::vectors
