@@ -115,7 +115,10 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
       const double block = 0.0;
       const std::pair<std::size_t, std::size_t> row_range = A.local_range(0);
       for (std::size_t i = row_range.first; i < row_range.second; i++)
-        _A.set(&block, (uint) 1, &i, (uint) 1, &i);
+      {
+        DolfinIndex _i = i;
+        _A.set(&block, 1, &_i, 1, &_i);
+      }
       A.apply("flush");
     }
 
@@ -151,7 +154,11 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
             {
               pattern.get_edges(dofs[i], edges);
               const std::vector<double> block(edges.size(), 0.0);
-              _A.set(&block[0], (std::size_t) 1, &dofs[i], (std::size_t) edges.size(), &edges[0]);
+              DolfinIndex _dofs[2];
+              _dofs[0] = dofs[0];
+              _dofs[1] = dofs[1];
+              const std::vector<DolfinIndex> _edges(edges.begin(), edges.end());
+              _A.set(&block[0], 1, _dofs, edges.size(), _edges.data());
             }
           }
         }

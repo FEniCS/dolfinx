@@ -266,14 +266,14 @@ void DirichletBC::zero(GenericMatrix& A) const
   compute_bc(boundary_values, data, _method);
 
   // Copy boundary value data to arrays
-  std::vector<std::size_t> dofs(boundary_values.size());
+  std::vector<DolfinIndex> dofs(boundary_values.size());
   Map::const_iterator bv;
   std::size_t i = 0;
   for (bv = boundary_values.begin(); bv != boundary_values.end(); ++bv)
     dofs[i++] = bv->first;
 
   // Modify linear system (A_ii = 1)
-  A.zero(boundary_values.size(), &dofs[0]);
+  A.zero(boundary_values.size(), dofs.data());
 
   // Finalise changes to A
   A.apply("insert");
@@ -291,7 +291,6 @@ void DirichletBC::zero_columns(GenericMatrix& A,
   const std::size_t ncols = A.size(1); // should be equal to max possible dof+1
 
   std::pair<std::size_t, std::size_t> rows = A.local_range(0);
-  //std::pair<uint,uint> cols = A.local_range(1);
 
   std::vector<char> is_bc_dof(ncols);
   std::vector<double> bc_dof_val(ncols);
@@ -304,10 +303,10 @@ void DirichletBC::zero_columns(GenericMatrix& A,
   // Scan through all columns of all rows, setting to zero if is_bc_dof[column]
   // At the same time, we collect corrections to the RHS
 
-  std::vector<std::size_t>   cols;
+  std::vector<DolfinIndex> cols;
   std::vector<double> vals;
   std::vector<double> b_vals;
-  std::vector<std::size_t>   b_rows;
+  std::vector<DolfinIndex> b_rows;
 
   for (std::size_t row = rows.first; row < rows.second; row++)
   {
@@ -316,8 +315,8 @@ void DirichletBC::zero_columns(GenericMatrix& A,
     if (diag_val != 0.0 && is_bc_dof[row])
     {
       A.getrow(row, cols, vals);
-      for (std::size_t j=0; j<cols.size(); j++)
-        vals[j] = (cols[j]==row) * diag_val;
+      for (std::size_t j = 0; j < cols.size(); j++)
+        vals[j] = (cols[j] == static_cast<DolfinIndex>(row))*diag_val;
       A.setrow(row, cols, vals);
       A.apply("insert");
       b.setitem(row, bc_dof_val[row]*diag_val);
@@ -325,8 +324,8 @@ void DirichletBC::zero_columns(GenericMatrix& A,
     else // Otherwise, we scan the row for BC columns
     {
       A.getrow(row, cols, vals);
-      bool row_changed=false;
-      for (std::size_t j=0; j<cols.size(); j++)
+      bool row_changed = false;
+      for (std::size_t j = 0; j < cols.size(); j++)
       {
         const std::size_t col = cols[j];
 
@@ -500,7 +499,7 @@ void DirichletBC::apply(GenericMatrix* A,
 
   // Copy boundary value data to arrays
   const std::size_t size = boundary_values.size();
-  std::vector<std::size_t> dofs(size);
+  std::vector<DolfinIndex> dofs(size);
   std::vector<double> values(size);
   Map::const_iterator bv;
   std::size_t i = 0;
@@ -777,7 +776,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     g->restrict(&data.w[0], *_function_space->element(), cell, ufc_cell);
 
     // Tabulate dofs on cell
-    const std::vector<std::size_t>& cell_dofs = dofmap.cell_dofs(cell.index());
+    const std::vector<DolfinIndex>& cell_dofs = dofmap.cell_dofs(cell.index());
 
     // Tabulate which dofs are on the facet
     dofmap.tabulate_facet_dofs(&data.facet_dofs[0], facet_number);
@@ -852,7 +851,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
         bool interpolated = false;
 
         // Tabulate dofs on cell
-        const std::vector<std::size_t>& cell_dofs = dofmap.cell_dofs(c->index());
+        const std::vector<DolfinIndex>& cell_dofs = dofmap.cell_dofs(c->index());
 
         // Loop over all dofs on cell
         for (std::size_t i = 0; i < cell_dofs.size(); ++i)
@@ -930,7 +929,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
     dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
 
     // Tabulate dofs on cell
-    const std::vector<std::size_t>& cell_dofs = dofmap.cell_dofs(cell->index());
+    const std::vector<DolfinIndex>& cell_dofs = dofmap.cell_dofs(cell->index());
 
     // Interpolate function only once and only on cells where necessary
     bool already_interpolated = false;

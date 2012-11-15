@@ -376,7 +376,7 @@ void EpetraVector::add_local(const Array<double>& values)
     (*x)[0][i] += values[i];
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::set(const double* block, std::size_t m, const std::size_t* rows)
+void EpetraVector::set(const double* block, std::size_t m, const DolfinIndex* rows)
 {
   dolfin_assert(x);
   /*
@@ -434,7 +434,7 @@ void EpetraVector::add(const double* block, std::size_t m, const std::size_t* ro
   }
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::get_local(double* block, std::size_t m, const std::size_t* rows) const
+void EpetraVector::get_local(double* block, std::size_t m, const DolfinIndex* rows) const
 {
   dolfin_assert(x);
   const Epetra_BlockMap& map = x->Map();

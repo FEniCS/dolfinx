@@ -62,24 +62,24 @@ namespace dolfin
     virtual std::pair<std::size_t, std::size_t> local_range(uint dim) const = 0;
 
     /// Get block of values
-    virtual void get(double* block, const std::size_t* num_rows,
-                     const std::size_t * const * rows) const = 0;
+    virtual void get(double* block, const DolfinIndex* num_rows,
+                     const DolfinIndex * const * rows) const = 0;
 
     /// Set block of values
-    virtual void set(const double* block, const std::size_t* num_rows,
-                     const std::size_t * const * rows) = 0;
+    virtual void set(const double* block, const DolfinIndex* num_rows,
+                     const DolfinIndex * const * rows) = 0;
 
     /// Add block of values
     virtual void add(const double* block,
-                     const std::vector<const std::vector<std::size_t>* >& rows) = 0;
+                     const std::vector<const std::vector<DolfinIndex>* >& rows) = 0;
 
     /// Add block of values
     virtual void add(const double* block,
-                     const std::vector<std::vector<std::size_t> >& rows) = 0;
+                     const std::vector<std::vector<DolfinIndex> >& rows) = 0;
 
     /// Add block of values
-    virtual void add(const double* block, const std::size_t* num_rows,
-                     const std::size_t * const * rows) = 0;
+    virtual void add(const double* block, const DolfinIndex* num_rows,
+                     const DolfinIndex * const * rows) = 0;
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero() = 0;

@@ -63,7 +63,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     return;
 
   // Create vector to point to dofs
-  std::vector<const std::vector<std::size_t>* > dofs(rank);
+  std::vector<const std::vector<DolfinIndex>* > dofs(rank);
 
   // Build sparsity pattern for cell integrals
   if (cells)
@@ -100,7 +100,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     }
 
     // Vector to store macro-dofs (for interior facets)
-    std::vector<std::vector<std::size_t> > macro_dofs(rank);
+    std::vector<std::vector<DolfinIndex> > macro_dofs(rank);
 
     Progress p("Building sparsity pattern over interior facets", mesh.num_facets());
     for (FacetIterator facet(mesh); !facet.end(); ++facet)
@@ -133,8 +133,8 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
         for (uint i = 0; i < rank; i++)
         {
           // Get dofs for each cell
-          const std::vector<std::size_t>& cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
-          const std::vector<std::size_t>& cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
+          const std::vector<DolfinIndex>& cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
+          const std::vector<DolfinIndex>& cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
 
           // Create space in macro dof vector
           macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
@@ -159,7 +159,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   {
     Progress p("Building sparsity pattern over diagonal", local_range[0].second-local_range[0].first);
 
-    std::vector<std::size_t> diagonal_dof(1, 0);
+    std::vector<DolfinIndex> diagonal_dof(1, 0);
     for (uint i = 0; i < rank; ++i)
       dofs[i] = &diagonal_dof;
 

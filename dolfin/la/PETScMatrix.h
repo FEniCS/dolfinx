@@ -111,35 +111,35 @@ namespace dolfin
     { PETScBaseMatrix::resize(z, dim); }
 
     /// Get block of values
-    virtual void get(double* block, std::size_t m, const std::size_t* rows, std::size_t n,
-                     const std::size_t* cols) const;
+    virtual void get(double* block, std::size_t m, const DolfinIndex* rows, std::size_t n,
+                     const DolfinIndex* cols) const;
 
     /// Set block of values
-    virtual void set(const double* block, std::size_t m, const std::size_t* rows, std::size_t n,
-                     const std::size_t* cols);
+    virtual void set(const double* block, std::size_t m, const DolfinIndex* rows, std::size_t n,
+                     const DolfinIndex* cols);
 
     /// Add block of values
-    virtual void add(const double* block, std::size_t m, const std::size_t* rows, std::size_t n,
-                     const std::size_t* cols);
+    virtual void add(const double* block, std::size_t m, const DolfinIndex* rows, std::size_t n,
+                     const DolfinIndex* cols);
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern);
 
     /// Get non-zero values of given row
     virtual void getrow(std::size_t row,
-                        std::vector<std::size_t>& columns,
+                        std::vector<DolfinIndex>& columns,
                         std::vector<double>& values) const;
 
     /// Set values for given row
     virtual void setrow(std::size_t row,
-                        const std::vector<std::size_t>& columns,
+                        const std::vector<DolfinIndex>& columns,
                         const std::vector<double>& values);
 
     /// Set given rows to zero
-    virtual void zero(std::size_t m, const std::size_t* rows);
+    virtual void zero(std::size_t m, const DolfinIndex* rows);
 
     /// Set given rows to identity matrix
-    virtual void ident(std::size_t m, const std::size_t* rows);
+    virtual void ident(std::size_t m, const DolfinIndex* rows);
 
     // Matrix-vector product, y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const;

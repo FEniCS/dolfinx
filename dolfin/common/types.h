@@ -29,6 +29,9 @@
 namespace dolfin
 {
 
+  // Index type
+  typedef int DolfinIndex;
+
   // Unsigned integers
   typedef unsigned int uint;
 

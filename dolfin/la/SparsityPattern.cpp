@@ -98,7 +98,7 @@ void SparsityPattern::init(const std::vector<std::size_t>& dims,
     off_diagonal.resize(_local_range[_primary_dim].second - _local_range[_primary_dim].first);
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert(const std::vector<const std::vector<std::size_t>* >& entries)
+void SparsityPattern::insert(const std::vector<const std::vector<DolfinIndex>* >& entries)
 {
   dolfin_assert(entries.size() == 2);
   dolfin_assert(entries[0]);
@@ -106,8 +106,8 @@ void SparsityPattern::insert(const std::vector<const std::vector<std::size_t>* >
 
   const uint _primary_dim = primary_dim();
 
-  const std::vector<std::size_t>* map_i;
-  const std::vector<std::size_t>* map_j;
+  const std::vector<DolfinIndex>* map_i;
+  const std::vector<DolfinIndex>* map_j;
   uint primary_codim;
   dolfin_assert(_primary_dim < 2);
   if (_primary_dim == 0)

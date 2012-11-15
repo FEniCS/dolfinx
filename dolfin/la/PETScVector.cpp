@@ -305,7 +305,7 @@ void PETScVector::add_local(const Array<double>& values)
   VecSetValues(*x, local_size, rows.data(), values.data(), ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::get_local(double* block, std::size_t m, const std::size_t* rows) const
+void PETScVector::get_local(double* block, std::size_t m, const DolfinIndex* rows) const
 {
   dolfin_assert(x);
   PetscInt _m = m;
@@ -353,7 +353,7 @@ void PETScVector::get_local(double* block, std::size_t m, const std::size_t* row
   }
 }
 //-----------------------------------------------------------------------------
-void PETScVector::set(const double* block, std::size_t m, const std::size_t* rows)
+void PETScVector::set(const double* block, std::size_t m, const DolfinIndex* rows)
 {
   dolfin_assert(x);
 
@@ -364,7 +364,7 @@ void PETScVector::set(const double* block, std::size_t m, const std::size_t* row
   VecSetValues(*x, m, _rows.data(), block, INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::add(const double* block, std::size_t m, const std::size_t* rows)
+void PETScVector::add(const double* block, std::size_t m, const DolfinIndex* rows)
 {
   dolfin_assert(x);
 
@@ -617,7 +617,7 @@ double PETScVector::sum() const
   return value;
 }
 //-----------------------------------------------------------------------------
-double PETScVector::sum(const Array<std::size_t>& rows) const
+double PETScVector::sum(const Array<DolfinIndex>& rows) const
 {
   dolfin_assert(x);
   const std::size_t n0 = local_range().first;
@@ -703,7 +703,7 @@ std::string PETScVector::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void PETScVector::gather(GenericVector& y, const std::vector<std::size_t>& indices) const
+void PETScVector::gather(GenericVector& y, const std::vector<DolfinIndex>& indices) const
 {
   dolfin_assert(x);
 
@@ -765,7 +765,7 @@ void PETScVector::gather(GenericVector& y, const std::vector<std::size_t>& indic
   VecScatterDestroy(&scatter);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::gather(std::vector<double>& x, const std::vector<std::size_t>& indices) const
+void PETScVector::gather(std::vector<double>& x, const std::vector<DolfinIndex>& indices) const
 {
   x.resize(indices.size());
   PETScVector y("local");

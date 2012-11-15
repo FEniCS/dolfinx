@@ -120,12 +120,12 @@ namespace dolfin
     virtual bool owns_index(std::size_t i) const;
 
     /// Set block of values
-    virtual void set(const double* block, std::size_t m, const std::size_t* rows);
+    virtual void set(const double* block, std::size_t m, const DolfinIndex* rows);
 
     /// Add block of values
-    virtual void add(const double* block, std::size_t m, const std::size_t* rows);
+    virtual void add(const double* block, std::size_t m, const DolfinIndex* rows);
 
-    virtual void get_local(double* block, std::size_t m, const std::size_t* rows) const;
+    virtual void get_local(double* block, std::size_t m, const DolfinIndex* rows) const;
 
     /// Get all values on local process
     virtual void get_local(std::vector<double>& values) const;

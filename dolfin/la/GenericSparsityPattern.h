@@ -56,10 +56,11 @@ namespace dolfin
                       const std::vector<const boost::unordered_map<std::size_t, uint>* > off_process_owner) = 0;
 
     /// Insert non-zero entries
-    virtual void insert(const std::vector<const std::vector<std::size_t>* >& entries) = 0;
+    virtual void insert(const std::vector<const std::vector<DolfinIndex>* >& entries) = 0;
 
     /// Add edges (vertex = [index, owning process])
-    virtual void add_edges(const std::pair<std::size_t, uint>& vertex, const std::vector<std::size_t>& edges) = 0;
+    virtual void add_edges(const std::pair<std::size_t, uint>& vertex,
+                           const std::vector<std::size_t>& edges) = 0;
 
     /// Return rank
     virtual uint rank() const = 0;

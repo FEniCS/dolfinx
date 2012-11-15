@@ -100,15 +100,15 @@ namespace dolfin
     { matrix->resize(y, dim); }
 
     /// Get block of values
-    virtual void get(double* block, std::size_t m, const std::size_t* rows, std::size_t n, const std::size_t* cols) const
+    virtual void get(double* block, std::size_t m, const DolfinIndex* rows, std::size_t n, const DolfinIndex* cols) const
     { matrix->get(block, m, rows, n, cols); }
 
     /// Set block of values
-    virtual void set(const double* block, std::size_t m, const std::size_t* rows, std::size_t n, const std::size_t* cols)
+    virtual void set(const double* block, std::size_t m, const DolfinIndex* rows, std::size_t n, const DolfinIndex* cols)
     { matrix->set(block, m, rows, n, cols); }
 
     /// Add block of values
-    virtual void add(const double* block, std::size_t m, const std::size_t* rows, std::size_t n, const std::size_t* cols)
+    virtual void add(const double* block, std::size_t m, const DolfinIndex* rows, std::size_t n, const DolfinIndex* cols)
     { matrix->add(block, m, rows, n, cols); }
 
     /// Add multiple of given matrix (AXPY operation)
@@ -120,19 +120,19 @@ namespace dolfin
     { return matrix->norm(norm_type); }
 
     /// Get non-zero values of given row
-    virtual void getrow(std::size_t row, std::vector<std::size_t>& columns, std::vector<double>& values) const
+    virtual void getrow(std::size_t row, std::vector<DolfinIndex>& columns, std::vector<double>& values) const
     { matrix->getrow(row, columns, values); }
 
     /// Set values for given row
-    virtual void setrow(std::size_t row, const std::vector<std::size_t>& columns, const std::vector<double>& values)
+    virtual void setrow(std::size_t row, const std::vector<DolfinIndex>& columns, const std::vector<double>& values)
     { matrix->setrow(row, columns, values); }
 
     /// Set given rows to zero
-    virtual void zero(std::size_t m, const std::size_t* rows)
+    virtual void zero(std::size_t m, const DolfinIndex* rows)
     { matrix->zero(m, rows); }
 
     /// Set given rows to identity matrix
-    virtual void ident(std::size_t m, const std::size_t* rows)
+    virtual void ident(std::size_t m, const DolfinIndex* rows)
     { matrix->ident(m, rows); }
 
     // Matrix-vector product, y = Ax
@@ -157,7 +157,7 @@ namespace dolfin
 
     /// Return pointers to underlying compressed storage data.
     /// See GenericMatrix for documentation.
-    virtual boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const
+    virtual boost::tuples::tuple<const DolfinIndex*, const DolfinIndex*, const double*, int> data() const
     { return matrix->data(); }
 
     //--- Special functions ---

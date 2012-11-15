@@ -62,10 +62,10 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
   // Build graph
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    const std::vector<std::size_t>& dofs0 = dofmap0.cell_dofs(cell->index());
-    const std::vector<std::size_t>& dofs1 = dofmap1.cell_dofs(cell->index());
+    const std::vector<DolfinIndex>& dofs0 = dofmap0.cell_dofs(cell->index());
+    const std::vector<DolfinIndex>& dofs1 = dofmap1.cell_dofs(cell->index());
 
-    std::vector<std::size_t>::const_iterator node;
+    std::vector<DolfinIndex>::const_iterator node;
     for (node = dofs0.begin(); node != dofs0.end(); ++node)
       graph[*node].insert(dofs1.begin(), dofs1.end());
   }
