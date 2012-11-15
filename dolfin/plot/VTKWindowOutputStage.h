@@ -126,6 +126,9 @@ namespace dolfin
     /// Toggle the bounding box around the main actor
     void toggle_boundingbox();
 
+    /// Toggle the help text box with the given text
+    void toggle_helptext(std::string text);
+
     /// Re-render the current frame
     void render();
 

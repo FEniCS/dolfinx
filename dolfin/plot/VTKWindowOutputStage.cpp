@@ -130,6 +130,42 @@ namespace // anonymous
   };
   vtkStandardNewMacro(PrivateVTKInteractorStyle)
   //----------------------------------------------------------------------------
+  class PrivateVTKBalloonWidget : public vtkBalloonWidget
+  {
+  public:
+
+    PrivateVTKBalloonWidget() : _force_visible(false) {}
+
+    static PrivateVTKBalloonWidget* New();
+    vtkTypeMacro(PrivateVTKBalloonWidget, vtkBalloonWidget);
+
+    virtual int SubclassEndHoverAction()
+    {
+      if (_force_visible)
+        return 1;
+      else
+        return vtkBalloonWidget::SubclassEndHoverAction();
+    }
+
+    void toggle_popup(std::string text) {
+      vtkBalloonRepresentation *rep = GetBalloonRepresentation();
+      double e[2] = {10, 10};
+
+      _force_visible = !_force_visible;
+      if (_force_visible) {
+        rep->SetBalloonText(text.c_str());
+        rep->StartWidgetInteraction(e);
+      }
+      else {
+        rep->EndWidgetInteraction(e);
+      }
+    }
+
+    bool _force_visible;
+
+  };
+  vtkStandardNewMacro(PrivateVTKBalloonWidget)
+  //----------------------------------------------------------------------------
 #ifdef HAS_QVTK
   void create_qApp()
   {
@@ -167,7 +203,7 @@ VTKWindowOutputStage::VTKWindowOutputStage(QVTKWidget *user_widget)
   _actor = vtkSmartPointer<vtkActor>::New();
   helptextActor = vtkSmartPointer<vtkTextActor>::New();
   balloonRep = vtkSmartPointer<vtkBalloonRepresentation>::New();
-  balloonwidget = vtkSmartPointer<vtkBalloonWidget>::New();
+  balloonwidget = vtkSmartPointer<PrivateVTKBalloonWidget>::New();
 
   _renderer = vtkSmartPointer<vtkRenderer>::New();
   _renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
@@ -283,6 +319,25 @@ void VTKWindowOutputStage::init(VTKPlotter *parent, const Parameters &parameters
     _axesActor->GetZAxisCaptionActor2D()->GetCaptionTextProperty()->ShadowOn();
     _renderer->AddActor(_axesActor);
   }
+
+  // Create help text actor
+  helptextActor->SetPosition(10,10);
+  helptextActor->SetInput("Help ");
+  helptextActor->GetTextProperty()->SetColor(0.0, 0.0, 0.0);
+  helptextActor->GetTextProperty()->SetFontSize(16);
+  helptextActor->GetTextProperty()->SetFontFamilyToCourier();
+
+  // Set up the representation for the hover-over help text box
+  balloonRep->SetOffset(5,5);
+  balloonRep->GetTextProperty()->SetFontSize(14);
+  balloonRep->GetTextProperty()->BoldOff();
+  balloonRep->GetTextProperty()->SetFontFamilyToCourier();
+  balloonRep->GetFrameProperty()->SetOpacity(0.7);
+
+  // Set up the actual widget that makes the help text pop up
+  balloonwidget->SetInteractor(get_interactor());
+  balloonwidget->SetRepresentation(balloonRep);
+  balloonwidget->EnabledOn();
 }
 //----------------------------------------------------------------------------
 vtkRenderWindowInteractor* VTKWindowOutputStage::get_interactor()
@@ -306,25 +361,10 @@ void VTKWindowOutputStage::scale_points_lines(double factor)
 void VTKWindowOutputStage::set_helptext(std::string text)
 {
   // Add help text actor
-  helptextActor->SetPosition(10,10);
-  helptextActor->SetInput("Help ");
-  helptextActor->GetTextProperty()->SetColor(0.0, 0.0, 0.0);
-  helptextActor->GetTextProperty()->SetFontSize(16);
-  helptextActor->GetTextProperty()->SetFontFamilyToCourier();
   _renderer->AddActor2D(helptextActor);
 
-  // Set up the representation for the hover-over help text box
-  balloonRep->SetOffset(5,5);
-  balloonRep->GetTextProperty()->SetFontSize(14);
-  balloonRep->GetTextProperty()->BoldOff();
-  balloonRep->GetTextProperty()->SetFontFamilyToCourier();
-  balloonRep->GetFrameProperty()->SetOpacity(0.7);
-
-  // Set up the actual widget that makes the help text pop up
-  balloonwidget->SetInteractor(get_interactor());
-  balloonwidget->SetRepresentation(balloonRep);
+  // Add the balloon text to the actor
   balloonwidget->AddBalloon(helptextActor, text.c_str(), NULL);
-  balloonwidget->EnabledOn();
 }
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::set_window_title(std::string title)
@@ -500,6 +540,13 @@ void VTKWindowOutputStage::toggle_boundingbox()
     style->_highlighted = !style->_highlighted;
     style->HighlightProp(style->_highlighted ? _actor : NULL);
   }
+}
+//----------------------------------------------------------------------------
+void VTKWindowOutputStage::toggle_helptext(std::string text)
+{
+  PrivateVTKBalloonWidget *balloon =
+    dynamic_cast<PrivateVTKBalloonWidget*>((vtkBalloonWidget*)balloonwidget);
+  balloon->toggle_popup(text);
 }
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::render()
