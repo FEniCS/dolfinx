@@ -147,8 +147,9 @@ namespace // anonymous
         return vtkBalloonWidget::SubclassEndHoverAction();
     }
 
-    void toggle_popup(std::string text) {
-      vtkBalloonRepresentation *rep = GetBalloonRepresentation();
+    void toggle_popup(std::string text, vtkBalloonRepresentation *rep) {
+      // This callmethod is only available from vtk 5.6:
+      //vtkBalloonRepresentation *rep = GetBalloonRepresentation();
       double e[2] = {10, 10};
 
       _force_visible = !_force_visible;
@@ -546,7 +547,7 @@ void VTKWindowOutputStage::toggle_helptext(std::string text)
 {
   PrivateVTKBalloonWidget *balloon =
     dynamic_cast<PrivateVTKBalloonWidget*>((vtkBalloonWidget*)balloonwidget);
-  balloon->toggle_popup(text);
+  balloon->toggle_popup(text, balloonRep);
 }
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::render()
