@@ -243,9 +243,11 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
             << "(" << errorDescription << ", error code " << (int)status[AZ_why] << ")";
 
     if (parameters["error_on_nonconvergence"])
+    {
       dolfin_error("EpetraKrylovSolver.cpp",
                    "solve linear system using Epetra Krylov solver",
                    message.str());
+    }
     else
       warning(message.str());
   }
