@@ -249,6 +249,7 @@ SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input,
 //-----------------------------------------------------------------------------
 UNSAFE_NUMPY_TYPEMAPS(std::size_t, INT32, NPY_UINTP, sizet, uintp)
 UNSAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,float_)
+UNSAFE_NUMPY_TYPEMAPS(dolfin::DolfinIndex,INT32,NPY_UINT,dolfin_index,intc)
 //UNSAFE_NUMPY_TYPEMAPS(int,INT,NPY_INT,int,cint)
 
 SAFE_NUMPY_TYPEMAPS(std::size_t,INT32,NPY_UINTP,sizet,uintp)

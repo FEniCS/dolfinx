@@ -85,16 +85,16 @@
 // Typemaps for GenericMatrix get and set functions
 //-----------------------------------------------------------------------------
 %typemap(in) const double* block = double* _array;
-%typemap(in) (std::size_t m, const std::size_t* rows) = (std::size_t _array_dim, std::size_t* _array);
-%typemap(in) (std::size_t n, const std::size_t* cols) = (std::size_t _array_dim, std::size_t* _array);
+%typemap(in) (std::size_t m, const dolfin::DolfinIndex* rows) = (std::size_t _array_dim, dolfin::DolfinIndex* _array);
+%typemap(in) (std::size_t n, const dolfin::DolfinIndex* cols) = (std::size_t _array_dim, dolfin::DolfinIndex* _array);
 
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (std::size_t m, const std::size_t* rows)
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (std::size_t m, const dolfin::DolfinIndex* rows)
 {
   // rows typemap
   $1 = PyArray_Check($input);
 }
 
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (std::size_t n, const std::size_t* cols)
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (std::size_t n, const dolfin::DolfinIndex* cols)
 {
   // cols typemap
   $1 = PyArray_Check($input);
@@ -104,7 +104,7 @@
 // Ignore low level interface
 //-----------------------------------------------------------------------------
 %ignore dolfin::LinearAlgebraObject::instance;
-%ignore dolfin::GenericTensor::get(double*, const dolfin::DolfinIndex*, const dolfin::DolfinIndex * const *) const;
+%ignore dolfin::GenericTensor::get(double*, const  dolfin::DolfinIndex*,        const dolfin::DolfinIndex * const *) const;
 %ignore dolfin::GenericTensor::set(const double* , const dolfin::DolfinIndex* , const dolfin::DolfinIndex * const *);
 %ignore dolfin::GenericTensor::add(const double* , const dolfin::DolfinIndex* , const dolfin::DolfinIndex * const *);
 %ignore dolfin::PETScLinearOperator::wrapper;
@@ -161,11 +161,11 @@
 %ignore dolfin::GenericMatrix::operator-=;
 
 %ignore dolfin::GenericMatrix::set(const double*, const dolfin::DolfinIndex*,
-				   const dolfin::DolfinIndex * const *);
+                                   const dolfin::DolfinIndex * const *);
 %ignore dolfin::GenericMatrix::add(const double*, const dolfin::DolfinIndex*,
-				   const dolfin::DolfinIndex * const * rows);
+                                   const dolfin::DolfinIndex * const * rows);
 %ignore dolfin::GenericMatrix::get(double*, const dolfin::DolfinIndex*,
-				   const dolfin::DolfinIndex * const *) const;
+                                   const dolfin::DolfinIndex * const *) const;
 %ignore dolfin::GenericMatrix::data;
 %ignore dolfin::GenericMatrix::getitem;
 %ignore dolfin::GenericMatrix::setitem;
@@ -203,15 +203,18 @@
 //-----------------------------------------------------------------------------
 
 %define %RCP_to_const_ref_typemap(Type)
-%typemap(in) const Type& {
+%typemap(in) const Type&
+{
   int res = SWIG_ConvertPtr($input, (void**)&$1, $1_descriptor, 0);
-  if (!SWIG_IsOK(res)) {
+  if (!SWIG_IsOK(res))
+  {
     Teuchos::RCP<Type> *rcp_ptr;
     int newmem = 0;
     res = SWIG_ConvertPtrAndOwn($input, (void**)&rcp_ptr, $descriptor(Teuchos::RCP<Type>*), 0, &newmem);
     if (!SWIG_IsOK(res))
       SWIG_exception_fail(SWIG_ArgError(res), "in method '$symname', argument $argnum of type '$type'");
-    if (rcp_ptr) {
+    if (rcp_ptr)
+    {
       $1 = rcp_ptr->get();
       if (newmem & SWIG_CAST_NEW_MEMORY)
         delete rcp_ptr;
@@ -224,11 +227,13 @@
 }
 
 
-%typecheck(SWIG_TYPECHECK_POINTER) const Type& {
+%typecheck(SWIG_TYPECHECK_POINTER) const Type&
+{
   void *dummy;
   int res;
   res = SWIG_ConvertPtr($input, &dummy, $1_descriptor, 0);
-  if (!SWIG_IsOK(res)) {
+  if (!SWIG_IsOK(res))
+  {
     Teuchos::RCP<Type> *rcp_ptr;
     int newmem = 0;
     res = SWIG_ConvertPtrAndOwn($input, (void**)&rcp_ptr, $descriptor(Teuchos::RCP<Type>*), 0, &newmem);
@@ -263,13 +268,15 @@
 //-----------------------------------------------------------------------------
 // Director typemaps for dolfin::GenericVector
 //-----------------------------------------------------------------------------
-%typemap(directorin, fragment="NoDelete") dolfin::GenericVector& {
+%typemap(directorin, fragment="NoDelete") dolfin::GenericVector&
+{
   // Director in dolfin::GenericVector&
   SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericVector >(reference_to_no_delete_pointer($1_name));
   $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericVector > *), SWIG_POINTER_OWN);
 }
 
-%typemap(directorin, fragment="NoDelete") const dolfin::GenericVector& {
+%typemap(directorin, fragment="NoDelete") const dolfin::GenericVector&
+{
   // Director in const dolfin::GenericVector&
   SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::GenericVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::GenericVector >(reference_to_no_delete_pointer($1_name));
   $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::GenericVector > *), SWIG_POINTER_OWN);
@@ -278,13 +285,15 @@
 //-----------------------------------------------------------------------------
 // Director typemaps for dolfin::PETScVector
 //-----------------------------------------------------------------------------
-%typemap(directorin, fragment="NoDelete") dolfin::PETScVector& {
+%typemap(directorin, fragment="NoDelete") dolfin::PETScVector&
+{
   // Director in dolfin::PETScVector&
   SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector >(reference_to_no_delete_pointer($1_name));
   $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector > *), SWIG_POINTER_OWN);
 }
 
-%typemap(directorin, fragment="NoDelete") const dolfin::PETScVector& {
+%typemap(directorin, fragment="NoDelete") const dolfin::PETScVector&
+{
   // Director in const dolfin::PETScVector&
   SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::PETScVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< const dolfin::PETScVector >(reference_to_no_delete_pointer($1_name));
   $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::PETScVector > *), SWIG_POINTER_OWN);
@@ -293,7 +302,8 @@
 //-----------------------------------------------------------------------------
 // Director typemaps for dolfin::uBLASVector
 //-----------------------------------------------------------------------------
-%typemap(directorin, fragment="NoDelete") dolfin::uBLASVector& {
+%typemap(directorin, fragment="NoDelete") dolfin::uBLASVector&
+{
   // Director in dolfin::uBLASVector&
   SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::uBLASVector > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::uBLASVector >(reference_to_no_delete_pointer($1_name));
   $input = SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::uBLASVector > *), SWIG_POINTER_OWN);
