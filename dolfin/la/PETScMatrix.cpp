@@ -224,8 +224,8 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   #endif
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::get(double* block, std::size_t m, const std::size_t* rows,
-                                     std::size_t n, const std::size_t* cols) const
+void PETScMatrix::get(double* block, std::size_t m, const DolfinIndex* rows,
+                                     std::size_t n, const DolfinIndex* cols) const
 {
   // Get matrix entries (must be on this process)
   dolfin_assert(A);
@@ -234,8 +234,8 @@ void PETScMatrix::get(double* block, std::size_t m, const std::size_t* rows,
   MatGetValues(*A, m, _rows.data(), n, _cols.data(), block);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set(const double* block, std::size_t m, const std::size_t* rows,
-                                           std::size_t n, const std::size_t* cols)
+void PETScMatrix::set(const double* block, std::size_t m, const DolfinIndex* rows,
+                                           std::size_t n, const DolfinIndex* cols)
 {
   dolfin_assert(A);
   const std::vector<PetscInt> _rows(rows, rows + m);
@@ -243,8 +243,8 @@ void PETScMatrix::set(const double* block, std::size_t m, const std::size_t* row
   MatSetValues(*A, m, _rows.data(), n, _cols.data(), block, INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::add(const double* block, std::size_t m, const std::size_t* rows,
-                                           std::size_t n, const std::size_t* cols)
+void PETScMatrix::add(const double* block, std::size_t m, const DolfinIndex* rows,
+                                           std::size_t n, const DolfinIndex* cols)
 {
   dolfin_assert(A);
   const std::vector<PetscInt> _rows(rows, rows + m);
@@ -281,7 +281,8 @@ void PETScMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
   MatRestoreRow(*A, row, &ncols, &cols, &vals);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::setrow(std::size_t row, const std::vector<std::size_t>& columns,
+void PETScMatrix::setrow(std::size_t row,
+                         const std::vector<std::size_t>& columns,
                          const std::vector<double>& values)
 {
   dolfin_assert(A);
@@ -295,27 +296,30 @@ void PETScMatrix::setrow(std::size_t row, const std::vector<std::size_t>& column
   }
 
   // Handle case n = 0
-  const std::size_t n = columns.size();
+  const PetscInt n = columns.size();
   if (n == 0)
     return;
 
   // Set values
-  set(&values[0], 1, &row, n, &columns[0]);
+  const PetscInt _row = row;
+  const std::vector<PetscInt> _columns(columns.begin(), columns.end());
+  set(&values[0], 1, &_row, n, _columns.data());
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::zero(std::size_t m, const std::size_t* rows)
+void PETScMatrix::zero(std::size_t m, const DolfinIndex* rows)
 {
   dolfin_assert(A);
 
   IS is = 0;
   PetscScalar null = 0.0;
+  const PetscInt _m = m;
   const std::vector<PetscInt> _rows(rows, rows + m);
-  ISCreateGeneral(PETSC_COMM_SELF, m, _rows.data(), PETSC_COPY_VALUES, &is);
+  ISCreateGeneral(PETSC_COMM_SELF, _m, _rows.data(), PETSC_COPY_VALUES, &is);
   MatZeroRowsIS(*A, is, null, NULL, NULL);
   ISDestroy(&is);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::ident(std::size_t m, const std::size_t* rows)
+void PETScMatrix::ident(std::size_t m, const DolfinIndex* rows)
 {
   dolfin_assert(A);
 

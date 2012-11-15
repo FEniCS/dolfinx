@@ -120,13 +120,13 @@ namespace dolfin
     virtual void resize(GenericVector& z, uint dim) const;
 
     /// Get block of values
-    virtual void get(double* block, std::size_t m, const std::size_t* rows, std::size_t n, const std::size_t* cols) const;
+    virtual void get(double* block, std::size_t m, const DolfinIndex* rows, std::size_t n, const DolfinIndex* cols) const;
 
     /// Set block of values
-    virtual void set(const double* block, std::size_t m, const std::size_t* rows, std::size_t n, const std::size_t* cols);
+    virtual void set(const double* block, std::size_t m, const DolfinIndex* rows, std::size_t n, const DolfinIndex* cols);
 
     /// Add block of values
-    virtual void add(const double* block, std::size_t m, const std::size_t* rows, std::size_t n, const std::size_t* cols);
+    virtual void add(const double* block, std::size_t m, const DolfinIndex* rows, std::size_t n, const DolfinIndex* cols);
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A,
@@ -136,16 +136,18 @@ namespace dolfin
     virtual double norm(std::string norm_type) const;
 
     /// Get non-zero values of given row
-    virtual void getrow(std::size_t row, std::vector<std::size_t>& columns, std::vector<double>& values) const;
+    virtual void getrow(std::size_t row, std::vector<std::size_t>& columns,
+                        std::vector<double>& values) const;
 
     /// Set values for given row
-    virtual void setrow(std::size_t row_idx, const std::vector<std::size_t>& columns, const std::vector<double>& values);
+    virtual void setrow(std::size_t row_idx, const std::vector<std::size_t>& columns,
+                        const std::vector<double>& values);
 
     /// Set given rows to zero
-    virtual void zero(std::size_t m, const std::size_t* rows);
+    virtual void zero(std::size_t m, const DolfinIndex* rows);
 
     /// Set given rows to identity matrix
-    virtual void ident(std::size_t m, const std::size_t* rows);
+    virtual void ident(std::size_t m, const DolfinIndex* rows);
 
     /// Matrix-vector product, y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const;
@@ -198,7 +200,7 @@ namespace dolfin
     void compress();
 
     /// Access value of given entry
-    double operator() (std::size_t i, std::size_t j) const
+    double operator() (DolfinIndex i, DolfinIndex j) const
     { return A(i, j); }
 
     /// Assignment operator
@@ -291,7 +293,8 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
-  void uBLASMatrix<Mat>::getrow(std::size_t row_idx, std::vector<std::size_t>& columns,
+  void uBLASMatrix<Mat>::getrow(std::size_t row_idx,
+                                std::vector<std::size_t>& columns,
                                 std::vector<double>& values) const
   {
     dolfin_assert(row_idx < this->size(0));
@@ -311,7 +314,8 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <typename Mat>
-  void uBLASMatrix<Mat>::setrow(std::size_t row_idx, const std::vector<std::size_t>& columns,
+  void uBLASMatrix<Mat>::setrow(std::size_t row_idx,
+                                const std::vector<std::size_t>& columns,
                                 const std::vector<double>& values)
   {
     dolfin_assert(columns.size() == values.size());
@@ -332,8 +336,8 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <typename Mat>
-  void uBLASMatrix<Mat>::set(const double* block, std::size_t m, const std::size_t* rows,
-                             std::size_t n, const std::size_t* cols)
+  void uBLASMatrix<Mat>::set(const double* block, std::size_t m, const DolfinIndex* rows,
+                             std::size_t n, const DolfinIndex* cols)
   {
     for (std::size_t i = 0; i < m; i++)
       for (std::size_t j = 0; j < n; j++)
@@ -341,8 +345,8 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
-  void uBLASMatrix<Mat>::add(const double* block, std::size_t m, const std::size_t* rows,
-                             std::size_t n, const std::size_t* cols)
+  void uBLASMatrix<Mat>::add(const double* block, std::size_t m, const DolfinIndex* rows,
+                             std::size_t n, const DolfinIndex* cols)
   {
     for (std::size_t i = 0; i < m; i++)
       for (std::size_t j = 0; j < n; j++)
@@ -350,8 +354,8 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
-  void uBLASMatrix<Mat>::get(double* block, std::size_t m, const std::size_t* rows,
-                             std::size_t n, const std::size_t* cols) const
+  void uBLASMatrix<Mat>::get(double* block, std::size_t m, const DolfinIndex* rows,
+                             std::size_t n, const DolfinIndex* cols) const
   {
     for(std::size_t i = 0; i < m; ++i)
       for(std::size_t j = 0; j < n; ++j)
@@ -424,17 +428,17 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <typename Mat>
-  void uBLASMatrix<Mat>::zero(std::size_t m, const std::size_t* rows)
+  void uBLASMatrix<Mat>::zero(std::size_t m, const DolfinIndex* rows)
   {
     for(std::size_t i = 0; i < m; ++i)
       ublas::row(A, rows[i]) *= 0.0;
   }
   //-----------------------------------------------------------------------------
   template <typename Mat>
-  void uBLASMatrix<Mat>::ident(std::size_t m, const std::size_t* rows)
+  void uBLASMatrix<Mat>::ident(std::size_t m, const DolfinIndex* rows)
   {
     // Copy row indices to a vector
-    std::vector<std::size_t> _rows(rows, rows+m);
+    std::vector<std::size_t> _rows(rows, rows + m);
 
     std::size_t counter = 0;
     typename Mat::iterator1 row;    // Iterator over rows

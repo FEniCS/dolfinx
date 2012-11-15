@@ -212,8 +212,8 @@ const Function& Function::operator= (const Function& v)
 
     // Get row indices of original and new vectors
     boost::unordered_map<std::size_t, std::size_t>::const_iterator entry;
-    std::vector<std::size_t> new_rows(collapsed_map.size());
-    std::vector<std::size_t> old_rows(collapsed_map.size());
+    std::vector<DolfinIndex> new_rows(collapsed_map.size());
+    std::vector<DolfinIndex> old_rows(collapsed_map.size());
     std::size_t i = 0;
     for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
     {
@@ -508,10 +508,10 @@ void Function::restrict(double* w,
   {
     // Get dofmap for cell
     const GenericDofMap& dofmap = *_function_space->dofmap();
-    const std::vector<std::size_t>& dofs = dofmap.cell_dofs(dolfin_cell.index());
+    const std::vector<DolfinIndex>& dofs = dofmap.cell_dofs(dolfin_cell.index());
 
     // Pick values from vector(s)
-    _vector->get_local(w, dofs.size(), &dofs[0]);
+    _vector->get_local(w, dofs.size(), dofs.data());
   }
   else
   {
@@ -664,7 +664,7 @@ void Function::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get dofs on cell
-    const std::vector<std::size_t>& dofs = dofmap.cell_dofs(cell->index());
+    const std::vector<DolfinIndex>& dofs = dofmap.cell_dofs(cell->index());
 
     for (uint d = 0; d < num_dofs_per_cell; ++d)
     {

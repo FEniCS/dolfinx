@@ -165,13 +165,13 @@ dolfin::uint MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
 
   // Get size of local solution vector x and create objects to hold solution
   const std::size_t local_x_size = data.INFO(23);
-  std::vector<std::size_t> x_local_indices(local_x_size);
+  std::vector<int> x_local_indices(local_x_size);
   std::vector<double> x_local_vals(local_x_size);
 
   // Attach solution data to MUMPS object
   data.lsol_loc = local_x_size;
   data.sol_loc  = &x_local_vals[0];
-  data.isol_loc = reinterpret_cast<int*>(&x_local_indices[0]);
+  data.isol_loc = x_local_indices.data();
 
   // Solve problem
   data.job = 3;

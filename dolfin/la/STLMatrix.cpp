@@ -130,14 +130,14 @@ void STLMatrix::zero()
       entry->second = 0.0;
 }
 //-----------------------------------------------------------------------------
-void STLMatrix::add(const double* block, std::size_t m, const std::size_t* rows, std::size_t n,
-                    const std::size_t* cols)
+void STLMatrix::add(const double* block, std::size_t m, const DolfinIndex* rows, std::size_t n,
+                    const DolfinIndex* cols)
 {
   // Perform a simple linear search along each column. Otherwise,
   // append the value (calling push_back).
 
-  const std::size_t* primary_slice = rows;
-  const std::size_t* secondary_slice = cols;
+  const DolfinIndex* primary_slice = rows;
+  const DolfinIndex* secondary_slice = cols;
 
   std::size_t dim   = m;
   std::size_t codim = n;
@@ -306,7 +306,7 @@ void STLMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
   }
 }
 //-----------------------------------------------------------------------------
-void STLMatrix::ident(std::size_t m, const std::size_t* rows)
+void STLMatrix::ident(std::size_t m, const DolfinIndex* rows)
 {
   if (primary_dim == 1)
   {

@@ -36,6 +36,14 @@
   }
 }
 
+// Make sure Python int from DolfinIndex can be constructed
+%fragment("SWIG_From_dolfin_DolfinIndex", "header") {
+  SWIGINTERNINLINE PyObject * SWIG_From_dolfin_DolfinIndex  (dolfin::DolfinIndex value)
+  {
+    return SWIG_From_unsigned_SS_long (static_cast< unsigned long >(value));
+  }
+}
+
 //-----------------------------------------------------------------------------
 // A home brewed type check for checking integers
 // Needed due to problems with PyInt_Check from python 2.6 and NumPy
@@ -47,7 +55,6 @@
 				PyArray_IsScalar(in,Integer));
   }
 }
-
 
 //-----------------------------------------------------------------------------
 // Home brewed versions of the SWIG provided SWIG_AsVal(Type). These are needed
@@ -181,3 +188,4 @@
 %fragment(SWIG_From_frag(unsigned int));
 %fragment(SWIG_From_frag(int));
 %fragment(SWIG_From_frag(std::size_t));
+%fragment(SWIG_From_frag(dolfin::DolfinIndex));

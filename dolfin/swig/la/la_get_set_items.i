@@ -24,7 +24,7 @@ enum DolfinCompareType {dolfin_gt, dolfin_ge, dolfin_lt, dolfin_le, dolfin_eq, d
 
 // Returns the values from a Vector.
 // copied_values are true if the returned values are copied and need clean up.
-std::vector<double> _get_vector_values( dolfin::GenericVector* self)
+std::vector<double> _get_vector_values(dolfin::GenericVector* self)
 {
   std::vector<double> values;
   self->get_local(values);
@@ -156,7 +156,7 @@ PyObject* _compare_vector_with_vector( dolfin::GenericVector* self, dolfin::Gene
 double _get_vector_single_item( dolfin::GenericVector* self, int index )
 {
   double value;
-  std::size_t i(Indices::check_index(index, self->size()));
+  dolfin::DolfinIndex i(Indices::check_index(index, self->size()));
 
   // Check that requested index is owned by this process
   if (i < self->local_range().first || i >= self->local_range().second)
@@ -170,8 +170,8 @@ double _get_vector_single_item( dolfin::GenericVector* self, int index )
 boost::shared_ptr<dolfin::GenericVector> _get_vector_sub_vector( const dolfin::GenericVector* self, PyObject* op )
 {
   Indices* inds;
-  std::size_t* range;
-  std::size_t* indices;
+  dolfin::DolfinIndex* range;
+  dolfin::DolfinIndex* indices;
   boost::shared_ptr<dolfin::GenericVector> return_vec;
   std::size_t m;
 
@@ -217,8 +217,8 @@ void _set_vector_items_vector( dolfin::GenericVector* self, PyObject* op, dolfin
 {
   // Get the correct Indices
   Indices* inds;
-  std::size_t* range;
-  std::size_t* indices;
+  dolfin::DolfinIndex* range;
+  dolfin::DolfinIndex* indices;
   std::size_t m;
 
   if ( (inds = indice_chooser(op, self->size())) == 0 )
@@ -261,7 +261,7 @@ void _set_vector_items_array_of_float( dolfin::GenericVector* self, PyObject* op
 {
   Indices* inds;
   double* values;
-  std::size_t* indices;
+  dolfin::DolfinIndex* indices;
   std::size_t m;
   bool casted = false;
 
@@ -330,7 +330,7 @@ void _set_vector_items_value(dolfin::GenericVector* self, PyObject* op, double v
   // The op is a Indices
   else
   {
-    std::size_t* indices;
+    dolfin::DolfinIndex* indices;
     std::size_t i;
     // Fill the vector using the slice
     try {
@@ -356,21 +356,21 @@ void _set_vector_items_value(dolfin::GenericVector* self, PyObject* op, double v
 double _get_matrix_single_item( const dolfin::GenericMatrix* self, int m, int n )
 {
   double value;
-  std::size_t _m(Indices::check_index(m, self->size(0)));
-  std::size_t _n(Indices::check_index(n, self->size(1)));
+  dolfin::DolfinIndex _m(Indices::check_index(m, self->size(0)));
+  dolfin::DolfinIndex _n(Indices::check_index(n, self->size(1)));
   self->get(&value, 1, &_m, 1, &_n);
   return value;
  }
 
 // Get items for slice, list, or numpy array object
-boost::shared_ptr<dolfin::GenericVector> _get_matrix_sub_vector( dolfin::GenericMatrix* self, std::size_t single, PyObject* op, bool row )
+boost::shared_ptr<dolfin::GenericVector> _get_matrix_sub_vector(dolfin::GenericMatrix* self, dolfin::DolfinIndex single, PyObject* op, bool row )
 {
   // Get the correct Indices
   Indices* inds;
   if ( (inds = indice_chooser(op, self->size(row ? 1 : 0))) == 0 )
     throw std::runtime_error("index must be either a slice, a list or a Numpy array of integer");
 
-  std::size_t* indices;
+  dolfin::DolfinIndex* indices;
   try
   {
     // Get the indices in a c array
@@ -522,10 +522,10 @@ dolfin::GenericMatrix* _get_matrix_sub_matrix(const dolfin::GenericMatrix* self,
 */
 
 // Set single item in Matrix
-void _set_matrix_single_item( dolfin::GenericMatrix* self, int m, int n, double value )
+void _set_matrix_single_item(dolfin::GenericMatrix* self, int m, int n, double value )
 {
-  std::size_t _m(Indices::check_index(m, self->size(0)));
-  std::size_t _n(Indices::check_index(n, self->size(1)));
+  dolfin::DolfinIndex _m(Indices::check_index(m, self->size(0)));
+  dolfin::DolfinIndex _n(Indices::check_index(n, self->size(1)));
   self->set(&value, 1, &_m, 1, &_n);
   self->apply("insert");
  }
