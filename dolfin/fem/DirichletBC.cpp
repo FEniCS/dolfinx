@@ -303,7 +303,7 @@ void DirichletBC::zero_columns(GenericMatrix& A,
   // Scan through all columns of all rows, setting to zero if is_bc_dof[column]
   // At the same time, we collect corrections to the RHS
 
-  std::vector<DolfinIndex> cols;
+  std::vector<std::size_t> cols;
   std::vector<double> vals;
   std::vector<double> b_vals;
   std::vector<DolfinIndex> b_rows;
@@ -316,7 +316,7 @@ void DirichletBC::zero_columns(GenericMatrix& A,
     {
       A.getrow(row, cols, vals);
       for (std::size_t j = 0; j < cols.size(); j++)
-        vals[j] = (cols[j] == static_cast<DolfinIndex>(row))*diag_val;
+        vals[j] = (cols[j] == row)*diag_val;
       A.setrow(row, cols, vals);
       A.apply("insert");
       b.setitem(row, bc_dof_val[row]*diag_val);

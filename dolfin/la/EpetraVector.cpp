@@ -823,15 +823,15 @@ double EpetraVector::sum() const
   return global_sum;
 }
 //-----------------------------------------------------------------------------
-double EpetraVector::sum(const Array<DolfinIndex>& rows) const
+double EpetraVector::sum(const Array<std::size_t>& rows) const
 {
   dolfin_assert(x);
-  const DolfinIndex n0 = local_range().first;
-  const DolfinIndex n1 = local_range().second;
+  const std::size_t n0 = local_range().first;
+  const std::size_t n1 = local_range().second;
 
   // Build sets of local and nonlocal entries
-  Set<DolfinIndex> local_rows;
-  Set<DolfinIndex> nonlocal_rows;
+  Set<std::size_t> local_rows;
+  Set<std::size_t> nonlocal_rows;
   for (std::size_t i = 0; i < rows.size(); ++i)
   {
     if (rows[i] >= n0 && rows[i] < n1)
@@ -851,7 +851,7 @@ double EpetraVector::sum(const Array<DolfinIndex>& rows) const
     const uint dest   = (process_number + i) % num_processes;
 
     // Send and receive data
-    std::vector<DolfinIndex> received_nonlocal_rows;
+    std::vector<std::size_t> received_nonlocal_rows;
     MPI::send_recv(nonlocal_rows.set(), dest, received_nonlocal_rows, source);
 
     // Add rows which reside on this process

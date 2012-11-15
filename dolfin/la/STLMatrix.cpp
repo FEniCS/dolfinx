@@ -284,7 +284,7 @@ double STLMatrix::norm(std::string norm_type) const
   return std::sqrt(dolfin::MPI::sum(_norm));
 }
 //-----------------------------------------------------------------------------
-void STLMatrix::getrow(std::size_t row, std::vector<DolfinIndex>& columns,
+void STLMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
                        std::vector<double>& values) const
 {
   if (primary_dim == 1)

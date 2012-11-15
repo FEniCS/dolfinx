@@ -249,10 +249,11 @@ void PeriodicBC::apply(GenericMatrix* A, GenericVector* b,
     // Add slave row to master row in A
     if (A)
     {
-      std::vector<DolfinIndex> columns;
+      std::vector<std::size_t> columns;
       std::vector<double> values;
       A->getrow(slave_dofs[i], columns, values);
-      A->add(values.data(), 1, &master_dofs[i], columns.size(), columns.data());
+      std::vector<DolfinIndex> _columns(columns.begin(), columns.end());
+      A->add(values.data(), 1, &master_dofs[i], _columns.size(), _columns.data());
       A->apply("add");
     }
 
@@ -534,7 +535,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
   if (A)
   {
     // Data for a row -- master dof, cols, vals
-    typedef boost::tuples::tuple<DolfinIndex, std::vector<DolfinIndex>, std::vector<double> > row_type;
+    typedef boost::tuples::tuple<DolfinIndex, std::vector<std::size_t>, std::vector<double> > row_type;
 
     // All rows to be sent to a particular process
     typedef std::vector<row_type> rows_type;
@@ -551,7 +552,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
     {
       if (slave_dofs[i] >= local_range.first && slave_dofs[i] < local_range.second)
       {
-        std::vector<DolfinIndex> columns;
+        std::vector<std::size_t> columns;
         std::vector<double> values;
         A->getrow(slave_dofs[i], columns, values);
         row_type row = row_type(master_dofs[i], columns, values);
@@ -578,15 +579,16 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
     row_map_type received_rows;
     MPI::distribute(communicating_processors, row_map, received_rows);
 
-    for (row_map_type::const_iterator proc_it = received_rows.begin(); proc_it != received_rows.end(); ++proc_it)
+    for (row_map_type::const_iterator proc_it = received_rows.begin();
+            proc_it != received_rows.end(); ++proc_it)
     {
       rows_type rows = proc_it->second;
       for (rows_type::const_iterator row_it = rows.begin(); row_it != rows.end(); ++row_it)
       {
         row_type row = *row_it;
-        DolfinIndex master_dof = row.get<0>();
-        std::vector<DolfinIndex> columns = row.get<1>();
-        std::vector<double> values = row.get<2>();
+        const DolfinIndex& master_dof = row.get<0>();
+        const std::vector<DolfinIndex> columns(row.get<1>().begin(), row.get<1>().end());
+        const std::vector<double>& values = row.get<2>();
         A->add(&values[0], 1, &master_dof, columns.size(), &columns[0]);
       }
     }

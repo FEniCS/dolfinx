@@ -259,7 +259,7 @@ double uBLASVector::sum() const
   return ublas::sum(*x);
 }
 //-----------------------------------------------------------------------------
-double uBLASVector::sum(const Array<DolfinIndex>& rows) const
+double uBLASVector::sum(const Array<std::size_t>& rows) const
 {
   boost::unordered_set<std::size_t> row_set;
   double _sum = 0.0;

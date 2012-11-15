@@ -160,7 +160,7 @@ namespace dolfin
     virtual double sum() const;
 
     /// Return sum of selected rows in vector. Repeated entries are only summed once.
-    virtual double sum(const Array<DolfinIndex>& rows) const;
+    virtual double sum(const Array<std::size_t>& rows) const;
 
     /// Multiply vector by given number
     virtual const uBLASVector& operator*= (double a);

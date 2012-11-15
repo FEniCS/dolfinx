@@ -41,7 +41,7 @@ void GenericMatrix::ident_zeros()
                  "Matrix is not square");
   }
 
-  std::vector<DolfinIndex> columns;
+  std::vector<std::size_t> columns;
   std::vector<double> values;
   std::vector<DolfinIndex> zero_rows;
   const std::pair<std::size_t, std::size_t> row_range = local_range(0);
@@ -126,7 +126,7 @@ void GenericMatrix::compress()
   new_sparsity_pattern.init(global_dimensions, local_range, off_process_owner);
 
   // Declare some variables used to extract matrix information
-  std::vector<DolfinIndex> columns;
+  std::vector<std::size_t> columns;
   std::vector<double> values;
   std::vector<double> allvalues; // Hold all values of local matrix
   std::vector<DolfinIndex> allcolumns;  // Hold column id for all values of local matrix
@@ -142,7 +142,7 @@ void GenericMatrix::compress()
   for (std::size_t i = 0; i < m; i++)
   {
     // Get row and locate nonzeros. Store non-zero values and columns for later
-    const DolfinIndex global_row = i + row_range.first;
+    const std::size_t global_row = i + row_range.first;
     getrow(global_row, columns, values);
     std::size_t count = 0;
     thiscolumn.clear();

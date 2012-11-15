@@ -171,7 +171,7 @@ boost::shared_ptr<GenericMatrix> BlockMatrix::schur_approximation(bool symmetry)
 
   boost::shared_ptr<GenericMatrix> S(D.copy());
 
-  std::vector<DolfinIndex> cols_i;
+  std::vector<std::size_t> cols_i;
   std::vector<double> vals_i;
   for (std::size_t i = 0; i < D.size(0); i++)
   {

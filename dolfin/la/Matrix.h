@@ -120,11 +120,13 @@ namespace dolfin
     { return matrix->norm(norm_type); }
 
     /// Get non-zero values of given row
-    virtual void getrow(std::size_t row, std::vector<DolfinIndex>& columns, std::vector<double>& values) const
+    virtual void getrow(std::size_t row, std::vector<std::size_t>& columns,
+                        std::vector<double>& values) const
     { matrix->getrow(row, columns, values); }
 
     /// Set values for given row
-    virtual void setrow(std::size_t row, const std::vector<DolfinIndex>& columns, const std::vector<double>& values)
+    virtual void setrow(std::size_t row, const std::vector<std::size_t>& columns,
+                        const std::vector<double>& values)
     { matrix->setrow(row, columns, values); }
 
     /// Set given rows to zero

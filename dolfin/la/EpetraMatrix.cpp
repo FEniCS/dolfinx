@@ -626,7 +626,7 @@ void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
   }
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::getrow(std::size_t row, std::vector<DolfinIndex>& columns,
+void EpetraMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
                           std::vector<double>& values) const
 {
   dolfin_assert(A);
@@ -668,7 +668,8 @@ void EpetraMatrix::getrow(std::size_t row, std::vector<DolfinIndex>& columns,
   }
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::setrow(std::size_t row, const std::vector<DolfinIndex>& columns,
+void EpetraMatrix::setrow(std::size_t row,
+                          const std::vector<std::size_t>& columns,
                           const std::vector<double>& values)
 {
   static bool print_msg_once = true;
@@ -681,7 +682,8 @@ void EpetraMatrix::setrow(std::size_t row, const std::vector<DolfinIndex>& colum
   for (std::size_t i = 0; i < columns.size(); i++)
   {
     DolfinIndex _row = row;
-    set(&values[i], 1, &_row, 1, columns.data());
+    DolfinIndex _col = columns[i];
+    set(&values[i], 1, &_row, 1, &_col);
   }
 }
 //-----------------------------------------------------------------------------

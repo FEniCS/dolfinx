@@ -167,7 +167,7 @@ namespace dolfin
     virtual double sum() const;
 
     /// Return sum of selected rows in vector
-    virtual double sum(const Array<DolfinIndex>& rows) const;
+    virtual double sum(const Array<std::size_t>& rows) const;
 
     /// Multiply vector by given number
     virtual const EpetraVector& operator*= (double a);

@@ -123,11 +123,11 @@ namespace dolfin
     virtual double norm(std::string norm_type) const;
 
     /// Get non-zero values of given row
-    virtual void getrow(std::size_t row, std::vector<DolfinIndex>& columns,
+    virtual void getrow(std::size_t row, std::vector<std::size_t>& columns,
                         std::vector<double>& values) const;
 
     /// Set values for given row
-    virtual void setrow(std::size_t row, const std::vector<DolfinIndex>& columns,
+    virtual void setrow(std::size_t row, const std::vector<std::size_t>& columns,
                         const std::vector<double>& values)
     { dolfin_not_implemented(); }
 

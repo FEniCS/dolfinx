@@ -129,11 +129,11 @@ namespace dolfin
     virtual double norm(std::string norm_type) const = 0;
 
     /// Get non-zero values of given row on local process
-    virtual void getrow(std::size_t row, std::vector<DolfinIndex>& columns,
+    virtual void getrow(std::size_t row, std::vector<std::size_t>& columns,
                         std::vector<double>& values) const = 0;
 
     /// Set values for given row on local process
-    virtual void setrow(std::size_t row, const std::vector<DolfinIndex>& columns,
+    virtual void setrow(std::size_t row, const std::vector<std::size_t>& columns,
                         const std::vector<double>& values) = 0;
 
     /// Set given rows to zero

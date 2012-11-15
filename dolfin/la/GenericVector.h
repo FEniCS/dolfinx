@@ -188,7 +188,7 @@ namespace dolfin
     virtual double sum() const = 0;
 
     /// Return sum of selected rows in vector. Repeated entries are only summed once.
-    virtual double sum(const Array<DolfinIndex>& rows) const = 0;
+    virtual double sum(const Array<std::size_t>& rows) const = 0;
 
     /// Multiply vector by given number
     virtual const GenericVector& operator*= (double a) = 0;

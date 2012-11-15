@@ -185,7 +185,7 @@ namespace dolfin
     virtual double sum() const
     { return vector->sum(); }
 
-    virtual double sum(const Array<DolfinIndex>& rows) const
+    virtual double sum(const Array<std::size_t>& rows) const
     { return vector->sum(rows); }
 
     /// Multiply vector by given number

@@ -104,9 +104,9 @@
 // Ignore low level interface
 //-----------------------------------------------------------------------------
 %ignore dolfin::LinearAlgebraObject::instance;
-%ignore dolfin::GenericTensor::get(double*, const std::size_t*, const std::size_t * const *) const;
-%ignore dolfin::GenericTensor::set(const double* , const std::size_t* , const std::size_t * const *);
-%ignore dolfin::GenericTensor::add(const double* , const std::size_t* , const std::size_t * const *);
+%ignore dolfin::GenericTensor::get(double*, const dolfin::DolfinIndex*, const dolfin::DolfinIndex * const *) const;
+%ignore dolfin::GenericTensor::set(const double* , const dolfin::DolfinIndex* , const dolfin::DolfinIndex * const *);
+%ignore dolfin::GenericTensor::add(const double* , const dolfin::DolfinIndex* , const dolfin::DolfinIndex * const *);
 %ignore dolfin::PETScLinearOperator::wrapper;
 
 //-----------------------------------------------------------------------------
@@ -144,8 +144,8 @@
 // NOTE: The %ignore has to be set using the actual type used in the declaration
 // so we cannot use dolfin::uint or unsigned int for uint. Strange...
 //-----------------------------------------------------------------------------
-%ignore dolfin::GenericVector::get(double*, std::size_t, const std::size_t*) const;
-%ignore dolfin::GenericVector::set(const double* , std::size_t m, const std::size_t*);
+%ignore dolfin::GenericVector::get(double*, std::size_t, const dolfin::DolfinIndex*) const;
+%ignore dolfin::GenericVector::set(const double* , std::size_t m, const dolfin::DolfinIndex*);
 
 %ignore dolfin::GenericVector::data() const;
 %ignore dolfin::GenericVector::data();
@@ -160,12 +160,12 @@
 %ignore dolfin::GenericMatrix::operator+=;
 %ignore dolfin::GenericMatrix::operator-=;
 
-%ignore dolfin::GenericMatrix::set(const double*, const std::size_t*,
-				   const std::size_t * const *);
-%ignore dolfin::GenericMatrix::add(const double*, const std::size_t*,
-				   const std::size_t * const * rows);
-%ignore dolfin::GenericMatrix::get(double*, const std::size_t*,
-				   const std::size_t * const *) const;
+%ignore dolfin::GenericMatrix::set(const double*, const dolfin::DolfinIndex*,
+				   const dolfin::DolfinIndex * const *);
+%ignore dolfin::GenericMatrix::add(const double*, const dolfin::DolfinIndex*,
+				   const dolfin::DolfinIndex * const * rows);
+%ignore dolfin::GenericMatrix::get(double*, const dolfin::DolfinIndex*,
+				   const dolfin::DolfinIndex * const *) const;
 %ignore dolfin::GenericMatrix::data;
 %ignore dolfin::GenericMatrix::getitem;
 %ignore dolfin::GenericMatrix::setitem;

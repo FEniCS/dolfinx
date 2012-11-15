@@ -127,12 +127,12 @@ namespace dolfin
 
     /// Get non-zero values of given row
     virtual void getrow(std::size_t row,
-                        std::vector<DolfinIndex>& columns,
+                        std::vector<std::size_t>& columns,
                         std::vector<double>& values) const;
 
     /// Set values for given row
     virtual void setrow(std::size_t row,
-                        const std::vector<DolfinIndex>& columns,
+                        const std::vector<std::size_t>& columns,
                         const std::vector<double>& values);
 
     /// Set given rows to zero

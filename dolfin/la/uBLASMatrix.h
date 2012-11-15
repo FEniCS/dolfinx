@@ -136,10 +136,12 @@ namespace dolfin
     virtual double norm(std::string norm_type) const;
 
     /// Get non-zero values of given row
-    virtual void getrow(std::size_t row, std::vector<DolfinIndex>& columns, std::vector<double>& values) const;
+    virtual void getrow(std::size_t row, std::vector<std::size_t>& columns,
+                        std::vector<double>& values) const;
 
     /// Set values for given row
-    virtual void setrow(std::size_t row_idx, const std::vector<DolfinIndex>& columns, const std::vector<double>& values);
+    virtual void setrow(std::size_t row_idx, const std::vector<std::size_t>& columns,
+                        const std::vector<double>& values);
 
     /// Set given rows to zero
     virtual void zero(std::size_t m, const DolfinIndex* rows);
@@ -291,7 +293,8 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
-  void uBLASMatrix<Mat>::getrow(std::size_t row_idx, std::vector<DolfinIndex>& columns,
+  void uBLASMatrix<Mat>::getrow(std::size_t row_idx,
+                                std::vector<std::size_t>& columns,
                                 std::vector<double>& values) const
   {
     dolfin_assert(row_idx < this->size(0));
@@ -311,7 +314,8 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <typename Mat>
-  void uBLASMatrix<Mat>::setrow(std::size_t row_idx, const std::vector<DolfinIndex>& columns,
+  void uBLASMatrix<Mat>::setrow(std::size_t row_idx,
+                                const std::vector<std::size_t>& columns,
                                 const std::vector<double>& values)
   {
     dolfin_assert(columns.size() == values.size());
