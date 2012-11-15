@@ -295,12 +295,13 @@ void PETScMatrix::setrow(std::size_t row, const std::vector<DolfinIndex>& column
   }
 
   // Handle case n = 0
-  const std::size_t n = columns.size();
+  const PetscInt n = columns.size();
   if (n == 0)
     return;
 
   // Set values
-  set(&values[0], 1, &row, n, &columns[0]);
+  const PetscInt _row = row;
+  set(&values[0], 1, &_row, n, columns.data());
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero(std::size_t m, const DolfinIndex* rows)
@@ -309,13 +310,14 @@ void PETScMatrix::zero(std::size_t m, const DolfinIndex* rows)
 
   IS is = 0;
   PetscScalar null = 0.0;
+  const PetscInt _m = m;
   const std::vector<PetscInt> _rows(rows, rows + m);
-  ISCreateGeneral(PETSC_COMM_SELF, m, _rows.data(), PETSC_COPY_VALUES, &is);
+  ISCreateGeneral(PETSC_COMM_SELF, _m, _rows.data(), PETSC_COPY_VALUES, &is);
   MatZeroRowsIS(*A, is, null, NULL, NULL);
   ISDestroy(&is);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::ident(DolfinIndex m, const DolfinIndex* rows)
+void PETScMatrix::ident(std::size_t m, const DolfinIndex* rows)
 {
   dolfin_assert(A);
 

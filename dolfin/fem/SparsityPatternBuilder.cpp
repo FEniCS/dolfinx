@@ -186,7 +186,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     if (master_dof >= local_range[0].first && master_dof < local_range[0].second)
     {
       // Get non-zero columns for master row
-      std::vector<std::size_t> column_indices;
+      std::vector<DolfinIndex> column_indices;
       sparsity_pattern.get_edges(master_dof, column_indices);
       column_indices.push_back(slave_dof);
 
@@ -197,7 +197,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     if (slave_dof >= local_range[0].first && slave_dof < local_range[0].second)
     {
       // Get non-zero columns for slace row
-      std::vector<std::size_t> column_indices;
+      std::vector<DolfinIndex> column_indices;
       sparsity_pattern.get_edges(slave_dof, column_indices);
       column_indices.push_back(master_dof);
 

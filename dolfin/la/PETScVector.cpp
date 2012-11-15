@@ -329,9 +329,9 @@ void PETScVector::get_local(double* block, std::size_t m, const DolfinIndex* row
     dolfin_assert(x_ghosted);
 
     // Get local range
-    const std::size_t n0 = local_range().first;
-    const std::size_t n1 = local_range().second;
-    const std::size_t local_size = n1 - n0;
+    const PetscInt n0 = local_range().first;
+    const PetscInt n1 = local_range().second;
+    const PetscInt local_size = n1 - n0;
 
     // Build list of rows, and get from ghosted vector
     std::vector<PetscInt> local_rows(m);
@@ -620,12 +620,12 @@ double PETScVector::sum() const
 double PETScVector::sum(const Array<DolfinIndex>& rows) const
 {
   dolfin_assert(x);
-  const std::size_t n0 = local_range().first;
-  const std::size_t n1 = local_range().second;
+  const PetscInt n0 = local_range().first;
+  const PetscInt n1 = local_range().second;
 
   // Build sets of local and nonlocal entries
-  Set<std::size_t> local_rows;
-  Set<std::size_t> send_nonlocal_rows;
+  Set<PetscInt> local_rows;
+  Set<PetscInt> send_nonlocal_rows;
   for (std::size_t i = 0; i < rows.size(); ++i)
   {
     if (rows[i] >= n0 && rows[i] < n1)
@@ -645,7 +645,7 @@ double PETScVector::sum(const Array<DolfinIndex>& rows) const
     const uint dest   = (process_number + i) % num_processes;
 
     // Send and receive data
-    std::vector<std::size_t> received_nonlocal_rows;
+    std::vector<PetscInt> received_nonlocal_rows;
     MPI::send_recv(send_nonlocal_rows.set(), dest,
                    received_nonlocal_rows, source);
 

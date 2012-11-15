@@ -171,7 +171,7 @@ boost::shared_ptr<GenericMatrix> BlockMatrix::schur_approximation(bool symmetry)
 
   boost::shared_ptr<GenericMatrix> S(D.copy());
 
-  std::vector<std::size_t> cols_i;
+  std::vector<DolfinIndex> cols_i;
   std::vector<double> vals_i;
   for (std::size_t i = 0; i < D.size(0); i++)
   {
@@ -183,7 +183,8 @@ boost::shared_ptr<GenericMatrix> BlockMatrix::schur_approximation(bool symmetry)
       const double val=vals_i[k];
       diag_ii -= val*val/A(j,j);
     }
-    S->add(&diag_ii, 1, &i, 1, &i);
+    const DolfinIndex _i = i;
+    S->add(&diag_ii, 1, &_i, 1, &_i);
   }
   return S;
 }

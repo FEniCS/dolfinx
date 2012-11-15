@@ -400,8 +400,8 @@ void EpetraVector::set(const double* block, std::size_t m, const DolfinIndex* ro
 
   const Epetra_BlockMap& map = x->Map();
   dolfin_assert(x->Map().LinearMap());
-  const std::size_t n0 = map.MinMyGID();
-  const std::size_t n1 = map.MaxMyGID();
+  const DolfinIndex n0 = map.MinMyGID();
+  const DolfinIndex n1 = map.MaxMyGID();
 
   // Set local values, or add to off-process cache for later communication
   for (std::size_t i = 0; i < m; ++i)
@@ -413,7 +413,7 @@ void EpetraVector::set(const double* block, std::size_t m, const DolfinIndex* ro
   }
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::add(const double* block, std::size_t m, const std::size_t* rows)
+void EpetraVector::add(const double* block, std::size_t m, const DolfinIndex* rows)
 {
   if (!off_process_set_values.empty())
   {
@@ -439,7 +439,7 @@ void EpetraVector::get_local(double* block, std::size_t m, const DolfinIndex* ro
   dolfin_assert(x);
   const Epetra_BlockMap& map = x->Map();
   dolfin_assert(x->Map().LinearMap());
-  const std::size_t n0 = map.MinMyGID();
+  const DolfinIndex n0 = map.MinMyGID();
 
   // Get values
   if (ghost_global_to_local.empty())
@@ -450,7 +450,7 @@ void EpetraVector::get_local(double* block, std::size_t m, const DolfinIndex* ro
   else
   {
     dolfin_assert(x_ghost);
-    const std::size_t n1 = map.MaxMyGID();
+    const DolfinIndex n1 = map.MaxMyGID();
     const Epetra_BlockMap& ghost_map = x_ghost->Map();
     for (std::size_t i = 0; i < m; ++i)
     {
@@ -475,7 +475,7 @@ void EpetraVector::get_local(double* block, std::size_t m, const DolfinIndex* ro
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::gather(GenericVector& y,
-                          const std::vector<std::size_t>& indices) const
+                          const std::vector<DolfinIndex>& indices) const
 {
   dolfin_assert(x);
 
@@ -503,7 +503,7 @@ void EpetraVector::gather(GenericVector& y,
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::gather(std::vector<double>& x,
-                          const std::vector<std::size_t>& indices) const
+                          const std::vector<DolfinIndex>& indices) const
 {
   const std::size_t _size = indices.size();
   x.resize(_size);
@@ -525,7 +525,7 @@ void EpetraVector::gather_on_zero(std::vector<double>& x) const
 {
   // FIXME: Is there an Epetra function for this?
 
-  std::vector<std::size_t> indices;
+  std::vector<DolfinIndex> indices;
   if (MPI::process_number() == 0)
   {
     indices.resize(size());
@@ -823,15 +823,15 @@ double EpetraVector::sum() const
   return global_sum;
 }
 //-----------------------------------------------------------------------------
-double EpetraVector::sum(const Array<std::size_t>& rows) const
+double EpetraVector::sum(const Array<DolfinIndex>& rows) const
 {
   dolfin_assert(x);
-  const std::size_t n0 = local_range().first;
-  const std::size_t n1 = local_range().second;
+  const DolfinIndex n0 = local_range().first;
+  const DolfinIndex n1 = local_range().second;
 
   // Build sets of local and nonlocal entries
-  Set<std::size_t> local_rows;
-  Set<std::size_t> nonlocal_rows;
+  Set<DolfinIndex> local_rows;
+  Set<DolfinIndex> nonlocal_rows;
   for (std::size_t i = 0; i < rows.size(); ++i)
   {
     if (rows[i] >= n0 && rows[i] < n1)
@@ -851,7 +851,7 @@ double EpetraVector::sum(const Array<std::size_t>& rows) const
     const uint dest   = (process_number + i) % num_processes;
 
     // Send and receive data
-    std::vector<std::size_t> received_nonlocal_rows;
+    std::vector<DolfinIndex> received_nonlocal_rows;
     MPI::send_recv(nonlocal_rows.set(), dest, received_nonlocal_rows, source);
 
     // Add rows which reside on this process

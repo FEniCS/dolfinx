@@ -157,7 +157,7 @@ namespace dolfin
 
     /// Return pointers to underlying compressed storage data.
     /// See GenericMatrix for documentation.
-    virtual boost::tuples::tuple<const DolfinIndex*, const DolfinIndex*, const double*, int> data() const
+    virtual boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const
     { return matrix->data(); }
 
     //--- Special functions ---

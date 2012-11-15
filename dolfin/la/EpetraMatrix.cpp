@@ -231,8 +231,8 @@ void EpetraMatrix::resize(GenericVector& z, uint dim) const
   _z.reset(*map);
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::get(double* block, std::size_t m, const std::size_t* rows,
-                       std::size_t n, const std::size_t* cols) const
+void EpetraMatrix::get(double* block, std::size_t m, const DolfinIndex* rows,
+                       std::size_t n, const DolfinIndex* cols) const
 {
   dolfin_assert(A);
 
@@ -286,8 +286,8 @@ void EpetraMatrix::get(double* block, std::size_t m, const std::size_t* rows,
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::set(const double* block,
-                       std::size_t m, const std::size_t* rows,
-                       std::size_t n, const std::size_t* cols)
+                       std::size_t m, const DolfinIndex* rows,
+                       std::size_t n, const DolfinIndex* cols)
 {
   // This function is awkward and somewhat restrictive because of the
   // poor support for setting off-process values in Epetra
@@ -320,8 +320,8 @@ void EpetraMatrix::set(const double* block,
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::add(const double* block,
-                       std::size_t m, const std::size_t* rows,
-                       std::size_t n, const std::size_t* cols)
+                       std::size_t m, const DolfinIndex* rows,
+                       std::size_t n, const DolfinIndex* cols)
 {
   dolfin_assert(A);
 
@@ -432,7 +432,7 @@ std::string EpetraMatrix::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::ident(std::size_t m, const std::size_t* rows)
+void EpetraMatrix::ident(std::size_t m, const DolfinIndex* rows)
 {
   dolfin_assert(A);
   dolfin_assert(A->Filled() == true);
@@ -527,7 +527,7 @@ void EpetraMatrix::ident(std::size_t m, const std::size_t* rows)
   }
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::zero(std::size_t m, const std::size_t* rows)
+void EpetraMatrix::zero(std::size_t m, const DolfinIndex* rows)
 {
   // FIXME: This can be made more efficient by eliminating creation of
   //        some obejcts inside the loop
@@ -626,7 +626,7 @@ void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
   }
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
+void EpetraMatrix::getrow(std::size_t row, std::vector<DolfinIndex>& columns,
                           std::vector<double>& values) const
 {
   dolfin_assert(A);
@@ -668,7 +668,7 @@ void EpetraMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
   }
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::setrow(std::size_t row, const std::vector<std::size_t>& columns,
+void EpetraMatrix::setrow(std::size_t row, const std::vector<DolfinIndex>& columns,
                           const std::vector<double>& values)
 {
   static bool print_msg_once = true;
@@ -679,7 +679,10 @@ void EpetraMatrix::setrow(std::size_t row, const std::vector<std::size_t>& colum
   }
 
   for (std::size_t i = 0; i < columns.size(); i++)
-    set(&values[i], 1, &row, 1, &columns[i]);
+  {
+    DolfinIndex _row = row;
+    set(&values[i], 1, &_row, 1, columns.data());
+  }
 }
 //-----------------------------------------------------------------------------
 GenericLinearAlgebraFactory& EpetraMatrix::factory() const

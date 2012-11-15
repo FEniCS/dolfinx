@@ -147,7 +147,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
         {
           const std::size_t dofs[2] = {dof_pair->first.first, dof_pair->second.first};
 
-          std::vector<std::size_t> edges;
+          std::vector<DolfinIndex> edges;
           for (uint i = 0; i < 2; ++i)
           {
             if (dofs[i] >= local_range.first && dofs[i] < local_range.second)

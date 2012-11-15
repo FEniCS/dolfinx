@@ -40,7 +40,7 @@ CoordinateMatrix::CoordinateMatrix(const GenericMatrix& A, bool symmetric,
     for (std::size_t i = local_row_range.first; i < local_row_range.second; ++i)
     {
       // Get column and value data for row
-      std::vector<std::size_t> columns;
+      std::vector<DolfinIndex> columns;
       std::vector<double> values;
       A.getrow(i, columns, values);
 
@@ -57,13 +57,13 @@ CoordinateMatrix::CoordinateMatrix(const GenericMatrix& A, bool symmetric,
     for (std::size_t i = local_row_range.first; i < local_row_range.second; ++i)
     {
       // Get column and value data for row
-      std::vector<std::size_t> columns;
+      std::vector<DolfinIndex> columns;
       std::vector<double> values;
       A.getrow(i, columns, values);
 
       for (std::size_t j = 0; j < columns.size(); ++j)
       {
-        if (columns[j] >= i)
+        if (columns[j] >= (DolfinIndex) i)
         {
           _rows.push_back(i);
           _cols.push_back(columns[j]);

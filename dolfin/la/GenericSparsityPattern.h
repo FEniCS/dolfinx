@@ -59,8 +59,8 @@ namespace dolfin
     virtual void insert(const std::vector<const std::vector<DolfinIndex>* >& entries) = 0;
 
     /// Add edges (vertex = [index, owning process])
-    virtual void add_edges(const std::pair<std::size_t, uint>& vertex,
-                           const std::vector<std::size_t>& edges) = 0;
+    virtual void add_edges(const std::pair<DolfinIndex, uint>& vertex,
+                           const std::vector<DolfinIndex>& edges) = 0;
 
     /// Return rank
     virtual uint rank() const = 0;
@@ -96,7 +96,7 @@ namespace dolfin
     virtual std::vector<std::vector<std::size_t> > off_diagonal_pattern(Type type) const = 0;
 
     /// Fill vector with edges for given vertex
-    virtual void get_edges(std::size_t vertex, std::vector<std::size_t>& edges) const = 0;
+    virtual void get_edges(std::size_t vertex, std::vector<DolfinIndex>& edges) const = 0;
 
     /// Finalize sparsity pattern
     virtual void apply() = 0;
