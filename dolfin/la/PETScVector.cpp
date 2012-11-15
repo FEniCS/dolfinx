@@ -312,7 +312,7 @@ void PETScVector::get_local(double* block, std::size_t m,
 {
   dolfin_assert(x);
   PetscInt _m = m;
-  const int* _rows = rows;
+  const DolfinIndex* _rows = rows;
 
   // Handle case that m = 0 (VecGetValues is collective -> must be called be
   //                         all processes)
@@ -814,7 +814,7 @@ void PETScVector::_init(std::pair<std::size_t, std::size_t> range,
   x.reset(new Vec(0), PETScVectorDeleter());
 
   const std::size_t local_size = range.second - range.first;
-  dolfin_assert(int (range.second - range.first) >= 0);
+  dolfin_assert(range.second - range.first >= 0);
 
   // Initialize vector, either default or MPI vector
   if (!distributed)
@@ -842,9 +842,7 @@ void PETScVector::_init(std::pair<std::size_t, std::size_t> range,
     // Clear ghost indices map
     ghost_global_to_local.clear();
 
-    //const int* _ghost_indices = 0;
-    //if (!ghost_indices.empty())
-    //  _ghost_indices = reinterpret_cast<const int*>(&ghost_indices[0]);
+    // Copy ghost indices
     const std::vector<PetscInt> _ghost_indices(ghost_indices.begin(), ghost_indices.end());
 
     VecCreateGhost(PETSC_COMM_WORLD, local_size, PETSC_DECIDE,
