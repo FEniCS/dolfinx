@@ -303,7 +303,7 @@ std::pair<std::size_t, std::size_t> DofMap::ownership_range() const
   return _ownership_range;
 }
 //-----------------------------------------------------------------------------
-const boost::unordered_map<std::size_t, uint>& DofMap::off_process_owner() const
+const boost::unordered_map<std::size_t, dolfin::uint>& DofMap::off_process_owner() const
 {
   return _off_process_owner;
 }
