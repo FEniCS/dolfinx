@@ -121,6 +121,8 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& dolfin_mesh,
   }
   
   // Periodic modification. Compute master-slave pairs and eliminate slaves 
+  // Could this be done prior to compute_ownership etc?? such that we don't need
+  // to modify all maps after making the periodic modification.
   if (dolfin_mesh.is_periodic())
   {  
     periodic_modification(dofmap, dolfin_mesh);
@@ -683,6 +685,61 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
       const uint local_master_facet = master_cell.index(master_facet);
       dofmap.tabulate_facet_dofs(&local_master_dofs[0], local_master_facet); 
       
+//       //////////////////////////////////////////////////////////////
+         // Faster search, but this is not really a timeconsuming process anyway...
+//       if (dofmap.num_facet_dofs() == 0)
+//       {
+//         continue;
+//       }
+//       else if (dofmap.num_facet_dofs() == 1)
+//       {
+//         uint global_master_dof = global_master_dofs[local_master_dofs[0]];
+//         uint global_slave_dof = slave_dofs[i][0];
+//         if (global_master_dof >= ownership_range.first && global_master_dof < ownership_range.second)
+//           global_matching_pairs.push_back(std::make_pair(global_master_dof, global_slave_dof));
+//       }
+//       else
+//       {
+//         // Get global master dof and coordinates of first local dof
+//         uint global_master_dof = global_master_dofs[local_master_dofs[0]];
+//         std::copy(master_coor[local_master_dofs[0]].begin(),
+//                   master_coor[local_master_dofs[0]].end(), x.begin());      
+//         dx = dx_map[i];    
+//         // Look for a match in coordinates of the first local slave dof
+//         uint global_slave_dof = slave_dofs[i][0];
+//         y = coors_on_slave[i][0];                      
+//         for(uint l = 0; l < gdim; l++) 
+//           y[l] = y[l] - dx[l];   
+// 
+//         // y should now be equal to x for a periodic match
+//         double error = 0.;
+//         for(uint l = 0; l < gdim; l++) 
+//           error += std::abs(y[l] - x[l]);
+//           
+//         if (error < y.size()*DOLFIN_EPS) // Match! Assuming the dofs are laid out in the same order 
+//                                          // on the facet the remaining are simply copied without control
+//         {  
+//           for (uint j = 0; j < dofmap.num_facet_dofs(); j++)
+//           {
+//             global_master_dof = global_master_dofs[local_master_dofs[j]];
+//             global_slave_dof = slave_dofs[i][j];    
+//             if (global_master_dof >= ownership_range.first && global_master_dof < ownership_range.second)
+//               global_matching_pairs.push_back(std::make_pair(global_master_dof, global_slave_dof));
+//           }
+//         }
+//         else  // If local dofs 0/0 don't match the order must be opposite
+//         {
+//           for (uint j = 0; j < dofmap.num_facet_dofs(); j++)
+//           {
+//             global_master_dof = global_master_dofs[local_master_dofs[j]];
+//             global_slave_dof = slave_dofs[i][dofmap.num_facet_dofs()-j-1];
+//             if (global_master_dof >= ownership_range.first && global_master_dof < ownership_range.second)
+//               global_matching_pairs.push_back(std::make_pair(global_master_dof, global_slave_dof));
+//           }
+//         }
+//       }            
+//       ////////////////////////////////////////////////////////
+      
       // Match master and slave dofs and put pair in map
       for (uint j = 0; j < dofmap.num_facet_dofs(); j++)
       {
@@ -718,11 +775,13 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
     }                  
   }
   
-  // At this point there should be a match between dofs in 
-  // global_matching_pairs. 
+  // At this point there should be a match between dofs in global_matching_pairs. 
   // Put the matching dof pairs on all processes
   std::vector<vector_of_pairs> allpairs;
   MPI::all_gather(global_matching_pairs, allpairs);
+  
+  // Use a master_slave map for fast master search
+  std::map<uint, uint> _current_master_slave_map;
   
   // Add dof pairs to the global _slave_master_map
   for (uint i = 0; i < allpairs.size(); i++)
@@ -745,14 +804,21 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
       if (_slave_master_map.find(slave_dof) == _slave_master_map.end())
       {
         _slave_master_map[slave_dof] = pair;
-        for (ui_pair_map_iterator it = _slave_master_map.begin();
-                                  it != _slave_master_map.end(); ++it)
+        _current_master_slave_map[master_dof] = slave_dof;
+//         This search is slow, but perhaps more intuitive than the alternative below?
+//         for (ui_pair_map_iterator it = _current_slave_master_map.begin();
+//                                   it != _current_slave_master_map.end(); ++it)
+//         {
+//           if (it->second.first == slave_dof) // Has been previously used as master
+//           {
+//             _slave_master_map[it->first] = pair; // Use latest master value for previous as well
+//             break;
+//           }
+//         }
+        if (_current_master_slave_map.find(slave_dof) != _current_master_slave_map.end())
         {
-          if (it->second.first == slave_dof) // Has been previously used as master
-          {
-            _slave_master_map[it->first] = pair; // Use latest master value for previous as well
-            break;
-          }
+          _slave_master_map[_current_master_slave_map[slave_dof]] = pair;
+          _current_master_slave_map.erase(slave_dof);
         }
       }
       else // The slave_dof exists as slave from before
@@ -760,15 +826,26 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
         // Check if the master_dof has been used previously as a slave
         // In that case use previous master for the current slave as well
         if (_slave_master_map.find(master_dof) != _slave_master_map.end())
+        {
+          _current_master_slave_map.erase(_slave_master_map[slave_dof].first);
           _slave_master_map[slave_dof] = _slave_master_map[master_dof]; 
+          _current_master_slave_map[_slave_master_map[master_dof].first] = slave_dof;
+        }
       }
     }
   }
+
 //   cout << "Map" << endl;
 //   for (ui_pair_map_iterator it = _slave_master_map.begin();
 //                                   it != _slave_master_map.end(); ++it)
 //   {
 //     cout << "   " << it->first << " " << it->second.first << endl;
+//   }
+//   cout << "Master Map" << endl;
+//   for (std::map<uint, uint>::iterator it = _current_master_slave_map.begin();
+//                                   it != _current_master_slave_map.end(); ++it)
+//   {
+//     cout << "   " << it->first << " " << it->second << endl;
 //   }
 }
 
@@ -822,6 +899,7 @@ void DofMapBuilder::periodic_modification(DofMap& dofmap, const Mesh& mesh)
       if (_slave_master_map.find(dof) != _slave_master_map.end())
       {
         dofmap._dofmap[*it][j] = _slave_master_map[dof].first; // Switch slave for master
+        
         // Modify _off_process_owner if master is not owned by current process
         if (_slave_master_map[dof].second != MPI::process_number())
           dofmap._off_process_owner[_slave_master_map[dof].first] = _slave_master_map[dof].second; 

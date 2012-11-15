@@ -588,6 +588,7 @@ void Mesh::add_periodic_direction(const SubDomain& sub_domain)
 //-----------------------------------------------------------------------------
 void Mesh::add_periodic_direction(boost::shared_ptr<const SubDomain> sub_domain)
 {  
+  // Get dimensions
   const uint tdim = topology().dim();
   const uint gdim = geometry().dim();
 
@@ -620,6 +621,7 @@ void Mesh::add_periodic_direction(boost::shared_ptr<const SubDomain> sub_domain)
   {
     if (!facet->exterior())
       continue;
+    
     facet_midpoint = facet->midpoint();
     for (uint i = 0; i < gdim; i++)
       x[i] = facet_midpoint[i];
@@ -636,23 +638,28 @@ void Mesh::add_periodic_direction(boost::shared_ptr<const SubDomain> sub_domain)
       mf.set_value(cell.index(), cell.index(*facet), ii + 1);
     }
   }
+  
+  // Create the facet-to-facet list of matching periodic directions ii and ii+1
   add_periodic_direction(ii, ii + 1);  
 }
 //-----------------------------------------------------------------------------
 void Mesh::add_periodic_direction(const MeshFunction<unsigned int>& sub_domains,
                const uint sub_domain0, const uint sub_domain1)
 {
+  // Mark the MeshValueCollection using provided MeshFunction  
   MeshValueCollection<uint>& mf = *(_domains.markers(topology().dim() - 1));
   mf = sub_domains;  
+  
+  // Create the facet-to-facet list of matching periodic directions ii and ii+1
   add_periodic_direction(sub_domain0, sub_domain1);  
 }
 //-----------------------------------------------------------------------------
 void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1)
 {
-  // They should all end up calling this for computing the periodic facet-to-facet pairs
-  
+  // All should end up calling this for computing the periodic facet-to-facet pairs  
   Timer t0("Mesh compute facet pairs");
   
+  // Get dimensions
   const uint tdim = topology().dim();
   const uint gdim = geometry().dim();
   
@@ -663,19 +670,27 @@ void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1
   Point facet_midpoint;
   
   // Initialize mesh facets
-  init(tdim - 1, tdim);
+  init(tdim-1, tdim);
   
   // MPI process number
   const int process_number = MPI::process_number();
   
   // Make sure the MeshValueCollection exists
-  dolfin_assert(_domains.markers(tdim - 1));
+  dolfin_assert(_domains.markers(tdim-1));
   
   // Get the facet markers 
   const std::map<std::pair<uint, uint>, uint>& 
-    markers = _domains.markers(tdim - 1)->values();
+    markers = _domains.markers(tdim-1)->values();
   
+  std::ostringstream ost;  
+  if (_domains.markers(tdim-1)->name() == "m")
+    ost << " Periodic/" << sub_domain0 << ":" << sub_domain1 << "/ " ;
+  else
+    ost << _domains.markers(tdim-1)->name() << " Periodic/" << sub_domain0 << ":" << sub_domain1 << "/ " ;
+  
+  _domains.markers(tdim-1)->rename(ost.str(), _domains.markers(tdim-1)->label()) ;
   // Compute distance between periodic subdomains
+  
   uint count0 = 0;
   uint count1 = 0;
   std::map<std::pair<uint, uint>, uint>::const_iterator mark;
@@ -710,13 +725,12 @@ void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1
   }
   #endif
   assert(count0 == count1);
-  
   // Put the distance between the periodic subdomains in dx-vector
   for (uint i = 0; i < gdim; i++)
-    dx[i] = (y[i] - x[i])/(double) count0;
+    dx[i] = (y[i]-x[i]) / (double) count0;
     
   // Loop over both periodic subdomains and find matching pairs of facets
-  Progress p("Finding periodic face pairs", size(tdim - 1));
+  Progress p("Finding periodic face pairs", size(tdim-1));
   coordinate_map coordinate_facet_pairs;
   for (mark = markers.begin(); mark != markers.end(); ++mark)
   {
@@ -752,7 +766,7 @@ void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1
     {
       // Map coordinates of slave midpoint.
       for (uint i = 0; i < gdim; i++)
-        y[i] = x[i] - dx[i];
+        y[i] = x[i]-dx[i];
       
       coordinate_iterator it = coordinate_facet_pairs.find(y);
       if (it != coordinate_facet_pairs.end())

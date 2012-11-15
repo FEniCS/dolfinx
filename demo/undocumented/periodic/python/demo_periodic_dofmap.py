@@ -75,7 +75,7 @@ pbr.mark(mf, 2)
 mesh.add_periodic_direction(pbc)
 #mesh.add_periodic_direction(1, 2)
 
-V = FunctionSpace(mesh, "CG", 1)
+V = FunctionSpace(mesh, "CG", 2)
 
 # Create Dirichlet boundary condition
 u0 = Constant(0.0)
@@ -98,11 +98,14 @@ u = Function(V)
 solve(a == L, u, bcs)
 
 # Save solution to file
-file = File("periodic_dofmap.pvd")
+file = File("periodic_dofmap.xml.gz")
 file << u
+
+#u = Function(V, "periodic_dofmap.xml.gz")
+list_timings()
 
 # Plot solution
 plot(u, interactive=True)
 
-list_timings()
+
 
