@@ -54,7 +54,7 @@ static void build_dolfin_mesh(const csg::C3t3& c3t3, Mesh& mesh)
   dolfin::uint num_cells = 0;
   for(csg::C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin();
       cit != c3t3.cells_in_complex_end();
-      ++cit) 
+      ++cit)
   {
     num_cells++;
   }
@@ -69,12 +69,12 @@ static void build_dolfin_mesh(const csg::C3t3& c3t3, Mesh& mesh)
   dolfin::uint vertex_index = 0;
   std::map<Vertex_handle, dolfin::uint> vertex_id_map;
 
-  for (Triangulation::Finite_vertices_iterator 
+  for (Triangulation::Finite_vertices_iterator
          cgal_vertex = triangulation.finite_vertices_begin();
        cgal_vertex != triangulation.finite_vertices_end(); ++cgal_vertex)
   {
     vertex_id_map[cgal_vertex] = vertex_index;
-    
+
       // Get vertex coordinates and add vertex to the mesh
     Point p(cgal_vertex->point()[0], cgal_vertex->point()[1], cgal_vertex->point()[2]);
     mesh_editor.add_vertex(vertex_index, p);
@@ -82,11 +82,11 @@ static void build_dolfin_mesh(const csg::C3t3& c3t3, Mesh& mesh)
     ++vertex_index;
   }
 
-  // Add cells to mesh 
+  // Add cells to mesh
   dolfin::uint cell_index = 0;
   for(csg::C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin();
       cit != c3t3.cells_in_complex_end();
-      ++cit) 
+      ++cit)
   {
     mesh_editor.add_cell(cell_index,
                          vertex_id_map[cit->vertex(0)],
@@ -148,23 +148,23 @@ void CSGCGALMeshGenerator3D::generate(Mesh& mesh) const
     //cout << "Cell size: " << cell_size << endl;
 
     criteria.reset(new csg::Mesh_criteria(CGAL::parameters::edge_size = cell_size, // ???
-                                          CGAL::parameters::facet_angle = 30.0, 
-                                          CGAL::parameters::facet_size = cell_size, 
+                                          CGAL::parameters::facet_angle = 30.0,
+                                          CGAL::parameters::facet_size = cell_size,
                                           CGAL::parameters::facet_distance = cell_size/10.0, // ???
-                                          CGAL::parameters::cell_radius_edge_ratio = 3.0, 
+                                          CGAL::parameters::cell_radius_edge_ratio = 3.0,
                                           CGAL::parameters::cell_size = cell_size));
   }
   else
   {
     // Mesh criteria
     criteria.reset(new csg::Mesh_criteria(CGAL::parameters::edge_size = parameters["edge_size"],
-                                          CGAL::parameters::facet_angle = parameters["facet_angle"], 
-                                          CGAL::parameters::facet_size = parameters["facet_size"], 
+                                          CGAL::parameters::facet_angle = parameters["facet_angle"],
+                                          CGAL::parameters::facet_size = parameters["facet_size"],
                                           CGAL::parameters::facet_distance = parameters["facet_distance"],
-                                          CGAL::parameters::cell_radius_edge_ratio = parameters["cell_radius_edge_ratio"], 
+                                          CGAL::parameters::cell_radius_edge_ratio = parameters["cell_radius_edge_ratio"],
                                           CGAL::parameters::cell_size = parameters["cell_size"]));
   }
-  
+
   // Mesh generation
   cout << "Generating mesh" << endl;
   csg::C3t3 c3t3 = CGAL::make_mesh_3<csg::C3t3>(domain, *criteria,
@@ -220,6 +220,7 @@ CSGCGALMeshGenerator3D::CSGCGALMeshGenerator3D(const CSGGeometry& geometry)
 	       "Create mesh generator",
 	       "Dolfin must be compiled with CGAL to use this feature.");
 }
+//-----------------------------------------------------------------------------
 CSGCGALMeshGenerator3D::CSGCGALMeshGenerator3D(boost::shared_ptr<const CSGGeometry> geometry)
 {
   dolfin_error("CSGCGALMeshGenerator3D.cpp",
@@ -229,6 +230,7 @@ CSGCGALMeshGenerator3D::CSGCGALMeshGenerator3D(boost::shared_ptr<const CSGGeomet
 CSGCGALMeshGenerator3D::~CSGCGALMeshGenerator3D(){}
 void CSGCGALMeshGenerator3D::generate(Mesh& mesh) const{}
 void CSGCGALMeshGenerator3D::save_off(std::string filename) const {}
+//-----------------------------------------------------------------------------
 
 
 #endif

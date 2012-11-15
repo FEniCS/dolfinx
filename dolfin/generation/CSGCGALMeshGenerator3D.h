@@ -40,9 +40,13 @@ namespace dolfin
   {
   public :
     CSGCGALMeshGenerator3D(const CSGGeometry& geometry);
+
     CSGCGALMeshGenerator3D(boost::shared_ptr<const CSGGeometry> geometry);
+
     ~CSGCGALMeshGenerator3D();
+
     void generate(Mesh& mesh) const;
+
     void save_off(std::string filename) const;
 
     /// Default parameter values

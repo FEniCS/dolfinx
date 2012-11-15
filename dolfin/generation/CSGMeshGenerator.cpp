@@ -92,6 +92,7 @@ void CSGMeshGenerator::generate(Mesh& mesh,
 	       "create mesh from CSG geometry",
 	       "Mesh generation not available. Dolfin has been compiled without CGAL.");
 }
+//-----------------------------------------------------------------------------
 void CSGMeshGenerator::generate(BoundaryMesh& mesh,
                                 const CSGGeometry& geometry)
 {
