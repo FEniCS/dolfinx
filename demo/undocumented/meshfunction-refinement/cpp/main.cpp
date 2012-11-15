@@ -44,12 +44,12 @@ int main()
   UnitSquare mesh(5, 5);
 
   // Create MeshFunction over cells
-  MeshFunction<unsigned int> right_cells(mesh, mesh.topology().dim(), 0);
+  MeshFunction<std::size_t> right_cells(mesh, mesh.topology().dim(), 0);
   Right right;
   right.mark(right_cells, 1);
 
   // Create MeshFunction over facets
-  MeshFunction<unsigned int> inflow_facets(mesh, mesh.topology().dim() - 1, 0);
+  MeshFunction<std::size_t> inflow_facets(mesh, mesh.topology().dim() - 1, 0);
   Inflow inflow;
   inflow.mark(inflow_facets, 1);
 

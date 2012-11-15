@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2011
 //
 // First added:  2009-09-29
-// Last changed: 2012-07-05
+// Last changed: 2012-11-12
 //
 // This demo program solves a hyperelastic problem
 
@@ -96,7 +96,7 @@ public:
 int main()
 {
   // Create mesh and define function space
-  UnitCube mesh (16, 16, 16);
+  UnitCubeMesh mesh (16, 16, 16);
   HyperElasticity::FunctionSpace V(mesh);
 
   // Define Dirichlet boundaries

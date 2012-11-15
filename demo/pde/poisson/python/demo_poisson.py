@@ -30,14 +30,14 @@ du/dn(x, y) = sin(5*x) for y = 0 or y = 1
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2007-08-16
-# Last changed: 2011-06-28
+# Last changed: 2012-11-12
 
 # Begin demo
 
 from dolfin import *
 
 # Create mesh and define function space
-mesh = UnitSquare(32, 32)
+mesh = UnitSquareMesh(32, 32)
 V = FunctionSpace(mesh, "Lagrange", 1)
 
 # Define Dirichlet boundary (x = 0 or x = 1)

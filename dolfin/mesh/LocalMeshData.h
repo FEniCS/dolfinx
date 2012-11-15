@@ -93,25 +93,25 @@ namespace dolfin
     void unpack_vertex_coordinates(const std::vector<double>& values);
 
     // Unpack received cell vertices
-    void unpack_cell_vertices(const std::vector<uint>& values);
+    void unpack_cell_vertices(const std::vector<std::size_t>& values);
 
     // Coordinates for all vertices stored on local processor
     std::vector<std::vector<double> > vertex_coordinates;
 
     // Global vertex indices for all vertices stored on local processor
-    std::vector<uint> vertex_indices;
+    std::vector<std::size_t> vertex_indices;
 
     // Global vertex indices for all cells stored on local processor
-    boost::multi_array<uint, 2> cell_vertices;
+    boost::multi_array<std::size_t, 2> cell_vertices;
 
     // Global cell numbers for all cells stored on local processor
-    std::vector<uint> global_cell_indices;
+    std::vector<std::size_t> global_cell_indices;
 
     // Global number of vertices
-    uint num_global_vertices;
+    std::size_t num_global_vertices;
 
     // Global number of cells
-    uint num_global_cells;
+    std::size_t num_global_cells;
 
     // Number of vertices per cell
     uint num_vertices_per_cell;
@@ -123,7 +123,7 @@ namespace dolfin
     uint tdim;
 
     // Mesh domain data [dim](line, (cell_index, local_index, value))
-    std::map<uint, std::vector< std::pair<std::pair<dolfin::uint, dolfin::uint>, dolfin::uint> > >
+    std::map<std::size_t, std::vector<std::pair<std::pair<std::size_t, dolfin::uint>, dolfin::uint> > >
         domain_data;
 
     // Friends

@@ -137,8 +137,6 @@ dolfin::uint LinearSolver::solve(const GenericLinearOperator& A,
                                  const GenericVector& b)
 {
   dolfin_assert(solver);
-  //check_dimensions(A, x, b);
-
   solver->parameters.update(parameters);
   return solver->solve(A, x, b);
 }
@@ -146,8 +144,6 @@ dolfin::uint LinearSolver::solve(const GenericLinearOperator& A,
 dolfin::uint LinearSolver::solve(GenericVector& x, const GenericVector& b)
 {
   dolfin_assert(solver);
-  //check_dimensions(get_operator(), x, b);
-
   solver->parameters.update(parameters);
   return solver->solve(x, b);
 }
@@ -159,6 +155,7 @@ LinearSolver::in_list(const std::string& method,
   for (uint i = 0; i < methods.size(); i++)
     if (method == methods[i].first)
       return true;
+
   return false;
 }
 //-----------------------------------------------------------------------------

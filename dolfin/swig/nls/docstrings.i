@@ -129,3 +129,61 @@ Default parameter values
 Convergence test
 ";
 
+// Documentation extracted from: (module=nls, header=PETScSNESSolver.h)
+%feature("docstring")  dolfin::PETScSNESSolver "
+This class implements methods for solving nonlinear systems
+via PETSc's SNES interface. It includes line search and trust
+region techniques for globalising the convergence of the
+nonlinear iteration.
+";
+
+%feature("docstring")  dolfin::PETScSNESSolver::PETScSNESSolver "
+Create SNES solver for a particular method
+";
+
+%feature("docstring")  dolfin::PETScSNESSolver::solve "
+Solve abstract nonlinear problem :math:`F(x) = 0` for given
+:math:`F` and Jacobian :math:`\dfrac{\partial F}{\partial x}`.
+
+*Arguments*
+    nonlinear_function (:py:class:`NonlinearProblem`)
+        The nonlinear problem.
+    x (:py:class:`GenericVector`)
+        The vector.
+
+*Returns*
+    (int, bool)
+        Pair of number of Newton iterations, and whether
+        iteration converged)
+";
+
+%feature("docstring")  dolfin::PETScSNESSolver::methods "
+Return a list of available solver methods
+";
+
+%feature("docstring")  dolfin::PETScSNESSolver::default_parameters "
+Default parameter values
+";
+
+%feature("docstring")  dolfin::PETScSNESSolver::set_linear_solver_parameters "
+Update the linear solver with the Parameters for a linear solver
+";
+
+%feature("docstring")  dolfin::PETScSNESSolver::init "
+Initialize SNES solver
+";
+
+%feature("docstring")  dolfin::PETScSNESSolver::FormFunction "
+The callback for PETSc to compute F, the nonlinear residual
+";
+
+%feature("docstring")  dolfin::PETScSNESSolver::FormJacobian "
+The callback for PETSc to compute A, the Jacobian
+";
+
+%feature("docstring")  dolfin::PETScSNESSolver::set_bounds "
+Set the bounds on the problem from the parameters, if desired
+Here, x is passed in as a model vector from which we make our Vecs
+that tell PETSc the bounds.
+";
+

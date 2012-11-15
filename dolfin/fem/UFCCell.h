@@ -166,7 +166,7 @@ namespace dolfin
         //if (use_global_indices && topology.have_global_indices(d))
         if (topology.have_global_indices(d))
         {
-          const std::vector<uint>& global_indices = topology.global_indices(d);
+          const std::vector<std::size_t>& global_indices = topology.global_indices(d);
           for (uint i = 0; i < num_cell_entities[d]; ++i)
             entity_indices[d][i] = global_indices[cell.entities(d)[i]];
         }
@@ -189,7 +189,7 @@ namespace dolfin
       index = cell.index();
 
       // Set vertex coordinates
-      const uint* vertices = cell.entities(0);
+      const std::size_t* vertices = cell.entities(0);
       for (uint i = 0; i < num_vertices; i++)
         coordinates[i] = const_cast<double*>(cell.mesh().geometry().x(vertices[i]));
     }

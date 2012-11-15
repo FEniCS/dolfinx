@@ -72,12 +72,12 @@ void RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
                                            const MeshFunction<bool>& cell_markers)
 {
   // Create edge markers and initialize to false
-  const uint edges_per_cell = mesh.topology().dim() + 1;
+  const std::size_t edges_per_cell = mesh.topology().dim() + 1;
   std::vector<std::vector<bool> > edge_markers(mesh.num_cells());
-  for (uint i = 0; i < mesh.num_cells(); i++)
+  for (std::size_t i = 0; i < mesh.num_cells(); i++)
   {
     edge_markers[i].resize(edges_per_cell);
-    for (uint j = 0; j < edges_per_cell; j++)
+    for (std::size_t j = 0; j < edges_per_cell; j++)
       edge_markers[i][j] = false;
   }
 
@@ -86,24 +86,25 @@ void RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
   IndexSet marked_cells(mesh.num_cells());
 
   // Get bisection data
-  boost::shared_ptr<MeshFunction<unsigned int> > bisection_twins = mesh.data().mesh_function("bisection_twins");
+  boost::shared_ptr<MeshFunction<std::size_t> > bisection_twins
+      = mesh.data().mesh_function("bisection_twins");
 
   // Iterate until no more cells are marked
   cells.fill();
   while (!cells.empty())
   {
     // Iterate over all cells in list
-    for (uint _i = 0; _i < cells.size(); _i++)
+    for (std::size_t _i = 0; _i < cells.size(); _i++)
     {
       // Get cell index and create cell
-      const uint cell_index = cells[_i];
+      const std::size_t cell_index = cells[_i];
       const Cell cell(mesh, cell_index);
 
       // Count the number of marked edges
-      const uint num_marked = count_markers(edge_markers[cell_index]);
+      const std::size_t num_marked = count_markers(edge_markers[cell_index]);
 
       // Check whether cell has a bisection twin
-      uint bisection_twin = cell_index;
+      std::size_t bisection_twin = cell_index;
       bool is_bisected = false;
       if (bisection_twins)
       {
@@ -112,8 +113,8 @@ void RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
       }
 
       // Get bisection edge
-      uint common_edge = 0;
-      uint bisection_edge = 0;
+      std::size_t common_edge = 0;
+      std::size_t bisection_edge = 0;
       if (is_bisected)
       {
         common_edge = find_common_edges(cell, mesh, bisection_twin).first;
@@ -159,7 +160,7 @@ void RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
         for (CellIterator neighbor(*edge); !neighbor.end(); ++neighbor)
         {
           // Get local edge number of edge relative to neighbor
-          const uint local_index = neighbor->index(*edge);
+          const std::size_t local_index = neighbor->index(*edge);
 
           // Mark edge for refinement
           if (!edge_markers[neighbor->index()][local_index])
@@ -178,10 +179,10 @@ void RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
 
   // Extract which cells to refine and indices which edges to bisect
   refinement_markers.resize(mesh.num_cells());
-  for (uint i = 0; i < edge_markers.size(); i++)
+  for (std::size_t i = 0; i < edge_markers.size(); i++)
   {
     // Count the number of marked edges
-    const uint num_marked = count_markers(edge_markers[i]);
+    const std::size_t num_marked = count_markers(edge_markers[i]);
 
     // Check if cell has been bisected before
     const bool is_bisected = bisection_twins && (*bisection_twins)[i] != i;
@@ -220,10 +221,10 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
                                          const IndexSet& marked_edges)
 {
   // Count the number of cells in refined mesh
-  uint num_cells = 0;
+  std::size_t num_cells = 0;
 
   // Data structure to hold a cell
-  std::vector<uint> cell_data;
+  std::vector<std::size_t> cell_data;
 
 
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -249,20 +250,20 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   }
 
   // Initialize mesh editor
-  const uint num_vertices = mesh.num_vertices() + marked_edges.size();
+  const std::size_t num_vertices = mesh.num_vertices() + marked_edges.size();
   MeshEditor editor;
   editor.open(refined_mesh, mesh.topology().dim(), mesh.geometry().dim());
   editor.init_vertices(num_vertices);
   editor.init_cells(num_cells);
 
   // Set vertex coordinates
-  uint current_vertex = 0;
+  std::size_t current_vertex = 0;
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
     editor.add_vertex(current_vertex, vertex->point());
     current_vertex++;
   }
-  for (uint i = 0; i < marked_edges.size(); i++)
+  for (std::size_t i = 0; i < marked_edges.size(); i++)
   {
     Edge edge(mesh, marked_edges[i]);
     editor.add_vertex(current_vertex, edge.midpoint());
@@ -270,13 +271,13 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   }
 
   // Get bisection data for old mesh
-  boost::shared_ptr<const MeshFunction<unsigned int> > bisection_twins
+  boost::shared_ptr<const MeshFunction<std::size_t> > bisection_twins
         = mesh.data().mesh_function("bisection_twins");
 
   // Markers for bisected cells pointing to their bisection twins in
   // refined mesh
-  std::vector<uint> refined_bisection_twins(num_cells);
-  for (uint i = 0; i < num_cells; i++)
+  std::vector<std::size_t> refined_bisection_twins(num_cells);
+  for (std::size_t i = 0; i < num_cells; i++)
     refined_bisection_twins[i] = i;
 
   // Mapping from old to new unrefined cells (-1 means refined or not
@@ -285,7 +286,7 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   std::fill(unrefined_cells.begin(), unrefined_cells.end(), -1);
 
   // Iterate over all cells and add new cells
-  uint current_cell = 0;
+  std::size_t current_cell = 0;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get marker
@@ -294,7 +295,7 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
     // No refinement: just copy cell to new mesh
     if (marker == no_refinement)
     {
-      std::vector<uint> vertices;
+      std::vector<std::size_t> vertices;
       for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
         vertices.push_back(vertex->index());
       editor.add_cell(current_cell++, vertices);
@@ -305,13 +306,13 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       // Remember unrefined bisection twins
       if (bisection_twins)
       {
-        const uint bisection_twin = (*bisection_twins)[cell->index()];
+        const std::size_t bisection_twin = (*bisection_twins)[cell->index()];
         const int twin_marker = refinement_markers[bisection_twin];
         dolfin_assert(twin_marker == no_refinement);
         if (unrefined_cells[bisection_twin] >= 0)
         {
-          const uint i = current_cell - 1;
-          const uint j = unrefined_cells[bisection_twin];
+          const std::size_t i = current_cell - 1;
+          const std::size_t j = unrefined_cells[bisection_twin];
           refined_bisection_twins[i] = j;
           refined_bisection_twins[j] = i;
         }
@@ -324,31 +325,31 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       dolfin_assert(unrefined_cells[cell->index()] == -1);
 
       // Get vertices and edges
-      const uint* v = cell->entities(0);
-      const uint* e = cell->entities(1);
+      const std::size_t* v = cell->entities(0);
+      const std::size_t* e = cell->entities(1);
       dolfin_assert(v);
       dolfin_assert(e);
 
       // Get offset for new vertex indices
-      const uint offset = mesh.num_vertices();
+      const std::size_t offset = mesh.num_vertices();
 
       // Compute indices for the six new vertices
-      const uint v0 = v[0];
-      const uint v1 = v[1];
-      const uint v2 = v[2];
-      const uint e0 = offset + marked_edges.find(e[0]);
-      const uint e1 = offset + marked_edges.find(e[1]);
-      const uint e2 = offset + marked_edges.find(e[2]);
+      const std::size_t v0 = v[0];
+      const std::size_t v1 = v[1];
+      const std::size_t v2 = v[2];
+      const std::size_t e0 = offset + marked_edges.find(e[0]);
+      const std::size_t e1 = offset + marked_edges.find(e[1]);
+      const std::size_t e2 = offset + marked_edges.find(e[2]);
 
       // Create four new cells
-      std::vector<std::vector<uint> > cells;
+      std::vector<std::vector<std::size_t> > cells;
       cells.push_back(boost::assign::list_of(v0)(e2)(e1));
       cells.push_back(boost::assign::list_of(v1)(e0)(e2));
       cells.push_back(boost::assign::list_of(v2)(e1)(e0));
       cells.push_back(boost::assign::list_of(e0)(e1)(e2));
 
       // Add cells
-      std::vector<std::vector<uint> >::const_iterator _cell;
+      std::vector<std::vector<std::size_t> >::const_iterator _cell;
       for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
         editor.add_cell(current_cell++, *_cell);
     }
@@ -360,7 +361,7 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
 
       // Get index for bisection twin
       dolfin_assert(bisection_twins);
-      const uint bisection_twin = (*bisection_twins)[cell->index()];
+      const std::size_t bisection_twin = (*bisection_twins)[cell->index()];
       dolfin_assert(bisection_twin != cell->index());
 
       // Let lowest number twin handle refinement
@@ -371,36 +372,36 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       const int twin_marker = refinement_markers[bisection_twin];
 
       // Find common edge(s) and bisected edge(s)
-      const std::pair<uint, uint> common_edges = find_common_edges(*cell, mesh, bisection_twin);
-      const std::pair<uint, uint> bisection_edges = find_bisection_edges(*cell, mesh, bisection_twin);
-      const std::pair<uint, uint> bisection_vertices = find_bisection_vertices(*cell, mesh, bisection_twin, bisection_edges);
+      const std::pair<std::size_t, std::size_t> common_edges = find_common_edges(*cell, mesh, bisection_twin);
+      const std::pair<std::size_t, std::size_t> bisection_edges = find_bisection_edges(*cell, mesh, bisection_twin);
+      const std::pair<std::size_t, std::size_t> bisection_vertices = find_bisection_vertices(*cell, mesh, bisection_twin, bisection_edges);
 
       // Get list of vertices and edges for both cells
       const Cell twin(mesh, bisection_twin);
-      const uint* vertices_0 = cell->entities(0);
-      const uint* vertices_1 = twin.entities(0);
-      const uint* edges_0 = cell->entities(1);
-      const uint* edges_1 = twin.entities(1);
+      const std::size_t* vertices_0 = cell->entities(0);
+      const std::size_t* vertices_1 = twin.entities(0);
+      const std::size_t* edges_0 = cell->entities(1);
+      const std::size_t* edges_1 = twin.entities(1);
       dolfin_assert(vertices_0);
       dolfin_assert(vertices_1);
       dolfin_assert(edges_0);
       dolfin_assert(edges_1);
 
       // Get offset for new vertex indices
-      const uint offset = mesh.num_vertices();
+      const std::size_t offset = mesh.num_vertices();
 
       // Locate vertices such that v_i is the vertex opposite to
       // the edge e_i on the parent triangle
-      const uint v0 = vertices_0[common_edges.first];
-      const uint v1 = vertices_1[common_edges.second];
-      const uint v2 = vertices_0[bisection_edges.first];
-      const uint e0 = offset + marked_edges.find(edges_1[bisection_vertices.second]);
-      const uint e1 = offset + marked_edges.find(edges_0[bisection_vertices.first]);
-      const uint e2 = vertices_0[bisection_vertices.first];
+      const std::size_t v0 = vertices_0[common_edges.first];
+      const std::size_t v1 = vertices_1[common_edges.second];
+      const std::size_t v2 = vertices_0[bisection_edges.first];
+      const std::size_t e0 = offset + marked_edges.find(edges_1[bisection_vertices.second]);
+      const std::size_t e1 = offset + marked_edges.find(edges_0[bisection_vertices.first]);
+      const std::size_t e2 = vertices_0[bisection_vertices.first];
 
       // Locate new vertices on bisected edge (if any)
-      uint E0 = 0;
-      uint E1 = 0;
+      std::size_t E0 = 0;
+      std::size_t E1 = 0;
       if (marker == backtrack_bisection_refine)
         E0 = offset + marked_edges.find(edges_0[bisection_edges.first]);
       if (twin_marker == backtrack_bisection_refine)
@@ -457,16 +458,16 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       dolfin_assert(unrefined_cells[cell->index()] == -1);
 
       // Get vertices and edges
-      const uint* v = cell->entities(0);
-      const uint* e = cell->entities(1);
+      const std::size_t* v = cell->entities(0);
+      const std::size_t* e = cell->entities(1);
       dolfin_assert(v);
       dolfin_assert(e);
 
       // Get edge number (equal to marker)
       dolfin_assert(marker >= 0);
-      const uint local_edge_index = static_cast<uint>(marker);
-      const uint global_edge_index = e[local_edge_index];
-      const uint ee = mesh.num_vertices() + marked_edges.find(global_edge_index);
+      const std::size_t local_edge_index = static_cast<std::size_t>(marker);
+      const std::size_t global_edge_index = e[local_edge_index];
+      const std::size_t ee = mesh.num_vertices() + marked_edges.find(global_edge_index);
 
       // Add the two new cells
       if (local_edge_index == 0)
@@ -505,24 +506,25 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   editor.close();
 
   // Attach data for bisection twins
-  boost::shared_ptr<MeshFunction<unsigned int> > _refined_bisection_twins = refined_mesh.data().create_mesh_function("bisection_twins");
+  boost::shared_ptr<MeshFunction<std::size_t> > _refined_bisection_twins
+      = refined_mesh.data().create_mesh_function("bisection_twins");
   dolfin_assert(_refined_bisection_twins);
   _refined_bisection_twins->init(refined_mesh.topology().dim());
   _refined_bisection_twins->set_values(refined_bisection_twins);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint RegularCutRefinement::count_markers(const std::vector<bool>& markers)
+std::size_t RegularCutRefinement::count_markers(const std::vector<bool>& markers)
 {
-  uint num_markers = 0;
-  for (uint i = 0; i < markers.size(); i++)
+  std::size_t num_markers = 0;
+  for (std::size_t i = 0; i < markers.size(); i++)
     if (markers[i])
       num_markers++;
   return num_markers;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint RegularCutRefinement::extract_edge(const std::vector<bool>& markers)
+std::size_t RegularCutRefinement::extract_edge(const std::vector<bool>& markers)
 {
-  for (uint i = 0; i < markers.size(); i++)
+  for (std::size_t i = 0; i < markers.size(); i++)
     if (markers[i])
       return i;
 
@@ -535,7 +537,7 @@ dolfin::uint RegularCutRefinement::extract_edge(const std::vector<bool>& markers
 bool RegularCutRefinement::too_thin(const Cell& cell,
                                     const std::vector<bool>& edge_markers)
 {
-  const uint num_markers = count_markers(edge_markers);
+  const std::size_t num_markers = count_markers(edge_markers);
 
   // Only care about the case when one edge is marked
   if (num_markers != 1)
@@ -560,22 +562,22 @@ bool RegularCutRefinement::too_thin(const Cell& cell,
   return too_thin;
 }
 //-----------------------------------------------------------------------------
-std::pair<dolfin::uint, dolfin::uint>
+std::pair<std::size_t, std::size_t>
 RegularCutRefinement::find_common_edges(const Cell& cell,
                                         const Mesh& mesh,
-                                        uint bisection_twin)
+                                        std::size_t bisection_twin)
 {
   // Get list of edges for both cells
   const Cell twin(mesh, bisection_twin);
-  const uint* e0 = cell.entities(1);
-  const uint* e1 = twin.entities(1);
+  const std::size_t* e0 = cell.entities(1);
+  const std::size_t* e1 = twin.entities(1);
   dolfin_assert(e0);
   dolfin_assert(e1);
 
   // Iterate over all combinations of edges
-  const uint num_edges = cell.num_entities(1);
-  for (uint i = 0; i < num_edges; i++)
-    for (uint j = 0; j < num_edges; j++)
+  const std::size_t num_edges = cell.num_entities(1);
+  for (std::size_t i = 0; i < num_edges; i++)
+    for (std::size_t j = 0; j < num_edges; j++)
       if (e0[i] == e1[j])
         return std::make_pair(i, j);
 
@@ -587,28 +589,28 @@ RegularCutRefinement::find_common_edges(const Cell& cell,
   return std::make_pair(0, 0);
 }
 //-----------------------------------------------------------------------------
-std::pair<dolfin::uint, dolfin::uint>
+std::pair<std::size_t, std::size_t>
 RegularCutRefinement::find_bisection_edges(const Cell& cell,
                                            const Mesh& mesh,
-                                           uint bisection_twin)
+                                           std::size_t bisection_twin)
 {
   // Get list of edges for both cells
   const Cell twin(mesh, bisection_twin);
-  const uint* e0 = cell.entities(1);
-  const uint* e1 = twin.entities(1);
+  const std::size_t* e0 = cell.entities(1);
+  const std::size_t* e1 = twin.entities(1);
   dolfin_assert(e0);
   dolfin_assert(e1);
 
   // Iterate over all combinations of edges
-  const uint num_edges = cell.num_entities(1);
-  for (uint i = 0; i < num_edges; i++)
+  const std::size_t num_edges = cell.num_entities(1);
+  for (std::size_t i = 0; i < num_edges; i++)
   {
     // Get list of vertices for edge
     const Edge edge_0(mesh, e0[i]);
-    const uint* v0 = edge_0.entities(0);
+    const std::size_t* v0 = edge_0.entities(0);
     dolfin_assert(v0);
 
-    for (uint j = 0; j < num_edges; j++)
+    for (std::size_t j = 0; j < num_edges; j++)
     {
       // Don't test against the edge itself
       if (e0[i] == e1[j])
@@ -616,7 +618,7 @@ RegularCutRefinement::find_bisection_edges(const Cell& cell,
 
       // Get list of vertices for edge
       const Edge edge_1(mesh, e1[j]);
-      const uint* v1 = edge_1.entities(0);
+      const std::size_t* v1 = edge_1.entities(0);
       dolfin_assert(v1);
 
       // Check that we have a common vertex
@@ -641,24 +643,24 @@ RegularCutRefinement::find_bisection_edges(const Cell& cell,
   return std::make_pair(0, 0);
 }
 //-----------------------------------------------------------------------------
-std::pair<dolfin::uint, dolfin::uint>
+std::pair<std::size_t, std::size_t>
 RegularCutRefinement::find_bisection_vertices(const Cell& cell,
                                               const Mesh& mesh,
-                                              uint bisection_twin,
-                                              const std::pair<uint, uint>& bisection_edges)
+                                              std::size_t bisection_twin,
+                                              const std::pair<std::size_t, std::size_t>& bisection_edges)
 {
   // Get list of edges for both cells
   const Cell twin(mesh, bisection_twin);
-  const uint* e0 = cell.entities(1);
-  const uint* e1 = twin.entities(1);
+  const std::size_t* e0 = cell.entities(1);
+  const std::size_t* e1 = twin.entities(1);
   dolfin_assert(e0);
   dolfin_assert(e1);
 
   // Get vertices of the two edges
   Edge edge_0(mesh, e0[bisection_edges.first]);
   Edge edge_1(mesh, e1[bisection_edges.second]);
-  const uint* v0 = edge_0.entities(0);
-  const uint* v1 = edge_1.entities(0);
+  const std::size_t* v0 = edge_0.entities(0);
+  const std::size_t* v1 = edge_1.entities(0);
   dolfin_assert(v0);
   dolfin_assert(v1);
 

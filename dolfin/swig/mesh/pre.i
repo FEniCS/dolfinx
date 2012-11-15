@@ -43,7 +43,7 @@
 
   PyObject* _cells() {
     // FIXME: Works only for Mesh with Intervals, Triangles and Tetrahedrons
-    return %make_numpy_array(2, uint)(self->num_cells(), self->topology().dim()+1,
+    return %make_numpy_array(2, sizet)(self->num_cells(), self->topology().dim()+1,
 				      &(self->cells()[0]), false);
   }
 }
@@ -81,7 +81,6 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, sizet)
 //-----------------------------------------------------------------------------
 // Misc ignores
 //-----------------------------------------------------------------------------
-%ignore dolfin::Mesh::partition(dolfin::uint num_partitions, dolfin::MeshFunction<dolfin::uint>& partitions);
 %ignore dolfin::MeshEditor::open(Mesh&, CellType::Type, uint, uint);
 %ignore dolfin::Point::operator=;
 %ignore dolfin::Point::operator[];
@@ -100,8 +99,6 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, sizet)
 %ignore dolfin::MeshEntity::operator->;
 %ignore dolfin::SubsetIterator::operator->;
 %ignore dolfin::SubsetIterator::operator[];
-%ignore dolfin::ParallelData::shared_vertices();
-%ignore dolfin::ParallelData::num_global_entities();
 
 //-----------------------------------------------------------------------------
 // Map increment, decrease and dereference operators for iterators
@@ -134,7 +131,7 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, sizet)
 %template(name) dolfin::MeshEntityIteratorBase<dolfin::ENTITY>;
 
 // Extend the interface (instead of renaming, doesn't seem to work)
-%extend  dolfin::MeshEntityIteratorBase<dolfin::ENTITY>
+%extend dolfin::MeshEntityIteratorBase<dolfin::ENTITY>
 {
   dolfin::MeshEntityIteratorBase<dolfin::ENTITY>& _increment()
   {
@@ -186,19 +183,19 @@ MESHENTITYITERATORBASE(Vertex, vertices)
 //-----------------------------------------------------------------------------
 // Return NumPy arrays for MeshConnectivity() and MeshEntity.entities()
 //-----------------------------------------------------------------------------
-%ignore dolfin::MeshGeometry::x(uint n, uint i) const;
+%ignore dolfin::MeshGeometry::x(std::size_t n, uint i) const;
 %ignore dolfin::MeshConnectivity::operator();
 %ignore dolfin::MeshEntity::entities;
 
 %extend dolfin::MeshConnectivity {
   PyObject* __call__()
   {
-    return %make_numpy_array(1, uint)(self->size(), &(*self)()[0], false);
+    return %make_numpy_array(1, sizet)(self->size(), &(*self)()[0], false);
   }
 
-  PyObject* __call__(dolfin::uint entity)
+  PyObject* __call__(std::size_t entity)
   {
-    return %make_numpy_array(1, uint)(self->size(entity), (*self)(entity), false);
+    return %make_numpy_array(1, sizet)(self->size(entity), (*self)(entity), false);
   }
 }
 

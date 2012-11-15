@@ -36,7 +36,7 @@ variational formulation.
 # Modified by Anders Logg 2011
 #
 # First added:  2010-03-05
-# Last changed: 2011-06-28
+# Last changed: 2012-11-12
 
 from dolfin import *
 
@@ -45,7 +45,7 @@ parameters["form_compiler"]["optimize"]     = True
 parameters["form_compiler"]["cpp_optimize"] = True
 
 # Create mesh and define function space
-mesh = UnitSquare(32, 32)
+mesh = UnitSquareMesh(32, 32)
 V = FunctionSpace(mesh, "CG", 1)
 
 # Define Dirichlet boundary (x = 0 or x = 1)

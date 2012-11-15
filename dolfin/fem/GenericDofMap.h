@@ -63,7 +63,7 @@ namespace dolfin
 
     /// Return the dimension of the local finite element function space on a
     /// cell
-    virtual unsigned int cell_dimension(uint index) const = 0;
+    virtual unsigned int cell_dimension(std::size_t index) const = 0;
 
     /// Return the maximum dimension of the local finite element function space
     virtual unsigned int max_cell_dimension() const = 0;
@@ -75,13 +75,13 @@ namespace dolfin
     virtual unsigned int num_facet_dofs() const = 0;
 
     /// Return the ownership range (dofs in this range are owned by this process)
-    virtual std::pair<unsigned int, unsigned int> ownership_range() const = 0;
+    virtual std::pair<std::size_t, std::size_t> ownership_range() const = 0;
 
     /// Return map from nonlocal-dofs (that appear in local dof map) to owning process
-    virtual const boost::unordered_map<unsigned int, unsigned int>& off_process_owner() const = 0;
+    virtual const boost::unordered_map<std::size_t, uint>& off_process_owner() const = 0;
 
     /// Local-to-global mapping of dofs on a cell
-    virtual const std::vector<unsigned int>& cell_dofs(uint cell_index) const = 0;
+    virtual const std::vector<std::size_t>& cell_dofs(std::size_t cell_index) const = 0;
 
     /// Tabulate local-local facet dofs
     virtual void tabulate_facet_dofs(uint* dofs, uint local_facet) const = 0;
@@ -105,25 +105,25 @@ namespace dolfin
                                               const Mesh& mesh) const = 0;
 
     /// Create a "collapsed" a dofmap (collapses from a sub-dofmap view)
-    virtual GenericDofMap* collapse(boost::unordered_map<uint, uint>& collapsed_map,
+    virtual GenericDofMap* collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
                                     const Mesh& mesh) const = 0;
 
     /// Set dof entries in vector to a specified value. Parallel layout
     /// of vector must be consistent with dof map range.
     virtual void set(GenericVector& x, double value) const = 0;
 
-    /// Set dof entries in vector to the x[i] coordinate of the dof
-    /// spatial coordinate. Parallel layout of vector must be consistent
-    /// with dof map range.
-    virtual void set_x(GenericVector& x, const Mesh& mesh,
-                       uint component) const = 0;
+    /// Set dof entries in vector to the value*x[i], where x[i] is the
+    /// spatial coordinate of the dof. Parallel layout of vector must
+    /// be consistent with dof map range.
+    virtual void set_x(GenericVector& x, double value, uint component,
+                       const Mesh& mesh) const = 0;
 
     /// Return the set of dof indices
-    virtual boost::unordered_set<uint> dofs() const = 0;
+    virtual boost::unordered_set<std::size_t> dofs() const = 0;
 
     /// Return map from shared dofs to the processes (not including the current
     /// process) that share it.
-    virtual const boost::unordered_map<uint, std::vector<uint> >& shared_dofs() const = 0;
+    virtual const boost::unordered_map<std::size_t, std::vector<std::size_t> >& shared_dofs() const = 0;
 
     /// Return set of all processes that share dofs with the current process.
     virtual const std::set<uint>& neighbours() const = 0;

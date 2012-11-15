@@ -45,12 +45,12 @@ namespace dolfin
     ~FacetCell();
 
     /// Return local index of facet with respect to the cell
-    uint facet_index() const;
+    std::size_t facet_index() const;
 
   private:
 
     // Facet index
-    uint _facet_index;
+    std::size_t _facet_index;
 
   };
 

@@ -426,7 +426,7 @@ void XMLLocalMeshSAX::read_interval(const xmlChar* name, const xmlChar** attrs,
     return;
 
   // Add cell
-  boost::multi_array<uint, 2>::subarray<1>::type cell = mesh_data.cell_vertices[c - cell_range.first];
+  boost::multi_array<std::size_t , 2>::subarray<1>::type cell = mesh_data.cell_vertices[c - cell_range.first];
   cell[0] = SAX2AttributeParser::parse<uint>(name, attrs, "v0", num_attributes);
   cell[1] = SAX2AttributeParser::parse<uint>(name, attrs, "v1", num_attributes);
 
@@ -457,7 +457,7 @@ void XMLLocalMeshSAX::read_triangle(const xmlChar *name,
     return;
 
   // Add cell
-  boost::multi_array<uint, 2>::subarray<1>::type cell = mesh_data.cell_vertices[c- cell_range.first];
+  boost::multi_array<std::size_t, 2>::subarray<1>::type cell = mesh_data.cell_vertices[c- cell_range.first];
   cell[0] = SAX2AttributeParser::parse<uint>(name, attrs, "v0", num_attributes);
   cell[1] = SAX2AttributeParser::parse<uint>(name, attrs, "v1", num_attributes);
   cell[2] = SAX2AttributeParser::parse<uint>(name, attrs, "v2", num_attributes);
@@ -489,7 +489,7 @@ void XMLLocalMeshSAX::read_tetrahedron(const xmlChar *name,
     return;
 
   // Add cell
-  boost::multi_array<uint, 2>::subarray<1>::type cell = mesh_data.cell_vertices[c - cell_range.first];
+  boost::multi_array<std::size_t, 2>::subarray<1>::type cell = mesh_data.cell_vertices[c - cell_range.first];
   cell[0] = SAX2AttributeParser::parse<uint>(name, attrs, "v0", num_attributes);
   cell[1] = SAX2AttributeParser::parse<uint>(name, attrs, "v1", num_attributes);
   cell[2] = SAX2AttributeParser::parse<uint>(name, attrs, "v2", num_attributes);
@@ -509,7 +509,7 @@ void XMLLocalMeshSAX::read_mesh_value_collection(const xmlChar* name,
   // Parse values
   const std::string type = SAX2AttributeParser::parse<std::string>(name, attrs, "type", num_attributes);
   const uint dim = SAX2AttributeParser::parse<uint>(name, attrs, "dim", num_attributes);
-  const uint size = SAX2AttributeParser::parse<uint>(name, attrs, "size", num_attributes);
+  const std::size_t size = SAX2AttributeParser::parse<uint>(name, attrs, "size", num_attributes);
 
   // Compute domain value range
   domain_value_range = MPI::local_range(size);
@@ -535,12 +535,12 @@ void XMLLocalMeshSAX::read_mesh_value_collection_entry(const xmlChar* name,
   if (domain_value_counter >= domain_value_range.first && domain_value_counter < domain_value_range.second)
   {
     // Parse values
-    std::pair<std::pair<uint, uint>, uint> entry_data;
+    std::pair<std::pair<std::size_t, uint>, uint> entry_data;
     entry_data.first.first  = SAX2AttributeParser::parse<uint>(name, attrs, "cell_index", num_attributes);
     entry_data.first.second = SAX2AttributeParser::parse<uint>(name, attrs, "local_entity", num_attributes);
     entry_data.second       = SAX2AttributeParser::parse<uint>(name, attrs, "value", num_attributes);
 
-    std::vector< std::pair<std::pair<dolfin::uint, dolfin::uint>, dolfin::uint> >& data
+    std::vector<std::pair<std::pair<std::size_t, dolfin::uint>, dolfin::uint> >& data
       = mesh_data.domain_data.find(domain_dim)->second;
     data.push_back(entry_data);
   }

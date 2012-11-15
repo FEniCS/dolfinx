@@ -36,7 +36,7 @@ if not has_krylov_solver_preconditioner("amg"):
     exit()
     
 # Load mesh
-mesh = UnitCube(16, 16, 16)
+mesh = UnitCubeMesh(16, 16, 16)
 
 # Define function spaces
 V = VectorFunctionSpace(mesh, "CG", 2)

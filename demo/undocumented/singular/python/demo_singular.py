@@ -39,7 +39,7 @@ that removes the component in the null space from the solution vector.
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2012-10-31
-# Last changed:
+# Last changed: 2012-11-12
 
 from dolfin import *
 
@@ -51,7 +51,7 @@ if not has_linear_algebra_backend("PETSc"):
 parameters["linear_algebra_backend"] = "PETSc"
 
 # Create mesh and define function space
-mesh = UnitSquare(64, 64)
+mesh = UnitSquareMesh(64, 64)
 V = FunctionSpace(mesh, "CG", 1)
 
 # Define variational problem

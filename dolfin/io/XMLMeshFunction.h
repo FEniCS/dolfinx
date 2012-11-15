@@ -86,8 +86,8 @@ namespace dolfin
       if (!xml_meshfunction)
         std::cout << "Not a DOLFIN MeshFunction XML file." << std::endl;
 
-     if (xml_meshfunction.attributes_begin() == xml_meshfunction.attributes_end())
-      new_format = true;
+      if (xml_meshfunction.attributes_begin() == xml_meshfunction.attributes_end())
+        new_format = true;
     }
 
     // Broadcast format type from zero process
@@ -156,7 +156,7 @@ namespace dolfin
       {
         for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
         {
-          const unsigned int index = it->attribute("index").as_uint();
+          const std::size_t index = it->attribute("index").as_uint();
           dolfin_assert(index < size);
           mesh_function[index] = it->attribute("value").as_uint();
         }

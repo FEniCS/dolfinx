@@ -41,7 +41,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-const std::vector<std::size_t>& MeshColoring::color_cells(Mesh& mesh,
+const std::vector<dolfin::uint>& MeshColoring::color_cells(Mesh& mesh,
                                                      std::string coloring_type)
 {
   // Define graph type
@@ -53,11 +53,11 @@ const std::vector<std::size_t>& MeshColoring::color_cells(Mesh& mesh,
   return color(mesh, _coloring_type);
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::size_t>& MeshColoring::color(Mesh& mesh,
+const std::vector<dolfin::uint>& MeshColoring::color(Mesh& mesh,
                                        const std::vector<uint>& coloring_type)
 {
   // Convenience typedefs
-  typedef std::pair<std::vector<std::size_t>, std::vector<std::vector<uint> > > ColorData;
+  typedef std::pair<std::vector<uint>, std::vector<std::vector<std::size_t> > > ColorData;
 
   info("Coloring mesh.");
 
@@ -74,8 +74,8 @@ const std::vector<std::size_t>& MeshColoring::color(Mesh& mesh,
   dolfin_assert(mesh.topology().coloring.find(coloring_type) != mesh.topology().coloring.end());
   ColorData& color_data = mesh.topology().coloring.find(coloring_type)->second;
 
-  std::vector<std::size_t>& colors = color_data.first;
-  std::vector<std::vector<uint> >& entities_of_color = color_data.second;
+  std::vector<uint>& colors = color_data.first;
+  std::vector<std::vector<std::size_t> >& entities_of_color = color_data.second;
 
   // Initialise mesh function for colors and compute coloring
   const uint colored_entity_dim = coloring_type[0];
@@ -96,7 +96,7 @@ const std::vector<std::size_t>& MeshColoring::color(Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 dolfin::uint MeshColoring::compute_colors(const Mesh& mesh,
-                                          std::vector<std::size_t>& colors,
+                                          std::vector<uint>& colors,
                                           const std::vector<uint>& coloring_type)
 {
   if (coloring_type.front() != coloring_type.back())
@@ -117,7 +117,7 @@ dolfin::uint MeshColoring::compute_colors(const Mesh& mesh,
   return GraphColoring::compute_local_vertex_coloring(graph, colors);
 }
 //-----------------------------------------------------------------------------
-CellFunction<std::size_t> MeshColoring::cell_colors(const Mesh& mesh,
+CellFunction<dolfin::uint> MeshColoring::cell_colors(const Mesh& mesh,
                                        std::string coloring_type)
 {
   // Get graph/coloring type
@@ -130,13 +130,13 @@ CellFunction<std::size_t> MeshColoring::cell_colors(const Mesh& mesh,
   return cell_colors(mesh, _coloring_type);
 }
 //-----------------------------------------------------------------------------
-CellFunction<std::size_t> MeshColoring::cell_colors(const Mesh& mesh,
+CellFunction<dolfin::uint> MeshColoring::cell_colors(const Mesh& mesh,
                               const std::vector<unsigned int> coloring_type)
 {
 
   // Get color data
-  std::map<const std::vector<uint>, std::pair<std::vector<std::size_t>,
-           std::vector<std::vector<uint> > > >::const_iterator coloring_data;
+  std::map<const std::vector<uint>, std::pair<std::vector<uint>,
+           std::vector<std::vector<std::size_t> > > >::const_iterator coloring_data;
   coloring_data = mesh.topology().coloring.find(coloring_type);
 
   // Check that coloring has been computed
@@ -148,9 +148,9 @@ CellFunction<std::size_t> MeshColoring::cell_colors(const Mesh& mesh,
   }
 
   // Colors
-  const std::vector<std::size_t>& colors = coloring_data->second.first;
+  const std::vector<uint>& colors = coloring_data->second.first;
 
-  CellFunction<std::size_t> mf(mesh);
+  CellFunction<uint> mf(mesh);
   dolfin_assert(colors.size() == mesh.num_entities(coloring_type[0]));
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     mf[*cell] = colors[cell->index()];

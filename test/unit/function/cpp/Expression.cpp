@@ -17,9 +17,10 @@
 //
 // Modified by Garth N. Wells, 2008.
 // Modified by Johannes Ring, 2009.
+// Modified by Benjamin Kehlet 2012
 //
 // First added:  2007-05-24
-// Last changed: 2011-03-31
+// Last changed: 2012-11-12
 //
 // Unit tests for the function library
 
@@ -64,7 +65,7 @@ public:
       }
     };
 
-    UnitCube mesh(8, 8, 8);
+    UnitCubeMesh mesh(8, 8, 8);
 
     Array<double> x(3);
     x[0] = 0.31; x[1] = 0.32; x[2] = 0.33;

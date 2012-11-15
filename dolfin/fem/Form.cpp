@@ -247,38 +247,38 @@ std::string Form::coefficient_name(uint i) const
   return name.str();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const MeshFunction<dolfin::uint> >
+boost::shared_ptr<const MeshFunction<std::size_t> >
 Form::cell_domains_shared_ptr() const
 {
   return _cell_domains;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const MeshFunction<dolfin::uint> >
+boost::shared_ptr<const MeshFunction<std::size_t> >
 Form::exterior_facet_domains_shared_ptr() const
 {
   return _exterior_facet_domains;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const MeshFunction<dolfin::uint> >
+boost::shared_ptr<const MeshFunction<std::size_t> >
 Form::interior_facet_domains_shared_ptr() const
 {
   return _interior_facet_domains;
 }
 //-----------------------------------------------------------------------------
 void Form::set_cell_domains
-(boost::shared_ptr<const MeshFunction<uint> > cell_domains)
+(boost::shared_ptr<const MeshFunction<std::size_t> > cell_domains)
 {
   _cell_domains = cell_domains;
 }
 //-----------------------------------------------------------------------------
 void Form::set_exterior_facet_domains
-(boost::shared_ptr<const MeshFunction<uint> > exterior_facet_domains)
+(boost::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains)
 {
   _exterior_facet_domains = exterior_facet_domains;
 }
 //-----------------------------------------------------------------------------
 void Form::set_interior_facet_domains
-(boost::shared_ptr<const MeshFunction<uint> > interior_facet_domains)
+(boost::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains)
 {
   _interior_facet_domains = interior_facet_domains;
 }

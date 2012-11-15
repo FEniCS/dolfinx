@@ -47,7 +47,7 @@ namespace dolfin
     virtual ~GenericLinearOperator() {}
 
     /// Return size of given dimension
-    virtual uint size(uint dim) const = 0;
+    virtual std::size_t size(uint dim) const = 0;
 
     /// Compute matrix-vector product y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const = 0;
@@ -61,7 +61,7 @@ namespace dolfin
 
     // Initialize linear operator, needs to be implemented by
     // backend-specific implementation
-    virtual void init(uint M, uint N, GenericLinearOperator* wrapper)
+    virtual void init(std::size_t M, std::size_t N, GenericLinearOperator* wrapper)
     {
       dolfin_error("GenericLinearOperator.h",
                    "initialize backend implementation of linear operator",

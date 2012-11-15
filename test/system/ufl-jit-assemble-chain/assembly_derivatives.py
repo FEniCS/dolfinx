@@ -174,7 +174,7 @@ class IntegrateDerivatives(unittest.TestCase):
 
         # Define 2D geometry
         n = 10
-        mesh = Rectangle(0.0, 0.0, 2.0, 3.0, 2*n, 3*n)
+        mesh = RectangleMesh(0.0, 0.0, 2.0, 3.0, 2*n, 3*n)
 
         cell = mesh.ufl_cell()
         x, y = cell.x

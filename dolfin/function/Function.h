@@ -257,7 +257,7 @@ namespace dolfin
     ///         The index of the axis.
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The value dimension.
     virtual uint value_dimension(uint i) const;
 
@@ -336,8 +336,8 @@ namespace dolfin
     void init_vector();
 
     // Get coefficients from the vector(s)
-    void compute_ghost_indices(std::pair<uint, uint> range,
-                               std::vector<uint>& ghost_indices) const;
+    void compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
+                               std::vector<std::size_t>& ghost_indices) const;
 
     // The function space
     boost::shared_ptr<const FunctionSpace> _function_space;

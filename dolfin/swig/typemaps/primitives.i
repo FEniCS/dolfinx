@@ -27,10 +27,14 @@
 // General typemaps for PyDOLFIN
 //=============================================================================
 
-// Ensure typefragments
-%ensure_type_fragments(double)
-%ensure_type_fragments(unsigned int)
-%ensure_type_fragments(std::size_t)
+// Make sure Python int from std::size_t can be constructed
+// It looks like SWIG_From_size_t is available but not SWIG_From_std_size_t
+%fragment("SWIG_From_std_size_t", "header") {
+  SWIGINTERNINLINE PyObject * SWIG_From_std_size_t  (std::size_t value)
+  {
+    return SWIG_From_unsigned_SS_long (static_cast< unsigned long >(value));
+  }
+}
 
 //-----------------------------------------------------------------------------
 // A home brewed type check for checking integers
@@ -52,6 +56,17 @@
 //-----------------------------------------------------------------------------
 #define Py_convert_frag(Type) "Py_convert_" {Type}
 
+%fragment("Py_convert_std_size_t", "header", fragment="PyInteger_Check") {
+  // A check for integer
+  SWIGINTERNINLINE bool Py_convert_std_size_t(PyObject* in, std::size_t& value)
+  {
+    if (!(PyInteger_Check(in) && PyInt_AS_LONG(in)>=0))
+      return false;
+    value = static_cast<std::size_t>(PyInt_AS_LONG(in));
+    return true;
+  }
+}
+
 %fragment("Py_convert_double", "header") {
   // A check for float and converter for double
   SWIGINTERNINLINE bool Py_convert_double(PyObject* in, double& value)
@@ -66,7 +81,7 @@
   {
     if (!PyInteger_Check(in))
       return false;
-    value = static_cast<unsigned int>(PyInt_AS_LONG(in));
+    value = static_cast<int>(PyInt_AS_LONG(in));
     return true;
   }
 }
@@ -93,10 +108,23 @@
 {
   // Typemap unsigned int
   $result = PyInt_FromLong(static_cast< long >($1));
-  // NOTE: From SWIG 2.0.5 does this macro return a Python long, 
+  // NOTE: From SWIG 2.0.5 does this macro return a Python long,
   // NOTE: which we do not want
   // NOTE: Fixed in 2.0.7, but keep the above fix for now
   // $result = SWIG_From(unsigned int)($1);
+}
+
+//-----------------------------------------------------------------------------
+// Out typemap (std::size_t)
+//-----------------------------------------------------------------------------
+%typemap(out, fragment=SWIG_From_frag(std::size_t)) std::size_t
+{
+  // Typemap unsigned int
+  $result = PyInt_FromLong(static_cast< long >($1));
+  // NOTE: From SWIG 2.0.5 does this macro return a Python long,
+  // NOTE: which we do not want
+  // NOTE: Fixed in 2.0.7, but keep the above fix for now
+  // $result = SWIG_From(std::size_t)($1);
 }
 
 //-----------------------------------------------------------------------------
@@ -110,7 +138,21 @@
 %typemap(in, fragment="Py_convert_uint") unsigned int
 {
   if (!Py_convert_uint($input, $1))
-    SWIG_exception(SWIG_TypeError, "expected positive 'int' for argument $argnum");
+    SWIG_exception(SWIG_TypeError, "(a) expected positive 'int' for argument $argnum");
+}
+
+//-----------------------------------------------------------------------------
+// Typecheck and in typemap (std::size_t)
+//-----------------------------------------------------------------------------
+%typecheck(SWIG_TYPECHECK_INTEGER) std::size_t
+{
+  $1 = PyInteger_Check($input) ? 1 : 0;
+}
+
+%typemap(in, fragment="Py_convert_std_size_t") std::size_t
+{
+  if (!Py_convert_std_size_t($input, $1))
+    SWIG_exception(SWIG_TypeError, "(b) expected positive 'int' for argument $argnum");
 }
 
 //-----------------------------------------------------------------------------
@@ -129,3 +171,13 @@
   if (!Py_convert_int($input, $1))
     SWIG_exception(SWIG_TypeError, "expected 'int' for argument $argnum");
 }
+
+
+//-----------------------------------------------------------------------------
+// Ensure typefragments
+//-----------------------------------------------------------------------------
+%fragment(SWIG_From_frag(unsigned long));
+%fragment(SWIG_From_frag(double));
+%fragment(SWIG_From_frag(unsigned int));
+%fragment(SWIG_From_frag(int));
+%fragment(SWIG_From_frag(std::size_t));

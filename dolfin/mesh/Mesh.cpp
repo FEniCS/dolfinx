@@ -35,6 +35,7 @@
 #include <dolfin/io/File.h>
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/generation/CSGMeshGenerator.h>
 #include "BoundaryMesh.h"
 #include "Cell.h"
 #include "LocalMeshData.h"
@@ -96,6 +97,42 @@ Mesh::Mesh(LocalMeshData& local_mesh_data)
   MeshPartitioning::build_distributed_mesh(*this, local_mesh_data);
 }
 //-----------------------------------------------------------------------------
+Mesh::Mesh(const CSGGeometry& geometry, uint mesh_resolution)
+  : Variable("mesh", "DOLFIN mesh"),
+    Hierarchical<Mesh>(*this),
+    _data(*this),
+    _cell_type(0),
+    _intersection_operator(*this),
+    _ordered(false)
+{
+  // Build mesh on process 0
+  if (MPI::process_number() == 0)
+    CSGMeshGenerator::generate(*this, geometry, mesh_resolution);
+
+  // Build distributed mesh
+  if (MPI::num_processes() > 1)
+    MeshPartitioning::build_distributed_mesh(*this);
+}
+//-----------------------------------------------------------------------------
+Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry, uint resolution)
+  : Variable("mesh", "DOLFIN mesh"),
+    Hierarchical<Mesh>(*this),
+    _data(*this),
+    _cell_type(0),
+    _intersection_operator(*this),
+    _ordered(false)
+{
+  assert(geometry);
+
+  // Build mesh on process 0
+  if (MPI::process_number() == 0)
+    CSGMeshGenerator::generate(*this, *geometry, resolution);
+
+  // Build distributed mesh
+  if (MPI::num_processes() > 1)
+    MeshPartitioning::build_distributed_mesh(*this);
+}
+//-----------------------------------------------------------------------------
 Mesh::~Mesh()
 {
   clear();
@@ -133,7 +170,7 @@ const MeshData& Mesh::data() const
   return _data;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Mesh::init(uint dim) const
+std::size_t Mesh::init(uint dim) const
 {
   // This function is obviously not const since it may potentially compute
   // new connectivity. However, in a sense all connectivity of a mesh always
@@ -312,7 +349,7 @@ void Mesh::snap_boundary(const SubDomain& sub_domain, bool harmonic_smoothing)
   MeshSmoothing::snap_boundary(*this, sub_domain, harmonic_smoothing);
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::size_t>& Mesh::color(std::string coloring_type) const
+const std::vector<dolfin::uint>& Mesh::color(std::string coloring_type) const
 {
   // Define graph type
   const uint dim = MeshColoring::type_to_dim(coloring_type, *this);
@@ -324,11 +361,11 @@ const std::vector<std::size_t>& Mesh::color(std::string coloring_type) const
   return color(_coloring_type);
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::size_t>& Mesh::color(std::vector<uint> coloring_type) const
+const std::vector<dolfin::uint>& Mesh::color(std::vector<uint> coloring_type) const
 {
   // Find color data
-  std::map<const std::vector<uint>, std::pair<std::vector<std::size_t>,
-           std::vector<std::vector<uint> > > >::const_iterator coloring_data;
+  std::map<const std::vector<uint>, std::pair<std::vector<uint>,
+           std::vector<std::vector<std::size_t> > > >::const_iterator coloring_data;
   coloring_data = this->topology().coloring.find(coloring_type);
 
   if (coloring_data != this->topology().coloring.end())
@@ -344,7 +381,7 @@ const std::vector<std::size_t>& Mesh::color(std::vector<uint> coloring_type) con
   return MeshColoring::color(*_mesh, coloring_type);
 }
 //-----------------------------------------------------------------------------
-void Mesh::intersected_cells(const Point& point, std::set<uint>& cells) const
+void Mesh::intersected_cells(const Point& point, std::set<std::size_t>& cells) const
 {
   // CGAL needs mesh with more than 1 cell
   if (num_cells() > 1)
@@ -359,7 +396,7 @@ void Mesh::intersected_cells(const Point& point, std::set<uint>& cells) const
 }
 //-----------------------------------------------------------------------------
 void Mesh::intersected_cells(const std::vector<Point>& points,
-                             std::set<uint>& cells) const
+                             std::set<std::size_t>& cells) const
 {
   // CGAL needs mesh with more than 1 cell
   if (num_cells() > 1)
@@ -371,13 +408,13 @@ void Mesh::intersected_cells(const std::vector<Point>& points,
     for (std::vector<Point>::const_iterator p = points.begin(); p != points.end(); ++p)
     {
       if (cell.intersects(*p))
-	cells.insert(0);
+        cells.insert(0);
     }
   }
 }
 //-----------------------------------------------------------------------------
 void Mesh::intersected_cells(const MeshEntity & entity,
-                             std::vector<uint>& cells) const
+                             std::vector<std::size_t>& cells) const
 {
   // CGAL needs mesh with more than 1 cell
   if (num_cells() > 1)
@@ -392,7 +429,7 @@ void Mesh::intersected_cells(const MeshEntity & entity,
 }
 //-----------------------------------------------------------------------------
 void Mesh::intersected_cells(const std::vector<MeshEntity>& entities,
-                             std::set<uint>& cells) const
+                             std::set<std::size_t>& cells) const
 {
   // CGAL needs mesh with more than 1 cell
   if (num_cells() > 1)
@@ -411,7 +448,7 @@ void Mesh::intersected_cells(const std::vector<MeshEntity>& entities,
 }
 //-----------------------------------------------------------------------------
 void Mesh::intersected_cells(const Mesh& another_mesh,
-                             std::set<uint>& cells) const
+                             std::set<std::size_t>& cells) const
 {
   _intersection_operator.all_intersected_entities(another_mesh, cells);
 }
@@ -432,7 +469,7 @@ Point Mesh::closest_point(const Point& point) const
   return _intersection_operator.closest_point(point);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Mesh::closest_cell(const Point & point) const
+std::size_t Mesh::closest_cell(const Point & point) const
 {
   // CGAL exits with an assertion error whilst performing
   // the closest cell query if num_cells() == 1
@@ -443,7 +480,7 @@ dolfin::uint Mesh::closest_cell(const Point & point) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-std::pair<Point,dolfin::uint>
+std::pair<Point, std::size_t>
 Mesh::closest_point_and_cell(const Point & point) const
 {
   return _intersection_operator.closest_point_and_cell(point);

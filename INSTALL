@@ -28,6 +28,15 @@ of the DOLFIN source tree. To do this, simply type
 This configures, compiles, and install DOLFIN in a directory named
 'local' in the DOLFIN source tree.
 
+(Re-)generating the SWIG interface and docstrings
+-------------------------------------------------
+
+In order to regenerate the SWIG interface and update the
+documentation, respectively, run the generator scripts:
+
+   ./cmake/scripts/generate-swig-interface
+   ./cmake/scripts/generate-swig-docstrings
+
 Customized builds
 -----------------
 

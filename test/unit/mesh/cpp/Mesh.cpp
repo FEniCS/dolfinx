@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Benjamin Kehlet 2012
+//
 // First added:  2007-05-14
-// Last changed: 2012-01-11
+// Last changed: 2012-11-12
 //
 // Unit tests for the mesh library
 
@@ -37,7 +39,7 @@ public:
   void testUnitSquare()
   {
     // Create mesh of unit square
-    UnitSquare mesh(5, 7);
+    UnitSquareMesh mesh(5, 7);
     CPPUNIT_ASSERT(mesh.num_vertices() == 48);
     CPPUNIT_ASSERT(mesh.num_cells() == 70);
   }
@@ -45,7 +47,7 @@ public:
   void testUnitCube()
   {
     // Create mesh of unit cube
-    UnitCube mesh(5, 7, 9);
+    UnitCubeMesh mesh(5, 7, 9);
     CPPUNIT_ASSERT(mesh.num_vertices() == 480);
     CPPUNIT_ASSERT(mesh.num_cells() == 1890);
   }
@@ -64,7 +66,7 @@ public:
   void testRefineUnitSquare()
   {
     // Refine mesh of unit square
-    UnitSquare mesh0(5, 7);
+    UnitSquareMesh mesh0(5, 7);
     Mesh mesh1 = refine(mesh0);
     CPPUNIT_ASSERT(mesh1.num_vertices() == 165);
     CPPUNIT_ASSERT(mesh1.num_cells() == 280);
@@ -73,7 +75,7 @@ public:
   void testRefineUnitCube()
   {
     // Refine mesh of unit cube
-    UnitCube mesh0(5, 7, 9);
+    UnitCubeMesh mesh0(5, 7, 9);
     Mesh mesh1 = refine(mesh0);
     CPPUNIT_ASSERT(mesh1.num_vertices() == 3135);
     CPPUNIT_ASSERT(mesh1.num_cells() == 15120);
@@ -97,7 +99,7 @@ public:
   void testVertexIterators()
   {
     // Iterate over vertices
-    UnitCube mesh(5, 5, 5);
+    UnitCubeMesh mesh(5, 5, 5);
     unsigned int n = 0;
     for (VertexIterator v(mesh); !v.end(); ++v)
       n++;
@@ -107,7 +109,7 @@ public:
   void testEdgeIterators()
   {
     // Iterate over edges
-    UnitCube mesh(5, 5, 5);
+    UnitCubeMesh mesh(5, 5, 5);
     unsigned int n = 0;
     for (EdgeIterator e(mesh); !e.end(); ++e)
       n++;
@@ -117,7 +119,7 @@ public:
   void testFaceIterators()
   {
     // Iterate over faces
-    UnitCube mesh(5, 5, 5);
+    UnitCubeMesh mesh(5, 5, 5);
     unsigned int n = 0;
     for (FaceIterator f(mesh); !f.end(); ++f)
       n++;
@@ -127,7 +129,7 @@ public:
   void testFacetIterators()
   {
     // Iterate over facets
-    UnitCube mesh(5, 5, 5);
+    UnitCubeMesh mesh(5, 5, 5);
     unsigned int n = 0;
     for (FacetIterator f(mesh); !f.end(); ++f)
       n++;
@@ -137,7 +139,7 @@ public:
   void testCellIterators()
   {
     // Iterate over cells
-    UnitCube mesh(5, 5, 5);
+    UnitCubeMesh mesh(5, 5, 5);
     unsigned int n = 0;
     for (CellIterator c(mesh); !c.end(); ++c)
       n++;
@@ -147,7 +149,7 @@ public:
   void testMixedIterators()
   {
     // Iterate over vertices of cells
-    UnitCube mesh(5, 5, 5);
+    UnitCubeMesh mesh(5, 5, 5);
     unsigned int n = 0;
     for (CellIterator c(mesh); !c.end(); ++c)
       for (VertexIterator v(*c); !v.end(); ++v)
@@ -169,7 +171,7 @@ public:
   void testBoundaryComputation()
   {
     // Compute boundary of mesh
-    UnitCube mesh(2, 2, 2);
+    UnitCubeMesh mesh(2, 2, 2);
     BoundaryMesh boundary(mesh);
     CPPUNIT_ASSERT(boundary.num_vertices() == 26);
     CPPUNIT_ASSERT(boundary.num_cells() == 48);
@@ -187,7 +189,7 @@ public:
     // since b1 would then be a copy of b0 (copy
     // constructor in Mesh will be used).
 
-    UnitCube mesh(2, 2, 2);
+    UnitCubeMesh mesh(2, 2, 2);
     BoundaryMesh b0(mesh);
     BoundaryMesh b1;
     b0.order();
@@ -209,7 +211,7 @@ public:
   void testAssign()
   {
     /// Assign value of mesh function
-    UnitSquare mesh(3, 3);
+    UnitSquareMesh mesh(3, 3);
     MeshFunction<int> f(mesh, 0);
     f[3] = 10;
     Vertex v(mesh, 3);
@@ -231,7 +233,7 @@ public:
   void testMeshXML2D()
   {
     // Write and read 2D mesh to/from file
-    UnitSquare mesh_out(3, 3);
+    UnitSquareMesh mesh_out(3, 3);
     Mesh mesh_in;
     File file("unitsquare.xml");
     file << mesh_out;
@@ -242,7 +244,7 @@ public:
   void testMeshXML3D()
   {
     // Write and read 3D mesh to/from file
-    UnitCube mesh_out(3, 3, 3);
+    UnitCubeMesh mesh_out(3, 3, 3);
     Mesh mesh_in;
     File file("unitcube.xml");
     file << mesh_out;
@@ -253,7 +255,7 @@ public:
   void testMeshFunction()
   {
     // Write and read mesh function to/from file
-    UnitSquare mesh(1, 1);
+    UnitSquareMesh mesh(1, 1);
     MeshFunction<int> f(mesh, 0);
     f[0] = 2;
     f[1] = 4;
@@ -282,21 +284,21 @@ public:
   void testGetGeometricalDimension()
   {
     // Get geometrical dimension of mesh
-    UnitSquare mesh(5, 5);
+    UnitSquareMesh mesh(5, 5);
     CPPUNIT_ASSERT(mesh.geometry().dim() == 2);
   }
 
   void testGetCoordinates()
   {
     // Get coordinates of vertices
-    UnitSquare mesh(5, 5);
+    UnitSquareMesh mesh(5, 5);
     CPPUNIT_ASSERT(mesh.geometry().size() == 36);
   }
 
   void testGetCells()
   {
     // Get cells of mesh
-    UnitSquare mesh(5, 5);
+    UnitSquareMesh mesh(5, 5);
     CPPUNIT_ASSERT(mesh.topology().size(2) == 50);
   }
 

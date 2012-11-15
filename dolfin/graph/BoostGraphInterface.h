@@ -44,11 +44,11 @@ namespace dolfin
 
     /// Compute vertex colors
     static uint compute_local_vertex_coloring(const Graph& graph,
-                                              std::vector<std::size_t>& colors);
+                                              std::vector<uint>& colors);
 
     /// Compute vertex colors
     template<typename T>
-    static uint compute_local_vertex_coloring(const T& graph, std::vector<std::size_t>& colors)
+    static uint compute_local_vertex_coloring(const T& graph, std::vector<uint>& colors)
     {
       // Number of vertices in graph
       const std::size_t num_vertices = boost::num_vertices(graph);
@@ -62,10 +62,14 @@ namespace dolfin
       // Resize to hold colors
       colors.resize(num_vertices);
 
+      std::vector<vert_size_type> _colors(num_vertices);
+
       // Color vertices
       boost::iterator_property_map<vert_size_type*, vert_index_map>
-          color(&colors.front(), get(boost::vertex_index, graph));
+          color(&_colors.front(), get(boost::vertex_index, graph));
       const vert_size_type num_colors = sequential_vertex_coloring(graph, color);
+
+      std::copy(_colors.begin(), _colors.end(), colors.begin());
 
       std::cout << "Number of colors: " << num_colors << std::endl;
       return num_colors;

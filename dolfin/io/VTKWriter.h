@@ -55,13 +55,13 @@ namespace dolfin
 
     // Write cell data (ascii)
     static std::string ascii_cell_data(const Mesh& mesh,
-                                       const std::vector<uint>& offset,
+                                       const std::vector<std::size_t>& offset,
                                        const std::vector<double>& values,
                                        uint dim, uint rank);
 
     // Write cell data (base64)
     static std::string base64_cell_data(const Mesh& mesh,
-                                        const std::vector<uint>& offset,
+                                        const std::vector<std::size_t>& offset,
                                         const std::vector<double>& values,
                                         uint dim, uint rank, bool compress);
 
@@ -89,7 +89,7 @@ namespace dolfin
   //--------------------------------------------------------------------------
   template<typename T>
   std::string VTKWriter::encode_stream(const std::vector<T>& data,
-                                             bool compress)
+                                       bool compress)
   {
     std::stringstream stream;
 

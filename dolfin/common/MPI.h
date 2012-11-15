@@ -404,12 +404,12 @@ namespace dolfin
   //-----------------------------------------------------------------------------
   template<typename T>
   void dolfin::MPI::distribute(const std::set<uint> group,
-                               const std::map<uint,T>& in_values_per_dest,
-                               std::map<uint,T>& out_values_per_src)
+                               const std::map<uint, T>& in_values_per_dest,
+                               std::map<uint, T>& out_values_per_src)
   {
-  #ifdef HAS_MPI
-    typedef typename std::map<uint,T>::const_iterator map_const_iterator;
-    typedef typename std::map<uint,T>::iterator map_iterator;
+    #ifdef HAS_MPI
+    typedef typename std::map<uint, T>::const_iterator map_const_iterator;
+    typedef typename std::map<uint, T>::iterator map_iterator;
     dolfin::MPINonblocking mpi;
     const T no_data;
 
@@ -439,9 +439,9 @@ namespace dolfin
       if (tmp->second.empty())
         out_values_per_src.erase(tmp); // map::erase only invalidates current iterator
     }
-  #else
+    #else
     error_no_mpi("call MPI::distribute");
-  #endif
+    #endif
   }
 
   //-----------------------------------------------------------------------------

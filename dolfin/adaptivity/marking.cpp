@@ -50,7 +50,7 @@ void dolfin::mark(dolfin::MeshFunction<bool>& markers,
   }
 
   // Report the number of marked cells
-  log(INFO,
+  log(PROGRESS,
       "Marking %d cells out of %d (%.1f%%) for refinement",
       num_marked, markers.size(), 100.0*num_marked/markers.size());
 }

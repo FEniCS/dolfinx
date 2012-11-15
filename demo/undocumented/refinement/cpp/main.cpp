@@ -18,7 +18,7 @@
 // Modified by Johan Hoffman, 2006.
 //
 // First added:  2006-10-26
-// Last changed: 2012-07-05
+// Last changed: 2012-11-12
 
 #include <dolfin.h>
 
@@ -29,7 +29,7 @@ int main()
   File file("mesh.pvd");
 
   // Create mesh of unit square
-  UnitSquare unit_square(5, 5);
+  UnitSquareMesh unit_square(5, 5);
   Mesh mesh(unit_square);
   file << mesh;
 

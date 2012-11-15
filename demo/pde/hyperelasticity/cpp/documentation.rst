@@ -214,7 +214,7 @@ space defined by the generated code.
 .. code-block:: c++
 
   // Create mesh and define function space
-  UnitCube mesh (16, 16, 16);
+  UnitCubeMesh mesh (16, 16, 16);
   HyperElasticity::FunctionSpace V(mesh);
 
 Now, the Dirichlet boundary conditions can be created using the class

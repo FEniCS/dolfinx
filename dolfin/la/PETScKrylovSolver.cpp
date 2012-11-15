@@ -309,6 +309,23 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   // Set operators
   set_petsc_operators();
 
+  // Set (approxinate) null space for preconditioner
+  if (preconditioner)
+  {
+    dolfin_assert(P);
+    boost::shared_ptr<const MatNullSpace> pc_nullspace = preconditioner->nullspace();
+    if (pc_nullspace)
+    {
+      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 3
+      MatSetNearNullSpace(*(this->P->mat()), *pc_nullspace);
+      #else
+      dolfin_error("PETScMatrix.cpp",
+                   "set approximate null space for PETSc matrix",
+                   "This is supported by PETSc version > 3.2");
+      #endif
+    }
+  }
+
   // FIXME: Improve check for re-setting preconditoner, e.g. if parameters change
   // FIXME: Solve using matrix free matrices fails if no user provided Prec is provided
   // Set preconditioner if necessary
@@ -497,8 +514,13 @@ void PETScKrylovSolver::write_report(int num_iterations,
 {
   // Get name of solver and preconditioner
   PC pc;
+  #if PETSC_VERSION_RELEASE
   const KSPType ksp_type;
   const PCType pc_type;
+  #else
+  KSPType ksp_type;
+  PCType pc_type;
+  #endif
   KSPGetType(*_ksp, &ksp_type);
   KSPGetPC(*_ksp, &pc);
   PCGetType(pc, &pc_type);
@@ -506,8 +528,13 @@ void PETScKrylovSolver::write_report(int num_iterations,
   // If using additive Schwarz or block Jacobi, get 'sub' method which is
   // applied to each block
   const std::string pc_type_str = pc_type;
+  #if PETSC_VERSION_RELEASE
   const KSPType sub_ksp_type;
   const PCType sub_pc_type;
+  #else
+  KSPType sub_ksp_type;
+  PCType sub_pc_type;
+  #endif
   PC sub_pc;
   KSP* sub_ksp;
   if (pc_type_str == PCASM || pc_type_str == PCBJACOBI)

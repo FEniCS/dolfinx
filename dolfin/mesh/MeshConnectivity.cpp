@@ -61,24 +61,24 @@ void MeshConnectivity::clear()
   index_to_position.clear();
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::init(uint num_entities, uint num_connections)
+void MeshConnectivity::init(std::size_t num_entities, uint num_connections)
 {
   // Clear old data if any
   clear();
 
   // Compute the total size
-  const uint size = num_entities*num_connections;
+  const std::size_t size = num_entities*num_connections;
 
   // Allocate data
-  connections = std::vector<uint>(size, 0);
+  connections = std::vector<std::size_t>(size, 0);
   index_to_position.resize(num_entities + 1);
 
   // Initialize data
-  for (uint e = 0; e < index_to_position.size(); e++)
+  for (std::size_t e = 0; e < index_to_position.size(); e++)
     index_to_position[e] = e*num_connections;
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::init(std::vector<uint>& num_connections)
+void MeshConnectivity::init(std::vector<unsigned int>& num_connections)
 {
   // Clear old data if any
   clear();
@@ -86,7 +86,7 @@ void MeshConnectivity::init(std::vector<uint>& num_connections)
   // Initialize offsets and compute total size
   const uint num_entities = num_connections.size();
   index_to_position.resize(num_entities + 1);
-  uint size = 0;
+  std::size_t size = 0;
   for (uint e = 0; e < num_entities; e++)
   {
     index_to_position[e] = size;
@@ -95,17 +95,18 @@ void MeshConnectivity::init(std::vector<uint>& num_connections)
   index_to_position[num_entities] = size;
 
   // Initialize connections
-  connections = std::vector<uint>(size, 0);
+  connections = std::vector<std::size_t>(size, 0);
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::set(uint entity, uint connection, uint pos)
+void MeshConnectivity::set(std::size_t entity, std::size_t connection,
+                           std::size_t pos)
 {
   dolfin_assert((entity + 1) < index_to_position.size());
   dolfin_assert(pos < index_to_position[entity + 1] - index_to_position[entity]);
   connections[index_to_position[entity] + pos] = connection;
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::set(uint entity, const std::vector<uint>& connections)
+void MeshConnectivity::set(std::size_t entity, const std::vector<std::size_t>& connections)
 {
   dolfin_assert((entity + 1) < index_to_position.size());
   dolfin_assert(connections.size() == index_to_position[entity + 1] - index_to_position[entity]);
@@ -115,7 +116,7 @@ void MeshConnectivity::set(uint entity, const std::vector<uint>& connections)
             this->connections.begin() + index_to_position[entity]);
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::set(uint entity, uint* connections)
+void MeshConnectivity::set(std::size_t entity, std::size_t* connections)
 {
   dolfin_assert((entity + 1) < index_to_position.size());
   dolfin_assert(connections);
@@ -130,7 +131,7 @@ void MeshConnectivity::set(uint entity, uint* connections)
 std::size_t MeshConnectivity::hash() const
 {
   // Compute local hash key
-  boost::hash<std::vector<uint> > uhash;
+  boost::hash<std::vector<std::size_t> > uhash;
   const std::size_t local_hash = uhash(connections);
 
   // Gather all hash keys

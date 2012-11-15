@@ -27,12 +27,12 @@ the world's maybe shortest PDE solver.
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2009-06-15
-# Last changed: 2011-06-28
+# Last changed: 2012-11-12
 
 from dolfin import *
 
 # Define variational problem
-mesh = UnitSquare(32, 32)
+mesh = UnitSquareMesh(32, 32)
 V = FunctionSpace(mesh, "CG", 1)
 u = TrialFunction(V)
 v = TestFunction(V)

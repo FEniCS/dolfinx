@@ -32,12 +32,12 @@ and homogeneous Dirichlet boundary conditions.
 # Modified by Anders Logg 2011
 #
 # First added:  2010-07-23
-# Last changed: 2011-06-28
+# Last changed: 2012-11-12
 
 from dolfin import *
 
 # Create mesh and define function space
-mesh = UnitSquare(64, 64)
+mesh = UnitSquareMesh(64, 64)
 V = FunctionSpace(mesh, "CG", 2)
 
 # Define Dirichlet boundary (x = 0 or x = 1)

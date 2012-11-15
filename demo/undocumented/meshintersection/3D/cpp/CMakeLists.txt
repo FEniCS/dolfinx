@@ -5,7 +5,7 @@
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
-set(PROJECT_NAME demo_3D)
+set(PROJECT_NAME demo_meshintersection_3D)
 project(${PROJECT_NAME})
 
 # Set verbose output while testing CMake
@@ -38,3 +38,4 @@ add_executable(${PROJECT_NAME} main.cpp)
 
 # Target libraries
 target_link_libraries(${PROJECT_NAME} ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
+

@@ -42,7 +42,7 @@ namespace dolfin
   {
 
     // Set type used for the rows of the sparsity pattern
-    //typedef dolfin::Set<uint> set_type;
+    typedef dolfin::Set<std::size_t> set_type;
     typedef boost::unordered_set<dolfin::uint>   set_type;
 
   public:
@@ -51,46 +51,46 @@ namespace dolfin
     SparsityPattern(uint primary_dim);
 
     /// Create sparsity pattern for a generic tensor
-    SparsityPattern(const std::vector<uint>& dims,
-                    const std::vector<std::pair<uint, uint> >& ownership_range,
-                    const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner,
+    SparsityPattern(const std::vector<std::size_t>& dims,
+                    const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range,
+                    const std::vector<const boost::unordered_map<std::size_t, uint>* > off_process_owner,
                     uint primary_dim);
 
     /// Initialize sparsity pattern for a generic tensor
-    void init(const std::vector<uint>& dims,
-              const std::vector<std::pair<uint, uint> >& ownership_range,
-              const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner);
+    void init(const std::vector<std::size_t>& dims,
+              const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range,
+              const std::vector<const boost::unordered_map<std::size_t, uint>* > off_process_owner);
 
     /// Insert non-zero entries
-    void insert(const std::vector<const std::vector<uint>* >& entries);
+    void insert(const std::vector<const std::vector<std::size_t>* >& entries);
 
     /// Add edges (vertex = [index, owning process])
-    void add_edges(const std::pair<uint, uint>& vertex, const std::vector<uint>& edges);
+    void add_edges(const std::pair<std::size_t, uint>& vertex, const std::vector<std::size_t>& edges);
 
     /// Return rank
     uint rank() const;
 
     /// Return local range for dimension dim
-    std::pair<uint, uint> local_range(uint dim) const;
+    std::pair<std::size_t, std::size_t> local_range(uint dim) const;
 
     /// Return number of local nonzeros
-    uint num_nonzeros() const;
+    std::size_t num_nonzeros() const;
 
     /// Fill array with number of nonzeros for diagonal block in
     /// local_range for dimension 0. For matrices, fill array with number
     /// of nonzeros per local row for diagonal block
-    void num_nonzeros_diagonal(std::vector<uint>& num_nonzeros) const;
+    void num_nonzeros_diagonal(std::vector<std::size_t>& num_nonzeros) const;
 
     /// Fill array with number of nonzeros for off-diagonal block in
     /// local_range for dimension 0. For matrices, fill array with number
     /// of nonzeros per local row for off-diagonal block
-    void num_nonzeros_off_diagonal(std::vector<uint>& num_nonzeros) const;
+    void num_nonzeros_off_diagonal(std::vector<std::size_t>& num_nonzeros) const;
 
     /// Fill vector with number of nonzeros in local_range for dimension 0
-    void num_local_nonzeros(std::vector<uint>& num_nonzeros) const;
+    void num_local_nonzeros(std::vector<std::size_t>& num_nonzeros) const;
 
     /// Fill vector with edges for given vertex
-    void get_edges(uint vertex, std::vector<uint>& edges) const;
+    void get_edges(std::size_t vertex, std::vector<std::size_t>& edges) const;
 
     /// Finalize sparsity pattern
     void apply();
@@ -100,11 +100,11 @@ namespace dolfin
 
     /// Return underlying sparsity pattern (diagonal). Options are
     /// 'sorted' and 'unsorted'.
-    std::vector<std::vector<uint> > diagonal_pattern(Type type) const;
+    std::vector<std::vector<std::size_t> > diagonal_pattern(Type type) const;
 
     /// Return underlying sparsity pattern (off-diagional). Options are
     /// 'sorted' and 'unsorted'.
-    std::vector<std::vector<uint> > off_diagonal_pattern(Type type) const;
+    std::vector<std::vector<std::size_t> > off_diagonal_pattern(Type type) const;
 
   private:
 
@@ -115,17 +115,17 @@ namespace dolfin
     bool distributed;
 
     // Ownership range for each dimension
-    std::vector<std::pair<uint, uint> > _local_range;
+    std::vector<std::pair<std::size_t, std::size_t> > _local_range;
 
     // Sparsity patterns for diagonal and off-diagonal blocks
     std::vector<set_type> diagonal;
     std::vector<set_type> off_diagonal;
 
     // Sparsity pattern for non-local entries stored as [i0, j0, i1, j1, ...]
-    std::vector<uint> non_local;
+    std::vector<std::size_t> non_local;
 
     // Map from non-local vertex to owning process index
-    std::vector<boost::unordered_map<uint, uint> > off_process_owner;
+    std::vector<boost::unordered_map<std::size_t, uint> > off_process_owner;
 
   };
 

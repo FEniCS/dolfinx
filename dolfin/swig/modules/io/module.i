@@ -64,8 +64,6 @@
 // #include types from fem submodule of module fem
 #include "dolfin/fem/GenericDofMap.h"
 #include "dolfin/fem/DofMap.h"
-#include "dolfin/fem/BoundaryCondition.h"
-#include "dolfin/fem/DirichletBC.h"
 
 // Include types from present module io
 
@@ -133,8 +131,6 @@ import_array();
 %include "dolfin/swig/fem/pre.i"
 %import(module="fem") "dolfin/fem/GenericDofMap.h"
 %import(module="fem") "dolfin/fem/DofMap.h"
-%import(module="fem") "dolfin/fem/BoundaryCondition.h"
-%import(module="fem") "dolfin/fem/DirichletBC.h"
 
 // Turn on SWIG generated signature documentation and include doxygen
 // generated docstrings

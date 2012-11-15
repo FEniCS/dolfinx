@@ -28,7 +28,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::uint PETScBaseMatrix::size(uint dim) const
+std::size_t PETScBaseMatrix::size(uint dim) const
 {
   if (dim > 1)
   {
@@ -50,7 +50,7 @@ dolfin::uint PETScBaseMatrix::size(uint dim) const
     return 0;
 }
 //-----------------------------------------------------------------------------
-std::pair<dolfin::uint, dolfin::uint> PETScBaseMatrix::local_range(uint dim) const
+std::pair<std::size_t, std::size_t> PETScBaseMatrix::local_range(uint dim) const
 {
   dolfin_assert(dim <= 1);
   if (dim == 1)

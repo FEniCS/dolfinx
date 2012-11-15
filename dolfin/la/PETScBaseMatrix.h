@@ -43,11 +43,7 @@ namespace dolfin
     void operator() (Mat* A)
     {
       if (*A)
-        #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
-        MatDestroy(*A);
-        #else
         MatDestroy(A);
-        #endif
       delete A;
     }
   };
@@ -68,10 +64,10 @@ namespace dolfin
     PETScBaseMatrix(boost::shared_ptr<Mat> A) : A(A) {}
 
     /// Return number of rows (dim = 0) or columns (dim = 1)
-    uint size(uint dim) const;
+    std::size_t size(uint dim) const;
 
     /// Return local range along dimension dim
-    std::pair<uint, uint> local_range(uint dim) const;
+    std::pair<std::size_t, std::size_t> local_range(uint dim) const;
 
     /// Resize matrix to be compatible with the matrix-vector product
     /// y = Ax. In the parallel case, both size and layout are

@@ -114,14 +114,14 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   const bool vertex_data = !(dofmap.max_cell_dimension() == cell_based_dim);
 
   // Get number of local/global cells/vertices
-  const uint num_local_cells = mesh.num_cells();
-  const uint num_local_vertices = mesh.num_vertices();
-  const uint num_global_cells = MPI::sum(num_local_cells);
-  const uint num_global_vertices = MPI::sum(num_local_vertices);
+  const std::size_t num_local_cells = mesh.num_cells();
+  const std::size_t num_local_vertices = mesh.num_vertices();
+  const std::size_t num_global_cells = MPI::sum(num_local_cells);
+  const std::size_t num_global_vertices = MPI::sum(num_local_vertices);
 
   // Get Function data at vertices/cell centres
   std::vector<double> data_values;
-  uint num_local_entities = 0;
+  std::size_t num_local_entities = 0;
   if (vertex_data)
   {
     num_local_entities = mesh.num_vertices(); // includes duplicates
@@ -144,11 +144,11 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
       padded_value_size = 9;
 
     std::vector<double> _data_values(padded_value_size*num_local_entities, 0.0);
-    for(uint i = 0; i < num_local_entities; i++)
+    for(std::size_t i = 0; i < num_local_entities; i++)
     {
       for (uint j = 0; j < value_size; j++)
       {
-        uint tensor_2d_offset = (j > 1 && value_size == 4) ? 1 : 0;
+        std::size_t tensor_2d_offset = (j > 1 && value_size == 4) ? 1 : 0;
         _data_values[i*padded_value_size + j + tensor_2d_offset]
             = data_values[i + j*num_local_entities];
       }
@@ -169,7 +169,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   // as distinct from /Vector which is used for solution vectors.
 
   // Save data values to HDF5 file
-  std::vector<uint> global_size(2);
+  std::vector<std::size_t> global_size(2);
   global_size[0] = MPI::sum(num_local_entities);
   global_size[1] = padded_value_size;
 
@@ -316,10 +316,10 @@ void XDMFFile::operator<< (const Mesh& mesh)
   hdf5_file->write_visualisation_mesh(mesh, name);
 
   // Get number of local/global cells/vertices
-  const uint num_local_cells = mesh.num_cells();
-  const uint num_global_cells = MPI::sum(num_local_cells);
-  const uint num_local_vertices = mesh.num_vertices();
-  const uint num_global_vertices = MPI::sum(num_local_vertices);
+  const std::size_t num_local_cells = mesh.num_cells();
+  const std::size_t num_global_cells = MPI::sum(num_local_cells);
+  const std::size_t num_local_vertices = mesh.num_vertices();
+  const std::size_t num_global_vertices = MPI::sum(num_local_vertices);
   const uint cell_dim = mesh.topology().dim();
 
   // Get geometric dimension
@@ -422,10 +422,10 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   dolfin_assert(hdf5_file);
 
   // Get counts of mesh cells and vertices
-  const uint num_local_cells = mesh.num_entities(cell_dim);
-  const uint num_local_vertices = mesh.num_vertices();
-  const uint num_global_cells = MPI::sum(num_local_cells);
-  const uint num_global_vertices = MPI::sum(num_local_vertices);
+  const std::size_t num_local_cells = mesh.num_entities(cell_dim);
+  const std::size_t num_local_vertices = mesh.num_vertices();
+  const std::size_t num_global_cells = MPI::sum(num_local_cells);
+  const std::size_t num_global_vertices = MPI::sum(num_local_vertices);
 
   // Work out HDF5 dataset names
   const std::string name = "/VisualisationMesh/" + boost::lexical_cast<std::string>(counter);
@@ -441,7 +441,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   hdf5_file->write_visualisation_mesh(mesh, cell_dim, name);
 
   // Write values to HDF5
-  const std::vector<uint> global_size(1, MPI::sum(data_values.size()));
+  const std::vector<std::size_t> global_size(1, MPI::sum(data_values.size()));
   hdf5_file->write_data(dataset_basic_name, data_values, global_size);
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero
@@ -490,10 +490,10 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 //----------------------------------------------------------------------------
 void XDMFFile::xml_mesh_topology(pugi::xml_node &xdmf_topology,
                                  const uint cell_dim,
-                                 const uint num_global_cells,
+                                 const std::size_t num_global_cells,
                                  const std::string topology_dataset_name) const
 {
-  xdmf_topology.append_attribute("NumberOfElements") = num_global_cells;
+  xdmf_topology.append_attribute("NumberOfElements") = (uint) num_global_cells;
 
   // Cell type
   if (cell_dim == 1)
@@ -522,7 +522,7 @@ void XDMFFile::xml_mesh_topology(pugi::xml_node &xdmf_topology,
 }
 //----------------------------------------------------------------------------
 void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
-                                 const uint num_global_vertices,
+                                 const std::size_t num_global_vertices,
                                  const uint gdim,
                                  const std::string geometry_dataset_name) const
 {

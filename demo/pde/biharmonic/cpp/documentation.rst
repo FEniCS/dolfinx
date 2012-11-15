@@ -127,7 +127,7 @@ in each direction:
   int main()
   {
     // Create mesh
-    UnitSquare mesh(32, 32);
+    UnitSquareMesh mesh(32, 32);
 
 
 The source function, a function for the cell size and the penalty term

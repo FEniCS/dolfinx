@@ -44,14 +44,14 @@ class MeshPrimitive
 {
 public:
 
-  typedef uint Id;
+  typedef std::size_t Id;
   typedef typename PrimitiveTrait::Datum Datum;
   typedef typename PrimitiveTrait::K K;
   typedef typename PrimitiveTrait::Primitive Primitive;
   typedef typename K::Point_3 Point_3;
 
   /// Topological dimension of the MeshEntity
-  static const uint dim = PrimitiveTrait::dim;
+  static const std::size_t dim = PrimitiveTrait::dim;
 
   /// Static, so only reference to a mesh and entity index have to be saved
   static MeshEntity getEntity(const MeshPrimitive & p)

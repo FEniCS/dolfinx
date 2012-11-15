@@ -173,8 +173,8 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   dolfin_assert(P);
 
   // Check dimensions
-  const uint M = A->size(0);
-  const uint N = A->size(1);
+  const std::size_t M = A->size(0);
+  const std::size_t N = A->size(1);
   if (N != b.size())
   {
     dolfin_error("EpetraKrylovSolver.cpp",
@@ -225,19 +225,31 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   const double* status = solver->GetAztecStatus();
   if ((int) status[AZ_why] != AZ_normal)
   {
-    const bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
-    if (error_on_nonconvergence)
+    std::string errorDescription;
+    if( status[AZ_why] == AZ_maxits )
+      errorDescription = "maximum iters reached";
+    else if( status[AZ_why] == AZ_loss )
+      errorDescription = "loss of accuracy";
+    else if( status[AZ_why] == AZ_ill_cond  )
+      errorDescription = "ill-conditioned";
+    else if( status[AZ_why] == AZ_breakdown )
+      errorDescription = "breakdown";
+    else
+      errorDescription = "unknown error";
+
+    std::stringstream message;
+    message << "Epetra (AztecOO) Krylov solver (" << method << ", " << preconditioner->name() << ") "
+            << "failed to converge after " << (int)status[AZ_its] << " iterations "
+            << "(" << errorDescription << ", error code " << (int)status[AZ_why] << ")";
+
+    if (parameters["error_on_nonconvergence"])
     {
       dolfin_error("EpetraKrylovSolver.cpp",
                    "solve linear system using Epetra Krylov solver",
-                   "Solution failed to converge (error code %.f)",
-                   status[AZ_why]);
+                   message.str());
     }
     else
-    {
-      warning("Epetra (Aztec00) Krylov solver failed to converge (error code %.f).",
-              status[AZ_why]);
-    }
+      warning(message.str());
   }
   else
   {

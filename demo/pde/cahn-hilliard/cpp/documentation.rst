@@ -303,7 +303,7 @@ A mesh is then created with 97 (96 + 1) vertices in each direction:
 .. code-block:: c++
 
     // Mesh
-    UnitSquare mesh(96, 96);
+    UnitSquareMesh mesh(96, 96);
 
 A set of constants (required for the assembling of the forms) and two
 scalars (to be used in the time stepping) are then declared:

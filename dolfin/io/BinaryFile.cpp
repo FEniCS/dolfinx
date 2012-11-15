@@ -52,7 +52,7 @@ void BinaryFile::operator>> (std::vector<double>& values)
 {
   open_read();
 
-  const uint n = read_uint();
+  const std::size_t n = read_uint();
   values.resize(n);
   read_array(n, &values[0]);
 
@@ -63,7 +63,7 @@ void BinaryFile::operator>> (GenericVector& vector)
 {
   open_read();
 
-  const uint n = read_uint();
+  const std::size_t n = read_uint();
   std::vector<double> values(n);
   read_array(n, values.data());
 
@@ -83,21 +83,21 @@ void BinaryFile::operator>> (Mesh& mesh)
 
   // Read mesh topology
   MeshTopology& t = mesh._topology;
-  uint D = read_uint();
+  std::size_t D = read_uint();
   t.num_entities.resize(D + 1);
   read_array(D + 1, t.num_entities.data());
   t.connectivity.resize(D + 1);
-  for (uint i = 0; i <= D; i++)
+  for (std::size_t i = 0; i <= D; i++)
   {
-    for (uint j = 0; j <= D; j++)
+    for (std::size_t j = 0; j <= D; j++)
     {
       t.connectivity[i].push_back(MeshConnectivity(i, j));
       MeshConnectivity& c = t.connectivity[i][j];
-      const uint size = read_uint();
+      const std::size_t size = read_uint();
       if (size > 0)
       {
-        const uint num_entities = read_uint();
-        c.connections = std::vector<uint>(size);
+        const std::size_t num_entities = read_uint();
+        c.connections = std::vector<std::size_t>(size);
         read_array(size, &(c.connections)[0]);
         c.index_to_position.resize(num_entities + 1);
         read_array(c.index_to_position.size(), &(c.index_to_position[0]));
@@ -108,7 +108,7 @@ void BinaryFile::operator>> (Mesh& mesh)
   // Read mesh geometry (ignoring higher order stuff)
   MeshGeometry& g = mesh._geometry;
   g._dim = read_uint();
-  const uint size = read_uint();
+  const std::size_t size = read_uint();
   g.coordinates.resize(g._dim*size);
   read_array(g._dim*size, g.coordinates.data());
 
@@ -142,7 +142,7 @@ void BinaryFile::operator<< (const GenericVector& vector)
 {
   open_write();
 
-  const uint n = vector.size();
+  const std::size_t n = vector.size();
   std::vector<double> values(n);
   vector.get_local(values);
   write_uint(n);
@@ -164,7 +164,7 @@ void BinaryFile::operator<< (const Mesh& mesh)
     write_array(D + 1, t.num_entities.data());
   else
   {
-    for (uint i = 0; i <= D; i++)
+    for (std::size_t i = 0; i <= D; i++)
     {
       if (i==0 || i == D)
         write_uint(t.size(i));
@@ -201,7 +201,7 @@ void BinaryFile::operator<< (const Mesh& mesh)
   write_array(g._dim*g.size(), g.coordinates.data());
 
   // Write cell type
-  write_uint(static_cast<uint>(mesh._cell_type->cell_type()));
+  write_uint(static_cast<std::size_t>(mesh._cell_type->cell_type()));
 
   // Write mesh data
   // FIXME: Not implemented
@@ -269,39 +269,39 @@ void BinaryFile::close_write()
   ofilter.reset();
 }
 //-----------------------------------------------------------------------------
-dolfin::uint BinaryFile::read_uint()
+std::size_t BinaryFile::read_uint()
 {
-  uint value = 0;
-  boost::iostreams::read(ifilter, (char*) &value, (std::streamsize) sizeof(uint));
+  std::size_t value = 0;
+  boost::iostreams::read(ifilter, (char*) &value, (std::streamsize) sizeof(std::size_t));
   return value;
 }
 //-----------------------------------------------------------------------------
-void BinaryFile::read_array(uint n, uint* values)
+void BinaryFile::read_array(std::size_t n, std::size_t* values)
 {
-  for (uint i = 0; i < n; ++i)
-    boost::iostreams::read(ifilter, (char*) (values + i), (std::streamsize) sizeof(uint));
+  for (std::size_t i = 0; i < n; ++i)
+    boost::iostreams::read(ifilter, (char*) (values + i), (std::streamsize) sizeof(std::size_t));
 }
 //-----------------------------------------------------------------------------
-void BinaryFile::read_array(uint n, double* values)
+void BinaryFile::read_array(std::size_t n, double* values)
 {
-  for (uint i = 0; i < n; ++i)
+  for (std::size_t i = 0; i < n; ++i)
     boost::iostreams::read(ifilter, (char*) (values + i), (std::streamsize) sizeof(double));
 }
 //-----------------------------------------------------------------------------
-void BinaryFile::write_uint(uint value)
+void BinaryFile::write_uint(std::size_t value)
 {
-  boost::iostreams::write(ofilter, (char*) &value, (std::streamsize) sizeof(uint));
+  boost::iostreams::write(ofilter, (char*) &value, (std::streamsize) sizeof(std::size_t));
 }
 //-----------------------------------------------------------------------------
-void BinaryFile::write_array(uint n, const uint* values)
+void BinaryFile::write_array(std::size_t n, const std::size_t* values)
 {
-  for (uint i = 0; i < n; ++i)
-    boost::iostreams::write(ofilter, (char*) &values[i], (std::streamsize) sizeof(uint));
+  for (std::size_t i = 0; i < n; ++i)
+    boost::iostreams::write(ofilter, (char*) &values[i], (std::streamsize) sizeof(std::size_t));
 }
 //-----------------------------------------------------------------------------
-void BinaryFile::write_array(uint n, const double* values)
+void BinaryFile::write_array(std::size_t n, const double* values)
 {
-  for (uint i = 0; i < n; ++i)
+  for (std::size_t i = 0; i < n; ++i)
     boost::iostreams::write(ofilter, (char*) &values[i], (std::streamsize) sizeof(double));
 }
 //-----------------------------------------------------------------------------

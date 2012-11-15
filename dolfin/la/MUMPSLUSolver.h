@@ -68,7 +68,6 @@ namespace dolfin
 
   private:
 
-
     // Operator (the matrix)
     boost::shared_ptr<const CoordinateMatrix> A;
 

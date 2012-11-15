@@ -86,8 +86,7 @@ void MeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim)
   mesh._domains.init(tdim);
 
   // Initialize temporary storage for local cell data
-  vertices.resize(mesh.type().num_vertices(tdim));
-  std::fill(vertices.begin(), vertices.end(), 0);
+  vertices = std::vector<std::size_t>(mesh.type().num_vertices(tdim), 0);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::open(Mesh& mesh, std::string type, uint tdim, uint gdim)
@@ -108,7 +107,7 @@ void MeshEditor::open(Mesh& mesh, std::string type, uint tdim, uint gdim)
   }
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::init_vertices(uint num_vertices)
+void MeshEditor::init_vertices(std::size_t num_vertices)
 {
   // Check if we are currently editing a mesh
   if (!mesh)
@@ -125,7 +124,7 @@ void MeshEditor::init_vertices(uint num_vertices)
   mesh->_geometry.init(gdim, num_vertices);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::init_cells(uint num_cells)
+void MeshEditor::init_cells(std::size_t num_cells)
 {
   // Check if we are currently editing a mesh
   if (!mesh)
@@ -142,17 +141,17 @@ void MeshEditor::init_cells(uint num_cells)
   mesh->_topology(tdim, 0).init(num_cells, mesh->type().num_vertices(tdim));
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_vertex(uint index, const Point& p)
+void MeshEditor::add_vertex(std::size_t index, const Point& p)
 {
   add_vertex_global(index, index, p);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_vertex(uint index, const std::vector<double>& x)
+void MeshEditor::add_vertex(std::size_t index, const std::vector<double>& x)
 {
   add_vertex_global(index, index, x);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_vertex(uint index, double x)
+void MeshEditor::add_vertex(std::size_t index, double x)
 {
   dolfin_assert(gdim == 1);
   std::vector<double> p(1);
@@ -160,7 +159,7 @@ void MeshEditor::add_vertex(uint index, double x)
   add_vertex(index, p);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_vertex(uint index, double x, double y)
+void MeshEditor::add_vertex(std::size_t index, double x, double y)
 {
   dolfin_assert(gdim == 2);
   std::vector<double> p(2);
@@ -169,7 +168,7 @@ void MeshEditor::add_vertex(uint index, double x, double y)
   add_vertex(index, p);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_vertex(uint index, double x, double y, double z)
+void MeshEditor::add_vertex(std::size_t index, double x, double y, double z)
 {
   dolfin_assert(gdim == 3);
   std::vector<double> p(3);
@@ -179,7 +178,8 @@ void MeshEditor::add_vertex(uint index, double x, double y, double z)
   add_vertex(index, p);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_vertex_global(uint local_index, uint global_index,
+void MeshEditor::add_vertex_global(std::size_t local_index,
+                                   std::size_t global_index,
                                    const Point& p)
 {
   // Geometric dimension
@@ -194,7 +194,8 @@ void MeshEditor::add_vertex_global(uint local_index, uint global_index,
   mesh->_topology.set_global_index(0, local_index, global_index);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_vertex_global(uint local_index, uint global_index,
+void MeshEditor::add_vertex_global(std::size_t local_index,
+                                   std::size_t global_index,
                                    const std::vector<double>& x)
 {
   // Add vertex
@@ -205,29 +206,31 @@ void MeshEditor::add_vertex_global(uint local_index, uint global_index,
   mesh->_topology.set_global_index(0, local_index, global_index);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_cell(uint c, uint v0, uint v1)
+void MeshEditor::add_cell(std::size_t c, std::size_t v0, std::size_t v1)
 {
   dolfin_assert(tdim == 1);
-  std::vector<uint> vertices(2);
+  std::vector<std::size_t> vertices(2);
   vertices[0] = v0;
   vertices[1] = v1;
   add_cell(c, c, vertices);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2)
+void MeshEditor::add_cell(std::size_t c, std::size_t v0, std::size_t v1,
+                          std::size_t v2)
 {
   dolfin_assert(tdim == 2);
-  std::vector<uint> vertices(3);
+  std::vector<std::size_t> vertices(3);
   vertices[0] = v0;
   vertices[1] = v1;
   vertices[2] = v2;
   add_cell(c, c, vertices);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2, uint v3)
+void MeshEditor::add_cell(std::size_t c, std::size_t v0, std::size_t v1,
+                          std::size_t v2, std::size_t v3)
 {
   dolfin_assert(tdim == 3);
-  std::vector<uint> vertices(4);
+  std::vector<std::size_t> vertices(4);
   vertices[0] = v0;
   vertices[1] = v1;
   vertices[2] = v2;
@@ -235,13 +238,13 @@ void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2, uint v3)
   add_cell(c, c, vertices);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_cell(uint c, const std::vector<uint>& v)
+void MeshEditor::add_cell(std::size_t c, const std::vector<std::size_t>& v)
 {
   add_cell(c, c, v);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_cell(uint local_index, uint global_index,
-                          const std::vector<uint>& v)
+void MeshEditor::add_cell(std::size_t local_index, std::size_t global_index,
+                          const std::vector<std::size_t>& v)
 {
   dolfin_assert(v.size() == tdim + 1);
 
@@ -267,7 +270,7 @@ void MeshEditor::close(bool order)
   clear();
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_vertex_common(uint v, uint gdim)
+void MeshEditor::add_vertex_common(std::size_t v, uint gdim)
 {
   // Check if we are currently editing a mesh
   if (!mesh)
@@ -308,7 +311,7 @@ void MeshEditor::add_vertex_common(uint v, uint gdim)
   next_vertex++;
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_cell_common(uint c, uint tdim)
+void MeshEditor::add_cell_common(std::size_t c, uint tdim)
 {
   // Check if we are currently editing a mesh
   if (!mesh)
@@ -360,9 +363,9 @@ void MeshEditor::clear()
   vertices.clear();
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::check_vertices(const std::vector<uint>& v) const
+void MeshEditor::check_vertices(const std::vector<std::size_t>& v) const
 {
-  for (uint i = 0; i < v.size(); ++i)
+  for (std::size_t i = 0; i < v.size(); ++i)
   {
     if (num_vertices > 0 && v[i] >= num_vertices)
     {

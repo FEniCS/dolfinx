@@ -67,7 +67,7 @@ int main() {
   // Define boundary condition
   Constant u0(0.0, 0.0);
   Noslip noslip;
-  MeshFunction<dolfin::uint> noslip_markers(mesh, mesh.topology().dim() - 1, 1);
+  MeshFunction<std::size_t> noslip_markers(mesh, mesh.topology().dim() - 1, 1);
   noslip.mark(noslip_markers, 0);
   SubSpace W0(W, 0);
   DirichletBC bc(W0, u0, noslip_markers, 0);
@@ -89,7 +89,7 @@ int main() {
   AdaptiveNavierStokes::GoalFunctional M(mesh);
   M.w = w;
   Outflow outflow;
-  MeshFunction<dolfin::uint> outflow_markers(mesh, mesh.topology().dim()-1, 1);
+  MeshFunction<std::size_t> outflow_markers(mesh, mesh.topology().dim()-1, 1);
   outflow.mark(outflow_markers, 0);
   M.ds = outflow_markers;
 
@@ -105,16 +105,19 @@ int main() {
   NonlinearVariationalProblem pde(F, w, bc, dF);
 
   // Define solver
-  AdaptiveNonlinearVariationalSolver solver(pde);
+  AdaptiveNonlinearVariationalSolver solver(pde, M);
 
   // Set (precomputed) reference in adaptive solver to evaluate
   // quality of error estimates and adaptive refinement
   solver.parameters["reference"] = 0.40863917;
 
   // Solve problem with goal-oriented error control to given tolerance
-  solver.solve(tol, M);
+  solver.solve(tol);
 
-  // Show timings
+  // Show solver summary
+  solver.summary();
+
+  // Show all timings
   list_timings();
 
   // Plot solutions

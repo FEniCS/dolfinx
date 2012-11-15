@@ -27,12 +27,12 @@
 # Modified by Anders Logg 2011
 #
 # First added:  2007-11-15
-# Last changed: 2011-11-18
+# Last changed: 2012-11-12
 
 from dolfin import *
 
 # Create mesh and finite element
-mesh = UnitSquare(32, 32)
+mesh = UnitSquareMesh(32, 32)
 V = FunctionSpace(mesh, "CG", 1)
 
 # Source term

@@ -30,7 +30,7 @@ from dolfin import *
 
 # Load mesh and subdomains
 mesh = Mesh("dolfin-2.xml.gz")
-sub_domains = MeshFunction("uint", mesh, "../subdomains.xml.gz")
+sub_domains = MeshFunction("sizet", mesh, "../subdomains.xml.gz")
 
 # Define function spaces
 P1 = VectorFunctionSpace(mesh, "Lagrange", 1)
