@@ -229,27 +229,21 @@ void PETScMatrix::get(double* block, std::size_t m, const DolfinIndex* rows,
 {
   // Get matrix entries (must be on this process)
   dolfin_assert(A);
-  const std::vector<PetscInt> _rows(rows, rows + m);
-  const std::vector<PetscInt> _cols(cols, cols + n);
-  MatGetValues(*A, m, _rows.data(), n, _cols.data(), block);
+  MatGetValues(*A, m, rows, n, cols, block);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::set(const double* block, std::size_t m, const DolfinIndex* rows,
                                            std::size_t n, const DolfinIndex* cols)
 {
   dolfin_assert(A);
-  const std::vector<PetscInt> _rows(rows, rows + m);
-  const std::vector<PetscInt> _cols(cols, cols + n);
-  MatSetValues(*A, m, _rows.data(), n, _cols.data(), block, INSERT_VALUES);
+  MatSetValues(*A, m, rows, n, cols, block, INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::add(const double* block, std::size_t m, const DolfinIndex* rows,
                                            std::size_t n, const DolfinIndex* cols)
 {
   dolfin_assert(A);
-  const std::vector<PetscInt> _rows(rows, rows + m);
-  const std::vector<PetscInt> _cols(cols, cols + n);
-  MatSetValues(*A, m, _rows.data(), n, _cols.data(), block, ADD_VALUES);
+  MatSetValues(*A, m, rows, n, cols, block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::axpy(double a, const GenericMatrix& A,
@@ -313,8 +307,7 @@ void PETScMatrix::zero(std::size_t m, const DolfinIndex* rows)
   IS is = 0;
   PetscScalar null = 0.0;
   const PetscInt _m = m;
-  const std::vector<PetscInt> _rows(rows, rows + m);
-  ISCreateGeneral(PETSC_COMM_SELF, _m, _rows.data(), PETSC_COPY_VALUES, &is);
+  ISCreateGeneral(PETSC_COMM_SELF, _m, rows, PETSC_COPY_VALUES, &is);
   MatZeroRowsIS(*A, is, null, NULL, NULL);
   ISDestroy(&is);
 }
@@ -325,8 +318,7 @@ void PETScMatrix::ident(std::size_t m, const DolfinIndex* rows)
 
   IS is = 0;
   PetscScalar one = 1.0;
-  const std::vector<PetscInt> _rows(rows, rows + m);
-  ISCreateGeneral(PETSC_COMM_SELF, m, _rows.data(), PETSC_COPY_VALUES, &is);
+  ISCreateGeneral(PETSC_COMM_SELF, m, rows, PETSC_COPY_VALUES, &is);
   MatZeroRowsIS(*A, is, one, NULL, NULL);
   ISDestroy(&is);
 }
