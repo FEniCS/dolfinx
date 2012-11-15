@@ -505,12 +505,12 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   dolfin_assert(num_cells == current_cell);
   editor.close();
 
-  // FIXME: GNW
   // Attach data for bisection twins
-  //boost::shared_ptr<MeshFunction<unsigned int> > _refined_bisection_twins = refined_mesh.data().create_mesh_function("bisection_twins");
-  //dolfin_assert(_refined_bisection_twins);
-  //_refined_bisection_twins->init(refined_mesh.topology().dim());
-  //_refined_bisection_twins->set_values(refined_bisection_twins);
+  boost::shared_ptr<MeshFunction<std::size_t> > _refined_bisection_twins
+      = refined_mesh.data().create_mesh_function("bisection_twins");
+  dolfin_assert(_refined_bisection_twins);
+  _refined_bisection_twins->init(refined_mesh.topology().dim());
+  _refined_bisection_twins->set_values(refined_bisection_twins);
 }
 //-----------------------------------------------------------------------------
 std::size_t RegularCutRefinement::count_markers(const std::vector<bool>& markers)
