@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
 {
   if (getenv("DOLFIN_NOPLOT"))
   {
-    warning("DOLFIN_NOPLOT is set; not running demo_qt");
+    warning("DOLFIN_NOPLOT is set; not running %s", argv[0]);
     return 0;
   }
 
