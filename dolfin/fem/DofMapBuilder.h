@@ -75,8 +75,7 @@ namespace dolfin
     static void build(DofMap& dofmap,
                       const Mesh& dolfin_mesh,
                       const UFCMesh& ufc_mesh,
-                      const MeshFunction<uint>& domain_markers,
-                      uint domain,
+                      const Restriction& restriction,
                       bool reorder,
                       bool distributed);
 

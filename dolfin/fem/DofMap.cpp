@@ -32,6 +32,7 @@
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/Restriction.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "DofMapBuilder.h"
 #include "UFCCell.h"
@@ -85,9 +86,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
-               const Mesh& dolfin_mesh,
-               const MeshFunction<uint>& domain_markers,
-               uint domain)
+               const Restriction& restriction)
   : _ufc_dofmap(ufc_dofmap->create()),
     _global_dimension(0), _ufc_offset(0), _is_view(false),
     _distributed(MPI::num_processes() > 1)
@@ -95,6 +94,9 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   info("Creating restricted dofmap.");
 
   dolfin_assert(_ufc_dofmap);
+
+  // Get mesh
+  const dolfin::Mesh& dolfin_mesh(restriction.mesh());
 
   // Check for dimensional consistency between the dofmap and mesh
   check_dimensional_consistency(*_ufc_dofmap, dolfin_mesh);
@@ -110,7 +112,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 
   // Check that we get cell markers, extend later
   const uint D = dolfin_mesh.topology().dim();
-  if (domain_markers.dim() != D)
+  if (restriction.dim() != D)
   {
     dolfin_error("DofMap.cpp",
                  "create mapping of degrees of freedom",
@@ -143,8 +145,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   // Build dof map
   // FIXME: Need to build better dofmap
   const bool reorder = dolfin::parameters["reorder_dofs_serial"];
-  DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh,
-                       domain_markers, domain,
+  DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, restriction,
                        reorder, _distributed);
 
   info("Restricted dofmap created.");

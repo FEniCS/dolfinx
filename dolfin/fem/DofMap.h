@@ -46,6 +46,7 @@ namespace dolfin
   class GenericVector;
   class UFC;
   class UFCMesh;
+  class Restriction;
 
   /// This class handles the mapping of degrees of freedom. It builds
   /// a dof map based on a ufc::dofmap on a specific mesh. It will
@@ -71,16 +72,10 @@ namespace dolfin
     /// *Arguments*
     ///     ufc_dofmap (ufc::dofmap)
     ///         The ufc::dofmap.
-    ///     mesh (_Mesh_)
-    ///         The mesh.
-    ///     domain_markers (_MeshFunction_ <uint>)
-    ///         Domain markers for the cells of the mesh.
-    ///     domain (uint)
-    ///         Identifier for domain.
+    ///     restriction (_Restriction_)
+    ///         The restriction.
     DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
-           const Mesh& mesh,
-           const MeshFunction<uint>& domain_markers,
-           uint domain);
+           const Restriction& restriction);
 
   private:
 

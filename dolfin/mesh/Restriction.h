@@ -79,6 +79,20 @@ namespace dolfin
     Restriction(boost::shared_ptr<const MeshFunction<uint> > domain_markers,
                 uint domain_number);
 
+    /// Return the full unrestricted mesh
+    const Mesh& mesh() const;
+
+    /// Return topological dimension of restriction
+    uint dim() const;
+
+    /// Check whether restriction contains entity
+    bool contains(const MeshEntity& entity) const
+    {
+      dolfin_assert(_domain_markers);
+      return (*_domain_markers)[entity] == _domain_number;
+    }
+
+
   private:
 
     // Initialize domain markers from subdomain

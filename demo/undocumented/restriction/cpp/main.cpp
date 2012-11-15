@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-10-12
-// Last changed: 2012-11-09
+// Last changed: 2012-11-14
 
 #include <dolfin.h>
 #include "Poisson.h"
@@ -51,14 +51,12 @@ int main()
   // Create mesh
   UnitSquare mesh(8, 8);
 
-  // Create domain markers for subdomain
+  // Define restriction
   Domain domain;
-  CellFunction<uint> domain_markers(mesh);
-  domain_markers.set_all(1);
-  domain.mark(domain_markers, 0);
+  Restriction restriction(mesh, domain);
 
   // Create restricted function space
-  Poisson::FunctionSpace V(mesh, domain_markers, 0);
+  Poisson::FunctionSpace V(restriction);
 
   // Create forms and attach coefficients
   Poisson::BilinearForm a(V, V);

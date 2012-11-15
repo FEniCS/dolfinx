@@ -53,6 +53,18 @@ Restriction::Restriction(boost::shared_ptr<const MeshFunction<uint> > domain_mar
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+const Mesh& Restriction::mesh() const
+{
+  dolfin_assert(_domain_markers);
+  return _domain_markers->mesh();
+}
+//-----------------------------------------------------------------------------
+dolfin::uint Restriction::dim() const
+{
+  dolfin_assert(_domain_markers);
+  return _domain_markers->dim();
+}
+//-----------------------------------------------------------------------------
 void Restriction::init_from_subdomain(const Mesh& mesh,
                                       const SubDomain& sub_domain, uint dim)
 {
@@ -69,4 +81,3 @@ void Restriction::init_from_subdomain(const Mesh& mesh,
   _domain_markers = boost::shared_ptr<const MeshFunction<uint> >(__domain_markers);
 }
 //-----------------------------------------------------------------------------
-

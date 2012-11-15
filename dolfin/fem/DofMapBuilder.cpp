@@ -35,6 +35,7 @@
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/Restriction.h>
 #include "DofMap.h"
 #include "UFCCell.h"
 #include "UFCMesh.h"
@@ -123,8 +124,7 @@ void DofMapBuilder::build(DofMap& dofmap,
 void DofMapBuilder::build(DofMap& dofmap,
                           const Mesh& dolfin_mesh,
                           const UFCMesh& ufc_mesh,
-                          const MeshFunction<uint>& domain_markers,
-                          uint domain,
+                          const Restriction& restriction,
                           bool reorder,
                           bool distributed)
 {
@@ -151,7 +151,7 @@ void DofMapBuilder::build(DofMap& dofmap,
   for (dolfin::CellIterator cell(dolfin_mesh); !cell.end(); ++cell)
   {
     // Skip cells not included in restriction
-    if (domain_markers[cell->index()] != domain)
+    if (!restriction.contains(*cell))
       continue;
 
     // Update UFC cell
