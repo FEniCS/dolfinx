@@ -77,7 +77,8 @@ PETScVector::PETScVector(std::string type, bool use_gpu) : _use_gpu(use_gpu)
     _init(range, ghost_indices, false);
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(std::size_t N, std::string type, bool use_gpu) : _use_gpu(use_gpu)
+PETScVector::PETScVector(std::size_t N, std::string type, bool use_gpu)
+                      : _use_gpu(use_gpu)
 {
 #ifndef HAS_PETSC_CUSP
   if (_use_gpu)
@@ -114,7 +115,8 @@ PETScVector::PETScVector(std::size_t N, std::string type, bool use_gpu) : _use_g
   }
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(const GenericSparsityPattern& sparsity_pattern): _use_gpu(false)
+PETScVector::PETScVector(const GenericSparsityPattern& sparsity_pattern)
+                      : _use_gpu(false)
 {
   std::vector<std::size_t> ghost_indices;
   resize(sparsity_pattern.local_range(0), ghost_indices);
@@ -252,9 +254,9 @@ void PETScVector::get_local(std::vector<double>& values) const
   if (local_size == 0)
     return;
 
-  std::vector<PetscInt> rows(local_size);
+  std::vector<PetscInt> rows(local_size, n0);
   for (std::size_t i = 0; i < local_size; ++i)
-    rows[i] = i + n0;
+    rows[i] += i;
 
   VecGetValues(*x, local_size, rows.data(), values.data());
 }
@@ -275,9 +277,9 @@ void PETScVector::set_local(const std::vector<double>& values)
     return;
 
   // Build array of global indices
-  std::vector<PetscInt> rows(local_size);
+  std::vector<PetscInt> rows(local_size, n0);
   for (std::size_t i = 0; i < local_size; ++i)
-    rows[i] = i + n0;
+    rows[i] += i;
 
   VecSetValues(*x, local_size, rows.data(), values.data(), INSERT_VALUES);
 }
@@ -298,32 +300,32 @@ void PETScVector::add_local(const Array<double>& values)
     return;
 
   // Build array of global indices
-  std::vector<PetscInt> rows(local_size);
+  std::vector<PetscInt> rows(local_size, n0);
   for (std::size_t i = 0; i < local_size; ++i)
-    rows[i] = i + n0;
+    rows[i] += i;
 
   VecSetValues(*x, local_size, rows.data(), values.data(), ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::get_local(double* block, std::size_t m, const DolfinIndex* rows) const
+void PETScVector::get_local(double* block, std::size_t m,
+                           const DolfinIndex* rows) const
 {
   dolfin_assert(x);
   PetscInt _m = m;
-  //const int* _rows = reinterpret_cast<const int*>(rows);
-  std::vector<PetscInt> _rows(rows, rows + m);
+  const int* _rows = rows;
 
   // Handle case that m = 0 (VecGetValues is collective -> must be called be
   //                         all processes)
   if (m == 0)
   {
-    _rows.resize(1);
+    _rows = &_m;
     double tmp = 0.0;
     block = &tmp;
   }
 
   // Use VecGetValues if no ghost points, otherwise check for ghost values
   if (ghost_global_to_local.empty() || m == 0)
-    VecGetValues(*x, _m, _rows.data(), block);
+    VecGetValues(*x, _m, _rows, block);
   else
   {
     dolfin_assert(x_ghosted);
@@ -353,26 +355,26 @@ void PETScVector::get_local(double* block, std::size_t m, const DolfinIndex* row
   }
 }
 //-----------------------------------------------------------------------------
-void PETScVector::set(const double* block, std::size_t m, const DolfinIndex* rows)
+void PETScVector::set(const double* block, std::size_t m,
+                      const DolfinIndex* rows)
 {
   dolfin_assert(x);
 
   if (m == 0)
     return;
 
-  const std::vector<PetscInt> _rows(rows, rows + m);
-  VecSetValues(*x, m, _rows.data(), block, INSERT_VALUES);
+  VecSetValues(*x, m, rows, block, INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::add(const double* block, std::size_t m, const DolfinIndex* rows)
+void PETScVector::add(const double* block, std::size_t m,
+                      const DolfinIndex* rows)
 {
   dolfin_assert(x);
 
   if (m == 0)
     return;
 
-  const std::vector<PetscInt> _rows(rows, rows + m);
-  VecSetValues(*x, m, _rows.data(), block, ADD_VALUES);
+  VecSetValues(*x, m, rows, block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::apply(std::string mode)
@@ -799,7 +801,8 @@ void PETScVector::gather_on_zero(std::vector<double>& x) const
 }
 //-----------------------------------------------------------------------------
 void PETScVector::_init(std::pair<std::size_t, std::size_t> range,
-                        const std::vector<std::size_t>& ghost_indices, bool distributed)
+                        const std::vector<std::size_t>& ghost_indices,
+                        bool distributed)
 {
   // Create vector
   if (x && !x.unique())
