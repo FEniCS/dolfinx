@@ -28,6 +28,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "dolfin/common/Timer.h"
 #include "dolfin/common/types.h"
 #include "dolfin/common/Variable.h"
 #include "dolfin/mesh/Mesh.h"
@@ -123,14 +124,14 @@ namespace dolfin
                                    const std::string& search_term);
 
     // Remove values from "values" which are duplicated on another process
-    // Used to optimise Mesh output for HDF5, at some expense of 
+    // Used to optimise Mesh output for HDF5, at some expense of
     // computation/communication.
     template <typename T>
     void remove_duplicate_values(const Mesh &mesh,
                                            std::vector<T>& values,
                                            const uint value_size);
 
-    
+
     // Go through set of coordinate and connectivity data
     // and remove duplicate vertices between processes
     // remapping the topology accordingly to the new
@@ -139,7 +140,7 @@ namespace dolfin
     void remove_duplicate_vertices(const Mesh &mesh,
                                    std::vector<double>& vertex_data,
                                    std::vector<uint>& topological_data);
-    
+
 
     // Redistribute a local_vector into global order, eliminating
     // duplicate values. global_index contains the global indexing held on
@@ -185,10 +186,10 @@ namespace dolfin
       uint global_index = v->global_index();
       if(shared_vertices.count(global_index) != 0)
       {
-        const std::set<uint>& procs = 
+        const std::set<uint>& procs =
           shared_vertices.find(global_index)->second;
-        
-        // Determine whether the first element of 
+
+        // Determine whether the first element of
         // this set refers to a higher numbered process.
         // If so, the vertex is owned here.
         if(*(procs.begin()) > process_number)
@@ -204,7 +205,7 @@ namespace dolfin
     std::copy(result.begin(), result.end(), values.begin());
   }
   //---------------------------------------------------------------------------
- 
+
 
   //---------------------------------------------------------------------------
   template <typename T>
