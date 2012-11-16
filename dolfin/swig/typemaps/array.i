@@ -105,12 +105,14 @@
 IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, values, )
 IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(std::size_t, INT32, NPY_UINTP, sizet, indices,)
 IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, vertex_values, )
+IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(dolfin::DolfinIndex, INT32, NPY_UINTP, dolfin_index, indices,)
 
 // Instantiate argument name independent typemaps for all
 // const Array <{int, uint, double}>& arguments
 IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, , const)
 IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(std::size_t, INT32, NPY_UINTP, sizet, , const)
 IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(int, INT32, NPY_INT, int, , const)
+IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(dolfin::DolfinIndex, INT32, NPY_UINT, dolfin_index, , const)
 
 OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(std::size_t, NPY_UINTP)
 OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(int, NPY_INT)

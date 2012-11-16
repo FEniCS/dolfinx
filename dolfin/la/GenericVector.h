@@ -71,26 +71,26 @@ namespace dolfin
     { dolfin_assert(dim == 0); return local_range(); }
 
     /// Get block of values
-    virtual void get(double* block, const std::size_t* num_rows,
-                     const std::size_t * const * rows) const
+    virtual void get(double* block, const DolfinIndex* num_rows,
+                     const DolfinIndex * const * rows) const
     { get_local(block, num_rows[0], rows[0]); }
 
     /// Set block of values
-    virtual void set(const double* block, const std::size_t* num_rows,
-                     const std::size_t * const * rows)
+    virtual void set(const double* block, const DolfinIndex* num_rows,
+                     const DolfinIndex * const * rows)
     { set(block, num_rows[0], rows[0]); }
 
     /// Add block of values
-    virtual void add(const double* block, const std::size_t* num_rows,
-                     const std::size_t * const * rows)
+    virtual void add(const double* block, const DolfinIndex* num_rows,
+                     const DolfinIndex * const * rows)
     { add(block, num_rows[0], rows[0]); }
 
     /// Add block of values
-    virtual void add(const double* block, const std::vector<const std::vector<std::size_t>* >& rows)
+    virtual void add(const double* block, const std::vector<const std::vector<DolfinIndex>* >& rows)
     { add(block, rows[0]->size(), &(*rows[0])[0]); }
 
     /// Add block of values
-    virtual void add(const double* block, const std::vector<std::vector<std::size_t> >& rows)
+    virtual void add(const double* block, const std::vector<std::vector<DolfinIndex> >& rows)
     { add(block, rows[0].size(), &(rows[0])[0]); }
 
     /// Set all entries to zero and keep any sparse structure
@@ -133,20 +133,20 @@ namespace dolfin
     virtual bool owns_index(std::size_t i) const = 0;
 
     /// Get block of values (values may live on any process)
-    virtual void get(double* block, std::size_t m, const std::size_t* rows) const
+    virtual void get(double* block, std::size_t m, const DolfinIndex* rows) const
     {
       warning("GenericVector::get is redirected to GenericVector::get_local. Use GenericVector::gather for get off-process entries. GenericVector::get will be removed.");
       get_local(block, m, rows);
     }
 
     /// Get block of values (values must all live on the local process)
-    virtual void get_local(double* block, std::size_t m, const std::size_t* rows) const = 0;
+    virtual void get_local(double* block, std::size_t m, const DolfinIndex* rows) const = 0;
 
     /// Set block of values
-    virtual void set(const double* block, std::size_t m, const std::size_t* rows) = 0;
+    virtual void set(const double* block, std::size_t m, const DolfinIndex* rows) = 0;
 
     /// Add block of values
-    virtual void add(const double* block, std::size_t m, const std::size_t* rows) = 0;
+    virtual void add(const double* block, std::size_t m, const DolfinIndex* rows) = 0;
 
     /// Get all values on local process
     virtual void get_local(std::vector<double>& values) const = 0;
@@ -158,10 +158,10 @@ namespace dolfin
     virtual void add_local(const Array<double>& values) = 0;
 
     /// Gather entries into local vector x
-    virtual void gather(GenericVector& x, const std::vector<std::size_t>& indices) const = 0;
+    virtual void gather(GenericVector& x, const std::vector<DolfinIndex>& indices) const = 0;
 
     /// Gather entries into x
-    virtual void gather(std::vector<double>& x, const std::vector<std::size_t>& indices) const = 0;
+    virtual void gather(std::vector<double>& x, const std::vector<DolfinIndex>& indices) const = 0;
 
     /// Gather all entries into x on process 0
     virtual void gather_on_zero(std::vector<double>& x) const = 0;
@@ -246,16 +246,16 @@ namespace dolfin
     //--- Convenience functions ---
 
     /// Get value of given entry
-    virtual double operator[] (std::size_t i) const
+    virtual double operator[] (DolfinIndex i) const
     { double value(0); get_local(&value, 1, &i); return value; }
 
     /// Get value of given entry
-    virtual double getitem(std::size_t i) const
+    virtual double getitem(DolfinIndex i) const
     { double value(0); get_local(&value, 1, &i); return value; }
 
     /// Set given entry to value. apply("insert") should be called before using
     /// using the object.
-    virtual void setitem(std::size_t i, double value)
+    virtual void setitem(DolfinIndex i, double value)
     { set(&value, 1, &i); }
 
   };

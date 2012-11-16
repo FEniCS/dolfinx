@@ -135,7 +135,6 @@ void EpetraMatrix::init(const TensorLayout& tensor_layout)
   for (std::size_t local_row = 0; local_row < d_pattern.size(); local_row++)
   {
     const std::size_t global_row = local_row + n0;
-    //std::vector<std::size_t>& entries = const_cast<std::vector<std::size_t>&>(d_pattern[local_row]);
     std::vector<int> entries(d_pattern[local_row].begin(), d_pattern[local_row].end());
     matrix_map.InsertGlobalIndices(global_row, entries.size(), entries.data());
   }
@@ -231,8 +230,8 @@ void EpetraMatrix::resize(GenericVector& z, uint dim) const
   _z.reset(*map);
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::get(double* block, std::size_t m, const std::size_t* rows,
-                       std::size_t n, const std::size_t* cols) const
+void EpetraMatrix::get(double* block, std::size_t m, const DolfinIndex* rows,
+                       std::size_t n, const DolfinIndex* cols) const
 {
   dolfin_assert(A);
 
@@ -286,31 +285,16 @@ void EpetraMatrix::get(double* block, std::size_t m, const std::size_t* rows,
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::set(const double* block,
-                       std::size_t m, const std::size_t* rows,
-                       std::size_t n, const std::size_t* cols)
+                       std::size_t m, const DolfinIndex* rows,
+                       std::size_t n, const DolfinIndex* cols)
 {
   // This function is awkward and somewhat restrictive because of the
   // poor support for setting off-process values in Epetra
 
   dolfin_assert(A);
 
-  // Check that all rows are local to this process
-  /*
-  for (std::size_t i = 0; i < m; ++i)
-  {
-    if (!A->MyGRID(rows[i]))
-    {
-      dolfin_error("EpetraMatrix.cpp",
-                   "set block of values for Epetra matrix",
-                   "Only values in row belonging to process can be set");
-    }
-  }
-  */
-
-  const std::vector<int> _rows(rows, rows + m);
-  const std::vector<int> _cols(cols, cols + n);
-  const int err = A->ReplaceGlobalValues(m, _rows.data(), n, _cols.data(),
-                                         block, Epetra_FECrsMatrix::ROW_MAJOR);
+  const int err = A->ReplaceGlobalValues(m, rows, n, cols, block,
+                                         Epetra_FECrsMatrix::ROW_MAJOR);
   if (err != 0)
   {
     dolfin_error("EpetraMatrix.cpp",
@@ -320,15 +304,12 @@ void EpetraMatrix::set(const double* block,
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::add(const double* block,
-                       std::size_t m, const std::size_t* rows,
-                       std::size_t n, const std::size_t* cols)
+                       std::size_t m, const DolfinIndex* rows,
+                       std::size_t n, const DolfinIndex* cols)
 {
   dolfin_assert(A);
-
-  const std::vector<int> _rows(rows, rows + m);
-  const std::vector<int> _cols(cols, cols + n);
-  const int err = A->SumIntoGlobalValues(m, _rows.data(), n, _cols.data(),
-                                         block, Epetra_FECrsMatrix::ROW_MAJOR);
+  const int err = A->SumIntoGlobalValues(m, rows, n, cols, block,
+                                         Epetra_FECrsMatrix::ROW_MAJOR);
   if (err != 0)
   {
     dolfin_error("EpetraMatrix.cpp",
@@ -337,7 +318,8 @@ void EpetraMatrix::add(const double* block,
   }
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
+void EpetraMatrix::axpy(double a, const GenericMatrix& A,
+                        bool same_nonzero_pattern)
 {
   const EpetraMatrix* AA = &as_type<const EpetraMatrix>(A);
   if (!AA->mat()->Filled())
@@ -347,7 +329,8 @@ void EpetraMatrix::axpy(double a, const GenericMatrix& A, bool same_nonzero_patt
                  "Epetra matrix is not in the correct state");
   }
 
-  const int err = EpetraExt::MatrixMatrix::Add(*(AA->mat()), false, a, *(this->A), 1.0);
+  const int err = EpetraExt::MatrixMatrix::Add(*(AA->mat()), false, a,
+                                               *(this->A), 1.0);
   if (err != 0)
   {
     dolfin_error("EpetraMatrix.cpp",
@@ -393,7 +376,6 @@ void EpetraMatrix::apply(std::string mode)
   if (mode == "add")
     err = A->GlobalAssemble(true, Add);
   else if (mode == "insert")
-    //err = A->GlobalAssemble(true, Insert);
     err = A->GlobalAssemble(true);
   else if (mode == "flush")
   {
@@ -432,7 +414,7 @@ std::string EpetraMatrix::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::ident(std::size_t m, const std::size_t* rows)
+void EpetraMatrix::ident(std::size_t m, const DolfinIndex* rows)
 {
   dolfin_assert(A);
   dolfin_assert(A->Filled() == true);
@@ -445,17 +427,15 @@ void EpetraMatrix::ident(std::size_t m, const std::size_t* rows)
 
   typedef boost::unordered_set<std::size_t> MySet;
 
-  const std::vector<int> _rows(rows, rows + m);
-
   // Build lists of local and nonlocal rows
   MySet local_rows;
   std::vector<int> non_local_rows;
   for (std::size_t i = 0; i < m; ++i)
   {
-    if (A->MyGlobalRow(_rows[i]))
-      local_rows.insert(_rows[i]);
+    if (A->MyGlobalRow(rows[i]))
+      local_rows.insert(rows[i]);
     else
-      non_local_rows.push_back(_rows[i]);
+      non_local_rows.push_back(rows[i]);
   }
 
   // If parallel, send non_local rows to all processes
@@ -527,7 +507,7 @@ void EpetraMatrix::ident(std::size_t m, const std::size_t* rows)
   }
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::zero(std::size_t m, const std::size_t* rows)
+void EpetraMatrix::zero(std::size_t m, const DolfinIndex* rows)
 {
   // FIXME: This can be made more efficient by eliminating creation of
   //        some obejcts inside the loop
@@ -668,7 +648,8 @@ void EpetraMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
   }
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::setrow(std::size_t row, const std::vector<std::size_t>& columns,
+void EpetraMatrix::setrow(std::size_t row,
+                          const std::vector<std::size_t>& columns,
                           const std::vector<double>& values)
 {
   static bool print_msg_once = true;
@@ -679,7 +660,11 @@ void EpetraMatrix::setrow(std::size_t row, const std::vector<std::size_t>& colum
   }
 
   for (std::size_t i = 0; i < columns.size(); i++)
-    set(&values[i], 1, &row, 1, &columns[i]);
+  {
+    DolfinIndex _row = row;
+    DolfinIndex _col = columns[i];
+    set(&values[i], 1, &_row, 1, &_col);
+  }
 }
 //-----------------------------------------------------------------------------
 GenericLinearAlgebraFactory& EpetraMatrix::factory() const

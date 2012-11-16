@@ -41,7 +41,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-const std::vector<uint>& MeshColoring::color_cells(Mesh& mesh,
+const std::vector<dolfin::uint>& MeshColoring::color_cells(Mesh& mesh,
                                                      std::string coloring_type)
 {
   // Define graph type

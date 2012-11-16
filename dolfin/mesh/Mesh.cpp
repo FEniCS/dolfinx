@@ -101,7 +101,13 @@ Mesh::Mesh(const CSGGeometry& geometry, uint mesh_resolution)
     _intersection_operator(*this),
     _ordered(false)
 {
-  CSGMeshGenerator::generate(*this, geometry, mesh_resolution);
+  // Build mesh on process 0
+  if (MPI::process_number() == 0)
+    CSGMeshGenerator::generate(*this, geometry, mesh_resolution);
+
+  // Build distributed mesh
+  if (MPI::num_processes() > 1)
+    MeshPartitioning::build_distributed_mesh(*this);
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry, uint resolution)
@@ -113,7 +119,14 @@ Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry, uint resolution)
     _ordered(false)
 {
   assert(geometry);
-  CSGMeshGenerator::generate(*this, *geometry, resolution);
+
+  // Build mesh on process 0
+  if (MPI::process_number() == 0)
+    CSGMeshGenerator::generate(*this, *geometry, resolution);
+
+  // Build distributed mesh
+  if (MPI::num_processes() > 1)
+    MeshPartitioning::build_distributed_mesh(*this);
 }
 //-----------------------------------------------------------------------------
 Mesh::~Mesh()

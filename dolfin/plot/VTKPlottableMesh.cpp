@@ -92,7 +92,7 @@ void VTKPlottableMesh::connect_to_output(VTKWindowOutputStage& output)
   {
     for (int i = 0; i < pointdata->GetNumberOfTuples(); i++)
     {
-      if (isnan(pointdata->GetValue(i)))
+      if (std::isnan(pointdata->GetValue(i)))
       {
         has_nans = true;
         break;
@@ -105,7 +105,7 @@ void VTKPlottableMesh::connect_to_output(VTKWindowOutputStage& output)
   {
     for (int i = 0; i < celldata->GetNumberOfTuples(); i++)
     {
-      if (isnan(celldata->GetValue(i)))
+      if (std::isnan(celldata->GetValue(i)))
       {
         has_nans = true;
         break;

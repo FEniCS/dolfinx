@@ -234,7 +234,7 @@ void ErrorControl::compute_indicators(MeshFunction<double>& indicators,
   // Convert DG_0 vector to mesh function over cells
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    const std::vector<std::size_t>& dofs = dofmap.cell_dofs(cell->index());
+    const std::vector<DolfinIndex>& dofs = dofmap.cell_dofs(cell->index());
     dolfin_assert(dofs.size() == 1);
     indicators[cell->index()] = x[dofs[0]];
   }
@@ -318,7 +318,7 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
     x = arma::solve(A, b);
 
     // Get local-to-global dof map for cell
-    const std::vector<std::size_t>& dofs = dofmap.cell_dofs(cell->index());
+    const std::vector<DolfinIndex>& dofs = dofmap.cell_dofs(cell->index());
 
     // Plug local solution into global vector
     dolfin_assert(R_T.vector());
@@ -377,7 +377,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   // Variables to be used for the construction of the cone function
   const std::size_t num_cells = mesh.num_cells();
   const std::vector<double> ones(num_cells, 1.0);
-  std::vector<std::size_t> facet_dofs(num_cells);
+  std::vector<DolfinIndex> facet_dofs(num_cells);
 
   // Extract cell_domains etc from right-hand side form
   dolfin_assert(_L_R_T);
@@ -436,7 +436,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
       x = arma::solve(A, b);
 
       // Get local-to-global dof map for cell
-      const std::vector<std::size_t>& dofs = dofmap.cell_dofs(cell->index());
+      const std::vector<DolfinIndex>& dofs = dofmap.cell_dofs(cell->index());
 
       // Plug local solution into global vector
       dolfin_assert(R_dT[local_facet].vector());

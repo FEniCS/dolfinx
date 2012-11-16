@@ -178,7 +178,7 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
     v.restrict(&cell_coefficients[0], *_element, *cell, ufc_cell);
 
     // Tabulate dofs
-    const std::vector<std::size_t>& cell_dofs = _dofmap->cell_dofs(cell->index());
+    const std::vector<DolfinIndex>& cell_dofs = _dofmap->cell_dofs(cell->index());
 
     // Copy dofs to vector
     expansion_coefficients.set(&cell_coefficients[0],
@@ -284,7 +284,7 @@ void FunctionSpace::print_dofmap() const
   dolfin_assert(_mesh);
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
-    const std::vector<std::size_t>& dofs = _dofmap->cell_dofs(cell->index());
+    const std::vector<DolfinIndex>& dofs = _dofmap->cell_dofs(cell->index());
 
     cout << cell->index() << ":";
     for (std::size_t i = 0; i < dofs.size(); i++)

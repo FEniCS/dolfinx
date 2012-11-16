@@ -185,7 +185,7 @@ void EpetraVector::resize(std::pair<std::size_t, std::size_t> range,
 
   // Create local ghost vector
   const int num_ghost_entries = ghost_indices.size();
-  const std::vector<int> ghost_entries(ghost_indices.begin(), ghost_indices.end());
+  const std::vector<DolfinIndex> ghost_entries(ghost_indices.begin(), ghost_indices.end());
   Epetra_BlockMap ghost_map(num_ghost_entries, num_ghost_entries,
                             ghost_entries.data(), 1, 0, serial_comm);
   x_ghost.reset(new Epetra_Vector(ghost_map));
@@ -249,7 +249,7 @@ void EpetraVector::apply(std::string mode)
     Epetra_MpiComm mpi_comm = f.get_mpi_comm();
     Epetra_SerialComm serial_comm = f.get_serial_comm();
 
-    std::vector<int> non_local_indices;
+    std::vector<DolfinIndex> non_local_indices;
     non_local_indices.reserve(off_process_set_values.size());
     std::vector<double> non_local_values;
     non_local_values.reserve(off_process_set_values.size());
@@ -376,32 +376,14 @@ void EpetraVector::add_local(const Array<double>& values)
     (*x)[0][i] += values[i];
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::set(const double* block, std::size_t m, const std::size_t* rows)
+void EpetraVector::set(const double* block, std::size_t m,
+                       const DolfinIndex* rows)
 {
   dolfin_assert(x);
-  /*
-  for (std::size_t i = 0; i < m; ++i)
-  {
-	  //const int local_row = x->Map().LID(rows[i]);
-    //if (local_row == -1)
-    {
-      const int err = x->ReplaceGlobalValues(1, (int*) &rows[i], &block[i], 0);
-      if (err != 0)
-      {
-        dolfin_error("EpetraVector.cpp",
-                     "set block of values for Epetra vector",
-                     "Did not manage to perform Epetra_Vector::ReplaceGlobalValues");
-      }
-    }
-    //else
-    //  (*x)[0][local_row] = block[i];
-  }
-  */
-
   const Epetra_BlockMap& map = x->Map();
   dolfin_assert(x->Map().LinearMap());
-  const std::size_t n0 = map.MinMyGID();
-  const std::size_t n1 = map.MaxMyGID();
+  const DolfinIndex n0 = map.MinMyGID();
+  const DolfinIndex n1 = map.MaxMyGID();
 
   // Set local values, or add to off-process cache for later communication
   for (std::size_t i = 0; i < m; ++i)
@@ -413,7 +395,8 @@ void EpetraVector::set(const double* block, std::size_t m, const std::size_t* ro
   }
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::add(const double* block, std::size_t m, const std::size_t* rows)
+void EpetraVector::add(const double* block, std::size_t m,
+                       const DolfinIndex* rows)
 {
   if (!off_process_set_values.empty())
   {
@@ -423,8 +406,7 @@ void EpetraVector::add(const double* block, std::size_t m, const std::size_t* ro
   }
 
   dolfin_assert(x);
-  const std::vector<int> _rows(rows, rows + m);
-  int err = x->SumIntoGlobalValues(m, _rows.data(), block, 0);
+  int err = x->SumIntoGlobalValues(m, rows, block, 0);
 
   if (err != 0)
   {
@@ -434,12 +416,13 @@ void EpetraVector::add(const double* block, std::size_t m, const std::size_t* ro
   }
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::get_local(double* block, std::size_t m, const std::size_t* rows) const
+void EpetraVector::get_local(double* block, std::size_t m,
+                             const DolfinIndex* rows) const
 {
   dolfin_assert(x);
   const Epetra_BlockMap& map = x->Map();
   dolfin_assert(x->Map().LinearMap());
-  const std::size_t n0 = map.MinMyGID();
+  const DolfinIndex n0 = map.MinMyGID();
 
   // Get values
   if (ghost_global_to_local.empty())
@@ -450,7 +433,7 @@ void EpetraVector::get_local(double* block, std::size_t m, const std::size_t* ro
   else
   {
     dolfin_assert(x_ghost);
-    const std::size_t n1 = map.MaxMyGID();
+    const DolfinIndex n1 = map.MaxMyGID();
     const Epetra_BlockMap& ghost_map = x_ghost->Map();
     for (std::size_t i = 0; i < m; ++i)
     {
@@ -475,7 +458,7 @@ void EpetraVector::get_local(double* block, std::size_t m, const std::size_t* ro
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::gather(GenericVector& y,
-                          const std::vector<std::size_t>& indices) const
+                          const std::vector<DolfinIndex>& indices) const
 {
   dolfin_assert(x);
 
@@ -487,8 +470,7 @@ void EpetraVector::gather(GenericVector& y,
   Epetra_SerialComm serial_comm = f.get_serial_comm();
 
   // Create map for y
-  const std::vector<int> _indices(indices.begin(), indices.end());
-  Epetra_BlockMap target_map(indices.size(), indices.size(), _indices.data(),
+  Epetra_BlockMap target_map(indices.size(), indices.size(), indices.data(),
                              1, 0, serial_comm);
 
   // Reset vector y
@@ -503,7 +485,7 @@ void EpetraVector::gather(GenericVector& y,
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::gather(std::vector<double>& x,
-                          const std::vector<std::size_t>& indices) const
+                          const std::vector<DolfinIndex>& indices) const
 {
   const std::size_t _size = indices.size();
   x.resize(_size);
@@ -525,7 +507,7 @@ void EpetraVector::gather_on_zero(std::vector<double>& x) const
 {
   // FIXME: Is there an Epetra function for this?
 
-  std::vector<std::size_t> indices;
+  std::vector<DolfinIndex> indices;
   if (MPI::process_number() == 0)
   {
     indices.resize(size());

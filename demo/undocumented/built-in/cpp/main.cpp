@@ -77,10 +77,6 @@ int main()
   info("Plotting a Box");
   plot(box, "Box");
 
-  UnitSphereMesh sphere(10);
-  info("Plotting a UnitSphere");
-  plot(sphere, "Unit sphere");
-
   interactive();
 
   return 0;
