@@ -88,9 +88,9 @@ Parameters EpetraKrylovSolver::default_parameters()
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
                                        std::string preconditioner)
-  : method(method), solver(new AztecOO),
-    preconditioner(new TrilinosPreconditioner(preconditioner)),
-    preconditioner_set(false), relative_residual(0.0), absolute_residual(0.0)
+  : method(method), preconditioner(new TrilinosPreconditioner(preconditioner)),
+    solver(new AztecOO), preconditioner_set(false), relative_residual(0.0),
+    absolute_residual(0.0)
 
 {
   parameters = default_parameters();
@@ -110,9 +110,9 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
                                        TrilinosPreconditioner& preconditioner)
-  : method(method), solver(new AztecOO),
-    preconditioner(reference_to_no_delete_pointer(preconditioner)),
-    preconditioner_set(false), relative_residual(0.0), absolute_residual(0.0)
+  : method(method),  preconditioner(reference_to_no_delete_pointer(preconditioner)),
+    solver(new AztecOO), preconditioner_set(false), relative_residual(0.0),
+    absolute_residual(0.0)
 {
   // Set parameter values
   parameters = default_parameters();
