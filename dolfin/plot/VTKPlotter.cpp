@@ -77,7 +77,7 @@ namespace // anonymous
     if (x != 0.0)
     {
       const int num_digits = std::log10(std::abs(x))+1;
-      const double reduction_factor = std::pow(10, num_digits-num_significant_digits);
+      const double reduction_factor = std::pow(10.0, num_digits-num_significant_digits);
       x = rounding(x/reduction_factor)*reduction_factor;
     }
   }
