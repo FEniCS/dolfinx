@@ -34,7 +34,7 @@ if not has_krylov_solver_preconditioner("amg"):
     info("Sorry, this demo is only available when DOLFIN is compiled with AMG "
 	 "preconditioner, Hypre or ML.");
     exit()
-    
+
 # Load mesh
 mesh = UnitCubeMesh(16, 16, 16)
 
