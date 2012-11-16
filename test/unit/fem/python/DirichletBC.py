@@ -32,8 +32,8 @@ class DirichletBCTest(unittest.TestCase):
 
     def test_instantiation(self):
         """ A rudimentary test for instantiation"""
-        # FIXME: Need to be expanded
-        mesh = UnitCube(8, 8, 8)
+        # FIXME: Needs to be expanded
+        mesh = UnitCubeMesh(8, 8, 8)
         V = FunctionSpace(mesh, "CG", 1)
 
         bc0 = DirichletBC(V, 1, "x[0]<0")
@@ -50,7 +50,7 @@ class DirichletBCTest(unittest.TestCase):
         class BoundaryFunction(Expression):
             def eval(self, values, x): values[0] = 1.0
 
-        mesh = UnitSquare(8, 8)
+        mesh = UnitSquareMesh(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
         v, u = TestFunction(V), TrialFunction(V)
         A = assemble(v*u*dx)
@@ -59,7 +59,7 @@ class DirichletBCTest(unittest.TestCase):
         bc.apply(A)
 
     def test_get_values(self):
-        mesh = UnitSquare(8, 8)
+        mesh = UnitSquareMesh(8, 8)
         dofs = numpy.zeros(3, dtype="I")
 
         def upper(x, on_boundary):
@@ -97,7 +97,7 @@ class DirichletBCTest(unittest.TestCase):
         u = Function(V)
         solve(a == L, u, bcs)
 
-        self.assertAlmostEqual(u.vector().norm("l2"), 171.3032089576118, 10)
+        self.assertAlmostEqual(u.vector().norm("l2"), 171.3032089576118)
 
 if __name__ == "__main__":
     print ""
