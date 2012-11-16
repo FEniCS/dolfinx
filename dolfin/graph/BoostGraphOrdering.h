@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-07-06
-// Last changed:
+// Last changed: 2012-11-12
 
 #ifndef __DOLFIN_BOOST_GRAPH_ORDERING_H
 #define __DOLFIN_BOOST_GRAPH_ORDERING_H
@@ -39,22 +39,12 @@ namespace dolfin
 
     /// Compute re-ordering (map[old] -> new) using Cuthill-McKee algorithm
     static std::vector<std::size_t> compute_cuthill_mckee(const Graph& graph,
-                                                   bool reverse=false);
+                                                          bool reverse=false);
 
     /// Compute re-ordering (map[old] -> new) using Cuthill-McKee algorithm
     static std::vector<std::size_t>
       compute_cuthill_mckee(const std::set<std::pair<std::size_t, std::size_t> >& edges,
                             std::size_t size, bool reverse=false);
-
-    /// Compute re-ordering (map[old] -> new) using King algorithm
-    static std::vector<uint> compute_king(const Graph& graph);
-
-    /// Compute re-ordering (map[old] -> new) using King algorithm
-    static std::vector<uint> compute_king(const std::vector<std::vector<uint> >& graph);
-
-    /// Compute re-ordering (map[old] -> new) using minimum degree algorithm
-    static std::vector<uint> compute_minimum_degree(const Graph& graph,
-                                                    const int delta=0);
 
   private:
 
@@ -65,6 +55,10 @@ namespace dolfin
     // Build Boost directed graph
     template<typename T, typename X>
     static T build_directed_graph(const X& graph);
+
+    // Build Boost compressed sparse row graph
+    template<typename T, typename X>
+    static T build_csr_directed_graph(const X& graph);
 
   };
 
