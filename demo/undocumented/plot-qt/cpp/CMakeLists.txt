@@ -42,7 +42,16 @@ if (VTK_FOUND)
   find_library(QVTK_FOUND QVTK HINTS ${VTK_LIBRARY_DIRS})
 endif()
 
-if (DOLFIN_ENABLE_QT AND QT_FOUND AND DOLFIN_ENABLE_VTK AND QVTK_FOUND)
+# If built stand-alone (in demo directory), DOLFIN_ENABLE_FOO are not set. We
+# have to parse the definitions to see if qvtk is enabled in dolfin.
+get_directory_property(cmake_defs COMPILE_DEFINITIONS)
+foreach(d ${cmake_defs})
+  if (${d} STREQUAL HAS_QVTK)
+    set(QVTK_ENABLED 1)
+  endif()
+endforeach()
+  
+if (QT_FOUND AND VTK_FOUND AND QVTK_ENABLED)
 
   # Define headers to run moc on. The OPTIONS ... works around a problem with moc+boost (QT bug #22829).
   qt4_wrap_cpp(HEADERS_MOC ${HEADERS} OPTIONS -DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED)
@@ -55,7 +64,7 @@ if (DOLFIN_ENABLE_QT AND QT_FOUND AND DOLFIN_ENABLE_VTK AND QVTK_FOUND)
 
 else()
 
-  message(WARNING "Qt / QVTK not enabled, not building " ${PROJECT_NAME})
+  message(WARNING "QT not found, or QT/VTK not enabled in DOLFIN. Not building " ${PROJECT_NAME})
 
 endif()
 
