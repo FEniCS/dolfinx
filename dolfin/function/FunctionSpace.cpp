@@ -281,14 +281,15 @@ std::string FunctionSpace::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void FunctionSpace::print_dofmap() const
 {
+  // Note: static_cast is used below to supoort types that cannot be
+  //       directed to dolfin::cout
   dolfin_assert(_mesh);
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
     const std::vector<DolfinIndex>& dofs = _dofmap->cell_dofs(cell->index());
-
     cout << cell->index() << ":";
     for (std::size_t i = 0; i < dofs.size(); i++)
-      cout << " " << dofs[i];
+      cout << " " << static_cast<std::size_t>(dofs[i]);
     cout << endl;
   }
 }

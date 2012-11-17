@@ -106,9 +106,12 @@ void EpetraMatrix::init(const TensorLayout& tensor_layout)
   const std::size_t n0 = range.first;
 
   dolfin_assert(tensor_layout.sparsity_pattern());
-  const SparsityPattern& _pattern = dynamic_cast<const SparsityPattern&>(*tensor_layout.sparsity_pattern());
-  const std::vector<std::vector<std::size_t> > d_pattern = _pattern.diagonal_pattern(SparsityPattern::unsorted);
-  const std::vector<std::vector<std::size_t> > o_pattern = _pattern.off_diagonal_pattern(SparsityPattern::unsorted);
+  const SparsityPattern& _pattern
+    = dynamic_cast<const SparsityPattern&>(*tensor_layout.sparsity_pattern());
+  const std::vector<std::vector<std::size_t> > d_pattern
+    = _pattern.diagonal_pattern(SparsityPattern::unsorted);
+  const std::vector<std::vector<std::size_t> > o_pattern
+      = _pattern.off_diagonal_pattern(SparsityPattern::unsorted);
 
   // Get number of non-zeroes per row
   std::vector<std::size_t> num_nonzeros;
@@ -117,7 +120,7 @@ void EpetraMatrix::init(const TensorLayout& tensor_layout)
   // Create row map
   EpetraFactory& f = EpetraFactory::instance();
   Epetra_MpiComm comm = f.get_mpi_comm();
-  Epetra_Map row_map((int) tensor_layout.size(0), (int) num_local_rows, 0, comm);
+  Epetra_Map row_map((DolfinIndex) tensor_layout.size(0), (DolfinIndex) num_local_rows, 0, comm);
 
   // For rectangular matrices with more columns than rows, the columns which are
   // larger than those in row_map are marked as nonlocal (and assembly fails).
@@ -125,7 +128,7 @@ void EpetraMatrix::init(const TensorLayout& tensor_layout)
   // FIXME: Needs attention in the parallel case. Maybe range_map is also req'd.
   const std::pair<std::size_t, std::size_t> colrange = tensor_layout.local_range(1);
   const int num_local_cols = colrange.second - colrange.first;
-  Epetra_Map domain_map((int) tensor_layout.size(1), (int) num_local_cols, 0, comm);
+  Epetra_Map domain_map((DolfinIndex) tensor_layout.size(1), num_local_cols, 0, comm);
 
   // Create Epetra_FECrsGraph
   const std::vector<int> _num_nonzeros(num_nonzeros.begin(), num_nonzeros.end());
@@ -134,16 +137,16 @@ void EpetraMatrix::init(const TensorLayout& tensor_layout)
   // Add diagonal block indices
   for (std::size_t local_row = 0; local_row < d_pattern.size(); local_row++)
   {
-    const std::size_t global_row = local_row + n0;
-    std::vector<int> entries(d_pattern[local_row].begin(), d_pattern[local_row].end());
-    matrix_map.InsertGlobalIndices(global_row, entries.size(), entries.data());
+    const DolfinIndex global_row = local_row + n0;
+    std::vector<DolfinIndex> entries(d_pattern[local_row].begin(), d_pattern[local_row].end());
+    matrix_map.InsertGlobalIndices(global_row, (DolfinIndex) entries.size(), entries.data());
   }
 
   // Add off-diagonal block indices (parallel only)
   for (std::size_t local_row = 0; local_row < o_pattern.size(); local_row++)
   {
     const std::size_t global_row = local_row + n0;
-    std::vector<int> entries(o_pattern[local_row].begin(),o_pattern[local_row].end());
+    std::vector<DolfinIndex> entries(o_pattern[local_row].begin(),o_pattern[local_row].end());
     matrix_map.InsertGlobalIndices(global_row, entries.size(), entries.data());
   }
 
@@ -308,7 +311,7 @@ void EpetraMatrix::add(const double* block,
                        std::size_t n, const DolfinIndex* cols)
 {
   dolfin_assert(A);
-  const int err = A->SumIntoGlobalValues(m, rows, n, cols, block,
+  const int err = A->SumIntoGlobalValues((long long int) m, rows, (long long int) n, cols, block,
                                          Epetra_FECrsMatrix::ROW_MAJOR);
   if (err != 0)
   {
