@@ -27,11 +27,19 @@
 
 #include <complex>
 
+#ifdef HAS_PETSC
+#include <petscsys.h>
+#endif
+
 namespace dolfin
 {
 
-  /// Index type for compatibility with linear algebra backend
+  /// Index type for compatibility with linear algebra backend(s)
+  #ifdef HAS_PETSC
   typedef int DolfinIndex;
+  #else
+  typedef int DolfinIndex;
+  #endif
 
   /// Unsigned integers
   typedef unsigned int uint;

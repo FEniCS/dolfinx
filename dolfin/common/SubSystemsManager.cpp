@@ -43,10 +43,10 @@
 
 using namespace dolfin;
 
-
-// Return singleton instance. Do NOT make the singleton a global static object;
-// the method here ensures that the singleton is initialised before use.
-// (google "static initialization order fiasco" for full explanation)
+// Return singleton instance. Do NOT make the singleton a global static
+// object; the method here ensures that the singleton is initialised
+// before use. (google "static initialization order fiasco" for full
+// explanation)
 
 SubSystemsManager& SubSystemsManager::singleton()
 {
