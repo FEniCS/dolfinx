@@ -21,6 +21,7 @@
 // First added:  2009-06-22
 // Last changed: 2012-02-29
 
+#include <armadillo>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/function/GenericFunction.h>
@@ -575,10 +576,15 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
                      const DirichletBC::Map& boundary_values,
                      const std::vector<const std::vector<DolfinIndex>* >& global_dofs)
 {
+  arma::mat A = trans(arma::mat(A, global_dofs[1]->size(), global_dofs[0]->size(), false, true));
+  arma::vec _b(b, global_dofs[0]->size(), false, true);
+
+  /*
   // Get local dimensions
   const std::size_t m = global_dofs[0]->size();
   const std::size_t n = global_dofs[1]->size();
 
+  // Loop over rows
   for (std::size_t i = 0; i < n; ++i)
   {
     const std::size_t ii = (*global_dofs[1])[i];
@@ -586,8 +592,6 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
 
     if (bc_value != boundary_values.end())
     {
-      b[i] = bc_value->second;
-
       // Zero row (i th)
       for (std::size_t k = 0; k < n; ++k)
         A[i*n + k] = 0.0;
@@ -601,10 +605,12 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
         A[i + j*n] = 0.0;
       }
 
-      // Place one on diagonal (i th)
+      // Place 1 on diagonal and bc on RHS (i th row )
+      b[i] = bc_value->second;
       A[i + i*n] = 1.0;
     }
   }
+  */
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b,
