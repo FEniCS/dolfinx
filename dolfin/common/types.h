@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Garth N. Wells, 2012
+//
 // First added:  2008-04-22
-// Last changed: 2011-08-10
+// Last changed: 2012-11-15
 //
 // This file provides DOLFIN typedefs for basic types.
 
@@ -24,18 +26,17 @@
 #define __DOLFIN_TYPES_H
 
 #include <complex>
-#include <set>
 
 namespace dolfin
 {
 
-  // Index type
+  /// Index type for compatibility with linear algebra backend
   typedef int DolfinIndex;
 
-  // Unsigned integers
+  /// Unsigned integers
   typedef unsigned int uint;
 
-  // Complex numbers
+  /// Complex numbers
   typedef std::complex<double> complex;
 
 }

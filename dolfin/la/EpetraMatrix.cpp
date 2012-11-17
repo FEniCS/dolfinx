@@ -187,8 +187,8 @@ std::size_t EpetraMatrix::size(uint dim) const
 
   if (A)
   {
-    const int M = A->NumGlobalRows();
-    const int N = A->NumGlobalCols();
+    const std::size_t M = A->NumGlobalRows64();
+    const std::size_t N = A->NumGlobalCols64();
     return (dim == 0 ? M : N);
   }
   else
@@ -208,7 +208,7 @@ std::pair<std::size_t, std::size_t> EpetraMatrix::local_range(uint dim) const
   const Epetra_BlockMap& row_map = A->RowMap();
   dolfin_assert(row_map.LinearMap());
 
-  return std::make_pair(row_map.MinMyGID(), row_map.MaxMyGID() + 1);
+  return std::make_pair(row_map.MinMyGID64(), row_map.MaxMyGID64() + 1);
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::resize(GenericVector& z, uint dim) const
@@ -311,7 +311,7 @@ void EpetraMatrix::add(const double* block,
                        std::size_t n, const DolfinIndex* cols)
 {
   dolfin_assert(A);
-  const int err = A->SumIntoGlobalValues((long long int) m, rows, (long long int) n, cols, block,
+  const int err = A->SumIntoGlobalValues(m, rows, n, cols, block,
                                          Epetra_FECrsMatrix::ROW_MAJOR);
   if (err != 0)
   {
@@ -432,7 +432,7 @@ void EpetraMatrix::ident(std::size_t m, const DolfinIndex* rows)
 
   // Build lists of local and nonlocal rows
   MySet local_rows;
-  std::vector<int> non_local_rows;
+  std::vector<std::size_t> non_local_rows;
   for (std::size_t i = 0; i < m; ++i)
   {
     if (A->MyGlobalRow(rows[i]))
@@ -445,9 +445,9 @@ void EpetraMatrix::ident(std::size_t m, const DolfinIndex* rows)
   if (MPI::num_processes() > 1)
   {
     // Send list of nonlocal rows to all processes
-    std::vector<uint> destinations;
+    std::vector<unsigned int> destinations;
     std::vector<std::size_t> send_data;
-    for (uint i = 0; i < MPI::num_processes(); ++i)
+    for (unsigned int i = 0; i < MPI::num_processes(); ++i)
     {
       if (i != MPI::process_number())
       {
@@ -476,7 +476,7 @@ void EpetraMatrix::ident(std::size_t m, const DolfinIndex* rows)
   for (global_row = local_rows.begin(); global_row != local_rows.end(); ++global_row)
   {
     // Get local row index
-    const int _global_row = *global_row;
+    const DolfinIndex _global_row = *global_row;
     const int local_row = A->LRID(_global_row);
 
     // If this process owns row, then zero row
@@ -615,7 +615,7 @@ void EpetraMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
   dolfin_assert(A);
 
   // Get local row index
-  const int _row = row;
+  const DolfinIndex _row = row;
   const int local_row_index = A->LRID(_row);
 
   // If this process has part of the row, get values
