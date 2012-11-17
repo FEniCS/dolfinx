@@ -75,7 +75,9 @@ SubSystemsManager::~SubSystemsManager()
 void SubSystemsManager::init_mpi()
 {
   #ifdef HAS_MPI
-  if( MPI::Is_initialized() )
+  int mpi_initialized;
+  MPI_Initialized(&mpi_initialized);
+  if (mpi_initialized)
     return;
 
   // Init MPI with highest level of thread support and take responsibility
@@ -93,7 +95,9 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
   Timer timer("Init MPI");
 
   #ifdef HAS_MPI
-  if (MPI::Is_initialized())
+  int mpi_initialized;
+  MPI_Initialized(&mpi_initialized);
+  if (mpi_initialized)
     return -100;
 
   // Initialise MPI and take responsibility
@@ -216,12 +220,17 @@ bool SubSystemsManager::responsible_petsc()
 void SubSystemsManager::finalize_mpi()
 {
   #ifdef HAS_MPI
+  int mpi_initialized;
+  MPI_Initialized(&mpi_initialized);
+
   // Finalise MPI if required
-  if (MPI::Is_initialized() and singleton().control_mpi)
+  if (mpi_initialized and singleton().control_mpi)
   {
     // Check in MPI has already been finalised (possibly incorrectly by a
     // 3rd party libary). Is it hasn't, finalise as normal.
-    if (!MPI::Is_finalized())
+    int mpi_finalized;
+    MPI_Finalized(&mpi_finalized);
+    if (!mpi_finalized)
       MPI::Finalize();
     else
     {
@@ -262,7 +271,9 @@ bool SubSystemsManager::mpi_initialized()
   // been called.
 
   #ifdef HAS_MPI
-  return MPI::Is_initialized();
+  int mpi_initialized;
+  MPI_Initialized(&mpi_initialized);
+  return mpi_initialized;
   #else
   // DOLFIN is not configured for MPI (it might be through PETSc)
   return false;
@@ -272,7 +283,9 @@ bool SubSystemsManager::mpi_initialized()
 bool SubSystemsManager::mpi_finalized()
 {
   #ifdef HAS_MPI
-  return MPI::Is_finalized();
+  int mpi_finalized;
+  MPI_Initialized(&mpi_finalized);
+  return mpi_finalized;
   #else
   // DOLFIN is not configured for MPI (it might be through PETSc)
   return false;
