@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2008-04-22
-// Last changed: 2012-11-15
+// Last changed: 2012-11-17
 //
 // This file provides DOLFIN typedefs for basic types.
 
@@ -36,7 +36,7 @@ namespace dolfin
 
   /// Index type for compatibility with linear algebra backend(s)
   #ifdef HAS_PETSC
-  typedef int DolfinIndex;
+  typedef PetscInt DolfinIndex;
   #else
   typedef int DolfinIndex;
   #endif
