@@ -288,7 +288,7 @@ const std::vector<TYPE>&  ARG_NAME
 // ARG_NAME   : The name of the argument that will be maped as an 'argout' argument
 // NUMPY_TYPE : The type of the NumPy array that will be returned
 //-----------------------------------------------------------------------------
-%define ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, ARG_NAME,
+%define ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, ARG_NAME, \
                                                 NUMPY_TYPE)
 
 //-----------------------------------------------------------------------------
@@ -329,8 +329,8 @@ const std::vector<TYPE>&  ARG_NAME
 // SEQ_LENGTH : An optional sequence length argument. If set to a negative number
 //              will no length check be made
 //-----------------------------------------------------------------------------
-%define PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, ARG_NAME,
-						       TYPE_NAME, SEQ_LENGTH)
+%define PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, \
+                                              ARG_NAME, TYPE_NAME, SEQ_LENGTH)
 
 %typecheck(SWIG_TYPECHECK_ ## TYPE_UPPER ## _ARRAY) std::vector<TYPE> ARG_NAME
 {
@@ -457,7 +457,7 @@ const std::vector<TYPE>&  ARG_NAME
 // TYPE_NAME  : The name of the pointer type, 'double' for 'double', 'uint' for
 //              'dolfin::uint'
 //-----------------------------------------------------------------------------
-%define IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER,
+%define IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, \
                                                           ARG_NAME, TYPE_NAME)
 
 %typecheck(SWIG_TYPECHECK_ ## TYPE_UPPER ## _ARRAY) const std::vector<std::vector<TYPE> >& ARG_NAME
@@ -526,7 +526,7 @@ const std::vector<TYPE>&  ARG_NAME
   // std::vector<std::pair<std:string, std:string> >
   $result = PyList_New((&$1)->size());
   ind = 0;
-  for (it = (&$1)->begin(); it! = (&$1)->end(); ++it)
+  for (it = (&$1)->begin(); it !=(&$1)->end(); ++it)
   {
     tuple = Py_BuildValue("ss", it->first.c_str(), it->second.c_str());
     PyList_SetItem($result, ind++, tuple);
@@ -562,14 +562,18 @@ ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, , NPY_DOUBLE)
 //              'dolfin::uint'
 // DESCR      : The char descriptor of the NumPy type
 
+
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, , NPY_DOUBLE, double, float_)
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, INT32, , NPY_INT, int, intc)
+//IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, , NPY_UINT, uint, uintc)
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, INT32, , NPY_UINT, uint, uintc)
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, , NPY_UINTP, uintp, uintp)
 
 // This typemap handles PETSc index typemap. Untested for 46-bit integers
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(PetscInt, INT32, , NPY_INT, intc, intc)
 
+//PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, coloring_type, uint, -1)
+//PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, value_shape, uint, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(unsigned int, INT32, coloring_type, uint, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(unsigned int, INT32, value_shape, uint, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, double, -1)
@@ -581,6 +585,7 @@ OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, NPY_UINT)
 READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, double)
 READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, int)
 READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, uint)
+//READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, uint)
 READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, sizet)
 
 // This typemap handles PETSc index typemap. Untested for 46-bit integers

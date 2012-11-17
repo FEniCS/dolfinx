@@ -104,12 +104,9 @@
 // Ignore low level interface
 //-----------------------------------------------------------------------------
 %ignore dolfin::LinearAlgebraObject::instance;
-%ignore dolfin::GenericTensor::get(double*, const  dolfin::DolfinIndex*,
-                                   const dolfin::DolfinIndex * const *) const;
-%ignore dolfin::GenericTensor::set(const double* , const dolfin::DolfinIndex* ,
-                                   const dolfin::DolfinIndex * const *);
-%ignore dolfin::GenericTensor::add(const double* , const dolfin::DolfinIndex* ,
-                                   const dolfin::DolfinIndex * const *);
+%ignore dolfin::GenericTensor::get(double*, const  dolfin::DolfinIndex*,        const dolfin::DolfinIndex * const *) const;
+%ignore dolfin::GenericTensor::set(const double* , const dolfin::DolfinIndex* , const dolfin::DolfinIndex * const *);
+%ignore dolfin::GenericTensor::add(const double* , const dolfin::DolfinIndex* , const dolfin::DolfinIndex * const *);
 %ignore dolfin::PETScLinearOperator::wrapper;
 
 //-----------------------------------------------------------------------------
@@ -147,10 +144,8 @@
 // NOTE: The %ignore has to be set using the actual type used in the declaration
 // so we cannot use dolfin::uint or unsigned int for uint. Strange...
 //-----------------------------------------------------------------------------
-%ignore dolfin::GenericVector::get(double*, std::size_t,
-                                   const dolfin::DolfinIndex*) const;
-%ignore dolfin::GenericVector::set(const double* , std::size_t m,
-                                   const dolfin::DolfinIndex*);
+%ignore dolfin::GenericVector::get(double*, std::size_t, const dolfin::DolfinIndex*) const;
+%ignore dolfin::GenericVector::set(const double* , std::size_t m, const dolfin::DolfinIndex*);
 
 %ignore dolfin::GenericVector::data() const;
 %ignore dolfin::GenericVector::data();
@@ -181,8 +176,7 @@
 // Modify uBLAS matrices, as these are not renamed by the GenericMatrix rename
 //-----------------------------------------------------------------------------
 %rename(assign) dolfin::uBLASMatrix<boost::numeric::ublas::matrix<double> >::operator=;
-%rename(assign) dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double,
-                                        boost::numeric::ublas::row_major> >::operator=;
+%rename(assign) dolfin::uBLASMatrix<boost::numeric::ublas::compressed_matrix<double, boost::numeric::ublas::row_major> >::operator=;
 
 // Ignore reference version of constructor
 %ignore dolfin::PETScKrylovSolver(std::string, PETScPreconditioner&);

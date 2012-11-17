@@ -36,7 +36,7 @@ namespace dolfin
 
   /// Index type for compatibility with linear algebra backend(s)
   #ifdef HAS_PETSC
-  typedef PetscInt DolfinIndex;
+  typedef int DolfinIndex;
   #else
   typedef int DolfinIndex;
   #endif
