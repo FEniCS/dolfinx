@@ -185,7 +185,7 @@ class AbstractBaseTest(object):
         B1 = Matrix(B0)
         self.assertEqual(B0.size(0), B1.size(0))
         self.assertEqual(B0.size(1), B1.size(1))
-        self.assertEqual(B0.norm("frobenius"), B1.norm("frobenius"))
+        self.assertAlmostEqual(B0.norm("frobenius"), B1.norm("frobenius"))
 
     def test_compress_matrix(self):
 

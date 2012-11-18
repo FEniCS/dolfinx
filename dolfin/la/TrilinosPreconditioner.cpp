@@ -260,14 +260,12 @@ void TrilinosPreconditioner::set_ml(AztecOO& solver, const Epetra_RowMatrix& P)
     mlist.setParameters(*parameter_list);
 
   // Set null space
-  if(_nullspace)
+  if (_nullspace)
   {
     mlist.set("null space: add default vectors", false);
     mlist.set("null space: type", "pre-computed");
     mlist.set("null space: dimension", _nullspace->NumVectors());
     mlist.set("null space: vectors", _nullspace->Values());
-
-    //mlist.set("PDE equations", 3);
   }
 
   // Create preconditioner

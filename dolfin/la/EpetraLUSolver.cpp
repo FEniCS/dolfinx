@@ -22,7 +22,7 @@
 
 #ifdef HAS_TRILINOS
 
-// Included here to avoid a C++ problem with some MPI implementations                                                                                                                         
+// Included here to avoid a C++ problem with some MPI implementations
 #include <dolfin/common/MPI.h>
 
 #include <Amesos.h>
@@ -192,8 +192,10 @@ dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
 
   // Write a message
   if (parameters["report"] && dolfin::MPI::process_number() == 0)
+  {
     info("Solving linear system of size %d x %d using Epetra LU solver (%s).",
          A->size(0), A->size(1), method.c_str());
+  }
 
   // Downcast vector
   EpetraVector& _x = as_type<EpetraVector>(x);
@@ -208,8 +210,8 @@ dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
                  "Operator has not been set");
   }
 
-  const uint M = A->NumGlobalRows();
-  const uint N = A->NumGlobalCols();
+  const std::size_t M = A->NumGlobalRows64();
+  const std::size_t N = A->NumGlobalCols64();
   if (N != b.size())
   {
     dolfin_error("EpetraLUSolver.cpp",

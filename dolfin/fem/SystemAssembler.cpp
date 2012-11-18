@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2010 Kent-Andre Mardal and Garth N. Wells
+// Copyright (C) 2008-2012 Kent-Andre Mardal and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -19,14 +19,15 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2009-06-22
-// Last changed: 2012-02-29
+// Last changed: 2012-11-17
 
-#include <dolfin/log/dolfin_log.h>
+#include <armadillo>
 #include <dolfin/common/Timer.h>
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
+#include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
@@ -575,44 +576,40 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
                      const DirichletBC::Map& boundary_values,
                      const std::vector<const std::vector<DolfinIndex>* >& global_dofs)
 {
-  // Get local dimensions
-  const std::size_t m = global_dofs[0]->size();
-  const std::size_t n = global_dofs[1]->size();
+  // Wrap matrix and vector as Armadillo. Armadillo matrix storgae is
+  // column-major, so all operations are transposed.
+  arma::mat _A(A, global_dofs[1]->size(), global_dofs[0]->size(), false, true);
+  arma::rowvec _b(b, global_dofs[0]->size(), false, true);
 
-  for (std::size_t i = 0; i < n; ++i)
+  // Loop over rows
+  for (std::size_t i = 0; i < _A.n_rows; ++i)
   {
     const std::size_t ii = (*global_dofs[1])[i];
     DirichletBC::Map::const_iterator bc_value = boundary_values.find(ii);
-
     if (bc_value != boundary_values.end())
     {
-      b[i] = bc_value->second;
+      // Zero row
+      _A.unsafe_col(i).fill(0.0);
 
-      // Zero row (i th)
-      for (std::size_t k = 0; k < n; ++k)
-        A[i*n + k] = 0.0;
+      // Modify RHS (subtract (bc_column(A))*bc_val from b)
+      _b -= _A.row(i)*bc_value->second;
 
-      for (std::size_t j = 0; j < m; ++j)
-      {
-        // Modify RHS
-        b[j] -= A[i + j*n]*bc_value->second;
+      // Zero column
+      _A.row(i).fill(0.0);
 
-        // Zero column (i th)
-        A[i + j*n] = 0.0;
-      }
-
-      // Place one on diagonal (i th)
-      A[i + i*n] = 1.0;
+      // Place 1 on diagonal and bc on RHS (i th row )
+      _b(i) = bc_value->second;
+      _A(i, i) = 1.0;
     }
   }
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b,
-                              UFC& A_ufc, UFC& b_ufc,
-                              const Form& a, const Form& L,
-                              const Cell& cell0, const Cell& cell1,
-                              const Facet& facet, Scratch& data,
-                              const DirichletBC::Map& boundary_values)
+                                              UFC& A_ufc, UFC& b_ufc,
+                                              const Form& a, const Form& L,
+                                              const Cell& cell0, const Cell& cell1,
+                                              const Facet& facet, Scratch& data,
+                                              const DirichletBC::Map& boundary_values)
 {
   // Facet orientation not supported
   if (cell0.mesh().data().mesh_function("facet_orientation"))

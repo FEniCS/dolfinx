@@ -111,18 +111,20 @@ namespace dolfin
     // Available named preconditionersdescriptions
     static const std::vector<std::pair<std::string, std::string> >_preconditioners_descr;
 
+    // The Preconditioner
+    boost::shared_ptr<Ifpack_Preconditioner> ifpack_preconditioner;
+    boost::shared_ptr<ML_Epetra::MultiLevelPreconditioner> ml_preconditioner;
+
     // Parameter list
     boost::shared_ptr<const Teuchos::ParameterList> parameter_list;
+
+    // Vectors spanning the null space
+    boost::shared_ptr<Epetra_MultiVector> _nullspace;
 
     // Teuchos::ParameterList pointer, used when initialized with a
     // Teuchos::RCP shared_ptr
     Teuchos::RCP<const Teuchos::ParameterList> parameter_ref_keeper;
 
-    // Vectors spanning the null space
-    boost::shared_ptr<Epetra_MultiVector> _nullspace;
-
-    boost::shared_ptr<Ifpack_Preconditioner> ifpack_preconditioner;
-    boost::shared_ptr<ML_Epetra::MultiLevelPreconditioner> ml_preconditioner;
   };
 
 }
