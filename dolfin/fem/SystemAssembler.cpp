@@ -581,6 +581,7 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
   arma::mat _A(A, global_dofs[1]->size(), global_dofs[0]->size(), false, true);
   arma::rowvec _b(b, global_dofs[0]->size(), false, true);
 
+  //bool bc_applied = false;
   // Loop over rows
   for (std::size_t i = 0; i < _A.n_rows; ++i)
   {
@@ -594,12 +595,25 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
       // Modify RHS (subtract (bc_column(A))*bc_val from b)
       _b -= _A.row(i)*bc_value->second;
 
+      // Get measure of size of RHS components
+      const double b_norm = arma::norm(_b, 1)/_b.size();
+
       // Zero column
       _A.row(i).fill(0.0);
 
-      // Place 1 on diagonal and bc on RHS (i th row )
-      _b(i) = bc_value->second;
-      _A(i, i) = 1.0;
+      // Place 1 on diagonal and bc on RHS (i th row ). Rescale to avoid
+      // distortion of RHS norm.
+      if (std::abs(bc_value->second) < (b_norm + DOLFIN_EPS))
+      {
+        _b(i)    = bc_value->second;
+        _A(i, i) = 1.0;
+      }
+      else
+      {
+        dolfin_assert(std::abs(bc_value->second) > 0.0);
+        _b(i)    = b_norm;
+        _A(i, i) = b_norm/bc_value->second;
+      }
     }
   }
 }
