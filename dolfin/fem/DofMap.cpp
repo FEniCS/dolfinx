@@ -93,6 +93,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
     _distributed(MPI::num_processes() > 1)
 {
   info("Creating restricted dofmap.");
+  warning("Restricted function space is an experimental feature.");
 
   dolfin_assert(_ufc_dofmap);
   dolfin_assert(_restriction);
