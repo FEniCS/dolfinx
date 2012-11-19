@@ -162,7 +162,7 @@ void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var, const Param
   // Construct VTK cells from DOLFIN facets
   //
 
-  build_grid_cells(_full_grid, dim());
+  build_grid_cells(_full_grid, _mesh->topology().dim());
   if (_entity_dim == dim())
   {
     _grid->ShallowCopy(_full_grid);
