@@ -144,8 +144,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 
   // FIXME: Should be OK up to here
 
-  // Build dof map
-  // FIXME: Need to build better dofmap
+  // Build restricted dof map
   const bool reorder = dolfin::parameters["reorder_dofs_serial"];
   DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, *restriction,
                        reorder, _distributed);
@@ -157,7 +156,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   _ownership_range(0, 0), _is_view(true),
   _distributed(distributed)
 {
-  // NOTE: Ownership range is set to zero since dofmap is a view
+  // Note: Ownership range is set to zero since dofmap is a view
 
   dolfin_assert(!component.empty());
 
@@ -211,6 +210,9 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
     for (std::size_t i = 0; i < _dofmap[cell_index].size(); ++i)
       _dofmap[cell_index][i] += offset;
   }
+
+  // Set global dimension
+  _global_dimension = _ufc_dofmap->global_dimension();
 
   // Modify dofmap for non-UFC numbering
   ufc_map_to_dofmap.clear();

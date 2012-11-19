@@ -347,6 +347,9 @@ std::string VTKPlotter::get_helptext()
   text << "   p: Save plot to png file\n";
 #endif
   text << "  hH: Show help, or print help to console\n";
+#ifdef HAS_QVTK
+  text << "   I: Enter interactive mode (and pause execution)\n";
+#endif
   text << "  qQ: Continue, or continue to end\n";
   text << " C-c: Abort execution\n";
   text << "\n";
@@ -500,6 +503,13 @@ bool VTKPlotter::key_pressed(int modifiers, char key, std::string keysym)
     run_to_end = true;
     vtk_pipeline->stop_interaction();
     return true;
+
+#ifdef HAS_QVTK
+  case SHIFT + 'i': // Enter interactive mode
+    run_to_end = false;
+    interactive();
+    return true;
+#endif
 
   case CONTROL + 'c':
     dolfin_error("VTKPlotter", "continue execution", "Aborted by user");
