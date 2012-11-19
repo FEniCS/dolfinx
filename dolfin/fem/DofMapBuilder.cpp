@@ -616,7 +616,7 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
         // Get dofs and dof-coordinates from slave facet
         const Facet facet(mesh, facet_pairs[i].second.first); 
         const Cell cell(mesh, facet.entities(tdim)[0]);
-        const std::vector<std::size_t> global_dofs = dofmap.cell_dofs(cell.index());
+        const std::vector<DolfinIndex> global_dofs = dofmap.cell_dofs(cell.index());
         dofmap.tabulate_coordinates(facet_coors, cell);
         dofmap.tabulate_facet_dofs(&facet_dofs[0], cell.index(facet));
         communicating_processors.insert(master_process);
@@ -675,7 +675,7 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
         // Get info from master facet: cell, dofs, coordinates
         const Facet facet(mesh, facet_pairs[i].first.first);
         const Cell cell(mesh, facet.entities(tdim)[0]);        
-        const std::vector<std::size_t> global_dofs = dofmap.cell_dofs(cell.index());
+        const std::vector<DolfinIndex> global_dofs = dofmap.cell_dofs(cell.index());
         dofmap.tabulate_coordinates(facet_coors, cell);
         dofmap.tabulate_facet_dofs(&facet_dofs[0], cell.index(facet)); 
         
@@ -687,33 +687,31 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
 //         }
 //         else if (dofmap.num_facet_dofs() == 1)
 //         {
-//           uint master_dof = global_dofs[facet_dofs[0]];
-//           uint slave_dof = slave_dofs[i][0];
+//           std::size_t master_dof = global_dofs[facet_dofs[0]];
+//           std::size_t slave_dof = slave_dofs[i][0];
 //           if (master_dof >= ownership_range.first && master_dof < ownership_range.second)
-//             global_matching_pairs.push_back(std::make_pair(master_dof, slave_dof));
+//             matching_dofs[master_dof] = slave_dof;
 //         }
 //         else
 //         {
 //           // Get global master dof and coordinates of first local dof
-//           uint master_dof = global_dofs[facet_dofs[0]];
+//           std::size_t master_dof = global_dofs[facet_dofs[0]];
 //           std::copy(facet_coors[facet_dofs[0]].begin(),
 //                     facet_coors[facet_dofs[0]].end(), x.begin());      
 //           // Look for a match in coordinates of the first local slave dof
-//           uint slave_dof = slave_dofs[i][0];
 //           y = coors_on_slave[i][0];    
 //           double error = 0.;
 //           for(uint l = 0; l < gdim; l++) 
 //             error += std::abs(x[l] - y[l] + dx[l]);
 //             
-//           if (error < 100.*DOLFIN_EPS) // Match! Assuming the dofs are laid out in the same order 
+//           if (error < 1.0e-12)    // Match! Assuming the dofs are laid out in the same order 
 //                                            // on the facet the remaining are simply copied without control
 //           {  
 //             for (uint j = 0; j < dofmap.num_facet_dofs(); j++)
 //             {
 //               master_dof = global_dofs[facet_dofs[j]];
-//               slave_dof = slave_dofs[i][j];    
 //               if (master_dof >= ownership_range.first && master_dof < ownership_range.second)
-//                 global_matching_pairs.push_back(std::make_pair(master_dof, slave_dof));
+//                 matching_dofs[master_dof] = slave_dofs[i][j];
 //             }
 //           }
 //           else  // If local dofs 0/0 don't match the order must be opposite
@@ -721,12 +719,11 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
 //             for (uint j = 0; j < dofmap.num_facet_dofs(); j++)
 //             {
 //               master_dof = global_dofs[facet_dofs[j]];
-//               slave_dof = slave_dofs[i][dofmap.num_facet_dofs()-j-1];
 //               if (master_dof >= ownership_range.first && master_dof < ownership_range.second)
-//                 global_matching_pairs.push_back(std::make_pair(master_dof, slave_dof));
+//                 matching_dofs[master_dof] = slave_dofs[i][dofmap.num_facet_dofs()-j-1];
 //             }
 //           }
-//         }            
+//         }
 //         ////////////////////////////////////////////////////////
         
         // Match master and slave dofs and put pair in map
@@ -900,7 +897,7 @@ void DofMapBuilder::periodic_modification(DofMap& dofmap, const Mesh& mesh)
   for (set_iterator it = cells_with_slave.begin();
                     it != cells_with_slave.end(); ++it)
   {
-    const std::vector<std::size_t> global_dofs = dofmap.cell_dofs(*it);
+    const std::vector<DolfinIndex> global_dofs = dofmap.cell_dofs(*it);
     for (uint j = 0; j < dofmap.max_cell_dimension(); j++)
     {
       const std::size_t dof = global_dofs[j];
@@ -973,7 +970,7 @@ void DofMapBuilder::periodic_modification(DofMap& dofmap, const Mesh& mesh)
   std::vector<std::size_t>::iterator it;  
   for (std::size_t i = 0; i < dofmap._dofmap.size(); i++)
   {
-    const std::vector<std::size_t>& global_dofs = dofmap.cell_dofs(i); 
+    const std::vector<DolfinIndex>& global_dofs = dofmap.cell_dofs(i); 
     for (uint j = 0; j < dofmap.max_cell_dimension(); j++)
     {
       const std::size_t dof = global_dofs[j];
