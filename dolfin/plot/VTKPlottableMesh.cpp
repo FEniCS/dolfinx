@@ -92,7 +92,7 @@ void VTKPlottableMesh::connect_to_output(VTKWindowOutputStage& output)
   {
     for (int i = 0; i < pointdata->GetNumberOfTuples(); i++)
     {
-      if (isnan(pointdata->GetValue(i)))
+      if (std::isnan(pointdata->GetValue(i)))
       {
         has_nans = true;
         break;
@@ -105,7 +105,7 @@ void VTKPlottableMesh::connect_to_output(VTKWindowOutputStage& output)
   {
     for (int i = 0; i < celldata->GetNumberOfTuples(); i++)
     {
-      if (isnan(celldata->GetValue(i)))
+      if (std::isnan(celldata->GetValue(i)))
       {
         has_nans = true;
         break;
@@ -162,7 +162,7 @@ void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var, const Param
   // Construct VTK cells from DOLFIN facets
   //
 
-  build_grid_cells(_full_grid, dim());
+  build_grid_cells(_full_grid, _mesh->topology().dim());
   if (_entity_dim == dim())
   {
     _grid->ShallowCopy(_full_grid);
@@ -174,22 +174,24 @@ void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var, const Param
   }
 }
 //----------------------------------------------------------------------------
-void VTKPlottableMesh::build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &grid, uint entity_dim)
+void VTKPlottableMesh::build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &grid, uint topological_dim)
 {
   // Add mesh cells to VTK cell array. Note: Preallocation of storage
   // in cell array did not give speedups when testing during development
   vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
-  const std::vector<std::size_t>& connectivity = _mesh->cells();
-  uint spatial_dim = _mesh->topology().dim();
 
-  for (std::size_t i = 0; i < _mesh->num_cells(); ++i)
+  _mesh->init(topological_dim, 0);
+  const std::vector<std::size_t>& connectivity = _mesh->topology()(topological_dim, 0)();
+
+  for (std::size_t i = 0; i < _mesh->size(topological_dim); ++i)
   {
     // Insert all vertex indices for a given cell. For a simplex cell in nD,
     // n+1 indices are inserted. The connectivity array must be indexed at
     // ((n+1) x cell_number + idx_offset)
-    cells->InsertNextCell(spatial_dim + 1);
-    for(uint j = 0; j <= spatial_dim; ++j) {
-      cells->InsertCellPoint(connectivity[(spatial_dim + 1)*i + j]);
+    cells->InsertNextCell(topological_dim + 1);
+    for(uint j = 0; j <= topological_dim; ++j)
+    {
+      cells->InsertCellPoint(connectivity[(topological_dim + 1)*i + j]);
     }
   }
 
@@ -197,7 +199,7 @@ void VTKPlottableMesh::build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &gr
   // (automatically allocated during cell insertion)
   cells->Squeeze();
 
-  switch (_entity_dim)
+  switch (topological_dim)
   {
     case 0:
       grid->SetCells(VTK_VERTEX, cells);
@@ -215,10 +217,6 @@ void VTKPlottableMesh::build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &gr
       dolfin_error("VTKPlottableMesh.cpp", "initialise cells", "Not implemented for dim>3");
       break;
   }
-
-  // Is this needed?
-  // _grid->Modified();
-  // _geometryFilter->Modified();
 }
 //----------------------------------------------------------------------------
 void VTKPlottableMesh::update_range(double range[2])
@@ -228,7 +226,7 @@ void VTKPlottableMesh::update_range(double range[2])
 //----------------------------------------------------------------------------
 dolfin::uint VTKPlottableMesh::dim() const
 {
-  return _mesh->topology().dim();
+  return _mesh->geometry().dim();
 }
 //----------------------------------------------------------------------------
 void VTKPlottableMesh::build_id_filter()
@@ -238,7 +236,9 @@ void VTKPlottableMesh::build_id_filter()
     _idFilter = vtkSmartPointer<vtkIdFilter>::New();
     if (_entity_dim == dim() || _entity_dim == 0)
     {
-      // Kludge to get to the unwarped mesh in relevant cases
+      // Use the un-warped mesh if dimension is full. If dim is zero, use the
+      // original cells rather than vertices (the vertices are labeled by the
+      // vertex label actor anyway).
       _idFilter->SetInputConnection(get_mesh_actor()->GetMapper()->GetInputConnection(0,0));
     }
     else
@@ -264,7 +264,7 @@ vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor(vtkSmartPoi
     // If the tolerance is too high, too many labels are visible (especially at
     // a distance).  If set too low, some labels are invisible. There isn't a
     // "correct" value, it should really depend on distance and resolution.
-    vis->SetTolerance(1e-4);
+    vis->SetTolerance(1e-3);
     vis->SetRenderer(renderer);
     //vis->SelectionWindowOn();
     //vis->SetSelection(0, 0.3, 0, 0.3);

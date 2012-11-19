@@ -160,7 +160,7 @@ void SymmetricAssembler::assemble(GenericMatrix& A,
 //-----------------------------------------------------------------------------
 void SymmetricAssembler::add_to_global_tensor(GenericTensor &A,
                                               std::vector<double>& local_A,
-                                              std::vector<const std::vector<std::size_t>* >& dofs)
+                                              std::vector<const std::vector<DolfinIndex>* >& dofs)
 {
   // Apply boundary conditions, and move affected columns of the local element
   // tensor, to restore symmetry.
@@ -173,8 +173,8 @@ void SymmetricAssembler::add_to_global_tensor(GenericTensor &A,
   bool local_B_is_set = false;
 
   // Convenience aliases
-  const std::vector<std::size_t>& row_dofs = *dofs[0];
-  const std::vector<std::size_t>& col_dofs = *dofs[1];
+  const std::vector<DolfinIndex>& row_dofs = *dofs[0];
+  const std::vector<DolfinIndex>& col_dofs = *dofs[1];
 
   if (impl->matching_bcs && row_dofs != col_dofs)
     dolfin_error("SymmetricAssembler.cpp",

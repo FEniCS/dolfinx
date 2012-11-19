@@ -118,13 +118,13 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   const std::size_t size = num_cells*data_dim;
 
   // Build lists of dofs and create map
-  std::vector<std::size_t> dof_set;
+  std::vector<DolfinIndex> dof_set;
   std::vector<std::size_t> offset(size + 1);
   std::vector<std::size_t>::iterator cell_offset = offset.begin();
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Tabulate dofs
-    const std::vector<std::size_t>& dofs = dofmap.cell_dofs(cell->index());
+    const std::vector<DolfinIndex>& dofs = dofmap.cell_dofs(cell->index());
     for(uint i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
       dof_set.push_back(dofs[i]);
 
@@ -136,7 +136,7 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   // Get  values
   std::vector<double> values(dof_set.size());
   dolfin_assert(u.vector());
-  u.vector()->get_local(&values[0], dof_set.size(), &dof_set[0]);
+  u.vector()->get_local(values.data(), dof_set.size(), dof_set.data());
 
   // Get cell data
   if (!binary)

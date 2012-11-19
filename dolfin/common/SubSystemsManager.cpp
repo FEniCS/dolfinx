@@ -43,10 +43,10 @@
 
 using namespace dolfin;
 
-
-// Return singleton instance. Do NOT make the singleton a global static object;
-// the method here ensures that the singleton is initialised before use.
-// (google "static initialization order fiasco" for full explanation)
+// Return singleton instance. Do NOT make the singleton a global static
+// object; the method here ensures that the singleton is initialised
+// before use. (google "static initialization order fiasco" for full
+// explanation)
 
 SubSystemsManager& SubSystemsManager::singleton()
 {
@@ -75,7 +75,9 @@ SubSystemsManager::~SubSystemsManager()
 void SubSystemsManager::init_mpi()
 {
   #ifdef HAS_MPI
-  if( MPI::Is_initialized() )
+  int mpi_initialized;
+  MPI_Initialized(&mpi_initialized);
+  if (mpi_initialized)
     return;
 
   // Init MPI with highest level of thread support and take responsibility
@@ -93,7 +95,9 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
   Timer timer("Init MPI");
 
   #ifdef HAS_MPI
-  if (MPI::Is_initialized())
+  int mpi_initialized;
+  MPI_Initialized(&mpi_initialized);
+  if (mpi_initialized)
     return -100;
 
   // Initialise MPI and take responsibility
@@ -155,7 +159,7 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
 {
   Timer timer("Init PETSc");
 
-#ifdef HAS_PETSC
+  #ifdef HAS_PETSC
   if (singleton().petsc_initialized)
     return;
 
@@ -169,10 +173,10 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   // Initialize PETSc
   PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
 
-#ifdef HAS_SLEPC
+  #ifdef HAS_SLEPC
   // Initialize SLEPc
   SlepcInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
-#endif
+  #endif
 
   // Avoid using default PETSc signal handler
   const bool use_petsc_signal_handler = parameters["use_petsc_signal_handler"];
@@ -186,11 +190,11 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   if (mpi_initialized() and !mpi_init_status)
     singleton().control_mpi = false;
 
-#else
+  #else
   dolfin_error("SubSystemsManager.cpp",
                "initialize PETSc subsystem",
                "DOLFIN has not been configured with PETSc support");
-#endif
+  #endif
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::finalize()
@@ -215,13 +219,18 @@ bool SubSystemsManager::responsible_petsc()
 //-----------------------------------------------------------------------------
 void SubSystemsManager::finalize_mpi()
 {
-#ifdef HAS_MPI
+  #ifdef HAS_MPI
+  int mpi_initialized;
+  MPI_Initialized(&mpi_initialized);
+
   // Finalise MPI if required
-  if (MPI::Is_initialized() and singleton().control_mpi)
+  if (mpi_initialized and singleton().control_mpi)
   {
     // Check in MPI has already been finalised (possibly incorrectly by a
     // 3rd party libary). Is it hasn't, finalise as normal.
-    if (!MPI::Is_finalized())
+    int mpi_finalized;
+    MPI_Finalized(&mpi_finalized);
+    if (!mpi_finalized)
       MPI::Finalize();
     else
     {
@@ -233,14 +242,14 @@ void SubSystemsManager::finalize_mpi()
 
     singleton().control_mpi = false;
   }
-#else
+  #else
   // Do nothing
-#endif
+  #endif
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::finalize_petsc()
 {
-#ifdef HAS_PETSC
+  #ifdef HAS_PETSC
   if (singleton().petsc_initialized)
   {
     PetscFinalize();
@@ -250,9 +259,9 @@ void SubSystemsManager::finalize_petsc()
     SlepcFinalize();
     #endif
   }
-#else
+  #else
   // Do nothing
-#endif
+  #endif
 }
 //-----------------------------------------------------------------------------
 bool SubSystemsManager::mpi_initialized()
@@ -261,21 +270,25 @@ bool SubSystemsManager::mpi_initialized()
   // true if MPI_Init has been called at any point, even if MPI_Finalize has
   // been called.
 
-#ifdef HAS_MPI
-  return MPI::Is_initialized();
-#else
+  #ifdef HAS_MPI
+  int mpi_initialized;
+  MPI_Initialized(&mpi_initialized);
+  return mpi_initialized;
+  #else
   // DOLFIN is not configured for MPI (it might be through PETSc)
   return false;
-#endif
+  #endif
 }
 //-----------------------------------------------------------------------------
 bool SubSystemsManager::mpi_finalized()
 {
-#ifdef HAS_MPI
-  return MPI::Is_finalized();
-#else
+  #ifdef HAS_MPI
+  int mpi_finalized;
+  MPI_Initialized(&mpi_finalized);
+  return mpi_finalized;
+  #else
   // DOLFIN is not configured for MPI (it might be through PETSc)
   return false;
-#endif
+  #endif
 }
 //-----------------------------------------------------------------------------

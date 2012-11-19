@@ -117,17 +117,17 @@ namespace dolfin
     // Available solvers descriptions
     static const std::vector<std::pair<std::string, std::string> > _methods_descr;
 
-    // Underlying solver
-    boost::shared_ptr<AztecOO> solver;
-
-    // Preconditioner
-    boost::shared_ptr<TrilinosPreconditioner> preconditioner;
-
     // Operator (the matrix)
     boost::shared_ptr<const EpetraMatrix> A;
 
     // Matrix used to construct the preconditoner
     boost::shared_ptr<const EpetraMatrix> P;
+
+    // Preconditioner
+    boost::shared_ptr<TrilinosPreconditioner> preconditioner;
+
+    // Underlying solver
+    boost::shared_ptr<AztecOO> solver;
 
     bool preconditioner_set;
 

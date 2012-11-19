@@ -198,7 +198,7 @@ void Assembler::assemble_cells(GenericTensor& A,
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dof map for a cell
-  std::vector<const std::vector<std::size_t>* > dofs(form_rank);
+  std::vector<const std::vector<DolfinIndex>* > dofs(form_rank);
 
   // Cell integral
   dolfin_assert(!ufc.cell_integrals.empty());
@@ -266,7 +266,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dof map for a cell
-  std::vector<const std::vector<std::size_t>* > dofs(form_rank);
+  std::vector<const std::vector<DolfinIndex>* > dofs(form_rank);
 
   // Exterior facet integral
   dolfin_assert(!ufc.exterior_facet_integrals.empty());
@@ -355,8 +355,8 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dofs for cells, and a vector holding pointers to same
-  std::vector<std::vector<std::size_t> > macro_dofs(form_rank);
-  std::vector<const std::vector<std::size_t>* > macro_dof_ptrs(form_rank);
+  std::vector<std::vector<DolfinIndex> > macro_dofs(form_rank);
+  std::vector<const std::vector<DolfinIndex>* > macro_dof_ptrs(form_rank);
   for (uint i = 0; i < form_rank; i++)
   {
     macro_dof_ptrs[i] = &macro_dofs[i];
@@ -427,8 +427,8 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     for (uint i = 0; i < form_rank; i++)
     {
       // Get dofs for each cell
-      const std::vector<std::size_t>& cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
-      const std::vector<std::size_t>& cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
+      const std::vector<DolfinIndex>& cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
+      const std::vector<DolfinIndex>& cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
 
       // Create space in macro dof vector
       macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
@@ -453,7 +453,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
 //-----------------------------------------------------------------------------
 void Assembler::add_to_global_tensor(GenericTensor& A,
                                      std::vector<double>& cell_tensor,
-                                     std::vector<const std::vector<std::size_t>* >& dofs)
+                                     std::vector<const std::vector<DolfinIndex>* >& dofs)
 {
   A.add(&cell_tensor[0], dofs);
 }

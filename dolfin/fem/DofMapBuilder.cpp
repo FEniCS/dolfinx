@@ -76,7 +76,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& dolfin_mesh,
     const uint local_dim = dofmap._ufc_dofmap->local_dimension(ufc_cell);
 
     // Container for cell dofs
-    std::vector<std::size_t>& cell_dofs = dofmap._dofmap[cell->index()];
+    std::vector<DolfinIndex>& cell_dofs = dofmap._dofmap[cell->index()];
     cell_dofs.resize(local_dim);
     tmp_dofs.resize(local_dim);
 
@@ -104,9 +104,9 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& dolfin_mesh,
       Graph graph(dofmap.global_dimension());
       for (CellIterator cell(dolfin_mesh); !cell.end(); ++cell)
       {
-        const std::vector<std::size_t>& dofs0 = dofmap.cell_dofs(cell->index());
-        const std::vector<std::size_t>& dofs1 = dofmap.cell_dofs(cell->index());
-        std::vector<std::size_t>::const_iterator node;
+        const std::vector<DolfinIndex>& dofs0 = dofmap.cell_dofs(cell->index());
+        const std::vector<DolfinIndex>& dofs1 = dofmap.cell_dofs(cell->index());
+        std::vector<DolfinIndex>::const_iterator node;
         for (node = dofs0.begin(); node != dofs0.end(); ++node)
           graph[*node].insert(dofs1.begin(), dofs1.end());
       }
@@ -121,8 +121,8 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& dolfin_mesh,
         dofmap.ufc_map_to_dofmap[i] = dof_remap[i];
 
       // Re-number dofs for cell
-      std::vector<std::vector<std::size_t> >::iterator cell_map;
-      std::vector<std::size_t>::iterator dof;
+      std::vector<std::vector<DolfinIndex> >::iterator cell_map;
+      std::vector<DolfinIndex>::iterator dof;
       for (cell_map = dofmap._dofmap.begin(); cell_map != dofmap._dofmap.end(); ++cell_map)
         for (dof = cell_map->begin(); dof != cell_map->end(); ++dof)
           *dof = dof_remap[*dof];
@@ -199,7 +199,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
       Cell c(mesh, f.entities(mesh.topology().dim())[0]);
 
       // Tabulate dofs on cell
-      const std::vector<std::size_t>& cell_dofs = dofmap.cell_dofs(c.index());
+      const std::vector<DolfinIndex>& cell_dofs = dofmap.cell_dofs(c.index());
 
       // Tabulate which dofs are on the facet
       dofmap.tabulate_facet_dofs(&facet_dofs[0], c.index(f));
@@ -286,7 +286,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
   // Mark all shared and owned dofs as owned by the processes
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    const std::vector<std::size_t>& cell_dofs = dofmap.cell_dofs(cell->index());
+    const std::vector<DolfinIndex>& cell_dofs = dofmap.cell_dofs(cell->index());
     const uint cell_dimension = dofmap.cell_dimension(cell->index());
     for (uint i = 0; i < cell_dimension; ++i)
     {
@@ -319,8 +319,8 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
                  "The degree of freedom mapping cannot (yet) be renumbered twice");
   }
 
-  const std::vector<std::vector<std::size_t> >& old_dofmap = dofmap._dofmap;
-  std::vector<std::vector<std::size_t> > new_dofmap(old_dofmap.size());
+  const std::vector<std::vector<DolfinIndex> >& old_dofmap = dofmap._dofmap;
+  std::vector<std::vector<DolfinIndex> > new_dofmap(old_dofmap.size());
   dolfin_assert(old_dofmap.size() == mesh.num_cells());
 
   // Compute offset for owned and non-shared dofs
@@ -342,9 +342,9 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   Graph graph(owned_dofs.size());
   for (std::size_t cell = 0; cell < old_dofmap.size(); ++cell)
   {
-    const std::vector<std::size_t>& dofs0 = dofmap.cell_dofs(cell);
-    const std::vector<std::size_t>& dofs1 = dofmap.cell_dofs(cell);
-    std::vector<std::size_t>::const_iterator node0, node1;
+    const std::vector<DolfinIndex>& dofs0 = dofmap.cell_dofs(cell);
+    const std::vector<DolfinIndex>& dofs1 = dofmap.cell_dofs(cell);
+    std::vector<DolfinIndex>::const_iterator node0, node1;
     for (node0 = dofs0.begin(); node0 != dofs0.end(); ++node0)
     {
       boost::unordered_map<std::size_t, std::size_t>::const_iterator _node0

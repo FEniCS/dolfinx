@@ -43,7 +43,7 @@ void GenericMatrix::ident_zeros()
 
   std::vector<std::size_t> columns;
   std::vector<double> values;
-  std::vector<std::size_t> zero_rows;
+  std::vector<DolfinIndex> zero_rows;
   const std::pair<std::size_t, std::size_t> row_range = local_range(0);
   const std::size_t m = row_range.second - row_range.first;
 
@@ -74,7 +74,7 @@ void GenericMatrix::ident_zeros()
   // has been assembled into those rows.
   for (std::size_t i = 0; i < zero_rows.size(); i++)
   {
-    std::pair<std::size_t, std::size_t> ij(zero_rows[i], zero_rows[i]);
+    std::pair<DolfinIndex, DolfinIndex> ij(zero_rows[i], zero_rows[i]);
     setitem(ij, 1.0);
   }
 
@@ -129,12 +129,12 @@ void GenericMatrix::compress()
   std::vector<std::size_t> columns;
   std::vector<double> values;
   std::vector<double> allvalues; // Hold all values of local matrix
-  std::vector<std::size_t> allcolumns;  // Hold column id for all values of local matrix
-  std::vector<std::size_t> offset(m + 1); // Hold accumulated number of cols on local matrix
+  std::vector<DolfinIndex> allcolumns;  // Hold column id for all values of local matrix
+  std::vector<DolfinIndex> offset(m + 1); // Hold accumulated number of cols on local matrix
   offset[0] = 0;
-  std::vector<std::size_t> thisrow(1);
-  std::vector<std::size_t> thiscolumn;
-  std::vector<const std::vector<std::size_t>* > dofs(2);
+  std::vector<DolfinIndex> thisrow(1);
+  std::vector<DolfinIndex> thiscolumn;
+  std::vector<const std::vector<DolfinIndex>* > dofs(2);
   dofs[0] = &thisrow;
   dofs[1] = &thiscolumn;
 
@@ -174,7 +174,7 @@ void GenericMatrix::compress()
   // Put the old values back in the newly compressed matrix
   for (std::size_t i = 0; i < m; i++)
   {
-    const std::size_t global_row = i + row_range.first;
+    const DolfinIndex global_row = i + row_range.first;
     set(&allvalues[offset[i]], 1, &global_row,
         offset[i+1] - offset[i], &allcolumns[offset[i]]);
   }

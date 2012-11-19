@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/types.h>
 #include "DefaultFactory.h"
 #include "GenericTensor.h"
 
@@ -81,29 +82,29 @@ namespace dolfin
     }
 
     /// Get block of values
-    void get(double* block, const std::size_t* num_rows, const std::size_t * const * rows) const
+    void get(double* block, const DolfinIndex* num_rows, const DolfinIndex * const * rows) const
     { block[0] = value; }
 
     /// Set block of values
-    void set(const double* block, const std::size_t* num_rows, const std::size_t * const * rows)
+    void set(const double* block, const DolfinIndex* num_rows, const DolfinIndex * const * rows)
     { value = block[0]; }
 
     /// Add block of values
-    void add(const double* block, const std::size_t* num_rows, const std::size_t * const * rows)
+    void add(const double* block, const DolfinIndex* num_rows, const DolfinIndex * const * rows)
     {
       dolfin_assert(block);
       value += block[0];
     }
 
     /// Add block of values
-    void add(const double* block, const std::vector<const std::vector<std::size_t>* >& rows)
+    void add(const double* block, const std::vector<const std::vector<DolfinIndex>* >& rows)
     {
       dolfin_assert(block);
       value += block[0];
     }
 
     /// Add block of values
-    void add(const double* block, const std::vector<std::vector<std::size_t> >& rows)
+    void add(const double* block, const std::vector<std::vector<DolfinIndex> >& rows)
     {
       dolfin_assert(block);
       value += block[0];

@@ -154,6 +154,7 @@ namespace // anonymous
 
       _force_visible = !_force_visible;
       if (_force_visible) {
+        EnabledOn();
         rep->SetBalloonText(text.c_str());
         rep->StartWidgetInteraction(e);
       }
@@ -338,7 +339,6 @@ void VTKWindowOutputStage::init(VTKPlotter *parent, const Parameters &parameters
   // Set up the actual widget that makes the help text pop up
   balloonwidget->SetInteractor(get_interactor());
   balloonwidget->SetRepresentation(balloonRep);
-  balloonwidget->EnabledOn();
 }
 //----------------------------------------------------------------------------
 vtkRenderWindowInteractor* VTKWindowOutputStage::get_interactor()
@@ -366,6 +366,7 @@ void VTKWindowOutputStage::set_helptext(std::string text)
 
   // Add the balloon text to the actor
   balloonwidget->AddBalloon(helptextActor, text.c_str(), NULL);
+  balloonwidget->EnabledOn();
 }
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::set_window_title(std::string title)
