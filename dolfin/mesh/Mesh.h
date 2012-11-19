@@ -696,7 +696,7 @@ namespace dolfin
     ///         Id of master subdomain
     ///     uint
     ///         Id of slave subdomain
-    void add_periodic_direction(const MeshFunction<unsigned int>& sub_domains,
+    void add_periodic_direction(const MeshFunction<std::size_t>& sub_domains,
                 const uint sub_domain0, const uint sub_domain1);
 
     /// Add Periodicity to the mesh. The mesh must contain markers for subdomains
@@ -711,11 +711,11 @@ namespace dolfin
     /// Return periodic facet-to-facet map
     ///
     /// *Returns*
-    ///     std::vector<std::pair< std::pair<uint, uint>, std::pair<uint, uint> > >
+    ///     std::vector<std::pair< std::pair<std::size_t, uint>, std::pair<std::size_t, uint> > >
     ///         The periodic facet-to-facet map. First pair is master, second is slave. 
     ///         First item of pairs is global facet index, second item is the process 
-    ///         number where the facets live.
-    std::vector<std::pair< std::pair<uint, uint>, std::pair<uint, uint> > > get_facet_pairs() const;
+    ///         number where the facet lives.
+    std::vector<std::pair< std::pair<std::size_t, uint>, std::pair<std::size_t, uint> > > get_periodic_facet_pairs(uint i) const;
     
     /// Check if mesh has one or more periodic directions
     ///
@@ -724,9 +724,23 @@ namespace dolfin
     ///         The return value is True if one or more periodic directions has 
     ///         been added to the mesh
     bool is_periodic() const;
+    
+    /// Returns number of periodic directions
+    ///
+    /// *Returns*
+    ///     uint
+    ///         Number of periodic directions that has been added to the mesh
+    uint num_periodic_domains() const;
+    
+    /// Returns the distance between two periodic subdomains
+    ///
+    /// *Returns*
+    ///     std::vector<double>
+    ///         The distance between two periodic subdomains
+    std::vector<double> get_periodic_distance(uint i) const;
 
   private:
-
+    
     // Friends
     friend class MeshEditor;
     friend class TopologyComputation;
@@ -753,9 +767,30 @@ namespace dolfin
 
     // True if mesh has been ordered
     mutable bool _ordered;
-    
-    // The periodic facet-to-facet map. Contains facet number and process where it lives
-    std::vector<std::pair< std::pair<uint, uint>, std::pair<uint, uint> > > _facet_pairs;
+        
+    // Create a container for data relating to one periodic direction.
+    // Sould perhaps use something else, like a tuple??
+    class PeriodicDomain
+    {
+    public:
+      
+      PeriodicDomain(uint, uint, std::vector<double>, std::vector<std::pair< std::pair<std::size_t, uint>, std::pair<std::size_t, uint> > >);
+      
+      // The periodic facet-to-facet map. First pair is master, second is slave. 
+      // First item of pairs is global facet index, second item is the process 
+      // number where the facet lives.
+      std::vector<std::pair< std::pair<std::size_t, uint>, std::pair<std::size_t, uint> > > facet_pairs;
+      
+      // Distance between subdomains 
+      std::vector<double> dx;
+      
+      // Markers for the two periodic subdomains used by _domains. master first, slave second
+      std::pair<uint, uint> sub_domains;
+      
+    };
+
+    // Container for each periodic direction
+    std::vector<const PeriodicDomain*> _periodic_domains;
     
   };
 }

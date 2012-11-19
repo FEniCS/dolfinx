@@ -385,7 +385,7 @@ namespace dolfin
     
     // Global dimension of the finite element function space, modified
     // for the number of eliminated periodic slaves.
-    uint _global_dim;    
+    uint _global_dimension;    
   };
 }
 

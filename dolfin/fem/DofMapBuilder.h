@@ -51,17 +51,17 @@ namespace dolfin
     //typedef std::set<std::size_t> set;
     //typedef std::set<std::size_t>::const_iterator set_iterator;
 
-    typedef boost::unordered_set<dolfin::std::size_t> set;
-    typedef boost::unordered_set<dolfin::std::size_t>::const_iterator set_iterator;
+    typedef boost::unordered_set<std::size_t> set;
+    typedef boost::unordered_set<std::size_t>::const_iterator set_iterator;
 
     typedef std::vector<std::size_t>::const_iterator vector_it;
     typedef boost::unordered_map<std::size_t, std::vector<std::size_t> > vec_map;
     
-    typedef std::pair<uint, uint> ui_pair;
-    typedef std::map<uint, ui_pair> ui_pair_map;
-    typedef std::vector<ui_pair> vector_of_pairs;
-    typedef ui_pair_map::iterator ui_pair_map_iterator;
-    typedef std::vector<std::pair<ui_pair, ui_pair> > facet_pair_type;    
+    typedef std::pair<std::size_t, uint> dof_data;
+    typedef std::map<std::size_t, dof_data> dof_data_map;
+    typedef std::vector<dof_data> vector_of_pairs;
+    typedef dof_data_map::iterator dof_data_map_iterator;
+    typedef std::vector<std::pair<dof_data, dof_data> > facet_pair_type;    
 
   public:
 
@@ -105,8 +105,8 @@ namespace dolfin
     // Iterate recursively over all sub-dof maps to build a global
     // map from slave dofs to master dofs
     static void extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh, 
-                            std::map<uint, std::pair<uint, uint> >& _slave_master_map,
-                            std::pair<uint, uint> ownership_range);
+                            dof_data_map& _slave_master_map,
+                            std::pair<std::size_t, std::size_t> ownership_range);
 
     // Make all necessary modifications to dofmap due to periodicity of the mesh
     static void periodic_modification(DofMap& dofmap, const Mesh& dolfin_mesh);

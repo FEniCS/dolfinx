@@ -80,7 +80,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh);
   
   // Set the global dimension of the dofmap. This will be modified for a periodic mesh
-  _global_dim = _ufc_dofmap->global_dimension();
+  _global_dimension = _ufc_dofmap->global_dimension();
 
   // Build dof map
   const bool reorder = dolfin::parameters["reorder_dofs_serial"];
@@ -190,19 +190,19 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   // Set the global dimension of newly created dofmap
   if (mesh.is_periodic())
   {
-    boost::unordered_set<dolfin::uint> alldofs = dofs();
+    boost::unordered_set<std::size_t> alldofs = dofs();
     uint sumdofs = 0;
-    for (boost::unordered_set<dolfin::uint>::iterator it = alldofs.begin();
+    for (boost::unordered_set<std::size_t>::iterator it = alldofs.begin();
          it != alldofs.end(); ++it)
     {
       if (*it >= parent_dofmap._ownership_range.first && *it < parent_dofmap._ownership_range.second)
         sumdofs += 1;
     }
-    _global_dim = MPI::sum(sumdofs);
+    _global_dimension = MPI::sum(sumdofs);
   }
   else
   {
-    _global_dim = _ufc_dofmap->global_dimension();
+    _global_dimension = _ufc_dofmap->global_dimension();
   }
 }
 //-----------------------------------------------------------------------------
@@ -232,7 +232,7 @@ DofMap::DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
   init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, mesh);
   
   // Set the global dimension of the dofmap. This will be modified for a periodic mesh
-  _global_dim = _ufc_dofmap->global_dimension();
+  _global_dimension = _ufc_dofmap->global_dimension();
 
   // Build dof map
   const bool reorder = dolfin::parameters["reorder_dofs_serial"];
@@ -272,7 +272,7 @@ DofMap::DofMap(const DofMap& dofmap)
   _neighbours = dofmap._neighbours;
   _is_view = dofmap. _is_view;
   _distributed = dofmap._distributed;
-  _global_dim = dofmap._global_dim;
+  _global_dimension = dofmap._global_dimension;
 }
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()
@@ -287,11 +287,8 @@ bool DofMap::needs_mesh_entities(unsigned int d) const
 }
 //-----------------------------------------------------------------------------
 unsigned int DofMap::global_dimension() const
-{
-  dolfin_assert(_ufc_dofmap);
-  dolfin_assert(_ufc_dofmap->global_dimension() > 0);
-  
-  return _global_dim;
+{  
+  return _global_dimension;
 }
 //-----------------------------------------------------------------------------
 unsigned int DofMap::cell_dimension(std::size_t cell_index) const

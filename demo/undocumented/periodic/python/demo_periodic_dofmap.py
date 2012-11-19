@@ -33,7 +33,7 @@
 from dolfin import *
 
 # Create mesh and finite element
-mesh = UnitSquare(32, 32)
+mesh = UnitSquareMesh(32, 32)
 
 # Source term
 class Source(Expression):
@@ -67,7 +67,7 @@ class PeriodicBoundaryRight(SubDomain):
 
 pbc = PeriodicBoundary()
 pbr = PeriodicBoundaryRight()
-mf = FacetFunction('uint', mesh)
+mf = FacetFunction('sizet', mesh)
 mf.set_all(0)
 pbc.mark(mf, 1)
 pbr.mark(mf, 2)
