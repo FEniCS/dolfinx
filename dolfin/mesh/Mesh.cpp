@@ -25,7 +25,6 @@
 // First added:  2006-05-09
 // Last changed: 2012-10-24
 
-
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>

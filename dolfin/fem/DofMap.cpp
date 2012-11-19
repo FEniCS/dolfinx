@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2012 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -22,7 +22,7 @@
 // Modified by Joachim B Haga, 2012
 //
 // First added:  2007-03-01
-// Last changed: 2012-02-29
+// Last changed: 2012-11-05
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
@@ -32,6 +32,7 @@
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/Restriction.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "DofMapBuilder.h"
 #include "UFCCell.h"
@@ -42,9 +43,10 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
-               const Mesh& dolfin_mesh) : _ufc_dofmap(ufc_dofmap->create()),
-               ufc_offset(0), _is_view(false),
-               _distributed(MPI::num_processes() > 1)
+               const Mesh& dolfin_mesh)
+  : _ufc_dofmap(ufc_dofmap->create()),
+    _global_dimension(0), _ufc_offset(0), _is_view(false),
+    _distributed(MPI::num_processes() > 1)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -83,12 +85,79 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, reorder, _distributed);
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
-               const Mesh& mesh, bool distributed) : ufc_offset(0),
-               _ownership_range(0, 0), _is_view(true),
-               _distributed(distributed)
+DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
+               boost::shared_ptr<const Restriction> restriction)
+  : _ufc_dofmap(ufc_dofmap->create()),
+    _restriction(restriction),
+    _global_dimension(0), _ufc_offset(0), _is_view(false),
+    _distributed(MPI::num_processes() > 1)
 {
-  // NOTE: Ownership range is set to zero since dofmap is a view
+  info("Creating restricted dofmap.");
+  warning("Restricted function space is an experimental feature.");
+
+  dolfin_assert(_ufc_dofmap);
+  dolfin_assert(_restriction);
+
+  // Get mesh
+  const dolfin::Mesh& dolfin_mesh(restriction->mesh());
+
+  // Check for dimensional consistency between the dofmap and mesh
+  check_dimensional_consistency(*_ufc_dofmap, dolfin_mesh);
+
+  // Check that mesh has been ordered
+  if (!dolfin_mesh.ordered())
+  {
+     dolfin_error("DofMap.cpp",
+                  "create mapping of degrees of freedom",
+                  "Mesh is not ordered according to the UFC numbering convention. "
+                  "Consider calling mesh.order()");
+  }
+
+  // Check that we get cell markers, extend later
+  const uint D = dolfin_mesh.topology().dim();
+  if (restriction->dim() != D)
+  {
+    dolfin_error("DofMap.cpp",
+                 "create mapping of degrees of freedom",
+                 "Only cell-based restricted function spaces are currently supported. ");
+  }
+
+  // Generate and number all mesh entities
+  for (uint d = 1; d <= D; ++d)
+  {
+    if (_ufc_dofmap->needs_mesh_entities(d) || (_distributed && d == (D - 1)))
+    {
+      dolfin_mesh.init(d);
+      if (_distributed)
+        MeshPartitioning::number_entities(dolfin_mesh, d);
+    }
+  }
+
+  // FIXME: Think about whether restricted UFC mesh should be created
+  // Create the UFC mesh
+  //const UFCMesh ufc_mesh(dolfin_mesh, domain_markers, domain);
+  const UFCMesh ufc_mesh(dolfin_mesh);
+
+  // FIXME: Think about whether restricted UFC dofmap should be created
+  // Initialize the UFC dofmap
+  //init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh, domain_markers, domain);
+  init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh);
+
+  // FIXME: Should be OK up to here
+
+  // Build restricted dof map
+  const bool reorder = dolfin::parameters["reorder_dofs_serial"];
+  DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, *restriction,
+                       reorder, _distributed);
+}
+//-----------------------------------------------------------------------------
+DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
+               const Mesh& mesh, bool distributed) :
+  _global_dimension(0), _ufc_offset(0),
+  _ownership_range(0, 0), _is_view(true),
+  _distributed(distributed)
+{
+  // Note: Ownership range is set to zero since dofmap is a view
 
   dolfin_assert(!component.empty());
 
@@ -96,7 +165,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   const UFCMesh ufc_mesh(mesh);
 
   // Initialise offset from parent
-  std::size_t offset = parent_dofmap.ufc_offset;
+  std::size_t offset = parent_dofmap._ufc_offset;
 
   // Get parent UFC dof map
   const ufc::dofmap& parent_ufc_dofmap = *(parent_dofmap._ufc_dofmap);
@@ -110,7 +179,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   check_dimensional_consistency(*_ufc_dofmap, mesh);
 
   // Set UFC offset
-  this->ufc_offset = offset;
+  this->_ufc_offset = offset;
 
   // Initialise UFC dofmap
   init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, mesh);
@@ -142,6 +211,9 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
     for (std::size_t i = 0; i < _dofmap[cell_index].size(); ++i)
       _dofmap[cell_index][i] += offset;
   }
+
+  // Set global dimension
+  _global_dimension = _ufc_dofmap->global_dimension();
 
   // Modify dofmap for non-UFC numbering
   ufc_map_to_dofmap.clear();
@@ -186,8 +258,10 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
                const DofMap& dofmap_view, const Mesh& mesh, bool distributed)
-             : _ufc_dofmap(dofmap_view._ufc_dofmap->create()), ufc_offset(0),
-               _is_view(false), _distributed(distributed)
+             :
+  _ufc_dofmap(dofmap_view._ufc_dofmap->create()),
+  _global_dimension(0), _ufc_offset(0),
+  _is_view(false), _distributed(distributed)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -240,7 +314,8 @@ DofMap::DofMap(const DofMap& dofmap)
   _dofmap = dofmap._dofmap;
   _ufc_dofmap.reset(dofmap._ufc_dofmap->create());
   ufc_map_to_dofmap = dofmap.ufc_map_to_dofmap;
-  ufc_offset = dofmap.ufc_offset;
+  _global_dimension = dofmap._global_dimension;
+  _ufc_offset = dofmap._ufc_offset;
   _ownership_range = dofmap._ownership_range;
   _off_process_owner = dofmap._off_process_owner;
   _shared_dofs = dofmap._shared_dofs;
@@ -262,9 +337,7 @@ bool DofMap::needs_mesh_entities(unsigned int d) const
 //-----------------------------------------------------------------------------
 unsigned int DofMap::global_dimension() const
 {
-  dolfin_assert(_ufc_dofmap);
-  dolfin_assert(_ufc_dofmap->global_dimension() > 0);
-  return _ufc_dofmap->global_dimension();
+  return _global_dimension;
 }
 //-----------------------------------------------------------------------------
 unsigned int DofMap::cell_dimension(std::size_t cell_index) const
@@ -289,6 +362,11 @@ unsigned int DofMap::num_facet_dofs() const
 {
   dolfin_assert(_ufc_dofmap);
   return _ufc_dofmap->num_facet_dofs();
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<const dolfin::Restriction> DofMap::restriction() const
+{
+  return _restriction;
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t> DofMap::ownership_range() const
@@ -502,6 +580,49 @@ void DofMap::init_ufc_dofmap(ufc::dofmap& dofmap,
     UFCCell ufc_cell(dolfin_mesh);
     for (CellIterator cell(dolfin_mesh); !cell.end(); ++cell)
     {
+      ufc_cell.update(*cell);
+      dofmap.init_cell(ufc_mesh, ufc_cell);
+    }
+    dofmap.init_cell_finalize();
+  }
+}
+//-----------------------------------------------------------------------------
+void DofMap::init_ufc_dofmap(ufc::dofmap& dofmap,
+                             const ufc::mesh ufc_mesh,
+                             const Mesh& dolfin_mesh,
+                             const MeshFunction<uint>& domain_markers,
+                             uint domain)
+{
+  // Check that we get cell markers, extend later
+  if (domain_markers.dim() != dolfin_mesh.topology().dim())
+  {
+    dolfin_error("DofMap.cpp",
+                 "create mapping of degrees of freedom",
+                 "Only cell-based restricted function spaces are currently supported. ");
+  }
+
+  // FIXME: Not yet working in parallel
+  not_working_in_parallel("Restricted of function spaces");
+
+  // Check that we have all mesh entities
+  for (uint d = 0; d <= dolfin_mesh.topology().dim(); ++d)
+  {
+    if (dofmap.needs_mesh_entities(d) && dolfin_mesh.num_entities(d) == 0)
+      dolfin_error("DofMap.cpp",
+                   "initialize mapping of degrees of freedom",
+                   "Missing entities of dimension %d. Try calling mesh.init(%d)", d, d);
+  }
+
+  // Initialize UFC dof map
+  const bool init_cells = dofmap.init_mesh(ufc_mesh);
+  if (init_cells)
+  {
+    UFCCell ufc_cell(dolfin_mesh);
+    for (CellIterator cell(dolfin_mesh); !cell.end(); ++cell)
+    {
+      // FIXME: Check whether this makes sense in parallel
+      if (domain_markers[cell->index()] != domain)
+        continue;
       ufc_cell.update(*cell);
       dofmap.init_cell(ufc_mesh, ufc_cell);
     }

@@ -65,6 +65,11 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   // Create vector to point to dofs
   std::vector<const std::vector<DolfinIndex>* > dofs(rank);
 
+  // FIXME: We iterate over the entire mesh even if the function space
+  // is restricted. This works out fine since the local dofmap
+  // returned on each cell will be an empty vector, but we might think
+  // about optimizing this further.
+
   // Build sparsity pattern for cell integrals
   if (cells)
   {
