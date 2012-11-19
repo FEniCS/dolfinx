@@ -50,19 +50,19 @@ namespace dolfin
     static void finalize();
 
     /// Return true if DOLFIN intialised MPI (and is therefore responsible
-    //  for finalization)
+    /// for finalization)
     static bool responsible_mpi();
 
-    /// Return true if DOLFIN intialised PETSc (and is therefore responsible
-    //  for finalization)
+    /// Return true if DOLFIN intialised PETSc (and is therefore
+    /// responsible for finalization)
     static bool responsible_petsc();
 
-    // Check if MPI has been initialised (returns true if MPI has been
-    // initialised, even if it is later finalised)
+    /// Check if MPI has been initialised (returns true if MPI has been
+    /// initialised, even if it is later finalised)
     static bool mpi_initialized();
 
-    // Check if MPI has been finalized (returns true if MPI has been
-    // finalised)
+    /// Check if MPI has been finalized (returns true if MPI has been
+    /// finalised)
     static bool mpi_finalized();
 
   private:

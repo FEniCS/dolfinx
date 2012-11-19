@@ -20,7 +20,7 @@
 # Modified by Johan Hake, 2009
 #
 # First added:  2008-03-17
-# Last changed: 2009-10-06
+# Last changed: 2012-11-12
 
 from dolfin import *
 from numpy import array
@@ -30,7 +30,7 @@ if not has_cgal():
     exit(0)
 
 # Create mesh and a point in the mesh
-mesh = UnitCube(8, 8, 8);
+mesh = UnitCubeMesh(8, 8, 8);
 x = (0.31, 0.32, 0.33)
 
 # A user-defined function

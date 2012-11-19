@@ -45,7 +45,7 @@ namespace dolfin
 
     /// Compute vertex colors
     static uint compute_local_vertex_coloring(const Graph& graph,
-                                              std::vector<uint>& colors);
+                                          std::vector<uint>& colors);
 
   private:
 

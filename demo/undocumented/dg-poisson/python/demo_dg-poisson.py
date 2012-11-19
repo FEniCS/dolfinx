@@ -34,12 +34,12 @@ using a discontinuous Galerkin formulation (interior penalty method).
 # Modified by Anders Logg 2008-2011
 #
 # First added:  2007-10-02
-# Last changed: 2011-06-28
+# Last changed: 2012-11-12
 
 from dolfin import *
 
 # Create mesh and define function space
-mesh = UnitSquare(24, 24)
+mesh = UnitSquareMesh(24, 24)
 V = FunctionSpace(mesh, "DG", 1)
 
 # Define test and trial functions

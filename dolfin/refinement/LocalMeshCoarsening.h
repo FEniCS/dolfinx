@@ -45,7 +45,7 @@ namespace dolfin
   private:
 
     /// Check that edge collapse is ok
-    static bool coarsen_mesh_ok(Mesh& mesh, uint edge_index, uint* edge_vertex,
+    static bool coarsen_mesh_ok(Mesh& mesh, std::size_t edge_index, std::size_t* edge_vertex,
                                 MeshFunction<bool>& vertex_forbidden);
 
     /// Collapse edge by node deletion
@@ -55,7 +55,7 @@ namespace dolfin
                               std::vector<int>& old2new_vertex,
                               std::vector<int>& old2new_cell,
                               MeshEditor& editor,
-                              uint& current_cell);
+                              std::size_t& current_cell);
 
     /// Coarsen simplicial cell by edge collapse
     static bool coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,

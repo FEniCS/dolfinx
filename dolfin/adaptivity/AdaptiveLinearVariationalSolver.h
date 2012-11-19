@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Marie E. Rognes
+// Copyright (C) 2010--2012 Marie E. Rognes
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2011.
 //
 // First added:  2010-08-19
-// Last changed: 2011-07-05
+// Last changed: 2012-11-14
 
 #ifndef __ADAPTIVE_LINEAR_VARIATIONAL_SOLVER_H
 #define __ADAPTIVE_LINEAR_VARIATIONAL_SOLVER_H
@@ -32,6 +32,7 @@
 namespace dolfin
 {
   // Forward declarations
+  class Form;
   class Function;
   class LinearVariationalProblem;
   class GoalFunctional;
@@ -70,28 +71,37 @@ namespace dolfin
     /// *Arguments*
     ///     problem (_LinearVariationalProblem_)
     ///         The primal problem
-    AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem);
+    ///     goal (_GoalFunctional_)
+    ///         The goal functional
+    AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem,
+                                    GoalFunctional& goal);
 
-    /// Create AdaptiveLinearVariationalSolver
+    /// Create AdaptiveLinearVariationalSolver (shared ptr version)
     ///
     /// *Arguments*
     ///     problem (_LinearVariationalProblem_)
     ///         The primal problem
-    AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem);
+    ///     goal (_GoalFunctional_)
+    ///         The goal functional
+    AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem,
+                                    boost::shared_ptr<GoalFunctional> goal);
+
+    /// Create AdaptiveLinearVariationalSolver from variational
+    /// problem, goal form and error control instance
+    ///
+    /// *Arguments*
+    ///     problem (_LinearVariationalProblem_)
+    ///         The primal problem
+    ///     goal (_Form_)
+    ///         The goal functional
+    ///     control (_ErrorControl_)
+    ///         An error controller object
+    AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem,
+                                    boost::shared_ptr<Form> goal,
+                                    boost::shared_ptr<ErrorControl> control);
 
     /// Destructor
     ~AdaptiveLinearVariationalSolver() {/* Do nothing */};
-
-    /// Solve problem such that the error measured in the goal
-    /// functional 'M' is less than the given tolerance using the
-    /// GoalFunctional's ErrorControl object.
-    ///
-    /// *Arguments*
-    ///     tol  (double)
-    ///         The error tolerance
-    ///     goal  (_GoalFunctional_)
-    ///         The goal functional
-    virtual void solve(const double tol, GoalFunctional& M);
 
     /// Solve the primal problem.
     ///
@@ -138,6 +148,16 @@ namespace dolfin
     virtual uint num_dofs_primal();
 
   private:
+
+    /// Helper function for instance initialization
+    ///
+    /// *Arguments*
+    ///    problem (_LinearVariationalProblem_)
+    ///        The primal problem
+    ///    u (_GoalFunctional_)
+    ///        The goal functional
+    void init(boost::shared_ptr<LinearVariationalProblem> problem,
+              boost::shared_ptr<GoalFunctional> goal);
 
     // The primal problem
     boost::shared_ptr<LinearVariationalProblem> problem;

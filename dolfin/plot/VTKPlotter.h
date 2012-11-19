@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Benjamin Kehlet 2012
+// Modified by Joachim B Haga 2012
 //
 // First added:  2012-05-23
-// Last changed: 2012-08-11
+// Last changed: 2012-11-13
 
 #ifndef __VTK_PLOTTER_H
 #define __VTK_PLOTTER_H
@@ -33,20 +34,17 @@
 #include <dolfin/parameter/Parameters.h>
 
 class vtkObject;
+class QVTKWidget;
 
 namespace dolfin
 {
 
   // Forward declarations
-  class DirichletBC;
   class Expression;
-  class ExpressionWrapper;
-  class Function;
-  class GenericVTKPlottable;
   class Mesh;
-  class PrivateVTKPipeline;
+  class GenericVTKPlottable;
+  class VTKWindowOutputStage;
   template<typename T> class Array;
-  template<typename T> class MeshFunction;
 
   /// This class enables visualization of various DOLFIN entities.
   /// It supports visualization of meshes, functions, expressions, boundary
@@ -69,15 +67,20 @@ namespace dolfin
   /// ============= ============ =============== =================================
   ///  mode           String        "auto"        For vector valued functions,
   ///                                             this parameter may be set to
-  ///                                             "warp" to enable vector warping
-  ///                                             visualization
+  ///                                             "glyphs" or "displacement".
+  ///                                             Scalars may be set to "warp" in
+  ///                                             2D only. A value of "color" is
+  ///                                             valid in all cases; for vectors,
+  ///                                             the norms are used. See below for
+  ///                                             a summary of default modes,
+  ///                                             used when set to "auto".
   ///  interactive    Boolean     False           Enable/disable interactive mode
   ///                                             for the rendering window.
   ///                                             For repeated plots of the same
   ///                                             object (animated plots), this
-  ///                                             parameter must be set to false
+  ///                                             parameter should be set to false.
   ///  wireframe      Boolean     True for        Enable/disable wireframe
-  ///                             meshes, else    rendering of the object
+  ///                             meshes, else    rendering of the object.
   ///                             false
   ///  title          String      Inherited       The title of the rendering
   ///                             from the        window
@@ -88,11 +91,24 @@ namespace dolfin
   ///  scalarbar      Boolean     False for       Hide/show the colormapping bar
   ///                             meshes, else
   ///                             true
-  ///  rescale        Boolean     False           Enable/disable recomputation
+  ///  axes           Boolean     False           Show X-Y-Z axes.
+  ///
+  ///  rescale        Boolean     True            Enable/disable recomputation
   ///                                             of the scalar to color mapping
   ///                                             on every iteration when performing
   ///                                             repeated/animated plots of the same
-  ///                                             data
+  ///                                             data. If both range_min and
+  ///                                             range_max are set, this parameter
+  ///                                             is ignored.
+  ///  range_min      Double                      Set lower range of data values.
+  ///                                             Disables automatic (re-)computation
+  ///                                             of the lower range.
+  ///  range_max      Double                      Set upper range of data values.
+  ///                                             Disables automatic (re-)computation
+  ///                                             of the upper range.
+  ///  elevate        Double      -65.0 for 2D    Set camera elevation.
+  ///                             warped scalars,
+  ///                             0.0 otherwise
   ///  prefix         String      "dolfin_plot_"  Filename prefix used when
   ///                                             saving plots to file in
   ///                                             interactive mode. An integer
@@ -105,6 +121,21 @@ namespace dolfin
   ///                                             in pixels
   ///  window_height  Integer     400             The height of the plotting window
   ///                                             in pixels
+  ///  tile_windows   Boolean     True            Automatically tile plot windows.
+  ///
+  ///  key            String                      Key (id) of the plot window, used to
+  ///                                             decide if a new plotter should be
+  ///                                             created or a current one updated
+  ///                                             when called through the static
+  ///                                             plot() interface (in plot.h).
+  ///                                             If not set, the object's unique
+  ///                                             id (Variable::id) is used.
+  ///  input_keys     String      ""              Synthesize key presses, as if these
+  ///                                             keys are pressed by the user in
+  ///                                             the plot window.
+  ///                                             For example: "ww++m" shows the data
+  ///                                             as large points on a wireframe
+  ///                                             mesh.
   /// ============= ============ =============== =================================
   ///
   /// The default visualization mode for the different plot types are as follows:
@@ -113,9 +144,10 @@ namespace dolfin
   ///  Plot type                  Default visualization mode   Alternatives
   /// =========================  ============================ ===================
   ///  Meshes                     Wireframe rendering           None
-  ///  2D scalar functions        Scalar warping                None
+  ///  2D scalar functions        Scalar warping                Color mapping
   ///  3D scalar functions        Color mapping                 None
-  ///  2D/3D vector functions     Glyphs (vector arrows)        Vector warping
+  ///  2D/3D vector functions     Glyphs (vector arrows)        Displacements,
+  ///                                                           Color mapping (norm)
   /// =========================  ============================ ===================
   ///
   /// Expressions and boundary conditions are also visualized according to the
@@ -125,33 +157,17 @@ namespace dolfin
   {
   public:
 
-    /// Create plotter for a mesh
-    explicit VTKPlotter(boost::shared_ptr<const Mesh> mesh);
+    /// Create plotter for a variable. If a widget is supplied, this widget
+    /// will be used for drawing, instead of a new top-level widget. Ownership
+    /// is transferred.
+    explicit VTKPlotter(boost::shared_ptr<const Variable>, QVTKWidget *widget = NULL);
 
-    /// Create plotter for a function
-    explicit VTKPlotter(boost::shared_ptr<const Function> function);
-
-    /// Create plotter for an expression
-    explicit VTKPlotter(boost::shared_ptr<const ExpressionWrapper> expression);
-
-    /// Create plotter for an expression
+    /// Create plotter for an Expression with associated Mesh. If a widget is
+    /// supplied, this widget will be used for drawing, instead of a new
+    /// top-level widget. Ownership is transferred.
     explicit VTKPlotter(boost::shared_ptr<const Expression> expression,
-                        boost::shared_ptr<const Mesh> mesh);
-
-    /// Create plotter for Dirichlet B.C.
-    explicit VTKPlotter(boost::shared_ptr<const DirichletBC> bc);
-
-    /// Create plotter for an uint valued mesh function
-    explicit VTKPlotter(boost::shared_ptr<const MeshFunction<unsigned int> > mesh_function);
-
-    /// Create plotter for an intr valued mesh function
-    explicit VTKPlotter(boost::shared_ptr<const MeshFunction<int> > mesh_function);
-
-    /// Create plotter for a double valued mesh function
-    explicit VTKPlotter(boost::shared_ptr<const MeshFunction<double> > mesh_function);
-
-    /// Create plotter for a boolean valued mesh function
-    explicit VTKPlotter(boost::shared_ptr<const MeshFunction<bool> > mesh_function);
+                        boost::shared_ptr<const Mesh> mesh,
+                        QVTKWidget *wiget = NULL);
 
     /// Destructor
     ~VTKPlotter();
@@ -159,75 +175,75 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters()
     {
+      std::set<std::string> allowed_modes;
+      allowed_modes.insert("auto");
+      allowed_modes.insert("displacement");
+      allowed_modes.insert("warp");
+      allowed_modes.insert("glyphs");
+      allowed_modes.insert("color");
+
       Parameters p("vtk_plotter");
-      p.add("mode", "auto");
+      p.add("mode", "auto", allowed_modes);
       p.add("interactive", false);
       p.add("wireframe", false);
       p.add("title", "Plot");
       p.add("scale", 1.0);
       p.add("scalarbar", true);
-      p.add("autorange", true);
-      p.add("range_min", 0.0);
-      p.add("range_max", 1.0);
-      p.add("rescale", false);
+      p.add("axes", false);
+      p.add<double>("elevate");
+      p.add<double>("range_min");
+      p.add<double>("range_max");
+      p.add("rescale", true);
       p.add("prefix", "dolfin_plot_");
       p.add("helptext", true);
-      p.add("window_width", 600);
-      p.add("window_height", 400);
+      p.add("window_width",  600, /*min*/ 50, /*max*/ 5000);
+      p.add("window_height", 400, /*min*/ 50, /*max*/ 5000);
+      p.add("tile_windows", true);
+
+      p.add<std::string>("key");
+      p.add<double>("hide_below"); // Undocumented on purpose, may be removed
+      p.add<double>("hide_above"); // Undocumented on purpose, may be removed
+      p.add<std::string>("input_keys");
       return p;
     }
 
-    /// Default parameter values for mesh plotting
-    static Parameters default_mesh_parameters()
-    {
-      Parameters p = default_parameters();
-      p["wireframe"] = true;
-      p["scalarbar"] = false;
-      return p;
-    }
-
-    // This function should be private, but is available
-    // to keep backward compatibilty with Viper
-    // Update all VTK structures
-    void update();
-
-    // These functions are kept for backward compatibility with Viper
-    // TODO: Clean up this and deprecate these functions.
-    void update(boost::shared_ptr<const Mesh> mesh);
-    void update(boost::shared_ptr<const Function> function);
-    void update(boost::shared_ptr<const ExpressionWrapper> expression);
-    void update(boost::shared_ptr<const Expression> expression, boost::shared_ptr<const Mesh> mesh);
-    void update(boost::shared_ptr<const DirichletBC> bc);
-    void update(boost::shared_ptr<const MeshFunction<unsigned int> > mesh_function);
-    void update(boost::shared_ptr<const MeshFunction<int> > mesh_function);
-    void update(boost::shared_ptr<const MeshFunction<double> > mesh_function);
-    void update(boost::shared_ptr<const MeshFunction<bool> > mesh_function);
+    bool is_compatible(boost::shared_ptr<const Variable> variable) const;
 
     /// Plot the object
-    void plot();
+    void plot(boost::shared_ptr<const Variable> variable=boost::shared_ptr<const Variable>());
+
+    // FIXME: Deprecated? What should it do?
+    void update(boost::shared_ptr<const Variable> variable=boost::shared_ptr<const Variable>())
+    {
+      warning("VTKPlotter::update is deprecated, use ::plot instead");
+      plot(variable);
+    }
 
     /// Make the current plot interactive
     void interactive(bool enter_eventloop = true);
 
-    void start_eventloop();
+    /// Save plot to PNG file (file suffix appended automatically, filename
+    /// optionally built from prefix)
+    void write_png(std::string filename="");
 
-    /// Save plot to PNG file (file suffix appended automatically)
-    void write_png(std::string filename);
+    /// Save plot to PDF file (file suffix appended automatically, filename
+    /// optionally built from prefix)
+    void write_pdf(std::string filename="");
 
-    /// Get size of the plot window
-    void get_window_size(int& width, int& height);
+    /// Return key (i.e., plotter id) of the object to plot
+    const std::string& key() const;
 
-    /// Set the position of the plot window on the screen
-    void set_window_position(int x, int y);
+    /// Set the key (plotter id)
+    void set_key(std::string key);
 
-    /// Return unique ID of the object to plot
-    uint id() const
-    { return _id; }
+    /// Return default key (plotter id) of a Variable (object to plot).
+    static std::string to_key(const Variable &var);
 
     /// Camera control
     void azimuth(double angle);
     void elevate(double angle);
     void dolly(double value);
+    void zoom(double zoomfactor);
     void set_viewangle(double angle);
 
     // Set the range of the color table
@@ -235,47 +251,61 @@ namespace dolfin
 
     void add_polygon(const Array<double>& points);
 
-    // Make all plot windows interactive
-    static void all_interactive();
+    // Make all plot windows interactive. If really is set, the interactive
+    // mode is entered even if 'Q' has been pressed.
+    static void all_interactive(bool really=false);
 
-  private:
+    enum Modifiers
+    {
+      // Zero low byte, so that a char can be added
+      SHIFT    = 0x100,
+      ALT      = 0x200,
+      CONTROL  = 0x400
+    };
+
+    // Called (from within VTKWindowOutputStage) when a key is pressed. Public,
+    // but intended for internal (and subclass) use. Returns true if the
+    // keypress is handled.
+    virtual bool key_pressed(int modifiers, char key, std::string keysym);
+
+    // Returns the QVTKWidget that contains the plot (when compiled with Qt).
+    QVTKWidget *get_widget() const;
+
+  protected:
+
+    void update_pipeline(boost::shared_ptr<const Variable> variable=boost::shared_ptr<const Variable>());
 
     // The pool of plotter objects. Objects register
     // themselves in the list when created and remove themselves when
-    // destroyed. 
+    // destroyed.
     // Used when calling interactive() (which should have effect on
     // all plot windows)
-    static boost::shared_ptr<std::list<VTKPlotter*> > all_plotters;
-
+    static boost::shared_ptr<std::list<VTKPlotter*> > active_plotters;
 
     // Initialization common to all constructors.
     // Setup all pipeline objects and connect them.
     void init();
 
+    // Has init been called
+    bool _initialized;
+
     // Set the title parameter from the name and label of the Variable to plot
-    void set_title(const std::string& name, const std::string& label);
+    void set_title_from(const Variable &variable);
 
     // Return the hover-over help text
     std::string get_helptext();
 
-    // Keypress callback
-    void keypressCallback(vtkObject* caller,
-                          long unsigned int eventId,
-                          void* callData);
-
     // The plottable object (plot data wrapper)
     boost::shared_ptr<GenericVTKPlottable> _plottable;
 
-    boost::scoped_ptr<PrivateVTKPipeline> vtk_pipeline;
+    // The output stage
+    boost::scoped_ptr<VTKWindowOutputStage> vtk_pipeline;
 
     // The number of plotted frames
     uint _frame_counter;
 
-    // The unique ID (inherited from Variable) for the object to plot
-    uint _id;
-
-    // Flag to set the state of vertex labels
-    bool _toggle_vertex_labels;
+    // The window id (derived from Variable::id unless overridden by user)
+    std::string _key;
 
     // Counter for the automatically named hardcopies
     static int hardcopy_counter;
@@ -285,7 +315,10 @@ namespace dolfin
     // Keep a shared_ptr to the list of plotter to ensure that the
     // list is not destroyed before the last VTKPlotter object is
     // destroyed.
-    boost::shared_ptr<std::list<VTKPlotter*> > all_plotters_local_copy;
+    boost::shared_ptr<std::list<VTKPlotter*> > active_plotters_local_copy;
+
+    // Usually false, but if true ('Q' keyboard binding) then all event loops are skipped.
+    static bool run_to_end;
   };
 
 }

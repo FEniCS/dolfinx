@@ -106,13 +106,7 @@ SLEPcEigenSolver::~SLEPcEigenSolver()
 {
   // Destroy solver environment
   if (eps)
-  {
-    #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR <= 1
-    EPSDestroy(eps);
-    #else
     EPSDestroy(&eps);
-    #endif
-  }
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve()
@@ -192,13 +186,7 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, uint i) const
   EPSGetConverged(eps, &num_computed_eigenvalues);
 
   if (ii < num_computed_eigenvalues)
-  {
-    #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR >= 1
     EPSGetEigenvalue(eps, ii, &lr, &lc);
-    #else
-    EPSGetValue(eps, ii, &lr, &lc);
-    #endif
-  }
   else
   {
     dolfin_error("SLEPcEigenSolver.cpp",
@@ -253,13 +241,7 @@ int SLEPcEigenSolver::get_number_converged() const
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_deflation_space(const PETScVector& deflation_space)
 {
-  #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR >= 1
   EPSSetDeflationSpace(eps, 1, deflation_space.vec().get());
-  #else
-  dolfin_error("SLEPcEigenSolver.cpp",
-               "set deflation space for SLEPc eigensolver",
-               "Setting a deflation space requires SLEPc version 3.1 or higher");
-  #endif
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::read_parameters()
@@ -305,12 +287,7 @@ void SLEPcEigenSolver::set_spectral_transform(std::string transform,
   EPSGetST(eps, &st);
   if (transform == "shift-and-invert")
   {
-    #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR >= 1
     STSetType(st, STSINVERT);
-    #else
-    STSetType(st, STSINV);
-    #endif
-
     STSetShift(st, shift);
   }
   else
@@ -340,8 +317,6 @@ void SLEPcEigenSolver::set_spectrum(std::string spectrum)
     EPSSetWhichEigenpairs(eps, EPS_LARGEST_IMAGINARY);
   else if (spectrum == "smallest imaginary")
     EPSSetWhichEigenpairs(eps, EPS_SMALLEST_IMAGINARY);
-
-  #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR >= 1
   else if (spectrum == "target magnitude")
   {
     EPSSetWhichEigenpairs(eps, EPS_TARGET_MAGNITUDE);
@@ -357,8 +332,6 @@ void SLEPcEigenSolver::set_spectrum(std::string spectrum)
     EPSSetWhichEigenpairs(eps, EPS_TARGET_IMAGINARY);
     EPSSetTarget(eps, parameters["spectral_shift"]);
   }
-  #endif
-
   else
   {
     dolfin_error("SLEPcEigenSolver.cpp",

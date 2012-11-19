@@ -120,17 +120,9 @@ Set output stream
 Get log level
 ";
 
-%feature("docstring")  dolfin::list_timings "
-List a summary of timings and tasks, optionally clearing stored timings
-";
-
-%feature("docstring")  dolfin::summary "
-This function is deprecated, use list_timings
-";
-
-%feature("docstring")  dolfin::timing "
-Return timing (average) for given task, optionally clearing timing
-for task
+%feature("docstring")  dolfin::monitor_memory_usage "
+Monitor memory usage. Call this function at the start of a
+program to continuously monitor the memory usage of the process.
 ";
 
 %feature("docstring")  dolfin::not_working_in_parallel "

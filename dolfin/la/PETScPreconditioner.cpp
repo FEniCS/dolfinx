@@ -28,12 +28,25 @@
 #include <petscmat.h>
 #include <petscpcmg.h>
 #include <dolfin/common/MPI.h>
-#include <dolfin/la/KrylovSolver.h>
-#include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/log/dolfin_log.h>
+#include "GenericVector.h"
+#include "KrylovSolver.h"
+#include "PETScKrylovSolver.h"
+#include "PETScVector.h"
 #include "PETScPreconditioner.h"
 
 using namespace dolfin;
+
+class PETScMatNullSpaceDeleter
+{
+public:
+  void operator() (MatNullSpace* ns)
+  {
+    if (*ns)
+      MatNullSpaceDestroy(ns);
+    delete ns;
+  }
+};
 
 // Mapping from preconditioner string to PETSc
 const std::map<std::string, const PCType> PETScPreconditioner::_methods
@@ -110,8 +123,14 @@ Parameters PETScPreconditioner::default_parameters()
   Parameters p_ml("ml");
   p_ml.add<uint>("max_coarse_size");
   p_ml.add<double>("aggregation_damping_factor");
+  p_ml.add<double>("threshold");
   p_ml.add<uint>("max_num_levels");
   p_ml.add<uint>("print_level", 0, 10);
+
+  std::set<std::string> ml_schemes;
+  ml_schemes.insert("v");
+  ml_schemes.insert("w");
+  p_ml.add<std::string>("cycle_type", ml_schemes);
 
   std::set<std::string> aggregation_schemes;
   aggregation_schemes.insert("Uncoupled");
@@ -176,12 +195,8 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     #if PETSC_HAVE_HYPRE
     PCSetType(pc, PCHYPRE);
 
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
     PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
     PCFactorSetShiftAmount(pc, PETSC_DECIDE);
-    #else
-    PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
-    #endif
 
     if (type == "hypre_amg" || type == "amg")
     {
@@ -310,11 +325,13 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
                             boost::lexical_cast<std::string>(max_size).c_str());
     }
 
-    //PetscOptionsSetValue("-pc_ml_Threshold",
-    //                      boost::lexical_cast<std::string>(2).c_str());
-
-    //PetscOptionsSetValue("-pc_ml_PrintLevel",
-    //                      boost::lexical_cast<std::string>(6).c_str());
+    // Threshold parameters used in aggregation
+    if (parameters("ml")["threshold"].is_set())
+    {
+      const double threshold = parameters("ml")["threshold"];
+      PetscOptionsSetValue("-pc_ml_Threshold",
+                            boost::lexical_cast<std::string>(threshold).c_str());
+    }
 
     // --- PETSc parameters
 
@@ -328,9 +345,11 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
                            boost::lexical_cast<std::string>(num_sweeps).c_str());
     }
 
-    // Cycle type (v or w)
-    //PetscOptionsSetValue("-pc_mg_cycles",
-    //                      boost::lexical_cast<std::string>(v).c_str());
+    if (parameters("ml")["cycle_type"].is_set())
+    {
+      const std::string type = parameters("mg")["cycle_type"];
+      PetscOptionsSetValue("-pc_mg_cycles", type.c_str());
+    }
 
     // Coarse level solver
     #if PETSC_HAVE_MUMPS
@@ -410,12 +429,8 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   else if (type != "default")
   {
     PCSetType(pc, _methods.find(type)->second);
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 1
     PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
     PCFactorSetShiftAmount(pc, parameters["shift_nonzero"]);
-    #else
-    PCFactorSetShiftNonzero(pc, parameters["shift_nonzero"]);
-    #endif
   }
 
   PCFactorSetLevels(pc, parameters("ilu")["fill_level"]);
@@ -430,6 +445,44 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     PCSetUp(pc);
     PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
   }
+}
+//-----------------------------------------------------------------------------
+void PETScPreconditioner::set_nullspace(const std::vector<const GenericVector*> nullspace)
+{
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR < 3
+  dolfin_error("PETScMatrix.cpp",
+               "set approximate null space for PETSc matrix",
+               "This is supported by PETSc version > 3.2");
+  #else
+  if (nullspace.empty())
+  {
+    // Clear nullspace
+    petsc_nullspace.reset();
+    _nullspace.clear();
+  }
+  else
+  {
+    // Copy vectors
+    for (uint i = 0; i < nullspace.size(); ++i)
+    {
+      dolfin_assert(nullspace[i]);
+      const PETScVector& x = nullspace[i]->down_cast<PETScVector>();
+
+      // Copy vector
+      _nullspace.push_back(x);
+    }
+
+    // Get pointers to underlying PETSc objects
+    std::vector<Vec> petsc_vec(nullspace.size());
+    for (uint i = 0; i < nullspace.size(); ++i)
+      petsc_vec[i] = *(_nullspace[i].vec().get());
+
+    // Create null space
+    petsc_nullspace.reset(new MatNullSpace, PETScMatNullSpaceDeleter());
+    MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE, nullspace.size(),
+                       &petsc_vec[0], petsc_nullspace.get());
+  }
+  #endif
 }
 //-----------------------------------------------------------------------------
 std::string PETScPreconditioner::str(bool verbose) const

@@ -89,7 +89,7 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
   const uint vertices_per_cell = mesh.type().num_entities(0);
   for (uint i = 0; i < num_cells; ++i)
   {
-    std::vector<uint> c(vertices_per_cell);
+    std::vector<std::size_t> c(vertices_per_cell);
     std::copy(new_connections.begin() + i*vertices_per_cell,
               new_connections.begin() + i*vertices_per_cell + vertices_per_cell,
               c.begin());
@@ -102,7 +102,7 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
 
   // Initialise coloring data
   typedef std::map<const std::vector<uint>, std::pair<std::vector<uint>,
-           std::vector<std::vector<uint> > > >::const_iterator ConstMeshColoringData;
+           std::vector<std::vector<std::size_t> > > >::const_iterator ConstMeshColoringData;
 
   // Get old coloring
   ConstMeshColoringData mesh_coloring
@@ -116,7 +116,7 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
 
   // Get old coloring data
   const std::vector<uint>& colors = mesh_coloring->second.first;
-  const std::vector<std::vector<uint> >&
+  const std::vector<std::vector<std::size_t> >&
     entities_of_color = mesh_coloring->second.second;
   dolfin_assert(colors.size() == num_cells);
   dolfin_assert(!entities_of_color.empty());
@@ -125,14 +125,14 @@ dolfin::Mesh MeshRenumbering::renumber_by_color(const Mesh& mesh,
   // New coloring data
   dolfin_assert(new_mesh.topology().coloring.empty());
   std::vector<uint> new_colors(colors.size());
-  std::vector<std::vector<uint> > new_entities_of_color(num_colors);
+  std::vector<std::vector<std::size_t> > new_entities_of_color(num_colors);
 
   uint current_cell = 0;
   for (uint color = 0; color < num_colors; color++)
   {
     // Get the array of cell indices of current color
-    const std::vector<uint>& colored_cells = entities_of_color[color];
-    std::vector<uint>& new_colored_cells = new_entities_of_color[color];
+    const std::vector<std::size_t>& colored_cells = entities_of_color[color];
+    std::vector<std::size_t>& new_colored_cells = new_entities_of_color[color];
 
     // Update cell color data
     for (uint i = 0; i < colored_cells.size(); i++)
@@ -174,7 +174,7 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
   new_coordinates.resize(coordinates_size);
 
   typedef std::map<const std::vector<uint>, std::pair<std::vector<uint>,
-           std::vector<std::vector<uint> > > >::const_iterator MeshColoringData;
+           std::vector<std::vector<std::size_t> > > >::const_iterator MeshColoringData;
 
   info("Renumbering mesh by cell colors.");
   info(mesh);
@@ -200,7 +200,7 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
 
   // Get coloring data (copies since the data will be deleted mesh.clear())
   const std::vector<uint>& colors_old = mesh_coloring->second.first;
-  const std::vector<std::vector<uint> >&
+  const std::vector<std::vector<std::size_t> >&
     entities_of_color_old = mesh_coloring->second.second;
   dolfin_assert(colors_old.size() == num_cells);
   dolfin_assert(!entities_of_color_old.empty());
@@ -218,7 +218,7 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
   for (uint color = 0; color < num_colors; ++color)
   {
     // Get the array of cell indices of current color
-    const std::vector<uint>& colored_cells = entities_of_color_old[color];
+    const std::vector<std::size_t>& colored_cells = entities_of_color_old[color];
 
     // Iterate over cells for current color
     for (uint i = 0; i < colored_cells.size(); i++)
@@ -227,14 +227,14 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
       Cell cell(mesh, colored_cells[i]);
 
       // Get array of vertices for current cell
-      const uint* cell_vertices = cell.entities(0);
+      const std::size_t* cell_vertices = cell.entities(0);
       const uint num_vertices   = cell.num_entities(0);
 
       // Iterate over cell vertices
       for (uint j = 0; j < num_vertices; j++)
       {
         // Get vertex index
-        const uint vertex_index = cell_vertices[j];
+        const std::size_t vertex_index = cell_vertices[j];
 
         // Renumber and copy coordinate data if vertex is not yet renumbered
         if (new_vertex_indices[vertex_index] == -1)
@@ -246,7 +246,7 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
         }
 
         // Renumber and copy connectivity data (must be done after vertex renumbering)
-        const uint new_vertex_index = new_vertex_indices[vertex_index];
+        const std::size_t new_vertex_index = new_vertex_indices[vertex_index];
         new_connections[connections_offset++] = new_vertex_index;
       }
     }

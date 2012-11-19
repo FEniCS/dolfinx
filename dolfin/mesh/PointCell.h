@@ -51,15 +51,15 @@ namespace dolfin
     uint orientation(const Cell& cell) const;
 
     /// Create entities e of given topological dimension from vertices v
-    void create_entities(std::vector<std::vector<uint> >& e, uint dim,
-                         const uint* v) const;
+    void create_entities(std::vector<std::vector<std::size_t> >& e, uint dim,
+                         const std::size_t* v) const;
 
     /// Order entities locally (connectivity 1-0, 2-0, 2-1)
     void order(Cell& cell,
-               const std::vector<uint>& local_to_global_vertex_indices) const;
+               const std::vector<std::size_t>& local_to_global_vertex_indices) const;
 
     /// Refine cell uniformly
-    void refine_cell(Cell& cell, MeshEditor& editor, uint& current_cell) const;
+    void refine_cell(Cell& cell, MeshEditor& editor, std::size_t& current_cell) const;
 
     /// Compute (generalized) volume (area) of triangle
     double volume(const MeshEntity& triangle) const;

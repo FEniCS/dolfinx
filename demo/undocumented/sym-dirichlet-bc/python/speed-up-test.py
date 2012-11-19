@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2008-08-13
-# Last changed: 2008-08-13
+# Last changed: 2012-11-12
 
 from dolfin import *
 import time
@@ -31,7 +31,7 @@ class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
         return bool(on_boundary and x[0] < DOLFIN_EPS)
 
-mesh = UnitCube(32,32,32)
+mesh = UnitCubeMesh(32,32,32)
 V = FunctionSpace(mesh, "CG", 1)
 
 # Define variational problem

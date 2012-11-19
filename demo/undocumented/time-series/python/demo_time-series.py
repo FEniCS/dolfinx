@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2009-11-11
-# Last changed: 2011-02-25
+# Last changed: 2012-11-12
 
 from dolfin import *
 from numpy import ones
@@ -25,7 +25,7 @@ from numpy import ones
 series = TimeSeries("primal")
 
 # Create a mesh and a vector
-mesh = UnitSquare(2, 2)
+mesh = UnitSquareMesh(2, 2)
 x = Vector()
 
 # Add a bunch of meshes and vectors to the series

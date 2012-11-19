@@ -1,4 +1,4 @@
-// Copyright (C) 201 Garth N. Wells
+// Copyright (C) 2008-2012 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -58,7 +58,7 @@ namespace dolfin
     { return _dim; }
 
     /// Return data
-    const std::vector<std::pair<std::pair<uint, uint>, T> >& values() const
+    const std::vector<std::pair<std::pair<std::size_t, uint>, T> >& values() const
     { return _values; }
 
   private:
@@ -67,7 +67,7 @@ namespace dolfin
     const uint _dim;
 
     // MeshValueCollection values (cell_index, local_index), value))
-    std::vector<std::pair<std::pair<uint, uint>, T> >  _values;
+    std::vector<std::pair<std::pair<std::size_t, uint>, T> >  _values;
 
   };
 
@@ -76,8 +76,7 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template <typename T>
   LocalMeshValueCollection<T>::LocalMeshValueCollection(const MeshValueCollection<T>& values,
-                                                        uint dim)
-      : _dim(dim)
+                                                        uint dim) : _dim(dim)
   {
     // Prepare data
     std::vector<std::vector<uint> > send_indices;
@@ -91,11 +90,11 @@ namespace dolfin
       send_indices.resize(num_processes);
       send_v.resize(num_processes);
 
-      const std::map<std::pair<uint, uint>, T>& vals = values.values();
+      const std::map<std::pair<std::size_t, uint>, T>& vals = values.values();
       for (uint p = 0; p < num_processes; p++)
       {
-        const std::pair<uint, uint> local_range = MPI::local_range(p, vals.size());
-        typename std::map<std::pair<uint, uint>, T>::const_iterator it = vals.begin();
+        const std::pair<std::size_t, std::size_t> local_range = MPI::local_range(p, vals.size());
+        typename std::map<std::pair<std::size_t, uint>, T>::const_iterator it = vals.begin();
         std::advance(it, local_range.first);
         for (uint i = local_range.first; i < local_range.second; ++i)
         {
@@ -117,7 +116,7 @@ namespace dolfin
     // Unpack
     for (uint i = 0; i < v.size(); ++i)
     {
-      const uint cell_index = indices[2*i];
+      const std::size_t cell_index = indices[2*i];
       const uint local_entity_index = indices[2*i + 1];
       const T value = v[i];
 

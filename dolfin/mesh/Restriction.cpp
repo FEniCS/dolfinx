@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-11-14
-// Last changed: 2012-11-14
+// Last changed: 2012-11-19
 
 #include <dolfin/common/NoDeleter.h>
 #include "SubDomain.h"
@@ -37,7 +37,7 @@ Restriction::Restriction(const Mesh& mesh,
   init_from_subdomain(mesh, sub_domain, dim);
 }
 //-----------------------------------------------------------------------------
-Restriction::Restriction(const MeshFunction<uint>& domain_markers,
+Restriction::Restriction(const MeshFunction<std::size_t>& domain_markers,
                          uint domain_number)
   : _domain_markers(reference_to_no_delete_pointer(domain_markers)),
     _domain_number(domain_number)
@@ -45,7 +45,7 @@ Restriction::Restriction(const MeshFunction<uint>& domain_markers,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Restriction::Restriction(boost::shared_ptr<const MeshFunction<uint> > domain_markers,
+Restriction::Restriction(boost::shared_ptr<const MeshFunction<std::size_t> > domain_markers,
                          uint domain_number)
   : _domain_markers(domain_markers),
     _domain_number(domain_number)
@@ -69,7 +69,7 @@ void Restriction::init_from_subdomain(const Mesh& mesh,
                                       const SubDomain& sub_domain, uint dim)
 {
   // Create mesh function
-  MeshFunction<uint>* __domain_markers = new MeshFunction<uint>(mesh, dim);
+  MeshFunction<std::size_t>* __domain_markers = new MeshFunction<std::size_t>(mesh, dim);
   dolfin_assert(__domain_markers);
 
   // Set all markers to 1 and mark current domain as 0
@@ -78,6 +78,6 @@ void Restriction::init_from_subdomain(const Mesh& mesh,
   _domain_number = 0;
 
   // Store shared pointer
-  _domain_markers = boost::shared_ptr<const MeshFunction<uint> >(__domain_markers);
+  _domain_markers = boost::shared_ptr<const MeshFunction<std::size_t> >(__domain_markers);
 }
 //-----------------------------------------------------------------------------

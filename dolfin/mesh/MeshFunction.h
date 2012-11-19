@@ -155,9 +155,9 @@ namespace dolfin
     /// Return size (number of entities)
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The size.
-    uint size() const;
+    std::size_t size() const;
 
     /// Return array of values (const. version)
     ///
@@ -198,24 +198,24 @@ namespace dolfin
     /// Return value at given index
     ///
     /// *Arguments*
-    ///     index (uint)
+    ///     index (std::size_t)
     ///         The index.
     ///
     /// *Returns*
     ///     T
     ///         The value at the given index.
-    T& operator[] (uint index);
+    T& operator[] (std::size_t index);
 
     /// Return value at given index  (const version)
     ///
     /// *Arguments*
-    ///     index (uint)
+    ///     index (std::size_t)
     ///         The index.
     ///
     /// *Returns*
     ///     T
     ///         The value at the given index.
-    const T& operator[] (uint index) const;
+    const T& operator[] (std::size_t index) const;
 
     /// Set all values to given value
     const MeshFunction<T>& operator= (const T& value);
@@ -233,9 +233,9 @@ namespace dolfin
     /// *Arguments*
     ///     dim (uint)
     ///         The dimension.
-    ///     size (uint)
+    ///     size (std::size_t)
     ///         The size.
-    void init(uint dim, uint size);
+    void init(uint dim, std::size_t size);
 
     /// Initialize mesh function for given topological dimension
     ///
@@ -254,21 +254,21 @@ namespace dolfin
     ///         The mesh.
     ///     dim (uint)
     ///         The dimension.
-    ///     size (uint)
+    ///     size (std::size_t)
     ///         The size.
-    void init(const Mesh& mesh, uint dim, uint size);
+    void init(const Mesh& mesh, uint dim, std::size_t size);
 
     /// Set value at given index
     ///
     /// *Arguments*
-    ///     index (uint)
+    ///     index (std::size_t)
     ///         The index.
     ///     value (T)
     ///         The value.
-    void set_value(uint index, const T& value);
+    void set_value(std::size_t index, const T& value);
 
     /// Compatibility function for use in SubDomains
-    void set_value(uint index, const T& value, const Mesh& mesh)
+    void set_value(std::size_t index, const T& value, const Mesh& mesh)
     { set_value(index, value); }
 
     /// Set values
@@ -308,7 +308,7 @@ namespace dolfin
     uint _dim;
 
     /// Number of mesh entities
-    uint _size;
+    std::size_t _size;
   };
 
   template<> std::string MeshFunction<double>::str(bool verbose) const;
@@ -414,23 +414,22 @@ namespace dolfin
     dolfin_assert(!connectivity.empty());
 
     // Iterate over all values
-    boost::unordered_set<uint> entities_values_set;
-    typename std::map<std::pair<uint, uint>, T>::const_iterator it;
-    const std::map<std::pair<uint, uint>, T>& values = mesh_value_collection.values();
+    boost::unordered_set<std::size_t> entities_values_set;
+    typename std::map<std::pair<std::size_t, uint>, T>::const_iterator it;
+    const std::map<std::pair<std::size_t, uint>, T>& values = mesh_value_collection.values();
     for (it = values.begin(); it != values.end(); ++it)
     {
       // Get value collection entry data
-      const uint cell_index = it->first.first;
-      const uint local_entity = it->first.second;
+      const std::size_t cell_index = it->first.first;
+      const std::size_t local_entity = it->first.second;
       const T value = it->second;
 
-      uint entity_index = 0;
+      std::size_t entity_index = 0;
       if (d != D)
       {
         // Get global (local to to process) entity index
         dolfin_assert(cell_index < _mesh->num_cells());
         entity_index = connectivity(cell_index)[local_entity];
-
       }
       else
       {
@@ -477,7 +476,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  uint MeshFunction<T>::size() const
+  std::size_t MeshFunction<T>::size() const
   {
     return _size;
   }
@@ -515,7 +514,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  T& MeshFunction<T>::operator[] (uint index)
+  T& MeshFunction<T>::operator[] (std::size_t index)
   {
     dolfin_assert(_values);
     dolfin_assert(index < _size);
@@ -523,7 +522,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  const T& MeshFunction<T>::operator[] (uint index) const
+  const T& MeshFunction<T>::operator[] (std::size_t index) const
   {
     dolfin_assert(_values);
     dolfin_assert(index < _size);
@@ -553,7 +552,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  void MeshFunction<T>::init(uint dim, uint size)
+  void MeshFunction<T>::init(uint dim, std::size_t size)
   {
     if (!_mesh)
     {
@@ -573,7 +572,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  void MeshFunction<T>::init(const Mesh& mesh, uint dim, uint size)
+  void MeshFunction<T>::init(const Mesh& mesh, uint dim, std::size_t size)
   {
     // Initialize mesh for entities of given dimension
     mesh.init(dim);
@@ -587,7 +586,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  void MeshFunction<T>::set_value(uint index, const T& value)
+  void MeshFunction<T>::set_value(std::size_t index, const T& value)
   {
     dolfin_assert(_values);
     dolfin_assert(index < _size);

@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2011.
 //
 // First added:  2009-10-10
-// Last changed: 2012-07-05
+// Last changed: 2012-11-12
 //
 // This program demonstrates the L2 projection of a function onto a
 // non-matching mesh.
@@ -45,8 +45,8 @@ public:
 int main()
 {
   // Create meshes
-  UnitSquare mesh0(16, 16);
-  UnitSquare mesh1(64, 64);
+  UnitSquareMesh mesh0(16, 16);
+  UnitSquareMesh mesh1(64, 64);
 
   // Create P3 function space
   P3::FunctionSpace V0(mesh0);

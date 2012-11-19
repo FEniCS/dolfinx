@@ -60,23 +60,23 @@ void SubDomain::map(const Array<double>& x, Array<double>& y) const
                "Function map() not implemented by user. (Required for periodic boundary conditions)");
 }
 //-----------------------------------------------------------------------------
-void SubDomain::mark_cells(Mesh& mesh, unsigned int sub_domain) const
+void SubDomain::mark_cells(Mesh& mesh, std::size_t sub_domain) const
 {
   mark(mesh, mesh.topology().dim(), sub_domain);
 }
 //-----------------------------------------------------------------------------
-void SubDomain::mark_facets(Mesh& mesh, unsigned int sub_domain) const
+void SubDomain::mark_facets(Mesh& mesh, std::size_t sub_domain) const
 {
   mark(mesh, mesh.topology().dim() - 1, sub_domain);
 }
 //-----------------------------------------------------------------------------
-void SubDomain::mark(Mesh& mesh, unsigned int dim, unsigned int sub_domain) const
+void SubDomain::mark(Mesh& mesh, unsigned int dim, std::size_t sub_domain) const
 {
   dolfin_assert(mesh.domains().markers(dim));
   mark(*(mesh.domains().markers(dim)), sub_domain, mesh);
 }
 //-----------------------------------------------------------------------------
-void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
+void SubDomain::mark(MeshFunction<std::size_t>& sub_domains, std::size_t sub_domain) const
 {
   apply_markers(sub_domains, sub_domain, sub_domains.mesh());
 }
@@ -96,9 +96,8 @@ void SubDomain::mark(MeshFunction<bool>& sub_domains, bool sub_domain) const
   apply_markers(sub_domains, sub_domain, sub_domains.mesh());
 }
 //-----------------------------------------------------------------------------
-void SubDomain::mark(MeshValueCollection<uint>& sub_domains,
-                     uint sub_domain,
-                     const Mesh& mesh) const
+void SubDomain::mark(MeshValueCollection<std::size_t>& sub_domains,
+                     std::size_t sub_domain, const Mesh& mesh) const
 {
   apply_markers(sub_domains, sub_domain, mesh);
 }

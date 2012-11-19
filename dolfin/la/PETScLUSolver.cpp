@@ -48,20 +48,12 @@ namespace dolfin
     void operator() (KSP* ksp)
     {
       if (ksp)
-      {
-        #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
-        KSPDestroy(*ksp);
-        #else
         KSPDestroy(ksp);
-        #endif
-      }
       delete ksp;
     }
   };
 }
 
-// Compatibility with petsc 3.2
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 1
 #define MAT_SOLVER_UMFPACK      MATSOLVERUMFPACK
 #define MAT_SOLVER_MUMPS        MATSOLVERMUMPS
 #define MAT_SOLVER_PASTIX       MATSOLVERPASTIX
@@ -69,7 +61,6 @@ namespace dolfin
 #define MAT_SOLVER_SPOOLES      MATSOLVERSPOOLES
 #define MAT_SOLVER_SUPERLU_DIST MATSOLVERSUPERLU_DIST
 #define MAT_SOLVER_SUPERLU      MATSOLVERSUPERLU
-#endif
 
 // List of available LU solvers
 const std::map<std::string, const MatSolverPackage> PETScLUSolver::_methods

@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2006-02-07
-// Last changed: 2012-07-05
+// Last changed: 2012-11-12
 //
 // This demo program solves Poisson's equation,
 //
@@ -84,7 +84,7 @@ int main()
   };
 
   // Create mesh
-  UnitSquare mesh(300, 300);
+  UnitSquareMesh mesh(300, 300);
 
   // Create functions
   Source f;

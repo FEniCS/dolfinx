@@ -153,9 +153,9 @@ namespace dolfin
     /// Return dimension of function space
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The dimension of the function space.
-    uint dim() const;
+    std::size_t dim() const;
 
     /// Interpolate function v into function space, returning the
     /// vector of expansion coefficients
@@ -201,14 +201,14 @@ namespace dolfin
     /// from new to old dofs
     ///
     /// *Arguments*
-    ///     collapsed_dofs (boost::unordered_map<uint, uint>)
+    ///     collapsed_dofs (boost::unordered_map<std::size_t, std::size_t>)
     ///         The map from new to old dofs.
     ///
     /// *Returns*
     ///     _FunctionSpace_
     ///       The new function space.
     boost::shared_ptr<FunctionSpace>
-    collapse(boost::unordered_map<uint, uint>& collapsed_dofs) const;
+    collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const;
 
     /// Check if function space has given cell
     ///

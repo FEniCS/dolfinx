@@ -44,14 +44,14 @@ using namespace dolfin;
 #ifdef HAS_SCOTCH
 
 //-----------------------------------------------------------------------------
-void SCOTCH::compute_partition(std::vector<uint>& cell_partition,
+void SCOTCH::compute_partition(std::vector<std::size_t>& cell_partition,
                                const LocalMeshData& mesh_data)
 {
   // FIXME: Use std::set or std::vector?
 
   // Create data structures to hold graph
-  std::vector<std::set<uint> > local_graph;
-  std::set<uint> ghost_vertices;
+  std::vector<std::set<std::size_t> > local_graph;
+  std::set<std::size_t> ghost_vertices;
 
   // Compute local dual graph
   info("Compute dual graph.");
@@ -60,27 +60,27 @@ void SCOTCH::compute_partition(std::vector<uint>& cell_partition,
 
   // Compute partitions
   info("Start to compute partitions using SCOTCH");
-  const uint num_global_vertices = mesh_data.num_global_cells;
-  const std::vector<uint>& global_cell_indices = mesh_data.global_cell_indices;
+  const std::size_t num_global_vertices = mesh_data.num_global_cells;
+  const std::vector<std::size_t>& global_cell_indices = mesh_data.global_cell_indices;
   partition(local_graph, ghost_vertices, global_cell_indices,
             num_global_vertices, cell_partition);
   info("Finished computing partitions using SCOTCH");
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::uint> SCOTCH::compute_reordering(const Graph& graph)
+std::vector<std::size_t> SCOTCH::compute_reordering(const Graph& graph)
 {
-  std::vector<uint> permutation, inverse_permutation;
+  std::vector<std::size_t> permutation, inverse_permutation;
   compute_reordering(graph, permutation, inverse_permutation);
   return permutation;
 }
 //-----------------------------------------------------------------------------
 void SCOTCH::compute_reordering(const Graph& graph,
-                               std::vector<uint>& permutation,
-                               std::vector<uint>& inverse_permutation)
+                               std::vector<std::size_t>& permutation,
+                               std::vector<std::size_t>& inverse_permutation)
 {
   // Remove graph loops
   Graph _graph = graph;
-  for(uint i = 0; i < _graph.size(); ++i)
+  for(std::size_t i = 0; i < _graph.size(); ++i)
   {
     _graph[i].set().erase(std::remove(_graph[i].set().begin(), _graph[i].set().end(), i), _graph[i].set().end());
   }
@@ -174,11 +174,11 @@ void SCOTCH::compute_reordering(const Graph& graph,
             inverse_permutation_indices.end(), inverse_permutation.begin());
 }
 //-----------------------------------------------------------------------------
-void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
-                       const std::set<uint>& ghost_vertices,
-                       const std::vector<uint>& global_cell_indices,
-                       const uint num_global_vertices,
-                       std::vector<uint>& cell_partition)
+void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
+                       const std::set<std::size_t>& ghost_vertices,
+                       const std::vector<std::size_t>& global_cell_indices,
+                       const std::size_t num_global_vertices,
+                       std::vector<std::size_t>& cell_partition)
 {
   Timer timer("Partition graph (calling SCOTCH)");
 
@@ -206,7 +206,7 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   // number of local edges + edges connecting to ghost vertices)
   int edgelocnbr = 0;
   vertloctab.push_back(0);
-  std::vector<std::set<uint> >::const_iterator vertex;
+  std::vector<std::set<std::size_t> >::const_iterator vertex;
   for(vertex = local_graph.begin(); vertex != local_graph.end(); ++vertex)
   {
     edgelocnbr += vertex->size();
@@ -227,7 +227,7 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
 
   // FIXME: explain this test
   // Array containing . . . . (some sanity checks)
-  std::vector<uint> procvrttab(num_processes + 1);
+  std::vector<std::size_t> procvrttab(num_processes + 1);
   for (uint i = 0; i < num_processes; ++i)
     procvrttab[i] = std::accumulate(proccnttab.begin(), proccnttab.begin() + i, 0);
   procvrttab[num_processes] = procvrttab[num_processes - 1] + proccnttab[num_processes - 1];
@@ -240,7 +240,7 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   const bool dislay_graph_data = false;
   if (dislay_graph_data)
   {
-    const uint vertgstnbr = local_graph.size() + ghost_vertices.size();
+    const std::size_t vertgstnbr = local_graph.size() + ghost_vertices.size();
 
     // Total  (global) number of vertices (cells) in the graph
     const SCOTCH_Num vertglbnbr = num_global_vertices;
@@ -261,11 +261,11 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
         cout << "Num edges (edgeglbnbr)        : " << edgeglbnbr << endl;
         cout << "Num of processes (procglbnbr) : " << procglbnbr << endl;
         cout << "Vert per processes (proccnttab) : " << endl;
-        for (uint i = 0; i < proccnttab.size(); ++i)
+        for (std::size_t i = 0; i < proccnttab.size(); ++i)
           cout << "  " << proccnttab[i];
         cout << endl;
         cout << "Offests (procvrttab): " << endl;
-        for (uint i = 0; i < procvrttab.size(); ++i)
+        for (std::size_t i = 0; i < procvrttab.size(); ++i)
           cout << "  " << procvrttab[i];
         cout << endl;
 
@@ -274,11 +274,11 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
         cout << "(*) Num vert (inc ghost) (vertgstnbr): " << vertgstnbr << endl;
         cout << "(*) Num edges (edgelocnbr)           : " << edgelocnbr << endl;
         cout << "(*) Vertloctab: " << endl;
-        for (uint i = 0; i < vertloctab.size(); ++i)
+        for (std::size_t i = 0; i < vertloctab.size(); ++i)
           cout << "  " << vertloctab[i];
         cout << endl;
         cout << "edgeloctab: " << endl;
-        for (uint i = 0; i < edgeloctab.size(); ++i)
+        for (std::size_t i = 0; i < edgeloctab.size(); ++i)
           cout << "  " << edgeloctab[i];
         cout << endl;
         cout << "--------------------------------------------------" << endl;
@@ -369,7 +369,7 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
 //-----------------------------------------------------------------------------
 #else
 //-----------------------------------------------------------------------------
-void SCOTCH::compute_partition(std::vector<uint>& cell_partition,
+void SCOTCH::compute_partition(std::vector<std::size_t>& cell_partition,
                                const LocalMeshData& mesh_data)
 {
   dolfin_error("SCOTCH.cpp",
@@ -377,29 +377,29 @@ void SCOTCH::compute_partition(std::vector<uint>& cell_partition,
                "DOLFIN has been configured without support for SCOTCH");
 }
 //-----------------------------------------------------------------------------
-void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
-                       const std::set<uint>& ghost_vertices,
-                       const std::vector<uint>& global_cell_indices,
-                       uint num_global_vertices,
-                       std::vector<uint>& cell_partition)
+void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
+                       const std::set<std::size_t>& ghost_vertices,
+                       const std::vector<std::size_t>& global_cell_indices,
+                       std::size_t num_global_vertices,
+                       std::vector<std::size_t>& cell_partition)
 {
   dolfin_error("SCOTCH.cpp",
                "partition mesh using SCOTCH",
                "DOLFIN has been configured without support for SCOTCH");
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::uint> SCOTCH::compute_reordering(const Graph& graph)
+std::vector<std::size_t> SCOTCH::compute_reordering(const Graph& graph)
 {
   dolfin_error("SCOTCH.cpp",
                "re-order graph using SCOTCH",
                "DOLFIN has been configured without support for SCOTCH");
-  std::vector<uint> x;
+  std::vector<std::size_t> x;
   return x;
 }
 //-----------------------------------------------------------------------------
 void SCOTCH::compute_reordering(const Graph& graph,
-                                 std::vector<uint>& permutation,
-                                 std::vector<uint>& inverse_permutation)
+                                 std::vector<std::size_t>& permutation,
+                                 std::vector<std::size_t>& inverse_permutation)
 {
   dolfin_error("SCOTCH.cpp",
                "re-order graph using SCOTCH",

@@ -22,12 +22,12 @@ boundary conditions."""
 # Modified by Anders Logg 2011
 #
 # First added:  2008-08-13
-# Last changed: 2011-06-28
+# Last changed: 2012-11-12
 
 from dolfin import *
 
 # Create mesh and finite element
-mesh = UnitSquare(32, 32)
+mesh = UnitSquareMesh(32, 32)
 V = FunctionSpace(mesh, "CG", 1)
 
 # Source term

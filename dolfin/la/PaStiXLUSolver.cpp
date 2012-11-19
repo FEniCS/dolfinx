@@ -183,7 +183,7 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
     iparm[IPARM_ORDERING] = API_ORDER_PERSONAL;
     iparm[IPARM_LEVEL_OF_FILL] = -1;
     iparm[IPARM_AMALGAMATION_LEVEL]  = 10;
-    for (uint i = 0; i < local_to_global_cols.size(); ++i)
+    for (std::size_t i = 0; i < local_to_global_cols.size(); ++i)
     {
       perm[i] = i + 1;
       std::copy(perm.begin(), perm.end(), invp.begin());
@@ -209,7 +209,7 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
 
   // Get RHS data for this process
   std::vector<double> _b;
-  std::vector<uint> idx(local_to_global_cols_ref.begin(), local_to_global_cols_ref.end());
+  std::vector<DolfinIndex> idx(local_to_global_cols_ref.begin(), local_to_global_cols_ref.end());
   b.gather(_b, idx);
 
   // Solve

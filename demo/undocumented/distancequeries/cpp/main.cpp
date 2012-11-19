@@ -47,7 +47,7 @@ int main()
 {
 
   //Rectangle mesh stretching from (-1,-1,0) to (1,1,0) with 20 sample points each axis.
-  Rectangle mesh(-1,-1,1,1,20,20);
+  RectangleMesh mesh(-1,-1,1,1,20,20);
 
   PointList point_list;
 

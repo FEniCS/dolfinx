@@ -46,8 +46,8 @@ class SymmetricAssembler::Private
   DirichletBC::Map col_bc_values; // derived from col_bcs, but empty if matching_bcs
 
   // These are used to keep track of which diagonals (BCs) have been set:
-  std::pair<uint,uint> processor_dof_range;
-  std::set<uint> inserted_diagonals;
+  std::pair<std::size_t,std::size_t> processor_dof_range;
+  std::set<std::size_t> inserted_diagonals;
 
   // Scratch variables
   std::vector<double> local_B;
@@ -73,19 +73,19 @@ void SymmetricAssembler::assemble(GenericMatrix& A,
   const Mesh& mesh = a.mesh();
 
   // Extract cell domains
-  boost::scoped_ptr<MeshFunction<uint> > cell_domains;
+  boost::scoped_ptr<MeshFunction<std::size_t> > cell_domains;
   if (a.ufc_form()->num_cell_domains() > 0)
   {
-    cell_domains.reset(new MeshFunction<uint>(mesh, mesh.topology().dim(), 1));
+    cell_domains.reset(new MeshFunction<std::size_t>(mesh, mesh.topology().dim(), 1));
     sub_domain.mark(*cell_domains, 0);
   }
 
   // Extract facet domains
-  boost::scoped_ptr<MeshFunction<uint> > facet_domains;
+  boost::scoped_ptr<MeshFunction<std::size_t> > facet_domains;
   if (a.ufc_form()->num_exterior_facet_domains() > 0 ||
       a.ufc_form()->num_interior_facet_domains() > 0)
   {
-    facet_domains.reset(new MeshFunction<uint>(mesh, mesh.topology().dim() - 1, 1));
+    facet_domains.reset(new MeshFunction<std::size_t>(mesh, mesh.topology().dim() - 1, 1));
     sub_domain.mark(*facet_domains, 0);
   }
 
@@ -98,9 +98,9 @@ void SymmetricAssembler::assemble(GenericMatrix& A,
                                   const Form& a,
                                   const std::vector<const DirichletBC*> row_bcs,
                                   const std::vector<const DirichletBC*> col_bcs,
-                                  const MeshFunction<uint>* cell_domains,
-                                  const MeshFunction<uint>* exterior_facet_domains,
-                                  const MeshFunction<uint>* interior_facet_domains)
+                                  const MeshFunction<std::size_t>* cell_domains,
+                                  const MeshFunction<std::size_t>* exterior_facet_domains,
+                                  const MeshFunction<std::size_t>* interior_facet_domains)
 {
   dolfin_assert(a.rank() == 2);
 
@@ -119,7 +119,7 @@ void SymmetricAssembler::assemble(GenericMatrix& A,
   impl->matching_bcs = (row_bcs == col_bcs);
 
   // Get Dirichlet dofs rows and values for local mesh
-  for (uint i = 0; i < row_bcs.size(); ++i)
+  for (std::size_t i = 0; i < row_bcs.size(); ++i)
   {
     row_bcs[i]->get_boundary_values(impl->row_bc_values);
     if (MPI::num_processes() > 1 && row_bcs[i]->method() != "pointwise")
@@ -128,7 +128,7 @@ void SymmetricAssembler::assemble(GenericMatrix& A,
   if (!impl->matching_bcs)
   {
     // Get Dirichlet dofs columns and values for local mesh
-    for (uint i = 0; i < col_bcs.size(); ++i)
+    for (std::size_t i = 0; i < col_bcs.size(); ++i)
     {
       col_bcs[i]->get_boundary_values(impl->col_bc_values);
       if (MPI::num_processes() > 1 && col_bcs[i]->method() != "pointwise")
@@ -137,7 +137,7 @@ void SymmetricAssembler::assemble(GenericMatrix& A,
   }
 
   // Initialize the global nonsymmetric tensor (the symmetric one is handled by Assembler)
-  const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > > periodic_master_slave_dofs;
+  const std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > > periodic_master_slave_dofs;
   init_global_tensor(impl->B, a, periodic_master_slave_dofs);
 
   // Get dofs that are local to this processor
@@ -160,21 +160,21 @@ void SymmetricAssembler::assemble(GenericMatrix& A,
 //-----------------------------------------------------------------------------
 void SymmetricAssembler::add_to_global_tensor(GenericTensor &A,
                                               std::vector<double>& local_A,
-                                              std::vector<const std::vector<uint>* >& dofs)
+                                              std::vector<const std::vector<DolfinIndex>* >& dofs)
 {
   // Apply boundary conditions, and move affected columns of the local element
   // tensor, to restore symmetry.
 
   // Get local dimensions
-  const uint num_local_rows = dofs[0]->size();
-  const uint num_local_cols = dofs[1]->size();
+  const std::size_t num_local_rows = dofs[0]->size();
+  const std::size_t num_local_cols = dofs[1]->size();
 
   // Return value, true if columns have been moved from local_A to local_B
   bool local_B_is_set = false;
 
   // Convenience aliases
-  const std::vector<uint>& row_dofs = *dofs[0];
-  const std::vector<uint>& col_dofs = *dofs[1];
+  const std::vector<DolfinIndex>& row_dofs = *dofs[0];
+  const std::vector<DolfinIndex>& col_dofs = *dofs[1];
 
   if (impl->matching_bcs && row_dofs != col_dofs)
     dolfin_error("SymmetricAssembler.cpp",
@@ -184,14 +184,14 @@ void SymmetricAssembler::add_to_global_tensor(GenericTensor &A,
   // Store the local boundary conditions, to avoid multiple searches in the
   // (common) case of matching_bcs
   impl->local_row_is_bc.resize(num_local_rows);
-  for (uint row = 0; row < num_local_rows; ++row)
+  for (std::size_t row = 0; row < num_local_rows; ++row)
   {
     DirichletBC::Map::const_iterator bc_item = impl->row_bc_values.find(row_dofs[row]);
     impl->local_row_is_bc[row] = (bc_item != impl->row_bc_values.end());
   }
 
   // Clear matrix rows belonging to BCs. These modifications destroy symmetry.
-  for (uint row = 0; row < num_local_rows; ++row)
+  for (std::size_t row = 0; row < num_local_rows; ++row)
   {
     // Do nothing if row is not affected by BCs
     if (!impl->local_row_is_bc[row])
@@ -204,7 +204,7 @@ void SymmetricAssembler::add_to_global_tensor(GenericTensor &A,
     if (impl->matching_bcs)
     {
       // ...but only set it on the owning processor
-      const uint dof = row_dofs[row];
+      const std::size_t dof = row_dofs[row];
       if (dof >= impl->processor_dof_range.first && dof < impl->processor_dof_range.second)
       {
         // ...and only once.
@@ -218,10 +218,11 @@ void SymmetricAssembler::add_to_global_tensor(GenericTensor &A,
   // Modify matrix columns belonging to BCs. These modifications restore
   // symmetry, but the entries must be moved to the asymm matrix instead of
   // just cleared.
-  for (uint col = 0; col < num_local_cols; ++col)
+  for (std::size_t col = 0; col < num_local_cols; ++col)
   {
     // Do nothing if column is not affected by BCs
-    if (impl->matching_bcs) {
+    if (impl->matching_bcs)
+    {
       if (!impl->local_row_is_bc[col])
         continue;
     }
@@ -242,11 +243,11 @@ void SymmetricAssembler::add_to_global_tensor(GenericTensor &A,
     }
 
     // Move the column to B, zero it in A
-    for (uint row = 0; row < num_local_rows; ++row)
+    for (std::size_t row = 0; row < num_local_rows; ++row)
     {
       if (!impl->local_row_is_bc[row])
       {
-        const uint entry = col + row*num_local_cols;
+        const std::size_t entry = col + row*num_local_cols;
         impl->local_B[entry] = local_A[entry];
         local_A[entry] = 0.0;
       }
@@ -256,8 +257,6 @@ void SymmetricAssembler::add_to_global_tensor(GenericTensor &A,
   // Add entries to global tensor.
   A.add(&local_A[0], dofs);
   if (local_B_is_set)
-  {
     impl->B.add(&impl->local_B[0], dofs);
-  }
 }
 //-----------------------------------------------------------------------------

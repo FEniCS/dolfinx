@@ -34,7 +34,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/parameter/Parameters.h>
-
+#include "GenericPreconditioner.h"
 
 // Trilinos forward declarations
 class Epetra_MultiVector;
@@ -61,7 +61,7 @@ namespace dolfin
   /// not own a preconditioner. It can take a EpetraKrylovSolver and set the
   /// preconditioner type and parameters.
 
-  class TrilinosPreconditioner : public Variable
+  class TrilinosPreconditioner : public GenericPreconditioner, public Variable
   {
   public:
 
@@ -83,7 +83,7 @@ namespace dolfin
     /// Set basis for the null space of the operator. Setting this
     /// is critical to the performance of some preconditioners, e.g. ML.
     /// The vectors spanning the null space are copied.
-    void set_null_space(const std::vector<const GenericVector*> null_space);
+    void set_nullspace(const std::vector<const GenericVector*> null_space);
 
     /// Return preconditioner name
     std::string name() const;
@@ -111,18 +111,20 @@ namespace dolfin
     // Available named preconditionersdescriptions
     static const std::vector<std::pair<std::string, std::string> >_preconditioners_descr;
 
+    // The Preconditioner
+    boost::shared_ptr<Ifpack_Preconditioner> ifpack_preconditioner;
+    boost::shared_ptr<ML_Epetra::MultiLevelPreconditioner> ml_preconditioner;
+
     // Parameter list
     boost::shared_ptr<const Teuchos::ParameterList> parameter_list;
+
+    // Vectors spanning the null space
+    boost::shared_ptr<Epetra_MultiVector> _nullspace;
 
     // Teuchos::ParameterList pointer, used when initialized with a
     // Teuchos::RCP shared_ptr
     Teuchos::RCP<const Teuchos::ParameterList> parameter_ref_keeper;
 
-    // Vectors spanning the null space
-    boost::shared_ptr<Epetra_MultiVector> _null_space;
-
-    boost::shared_ptr<Ifpack_Preconditioner> ifpack_preconditioner;
-    boost::shared_ptr<ML_Epetra::MultiLevelPreconditioner> ml_preconditioner;
   };
 
 }

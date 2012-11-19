@@ -85,22 +85,22 @@ namespace dolfin
     void close_write();
 
     // Read uint
-    uint read_uint();
+    std::size_t read_uint();
 
     // Read array (uint)
-    void read_array(uint n, uint* values);
+    void read_array(std::size_t n, std::size_t* values);
 
     // Read array (double)
-    void read_array(uint n, double* values);
+    void read_array(std::size_t n, double* values);
 
     // Write uint
-    void write_uint(uint value);
+    void write_uint(std::size_t value);
 
     // Write array (uint)
-    void write_array(uint n, const uint* values);
+    void write_array(std::size_t n, const std::size_t* values);
 
     // Write array (double)
-    void write_array(uint n, const double* values);
+    void write_array(std::size_t n, const double* values);
 
     // Store all connectivity in a mesh
     bool _store_connectivity;

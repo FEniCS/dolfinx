@@ -64,7 +64,7 @@ namespace dolfin
                              const pugi::xml_node mesh_node);
 
     // Read array
-    static void read_array_uint(std::vector<unsigned int>& array,
+    static void read_array_uint(std::vector<std::size_t>& array,
                                 const pugi::xml_node xml_array);
 
     // Write mesh

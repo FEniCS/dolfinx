@@ -69,7 +69,7 @@ namespace dolfin
     uBLASMatrix();
 
     /// Create M x N matrix
-    uBLASMatrix(uint M, uint N);
+    uBLASMatrix(std::size_t M, std::size_t N);
 
     /// Copy constructor
     uBLASMatrix(const uBLASMatrix& A);
@@ -87,10 +87,10 @@ namespace dolfin
     virtual void init(const TensorLayout& tensor_layout);
 
     /// Return size of given dimension
-    virtual uint size(uint dim) const;
+    virtual std::size_t size(uint dim) const;
 
     /// Return local ownership range
-    virtual std::pair<uint, uint> local_range(uint dim) const
+    virtual std::pair<std::size_t, std::size_t> local_range(uint dim) const
     { return std::make_pair(0, size(dim)); }
 
     /// Set all entries to zero and keep any sparse structure
@@ -108,7 +108,7 @@ namespace dolfin
     virtual boost::shared_ptr<GenericMatrix> copy() const;
 
     /// Resize matrix to M x N
-    virtual void resize(uint M, uint N);
+    virtual void resize(std::size_t M, std::size_t N);
 
     /// Resize vector z to be compatible with the matrix-vector product
     /// y = Ax. In the parallel case, both size and layout are
@@ -120,13 +120,13 @@ namespace dolfin
     virtual void resize(GenericVector& z, uint dim) const;
 
     /// Get block of values
-    virtual void get(double* block, uint m, const uint* rows, uint n, const uint* cols) const;
+    virtual void get(double* block, std::size_t m, const DolfinIndex* rows, std::size_t n, const DolfinIndex* cols) const;
 
     /// Set block of values
-    virtual void set(const double* block, uint m, const uint* rows, uint n, const uint* cols);
+    virtual void set(const double* block, std::size_t m, const DolfinIndex* rows, std::size_t n, const DolfinIndex* cols);
 
     /// Add block of values
-    virtual void add(const double* block, uint m, const uint* rows, uint n, const uint* cols);
+    virtual void add(const double* block, std::size_t m, const DolfinIndex* rows, std::size_t n, const DolfinIndex* cols);
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A,
@@ -136,16 +136,18 @@ namespace dolfin
     virtual double norm(std::string norm_type) const;
 
     /// Get non-zero values of given row
-    virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const;
+    virtual void getrow(std::size_t row, std::vector<std::size_t>& columns,
+                        std::vector<double>& values) const;
 
     /// Set values for given row
-    virtual void setrow(uint row_idx, const std::vector<uint>& columns, const std::vector<double>& values);
+    virtual void setrow(std::size_t row_idx, const std::vector<std::size_t>& columns,
+                        const std::vector<double>& values);
 
     /// Set given rows to zero
-    virtual void zero(uint m, const uint* rows);
+    virtual void zero(std::size_t m, const DolfinIndex* rows);
 
     /// Set given rows to identity matrix
-    virtual void ident(uint m, const uint* rows);
+    virtual void ident(std::size_t m, const DolfinIndex* rows);
 
     /// Matrix-vector product, y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const;
@@ -198,7 +200,7 @@ namespace dolfin
     void compress();
 
     /// Access value of given entry
-    double operator() (uint i, uint j) const
+    double operator() (DolfinIndex i, DolfinIndex j) const
     { return A(i, j); }
 
     /// Assignment operator
@@ -225,7 +227,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
-  uBLASMatrix<Mat>::uBLASMatrix(uint M, uint N) : GenericMatrix(), A(M, N)
+  uBLASMatrix<Mat>::uBLASMatrix(std::size_t M, std::size_t N) : GenericMatrix(), A(M, N)
   {
     // Do nothing
   }
@@ -250,7 +252,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
-  void uBLASMatrix< Mat >::resize(uint M, uint N)
+  void uBLASMatrix< Mat >::resize(std::size_t M, std::size_t N)
   {
     // Resize matrix
     if( size(0) != M || size(1) != N )
@@ -258,7 +260,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
-  uint uBLASMatrix<Mat>::size(uint dim) const
+  std::size_t uBLASMatrix<Mat>::size(uint dim) const
   {
     if (dim > 1)
     {
@@ -291,7 +293,8 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
-  void uBLASMatrix<Mat>::getrow(uint row_idx, std::vector<uint>& columns,
+  void uBLASMatrix<Mat>::getrow(std::size_t row_idx,
+                                std::vector<std::size_t>& columns,
                                 std::vector<double>& values) const
   {
     dolfin_assert(row_idx < this->size(0));
@@ -311,7 +314,8 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <typename Mat>
-  void uBLASMatrix<Mat>::setrow(uint row_idx, const std::vector<uint>& columns,
+  void uBLASMatrix<Mat>::setrow(std::size_t row_idx,
+                                const std::vector<std::size_t>& columns,
                                 const std::vector<double>& values)
   {
     dolfin_assert(columns.size() == values.size());
@@ -321,7 +325,7 @@ namespace dolfin
     dolfin_assert(columns.size() <= row.size());
 
     row *= 0;
-    for(uint i = 0; i < columns.size(); i++)
+    for(std::size_t i = 0; i < columns.size(); i++)
       row(columns[i])=values[i];
   }
   //-----------------------------------------------------------------------------
@@ -332,36 +336,36 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <typename Mat>
-  void uBLASMatrix<Mat>::set(const double* block, uint m, const uint* rows,
-                             uint n, const uint* cols)
+  void uBLASMatrix<Mat>::set(const double* block, std::size_t m, const DolfinIndex* rows,
+                             std::size_t n, const DolfinIndex* cols)
   {
-    for (uint i = 0; i < m; i++)
-      for (uint j = 0; j < n; j++)
+    for (std::size_t i = 0; i < m; i++)
+      for (std::size_t j = 0; j < n; j++)
         A(rows[i] , cols[j]) = block[i*n + j];
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
-  void uBLASMatrix<Mat>::add(const double* block, uint m, const uint* rows,
-                             uint n, const uint* cols)
+  void uBLASMatrix<Mat>::add(const double* block, std::size_t m, const DolfinIndex* rows,
+                             std::size_t n, const DolfinIndex* cols)
   {
-    for (uint i = 0; i < m; i++)
-      for (uint j = 0; j < n; j++)
+    for (std::size_t i = 0; i < m; i++)
+      for (std::size_t j = 0; j < n; j++)
         A(rows[i] , cols[j]) += block[i*n + j];
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
-  void uBLASMatrix<Mat>::get(double* block, uint m, const uint* rows,
-                             uint n, const uint* cols) const
+  void uBLASMatrix<Mat>::get(double* block, std::size_t m, const DolfinIndex* rows,
+                             std::size_t n, const DolfinIndex* cols) const
   {
-    for(uint i = 0; i < m; ++i)
-      for(uint j = 0; j < n; ++j)
+    for(std::size_t i = 0; i < m; ++i)
+      for(std::size_t j = 0; j < n; ++j)
         block[i*n + j] = A(rows[i], cols[j]);
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
   void uBLASMatrix<Mat>::lump(uBLASVector& m) const
   {
-    const uint n = size(1);
+    const std::size_t n = size(1);
     m.resize(n);
     m.zero();
     ublas::scalar_vector<double> one(n, 1.0);
@@ -385,7 +389,7 @@ namespace dolfin
   template <typename Mat>
   void uBLASMatrix<Mat>::solve_in_place(uBLASVector& x, const uBLASVector& b)
   {
-    const uint M = A.size1();
+    const std::size_t M = A.size1();
     dolfin_assert(M == b.size());
 
     // Initialise solution vector
@@ -400,7 +404,7 @@ namespace dolfin
   template <typename Mat>
   void uBLASMatrix<Mat>::invert()
   {
-    const uint M = A.size1();
+    const std::size_t M = A.size1();
     dolfin_assert(M == A.size2());
 
     // Create indentity matrix
@@ -424,19 +428,19 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <typename Mat>
-  void uBLASMatrix<Mat>::zero(uint m, const uint* rows)
+  void uBLASMatrix<Mat>::zero(std::size_t m, const DolfinIndex* rows)
   {
-    for(uint i = 0; i < m; ++i)
+    for(std::size_t i = 0; i < m; ++i)
       ublas::row(A, rows[i]) *= 0.0;
   }
   //-----------------------------------------------------------------------------
   template <typename Mat>
-  void uBLASMatrix<Mat>::ident(uint m, const uint* rows)
+  void uBLASMatrix<Mat>::ident(std::size_t m, const DolfinIndex* rows)
   {
     // Copy row indices to a vector
-    std::vector<uint> _rows(rows, rows+m);
+    std::vector<std::size_t> _rows(rows, rows + m);
 
-    uint counter = 0;
+    std::size_t counter = 0;
     typename Mat::iterator1 row;    // Iterator over rows
     typename Mat::iterator2 entry;  // Iterator over entries
     for (row = A.begin1(); row != A.end1(); ++row)
@@ -591,11 +595,11 @@ namespace dolfin
 
     // Reserve space for non-zeroes and get non-zero pattern
     A.reserve(pattern_pointer->num_nonzeros());
-    const std::vector<std::vector<uint> > pattern = pattern_pointer->diagonal_pattern(SparsityPattern::sorted);
+    const std::vector<std::vector<std::size_t> > pattern = pattern_pointer->diagonal_pattern(SparsityPattern::sorted);
 
     // Add entries
-    std::vector<std::vector<uint> >::const_iterator row;
-    Set<uint>::const_iterator element;
+    std::vector<std::vector<std::size_t> >::const_iterator row;
+    Set<std::size_t>::const_iterator element;
     for(row = pattern.begin(); row != pattern.end(); ++row)
       for(element = row->begin(); element != row->end(); ++element)
         A.push_back(row - pattern.begin(), *element, 0.0);
@@ -662,14 +666,14 @@ namespace dolfin
   template<typename Mat> template<typename B>
   void uBLASMatrix<Mat>::solve_in_place(B& X)
   {
-    const uint M = A.size1();
+    const std::size_t M = A.size1();
     dolfin_assert(M == A.size2());
 
     // Create permutation matrix
     ublas::permutation_matrix<std::size_t> pmatrix(M);
 
     // Factorise (with pivoting)
-    uint singular = ublas::lu_factorize(A, pmatrix);
+    std::size_t singular = ublas::lu_factorize(A, pmatrix);
     if (singular > 0)
     {
       dolfin_error("uBLASMatrix.h",

@@ -61,7 +61,7 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   dolfin_assert(u.function_space()->dofmap());
   const Mesh& mesh = *u.function_space()->mesh();
   const GenericDofMap& dofmap = *u.function_space()->dofmap();
-  const uint num_cells = mesh.num_cells();
+  const std::size_t num_cells = mesh.num_cells();
 
   std::string encode_string;
   if (!binary)
@@ -115,16 +115,16 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   }
 
   // Allocate memory for function values at cell centres
-  const uint size = num_cells*data_dim;
+  const std::size_t size = num_cells*data_dim;
 
   // Build lists of dofs and create map
-  std::vector<uint> dof_set;
-  std::vector<uint> offset(size + 1);
-  std::vector<uint>::iterator cell_offset = offset.begin();
+  std::vector<DolfinIndex> dof_set;
+  std::vector<std::size_t> offset(size + 1);
+  std::vector<std::size_t>::iterator cell_offset = offset.begin();
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Tabulate dofs
-    const std::vector<uint>& dofs = dofmap.cell_dofs(cell->index());
+    const std::vector<DolfinIndex>& dofs = dofmap.cell_dofs(cell->index());
     for(uint i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
       dof_set.push_back(dofs[i]);
 
@@ -136,7 +136,7 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   // Get  values
   std::vector<double> values(dof_set.size());
   dolfin_assert(u.vector());
-  u.vector()->get_local(&values[0], dof_set.size(), &dof_set[0]);
+  u.vector()->get_local(values.data(), dof_set.size(), dof_set.data());
 
   // Get cell data
   if (!binary)
@@ -149,14 +149,14 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
 }
 //----------------------------------------------------------------------------
 std::string VTKWriter::ascii_cell_data(const Mesh& mesh,
-                                       const std::vector<uint>& offset,
+                                       const std::vector<std::size_t>& offset,
                                        const std::vector<double>& values,
                                        uint data_dim, uint rank)
 {
   std::ostringstream ss;
   ss << std::scientific;
   ss << std::setprecision(16);
-  std::vector<uint>::const_iterator cell_offset = offset.begin();
+  std::vector<std::size_t>::const_iterator cell_offset = offset.begin();
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     if (rank == 1 && data_dim == 2)
@@ -191,11 +191,11 @@ std::string VTKWriter::ascii_cell_data(const Mesh& mesh,
 }
 //----------------------------------------------------------------------------
 std::string VTKWriter::base64_cell_data(const Mesh& mesh,
-                                        const std::vector<uint>& offset,
+                                        const std::vector<std::size_t>& offset,
                                         const std::vector<double>& values,
                                         uint data_dim, uint rank, bool compress)
 {
-  const uint num_cells = mesh.num_cells();
+  const std::size_t num_cells = mesh.num_cells();
 
   // Number of zero paddings per point
   uint padding_per_point = 0;
@@ -206,13 +206,13 @@ std::string VTKWriter::base64_cell_data(const Mesh& mesh,
 
   // Number of data entries per point and total number
   const uint num_data_per_point = data_dim + padding_per_point;
-  const uint num_total_data_points = num_cells*num_data_per_point;
+  const std::size_t num_total_data_points = num_cells*num_data_per_point;
 
-  std::vector<uint>::const_iterator cell_offset = offset.begin();
+  std::vector<std::size_t>::const_iterator cell_offset = offset.begin();
   std::vector<double> data(num_total_data_points, 0);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    const uint index = cell->index();
+    const std::size_t index = cell->index();
     for(uint i = 0; i < data_dim; i++)
       data[index*num_data_per_point + i] = values[*cell_offset + i];
     ++cell_offset;
@@ -224,7 +224,7 @@ std::string VTKWriter::base64_cell_data(const Mesh& mesh,
 void VTKWriter::write_ascii_mesh(const Mesh& mesh, uint cell_dim,
                                  std::string filename)
 {
-  const uint num_cells = mesh.topology().size(cell_dim);
+  const std::size_t num_cells = mesh.topology().size(cell_dim);
   const uint num_cell_vertices = mesh.type().num_vertices(cell_dim);
 
   // Get VTK cell type
@@ -281,7 +281,7 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, uint cell_dim,
 void VTKWriter::write_base64_mesh(const Mesh& mesh, uint cell_dim,
                                   std::string filename, bool compress)
 {
-  const uint num_cells = mesh.topology().size(cell_dim);
+  const std::size_t num_cells = mesh.topology().size(cell_dim);
   const uint num_cell_vertices = mesh.type().num_vertices(cell_dim);
 
   // Get VTK cell type
@@ -333,7 +333,7 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, uint cell_dim,
   file << "<DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\"" << "binary" << "\">" << std::endl;
   std::vector<boost::uint32_t> offset_data(num_cells*num_cell_vertices);
   std::vector<boost::uint32_t>::iterator offset_entry = offset_data.begin();
-  for (uint offsets = 1; offsets <= num_cells; offsets++)
+  for (std::size_t offsets = 1; offsets <= num_cells; offsets++)
     *offset_entry++ = offsets*num_cell_vertices;
 
   // Create encoded stream

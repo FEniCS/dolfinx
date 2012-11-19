@@ -41,7 +41,7 @@ void BisectionRefinement::refine_by_recursive_bisection(Mesh& refined_mesh,
   not_working_in_parallel("BisectionRefinement::refine");
 
   // Transformation maps
-  MeshFunction<uint> cell_map;
+  MeshFunction<std::size_t> cell_map;
   std::vector<int> facet_map;
 
   // Call Rivara refinement
@@ -49,29 +49,29 @@ void BisectionRefinement::refine_by_recursive_bisection(Mesh& refined_mesh,
 
   // Store child->parent cell and facet information as mesh data
   const uint D = refined_mesh.topology().dim();
-  boost::shared_ptr<MeshFunction<unsigned int> > cf = \
-    refined_mesh.data().create_mesh_function("parent_cell", D);
-  for(uint i = 0; i < refined_mesh.num_cells(); i++)
+  boost::shared_ptr<MeshFunction<std::size_t> > cf
+    =  refined_mesh.data().create_mesh_function("parent_cell", D);
+  for(std::size_t i = 0; i < refined_mesh.num_cells(); i++)
     (*cf)[i] = cell_map[i];
 
   // Create mesh function in refined mesh encoding parent facet maps
-  boost::shared_ptr<MeshFunction<unsigned int> > ff = \
-    refined_mesh.data().create_mesh_function("parent_facet", D - 1);
+  boost::shared_ptr<MeshFunction<std::size_t> > ff
+    = refined_mesh.data().create_mesh_function("parent_facet", D - 1);
 
   // Fill ff from facet_map
-  mesh.init(D, D-1);
-  refined_mesh.init(D-1, D);
-  const uint orphan = mesh.num_facets() + 1;
+  mesh.init(D, D - 1);
+  refined_mesh.init(D - 1, D);
+  const std::size_t orphan = mesh.num_facets() + 1;
   for (FacetIterator facet(refined_mesh); !facet.end(); ++facet)
   {
     // Extract (arbitrary) cell that this facet belongs to
     Cell cell(refined_mesh, facet->entities(D)[0]);
 
     // Extract local facet number of this facet with that cell
-    const uint local_facet = cell.index(*facet);
+    const std::size_t local_facet = cell.index(*facet);
 
     // Extract local facet index of parent cell (using facet_map)
-    const uint index = cell.index()*(D + 1) + local_facet;
+    const std::size_t index = cell.index()*(D + 1) + local_facet;
     const int parent_local_facet_index = facet_map[index];
 
     // Ignore if orphaned facet

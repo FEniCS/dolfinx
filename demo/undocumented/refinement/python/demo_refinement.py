@@ -18,12 +18,12 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2007-06-01
-# Last changed: 2009-10-08
+# Last changed: 2012-11-12
 
 from dolfin import *
 
 # Create mesh of unit square
-mesh = UnitSquare(8, 8)
+mesh = UnitSquareMesh(8, 8)
 plot(mesh)
 
 info(mesh)

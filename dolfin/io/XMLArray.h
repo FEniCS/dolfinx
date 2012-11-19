@@ -69,7 +69,7 @@ namespace dolfin
     }
 
     // Get size and type
-    const unsigned int size = array.attribute("size").as_uint();
+    const std::size_t size = array.attribute("size").as_uint();
     const std::string type  = array.attribute("type").value();
     if (type != "double")
     {
@@ -80,10 +80,10 @@ namespace dolfin
 
     // Iterate over array entries
     x.resize(size);
-    Array<unsigned int> indices(size);
+    Array<std::size_t> indices(size);
     for (pugi::xml_node_iterator it = array.begin(); it != array.end(); ++it)
     {
-      const unsigned int index = it->attribute("index").as_uint();
+      const std::size_t index = it->attribute("index").as_uint();
       const double value = it->attribute("value").as_double();
       dolfin_assert(index < size);
       indices[index] = index;
@@ -99,15 +99,15 @@ namespace dolfin
     pugi::xml_node array_node = xml_node.append_child("array");
 
     // Add attributes
-    const unsigned int size = x.size();
+    const std::size_t size = x.size();
     array_node.append_attribute("type") = type.c_str();
-    array_node.append_attribute("size") = size;
+    array_node.append_attribute("size") = (uint) size;
 
     // Add data
-    for (uint i = 0; i < size; ++i)
+    for (std::size_t i = 0; i < size; ++i)
     {
       pugi::xml_node element_node = array_node.append_child("element");
-      element_node.append_attribute("index") = i;
+      element_node.append_attribute("index") = (uint) i;
       // NOTE: Casting to a string to avoid loss of precision when
       //       pugixml performs double-to-char conversion
       element_node.append_attribute("value")

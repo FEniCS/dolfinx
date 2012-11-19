@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-06-30
-// Last changed: 2011-07-17
+// Last changed: 2012-11-12
 
 #include <dolfin/fem/Form.h>
 #include <dolfin/function/Function.h>
@@ -66,8 +66,8 @@ void dolfin::solve(const Equation& equation,
   if (equation.is_linear())
   {
     LinearVariationalProblem problem(*equation.lhs(), *equation.rhs(), u, bcs);
-    AdaptiveLinearVariationalSolver solver(problem);
-    solver.solve(tol, M);
+    AdaptiveLinearVariationalSolver solver(problem, M);
+    solver.solve(tol);
   } else
   {
     // Raise error if the problem is nonlinear (for now)
@@ -125,7 +125,7 @@ void dolfin::solve(const Equation& equation,
   NonlinearVariationalProblem problem(*equation.lhs(), u, bcs, J);
 
   // Solve nonlinear problem adaptively
-  AdaptiveNonlinearVariationalSolver solver(problem);
-  solver.solve(tol, M);
+  AdaptiveNonlinearVariationalSolver solver(problem, M);
+  solver.solve(tol);
 }
 //-----------------------------------------------------------------------------

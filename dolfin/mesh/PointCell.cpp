@@ -75,8 +75,9 @@ dolfin::uint PointCell::orientation(const Cell& cell) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void PointCell::create_entities(std::vector<std::vector<uint> >& e, uint dim,
-                                const uint* v) const
+void PointCell::create_entities(std::vector<std::vector<std::size_t> >& e,
+                                uint dim,
+                                const std::size_t* v) const
 {
   dolfin_error("PointCell.cpp",
                "create entities",
@@ -84,7 +85,7 @@ void PointCell::create_entities(std::vector<std::vector<uint> >& e, uint dim,
 }
 //-----------------------------------------------------------------------------
 void PointCell::refine_cell(Cell& cell, MeshEditor& editor,
-                          uint& current_cell) const
+                          std::size_t& current_cell) const
 {
   dolfin_error("PointCell.cpp",
                "refine cell",
@@ -133,7 +134,7 @@ double PointCell::facet_area(const Cell& cell, uint facet) const
 }
 //-----------------------------------------------------------------------------
 void PointCell::order(Cell& cell,
-                 const std::vector<uint>& local_to_global_vertex_indices) const
+                 const std::vector<std::size_t>& local_to_global_vertex_indices) const
 {
   dolfin_error("PointCell.cpp",
                "order cell",

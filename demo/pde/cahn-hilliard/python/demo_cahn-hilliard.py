@@ -19,7 +19,7 @@ equation, which is a time-dependent nonlinear PDE """
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2009-06-20
-# Last changed: 2009-06-20
+# Last changed: 2012-11-12
 
 # Begin demo
 
@@ -60,7 +60,7 @@ parameters["form_compiler"]["cpp_optimize"] = True
 parameters["form_compiler"]["representation"] = "quadrature"
 
 # Create mesh and define function spaces
-mesh = UnitSquare(96, 96)
+mesh = UnitSquareMesh(96, 96)
 V = FunctionSpace(mesh, "Lagrange", 1)
 ME = V*V
 

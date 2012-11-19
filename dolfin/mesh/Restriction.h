@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-11-14
-// Last changed: 2012-11-14
+// Last changed: 2012-11-19
 
 #ifndef __RESTRICTION_H
 #define __RESTRICTION_H
@@ -66,7 +66,7 @@ namespace dolfin
     ///         Domain markers for the cells of the mesh.
     ///     domain_number (uint)
     ///         Identifier for domain.
-    Restriction(const MeshFunction<uint>& domain_markers,
+    Restriction(const MeshFunction<std::size_t>& domain_markers,
                 uint domain_number);
 
     /// Create restriction from domain markers (shared pointer version)
@@ -76,7 +76,7 @@ namespace dolfin
     ///         Domain markers for the cells of the mesh.
     ///     domain_number (uint)
     ///         Identifier for domain.
-    Restriction(boost::shared_ptr<const MeshFunction<uint> > domain_markers,
+    Restriction(boost::shared_ptr<const MeshFunction<std::size_t> > domain_markers,
                 uint domain_number);
 
     /// Return the full unrestricted mesh
@@ -107,7 +107,7 @@ namespace dolfin
                              const SubDomain& sub_domain, uint dim);
 
     // Domain markers
-    boost::shared_ptr<const MeshFunction<uint> > _domain_markers;
+    boost::shared_ptr<const MeshFunction<std::size_t> > _domain_markers;
 
     // Identifier for domain
     uint _domain_number;

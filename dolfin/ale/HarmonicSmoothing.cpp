@@ -76,17 +76,17 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
   assembler.assemble(A, *form);
 
   // Initialize RHS vector
-  const uint N = mesh.num_vertices();
+  const std::size_t N = mesh.num_vertices();
   Vector b(N);
 
   // Get array of dofs for boundary vertices
-  const MeshFunction<unsigned int>& vertex_map = new_boundary.vertex_map();
-  const uint num_dofs = vertex_map.size();
-  const uint* dofs = vertex_map.values();
+  const MeshFunction<std::size_t>& vertex_map = new_boundary.vertex_map();
+  const std::size_t num_dofs = vertex_map.size();
+  const std::vector<DolfinIndex> dofs(vertex_map.values(), vertex_map.values() + num_dofs);
 
   // Modify matrix (insert 1 on diagonal)
 
-  A.ident(num_dofs, dofs);
+  A.ident(num_dofs, dofs.data());
   A.apply("insert");
 
   // Solve system for each dimension
@@ -104,7 +104,7 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
       values[i] = new_boundary.geometry().x(i, dim);
 
     // Modify right-hand side
-    b.set(&values[0], num_dofs, dofs);
+    b.set(&values[0], num_dofs, dofs.data());
     b.apply("insert");
 
     // Solve system

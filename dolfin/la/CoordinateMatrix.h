@@ -43,13 +43,13 @@ namespace dolfin
     /// Destructor
     virtual ~CoordinateMatrix() {}
 
-    unsigned int size(unsigned int dim) const
+    std::size_t size(uint dim) const
     { return _size[dim]; }
 
-    const std::vector<uint>& rows() const
+    const std::vector<std::size_t>& rows() const
     { return _rows; }
 
-    const std::vector<uint>& columns() const
+    const std::vector<std::size_t>& columns() const
     { return _cols; }
 
     const std::vector<double>& values() const
@@ -64,14 +64,14 @@ namespace dolfin
   private:
 
     // Row and column indices
-    std::vector<uint> _rows;
-    std::vector<uint> _cols;
+    std::vector<std::size_t> _rows;
+    std::vector<std::size_t> _cols;
 
     // Storage of values
     std::vector<double> _vals;
 
     // Gobal size
-    unsigned int _size[2];
+    std::size_t _size[2];
 
     // Symmetric storage
     const bool _symmetric;

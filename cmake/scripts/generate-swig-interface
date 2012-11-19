@@ -356,6 +356,12 @@ def write_module_interface_file(module, dependencies, submodule_info):
     file_dependencies = [f.replace("dolfin", "../../..") \
                          for f in file_dependencies]
     
+    # Add global SWIG interface files
+    file_dependencies.append("module.i")
+    file_dependencies.extend(f.replace("dolfin/swig", "../..") \
+                             for f in glob.glob("dolfin/swig/*.i") + \
+                             glob.glob("dolfin/swig/typemaps/*.i"))
+
     include_lines = []
     docstring_lines = []
     
@@ -411,17 +417,6 @@ def write_module_interface_file(module, dependencies, submodule_info):
     module_file.write(module_template % module_form)
 
     # Write swig interface file dependencies
-
-    # Typemap files
-    file_dependencies.extend("../../typemaps/" + \
-                             interface_file.split(os.path.sep)[-1] \
-                             for interface_file in \
-                             glob.glob(os.path.join("typemaps","*.i")))
-
-    file_dependencies.extend(["../../shared_ptr_classes.i",
-                              "../../exceptions.i", "../../version.i",
-                              "../../forwarddeclarations.i"])
-                 
     dependency_file = open(os.path.join(swig_path, "modules", module,
                                         "dependencies.txt"), "w")
     dependency_file.write(";".join(sorted(file_dependencies)))

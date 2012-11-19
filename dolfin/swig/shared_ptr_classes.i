@@ -17,12 +17,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Anders logg, 2009.
-// Modified by Garth N. Wells, 2009.
+// Modified by Garth N. Wells, 2009-2012.
 // Modified by Fredrik Valdmanis, 2012.
 // Modified by Patrick E. Farrell, 2012.
+// Modified by Benjamin Kehlet, 2012
 //
 // First added:  2007-11-25
-// Last changed: 2012-10-13
+// Last changed: 2012-11-12
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -30,12 +31,6 @@
 // Objects of these classes can then be passed to c++ functions
 // demanding a boost::shared_ptr<type>
 //=============================================================================
-
-//-----------------------------------------------------------------------------
-// Un-comment these lines to use std::tr1, only works with swig version >=1.3.37
-//-----------------------------------------------------------------------------
-//#define SWIG_SHARED_PTR_NAMESPACE std
-//#define SWIG_SHARED_PTR_SUBNAMESPACE tr1
 
 //-----------------------------------------------------------------------------
 // Include macros for shared_ptr support
@@ -117,16 +112,46 @@
 %shared_ptr(dolfin::Mesh)
 %shared_ptr(dolfin::BoundaryMesh)
 %shared_ptr(dolfin::SubMesh)
+%shared_ptr(dolfin::UnitTetrahedronMesh)
 %shared_ptr(dolfin::UnitTetrahedron)
+%shared_ptr(dolfin::UnitCubeMesh)
 %shared_ptr(dolfin::UnitCube)
+%shared_ptr(dolfin::UnitIntervalMesh)
 %shared_ptr(dolfin::UnitInterval)
+%shared_ptr(dolfin::IntervalMesh)
 %shared_ptr(dolfin::Interval)
+%shared_ptr(dolfin::UnitTriangleMesh)
 %shared_ptr(dolfin::UnitTriangle)
+%shared_ptr(dolfin::UnitSquareMesh)
 %shared_ptr(dolfin::UnitSquare)
+%shared_ptr(dolfin::UnitCircleMesh)
 %shared_ptr(dolfin::UnitCircle)
+%shared_ptr(dolfin::BoxMesh)
 %shared_ptr(dolfin::Box)
+%shared_ptr(dolfin::RectangleMesh)
 %shared_ptr(dolfin::Rectangle)
-%shared_ptr(dolfin::UnitSphere)
+
+ //csg
+%shared_ptr(dolfin::CSGGeometry)
+%shared_ptr(dolfin::CSGOperator)
+%shared_ptr(dolfin::CSGUnion)
+%shared_ptr(dolfin::CSGDifference)
+%shared_ptr(dolfin::CSGIntersection)
+%shared_ptr(dolfin::CSGPrimitive)
+%shared_ptr(dolfin::CSGPrimitive2D)
+%shared_ptr(dolfin::CSGPrimitive3D)
+%shared_ptr(dolfin::Circle)
+%shared_ptr(dolfin::Ellipse)
+%shared_ptr(dolfin::Polygon)
+%shared_ptr(dolfin::Sphere)
+%shared_ptr(dolfin::Cone)
+%shared_ptr(dolfin::Cylinder)
+%shared_ptr(dolfin::Tetrahedron)
+%shared_ptr(dolfin::Surface3D)
+%shared_ptr(dolfin::CSGCGALMeshGenerator2D)
+%shared_ptr(dolfin::CSGCGALMeshGenerator3D)
+
+
 
 %shared_ptr(dolfin::SubDomain)
 %shared_ptr(dolfin::DomainBoundary)
@@ -135,10 +160,18 @@
 %shared_ptr(dolfin::LocalMeshData)
 %shared_ptr(dolfin::MeshData)
 
-// NOTE: Most of the MeshFunctions are declared sharepointers in
-// NOTE: mesh_pre.i, mesh_post.i
+// NOTE: Most of the MeshFunctions are declared shared pointers in
+// NOTE: mesh/pre.i, mesh/post.i
+%shared_ptr(dolfin::Hierarchical<dolfin::MeshFunction<std::size_t> >)
+%shared_ptr(dolfin::MeshFunction<std::size_t>)
 %shared_ptr(dolfin::Hierarchical<dolfin::MeshFunction<dolfin::uint> >)
 %shared_ptr(dolfin::MeshFunction<dolfin::uint>)
+
+%shared_ptr(dolfin::CellFunction<std::size_t>)
+%shared_ptr(dolfin::EdgeFunction<std::size_t>)
+%shared_ptr(dolfin::FaceFunction<std::size_t>)
+%shared_ptr(dolfin::FacetFunction<std::size_t>)
+%shared_ptr(dolfin::VertexFunction<std::size_t>)
 
 // FIXME: Do we need to declare dolfin::uint?
 %shared_ptr(dolfin::CellFunction<dolfin::uint>)
@@ -147,16 +180,16 @@
 %shared_ptr(dolfin::FacetFunction<dolfin::uint>)
 %shared_ptr(dolfin::VertexFunction<dolfin::uint>)
 
-
 // parameters
 %shared_ptr(dolfin::Parameters)
 %shared_ptr(dolfin::GlobalParameters)
 
 // la
+%shared_ptr(dolfin::GenericLinearOperator)
+%shared_ptr(dolfin::GenericMatrix)
+%shared_ptr(dolfin::GenericPreconditioner)
 %shared_ptr(dolfin::GenericTensor)
 %shared_ptr(dolfin::GenericVector)
-%shared_ptr(dolfin::GenericMatrix)
-%shared_ptr(dolfin::GenericLinearOperator)
 %shared_ptr(dolfin::LinearAlgebraObject)
 %shared_ptr(dolfin::Scalar)
 
@@ -210,7 +243,6 @@
 %shared_ptr(dolfin::GenericLUSolver)
 %shared_ptr(dolfin::KrylovSolver)
 %shared_ptr(dolfin::LUSolver)
-%shared_ptr(dolfin::SingularSolver)
 
 %shared_ptr(dolfin::GenericSparsityPattern)
 %shared_ptr(dolfin::SparsityPattern)

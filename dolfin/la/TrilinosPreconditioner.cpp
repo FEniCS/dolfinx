@@ -189,25 +189,31 @@ void TrilinosPreconditioner::set_parameters(Teuchos::RCP<Teuchos::ParameterList>
   parameter_ref_keeper = list;
 }
 //-----------------------------------------------------------------------------
-void TrilinosPreconditioner::set_null_space(const std::vector<const GenericVector*> null_space)
+void TrilinosPreconditioner::set_nullspace(const std::vector<const GenericVector*> nullspace)
 {
-  // Loop over vectors spanning the null space and copy into a
-  // Epetra_MultiVector
-  for (uint i = 0; i < null_space.size(); ++i)
+  if (nullspace.empty())
   {
-    dolfin_assert(null_space[i]);
+    // Clear nullspace
+    _nullspace.reset();
+  }
+  else
+  {
+    for (uint i = 0; i < nullspace.size(); ++i)
+    {
+      dolfin_assert(nullspace[i]);
 
-    // Get Epetra vector
-    const EpetraVector& v = as_type<const EpetraVector>(*null_space[i]);
-    dolfin_assert(v.vec());
+      // Get Epetra vector
+      const EpetraVector& v = as_type<const EpetraVector>(*nullspace[i]);
+      dolfin_assert(v.vec());
 
-    // Initialise null space multivector on first pass
-    if (i == 0)
-      _null_space.reset(new Epetra_MultiVector(v.vec()->Map(), null_space.size()));
+      // Initialise null space multivector on first pass
+      if (i == 0)
+        _nullspace.reset(new Epetra_MultiVector(v.vec()->Map(), nullspace.size()));
 
-    // Copy data into Epetra_MultiVector object
-    const Epetra_Vector& _v = *(*(v.vec()))(0);
-    *(*_null_space)(i) = _v;
+      // Copy data into Epetra_MultiVector object
+      const Epetra_Vector& _v = *(*(v.vec()))(0);
+      *(*_nullspace)(i) = _v;
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -254,14 +260,12 @@ void TrilinosPreconditioner::set_ml(AztecOO& solver, const Epetra_RowMatrix& P)
     mlist.setParameters(*parameter_list);
 
   // Set null space
-  if(_null_space)
+  if (_nullspace)
   {
     mlist.set("null space: add default vectors", false);
     mlist.set("null space: type", "pre-computed");
-    mlist.set("null space: dimension", _null_space->NumVectors());
-    mlist.set("null space: vectors", _null_space->Values());
-
-    //mlist.set("PDE equations", 3);
+    mlist.set("null space: dimension", _nullspace->NumVectors());
+    mlist.set("null space: vectors", _nullspace->Values());
   }
 
   // Create preconditioner

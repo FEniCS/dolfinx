@@ -20,12 +20,12 @@
 # Modified by Anders Logg, 2008.
 #
 # First added:  2008-12-12
-# Last changed: 2008-12-12
+# Last changed: 2012-11-12
 
 from dolfin import *
 
 # Create a simple stiffness matrix and vector
-mesh = UnitSquare(32, 32)
+mesh = UnitSquareMesh(32, 32)
 V = FunctionSpace(mesh, "CG", 1)
 u = TrialFunction(V)
 v = TestFunction(V)

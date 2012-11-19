@@ -20,7 +20,7 @@ V = FunctionSpace(mesh, 'Lagrange', 1)
 # Define boundary segments for Neumann, Robin and Dirichlet conditions
 
 # Create mesh function over cell facets
-boundary_parts = MeshFunction("uint", mesh, mesh.topology().dim()-1)
+boundary_parts = MeshFunction("sizet", mesh, mesh.topology().dim()-1)
 
 # Mark lower boundary facets as subdomain 0
 class LowerRobinBoundary(SubDomain):
@@ -95,4 +95,3 @@ u_e = interpolate(u_exact, V)
 print 'Max error:', abs(u_e.vector().array() - u.vector().array()).max()
 
 #interactive()
-

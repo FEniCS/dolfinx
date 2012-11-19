@@ -31,7 +31,7 @@ the unit square. In this example, we will let the mesh consist of 32 x
 .. code-block:: python
 
     # Create mesh
-    mesh = UnitSquare(32, 32)
+    mesh = UnitSquareMesh(32, 32)
 
 .. index::
    pair: FunctionSpace; Brezzi-Douglas-Marini

@@ -154,13 +154,13 @@ namespace dolfin
     // FIXME: This should find only pairs for which this process owns
     //        the slave dof
     /// Compute dof pairs (master dof, slave dof)
-    std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >
+    std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > >
         compute_dof_pairs() const;
 
     // FIXME: This should find only pairs for which this process owns
     //        the slave dof
     /// Compute dof pairs (master dof, slave dof)
-    void compute_dof_pairs(std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs) const;
+    void compute_dof_pairs(std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > >& dof_pairs) const;
 
 
   private:
@@ -175,22 +175,22 @@ namespace dolfin
     //        the slave dof
     // Extract dof pairs for subspace and append to vector
     void extract_dof_pairs(const FunctionSpace& V,
-      std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& dof_pairs) const;
+      std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > >& dof_pairs) const;
 
     // The subdomain
     boost::shared_ptr<const SubDomain> _sub_domain;
 
     // Array of master dofs (size = num_dof_pairs)
-    std::vector<uint> master_dofs;
+    std::vector<DolfinIndex> master_dofs;
 
     // Owners of master dofs in parallel (size = num_dof_pairs)
-    std::vector<uint> master_owners;
+    std::vector<std::size_t> master_owners;
 
     // Array of slave dofs (size = num_dof_pairs)
-    std::vector<uint> slave_dofs;
+    std::vector<DolfinIndex> slave_dofs;
 
     // Owners of slave dofs in parallel (size = num_dof_pairs)
-    std::vector<uint> slave_owners;
+    std::vector<std::size_t> slave_owners;
 
   };
 

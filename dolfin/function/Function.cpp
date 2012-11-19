@@ -204,7 +204,7 @@ const Function& Function::operator= (const Function& v)
   else
   {
     // Create new collapsed FunctionSpace
-    boost::unordered_map<uint, uint> collapsed_map;
+    boost::unordered_map<std::size_t, std::size_t> collapsed_map;
     _function_space = v._function_space->collapse(collapsed_map);
 
     // FIXME: This dolfin_assertion doesn't work in parallel
@@ -212,10 +212,10 @@ const Function& Function::operator= (const Function& v)
     //dolfin_assert(collapsed_map.size() == _function_space->dofmap()->local_dimension());
 
     // Get row indices of original and new vectors
-    boost::unordered_map<uint, uint>::const_iterator entry;
-    std::vector<uint> new_rows(collapsed_map.size());
-    std::vector<uint> old_rows(collapsed_map.size());
-    uint i = 0;
+    boost::unordered_map<std::size_t, std::size_t>::const_iterator entry;
+    std::vector<DolfinIndex> new_rows(collapsed_map.size());
+    std::vector<DolfinIndex> old_rows(collapsed_map.size());
+    std::size_t i = 0;
     for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
     {
       new_rows[i]   = entry->first;
@@ -509,10 +509,10 @@ void Function::restrict(double* w,
   {
     // Get dofmap for cell
     const GenericDofMap& dofmap = *_function_space->dofmap();
-    const std::vector<uint>& dofs = dofmap.cell_dofs(dolfin_cell.index());
+    const std::vector<DolfinIndex>& dofs = dofmap.cell_dofs(dolfin_cell.index());
 
     // Pick values from vector(s)
-    _vector->get_local(w, dofs.size(), &dofs[0]);
+    _vector->get_local(w, dofs.size(), dofs.data());
   }
   else
   {
@@ -622,14 +622,14 @@ void Function::init_vector()
   }
 
   // Get global size
-  const uint N = _function_space->dofmap()->global_dimension();
+  const std::size_t N = _function_space->dofmap()->global_dimension();
 
   // Get local range
-  const std::pair<uint, uint> range = _function_space->dofmap()->ownership_range();
-  const uint local_size = range.second - range.first;
+  const std::pair<std::size_t, std::size_t> range = _function_space->dofmap()->ownership_range();
+  const std::size_t local_size = range.second - range.first;
 
   // Determine ghost vertices if dof map is distributed
-  std::vector<uint> ghost_indices;
+  std::vector<std::size_t> ghost_indices;
   if (N > local_size)
     compute_ghost_indices(range, ghost_indices);
 
@@ -646,8 +646,8 @@ void Function::init_vector()
   _vector->zero();
 }
 //-----------------------------------------------------------------------------
-void Function::compute_ghost_indices(std::pair<uint, uint> range,
-                                     std::vector<uint>& ghost_indices) const
+void Function::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
+                                     std::vector<std::size_t>& ghost_indices) const
 {
   // Clear data
   ghost_indices.clear();
@@ -666,18 +666,18 @@ void Function::compute_ghost_indices(std::pair<uint, uint> range,
   const uint num_dofs_per_cell = _function_space->element()->space_dimension();
 
   // Get local range
-  const uint n0 = range.first;
-  const uint n1 = range.second;
+  const std::size_t n0 = range.first;
+  const std::size_t n1 = range.second;
 
   // Iterate over local mesh and check which dofs are needed
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get dofs on cell
-    const std::vector<uint>& dofs = dofmap.cell_dofs(cell->index());
+    const std::vector<DolfinIndex>& dofs = dofmap.cell_dofs(cell->index());
 
     for (uint d = 0; d < num_dofs_per_cell; ++d)
     {
-      const uint dof = dofs[d];
+      const std::size_t dof = dofs[d];
       if (dof < n0 || dof >= n1)
       {
         // FIXME: Could we use dolfin::Set here? Or unordered_set?

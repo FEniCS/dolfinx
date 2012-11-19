@@ -120,7 +120,7 @@ boost::shared_ptr<const GenericDofMap> FunctionSpace::dofmap() const
   return _dofmap;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint FunctionSpace::dim() const
+std::size_t FunctionSpace::dim() const
 {
   dolfin_assert(_dofmap);
   return _dofmap->global_dimension();
@@ -178,7 +178,7 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
     v.restrict(&cell_coefficients[0], *_element, *cell, ufc_cell);
 
     // Tabulate dofs
-    const std::vector<uint>& cell_dofs = _dofmap->cell_dofs(cell->index());
+    const std::vector<DolfinIndex>& cell_dofs = _dofmap->cell_dofs(cell->index());
 
     // Copy dofs to vector
     expansion_coefficients.set(&cell_coefficients[0],
@@ -234,12 +234,12 @@ FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
 //-----------------------------------------------------------------------------
 boost::shared_ptr<FunctionSpace> FunctionSpace::collapse() const
 {
-  boost::unordered_map<uint, uint> collapsed_dofs;
+  boost::unordered_map<std::size_t, std::size_t> collapsed_dofs;
   return collapse(collapsed_dofs);
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<FunctionSpace>
-FunctionSpace::collapse(boost::unordered_map<uint, uint>& collapsed_dofs) const
+FunctionSpace::collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const
 {
   dolfin_assert(_mesh);
 
@@ -281,14 +281,15 @@ std::string FunctionSpace::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void FunctionSpace::print_dofmap() const
 {
+  // Note: static_cast is used below to supoort types that cannot be
+  //       directed to dolfin::cout
   dolfin_assert(_mesh);
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
-    const std::vector<uint>& dofs = _dofmap->cell_dofs(cell->index());
-
+    const std::vector<DolfinIndex>& dofs = _dofmap->cell_dofs(cell->index());
     cout << cell->index() << ":";
-    for (uint i = 0; i < dofs.size(); i++)
-      cout << " " << dofs[i];
+    for (std::size_t i = 0; i < dofs.size(); i++)
+      cout << " " << static_cast<std::size_t>(dofs[i]);
     cout << endl;
   }
 }

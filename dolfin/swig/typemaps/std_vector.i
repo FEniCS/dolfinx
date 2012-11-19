@@ -229,7 +229,7 @@ PyObject* list_item)
 // DESCR      : The char descriptor of the NumPy type
 //-----------------------------------------------------------------------------
 %define IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, ARG_NAME, \
-					    NUMPY_TYPE, TYPE_NAME, DESCR)
+                                            NUMPY_TYPE, TYPE_NAME, DESCR)
 
 // The typecheck
 %typecheck(SWIG_TYPECHECK_ ## TYPE_UPPER ## _ARRAY)  \
@@ -249,7 +249,7 @@ const std::vector<TYPE>&  ARG_NAME
       PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
       if ( PyArray_TYPE(xa) == NUMPY_TYPE )
       {
-        const unsigned int size = PyArray_DIM(xa, 0);
+        const std::size_t size = PyArray_DIM(xa, 0);
         temp.resize(size);
         TYPE* array = static_cast<TYPE*>(PyArray_DATA(xa));
         if (PyArray_ISCONTIGUOUS(xa))
@@ -257,20 +257,20 @@ const std::vector<TYPE>&  ARG_NAME
         else
         {
           const npy_intp strides = PyArray_STRIDE(xa, 0)/sizeof(TYPE);
-          for (int i=0; i<size; i++)
+          for (std::size_t i = 0; i < size; i++)
             temp[i] = array[i*strides];
         }
         $1 = &temp;
       }
       else
       {
-        SWIG_exception(SWIG_TypeError, "numpy array of 'TYPE_NAME' expected."\
+        SWIG_exception(SWIG_TypeError, "(1) numpy array of 'TYPE_NAME' expected."\
           " Make sure that the numpy array use dtype=DESCR.");
       }
     }
     else
     {
-      SWIG_exception(SWIG_TypeError, "numpy array of 'TYPE_NAME' expected. "\
+      SWIG_exception(SWIG_TypeError, "(2) numpy array of 'TYPE_NAME' expected. "\
 		     "Make sure that the numpy array use dtype=DESCR.");
     }
   }
@@ -288,7 +288,8 @@ const std::vector<TYPE>&  ARG_NAME
 // ARG_NAME   : The name of the argument that will be maped as an 'argout' argument
 // NUMPY_TYPE : The type of the NumPy array that will be returned
 //-----------------------------------------------------------------------------
-%define ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, ARG_NAME, NUMPY_TYPE)
+%define ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, ARG_NAME, \
+                                                NUMPY_TYPE)
 
 //-----------------------------------------------------------------------------
 // In typemap removing the argument from the expected in list
@@ -328,8 +329,8 @@ const std::vector<TYPE>&  ARG_NAME
 // SEQ_LENGTH : An optional sequence length argument. If set to a negative number
 //              will no length check be made
 //-----------------------------------------------------------------------------
-%define PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, ARG_NAME,
-						       TYPE_NAME, SEQ_LENGTH)
+%define PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, \
+                                              ARG_NAME, TYPE_NAME, SEQ_LENGTH)
 
 %typecheck(SWIG_TYPECHECK_ ## TYPE_UPPER ## _ARRAY) std::vector<TYPE> ARG_NAME
 {
@@ -349,14 +350,15 @@ const std::vector<TYPE>&  ARG_NAME
   // Get sequence length
   Py_ssize_t pyseq_length = PySequence_Size($input);
   if (SEQ_LENGTH >= 0 && pyseq_length > SEQ_LENGTH)
+  {
     SWIG_exception(SWIG_TypeError, "expected a sequence with length "	\
 		   "SEQ_LENGTH for argument $argnum");
+  }
 
   tmp_vec.reserve(pyseq_length);
   for (i = 0; i < pyseq_length; i++)
   {
     item = PySequence_GetItem($input, i);
-
     if(!SWIG_IsOK(Py_convert_ ## TYPE_NAME(item, value)))
     {
       Py_DECREF(item);
@@ -379,7 +381,8 @@ const std::vector<TYPE>&  ARG_NAME
 //-----------------------------------------------------------------------------
 %define OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, NUMPY_TYPE)
 
-%typemap(out) std::vector<TYPE> {
+%typemap(out) std::vector<TYPE>
+{
   // OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, NUMPY_TYPE)
   npy_intp adims = $1.size();
 
@@ -400,7 +403,8 @@ const std::vector<TYPE>&  ARG_NAME
 //-----------------------------------------------------------------------------
 %define READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_NAME)
 
-%typemap(out, fragment=make_numpy_array_frag(1, TYPE_NAME)) const std::vector<TYPE>& {
+%typemap(out, fragment=make_numpy_array_frag(1, TYPE_NAME)) const std::vector<TYPE>&
+{
   // READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_NAME)
   $result = %make_numpy_array(1, TYPE_NAME)($1->size(), &($1->operator[](0)), false);
 }
@@ -453,8 +457,8 @@ const std::vector<TYPE>&  ARG_NAME
 // TYPE_NAME  : The name of the pointer type, 'double' for 'double', 'uint' for
 //              'dolfin::uint'
 //-----------------------------------------------------------------------------
-%define IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, ARG_NAME,
-							  TYPE_NAME)
+%define IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, \
+                                                          ARG_NAME, TYPE_NAME)
 
 %typecheck(SWIG_TYPECHECK_ ## TYPE_UPPER ## _ARRAY) const std::vector<std::vector<TYPE> >& ARG_NAME
 {
@@ -522,7 +526,7 @@ const std::vector<TYPE>&  ARG_NAME
   // std::vector<std::pair<std:string, std:string> >
   $result = PyList_New((&$1)->size());
   ind = 0;
-  for (it=(&$1)->begin(); it!=(&$1)->end(); ++it)
+  for (it = (&$1)->begin(); it !=(&$1)->end(); ++it)
   {
     tuple = Py_BuildValue("ss", it->first.c_str(), it->second.c_str());
     PyList_SetItem($result, ind++, tuple);
@@ -545,14 +549,28 @@ TYPEMAPS_STD_VECTOR_OF_POINTERS(Parameters)
 
 //ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, cells, NPY_INT)
 //ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, columns, NPY_INT)
-ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, INT32, cells, NPY_INT)
-ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, INT32, columns, NPY_INT)
+ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, cells, NPY_UINTP)
+ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT32, columns, NPY_INTP)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, , NPY_DOUBLE)
+
+// TYPE       : The primitive type
+// TYPE_UPPER : The SWIG specific name of the type used in the array type checks
+//              values SWIG use: INT32 for integer, DOUBLE for double aso.
+// ARG_NAME   : The name of the argument that will be maped as an 'argout' argument
+// NUMPY_TYPE : The type of the NumPy array that will be returned
+// TYPE_NAME  : The name of the pointer type, 'double' for 'double', 'uint' for
+//              'dolfin::uint'
+// DESCR      : The char descriptor of the NumPy type
+
 
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, , NPY_DOUBLE, double, float_)
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, INT32, , NPY_INT, int, intc)
 //IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, , NPY_UINT, uint, uintc)
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, INT32, , NPY_UINT, uint, uintc)
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, , NPY_UINTP, uintp, uintp)
+
+// This typemap handles PETSc index typemap. Untested for 46-bit integers
+IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(PetscInt, INT32, , NPY_INT, intc, intc)
 
 //PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, coloring_type, uint, -1)
 //PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, value_shape, uint, -1)
@@ -568,6 +586,10 @@ READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, double)
 READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, int)
 READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, uint)
 //READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, uint)
+READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, sizet)
+
+// This typemap handles PETSc index typemap. Untested for 46-bit integers
+READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(PetscInt, dolfin_index)
 
 IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(Point)
 IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(MeshEntity)

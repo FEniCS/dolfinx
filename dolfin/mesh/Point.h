@@ -268,6 +268,19 @@ namespace dolfin
     ///         2
     double dot(const Point& p) const;
 
+    /// Rotate around a given axis
+    ///
+    /// *Arguments*
+    ///     a (_Point_)
+    ///         The axis to rotate around. Must be unit length.
+    ///     theta (_double_)
+    ///         The rotation angle.
+    ///
+    /// *Returns*
+    ///     Point
+    ///         The rotated point.
+    Point rotate(const Point& a, double theta) const;
+
     // Note: Not a subclass of Variable for efficiency!
 
     /// Return informal string representation (pretty-print)

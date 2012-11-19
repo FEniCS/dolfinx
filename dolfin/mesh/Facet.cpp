@@ -70,14 +70,14 @@ bool Facet::exterior() const
 }
 //-----------------------------------------------------------------------------
 std::pair<const Cell, const Cell>
-Facet::adjacent_cells(const MeshFunction<uint>* facet_orientation) const
+Facet::adjacent_cells(const MeshFunction<std::size_t>* facet_orientation) const
 {
   dolfin_assert(num_entities(dim() + 1) == 2);
 
   // Get cell indices
   const uint D = dim() + 1;
-  const uint c0 = entities(D)[0];
-  const uint c1 = entities(D)[1];
+  const std::size_t c0 = entities(D)[0];
+  const std::size_t c1 = entities(D)[1];
 
   // Normal ordering
   if (!facet_orientation || (*facet_orientation)[*this] == c0)
