@@ -379,7 +379,7 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     KSPSolve(*_ksp, *b.vec(), *x.vec());
 
   // Get the number of iterations
-  int num_iterations = 0;
+  PetscInt num_iterations = 0;
   KSPGetIterationNumber(*_ksp, &num_iterations);
 
   // Check if the solution converged and print error/warning if not converged
@@ -397,7 +397,7 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
       dolfin_error("PETScKrylovSolver.cpp",
                    "solve linear system using PETSc Krylov solver",
                    "Solution failed to converge in %i iterations (PETSc reason %s, norm %e)",
-                   num_iterations, reason_str, rnorm);
+                   static_cast<int>(num_iterations), reason_str, rnorm);
     }
     else
       warning("Krylov solver did not converge in %i iterations (PETSc reason %s, norm %e).", num_iterations, reason_str, rnorm);
@@ -489,7 +489,8 @@ void PETScKrylovSolver::set_petsc_operators()
 void PETScKrylovSolver::set_petsc_options()
 {
   // GMRES restart parameter
-  KSPGMRESSetRestart(*_ksp, parameters("gmres")["restart"]);
+  const int gmres_restart = parameters("gmres")["restart"];
+  KSPGMRESSetRestart(*_ksp, gmres_restart);
 
   // Non-zero initial guess
   const bool nonzero_guess = parameters["nonzero_initial_guess"];
@@ -502,11 +503,12 @@ void PETScKrylovSolver::set_petsc_options()
     KSPMonitorSet(*_ksp, KSPMonitorTrueResidualNorm, 0, 0);
 
   // Set tolerances
+  const int max_iterations = parameters["maximum_iterations"];
   KSPSetTolerances(*_ksp,
                    parameters["relative_tolerance"],
                    parameters["absolute_tolerance"],
                    parameters["divergence_limit"],
-                   parameters["maximum_iterations"]);
+                   max_iterations);
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::write_report(int num_iterations,

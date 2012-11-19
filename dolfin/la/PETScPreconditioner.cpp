@@ -398,7 +398,8 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   {
     // Select method and overlap
     PCSetType(pc, _methods.find("additive_schwarz")->second);
-    PCASMSetOverlap(pc, parameters("schwarz")["overlap"]);
+    const int schwarz_overlap = parameters("schwarz")["overlap"];
+    PCASMSetOverlap(pc, schwarz_overlap);
 
     // Get sub-solvers and set sub-solver parameters
     /*
@@ -433,7 +434,8 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     PCFactorSetShiftAmount(pc, parameters["shift_nonzero"]);
   }
 
-  PCFactorSetLevels(pc, parameters("ilu")["fill_level"]);
+  const int ilu_levels = parameters("ilu")["fill_level"];
+  PCFactorSetLevels(pc, ilu_levels);
 
   // Make sure options are set
   PCSetFromOptions(pc);

@@ -39,7 +39,7 @@ std::size_t PETScBaseMatrix::size(uint dim) const
 
   if (A)
   {
-    int m(0), n(0);
+    PetscInt m(0), n(0);
     MatGetSize(*A, &m, &n);
     if (dim == 0)
       return m;
@@ -62,7 +62,7 @@ std::pair<std::size_t, std::size_t> PETScBaseMatrix::local_range(uint dim) const
 
   if (A)
   {
-    int m(0), n(0);
+    PetscInt m(0), n(0);
     MatGetOwnershipRange(*A, &m, &n);
     return std::make_pair(m, n);
   }
