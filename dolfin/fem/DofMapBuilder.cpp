@@ -582,7 +582,7 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
       
   // First we send all relevant information on the slave facets to adjoining master
   // Create a type to hold all info that will be sent. The info is:
-  //    (facet id, global slave dofs and coordinates of all dofs)
+  //    (periodic facet id, global slave dofs and coordinates of all dofs)
   typedef boost::tuples::tuple<std::size_t, std::vector<std::size_t>, std::vector<std::vector<double> > > facet_info_type;
   typedef std::vector<facet_info_type> facets_info_type;
   typedef std::map<uint, facets_info_type> facet_info_map_type;    
@@ -601,7 +601,7 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
     facet_info_map_type facet_info_map;    
     std::set<uint> communicating_processors;
 
-    // Run over periodic faces and collect all info that should be sent
+    // Run over periodic facets and collect all info that should be sent
     for (uint i = 0; i < num_periodic_faces; i++)
     {   
       // There are two connected periodic facets
@@ -626,11 +626,10 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
         for (uint k = 0; k < dofmap.num_facet_dofs(); k++)
         {
           // Get global slave dof and coordinates
-          std::size_t dof = global_dofs[facet_dofs[k]];
           std::copy(facet_coors[facet_dofs[k]].begin(),
                     facet_coors[facet_dofs[k]].end(), y.begin());
           coors_of_dofs.push_back(y);
-          dofs_on_facet.push_back(dof);
+          dofs_on_facet.push_back(global_dofs[facet_dofs[k]]);
         }
                 
         // Put info in type used for communicating with master
@@ -664,10 +663,10 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
       }
     }
     
-    // Vector to hold global matching pairs of dofs
+    // Map used to hold global matching pairs of dofs on this process
     std::map<std::size_t, std::size_t> matching_dofs;
     
-    // Run over periodic face maps and extract matching dof pairs
+    // Run over periodic facets and locate matching dof pairs
     for (uint i = 0; i < num_periodic_faces; i++)
     {   
       const uint master_process = facet_pairs[i].first.second;      
@@ -736,11 +735,11 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
           //Get global master dof and coordinates
           std::size_t master_dof = global_dofs[facet_dofs[j]];
          
-          // Check new master_dofs only
-          if (matching_dofs.find(master_dof) == matching_dofs.end())
+          // Only handle dofs owned by this process
+          if (master_dof >= ownership_range.first && master_dof < ownership_range.second)
           {            
-            // Only handle dofs owned by this process
-            if (master_dof >= ownership_range.first && master_dof < ownership_range.second)
+            // Check new master_dofs only
+            if (matching_dofs.find(master_dof) == matching_dofs.end())
             {
               std::copy(facet_coors[facet_dofs[j]].begin(),
                         facet_coors[facet_dofs[j]].end(), x.begin());
@@ -748,7 +747,6 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
               for (uint k = 0; k < dofmap.num_facet_dofs(); k++)
               {
                 // Look for a match in coordinates
-                std::size_t slave_dof = slave_dofs[i][k];
                 y = coors_on_slave[i][k];                      
                 double error = 0.;
                 for(uint l = 0; l < gdim; l++) 
@@ -756,7 +754,7 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
                   
                 if (error < 1.0e-12) // Match! Store master and slave in global_matching_pairs
                 {  
-                  matching_dofs[master_dof] = slave_dof;
+                  matching_dofs[master_dof] = slave_dofs[i][k];
                   break;
                 }
               }
@@ -766,7 +764,7 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
       }                  
     }   // Finished all periodic pairs on periodic domain
     
-    // At this point there should be a match between dofs in global_matching_pairs. 
+    // At this point there should be a match between dofs in matching_dofs. 
     // Put the matching dof pairs on all processes    
     std::vector<std::map<std::size_t, std::size_t> > all_dof_pairs;
     MPI::all_gather(matching_dofs, all_dof_pairs);      
