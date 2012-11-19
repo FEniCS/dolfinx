@@ -64,19 +64,19 @@ namespace dolfin
     PETScBaseMatrix(boost::shared_ptr<Mat> A) : A(A) {}
 
     /// Return number of rows (dim = 0) or columns (dim = 1)
-    std::size_t size(uint dim) const;
+    std::size_t size(unsigned int dim) const;
 
     /// Return local range along dimension dim
-    std::pair<std::size_t, std::size_t> local_range(uint dim) const;
+    std::pair<std::size_t, std::size_t> local_range(unsigned int dim) const;
 
     /// Resize matrix to be compatible with the matrix-vector product
     /// y = Ax. In the parallel case, both size and layout are
     /// important.
     ///
     /// *Arguments*
-    ///     dim (uint)
+    ///     dim (unsigned int)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-    void resize(GenericVector& z, uint dim) const;
+    void resize(GenericVector& z, unsigned int dim) const;
 
     /// Return PETSc Mat pointer
     boost::shared_ptr<Mat> mat() const

@@ -53,7 +53,7 @@ boost::shared_ptr<GenericVector> PETScFactory:: create_local_vector() const
   return x;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<TensorLayout> PETScFactory::create_layout(uint rank) const
+boost::shared_ptr<TensorLayout> PETScFactory::create_layout(unsigned int rank) const
 {
   bool sparsity = false;
   if (rank > 1)

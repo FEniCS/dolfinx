@@ -59,7 +59,7 @@ CholmodCholeskySolver::~CholmodCholeskySolver()
 //-----------------------------------------------------------------------------
 //=============================================================================
 #ifdef HAS_CHOLMOD
-dolfin::uint CholmodCholeskySolver::solve(const GenericLinearOperator& A,
+unsigned int CholmodCholeskySolver::solve(const GenericLinearOperator& A,
                                           GenericVector& x,
                                           const GenericVector& b)
 {
@@ -75,7 +75,7 @@ dolfin::uint CholmodCholeskySolver::solve(const GenericLinearOperator& A,
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint CholmodCholeskySolver::factorize(const GenericLinearOperator& A)
+unsigned int CholmodCholeskySolver::factorize(const GenericLinearOperator& A)
 {
   // Need matrix data
   const GenericMatrix& _A = require_matrix(A);
@@ -84,8 +84,8 @@ dolfin::uint CholmodCholeskySolver::factorize(const GenericLinearOperator& A)
   boost::tuples::tuple<const std::size_t*,
                        const std::size_t*,
                        const double*, int> data = _A.data();
-  const uint M = _A.size(0);
-  const uint nnz = boost::tuples::get<3>(data);
+  const unsigned int M = _A.size(0);
+  const unsigned int nnz = boost::tuples::get<3>(data);
   dolfin_assert(_A.size(0) == _A.size(1));
 
   dolfin_assert(nnz >= M);
@@ -104,10 +104,10 @@ dolfin::uint CholmodCholeskySolver::factorize(const GenericLinearOperator& A)
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint CholmodCholeskySolver::factorized_solve(GenericVector& x,
+unsigned int CholmodCholeskySolver::factorized_solve(GenericVector& x,
                                                      const GenericVector& b)
 {
-  const uint N = b.size();
+  const unsigned int N = b.size();
 
   if (!cholmod.factorized)
   {
@@ -135,7 +135,7 @@ dolfin::uint CholmodCholeskySolver::factorized_solve(GenericVector& x,
 //-----------------------------------------------------------------------------
 #else
 // ============================================================================
-dolfin::uint CholmodCholeskySolver::solve(const GenericLinearOperator& A,
+unsigned int CholmodCholeskySolver::solve(const GenericLinearOperator& A,
                                           GenericVector& x,
                                           const GenericVector& b)
 {
@@ -146,7 +146,7 @@ dolfin::uint CholmodCholeskySolver::solve(const GenericLinearOperator& A,
   return solver.solve(x, b);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint CholmodCholeskySolver::factorize(const GenericLinearOperator& A)
+unsigned int CholmodCholeskySolver::factorize(const GenericLinearOperator& A)
 {
   dolfin_error("CholdmodCholeskySolver.cpp",
                "perform factorization using CHOLMOD Cholesky solver",
@@ -154,7 +154,7 @@ dolfin::uint CholmodCholeskySolver::factorize(const GenericLinearOperator& A)
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint CholmodCholeskySolver::factorized_solve(GenericVector& x,
+unsigned int CholmodCholeskySolver::factorized_solve(GenericVector& x,
                                                      const GenericVector& b)
 {
   dolfin_error("CholdmodCholeskySolver.cpp",
@@ -198,7 +198,7 @@ void CholmodCholeskySolver::Cholmod::clear()
 }
 //-----------------------------------------------------------------------------
 void CholmodCholeskySolver::Cholmod::init(UF_long* Ap, UF_long* Ai, double* Ax,
-					                                uint M, uint nz)
+					                                unsigned int M, unsigned int nz)
 {
   if (factorized)
     log(DBG, "CholeskySolver already contains a factorized matrix! Clearing and starting over.");
@@ -323,7 +323,7 @@ void CholmodCholeskySolver::Cholmod::refine_once(cholmod_dense* x,
   double* xx = (double*) x->x;
   double* rx = (double*) r_iter->x;
 
-  for(uint i = 0; i < N; i++)
+  for(unsigned int i = 0; i < N; i++)
     xx[i] = xx[i] + rx[i];
 
   cholmod_l_free_dense(&r_iter, &c);

@@ -64,7 +64,7 @@ namespace dolfin
     }
 
     /// Solve linear system Ax = b
-    virtual uint solve(const GenericLinearOperator& A, GenericVector& x,
+    virtual unsigned int solve(const GenericLinearOperator& A, GenericVector& x,
                        const GenericVector& b)
     {
       dolfin_error("GenericLinearSolver.h",
@@ -74,7 +74,7 @@ namespace dolfin
     }
 
     /// Solve linear system Ax = b
-    virtual uint solve(GenericVector& x, const GenericVector& b)
+    virtual unsigned int solve(GenericVector& x, const GenericVector& b)
     {
       dolfin_error("GenericLinearSolver.h",
                    "solve linear system",

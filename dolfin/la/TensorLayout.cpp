@@ -26,7 +26,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TensorLayout::TensorLayout(uint primary_dim, bool sparsity_pattern)
+TensorLayout::TensorLayout(unsigned int primary_dim, bool sparsity_pattern)
     : primary_dim(primary_dim)
 {
   // Create empty sparsity pattern
@@ -34,7 +34,7 @@ TensorLayout::TensorLayout(uint primary_dim, bool sparsity_pattern)
     _sparsity_pattern.reset(new SparsityPattern(primary_dim));
 }
 //-----------------------------------------------------------------------------
-TensorLayout::TensorLayout(const std::vector<std::size_t>& dims, uint primary_dim,
+TensorLayout::TensorLayout(const std::vector<std::size_t>& dims, unsigned int primary_dim,
   const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range,
   bool sparsity_pattern)
   : primary_dim(primary_dim), shape(dims), ownership_range(ownership_range)
@@ -66,18 +66,18 @@ void TensorLayout::init(const std::vector<std::size_t>& dims,
   this->ownership_range = ownership_range;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint TensorLayout::rank() const
+unsigned int TensorLayout::rank() const
 {
   return shape.size();
 }
 //-----------------------------------------------------------------------------
-std::size_t TensorLayout::size(uint i) const
+std::size_t TensorLayout::size(unsigned int i) const
 {
   dolfin_assert(i < shape.size());
   return shape[i];
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t> TensorLayout::local_range(uint dim) const
+std::pair<std::size_t, std::size_t> TensorLayout::local_range(unsigned int dim) const
 {
   dolfin_assert(dim < 2);
   return ownership_range[dim];
@@ -87,7 +87,7 @@ std::string TensorLayout::str() const
 {
   std::stringstream s;
   s << "<TensorLayout for tensor of rank " << rank() << ">" << std::endl;
-  for (uint i = 0; i < rank(); i++)
+  for (unsigned int i = 0; i < rank(); i++)
   {
     s << " Local range for dim " << i << ": [" << ownership_range[i].first
         << ", " << ownership_range[i].second << ")" << std::endl;

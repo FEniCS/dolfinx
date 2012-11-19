@@ -68,7 +68,7 @@ MUMPSLUSolver::~MUMPSLUSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
+unsigned int MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   assert(A);
 

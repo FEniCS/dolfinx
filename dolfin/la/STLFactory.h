@@ -64,7 +64,7 @@ namespace dolfin
     }
 
     /// Create empty tensor layout
-    boost::shared_ptr<TensorLayout> create_layout(uint rank) const
+    boost::shared_ptr<TensorLayout> create_layout(unsigned int rank) const
     {
       boost::shared_ptr<TensorLayout> pattern(new TensorLayout(0, false));
       return pattern;

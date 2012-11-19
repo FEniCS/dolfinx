@@ -105,16 +105,16 @@ namespace dolfin
     const PETScBaseMatrix& get_operator() const;
 
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(GenericVector& x, const GenericVector& b);
+    unsigned int solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(PETScVector& x, const PETScVector& b);
+    unsigned int solve(PETScVector& x, const PETScVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+    unsigned int solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(const PETScBaseMatrix& A, PETScVector& x, const PETScVector& b);
+    unsigned int solve(const PETScBaseMatrix& A, PETScVector& x, const PETScVector& b);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;

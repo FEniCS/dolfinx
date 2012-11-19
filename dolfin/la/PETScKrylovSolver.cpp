@@ -217,7 +217,7 @@ void PETScKrylovSolver::set_nullspace(const std::vector<const GenericVector*> nu
 {
   // Copy vectors
   _nullspace.clear();
-  for (uint i = 0; i < nullspace.size(); ++i)
+  for (unsigned int i = 0; i < nullspace.size(); ++i)
   {
     dolfin_assert(nullspace[i]);
     const PETScVector& x = nullspace[i]->down_cast<PETScVector>();
@@ -228,7 +228,7 @@ void PETScKrylovSolver::set_nullspace(const std::vector<const GenericVector*> nu
 
   // Get pointers to underlying PETSc objects and normalize vectors
   std::vector<Vec> petsc_vec(nullspace.size());
-  for (uint i = 0; i < nullspace.size(); ++i)
+  for (unsigned int i = 0; i < nullspace.size(); ++i)
   {
     petsc_vec[i] = *(_nullspace[i].vec().get());
     PetscReal val = 0.0;
@@ -259,13 +259,13 @@ const PETScBaseMatrix& PETScKrylovSolver::get_operator() const
   return *A;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b)
+unsigned int PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
   //check_dimensions(*A, x, b);
   return solve(as_type<PETScVector>(x), as_type<const PETScVector>(b));
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovSolver::solve(const GenericLinearOperator& A,
+unsigned int PETScKrylovSolver::solve(const GenericLinearOperator& A,
                                       GenericVector& x,
                                       const GenericVector& b)
 {
@@ -275,14 +275,14 @@ dolfin::uint PETScKrylovSolver::solve(const GenericLinearOperator& A,
                as_type<const PETScVector>(b));
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
+unsigned int PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
 {
   dolfin_assert(A);
   dolfin_assert(_ksp);
 
   // Check dimensions
-  const uint M = A->size(0);
-  const uint N = A->size(1);
+  const unsigned int M = A->size(0);
+  const unsigned int N = A->size(1);
   if (A->size(0) != b.size())
   {
     dolfin_error("PETScKrylovSolver.cpp",
@@ -410,7 +410,7 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   return num_iterations;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovSolver::solve(const PETScBaseMatrix& A,
+unsigned int PETScKrylovSolver::solve(const PETScBaseMatrix& A,
                                       PETScVector& x,
                                       const PETScVector& b)
 {
