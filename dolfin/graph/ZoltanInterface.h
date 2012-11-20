@@ -27,7 +27,6 @@
 #include <zoltan_cpp.h>
 #endif
 
-#include <dolfin/common/types.h>
 #include "Graph.h"
 
 namespace dolfin
@@ -44,8 +43,8 @@ namespace dolfin
   public:
 
     /// Compute vertex colors
-    static uint compute_local_vertex_coloring(const Graph& graph,
-                                          std::vector<uint>& colors);
+    static std::size_t compute_local_vertex_coloring(const Graph& graph,
+                                          std::vector<std::size_t>& colors);
 
   private:
 
@@ -62,7 +61,7 @@ namespace dolfin
       const Graph& graph;
 
       /// Number of edges from each vertex
-      void num_vertex_edges(uint* num_edges) const;
+      void num_vertex_edges(unsigned int* num_edges) const;
 
       // Zoltan call-back functions
       static int get_number_of_objects(void* data, int* ierr);

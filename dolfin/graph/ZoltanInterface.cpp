@@ -33,8 +33,8 @@ using namespace dolfin;
 
 #ifdef HAS_TRILINOS
 //-----------------------------------------------------------------------------
-dolfin::uint ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
-                                               std::vector<uint>& colors)
+std::size_t ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
+                                               std::vector<std::size_t>& colors)
 {
   if (colors.size() != graph.size())
   {
@@ -69,7 +69,7 @@ dolfin::uint ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
 
   // Create array for global ids that should be re-ordered
   std::vector<ZOLTAN_ID_TYPE> global_ids(graph.size());
-  for (uint i = 0; i < global_ids.size(); ++i)
+  for (std::size_t i = 0; i < global_ids.size(); ++i)
     global_ids[i] = i;
 
   // Call Zoltan function to compute coloring
@@ -84,8 +84,8 @@ dolfin::uint ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
   }
 
   // Compute number of colors
-  boost::unordered_set<uint> colors_set;
-  for (uint i = 0; i < colors.size(); ++i)
+  boost::unordered_set<std::size_t> colors_set;
+  for (std::size_t i = 0; i < colors.size(); ++i)
   {
     colors[i] = colors[i] - 1;
     colors_set.insert(colors[i]);
@@ -95,8 +95,8 @@ dolfin::uint ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
 }
 //-----------------------------------------------------------------------------
 #else
-dolfin::uint ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
-							    std::vector<uint>& colors)
+std::size_t ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
+							    std::vector<std::size_t>& colors)
 {
   dolfin_error("ZoltanInterface.cpp",
                "color mesh using Zoltan",
@@ -113,12 +113,12 @@ ZoltanInterface::ZoltanGraphInterface::ZoltanGraphInterface(const Graph& graph)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void ZoltanInterface::ZoltanGraphInterface::num_vertex_edges(uint* num_edges) const
+void ZoltanInterface::ZoltanGraphInterface::num_vertex_edges(unsigned int* num_edges) const
 {
   dolfin_assert(num_edges);
 
   // Compute nunber of edges from each graph node
-  for (uint i = 0; i < graph.size(); ++i)
+  for (std::size_t i = 0; i < graph.size(); ++i)
     num_edges[i] = graph[i].size();
 }
 //-----------------------------------------------------------------------------
@@ -139,7 +139,7 @@ void ZoltanInterface::ZoltanGraphInterface::get_object_list(void *data,
 {
   ZoltanGraphInterface *objs = (ZoltanGraphInterface *)data;
   *ierr = ZOLTAN_OK;
-  for (uint i = 0; i< objs->graph.size(); i++)
+  for (std::size_t i = 0; i< objs->graph.size(); i++)
   {
     global_id[i] = i;
     local_id[i]  = i;
@@ -154,7 +154,7 @@ void ZoltanInterface::ZoltanGraphInterface::get_number_edges(void *data,
                                     int *ierr)
 {
   ZoltanGraphInterface *objs = (ZoltanGraphInterface *)data;
-  objs->num_vertex_edges(reinterpret_cast<uint*>(num_edges));
+  objs->num_vertex_edges(reinterpret_cast<unsigned int*>(num_edges));
 }
 //-----------------------------------------------------------------------------
 void ZoltanInterface::ZoltanGraphInterface::get_all_edges(void* data,
@@ -172,11 +172,11 @@ void ZoltanInterface::ZoltanGraphInterface::get_all_edges(void* data,
   // Get graph
   const Graph graph = objs->graph;
 
-  uint entry = 0;
-  for (uint i = 0; i < graph.size(); ++i)
+  unsigned int entry = 0;
+  for (unsigned int i = 0; i < graph.size(); ++i)
   {
-    dolfin_assert(graph[i].size() == (uint) num_edges[i]);
-    BOOST_FOREACH(boost::unordered_set<uint>::value_type edge, graph[i])
+    dolfin_assert(graph[i].size() == (unsigned int) num_edges[i]);
+    BOOST_FOREACH(boost::unordered_set<unsigned int>::value_type edge, graph[i])
     {
       nbor_global_id[entry++] = edge;
     }

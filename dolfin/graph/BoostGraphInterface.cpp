@@ -36,8 +36,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::uint BoostGraphInterface::compute_local_vertex_coloring(const Graph& graph,
-                                                 std::vector<dolfin::uint>& colors)
+std::size_t BoostGraphInterface::compute_local_vertex_coloring(const Graph& graph,
+                                                 std::vector<std::size_t>& colors)
 {
   // Number of vertices
   const std::size_t n = graph.size();

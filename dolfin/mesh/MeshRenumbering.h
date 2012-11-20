@@ -47,16 +47,17 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         Mesh to be renumbered.
-    ///     coloring (_std::vector<uint>_)
+    ///     coloring (_std::vector<std::size_t>_)
     ///         Mesh coloring type.
     /// *Returns*
     ///     _Mesh_
-    static Mesh renumber_by_color(const Mesh& mesh, std::vector<uint> coloring);
+    static Mesh renumber_by_color(const Mesh& mesh,
+                                  std::vector<std::size_t> coloring);
 
   private:
 
     static void compute_renumbering(const Mesh& mesh,
-                                    const std::vector<uint>& coloring,
+                                    const std::vector<std::size_t>& coloring,
                                     std::vector<double>& coordinates,
                                     std::vector<uint>& connectivity);
 

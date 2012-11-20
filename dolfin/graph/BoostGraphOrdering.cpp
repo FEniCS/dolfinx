@@ -96,7 +96,7 @@ template<typename T, typename X>
 T BoostGraphOrdering::build_undirected_graph(const X& graph)
 {
   // Graph size
-  const uint n = graph.size();
+  const std::size_t n = graph.size();
 
   // Build Boost graph
   T boost_graph(n);
@@ -104,7 +104,7 @@ T BoostGraphOrdering::build_undirected_graph(const X& graph)
   graph_set_type::const_iterator edge;
   for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
   {
-    const uint vertex_index = vertex - graph.begin();
+    const std::size_t vertex_index = vertex - graph.begin();
     for (edge = vertex->begin(); edge != vertex->end(); ++edge)
     {
       if (vertex_index < *edge)
@@ -119,7 +119,7 @@ template<typename T, typename X>
 T BoostGraphOrdering::build_directed_graph(const X& graph)
 {
   // Graph size
-  const uint n = graph.size();
+  const std::size_t n = graph.size();
 
   // Build Boost graph
   T boost_graph(n);

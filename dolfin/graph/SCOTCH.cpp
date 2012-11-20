@@ -186,10 +186,10 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
   const int baseval = 0;
 
   // Number of processes
-  const uint num_processes = MPI::num_processes();
+  const std::size_t num_processes = MPI::num_processes();
 
   // This process number
-  const uint proc_num = MPI::process_number();
+  const std::size_t proc_num = MPI::process_number();
 
   // Local data ---------------------------------
 
@@ -228,12 +228,12 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
   // FIXME: explain this test
   // Array containing . . . . (some sanity checks)
   std::vector<std::size_t> procvrttab(num_processes + 1);
-  for (uint i = 0; i < num_processes; ++i)
+  for (std::size_t i = 0; i < num_processes; ++i)
     procvrttab[i] = std::accumulate(proccnttab.begin(), proccnttab.begin() + i, 0);
   procvrttab[num_processes] = procvrttab[num_processes - 1] + proccnttab[num_processes - 1];
 
   // Sanity check
-  for (uint i = 1; i <= proc_num; ++i)
+  for (std::size_t i = 1; i <= proc_num; ++i)
     dolfin_assert(procvrttab[i] >= (procvrttab[i - 1] + proccnttab[i - 1]));
 
   // Print graph data -------------------------------------
@@ -248,7 +248,7 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
     // Total (global) number of edges (cell-cell connections) in the graph
     const SCOTCH_Num edgeglbnbr = MPI::sum(edgelocnbr);
 
-    for (uint proc = 0; proc < num_processes; ++proc)
+    for (std::size_t proc = 0; proc < num_processes; ++proc)
     {
       // Print data for one process at a time
       if (proc == proc_num)
