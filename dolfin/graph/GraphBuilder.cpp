@@ -359,21 +359,21 @@ void GraphBuilder::compute_connectivity(const boost::multi_array<std::size_t, 2>
     for(uint j = 0; j < cell_vertices.shape()[1]; ++j)
     {
       // create a set of vertices representing a facet, 
-      std::vector<std::size_t> facet(cell_vertices.shape()[1]);
-      std::copy(cell_vertices[i].begin(),cell_vertices[i].end(),facet.begin());
+      std::vector<std::size_t> facet(cell_vertices[i].begin(), cell_vertices[i].end());
       facet.erase(facet.begin() + j);
       // sort into order, so map indexing will be consistent
       std::sort(facet.begin(),facet.end());
-      boost::unordered_map<std::vector<size_t>, std::size_t>::iterator p=facet_cell.find(facet);
-      // If not found in map, insert
-      if(p == facet_cell.end())
+
+      boost::unordered_map<std::vector<size_t>, std::size_t>::iterator join_cell = facet_cell.find(facet);
+      // If facet not found in map, insert facet->cell into map
+      if(join_cell == facet_cell.end())
         facet_cell[facet] = i;
       else
       {
         // Already in map. Connect cells and delete from map.
-        local_graph[i].insert(p->second + offset);
-        local_graph[p->second].insert(i + offset);
-        facet_cell.erase(p);
+        local_graph[i].insert(join_cell->second + offset);
+        local_graph[join_cell->second].insert(i + offset);
+        facet_cell.erase(join_cell);
       }
     }
   }
