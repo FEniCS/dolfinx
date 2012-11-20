@@ -208,7 +208,6 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
   const std::size_t num_local_cells    = mesh_data.global_cell_indices.size();
   const uint topological_dim    = mesh_data.tdim;
-  const uint num_cell_facets    = topological_dim + 1;
   const uint num_facet_vertices = topological_dim;
   const uint num_cell_vertices  = topological_dim + 1;
 
@@ -354,7 +353,7 @@ void GraphBuilder::compute_connectivity(const boost::multi_array<std::size_t, 2>
   double tt = time();
 
   //  typedef boost::unordered_map<std::vector<size_t>, std::size_t> vectormap;
-  boost::unordered_map<std::vector<size_t>, std::size_t> facet_cell;  
+  boost::unordered_map<std::vector<size_t>, std::size_t> facet_cell;
 
   // Iterate over all cells
   for (std::size_t i = 0; i < cell_vertices.shape()[0]; ++i)
@@ -362,7 +361,7 @@ void GraphBuilder::compute_connectivity(const boost::multi_array<std::size_t, 2>
     // Iterate over facets in cell
     for(uint j = 0; j < cell_vertices.shape()[1]; ++j)
     {
-      // create a set of vertices representing a facet, 
+      // create a set of vertices representing a facet,
       std::vector<std::size_t> facet(cell_vertices[i].begin(), cell_vertices[i].end());
       facet.erase(facet.begin() + j);
       // sort into order, so map indexing will be consistent
@@ -391,10 +390,10 @@ void GraphBuilder::compute_connectivity(const boost::multi_array<std::size_t, 2>
   {
     local_boundary_set.insert(facet->second);
   }
-  
+
   local_boundary_cells.resize(local_boundary_set.size());
   std::copy(local_boundary_set.begin(), local_boundary_set.end(),local_boundary_cells.begin());
-  
+
   tt = time() - tt;
   info("Time to build connectivity map (alt): %g", tt);
 
