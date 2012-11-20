@@ -68,11 +68,12 @@ namespace dolfin
   private:
 
     static void compute_connectivity_orig(const boost::multi_array<std::size_t, 2>& cell_vertices,
-                                         uint num_facet_vertices, std::size_t offset,
-                                         std::vector<std::set<std::size_t> >& local_graph);
+                                          uint num_facet_vertices, std::size_t offset,
+                                          std::vector<std::set<std::size_t> >& local_graph);
 
     static void compute_connectivity(const boost::multi_array<std::size_t, 2>& cell_vertices,
-                                     uint num_facet_vertices, std::size_t offset,
+                                     std::size_t offset,
+                                     std::vector<std::size_t>& local_boundary_cells,
                                      std::vector<std::set<std::size_t> >& graph);
 
     static std::size_t compute_ghost_connectivity(const boost::multi_array<std::size_t, 2>& cell_vertices,
