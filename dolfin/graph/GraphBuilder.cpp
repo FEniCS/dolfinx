@@ -227,7 +227,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
   // Compute local edges (cell-cell connections) using global (internal) numbering
   cout << "Compute local cell-cell connections" << endl;
-  compute_connectivity_alt(cell_vertices, num_facet_vertices, process_offset,
+  compute_connectivity(cell_vertices, num_facet_vertices, process_offset,
                        local_graph);
   cout << "Finished computing local cell-cell connections" << endl;
 
@@ -351,7 +351,6 @@ void GraphBuilder::compute_connectivity(const boost::multi_array<std::size_t, 2>
   double tt = time();
 
   boost::unordered_map<std::vector<size_t>, std::size_t> facet_cell;  
-  boost::unordered_map<std::size_t, std::size_t> cell_cell;  
 
   // Iterate over all cells
   for (std::size_t i = 0; i < cell_vertices.shape()[0]; ++i)
@@ -362,7 +361,6 @@ void GraphBuilder::compute_connectivity(const boost::multi_array<std::size_t, 2>
       // create a set of vertices representing a facet, 
       std::vector<std::size_t> facet(cell_vertices.shape()[1]);
       std::copy(cell_vertices[i].begin(),cell_vertices[i].end(),facet.begin());
-      
       facet.erase(facet.begin() + j);
       // sort into order, so map indexing will be consistent
       std::sort(facet.begin(),facet.end());
@@ -379,6 +377,9 @@ void GraphBuilder::compute_connectivity(const boost::multi_array<std::size_t, 2>
       }
     }
   }
+
+  // facet_cell map now only contains cells with edge facets
+  info("Number of edge cells: %d", facet_cell.size());
   
   tt = time() - tt;
   info("Time to build connectivity map (alt): %g", tt);
