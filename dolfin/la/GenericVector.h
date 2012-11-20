@@ -51,7 +51,7 @@ namespace dolfin
     //--- Implementation of the GenericTensor interface ---
 
     /// Resize tensor with given dimensions
-    virtual void resize(uint rank, const std::size_t* dims)
+    virtual void resize(unsigned int rank, const std::size_t* dims)
     { dolfin_assert(rank == 1); resize(dims[0]); }
 
     /// Initialize zero tensor using sparsity pattern
@@ -59,15 +59,15 @@ namespace dolfin
     { resize(tensor_layout.local_range(0)); zero(); }
 
     /// Return tensor rank (number of dimensions)
-    virtual uint rank() const
+    virtual unsigned int rank() const
     { return 1; }
 
     /// Return size of given dimension
-    virtual std::size_t size(uint dim) const
+    virtual std::size_t size(unsigned int dim) const
     { dolfin_assert(dim == 0); return size(); }
 
     /// Return local ownership range
-    virtual std::pair<std::size_t, std::size_t> local_range(uint dim) const
+    virtual std::pair<std::size_t, std::size_t> local_range(unsigned int dim) const
     { dolfin_assert(dim == 0); return local_range(); }
 
     /// Get block of values

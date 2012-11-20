@@ -54,7 +54,7 @@ Parameters PaStiXLUSolver::default_parameters()
   p.rename("pastix_lu_solver");
 
   // Number of threads per MPI process
-  p.add<uint>("num_threads");
+  p.add<unsigned int>("num_threads");
 
   // max = 300 good with 1 thread on laptop
   // min, max = 180, 340 good with 2 thread on laptop
@@ -116,9 +116,9 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   }
 
   // Block sizes (affects performance)
-  const uint min_block_size = parameters["min_block_size"];
+  const unsigned int min_block_size = parameters["min_block_size"];
   iparm[IPARM_MIN_BLOCKSIZE] = min_block_size;
-  const uint max_block_size = parameters["max_block_size"];
+  const unsigned int max_block_size = parameters["max_block_size"];
   iparm[IPARM_MAX_BLOCKSIZE] = max_block_size;
   //iparm[IPARM_ABS] = API_YES;
 
@@ -152,9 +152,9 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
 
   // Number of threads per MPI process
   if (parameters["num_threads"].is_set())
-    iparm[IPARM_THREAD_NBR] = std::max((uint) 1, (uint) parameters["num_threads"]);
+    iparm[IPARM_THREAD_NBR] = std::max((unsigned int) 1, (unsigned int) parameters["num_threads"]);
   else
-    iparm[IPARM_THREAD_NBR] = std::max((uint) 1, (uint) dolfin::parameters["num_threads"]);
+    iparm[IPARM_THREAD_NBR] = std::max((unsigned int) 1, (unsigned int) dolfin::parameters["num_threads"]);
 
   // User-supplied RHS
   iparm[IPARM_RHS_MAKING] = API_RHS_B;

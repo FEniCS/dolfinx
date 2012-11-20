@@ -142,7 +142,7 @@ const GenericLinearOperator& UmfpackLUSolver::get_operator() const
   return *A;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::solve(GenericVector& x, const GenericVector& b)
+unsigned int UmfpackLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   dolfin_assert(A);
 
@@ -166,7 +166,7 @@ dolfin::uint UmfpackLUSolver::solve(GenericVector& x, const GenericVector& b)
   return solve_factorized(x, b);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::solve(const GenericLinearOperator& A, GenericVector& x,
+unsigned int UmfpackLUSolver::solve(const GenericLinearOperator& A, GenericVector& x,
                                     const GenericVector& b)
 {
   boost::shared_ptr<const GenericLinearOperator> _A(&A, NoDeleter());
@@ -195,11 +195,11 @@ void UmfpackLUSolver::symbolic_factorize()
   const std::size_t* Ap  = boost::tuples::get<0>(data);
   const std::size_t* Ai  = boost::tuples::get<1>(data);
   const double*      Ax  = boost::tuples::get<2>(data);
-  const uint         nnz = boost::tuples::get<3>(data);
+  const unsigned int         nnz = boost::tuples::get<3>(data);
 
   // Check dimensions and get number of non-zeroes
-  const uint M   = _A->size(0);
-  const uint N   = _A->size(1);
+  const unsigned int M   = _A->size(0);
+  const unsigned int N   = _A->size(1);
   dolfin_assert(nnz >= M);
 
   // Factorize and solve
@@ -226,11 +226,11 @@ void UmfpackLUSolver::numeric_factorize()
   const std::size_t* Ap  = boost::tuples::get<0>(data);
   const std::size_t* Ai  = boost::tuples::get<1>(data);
   const double*      Ax  = boost::tuples::get<2>(data);
-  const uint         nnz = boost::tuples::get<3>(data);
+  const unsigned int         nnz = boost::tuples::get<3>(data);
 
   // Check dimensions and get number of non-zeroes
-  const uint M   = _A->size(0);
-  const uint N   = _A->size(1);
+  const unsigned int M   = _A->size(0);
+  const unsigned int N   = _A->size(1);
   dolfin_assert(nnz >= M);
 
   // Factorize and solve
@@ -243,7 +243,7 @@ void UmfpackLUSolver::numeric_factorize()
   numeric = umfpack_factorize_numeric(Ap, Ai, Ax, symbolic.get());
 }
 //-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::solve_factorized(GenericVector& x,
+unsigned int UmfpackLUSolver::solve_factorized(GenericVector& x,
                                                const GenericVector& b) const
 {
   if (!A)
@@ -294,7 +294,7 @@ dolfin::uint UmfpackLUSolver::solve_factorized(GenericVector& x,
 //-----------------------------------------------------------------------------
 #ifdef HAS_UMFPACK
 //-----------------------------------------------------------------------------
-boost::shared_ptr<void> UmfpackLUSolver::umfpack_factorize_symbolic(uint M, uint N,
+boost::shared_ptr<void> UmfpackLUSolver::umfpack_factorize_symbolic(unsigned int M, unsigned int N,
                                                                     const std::size_t* Ap,
                                                                     const std::size_t* Ai,
                                                                     const double* Ax)
@@ -454,7 +454,7 @@ void UmfpackLUSolver::umfpack_check_status(long int status,
 //-----------------------------------------------------------------------------
 #else
 //-----------------------------------------------------------------------------
-boost::shared_ptr<void> UmfpackLUSolver::umfpack_factorize_symbolic(uint M, uint N,
+boost::shared_ptr<void> UmfpackLUSolver::umfpack_factorize_symbolic(unsigned int M, unsigned int N,
                                                   const std::size_t* Ap,
                                                   const std::size_t* Ai,
                                                   const double* Ax)

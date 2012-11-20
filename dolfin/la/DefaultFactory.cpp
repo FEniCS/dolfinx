@@ -46,7 +46,7 @@ boost::shared_ptr<GenericVector> DefaultFactory::create_local_vector() const
   return factory().create_local_vector();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<TensorLayout> DefaultFactory::create_layout(uint rank) const
+boost::shared_ptr<TensorLayout> DefaultFactory::create_layout(unsigned int rank) const
 {
   return factory().create_layout(rank);
 }

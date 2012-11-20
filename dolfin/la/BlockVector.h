@@ -41,7 +41,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    BlockVector(uint n = 0);
+    BlockVector(unsigned int n = 0);
 
     /// Destructor
     virtual ~BlockVector();
@@ -50,13 +50,13 @@ namespace dolfin
     virtual BlockVector* copy() const;
 
     /// Set function
-    void set_block(uint i, boost::shared_ptr<GenericVector> v);
+    void set_block(unsigned int i, boost::shared_ptr<GenericVector> v);
 
     /// Get sub-vector (const)
-    const boost::shared_ptr<GenericVector> get_block(uint i) const;
+    const boost::shared_ptr<GenericVector> get_block(unsigned int i) const;
 
     /// Get sub-vector (non-const)
-    boost::shared_ptr<GenericVector> get_block(uint);
+    boost::shared_ptr<GenericVector> get_block(unsigned int);
 
     /// Add multiple of given vector (AXPY operation)
     void axpy(double a, const BlockVector& x);
@@ -95,7 +95,7 @@ namespace dolfin
     virtual bool empty() const;
 
     /// Number of vectors
-    uint size() const;
+    unsigned int size() const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;

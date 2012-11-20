@@ -54,14 +54,14 @@ namespace dolfin
     virtual void init(const TensorLayout& tensor_layout) = 0;
 
     /// Return tensor rank (number of dimensions)
-    virtual uint rank() const
+    virtual unsigned int rank() const
     { return 2; }
 
     /// Return size of given dimension
-    virtual std::size_t size(uint dim) const = 0;
+    virtual std::size_t size(unsigned int dim) const = 0;
 
     /// Return local ownership range
-    virtual std::pair<std::size_t, std::size_t> local_range(uint dim) const = 0;
+    virtual std::pair<std::size_t, std::size_t> local_range(unsigned int dim) const = 0;
 
     /// Get block of values
     virtual void get(double* block, const DolfinIndex* num_rows,
@@ -105,9 +105,9 @@ namespace dolfin
     /// important.
     ///
     /// *Arguments*
-    ///     dim (uint)
+    ///     dim (unsigned int)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-    virtual void resize(GenericVector& z, uint dim) const = 0;
+    virtual void resize(GenericVector& z, unsigned int dim) const = 0;
 
     /// Get block of values
     virtual void get(double* block, std::size_t m, const DolfinIndex* rows, std::size_t n,

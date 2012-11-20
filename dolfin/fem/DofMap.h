@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2012 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -22,7 +22,7 @@
 // Modified by Mikael Mortensen, 2012
 //
 // First added:  2007-03-01
-// Last changed: 2012-02-29
+// Last changed: 2012-11-05
 
 #ifndef __DOLFIN_DOF_MAP_H
 #define __DOLFIN_DOF_MAP_H
@@ -47,6 +47,7 @@ namespace dolfin
   class GenericVector;
   class UFC;
   class UFCMesh;
+  class Restriction;
 
   /// This class handles the mapping of degrees of freedom. It builds
   /// a dof map based on a ufc::dofmap on a specific mesh. It will
@@ -64,7 +65,18 @@ namespace dolfin
     ///         The ufc::dofmap.
     ///     mesh (_Mesh_)
     ///         The mesh.
-    DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh);
+    DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
+           const Mesh& mesh);
+
+    /// Create restricted dof map on mesh (data is not shared)
+    ///
+    /// *Arguments*
+    ///     ufc_dofmap (ufc::dofmap)
+    ///         The ufc::dofmap.
+    ///     restriction (_Restriction_)
+    ///         The restriction.
+    DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
+           boost::shared_ptr<const Restriction> restriction);
 
   private:
 
@@ -88,7 +100,7 @@ namespace dolfin
     /// Destructor
     ~DofMap();
 
-    /// True if dof map is a view into another map
+    /// True iff dof map is a view into another map
     ///
     /// *Returns*
     ///     bool
@@ -96,6 +108,14 @@ namespace dolfin
     ///         another map).
     bool is_view() const
     { return _is_view; }
+
+    /// True iff dof map is restricted
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True iff dof map is restricted
+    bool is_restricted() const
+    { return static_cast<bool>(_restriction); }
 
     /// Return true iff mesh entities of topological dimension d are
     /// needed
@@ -154,6 +174,14 @@ namespace dolfin
     ///     unsigned int
     ///         The number of facet dofs.
     unsigned int num_facet_dofs() const;
+
+    /// Restriction if any. If the dofmap is not restricted, a null
+    /// pointer is returned.
+    ///
+    /// *Returns*
+    ///     boost::shared_ptr<const Restriction>
+    //          The restriction.
+    boost::shared_ptr<const Restriction> restriction() const;
 
     /// Return the ownership range (dofs in this range are owned by
     /// this process)
@@ -348,6 +376,13 @@ namespace dolfin
     static void init_ufc_dofmap(ufc::dofmap& dofmap, const ufc::mesh ufc_mesh,
                                 const Mesh& dolfin_mesh);
 
+    // Initialize UFC dofmap for restricted space
+    static void init_ufc_dofmap(ufc::dofmap& dofmap,
+                                const ufc::mesh ufc_mesh,
+                                const Mesh& dolfin_mesh,
+                                const MeshFunction<uint>& domain_markers,
+                                uint domain);
+
     // Check dimensional consistency between UFC dofmap and the mesh
     static void check_dimensional_consistency(const ufc::dofmap& dofmap,
                                               const Mesh& mesh);
@@ -361,8 +396,15 @@ namespace dolfin
     // Map from UFC dof numbering to renumbered dof (ufc_dof, actual_dof)
     boost::unordered_map<std::size_t, std::size_t> ufc_map_to_dofmap;
 
+    // Restriction, pointer zero if not restricted
+    boost::shared_ptr<const Restriction> _restriction;
+
+    // Global dimension. Note that this may differ from the global dimension
+    // of the UFC dofmap if the function space is restricted or periodic.
+    uint _global_dimension;
+
     // UFC dof map offset
-    std::size_t ufc_offset;
+    std::size_t _ufc_offset;
 
     // Ownership range (dofs in this range are owned by this process)
     std::pair<std::size_t, std::size_t> _ownership_range;
@@ -383,9 +425,6 @@ namespace dolfin
     // True iff running in parallel
     bool _distributed;
     
-    // Global dimension of the finite element function space, modified
-    // for the number of eliminated periodic slaves.
-    uint _global_dimension;    
   };
 }
 

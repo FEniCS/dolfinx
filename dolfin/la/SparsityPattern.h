@@ -48,31 +48,31 @@ namespace dolfin
   public:
 
     /// Create empty sparsity pattern
-    SparsityPattern(uint primary_dim);
+    SparsityPattern(unsigned int primary_dim);
 
     /// Create sparsity pattern for a generic tensor
     SparsityPattern(const std::vector<std::size_t>& dims,
                     const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range,
-                    const std::vector<const boost::unordered_map<std::size_t, uint>* > off_process_owner,
-                    uint primary_dim);
+                    const std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner,
+                    unsigned int primary_dim);
 
     /// Initialize sparsity pattern for a generic tensor
     void init(const std::vector<std::size_t>& dims,
               const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range,
-              const std::vector<const boost::unordered_map<std::size_t, uint>* > off_process_owner);
+              const std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner);
 
     /// Insert non-zero entries
     void insert(const std::vector<const std::vector<DolfinIndex>* >& entries);
 
     /// Add edges (vertex = [index, owning process])
-    void add_edges(const std::pair<DolfinIndex, uint>& vertex,
+    void add_edges(const std::pair<DolfinIndex, unsigned int>& vertex,
                    const std::vector<DolfinIndex>& edges);
 
     /// Return rank
-    uint rank() const;
+    unsigned int rank() const;
 
     /// Return local range for dimension dim
-    std::pair<std::size_t, std::size_t> local_range(uint dim) const;
+    std::pair<std::size_t, std::size_t> local_range(unsigned int dim) const;
 
     /// Return number of local nonzeros
     std::size_t num_nonzeros() const;
@@ -126,7 +126,7 @@ namespace dolfin
     std::vector<std::size_t> non_local;
 
     // Map from non-local vertex to owning process index
-    std::vector<boost::unordered_map<std::size_t, uint> > off_process_owner;
+    std::vector<boost::unordered_map<std::size_t, unsigned int> > off_process_owner;
 
   };
 

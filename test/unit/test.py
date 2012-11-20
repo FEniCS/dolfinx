@@ -133,6 +133,7 @@ for prefix in prefixes:
     for (test, subtest, interface, output) in failed:
         print "One or more unit tests failed for %s (%s, %s):" % (test, subtest, interface)
         print output
+        open("fail.log", "w").write(output)
 
 # Return error code if tests failed
 sys.exit(len(failed) != 0)

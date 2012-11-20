@@ -33,7 +33,7 @@ include_directories(${DOLFIN_INCLUDE_DIRS})
 include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
-
+add_executable(demo_restriction main.cpp)
 
 # Target libraries
-NOT_SET
+target_link_libraries(demo_restriction ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})

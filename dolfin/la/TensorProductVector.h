@@ -53,7 +53,7 @@ namespace dolfin
   public:
 
     /// Create tensor product vector with given dimensions
-    TensorProductVector(const std::vector<uint>& dims);
+    TensorProductVector(const std::vector<unsigned int>& dims);
 
     /// Destructor
     virtual ~TensorProductVector() {}

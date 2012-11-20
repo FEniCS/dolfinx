@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Anders Logg and Ola Skavhaug
+// Copyright (C) 2008-2012 Anders Logg and Ola Skavhaug
 //
 // This file is part of DOLFIN.
 //
@@ -16,17 +16,20 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Niclas Jansson 2009.
+// Modified by Garth Wells 2009-2012
 // Modified by Mikael Mortensen 2012.
 //
 // First added:  2008-08-12
-// Last changed: 2009-11-04
+// Last changed: 2012-11-05
 
 #ifndef __DOF_MAP_BUILDER_H
 #define __DOF_MAP_BUILDER_H
 
 #include <set>
+#include <map>
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
+#include <dolfin/common/types.h>
 #include <dolfin/common/Set.h>
 
 namespace ufc
@@ -46,6 +49,11 @@ namespace dolfin
 
   class DofMapBuilder
   {
+
+    // FIXME: Test which 'map' is most efficient
+    typedef std::map<DolfinIndex, DolfinIndex> map;
+    typedef std::map<DolfinIndex, DolfinIndex>::const_iterator map_iterator;
+
     // FIXME: Test which 'set' is most efficient
 
     //typedef std::set<std::size_t> set;
@@ -65,8 +73,19 @@ namespace dolfin
 
   public:
 
-    static void build(DofMap& dofmap, const Mesh& dolfin_mesh,
-                      const UFCMesh& ufc_mesh, bool reorder,
+    // Build dofmap
+    static void build(DofMap& dofmap,
+                      const Mesh& dolfin_mesh,
+                      const UFCMesh& ufc_mesh,
+                      bool reorder,
+                      bool distributed);
+
+    // Build restricted dofmap
+    static void build(DofMap& dofmap,
+                      const Mesh& dolfin_mesh,
+                      const UFCMesh& ufc_mesh,
+                      const Restriction& restriction,
+                      bool reorder,
                       bool distributed);
 
   private:

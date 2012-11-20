@@ -176,7 +176,7 @@ boost::shared_ptr<GenericMatrix> EpetraMatrix::copy() const
   return B;
 }
 //-----------------------------------------------------------------------------
-std::size_t EpetraMatrix::size(uint dim) const
+std::size_t EpetraMatrix::size(unsigned int dim) const
 {
   if (dim > 1)
   {
@@ -195,7 +195,7 @@ std::size_t EpetraMatrix::size(uint dim) const
     return 0;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t> EpetraMatrix::local_range(uint dim) const
+std::pair<std::size_t, std::size_t> EpetraMatrix::local_range(unsigned int dim) const
 {
   dolfin_assert(dim < 2);
   if (dim == 1)
@@ -211,7 +211,7 @@ std::pair<std::size_t, std::size_t> EpetraMatrix::local_range(uint dim) const
   return std::make_pair(row_map.MinMyGID64(), row_map.MaxMyGID64() + 1);
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::resize(GenericVector& z, uint dim) const
+void EpetraMatrix::resize(GenericVector& z, unsigned int dim) const
 {
   dolfin_assert(A);
 

@@ -42,10 +42,10 @@ namespace dolfin
   public:
 
     /// Create empty tensor layout
-    TensorLayout(uint primary_dim, bool sparsity_pattern);
+    TensorLayout(unsigned int primary_dim, bool sparsity_pattern);
 
     /// Create a tensor layout
-    TensorLayout(const std::vector<std::size_t>& dims, uint primary_dim,
+    TensorLayout(const std::vector<std::size_t>& dims, unsigned int primary_dim,
                  const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range,
                  bool sparsity_pattern);
 
@@ -54,13 +54,13 @@ namespace dolfin
               const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range);
 
     /// Return rank
-    uint rank() const;
+    unsigned int rank() const;
 
     /// Return global size for dimension i (size of tensor, includes non-zeroes)
-    std::size_t size(uint i) const;
+    std::size_t size(unsigned int i) const;
 
     /// Return local range for dimension dim
-    std::pair<std::size_t, std::size_t> local_range(uint dim) const;
+    std::pair<std::size_t, std::size_t> local_range(unsigned int dim) const;
 
     /// Return sparsity pattern (possibly null)
     boost::shared_ptr<GenericSparsityPattern> sparsity_pattern()
@@ -74,7 +74,7 @@ namespace dolfin
     std::string str() const;
 
     // Primary storage dim (e.g., 0=row major, 1=column major)
-    const uint primary_dim;
+    const unsigned int primary_dim;
 
   private:
 

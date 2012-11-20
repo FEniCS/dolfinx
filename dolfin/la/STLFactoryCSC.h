@@ -36,7 +36,7 @@ namespace dolfin
     virtual ~STLFactoryCSC() {}
 
     /// Create empty tensor layout
-    virtual boost::shared_ptr<TensorLayout> create_layout(uint rank) const
+    virtual boost::shared_ptr<TensorLayout> create_layout(unsigned int rank) const
     {
       boost::shared_ptr<TensorLayout> pattern(new TensorLayout(1, false));
       return pattern;

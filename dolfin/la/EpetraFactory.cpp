@@ -71,7 +71,7 @@ boost::shared_ptr<GenericVector> EpetraFactory::create_local_vector() const
   return x;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<TensorLayout> EpetraFactory::create_layout(uint rank) const
+boost::shared_ptr<TensorLayout> EpetraFactory::create_layout(unsigned int rank) const
 {
   bool sparsity = false;
   if (rank > 1)

@@ -58,7 +58,7 @@ namespace dolfin
     uBLASMatrix<ublas_sparse_matrix> M;
 
     // Diagonal
-    std::vector<uint> diagonal;
+    std::vector<unsigned int> diagonal;
 
     const Parameters& krylov_parameters;
 

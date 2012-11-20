@@ -198,7 +198,7 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
 {
   PETScVector f;
   PETScMatrix A;
-  int its;
+  DolfinIndex its;
   SNESConvergedReason reason;
   struct snes_ctx_t snes_ctx;
 
@@ -266,9 +266,11 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
   #endif
 
   // Tolerances
+  const int max_iters = parameters["maximum_iterations"];
+  const int max_residual_evals = parameters["maximum_residual_evaluations"];
   SNESSetTolerances(*_snes, parameters["absolute_tolerance"], parameters["relative_tolerance"],
-                            parameters["solution_tolerance"], parameters["maximum_iterations"],
-                            parameters["maximum_residual_evaluations"]);
+                            parameters["solution_tolerance"], max_iters,
+                            max_residual_evals);
 
   if (parameters["report"])
     SNESView(*_snes, PETSC_VIEWER_STDOUT_WORLD);

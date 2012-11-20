@@ -218,7 +218,7 @@ void Assembler::assemble_cells(GenericTensor& A,
         continue;
     }
 
-    // Skip integral if zero
+    // Skip if no integral on current domain
     if (!integral)
       continue;
 
@@ -226,8 +226,16 @@ void Assembler::assemble_cells(GenericTensor& A,
     ufc.update(*cell);
 
     // Get local-to-global dof maps for cell
+    bool empty_dofmap = false;
     for (uint i = 0; i < form_rank; ++i)
+    {
       dofs[i] = &(dofmaps[i]->cell_dofs(cell->index()));
+      empty_dofmap = empty_dofmap || dofs[i]->size() == 0;
+    }
+
+    // Skip if at least one dofmap is empty
+    if (empty_dofmap)
+      continue;
 
     // Tabulate cell tensor
     integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell);

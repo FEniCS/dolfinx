@@ -77,16 +77,16 @@ namespace dolfin
     const GenericLinearOperator& get_operator() const;
 
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(GenericVector& x, const GenericVector& b);
+    unsigned int solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(EpetraVector& x, const EpetraVector& b);
+    unsigned int solve(EpetraVector& x, const EpetraVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+    unsigned int solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);
+    unsigned int solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);
 
     /// Return residual from most recent solve
     double residual(const std::string residualtype) const;
