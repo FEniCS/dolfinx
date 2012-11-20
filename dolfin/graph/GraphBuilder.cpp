@@ -193,6 +193,7 @@ BoostBidirectionalGraph GraphBuilder::local_boost_graph(const Mesh& mesh,
 
   return graph;
 }
+
 //-----------------------------------------------------------------------------
 void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
                                 std::vector<std::set<std::size_t> >& local_graph,
@@ -226,7 +227,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
   // Compute local edges (cell-cell connections) using global (internal) numbering
   cout << "Compute local cell-cell connections" << endl;
-  compute_connectivity(cell_vertices, num_facet_vertices, process_offset,
+  compute_connectivity_alt(cell_vertices, num_facet_vertices, process_offset,
                        local_graph);
   cout << "Finished computing local cell-cell connections" << endl;
 
@@ -339,12 +340,59 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   ghost_vertices = ghost_cell_global_indices;
   info("Finish compute graph ghost edges.");;
 }
-//-----------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------
 void GraphBuilder::compute_connectivity(const boost::multi_array<std::size_t, 2>& cell_vertices,
+                                         uint num_facet_vertices, std::size_t offset,
+                                         std::vector<std::set<std::size_t> >& local_graph)
+{
+
+  Timer t("Compute Connectivity [new]");
+  double tt = time();
+
+  boost::unordered_map<std::vector<size_t>, std::size_t> facet_cell;  
+  boost::unordered_map<std::size_t, std::size_t> cell_cell;  
+
+  // Iterate over all cells
+  for (std::size_t i = 0; i < cell_vertices.shape()[0]; ++i)
+  {
+    // Iterate over facets in cell
+    for(uint j = 0; j < cell_vertices.shape()[1]; ++j)
+    {
+      // create a set of vertices representing a facet, 
+      std::vector<std::size_t> facet(cell_vertices.shape()[1]);
+      std::copy(cell_vertices[i].begin(),cell_vertices[i].end(),facet.begin());
+      
+      facet.erase(facet.begin() + j);
+      // sort into order, so map indexing will be consistent
+      std::sort(facet.begin(),facet.end());
+      boost::unordered_map<std::vector<size_t>, std::size_t>::iterator p=facet_cell.find(facet);
+      // If not found in map, insert
+      if(p == facet_cell.end())
+        facet_cell[facet] = i;
+      else
+      {
+        // Already in map. Connect cells and delete from map.
+        local_graph[i].insert(p->second + offset);
+        local_graph[p->second].insert(i + offset);
+        facet_cell.erase(p);
+      }
+    }
+  }
+  
+  tt = time() - tt;
+  info("Time to build connectivity map (alt): %g", tt);
+
+}
+
+
+//-----------------------------------------------------------------------------
+void GraphBuilder::compute_connectivity_orig(const boost::multi_array<std::size_t, 2>& cell_vertices,
                                   uint num_facet_vertices, std::size_t offset,
                                   std::vector<std::set<std::size_t> >& local_graph)
 {
   // FIXME: Continue to make this function more efficient
+  Timer t("Compute Connectivity [original]");
 
   // Declare iterators
   boost::multi_array<std::size_t, 2>::const_iterator c_vertices;

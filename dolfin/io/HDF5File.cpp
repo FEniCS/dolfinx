@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-11-16
+// Last changed: 2012-11-19
 
 #ifdef HAS_HDF5
 
@@ -234,6 +234,7 @@ std::string HDF5File::search_list(const std::vector<std::string>& list,
 //-----------------------------------------------------------------------------
 void HDF5File::operator>> (Mesh& input_mesh)
 {
+  Timer t("HDF5: read_mesh_all");
 
   // Open file if not already open
   if (!hdf5_file_open)
@@ -317,6 +318,7 @@ void HDF5File::read_mesh(Mesh& input_mesh,const std::string name)
   }
   coordinates_name = name + "/" + coordinates_name;
 
+  Timer t("HDF5: read_repartition");  
   read_mesh_repartition(input_mesh, coordinates_name, global_index_name,
                                    topology_name);
 }
@@ -404,6 +406,11 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
   HDF5Interface::read_dataset(hdf5_file_id, global_index_name, vertex_range,
                               mesh_data.vertex_indices);
 
+  // Use this when  disabling redistribute
+  // mesh_data.vertex_coordinates.resize(mesh_data.num_global_vertices);
+  //   std::copy(vertex_coordinates.begin(),vertex_coordinates.end(), 
+  //            mesh_data.vertex_coordinates.begin());
+
   // MeshPartitioning::build_distributed_mesh() does not 
   // use the vertex indices values, so need to sort
   // vertices into global order before calling it.
@@ -419,11 +426,12 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
   //    mesh_data.vertex_indices[i] = vertex_range.first + i;
 
   // Build distributed mesh
+  Timer t9("HDF5: partition");
   MeshPartitioning::build_distributed_mesh(input_mesh, mesh_data);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::operator<< (const Mesh& mesh)
-{
+{  
   const std::string name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
   write_mesh_global_index(mesh, mesh.topology().dim(), name);
   counter++;
