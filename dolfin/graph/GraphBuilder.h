@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-19
-// Last changed: 2012-11-20
+// Last changed: 2012-11-21
 
 #ifndef __GRAPH_BUILDER_H
 #define __GRAPH_BUILDER_H
@@ -65,6 +65,10 @@ namespace dolfin
                                    std::vector<std::set<std::size_t> >& local_graph,
                                    std::set<std::size_t>& ghost_vertices);
 
+    static void compute_dual_graph_orig(const LocalMeshData& mesh_data,
+                                   std::vector<std::set<std::size_t> >& local_graph,
+                                   std::set<std::size_t>& ghost_vertices);
+
   private:
 
     static void compute_connectivity_orig(const boost::multi_array<std::size_t, 2>& cell_vertices,
@@ -73,7 +77,7 @@ namespace dolfin
 
     static void compute_connectivity(const boost::multi_array<std::size_t, 2>& cell_vertices,
                                      std::size_t offset,
-                                     std::vector<std::size_t>& local_boundary_cells,
+                                     std::set<std::size_t>& ghost_vertices,
                                      std::vector<std::set<std::size_t> >& graph);
 
     static std::size_t compute_ghost_connectivity(const boost::multi_array<std::size_t, 2>& cell_vertices,
