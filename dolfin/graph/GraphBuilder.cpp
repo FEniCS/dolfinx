@@ -393,14 +393,18 @@ void GraphBuilder::compute_connectivity(const boost::multi_array<std::size_t, 2>
   Timer t("Compute Connectivity [new]");
   double tt = time();
 
+  // create mapping from facets(vector) to cells
   typedef boost::unordered_map<std::vector<std::size_t>, std::size_t> vectormap;
   vectormap facet_cell;  
 
+  const std::size_t num_cells = cell_vertices.shape()[0];
+  const uint num_vertices_per_cell = cell_vertices.shape()[1];
+
   // Iterate over all cells
-  for (std::size_t i = 0; i < cell_vertices.shape()[0]; ++i)
+  for (std::size_t i = 0; i < num_cells; ++i)
   {
     // Iterate over facets in cell
-    for(uint j = 0; j < cell_vertices.shape()[1]; ++j)
+    for(uint j = 0; j < num_vertices_per_cell; ++j)
     {
       // create a set of vertices representing a facet,
       std::vector<std::size_t> facet(cell_vertices[i].begin(), cell_vertices[i].end());
@@ -408,7 +412,7 @@ void GraphBuilder::compute_connectivity(const boost::multi_array<std::size_t, 2>
       // sort into order, so map indexing will be consistent
       std::sort(facet.begin(),facet.end());
 
-      vectormap::iterator join_cell = facet_cell.find(facet);
+      const vectormap::iterator join_cell = facet_cell.find(facet);
       // If facet not found in map, insert facet->cell into map
       if(join_cell == facet_cell.end())
         facet_cell[facet] = i;
@@ -425,6 +429,8 @@ void GraphBuilder::compute_connectivity(const boost::multi_array<std::size_t, 2>
   // facet_cell map now only contains facets->cells with edge facets
   // either interprocess or external boundaries
 
+  // For parallel only, deal with ghosts
+
   // Copy to another map and re-label cells with offset
   vectormap othermap(facet_cell);
   for(vectormap::iterator other_cell = othermap.begin(); other_cell != othermap.end(); ++other_cell)
@@ -432,15 +438,14 @@ void GraphBuilder::compute_connectivity(const boost::multi_array<std::size_t, 2>
     other_cell->second += offset;
   }
 
-  // For parallel only, deal with ghosts
-  uint num_processes = MPI::num_processes();
-  uint process_number = MPI::process_number();
-  uint mpi_neighbour = (process_number + 1)%num_processes;
+  const uint num_processes = MPI::num_processes();
+  const uint process_number = MPI::process_number();
+  const uint mpi_neighbour = (process_number + 1)%num_processes;
     
   ghost_vertices.clear();
 
   // create MPI ring
-  std::vector<uint>destinations(1,mpi_neighbour);
+  const std::vector<uint>destinations(1,mpi_neighbour);
 
   // FIXME: better way to send boost::unordered_map between processes
   // boost cannot serialise unordered_map, so convert to a vector here
@@ -458,10 +463,11 @@ void GraphBuilder::compute_connectivity(const boost::multi_array<std::size_t, 2>
     othermap.clear();
     othermap.insert(map_data.begin(),map_data.end());
 
-    uint mapsize = MPI::sum(othermap.size());
+    const uint mapsize = MPI::sum(othermap.size());
     if(process_number==0)
       std::cout << " Iteration: " << i << ", map size = " << mapsize << std::endl;
 
+    // Go through local facets, looking for a matching facet in othermap
     for(vectormap::iterator fcell = facet_cell.begin(); fcell != facet_cell.end(); ++fcell)
     {
       vectormap::iterator join_cell = othermap.find(fcell->first);
