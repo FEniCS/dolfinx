@@ -20,7 +20,7 @@
 // Modified by Joachim B Haga, 2012
 //
 // First added:  2012-04-13
-// Last changed: 2012-11-12
+// Last changed: 2012-11-21
 
 #include <dolfin.h>
 
@@ -47,7 +47,7 @@ int main(int argc, char** argv)
   plot(g3d, "3D geometry (surface)");
 
   // Generate and plot mesh
-  Mesh mesh3d(g3d, 128);
+  Mesh mesh3d(g3d, 24);
   cout << "Done generating mesh" << endl;
   info(mesh3d);
   plot(mesh3d, "3D mesh");
