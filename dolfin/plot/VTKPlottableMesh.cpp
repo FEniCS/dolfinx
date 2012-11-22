@@ -368,6 +368,29 @@ VTKPlottableMesh *dolfin::CreateVTKPlottable(boost::shared_ptr<const Mesh> mesh)
   return new VTKPlottableMesh(mesh);
 }
 //---------------------------------------------------------------------------
+void VTKPlottableMesh::filter_scalars(vtkFloatArray *values, const Parameters &parameters)
+{
+  const Parameter &param_hide_below = parameters["hide_below"];
+  const Parameter &param_hide_above = parameters["hide_above"];
+  if (param_hide_below.is_set() || param_hide_above.is_set())
+  {
+    float hide_above =  std::numeric_limits<float>::infinity();
+    float hide_below = -std::numeric_limits<float>::infinity();
+    if (param_hide_below.is_set()) hide_below = (double)param_hide_below;
+    if (param_hide_above.is_set()) hide_above = (double)param_hide_above;
+
+    for (uint i = 0; i < values->GetNumberOfTuples(); i++)
+    {
+      float val = values->GetValue(i);
+
+      if (val < hide_below || val > hide_above)
+      {
+        values->SetValue(i, std::numeric_limits<float>::quiet_NaN());
+      }
+    }
+  }
+}
+//---------------------------------------------------------------------------
 template <class T>
 void VTKPlottableMesh::setPointValues(uint size, const T* indata, const Parameters &parameters)
 {
@@ -386,6 +409,9 @@ void VTKPlottableMesh::setPointValues(uint size, const T* indata, const Paramete
     {
       values->SetValue(i, (double)indata[i]);
     }
+
+    filter_scalars(values, parameters);
+
     _grid->GetPointData()->SetScalars(values);
   }
   else
@@ -439,25 +465,7 @@ void VTKPlottableMesh::setCellValues(uint size, const T* indata, const Parameter
     values->SetValue(i, (float)indata[i]);
   }
 
-  const Parameter &param_hide_below = parameters["hide_below"];
-  const Parameter &param_hide_above = parameters["hide_above"];
-  if (param_hide_below.is_set() || param_hide_above.is_set())
-  {
-    float hide_above =  std::numeric_limits<float>::infinity();
-    float hide_below = -std::numeric_limits<float>::infinity();
-    if (param_hide_below.is_set()) hide_below = (double)param_hide_below;
-    if (param_hide_above.is_set()) hide_above = (double)param_hide_above;
-
-    for (uint i = 0; i < num_entities; i++)
-    {
-      float val = values->GetValue(i);
-
-      if (val < hide_below || val > hide_above)
-      {
-        values->SetValue(i, std::numeric_limits<float>::quiet_NaN());
-      }
-    }
-  }
+  filter_scalars(values, parameters);
 
   _grid->GetCellData()->SetScalars(values);
 }
