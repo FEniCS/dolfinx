@@ -38,7 +38,6 @@ class XDMF_Mesh_Output(unittest.TestCase):
         mesh = UnitCube(8, 8, 8)
         File("output/mesh_3D.xdmf") << mesh
 
-
 class XDMF_Vertex_Function_Output(unittest.TestCase):
     """Test output of vertex-based Functions to XDMF files"""
 
@@ -100,7 +99,6 @@ class XDMF_Vertex_Function_Output(unittest.TestCase):
         u.vector()[:] = 1.0
         File("output/u.xdmf") << u
 
-
 class XDMF_MeshFunction_Output(unittest.TestCase):
     """Test output of Meshes to XDMF files"""
 
@@ -139,7 +137,6 @@ class XDMF_MeshFunction_Output(unittest.TestCase):
         for facet in facets(mesh):
             mf[facet] = facet.index()
         File("output/mf_facet_3D.xdmf") << mf
-
 
 if __name__ == "__main__":
     if has_hdf5():

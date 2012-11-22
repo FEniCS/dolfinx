@@ -58,6 +58,7 @@
 #include "dolfin/mesh/Cell.h"
 #include "dolfin/mesh/MeshFunction.h"
 #include "dolfin/mesh/SubDomain.h"
+#include "dolfin/mesh/Restriction.h"
 
 // #include types from function submodule of module function
 #include "dolfin/function/GenericFunction.h"
@@ -155,6 +156,7 @@ import_array();
 %import(module="mesh") "dolfin/mesh/Cell.h"
 %import(module="mesh") "dolfin/mesh/MeshFunction.h"
 %import(module="mesh") "dolfin/mesh/SubDomain.h"
+%import(module="mesh") "dolfin/mesh/Restriction.h"
 
 // %import types from submodule function of SWIG module function
 %include "dolfin/swig/function/pre.i"
