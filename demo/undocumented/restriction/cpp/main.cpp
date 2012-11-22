@@ -49,7 +49,7 @@ class Boundary : public SubDomain
 int main()
 {
   // FIXME: Does not yet run in parallel
-  if (MPI::num_processes() > 1)
+  if (dolfin::MPI::num_processes() > 1)
   {
     info("Sorry, this demo does not yet run in parallel.");
     return 0;
