@@ -79,6 +79,12 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, sizet)
 %ignore dolfin::MeshFunction::values;
 
 //-----------------------------------------------------------------------------
+// Rename methods which get called by a re-implemented method from the 
+// Python layer
+//-----------------------------------------------------------------------------
+%rename (_mark) dolfin::SubDomain::mark;
+
+//-----------------------------------------------------------------------------
 // Misc ignores
 //-----------------------------------------------------------------------------
 %ignore dolfin::MeshEditor::open(Mesh&, CellType::Type, uint, uint);
