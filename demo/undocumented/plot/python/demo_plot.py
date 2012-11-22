@@ -86,8 +86,7 @@ if 1 in demos:
     f = Expression("t * 100 * exp(-10.0 * (pow(x[0] - t, 2) + pow(x[1] - t, 2)))", element=V.ufl_element(), t=0.0)
     for i in range(100):
         f.t += 0.01
-        p=plot(f, mesh=mesh, rescale=True, title="Plotting scalar function")
-    f1=f
+        plot(f, mesh=mesh, rescale=True, title="Plotting scalar function")
 
 # Plot vector function
 if 2 in demos:
@@ -96,11 +95,8 @@ if 2 in demos:
     f = Expression(("-(x[1] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))",\
                   " (x[0] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))"), \
                    element=V.ufl_element(), t=0.0)
-    plot(f, mesh, mode="displacement", input_keys="mw")
     for i in range(200):
         f.t += 0.005
         plot(f, mesh=mesh, rescale=True, title="Plotting vector function")
-
-p.plot()
 
 interactive()
