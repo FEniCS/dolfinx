@@ -370,6 +370,8 @@ VTKPlottableMesh *dolfin::CreateVTKPlottable(boost::shared_ptr<const Mesh> mesh)
 //---------------------------------------------------------------------------
 void VTKPlottableMesh::filter_scalars(vtkFloatArray *values, const Parameters &parameters)
 {
+  dolfin_assert(values);
+
   const Parameter &param_hide_below = parameters["hide_below"];
   const Parameter &param_hide_above = parameters["hide_above"];
   if (param_hide_below.is_set() || param_hide_above.is_set())
@@ -379,7 +381,8 @@ void VTKPlottableMesh::filter_scalars(vtkFloatArray *values, const Parameters &p
     if (param_hide_below.is_set()) hide_below = (double)param_hide_below;
     if (param_hide_above.is_set()) hide_above = (double)param_hide_above;
 
-    for (uint i = 0; i < values->GetNumberOfTuples(); i++)
+    const uint num_tuples = static_cast<uint>(values->GetNumberOfTuples());
+    for (uint i = 0; i < num_tuples; i++)
     {
       float val = values->GetValue(i);
 
