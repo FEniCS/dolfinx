@@ -356,8 +356,11 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   // List of cell vertices
   const boost::multi_array<std::size_t, 2>& cell_vertices = mesh_data.cell_vertices;
   const std::size_t num_local_cells    = mesh_data.global_cell_indices.size();
-
+  const uint num_vertices_per_cell = mesh_data.num_vertices_per_cell;
+  
   dolfin_assert(num_local_cells == cell_vertices.shape()[0]);
+  dolfin_assert(num_vertices_per_cell == cell_vertices.shape()[1]);
+
   local_graph.resize(num_local_cells);
 
   const std::size_t offset = MPI::global_offset(num_local_cells, true);
@@ -370,11 +373,8 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   typedef boost::unordered_map<std::vector<std::size_t>, std::size_t> vectormap;
   vectormap facet_cell;  
 
-  const std::size_t num_cells = cell_vertices.shape()[0];
-  const uint num_vertices_per_cell = cell_vertices.shape()[1];
-
   // Iterate over all cells
-  for (std::size_t i = 0; i < num_cells; ++i)
+  for (std::size_t i = 0; i < num_local_cells; ++i)
   {
     // Iterate over facets in cell
     for(uint j = 0; j < num_vertices_per_cell; ++j)
@@ -383,7 +383,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
       std::vector<std::size_t> facet(cell_vertices[i].begin(), cell_vertices[i].end());
       facet.erase(facet.begin() + j);
       // sort into order, so map indexing will be consistent
-      std::sort(facet.begin(),facet.end());
+      std::sort(facet.begin(), facet.end());
 
       const vectormap::iterator join_cell = facet_cell.find(facet);
       // If facet not found in map, insert facet->cell into map
@@ -421,15 +421,15 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
   // create MPI ring
   // OPTIONAL: could create a bidirectional ring - but tricky if num_processes is even.
-  const std::vector<uint>destinations(1,mpi_neighbour);
+  const std::vector<uint>destinations(1, mpi_neighbour);
 
-  // FIXME: better way to send boost::unordered_map between processes
+  // FIXME: better way to send boost::unordered_map between processes - could use std::map instead
   // boost cannot serialise unordered_map, so convert to a vector here
   std::vector<std::vector<std::pair<std::vector<std::size_t>, size_t> > >data_vector(1);
   std::vector<std::pair<std::vector<std::size_t>, size_t> >& map_data = data_vector[0];
 
   // repeat (n-1) times, to go round ring
-  for(uint i = 0; i < (num_processes - 1) ; ++i)
+  for(uint i = 0; i < (num_processes - 1); ++i)
   {
     // FIXME: improve memory management
     // Shift data to next process
@@ -437,7 +437,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     std::copy(othermap.begin(), othermap.end(), map_data.begin());
     MPI::distribute(data_vector, destinations, data_vector);
     othermap.clear();
-    othermap.insert(map_data.begin(),map_data.end());
+    othermap.insert(map_data.begin(), map_data.end());
 
     const uint mapsize = MPI::sum(othermap.size());
     if(process_number == 0)
@@ -458,7 +458,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     }
   }
 
-  // remaining facets are exterior boundary
+  // remaining facets are exterior boundary - could be useful
 
   const std::size_t n_exterior_facets = MPI::sum(facet_cell.size());
   if(process_number == 0)
