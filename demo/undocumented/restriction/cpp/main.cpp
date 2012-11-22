@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-10-12
-// Last changed: 2012-11-14
+// Last changed: 2012-11-22
 
 #include <dolfin.h>
 #include "Poisson.h"
@@ -48,6 +48,13 @@ class Boundary : public SubDomain
 
 int main()
 {
+  // FIXME: Does not yet run in parallel
+  if (MPI::num_processes() > 1)
+  {
+    info("Sorry, this demo does not yet run in parallel.");
+    return 0;
+  }
+
   // Create mesh
   UnitSquare mesh(32, 32);
 
