@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2012
 //
 // First added:  2010-02-19
-// Last changed: 2012-11-21
+// Last changed: 2012-11-22
 
 #include <algorithm>
 #include <numeric>
@@ -345,6 +345,7 @@ void GraphBuilder::compute_dual_graph_orig(const LocalMeshData& mesh_data,
   info("Finish compute graph ghost edges.");;
 }
 
+//-----------------------------------------------------------------------------
 
 void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
                                       std::vector<std::set<std::size_t> >& local_graph,
@@ -354,43 +355,15 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
   // List of cell vertices
   const boost::multi_array<std::size_t, 2>& cell_vertices = mesh_data.cell_vertices;
-
-  const uint num_processes = MPI::num_processes();
-
   const std::size_t num_local_cells    = mesh_data.global_cell_indices.size();
-  //  const uint topological_dim    = mesh_data.tdim;
-  //  const uint num_cell_facets    = topological_dim + 1;
-  //  const uint num_facet_vertices = topological_dim;
-  //  const uint num_cell_vertices  = topological_dim + 1;
 
-  // Resize graph (cell are graph vertices, cell-cell connections are graph edges)
+  dolfin_assert(num_local_cells == cell_vertices.shape()[0]);
   local_graph.resize(num_local_cells);
 
-  // Get number of cells on each process
-  std::vector<std::size_t> cells_per_process;
-  MPI::all_gather(num_local_cells, cells_per_process);
-
-  // Compute offset for going from local to (internal) global numbering
-  std::vector<std::size_t> process_offsets(num_processes);
-  for (uint i = 0; i < num_processes; ++i)
-    process_offsets[i] = std::accumulate(cells_per_process.begin(), cells_per_process.begin() + i, 0);
-  const std::size_t process_offset = process_offsets[MPI::process_number()];
+  const std::size_t offset = MPI::global_offset(num_local_cells, true);
 
   // Compute local edges (cell-cell connections) using global (internal) numbering
-  cout << "Compute local cell-cell connections" << endl;
 
-  compute_connectivity(cell_vertices, process_offset, ghost_vertices, local_graph);
-
-}
-
-// ----------------------------------------------------------------------
-void GraphBuilder::compute_connectivity(const boost::multi_array<std::size_t, 2>& cell_vertices,
-                                        std::size_t offset,
-                                        std::set<std::size_t>& ghost_vertices,
-                                        std::vector<std::set<std::size_t> >& local_graph)
-{
-
-  Timer t("Compute Connectivity [new]");
   double tt = time();
 
   // create mapping from facets(vector) to cells
@@ -429,6 +402,8 @@ void GraphBuilder::compute_connectivity(const boost::multi_array<std::size_t, 2>
   // facet_cell map now only contains facets->cells with edge facets
   // either interprocess or external boundaries
 
+  // FIXME: separate here into two functions
+
   // For parallel only, deal with ghosts
 
   // Copy to another map and re-label cells with offset
@@ -445,6 +420,7 @@ void GraphBuilder::compute_connectivity(const boost::multi_array<std::size_t, 2>
   ghost_vertices.clear();
 
   // create MPI ring
+  // OPTIONAL: could create a bidirectional ring - but tricky if num_processes is even.
   const std::vector<uint>destinations(1,mpi_neighbour);
 
   // FIXME: better way to send boost::unordered_map between processes
@@ -455,7 +431,7 @@ void GraphBuilder::compute_connectivity(const boost::multi_array<std::size_t, 2>
   // repeat (n-1) times, to go round ring
   for(uint i = 0; i < (num_processes - 1) ; ++i)
   {
-    // FIXME: improve. 
+    // FIXME: improve memory management
     // Shift data to next process
     map_data.resize(othermap.size());
     std::copy(othermap.begin(), othermap.end(), map_data.begin());
@@ -464,8 +440,8 @@ void GraphBuilder::compute_connectivity(const boost::multi_array<std::size_t, 2>
     othermap.insert(map_data.begin(),map_data.end());
 
     const uint mapsize = MPI::sum(othermap.size());
-    if(process_number==0)
-      std::cout << " Iteration: " << i << ", map size = " << mapsize << std::endl;
+    if(process_number == 0)
+      std::cout << "t=" << (time() - tt) << ", iteration: " << i << ", map size = " << mapsize << std::endl;
 
     // Go through local facets, looking for a matching facet in othermap
     for(vectormap::iterator fcell = facet_cell.begin(); fcell != facet_cell.end(); ++fcell)
@@ -484,10 +460,12 @@ void GraphBuilder::compute_connectivity(const boost::multi_array<std::size_t, 2>
 
   // remaining facets are exterior boundary
 
-  std::cout << "n(exterior facets) = " << MPI::sum(facet_cell.size()) << std::endl;
+  const std::size_t n_exterior_facets = MPI::sum(facet_cell.size());
+  if(process_number == 0)
+    std::cout << "n(exterior facets) = " << n_exterior_facets << std::endl;
 
   tt = time() - tt;
-  info("Time to build connectivity map (alt): %g", tt);
+  info("Time to build connectivity map [new]: %g", tt);
 
 }
 
