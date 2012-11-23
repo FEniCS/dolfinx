@@ -1,5 +1,5 @@
 """ added by Jan Blechta 2012-11-23
-This script test if conversion of test_Triangle_3.{edge, ele, mesh}
+This script test if conversion of test_Triangle_3.{edge, ele, node}
 to test_Triangle_3.{xml, attr0.xml} by mesh-convert works fine. It particularly
 checks if edge marker has right value by integrating over these edges.
 Note that marker of dim=1 is saved in XML mesh file and loaded automatically
