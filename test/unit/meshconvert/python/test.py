@@ -1,5 +1,27 @@
-""" Tests for the meshconvert module.
-"""
+""" Tests for the meshconvert module."""
+
+# Copyright (C) 2012
+#
+# This file is part of DOLFIN.
+#
+# DOLFIN is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# DOLFIN is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+#
+# Modified by Jan Blechta 2012
+#
+# First added:
+# Last changed: 2012-11-23
+
 from unittest import TestCase as _TestCase
 import unittest
 import os
@@ -327,6 +349,7 @@ class GmshTest(_ConverterTest):
 
 class TriangleTester(_TestCase):
     def test_convert(self):
+        # test no. 1
         from dolfin import Mesh, MPI
         if MPI.num_processes() != 1:
             return
@@ -343,6 +366,67 @@ class TriangleTester(_TestCase):
 
         # Clean up
         os.unlink(dfname)
+
+
+        # test no. 2
+        from dolfin import MPI, Mesh, MeshFunction, Expression, Constant, \
+                           ds, dS, dx, assemble, DOLFIN_EPS, edges, Edge
+        if MPI.num_processes() != 1:
+            return
+        fname = os.path.join("data", "test_Triangle_3")
+        dfname = fname+".xml"
+        dfname0 = fname+".attr0.xml"
+
+        # Read triangle file and convert to a dolfin xml mesh file
+        meshconvert.triangle2xml(fname, dfname)
+
+        # Read in dolfin mesh and check number of cells and vertices
+        mesh = Mesh(dfname)
+        mfun = MeshFunction('double', mesh, dfname0)
+        self.assertEqual(mesh.num_vertices(), 58)
+        self.assertEqual(mesh.num_cells(), 58)
+
+        # Define expressions out of mfun 
+        class TopA(Expression):
+            def eval_cell(self, value, x, ufc_cell):
+                if x[1]>0:
+                    value[0] = mfun.array()[ufc_cell.index]
+                else:
+                    value[0] = 0
+        class BottomA(Expression):
+            def eval_cell(self, value, x, ufc_cell):
+                if x[1]<0:
+                    value[0] = mfun.array()[ufc_cell.index]
+                else:
+                    value[0] = 0
+        topA, bottomA = TopA(), BottomA()
+
+        # Calculate averages of mfun on two domains 
+        volA    = assemble(Constant(0.5)*dx, mesh=mesh)
+        topA    = assemble(topA*dx,          mesh=mesh)
+        bottomA = assemble(bottomA*dx,       mesh=mesh)
+        self.assertEqual(abs((topA   /volA)+10.0) < 100.*DOLFIN_EPS, True)
+        self.assertEqual(abs((bottomA/volA)-10.0) < 100.*DOLFIN_EPS, True)
+
+        # Facet integrals over different markers
+        a = assemble(Constant(1)('-')*dS(0), mesh=mesh)
+        b = assemble(Constant(1)     *ds(0), mesh=mesh)
+        c = assemble(Constant(1)('-')*dS(1), mesh=mesh)
+        d = assemble(Constant(1)     *ds(1), mesh=mesh)
+
+        # Total length of all edges...
+        edges_length = 0
+        for e in edges(mesh):
+            edges_length += e.length()
+
+        # ...should be equal to a+d
+        self.assertEqual(abs(a+d-edges_length) < 100.*DOLFIN_EPS, True)
+        self.assertEqual(b, 0.0)
+        self.assertEqual(c, 0.0)
+
+        # Clean up
+        os.unlink(dfname)
+        os.unlink(dfname0)
 
 class DiffPackTester(_TestCase):
     def test_convert(self):
