@@ -154,7 +154,7 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'time-series',                 'python'), \
    os.path.join(demodir, 'undocumented', 'triangulate',                 'cpp'),    \
    os.path.join(demodir, 'undocumented', 'triangulate',                 'python'), \
-   os.path.join(demodir, 'undocumented', 'restriction',                 'python')]
+   os.path.join(demodir, 'undocumented', 'restriction',                 'cpp')]
 
 failed = []
 timing = []
