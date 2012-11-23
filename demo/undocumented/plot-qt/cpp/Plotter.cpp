@@ -18,7 +18,6 @@
 // First added:  2012-09-14
 // Last changed: 2012-09-18
 
-#include <vtkNew.h>
 #include <vtkCellPicker.h>
 #include <vtkRenderer.h>
 
@@ -73,7 +72,7 @@ void Plotter::receiveMouseMoved(int x, int y)
 {
   const QSize size = get_widget()->size();
 
-  vtkNew<vtkCellPicker> picker;
+  vtkSmartPointer<vtkCellPicker> picker = vtkSmartPointer<vtkCellPicker>::New();
   if (picker->Pick(x, size.height()-y-1, 0, vtk_pipeline->get_renderer()))
   {
     cur_cell = picker->GetCellId();
