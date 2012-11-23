@@ -94,6 +94,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 {
   info("Creating restricted dofmap.");
   warning("Restricted function space is an experimental feature.");
+  not_working_in_parallel("Restricted function space");
 
   dolfin_assert(_ufc_dofmap);
   dolfin_assert(_restriction);

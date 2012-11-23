@@ -149,12 +149,12 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'subdomains',                  'cpp'),    \
    os.path.join(demodir, 'undocumented', 'subdomains',                  'python'), \
    os.path.join(demodir, 'undocumented', 'submesh',                     'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'submesh',                     'python'),  \
+   os.path.join(demodir, 'undocumented', 'submesh',                     'python'), \
    os.path.join(demodir, 'undocumented', 'time-series',                 'cpp'),    \
    os.path.join(demodir, 'undocumented', 'time-series',                 'python'), \
    os.path.join(demodir, 'undocumented', 'triangulate',                 'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'triangulate',                 'python')]
-
+   os.path.join(demodir, 'undocumented', 'triangulate',                 'python'), \
+   os.path.join(demodir, 'undocumented', 'restriction',                 'python')]
 
 failed = []
 timing = []
