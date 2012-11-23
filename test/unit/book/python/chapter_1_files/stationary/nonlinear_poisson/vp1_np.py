@@ -76,7 +76,7 @@ prm['newton_solver']['relative_tolerance'] = 1E-7
 prm['newton_solver']['maximum_iterations'] = 25
 prm['newton_solver']['relaxation_parameter'] = 1.0
 if iterative_solver:
-    prec = 'ilu' if parameters['linear_algebra_backend'] == 'PETSc' else 'jacobi'
+    prec = 'jacobi' if 'jacobi' in zip(*krylov_solver_preconditioners())[0] else 'ilu'
     prm['linear_solver'] = 'gmres'
     prm['preconditioner'] = prec
     prm['krylov_solver']['absolute_tolerance'] = 1E-9
