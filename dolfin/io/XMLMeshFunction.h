@@ -238,7 +238,7 @@ namespace dolfin
                               const std::string type, pugi::xml_node xml_node,
                               bool write_mesh)
   {
-    not_working_in_parallel("Writing XML MeshFunctions");
+    not_working_in_parallel("MeshFunction XML output");
 
     // Write mesh if requested
     if (write_mesh)

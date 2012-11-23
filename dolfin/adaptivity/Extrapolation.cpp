@@ -45,7 +45,7 @@ using namespace dolfin;
 void Extrapolation::extrapolate(Function& w, const Function& v)
 {
   // Using set_local for simplicity here
-  not_working_in_parallel("Extrapolation");
+  not_working_in_parallel("Extrapolation of functions");
 
   // Too verbose
   //info("Extrapolating function: %s --> %s",

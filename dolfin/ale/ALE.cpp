@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-05-02
-// Last changed: 2011-11-12
+// Last changed: 2012-11-23
 
 #include <vector>
 #include <dolfin/function/Function.h>
@@ -32,12 +32,13 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void ALE::move(Mesh& mesh, const BoundaryMesh& new_boundary)
 {
+  not_working_in_parallel("ALE mesh smoothing");
   HarmonicSmoothing::move(mesh, new_boundary);
 }
 //-----------------------------------------------------------------------------
 void ALE::move(Mesh& mesh0, const Mesh& mesh1)
 {
-  not_working_in_parallel("ALE::move");
+  not_working_in_parallel("ALE mesh smoothing");
 
   // Extract boundary meshes
   BoundaryMesh boundary0(mesh0);

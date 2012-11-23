@@ -602,8 +602,7 @@ void DofMap::init_ufc_dofmap(ufc::dofmap& dofmap,
                  "Only cell-based restricted function spaces are currently supported. ");
   }
 
-  // FIXME: Not yet working in parallel
-  not_working_in_parallel("Restricted of function spaces");
+  not_working_in_parallel("Restricted function space");
 
   // Check that we have all mesh entities
   for (uint d = 0; d <= dolfin_mesh.topology().dim(); ++d)

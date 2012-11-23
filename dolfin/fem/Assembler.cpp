@@ -347,9 +347,9 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   if (ufc.form.num_interior_facet_domains() == 0)
     return;
 
- not_working_in_parallel("Assembly over interior facets");
+  not_working_in_parallel("Assembly over interior facets");
 
- Timer timer("Assemble interior facets");
+  Timer timer("Assemble interior facets");
 
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
