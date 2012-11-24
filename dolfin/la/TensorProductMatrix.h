@@ -51,7 +51,7 @@ namespace dolfin
   public:
 
     /// Create tensor product matrix with given number of factors
-    TensorProductMatrix(uint num_factors);
+    TensorProductMatrix(unsigned int num_factors);
 
     /// Destructor
     virtual ~TensorProductMatrix() {}

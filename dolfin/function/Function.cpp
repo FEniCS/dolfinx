@@ -45,6 +45,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Point.h>
+#include <dolfin/mesh/Restriction.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "Expression.h"
 #include "FunctionSpace.h"
@@ -543,6 +544,10 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   dolfin_assert(_function_space->element());
   const FiniteElement& element = *_function_space->element();
 
+  // Get restriction if any
+  boost::shared_ptr<const Restriction> restriction
+    = _function_space->dofmap()->restriction();
+
   // Local data for interpolation on each cell
   const uint num_cell_vertices = mesh.type().num_vertices(mesh.topology().dim());
 
@@ -563,6 +568,10 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   UFCCell ufc_cell(mesh);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
+    // Skip cells not included in restriction
+    if (restriction && !restriction->contains(*cell))
+      continue;
+
     // Update to current cell
     ufc_cell.update(*cell);
 

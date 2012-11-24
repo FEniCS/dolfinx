@@ -198,7 +198,7 @@ void TrilinosPreconditioner::set_nullspace(const std::vector<const GenericVector
   }
   else
   {
-    for (uint i = 0; i < nullspace.size(); ++i)
+    for (unsigned int i = 0; i < nullspace.size(); ++i)
     {
       dolfin_assert(nullspace[i]);
 

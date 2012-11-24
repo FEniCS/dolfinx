@@ -217,7 +217,7 @@ void PETScKrylovSolver::set_nullspace(const std::vector<const GenericVector*> nu
 {
   // Copy vectors
   _nullspace.clear();
-  for (uint i = 0; i < nullspace.size(); ++i)
+  for (unsigned int i = 0; i < nullspace.size(); ++i)
   {
     dolfin_assert(nullspace[i]);
     const PETScVector& x = nullspace[i]->down_cast<PETScVector>();
@@ -228,7 +228,7 @@ void PETScKrylovSolver::set_nullspace(const std::vector<const GenericVector*> nu
 
   // Get pointers to underlying PETSc objects and normalize vectors
   std::vector<Vec> petsc_vec(nullspace.size());
-  for (uint i = 0; i < nullspace.size(); ++i)
+  for (unsigned int i = 0; i < nullspace.size(); ++i)
   {
     petsc_vec[i] = *(_nullspace[i].vec().get());
     PetscReal val = 0.0;
@@ -259,13 +259,13 @@ const PETScBaseMatrix& PETScKrylovSolver::get_operator() const
   return *A;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b)
+unsigned int PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
   //check_dimensions(*A, x, b);
   return solve(as_type<PETScVector>(x), as_type<const PETScVector>(b));
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovSolver::solve(const GenericLinearOperator& A,
+unsigned int PETScKrylovSolver::solve(const GenericLinearOperator& A,
                                       GenericVector& x,
                                       const GenericVector& b)
 {
@@ -275,14 +275,14 @@ dolfin::uint PETScKrylovSolver::solve(const GenericLinearOperator& A,
                as_type<const PETScVector>(b));
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
+unsigned int PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
 {
   dolfin_assert(A);
   dolfin_assert(_ksp);
 
   // Check dimensions
-  const uint M = A->size(0);
-  const uint N = A->size(1);
+  const unsigned int M = A->size(0);
+  const unsigned int N = A->size(1);
   if (A->size(0) != b.size())
   {
     dolfin_error("PETScKrylovSolver.cpp",
@@ -379,7 +379,7 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     KSPSolve(*_ksp, *b.vec(), *x.vec());
 
   // Get the number of iterations
-  int num_iterations = 0;
+  PetscInt num_iterations = 0;
   KSPGetIterationNumber(*_ksp, &num_iterations);
 
   // Check if the solution converged and print error/warning if not converged
@@ -397,7 +397,7 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
       dolfin_error("PETScKrylovSolver.cpp",
                    "solve linear system using PETSc Krylov solver",
                    "Solution failed to converge in %i iterations (PETSc reason %s, norm %e)",
-                   num_iterations, reason_str, rnorm);
+                   static_cast<int>(num_iterations), reason_str, rnorm);
     }
     else
       warning("Krylov solver did not converge in %i iterations (PETSc reason %s, norm %e).", num_iterations, reason_str, rnorm);
@@ -410,7 +410,7 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   return num_iterations;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovSolver::solve(const PETScBaseMatrix& A,
+unsigned int PETScKrylovSolver::solve(const PETScBaseMatrix& A,
                                       PETScVector& x,
                                       const PETScVector& b)
 {
@@ -489,7 +489,8 @@ void PETScKrylovSolver::set_petsc_operators()
 void PETScKrylovSolver::set_petsc_options()
 {
   // GMRES restart parameter
-  KSPGMRESSetRestart(*_ksp, parameters("gmres")["restart"]);
+  const int gmres_restart = parameters("gmres")["restart"];
+  KSPGMRESSetRestart(*_ksp, gmres_restart);
 
   // Non-zero initial guess
   const bool nonzero_guess = parameters["nonzero_initial_guess"];
@@ -502,11 +503,12 @@ void PETScKrylovSolver::set_petsc_options()
     KSPMonitorSet(*_ksp, KSPMonitorTrueResidualNorm, 0, 0);
 
   // Set tolerances
+  const int max_iterations = parameters["maximum_iterations"];
   KSPSetTolerances(*_ksp,
                    parameters["relative_tolerance"],
                    parameters["absolute_tolerance"],
                    parameters["divergence_limit"],
-                   parameters["maximum_iterations"]);
+                   max_iterations);
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::write_report(int num_iterations,

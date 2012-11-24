@@ -318,7 +318,7 @@ class AbstractBaseTest(object):
 
 
 # A DataTester class that test the acces of the raw data through pointers
-# This is only available for uBLAS and MTL4 backends
+# This is only available for uBLAS backend
 class DataTester:
     def test_vector_data(self):
         # Test for ordinary Vector
@@ -337,7 +337,6 @@ class DataTester:
         v = as_backend_type(v)
         data = v.data()
         self.assertTrue((data==array).all())
-
 
 class DataNotWorkingTester:
     def test_vector_data(self):
@@ -358,10 +357,6 @@ if MPI.num_processes() == 1:
         backend     = "uBLAS"
         sub_backend = "Dense"
 
-    if has_linear_algebra_backend("MTL4"):
-        class MTL4Tester(DataTester, AbstractBaseTest, unittest.TestCase):
-            backend    = "MTL4"
-
     if has_linear_algebra_backend("PETScCusp"):
         class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
             backend    = "PETScCusp"
@@ -374,8 +369,15 @@ if has_linear_algebra_backend("Epetra"):
     class EpetraTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
         backend    = "Epetra"
 
-class STLTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
-    backend    = "STL"
+# If we have PETSc or Epetra STL Vector gets typedefed to one of these and
+# data test will not work. If none of these backends are available
+# STLVector defaults to uBLASVEctor, which data will work
+if has_linear_algebra_backend("Epetra") or has_linear_algebra_backend("PETSc"):
+    class STLTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
+        backend    = "STL"
+else:
+    class STLTester(AbstractBaseTest, unittest.TestCase):
+        backend    = "STL"
 
 if __name__ == "__main__":
 

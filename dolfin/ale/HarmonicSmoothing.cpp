@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-08-11
-// Last changed: 2012-02-01
+// Last changed: 2012-11-23
 
 #include <boost/shared_ptr.hpp>
 
@@ -42,7 +42,7 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
 {
   error("The function HarmonicSmoothing::move is broken. See https://bugs.launchpad.net/dolfin/+bug/1047641.");
 
-  not_working_in_parallel("ALE::move");
+  not_working_in_parallel("ALE mesh smoothing");
 
   const uint D = mesh.topology().dim();
   const uint d = mesh.geometry().dim();

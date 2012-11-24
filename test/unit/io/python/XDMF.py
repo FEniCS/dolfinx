@@ -38,7 +38,6 @@ class XDMF_Mesh_Output(unittest.TestCase):
         mesh = UnitCube(8, 8, 8)
         File("output/mesh_3D.xdmf") << mesh
 
-
 class XDMF_Vertex_Function_Output(unittest.TestCase):
     """Test output of vertex-based Functions to XDMF files"""
 
@@ -100,46 +99,44 @@ class XDMF_Vertex_Function_Output(unittest.TestCase):
         u.vector()[:] = 1.0
         File("output/u.xdmf") << u
 
-
 class XDMF_MeshFunction_Output(unittest.TestCase):
     """Test output of Meshes to XDMF files"""
 
     # FIXME: 1D seems to be broken
     def xtest_save_1d_mesh(self):
         mesh = UnitInterval(32)
-        mf = CellFunction("uint", mesh)
+        mf = CellFunction("sizet", mesh)
         for cell in cells(mesh):
             mf[cell] = cell.index()
         File("output/mf_1D.xdmf") << mf
 
     def test_save_2D_cell_function(self):
         mesh = UnitSquare(32, 32)
-        mf = CellFunction("uint", mesh)
+        mf = CellFunction("sizet", mesh)
         for cell in cells(mesh):
             mf[cell] = cell.index()
         File("output/mf_2D.xdmf") << mf
 
     def test_save_3D_cell_function(self):
         mesh = UnitCube(8, 8, 8)
-        mf = CellFunction("uint", mesh)
+        mf = CellFunction("sizet", mesh)
         for cell in cells(mesh):
             mf[cell] = cell.index()
         File("output/mf_3D.xdmf") << mf
 
     def test_save_2D_facet_function(self):
         mesh = UnitSquare(32, 32)
-        mf = FacetFunction("uint", mesh)
+        mf = FacetFunction("sizet", mesh)
         for facet in facets(mesh):
             mf[facet] = facet.index()
         File("output/mf_facet_2D.xdmf") << mf
 
     def test_save_3D_facet_function(self):
         mesh = UnitCube(8, 8, 8)
-        mf = FacetFunction("uint", mesh)
+        mf = FacetFunction("sizet", mesh)
         for facet in facets(mesh):
             mf[facet] = facet.index()
         File("output/mf_facet_3D.xdmf") << mf
-
 
 if __name__ == "__main__":
     if has_hdf5():

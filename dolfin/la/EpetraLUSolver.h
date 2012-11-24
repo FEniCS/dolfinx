@@ -65,13 +65,13 @@ namespace dolfin
     const GenericLinearOperator& get_operator() const;
 
     /// Solve linear system Ax = b
-    uint solve(GenericVector& x, const GenericVector& b);
+    unsigned int solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b
-    uint solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+    unsigned int solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b
-    uint solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);
+    unsigned int solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);
 
     /// Return a list of available solver methods
     static std::vector<std::pair<std::string, std::string> > methods();

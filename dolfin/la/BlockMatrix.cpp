@@ -35,10 +35,10 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BlockMatrix::BlockMatrix(uint m, uint n) : matrices(boost::extents[m][n])
+BlockMatrix::BlockMatrix(unsigned int m, unsigned int n) : matrices(boost::extents[m][n])
 {
-  for (uint i = 0; i < m; i++)
-    for (uint j = 0; j < n; j++)
+  for (unsigned int i = 0; i < m; i++)
+    for (unsigned int j = 0; j < n; j++)
       matrices[i][j].reset(new Matrix());
 }
 //-----------------------------------------------------------------------------
@@ -47,28 +47,28 @@ BlockMatrix::~BlockMatrix()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void BlockMatrix::set_block(uint i, uint j, boost::shared_ptr<GenericMatrix> m)
+void BlockMatrix::set_block(unsigned int i, unsigned int j, boost::shared_ptr<GenericMatrix> m)
 {
   dolfin_assert(i < matrices.shape()[0]);
   dolfin_assert(j < matrices.shape()[1]);
   matrices[i][j] = m;
 }
 //-----------------------------------------------------------------------------
-const boost::shared_ptr<GenericMatrix> BlockMatrix::get_block(uint i, uint j) const
+const boost::shared_ptr<GenericMatrix> BlockMatrix::get_block(unsigned int i, unsigned int j) const
 {
   dolfin_assert(i < matrices.shape()[0]);
   dolfin_assert(j < matrices.shape()[1]);
   return matrices[i][j];
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericMatrix> BlockMatrix::get_block(uint i, uint j)
+boost::shared_ptr<GenericMatrix> BlockMatrix::get_block(unsigned int i, unsigned int j)
 {
   dolfin_assert(i < matrices.shape()[0]);
   dolfin_assert(j < matrices.shape()[1]);
   return matrices[i][j];
 }
 //-----------------------------------------------------------------------------
-std::size_t BlockMatrix::size(uint dim) const
+std::size_t BlockMatrix::size(unsigned int dim) const
 {
   dolfin_assert(dim < 1);
   return matrices.shape()[dim];
@@ -76,16 +76,16 @@ std::size_t BlockMatrix::size(uint dim) const
 //-----------------------------------------------------------------------------
 void BlockMatrix::zero()
 {
-  for(uint i = 0; i < matrices.shape()[0]; i++)
-    for(uint j = 0; j < matrices.shape()[1]; j++)
+  for(unsigned int i = 0; i < matrices.shape()[0]; i++)
+    for(unsigned int j = 0; j < matrices.shape()[1]; j++)
       matrices[i][j]->zero();
 }
 //-----------------------------------------------------------------------------
 void BlockMatrix::apply(std::string mode)
 {
   Timer("Apply (matrix)");
-  for (uint i = 0; i < matrices.shape()[0]; i++)
-    for (uint j = 0; j < matrices.shape()[1]; j++)
+  for (unsigned int i = 0; i < matrices.shape()[0]; i++)
+    for (unsigned int j = 0; j < matrices.shape()[1]; j++)
       matrices[i][j]->apply(mode);
 }
 //-----------------------------------------------------------------------------
@@ -96,9 +96,9 @@ std::string BlockMatrix::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-    for (uint i = 0; i < matrices.shape()[0]; i++)
+    for (unsigned int i = 0; i < matrices.shape()[0]; i++)
     {
-      for (uint j = 0; i < matrices.shape()[1]; j++)
+      for (unsigned int j = 0; i < matrices.shape()[1]; j++)
       {
         s << "  BlockMatrix (" << i << ", " << j << ")" << std::endl << std::endl;
         s << indent(indent(matrices[i][j]->str(true))) << std::endl;

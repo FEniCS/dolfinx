@@ -64,10 +64,10 @@ namespace dolfin
     const GenericLinearOperator& get_operator() const;
 
     /// Solve linear system Ax = b for a sparse matrix using UMFPACK if installed
-    uint solve(GenericVector& x, const GenericVector& b);
+    unsigned int solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system
-    uint solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+    unsigned int solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
 
     /// Default parameter values
     static Parameters default_parameters();
@@ -81,10 +81,10 @@ namespace dolfin
     void numeric_factorize();
 
     /// Solve factorized system (UMFPACK).
-    uint solve_factorized(GenericVector& x, const GenericVector& b) const;
+    unsigned int solve_factorized(GenericVector& x, const GenericVector& b) const;
 
     // Return pointer to symbolic factorisation
-    static boost::shared_ptr<void> umfpack_factorize_symbolic(uint M, uint N,
+    static boost::shared_ptr<void> umfpack_factorize_symbolic(unsigned int M, unsigned int N,
                                                          const std::size_t* Ap,
                                                          const std::size_t* Ai,
                                                          const double* Ax);

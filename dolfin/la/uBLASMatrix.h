@@ -87,10 +87,10 @@ namespace dolfin
     virtual void init(const TensorLayout& tensor_layout);
 
     /// Return size of given dimension
-    virtual std::size_t size(uint dim) const;
+    virtual std::size_t size(unsigned int dim) const;
 
     /// Return local ownership range
-    virtual std::pair<std::size_t, std::size_t> local_range(uint dim) const
+    virtual std::pair<std::size_t, std::size_t> local_range(unsigned int dim) const
     { return std::make_pair(0, size(dim)); }
 
     /// Set all entries to zero and keep any sparse structure
@@ -115,9 +115,9 @@ namespace dolfin
     /// important.
     ///
     /// *Arguments*
-    ///     dim (uint)
+    ///     dim (unsigned int)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-    virtual void resize(GenericVector& z, uint dim) const;
+    virtual void resize(GenericVector& z, unsigned int dim) const;
 
     /// Get block of values
     virtual void get(double* block, std::size_t m, const DolfinIndex* rows, std::size_t n, const DolfinIndex* cols) const;
@@ -260,7 +260,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename Mat>
-  std::size_t uBLASMatrix<Mat>::size(uint dim) const
+  std::size_t uBLASMatrix<Mat>::size(unsigned int dim) const
   {
     if (dim > 1)
     {
@@ -330,7 +330,7 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <typename Mat>
-  void uBLASMatrix<Mat>::resize(GenericVector& z, uint dim) const
+  void uBLASMatrix<Mat>::resize(GenericVector& z, unsigned int dim) const
   {
     z.resize(size(dim));
   }

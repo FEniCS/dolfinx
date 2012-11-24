@@ -129,13 +129,13 @@ namespace dolfin
     /// over a mesh entity of a given dimension
     ///
     /// *Arguments*
-    ///     entity_dim (uint)
+    ///     entity_dim (std::size_t)
     ///         Dimension.
     ///
     /// *Returns*
-    ///     std::vector<uint>
+    ///     std::vector<std::size_t>
     ///         Coloring type.
-    std::vector<uint> coloring(uint entity_dim) const;
+    std::vector<std::size_t> coloring(std::size_t entity_dim) const;
 
     /// Set mesh, necessary for functionals when there are no function spaces
     ///

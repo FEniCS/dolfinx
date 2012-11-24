@@ -382,7 +382,7 @@ void XDMFFile::operator<< (const MeshFunction<int>& meshfunction)
   write_mesh_function(meshfunction);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::operator<< (const MeshFunction<uint>& meshfunction)
+void XDMFFile::operator<< (const MeshFunction<std::size_t>& meshfunction)
 {
   write_mesh_function(meshfunction);
 }

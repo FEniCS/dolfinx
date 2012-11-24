@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2012
 //
 // First added:  2010-02-19
-// Last changed: 2012-11-23
+// Last changed: 2012-11-24
 
 #include <algorithm>
 #include <numeric>
@@ -76,7 +76,7 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
 }
 //-----------------------------------------------------------------------------
 Graph GraphBuilder::local_graph(const Mesh& mesh,
-                                const std::vector<uint>& coloring_type)
+                                const std::vector<std::size_t>& coloring_type)
 {
   // Check coloring type
   dolfin_assert(coloring_type.size() >= 2);
@@ -94,7 +94,7 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
     entity_list0.insert(vertex_entity->index());
 
     // Build list of entities, moving between levels
-    for (uint level = 1; level < coloring_type.size(); ++level)
+    for (std::size_t level = 1; level < coloring_type.size(); ++level)
     {
       for (boost::unordered_set<std::size_t>::const_iterator entity_index = entity_list0.begin(); entity_index != entity_list0.end(); ++entity_index)
       {
@@ -114,7 +114,8 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
   return graph;
 }
 //-----------------------------------------------------------------------------
-Graph GraphBuilder::local_graph(const Mesh& mesh, uint dim0, uint dim1)
+Graph GraphBuilder::local_graph(const Mesh& mesh,
+                                std::size_t dim0, std::size_t dim1)
 {
   // Create graph
   const std::size_t num_verticies = mesh.num_entities(dim0);
@@ -135,7 +136,7 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, uint dim0, uint dim1)
 }
 //-----------------------------------------------------------------------------
 BoostBidirectionalGraph GraphBuilder::local_boost_graph(const Mesh& mesh,
-                                        const std::vector<uint>& coloring_type)
+                                const std::vector<std::size_t>& coloring_type)
 {
   // Check coloring type
   dolfin_assert(coloring_type.size() >= 2);
@@ -154,7 +155,7 @@ BoostBidirectionalGraph GraphBuilder::local_boost_graph(const Mesh& mesh,
 
     // Build list of entities, moving between levels
     boost::unordered_set<std::size_t>::const_iterator entity_index;
-    for (uint level = 1; level < coloring_type.size(); ++level)
+    for (std::size_t level = 1; level < coloring_type.size(); ++level)
     {
       for (entity_index = entity_list0.begin(); entity_index != entity_list0.end(); ++entity_index)
       {
@@ -176,7 +177,7 @@ BoostBidirectionalGraph GraphBuilder::local_boost_graph(const Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 BoostBidirectionalGraph GraphBuilder::local_boost_graph(const Mesh& mesh,
-                                                        uint dim0, uint dim1)
+                                           std::size_t dim0, std::size_t dim1)
 {
   // Create graph
   const std::size_t num_verticies = mesh.num_entities(dim0);
@@ -203,16 +204,16 @@ void GraphBuilder::compute_dual_graph_orig(const LocalMeshData& mesh_data,
 {
   Timer timer("Compute dual graph [original]");
 
-  const uint num_mpi_procs = MPI::num_processes();
+  const std::size_t num_mpi_procs = MPI::num_processes();
 
   // List of cell vertices
   const boost::multi_array<std::size_t, 2>& cell_vertices = mesh_data.cell_vertices;
 
   const std::size_t num_local_cells    = mesh_data.global_cell_indices.size();
-  const uint topological_dim    = mesh_data.tdim;
-  const uint num_facet_vertices = topological_dim;
-  const uint num_cell_vertices  = topological_dim + 1;
-  const uint num_cell_facets  = topological_dim + 1;
+  const std::size_t topological_dim    = mesh_data.tdim;
+  const std::size_t num_cell_facets    = topological_dim + 1;
+  const std::size_t num_facet_vertices = topological_dim;
+  const std::size_t num_cell_vertices  = topological_dim + 1;
 
   // Resize graph (cell are graph vertices, cell-cell connections are graph edges)
   local_graph.resize(num_local_cells);
@@ -223,7 +224,7 @@ void GraphBuilder::compute_dual_graph_orig(const LocalMeshData& mesh_data,
 
   // Compute offset for going from local to (internal) global numbering
   std::vector<std::size_t> process_offsets(num_mpi_procs);
-  for (uint i = 0; i < num_mpi_procs; ++i)
+  for (std::size_t i = 0; i < num_mpi_procs; ++i)
     process_offsets[i] = std::accumulate(cells_per_process.begin(), cells_per_process.begin() + i, 0);
   const std::size_t process_offset = process_offsets[MPI::process_number()];
 
@@ -268,9 +269,9 @@ void GraphBuilder::compute_dual_graph_orig(const LocalMeshData& mesh_data,
   }
 
   // Prepare package to send (do not send data belonging to this process)
-  std::vector<uint> destinations;
+  std::vector<std::size_t> destinations;
   std::vector<std::size_t> send_data;
-  for (uint i = 0; i < num_mpi_procs; ++i)
+  for (std::size_t i = 0; i < num_mpi_procs; ++i)
   {
     if (i != MPI::process_number())
     {
@@ -290,7 +291,7 @@ void GraphBuilder::compute_dual_graph_orig(const LocalMeshData& mesh_data,
  
   // Distribute data to all processes
   std::vector<std::size_t> received_data;
-  std::vector<unsigned int> sources;
+  std::vector<std::size_t> sources;
   MPI::distribute(send_data, destinations, received_data, sources);
 
   // Data structures for unpacking data
@@ -298,13 +299,13 @@ void GraphBuilder::compute_dual_graph_orig(const LocalMeshData& mesh_data,
   std::vector<std::vector<std::size_t> > candidate_ghost_cell_global_indices(num_mpi_procs);
 
   std::size_t _offset = 0;
-  for (uint i = 0; i < num_mpi_procs - 1; ++i)
+  for (std::size_t i = 0; i < num_mpi_procs - 1; ++i)
   {
     // Check if there is data to unpack
     if (_offset >= sources.size())
       break;
 
-    const uint p = sources[_offset];
+    const std::size_t p = sources[_offset];
     dolfin_assert(p < boundary_cells_per_process.size());
     const std::size_t data_length = (num_cell_vertices + 1)*boundary_cells_per_process[p];
 
@@ -321,7 +322,7 @@ void GraphBuilder::compute_dual_graph_orig(const LocalMeshData& mesh_data,
 
       // Get cell vertices
       std::vector<std::size_t> vertices;
-      for (uint k = 0; k < num_cell_vertices; ++k)
+      for (std::size_t k = 0; k < num_cell_vertices; ++k)
         vertices.push_back(received_data[(j + 1) + k]);
       _cell_vertices.push_back(vertices);
     }
@@ -518,7 +519,7 @@ void GraphBuilder::compute_connectivity_orig(const boost::multi_array<std::size_
         boost::multi_array<std::size_t, 2>::const_subarray<1>::type cell0_vertices = cell_vertices[*connected_cell0];
         boost::multi_array<std::size_t, 2>::const_subarray<1>::type cell1_vertices = cell_vertices[*connected_cell1];
 
-        uint num_common_vertices = 0;
+        std::size_t num_common_vertices = 0;
         for (cell_vertex = cell1_vertices.begin(); cell_vertex != cell1_vertices.end(); ++cell_vertex)
         {
           if (std::find(cell0_vertices.begin(), cell0_vertices.end(), *cell_vertex) != cell0_vertices.end())
@@ -542,7 +543,7 @@ std::size_t GraphBuilder::compute_ghost_connectivity(const boost::multi_array<st
                   const std::vector<std::size_t>& local_boundary_cells,
                   const std::vector<std::vector<std::size_t> >& candidate_ghost_vertices,
                   const std::vector<std::size_t>& candidate_ghost_global_indices,
-                  uint num_facet_vertices,
+                  std::size_t num_facet_vertices,
                   std::vector<std::set<std::size_t> >& local_graph,
                   std::set<std::size_t>& ghost_cells)
 {
@@ -606,7 +607,7 @@ std::size_t GraphBuilder::compute_ghost_connectivity(const boost::multi_array<st
         // Vertices of candidate neighbour
         const std::vector<std::size_t>& candidate_vertices = candidate_ghost_vertices[*connected_cell];
 
-        uint num_common_vertices = 0;
+        std::size_t num_common_vertices = 0;
         for (vertex = c_vertices.begin(); vertex != c_vertices.end(); ++vertex)
         {
           if (std::find(candidate_vertices.begin(), candidate_vertices.end(), *vertex) != candidate_vertices.end())

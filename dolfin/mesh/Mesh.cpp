@@ -25,7 +25,6 @@
 // First added:  2006-05-09
 // Last changed: 2012-10-24
 
-
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
@@ -299,8 +298,8 @@ bool Mesh::ordered() const
 //-----------------------------------------------------------------------------
 dolfin::Mesh Mesh::renumber_by_color() const
 {
-  std::vector<uint> coloring_type;
-  const uint D = topology().dim();
+  std::vector<std::size_t> coloring_type;
+  const std::size_t D = topology().dim();
   coloring_type.push_back(D); coloring_type.push_back(0); coloring_type.push_back(D);
   return MeshRenumbering::renumber_by_color(*this, coloring_type);
 }
@@ -345,11 +344,11 @@ void Mesh::snap_boundary(const SubDomain& sub_domain, bool harmonic_smoothing)
   MeshSmoothing::snap_boundary(*this, sub_domain, harmonic_smoothing);
 }
 //-----------------------------------------------------------------------------
-const std::vector<dolfin::uint>& Mesh::color(std::string coloring_type) const
+const std::vector<std::size_t>& Mesh::color(std::string coloring_type) const
 {
   // Define graph type
-  const uint dim = MeshColoring::type_to_dim(coloring_type, *this);
-  std::vector<uint> _coloring_type;
+  const std::size_t dim = MeshColoring::type_to_dim(coloring_type, *this);
+  std::vector<std::size_t> _coloring_type;
   _coloring_type.push_back(topology().dim());
   _coloring_type.push_back(dim);
   _coloring_type.push_back(topology().dim());
@@ -357,10 +356,10 @@ const std::vector<dolfin::uint>& Mesh::color(std::string coloring_type) const
   return color(_coloring_type);
 }
 //-----------------------------------------------------------------------------
-const std::vector<dolfin::uint>& Mesh::color(std::vector<uint> coloring_type) const
+const std::vector<std::size_t>& Mesh::color(std::vector<std::size_t> coloring_type) const
 {
   // Find color data
-  std::map<const std::vector<uint>, std::pair<std::vector<uint>,
+  std::map<const std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
            std::vector<std::vector<std::size_t> > > >::const_iterator coloring_data;
   coloring_data = this->topology().coloring.find(coloring_type);
 

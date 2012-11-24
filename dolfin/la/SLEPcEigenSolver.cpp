@@ -114,7 +114,7 @@ void SLEPcEigenSolver::solve()
   solve(A->size(0));
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::solve(uint n)
+void SLEPcEigenSolver::solve(unsigned int n)
 {
   dolfin_assert(A);
 
@@ -130,7 +130,7 @@ void SLEPcEigenSolver::solve(uint n)
 
   // Set number of eigenpairs to compute
   dolfin_assert(n <= A->size(0));
-  const uint nn = static_cast<int>(n);
+  const unsigned int nn = static_cast<int>(n);
   EPSSetDimensions(eps, nn, PETSC_DECIDE, PETSC_DECIDE);
 
   // Set parameters from local parameters
@@ -177,7 +177,7 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
   get_eigenpair(lr, lc, r, c, 0);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, uint i) const
+void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, unsigned int i) const
 {
   const int ii = static_cast<int>(i);
 
@@ -197,7 +197,7 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, uint i) const
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
                                      GenericVector& r, GenericVector& c,
-                                     uint i) const
+                                     unsigned int i) const
 {
   PETScVector& _r = as_type<PETScVector>(r);
   PETScVector& _c = as_type<PETScVector>(c);
@@ -206,7 +206,7 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
                                      PETScVector& r, PETScVector& c,
-                                     uint i) const
+                                     unsigned int i) const
 {
   const int ii = static_cast<int>(i);
 
@@ -373,7 +373,7 @@ void SLEPcEigenSolver::set_solver(std::string solver)
   }
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::set_tolerance(double tolerance, uint maxiter)
+void SLEPcEigenSolver::set_tolerance(double tolerance, unsigned int maxiter)
 {
   dolfin_assert(tolerance > 0.0);
   EPSSetTolerances(eps, tolerance, static_cast<int>(maxiter));

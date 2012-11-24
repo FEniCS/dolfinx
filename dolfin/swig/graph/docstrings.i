@@ -59,22 +59,6 @@ This class computes graph re-orderings. It uses Boost Graph.
   Compute re-ordering (map[old] -> new) using Cuthill-McKee algorithm
 ";
 
-%feature("docstring")  dolfin::BoostGraphOrdering::compute_king "
-**Overloaded versions**
-
-* compute_king\ (graph)
-
-  Compute re-ordering (map[old] -> new) using King algorithm
-
-* compute_king\ (graph)
-
-  Compute re-ordering (map[old] -> new) using King algorithm
-";
-
-%feature("docstring")  dolfin::BoostGraphOrdering::compute_minimum_degree "
-Compute re-ordering (map[old] -> new) using minimum degree algorithm
-";
-
 // Documentation extracted from: (module=graph, header=SCOTCH.h)
 %feature("docstring")  dolfin::SCOTCH "
 This class proivdes an interface to SCOTCH-PT (parallel version)

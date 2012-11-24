@@ -139,8 +139,8 @@ namespace dolfin
     /// of color 'col'.
     // Developer note: std::vector is used in place of a MeshFunction
     //                 to avoid circular dependencies in the header files
-    std::map<const std::vector<uint>,
-      std::pair<std::vector<uint>, std::vector<std::vector<std::size_t> > > > coloring;
+    std::map<const std::vector<std::size_t>,
+      std::pair<std::vector<std::size_t>, std::vector<std::vector<std::size_t> > > > coloring;
 
   private:
 

@@ -37,7 +37,7 @@ namespace dolfin
   class GenericVector;
 
   /// Solve linear system Ax = b
-  uint solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b,
+  unsigned int solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b,
              std::string method = "lu",
              std::string preconditioner = "none");
 

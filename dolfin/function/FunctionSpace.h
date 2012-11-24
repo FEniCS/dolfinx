@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2008-2011.
-// Modified by Kent-Andre Mardal, 2009.
-// Modified by Ola Skavhaug, 2009.
+// Modified by Garth N. Wells 2008-2011
+// Modified by Kent-Andre Mardal 2009
+// Modified by Ola Skavhaug 2009
 //
 // First added:  2008-09-11
-// Last changed: 2011-05-15
+// Last changed: 2012-11-02
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H

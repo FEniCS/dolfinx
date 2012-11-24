@@ -162,7 +162,7 @@ void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var, const Param
   // Construct VTK cells from DOLFIN facets
   //
 
-  build_grid_cells(_full_grid, dim());
+  build_grid_cells(_full_grid, _mesh->topology().dim());
   if (_entity_dim == dim())
   {
     _grid->ShallowCopy(_full_grid);
@@ -174,25 +174,24 @@ void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var, const Param
   }
 }
 //----------------------------------------------------------------------------
-void VTKPlottableMesh::build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &grid, uint entity_dim)
+void VTKPlottableMesh::build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &grid, uint topological_dim)
 {
   // Add mesh cells to VTK cell array. Note: Preallocation of storage
   // in cell array did not give speedups when testing during development
   vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
 
-  _mesh->init(entity_dim, 0);
-  const std::vector<std::size_t>& connectivity = _mesh->topology()(entity_dim, 0)();
-  const uint spatial_dim = _mesh->topology().dim();
+  _mesh->init(topological_dim, 0);
+  const std::vector<std::size_t>& connectivity = _mesh->topology()(topological_dim, 0)();
 
-  for (std::size_t i = 0; i < _mesh->size(entity_dim); ++i)
+  for (std::size_t i = 0; i < _mesh->size(topological_dim); ++i)
   {
     // Insert all vertex indices for a given cell. For a simplex cell in nD,
     // n+1 indices are inserted. The connectivity array must be indexed at
     // ((n+1) x cell_number + idx_offset)
-    cells->InsertNextCell(spatial_dim + 1);
-    for(uint j = 0; j <= spatial_dim; ++j) 
+    cells->InsertNextCell(topological_dim + 1);
+    for(uint j = 0; j <= topological_dim; ++j)
     {
-      cells->InsertCellPoint(connectivity[(spatial_dim + 1)*i + j]);
+      cells->InsertCellPoint(connectivity[(topological_dim + 1)*i + j]);
     }
   }
 
@@ -200,7 +199,7 @@ void VTKPlottableMesh::build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &gr
   // (automatically allocated during cell insertion)
   cells->Squeeze();
 
-  switch (entity_dim)
+  switch (topological_dim)
   {
     case 0:
       grid->SetCells(VTK_VERTEX, cells);
@@ -218,10 +217,6 @@ void VTKPlottableMesh::build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &gr
       dolfin_error("VTKPlottableMesh.cpp", "initialise cells", "Not implemented for dim>3");
       break;
   }
-
-  // Is this needed?
-  // _grid->Modified();
-  // _geometryFilter->Modified();
 }
 //----------------------------------------------------------------------------
 void VTKPlottableMesh::update_range(double range[2])
@@ -373,6 +368,32 @@ VTKPlottableMesh *dolfin::CreateVTKPlottable(boost::shared_ptr<const Mesh> mesh)
   return new VTKPlottableMesh(mesh);
 }
 //---------------------------------------------------------------------------
+void VTKPlottableMesh::filter_scalars(vtkFloatArray *values, const Parameters &parameters)
+{
+  dolfin_assert(values);
+
+  const Parameter &param_hide_below = parameters["hide_below"];
+  const Parameter &param_hide_above = parameters["hide_above"];
+  if (param_hide_below.is_set() || param_hide_above.is_set())
+  {
+    float hide_above =  std::numeric_limits<float>::infinity();
+    float hide_below = -std::numeric_limits<float>::infinity();
+    if (param_hide_below.is_set()) hide_below = (double)param_hide_below;
+    if (param_hide_above.is_set()) hide_above = (double)param_hide_above;
+
+    const uint num_tuples = static_cast<uint>(values->GetNumberOfTuples());
+    for (uint i = 0; i < num_tuples; i++)
+    {
+      float val = values->GetValue(i);
+
+      if (val < hide_below || val > hide_above)
+      {
+        values->SetValue(i, std::numeric_limits<float>::quiet_NaN());
+      }
+    }
+  }
+}
+//---------------------------------------------------------------------------
 template <class T>
 void VTKPlottableMesh::setPointValues(uint size, const T* indata, const Parameters &parameters)
 {
@@ -391,6 +412,9 @@ void VTKPlottableMesh::setPointValues(uint size, const T* indata, const Paramete
     {
       values->SetValue(i, (double)indata[i]);
     }
+
+    filter_scalars(values, parameters);
+
     _grid->GetPointData()->SetScalars(values);
   }
   else
@@ -444,25 +468,7 @@ void VTKPlottableMesh::setCellValues(uint size, const T* indata, const Parameter
     values->SetValue(i, (float)indata[i]);
   }
 
-  const Parameter &param_hide_below = parameters["hide_below"];
-  const Parameter &param_hide_above = parameters["hide_above"];
-  if (param_hide_below.is_set() || param_hide_above.is_set())
-  {
-    float hide_above =  std::numeric_limits<float>::infinity();
-    float hide_below = -std::numeric_limits<float>::infinity();
-    if (param_hide_below.is_set()) hide_below = (double)param_hide_below;
-    if (param_hide_above.is_set()) hide_above = (double)param_hide_above;
-
-    for (uint i = 0; i < num_entities; i++)
-    {
-      float val = values->GetValue(i);
-
-      if (val < hide_below || val > hide_above)
-      {
-        values->SetValue(i, std::numeric_limits<float>::quiet_NaN());
-      }
-    }
-  }
+  filter_scalars(values, parameters);
 
   _grid->GetCellData()->SetScalars(values);
 }
