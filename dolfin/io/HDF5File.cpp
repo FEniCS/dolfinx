@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-11-23
+// Last changed: 2012-11-24
 
 #ifdef HAS_HDF5
 
@@ -298,16 +298,6 @@ void HDF5File::read_mesh(Mesh& input_mesh,const std::string name)
   }
   topology_name = name + "/" + topology_name;
 
-  // Look for global_index dataset
-  std::string global_index_name = search_list(_dataset_list,"global_index");
-  if (global_index_name.size() == 0)
-  {
-    dolfin_error("HDF5File.cpp",
-                 "read global index dataset",
-                 "Dataset not found");
-  }
-  global_index_name = name + "/" + global_index_name;
-
   // Look for Coordinates dataset
   std::string coordinates_name=search_list(_dataset_list,"coordinates");
   if(coordinates_name.size()==0)
@@ -319,13 +309,12 @@ void HDF5File::read_mesh(Mesh& input_mesh,const std::string name)
   coordinates_name = name + "/" + coordinates_name;
 
   Timer t("HDF5: read_repartition");  
-  read_mesh_repartition(input_mesh, coordinates_name, global_index_name,
+  read_mesh_repartition(input_mesh, coordinates_name,
                                    topology_name);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::read_mesh_repartition(Mesh& input_mesh,
                                      const std::string coordinates_name,
-                                     const std::string global_index_name,
                                      const std::string topology_name)
 {
   // FIXME:
@@ -390,40 +379,17 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
   HDF5Interface::read_dataset(hdf5_file_id, coordinates_name, vertex_range,
                               tmp_vertex_data);
   
-  // Copy to vector<vector>
-  // FIXME: improve
-  std::vector<std::vector<double> > vertex_coordinates;
-  vertex_coordinates.reserve(num_local_vertices);
-  for(std::vector<double>::iterator v = tmp_vertex_data.begin();
-      v != tmp_vertex_data.end(); v += vertex_dim)
-  {
-    vertex_coordinates.push_back(std::vector<double>(v, v + vertex_dim));
-  }
+  // Copy to boost::multi_array
+  mesh_data.vertex_coordinates.resize(boost::extents[num_local_vertices][vertex_dim]);
+  std::copy(tmp_vertex_data.begin(), tmp_vertex_data.end(), 
+            mesh_data.vertex_coordinates.data());
 
   // Fill vertex indices with values - 
   mesh_data.vertex_indices.resize(num_local_vertices);
 
-  HDF5Interface::read_dataset(hdf5_file_id, global_index_name, vertex_range,
-                              mesh_data.vertex_indices);
-
-  // Use this when  disabling redistribute
-  // mesh_data.vertex_coordinates.resize(mesh_data.num_global_vertices);
-  //   std::copy(vertex_coordinates.begin(),vertex_coordinates.end(), 
-  //            mesh_data.vertex_coordinates.begin());
-
-  // MeshPartitioning::build_distributed_mesh() does not 
-  // use the vertex indices values, so need to sort
-  // vertices into global order before calling it.
-  
-  //  redistribute_by_global_index(mesh_data.vertex_indices, vertex_coordinates, mesh_data.vertex_coordinates);
-
-  // redistribute_by_global_index() has eliminated duplicates, 
-  // so need to resize global total
-  //  mesh_data.num_global_vertices = MPI::sum(mesh_data.vertex_coordinates.size());
-  
-  // FIXME: Should put global index back here - not used at present
-  //  for(std::size_t i = 0; i < mesh_data.vertex_coordinates.size(); ++i)
-  //    mesh_data.vertex_indices[i] = vertex_range.first + i;
+  // FIXME: put global index here - not used at present
+  for(std::size_t i = 0; i < mesh_data.vertex_coordinates.size(); ++i)
+    mesh_data.vertex_indices[i] = vertex_range.first + i;
 
   // Build distributed mesh
   Timer t9("HDF5: partition");
@@ -500,10 +466,9 @@ void HDF5File::write_mesh_global_index(const Mesh& mesh, uint cell_dim, const st
   std::vector<std::size_t> topological_data;
   if (cell_dim == mesh.topology().dim())
   {
-    topological_data = mesh.cells();
+    topological_data.resize(mesh.cells().size());
     // reindex using global indices
-    // FIXME: can this use mesh.cells() directly ?
-    std::transform(topological_data.begin(), topological_data.end(),
+    std::transform(mesh.cells().begin(), mesh.cells().end(),
                    topological_data.begin(),
     boost::bind<const std::size_t &>(&std::vector<std::size_t>::at,
                                      &global_indices, _1));

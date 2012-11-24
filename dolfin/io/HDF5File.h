@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-11-23
+// Last changed: 2012-11-24
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -104,7 +104,6 @@ namespace dolfin
     // Read a mesh which has locally indexed topology and repartition
     void read_mesh_repartition(Mesh &input_mesh,
                                const std::string coordinates_name,
-                               const std::string global_index_name,
                                const std::string topology_name);
 
     // Return vertex and topological data with duplicates removed
