@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2012
 //
 // First added:  2010-02-19
-// Last changed: 2012-11-22
+// Last changed: 2012-11-23
 
 #include <algorithm>
 #include <numeric>
@@ -370,6 +370,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   double tt = time();
 
   // create mapping from facets(vector) to cells
+  // FIXME: potential speedup by using a hash directly for the map key instead of vector
   typedef boost::unordered_map<std::vector<std::size_t>, std::size_t> vectormap;
   vectormap facet_cell;  
 
@@ -415,20 +416,15 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
   const uint num_processes = MPI::num_processes();
   const uint process_number = MPI::process_number();
-  //  const uint mpi_neighbour = (process_number + 1)%num_processes;
     
   ghost_vertices.clear();
 
   // create MPI ring
-  // OPTIONAL: could create a bidirectional ring - but tricky if num_processes is even.
-  //  const std::vector<uint>destinations(1, mpi_neighbour);
   const int source = (num_processes + process_number - 1)%num_processes;
   const int dest   = (process_number + 1)%num_processes;
 
   // FIXME: better way to send boost::unordered_map between processes - could use std::map instead
   // boost cannot serialise unordered_map, so convert to a vector here
-  //  std::vector<std::vector<std::pair<std::vector<std::size_t>, size_t> > > data_vector(1);
-  //  std::vector<std::pair<std::vector<std::size_t>, size_t> >& map_data = data_vector[0];
   std::vector<std::pair<std::vector<std::size_t>, size_t> > map_data;
 
   // repeat (n-1) times, to go round ring
@@ -438,7 +434,6 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     // Shift data to next process
     map_data.resize(othermap.size());
     std::copy(othermap.begin(), othermap.end(), map_data.begin());
-    //    MPI::distribute(data_vector, destinations, data_vector);
     MPI::send_recv(map_data, dest, map_data, source);
     othermap.clear();
     othermap.insert(map_data.begin(), map_data.end());

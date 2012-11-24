@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-11-15
+// Last changed: 2012-11-23
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -151,6 +151,10 @@ namespace dolfin
                                       const std::vector<T>& local_vector,
                                       std::vector<T>& global_vector);
 
+
+    void reorder_vertices_by_global_indices(std::vector<double>& vertex_coords, uint gdim,
+                                            const std::vector<std::size_t>& global_indices);
+    
 
     // HDF5 file descriptor/handle
     bool hdf5_file_open;

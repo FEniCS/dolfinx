@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-11-19
+// Last changed: 2012-11-23
 
 #ifdef HAS_HDF5
 
@@ -415,11 +415,11 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
   // use the vertex indices values, so need to sort
   // vertices into global order before calling it.
   
-  redistribute_by_global_index(mesh_data.vertex_indices, vertex_coordinates, mesh_data.vertex_coordinates);
+  //  redistribute_by_global_index(mesh_data.vertex_indices, vertex_coordinates, mesh_data.vertex_coordinates);
 
   // redistribute_by_global_index() has eliminated duplicates, 
   // so need to resize global total
-  mesh_data.num_global_vertices = MPI::sum(mesh_data.vertex_coordinates.size());
+  //  mesh_data.num_global_vertices = MPI::sum(mesh_data.vertex_coordinates.size());
   
   // FIXME: Should put global index back here - not used at present
   //  for(std::size_t i = 0; i < mesh_data.vertex_coordinates.size(); ++i)
@@ -473,55 +473,36 @@ void HDF5File::write_mesh_global_index(const Mesh& mesh, uint cell_dim, const st
 
   const std::string cell_type = CellType::type2string(_cell_type);
 
-  // ------ Output vertex coordinates and global index
+  // ---------- Coordinates
 
-  // Vertex numbers, ranges and offsets
-
-  // Write vertex data to HDF5 file
-  const std::string coord_dataset = name + "/coordinates";
-  const std::string index_dataset = name + "/global_index";
   const std::vector<std::size_t>& global_indices = mesh.topology().global_indices(0);
-
-  // Optionally reduce file size by deleting duplicates in vertex list.
-  if(parameters["remove_duplicates"])
+  
   {
+    // Write vertex data to HDF5 file
+    const std::string coord_dataset = name + "/coordinates";
+    
     const uint gdim = mesh.geometry().dim();
     // Copy coordinates and indices and remove off-process values
     std::vector<double> vertex_coords(mesh.coordinates()); 
-    remove_duplicate_values(mesh, vertex_coords, gdim);
-
-    std::vector<std::size_t> vertex_indices(global_indices);
-    remove_duplicate_values(mesh, vertex_indices, 1);
-
-    // Write coordinates contiguously from each process
+        
+    reorder_vertices_by_global_indices(vertex_coords, gdim, global_indices);
+    
+    // Write coordinates out from each process
     std::vector<std::size_t> global_size(2);
-    global_size[0] = MPI::sum(vertex_indices.size()); // reduced
+    global_size[0] = MPI::sum(vertex_coords.size()/gdim); // reduced after reorder
     global_size[1] = gdim;
     write_data(coord_dataset, vertex_coords, global_size);
-    global_size.resize(1); //remove second dimension
-    write_data(index_dataset, vertex_indices, global_size);
-  }
-  else //just output in blocks - faster and less memory intensive
-  {
-    const uint gdim = mesh.geometry().dim();
-    const std::vector<double>& vertex_coords = mesh.coordinates();
-
-    // Write coordinates contiguously from each process
-    std::vector<std::size_t> global_size(2);
-    global_size[0] = MPI::sum(mesh.num_vertices());
-    global_size[1] = gdim;
-    write_data(coord_dataset, vertex_coords, global_size);
-    global_size.resize(1); //remove second dimension
-    write_data(index_dataset, global_indices, global_size);
   }
 
-  // ------ Topology
+  // ---------- Topology
 
   // Get/build topology data
   std::vector<std::size_t> topological_data;
   if (cell_dim == mesh.topology().dim())
   {
     topological_data = mesh.cells();
+    // reindex using global indices
+    // FIXME: can this use mesh.cells() directly ?
     std::transform(topological_data.begin(), topological_data.end(),
                    topological_data.begin(),
     boost::bind<const std::size_t &>(&std::vector<std::size_t>::at,
@@ -529,7 +510,6 @@ void HDF5File::write_mesh_global_index(const Mesh& mesh, uint cell_dim, const st
   }
   else
   {
-    //    topological_data.reserve(mesh.num_cells()*(cell_dim - 1));
     topological_data.reserve(mesh.num_entities(cell_dim)*(cell_dim + 1));
     for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
       for (VertexIterator v(*c); !v.end(); ++v)
@@ -647,6 +627,75 @@ void HDF5File::open_hdf5_file(bool truncate)
   hdf5_file_open = true;
 }
 //-----------------------------------------------------------------------------
+
+void HDF5File::reorder_vertices_by_global_indices(std::vector<double>& vertex_coords, uint gdim,
+                                                  const std::vector<std::size_t>& global_indices)
+{
+  Timer t("HDF5: reorder vertices");
+
+  dolfin_assert(gdim*global_indices.size() == vertex_coords.size());
+
+  boost::multi_array_ref<double, 2> vertex_array(vertex_coords.data(), 
+                      boost::extents[vertex_coords.size()/gdim][gdim]);
+  
+  // Calculate size of overall global vector by finding max index value
+  // anywhere
+  const uint global_vector_size
+    = MPI::max(*std::max_element(global_indices.begin(), global_indices.end())) + 1;
+
+  // Send unwanted values off process
+  const uint num_processes = MPI::num_processes();
+  std::vector<std::vector<std::pair<uint, std::vector<double> > > > values_to_send(num_processes);
+  std::vector<uint> destinations(num_processes);
+
+  // Set up destination vector for communication with remote processes
+  for(uint process_j = 0; process_j < num_processes ; ++process_j)
+    destinations[process_j] = process_j;
+
+  // Go through local vector and append value to the appropriate list
+  // to send to correct process
+  for(uint i = 0; i < vertex_array.shape()[0] ; ++i)
+  {
+    const uint global_i = global_indices[i];
+    const uint process_i = MPI::index_owner(global_i, global_vector_size);
+    const std::vector<double> v(vertex_array[i].begin(), vertex_array[i].end());
+    values_to_send[process_i].push_back(make_pair(global_i, v));
+  }
+
+  // Redistribute the values to the appropriate process - including self
+  // All values are "in the air" at this point, so local vector can be cleared
+  std::vector<std::vector<std::pair<uint,std::vector<double> > > > received_values;
+  MPI::distribute(values_to_send, destinations, received_values);
+
+  // When receiving, just go through all received values
+  // and place them in the local partition of the global vector.
+  std::pair<uint, uint> range = MPI::local_range(global_vector_size);
+  vertex_coords.resize((range.second - range.first)*gdim);
+  boost::multi_array_ref<double, 2> new_vertex_array(vertex_coords.data(), 
+                     boost::extents[range.second - range.first][gdim]);
+  
+  for(uint i = 0; i < received_values.size(); ++i)
+  {
+    const std::vector<std::pair<uint, std::vector<double> > >& received_global_data = received_values[i];
+    for(uint j = 0; j < received_global_data.size(); ++j)
+    {
+      const uint global_i = received_global_data[j].first;
+      if(global_i >= range.first && global_i < range.second)
+        std::copy(received_global_data[j].second.begin(), 
+                  received_global_data[j].second.end(), 
+                  new_vertex_array[global_i - range.first].begin());
+      else
+      {
+        dolfin_error("HDF5File.cpp",
+                     "unpack values in vector redistribution",
+                     "This should not happen");
+      }
+    }
+  }
+
+
+}
+
 
 template <typename T>
 void HDF5File::redistribute_by_global_index(const std::vector<std::size_t>& global_index,

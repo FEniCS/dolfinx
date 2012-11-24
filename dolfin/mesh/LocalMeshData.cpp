@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2008-2011
 //
 // First added:  2008-11-28
-// Last changed: 2012-10-23
+// Last changed: 2012-11-23
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
@@ -110,7 +110,7 @@ std::string LocalMeshData::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void LocalMeshData::clear()
 {
-  vertex_coordinates.clear();
+  vertex_coordinates.resize(boost::extents[0][0]);
   vertex_indices.clear();
   cell_vertices.resize(boost::extents[0][0]);
   global_cell_indices.clear();
@@ -141,8 +141,7 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
   num_vertices_per_cell = mesh.type().num_entities(0);
 
   // Get coordinates for all vertices stored on local processor
-  vertex_coordinates
-    = std::vector<std::vector<double> >(mesh.num_vertices(), std::vector<double>(gdim));
+  vertex_coordinates.resize(boost::extents[mesh.num_vertices()][gdim]);
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
     const std::size_t index = vertex->index();
@@ -291,8 +290,7 @@ void LocalMeshData::unpack_vertex_coordinates(const std::vector<double>& values)
 {
   dolfin_assert(values.size() % gdim == 0);
   const std::size_t num_vertices = values.size()/gdim;
-  vertex_coordinates
-    = std::vector<std::vector<double> >(num_vertices, std::vector<double>(gdim));
+  vertex_coordinates.resize(boost::extents[num_vertices][gdim]);
   for (std::size_t i = 0; i < num_vertices; i++)
   {
     std::copy(values.begin() + i*gdim, values.begin() + (i + 1)*gdim,
