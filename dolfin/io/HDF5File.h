@@ -32,6 +32,7 @@
 #include "dolfin/common/types.h"
 #include "dolfin/common/Variable.h"
 #include "dolfin/mesh/Mesh.h"
+#include "dolfin/mesh/MeshEditor.h"
 #include "dolfin/mesh/Vertex.h"
 #include "GenericFile.h"
 #include "HDF5Interface.h"
@@ -105,6 +106,9 @@ namespace dolfin
     void read_mesh_repartition(Mesh &input_mesh,
                                const std::string coordinates_name,
                                const std::string topology_name);
+
+    void build_local_mesh(Mesh &mesh, const LocalMeshData& mesh_data);
+    
 
     // Return vertex and topological data with duplicates removed
     void remove_duplicate_vertices(const Mesh& mesh,

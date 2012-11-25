@@ -356,7 +356,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
   // List of cell vertices
   const boost::multi_array<std::size_t, 2>& cell_vertices = mesh_data.cell_vertices;
-  const std::size_t num_local_cells    = mesh_data.global_cell_indices.size();
+  const std::size_t num_local_cells = mesh_data.global_cell_indices.size();
   const uint num_vertices_per_cell = mesh_data.num_vertices_per_cell;
   
   dolfin_assert(num_local_cells == cell_vertices.shape()[0]);
@@ -371,7 +371,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   double tt = time();
 
   // create mapping from facets(vector) to cells
-  // FIXME: potential speedup by using a hash directly for the map key instead of vector
+  // FIXME: potential speedup by using a hash directly for the map key instead of a vector
   typedef boost::unordered_map<std::vector<std::size_t>, std::size_t> vectormap;
   vectormap facet_cell;  
 
@@ -426,7 +426,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
   // FIXME: better way to send boost::unordered_map between processes - could use std::map instead
   // boost cannot serialise unordered_map, so convert to a vector here
-  std::vector<std::pair<std::vector<std::size_t>, size_t> > map_data;
+  std::vector<std::pair<std::vector<std::size_t>, std::size_t> > map_data;
 
   // repeat (n-1) times, to go round ring
   for(uint i = 0; i < (num_processes - 1); ++i)

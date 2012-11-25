@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2008-2011
 //
 // First added:  2008-11-28
-// Last changed: 2012-11-23
+// Last changed: 2012-11-24
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
@@ -156,7 +156,7 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
   // Get global vertex indices for all cells stored on local processor
   cell_vertices.resize(boost::extents[mesh.num_cells()][num_vertices_per_cell]);
   global_cell_indices.reserve(mesh.num_cells());
-  std::vector<std::size_t> vertices(num_vertices_per_cell);
+  //  std::vector<std::size_t> vertices(num_vertices_per_cell);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     const std::size_t index = cell->index();
@@ -254,7 +254,7 @@ void LocalMeshData::receive_mesh_data()
     MPI::broadcast(values);
     dolfin_assert(values.size() == 5);
     gdim = values[0];
-    tdim = values[1];
+    tdim = values[1]; 
     num_global_vertices = values[2];
     num_global_cells = values[3];
     num_vertices_per_cell = values[4];

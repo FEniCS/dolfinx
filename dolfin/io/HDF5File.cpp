@@ -317,10 +317,7 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
                                      const std::string coordinates_name,
                                      const std::string topology_name)
 {
-  // FIXME:
-  // This function is experimental, and not checked or optimised
-
-  warning("HDF5 Mesh read is still experimental");
+  // FIXME: should not call repartition if running serial
   warning("HDF5 Mesh read will repartition this mesh");
 
   // Structure to store local mesh
@@ -348,15 +345,14 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
   // Read a block of cells
   std::vector<std::size_t> topology_data;
   topology_data.reserve(num_local_cells*num_vertices_per_cell);
-  mesh_data.cell_vertices.resize(boost::extents[num_local_cells][num_vertices_per_cell]);
   HDF5Interface::read_dataset(hdf5_file_id, topology_name, cell_range, topology_data);
 
   mesh_data.global_cell_indices.reserve(num_local_cells);
-
   for(std::size_t i = 0; i < num_local_cells; i++)
     mesh_data.global_cell_indices.push_back(cell_range.first + i);
 
   // Copy to boost::multi_array
+  mesh_data.cell_vertices.resize(boost::extents[num_local_cells][num_vertices_per_cell]);
   std::copy(topology_data.begin(), topology_data.end(), 
             mesh_data.cell_vertices.data());
 
@@ -365,36 +361,79 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
   std::vector<std::size_t> coords_dim
     = HDF5Interface::get_dataset_size(hdf5_file_id, coordinates_name);
   mesh_data.num_global_vertices = coords_dim[0];
-  const uint vertex_dim = coords_dim[1];
-  mesh_data.gdim = vertex_dim;
+  mesh_data.gdim = coords_dim[1];
 
   // Divide range into equal blocks for each process
-  const std::pair<std::size_t, std::size_t> vertex_range = MPI::local_range(coords_dim[0]);
+  const std::pair<std::size_t, std::size_t> vertex_range = 
+                          MPI::local_range(mesh_data.num_global_vertices);
   const std::size_t num_local_vertices = vertex_range.second - vertex_range.first;
 
   // Read vertex data to temporary vector
-
-  std::vector<double> tmp_vertex_data;
-  tmp_vertex_data.reserve(num_local_vertices*vertex_dim);
+  std::vector<double> coordinates_data;
+  coordinates_data.reserve(num_local_vertices*mesh_data.gdim);
   HDF5Interface::read_dataset(hdf5_file_id, coordinates_name, vertex_range,
-                              tmp_vertex_data);
+                              coordinates_data);
   
   // Copy to boost::multi_array
-  mesh_data.vertex_coordinates.resize(boost::extents[num_local_vertices][vertex_dim]);
-  std::copy(tmp_vertex_data.begin(), tmp_vertex_data.end(), 
+  mesh_data.vertex_coordinates.resize(boost::extents[num_local_vertices][mesh_data.gdim]);
+  std::copy(coordinates_data.begin(), coordinates_data.end(), 
             mesh_data.vertex_coordinates.data());
 
-  // Fill vertex indices with values - 
+  // Fill vertex indices with values - not used in build_distributed_mesh
   mesh_data.vertex_indices.resize(num_local_vertices);
-
-  // FIXME: put global index here - not used at present
   for(std::size_t i = 0; i < mesh_data.vertex_coordinates.size(); ++i)
     mesh_data.vertex_indices[i] = vertex_range.first + i;
 
   // Build distributed mesh
   Timer t9("HDF5: partition");
-  MeshPartitioning::build_distributed_mesh(input_mesh, mesh_data);
+
+  if(MPI::num_processes() == 1)
+    build_local_mesh(input_mesh, mesh_data);
+  else
+    MeshPartitioning::build_distributed_mesh(input_mesh, mesh_data);
+
 }
+//-----------------------------------------------------------------------------
+void HDF5File::build_local_mesh(Mesh &mesh, const LocalMeshData& mesh_data)
+{
+
+  // Create mesh for editing
+  MeshEditor editor;
+  std::string cell_type_str;
+
+  if(mesh_data.tdim == 2)
+    cell_type_str = "triangle";
+  if(mesh_data.tdim == 3)
+    cell_type_str = "tetrahedron";
+
+  editor.open(mesh, cell_type_str, mesh_data.tdim, mesh_data.gdim);
+  editor.init_vertices(mesh_data.num_global_vertices);
+
+  // Iterate over vertices and add to mesh
+  for (std::size_t i = 0; i < mesh_data.num_global_vertices; ++i)
+  {
+    const std::size_t index = mesh_data.vertex_indices[i];
+    const std::vector<double> coords(mesh_data.vertex_coordinates[i].begin(), 
+                                     mesh_data.vertex_coordinates[i].end());
+    Point p(mesh_data.gdim, coords.data());
+    editor.add_vertex(index, p);
+  }
+
+  editor.init_cells(mesh_data.num_global_cells);
+  const unsigned int num_vertices_per_cell = mesh_data.tdim + 1;
+
+  // Iterate over cells and add to mesh
+  for (std::size_t i = 0; i < mesh_data.num_global_cells; ++i)
+  {
+    const std::size_t index = mesh_data.global_cell_indices[i];
+    const std::vector<std::size_t> v(mesh_data.cell_vertices[i].begin(), mesh_data.cell_vertices[i].end());
+    editor.add_cell(index, v);
+  }
+
+  // Close mesh editor
+  editor.close();
+}
+
 //-----------------------------------------------------------------------------
 void HDF5File::operator<< (const Mesh& mesh)
 {  
@@ -447,10 +486,9 @@ void HDF5File::write_mesh_global_index(const Mesh& mesh, uint cell_dim, const st
     // Write vertex data to HDF5 file
     const std::string coord_dataset = name + "/coordinates";
     
-    const uint gdim = mesh.geometry().dim();
     // Copy coordinates and indices and remove off-process values
     std::vector<double> vertex_coords(mesh.coordinates()); 
-        
+    const uint gdim = mesh.geometry().dim();
     reorder_vertices_by_global_indices(vertex_coords, gdim, global_indices);
     
     // Write coordinates out from each process
@@ -597,6 +635,7 @@ void HDF5File::reorder_vertices_by_global_indices(std::vector<double>& vertex_co
                                                   const std::vector<std::size_t>& global_indices)
 {
   Timer t("HDF5: reorder vertices");
+  // FIXME: be more efficient with MPI
 
   dolfin_assert(gdim*global_indices.size() == vertex_coords.size());
 

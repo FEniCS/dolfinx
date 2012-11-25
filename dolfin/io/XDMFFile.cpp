@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-11-19
+// Last changed: 2012-11-25
 
 #ifdef HAS_HDF5
 
@@ -382,7 +382,12 @@ void XDMFFile::operator<< (const MeshFunction<int>& meshfunction)
   write_mesh_function(meshfunction);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::operator<< (const MeshFunction<std::size_t>& meshfunction)
+void XDMFFile::operator<< (const MeshFunction<unsigned int>& meshfunction)
+{
+  write_mesh_function(meshfunction);
+}
+//----------------------------------------------------------------------------
+void XDMFFile::operator<< (const MeshFunction<unsigned long int>& meshfunction)
 {
   write_mesh_function(meshfunction);
 }

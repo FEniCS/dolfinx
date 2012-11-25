@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-11-08
+// Last changed: 2012-11-25
 
 #ifndef __DOLFIN_XDMFFILE_H
 #define __DOLFIN_XDMFFILE_H
@@ -76,7 +76,8 @@ namespace dolfin
     /// Save MeshFunction to file
     void operator<< (const MeshFunction<bool>& meshfunction);
     void operator<< (const MeshFunction<int>& meshfunction);
-    void operator<< (const MeshFunction<std::size_t>& meshfunction);
+    void operator<< (const MeshFunction<unsigned int>& meshfunction);
+    void operator<< (const MeshFunction<unsigned long int>& meshfunction);
     void operator<< (const MeshFunction<double>& meshfunction);
 
   private:
