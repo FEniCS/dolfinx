@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-11-25
+// Last changed: 2012-11-26
 
 #ifdef HAS_HDF5
 

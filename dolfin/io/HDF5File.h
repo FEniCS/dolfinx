@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-11-24
+// Last changed: 2012-11-26
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -107,8 +107,8 @@ namespace dolfin
                                const std::string coordinates_name,
                                const std::string topology_name);
 
+    // Convert LocalMeshData into a Mesh, when running serially
     void build_local_mesh(Mesh &mesh, const LocalMeshData& mesh_data);
-    
 
     // Return vertex and topological data with duplicates removed
     void remove_duplicate_vertices(const Mesh& mesh,

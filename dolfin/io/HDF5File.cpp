@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-11-24
+// Last changed: 2012-11-26
 
 #ifdef HAS_HDF5
 
@@ -401,10 +401,20 @@ void HDF5File::build_local_mesh(Mesh &mesh, const LocalMeshData& mesh_data)
   MeshEditor editor;
   std::string cell_type_str;
 
-  if(mesh_data.tdim == 2)
+  switch(mesh_data.tdim)
+  {
+  case 1:
+    cell_type_str = "interval";
+    break;
+  case 2:
     cell_type_str = "triangle";
-  if(mesh_data.tdim == 3)
+    break;
+  case 3:
     cell_type_str = "tetrahedron";
+    break;
+  default:
+    dolfin_error("HDF5File.cpp","resolve cell type","Topological dimension out of range");
+  }
 
   editor.open(mesh, cell_type_str, mesh_data.tdim, mesh_data.gdim);
   editor.init_vertices(mesh_data.num_global_vertices);
@@ -420,7 +430,6 @@ void HDF5File::build_local_mesh(Mesh &mesh, const LocalMeshData& mesh_data)
   }
 
   editor.init_cells(mesh_data.num_global_cells);
-  const unsigned int num_vertices_per_cell = mesh_data.tdim + 1;
 
   // Iterate over cells and add to mesh
   for (std::size_t i = 0; i < mesh_data.num_global_cells; ++i)

@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2008-2011
 //
 // First added:  2008-11-28
-// Last changed: 2012-11-23
+// Last changed: 2012-11-26
 
 #include <iostream>
 
@@ -355,16 +355,12 @@ void XMLLocalMeshSAX::read_vertex(const xmlChar* name, const xmlChar** attrs,
   if (v < vertex_range.first || v >= vertex_range.second)
     return;
 
-  std::size_t local_index = v - vertex_range.first;
-  
-  mesh_data.vertex_coordinates[local_index][0] = SAX2AttributeParser::parse<double>(name, attrs, "x", num_attributes);
-  
-  if(gdim > 1) 
-    mesh_data.vertex_coordinates[local_index][1] = SAX2AttributeParser::parse<double>(name, attrs, "y", num_attributes);
+  const std::size_t local_index = v - vertex_range.first;
+  const char *xyz[] = {"x", "y", "z"};
 
-  if(gdim > 2) 
-    mesh_data.vertex_coordinates[local_index][2] = SAX2AttributeParser::parse<double>(name, attrs, "z", num_attributes);
-  
+  for(uint i = 0; i < gdim ; ++i)
+    mesh_data.vertex_coordinates[local_index][i] = SAX2AttributeParser::parse<double>(name, attrs, xyz[i], num_attributes);
+    
   // Store global vertex numbering
   mesh_data.vertex_indices.push_back(v);
 }
