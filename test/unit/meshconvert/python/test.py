@@ -383,6 +383,7 @@ class TriangleTester(_TestCase):
 
         # Read in dolfin mesh and check number of cells and vertices
         mesh = Mesh(dfname)
+        mesh.init()
         mfun = MeshFunction('double', mesh, dfname0)
         self.assertEqual(mesh.num_vertices(), 58)
         self.assertEqual(mesh.num_cells(), 58)
@@ -408,7 +409,7 @@ class TriangleTester(_TestCase):
         # Check that the areas add up
         self.assertEqual(abs(area0+area1-total_area) < 100.*DOLFIN_EPS, True)
         
-        # Measure the edge length of the two domains
+        # Measure the edge length of the two edge domains
         edge_markers = mesh.domains().facet_domains(mesh)
         self.assertTrue(edge_markers is not None)
         length0 = reduce(add, (Edge(mesh, e.index()).length() \
@@ -416,12 +417,14 @@ class TriangleTester(_TestCase):
         length1 = reduce(add, (Edge(mesh, e.index()).length() \
                             for e in SubsetIterator(edge_markers, 1)), 0.0)
         
-        # Total length of all edges
-        total_length = reduce(add, (Edge(mesh, f.index()).length() \
-                               for f in facets(mesh)), 0.0)
-
+        # Total length of all edges and total length of boundary edges
+        total_length = reduce(add, (e.length() for e in edges(mesh)), 0.0)
+        boundary_length = reduce(add, (Edge(mesh, f.index()).length() \
+                          for f in facets(mesh) if f.exterior()), 0.0)
+        
         # Check that the edges add up
-        self.assertEqual(abs(length0+length1-total_length) < 100.*DOLFIN_EPS, True)
+        self.assertAlmostEqual(length0+length1, total_length)
+        self.assertAlmostEqual(length1, boundary_length)
 
         # Clean up
         os.unlink(dfname)
