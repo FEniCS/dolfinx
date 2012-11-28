@@ -369,8 +369,9 @@ class TriangleTester(_TestCase):
 
 
         # test no. 2
-        from dolfin import MPI, Mesh, MeshFunction, Expression, Constant, \
-                           ds, dS, dx, assemble, DOLFIN_EPS, edges, Edge
+        from dolfin import MPI, Mesh, MeshFunction, \
+                           DOLFIN_EPS, edges, Edge, faces, Face, \
+                           SubsetIterator, facets, CellFunction
         if MPI.num_processes() != 1:
             return
         fname = os.path.join("data", "test_Triangle_3")
@@ -385,44 +386,35 @@ class TriangleTester(_TestCase):
         mfun = MeshFunction('double', mesh, dfname0)
         self.assertEqual(mesh.num_vertices(), 58)
         self.assertEqual(mesh.num_cells(), 58)
+        
+        cf = CellFunction("sizet", mesh)
+        cf.array()[mfun.array()==10.0] = 0
+        cf.array()[mfun.array()==-10.0] = 1
 
-        # Define expressions out of mfun 
-        class TopA(Expression):
-            def eval_cell(self, value, x, ufc_cell):
-                if x[1]>0:
-                    value[0] = mfun.array()[ufc_cell.index]
-                else:
-                    value[0] = 0
-        class BottomA(Expression):
-            def eval_cell(self, value, x, ufc_cell):
-                if x[1]<0:
-                    value[0] = mfun.array()[ufc_cell.index]
-                else:
-                    value[0] = 0
-        topA, bottomA = TopA(), BottomA()
+        # Meassure total area of cells with 1 and 2 marker
+        add = lambda x, y : x+y
+        area0 = reduce(add, (Face(mesh, cell.index()).area() \
+                             for cell in SubsetIterator(cf, 0)), 0.0)
+        area1 = reduce(add, (Face(mesh, cell.index()).area() \
+                             for cell in SubsetIterator(cf, 1)), 0.0)
+        total_area = reduce(add, (face.area() for face in faces(mesh)), 0.0)
 
-        # Calculate averages of mfun on two domains 
-        volA    = assemble(Constant(0.5)*dx, mesh=mesh)
-        topA    = assemble(topA*dx,          mesh=mesh)
-        bottomA = assemble(bottomA*dx,       mesh=mesh)
-        self.assertEqual(abs((topA   /volA)+10.0) < 100.*DOLFIN_EPS, True)
-        self.assertEqual(abs((bottomA/volA)-10.0) < 100.*DOLFIN_EPS, True)
+        # Check that the areas add up
+        self.assertEqual(abs(area0+area1-total_area) < 100.*DOLFIN_EPS, True)
+        
+        # Measure the edge length of the two domains
+        edge_markers = mesh.domains().facet_domains(mesh)
+        length0 = reduce(add, (Edge(mesh, e.index()).length() \
+                            for e in SubsetIterator(edge_markers, 0)), 0.0)
+        length1 = reduce(add, (Edge(mesh, e.index()).length() \
+                            for e in SubsetIterator(edge_markers, 1)), 0.0)
+        
+        # Total length of all edges
+        total_length = reduce(add, (Edge(mesh, f.index()).length() \
+                               for f in facets(mesh)), 0.0)
 
-        # Facet integrals over different markers
-        a = assemble(Constant(1)('-')*dS(0), mesh=mesh)
-        b = assemble(Constant(1)     *ds(0), mesh=mesh)
-        c = assemble(Constant(1)('-')*dS(1), mesh=mesh)
-        d = assemble(Constant(1)     *ds(1), mesh=mesh)
-
-        # Total length of all edges...
-        edges_length = 0
-        for e in edges(mesh):
-            edges_length += e.length()
-
-        # ...should be equal to a+d
-        self.assertEqual(abs(a+d-edges_length) < 100.*DOLFIN_EPS, True)
-        self.assertEqual(b, 0.0)
-        self.assertEqual(c, 0.0)
+        # Check that the edges add up
+        self.assertEqual(abs(length0+length1-total_length) < 100.*DOLFIN_EPS, True)
 
         # Clean up
         os.unlink(dfname)
