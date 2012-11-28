@@ -370,7 +370,7 @@ class TriangleTester(_TestCase):
 
         # test no. 2
         from dolfin import MPI, Mesh, MeshFunction, \
-                           DOLFIN_EPS, edges, Edge, faces, Face, \
+                           edges, Edge, faces, Face, \
                            SubsetIterator, facets, CellFunction
         if MPI.num_processes() != 1:
             return
@@ -407,7 +407,7 @@ class TriangleTester(_TestCase):
         self.assertTrue(all(cell.midpoint().y()>0 for cell in SubsetIterator(cf, 1)))
         
         # Check that the areas add up
-        self.assertEqual(abs(area0+area1-total_area) < 100.*DOLFIN_EPS, True)
+        self.assertAlmostEqual(area0+area1, total_area)
         
         # Measure the edge length of the two edge domains
         edge_markers = mesh.domains().facet_domains(mesh)
