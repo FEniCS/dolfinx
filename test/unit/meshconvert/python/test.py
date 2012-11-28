@@ -348,7 +348,7 @@ class GmshTest(_ConverterTest):
         return handler
 
 class TriangleTester(_TestCase):
-    def xtest_convert_triangle(self): # Disabled because it fails, see FIXME below
+    def test_convert_triangle(self): # Disabled because it fails, see FIXME below
         # test no. 1
         from dolfin import Mesh, MPI
         if MPI.num_processes() != 1:
@@ -403,7 +403,8 @@ class TriangleTester(_TestCase):
         self.assertEqual(abs(area0+area1-total_area) < 100.*DOLFIN_EPS, True)
         
         # Measure the edge length of the two domains
-        edge_markers = mesh.domains().facet_domains(mesh) # FIXME: When this is None, the SubsetIterator gets a NULL reference below
+        edge_markers = mesh.domains().facet_domains(mesh)
+        self.assertTrue(edge_markers is not None)
         length0 = reduce(add, (Edge(mesh, e.index()).length() \
                             for e in SubsetIterator(edge_markers, 0)), 0.0)
         length1 = reduce(add, (Edge(mesh, e.index()).length() \
