@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-11-26
+// Last changed: 2012-11-27
 
 #ifdef HAS_HDF5
 
@@ -234,7 +234,6 @@ std::string HDF5File::search_list(const std::vector<std::string>& list,
 //-----------------------------------------------------------------------------
 void HDF5File::operator>> (Mesh& input_mesh)
 {
-  Timer t("HDF5: read_mesh_all");
 
   // Open file if not already open
   if (!hdf5_file_open)
@@ -308,7 +307,6 @@ void HDF5File::read_mesh(Mesh& input_mesh,const std::string name)
   }
   coordinates_name = name + "/" + coordinates_name;
 
-  Timer t("HDF5: read_repartition");  
   read_mesh_repartition(input_mesh, coordinates_name,
                                    topology_name);
 }
@@ -319,6 +317,7 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
 {
   // FIXME: should not call repartition if running serial
   warning("HDF5 Mesh read will repartition this mesh");
+  Timer t("HDF5: ReadMesh");
 
   // Structure to store local mesh
   LocalMeshData mesh_data;
@@ -385,7 +384,8 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
     mesh_data.vertex_indices[i] = vertex_range.first + i;
 
   // Build distributed mesh
-  Timer t9("HDF5: partition");
+
+  t.stop();
 
   if(MPI::num_processes() == 1)
     build_local_mesh(input_mesh, mesh_data);
