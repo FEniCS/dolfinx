@@ -386,7 +386,9 @@ class TriangleTester(_TestCase):
         mfun = MeshFunction('double', mesh, dfname0)
         self.assertEqual(mesh.num_vertices(), 58)
         self.assertEqual(mesh.num_cells(), 58)
-        
+
+        # Create a sizet CellFunction and assign the values based on the
+        # converted Meshfunction
         cf = CellFunction("sizet", mesh)
         cf.array()[mfun.array()==10.0] = 0
         cf.array()[mfun.array()==-10.0] = 1
@@ -399,6 +401,10 @@ class TriangleTester(_TestCase):
                              for cell in SubsetIterator(cf, 1)), 0.0)
         total_area = reduce(add, (face.area() for face in faces(mesh)), 0.0)
 
+        # Check that all cells in the two domains are either above or below y=0
+        self.assertTrue(all(cell.midpoint().y()<0 for cell in SubsetIterator(cf, 0)))
+        self.assertTrue(all(cell.midpoint().y()>0 for cell in SubsetIterator(cf, 1)))
+        
         # Check that the areas add up
         self.assertEqual(abs(area0+area1-total_area) < 100.*DOLFIN_EPS, True)
         
