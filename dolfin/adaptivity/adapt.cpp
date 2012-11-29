@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-10
-// Last changed: 2012-01-20
+// Last changed: 2012-11-29
 
 #include <map>
 #include <boost/shared_ptr.hpp>
@@ -135,8 +135,11 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
 const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
                                            boost::shared_ptr<const Mesh> adapted_mesh)
 {
-  // Skip refinement if already refined
-  if (space.has_child())
+
+  // Skip refinement if already refined and child's mesh is the same
+  // as requested
+  if (space.has_child()
+      && adapted_mesh.get() == space.child().mesh().get())
   {
     dolfin_debug("Function space has already been refined, returning child space.");
     return space.child();
@@ -163,8 +166,10 @@ const dolfin::Function& dolfin::adapt(const Function& function,
                                       boost::shared_ptr<const Mesh> adapted_mesh,
                                       bool interpolate)
 {
-  // Skip refinement if already refined
-  if (function.has_child())
+  // Skip refinement if already refined and if child's mesh matches
+  // requested mesh
+  if (function.has_child()
+      && adapted_mesh.get() == function.child().function_space()->mesh().get())
   {
     dolfin_debug("Function has already been refined, returning child function.");
     return function.child();

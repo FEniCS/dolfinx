@@ -1,5 +1,27 @@
-""" Tests for the meshconvert module.
-"""
+""" Tests for the meshconvert module."""
+
+# Copyright (C) 2012
+#
+# This file is part of DOLFIN.
+#
+# DOLFIN is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# DOLFIN is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+#
+# Modified by Jan Blechta 2012
+#
+# First added:
+# Last changed: 2012-11-23
+
 from unittest import TestCase as _TestCase
 import unittest
 import os
@@ -326,7 +348,8 @@ class GmshTest(_ConverterTest):
         return handler
 
 class TriangleTester(_TestCase):
-    def test_convert(self):
+    def test_convert_triangle(self): # Disabled because it fails, see FIXME below
+        # test no. 1
         from dolfin import Mesh, MPI
         if MPI.num_processes() != 1:
             return
@@ -344,8 +367,71 @@ class TriangleTester(_TestCase):
         # Clean up
         os.unlink(dfname)
 
+
+        # test no. 2
+        from dolfin import MPI, Mesh, MeshFunction, \
+                           edges, Edge, faces, Face, \
+                           SubsetIterator, facets, CellFunction
+        if MPI.num_processes() != 1:
+            return
+        fname = os.path.join("data", "test_Triangle_3")
+        dfname = fname+".xml"
+        dfname0 = fname+".attr0.xml"
+
+        # Read triangle file and convert to a dolfin xml mesh file
+        meshconvert.triangle2xml(fname, dfname)
+
+        # Read in dolfin mesh and check number of cells and vertices
+        mesh = Mesh(dfname)
+        mesh.init()
+        mfun = MeshFunction('double', mesh, dfname0)
+        self.assertEqual(mesh.num_vertices(), 58)
+        self.assertEqual(mesh.num_cells(), 58)
+
+        # Create a sizet CellFunction and assign the values based on the
+        # converted Meshfunction
+        cf = CellFunction("sizet", mesh)
+        cf.array()[mfun.array()==10.0] = 0
+        cf.array()[mfun.array()==-10.0] = 1
+
+        # Meassure total area of cells with 1 and 2 marker
+        add = lambda x, y : x+y
+        area0 = reduce(add, (Face(mesh, cell.index()).area() \
+                             for cell in SubsetIterator(cf, 0)), 0.0)
+        area1 = reduce(add, (Face(mesh, cell.index()).area() \
+                             for cell in SubsetIterator(cf, 1)), 0.0)
+        total_area = reduce(add, (face.area() for face in faces(mesh)), 0.0)
+
+        # Check that all cells in the two domains are either above or below y=0
+        self.assertTrue(all(cell.midpoint().y()<0 for cell in SubsetIterator(cf, 0)))
+        self.assertTrue(all(cell.midpoint().y()>0 for cell in SubsetIterator(cf, 1)))
+        
+        # Check that the areas add up
+        self.assertAlmostEqual(area0+area1, total_area)
+        
+        # Measure the edge length of the two edge domains
+        edge_markers = mesh.domains().facet_domains(mesh)
+        self.assertTrue(edge_markers is not None)
+        length0 = reduce(add, (Edge(mesh, e.index()).length() \
+                            for e in SubsetIterator(edge_markers, 0)), 0.0)
+        length1 = reduce(add, (Edge(mesh, e.index()).length() \
+                            for e in SubsetIterator(edge_markers, 1)), 0.0)
+        
+        # Total length of all edges and total length of boundary edges
+        total_length = reduce(add, (e.length() for e in edges(mesh)), 0.0)
+        boundary_length = reduce(add, (Edge(mesh, f.index()).length() \
+                          for f in facets(mesh) if f.exterior()), 0.0)
+        
+        # Check that the edges add up
+        self.assertAlmostEqual(length0+length1, total_length)
+        self.assertAlmostEqual(length1, boundary_length)
+
+        # Clean up
+        os.unlink(dfname)
+        os.unlink(dfname0)
+
 class DiffPackTester(_TestCase):
-    def test_convert(self):
+    def test_convert_diffpack(self):
         from dolfin import Mesh, MPI, MeshFunction
         if MPI.num_processes() != 1:
             return
