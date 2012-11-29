@@ -629,8 +629,8 @@ void Mesh::add_periodic_direction(boost::shared_ptr<const SubDomain> sub_domain)
   const uint tdim = topology().dim();
   const uint gdim = geometry().dim();
 
-  MeshValueCollection<std::size_t>& mf = *(_domains.markers(tdim-1));
- 
+  MeshValueCollection<std::size_t>& mf = *(_domains.markers(tdim-1)); 
+
   // Choose an integer to mark the domains. If there has been some sub_domains defined
   // previously in mf, then choose a higher number (required, e.g., for multiple periodic directions)
   uint ii = 0;
@@ -841,9 +841,10 @@ void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1
   coordinate_map final_coordinate_facet_pairs = coordinate_facet_pairs;
   #endif
   
+  // Create the final facet-to-facet list of matching facets  
   std::vector<std::pair<std::pair<std::size_t, uint>, 
                         std::pair<std::size_t, uint> > > _facet_pairs;
-  // Create the final facet-to-facet list of matching facets
+                        
   for (coordinate_iterator it = final_coordinate_facet_pairs.begin();
                            it != final_coordinate_facet_pairs.end(); ++it)
   {
@@ -876,13 +877,13 @@ void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1
   const PeriodicDomain* _periodic_domain = new PeriodicDomain(sub_domain0, sub_domain1, dx, _facet_pairs);  
   _periodic_domains.push_back(_periodic_domain);
   
-//    cout << "Facet pairs " << _periodic_domain->facet_pairs.size() << endl;
-//   for (uint i=0; i<_periodic_domain->facet_pairs.size(); i++)
-//   {
-//     facet_pair pair = _periodic_domain->facet_pairs[i];
-//     cout << " (" << pair.first.first << ", " << pair.first.second << ")"
-//               ", (" << pair.second.first << ", " << pair.second.second << ")" << endl;
-//   }  
+   cout << "Facet pairs " << _periodic_domain->facet_pairs.size() << endl;
+  for (uint i=0; i<_periodic_domain->facet_pairs.size(); i++)
+  {
+    facet_pair pair = _periodic_domain->facet_pairs[i];
+    cout << " (" << pair.first.first << ", " << pair.first.second << ")"
+              ", (" << pair.second.first << ", " << pair.second.second << ")" << endl;
+  }  
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair< std::pair<std::size_t, uint>, std::pair<std::size_t, uint> > > 

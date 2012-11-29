@@ -25,6 +25,7 @@
 // First added:  2007-03-01
 // Last changed: 2012-11-05
 
+#include <boost/serialization/map.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Set.h>
@@ -170,7 +171,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
 
   // Get parent UFC dof map
   const ufc::dofmap& parent_ufc_dofmap = *(parent_dofmap._ufc_dofmap);
-
+  
   // Extract ufc sub-dofmap from parent and get offset
   _ufc_dofmap.reset(extract_ufc_sub_dofmap(parent_ufc_dofmap, offset,
                                            component, ufc_mesh, mesh));
@@ -206,16 +207,75 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
 
     // Tabulate sub-dofs on cell (using UFC map)
     _ufc_dofmap->tabulate_dofs(&tmp_dof_holder[0], ufc_mesh, ufc_cell);
-    std::copy(tmp_dof_holder.begin(), tmp_dof_holder.end(), _dofmap[cell_index].begin());
 
     // Add UFC offset
-    for (std::size_t i = 0; i < _dofmap[cell_index].size(); ++i)
-      _dofmap[cell_index][i] += offset;
+    for (uint i=0; i < tmp_dof_holder.size(); i++)
+      tmp_dof_holder[i] += offset;
+
+    if (mesh.is_periodic())
+    {
+      // Check for slaves and modify
+      std::map<std::size_t, std::size_t>::const_iterator slave_it;
+      for (uint i = 0; i < tmp_dof_holder.size(); i++)
+      {
+        const std::size_t dof = tmp_dof_holder[i];
+        slave_it = parent_dofmap._slave_master_map.find(dof);
+        if (slave_it != parent_dofmap._slave_master_map.end())
+        {
+          tmp_dof_holder[i] = slave_it->second; // Replace slave with master
+          _slave_master_map[slave_it->first] = slave_it->second;
+        }
+      }
+    }        
+    std::copy(tmp_dof_holder.begin(), tmp_dof_holder.end(), _dofmap[cell_index].begin());
   }
-
-  // Set global dimension
-  _global_dimension = _ufc_dofmap->global_dimension();
-
+  
+  if (mesh.is_periodic())
+  { // Periodic meshes need to renumber ufc-numbered dofs due to elimination of slave dofs
+  
+    // Reduce the local _slave_master_maps onto all processes
+    std::vector<std::map<std::size_t, std::size_t> > all_slave_pairs;
+    MPI::all_gather(_slave_master_map, all_slave_pairs);    
+    for (uint i = 0; i < all_slave_pairs.size(); i++)
+      _slave_master_map.insert(all_slave_pairs[i].begin(), all_slave_pairs[i].end());
+    
+    // Get a list of all slaves on parent dofmap (or parent of parent, aka the owner)
+    std::vector<std::size_t> _all_slaves;
+    for (std::map<std::size_t, std::size_t>::const_iterator it = parent_dofmap._slave_master_map.begin();
+                              it != parent_dofmap._slave_master_map.end(); ++it)
+    {
+      _all_slaves.push_back(it->first);
+    }
+    std::sort(_all_slaves.begin(), _all_slaves.end());
+    
+    // Renumber all ufc-numbered dofs due to deleted slave dofs
+    std::vector<std::size_t>::iterator it;  
+    for (std::size_t i = 0; i < _dofmap.size(); i++)
+    {
+      const std::vector<DolfinIndex>& global_dofs = cell_dofs(i); 
+      for (uint j = 0; j < max_cell_dimension(); j++)
+      {
+        const std::size_t dof = global_dofs[j];
+        
+        // lower_bound returns the location of the first item bigger than dof. As such 
+        // it counts the number of slaves with dof number smaller than current.
+        it = std::lower_bound(_all_slaves.begin(), _all_slaves.end(), dof);
+        _dofmap[i][j] = dof - std::size_t(it - _all_slaves.begin());
+      }
+    }    
+    
+    // Set global dimension
+    _global_dimension = _ufc_dofmap->global_dimension() - _slave_master_map.size();
+    
+    // Store original _slave_master_map on this sub_dofmap
+    _slave_master_map = parent_dofmap._slave_master_map;
+  }
+  else
+  {
+    // Set global dimension
+    _global_dimension = _ufc_dofmap->global_dimension();
+  }
+  
   // Modify dofmap for non-UFC numbering
   ufc_map_to_dofmap.clear();
   _off_process_owner.clear();
@@ -254,21 +314,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
         }
       }
     }
-  }
-  
-  // Set the global dimension of newly created dofmap
-  if (mesh.is_periodic())
-  {
-    boost::unordered_set<std::size_t> alldofs = dofs();
-    uint sumdofs = 0;
-    for (boost::unordered_set<std::size_t>::iterator it = alldofs.begin();
-         it != alldofs.end(); ++it)
-    {
-      if (*it >= parent_dofmap._ownership_range.first && *it < parent_dofmap._ownership_range.second)
-        sumdofs += 1;
-    }
-    _global_dimension = MPI::sum(sumdofs);
-  }
+  }  
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
@@ -340,6 +386,8 @@ DofMap::DofMap(const DofMap& dofmap)
   _neighbours = dofmap._neighbours;
   _is_view = dofmap. _is_view;
   _distributed = dofmap._distributed;
+  _slave_master_map = dofmap._slave_master_map;
+  _master_processes = dofmap._master_processes;
 }
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()

@@ -65,11 +65,11 @@ namespace dolfin
     typedef std::vector<std::size_t>::const_iterator vector_it;
     typedef boost::unordered_map<std::size_t, std::vector<std::size_t> > vec_map;
     
-    typedef std::pair<std::size_t, uint> dof_data;
-    typedef std::map<std::size_t, dof_data> dof_data_map;
-    typedef std::vector<dof_data> vector_of_pairs;
-    typedef dof_data_map::iterator dof_data_map_iterator;
-    typedef std::vector<std::pair<dof_data, dof_data> > facet_pair_type;    
+    typedef std::pair<std::size_t, uint> facet_data;
+    typedef std::map<std::size_t, std::size_t> periodic_map;
+    typedef std::vector<facet_data> vector_of_pairs;
+    typedef periodic_map::iterator periodic_map_iterator;
+    typedef std::vector<std::pair<facet_data, facet_data> > facet_pair_type;
 
   public:
 
@@ -122,13 +122,14 @@ namespace dolfin
                             const Mesh& dolfin_mesh, const UFCMesh& ufc_mesh);
 
     // Iterate recursively over all sub-dof maps to build a global
-    // map from slave dofs to master dofs
+    // map from slave dofs to master dofs. Build also a map of all
+    // processes that shares the master dofs
     static void extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh, 
-                            dof_data_map& _slave_master_map,
-                            std::pair<std::size_t, std::size_t> ownership_range);
+                            periodic_map& _slave_master_map,
+                            std::map<std::size_t, boost::unordered_set<uint> >& _master_processes);
 
     // Make all necessary modifications to dofmap due to periodicity of the mesh
-    static void periodic_modification(DofMap& dofmap, const Mesh& dolfin_mesh);
+    static void periodic_modification(DofMap& dofmap, const Mesh& dolfin_mesh, DofMapBuilder::set& global_dofs);
   };
 }
 
