@@ -72,6 +72,7 @@ class Interface(unittest.TestCase):
         self.assertEqual(len(f0.vector()), len(f1.vector()))
 
     def test_argument_equality(self):
+        "Placed this test here because it's mainly about detecting differing function spaces."
         mesh2 = UnitCubeMesh(1, 1, 1)
         V3 = FunctionSpace(mesh2, 'CG', 1)
         W3 = VectorFunctionSpace(mesh2, 'CG', 1)
@@ -111,6 +112,11 @@ class Interface(unittest.TestCase):
             self.assertEqual(s1, s2)
             self.assertEqual(s1, s3)
             self.assertEqual(s2, s3)
+
+            # Test that the dolfin implementation of Argument.__eq__
+            # is triggered when comparing ufl expressions
+            self.assertTrue(grad(v) == grad(v2))
+            self.assertTrue(grad(v) != grad(v3))
 
 if __name__ == "__main__":
     unittest.main()
