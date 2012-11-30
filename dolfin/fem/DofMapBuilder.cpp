@@ -1156,8 +1156,8 @@ void DofMapBuilder::periodic_modification(DofMap& dofmap, const Mesh& mesh, set&
   set new_global_dofs;
   for (set_iterator sit = global_dofs.begin(); sit != global_dofs.end(); ++sit)
   {
-     it = std::lower_bound(_all_slaves.begin(), _all_slaves.end(), *sit);
-     new_global_dofs.insert(*sit - std::size_t(it - _all_slaves.begin()));
+    it = std::lower_bound(_all_slaves.begin(), _all_slaves.end(), *sit);
+    new_global_dofs.insert(*sit - std::size_t(it - _all_slaves.begin()));
   }
   global_dofs = new_global_dofs;  
 }

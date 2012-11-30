@@ -197,6 +197,9 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   
   // Set to hold slave dofs on current processor
   std::set<std::size_t> slave_dofs;
+  
+  // Store original _slave_master_map on this sub_dofmap
+  _slave_master_map = parent_dofmap._slave_master_map;
 
   // Build sub-map based on UFC dofmap
   UFCCell ufc_cell(mesh);
@@ -218,15 +221,15 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
     for (uint i=0; i < tmp_dof_holder.size(); i++)
       tmp_dof_holder[i] += offset;
 
-    if (mesh.is_periodic())
+    if (mesh.is_periodic() && !_slave_master_map.empty())
     {
       // Check for slaves and modify
       std::map<std::size_t, std::size_t>::const_iterator slave_it;
       for (uint i = 0; i < tmp_dof_holder.size(); i++)
       {
         const std::size_t dof = tmp_dof_holder[i];
-        slave_it = parent_dofmap._slave_master_map.find(dof);
-        if (slave_it != parent_dofmap._slave_master_map.end())
+        slave_it = _slave_master_map.find(dof);
+        if (slave_it != _slave_master_map.end())
         {
           tmp_dof_holder[i] = slave_it->second; // Replace slave with master
           slave_dofs.insert(slave_it->first);
@@ -236,13 +239,13 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
     std::copy(tmp_dof_holder.begin(), tmp_dof_holder.end(), _dofmap[cell_index].begin());
   }
   
-  if (mesh.is_periodic())
+  if (mesh.is_periodic() && !_slave_master_map.empty())
   { 
     // Periodic meshes need to renumber UFC-numbered dofs due to elimination of slave dofs      
     // For faster search get a vector of all slaves on parent dofmap (or parent of parent, aka the owner)
     std::vector<std::size_t> parent_slaves;
-    for (std::map<std::size_t, std::size_t>::const_iterator it = parent_dofmap._slave_master_map.begin();
-                              it != parent_dofmap._slave_master_map.end(); ++it)
+    for (std::map<std::size_t, std::size_t>::const_iterator it = _slave_master_map.begin();
+                              it != _slave_master_map.end(); ++it)
     {
       parent_slaves.push_back(it->first);
     }
@@ -253,13 +256,13 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
       const std::vector<DolfinIndex>& global_dofs = cell_dofs(i); 
       for (uint j = 0; j < max_cell_dimension(); j++)
       { // Count the number of slaves with dof number smaller than current
-        const std::size_t dof = global_dofs[j];        
+        std::size_t dof = global_dofs[j];
         it = std::lower_bound(parent_slaves.begin(), parent_slaves.end(), dof);
-        _dofmap[i][j] = dof - std::size_t(it - parent_slaves.begin());
+        _dofmap[i][j] = dof - std::size_t(it - parent_slaves.begin());        
       }
     }    
-    
-    // Reduce the local slaves onto all processes and eliminate duplicates 
+        
+    // Reduce the local slaves onto all processes to eliminate duplicates 
     std::vector<std::set<std::size_t> > all_slave_dofs;
     MPI::all_gather(slave_dofs, all_slave_dofs);    
     for (uint i = 0; i < all_slave_dofs.size(); i++)
@@ -268,9 +271,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
     
     // Set global dimension
     _global_dimension = _ufc_dofmap->global_dimension() - slave_dofs.size();
-    
-    // Store original _slave_master_map on this sub_dofmap
-    _slave_master_map = parent_dofmap._slave_master_map;
+        
   }
   else
   {

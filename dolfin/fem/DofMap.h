@@ -428,7 +428,7 @@ namespace dolfin
     // Map from slave dofs to master dofs using UFC numbering
     std::map<std::size_t, std::size_t> _slave_master_map;
     
-    // Map of processes that share master dofs
+    // Map of processes that share master dofs (used by compute_ownership)
     std::map<std::size_t, boost::unordered_set<uint> > _master_processes;
     
   };
