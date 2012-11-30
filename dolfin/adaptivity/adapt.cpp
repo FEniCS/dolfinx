@@ -426,8 +426,10 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
 {
   dolfin_assert(adapted_mesh);
 
-  // Skip refinement if already refined
-  if (bc.has_child())
+  // Skip refinement if already refined and child's mesh is the same
+  // as requested
+  if (bc.has_child()
+      && adapted_mesh.get() == bc.child().function_space()->mesh().get())
   {
     dolfin_debug("DirichletBC has already been refined, returning child.");
     return bc.child();
