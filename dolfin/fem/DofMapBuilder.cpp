@@ -28,7 +28,6 @@
 
 #include <ufc.h>
 #include <boost/random.hpp>
-#include <boost/unordered_map.hpp>
 #include <boost/serialization/map.hpp>
 #include <dolfin/common/tuple_serialization.h>
 
@@ -1020,12 +1019,12 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
   
   // Update the global _slave_master_map (the map for all sub_dofmaps)
   _slave_master_map.insert(_current_slave_master_map.begin(), _current_slave_master_map.end());
-  
+   
 //     cout << "Map" << endl;
 //     for (periodic_map_iterator it = _slave_master_map.begin();
 //                                it != _slave_master_map.end(); ++it)
 //     {
-//       cout << "   " << it->first << " " << it->second.first << endl;
+//       cout << "   " << it->first << " " << it->second << endl;
 //     }
 //     for (std::map<std::size_t, set>::iterator it = _master_processes.begin();
 //                                     it != _master_processes.end(); ++it)
@@ -1114,31 +1113,31 @@ void DofMapBuilder::periodic_modification(DofMap& dofmap, const Mesh& mesh, set&
   //   3) Recompute global_dimension (set _global_dimension)
   //   4) Renumber global_dofs and _master_processes
   
-  // Count the number of slaves on dofmap
+  // Get the keys of _slave_master_map for faster search (to avoid std::distance)
   std::vector<std::size_t> _all_slaves;
   for (periodic_map_iterator it = _slave_master_map.begin();
                              it != _slave_master_map.end(); ++it)
   {    
     _all_slaves.push_back(it->first);
   }
-  std::sort(_all_slaves.begin(), _all_slaves.end());
   
   // Compute the new global dimension of dofmap
-  dofmap._global_dimension = dofmap._ufc_dofmap->global_dimension() - _all_slaves.size();
+  dofmap._global_dimension = dofmap._ufc_dofmap->global_dimension() - _slave_master_map.size();
   
   // Renumber all UFC-numbering based dofs due to deleted slave dofs
   std::vector<std::size_t>::iterator it;  
+//   periodic_map_iterator pit;
   for (std::size_t i = 0; i < dofmap._dofmap.size(); i++)
   {
     const std::vector<DolfinIndex>& global_dofs = dofmap.cell_dofs(i); 
     for (uint j = 0; j < dofmap.max_cell_dimension(); j++)
-    {
-      const std::size_t dof = global_dofs[j];
-      
-      // lower_bound returns the location of the first item bigger than dof. As such 
-      // it counts the number of slaves with dof number smaller than current.
+    { // Counts the number of slaves with dof number smaller than current.
+      const std::size_t dof = global_dofs[j];            
       it = std::lower_bound(_all_slaves.begin(), _all_slaves.end(), dof);
-      dofmap._dofmap[i][j] = dof - std::size_t(it - _all_slaves.begin());
+      const std::size_t new_dof = dof - std::size_t(it - _all_slaves.begin());
+//       pit = _slave_master_map.lower_bound(dof);
+//       new_dof = dof - std::distance(_slave_master_map.begin(), pit); // slow
+      dofmap._dofmap[i][j] = new_dof;
     }
   }
   
@@ -1147,18 +1146,18 @@ void DofMapBuilder::periodic_modification(DofMap& dofmap, const Mesh& mesh, set&
   for (std::map<std::size_t, boost::unordered_set<uint> >::iterator sit = _master_processes.begin();
                                             sit != _master_processes.end(); ++sit)
   {
-      const std::size_t dof = sit->first;
-      it = std::lower_bound(_all_slaves.begin(), _all_slaves.end(), dof);
-      const std::size_t new_dof = dof - std::size_t(it - _all_slaves.begin());
-      new_master_processes[new_dof] = sit->second;
+    const std::size_t dof = sit->first;
+    it = std::lower_bound(_all_slaves.begin(), _all_slaves.end(), dof);            
+    const std::size_t new_dof = dof - std::size_t(it - _all_slaves.begin());
+    new_master_processes[new_dof] = sit->second;
   }
   dofmap._master_processes = new_master_processes;
   
   set new_global_dofs;
   for (set_iterator sit = global_dofs.begin(); sit != global_dofs.end(); ++sit)
   {
-    it = std::lower_bound(_all_slaves.begin(), _all_slaves.end(), *sit);
-    new_global_dofs.insert(*sit - std::size_t(it - _all_slaves.begin()));
+     it = std::lower_bound(_all_slaves.begin(), _all_slaves.end(), *sit);
+     new_global_dofs.insert(*sit - std::size_t(it - _all_slaves.begin()));
   }
   global_dofs = new_global_dofs;  
 }

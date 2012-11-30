@@ -96,7 +96,7 @@ void XMLFile::operator>> (Mesh& input_mesh)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const Mesh& output_mesh)
 {
-  not_working_in_parallel("Mesh XML output in parallel not yet supported.");
+  not_working_in_parallel("Mesh XML output");
 
   pugi::xml_document doc;
   pugi::xml_node node = write_dolfin(doc);

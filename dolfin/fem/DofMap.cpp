@@ -25,7 +25,9 @@
 // First added:  2007-03-01
 // Last changed: 2012-11-05
 
+#include <boost/unordered_map.hpp>
 #include <boost/serialization/map.hpp>
+#include <boost/serialization/set.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Set.h>
@@ -96,6 +98,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 {
   info("Creating restricted dofmap.");
   warning("Restricted function space is an experimental feature.");
+  not_working_in_parallel("Restricted function space");
 
   dolfin_assert(_ufc_dofmap);
   dolfin_assert(_restriction);
@@ -191,6 +194,9 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
 
   // Hack to get around UFC using 32-bit integers
   std::vector<uint> tmp_dof_holder;
+  
+  // Set to hold slave dofs on current processor
+  std::set<std::size_t> slave_dofs;
 
   // Build sub-map based on UFC dofmap
   UFCCell ufc_cell(mesh);
@@ -223,7 +229,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
         if (slave_it != parent_dofmap._slave_master_map.end())
         {
           tmp_dof_holder[i] = slave_it->second; // Replace slave with master
-          _slave_master_map[slave_it->first] = slave_it->second;
+          slave_dofs.insert(slave_it->first);
         }
       }
     }        
@@ -231,41 +237,37 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   }
   
   if (mesh.is_periodic())
-  { // Periodic meshes need to renumber ufc-numbered dofs due to elimination of slave dofs
-  
-    // Reduce the local _slave_master_maps onto all processes
-    std::vector<std::map<std::size_t, std::size_t> > all_slave_pairs;
-    MPI::all_gather(_slave_master_map, all_slave_pairs);    
-    for (uint i = 0; i < all_slave_pairs.size(); i++)
-      _slave_master_map.insert(all_slave_pairs[i].begin(), all_slave_pairs[i].end());
-    
-    // Get a list of all slaves on parent dofmap (or parent of parent, aka the owner)
-    std::vector<std::size_t> _all_slaves;
+  { 
+    // Periodic meshes need to renumber UFC-numbered dofs due to elimination of slave dofs      
+    // For faster search get a vector of all slaves on parent dofmap (or parent of parent, aka the owner)
+    std::vector<std::size_t> parent_slaves;
     for (std::map<std::size_t, std::size_t>::const_iterator it = parent_dofmap._slave_master_map.begin();
                               it != parent_dofmap._slave_master_map.end(); ++it)
     {
-      _all_slaves.push_back(it->first);
+      parent_slaves.push_back(it->first);
     }
-    std::sort(_all_slaves.begin(), _all_slaves.end());
     
-    // Renumber all ufc-numbered dofs due to deleted slave dofs
     std::vector<std::size_t>::iterator it;  
     for (std::size_t i = 0; i < _dofmap.size(); i++)
     {
       const std::vector<DolfinIndex>& global_dofs = cell_dofs(i); 
       for (uint j = 0; j < max_cell_dimension(); j++)
-      {
-        const std::size_t dof = global_dofs[j];
-        
-        // lower_bound returns the location of the first item bigger than dof. As such 
-        // it counts the number of slaves with dof number smaller than current.
-        it = std::lower_bound(_all_slaves.begin(), _all_slaves.end(), dof);
-        _dofmap[i][j] = dof - std::size_t(it - _all_slaves.begin());
+      { // Count the number of slaves with dof number smaller than current
+        const std::size_t dof = global_dofs[j];        
+        it = std::lower_bound(parent_slaves.begin(), parent_slaves.end(), dof);
+        _dofmap[i][j] = dof - std::size_t(it - parent_slaves.begin());
       }
     }    
     
+    // Reduce the local slaves onto all processes and eliminate duplicates 
+    std::vector<std::set<std::size_t> > all_slave_dofs;
+    MPI::all_gather(slave_dofs, all_slave_dofs);    
+    for (uint i = 0; i < all_slave_dofs.size(); i++)
+      if (i != MPI::process_number())
+        slave_dofs.insert(all_slave_dofs[i].begin(), all_slave_dofs[i].end());
+    
     // Set global dimension
-    _global_dimension = _ufc_dofmap->global_dimension() - _slave_master_map.size();
+    _global_dimension = _ufc_dofmap->global_dimension() - slave_dofs.size();
     
     // Store original _slave_master_map on this sub_dofmap
     _slave_master_map = parent_dofmap._slave_master_map;
@@ -667,8 +669,7 @@ void DofMap::init_ufc_dofmap(ufc::dofmap& dofmap,
                  "Only cell-based restricted function spaces are currently supported. ");
   }
 
-  // FIXME: Not yet working in parallel
-  not_working_in_parallel("Restricted of function spaces");
+  not_working_in_parallel("Restricted function space");
 
   // Check that we have all mesh entities
   for (uint d = 0; d <= dolfin_mesh.topology().dim(); ++d)

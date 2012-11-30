@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-11-05
-// Last changed: 2012-11-05
+// Last changed: 2012-11-23
 
 #include <vector>
 #include <set>
@@ -42,7 +42,7 @@ UFCMesh::UFCMesh(const Mesh& mesh,
   }
 
   // FIXME: Not yet working in parallel
-  not_working_in_parallel("Restricted of function spaces");
+  not_working_in_parallel("Restricted function space");
 
   // Set topological and geometric dimensions
   topological_dimension = mesh.topology().dim();

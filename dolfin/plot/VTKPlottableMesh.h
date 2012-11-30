@@ -39,6 +39,7 @@ class vtkGeometryFilter;
 class vtkIdFilter;
 class vtkPointSetAlgorithm;
 class vtkUnstructuredGrid;
+class vtkFloatArray;
 
 namespace dolfin
 {
@@ -106,6 +107,9 @@ namespace dolfin
 
     // Build the grid from mesh
     void build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &grid, uint entity_dim);
+
+    // Remove values from an array if hide_above/hide_below are set
+    void filter_scalars(vtkFloatArray *, const Parameters &);
 
     /// Set scalar values on the mesh
     template <class T>

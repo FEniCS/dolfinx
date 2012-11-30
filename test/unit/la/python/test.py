@@ -22,6 +22,8 @@
 
 import unittest
 from dolfin import *
+import sys
+
 
 class AbstractBaseTest(object):
     count = 0
@@ -204,6 +206,11 @@ class AbstractBaseTest(object):
             self.assertRaises(RuntimeError,wrong_dim,[0,2],slice(0,4,1))
             self.assertRaises(TypeError,wrong_dim,0,slice(0,4,1))
 
+            # Tests bailout for these choices
+            if self.backend == "uBLAS" and sys.version_info[0]==2 and \
+                   sys.version_info[1]==6:
+                return
+            
             A *= B
             A2 *= B2
             I = A*B

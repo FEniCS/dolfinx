@@ -75,6 +75,39 @@ def next(self):
 }
 
 //-----------------------------------------------------------------------------
+// Extend SubDomain
+//-----------------------------------------------------------------------------
+%pythoncode
+%{
+_subdomain_mark_doc_string = SubDomain._mark.__doc__
+%}
+
+%extend dolfin::SubDomain {
+%pythoncode
+%{
+# NOTE: This is a hardcoded check, which rely on SubDomain::mark only taking
+# a MeshFunction as its first argument when mark is called with two arguments
+def mark(self, *args):
+    import common
+    if len(args) == 2 and not isinstance(args[0], \
+                    (MeshFunctionSizet, MeshFunctionInt,
+                     MeshFunctionDouble, MeshFunctionBool)):
+        common.dolfin_error("dolfin.cpp.mesh.py",
+                            "mark MeshFunction",
+                            "Expected a MeshFunction of type \"sizet\", \"int\", \"double\" or \"bool\"")
+            
+    self._mark(*args)
+
+%}
+}
+
+%pythoncode
+%{
+SubDomain.mark.__func__.__doc__ = _subdomain_mark_doc_string
+del _subdomain_mark_doc_string
+%}
+
+//-----------------------------------------------------------------------------
 // Macro for declaring MeshFunctions
 //-----------------------------------------------------------------------------
 %define DECLARE_MESHFUNCTION(TYPE, TYPENAME)

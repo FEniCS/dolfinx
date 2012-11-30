@@ -88,7 +88,7 @@ std::vector<std::size_t> GraphOrdering::compute_local_reordering_map()
 
   // Create array for global ids that should be re-ordered
   std::vector<ZOLTAN_ID_TYPE> global_ids(num_global_objects());
-  for (uint i = 0; i < global_ids.size(); ++i)
+  for (std::size_t i = 0; i < global_ids.size(); ++i)
     global_ids[i] = i;
 
   // Create array for re-ordered vertices
@@ -183,10 +183,10 @@ void GraphOrdering::get_all_edges(void *data, int num_gid_entries,
   GraphOrdering *objs = (GraphOrdering *)data;
   const std::vector<std::vector<std::size_t> > edges = objs->edges();
 
-  uint sum = 0;
+  std::size_t sum = 0;
   for (std::size_t i = 0; i < edges.size(); ++i)
   {
-    dolfin_assert(edges[i].size() == (uint) num_edges[i]);
+    dolfin_assert(static_cast<int>(edges[i].size()) == num_edges[i]);
     for (std::size_t j = 0; j < edges[i].size(); ++j)
       nbor_global_id[sum*num_gid_entries + j] = edges[i][j];
     sum += edges[i].size();

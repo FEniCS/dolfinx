@@ -84,15 +84,15 @@ dolfin::uint Form::num_coefficients() const
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::uint> Form::coloring(uint entity_dim) const
+std::vector<std::size_t> Form::coloring(std::size_t entity_dim) const
 {
   warning("Form::coloring does not properly consider form type.");
 
   // Get mesh
   const Mesh& mesh = this->mesh();
-  const uint cell_dim = mesh.topology().dim();
+  const std::size_t cell_dim = mesh.topology().dim();
 
-  std::vector<uint> _coloring;
+  std::vector<std::size_t> _coloring;
   if (entity_dim == cell_dim)
   {
     _coloring.push_back(cell_dim);

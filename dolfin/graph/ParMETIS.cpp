@@ -47,7 +47,7 @@ void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
   Timer timer0("PARALLEL 1a: Build distributed dual graph (calling ParMETIS)");
 
   // Get number of processes and process number
-  const uint num_processes = MPI::num_processes();
+  const std::size_t num_processes = MPI::num_processes();
 
   // Get dimensions of local mesh_data
   const std::size_t num_local_cells = mesh_data.cell_vertices.size();
@@ -67,7 +67,7 @@ void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
 
   // Build elmdist array with cell offsets for all processors
   std::vector<int> elmdist(num_processes + 1, 0);
-  for (uint i = 1; i < num_processes + 1; ++i)
+  for (std::size_t i = 1; i < num_processes + 1; ++i)
     elmdist[i] = elmdist[i - 1] + num_cells[i - 1];
 
   // Build eptr and eind arrays storing cell-vertex connectivity

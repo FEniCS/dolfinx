@@ -1,0 +1,8 @@
+#!/bin/sh
+#
+# This script runs all the others except for generate-form-files,
+# Generally useful to run whenever something new is added for changed.
+
+./cmake/scripts/generate-cmakefiles
+./cmake/scripts/generate-swig-interface
+./cmake/scripts/generate-swig-docstrings
