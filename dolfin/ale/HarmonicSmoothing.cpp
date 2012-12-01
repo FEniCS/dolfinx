@@ -16,11 +16,12 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-08-11
-// Last changed: 2012-11-23
+// Last changed: 2012-12-01
 
 #include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/Array.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/fem/Assembler.h>
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/solve.h>
@@ -40,7 +41,10 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
 {
-  error("The function HarmonicSmoothing::move is broken. See https://bugs.launchpad.net/dolfin/+bug/1047641.");
+  // This only works when reorder_dofs_series is not True
+  const bool reorder_dofs_serial = parameters["reorder_dofs_serial"];
+  if (reorder_dofs_serial)
+    error("The function HarmonicSmoothing::move is broken. See https://bugs.launchpad.net/dolfin/+bug/1047641.");
 
   not_working_in_parallel("ALE mesh smoothing");
 
@@ -85,7 +89,6 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
   const std::vector<DolfinIndex> dofs(vertex_map.values(), vertex_map.values() + num_dofs);
 
   // Modify matrix (insert 1 on diagonal)
-
   A.ident(num_dofs, dofs.data());
   A.apply("insert");
 
@@ -113,7 +116,9 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
     // Get new coordinates
     std::vector<double> _new_coordinates;
     x.get_local(_new_coordinates);
-    new_coordinates.insert(new_coordinates.end(), _new_coordinates.begin(), _new_coordinates.end());
+    new_coordinates.insert(new_coordinates.end(),
+                           _new_coordinates.begin(),
+                           _new_coordinates.end());
   }
 
   // Modify mesh coordinates
