@@ -21,7 +21,7 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2011-11-14
+// Last changed: 2012-12-01
 
 #include <fstream>
 #include <string>
@@ -37,6 +37,7 @@
 #include "XYZFile.h"
 #include "HDF5File.h"
 #include "XDMFFile.h"
+#include "SVGFile.h"
 #include "File.h"
 
 using namespace dolfin;
@@ -84,6 +85,8 @@ File::File(const std::string filename, std::string encoding)
     file.reset(new HDF5File(filename));
   else if (extension == ".xdmf")
     file.reset(new XDMFFile(filename));
+  else if (extension == ".svg")
+    file.reset(new SVGFile(filename));
 #endif
   else
   {

@@ -57,6 +57,7 @@ namespace dolfin
 
       // Output
       p.add("std_out_all_processes", true);                  // Print standard output on all processes
+      p.add("relative_line_width", 0.025);                   // Line width relative to edge length in SVG output
 
       // Threaded computation
       p.add("num_threads", 0);                               // Number of threads to run, 0 = run serial version
