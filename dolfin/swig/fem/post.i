@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-10-22
-// Last changed: 2012-02-02
+// Last changed: 2012-11-30
 
 // ===========================================================================
 // SWIG directives for the DOLFIN fem kernel module (post)
@@ -29,7 +29,8 @@
 //-----------------------------------------------------------------------------
 // Extend Function so f.function_space() return a dolfin.FunctionSpace
 //-----------------------------------------------------------------------------
-%extend dolfin::BoundaryCondition {
+%extend dolfin::BoundaryCondition 
+{
 %pythoncode %{
 def function_space(self):
     "Return the FunctionSpace"
@@ -119,3 +120,39 @@ def tabulate_coordinates(self, cell, coordinates=None):
     return coordinates
 %}
 }
+
+//-----------------------------------------------------------------------------
+// Modifying the interface of FooProblem
+//-----------------------------------------------------------------------------
+%define PROBLEM_EXTENDS(NAME)
+%extend dolfin::NAME ## Problem
+{
+%pythoncode %{
+def solution(self):
+    """
+    Return the solution
+    """
+    from dolfin.functions.function import Function
+    return Function(self._solution())
+
+def trial_space(self):
+    """
+    Return the trial space
+    """
+    from dolfin.functions.functionspace import FunctionSpaceFromCpp
+    return FunctionSpaceFromCpp(self._trial_space())
+
+def test_space(self):
+    """
+    Return the test space
+    """
+    from dolfin.functions.functionspace import FunctionSpaceFromCpp
+    return FunctionSpaceFromCpp(self._test_space())
+
+%}
+}
+%enddef
+
+PROBLEM_EXTENDS(LinearVariational)
+PROBLEM_EXTENDS(NonlinearVariational)
+//PROBLEM_EXTENDS(LinearTimeDependent)

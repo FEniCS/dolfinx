@@ -101,3 +101,20 @@
 //-----------------------------------------------------------------------------
 %template (HierarchicalFunctionSpace) dolfin::Hierarchical<dolfin::FunctionSpace>;
 %template (HierarchicalFunction) dolfin::Hierarchical<dolfin::Function>;
+
+/* Out comment this, as some of it is handled in post.i
+//-----------------------------------------------------------------------------
+// Instantiate Hierarchical FunctionSpace, Function template class and 
+// alter access functions
+//-----------------------------------------------------------------------------
+%define HIERACHICAL_INSTANSIATION(TYPE)
+%template (Hierarchical ## TYPE) dolfin::Hierarchical<dolfin::TYPE>;
+%rename (_child) dolfin::Hierarchical<dolfin::TYPE>::child_shared_ptr;
+%rename (_parent) dolfin::Hierarchical<dolfin::TYPE>::parent_shared_ptr;
+%rename (_leaf) dolfin::Hierarchical<dolfin::TYPE>::leaf_node_shared_ptr;
+%rename (_root_node) dolfin::Hierarchical<dolfin::TYPE>::root_node_shared_ptr;
+%enddef
+
+HIERACHICAL_INSTANSIATION(Function)
+HIERACHICAL_INSTANSIATION(FunctionSpace)
+*/
