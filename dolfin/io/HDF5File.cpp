@@ -64,7 +64,7 @@ HDF5File::HDF5File(const std::string filename, bool truncate, bool use_mpiio)
   // Optional duplicate vertex suppression for H5 Mesh output
   parameters.add("remove_duplicates", true);
 
-  // Clear file and open
+  // OPen HDF5 file
   hdf5_file_id = HDF5Interface::open_file(filename, truncate, mpi_io);
   hdf5_file_open = true;
 }
@@ -280,17 +280,19 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
 {
   dolfin_assert(hdf5_file_open);
 
+  const std::string _dataset_name = "/Vector/" + dataset_name;
+
   // Check for data set exists
-  if (!HDF5Interface::has_group(hdf5_file_id, dataset_name))
-    error("Data set with name \"%s\" does not exist", dataset_name.c_str());
+  if (!HDF5Interface::has_group(hdf5_file_id, _dataset_name))
+    error("Data set with name \"%s\" does not exist", _dataset_name.c_str());
 
   // Get dataset rank
-  const uint rank = HDF5Interface::dataset_rank(hdf5_file_id, dataset_name);
+  const uint rank = HDF5Interface::dataset_rank(hdf5_file_id, _dataset_name);
   dolfin_assert(rank == 1);
 
   // Get global dataset size
   const std::vector<std::size_t> data_size
-      = HDF5Interface::get_dataset_size(hdf5_file_id, dataset_name);
+      = HDF5Interface::get_dataset_size(hdf5_file_id, _dataset_name);
 
   // Check that rank is 1
   dolfin_assert(data_size.size() == 1);
@@ -303,7 +305,7 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
     {
       // Get partition from file
       std::vector<std::size_t> partitions;
-      HDF5Interface::get_attribute(hdf5_file_id, dataset_name, "partition", partitions);
+      HDF5Interface::get_attribute(hdf5_file_id, _dataset_name, "partition", partitions);
 
       // Check that number of MPI processes matches partitioning
       if(MPI::num_processes() != partitions.size())
@@ -337,7 +339,7 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
 
   // Read data from file
   std::vector<double> data;
-  HDF5Interface::read_dataset(hdf5_file_id, dataset_name, local_range, data);
+  HDF5Interface::read_dataset(hdf5_file_id, _dataset_name, local_range, data);
 
   // Set data
   x.set_local(data);
