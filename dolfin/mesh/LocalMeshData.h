@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2008-11-28
-// Last changed: 2012-10-16
+// Last changed: 2012-11-23
 //
 // Modified by Anders Logg, 2008-2009.
 // Modified by Kent-Andre Mardal, 2011.
@@ -96,7 +96,7 @@ namespace dolfin
     void unpack_cell_vertices(const std::vector<std::size_t>& values);
 
     // Coordinates for all vertices stored on local processor
-    std::vector<std::vector<double> > vertex_coordinates;
+    boost::multi_array<double, 2> vertex_coordinates;
 
     // Global vertex indices for all vertices stored on local processor
     std::vector<std::size_t> vertex_indices;

@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2009-03-03
-// Last changed: 2011-09-27
+// Last changed: 2012-11-27
 
 #include <iostream>
 #include <fstream>
@@ -42,6 +42,7 @@
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/common/Timer.h>
 #include "XMLFunctionData.h"
 #include "XMLLocalMeshSAX.h"
 #include "XMLMesh.h"
@@ -85,9 +86,11 @@ void XMLFile::operator>> (Mesh& input_mesh)
   else
   {
     // Read local mesh data
+    Timer t("XML: readSAX");
     LocalMeshData local_mesh_data;
     XMLLocalMeshSAX xml_object(local_mesh_data, filename);
     xml_object.read();
+    t.stop();
 
     // Partition and build mesh
     MeshPartitioning::build_distributed_mesh(input_mesh, local_mesh_data);

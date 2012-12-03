@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2008-2011
 //
 // First added:  2008-11-28
-// Last changed: 2011-11-14
+// Last changed: 2012-11-26
 
 #include <iostream>
 
@@ -342,7 +342,7 @@ void XMLLocalMeshSAX::read_vertices(const xmlChar* name, const xmlChar** attrs,
 
   // Reserve space for local-to-global vertex map and vertex coordinates
   mesh_data.vertex_indices.reserve(num_local_vertices());
-  mesh_data.vertex_coordinates.reserve(num_local_vertices());
+  mesh_data.vertex_coordinates.resize(boost::extents[num_local_vertices()][mesh_data.gdim]);
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshSAX::read_vertex(const xmlChar* name, const xmlChar** attrs,
@@ -355,37 +355,12 @@ void XMLLocalMeshSAX::read_vertex(const xmlChar* name, const xmlChar** attrs,
   if (v < vertex_range.first || v >= vertex_range.second)
     return;
 
-  // Parse vertex coordinates
-  std::vector<double> coordinate;
-  switch (gdim)
-  {
-  case 1:
-    {
-      coordinate = boost::assign::list_of(SAX2AttributeParser::parse<double>(name, attrs, "x", num_attributes));
-    }
-  break;
-  case 2:
-    {
-      coordinate = boost::assign::list_of(SAX2AttributeParser::parse<double>(name, attrs, "x", num_attributes))
-                                         (SAX2AttributeParser::parse<double>(name, attrs, "y", num_attributes));
-    }
-    break;
-  case 3:
-    {
-      coordinate = boost::assign::list_of(SAX2AttributeParser::parse<double>(name, attrs, "x", num_attributes))
-                                         (SAX2AttributeParser::parse<double>(name, attrs, "y", num_attributes))
-                                         (SAX2AttributeParser::parse<double>(name, attrs, "z", num_attributes));
-    }
-    break;
-  default:
-    dolfin_error("XMLLocalMeshSAX.cpp",
-                 "read local mesh data",
-                 "Geometric dimension of mesh must be 1, 2 or 3");
-  }
+  const std::size_t local_index = v - vertex_range.first;
+  const char *xyz[] = {"x", "y", "z"};
 
-  // Store vertex coordinates
-  mesh_data.vertex_coordinates.push_back(coordinate);
-
+  for(uint i = 0; i < gdim ; ++i)
+    mesh_data.vertex_coordinates[local_index][i] = SAX2AttributeParser::parse<double>(name, attrs, xyz[i], num_attributes);
+    
   // Store global vertex numbering
   mesh_data.vertex_indices.push_back(v);
 }

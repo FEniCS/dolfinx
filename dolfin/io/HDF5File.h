@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-10-24
+// Last changed: 2012-11-27
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -28,9 +28,11 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "dolfin/common/Timer.h"
 #include "dolfin/common/types.h"
 #include "dolfin/common/Variable.h"
 #include "dolfin/mesh/Mesh.h"
+#include "dolfin/mesh/MeshEditor.h"
 #include "dolfin/mesh/Vertex.h"
 #include "GenericFile.h"
 #include "HDF5Interface.h"
@@ -61,9 +63,8 @@ namespace dolfin
     /// Write Mesh to file
     void write_mesh(const Mesh& mesh, const std::string name);
 
-    /// Write Mesh of given cell dimension to file
-    void write_mesh(const Mesh& mesh, const uint cell_dim,
-                    const std::string name);
+    /// Write Mesh of given cell dimension to file in a format suitable for re-reading
+    void write_mesh_global_index(const Mesh& mesh, const uint cell_dim, const std::string name);
 
     /// Write Mesh to file for visualisation (may contain duplicate
     /// entities and will not preserve global indices)
@@ -85,10 +86,13 @@ namespace dolfin
     void operator>> (Mesh& mesh);
 
     /// Read Mesh from file
-    void read_mesh(Mesh& mesh);
+    void read_mesh(Mesh& mesh, const std::string name);
 
     /// Check if dataset exists in HDF5 file
     bool has_dataset(const std::string dataset_name) const;
+
+    /// Flush buffered I/O to disk
+    void flush();
 
   private:
 
@@ -103,15 +107,13 @@ namespace dolfin
                                const std::string coordinates_name,
                                const std::string topology_name);
 
+    // Convert LocalMeshData into a Mesh, when running serially
+    void build_local_mesh(Mesh &mesh, const LocalMeshData& mesh_data);
+
     // Return vertex and topological data with duplicates removed
     void remove_duplicate_vertices(const Mesh& mesh,
                                    std::vector<double>& vertex_data,
                                    std::vector<std::size_t>& topological_data);
-
-    // Eliminate elements of value vector corresponding to eliminated vertices
-    template <typename T>
-    void remove_duplicate_values(const Mesh &mesh, std::vector<T>& values,
-                                 const uint value_size);
 
     // Write contiguous data to HDF5 data set. Data is flattened into
     // a 1D array, e.g. [x0, y0, z0, x1, y1, z1] for a vector in 3D
@@ -124,14 +126,35 @@ namespace dolfin
     static std::string search_list(const std::vector<std::string>& list,
                                    const std::string& search_term);
 
-    // Reorganise data into global order as defined by global_index
-    // global_index contains the global index positions
-    // local_vector contains the items to be redistributed
-    // global_vector is the result: the local part of the new global vector created.
+    // Remove values from "values" which are duplicated on another process
+    // Used to optimise Mesh output for HDF5, at some expense of
+    // computation/communication.
+    template <typename T>
+    void remove_duplicate_values(const Mesh &mesh,
+                                           std::vector<T>& values,
+                                           const uint value_size);
+
+    // Go through set of coordinate and connectivity data
+    // and remove duplicate vertices between processes
+    // remapping the topology accordingly to the new
+    // global order (not the same as the global index)
+    // Not used - keeping for now until format is fixed.
+    void remove_duplicate_vertices(const Mesh &mesh,
+                                   std::vector<double>& vertex_data,
+                                   std::vector<uint>& topological_data);
+
+    // Redistribute a local_vector into global order, eliminating
+    // duplicate values. global_index contains the global indexing held on
+    // each process. global_vector will be equally divided amongst the
+    // processes
     template <typename T>
     void redistribute_by_global_index(const std::vector<std::size_t>& global_index,
                                       const std::vector<T>& local_vector,
                                       std::vector<T>& global_vector);
+
+
+    void reorder_vertices_by_global_indices(std::vector<double>& vertex_coords,
+              uint gdim, const std::vector<std::size_t>& global_indices);
 
     // HDF5 file descriptor/handle
     bool hdf5_file_open;
@@ -141,6 +164,50 @@ namespace dolfin
     const bool mpi_io;
 
   };
+
+  //---------------------------------------------------------------------------
+  template <typename T>
+  void HDF5File::remove_duplicate_values(const Mesh &mesh,
+                                         std::vector<T>& values,
+                                         const uint value_size)
+  {
+
+    dolfin_assert(mesh.num_vertices()*value_size == values.size());
+
+    Timer t("HDF5: Remove dups");
+
+    const std::map<std::size_t, std::set<uint> >& shared_vertices
+      = mesh.topology().shared_entities(0);
+
+    const uint process_number = MPI::process_number();
+
+    std::vector<T> result;
+    result.reserve(values.size()); //overestimate
+
+    typename std::vector<T>::iterator value_it = values.begin();
+    for(VertexIterator v(mesh); !v.end(); ++v)
+    {
+      uint global_index = v->global_index();
+      if(shared_vertices.count(global_index) != 0)
+      {
+        const std::set<uint>& procs =
+          shared_vertices.find(global_index)->second;
+
+        // Determine whether the first element of
+        // this set refers to a higher numbered process.
+        // If so, the vertex is owned here.
+        if(*(procs.begin()) > process_number)
+          result.insert(result.end(), value_it, value_it + value_size);
+      }
+      else // not a shared vertex
+        result.insert(result.end(), value_it, value_it + value_size);
+      value_it += value_size;
+    }
+
+    // copy back into values and resize
+    values.resize(result.size());
+    std::copy(result.begin(), result.end(), values.begin());
+  }
   //---------------------------------------------------------------------------
   template <typename T>
   void HDF5File::write_data(const std::string dataset_name,
@@ -180,32 +247,6 @@ namespace dolfin
     // Write data to HDF5 file
     HDF5Interface::write_dataset(hdf5_file_id, dataset_name, data,
                                  range, global_size, mpi_io, false);
-  }
-  //---------------------------------------------------------------------------
-  template <typename T>
-  void HDF5File::remove_duplicate_values(const Mesh &mesh,
-                                         std::vector<T>& values,
-                                         const uint value_size)
-  {
-    /*
-    // Get list of locally owned vertices, with local index
-    const std::vector<uint> owned_vertices = mesh.owned_vertices();
-
-    std::vector<T> result;
-    result.reserve(values.size()); //overestimate
-
-    // only copy local values
-    for(uint i = 0; i < owned_vertices.size(); i++)
-    {
-      typename std::vector<T>::iterator owned_it =
-        values.begin() + value_size*owned_vertices[i];
-      result.insert(result.end(), owned_it, owned_it + value_size);
-    }
-
-    // copy back into values and resize
-    values.resize(result.size());
-    std::copy(result.begin(), result.end(), values.begin());
-  */
   }
   //---------------------------------------------------------------------------
 

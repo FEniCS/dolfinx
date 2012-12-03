@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2008-12-01
-// Last changed: 2011-11-14
+// Last changed: 2012-11-23
 
 #include <algorithm>
 #include <iterator>
@@ -750,11 +750,11 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
     dolfin_assert(received_vertex_indices[i] >= local_vertex_range.first
                       && received_vertex_indices[i] < local_vertex_range.second);
     const std::size_t location = received_vertex_indices[i] - local_vertex_range.first;
-    const std::vector<double>& x = mesh_data.vertex_coordinates[location];
-    dolfin_assert(x.size() == gdim);
+    //    const std::vector<double>& x = mesh_data.vertex_coordinates[location];
+    //    dolfin_assert(x.size() == gdim);
     for (std::size_t j = 0; j < gdim; ++j)
     {
-      send_vertex_coordinates.push_back(x[j]);
+      send_vertex_coordinates.push_back(mesh_data.vertex_coordinates[location][j]);
       destinations_vertex_coordinates.push_back(sources_vertex[i]);
     }
   }
@@ -805,7 +805,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // Open mesh for editing
   mesh.clear();
   MeshEditor editor;
-  editor.open(mesh, gdim, tdim);
+  editor.open(mesh, tdim, gdim);
 
   // Add vertices
   editor.init_vertices(vertex_coordinates.size());

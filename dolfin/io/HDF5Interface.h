@@ -277,11 +277,8 @@ namespace dolfin
     const int rank = H5Sget_simple_extent_ndims(dataspace);
     dolfin_assert(rank >= 0);
 
-    if (rank > 1)
-      warning("HDF5Interface::read_dataset untested for rank > 1.");
-
     if (rank > 2)
-      warning("HDF5Interface::read_dataset not configured for rank > 2.");
+      warning("HDF5Interface::read_dataset untested for rank > 2.");
 
     // Allocate data for size of each dimension
     std::vector<hsize_t> dimensions_size(rank);
@@ -294,10 +291,8 @@ namespace dolfin
     // Hyperslab selection
     std::vector<hsize_t> offset(rank, 0);
     offset[0]= range.first;
-    std::vector<hsize_t> count(rank);
+    std::vector<hsize_t> count(dimensions_size);
     count[0] = range.second - range.first;
-    if (rank == 2)
-      count[1] = dimensions_size[1];
 
     // Select a block in the dataset beginning at offset[], with size=count[]
     herr_t status = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET,

@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Chris Richardson, 2012
+//
 // First added:  2010-02-19
-// Last changed:
+// Last changed: 2012-11-24
 
 #include <algorithm>
 #include <numeric>
@@ -194,12 +196,13 @@ BoostBidirectionalGraph GraphBuilder::local_boost_graph(const Mesh& mesh,
 
   return graph;
 }
+
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
+void GraphBuilder::compute_dual_graph_orig(const LocalMeshData& mesh_data,
                                 std::vector<std::set<std::size_t> >& local_graph,
                                 std::set<std::size_t>& ghost_vertices)
 {
-  Timer timer("Compute dual graph");
+  Timer timer("Compute dual graph [original]");
 
   const std::size_t num_mpi_procs = MPI::num_processes();
 
@@ -227,8 +230,8 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
   // Compute local edges (cell-cell connections) using global (internal) numbering
   cout << "Compute local cell-cell connections" << endl;
-  compute_connectivity(cell_vertices, num_facet_vertices, process_offset,
-                       local_graph);
+
+  compute_connectivity_orig(cell_vertices, num_cell_facets, process_offset, local_graph);
   cout << "Finished computing local cell-cell connections" << endl;
 
   //-----------------------------------------------
@@ -237,6 +240,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
   // Determine candidate ghost cells (graph ghost vertices)
   info("Preparing data to to send off-process.");
+
   std::vector<std::size_t> local_boundary_cells;
   for (std::size_t i = 0; i < num_local_cells; ++i)
   {
@@ -244,6 +248,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     if (local_graph[i].size() != num_cell_facets)
       local_boundary_cells.push_back(i);
   }
+  cout << "Local boundary cells = " << local_boundary_cells.size() << endl;
 
   // Get number of possible ghost cells coming from each process
   std::vector<std::size_t> boundary_cells_per_process;
@@ -283,7 +288,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   // FIXME: Make the communication cleverer and more scalable. Send to
   // one process at a time, and remove cells when it is know that all
   // neighbors have been found.
-
+ 
   // Distribute data to all processes
   std::vector<std::size_t> received_data;
   std::vector<std::size_t> sources;
@@ -340,12 +345,137 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   ghost_vertices = ghost_cell_global_indices;
   info("Finish compute graph ghost edges.");;
 }
+
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_connectivity(const boost::multi_array<std::size_t, 2>& cell_vertices,
-                                  std::size_t num_facet_vertices, std::size_t offset,
+
+void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
+                                      std::vector<std::set<std::size_t> >& local_graph,
+                                      std::set<std::size_t>& ghost_vertices)
+{
+  Timer timer("Compute dual graph [new]");
+
+  // List of cell vertices
+  const boost::multi_array<std::size_t, 2>& cell_vertices = mesh_data.cell_vertices;
+  const std::size_t num_local_cells = mesh_data.global_cell_indices.size();
+  const uint num_vertices_per_cell = mesh_data.num_vertices_per_cell;
+  
+  dolfin_assert(num_local_cells == cell_vertices.shape()[0]);
+  dolfin_assert(num_vertices_per_cell == cell_vertices.shape()[1]);
+
+  local_graph.resize(num_local_cells);
+
+  const std::size_t offset = MPI::global_offset(num_local_cells, true);
+
+  // Compute local edges (cell-cell connections) using global (internal) numbering
+
+  double tt = time();
+
+  // create mapping from facets(vector) to cells
+  // FIXME: potential speedup by using a hash directly for the map key instead of a vector
+  typedef boost::unordered_map<std::vector<std::size_t>, std::size_t> vectormap;
+  vectormap facet_cell;  
+
+  // Iterate over all cells
+  for (std::size_t i = 0; i < num_local_cells; ++i)
+  {
+    // Iterate over facets in cell
+    for(uint j = 0; j < num_vertices_per_cell; ++j)
+    {
+      // create a set of vertices representing a facet,
+      std::vector<std::size_t> facet(cell_vertices[i].begin(), cell_vertices[i].end());
+      facet.erase(facet.begin() + j);
+      // sort into order, so map indexing will be consistent
+      std::sort(facet.begin(), facet.end());
+
+      const vectormap::iterator join_cell = facet_cell.find(facet);
+      // If facet not found in map, insert facet->cell into map
+      if(join_cell == facet_cell.end())
+        facet_cell[facet] = i;
+      else
+      {
+        // Already in map. Connect cells and delete from map.
+        local_graph[i].insert(join_cell->second + offset);
+        local_graph[join_cell->second].insert(i + offset);
+        facet_cell.erase(join_cell);
+      }
+    }
+  }
+
+  // facet_cell map now only contains facets->cells with edge facets
+  // either interprocess or external boundaries
+
+  // FIXME: separate here into two functions
+
+  // For parallel only, deal with ghosts
+
+  // Copy to another map and re-label cells with offset
+  vectormap othermap(facet_cell);
+  for(vectormap::iterator other_cell = othermap.begin(); other_cell != othermap.end(); ++other_cell)
+  {
+    other_cell->second += offset;
+  }
+
+  const uint num_processes = MPI::num_processes();
+  const uint process_number = MPI::process_number();
+    
+  ghost_vertices.clear();
+
+  // create MPI ring
+  const int source = (num_processes + process_number - 1)%num_processes;
+  const int dest   = (process_number + 1)%num_processes;
+
+  // FIXME: better way to send boost::unordered_map between processes - could use std::map instead
+  // boost cannot serialise unordered_map, so convert to a vector here
+  std::vector<std::pair<std::vector<std::size_t>, std::size_t> > map_data;
+
+  // repeat (n-1) times, to go round ring
+  for(uint i = 0; i < (num_processes - 1); ++i)
+  {
+    // FIXME: improve memory management
+    // Shift data to next process
+    map_data.resize(othermap.size());
+    std::copy(othermap.begin(), othermap.end(), map_data.begin());
+    MPI::send_recv(map_data, dest, map_data, source);
+    othermap.clear();
+    othermap.insert(map_data.begin(), map_data.end());
+
+    const uint mapsize = MPI::sum(othermap.size());
+    if(process_number == 0)
+      std::cout << "t=" << (time() - tt) << ", iteration: " << i << ", map size = " << mapsize << std::endl;
+
+    // Go through local facets, looking for a matching facet in othermap
+    for(vectormap::iterator fcell = facet_cell.begin(); fcell != facet_cell.end(); ++fcell)
+    {
+      vectormap::iterator join_cell = othermap.find(fcell->first);
+      if(join_cell != othermap.end())
+      {
+        //found neighbours, insert into local_graph and delete facets from both maps
+        local_graph[fcell->second].insert(join_cell->second);
+        ghost_vertices.insert(join_cell->second);
+        facet_cell.erase(fcell);
+        othermap.erase(join_cell);
+      }
+    }
+  }
+
+  // remaining facets are exterior boundary - could be useful
+
+  const std::size_t n_exterior_facets = MPI::sum(facet_cell.size());
+  if(process_number == 0)
+    std::cout << "n(exterior facets) = " << n_exterior_facets << std::endl;
+
+  tt = time() - tt;
+  info("Time to build connectivity map [new]: %g", tt);
+
+}
+
+//-----------------------------------------------------------------------------
+void GraphBuilder::compute_connectivity_orig(const boost::multi_array<std::size_t, 2>& cell_vertices,
+                                  uint num_facet_vertices, std::size_t offset,
                                   std::vector<std::set<std::size_t> >& local_graph)
 {
   // FIXME: Continue to make this function more efficient
+  Timer t("Compute Connectivity [original]");
 
   // Declare iterators
   boost::multi_array<std::size_t, 2>::const_iterator c_vertices;
