@@ -52,12 +52,10 @@ XDMFFile::XDMFFile(const std::string filename) : GenericFile(filename, "XDMF")
   // Make name for HDF5 file (used to store data)
   boost::filesystem::path p(filename);
   p.replace_extension(".h5");
+  hdf5_filename = p.string();
 
   // Create HDF5 file (truncate)
-  hdf5_file.reset(new HDF5File(p.string(), true));
-
-  //dolfin_assert(hdf5_file);
-  //hdf5_file->open_hdf5_file(true);
+  hdf5_file.reset(new HDF5File(hdf5_filename, true));
 
   // Re-write mesh (true, false or auto, with auto based on detecting
   // changes in a hash key)
@@ -169,7 +167,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   if (parameters["rewrite_function_mesh"])
   {
     current_mesh_name = "/VisualisationMesh/" + boost::lexical_cast<std::string>(counter);
-    hdf5_file->write_visualisation_mesh(mesh, current_mesh_name);
+    hdf5_file->write_visualisation(mesh, current_mesh_name);
   }
 
   // Vertex/cell values are saved in the hdf5 group /VisualisationVector
@@ -293,7 +291,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
     xdmf_data.append_attribute("Dimensions") = s.c_str();
 
-    boost::filesystem::path p(hdf5_file->filename);
+    boost::filesystem::path p(hdf5_filename);
     s = p.filename().string() + ":/VisualisationVector/"
           + boost::lexical_cast<std::string>(counter);
     xdmf_data.append_child(pugi::node_pcdata).set_value(s.c_str());
@@ -315,7 +313,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
 
   // Output data name
   const std::string name = "/VisualisationMesh/" + boost::lexical_cast<std::string>(counter);
-  hdf5_file->write_visualisation_mesh(mesh, name);
+  hdf5_file->write_visualisation(mesh, name);
 
   // Get number of local/global cells/vertices
 
@@ -440,13 +438,13 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   const std::string mesh_topology_name = name + "/topology";
   const std::string mesh_coords_name = name + "/coordinates";
 
-  boost::filesystem::path p(hdf5_file->filename);
+  boost::filesystem::path p(hdf5_filename);
   std::string dataset_basic_name = "/VisualisationMesh/MeshFunction_" + meshfunction.name();
   const std::string mesh_function_dataset_name
     = p.filename().string() + ":" + dataset_basic_name;
 
   // Write mesh to HDF5
-  hdf5_file->write_visualisation_mesh(mesh, cell_dim, name);
+  hdf5_file->write_visualisation(mesh, cell_dim, name);
 
   // Write values to HDF5
   const std::vector<std::size_t> global_size(1, MPI::sum(data_values.size()));
@@ -524,7 +522,7 @@ void XDMFFile::xml_mesh_topology(pugi::xml_node &xdmf_topology,
   // For XDMF file need to remove path from filename so that xdmf
   // filenames such as "results/data.xdmf" correctly index h5 files in
   // the same directory
-  boost::filesystem::path p(hdf5_file->filename);
+  boost::filesystem::path p(hdf5_filename);
   std::string topology_reference = p.filename().string() + ":" + topology_dataset_name;
   xdmf_topology_data.append_child(pugi::node_pcdata).set_value(topology_reference.c_str());
 }
@@ -551,7 +549,7 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
     + " " + boost::lexical_cast<std::string>(gdim);
   xdmf_geom_data.append_attribute("Dimensions") = geom_dim.c_str();
 
-  boost::filesystem::path p(hdf5_file->filename);
+  boost::filesystem::path p(hdf5_filename);
   const std::string geometry_reference
     = p.filename().string() + ":" + geometry_dataset_name;
   xdmf_geom_data.append_child(pugi::node_pcdata).set_value(geometry_reference.c_str());

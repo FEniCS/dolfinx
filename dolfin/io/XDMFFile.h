@@ -85,6 +85,9 @@ namespace dolfin
     // HDF5 data file
     boost::scoped_ptr<HDF5File> hdf5_file;
 
+    // HDF5 filename
+    std::string hdf5_filename;
+
     // Generic MeshFunction writer
     template<typename T>
       void write_mesh_function(const MeshFunction<T>& meshfunction);
