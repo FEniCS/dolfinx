@@ -134,7 +134,6 @@ namespace dolfin
                                            std::vector<T>& values,
                                            const uint value_size);
 
-
     // Go through set of coordinate and connectivity data
     // and remove duplicate vertices between processes
     // remapping the topology accordingly to the new
@@ -143,7 +142,6 @@ namespace dolfin
     void remove_duplicate_vertices(const Mesh &mesh,
                                    std::vector<double>& vertex_data,
                                    std::vector<uint>& topological_data);
-
 
     // Redistribute a local_vector into global order, eliminating
     // duplicate values. global_index contains the global indexing held on
@@ -155,9 +153,8 @@ namespace dolfin
                                       std::vector<T>& global_vector);
 
 
-    void reorder_vertices_by_global_indices(std::vector<double>& vertex_coords, uint gdim,
-                                            const std::vector<std::size_t>& global_indices);
-    
+    void reorder_vertices_by_global_indices(std::vector<double>& vertex_coords,
+              uint gdim, const std::vector<std::size_t>& global_indices);
 
     // HDF5 file descriptor/handle
     bool hdf5_file_open;
@@ -211,9 +208,6 @@ namespace dolfin
     values.resize(result.size());
     std::copy(result.begin(), result.end(), values.begin());
   }
-  //---------------------------------------------------------------------------
-
-
   //---------------------------------------------------------------------------
   template <typename T>
   void HDF5File::write_data(const std::string dataset_name,

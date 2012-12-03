@@ -286,7 +286,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
     pugi::xml_node xdmf_data = xdmf_values.append_child("DataItem");
     xdmf_data.append_attribute("Format") = "HDF";
-    
+
     s = boost::lexical_cast<std::string>(num_total_entities) + " "
       + boost::lexical_cast<std::string>(padded_value_size);
 
@@ -304,7 +304,6 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   // Increment counter
   counter++;
 }
-
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const Mesh& mesh)
 {
