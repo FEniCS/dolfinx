@@ -222,9 +222,9 @@ else()
 endif()
 
 # Boost timer was not a separate Boost component until version 1.48
-# if ("${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}" VERSION_GREATER "1.47")
-#  find_package(Boost COMPONENTS timer REQUIRED)
-# endif()
+if ("${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}" VERSION_GREATER "1.47")
+  find_package(Boost COMPONENTS timer REQUIRED)
+endif()
 
 # Check for required package UFC
 find_package(UFC 2.0.2 QUIET HINTS ${UFC_DIR})
