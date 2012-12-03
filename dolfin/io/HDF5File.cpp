@@ -54,7 +54,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-HDF5File::HDF5File(const std::string filename, const bool use_mpiio)
+HDF5File::HDF5File(const std::string filename, bool truncate, bool use_mpiio)
   : filename(filename), hdf5_file_open(false), hdf5_file_id(0),
     mpi_io(MPI::num_processes() > 1 && use_mpiio ? true : false)
 {
@@ -63,6 +63,10 @@ HDF5File::HDF5File(const std::string filename, const bool use_mpiio)
 
   // Optional duplicate vertex suppression for H5 Mesh output
   parameters.add("remove_duplicates", true);
+
+  // Clear file and open
+  hdf5_file_id = HDF5Interface::open_file(filename, truncate, mpi_io);
+  hdf5_file_open = true;
 }
 //-----------------------------------------------------------------------------
 HDF5File::~HDF5File()
@@ -84,13 +88,7 @@ void HDF5File::flush()
 void HDF5File::write(const GenericVector& x, const std::string name)
 {
   dolfin_assert(x.size() > 0);
-
-  // Clear file when writing to file for the first time
-  if(!hdf5_file_open)
-  {
-    hdf5_file_id = HDF5Interface::open_file(filename, true, mpi_io);
-    hdf5_file_open = true;
-  }
+  dolfin_assert(hdf5_file_open);
 
   // Create Vector group in HDF5 file
   if (!HDF5Interface::has_group(hdf5_file_id, "/Vector"))
@@ -128,15 +126,7 @@ void HDF5File::write(const Mesh& mesh, uint cell_dim, const std::string name)
 {
   warning("Writing mesh with global index - not suitable for visualisation");
 
-  // Clear file when writing to file for the first time
-  if(!hdf5_file_open)
-  {
-    cout << "Open file" << endl;
-    hdf5_file_id = HDF5Interface::open_file(filename, true, mpi_io);
-    hdf5_file_open = true;
-  }
-
-  cout << "Here I am " << endl;
+  dolfin_assert(hdf5_file_open);
 
   // Create Mesh group in HDF5 file
   if (!HDF5Interface::has_group(hdf5_file_id, "/Mesh"))
@@ -216,12 +206,7 @@ void HDF5File::write_visualisation_mesh(const Mesh& mesh, const std::string name
 void HDF5File::write_visualisation_mesh(const Mesh& mesh, const uint cell_dim,
                           const std::string name)
 {
-  // Clear file when writing to file for the first time
-  if (!hdf5_file_open)
-  {
-    hdf5_file_id = HDF5Interface::open_file(filename, true, mpi_io);
-    hdf5_file_open = true;
-  }
+  dolfin_assert(hdf5_file_open);
 
   // Create VisualisationMesh group in HDF5 file
   if (!HDF5Interface::has_group(hdf5_file_id, "/VisualisationMesh"))
@@ -293,14 +278,7 @@ void HDF5File::write_visualisation_mesh(const Mesh& mesh, const uint cell_dim,
 void HDF5File::read(GenericVector& x, const std::string dataset_name,
                     const bool use_partition_from_file)
 {
-  // Open HDF5 file
-  if (!hdf5_file_open)
-  {
-    // Open file
-    dolfin_assert(!hdf5_file_open);
-    hdf5_file_id = HDF5Interface::open_file(filename, false, mpi_io);
-    hdf5_file_open = true;
-  }
+  dolfin_assert(hdf5_file_open);
 
   // Check for data set exists
   if (!HDF5Interface::has_group(hdf5_file_id, dataset_name))
@@ -382,13 +360,7 @@ void HDF5File::read(Mesh& input_mesh, const std::string name)
   warning("HDF5 Mesh input is still experimental");
   warning("HDF5 Mesh input will always repartition the mesh");
 
-  // Open file if not already open
-  if (!hdf5_file_open)
-  {
-    dolfin_assert(!hdf5_file_open);
-    hdf5_file_id = HDF5Interface::open_file(filename, false, mpi_io);
-    hdf5_file_open = true;
-  }
+  dolfin_assert(hdf5_file_open);
 
   std::vector<std::string> _dataset_list =
     HDF5Interface::dataset_list(hdf5_file_id, name);

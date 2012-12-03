@@ -54,7 +54,8 @@ XDMFFile::XDMFFile(const std::string filename) : GenericFile(filename, "XDMF")
   p.replace_extension(".h5");
 
   // Create HDF5 file (truncate)
-  hdf5_file.reset(new HDF5File(p.string()));
+  hdf5_file.reset(new HDF5File(p.string(), true));
+
   //dolfin_assert(hdf5_file);
   //hdf5_file->open_hdf5_file(true);
 

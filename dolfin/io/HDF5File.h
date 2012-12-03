@@ -47,7 +47,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    HDF5File(const std::string filename, const bool use_mpiio=true);
+    HDF5File(const std::string filename, bool truncate, bool use_mpiio=true);
 
     /// Destructor
     ~HDF5File();
