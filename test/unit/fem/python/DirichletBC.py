@@ -28,8 +28,6 @@ import unittest
 import numpy
 from dolfin import *
 
-parameters.linear_algebra_backend = "Epetra"
-
 class DirichletBCTest(unittest.TestCase):
 
     def test_instantiation(self):
