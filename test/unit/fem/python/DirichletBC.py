@@ -28,6 +28,8 @@ import unittest
 import numpy
 from dolfin import *
 
+parameters.linear_algebra_backend = "Epetra"
+
 class DirichletBCTest(unittest.TestCase):
 
     def test_instantiation(self):
@@ -76,8 +78,6 @@ class DirichletBCTest(unittest.TestCase):
 
         mesh = Mesh("../../../../data/meshes/aneurysm.xml.gz")
         V = FunctionSpace(mesh, "CG", 1)
-
-        u = TrialFunction(V)
         v = TestFunction(V)
 
         f = Constant(0)
@@ -91,21 +91,12 @@ class DirichletBCTest(unittest.TestCase):
 
         bcs = [bc1, bc2, bc3]
 
-        a = inner(grad(u), grad(v))*dx
         L = f*v*dx
 
-        # Use iterative solver to get around problem with possibly broken
-        # MUMPS on Mac OS X 10.6 buildbot
-        p = LinearVariationalSolver.default_parameters()
-        p.linear_solver = "iterative"
-        p.krylov_solver.relative_tolerance = 1e-15
-        p.krylov_solver.absolute_tolerance = 1e-15
-        #p.krylov_solver.monitor_convergence = True
+        b = assemble(L)
+        [bc.apply(b) for bc in bcs]
 
-        u = Function(V)
-        solve(a == L, u, bcs, solver_parameters=p)
-
-        self.assertAlmostEqual(u.vector().norm("l2"), 171.3032089576118)
+        self.assertAlmostEqual(norm(b), 16.55294535724685)
 
 if __name__ == "__main__":
     print ""
