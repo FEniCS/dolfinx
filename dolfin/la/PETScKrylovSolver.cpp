@@ -499,7 +499,9 @@ void PETScKrylovSolver::set_petsc_options()
   else
     KSPSetInitialGuessNonzero(*_ksp, PETSC_FALSE);
 
-  if (parameters["monitor_convergence"])
+  // Monitor convergence
+  const bool monitor_convergence = parameters["monitor_convergence"];
+  if (monitor_convergence)
     KSPMonitorSet(*_ksp, KSPMonitorTrueResidualNorm, 0, 0);
 
   // Set tolerances

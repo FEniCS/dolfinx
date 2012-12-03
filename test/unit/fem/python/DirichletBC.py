@@ -94,20 +94,18 @@ class DirichletBCTest(unittest.TestCase):
         a = inner(grad(u), grad(v))*dx
         L = f*v*dx
 
-        set_log_level(DEBUG)
-
         # Use iterative solver to get around problem with possibly broken
         # MUMPS on Mac OS X 10.6 buildbot
         p = LinearVariationalSolver.default_parameters()
         p.linear_solver = "iterative"
         p.krylov_solver.relative_tolerance = 1e-15
         p.krylov_solver.absolute_tolerance = 1e-15
+        #p.krylov_solver.monitor_convergence = True
 
         u = Function(V)
         solve(a == L, u, bcs, solver_parameters=p)
 
-        #self.assertAlmostEqual(u.vector().norm("l2"), 171.3032089576118)
-        self.assertAlmostEqual(u.vector().norm("l2"), 171.263615943409)
+        self.assertAlmostEqual(u.vector().norm("l2"), 171.3032089576118)
 
 if __name__ == "__main__":
     print ""
