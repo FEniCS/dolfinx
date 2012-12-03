@@ -34,7 +34,6 @@
 #include "dolfin/mesh/Mesh.h"
 #include "dolfin/mesh/MeshEditor.h"
 #include "dolfin/mesh/Vertex.h"
-#include "GenericFile.h"
 #include "HDF5Interface.h"
 
 namespace dolfin
@@ -43,7 +42,7 @@ namespace dolfin
   class Function;
   class GenericVector;
 
-  class HDF5File : public GenericFile, public Variable
+  class HDF5File : public Variable
   {
   public:
 
@@ -53,18 +52,15 @@ namespace dolfin
     /// Destructor
     ~HDF5File();
 
-    /// Write vector to file in HDF5 folder 'Vector'. Multiple calls
-    /// will save in the same file with incrementing dataset names
-    void operator<< (const GenericVector& x);
+    /// Write Vector to file in a format suitable for re-reading
+    void write(const GenericVector& x, const std::string name);
 
     /// Write Mesh to file
-    void operator<< (const Mesh& mesh);
+    void write(const Mesh& mesh, const std::string name);
 
-    /// Write Mesh to file
-    void write_mesh(const Mesh& mesh, const std::string name);
-
-    /// Write Mesh of given cell dimension to file in a format suitable for re-reading
-    void write_mesh_global_index(const Mesh& mesh, const uint cell_dim, const std::string name);
+    /// Write Mesh of given cell dimension to file in a format suitable
+    /// for re-reading
+    void write(const Mesh& mesh, const uint cell_dim, const std::string name);
 
     /// Write Mesh to file for visualisation (may contain duplicate
     /// entities and will not preserve global indices)
@@ -75,18 +71,12 @@ namespace dolfin
     void write_visualisation_mesh(const Mesh& mesh, const uint cell_dim,
                                   const std::string name);
 
-    /// Read vector from file (in HDF5 folder 'Vector' for dataset 0)
-    void operator>> (GenericVector& x);
-
-    /// Read vector from HDF5 file
-    void read(const std::string dataset_name, GenericVector& x,
+    /// Read vector from file
+    void read(GenericVector& x, const std::string dataset_name,
               const bool use_partition_from_file=true);
 
     /// Read Mesh from file
-    void operator>> (Mesh& mesh);
-
-    /// Read Mesh from file
-    void read_mesh(Mesh& mesh, const std::string name);
+    void read(Mesh& mesh, const std::string name);
 
     /// Check if dataset exists in HDF5 file
     bool has_dataset(const std::string dataset_name) const;
@@ -98,9 +88,6 @@ namespace dolfin
 
     // Friend
     friend class XDMFFile;
-
-    // Open HDF5 file
-    void open_hdf5_file(bool truncate);
 
     // Read a mesh which has locally indexed topology and repartition
     void read_mesh_repartition(Mesh &input_mesh,
@@ -131,8 +118,8 @@ namespace dolfin
     // computation/communication.
     template <typename T>
     void remove_duplicate_values(const Mesh &mesh,
-                                           std::vector<T>& values,
-                                           const uint value_size);
+                                 std::vector<T>& values,
+                                 const uint value_size);
 
     // Go through set of coordinate and connectivity data
     // and remove duplicate vertices between processes
@@ -152,9 +139,11 @@ namespace dolfin
                                       const std::vector<T>& local_vector,
                                       std::vector<T>& global_vector);
 
-
     void reorder_vertices_by_global_indices(std::vector<double>& vertex_coords,
               uint gdim, const std::vector<std::size_t>& global_indices);
+
+    // Filename
+    const std::string filename;
 
     // HDF5 file descriptor/handle
     bool hdf5_file_open;
@@ -162,9 +151,7 @@ namespace dolfin
 
     // Parallel mode
     const bool mpi_io;
-
   };
-
   //---------------------------------------------------------------------------
   template <typename T>
   void HDF5File::remove_duplicate_values(const Mesh &mesh,

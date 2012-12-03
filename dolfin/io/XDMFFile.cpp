@@ -55,8 +55,8 @@ XDMFFile::XDMFFile(const std::string filename) : GenericFile(filename, "XDMF")
 
   // Create HDF5 file (truncate)
   hdf5_file.reset(new HDF5File(p.string()));
-  dolfin_assert(hdf5_file);
-  hdf5_file->open_hdf5_file(true);
+  //dolfin_assert(hdf5_file);
+  //hdf5_file->open_hdf5_file(true);
 
   // Re-write mesh (true, false or auto, with auto based on detecting
   // changes in a hash key)
