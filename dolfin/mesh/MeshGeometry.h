@@ -67,14 +67,16 @@ namespace dolfin
     /// Return value of coordinate with local index n in direction i
     double& x(std::size_t n, uint i)
     {
-      dolfin_assert(n < local_index_to_position.size() && i < _dim);
+      dolfin_assert(n < local_index_to_position.size());
+      dolfin_assert(i < _dim);
       return coordinates[local_index_to_position[n]*_dim + i];
     }
 
     /// Return value of coordinate with local index n in direction i
     double x(std::size_t n, uint i) const
     {
-      dolfin_assert(n < local_index_to_position.size() && i < _dim);
+      dolfin_assert(n < local_index_to_position.size());
+      dolfin_assert(i < _dim);
       return coordinates[local_index_to_position[n]*_dim + i];
     }
 

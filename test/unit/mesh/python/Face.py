@@ -23,7 +23,8 @@
 import unittest
 from dolfin import *
 
-cube = UnitCube(5, 5, 5)
+cube = UnitCubeMesh(5, 5, 5)
+square = UnitSquareMesh(5, 5)
 
 class Area(unittest.TestCase):
 
@@ -34,7 +35,12 @@ class Area(unittest.TestCase):
             area += f.area()
         if MPI.num_processes() == 1:
             self.assertAlmostEqual(area, 39.21320343559672494393)
-
+        area = 0.0
+        for f in faces(square):
+            area += f.area()
+        if MPI.num_processes() == 1:
+            self.assertAlmostEqual(area, 1.0)
+        
 class Normal(unittest.TestCase):
 
     def testNormalPoint(self):
@@ -43,6 +49,10 @@ class Normal(unittest.TestCase):
             n = f.normal()
             self.assertAlmostEqual(n.norm(), 1.0)
 
+        f = Face(square, 0)
+        self.assertRaises(RuntimeError, f.normal)
+
+
     def testNormalComponent(self):
         """Compute normal vector components to each face."""
         D = cube.topology().dim()
@@ -50,6 +60,9 @@ class Normal(unittest.TestCase):
             n = [f.normal(i) for i in range(D)]
             norm = sum(map(lambda x: x*x, n))
             self.assertAlmostEqual(norm, 1.0)
+
+        f = Face(square, 0)
+        self.assertRaises(RuntimeError, f.normal, 0)
 
 if __name__ == "__main__":
     unittest.main()

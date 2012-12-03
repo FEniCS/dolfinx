@@ -76,8 +76,6 @@ class DirichletBCTest(unittest.TestCase):
 
         mesh = Mesh("../../../../data/meshes/aneurysm.xml.gz")
         V = FunctionSpace(mesh, "CG", 1)
-
-        u = TrialFunction(V)
         v = TestFunction(V)
 
         f = Constant(0)
@@ -91,13 +89,12 @@ class DirichletBCTest(unittest.TestCase):
 
         bcs = [bc1, bc2, bc3]
 
-        a = inner(grad(u), grad(v))*dx
         L = f*v*dx
 
-        u = Function(V)
-        solve(a == L, u, bcs)
+        b = assemble(L)
+        [bc.apply(b) for bc in bcs]
 
-        self.assertAlmostEqual(u.vector().norm("l2"), 171.3032089576118)
+        self.assertAlmostEqual(norm(b), 16.55294535724685)
 
 if __name__ == "__main__":
     print ""

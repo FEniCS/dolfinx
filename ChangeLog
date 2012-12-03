@@ -1,4 +1,7 @@
 1.1.0 [not yet released]
+ - Add mesh output to SVG
+ - Add support for Facet and cell markers to mesh converted from Diffpack
+ - Add support for Facet and cell markers/attributes to mesh converted from Triangle
  - Change interface for auto-adaptive solvers: these now take the goal functional as a constructor argument
  - Add memory usage monitor: monitor_memory_usage()
  - Compare mesh hash in interpolate_vertex_values

@@ -39,6 +39,7 @@ GenericFile.h. Compatible file formats include:
     * RAW    (.raw)
     * XYZ    (.xyz)
     * Binary (.bin)
+    * SVG    (.svg)
 ";
 
 %feature("docstring")  dolfin::File::File "

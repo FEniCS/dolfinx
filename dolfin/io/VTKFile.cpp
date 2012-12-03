@@ -99,7 +99,7 @@ void VTKFile::operator<<(const Mesh& mesh)
   // Write local mesh to vtu file
   VTKWriter::write_mesh(mesh, mesh.topology().dim(), vtu_filename, binary, compress);
 
-  // Parallel-specfic files
+  // Parallel-specific files
   if (MPI::num_processes() > 1 && MPI::process_number() == 0)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
