@@ -490,7 +490,7 @@ void XMLLocalMeshSAX::read_mesh_value_collection(const xmlChar* name,
   domain_value_range = MPI::local_range(size);
   domain_dim = dim;
 
-  if (type != "unsigned int")
+  if (type != "uint")
   {
     dolfin_error("XMLLocalMeshSAX.cpp",
                  "read local mesh data",

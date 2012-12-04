@@ -36,7 +36,7 @@ public:
   void test_read()
   {
     // Create mesh and read file
-    UnitCube mesh(5, 5, 5);
+    UnitCubeMesh mesh(5, 5, 5);
     MeshValueCollection<std::size_t> markers(mesh, "xml_value_collection_ref.xml", 2);
 
     // Check size
@@ -49,7 +49,6 @@ public:
     for (it = values.begin(); it != values.end(); ++it)
       sum += it->second;
     CPPUNIT_ASSERT(dolfin::MPI::sum(sum) == 48);
-
   }
 
 };
