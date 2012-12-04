@@ -44,10 +44,10 @@ namespace dolfin
   public:
 
     /// Create array of size N. Array has ownership.
-    explicit Array(uint N) : _size(N), _x(new T[N]), _owner(true) {}
+    explicit Array(std::size_t N) : _size(N), _x(new T[N]), _owner(true) {}
 
     /// Construct array from a pointer. Array does not take ownership.
-    Array(uint N, T* x) : _size(N), _x(x), _owner(false) {}
+    Array(std::size_t N, T* x) : _size(N), _x(x), _owner(false) {}
 
     /// Destructor
     ~Array()
@@ -68,7 +68,7 @@ namespace dolfin
       {
         s << str(false) << std::endl << std::endl;
 
-        for (uint i = 0; i < size(); i++)
+        for (std::size_t i = 0; i < size(); i++)
           s << i << ": " << (*this)[i] << std::endl;
       }
       else
@@ -78,15 +78,15 @@ namespace dolfin
     }
 
     /// Return size of array
-    uint size() const
+    std::size_t size() const
     { return _size; }
 
     /// Access value of given entry (const version)
-    const T& operator[] (uint i) const
+    const T& operator[] (std::size_t i) const
     { dolfin_assert(i < _size); return _x[i]; }
 
     /// Access value of given entry (non-const version)
-    T& operator[] (uint i)
+    T& operator[] (std::size_t i)
     { dolfin_assert(i < _size); return _x[i]; }
 
     /// Return pointer to data (const version)
@@ -107,7 +107,7 @@ namespace dolfin
   private:
 
     /// Length of array
-    const uint _size;
+    const std::size_t _size;
 
     /// Array data
     T* _x;

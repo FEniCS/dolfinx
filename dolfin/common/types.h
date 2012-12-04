@@ -42,7 +42,7 @@ namespace dolfin
   #endif
 
   /// Unsigned integers
-  typedef unsigned int uint;
+  //typedef unsigned int uint;
 
   /// Complex numbers
   typedef std::complex<double> complex;

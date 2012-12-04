@@ -73,7 +73,7 @@ public:
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       const int value = ncells - cell->index();
-      for (dolfin::uint i = 0; i < cell->num_entities(1); ++i)
+      for (std::size_t i = 0; i < cell->num_entities(1); ++i)
       {
         bool this_new;
         this_new = f.set_value(cell->index(), i, value+i);
@@ -87,7 +87,7 @@ public:
     CPPUNIT_ASSERT(all_new);
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      for (dolfin::uint i = 0; i < cell->num_entities(1); ++i)
+      for (std::size_t i = 0; i < cell->num_entities(1); ++i)
       {
         const int value = ncells - cell->index() + i;
         CPPUNIT_ASSERT_EQUAL(value, g.get_value(cell->index(), i));
@@ -105,7 +105,7 @@ public:
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       const int value = ncells - cell->index();
-      for (dolfin::uint i = 0; i < cell->num_entities(0); ++i)
+      for (std::size_t i = 0; i < cell->num_entities(0); ++i)
       {
         bool this_new;
         this_new = f.set_value(cell->index(), i, value+i);
@@ -119,7 +119,7 @@ public:
     CPPUNIT_ASSERT(all_new);
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      for (dolfin::uint i = 0; i < cell->num_entities(0); ++i)
+      for (std::size_t i = 0; i < cell->num_entities(0); ++i)
       {
         const int value = ncells - cell->index() + i;
         CPPUNIT_ASSERT_EQUAL(value, g.get_value(cell->index(), i));
@@ -158,7 +158,7 @@ public:
     CPPUNIT_ASSERT_EQUAL(mesh.num_cells()*3, g.size());
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      for (dolfin::uint i = 0; i < cell->num_entities(1); ++i)
+      for (std::size_t i = 0; i < cell->num_entities(1); ++i)
       {
         CPPUNIT_ASSERT_EQUAL(25, g.get_value(cell->index(), i));
       }
@@ -176,7 +176,7 @@ public:
     CPPUNIT_ASSERT_EQUAL(mesh.num_cells()*3, g.size());
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      for (dolfin::uint i = 0; i < cell->num_entities(0); ++i)
+      for (std::size_t i = 0; i < cell->num_entities(0); ++i)
       {
         CPPUNIT_ASSERT_EQUAL(25, g.get_value(cell->index(), i));
       }

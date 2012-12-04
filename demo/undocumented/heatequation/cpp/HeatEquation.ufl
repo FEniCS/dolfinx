@@ -28,21 +28,21 @@ Uh = FiniteElement("Lagrange", triangle, 1)
 Vh = FiniteElement("Lagrange", triangle, 1)
 
 # Trial and test spaces for time discretization
-Uk = FiniteElement("cG", interval, 1)
-Vk = FiniteElement("dG", interval, 0)
+Uk = FiniteElement("Lagrange", interval, 1)
+Vk = FiniteElement("Discontinuous Lagrange", interval, 0)
 
 # Trial and test spaces for space-time discretization
-U = Uh ** Uk
-V = Vh ** Vk
+#U = Uh ** Uk
+#V = Vh ** Vk
 
 # Trial and test functions
-u = TrialFunction(U)
-v = TestFunction(V)
+#u = TrialFunction(U)
+#v = TestFunction(V)
 
 # Heat conductivity and source term
-kappa = Coefficient(U)
-f = Coefficient(U)
+#kappa = Coefficient(U)
+#f = Coefficient(U)
 
 # Bilinear and linear forms
-a = Dt(u)*v*dx*dt + kappa*dot(grad(u), grad(v))*dx*dt
-L = f*v*dx*dt
+#a = Dt(u)*v*dx*dt + kappa*dot(grad(u), grad(v))*dx*dt
+#L = f*v*dx*dt
