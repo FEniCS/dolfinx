@@ -39,7 +39,7 @@
 %rename (_get_int_range) dolfin::Parameter::get_range(int& min_value, int& max_value) const;
 %rename (_get_double_range) dolfin::Parameter::get_range(double& min_value, double& max_value) const;
 %rename (_get_string_range) dolfin::Parameter::get_range(std::set<std::string>& range) const;
-%ignore dolfin::Parameter::operator dolfin::uint;
+%ignore dolfin::Parameter::operator std::size_t;
 
 // ---------------------------------------------------------------------------
 // Renames and ignores for Parameters
@@ -159,4 +159,3 @@
   }
   $result = ret;
 }
-
