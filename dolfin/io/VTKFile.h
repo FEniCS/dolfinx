@@ -62,7 +62,7 @@ namespace dolfin
 
     void write_function(const Function& u, double time);
 
-    std::string init(const Mesh& mesh, uint dim) const;
+    std::string init(const Mesh& mesh, std::size_t dim) const;
 
     void finalize(std::string vtu_filename, double time);
 
@@ -71,10 +71,10 @@ namespace dolfin
     void write_point_data(const GenericFunction& u, const Mesh& mesh,
                           std::string file) const;
 
-    void pvd_file_write(uint step, double time, std::string file);
+    void pvd_file_write(std::size_t step, double time, std::string file);
 
 
-    void pvtu_write_function(uint dim, uint rank,
+    void pvtu_write_function(std::size_t dim, std::size_t rank,
                              const std::string data_location,
                              const std::string name,
                              const std::string filename) const;
@@ -83,7 +83,7 @@ namespace dolfin
 
     void pvtu_write(const Function& u, const std::string pvtu_filename) const;
 
-    void vtk_header_open(uint num_vertices, uint num_cells, std::string file) const;
+    void vtk_header_open(std::size_t num_vertices, std::size_t num_cells, std::string file) const;
     void vtk_header_close(std::string file) const;
 
     std::string vtu_name(const int process, const int num_processes,

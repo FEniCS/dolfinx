@@ -92,7 +92,7 @@ Mesh::Mesh(LocalMeshData& local_mesh_data)
   MeshPartitioning::build_distributed_mesh(*this, local_mesh_data);
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(const CSGGeometry& geometry, uint mesh_resolution)
+Mesh::Mesh(const CSGGeometry& geometry, std::size_t mesh_resolution)
   : Variable("mesh", "DOLFIN mesh"),
     Hierarchical<Mesh>(*this),
     _data(*this),
@@ -109,7 +109,7 @@ Mesh::Mesh(const CSGGeometry& geometry, uint mesh_resolution)
     MeshPartitioning::build_distributed_mesh(*this);
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry, uint resolution)
+Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry, std::size_t resolution)
   : Variable("mesh", "DOLFIN mesh"),
     Hierarchical<Mesh>(*this),
     _data(*this),
@@ -165,7 +165,7 @@ const MeshData& Mesh::data() const
   return _data;
 }
 //-----------------------------------------------------------------------------
-std::size_t Mesh::init(uint dim) const
+std::size_t Mesh::init(std::size_t dim) const
 {
   // This function is obviously not const since it may potentially compute
   // new connectivity. However, in a sense all connectivity of a mesh always
@@ -206,7 +206,7 @@ std::size_t Mesh::init(uint dim) const
   return _topology.size(dim);
 }
 //-----------------------------------------------------------------------------
-void Mesh::init(uint d0, uint d1) const
+void Mesh::init(std::size_t d0, std::size_t d1) const
 {
   // This function is obviously not const since it may potentially compute
   // new connectivity. However, in a sense all connectivity of a mesh always
@@ -244,12 +244,12 @@ void Mesh::init(uint d0, uint d1) const
 void Mesh::init() const
 {
   // Compute all entities
-  for (uint d = 0; d <= topology().dim(); d++)
+  for (std::size_t d = 0; d <= topology().dim(); d++)
     init(d);
 
   // Compute all connectivity
-  for (uint d0 = 0; d0 <= topology().dim(); d0++)
-    for (uint d1 = 0; d1 <= topology().dim(); d1++)
+  for (std::size_t d0 = 0; d0 <= topology().dim(); d0++)
+    for (std::size_t d1 = 0; d1 <= topology().dim(); d1++)
       init(d0, d1);
 }
 //-----------------------------------------------------------------------------
@@ -266,10 +266,10 @@ void Mesh::clear()
 //-----------------------------------------------------------------------------
 void Mesh::clean()
 {
-  const uint D = topology().dim();
-  for (uint d0 = 0; d0 <= D; d0++)
+  const std::size_t D = topology().dim();
+  for (std::size_t d0 = 0; d0 <= D; d0++)
   {
-    for (uint d1 = 0; d1 <= D; d1++)
+    for (std::size_t d1 = 0; d1 <= D; d1++)
     {
       if (!(d0 == D && d1 == 0))
         _topology.clear(d0, d1);
@@ -304,12 +304,12 @@ dolfin::Mesh Mesh::renumber_by_color() const
   return MeshRenumbering::renumber_by_color(*this, coloring_type);
 }
 //-----------------------------------------------------------------------------
-void Mesh::rotate(double angle, uint axis)
+void Mesh::rotate(double angle, std::size_t axis)
 {
   MeshTransformation::rotate(*this, angle, axis);
 }
 //-----------------------------------------------------------------------------
-void Mesh::rotate(double angle, uint axis, const Point& p)
+void Mesh::rotate(double angle, std::size_t axis, const Point& p)
 {
   MeshTransformation::rotate(*this, angle, axis, p);
 }
@@ -329,12 +329,12 @@ void Mesh::move(const Function& displacement)
   ALE::move(*this, displacement);
 }
 //-----------------------------------------------------------------------------
-void Mesh::smooth(uint num_iterations)
+void Mesh::smooth(std::size_t num_iterations)
 {
   MeshSmoothing::smooth(*this, num_iterations);
 }
 //-----------------------------------------------------------------------------
-void Mesh::smooth_boundary(uint num_iterations, bool harmonic_smoothing)
+void Mesh::smooth_boundary(std::size_t num_iterations, bool harmonic_smoothing)
 {
   MeshSmoothing::smooth_boundary(*this, num_iterations, harmonic_smoothing);
 }

@@ -132,7 +132,7 @@ void LinearSolver::set_operators(const boost::shared_ptr<const GenericLinearOper
   solver->set_operators(A, P);
 }
 //-----------------------------------------------------------------------------
-unsigned int LinearSolver::solve(const GenericLinearOperator& A,
+std::size_t LinearSolver::solve(const GenericLinearOperator& A,
                                  GenericVector& x,
                                  const GenericVector& b)
 {
@@ -141,7 +141,7 @@ unsigned int LinearSolver::solve(const GenericLinearOperator& A,
   return solver->solve(A, x, b);
 }
 //-----------------------------------------------------------------------------
-unsigned int LinearSolver::solve(GenericVector& x, const GenericVector& b)
+std::size_t LinearSolver::solve(GenericVector& x, const GenericVector& b)
 {
   dolfin_assert(solver);
   solver->parameters.update(parameters);
@@ -152,7 +152,7 @@ bool
 LinearSolver::in_list(const std::string& method,
                       const std::vector<std::pair<std::string, std::string> > methods)
 {
-  for (unsigned int i = 0; i < methods.size(); i++)
+  for (std::size_t i = 0; i < methods.size(); i++)
     if (method == methods[i].first)
       return true;
 

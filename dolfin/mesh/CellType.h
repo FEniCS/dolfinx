@@ -73,20 +73,20 @@ namespace dolfin
     Type facet_type() const { return _facet_type; }
 
     /// Return topological dimension of cell
-    virtual uint dim() const = 0;
+    virtual std::size_t dim() const = 0;
 
     /// Return number of entitites of given topological dimension
-    virtual uint num_entities(uint dim) const = 0;
+    virtual std::size_t num_entities(std::size_t dim) const = 0;
 
     /// Return number of vertices for entity of given topological dimension
-    virtual uint num_vertices(uint dim) const = 0;
+    virtual std::size_t num_vertices(std::size_t dim) const = 0;
 
     /// Return orientation of the cell
-    virtual uint orientation(const Cell& cell) const = 0;
+    virtual std::size_t orientation(const Cell& cell) const = 0;
 
     /// Create entities e of given topological dimension from vertices v
     virtual void create_entities(std::vector<std::vector<std::size_t> >& e,
-                                 uint dim, const std::size_t* v) const = 0;
+                                 std::size_t dim, const std::size_t* v) const = 0;
 
     /// Refine cell uniformly
     virtual void refine_cell(Cell& cell, MeshEditor& editor,
@@ -99,13 +99,13 @@ namespace dolfin
     virtual double diameter(const MeshEntity& entity) const = 0;
 
     /// Compute component i of normal of given facet with respect to the cell
-    virtual double normal(const Cell& cell, uint facet, uint i) const = 0;
+    virtual double normal(const Cell& cell, std::size_t facet, std::size_t i) const = 0;
 
     /// Compute of given facet with respect to the cell
-    virtual Point normal(const Cell& cell, uint facet) const = 0;
+    virtual Point normal(const Cell& cell, std::size_t facet) const = 0;
 
     /// Compute the area/length of given facet with respect to the cell
-    virtual double facet_area(const Cell& cell, uint facet) const = 0;
+    virtual double facet_area(const Cell& cell, std::size_t facet) const = 0;
 
     // FIXME: The order() function should be reimplemented and use one common
     // FIXME: implementation for all cell types, just as we have for ordered()
@@ -127,20 +127,20 @@ namespace dolfin
     Type _facet_type;
 
     // Sort vertices based on global entity indices
-    static void sort_entities(uint num_vertices,
+    static void sort_entities(std::size_t num_vertices,
                       std::size_t* vertices,
                       const std::vector<std::size_t>& local_to_global_vertex_indices);
 
   private:
 
     // Check if list of vertices is increasing
-    static bool increasing(uint num_vertices, const std::size_t* vertices,
+    static bool increasing(std::size_t num_vertices, const std::size_t* vertices,
                      const std::vector<std::size_t>& local_to_global_vertex_indices);
 
     // Check that <entity e0 with vertices v0> <= <entity e1 with vertices v1>
     static bool increasing(std::size_t n0, const std::size_t* v0,
                        std::size_t n1, const std::size_t* v1,
-                       uint num_vertices, const std::size_t* vertices,
+                       std::size_t num_vertices, const std::size_t* vertices,
                        const std::vector<std::size_t>& local_to_global_vertex_indices);
 
   };

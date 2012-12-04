@@ -33,13 +33,13 @@ namespace dolfin
   public:
 
     /// Evaluate polynomial of order n at point x
-    static double eval(uint n, double x);
+    static double eval(std::size_t n, double x);
 
     /// Evaluate first derivative of polynomial of order n at point x
-    static double ddx(uint n, double x);
+    static double ddx(std::size_t n, double x);
 
     /// Evaluate second derivative of polynomial of order n at point x
-    static double d2dx(uint n, double x);
+    static double d2dx(std::size_t n, double x);
 
   };
 

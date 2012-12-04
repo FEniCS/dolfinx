@@ -21,6 +21,14 @@
 // Last changed: 2012-07-05
 
 #include <dolfin.h>
+
+int main()
+{
+  dolfin::cout << "This demo is not working" << dolfin::endl;
+  return 0;
+}
+
+/*
 #include "AdaptiveNavierStokes.h"
 
 using namespace dolfin;
@@ -53,8 +61,8 @@ class Pressure : public Expression
   }
 };
 
-int main() {
-
+int main()
+{
   parameters["allow_extrapolation"] = true;
 
   // Create mesh and function space
@@ -128,3 +136,4 @@ int main() {
 
   return 0;
 }
+*/

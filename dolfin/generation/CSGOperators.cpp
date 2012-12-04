@@ -48,7 +48,7 @@ CSGUnion::CSGUnion(boost::shared_ptr<CSGGeometry> g0,
   }
 }
 //-----------------------------------------------------------------------------
-dolfin::uint CSGUnion::dim() const
+std::size_t CSGUnion::dim() const
 {
   assert(_g0->dim() == _g1->dim());
   return _g0->dim();
@@ -97,7 +97,7 @@ CSGDifference::CSGDifference(boost::shared_ptr<CSGGeometry> g0,
   }
 }
 //-----------------------------------------------------------------------------
-dolfin::uint CSGDifference::dim() const
+std::size_t CSGDifference::dim() const
 {
   assert(_g0->dim() == _g1->dim());
   return _g0->dim();
@@ -146,7 +146,7 @@ CSGIntersection::CSGIntersection(boost::shared_ptr<CSGGeometry> g0,
   }
 }
 //-----------------------------------------------------------------------------
-dolfin::uint CSGIntersection::dim() const
+std::size_t CSGIntersection::dim() const
 {
   assert(_g0->dim() == _g1->dim());
   return _g0->dim();

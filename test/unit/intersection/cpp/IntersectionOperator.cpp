@@ -29,7 +29,7 @@
 #include <algorithm>
 
 using namespace dolfin;
-using dolfin::uint;
+using std::size_t;
 
   template <uint dim0, uint dim1>
   void testEntityEntityIntersection(const Mesh& mesh)

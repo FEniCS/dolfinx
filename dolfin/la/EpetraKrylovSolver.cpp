@@ -160,13 +160,13 @@ const GenericLinearOperator& EpetraKrylovSolver::get_operator() const
   return *A;
 }
 //-----------------------------------------------------------------------------
-unsigned int EpetraKrylovSolver::solve(GenericVector& x,
+std::size_t EpetraKrylovSolver::solve(GenericVector& x,
                                        const GenericVector& b)
 {
   return solve(as_type<EpetraVector>(x), as_type<const EpetraVector>(b));
 }
 //-----------------------------------------------------------------------------
-unsigned int EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
+std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
 {
   dolfin_assert(solver);
   dolfin_assert(A);
@@ -205,7 +205,7 @@ unsigned int EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   // Set output level
   if (parameters["monitor_convergence"])
   {
-    const unsigned int interval = parameters["monitor_interval"];
+    const std::size_t interval = parameters["monitor_interval"];
     solver->SetAztecOption(AZ_output, interval);
   }
   else
@@ -265,7 +265,7 @@ unsigned int EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   return solver->NumIters();
 }
 //-----------------------------------------------------------------------------
-unsigned int EpetraKrylovSolver::solve(const GenericLinearOperator& A,
+std::size_t EpetraKrylovSolver::solve(const GenericLinearOperator& A,
                                        GenericVector& x,
                                        const GenericVector& b)
 {
@@ -274,7 +274,7 @@ unsigned int EpetraKrylovSolver::solve(const GenericLinearOperator& A,
                as_type<const EpetraVector>(b));
 }
 //-----------------------------------------------------------------------------
-unsigned int EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
+std::size_t EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
                                        const EpetraVector& b)
 {
   boost::shared_ptr<const EpetraMatrix> _A(&A, NoDeleter());

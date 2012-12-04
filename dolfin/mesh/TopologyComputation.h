@@ -39,18 +39,21 @@ namespace dolfin
   public:
 
     /// Compute mesh entities of given topological dimension
-    static std::size_t compute_entities(Mesh& mesh, uint dim);
+    static std::size_t compute_entities(Mesh& mesh, std::size_t dim);
 
     /// Compute connectivity for given pair of topological dimensions
-    static void compute_connectivity(Mesh& mesh, uint d0, uint d1);
+    static void compute_connectivity(Mesh& mesh, std::size_t d0,
+                                     std::size_t d1);
 
   private:
 
     /// Compute connectivity from transpose
-    static void compute_from_transpose(Mesh& mesh, uint d0, uint d1);
+    static void compute_from_transpose(Mesh& mesh, std::size_t d0,
+                                       std::size_t d1);
 
     /// Compute connectivity from intersection
-    static void compute_from_intersection(Mesh& mesh, uint d0, uint d1, uint d);
+    static void compute_from_intersection(Mesh& mesh, std::size_t d0,
+                                          std::size_t d1, std::size_t d);
 
   };
 

@@ -57,10 +57,10 @@ namespace dolfin
     ///         The vector.
     ///
     /// *Returns*
-    ///     std::pair<uint, bool>
+    ///     std::pair<std::size_t, bool>
     ///         Pair of number of Newton iterations, and whether
     ///         iteration converged)
-    std::pair<uint, bool> solve(NonlinearProblem& nonlinear_function,
+    std::pair<std::size_t, bool> solve(NonlinearProblem& nonlinear_function,
                                 GenericVector& x);
 
     /// Return a list of available solver methods

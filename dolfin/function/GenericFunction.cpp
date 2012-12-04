@@ -162,10 +162,10 @@ void GenericFunction::operator() (Array<double>& values, const Point& p)
   (*this)(values, p.x(), p.y(), p.z());
 }
 //-----------------------------------------------------------------------------
-dolfin::uint GenericFunction::value_size() const
+std::size_t GenericFunction::value_size() const
 {
-  uint size = 1;
-  for (uint i = 0; i < value_rank(); ++i)
+  std::size_t size = 1;
+  for (std::size_t i = 0; i < value_rank(); ++i)
     size *= value_dimension(i);
   return size;
 }

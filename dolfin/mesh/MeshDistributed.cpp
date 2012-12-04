@@ -30,15 +30,15 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::map<std::size_t, std::set<std::pair<unsigned int, std::size_t> > >
+std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t> > >
 MeshDistributed::off_process_indices(const std::vector<std::size_t>& entity_indices,
-                                     uint dim, const Mesh& mesh)
+                                     std::size_t dim, const Mesh& mesh)
 {
   if (dim == 0)
     warning("MeshDistributed::host_processes has not been tested for vertices.");
 
   // Mesh topology dim
-  const uint D = mesh.topology().dim();
+  const std::size_t D = mesh.topology().dim();
 
   // Check that entity is a vertex or a cell
   if (dim != 0 && dim != D)
@@ -71,7 +71,7 @@ MeshDistributed::off_process_indices(const std::vector<std::size_t>& entity_indi
   dolfin_assert(global_entity_indices.size() == mesh.num_cells());
 
   // Prepare map to hold process numbers
-  std::map<std::size_t, std::set<std::pair<unsigned int, std::size_t> > > processes;
+  std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t> > > processes;
 
   // FIXME: work on optimising below code
 

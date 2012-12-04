@@ -29,7 +29,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitCubeMesh::UnitCubeMesh(uint nx, uint ny, uint nz) : Mesh()
+UnitCubeMesh::UnitCubeMesh(std::size_t nx, std::size_t ny, std::size_t nz) : Mesh()
 {
   Timer timer("generate unit cube mesh");
 

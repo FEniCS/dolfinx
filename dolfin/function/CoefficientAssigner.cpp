@@ -28,7 +28,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-CoefficientAssigner::CoefficientAssigner(Form& form, uint number)
+CoefficientAssigner::CoefficientAssigner(Form& form, std::size_t number)
   : form(form), number(number)
 {
   // Do nothing

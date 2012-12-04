@@ -48,8 +48,8 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
 
   not_working_in_parallel("ALE mesh smoothing");
 
-  const uint D = mesh.topology().dim();
-  const uint d = mesh.geometry().dim();
+  const std::size_t D = mesh.topology().dim();
+  const std::size_t d = mesh.geometry().dim();
 
   // Choose form and function space
   boost::shared_ptr<FunctionSpace> V;
@@ -100,10 +100,10 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
   // Pick amg as preconditioner if available
   const std::string prec(has_krylov_solver_preconditioner("amg") ? "amg" : "default");
 
-  for (uint dim = 0; dim < d; dim++)
+  for (std::size_t dim = 0; dim < d; dim++)
   {
     // Get boundary coordinates
-    for (uint i = 0; i < new_boundary.num_vertices(); i++)
+    for (std::size_t i = 0; i < new_boundary.num_vertices(); i++)
       values[i] = new_boundary.geometry().x(i, dim);
 
     // Modify right-hand side
@@ -124,9 +124,9 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
   // Modify mesh coordinates
   MeshGeometry& geometry = mesh.geometry();
   std::vector<double> coord(d);
-  for (uint i = 0; i < N; i++)
+  for (std::size_t i = 0; i < N; i++)
   {
-    for (uint dim = 0; dim < d; dim++)
+    for (std::size_t dim = 0; dim < d; dim++)
       coord[dim] = new_coordinates[dim*N + i];
     geometry.set(i, coord);
   }

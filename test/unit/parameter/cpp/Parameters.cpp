@@ -59,7 +59,7 @@ public:
 
     // Get parameter values
     std::string filename(p1["filename"]);
-    dolfin::uint maxiter(p1["maxiter"]);
+    std::size_t maxiter(p1["maxiter"]);
     double tolerance(p1["tolerance"]);
     bool monitor_convergence(p1["monitor_convergence"]);
 
@@ -102,7 +102,7 @@ public:
     // Get parameter values
     std::string foo(p1["foo"]);
     std::string filename(p1("sub0")["filename"]);
-    dolfin::uint maxiter(p1("sub0")["maxiter"]);
+    std::size_t maxiter(p1("sub0")["maxiter"]);
     double tolerance(p1("sub0")["tolerance"]);
     bool monitor_convergence(p1("sub0")["monitor_convergence"]);
 

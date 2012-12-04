@@ -74,18 +74,18 @@ namespace dolfin
     ///         The vector.
     ///
     /// *Returns*
-    ///     std::pair<uint, bool>
+    ///     std::pair<std::size_t, bool>
     ///         Pair of number of Newton iterations, and whether
     ///         iteration converged)
-    std::pair<uint, bool> solve(NonlinearProblem& nonlinear_function,
+    std::pair<std::size_t, bool> solve(NonlinearProblem& nonlinear_function,
                                 GenericVector& x);
 
     /// Return Newton iteration number
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The iteration number.
-    uint iteration() const;
+    std::size_t iteration() const;
 
     /// Return current residual
     ///
@@ -122,7 +122,7 @@ namespace dolfin
                            const NonlinearProblem& nonlinear_problem);
 
     /// Current number of Newton iterations
-    uint newton_iteration;
+    std::size_t newton_iteration;
 
     /// Most recent residual and intitial residual
     double _residual, residual0;

@@ -44,15 +44,15 @@ namespace dolfin
 
     /// Create subspace for given component (one level)
     SubSpace(const FunctionSpace& V,
-             uint component);
+             std::size_t component);
 
     /// Create subspace for given component (two levels)
     SubSpace(const FunctionSpace& V,
-             uint component, uint sub_component);
+             std::size_t component, std::size_t sub_component);
 
     /// Create subspace for given component (n levels)
     SubSpace(const FunctionSpace& V,
-             const std::vector<uint>& component);
+             const std::vector<std::size_t>& component);
 
   };
 

@@ -375,7 +375,7 @@ pressure equation if available:
     // Compute tentative velocity step
     begin("Computing tentative velocity");
     assemble(b1, L1);
-    for (dolfin::uint i = 0; i < bcu.size(); i++)
+    for (std::size_t i = 0; i < bcu.size(); i++)
       bcu[i]->apply(A1, b1);
     solve(A1, *u1.vector(), b1, "gmres", "default");
     end();
@@ -383,7 +383,7 @@ pressure equation if available:
     // Pressure correction
     begin("Computing pressure correction");
     assemble(b2, L2);
-    for (dolfin::uint i = 0; i < bcp.size(); i++)
+    for (std::size_t i = 0; i < bcp.size(); i++)
       bcp[i]->apply(A2, b2);
     solve(A2, *p1.vector(), b2, "gmres", prec);
     end();
@@ -391,7 +391,7 @@ pressure equation if available:
     // Velocity correction
     begin("Computing velocity correction");
     assemble(b3, L3);
-    for (dolfin::uint i = 0; i < bcu.size(); i++)
+    for (std::size_t i = 0; i < bcu.size(); i++)
       bcu[i]->apply(A3, b3);
     solve(A3, *u1.vector(), b3, "gmres", "default");
     end();

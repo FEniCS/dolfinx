@@ -121,7 +121,7 @@ void KrylovSolver::set_nullspace(const std::vector<const GenericVector*> nullspa
   solver->set_nullspace(nullspace);
 }
 //-----------------------------------------------------------------------------
-unsigned int KrylovSolver::solve(GenericVector& x, const GenericVector& b)
+std::size_t KrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
   dolfin_assert(solver);
   //check_dimensions(solver->get_operator(), x, b);
@@ -131,7 +131,7 @@ unsigned int KrylovSolver::solve(GenericVector& x, const GenericVector& b)
   return solver->solve(x, b);
 }
 //-----------------------------------------------------------------------------
-unsigned int KrylovSolver::solve(const GenericLinearOperator& A, GenericVector& x,
+std::size_t KrylovSolver::solve(const GenericLinearOperator& A, GenericVector& x,
                                  const GenericVector& b)
 {
   dolfin_assert(solver);

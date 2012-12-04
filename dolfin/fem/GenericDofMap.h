@@ -57,23 +57,23 @@ namespace dolfin
     virtual bool is_view() const = 0;
 
     /// Return true iff mesh entities of topological dimension d are needed
-    virtual bool needs_mesh_entities(unsigned int d) const = 0;
+    virtual bool needs_mesh_entities(std::size_t d) const = 0;
 
     /// Return the dimension of the global finite element function space
-    virtual unsigned int global_dimension() const = 0;
+    virtual std::size_t global_dimension() const = 0;
 
     /// Return the dimension of the local finite element function space on a
     /// cell
-    virtual unsigned int cell_dimension(std::size_t index) const = 0;
+    virtual std::size_t cell_dimension(std::size_t index) const = 0;
 
     /// Return the maximum dimension of the local finite element function space
-    virtual unsigned int max_cell_dimension() const = 0;
+    virtual std::size_t max_cell_dimension() const = 0;
 
     // Return the geometric dimension of the coordinates this dof map provides
-    virtual unsigned int geometric_dimension() const = 0;
+    virtual std::size_t geometric_dimension() const = 0;
 
     /// Return number of facet dofs
-    virtual unsigned int num_facet_dofs() const = 0;
+    virtual std::size_t num_facet_dofs() const = 0;
 
     /// Restriction if any. If the dofmap is not restricted, a null
     /// pointer is returned.
@@ -83,13 +83,13 @@ namespace dolfin
     virtual std::pair<std::size_t, std::size_t> ownership_range() const = 0;
 
     /// Return map from nonlocal-dofs (that appear in local dof map) to owning process
-    virtual const boost::unordered_map<std::size_t, uint>& off_process_owner() const = 0;
+    virtual const boost::unordered_map<std::size_t, std::size_t>& off_process_owner() const = 0;
 
     /// Local-to-global mapping of dofs on a cell
     virtual const std::vector<DolfinIndex>& cell_dofs(std::size_t cell_index) const = 0;
 
     /// Tabulate local-local facet dofs
-    virtual void tabulate_facet_dofs(uint* dofs, uint local_facet) const = 0;
+    virtual void tabulate_facet_dofs(unsigned int* dofs, std::size_t local_facet) const = 0;
 
     /// Tabulate the coordinates of all dofs on a cell (UFC cell version)
     virtual void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
@@ -106,7 +106,7 @@ namespace dolfin
     virtual boost::shared_ptr<GenericDofMap> build(const Mesh& new_mesh) const = 0;
 
     /// Extract sub dofmap component
-    virtual GenericDofMap* extract_sub_dofmap(const std::vector<uint>& component,
+    virtual GenericDofMap* extract_sub_dofmap(const std::vector<std::size_t>& component,
                                               const Mesh& mesh) const = 0;
 
     /// Create a "collapsed" a dofmap (collapses from a sub-dofmap view)
@@ -120,7 +120,7 @@ namespace dolfin
     /// Set dof entries in vector to the value*x[i], where x[i] is the
     /// spatial coordinate of the dof. Parallel layout of vector must
     /// be consistent with dof map range.
-    virtual void set_x(GenericVector& x, double value, uint component,
+    virtual void set_x(GenericVector& x, double value, std::size_t component,
                        const Mesh& mesh) const = 0;
 
     /// Return the set of dof indices
@@ -131,7 +131,7 @@ namespace dolfin
     virtual const boost::unordered_map<std::size_t, std::vector<std::size_t> >& shared_dofs() const = 0;
 
     /// Return set of all processes that share dofs with the current process.
-    virtual const std::set<uint>& neighbours() const = 0;
+    virtual const std::set<std::size_t>& neighbours() const = 0;
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;

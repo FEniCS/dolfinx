@@ -84,7 +84,7 @@ NewtonSolver::~NewtonSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
+std::pair<std::size_t, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
                                                   GenericVector& x)
 {
   dolfin_assert(A);
@@ -92,9 +92,9 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
   dolfin_assert(dx);
   dolfin_assert(solver);
 
-  const uint maxiter = parameters["maximum_iterations"];
+  const std::size_t maxiter = parameters["maximum_iterations"];
 
-  uint krylov_iterations = 0;
+  std::size_t krylov_iterations = 0;
   newton_iteration = 0;
   bool newton_converged = false;
 
@@ -163,7 +163,7 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
   return std::make_pair(newton_iteration, newton_converged);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint NewtonSolver::iteration() const
+std::size_t NewtonSolver::iteration() const
 {
   return newton_iteration;
 }

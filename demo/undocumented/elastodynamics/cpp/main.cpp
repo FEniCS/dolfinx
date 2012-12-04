@@ -204,7 +204,7 @@ int main(int argc, char* argv[])
   File file_eps("eps_xx.pvd", "compressed");
 
   // Start time stepping
-  dolfin::uint step = 0;
+  std::size_t step = 0;
   while (t < T)
   {
     // Update for next time step

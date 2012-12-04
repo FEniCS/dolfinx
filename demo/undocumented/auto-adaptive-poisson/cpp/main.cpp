@@ -19,6 +19,14 @@
 // Last changed: 2012-11-14
 
 #include <dolfin.h>
+
+int main()
+{
+  dolfin::cout << "This demo is not working" << dolfin::endl;
+  return 0;
+}
+
+/*
 #include "AdaptivePoisson.h"
 
 using namespace dolfin;
@@ -97,3 +105,4 @@ int main()
 
   return 0;
 }
+*/

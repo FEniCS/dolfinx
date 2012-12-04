@@ -65,7 +65,7 @@ void ALE::move(Mesh& mesh0, const Mesh& mesh1)
     mesh_to_boundary_0[boundary_to_mesh_0[i]] = i;
 
   // Iterate over vertices in boundary1
-  const uint dim = mesh0.geometry().dim();
+  const std::size_t dim = mesh0.geometry().dim();
   for (VertexIterator v(boundary1); !v.end(); ++v)
   {
     // Get global vertex index (steps 1 and 2)
@@ -90,7 +90,7 @@ void ALE::move(Mesh& mesh0, const Mesh& mesh1)
 
     // Update vertex coordinate
     double* x = boundary0.geometry().x(boundary_index_0);
-    for (uint i = 0; i < dim; i++)
+    for (std::size_t i = 0; i < dim; i++)
       x[i] = v->x()[i];
   }
 
@@ -103,7 +103,7 @@ void ALE::move(Mesh& mesh, const Function& displacement)
   // Check dimensions
   dolfin_assert(displacement.function_space()->element());
   const FiniteElement& element = *displacement.function_space()->element();
-  const uint gdim = mesh.geometry().dim();
+  const std::size_t gdim = mesh.geometry().dim();
   if (!((element.value_rank() == 0 && gdim == 0) ||
         (element.value_rank() == 1 && gdim == element.value_dimension(0))))
   {
@@ -119,9 +119,9 @@ void ALE::move(Mesh& mesh, const Function& displacement)
 
   // Move vertex coordinates
   std::vector<double>& x = mesh.geometry().x();
-  for (uint d = 0; d < gdim; d++)
+  for (std::size_t d = 0; d < gdim; d++)
   {
-    for (uint i = 0; i < N; i++)
+    for (std::size_t i = 0; i < N; i++)
       x[i*gdim + d] += vertex_values[d*N + i];
   }
 }

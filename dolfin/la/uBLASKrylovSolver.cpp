@@ -90,7 +90,7 @@ uBLASKrylovSolver::~uBLASKrylovSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-unsigned int uBLASKrylovSolver::solve(GenericVector& x, const GenericVector& b)
+std::size_t uBLASKrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
   dolfin_assert(A);
   dolfin_assert(P);
@@ -132,7 +132,7 @@ unsigned int uBLASKrylovSolver::solve(GenericVector& x, const GenericVector& b)
   return 0;
 }
 //-----------------------------------------------------------------------------
-unsigned int uBLASKrylovSolver::solve(const GenericLinearOperator& A,
+std::size_t uBLASKrylovSolver::solve(const GenericLinearOperator& A,
                                       GenericVector& x,
                                       const GenericVector& b)
 {

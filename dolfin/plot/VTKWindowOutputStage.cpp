@@ -609,16 +609,17 @@ void VTKWindowOutputStage::set_input(vtkSmartPointer<vtkAlgorithmOutput> output)
   _input->SetInputConnection(output);
 }
 //----------------------------------------------------------------------------
-void VTKWindowOutputStage::set_translucent(bool onoff, uint topo_dim, uint geom_dim)
+void VTKWindowOutputStage::set_translucent(bool onoff, std::size_t topo_dim,
+                                           std::size_t geom_dim)
 {
   // In 3D, any translucency in the lut makes the visibility test
   // for cell/vertex labels ineffective.
   // The depth sorting is slow, particularly for glyphs.
   // Hence, set these only when required.
 
-#if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 8)
+  #if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 8)
   _lut->SetNanColor(0.0, 0.0, 0.0, (onoff ? 0.05 : 1.0));
-#endif
+  #endif
 
   if (onoff && topo_dim >= 2 && geom_dim == 3)
   {

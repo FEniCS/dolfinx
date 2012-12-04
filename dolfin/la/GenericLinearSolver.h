@@ -64,7 +64,7 @@ namespace dolfin
     }
 
     /// Solve linear system Ax = b
-    virtual unsigned int solve(const GenericLinearOperator& A, GenericVector& x,
+    virtual std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
                        const GenericVector& b)
     {
       dolfin_error("GenericLinearSolver.h",
@@ -74,7 +74,7 @@ namespace dolfin
     }
 
     /// Solve linear system Ax = b
-    virtual unsigned int solve(GenericVector& x, const GenericVector& b)
+    virtual std::size_t solve(GenericVector& x, const GenericVector& b)
     {
       dolfin_error("GenericLinearSolver.h",
                    "solve linear system",

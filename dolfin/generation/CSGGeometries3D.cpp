@@ -25,7 +25,7 @@
 
 using namespace dolfin;
 
-boost::shared_ptr<CSGGeometry> CSGGeometries::lego( uint n0, uint n1, uint n2, double x0, double x1, double x2 )
+boost::shared_ptr<CSGGeometry> CSGGeometries::lego( std::size_t n0, std::size_t n1, std::size_t n2, double x0, double x1, double x2 )
 {
   // Standard dimensions for LEGO bricks / m
   const double P = 8.0 * 0.001;
@@ -39,9 +39,9 @@ boost::shared_ptr<CSGGeometry> CSGGeometries::lego( uint n0, uint n1, uint n2, d
 						x0 + n0*P - 0.5*d, x1 + n1*P - 0.5*d, x2 + n2*h));
 
   // Add knobs
-  for (uint i = 0; i < n0; i++)
+  for (std::size_t i = 0; i < n0; i++)
   {
-    for (uint j = 0; j < n1; j++)
+    for (std::size_t j = 0; j < n1; j++)
     {
       const double x = x0 + (i + 0.5)*P;
       const double y = x1 + (j + 0.5)*P;
@@ -82,7 +82,7 @@ boost::shared_ptr<CSGGeometry> CSGGeometries::propeller(double r, double R, doub
   boost::shared_ptr<CSGGeometry> blade_tip_1(new Cylinder( Point(-R,     -0.5*h, 0), Point(-R,  0.5*h, 0), 0.5*w));
   boost::shared_ptr<CSGGeometry> blade_tip_2(new Cylinder( Point(-0.5*h,  R,     0), Point( 0.5*h,  R, 0), 0.5*w));
   boost::shared_ptr<CSGGeometry> blade_tip_3(new Cylinder( Point(-0.5*h, -R,     0), Point( 0.5*h, -R,     0), 0.5*w));
-    
+
   // // Rotate blade tips
   // // blade_tip_0.rotate(-v, 0);
   // // blade_tip_1.rotate(v, 0);

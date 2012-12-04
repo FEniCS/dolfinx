@@ -50,7 +50,7 @@ namespace dolfin
     //--- Implementation of the GenericLinearOperator interface ---
 
     /// Return size of given dimension
-    virtual std::size_t size(unsigned int dim) const;
+    virtual std::size_t size(std::size_t dim) const;
 
     /// Compute matrix-vector product y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const;

@@ -61,7 +61,7 @@ namespace dolfin
     /// Create  IntersectionOperator for a given mesh
     ///
     /// *Arguments*
-    ///     labels (_MeshFunction<unsigned int>_)
+    ///     labels (_MeshFunction<std::size_t>_)
     ///         A MeshFunction over entities labeling the part of the Mesh
     ///         for which the distance will be measured to
     ///
@@ -82,7 +82,7 @@ namespace dolfin
     /// Create IntersectionOperator for a given mesh (shared data)
     ///
     /// *Arguments*
-    ///     labels (_MeshFunction<unsigned int>_)
+    ///     labels (_MeshFunction<std::size_t>_)
     ///         A MeshFunction over facets labeling the part of the Boundary
     ///         for which the distance will be measured to
     ///

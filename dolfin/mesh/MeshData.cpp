@@ -113,7 +113,7 @@ boost::shared_ptr<MeshFunction<std::size_t> >
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<MeshFunction<std::size_t> >
-MeshData::create_mesh_function(std::string name, uint dim)
+MeshData::create_mesh_function(std::string name, std::size_t dim)
 {
   boost::shared_ptr<MeshFunction<std::size_t> > f = create_mesh_function(name);
   f->init(dim);

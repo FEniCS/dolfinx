@@ -53,7 +53,7 @@ public:
         // Do nothing
       }
 
-      std::size_t size(dolfin::uint dim) const
+      std::size_t size(std::size_t dim) const
       { return u.function_space()->dim(); }
 
       void mult(const GenericVector& x, GenericVector& y) const
@@ -73,7 +73,7 @@ public:
     };
 
     // Iterate over backends supporting linear operators
-    for (dolfin::uint i = 0; i < backends.size(); i++)
+    for (std::size_t i = 0; i < backends.size(); i++)
     {
       // Set linear algebra backend
       parameters["linear_algebra_backend"] = backends[i];

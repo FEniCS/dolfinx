@@ -59,10 +59,10 @@ namespace dolfin
     //--- Functions that must be implemented by sub-classes ---
 
     /// Return value rank
-    virtual uint value_rank() const = 0;
+    virtual std::size_t value_rank() const = 0;
 
     /// Return value dimension for given axis
-    virtual uint value_dimension(uint i) const = 0;
+    virtual std::size_t value_dimension(std::size_t i) const = 0;
 
     /// Evaluate at given point in given cell
     virtual void eval(Array<double>& values, const Array<double>& x,
@@ -115,7 +115,7 @@ namespace dolfin
     /// Evaluation at given point
 
     /// Return value size (product of value dimensions)
-    uint value_size() const;
+    std::size_t value_size() const;
 
     //--- Implementation of ufc::function interface ---
 

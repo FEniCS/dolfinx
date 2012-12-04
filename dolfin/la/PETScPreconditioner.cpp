@@ -115,17 +115,17 @@ Parameters PETScPreconditioner::default_parameters()
 
   // Generic multigrid parameters
   Parameters p_mg("mg");
-  p_mg.add<unsigned int>("num_levels");
-  p_mg.add<unsigned int>("num_sweeps");
+  p_mg.add<std::size_t>("num_levels");
+  p_mg.add<std::size_t>("num_sweeps");
   p.add(p_mg);
 
   // ML package parameters
   Parameters p_ml("ml");
-  p_ml.add<unsigned int>("max_coarse_size");
+  p_ml.add<std::size_t>("max_coarse_size");
   p_ml.add<double>("aggregation_damping_factor");
   p_ml.add<double>("threshold");
-  p_ml.add<unsigned int>("max_num_levels");
-  p_ml.add<unsigned int>("print_level", 0, 10);
+  p_ml.add<std::size_t>("max_num_levels");
+  p_ml.add<std::size_t>("print_level", 0, 10);
 
   std::set<std::string> ml_schemes;
   ml_schemes.insert("v");
@@ -143,15 +143,15 @@ Parameters PETScPreconditioner::default_parameters()
   // Hypre/ParaSails parameters
   Parameters p_parasails("parasails");
   p_parasails.add<double>("threshold");
-  p_parasails.add<unsigned int>("levels");
+  p_parasails.add<std::size_t>("levels");
 
   // Hypre/BoomerAMG parameters
   Parameters p_boomeramg("BoomerAMG");
   p_boomeramg.add<std::string>("cycle_type"); // "V" or "W"
-  p_boomeramg.add<unsigned int>("max_levels");
+  p_boomeramg.add<std::size_t>("max_levels");
   p_boomeramg.add<double>("strong_threshold");
   p_boomeramg.add<double>("relaxation_weight");
-  p_boomeramg.add<unsigned int>("agressive_coarsening_levels");
+  p_boomeramg.add<std::size_t>("agressive_coarsening_levels");
 
   // Hypre package parameters
   Parameters p_hypre("hypre");
@@ -203,7 +203,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
       PCHYPRESetType(pc, "boomeramg");
       if (parameters("mg")["num_sweeps"].is_set())
       {
-        const unsigned int num_sweeps = parameters("mg")["num_sweeps"];
+        const std::size_t num_sweeps = parameters("mg")["num_sweeps"];
         PetscOptionsSetValue("-pc_hypre_boomeramg_grid_sweeps_all",
                          boost::lexical_cast<std::string>(num_sweeps).c_str());
       }
@@ -214,7 +214,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
       }
       if (parameters("hypre")("BoomerAMG")["max_levels"].is_set())
       {
-        const unsigned int max_levels = parameters("hypre")("BoomerAMG")["max_levels"];
+        const std::size_t max_levels = parameters("hypre")("BoomerAMG")["max_levels"];
         PetscOptionsSetValue("-pc_hypre_boomeramg_max_levels",
                           boost::lexical_cast<std::string>(max_levels).c_str());
       }
@@ -232,7 +232,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
       }
       if (parameters("hypre")("BoomerAMG")["agressive_coarsening_levels"].is_set())
       {
-        const unsigned int levels = parameters("hypre")("BoomerAMG")["agressive_coarsening_levels"];
+        const std::size_t levels = parameters("hypre")("BoomerAMG")["agressive_coarsening_levels"];
         PetscOptionsSetValue("-pc_hypre_boomeramg_agg_nl",
                             boost::lexical_cast<std::string>(levels).c_str() );
       }
@@ -254,7 +254,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     else if (type == "hypre_euclid")
     {
       PCHYPRESetType(pc, "euclid");
-      const unsigned int ilu_level = parameters("ilu")["fill_level"];
+      const std::size_t ilu_level = parameters("ilu")["fill_level"];
       PetscOptionsSetValue("-pc_hypre_euclid_levels",
                           boost::lexical_cast<std::string>(ilu_level).c_str());
     }
@@ -289,7 +289,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     // Output level
     if (parameters("ml")["print_level"].is_set())
     {
-      const unsigned int print_level = parameters("ml")["print_level"];
+      const std::size_t print_level = parameters("ml")["print_level"];
       PetscOptionsSetValue("-pc_ml_PrintLevel",
                            boost::lexical_cast<std::string>(print_level).c_str());
     }
@@ -297,7 +297,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     // Maximum number of levels
     if (parameters("ml")["max_num_levels"].is_set())
     {
-      const unsigned int max_levels = parameters("ml")["max_num_levels"];
+      const std::size_t max_levels = parameters("ml")["max_num_levels"];
       PetscOptionsSetValue("-pc_ml_maxNlevels",
                            boost::lexical_cast<std::string>(max_levels).c_str());
     }
@@ -320,7 +320,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     // Maximum coarse level problem size
     if (parameters("ml")["max_coarse_size"].is_set())
     {
-      const unsigned int max_size = parameters("ml")["max_coarse_size"];
+      const std::size_t max_size = parameters("ml")["max_coarse_size"];
       PetscOptionsSetValue("-pc_ml_maxCoarseSize",
                             boost::lexical_cast<std::string>(max_size).c_str());
     }
@@ -338,7 +338,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     // Number of smmoother applications
     if (parameters("mg")["num_sweeps"].is_set())
     {
-      const unsigned int num_sweeps = parameters("mg")["num_sweeps"];
+      const std::size_t num_sweeps = parameters("mg")["num_sweeps"];
       PetscOptionsSetValue("-pc_mg_smoothup",
                            boost::lexical_cast<std::string>(num_sweeps).c_str());
       PetscOptionsSetValue("-pc_mg_smoothdown",
@@ -465,7 +465,7 @@ void PETScPreconditioner::set_nullspace(const std::vector<const GenericVector*> 
   else
   {
     // Copy vectors
-    for (unsigned int i = 0; i < nullspace.size(); ++i)
+    for (std::size_t i = 0; i < nullspace.size(); ++i)
     {
       dolfin_assert(nullspace[i]);
       const PETScVector& x = nullspace[i]->down_cast<PETScVector>();
@@ -476,7 +476,7 @@ void PETScPreconditioner::set_nullspace(const std::vector<const GenericVector*> 
 
     // Get pointers to underlying PETSc objects
     std::vector<Vec> petsc_vec(nullspace.size());
-    for (unsigned int i = 0; i < nullspace.size(); ++i)
+    for (std::size_t i = 0; i < nullspace.size(); ++i)
       petsc_vec[i] = *(_nullspace[i].vec().get());
 
     // Create null space

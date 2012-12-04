@@ -56,7 +56,7 @@ Constant::Constant(std::vector<double> values)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Constant::Constant(std::vector<uint> value_shape,
+Constant::Constant(std::vector<std::size_t> value_shape,
                    std::vector<double> values)
   : Expression(value_shape), _values(values)
 {
@@ -125,7 +125,7 @@ Constant::operator double() const
 void Constant::eval(Array<double>& values, const Array<double>& x) const
 {
   // Copy values
-  for (uint j = 0; j < _values.size(); j++)
+  for (std::size_t j = 0; j < _values.size(); j++)
     values[j] = _values[j];
 }
 //-----------------------------------------------------------------------------

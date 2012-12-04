@@ -66,7 +66,7 @@ PETScLinearOperator::PETScLinearOperator() : _wrapper(0)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScLinearOperator::size(unsigned int dim) const
+std::size_t PETScLinearOperator::size(std::size_t dim) const
 {
   return PETScBaseMatrix::size(dim);
 }

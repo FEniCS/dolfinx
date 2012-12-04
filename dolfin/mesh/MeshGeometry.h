@@ -54,7 +54,7 @@ namespace dolfin
     const MeshGeometry& operator= (const MeshGeometry& geometry);
 
     /// Return Euclidean dimension of coordinate system
-    uint dim() const
+    std::size_t dim() const
     { return _dim; }
 
     /// Return number of coordinates
@@ -65,7 +65,7 @@ namespace dolfin
     }
 
     /// Return value of coordinate with local index n in direction i
-    double& x(std::size_t n, uint i)
+    double& x(std::size_t n, std::size_t i)
     {
       dolfin_assert(n < local_index_to_position.size());
       dolfin_assert(i < _dim);
@@ -73,7 +73,7 @@ namespace dolfin
     }
 
     /// Return value of coordinate with local index n in direction i
-    double x(std::size_t n, uint i) const
+    double x(std::size_t n, std::size_t i) const
     {
       dolfin_assert(n < local_index_to_position.size());
       dolfin_assert(i < _dim);
@@ -109,16 +109,16 @@ namespace dolfin
     void clear();
 
     /// Initialize coordinate list to given dimension and size
-    void init(uint dim, std::size_t size);
+    void init(std::size_t dim, std::size_t size);
 
     /// Set value of coordinate
-    //void set(uint n, uint i, double x);
+    //void set(std::size_t n, std::size_t i, double x);
     void set(std::size_t local_index, const std::vector<double>& x);
 
     /// Hash of coordinate values
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         A tree-hashed value of the coordinates over all MPI processes
     ///
     std::size_t hash() const;
@@ -133,7 +133,7 @@ namespace dolfin
     friend class MeshRenumbering;
 
     // Euclidean dimension
-    uint _dim;
+    std::size_t _dim;
 
     // Coordinates for all vertices stored as a contiguous array
     std::vector<double> coordinates;

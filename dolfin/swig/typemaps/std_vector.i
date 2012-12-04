@@ -338,7 +338,7 @@ const std::vector<TYPE>&  ARG_NAME
 }
 
 %typemap (in, fragment=Py_convert_frag(TYPE_NAME)) std::vector<TYPE> ARG_NAME
-(std::vector<TYPE> tmp_vec, PyObject* item, TYPE value, dolfin::uint i)
+(std::vector<TYPE> tmp_vec, PyObject* item, TYPE value, std::size_t i)
 {
   // PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER,
   //                                    ARG_NAME, TYPE_NAME, SEQ_LENGTH)
@@ -573,7 +573,7 @@ IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, INT64, , NPY_UINTP, uintp, uint
 IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(PetscInt, INT32, , NPY_INT, intc, intc)
 
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t, INT32, coloring_type, std_size_t, -1)
-PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(unsigned int, INT32, value_shape, uint, -1)
+PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t, INT32, value_shape, std_size_t, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, double, -1)
 
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, NPY_DOUBLE)
@@ -586,7 +586,7 @@ READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, uint)
 //READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, uint)
 READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, sizet)
 
-// This typemap handles PETSc index typemap. Untested for 46-bit integers
+// This typemap handles PETSc index typemap. Untested for 64-bit integers
 READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(PetscInt, dolfin_index)
 
 IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(Point)

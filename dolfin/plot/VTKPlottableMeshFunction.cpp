@@ -69,7 +69,7 @@ template class VTKPlottableMeshFunction<double>;
 template class VTKPlottableMeshFunction<float>;
 template class VTKPlottableMeshFunction<int>;
 
-// Note: We want to be able to plot meshfunctions of dolfin::uint and
+// Note: We want to be able to plot meshfunctions of unsigned int and
 // std::size_t. Instansiating with these two types, however, gives
 // "error: duplicate explicit instantiation" on 32 bit platforms. The
 // following seems to work
