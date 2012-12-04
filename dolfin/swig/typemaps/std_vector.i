@@ -338,7 +338,7 @@ const std::vector<TYPE>&  ARG_NAME
 }
 
 %typemap (in, fragment=Py_convert_frag(TYPE_NAME)) std::vector<TYPE> ARG_NAME
-(std::vector<TYPE> tmp_vec, PyObject* item, TYPE value, dolfin::uint i)
+(std::vector<TYPE> tmp_vec, PyObject* item, TYPE value, std::size_t i)
 {
   // PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER,
   //                                    ARG_NAME, TYPE_NAME, SEQ_LENGTH)

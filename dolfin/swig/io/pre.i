@@ -20,20 +20,20 @@
 // Last changed: 2012-11-01
 
 %ignore dolfin::GenericFile::operator>> (std::vector<int>& x);
-%ignore dolfin::GenericFile::operator>> (std::vector<uint>& x);
+%ignore dolfin::GenericFile::operator>> (std::vector<std::size_t>& x);
 %ignore dolfin::GenericFile::operator>> (std::vector<double>& x);
-%ignore dolfin::GenericFile::operator>> (std::map<uint, int>& map);
-%ignore dolfin::GenericFile::operator>> (std::map<uint, uint>& map);
-%ignore dolfin::GenericFile::operator>> (std::map<uint, double>& map);
-%ignore dolfin::GenericFile::operator>> (std::map<uint, std::vector<int> >& array_map);
-%ignore dolfin::GenericFile::operator>> (std::map<uint, std::vector<uint> >& array_map);
-%ignore dolfin::GenericFile::operator>> (std::map<uint, std::vector<double> >& array_map);
+%ignore dolfin::GenericFile::operator>> (std::map<std::size_t, int>& map);
+%ignore dolfin::GenericFile::operator>> (std::map<std::size_t, std::size_t>& map);
+%ignore dolfin::GenericFile::operator>> (std::map<std::size_t, double>& map);
+%ignore dolfin::GenericFile::operator>> (std::map<std::size_t, std::vector<int> >& array_map);
+%ignore dolfin::GenericFile::operator>> (std::map<std::size_t, std::vector<std::size_t> >& array_map);
+%ignore dolfin::GenericFile::operator>> (std::map<std::size_t, std::vector<double> >& array_map);
 %ignore dolfin::GenericFile::operator<< (const std::vector<int>& x);
-%ignore dolfin::GenericFile::operator<< (const std::vector<uint>& x);
+%ignore dolfin::GenericFile::operator<< (const std::vector<std::size_t>& x);
 %ignore dolfin::GenericFile::operator<< (const std::vector<double>& x);
-%ignore dolfin::GenericFile::operator<< (const std::map<uint, int>& map);
-%ignore dolfin::GenericFile::operator<< (const std::map<uint, uint>& map);
-%ignore dolfin::GenericFile::operator<< (const std::map<uint, double>& map);
-%ignore dolfin::GenericFile::operator<< (const std::map<uint, std::vector<int> >& array_map);
-%ignore dolfin::GenericFile::operator<< (const std::map<uint, std::vector<uint> >& array_map);
-%ignore dolfin::GenericFile::operator<< (const std::map<uint, std::vector<double> >& array_map);
+%ignore dolfin::GenericFile::operator<< (const std::map<std::size_t, int>& map);
+%ignore dolfin::GenericFile::operator<< (const std::map<std::size_t, std::size_t>& map);
+%ignore dolfin::GenericFile::operator<< (const std::map<std::size_t, double>& map);
+%ignore dolfin::GenericFile::operator<< (const std::map<std::size_t, std::vector<int> >& array_map);
+%ignore dolfin::GenericFile::operator<< (const std::map<std::size_t, std::vector<std::size_t> >& array_map);
+%ignore dolfin::GenericFile::operator<< (const std::map<std::size_t, std::vector<double> >& array_map);

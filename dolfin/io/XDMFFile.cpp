@@ -241,7 +241,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     }
 
     //  Add a time step to the TimeSeries List
-    xdmf_timedata.attribute("Dimensions").set_value(counter + 1);
+    xdmf_timedata.attribute("Dimensions").set_value(static_cast<unsigned int>(counter + 1));
     s = boost::lexical_cast<std::string>(xdmf_timedata.first_child().value())
           + " " + boost::str((boost::format("%d") % time_step));
     xdmf_timedata.first_child().set_value(s.c_str());
