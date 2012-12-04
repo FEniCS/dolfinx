@@ -637,14 +637,14 @@ double PETScVector::sum(const Array<std::size_t>& rows) const
   }
 
   // Send nonlocal rows indices to other processes
-  const unsigned int num_processes  = MPI::num_processes();
-  const unsigned int process_number = MPI::process_number();
-  for (unsigned int i = 1; i < num_processes; ++i)
+  const std::size_t num_processes  = MPI::num_processes();
+  const std::size_t process_number = MPI::process_number();
+  for (std::size_t i = 1; i < num_processes; ++i)
   {
     // Receive data from process p - i (i steps to the left), send data to
     // process p + i (i steps to the right)
-    const unsigned int source = (process_number - i + num_processes) % num_processes;
-    const unsigned int dest   = (process_number + i) % num_processes;
+    const std::size_t source = (process_number - i + num_processes) % num_processes;
+    const std::size_t dest   = (process_number + i) % num_processes;
 
     // Send and receive data
     std::vector<std::size_t> received_nonlocal_rows;

@@ -41,11 +41,11 @@ namespace dolfin
     /// [0,1] x [0,1] x [0,1].
     ///
     /// *Arguments*
-    ///     nx (uint)
+    ///     nx (std::size_t)
     ///         Number of cells in :math:`x` direction.
-    ///     ny (uint)
+    ///     ny (std::size_t)
     ///         Number of cells in :math:`y` direction.
-    ///     nz (uint)
+    ///     nz (std::size_t)
     ///         Number of cells in :math:`z` direction.
     ///
     /// *Example*
@@ -53,7 +53,7 @@ namespace dolfin
     ///
     ///         UnitCubeMesh mesh(32, 32, 32);
     ///
-    UnitCube(uint nx, uint ny, uint nz)
+    UnitCube(std::size_t nx, std::size_t ny, std::size_t nz)
       : UnitCubeMesh(nx, ny, nz)
       {
 	warning("UnitCube is deprecated. Use UnitCubeMesh");

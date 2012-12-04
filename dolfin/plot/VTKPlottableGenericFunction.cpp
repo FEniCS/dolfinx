@@ -56,7 +56,7 @@ VTKPlottableGenericFunction::VTKPlottableGenericFunction(boost::shared_ptr<const
   // Do nothing
 }
 //----------------------------------------------------------------------------
-dolfin::uint VTKPlottableGenericFunction::value_rank() const
+std::size_t VTKPlottableGenericFunction::value_rank() const
 {
   return _function->value_rank();
 }
@@ -213,7 +213,7 @@ void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var, 
 
   // Update the values on the mesh
   const Function *func = dynamic_cast<const Function *>(_function.get());
-  if (func && func->vector()->local_size() == (dolfin::uint)grid()->GetNumberOfCells()
+  if (func && func->vector()->local_size() == (std::size_t)grid()->GetNumberOfCells()
       && dim() > 1)
   {
     // Hack to display DG0 functions. Should really be implemented using

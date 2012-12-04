@@ -81,7 +81,7 @@ void MeshGeometry::clear()
   local_index_to_position.clear();
 }
 //-----------------------------------------------------------------------------
-void MeshGeometry::init(uint dim, std::size_t size)
+void MeshGeometry::init(std::size_t dim, std::size_t size)
 {
   // Delete old data if any
   clear();
@@ -137,10 +137,10 @@ std::string MeshGeometry::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-    for (uint i = 0; i < size(); i++)
+    for (std::size_t i = 0; i < size(); i++)
     {
       s << "  " << i << ":";
-      for (uint d = 0; d < _dim; d++)
+      for (std::size_t d = 0; d < _dim; d++)
         s << " " << x(i, d);
       s << std::endl;
     }

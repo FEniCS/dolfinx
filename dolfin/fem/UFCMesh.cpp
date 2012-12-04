@@ -30,8 +30,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 UFCMesh::UFCMesh(const Mesh& mesh,
-                 const MeshFunction<uint>& domain_markers,
-                 uint domain) : ufc::mesh()
+                 const MeshFunction<std::size_t>& domain_markers,
+                 std::size_t domain) : ufc::mesh()
 {
   // Check that we get cell markers, extend later
   if (domain_markers.dim() != mesh.topology().dim())
@@ -49,10 +49,10 @@ UFCMesh::UFCMesh(const Mesh& mesh,
   geometric_dimension = mesh.geometry().dim();
 
   // Use sets to count the number of entities of each dimension
-  std::vector<std::set<uint> > entity_sets(topological_dimension + 1);
+  std::vector<std::set<std::size_t> > entity_sets(topological_dimension + 1);
 
   // Count the number of entities of each dimension
-  uint num_cells = 0;
+  std::size_t num_cells = 0;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Skip cell if it is not included in restriction
@@ -63,7 +63,7 @@ UFCMesh::UFCMesh(const Mesh& mesh,
     num_cells += 1;
 
     // Count entities
-    for (uint d = 0; d < topological_dimension; d++)
+    for (std::size_t d = 0; d < topological_dimension; d++)
     {
       // Skip if there are not entities of current dimension
       if (mesh.num_entities(d) == 0)
@@ -76,13 +76,13 @@ UFCMesh::UFCMesh(const Mesh& mesh,
   }
 
   // Store number of entities
-  num_entities = new uint[topological_dimension + 1];
-  for (uint d = 0; d < topological_dimension; d++)
+  num_entities = new unsigned int[topological_dimension + 1];
+  for (std::size_t d = 0; d < topological_dimension; d++)
     num_entities[d] = entity_sets[d].size();
   num_entities[topological_dimension] = num_cells;
 
   // Print some info
-  for (uint d = 0; d <= topological_dimension; d++)
+  for (std::size_t d = 0; d <= topological_dimension; d++)
   {
     info("Number of entities of dimension %d for restricted mesh: %d (out of %d).",
          d, num_entities[d], mesh.num_entities(d));

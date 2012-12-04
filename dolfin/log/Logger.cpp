@@ -46,8 +46,8 @@
 
 using namespace dolfin;
 
-typedef std::map<std::string, std::pair<dolfin::uint, double> >::iterator map_iterator;
-typedef std::map<std::string, std::pair<dolfin::uint, double> >::const_iterator const_map_iterator;
+typedef std::map<std::string, std::pair<std::size_t, double> >::iterator map_iterator;
+typedef std::map<std::string, std::pair<std::size_t, double> >::const_iterator const_map_iterator;
 
 // Function for monitoring memory usage, called by thread
 #ifdef __linux__
@@ -59,7 +59,7 @@ void _monitor_memory_usage(dolfin::Logger* logger)
   //std::fstream
 
   // Get process ID and page size
-  const dolfin::uint pid = getpid();
+  const std::size_t pid = getpid();
   const size_t page_size = getpagesize();
 
   // Print some info
@@ -133,7 +133,7 @@ void Logger::log_underline(std::string msg, int log_level) const
   s << "\n";
   for (int i = 0; i < indentation_level; i++)
     s << "  ";
-  for (uint i = 0; i < msg.size(); i++)
+  for (std::size_t i = 0; i < msg.size(); i++)
     s << "-";
 
   log(s.str(), log_level);
@@ -252,7 +252,7 @@ void Logger::register_timing(std::string task, double elapsed_time)
   map_iterator it = _timings.find(task);
   if (it == _timings.end())
   {
-    std::pair<uint, double> timing(1, elapsed_time);
+    std::pair<std::size_t, double> timing(1, elapsed_time);
     _timings[task] = timing;
   }
   else
@@ -293,7 +293,7 @@ Table Logger::timings(bool reset)
   for (const_map_iterator it = _timings.begin(); it != _timings.end(); ++it)
   {
     const std::string task    = it->first;
-    const uint num_timings    = it->second.first;
+    const std::size_t num_timings    = it->second.first;
     const double total_time   = it->second.second;
     const double average_time = total_time / static_cast<double>(num_timings);
 
@@ -323,7 +323,7 @@ double Logger::timing(std::string task, bool reset)
   }
 
   // Compute average
-  const uint num_timings  = it->second.first;
+  const std::size_t num_timings  = it->second.first;
   const double total_time   = it->second.second;
   const double average_time = total_time / static_cast<double>(num_timings);
 

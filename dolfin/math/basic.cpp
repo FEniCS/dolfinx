@@ -35,10 +35,10 @@ namespace dolfin
 }
 
 //-----------------------------------------------------------------------------
-dolfin::uint dolfin::ipow(uint a, uint n)
+std::size_t dolfin::ipow(std::size_t a, std::size_t n)
 {
-  uint p = a;
-  for (uint i = 1; i < n; i++)
+  std::size_t p = a;
+  for (std::size_t i = 1; i < n; i++)
     p *= a;
   return p;
 }
@@ -54,7 +54,7 @@ double dolfin::rand()
   return static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX);
 }
 //-----------------------------------------------------------------------------
-void dolfin::seed(unsigned int s)
+void dolfin::seed(std::size_t s)
 {
   std::srand(s);
   rand_seeded = true;

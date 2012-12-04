@@ -28,7 +28,7 @@ uBLASLinearOperator::uBLASLinearOperator() : _wrapper(0), M(0), N(0)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::size_t uBLASLinearOperator::size(unsigned int dim) const
+std::size_t uBLASLinearOperator::size(std::size_t dim) const
 {
   if (dim == 0)
     return M;

@@ -63,7 +63,7 @@ namespace dolfin
                                         UFC& ufc,
                                         const Cell& cell,
                                         const Facet& facet,
-                                        const uint local_facet,
+                                        const std::size_t local_facet,
                                         const MeshFunction<std::size_t>* domains);
 
     ///
@@ -71,7 +71,7 @@ namespace dolfin
                                         UFC& ufc,
                                         const Cell& cell,
                                         const Facet& facet,
-                                        const uint local_facet,
+                                        const std::size_t local_facet,
                                         const MeshFunction<std::size_t>* domains);
   };
 

@@ -47,7 +47,7 @@ namespace dolfin
     virtual ~LinearOperator() {}
 
     /// Return size of given dimension
-    virtual std::size_t size(unsigned int dim) const = 0;
+    virtual std::size_t size(std::size_t dim) const = 0;
 
     /// Compute matrix-vector product y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const = 0;

@@ -51,7 +51,7 @@ static void build_dolfin_mesh(const csg::C3t3& c3t3, Mesh& mesh)
   mesh.clear();
 
   // Count cells in complex
-  dolfin::uint num_cells = 0;
+  std::size_t num_cells = 0;
   for(csg::C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin();
       cit != c3t3.cells_in_complex_end();
       ++cit)
@@ -66,8 +66,8 @@ static void build_dolfin_mesh(const csg::C3t3& c3t3, Mesh& mesh)
   mesh_editor.init_cells(num_cells);
 
   // Add vertices to mesh
-  dolfin::uint vertex_index = 0;
-  std::map<Vertex_handle, dolfin::uint> vertex_id_map;
+  std::size_t vertex_index = 0;
+  std::map<Vertex_handle, std::size_t> vertex_id_map;
 
   for (Triangulation::Finite_vertices_iterator
          cgal_vertex = triangulation.finite_vertices_begin();
@@ -83,7 +83,7 @@ static void build_dolfin_mesh(const csg::C3t3& c3t3, Mesh& mesh)
   }
 
   // Add cells to mesh
-  dolfin::uint cell_index = 0;
+  std::size_t cell_index = 0;
   for(csg::C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin();
       cit != c3t3.cells_in_complex_end();
       ++cit)

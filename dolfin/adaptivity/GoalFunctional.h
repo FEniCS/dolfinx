@@ -47,7 +47,7 @@ namespace dolfin
     ///         the rank of the functional (should be 0)
     ///     num_coefficients (int)
     ///         the number of coefficients in functional
-    GoalFunctional(uint rank, uint num_coefficients);
+    GoalFunctional(std::size_t rank, std::size_t num_coefficients);
 
     /// Update error control instance with given forms
     ///

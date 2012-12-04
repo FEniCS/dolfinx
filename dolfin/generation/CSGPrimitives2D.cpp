@@ -31,7 +31,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 // Circle
 //-----------------------------------------------------------------------------
-Circle::Circle(double x0, double x1, double r, dolfin::uint fragments)
+Circle::Circle(double x0, double x1, double r, std::size_t fragments)
   : _x0(x0), _x1(x1), _r(r), _fragments(fragments)
 {
   if (_r < DOLFIN_EPS)
@@ -69,7 +69,7 @@ std::string Circle::str(bool verbose) const
 //-----------------------------------------------------------------------------
 // Ellipse
 //-----------------------------------------------------------------------------
-Ellipse::Ellipse(double x0, double x1, double a, double b, dolfin::uint fragments)
+Ellipse::Ellipse(double x0, double x1, double a, double b, std::size_t fragments)
   : _x0(x0), _x1(x1), _a(a), _b(b), _fragments(fragments)
 {
   if (_a < DOLFIN_EPS || _b < DOLFIN_EPS)

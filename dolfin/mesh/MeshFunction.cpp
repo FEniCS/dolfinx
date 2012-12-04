@@ -39,7 +39,7 @@ template<> std::string MeshFunction<double>::str(bool verbose) const
   {
     s << str(false) << std::endl << std::endl;
 
-    for (uint i = 0; i < _size; i++)
+    for (std::size_t i = 0; i < _size; i++)
       s << "  (" << _dim << ", " << i << "): " << _values[i] << std::endl;
   }
   else
@@ -47,7 +47,7 @@ template<> std::string MeshFunction<double>::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-template<> std::string MeshFunction<dolfin::uint>::str(bool verbose) const
+template<> std::string MeshFunction<std::size_t>::str(bool verbose) const
 {
   std::stringstream s;
 
@@ -55,7 +55,7 @@ template<> std::string MeshFunction<dolfin::uint>::str(bool verbose) const
   {
     s << str(false) << std::endl << std::endl;
 
-    for (uint i = 0; i < _size; i++)
+    for (std::size_t i = 0; i < _size; i++)
       s << "  (" << _dim << ", " << i << "): " << _values[i] << std::endl;
   }
   else

@@ -57,7 +57,7 @@ namespace dolfin
     { return _weights; }
 
     /// Return number of quadrature points/weights
-    uint size() const
+    std::size_t size() const
     { dolfin_assert(_points.size() == _weights.size()); return _points.size(); }
 
   private:

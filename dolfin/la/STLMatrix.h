@@ -55,7 +55,7 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-    STLMatrix(unsigned int primary_dim=0) : primary_dim(primary_dim),
+    STLMatrix(std::size_t primary_dim=0) : primary_dim(primary_dim),
       _local_range(0, 0), num_codim_entities(0) {}
 
     /// Destructor
@@ -67,10 +67,10 @@ namespace dolfin
     virtual void init(const TensorLayout& tensor_layout);
 
     /// Return size of given dimension
-    virtual std::size_t size(unsigned int dim) const;
+    virtual std::size_t size(std::size_t dim) const;
 
     /// Return local ownership range
-    virtual std::pair<std::size_t, std::size_t> local_range(unsigned int dim) const;
+    virtual std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const;
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
@@ -95,9 +95,9 @@ namespace dolfin
     /// important.
     ///
     /// *Arguments*
-    ///     dim (unsigned int)
+    ///     dim (std::size_t)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-    virtual void resize(GenericVector& z, unsigned int dim) const
+    virtual void resize(GenericVector& z, std::size_t dim) const
     { dolfin_not_implemented(); }
 
     /// Get block of values
@@ -201,7 +201,7 @@ namespace dolfin
                             bool symmetric) const;
 
     // Primary dimension (0=row-wise storage, 1=column-wise storage)
-    const unsigned int primary_dim;
+    const std::size_t primary_dim;
 
     // Local ownership range (row range for row-wise storage, column
     // range for column-wise storage)

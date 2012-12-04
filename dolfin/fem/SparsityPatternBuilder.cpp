@@ -41,13 +41,13 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
                    const std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > >& master_slave_dofs,
                    bool cells, bool interior_facets, bool exterior_facets, bool diagonal)
 {
-  const uint rank = dofmaps.size();
+  const std::size_t rank = dofmaps.size();
 
   // Get global dimensions and local range
   std::vector<std::size_t> global_dimensions(rank);
   std::vector<std::pair<std::size_t, std::size_t> > local_range(rank);
-  std::vector<const boost::unordered_map<std::size_t, uint>* > off_process_owner(rank);
-  for (uint i = 0; i < rank; ++i)
+  std::vector<const boost::unordered_map<std::size_t, std::size_t>* > off_process_owner(rank);
+  for (std::size_t i = 0; i < rank; ++i)
   {
     global_dimensions[i] = dofmaps[i]->global_dimension();
     local_range[i]       = dofmaps[i]->ownership_range();
@@ -90,7 +90,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   //       are included when tabulating dofs on all cells
 
   // Build sparsity pattern for interior/exterior facet integrals
-  const uint D = mesh.topology().dim();
+  const std::size_t D = mesh.topology().dim();
   if (interior_facets || exterior_facets)
   {
     // Compute facets and facet - cell connectivity if not already computed
@@ -122,7 +122,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
         Cell cell(mesh, facet->entities(D)[0]);
 
         // Tabulate dofs for each dimension and get local dimensions
-        for (uint i = 0; i < rank; ++i)
+        for (std::size_t i = 0; i < rank; ++i)
           dofs[i] = &dofmaps[i]->cell_dofs(cell.index());
 
         // Insert dofs
@@ -135,7 +135,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
         Cell cell1(mesh, facet->entities(D)[1]);
 
         // Tabulate dofs for each dimension on macro element
-        for (uint i = 0; i < rank; i++)
+        for (std::size_t i = 0; i < rank; i++)
         {
           // Get dofs for each cell
           const std::vector<DolfinIndex>& cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
@@ -165,10 +165,10 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     Progress p("Building sparsity pattern over diagonal", local_range[0].second-local_range[0].first);
 
     std::vector<DolfinIndex> diagonal_dof(1, 0);
-    for (uint i = 0; i < rank; ++i)
+    for (std::size_t i = 0; i < rank; ++i)
       dofs[i] = &diagonal_dof;
 
-    for (uint j = local_range[0].first; j < local_range[0].second; j++)
+    for (std::size_t j = local_range[0].first; j < local_range[0].second; j++)
     {
       diagonal_dof[0] = j;
 

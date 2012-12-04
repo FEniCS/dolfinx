@@ -171,24 +171,24 @@ namespace dolfin
     /// Extract subspace for component
     ///
     /// *Arguments*
-    ///     i (uint)
+    ///     i (std::size_t)
     ///         Index of the subspace.
     /// *Returns*
     ///     _FunctionSpace_
     ///         The subspace.
-    boost::shared_ptr<FunctionSpace> operator[] (uint i) const;
+    boost::shared_ptr<FunctionSpace> operator[] (std::size_t i) const;
 
     /// Extract subspace for component
     ///
     /// *Arguments*
-    ///     component (std::vector<uint>)
+    ///     component (std::vector<std::size_t>)
     ///         The component.
     ///
     /// *Returns*
     ///     _FunctionSpace_
     ///         The subspace.
     boost::shared_ptr<FunctionSpace>
-    extract_sub_space(const std::vector<uint>& component) const;
+    extract_sub_space(const std::vector<std::size_t>& component) const;
 
     /// Collapse a subspace and return a new function space
     ///
@@ -237,9 +237,9 @@ namespace dolfin
     /// Return component
     ///
     /// *Returns*
-    ///     std::vector<uint>
+    ///     std::vector<std::size_t>
     ///         The component (relative to superspace).
-    std::vector<uint> component() const;
+    std::vector<std::size_t> component() const;
 
     /// Return informal string representation (pretty-print)
     ///
@@ -267,10 +267,10 @@ namespace dolfin
     boost::shared_ptr<const GenericDofMap> _dofmap;
 
     // The component (for sub spaces)
-    std::vector<uint> _component;
+    std::vector<std::size_t> _component;
 
     // Cache of sub spaces
-    mutable std::map<std::vector<uint>, boost::shared_ptr<FunctionSpace> > subspaces;
+    mutable std::map<std::vector<std::size_t>, boost::shared_ptr<FunctionSpace> > subspaces;
 
   };
 

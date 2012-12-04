@@ -38,7 +38,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-unsigned int dolfin::solve(const GenericLinearOperator& A,
+std::size_t dolfin::solve(const GenericLinearOperator& A,
                            GenericVector& x,
                            const GenericVector& b,
                            std::string method,
@@ -57,7 +57,7 @@ void dolfin::list_linear_solver_methods()
 
   // Pretty-print list of methods
   Table t("Solver method", false);
-  for (unsigned int i = 0; i < methods.size(); i++)
+  for (std::size_t i = 0; i < methods.size(); i++)
     t(methods[i].first, "Description") = methods[i].second;
   cout << t.str(true) << endl;
 }
@@ -70,7 +70,7 @@ void dolfin::list_lu_solver_methods()
 
   // Pretty-print list of methods
   Table t("LU method", false);
-  for (unsigned int i = 0; i < methods.size(); i++)
+  for (std::size_t i = 0; i < methods.size(); i++)
     t(methods[i].first, "Description") = methods[i].second;
   cout << t.str(true) << endl;
 }
@@ -83,7 +83,7 @@ void dolfin::list_krylov_solver_methods()
 
   // Pretty-print list of methods
   Table t("Krylov method", false);
-  for (unsigned int i = 0; i < methods.size(); i++)
+  for (std::size_t i = 0; i < methods.size(); i++)
     t(methods[i].first, "Description") = methods[i].second;
   cout << t.str(true) << endl;
 }
@@ -96,7 +96,7 @@ void dolfin::list_krylov_solver_preconditioners()
 
   // Pretty-print list of preconditioners
   Table t("Preconditioner", false);
-  for (unsigned int i = 0; i < preconditioners.size(); i++)
+  for (std::size_t i = 0; i < preconditioners.size(); i++)
     t(preconditioners[i].first, "Description") = preconditioners[i].second;
   cout << t.str(true) << endl;
 }
@@ -112,7 +112,7 @@ dolfin::linear_solver_methods()
   // Add LU methods
   std::vector<std::pair<std::string, std::string> >
     lu_methods = DefaultFactory::factory().lu_solver_methods();
-  for (unsigned int i = 0; i < lu_methods.size(); i++)
+  for (std::size_t i = 0; i < lu_methods.size(); i++)
   {
     if (lu_methods[i].first != "default")
       methods.push_back(lu_methods[i]);
@@ -121,7 +121,7 @@ dolfin::linear_solver_methods()
   // Add Krylov methods
   std::vector<std::pair<std::string, std::string> >
     krylov_methods = DefaultFactory::factory().krylov_solver_methods();
-  for (unsigned int i = 0; i < krylov_methods.size(); i++)
+  for (std::size_t i = 0; i < krylov_methods.size(); i++)
   {
     if (krylov_methods[i].first != "default")
       methods.push_back(krylov_methods[i]);
@@ -151,7 +151,7 @@ bool dolfin::has_lu_solver_method(std::string method)
 {
   std::vector<std::pair<std::string, std::string> > methods =
     DefaultFactory::factory().lu_solver_methods();
-  for (unsigned int i = 0; i < methods.size(); i++)
+  for (std::size_t i = 0; i < methods.size(); i++)
     if (methods[i].first == method)
       return true;
   return false;
@@ -161,7 +161,7 @@ bool dolfin::has_krylov_solver_method(std::string method)
 {
   std::vector<std::pair<std::string, std::string> > methods =
     DefaultFactory::factory().krylov_solver_methods();
-  for (unsigned int i = 0; i < methods.size(); i++)
+  for (std::size_t i = 0; i < methods.size(); i++)
     if (methods[i].first == method)
       return true;
   return false;
@@ -171,7 +171,7 @@ bool dolfin::has_krylov_solver_preconditioner(std::string preconditioner)
 {
   std::vector<std::pair<std::string, std::string> > preconditioners =
     DefaultFactory::factory().krylov_solver_preconditioners();
-  for (unsigned int i = 0; i < preconditioners.size(); i++)
+  for (std::size_t i = 0; i < preconditioners.size(); i++)
     if (preconditioners[i].first == preconditioner)
       return true;
   return false;
@@ -267,7 +267,7 @@ void dolfin::list_linear_algebra_backends()
 
   // Pretty-print list of available linear algebra backends
   Table t("Linear algebra backends", false);
-  for (unsigned int i = 0; i < backends.size(); i++)
+  for (std::size_t i = 0; i < backends.size(); i++)
     t(backends[i].first, "Description") = backends[i].second;
 
   cout << t.str(true) << endl;

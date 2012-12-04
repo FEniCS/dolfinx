@@ -60,7 +60,7 @@ namespace dolfin
 
     /// Write Mesh of given cell dimension to file in a format suitable
     /// for re-reading
-    void write(const Mesh& mesh, const uint cell_dim, const std::string name);
+    void write(const Mesh& mesh, const std::size_t cell_dim, const std::string name);
 
     /// Write Mesh to file for visualisation (may contain duplicate
     /// entities and will not preserve global indices)
@@ -68,7 +68,7 @@ namespace dolfin
 
     /// Write Mesh of given cell dimension to file for visualisation (may
     /// contain duplicate entities and will not preserve global indices)
-    void write_visualisation(const Mesh& mesh, const uint cell_dim,
+    void write_visualisation(const Mesh& mesh, const std::size_t cell_dim,
                              const std::string name);
 
     /// Read vector from file
@@ -109,7 +109,7 @@ namespace dolfin
                                    const std::string& search_term);
 
     void reorder_vertices_by_global_indices(std::vector<double>& vertex_coords,
-              uint gdim, const std::vector<std::size_t>& global_indices);
+              std::size_t gdim, const std::vector<std::size_t>& global_indices);
 
     // HDF5 file descriptor/handle
     bool hdf5_file_open;

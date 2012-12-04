@@ -35,12 +35,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::uint TriangleCell::dim() const
+std::size_t TriangleCell::dim() const
 {
   return 2;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint TriangleCell::num_entities(uint dim) const
+std::size_t TriangleCell::num_entities(std::size_t dim) const
 {
   switch (dim)
   {
@@ -59,7 +59,7 @@ dolfin::uint TriangleCell::num_entities(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint TriangleCell::num_vertices(uint dim) const
+std::size_t TriangleCell::num_vertices(std::size_t dim) const
 {
   switch (dim)
   {
@@ -78,7 +78,7 @@ dolfin::uint TriangleCell::num_vertices(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint TriangleCell::orientation(const Cell& cell) const
+std::size_t TriangleCell::orientation(const Cell& cell) const
 {
   const Vertex v0(cell.mesh(), cell.entities(0)[0]);
   const Vertex v1(cell.mesh(), cell.entities(0)[1]);
@@ -92,7 +92,7 @@ dolfin::uint TriangleCell::orientation(const Cell& cell) const
 }
 //-----------------------------------------------------------------------------
 void TriangleCell::create_entities(std::vector<std::vector<std::size_t> >& e,
-                                   uint dim, const std::size_t* v) const
+                                   std::size_t dim, const std::size_t* v) const
 {
   // We only need to know how to create edges
   if (dim != 1)
@@ -223,12 +223,12 @@ double TriangleCell::diameter(const MeshEntity& triangle) const
   return 0.5*a*b*c/volume(triangle);
 }
 //-----------------------------------------------------------------------------
-double TriangleCell::normal(const Cell& cell, uint facet, uint i) const
+double TriangleCell::normal(const Cell& cell, std::size_t facet, std::size_t i) const
 {
   return normal(cell, facet)[i];
 }
 //-----------------------------------------------------------------------------
-Point TriangleCell::normal(const Cell& cell, uint facet) const
+Point TriangleCell::normal(const Cell& cell, std::size_t facet) const
 {
   // Make sure we have facets
   cell.mesh().init(2, 1);
@@ -269,7 +269,7 @@ Point TriangleCell::normal(const Cell& cell, uint facet) const
   return n;
 }
 //-----------------------------------------------------------------------------
-double TriangleCell::facet_area(const Cell& cell, uint facet) const
+double TriangleCell::facet_area(const Cell& cell, std::size_t facet) const
 {
   // Create facet from the mesh and local facet number
   const Facet f(cell.mesh(), cell.entities(1)[facet]);
@@ -313,7 +313,7 @@ void TriangleCell::order(Cell& cell,
     const std::size_t* cell_edges = cell.entities(1);
 
     // Sort vertices on each edge
-    for (uint i = 0; i < 3; i++)
+    for (std::size_t i = 0; i < 3; i++)
     {
       std::size_t* edge_vertices = const_cast<std::size_t*>(topology(1, 0)(cell_edges[i]));
       sort_entities(2, edge_vertices, local_to_global_vertex_indices);
@@ -337,10 +337,10 @@ void TriangleCell::order(Cell& cell,
     std::size_t* cell_edges = const_cast<std::size_t*>(cell.entities(1));
 
     // Loop over vertices on cell
-    for (uint i = 0; i < 3; i++)
+    for (std::size_t i = 0; i < 3; i++)
     {
       // Loop over edges on cell
-      for (uint j = i; j < 3; j++)
+      for (std::size_t j = i; j < 3; j++)
       {
         const std::size_t* edge_vertices = topology(1, 0)(cell_edges[j]);
 
@@ -365,7 +365,7 @@ std::string TriangleCell::description(bool plural) const
   return "triangle";
 }
 //-----------------------------------------------------------------------------
-std::size_t TriangleCell::find_edge(uint i, const Cell& cell) const
+std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const
 {
   // Get vertices and edges
   const std::size_t* v = cell.entities(0);
@@ -374,7 +374,7 @@ std::size_t TriangleCell::find_edge(uint i, const Cell& cell) const
   dolfin_assert(e);
 
   // Look for edge satisfying ordering convention
-  for (uint j = 0; j < 3; j++)
+  for (std::size_t j = 0; j < 3; j++)
   {
     const std::size_t* ev = cell.mesh().topology()(1, 0)(e[j]);
     dolfin_assert(ev);

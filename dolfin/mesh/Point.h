@@ -59,12 +59,12 @@ namespace dolfin
     /// Create point from array
     ///
     /// *Arguments*
-    ///     dim (uint)
+    ///     dim (std::size_t)
     ///         Dimension of the array.
     ///     x (double)
     ///         The array to create a Point from.
-    Point(uint dim, const double* x)
-    { for (uint i = 0; i < 3; i++) _x[i] = (i < dim ? x[i] : 0.0); }
+    Point(std::size_t dim, const double* x)
+    { for (std::size_t i = 0; i < 3; i++) _x[i] = (i < dim ? x[i] : 0.0); }
 
     /// Copy constructor
     ///
@@ -80,25 +80,25 @@ namespace dolfin
     /// Return address of coordinate in direction i
     ///
     /// *Arguments*
-    ///     i (uint)
+    ///     i (std::size_t)
     ///         Direction.
     ///
     /// *Returns*
     ///     double
     ///         Adress of coordinate in the given direction.
-    double& operator[] (uint i)
+    double& operator[] (std::size_t i)
     { dolfin_assert(i < 3); return _x[i]; }
 
     /// Return coordinate in direction i
     ///
     /// *Arguments*
-    ///     i (uint)
+    ///     i (std::size_t)
     ///         Direction.
     ///
     /// *Returns*
     ///     double
     ///         The coordinate in the given direction.
-    double operator[] (uint i) const
+    double operator[] (std::size_t i) const
     { dolfin_assert(i < 3); return _x[i]; }
 
     /// Return x-coordinate

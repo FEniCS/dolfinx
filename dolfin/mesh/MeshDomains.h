@@ -60,23 +60,23 @@ namespace dolfin
     static const std::size_t default_unset_value;
 
     /// Return maximum topological dimension of stored markers
-    uint max_dim() const;
+    std::size_t max_dim() const;
 
     /// Return number of marked entities of given dimension
-    std::size_t num_marked(uint dim) const;
+    std::size_t num_marked(std::size_t dim) const;
 
     /// Check whether domain data is empty
     bool is_empty() const;
 
     /// Get subdomain markers for given dimension (shared pointer version)
-    boost::shared_ptr<MeshValueCollection<std::size_t> > markers(uint dim);
+    boost::shared_ptr<MeshValueCollection<std::size_t> > markers(std::size_t dim);
 
     /// Get subdomain markers for given dimension (const shared pointer version)
     boost::shared_ptr<const MeshValueCollection<std::size_t> >
-      markers(uint dim) const;
+      markers(std::size_t dim) const;
 
     /// Return names of markers of a given dimension
-    std::vector<std::string> marker_names(uint dim) const;
+    std::vector<std::string> marker_names(std::size_t dim) const;
 
     /// Get cell domains. This function computes the mesh function
     /// corresponding to markers of dimension D. The mesh function is
@@ -101,7 +101,7 @@ namespace dolfin
           std::size_t unset_value=MeshDomains::default_unset_value);
 
     /// Initialize mesh domains for given topological dimension
-    void init(uint dim);
+    void init(std::size_t dim);
 
     /// Clear all data
     void clear();

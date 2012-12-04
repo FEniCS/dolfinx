@@ -65,11 +65,11 @@ namespace dolfin
     { matrix->init(tensor_layout); }
 
     /// Return size of given dimension
-    virtual std::size_t size(unsigned int dim) const
+    virtual std::size_t size(std::size_t dim) const
     { return matrix->size(dim); }
 
     /// Return local ownership range
-    virtual std::pair<std::size_t, std::size_t> local_range(unsigned int dim) const
+    virtual std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const
     { return matrix->local_range(dim); }
 
     /// Set all entries to zero and keep any sparse structure
@@ -96,7 +96,7 @@ namespace dolfin
     /// Resize vector y such that is it compatible with matrix for
     /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
     /// case, size and layout are important.
-    virtual void resize(GenericVector& y, unsigned int dim) const
+    virtual void resize(GenericVector& y, std::size_t dim) const
     { matrix->resize(y, dim); }
 
     /// Get block of values

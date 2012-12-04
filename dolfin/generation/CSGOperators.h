@@ -48,7 +48,7 @@ namespace dolfin
              boost::shared_ptr<CSGGeometry> g1);
 
     /// Return dimension of geometry
-    uint dim() const;
+    std::size_t dim() const;
 
     /// Informal string representation
     std::string str(bool verbose) const;
@@ -70,7 +70,7 @@ namespace dolfin
              boost::shared_ptr<CSGGeometry> g1);
 
     /// Return dimension of geometry
-    uint dim() const;
+    std::size_t dim() const;
 
     /// Informal string representation
     std::string str(bool verbose) const;
@@ -93,7 +93,7 @@ namespace dolfin
                     boost::shared_ptr<CSGGeometry> g1);
 
     /// Return dimension of geometry
-    uint dim() const;
+    std::size_t dim() const;
 
     /// Informal string representation
     std::string str(bool verbose) const;

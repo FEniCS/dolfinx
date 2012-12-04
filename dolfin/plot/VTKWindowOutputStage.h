@@ -150,7 +150,7 @@ namespace dolfin
 
     /// Used by plottables to indicate whether the scene should be
     /// treated as translucent (which requires depth sorting, etc.)
-    void set_translucent(bool onoff, uint topo_dim=3, uint geom_dim=3);
+    void set_translucent(bool onoff, std::size_t topo_dim=3, std::size_t geom_dim=3);
 
   protected:
 

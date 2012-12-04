@@ -94,21 +94,21 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   const Mesh& mesh = *u.function_space()->mesh();
 
   // Geometric dimension
-  const uint gdim = mesh.geometry().dim();
+  const std::size_t gdim = mesh.geometry().dim();
 
   // Get DOF map
   dolfin_assert(u.function_space()->dofmap());
   const GenericDofMap& dofmap = *u.function_space()->dofmap();
 
   // Get some Function and cell information
-  const uint value_rank = u.value_rank();
-  const uint value_size = u.value_size();
-  const uint cell_dim = mesh.topology().dim();
-  uint padded_value_size = value_size;
+  const std::size_t value_rank = u.value_rank();
+  const std::size_t value_size = u.value_size();
+  const std::size_t cell_dim = mesh.topology().dim();
+  std::size_t padded_value_size = value_size;
 
   // Test for cell-centred data
-  uint cell_based_dim = 1;
-  for (uint i = 0; i < value_rank; i++)
+  std::size_t cell_based_dim = 1;
+  for (std::size_t i = 0; i < value_rank; i++)
     cell_based_dim *= cell_dim;
   const bool vertex_data = !(dofmap.max_cell_dimension() == cell_based_dim);
 
@@ -151,7 +151,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     std::vector<double> _data_values(padded_value_size*num_local_entities, 0.0);
     for(std::size_t i = 0; i < num_local_entities; i++)
     {
-      for (uint j = 0; j < value_size; j++)
+      for (std::size_t j = 0; j < value_size; j++)
       {
         std::size_t tensor_2d_offset = (j > 1 && value_size == 4) ? 1 : 0;
         _data_values[i*padded_value_size + j + tensor_2d_offset]
@@ -321,10 +321,10 @@ void XDMFFile::operator<< (const Mesh& mesh)
   const std::size_t num_global_cells = MPI::sum(num_local_cells);
   const std::size_t num_local_vertices = mesh.num_vertices();
   const std::size_t num_total_vertices = MPI::sum(num_local_vertices);
-  const uint cell_dim = mesh.topology().dim();
+  const std::size_t cell_dim = mesh.topology().dim();
 
   // Get geometric dimension
-  const uint gdim = mesh.geometry().dim();
+  const std::size_t gdim = mesh.geometry().dim();
 
   // FIXME: Names should be returned by HDF5::write_mesh
   // Mesh data set names
@@ -364,11 +364,11 @@ void XDMFFile::operator<< (const Mesh& mesh)
 void XDMFFile::operator<< (const MeshFunction<bool>& meshfunction)
 {
   const Mesh& mesh = meshfunction.mesh();
-  const uint cell_dim = meshfunction.dim();
+  const std::size_t cell_dim = meshfunction.dim();
 
-  // HDF5 does not support a boolean type, so copy to a uint with values
+  // HDF5 does not support a boolean type, so copy to a std::size_t with values
   // 1 and 0
-  MeshFunction<uint> uint_meshfunction(mesh, cell_dim);
+  MeshFunction<std::size_t> uint_meshfunction(mesh, cell_dim);
   for (MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
     uint_meshfunction[cell->index()] = (meshfunction[cell->index()] ? 1 : 0);
 
@@ -402,8 +402,8 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   const Mesh& mesh = meshfunction.mesh();
 
   // Get some dimensions
-  const uint gdim = mesh.geometry().dim();
-  const uint cell_dim = meshfunction.dim();
+  const std::size_t gdim = mesh.geometry().dim();
+  const std::size_t cell_dim = meshfunction.dim();
 
   // Only allow cell-based MeshFunctions
   dolfin_assert(cell_dim <= mesh.topology().dim());
@@ -495,11 +495,11 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 }
 //----------------------------------------------------------------------------
 void XDMFFile::xml_mesh_topology(pugi::xml_node &xdmf_topology,
-                                 const uint cell_dim,
+                                 const std::size_t cell_dim,
                                  const std::size_t num_global_cells,
                                  const std::string topology_dataset_name) const
 {
-  xdmf_topology.append_attribute("NumberOfElements") = (uint) num_global_cells;
+  xdmf_topology.append_attribute("NumberOfElements") = (unsigned int) num_global_cells;
 
   // Cell type
   if (cell_dim == 1)
@@ -529,7 +529,7 @@ void XDMFFile::xml_mesh_topology(pugi::xml_node &xdmf_topology,
 //----------------------------------------------------------------------------
 void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
                                  const std::size_t num_total_vertices,
-                                 const uint gdim,
+                                 const std::size_t gdim,
                                  const std::string geometry_dataset_name) const
 {
   dolfin_assert(0 < gdim && gdim <= 3);

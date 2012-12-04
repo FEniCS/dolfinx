@@ -30,7 +30,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 // Sphere
 //-----------------------------------------------------------------------------
-Sphere::Sphere(Point c, double r, dolfin::uint slices)
+Sphere::Sphere(Point c, double r, std::size_t slices)
   : c(c), r(r), slices(slices)
 {
   if (r < DOLFIN_EPS)
@@ -98,14 +98,14 @@ std::string Box::str(bool verbose) const
 //-----------------------------------------------------------------------------
 // Cone
 //-----------------------------------------------------------------------------
-Cone::Cone(Point top, Point bottom, double top_radius, double bottom_radius, dolfin::uint slices)
+Cone::Cone(Point top, Point bottom, double top_radius, double bottom_radius, std::size_t slices)
   : top(top), bottom(bottom), top_radius(top_radius), bottom_radius(bottom_radius), slices(slices)
 {
   if (near(top_radius, 0.0) && near(bottom_radius, 0.0))
       dolfin_error("CSGPrimitives3D.cpp",
 		   "Create cone",
 		   "Cone with zero thickness");
-      
+
   if (top.distance(bottom) < DOLFIN_EPS)
     dolfin_error("CSGPrimitives3D.cpp",
 		 "Create cone",

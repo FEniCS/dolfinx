@@ -70,7 +70,7 @@ void SubDomain::mark_facets(Mesh& mesh, std::size_t sub_domain) const
   mark(mesh, mesh.topology().dim() - 1, sub_domain);
 }
 //-----------------------------------------------------------------------------
-void SubDomain::mark(Mesh& mesh, unsigned int dim, std::size_t sub_domain) const
+void SubDomain::mark(Mesh& mesh, std::size_t dim, std::size_t sub_domain) const
 {
   dolfin_assert(mesh.domains().markers(dim));
   mark(*(mesh.domains().markers(dim)), sub_domain, mesh);
@@ -123,7 +123,7 @@ void SubDomain::mark(MeshValueCollection<bool>& sub_domains,
   apply_markers(sub_domains, sub_domain, mesh);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint SubDomain::geometric_dimension() const
+std::size_t SubDomain::geometric_dimension() const
 {
   // Check that dim has been set
   if (_geometric_dimension == 0)
@@ -144,10 +144,10 @@ void SubDomain::apply_markers(S& sub_domains,
   log(TRACE, "Computing sub domain markers for sub domain %d.", sub_domain);
 
   // Get the dimension of the entities we are marking
-  const uint dim = sub_domains.dim();
+  const std::size_t dim = sub_domains.dim();
 
   // Compute facet - cell connectivity if necessary
-  const uint D = mesh.topology().dim();
+  const std::size_t D = mesh.topology().dim();
   if (dim == D - 1)
   {
     mesh.init(D - 1);

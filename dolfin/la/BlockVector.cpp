@@ -34,9 +34,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BlockVector::BlockVector(unsigned int n) : vectors(n)
+BlockVector::BlockVector(std::size_t n) : vectors(n)
 {
-  for (unsigned int i = 0; i < n; i++)
+  for (std::size_t i = 0; i < n; i++)
     vectors[i].reset(new Vector());
 }
 //-----------------------------------------------------------------------------
@@ -48,24 +48,24 @@ BlockVector::~BlockVector()
 BlockVector* BlockVector::copy() const
 {
   BlockVector* x = new BlockVector(vectors.size());
-  for (unsigned int i = 0; i < vectors.size(); i++)
+  for (std::size_t i = 0; i < vectors.size(); i++)
     x->set_block(i, boost::shared_ptr<GenericVector>(vectors[i]->copy()));
   return x;
 }
 //-----------------------------------------------------------------------------
-void BlockVector::set_block(unsigned int i, boost::shared_ptr<GenericVector> v)
+void BlockVector::set_block(std::size_t i, boost::shared_ptr<GenericVector> v)
 {
   dolfin_assert(i < vectors.size());
   vectors[i] = v;
 }
 //-----------------------------------------------------------------------------
-const boost::shared_ptr<GenericVector> BlockVector::get_block(unsigned int i) const
+const boost::shared_ptr<GenericVector> BlockVector::get_block(std::size_t i) const
 {
   dolfin_assert(i < vectors.size());
   return vectors[i];
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericVector> BlockVector::get_block(unsigned int i)
+boost::shared_ptr<GenericVector> BlockVector::get_block(std::size_t i)
 {
   dolfin_assert(i < vectors.size());
   return vectors[i];
@@ -76,21 +76,21 @@ bool BlockVector::empty() const
   return vectors.empty();
 }
 //-----------------------------------------------------------------------------
-unsigned int BlockVector::size() const
+std::size_t BlockVector::size() const
 {
   return vectors.size();
 }
 //-----------------------------------------------------------------------------
 void BlockVector::axpy(double a, const BlockVector& x)
 {
-  for (unsigned int i = 0; i < vectors.size(); i++)
+  for (std::size_t i = 0; i < vectors.size(); i++)
     vectors[i]->axpy(a, *x.get_block(i));
 }
 //-----------------------------------------------------------------------------
 double BlockVector::inner(const BlockVector& x) const
 {
   double value = 0.0;
-  for (unsigned int i = 0; i < vectors.size(); i++)
+  for (std::size_t i = 0; i < vectors.size(); i++)
     value += vectors[i]->inner(*x.get_block(i));
   return value;
 }
@@ -100,19 +100,19 @@ double BlockVector::norm(std::string norm_type) const
   double value = 0.0;
   if(norm_type == "l1")
   {
-    for (unsigned int i = 0; i < vectors.size(); i++)
+    for (std::size_t i = 0; i < vectors.size(); i++)
       value += vectors[i]->norm(norm_type);
   }
   else if (norm_type == "l2")
   {
-    for (unsigned int i = 0; i < vectors.size(); i++)
+    for (std::size_t i = 0; i < vectors.size(); i++)
       value += std::pow(vectors[i]->norm(norm_type), 2);
     value = sqrt(value);
   }
   else if (norm_type == "linf")
   {
     std::vector<double> linf(vectors.size());
-    for (unsigned int i = 0; i < vectors.size(); i++)
+    for (std::size_t i = 0; i < vectors.size(); i++)
       linf[i] = vectors[i]->norm(norm_type);
      value = *(std::max_element(linf.begin(), linf.end()));
   }
@@ -122,7 +122,7 @@ double BlockVector::norm(std::string norm_type) const
 double BlockVector::min() const
 {
   std::vector<double> _min(vectors.size());
-  for (unsigned int i = 0; i < vectors.size(); i++)
+  for (std::size_t i = 0; i < vectors.size(); i++)
     _min[i] = vectors[i]->min();
 
   return *(std::min_element(_min.begin(), _min.end()));
@@ -131,7 +131,7 @@ double BlockVector::min() const
 double BlockVector::max() const
 {
   std::vector<double> _max(vectors.size());
-  for (unsigned int i = 0; i < vectors.size(); i++)
+  for (std::size_t i = 0; i < vectors.size(); i++)
     _max[i] = vectors[i]->min();
 
   return *(std::max_element(_max.begin(), _max.end()));
@@ -139,14 +139,14 @@ double BlockVector::max() const
 //-----------------------------------------------------------------------------
 const BlockVector& BlockVector::operator*= (double a)
 {
-  for(unsigned int i = 0; i < vectors.size(); i++)
+  for(std::size_t i = 0; i < vectors.size(); i++)
     *vectors[i] *= a;
   return *this;
 }
 //-----------------------------------------------------------------------------
 const BlockVector& BlockVector::operator/= (double a)
 {
-  for(unsigned int i = 0; i < vectors.size(); i++)
+  for(std::size_t i = 0; i < vectors.size(); i++)
     *vectors[i] /= a;
   return *this;
 }
@@ -165,14 +165,14 @@ const BlockVector& BlockVector::operator-= (const BlockVector& y)
 //-----------------------------------------------------------------------------
 const BlockVector& BlockVector::operator= (const BlockVector& x)
 {
-  for(unsigned int i = 0; i < vectors.size(); i++)
+  for(std::size_t i = 0; i < vectors.size(); i++)
     *vectors[i] = *x.get_block(i);
   return *this;
 }
 //-----------------------------------------------------------------------------
 const BlockVector& BlockVector::operator= (double a)
 {
-  for(unsigned int i = 0; i < vectors.size(); i++)
+  for(std::size_t i = 0; i < vectors.size(); i++)
     *vectors[i] = a;
   return *this;
 }
@@ -185,7 +185,7 @@ std::string BlockVector::str(bool verbose) const
   {
     s << str(false) << std::endl << std::endl;
 
-    for (unsigned int i = 0; i < vectors.size(); i++)
+    for (std::size_t i = 0; i < vectors.size(); i++)
     {
       s << "  BlockVector " << i << std::endl << std::endl;
       s << indent(indent(vectors[i]->str(true))) << std::endl;

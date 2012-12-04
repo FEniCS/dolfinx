@@ -152,7 +152,7 @@ void XMLFunctionData::write(const Function& u, pugi::xml_node xml_node)
   {
     // Add vector node
     pugi::xml_node function_node = xml_node.append_child("function_data");
-    function_node.append_attribute("size") = (uint) x.size();
+    function_node.append_attribute("size") = (unsigned int) x.size();
 
     // Add data
     for (std::size_t i = 0; i < x.size(); ++i)
@@ -160,10 +160,10 @@ void XMLFunctionData::write(const Function& u, pugi::xml_node xml_node)
       dolfin_assert(i < global_dof_to_cell_dof.size());
 
       pugi::xml_node dof_node = function_node.append_child("dof");
-      dof_node.append_attribute("index") = (uint) i;
+      dof_node.append_attribute("index") = (unsigned int) i;
       dof_node.append_attribute("value") = boost::lexical_cast<std::string>(x[i]).c_str();
-      dof_node.append_attribute("cell_index") = (uint) global_dof_to_cell_dof[i][0].first;
-      dof_node.append_attribute("cell_dof_index") = (uint) global_dof_to_cell_dof[i][0].second;
+      dof_node.append_attribute("cell_index") = (unsigned int) global_dof_to_cell_dof[i][0].first;
+      dof_node.append_attribute("cell_dof_index") = (unsigned int) global_dof_to_cell_dof[i][0].second;
     }
   }
 }
@@ -184,7 +184,7 @@ void XMLFunctionData::build_global_to_cell_dof(
   if (MPI::num_processes() > 1)
   {
     // Check that local-to-global cell numbering is available
-    const uint D = mesh.topology().dim();
+    const std::size_t D = mesh.topology().dim();
     dolfin_assert(mesh.topology().have_global_indices(D));
 
     // Build dof map data with global cell indices
@@ -247,7 +247,7 @@ void XMLFunctionData::build_dof_map(std::vector<std::vector<DolfinIndex> >& dof_
   if (MPI::num_processes() > 1)
   {
     // Check that local-to-global cell numbering is available
-    const uint D = mesh.topology().dim();
+    const std::size_t D = mesh.topology().dim();
     dolfin_assert(mesh.topology().have_global_indices(D));
 
     // Build dof map data with global cell indices
