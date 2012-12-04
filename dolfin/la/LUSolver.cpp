@@ -58,7 +58,7 @@ void LUSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator>
   solver->set_operator(A);
 }
 //-----------------------------------------------------------------------------
-unsigned int LUSolver::solve(GenericVector& x, const GenericVector& b)
+std::size_t LUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   dolfin_assert(solver);
 
@@ -67,7 +67,7 @@ unsigned int LUSolver::solve(GenericVector& x, const GenericVector& b)
   return solver->solve(x, b);
 }
 //-----------------------------------------------------------------------------
-unsigned int LUSolver::solve(const GenericLinearOperator& A, GenericVector& x,
+std::size_t LUSolver::solve(const GenericLinearOperator& A, GenericVector& x,
                              const GenericVector& b)
 {
   dolfin_assert(solver);

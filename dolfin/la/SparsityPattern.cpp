@@ -32,7 +32,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SparsityPattern::SparsityPattern(unsigned int primary_dim)
+SparsityPattern::SparsityPattern(std::size_t primary_dim)
     : GenericSparsityPattern(primary_dim), distributed(false)
 {
   // Do nothing
@@ -40,8 +40,8 @@ SparsityPattern::SparsityPattern(unsigned int primary_dim)
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(const std::vector<std::size_t>& dims,
   const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
-  const std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner,
-    unsigned int primary_dim)
+  const std::vector<const boost::unordered_map<std::size_t, std::size_t>* > off_process_owner,
+    std::size_t primary_dim)
   : GenericSparsityPattern(primary_dim), distributed(false)
 {
   init(dims, local_range, off_process_owner);
@@ -49,12 +49,12 @@ SparsityPattern::SparsityPattern(const std::vector<std::size_t>& dims,
 //-----------------------------------------------------------------------------
 void SparsityPattern::init(const std::vector<std::size_t>& dims,
   const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
-  const std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner)
+  const std::vector<const boost::unordered_map<std::size_t, std::size_t>* > off_process_owner)
 {
   // Only rank 2 sparsity patterns are supported
   dolfin_assert(dims.size() == 2);
 
-  const unsigned int _primary_dim = primary_dim();
+  const std::size_t _primary_dim = primary_dim();
 
   // Check that dimensions match
   dolfin_assert(dims.size() == local_range.size());
@@ -104,11 +104,11 @@ void SparsityPattern::insert(const std::vector<const std::vector<DolfinIndex>* >
   dolfin_assert(entries[0]);
   dolfin_assert(entries[1]);
 
-  const unsigned int _primary_dim = primary_dim();
+  const std::size_t _primary_dim = primary_dim();
 
   const std::vector<DolfinIndex>* map_i;
   const std::vector<DolfinIndex>* map_j;
-  unsigned int primary_codim;
+  std::size_t primary_codim;
   dolfin_assert(_primary_dim < 2);
   if (_primary_dim == 0)
   {
@@ -177,10 +177,10 @@ void SparsityPattern::insert(const std::vector<const std::vector<DolfinIndex>* >
   }
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::add_edges(const std::pair<DolfinIndex, unsigned int>& vertex,
+void SparsityPattern::add_edges(const std::pair<DolfinIndex, std::size_t>& vertex,
                                 const std::vector<DolfinIndex>& edges)
 {
-  const unsigned int _primary_dim = primary_dim();
+  const std::size_t _primary_dim = primary_dim();
   const DolfinIndex vertex_index = vertex.first;
 
 
@@ -199,12 +199,12 @@ void SparsityPattern::add_edges(const std::pair<DolfinIndex, unsigned int>& vert
   insert(entries);
 }
 //-----------------------------------------------------------------------------
-unsigned int SparsityPattern::rank() const
+std::size_t SparsityPattern::rank() const
 {
   return 2;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t> SparsityPattern::local_range(unsigned int dim) const
+std::pair<std::size_t, std::size_t> SparsityPattern::local_range(std::size_t dim) const
 {
   dolfin_assert(dim < 2);
   return _local_range[dim];
@@ -281,17 +281,17 @@ void SparsityPattern::get_edges(std::size_t vertex, std::vector<DolfinIndex>& ed
 //-----------------------------------------------------------------------------
 void SparsityPattern::apply()
 {
-  const unsigned int _primary_dim = primary_dim();
+  const std::size_t _primary_dim = primary_dim();
 
-  unsigned int primary_codim;
+  std::size_t primary_codim;
   dolfin_assert(_primary_dim < 2);
   if (_primary_dim == 0)
     primary_codim = 1;
   else
     primary_codim = 0;
 
-  const unsigned int num_processes = MPI::num_processes();
-  const unsigned int proc_number = MPI::process_number();
+  const std::size_t num_processes = MPI::num_processes();
+  const std::size_t proc_number = MPI::process_number();
 
   // Print some useful information
   if (get_log_level() <= DBG)
@@ -302,17 +302,17 @@ void SparsityPattern::apply()
   {
     // Figure out correct process for each non-local entry
     dolfin_assert(non_local.size() % 2 == 0);
-    std::vector<unsigned int> destinations(non_local.size());
+    std::vector<std::size_t> destinations(non_local.size());
     for (std::size_t i = 0; i < non_local.size(); i += 2)
     {
       // Get generalised row for non-local entry
       const std::size_t I = non_local[i];
 
       // Figure out which process owns the row
-      boost::unordered_map<std::size_t, unsigned int>::const_iterator non_local_index
+      boost::unordered_map<std::size_t, std::size_t>::const_iterator non_local_index
           = off_process_owner[_primary_dim].find(I);
       dolfin_assert(non_local_index != off_process_owner[_primary_dim].end());
-      const unsigned int p = non_local_index->second;
+      const std::size_t p = non_local_index->second;
 
       dolfin_assert(p < num_processes);
       dolfin_assert(p != proc_number);

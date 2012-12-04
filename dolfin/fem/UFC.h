@@ -65,11 +65,11 @@ namespace dolfin
     void update(const Cell& cell);
 
     /// Update current cell and facet
-    void update(const Cell& cell, uint local_facet);
+    void update(const Cell& cell, std::size_t local_facet);
 
     /// Update current pair of cells for macro element
-    void update(const Cell& cell0, uint local_facet0,
-                const Cell& cell1, uint local_facet1);
+    void update(const Cell& cell0, std::size_t local_facet0,
+                const Cell& cell1, std::size_t local_facet1);
 
     /// Pointer to coefficient data. Used to support UFC interface.
     const double* const * w() const

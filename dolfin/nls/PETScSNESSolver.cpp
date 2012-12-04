@@ -193,7 +193,7 @@ void PETScSNESSolver::init(const std::string& method)
     SNESSetType(*_snes, _methods.find(method)->second);
 }
 //-----------------------------------------------------------------------------
-std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
+std::pair<std::size_t, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
                                                   GenericVector& x)
 {
   PETScVector f;

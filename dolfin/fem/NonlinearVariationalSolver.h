@@ -48,10 +48,10 @@ namespace dolfin
     /// Solve variational problem
     ///
     /// *Returns*
-    ///     std::pair<uint, bool>
+    ///     std::pair<std::size_t, bool>
     ///         Pair of number of Newton iterations, and whether
     ///         iteration converged)
-    std::pair<uint, bool> solve();
+    std::pair<std::size_t, bool> solve();
 
     /// Default parameter values
     static Parameters default_parameters()

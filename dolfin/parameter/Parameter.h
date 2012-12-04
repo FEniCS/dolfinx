@@ -56,10 +56,10 @@ namespace dolfin
     void reset();
 
     /// Return access count (number of times parameter has been accessed)
-    uint access_count() const;
+    std::size_t access_count() const;
 
     /// Return change count (number of times parameter has been changed)
-    uint change_count() const;
+    std::size_t change_count() const;
 
     /// Set range for int-valued parameter
     virtual void set_range(int min_value, int max_value);
@@ -97,8 +97,8 @@ namespace dolfin
     /// Cast parameter to int
     virtual operator int() const;
 
-    /// Cast parameter to uint
-    virtual operator dolfin::uint() const;
+    /// Cast parameter to std::size_t
+    virtual operator std::size_t() const;
 
     /// Cast parameter to double
     virtual operator double() const;
@@ -127,10 +127,10 @@ namespace dolfin
   protected:
 
     // Access count
-    mutable uint _access_count;
+    mutable std::size_t _access_count;
 
     // Change count
-    uint _change_count;
+    std::size_t _change_count;
 
     // Whether or not parameter has been set
     bool _is_set;
@@ -171,8 +171,8 @@ namespace dolfin
     /// Cast parameter to int
     operator int() const;
 
-    /// Cast parameter to uint
-    operator dolfin::uint() const;
+    /// Cast parameter to std::size_t
+    operator std::size_t() const;
 
     /// Return value type string
     std::string type_str() const;

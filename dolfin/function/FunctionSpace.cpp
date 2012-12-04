@@ -143,7 +143,7 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
   }
 
   // Check that function dims match
-  for (uint i = 0; i < _element->value_rank(); ++i)
+  for (std::size_t i = 0; i < _element->value_rank(); ++i)
   {
     if (_element->value_dimension(i) != v.value_dimension(i))
     {
@@ -190,22 +190,22 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
   expansion_coefficients.apply("insert");
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<FunctionSpace> FunctionSpace::operator[] (uint i) const
+boost::shared_ptr<FunctionSpace> FunctionSpace::operator[] (std::size_t i) const
 {
-  std::vector<uint> component;
+  std::vector<std::size_t> component;
   component.push_back(i);
   return extract_sub_space(component);
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<FunctionSpace>
-FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
+FunctionSpace::extract_sub_space(const std::vector<std::size_t>& component) const
 {
   dolfin_assert(_mesh);
   dolfin_assert(_element);
   dolfin_assert(_dofmap);
 
   // Check if sub space is already in the cache
-  std::map<std::vector<uint>, boost::shared_ptr<FunctionSpace> >::const_iterator subspace;
+  std::map<std::vector<std::size_t>, boost::shared_ptr<FunctionSpace> >::const_iterator subspace;
   subspace = subspaces.find(component);
   if (subspace != subspaces.end())
     return subspace->second;
@@ -222,11 +222,11 @@ FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
 
     // Set component
     new_sub_space->_component.resize(component.size());
-    for (uint i = 0; i < component.size(); i++)
+    for (std::size_t i = 0; i < component.size(); i++)
       new_sub_space->_component[i] = component[i];
 
     // Insert new sub space into cache
-    subspaces.insert(std::pair<std::vector<uint>, boost::shared_ptr<FunctionSpace> >(component, new_sub_space));
+    subspaces.insert(std::pair<std::vector<std::size_t>, boost::shared_ptr<FunctionSpace> >(component, new_sub_space));
 
     return new_sub_space;
   }
@@ -258,7 +258,7 @@ FunctionSpace::collapse(boost::unordered_map<std::size_t, std::size_t>& collapse
   return collapsed_sub_space;
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::uint> FunctionSpace::component() const
+std::vector<std::size_t> FunctionSpace::component() const
 {
   return _component;
 }

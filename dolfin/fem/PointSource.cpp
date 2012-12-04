@@ -89,7 +89,7 @@ void PointSource::apply(GenericVector& b)
   }
 
   // Create cell
-  Cell cell(mesh, static_cast<uint>(cell_index));
+  Cell cell(mesh, static_cast<std::size_t>(cell_index));
   UFCCell ufc_cell(cell);
 
   // Evaluate all basis functions at the point()
@@ -99,7 +99,7 @@ void PointSource::apply(GenericVector& b)
   V->element()->evaluate_basis_all(&values[0], p.coordinates(), ufc_cell);
 
   // Scale by magnitude
-  for (uint i = 0; i < V->element()->space_dimension(); i++)
+  for (std::size_t i = 0; i < V->element()->space_dimension(); i++)
     values[i] *= magnitude;
 
   // Compute local-to-global mapping

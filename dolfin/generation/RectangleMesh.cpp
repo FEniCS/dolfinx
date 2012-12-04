@@ -34,7 +34,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 RectangleMesh::RectangleMesh(double x0, double y0, double x1, double y1,
-                     uint nx, uint ny, std::string diagonal) : Mesh()
+                     std::size_t nx, std::size_t ny, std::string diagonal) : Mesh()
 {
   // Receive mesh according to parallel policy
   if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }

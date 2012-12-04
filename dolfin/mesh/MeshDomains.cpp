@@ -42,7 +42,7 @@ MeshDomains::~MeshDomains()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint MeshDomains::max_dim() const
+std::size_t MeshDomains::max_dim() const
 {
   if (!_markers.empty())
     return _markers.size() - 1;
@@ -50,7 +50,7 @@ dolfin::uint MeshDomains::max_dim() const
     return 0;
 }
 //-----------------------------------------------------------------------------
-std::size_t MeshDomains::num_marked(uint dim) const
+std::size_t MeshDomains::num_marked(std::size_t dim) const
 {
   dolfin_assert(dim < _markers.size());
   dolfin_assert(_markers[dim]);
@@ -69,20 +69,20 @@ bool MeshDomains::is_empty() const
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<MeshValueCollection<std::size_t> >
-  MeshDomains::markers(uint dim)
+  MeshDomains::markers(std::size_t dim)
 {
   dolfin_assert(dim < _markers.size());
   return _markers[dim];
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const MeshValueCollection<std::size_t> >
-  MeshDomains::markers(uint dim) const
+  MeshDomains::markers(std::size_t dim) const
 {
   dolfin_assert(dim < _markers.size());
   return _markers[dim];
 }
 //-----------------------------------------------------------------------------
-std::vector<std::string> MeshDomains::marker_names(uint dim) const
+std::vector<std::string> MeshDomains::marker_names(std::size_t dim) const
 {
   dolfin_assert(dim < _named_markers.size());
   std::vector<std::string> names;
@@ -96,7 +96,7 @@ boost::shared_ptr<const MeshFunction<std::size_t> >
   MeshDomains::cell_domains(const Mesh& mesh, std::size_t unset_value) const
 {
   // Check if any markers have been set
-  const uint D = mesh.topology().dim();
+  const std::size_t D = mesh.topology().dim();
   dolfin_assert(D < _markers.size());
 
   // Create markers if mesh collection present
@@ -113,7 +113,7 @@ boost::shared_ptr<const MeshFunction<std::size_t> >
   MeshDomains::facet_domains(const Mesh& mesh, std::size_t unset_value) const
 {
   // Check if any markers have been set
-  const uint D = mesh.topology().dim();
+  const std::size_t D = mesh.topology().dim();
   dolfin_assert((D - 1) < _markers.size());
 
   // Create markers if mesh collection present
@@ -132,8 +132,8 @@ MeshDomains::mesh_function(const Mesh& mesh,
                            std::size_t unset_value)
 {
   // Get dimensions
-  const uint d = collection.dim();
-  const uint D = mesh.topology().dim();
+  const std::size_t d = collection.dim();
+  const std::size_t D = mesh.topology().dim();
 
   // Create MeshFunction
   boost::shared_ptr<MeshFunction<std::size_t> >
@@ -145,18 +145,18 @@ MeshDomains::mesh_function(const Mesh& mesh,
   dolfin_assert(D == d || !connectivity.empty());
 
   // Iterate over all values
-  const std::map<std::pair<std::size_t, uint>, std::size_t>& values = collection.values();
-  std::map<std::pair<std::size_t, uint>, std::size_t>::const_iterator it;
+  const std::map<std::pair<std::size_t, std::size_t>, std::size_t>& values = collection.values();
+  std::map<std::pair<std::size_t, std::size_t>, std::size_t>::const_iterator it;
   for (it = values.begin(); it != values.end(); ++it)
   {
     // Get marker data
     const std::size_t cell_index = it->first.first;
-    const uint local_entity = it->first.second;
+    const std::size_t local_entity = it->first.second;
     const std::size_t value = it->second;
 
     // Get global entity index. Note that we ignore the local entity
     // index when the function is defined over cells.
-    uint entity_index = 0;
+    std::size_t entity_index = 0;
     if (d == D)
       entity_index = cell_index;
     else
@@ -173,13 +173,13 @@ MeshDomains::mesh_function(const Mesh& mesh,
   return mesh_function;
 }
 //-----------------------------------------------------------------------------
-void MeshDomains::init(uint dim)
+void MeshDomains::init(std::size_t dim)
 {
   // Clear old data
   clear();
 
   // Add markers for each topological dimension
-  for (uint d = 0; d <= dim; d++)
+  for (std::size_t d = 0; d <= dim; d++)
   {
     boost::shared_ptr<MeshValueCollection<std::size_t> >
         m(new MeshValueCollection<std::size_t>(d));

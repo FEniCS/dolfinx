@@ -66,7 +66,6 @@ PyObject* _array()
 ALL_VALUES(dolfin::MeshFunction<double>, double)
 ALL_VALUES(dolfin::MeshFunction<int>, int)
 ALL_VALUES(dolfin::MeshFunction<bool>, bool)
-ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, uint)
 ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
 ALL_VALUES(dolfin::MeshFunction<std::size_t>, sizet)
 
@@ -79,7 +78,7 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, sizet)
 %ignore dolfin::MeshFunction::values;
 
 //-----------------------------------------------------------------------------
-// Rename methods which get called by a re-implemented method from the 
+// Rename methods which get called by a re-implemented method from the
 // Python layer
 //-----------------------------------------------------------------------------
 %rename (_mark) dolfin::SubDomain::mark;
@@ -87,7 +86,7 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, sizet)
 //-----------------------------------------------------------------------------
 // Misc ignores
 //-----------------------------------------------------------------------------
-%ignore dolfin::MeshEditor::open(Mesh&, CellType::Type, uint, uint);
+%ignore dolfin::MeshEditor::open(Mesh&, CellType::Type, std::size_t, std::size_t);
 %ignore dolfin::Point::operator=;
 %ignore dolfin::Point::operator[];
 %ignore dolfin::Mesh::operator=;
@@ -189,7 +188,7 @@ MESHENTITYITERATORBASE(Vertex, vertices)
 //-----------------------------------------------------------------------------
 // Return NumPy arrays for MeshConnectivity() and MeshEntity.entities()
 //-----------------------------------------------------------------------------
-%ignore dolfin::MeshGeometry::x(std::size_t n, uint i) const;
+%ignore dolfin::MeshGeometry::x(std::size_t n, std::size_t i) const;
 %ignore dolfin::MeshConnectivity::operator();
 %ignore dolfin::MeshEntity::entities;
 

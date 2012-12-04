@@ -36,20 +36,19 @@ public:
   void test_read()
   {
     // Create mesh and read file
-    UnitCube mesh(5, 5, 5);
-    MeshValueCollection<dolfin::uint> markers(mesh, "xml_value_collection_ref.xml", 2);
+    UnitCubeMesh mesh(5, 5, 5);
+    MeshValueCollection<std::size_t> markers(mesh, "xml_value_collection_ref.xml", 2);
 
     // Check size
     CPPUNIT_ASSERT(dolfin::MPI::sum(markers.size()) == 6);
 
     // Check sum of values
-    const std::map<std::pair<std::size_t, dolfin::uint>, dolfin::uint>& values = markers.values();
-    std::map<std::pair<std::size_t, dolfin::uint>, dolfin::uint>::const_iterator it;
+    const std::map<std::pair<std::size_t, std::size_t>, std::size_t>& values = markers.values();
+    std::map<std::pair<std::size_t, std::size_t>, std::size_t>::const_iterator it;
     std::size_t sum = 0;
     for (it = values.begin(); it != values.end(); ++it)
       sum += it->second;
     CPPUNIT_ASSERT(dolfin::MPI::sum(sum) == 48);
-
   }
 
 };

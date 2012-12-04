@@ -158,7 +158,7 @@ void BinaryFile::operator<< (const Mesh& mesh)
 
   // Write mesh topology
   const MeshTopology& t = mesh._topology;
-  const uint D = t.dim();
+  const std::size_t D = t.dim();
   write_uint(D);
   if (_store_connectivity)
     write_array(D + 1, t.num_entities.data());
@@ -172,9 +172,9 @@ void BinaryFile::operator<< (const Mesh& mesh)
         write_uint(0);
     }
   }
-  for (uint i = 0; i <= D; i++)
+  for (std::size_t i = 0; i <= D; i++)
   {
-    for (uint j = 0; j <= D; j++)
+    for (std::size_t j = 0; j <= D; j++)
     {
       const MeshConnectivity& c = t.connectivity[i][j];
 

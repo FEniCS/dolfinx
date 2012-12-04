@@ -29,7 +29,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitSquareMesh::UnitSquareMesh(uint nx, uint ny, std::string diagonal) : Mesh()
+UnitSquareMesh::UnitSquareMesh(std::size_t nx, std::size_t ny, std::string diagonal) : Mesh()
 {
   // Receive mesh according to parallel policy
   if (MPI::is_receiver())

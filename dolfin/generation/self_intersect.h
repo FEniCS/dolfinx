@@ -72,7 +72,7 @@ public:
 
     if(v != Halfedge_const_handle())
     {
-      // found shared vertex: 
+      // found shared vertex:
       CGAL_assertion(h->vertex() == v->vertex());
       // geometric check if the opposite segments intersect the triangles
       Triangle t1( h->vertex()->point(),

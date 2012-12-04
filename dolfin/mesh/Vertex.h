@@ -47,7 +47,7 @@ namespace dolfin
     ~Vertex() {}
 
     /// Return value of vertex coordinate i
-    double x(uint i) const
+    double x(std::size_t i) const
     { return _mesh->geometry().x(_local_index, i); }
 
     /// Return vertex coordinates as a 3D point value

@@ -55,7 +55,7 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-VTKPlottableMesh::VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh, uint entity_dim) :
+VTKPlottableMesh::VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh, std::size_t entity_dim) :
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _full_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _geometryFilter(vtkSmartPointer<vtkGeometryFilter>::New()),
@@ -174,7 +174,7 @@ void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var, const Param
   }
 }
 //----------------------------------------------------------------------------
-void VTKPlottableMesh::build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &grid, uint topological_dim)
+void VTKPlottableMesh::build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &grid, std::size_t topological_dim)
 {
   // Add mesh cells to VTK cell array. Note: Preallocation of storage
   // in cell array did not give speedups when testing during development
@@ -189,7 +189,7 @@ void VTKPlottableMesh::build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &gr
     // n+1 indices are inserted. The connectivity array must be indexed at
     // ((n+1) x cell_number + idx_offset)
     cells->InsertNextCell(topological_dim + 1);
-    for(uint j = 0; j <= topological_dim; ++j)
+    for(std::size_t j = 0; j <= topological_dim; ++j)
     {
       cells->InsertCellPoint(connectivity[(topological_dim + 1)*i + j]);
     }
@@ -224,7 +224,7 @@ void VTKPlottableMesh::update_range(double range[2])
   _grid->GetScalarRange(range);
 }
 //----------------------------------------------------------------------------
-dolfin::uint VTKPlottableMesh::dim() const
+std::size_t VTKPlottableMesh::dim() const
 {
   return _mesh->geometry().dim();
 }
@@ -381,8 +381,8 @@ void VTKPlottableMesh::filter_scalars(vtkFloatArray *values, const Parameters &p
     if (param_hide_below.is_set()) hide_below = (double)param_hide_below;
     if (param_hide_above.is_set()) hide_above = (double)param_hide_above;
 
-    const uint num_tuples = static_cast<uint>(values->GetNumberOfTuples());
-    for (uint i = 0; i < num_tuples; i++)
+    const std::size_t num_tuples = static_cast<std::size_t>(values->GetNumberOfTuples());
+    for (std::size_t i = 0; i < num_tuples; i++)
     {
       float val = values->GetValue(i);
 
@@ -395,10 +395,10 @@ void VTKPlottableMesh::filter_scalars(vtkFloatArray *values, const Parameters &p
 }
 //---------------------------------------------------------------------------
 template <class T>
-void VTKPlottableMesh::setPointValues(uint size, const T* indata, const Parameters &parameters)
+void VTKPlottableMesh::setPointValues(std::size_t size, const T* indata, const Parameters &parameters)
 {
-  const uint num_vertices = _mesh->num_vertices();
-  const uint num_components = size / num_vertices;
+  const std::size_t num_vertices = _mesh->num_vertices();
+  const std::size_t num_components = size / num_vertices;
 
   dolfin_assert(num_components > 0 && num_components <= 3);
   dolfin_assert(num_vertices*num_components == size);
@@ -408,7 +408,7 @@ void VTKPlottableMesh::setPointValues(uint size, const T* indata, const Paramete
   if (num_components == 1)
   {
     values->SetNumberOfValues(num_vertices);
-    for (uint i = 0; i < num_vertices; ++i)
+    for (std::size_t i = 0; i < num_vertices; ++i)
     {
       values->SetValue(i, (double)indata[i]);
     }
@@ -424,16 +424,16 @@ void VTKPlottableMesh::setPointValues(uint size, const T* indata, const Paramete
     // regardless of the function vector value dimension
     values->SetNumberOfComponents(3);
     values->SetNumberOfTuples(num_vertices);
-    for (uint i = 0; i < num_vertices; ++i)
+    for (std::size_t i = 0; i < num_vertices; ++i)
     {
       // The entries in "vertex_values" must be copied to "vectors". Viewing
       // these arrays as matrices, the transpose of vertex values should be copied,
       // since DOLFIN and VTK store vector function values differently
-      for (uint d = 0; d < num_components; d++)
+      for (std::size_t d = 0; d < num_components; d++)
       {
         values->SetValue(3*i+d, indata[i+num_vertices*d]);
       }
-      for (uint d = num_components; d < 3; d++)
+      for (std::size_t d = num_components; d < 3; d++)
       {
         values->SetValue(3*i+d, 0.0);
       }
@@ -454,16 +454,16 @@ void VTKPlottableMesh::setPointValues(uint size, const T* indata, const Paramete
 }
 //----------------------------------------------------------------------------
 template <class T>
-void VTKPlottableMesh::setCellValues(uint size, const T* indata, const Parameters &parameters)
+void VTKPlottableMesh::setCellValues(std::size_t size, const T* indata, const Parameters &parameters)
 {
-  const uint num_entities = _mesh->num_entities(_entity_dim);
+  const std::size_t num_entities = _mesh->num_entities(_entity_dim);
   dolfin_assert(num_entities == size);
 
   vtkSmartPointer<vtkFloatArray> values =
     vtkSmartPointer<vtkFloatArray>::New();
   values->SetNumberOfValues(num_entities);
 
-  for (uint i = 0; i < num_entities; ++i)
+  for (std::size_t i = 0; i < num_entities; ++i)
   {
     values->SetValue(i, (float)indata[i]);
   }
@@ -478,15 +478,15 @@ void VTKPlottableMesh::setCellValues(uint size, const T* indata, const Parameter
 //----------------------------------------------------------------------------
 
 #define INSTANTIATE(T)                                                  \
-  template void dolfin::VTKPlottableMesh::setPointValues(dolfin::uint, const T*, const Parameters&); \
-  template void dolfin::VTKPlottableMesh::setCellValues(dolfin::uint, const T*, const Parameters&);
+  template void dolfin::VTKPlottableMesh::setPointValues(std::size_t, const T*, const Parameters&); \
+  template void dolfin::VTKPlottableMesh::setCellValues(std::size_t, const T*, const Parameters&);
 
 INSTANTIATE(bool)
 INSTANTIATE(double)
 INSTANTIATE(float)
 INSTANTIATE(int)
 
-// Handle dolfin::uint and std::size_t. See note in VTKPlottableMeshFunction.cpp for explanation
+// Handle std::size_t and std::size_t. See note in VTKPlottableMeshFunction.cpp for explanation
 INSTANTIATE(unsigned int)
 INSTANTIATE(unsigned long)
 

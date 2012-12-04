@@ -55,7 +55,7 @@ namespace dolfin
     boost::shared_ptr<GenericVector> create_local_vector() const;
 
     /// Create empty tensor layout
-    boost::shared_ptr<TensorLayout> create_layout(unsigned int rank) const;
+    boost::shared_ptr<TensorLayout> create_layout(std::size_t rank) const;
 
     /// Create empty linear operator
     boost::shared_ptr<GenericLinearOperator> create_linear_operator() const;

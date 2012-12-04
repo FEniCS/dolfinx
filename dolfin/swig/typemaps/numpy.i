@@ -214,7 +214,7 @@ SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input,
           (PyArray_NDIM(xa)==1))
     {
       _array  = static_cast<TYPE*>(PyArray_DATA(xa));
-      _array_dim = static_cast<dolfin::uint>(PyArray_DIM(xa,0));
+      _array_dim = static_cast<unsigned int>(PyArray_DIM(xa,0));
       return true;
     }
   }
@@ -261,7 +261,7 @@ SAFE_NUMPY_TYPEMAPS(int,INT32,NPY_INT,int,cint)
 // The first argument name the C++ type, the second the corresponding
 // NumPy type and the third argument a shorthand name for the C++ type
 // to identify the correct function
-NUMPY_ARRAY_FRAGMENTS(dolfin::uint, NPY_UINT, uint)
+NUMPY_ARRAY_FRAGMENTS(unsigned int, NPY_UINT, uint)
 NUMPY_ARRAY_FRAGMENTS(double, NPY_DOUBLE, double)
 NUMPY_ARRAY_FRAGMENTS(int, NPY_INT, int)
 NUMPY_ARRAY_FRAGMENTS(bool, NPY_BOOL, bool)

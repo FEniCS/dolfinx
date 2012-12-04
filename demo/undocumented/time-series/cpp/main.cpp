@@ -45,8 +45,8 @@ int main()
 
     // Set some vector values
     std::vector<double> values(x.local_size());
-    const dolfin::uint offset = x.local_range().first;
-    for (dolfin::uint i = 0; i < x.local_size(); i++)
+    const std::size_t offset = x.local_range().first;
+    for (std::size_t i = 0; i < x.local_size(); i++)
       values[i] = (t + 1.0)*static_cast<double>(offset + i);
     x.set_local(values);
     x.apply("insert");

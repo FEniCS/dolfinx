@@ -57,7 +57,7 @@ int main()
   face_vertices.push_back(Point(1.0, 0.0, 0.0));
 
   // Polyhedron faces (of a tetrahedron)
-  std::vector<std::vector<unsigned int> > faces(4, std::vector<unsigned int>(3));
+  std::vector<std::vector<std::size_t> > faces(4, std::vector<std::size_t>(3));
   faces[0][0] = 3;
   faces[0][1] = 2;
   faces[0][2] = 1;

@@ -86,11 +86,11 @@ namespace dolfin
                           const std::string dataset_name);
 
     /// Get dataset rank
-    static uint dataset_rank(const hid_t hdf5_file_handle,
+    static std::size_t dataset_rank(const hid_t hdf5_file_handle,
                              const std::string dataset_name);
 
     /// Return number of data sets in a group
-    static uint num_datasets_in_group(const hid_t hdf5_file_handle,
+    static std::size_t num_datasets_in_group(const hid_t hdf5_file_handle,
                                       const std::string group_name);
 
     /// Get dataset size (size of each dimension)
@@ -159,7 +159,7 @@ namespace dolfin
                                            bool use_mpi_io, bool use_chunking)
   {
     // Data rank
-    const uint rank = global_size.size();
+    const std::size_t rank = global_size.size();
     dolfin_assert(rank != 0);
 
     if (rank > 2)
@@ -391,7 +391,7 @@ namespace dolfin
     hid_t dataspace_id = H5Screate(H5S_SCALAR);
     dolfin_assert(dataspace_id != HDF5_FAIL);
 
-    // Create attribute of type uint
+    // Create attribute of type std::size_t
     hid_t attribute_id = H5Acreate2(dset_id, attribute_name.c_str(),
                                    H5T_NATIVE_ULONG, dataspace_id,
                                    H5P_DEFAULT, H5P_DEFAULT);
@@ -409,7 +409,7 @@ namespace dolfin
   template<>
   inline void HDF5Interface::add_attribute_value(const hid_t dset_id,
                                           const std::string attribute_name,
-                                          const uint& attribute_value)
+                                          const unsigned int& attribute_value)
   {
     // Create a scalar dataspace
     hid_t dataspace_id = H5Screate(H5S_SCALAR);
@@ -433,7 +433,7 @@ namespace dolfin
   template<>
   inline void HDF5Interface::add_attribute_value(const hid_t dset_id,
                                         const std::string attribute_name,
-                                        const std::vector<uint>& attribute_value)
+                                        const std::vector<unsigned int>& attribute_value)
   {
 
     // Create a vector dataspace
@@ -514,7 +514,7 @@ namespace dolfin
   template<>
   inline void HDF5Interface::get_attribute_value(const hid_t attr_type,
                                                  const hid_t attr_id,
-                                                 uint& attribute_value)
+                                                 unsigned int& attribute_value)
   {
     // FIXME: more complete check of type
     dolfin_assert(H5Tget_class(attr_type) == H5T_INTEGER);
@@ -565,7 +565,7 @@ namespace dolfin
   template<>
   inline void HDF5Interface::get_attribute_value(const hid_t attr_type,
                                           const hid_t attr_id,
-                                          std::vector<uint>& attribute_value)
+                                          std::vector<unsigned int>& attribute_value)
   {
     // FIXME: more complete check of type
     dolfin_assert(H5Tget_class(attr_type) == H5T_INTEGER);
@@ -619,7 +619,7 @@ namespace dolfin
   { return H5T_NATIVE_INT; }
   //-----------------------------------------------------------------------------
   template <>
-  inline hid_t HDF5Interface::hdf5_type<dolfin::uint>()
+  inline hid_t HDF5Interface::hdf5_type<unsigned int>()
   { return H5T_NATIVE_UINT; }
   //-----------------------------------------------------------------------------
   template <>

@@ -146,7 +146,7 @@ PROBLEM_RENAMES(NonlinearVariational)
 // Ignore dolfin::Cell versions of signatures as these now are handled by
 // a typemap
 //-----------------------------------------------------------------------------
-%ignore dolfin::FiniteElement::evaluate_basis(uint i,
+%ignore dolfin::FiniteElement::evaluate_basis(std::size_t i,
                                               double* values,
                                               const double* x,
                                               const Cell& cell) const;

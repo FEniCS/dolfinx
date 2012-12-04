@@ -36,9 +36,9 @@ void LocalMeshRefinement::refine(Mesh& refined_mesh,
   not_working_in_parallel("LocalMeshRefinement::refine");
 
   // Count the number of marked cells
-  const uint n0 = mesh.num_cells();
-  uint n = 0;
-  for (uint i = 0; i < cell_markers.size(); i++)
+  const std::size_t n0 = mesh.num_cells();
+  std::size_t n = 0;
+  for (std::size_t i = 0; i < cell_markers.size(); i++)
   {
     if (cell_markers[i])
       n++;
@@ -60,7 +60,7 @@ void LocalMeshRefinement::refine(Mesh& refined_mesh,
   // Report the number of refined cells
   if (refined_mesh.topology().dim() > 0)
   {
-    const uint n1 = refined_mesh.num_cells();
+    const std::size_t n1 = refined_mesh.num_cells();
     info("Number of cells increased from %d to %d (%.1f%% increase).",
          n0, n1, 100.0 * (static_cast<double>(n1) / static_cast<double>(n0) - 1.0));
   }

@@ -103,7 +103,7 @@ namespace dolfin
     DISPATCH(MeshFunction<double>);
     //DISPATCH(MeshFunction<float>);
     DISPATCH(MeshFunction<int>);
-    DISPATCH(MeshFunction<uint>);
+    DISPATCH(MeshFunction<unsigned int>);
     DISPATCH(MeshFunction<std::size_t>);
 
     if (dynamic_cast<const Expression*>(var.get()))
@@ -174,7 +174,7 @@ void VTKPlotter::plot(boost::shared_ptr<const Variable> variable)
   if (param_keys.is_set())
   {
     std::string keys = param_keys;
-    for (uint i = 0; i < keys.size(); i++)
+    for (std::size_t i = 0; i < keys.size(); i++)
     {
       const char c = tolower(keys[i]);
       const int modifiers = (c == keys[i] ? 0 : SHIFT);
@@ -268,7 +268,7 @@ void VTKPlotter::init()
   if (parameters["tile_windows"])
   {
     // Adjust window position to not completely overlap previous plots.
-    dolfin::uint num_old_plots = active_plotters->size()-1;
+    std::size_t num_old_plots = active_plotters->size()-1;
 
     int row=0, col=0, width=0, height=0;
     if (num_old_plots > 0)
@@ -616,12 +616,12 @@ void VTKPlotter::add_polygon(const Array<double>& points)
   if (no_plot)
     return;
 
-  const dolfin::uint dim = _plottable->dim();
+  const std::size_t dim = _plottable->dim();
 
   if (points.size() % dim != 0)
     warning("VTKPlotter::add_polygon() : Size of array is not a multiple of %d", dim);
 
-  const dolfin::uint numpoints = points.size()/dim;
+  const std::size_t numpoints = points.size()/dim;
 
   vtkSmartPointer<vtkPoints> vtk_points = vtkSmartPointer<vtkPoints>::New();
   vtk_points->SetNumberOfPoints(numpoints);
@@ -629,9 +629,9 @@ void VTKPlotter::add_polygon(const Array<double>& points)
   double point[3];
   point[2] = 0.0;
 
-  for (dolfin::uint i = 0; i < numpoints; i++)
+  for (std::size_t i = 0; i < numpoints; i++)
   {
-    for (dolfin::uint j = 0; j < dim; j++)
+    for (std::size_t j = 0; j < dim; j++)
       point[j] = points[i*dim + j];
 
     vtk_points->InsertPoint(i, point);
@@ -640,7 +640,7 @@ void VTKPlotter::add_polygon(const Array<double>& points)
   vtkSmartPointer<vtkPolyLine> line = vtkSmartPointer<vtkPolyLine>::New();
   line->GetPointIds()->SetNumberOfIds(numpoints);
 
-  for (dolfin::uint i = 0; i < numpoints; i++)
+  for (std::size_t i = 0; i < numpoints; i++)
     line->GetPointIds()->SetId(i, i);
 
   vtkSmartPointer<vtkUnstructuredGrid> grid = vtkSmartPointer<vtkUnstructuredGrid>::New();

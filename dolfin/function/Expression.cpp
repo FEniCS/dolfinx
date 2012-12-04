@@ -35,20 +35,20 @@ Expression::Expression()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Expression::Expression(uint dim)
+Expression::Expression(std::size_t dim)
 {
   value_shape.resize(1);
   value_shape[0] = dim;
 }
 //-----------------------------------------------------------------------------
-Expression::Expression(uint dim0, uint dim1)
+Expression::Expression(std::size_t dim0, std::size_t dim1)
 {
   value_shape.resize(2);
   value_shape[0] = dim0;
   value_shape[1] = dim1;
 }
 //-----------------------------------------------------------------------------
-Expression::Expression(std::vector<uint> value_shape)
+Expression::Expression(std::vector<std::size_t> value_shape)
   : value_shape(value_shape)
 {
   // Do nothing
@@ -80,12 +80,12 @@ void Expression::eval(Array<double>& values, const Array<double>& x) const
                "Missing eval() function (must be overloaded)");
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Expression::value_rank() const
+std::size_t Expression::value_rank() const
 {
   return value_shape.size();
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Expression::value_dimension(uint i) const
+std::size_t Expression::value_dimension(std::size_t i) const
 {
   if (i >= value_shape.size())
   {
@@ -110,7 +110,7 @@ void Expression::compute_vertex_values(std::vector<double>& vertex_values,
                                        const Mesh& mesh) const
 {
   // Local data for vertex values
-  const uint size = value_size();
+  const std::size_t size = value_size();
   Array<double> local_vertex_values(size);
 
   // Resize vertex_values
@@ -133,9 +133,9 @@ void Expression::compute_vertex_values(std::vector<double>& vertex_values,
       eval(local_vertex_values, x, ufc_cell);
 
       // Copy to array
-      for (uint i = 0; i < size; i++)
+      for (std::size_t i = 0; i < size; i++)
       {
-        const uint global_index = i*mesh.num_vertices() + vertex->index();
+        const std::size_t global_index = i*mesh.num_vertices() + vertex->index();
         vertex_values[global_index] = local_vertex_values[i];
       }
     }

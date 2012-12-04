@@ -76,7 +76,7 @@ void XYZFile::results_write(const Function& u) const
                  "Unable to open file \"%s\"", filename.c_str());
   }
 
-  const uint rank = u.function_space()->element()->value_rank();
+  const std::size_t rank = u.function_space()->element()->value_rank();
   if (rank > 1)
   {
     dolfin_error("XYZFile.cpp",
@@ -85,15 +85,15 @@ void XYZFile::results_write(const Function& u) const
   }
 
   // Get number of components
-  uint dim = 1;
-  for (uint i = 0; i < rank; i++)
+  std::size_t dim = 1;
+  for (std::size_t i = 0; i < rank; i++)
     dim *= u.function_space()->element()->value_dimension(i);
 
   dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
 
   // Allocate memory for function values at vertices
-  //const uint size = mesh.num_vertices()*dim;
+  //const std::size_t size = mesh.num_vertices()*dim;
   std::vector<double> values;
 
   // Get function values at vertices
@@ -112,7 +112,7 @@ void XYZFile::results_write(const Function& u) const
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
     ss.str("");
-    for (uint i = 0; i < mesh.geometry().dim(); i++)
+    for (std::size_t i = 0; i < mesh.geometry().dim(); i++)
       ss << vertex->x(i) << " ";
     ss << values[vertex->index()];
     ss <<std::endl;
@@ -158,7 +158,7 @@ void XYZFile::xyz_name_update()
     // index every time, easier than messing with a flag to say that
     // the file should not be cleared. This whole file needs some
     // cleanup but we can sort that out later.
-    for (uint i = 0; i < counter + 1; i++)
+    for (std::size_t i = 0; i < counter + 1; i++)
     {
       std::ostringstream fileid;
       fileid.fill('0');

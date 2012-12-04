@@ -133,7 +133,7 @@ void HDF5Interface::add_group(const hid_t hdf5_file_handle,
   dolfin_assert(status != HDF5_FAIL);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint HDF5Interface::dataset_rank(const hid_t hdf5_file_handle,
+std::size_t HDF5Interface::dataset_rank(const hid_t hdf5_file_handle,
 					 const std::string dataset_name)
 {
   // Open dataset
@@ -190,7 +190,7 @@ std::vector<std::size_t>
   return std::vector<std::size_t>(size.begin(), size.end());
 }
 //-----------------------------------------------------------------------------
-dolfin::uint HDF5Interface::num_datasets_in_group(const hid_t hdf5_file_handle,
+std::size_t HDF5Interface::num_datasets_in_group(const hid_t hdf5_file_handle,
                                                   const std::string group_name)
 {
   // Get group info by name

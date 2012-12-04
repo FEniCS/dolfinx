@@ -42,9 +42,9 @@ namespace dolfin
     /// [0,1] x [0,1].
     ///
     /// *Arguments*
-    ///     nx (uint)
+    ///     nx (std::size_t)
     ///         Number of cells in horizontal direction.
-    ///     ny (uint)
+    ///     ny (std::size_t)
     ///         Number of cells in vertical direction.
     ///     diagonal (std::string)
     ///         Optional argument: A std::string indicating
@@ -56,7 +56,7 @@ namespace dolfin
     ///         UnitSquare mesh1(32, 32);
     ///         UnitSquare mesh2(32, 32, "crossed");
     ///
-    UnitSquareMesh(uint nx, uint ny, std::string diagonal="right");
+    UnitSquareMesh(std::size_t nx, std::size_t ny, std::string diagonal="right");
 
   };
 

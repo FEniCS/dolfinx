@@ -288,7 +288,7 @@ void GraphBuilder::compute_dual_graph_orig(const LocalMeshData& mesh_data,
   // FIXME: Make the communication cleverer and more scalable. Send to
   // one process at a time, and remove cells when it is know that all
   // neighbors have been found.
- 
+
   // Distribute data to all processes
   std::vector<std::size_t> received_data;
   std::vector<std::size_t> sources;
@@ -357,8 +357,8 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   // List of cell vertices
   const boost::multi_array<std::size_t, 2>& cell_vertices = mesh_data.cell_vertices;
   const std::size_t num_local_cells = mesh_data.global_cell_indices.size();
-  const uint num_vertices_per_cell = mesh_data.num_vertices_per_cell;
-  
+  const std::size_t num_vertices_per_cell = mesh_data.num_vertices_per_cell;
+
   dolfin_assert(num_local_cells == cell_vertices.shape()[0]);
   dolfin_assert(num_vertices_per_cell == cell_vertices.shape()[1]);
 
@@ -373,13 +373,13 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   // create mapping from facets(vector) to cells
   // FIXME: potential speedup by using a hash directly for the map key instead of a vector
   typedef boost::unordered_map<std::vector<std::size_t>, std::size_t> vectormap;
-  vectormap facet_cell;  
+  vectormap facet_cell;
 
   // Iterate over all cells
   for (std::size_t i = 0; i < num_local_cells; ++i)
   {
     // Iterate over facets in cell
-    for(uint j = 0; j < num_vertices_per_cell; ++j)
+    for(std::size_t j = 0; j < num_vertices_per_cell; ++j)
     {
       // create a set of vertices representing a facet,
       std::vector<std::size_t> facet(cell_vertices[i].begin(), cell_vertices[i].end());
@@ -415,9 +415,9 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     other_cell->second += offset;
   }
 
-  const uint num_processes = MPI::num_processes();
-  const uint process_number = MPI::process_number();
-    
+  const std::size_t num_processes = MPI::num_processes();
+  const std::size_t process_number = MPI::process_number();
+
   ghost_vertices.clear();
 
   // create MPI ring
@@ -429,7 +429,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   std::vector<std::pair<std::vector<std::size_t>, std::size_t> > map_data;
 
   // repeat (n-1) times, to go round ring
-  for(uint i = 0; i < (num_processes - 1); ++i)
+  for(std::size_t i = 0; i < (num_processes - 1); ++i)
   {
     // FIXME: improve memory management
     // Shift data to next process
@@ -439,7 +439,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     othermap.clear();
     othermap.insert(map_data.begin(), map_data.end());
 
-    const uint mapsize = MPI::sum(othermap.size());
+    const std::size_t mapsize = MPI::sum(othermap.size());
     if(process_number == 0)
       std::cout << "t=" << (time() - tt) << ", iteration: " << i << ", map size = " << mapsize << std::endl;
 
@@ -471,7 +471,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
 //-----------------------------------------------------------------------------
 void GraphBuilder::compute_connectivity_orig(const boost::multi_array<std::size_t, 2>& cell_vertices,
-                                  uint num_facet_vertices, std::size_t offset,
+                                  std::size_t num_facet_vertices, std::size_t offset,
                                   std::vector<std::set<std::size_t> >& local_graph)
 {
   // FIXME: Continue to make this function more efficient

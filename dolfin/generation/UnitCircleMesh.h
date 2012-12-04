@@ -40,7 +40,7 @@ namespace dolfin
     /// Create a uniform finite element _Mesh_ over the unit circle.
     ///
     /// *Arguments*
-    ///     n (uint)
+    ///     n (std::size_t)
     ///         Resolution of the mesh.
     ///     diagonal (std::string)
     ///         Optional argument: A std::string indicating
@@ -48,7 +48,7 @@ namespace dolfin
     ///     transformation (std::string)
     ///         Optional argument: A std::string indicating
     ///         the type of transformation used.
-    UnitCircleMesh(uint n,
+    UnitCircleMesh(std::size_t n,
                std::string diagonal="crossed",
                std::string transformation="rotsumn");
 

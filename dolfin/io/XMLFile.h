@@ -111,10 +111,16 @@ namespace dolfin
     void operator<< (const MeshFunction<bool>& input)
     { write_mesh_function(input, "bool"); }
 
-    // MeshValueCollection (uint)
+    // MeshValueCollection (unsigned int)
     void operator>> (MeshValueCollection<unsigned int>& input)
     { read_mesh_value_collection(input, "uint"); }
     void operator<< (const MeshValueCollection<unsigned int>& output)
+    { write_mesh_value_collection(output, "uint"); }
+
+    // MeshValueCollection (std::size_t)
+    void operator>> (MeshValueCollection<std::size_t>& input)
+    { read_mesh_value_collection(input, "uint"); }
+    void operator<< (const MeshValueCollection<std::size_t>& output)
     { write_mesh_value_collection(output, "uint"); }
 
     // MeshValueCollection (int)

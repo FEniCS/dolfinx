@@ -88,11 +88,11 @@ namespace dolfin
     /// Create form of given rank with given number of coefficients
     ///
     /// *Arguments*
-    ///     rank (uint)
+    ///     rank (std::size_t)
     ///         The rank.
-    ///     num_coefficients (uint)
+    ///     num_coefficients (std::size_t)
     ///         The number of coefficients.
-    Form(uint rank, uint num_coefficients);
+    Form(std::size_t rank, std::size_t num_coefficients);
 
     /// Create form (shared data)
     ///
@@ -114,16 +114,16 @@ namespace dolfin
     /// functional = 0, etc)
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The rank of the form.
-    uint rank() const;
+    std::size_t rank() const;
 
     /// Return number of coefficients
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The number of coefficients.
-    uint num_coefficients() const;
+    std::size_t num_coefficients() const;
 
     /// Return coloring type for colored (multi-threaded) assembly of form
     /// over a mesh entity of a given dimension
@@ -161,13 +161,13 @@ namespace dolfin
     /// Return function space for given argument
     ///
     /// *Arguments*
-    ///     i (uint)
+    ///     i (std::size_t)
     ///         Index
     ///
     /// *Returns*
     ///     _FunctionSpace_
     ///         Function space shared pointer.
-    boost::shared_ptr<const FunctionSpace> function_space(uint i) const;
+    boost::shared_ptr<const FunctionSpace> function_space(std::size_t i) const;
 
     /// Return function spaces for arguments
     ///
@@ -179,11 +179,11 @@ namespace dolfin
     /// Set coefficient with given number (shared pointer version)
     ///
     /// *Arguments*
-    ///     i (uint)
+    ///     i (std::size_t)
     ///         The given number.
     ///     coefficient (_GenericFunction_)
     ///         The coefficient.
-    void set_coefficient(uint i,
+    void set_coefficient(std::size_t i,
                          boost::shared_ptr<const GenericFunction> coefficient);
 
     /// Set coefficient with given name (shared pointer version)
@@ -207,13 +207,13 @@ namespace dolfin
     /// Return coefficient with given number
     ///
     /// *Arguments*
-    ///     i (uint)
+    ///     i (std::size_t)
     ///         Index
     ///
     /// *Returns*
     ///     _GenericFunction_
     ///         The coefficient.
-    boost::shared_ptr<const GenericFunction> coefficient(uint i) const;
+    boost::shared_ptr<const GenericFunction> coefficient(std::size_t i) const;
 
     /// Return coefficient with given name
     ///
@@ -240,20 +240,20 @@ namespace dolfin
     ///         The name.
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The number of the coefficient with the given name.
-    virtual uint coefficient_number(const std::string & name) const;
+    virtual std::size_t coefficient_number(const std::string & name) const;
 
     /// Return the name of the coefficient with this number
     ///
     /// *Arguments*
-    ///     i (uint)
+    ///     i (std::size_t)
     ///         The number
     ///
     /// *Returns*
     ///     std::string
     ///         The name of the coefficient with the given number.
-    virtual std::string coefficient_name(uint i) const;
+    virtual std::string coefficient_name(std::size_t i) const;
 
     /// Return cell domains (zero pointer if no domains have been
     /// specified)
@@ -346,7 +346,7 @@ namespace dolfin
 
   private:
 
-    const uint _rank;
+    const std::size_t _rank;
 
   };
 
