@@ -55,7 +55,7 @@ hid_t HDF5Interface::open_file(const std::string filename, const std::string mod
     #endif
   }
 
-  hid_t file_id;
+  hid_t file_id = HDF5_FAIL;
   if (mode=="w")
   {
     // Create file for write, (overwriting existing file, if present)
