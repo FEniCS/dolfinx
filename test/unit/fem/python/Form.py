@@ -50,15 +50,18 @@ class FormTestsOverManifolds(unittest.TestCase):
     def setUp(self):
 
         # 1D in 2D spaces
-        self.mesh1 = BoundaryMesh(UnitSquareMesh(2, 2))
+        self.square = UnitSquareMesh(2, 2)
+        self.mesh1 = BoundaryMesh(self.square)
         self.V1 = FunctionSpace(self.mesh1, "CG", 1)
+        self.VV1 = VectorFunctionSpace(self.mesh1, "CG", 1)
         self.Q1 = FunctionSpace(self.mesh1, "DG", 0)
 
         # 2D in 3D spaces
-        self.mesh2 = BoundaryMesh(UnitCubeMesh(2, 2, 2))
+        self.cube = UnitCubeMesh(2, 2, 2)
+        self.mesh2 = BoundaryMesh(self.cube)
         self.V2 = FunctionSpace(self.mesh2, "CG", 1)
-        self.Q2 = FunctionSpace(self.mesh2, "DG", 0)
         self.VV2 = VectorFunctionSpace(self.mesh2, "CG", 1)
+        self.Q2 = FunctionSpace(self.mesh2, "DG", 0)
         self.W2 = FunctionSpace(self.mesh2, "RT", 1)
 
     def test_assemble_functional(self):
@@ -72,11 +75,11 @@ class FormTestsOverManifolds(unittest.TestCase):
         surfacearea = assemble(u*dx)
         self.assertAlmostEqual(surfacearea, 6.0)
 
+        # RT is failing at the moment
         f = Expression(("1.0", "0.0", "0.0"))
         u = interpolate(f, self.VV2)
-        print assemble(inner(u, u)*dx)
-        u = interpolate(f, self.W2)
-        print assemble(inner(u, u)*dx)
+        v = interpolate(f, self.W2)
+        #self.assertAlmostEqual(assemble(u[0]*dx), assemble(v[0]*dx))
 
         f = Expression("1.0")
         u = interpolate(f, self.V1)
@@ -87,7 +90,6 @@ class FormTestsOverManifolds(unittest.TestCase):
         u = interpolate(f, self.V2)
         surfacearea = assemble(u*dx)
         self.assertAlmostEqual(surfacearea, 6.0)
-
 
     def test_assemble_form(self):
         u = Function(self.V1)
@@ -104,7 +106,63 @@ class FormTestsOverManifolds(unittest.TestCase):
         facetareas = assemble(u*w*dx).array().sum()
         self.assertAlmostEqual(facetareas, 3.0)
 
+        mesh = UnitSquareMesh(8, 8)
+        bdry = BoundaryMesh(mesh)
+        V = FunctionSpace(mesh, "CG", 1)
+        u = TrialFunction(V)
+        v = TestFunction(V)
 
+        BV = FunctionSpace(bdry, "CG", 1)
+        bu = TrialFunction(BV)
+        bv = TestFunction(BV)
+
+        a = assemble(inner(u, v)*ds).array().sum()
+        b = assemble(inner(bu, bv)*dx).array().sum()
+        self.assertAlmostEqual(a, b)
+
+    def test_assemble_bilinear_1D_2D(self):
+
+        V = FunctionSpace(self.square, 'CG', 1)
+        u = TrialFunction(V)
+        v = TestFunction(V)
+
+        bu = TrialFunction(self.V1)
+        bv = TestFunction(self.V1)
+
+        a = assemble(inner(u, v)*ds).array().sum()
+        b = assemble(inner(bu, bv)*dx).array().sum()
+        self.assertAlmostEqual(a, b)
+
+        bottom = compile_subdomains("near(x[1], 0.0)")
+        foo = abs(assemble(inner(grad(u)[0], grad(v)[0])*ds,
+                           exterior_facet_domains=bottom).array()).sum()
+        BV = FunctionSpace(SubMesh(self.mesh1, bottom), "CG", 1)
+        bu = TrialFunction(BV)
+        bv = TestFunction(BV)
+        bar = abs(assemble(inner(grad(bu), grad(bv))*dx).array()).sum()
+        self.assertAlmostEqual(a, b)
+
+    def test_assemble_bilinear_2D_3D(self):
+
+        V = FunctionSpace(self.cube, 'CG', 1)
+        u = TrialFunction(V)
+        v = TestFunction(V)
+
+        bu = TrialFunction(self.V2)
+        bv = TestFunction(self.V2)
+
+        a = assemble(inner(u, v)*ds).array().sum()
+        b = assemble(inner(bu, bv)*dx).array().sum()
+        self.assertAlmostEqual(a, b)
+
+        bottom = compile_subdomains("near(x[1], 0.0)")
+        foo = abs(assemble(inner(grad(u)[0], grad(v)[0])*ds,
+                           exterior_facet_domains=bottom).array()).sum()
+        BV = FunctionSpace(SubMesh(self.mesh1, bottom), "CG", 1)
+        bu = TrialFunction(BV)
+        bv = TestFunction(BV)
+        bar = abs(assemble(inner(grad(bu), grad(bv))*dx).array()).sum()
+        self.assertAlmostEqual(a, b)
 
 
 if __name__ == "__main__":
