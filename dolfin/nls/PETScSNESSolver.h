@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-10-13
-// Last changed: 2012-10-26
+// Last changed: 2012-12-05
 
 #ifndef __PETSC_SNES_SOLVER_H
 #define __PETSC_SNES_SOLVER_H
@@ -29,6 +29,7 @@
 #include <boost/shared_ptr.hpp>
 #include <dolfin/parameter/Parameters.h>
 #include <dolfin/nls/NewtonSolver.h>
+#include <dolfin/la/PETScObject.h>
 
 namespace dolfin
 {
@@ -37,7 +38,7 @@ namespace dolfin
   /// via PETSc's SNES interface. It includes line search and trust
   /// region techniques for globalising the convergence of the
   /// nonlinear iteration.
-  class PETScSNESSolver
+  class PETScSNESSolver : public PETScObject
   {
   public:
 
