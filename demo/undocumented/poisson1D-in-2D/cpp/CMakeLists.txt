@@ -5,7 +5,7 @@
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
-set(PROJECT_NAME test_io)
+set(PROJECT_NAME demo_poisson1D-in-2D)
 project(${PROJECT_NAME})
 
 # Set verbose output while testing CMake
@@ -34,9 +34,7 @@ include_directories(${DOLFIN_INCLUDE_DIRS})
 include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
-add_executable(test_XMLMeshValueCollection XMLMeshValueCollection.cpp)
-add_executable(test_XMLLocalMeshData XMLLocalMeshData.cpp)
+add_executable(${PROJECT_NAME} main.cpp)
 
 # Target libraries
-target_link_libraries(test_XMLMeshValueCollection ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
-target_link_libraries(test_XMLLocalMeshData ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
