@@ -83,7 +83,7 @@ class NavierStokesFactory
 
 double bench(std::string form, boost::shared_ptr<const Form> a)
 {
-  dolfin::uint num_threads = parameters["num_threads"];
+  std::size_t num_threads = parameters["num_threads"];
   info_underline("Benchmarking %s, num_threads = %d", form.c_str(), num_threads);
 
   // Create matrix
@@ -96,7 +96,7 @@ double bench(std::string form, boost::shared_ptr<const Form> a)
 
   // Run timing
   Timer timer("Total time");
-  for (dolfin::uint i = 0; i < NUM_REPS; ++i)
+  for (std::size_t i = 0; i < NUM_REPS; ++i)
     assemble(A, *a);
   const double t = timer.stop();
 
@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
   //parameters["linear_algebra_backend"] = "Epetra";
 
   // Create mesh
-  UnitCube old_mesh(SIZE, SIZE, SIZE);
+  UnitCubeMesh old_mesh(SIZE, SIZE, SIZE);
   old_mesh.color("vertex");
   Mesh mesh = old_mesh.renumber_by_color();
 
@@ -132,7 +132,7 @@ int main(int argc, char* argv[])
   // If parameter num_threads has been set, just run once
   if (parameters["num_threads"].change_count() > 0)
   {
-    for (unsigned int i = 0; i < forms.size(); i++)
+    for (std::size_t i = 0; i < forms.size(); i++)
       bench(forms[i].first, forms[i].second);
   }
 
@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
       parameters["num_threads"] = num_threads;
 
       // Iterate over forms
-      for (unsigned int i = 0; i < forms.size(); i++)
+      for (std::size_t i = 0; i < forms.size(); i++)
       {
         // Run test case
         const double t = bench(forms[i].first, forms[i].second);

@@ -28,7 +28,7 @@ class MeshData(unittest.TestCase):
     def test_meshfunction(self):
         "Test input/output"
 
-        mesh = UnitCube(3, 3, 3)
+        mesh = UnitCubeMesh(3, 3, 3)
 
         f = mesh.data().create_mesh_function("foo")
         f.init(0)

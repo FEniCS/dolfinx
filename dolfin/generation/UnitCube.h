@@ -55,9 +55,9 @@ namespace dolfin
     ///
     UnitCube(std::size_t nx, std::size_t ny, std::size_t nz)
       : UnitCubeMesh(nx, ny, nz)
-      {
-	warning("UnitCube is deprecated. Use UnitCubeMesh");
-      }
+    {
+      warning("UnitCube is deprecated. Use UnitCubeMesh");
+    }
 
   };
 
