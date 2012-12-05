@@ -37,35 +37,35 @@ double bench_form(std::string form_name, double (*foo)(Form&))
 {
   if (form_name == "poisson1")
   {
-    UnitSquare mesh(SIZE_2D, SIZE_2D);
+    UnitSquareMesh mesh(SIZE_2D, SIZE_2D);
     Poisson2DP1::FunctionSpace V(mesh);
     Poisson2DP1::BilinearForm form(V, V);
     return foo(form);
   }
   else if (form_name == "poisson2")
   {
-    UnitSquare mesh(SIZE_2D, SIZE_2D);
+    UnitSquareMesh mesh(SIZE_2D, SIZE_2D);
     Poisson2DP2::FunctionSpace V(mesh);
     Poisson2DP2::BilinearForm form(V, V);
     return foo(form);
   }
   else if (form_name == "poisson3")
   {
-    UnitSquare mesh(SIZE_2D, SIZE_2D);
+    UnitSquareMesh mesh(SIZE_2D, SIZE_2D);
     Poisson2DP3::FunctionSpace V(mesh);
     Poisson2DP3::BilinearForm form(V, V);
     return foo(form);
   }
   else if (form_name == "stokes")
   {
-    UnitSquare mesh(SIZE_2D, SIZE_2D);
+    UnitSquareMesh mesh(SIZE_2D, SIZE_2D);
     THStokes2D::FunctionSpace V(mesh);
     THStokes2D::BilinearForm form(V, V);
     return foo(form);
   }
   else if (form_name == "stabilization")
   {
-    UnitSquare mesh(SIZE_2D, SIZE_2D);
+    UnitSquareMesh mesh(SIZE_2D, SIZE_2D);
     StabStokes2D::FunctionSpace V(mesh);
     Constant h(1.0);
     StabStokes2D::BilinearForm form(V, V, h);
@@ -73,14 +73,14 @@ double bench_form(std::string form_name, double (*foo)(Form&))
   }
   else if (form_name == "elasticity")
   {
-    UnitCube mesh(SIZE_3D, SIZE_3D, SIZE_3D);
+    UnitCubeMesh mesh(SIZE_3D, SIZE_3D, SIZE_3D);
     Elasticity3D::FunctionSpace V(mesh);
     Elasticity3D::BilinearForm form(V, V);
     return foo(form);
   }
   else if (form_name == "navierstokes")
   {
-    UnitCube mesh(SIZE_3D, SIZE_3D, SIZE_3D);
+    UnitCubeMesh mesh(SIZE_3D, SIZE_3D, SIZE_3D);
     NSEMomentum3D::FunctionSpace V(mesh);
     Constant  w(1.0, 1.0, 1.0);
     Constant d1(1.0);

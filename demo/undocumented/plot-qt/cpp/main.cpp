@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
   window.setWindowTitle("Qt embedded plot window demo");
 
   // Create plotter
-  UnitCube unit_cube(4, 4, 4);
+  UnitCubeMesh unit_cube(4, 4, 4);
   BoundaryMeshFunction meshfunc(unit_cube);
   Plotter plotter(reference_to_no_delete_pointer(meshfunc));
   plotter.parameters["range_min"] = 0.0;

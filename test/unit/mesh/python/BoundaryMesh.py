@@ -27,7 +27,7 @@ from dolfin import *
 class BoundaryMeshConstruction(unittest.TestCase):
 
     def test_1D_mesh(self):
-        mesh = UnitInterval(32)
+        mesh = UnitIntervalMesh(32)
 
         # Create global boundary mesh
         bmesh1 = BoundaryMesh()
@@ -36,7 +36,7 @@ class BoundaryMeshConstruction(unittest.TestCase):
         self.assertEqual(bmesh1.topology().dim(), 0)
 
     def test_2D_mesh(self):
-        mesh = UnitSquare(8, 8)
+        mesh = UnitSquareMesh(8, 8)
 
         # Create global boundary mesh
         bmesh1 = BoundaryMesh()

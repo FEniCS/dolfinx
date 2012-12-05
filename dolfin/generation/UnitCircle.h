@@ -26,7 +26,7 @@
 
 namespace dolfin
 {
-
+  /*
   class UnitCircle : public UnitCircleMesh
   {
   public:
@@ -48,10 +48,10 @@ namespace dolfin
                std::string transformation="rotsumn")
       : UnitCircleMesh(n, diagonal, transformation)
       {
-	warning("UnitCircle is deprecated. Use UnitCircleMesh.");
+        warning("UnitCircle is deprecated. Use UnitCircleMesh.");
       }
   };
-
+  */
 }
 
 #endif

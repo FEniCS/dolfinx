@@ -49,7 +49,7 @@ class Boundary : public SubDomain
 int main()
 {
   // Create mesh
-  UnitSquare mesh(32, 32);
+  UnitSquareMesh mesh(32, 32);
 
   // Define restriction
   Domain domain;

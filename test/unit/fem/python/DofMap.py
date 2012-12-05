@@ -27,7 +27,7 @@ from dolfin import *
 class DofMapTest(unittest.TestCase):
 
     def setUp(self):
-        self.mesh = UnitSquare(4, 4)
+        self.mesh = UnitSquareMesh(4, 4)
         self.V = FunctionSpace(self.mesh, "Lagrange", 1)
         self.Q = VectorFunctionSpace(self.mesh, "Lagrange", 1)
         self.W = self.V*self.Q
@@ -80,7 +80,7 @@ class DofMapTest(unittest.TestCase):
 
     def test_global_dof_builder(self):
 
-        mesh = UnitSquare(3, 3)
+        mesh = UnitSquareMesh(3, 3)
 
         V = VectorFunctionSpace(mesh, "CG", 1)
         Q = FunctionSpace(mesh, "CG", 1)

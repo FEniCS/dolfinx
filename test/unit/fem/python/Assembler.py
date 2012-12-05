@@ -31,7 +31,7 @@ class Assembly(unittest.TestCase):
 
     def test_cell_assembly_1D(self):
 
-        mesh = UnitInterval(48)
+        mesh = UnitIntervalMesh(48)
         V = FunctionSpace(mesh, "CG", 1)
 
         v = TestFunction(V)
@@ -58,7 +58,7 @@ class Assembly(unittest.TestCase):
 
     def test_cell_assembly(self):
 
-        mesh = UnitCube(4, 4, 4)
+        mesh = UnitCubeMesh(4, 4, 4)
         V = VectorFunctionSpace(mesh, "DG", 1)
 
         v = TestFunction(V)
@@ -92,7 +92,7 @@ class Assembly(unittest.TestCase):
             print "FIXME: This unit test does not work in parallel, skipping"
             return
 
-        mesh = UnitSquare(24, 24)
+        mesh = UnitSquareMesh(24, 24)
         V = FunctionSpace(mesh, "DG", 1)
 
         # Define test and trial functions
@@ -135,7 +135,7 @@ class Assembly(unittest.TestCase):
 
     def test_functional_assembly(self):
 
-        mesh = UnitSquare(24, 24)
+        mesh = UnitSquareMesh(24, 24)
 
         # This is a hack to get around a DOLFIN bug
         if MPI.num_processes() > 1:
@@ -159,7 +159,7 @@ class Assembly(unittest.TestCase):
         "Test assembly over subdomains with markers stored as part of mesh"
 
         # Create a mesh of the unit cube
-        mesh = UnitCube(4, 4, 4)
+        mesh = UnitCubeMesh(4, 4, 4)
 
         # Define subdomains for 3 faces of the unit cube
         class F0(SubDomain):
@@ -215,7 +215,7 @@ class Assembly(unittest.TestCase):
             return
 
         # Define some haphazardly chosen cell/facet function
-        mesh = UnitSquare(4, 4)
+        mesh = UnitSquareMesh(4, 4)
         domains = CellFunction("sizet", mesh)
         domains.set_all(0)
         domains[0] = 1
@@ -293,7 +293,7 @@ class Assembly(unittest.TestCase):
         "Test assembly over subdomains with markers stored as part of form"
 
         # Define mesh
-        mesh = UnitSquare(8, 8)
+        mesh = UnitSquareMesh(8, 8)
 
         # Define domain for lower left corner
         class MyDomain(SubDomain):
@@ -335,7 +335,7 @@ class Assembly(unittest.TestCase):
             return
 
         # Create mesh, then color and renumber
-        old_mesh = UnitCube(4, 4, 4)
+        old_mesh = UnitCubeMesh(4, 4, 4)
         old_mesh.color("vertex")
         mesh = old_mesh.renumber_by_color()
 
@@ -364,7 +364,7 @@ class Assembly(unittest.TestCase):
     def test_nonsquare_assembly(self):
         """Test assembly of a rectangular matrix"""
 
-        mesh = UnitSquare(16, 16)
+        mesh = UnitSquareMesh(16, 16)
 
         V = VectorFunctionSpace(mesh, "CG", 2)
         Q = FunctionSpace(mesh, "CG", 1)
