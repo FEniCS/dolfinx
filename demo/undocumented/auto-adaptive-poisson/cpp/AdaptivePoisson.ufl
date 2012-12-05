@@ -16,7 +16,9 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2010-08-19
-# Last changed: 2011-01-04
+# Last changed: 2012-12-05
+#
+# Compile this form with ffc -l dolfin -e AdaptivePoisson.ufl
 
 element = FiniteElement("CG", triangle, 1)
 u = TrialFunction(element)
