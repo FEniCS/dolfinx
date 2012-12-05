@@ -25,7 +25,6 @@
 
 namespace dolfin
 {
-  /*
 
   /// Triangular mesh of the 2D unit square [0,1] x [0,1].
   /// Given the number of cells (nx, ny) in each direction,
@@ -58,14 +57,15 @@ namespace dolfin
     ///         UnitSquare mesh1(32, 32);
     ///         UnitSquare mesh2(32, 32, "crossed");
     ///
-    UnitSquare(std::size_t nx, std::size_t ny, std::string diagonal="right")
+    UnitSquare(std::size_t nx, std::size_t ny,
+               std::string diagonal="right")
       : UnitSquareMesh(nx, ny, diagonal)
     {
       warning("UnitSquare is deprecated. Use UnitSquareMesh.");
     }
 
   };
-  */
+
 }
 
 #endif

@@ -36,7 +36,7 @@ class IntegrateDerivatives(unittest.TestCase):
 
         # Define 1D geometry
         n = 21
-        mesh = UnitInterval(n)
+        mesh = UnitIntervalMesh(n)
 
         # Shift and scale mesh
         x0, x1 = 1.5, 3.14

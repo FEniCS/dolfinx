@@ -26,7 +26,7 @@
 
 namespace dolfin
 {
-  /*
+
   /// Tetrahedral mesh of the 3D unit cube [0,1] x [0,1] x [0,1].
   /// Given the number of cells (nx, ny, nz) in each direction,
   /// the total number of tetrahedra will be 6*nx*ny*nz and the
@@ -55,12 +55,12 @@ namespace dolfin
     ///
     UnitCube(std::size_t nx, std::size_t ny, std::size_t nz)
       : UnitCubeMesh(nx, ny, nz)
-      {
-	warning("UnitCube is deprecated. Use UnitCubeMesh");
-      }
+    {
+      warning("UnitCube is deprecated. Use UnitCubeMesh");
+    }
 
   };
-*/
+
 }
 
 #endif

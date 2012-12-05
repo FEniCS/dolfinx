@@ -123,7 +123,7 @@ class Interpolate(unittest.TestCase):
             f1.vector()[:] = 1.0
             self.assertAlmostEqual(f1(0.,-1), 1.0)
 
-            mesh2 = UnitTriangle()
+            mesh2 = UnitTriangleMesh()
             V2 = FunctionSpace(mesh2, "CG", 1)
 
             parameters["allow_extrapolation"] = False

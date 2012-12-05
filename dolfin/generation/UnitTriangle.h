@@ -25,7 +25,7 @@
 
 namespace dolfin
 {
-
+  /*
   /// A mesh consisting of a single triangle with vertices at
   ///
   ///   (0, 0)
@@ -45,7 +45,7 @@ namespace dolfin
     }
 
   };
-
+  */
 }
 
 #endif
