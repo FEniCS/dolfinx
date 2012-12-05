@@ -19,6 +19,8 @@
 #
 # First added:  2011-12-02
 # Last changed: 2011-12-02
+#
+# Modified by Marie E. Rognes (meg@simula.no), 2012
 
 import unittest
 import numpy
