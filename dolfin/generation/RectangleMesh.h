@@ -59,7 +59,8 @@ namespace dolfin
   public:
 
     RectangleMesh(double x0, double y0, double x1, double y1,
-              std::size_t nx, std::size_t ny, std::string diagonal="right");
+                  std::size_t nx, std::size_t ny,
+                  std::string diagonal="right");
 
   };
 
