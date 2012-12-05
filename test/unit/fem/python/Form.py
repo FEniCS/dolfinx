@@ -93,7 +93,7 @@ class FormTestsOverManifolds(unittest.TestCase):
         surfacearea = assemble(u*dx)
         self.assertAlmostEqual(surfacearea, 6.0)
 
-    def test_assemble_form(self):
+    def test_assemble_linear(self):
         u = Function(self.V1)
         w = TestFunction(self.Q1)
         u.vector()[:] = 0.5
@@ -142,7 +142,7 @@ class FormTestsOverManifolds(unittest.TestCase):
         bu = TrialFunction(BV)
         bv = TestFunction(BV)
         bar = abs(assemble(inner(grad(bu), grad(bv))*dx).array()).sum()
-        self.assertAlmostEqual(a, b)
+        self.assertAlmostEqual(bar, foo)
 
     def test_assemble_bilinear_2D_3D(self):
 
@@ -164,7 +164,7 @@ class FormTestsOverManifolds(unittest.TestCase):
         bu = TrialFunction(BV)
         bv = TestFunction(BV)
         bar = abs(assemble(inner(grad(bu), grad(bv))*dx).array()).sum()
-        self.assertAlmostEqual(a, b)
+        self.assertAlmostEqual(bar, foo)
 
 
 if __name__ == "__main__":
