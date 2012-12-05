@@ -45,8 +45,8 @@ public:
 int main()
 {
   // Create meshes
-  UnitSquare mesh0(16, 16);
-  UnitSquare mesh1(64, 64);
+  UnitSquareMesh mesh0(16, 16);
+  UnitSquareMesh mesh1(64, 64);
 
   // Create function spaces
   P3::FunctionSpace V0(mesh0);

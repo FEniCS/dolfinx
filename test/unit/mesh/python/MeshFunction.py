@@ -31,7 +31,7 @@ class NamedMeshFunctions(unittest.TestCase):
         #self.tps = ['int', 'uint', 'bool', 'double']
         self.names = ["Cell", "Vertex", "Edge", "Face", "Facet"]
         self.tps = ['int', 'uint', 'bool', 'double']
-        self.mesh = UnitCube(3, 3, 3)
+        self.mesh = UnitCubeMesh(3, 3, 3)
         self.funcs = {}
         for tp in self.tps:
             for name in self.names:
@@ -68,7 +68,7 @@ class NamedMeshFunctions(unittest.TestCase):
 class MeshFunctions(unittest.TestCase):
 
     def setUp(self):
-        self.mesh = UnitCube(8, 8, 8)
+        self.mesh = UnitCubeMesh(8, 8, 8)
         self.f = MeshFunction('int', self.mesh, 0)
 
     def testCreate(self):

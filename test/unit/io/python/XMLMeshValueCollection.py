@@ -32,7 +32,7 @@ class XMLMeshValueCollection(unittest.TestCase):
         if (MPI.num_processes() == 1):
 
             # Create mesh value collection and add some data
-            mesh = UnitCube(5, 5, 5)
+            mesh = UnitCubeMesh(5, 5, 5)
             output_values = MeshValueCollection("uint", 2)
             output_values.set_value(1,  1, 1);
             output_values.set_value(2,  1, 3);
@@ -61,7 +61,7 @@ class XMLMeshValueCollection(unittest.TestCase):
         "Test input via constructor."
 
         # Create mesh
-        mesh = UnitCube(5, 5, 5)
+        mesh = UnitCubeMesh(5, 5, 5)
 
         # Read from file
         input_values = MeshValueCollection("uint", mesh, "xml_value_collection_ref.xml", 2)

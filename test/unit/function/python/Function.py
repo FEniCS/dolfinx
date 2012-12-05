@@ -24,7 +24,7 @@ import unittest
 from dolfin import *
 import ufl
 
-mesh = UnitCube(8, 8, 8)
+mesh = UnitCubeMesh(8, 8, 8)
 R = FunctionSpace(mesh, 'R', 0)
 V = FunctionSpace(mesh, 'CG', 1)
 W = VectorFunctionSpace(mesh, 'CG', 1)
@@ -115,7 +115,7 @@ class Interpolate(unittest.TestCase):
         self.assertRaises(RuntimeError, f0.__call__, (0., 0, -1))
 
         if MPI.num_processes() == 1:
-            mesh1 = UnitSquare(3,3)
+            mesh1 = UnitSquareMesh(3,3)
             V1 = FunctionSpace(mesh1, "CG", 1)
 
             parameters["allow_extrapolation"] = True
@@ -123,7 +123,7 @@ class Interpolate(unittest.TestCase):
             f1.vector()[:] = 1.0
             self.assertAlmostEqual(f1(0.,-1), 1.0)
 
-            mesh2 = UnitTriangle()
+            mesh2 = UnitTriangleMesh()
             V2 = FunctionSpace(mesh2, "CG", 1)
 
             parameters["allow_extrapolation"] = False

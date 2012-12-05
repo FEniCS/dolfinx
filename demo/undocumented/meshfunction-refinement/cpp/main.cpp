@@ -41,7 +41,7 @@ int main()
     }
   };
 
-  UnitSquare mesh(5, 5);
+  UnitSquareMesh mesh(5, 5);
 
   // Create MeshFunction over cells
   MeshFunction<std::size_t> right_cells(mesh, mesh.topology().dim(), 0);

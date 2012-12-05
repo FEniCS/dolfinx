@@ -25,7 +25,7 @@ from numpy import array
 from dolfin import *
 
 
-mesh = UnitCube(8, 8, 8)
+mesh = UnitCubeMesh(8, 8, 8)
 V = FunctionSpace(mesh, 'CG', 1)
 W = VectorFunctionSpace(mesh, 'CG', 1)
 

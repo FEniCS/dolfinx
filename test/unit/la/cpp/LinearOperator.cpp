@@ -79,7 +79,7 @@ public:
       parameters["linear_algebra_backend"] = backends[i];
 
       // Compute reference value by solving ordinary linear system
-      UnitSquare mesh(8, 8);
+      UnitSquareMesh mesh(8, 8);
       ReactionDiffusion::FunctionSpace V(mesh);
       ReactionDiffusion::BilinearForm a(V, V);
       Matrix A;
