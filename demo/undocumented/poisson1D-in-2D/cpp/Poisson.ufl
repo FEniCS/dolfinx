@@ -15,11 +15,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by David Ham 2012
+#
 # First added:  2007-11-23
-# Last changed: 2011-03-09
+# Last changed: 2012-12-04
 #
 # The bilinear form a(u, v) and linear form L(v) for
-# Poisson's equation.
+# Poisson's equation in 1D embedded in 2D space.
 #
 # Compile this form with FFC: ffc -l dolfin Poisson.ufl
 domain = Cell("interval", Space(2))

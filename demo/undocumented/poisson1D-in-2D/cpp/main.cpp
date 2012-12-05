@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Kristian B. Oelgaard
+// Copyright (C) 2012 Imperial College London and others.
 //
 // This file is part of DOLFIN.
 //
@@ -15,23 +15,25 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Anders Logg, 2011
+// Modified by David Ham 2012
 //
-// First added:  2007-11-23
-// Last changed: 2012-11-12
+// First added:  2012-12-04
+// Last changed: 2012-12-04
 //
-// This demo program solves Poisson's equation,
+// This demo program solves Poisson's equation
 //
-//     - div grad u(x) = f(x)
+//     - div grad u(xi) = f(xi)
 //
-// on the unit interval with source f given by
+// on a unit interval embedded in 2D and rotated pi/4 radians
+// anticlockwise from the x axis, where xi is the distance along the
+// interval (ie the domain is 0<xi<1).  The source f is given by
 //
-//     f(x) = 9.0*DOLFIN_PI*DOLFIN_PI*sin(3.0*DOLFIN_PI*x[0]);
+//     f(xi) = 9*pi^2*sin(3*pi*xi)
 //
-// and boundary conditions given by
+// The boundary conditions are given by
 //
-//     u(x) = 0 for x = 0,
-//    du/dx = 0 for x = 1.
+//     u(xi) = 0 for xi = 0
+//     du/dxi = 0 for xi = 1
 
 #include <dolfin.h>
 #include "Poisson.h"
@@ -137,10 +139,6 @@ int main()
   // Save solution in VTK format
   File file_u("poisson.pvd");
   file_u << u;
-
-  // Plot solution
-  //plot(u);
-  //interactive();
 
   return 0;
 }
