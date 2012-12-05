@@ -124,8 +124,8 @@ def tabulate_coordinates(self, cell, coordinates=None):
 //-----------------------------------------------------------------------------
 // Modifying the interface of FooProblem
 //-----------------------------------------------------------------------------
-%define PROBLEM_EXTENDS(NAME)
-%extend dolfin::NAME ## Problem
+%define PROBLEM_EXTENDS(TYPE)
+%extend dolfin::TYPE
 {
 %pythoncode %{
 def solution(self):
@@ -153,6 +153,22 @@ def test_space(self):
 }
 %enddef
 
-PROBLEM_EXTENDS(LinearVariational)
-PROBLEM_EXTENDS(NonlinearVariational)
-//PROBLEM_EXTENDS(LinearTimeDependent)
+//-----------------------------------------------------------------------------
+// Modifying the interface of Hierarchical
+//-----------------------------------------------------------------------------
+%define HIERARCHICAL_FEM_EXTENDS(TYPE)
+%pythoncode %{
+Hierarchical ## TYPE.leaf_node = Hierarchical ## TYPE._leaf_node
+Hierarchical ## TYPE.root_node = Hierarchical ## TYPE._root_node
+Hierarchical ## TYPE.child = Hierarchical ## TYPE._child
+Hierarchical ## TYPE.parent = Hierarchical ## TYPE._parent
+%}
+%enddef
+
+
+PROBLEM_EXTENDS(LinearVariationalProblem)
+PROBLEM_EXTENDS(NonlinearVariationalProblem)
+HIERARCHICAL_FEM_EXTENDS(LinearVariationalProblem)
+HIERARCHICAL_FEM_EXTENDS(NonlinearVariationalProblem)
+HIERARCHICAL_FEM_EXTENDS(Form)
+HIERARCHICAL_FEM_EXTENDS(DirichletBC)
