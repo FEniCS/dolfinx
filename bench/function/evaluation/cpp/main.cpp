@@ -24,7 +24,6 @@
 #include "P1.h"
 
 using namespace dolfin;
-using dolfin::uint;
 
 class F : public Expression
 {
@@ -45,12 +44,12 @@ int main(int argc, char* argv[])
 
   info("Evaluations of functions at arbitrary points.");
 
-  const uint mesh_max_size = 32;
-  const uint num_points  = 10000000;
+  const std::size_t mesh_max_size = 32;
+  const std::size_t num_points  = 10000000;
 
   // Start timing
   tic();
-  for (uint N = 10; N < mesh_max_size; N += 2)
+  for (std::size_t N = 10; N < mesh_max_size; N += 2)
   {
     UnitCube mesh(N, N, N);
 
@@ -65,7 +64,7 @@ int main(int argc, char* argv[])
     // Initialize random generator generator (produces same sequence each test).
     srand(1);
 
-    for (uint i = 1; i <= num_points; ++i)
+    for (std::size_t i = 1; i <= num_points; ++i)
     {
       X[0] = std::rand()/static_cast<double>(RAND_MAX);
       X[1] = std::rand()/static_cast<double>(RAND_MAX);

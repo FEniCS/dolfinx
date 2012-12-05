@@ -57,11 +57,11 @@ class NavierStokesFactory
   {
     boost::shared_ptr<FunctionSpace> _V(new NavierStokes::FunctionSpace(mesh));
 
-    boost::shared_ptr<FunctionSpace> W0(new NavierStokes::Form_0_FunctionSpace_2(mesh));
-    boost::shared_ptr<FunctionSpace> W1(new NavierStokes::Form_0_FunctionSpace_3(mesh));
-    boost::shared_ptr<FunctionSpace> W2(new NavierStokes::Form_0_FunctionSpace_4(mesh));
-    boost::shared_ptr<FunctionSpace> W3(new NavierStokes::Form_0_FunctionSpace_5(mesh));
-    boost::shared_ptr<FunctionSpace> W4(new NavierStokes::Form_0_FunctionSpace_6(mesh));
+    boost::shared_ptr<FunctionSpace> W0(new NavierStokes::Form_a_FunctionSpace_2(mesh));
+    boost::shared_ptr<FunctionSpace> W1(new NavierStokes::Form_a_FunctionSpace_3(mesh));
+    boost::shared_ptr<FunctionSpace> W2(new NavierStokes::Form_a_FunctionSpace_4(mesh));
+    boost::shared_ptr<FunctionSpace> W3(new NavierStokes::Form_a_FunctionSpace_5(mesh));
+    boost::shared_ptr<FunctionSpace> W4(new NavierStokes::Form_a_FunctionSpace_6(mesh));
 
     boost::shared_ptr<Function> w0(new Function(W0));
     boost::shared_ptr<Function> w1(new Function(W1));
