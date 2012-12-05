@@ -24,27 +24,88 @@ import unittest
 import numpy
 from dolfin import *
 
-
-mesh = UnitSquare(10, 10)
-V = FunctionSpace(mesh, "CG", 1)
-f = Expression("sin(pi*x[0]*x[1])")
-v = TestFunction(V)
-u = TrialFunction(V)
-
 class FormTest(unittest.TestCase):
 
+    def setUp(self):
+        self.mesh = UnitSquareMesh(10, 10)
+        self.V = FunctionSpace(self.mesh, "CG", 1)
+        self.f = Expression("sin(pi*x[0]*x[1])")
+        self.v = TestFunction(self.V)
+        self.u = TrialFunction(self.V)
+
     def test_assemble(self):
-        
-        ufl_form = f*u*v*dx
+        ufl_form = self.f*self.u*self.v*dx
         dolfin_form = Form(ufl_form)
         ufc_form = dolfin_form._compiled_form
         A_ufl_norm = assemble(ufl_form).norm("frobenius")
         A_dolfin_norm = assemble(dolfin_form).norm("frobenius")
-        A_ufc_norm = assemble(ufc_form, coefficients=[f],
-                              function_spaces=[V, V]).norm("frobenius")
-        
+        A_ufc_norm = assemble(ufc_form, coefficients=[self.f],
+                              function_spaces=[self.V, self.V]).norm("frobenius")
+
         self.assertAlmostEqual(A_ufl_norm, A_dolfin_norm)
         self.assertAlmostEqual(A_ufl_norm, A_ufc_norm)
+
+class FormTestsOverManifolds(unittest.TestCase):
+
+    def setUp(self):
+
+        # 1D in 2D spaces
+        self.mesh1 = BoundaryMesh(UnitSquareMesh(2, 2))
+        self.V1 = FunctionSpace(self.mesh1, "CG", 1)
+        self.Q1 = FunctionSpace(self.mesh1, "DG", 0)
+
+        # 2D in 3D spaces
+        self.mesh2 = BoundaryMesh(UnitCubeMesh(2, 2, 2))
+        self.V2 = FunctionSpace(self.mesh2, "CG", 1)
+        self.Q2 = FunctionSpace(self.mesh2, "DG", 0)
+        self.VV2 = VectorFunctionSpace(self.mesh2, "CG", 1)
+        self.W2 = FunctionSpace(self.mesh2, "RT", 1)
+
+    def test_assemble_functional(self):
+        u = Function(self.V1)
+        u.vector()[:] = 1.0
+        surfacearea = assemble(u*dx)
+        self.assertAlmostEqual(surfacearea, 4.0)
+
+        u = Function(self.V2)
+        u.vector()[:] = 1.0
+        surfacearea = assemble(u*dx)
+        self.assertAlmostEqual(surfacearea, 6.0)
+
+        f = Expression(("1.0", "0.0", "0.0"))
+        u = interpolate(f, self.VV2)
+        print assemble(inner(u, u)*dx)
+        u = interpolate(f, self.W2)
+        print assemble(inner(u, u)*dx)
+
+        f = Expression("1.0")
+        u = interpolate(f, self.V1)
+        surfacearea = assemble(u*dx)
+        self.assertAlmostEqual(surfacearea, 4.0)
+
+        f = Expression("1.0")
+        u = interpolate(f, self.V2)
+        surfacearea = assemble(u*dx)
+        self.assertAlmostEqual(surfacearea, 6.0)
+
+
+    def test_assemble_form(self):
+        u = Function(self.V1)
+        w = TestFunction(self.Q1)
+        u.vector()[:] = 0.5
+        facetareas = assemble(u*w*dx).array().sum()
+        self.assertAlmostEqual(facetareas, 2.0)
+
+        u = Function(self.V2)
+        w = TestFunction(self.Q2)
+        u.vector()[:] = 0.5
+        a = u*w*dx
+        b = assemble(a)
+        facetareas = assemble(u*w*dx).array().sum()
+        self.assertAlmostEqual(facetareas, 3.0)
+
+
+
 
 if __name__ == "__main__":
     print ""
