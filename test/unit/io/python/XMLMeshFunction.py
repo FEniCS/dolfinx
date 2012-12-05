@@ -32,7 +32,7 @@ class XMLMeshFunction(unittest.TestCase):
 
         if (MPI.num_processes() == 1):
             # Write some data
-            mesh = UnitSquare(5, 5)
+            mesh = UnitSquareMesh(5, 5)
             f = MeshFunction("uint", mesh, 1)
             f.set_all(0)
             f[2] = 3
@@ -56,7 +56,7 @@ class XMLMeshFunction(unittest.TestCase):
 
         if (MPI.num_processes() == 1):
             # Write some data
-            mesh = UnitSquare(5, 5)
+            mesh = UnitSquareMesh(5, 5)
             f = MeshFunction("int", mesh, 1)
             f.set_all(0)
             f[2] = -3
@@ -80,7 +80,7 @@ class XMLMeshFunction(unittest.TestCase):
 
         if (MPI.num_processes() == 1):
             # Write some data
-            mesh = UnitSquare(5, 5)
+            mesh = UnitSquareMesh(5, 5)
             f = MeshFunction("double", mesh, 1)
             f.set_all(0.0)
             f[2] = 3.14
@@ -104,7 +104,7 @@ class XMLMeshFunction(unittest.TestCase):
 
         if (MPI.num_processes() == 1):
             # Write some data
-            mesh = UnitSquare(5, 5)
+            mesh = UnitSquareMesh(5, 5)
             f = MeshFunction("bool", mesh, 1)
             f.set_all(False)
             f[2] = True

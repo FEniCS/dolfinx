@@ -29,13 +29,13 @@ class XMLMesh(unittest.TestCase):
 
     def test_save_plain_mesh2D(self):
         if MPI.num_processes() == 1:
-            mesh = UnitSquare(8, 8)
+            mesh = UnitSquareMesh(8, 8)
             f = File("unit_square.xml")
             f << mesh
 
     def test_save_plain_mesh3D(self):
         if MPI.num_processes() == 1:
-            mesh = UnitCube(8, 8, 8)
+            mesh = UnitCubeMesh(8, 8, 8)
             f = File("unit_cube.xml")
             f << mesh
 
@@ -72,7 +72,7 @@ class XMLMesh(unittest.TestCase):
                 return x[0] > 0.5 - DOLFIN_EPS
 
         # Create a mesh
-        output_mesh = UnitCube(3, 3, 3)
+        output_mesh = UnitCubeMesh(3, 3, 3)
 
         # Apply facet markers
         f0 = F0()

@@ -45,7 +45,7 @@ class BoundaryMeshConstruction(unittest.TestCase):
         self.assertEqual(bmesh1.topology().dim(), 1)
 
     def test_3D_mesh(self):
-        mesh = UnitCube(8, 8, 8)
+        mesh = UnitCubeMesh(8, 8, 8)
 
         # Create global boundary mesh
         bmesh1 = BoundaryMesh()
