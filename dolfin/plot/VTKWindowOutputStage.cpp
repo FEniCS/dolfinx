@@ -191,7 +191,7 @@ namespace // anonymous
 VTKWindowOutputStage::VTKWindowOutputStage(QVTKWidget *user_widget)
 {
 #ifdef HAS_QVTK
-  widget.reset(user_widget);
+  widget = user_widget;
 #endif
 
   vtkMapper::GlobalImmediateModeRenderingOn(); // FIXME: Check if faster or not
@@ -222,7 +222,7 @@ VTKWindowOutputStage::~VTKWindowOutputStage()
   //log(DBG, "VTK pipeline destroyed");
 
 #ifdef HAS_QVTK
-  widget.reset(NULL);
+  widget = NULL;
 #endif
 
   helptextActor = NULL;
@@ -261,7 +261,7 @@ void VTKWindowOutputStage::init(VTKPlotter *parent, const Parameters &parameters
   {
     // Create new top-level widget -- make sure a QApplication exists first
     create_qApp();
-    widget.reset(new QVTKWidget());
+    widget = new QVTKWidget();
   }
   _renderWindow->SetInteractor(widget->GetInteractor());
 
@@ -390,7 +390,7 @@ std::string VTKWindowOutputStage::get_window_title()
 QVTKWidget *VTKWindowOutputStage::get_widget() const
 {
 #ifdef HAS_QVTK
-  return widget.get();
+  return widget;
 #else
   return NULL;
 #endif
