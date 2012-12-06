@@ -126,7 +126,7 @@ void XMLFile::operator>> (GenericVector& input)
   pugi::xml_node dolfin_node(0);
 
   // Read vector size
-  uint size = 0;
+  std::size_t size = 0;
   if (MPI::process_number() == 0)
   {
     load_xml_doc(xml_doc);
@@ -136,8 +136,8 @@ void XMLFile::operator>> (GenericVector& input)
   MPI::broadcast(size);
 
   // Resize if necessary
-  const uint input_vector_size = input.size();
-  const uint num_proc = MPI::num_processes();
+  const std::size_t input_vector_size = input.size();
+  const std::size_t num_proc = MPI::num_processes();
   if (num_proc > 1 && input_vector_size != size)
     warning("Resizing parallel vector. Default partitioning will be used. To control distribution, initialize vector size before reading from file.");
   if (input.size() != size)
