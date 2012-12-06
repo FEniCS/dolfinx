@@ -444,7 +444,7 @@ void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
 
     pugi::xml_node array_node = data_entry_node.append_child("array");
     array_node.append_attribute("type") = "uint";
-    array_node.append_attribute("size") = static_cast<uint>(array->size());
+    array_node.append_attribute("size") = static_cast<unsigned int>(array->size());
 
     for (std::size_t i = 0; i < array->size(); i++)
     {
