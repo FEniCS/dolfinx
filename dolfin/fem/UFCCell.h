@@ -92,6 +92,9 @@ namespace dolfin
       // Mesh
       const Mesh& mesh = cell.mesh();
 
+      // Set orientation (default to 0)
+      orientation = 0;
+
       // Set topological dimension
       topological_dimension = mesh.topology().dim();
 
@@ -136,11 +139,13 @@ namespace dolfin
       cell_shape = ufc::interval;
       topological_dimension = 0;
       geometric_dimension = 0;
+      orientation = 0;
     }
 
     // Update cell entities and coordinates
     // Note: We use MeshEntity& rather than Cell& to avoid a gcc 4.4.1 warning
-    void update(const MeshEntity& cell, int local_facet=-1)
+    void update(const MeshEntity& cell, const int local_facet=-1,
+                const int orientation=0)
     {
       dolfin_assert(cell.dim() == topological_dimension);
 
@@ -158,6 +163,9 @@ namespace dolfin
 
       // Set local facet (-1 means no local facet set)
       this->local_facet = local_facet;
+
+      // Set orientation
+      this->orientation = orientation;
 
       const uint D = topological_dimension;
       const MeshTopology& topology = cell.mesh().topology();

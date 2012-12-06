@@ -223,7 +223,15 @@ void Assembler::assemble_cells(GenericTensor& A,
       continue;
 
     // Update to current cell
-    ufc.update(*cell);
+    boost::shared_ptr<MeshFunction<std::size_t> >
+      cell_orientation = mesh.data().mesh_function("cell_orientation");
+
+    if (cell_orientation)
+    {
+      ufc.update(*cell, -1, (*cell_orientation)[cell->index()]);
+    } else {
+      ufc.update(*cell);
+    }
 
     // Get local-to-global dof maps for cell
     bool empty_dofmap = false;

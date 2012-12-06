@@ -133,6 +133,16 @@ void UFC::update(const Cell& cell)
     coefficients[i]->restrict(&_w[i][0], coefficient_elements[i], cell, this->cell);
 }
 //-----------------------------------------------------------------------------
+void UFC::update(const Cell& cell, const int local_facet, const int orientation)
+{
+  // Update UFC cell
+  this->cell.update(cell, local_facet, orientation);
+
+  // Restrict coefficients to cell
+  for (uint i = 0; i < coefficients.size(); ++i)
+    coefficients[i]->restrict(&_w[i][0], coefficient_elements[i], cell, this->cell);
+}
+//-----------------------------------------------------------------------------
 void UFC::update(const Cell& cell, uint local_facet)
 {
   // Update UFC cell
