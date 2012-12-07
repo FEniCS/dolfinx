@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2012
 //
 // First added:  2010-02-19
-// Last changed: 2012-12-05
+// Last changed: 2012-12-07
 
 #include <algorithm>
 #include <numeric>
@@ -26,7 +26,6 @@
 #include <vector>
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
-#include <boost/functional/hash.hpp>
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/types.h>
@@ -372,12 +371,8 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   double tt = time();
 
   // create mapping from facets(vector) to cells
-  // Speed up by using a hash directly for the map key instead of a vector
-  typedef boost::unordered_map<std::size_t, std::size_t> vectormap;
-  boost::hash<std::vector<std::size_t> > vhash;
-  //  typedef boost::unordered_map<std::vector<std::size_t>, std::size_t> vectormap;
+  typedef boost::unordered_map<std::vector<std::size_t>, std::size_t> vectormap;
   vectormap facet_cell;
-
 
   // Iterate over all cells
   for (std::size_t i = 0; i < num_local_cells; ++i)
@@ -386,12 +381,10 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     for(std::size_t j = 0; j < num_vertices_per_cell; ++j)
     {
       // create a set of vertices representing a facet,
-      std::vector<std::size_t> facetv(cell_vertices[i].begin(), cell_vertices[i].end());
-      facetv.erase(facetv.begin() + j);
+      std::vector<std::size_t> facet(cell_vertices[i].begin(), cell_vertices[i].end());
+      facet.erase(facet.begin() + j);
       // sort into order, so map indexing will be consistent
-      std::sort(facetv.begin(), facetv.end());
-      // create a hash key
-      std::size_t facet = vhash(facetv);
+      std::sort(facet.begin(), facet.end());
 
       const vectormap::iterator join_cell = facet_cell.find(facet);
       // If facet not found in map, insert facet->cell into map
@@ -432,8 +425,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
   // FIXME: better way to send boost::unordered_map between processes - could use std::map instead
   // boost cannot serialise unordered_map, so convert to a vector here
-  //  std::vector<std::pair<std::vector<std::size_t>, std::size_t> > map_data;
-  std::vector<std::pair<std::size_t, std::size_t> > map_data;
+  std::vector<std::pair<std::vector<std::size_t>, std::size_t> > map_data;
 
   // repeat (n-1) times, to go round ring
   for(std::size_t i = 0; i < (num_processes - 1); ++i)
@@ -451,7 +443,8 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
       std::cout << "t=" << (time() - tt) << ", iteration: " << i << ", map size = " << mapsize << std::endl;
 
     // Go through local facets, looking for a matching facet in othermap
-    for(vectormap::iterator fcell = facet_cell.begin(); fcell != facet_cell.end(); ++fcell)
+    vectormap::iterator fcell = facet_cell.begin(); 
+    while(fcell != facet_cell.end())
     {
       vectormap::iterator join_cell = othermap.find(fcell->first);
       if(join_cell != othermap.end())
@@ -459,10 +452,13 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
         //found neighbours, insert into local_graph and delete facets from both maps
         local_graph[fcell->second].insert(join_cell->second);
         ghost_vertices.insert(join_cell->second);
-        facet_cell.erase(fcell);
+        facet_cell.erase(fcell++);
         othermap.erase(join_cell);
       }
+      else
+        ++fcell;
     }
+    
   }
 
   // remaining facets are exterior boundary - could be useful
