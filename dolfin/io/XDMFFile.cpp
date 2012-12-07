@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2012-11-26
+// Last changed: 2012-12-04
 
 #ifdef HAS_HDF5
 
@@ -55,7 +55,7 @@ XDMFFile::XDMFFile(const std::string filename) : GenericFile(filename, "XDMF")
   hdf5_filename = p.string();
 
   // Create HDF5 file (truncate)
-  hdf5_file.reset(new HDF5File(hdf5_filename, true));
+  hdf5_file.reset(new HDF5File(hdf5_filename, "w"));
 
   // Re-write mesh (true, false or auto, with auto based on detecting
   // changes in a hash key)

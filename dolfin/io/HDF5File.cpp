@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-11-27
+// Last changed: 2012-12-04
 
 #ifdef HAS_HDF5
 
@@ -54,7 +54,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-HDF5File::HDF5File(const std::string filename, bool truncate, bool use_mpiio)
+HDF5File::HDF5File(const std::string filename, const std::string file_mode, bool use_mpiio)
   : hdf5_file_open(false), hdf5_file_id(0),
     mpi_io(MPI::num_processes() > 1 && use_mpiio ? true : false)
 {
@@ -62,7 +62,7 @@ HDF5File::HDF5File(const std::string filename, bool truncate, bool use_mpiio)
   parameters.add("chunking", false);
 
   // OPen HDF5 file
-  hdf5_file_id = HDF5Interface::open_file(filename, truncate, mpi_io);
+  hdf5_file_id = HDF5Interface::open_file(filename, file_mode, mpi_io);
   hdf5_file_open = true;
 }
 //-----------------------------------------------------------------------------
@@ -121,7 +121,7 @@ void HDF5File::write(const Mesh& mesh, const std::string name)
 //-----------------------------------------------------------------------------
 void HDF5File::write(const Mesh& mesh, std::size_t cell_dim, const std::string name)
 {
-  warning("Writing mesh with global index - not suitable for visualisation");
+  warning("Writing globally indexed mesh - not suitable for visualisation");
 
   dolfin_assert(hdf5_file_open);
 
@@ -357,7 +357,6 @@ std::string HDF5File::search_list(const std::vector<std::string>& list,
 void HDF5File::read(Mesh& input_mesh, const std::string name)
 {
   warning("HDF5 Mesh input is still experimental");
-  warning("HDF5 Mesh input will always repartition the mesh");
 
   dolfin_assert(hdf5_file_open);
 
@@ -391,8 +390,6 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
                                      const std::string coordinates_name,
                                      const std::string topology_name)
 {
-  // FIXME: should not call repartition if running serial
-  warning("HDF5 Mesh read will repartition this mesh");
   Timer t("HDF5: ReadMesh");
 
   // Structure to store local mesh

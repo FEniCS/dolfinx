@@ -30,20 +30,20 @@ if has_hdf5():
         def test_save_vector(self):
             x = Vector(305)
             x[:] = 1.0
-            vector_file = HDF5File("x.h5", True)
+            vector_file = HDF5File("x.h5", "w")
             vector_file.write(x, "my_vector")
 
         def test_save_and_read_vector(self):
             # Write to file
             x = Vector(305)
             x[:] = 1.2
-            vector_file = HDF5File("vector.h5", True)
+            vector_file = HDF5File("vector.h5", "w")
             vector_file.write(x, "my_vector")
             del vector_file
 
             # Read from file
             y = Vector()
-            vector_file = HDF5File("vector.h5", False)
+            vector_file = HDF5File("vector.h5", "r")
             vector_file.read(y, "my_vector")
             self.assertEqual(y.size(), x.size())
             self.assertEqual((x - y).norm("l1"), 0.0)

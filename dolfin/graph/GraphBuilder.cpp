@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2012
 //
 // First added:  2010-02-19
-// Last changed: 2012-11-24
+// Last changed: 2012-12-07
 
 #include <algorithm>
 #include <numeric>
@@ -372,8 +372,6 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   double tt = time();
 
   // Create mapping from facets (vector) to cells
-  // FIXME: potential speedup by using a hash directly for the map key
-  //        instead of a vector
   typedef boost::unordered_map<std::vector<std::size_t>, std::size_t> vectormap;
   vectormap facet_cell;
 
@@ -451,7 +449,8 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     }
 
     // Go through local facets, looking for a matching facet in othermap
-    for(vectormap::iterator fcell = facet_cell.begin(); fcell != facet_cell.end(); ++fcell)
+    vectormap::iterator fcell = facet_cell.begin(); 
+    while(fcell != facet_cell.end())
     {
       vectormap::iterator join_cell = othermap.find(fcell->first);
       if (join_cell != othermap.end())
@@ -460,10 +459,13 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
         // from both maps
         local_graph[fcell->second].insert(join_cell->second);
         ghost_vertices.insert(join_cell->second);
-        facet_cell.erase(fcell);
+        facet_cell.erase(fcell++);
         othermap.erase(join_cell);
       }
+      else
+        ++fcell;
     }
+    
   }
 
   // remaining facets are exterior boundary - could be useful

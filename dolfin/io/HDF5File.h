@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-11-27
+// Last changed: 2012-12-04
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -47,7 +47,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    HDF5File(const std::string filename, bool truncate, bool use_mpiio=true);
+    HDF5File(const std::string filename, const std::string file_mode, bool use_mpiio=true);
 
     /// Destructor
     ~HDF5File();

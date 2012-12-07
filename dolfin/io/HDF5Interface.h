@@ -44,7 +44,7 @@ namespace dolfin
   public:
 
     /// Open HDF5 and return file descriptor
-    static hid_t open_file(const std::string filename, const bool truncate,
+    static hid_t open_file(const std::string filename, const std::string mode,
                            const bool use_mpi_io);
 
 
