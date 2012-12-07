@@ -29,9 +29,8 @@
 #include <algorithm>
 
 using namespace dolfin;
-using std::size_t;
 
-  template <std::size_t dim0, <std::size_t dim1>
+  template <std::size_t dim0, std::size_t dim1>
   void testEntityEntityIntersection(const Mesh& mesh)
   {
     //Compute incidences
