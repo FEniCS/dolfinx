@@ -63,7 +63,7 @@ void SVGFile::operator<< (const Mesh& mesh)
   double xmax = std::numeric_limits<double>::min();
   double ymin = std::numeric_limits<double>::max();
   double ymax = std::numeric_limits<double>::min();
-  const uint gdim = mesh.geometry().dim();
+  const std::size_t gdim = mesh.geometry().dim();
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     xmin = std::min(xmin, v->x(0));

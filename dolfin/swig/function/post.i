@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-11-02
-// Last changed: 2012-10-02
+// Last changed: 2012-11-30
 
 //-----------------------------------------------------------------------------
 // Extend FunctionSpace so one can check if a Function is in a FunctionSpace
@@ -28,6 +28,27 @@ def __contains__(self,u):
     "Check whether a function is in the FunctionSpace"
     assert(isinstance(u,Function))
     return u._in(self)
+
+def leaf_node(self):
+    "Return the finest FunctionSpace in hierarchy"
+    from dolfin.functions.functionspace import FunctionSpaceFromCpp
+    return FunctionSpaceFromCpp(HierarchicalFunctionSpace._leaf_node(self))
+
+def root_node(self):
+    "Return the coarsest FunctionSpace in hierarchy"
+    from dolfin.functions.functionspace import FunctionSpaceFromCpp
+    return FunctionSpaceFromCpp(HierarchicalFunctionSpace._root_node(self))
+
+def child(self):
+    "Return the child FunctionSpace in the hierarchy"
+    from dolfin.functions.functionspace import FunctionSpaceFromCpp
+    return FunctionSpaceFromCpp(HierarchicalFunctionSpace._child(self))
+
+def parent(self):
+    "Return the parent FunctionSpace in the hierarchy"
+    from dolfin.functions.functionspace import FunctionSpaceFromCpp
+    return FunctionSpaceFromCpp(HierarchicalFunctionSpace._parent(self))
+
 %}
 }
 
@@ -106,18 +127,24 @@ def copy(self, deepcopy=False):
         return Function(self.function_space(), self.vector().copy())
     return Function(self.function_space(), self.vector())
 
-#  -----------------------------------------------------------------------------
-#  f.leaf_node()/root_node() returns a dolfin.Function.
-#  Not doing this on purpose for child()/parent().
-#  -----------------------------------------------------------------------------
 def leaf_node(self):
     "Return the finest Function in hierarchy"
-    f = HierarchicalFunction.leaf_node(self)
-    return f.copy()
+    from dolfin.functions.function import Function
+    return Function(HierarchicalFunction._leaf_node(self))
 
 def root_node(self):
     "Return the coarsest Function in hierarchy"
-    f = HierarchicalFunction.root_node(self)
-    return f.copy()
+    from dolfin.functions.function import Function
+    return Function(HierarchicalFunction._root_node(self))
+
+def child(self):
+    "Return the child Function in the hierarchy"
+    from dolfin.functions.function import Function
+    return Function(HierarchicalFunction._child(self))
+
+def parent(self):
+    "Return the parent Function in the hierarchy"
+    from dolfin.functions.function import Function
+    return Function(HierarchicalFunction._parent(self))
 %}
 }

@@ -49,16 +49,18 @@ namespace dolfin
     ///         Optional argument: A std::string indicating
     ///         the type of transformation used.
     UnitCircleMesh(std::size_t n,
-               std::string diagonal="crossed",
-               std::string transformation="rotsumn");
+                   std::string diagonal="crossed",
+                   std::string transformation="rotsumn");
 
   private:
 
     std::vector<double> transform(const std::vector<double>& x,
                                   const std::string transformation);
 
-    double max(const std::vector<double>& x)
-    { return ((std::abs(x[0]) > std::abs(x[1])) ? std::abs(x[0]) : std::abs(x[1])); };
+    double max(const std::vector<double>& x) const
+    {
+      return ((std::abs(x[0]) > std::abs(x[1])) ? std::abs(x[0]) : std::abs(x[1]));
+    }
 
   };
 

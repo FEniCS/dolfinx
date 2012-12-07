@@ -96,7 +96,8 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
     // Build list of entities, moving between levels
     for (std::size_t level = 1; level < coloring_type.size(); ++level)
     {
-      for (boost::unordered_set<std::size_t>::const_iterator entity_index = entity_list0.begin(); entity_index != entity_list0.end(); ++entity_index)
+      for (boost::unordered_set<std::size_t>::const_iterator entity_index
+              = entity_list0.begin(); entity_index != entity_list0.end(); ++entity_index)
       {
         const MeshEntity entity(mesh, coloring_type[level -1], *entity_index);
         for (MeshEntityIterator neighbor(entity, coloring_type[level]); !neighbor.end(); ++neighbor)
@@ -263,7 +264,8 @@ void GraphBuilder::compute_dual_graph_orig(const LocalMeshData& mesh_data,
     connected_cell_data.push_back(local_boundary_cells[i] + process_offset);
 
     // Candidate cell vertices
-    boost::multi_array<std::size_t, 2>::const_subarray<1>::type vertices = cell_vertices[local_boundary_cells[i]];
+    boost::multi_array<std::size_t, 2>::const_subarray<1>::type vertices
+        = cell_vertices[local_boundary_cells[i]];
     for (std::size_t j = 0; j < num_cell_vertices; ++j)
       connected_cell_data.push_back(vertices[j]);
   }
@@ -276,7 +278,7 @@ void GraphBuilder::compute_dual_graph_orig(const LocalMeshData& mesh_data,
     if (i != MPI::process_number())
     {
       send_data.insert(send_data.end(), connected_cell_data.begin(),
-                           connected_cell_data.end());
+                       connected_cell_data.end());
       destinations.insert(destinations.end(), connected_cell_data.size(), i);
     }
   }
@@ -347,7 +349,6 @@ void GraphBuilder::compute_dual_graph_orig(const LocalMeshData& mesh_data,
 }
 
 //-----------------------------------------------------------------------------
-
 void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
                                       std::vector<std::set<std::size_t> >& local_graph,
                                       std::set<std::size_t>& ghost_vertices)
@@ -370,7 +371,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
   double tt = time();
 
-  // create mapping from facets(vector) to cells
+  // Create mapping from facets (vector) to cells
   typedef boost::unordered_map<std::vector<std::size_t>, std::size_t> vectormap;
   vectormap facet_cell;
 
@@ -380,10 +381,11 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     // Iterate over facets in cell
     for(std::size_t j = 0; j < num_vertices_per_cell; ++j)
     {
-      // create a set of vertices representing a facet,
+      // Create a set of vertices representing a facet,
       std::vector<std::size_t> facet(cell_vertices[i].begin(), cell_vertices[i].end());
       facet.erase(facet.begin() + j);
-      // sort into order, so map indexing will be consistent
+
+      // Sort into order, so map indexing will be consistent
       std::sort(facet.begin(), facet.end());
 
       const vectormap::iterator join_cell = facet_cell.find(facet);
@@ -419,12 +421,13 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
   ghost_vertices.clear();
 
-  // create MPI ring
-  const int source = (num_processes + process_number - 1)%num_processes;
-  const int dest   = (process_number + 1)%num_processes;
+  // Create MPI ring
+  const int source = (num_processes + process_number - 1) % num_processes;
+  const int dest   = (process_number + 1) % num_processes;
 
-  // FIXME: better way to send boost::unordered_map between processes - could use std::map instead
-  // boost cannot serialise unordered_map, so convert to a vector here
+  // FIXME: better way to send boost::unordered_map between processes -
+  // could use std::map instead Boost cannot serialise unordered_map,
+  // so convert to a vector here
   std::vector<std::pair<std::vector<std::size_t>, std::size_t> > map_data;
 
   // repeat (n-1) times, to go round ring
@@ -440,16 +443,20 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
     const std::size_t mapsize = MPI::sum(othermap.size());
     if(process_number == 0)
-      std::cout << "t=" << (time() - tt) << ", iteration: " << i << ", map size = " << mapsize << std::endl;
+    {
+      std::cout << "t = " << (time() - tt) << ", iteration: " << i
+          << ", map size = " << mapsize << std::endl;
+    }
 
     // Go through local facets, looking for a matching facet in othermap
     vectormap::iterator fcell = facet_cell.begin(); 
     while(fcell != facet_cell.end())
     {
       vectormap::iterator join_cell = othermap.find(fcell->first);
-      if(join_cell != othermap.end())
+      if (join_cell != othermap.end())
       {
-        //found neighbours, insert into local_graph and delete facets from both maps
+        // Found neighbours, insert into local_graph and delete facets
+        // from both maps
         local_graph[fcell->second].insert(join_cell->second);
         ghost_vertices.insert(join_cell->second);
         facet_cell.erase(fcell++);
@@ -465,13 +472,11 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
   const std::size_t n_exterior_facets = MPI::sum(facet_cell.size());
   if(process_number == 0)
-    std::cout << "n(exterior facets) = " << n_exterior_facets << std::endl;
+    std::cout << "n (exterior facets) = " << n_exterior_facets << std::endl;
 
   tt = time() - tt;
   info("Time to build connectivity map [new]: %g", tt);
-
 }
-
 //-----------------------------------------------------------------------------
 void GraphBuilder::compute_connectivity_orig(const boost::multi_array<std::size_t, 2>& cell_vertices,
                                   std::size_t num_facet_vertices, std::size_t offset,

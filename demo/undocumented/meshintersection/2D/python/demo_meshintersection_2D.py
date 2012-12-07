@@ -37,8 +37,8 @@ if not has_cgal():
     exit(0)
 
 # Create meshes (omega0 overlapped by omega1)
-omega0 = UnitCircle(5)
-omega1 = UnitSquare(5, 5)
+omega0 = UnitCircleMesh(5)
+omega1 = UnitSquareMesh(5, 5)
 
 # Access mesh geometry
 x = omega0.coordinates()

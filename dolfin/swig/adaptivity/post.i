@@ -1,4 +1,5 @@
-// Copyright (C) 2005-2009 Anders Logg
+/* -*- C -*- */
+// Copyright (C) 2009 Johan Hake
 //
 // This file is part of DOLFIN.
 //
@@ -15,20 +16,23 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells 2007.
-// Modified by Kristian B. Oelgaard 2009.
+// First added:  2012-11-30
+// Last changed: 2012-11-30
+
+// ===========================================================================
+// SWIG directives for the DOLFIN fem kernel module (post)
 //
-// First added:  2005-12-02
-// Last changed: 2009-09-29
-
-#include "UnitSquareMesh.h"
-
-using namespace dolfin;
+// The directives in this file are applied _after_ the header files of the
+// modules has been loaded.
+// ===========================================================================
 
 //-----------------------------------------------------------------------------
-UnitSquareMesh::UnitSquareMesh(std::size_t nx, std::size_t ny,
-   std::string diagonal) : RectangleMesh(0.0, 0.0, 1.0, 1.0, nx, ny, diagonal)
-{
-  // Do nothing
-}
+// Modifying the interface of Hierarchical
 //-----------------------------------------------------------------------------
+%pythoncode %{
+HierarchicalErrorControl.leaf_node = HierarchicalErrorControl._leaf_node
+HierarchicalErrorControl.root_node = HierarchicalErrorControl._root_node
+HierarchicalErrorControl.child = HierarchicalErrorControl._child
+HierarchicalErrorControl.parent = HierarchicalErrorControl._parent
+%}
+

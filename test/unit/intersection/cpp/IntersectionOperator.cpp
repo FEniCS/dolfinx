@@ -31,7 +31,7 @@
 using namespace dolfin;
 using std::size_t;
 
-  template <uint dim0, uint dim1>
+  template <std::size_t dim0, <std::size_t dim1>
   void testEntityEntityIntersection(const Mesh& mesh)
   {
     //Compute incidences
@@ -118,71 +118,71 @@ public:
 
   void testCellCellIntersection()
   {
-    uint N = 3;
-    UnitCube mesh(N, N, N);
+    std::size_t N = 3;
+    UnitCubeMesh mesh(N, N, N);
     testEntityEntityIntersection<3, 3>(mesh);
   }
 
   void testCellFacetIntersection()
   {
-    uint N = 3;
-    UnitCube mesh(N, N, N);
+    std::size_t N = 3;
+    UnitCubeMesh mesh(N, N, N);
     testEntityEntityIntersection<3, 2>(mesh);
   }
 
   void testCellEdgeIntersection()
   {
-    uint N = 3;
-    UnitCube mesh(N, N, N);
+    std::size_t N = 3;
+    UnitCubeMesh mesh(N, N, N);
     testEntityEntityIntersection<3, 1>(mesh);
   }
 
   void testCellVertexIntersection()
   {
-    uint N = 3;
-    UnitCube mesh(N, N, N);
+    std::size_t N = 3;
+    UnitCubeMesh mesh(N, N, N);
     testEntityEntityIntersection<3, 0>(mesh);
   }
 
   void testFacetFacetIntersection()
   {
-    uint N = 3;
-    UnitCube mesh(N, N, N);
+    std::size_t N = 3;
+    UnitCubeMesh mesh(N, N, N);
     testEntityEntityIntersection<2, 2>(mesh);
   }
 
   void testFacetEdgeIntersection()
   {
-    uint N = 3;
-    UnitCube mesh(N, N, N);
+    std::size_t N = 3;
+    UnitCubeMesh mesh(N, N, N);
     testEntityEntityIntersection<2, 1>(mesh);
   }
 
   void testFacetVertexIntersection()
   {
-    uint N = 3;
-    UnitCube mesh(N, N, N);
+    std::size_t N = 3;
+    UnitCubeMesh mesh(N, N, N);
     testEntityEntityIntersection<2, 0>(mesh);
   }
 
   void testEdgeEdgeIntersection()
   {
-    uint N = 3;
-    UnitCube mesh(N, N, N);
+    std::size_t N = 3;
+    UnitCubeMesh mesh(N, N, N);
     testEntityEntityIntersection<1, 1>(mesh);
   }
 
   void testEdgeVertexIntersection()
   {
-    uint N = 3;
-    UnitCube mesh(N, N, N);
+    std::size_t N = 3;
+    UnitCubeMesh mesh(N, N, N);
     testEntityEntityIntersection<1, 0>(mesh);
   }
 
   void testVertexVertexIntersection()
   {
-    uint N = 3;
-    UnitCube mesh(N, N, N);
+    std::size_t N = 3;
+    UnitCubeMesh mesh(N, N, N);
     testEntityEntityIntersection<0, 0>(mesh);
   }
 
@@ -207,43 +207,43 @@ public:
 
   void testCellCellIntersection()
   {
-    uint N = 6;
-    UnitSquare mesh(N, N);
+    std::size_t N = 6;
+    UnitSquareMesh mesh(N, N);
     testEntityEntityIntersection<2, 2>(mesh);
   }
 
   void testCellEdgeIntersection()
   {
-    uint N = 6;
-    UnitSquare mesh(N, N);
+    std::size_t N = 6;
+    UnitSquareMesh mesh(N, N);
     testEntityEntityIntersection<2, 1>(mesh);
   }
 
   void testCellVertexIntersection()
   {
-    uint N = 6;
-    UnitSquare mesh(N, N);
+    std::size_t N = 6;
+    UnitSquareMesh mesh(N, N);
     testEntityEntityIntersection<2, 0>(mesh);
   }
 
   void testEdgeEdgeIntersection()
   {
-    uint N = 6;
-    UnitSquare mesh(N, N);
+    std::size_t N = 6;
+    UnitSquareMesh mesh(N, N);
     testEntityEntityIntersection<1, 1>(mesh);
   }
 
   void testEdgeVertexIntersection()
   {
-    uint N = 6;
-    UnitSquare mesh(N, N);
+    std::size_t N = 6;
+    UnitSquareMesh mesh(N, N);
     testEntityEntityIntersection<1, 0>(mesh);
   }
 
   void testVertexVertexIntersection()
   {
-    uint N = 6;
-    UnitSquare mesh(N, N);
+    std::size_t N = 6;
+    UnitSquareMesh mesh(N, N);
     testEntityEntityIntersection<0, 0>(mesh);
   }
 
@@ -264,22 +264,22 @@ public:
 
   void testCellCellIntersection()
   {
-    uint N = 10;
-    UnitInterval mesh(N);
+    std::size_t N = 10;
+    UnitIntervalMesh mesh(N);
     testEntityEntityIntersection<1,1>(mesh);
   }
 
   void testCellVertexIntersection()
   {
-    uint N = 10;
-    UnitInterval mesh(N);
+    std::size_t N = 10;
+    UnitIntervalMesh mesh(N);
     testEntityEntityIntersection<1,0>(mesh);
   }
 
   void testVertexVertexIntersection()
   {
-    uint N = 10;
-    UnitInterval mesh(N);
+    std::size_t N = 10;
+    UnitIntervalMesh mesh(N);
     testEntityEntityIntersection<0,0>(mesh);
   }
 

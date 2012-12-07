@@ -188,7 +188,7 @@ namespace dolfin
     vtkSmartPointer<vtkBalloonWidget> balloonwidget;
 
 #ifdef HAS_QVTK
-    boost::scoped_ptr<QVTKWidget> widget;
+    QVTKWidget *widget;
 #endif
 
   };

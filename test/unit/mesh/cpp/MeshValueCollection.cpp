@@ -40,7 +40,7 @@ public:
 
   void testAssign2DCells()
   {
-    UnitSquare mesh(3, 3);
+    UnitSquareMesh mesh(3, 3);
     const std::size_t ncells = mesh.num_cells();
     MeshValueCollection<int> f(2);
     bool all_new = true;
@@ -65,7 +65,7 @@ public:
 
   void testAssign2DFacets()
   {
-    UnitSquare mesh(3, 3);
+    UnitSquareMesh mesh(3, 3);
     mesh.init(2,1);
     const std::size_t ncells = mesh.num_cells();
     MeshValueCollection<int> f(1);
@@ -97,7 +97,7 @@ public:
 
   void testAssign2DVertices()
   {
-    UnitSquare mesh(3, 3);
+    UnitSquareMesh mesh(3, 3);
     mesh.init(2,0);
     const std::size_t ncells = mesh.num_cells();
     MeshValueCollection<int> f(0);
@@ -129,7 +129,7 @@ public:
 
   void testMeshFunctionAssign2DCells()
   {
-    UnitSquare mesh(3, 3);
+    UnitSquareMesh mesh(3, 3);
     const std::size_t ncells = mesh.num_cells();
     MeshFunction<int> f(mesh, 2, 0);
     for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -149,7 +149,7 @@ public:
 
   void testMeshFunctionAssign2DFacets()
   {
-    UnitSquare mesh(3, 3);
+    UnitSquareMesh mesh(3, 3);
     mesh.init(1);
     MeshFunction<int> f(mesh, 1, 25);
     MeshValueCollection<int> g(1);
@@ -167,7 +167,7 @@ public:
 
   void testMeshFunctionAssign2DVertices()
   {
-    UnitSquare mesh(3, 3);
+    UnitSquareMesh mesh(3, 3);
     mesh.init(0);
     MeshFunction<int> f(mesh, 0, 25);
     MeshValueCollection<int> g(0);

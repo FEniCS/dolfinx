@@ -21,7 +21,7 @@
 from dolfin import *
 
 # Create mesh and function spaces
-mesh = UnitSquare(8, 8)
+mesh = UnitSquareMesh(8, 8)
 P1 = FunctionSpace(mesh, "CG", 1)
 P2 = FunctionSpace(mesh, "CG", 2)
 

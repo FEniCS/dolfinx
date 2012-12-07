@@ -40,7 +40,8 @@ RectangleMesh::RectangleMesh(double x0, double y0, double x1, double y1,
   if (MPI::is_receiver()) { MeshPartitioning::build_distributed_mesh(*this); return; }
 
   // Check options
-  if (diagonal != "left" && diagonal != "right" && diagonal != "right/left" && diagonal != "left/right" && diagonal != "crossed")
+  if (diagonal != "left" && diagonal != "right" && diagonal != "right/left"
+          && diagonal != "left/right" && diagonal != "crossed")
   {
     dolfin_error("RectangleMesh.cpp",
                  "create rectangle",
