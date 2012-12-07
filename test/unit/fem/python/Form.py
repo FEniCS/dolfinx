@@ -163,50 +163,13 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
     def setUp(self):
 
         n = 1
-        bottom = compile_subdomains("near(x[1], 0.0)")
+        bottom = compile_subdomains("near(x[2], 1.0)")
         self.square = UnitSquareMesh(n, n)
         self.square3d = SubMesh(BoundaryMesh(UnitCubeMesh(n, n, n)), bottom)
 
-        # # Create mesh object and open editor
-        # self.square = Mesh()
-        # editor = MeshEditor()
-        # editor.open(self.square, 2, 2)
-        # editor.init_vertices(4)
-        # editor.init_cells(2)
-
-        # # Add vertices
-        # editor.add_vertex(1, 0.0, 0.0)
-        # editor.add_vertex(0, 1.0, 0.0)
-        # editor.add_vertex(3, 0.0, 1.0)
-        # editor.add_vertex(2, 1.0, 1.0)
-
-        # # Add cell
-        # editor.add_cell(0, 0, 1, 2)
-        # editor.add_cell(1, 1, 2, 3)
-
-        # # Close editor
-        # editor.close()
-
-        # # Create mesh object and open editor
-        # self.square3d = Mesh()
-        # editor = MeshEditor()
-        # editor.open(self.square3d, 2, 3)
-        # editor.init_vertices(4)
-        # editor.init_cells(2)
-
-        # # Add vertices
-        # editor.add_vertex(1, 0.0, 0.0, 0.0)
-        # editor.add_vertex(0, 1.0, 0.0, 0.0)
-        # editor.add_vertex(3, 0.0, 1.0, 0.0)
-        # editor.add_vertex(2, 1.0, 1.0, 0.0)
-
-        # # Add cell
-        # editor.add_cell(0, 0, 1, 2)
-        # editor.add_cell(1, 1, 2, 3)
-
         # Create global_orientation
         mf = self.square3d.data().create_mesh_function("cell_orientation", 2)
-        global_normal = numpy.array((0.0, 1.0, 0.0))
+        global_normal = numpy.array((0.0, 0.0, 1.0))
 
         for cell in cells(self.square3d):
             ind = [v.index() for v in vertices(cell)]
@@ -214,7 +177,6 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
             v2 = self.square3d.coordinates()[ind[2], :] - self.square3d.coordinates()[ind[0], :]
             local_normal = numpy.cross(v1, v2)
             orientation = numpy.inner(global_normal, local_normal)
-            print "orientation = ", orientation
             if orientation > 0:
                 mf[cell.index()] = 2
             elif orientation < 0:
@@ -232,17 +194,18 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
     def test_basic_rt(self):
 
         f2 = Expression(("2.0", "0.0"))
-        f3 = Expression(("0.0", "0.0", "2.0"))
+        f3 = Expression(("2.0", "0.0", "0.0"))
 
         u2 = TrialFunction(self.RT2)
         u3 = TrialFunction(self.RT3)
         v2 = TestFunction(self.RT2)
         v3 = TestFunction(self.RT3)
 
-        #w2 = project(f2, self.RT2)
-        #w3 = project(f3, self.RT3)
-        #info(w2.vector(), True)
-        #info(w3.vector(), True)
+        w2 = project(f2, self.RT2)
+        w3 = project(f3, self.RT3)
+        info_blue("Result from project")
+        info(w2.vector(), True)
+        info(w3.vector(), True)
 
         #exit()
 
@@ -263,12 +226,10 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
         A3 = assemble(a3)
         b3 = assemble(L3)
 
-        print "A2 - A3 = ", A2.array() - A3.array()
-        print "b2 - b3 = ", b2.array() - b3.array()
-
         solve(A2, w2.vector(), b2)
         solve(A3, w3.vector(), b3)
 
+        info_blue("Result from solve")
         info(w2.vector(), True)
         info(w3.vector(), True)
 
