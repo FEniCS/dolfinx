@@ -30,6 +30,7 @@ using namespace dolfin;
 
 int main()
 {
+  parameters["mesh_partitioner"] = "ParMETIS";
   #ifdef HAS_SLEPC
 
   // Create mesh
@@ -56,7 +57,7 @@ int main()
 
   // Initialize function with eigenvector
   Function u(V);
-  *u.vector() = rx;  
+  *u.vector() = rx;
 
   // Plot eigenfunction
   plot(u);

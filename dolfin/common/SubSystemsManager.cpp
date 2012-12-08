@@ -136,7 +136,7 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
 void SubSystemsManager::init_petsc()
 {
   #ifdef HAS_PETSC
-  if ( singleton().petsc_initialized )
+  if (singleton().petsc_initialized )
     return;
 
   log(TRACE, "Initializing PETSc (ignoring command-line arguments).");
@@ -163,6 +163,10 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   if (singleton().petsc_initialized)
     return;
 
+  // Initialized MPI (do it here rather than letting PETSc do it to make
+  // sure we MPI is intialized with thread suppport
+  init_mpi();
+
   // Get status of MPI before PETSc initialisation
   const bool mpi_init_status = mpi_initialized();
 
@@ -187,7 +191,7 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   singleton().petsc_initialized = true;
 
   // Determine if PETSc initialised MPI (and is therefore responsible for MPI finalization)
-  if (mpi_initialized() and !mpi_init_status)
+  if (mpi_initialized() && !mpi_init_status)
     singleton().control_mpi = false;
 
   #else
@@ -224,7 +228,7 @@ void SubSystemsManager::finalize_mpi()
   MPI_Initialized(&mpi_initialized);
 
   // Finalise MPI if required
-  if (mpi_initialized and singleton().control_mpi)
+  if (mpi_initialized && singleton().control_mpi)
   {
     // Check in MPI has already been finalised (possibly incorrectly by a
     // 3rd party libary). Is it hasn't, finalise as normal.

@@ -70,17 +70,17 @@ namespace dolfin
 
       // Graph partitioner
       std::set<std::string> allowed_mesh_partitioners;
-      std::string default_mesh_partitioner("ParMETIS");
-      allowed_mesh_partitioners.insert("ParMETIS");
-      #ifdef HAS_SCOTCH
+      std::string default_mesh_partitioner = "SCOTCH";
       allowed_mesh_partitioners.insert("SCOTCH");
-        #ifndef HAS_PARMETIS
-        default_mesh_partitioner = "SCOTCH";
+      #ifdef HAS_PARMETIS
+      allowed_mesh_partitioners.insert("ParMETIS");
+        #ifndef HAS_SCOTCH
+        default_mesh_partitioner = "ParMETIS";
         #endif
       #endif
       p.add("mesh_partitioner",
-	    default_mesh_partitioner,
-	    allowed_mesh_partitioners);
+            default_mesh_partitioner,
+            allowed_mesh_partitioners);
 
       // Graph coloring
       p.add("graph_coloring_library", "Boost");
@@ -105,7 +105,6 @@ namespace dolfin
       allowed_backends.insert("PETSc");
       default_backend = "PETSc";
       p.add("use_petsc_signal_handler", false);
-
       #endif
       #ifdef HAS_PETSC_CUSP
       allowed_backends.insert("PETScCusp");
