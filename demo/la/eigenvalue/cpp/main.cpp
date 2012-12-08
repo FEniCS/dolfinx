@@ -30,7 +30,6 @@ using namespace dolfin;
 
 int main()
 {
-  parameters["mesh_partitioner"] = "ParMETIS";
   #ifdef HAS_SLEPC
 
   // Create mesh
