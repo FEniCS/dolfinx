@@ -25,6 +25,8 @@ from dolfin import *
 import sys
 
 
+mesh = UnitSquareMesh(3, 3)
+
 class AbstractBaseTest(object):
     count = 0
     def setUp(self):
@@ -37,7 +39,6 @@ class AbstractBaseTest(object):
 
     def assemble_matrices(self, use_backend=False):
         " Assemble a pair of matrices, one (square) MxM and one MxN"
-        mesh = UnitSquareMesh(3, 3)
 
         V = FunctionSpace(mesh, "Lagrange", 2)
         W = FunctionSpace(mesh, "Lagrange", 1)
@@ -60,8 +61,6 @@ class AbstractBaseTest(object):
             return assemble(a), assemble(b)
 
     def assemble_vectors(self):
-        mesh = UnitSquareMesh(3, 3)
-
         V = FunctionSpace(mesh, "Lagrange", 2)
         W = FunctionSpace(mesh, "Lagrange", 1)
 
@@ -210,7 +209,7 @@ class AbstractBaseTest(object):
             if self.backend == "uBLAS" and sys.version_info[0]==2 and \
                    sys.version_info[1]==6:
                 return
-            
+
             A *= B
             A2 *= B2
             I = A*B
