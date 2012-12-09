@@ -35,7 +35,7 @@ class FormTest(unittest.TestCase):
         self.v = TestFunction(self.V)
         self.u = TrialFunction(self.V)
 
-    def _test_assemble(self):
+    def test_assemble(self):
         ufl_form = self.f*self.u*self.v*dx
         dolfin_form = Form(ufl_form)
         ufc_form = dolfin_form._compiled_form
@@ -64,7 +64,7 @@ class FormTestsOverManifolds(unittest.TestCase):
         self.VV2 = VectorFunctionSpace(self.mesh2, "CG", 1)
         self.Q2 = FunctionSpace(self.mesh2, "DG", 0)
 
-    def _test_assemble_functional(self):
+    def test_assemble_functional(self):
         u = Function(self.V1)
         u.vector()[:] = 1.0
         surfacearea = assemble(u*dx)
@@ -85,7 +85,7 @@ class FormTestsOverManifolds(unittest.TestCase):
         surfacearea = assemble(u*dx)
         self.assertAlmostEqual(surfacearea, 6.0)
 
-    def _test_assemble_linear(self):
+    def test_assemble_linear(self):
         u = Function(self.V1)
         w = TestFunction(self.Q1)
         u.vector()[:] = 0.5
@@ -114,7 +114,7 @@ class FormTestsOverManifolds(unittest.TestCase):
         b = assemble(inner(bu, bv)*dx).array().sum()
         self.assertAlmostEqual(a, b)
 
-    def _test_assemble_bilinear_1D_2D(self):
+    def test_assemble_bilinear_1D_2D(self):
 
         V = FunctionSpace(self.square, 'CG', 1)
         u = TrialFunction(V)
@@ -136,7 +136,7 @@ class FormTestsOverManifolds(unittest.TestCase):
         bar = abs(assemble(inner(grad(bu), grad(bv))*dx).array()).sum()
         self.assertAlmostEqual(bar, foo)
 
-    def _test_assemble_bilinear_2D_3D(self):
+    def test_assemble_bilinear_2D_3D(self):
 
         V = FunctionSpace(self.cube, 'CG', 1)
         u = TrialFunction(V)
@@ -162,19 +162,28 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
 
     def setUp(self):
 
-        n = 1
+        n = 2
         bottom = compile_subdomains("near(x[2], 1.0)")
         self.square = UnitSquareMesh(n, n)
         self.square3d = SubMesh(BoundaryMesh(UnitCubeMesh(n, n, n)), bottom)
 
-        # Create global_orientation
-        mf = self.square3d.data().create_mesh_function("cell_orientation", 2)
+        # Define global normal and create orientation map
         global_normal = numpy.array((0.0, 0.0, 1.0))
+        mf = self.square3d.data().create_mesh_function("cell_orientation", 2)
+        self.create_orientation(mf, global_normal)
 
-        for cell in cells(self.square3d):
+        self.CG2 = VectorFunctionSpace(self.square, "CG", 1)
+        self.CG3 = VectorFunctionSpace(self.square3d, "CG", 1)
+        self.RT2 = FunctionSpace(self.square, "RT", 1)
+        self.RT3 = FunctionSpace(self.square3d, "RT", 1)
+
+    def create_orientation(self, mf, global_normal):
+        mesh = mf.mesh()
+        coords = mesh.coordinates()
+        for cell in cells(mesh):
             ind = [v.index() for v in vertices(cell)]
-            v1 = self.square3d.coordinates()[ind[1], :] - self.square3d.coordinates()[ind[0], :]
-            v2 = self.square3d.coordinates()[ind[2], :] - self.square3d.coordinates()[ind[0], :]
+            v1 = coords[ind[1], :] - coords[ind[0], :]
+            v2 = coords[ind[2], :] - coords[ind[0], :]
             local_normal = numpy.cross(v1, v2)
             orientation = numpy.inner(global_normal, local_normal)
             if orientation > 0:
@@ -184,60 +193,44 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
             else:
                 raise Exception, "Not expecting orthogonal local/global normal"
 
-        #plot(mf, interactive=True)
-
-        self.CG2 = VectorFunctionSpace(self.square, "CG", 1)
-        self.CG3 = VectorFunctionSpace(self.square3d, "CG", 1)
-        self.RT2 = FunctionSpace(self.square, "RT", 1)
-        self.RT3 = FunctionSpace(self.square3d, "RT", 1)
-
     def test_basic_rt(self):
 
-        f2 = Expression(("2.0", "0.0"))
-        f3 = Expression(("2.0", "0.0", "0.0"))
+        f2 = Expression(("2.0", "1.0"))
+        f3 = Expression(("2.0", "1.0", "0.0"))
 
         u2 = TrialFunction(self.RT2)
         u3 = TrialFunction(self.RT3)
         v2 = TestFunction(self.RT2)
         v3 = TestFunction(self.RT3)
 
-        w2 = project(f2, self.RT2)
-        w3 = project(f3, self.RT3)
-        info_blue("Result from project")
-        info(w2.vector(), True)
-        info(w3.vector(), True)
+        # Project
+        pw2 = project(f2, self.RT2)
+        pw3 = project(f3, self.RT3)
+        pa2 = assemble(inner(pw2, pw2)*dx)
+        pa3 = assemble(inner(pw3, pw3)*dx)
 
-        #exit()
-
+        # Project explicitly
         a2 = inner(u2, v2)*dx
         a3 = inner(u3, v3)*dx
-
         L2 = inner(f2, v2)*dx
         L3 = inner(f3, v3)*dx
-
         w2 = Function(self.RT2)
         w3 = Function(self.RT3)
-
-        info_blue("Assembling std")
         A2 = assemble(a2)
         b2 = assemble(L2)
-
-        info_blue("Assembling manifold")
         A3 = assemble(a3)
         b3 = assemble(L3)
-
         solve(A2, w2.vector(), b2)
         solve(A3, w3.vector(), b3)
+        a2 = assemble(inner(w2, w2)*dx)
+        a3 = assemble(inner(w3, w3)*dx)
 
-        info_blue("Result from solve")
-        info(w2.vector(), True)
-        info(w3.vector(), True)
-
-        avg2 = assemble(inner(w2, w2)*dx)
-        print "avg2 = ", avg2
-
-        avg3 = assemble(inner(w3, w3)*dx)
-        print "avg3 = ", avg3
+        # Compare various results
+        self.assertAlmostEqual((w2.vector() - pw2.vector()).norm("l2"), 0.0)
+        self.assertAlmostEqual(a3, 5.0)
+        self.assertAlmostEqual(a2, a3)
+        self.assertAlmostEqual(pa2, a2)
+        self.assertAlmostEqual(pa2, pa3)
 
 
 if __name__ == "__main__":

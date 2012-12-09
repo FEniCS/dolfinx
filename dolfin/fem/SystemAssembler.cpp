@@ -330,6 +330,10 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     mesh.init(D - 1, D);
   }
 
+  // Extract cell orientations
+  boost::shared_ptr<MeshFunction<std::size_t> >
+    cell_orientation = mesh.data().mesh_function("cell_orientation");
+
   // Iterate over all cells
   Progress p("Assembling system (cell-wise)", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -355,8 +359,11 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     // Compute cell tensor for A
     if (A_cell_integral)
     {
-      // Update to current cell
-      A_ufc.update(*cell);
+      // Update cell
+      if (cell_orientation)
+        A_ufc.update(*cell, -1, (*cell_orientation)[cell->index()]);
+      else
+        A_ufc.update(*cell);
 
       // Tabulate cell tensor
       A_cell_integral->tabulate_tensor(&A_ufc.A[0], A_ufc.w(), A_ufc.cell);
@@ -367,8 +374,11 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     // Compute cell tensor for b
     if (b_cell_integral)
     {
-      // Update to current cell
-      b_ufc.update(*cell);
+      // Update cell
+      if (cell_orientation)
+        b_ufc.update(*cell, -1, (*cell_orientation)[cell->index()]);
+      else
+        b_ufc.update(*cell);
 
       // Tabulate cell tensor
       b_cell_integral->tabulate_tensor(&b_ufc.A[0], b_ufc.w(), b_ufc.cell);
