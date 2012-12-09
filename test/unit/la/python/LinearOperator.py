@@ -38,6 +38,9 @@ class TestLinearOperator(unittest.TestCase):
 
     def test_linear_operator(self):
 
+        if (MPI.num_processes() > 1):
+            return
+
         # Define linear operator
         class MyLinearOperator(LinearOperator):
 
