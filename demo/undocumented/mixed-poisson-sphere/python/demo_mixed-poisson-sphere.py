@@ -21,7 +21,7 @@ manifolds."""
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2012-12-09
-# Last changed:  2012-12-09
+# Last changed: 2012-12-09
 
 # Begin demo
 
@@ -78,5 +78,12 @@ solve(a == L, w)
 sigma_cg = project(sigma, VectorFunctionSpace(mesh, "CG", 1))
 u_cg = project(u, FunctionSpace(mesh, "CG", 1))
 plot(sigma_cg, interactive=True)
-plot(u_cg, interactive=True)
+plot(u_cg)
 
+# Store solutions
+file = File("sigma.pvd")
+file << sigma
+file = File("u.pvd")
+file << u
+
+interactive()

@@ -527,6 +527,7 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->mesh());
 
+
   // Check that the mesh matches. Notice that the hash is only
   // compared if the pointers are not matching.
   if (&mesh != _function_space->mesh().get() &&
@@ -536,6 +537,10 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
                  "interpolate function values at vertices",
                  "Non-matching mesh");
   }
+
+  // Extract cell orientation
+  boost::shared_ptr<MeshFunction<std::size_t> >
+    cell_orientation = mesh.data().mesh_function("cell_orientation");
 
   // Update ghosts dofs
   update();
@@ -573,7 +578,13 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
       continue;
 
     // Update to current cell
-    ufc_cell.update(*cell);
+    if (cell_orientation)
+      ufc_cell.update(*cell, -1, (*cell_orientation)[cell->index()]);
+    else
+      ufc_cell.update(*cell);
+
+    // Update to current cell
+    //ufc_cell.update(*cell);
 
     // Pick values from global vector
     restrict(&coefficients[0], element, *cell, ufc_cell);
