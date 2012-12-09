@@ -162,13 +162,14 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
 
     def setUp(self):
 
-        n = 2
-        bottom = compile_subdomains("near(x[2], 1.0)")
+        # Set-up meshes
+        n = 16
+        plane = compile_subdomains("near(x[1], 1.0)")
         self.square = UnitSquareMesh(n, n)
-        self.square3d = SubMesh(BoundaryMesh(UnitCubeMesh(n, n, n)), bottom)
+        self.square3d = SubMesh(BoundaryMesh(UnitCubeMesh(n, n, n)), plane)
 
         # Define global normal and create orientation map
-        global_normal = numpy.array((0.0, 0.0, 1.0))
+        global_normal = numpy.array((0.0, 1.0, 0.0))
         mf = self.square3d.data().create_mesh_function("cell_orientation", 2)
         self.create_orientation(mf, global_normal)
 
@@ -176,6 +177,10 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
         self.CG3 = VectorFunctionSpace(self.square3d, "CG", 1)
         self.RT2 = FunctionSpace(self.square, "RT", 1)
         self.RT3 = FunctionSpace(self.square3d, "RT", 1)
+        self.DG2 = FunctionSpace(self.square, "DG", 0)
+        self.DG3 = FunctionSpace(self.square3d, "DG", 0)
+        self.W2 = self.RT2*self.DG2
+        self.W3 = self.RT3*self.DG3
 
     def create_orientation(self, mf, global_normal):
         mesh = mf.mesh()
@@ -196,7 +201,7 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
     def test_basic_rt(self):
 
         f2 = Expression(("2.0", "1.0"))
-        f3 = Expression(("2.0", "1.0", "0.0"))
+        f3 = Expression(("1.0", "0.0", "2.0"))
 
         u2 = TrialFunction(self.RT2)
         u3 = TrialFunction(self.RT3)
@@ -226,11 +231,36 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
         a3 = assemble(inner(w3, w3)*dx)
 
         # Compare various results
-        self.assertAlmostEqual((w2.vector() - pw2.vector()).norm("l2"), 0.0)
+        self.assertAlmostEqual((w2.vector() - pw2.vector()).norm("l2"), 0.0,
+                               places=6)
         self.assertAlmostEqual(a3, 5.0)
         self.assertAlmostEqual(a2, a3)
         self.assertAlmostEqual(pa2, a2)
         self.assertAlmostEqual(pa2, pa3)
+
+    def test_mixed_poisson_solve(self):
+
+        f = Constant(1.0)
+
+        # Solve mixed Poisson on standard unit square
+        (sigma2, u2) = TrialFunctions(self.W2)
+        (tau2, v2) = TestFunctions(self.W2)
+        a = (inner(sigma2, tau2) + div(tau2)*u2 + div(sigma2)*v2)*dx
+        L = f*v2*dx
+        w2 = Function(self.W2)
+        solve(a == L, w2)
+
+        # Solve mixed Poisson on unit square in 3D
+        (sigma3, u3) = TrialFunctions(self.W3)
+        (tau3, v3) = TestFunctions(self.W3)
+        a = (inner(sigma3, tau3) + div(tau3)*u3 + div(sigma3)*v3)*dx
+        L = f*v3*dx
+        w3 = Function(self.W3)
+        solve(a == L, w3)
+
+        # Check that results are about the same
+        self.assertAlmostEqual(assemble(inner(w2, w2)*dx),
+                               assemble(inner(w3, w3)*dx))
 
 
 if __name__ == "__main__":
