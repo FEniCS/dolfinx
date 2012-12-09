@@ -145,10 +145,11 @@ int main() {
   # Set version number
   if (SCOTCH_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
     set(SCOTCH_VERSION ${OUTPUT} CACHE TYPE STRING)
+    message(STATUS "Found SCOTCH (version ${SCOTCH_VERSION})")
   endif()
 
   # For SCOTCH version > 6, need to add libraries scotch and ptscotch
-  if (${SCOTCH_VERSION} VERSION_GREATER "5")
+  if (NOT ${SCOTCH_VERSION} VERSION_LESS "6")
     set(SCOTCH_LIBRARIES ${PTSCOTCH_LIBRARY} ${SCOTCH_LIBRARY} ${PTSCOTCHERR_LIBRARY})
     set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${SCOTCH_LIBRARY})
   endif()
