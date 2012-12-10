@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-12-04
+// Last changed: 2012-12-10
 
 #ifdef HAS_HDF5
 
@@ -121,8 +121,6 @@ void HDF5File::write(const Mesh& mesh, const std::string name)
 //-----------------------------------------------------------------------------
 void HDF5File::write(const Mesh& mesh, std::size_t cell_dim, const std::string name)
 {
-  warning("Writing globally indexed mesh - not suitable for visualisation");
-
   dolfin_assert(hdf5_file_open);
 
   // Create Mesh group in HDF5 file
@@ -172,9 +170,9 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim, const std::string n
     topological_data.resize(mesh.cells().size());
     // reindex using global indices
     std::transform(mesh.cells().begin(), mesh.cells().end(),
-                   topological_data.begin(),
-    boost::bind<const std::size_t &>(&std::vector<std::size_t>::at,
-                                     &global_indices, _1));
+         topological_data.begin(),
+         boost::bind<const std::size_t &>(&std::vector<std::size_t>::at,
+                                          &global_indices, _1));
   }
   else
   {
@@ -356,8 +354,6 @@ std::string HDF5File::search_list(const std::vector<std::string>& list,
 //-----------------------------------------------------------------------------
 void HDF5File::read(Mesh& input_mesh, const std::string name)
 {
-  warning("HDF5 Mesh input is still experimental");
-
   dolfin_assert(hdf5_file_open);
 
   std::vector<std::string> _dataset_list =
@@ -573,16 +569,10 @@ void HDF5File::reorder_vertices_by_global_indices(std::vector<double>& vertex_co
     for(std::size_t j = 0; j < received_global_data.size(); ++j)
     {
       const std::size_t global_i = received_global_data[j].first;
-      if(global_i >= range.first && global_i < range.second)
-        std::copy(received_global_data[j].second.begin(),
-                  received_global_data[j].second.end(),
-                  new_vertex_array[global_i - range.first].begin());
-      else
-      {
-        dolfin_error("HDF5File.cpp",
-                     "unpack values in vector redistribution",
-                     "This should not happen");
-      }
+      dolfin_assert(global_i >= range.first && global_i < range.second);
+      std::copy(received_global_data[j].second.begin(),
+                received_global_data[j].second.end(),
+                new_vertex_array[global_i - range.first].begin());
     }
   }
 }
