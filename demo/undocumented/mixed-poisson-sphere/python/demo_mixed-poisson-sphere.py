@@ -64,20 +64,22 @@ for cell in cells(mesh):
 # Define function spaces and basis functions
 V = FunctionSpace(mesh, "RT", 1)
 Q = FunctionSpace(mesh, "DG", 0)
-W = V * Q
+R = FunctionSpace(mesh, "R", 0)
+W = MixedFunctionSpace((V, Q, R))
 
-(sigma, u) = TrialFunctions(W)
-(tau, v) = TestFunctions(W)
-g = Constant(1.0)
+(sigma, u, r) = TrialFunctions(W)
+(tau, v, t) = TestFunctions(W)
+
+g = Expression("sin(0.5*pi*x[2])")
 
 # Define forms
-a = (inner(sigma, tau) + div(sigma)*v + div(tau)*u)*dx
+a = (inner(sigma, tau) + div(sigma)*v + div(tau)*u + r*v + t*u)*dx
 L = g*v*dx
 
 # Solve problem
 w = Function(W)
 solve(a == L, w)
-(sigma, u) = w.split()
+(sigma, u, r) = w.split()
 
 # Plot CG1 representation of solutions
 sigma_cg = project(sigma, VectorFunctionSpace(mesh, "CG", 1))
