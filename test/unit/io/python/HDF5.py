@@ -48,6 +48,8 @@ if has_hdf5():
             self.assertEqual(y.size(), x.size())
             self.assertEqual((x - y).norm("l1"), 0.0)
 
+    class HDF5_Mesh(unittest.TestCase):
+
         def test_save_and_read_mesh_2D(self):
             # Write to file
             M = UnitSquareMesh(20,20)
