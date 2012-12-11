@@ -47,7 +47,8 @@ const std::map<std::string, NormType> PETScVector::norm_types
   ("linf", NORM_INFINITY);
 
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(std::string type, bool use_gpu) : _use_gpu(use_gpu)
+PETScVector::PETScVector(std::string type, bool use_gpu)
+  : _use_gpu(use_gpu)
 {
   if (type != "global" && type != "local")
   {
@@ -78,7 +79,7 @@ PETScVector::PETScVector(std::string type, bool use_gpu) : _use_gpu(use_gpu)
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(std::size_t N, std::string type, bool use_gpu)
-                      : _use_gpu(use_gpu)
+  : _use_gpu(use_gpu)
 {
 #ifndef HAS_PETSC_CUSP
   if (_use_gpu)
@@ -116,7 +117,7 @@ PETScVector::PETScVector(std::size_t N, std::string type, bool use_gpu)
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(const GenericSparsityPattern& sparsity_pattern)
-                      : _use_gpu(false)
+  : _use_gpu(false)
 {
   std::vector<std::size_t> ghost_indices;
   resize(sparsity_pattern.local_range(0), ghost_indices);

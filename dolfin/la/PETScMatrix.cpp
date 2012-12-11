@@ -117,7 +117,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   const std::size_t n = col_range.second - col_range.first;
   dolfin_assert(M > 0 && N > 0 && m > 0 && n > 0);
 
-  // Get sparsity payttern
+  // Get sparsity pattern
   dolfin_assert(tensor_layout.sparsity_pattern());
   const GenericSparsityPattern& sparsity_pattern = *tensor_layout.sparsity_pattern();
 

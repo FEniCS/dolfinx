@@ -24,7 +24,7 @@ import unittest
 from dolfin import *
 
 # Create some data for use below
-mesh = UnitSquare(8, 8)
+mesh = UnitSquareMesh(8, 8)
 V = FunctionSpace(mesh, "Lagrange", 1)
 u = TrialFunction(V)
 v = TestFunction(V)
@@ -39,6 +39,7 @@ class TestLinearOperator(unittest.TestCase):
 
     def test_linear_operator(self):
 
+        # FIXME: Uncomment to test in parallel
         if (MPI.num_processes() > 1):
             return
 
@@ -68,7 +69,7 @@ class TestLinearOperator(unittest.TestCase):
             parameters["linear_algebra_backend"] = backend
 
             # Compute reference value by solving ordinary linear system
-            mesh = UnitSquare(8, 8)
+            mesh = UnitSquareMesh(8, 8)
             V = FunctionSpace(mesh, "Lagrange", 1)
             u = TrialFunction(V)
             v = TestFunction(V)

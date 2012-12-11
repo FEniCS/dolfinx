@@ -108,34 +108,21 @@ GenericLinearOperator* PETScLinearOperator::wrapper()
 void PETScLinearOperator::init(const GenericVector& x,
                                GenericLinearOperator* wrapper)
 {
-  const uint M = x.size();
-  const uint N = x.size();
-
   // Store wrapper
   _wrapper = wrapper;
 
-  // Compute local range
-  const std::pair<std::size_t, std::size_t> row_range    = MPI::local_range(M);
-  const std::pair<std::size_t, std::size_t> column_range = MPI::local_range(N);
-  const std::size_t m_local = row_range.second - row_range.first;
-  const std::size_t n_local = column_range.second - column_range.first;
+  // Get global dimension
+  const std::size_t M = x.size();
+  const std::size_t N = x.size();
 
-  // Check whether matrix has already been initialized and dimensions match
-  if (A)
+  // Get local range
+  std::size_t m_local = M;
+  std::size_t n_local = N;
+  if (MPI::num_processes() > 1)
   {
-    // Get size and local size of existing matrix
-    PetscInt _M(0), _N(0), _m_local(0), _n_local(0);
-    MatGetSize(*A, &_M, &_N);
-    MatGetLocalSize(*A, &_m_local, &_n_local);
-
-    // Check whether size already matches
-    if (M == static_cast<std::size_t>(_M) &&
-        N == static_cast<std::size_t>(_N) &&
-        m_local == static_cast<std::size_t>(_m_local) &&
-        n_local == static_cast<std::size_t>(_n_local))
-    {
-      return;
-    }
+    std::pair<std::size_t, std::size_t> local_range = x.local_range();
+    m_local = local_range.first;
+    n_local = local_range.second;
   }
 
   // Initialize PETSc matrix
