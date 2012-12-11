@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2011-12-02
-# Last changed: 2011-12-02
+# Last changed: 2012-12-11
 #
 # Modified by Marie E. Rognes (meg@simula.no), 2012
 
@@ -266,7 +266,7 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
 class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
 
     def setUp(self):
-        m = 2
+        m = 3
         self.m = m
         plane = compile_subdomains("near(x[1], 0.0)")
         self.mesh1 = BoundaryMesh(UnitSquareMesh(m, m))
@@ -320,7 +320,22 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         #self.assertAlmostEqual(b1, self.m-1)
         #self.assertAlmostEqual(c1, - b1)
 
+    def test_cell_volume(self):
 
+        volume = ufl.Cell("interval", Space(2)).volume
+        a = volume*dx
+        b = assemble(a, mesh=self.bottom1)
+        self.assertAlmostEqual(b, 1.0/self.m)
+
+        volume = ufl.Cell("interval", Space(3)).volume
+        a = volume*dx
+        b = assemble(a, mesh=self.bottom3)
+        self.assertAlmostEqual(b, 1.0/self.m)
+
+        volume = ufl.Cell("triangle", Space(3)).volume
+        a = volume*dx
+        b = assemble(a, mesh=self.bottom2)
+        self.assertAlmostEqual(b, 1.0/(2*self.m*self.m))
 
 if __name__ == "__main__":
     print ""
