@@ -16,13 +16,24 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-20
-// Last changed: 2012-09-03
+// Last changed: 2012-12-11
 
 #include "DefaultFactory.h"
 #include "LinearOperator.h"
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+LinearOperator::LinearOperator(const GenericVector& x)
+{
+  // Create concrete implementation
+  DefaultFactory factory;
+  _A = factory.create_linear_operator();
+  dolfin_assert(_A);
+
+  // Initialize implementation
+  _A->init(x, this);
+}
 //-----------------------------------------------------------------------------
 LinearOperator::LinearOperator()
 {
@@ -39,46 +50,21 @@ std::string LinearOperator::str(bool verbose) const
 //-----------------------------------------------------------------------------
 const GenericLinearOperator* LinearOperator::instance() const
 {
-  // const cast required here to enable delayed initialization.
-  const_cast<LinearOperator*>(this)->init();
-
   return _A.get();
 }
 //-----------------------------------------------------------------------------
 GenericLinearOperator* LinearOperator::instance()
 {
-  init();
   return _A.get();
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const LinearAlgebraObject> LinearOperator::shared_instance() const
 {
-  // const cast required here to enable delayed initialization
-  const_cast<LinearOperator*>(this)->init();
-
   return _A;
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<LinearAlgebraObject> LinearOperator::shared_instance()
 {
-  init();
   return _A;
-}
-//-----------------------------------------------------------------------------
-void LinearOperator::init()
-{
-  // Check whether we need to initialize
-  if (_A)
-    return;
-
-  info("Calling init() for LinearOperator");
-
-  // Create concrete implementation
-  DefaultFactory factory;
-  _A = factory.create_linear_operator();
-  dolfin_assert(_A);
-
-  // Initialize implementation
-  _A->init(size(0), size(1), this);
 }
 //-----------------------------------------------------------------------------

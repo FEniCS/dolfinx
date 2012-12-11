@@ -105,8 +105,12 @@ GenericLinearOperator* PETScLinearOperator::wrapper()
   return _wrapper;
 }
 //-----------------------------------------------------------------------------
-void PETScLinearOperator::init(std::size_t M, std::size_t N, GenericLinearOperator* wrapper)
+void PETScLinearOperator::init(const GenericVector& x,
+                               GenericLinearOperator* wrapper)
 {
+  const uint M = x.size();
+  const uint N = x.size();
+
   // Store wrapper
   _wrapper = wrapper;
 

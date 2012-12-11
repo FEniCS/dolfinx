@@ -15,7 +15,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-20
-// Last changed: 2012-09-03
+// Last changed: 2012-12-11
 
 #ifndef __LINEAR_OPERATOR_H
 #define __LINEAR_OPERATOR_H
@@ -39,6 +39,9 @@ namespace dolfin
   class LinearOperator : public GenericLinearOperator
   {
   public:
+
+    /// Create linear operator matching parallel layout of given vector
+    LinearOperator(const GenericVector& x);
 
     /// Create linear operator
     LinearOperator();
@@ -70,9 +73,6 @@ namespace dolfin
     virtual boost::shared_ptr<LinearAlgebraObject> shared_instance();
 
   private:
-
-    // Initialize backend
-    void init();
 
     // Pointer to concrete implementation
     boost::shared_ptr<GenericLinearOperator> _A;

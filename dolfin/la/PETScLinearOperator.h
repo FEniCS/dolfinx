@@ -18,7 +18,7 @@
 // Modified by Andy R. Terrel 2005
 //
 // First added:  2005-01-17
-// Last changed: 2012-08-31
+// Last changed: 2012-12-11
 
 #ifndef __PETSC_LINEAR_OPERATOR_H
 #define __PETSC_LINEAR_OPERATOR_H
@@ -69,7 +69,7 @@ namespace dolfin
   protected:
 
     // Initialization
-    void init(std::size_t M, std::size_t N, GenericLinearOperator* wrapper);
+    void init(const GenericVector& x, GenericLinearOperator* wrapper);
 
     // Pointer to wrapper
     GenericLinearOperator* _wrapper;

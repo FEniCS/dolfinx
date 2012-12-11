@@ -32,7 +32,8 @@ a = dot(grad(u), grad(v))*dx + u*v*dx
 L = Constant(1)*dx
 
 # Backends supporting the LinearOperator interface
-backends = ["PETSc", "uBLAS"]
+#backends = ["PETSc", "uBLAS"]
+backends = ["PETSc"]
 
 class TestLinearOperator(unittest.TestCase):
 
@@ -45,7 +46,7 @@ class TestLinearOperator(unittest.TestCase):
         class MyLinearOperator(LinearOperator):
 
             def __init__(self, a_action, u):
-                LinearOperator.__init__(self)
+                LinearOperator.__init__(self, u.vector())
                 self.a_action = a_action
                 self.u = u
 
