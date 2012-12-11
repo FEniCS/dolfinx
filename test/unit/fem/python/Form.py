@@ -24,6 +24,7 @@
 
 import unittest
 import numpy
+import ufl
 from dolfin import *
 
 class FormTest(unittest.TestCase):
@@ -261,6 +262,64 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
         # Check that results are about the same
         self.assertAlmostEqual(assemble(inner(w2, w2)*dx),
                                assemble(inner(w3, w3)*dx))
+
+class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
+
+    def setUp(self):
+        m = 2
+        self.m = m
+        plane = compile_subdomains("near(x[1], 0.0)")
+        self.mesh1 = BoundaryMesh(UnitSquareMesh(m, m))
+        self.bottom1 = SubMesh(self.mesh1, plane)
+        self.mesh2 = BoundaryMesh(UnitCubeMesh(m, m, m))
+        self.bottom2 = SubMesh(self.mesh2, plane)
+        line = compile_subdomains("near(x[0], 0.0)")
+        self.mesh3 = BoundaryMesh(SubMesh(self.mesh2, plane))
+        self.bottom3 = SubMesh(self.mesh3, line)
+
+    def test_normals_2D_1D(self):
+        "Testing assembly of normals for 1D meshes embedded in 2D"
+        n = ufl.Cell("interval", Space(2)).n
+        a = inner(n, n)*ds
+        value_bottom1 = assemble(a, mesh=self.bottom1)
+        self.assertAlmostEqual(value_bottom1, 2.0)
+        b = inner(n('+'), n('+'))*dS
+        b1 = assemble(b, mesh=self.bottom1)
+        c = inner(n('+'), n('-'))*dS
+        c1 = assemble(c, mesh=self.bottom1)
+        self.assertAlmostEqual(b1, self.m-1)
+        self.assertAlmostEqual(c1, - b1)
+
+    def test_normals_3D_1D(self):
+        "Testing assembly of normals for 1D meshes embedded in 3D"
+        n = ufl.Cell("interval", Space(3)).n
+        a = inner(n, n)*ds
+        v1 = assemble(a, mesh=self.bottom3)
+        self.assertAlmostEqual(v1, 2.0)
+        b = inner(n('+'), n('+'))*dS
+        b1 = assemble(b, mesh=self.bottom3)
+        c = inner(n('+'), n('-'))*dS
+        c1 = assemble(c, mesh=self.bottom3)
+        self.assertAlmostEqual(b1, self.m-1)
+        self.assertAlmostEqual(c1, - b1)
+
+    def test_normals_3D_2D(self):
+        "Testing assembly of normals for 2D meshes embedded in 3D"
+        n = ufl.Cell("triangle", Space(3)).n
+        a = inner(n, n)*ds
+        # Not quite working yet...
+
+        #v1 = assemble(a, mesh=self.bottom2)
+        #self.assertAlmostEqual(v1, 4.0)
+        #b = inner(n('+'), n('+'))*dS
+        #b1 = assemble(b, mesh=self.bottom2)
+        #c = inner(n('+'), n('-'))*dS
+        #c1 = assemble(c, mesh=self.bottom2)
+        #print "b1 = ", b1
+        #print "c1 = ", c1
+        #self.assertAlmostEqual(b1, self.m-1)
+        #self.assertAlmostEqual(c1, - b1)
+
 
 
 if __name__ == "__main__":
