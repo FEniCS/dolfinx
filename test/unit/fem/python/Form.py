@@ -321,7 +321,7 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         #self.assertAlmostEqual(c1, - b1)
 
     def test_cell_volume(self):
-
+        "Testing assembly of volume for embedded meshes"
         volume = ufl.Cell("interval", Space(2)).volume
         a = volume*dx
         b = assemble(a, mesh=self.bottom1)
@@ -336,6 +336,26 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         a = volume*dx
         b = assemble(a, mesh=self.bottom2)
         self.assertAlmostEqual(b, 1.0/(2*self.m*self.m))
+
+    def test_cell_circumradius(self):
+        "Testing assembly of circumradius for embedded meshes"
+        r = ufl.Cell("interval", Space(2)).circumradius
+        a = r*dx
+        b = assemble(a, mesh=self.bottom1)
+        self.assertAlmostEqual(b, 1.0/self.m)
+
+        r = ufl.Cell("interval", Space(3)).circumradius
+        a = r*dx
+        b = assemble(a, mesh=self.bottom3)
+        self.assertAlmostEqual(b, 1.0/self.m)
+
+        r = ufl.Cell("triangle", Space(2)).circumradius
+        a = r*dx
+        b0 = assemble(a, mesh=UnitSquareMesh(self.m, self.m))
+        r = ufl.Cell("triangle", Space(3)).circumradius
+        a = r*dx
+        b1 = assemble(a, mesh=self.bottom2)
+        self.assertAlmostEqual(b0, b1)
 
 if __name__ == "__main__":
     print ""

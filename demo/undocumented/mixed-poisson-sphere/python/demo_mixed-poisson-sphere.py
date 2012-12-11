@@ -39,27 +39,7 @@ mesh = Mesh("sphere16.xml")
 # Define global normal
 global_normal = Expression(("x[0]", "x[1]", "x[2]"))
 
-# Create orientation map (2 == up, 1 == down, 0 == undefined) For each
-# cell, compute the local normal defined by the cross product of the
-# first and second edge, compare this to the globally defined normal
-# (evaluated at the cell midpoint) via the dot product. If the local
-# and global normal point in different directions, the cell is
-# considered a 'down' cell, otherwise it is an 'up' cell.
-mf = mesh.data().create_mesh_function("cell_orientation", 2)
-coords = mesh.coordinates()
-for cell in cells(mesh):
-    ind = [v.index() for v in vertices(cell)]
-    v1 = coords[ind[1], :] - coords[ind[0], :]
-    v2 = coords[ind[2], :] - coords[ind[0], :]
-    local_normal = numpy.cross(v1, v2)
-    p = cell.midpoint()
-    orientation = numpy.inner(global_normal(p), local_normal)
-    if orientation > 0:
-        mf[cell.index()] = 2
-    elif orientation < 0:
-        mf[cell.index()] = 1
-    else:
-        raise Exception, "Not expecting orthogonal local/global normal"
+init_orientation(mesh, global_normal)
 
 # Define function spaces and basis functions
 V = FunctionSpace(mesh, "RT", 1)
