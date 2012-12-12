@@ -82,7 +82,8 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 
   // Build dof map
   const bool reorder = dolfin::parameters["reorder_dofs_serial"];
-  DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, reorder, _distributed);
+  DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, _restriction,
+                       reorder, _distributed);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
@@ -134,20 +135,15 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
     }
   }
 
-  // FIXME: Think about whether restricted UFC mesh should be created
   // Create the UFC mesh
-  //const UFCMesh ufc_mesh(dolfin_mesh, domain_markers, domain);
   const UFCMesh ufc_mesh(dolfin_mesh);
 
-  // FIXME: Think about whether restricted UFC dofmap should be created
   // Initialize the UFC dofmap
   init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh);
 
-  // FIXME: Should be OK up to here
-
   // Build restricted dof map
   const bool reorder = dolfin::parameters["reorder_dofs_serial"];
-  DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, *restriction,
+  DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, restriction,
                        reorder, _distributed);
 }
 //-----------------------------------------------------------------------------
@@ -285,7 +281,7 @@ DofMap::DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
 
   // Build dof map
   const bool reorder = dolfin::parameters["reorder_dofs_serial"];
-  DofMapBuilder::build(*this, mesh, ufc_mesh, reorder, _distributed);
+  DofMapBuilder::build(*this, mesh, ufc_mesh, _restriction, reorder, _distributed);
 
   // Dimension checks
   dolfin_assert(dofmap_view._dofmap.size() == mesh.num_cells());
