@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-03-01
-// Last changed: 2012-11-05
+// Last changed: 2012-12-12
 
 #ifndef __UFC_MESH_H
 #define __UFC_MESH_H
@@ -58,11 +58,6 @@ namespace dolfin
       for (std::size_t d = 0; d <= topological_dimension; d++)
         num_entities[d] = mesh.size_global(d);
     }
-
-    // Create UFC mesh from restricted DOLFIN mesh
-    UFCMesh(const Mesh& mesh,
-            const MeshFunction<std::size_t>& domain_markers,
-            std::size_t domain);
 
     /// Copy constructor
     UFCMesh(const UFCMesh& mesh) : ufc::mesh()
