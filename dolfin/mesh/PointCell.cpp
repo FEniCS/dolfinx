@@ -125,6 +125,15 @@ Point PointCell::normal(const Cell& cell, uint facet) const
   return p;
 }
 //-----------------------------------------------------------------------------
+Point PointCell::cell_normal(const Cell& cell) const
+{
+  dolfin_error("PointCell.cpp",
+               "compute cell normal",
+               "Normal vector of a point cell is not defined");
+  Point p;
+  return p;
+}
+//-----------------------------------------------------------------------------
 double PointCell::facet_area(const Cell& cell, uint facet) const
 {
   dolfin_error("PointCell.cpp",

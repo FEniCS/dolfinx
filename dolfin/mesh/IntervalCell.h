@@ -54,7 +54,7 @@ namespace dolfin
     /// Return number of vertices for entity of given topological dimension
     uint num_vertices(uint dim) const;
 
-    /// Return orientation of the cell
+    /// Return orientation of the cell (assuming flat space)
     uint orientation(const Cell& cell) const;
 
     /// Create entities e of given topological dimension from vertices v
@@ -75,6 +75,9 @@ namespace dolfin
 
     /// Compute of given facet with respect to the cell
     Point normal(const Cell& cell, uint facet) const;
+
+    /// Compute normal to given cell (viewed as embedded in 2D)
+    Point cell_normal(const Cell& cell) const;
 
     /// Compute the area/length of given facet with respect to the cell
     double facet_area(const Cell& cell, uint facet) const;

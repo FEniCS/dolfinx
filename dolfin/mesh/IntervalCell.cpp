@@ -74,10 +74,8 @@ dolfin::uint IntervalCell::num_vertices(uint dim) const
 //-----------------------------------------------------------------------------
 dolfin::uint IntervalCell::orientation(const Cell& cell) const
 {
-  Point v01 = Point(cell.entities(0)[1]) - Point(cell.entities(0)[0]);
-  Point n(-v01.y(), v01.x());
-
-  return (n.dot(v01) < 0.0 ? 1 : 0);
+  const Point up(0.0, 1.0);
+  return cell.orientation(up);
 }
 //-----------------------------------------------------------------------------
 void IntervalCell::create_entities(std::vector<std::vector<std::size_t> >& e,
@@ -176,6 +174,33 @@ Point IntervalCell::normal(const Cell& cell, uint facet) const
   Point n = p0 - p1;
   if (facet == 1)
     n *= -1.0;
+
+  // Normalize
+  n /= n.norm();
+
+  return n;
+}
+//-----------------------------------------------------------------------------
+Point IntervalCell::cell_normal(const Cell& cell) const
+{
+  // Get mesh geometry
+  const MeshGeometry& geometry = cell.mesh().geometry();
+
+  // Cell_normal only defined for gdim = 1, 2 for now
+  const unsigned int gdim = geometry.dim();
+  if (gdim > 2)
+    dolfin_error("IntervalCell.cpp",
+                 "compute cell normal",
+                 "Illegal geometric dimension (%d)", gdim);
+
+  // Get the two vertices as points
+  const std::size_t* vertices = cell.entities(0);
+  Point p0 = geometry.point(vertices[0]);
+  Point p1 = geometry.point(vertices[1]);
+
+  // Define normal by rotating tangent counterclockwise
+  Point t = p1 - p0;
+  Point n(-t.y(), t.x());
 
   // Normalize
   n /= n.norm();

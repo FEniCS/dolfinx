@@ -50,6 +50,7 @@ namespace dolfin
   class CellType;
   class BoundaryMesh;
   class Function;
+  class Expression;
   class LocalMeshData;
   class MeshEntity;
   template <typename T> class MeshFunction;
@@ -672,6 +673,29 @@ namespace dolfin
     ///         No example code available for this function.
     std::string str(bool verbose) const;
 
+    /// Return cell_orientations
+    ///
+    /// *Returns*
+    ///     std::vector<int>
+    ///         Map from cell index to orientation of cell
+    std::vector<int>& cell_orientations();
+
+    /// Return cell_orientations (const version)
+    ///
+    /// *Returns*
+    ///     std::vector<int>
+    ///         Map from cell index to orientation of cell
+    const std::vector<int>& cell_orientations() const;
+
+    /// Compute and initialize cell_orientations relative to a given
+    /// global outward direction/normal/orientation. Only defined if
+    /// mesh is orientable.
+    ///
+    /// *Arguments*
+    ///     global_normal (Expression)
+    ///         A global normal direction to the mesh
+    void init_cell_orientations(const Expression& global_normal);
+
   private:
 
     // Friends
@@ -700,6 +724,9 @@ namespace dolfin
 
     // True if mesh has been ordered
     mutable bool _ordered;
+
+    // Orientation of cells relative to a global direction
+    std::vector<int> _cell_orientations;
 
   };
 

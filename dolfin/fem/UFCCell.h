@@ -164,7 +164,6 @@ namespace dolfin
       this->local_facet = local_facet;
 
       // Set orientation
-      std::cout << "Setting orientation" << std::endl;
       this->orientation = cell.mesh().cell_orientations()[cell.index()];
 
       const uint D = topological_dimension;
@@ -189,7 +188,7 @@ namespace dolfin
       //if (use_global_indices && topology.have_global_indices(D))
       //  entity_indices[D][0] = cell.global_index();
       //else
-        entity_indices[D][0] = cell.index();
+      entity_indices[D][0] = cell.index();
 
       // FIXME: Using the local cell index is inconsistent with UFC, but
       //        necessary to make DOLFIN run
