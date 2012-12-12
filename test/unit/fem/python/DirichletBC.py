@@ -96,6 +96,27 @@ class DirichletBCTest(unittest.TestCase):
 
         self.assertAlmostEqual(norm(b), 16.55294535724685)
 
+    def test_bc_for_piola_on_manifolds(self):
+        "Testing DirichletBC for Piolas over manifolds"
+        n = 4
+        side = compile_subdomains("near(x[1], 0.0)")
+        mesh = SubMesh(BoundaryMesh(UnitCubeMesh(n, n, n)), side)
+        init_orientation(mesh, lambda x: (0.0, 1.0, 0.0))
+
+        RT0 = FunctionSpace(mesh, "RT", 1)
+        BDM1 = FunctionSpace(mesh, "BDM", 1)
+        BDM2 = FunctionSpace(mesh, "BDM", 2)
+        N1curl1 = FunctionSpace(mesh, "N1curl", 1)
+        N2curl1 = FunctionSpace(mesh, "N2curl", 1)
+        elements = [N1curl1, N2curl1 , RT0, BDM1]#, BDM2]
+
+        for V in elements:
+            bc = DirichletBC(V, (1.0, 0.0, 0.0), lambda x: True)
+            u = Function(V)
+            bc.apply(u.vector())
+            b = assemble(inner(u, u)*dx)
+            self.assertAlmostEqual(b, 1.0)
+
 if __name__ == "__main__":
     print ""
     print "Testing Dirichlet boundary conditions"

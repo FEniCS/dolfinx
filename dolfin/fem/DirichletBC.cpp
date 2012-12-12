@@ -786,6 +786,10 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   // Create UFC cell object
   UFCCell ufc_cell(mesh);
 
+  // Extract cell orientation
+  boost::shared_ptr<MeshFunction<std::size_t> >
+    cell_orientation = mesh.data().mesh_function("cell_orientation");
+
   // Iterate over facets
   dolfin_assert(_function_space->element());
   Progress p("Computing Dirichlet boundary values, topological search", facets.size());
@@ -797,7 +801,10 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
 
     // Create cell
     Cell cell(mesh, cell_number);
-    ufc_cell.update(cell, facet_number);
+    if (cell_orientation)
+      ufc_cell.update(cell, facet_number, (*cell_orientation)[cell.index()]);
+    else
+      ufc_cell.update(cell);
 
     // Restrict coefficient to cell
     g->restrict(&data.w[0], *_function_space->element(), cell, ufc_cell);
@@ -866,13 +873,21 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
     // Create UFC cell object
     UFCCell ufc_cell(mesh);
 
+    // Extract cell orientation
+    boost::shared_ptr<MeshFunction<std::size_t> >
+      cell_orientation = mesh.data().mesh_function("cell_orientation");
+
     // Loop the vertices associated with the facet
     for (VertexIterator vertex(facet); !vertex.end(); ++vertex)
     {
       // Loop the cells associated with the vertex
       for (CellIterator c(*vertex); !c.end(); ++c)
       {
-        ufc_cell.update(*c, facet_number);
+        // Update UFC cell
+        if (cell_orientation)
+          ufc_cell.update(*c, facet_number, (*cell_orientation)[c->index()]);
+        else
+          ufc_cell.update(*c, facet_number);
 
         bool tabulated = false;
         bool interpolated = false;
@@ -945,12 +960,19 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                                  ? std::pair<std::size_t, std::size_t>(0,0)
                                  : dofmap.ownership_range());
 
+  // Extract cell orientation
+  boost::shared_ptr<MeshFunction<std::size_t> >
+    cell_orientation = mesh.data().mesh_function("cell_orientation");
+
   // Iterate over cells
   Progress p("Computing Dirichlet boundary values, pointwise search", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update UFC cell
-    ufc_cell.update(*cell);
+    if (cell_orientation)
+      ufc_cell.update(*cell, -1, (*cell_orientation)[cell->index()]);
+    else
+      ufc_cell.update(*cell);
 
     // Tabulate coordinates of dofs on cell
     dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
