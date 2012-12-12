@@ -249,9 +249,9 @@ find_package(LibXml2 REQUIRED)
 
 # Note: Check for Python interpreter even when Python is disabled because it
 #       is used to get the installation path for dolfin_utils
-find_package(PythonInterp)
+find_package(PythonInterp 2)
 if (DOLFIN_ENABLE_PYTHON)
-  find_package(PythonLibs)
+  find_package(PythonLibs 2)
 
   # If Python is found, check for NumPy and SWIG
   if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
