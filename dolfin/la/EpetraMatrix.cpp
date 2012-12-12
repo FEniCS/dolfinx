@@ -176,7 +176,7 @@ boost::shared_ptr<GenericMatrix> EpetraMatrix::copy() const
   return B;
 }
 //-----------------------------------------------------------------------------
-std::size_t EpetraMatrix::size(unsigned int dim) const
+std::size_t EpetraMatrix::size(std::size_t dim) const
 {
   if (dim > 1)
   {
@@ -195,7 +195,7 @@ std::size_t EpetraMatrix::size(unsigned int dim) const
     return 0;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t> EpetraMatrix::local_range(unsigned int dim) const
+std::pair<std::size_t, std::size_t> EpetraMatrix::local_range(std::size_t dim) const
 {
   dolfin_assert(dim < 2);
   if (dim == 1)
@@ -211,7 +211,7 @@ std::pair<std::size_t, std::size_t> EpetraMatrix::local_range(unsigned int dim) 
   return std::make_pair(row_map.MinMyGID64(), row_map.MaxMyGID64() + 1);
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::resize(GenericVector& z, unsigned int dim) const
+void EpetraMatrix::resize(GenericVector& z, std::size_t dim) const
 {
   dolfin_assert(A);
 
@@ -445,9 +445,9 @@ void EpetraMatrix::ident(std::size_t m, const DolfinIndex* rows)
   if (MPI::num_processes() > 1)
   {
     // Send list of nonlocal rows to all processes
-    std::vector<unsigned int> destinations;
+    std::vector<std::size_t> destinations;
     std::vector<std::size_t> send_data;
-    for (unsigned int i = 0; i < MPI::num_processes(); ++i)
+    for (std::size_t i = 0; i < MPI::num_processes(); ++i)
     {
       if (i != MPI::process_number())
       {

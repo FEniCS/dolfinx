@@ -142,6 +142,16 @@ def array(self):
 %template(FaceFunction ## TYPENAME) dolfin::FaceFunction<TYPE>;
 %template(FacetFunction ## TYPENAME) dolfin::FacetFunction<TYPE>;
 %template(VertexFunction ## TYPENAME) dolfin::VertexFunction<TYPE>;
+
+//-----------------------------------------------------------------------------
+// Modifying the interface of Hierarchical
+//-----------------------------------------------------------------------------
+%pythoncode %{
+HierarchicalMeshFunction ## TYPENAME.leaf_node = HierarchicalMeshFunction ## TYPENAME._leaf_node
+HierarchicalMeshFunction ## TYPENAME.root_node = HierarchicalMeshFunction ## TYPENAME._root_node
+HierarchicalMeshFunction ## TYPENAME.child = HierarchicalMeshFunction ## TYPENAME._child
+HierarchicalMeshFunction ## TYPENAME.parent = HierarchicalMeshFunction ## TYPENAME._parent
+%}
 %enddef
 
 
@@ -399,3 +409,14 @@ def cells(self):
 
 %}
 }
+
+//-----------------------------------------------------------------------------
+// Modifying the interface of Hierarchical
+//-----------------------------------------------------------------------------
+%pythoncode %{
+HierarchicalMesh.leaf_node = HierarchicalMesh._leaf_node
+HierarchicalMesh.root_node = HierarchicalMesh._root_node
+HierarchicalMesh.child = HierarchicalMesh._child
+HierarchicalMesh.parent = HierarchicalMesh._parent
+%}
+

@@ -16,8 +16,9 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-07-07
-// Last changed: 2012-08-23
+// Last changed: 2012-12-11
 
+#include "GenericVector.h"
 #include "uBLASLinearOperator.h"
 
 using namespace dolfin;
@@ -28,7 +29,7 @@ uBLASLinearOperator::uBLASLinearOperator() : _wrapper(0), M(0), N(0)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::size_t uBLASLinearOperator::size(unsigned int dim) const
+std::size_t uBLASLinearOperator::size(std::size_t dim) const
 {
   if (dim == 0)
     return M;
@@ -67,11 +68,12 @@ std::string uBLASLinearOperator::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void uBLASLinearOperator::init(std::size_t M, std::size_t N, GenericLinearOperator* wrapper)
+void uBLASLinearOperator::init(const GenericVector& x,
+                               GenericLinearOperator* wrapper)
 {
   // Store dimensions
-  this->M = M;
-  this->N = N;
+  this->M = x.size();
+  this->N = x.size();
 
   // Store wrapper
   _wrapper = wrapper;

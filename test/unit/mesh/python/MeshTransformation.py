@@ -26,14 +26,14 @@ from dolfin import *
 class MeshTransformation(unittest.TestCase):
 
     def test_rotation_2d(self):
-        mesh = UnitSquare(8, 8)
+        mesh = UnitSquareMesh(8, 8)
         p = Point(1, 2)
         mesh.rotate(10)
         mesh.rotate(10, 2)
         mesh.rotate(10, 2, p)
 
     def test_rotation_3d(self):
-        mesh = UnitCube(8, 8, 8)
+        mesh = UnitCubeMesh(8, 8, 8)
         p = Point(1, 2, 3)
         mesh.rotate(30, 0)
         mesh.rotate(30, 1)

@@ -42,7 +42,7 @@ public:
 int main()
 {
   // Create mesh and function spaces
-  UnitSquare mesh(8, 8);
+  UnitSquareMesh mesh(8, 8);
   P1::FunctionSpace P1(mesh);
   P2::FunctionSpace P2(mesh);
 

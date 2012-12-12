@@ -39,8 +39,8 @@ DynamicMeshEditor::~DynamicMeshEditor()
   clear();
 }
 //-----------------------------------------------------------------------------
-void DynamicMeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim,
-                             uint gdim)
+void DynamicMeshEditor::open(Mesh& mesh, CellType::Type type, std::size_t tdim,
+                             std::size_t gdim)
 {
   // Clear old data
   mesh.clear();
@@ -53,7 +53,7 @@ void DynamicMeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim,
   this->cell_type = CellType::create(type);
 }
 //-----------------------------------------------------------------------------
-void DynamicMeshEditor::open(Mesh& mesh, std::string type, uint tdim, uint gdim)
+void DynamicMeshEditor::open(Mesh& mesh, std::string type, std::size_t tdim, std::size_t gdim)
 {
   if (type == "point")
     open(mesh, CellType::point, tdim, gdim);
@@ -106,7 +106,7 @@ void DynamicMeshEditor::add_cell(std::size_t c,
                                  const std::vector<std::size_t>& v)
 {
   // Check size of array
-  const uint vertices_per_cell = cell_type->num_vertices(tdim);
+  const std::size_t vertices_per_cell = cell_type->num_vertices(tdim);
   if (v.size() != vertices_per_cell)
   {
     dolfin_error("DynamicMeshEditor.cpp",
@@ -170,7 +170,7 @@ void DynamicMeshEditor::close(bool order)
   editor.init_vertices(num_vertices);
 
   // Set number of cells
-  const uint vertices_per_cell = cell_type->num_vertices(gdim);
+  const std::size_t vertices_per_cell = cell_type->num_vertices(gdim);
   const std::size_t num_cells = cell_vertices.size() / vertices_per_cell;
   editor.init_cells(num_cells);
 

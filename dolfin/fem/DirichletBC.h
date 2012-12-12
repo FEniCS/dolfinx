@@ -24,7 +24,7 @@
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common
-// FIXME: data structure (perhaps an std::vector<uint> with facet indices).
+// FIXME: data structure (perhaps an std::vector<std::size_t> with facet indices).
 
 #ifndef __DIRICHLET_BC_H
 #define __DIRICHLET_BC_H

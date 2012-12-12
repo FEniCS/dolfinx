@@ -93,11 +93,11 @@ namespace dolfin
     /// Create tensor-valued constant for flattened array of values
     ///
     /// *Arguments*
-    ///     value_shape (std::vector<uint>)
+    ///     value_shape (std::vector<std::size_t>)
     ///         Shape of tensor.
     ///     values (std::vector<double>)
     ///         Values to create tensor-valued constant from.
-    Constant(std::vector<uint> value_shape,
+    Constant(std::vector<std::size_t> value_shape,
              std::vector<double> values);
 
     /// Copy constructor

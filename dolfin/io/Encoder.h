@@ -51,7 +51,7 @@ namespace dolfin
   {
 
     template<typename T>
-    static void encode_base64(const T* data, uint length,
+    static void encode_base64(const T* data, std::size_t length,
                               std::stringstream& encoded_data)
     {
       encoded_data << base64_encode((const unsigned char*) &data[0],
@@ -68,7 +68,7 @@ namespace dolfin
 
     #ifdef HAS_ZLIB
     template<typename T>
-    static std::pair<boost::shared_array<unsigned char>, dolfin::uint> compress_data(const std::vector<T>& data)
+    static std::pair<boost::shared_array<unsigned char>, std::size_t> compress_data(const std::vector<T>& data)
     {
       // Compute length of uncompressed data
       const unsigned long uncompressed_size = data.size()*sizeof(T);

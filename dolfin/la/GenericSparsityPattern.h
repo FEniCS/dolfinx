@@ -45,7 +45,7 @@ namespace dolfin
     enum Type {sorted, unsorted};
 
     /// Create empty sparsity pattern
-    GenericSparsityPattern(unsigned int primary_dim) : _primary_dim(primary_dim) {}
+    GenericSparsityPattern(std::size_t primary_dim) : _primary_dim(primary_dim) {}
 
     /// Destructor
     virtual ~GenericSparsityPattern() {};
@@ -53,24 +53,24 @@ namespace dolfin
     /// Initialize sparsity pattern for a generic tensor
     virtual void init(const std::vector<std::size_t>& dims,
                       const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
-                      const std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner) = 0;
+                      const std::vector<const boost::unordered_map<std::size_t, std::size_t>* > off_process_owner) = 0;
 
     /// Insert non-zero entries
     virtual void insert(const std::vector<const std::vector<DolfinIndex>* >& entries) = 0;
 
     /// Add edges (vertex = [index, owning process])
-    virtual void add_edges(const std::pair<DolfinIndex, unsigned int>& vertex,
+    virtual void add_edges(const std::pair<DolfinIndex, std::size_t>& vertex,
                            const std::vector<DolfinIndex>& edges) = 0;
 
     /// Return rank
-    virtual unsigned int rank() const = 0;
+    virtual std::size_t rank() const = 0;
 
     /// Return primary dimension (e.g., 0=row partition, 1=column partition)
-    unsigned int primary_dim() const
+    std::size_t primary_dim() const
     { return _primary_dim; }
 
     /// Return local range for dimension dim
-    virtual std::pair<std::size_t, std::size_t> local_range(unsigned int dim) const = 0;
+    virtual std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const = 0;
 
     /// Return total number of nonzeros in local_range
     virtual std::size_t num_nonzeros() const = 0;
@@ -105,7 +105,7 @@ namespace dolfin
 
     // Primary sparsity pattern storage dimension
     // (e.g., 0=row partition, 1=column partition)
-    const unsigned int _primary_dim;
+    const std::size_t _primary_dim;
 
   };
 

@@ -211,7 +211,7 @@ void DirichletBC::gather(Map& boundary_values) const
   Timer timer("DirichletBC gather");
 
   typedef std::vector<std::pair<std::size_t, double> > bv_vec_type;
-  typedef std::map<uint, bv_vec_type> map_type;
+  typedef std::map<std::size_t, bv_vec_type> map_type;
 
   typedef boost::unordered_map<std::size_t, std::vector<std::size_t> > shared_dof_type;
   typedef shared_dof_type::const_iterator shared_dof_iterator;
@@ -386,9 +386,9 @@ bool DirichletBC::is_compatible(GenericFunction& v) const
 
   /*
   // Compute value size
-  uint size = 1;
-  const uint rank = g->function_space().element()->value_rank();
-  for (uint i = 0; i < rank ; i++)
+  std::size_t size = 1;
+  const std::size_t rank = g->function_space().element()->value_rank();
+  for (std::size_t i = 0; i < rank ; i++)
     size *= g->function_space().element()->value_dimension(i);
   double* g_values = new double[size];
   double* v_values = new double[size];
@@ -397,11 +397,11 @@ bool DirichletBC::is_compatible(GenericFunction& v) const
   const Mesh& mesh = _function_space->mesh();
 
   // Iterate over facets
-  for (uint f = 0; f < facets.size(); f++)
+  for (std::size_t f = 0; f < facets.size(); f++)
   {
     // Create cell and facet
-    uint cell_number  = facets[f].first;
-    uint facet_number = facets[f].second;
+    std::size_t cell_number  = facets[f].first;
+    std::size_t facet_number = facets[f].second;
     Cell cell(mesh, cell_number);
     Facet facet(mesh, facet_number);
 
@@ -420,7 +420,7 @@ bool DirichletBC::is_compatible(GenericFunction& v) const
       v.eval(v_values, vertex->x());
 
       // Check values
-      for (uint i = 0; i < size; i++)
+      for (std::size_t i = 0; i < size; i++)
       {
         if (std::abs(g_values[i] - v_values[i]) > DOLFIN_EPS)
         {
@@ -448,21 +448,21 @@ void DirichletBC::set_value(const GenericFunction& g)
 //-----------------------------------------------------------------------------
 void DirichletBC::homogenize()
 {
-  const uint value_rank = g->value_rank();
+  const std::size_t value_rank = g->value_rank();
   if (!value_rank)
   {
     boost::shared_ptr<Constant> zero(new Constant(0.0));
     set_value(zero);
   } else if (value_rank == 1)
   {
-    const uint value_dim = g->value_dimension(0);
+    const std::size_t value_dim = g->value_dimension(0);
     std::vector<double> values(value_dim, 0.0);
     boost::shared_ptr<Constant> zero(new Constant(values));
     set_value(zero);
   } else
   {
-    std::vector<uint> value_shape;
-    for (uint i = 0; i < value_rank; i++)
+    std::vector<std::size_t> value_shape;
+    for (std::size_t i = 0; i < value_rank; i++)
       value_shape.push_back(g->value_dimension(i));
     std::vector<double> values(g->value_size(), 0.0);
     boost::shared_ptr<Constant> zero(new Constant(value_shape, values));
@@ -579,7 +579,7 @@ void DirichletBC::check() const
                  "Illegal value rank (%d), expecting (%d)",
                  g->value_rank(), _function_space->element()->value_rank());
   }
-  for (uint i = 0; i < g->value_rank(); i++)
+  for (std::size_t i = 0; i < g->value_rank(); i++)
   {
     if (g->value_dimension(i) != _function_space->element()->value_dimension(i))
     {
@@ -637,7 +637,7 @@ void DirichletBC::init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_do
   const Mesh& mesh = *_function_space->mesh();
 
   // Create mesh function for sub domain markers on facets
-  const uint dim = mesh.topology().dim();
+  const std::size_t dim = mesh.topology().dim();
   _function_space->mesh()->init(dim - 1);
   MeshFunction<std::size_t> sub_domains(mesh, dim - 1);
 
@@ -668,7 +668,7 @@ void DirichletBC::init_from_mesh_function(const MeshFunction<std::size_t>& sub_d
     = _function_space->dofmap()->restriction();
 
   // Make sure we have the facet - cell connectivity
-  const uint D = mesh.topology().dim();
+  const std::size_t D = mesh.topology().dim();
   mesh.init(D - 1, D);
 
   // Build set of boundary facets
@@ -724,11 +724,11 @@ void DirichletBC::init_from_mesh(std::size_t sub_domain) const
   const Mesh& mesh = *_function_space->mesh();
 
   // Assign domain numbers for each facet
-  const uint D = mesh.topology().dim();
+  const std::size_t D = mesh.topology().dim();
   dolfin_assert(mesh.domains().markers(D - 1));
-  const std::map<std::pair<std::size_t, uint>, std::size_t>&
+  const std::map<std::pair<std::size_t, std::size_t>, std::size_t>&
     markers = mesh.domains().markers(D - 1)->values();
-  std::map<std::pair<std::size_t, uint>, std::size_t>::const_iterator mark;
+  std::map<std::pair<std::size_t, std::size_t>, std::size_t>::const_iterator mark;
   for (mark = markers.begin(); mark != markers.end(); ++mark)
   {
     if (mark->second == sub_domain)
@@ -793,7 +793,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   {
     // Get cell number and local facet number
     const std::size_t cell_number  = facets[f].first;
-    const uint facet_number = facets[f].second;
+    const std::size_t facet_number = facets[f].second;
 
     // Create cell
     Cell cell(mesh, cell_number);
@@ -935,7 +935,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   const GenericDofMap& dofmap = *_function_space->dofmap();
 
   // Geometric dim
-  const uint gdim = mesh.geometry().dim();
+  const std::size_t gdim = mesh.geometry().dim();
 
   // Create UFC cell object
   UFCCell ufc_cell(mesh);
@@ -962,7 +962,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
     bool already_interpolated = false;
 
     // Loop all dofs on cell
-    for (uint i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
+    for (std::size_t i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
     {
       const std::size_t global_dof = cell_dofs[i];
 

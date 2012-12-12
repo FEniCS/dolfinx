@@ -32,13 +32,13 @@ Restriction::Restriction(const Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 Restriction::Restriction(const Mesh& mesh,
-                         const SubDomain& sub_domain, uint dim)
+                         const SubDomain& sub_domain, std::size_t dim)
 {
   init_from_subdomain(mesh, sub_domain, dim);
 }
 //-----------------------------------------------------------------------------
 Restriction::Restriction(const MeshFunction<std::size_t>& domain_markers,
-                         uint domain_number)
+                         std::size_t domain_number)
   : _domain_markers(reference_to_no_delete_pointer(domain_markers)),
     _domain_number(domain_number)
 {
@@ -46,7 +46,7 @@ Restriction::Restriction(const MeshFunction<std::size_t>& domain_markers,
 }
 //-----------------------------------------------------------------------------
 Restriction::Restriction(boost::shared_ptr<const MeshFunction<std::size_t> > domain_markers,
-                         uint domain_number)
+                         std::size_t domain_number)
   : _domain_markers(domain_markers),
     _domain_number(domain_number)
 {
@@ -59,14 +59,14 @@ const Mesh& Restriction::mesh() const
   return _domain_markers->mesh();
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Restriction::dim() const
+std::size_t Restriction::dim() const
 {
   dolfin_assert(_domain_markers);
   return _domain_markers->dim();
 }
 //-----------------------------------------------------------------------------
 void Restriction::init_from_subdomain(const Mesh& mesh,
-                                      const SubDomain& sub_domain, uint dim)
+                                      const SubDomain& sub_domain, std::size_t dim)
 {
   // Create mesh function
   MeshFunction<std::size_t>* __domain_markers = new MeshFunction<std::size_t>(mesh, dim);

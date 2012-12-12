@@ -39,13 +39,13 @@ namespace dolfin
   std::string to_string(int n);
 
   /// Return string representation of given array
-  std::string to_string(const double* x, uint n);
+  std::string to_string(const double* x, std::size_t n);
 
   /// Return simple hash for given signature string
-  dolfin::uint hash(std::string signature);
+  std::size_t hash(std::string signature);
 
   /// Fast zero-fill of numeric vectors / blocks.
-  template <class T> inline void zerofill(T* arr, uint n)
+  template <class T> inline void zerofill(T* arr, std::size_t n)
   {
     if (std::numeric_limits<T>::is_integer || std::numeric_limits<T>::is_iec559)
       std::memset(arr, 0, n*sizeof(T));

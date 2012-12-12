@@ -87,7 +87,7 @@ namespace dolfin
     static void check(const Form& a);
 
     // Pretty-printing for progress bar
-    static std::string progress_message(uint rank, std::string integral_type);
+    static std::string progress_message(std::size_t rank, std::string integral_type);
 
   };
 

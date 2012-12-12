@@ -27,7 +27,7 @@ from dolfin import *
 class FiniteElementTest(unittest.TestCase):
 
     def setUp(self):
-        self.mesh = UnitSquare(4, 4)
+        self.mesh = UnitSquareMesh(4, 4)
         self.V = FunctionSpace(self.mesh, "CG", 1)
         self.Q = VectorFunctionSpace(self.mesh, "CG", 1)
         self.W = self.V * self.Q
@@ -64,7 +64,7 @@ class FiniteElementTest(unittest.TestCase):
 class DofMapTest(unittest.TestCase):
 
     def setUp(self):
-        self.mesh = UnitSquare(4, 4)
+        self.mesh = UnitSquareMesh(4, 4)
         self.V = FunctionSpace(self.mesh, "CG", 1)
         self.Q = VectorFunctionSpace(self.mesh, "CG", 1)
         self.W = self.V*self.Q

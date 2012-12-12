@@ -185,7 +185,7 @@ const GenericLinearOperator& EpetraLUSolver::get_operator() const
   return *A;
 }
 //-----------------------------------------------------------------------------
-unsigned int EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
+std::size_t EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   dolfin_assert(linear_problem);
   dolfin_assert(solver);
@@ -264,7 +264,7 @@ unsigned int EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
   return 1;
 }
 //-----------------------------------------------------------------------------
-unsigned int EpetraLUSolver::solve(const GenericLinearOperator& A,
+std::size_t EpetraLUSolver::solve(const GenericLinearOperator& A,
                                    GenericVector& x,
                                    const GenericVector& b)
 {
@@ -273,7 +273,7 @@ unsigned int EpetraLUSolver::solve(const GenericLinearOperator& A,
                as_type<const EpetraVector>(b));
 }
 //-----------------------------------------------------------------------------
-unsigned int EpetraLUSolver::solve(const EpetraMatrix& A, EpetraVector& x,
+std::size_t EpetraLUSolver::solve(const EpetraMatrix& A, EpetraVector& x,
                                    const EpetraVector& b)
 {
   boost::shared_ptr<const EpetraMatrix> _A(&A, NoDeleter());

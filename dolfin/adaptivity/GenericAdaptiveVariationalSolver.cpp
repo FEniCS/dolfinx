@@ -59,14 +59,14 @@ void GenericAdaptiveVariationalSolver::solve(const double tol)
 
   // Iterate over a series of meshes
   Timer timer("Adaptive solve");
-  const uint max_iterations = parameters["max_iterations"];
-  for (uint i = 0; i < max_iterations; i++)
+  const std::size_t max_iterations = parameters["max_iterations"];
+  for (std::size_t i = 0; i < max_iterations; i++)
   {
     log(INFO, "Adaptive iteration %d", i );
 
     // Check that num_dofs is not greater than than max dimension (and
     // that that parameter is modified)
-    const uint max_dimension = parameters["max_dimension"];
+    const std::size_t max_dimension = parameters["max_dimension"];
     if (parameters["max_dimension"].change_count() > 0
         && num_dofs_primal() > max_dimension)
     {
@@ -196,7 +196,7 @@ void GenericAdaptiveVariationalSolver::summary()
   Table table("Level");
   Table time_table("Level");
 
-  for (uint i = 0; i < _adaptive_data.size(); i++)
+  for (std::size_t i = 0; i < _adaptive_data.size(); i++)
   {
     std::stringstream s;
     s << i;

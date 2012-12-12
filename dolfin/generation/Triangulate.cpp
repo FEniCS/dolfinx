@@ -41,14 +41,14 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 
 // 2D triangulation typedefs
 typedef CGAL::Triangulation_vertex_base_2<K> Tvb2base;
-typedef CGAL::Triangulation_vertex_base_with_info_2<unsigned int, K, Tvb2base> Tvb2;
+typedef CGAL::Triangulation_vertex_base_with_info_2<std::size_t, K, Tvb2base> Tvb2;
 typedef CGAL::Triangulation_face_base_2<K> Tfb2;
 typedef CGAL::Triangulation_data_structure_2<Tvb2, Tfb2> Tds2;
 typedef CGAL::Delaunay_triangulation_2<K, Tds2> Triangulation2;
 
 // 3D triangulation typedefs
 typedef CGAL::Triangulation_vertex_base_3<K> Tvb3base;
-typedef CGAL::Triangulation_vertex_base_with_info_3<unsigned int, K, Tvb3base> Tvb3;
+typedef CGAL::Triangulation_vertex_base_with_info_3<std::size_t, K, Tvb3base> Tvb3;
 typedef CGAL::Triangulation_cell_base_3<K> Tfb3;
 typedef CGAL::Triangulation_data_structure_3<Tvb3, Tfb3> Tds3;
 typedef CGAL::Delaunay_triangulation_3<K, Tds3> Triangulation3;
@@ -57,7 +57,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void Triangulate::triangulate(Mesh& mesh, const std::vector<Point>& vertices,
-                              unsigned int gdim)
+                              std::size_t gdim)
 {
   // Check that we are not running in parallel
   if (MPI::num_processes() > 1)

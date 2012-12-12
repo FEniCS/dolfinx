@@ -48,7 +48,7 @@ void BisectionRefinement::refine_by_recursive_bisection(Mesh& refined_mesh,
   RivaraRefinement::refine(refined_mesh, mesh, cell_marker, cell_map, facet_map);
 
   // Store child->parent cell and facet information as mesh data
-  const uint D = refined_mesh.topology().dim();
+  const std::size_t D = refined_mesh.topology().dim();
   boost::shared_ptr<MeshFunction<std::size_t> > cf
     =  refined_mesh.data().create_mesh_function("parent_cell", D);
   for(std::size_t i = 0; i < refined_mesh.num_cells(); i++)
@@ -85,7 +85,7 @@ void BisectionRefinement::refine_by_recursive_bisection(Mesh& refined_mesh,
     Cell parent_cell(mesh, (*cf)[cell]);
 
     // Figure out global facet number of local facet number of parent
-    const uint parent_facet_index = \
+    const std::size_t parent_facet_index = \
       parent_cell.entities(D - 1)[parent_local_facet_index];
 
     // Assign parent facet index to this facet
@@ -95,7 +95,7 @@ void BisectionRefinement::refine_by_recursive_bisection(Mesh& refined_mesh,
 /*
 //-----------------------------------------------------------------------------
 void BisectionRefinement::transform_data(Mesh& newmesh, const Mesh& oldmesh,
-                                         const MeshFunction<uint>& cell_map,
+                                         const MeshFunction<std::size_t>& cell_map,
                                          const std::vector<int>& facet_map)
 {
   newmesh.data().clear();
@@ -106,7 +106,7 @@ void BisectionRefinement::transform_data(Mesh& newmesh, const Mesh& oldmesh,
     boost::shared_ptr<MeshFunction<unsigned int> > mat;
     mat = newmesh.data().create_mesh_function("material_indicators", newmesh.type().dim());
 
-    for(dolfin::uint i=0; i < newmesh.num_cells(); i++)
+    for(std::size_t i=0; i < newmesh.num_cells(); i++)
       (*mat)[i] = (*oldmesh.data().mesh_function("material_indicators"))[cell_map[i]];
 
     log(TRACE, "MeshData MeshFunction \"material_indicators\" transformed.");
@@ -118,29 +118,29 @@ void BisectionRefinement::transform_data(Mesh& newmesh, const Mesh& oldmesh,
         && oldmesh.data().array("boundary indicators"))
   {
 
-    dolfin::uint num_ent = oldmesh.type().num_entities(0);
-    std::vector<dolfin::uint>*  bfc = oldmesh.data().array("boundary facet cells");
-    std::vector<dolfin::uint>*  bfn = oldmesh.data().array("boundary facet numbers");
-    std::vector<dolfin::uint>*  bi  = oldmesh.data().array("boundary indicators");
-    dolfin::uint bi_table_size = oldmesh.num_cells()*num_ent;
+    std::size_t num_ent = oldmesh.type().num_entities(0);
+    std::vector<std::size_t>*  bfc = oldmesh.data().array("boundary facet cells");
+    std::vector<std::size_t>*  bfn = oldmesh.data().array("boundary facet numbers");
+    std::vector<std::size_t>*  bi  = oldmesh.data().array("boundary indicators");
+    std::size_t bi_table_size = oldmesh.num_cells()*num_ent;
     std::vector<int> bi_table;
     bi_table.resize(bi_table_size);
 
-    for(dolfin::uint i= 0 ; i< bi_table_size; i++)
+    for(std::size_t i= 0 ; i< bi_table_size; i++)
       bi_table[i] = -1;
 
-    for(dolfin::uint i = 0; i < bi->size(); i++)
+    for(std::size_t i = 0; i < bi->size(); i++)
       bi_table[(*bfc)[i]*num_ent+(*bfn)[i]] = (*bi)[i];
 
     // Empty loop to count elements
-    dolfin::uint bi_size = 0;
-    for(dolfin::uint c = 0; c < newmesh.num_cells(); c++)
+    std::size_t bi_size = 0;
+    for(std::size_t c = 0; c < newmesh.num_cells(); c++)
     {
-      for(dolfin::uint f = 0; f < num_ent; f++)
+      for(std::size_t f = 0; f < num_ent; f++)
       {
         if (facet_map[c*num_ent+f] != -1)
         {
-          dolfin::uint table_map = cell_map[c]*num_ent + facet_map[c*num_ent+f];
+          std::size_t table_map = cell_map[c]*num_ent + facet_map[c*num_ent+f];
           if (bi_table[table_map] != -1)
             bi_size++;
         }
@@ -148,19 +148,19 @@ void BisectionRefinement::transform_data(Mesh& newmesh, const Mesh& oldmesh,
     }
 
     // Create new MeshData std::vectors for boundary indicators
-    std::vector<dolfin::uint>* bfc_new = newmesh.data().create_array("boundary facet cells", bi_size);
-    std::vector<dolfin::uint>* bfn_new = newmesh.data().create_array("boundary facet numbers", bi_size);
-    std::vector<dolfin::uint>* bi_new  = newmesh.data().create_array("boundary indicators", bi_size);
+    std::vector<std::size_t>* bfc_new = newmesh.data().create_array("boundary facet cells", bi_size);
+    std::vector<std::size_t>* bfn_new = newmesh.data().create_array("boundary facet numbers", bi_size);
+    std::vector<std::size_t>* bi_new  = newmesh.data().create_array("boundary indicators", bi_size);
 
     // Main transformation loop
-    dolfin::uint number_bi = 0;
-    for(dolfin::uint c = 0; c < newmesh.num_cells(); c++)
+    std::size_t number_bi = 0;
+    for(std::size_t c = 0; c < newmesh.num_cells(); c++)
     {
-      for(dolfin::uint f = 0; f < num_ent; f++)
+      for(std::size_t f = 0; f < num_ent; f++)
       {
         if (facet_map[c*num_ent+f] != -1)
         {
-          dolfin::uint table_map = cell_map[c]*num_ent + facet_map[c*num_ent+f];
+          std::size_t table_map = cell_map[c]*num_ent + facet_map[c*num_ent+f];
           if (bi_table[table_map] != -1)
           {
             (*bfc_new)[number_bi] = c;

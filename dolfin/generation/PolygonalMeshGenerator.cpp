@@ -42,7 +42,7 @@
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 
 typedef CGAL::Triangulation_vertex_base_2<K> Vbase;
-typedef CGAL::Triangulation_vertex_base_with_info_2<unsigned int, K, Vbase> Vb;
+typedef CGAL::Triangulation_vertex_base_with_info_2<std::size_t, K, Vbase> Vb;
 typedef CGAL::Delaunay_mesh_face_base_2<K> Fb;
 typedef CGAL::Triangulation_data_structure_2<Vb, Fb> Tds;
 typedef CGAL::Constrained_Delaunay_triangulation_2<K, Tds> CDT;

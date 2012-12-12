@@ -58,7 +58,7 @@ namespace dolfin
     }
 
     // Return the topological dimension of the cell shape
-    uint topological_dimension() const
+    std::size_t topological_dimension() const
     {
       dolfin_assert(_ufc_element);
       return _ufc_element->topological_dimension();
@@ -72,28 +72,28 @@ namespace dolfin
     }
 
     /// Return the dimension of the finite element function space
-    uint space_dimension() const
+    std::size_t space_dimension() const
     {
       dolfin_assert(_ufc_element);
       return _ufc_element->space_dimension();
     }
 
     /// Return the rank of the value space
-    uint value_rank() const
+    std::size_t value_rank() const
     {
       dolfin_assert(_ufc_element);
       return _ufc_element->value_rank();
     }
 
     /// Return the dimension of the value space for axis i
-    uint value_dimension(uint i) const
+    std::size_t value_dimension(std::size_t i) const
     {
       dolfin_assert(_ufc_element);
       return _ufc_element->value_dimension(i);
     }
 
     /// Evaluate basis function i at given point in cell
-    void evaluate_basis(uint i, double* values, const double* x,
+    void evaluate_basis(std::size_t i, double* values, const double* x,
                         const ufc::cell& cell) const
     {
       dolfin_assert(_ufc_element);
@@ -131,7 +131,7 @@ namespace dolfin
     }
 
     /// Evaluate linear functional for dof i on the function f
-    double evaluate_dof(uint i,
+    double evaluate_dof(std::size_t i,
                         const ufc::function& function,
                         const ufc::cell& cell) const
     {
@@ -176,7 +176,7 @@ namespace dolfin
     }
 
     /// Return the number of sub elements (for a mixed element)
-    uint num_sub_elements() const
+    std::size_t num_sub_elements() const
     {
       dolfin_assert(_ufc_element);
       return _ufc_element->num_sub_elements();
@@ -185,11 +185,11 @@ namespace dolfin
     //--- DOLFIN-specific extensions of the interface ---
 
     /// Return simple hash of the signature string
-    uint hash() const
+    std::size_t hash() const
     { return _hash; }
 
     /// Evaluate basis function i at given point in cell
-    void evaluate_basis(uint i, double* values, const double* x,
+    void evaluate_basis(std::size_t i, double* values, const double* x,
                         const Cell& cell) const
     {
       dolfin_assert(_ufc_element);
@@ -207,7 +207,7 @@ namespace dolfin
     }
 
     /// Create a new finite element for sub element i (for a mixed element)
-    boost::shared_ptr<const FiniteElement> create_sub_element(uint i) const
+    boost::shared_ptr<const FiniteElement> create_sub_element(std::size_t i) const
     {
       dolfin_assert(_ufc_element);
       boost::shared_ptr<const ufc::finite_element>  ufc_element(_ufc_element->create_sub_element(i));
@@ -224,19 +224,19 @@ namespace dolfin
     }
 
     /// Extract sub finite element for component
-    boost::shared_ptr<const FiniteElement> extract_sub_element(const std::vector<uint>& component) const;
+    boost::shared_ptr<const FiniteElement> extract_sub_element(const std::vector<std::size_t>& component) const;
 
   private:
 
     // Recursively extract sub finite element
     static boost::shared_ptr<const FiniteElement> extract_sub_element(const FiniteElement& finite_element,
-                                                                      const std::vector<uint>& component);
+                                                                      const std::vector<std::size_t>& component);
 
     // UFC finite element
     boost::shared_ptr<const ufc::finite_element> _ufc_element;
 
     // Simple hash of the signature string
-    uint _hash;
+    std::size_t _hash;
 
   };
 

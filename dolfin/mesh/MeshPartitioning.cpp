@@ -19,7 +19,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2008-12-01
-// Last changed: 2011-11-14
+// Last changed: 2012-11-23
 
 #include <algorithm>
 #include <iterator>
@@ -54,16 +54,16 @@ using namespace dolfin;
 // Explicitly instantiate some templated functions to help the Python
 // wrappers
 template void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
-   const std::vector<std::pair<std::pair<std::size_t, unsigned int>, std::size_t> >& local_value_data,
+   const std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::size_t> >& local_value_data,
    MeshValueCollection<std::size_t>& mesh_values);
 template void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
-   const std::vector<std::pair<std::pair<std::size_t, unsigned int>, int> >& local_value_data,
+   const std::vector<std::pair<std::pair<std::size_t, std::size_t>, int> >& local_value_data,
    MeshValueCollection<int>& mesh_values);
 template void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
-   const std::vector<std::pair<std::pair<std::size_t, unsigned int>, double> >& local_value_data,
+   const std::vector<std::pair<std::pair<std::size_t, std::size_t>, double> >& local_value_data,
    MeshValueCollection<double>& mesh_values);
 template void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
-   const std::vector<std::pair<std::pair<std::size_t, unsigned int>, bool> >& local_value_data,
+   const std::vector<std::pair<std::pair<std::size_t, std::size_t>, bool> >& local_value_data,
    MeshValueCollection<bool>& mesh_values);
 
 //-----------------------------------------------------------------------------
@@ -92,7 +92,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   number_entities(mesh, mesh.topology().dim() - 1);
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
+void MeshPartitioning::number_entities(const Mesh& _mesh, std::size_t d)
 {
   // FIXME: Break up this function
 
@@ -113,14 +113,14 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
     return;
 
   // Get number of processes and process number
-  const uint num_processes = MPI::num_processes();
-  const uint process_number = MPI::process_number();
+  const std::size_t num_processes = MPI::num_processes();
+  const std::size_t process_number = MPI::process_number();
 
   // Initialize entities of dimension d
   mesh.init(d);
 
   // Get shared vertices (global index, [sharing processes])
-  std::map<std::size_t, std::set<uint> >& shared_vertices
+  std::map<std::size_t, std::set<std::size_t> >& shared_vertices
                             = mesh.topology().shared_entities(0);
 
   // Build entity(vertex list)-to-global-vertex-index map
@@ -155,7 +155,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   // Create mesh markers for exterior facets
   if (d == (mesh.topology().dim() - 1))
   {
-    std::vector<unsigned int> _num_connected_cells
+    std::vector<std::size_t> _num_connected_cells
       = num_connected_cells(mesh, entities, owned_shared_entities,
                             unowned_shared_entities);
     mesh.topology()(d, mesh.topology().dim()).set_global_size(_num_connected_cells);
@@ -196,7 +196,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
 
   // Communicate indices for shared entities and get indices for ignored
   std::vector<std::size_t> send_values;
-  std::vector<uint> destinations;
+  std::vector<std::size_t> destinations;
   for (it1 = owned_shared_entities.begin(); it1 != owned_shared_entities.end(); ++it1)
   {
     // Get entity index
@@ -208,7 +208,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
     const Entity& entity = it1->first;
 
     // Get entity processes (processes sharing the entity)
-    const std::vector<unsigned int>& entity_processes = it1->second.processes;
+    const std::vector<std::size_t>& entity_processes = it1->second.processes;
 
     // Prepare data for sending
     for (std::size_t j = 0; j < entity_processes.size(); ++j)
@@ -224,13 +224,13 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
 
   // Send data
   std::vector<std::size_t> received_values;
-  std::vector<uint> sources;
+  std::vector<std::size_t> sources;
   MPI::distribute(send_values, destinations, received_values, sources);
 
   // Fill in global entity indices recieved from lower ranked processes
   for (std::size_t i = 0; i < received_values.size();)
   {
-    const uint p = sources[i];
+    const std::size_t p = sources[i];
     const std::size_t global_index = received_values[i++];
     const std::size_t entity_size = received_values[i++];
     Entity entity;
@@ -308,16 +308,16 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
                                           const LocalMeshData& local_data)
 {
   // Local domain data
-  const std::map<std::size_t, std::vector< std::pair<std::pair<std::size_t, uint>, uint> > >
+  const std::map<std::size_t, std::vector< std::pair<std::pair<std::size_t, std::size_t>, std::size_t> > >
     domain_data = local_data.domain_data;
   if (domain_data.empty())
     return;
 
   // Initialse mesh domains
-  const uint D = mesh.topology().dim();
+  const std::size_t D = mesh.topology().dim();
   mesh.domains().init(D);
 
-  std::map<std::size_t, std::vector< std::pair<std::pair<std::size_t, uint>, uint> > >::const_iterator dim_data;
+  std::map<std::size_t, std::vector< std::pair<std::pair<std::size_t, std::size_t>, std::size_t> > >::const_iterator dim_data;
   for (dim_data = domain_data.begin(); dim_data != domain_data.end(); ++dim_data)
   {
     // Get mesh value collection used for marking
@@ -325,7 +325,7 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
     dolfin_assert(mesh.domains().markers(dim));
     MeshValueCollection<std::size_t>& markers = *(mesh.domains().markers(dim));
 
-    const std::vector< std::pair<std::pair<std::size_t, uint>, uint> >&
+    const std::vector< std::pair<std::pair<std::size_t, std::size_t>, std::size_t> >&
         local_value_data = dim_data->second;
     build_mesh_value_collection(mesh, local_value_data, markers);
   }
@@ -333,8 +333,8 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
   MeshPartitioning::compute_num_global_entities(std::size_t num_local_entities,
-                                                uint num_processes,
-                                                uint process_number)
+                                                std::size_t num_processes,
+                                                std::size_t process_number)
 {
   // Communicate number of local entities
   std::vector<std::size_t> num_entities_to_number;
@@ -354,7 +354,7 @@ std::pair<std::size_t, std::size_t>
 boost::array<std::map<MeshPartitioning::Entity, MeshPartitioning::EntityData>, 3>
   MeshPartitioning::compute_entity_ownership(
           const std::map<Entity, std::size_t>& entities,
-          const std::map<std::size_t, std::set<uint> >& shared_vertices)
+          const std::map<std::size_t, std::set<std::size_t> >& shared_vertices)
 {
   // Entitity ownership list
   boost::array<std::map<Entity, EntityData>, 3> entity_ownership;
@@ -375,7 +375,7 @@ boost::array<std::map<MeshPartitioning::Entity, MeshPartitioning::EntityData>, 3
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::compute_preliminary_entity_ownership(
-  const std::map<std::size_t, std::set<unsigned int> >& shared_vertices,
+  const std::map<std::size_t, std::set<std::size_t> >& shared_vertices,
   const std::map<Entity, std::size_t>& entities,
   boost::array<std::map<Entity, EntityData>, 3>& entity_ownership)
 {
@@ -390,7 +390,7 @@ void MeshPartitioning::compute_preliminary_entity_ownership(
   unowned_shared_entities.clear();
 
   // Get process number
-  const uint process_number = MPI::process_number();
+  const std::size_t process_number = MPI::process_number();
 
   // Iterate over all entities
   std::map<std::vector<std::size_t>, std::size_t>::const_iterator it;
@@ -400,7 +400,7 @@ void MeshPartitioning::compute_preliminary_entity_ownership(
     const std::size_t local_entity_index = it->second;
 
     // Compute which processes entity is shared with
-    std::vector<unsigned int> entity_processes;
+    std::vector<std::size_t> entity_processes;
     if (in_overlap(entity, shared_vertices))
     {
       std::vector<std::size_t> intersection(shared_vertices.find(entity[0])->second.begin(),
@@ -410,7 +410,7 @@ void MeshPartitioning::compute_preliminary_entity_ownership(
       for (std::size_t i = 1; i < entity.size(); ++i)
       {
         const std::size_t v = entity[i];
-        const std::set<unsigned int>& shared_vertices_v
+        const std::set<std::size_t>& shared_vertices_v
           = shared_vertices.find(v)->second;
 
         intersection_end
@@ -418,7 +418,7 @@ void MeshPartitioning::compute_preliminary_entity_ownership(
                                   shared_vertices_v.begin(), shared_vertices_v.end(),
                                   intersection.begin());
       }
-      entity_processes = std::vector<unsigned int>(intersection.begin(), intersection_end);
+      entity_processes = std::vector<std::size_t>(intersection.begin(), intersection_end);
     }
 
     // Check if entity is ignored (shared with lower ranked process)
@@ -464,19 +464,19 @@ void MeshPartitioning::compute_final_entity_ownership(boost::array<std::map<Enti
   // Communicate common entities, starting with the entities we think
   // should be ignored
   std::vector<std::size_t> send_common_entity_values;
-  std::vector<unsigned int> destinations_common_entity;
+  std::vector<std::size_t> destinations_common_entity;
   for (it = unowned_shared_entities.begin(); it != unowned_shared_entities.end(); ++it)
   {
     // Get entity vertices (global vertex indices)
     const Entity& entity = it->first;
 
     // Get entity processes (processes might sharing the entity)
-    const std::vector<unsigned int>& entity_processes = it->second.processes;
+    const std::vector<std::size_t>& entity_processes = it->second.processes;
 
     // Prepare data for sending
     for (std::size_t j = 0; j < entity_processes.size(); ++j)
     {
-      const unsigned int p = entity_processes[j];
+      const std::size_t p = entity_processes[j];
       send_common_entity_values.push_back(entity.size());
       send_common_entity_values.insert(send_common_entity_values.end(), entity.begin(), entity.end());
       destinations_common_entity.insert(destinations_common_entity.end(), entity.size() + 1, p);
@@ -491,7 +491,7 @@ void MeshPartitioning::compute_final_entity_ownership(boost::array<std::map<Enti
     const Entity& entity = it->first;
 
     // Get entity processes (processes might sharing the entity)
-    const std::vector<unsigned int>& entity_processes = it->second.processes;
+    const std::vector<std::size_t>& entity_processes = it->second.processes;
 
     // Prepare data for sending
     for (std::size_t j = 0; j < entity_processes.size(); ++j)
@@ -506,13 +506,13 @@ void MeshPartitioning::compute_final_entity_ownership(boost::array<std::map<Enti
 
   // Communicate common entities
   std::vector<std::size_t> received_common_entity_values;
-  std::vector<unsigned int> sources_common_entity;
+  std::vector<std::size_t> sources_common_entity;
   MPI::distribute(send_common_entity_values, destinations_common_entity,
                   received_common_entity_values, sources_common_entity);
 
   // Check if entities received are really entities
   std::vector<std::size_t> send_is_entity_values;
-  std::vector<unsigned int> destinations_is_entity;
+  std::vector<std::size_t> destinations_is_entity;
   for (std::size_t i = 0; i < received_common_entity_values.size();)
   {
     // Get entity
@@ -546,12 +546,12 @@ void MeshPartitioning::compute_final_entity_ownership(boost::array<std::map<Enti
 
   // Send data back (list of requested entities that are really entities)
   std::vector<std::size_t> received_is_entity_values;
-  std::vector<unsigned int> sources_is_entity;
+  std::vector<std::size_t> sources_is_entity;
   MPI::distribute(send_is_entity_values, destinations_is_entity,
                   received_is_entity_values, sources_is_entity);
 
   // Create map from entities to processes where it is an entity
-  std::map<Entity, std::vector<unsigned int> > entity_processes;
+  std::map<Entity, std::vector<std::size_t> > entity_processes;
   for (std::size_t i = 0; i < received_is_entity_values.size();)
   {
     const std::size_t p = sources_is_entity[i];
@@ -575,7 +575,7 @@ void MeshPartitioning::compute_final_entity_ownership(boost::array<std::map<Enti
     const std::size_t local_entity_index = it->second.index;
     if (entity_processes.find(entity) != entity_processes.end())
     {
-      std::vector<unsigned int> common_processes = entity_processes[entity];
+      std::vector<std::size_t> common_processes = entity_processes[entity];
       dolfin_assert(!common_processes.empty());
       const std::size_t min_proc = *(std::min_element(common_processes.begin(), common_processes.end()));
 
@@ -658,7 +658,7 @@ void MeshPartitioning::distribute_cells(const LocalMeshData& mesh_data,
   // Build array of cell-vertex connectivity and partition vector
   // Distribute the global cell number as well
   std::vector<std::size_t> send_cell_vertices;
-  std::vector<unsigned int> destinations_cell_vertices;
+  std::vector<std::size_t> destinations_cell_vertices;
   send_cell_vertices.reserve(num_local_cells*(num_cell_vertices + 1));
   destinations_cell_vertices.reserve(num_local_cells*(num_cell_vertices + 1));
   for (std::size_t i = 0; i < num_local_cells; i++)
@@ -710,7 +710,7 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
   const std::size_t num_processes = MPI::num_processes();
 
   // Get geometric dimension
-  const uint gdim = mesh_data.gdim;
+  const std::size_t gdim = mesh_data.gdim;
 
   // Compute which vertices we need
   std::set<std::size_t> needed_vertex_indices;
@@ -720,14 +720,14 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
 
   // Compute where (process number) the vertices we need are located
   std::vector<std::size_t> send_vertex_indices;
-  std::vector<unsigned int> destinations_vertex;
+  std::vector<std::size_t> destinations_vertex;
   std::vector<std::vector<std::size_t> > vertex_location(num_processes);
   std::set<std::size_t>::const_iterator required_vertex;
   for (required_vertex = needed_vertex_indices.begin();
         required_vertex != needed_vertex_indices.end(); ++required_vertex)
   {
     // Get process that has required vertex
-    const uint location = MPI::index_owner(*required_vertex, mesh_data.num_global_vertices);
+    const std::size_t location = MPI::index_owner(*required_vertex, mesh_data.num_global_vertices);
     destinations_vertex.push_back(location);
     send_vertex_indices.push_back(*required_vertex);
     vertex_location[location].push_back(*required_vertex);
@@ -736,30 +736,30 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
   // Send required vertices to other proceses, and receive back vertices
   // required by othe processes.
   std::vector<std::size_t> received_vertex_indices;
-  std::vector<unsigned int> sources_vertex;
+  std::vector<std::size_t> sources_vertex;
   MPI::distribute(send_vertex_indices, destinations_vertex,
                   received_vertex_indices, sources_vertex);
   dolfin_assert(received_vertex_indices.size() == sources_vertex.size());
 
   // Distribute vertex coordinates
   std::vector<double> send_vertex_coordinates;
-  std::vector<unsigned int> destinations_vertex_coordinates;
+  std::vector<std::size_t> destinations_vertex_coordinates;
   const std::pair<std::size_t, std::size_t> local_vertex_range = MPI::local_range(mesh_data.num_global_vertices);
   for (std::size_t i = 0; i < sources_vertex.size(); ++i)
   {
     dolfin_assert(received_vertex_indices[i] >= local_vertex_range.first
                       && received_vertex_indices[i] < local_vertex_range.second);
     const std::size_t location = received_vertex_indices[i] - local_vertex_range.first;
-    const std::vector<double>& x = mesh_data.vertex_coordinates[location];
-    dolfin_assert(x.size() == gdim);
+    //    const std::vector<double>& x = mesh_data.vertex_coordinates[location];
+    //    dolfin_assert(x.size() == gdim);
     for (std::size_t j = 0; j < gdim; ++j)
     {
-      send_vertex_coordinates.push_back(x[j]);
+      send_vertex_coordinates.push_back(mesh_data.vertex_coordinates[location][j]);
       destinations_vertex_coordinates.push_back(sources_vertex[i]);
     }
   }
   std::vector<double> received_vertex_coordinates;
-  std::vector<unsigned int> sources_vertex_coordinates;
+  std::vector<std::size_t> sources_vertex_coordinates;
   MPI::distribute(send_vertex_coordinates, destinations_vertex_coordinates,
                   received_vertex_coordinates, sources_vertex_coordinates);
 
@@ -793,7 +793,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
               const std::vector<std::size_t>& vertex_indices,
               const boost::multi_array<double, 2>& vertex_coordinates,
               const std::map<std::size_t, std::size_t>& vertex_global_to_local,
-              uint tdim, uint gdim, std::size_t num_global_cells,
+              std::size_t tdim, std::size_t gdim, std::size_t num_global_cells,
               std::size_t num_global_vertices)
 {
   Timer timer("PARALLEL 3: Build mesh (from local mesh data)");
@@ -805,7 +805,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // Open mesh for editing
   mesh.clear();
   MeshEditor editor;
-  editor.open(mesh, gdim, tdim);
+  editor.open(mesh, tdim, gdim);
 
   // Add vertices
   editor.init_vertices(vertex_coordinates.size());
@@ -813,14 +813,14 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   dolfin_assert(vertex_indices.size() == vertex_coordinates.size());
   for (std::size_t i = 0; i < vertex_coordinates.size(); ++i)
   {
-    for (uint j = 0; j < gdim; ++j)
+    for (std::size_t j = 0; j < gdim; ++j)
       p[j] = vertex_coordinates[i][j];
     editor.add_vertex_global(i, vertex_indices[i], p);
   }
 
   // Add cells
   editor.init_cells(cell_vertices.size());
-  const uint num_cell_vertices = tdim + 1;
+  const std::size_t num_cell_vertices = tdim + 1;
   std::vector<std::size_t> cell(num_cell_vertices);
   for (std::size_t i = 0; i < cell_vertices.size(); ++i)
   {
@@ -867,7 +867,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
   // Create shared_vertices data structure: mapping from shared vertices
   // to list of neighboring processes
-  std::map<std::size_t, std::set<unsigned int> >& shared_vertices
+  std::map<std::size_t, std::set<std::size_t> >& shared_vertices
         = mesh.topology().shared_entities(0);
   shared_vertices.clear();
 
@@ -898,7 +898,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 bool MeshPartitioning::in_overlap(const Entity& entity,
-                const std::map<std::size_t, std::set<unsigned int> >& shared)
+                const std::map<std::size_t, std::set<std::size_t> >& shared)
 {
   // Iterate over entity vertices
   Entity::const_iterator e;
@@ -912,17 +912,17 @@ bool MeshPartitioning::in_overlap(const Entity& entity,
   return true;
 }
 //-----------------------------------------------------------------------------
-std::vector<unsigned int> MeshPartitioning::num_connected_cells(const Mesh& mesh,
+std::vector<std::size_t> MeshPartitioning::num_connected_cells(const Mesh& mesh,
              const std::map<Entity, std::size_t>& entities,
              const std::map<Entity, EntityData>& owned_shared_entities,
              const std::map<Entity, EntityData>& unowned_shared_entities)
 {
   // Topological dimension
-  const uint D = mesh.topology().dim();
+  const std::size_t D = mesh.topology().dim();
 
   // Create vector to hold number of cells connected to each facet. Assume
   // facet is internal, then modify for external facets.
-  std::vector<unsigned int> num_global_neighbors(mesh.num_facets(), 2);
+  std::vector<std::size_t> num_global_neighbors(mesh.num_facets(), 2);
 
   // FIXME: Check that everything is correctly initalised
 

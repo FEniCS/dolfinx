@@ -32,21 +32,21 @@ double Face::area() const
   dolfin_assert(_mesh);
   dolfin_assert(_mesh->ordered());
 
-  const uint D = _mesh->topology().dim();
+  const std::size_t D = _mesh->topology().dim();
 
   // If the Face is the same topological dimension as cell
   if (D == 2)
   {
     // Get the cell corresponding to this Face
     const Cell cell(*_mesh, this->index());
-    
+
     // Return the generalized volume (area)
     return cell.volume();
-    
+
   }
   else
   {
-    
+
     // Initialize needed connectivity
     _mesh->init(2, D);
 
@@ -54,19 +54,19 @@ double Face::area() const
     const Cell cell(*_mesh, this->entities(D)[0]);
 
     // Get local index of facet with respect to the cell
-    const uint local_facet = cell.index(*this);
-    
+    const std::size_t local_facet = cell.index(*this);
+
     return cell.facet_area(local_facet);
   }
 }
 //-----------------------------------------------------------------------------
-double Face::normal(uint i) const
+double Face::normal(std::size_t i) const
 {
   dolfin_assert(_mesh);
   dolfin_assert(_mesh->ordered());
 
-  const uint tD = _mesh->topology().dim();
-  const uint gD = _mesh->geometry().dim();
+  const std::size_t tD = _mesh->topology().dim();
+  const std::size_t gD = _mesh->geometry().dim();
 
   // Check for when Cell has the same topological dimension as Face and we are in R^2
   if (tD == 2 && gD == 2)
@@ -75,7 +75,7 @@ double Face::normal(uint i) const
                  "compute Face normal",
                  "Don't know how to compute Face normal for a Face in a 2D mesh embedded in R^2.");
   }
-  
+
   // Check for when Cell has the same topological dimension as Face and we are in R^3
   if (tD == 2 && gD == 3)
   {
@@ -89,7 +89,7 @@ double Face::normal(uint i) const
   const Cell cell(*_mesh, this->entities(tD)[0]);
 
   // Get local index of facet with respect to the cell
-  const uint local_facet = cell.index(*this);
+  const std::size_t local_facet = cell.index(*this);
 
   return cell.normal(local_facet, i);
 }
@@ -99,8 +99,8 @@ Point Face::normal() const
   dolfin_assert(_mesh);
   dolfin_assert(_mesh->ordered());
 
-  const uint tD = _mesh->topology().dim();
-  const uint gD = _mesh->geometry().dim();
+  const std::size_t tD = _mesh->topology().dim();
+  const std::size_t gD = _mesh->geometry().dim();
 
   // Check for when Cell has the same topological dimension as Face and we are in R^2
   if (tD == 2 && gD == 2)
@@ -109,7 +109,7 @@ Point Face::normal() const
                  "compute Face normal",
                  "Don't know how to compute Face normal for a Face in a 2D mesh embedded in R^2.");
   }
-  
+
   // Check for when Cell has the same topological dimension as Face and we are in R^3
   if (tD == 2 && gD == 3)
   {
@@ -123,7 +123,7 @@ Point Face::normal() const
   const Cell cell(*_mesh, this->entities(tD)[0]);
 
   // Get local index of facet with respect to the cell
-  const uint local_facet = cell.index(*this);
+  const std::size_t local_facet = cell.index(*this);
 
   return cell.normal(local_facet);
 }

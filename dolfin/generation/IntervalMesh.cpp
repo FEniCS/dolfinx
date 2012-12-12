@@ -30,7 +30,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-IntervalMesh::IntervalMesh(uint nx, double a, double b) : Mesh()
+IntervalMesh::IntervalMesh(std::size_t nx, double a, double b) : Mesh()
 {
   // Receive mesh according to parallel policy
   if (MPI::is_receiver())

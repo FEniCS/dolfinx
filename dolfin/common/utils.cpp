@@ -31,7 +31,7 @@ std::string dolfin::indent(std::string block)
   std::stringstream s;
 
   s << indentation;
-  for (uint i = 0; i < block.size(); ++i)
+  for (std::size_t i = 0; i < block.size(); ++i)
   {
     s << block[i];
     if (block[i] == '\n' && i < block.size() - 1)
@@ -48,12 +48,12 @@ std::string dolfin::to_string(int n)
   return s.str();
 }
 //-----------------------------------------------------------------------------
-std::string dolfin::to_string(const double* x, uint n)
+std::string dolfin::to_string(const double* x, std::size_t n)
 {
   std::stringstream s;
 
   s << "[";
-  for (uint i = 0; i < n; i++)
+  for (std::size_t i = 0; i < n; i++)
   {
     s << x[i];
     if (i < n - 1)
@@ -64,11 +64,9 @@ std::string dolfin::to_string(const double* x, uint n)
   return s.str();
 }
 //-----------------------------------------------------------------------------
-dolfin::uint dolfin::hash(std::string signature)
+std::size_t dolfin::hash(std::string signature)
 {
   boost::hash<std::string> string_hash;
-  std::size_t h = string_hash(signature);
-
-  return h;
+  return string_hash(signature);
 }
 //-----------------------------------------------------------------------------

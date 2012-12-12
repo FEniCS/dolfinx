@@ -18,7 +18,7 @@
 // First added:  2012-05-10
 // Last changed: 2012-05-10
 
-// This class is capable of converting a 3D dolfin::CSGGeometry to a 
+// This class is capable of converting a 3D dolfin::CSGGeometry to a
 // CGAL::Polyhedron_3
 
 

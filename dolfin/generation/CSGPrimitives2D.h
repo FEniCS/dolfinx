@@ -38,7 +38,7 @@ namespace dolfin
   public:
 
     /// Return dimension of geometry
-    uint dim() const { return 2; }
+    std::size_t dim() const { return 2; }
 
   };
 
@@ -57,27 +57,27 @@ namespace dolfin
     ///         x1-coordinate of center.
     ///     r (double)
     ///         radius.
-    ///     fragments (uint)
+    ///     fragments (std::size_t)
     ///         number of fragments.
-    Circle(double x0, double x1, double r, uint fragments=32);
+    Circle(double x0, double x1, double r, std::size_t fragments=32);
 
     /// Informal string representation
     std::string str(bool verbose) const;
     Type getType() const { return CSGGeometry::Circle; }
-    
+
     /// Return center of circle
     Point center() const { return Point(_x0, _x1); }
-    
+
     /// Return radius of circle
     double radius() const { return _r; }
-    
+
     /// Return number of fragments around the circle
-    uint fragments() const { return _fragments; }
+    std::size_t fragments() const { return _fragments; }
 
   private:
 
     double _x0, _x1, _r;
-    const uint _fragments;
+    const std::size_t _fragments;
 
   };
 
@@ -86,7 +86,7 @@ namespace dolfin
   class Ellipse : public CSGPrimitive2D
   {
   public:
-    
+
     /// Create ellipse at x = (x0, x1) with horizontal semi-axis a and
     /// vertical semi-axis b.
     ///
@@ -99,9 +99,9 @@ namespace dolfin
     ///         horizontal semi-axis.
     ///     b (double)
     ///         vertical semi-axis.
-    ///     fragments (uint)
+    ///     fragments (std::size_t)
     ///         number of fragments.
-    Ellipse(double x0, double x1, double a, double b, uint fragments=32);
+    Ellipse(double x0, double x1, double a, double b, std::size_t fragments=32);
 
     /// Informal string representation
     std::string str(bool verbose) const;
@@ -109,7 +109,7 @@ namespace dolfin
 
     /// Return center of ellipse
     Point center() const { return Point(_x0, _x1); }
-    
+
     /// Return horizontal semi-axis
     double a() const { return _a; }
 
@@ -117,12 +117,12 @@ namespace dolfin
     double b() const { return _b; }
 
     /// Return number of fragments around the ellipse
-    uint fragments() const { return _fragments; }
+    std::size_t fragments() const { return _fragments; }
 
   private:
 
     double _x0, _x1, _a, _b;
-    const uint _fragments;
+    const std::size_t _fragments;
 
   };
 
@@ -173,7 +173,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     vertices (std::vector<_Point_>)
-    ///         A vector of _Point_ objects. 
+    ///         A vector of _Point_ objects.
     ///         The points must be given in clockwise order
     ///         and the polygon can not self intersect.
     Polygon(const std::vector<Point>& vertices);
@@ -181,7 +181,7 @@ namespace dolfin
     /// Informal string representation
     std::string str(bool verbose) const;
     Type getType() const { return CSGGeometry::Polygon; }
-    
+
     /// Return vertices in polygon
     const std::vector<Point>& vertices() const { return _vertices; }
 

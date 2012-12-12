@@ -56,7 +56,7 @@ int main()
 
   // Initialize function with eigenvector
   Function u(V);
-  *u.vector() = rx;  
+  *u.vector() = rx;
 
   // Plot eigenfunction
   plot(u);

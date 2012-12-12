@@ -53,7 +53,7 @@ class XMLMesMarkers(unittest.TestCase):
         f4 = F4()
 
         # Apply markers to unit cube
-        mesh = UnitCube(3, 3, 3)
+        mesh = UnitCubeMesh(3, 3, 3)
         f0.mark_facets(mesh, 0)
         f1.mark_facets(mesh, 1)
         f2.mark_facets(mesh, 2)

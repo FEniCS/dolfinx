@@ -35,7 +35,7 @@ namespace dolfin
     /// This class is deprecated. Use _UnitCircleMesh_.
     ///
     /// *Arguments*
-    ///     n (uint)
+    ///     n (std::size_t)
     ///         Resolution of the mesh.
     ///     diagonal (std::string)
     ///         Optional argument: A std::string indicating
@@ -43,13 +43,14 @@ namespace dolfin
     ///     transformation (std::string)
     ///         Optional argument: A std::string indicating
     ///         the type of transformation used.
-    UnitCircle(uint n,
+    UnitCircle(std::size_t n,
                std::string diagonal="crossed",
                std::string transformation="rotsumn")
       : UnitCircleMesh(n, diagonal, transformation)
-      {
-	warning("UnitCircle is deprecated. Use UnitCircleMesh.");
-      }
+    {
+      warning("UnitCircle is deprecated. Use UnitCircleMesh.");
+    }
+
   };
 
 }

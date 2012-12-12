@@ -99,10 +99,10 @@ namespace dolfin
     std::string title;
 
     // Number of steps
-    uint n;
+    std::size_t n;
 
     // Current position
-    uint i;
+    std::size_t i;
 
     // Minimum progress increment
     double p_step;
@@ -111,7 +111,7 @@ namespace dolfin
     double t_step;
 
     // Minimum counter increment
-    uint c_step;
+    std::size_t c_step;
 
     // Current progress
     double p;
@@ -132,7 +132,7 @@ namespace dolfin
     bool displayed;
 
     // Counter for updates
-    uint counter;
+    std::size_t counter;
 
   };
 

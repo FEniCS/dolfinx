@@ -99,7 +99,7 @@ void VTKFile::operator<<(const Mesh& mesh)
   // Write local mesh to vtu file
   VTKWriter::write_mesh(mesh, mesh.topology().dim(), vtu_filename, binary, compress);
 
-  // Parallel-specfic files
+  // Parallel-specific files
   if (MPI::num_processes() > 1 && MPI::process_number() == 0)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
@@ -186,7 +186,7 @@ void VTKFile::write_function(const Function& u, double time)
       u.name().c_str(), u.label().c_str(), filename.c_str());
 }
 //----------------------------------------------------------------------------
-std::string VTKFile::init(const Mesh& mesh, uint cell_dim) const
+std::string VTKFile::init(const Mesh& mesh, std::size_t cell_dim) const
 {
   // Get vtu file name and clear file
   std::string vtu_filename = vtu_name(MPI::process_number(),
@@ -196,7 +196,7 @@ std::string VTKFile::init(const Mesh& mesh, uint cell_dim) const
   clear_file(vtu_filename);
 
   // Number of cells
-  const uint num_cells = mesh.topology().size(cell_dim);
+  const std::size_t num_cells = mesh.topology().size(cell_dim);
 
   // Write headers
   vtk_header_open(mesh.num_vertices(), num_cells, vtu_filename);
@@ -216,7 +216,7 @@ void VTKFile::finalize(std::string vtu_filename, double time)
 void VTKFile::results_write(const Function& u, std::string vtu_filename) const
 {
   // Get rank of Function
-  const uint rank = u.value_rank();
+  const std::size_t rank = u.value_rank();
   if (rank > 2)
   {
     dolfin_error("VTKFile.cpp",
@@ -225,7 +225,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
   }
 
   // Get number of components
-  const uint dim = u.value_size();
+  const std::size_t dim = u.value_size();
 
   // Check that function type can be handled
   if (rank == 1)
@@ -250,8 +250,8 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
   // Test for cell-based element type
   dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
-  uint cell_based_dim = 1;
-  for (uint i = 0; i < rank; i++)
+  std::size_t cell_based_dim = 1;
+  for (std::size_t i = 0; i < rank; i++)
     cell_based_dim *= mesh.topology().dim();
 
   dolfin_assert(u.function_space()->dofmap());
@@ -265,18 +265,18 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
 void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
                                std::string vtu_filename) const
 {
-  const uint rank = u.value_rank();
-  const uint num_vertices = mesh.num_vertices();
+  const std::size_t rank = u.value_rank();
+  const std::size_t num_vertices = mesh.num_vertices();
 
   // Get number of components
-  const uint dim = u.value_size();
+  const std::size_t dim = u.value_size();
 
   // Open file
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
   fp.precision(16);
 
   // Allocate memory for function values at vertices
-  const uint size = num_vertices*dim;
+  const std::size_t size = num_vertices*dim;
   std::vector<double> values(size);
 
   // Get function values at vertices and zero any small values
@@ -315,14 +315,14 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
       if (rank == 1 && dim == 2)
       {
         // Append 0.0 to 2D vectors to make them 3D
-        for(uint i = 0; i < 2; i++)
+        for(std::size_t i = 0; i < 2; i++)
           ss << values[vertex->index() + i*num_vertices] << " ";
         ss << 0.0 << "  ";
       }
       else if (rank == 2 && dim == 4)
       {
         // Pad 2D tensors with 0.0 to make them 3D
-        for(uint i = 0; i < 2; i++)
+        for(std::size_t i = 0; i < 2; i++)
         {
           ss << values[vertex->index() + (2*i + 0)*num_vertices] << " ";
           ss << values[vertex->index() + (2*i + 1)*num_vertices] << " ";
@@ -335,7 +335,7 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
       else
       {
         // Write all components
-        for(uint i = 0; i < dim; i++)
+        for(std::size_t i = 0; i < dim; i++)
           ss << values[vertex->index() + i*num_vertices] << " ";
         ss << " ";
       }
@@ -347,21 +347,21 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
   else if (encoding == "base64" || encoding == "compressed")
   {
     // Number of zero paddings per point
-    uint padding_per_point = 0;
+    std::size_t padding_per_point = 0;
     if (rank == 1 && dim == 2)
       padding_per_point = 1;
     else if (rank == 2 && dim == 4)
       padding_per_point = 5;
 
     // Number of data entries per point and total number
-    const uint num_data_per_point = dim + padding_per_point;
-    const uint num_total_data_points = num_vertices*num_data_per_point;
+    const std::size_t num_data_per_point = dim + padding_per_point;
+    const std::size_t num_total_data_points = num_vertices*num_data_per_point;
 
     std::vector<double> data(num_total_data_points, 0);
     for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
     {
-      const uint index = vertex->index();
-      for(uint i = 0; i < dim; i++)
+      const std::size_t index = vertex->index();
+      for(std::size_t i = 0; i < dim; i++)
         data[index*num_data_per_point + i] = values[index + i*num_vertices];
     }
 
@@ -373,7 +373,7 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
   fp << "</PointData> " << std::endl;
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvd_file_write(uint step, double time, std::string _filename)
+void VTKFile::pvd_file_write(std::size_t step, double time, std::string _filename)
 {
   pugi::xml_document xml_doc;
   if (step == 0)
@@ -435,7 +435,7 @@ void VTKFile::pvtu_write_mesh(pugi::xml_node xml_node) const
   data_node.append_attribute("Name") = "types";
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvtu_write_function(uint dim, uint rank,
+void VTKFile::pvtu_write_function(std::size_t dim, std::size_t rank,
                                   const std::string data_location,
                                   const std::string name,
                                   const std::string filename) const
@@ -453,7 +453,7 @@ void VTKFile::pvtu_write_function(uint dim, uint rank,
 
   // Get type based on rank
   std::string rank_type;
-  uint num_components = 0;
+  std::size_t num_components = 0;
   if (rank == 0)
   {
     rank_type = "Scalars";
@@ -499,10 +499,10 @@ void VTKFile::pvtu_write_function(uint dim, uint rank,
   pugi::xml_node data_array_node = data_node.append_child("PDataArray");
   data_array_node.append_attribute("type") = "Float64";
   data_array_node.append_attribute("Name") = name.c_str();
-  data_array_node.append_attribute("NumberOfComponents") = num_components;
+  data_array_node.append_attribute("NumberOfComponents") = (unsigned int) num_components;
 
   // Write vtu file list
-  for(uint i = 0; i < MPI::num_processes(); i++)
+  for(std::size_t i = 0; i < MPI::num_processes(); i++)
   {
     const std::string tmp_string = strip_path(vtu_name(i, MPI::num_processes(), counter, ".vtu"));
     pugi::xml_node piece_node = grid_node.append_child("Piece");
@@ -526,7 +526,7 @@ void VTKFile::pvtu_write_mesh(const std::string filename) const
   pvtu_write_mesh(grid_node);
 
   // Write vtu file list
-  for(uint i = 0; i < MPI::num_processes(); i++)
+  for(std::size_t i = 0; i < MPI::num_processes(); i++)
   {
     const std::string tmp_string = strip_path(vtu_name(i, MPI::num_processes(), counter, ".vtu"));
     pugi::xml_node piece_node = grid_node.append_child("Piece");
@@ -539,7 +539,7 @@ void VTKFile::pvtu_write_mesh(const std::string filename) const
 void VTKFile::pvtu_write(const Function& u, const std::string filename) const
 {
   dolfin_assert(u.function_space()->element());
-  const uint rank = u.function_space()->element()->value_rank();
+  const std::size_t rank = u.function_space()->element()->value_rank();
   if (rank > 2)
   {
     dolfin_error("VTKFile.cpp",
@@ -548,14 +548,14 @@ void VTKFile::pvtu_write(const Function& u, const std::string filename) const
   }
 
   // Get number of components
-  const uint dim = u.value_size();
+  const std::size_t dim = u.value_size();
 
   // Test for cell-based element type
   std::string data_type = "point";
-  uint cell_based_dim = 1;
+  std::size_t cell_based_dim = 1;
   dolfin_assert(u.function_space()->mesh());
   dolfin_assert(u.function_space()->dofmap());
-  for (uint i = 0; i < rank; i++)
+  for (std::size_t i = 0; i < rank; i++)
     cell_based_dim *= u.function_space()->mesh()->topology().dim();
   if (u.function_space()->dofmap()->max_cell_dimension() == cell_based_dim)
     data_type = "cell";
@@ -563,7 +563,7 @@ void VTKFile::pvtu_write(const Function& u, const std::string filename) const
   pvtu_write_function(dim, rank, data_type, u.name(), filename);
 }
 //----------------------------------------------------------------------------
-void VTKFile::vtk_header_open(uint num_vertices, uint num_cells,
+void VTKFile::vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
                               std::string vtu_filename) const
 {
   // Open file
@@ -656,7 +656,7 @@ template<typename T>
 void VTKFile::mesh_function_write(T& meshfunction)
 {
   const Mesh& mesh = meshfunction.mesh();
-  const uint cell_dim = meshfunction.dim();
+  const std::size_t cell_dim = meshfunction.dim();
 
   // Throw error for MeshFunctions on vertices for interval elements
   if (mesh.topology().dim() == 1 && cell_dim == 0)

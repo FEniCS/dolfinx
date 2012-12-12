@@ -25,7 +25,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SpecialFacetFunction::SpecialFacetFunction(std::vector<Function>& f_e, uint dim)
+SpecialFacetFunction::SpecialFacetFunction(std::vector<Function>& f_e, std::size_t dim)
   : Expression(dim), f_e(f_e)
 {
   // Do nothing
@@ -37,7 +37,7 @@ SpecialFacetFunction::SpecialFacetFunction(std::vector<Function>& f_e)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Function& SpecialFacetFunction::operator[] (uint i) const
+Function& SpecialFacetFunction::operator[] (std::size_t i) const
 {
   dolfin_assert(i < f_e.size());
   return f_e[i];

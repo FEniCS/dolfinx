@@ -44,7 +44,7 @@ namespace dolfin
 
     /// Create mesh from a collection of facets
     static void generate(Mesh& mesh, const std::vector<Point>& vertices,
-                         const std::vector<std::vector<unsigned int> >& facets,
+                         const std::vector<std::vector<std::size_t> >& facets,
                          double cell_size, bool detect_sharp_features=true);
 
     /// Create a surface mesh from Object File Format (.off) file

@@ -120,7 +120,7 @@ void XMLVector::write(const GenericVector& vector, pugi::xml_node xml_node,
   else
     vector.get_local(x);
 
-  const uint size = vector.size();
+  const std::size_t size = vector.size();
 
   // Check if size is zero
   if (size == 0)

@@ -63,8 +63,8 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   }
 
   // Generate and number all mesh entities
-  const uint D = dolfin_mesh.topology().dim();
-  for (uint d = 1; d <= D; ++d)
+  const std::size_t D = dolfin_mesh.topology().dim();
+  for (std::size_t d = 1; d <= D; ++d)
   {
     if (_ufc_dofmap->needs_mesh_entities(d) || (_distributed && d == (D - 1)))
     {
@@ -115,7 +115,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   }
 
   // Check that we get cell markers, extend later
-  const uint D = dolfin_mesh.topology().dim();
+  const std::size_t D = dolfin_mesh.topology().dim();
   if (restriction->dim() != D)
   {
     dolfin_error("DofMap.cpp",
@@ -124,7 +124,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   }
 
   // Generate and number all mesh entities
-  for (uint d = 1; d <= D; ++d)
+  for (std::size_t d = 1; d <= D; ++d)
   {
     if (_ufc_dofmap->needs_mesh_entities(d) || (_distributed && d == (D - 1)))
     {
@@ -152,7 +152,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
                        reorder, _distributed);
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
+DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& component,
                const Mesh& mesh, bool distributed) :
   _global_dimension(0), _ufc_offset(0),
   _ownership_range(0, 0), _is_view(true),
@@ -189,7 +189,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
   _dofmap.resize(mesh.num_cells());
 
   // Hack to get around UFC using 32-bit integers
-  std::vector<uint> tmp_dof_holder;
+  std::vector<unsigned int> tmp_dof_holder;
 
   // Build sub-map based on UFC dofmap
   UFCCell ufc_cell(mesh);
@@ -241,7 +241,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
         *dof = ufc_to_current_dof->second;
 
         // Add to off-process dof owner map
-        boost::unordered_map<std::size_t, uint>::const_iterator parent_off_proc = parent_dofmap._off_process_owner.find(*dof);
+        boost::unordered_map<std::size_t, std::size_t>::const_iterator parent_off_proc = parent_dofmap._off_process_owner.find(*dof);
         if (parent_off_proc != parent_dofmap._off_process_owner.end())
           _off_process_owner.insert(*parent_off_proc);
 
@@ -330,36 +330,36 @@ DofMap::~DofMap()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-bool DofMap::needs_mesh_entities(unsigned int d) const
+bool DofMap::needs_mesh_entities(std::size_t d) const
 {
   dolfin_assert(_ufc_dofmap);
   return _ufc_dofmap->needs_mesh_entities(d);
 }
 //-----------------------------------------------------------------------------
-unsigned int DofMap::global_dimension() const
+std::size_t DofMap::global_dimension() const
 {
   return _global_dimension;
 }
 //-----------------------------------------------------------------------------
-unsigned int DofMap::cell_dimension(std::size_t cell_index) const
+std::size_t DofMap::cell_dimension(std::size_t cell_index) const
 {
   dolfin_assert(cell_index < _dofmap.size());
   return _dofmap[cell_index].size();
 }
 //-----------------------------------------------------------------------------
-unsigned int DofMap::max_cell_dimension() const
+std::size_t DofMap::max_cell_dimension() const
 {
   dolfin_assert(_ufc_dofmap);
   return _ufc_dofmap->max_local_dimension();
 }
 //-----------------------------------------------------------------------------
-unsigned int DofMap::geometric_dimension() const
+std::size_t DofMap::geometric_dimension() const
 {
   dolfin_assert(_ufc_dofmap);
   return _ufc_dofmap->geometric_dimension();
 }
 //-----------------------------------------------------------------------------
-unsigned int DofMap::num_facet_dofs() const
+std::size_t DofMap::num_facet_dofs() const
 {
   dolfin_assert(_ufc_dofmap);
   return _ufc_dofmap->num_facet_dofs();
@@ -382,7 +382,7 @@ std::pair<std::size_t, std::size_t> DofMap::ownership_range() const
   return _ownership_range;
 }
 //-----------------------------------------------------------------------------
-const boost::unordered_map<std::size_t, dolfin::uint>& DofMap::off_process_owner() const
+const boost::unordered_map<std::size_t, std::size_t>& DofMap::off_process_owner() const
 {
   return _off_process_owner;
 }
@@ -392,12 +392,12 @@ const boost::unordered_map<std::size_t, std::vector<std::size_t> >& DofMap::shar
   return _shared_dofs;
 }
 //-----------------------------------------------------------------------------
-const std::set<dolfin::uint>& DofMap::neighbours() const
+const std::set<std::size_t>& DofMap::neighbours() const
 {
   return _neighbours;
 }
 //-----------------------------------------------------------------------------
-void DofMap::tabulate_facet_dofs(uint* dofs, uint local_facet) const
+void DofMap::tabulate_facet_dofs(unsigned int* dofs, std::size_t local_facet) const
 {
   dolfin_assert(_ufc_dofmap);
   _ufc_dofmap->tabulate_facet_dofs(dofs, local_facet);
@@ -413,14 +413,14 @@ void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
       coordinates.shape()[1] != geometric_dimension())
   {
     boost::multi_array<double, 2>::extent_gen extents;
-    const uint cell_dim = cell_dimension(ufc_cell.index);
+    const std::size_t cell_dim = cell_dimension(ufc_cell.index);
     coordinates.resize(extents[cell_dim][geometric_dimension()]);
   }
 
   // Set vertex coordinates
-  const uint num_points = coordinates.size();
+  const std::size_t num_points = coordinates.size();
   std::vector<double*> coords(num_points);
-  for (uint i = 0; i < num_points; ++i)
+  for (std::size_t i = 0; i < num_points; ++i)
     coords[i] = &(coordinates[i][0]);
 
   // Tabulate coordinates
@@ -446,7 +446,7 @@ boost::shared_ptr<GenericDofMap> DofMap::build(const Mesh& new_mesh) const
   return boost::shared_ptr<GenericDofMap>(new DofMap(ufc_dof_map, new_mesh));
 }
 //-----------------------------------------------------------------------------
-DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
+DofMap* DofMap::extract_sub_dofmap(const std::vector<std::size_t>& component,
                                    const Mesh& mesh) const
 {
   return new DofMap(*this, component, mesh, _distributed);
@@ -469,7 +469,7 @@ void DofMap::set(GenericVector& x, double value) const
   x.apply("add");
 }
 //-----------------------------------------------------------------------------
-void DofMap::set_x(GenericVector& x, double value, uint component,
+void DofMap::set_x(GenericVector& x, double value, std::size_t component,
                    const Mesh& mesh) const
 {
   std::vector<double> x_values;
@@ -486,7 +486,7 @@ void DofMap::set_x(GenericVector& x, double value, uint component,
 
     // Copy coordinate (it may be possible to avoid this)
     x_values.resize(dofs.size());
-    for (uint i = 0; i < coordinates.shape()[0]; ++i)
+    for (std::size_t i = 0; i < coordinates.shape()[0]; ++i)
       x_values[i] = value*coordinates[i][component];
 
     // Set x[component] values in vector
@@ -496,7 +496,7 @@ void DofMap::set_x(GenericVector& x, double value, uint component,
 //-----------------------------------------------------------------------------
 ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
                                             std::size_t& offset,
-                                            const std::vector<uint>& component,
+                                            const std::vector<std::size_t>& component,
                                             const ufc::mesh ufc_mesh,
                                             const Mesh& dolfin_mesh)
 {
@@ -526,7 +526,7 @@ ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
   }
 
   // Add to offset if necessary
-  for (uint i = 0; i < component[0]; i++)
+  for (std::size_t i = 0; i < component[0]; i++)
   {
     // Extract sub dofmap
     boost::scoped_ptr<ufc::dofmap> ufc_tmp_dofmap(ufc_dofmap.create_sub_dofmap(i));
@@ -549,8 +549,8 @@ ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
     return sub_dofmap;
   else
   {
-    std::vector<uint> sub_component;
-    for (uint i = 1; i < component.size(); ++i)
+    std::vector<std::size_t> sub_component;
+    for (std::size_t i = 1; i < component.size(); ++i)
       sub_component.push_back(component[i]);
 
     ufc::dofmap* sub_sub_dofmap = extract_ufc_sub_dofmap(*sub_dofmap, offset,
@@ -566,7 +566,7 @@ void DofMap::init_ufc_dofmap(ufc::dofmap& dofmap,
                              const Mesh& dolfin_mesh)
 {
   // Check that we have all mesh entities
-  for (uint d = 0; d <= dolfin_mesh.topology().dim(); ++d)
+  for (std::size_t d = 0; d <= dolfin_mesh.topology().dim(); ++d)
   {
     if (dofmap.needs_mesh_entities(d) && dolfin_mesh.num_entities(d) == 0)
       dolfin_error("DofMap.cpp",
@@ -591,8 +591,8 @@ void DofMap::init_ufc_dofmap(ufc::dofmap& dofmap,
 void DofMap::init_ufc_dofmap(ufc::dofmap& dofmap,
                              const ufc::mesh ufc_mesh,
                              const Mesh& dolfin_mesh,
-                             const MeshFunction<uint>& domain_markers,
-                             uint domain)
+                             const MeshFunction<std::size_t>& domain_markers,
+                             std::size_t domain)
 {
   // Check that we get cell markers, extend later
   if (domain_markers.dim() != dolfin_mesh.topology().dim())
@@ -605,7 +605,7 @@ void DofMap::init_ufc_dofmap(ufc::dofmap& dofmap,
   not_working_in_parallel("Restricted function space");
 
   // Check that we have all mesh entities
-  for (uint d = 0; d <= dolfin_mesh.topology().dim(); ++d)
+  for (std::size_t d = 0; d <= dolfin_mesh.topology().dim(); ++d)
   {
     if (dofmap.needs_mesh_entities(d) && dolfin_mesh.num_entities(d) == 0)
       dolfin_error("DofMap.cpp",

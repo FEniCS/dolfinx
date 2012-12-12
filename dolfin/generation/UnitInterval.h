@@ -30,15 +30,14 @@ namespace dolfin
   /// A mesh of the unit interval (0, 1) with a given number of cells
   /// (nx) in the axial direction. The total number of intervals will
   /// be nx and the total number of vertices will be (nx + 1).
-  /// 
+  ///
   /// This class has been deprecated. Use _UnitIntervalMesh_.
   class UnitInterval : public UnitIntervalMesh
   {
   public:
 
     /// Create mesh of unit interval
-    UnitInterval(uint nx=1)
-      : UnitIntervalMesh(nx)
+    UnitInterval(std::size_t nx=1) : UnitIntervalMesh(nx)
     {
       warning("UnitInterval is deprecated. Use UnitIntervalMesh.");
     }

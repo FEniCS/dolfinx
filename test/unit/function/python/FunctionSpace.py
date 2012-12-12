@@ -73,7 +73,7 @@ class Interface(unittest.TestCase):
 
     def test_argument_equality(self):
         "Placed this test here because it's mainly about detecting differing function spaces."
-        mesh2 = UnitCubeMesh(1, 1, 1)
+        mesh2 = UnitCubeMesh(8, 8, 8)
         V3 = FunctionSpace(mesh2, 'CG', 1)
         W3 = VectorFunctionSpace(mesh2, 'CG', 1)
 

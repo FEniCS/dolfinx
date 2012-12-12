@@ -61,7 +61,7 @@ namespace dolfin
     ~MUMPSLUSolver();
 
     /// Solve linear system Ax = b
-    unsigned int solve(GenericVector& x, const GenericVector& b);
+    std::size_t solve(GenericVector& x, const GenericVector& b);
 
     /// Default parameter values
     static Parameters default_parameters();
