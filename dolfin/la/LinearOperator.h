@@ -15,7 +15,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-20
-// Last changed: 2012-12-11
+// Last changed: 2012-12-12
 
 #ifndef __LINEAR_OPERATOR_H
 #define __LINEAR_OPERATOR_H
@@ -40,8 +40,9 @@ namespace dolfin
   {
   public:
 
-    /// Create linear operator matching parallel layout of given vector
-    LinearOperator(const GenericVector& x);
+    // Create linear operator to match parallel layout of vectors
+    // x and y for product y = Ax.
+    LinearOperator(const GenericVector& x, const GenericVector& y);
 
     /// Create linear operator
     LinearOperator();

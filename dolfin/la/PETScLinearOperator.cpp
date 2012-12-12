@@ -106,13 +106,14 @@ GenericLinearOperator* PETScLinearOperator::wrapper()
 }
 //-----------------------------------------------------------------------------
 void PETScLinearOperator::init(const GenericVector& x,
+                               const GenericVector& y,
                                GenericLinearOperator* wrapper)
 {
   // Store wrapper
   _wrapper = wrapper;
 
   // Get global dimension
-  const std::size_t M = x.size();
+  const std::size_t M = y.size();
   const std::size_t N = x.size();
 
   // Get local range
@@ -120,9 +121,10 @@ void PETScLinearOperator::init(const GenericVector& x,
   std::size_t n_local = N;
   if (MPI::num_processes() > 1)
   {
-    std::pair<std::size_t, std::size_t> local_range = x.local_range();
-    m_local = local_range.first;
-    n_local = local_range.second;
+    std::pair<std::size_t, std::size_t> local_range_x = x.local_range();
+    std::pair<std::size_t, std::size_t> local_range_y = y.local_range();
+    m_local = local_range_y.second - local_range_y.first;
+    n_local = local_range_x.second - local_range_x.first;
   }
 
   // Initialize PETSc matrix

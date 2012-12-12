@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-20
-// Last changed: 2012-12-11
+// Last changed: 2012-12-12
 
 #include "DefaultFactory.h"
 #include "LinearOperator.h"
@@ -24,7 +24,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LinearOperator::LinearOperator(const GenericVector& x)
+LinearOperator::LinearOperator(const GenericVector& x,
+                               const GenericVector& y)
 {
   // Create concrete implementation
   DefaultFactory factory;
@@ -32,7 +33,7 @@ LinearOperator::LinearOperator(const GenericVector& x)
   dolfin_assert(_A);
 
   // Initialize implementation
-  _A->init(x, this);
+  _A->init(x, y, this);
 }
 //-----------------------------------------------------------------------------
 LinearOperator::LinearOperator()

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-07-07
-// Last changed: 2012-12-11
+// Last changed: 2012-12-12
 
 #include "GenericVector.h"
 #include "uBLASLinearOperator.h"
@@ -69,10 +69,11 @@ std::string uBLASLinearOperator::str(bool verbose) const
 }
 //-----------------------------------------------------------------------------
 void uBLASLinearOperator::init(const GenericVector& x,
+                               const GenericVector& y,
                                GenericLinearOperator* wrapper)
 {
   // Store dimensions
-  this->M = x.size();
+  this->M = y.size();
   this->N = x.size();
 
   // Store wrapper

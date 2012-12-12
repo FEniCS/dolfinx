@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-06-30
-// Last changed: 2012-12-11
+// Last changed: 2012-12-12
 
 #ifndef __UBLAS_LINEAR_OPERATOR_H
 #define __UBLAS_LINEAR_OPERATOR_H
@@ -56,7 +56,8 @@ namespace dolfin
   protected:
 
     // Initialization
-    void init(const GenericVector& x, GenericLinearOperator* wrapper);
+    void init(const GenericVector& x, const GenericVector& y,
+              GenericLinearOperator* wrapper);
 
     // Pointer to wrapper
     GenericLinearOperator* _wrapper;

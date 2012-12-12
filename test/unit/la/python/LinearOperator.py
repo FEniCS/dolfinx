@@ -30,16 +30,11 @@ class TestLinearOperator(unittest.TestCase):
 
     def test_linear_operator(self):
 
-        # FIXME: Still not working
-        if MPI.num_processes() > 1:
-            print "FIXME: Test brooken in parallel"
-            #return
-
         # Define linear operator
         class MyLinearOperator(LinearOperator):
 
             def __init__(self, a_action, u):
-                LinearOperator.__init__(self, u.vector())
+                LinearOperator.__init__(self, u.vector(), u.vector())
                 self.a_action = a_action
                 self.u = u
 
