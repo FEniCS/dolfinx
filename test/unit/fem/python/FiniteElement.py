@@ -27,7 +27,7 @@ from dolfin import *
 class FiniteElementTest(unittest.TestCase):
 
     def setUp(self):
-        self.mesh = UnitSquare(4, 4)
+        self.mesh = UnitSquareMesh(4, 4)
         self.V = FunctionSpace(self.mesh, "CG", 1)
         self.Q = VectorFunctionSpace(self.mesh, "CG", 1)
         self.W = self.V * self.Q
@@ -61,10 +61,42 @@ class FiniteElementTest(unittest.TestCase):
                 self.assertAlmostEqual(values4[:3][i], values0[i])
                 self.assertAlmostEqual(values4[3:][i], values0[i])
 
+    def test_evaluate_dofs_manifolds_affine(self):
+        "Testing evaluate_dofs vs tabulated coordinates."
+        n = 4
+        mesh = BoundaryMesh(UnitSquareMesh(n, n))
+        mesh2 = BoundaryMesh(UnitCubeMesh(n, n, n))
+        DG0 = FunctionSpace(mesh, "DG", 0)
+        DG1 = FunctionSpace(mesh, "DG", 1)
+        CG1 = FunctionSpace(mesh, "CG", 1)
+        CG2 = FunctionSpace(mesh, "CG", 2)
+        DG20 = FunctionSpace(mesh2, "DG", 0)
+        DG21 = FunctionSpace(mesh2, "DG", 1)
+        CG21 = FunctionSpace(mesh2, "CG", 1)
+        CG22 = FunctionSpace(mesh2, "CG", 2)
+        elements = [DG0, DG1, CG1, CG2, DG20, DG21, CG21, CG22]
+
+        f = Expression("x[0]+x[1]")
+        for V in elements:
+            sdim = V.element().space_dimension()
+            gdim = V.mesh().geometry().dim()
+            coords = numpy.zeros((sdim, gdim), dtype="d")
+            coord = numpy.zeros(gdim, dtype="d")
+            values0 = numpy.zeros(sdim, dtype="d")
+            values1 = numpy.zeros(sdim, dtype="d")
+            for cell in cells(V.mesh()):
+                V.dofmap().tabulate_coordinates(cell, coords)
+                for i in xrange(coords.shape[0]):
+                    coord[:] = coords[i,:]
+                    values0[i] = f(*coord)
+                V.element().evaluate_dofs(values1, f, cell)
+                for i in range(sdim):
+                    self.assertAlmostEqual(values0[i], values1[i])
+
 class DofMapTest(unittest.TestCase):
 
     def setUp(self):
-        self.mesh = UnitSquare(4, 4)
+        self.mesh = UnitSquareMesh(4, 4)
         self.V = FunctionSpace(self.mesh, "CG", 1)
         self.Q = VectorFunctionSpace(self.mesh, "CG", 1)
         self.W = self.V*self.Q
