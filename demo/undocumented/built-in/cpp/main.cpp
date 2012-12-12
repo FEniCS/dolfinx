@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-29
-// Last changed: 2012-07-05
+// Last changed: 2012-12-12
 //
 // This demo illustrates the built-in mesh types.
 
@@ -29,36 +29,36 @@ int main()
   if (dolfin::MPI::num_processes() == 1)
   {
     UnitIntervalMesh interval(10);
-    info("Plotting a UnitInterval");
+    info("Plotting a UnitIntervalMesh");
     plot(interval, "Unit interval");
   }
 
   UnitSquareMesh square_default(10, 10);
-  info("Plotting a UnitSquare");
+  info("Plotting a UnitSquareMesh");
   plot(square_default, "Unit square");
 
   UnitSquareMesh square_left(10, 10, "left");
-  info("Plotting a UnitSquare");
+  info("Plotting a UnitSquareMesh");
   plot(square_left, "Unit square (left)");
 
   UnitSquareMesh square_crossed(10, 10, "crossed");
-  info("Plotting a UnitSquare");
+  info("Plotting a UnitSquareMesh");
   plot(square_crossed, "Unit square (crossed)");
 
   UnitSquareMesh square_right_left(10, 10, "right/left");
-  info("Plotting a UnitSquare");
+  info("Plotting a UnitSquareMesh");
   plot(square_right_left, "Unit square (right/left)");
 
   RectangleMesh rectangle_default(0.0, 0.0, 10.0, 4.0, 10, 10);
-  info("Plotting a Rectangle");
+  info("Plotting a RectangleMesh");
   plot(rectangle_default, "Rectangle");
 
   RectangleMesh rectangle_right_left(-3.0, 2.0, 7.0, 6.0, 10, 10, "right/left");
-  info("Plotting a Rectangle");
+  info("Plotting a RectangleMesh");
   plot(rectangle_right_left, "Rectangle (right/left)");
 
   UnitCircleMesh circle_rotsumn(20, "right", "rotsumn");
-  info("Plotting a UnitCircle");
+  info("Plotting a UnitCircleMesh");
   plot(circle_rotsumn, "Unit circle (rotsum)");
 
   //UnitCircleMesh circle_sumn(20, "left", "sumn");
@@ -66,15 +66,15 @@ int main()
   //plot(circle_sumn, "Unit circle (sumn)");
 
   UnitCircleMesh circle_maxn(20, "right", "maxn");
-  info("Plotting a UnitCircle");
+  info("Plotting a UnitCircleMesh");
   plot(circle_maxn, "Unit circle (maxn)");
 
   UnitCubeMesh cube(10, 10, 10);
-  info("Plotting a UnitCube");
+  info("Plotting a UnitCubeMesh");
   plot(cube, "Unit cube");
 
   BoxMesh box(0.0, 0.0, 0.0, 10.0, 4.0, 2.0, 10, 10, 10);
-  info("Plotting a Box");
+  info("Plotting a BoxMesh");
   plot(box, "Box");
 
   interactive();

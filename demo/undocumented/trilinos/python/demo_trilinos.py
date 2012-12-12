@@ -42,7 +42,7 @@ if not has_linear_algebra_backend("Epetra"):
 parameters["linear_algebra_backend"] = "Epetra"
 
 # Create mesh and finite element
-mesh = UnitSquare(20,20)
+mesh = UnitSquareMesh(20, 20)
 V = FunctionSpace(mesh, "CG", 1)
 
 # Sub domain for Dirichlet boundary condition
