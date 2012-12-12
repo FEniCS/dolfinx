@@ -337,7 +337,7 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         b = assemble(a, mesh=self.bottom2)
         self.assertAlmostEqual(b, 1.0/(2*self.m*self.m))
 
-    def test_cell_circumradius(self):
+    def test_circumradius(self):
         "Testing assembly of circumradius for embedded meshes"
         r = ufl.Cell("interval", Space(2)).circumradius
         a = r*dx
@@ -356,6 +356,28 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         a = r*dx
         b1 = assemble(a, mesh=self.bottom2)
         self.assertAlmostEqual(b0, b1)
+
+    def test_facetarea(self):
+        "Testing assembly of facet area for embedded meshes"
+        area = ufl.Cell("interval", Space(2)).facet_area
+        a = area*ds
+        b = assemble(a, mesh=self.bottom1)
+        self.assertAlmostEqual(b, 2.0)
+
+        area = ufl.Cell("interval", Space(3)).facet_area
+        a = area*ds
+        b = assemble(a, mesh=self.bottom3)
+        self.assertAlmostEqual(b, 2.0)
+
+        area = ufl.Cell("triangle", Space(2)).facet_area
+        a = area*ds
+        b0 = assemble(a, mesh=UnitSquareMesh(self.m, self.m))
+
+        # Add in after fixing facet area
+        area = ufl.Cell("triangle", Space(3)).facet_area
+        a = area*ds
+        #b1 = assemble(a, mesh=self.bottom2)
+        #self.assertAlmostEqual(b0, b1)
 
 if __name__ == "__main__":
     print ""
