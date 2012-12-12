@@ -375,13 +375,6 @@ namespace dolfin
     static void init_ufc_dofmap(ufc::dofmap& dofmap, const ufc::mesh ufc_mesh,
                                 const Mesh& dolfin_mesh);
 
-    // Initialize UFC dofmap for restricted space
-    static void init_ufc_dofmap(ufc::dofmap& dofmap,
-                                const ufc::mesh ufc_mesh,
-                                const Mesh& dolfin_mesh,
-                                const MeshFunction<std::size_t>& domain_markers,
-                                std::size_t domain);
-
     // Check dimensional consistency between UFC dofmap and the mesh
     static void check_dimensional_consistency(const ufc::dofmap& dofmap,
                                               const Mesh& mesh);
