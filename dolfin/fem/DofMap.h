@@ -364,6 +364,9 @@ namespace dolfin
     // Friends
     friend class DofMapBuilder;
 
+    // Build dofmap
+    void build_common(const Mesh& dolfin_mesh);
+
     // Recursively extract UFC sub-dofmap and compute offset
     static ufc::dofmap* extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
                                             std::size_t& offset,

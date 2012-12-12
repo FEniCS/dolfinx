@@ -50,40 +50,8 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 {
   dolfin_assert(_ufc_dofmap);
 
-  // Check for dimensional consistency between the dofmap and mesh
-  check_dimensional_consistency(*_ufc_dofmap, dolfin_mesh);
-
-  // Check that mesh has been ordered
-  if (!dolfin_mesh.ordered())
-  {
-     dolfin_error("DofMap.cpp",
-                  "create mapping of degrees of freedom",
-                  "Mesh is not ordered according to the UFC numbering convention. "
-                  "Consider calling mesh.order()");
-  }
-
-  // Generate and number all mesh entities
-  const std::size_t D = dolfin_mesh.topology().dim();
-  for (std::size_t d = 1; d <= D; ++d)
-  {
-    if (_ufc_dofmap->needs_mesh_entities(d) || (_distributed && d == (D - 1)))
-    {
-      dolfin_mesh.init(d);
-      if (_distributed)
-        MeshPartitioning::number_entities(dolfin_mesh, d);
-    }
-  }
-
-  // Create the UFC mesh
-  const UFCMesh ufc_mesh(dolfin_mesh);
-
-  // Initialize the UFC dofmap
-  init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh);
-
-  // Build dof map
-  const bool reorder = dolfin::parameters["reorder_dofs_serial"];
-  DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, _restriction,
-                       reorder, _distributed);
+  // Call common build
+  build_common(dolfin_mesh);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
@@ -93,58 +61,25 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
     _global_dimension(0), _ufc_offset(0), _is_view(false),
     _distributed(MPI::num_processes() > 1)
 {
-  info("Creating restricted dofmap.");
-  warning("Restricted function space is an experimental feature.");
-  not_working_in_parallel("Restricted function space");
-
   dolfin_assert(_ufc_dofmap);
   dolfin_assert(_restriction);
+
+  warning("Restricted function space is an experimental feature.");
+  not_working_in_parallel("Restricted function space");
 
   // Get mesh
   const dolfin::Mesh& dolfin_mesh(restriction->mesh());
 
-  // Check for dimensional consistency between the dofmap and mesh
-  check_dimensional_consistency(*_ufc_dofmap, dolfin_mesh);
-
-  // Check that mesh has been ordered
-  if (!dolfin_mesh.ordered())
-  {
-     dolfin_error("DofMap.cpp",
-                  "create mapping of degrees of freedom",
-                  "Mesh is not ordered according to the UFC numbering convention. "
-                  "Consider calling mesh.order()");
-  }
-
   // Check that we get cell markers, extend later
-  const std::size_t D = dolfin_mesh.topology().dim();
-  if (restriction->dim() != D)
+  if (restriction->dim() != dolfin_mesh.topology().dim())
   {
     dolfin_error("DofMap.cpp",
                  "create mapping of degrees of freedom",
-                 "Only cell-based restricted function spaces are currently supported. ");
+                 "Only cell-based restriction of function spaces are currently supported. ");
   }
 
-  // Generate and number all mesh entities
-  for (std::size_t d = 1; d <= D; ++d)
-  {
-    if (_ufc_dofmap->needs_mesh_entities(d) || (_distributed && d == (D - 1)))
-    {
-      dolfin_mesh.init(d);
-      if (_distributed)
-        MeshPartitioning::number_entities(dolfin_mesh, d);
-    }
-  }
-
-  // Create the UFC mesh
-  const UFCMesh ufc_mesh(dolfin_mesh);
-
-  // Initialize the UFC dofmap
-  init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh);
-
-  // Build restricted dof map
-  const bool reorder = dolfin::parameters["reorder_dofs_serial"];
-  DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, restriction,
-                       reorder, _distributed);
+  // Call common build
+  build_common(dolfin_mesh);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& component,
@@ -436,7 +371,7 @@ boost::shared_ptr<GenericDofMap> DofMap::copy() const
 //-----------------------------------------------------------------------------
 boost::shared_ptr<GenericDofMap> DofMap::build(const Mesh& new_mesh) const
 {
-  // Get copy of underlying UFC dof mapo
+  // Get copy of underlying UFC dof map
   boost::shared_ptr<const ufc::dofmap> ufc_dof_map(_ufc_dofmap->create());
   return boost::shared_ptr<GenericDofMap>(new DofMap(ufc_dof_map, new_mesh));
 }
@@ -487,6 +422,48 @@ void DofMap::set_x(GenericVector& x, double value, std::size_t component,
     // Set x[component] values in vector
     x.set(x_values.data(), dofs.size(), dofs.data());
   }
+}
+//-----------------------------------------------------------------------------
+void DofMap::build_common(const Mesh& dolfin_mesh)
+{
+  // FIXME: Parts of this might be consolidated with the code in
+  // DofMapBuilder. It's not clear which parts should happen here and
+  // which parts should happen inside DofMapBuilder.
+
+  // Check for dimensional consistency between the dofmap and mesh
+  check_dimensional_consistency(*_ufc_dofmap, dolfin_mesh);
+
+  // Check that mesh has been ordered
+  if (!dolfin_mesh.ordered())
+  {
+     dolfin_error("DofMap.cpp",
+                  "create mapping of degrees of freedom",
+                  "Mesh is not ordered according to the UFC numbering convention. "
+                  "Consider calling mesh.order()");
+  }
+
+  // Generate and number all mesh entities
+  const std::size_t D = dolfin_mesh.topology().dim();
+  for (std::size_t d = 1; d <= D; ++d)
+  {
+    if (_ufc_dofmap->needs_mesh_entities(d) || (_distributed && d == (D - 1)))
+    {
+      dolfin_mesh.init(d);
+      if (_distributed)
+        MeshPartitioning::number_entities(dolfin_mesh, d);
+    }
+  }
+
+  // Create the UFC mesh
+  const UFCMesh ufc_mesh(dolfin_mesh);
+
+  // Initialize the UFC dofmap
+  init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh);
+
+  // Build restricted dof map
+  const bool reorder = dolfin::parameters["reorder_dofs_serial"];
+  DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, _restriction,
+                       reorder, _distributed);
 }
 //-----------------------------------------------------------------------------
 ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
