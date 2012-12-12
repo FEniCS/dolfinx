@@ -148,7 +148,7 @@ class AbstractBaseTest(object):
 
     #def create_sparsity_pattern(self):
     #    "Create a sparsity pattern"
-    #    mesh = UnitSquare(34, 33)
+    #    mesh = UnitSquareMesh(34, 33)
     #
     #    V = FunctionSpace(mesh, "Lagrange", 2)
     #    W = FunctionSpace(mesh, "Lagrange", 1)

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-11-25
-// Last changed: 2010-11-27
+// Last changed: 2012-12-12
 
 #include <dolfin.h>
 #include <dolfin/log/LogLevel.h>
@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
 
   parameters.parse(argc, argv);
 
-  UnitCube mesh(SIZE, SIZE, SIZE);
+  UnitCubeMesh mesh(SIZE, SIZE, SIZE);
   const int D = mesh.topology().dim();
 
   for (int i = 0; i < NUM_REPS; i++)
