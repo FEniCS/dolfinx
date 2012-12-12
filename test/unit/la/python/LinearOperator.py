@@ -23,25 +23,17 @@
 import unittest
 from dolfin import *
 
-# Create some data for use below
-mesh = UnitSquareMesh(8, 8)
-V = FunctionSpace(mesh, "Lagrange", 1)
-u = TrialFunction(V)
-v = TestFunction(V)
-a = dot(grad(u), grad(v))*dx + u*v*dx
-L = Constant(1)*dx
-
 # Backends supporting the LinearOperator interface
-#backends = ["PETSc", "uBLAS"]
-backends = ["PETSc"]
+backends = ["PETSc", "uBLAS"]
 
 class TestLinearOperator(unittest.TestCase):
 
     def test_linear_operator(self):
 
-        # FIXME: Uncomment to test in parallel
-        if (MPI.num_processes() > 1):
-            return
+        # FIXME: Still not working
+        if MPI.num_processes() > 1:
+            print "FIXME: Test brooken in parallel"
+            #return
 
         # Define linear operator
         class MyLinearOperator(LinearOperator):
@@ -65,6 +57,11 @@ class TestLinearOperator(unittest.TestCase):
         # Iterate over backends supporting linear operators
         for backend in backends:
 
+            # Skip testing uBLAS in parallel
+            if MPI.num_processes() > 1 and backend == "uBLAS":
+                print "Not running uBLAS test in parallel"
+                return
+
             # Set linear algebra backend
             parameters["linear_algebra_backend"] = backend
 
@@ -73,11 +70,12 @@ class TestLinearOperator(unittest.TestCase):
             V = FunctionSpace(mesh, "Lagrange", 1)
             u = TrialFunction(V)
             v = TestFunction(V)
+            f = Constant(1.0)
             a = dot(grad(u), grad(v))*dx + u*v*dx
-            x = Vector()
-            b = Vector(V.dim())
-            b[:] = 1.0
+            L = f*v*dx
             A = assemble(a)
+            b = assemble(L)
+            x = Vector()
             solve(A, x, b, "gmres", "none")
             norm_ref = norm(x, "l2")
 
