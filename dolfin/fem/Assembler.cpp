@@ -204,10 +204,6 @@ void Assembler::assemble_cells(GenericTensor& A,
   dolfin_assert(!ufc.cell_integrals.empty());
   ufc::cell_integral* integral = ufc.cell_integrals[0].get();
 
-  // Extract cell orientation
-  boost::shared_ptr<MeshFunction<std::size_t> >
-    cell_orientation = mesh.data().mesh_function("cell_orientation");
-
   // Assemble over cells
   Progress p(AssemblerBase::progress_message(A.rank(), "cells"), mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -227,10 +223,7 @@ void Assembler::assemble_cells(GenericTensor& A,
       continue;
 
     // Update to current cell
-    if (cell_orientation)
-      ufc.update(*cell, -1, (*cell_orientation)[cell->index()]);
-    else
-      ufc.update(*cell);
+    ufc.update(*cell);
 
     // Get local-to-global dof maps for cell
     bool empty_dofmap = false;

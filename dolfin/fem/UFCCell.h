@@ -144,8 +144,7 @@ namespace dolfin
 
     // Update cell entities and coordinates
     // Note: We use MeshEntity& rather than Cell& to avoid a gcc 4.4.1 warning
-    void update(const MeshEntity& cell, const int local_facet=-1,
-                const int orientation=0)
+    void update(const MeshEntity& cell, int local_facet=-1)
     {
       dolfin_assert(cell.dim() == topological_dimension);
 
@@ -165,7 +164,8 @@ namespace dolfin
       this->local_facet = local_facet;
 
       // Set orientation
-      this->orientation = orientation;
+      std::cout << "Setting orientation" << std::endl;
+      this->orientation = cell.mesh().cell_orientations()[cell.index()];
 
       const uint D = topological_dimension;
       const MeshTopology& topology = cell.mesh().topology();

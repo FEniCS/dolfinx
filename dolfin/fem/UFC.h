@@ -71,9 +71,6 @@ namespace dolfin
     void update(const Cell& cell0, uint local_facet0,
                 const Cell& cell1, uint local_facet1);
 
-    /// Update current cell possibly with facet and possibly with orientation
-    void update(const Cell& cell, const int local_facet, const int orientation);
-
     /// Pointer to coefficient data. Used to support UFC interface.
     const double* const * w() const
     { return &w_pointer[0]; }
