@@ -38,8 +38,7 @@ mesh = Mesh("sphere16.xml")
 
 # Define global normal
 global_normal = Expression(("x[0]", "x[1]", "x[2]"))
-
-init_orientation(mesh, global_normal)
+mesh.init_cell_orientations(global_normal)
 
 # Define function spaces and basis functions
 V = FunctionSpace(mesh, "RT", 1)
