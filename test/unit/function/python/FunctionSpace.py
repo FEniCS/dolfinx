@@ -34,6 +34,14 @@ W2 = g.function_space()
 
 class Interface(unittest.TestCase):
 
+    def test_component(self):
+        self.assertFalse(W.component())
+        self.assertFalse(V.component())
+        self.assertEqual(W.sub(0).component()[0], 0)
+        self.assertEqual(W.sub(1).component()[0], 1)
+        self.assertEqual(Q.sub(0).component()[0], 0)
+        self.assertEqual(Q.sub(1).component()[0], 1)
+
     def test_equality(self):
         self.assertEqual(V, V)
         self.assertEqual(V, V2)
