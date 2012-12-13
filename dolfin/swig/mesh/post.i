@@ -95,7 +95,7 @@ def mark(self, *args):
         common.dolfin_error("dolfin.cpp.mesh.py",
                             "mark MeshFunction",
                             "Expected a MeshFunction of type \"sizet\", \"int\", \"double\" or \"bool\"")
-            
+
     self._mark(*args)
 
 %}
@@ -372,6 +372,22 @@ def coordinates(self):
     _attach_base_to_numpy_array(coord, self)
 
     return coord
+
+def cell_orientations(self):
+    """
+    Get the cell orientations set.
+
+    *Returns*
+        numpy.array(int)
+            Cell orientations
+    """
+    # Get coordinates
+    orientations = self._cell_orientations()
+
+    # Attach a reference to the Mesh to the orientations array
+    _attach_base_to_numpy_array(orientations, self)
+
+    return orientations
 
 def cells(self):
     """

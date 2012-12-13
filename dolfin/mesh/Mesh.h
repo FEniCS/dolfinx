@@ -21,9 +21,10 @@
 // Modified by Niclas Jansson 2008
 // Modified by Kristoffer Selim 2008
 // Modified by Andre Massing 2009-2010
+// Modified by Marie E. Rognes 2012
 //
 // First added:  2006-05-08
-// Last changed: 2012-10-25
+// Last changed: 2012-12-13
 
 #ifndef __MESH_H
 #define __MESH_H

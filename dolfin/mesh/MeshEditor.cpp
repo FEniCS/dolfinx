@@ -267,7 +267,7 @@ void MeshEditor::close(bool order)
     mesh->order();
 
   // Initialize cell orientations
-  mesh->cell_orientations().resize(mesh->num_cells());
+  mesh->cell_orientations().resize(mesh->num_cells(), -1);
 
   // Clear data
   clear();
