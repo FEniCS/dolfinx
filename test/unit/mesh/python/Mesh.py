@@ -18,9 +18,10 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Benjamin Kehlet 2012
+# Modified by Marie E. Rognes 2012
 #
 # First added:  2006-08-08
-# Last changed: 2012-11-12
+# Last changed: 2012-12-13
 
 import unittest
 import numpy
@@ -300,6 +301,42 @@ if MPI.num_processes() == 1:
             id = mesh.closest_cell(point)
             self.assertEqual(id, 0)
 
+class MeshOrientations(unittest.TestCase):
+
+    def setUp(self):
+        pass
+
+    def test_basic_cell_orientations(self):
+        "Test that default cell orientations initialize and update as expected."
+        mesh = UnitIntervalMesh(4)
+        orientations = mesh.cell_orientations()
+        self.assertEqual(len(orientations), mesh.num_cells())
+        for i in range(mesh.num_cells()):
+            self.assertEqual(orientations[i], -1)
+
+        orientations[0] = 1
+        self.assertEqual(mesh.cell_orientations()[0], 1)
+
+    def test_cell_orientations(self):
+        "Test that cell orientations update as expected."
+        mesh = UnitIntervalMesh(4)
+        mesh.init_cell_orientations(Expression(("0.0", "1.0", "0.0")))
+        for i in range(mesh.num_cells()):
+            self.assertEqual(mesh.cell_orientations()[i], 0)
+
+        mesh = UnitSquareMesh(2, 2)
+        mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
+        reference = numpy.array((0, 1, 0, 1, 0, 1, 0, 1))
+        # Only compare against reference in serial (don't know how to
+        # compare in parallel)
+        if MPI.num_processes() == 1:
+            for i in range(mesh.num_cells()):
+                self.assertEqual(mesh.cell_orientations()[i], reference[i])
+
+        mesh = BoundaryMesh(UnitSquareMesh(2, 2))
+        mesh.init_cell_orientations(Expression(("x[0]", "x[1]", "x[2]")))
+        print mesh.cell_orientations()
 
 if __name__ == "__main__":
     unittest.main()
+

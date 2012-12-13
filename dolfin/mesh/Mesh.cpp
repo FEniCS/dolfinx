@@ -582,24 +582,24 @@ std::vector<int>& Mesh::cell_orientations()
 void Mesh::init_cell_orientations(const Expression& global_normal)
 {
   // Check that global_normal has the right size
-  const unsigned int gdim = this->geometry().dim();
-  if (global_normal.value_size() != gdim)
-    dolfin_error("Mesh.cpp",
-                 "initialize cell orientations",
-                 "Global normal value size must match gdim (%d)", gdim);
+  if (global_normal.value_size() != 3)
+     dolfin_error("Mesh.cpp",
+                  "initialize cell orientations",
+                  "Global normal value size is assumed to be 3 (not %d)",
+                  global_normal.value_size());
 
-  Array<double> values(gdim);
+  Array<double> values(3);
   Point up;
   for (CellIterator cell(*this); !cell.end(); ++cell)
   {
     // Extract cell midpoint as Array
-    const Array<double> x(gdim, cell->midpoint().coordinates());
+    const Array<double> x(3, cell->midpoint().coordinates());
 
     // Evaluate global normal at cell midpoint
     global_normal.eval(values, x);
 
     // Extract values as Point
-    for (unsigned int i=0; i < gdim; i++)
+    for (unsigned int i=0; i < 3; i++)
       up[i] = values[i];
 
     // Set orientation as orientation relative to up direction.

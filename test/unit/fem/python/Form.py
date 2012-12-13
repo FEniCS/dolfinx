@@ -170,9 +170,8 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
         self.square3d = SubMesh(BoundaryMesh(UnitCubeMesh(n, n, n)), plane)
 
         # Define global normal and create orientation map
-        global_normal = numpy.array((0.0, 1.0, 0.0))
-        mf = self.square3d.data().create_mesh_function("cell_orientation", 2)
-        self.create_orientation(mf, global_normal)
+        global_normal = Expression(("0.0", "1.0", "0.0"))
+        self.square3d.init_cell_orientations(global_normal)
 
         self.CG2 = VectorFunctionSpace(self.square, "CG", 1)
         self.CG3 = VectorFunctionSpace(self.square3d, "CG", 1)
@@ -182,22 +181,6 @@ class FormTestsOverFunnySpaces(unittest.TestCase):
         self.DG3 = FunctionSpace(self.square3d, "DG", 0)
         self.W2 = self.RT2*self.DG2
         self.W3 = self.RT3*self.DG3
-
-    def create_orientation(self, mf, global_normal):
-        mesh = mf.mesh()
-        coords = mesh.coordinates()
-        for cell in cells(mesh):
-            ind = [v.index() for v in vertices(cell)]
-            v1 = coords[ind[1], :] - coords[ind[0], :]
-            v2 = coords[ind[2], :] - coords[ind[0], :]
-            local_normal = numpy.cross(v1, v2)
-            orientation = numpy.inner(global_normal, local_normal)
-            if orientation > 0:
-                mf[cell.index()] = 2
-            elif orientation < 0:
-                mf[cell.index()] = 1
-            else:
-                raise Exception, "Not expecting orthogonal local/global normal"
 
     def test_basic_rt(self):
 
@@ -373,7 +356,7 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         a = area*ds
         b0 = assemble(a, mesh=UnitSquareMesh(self.m, self.m))
 
-        # Add in after fixing facet area
+        # Add in after fixing facet normal
         area = ufl.Cell("triangle", Space(3)).facet_area
         a = area*ds
         #b1 = assemble(a, mesh=self.bottom2)
