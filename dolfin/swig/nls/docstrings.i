@@ -80,7 +80,7 @@ Solve abstract nonlinear problem :math:`F(x) = 0` for given
         The vector.
 
 *Returns*
-    (int, bool)
+    std::pair<std::size_t, bool>
         Pair of number of Newton iterations, and whether
         iteration converged)
 ";
@@ -89,7 +89,7 @@ Solve abstract nonlinear problem :math:`F(x) = 0` for given
 Return Newton iteration number
 
 *Returns*
-    int
+    std::size_t
         The iteration number.
 ";
 
@@ -152,7 +152,7 @@ Solve abstract nonlinear problem :math:`F(x) = 0` for given
         The vector.
 
 *Returns*
-    (int, bool)
+    std::pair<std::size_t, bool>
         Pair of number of Newton iterations, and whether
         iteration converged)
 ";

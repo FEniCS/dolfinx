@@ -172,19 +172,27 @@ void LinearVariationalSolver::solve()
   if (print_matrix)
     info(*A, true);
 
-  // Adjust solver type if necessary
+  // Choose linear solver
   if (solver_type == "iterative")
   {
+    // Adjust iterative solver type
     if (symmetric)
       solver_type = "cg";
     else
       solver_type = "gmres";
-  }
 
-  // Solve linear system
-  LinearSolver solver(solver_type, pc_type);
-  dolfin_assert(u->vector());
-  solver.solve(*A, *u->vector(), *b);
+    // Solve linear system
+    KrylovSolver solver(solver_type, pc_type);
+    solver.parameters.update(parameters("krylov_solver"));
+    solver.solve(*A, *u->vector(), *b);
+  }
+  else
+  {
+    // Solve linear system
+    LUSolver solver;
+    solver.parameters.update(parameters("lu_solver"));
+    solver.solve(*A, *u->vector(), *b);
+  }
 
   end();
 }

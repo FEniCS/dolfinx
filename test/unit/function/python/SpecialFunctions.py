@@ -27,9 +27,9 @@ class SpecialFunctions(unittest.TestCase):
 
     def testFacetArea(self):
         if MPI.num_processes() == 1:
-            references = [(UnitInterval(1), 2, 2),\
-                          (UnitSquare(1,1), 4, 4),\
-                          (UnitCube(1,1,1), 6, 3)]
+            references = [(UnitIntervalMesh(1), 2, 2),\
+                          (UnitSquareMesh(1,1), 4, 4),\
+                          (UnitCubeMesh(1,1,1), 6, 3)]
             for mesh, surface, ref_int in references:
                 c = Constant(1, mesh.ufl_cell())
                 c0 = mesh.ufl_cell().facet_area

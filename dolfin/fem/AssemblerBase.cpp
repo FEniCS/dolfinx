@@ -31,6 +31,7 @@
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/GenericLinearAlgebraFactory.h>
+#include <dolfin/la/TensorLayout.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/Mesh.h>
@@ -42,7 +43,6 @@
 #include "SparsityPatternBuilder.h"
 #include "AssemblerBase.h"
 
-#include <dolfin/la/TensorLayout.h>
 
 using namespace dolfin;
 
@@ -63,7 +63,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
 
   // Get dof maps
   std::vector<const GenericDofMap*> dofmaps;
-  for (uint i = 0; i < a.rank(); ++i)
+  for (std::size_t i = 0; i < a.rank(); ++i)
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   if (reset_sparsity)
@@ -76,7 +76,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
 
     std::vector<std::size_t> global_dimensions(a.rank());
     std::vector<std::pair<std::size_t, std::size_t> > local_range(a.rank());
-    for (uint i = 0; i < a.rank(); i++)
+    for (std::size_t i = 0; i < a.rank(); i++)
     {
       dolfin_assert(dofmaps[i]);
       global_dimensions[i] = dofmaps[i]->global_dimension();
@@ -148,17 +148,15 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
           const std::size_t dofs[2] = {dof_pair->first.first, dof_pair->second.first};
 
           std::vector<DolfinIndex> edges;
-          for (uint i = 0; i < 2; ++i)
+          for (std::size_t i = 0; i < 2; ++i)
           {
             if (dofs[i] >= local_range.first && dofs[i] < local_range.second)
             {
               pattern.get_edges(dofs[i], edges);
               const std::vector<double> block(edges.size(), 0.0);
-              DolfinIndex _dofs[2];
-              _dofs[0] = dofs[0];
-              _dofs[1] = dofs[1];
+              DolfinIndex _dof = dofs[i];
               const std::vector<DolfinIndex> _edges(edges.begin(), edges.end());
-              _A.set(&block[0], 1, _dofs, edges.size(), _edges.data());
+              _A.set(&block[0], 1, &_dof, edges.size(), _edges.data());
             }
           }
         }
@@ -173,7 +171,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
   else
   {
     // If tensor is not reset, check that dimensions are correct
-    for (uint i = 0; i < a.rank(); ++i)
+    for (std::size_t i = 0; i < a.rank(); ++i)
     {
       if (A.size(i) != dofmaps[i]->global_dimension())
       {
@@ -228,7 +226,7 @@ void AssemblerBase::check(const Form& a)
   }
 
   // Check that all coefficients have valid value dimensions
-  for (uint i = 0; i < coefficients.size(); ++i)
+  for (std::size_t i = 0; i < coefficients.size(); ++i)
   {
     if (!coefficients[i])
     {
@@ -242,8 +240,8 @@ void AssemblerBase::check(const Form& a)
     boost::scoped_ptr<ufc::finite_element> fe(a.ufc_form()->create_finite_element(i + a.rank()));
 
     // Checks out-commented since they only work for Functions, not Expressions
-    const uint r = coefficients[i]->value_rank();
-    const uint fe_r = fe->value_rank();
+    const std::size_t r = coefficients[i]->value_rank();
+    const std::size_t fe_r = fe->value_rank();
     if (fe_r != r)
     {
       dolfin_error("AssemblerBase.cpp",
@@ -252,10 +250,10 @@ void AssemblerBase::check(const Form& a)
 You might have forgotten to specify the value rank correctly in an Expression subclass", i, r, fe_r);
     }
 
-    for (uint j = 0; j < r; ++j)
+    for (std::size_t j = 0; j < r; ++j)
     {
-      const uint dim = coefficients[i]->value_dimension(j);
-      const uint fe_dim = fe->value_dimension(j);
+      const std::size_t dim = coefficients[i]->value_dimension(j);
+      const std::size_t fe_dim = fe->value_dimension(j);
       if (dim != fe_dim)
       {
         dolfin_error("AssemblerBase.cpp",
@@ -300,7 +298,7 @@ You might have forgotten to specify the value dimension correctly in an Expressi
   }
 }
 //-----------------------------------------------------------------------------
-std::string AssemblerBase::progress_message(uint rank,
+std::string AssemblerBase::progress_message(std::size_t rank,
                                             std::string integral_type)
 {
   std::stringstream s;

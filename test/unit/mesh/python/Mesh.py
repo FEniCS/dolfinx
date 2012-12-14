@@ -51,13 +51,13 @@ class MeshConstruction(unittest.TestCase):
 if MPI.num_processes() == 1:
     class SimpleShapes(unittest.TestCase):
 
-        def testUnitSquare(self):
+        def testUnitSquareMesh(self):
             """Create mesh of unit square."""
             mesh = UnitSquareMesh(5, 7)
             self.assertEqual(mesh.num_vertices(), 48)
             self.assertEqual(mesh.num_cells(), 70)
 
-        def testUnitCube(self):
+        def testUnitCubeMesh(self):
             """Create mesh of unit cube."""
             mesh = UnitCubeMesh(5, 7, 9)
             self.assertEqual(mesh.num_vertices(), 480)
@@ -65,14 +65,14 @@ if MPI.num_processes() == 1:
 
     class MeshRefinement(unittest.TestCase):
 
-        def testRefineUnitSquare(self):
+        def testRefineUnitSquareMesh(self):
             """Refine mesh of unit square."""
             mesh = UnitSquareMesh(5, 7)
             mesh = refine(mesh)
             self.assertEqual(mesh.num_vertices(), 165)
             self.assertEqual(mesh.num_cells(), 280)
 
-        def testRefineUnitCube(self):
+        def testRefineUnitCubeMesh(self):
             """Refine mesh of unit cube."""
             mesh = UnitCubeMesh(5, 7, 9)
             mesh = refine(mesh)

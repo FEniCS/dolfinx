@@ -40,7 +40,7 @@ namespace dolfin
 
     template<typename T>
     static T parse(const xmlChar* name, const xmlChar** attrs,
-			                 const char* attribute, uint num_attributes)
+			                 const char* attribute, std::size_t num_attributes)
     {
       // Check that we got the data
       if (!attrs)
@@ -52,7 +52,7 @@ namespace dolfin
       }
 
       // Parse data
-      for (uint i = 0; i < num_attributes; i++)
+      for (std::size_t i = 0; i < num_attributes; i++)
       {
         // Check for attribute
         if (xmlStrcasecmp(attrs[5*i], (xmlChar *) attribute) == 0)

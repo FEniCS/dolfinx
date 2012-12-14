@@ -45,7 +45,7 @@ class TimeSeriesTest(unittest.TestCase):
         times = [t/10.0 for t in range(1, 11)]
 
         mesh_size = (2, 2, 2)
-        mesh = UnitCube(*mesh_size)
+        mesh = UnitCubeMesh(*mesh_size)
         mesh.init()
         V = FunctionSpace(mesh, "CG", 2)
 
@@ -67,7 +67,7 @@ class TimeSeriesTest(unittest.TestCase):
         mesh_retreived = Mesh()
         series.retrieve(mesh_retreived, 0.1)
 
-        mesh_test = mesh if all_connectivities else UnitCube(*mesh_size)
+        mesh_test = mesh if all_connectivities else UnitCubeMesh(*mesh_size)
 
         for entity in range(4):
             self.assertEqual(mesh_retreived.topology().size(entity),
@@ -87,7 +87,7 @@ class TimeSeriesTest(unittest.TestCase):
         name = "TimeSeries_test_subdirectory/foo"
 
         series0 = TimeSeries(name)
-        m0 = UnitSquare(3, 3)
+        m0 = UnitSquareMesh(3, 3)
         x0 = Vector(10)
 
         # Test storage of only one time point for the mesh

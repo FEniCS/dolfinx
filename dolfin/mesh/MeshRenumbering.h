@@ -59,7 +59,7 @@ namespace dolfin
     static void compute_renumbering(const Mesh& mesh,
                                     const std::vector<std::size_t>& coloring,
                                     std::vector<double>& coordinates,
-                                    std::vector<uint>& connectivity);
+                                    std::vector<std::size_t>& connectivity);
 
 
   };

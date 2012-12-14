@@ -73,18 +73,12 @@ namespace dolfin
 
   public:
 
-    // Build dofmap
+    // Build dofmap. The restriction may be a null pointer in which
+    // case it is ignored.
     static void build(DofMap& dofmap,
                       const Mesh& dolfin_mesh,
                       const UFCMesh& ufc_mesh,
-                      bool reorder,
-                      bool distributed);
-
-    // Build restricted dofmap
-    static void build(DofMap& dofmap,
-                      const Mesh& dolfin_mesh,
-                      const UFCMesh& ufc_mesh,
-                      const Restriction& restriction,
+                      boost::shared_ptr<const Restriction> restriction,
                       bool reorder,
                       bool distributed);
 

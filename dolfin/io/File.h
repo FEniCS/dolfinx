@@ -1,4 +1,4 @@
-// Copyright (C) 2002-2011 Johan Hoffman, Anders Logg and Garth N. Wells
+// Copyright (C) 2002-2012 Johan Hoffman, Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -20,7 +20,7 @@
 // Modified by Ola Skavhaug 2009
 //
 // First added:  2002-11-12
-// Last changed: 2011-09-27
+// Last changed: 2012-12-01
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -41,19 +41,19 @@ namespace dolfin
   /// A list of objects that can be read/written to file can be found in
   /// GenericFile.h. Compatible file formats include:
   ///     * XDMF   (.xdmf)
-  ///     * HDF5   (.h5)
   ///     * XML    (.xml)
   ///     * VTK    (.pvd)
   ///     * RAW    (.raw)
   ///     * XYZ    (.xyz)
   ///     * Binary (.bin)
+  ///     * SVG    (.svg)
 
   class File
   {
   public:
 
     /// File formats
-    enum Type {xdmf, hdf5, xml, vtk, raw, xyz, binary};
+    enum Type {xdmf, xml, vtk, raw, xyz, binary, svg};
 
     /// Create a file with given name
     ///

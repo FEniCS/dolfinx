@@ -38,7 +38,7 @@ if not has_cgal():
 parameters["allow_extrapolation"] = True
 
 # Create mesh and function space
-mesh = UnitSquare(16, 16)
+mesh = UnitSquareMesh(16, 16)
 V = FunctionSpace(mesh, "CG", 1)
 
 # Create a function on the original mesh
@@ -49,7 +49,7 @@ v = interpolate(f, V)
 # FIXME: but that breaks in parallel
 
 # Refine mesh and create a new function space
-refined_mesh = UnitSquare(32, 32)
+refined_mesh = UnitSquareMesh(32, 32)
 W = FunctionSpace(refined_mesh, "CG", 1)
 
 # Displace mesh slightly

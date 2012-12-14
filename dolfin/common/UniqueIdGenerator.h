@@ -38,7 +38,7 @@ namespace dolfin
     UniqueIdGenerator();
 
     /// Generate a unique ID
-    static uint id();
+    static std::size_t id();
 
   private:
 
@@ -46,7 +46,7 @@ namespace dolfin
     static UniqueIdGenerator unique_id_generator;
 
     // Next ID to be returned
-    uint next_id;
+    std::size_t next_id;
 
   };
 

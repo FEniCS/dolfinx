@@ -15,24 +15,21 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Niclas Jansson 2009.
-// Modified by Garth N. Wells 2010.
-// Modified by Joachim B Haga, 2012.
-// Modified by Mikael Mortensen, 2012.
 // Modified by Niclas Jansson 2009
 // Modified by Garth N. Wells 2010-2012
+// Modified by Mikael Mortensen, 2012.
 // Modified by Joachim B Haga, 2012
 //
 // First added:  2008-08-12
-// Last changed: 2012-11-05
+// Last changed: 2012-12-12
 
 #include <ufc.h>
 #include <boost/random.hpp>
+#include <boost/unordered_map.hpp>
 #include <boost/serialization/map.hpp>
 #include <dolfin/common/tuple_serialization.h>
 
 #include <dolfin/common/Timer.h>
-#include <dolfin/common/constants.h>
 #include <dolfin/graph/BoostGraphOrdering.h>
 #include <dolfin/graph/GraphBuilder.h>
 #include <dolfin/graph/SCOTCH.h>
@@ -53,6 +50,7 @@ using namespace dolfin;
 void DofMapBuilder::build(DofMap& dofmap,
                           const Mesh& dolfin_mesh,
                           const UFCMesh& ufc_mesh,
+                          boost::shared_ptr<const Restriction> restriction,
                           bool reorder,
                           bool distributed)
 {
@@ -65,17 +63,24 @@ void DofMapBuilder::build(DofMap& dofmap,
   dolfin_assert(dofmap._ufc_dofmap);
 
   // Temporary holder until UFC supporte 64-bit integers
-  std::vector<uint> tmp_dofs;
+  std::vector<unsigned int> tmp_dofs;
+
+  // Map used to renumber dofs for restricted meshes
+  map restricted_dofs;
 
   // Build dofmap from ufc::dofmap
   dolfin::UFCCell ufc_cell(dolfin_mesh);
   for (dolfin::CellIterator cell(dolfin_mesh); !cell.end(); ++cell)
   {
+    // Skip cells not included in restriction
+    if (restriction && !restriction->contains(*cell))
+      continue;
+
     // Update UFC cell
     ufc_cell.update(*cell);
 
     // Get standard local dimension
-    const uint local_dim = dofmap._ufc_dofmap->local_dimension(ufc_cell);
+    const unsigned int local_dim = dofmap._ufc_dofmap->local_dimension(ufc_cell);
 
     // Get container for cell dofs
     std::vector<DolfinIndex>& cell_dofs = dofmap._dofmap[cell->index()];
@@ -87,23 +92,43 @@ void DofMapBuilder::build(DofMap& dofmap,
     dofmap._ufc_dofmap->tabulate_dofs(&tmp_dofs[0],
                                       ufc_mesh, ufc_cell);
     std::copy(tmp_dofs.begin(), tmp_dofs.end(), cell_dofs.begin());
+
+    // Renumber dofs if mesh is restricted
+    if (restriction)
+    {
+      for (std::size_t i = 0; i < cell_dofs.size(); i++)
+      {
+        map_iterator it = restricted_dofs.find(cell_dofs[i]);
+        if (it == restricted_dofs.end())
+        {
+          const std::size_t dof = restricted_dofs.size();
+          restricted_dofs[cell_dofs[i]] = dof;
+          cell_dofs[i] = dof;
+        }
+        else
+          cell_dofs[i] = it->second;
+      }
+    }
   }
-  
+
   // Set global dimension
-  dofmap._global_dimension = dofmap._ufc_dofmap->global_dimension();
+  if (restriction)
+    dofmap._global_dimension = restricted_dofs.size();
+  else
+    dofmap._global_dimension = dofmap._ufc_dofmap->global_dimension();
 
   // Build (re-order) dofmap when running in parallel
   if (distributed)
   {
     // Build set of global dofs
     set global_dofs = compute_global_dofs(dofmap, dolfin_mesh);
-    
+
     // Periodic modification of the UFC-numbered dofmap. 
     // Computes slave-master map and eliminates slaves from dofmap. 
     // Computes processes that share master dofs. Recomputes _global_dimension
     if (dolfin_mesh.is_periodic())
       periodic_modification(dofmap, dolfin_mesh, global_dofs);
-    
+
     // Build distributed dof map
     build_distributed(dofmap, global_dofs, dolfin_mesh);
   }
@@ -112,130 +137,7 @@ void DofMapBuilder::build(DofMap& dofmap,
     set global_dofs;
     if (dolfin_mesh.is_periodic())
       periodic_modification(dofmap, dolfin_mesh, global_dofs);
-
-    if (reorder)
-    {      
-      // Build graph
-      Graph graph(dofmap.global_dimension());
-      for (CellIterator cell(dolfin_mesh); !cell.end(); ++cell)
-      {
-        const std::vector<DolfinIndex>& dofs0 = dofmap.cell_dofs(cell->index());
-        const std::vector<DolfinIndex>& dofs1 = dofmap.cell_dofs(cell->index());
-        std::vector<DolfinIndex>::const_iterator node;
-        for (node = dofs0.begin(); node != dofs0.end(); ++node)
-          graph[*node].insert(dofs1.begin(), dofs1.end());
-      }
-
-      // Reorder graph (reverse Cuthill-McKee)
-      const std::vector<std::size_t> dof_remap
-          = BoostGraphOrdering::compute_cuthill_mckee(graph, true);
-
-      // Reorder dof map
-      dolfin_assert(dofmap.ufc_map_to_dofmap.empty());
-      for (std::size_t i = 0; i < dofmap.global_dimension(); ++i)
-        dofmap.ufc_map_to_dofmap[i] = dof_remap[i];
-
-      // Re-number dofs for cell
-      std::vector<std::vector<DolfinIndex> >::iterator cell_map;
-      std::vector<DolfinIndex>::iterator dof;
-      for (cell_map = dofmap._dofmap.begin(); cell_map != dofmap._dofmap.end(); ++cell_map)
-        for (dof = cell_map->begin(); dof != cell_map->end(); ++dof)
-          *dof = dof_remap[*dof];
-    }
-    dofmap._ownership_range = std::make_pair(0, dofmap.global_dimension());
-  }
   
-}
-//-----------------------------------------------------------------------------
-void DofMapBuilder::build(DofMap& dofmap,
-                          const Mesh& dolfin_mesh,
-                          const UFCMesh& ufc_mesh,
-                          const Restriction& restriction,
-                          bool reorder,
-                          bool distributed)
-{
-  info("Building restricted dofmap.");
-
-  // Start timer for dofmap initialization
-  Timer t0("Init dofmap");
-
-  // Note: We store a local dof map for each cell but for cells not
-  // included in the restriction, the local size will be zero.
-
-  // Create space for dof map
-  dofmap._dofmap.resize(dolfin_mesh.num_cells());
-  dofmap._off_process_owner.clear();
-  dolfin_assert(dofmap._ufc_dofmap);
-
-  // Use a map to renumber dofs on restricted mesh
-  map restricted_dofs;
-
-  // Temporary holder until UFC supporte 64-bit integers
-  std::vector<uint> tmp_dofs;
-
-  // Build dofmap from ufc::dofmap
-  dolfin::UFCCell ufc_cell(dolfin_mesh);
-  for (dolfin::CellIterator cell(dolfin_mesh); !cell.end(); ++cell)
-  {
-    // Skip cells not included in restriction
-    if (!restriction.contains(*cell))
-      continue;
-
-    // Update UFC cell
-    ufc_cell.update(*cell);
-
-    // Get standard local dimension
-    const unsigned int local_dim = dofmap._ufc_dofmap->local_dimension(ufc_cell);
-    dofmap._dofmap[cell->index()].resize(local_dim);
-
-    // Get container for cell dofs
-    std::vector<DolfinIndex>& cell_dofs = dofmap._dofmap[cell->index()];
-    cell_dofs.resize(local_dim);
-    tmp_dofs.resize(local_dim);
-
-    // Tabulate standard UFC dof map
-    // Temporary fix until UFC supporte 64-bit integers
-    dofmap._ufc_dofmap->tabulate_dofs(&tmp_dofs[0],
-                                      ufc_mesh, ufc_cell);
-    std::copy(tmp_dofs.begin(), tmp_dofs.end(), cell_dofs.begin());
-
-    // Renumber by counting, starting at zero
-    for (uint i = 0; i < cell_dofs.size(); i++)
-    {
-      map_iterator it = restricted_dofs.find(cell_dofs[i]);
-      if (it == restricted_dofs.end())
-      {
-        const uint dof = restricted_dofs.size();
-        restricted_dofs[cell_dofs[i]] = dof;
-        cell_dofs[i] = dof;
-      }
-      else
-        cell_dofs[i] = it->second;
-    }
-  }
-
-  // FIXME: Debugging
-  cout << "Number of restricted dofs: " << restricted_dofs.size() << endl;
-  for (map_iterator it = restricted_dofs.begin(); it != restricted_dofs.end(); ++it)
-    cout << "  " << it->first << " --> " << it->second << endl;
-  dofmap._global_dimension = dofmap._ufc_dofmap->global_dimension();
-
-  // FIXME: Improve code reuse between this one and default build above
-
-  // Set global dimension
-  dofmap._global_dimension = restricted_dofs.size();
-
-  // Build (re-order) dofmap when running in parallel
-  if (distributed)
-  {
-    // Build set of global dofs
-    const set global_dofs = compute_global_dofs(dofmap, dolfin_mesh);
-
-    // Build distributed dof map
-    build_distributed(dofmap, global_dofs, dolfin_mesh);
-  }
-  else
-  {
     if (reorder)
     {
       // Build graph
@@ -267,7 +169,6 @@ void DofMapBuilder::build(DofMap& dofmap,
     }
     dofmap._ownership_range = std::make_pair(0, dofmap.global_dimension());
   }
-  
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::build_distributed(DofMap& dofmap,
@@ -308,7 +209,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
 
   // Data structures for computing ownership
   boost::unordered_map<std::size_t, std::size_t> dof_vote;
-  std::vector<uint> facet_dofs(dofmap.num_facet_dofs());
+  std::vector<unsigned int> facet_dofs(dofmap.num_facet_dofs());
 
   // Communication buffer
   std::vector<std::size_t> send_buffer;
@@ -374,13 +275,13 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
   }
 
   // Decide ownership of shared dofs
-  const uint num_proc = MPI::num_processes();
-  const uint proc_num = MPI::process_number();
+  const std::size_t num_proc = MPI::num_processes();
+  const std::size_t proc_num = MPI::process_number();
   std::vector<std::size_t> recv_buffer;
-  for (uint k = 1; k < MPI::num_processes(); ++k)
+  for (std::size_t k = 1; k < MPI::num_processes(); ++k)
   {
-    const uint src  = (proc_num - k + num_proc) % num_proc;
-    const uint dest = (proc_num + k) % num_proc;
+    const std::size_t src  = (proc_num - k + num_proc) % num_proc;
+    const std::size_t dest = (proc_num + k) % num_proc;
     MPI::send_recv(send_buffer, dest, recv_buffer, src);
 
     for (std::size_t i = 0; i < recv_buffer.size(); i += 2)
@@ -441,19 +342,19 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     const std::vector<DolfinIndex>& cell_dofs = dofmap.cell_dofs(cell->index());
-    const uint cell_dimension = dofmap.cell_dimension(cell->index());
-    for (uint i = 0; i < cell_dimension; ++i)
+    const std::size_t cell_dimension = dofmap.cell_dimension(cell->index());
+    for (std::size_t i = 0; i < cell_dimension; ++i)
     {
       // Mark dof as owned if in unowned set
       if (shared_unowned_dofs.find(cell_dofs[i]) == shared_unowned_dofs.end())
         owned_dofs.insert(cell_dofs[i]);
     }
   }
-    
+
   // Check that sum of locally owned dofs is equal to global dimension
   const std::size_t _owned_dim = owned_dofs.size();
   dolfin_assert(MPI::sum(_owned_dim) == dofmap.global_dimension());
-  
+
   log(TRACE, "Finished determining dof ownership for parallel dof map");
 }
 //-----------------------------------------------------------------------------
@@ -549,13 +450,13 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   }
 
   // Exchange new dof numbers for dofs that are shared
-  const uint num_proc = MPI::num_processes();
-  const uint proc_num = MPI::process_number();
+  const std::size_t num_proc = MPI::num_processes();
+  const std::size_t proc_num = MPI::process_number();
   std::vector<std::size_t> recv_buffer;
-  for (uint k = 1; k < MPI::num_processes(); ++k)
+  for (std::size_t k = 1; k < MPI::num_processes(); ++k)
   {
-    const uint src  = (proc_num - k + num_proc) % num_proc;
-    const uint dest = (proc_num + k) % num_proc;
+    const std::size_t src  = (proc_num - k + num_proc) % num_proc;
+    const std::size_t dest = (proc_num + k) % num_proc;
     MPI::send_recv(send_buffer, dest, recv_buffer, src);
 
     // Add dofs renumbered by another process to the old-to-new map
@@ -596,11 +497,11 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     const std::size_t cell_index = cell->index();
-    const uint cell_dimension = dofmap.cell_dimension(cell_index);
+    const std::size_t cell_dimension = dofmap.cell_dimension(cell_index);
 
     // Resize cell map and insert dofs
     new_dofmap[cell_index].resize(cell_dimension);
-    for (uint i = 0; i < cell_dimension; ++i)
+    for (std::size_t i = 0; i < cell_dimension; ++i)
     {
       const std::size_t old_index = old_dofmap[cell_index][i];
       new_dofmap[cell_index][i] = old_to_new_dof_index[old_index];
@@ -641,7 +542,7 @@ void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
                             const Mesh& dolfin_mesh, const UFCMesh& ufc_mesh)
 {
   dolfin_assert(dofmap);
-  const uint D = dolfin_mesh.topology().dim();
+  const std::size_t D = dolfin_mesh.topology().dim();
 
   if (dofmap->num_sub_dofmaps() == 0)
   {
@@ -668,8 +569,7 @@ void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
 
       boost::scoped_ptr<ufc::mesh> ufc_mesh(new ufc::mesh);
       boost::scoped_ptr<ufc::cell> ufc_cell(new ufc::cell);
-      //std::size_t dof = 0;
-      uint dof = 0;
+      unsigned int dof = 0;
       dofmap->tabulate_dofs(&dof, *ufc_mesh, *ufc_cell);
 
       // Insert global dof index
@@ -710,7 +610,7 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
   if (num_sub_dofmaps > 0)
   {
     // Call recursively for all sub_dofmaps
-    std::vector<uint> component(1);
+    std::vector<std::size_t> component(1);
     for (uint i=0; i<num_sub_dofmaps; i++)
     {
       component[0] = i;

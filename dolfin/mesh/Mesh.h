@@ -124,14 +124,14 @@ namespace dolfin
     /// *Arguments*
     ///     geometry (CSGGeometry)
     ///         The CSG geometry
-    explicit Mesh(const CSGGeometry& geometry, uint mesh_resolution);
+    explicit Mesh(const CSGGeometry& geometry, std::size_t mesh_resolution);
 
     /// Create mesh defined by Constructive Solid Geometry (CSG)
     ///
     /// *Arguments*
     ///     geometry (CSGGeometry)
     ///         The CSG geometry
-    explicit Mesh(boost::shared_ptr<const CSGGeometry> geometry, uint resolution);
+    explicit Mesh(boost::shared_ptr<const CSGGeometry> geometry, std::size_t resolution);
 
     /// Destructor.
     ~Mesh();
@@ -217,7 +217,7 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    std::size_t num_entities(uint d) const { return _topology.size(d); }
+    std::size_t num_entities(std::size_t d) const { return _topology.size(d); }
 
     /// Get vertex coordinates.
     ///
@@ -249,34 +249,34 @@ namespace dolfin
     /// Get number of local entities of given topological dimension.
     ///
     /// *Arguments*
-    ///     dim (uint)
+    ///     dim (std::size_t)
     ///         Topological dimension.
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         Number of local entities of topological dimension d.
     ///
     /// *Example*
     ///     .. note::
     ///
     ///         No example code available for this function.
-    uint size(uint dim) const { return _topology.size(dim); }
+    std::size_t size(std::size_t dim) const { return _topology.size(dim); }
 
     /// Get global number of entities of given topological dimension.
     ///
     /// *Arguments*
-    ///     dim (uint)
+    ///     dim (std::size_t)
     ///         Topological dimension.
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         Global number of entities of topological dimension d.
     ///
     /// *Example*
     ///     .. note::
     ///
     ///         No example code available for this function.
-    std::size_t size_global(uint dim) const { return _topology.size_global(dim); }
+    std::size_t size_global(std::size_t dim) const { return _topology.size_global(dim); }
 
     /// Get mesh topology.
     ///
@@ -341,23 +341,23 @@ namespace dolfin
     /// Compute entities of given topological dimension.
     ///
     /// *Arguments*
-    ///     dim (uint)
+    ///     dim (std::size_t)
     ///         Topological dimension.
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         Number of created entities.
-    std::size_t init(uint dim) const;
+    std::size_t init(std::size_t dim) const;
 
     /// Compute connectivity between given pair of dimensions.
     ///
     /// *Arguments*
-    ///     d0 (uint)
+    ///     d0 (std::size_t)
     ///         Topological dimension.
     ///
-    ///     d1 (uint)
+    ///     d1 (std::size_t)
     ///         Topological dimension.
-    void init(uint d0, uint d1) const;
+    void init(std::size_t d0, std::size_t d1) const;
 
     /// Compute all entities and connectivity.
     void init() const;
@@ -398,20 +398,20 @@ namespace dolfin
     /// *Arguments*
     ///     angle (double)
     ///         The number of degrees (0-360) of rotation
-    ///     axis (uint)
+    ///     axis (std::size_t)
     ///         The coordinate axis around which to rotate the mesh
-    void rotate(double angle, uint axis=2);
+    void rotate(double angle, std::size_t axis=2);
 
     /// Rotate mesh around a coordinate axis through a given point
     ///
     /// *Arguments*
     ///     angle (double)
     ///         The number of degrees (0-360) of rotation
-    ///     axis (uint)
+    ///     axis (std::size_t)
     ///         The coordinate axis around which to rotate the mesh
     ///     point (_Point_)
     ///         The point around which to rotate the mesh
-    void rotate(double angle, uint axis, const Point& p);
+    void rotate(double angle, std::size_t axis, const Point& p);
 
     /// Move coordinates of mesh according to new boundary coordinates.
     ///
@@ -438,22 +438,22 @@ namespace dolfin
     /// Smooth internal vertices of mesh by local averaging.
     ///
     /// *Arguments*
-    ///     num_iterations (uint)
+    ///     num_iterations (std::size_t)
     ///         Number of iterations to perform smoothing,
     ///         default value is 1.
-    void smooth(uint num_iterations=1);
+    void smooth(std::size_t num_iterations=1);
 
     /// Smooth boundary vertices of mesh by local averaging.
     ///
     /// *Arguments*
-    ///     num_iterations (uint)
+    ///     num_iterations (std::size_t)
     ///         Number of iterations to perform smoothing,
     ///         default value is 1.
     ///
     ///     harmonic_smoothing (bool)
     ///         Flag to turn on harmonics smoothing, default
     ///         value is true.
-    void smooth_boundary(uint num_iterations=1, bool harmonic_smoothing=true);
+    void smooth_boundary(std::size_t num_iterations=1, bool harmonic_smoothing=true);
 
     /// Snap boundary vertices of mesh to match given sub domain.
     ///
@@ -493,7 +493,7 @@ namespace dolfin
     ///         specifying what relation makes two mesh entinties neighbors.
     ///
     /// *Returns*
-    ///     MeshFunction<unsigned int>
+    ///     MeshFunction<std::size_t>
     ///         The colors as a mesh function over entities of the mesh.
     const std::vector<std::size_t>& color(std::vector<std::size_t> coloring_type) const;
 
@@ -692,30 +692,30 @@ namespace dolfin
     /// *Arguments*
     ///     MeshFunction (_MeshFunction_)
     ///         FacetFunction marking the two periodic subdomains
-    ///     uint
+    ///     unsigned int
     ///         Id of master subdomain
-    ///     uint
+    ///     unsigned int
     ///         Id of slave subdomain
     void add_periodic_direction(const MeshFunction<std::size_t>& sub_domains,
-                const uint sub_domain0, const uint sub_domain1);
+                const unsigned int sub_domain0, const unsigned int sub_domain1);
 
     /// Add Periodicity to the mesh. The mesh must contain markers for subdomains
     ///
     /// *Arguments*
-    ///     uint
+    ///     unsigned int
     ///         Id of master subdomain
-    ///     uint
+    ///     unsigned int
     ///         Id of slave subdomain
-    void add_periodic_direction(const uint sub_domain0, const uint sub_domain1);
+    void add_periodic_direction(const unsigned int sub_domain0, const unsigned int sub_domain1);
 
     /// Return periodic facet-to-facet map
     ///
     /// *Returns*
-    ///     std::vector<std::pair< std::pair<std::size_t, uint>, std::pair<std::size_t, uint> > >
+    ///     std::vector<std::pair< std::pair<std::size_t, unsigned int>, std::pair<std::size_t, unsigned int> > >
     ///         The periodic facet-to-facet map. First pair is master, second is slave. 
     ///         First item of pairs is global facet index, second item is the process 
     ///         number where the facet lives.
-    std::vector<std::pair< std::pair<std::size_t, uint>, std::pair<std::size_t, uint> > > get_periodic_facet_pairs(uint i) const;
+    std::vector<std::pair< std::pair<std::size_t, unsigned int>, std::pair<std::size_t, unsigned int> > > get_periodic_facet_pairs(unsigned int i) const;
     
     /// Check if mesh has one or more periodic directions
     ///
@@ -728,16 +728,16 @@ namespace dolfin
     /// Returns number of periodic directions
     ///
     /// *Returns*
-    ///     uint
+    ///     unsigned int
     ///         Number of periodic directions that has been added to the mesh
-    uint num_periodic_domains() const;
+    unsigned int num_periodic_domains() const;
     
     /// Returns the distance between two periodic subdomains
     ///
     /// *Returns*
     ///     std::vector<double>
     ///         The distance between two periodic subdomains
-    std::vector<double> get_periodic_distance(uint i) const;
+    std::vector<double> get_periodic_distance(unsigned int i) const;
 
   private:
     
@@ -774,18 +774,18 @@ namespace dolfin
     {
     public:
       
-      PeriodicDomain(uint, uint, std::vector<double>, std::vector<std::pair< std::pair<std::size_t, uint>, std::pair<std::size_t, uint> > >);
+      PeriodicDomain(unsigned int, unsigned int, std::vector<double>, std::vector<std::pair< std::pair<std::size_t, unsigned int>, std::pair<std::size_t, unsigned int> > >);
       
       // The periodic facet-to-facet map. First pair is master, second is slave. 
       // First item of pairs is global facet index, second item is the process 
       // number where the facet lives.
-      std::vector<std::pair< std::pair<std::size_t, uint>, std::pair<std::size_t, uint> > > facet_pairs;
+      std::vector<std::pair< std::pair<std::size_t, unsigned int>, std::pair<std::size_t, unsigned int> > > facet_pairs;
       
       // Distance between subdomains 
       std::vector<double> dx;
       
       // Markers for the two periodic subdomains used by _domains. master first, slave second
-      std::pair<uint, uint> sub_domains;
+      std::pair<unsigned int, unsigned int> sub_domains;
       
     };
 

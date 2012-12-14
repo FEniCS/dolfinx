@@ -97,7 +97,7 @@ Mesh::Mesh(LocalMeshData& local_mesh_data)
   MeshPartitioning::build_distributed_mesh(*this, local_mesh_data);
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(const CSGGeometry& geometry, uint mesh_resolution)
+Mesh::Mesh(const CSGGeometry& geometry, std::size_t mesh_resolution)
   : Variable("mesh", "DOLFIN mesh"),
     Hierarchical<Mesh>(*this),
     _data(*this),
@@ -114,7 +114,7 @@ Mesh::Mesh(const CSGGeometry& geometry, uint mesh_resolution)
     MeshPartitioning::build_distributed_mesh(*this);
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry, uint resolution)
+Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry, std::size_t resolution)
   : Variable("mesh", "DOLFIN mesh"),
     Hierarchical<Mesh>(*this),
     _data(*this),
@@ -170,7 +170,7 @@ const MeshData& Mesh::data() const
   return _data;
 }
 //-----------------------------------------------------------------------------
-std::size_t Mesh::init(uint dim) const
+std::size_t Mesh::init(std::size_t dim) const
 {
   // This function is obviously not const since it may potentially compute
   // new connectivity. However, in a sense all connectivity of a mesh always
@@ -211,7 +211,7 @@ std::size_t Mesh::init(uint dim) const
   return _topology.size(dim);
 }
 //-----------------------------------------------------------------------------
-void Mesh::init(uint d0, uint d1) const
+void Mesh::init(std::size_t d0, std::size_t d1) const
 {
   // This function is obviously not const since it may potentially compute
   // new connectivity. However, in a sense all connectivity of a mesh always
@@ -249,12 +249,12 @@ void Mesh::init(uint d0, uint d1) const
 void Mesh::init() const
 {
   // Compute all entities
-  for (uint d = 0; d <= topology().dim(); d++)
+  for (std::size_t d = 0; d <= topology().dim(); d++)
     init(d);
 
   // Compute all connectivity
-  for (uint d0 = 0; d0 <= topology().dim(); d0++)
-    for (uint d1 = 0; d1 <= topology().dim(); d1++)
+  for (std::size_t d0 = 0; d0 <= topology().dim(); d0++)
+    for (std::size_t d1 = 0; d1 <= topology().dim(); d1++)
       init(d0, d1);
 }
 //-----------------------------------------------------------------------------
@@ -271,10 +271,10 @@ void Mesh::clear()
 //-----------------------------------------------------------------------------
 void Mesh::clean()
 {
-  const uint D = topology().dim();
-  for (uint d0 = 0; d0 <= D; d0++)
+  const std::size_t D = topology().dim();
+  for (std::size_t d0 = 0; d0 <= D; d0++)
   {
-    for (uint d1 = 0; d1 <= D; d1++)
+    for (std::size_t d1 = 0; d1 <= D; d1++)
     {
       if (!(d0 == D && d1 == 0))
         _topology.clear(d0, d1);
@@ -309,12 +309,12 @@ dolfin::Mesh Mesh::renumber_by_color() const
   return MeshRenumbering::renumber_by_color(*this, coloring_type);
 }
 //-----------------------------------------------------------------------------
-void Mesh::rotate(double angle, uint axis)
+void Mesh::rotate(double angle, std::size_t axis)
 {
   MeshTransformation::rotate(*this, angle, axis);
 }
 //-----------------------------------------------------------------------------
-void Mesh::rotate(double angle, uint axis, const Point& p)
+void Mesh::rotate(double angle, std::size_t axis, const Point& p)
 {
   MeshTransformation::rotate(*this, angle, axis, p);
 }
@@ -334,12 +334,12 @@ void Mesh::move(const Function& displacement)
   ALE::move(*this, displacement);
 }
 //-----------------------------------------------------------------------------
-void Mesh::smooth(uint num_iterations)
+void Mesh::smooth(std::size_t num_iterations)
 {
   MeshSmoothing::smooth(*this, num_iterations);
 }
 //-----------------------------------------------------------------------------
-void Mesh::smooth_boundary(uint num_iterations, bool harmonic_smoothing)
+void Mesh::smooth_boundary(std::size_t num_iterations, bool harmonic_smoothing)
 {
   MeshSmoothing::smooth_boundary(*this, num_iterations, harmonic_smoothing);
 }
@@ -626,19 +626,19 @@ void Mesh::add_periodic_direction(const SubDomain& sub_domain)
 void Mesh::add_periodic_direction(boost::shared_ptr<const SubDomain> sub_domain)
 {  
   // Get dimensions
-  const uint tdim = topology().dim();
-  const uint gdim = geometry().dim();
+  const unsigned int tdim = topology().dim();
+  const unsigned int gdim = geometry().dim();
 
   MeshValueCollection<std::size_t>& mf = *(_domains.markers(tdim-1)); 
 
   // Choose an integer to mark the domains. If there has been some sub_domains defined
   // previously in mf, then choose a higher number (required, e.g., for multiple periodic directions)
-  uint ii = 0;
+  unsigned int ii = 0;
   if (!mf.empty())
   {
-    std::map<std::pair<std::size_t, uint>, std::size_t>::const_iterator mark;
+    std::map<std::pair<std::size_t, std::size_t>, std::size_t>::const_iterator mark;
     for (mark = mf.values().begin(); mark != mf.values().end(); ++mark)
-      ii = std::max(ii, (uint) mark->second);
+      ii = std::max(ii, (unsigned int) mark->second);
   }
   ii = MPI::max(ii)+1;
   
@@ -660,7 +660,7 @@ void Mesh::add_periodic_direction(boost::shared_ptr<const SubDomain> sub_domain)
       continue;
     
     facet_midpoint = facet->midpoint();
-    for (uint i = 0; i < gdim; i++)
+    for (unsigned int i = 0; i < gdim; i++)
       x[i] = facet_midpoint[i];
 
     sub_domain->map(_x, _y);
@@ -681,7 +681,7 @@ void Mesh::add_periodic_direction(boost::shared_ptr<const SubDomain> sub_domain)
 }
 //-----------------------------------------------------------------------------
 void Mesh::add_periodic_direction(const MeshFunction<std::size_t>& sub_domains,
-               const uint sub_domain0, const uint sub_domain1)
+               const unsigned int sub_domain0, const unsigned int sub_domain1)
 {
   // Mark the MeshValueCollection using provided MeshFunction  
   MeshValueCollection<std::size_t>& mf = *(_domains.markers(topology().dim() - 1));
@@ -691,14 +691,14 @@ void Mesh::add_periodic_direction(const MeshFunction<std::size_t>& sub_domains,
   add_periodic_direction(sub_domain0, sub_domain1);  
 }
 //-----------------------------------------------------------------------------
-void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1)
+void Mesh::add_periodic_direction(const unsigned int sub_domain0, const unsigned int sub_domain1)
 {
   // All should end up calling this for computing the periodic facet-to-facet pairs  
   Timer t0("Mesh compute facet pairs");
   
   // Get dimensions
-  const uint tdim = topology().dim();
-  const uint gdim = geometry().dim();
+  const unsigned int tdim = topology().dim();
+  const unsigned int gdim = geometry().dim();
   
   // Arrays used for mapping coordinates
   std::vector<double> x(gdim);
@@ -716,7 +716,7 @@ void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1
   dolfin_assert(_domains.markers(tdim-1));
   
   // Get the facet markers 
-  const std::map<std::pair<std::size_t, uint>, std::size_t>& 
+  const std::map<std::pair<std::size_t, std::size_t>, std::size_t>& 
     markers = _domains.markers(tdim-1)->values();
   
   // Just an idea:
@@ -731,9 +731,9 @@ void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1
 //   _domains.markers(tdim-1)->rename(ost.str(), _domains.markers(tdim-1)->label()) ;
   
   // Compute distance between periodic subdomains  
-  uint count0 = 0;
-  uint count1 = 0;
-  std::map<std::pair<std::size_t, uint>, std::size_t>::const_iterator mark;
+  unsigned int count0 = 0;
+  unsigned int count1 = 0;
+  std::map<std::pair<std::size_t, std::size_t>, std::size_t>::const_iterator mark;
   for (mark = markers.begin(); mark != markers.end(); ++mark)
   {
     if ((mark->second != sub_domain0) && (mark->second != sub_domain1))
@@ -744,13 +744,13 @@ void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1
     facet_midpoint = facet.midpoint();
     if (mark->second == sub_domain0)  // master
     {
-      for (uint i = 0; i < gdim; i++)
+      for (unsigned int i = 0; i < gdim; i++)
         x[i] += facet_midpoint[i];
       count0++;
     }
     else // slave
     {
-      for (uint i = 0; i < gdim; i++)
+      for (unsigned int i = 0; i < gdim; i++)
         y[i] += facet_midpoint[i];
       count1++;
     }
@@ -758,7 +758,7 @@ void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1
   #ifdef HAS_MPI  
   count0 = MPI::sum(count0);
   count1 = MPI::sum(count1);
-  for (uint i = 0; i < gdim; i++)
+  for (unsigned int i = 0; i < gdim; i++)
   {
     x[i] = MPI::sum(x[i]);
     y[i] = MPI::sum(y[i]);
@@ -777,7 +777,7 @@ void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1
                  "No facets found on pairs of matching subdomains");
   }
   // Put the distance between the periodic subdomains in dx-vector
-  for (uint i = 0; i < gdim; i++)
+  for (unsigned int i = 0; i < gdim; i++)
     dx[i] = (y[i]-x[i]) / (double) count0;
  
   // Loop over both periodic subdomains and find matching pairs of facets
@@ -795,7 +795,7 @@ void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1
     Cell cell = Cell(*this, mark->first.first);
     Facet facet = Facet(*this, cell.entities(tdim-1)[mark->first.second]);
     facet_midpoint = facet.midpoint();
-    for (uint i = 0; i < gdim; i++)
+    for (unsigned int i = 0; i < gdim; i++)
       x[i] = facet_midpoint[i];
     
     if (mark->second == sub_domain0)  // master
@@ -816,7 +816,7 @@ void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1
     else if(mark->second == sub_domain1) // slave
     {
       // Map coordinates of slave midpoint.
-      for (uint i = 0; i < gdim; i++)
+      for (unsigned int i = 0; i < gdim; i++)
         y[i] = x[i]-dx[i];
       
       coordinate_iterator it = coordinate_facet_pairs.find(y);
@@ -842,8 +842,8 @@ void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1
   #endif
   
   // Create the final facet-to-facet list of matching facets  
-  std::vector<std::pair<std::pair<std::size_t, uint>, 
-                        std::pair<std::size_t, uint> > > _facet_pairs;
+  std::vector<std::pair<std::pair<std::size_t, unsigned int>, 
+                        std::pair<std::size_t, unsigned int> > > _facet_pairs;
                         
   for (coordinate_iterator it = final_coordinate_facet_pairs.begin();
                            it != final_coordinate_facet_pairs.end(); ++it)
@@ -852,7 +852,7 @@ void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1
     if (it->second.first.first == -1 || it->second.second.first == -1)
     {
       cout << "At coordinate: x =";
-      for (uint j = 0; j < gdim; ++j)
+      for (unsigned int j = 0; j < gdim; ++j)
         cout << " " << it->first[j];
       cout << endl;
       dolfin_error("Mesh.cpp",
@@ -878,7 +878,7 @@ void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1
   _periodic_domains.push_back(_periodic_domain);
   
    cout << "Facet pairs " << _periodic_domain->facet_pairs.size() << endl;
-  for (uint i=0; i<_periodic_domain->facet_pairs.size(); i++)
+  for (unsigned int i=0; i<_periodic_domain->facet_pairs.size(); i++)
   {
     facet_pair pair = _periodic_domain->facet_pairs[i];
     cout << " (" << pair.first.first << ", " << pair.first.second << ")"
@@ -886,8 +886,8 @@ void Mesh::add_periodic_direction(const uint sub_domain0, const uint sub_domain1
   }  
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair< std::pair<std::size_t, uint>, std::pair<std::size_t, uint> > > 
-  Mesh::get_periodic_facet_pairs(uint i) const
+std::vector<std::pair< std::pair<std::size_t, unsigned int>, std::pair<std::size_t, unsigned int> > > 
+  Mesh::get_periodic_facet_pairs(unsigned int i) const
 {
   dolfin_assert(i < _periodic_domains.size());
   return _periodic_domains[i]->facet_pairs;
@@ -898,20 +898,20 @@ bool Mesh::is_periodic() const
   return !_periodic_domains.empty();
 }
 //-----------------------------------------------------------------------------
-std::vector<double> Mesh::get_periodic_distance(uint i) const
+std::vector<double> Mesh::get_periodic_distance(unsigned int i) const
 {
   dolfin_assert(i < _periodic_domains.size());
   return _periodic_domains[i]->dx;
 }
 //-----------------------------------------------------------------------------
-uint Mesh::num_periodic_domains() const
+unsigned int Mesh::num_periodic_domains() const
 {
   return _periodic_domains.size();
 }
 //-----------------------------------------------------------------------------
-Mesh::PeriodicDomain::PeriodicDomain(uint master, uint slave, std::vector<double> _dx, std::vector<std::pair< std::pair<std::size_t, uint>, std::pair<std::size_t, uint> > > _facet_pairs)  
+Mesh::PeriodicDomain::PeriodicDomain(unsigned int master, unsigned int slave, std::vector<double> _dx, std::vector<std::pair< std::pair<std::size_t, unsigned int>, std::pair<std::size_t, unsigned int> > > _facet_pairs)  
 {
-  sub_domains = std::pair<uint, uint>(master, slave);
+  sub_domains = std::pair<unsigned int, unsigned int>(master, slave);
   dx = _dx;
   facet_pairs = _facet_pairs;
 }

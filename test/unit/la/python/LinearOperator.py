@@ -23,14 +23,6 @@
 import unittest
 from dolfin import *
 
-# Create some data for use below
-mesh = UnitSquare(8, 8)
-V = FunctionSpace(mesh, "Lagrange", 1)
-u = TrialFunction(V)
-v = TestFunction(V)
-a = dot(grad(u), grad(v))*dx + u*v*dx
-L = Constant(1)*dx
-
 # Backends supporting the LinearOperator interface
 backends = ["PETSc", "uBLAS"]
 
@@ -42,7 +34,7 @@ class TestLinearOperator(unittest.TestCase):
         class MyLinearOperator(LinearOperator):
 
             def __init__(self, a_action, u):
-                LinearOperator.__init__(self)
+                LinearOperator.__init__(self, u.vector(), u.vector())
                 self.a_action = a_action
                 self.u = u
 
@@ -60,19 +52,25 @@ class TestLinearOperator(unittest.TestCase):
         # Iterate over backends supporting linear operators
         for backend in backends:
 
+            # Skip testing uBLAS in parallel
+            if MPI.num_processes() > 1 and backend == "uBLAS":
+                print "Not running uBLAS test in parallel"
+                return
+
             # Set linear algebra backend
             parameters["linear_algebra_backend"] = backend
 
             # Compute reference value by solving ordinary linear system
-            mesh = UnitSquare(8, 8)
+            mesh = UnitSquareMesh(8, 8)
             V = FunctionSpace(mesh, "Lagrange", 1)
             u = TrialFunction(V)
             v = TestFunction(V)
+            f = Constant(1.0)
             a = dot(grad(u), grad(v))*dx + u*v*dx
-            x = Vector()
-            b = Vector(V.dim())
-            b[:] = 1.0
+            L = f*v*dx
             A = assemble(a)
+            b = assemble(L)
+            x = Vector()
             solve(A, x, b, "gmres", "none")
             norm_ref = norm(x, "l2")
 

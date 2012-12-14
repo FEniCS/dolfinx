@@ -64,7 +64,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   log(TRACE, "Computing boundary mesh.");
 
   // Open boundary mesh for editing
-  const uint D = mesh.topology().dim();
+  const std::size_t D = mesh.topology().dim();
   MeshEditor editor;
   editor.open(boundary, mesh.type().facet_type(), D - 1, mesh.geometry().dim());
 
@@ -77,8 +77,8 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
 
   // Determine boundary facet, count boundary vertices and facets,
   // and assign vertex indices
-  uint num_boundary_vertices = 0;
-  uint num_boundary_cells = 0;
+  std::size_t num_boundary_vertices = 0;
+  std::size_t num_boundary_cells = 0;
   MeshFunction<bool> boundary_facet(mesh, D - 1, false);
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
@@ -96,7 +96,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
         // Count boundary vertices and assign indices
         for (VertexIterator v(*f); !v.end(); ++v)
         {
-          const uint vertex_index = v->index();
+          const std::size_t vertex_index = v->index();
           if (boundary_vertices[vertex_index] == num_vertices)
             boundary_vertices[vertex_index] = num_boundary_vertices++;
         }
@@ -139,14 +139,14 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
 
   // Create cells (facets)
   std::vector<std::size_t> cell(boundary.type().num_vertices(boundary.topology().dim()));
-  uint current_cell = 0;
+  std::size_t current_cell = 0;
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
     if (boundary_facet[*f])
     {
       // Compute new vertex numbers for cell
       const std::size_t* vertices = f->entities(0);
-      for (uint i = 0; i < cell.size(); i++)
+      for (std::size_t i = 0; i < cell.size(); i++)
         cell[i] = boundary_vertices[vertices[i]];
 
       // Reorder vertices so facet is right-oriented w.r.t. facet normal
@@ -176,11 +176,11 @@ void BoundaryComputation::reorder(std::vector<std::size_t>& vertices,
   // Get the vertex opposite to the facet (the one we remove)
   std::size_t vertex = 0;
   const Cell cell(mesh, facet.entities(mesh.topology().dim())[0]);
-  for (uint i = 0; i < cell.num_entities(0); i++)
+  for (std::size_t i = 0; i < cell.num_entities(0); i++)
   {
     bool not_in_facet = true;
     vertex = cell.entities(0)[i];
-    for (uint j = 0; j < facet.num_entities(0); j++)
+    for (std::size_t j = 0; j < facet.num_entities(0); j++)
     {
       if (vertex == facet.entities(0)[j])
       {

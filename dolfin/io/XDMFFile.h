@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-10-15
+// Last changed: 2012-11-25
 
 #ifndef __DOLFIN_XDMFFILE_H
 #define __DOLFIN_XDMFFILE_H
@@ -76,7 +76,8 @@ namespace dolfin
     /// Save MeshFunction to file
     void operator<< (const MeshFunction<bool>& meshfunction);
     void operator<< (const MeshFunction<int>& meshfunction);
-    void operator<< (const MeshFunction<std::size_t>& meshfunction);
+    void operator<< (const MeshFunction<unsigned int>& meshfunction);
+    void operator<< (const MeshFunction<unsigned long int>& meshfunction);
     void operator<< (const MeshFunction<double>& meshfunction);
 
   private:
@@ -84,20 +85,23 @@ namespace dolfin
     // HDF5 data file
     boost::scoped_ptr<HDF5File> hdf5_file;
 
+    // HDF5 filename
+    std::string hdf5_filename;
+
     // Generic MeshFunction writer
     template<typename T>
       void write_mesh_function(const MeshFunction<T>& meshfunction);
 
     // Helper function to add topology reference to XDMF XML file
     void xml_mesh_topology(pugi::xml_node& xdmf_topology,
-                           const uint cell_dim,
+                           const std::size_t cell_dim,
                            const std::size_t num_global_cells,
                            const std::string topology_dataset_name) const;
 
     // Helper function to add geometry section to XDMF XML file
     void xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
                            const std::size_t num_all_local_cells,
-                           const uint gdim,
+                           const std::size_t gdim,
                            const std::string geometry_dataset_name) const;
 
 

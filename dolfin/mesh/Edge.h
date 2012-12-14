@@ -44,9 +44,9 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh.
-    ///     index (uint)
+    ///     index (std::size_t)
     ///         Index of the edge.
-    Edge(const Mesh& mesh, uint index) : MeshEntity(mesh, 1, index) {}
+    Edge(const Mesh& mesh, std::size_t index) : MeshEntity(mesh, 1, index) {}
 
     /// Create edge from mesh entity
     ///

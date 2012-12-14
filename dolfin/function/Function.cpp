@@ -168,7 +168,7 @@ Function::Function(const Function& v)
   *this = v;
 }
 //-----------------------------------------------------------------------------
-Function::Function(const Function& v, uint i)
+Function::Function(const Function& v, std::size_t i)
   : Hierarchical<Function>(*this),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
@@ -249,16 +249,16 @@ const Function& Function::operator= (const Expression& v)
   return *this;
 }
 //-----------------------------------------------------------------------------
-Function& Function::operator[] (uint i) const
+Function& Function::operator[] (std::size_t i) const
 {
   // Check if sub-Function is in the cache, otherwise create and add to cache
-  boost::ptr_map<uint, Function>::iterator sub_function = sub_functions.find(i);
+  boost::ptr_map<std::size_t, Function>::iterator sub_function = sub_functions.find(i);
   if (sub_function != sub_functions.end())
     return *(sub_function->second);
   else
   {
     // Extract function subspace
-    std::vector<uint> component = boost::assign::list_of(i);
+    std::vector<std::size_t> component = boost::assign::list_of(i);
     boost::shared_ptr<const FunctionSpace> sub_space(_function_space->extract_sub_space(component));
 
     // Insert sub-Function into map and return reference
@@ -303,7 +303,7 @@ bool Function::in(const FunctionSpace& V) const
   return *_function_space == V;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Function::geometric_dimension() const
+std::size_t Function::geometric_dimension() const
 {
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->mesh());
@@ -358,7 +358,7 @@ void Function::eval(Array<double>& values,
   const FiniteElement& element = *_function_space->element();
 
   // Compute in tensor (one for scalar function, . . .)
-  const uint value_size_loc = value_size();
+  const std::size_t value_size_loc = value_size();
 
   dolfin_assert(values.size() == value_size_loc);
 
@@ -372,14 +372,14 @@ void Function::eval(Array<double>& values,
   std::vector<double> basis(value_size_loc);
 
   // Initialise values
-  for (uint j = 0; j < value_size_loc; ++j)
+  for (std::size_t j = 0; j < value_size_loc; ++j)
     values[j] = 0.0;
 
   // Compute linear combination
-  for (uint i = 0; i < element.space_dimension(); ++i)
+  for (std::size_t i = 0; i < element.space_dimension(); ++i)
   {
     element.evaluate_basis(i, &basis[0], &x[0], ufc_cell);
-    for (uint j = 0; j < value_size_loc; ++j)
+    for (std::size_t j = 0; j < value_size_loc; ++j)
       values[j] += coefficients[i]*basis[j];
   }
 }
@@ -402,14 +402,14 @@ void Function::extrapolate(const Function& v)
   Extrapolation::extrapolate(*this, v);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Function::value_rank() const
+std::size_t Function::value_rank() const
 {
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->element());
   return _function_space->element()->value_rank();
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Function::value_dimension(uint i) const
+std::size_t Function::value_dimension(std::size_t i) const
 {
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->element());
@@ -443,7 +443,7 @@ void Function::non_matching_eval(Array<double>& values,
   const Mesh& mesh = *_function_space->mesh();
 
   const double* _x = x.data();
-  const uint dim = mesh.geometry().dim();
+  const std::size_t dim = mesh.geometry().dim();
   const Point point(dim, _x);
 
   // Alternative 1: Find cell that point (x) intersects
@@ -469,7 +469,7 @@ void Function::non_matching_eval(Array<double>& values,
     const double * const * vertices = ufc_cell.coordinates;
 
     Point barycenter;
-    for (uint i = 0; i <= dim; i++)
+    for (std::size_t i = 0; i <= dim; i++)
     {
       Point vertex(dim, vertices[i]);
       barycenter += vertex;
@@ -549,10 +549,10 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
     = _function_space->dofmap()->restriction();
 
   // Local data for interpolation on each cell
-  const uint num_cell_vertices = mesh.type().num_vertices(mesh.topology().dim());
+  const std::size_t num_cell_vertices = mesh.type().num_vertices(mesh.topology().dim());
 
   // Compute in tensor (one for scalar function, . . .)
-  const uint value_size_loc = value_size();
+  const std::size_t value_size_loc = value_size();
 
   // Resize Array for holding vertex values
   vertex_values.resize(value_size_loc*(mesh.num_vertices()));
@@ -585,10 +585,10 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
     // Copy values to array of vertex values
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
     {
-      for (uint i = 0; i < value_size_loc; ++i)
+      for (std::size_t i = 0; i < value_size_loc; ++i)
       {
-        const uint local_index  = vertex.pos()*value_size_loc + i;
-        const uint global_index = i*mesh.num_vertices() + vertex->index();
+        const std::size_t local_index  = vertex.pos()*value_size_loc + i;
+        const std::size_t global_index = i*mesh.num_vertices() + vertex->index();
         vertex_values[global_index] = cell_vertex_values[local_index];
       }
     }
@@ -663,7 +663,7 @@ void Function::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
 
   // Dofs per cell
   dolfin_assert(_function_space->element());
-  const uint num_dofs_per_cell = _function_space->element()->space_dimension();
+  const std::size_t num_dofs_per_cell = _function_space->element()->space_dimension();
 
   // Get local range
   const std::size_t n0 = range.first;
@@ -675,7 +675,7 @@ void Function::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
     // Get dofs on cell
     const std::vector<DolfinIndex>& dofs = dofmap.cell_dofs(cell->index());
 
-    for (uint d = 0; d < num_dofs_per_cell; ++d)
+    for (std::size_t d = 0; d < num_dofs_per_cell; ++d)
     {
       const std::size_t dof = dofs[d];
       if (dof < n0 || dof >= n1)

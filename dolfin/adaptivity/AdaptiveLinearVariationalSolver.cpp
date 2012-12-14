@@ -123,7 +123,7 @@ adapt_problem(boost::shared_ptr<const Mesh> mesh)
   adapt(current, mesh);
 }
 // ----------------------------------------------------------------------------
-dolfin::uint AdaptiveLinearVariationalSolver::num_dofs_primal()
+std::size_t AdaptiveLinearVariationalSolver::num_dofs_primal()
 {
   const LinearVariationalProblem& current = problem->leaf_node();
   const FunctionSpace& V = *(current.trial_space());

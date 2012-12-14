@@ -43,7 +43,7 @@ void MeshCoordinates::eval(Array<double>& values,
   dolfin_assert(cell.geometric_dimension == mesh.geometry().dim());
   dolfin_assert(x.size() == mesh.geometry().dim());
 
-  for (uint i = 0; i < cell.geometric_dimension; ++i)
+  for (std::size_t i = 0; i < cell.geometric_dimension; ++i)
     values[i] = x[i];
 }
 //-----------------------------------------------------------------------------

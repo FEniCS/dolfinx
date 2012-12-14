@@ -27,40 +27,40 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void MeshTransformation::rotate(Mesh& mesh, double angle, uint axis)
+void MeshTransformation::rotate(Mesh& mesh, double angle, std::size_t axis)
 {
   // Get mesh geometry
   MeshGeometry& geometry = mesh.geometry();
-  const uint gdim = geometry.dim();
+  const std::size_t gdim = geometry.dim();
 
   // Reset center of mass
   std::vector<double> c(gdim);
-  for (uint j = 0; j < gdim; j++)
+  for (std::size_t j = 0; j < gdim; j++)
     c[j] = 0.0;
 
   // Sum all vertex coordinates
-  for (uint i = 0; i < geometry.size(); i++)
+  for (std::size_t i = 0; i < geometry.size(); i++)
   {
     const double* x = geometry.x(i);
-    for (uint j = 0; j < gdim; j++)
+    for (std::size_t j = 0; j < gdim; j++)
       c[j] += x[j];
   }
 
   // Divide by the number of vertices
-  for (uint j = 0; j < gdim; j++)
+  for (std::size_t j = 0; j < gdim; j++)
     c[j] /= static_cast<double>(geometry.size());
 
   // Set up point
   dolfin_assert(gdim <= 3);
   Point p;
-  for (uint j = 0; j < gdim; j++)
+  for (std::size_t j = 0; j < gdim; j++)
     p[j] = c[j];
 
   // Rotate around center of mass
   rotate(mesh, angle, axis, p);
 }
 //-----------------------------------------------------------------------------
-void MeshTransformation::rotate(Mesh& mesh, double angle, uint axis,
+void MeshTransformation::rotate(Mesh& mesh, double angle, std::size_t axis,
                                 const Point& p)
 {
   // Compute angle (radians)
@@ -70,7 +70,7 @@ void MeshTransformation::rotate(Mesh& mesh, double angle, uint axis,
   const double* c = p.coordinates();
 
   // Check dimension
-  const uint gdim = mesh.geometry().dim();
+  const std::size_t gdim = mesh.geometry().dim();
   if (gdim == 2)
   {
     // Check axis of rotation (must be 2)
@@ -87,7 +87,7 @@ void MeshTransformation::rotate(Mesh& mesh, double angle, uint axis,
 
     // Rotate all points
     MeshGeometry& geometry = mesh.geometry();
-    for (uint i = 0; i < geometry.size(); i++)
+    for (std::size_t i = 0; i < geometry.size(); i++)
     {
       // Get coordinate
       double* x = geometry.x(i);
@@ -136,7 +136,7 @@ void MeshTransformation::rotate(Mesh& mesh, double angle, uint axis,
 
     // Rotate all points
     MeshGeometry& geometry = mesh.geometry();
-    for (uint i = 0; i < geometry.size(); i++)
+    for (std::size_t i = 0; i < geometry.size(); i++)
     {
       // Get coordinate
       double* x = geometry.x(i);

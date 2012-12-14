@@ -253,10 +253,10 @@ namespace dolfin
   };
 
   // Specialised templated for unset parameters
-  template<> inline void Parameters::add<uint>(std::string key)
+  template<> inline void Parameters::add<std::size_t>(std::string key)
   { _parameters[key] = new IntParameter(key); }
 
-  template<> inline void Parameters::add<uint>(std::string key, uint min, uint max)
+  template<> inline void Parameters::add<std::size_t>(std::string key, std::size_t min, std::size_t max)
   {
     _parameters[key] = new IntParameter(key);
     _parameters[key]->set_range((int) min, (int) max);

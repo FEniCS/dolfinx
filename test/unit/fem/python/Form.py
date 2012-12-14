@@ -24,8 +24,7 @@ import unittest
 import numpy
 from dolfin import *
 
-
-mesh = UnitSquare(10, 10)
+mesh = UnitSquareMesh(10, 10)
 V = FunctionSpace(mesh, "CG", 1)
 f = Expression("sin(pi*x[0]*x[1])")
 v = TestFunction(V)
@@ -34,7 +33,7 @@ u = TrialFunction(V)
 class FormTest(unittest.TestCase):
 
     def test_assemble(self):
-        
+
         ufl_form = f*u*v*dx
         dolfin_form = Form(ufl_form)
         ufc_form = dolfin_form._compiled_form
@@ -42,7 +41,7 @@ class FormTest(unittest.TestCase):
         A_dolfin_norm = assemble(dolfin_form).norm("frobenius")
         A_ufc_norm = assemble(ufc_form, coefficients=[f],
                               function_spaces=[V, V]).norm("frobenius")
-        
+
         self.assertAlmostEqual(A_ufl_norm, A_dolfin_norm)
         self.assertAlmostEqual(A_ufl_norm, A_ufc_norm)
 

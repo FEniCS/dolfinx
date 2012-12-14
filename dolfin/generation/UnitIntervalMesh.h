@@ -38,7 +38,7 @@ namespace dolfin
   public:
 
     /// Create mesh of unit interval
-    UnitIntervalMesh(uint nx=1);
+    UnitIntervalMesh(std::size_t nx=1);
 
   };
 

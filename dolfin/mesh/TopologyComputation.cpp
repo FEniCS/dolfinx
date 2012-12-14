@@ -36,7 +36,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::size_t TopologyComputation::compute_entities(Mesh& mesh, uint dim)
+std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
 {
   // Generating an entity of topological dimension dim is equivalent
   // to generating the connectivity dim - 0 (connections to vertices)
@@ -92,8 +92,8 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, uint dim)
   const CellType& cell_type = mesh.type();
 
   // Initialize local array of entities
-  const uint m = cell_type.num_entities(dim);
-  const uint n = cell_type.num_vertices(dim);
+  const std::size_t m = cell_type.num_entities(dim);
+  const std::size_t n = cell_type.num_vertices(dim);
   std::vector<std::vector<std::size_t> > entities(m, std::vector<std::size_t>(n, 0));
 
   // List of entity e indices connected to cell
@@ -102,7 +102,7 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, uint dim)
   // List of vertces indices connected to entity e
   std::vector<std::vector<std::size_t> > connectivity_ev;
 
-  // List entities e (uint index, std::vector<uint> vertex_list) connected to each cell
+  // List entities e (std::size_t index, std::vector<std::size_t> vertex_list) connected to each cell
   std::vector<std::vector<std::pair<std::size_t, std::vector<std::size_t> > > > ce_list(mesh.num_cells());
 
   std::size_t current_entity = 0;
@@ -187,7 +187,7 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, uint dim)
   return connectivity_ev.size();
 }
 //-----------------------------------------------------------------------------
-void TopologyComputation::compute_connectivity(Mesh& mesh, uint d0, uint d1)
+void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0, std::size_t d1)
 {
   // This is where all the logic takes place to find a stragety for
   // the connectivity computation. For any given pair (d0, d1), the
@@ -262,7 +262,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, uint d0, uint d1)
   }
 }
 //----------------------------------------------------------------------------
-void TopologyComputation::compute_from_transpose(Mesh& mesh, uint d0, uint d1)
+void TopologyComputation::compute_from_transpose(Mesh& mesh, std::size_t d0, std::size_t d1)
 {
   // The transpose is computed in three steps:
   //
@@ -284,7 +284,7 @@ void TopologyComputation::compute_from_transpose(Mesh& mesh, uint d0, uint d1)
   dolfin_assert(!topology(d1, d0).empty());
 
   // Temporary array
-  std::vector<unsigned int> tmp(topology.size(d0), 0);
+  std::vector<std::size_t> tmp(topology.size(d0), 0);
 
   // Count the number of connections
   for (MeshEntityIterator e1(mesh, d1); !e1.end(); ++e1)
@@ -304,7 +304,7 @@ void TopologyComputation::compute_from_transpose(Mesh& mesh, uint d0, uint d1)
 }
 //----------------------------------------------------------------------------
 void TopologyComputation::compute_from_intersection(Mesh& mesh,
-                                                    uint d0, uint d1, uint d)
+                                                    std::size_t d0, std::size_t d1, std::size_t d)
 {
   log(TRACE, "Computing mesh connectivity %d - %d from intersection %d - %d - %d.",
       d0, d1, d0, d, d1);

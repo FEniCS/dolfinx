@@ -72,10 +72,10 @@ namespace dolfin
     virtual void init(const TensorLayout& tensor_layout);
 
     /// Return size of given dimension
-    std::size_t size(unsigned int dim) const { return PETScBaseMatrix::size(dim); }
+    std::size_t size(std::size_t dim) const { return PETScBaseMatrix::size(dim); }
 
     /// Return local ownership range
-    std::pair<std::size_t, std::size_t> local_range(unsigned int dim) const
+    std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const
     { return PETScBaseMatrix::local_range(dim); };
 
     /// Set all entries to zero and keep any sparse structure
@@ -105,9 +105,9 @@ namespace dolfin
     /// important.
     ///
     /// *Arguments*
-    ///     dim (unsigned int)
+    ///     dim (std::size_t)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-    virtual void resize(GenericVector& z, unsigned int dim) const
+    virtual void resize(GenericVector& z, std::size_t dim) const
     { PETScBaseMatrix::resize(z, dim); }
 
     /// Get block of values

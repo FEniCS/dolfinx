@@ -35,7 +35,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void MeshSmoothing::smooth(Mesh& mesh, uint num_iterations)
+void MeshSmoothing::smooth(Mesh& mesh, std::size_t num_iterations)
 {
   log(PROGRESS, "Smoothing mesh");
 
@@ -57,9 +57,9 @@ void MeshSmoothing::smooth(Mesh& mesh, uint num_iterations)
   }
 
   // Iterate over all vertices
-  const uint d = mesh.geometry().dim();
+  const std::size_t d = mesh.geometry().dim();
   std::vector<double> xx(d);
-  for (uint iteration = 0; iteration < num_iterations; iteration++)
+  for (std::size_t iteration = 0; iteration < num_iterations; iteration++)
   {
     for (VertexIterator v(mesh); !v.end(); ++v)
     {
@@ -72,8 +72,8 @@ void MeshSmoothing::smooth(Mesh& mesh, uint num_iterations)
       const Point p = v->point();
 
       // Compute center of mass of neighboring vertices
-      for (uint i = 0; i < d; i++) xx[i] = 0.0;
-      uint num_neighbors = 0;
+      for (std::size_t i = 0; i < d; i++) xx[i] = 0.0;
+      std::size_t num_neighbors = 0;
       for (VertexIterator vn(*v); !vn.end(); ++vn)
       {
         // Skip the vertex itself
@@ -83,10 +83,10 @@ void MeshSmoothing::smooth(Mesh& mesh, uint num_iterations)
 
         // Compute center of mass
         const double* xn = vn->x();
-        for (uint i = 0; i < d; i++)
+        for (std::size_t i = 0; i < d; i++)
           xx[i] += xn[i];
       }
-      for (uint i = 0; i < d; i++)
+      for (std::size_t i = 0; i < d; i++)
         xx[i] /= static_cast<double>(num_neighbors);
 
       // Compute closest distance to boundary of star
@@ -94,7 +94,7 @@ void MeshSmoothing::smooth(Mesh& mesh, uint num_iterations)
       for (CellIterator c(*v); !c.end(); ++c)
       {
         // Get local number of vertex relative to facet
-        const uint local_vertex = c->index(*v);
+        const std::size_t local_vertex = c->index(*v);
 
         // Get normal of corresponding facet
         Point n = c->normal(local_vertex);
@@ -113,7 +113,7 @@ void MeshSmoothing::smooth(Mesh& mesh, uint num_iterations)
 
       // Move vertex at most a distance rmin / 2
       double r = 0.0;
-      for (uint i = 0; i < d; i++)
+      for (std::size_t i = 0; i < d; i++)
       {
         const double dx = xx[i] - x[i];
         r += dx*dx;
@@ -122,7 +122,7 @@ void MeshSmoothing::smooth(Mesh& mesh, uint num_iterations)
       if (r < DOLFIN_EPS)
         continue;
       rmin = std::min(0.5*rmin, r);
-      for (uint i = 0; i < d; i++)
+      for (std::size_t i = 0; i < d; i++)
         x[i] += rmin*(xx[i] - x[i])/r;
     }
   }
@@ -132,7 +132,7 @@ void MeshSmoothing::smooth(Mesh& mesh, uint num_iterations)
 }
 //-----------------------------------------------------------------------------
 void MeshSmoothing::smooth_boundary(Mesh& mesh,
-                                    uint num_iterations,
+                                    std::size_t num_iterations,
                                     bool harmonic_smoothing)
 {
   cout << "Smoothing boundary of mesh: " << mesh << endl;
@@ -156,11 +156,11 @@ void MeshSmoothing::snap_boundary(Mesh& mesh,
   // Extract boundary of mesh
   BoundaryMesh boundary(mesh);
 
-  const uint dim = mesh.geometry().dim();
+  const std::size_t dim = mesh.geometry().dim();
 
   // Smooth boundary
   MeshGeometry& geometry = boundary.geometry();
-  for (uint i = 0; i < boundary.num_vertices(); i++)
+  for (std::size_t i = 0; i < boundary.num_vertices(); i++)
   {
     Array<double> x(dim, geometry.x(i));
     sub_domain.snap(x);
@@ -181,12 +181,12 @@ void MeshSmoothing::move_interior_vertices(Mesh& mesh,
   {
     // Use vertex map to update boundary coordinates of original mesh
     const MeshFunction<std::size_t>& vertex_map = boundary.vertex_map();
-    const uint d = mesh.geometry().dim();
+    const std::size_t d = mesh.geometry().dim();
     for (VertexIterator v(boundary); !v.end(); ++v)
     {
       const double* xb = v->x();
       double* xm = mesh.geometry().x(vertex_map[*v]);
-      for (uint i = 0; i < d; i++)
+      for (std::size_t i = 0; i < d; i++)
         xm[i] = xb[i];
     }
   }

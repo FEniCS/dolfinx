@@ -191,7 +191,7 @@ namespace // anonymous
 VTKWindowOutputStage::VTKWindowOutputStage(QVTKWidget *user_widget)
 {
 #ifdef HAS_QVTK
-  widget.reset(user_widget);
+  widget = user_widget;
 #endif
 
   vtkMapper::GlobalImmediateModeRenderingOn(); // FIXME: Check if faster or not
@@ -222,7 +222,7 @@ VTKWindowOutputStage::~VTKWindowOutputStage()
   //log(DBG, "VTK pipeline destroyed");
 
 #ifdef HAS_QVTK
-  widget.reset(NULL);
+  widget = NULL;
 #endif
 
   helptextActor = NULL;
@@ -261,7 +261,7 @@ void VTKWindowOutputStage::init(VTKPlotter *parent, const Parameters &parameters
   {
     // Create new top-level widget -- make sure a QApplication exists first
     create_qApp();
-    widget.reset(new QVTKWidget());
+    widget = new QVTKWidget();
   }
   _renderWindow->SetInteractor(widget->GetInteractor());
 
@@ -390,7 +390,7 @@ std::string VTKWindowOutputStage::get_window_title()
 QVTKWidget *VTKWindowOutputStage::get_widget() const
 {
 #ifdef HAS_QVTK
-  return widget.get();
+  return widget;
 #else
   return NULL;
 #endif
@@ -609,16 +609,17 @@ void VTKWindowOutputStage::set_input(vtkSmartPointer<vtkAlgorithmOutput> output)
   _input->SetInputConnection(output);
 }
 //----------------------------------------------------------------------------
-void VTKWindowOutputStage::set_translucent(bool onoff, uint topo_dim, uint geom_dim)
+void VTKWindowOutputStage::set_translucent(bool onoff, std::size_t topo_dim,
+                                           std::size_t geom_dim)
 {
   // In 3D, any translucency in the lut makes the visibility test
   // for cell/vertex labels ineffective.
   // The depth sorting is slow, particularly for glyphs.
   // Hence, set these only when required.
 
-#if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 8)
+  #if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 8)
   _lut->SetNanColor(0.0, 0.0, 0.0, (onoff ? 0.05 : 1.0));
-#endif
+  #endif
 
   if (onoff && topo_dim >= 2 && geom_dim == 3)
   {

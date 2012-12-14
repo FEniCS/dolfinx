@@ -128,9 +128,9 @@ void GenericFile::operator>> (std::vector<int>& x)
   read_not_impl("std::vector<int>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator>> (std::vector<uint>& x)
+void GenericFile::operator>> (std::vector<std::size_t>& x)
 {
-  read_not_impl("std::vector<uint>");
+  read_not_impl("std::vector<std::size_t>");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator>> (std::vector<double>& x)
@@ -138,34 +138,34 @@ void GenericFile::operator>> (std::vector<double>& x)
   read_not_impl("std::vector<double>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator>> (std::map<uint, int>& map)
+void GenericFile::operator>> (std::map<std::size_t, int>& map)
 {
-  read_not_impl("std::map<uint, int>");
+  read_not_impl("std::map<std::size_t, int>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator>> (std::map<uint, uint>& map)
+void GenericFile::operator>> (std::map<std::size_t, std::size_t>& map)
 {
-  read_not_impl("std::map<uint, uint>");
+  read_not_impl("std::map<std::size_t, std::size_t>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator>> (std::map<uint, double>& map)
+void GenericFile::operator>> (std::map<std::size_t, double>& map)
 {
-  read_not_impl("std::map<uint, double>");
+  read_not_impl("std::map<std::size_t, double>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator>> (std::map<uint, std::vector<int> >& array_map)
+void GenericFile::operator>> (std::map<std::size_t, std::vector<int> >& array_map)
 {
-  read_not_impl("std::map<uint, std::vector<int> >");
+  read_not_impl("std::map<std::size_t, std::vector<int> >");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator>> (std::map<uint, std::vector<uint> >& array_map)
+void GenericFile::operator>> (std::map<std::size_t, std::vector<std::size_t> >& array_map)
 {
-  read_not_impl("std::map<uint, std::vector<uint> >");
+  read_not_impl("std::map<std::size_t, std::vector<std::size_t> >");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator>> (std::map<uint, std::vector<double> >& array_map)
+void GenericFile::operator>> (std::map<std::size_t, std::vector<double> >& array_map)
 {
-  read_not_impl("std::map<uint, std::vector<double> >");
+  read_not_impl("std::map<std::size_t, std::vector<double> >");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator>> (Function& u)
@@ -268,9 +268,9 @@ void GenericFile::operator<< (const std::vector<int>& x)
   read_not_impl("std::vector<int>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<< (const std::vector<uint>& x)
+void GenericFile::operator<< (const std::vector<std::size_t>& x)
 {
-  read_not_impl("std::vector<uint>");
+  read_not_impl("std::vector<std::size_t>");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator<< (const std::vector<double>& x)
@@ -278,37 +278,37 @@ void GenericFile::operator<< (const std::vector<double>& x)
   read_not_impl("std::vector<double>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<< (const std::map<uint, int>& map)
+void GenericFile::operator<< (const std::map<std::size_t, int>& map)
 {
-  read_not_impl("std::map<uint, int>");
+  read_not_impl("std::map<std::size_t, int>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<< (const std::map<uint, uint>& map)
+void GenericFile::operator<< (const std::map<std::size_t, std::size_t>& map)
 {
-  read_not_impl("std::map<uint, uint>");
+  read_not_impl("std::map<std::size_t, std::size_t>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<< (const std::map<uint, double>& map)
+void GenericFile::operator<< (const std::map<std::size_t, double>& map)
 {
-  read_not_impl("std::map<uint, double>");
+  read_not_impl("std::map<std::size_t, double>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<< (const std::map<uint,
+void GenericFile::operator<< (const std::map<std::size_t,
                               std::vector<int> >& array_map)
 {
-  read_not_impl("std::map<uint, std::vector<int> >");
+  read_not_impl("std::map<std::size_t, std::vector<int> >");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<< (const std::map<uint,
-                              std::vector<uint> >& array_map)
+void GenericFile::operator<< (const std::map<std::size_t,
+                              std::vector<std::size_t> >& array_map)
 {
-  read_not_impl("std::map<uint, std::vector<uint> >");
+  read_not_impl("std::map<std::size_t, std::vector<std::size_t> >");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<< (const std::map<uint,
+void GenericFile::operator<< (const std::map<std::size_t,
                               std::vector<double> >& array_map)
 {
-  read_not_impl("std::map<uint, std::vector<double> >");
+  read_not_impl("std::map<std::size_t, std::vector<double> >");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::read()

@@ -36,6 +36,19 @@
 %rename(fem_solve) dolfin::solve;
 
 //-----------------------------------------------------------------------------
+// Modifying the interface of FooProblem
+//-----------------------------------------------------------------------------
+%define PROBLEM_RENAMES(NAME)
+%rename(_solution) dolfin::NAME ## Problem::solution;
+%rename(_trial_space) dolfin::NAME ## Problem::trial_space;
+%rename(_test_space) dolfin::NAME ## Problem::test_space;
+%enddef
+
+PROBLEM_RENAMES(LinearVariational)
+PROBLEM_RENAMES(NonlinearVariational)
+//PROBLEM_RENAMES(LinearTimeDependent)
+
+//-----------------------------------------------------------------------------
 // To simplify handling of shared_ptr types in PyDOLFIN we ignore the reference
 // version of constructors to these types
 //-----------------------------------------------------------------------------
@@ -133,7 +146,7 @@
 // Ignore dolfin::Cell versions of signatures as these now are handled by
 // a typemap
 //-----------------------------------------------------------------------------
-%ignore dolfin::FiniteElement::evaluate_basis(uint i,
+%ignore dolfin::FiniteElement::evaluate_basis(std::size_t i,
                                               double* values,
                                               const double* x,
                                               const Cell& cell) const;
@@ -212,6 +225,7 @@
 %template (HierarchicalNonlinearVariationalProblem) \
           dolfin::Hierarchical<dolfin::NonlinearVariationalProblem>;
 %template (HierarchicalDirichletBC) dolfin::Hierarchical<dolfin::DirichletBC>;
+
 #endif
 //#ifdef IOMODULE // Conditional template instiantiation for IO module
 //%template (HierarchicalDirichletBC) dolfin::Hierarchical<dolfin::DirichletBC>;

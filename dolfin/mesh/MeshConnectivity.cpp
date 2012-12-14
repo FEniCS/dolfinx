@@ -25,7 +25,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshConnectivity::MeshConnectivity(uint d0, uint d1) : d0(d0), d1(d1)
+MeshConnectivity::MeshConnectivity(std::size_t d0, std::size_t d1) : d0(d0), d1(d1)
 {
   // Do nothing
 }
@@ -61,7 +61,7 @@ void MeshConnectivity::clear()
   index_to_position.clear();
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::init(std::size_t num_entities, uint num_connections)
+void MeshConnectivity::init(std::size_t num_entities, std::size_t num_connections)
 {
   // Clear old data if any
   clear();
@@ -78,16 +78,16 @@ void MeshConnectivity::init(std::size_t num_entities, uint num_connections)
     index_to_position[e] = e*num_connections;
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::init(std::vector<unsigned int>& num_connections)
+void MeshConnectivity::init(std::vector<std::size_t>& num_connections)
 {
   // Clear old data if any
   clear();
 
   // Initialize offsets and compute total size
-  const uint num_entities = num_connections.size();
+  const std::size_t num_entities = num_connections.size();
   index_to_position.resize(num_entities + 1);
   std::size_t size = 0;
-  for (uint e = 0; e < num_entities; e++)
+  for (std::size_t e = 0; e < num_entities; e++)
   {
     index_to_position[e] = size;
     size += num_connections[e];
@@ -122,7 +122,7 @@ void MeshConnectivity::set(std::size_t entity, std::size_t* connections)
   dolfin_assert(connections);
 
   // Copy data
-  const uint num_connections
+  const std::size_t num_connections
     = index_to_position[entity + 1] - index_to_position[entity];
   std::copy(connections, connections + num_connections,
             this->connections.begin() + index_to_position[entity]);
@@ -156,10 +156,10 @@ std::string MeshConnectivity::str(bool verbose) const
   {
     s << str(false) << std::endl << std::endl;
 
-    for (uint e = 0; e < index_to_position.size() - 1; e++)
+    for (std::size_t e = 0; e < index_to_position.size() - 1; e++)
     {
       s << "  " << e << ":";
-      for (uint i = index_to_position[e]; i < index_to_position[e + 1]; i++)
+      for (std::size_t i = index_to_position[e]; i < index_to_position[e + 1]; i++)
         s << " " << connections[i];
       s << std::endl;
     }

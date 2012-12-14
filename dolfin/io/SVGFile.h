@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Benjamin Kehlet
+// Copyright (C) 2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,37 +15,35 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2012-11-09
-// Last changed: 2012-11-09
+// First added:  2012-12-01
+// Last changed: 2012-12-01
 
-#ifndef __UNIT_TETRAHEDRON_H
-#define __UNIT_TETRAHEDRON_H
+#ifndef __SVG_FILE_H
+#define __SVG_FILE_H
 
-#include "UnitTetrahedronMesh.h"
+#include "GenericFile.h"
 
 namespace dolfin
 {
 
-  /// A mesh consisting of a single tetrahedron with vertices at
-  ///
-  ///   (0, 0, 0)
-  ///   (1, 0, 0)
-  ///   (0, 1, 0)
-  ///   (0, 0, 1)
-  ///
-  /// This class is useful for testing.
-  ///
-  /// This class has been deprecated. Use _UnitTetrahedronMesh_.
-  class UnitTetrahedron : public UnitTetrahedronMesh
+  /// This class implements output of meshes to scalable vector
+  /// graphics format (SVG).
+
+  class SVGFile : public GenericFile
   {
   public:
 
-    /// Create mesh of unit tetrahedron
-    UnitTetrahedron()
-    {
-      warning("UnitTetrahedron is deprecated. Use UnitTetrahedronMesh");
-    }
+    /// Constructor
+    SVGFile(const std::string filename);
+
+    /// Destructor
+    ~SVGFile();
+
+    /// Store mesh to file
+    void operator<< (const Mesh& mesh);
+
   };
+
 }
 
 #endif

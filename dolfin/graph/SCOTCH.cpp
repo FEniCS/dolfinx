@@ -35,6 +35,7 @@
 #ifdef HAS_SCOTCH
 extern "C"
 {
+#include <stdint.h>
 #include <ptscotch.h>
 }
 #endif

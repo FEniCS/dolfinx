@@ -68,7 +68,7 @@ MUMPSLUSolver::~MUMPSLUSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-unsigned int MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
+std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   assert(A);
 

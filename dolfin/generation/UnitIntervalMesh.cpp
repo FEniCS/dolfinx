@@ -27,7 +27,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitIntervalMesh::UnitIntervalMesh(uint nx) : Mesh()
+UnitIntervalMesh::UnitIntervalMesh(std::size_t nx) : Mesh()
 {
   // Receive mesh according to parallel policy
   if (MPI::is_receiver())

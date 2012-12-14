@@ -56,11 +56,11 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh.
-    ///     dim (uint)
+    ///     dim (std::size_t)
     ///         The topological dimension.
-    ///     index (uint)
+    ///     index (std::size_t)
     ///         The index.
-    MeshEntity(const Mesh& mesh, uint dim, std::size_t index);
+    MeshEntity(const Mesh& mesh, std::size_t dim, std::size_t index);
 
     /// Destructor
     virtual ~MeshEntity();
@@ -70,11 +70,11 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh.
-    ///     dim (uint)
+    ///     dim (std::size_t)
     ///         The topological dimension.
-    ///     index (uint)
+    ///     index (std::size_t)
     ///         The index.
-    void init(const Mesh& mesh, uint dim, std::size_t index);
+    void init(const Mesh& mesh, std::size_t dim, std::size_t index);
 
     /// Comparision Operator
     ///
@@ -111,15 +111,15 @@ namespace dolfin
     /// Return topological dimension
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The dimension.
-    uint dim() const
+    std::size_t dim() const
     { return _dim; }
 
     /// Return index of mesh entity
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The index.
     std::size_t index() const
     { return _local_index; }
@@ -136,46 +136,46 @@ namespace dolfin
     /// Return local number of incident mesh entities of given topological dimension
     ///
     /// *Arguments*
-    ///     dim (uint)
+    ///     dim (std::size_t)
     ///         The topological dimension.
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The number of local incident MeshEntity objects of given dimension.
-    uint num_entities(uint dim) const
+    std::size_t num_entities(std::size_t dim) const
     { return _mesh->topology()(_dim, dim).size(_local_index); }
 
     /// Return global number of incident mesh entities of given topological dimension
     ///
     /// *Arguments*
-    ///     dim (uint)
+    ///     dim (std::size_t)
     ///         The topological dimension.
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The number of global incident MeshEntity objects of given dimension.
-    uint num_global_entities(uint dim) const
+    std::size_t num_global_entities(std::size_t dim) const
     { return _mesh->topology()(_dim, dim).size_global(_local_index); }
 
     /// Return array of indices for incident mesh entitites of given
     /// topological dimension
     ///
     /// *Arguments*
-    ///     dim (uint)
+    ///     dim (std::size_t)
     ///         The topological dimension.
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The index for incident mesh entities of given dimension.
-    const std::size_t* entities(uint dim) const
+    const std::size_t* entities(std::size_t dim) const
     { return _mesh->topology()(_dim, dim)(_local_index); }
 
     /// Return unique mesh ID
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The unique mesh ID.
-    uint mesh_id() const
+    std::size_t mesh_id() const
     { return _mesh->id(); }
 
     /// Check if given entity is incident
@@ -247,7 +247,7 @@ namespace dolfin
     ///         The mesh entity.
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The local index of given entity.
     std::size_t index(const MeshEntity& entity) const;
 
@@ -288,7 +288,7 @@ namespace dolfin
     Mesh const * _mesh;
 
     // Topological dimension
-    uint _dim;
+    std::size_t _dim;
 
     // Local index of entity within topological dimension
     std::size_t _local_index;

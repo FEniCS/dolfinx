@@ -43,7 +43,7 @@ namespace dolfin
     /// Destructor
     virtual ~CoordinateMatrix() {}
 
-    std::size_t size(unsigned int dim) const
+    std::size_t size(std::size_t dim) const
     { return _size[dim]; }
 
     const std::vector<std::size_t>& rows() const

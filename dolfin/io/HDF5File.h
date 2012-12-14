@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-10-24
+// Last changed: 2012-12-04
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -28,11 +28,12 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "dolfin/common/Timer.h"
 #include "dolfin/common/types.h"
 #include "dolfin/common/Variable.h"
 #include "dolfin/mesh/Mesh.h"
+#include "dolfin/mesh/MeshEditor.h"
 #include "dolfin/mesh/Vertex.h"
-#include "GenericFile.h"
 #include "HDF5Interface.h"
 
 namespace dolfin
@@ -41,77 +42,60 @@ namespace dolfin
   class Function;
   class GenericVector;
 
-  class HDF5File : public GenericFile, public Variable
+  class HDF5File : public Variable
   {
   public:
 
     /// Constructor
-    HDF5File(const std::string filename, const bool use_mpiio=true);
+    HDF5File(const std::string filename, const std::string file_mode, bool use_mpiio=true);
 
     /// Destructor
     ~HDF5File();
 
-    /// Write vector to file in HDF5 folder 'Vector'. Multiple calls
-    /// will save in the same file with incrementing dataset names
-    void operator<< (const GenericVector& x);
+    /// Write Vector to file in a format suitable for re-reading
+    void write(const GenericVector& x, const std::string name);
 
     /// Write Mesh to file
-    void operator<< (const Mesh& mesh);
+    void write(const Mesh& mesh, const std::string name);
 
-    /// Write Mesh to file
-    void write_mesh(const Mesh& mesh, const std::string name);
-
-    /// Write Mesh of given cell dimension to file
-    void write_mesh(const Mesh& mesh, const uint cell_dim,
-                    const std::string name);
+    /// Write Mesh of given cell dimension to file in a format suitable
+    /// for re-reading
+    void write(const Mesh& mesh, const std::size_t cell_dim, const std::string name);
 
     /// Write Mesh to file for visualisation (may contain duplicate
     /// entities and will not preserve global indices)
-    void write_visualisation_mesh(const Mesh& mesh, const std::string name);
+    void write_visualisation(const Mesh& mesh, const std::string name);
 
     /// Write Mesh of given cell dimension to file for visualisation (may
     /// contain duplicate entities and will not preserve global indices)
-    void write_visualisation_mesh(const Mesh& mesh, const uint cell_dim,
-                                  const std::string name);
+    void write_visualisation(const Mesh& mesh, const std::size_t cell_dim,
+                             const std::string name);
 
-    /// Read vector from file (in HDF5 folder 'Vector' for dataset 0)
-    void operator>> (GenericVector& x);
-
-    /// Read vector from HDF5 file
-    void read(const std::string dataset_name, GenericVector& x,
+    /// Read vector from file
+    void read(GenericVector& x, const std::string dataset_name,
               const bool use_partition_from_file=true);
 
     /// Read Mesh from file
-    void operator>> (Mesh& mesh);
-
-    /// Read Mesh from file
-    void read_mesh(Mesh& mesh);
+    void read(Mesh& mesh, const std::string name);
 
     /// Check if dataset exists in HDF5 file
     bool has_dataset(const std::string dataset_name) const;
+
+    /// Flush buffered I/O to disk
+    void flush();
 
   private:
 
     // Friend
     friend class XDMFFile;
 
-    // Open HDF5 file
-    void open_hdf5_file(bool truncate);
-
     // Read a mesh which has locally indexed topology and repartition
     void read_mesh_repartition(Mesh &input_mesh,
                                const std::string coordinates_name,
                                const std::string topology_name);
 
-    // Return vertex and topological data with duplicates removed
-    void remove_duplicate_vertices(const Mesh& mesh,
-                                   std::vector<double>& vertex_data,
-                                   std::vector<std::size_t>& topological_data);
-
-    // Eliminate elements of value vector corresponding to eliminated vertices
-    template <typename T>
-    void remove_duplicate_values(const Mesh &mesh, std::vector<T>& values,
-                                 const uint value_size);
+    // Convert LocalMeshData into a Mesh, when running serially
+    void build_local_mesh(Mesh &mesh, const LocalMeshData& mesh_data);
 
     // Write contiguous data to HDF5 data set. Data is flattened into
     // a 1D array, e.g. [x0, y0, z0, x1, y1, z1] for a vector in 3D
@@ -124,14 +108,8 @@ namespace dolfin
     static std::string search_list(const std::vector<std::string>& list,
                                    const std::string& search_term);
 
-    // Reorganise data into global order as defined by global_index
-    // global_index contains the global index positions
-    // local_vector contains the items to be redistributed
-    // global_vector is the result: the local part of the new global vector created.
-    template <typename T>
-    void redistribute_by_global_index(const std::vector<std::size_t>& global_index,
-                                      const std::vector<T>& local_vector,
-                                      std::vector<T>& global_vector);
+    void reorder_vertices_by_global_indices(std::vector<double>& vertex_coords,
+              std::size_t gdim, const std::vector<std::size_t>& global_indices);
 
     // HDF5 file descriptor/handle
     bool hdf5_file_open;
@@ -139,7 +117,6 @@ namespace dolfin
 
     // Parallel mode
     const bool mpi_io;
-
   };
   //---------------------------------------------------------------------------
   template <typename T>
@@ -180,32 +157,6 @@ namespace dolfin
     // Write data to HDF5 file
     HDF5Interface::write_dataset(hdf5_file_id, dataset_name, data,
                                  range, global_size, mpi_io, false);
-  }
-  //---------------------------------------------------------------------------
-  template <typename T>
-  void HDF5File::remove_duplicate_values(const Mesh &mesh,
-                                         std::vector<T>& values,
-                                         const uint value_size)
-  {
-    /*
-    // Get list of locally owned vertices, with local index
-    const std::vector<uint> owned_vertices = mesh.owned_vertices();
-
-    std::vector<T> result;
-    result.reserve(values.size()); //overestimate
-
-    // only copy local values
-    for(uint i = 0; i < owned_vertices.size(); i++)
-    {
-      typename std::vector<T>::iterator owned_it =
-        values.begin() + value_size*owned_vertices[i];
-      result.insert(result.end(), owned_it, owned_it + value_size);
-    }
-
-    // copy back into values and resize
-    values.resize(result.size());
-    std::copy(result.begin(), result.end(), values.begin());
-  */
   }
   //---------------------------------------------------------------------------
 

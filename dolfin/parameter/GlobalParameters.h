@@ -57,6 +57,7 @@ namespace dolfin
 
       // Output
       p.add("std_out_all_processes", true);                  // Print standard output on all processes
+      p.add("relative_line_width", 0.025);                   // Line width relative to edge length in SVG output
 
       // Threaded computation
       p.add("num_threads", 0);                               // Number of threads to run, 0 = run serial version
@@ -67,22 +68,29 @@ namespace dolfin
       // Print the level of thread support provided by the MPI library
       p.add("print_mpi_thread_support_level", false);
 
-      // Graph partitioner
+      // Allowed partitioners (not necessarily installed)
       std::set<std::string> allowed_mesh_partitioners;
-      std::string default_mesh_partitioner("ParMETIS");
       allowed_mesh_partitioners.insert("ParMETIS");
-      #ifdef HAS_SCOTCH
       allowed_mesh_partitioners.insert("SCOTCH");
-        #ifndef HAS_PARMETIS
-        default_mesh_partitioner = "SCOTCH";
+
+      // Set default graph/mesh partitioner
+      std::string default_mesh_partitioner = "SCOTCH";
+      #ifdef HAS_PARMETIS
+        #ifndef HAS_SCOTCH
+        default_mesh_partitioner = "ParMETIS";
         #endif
       #endif
+
+      // Add mesh/graph partitioner
       p.add("mesh_partitioner",
-	    default_mesh_partitioner,
-	    allowed_mesh_partitioners);
+            default_mesh_partitioner,
+            allowed_mesh_partitioners);
 
       // Graph coloring
-      p.add("graph_coloring_library", "Boost");
+      std::set<std::string> allowed_coloring_libraries;
+      allowed_mesh_partitioners.insert("Boost");
+      allowed_mesh_partitioners.insert("Zoltan");
+      p.add("graph_coloring_library", "Boost", allowed_coloring_libraries);
 
       // Mesh refinement
       std::set<std::string> allowed_refinement_algorithms;
@@ -104,7 +112,6 @@ namespace dolfin
       allowed_backends.insert("PETSc");
       default_backend = "PETSc";
       p.add("use_petsc_signal_handler", false);
-
       #endif
       #ifdef HAS_PETSC_CUSP
       allowed_backends.insert("PETScCusp");

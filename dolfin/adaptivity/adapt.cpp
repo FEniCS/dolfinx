@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-10
-// Last changed: 2012-01-20
+// Last changed: 2012-11-29
 
 #include <map>
 #include <boost/shared_ptr.hpp>
@@ -70,7 +70,7 @@ const Mesh& dolfin::adapt(const Mesh& mesh)
   UniformMeshRefinement::refine(*adapted_mesh, mesh);
 
   // Initialize the entities initialized in mesh in adapted_mesh
-  for (uint d = 0; d <= mesh.topology().dim(); ++d)
+  for (std::size_t d = 0; d <= mesh.topology().dim(); ++d)
     if (mesh.num_entities(d) != 0)
       adapted_mesh->init(d);
 
@@ -95,7 +95,7 @@ const dolfin::Mesh& dolfin::adapt(const Mesh& mesh,
   LocalMeshRefinement::refine(*adapted_mesh, mesh, cell_markers);
 
   // Initialize the entities initialized in mesh in adapted_mesh
-  for (uint d = 0; d <= mesh.topology().dim(); ++d)
+  for (std::size_t d = 0; d <= mesh.topology().dim(); ++d)
     if (mesh.num_entities(d) != 0)
       adapted_mesh->init(d);
 
@@ -135,8 +135,11 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
 const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
                                            boost::shared_ptr<const Mesh> adapted_mesh)
 {
-  // Skip refinement if already refined
-  if (space.has_child())
+
+  // Skip refinement if already refined and child's mesh is the same
+  // as requested
+  if (space.has_child()
+      && adapted_mesh.get() == space.child().mesh().get())
   {
     dolfin_debug("Function space has already been refined, returning child space.");
     return space.child();
@@ -163,8 +166,10 @@ const dolfin::Function& dolfin::adapt(const Function& function,
                                       boost::shared_ptr<const Mesh> adapted_mesh,
                                       bool interpolate)
 {
-  // Skip refinement if already refined
-  if (function.has_child())
+  // Skip refinement if already refined and if child's mesh matches
+  // requested mesh
+  if (function.has_child()
+      && adapted_mesh.get() == function.child().function_space()->mesh().get())
   {
     dolfin_debug("Function has already been refined, returning child function.");
     return function.child();
@@ -220,7 +225,7 @@ const dolfin::Form& dolfin::adapt(const Form& form,
 
   // Refine function spaces
   std::vector<boost::shared_ptr<const FunctionSpace> > refined_spaces;
-  for (uint i = 0; i < spaces.size(); i++)
+  for (std::size_t i = 0; i < spaces.size(); i++)
   {
     const FunctionSpace& space = *spaces[i];
     adapt(space, adapted_mesh);
@@ -229,7 +234,7 @@ const dolfin::Form& dolfin::adapt(const Form& form,
 
   // Refine coefficients:
   std::vector<boost::shared_ptr<const GenericFunction> > refined_coefficients;
-  for (uint i = 0; i < coefficients.size(); i++)
+  for (std::size_t i = 0; i < coefficients.size(); i++)
   {
     // Try casting to Function
     const Function*
@@ -311,7 +316,7 @@ dolfin::adapt(const LinearVariationalProblem& problem,
   // Refine bcs
   boost::shared_ptr<const FunctionSpace> V(problem.trial_space());
   std::vector<boost::shared_ptr<const BoundaryCondition> > refined_bcs;
-  for (uint i = 0; i < bcs.size(); i++)
+  for (std::size_t i = 0; i < bcs.size(); i++)
   {
     const DirichletBC* bc = dynamic_cast<const DirichletBC*>(bcs[i].get());
     if (bc != 0)
@@ -378,7 +383,7 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
   // Refine bcs
   boost::shared_ptr<const FunctionSpace> V(problem.trial_space());
   std::vector<boost::shared_ptr<const BoundaryCondition> > refined_bcs;
-  for (uint i = 0; i < bcs.size(); i++)
+  for (std::size_t i = 0; i < bcs.size(); i++)
   {
     const DirichletBC* bc = dynamic_cast<const DirichletBC*>(bcs[i].get());
     if (bc != 0)
@@ -432,7 +437,7 @@ const dolfin::DirichletBC& dolfin::adapt(const DirichletBC& bc,
   dolfin_assert(W);
 
   // Refine function space
-  const std::vector<uint> component = W->component();
+  const std::vector<std::size_t> component = W->component();
   boost::shared_ptr<const FunctionSpace> V;
   if (component.empty())
   {
@@ -531,7 +536,7 @@ const dolfin::MeshFunction<std::size_t>&
   }
 
   const Mesh& mesh = mesh_function.mesh();
-  const uint dim = mesh.topology().dim();
+  const std::size_t dim = mesh.topology().dim();
 
   // Extract parent map from data of refined mesh
   boost::shared_ptr<MeshFunction<std::size_t> > parent;
@@ -551,7 +556,7 @@ const dolfin::MeshFunction<std::size_t>&
   }
 
   // Use very large value as 'undefined'
-  const uint undefined = std::numeric_limits<std::size_t>::max();
+  const std::size_t undefined = std::numeric_limits<std::size_t>::max();
 
   // Map values of mesh function into refined mesh function
   boost::shared_ptr<MeshFunction<std::size_t> >
@@ -600,7 +605,7 @@ void dolfin::adapt_markers(std::vector<std::pair<std::size_t, std::size_t> >& re
   std::map< std::pair<std::size_t, std::size_t>,
     std::vector< std::pair<std::size_t, std::size_t> > > children;
 
-  const uint D = mesh.topology().dim();
+  const std::size_t D = mesh.topology().dim();
   for (FacetIterator facet(adapted_mesh); !facet.end(); ++facet)
   {
     // Ignore interior facets

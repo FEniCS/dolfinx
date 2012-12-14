@@ -121,7 +121,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
   Timer timer("Assemble cells");
 
   // Set number of OpenMP threads (from parameter systems)
-  const unsigned int num_threads = parameters["num_threads"];
+  const std::size_t num_threads = parameters["num_threads"];
   omp_set_num_threads(num_threads);
 
   // Extract mesh

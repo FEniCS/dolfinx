@@ -102,8 +102,8 @@ namespace dolfin
       std::list<DVertex*> vertices;
       std::list<DCell*> cells;
       const CellType* cell_type;
-      uint tdim;
-      uint gdim;
+      std::size_t tdim;
+      std::size_t gdim;
 
     };
 

@@ -23,8 +23,8 @@
 import unittest
 from dolfin import *
 
-cube   = UnitCube(5, 5, 5)
-square = UnitSquare(5, 5)
+cube   = UnitCubeMesh(5, 5, 5)
+square = UnitSquareMesh(5, 5)
 meshes = [cube, square]
 
 class EdgeFunctions(unittest.TestCase):

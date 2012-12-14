@@ -105,7 +105,7 @@ void SymmetricAssembler::assemble(GenericMatrix& A,
   dolfin_assert(a.rank() == 2);
 
   #ifdef HAS_OPENMP
-  const uint num_threads = parameters["num_threads"];
+  const std::size_t num_threads = parameters["num_threads"];
   if (num_threads > 0)
   {
     dolfin_error("SymmetricAssembler.cpp", "assemble",
