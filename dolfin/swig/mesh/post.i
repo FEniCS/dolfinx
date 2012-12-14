@@ -94,7 +94,7 @@ def mark(self, *args):
                      MeshFunctionDouble, MeshFunctionBool)):
         common.dolfin_error("dolfin.cpp.mesh.py",
                             "mark MeshFunction",
-                            "Expected a MeshFunction of type \"sizet\", \"int\", \"double\" or \"bool\"")
+                            "Expected a MeshFunction of type \"size_t\", \"int\", \"double\" or \"bool\"")
             
     self._mark(*args)
 
@@ -172,7 +172,7 @@ _doc_string += """
   *Arguments*
     tp (str)
       String defining the type of the MeshFunction
-      Allowed: 'int', 'sizet', 'uint', 'double', and 'bool'
+      Allowed: 'int', 'size_t', 'uint', 'double', and 'bool'
     mesh (_Mesh_)
       A DOLFIN mesh.
       Optional.
@@ -193,7 +193,7 @@ class MeshFunction(object):
             return MeshFunctionInt(*args)
         if tp == "uint":
             return MeshFunctionUInt(*args)
-        elif tp == "sizet":
+        elif tp == "size_t":
             return MeshFunctionSizet(*args)
         elif tp == "double":
             return MeshFunctionDouble(*args)
@@ -213,7 +213,7 @@ def _new_closure(MeshType):
             return eval("%sInt(mesh, value)"%MeshType)
         if tp == "uint":
             return eval("%sUInt(mesh, value)"%MeshType)
-        if tp == "sizet":
+        if tp == "size_t":
             return eval("%sSizet(mesh, value)"%MeshType)
         elif tp == "double":
             return eval("%sDouble(mesh, float(value))"%MeshType)
@@ -289,7 +289,7 @@ _meshvaluecollection_doc_string += """
   *Arguments*
       tp (str)
          String defining the type of the MeshValueCollection
-          Allowed: 'int', 'uint', 'sizet', 'double', and 'bool'
+          Allowed: 'int', 'uint', 'size_t', 'double', and 'bool'
       dim (uint)
           The topological dimension of the MeshValueCollection.
           Optional.
@@ -316,7 +316,7 @@ class MeshValueCollection(object):
             return MeshValueCollectionInt(*args)
         if tp == "uint":
             return MeshValueCollectionUInt(*args)
-        elif tp == "sizet":
+        elif tp == "size_t":
             return MeshValueCollectionSizet(*args)
         elif tp == "double":
             return MeshValueCollectionDouble(*args)
