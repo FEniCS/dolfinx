@@ -875,8 +875,7 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
 //             for (uint j = 0; j < dofmap.num_facet_dofs(); j++)
 //             {
 //               master_dof = global_dofs[facet_dofs[j]];
-//               if (master_dof >= ownership_range.first && master_dof < ownership_range.second)
-//                 matching_dofs[master_dof] = slave_dofs[i][j];
+//               matching_dofs[master_dof] = slave_dofs[i][j];
 //             }
 //           }
 //           else  // If local dofs 0/0 don't match the order must be opposite
@@ -884,8 +883,7 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
 //             for (uint j = 0; j < dofmap.num_facet_dofs(); j++)
 //             {
 //               master_dof = global_dofs[facet_dofs[j]];
-//               if (master_dof >= ownership_range.first && master_dof < ownership_range.second)
-//                 matching_dofs[master_dof] = slave_dofs[i][dofmap.num_facet_dofs()-j-1];
+//               matching_dofs[master_dof] = slave_dofs[i][dofmap.num_facet_dofs()-j-1];
 //             }
 //           }
 //         }
@@ -1125,19 +1123,19 @@ void DofMapBuilder::periodic_modification(DofMap& dofmap, const Mesh& mesh, set&
   dofmap._global_dimension = dofmap._ufc_dofmap->global_dimension() - _slave_master_map.size();
   
   // Renumber all UFC-numbering based dofs due to deleted slave dofs
+  // Could here alternatively create a map
   std::vector<std::size_t>::iterator it;  
-//   periodic_map_iterator pit;
-  for (std::size_t i = 0; i < dofmap._dofmap.size(); i++)
+  periodic_map_iterator pit;
+  std::vector<std::vector<DolfinIndex> >::iterator cell_map;
+  std::vector<DolfinIndex>::iterator dof;
+  for (cell_map = dofmap._dofmap.begin(); cell_map != dofmap._dofmap.end(); ++cell_map)
   {
-    const std::vector<DolfinIndex>& global_dofs = dofmap.cell_dofs(i); 
-    for (uint j = 0; j < dofmap.max_cell_dimension(); j++)
-    { // Counts the number of slaves with dof number smaller than current.
-      const std::size_t dof = global_dofs[j];            
-      it = std::lower_bound(_all_slaves.begin(), _all_slaves.end(), dof);
-      const std::size_t new_dof = dof - std::size_t(it - _all_slaves.begin());
-//       pit = _slave_master_map.lower_bound(dof);
-//       new_dof = dof - std::distance(_slave_master_map.begin(), pit); // slow
-      dofmap._dofmap[i][j] = new_dof;
+    for (dof = cell_map->begin(); dof != cell_map->end(); ++dof)
+    {
+      it = std::lower_bound(_all_slaves.begin(), _all_slaves.end(), *dof);
+      *dof -= std::size_t(it - _all_slaves.begin());
+//      pit = _slave_master_map.lower_bound(*dof);
+//      *dof -= std::distance(_slave_master_map.begin(), pit); // slow
     }
   }
   
@@ -1147,7 +1145,7 @@ void DofMapBuilder::periodic_modification(DofMap& dofmap, const Mesh& mesh, set&
                                             sit != _master_processes.end(); ++sit)
   {
     const std::size_t dof = sit->first;
-    it = std::lower_bound(_all_slaves.begin(), _all_slaves.end(), dof);            
+    it = std::lower_bound(_all_slaves.begin(), _all_slaves.end(), dof);
     const std::size_t new_dof = dof - std::size_t(it - _all_slaves.begin());
     new_master_processes[new_dof] = sit->second;
   }

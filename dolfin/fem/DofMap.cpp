@@ -250,15 +250,15 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
       parent_slaves.push_back(it->first);
     }
     
-    std::vector<std::size_t>::iterator it;  
-    for (std::size_t i = 0; i < _dofmap.size(); i++)
+    std::vector<std::size_t>::iterator it; 
+    std::vector<std::vector<DolfinIndex> >::iterator cell_map;
+    std::vector<DolfinIndex>::iterator dof;
+    for (cell_map = _dofmap.begin(); cell_map != _dofmap.end(); ++cell_map)
     {
-      const std::vector<DolfinIndex>& global_dofs = cell_dofs(i); 
-      for (uint j = 0; j < max_cell_dimension(); j++)
-      { // Count the number of slaves with dof number smaller than current
-        std::size_t dof = global_dofs[j];
-        it = std::lower_bound(parent_slaves.begin(), parent_slaves.end(), dof);
-        _dofmap[i][j] = dof - std::size_t(it - parent_slaves.begin());        
+      for (dof = cell_map->begin(); dof != cell_map->end(); ++dof)
+      {
+        it = std::lower_bound(parent_slaves.begin(), parent_slaves.end(), *dof);
+        *dof -= std::size_t(it - parent_slaves.begin());        
       }
     }    
         

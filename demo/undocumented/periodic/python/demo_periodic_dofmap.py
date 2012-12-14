@@ -71,6 +71,8 @@ mf = FacetFunction('sizet', mesh)
 mf.set_all(0)
 pbc.mark(mf, 1)
 pbr.mark(mf, 2)
+
+# Three different ways of creating the periodicity
 #mesh.domains().markers(1).assign(mf)
 mesh.add_periodic_direction(pbc)
 #mesh.add_periodic_direction(1, 2)
@@ -101,7 +103,6 @@ solve(a == L, u, bcs)
 file = File("periodic_dofmap.xml.gz")
 file << u
 
-#u = Function(V, "periodic_dofmap.xml.gz")
 list_timings()
 
 # Plot solution
