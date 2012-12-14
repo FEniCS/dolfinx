@@ -425,7 +425,7 @@ namespace dolfin
     std::map<std::size_t, std::size_t> _slave_master_map;
     
     // Map of processes that share master dofs (used by compute_ownership)
-    std::map<std::size_t, boost::unordered_set<uint> > _master_processes;
+    std::map<std::size_t, boost::unordered_set<std::size_t> > _master_processes;
     
   };
 }

@@ -148,14 +148,14 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
     _ufc_dofmap->tabulate_dofs(&tmp_dof_holder[0], ufc_mesh, ufc_cell);
     
     // Add UFC offset
-    for (uint i=0; i < tmp_dof_holder.size(); i++)
+    for (unsigned int i=0; i < tmp_dof_holder.size(); i++)
       tmp_dof_holder[i] += offset;
 
     if (mesh.is_periodic() && !_slave_master_map.empty())
     {
       // Check for slaves and modify
       std::map<std::size_t, std::size_t>::const_iterator slave_it;
-      for (uint i = 0; i < tmp_dof_holder.size(); i++)
+      for (unsigned int i = 0; i < tmp_dof_holder.size(); i++)
       {
         const std::size_t dof = tmp_dof_holder[i];
         slave_it = _slave_master_map.find(dof);
@@ -195,7 +195,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
     // Reduce the local slaves onto all processes to eliminate duplicates 
     std::vector<std::set<std::size_t> > all_slave_dofs;
     MPI::all_gather(slave_dofs, all_slave_dofs);    
-    for (uint i = 0; i < all_slave_dofs.size(); i++)
+    for (std::size_t i = 0; i < all_slave_dofs.size(); i++)
       if (i != MPI::process_number())
         slave_dofs.insert(all_slave_dofs[i].begin(), all_slave_dofs[i].end());
     

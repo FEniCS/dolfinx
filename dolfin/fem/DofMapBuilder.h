@@ -65,7 +65,7 @@ namespace dolfin
     typedef std::vector<std::size_t>::const_iterator vector_it;
     typedef boost::unordered_map<std::size_t, std::vector<std::size_t> > vec_map;
     
-    typedef std::pair<std::size_t, uint> facet_data;
+    typedef std::pair<std::size_t, std::size_t> facet_data;
     typedef std::map<std::size_t, std::size_t> periodic_map;
     typedef std::vector<facet_data> vector_of_pairs;
     typedef periodic_map::iterator periodic_map_iterator;
@@ -120,7 +120,7 @@ namespace dolfin
     // processes that shares the master dofs
     static void extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh, 
                             periodic_map& _slave_master_map,
-                            std::map<std::size_t, boost::unordered_set<uint> >& _master_processes);
+                            std::map<std::size_t, boost::unordered_set<std::size_t> >& _master_processes);
 
     // Make all necessary modifications to dofmap due to periodicity of the mesh
     static void periodic_modification(DofMap& dofmap, const Mesh& dolfin_mesh, DofMapBuilder::set& global_dofs);

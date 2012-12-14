@@ -692,30 +692,30 @@ namespace dolfin
     /// *Arguments*
     ///     MeshFunction (_MeshFunction_)
     ///         FacetFunction marking the two periodic subdomains
-    ///     unsigned int
+    ///     std::size_t
     ///         Id of master subdomain
-    ///     unsigned int
+    ///     std::size_t
     ///         Id of slave subdomain
     void add_periodic_direction(const MeshFunction<std::size_t>& sub_domains,
-                const unsigned int sub_domain0, const unsigned int sub_domain1);
+                const std::size_t sub_domain0, const std::size_t sub_domain1);
 
     /// Add Periodicity to the mesh. The mesh must contain markers for subdomains
     ///
     /// *Arguments*
-    ///     unsigned int
+    ///     std::size_t
     ///         Id of master subdomain
-    ///     unsigned int
+    ///     std::size_t
     ///         Id of slave subdomain
-    void add_periodic_direction(const unsigned int sub_domain0, const unsigned int sub_domain1);
+    void add_periodic_direction(const std::size_t sub_domain0, const std::size_t sub_domain1);
 
     /// Return periodic facet-to-facet map
     ///
     /// *Returns*
-    ///     std::vector<std::pair< std::pair<std::size_t, unsigned int>, std::pair<std::size_t, unsigned int> > >
+    ///     std::vector<std::pair< std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > >
     ///         The periodic facet-to-facet map. First pair is master, second is slave. 
     ///         First item of pairs is global facet index, second item is the process 
     ///         number where the facet lives.
-    std::vector<std::pair< std::pair<std::size_t, unsigned int>, std::pair<std::size_t, unsigned int> > > get_periodic_facet_pairs(unsigned int i) const;
+    std::vector<std::pair< std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > > get_periodic_facet_pairs(std::size_t i) const;
     
     /// Check if mesh has one or more periodic directions
     ///
@@ -728,16 +728,16 @@ namespace dolfin
     /// Returns number of periodic directions
     ///
     /// *Returns*
-    ///     unsigned int
+    ///     std::size_t
     ///         Number of periodic directions that has been added to the mesh
-    unsigned int num_periodic_domains() const;
+    std::size_t num_periodic_domains() const;
     
     /// Returns the distance between two periodic subdomains
     ///
     /// *Returns*
     ///     std::vector<double>
     ///         The distance between two periodic subdomains
-    std::vector<double> get_periodic_distance(unsigned int i) const;
+    std::vector<double> get_periodic_distance(std::size_t i) const;
 
   private:
     
@@ -774,18 +774,18 @@ namespace dolfin
     {
     public:
       
-      PeriodicDomain(unsigned int, unsigned int, std::vector<double>, std::vector<std::pair< std::pair<std::size_t, unsigned int>, std::pair<std::size_t, unsigned int> > >);
+      PeriodicDomain(std::size_t, std::size_t, std::vector<double>, std::vector<std::pair< std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > >);
       
       // The periodic facet-to-facet map. First pair is master, second is slave. 
       // First item of pairs is global facet index, second item is the process 
       // number where the facet lives.
-      std::vector<std::pair< std::pair<std::size_t, unsigned int>, std::pair<std::size_t, unsigned int> > > facet_pairs;
+      std::vector<std::pair< std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > > facet_pairs;
       
       // Distance between subdomains 
       std::vector<double> dx;
       
       // Markers for the two periodic subdomains used by _domains. master first, slave second
-      std::pair<unsigned int, unsigned int> sub_domains;
+      std::pair<std::size_t, std::size_t> sub_domains;
       
     };
 
