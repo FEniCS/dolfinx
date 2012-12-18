@@ -815,7 +815,7 @@ void PETScVector::_init(std::pair<std::size_t, std::size_t> range,
   x.reset(new Vec(0), PETScVectorDeleter());
 
   const std::size_t local_size = range.second - range.first;
-  dolfin_assert(range.second - range.first >= 0);
+  dolfin_assert(range.second >= range.first);
 
   // Initialize vector, either default or MPI vector
   if (!distributed)
