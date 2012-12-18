@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-29
-// Last changed: 2012-07-05
+// Last changed: 2012-12-12
 //
 // This demo illustrates the built-in mesh types.
 
@@ -28,58 +28,54 @@ int main()
 {
   if (dolfin::MPI::num_processes() == 1)
   {
-    UnitInterval interval(10);
-    info("Plotting a UnitInterval");
+    UnitIntervalMesh interval(10);
+    info("Plotting a UnitIntervalMesh");
     plot(interval, "Unit interval");
   }
 
-  UnitSquare square_default(10, 10);
-  info("Plotting a UnitSquare");
+  UnitSquareMesh square_default(10, 10);
+  info("Plotting a UnitSquareMesh");
   plot(square_default, "Unit square");
 
-  UnitSquare square_left(10, 10, "left");
-  info("Plotting a UnitSquare");
+  UnitSquareMesh square_left(10, 10, "left");
+  info("Plotting a UnitSquareMesh");
   plot(square_left, "Unit square (left)");
 
-  UnitSquare square_crossed(10, 10, "crossed");
-  info("Plotting a UnitSquare");
+  UnitSquareMesh square_crossed(10, 10, "crossed");
+  info("Plotting a UnitSquareMesh");
   plot(square_crossed, "Unit square (crossed)");
 
-  UnitSquare square_right_left(10, 10, "right/left");
-  info("Plotting a UnitSquare");
+  UnitSquareMesh square_right_left(10, 10, "right/left");
+  info("Plotting a UnitSquareMesh");
   plot(square_right_left, "Unit square (right/left)");
 
-  Rectangle rectangle_default(0.0, 0.0, 10.0, 4.0, 10, 10);
-  info("Plotting a Rectangle");
+  RectangleMesh rectangle_default(0.0, 0.0, 10.0, 4.0, 10, 10);
+  info("Plotting a RectangleMesh");
   plot(rectangle_default, "Rectangle");
 
-  Rectangle rectangle_right_left(-3.0, 2.0, 7.0, 6.0, 10, 10, "right/left");
-  info("Plotting a Rectangle");
+  RectangleMesh rectangle_right_left(-3.0, 2.0, 7.0, 6.0, 10, 10, "right/left");
+  info("Plotting a RectangleMesh");
   plot(rectangle_right_left, "Rectangle (right/left)");
 
-  UnitCircle circle_rotsumn(20, "right", "rotsumn");
-  info("Plotting a UnitCircle");
+  UnitCircleMesh circle_rotsumn(20, "right", "rotsumn");
+  info("Plotting a UnitCircleMesh");
   plot(circle_rotsumn, "Unit circle (rotsum)");
 
-  //UnitCircle circle_sumn(20, "left", "sumn");
+  //UnitCircleMesh circle_sumn(20, "left", "sumn");
   //info("Plotting a UnitCircle");
   //plot(circle_sumn, "Unit circle (sumn)");
 
-  UnitCircle circle_maxn(20, "right", "maxn");
-  info("Plotting a UnitCircle");
+  UnitCircleMesh circle_maxn(20, "right", "maxn");
+  info("Plotting a UnitCircleMesh");
   plot(circle_maxn, "Unit circle (maxn)");
 
-  UnitCube cube(10, 10, 10);
-  info("Plotting a UnitCube");
+  UnitCubeMesh cube(10, 10, 10);
+  info("Plotting a UnitCubeMesh");
   plot(cube, "Unit cube");
 
-  Box box(0.0, 0.0, 0.0, 10.0, 4.0, 2.0, 10, 10, 10);
-  info("Plotting a Box");
+  BoxMesh box(0.0, 0.0, 0.0, 10.0, 4.0, 2.0, 10, 10, 10);
+  info("Plotting a BoxMesh");
   plot(box, "Box");
-
-  UnitSphere sphere(10);
-  info("Plotting a UnitSphere");
-  plot(sphere, "Unit sphere");
 
   interactive();
 

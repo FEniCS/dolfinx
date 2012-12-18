@@ -46,7 +46,9 @@ find_library(HWLOC_LIBRARY hwloc
   DOC "The hwloc library"
   )
 
-set(PASTIX_LIBRARIES ${PASTIX_LIBRARIES} ${HWLOC_LIBRARY})
+if (HWLOC_LIBRARY)
+  set(PASTIX_LIBRARIES ${PASTIX_LIBRARIES} ${HWLOC_LIBRARY})
+endif()
 
 # Add BLAS libs if BLAS has been found
 set(CMAKE_LIBRARY_PATH ${BLAS_DIR}/lib $ENV{BLAS_DIR}/lib ${CMAKE_LIBRARY_PATH})

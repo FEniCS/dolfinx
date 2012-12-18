@@ -1,5 +1,4 @@
-// Copyright (C) 2005-2006 Anders Logg
-// AL: I don't think I wrote this file, who did?
+// Copyright (C) 2012 Benjamin Kehlet
 //
 // This file is part of DOLFIN.
 //
@@ -16,30 +15,27 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Nuno Lopes 2008
-// Modified by Anders Logg 2012
-//
-// First added:  2005-12-02
-// Last changed: 2006-08-19
+// First added:  2012-11-09
+// Last changed: 2012-11-09
 
 #ifndef __UNIT_CIRCLE_H
 #define __UNIT_CIRCLE_H
 
-#include <dolfin/mesh/Mesh.h>
+#include <dolfin/generation/UnitCircleMesh.h>
+#include <dolfin/log/log.h>
 
 namespace dolfin
 {
 
-  /// Tetrahedral mesh of the unit circle.
-
-  class UnitCircle : public Mesh
+  class UnitCircle : public UnitCircleMesh
   {
   public:
 
     /// Create a uniform finite element _Mesh_ over the unit circle.
+    /// This class is deprecated. Use _UnitCircleMesh_.
     ///
     /// *Arguments*
-    ///     n (uint)
+    ///     n (std::size_t)
     ///         Resolution of the mesh.
     ///     diagonal (std::string)
     ///         Optional argument: A std::string indicating
@@ -47,17 +43,13 @@ namespace dolfin
     ///     transformation (std::string)
     ///         Optional argument: A std::string indicating
     ///         the type of transformation used.
-    UnitCircle(uint n,
+    UnitCircle(std::size_t n,
                std::string diagonal="crossed",
-               std::string transformation="rotsumn");
-
-  private:
-
-    std::vector<double> transform(const std::vector<double>& x,
-                                  const std::string transformation);
-
-    double max(const std::vector<double>& x)
-    { return ((std::abs(x[0]) > std::abs(x[1])) ? std::abs(x[0]) : std::abs(x[1])); };
+               std::string transformation="rotsumn")
+      : UnitCircleMesh(n, diagonal, transformation)
+    {
+      warning("UnitCircle is deprecated. Use UnitCircleMesh.");
+    }
 
   };
 

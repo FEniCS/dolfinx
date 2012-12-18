@@ -68,7 +68,7 @@ MUMPSLUSolver::~MUMPSLUSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
+std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   assert(A);
 
@@ -135,8 +135,8 @@ dolfin::uint MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
     error("MUMPS requires a CoordinateMatrix with Fortran-style base 1 indexing.");
 
   // Get matrix coordindate and value data
-  const std::vector<uint>& rows = A->rows();
-  const std::vector<uint>& cols = A->columns();
+  const std::vector<std::size_t>& rows = A->rows();
+  const std::vector<std::size_t>& cols = A->columns();
   const std::vector<double>& vals = A->values();
 
   // Number of non-zero entries on this process
@@ -164,14 +164,14 @@ dolfin::uint MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   data.ICNTL(8) = 77;
 
   // Get size of local solution vector x and create objects to hold solution
-  const uint local_x_size = data.INFO(23);
-  std::vector<uint> x_local_indices(local_x_size);
+  const std::size_t local_x_size = data.INFO(23);
+  std::vector<int> x_local_indices(local_x_size);
   std::vector<double> x_local_vals(local_x_size);
 
   // Attach solution data to MUMPS object
   data.lsol_loc = local_x_size;
   data.sol_loc  = &x_local_vals[0];
-  data.isol_loc = reinterpret_cast<int*>(&x_local_indices[0]);
+  data.isol_loc = x_local_indices.data();
 
   // Solve problem
   data.job = 3;
@@ -180,7 +180,7 @@ dolfin::uint MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
     error("MUMPS reported an error during the solve.");
 
   // Shift indices by -1
-  for (uint i = 0; i < local_x_size ; ++i)
+  for (std::size_t i = 0; i < local_x_size ; ++i)
     x_local_indices[i]--;
 
   // Set x values

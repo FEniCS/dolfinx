@@ -16,6 +16,7 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericLinearSolver.h>
 #include <dolfin/la/GenericLUSolver.h>
+#include <dolfin/la/GenericPreconditioner.h>
 
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/la/PETScBaseMatrix.h>
@@ -66,7 +67,6 @@
 #include <dolfin/la/LinearSolver.h>
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/la/LUSolver.h>
-#include <dolfin/la/SingularSolver.h>
 #include <dolfin/la/solve.h>
 #include <dolfin/la/BlockVector.h>
 #include <dolfin/la/BlockMatrix.h>

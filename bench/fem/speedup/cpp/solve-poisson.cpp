@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-15
-// Last changed: 2010-05-03
+// Last changed: 2012-12-12
 //
 // Simple Poisson solver
 
@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
   int n = atoi(argv[1]);
 
   // Create mesh and function space
-  UnitCube mesh(n, n, n);
+  UnitCubeMesh mesh(n, n, n);
   Poisson::FunctionSpace V(mesh);
 
   // Define boundary condition

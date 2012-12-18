@@ -31,10 +31,10 @@ UniqueIdGenerator::UniqueIdGenerator() : next_id(0)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint UniqueIdGenerator::id()
+std::size_t UniqueIdGenerator::id()
 {
   // Get ID
-  const uint _id = unique_id_generator.next_id;
+  const std::size_t _id = unique_id_generator.next_id;
 
   // Increment ID
   ++unique_id_generator.next_id;

@@ -155,7 +155,7 @@ int main()
   // Save colored mesh paritions in VTK format if running in parallel
   if (dolfin::MPI::num_processes() > 1)
   {
-    CellFunction<dolfin::uint> partitions(mesh, dolfin::MPI::process_number());
+    CellFunction<std::size_t> partitions(mesh, dolfin::MPI::process_number());
     File file("partitions.pvd");
     file << partitions;
   }
@@ -168,7 +168,7 @@ int main()
   plot(mesh, "Deformed mesh");
 
   // Write boundary condition facets markers to VTK format
-  MeshFunction<dolfin::uint> facet_markers(mesh, 2, 0);
+  MeshFunction<std::size_t> facet_markers(mesh, 2, 0);
   left.mark(facet_markers, 1);
   right.mark(facet_markers, 2);
   File facet_file("facet_markers.pvd");

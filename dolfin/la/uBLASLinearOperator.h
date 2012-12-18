@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-06-30
-// Last changed: 2012-08-31
+// Last changed: 2012-12-12
 
 #ifndef __UBLAS_LINEAR_OPERATOR_H
 #define __UBLAS_LINEAR_OPERATOR_H
@@ -45,7 +45,7 @@ namespace dolfin
     //--- Implementation of the GenericLinearOperator interface ---
 
     /// Return size of given dimension
-    virtual uint size(uint dim) const;
+    virtual std::size_t size(std::size_t dim) const;
 
     /// Compute matrix-vector product y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const;
@@ -56,13 +56,14 @@ namespace dolfin
   protected:
 
     // Initialization
-    void init(uint M, uint N, GenericLinearOperator* wrapper);
+    void init(const GenericVector& x, const GenericVector& y,
+              GenericLinearOperator* wrapper);
 
     // Pointer to wrapper
     GenericLinearOperator* _wrapper;
 
     // Dimensions
-    uint M, N;
+    std::size_t M, N;
 
   };
 

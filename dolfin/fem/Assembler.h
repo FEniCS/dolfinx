@@ -99,21 +99,21 @@ namespace dolfin
     ///         The tensor to assemble.
     ///     a (_Form_)
     ///         The form to assemble the tensor from.
-    ///     cell_domains (_MeshFunction_ <uint>)
+    ///     cell_domains (_MeshFunction_ <std::size_t>)
     ///         Cell domains.
-    ///     exterior_facet_domains (_MeshFunction_ <uint>)
+    ///     exterior_facet_domains (_MeshFunction_ <std::size_t>)
     ///         The exterior facet domains.
-    ///     interior_facet_domains (_MeshFunction_ <uint>)
+    ///     interior_facet_domains (_MeshFunction_ <std::size_t>)
     ///         The interior facet domains.
     void assemble(GenericTensor& A, const Form& a,
-                  const MeshFunction<uint>* cell_domains,
-                  const MeshFunction<uint>* exterior_facet_domains,
-                  const MeshFunction<uint>* interior_facet_domains);
+                  const MeshFunction<std::size_t>* cell_domains,
+                  const MeshFunction<std::size_t>* exterior_facet_domains,
+                  const MeshFunction<std::size_t>* interior_facet_domains);
 
     /// Assemble tensor from given form over cells. This function is
     /// provided for users who wish to build a customized assembler.
     void assemble_cells(GenericTensor& A, const Form& a, UFC& ufc,
-                        const MeshFunction<uint>* domains,
+                        const MeshFunction<std::size_t>* domains,
                         std::vector<double>* values);
 
     /// Assemble tensor from given form over exterior facets. This
@@ -121,7 +121,7 @@ namespace dolfin
     /// assembler.
     void assemble_exterior_facets(GenericTensor& A, const Form& a,
                                   UFC& ufc,
-                                  const MeshFunction<uint>* domains,
+                                  const MeshFunction<std::size_t>* domains,
                                   std::vector<double>* values);
 
     /// Assemble tensor from given form over interior facets. This
@@ -129,7 +129,7 @@ namespace dolfin
     /// assembler.
     void assemble_interior_facets(GenericTensor& A, const Form& a,
                                   UFC& ufc,
-                                  const MeshFunction<uint>* domains,
+                                  const MeshFunction<std::size_t>* domains,
                                   std::vector<double>* values);
 
   protected:
@@ -138,7 +138,7 @@ namespace dolfin
     /// to split the cell tensor into symmetric/antisymmetric parts.
     virtual void add_to_global_tensor(GenericTensor& A,
                                       std::vector<double>& cell_tensor,
-                                      std::vector<const std::vector<uint>* >& dofs);
+                                      std::vector<const std::vector<DolfinIndex>* >& dofs);
 
   };
 

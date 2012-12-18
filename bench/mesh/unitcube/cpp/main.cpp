@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
 
   for (int i = 0; i < NUM_REPS; i++)
   {
-    UnitCube mesh(SIZE, SIZE, SIZE);
+    UnitCubeMesh mesh(SIZE, SIZE, SIZE);
     dolfin::cout << "Created unit cube: " << mesh << dolfin::endl;
   }
 

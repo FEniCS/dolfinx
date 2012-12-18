@@ -31,7 +31,7 @@ class Assembly(unittest.TestCase):
 
     def test_cell_assembly_1D(self):
 
-        mesh = UnitInterval(48)
+        mesh = UnitIntervalMesh(48)
         V = FunctionSpace(mesh, "CG", 1)
 
         v = TestFunction(V)
@@ -58,7 +58,7 @@ class Assembly(unittest.TestCase):
 
     def test_cell_assembly(self):
 
-        mesh = UnitCube(4, 4, 4)
+        mesh = UnitCubeMesh(4, 4, 4)
         V = VectorFunctionSpace(mesh, "DG", 1)
 
         v = TestFunction(V)
@@ -92,7 +92,7 @@ class Assembly(unittest.TestCase):
             print "FIXME: This unit test does not work in parallel, skipping"
             return
 
-        mesh = UnitSquare(24, 24)
+        mesh = UnitSquareMesh(24, 24)
         V = FunctionSpace(mesh, "DG", 1)
 
         # Define test and trial functions
@@ -135,7 +135,7 @@ class Assembly(unittest.TestCase):
 
     def test_functional_assembly(self):
 
-        mesh = UnitSquare(24, 24)
+        mesh = UnitSquareMesh(24, 24)
 
         # This is a hack to get around a DOLFIN bug
         if MPI.num_processes() > 1:
@@ -159,7 +159,7 @@ class Assembly(unittest.TestCase):
         "Test assembly over subdomains with markers stored as part of mesh"
 
         # Create a mesh of the unit cube
-        mesh = UnitCube(4, 4, 4)
+        mesh = UnitCubeMesh(4, 4, 4)
 
         # Define subdomains for 3 faces of the unit cube
         class F0(SubDomain):
@@ -215,13 +215,13 @@ class Assembly(unittest.TestCase):
             return
 
         # Define some haphazardly chosen cell/facet function
-        mesh = UnitSquare(4, 4)
-        domains = CellFunction("uint", mesh)
+        mesh = UnitSquareMesh(4, 4)
+        domains = CellFunction("size_t", mesh)
         domains.set_all(0)
         domains[0] = 1
         domains[1] = 1
 
-        boundaries = FacetFunction("uint", mesh)
+        boundaries = FacetFunction("size_t", mesh)
         boundaries.set_all(0)
         boundaries[0] = 1
         boundaries[1] = 1
@@ -250,7 +250,7 @@ class Assembly(unittest.TestCase):
             parameters["num_threads"] = 0
 
         # Check that given exterior_facet_domains override
-        new_boundaries = FacetFunction("uint", mesh)
+        new_boundaries = FacetFunction("size_t", mesh)
         new_boundaries.set_all(0)
         reference2 = 6.2001953125
         value2 = assemble(M, exterior_facet_domains=new_boundaries)
@@ -293,7 +293,7 @@ class Assembly(unittest.TestCase):
         "Test assembly over subdomains with markers stored as part of form"
 
         # Define mesh
-        mesh = UnitSquare(8, 8)
+        mesh = UnitSquareMesh(8, 8)
 
         # Define domain for lower left corner
         class MyDomain(SubDomain):
@@ -310,8 +310,8 @@ class Assembly(unittest.TestCase):
 
         # Mark mesh functions
         D = mesh.topology().dim()
-        cell_domains = MeshFunction("uint", mesh, D)
-        exterior_facet_domains = MeshFunction("uint", mesh, D - 1)
+        cell_domains = MeshFunction("size_t", mesh, D)
+        exterior_facet_domains = MeshFunction("size_t", mesh, D - 1)
         cell_domains.set_all(1)
         exterior_facet_domains.set_all(1)
         my_domain.mark(cell_domains, 0)
@@ -335,7 +335,7 @@ class Assembly(unittest.TestCase):
             return
 
         # Create mesh, then color and renumber
-        old_mesh = UnitCube(4, 4, 4)
+        old_mesh = UnitCubeMesh(4, 4, 4)
         old_mesh.color("vertex")
         mesh = old_mesh.renumber_by_color()
 
@@ -364,7 +364,7 @@ class Assembly(unittest.TestCase):
     def test_nonsquare_assembly(self):
         """Test assembly of a rectangular matrix"""
 
-        mesh = UnitSquare(16, 16)
+        mesh = UnitSquareMesh(16, 16)
 
         V = VectorFunctionSpace(mesh, "CG", 2)
         Q = FunctionSpace(mesh, "CG", 1)
@@ -407,7 +407,7 @@ class Assembly(unittest.TestCase):
 
             # Create reference matrices and set entries
             A0, M0 = uBLASDenseMatrix(4, 4), uBLASDenseMatrix(4, 4)
-            pos = numpy.array([0, 1, 2, 3], dtype=numpy.uintc)
+            pos = numpy.array([0, 1, 2, 3], dtype=numpy.intc)
             A0.set(numpy.array([[1.0/2.0, -1.0/6.0, -1.0/6.0, -1.0/6.0],
                           [-1.0/6.0, 1.0/6.0, 0.0, 0.0],
                           [-1.0/6.0, 0.0, 1.0/6.0, 0.0],

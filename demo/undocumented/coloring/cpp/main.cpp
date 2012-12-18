@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2010-11-16
-// Last changed: 2012-07-05
+// Last changed: 2012-11-12
 //
 // This demo colors a given mesh entities such that entities with the
 // same color are not neighbors. 'Neighbors' can be in the sense of shared
@@ -31,32 +31,32 @@ using namespace dolfin;
 int main()
 {
   // Create mesh
-  UnitCube mesh(24, 24, 24);
+  UnitCubeMesh mesh(24, 24, 24);
 
   // Compute vertex-based coloring
   mesh.color("vertex");
-  const MeshFunction<dolfin::uint> colors_vertex = MeshColoring::cell_colors(mesh, "vertex");
+  const MeshFunction<std::size_t> colors_vertex = MeshColoring::cell_colors(mesh, "vertex");
   plot(colors_vertex, "Vertex-based cell coloring");
 
   // Compute edge-based coloring
   mesh.color("edge");
-  const CellFunction<dolfin::uint> colors_edge = MeshColoring::cell_colors(mesh, "edge");
+  const CellFunction<std::size_t> colors_edge = MeshColoring::cell_colors(mesh, "edge");
   plot(colors_edge, "Edge-based cell coloring");
 
   // Compute facet-based coloring
   mesh.color("facet");
-  const CellFunction<dolfin::uint> colors_facet = MeshColoring::cell_colors(mesh, "facet");
+  const CellFunction<std::size_t> colors_facet = MeshColoring::cell_colors(mesh, "facet");
   plot(colors_facet, "Facet-based cell coloring");
 
   // Compute facet-based coloring with distance 2
-  std::vector<dolfin::uint> coloring_type;
+  std::vector<std::size_t> coloring_type;
   coloring_type.push_back(mesh.topology().dim());
   coloring_type.push_back(mesh.topology().dim() - 1);
   coloring_type.push_back(mesh.topology().dim());
   coloring_type.push_back(mesh.topology().dim() - 1);
   coloring_type.push_back(mesh.topology().dim());
   mesh.color(coloring_type);
-  const CellFunction<dolfin::uint> colors_vertex_2
+  const CellFunction<std::size_t> colors_vertex_2
       = MeshColoring::cell_colors(mesh, coloring_type);
   plot(colors_vertex_2, "Facet-based cell coloring with distance 2");
 

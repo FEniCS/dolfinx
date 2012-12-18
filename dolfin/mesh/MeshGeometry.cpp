@@ -56,7 +56,7 @@ const MeshGeometry& MeshGeometry::operator= (const MeshGeometry& geometry)
   return *this;
 }
 //-----------------------------------------------------------------------------
-Point MeshGeometry::point(uint n) const
+Point MeshGeometry::point(std::size_t n) const
 {
   double _x = 0.0;
   double _y = 0.0;
@@ -81,7 +81,7 @@ void MeshGeometry::clear()
   local_index_to_position.clear();
 }
 //-----------------------------------------------------------------------------
-void MeshGeometry::init(uint dim, uint size)
+void MeshGeometry::init(std::size_t dim, std::size_t size)
 {
   // Delete old data if any
   clear();
@@ -97,7 +97,7 @@ void MeshGeometry::init(uint dim, uint size)
   _dim = dim;
 }
 //-----------------------------------------------------------------------------
-void MeshGeometry::set(uint local_index,
+void MeshGeometry::set(std::size_t local_index,
                        const std::vector<double>& x)
 {
   dolfin_assert(x.size() == _dim);
@@ -137,10 +137,10 @@ std::string MeshGeometry::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-    for (uint i = 0; i < size(); i++)
+    for (std::size_t i = 0; i < size(); i++)
     {
       s << "  " << i << ":";
-      for (uint d = 0; d < _dim; d++)
+      for (std::size_t d = 0; d < _dim; d++)
         s << " " << x(i, d);
       s << std::endl;
     }

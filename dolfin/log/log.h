@@ -111,16 +111,6 @@ namespace dolfin
   /// Get log level
   int get_log_level();
 
-  /// List a summary of timings and tasks, optionally clearing stored timings
-  void list_timings(bool reset=false);
-
-  /// This function is deprecated, use list_timings
-  void summary(bool reset=false);
-
-  /// Return timing (average) for given task, optionally clearing timing
-  /// for task
-  double timing(std::string task, bool reset=false);
-
   /// Monitor memory usage. Call this function at the start of a
   /// program to continuously monitor the memory usage of the process.
   void monitor_memory_usage();

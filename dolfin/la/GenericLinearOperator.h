@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-20
-// Last changed: 2012-09-03
+// Last changed: 2012-12-12
 
 #ifndef __GENERIC_LINEAR_OPERATOR_H
 #define __GENERIC_LINEAR_OPERATOR_H
@@ -47,7 +47,7 @@ namespace dolfin
     virtual ~GenericLinearOperator() {}
 
     /// Return size of given dimension
-    virtual uint size(uint dim) const = 0;
+    virtual std::size_t size(std::size_t dim) const = 0;
 
     /// Compute matrix-vector product y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const = 0;
@@ -59,9 +59,10 @@ namespace dolfin
 
     friend class LinearOperator;
 
-    // Initialize linear operator, needs to be implemented by
-    // backend-specific implementation
-    virtual void init(uint M, uint N, GenericLinearOperator* wrapper)
+    // Initialize linear operator to match parallel layout of vectors
+    // x and y for product y = Ax. Needs to be implemented by backend.
+    virtual void init(const GenericVector& x, const GenericVector& y,
+                      GenericLinearOperator* wrapper)
     {
       dolfin_error("GenericLinearOperator.h",
                    "initialize backend implementation of linear operator",

@@ -39,25 +39,25 @@ namespace dolfin
   public:
 
     // Compute cell partition
-    static void compute_partition(std::vector<uint>& cell_partition,
+    static void compute_partition(std::vector<std::size_t>& cell_partition,
                                   const LocalMeshData& mesh_data);
 
     // Compute graph re-ordering
-    static std::vector<uint> compute_reordering(const Graph& graph);
+    static std::vector<std::size_t> compute_reordering(const Graph& graph);
 
     // Compute graph re-ordering
     static void compute_reordering(const Graph& graph,
-                                   std::vector<uint>& permutation,
-                                   std::vector<uint>& inverse_permutation);
+                                   std::vector<std::size_t>& permutation,
+                                   std::vector<std::size_t>& inverse_permutation);
 
   private:
 
     // Compute cell partitions from distribted dual graph
-    static void partition(const std::vector<std::set<uint> >& local_graph,
-                          const std::set<uint>& ghost_vertices,
-                          const std::vector<uint>& global_cell_indices,
-                          const uint num_global_vertices,
-                          std::vector<uint>& cell_partition);
+    static void partition(const std::vector<std::set<std::size_t> >& local_graph,
+                          const std::set<std::size_t>& ghost_vertices,
+                          const std::vector<std::size_t>& global_cell_indices,
+                          const std::size_t num_global_vertices,
+                          std::vector<std::size_t>& cell_partition);
 
   };
 

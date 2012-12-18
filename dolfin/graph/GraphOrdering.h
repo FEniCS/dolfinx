@@ -47,7 +47,7 @@ namespace dolfin
     GraphOrdering(const TensorLayout& tensor_layout);
 
     /// Compute re-ordering for process (map[old] -> new)
-    std::vector<uint> compute_local_reordering_map();
+    std::vector<std::size_t> compute_local_reordering_map();
 
   private:
 
@@ -58,10 +58,10 @@ namespace dolfin
     int num_local_objects() const;
 
     /// Number of edges per vertex
-    void num_edges_per_vertex(std::vector<uint>& num_edges) const;
+    void num_edges_per_vertex(std::vector<std::size_t>& num_edges) const;
 
     /// Vertex edges
-    const std::vector<std::vector<uint> > edges() const;
+    const std::vector<std::vector<std::size_t> > edges() const;
 
     // Zoltan call-back functions
 

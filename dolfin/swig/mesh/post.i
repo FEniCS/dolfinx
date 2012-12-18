@@ -75,6 +75,39 @@ def next(self):
 }
 
 //-----------------------------------------------------------------------------
+// Extend SubDomain
+//-----------------------------------------------------------------------------
+%pythoncode
+%{
+_subdomain_mark_doc_string = SubDomain._mark.__doc__
+%}
+
+%extend dolfin::SubDomain {
+%pythoncode
+%{
+# NOTE: This is a hardcoded check, which rely on SubDomain::mark only taking
+# a MeshFunction as its first argument when mark is called with two arguments
+def mark(self, *args):
+    import common
+    if len(args) == 2 and not isinstance(args[0], \
+                    (MeshFunctionSizet, MeshFunctionInt,
+                     MeshFunctionDouble, MeshFunctionBool)):
+        common.dolfin_error("dolfin.cpp.mesh.py",
+                            "mark MeshFunction",
+                            "Expected a MeshFunction of type \"size_t\", \"int\", \"double\" or \"bool\"")
+            
+    self._mark(*args)
+
+%}
+}
+
+%pythoncode
+%{
+SubDomain.mark.__func__.__doc__ = _subdomain_mark_doc_string
+del _subdomain_mark_doc_string
+%}
+
+//-----------------------------------------------------------------------------
 // Macro for declaring MeshFunctions
 //-----------------------------------------------------------------------------
 %define DECLARE_MESHFUNCTION(TYPE, TYPENAME)
@@ -84,8 +117,8 @@ def next(self):
 // Extend MeshFunction interface for get and set items
 %extend dolfin::MeshFunction<TYPE>
 {
-  TYPE __getitem__(unsigned int i) { return (*self)[i]; }
-  void __setitem__(unsigned int i, TYPE val) { (*self)[i] = val; }
+  TYPE __getitem__(std::size_t i) { return (*self)[i]; }
+  void __setitem__(std::size_t i, TYPE val) { (*self)[i] = val; }
 
   TYPE __getitem__(dolfin::MeshEntity& e) { return (*self)[e]; }
   void __setitem__(dolfin::MeshEntity& e, TYPE val) { (*self)[e] = val; }
@@ -109,12 +142,23 @@ def array(self):
 %template(FaceFunction ## TYPENAME) dolfin::FaceFunction<TYPE>;
 %template(FacetFunction ## TYPENAME) dolfin::FacetFunction<TYPE>;
 %template(VertexFunction ## TYPENAME) dolfin::VertexFunction<TYPE>;
+
+//-----------------------------------------------------------------------------
+// Modifying the interface of Hierarchical
+//-----------------------------------------------------------------------------
+%pythoncode %{
+HierarchicalMeshFunction ## TYPENAME.leaf_node = HierarchicalMeshFunction ## TYPENAME._leaf_node
+HierarchicalMeshFunction ## TYPENAME.root_node = HierarchicalMeshFunction ## TYPENAME._root_node
+HierarchicalMeshFunction ## TYPENAME.child = HierarchicalMeshFunction ## TYPENAME._child
+HierarchicalMeshFunction ## TYPENAME.parent = HierarchicalMeshFunction ## TYPENAME._parent
+%}
 %enddef
 
 
 //-----------------------------------------------------------------------------
 // Run Macros to declare the different MeshFunctions
 //-----------------------------------------------------------------------------
+DECLARE_MESHFUNCTION(std::size_t, Sizet)
 DECLARE_MESHFUNCTION(unsigned int, UInt)
 DECLARE_MESHFUNCTION(int, Int)
 DECLARE_MESHFUNCTION(double, Double)
@@ -128,7 +172,7 @@ _doc_string += """
   *Arguments*
     tp (str)
       String defining the type of the MeshFunction
-      Allowed: 'int', 'uint', 'double', and 'bool'
+      Allowed: 'int', 'size_t', 'uint', 'double', and 'bool'
     mesh (_Mesh_)
       A DOLFIN mesh.
       Optional.
@@ -149,6 +193,8 @@ class MeshFunction(object):
             return MeshFunctionInt(*args)
         if tp == "uint":
             return MeshFunctionUInt(*args)
+        elif tp == "size_t":
+            return MeshFunctionSizet(*args)
         elif tp == "double":
             return MeshFunctionDouble(*args)
         elif tp == "bool":
@@ -167,6 +213,8 @@ def _new_closure(MeshType):
             return eval("%sInt(mesh, value)"%MeshType)
         if tp == "uint":
             return eval("%sUInt(mesh, value)"%MeshType)
+        if tp == "size_t":
+            return eval("%sSizet(mesh, value)"%MeshType)
         elif tp == "double":
             return eval("%sDouble(mesh, float(value))"%MeshType)
         elif tp == "bool":
@@ -227,6 +275,7 @@ CellFunction = type("CellFunction", (),\
 //-----------------------------------------------------------------------------
 // Run macros for declaring MeshValueCollection
 //-----------------------------------------------------------------------------
+DECLARE_MESHVALUECOLLECTION(std::size_t, Sizet)
 DECLARE_MESHVALUECOLLECTION(unsigned int, UInt)
 DECLARE_MESHVALUECOLLECTION(int, Int)
 DECLARE_MESHVALUECOLLECTION(double, Double)
@@ -240,7 +289,7 @@ _meshvaluecollection_doc_string += """
   *Arguments*
       tp (str)
          String defining the type of the MeshValueCollection
-          Allowed: 'int', 'uint', 'double', and 'bool'
+          Allowed: 'int', 'uint', 'size_t', 'double', and 'bool'
       dim (uint)
           The topological dimension of the MeshValueCollection.
           Optional.
@@ -267,6 +316,8 @@ class MeshValueCollection(object):
             return MeshValueCollectionInt(*args)
         if tp == "uint":
             return MeshValueCollectionUInt(*args)
+        elif tp == "size_t":
+            return MeshValueCollectionSizet(*args)
         elif tp == "double":
             return MeshValueCollectionDouble(*args)
         elif tp == "bool":
@@ -358,3 +409,14 @@ def cells(self):
 
 %}
 }
+
+//-----------------------------------------------------------------------------
+// Modifying the interface of Hierarchical
+//-----------------------------------------------------------------------------
+%pythoncode %{
+HierarchicalMesh.leaf_node = HierarchicalMesh._leaf_node
+HierarchicalMesh.root_node = HierarchicalMesh._root_node
+HierarchicalMesh.child = HierarchicalMesh._child
+HierarchicalMesh.parent = HierarchicalMesh._parent
+%}
+

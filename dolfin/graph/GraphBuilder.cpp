@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Chris Richardson, 2012
+//
 // First added:  2010-02-19
-// Last changed:
+// Last changed: 2012-12-07
 
 #include <algorithm>
 #include <numeric>
@@ -43,17 +45,17 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
                                                   const GenericDofMap& dofmap1)
 {
   // Create empty graph
-  const uint n = dofmap0.global_dimension();
+  const std::size_t n = dofmap0.global_dimension();
   Graph graph(n);
 
   /*
   // Build graph
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    const std::vector<uint>& dofs0 = dofmap0.cell_dofs(cell->index());
-    const std::vector<uint>& dofs1 = dofmap1.cell_dofs(cell->index());
+    const std::vector<std::size_t>& dofs0 = dofmap0.cell_dofs(cell->index());
+    const std::vector<std::size_t>& dofs1 = dofmap1.cell_dofs(cell->index());
 
-    std::vector<uint>::const_iterator node;
+    std::vector<std::size_t>::const_iterator node;
     for (node = dofs0.begin(); node != dofs0.end(); ++node)
       graph[*node].insert(dofs1.begin(), dofs1.end());
   }
@@ -62,10 +64,10 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
   // Build graph
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    const std::vector<uint>& dofs0 = dofmap0.cell_dofs(cell->index());
-    const std::vector<uint>& dofs1 = dofmap1.cell_dofs(cell->index());
+    const std::vector<DolfinIndex>& dofs0 = dofmap0.cell_dofs(cell->index());
+    const std::vector<DolfinIndex>& dofs1 = dofmap1.cell_dofs(cell->index());
 
-    std::vector<uint>::const_iterator node;
+    std::vector<DolfinIndex>::const_iterator node;
     for (node = dofs0.begin(); node != dofs0.end(); ++node)
       graph[*node].insert(dofs1.begin(), dofs1.end());
   }
@@ -74,27 +76,28 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
 }
 //-----------------------------------------------------------------------------
 Graph GraphBuilder::local_graph(const Mesh& mesh,
-                                const std::vector<uint>& coloring_type)
+                                const std::vector<std::size_t>& coloring_type)
 {
   // Check coloring type
   dolfin_assert(coloring_type.size() >= 2);
   dolfin_assert(coloring_type.front() == coloring_type.back());
 
   // Create graph
-  const uint num_verticies = mesh.num_entities(coloring_type[0]);
+  const std::size_t num_verticies = mesh.num_entities(coloring_type[0]);
   Graph graph(num_verticies);
 
   // Build graph
   for (MeshEntityIterator vertex_entity(mesh, coloring_type[0]); !vertex_entity.end(); ++vertex_entity)
   {
-    boost::unordered_set<uint> entity_list0;
-    boost::unordered_set<uint> entity_list1;
+    boost::unordered_set<std::size_t> entity_list0;
+    boost::unordered_set<std::size_t> entity_list1;
     entity_list0.insert(vertex_entity->index());
 
     // Build list of entities, moving between levels
-    for (uint level = 1; level < coloring_type.size(); ++level)
+    for (std::size_t level = 1; level < coloring_type.size(); ++level)
     {
-      for (boost::unordered_set<uint>::const_iterator entity_index = entity_list0.begin(); entity_index != entity_list0.end(); ++entity_index)
+      for (boost::unordered_set<std::size_t>::const_iterator entity_index
+              = entity_list0.begin(); entity_index != entity_list0.end(); ++entity_index)
       {
         const MeshEntity entity(mesh, coloring_type[level -1], *entity_index);
         for (MeshEntityIterator neighbor(entity, coloring_type[level]); !neighbor.end(); ++neighbor)
@@ -105,23 +108,24 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
     }
 
     // Add edges to graph
-    const uint vertex_entity_index = vertex_entity->index();
+    const std::size_t vertex_entity_index = vertex_entity->index();
     graph[vertex_entity_index].insert(entity_list0.begin(), entity_list0.end());
   }
 
   return graph;
 }
 //-----------------------------------------------------------------------------
-Graph GraphBuilder::local_graph(const Mesh& mesh, uint dim0, uint dim1)
+Graph GraphBuilder::local_graph(const Mesh& mesh,
+                                std::size_t dim0, std::size_t dim1)
 {
   // Create graph
-  const uint num_verticies = mesh.num_entities(dim0);
+  const std::size_t num_verticies = mesh.num_entities(dim0);
   Graph graph(num_verticies);
 
   // Build graph
   for (MeshEntityIterator colored_entity(mesh, dim0); !colored_entity.end(); ++colored_entity)
   {
-    const uint colored_entity_index = colored_entity->index();
+    const std::size_t colored_entity_index = colored_entity->index();
     for (MeshEntityIterator entity(*colored_entity, dim1); !entity.end(); ++entity)
     {
       for (MeshEntityIterator neighbor(*entity, dim0); !neighbor.end(); ++neighbor)
@@ -133,26 +137,26 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, uint dim0, uint dim1)
 }
 //-----------------------------------------------------------------------------
 BoostBidirectionalGraph GraphBuilder::local_boost_graph(const Mesh& mesh,
-                                        const std::vector<uint>& coloring_type)
+                                const std::vector<std::size_t>& coloring_type)
 {
   // Check coloring type
   dolfin_assert(coloring_type.size() >= 2);
   dolfin_assert(coloring_type.front() == coloring_type.back());
 
   // Create graph
-  const uint num_verticies = mesh.num_entities(coloring_type[0]);
+  const std::size_t num_verticies = mesh.num_entities(coloring_type[0]);
   BoostBidirectionalGraph graph(num_verticies);
 
   // Build graph
   for (MeshEntityIterator vertex_entity(mesh, coloring_type[0]); !vertex_entity.end(); ++vertex_entity)
   {
-    boost::unordered_set<uint> entity_list0;
-    boost::unordered_set<uint> entity_list1;
+    boost::unordered_set<std::size_t> entity_list0;
+    boost::unordered_set<std::size_t> entity_list1;
     entity_list0.insert(vertex_entity->index());
 
     // Build list of entities, moving between levels
-    boost::unordered_set<uint>::const_iterator entity_index;
-    for (uint level = 1; level < coloring_type.size(); ++level)
+    boost::unordered_set<std::size_t>::const_iterator entity_index;
+    for (std::size_t level = 1; level < coloring_type.size(); ++level)
     {
       for (entity_index = entity_list0.begin(); entity_index != entity_list0.end(); ++entity_index)
       {
@@ -165,7 +169,7 @@ BoostBidirectionalGraph GraphBuilder::local_boost_graph(const Mesh& mesh,
     }
 
     // Add edges to graph
-    const uint vertex_entity_index = vertex_entity->index();
+    const std::size_t vertex_entity_index = vertex_entity->index();
     for (entity_index = entity_list0.begin(); entity_index != entity_list0.end(); ++entity_index)
       boost::add_edge(vertex_entity_index, *entity_index, graph);
   }
@@ -174,16 +178,16 @@ BoostBidirectionalGraph GraphBuilder::local_boost_graph(const Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 BoostBidirectionalGraph GraphBuilder::local_boost_graph(const Mesh& mesh,
-                                                        uint dim0, uint dim1)
+                                           std::size_t dim0, std::size_t dim1)
 {
   // Create graph
-  const uint num_verticies = mesh.num_entities(dim0);
+  const std::size_t num_verticies = mesh.num_entities(dim0);
   BoostBidirectionalGraph graph(num_verticies);
 
   // Build graph
   for (MeshEntityIterator colored_entity(mesh, dim0); !colored_entity.end(); ++colored_entity)
   {
-    const uint colored_entity_index = colored_entity->index();
+    const std::size_t colored_entity_index = colored_entity->index();
     for (MeshEntityIterator entity(*colored_entity, dim1); !entity.end(); ++entity)
     {
       for (MeshEntityIterator neighbor(*entity, dim0); !neighbor.end(); ++neighbor)
@@ -194,40 +198,40 @@ BoostBidirectionalGraph GraphBuilder::local_boost_graph(const Mesh& mesh,
   return graph;
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
-                                std::vector<std::set<uint> >& local_graph,
-                                std::set<uint>& ghost_vertices)
+void GraphBuilder::compute_dual_graph_orig(const LocalMeshData& mesh_data,
+                                std::vector<std::set<std::size_t> >& local_graph,
+                                std::set<std::size_t>& ghost_vertices)
 {
-  Timer timer("Compute dual graph");
+  Timer timer("Compute dual graph [original]");
 
-  const uint num_mpi_procs = MPI::num_processes();
+  const std::size_t num_mpi_procs = MPI::num_processes();
 
   // List of cell vertices
-  const boost::multi_array<uint, 2>& cell_vertices = mesh_data.cell_vertices;
+  const boost::multi_array<std::size_t, 2>& cell_vertices = mesh_data.cell_vertices;
 
-  const uint num_local_cells    = mesh_data.global_cell_indices.size();
-  const uint topological_dim    = mesh_data.tdim;
-  const uint num_cell_facets    = topological_dim + 1;
-  const uint num_facet_vertices = topological_dim;
-  const uint num_cell_vertices  = topological_dim + 1;
+  const std::size_t num_local_cells    = mesh_data.global_cell_indices.size();
+  const std::size_t topological_dim    = mesh_data.tdim;
+  const std::size_t num_cell_facets    = topological_dim + 1;
+  const std::size_t num_facet_vertices = topological_dim;
+  const std::size_t num_cell_vertices  = topological_dim + 1;
 
   // Resize graph (cell are graph vertices, cell-cell connections are graph edges)
   local_graph.resize(num_local_cells);
 
   // Get number of cells on each process
-  std::vector<uint> cells_per_process;
+  std::vector<std::size_t> cells_per_process;
   MPI::all_gather(num_local_cells, cells_per_process);
 
   // Compute offset for going from local to (internal) global numbering
-  std::vector<uint> process_offsets(num_mpi_procs);
-  for (uint i = 0; i < num_mpi_procs; ++i)
+  std::vector<std::size_t> process_offsets(num_mpi_procs);
+  for (std::size_t i = 0; i < num_mpi_procs; ++i)
     process_offsets[i] = std::accumulate(cells_per_process.begin(), cells_per_process.begin() + i, 0);
-  const uint process_offset = process_offsets[MPI::process_number()];
+  const std::size_t process_offset = process_offsets[MPI::process_number()];
 
   // Compute local edges (cell-cell connections) using global (internal) numbering
   cout << "Compute local cell-cell connections" << endl;
-  compute_connectivity(cell_vertices, num_facet_vertices, process_offset,
-                       local_graph);
+
+  compute_connectivity_orig(cell_vertices, num_cell_facets, process_offset, local_graph);
   cout << "Finished computing local cell-cell connections" << endl;
 
   //-----------------------------------------------
@@ -236,41 +240,44 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
   // Determine candidate ghost cells (graph ghost vertices)
   info("Preparing data to to send off-process.");
-  std::vector<uint> local_boundary_cells;
-  for (uint i = 0; i < num_local_cells; ++i)
+
+  std::vector<std::size_t> local_boundary_cells;
+  for (std::size_t i = 0; i < num_local_cells; ++i)
   {
     dolfin_assert(i < local_graph.size());
     if (local_graph[i].size() != num_cell_facets)
       local_boundary_cells.push_back(i);
   }
+  cout << "Local boundary cells = " << local_boundary_cells.size() << endl;
 
   // Get number of possible ghost cells coming from each process
-  std::vector<uint> boundary_cells_per_process;
-  const uint local_boundary_cells_size = local_boundary_cells.size();
+  std::vector<std::size_t> boundary_cells_per_process;
+  const std::size_t local_boundary_cells_size = local_boundary_cells.size();
   MPI::all_gather(local_boundary_cells_size, boundary_cells_per_process);
 
   // Pack local data for candidate ghost cells (global cell index and vertices)
-  std::vector<uint> connected_cell_data;
-  for (uint i = 0; i < local_boundary_cells.size(); ++i)
+  std::vector<std::size_t> connected_cell_data;
+  for (std::size_t i = 0; i < local_boundary_cells.size(); ++i)
   {
     // Global (internal) cell index
     connected_cell_data.push_back(local_boundary_cells[i] + process_offset);
 
     // Candidate cell vertices
-    boost::multi_array<uint, 2>::const_subarray<1>::type vertices = cell_vertices[local_boundary_cells[i]];
-    for (uint j = 0; j < num_cell_vertices; ++j)
+    boost::multi_array<std::size_t, 2>::const_subarray<1>::type vertices
+        = cell_vertices[local_boundary_cells[i]];
+    for (std::size_t j = 0; j < num_cell_vertices; ++j)
       connected_cell_data.push_back(vertices[j]);
   }
 
   // Prepare package to send (do not send data belonging to this process)
-  std::vector<uint> destinations;
-  std::vector<uint> send_data;
-  for (uint i = 0; i < num_mpi_procs; ++i)
+  std::vector<std::size_t> destinations;
+  std::vector<std::size_t> send_data;
+  for (std::size_t i = 0; i < num_mpi_procs; ++i)
   {
     if (i != MPI::process_number())
     {
       send_data.insert(send_data.end(), connected_cell_data.begin(),
-                           connected_cell_data.end());
+                       connected_cell_data.end());
       destinations.insert(destinations.end(), connected_cell_data.size(), i);
     }
   }
@@ -284,29 +291,33 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   // neighbors have been found.
 
   // Distribute data to all processes
-  std::vector<uint> received_data, sources;
+  std::vector<std::size_t> received_data;
+  std::vector<std::size_t> sources;
   MPI::distribute(send_data, destinations, received_data, sources);
 
   // Data structures for unpacking data
-  std::vector<std::vector<std::vector<uint> > > candidate_ghost_cell_vertices(num_mpi_procs);
-  std::vector<std::vector<uint> > candidate_ghost_cell_global_indices(num_mpi_procs);
+  std::vector<std::vector<std::vector<std::size_t> > > candidate_ghost_cell_vertices(num_mpi_procs);
+  std::vector<std::vector<std::size_t> > candidate_ghost_cell_global_indices(num_mpi_procs);
 
-  uint _offset = 0;
-  for (uint i = 0; i < num_mpi_procs - 1; ++i)
+  std::size_t _offset = 0;
+  for (std::size_t i = 0; i < num_mpi_procs - 1; ++i)
   {
     // Check if there is data to unpack
     if (_offset >= sources.size())
       break;
 
-    const uint p = sources[_offset];
+    const std::size_t p = sources[_offset];
     dolfin_assert(p < boundary_cells_per_process.size());
-    const uint data_length = (num_cell_vertices + 1)*boundary_cells_per_process[p];
+    const std::size_t data_length
+      = (num_cell_vertices + 1)*boundary_cells_per_process[p];
 
-    std::vector<uint>& _global_cell_indices         = candidate_ghost_cell_global_indices[p];
-    std::vector<std::vector<uint> >& _cell_vertices = candidate_ghost_cell_vertices[p];
+    std::vector<std::size_t>& _global_cell_indices
+      = candidate_ghost_cell_global_indices[p];
+    std::vector<std::vector<std::size_t> >& _cell_vertices
+      = candidate_ghost_cell_vertices[p];
 
     // Loop over data for each cell
-    for (uint j = _offset; j < _offset + data_length; j += num_cell_vertices + 1)
+    for (std::size_t j = _offset; j < _offset + data_length; j += num_cell_vertices + 1)
     {
       dolfin_assert(sources[j] == p);
 
@@ -314,8 +325,8 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
       _global_cell_indices.push_back(received_data[j]);
 
       // Get cell vertices
-      std::vector<uint> vertices;
-      for (uint k = 0; k < num_cell_vertices; ++k)
+      std::vector<std::size_t> vertices;
+      for (std::size_t k = 0; k < num_cell_vertices; ++k)
         vertices.push_back(received_data[(j + 1) + k]);
       _cell_vertices.push_back(vertices);
     }
@@ -326,8 +337,8 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
   // Add off-process (ghost) edges (cell-cell) connections to graph
   info("Compute graph ghost edges.");
-  std::set<uint> ghost_cell_global_indices;
-  for (uint i = 0; i < candidate_ghost_cell_vertices.size(); ++i)
+  std::set<std::size_t> ghost_cell_global_indices;
+  for (std::size_t i = 0; i < candidate_ghost_cell_vertices.size(); ++i)
   {
     compute_ghost_connectivity(cell_vertices, local_boundary_cells,
                                candidate_ghost_cell_vertices[i],
@@ -339,55 +350,185 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   info("Finish compute graph ghost edges.");;
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_connectivity(const boost::multi_array<uint, 2>& cell_vertices,
-                                  uint num_facet_vertices, uint offset,
-                                  std::vector<std::set<uint> >& local_graph)
+void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
+                            std::vector<std::set<std::size_t> >& local_graph,
+                            std::set<std::size_t>& ghost_vertices)
+{
+  Timer timer("Compute dual graph [new]");
+
+  // List of cell vertices
+  const boost::multi_array<std::size_t, 2>& cell_vertices = mesh_data.cell_vertices;
+  const std::size_t num_local_cells = mesh_data.global_cell_indices.size();
+  const std::size_t num_vertices_per_cell = mesh_data.num_vertices_per_cell;
+
+  dolfin_assert(num_local_cells == cell_vertices.shape()[0]);
+  dolfin_assert(num_vertices_per_cell == cell_vertices.shape()[1]);
+
+  local_graph.resize(num_local_cells);
+
+  const std::size_t offset = MPI::global_offset(num_local_cells, true);
+
+  // Compute local edges (cell-cell connections) using global (internal) numbering
+
+  double tt = time();
+
+  // Create mapping from facets (vector) to cells
+  typedef boost::unordered_map<std::vector<std::size_t>, std::size_t> vectormap;
+  vectormap facet_cell;
+
+  // Iterate over all cells
+  for (std::size_t i = 0; i < num_local_cells; ++i)
+  {
+    // Iterate over facets in cell
+    for(std::size_t j = 0; j < num_vertices_per_cell; ++j)
+    {
+      // Create a set of vertices representing a facet,
+      std::vector<std::size_t> facet(cell_vertices[i].begin(), cell_vertices[i].end());
+      facet.erase(facet.begin() + j);
+
+      // Sort into order, so map indexing will be consistent
+      std::sort(facet.begin(), facet.end());
+
+      const vectormap::iterator join_cell = facet_cell.find(facet);
+      // If facet not found in map, insert facet->cell into map
+      if(join_cell == facet_cell.end())
+        facet_cell[facet] = i;
+      else
+      {
+        // Already in map. Connect cells and delete from map.
+        local_graph[i].insert(join_cell->second + offset);
+        local_graph[join_cell->second].insert(i + offset);
+        facet_cell.erase(join_cell);
+      }
+    }
+  }
+
+  // facet_cell map now only contains facets->cells with edge facets
+  // either interprocess or external boundaries
+
+  // FIXME: separate here into two functions
+
+  // For parallel only, deal with ghosts
+
+  // Copy to another map and re-label cells with offset
+  vectormap othermap(facet_cell);
+  for(vectormap::iterator other_cell = othermap.begin();
+        other_cell != othermap.end(); ++other_cell)
+  {
+    other_cell->second += offset;
+  }
+
+  const std::size_t num_processes = MPI::num_processes();
+  const std::size_t process_number = MPI::process_number();
+
+  ghost_vertices.clear();
+
+  // Create MPI ring
+  const int source = (num_processes + process_number - 1) % num_processes;
+  const int dest   = (process_number + 1) % num_processes;
+
+  // FIXME: better way to send boost::unordered_map between processes -
+  // could use std::map instead Boost cannot serialise unordered_map,
+  // so convert to a vector here
+  std::vector<std::pair<std::vector<std::size_t>, std::size_t> > map_data;
+
+  // repeat (n-1) times, to go round ring
+  for(std::size_t i = 0; i < (num_processes - 1); ++i)
+  {
+    // FIXME: improve memory management
+    // Shift data to next process
+    map_data.resize(othermap.size());
+    std::copy(othermap.begin(), othermap.end(), map_data.begin());
+    MPI::send_recv(map_data, dest, map_data, source);
+    othermap.clear();
+    othermap.insert(map_data.begin(), map_data.end());
+
+    const std::size_t mapsize = MPI::sum(othermap.size());
+    if(process_number == 0)
+    {
+      std::cout << "t = " << (time() - tt) << ", iteration: " << i
+          << ", map size = " << mapsize << std::endl;
+    }
+
+    // Go through local facets, looking for a matching facet in othermap
+    vectormap::iterator fcell = facet_cell.begin();
+    while(fcell != facet_cell.end())
+    {
+      vectormap::iterator join_cell = othermap.find(fcell->first);
+      if (join_cell != othermap.end())
+      {
+        // Found neighbours, insert into local_graph and delete facets
+        // from both maps
+        local_graph[fcell->second].insert(join_cell->second);
+        ghost_vertices.insert(join_cell->second);
+        facet_cell.erase(fcell++);
+        othermap.erase(join_cell);
+      }
+      else
+        ++fcell;
+    }
+  }
+
+  // remaining facets are exterior boundary - could be useful
+
+  const std::size_t n_exterior_facets = MPI::sum(facet_cell.size());
+  if(process_number == 0)
+    std::cout << "n (exterior facets) = " << n_exterior_facets << std::endl;
+
+  tt = time() - tt;
+  info("Time to build connectivity map [new]: %g", tt);
+}
+//-----------------------------------------------------------------------------
+void GraphBuilder::compute_connectivity_orig(const boost::multi_array<std::size_t, 2>& cell_vertices,
+                                  std::size_t num_facet_vertices, std::size_t offset,
+                                  std::vector<std::set<std::size_t> >& local_graph)
 {
   // FIXME: Continue to make this function more efficient
+  Timer t("Compute Connectivity [original]");
 
   // Declare iterators
-  boost::multi_array<uint, 2>::const_iterator c_vertices;
-  boost::multi_array<uint, 2>::const_subarray<1>::type::const_iterator vertex;
-  std::vector<uint>::const_iterator c_vertex;
-  std::vector<uint>::const_iterator connected_cell;
+  boost::multi_array<std::size_t, 2>::const_iterator c_vertices;
+  boost::multi_array<std::size_t, 2>::const_subarray<1>::type::const_iterator vertex;
+  std::vector<std::size_t>::const_iterator c_vertex;
+  std::vector<std::size_t>::const_iterator connected_cell;
 
-  boost::unordered_map<uint, std::vector<uint> > vertex_connectivity;
-  std::pair<boost::unordered_map<uint, std::vector<uint> >::iterator, bool> ret;
+  boost::unordered_map<std::size_t, std::vector<std::size_t> > vertex_connectivity;
+  std::pair<boost::unordered_map<std::size_t, std::vector<std::size_t> >::iterator, bool> ret;
 
   // Build (global vertex)-(local cell) connectivity
   double tt = time();
   for (c_vertices = cell_vertices.begin(); c_vertices != cell_vertices.end(); ++c_vertices)
   {
-    const uint cell_index = c_vertices - cell_vertices.begin();
+    const std::size_t cell_index = c_vertices - cell_vertices.begin();
     for (vertex = c_vertices->begin(); vertex != c_vertices->end(); ++vertex)
     {
-      ret = vertex_connectivity.insert(std::pair<uint, std::vector<uint> >(*vertex, std::vector<uint>()) );
+      ret = vertex_connectivity.insert(std::pair<std::size_t, std::vector<std::size_t> >(*vertex, std::vector<std::size_t>()) );
       ret.first->second.push_back(cell_index);
     }
   }
   tt = time() - tt;
   info("Time to build vertex-cell connectivity map: %g", tt);
 
-  std::vector<uint>::const_iterator connected_cell0;
-  std::vector<uint>::const_iterator connected_cell1;
-  boost::multi_array<uint, 2>::const_subarray<1>::type::const_iterator cell_vertex;
+  std::vector<std::size_t>::const_iterator connected_cell0;
+  std::vector<std::size_t>::const_iterator connected_cell1;
+  boost::multi_array<std::size_t, 2>::const_subarray<1>::type::const_iterator cell_vertex;
 
   tt = time();
   // Iterate over all vertices
-  boost::unordered_map<uint, std::vector<uint> >::const_iterator _vertex;
+  boost::unordered_map<std::size_t, std::vector<std::size_t> >::const_iterator _vertex;
   for (_vertex = vertex_connectivity.begin(); _vertex != vertex_connectivity.end(); ++_vertex)
   {
-    const std::vector<uint>& cell_list = _vertex->second;
+    const std::vector<std::size_t>& cell_list = _vertex->second;
 
     // Iterate over connected cells
     for (connected_cell0 = cell_list.begin() ; connected_cell0 != cell_list.end() -1; ++connected_cell0)
     {
       for (connected_cell1 = connected_cell0 + 1; connected_cell1 != cell_list.end(); ++connected_cell1)
       {
-        boost::multi_array<uint, 2>::const_subarray<1>::type cell0_vertices = cell_vertices[*connected_cell0];
-        boost::multi_array<uint, 2>::const_subarray<1>::type cell1_vertices = cell_vertices[*connected_cell1];
+        boost::multi_array<std::size_t, 2>::const_subarray<1>::type cell0_vertices = cell_vertices[*connected_cell0];
+        boost::multi_array<std::size_t, 2>::const_subarray<1>::type cell1_vertices = cell_vertices[*connected_cell1];
 
-        uint num_common_vertices = 0;
+        std::size_t num_common_vertices = 0;
         for (cell_vertex = cell1_vertices.begin(); cell_vertex != cell1_vertices.end(); ++cell_vertex)
         {
           if (std::find(cell0_vertices.begin(), cell0_vertices.end(), *cell_vertex) != cell0_vertices.end())
@@ -398,7 +539,6 @@ void GraphBuilder::compute_connectivity(const boost::multi_array<uint, 2>& cell_
             local_graph[*connected_cell1].insert(*connected_cell0 + offset);
           }
         }
-
       }
     }
   }
@@ -407,35 +547,35 @@ void GraphBuilder::compute_connectivity(const boost::multi_array<uint, 2>& cell_
   info("Time to build local dual graph: : %g", tt);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint GraphBuilder::compute_ghost_connectivity(const boost::multi_array<uint, 2>& cell_vertices,
-                  const std::vector<uint>& local_boundary_cells,
-                  const std::vector<std::vector<uint> >& candidate_ghost_vertices,
-                  const std::vector<uint>& candidate_ghost_global_indices,
-                  uint num_facet_vertices,
-                  std::vector<std::set<uint> >& local_graph,
-                  std::set<uint>& ghost_cells)
+std::size_t GraphBuilder::compute_ghost_connectivity(const boost::multi_array<std::size_t, 2>& cell_vertices,
+                  const std::vector<std::size_t>& local_boundary_cells,
+                  const std::vector<std::vector<std::size_t> >& candidate_ghost_vertices,
+                  const std::vector<std::size_t>& candidate_ghost_global_indices,
+                  std::size_t num_facet_vertices,
+                  std::vector<std::set<std::size_t> >& local_graph,
+                  std::set<std::size_t>& ghost_cells)
 {
-  const uint num_ghost_vertices_0 = ghost_cells.size();
+  const std::size_t num_ghost_vertices_0 = ghost_cells.size();
 
   // Declare iterators
-  boost::multi_array<uint, 2>::const_iterator c_vertices;
-  boost::multi_array<uint, 2>::const_subarray<1>::type::const_iterator vertex;
-  boost::multi_array<uint, 2>::const_subarray<1>::type::const_iterator c_vertex;
-  std::vector<uint>::const_iterator connected_cell;
+  boost::multi_array<std::size_t, 2>::const_iterator c_vertices;
+  boost::multi_array<std::size_t, 2>::const_subarray<1>::type::const_iterator vertex;
+  boost::multi_array<std::size_t, 2>::const_subarray<1>::type::const_iterator c_vertex;
+  std::vector<std::size_t>::const_iterator connected_cell;
 
-  boost::unordered_map<uint, std::pair<std::vector<uint>, std::vector<uint> > > vertex_connectivity;
-  std::pair<boost::unordered_map<uint, std::pair<std::vector<uint>, std::vector<uint> > >::iterator, bool> ret;
+  boost::unordered_map<std::size_t, std::pair<std::vector<std::size_t>, std::vector<std::size_t> > > vertex_connectivity;
+  std::pair<boost::unordered_map<std::size_t, std::pair<std::vector<std::size_t>, std::vector<std::size_t> > >::iterator, bool> ret;
 
   // Build boundary (global vertex)-(local cell) connectivity
   double tt = time();
-  std::vector<uint>::const_iterator local_cell;
+  std::vector<std::size_t>::const_iterator local_cell;
   for (local_cell = local_boundary_cells.begin(); local_cell != local_boundary_cells.end(); ++local_cell)
   {
-    boost::multi_array<uint, 2>::const_subarray<1>::type c_vertices = cell_vertices[*local_cell];
+    boost::multi_array<std::size_t, 2>::const_subarray<1>::type c_vertices = cell_vertices[*local_cell];
     for (vertex = c_vertices.begin(); vertex != c_vertices.end(); ++vertex)
     {
-      std::pair<std::vector<uint>, std::vector<uint> > tmp;
-      ret = vertex_connectivity.insert(std::pair<uint, std::pair<std::vector<uint>, std::vector<uint> > >(*vertex, tmp) );
+      std::pair<std::vector<std::size_t>, std::vector<std::size_t> > tmp;
+      ret = vertex_connectivity.insert(std::pair<std::size_t, std::pair<std::vector<std::size_t>, std::vector<std::size_t> > >(*vertex, tmp) );
       ret.first->second.first.push_back(*local_cell);
     }
   }
@@ -444,14 +584,14 @@ dolfin::uint GraphBuilder::compute_ghost_connectivity(const boost::multi_array<u
 
   // Build off-process boundary (global vertex)-(local cell) connectivity
   tt = time();
-  for (std::vector<std::vector<uint> >::const_iterator c_vertices = candidate_ghost_vertices.begin(); c_vertices != candidate_ghost_vertices.end(); ++c_vertices)
+  for (std::vector<std::vector<std::size_t> >::const_iterator c_vertices = candidate_ghost_vertices.begin(); c_vertices != candidate_ghost_vertices.end(); ++c_vertices)
   {
-    const uint cell_index = c_vertices - candidate_ghost_vertices.begin();
-    std::vector<uint>::const_iterator vertex;
+    const std::size_t cell_index = c_vertices - candidate_ghost_vertices.begin();
+    std::vector<std::size_t>::const_iterator vertex;
     for (vertex = c_vertices->begin(); vertex != c_vertices->end(); ++vertex)
     {
-      std::pair<std::vector<uint>, std::vector<uint> > tmp;
-      ret = vertex_connectivity.insert(std::pair<uint, std::pair<std::vector<uint>, std::vector<uint> > >(*vertex, tmp) );
+      std::pair<std::vector<std::size_t>, std::vector<std::size_t> > tmp;
+      ret = vertex_connectivity.insert(std::pair<std::size_t, std::pair<std::vector<std::size_t>, std::vector<std::size_t> > >(*vertex, tmp) );
       ret.first->second.second.push_back(cell_index);
     }
   }
@@ -462,7 +602,7 @@ dolfin::uint GraphBuilder::compute_ghost_connectivity(const boost::multi_array<u
   tt = time();
   for (local_cell = local_boundary_cells.begin(); local_cell != local_boundary_cells.end(); ++local_cell)
   {
-    boost::multi_array<uint, 2>::const_subarray<1>::type c_vertices = cell_vertices[*local_cell];
+    boost::multi_array<std::size_t, 2>::const_subarray<1>::type c_vertices = cell_vertices[*local_cell];
 
     // Iterate over local cell vertices
     for (c_vertex = c_vertices.begin(); c_vertex != c_vertices.end(); ++c_vertex)
@@ -473,9 +613,9 @@ dolfin::uint GraphBuilder::compute_ghost_connectivity(const boost::multi_array<u
                      ++connected_cell)
       {
         // Vertices of candidate neighbour
-        const std::vector<uint>& candidate_vertices = candidate_ghost_vertices[*connected_cell];
+        const std::vector<std::size_t>& candidate_vertices = candidate_ghost_vertices[*connected_cell];
 
-        uint num_common_vertices = 0;
+        std::size_t num_common_vertices = 0;
         for (vertex = c_vertices.begin(); vertex != c_vertices.end(); ++vertex)
         {
           if (std::find(candidate_vertices.begin(), candidate_vertices.end(), *vertex) != candidate_vertices.end())
@@ -490,8 +630,10 @@ dolfin::uint GraphBuilder::compute_ghost_connectivity(const boost::multi_array<u
       }
     }
   }
+
   tt = time() - tt;
   info("Time to build ghost dual graph: : %g", tt);
+
   return ghost_cells.size() - num_ghost_vertices_0;
 }
 //-----------------------------------------------------------------------------

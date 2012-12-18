@@ -101,3 +101,4 @@
 //-----------------------------------------------------------------------------
 %template (HierarchicalFunctionSpace) dolfin::Hierarchical<dolfin::FunctionSpace>;
 %template (HierarchicalFunction) dolfin::Hierarchical<dolfin::Function>;
+

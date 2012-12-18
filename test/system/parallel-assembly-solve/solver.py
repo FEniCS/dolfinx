@@ -103,8 +103,8 @@ reference = { ("16x16 unit square", 1): 9.547454087328376 ,
               ("4x4x4 unit cube", 4): 74.49938266409099 }
 
 # Mesh files and degrees to check
-meshes= [(UnitSquare(16, 16), "16x16 unit square"),\
-         (UnitCube(4, 4, 4),  "4x4x4 unit cube")]
+meshes= [(UnitSquareMesh(16, 16), "16x16 unit square"),\
+         (UnitCubeMesh(4, 4, 4),  "4x4x4 unit cube")]
 degrees = [1, 2, 3, 4]
 
 ## Iterate over test cases and collect results

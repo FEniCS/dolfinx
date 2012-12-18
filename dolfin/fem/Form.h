@@ -88,11 +88,11 @@ namespace dolfin
     /// Create form of given rank with given number of coefficients
     ///
     /// *Arguments*
-    ///     rank (uint)
+    ///     rank (std::size_t)
     ///         The rank.
-    ///     num_coefficients (uint)
+    ///     num_coefficients (std::size_t)
     ///         The number of coefficients.
-    Form(uint rank, uint num_coefficients);
+    Form(std::size_t rank, std::size_t num_coefficients);
 
     /// Create form (shared data)
     ///
@@ -114,28 +114,28 @@ namespace dolfin
     /// functional = 0, etc)
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The rank of the form.
-    uint rank() const;
+    std::size_t rank() const;
 
     /// Return number of coefficients
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The number of coefficients.
-    uint num_coefficients() const;
+    std::size_t num_coefficients() const;
 
     /// Return coloring type for colored (multi-threaded) assembly of form
     /// over a mesh entity of a given dimension
     ///
     /// *Arguments*
-    ///     entity_dim (uint)
+    ///     entity_dim (std::size_t)
     ///         Dimension.
     ///
     /// *Returns*
-    ///     std::vector<uint>
+    ///     std::vector<std::size_t>
     ///         Coloring type.
-    std::vector<uint> coloring(uint entity_dim) const;
+    std::vector<std::size_t> coloring(std::size_t entity_dim) const;
 
     /// Set mesh, necessary for functionals when there are no function spaces
     ///
@@ -161,13 +161,13 @@ namespace dolfin
     /// Return function space for given argument
     ///
     /// *Arguments*
-    ///     i (uint)
+    ///     i (std::size_t)
     ///         Index
     ///
     /// *Returns*
     ///     _FunctionSpace_
     ///         Function space shared pointer.
-    boost::shared_ptr<const FunctionSpace> function_space(uint i) const;
+    boost::shared_ptr<const FunctionSpace> function_space(std::size_t i) const;
 
     /// Return function spaces for arguments
     ///
@@ -179,11 +179,11 @@ namespace dolfin
     /// Set coefficient with given number (shared pointer version)
     ///
     /// *Arguments*
-    ///     i (uint)
+    ///     i (std::size_t)
     ///         The given number.
     ///     coefficient (_GenericFunction_)
     ///         The coefficient.
-    void set_coefficient(uint i,
+    void set_coefficient(std::size_t i,
                          boost::shared_ptr<const GenericFunction> coefficient);
 
     /// Set coefficient with given name (shared pointer version)
@@ -207,13 +207,13 @@ namespace dolfin
     /// Return coefficient with given number
     ///
     /// *Arguments*
-    ///     i (uint)
+    ///     i (std::size_t)
     ///         Index
     ///
     /// *Returns*
     ///     _GenericFunction_
     ///         The coefficient.
-    boost::shared_ptr<const GenericFunction> coefficient(uint i) const;
+    boost::shared_ptr<const GenericFunction> coefficient(std::size_t i) const;
 
     /// Return coefficient with given name
     ///
@@ -240,65 +240,65 @@ namespace dolfin
     ///         The name.
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The number of the coefficient with the given name.
-    virtual uint coefficient_number(const std::string & name) const;
+    virtual std::size_t coefficient_number(const std::string & name) const;
 
     /// Return the name of the coefficient with this number
     ///
     /// *Arguments*
-    ///     i (uint)
+    ///     i (std::size_t)
     ///         The number
     ///
     /// *Returns*
     ///     std::string
     ///         The name of the coefficient with the given number.
-    virtual std::string coefficient_name(uint i) const;
+    virtual std::string coefficient_name(std::size_t i) const;
 
     /// Return cell domains (zero pointer if no domains have been
     /// specified)
     ///
     /// *Returns*
-    ///     _MeshFunction_ <uint>
+    ///     _MeshFunction_ <std::size_t>
     ///         The cell domains.
-    boost::shared_ptr<const MeshFunction<uint> > cell_domains_shared_ptr() const;
+    boost::shared_ptr<const MeshFunction<std::size_t> > cell_domains_shared_ptr() const;
 
     /// Return exterior facet domains (zero pointer if no domains have
     /// been specified)
     ///
     /// *Returns*
-    ///     boost::shared_ptr<_MeshFunction_ <uint> >
+    ///     boost::shared_ptr<_MeshFunction_ <std::size_t> >
     ///         The exterior facet domains.
-    boost::shared_ptr<const MeshFunction<uint> > exterior_facet_domains_shared_ptr() const;
+    boost::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains_shared_ptr() const;
 
     /// Return interior facet domains (zero pointer if no domains have
     /// been specified)
     ///
     /// *Returns*
-    ///     _MeshFunction_ <uint>
+    ///     _MeshFunction_ <std::size_t>
     ///         The interior facet domains.
-    boost::shared_ptr<const MeshFunction<uint> > interior_facet_domains_shared_ptr() const;
+    boost::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains_shared_ptr() const;
 
     /// Set cell domains
     ///
     /// *Arguments*
-    ///     cell_domains (_MeshFunction_ <unsigned int>)
+    ///     cell_domains (_MeshFunction_ <std::size_t>)
     ///         The cell domains.
-    void set_cell_domains(boost::shared_ptr<const MeshFunction<unsigned int> > cell_domains);
+    void set_cell_domains(boost::shared_ptr<const MeshFunction<std::size_t> > cell_domains);
 
     /// Set exterior facet domains
     ///
     /// *Arguments*
-    ///     exterior_facet_domains (_MeshFunction_ <unsigned int>)
+    ///     exterior_facet_domains (_MeshFunction_ <std::size_t>)
     ///         The exterior facet domains.
-    void set_exterior_facet_domains(boost::shared_ptr<const MeshFunction<unsigned int> > exterior_facet_domains);
+    void set_exterior_facet_domains(boost::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains);
 
     /// Set interior facet domains
     ///
     /// *Arguments*
-    ///     interior_facet_domains (_MeshFunction_ <unsigned int>)
+    ///     interior_facet_domains (_MeshFunction_ <std::size_t>)
     ///         The interior facet domains.
-    void set_interior_facet_domains(boost::shared_ptr<const MeshFunction<unsigned int> > interior_facet_domains);
+    void set_interior_facet_domains(boost::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains);
 
     /// Return UFC form shared pointer
     ///
@@ -336,17 +336,17 @@ namespace dolfin
     boost::shared_ptr<const Mesh> _mesh;
 
     // Markers for cell domains
-    boost::shared_ptr<const MeshFunction<uint> > _cell_domains;
+    boost::shared_ptr<const MeshFunction<std::size_t> > _cell_domains;
 
     // Markers for exterior facet domains
-    boost::shared_ptr<const MeshFunction<uint> > _exterior_facet_domains;
+    boost::shared_ptr<const MeshFunction<std::size_t> > _exterior_facet_domains;
 
     // Markers for interior facet domains
-    boost::shared_ptr<const MeshFunction<uint> > _interior_facet_domains;
+    boost::shared_ptr<const MeshFunction<std::size_t> > _interior_facet_domains;
 
   private:
 
-    const uint _rank;
+    const std::size_t _rank;
 
   };
 

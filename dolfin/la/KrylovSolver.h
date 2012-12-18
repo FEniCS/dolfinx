@@ -25,6 +25,7 @@
 #define __KRYLOV_SOLVER_H
 
 #include <string>
+#include <vector>
 #include <boost/shared_ptr.hpp>
 #include "GenericLinearSolver.h"
 
@@ -60,11 +61,15 @@ namespace dolfin
     void set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
                        const boost::shared_ptr<const GenericLinearOperator> P);
 
-    /// Solve linear system Ax = b
-    uint solve(GenericVector& x, const GenericVector& b);
+    /// Set null space of the operator (matrix). This is used to solve
+    /// singular systems
+    void set_nullspace(const std::vector<const GenericVector*> nullspace);
 
     /// Solve linear system Ax = b
-    uint solve(const GenericLinearOperator& A,
+    std::size_t solve(GenericVector& x, const GenericVector& b);
+
+    /// Solve linear system Ax = b
+    std::size_t solve(const GenericLinearOperator& A,
                GenericVector& x, const GenericVector& b);
 
     /// Default parameter values

@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Joachim B Haga 2012
+//
 // First added:  2012-06-20
-// Last changed: 2012-06-26
+// Last changed: 2012-09-20
 
 #ifndef __VTK_PLOTTABLE_GENERIC_FUNCTION_H
 #define __VTK_PLOTTABLE_GENERIC_FUNCTION_H
@@ -28,6 +30,8 @@
 #include <vtkWarpVector.h>
 #include <vtkGlyph3D.h>
 
+#include <dolfin/common/Variable.h>
+
 #include "VTKPlottableMesh.h"
 
 namespace dolfin
@@ -35,6 +39,7 @@ namespace dolfin
 
   // Forward declarations
   class Expression;
+  class ExpressionWrapper;
   class Function;
   class GenericFunction;
   class GenericVTKPlottable;
@@ -58,19 +63,41 @@ namespace dolfin
 
     //--- Implementation of the GenericVTKPlottable interface ---
 
+    /// Additional parameters for VTKPlottableGenericFunction
+    virtual void modify_default_parameters(Parameters &parameters)
+    {
+    }
+
+    virtual void modify_user_parameters(Parameters &parameters)
+    {
+      std::string mode = parameters["mode"];
+      Parameter &elevate = parameters["elevate"];
+      if (dim() < 3 && value_rank() == 0 && mode != "color" && !elevate.is_set())
+      {
+        elevate = -65.0;
+      }
+    }
+
     /// Initialize the parts of the pipeline that this class controls
-    void init_pipeline();
+    void init_pipeline(const Parameters &parameters);
 
     /// Update the plottable data
-    void update(const Parameters& parameters, int framecounter);
+    void update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int framecounter);
+
+    /// Check if the plotter is compatible with a given variable (same-rank
+    /// function on same mesh for example)
+    bool is_compatible(const Variable &var) const;
 
     /// Update the scalar range of the plottable data
     void update_range(double range[2]);
 
+    /// Inform the plottable about the range.
+    virtual void rescale(double range[2], const Parameters& parameters);
+
     /// Return data to visualize
     vtkSmartPointer<vtkAlgorithmOutput> get_output() const;
 
-  private:
+  protected:
 
     // Update scalar values
     void update_scalar();
@@ -90,10 +117,16 @@ namespace dolfin
     // The glyph filter
     vtkSmartPointer<vtkGlyph3D> _glyphs;
 
-    // Warp vector mode? FIXME: This is horrible, we must be able to avoid this somehow
-    bool warp_vector_mode;
+    // Mode flag
+    std::string _mode;
+
+    std::size_t value_rank() const;
 
   };
+
+  VTKPlottableGenericFunction *CreateVTKPlottable(boost::shared_ptr<const Function>);
+  VTKPlottableGenericFunction *CreateVTKPlottable(boost::shared_ptr<const ExpressionWrapper>);
+  VTKPlottableGenericFunction *CreateVTKPlottable(boost::shared_ptr<const Expression>, boost::shared_ptr<const Mesh>);
 
 }
 

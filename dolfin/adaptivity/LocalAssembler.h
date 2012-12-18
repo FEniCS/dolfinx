@@ -48,31 +48,31 @@ namespace dolfin
     static void assemble(arma::Mat<double>& A,
                          UFC& ufc,
                          const Cell& cell,
-                         const MeshFunction<uint>* cell_domains,
-                         const MeshFunction<uint>* exterior_facet_domains,
-                         const MeshFunction<uint>* interior_facet_domains);
+                         const MeshFunction<std::size_t>* cell_domains,
+                         const MeshFunction<std::size_t>* exterior_facet_domains,
+                         const MeshFunction<std::size_t>* interior_facet_domains);
 
     ///
     static void assemble_cell(arma::Mat<double>& A,
                               UFC& ufc,
                               const Cell& cell,
-                              const MeshFunction<uint>* domains);
+                              const MeshFunction<std::size_t>* domains);
 
     ///
     static void assemble_exterior_facet(arma::Mat<double>& A,
                                         UFC& ufc,
                                         const Cell& cell,
                                         const Facet& facet,
-                                        const uint local_facet,
-                                        const MeshFunction<uint>* domains);
+                                        const std::size_t local_facet,
+                                        const MeshFunction<std::size_t>* domains);
 
     ///
     static void assemble_interior_facet(arma::Mat<double>& A,
                                         UFC& ufc,
                                         const Cell& cell,
                                         const Facet& facet,
-                                        const uint local_facet,
-                                        const MeshFunction<uint>* domains);
+                                        const std::size_t local_facet,
+                                        const MeshFunction<std::size_t>* domains);
   };
 
 }

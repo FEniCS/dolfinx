@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2008-11-28
-// Last changed: 2012-10-16
+// Last changed: 2012-11-23
 //
 // Modified by Anders Logg, 2008-2009.
 // Modified by Kent-Andre Mardal, 2011.
@@ -93,37 +93,37 @@ namespace dolfin
     void unpack_vertex_coordinates(const std::vector<double>& values);
 
     // Unpack received cell vertices
-    void unpack_cell_vertices(const std::vector<uint>& values);
+    void unpack_cell_vertices(const std::vector<std::size_t>& values);
 
     // Coordinates for all vertices stored on local processor
-    std::vector<std::vector<double> > vertex_coordinates;
+    boost::multi_array<double, 2> vertex_coordinates;
 
     // Global vertex indices for all vertices stored on local processor
-    std::vector<uint> vertex_indices;
+    std::vector<std::size_t> vertex_indices;
 
     // Global vertex indices for all cells stored on local processor
-    boost::multi_array<uint, 2> cell_vertices;
+    boost::multi_array<std::size_t, 2> cell_vertices;
 
     // Global cell numbers for all cells stored on local processor
-    std::vector<uint> global_cell_indices;
+    std::vector<std::size_t> global_cell_indices;
 
     // Global number of vertices
-    uint num_global_vertices;
+    std::size_t num_global_vertices;
 
     // Global number of cells
-    uint num_global_cells;
+    std::size_t num_global_cells;
 
     // Number of vertices per cell
-    uint num_vertices_per_cell;
+    std::size_t num_vertices_per_cell;
 
     // Geometrical dimension
-    uint gdim;
+    std::size_t gdim;
 
     // Topological dimension
-    uint tdim;
+    std::size_t tdim;
 
     // Mesh domain data [dim](line, (cell_index, local_index, value))
-    std::map<uint, std::vector< std::pair<std::pair<dolfin::uint, dolfin::uint>, dolfin::uint> > >
+    std::map<std::size_t, std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::size_t> > >
         domain_data;
 
     // Friends

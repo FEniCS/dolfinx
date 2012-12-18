@@ -48,7 +48,7 @@ namespace dolfin
 
     /// Transform mesh data
     //static void transform_data(Mesh& newmesh, const Mesh& oldmesh,
-    //                           const MeshFunction<uint>& cell_map,
+    //                           const MeshFunction<std::size_t>& cell_map,
     //                           const std::vector<int>& facet_map);
 
   };

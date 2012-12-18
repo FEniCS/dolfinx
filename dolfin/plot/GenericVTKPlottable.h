@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Joachim B Haga 2012
+//
 // First added:  2012-06-20
-// Last changed: 2012-06-25
+// Last changed: 2012-09-13
 
 #ifndef __GENERIC_VTK_PLOTTABLE_H
 #define __GENERIC_VTK_PLOTTABLE_H
@@ -25,12 +27,16 @@
 
 #include <vtkSmartPointer.h>
 #include <vtkAlgorithmOutput.h>
+#include <vtkActor.h>
 #include <vtkActor2D.h>
+
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
 
   class Parameters;
+  class VTKWindowOutputStage;
 
   /// This class defines a common interface for objects that can be plotted by
   /// the VTKPlotter class
@@ -39,28 +45,66 @@ namespace dolfin
   {
   public:
 
-    /// Initialize the parts of the pipeline that this class controls
-    virtual void init_pipeline() = 0;
+    /// To be redefined in classes that require special parameters. Called once
+    /// with the default parameters.
+    virtual void modify_default_parameters(Parameters &parameters) = 0;
 
-    /// Update the plottable data
-    virtual void update(const Parameters& parameters, int framecounter) = 0;
+    /// To be redefined in classes that require special parameters. Called once
+    /// with user-specified parameters, but before init_pipeline.
+    virtual void modify_user_parameters(Parameters &parameters)
+    {
+    }
+
+    /// Initialize the parts of the pipeline that this class controls
+    virtual void init_pipeline(const Parameters& parameters) = 0;
+
+    /// Connect or reconnect to the output stage.
+    virtual void connect_to_output(VTKWindowOutputStage& output) = 0;
+
+    /// Update the plottable data. The variable may be empty, or it may be a
+    /// new variable to plot. is_compatible(var) must be true.
+    virtual void update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int framecounter) = 0;
+
+    /// Return whether this plottable is compatible with the variable
+    virtual bool is_compatible(const Variable &var) const = 0;
 
     /// Update the scalar range of the plottable data
     virtual void update_range(double range[2]) = 0;
 
-    /// Return geometric dimension
-    virtual uint dim() = 0;
+    /// Inform the plottable about the range. Most plottables don't care, since
+    /// this is handled in the output stage.
+    virtual void rescale(double range[2], const Parameters& parameters)
+    {
+    }
 
-    /// Return data to visualize
-    virtual vtkSmartPointer<vtkAlgorithmOutput> get_output() const = 0;
+    /// Return geometric dimension
+    virtual std::size_t dim() const = 0;
 
     /// Get an actor for showing vertex labels
-    virtual vtkSmartPointer<vtkActor2D> get_vertex_label_actor()
+    virtual vtkSmartPointer<vtkActor2D> get_vertex_label_actor(vtkSmartPointer<vtkRenderer>)
     {
       warning("Plotting of vertex labels is not implemented by the current"
           " VTK plottable type.");
       // Return empty actor to have something (invisible) to render
       return vtkSmartPointer<vtkActor2D>::New();
+    }
+
+    /// Get an actor for showing cell labels
+    virtual vtkSmartPointer<vtkActor2D> get_cell_label_actor(vtkSmartPointer<vtkRenderer>)
+    {
+      warning("Plotting of cell labels is not implemented by the current"
+          " VTK plottable type.");
+      // Return empty actor to have something (invisible) to render
+      return vtkSmartPointer<vtkActor2D>::New();
+    }
+
+    /// Get an actor for showing the mesh
+    virtual vtkSmartPointer<vtkActor> get_mesh_actor()
+    {
+      warning("Plotting of mesh is not implemented by the current"
+          " VTK plottable type.");
+      // Return empty actor to have something (invisible) to render
+      return vtkSmartPointer<vtkActor>::New();
     }
 
   };

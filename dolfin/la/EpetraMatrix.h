@@ -75,10 +75,10 @@ namespace dolfin
     virtual void init(const TensorLayout& tensor_layout);
 
     /// Return size of given dimension
-    virtual uint size(uint dim) const;
+    virtual std::size_t size(std::size_t dim) const;
 
     /// Return local ownership range
-    virtual std::pair<uint, uint> local_range(uint dim) const;
+    virtual std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const;
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
@@ -103,18 +103,18 @@ namespace dolfin
     /// important.
     ///
     /// *Arguments*
-    ///     dim (uint)
+    ///     dim (std::size_t)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-    virtual void resize(GenericVector& z, uint dim) const;
+    virtual void resize(GenericVector& z, std::size_t dim) const;
 
     /// Get block of values
-    virtual void get(double* block, uint m, const uint* rows, uint n, const uint* cols) const;
+    virtual void get(double* block, std::size_t m, const DolfinIndex* rows, std::size_t n, const DolfinIndex* cols) const;
 
     /// Set block of values
-    virtual void set(const double* block, uint m, const uint* rows, uint n, const uint* cols);
+    virtual void set(const double* block, std::size_t m, const DolfinIndex* rows, std::size_t n, const DolfinIndex* cols);
 
     /// Add block of values
-    virtual void add(const double* block, uint m, const uint* rows, uint n, const uint* cols);
+    virtual void add(const double* block, std::size_t m, const DolfinIndex* rows, std::size_t n, const DolfinIndex* cols);
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern);
@@ -123,16 +123,18 @@ namespace dolfin
     virtual double norm(std::string norm_type) const;
 
     /// Get non-zero values of given row
-    virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const;
+    virtual void getrow(std::size_t row, std::vector<std::size_t>& columns,
+                        std::vector<double>& values) const;
 
     /// Set values for given row
-    virtual void setrow(uint row, const std::vector<uint>& columns, const std::vector<double>& values);
+    virtual void setrow(std::size_t row, const std::vector<std::size_t>& columns,
+                        const std::vector<double>& values);
 
     /// Set given rows to zero
-    virtual void zero(uint m, const uint* rows);
+    virtual void zero(std::size_t m, const DolfinIndex* rows);
 
     /// Set given rows to identity matrix
-    virtual void ident(uint m, const uint* rows);
+    virtual void ident(std::size_t m, const DolfinIndex* rows);
 
     // Matrix-vector product, y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const;

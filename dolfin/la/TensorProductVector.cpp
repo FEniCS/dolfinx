@@ -23,7 +23,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TensorProductVector::TensorProductVector(const std::vector<uint>& dims)
+TensorProductVector::TensorProductVector(const std::vector<std::size_t>& dims)
 {
 
 }

@@ -1,10 +1,10 @@
 # - Try to find TAO
 # Once done this will define
 #
-#  TAO_FOUND        - system has SLEPc
-#  TAO_INCLUDE_DIR  - include directories for SLEPc
-#  TAO_LIBARIES     - libraries for SLEPc
-#  TAO_DIR          - directory where SLEPc is built
+#  TAO_FOUND        - system has TAO
+#  TAO_INCLUDE_DIR  - include directories for TAO
+#  TAO_LIBARIES     - libraries for TAO
+#  TAO_DIR          - directory where TAO is built
 #
 # Assumes that PETSC_DIR and PETSC_ARCH has been set by
 # alredy calling find_package(PETSc)
@@ -106,26 +106,59 @@ show :
   # Remove temporary Makefile
   file(REMOVE ${tao_config_makefile})
 
+##############################################
   # Extract include paths and libraries from compile command line
   include(ResolveCompilerPaths)
   resolve_includes(TAO_INCLUDE_DIRS "${TAO_INCLUDE}")
-  resolve_libraries(TAO_LIB "${TAO_LIB}")
-    
+  resolve_libraries(TAO_EXTERNAL_LIB "${TAO_EXTERNAL_LIB}")
+
   # Add variables to CMake cache and mark as advanced
   set(TAO_INCLUDE_DIRS ${TAO_INCLUDE_DIRS} CACHE STRING "TAO include paths." FORCE)
-  set(TAO_LIBRARIES ${TAO_LIB} CACHE STRING "TAO libraries." FORCE)
-  mark_as_advanced(TAO INCLUDE_DIRS TAO_LIBRARIES)
-  
+  set(TAO_LIBRARIES ${TAO_LIBRARY} ${TAO_EXTERNAL_LIB} CACHE STRING "TAO libraries." FORCE)
+  mark_as_advanced(TAO_INCLUDE_DIRS TAO_LIBRARIES)
+endif()
+
+if (DOLFIN_SKIP_BUILD_TESTS)
+  set(TAO_TEST_RUNS TRUE)
+  set(TAO_VERSION "UNKNOWN")
+  set(TAO_VERSION_OK TRUE)
+elseif (TAO_LIBRARIES AND TAO_INCLUDE_DIRS)
+
   # Set flags for building test program
   set(CMAKE_REQUIRED_INCLUDES ${TAO_INCLUDE_DIRS} ${PETSC_INCLUDE_DIRS})
   set(CMAKE_REQUIRED_LIBRARIES ${TAO_LIBRARIES} ${PETSC_LIBRARIES})
 
   # Add MPI variables if MPI has been found
-  if (MPI_FOUND)
-    set(CMAKE_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES} ${MPI_INCLUDE_PATH})
-    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${MPI_LIBRARIES})
-    set(CMAKE_REQUIRED_FLAGS     "${CMAKE_REQUIRED_FLAGS} ${MPI_COMPILE_FLAGS}")
+  if (MPI_C_FOUND)
+    set(CMAKE_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_PATH})
+
+    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${MPI_C_LIBRARIES})
+    set(CMAKE_REQUIRED_FLAGS     "${CMAKE_REQUIRED_FLAGS} ${MPI_C_COMPILE_FLAGS}")
   endif()
+
+##############################################
+
+  # Extract include paths and libraries from compile command line
+  # include(ResolveCompilerPaths)
+  # resolve_includes(TAO_INCLUDE_DIRS "${TAO_INCLUDE}")
+  #resolve_libraries(TAO_LIB "${TAO_LIB}")
+    
+  # Add variables to CMake cache and mark as advanced
+  #set(TAO_INCLUDE_DIRS ${TAO_INCLUDE_DIRS} CACHE STRING "TAO include paths." FORCE)
+  #set(TAO_LIBRARIES ${TAO_LIB} CACHE STRING "TAO libraries." FORCE)
+  #mark_as_advanced(TAO INCLUDE_DIRS TAO_LIBRARIES)
+  
+  # Set flags for building test program
+  #set(CMAKE_REQUIRED_INCLUDES ${TAO_INCLUDE_DIRS} ${PETSC_INCLUDE_DIRS})
+  #set(CMAKE_REQUIRED_LIBRARIES ${TAO_LIBRARIES} ${PETSC_LIBRARIES})
+
+  # Add MPI variables if MPI has been found
+  #if (MPI_FOUND)
+  #  set(CMAKE_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES} ${MPI_INCLUDE_PATH})
+  #  set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${MPI_LIBRARIES})
+  #  set(CMAKE_REQUIRED_FLAGS     "${CMAKE_REQUIRED_FLAGS} ${MPI_COMPILE_FLAGS}")
+  #endif()
+   
 
   # Run TAO test program
   include(CheckCXXSourceRuns)
@@ -146,7 +179,7 @@ int main()
   return 0;
 }
 " TAO_TEST_RUNS)
-
+  set(TAO_TEST_RUNS  TRUE)
   if (TAO_TEST_RUNS)
     message(STATUS "TAO test runs")
   else()

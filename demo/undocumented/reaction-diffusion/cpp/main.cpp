@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-06-15
-// Last changed: 2012-07-05
+// Last changed: 2012-11-12
 //
 // This demo program solves the reaction-diffusion equation
 //
@@ -47,7 +47,7 @@ public:
 int main()
 {
   // Define variational problem
-  UnitSquare mesh(32, 32);
+  UnitSquareMesh mesh(32, 32);
   Source f;
   ReactionDiffusion::FunctionSpace V(mesh);
   ReactionDiffusion::BilinearForm a(V, V);

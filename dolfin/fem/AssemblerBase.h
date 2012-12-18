@@ -75,7 +75,7 @@ namespace dolfin
 
     // Initialize global tensor
     void init_global_tensor(GenericTensor& A, const Form& a,
-         const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& periodic_master_slave_dofs);
+         const std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > >& periodic_master_slave_dofs);
 
   protected:
 
@@ -87,7 +87,7 @@ namespace dolfin
     static void check(const Form& a);
 
     // Pretty-printing for progress bar
-    static std::string progress_message(uint rank, std::string integral_type);
+    static std::string progress_message(std::size_t rank, std::string integral_type);
 
   };
 

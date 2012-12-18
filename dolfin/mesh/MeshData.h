@@ -42,7 +42,7 @@ namespace dolfin
   /// The class MeshData is a container for auxiliary mesh data,
   /// represented either as _MeshFunction_ over topological mesh
   /// entities, arrays or maps. Each dataset is identified by a unique
-  /// user-specified string. Only uint-valued data are currently
+  /// user-specified string. Only std::size_t-valued data are currently
   /// supported.
   ///
   /// Auxiliary mesh data may be attached to a mesh by users as a
@@ -52,11 +52,11 @@ namespace dolfin
   ///
   /// Facet orientation (used for assembly over interior facets)
   ///
-  ///   * "facet_orientation"     - _MeshFunction_ <uint> of dimension D - 1
+  ///   * "facet_orientation"     - _MeshFunction_ <std::size_t> of dimension D - 1
   ///
   /// Sub meshes (used by the class SubMesh)
   ///
-  ///   * "parent_vertex_indices" - _MeshFunction_ <uint> of dimension 0
+  ///   * "parent_vertex_indices" - _MeshFunction_ <std::size_t> of dimension 0
   ///
   /// Note to developers: use underscore in names in place of spaces.
 
@@ -89,24 +89,24 @@ namespace dolfin
     ///         The name of the mesh function.
     ///
     /// *Returns*
-    ///     _MeshFunction_ <unsigned int>
+    ///     _MeshFunction_ <std::size_t>
     ///         The mesh function.
-    boost::shared_ptr<MeshFunction<unsigned int> >
-    create_mesh_function(std::string name);
+    boost::shared_ptr<MeshFunction<std::size_t> >
+      create_mesh_function(std::string name);
 
     /// Create MeshFunction with given name and dimension
     ///
     /// *Arguments*
     ///     name (std::string)
     ///         The name of the mesh function.
-    ///     dim (uint)
+    ///     dim (std::size_t)
     ///         The dimension of the mesh function.
     ///
     /// *Returns*
-    ///     _MeshFunction_ <unsigned int>
+    ///     _MeshFunction_ <std::size_t>
     ///         The mesh function.
-    boost::shared_ptr<MeshFunction<unsigned int> >
-    create_mesh_function(std::string name, uint dim);
+    boost::shared_ptr<MeshFunction<std::size_t> >
+    create_mesh_function(std::string name, std::size_t dim);
 
     /// Create empty array (vector) with given name
     ///
@@ -115,22 +115,22 @@ namespace dolfin
     ///         The name of the array.
     ///
     /// *Returns*
-    ///     std::vector<uint>
+    ///     std::vector<std::size_t>
     ///         The array.
-    boost::shared_ptr<std::vector<uint> > create_array(std::string name);
+    boost::shared_ptr<std::vector<std::size_t> > create_array(std::string name);
 
     /// Create array (vector) with given name and size
     ///
     /// *Arguments*
     ///     name (std::string)
     ///         The name of the array.
-    ///     size (unit)
+    ///     size (std::size_t)
     ///         The size (length) of the array.
     ///
     /// *Returns*
-    ///     std::vector<uint>
+    ///     std::vector<std::size_t>
     ///         The array.
-    boost::shared_ptr<std::vector<uint> > create_array(std::string name, uint size);
+    boost::shared_ptr<std::vector<std::size_t> > create_array(std::string name, std::size_t size);
 
     //--- Retrieval of data ---
 
@@ -142,9 +142,9 @@ namespace dolfin
     ///         The name of the MeshFunction.
     ///
     /// *Returns*
-    ///     _MeshFunction_ <unsigned int>
+    ///     _MeshFunction_ <std::size_t>
     ///         The mesh function with given name
-    boost::shared_ptr<MeshFunction<unsigned int> > mesh_function(const std::string name) const;
+    boost::shared_ptr<MeshFunction<std::size_t> > mesh_function(const std::string name) const;
 
     /// Return array with given name (returning zero if data is not
     /// available)
@@ -154,9 +154,9 @@ namespace dolfin
     ///         The name of the array.
     ///
     /// *Returns*
-    ///     std::vector<uint>
+    ///     std::vector<std::size_t>
     ///         The array.
-    boost::shared_ptr<std::vector<uint> > array(const std::string name) const;
+    boost::shared_ptr<std::vector<std::size_t> > array(const std::string name) const;
 
     //--- Removal of data ---
 
@@ -200,10 +200,10 @@ namespace dolfin
     Mesh& mesh;
 
     // A map from named mesh data to MeshFunctions
-    std::map<std::string, boost::shared_ptr<MeshFunction<uint> > > mesh_functions;
+    std::map<std::string, boost::shared_ptr<MeshFunction<std::size_t> > > mesh_functions;
 
     // A map from named mesh data to vector
-    std::map<std::string, boost::shared_ptr<std::vector<uint> > > arrays;
+    std::map<std::string, boost::shared_ptr<std::vector<std::size_t> > > arrays;
 
     // List of depcrecated named data
     std::vector<std::string> _deprecated_names;

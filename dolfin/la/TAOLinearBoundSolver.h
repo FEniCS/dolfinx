@@ -86,10 +86,10 @@ namespace dolfin
     ~TAOLinearBoundSolver();
 	     
     /// Solve linear system Ax = b with xl =< x <= xu 
-    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b, const GenericVector& xl, const GenericVector& xu);
+    std::size_t solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b, const GenericVector& xl, const GenericVector& xu);
 
     /// Solve linear system Ax = b with xl =< x <= xu 
-    uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b, const PETScVector& xl, const PETScVector& xu);
+    std::size_t solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b, const PETScVector& xl, const PETScVector& xu);
         
     // Set the TAO solver type
 	void set_solver(const std::string&);

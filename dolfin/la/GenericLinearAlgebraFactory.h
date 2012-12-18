@@ -61,7 +61,7 @@ namespace dolfin
     virtual boost::shared_ptr<GenericVector> create_local_vector() const = 0;
 
     /// Create empty tensor layout
-    virtual boost::shared_ptr<TensorLayout> create_layout(uint rank) const = 0;
+    virtual boost::shared_ptr<TensorLayout> create_layout(std::size_t rank) const = 0;
 
     /// Create empty linear operator
     virtual boost::shared_ptr<GenericLinearOperator> create_linear_operator() const = 0;
@@ -109,7 +109,7 @@ namespace dolfin
     {
     public:
 
-      uint size(uint dim) const
+      std::size_t size(std::size_t dim) const
       { return 0; }
 
       void mult(const GenericVector& x, GenericVector& y) const

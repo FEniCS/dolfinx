@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Marie E. Rognes
+// Copyright (C) 2010--2012 Marie E. Rognes
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells 2011
 //
 // First added:  2010-08-19
-// Last changed: 2011-11-04
+// Last changed: 2012-11-14
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/NonlinearVariationalProblem.h>
@@ -36,43 +36,59 @@ using namespace dolfin;
 
 // ----------------------------------------------------------------------------
 AdaptiveNonlinearVariationalSolver::
-AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem& problem)
+AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem& problem,
+                                   GoalFunctional& goal)
   : problem(reference_to_no_delete_pointer(problem))
 {
-  // Set generic adaptive parameters
-  parameters = GenericAdaptiveVariationalSolver::default_parameters();
-
-  // Add parameters for nonlinear variational solver
-  parameters.add(NonlinearVariationalSolver::default_parameters());
+  init(reference_to_no_delete_pointer(problem),
+       reference_to_no_delete_pointer(goal));
 }
 // ----------------------------------------------------------------------------
 AdaptiveNonlinearVariationalSolver::
-AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem)
+AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem,
+                                   boost::shared_ptr<GoalFunctional> goal)
   : problem(problem)
 {
+  init(problem, goal);
+}
+// ----------------------------------------------------------------------------
+AdaptiveNonlinearVariationalSolver::
+AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem,
+                                boost::shared_ptr<Form> goal,
+                                boost::shared_ptr<ErrorControl> control)
+  : problem(problem)
+{
+  this->goal = goal;
+  this->control = control;
+
+  // Set generic adaptive parameters
+  parameters = GenericAdaptiveVariationalSolver::default_parameters();
+
+  // Add parameters for non-linear variational solver
+  parameters.add(NonlinearVariationalSolver::default_parameters());
+}
+// ----------------------------------------------------------------------------
+void AdaptiveNonlinearVariationalSolver::
+init(boost::shared_ptr<NonlinearVariationalProblem> problem,
+     boost::shared_ptr<GoalFunctional> goal)
+{
+  this->goal = goal;
+
   // Set generic adaptive parameters
   parameters = GenericAdaptiveVariationalSolver::default_parameters();
 
   // Add parameters for nonlinear variational solver
   parameters.add(NonlinearVariationalSolver::default_parameters());
-}
-// ----------------------------------------------------------------------------
-void AdaptiveNonlinearVariationalSolver::solve(const double tol,
-                                               GoalFunctional& M)
-{
-  // Initialize goal functional
+
+  // Extract error control from goal
   boost::shared_ptr<const Form> a = problem->jacobian_form();
   boost::shared_ptr<const Form> L = problem->residual_form();
   dolfin_assert(a);
   dolfin_assert(L);
-  M.update_ec(*a, *L);
 
   // Extract error control from goal functional
-  dolfin_assert(M._ec);
-  ErrorControl& ec(*(M._ec));
-
-  // Call solve with given error control
-  GenericAdaptiveVariationalSolver::solve(tol, M, ec);
+  goal->update_ec(*a, *L);
+  control = goal->_ec;
 }
 // ----------------------------------------------------------------------------
 boost::shared_ptr<const Function>
@@ -105,7 +121,7 @@ adapt_problem(boost::shared_ptr<const Mesh> mesh)
   adapt(current, mesh);
 }
 // ----------------------------------------------------------------------------
-dolfin::uint AdaptiveNonlinearVariationalSolver::num_dofs_primal()
+std::size_t AdaptiveNonlinearVariationalSolver::num_dofs_primal()
 {
   const NonlinearVariationalProblem& current = problem->leaf_node();
   const FunctionSpace& V = *(current.trial_space());

@@ -25,6 +25,7 @@
 
 #include <boost/foreach.hpp>
 #include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/compressed_sparse_row_graph.hpp>
 
 #include <dolfin/common/Array.h>
 #include "dolfin/common/Timer.h"
@@ -35,23 +36,33 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::uint BoostGraphInterface::compute_local_vertex_coloring(const Graph& graph,
-                                                        std::vector<uint>& colors)
+std::size_t BoostGraphInterface::compute_local_vertex_coloring(const Graph& graph,
+                                                 std::vector<std::size_t>& colors)
 {
-  // Number of vertices in graph
-  const uint num_vertices = graph.size();
-  dolfin_assert(num_vertices == colors.size());
+  // Number of vertices
+  const std::size_t n = graph.size();
+  dolfin_assert(n == colors.size());
 
-  // Copy Graph data structure into a BoostGraph
-  BoostBidirectionalGraph g(num_vertices);
-  for (uint i = 0; i < graph.size(); ++i)
-  {
-    BOOST_FOREACH(boost::unordered_set<uint>::value_type edge, graph[i])
-    {
-      const uint e = edge;
-      boost::add_edge(i, e, g);
-    }
-  }
+  // Typedef for Boost compressed sparse row graph
+  typedef boost::compressed_sparse_row_graph<boost::directedS> BoostGraph;
+
+  // Count number of edges
+  Graph::const_iterator vertex;
+  std::size_t num_edges = 0;
+  for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
+    num_edges += vertex->size();
+
+  // Build list of graph edges
+  std::vector<std::pair<std::size_t, std::size_t> > edges;
+  edges.reserve(num_edges);
+  graph_set_type::const_iterator edge;
+  for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
+    for (edge = vertex->begin(); edge != vertex->end(); ++edge)
+      edges.push_back(std::make_pair(vertex - graph.begin(), *edge));
+
+  // Build Boost graph
+  BoostGraph g(boost::edges_are_unsorted_multi_pass,
+               edges.begin(), edges.end(), n);
 
   // Perform coloring
   return compute_local_vertex_coloring(g, colors);

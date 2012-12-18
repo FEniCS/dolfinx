@@ -36,8 +36,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::uint GraphColoring::compute_local_vertex_coloring(const Graph& graph,
-                                                     std::vector<uint>& colors)
+std::size_t GraphColoring::compute_local_vertex_coloring(const Graph& graph,
+                                              std::vector<std::size_t>& colors)
 {
   // Get coloring library from parameter system
   const std::string colorer = parameters["graph_coloring_library"];

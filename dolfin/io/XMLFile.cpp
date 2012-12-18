@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2009-03-03
-// Last changed: 2011-09-27
+// Last changed: 2012-11-27
 
 #include <iostream>
 #include <fstream>
@@ -42,6 +42,7 @@
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/common/Timer.h>
 #include "XMLFunctionData.h"
 #include "XMLLocalMeshSAX.h"
 #include "XMLMesh.h"
@@ -85,9 +86,11 @@ void XMLFile::operator>> (Mesh& input_mesh)
   else
   {
     // Read local mesh data
+    Timer t("XML: readSAX");
     LocalMeshData local_mesh_data;
     XMLLocalMeshSAX xml_object(local_mesh_data, filename);
     xml_object.read();
+    t.stop();
 
     // Partition and build mesh
     MeshPartitioning::build_distributed_mesh(input_mesh, local_mesh_data);
@@ -96,7 +99,7 @@ void XMLFile::operator>> (Mesh& input_mesh)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const Mesh& output_mesh)
 {
-  not_working_in_parallel("Mesh XML output in parallel not yet supported.");
+  not_working_in_parallel("Mesh XML output");
 
   pugi::xml_document doc;
   pugi::xml_node node = write_dolfin(doc);
@@ -123,7 +126,7 @@ void XMLFile::operator>> (GenericVector& input)
   pugi::xml_node dolfin_node(0);
 
   // Read vector size
-  uint size = 0;
+  std::size_t size = 0;
   if (MPI::process_number() == 0)
   {
     load_xml_doc(xml_doc);
@@ -133,8 +136,8 @@ void XMLFile::operator>> (GenericVector& input)
   MPI::broadcast(size);
 
   // Resize if necessary
-  const uint input_vector_size = input.size();
-  const uint num_proc = MPI::num_processes();
+  const std::size_t input_vector_size = input.size();
+  const std::size_t num_proc = MPI::num_processes();
   if (num_proc > 1 && input_vector_size != size)
     warning("Resizing parallel vector. Default partitioning will be used. To control distribution, initialize vector size before reading from file.");
   if (input.size() != size)
@@ -151,7 +154,7 @@ void XMLFile::operator>> (GenericVector& input)
   input.apply("insert");
 }
 //-----------------------------------------------------------------------------
-void XMLFile::read_vector(std::vector<double>& input, std::vector<uint>& indices)
+void XMLFile::read_vector(std::vector<double>& input, std::vector<DolfinIndex>& indices)
 {
   // Create XML doc and get DOLFIN node
   pugi::xml_document xml_doc;

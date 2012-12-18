@@ -48,20 +48,12 @@ namespace dolfin
     void operator() (KSP* ksp)
     {
       if (ksp)
-      {
-        #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
-        KSPDestroy(*ksp);
-        #else
         KSPDestroy(ksp);
-        #endif
-      }
       delete ksp;
     }
   };
 }
 
-// Compatibility with petsc 3.2
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 1
 #define MAT_SOLVER_UMFPACK      MATSOLVERUMFPACK
 #define MAT_SOLVER_MUMPS        MATSOLVERMUMPS
 #define MAT_SOLVER_PASTIX       MATSOLVERPASTIX
@@ -69,7 +61,6 @@ namespace dolfin
 #define MAT_SOLVER_SPOOLES      MATSOLVERSPOOLES
 #define MAT_SOLVER_SUPERLU_DIST MATSOLVERSUPERLU_DIST
 #define MAT_SOLVER_SUPERLU      MATSOLVERSUPERLU
-#endif
 
 // List of available LU solvers
 const std::map<std::string, const MatSolverPackage> PETScLUSolver::_methods
@@ -129,7 +120,7 @@ Parameters PETScLUSolver::default_parameters()
   p.rename("petsc_lu_solver");
 
   // Number of threads per process for multi-threaded solvers
-  p.add<uint>("num_threads");
+  p.add<std::size_t>("num_threads");
 
   return p;
 }
@@ -189,7 +180,7 @@ const GenericLinearOperator& PETScLUSolver::get_operator() const
   return *A;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
+std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   dolfin_assert(_ksp);
   dolfin_assert(A);
@@ -245,7 +236,7 @@ dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScLUSolver::solve(const GenericLinearOperator& A,
+std::size_t PETScLUSolver::solve(const GenericLinearOperator& A,
                                   GenericVector& x,
                                   const GenericVector& b)
 {
@@ -254,7 +245,7 @@ dolfin::uint PETScLUSolver::solve(const GenericLinearOperator& A,
                as_type<const PETScVector>(b));
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
+std::size_t PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
                                   const PETScVector& b)
 {
   boost::shared_ptr<const PETScMatrix> _A(&A, NoDeleter());

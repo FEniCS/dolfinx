@@ -20,9 +20,10 @@
 # Modified by Anders Logg, 2008-2009.
 # Modified by Johannes Ring, 2009, 2011-2012.
 # Modified by Johan Hake, 2009.
+# Modified by Benjamin Kehlet 2012
 #
 # First added:  2008-04-08
-# Last changed: 2012-09-21
+# Last changed: 2012-11-13
 
 import sys, os, re
 import platform
@@ -30,6 +31,22 @@ import instant
 from time import time
 from dolfin_utils.commands import getstatusoutput
 from dolfin import has_mpi, has_parmetis, has_scotch
+
+
+def get_executable_name(demo, lang) :
+  """Extract name of executable (without extension) from path.
+     Name should be on the form demo_dir1_dir2 where dir1 and dir2 are
+     directories under demo/[undocumented,pde,la] and lang (cpp or py) should
+     be excluded.
+  """
+  directories = demo.split(os.path.sep)
+
+  # Search for "demo" and lang from right
+  directories_reverted = directories[::-1]
+  demo_index = len(directories) - directories_reverted.index("demo") - 1
+  lang_index = len(directories) - directories_reverted.index(lang) - 1
+  truncated_directories = directories[demo_index+2:lang_index]
+  return 'demo_' + "_".join(truncated_directories)
 
 # Location of all demos
 demodir = os.path.join(os.curdir, "..", "..", "demo")
@@ -71,6 +88,13 @@ for s in cppslow:
 # Remove demos that need command-line arguments
 pyremoves  = [os.path.join(demodir,  'undocumented', 'quadrature', 'python')]
 cppremoves = [os.path.join(demodir,  'undocumented', 'quadrature', 'cpp')]
+
+# Remove demos that crash
+pyremoves.append(os.path.join(demodir,  'undocumented', 'netgen', 'python'))
+# Add these back when mesh generation from csg is working in 3D
+pyremoves.append(os.path.join(demodir,  'undocumented', 'csg', '3D', 'python'))
+cppremoves.append(os.path.join(demodir, 'undocumented', 'csg', '3D', 'cpp'))
+
 for demo in pyremoves:
     if demo in pydemos:
         pydemos.remove(demo)
@@ -125,12 +149,12 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'subdomains',                  'cpp'),    \
    os.path.join(demodir, 'undocumented', 'subdomains',                  'python'), \
    os.path.join(demodir, 'undocumented', 'submesh',                     'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'submesh',                     'python'),  \
+   os.path.join(demodir, 'undocumented', 'submesh',                     'python'), \
    os.path.join(demodir, 'undocumented', 'time-series',                 'cpp'),    \
    os.path.join(demodir, 'undocumented', 'time-series',                 'python'), \
    os.path.join(demodir, 'undocumented', 'triangulate',                 'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'triangulate',                 'python')]
-
+   os.path.join(demodir, 'undocumented', 'triangulate',                 'python'), \
+   os.path.join(demodir, 'undocumented', 'restriction',                 'cpp')]
 
 failed = []
 timing = []
@@ -174,7 +198,9 @@ for prefix in prefixes:
         print "----------------------------------------------------------------------"
         print "Running C++ demo %s%s" % (prefix, demo)
         print ""
-        cppdemo_executable = 'demo_' + demo.split(os.path.sep)[-2]
+
+        cppdemo_executable = get_executable_name(demo, "cpp")
+
         if platform.system() == 'Windows':
             cppdemo_executable += '.exe'
         if os.path.isfile(os.path.join(demo, cppdemo_executable)):
@@ -199,7 +225,7 @@ for prefix in prefixes:
         print "----------------------------------------------------------------------"
         print "Running Python demo %s%s" % (prefix, demo)
         print ""
-        demofile = 'demo_' + demo.split(os.path.sep)[-2] + '.py'
+        demofile = get_executable_name(demo, "python") + '.py'
         if os.path.isfile(os.path.join(demo, demofile)):
             t1 = time()
             status, output = getstatusoutput("cd %s && %s python %s" % (demo, prefix, demofile))

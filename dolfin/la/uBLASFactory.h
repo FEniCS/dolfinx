@@ -69,7 +69,7 @@ namespace dolfin
     }
 
     /// Create empty tensor layout
-    boost::shared_ptr<TensorLayout> create_layout(uint rank) const
+    boost::shared_ptr<TensorLayout> create_layout(std::size_t rank) const
     {
       bool sparsity = false;
       if (rank > 1)

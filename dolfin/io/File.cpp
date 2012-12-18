@@ -21,7 +21,7 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2011-11-14
+// Last changed: 2012-12-01
 
 #include <fstream>
 #include <string>
@@ -35,8 +35,8 @@
 #include "VTKFile.h"
 #include "XMLFile.h"
 #include "XYZFile.h"
-#include "HDF5File.h"
 #include "XDMFFile.h"
+#include "SVGFile.h"
 #include "File.h"
 
 using namespace dolfin;
@@ -80,10 +80,10 @@ File::File(const std::string filename, std::string encoding)
   else if (extension == ".bin")
     file.reset(new BinaryFile(filename));
 #ifdef HAS_HDF5
-  else if (extension == ".h5")
-    file.reset(new HDF5File(filename));
   else if (extension == ".xdmf")
     file.reset(new XDMFFile(filename));
+  else if (extension == ".svg")
+    file.reset(new SVGFile(filename));
 #endif
   else
   {
@@ -101,11 +101,6 @@ File::File(const std::string filename, Type type, std::string encoding)
   case xdmf:
 #ifdef HAS_HDF5
     file.reset(new XDMFFile(filename));
-    break;
-#endif
-  case hdf5:
-#ifdef HAS_HDF5
-    file.reset(new HDF5File(filename));
     break;
 #endif
   case xml:

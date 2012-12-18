@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2011
 //
 // First added:  2010
-// Last changed: 2012-07-05
+// Last changed: 2012-11-12
 //
 // This demo program illustrates how to solve Poisson's equation
 //
@@ -70,7 +70,7 @@ class Flux : public Expression
 int main()
 {
   // Create mesh and function space
-  UnitSquare mesh(64, 64);
+  UnitSquareMesh mesh(64, 64);
   Poisson::FunctionSpace V(mesh);
 
   // Define variational problem

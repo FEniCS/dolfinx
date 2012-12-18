@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-27
-// Last changed: 2012-05-09
+// Last changed: 2012-12-13
 
 //=============================================================================
 // In this file we declare some typemaps for the std::set type
@@ -36,12 +36,10 @@ namespace std
 // The typemaps makes a function returning a NumPy array of that primitive
 //
 // TYPE       : The primitive type
-// TYPE_UPPER : The SWIG specific name of the type used in the array type checks
-//              values SWIG use: INT32 for integer, DOUBLE for double aso.
 // ARG_NAME   : The name of the argument that will be maped as an 'argout' argument
 // NUMPY_TYPE : The type of the NumPy array that will be returned
 //-----------------------------------------------------------------------------
-%define ARGOUT_TYPEMAP_BOOST_UNORDERED_SET_OF_PRIMITIVES(TYPE, TYPE_UPPER, ARG_NAME, NUMPY_TYPE)
+%define ARGOUT_TYPEMAP_STD_SET_OF_PRIMITIVES(TYPE, ARG_NAME, NUMPY_TYPE)
 //-----------------------------------------------------------------------------
 // In typemap removing the argument from the expected in list
 //-----------------------------------------------------------------------------
@@ -72,9 +70,41 @@ namespace std
 
 %enddef
 
+//-----------------------------------------------------------------------------
+// Macro for defining an out typemap for a boost::unordered_set of primitives
+// The typemaps makes a function returning a NumPy array of that primitive
+//
+// TYPE       : The primitive type
+// NUMPY_TYPE : The type of the NumPy array that will be returned
+//-----------------------------------------------------------------------------
+%define OUT_TYPEMAP_BOOST_UNORDERED_SET_OF_PRIMITIVES(TYPE, NUMPY_TYPE)
+//-----------------------------------------------------------------------------
+// Argout typemap, returning a NumPy array for the boost::unordered_set<TYPE>
+//-----------------------------------------------------------------------------
+%typemap(out) boost::unordered_set<TYPE> 
+{
+  npy_intp size = $1.size();
+  PyArrayObject *ret = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, &size, NUMPY_TYPE));
+  TYPE* data = static_cast<TYPE*>(PyArray_DATA(ret));
+
+  int i = 0;
+  for (boost::unordered_set<TYPE>::const_iterator it = $1.begin(); it != $1.end(); ++it)
+  {
+    data[i] = *it;
+    ++i;
+  }
+
+  // Append the output to $result
+  $result = PyArray_Return(ret);
+}
+
+%enddef
+
 // NOTE: SWIG BUG
-// NOTE: Because of bug introduced by SWIG 2.0.5 we cannot use templated versions 
+// NOTE: Because of bug introduced by SWIG 2.0.5 we cannot use templated versions
 // NOTE: of typdefs, which means we need to use unsigned int instead of dolfin::uint
 // NOTE: in typemaps
-ARGOUT_TYPEMAP_BOOST_UNORDERED_SET_OF_PRIMITIVES(unsigned int, INT32, ids_result, NPY_INT)
-ARGOUT_TYPEMAP_BOOST_UNORDERED_SET_OF_PRIMITIVES(unsigned int, INT32, cells, NPY_INT)
+ARGOUT_TYPEMAP_STD_SET_OF_PRIMITIVES(std::size_t, ids_result, NPY_UINTP)
+ARGOUT_TYPEMAP_STD_SET_OF_PRIMITIVES(std::size_t, cells, NPY_UINTP)
+
+OUT_TYPEMAP_BOOST_UNORDERED_SET_OF_PRIMITIVES(std::size_t, NPY_UINTP)

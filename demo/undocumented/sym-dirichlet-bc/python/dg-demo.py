@@ -22,12 +22,12 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2008
-# Last changed: 2008
+# Last changed: 2012-11-12
 
 from dolfin import *
 
 # Create mesh and finite element
-mesh = UnitSquare(10,10)
+mesh = UnitSquareMesh(10,10)
 
 parameters["linear_algebra_backend"] = "uBLAS"
 

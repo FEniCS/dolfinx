@@ -42,15 +42,15 @@ void dolfin::mark(dolfin::MeshFunction<bool>& markers,
   }
 
   // Count number of marked cells
-  uint num_marked = 0;
-  for(uint i=0; i < markers.size(); i++)
+  std::size_t num_marked = 0;
+  for(std::size_t i = 0; i < markers.size(); i++)
   {
     if (markers[i])
       num_marked++;
   }
 
   // Report the number of marked cells
-  log(INFO,
+  log(PROGRESS,
       "Marking %d cells out of %d (%.1f%%) for refinement",
       num_marked, markers.size(), 100.0*num_marked/markers.size());
 }
@@ -67,10 +67,10 @@ void dolfin::dorfler_mark(dolfin::MeshFunction<bool>& markers,
 
   // Sort cell indices by indicators and compute sum of error
   // indicators
-  std::map<double, uint> sorted_cells;
-  std::map<double, uint>::reverse_iterator it;
+  std::map<double, std::size_t> sorted_cells;
+  std::map<double, std::size_t>::reverse_iterator it;
   double eta_T_H = 0;
-  for (dolfin::uint i = 0; i < mesh.num_cells(); i++)
+  for (std::size_t i = 0; i < mesh.num_cells(); i++)
   {
     const double value = indicators[i];
     eta_T_H += value;

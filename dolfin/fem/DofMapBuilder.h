@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Anders Logg and Ola Skavhaug
+// Copyright (C) 2008-2012 Anders Logg and Ola Skavhaug
 //
 // This file is part of DOLFIN.
 //
@@ -15,17 +15,20 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Niclas Jansson 2009.
+// Modified by Niclas Jansson 2009
+// Modified by Garth Wells 2009-2012
 //
 // First added:  2008-08-12
-// Last changed: 2009-11-04
+// Last changed: 2012-11-05
 
 #ifndef __DOF_MAP_BUILDER_H
 #define __DOF_MAP_BUILDER_H
 
 #include <set>
+#include <map>
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
+#include <dolfin/common/types.h>
 #include <dolfin/common/Set.h>
 
 namespace ufc
@@ -45,23 +48,31 @@ namespace dolfin
 
   class DofMapBuilder
   {
+
+    // FIXME: Test which 'map' is most efficient
+    typedef std::map<DolfinIndex, DolfinIndex> map;
+    typedef std::map<DolfinIndex, DolfinIndex>::const_iterator map_iterator;
+
     // FIXME: Test which 'set' is most efficient
+    typedef std::set<std::size_t> set;
+    typedef std::set<std::size_t>::const_iterator set_iterator;
 
-    typedef std::set<dolfin::uint> set;
-    typedef std::set<dolfin::uint>::const_iterator set_iterator;
+    //typedef boost::unordered_set<dolfin::std::size_t> set;
+    //typedef boost::unordered_set<dolfin::std::size_t>::const_iterator set_iterator;
 
-    //typedef boost::unordered_set<dolfin::uint> set;
-    //typedef boost::unordered_set<dolfin::uint>::const_iterator set_iterator;
-
-    typedef std::vector<dolfin::uint>::const_iterator vector_it;
-    typedef boost::unordered_map<uint, std::vector<uint> > vec_map;
+    typedef std::vector<std::size_t>::const_iterator vector_it;
+    typedef boost::unordered_map<std::size_t, std::vector<std::size_t> > vec_map;
 
   public:
 
-    static void build(DofMap& dofmap, const Mesh& dolfin_mesh,
-                      const UFCMesh& ufc_mesh, bool reorder,
+    // Build dofmap. The restriction may be a null pointer in which
+    // case it is ignored.
+    static void build(DofMap& dofmap,
+                      const Mesh& dolfin_mesh,
+                      const UFCMesh& ufc_mesh,
+                      boost::shared_ptr<const Restriction> restriction,
+                      bool reorder,
                       bool distributed);
-
 
   private:
 
@@ -92,7 +103,7 @@ namespace dolfin
 
     // Iterate recursively over all sub-dof maps to find global
     // degrees of freedom
-    static void compute_global_dofs(set& global_dofs, uint& offset,
+    static void compute_global_dofs(set& global_dofs, std::size_t& offset,
                             boost::shared_ptr<const ufc::dofmap> dofmap,
                             const Mesh& dolfin_mesh, const UFCMesh& ufc_mesh);
 

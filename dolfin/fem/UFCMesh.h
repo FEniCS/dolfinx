@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Anders Logg
+// Copyright (C) 2007-2012 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-03-01
-// Last changed: 2007-03-01
+// Last changed: 2012-12-12
 
 #ifndef __UFC_MESH_H
 #define __UFC_MESH_H
@@ -35,53 +35,64 @@ namespace dolfin
   public:
 
     /// Create empty UFC mesh
-    UFCMesh() : ufc::mesh() {}
-
-    /// Copy constructor
-    UFCMesh(const UFCMesh& mesh) : ufc::mesh()
+    UFCMesh() : ufc::mesh()
     {
-      // Set topological dimension
-      topological_dimension = mesh.topological_dimension;
-
-      // Set geometric dimension
-      geometric_dimension = mesh.geometric_dimension;
-
-      // Number of entities
-      num_entities = new uint[topological_dimension + 1];
-      for (uint d = 0; d <= topological_dimension; d++)
-        num_entities[d] = mesh.num_entities[d];
+      topological_dimension = 0;
+      geometric_dimension = 0;
+      num_entities = 0;
     }
 
     /// Create UFC mesh from DOLFIN mesh
     UFCMesh(const Mesh& mesh) : ufc::mesh()
-    { init(mesh); }
+    {
+      // Clear old data
+      clear();
+
+      // Set topological and geometric dimensions
+      topological_dimension = mesh.topology().dim();
+      geometric_dimension = mesh.geometry().dim();
+
+      // Set number of entities of each topological dimension, using
+      // the number of global entities if available (in parallel)
+      num_entities = new unsigned int[topological_dimension + 1];
+      for (std::size_t d = 0; d <= topological_dimension; d++)
+        num_entities[d] = mesh.size_global(d);
+    }
+
+    /// Copy constructor
+    UFCMesh(const UFCMesh& mesh) : ufc::mesh()
+    {
+      topological_dimension = 0;
+      geometric_dimension = 0;
+      num_entities = 0;
+      *this = mesh;
+    }
+
+    // Assignment operator
+    const UFCMesh& operator= (const UFCMesh& mesh)
+    {
+      // Clear all data
+      clear();
+
+      // Set topological and geometric dimensions
+      topological_dimension = mesh.topological_dimension;
+      geometric_dimension = mesh.geometric_dimension;
+
+      // Set number of entities of each dimension
+      num_entities = new unsigned int[topological_dimension + 1];
+      for (std::size_t d = 0; d <= topological_dimension; d++)
+        num_entities[d] = mesh.num_entities[d];
+
+      return *this;
+    }
 
     /// Destructor
     ~UFCMesh()
     { clear(); }
 
-    /// Initialize UFC cell data
-    void init(const Mesh& mesh)
-    {
-      // Clear old data
-      clear();
+  private:
 
-      // Set topological dimension
-      topological_dimension = mesh.topology().dim();
-
-      // Set geometric dimension
-      geometric_dimension = mesh.geometry().dim();
-
-      // Set number of entities for each topological dimension
-      num_entities = new uint[mesh.topology().dim() + 1];
-
-      // Use number of global entities if available (when running in parallel)
-      const MeshTopology& topology = mesh.topology();
-      for (uint d = 0; d <= topology.dim(); d++)
-        num_entities[d] = mesh.size_global(d);
-    }
-
-    // Clear UFC cell data
+    // Clear all data
     void clear()
     {
       topological_dimension = 0;

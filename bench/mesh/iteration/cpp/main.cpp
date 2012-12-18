@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-11-01
-// Last changed: 2010-05-03
+// Last changed: 2012-12-12
 
 #include <dolfin.h>
 
@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
 
   parameters.parse(argc, argv);
 
-  UnitCube mesh(SIZE, SIZE, SIZE);
+  UnitCubeMesh mesh(SIZE, SIZE, SIZE);
 
   int sum = 0;
   tic();

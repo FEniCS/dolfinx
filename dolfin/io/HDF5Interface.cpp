@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First Added: 2012-09-21
-// Last Changed: 2012-10-12
+// Last Changed: 2012-12-04
 
 #include <boost/filesystem.hpp>
 
@@ -36,7 +36,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-hid_t HDF5Interface::open_file(const std::string filename, const bool truncate,
+hid_t HDF5Interface::open_file(const std::string filename, const std::string mode,
                                const bool use_mpi_io)
 {
   // Set parallel access with communicator
@@ -55,10 +55,10 @@ hid_t HDF5Interface::open_file(const std::string filename, const bool truncate,
     #endif
   }
 
-  hid_t file_id;
-  if (truncate)
+  hid_t file_id = HDF5_FAIL;
+  if (mode=="w")
   {
-    // Create file, (overwriting existing file, if present)
+    // Create file for write, (overwriting existing file, if present)
     file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT,
                         plist_id);
   }
@@ -72,8 +72,22 @@ hid_t HDF5Interface::open_file(const std::string filename, const bool truncate,
                    "File does not exist");
     }
 
-    // Open file existing file
-    file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
+    if(mode=="a")
+    {
+      // Open file existing file for append
+      file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
+    }
+    else if(mode=="r")
+    {
+      file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, plist_id);
+    }
+    else
+    {
+      dolfin_error("HDF5Interface.cpp",
+                   "open HDF5 file",
+                   "Unknown file mode \"%s\"", mode.c_str());
+    }
+    
   }
   dolfin_assert(file_id != HDF5_FAIL);
 
@@ -119,7 +133,7 @@ void HDF5Interface::add_group(const hid_t hdf5_file_handle,
   dolfin_assert(status != HDF5_FAIL);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint HDF5Interface::dataset_rank(const hid_t hdf5_file_handle,
+std::size_t HDF5Interface::dataset_rank(const hid_t hdf5_file_handle,
 					 const std::string dataset_name)
 {
   // Open dataset
@@ -144,7 +158,7 @@ dolfin::uint HDF5Interface::dataset_rank(const hid_t hdf5_file_handle,
   return rank;
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::uint>
+std::vector<std::size_t>
       HDF5Interface::get_dataset_size(const hid_t hdf5_file_handle,
                                       const std::string dataset_name)
 {
@@ -173,10 +187,10 @@ std::vector<dolfin::uint>
   status = H5Dclose(dset_id);
   dolfin_assert(status != HDF5_FAIL);
 
-  return std::vector<uint>(size.begin(), size.end());
+  return std::vector<std::size_t>(size.begin(), size.end());
 }
 //-----------------------------------------------------------------------------
-dolfin::uint HDF5Interface::num_datasets_in_group(const hid_t hdf5_file_handle,
+std::size_t HDF5Interface::num_datasets_in_group(const hid_t hdf5_file_handle,
                                                   const std::string group_name)
 {
   // Get group info by name

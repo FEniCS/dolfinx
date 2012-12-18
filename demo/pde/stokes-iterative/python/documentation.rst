@@ -49,8 +49,8 @@ this. We therefore start by checking that either "PETSc" or "Epetra"
              "preconditioner, Hypre or ML.");
         exit()
 
-Next, we define the mesh (a :py:class:`UnitCube
-<dolfin.cpp.UnitCube>`) and a :py:class:`MixedFunctionSpace
+Next, we define the mesh (a :py:class:`UnitCubeMesh
+<dolfin.cpp.UnitCubeMesh>`) and a :py:class:`MixedFunctionSpace
 <dolfin.functions.functionspace.MixedFunctionSpace>` composed of a
 :py:class:`VectorFunctionSpace
 <dolfin.functions.functionspace.VectorFunctionSpace>` of continuous
@@ -63,7 +63,7 @@ Stokes equations.)
 .. code-block:: python
 
     # Load mesh
-    mesh = UnitCube(16, 16, 16)
+    mesh = UnitCubeMesh(16, 16, 16)
 
     # Define function spaces
     V = VectorFunctionSpace(mesh, "CG", 2)

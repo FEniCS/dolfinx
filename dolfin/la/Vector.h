@@ -53,7 +53,7 @@ namespace dolfin
     }
 
     /// Create vector of size N
-    explicit Vector(uint N)
+    explicit Vector(std::size_t N)
     {
       DefaultFactory factory;
       vector = factory.create_vector();
@@ -90,15 +90,15 @@ namespace dolfin
     //--- Implementation of the GenericVector interface ---
 
     /// Resize vector to size N
-    virtual void resize(uint N)
+    virtual void resize(std::size_t N)
     { vector->resize(N); }
 
     /// Resize vector with given ownership range
-    virtual void resize(std::pair<uint, uint> range)
+    virtual void resize(std::pair<std::size_t, std::size_t> range)
     { vector->resize(range); }
 
     /// Resize vector with given ownership range and with ghost values
-    virtual void resize(std::pair<uint, uint> range, const std::vector<uint>& ghost_indices)
+    virtual void resize(std::pair<std::size_t, std::size_t> range, const std::vector<std::size_t>& ghost_indices)
     { vector->resize(range, ghost_indices); }
 
     /// Return true if vector is empty
@@ -106,31 +106,31 @@ namespace dolfin
     { return vector->empty(); }
 
     /// Return size of vector
-    virtual uint size() const
+    virtual std::size_t size() const
     { return vector->size(); }
 
     /// Return local size of vector
-    virtual uint local_size() const
+    virtual std::size_t local_size() const
     { return vector->local_size(); }
 
     /// Return local ownership range of a vector
-    virtual std::pair<uint, uint> local_range() const
+    virtual std::pair<std::size_t, std::size_t> local_range() const
     { return vector->local_range(); }
 
     /// Determine whether global vector index is owned by this process
-    virtual bool owns_index(uint i) const
+    virtual bool owns_index(std::size_t i) const
     { return vector->owns_index(i); }
 
     /// Get block of values (values must all live on the local process)
-    virtual void get_local(double* block, uint m, const uint* rows) const
+    virtual void get_local(double* block, std::size_t m, const DolfinIndex* rows) const
     { vector->get_local(block,m,rows); }
 
     /// Set block of values
-    virtual void set(const double* block, uint m, const uint* rows)
+    virtual void set(const double* block, std::size_t m, const DolfinIndex* rows)
     { vector->set(block, m, rows); }
 
     /// Add block of values
-    virtual void add(const double* block, uint m, const uint* rows)
+    virtual void add(const double* block, std::size_t m, const DolfinIndex* rows)
     { vector->add(block, m, rows); }
 
     /// Get all values on local process
@@ -146,11 +146,11 @@ namespace dolfin
     { vector->add_local(values); }
 
     /// Gather entries into local vector x
-    virtual void gather(GenericVector& x, const std::vector<uint>& indices) const
+    virtual void gather(GenericVector& x, const std::vector<DolfinIndex>& indices) const
     { vector->gather(x, indices); }
 
     /// Gather entries into x
-    virtual void gather(std::vector<double>& x, const std::vector<uint>& indices) const
+    virtual void gather(std::vector<double>& x, const std::vector<DolfinIndex>& indices) const
     { vector->gather(x, indices); }
 
     /// Gather all entries into x on process 0
@@ -185,7 +185,7 @@ namespace dolfin
     virtual double sum() const
     { return vector->sum(); }
 
-    virtual double sum(const Array<uint>& rows) const
+    virtual double sum(const Array<std::size_t>& rows) const
     { return vector->sum(rows); }
 
     /// Multiply vector by given number

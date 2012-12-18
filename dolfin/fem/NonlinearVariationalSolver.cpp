@@ -48,7 +48,7 @@ NonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> proble
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-std::pair<dolfin::uint, bool>  NonlinearVariationalSolver::solve()
+std::pair<std::size_t, bool>  NonlinearVariationalSolver::solve()
 {
   begin("Solving nonlinear variational problem.");
 
@@ -73,7 +73,7 @@ std::pair<dolfin::uint, bool>  NonlinearVariationalSolver::solve()
   }
 
 
-  std::pair<uint, bool> ret;
+  std::pair<std::size_t, bool> ret;
 
   if (std::string(parameters["nonlinear_solver"]) == "newton")
   {
@@ -150,7 +150,7 @@ NonlinearDiscreteProblem::F(GenericVector& b, const GenericVector& x)
   assemble(b, *F);
 
   // Apply boundary conditions
-  for (uint i = 0; i < bcs.size(); i++)
+  for (std::size_t i = 0; i < bcs.size(); i++)
   {
     dolfin_assert(bcs[i]);
     bcs[i]->apply(b, x);
@@ -184,7 +184,7 @@ NonlinearDiscreteProblem::J(GenericMatrix& A, const GenericVector& x)
   jacobian_initialized = true;
 
   // Apply boundary conditions
-  for (uint i = 0; i < bcs.size(); i++)
+  for (std::size_t i = 0; i < bcs.size(); i++)
   {
     dolfin_assert(bcs[i]);
     bcs[i]->apply(A);

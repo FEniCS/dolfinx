@@ -40,11 +40,11 @@
   Create  IntersectionOperator for a given mesh
   
   *Arguments*
-      labels (_MeshFunction<unsigned int>_)
+      labels (_MeshFunction<std::size_t>_)
           A MeshFunction over entities labeling the part of the Mesh
           for which the distance will be measured to
   
-      label (int)
+      label (std::size_t)
           The label determining the part of the mesh for which
           the distance will be measured to
   
@@ -60,11 +60,11 @@
   Create IntersectionOperator for a given mesh (shared data)
   
   *Arguments*
-      labels (_MeshFunction<unsigned int>_)
+      labels (_MeshFunction<std::size_t>_)
           A MeshFunction over facets labeling the part of the Boundary
           for which the distance will be measured to
   
-      label (int)
+      label (std::size_t)
           The label determining the part of the mesh for which
           the distance will be measured to
   
@@ -99,7 +99,7 @@
   the (external) cell and the intersected cell of the mesh. If you
   are only interested in intersection with a list of cells without caring about which
   cell what intersected by which one, use
-  void IntersectionOperator::all_intersected_entities(const std::vector<Cell> &, std::set<uint> &) const;
+  void IntersectionOperator::all_intersected_entities(const std::vector<Cell> &, std::set<std::size_t> &) const;
   @internal
   @todo This function has to improved: 1) it requires the object the
   mesh is to be cut with to be another mesh entitiy instead of being just a

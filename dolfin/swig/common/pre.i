@@ -45,9 +45,9 @@
 //-----------------------------------------------------------------------------
 // Copy Array construction typemaps from NumPy typemaps
 //-----------------------------------------------------------------------------
-%typemap(in) (dolfin::uint N, const dolfin::uint* x) = (dolfin::uint _array_dim, dolfin::uint* _array);
-%typemap(in) (dolfin::uint N, const int* x) = (dolfin::uint _array_dim, int* _array);
-%typemap(in) (dolfin::uint N, const double* x) = (dolfin::uint _array_dim, double* _array);
+%typemap(in) (std::size_t N, const std::size_t* x) = (std::size_t _array_dim, std::size_t* _array);
+%typemap(in) (std::size_t N, const int* x) = (std::size_t _array_dim, int* _array);
+%typemap(in) (std::size_t N, const double* x) = (std::size_t _array_dim, double* _array);
 
 //-----------------------------------------------------------------------------
 // Ignores for Hierarchical
@@ -59,11 +59,10 @@
 // and ignore foo_shared_ptr for SWIG < 2.0
 //-----------------------------------------------------------------------------
 %ignore dolfin::Hierarchical::parent;
-%rename(parent) dolfin::Hierarchical::parent_shared_ptr;
+%rename(_parent) dolfin::Hierarchical::parent_shared_ptr;
 %ignore dolfin::Hierarchical::child;
-%rename(child) dolfin::Hierarchical::child_shared_ptr;
+%rename(_child) dolfin::Hierarchical::child_shared_ptr;
 %ignore dolfin::Hierarchical::root_node;
-%rename(root_node) dolfin::Hierarchical::root_node_shared_ptr;
+%rename(_root_node) dolfin::Hierarchical::root_node_shared_ptr;
 %ignore dolfin::Hierarchical::leaf_node;
-%rename(leaf_node) dolfin::Hierarchical::leaf_node_shared_ptr;
-
+%rename(_leaf_node) dolfin::Hierarchical::leaf_node_shared_ptr;

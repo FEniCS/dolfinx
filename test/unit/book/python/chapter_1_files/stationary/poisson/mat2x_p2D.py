@@ -10,7 +10,7 @@ import sys, math, numpy
 mesh = UnitSquare(4, 6)
 
 # Define a MeshFunction over two subdomains
-subdomains = MeshFunction('uint', mesh, 2)
+subdomains = MeshFunction('size_t', mesh, 2)
 
 class Omega0(SubDomain):
     def inside(self, x, on_boundary):
@@ -71,7 +71,7 @@ class RightBoundary(SubDomain):
     def inside(self, x, on_boundary):
         tol = 1E-14   # tolerance for coordinate comparisons
         return on_boundary and abs(x[0] - 1) < tol
- 
+
 Gamma_1 = DirichletBC(V, u_R, RightBoundary())
 
 bcs = [Gamma_0, Gamma_1]

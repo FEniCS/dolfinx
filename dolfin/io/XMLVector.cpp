@@ -39,14 +39,14 @@ void XMLVector::read(GenericVector& x, const pugi::xml_node xml_dolfin)
 {
   // Read data in to vectors
   std::vector<double> data;
-  std::vector<uint> indices;
+  std::vector<DolfinIndex> indices;
   read(data, indices, xml_dolfin);
 
   // Set data (GenericVector::apply will be called by calling function)
-  x.set(&data[0], data.size(), &indices[0]);
+  x.set(data.data(), data.size(), indices.data());
 }
 //-----------------------------------------------------------------------------
-void XMLVector::read(std::vector<double>& x, std::vector<uint>& indices,
+void XMLVector::read(std::vector<double>& x, std::vector<DolfinIndex>& indices,
                      const pugi::xml_node xml_dolfin)
 {
   // Check that we have a XML Vector
@@ -67,7 +67,7 @@ void XMLVector::read(std::vector<double>& x, std::vector<uint>& indices,
                  "Expecting an Array inside a DOLFIN Vector XML file");
   }
 
-  const unsigned int size = array.attribute("size").as_uint();
+  const std::size_t size = array.attribute("size").as_uint();
   const std::string type = array.attribute("type").value();
 
   // Check if size is zero
@@ -83,7 +83,7 @@ void XMLVector::read(std::vector<double>& x, std::vector<uint>& indices,
   indices.resize(size);
   for (pugi::xml_node_iterator it = array.begin(); it != array.end(); ++it)
   {
-    const unsigned int index = it->attribute("index").as_uint();
+    const std::size_t index = it->attribute("index").as_uint();
     const double value = it->attribute("value").as_double();
     dolfin_assert(index < size);
     indices[index] = index;
@@ -91,7 +91,7 @@ void XMLVector::read(std::vector<double>& x, std::vector<uint>& indices,
   }
 }
 //-----------------------------------------------------------------------------
-dolfin::uint XMLVector::read_size(const pugi::xml_node xml_dolfin)
+std::size_t XMLVector::read_size(const pugi::xml_node xml_dolfin)
 {
   // Check that we have a XML Vector
   const pugi::xml_node xml_vector_node = xml_dolfin.child("vector");
@@ -120,7 +120,7 @@ void XMLVector::write(const GenericVector& vector, pugi::xml_node xml_node,
   else
     vector.get_local(x);
 
-  const uint size = vector.size();
+  const std::size_t size = vector.size();
 
   // Check if size is zero
   if (size == 0)

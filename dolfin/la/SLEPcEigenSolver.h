@@ -151,35 +151,35 @@ namespace dolfin
     void solve();
 
     /// Compute the n first eigenpairs of the matrix A (solve Ax = \lambda x)
-    void solve(uint n);
+    void solve(std::size_t n);
 
     /// Get the first eigenvalue
     void get_eigenvalue(double& lr, double& lc) const;
 
     /// Get the first eigenpair
-    void get_eigenpair(double& lr, double& lc, 
+    void get_eigenpair(double& lr, double& lc,
                        GenericVector& r, GenericVector& c) const;
 
     /// Get the first eigenpair
-    void get_eigenpair(double& lr, double& lc, 
+    void get_eigenpair(double& lr, double& lc,
                        PETScVector& r, PETScVector& c) const;
 
     /// Get eigenvalue i
-    void get_eigenvalue(double& lr, double& lc, uint i) const;
+    void get_eigenvalue(double& lr, double& lc, std::size_t i) const;
 
     /// Get eigenpair i
     void get_eigenpair(double& lr, double& lc,
-                       GenericVector& r, GenericVector& c, uint i) const;
+                       GenericVector& r, GenericVector& c, std::size_t i) const;
 
     /// Get eigenpair i
     void get_eigenpair(double& lr, double& lc,
-                       PETScVector& r, PETScVector& c, uint i) const;
+                       PETScVector& r, PETScVector& c, std::size_t i) const;
 
     // Get the number of iterations used by the solver
-    int get_iteration_number() const;
+    std::size_t get_iteration_number() const;
 
     // Get the number of converged eigenvalues
-    int get_number_converged() const;
+    std::size_t get_number_converged() const;
 
     // Set deflation space
     void set_deflation_space(const PETScVector& deflation_space);
@@ -218,7 +218,7 @@ namespace dolfin
     void set_solver(std::string spectrum);
 
     // Set tolerance
-    void set_tolerance(double tolerance, uint maxiter);
+    void set_tolerance(double tolerance, std::size_t maxiter);
 
     // Operators (A x = \lambda x or Ax = \lambda B x)
     boost::shared_ptr<const PETScMatrix> A;

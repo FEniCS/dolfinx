@@ -51,7 +51,7 @@ namespace dolfin
     static void refine(Mesh& refined_mesh,
                        const Mesh& mesh,
                        const MeshFunction<bool>& cell_marker,
-                       MeshFunction<uint>& cell_map,
+                       MeshFunction<std::size_t>& cell_map,
                        std::vector<int>& facet_map);
 
   private:
@@ -97,13 +97,13 @@ namespace dolfin
       void bisect(DCell* dcell, DVertex* hangv, DVertex* hv0, DVertex* hv1);
       void bisect_marked(std::vector<bool> marked_ids);
       DCell* opposite(DCell* dcell, DVertex* v1, DVertex* v2);
-      void propagate_facets(DCell* dcell, DCell* c0, DCell* c1, uint ii, uint jj, DVertex* mv);
+      void propagate_facets(DCell* dcell, DCell* c0, DCell* c1, std::size_t ii, std::size_t jj, DVertex* mv);
 
       std::list<DVertex*> vertices;
       std::list<DCell*> cells;
       const CellType* cell_type;
-      uint tdim;
-      uint gdim;
+      std::size_t tdim;
+      std::size_t gdim;
 
     };
 

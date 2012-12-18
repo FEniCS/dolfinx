@@ -40,10 +40,10 @@ int main()
   };
 
   // Create mesh
-  Rectangle mesh(0.0, 0.0, 3.0, 1.0, 60, 20);
+  RectangleMesh mesh(0.0, 0.0, 3.0, 1.0, 60, 20);
 
   // Create sub domain markers and mark everything as 0
-  MeshFunction<unsigned int> sub_domains(mesh, mesh.topology().dim());
+  MeshFunction<std::size_t> sub_domains(mesh, mesh.topology().dim());
   sub_domains = 0;
 
   // Mark structure domain as 1

@@ -31,6 +31,7 @@
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/GenericLinearAlgebraFactory.h>
+#include <dolfin/la/TensorLayout.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/Mesh.h>
@@ -42,13 +43,13 @@
 #include "SparsityPatternBuilder.h"
 #include "AssemblerBase.h"
 
-#include <dolfin/la/TensorLayout.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
-          const std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >& periodic_master_slave_dofs)
+          const std::vector<std::pair<std::pair<std::size_t, std::size_t>,
+                      std::pair<std::size_t, std::size_t> > >& periodic_master_slave_dofs)
 {
   dolfin_assert(a.ufc_form());
 
@@ -62,7 +63,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
 
   // Get dof maps
   std::vector<const GenericDofMap*> dofmaps;
-  for (uint i = 0; i < a.rank(); ++i)
+  for (std::size_t i = 0; i < a.rank(); ++i)
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   if (reset_sparsity)
@@ -73,9 +74,9 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
     boost::shared_ptr<TensorLayout> tensor_layout = A.factory().create_layout(a.rank());
     dolfin_assert(tensor_layout);
 
-    std::vector<uint> global_dimensions(a.rank());
-    std::vector<std::pair<uint, uint> > local_range(a.rank());
-    for (uint i = 0; i < a.rank(); i++)
+    std::vector<std::size_t> global_dimensions(a.rank());
+    std::vector<std::pair<std::size_t, std::size_t> > local_range(a.rank());
+    for (std::size_t i = 0; i < a.rank(); i++)
     {
       dolfin_assert(dofmaps[i]);
       global_dimensions[i] = dofmaps[i]->global_dimension();
@@ -112,9 +113,12 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
 
       // Loop over rows and insert 0.0 on the diagonal
       const double block = 0.0;
-      const std::pair<uint, uint> row_range = A.local_range(0);
-      for (uint i = row_range.first; i < row_range.second; i++)
-        _A.set(&block, (uint) 1, &i, (uint) 1, &i);
+      const std::pair<std::size_t, std::size_t> row_range = A.local_range(0);
+      for (std::size_t i = row_range.first; i < row_range.second; i++)
+      {
+        DolfinIndex _i = i;
+        _A.set(&block, 1, &_i, 1, &_i);
+      }
       A.apply("flush");
     }
 
@@ -134,23 +138,25 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
                        "Modifcation of non-zero matrix pattern for periodic boundary conditions is supported row-wise matrices only");
         }
 
-        const std::pair<uint, uint> local_range = pattern.local_range(0);
+        const std::pair<std::size_t, std::size_t> local_range = pattern.local_range(0);
 
         GenericMatrix& _A = A.down_cast<GenericMatrix>();
-        std::vector<std::pair<std::pair<uint, uint>, std::pair<uint, uint> > >::const_iterator dof_pair;
+        std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > >::const_iterator dof_pair;
         for (dof_pair = periodic_master_slave_dofs.begin();
                     dof_pair != periodic_master_slave_dofs.end(); ++dof_pair)
         {
-          const uint dofs[2] = {dof_pair->first.first, dof_pair->second.first};
+          const std::size_t dofs[2] = {dof_pair->first.first, dof_pair->second.first};
 
-          std::vector<uint> edges;
-          for (uint i = 0; i < 2; ++i)
+          std::vector<DolfinIndex> edges;
+          for (std::size_t i = 0; i < 2; ++i)
           {
             if (dofs[i] >= local_range.first && dofs[i] < local_range.second)
             {
               pattern.get_edges(dofs[i], edges);
               const std::vector<double> block(edges.size(), 0.0);
-              _A.set(&block[0], (uint) 1, &dofs[i], (uint) edges.size(), &edges[0]);
+              DolfinIndex _dof = dofs[i];
+              const std::vector<DolfinIndex> _edges(edges.begin(), edges.end());
+              _A.set(&block[0], 1, &_dof, edges.size(), _edges.data());
             }
           }
         }
@@ -165,7 +171,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
   else
   {
     // If tensor is not reset, check that dimensions are correct
-    for (uint i = 0; i < a.rank(); ++i)
+    for (std::size_t i = 0; i < a.rank(); ++i)
     {
       if (A.size(i) != dofmaps[i]->global_dimension())
       {
@@ -220,7 +226,7 @@ void AssemblerBase::check(const Form& a)
   }
 
   // Check that all coefficients have valid value dimensions
-  for (uint i = 0; i < coefficients.size(); ++i)
+  for (std::size_t i = 0; i < coefficients.size(); ++i)
   {
     if (!coefficients[i])
     {
@@ -233,9 +239,9 @@ void AssemblerBase::check(const Form& a)
     // auto_ptr deletes its object when it exits its scope
     boost::scoped_ptr<ufc::finite_element> fe(a.ufc_form()->create_finite_element(i + a.rank()));
 
-    // Checks outcommented since they only work for Functions, not Expressions
-    const uint r = coefficients[i]->value_rank();
-    const uint fe_r = fe->value_rank();
+    // Checks out-commented since they only work for Functions, not Expressions
+    const std::size_t r = coefficients[i]->value_rank();
+    const std::size_t fe_r = fe->value_rank();
     if (fe_r != r)
     {
       dolfin_error("AssemblerBase.cpp",
@@ -244,10 +250,10 @@ void AssemblerBase::check(const Form& a)
 You might have forgotten to specify the value rank correctly in an Expression subclass", i, r, fe_r);
     }
 
-    for (uint j = 0; j < r; ++j)
+    for (std::size_t j = 0; j < r; ++j)
     {
-      const uint dim = coefficients[i]->value_dimension(j);
-      const uint fe_dim = fe->value_dimension(j);
+      const std::size_t dim = coefficients[i]->value_dimension(j);
+      const std::size_t fe_dim = fe->value_dimension(j);
       if (dim != fe_dim)
       {
         dolfin_error("AssemblerBase.cpp",
@@ -292,7 +298,7 @@ You might have forgotten to specify the value dimension correctly in an Expressi
   }
 }
 //-----------------------------------------------------------------------------
-std::string AssemblerBase::progress_message(uint rank,
+std::string AssemblerBase::progress_message(std::size_t rank,
                                             std::string integral_type)
 {
   std::stringstream s;

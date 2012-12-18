@@ -59,9 +59,9 @@ namespace dolfin
     /// Create empty mesh value collection of given dimension
     ///
     /// *Arguments*
-    ///     dim (uint)
+    ///     dim (std::size_t)
     ///         The mesh entity dimension for the mesh value collection.
-    explicit MeshValueCollection(uint dim);
+    explicit MeshValueCollection(std::size_t dim);
 
     /// Create a mesh value collection from a MeshFunction
     ///
@@ -78,9 +78,9 @@ namespace dolfin
     ///         map collection values to the appropriate process.
     ///     filename (std::string)
     ///         The XML file name.
-    ///     dim (uint)
+    ///     dim (std::size_t)
     ///         The mesh entity dimension for the mesh value collection.
-    MeshValueCollection(const Mesh& mesh, const std::string filename, uint dim);
+    MeshValueCollection(const Mesh& mesh, const std::string filename, std::size_t dim);
 
     /// Destructor
     ~MeshValueCollection()
@@ -103,16 +103,16 @@ namespace dolfin
     /// Set the topological dimension
     ///
     /// *Arguments*
-    ///     dim (uint)
+    ///     dim (std::size_t)
     ///         The mesh entity dimension for the mesh value collection.
-    void set_dim(uint dim);
+    void set_dim(std::size_t dim);
 
     /// Return topological dimension
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The dimension.
-    uint dim() const;
+    std::size_t dim() const;
 
     /// Return true if the subset is empty
     ///
@@ -124,17 +124,17 @@ namespace dolfin
     /// Return size (number of entities in subset)
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The size.
-    uint size() const;
+    std::size_t size() const;
 
     /// Set marker value for given entity defined by a cell index and
     /// a local entity index
     ///
     /// *Arguments*
-    ///     cell_index (uint)
+    ///     cell_index (std::size_t)
     ///         The index of the cell.
-    ///     local_entity (uint)
+    ///     local_entity (std::size_t)
     ///         The local index of the entity relative to the cell.
     ///     marker_value (T)
     ///         The value of the marker.
@@ -143,12 +143,12 @@ namespace dolfin
     ///     bool
     ///         True is a new value is inserted, false if overwriting
     ///         an existing value.
-    bool set_value(uint cell_index, uint local_entity, const T& value);
+    bool set_value(std::size_t cell_index, std::size_t local_entity, const T& value);
 
     /// Set value for given entity index
     ///
     /// *Arguments*
-    ///     entity_index (uint)
+    ///     entity_index (std::size_t)
     ///         Index of the entity.
     ///     value (T).
     ///         The value of the marker.
@@ -159,35 +159,35 @@ namespace dolfin
     ///     bool
     ///         True is a new value is inserted, false if overwriting
     ///         an existing value.
-    bool set_value(uint entity_index, const T& value, const Mesh& mesh);
+    bool set_value(std::size_t entity_index, const T& value, const Mesh& mesh);
 
     /// Get marker value for given entity defined by a cell index and
     /// a local entity index
     ///
     /// *Arguments*
-    ///     cell_index (uint)
+    ///     cell_index (std::size_t)
     ///         The index of the cell.
-    ///     local_entity (uint)
+    ///     local_entity (std::size_t)
     ///         The local index of the entity relative to the cell.
     ///
     /// *Returns*
     ///     marker_value (T)
     ///         The value of the marker.
-    T get_value(uint cell_index, uint local_entity);
+    T get_value(std::size_t cell_index, std::size_t local_entity);
 
     /// Get all values
     ///
     /// *Returns*
-    ///     std::map<std::pair<uint, uint>, T>
+    ///     std::map<std::pair<std::size_t, std::size_t>, T>
     ///         A map from positions to values.
-    std::map<std::pair<uint, uint>, T>& values();
+    std::map<std::pair<std::size_t, std::size_t>, T>& values();
 
     /// Get all values (const version)
     ///
     /// *Returns*
-    ///     std::map<std::pair<uint, uint>, T>
+    ///     std::map<std::pair<std::size_t, std::size_t>, T>
     ///         A map from positions to values.
-    const std::map<std::pair<uint, uint>, T>& values() const;
+    const std::map<std::pair<std::size_t, std::size_t>, T>& values() const;
 
     /// Clear all values
     void clear();
@@ -206,10 +206,10 @@ namespace dolfin
   private:
 
     // The values
-    std::map<std::pair<uint, uint>, T> _values;
+    std::map<std::pair<std::size_t, std::size_t>, T> _values;
 
     /// Topological dimension
-    uint _dim;
+    std::size_t _dim;
 
   };
 
@@ -224,7 +224,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  MeshValueCollection<T>::MeshValueCollection(uint dim)
+  MeshValueCollection<T>::MeshValueCollection(std::size_t dim)
     : Variable("m", "unnamed MeshValueCollection"), _dim(dim)
   {
     // Do nothing
@@ -235,16 +235,16 @@ namespace dolfin
     : Variable("m", "unnamed MeshValueCollection"), _dim(mesh_function.dim())
   {
     const Mesh& mesh = mesh_function.mesh();
-    const uint D = mesh.topology().dim();
+    const std::size_t D = mesh.topology().dim();
 
     // FIXME: Use iterators
 
     // Handle cells as a special case
     if (D == _dim)
     {
-      for (uint cell_index = 0; cell_index < mesh_function.size(); ++cell_index)
+      for (std::size_t cell_index = 0; cell_index < mesh_function.size(); ++cell_index)
       {
-        const std::pair<uint, uint> key(cell_index, 0);
+        const std::pair<std::size_t, std::size_t> key(cell_index, 0);
         _values.insert(std::make_pair(key, mesh_function[cell_index]));
       }
     }
@@ -253,21 +253,21 @@ namespace dolfin
       mesh.init(_dim, D);
       const MeshConnectivity& connectivity = mesh.topology()(_dim, D);
       dolfin_assert(!connectivity.empty());
-      for (uint entity_index = 0; entity_index < mesh_function.size(); ++entity_index)
+      for (std::size_t entity_index = 0; entity_index < mesh_function.size(); ++entity_index)
       {
         // Find the cell
         dolfin_assert(connectivity.size(entity_index) > 0);
         const MeshEntity entity(mesh, _dim, entity_index);
-        for (uint i = 0; i < entity.num_entities(D) ; ++i)
+        for (std::size_t i = 0; i < entity.num_entities(D) ; ++i)
         {
           // Create cell
           const Cell cell(mesh, connectivity(entity_index)[i]);
 
           // Find the local entity index
-          const uint local_entity = cell.index(entity);
+          const std::size_t local_entity = cell.index(entity);
 
           // Insert into map
-          const std::pair<uint, uint> key(cell.index(), local_entity);
+          const std::pair<std::size_t, std::size_t> key(cell.index(), local_entity);
           _values.insert(std::make_pair(key, mesh_function[entity_index]));
         }
       }
@@ -276,7 +276,7 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template <typename T>
   MeshValueCollection<T>::MeshValueCollection(const Mesh& mesh,
-    const std::string filename, uint dim)
+    const std::string filename, std::size_t dim)
   : Variable("m", "unnamed MeshValueCollection"), _dim(dim)
   {
     if (MPI::num_processes() == 1)
@@ -309,16 +309,16 @@ namespace dolfin
     _dim = mesh_function.dim();
 
     const Mesh& mesh = mesh_function.mesh();
-    const uint D = mesh.topology().dim();
+    const std::size_t D = mesh.topology().dim();
 
     // FIXME: Use iterators
 
     // Handle cells as a special case
     if (D == _dim)
     {
-      for (uint cell_index = 0; cell_index < mesh_function.size(); ++cell_index)
+      for (std::size_t cell_index = 0; cell_index < mesh_function.size(); ++cell_index)
       {
-        const std::pair<uint, uint> key(cell_index, 0);
+        const std::pair<std::size_t, std::size_t> key(cell_index, 0);
         _values.insert(std::make_pair(key, mesh_function[cell_index]));
       }
     }
@@ -327,21 +327,21 @@ namespace dolfin
       mesh.init(_dim, D);
       const MeshConnectivity& connectivity = mesh.topology()(_dim, D);
       dolfin_assert(!connectivity.empty());
-      for (uint entity_index = 0; entity_index < mesh_function.size(); ++entity_index)
+      for (std::size_t entity_index = 0; entity_index < mesh_function.size(); ++entity_index)
       {
         // Find the cell
         dolfin_assert(connectivity.size(entity_index) > 0);
         const MeshEntity entity(mesh, _dim, entity_index);
-        for (uint i = 0; i < entity.num_entities(D) ; ++i)
+        for (std::size_t i = 0; i < entity.num_entities(D) ; ++i)
         {
           // Create cell
           const Cell cell(mesh, connectivity(entity_index)[i]);
 
           // Find the local entity index
-          const uint local_entity = cell.index(entity);
+          const std::size_t local_entity = cell.index(entity);
 
           // Insert into map
-          const std::pair<uint, uint> key(cell.index(), local_entity);
+          const std::pair<std::size_t, std::size_t> key(cell.index(), local_entity);
           _values.insert(std::make_pair(key, mesh_function[entity_index]));
         }
       }
@@ -360,13 +360,13 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  void MeshValueCollection<T>::set_dim(uint dim)
+  void MeshValueCollection<T>::set_dim(std::size_t dim)
   {
     _dim = dim;
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  uint MeshValueCollection<T>::dim() const
+  std::size_t MeshValueCollection<T>::dim() const
   {
     return _dim;
   }
@@ -378,34 +378,34 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  uint MeshValueCollection<T>::size() const
+  std::size_t MeshValueCollection<T>::size() const
   {
     return _values.size();
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  bool MeshValueCollection<T>::set_value(uint cell_index,
-                                         uint local_entity,
+  bool MeshValueCollection<T>::set_value(std::size_t cell_index,
+                                         std::size_t local_entity,
                                          const T& value)
   {
-    const std::pair<uint, uint> pos(std::make_pair(cell_index, local_entity));
-    std::pair<typename std::map<std::pair<uint, uint>, T>::iterator, bool> it;
+    const std::pair<std::size_t, std::size_t> pos(std::make_pair(cell_index, local_entity));
+    std::pair<typename std::map<std::pair<std::size_t, std::size_t>, T>::iterator, bool> it;
     it = _values.insert(std::make_pair(pos, value));
     return it.second;
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  bool MeshValueCollection<T>::set_value(uint entity_index,
+  bool MeshValueCollection<T>::set_value(std::size_t entity_index,
                                          const T& value,
                                          const Mesh& mesh)
   {
     // Special case when d = D
-    const uint D = mesh.topology().dim();
+    const std::size_t D = mesh.topology().dim();
     if (_dim == D)
     {
       // Set local entity index to zero when we mark a cell
-      const std::pair<uint, uint> pos(std::make_pair(entity_index, 0));
-      std::pair<typename std::map<std::pair<uint, uint>, T>::iterator, bool> it;
+      const std::pair<std::size_t, std::size_t> pos(std::make_pair(entity_index, 0));
+      std::pair<typename std::map<std::pair<std::size_t, std::size_t>, T>::iterator, bool> it;
       it = _values.insert(std::make_pair(pos, value));
       return it.second;
     }
@@ -421,21 +421,21 @@ namespace dolfin
     const Cell cell(mesh, connectivity(entity_index)[0]); // choose first
 
     // Find the local entity index
-    const uint local_entity = cell.index(entity);
+    const std::size_t local_entity = cell.index(entity);
 
     // Add value
-    const std::pair<uint, uint> pos(std::make_pair(cell.index(), local_entity));
-    std::pair<typename std::map<std::pair<uint, uint>, T>::iterator, bool> it;
+    const std::pair<std::size_t, std::size_t> pos(std::make_pair(cell.index(), local_entity));
+    std::pair<typename std::map<std::pair<std::size_t, std::size_t>, T>::iterator, bool> it;
     it = _values.insert(std::make_pair(pos, value));
     return it.second;
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  T MeshValueCollection<T>::get_value(uint cell_index,
-				      uint local_entity)
+  T MeshValueCollection<T>::get_value(std::size_t cell_index,
+				      std::size_t local_entity)
   {
-    const std::pair<uint, uint> pos(std::make_pair(cell_index, local_entity));
-    const typename std::map<std::pair<uint, uint>, T>::const_iterator it =
+    const std::pair<std::size_t, std::size_t> pos(std::make_pair(cell_index, local_entity));
+    const typename std::map<std::pair<std::size_t, std::size_t>, T>::const_iterator it =
       _values.find(pos);
 
     if (it == _values.end())
@@ -448,13 +448,13 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  std::map<std::pair<uint, uint>, T>& MeshValueCollection<T>::values()
+  std::map<std::pair<std::size_t, std::size_t>, T>& MeshValueCollection<T>::values()
   {
     return _values;
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  const std::map<std::pair<uint, uint>, T>& MeshValueCollection<T>::values() const
+  const std::map<std::pair<std::size_t, std::size_t>, T>& MeshValueCollection<T>::values() const
   {
     return _values;
   }

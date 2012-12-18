@@ -22,8 +22,10 @@
 
 import unittest
 from dolfin import *
+import ufl
 
-mesh = UnitCube(8, 8, 8)
+mesh = UnitCubeMesh(8, 8, 8)
+R = FunctionSpace(mesh, 'R', 0)
 V = FunctionSpace(mesh, 'CG', 1)
 W = VectorFunctionSpace(mesh, 'CG', 1)
 
@@ -50,6 +52,47 @@ class Interface(unittest.TestCase):
 
         self.assertTrue(all(u_values==1))
 
+
+class ScalarFunctions(unittest.TestCase):
+    def test_constant_float_conversion(self):
+        c = Constant(3.45)
+        self.assertTrue(float(c) == 3.45)
+
+    def test_real_function_float_conversion1(self):
+        c = Function(R)
+        self.assertTrue(float(c) == 0.0)
+
+    def test_real_function_float_conversion2(self):
+        c = Function(R)
+        c.assign(Constant(2.34))
+        self.assertTrue(float(c) == 2.34)
+
+    def test_real_function_float_conversion3(self):
+        c = Function(R)
+        c.vector()[:] = 1.23
+        self.assertTrue(float(c) == 1.23)
+
+    def test_scalar_conditions(self):
+        c = Function(R)
+        c.vector()[:] = 1.5
+
+        # Float conversion does not interfere with boolean ufl expressions
+        self.assertTrue(isinstance(lt(c, 3), ufl.classes.LT))
+        self.assertFalse(isinstance(lt(c, 3), bool))
+
+        # Float conversion is not implicit in boolean Python expressions
+        self.assertTrue(isinstance(c < 3, ufl.classes.LT))
+        self.assertFalse(isinstance(c < 3, bool))
+
+        # == is used in ufl to compare equivalent representations,
+        # <,> result in LT/GT expressions, bool conversion is illegal
+        # Note that 1.5 < 0 == False == 1.5 < 1, but that is not what we compare here:
+        self.assertFalse((c < 0) == (c < 1))
+        # This protects from "if c < 0: ..." misuse:
+        self.assertRaises(ufl.UFLException, lambda: bool(c < 0))
+        self.assertRaises(ufl.UFLException, lambda: not c < 0)
+
+
 class Interpolate(unittest.TestCase):
 
     def test_interpolation_mismatch_rank0(self):
@@ -72,15 +115,15 @@ class Interpolate(unittest.TestCase):
         self.assertRaises(RuntimeError, f0.__call__, (0., 0, -1))
 
         if MPI.num_processes() == 1:
-            mesh1 = UnitSquare(3,3)
+            mesh1 = UnitSquareMesh(3,3)
             V1 = FunctionSpace(mesh1, "CG", 1)
-            
+
             parameters["allow_extrapolation"] = True
             f1 = Function(V1)
             f1.vector()[:] = 1.0
             self.assertAlmostEqual(f1(0.,-1), 1.0)
-        
-            mesh2 = UnitTriangle()
+
+            mesh2 = UnitTriangleMesh()
             V2 = FunctionSpace(mesh2, "CG", 1)
 
             parameters["allow_extrapolation"] = False

@@ -33,12 +33,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::uint IntervalCell::dim() const
+std::size_t IntervalCell::dim() const
 {
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint IntervalCell::num_entities(uint dim) const
+std::size_t IntervalCell::num_entities(std::size_t dim) const
 {
   switch (dim)
   {
@@ -55,7 +55,7 @@ dolfin::uint IntervalCell::num_entities(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint IntervalCell::num_vertices(uint dim) const
+std::size_t IntervalCell::num_vertices(std::size_t dim) const
 {
   switch (dim)
   {
@@ -72,7 +72,7 @@ dolfin::uint IntervalCell::num_vertices(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint IntervalCell::orientation(const Cell& cell) const
+std::size_t IntervalCell::orientation(const Cell& cell) const
 {
   Point v01 = Point(cell.entities(0)[1]) - Point(cell.entities(0)[0]);
   Point n(-v01.y(), v01.x());
@@ -80,8 +80,8 @@ dolfin::uint IntervalCell::orientation(const Cell& cell) const
   return (n.dot(v01) < 0.0 ? 1 : 0);
 }
 //-----------------------------------------------------------------------------
-void IntervalCell::create_entities(std::vector<std::vector<uint> >& e,
-                                   uint dim, const uint* v) const
+void IntervalCell::create_entities(std::vector<std::vector<std::size_t> >& e,
+                                   std::size_t dim, const std::size_t* v) const
 {
   // We don't need to create any entities
   dolfin_error("IntervalCell.cpp",
@@ -90,22 +90,22 @@ void IntervalCell::create_entities(std::vector<std::vector<uint> >& e,
 }
 //-----------------------------------------------------------------------------
 void IntervalCell::refine_cell(Cell& cell, MeshEditor& editor,
-                              uint& current_cell) const
+                               std::size_t& current_cell) const
 {
   // Get vertices
-  const uint* v = cell.entities(0);
+  const std::size_t* v = cell.entities(0);
   dolfin_assert(v);
 
   // Get offset for new vertex indices
-  const uint offset = cell.mesh().num_vertices();
+  const std::size_t offset = cell.mesh().num_vertices();
 
   // Compute indices for the three new vertices
-  const uint v0 = v[0];
-  const uint v1 = v[1];
-  const uint e0 = offset + cell.index();
+  const std::size_t v0 = v[0];
+  const std::size_t v1 = v[1];
+  const std::size_t e0 = offset + cell.index();
 
   // Add the two new cells
-  std::vector<uint> new_cell(2);
+  std::vector<std::size_t> new_cell(2);
 
   new_cell[0] = v0; new_cell[1] = e0;
   editor.add_cell(current_cell++, new_cell);
@@ -128,13 +128,13 @@ double IntervalCell::volume(const MeshEntity& interval) const
   const MeshGeometry& geometry = interval.mesh().geometry();
 
   // Get the coordinates of the two vertices
-  const uint* vertices = interval.entities(0);
+  const std::size_t* vertices = interval.entities(0);
   const double* x0 = geometry.x(vertices[0]);
   const double* x1 = geometry.x(vertices[1]);
 
   // Compute length of interval (line segment)
   double sum = 0.0;
-  for (uint i = 0; i < geometry.dim(); ++i)
+  for (std::size_t i = 0; i < geometry.dim(); ++i)
   {
     const double dx = x1[i] - x0[i];
     sum += dx*dx;
@@ -157,18 +157,18 @@ double IntervalCell::diameter(const MeshEntity& interval) const
   return volume(interval);
 }
 //-----------------------------------------------------------------------------
-double IntervalCell::normal(const Cell& cell, uint facet, uint i) const
+double IntervalCell::normal(const Cell& cell, std::size_t facet, std::size_t i) const
 {
   return normal(cell, facet)[i];
 }
 //-----------------------------------------------------------------------------
-Point IntervalCell::normal(const Cell& cell, uint facet) const
+Point IntervalCell::normal(const Cell& cell, std::size_t facet) const
 {
   // Get mesh geometry
   const MeshGeometry& geometry = cell.mesh().geometry();
 
   // Get the two vertices as points
-  const uint* vertices = cell.entities(0);
+  const std::size_t* vertices = cell.entities(0);
   Point p0 = geometry.point(vertices[0]);
   Point p1 = geometry.point(vertices[1]);
 
@@ -183,13 +183,13 @@ Point IntervalCell::normal(const Cell& cell, uint facet) const
   return n;
 }
 //-----------------------------------------------------------------------------
-double IntervalCell::facet_area(const Cell& cell, uint facet) const
+double IntervalCell::facet_area(const Cell& cell, std::size_t facet) const
 {
   return 1.0;
 }
 //-----------------------------------------------------------------------------
 void IntervalCell::order(Cell& cell,
-                 const std::vector<uint>& local_to_global_vertex_indices) const
+                 const std::vector<std::size_t>& local_to_global_vertex_indices) const
 {
   // Sort i - j for i > j: 1 - 0
 
@@ -199,7 +199,7 @@ void IntervalCell::order(Cell& cell,
   // Sort local vertices in ascending order, connectivity 1 - 0
   if (!topology(1, 0).empty())
   {
-    uint* cell_vertices = const_cast<uint*>(cell.entities(0));
+    std::size_t* cell_vertices = const_cast<std::size_t*>(cell.entities(0));
     sort_entities(2, cell_vertices, local_to_global_vertex_indices);
   }
 }

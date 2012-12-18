@@ -43,7 +43,7 @@
 
   PyObject* _cells() {
     // FIXME: Works only for Mesh with Intervals, Triangles and Tetrahedrons
-    return %make_numpy_array(2, uint)(self->num_cells(), self->topology().dim()+1,
+    return %make_numpy_array(2, size_t)(self->num_cells(), self->topology().dim()+1,
 				      &(self->cells()[0]), false);
   }
 }
@@ -66,8 +66,9 @@ PyObject* _array()
 ALL_VALUES(dolfin::MeshFunction<double>, double)
 ALL_VALUES(dolfin::MeshFunction<int>, int)
 ALL_VALUES(dolfin::MeshFunction<bool>, bool)
-ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, uint)
 ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
+ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
+
 
 //-----------------------------------------------------------------------------
 // Ignore methods that is superseded by extended versions
@@ -77,10 +78,15 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
 %ignore dolfin::MeshFunction::values;
 
 //-----------------------------------------------------------------------------
+// Rename methods which get called by a re-implemented method from the
+// Python layer
+//-----------------------------------------------------------------------------
+%rename (_mark) dolfin::SubDomain::mark;
+
+//-----------------------------------------------------------------------------
 // Misc ignores
 //-----------------------------------------------------------------------------
-%ignore dolfin::Mesh::partition(dolfin::uint num_partitions, dolfin::MeshFunction<dolfin::uint>& partitions);
-%ignore dolfin::MeshEditor::open(Mesh&, CellType::Type, uint, uint);
+%ignore dolfin::MeshEditor::open(Mesh&, CellType::Type, std::size_t, std::size_t);
 %ignore dolfin::Point::operator=;
 %ignore dolfin::Point::operator[];
 %ignore dolfin::Mesh::operator=;
@@ -98,8 +104,6 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
 %ignore dolfin::MeshEntity::operator->;
 %ignore dolfin::SubsetIterator::operator->;
 %ignore dolfin::SubsetIterator::operator[];
-%ignore dolfin::ParallelData::shared_vertices();
-%ignore dolfin::ParallelData::num_global_entities();
 
 //-----------------------------------------------------------------------------
 // Map increment, decrease and dereference operators for iterators
@@ -132,7 +136,7 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
 %template(name) dolfin::MeshEntityIteratorBase<dolfin::ENTITY>;
 
 // Extend the interface (instead of renaming, doesn't seem to work)
-%extend  dolfin::MeshEntityIteratorBase<dolfin::ENTITY>
+%extend dolfin::MeshEntityIteratorBase<dolfin::ENTITY>
 {
   dolfin::MeshEntityIteratorBase<dolfin::ENTITY>& _increment()
   {
@@ -184,19 +188,19 @@ MESHENTITYITERATORBASE(Vertex, vertices)
 //-----------------------------------------------------------------------------
 // Return NumPy arrays for MeshConnectivity() and MeshEntity.entities()
 //-----------------------------------------------------------------------------
-%ignore dolfin::MeshGeometry::x(uint n, uint i) const;
+%ignore dolfin::MeshGeometry::x(std::size_t n, std::size_t i) const;
 %ignore dolfin::MeshConnectivity::operator();
 %ignore dolfin::MeshEntity::entities;
 
 %extend dolfin::MeshConnectivity {
   PyObject* __call__()
   {
-    return %make_numpy_array(1, uint)(self->size(), &(*self)()[0], false);
+    return %make_numpy_array(1, size_t)(self->size(), &(*self)()[0], false);
   }
 
-  PyObject* __call__(dolfin::uint entity)
+  PyObject* __call__(std::size_t entity)
   {
-    return %make_numpy_array(1, uint)(self->size(entity), (*self)(entity), false);
+    return %make_numpy_array(1, size_t)(self->size(entity), (*self)(entity), false);
   }
 }
 
@@ -240,6 +244,7 @@ FORWARD_DECLARE_MESHFUNCTIONS(unsigned int, UInt)
 FORWARD_DECLARE_MESHFUNCTIONS(int, Int)
 FORWARD_DECLARE_MESHFUNCTIONS(double, Double)
 FORWARD_DECLARE_MESHFUNCTIONS(bool, Bool)
+FORWARD_DECLARE_MESHFUNCTIONS(std::size_t, Sizet)
 
 // Exclude from ifdef as it is used by other modules
 %template (HierarchicalMesh) dolfin::Hierarchical<dolfin::Mesh>;

@@ -30,9 +30,9 @@ using namespace dolfin;
 void LocalAssembler::assemble(arma::Mat<double>& A,
                               UFC& ufc,
                               const Cell& cell,
-                              const MeshFunction<uint>* cell_domains,
-                              const MeshFunction<uint>* exterior_facet_domains,
-                              const MeshFunction<uint>* interior_facet_domains)
+                              const MeshFunction<std::size_t>* cell_domains,
+                              const MeshFunction<std::size_t>* exterior_facet_domains,
+                              const MeshFunction<std::size_t>* interior_facet_domains)
 {
   // Clear tensor
   A.zeros();
@@ -55,7 +55,7 @@ void LocalAssembler::assemble(arma::Mat<double>& A,
 void LocalAssembler::assemble_cell(arma::mat& A,
                                    UFC& ufc,
                                    const Cell& cell,
-                                   const MeshFunction<uint>* domains)
+                                   const MeshFunction<std::size_t>* domains)
 {
   // Skip if there are no cell integrals
   if (ufc.form.num_cell_domains() == 0)
@@ -67,7 +67,7 @@ void LocalAssembler::assemble_cell(arma::mat& A,
   // Get integral for sub domain (if any)
   if (domains && !domains->empty())
   {
-    const uint domain = (*domains)[cell];
+    const std::size_t domain = (*domains)[cell];
     if (domain < ufc.form.num_cell_domains())
       integral = ufc.cell_integrals[domain].get();
     else
@@ -85,10 +85,10 @@ void LocalAssembler::assemble_cell(arma::mat& A,
   integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell);
 
   // Stuff a_ufc.A into A
-  const uint M = A.n_rows;
-  const uint N = A.n_cols;
-  for (uint i=0; i < M; i++)
-    for (uint j=0; j < N; j++)
+  const std::size_t M = A.n_rows;
+  const std::size_t N = A.n_cols;
+  for (std::size_t i=0; i < M; i++)
+    for (std::size_t j=0; j < N; j++)
       A(i, j) += ufc.A[N*i + j];
 
 }
@@ -97,8 +97,8 @@ void LocalAssembler::assemble_exterior_facet(arma::mat& A,
                                              UFC& ufc,
                                              const Cell& cell,
                                              const Facet& facet,
-                                             const uint local_facet,
-                                             const MeshFunction<uint>* domains)
+                                             const std::size_t local_facet,
+                                             const MeshFunction<std::size_t>* domains)
 {
   // Skip if there are no exterior facet integrals
   if (ufc.form.num_exterior_facet_domains() == 0)
@@ -110,7 +110,7 @@ void LocalAssembler::assemble_exterior_facet(arma::mat& A,
   // Get integral for sub domain (if any)
   if (domains && !domains->empty())
   {
-    const uint domain = (*domains)[facet];
+    const std::size_t domain = (*domains)[facet];
     if (domain < ufc.form.num_exterior_facet_domains())
       integral = ufc.exterior_facet_integrals[domain].get();
     else
@@ -128,10 +128,10 @@ void LocalAssembler::assemble_exterior_facet(arma::mat& A,
   integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell, local_facet);
 
   // Stuff a_ufc.A into A
-  const uint M = A.n_rows;
-  const uint N = A.n_cols;
-  for (uint i=0; i < M; i++)
-    for (uint j=0; j < N; j++)
+  const std::size_t M = A.n_rows;
+  const std::size_t N = A.n_cols;
+  for (std::size_t i=0; i < M; i++)
+    for (std::size_t j=0; j < N; j++)
       A(i, j) += ufc.A[N*i + j];
 }
 //------------------------------------------------------------------------------
@@ -139,8 +139,8 @@ void LocalAssembler::assemble_interior_facet(arma::mat& A,
                                              UFC& ufc,
                                              const Cell& cell,
                                              const Facet& facet,
-                                             const uint local_facet,
-                                             const MeshFunction<uint>* domains)
+                                             const std::size_t local_facet,
+                                             const MeshFunction<std::size_t>* domains)
 {
   // Skip if there are no interior facet integrals
   if (ufc.form.num_interior_facet_domains() == 0)
@@ -152,7 +152,7 @@ void LocalAssembler::assemble_interior_facet(arma::mat& A,
   // Get integral for sub domain (if any)
   if (domains && !domains->empty())
   {
-    const uint domain = (*domains)[facet];
+    const std::size_t domain = (*domains)[facet];
     if (domain < ufc.form.num_interior_facet_domains())
       integral = ufc.interior_facet_integrals[domain].get();
     else
@@ -172,15 +172,15 @@ void LocalAssembler::assemble_interior_facet(arma::mat& A,
                             local_facet, local_facet);
 
   // Stuff upper left quadrant (corresponding to this cell) into A
-  const uint M = A.n_rows;
-  const uint N = A.n_cols;
+  const std::size_t M = A.n_rows;
+  const std::size_t N = A.n_cols;
 
   if (N == 1)
-    for (uint i=0; i < M; i++)
+    for (std::size_t i=0; i < M; i++)
       A(i, 0) = ufc.macro_A[i];
   else
-    for (uint i=0; i < M; i++)
-      for (uint j=0; j < N; j++)
+    for (std::size_t i=0; i < M; i++)
+      for (std::size_t j=0; j < N; j++)
         A(i, j) += ufc.macro_A[2*N*i + j];
 }
 //------------------------------------------------------------------------------

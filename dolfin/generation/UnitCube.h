@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2006 Anders Logg
+// Copyright (C) 2012 Benjamin Kehlet
 //
 // This file is part of DOLFIN.
 //
@@ -15,13 +15,14 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2005-12-02
-// Last changed: 2012-03-06
+// First added:  2012-11-09
+// Last changed: 2012-11-09
 
 #ifndef __UNIT_CUBE_H
 #define __UNIT_CUBE_H
 
-#include <dolfin/mesh/Mesh.h>
+#include "UnitCubeMesh.h"
+#include <dolfin/log/log.h>
 
 namespace dolfin
 {
@@ -30,8 +31,9 @@ namespace dolfin
   /// Given the number of cells (nx, ny, nz) in each direction,
   /// the total number of tetrahedra will be 6*nx*ny*nz and the
   /// total number of vertices will be (nx + 1)*(ny + 1)*(nz + 1).
-
-  class UnitCube : public Mesh
+  ///
+  /// This class has been deprecated. Unit _UnitCubeMesh_.
+  class UnitCube : public UnitCubeMesh
   {
   public:
 
@@ -39,19 +41,23 @@ namespace dolfin
     /// [0,1] x [0,1] x [0,1].
     ///
     /// *Arguments*
-    ///     nx (uint)
+    ///     nx (std::size_t)
     ///         Number of cells in :math:`x` direction.
-    ///     ny (uint)
+    ///     ny (std::size_t)
     ///         Number of cells in :math:`y` direction.
-    ///     nz (uint)
+    ///     nz (std::size_t)
     ///         Number of cells in :math:`z` direction.
     ///
     /// *Example*
     ///     .. code-block:: c++
     ///
-    ///         UnitCube mesh(32, 32, 32);
+    ///         UnitCubeMesh mesh(32, 32, 32);
     ///
-    UnitCube(uint nx, uint ny, uint nz);
+    UnitCube(std::size_t nx, std::size_t ny, std::size_t nz)
+      : UnitCubeMesh(nx, ny, nz)
+    {
+      warning("UnitCube is deprecated. Use UnitCubeMesh");
+    }
 
   };
 

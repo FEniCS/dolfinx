@@ -26,11 +26,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SubSpace::SubSpace(const FunctionSpace& V, uint component)
+SubSpace::SubSpace(const FunctionSpace& V, std::size_t component)
   : FunctionSpace(V.mesh(), V.element(), V.dofmap())
 {
   // Create array
-  std::vector<uint> c;
+  std::vector<std::size_t> c;
   c.push_back(component);
 
   // Extract subspace and assign
@@ -38,11 +38,11 @@ SubSpace::SubSpace(const FunctionSpace& V, uint component)
   *static_cast<FunctionSpace*>(this) = *_V;
 }
 //-----------------------------------------------------------------------------
-SubSpace::SubSpace(const FunctionSpace& V, uint component, uint sub_component)
+SubSpace::SubSpace(const FunctionSpace& V, std::size_t component, std::size_t sub_component)
   : FunctionSpace(V.mesh(), V.element(), V.dofmap())
 {
   // Create array
-  std::vector<uint> c;
+  std::vector<std::size_t> c;
   c.push_back(component);
   c.push_back(sub_component);
 
@@ -51,7 +51,7 @@ SubSpace::SubSpace(const FunctionSpace& V, uint component, uint sub_component)
   *static_cast<FunctionSpace*>(this) = *_V;
 }
 //-----------------------------------------------------------------------------
-SubSpace::SubSpace(const FunctionSpace& V, const std::vector<uint>& component)
+SubSpace::SubSpace(const FunctionSpace& V, const std::vector<std::size_t>& component)
   : FunctionSpace(V.mesh(), V.element(), V.dofmap())
 {
   // Extract subspace and assign

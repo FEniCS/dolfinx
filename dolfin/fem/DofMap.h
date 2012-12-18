@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2012 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -21,7 +21,7 @@
 // Modified by Joachim B Haga, 2012
 //
 // First added:  2007-03-01
-// Last changed: 2012-02-29
+// Last changed: 2012-11-05
 
 #ifndef __DOLFIN_DOF_MAP_H
 #define __DOLFIN_DOF_MAP_H
@@ -46,6 +46,7 @@ namespace dolfin
   class GenericVector;
   class UFC;
   class UFCMesh;
+  class Restriction;
 
   /// This class handles the mapping of degrees of freedom. It builds
   /// a dof map based on a ufc::dofmap on a specific mesh. It will
@@ -63,16 +64,27 @@ namespace dolfin
     ///         The ufc::dofmap.
     ///     mesh (_Mesh_)
     ///         The mesh.
-    DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap, const Mesh& mesh);
+    DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
+           const Mesh& mesh);
+
+    /// Create restricted dof map on mesh (data is not shared)
+    ///
+    /// *Arguments*
+    ///     ufc_dofmap (ufc::dofmap)
+    ///         The ufc::dofmap.
+    ///     restriction (_Restriction_)
+    ///         The restriction.
+    DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
+           boost::shared_ptr<const Restriction> restriction);
 
   private:
 
     // Create a sub-dofmap (a view) from parent_dofmap
-    DofMap(const DofMap& parent_dofmap, const std::vector<uint>& component,
+    DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& component,
            const Mesh& mesh, bool distributed);
 
     // Create a collapsed dofmap from parent_dofmap
-    DofMap(boost::unordered_map<uint, uint>& collapsed_map,
+    DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
            const DofMap& dofmap_view, const Mesh& mesh, bool distributed);
 
     /// Copy constructor
@@ -87,7 +99,7 @@ namespace dolfin
     /// Destructor
     ~DofMap();
 
-    /// True if dof map is a view into another map
+    /// True iff dof map is a view into another map
     ///
     /// *Returns*
     ///     bool
@@ -96,25 +108,33 @@ namespace dolfin
     bool is_view() const
     { return _is_view; }
 
+    /// True iff dof map is restricted
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True iff dof map is restricted
+    bool is_restricted() const
+    { return static_cast<bool>(_restriction); }
+
     /// Return true iff mesh entities of topological dimension d are
     /// needed
     ///
     /// *Arguments*
-    ///     d (unsigned int)
+    ///     d (std::size_t)
     ///         Topological dimension.
     ///
     /// *Returns*
     ///     bool
     ///         True if the mesh entities are needed.
-    bool needs_mesh_entities(unsigned int d) const;
+    bool needs_mesh_entities(std::size_t d) const;
 
     /// Return the dimension of the global finite element function
     /// space
     ///
     /// *Returns*
-    ///     unsigned int
+    ///     std::size_t
     ///         The dimension of the global finite element function space.
-    unsigned int global_dimension() const;
+    std::size_t global_dimension() const;
 
     // FIXME: Rename this function, 'cell_dimension' sounds confusing
 
@@ -122,79 +142,87 @@ namespace dolfin
     /// space on a cell
     ///
     /// *Arguments*
-    ///     cell_index (uint)
+    ///     cell_index (std::size_t)
     ///         Index of cell
     ///
     /// *Returns*
-    ///     unsigned int
+    ///     std::size_t
     ///         Dimension of the local finite element function space.
-    unsigned int cell_dimension(uint cell_index) const;
+    std::size_t cell_dimension(std::size_t cell_index) const;
 
     /// Return the maximum dimension of the local finite element
     /// function space
     ///
     /// *Returns*
-    ///     unsigned int
+    ///     std::size_t
     ///         Maximum dimension of the local finite element function
     ///         space.
-    unsigned int max_cell_dimension() const;
+    std::size_t max_cell_dimension() const;
 
     /// Return the geometric dimension of the coordinates this dof map
     /// provides
     ///
     /// *Returns*
-    ///     unsigned int
+    ///     std::size_t
     ///         The geometric dimension.
-    unsigned int geometric_dimension() const;
+    std::size_t geometric_dimension() const;
 
     /// Return number of facet dofs
     ///
     /// *Returns*
-    ///     unsigned int
+    ///     std::size_t
     ///         The number of facet dofs.
-    unsigned int num_facet_dofs() const;
+    std::size_t num_facet_dofs() const;
+
+    /// Restriction if any. If the dofmap is not restricted, a null
+    /// pointer is returned.
+    ///
+    /// *Returns*
+    ///     boost::shared_ptr<const Restriction>
+    //          The restriction.
+    boost::shared_ptr<const Restriction> restriction() const;
 
     /// Return the ownership range (dofs in this range are owned by
     /// this process)
     ///
     /// *Returns*
-    ///     std::pair<unsigned int, unsigned int>
+    ///     std::pair<std::size_t, std::size_t>
     ///         The ownership range.
-    std::pair<unsigned int, unsigned int> ownership_range() const;
+    std::pair<std::size_t, std::size_t> ownership_range() const;
 
     /// Return map from nonlocal dofs that appear in local dof map to
     /// owning process
     ///
     /// *Returns*
-    ///     boost::unordered_map<unsigned int, unsigned int>
+    ///     boost::unordered_map<std::size_t, std::size_t>
     ///         The map from non-local dofs.
-    const boost::unordered_map<unsigned int, unsigned int>& off_process_owner() const;
+    const boost::unordered_map<std::size_t, std::size_t>& off_process_owner() const;
 
     /// Return map from all shared dofs to the processes (not including the current
     /// process) that share it.
     ///
     /// *Returns*
-    ///     boost::unordered_map<uint, std::vector<uint> >
+    ///     boost::unordered_map<std::size_t, std::vector<std::size_t> >
     ///         The map from dofs to list of processes
-    const boost::unordered_map<uint, std::vector<uint> >& shared_dofs() const;
+    const boost::unordered_map<std::size_t, std::vector<std::size_t> >& shared_dofs() const;
 
     /// Return set of all neighbouring processes.
     ///
     /// *Returns*
-    ///     boost::unordered_set<uint>
+    ///     std::set<std::size_t>
     ///         The set of processes
-    const std::set<uint>& neighbours() const;
+    const std::set<std::size_t>& neighbours() const;
 
     /// Local-to-global mapping of dofs on a cell
     ///
     /// *Arguments*
-    ///     cell_index (uint)
+    ///     cell_index (std::size_t)
     ///         The cell index.
     ///
     /// *Returns*
-    ///     std::vector<uint>
+    ///     std::vector<std::size_t>
     ///         Local-to-global mapping of dofs.
-    const std::vector<uint>& cell_dofs(uint cell_index) const
+    const std::vector<DolfinIndex>& cell_dofs(std::size_t cell_index) const
     {
       dolfin_assert(cell_index < _dofmap.size());
       return _dofmap[cell_index];
@@ -203,11 +231,11 @@ namespace dolfin
     /// Tabulate local-local facet dofs
     ///
     /// *Arguments*
-    ///     dofs (uint)
+    ///     dofs (std::size_t)
     ///         Degrees of freedom.
-    ///     local_facet (uint)
+    ///     local_facet (std::size_t)
     ///         The local facet.
-    void tabulate_facet_dofs(uint* dofs, uint local_facet) const;
+    void tabulate_facet_dofs(unsigned int* dofs, std::size_t local_facet) const;
 
     /// Tabulate the coordinates of all dofs on a cell (UFC cell
     /// version)
@@ -253,7 +281,7 @@ namespace dolfin
     /// Extract subdofmap component
     ///
     /// *Arguments*
-    ///     component (std::vector<uint>)
+    ///     component (std::vector<std::size_t>)
     ///         The component.
     ///     mesh (_Mesh_)
     ///         The mesh.
@@ -261,13 +289,13 @@ namespace dolfin
     /// *Returns*
     ///     DofMap
     ///         The subdofmap component.
-    DofMap* extract_sub_dofmap(const std::vector<uint>& component,
+    DofMap* extract_sub_dofmap(const std::vector<std::size_t>& component,
                                const Mesh& mesh) const;
 
     /// Create a "collapsed" dofmap (collapses a sub-dofmap)
     ///
     /// *Arguments*
-    ///     collapsed_map (boost::unordered_map<uint, uint>)
+    ///     collapsed_map (boost::unordered_map<std::size_t, std::size_t>)
     ///         The "collapsed" map.
     ///     mesh (_Mesh_)
     ///         The mesh.
@@ -275,7 +303,7 @@ namespace dolfin
     /// *Returns*
     ///     DofMap
     ///         The collapsed dofmap.
-    DofMap* collapse(boost::unordered_map<uint, uint>& collapsed_map,
+    DofMap* collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
                      const Mesh& mesh) const;
 
     /// Set dof entries in vector to a specified value. Parallel layout
@@ -295,26 +323,29 @@ namespace dolfin
     /// *Arguments*
     ///     vector (_GenericVector_)
     ///         The vector to set.
+    ///     value (double)
+    ///         The value to multiply to coordinate by.
+    ///     component (std::size_t)
+    ///         The coordinate index.
     ///     mesh (_Mesh_)
     ///         The mesh.
-    ///     component (uint)
-    ///         The coordinate index.
-    void set_x(GenericVector& x, const Mesh& mesh, uint component) const;
+    void set_x(GenericVector& x, double value, std::size_t component,
+               const Mesh& mesh) const;
 
     /// Return the set of dof indices
     ///
     /// *Returns*
-    ///     boost::unordered_set<dolfin::uint>
+    ///     boost::unordered_set<dolfin::std::size_t>
     ///         The set of dof indices.
-    boost::unordered_set<uint> dofs() const;
+    boost::unordered_set<std::size_t> dofs() const;
 
     /// Return the underlying dof map data. Intended for internal library
     /// use only.
     ///
     /// *Returns*
-    ///     std::vector<std::vector<dolfin::uint> >
+    ///     std::vector<std::vector<dolfin::std::size_t> >
     ///         The local-to-global map for each cell.
-    const std::vector<std::vector<uint> >& data() const
+    const std::vector<std::vector<DolfinIndex> >& data() const
     { return _dofmap; }
 
     /// Return informal string representation (pretty-print)
@@ -333,10 +364,13 @@ namespace dolfin
     // Friends
     friend class DofMapBuilder;
 
+    // Build dofmap
+    void build_common(const Mesh& dolfin_mesh);
+
     // Recursively extract UFC sub-dofmap and compute offset
     static ufc::dofmap* extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
-                                            uint& offset,
-                                            const std::vector<uint>& component,
+                                            std::size_t& offset,
+                                            const std::vector<std::size_t>& component,
                                             const ufc::mesh ufc_mesh,
                                             const Mesh& dolfin_mesh);
 
@@ -349,29 +383,36 @@ namespace dolfin
                                               const Mesh& mesh);
 
     // Local-to-global dof map (dofs for cell dofmap[i])
-    std::vector<std::vector<uint> > _dofmap;
+    std::vector<std::vector<DolfinIndex> > _dofmap;
 
     // UFC dof map
     boost::scoped_ptr<ufc::dofmap> _ufc_dofmap;
 
     // Map from UFC dof numbering to renumbered dof (ufc_dof, actual_dof)
-    boost::unordered_map<uint, uint> ufc_map_to_dofmap;
+    boost::unordered_map<std::size_t, std::size_t> ufc_map_to_dofmap;
+
+    // Restriction, pointer zero if not restricted
+    boost::shared_ptr<const Restriction> _restriction;
+
+    // Global dimension. Note that this may differ from the global dimension
+    // of the UFC dofmap if the function space is restricted.
+    std::size_t _global_dimension;
 
     // UFC dof map offset
-    unsigned int ufc_offset;
+    std::size_t _ufc_offset;
 
     // Ownership range (dofs in this range are owned by this process)
-    std::pair<uint, uint> _ownership_range;
+    std::pair<std::size_t, std::size_t> _ownership_range;
 
     // Owner (process) of dofs in local dof map that do not belong to
     // this process
-    boost::unordered_map<uint, uint> _off_process_owner;
+    boost::unordered_map<std::size_t, std::size_t> _off_process_owner;
 
     // List of processes that share a given dof
-    boost::unordered_map<uint, std::vector<uint> > _shared_dofs;
+    boost::unordered_map<std::size_t, std::vector<std::size_t> > _shared_dofs;
 
     // Neighbours (processes that we share dofs with)
-    std::set<uint> _neighbours;
+    std::set<std::size_t> _neighbours;
 
     // True iff sub-dofmap (a view, i.e. not collapsed)
     bool _is_view;

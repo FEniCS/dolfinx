@@ -54,39 +54,41 @@ namespace dolfin
     const MeshGeometry& operator= (const MeshGeometry& geometry);
 
     /// Return Euclidean dimension of coordinate system
-    uint dim() const
+    std::size_t dim() const
     { return _dim; }
 
     /// Return number of coordinates
-    uint size() const
+    std::size_t size() const
     {
       dolfin_assert(coordinates.size() % _dim == 0);
       return coordinates.size()/_dim;
     }
 
     /// Return value of coordinate with local index n in direction i
-    double& x(uint n, uint i)
+    double& x(std::size_t n, std::size_t i)
     {
-      dolfin_assert(n < local_index_to_position.size() && i < _dim);
+      dolfin_assert(n < local_index_to_position.size());
+      dolfin_assert(i < _dim);
       return coordinates[local_index_to_position[n]*_dim + i];
     }
 
     /// Return value of coordinate with local index n in direction i
-    double x(uint n, uint i) const
+    double x(std::size_t n, std::size_t i) const
     {
-      dolfin_assert(n < local_index_to_position.size() && i < _dim);
+      dolfin_assert(n < local_index_to_position.size());
+      dolfin_assert(i < _dim);
       return coordinates[local_index_to_position[n]*_dim + i];
     }
 
     /// Return array of values for coordinate with local index n
-    double* x(uint n)
+    double* x(std::size_t n)
     {
       dolfin_assert(n < local_index_to_position.size());
       return &coordinates[local_index_to_position[n]*_dim];
     }
 
     /// Return array of values for coordinate with local index n
-    const double* x(uint n) const
+    const double* x(std::size_t n) const
     {
       dolfin_assert(n < local_index_to_position.size());
       return &coordinates[local_index_to_position[n]*_dim];
@@ -101,22 +103,22 @@ namespace dolfin
     { return coordinates; }
 
     /// Return coordinate with local index n as a 3D point value
-    Point point(uint n) const;
+    Point point(std::size_t n) const;
 
     /// Clear all data
     void clear();
 
     /// Initialize coordinate list to given dimension and size
-    void init(uint dim, uint size);
+    void init(std::size_t dim, std::size_t size);
 
     /// Set value of coordinate
-    //void set(uint n, uint i, double x);
-    void set(uint local_index, const std::vector<double>& x);
+    //void set(std::size_t n, std::size_t i, double x);
+    void set(std::size_t local_index, const std::vector<double>& x);
 
     /// Hash of coordinate values
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         A tree-hashed value of the coordinates over all MPI processes
     ///
     std::size_t hash() const;
@@ -131,16 +133,16 @@ namespace dolfin
     friend class MeshRenumbering;
 
     // Euclidean dimension
-    uint _dim;
+    std::size_t _dim;
 
     // Coordinates for all vertices stored as a contiguous array
     std::vector<double> coordinates;
 
     // Local coordinate indices (array position -> index)
-    std::vector<uint> position_to_local_index;
+    std::vector<std::size_t> position_to_local_index;
 
     // Local coordinate indices (local index -> array position)
-    std::vector<uint> local_index_to_position;
+    std::vector<std::size_t> local_index_to_position;
 
   };
 

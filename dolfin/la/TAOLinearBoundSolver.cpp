@@ -129,7 +129,7 @@ void TAOLinearBoundSolver::set_operators(const boost::shared_ptr<const PETScMatr
   		dolfin_assert(this->b);
 	}
 //-----------------------------------------------------------------------------
-dolfin::uint TAOLinearBoundSolver::solve(const GenericMatrix& A1,
+std::size_t TAOLinearBoundSolver::solve(const GenericMatrix& A1,
                                                GenericVector& x , 
                                          const GenericVector& b1, 
                                          const GenericVector& xl, 
@@ -142,7 +142,7 @@ dolfin::uint TAOLinearBoundSolver::solve(const GenericMatrix& A1,
                 xu.down_cast<PETScVector>());
 }
 //-----------------------------------------------------------------------------
-dolfin::uint TAOLinearBoundSolver::solve(const PETScMatrix& A1, 
+std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1, 
                                                PETScVector& x , 
                                          const PETScVector& b1, 
                                          const PETScVector& xl, 

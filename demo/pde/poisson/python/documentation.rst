@@ -28,14 +28,14 @@ First, the :py:mod:`dolfin` module is imported:
 We begin by defining a mesh of the domain and a finite element
 function space :math:`V` relative to this mesh. As the unit square is
 a very standard domain, we can use a built-in mesh provided by the
-class :py:class:`UnitSquare <dolfin.cpp.UnitSquare>`. In order to create a mesh
+class :py:class:`UnitSquareMesh <dolfin.cpp.UnitSquareMesh>`. In order to create a mesh
 consisting of 32 x 32 squares with each square divided into two
 triangles, we do as follows
 
 .. code-block:: python
 
     # Create mesh and define function space
-    mesh = UnitSquare(32, 32)
+    mesh = UnitSquareMesh(32, 32)
     V = FunctionSpace(mesh, "Lagrange", 1)
 
 The second argument to :py:class:`FunctionSpace

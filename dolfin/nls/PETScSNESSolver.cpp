@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-10-13
-// Last changed: 2012-10-26
+// Last changed: 2012-12-05
 
 #ifdef HAS_PETSC
 
@@ -193,12 +193,12 @@ void PETScSNESSolver::init(const std::string& method)
     SNESSetType(*_snes, _methods.find(method)->second);
 }
 //-----------------------------------------------------------------------------
-std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
+std::pair<std::size_t, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
                                                   GenericVector& x)
 {
   PETScVector f;
   PETScMatrix A;
-  int its;
+  DolfinIndex its;
   SNESConvergedReason reason;
   struct snes_ctx_t snes_ctx;
 
@@ -266,9 +266,11 @@ std::pair<dolfin::uint, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear
   #endif
 
   // Tolerances
+  const int max_iters = parameters["maximum_iterations"];
+  const int max_residual_evals = parameters["maximum_residual_evaluations"];
   SNESSetTolerances(*_snes, parameters["absolute_tolerance"], parameters["relative_tolerance"],
-                            parameters["solution_tolerance"], parameters["maximum_iterations"],
-                            parameters["maximum_residual_evaluations"]);
+                            parameters["solution_tolerance"], max_iters,
+                            max_residual_evals);
 
   if (parameters["report"])
     SNESView(*_snes, PETSC_VIEWER_STDOUT_WORLD);
@@ -432,7 +434,9 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
   if (sign != "default")
   {
     std::string method = parameters["method"];
-    if (method != std::string("virs") && method != std::string("viss") && method != std::string("default"))
+    if (method != std::string("virs") &&
+        method != std::string("viss") &&
+        method != std::string("default"))
     {
       dolfin_error("PETScSNESSolver.cpp",
                    "set variational inequality bounds",

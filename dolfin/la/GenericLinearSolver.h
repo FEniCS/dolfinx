@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2010 Garth N. Wells
+// Copyright (C) 2008-2012 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -18,11 +18,12 @@
 // Modified by Anders Logg 2009-2012
 //
 // First added:  2008-08-26
-// Last changed: 2012-08-20
+// Last changed: 2012-10-31
 
 #ifndef __GENERIC_LINEAR_SOLVER_H
 #define __GENERIC_LINEAR_SOLVER_H
 
+#include <vector>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
@@ -53,9 +54,17 @@ namespace dolfin
                    "Not supported by current linear algebra backend");
     }
 
+    /// Set null space of the operator (matrix). This is used to solve
+    /// singular systems
+    virtual void set_nullspace(const std::vector<const GenericVector*> nullspace)
+    {
+      dolfin_error("GenericLinearSolver.h",
+                   "set nullspace for operator",
+                   "Not supported by current linear algebra solver backend");
+    }
+
     /// Solve linear system Ax = b
-    virtual uint solve(const GenericLinearOperator& A,
-                       GenericVector& x,
+    virtual std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
                        const GenericVector& b)
     {
       dolfin_error("GenericLinearSolver.h",
@@ -65,7 +74,7 @@ namespace dolfin
     }
 
     /// Solve linear system Ax = b
-    virtual uint solve(GenericVector& x, const GenericVector& b)
+    virtual std::size_t solve(GenericVector& x, const GenericVector& b)
     {
       dolfin_error("GenericLinearSolver.h",
                    "solve linear system",

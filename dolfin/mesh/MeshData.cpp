@@ -29,14 +29,14 @@
 
 using namespace dolfin;
 
-typedef std::map<std::string, boost::shared_ptr<MeshFunction<unsigned int> > >
+typedef std::map<std::string, boost::shared_ptr<MeshFunction<std::size_t> > >
 ::iterator mf_iterator;
-typedef std::map<std::string, boost::shared_ptr<MeshFunction<unsigned int> > >
+typedef std::map<std::string, boost::shared_ptr<MeshFunction<std::size_t> > >
 ::const_iterator mf_const_iterator;
 
-typedef std::map<std::string, boost::shared_ptr<std::vector<dolfin::uint> > >
+typedef std::map<std::string, boost::shared_ptr<std::vector<std::size_t> > >
 ::iterator a_iterator;
-typedef std::map<std::string, boost::shared_ptr<std::vector<dolfin::uint> > >
+typedef std::map<std::string, boost::shared_ptr<std::vector<std::size_t> > >
 ::const_iterator a_const_iterator;
 
 //-----------------------------------------------------------------------------
@@ -66,7 +66,7 @@ const MeshData& MeshData::operator= (const MeshData& data)
   for (mf_const_iterator it = data.mesh_functions.begin();
        it != data.mesh_functions.end(); ++it)
   {
-    boost::shared_ptr<MeshFunction<unsigned int> >
+    boost::shared_ptr<MeshFunction<std::size_t> >
       f = create_mesh_function(it->first, it->second->dim());
     *f = *it->second;
   }
@@ -74,8 +74,8 @@ const MeshData& MeshData::operator= (const MeshData& data)
   // Copy arrays
   for (a_const_iterator it = data.arrays.begin(); it != data.arrays.end(); ++it)
   {
-    boost::shared_ptr<std::vector<uint> >
-      a = create_array( it->first, static_cast<uint>(it->second->size()) );
+    boost::shared_ptr<std::vector<std::size_t> >
+      a = create_array( it->first, static_cast<std::size_t>(it->second->size()) );
     *a = *it->second;
   }
 
@@ -88,8 +88,8 @@ void MeshData::clear()
   arrays.clear();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<MeshFunction<unsigned int> >
-MeshData::create_mesh_function(std::string name)
+boost::shared_ptr<MeshFunction<std::size_t> >
+  MeshData::create_mesh_function(std::string name)
 {
   // Check if data already exists
   mf_iterator it = mesh_functions.find(name);
@@ -103,7 +103,7 @@ MeshData::create_mesh_function(std::string name)
   check_deprecated(name);
 
   // Create new data
-  boost::shared_ptr<MeshFunction<unsigned int> > f(new MeshFunction<uint>(mesh));
+  boost::shared_ptr<MeshFunction<std::size_t> > f(new MeshFunction<std::size_t>(mesh));
   dolfin_assert(f);
 
   // Add to map
@@ -112,23 +112,23 @@ MeshData::create_mesh_function(std::string name)
   return f;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<MeshFunction<unsigned int> >
-MeshData::create_mesh_function(std::string name, uint dim)
+boost::shared_ptr<MeshFunction<std::size_t> >
+MeshData::create_mesh_function(std::string name, std::size_t dim)
 {
-  boost::shared_ptr<MeshFunction<unsigned int> > f = create_mesh_function(name);
+  boost::shared_ptr<MeshFunction<std::size_t> > f = create_mesh_function(name);
   f->init(dim);
 
   return f;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<std::vector<dolfin::uint> >
+boost::shared_ptr<std::vector<std::size_t> >
 MeshData::create_array(std::string name)
 {
   return create_array(name, 0);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<std::vector<dolfin::uint> >
-MeshData::create_array(std::string name, uint size)
+boost::shared_ptr<std::vector<std::size_t> >
+MeshData::create_array(std::string name, std::size_t size)
 {
   // Check if data already exists
   a_iterator it = arrays.find(name);
@@ -142,7 +142,7 @@ MeshData::create_array(std::string name, uint size)
   check_deprecated(name);
 
   // Create new data
-  boost::shared_ptr<std::vector<uint> > a(new std::vector<uint>(size));
+  boost::shared_ptr<std::vector<std::size_t> > a(new std::vector<std::size_t>(size));
   std::fill(a->begin(), a->end(), 0);
 
   // Add to map
@@ -151,24 +151,24 @@ MeshData::create_array(std::string name, uint size)
   return a;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<MeshFunction<unsigned int> >
+boost::shared_ptr<MeshFunction<std::size_t> >
 MeshData::mesh_function(const std::string name) const
 {
   // Check if data exists
   mf_const_iterator it = mesh_functions.find(name);
   if (it == mesh_functions.end())
-    return boost::shared_ptr<MeshFunction<unsigned int> >();
+    return boost::shared_ptr<MeshFunction<std::size_t> >();
 
   return it->second;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<std::vector<dolfin::uint> >
+boost::shared_ptr<std::vector<std::size_t> >
 MeshData::array(const std::string name) const
 {
   // Check if data exists
   a_const_iterator it = arrays.find(name);
   if (it == arrays.end())
-    return boost::shared_ptr<std::vector<uint> >();
+    return boost::shared_ptr<std::vector<std::size_t> >();
 
   return it->second;
 }
@@ -200,14 +200,14 @@ std::string MeshData::str(bool verbose) const
     s << str(false) << std::endl << std::endl;
 
     // Mesh functions
-    s << "  MeshFunction<uint>" << std::endl;
+    s << "  MeshFunction<std::size_t>" << std::endl;
     s << "  ------------------" << std::endl;
     for (mf_const_iterator it = mesh_functions.begin(); it != mesh_functions.end(); ++it)
       s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
     s << std::endl;
 
     // Arrays
-    s << "  std::vector<uint>" << std::endl;
+    s << "  std::vector<std::size_t>" << std::endl;
     s << "  -----------------" << std::endl;
     for (a_const_iterator it = arrays.begin(); it != arrays.end(); ++it)
       s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
@@ -215,7 +215,7 @@ std::string MeshData::str(bool verbose) const
   }
   else
   {
-    const uint num_objects = mesh_functions.size() + arrays.size();
+    const std::size_t num_objects = mesh_functions.size() + arrays.size();
     s << "<MeshData containing " << num_objects << " objects>";
   }
 
@@ -224,7 +224,7 @@ std::string MeshData::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void MeshData::check_deprecated(std::string name) const
 {
-  for (uint i = 0; i < _deprecated_names.size(); i++)
+  for (std::size_t i = 0; i < _deprecated_names.size(); i++)
   {
     if (name == _deprecated_names[i])
     {

@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-04-20
-// Last changed: 2012-07-05
+// Last changed: 2012-11-12
 
 #include <dolfin.h>
 #include "MixedPoisson.h"
@@ -74,7 +74,7 @@ class EssentialBoundary : public SubDomain
 int main()
 {
   // Create mesh
-  UnitSquare mesh(32, 32);
+  UnitSquareMesh mesh(32, 32);
 
   // Construct function space
   MixedPoisson::FunctionSpace W(mesh);

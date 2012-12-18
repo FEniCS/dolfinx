@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Niclas Jansson 2009.
+// Modified by Joachim B Haga 2012.
 //
 // First added:  2006-06-21
-// Last changed: 2012-06-25
+// Last changed: 2012-10-30
 
 #ifndef __BOUNDARY_MESH_H
 #define __BOUNDARY_MESH_H
@@ -29,7 +30,6 @@
 
 namespace dolfin
 {
-
   /// A BoundaryMesh is a mesh over the boundary of some given mesh.
   /// The cells of the boundary mesh (facets of the original mesh) are
   /// oriented to produce outward pointing normals relative to the
@@ -65,25 +65,25 @@ namespace dolfin
     /// Initialize interior boundary of given mesh
     void init_interior_boundary(const Mesh& mesh);
 
-    MeshFunction<unsigned int>& cell_map()
+    MeshFunction<std::size_t>& cell_map()
     { return _cell_map; }
 
     /// Get cell mapping from the boundary mesh to the original full mesh
-    const MeshFunction<unsigned int>& cell_map() const
+    const MeshFunction<std::size_t>& cell_map() const
     { return _cell_map; }
 
     /// Get vertex mapping from the boundary mesh to the original full mesh
-    MeshFunction<unsigned int>& vertex_map()
+    MeshFunction<std::size_t>& vertex_map()
     { return _vertex_map; }
 
-    const MeshFunction<unsigned int>& vertex_map() const
+    const MeshFunction<std::size_t>& vertex_map() const
     { return _vertex_map; }
 
   private:
 
-    MeshFunction<unsigned int> _cell_map;
+    MeshFunction<std::size_t> _cell_map;
 
-    MeshFunction<unsigned int> _vertex_map;
+    MeshFunction<std::size_t> _vertex_map;
 
   };
 

@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Marie Rognes 2011
+// Modified by Joachim B Haga 2012
 //
 // First added:  2009-05-08
-// Last changed: 2011-11-15
+// Last changed: 2012-09-11
 
 #include <sstream>
 #include <dolfin/log/log.h>
@@ -57,12 +58,17 @@ bool Parameter::is_set() const
   return _is_set;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Parameter::access_count() const
+void Parameter::reset()
+{
+  _is_set = false;
+}
+//-----------------------------------------------------------------------------
+std::size_t Parameter::access_count() const
 {
   return _access_count;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Parameter::change_count() const
+std::size_t Parameter::change_count() const
 {
   return _change_count;
 }
@@ -169,11 +175,11 @@ Parameter::operator int() const
   return 0;
 }
 //-----------------------------------------------------------------------------
-Parameter::operator uint() const
+Parameter::operator std::size_t() const
 {
   dolfin_error("Parameter.cpp",
                "convert to unsigned integer",
-               "Cannot convert parameter \"%s\" of type %s to uint",
+               "Cannot convert parameter \"%s\" of type %s to std::size_t",
                _key.c_str(), type_str().c_str());
   return 0;
 }
@@ -208,7 +214,7 @@ Parameter::operator bool() const
 void Parameter::check_key(std::string key)
 {
   // Space and punctuation not allowed in key names
-  for (uint i = 0; i < key.size(); i++)
+  for (std::size_t i = 0; i < key.size(); i++)
   {
     if (key[i] == ' ' || key[i] == '.')
     {
@@ -294,19 +300,19 @@ IntParameter::operator int() const
   return _value;
 }
 //-----------------------------------------------------------------------------
-IntParameter::operator dolfin::uint() const
+IntParameter::operator std::size_t() const
 {
   if (!_is_set)
   {
     dolfin_error("Parameter.cpp",
-                 "convert int parameter to uint",
+                 "convert int parameter to std::size_t",
                  "Parameter has not been set");
   }
 
   if (_value < 0)
   {
     dolfin_error("Parameter.cpp",
-                 "convert int parameter to uint",
+                 "convert int parameter to std::size_t",
                  "Parameter \"%s\" has negative value %d",
                  key().c_str(), _value);
   }
@@ -587,7 +593,7 @@ std::string StringParameter::range_str() const
 {
   std::stringstream s;
   s << "[";
-  uint i = 0;
+  std::size_t i = 0;
   for (std::set<std::string>::const_iterator it = _range.begin();
        it != _range.end(); ++it)
   {

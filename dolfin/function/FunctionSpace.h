@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2008-2011.
-// Modified by Kent-Andre Mardal, 2009.
-// Modified by Ola Skavhaug, 2009.
+// Modified by Garth N. Wells 2008-2011
+// Modified by Kent-Andre Mardal 2009
+// Modified by Ola Skavhaug 2009
 //
 // First added:  2008-09-11
-// Last changed: 2011-05-15
+// Last changed: 2012-11-02
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -153,9 +153,9 @@ namespace dolfin
     /// Return dimension of function space
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The dimension of the function space.
-    uint dim() const;
+    std::size_t dim() const;
 
     /// Interpolate function v into function space, returning the
     /// vector of expansion coefficients
@@ -171,24 +171,24 @@ namespace dolfin
     /// Extract subspace for component
     ///
     /// *Arguments*
-    ///     i (uint)
+    ///     i (std::size_t)
     ///         Index of the subspace.
     /// *Returns*
     ///     _FunctionSpace_
     ///         The subspace.
-    boost::shared_ptr<FunctionSpace> operator[] (uint i) const;
+    boost::shared_ptr<FunctionSpace> operator[] (std::size_t i) const;
 
     /// Extract subspace for component
     ///
     /// *Arguments*
-    ///     component (std::vector<uint>)
+    ///     component (std::vector<std::size_t>)
     ///         The component.
     ///
     /// *Returns*
     ///     _FunctionSpace_
     ///         The subspace.
     boost::shared_ptr<FunctionSpace>
-    extract_sub_space(const std::vector<uint>& component) const;
+    extract_sub_space(const std::vector<std::size_t>& component) const;
 
     /// Collapse a subspace and return a new function space
     ///
@@ -201,14 +201,14 @@ namespace dolfin
     /// from new to old dofs
     ///
     /// *Arguments*
-    ///     collapsed_dofs (boost::unordered_map<uint, uint>)
+    ///     collapsed_dofs (boost::unordered_map<std::size_t, std::size_t>)
     ///         The map from new to old dofs.
     ///
     /// *Returns*
     ///     _FunctionSpace_
     ///       The new function space.
     boost::shared_ptr<FunctionSpace>
-    collapse(boost::unordered_map<uint, uint>& collapsed_dofs) const;
+    collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_dofs) const;
 
     /// Check if function space has given cell
     ///
@@ -237,9 +237,9 @@ namespace dolfin
     /// Return component
     ///
     /// *Returns*
-    ///     std::vector<uint>
+    ///     std::vector<std::size_t>
     ///         The component (relative to superspace).
-    std::vector<uint> component() const;
+    std::vector<std::size_t> component() const;
 
     /// Return informal string representation (pretty-print)
     ///
@@ -267,10 +267,10 @@ namespace dolfin
     boost::shared_ptr<const GenericDofMap> _dofmap;
 
     // The component (for sub spaces)
-    std::vector<uint> _component;
+    std::vector<std::size_t> _component;
 
     // Cache of sub spaces
-    mutable std::map<std::vector<uint>, boost::shared_ptr<FunctionSpace> > subspaces;
+    mutable std::map<std::vector<std::size_t>, boost::shared_ptr<FunctionSpace> > subspaces;
 
   };
 

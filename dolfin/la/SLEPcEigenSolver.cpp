@@ -106,13 +106,7 @@ SLEPcEigenSolver::~SLEPcEigenSolver()
 {
   // Destroy solver environment
   if (eps)
-  {
-    #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR <= 1
-    EPSDestroy(eps);
-    #else
     EPSDestroy(&eps);
-    #endif
-  }
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve()
@@ -120,7 +114,7 @@ void SLEPcEigenSolver::solve()
   solve(A->size(0));
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::solve(uint n)
+void SLEPcEigenSolver::solve(std::size_t n)
 {
   dolfin_assert(A);
 
@@ -136,8 +130,7 @@ void SLEPcEigenSolver::solve(uint n)
 
   // Set number of eigenpairs to compute
   dolfin_assert(n <= A->size(0));
-  const uint nn = static_cast<int>(n);
-  EPSSetDimensions(eps, nn, PETSC_DECIDE, PETSC_DECIDE);
+  EPSSetDimensions(eps, n, PETSC_DECIDE, PETSC_DECIDE);
 
   // Set parameters from local parameters
   read_parameters();
@@ -155,7 +148,7 @@ void SLEPcEigenSolver::solve(uint n)
     warning("Eigenvalue solver did not converge");
 
   // Report solver status
-  int num_iterations = 0;
+  DolfinIndex num_iterations = 0;
   EPSGetIterationNumber(eps, &num_iterations);
 
   const EPSType eps_type = 0;
@@ -183,22 +176,16 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
   get_eigenpair(lr, lc, r, c, 0);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, uint i) const
+void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, std::size_t i) const
 {
-  const int ii = static_cast<int>(i);
+  const DolfinIndex ii = static_cast<DolfinIndex>(i);
 
   // Get number of computed values
-  int num_computed_eigenvalues;
+  DolfinIndex num_computed_eigenvalues;
   EPSGetConverged(eps, &num_computed_eigenvalues);
 
   if (ii < num_computed_eigenvalues)
-  {
-    #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR >= 1
     EPSGetEigenvalue(eps, ii, &lr, &lc);
-    #else
-    EPSGetValue(eps, ii, &lr, &lc);
-    #endif
-  }
   else
   {
     dolfin_error("SLEPcEigenSolver.cpp",
@@ -209,7 +196,7 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, uint i) const
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
                                      GenericVector& r, GenericVector& c,
-                                     uint i) const
+                                     std::size_t i) const
 {
   PETScVector& _r = as_type<PETScVector>(r);
   PETScVector& _c = as_type<PETScVector>(c);
@@ -218,12 +205,12 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
                                      PETScVector& r, PETScVector& c,
-                                     uint i) const
+                                     std::size_t i) const
 {
-  const int ii = static_cast<int>(i);
+  const DolfinIndex ii = static_cast<DolfinIndex>(i);
 
   // Get number of computed eigenvectors/values
-  int num_computed_eigenvalues;
+  DolfinIndex num_computed_eigenvalues;
   EPSGetConverged(eps, &num_computed_eigenvalues);
 
   if (ii < num_computed_eigenvalues)
@@ -244,22 +231,16 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
   }
 }
 //-----------------------------------------------------------------------------
-int SLEPcEigenSolver::get_number_converged() const
+std::size_t SLEPcEigenSolver::get_number_converged() const
 {
-  int num_conv;
+  DolfinIndex num_conv;
   EPSGetConverged(eps, &num_conv);
   return num_conv;
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_deflation_space(const PETScVector& deflation_space)
 {
-  #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR >= 1
   EPSSetDeflationSpace(eps, 1, deflation_space.vec().get());
-  #else
-  dolfin_error("SLEPcEigenSolver.cpp",
-               "set deflation space for SLEPc eigensolver",
-               "Setting a deflation space requires SLEPc version 3.1 or higher");
-  #endif
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::read_parameters()
@@ -305,12 +286,7 @@ void SLEPcEigenSolver::set_spectral_transform(std::string transform,
   EPSGetST(eps, &st);
   if (transform == "shift-and-invert")
   {
-    #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR >= 1
     STSetType(st, STSINVERT);
-    #else
-    STSetType(st, STSINV);
-    #endif
-
     STSetShift(st, shift);
   }
   else
@@ -340,8 +316,6 @@ void SLEPcEigenSolver::set_spectrum(std::string spectrum)
     EPSSetWhichEigenpairs(eps, EPS_LARGEST_IMAGINARY);
   else if (spectrum == "smallest imaginary")
     EPSSetWhichEigenpairs(eps, EPS_SMALLEST_IMAGINARY);
-
-  #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR >= 1
   else if (spectrum == "target magnitude")
   {
     EPSSetWhichEigenpairs(eps, EPS_TARGET_MAGNITUDE);
@@ -357,8 +331,6 @@ void SLEPcEigenSolver::set_spectrum(std::string spectrum)
     EPSSetWhichEigenpairs(eps, EPS_TARGET_IMAGINARY);
     EPSSetTarget(eps, parameters["spectral_shift"]);
   }
-  #endif
-
   else
   {
     dolfin_error("SLEPcEigenSolver.cpp",
@@ -400,15 +372,15 @@ void SLEPcEigenSolver::set_solver(std::string solver)
   }
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::set_tolerance(double tolerance, uint maxiter)
+void SLEPcEigenSolver::set_tolerance(double tolerance, std::size_t maxiter)
 {
   dolfin_assert(tolerance > 0.0);
-  EPSSetTolerances(eps, tolerance, static_cast<int>(maxiter));
+  EPSSetTolerances(eps, tolerance, maxiter);
 }
 //-----------------------------------------------------------------------------
-int SLEPcEigenSolver::get_iteration_number() const
+std::size_t SLEPcEigenSolver::get_iteration_number() const
 {
-  int num_iter;
+  DolfinIndex num_iter;
   EPSGetIterationNumber(eps, &num_iter);
   return num_iter;
 }

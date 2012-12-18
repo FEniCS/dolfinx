@@ -26,7 +26,7 @@ import unittest
 from dolfin import *
 
 # Assemble system
-mesh = UnitSquare(32, 32)
+mesh = UnitSquareMesh(32, 32)
 V = FunctionSpace(mesh, 'CG', 1)
 bc = DirichletBC(V, Constant(0.0), lambda x, on_boundary: on_boundary)
 u = TrialFunction(V); v = TestFunction(V);

@@ -58,7 +58,7 @@ namespace dolfin
     explicit uBLASVector(std::string type="global");
 
     /// Create vector of size N
-    uBLASVector(uint N, std::string type="global");
+    uBLASVector(std::size_t N, std::string type="global");
 
     /// Copy constructor
     uBLASVector(const uBLASVector& x);
@@ -86,39 +86,39 @@ namespace dolfin
     virtual boost::shared_ptr<GenericVector> copy() const;
 
     /// Resize vector to size N
-    virtual void resize(uint N);
+    virtual void resize(std::size_t N);
 
     /// Resize vector with given ownership range
-    virtual void resize(std::pair<uint, uint> range);
+    virtual void resize(std::pair<std::size_t, std::size_t> range);
 
     /// Resize vector with given ownership range and with ghost values
-    virtual void resize(std::pair<uint, uint> range,
-                        const std::vector<uint>& ghost_indices);
+    virtual void resize(std::pair<std::size_t, std::size_t> range,
+                        const std::vector<std::size_t>& ghost_indices);
 
     /// Return true if vector is empty
     virtual bool empty() const;
 
     /// Return true if vector is empty
-    virtual uint size() const;
+    virtual std::size_t size() const;
 
     /// Return local size of vector
-    virtual uint local_size() const
+    virtual std::size_t local_size() const
     { return size(); }
 
     /// Return local ownership range of a vector
-    virtual std::pair<uint, uint> local_range() const;
+    virtual std::pair<std::size_t, std::size_t> local_range() const;
 
     /// Determine whether global vector index is owned by this process
-    virtual bool owns_index(uint i) const;
+    virtual bool owns_index(std::size_t i) const;
 
     /// Get block of values
-    virtual void get_local(double* block, uint m, const uint* rows) const;
+    virtual void get_local(double* block, std::size_t m, const DolfinIndex* rows) const;
 
     /// Set block of values
-    virtual void set(const double* block, uint m, const uint* rows);
+    virtual void set(const double* block, std::size_t m, const DolfinIndex* rows);
 
     /// Add block of values
-    virtual void add(const double* block, uint m, const uint* rows);
+    virtual void add(const double* block, std::size_t m, const DolfinIndex* rows);
 
     /// Get all values on local process
     virtual void get_local(std::vector<double>& values) const;
@@ -130,10 +130,10 @@ namespace dolfin
     virtual void add_local(const Array<double>& values);
 
     /// Gather entries into local vector x
-    virtual void gather(GenericVector& x, const std::vector<uint>& indices) const;
+    virtual void gather(GenericVector& x, const std::vector<DolfinIndex>& indices) const;
 
     /// Gather entries into x
-    virtual void gather(std::vector<double>& x, const std::vector<uint>& indices) const;
+    virtual void gather(std::vector<double>& x, const std::vector<DolfinIndex>& indices) const;
 
     /// Gather all entries into x on process 0
     virtual void gather_on_zero(std::vector<double>& x) const;
@@ -160,7 +160,7 @@ namespace dolfin
     virtual double sum() const;
 
     /// Return sum of selected rows in vector. Repeated entries are only summed once.
-    virtual double sum(const Array<uint>& rows) const;
+    virtual double sum(const Array<std::size_t>& rows) const;
 
     /// Multiply vector by given number
     virtual const uBLASVector& operator*= (double a);
@@ -213,11 +213,11 @@ namespace dolfin
     { return *x; }
 
     /// Access value of given entry (const version)
-    virtual double operator[] (uint i) const
+    virtual double operator[] (DolfinIndex i) const
     { return (*x)(i); };
 
     /// Access value of given entry (non-const version)
-    double& operator[] (uint i)
+    double& operator[] (DolfinIndex i)
     { return (*x)(i); };
 
     /// Assignment operator

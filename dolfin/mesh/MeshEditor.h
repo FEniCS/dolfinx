@@ -50,9 +50,9 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh to open.
-    ///     tdim (uint)
+    ///     tdim (std::size_t)
     ///         The topological dimension.
-    ///     gdim (uint)
+    ///     gdim (std::size_t)
     ///         The geometrical dimension.
     ///
     /// *Example*
@@ -62,7 +62,7 @@ namespace dolfin
     ///         MeshEditor editor;
     ///         editor.open(mesh, 2, 2);
     ///
-    void open(Mesh& mesh, uint tdim, uint gdim);
+    void open(Mesh& mesh, std::size_t tdim, std::size_t gdim);
 
     /// Open mesh of given cell type, topological and geometrical dimension
     ///
@@ -71,11 +71,11 @@ namespace dolfin
     ///         The mesh to open.
     ///     type (CellType::Type)
     ///         Cell type.
-    ///     tdim (uint)
+    ///     tdim (std::size_t)
     ///         The topological dimension.
-    ///     gdim (uint)
+    ///     gdim (std::size_t)
     ///         The geometrical dimension.
-    void open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim);
+    void open(Mesh& mesh, CellType::Type type, std::size_t tdim, std::size_t gdim);
 
     /// Open mesh of given cell type, topological and geometrical dimension
     ///
@@ -84,16 +84,16 @@ namespace dolfin
     ///         The mesh to open.
     ///     type (std::string)
     ///         Cell type.
-    ///     tdim (uint)
+    ///     tdim (std::size_t)
     ///         The topological dimension.
-    ///     gdim (uint)
+    ///     gdim (std::size_t)
     ///         The geometrical dimension.
-    void open(Mesh& mesh, std::string type, uint tdim, uint gdim);
+    void open(Mesh& mesh, std::string type, std::size_t tdim, std::size_t gdim);
 
     /// Specify number of vertices
     ///
     /// *Arguments*
-    ///     num_vertices (uint)
+    ///     num_vertices (std::size_t)
     ///         The number of vertices.
     ///
     /// *Example*
@@ -104,12 +104,12 @@ namespace dolfin
     ///         editor.open(mesh, 2, 2);
     ///         editor.init_vertices(4);
     ///
-    void init_vertices(uint num_vertices);
+    void init_vertices(std::size_t num_vertices);
 
     /// Specify number of cells
     ///
     /// *Arguments*
-    ///     num_cells (uint)
+    ///     num_cells (std::size_t)
     ///         The number of cells.
     ///
     /// *Example*
@@ -120,50 +120,50 @@ namespace dolfin
     ///         editor.open(mesh, 2, 2);
     ///         editor.init_cells(2);
     ///
-    void init_cells(uint num_cells);
+    void init_cells(std::size_t num_cells);
 
     /// Add vertex v at given point p
     ///
     /// *Arguments*
-    ///     index (uint)
+    ///     index (std::size_t)
     ///         The vertex (index).
     ///     p (_Point_)
     ///         The point.
-    void add_vertex(uint index, const Point& p);
+    void add_vertex(std::size_t index, const Point& p);
 
     /// Add vertex v at given coordinate x
     ///
     /// *Arguments*
-    ///     index (uint)
+    ///     index (std::size_t)
     ///         The vertex (index).
     ///     x (std::vector<double>)
     ///         The x-coordinates.
-    void add_vertex(uint index, const std::vector<double>& x);
+    void add_vertex(std::size_t index, const std::vector<double>& x);
 
     /// Add vertex v at given point x (for a 1D mesh)
     ///
     /// *Arguments*
-    ///     index (uint)
+    ///     index (std::size_t)
     ///         The vertex (index).
     ///     x (double)
     ///         The x-coordinate.
-    void add_vertex(uint index, double x);
+    void add_vertex(std::size_t index, double x);
 
     /// Add vertex v at given point (x, y) (for a 2D mesh)
     ///
     /// *Arguments*
-    ///     index (uint)
+    ///     index (std::size_t)
     ///         The vertex (index).
     ///     x (double)
     ///         The x-coordinate.
     ///     y (double)
     ///         The y-coordinate.
-    void add_vertex(uint index, double x, double y);
+    void add_vertex(std::size_t index, double x, double y);
 
     /// Add vertex v at given point (x, y, z) (for a 3D mesh)
     ///
     /// *Arguments*
-    ///     index (uint)
+    ///     index (std::size_t)
     ///         The vertex (index).
     ///     x (double)
     ///         The x-coordinate.
@@ -171,90 +171,92 @@ namespace dolfin
     ///         The y-coordinate.
     ///     z (double)
     ///         The z-coordinate.
-    void add_vertex(uint index, double x, double y, double z);
+    void add_vertex(std::size_t index, double x, double y, double z);
 
     /// Add vertex v at given point p
     ///
     /// *Arguments*
-    ///     local_index (uint)
+    ///     local_index (std::size_t)
     ///         The vertex (local index).
-    ///     global_index (uint)
+    ///     global_index (std::size_t)
     ///         The vertex (global_index).
     ///     p (_Point_)
     ///         The point.
-    void add_vertex_global(uint local_index, uint global_index, const Point& p);
+    void add_vertex_global(std::size_t local_index, std::size_t global_index,
+                           const Point& p);
 
     /// Add vertex v at given coordinate x
     ///
     /// *Arguments*
-    ///     local_index (uint)
+    ///     local_index (std::size_t)
     ///         The vertex (local index).
-    ///     global_index (uint)
+    ///     global_index (std::size_t)
     ///         The vertex (global_index).
     ///     x (std::vector<double>)
     ///         The x-coordinates.
-    void add_vertex_global(uint local_index, uint global_index,
+    void add_vertex_global(std::size_t local_index, std::size_t global_index,
                            const std::vector<double>& x);
 
     /// Add cell with given vertices (1D)
     ///
     /// *Arguments*
-    ///     c (uint)
+    ///     c (std::size_t)
     ///         The cell (index).
-    ///     v0 (std::vector<uint>)
+    ///     v0 (std::vector<std::size_t>)
     ///         The first vertex (local index).
-    ///     v1 (std::vector<uint>)
+    ///     v1 (std::vector<std::size_t>)
     ///         The second vertex (local index).
-    void add_cell(uint c, uint v0, uint v1);
+    void add_cell(std::size_t c, std::size_t v0, std::size_t v1);
 
     /// Add cell with given vertices (2D)
     ///
     /// *Arguments*
-    ///     c (uint)
+    ///     c (std::size_t)
     ///         The cell (index).
-    ///     v0 (std::vector<uint>)
+    ///     v0 (std::vector<std::size_t>)
     ///         The first vertex (local index).
-    ///     v1 (std::vector<uint>)
+    ///     v1 (std::vector<std::size_t>)
     ///         The second vertex (local index).
-    ///     v2 (std::vector<uint>)
+    ///     v2 (std::vector<std::size_t>)
     ///         The third vertex (local index).
-    void add_cell(uint c, uint v0, uint v1, uint v2);
+    void add_cell(std::size_t c, std::size_t v0, std::size_t v1, std::size_t v2);
 
     /// Add cell with given vertices (3D)
     ///
     /// *Arguments*
-    ///     c (uint)
+    ///     c (std::size_t)
     ///         The cell (index).
-    ///     v0 (std::vector<uint>)
+    ///     v0 (std::vector<std::size_t>)
     ///         The first vertex (local index).
-    ///     v1 (std::vector<uint>)
+    ///     v1 (std::vector<std::size_t>)
     ///         The second vertex (local index).
-    ///     v2 (std::vector<uint>)
+    ///     v2 (std::vector<std::size_t>)
     ///         The third vertex (local index).
-    ///     v3 (std::vector<uint>)
+    ///     v3 (std::vector<std::size_t>)
     ///         The fourth vertex (local index).
-    void add_cell(uint c, uint v0, uint v1, uint v2, uint v3);
+    void add_cell(std::size_t c, std::size_t v0, std::size_t v1,
+                  std::size_t v2, std::size_t v3);
 
     /// Add cell with given vertices
     ///
     /// *Arguments*
-    ///     c (uint)
+    ///     c (std::size_t)
     ///         The cell (index).
-    ///     v (std::vector<uint>)
+    ///     v (std::vector<std::size_t>)
     ///         The vertex indices (local indices)
-    void add_cell(uint c, const std::vector<uint>& v);
+    void add_cell(std::size_t c, const std::vector<std::size_t>& v);
 
     /// Add cell with given vertices
     ///
     /// *Arguments*
-    ///     local_index (uint)
+    ///     local_index (std::size_t)
     ///         The cell (index).
-    ///     global_index (uint)
+    ///     global_index (std::size_t)
     ///         The global (user) cell index.
-    ///     v (std::vector<uint>)
+    ///     v (std::vector<std::size_t>)
     ///         The vertex indices (local indices)
-    void add_cell(uint local_index, uint global_index,
-                  const std::vector<uint>& v);
+    void add_cell(std::size_t local_index, std::size_t global_index,
+                  const std::vector<std::size_t>& v);
 
     /// Close mesh, finish editing, and order entities locally
     ///
@@ -278,10 +280,10 @@ namespace dolfin
     friend class TetrahedronCell;
 
     // Add vertex, common part
-    void add_vertex_common(uint v, uint dim);
+    void add_vertex_common(std::size_t v, std::size_t dim);
 
     // Add cell, common part
-    void add_cell_common(uint v, uint dim);
+    void add_cell_common(std::size_t v, std::size_t dim);
 
     // Compute boundary indicators (exterior facets)
     void compute_boundary_indicators();
@@ -290,31 +292,31 @@ namespace dolfin
     void clear();
 
     // Check that vertices are in range
-    void check_vertices(const std::vector<uint>& v) const;
+    void check_vertices(const std::vector<std::size_t>& v) const;
 
     // The mesh
     Mesh* mesh;
 
     // Topological dimension
-    uint tdim;
+    std::size_t tdim;
 
     // Geometrical (Euclidean) dimension
-    uint gdim;
+    std::size_t gdim;
 
     // Number of vertices
-    uint num_vertices;
+    std::size_t num_vertices;
 
     // Number of cells
-    uint num_cells;
+    std::size_t num_cells;
 
     // Next available vertex
-    uint next_vertex;
+    std::size_t next_vertex;
 
     // Next available cell
-    uint next_cell;
+    std::size_t next_cell;
 
     // Temporary storage for local cell data
-    std::vector<uint> vertices;
+    std::vector<std::size_t> vertices;
 
   };
 

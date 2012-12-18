@@ -43,7 +43,7 @@ void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& P)
 {
   ublas_sparse_matrix& _M = M.mat();
 
-  const uint size = P.size(0);
+  const std::size_t size = P.size(0);
   _M.resize(size, size, false);
   _M.assign(P.mat());
 
@@ -56,14 +56,14 @@ void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& P)
   // Straightforward and very slow implementation. This is used for verification
   tic();
   M.assign(A);
-  for(uint i=1; i < size; ++i)
+  for(std::size_t i=1; i < size; ++i)
   {
-    for(uint k=0; k < i; ++k)
+    for(std::size_t k=0; k < i; ++k)
     {
      if( fabs( M(i,k) ) > 0.0 )
       {
         M(i,k) = M(i,k)/M(k,k);
-        for(uint j=k+1; j < size; ++j)
+        for(std::size_t j=k+1; j < size; ++j)
         {
           if( fabs( M(i,j) ) > DOLFIN_EPS )
               M(i,j) = M(i,j) - M(i,k)*M(k,j);
@@ -102,20 +102,20 @@ void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& P)
   diagonal.resize(size);
   diagonal[0] = 0;
 
-  std::vector<uint> iw(size);
-  for(uint i=0; i< size; ++i)
+  std::vector<std::size_t> iw(size);
+  for(std::size_t i=0; i< size; ++i)
     iw[i] = 0;
 
-  uint j0=0, j1=0, j=0, jrow=0, jw=0;
+  std::size_t j0=0, j1=0, j=0, jrow=0, jw=0;
   double t1;
 
-  for (uint k = 0; k < size ; ++k)        // i (rows)
+  for (std::size_t k = 0; k < size ; ++k)        // i (rows)
   {
     j0 = _M.index1_data () [k];    // ia
     j1 = _M.index1_data () [k+1]-1;
 
     // Initialise working array iw
-    for (uint i = j0;  i <= j1; ++i)
+    for (std::size_t i = j0;  i <= j1; ++i)
       iw[ _M.index2_data () [i] ] = i;  // ja
 
     // Move along row looking for diagonal
@@ -129,7 +129,7 @@ void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& P)
 
       t1 = (_M.value_data() [j])/(_M.value_data() [ diagonal[jrow] ]);  //M(k,j) = M(k,j)/M(j,j)
       _M.value_data() [j] = t1;
-      for(uint jj = diagonal[jrow]+1; jj <= _M.index1_data () [jrow+1]-1; ++jj)
+      for(std::size_t jj = diagonal[jrow]+1; jj <= _M.index1_data () [jrow+1]-1; ++jj)
       {
         jw = iw[ _M.index2_data () [jj] ];
         if(jw != 0)
@@ -146,7 +146,7 @@ void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& P)
                    "Zero pivot detected in row %u", k);
     }
 
-    for(uint i=j0; i <= j1; ++i)
+    for(std::size_t i=j0; i <= j1; ++i)
       iw[ _M.index2_data () [i] ] = 0;
   } // k
 }
@@ -166,20 +166,19 @@ void uBLASILUPreconditioner::solve(uBLASVector& x, const uBLASVector& b) const
   _x.assign(_b);
 
   // Perform substutions for compressed row storage. This is the fastest.
-  const uint size = _M.size1();
-  for(uint i =0; i < size; ++i)
+  const std::size_t size = _M.size1();
+  for(std::size_t i =0; i < size; ++i)
   {
-    uint k;
+    std::size_t k;
     for(k = _M.index1_data () [i]; k < diagonal[i]; ++k)
       _x(i) -= ( _M.value_data () [k] )*x[ _M.index2_data () [k] ];
   }
   for(int i =size-1; i >= 0; --i)
   {
-    uint k;
+    std::size_t k;
     for(k = _M.index1_data () [i+1]-1; k > diagonal[i]; --k)
       _x(i) -= ( _M.value_data () [k] )*x[ _M.index2_data () [k] ];
     _x(i) /= ( _M.value_data () [k] );
   }
 }
 //-----------------------------------------------------------------------------
-

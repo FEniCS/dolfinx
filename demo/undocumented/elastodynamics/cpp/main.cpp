@@ -125,8 +125,8 @@ int main(int argc, char* argv[])
   Constant eta(0.25);                          // damping coefficient
   double E  = 1.0;                             // Youngs modulus
   double nu = 0.0;                             // Poisson ratio
-  Constant lambda((nu*E)/((1.0+nu)*(1.0-nu))); // Lame coefficient
-  Constant mu(E/(2.0*(1.0+nu)));               // Lame coefficient
+  Constant lambda((nu*E)/((1.0 + nu)*(1.0 - nu))); // Lame coefficient
+  Constant mu(E/(2.0*(1.0 + nu)));               // Lame coefficient
 
   // Time stepping parameters
   Constant alpha_m(0.2);
@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
 
   // External load
   RightBoundary right_boundary;
-  MeshFunction<unsigned int> right_boundary_function(mesh, 1);
+  MeshFunction<std::size_t> right_boundary_function(mesh, 1);
   right_boundary.mark(right_boundary_function, 3);
   Pressure p(t, dt, false), p0(t, dt, true);
 
@@ -204,7 +204,7 @@ int main(int argc, char* argv[])
   File file_eps("eps_xx.pvd", "compressed");
 
   // Start time stepping
-  dolfin::uint step = 0;
+  std::size_t step = 0;
   while (t < T)
   {
     // Update for next time step

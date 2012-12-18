@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2010-2011.
 //
 // First added:  2008-12-12
-// Last changed: 2011-01-22
+// Last changed: 2012-11-12
 //
 // This demo illustrates basic usage of block matrices and vectors.
 
@@ -31,7 +31,7 @@ using namespace dolfin;
 int main()
 {
   // Create mesh
-  UnitSquare mesh(32, 32);
+  UnitSquareMesh mesh(32, 32);
 
   // Create a simple stiffness matrix and vector
   StiffnessMatrix::FunctionSpace V(mesh);

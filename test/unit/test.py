@@ -27,7 +27,7 @@ import sys, os, re
 import platform
 import instant
 from dolfin_utils.commands import getstatusoutput
-from dolfin import has_mpi, has_parmetis, has_scotch
+from dolfin import has_mpi, has_parmetis, has_scotch, has_linear_algebra_backend
 
 # Tests to run
 tests = {
@@ -68,14 +68,18 @@ if len(sys.argv) == 2 and sys.argv[1] == "--only-python":
 
 # Build prefix list
 prefixes = [""]
-if has_mpi() and (has_parmetis() or has_scotch()):
+if has_mpi() and (has_parmetis() or has_scotch()) and \
+       (has_linear_algebra_backend("Epetra") or has_linear_algebra_backend("PETSc")):
     prefixes.append("mpirun -np 3 ")
 else:
-    print "DOLFIN has not been compiled with MPI and/or ParMETIS. Unit tests will not be run in parallel."
+    print "DOLFIN has not been compiled with MPI and/or ParMETIS/SCOTCH. Unit tests will not be run in parallel."
 
 # Allow to disable parallel testing
 if "DISABLE_PARALLEL_TESTING" in os.environ:
     prefixes = [""]
+
+# Set non-interactive
+os.putenv('DOLFIN_NOPLOT', '1')
 
 failed = []
 # Run tests in serial, then in parallel
@@ -130,6 +134,7 @@ for prefix in prefixes:
     for (test, subtest, interface, output) in failed:
         print "One or more unit tests failed for %s (%s, %s):" % (test, subtest, interface)
         print output
+        open("fail.log", "w").write(output)
 
 # Return error code if tests failed
 sys.exit(len(failed) != 0)

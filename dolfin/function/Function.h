@@ -134,10 +134,10 @@ namespace dolfin
     /// *Arguments*
     ///     v (_Function_)
     ///         The function to be copied.
-    ///     i (uint)
+    ///     i (std::size_t)
     ///         Index of subfunction.
     ///
-    Function(const Function& v, uint i);
+    Function(const Function& v, std::size_t i);
 
     /// Destructor
     virtual ~Function();
@@ -159,9 +159,9 @@ namespace dolfin
     /// Extract subfunction
     ///
     /// *Arguments*
-    ///     i (uint)
+    ///     i (std::size_t)
     ///         Index of subfunction.
-    Function& operator[] (uint i) const;
+    Function& operator[] (std::size_t i) const;
 
     /// Return shared pointer to function space
     ///
@@ -198,9 +198,9 @@ namespace dolfin
     /// Return geometric dimension
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The geometric dimension.
-    uint geometric_dimension() const;
+    std::size_t geometric_dimension() const;
 
     /// Evaluate function at given coordinates
     ///
@@ -246,20 +246,20 @@ namespace dolfin
     /// Return value rank
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The value rank.
-    virtual uint value_rank() const;
+    virtual std::size_t value_rank() const;
 
     /// Return value dimension for given axis
     ///
     /// *Arguments*
-    ///     i (uint)
+    ///     i (std::size_t)
     ///         The index of the axis.
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The value dimension.
-    virtual uint value_dimension(uint i) const;
+    virtual std::size_t value_dimension(std::size_t i) const;
 
     /// Evaluate at given point in given cell
     ///
@@ -327,7 +327,7 @@ namespace dolfin
     friend class FunctionSpace;
 
     // Collection of sub-functions which share data with the function
-    mutable boost::ptr_map<uint, Function> sub_functions;
+    mutable boost::ptr_map<std::size_t, Function> sub_functions;
 
     // Compute lists of off-process dofs
     void compute_off_process_dofs() const;
@@ -336,8 +336,8 @@ namespace dolfin
     void init_vector();
 
     // Get coefficients from the vector(s)
-    void compute_ghost_indices(std::pair<uint, uint> range,
-                               std::vector<uint>& ghost_indices) const;
+    void compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
+                               std::vector<std::size_t>& ghost_indices) const;
 
     // The function space
     boost::shared_ptr<const FunctionSpace> _function_space;

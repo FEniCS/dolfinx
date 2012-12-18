@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-03-11
-// Last changed: 2011-06-28
+// Last changed: 2012-11-12
 //
 // Demonstrating function evaluation at arbitrary points.
 
@@ -44,7 +44,7 @@ public:
 int main()
 {
   // Create mesh and a point in the mesh
-  UnitCube mesh(8, 8, 8);
+  UnitCubeMesh mesh(8, 8, 8);
   Point x(0.31, 0.32, 0.33);
 
   // A user-defined function

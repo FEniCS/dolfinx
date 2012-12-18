@@ -45,6 +45,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Point.h>
+#include <dolfin/mesh/Restriction.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "Expression.h"
 #include "FunctionSpace.h"
@@ -167,7 +168,7 @@ Function::Function(const Function& v)
   *this = v;
 }
 //-----------------------------------------------------------------------------
-Function::Function(const Function& v, uint i)
+Function::Function(const Function& v, std::size_t i)
   : Hierarchical<Function>(*this),
     allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
@@ -203,7 +204,7 @@ const Function& Function::operator= (const Function& v)
   else
   {
     // Create new collapsed FunctionSpace
-    boost::unordered_map<uint, uint> collapsed_map;
+    boost::unordered_map<std::size_t, std::size_t> collapsed_map;
     _function_space = v._function_space->collapse(collapsed_map);
 
     // FIXME: This dolfin_assertion doesn't work in parallel
@@ -211,10 +212,10 @@ const Function& Function::operator= (const Function& v)
     //dolfin_assert(collapsed_map.size() == _function_space->dofmap()->local_dimension());
 
     // Get row indices of original and new vectors
-    boost::unordered_map<uint, uint>::const_iterator entry;
-    std::vector<uint> new_rows(collapsed_map.size());
-    std::vector<uint> old_rows(collapsed_map.size());
-    uint i = 0;
+    boost::unordered_map<std::size_t, std::size_t>::const_iterator entry;
+    std::vector<DolfinIndex> new_rows(collapsed_map.size());
+    std::vector<DolfinIndex> old_rows(collapsed_map.size());
+    std::size_t i = 0;
     for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
     {
       new_rows[i]   = entry->first;
@@ -248,16 +249,16 @@ const Function& Function::operator= (const Expression& v)
   return *this;
 }
 //-----------------------------------------------------------------------------
-Function& Function::operator[] (uint i) const
+Function& Function::operator[] (std::size_t i) const
 {
   // Check if sub-Function is in the cache, otherwise create and add to cache
-  boost::ptr_map<uint, Function>::iterator sub_function = sub_functions.find(i);
+  boost::ptr_map<std::size_t, Function>::iterator sub_function = sub_functions.find(i);
   if (sub_function != sub_functions.end())
     return *(sub_function->second);
   else
   {
     // Extract function subspace
-    std::vector<uint> component = boost::assign::list_of(i);
+    std::vector<std::size_t> component = boost::assign::list_of(i);
     boost::shared_ptr<const FunctionSpace> sub_space(_function_space->extract_sub_space(component));
 
     // Insert sub-Function into map and return reference
@@ -302,7 +303,7 @@ bool Function::in(const FunctionSpace& V) const
   return *_function_space == V;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Function::geometric_dimension() const
+std::size_t Function::geometric_dimension() const
 {
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->mesh());
@@ -357,7 +358,7 @@ void Function::eval(Array<double>& values,
   const FiniteElement& element = *_function_space->element();
 
   // Compute in tensor (one for scalar function, . . .)
-  const uint value_size_loc = value_size();
+  const std::size_t value_size_loc = value_size();
 
   dolfin_assert(values.size() == value_size_loc);
 
@@ -371,14 +372,14 @@ void Function::eval(Array<double>& values,
   std::vector<double> basis(value_size_loc);
 
   // Initialise values
-  for (uint j = 0; j < value_size_loc; ++j)
+  for (std::size_t j = 0; j < value_size_loc; ++j)
     values[j] = 0.0;
 
   // Compute linear combination
-  for (uint i = 0; i < element.space_dimension(); ++i)
+  for (std::size_t i = 0; i < element.space_dimension(); ++i)
   {
     element.evaluate_basis(i, &basis[0], &x[0], ufc_cell);
-    for (uint j = 0; j < value_size_loc; ++j)
+    for (std::size_t j = 0; j < value_size_loc; ++j)
       values[j] += coefficients[i]*basis[j];
   }
 }
@@ -401,14 +402,14 @@ void Function::extrapolate(const Function& v)
   Extrapolation::extrapolate(*this, v);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Function::value_rank() const
+std::size_t Function::value_rank() const
 {
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->element());
   return _function_space->element()->value_rank();
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Function::value_dimension(uint i) const
+std::size_t Function::value_dimension(std::size_t i) const
 {
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->element());
@@ -442,7 +443,7 @@ void Function::non_matching_eval(Array<double>& values,
   const Mesh& mesh = *_function_space->mesh();
 
   const double* _x = x.data();
-  const uint dim = mesh.geometry().dim();
+  const std::size_t dim = mesh.geometry().dim();
   const Point point(dim, _x);
 
   // Alternative 1: Find cell that point (x) intersects
@@ -468,7 +469,7 @@ void Function::non_matching_eval(Array<double>& values,
     const double * const * vertices = ufc_cell.coordinates;
 
     Point barycenter;
-    for (uint i = 0; i <= dim; i++)
+    for (std::size_t i = 0; i <= dim; i++)
     {
       Point vertex(dim, vertices[i]);
       barycenter += vertex;
@@ -508,10 +509,10 @@ void Function::restrict(double* w,
   {
     // Get dofmap for cell
     const GenericDofMap& dofmap = *_function_space->dofmap();
-    const std::vector<uint>& dofs = dofmap.cell_dofs(dolfin_cell.index());
+    const std::vector<DolfinIndex>& dofs = dofmap.cell_dofs(dolfin_cell.index());
 
     // Pick values from vector(s)
-    _vector->get_local(w, dofs.size(), &dofs[0]);
+    _vector->get_local(w, dofs.size(), dofs.data());
   }
   else
   {
@@ -543,11 +544,15 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   dolfin_assert(_function_space->element());
   const FiniteElement& element = *_function_space->element();
 
+  // Get restriction if any
+  boost::shared_ptr<const Restriction> restriction
+    = _function_space->dofmap()->restriction();
+
   // Local data for interpolation on each cell
-  const uint num_cell_vertices = mesh.type().num_vertices(mesh.topology().dim());
+  const std::size_t num_cell_vertices = mesh.type().num_vertices(mesh.topology().dim());
 
   // Compute in tensor (one for scalar function, . . .)
-  const uint value_size_loc = value_size();
+  const std::size_t value_size_loc = value_size();
 
   // Resize Array for holding vertex values
   vertex_values.resize(value_size_loc*(mesh.num_vertices()));
@@ -563,6 +568,10 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   UFCCell ufc_cell(mesh);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
+    // Skip cells not included in restriction
+    if (restriction && !restriction->contains(*cell))
+      continue;
+
     // Update to current cell
     ufc_cell.update(*cell);
 
@@ -576,10 +585,10 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
     // Copy values to array of vertex values
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
     {
-      for (uint i = 0; i < value_size_loc; ++i)
+      for (std::size_t i = 0; i < value_size_loc; ++i)
       {
-        const uint local_index  = vertex.pos()*value_size_loc + i;
-        const uint global_index = i*mesh.num_vertices() + vertex->index();
+        const std::size_t local_index  = vertex.pos()*value_size_loc + i;
+        const std::size_t global_index = i*mesh.num_vertices() + vertex->index();
         vertex_values[global_index] = cell_vertex_values[local_index];
       }
     }
@@ -613,14 +622,14 @@ void Function::init_vector()
   }
 
   // Get global size
-  const uint N = _function_space->dofmap()->global_dimension();
+  const std::size_t N = _function_space->dofmap()->global_dimension();
 
   // Get local range
-  const std::pair<uint, uint> range = _function_space->dofmap()->ownership_range();
-  const uint local_size = range.second - range.first;
+  const std::pair<std::size_t, std::size_t> range = _function_space->dofmap()->ownership_range();
+  const std::size_t local_size = range.second - range.first;
 
   // Determine ghost vertices if dof map is distributed
-  std::vector<uint> ghost_indices;
+  std::vector<std::size_t> ghost_indices;
   if (N > local_size)
     compute_ghost_indices(range, ghost_indices);
 
@@ -637,8 +646,8 @@ void Function::init_vector()
   _vector->zero();
 }
 //-----------------------------------------------------------------------------
-void Function::compute_ghost_indices(std::pair<uint, uint> range,
-                                     std::vector<uint>& ghost_indices) const
+void Function::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
+                                     std::vector<std::size_t>& ghost_indices) const
 {
   // Clear data
   ghost_indices.clear();
@@ -654,21 +663,21 @@ void Function::compute_ghost_indices(std::pair<uint, uint> range,
 
   // Dofs per cell
   dolfin_assert(_function_space->element());
-  const uint num_dofs_per_cell = _function_space->element()->space_dimension();
+  const std::size_t num_dofs_per_cell = _function_space->element()->space_dimension();
 
   // Get local range
-  const uint n0 = range.first;
-  const uint n1 = range.second;
+  const std::size_t n0 = range.first;
+  const std::size_t n1 = range.second;
 
   // Iterate over local mesh and check which dofs are needed
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get dofs on cell
-    const std::vector<uint>& dofs = dofmap.cell_dofs(cell->index());
+    const std::vector<DolfinIndex>& dofs = dofmap.cell_dofs(cell->index());
 
-    for (uint d = 0; d < num_dofs_per_cell; ++d)
+    for (std::size_t d = 0; d < num_dofs_per_cell; ++d)
     {
-      const uint dof = dofs[d];
+      const std::size_t dof = dofs[d];
       if (dof < n0 || dof >= n1)
       {
         // FIXME: Could we use dolfin::Set here? Or unordered_set?

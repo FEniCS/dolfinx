@@ -22,7 +22,7 @@
 
 #ifdef HAS_TRILINOS
 
-// Included here to avoid a C++ problem with some MPI implementations                                                                                                                         
+// Included here to avoid a C++ problem with some MPI implementations
 #include <dolfin/common/MPI.h>
 
 #include <Amesos.h>
@@ -185,15 +185,17 @@ const GenericLinearOperator& EpetraLUSolver::get_operator() const
   return *A;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
+std::size_t EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   dolfin_assert(linear_problem);
   dolfin_assert(solver);
 
   // Write a message
   if (parameters["report"] && dolfin::MPI::process_number() == 0)
+  {
     info("Solving linear system of size %d x %d using Epetra LU solver (%s).",
          A->size(0), A->size(1), method.c_str());
+  }
 
   // Downcast vector
   EpetraVector& _x = as_type<EpetraVector>(x);
@@ -208,8 +210,8 @@ dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
                  "Operator has not been set");
   }
 
-  const uint M = A->NumGlobalRows();
-  const uint N = A->NumGlobalCols();
+  const std::size_t M = A->NumGlobalRows64();
+  const std::size_t N = A->NumGlobalCols64();
   if (N != b.size())
   {
     dolfin_error("EpetraLUSolver.cpp",
@@ -262,7 +264,7 @@ dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint EpetraLUSolver::solve(const GenericLinearOperator& A,
+std::size_t EpetraLUSolver::solve(const GenericLinearOperator& A,
                                    GenericVector& x,
                                    const GenericVector& b)
 {
@@ -271,7 +273,7 @@ dolfin::uint EpetraLUSolver::solve(const GenericLinearOperator& A,
                as_type<const EpetraVector>(b));
 }
 //-----------------------------------------------------------------------------
-dolfin::uint EpetraLUSolver::solve(const EpetraMatrix& A, EpetraVector& x,
+std::size_t EpetraLUSolver::solve(const EpetraMatrix& A, EpetraVector& x,
                                    const EpetraVector& b)
 {
   boost::shared_ptr<const EpetraMatrix> _A(&A, NoDeleter());

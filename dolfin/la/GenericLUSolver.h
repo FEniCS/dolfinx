@@ -45,10 +45,10 @@ namespace dolfin
     virtual void set_operator(const boost::shared_ptr<const GenericLinearOperator> A) = 0;
 
     /// Solve linear system Ax = b
-    virtual uint solve(GenericVector& x, const GenericVector& b) = 0;
+    virtual std::size_t solve(GenericVector& x, const GenericVector& b) = 0;
 
     /// Solve linear system Ax = b
-    virtual uint solve(const GenericLinearOperator& A,
+    virtual std::size_t solve(const GenericLinearOperator& A,
                        GenericVector& x, const GenericVector& b)
     {
       dolfin_error("GenericLLUSolver.h",

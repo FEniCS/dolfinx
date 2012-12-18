@@ -66,7 +66,7 @@ PETScLinearOperator::PETScLinearOperator() : _wrapper(0)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScLinearOperator::size(uint dim) const
+std::size_t PETScLinearOperator::size(std::size_t dim) const
 {
   return PETScBaseMatrix::size(dim);
 }
@@ -105,31 +105,26 @@ GenericLinearOperator* PETScLinearOperator::wrapper()
   return _wrapper;
 }
 //-----------------------------------------------------------------------------
-void PETScLinearOperator::init(uint M, uint N, GenericLinearOperator* wrapper)
+void PETScLinearOperator::init(const GenericVector& x,
+                               const GenericVector& y,
+                               GenericLinearOperator* wrapper)
 {
   // Store wrapper
   _wrapper = wrapper;
 
-  // Compute local range
-  const std::pair<uint, uint> row_range    = MPI::local_range(M);
-  const std::pair<uint, uint> column_range = MPI::local_range(N);
-  const int m_local = row_range.second - row_range.first;
-  const int n_local = column_range.second - column_range.first;
+  // Get global dimension
+  const std::size_t M = y.size();
+  const std::size_t N = x.size();
 
-  // Check whether matrix has already been initialized and dimensions match
-  if (A)
+  // Get local range
+  std::size_t m_local = M;
+  std::size_t n_local = N;
+  if (MPI::num_processes() > 1)
   {
-    // Get size and local size of existing matrix
-    int _M(0), _N(0), _m_local(0), _n_local(0);
-    MatGetSize(*A, &_M, &_N);
-    MatGetLocalSize(*A, &_m_local, &_n_local);
-
-    // Check whether size already matches
-    if (static_cast<int>(M) == _M &&
-        static_cast<int>(N) == _N &&
-        m_local == _m_local &&
-        n_local == _n_local)
-      return;
+    std::pair<std::size_t, std::size_t> local_range_x = x.local_range();
+    std::pair<std::size_t, std::size_t> local_range_y = y.local_range();
+    m_local = local_range_y.second - local_range_y.first;
+    n_local = local_range_x.second - local_range_x.first;
   }
 
   // Initialize PETSc matrix

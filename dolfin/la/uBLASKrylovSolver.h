@@ -84,10 +84,10 @@ namespace dolfin
     }
 
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(GenericVector& x, const GenericVector& b);
+    std::size_t solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+    std::size_t solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
 
     /// Return a list of available solver methods
     static std::vector<std::pair<std::string, std::string> > methods();
@@ -102,24 +102,24 @@ namespace dolfin
 
     /// Select solver and solve linear system Ax = b and return number of iterations
     template<typename MatA, typename MatP>
-    uint solve_krylov(const MatA& A,
+    std::size_t solve_krylov(const MatA& A,
                       uBLASVector& x,
                       const uBLASVector& b,
                       const MatP& P);
 
     /// Solve linear system Ax = b using CG
     template<typename Mat>
-    uint solveCG(const Mat& A, uBLASVector& x, const uBLASVector& b,
+    std::size_t solveCG(const Mat& A, uBLASVector& x, const uBLASVector& b,
                  bool& converged) const;
 
     /// Solve linear system Ax = b using restarted GMRES
     template<typename Mat>
-    uint solveGMRES(const Mat& A, uBLASVector& x, const uBLASVector& b,
+    std::size_t solveGMRES(const Mat& A, uBLASVector& x, const uBLASVector& b,
                         bool& converged) const;
 
     /// Solve linear system Ax = b using BiCGStab
     template<typename Mat>
-    uint solveBiCGStab(const Mat& A, uBLASVector& x, const uBLASVector& b,
+    std::size_t solveBiCGStab(const Mat& A, uBLASVector& x, const uBLASVector& b,
                         bool& converged) const;
 
     /// Select and create named preconditioner
@@ -136,7 +136,7 @@ namespace dolfin
 
     /// Solver parameters
     double rtol, atol, div_tol;
-    uint max_it, restart;
+    std::size_t max_it, restart;
     bool report;
 
     /// Operator (the matrix)
@@ -150,14 +150,14 @@ namespace dolfin
   // Implementation of template functions
   //---------------------------------------------------------------------------
   template<typename MatA, typename MatP>
-  dolfin::uint uBLASKrylovSolver::solve_krylov(const MatA& A,
+  std::size_t uBLASKrylovSolver::solve_krylov(const MatA& A,
                                                uBLASVector& x,
                                                const uBLASVector& b,
                                                const MatP& P)
   {
     // Check dimensions
-    uint M = A.size(0);
-    uint N = A.size(1);
+    std::size_t M = A.size(0);
+    std::size_t N = A.size(1);
     if ( N != b.size() )
     {
       dolfin_error("uBLASKrylovSolver.h",
@@ -184,7 +184,7 @@ namespace dolfin
 
     // Choose solver and solve
     bool converged = false;
-    uint iterations = 0;
+    std::size_t iterations = 0;
     if (method == "cg")
       iterations = solveCG(A, x, b, converged);
     else if (method == "gmres")
@@ -220,7 +220,7 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template<typename Mat>
-  dolfin::uint uBLASKrylovSolver::solveCG(const Mat& A,
+  std::size_t uBLASKrylovSolver::solveCG(const Mat& A,
                                           uBLASVector& x,
                                           const uBLASVector& b,
                                           bool& converged) const
@@ -230,7 +230,7 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template<typename Mat>
-  dolfin::uint uBLASKrylovSolver::solveGMRES(const Mat& A, uBLASVector& x,
+  std::size_t uBLASKrylovSolver::solveGMRES(const Mat& A, uBLASVector& x,
                                              const uBLASVector& b,
                                              bool& converged) const
   {
@@ -239,7 +239,7 @@ namespace dolfin
     const ublas_vector& _b = b.vec();
 
     // Get size of system
-    const uint size = A.size(0);
+    const std::size_t size = A.size(0);
 
     // Create residual vector
     uBLASVector r(size);
@@ -266,7 +266,7 @@ namespace dolfin
     double nu, temp1, temp2, r_norm = 0.0, beta0 = 0;
 
     converged = false;
-    uint iteration = 0;
+    std::size_t iteration = 0;
     while (iteration < max_it && !converged)
     {
       // Compute residual r = b -A*x
@@ -301,8 +301,8 @@ namespace dolfin
       noalias(column(V, 0)) = _r/beta;
 
       // Modified Gram-Schmidt procedure
-      uint subiteration = 0;
-      uint j = 0;
+      std::size_t subiteration = 0;
+      std::size_t j = 0;
       while (subiteration < restart && iteration < max_it && !converged && r_norm/beta < div_tol)
       {
         // Compute product w = A*V_j (use r for temporary storage)
@@ -314,7 +314,7 @@ namespace dolfin
         _r.assign(_w);
         pc->solve(w, r);
 
-        for (uint i=0; i <= j; ++i)
+        for (std::size_t i=0; i <= j; ++i)
         {
           _h(i)= inner_prod(_w, column(V,i));
           noalias(_w) -= _h(i)*column(V,i);
@@ -327,7 +327,7 @@ namespace dolfin
         // Apply previous Givens rotations to the "new" column
         // (this could be improved? - use more uBLAS functions.
         //  The below has been taken from old DOLFIN code.)
-        for(uint i=0; i<j; ++i)
+        for(std::size_t i=0; i<j; ++i)
         {
           temp1 = _h(i);
           temp2 = _h(i+1);
@@ -360,7 +360,7 @@ namespace dolfin
         //   noalias(column(H, j)) = subrange(h, 0, restart);
         // but this gives an error when uBLAS debugging is turned onand H
         // is a triangular matrix
-        for(uint i=0; i<j+1; ++i)
+        for(std::size_t i=0; i<j+1; ++i)
           H(i,j) = _h(i);
 
         // Check for convergence
@@ -387,7 +387,7 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template<typename Mat>
-  dolfin::uint uBLASKrylovSolver::solveBiCGStab(const Mat& A,
+  std::size_t uBLASKrylovSolver::solveBiCGStab(const Mat& A,
                                                 uBLASVector& x,
                                                 const uBLASVector& b,
                                                 bool& converged) const
@@ -397,7 +397,7 @@ namespace dolfin
     const ublas_vector& _b = b.vec();
 
    // Get size of system
-    const uint size = A.size(0);
+    const std::size_t size = A.size(0);
 
     // Allocate vectors
     uBLASVector r(size), rstar(size), p(size), s(size), v(size), t(size), y(size), z(size);
@@ -441,7 +441,7 @@ namespace dolfin
 
     // Start iterations
     converged = false;
-    uint iteration = 0;
+    std::size_t iteration = 0;
     while (iteration < max_it && !converged && r_norm/r0_norm < div_tol)
     {
       // Set rho_n = rho_n+1

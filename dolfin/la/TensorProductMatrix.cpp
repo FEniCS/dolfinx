@@ -23,7 +23,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TensorProductMatrix::TensorProductMatrix(uint num_factors)
+TensorProductMatrix::TensorProductMatrix(std::size_t num_factors)
 {
 
 }

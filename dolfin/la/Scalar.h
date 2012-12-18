@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/types.h>
 #include "DefaultFactory.h"
 #include "GenericTensor.h"
 
@@ -51,7 +52,7 @@ namespace dolfin
     //--- Implementation of the GenericTensor interface ---
 
     /// Resize tensor to given dimensions
-    virtual void resize(uint rank, const uint* dims)
+    virtual void resize(std::size_t rank, const std::size_t* dims)
     { dolfin_assert(rank == 0); value = 0.0; }
 
     /// Initialize zero tensor using sparsity pattern
@@ -59,11 +60,11 @@ namespace dolfin
     { value = 0.0; }
 
     /// Return tensor rank (number of dimensions)
-    uint rank() const
+    std::size_t rank() const
     { return 0; }
 
     /// Return size of given dimension
-    uint size(uint dim) const
+    std::size_t size(std::size_t dim) const
     {
       dolfin_error("Scalar.h",
                    "get size of scalar",
@@ -72,7 +73,7 @@ namespace dolfin
     }
 
     /// Return local ownership range
-    virtual std::pair<uint, uint> local_range(uint dim) const
+    virtual std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const
     {
       dolfin_error("Scalar.h",
                    "get local range of scalar",
@@ -81,29 +82,29 @@ namespace dolfin
     }
 
     /// Get block of values
-    void get(double* block, const uint* num_rows, const uint * const * rows) const
+    void get(double* block, const DolfinIndex* num_rows, const DolfinIndex * const * rows) const
     { block[0] = value; }
 
     /// Set block of values
-    void set(const double* block, const uint* num_rows, const uint * const * rows)
+    void set(const double* block, const DolfinIndex* num_rows, const DolfinIndex * const * rows)
     { value = block[0]; }
 
     /// Add block of values
-    void add(const double* block, const uint* num_rows, const uint * const * rows)
+    void add(const double* block, const DolfinIndex* num_rows, const DolfinIndex * const * rows)
     {
       dolfin_assert(block);
       value += block[0];
     }
 
     /// Add block of values
-    void add(const double* block, const std::vector<const std::vector<uint>* >& rows)
+    void add(const double* block, const std::vector<const std::vector<DolfinIndex>* >& rows)
     {
       dolfin_assert(block);
       value += block[0];
     }
 
     /// Add block of values
-    void add(const double* block, const std::vector<std::vector<uint> >& rows)
+    void add(const double* block, const std::vector<std::vector<DolfinIndex> >& rows)
     {
       dolfin_assert(block);
       value += block[0];

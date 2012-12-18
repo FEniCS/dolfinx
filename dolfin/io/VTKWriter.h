@@ -38,7 +38,7 @@ namespace dolfin
   public:
 
     // Mesh writer
-    static void write_mesh(const Mesh& mesh, uint cell_dim, std::string file,
+    static void write_mesh(const Mesh& mesh, std::size_t cell_dim, std::string file,
                            bool binary, bool compress);
 
     // Cell data writer
@@ -55,26 +55,26 @@ namespace dolfin
 
     // Write cell data (ascii)
     static std::string ascii_cell_data(const Mesh& mesh,
-                                       const std::vector<uint>& offset,
+                                       const std::vector<std::size_t>& offset,
                                        const std::vector<double>& values,
-                                       uint dim, uint rank);
+                                       std::size_t dim, std::size_t rank);
 
     // Write cell data (base64)
     static std::string base64_cell_data(const Mesh& mesh,
-                                        const std::vector<uint>& offset,
+                                        const std::vector<std::size_t>& offset,
                                         const std::vector<double>& values,
-                                        uint dim, uint rank, bool compress);
+                                        std::size_t dim, std::size_t rank, bool compress);
 
     // Mesh writer (ascii)
-    static void write_ascii_mesh(const Mesh& mesh, uint cell_dim,
+    static void write_ascii_mesh(const Mesh& mesh, std::size_t cell_dim,
                                  std::string file);
 
     // Mesh writer (base64)
-    static void write_base64_mesh(const Mesh& mesh, uint cell_dim,
+    static void write_base64_mesh(const Mesh& mesh, std::size_t cell_dim,
                                   std::string file, bool compress);
 
     // Get VTK cell type
-    static boost::uint8_t vtk_cell_type(const Mesh& mesh, uint cell_dim);
+    static boost::uint8_t vtk_cell_type(const Mesh& mesh, std::size_t cell_dim);
 
     // Compute base64 encoded stream for VTK
     template<typename T>
@@ -89,7 +89,7 @@ namespace dolfin
   //--------------------------------------------------------------------------
   template<typename T>
   std::string VTKWriter::encode_stream(const std::vector<T>& data,
-                                             bool compress)
+                                       bool compress)
   {
     std::stringstream stream;
 
@@ -130,7 +130,7 @@ namespace dolfin
     header[2] = 0;
 
     // Compress data
-    std::pair<boost::shared_array<unsigned char>, dolfin::uint>
+    std::pair<boost::shared_array<unsigned char>, std::size_t>
       compressed_data = Encoder::compress_data(data);
 
     // Length of compressed data

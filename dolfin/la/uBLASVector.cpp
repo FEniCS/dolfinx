@@ -49,7 +49,7 @@ uBLASVector::uBLASVector(std::string type): x(new ublas_vector(0))
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBLASVector::uBLASVector(uint N, std::string type): x(new ublas_vector(N))
+uBLASVector::uBLASVector(std::size_t N, std::string type): x(new ublas_vector(N))
 {
   // Set all entries to zero
   x->clear();
@@ -76,7 +76,7 @@ boost::shared_ptr<GenericVector> uBLASVector::copy() const
   return y;
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::resize(uint N)
+void uBLASVector::resize(std::size_t N)
 {
   if (x->size() == N)
     return;
@@ -87,7 +87,7 @@ void uBLASVector::resize(uint N)
   x->clear();
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::resize(std::pair<uint, uint> range)
+void uBLASVector::resize(std::pair<std::size_t, std::size_t> range)
 {
   if (range.first != 0)
   {
@@ -99,8 +99,8 @@ void uBLASVector::resize(std::pair<uint, uint> range)
   resize(range.second - range.first);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::resize(std::pair<uint, uint> range,
-                    const std::vector<uint>& ghost_indices)
+void uBLASVector::resize(std::pair<std::size_t, std::size_t> range,
+                    const std::vector<std::size_t>& ghost_indices)
 {
   if (range.first != 0)
   {
@@ -124,17 +124,17 @@ bool uBLASVector::empty() const
   return x->empty();
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBLASVector::size() const
+std::size_t uBLASVector::size() const
 {
   return x->size();
 }
 //-----------------------------------------------------------------------------
-std::pair<dolfin::uint, dolfin::uint> uBLASVector::local_range() const
+std::pair<std::size_t, std::size_t> uBLASVector::local_range() const
 {
   return std::make_pair(0, size());
 }
 //-----------------------------------------------------------------------------
-bool uBLASVector::owns_index(uint i) const
+bool uBLASVector::owns_index(std::size_t i) const
 {
   if (i < size())
     return true;
@@ -142,54 +142,54 @@ bool uBLASVector::owns_index(uint i) const
     return false;
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::get_local(double* block, uint m, const uint* rows) const
+void uBLASVector::get_local(double* block, std::size_t m, const DolfinIndex* rows) const
 {
-  for (uint i = 0; i < m; i++)
+  for (std::size_t i = 0; i < m; i++)
     block[i] = (*x)(rows[i]);
 }
 //-----------------------------------------------------------------------------
 void uBLASVector::get_local(std::vector<double>& values) const
 {
   values.resize(size());
-  for (uint i = 0; i < size(); i++)
+  for (std::size_t i = 0; i < size(); i++)
     values[i] = (*x)(i);
 }
 //-----------------------------------------------------------------------------
 void uBLASVector::set_local(const std::vector<double>& values)
 {
   dolfin_assert(values.size() == size());
-  for (uint i = 0; i < size(); i++)
+  for (std::size_t i = 0; i < size(); i++)
     (*x)(i) = values[i];
 }
 //-----------------------------------------------------------------------------
 void uBLASVector::add_local(const Array<double>& values)
 {
   dolfin_assert(values.size() == size());
-  for (uint i = 0; i < size(); i++)
+  for (std::size_t i = 0; i < size(); i++)
     (*x)(i) += values[i];
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::gather(GenericVector& x, const std::vector<uint>& indices) const
+void uBLASVector::gather(GenericVector& x, const std::vector<DolfinIndex>& indices) const
 {
   not_working_in_parallel("uBLASVector::gather)");
 
-  const uint _size = indices.size();
+  const std::size_t _size = indices.size();
   dolfin_assert(this->size() >= _size);
 
   x.resize(_size);
   ublas_vector& _x = as_type<uBLASVector>(x).vec();
-  for (uint i = 0; i < _size; i++)
+  for (std::size_t i = 0; i < _size; i++)
     _x(i) = (*this->x)(indices[i]);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::gather(std::vector<double>& x, const std::vector<uint>& indices) const
+void uBLASVector::gather(std::vector<double>& x, const std::vector<DolfinIndex>& indices) const
 {
   not_working_in_parallel("uBLASVector::gather)");
 
-  const uint _size = indices.size();
+  const std::size_t _size = indices.size();
   x.resize(_size);
   dolfin_assert(x.size() == _size);
-  for (uint i = 0; i < _size; i++)
+  for (std::size_t i = 0; i < _size; i++)
     x[i] = (*this->x)(indices[i]);
 }
 //-----------------------------------------------------------------------------
@@ -200,15 +200,15 @@ void uBLASVector::gather_on_zero(std::vector<double>& x) const
   get_local(x);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::set(const double* block, uint m, const uint* rows)
+void uBLASVector::set(const double* block, std::size_t m, const DolfinIndex* rows)
 {
-  for (uint i = 0; i < m; i++)
+  for (std::size_t i = 0; i < m; i++)
     (*x)(rows[i]) = block[i];
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::add(const double* block, uint m, const uint* rows)
+void uBLASVector::add(const double* block, std::size_t m, const DolfinIndex* rows)
 {
-  for (uint i = 0; i < m; i++)
+  for (std::size_t i = 0; i < m; i++)
     (*x)(rows[i]) += block[i];
 }
 //-----------------------------------------------------------------------------
@@ -259,13 +259,13 @@ double uBLASVector::sum() const
   return ublas::sum(*x);
 }
 //-----------------------------------------------------------------------------
-double uBLASVector::sum(const Array<uint>& rows) const
+double uBLASVector::sum(const Array<std::size_t>& rows) const
 {
-  boost::unordered_set<uint> row_set;
+  boost::unordered_set<std::size_t> row_set;
   double _sum = 0.0;
-  for (uint i = 0; i < rows.size(); ++i)
+  for (std::size_t i = 0; i < rows.size(); ++i)
   {
-    const uint index = rows[i];
+    const std::size_t index = rows[i];
     dolfin_assert(index < size());
     if (row_set.find(index) == row_set.end())
     {
@@ -291,8 +291,8 @@ void uBLASVector::axpy(double a, const GenericVector& y)
 void uBLASVector::abs()
 {
   dolfin_assert(x);
-  const uint size = x->size();
-  for (uint i = 0; i < size; i++)
+  const std::size_t size = x->size();
+  for (std::size_t i = 0; i < size; i++)
     (*x)[i] = std::abs((*x)[i]);
 }
 //-----------------------------------------------------------------------------

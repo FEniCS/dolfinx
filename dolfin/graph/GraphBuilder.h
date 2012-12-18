@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-19
-// Last changed: 2011-02-22
+// Last changed: 2012-11-24
 
 #ifndef __GRAPH_BUILDER_H
 #define __GRAPH_BUILDER_H
@@ -48,36 +48,42 @@ namespace dolfin
 
     /// Build local graph from mesh (general version)
     static Graph local_graph(const Mesh& mesh,
-                             const std::vector<uint>& coloring_type);
+                             const std::vector<std::size_t>& coloring_type);
 
     // Build local Boost graph (general version)
     static BoostBidirectionalGraph local_boost_graph(const Mesh& mesh,
-                                        const std::vector<uint>& coloring_type);
+                                        const std::vector<std::size_t>& coloring_type);
 
     // Build local graph (specialized version)
-    static Graph local_graph(const Mesh& mesh, uint dim0, uint dim1);
+    static Graph local_graph(const Mesh& mesh, std::size_t dim0, std::size_t dim1);
 
     // Build local Boost graph (specialized version)
-    static BoostBidirectionalGraph local_boost_graph(const Mesh& mesh, uint dim0, uint dim1);
+    static BoostBidirectionalGraph local_boost_graph(const Mesh& mesh,
+                                                     std::size_t dim0,
+                                                     std::size_t dim1);
 
     /// Build distributed dual graph for mesh
     static void compute_dual_graph(const LocalMeshData& mesh_data,
-                                   std::vector<std::set<uint> >& local_graph,
-                                   std::set<uint>& ghost_vertices);
+                                   std::vector<std::set<std::size_t> >& local_graph,
+                                   std::set<std::size_t>& ghost_vertices);
+
+    static void compute_dual_graph_orig(const LocalMeshData& mesh_data,
+                                   std::vector<std::set<std::size_t> >& local_graph,
+                                   std::set<std::size_t>& ghost_vertices);
 
   private:
 
-    static void compute_connectivity(const boost::multi_array<uint, 2>& cell_vertices,
-                                     uint num_facet_vertices, uint offset,
-                                     std::vector<std::set<uint> >& graph);
+    static void compute_connectivity_orig(const boost::multi_array<std::size_t, 2>& cell_vertices,
+                                          std::size_t num_facet_vertices, std::size_t offset,
+                                          std::vector<std::set<std::size_t> >& local_graph);
 
-    static uint compute_ghost_connectivity(const boost::multi_array<uint, 2>& cell_vertices,
-                                     const std::vector<uint>& local_boundary_cells,
-                                     const std::vector<std::vector<uint> >& candidate_ghost_vertices,
-                                     const std::vector<uint>& candidate_ghost_global_indices,
-                                     uint num_facet_vertices,
-                                     std::vector<std::set<uint> >& ghost_graph_edges,
-                                     std::set<uint>& ghost_cells);
+    static std::size_t compute_ghost_connectivity(const boost::multi_array<std::size_t, 2>& cell_vertices,
+                                     const std::vector<std::size_t>& local_boundary_cells,
+                                     const std::vector<std::vector<std::size_t> >& candidate_ghost_vertices,
+                                     const std::vector<std::size_t>& candidate_ghost_global_indices,
+                                     std::size_t num_facet_vertices,
+                                     std::vector<std::set<std::size_t> >& ghost_graph_edges,
+                                     std::set<std::size_t>& ghost_cells);
 
   };
 

@@ -40,8 +40,8 @@ public:
 
   void testAssign2DCells()
   {
-    UnitSquare mesh(3, 3);
-    const dolfin::uint ncells = mesh.num_cells();
+    UnitSquareMesh mesh(3, 3);
+    const std::size_t ncells = mesh.num_cells();
     MeshValueCollection<int> f(2);
     bool all_new = true;
     for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -65,15 +65,15 @@ public:
 
   void testAssign2DFacets()
   {
-    UnitSquare mesh(3, 3);
+    UnitSquareMesh mesh(3, 3);
     mesh.init(2,1);
-    const dolfin::uint ncells = mesh.num_cells();
+    const std::size_t ncells = mesh.num_cells();
     MeshValueCollection<int> f(1);
     bool all_new = true;
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       const int value = ncells - cell->index();
-      for (dolfin::uint i = 0; i < cell->num_entities(1); ++i)
+      for (std::size_t i = 0; i < cell->num_entities(1); ++i)
       {
         bool this_new;
         this_new = f.set_value(cell->index(), i, value+i);
@@ -87,7 +87,7 @@ public:
     CPPUNIT_ASSERT(all_new);
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      for (dolfin::uint i = 0; i < cell->num_entities(1); ++i)
+      for (std::size_t i = 0; i < cell->num_entities(1); ++i)
       {
         const int value = ncells - cell->index() + i;
         CPPUNIT_ASSERT_EQUAL(value, g.get_value(cell->index(), i));
@@ -97,15 +97,15 @@ public:
 
   void testAssign2DVertices()
   {
-    UnitSquare mesh(3, 3);
+    UnitSquareMesh mesh(3, 3);
     mesh.init(2,0);
-    const dolfin::uint ncells = mesh.num_cells();
+    const std::size_t ncells = mesh.num_cells();
     MeshValueCollection<int> f(0);
     bool all_new = true;
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       const int value = ncells - cell->index();
-      for (dolfin::uint i = 0; i < cell->num_entities(0); ++i)
+      for (std::size_t i = 0; i < cell->num_entities(0); ++i)
       {
         bool this_new;
         this_new = f.set_value(cell->index(), i, value+i);
@@ -119,7 +119,7 @@ public:
     CPPUNIT_ASSERT(all_new);
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      for (dolfin::uint i = 0; i < cell->num_entities(0); ++i)
+      for (std::size_t i = 0; i < cell->num_entities(0); ++i)
       {
         const int value = ncells - cell->index() + i;
         CPPUNIT_ASSERT_EQUAL(value, g.get_value(cell->index(), i));
@@ -129,8 +129,8 @@ public:
 
   void testMeshFunctionAssign2DCells()
   {
-    UnitSquare mesh(3, 3);
-    const dolfin::uint ncells = mesh.num_cells();
+    UnitSquareMesh mesh(3, 3);
+    const std::size_t ncells = mesh.num_cells();
     MeshFunction<int> f(mesh, 2, 0);
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
@@ -149,7 +149,7 @@ public:
 
   void testMeshFunctionAssign2DFacets()
   {
-    UnitSquare mesh(3, 3);
+    UnitSquareMesh mesh(3, 3);
     mesh.init(1);
     MeshFunction<int> f(mesh, 1, 25);
     MeshValueCollection<int> g(1);
@@ -158,7 +158,7 @@ public:
     CPPUNIT_ASSERT_EQUAL(mesh.num_cells()*3, g.size());
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      for (dolfin::uint i = 0; i < cell->num_entities(1); ++i)
+      for (std::size_t i = 0; i < cell->num_entities(1); ++i)
       {
         CPPUNIT_ASSERT_EQUAL(25, g.get_value(cell->index(), i));
       }
@@ -167,7 +167,7 @@ public:
 
   void testMeshFunctionAssign2DVertices()
   {
-    UnitSquare mesh(3, 3);
+    UnitSquareMesh mesh(3, 3);
     mesh.init(0);
     MeshFunction<int> f(mesh, 0, 25);
     MeshValueCollection<int> g(0);
@@ -176,7 +176,7 @@ public:
     CPPUNIT_ASSERT_EQUAL(mesh.num_cells()*3, g.size());
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      for (dolfin::uint i = 0; i < cell->num_entities(0); ++i)
+      for (std::size_t i = 0; i < cell->num_entities(0); ++i)
       {
         CPPUNIT_ASSERT_EQUAL(25, g.get_value(cell->index(), i));
       }

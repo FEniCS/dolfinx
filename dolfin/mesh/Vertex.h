@@ -38,7 +38,7 @@ namespace dolfin
   public:
 
     /// Create vertex on given mesh
-    Vertex(const Mesh& mesh, uint index) : MeshEntity(mesh, 0, index) {}
+    Vertex(const Mesh& mesh, std::size_t index) : MeshEntity(mesh, 0, index) {}
 
     /// Create vertex from mesh entity
     Vertex(MeshEntity& entity) : MeshEntity(entity.mesh(), 0, entity.index()) {}
@@ -47,7 +47,7 @@ namespace dolfin
     ~Vertex() {}
 
     /// Return value of vertex coordinate i
-    double x(uint i) const
+    double x(std::size_t i) const
     { return _mesh->geometry().x(_local_index, i); }
 
     /// Return vertex coordinates as a 3D point value

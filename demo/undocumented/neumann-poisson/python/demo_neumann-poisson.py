@@ -42,12 +42,12 @@ and the above constraint.
 # Modified by Anders Logg 2011
 #
 # First added:  2010-05-10
-# Last changed: 2011-06-28
+# Last changed: 2012-11-12
 
 from dolfin import *
 
 # Create mesh and define function space
-mesh = UnitSquare(64, 64)
+mesh = UnitSquareMesh(64, 64)
 V = FunctionSpace(mesh, "CG", 1)
 R = FunctionSpace(mesh, "R", 0)
 W = V * R

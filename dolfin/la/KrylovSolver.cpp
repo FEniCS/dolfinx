@@ -116,7 +116,12 @@ void KrylovSolver::set_operators(const boost::shared_ptr<const GenericLinearOper
   solver->set_operators(A, P);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint KrylovSolver::solve(GenericVector& x, const GenericVector& b)
+void KrylovSolver::set_nullspace(const std::vector<const GenericVector*> nullspace)
+{
+  solver->set_nullspace(nullspace);
+}
+//-----------------------------------------------------------------------------
+std::size_t KrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
   dolfin_assert(solver);
   //check_dimensions(solver->get_operator(), x, b);
@@ -126,7 +131,7 @@ dolfin::uint KrylovSolver::solve(GenericVector& x, const GenericVector& b)
   return solver->solve(x, b);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint KrylovSolver::solve(const GenericLinearOperator& A, GenericVector& x,
+std::size_t KrylovSolver::solve(const GenericLinearOperator& A, GenericVector& x,
                                  const GenericVector& b)
 {
   dolfin_assert(solver);

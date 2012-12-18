@@ -87,8 +87,8 @@ namespace dolfin
   const GenericFunction& adapt(const GenericFunction& function,
                                boost::shared_ptr<const Mesh> adapted_mesh);
 
-  /// Refine mesh function<uint> based on mesh
-  const MeshFunction<unsigned int>& adapt(const MeshFunction<unsigned int>& mesh_function,
+  /// Refine mesh function<std::size_t> based on mesh
+  const MeshFunction<std::size_t>& adapt(const MeshFunction<std::size_t>& mesh_function,
                                   boost::shared_ptr<const Mesh> adapted_mesh);
 
   //--- Refinement of boundary conditions ---
@@ -99,9 +99,9 @@ namespace dolfin
                            const FunctionSpace& S);
 
   /// Helper function for refinement of boundary conditions
-  void adapt_markers(std::vector<std::pair<unsigned int, unsigned int> >& refined_markers,
+  void adapt_markers(std::vector<std::pair<std::size_t, std::size_t> >& refined_markers,
                      const Mesh& adapted_mesh,
-                     const std::vector<std::pair<unsigned int, unsigned int> >& markers,
+                     const std::vector<std::pair<std::size_t, std::size_t> >& markers,
                      const Mesh& mesh);
 
   //--- Refinement of forms ---

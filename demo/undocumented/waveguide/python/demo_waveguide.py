@@ -50,7 +50,7 @@ parameters["linear_algebra_backend"] = "PETSc"
 # Create mesh
 width = 1.0
 height = 0.5
-mesh = Rectangle(0, 0, width, height, 4, 2)
+mesh = RectangleMesh(0, 0, width, height, 4, 2)
 
 # Define the function space
 V = FunctionSpace(mesh, "Nedelec 1st kind H(curl)", 3)

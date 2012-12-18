@@ -49,12 +49,9 @@ GenericAdaptiveVariationalSolver::~GenericAdaptiveVariationalSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void GenericAdaptiveVariationalSolver::solve(const double tol,
-                                             Form& goal,
-                                             ErrorControl& control)
+void GenericAdaptiveVariationalSolver::solve(const double tol)
 {
-  // Clear adaptive data
-  _adaptive_data.clear();
+  log(INFO, "Solving variational problem adaptively");
 
   // Initialize storage of meshes and indicators
   std::string label = parameters["data_label"];
@@ -62,17 +59,18 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
 
   // Iterate over a series of meshes
   Timer timer("Adaptive solve");
-  const uint max_iterations = parameters["max_iterations"];
-  for (uint i = 0; i < max_iterations; i++)
+  const std::size_t max_iterations = parameters["max_iterations"];
+  for (std::size_t i = 0; i < max_iterations; i++)
   {
+    log(INFO, "Adaptive iteration %d", i );
+
     // Check that num_dofs is not greater than than max dimension (and
     // that that parameter is modified)
-    const uint max_dimension = parameters["max_dimension"];
+    const std::size_t max_dimension = parameters["max_dimension"];
     if (parameters["max_dimension"].change_count() > 0
         && num_dofs_primal() > max_dimension)
     {
       info("Maximal number of dofs reached, finishing");
-      summary();
       return;
     }
 
@@ -89,12 +87,12 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     }
 
     // Deal with goal and error control on current mesh
-    Form& M = goal.leaf_node();
-    ErrorControl& ec = control.leaf_node();
+    Form& M = goal->leaf_node();
+    ErrorControl& ec = control->leaf_node();
     ec.parameters.update(parameters("error_control"));
 
     //--- Stage 0: Solve primal problem
-    begin("Stage %d.0: Solving primal problem...", i);
+    begin(PROGRESS, "Stage %d.0: Solving primal problem...", i);
     timer.start();
     boost::shared_ptr<const Function> u = solve_primal();
     datum->add("time_solve_primal", timer.stop());
@@ -106,17 +104,17 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     const Mesh& mesh = *V.mesh();
 
     // Evaluate goal functional
-    info("Evaluating goal functional.");
+    log(PROGRESS, "Evaluating goal functional.");
     const double functional_value = evaluate_goal(M, u);
     info("Value of goal functional is %g.", functional_value);
     end();
 
     //--- Stage 1: Estimate error
-    begin("Stage %d.1: Computing error estimate...", i);
+    begin(PROGRESS, "Stage %d.1: Computing error estimate...", i);
     timer.start();
     const double error_estimate = ec.estimate_error(*u, extract_bcs());
     datum->add("time_estimate_error", timer.stop());
-    info("Error estimate is %g (tol = %g).", error_estimate, tol);
+    log(PROGRESS, "Error estimate is %g (tol = %g).", error_estimate, tol);
     end();
 
     const int num_cells = mesh.num_cells();
@@ -129,12 +127,13 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     // Stop if error estimate is less than tolerance
     if (std::abs(error_estimate) < tol)
     {
-      summary();
+      info("Error estimate (%g) is less than tolerance (%g), returning.",
+           error_estimate, tol);
       return;
     }
 
     //--- Stage 2: Compute error indicators
-    begin("Stage %d.2: Computing error indicators...", i);
+    begin(PROGRESS, "Stage %d.2: Computing error indicators...", i);
     timer.start();
     MeshFunction<double> indicators(mesh, mesh.topology().dim());
     dolfin_assert(u);
@@ -148,7 +147,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     end();
 
     //--- Stage 3: Mark mesh for refinement ---
-    begin("Stage %d.3: Marking mesh for refinement...", i);
+    begin(PROGRESS, "Stage %d.3: Marking mesh for refinement...", i);
     MeshFunction<bool> markers(mesh, mesh.topology().dim());
     const std::string strategy = parameters["marking_strategy"];
     const double fraction = parameters["marking_fraction"];
@@ -158,7 +157,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     end();
 
     //--- Stage 4: Refine mesh ---
-    begin("Stage %d.4: Refining mesh...", i);
+    begin(PROGRESS, "Stage %d.4: Refining mesh...", i);
     timer.start();
     adapt(mesh, markers);
     datum->add("time_adapt_mesh", timer.stop());
@@ -167,7 +166,7 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     end();
 
     //--- Stage 5: Update forms ---
-    begin("Stage %d.5: Updating forms...", i);
+    begin(PROGRESS, "Stage %d.5: Updating forms...", i);
     timer.start();
     adapt_problem(mesh.leaf_node_shared_ptr());
     adapt(M, mesh.leaf_node_shared_ptr());
@@ -176,7 +175,6 @@ void GenericAdaptiveVariationalSolver::solve(const double tol,
     end();
   }
 
-  summary();
   warning("Maximal number of iterations (%d) exceeded! Returning anyhow.",
           max_iterations);
 }
@@ -198,7 +196,7 @@ void GenericAdaptiveVariationalSolver::summary()
   Table table("Level");
   Table time_table("Level");
 
-  for (uint i = 0; i < _adaptive_data.size(); i++)
+  for (std::size_t i = 0; i < _adaptive_data.size(); i++)
   {
     std::stringstream s;
     s << i;

@@ -71,16 +71,16 @@ void UniformMeshRefinement::refine(Mesh& refined_mesh,
               mesh.topology().dim(), mesh.geometry().dim());
 
   // Get size of mesh
-  const uint num_vertices = mesh.size(0);
-  const uint num_edges = mesh.size(1);
-  const uint num_cells = mesh.size(mesh.topology().dim());
+  const std::size_t num_vertices = mesh.size(0);
+  const std::size_t num_edges = mesh.size(1);
+  const std::size_t num_cells = mesh.size(mesh.topology().dim());
 
   // Specify number of vertices and cells
   editor.init_vertices(num_vertices + num_edges);
   editor.init_cells(ipow(2, mesh.topology().dim())*num_cells);
 
   // Add old vertices
-  uint vertex = 0;
+  std::size_t vertex = 0;
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     editor.add_vertex(vertex, v->point());
@@ -95,7 +95,7 @@ void UniformMeshRefinement::refine(Mesh& refined_mesh,
   }
 
   // Add cells
-  uint current_cell = 0;
+  std::size_t current_cell = 0;
   for (CellIterator c(mesh); !c.end(); ++c)
     cell_type.refine_cell(*c, editor, current_cell);
 

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-09-19
-// Last changed: 2010-01-27
+// Last changed: 2012-11-12
 //
 // This demo program computes the value of the functional
 //
@@ -48,7 +48,7 @@ int main()
   };
 
   // Define functional
-  UnitSquare mesh(16, 16);
+  UnitSquareMesh mesh(16, 16);
   MyFunction v;
   EnergyNorm::Functional M(mesh, v);
 

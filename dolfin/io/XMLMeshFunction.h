@@ -86,8 +86,8 @@ namespace dolfin
       if (!xml_meshfunction)
         std::cout << "Not a DOLFIN MeshFunction XML file." << std::endl;
 
-     if (xml_meshfunction.attributes_begin() == xml_meshfunction.attributes_end())
-      new_format = true;
+      if (xml_meshfunction.attributes_begin() == xml_meshfunction.attributes_end())
+        new_format = true;
     }
 
     // Broadcast format type from zero process
@@ -104,7 +104,7 @@ namespace dolfin
         XMLMeshValueCollection::read<T>(mesh_value_collection, type, xml_meshfunction);
       else
       {
-        uint dim = 0;
+        std::size_t dim = 0;
         if (MPI::process_number() == 0)
         {
           XMLMeshValueCollection::read<T>(mesh_value_collection, type, xml_meshfunction);
@@ -136,8 +136,8 @@ namespace dolfin
 
       // Get type and size
       const std::string file_data_type = xml_meshfunction.attribute("type").value();
-      const unsigned int dim = xml_meshfunction.attribute("dim").as_uint();
-      const unsigned int size = xml_meshfunction.attribute("size").as_uint();
+      const std::size_t dim = xml_meshfunction.attribute("dim").as_uint();
+      const std::size_t size = xml_meshfunction.attribute("size").as_uint();
 
       // Check that types match
       if (type != file_data_type)
@@ -156,7 +156,7 @@ namespace dolfin
       {
         for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
         {
-          const unsigned int index = it->attribute("index").as_uint();
+          const std::size_t index = it->attribute("index").as_uint();
           dolfin_assert(index < size);
           mesh_function[index] = it->attribute("value").as_uint();
         }
@@ -165,7 +165,7 @@ namespace dolfin
       {
         for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
         {
-          const unsigned int index = it->attribute("index").as_uint();
+          const std::size_t index = it->attribute("index").as_uint();
           dolfin_assert(index < size);
           mesh_function[index] = it->attribute("value").as_int();
         }
@@ -174,7 +174,7 @@ namespace dolfin
       {
         for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
         {
-          const unsigned int index = it->attribute("index").as_uint();
+          const std::size_t index = it->attribute("index").as_uint();
           dolfin_assert(index < size);
           mesh_function[index] = it->attribute("value").as_double();
         }
@@ -183,7 +183,7 @@ namespace dolfin
       {
         for (pugi::xml_node_iterator it = xml_meshfunction.begin(); it != xml_meshfunction.end(); ++it)
         {
-          const unsigned int index = it->attribute("index").as_uint();
+          const std::size_t index = it->attribute("index").as_uint();
           dolfin_assert(index < size);
           mesh_function[index] = it->attribute("value").as_bool();
         }
@@ -238,7 +238,7 @@ namespace dolfin
                               const std::string type, pugi::xml_node xml_node,
                               bool write_mesh)
   {
-    not_working_in_parallel("Writing XML MeshFunctions");
+    not_working_in_parallel("MeshFunction XML output");
 
     // Write mesh if requested
     if (write_mesh)

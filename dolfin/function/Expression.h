@@ -55,25 +55,25 @@ namespace dolfin
     /// Create vector-valued expression with given dimension.
     ///
     /// *Arguments*
-    ///     dim (uint)
+    ///     dim (std::size_t)
     ///         Dimension of the vector-valued expression.
-    Expression(uint dim);
+    Expression(std::size_t dim);
 
     /// Create matrix-valued expression with given dimensions.
     ///
     /// *Arguments*
-    ///     dim0 (uint)
+    ///     dim0 (std::size_t)
     ///         Dimension (rows).
-    ///     dim1 (uint)
+    ///     dim1 (std::size_t)
     ///         Dimension (columns).
-    Expression(uint dim0, uint dim1);
+    Expression(std::size_t dim0, std::size_t dim1);
 
     /// Create tensor-valued expression with given shape.
     ///
     /// *Arguments*
-    ///     value_shape (std::vector<uint>)
+    ///     value_shape (std::vector<std::size_t>)
     ///         Shape of expression.
-    Expression(std::vector<uint> value_shape);
+    Expression(std::vector<std::size_t> value_shape);
 
     /// Copy constructor
     ///
@@ -113,20 +113,20 @@ namespace dolfin
     /// Return value rank.
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The value rank.
-    virtual uint value_rank() const;
+    virtual std::size_t value_rank() const;
 
     /// Return value dimension for given axis.
     ///
     /// *Arguments*
-    ///     i (uint)
+    ///     i (std::size_t)
     ///         Integer denoting the axis to use.
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The value dimension (for the given axis).
-    virtual uint value_dimension(uint i) const;
+    virtual std::size_t value_dimension(std::size_t i) const;
 
     /// Restrict function to local cell (compute expansion coefficients w).
     ///
@@ -157,7 +157,7 @@ namespace dolfin
   protected:
 
     // Value shape
-    std::vector<uint> value_shape;
+    std::vector<std::size_t> value_shape;
 
   };
 

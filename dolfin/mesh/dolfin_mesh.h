@@ -33,6 +33,7 @@
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/SubMesh.h>
+#include <dolfin/mesh/Restriction.h>
 #include <dolfin/mesh/DomainBoundary.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 

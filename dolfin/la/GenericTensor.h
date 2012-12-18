@@ -53,33 +53,33 @@ namespace dolfin
     virtual void init(const TensorLayout& tensor_layout) = 0;
 
     /// Return tensor rank (number of dimensions)
-    virtual uint rank() const = 0;
+    virtual std::size_t rank() const = 0;
 
     /// Return size of given dimension
-    virtual uint size(uint dim) const = 0;
+    virtual std::size_t size(std::size_t dim) const = 0;
 
     /// Return local ownership range
-    virtual std::pair<uint, uint> local_range(uint dim) const = 0;
+    virtual std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const = 0;
 
     /// Get block of values
-    virtual void get(double* block, const uint* num_rows,
-                     const uint * const * rows) const = 0;
+    virtual void get(double* block, const DolfinIndex* num_rows,
+                     const DolfinIndex * const * rows) const = 0;
 
     /// Set block of values
-    virtual void set(const double* block, const uint* num_rows,
-                     const uint * const * rows) = 0;
+    virtual void set(const double* block, const DolfinIndex* num_rows,
+                     const DolfinIndex * const * rows) = 0;
 
     /// Add block of values
     virtual void add(const double* block,
-                     const std::vector<const std::vector<uint>* >& rows) = 0;
+                     const std::vector<const std::vector<DolfinIndex>* >& rows) = 0;
 
     /// Add block of values
     virtual void add(const double* block,
-                     const std::vector<std::vector<uint> >& rows) = 0;
+                     const std::vector<std::vector<DolfinIndex> >& rows) = 0;
 
     /// Add block of values
-    virtual void add(const double* block, const uint* num_rows,
-                     const uint * const * rows) = 0;
+    virtual void add(const double* block, const DolfinIndex* num_rows,
+                     const DolfinIndex * const * rows) = 0;
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero() = 0;

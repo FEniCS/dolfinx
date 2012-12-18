@@ -62,7 +62,7 @@ GraphOrdering::GraphOrdering(const TensorLayout& tensor_layout)
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::uint> GraphOrdering::compute_local_reordering_map()
+std::vector<std::size_t> GraphOrdering::compute_local_reordering_map()
 {
   // Initialise Zoltan
   float version;
@@ -88,7 +88,7 @@ std::vector<dolfin::uint> GraphOrdering::compute_local_reordering_map()
 
   // Create array for global ids that should be re-ordered
   std::vector<ZOLTAN_ID_TYPE> global_ids(num_global_objects());
-  for (uint i = 0; i < global_ids.size(); ++i)
+  for (std::size_t i = 0; i < global_ids.size(); ++i)
     global_ids[i] = i;
 
   // Create array for re-ordered vertices
@@ -105,8 +105,8 @@ std::vector<dolfin::uint> GraphOrdering::compute_local_reordering_map()
                  "Zoltan partitioning failed");
   }
 
-  // Copy re-ordering into a vector (in case Zoltan uses something other than uint)
-  std::vector<uint> map(new_id.begin(), new_id.end());
+  // Copy re-ordering into a vector (in case Zoltan uses something other than std::size_t)
+  std::vector<std::size_t> map(new_id.begin(), new_id.end());
 
   return map;
 }
@@ -121,13 +121,13 @@ int GraphOrdering::num_local_objects() const
   return tensor_layout.size(0);
 }
 //-----------------------------------------------------------------------------
-void GraphOrdering::num_edges_per_vertex(std::vector<uint>& num_edges) const
+void GraphOrdering::num_edges_per_vertex(std::vector<std::size_t>& num_edges) const
 {
   dolfin_assert(tensor_layout.sparsity_pattern());
   tensor_layout.sparsity_pattern()->num_nonzeros_diagonal(num_edges);
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::vector<dolfin::uint> > GraphOrdering::edges() const
+const std::vector<std::vector<std::size_t> > GraphOrdering::edges() const
 {
   dolfin_assert(tensor_layout.sparsity_pattern());
   return tensor_layout.sparsity_pattern()->diagonal_pattern(GenericSparsityPattern::unsorted);
@@ -163,11 +163,11 @@ void GraphOrdering::get_number_edges(void *data, int num_gid_entries,
   GraphOrdering *objs = (GraphOrdering *)data;
 
   // Get number of edges for each graph vertex
-  std::vector<uint> number_edges;
+  std::vector<std::size_t> number_edges;
   objs->num_edges_per_vertex(number_edges);
 
   // Fill array num_edges array
-  for (uint i = 0; i < number_edges.size(); ++i)
+  for (std::size_t i = 0; i < number_edges.size(); ++i)
     num_edges[i] = number_edges[i];
 }
 //-----------------------------------------------------------------------------
@@ -181,13 +181,13 @@ void GraphOrdering::get_all_edges(void *data, int num_gid_entries,
                                   float *ewgts, int *ierr)
 {
   GraphOrdering *objs = (GraphOrdering *)data;
-  const std::vector<std::vector<uint> > edges = objs->edges();
+  const std::vector<std::vector<std::size_t> > edges = objs->edges();
 
-  uint sum = 0;
-  for (uint i = 0; i < edges.size(); ++i)
+  std::size_t sum = 0;
+  for (std::size_t i = 0; i < edges.size(); ++i)
   {
-    dolfin_assert(edges[i].size() == (uint) num_edges[i]);
-    for (uint j = 0; j < edges[i].size(); ++j)
+    dolfin_assert(static_cast<int>(edges[i].size()) == num_edges[i]);
+    for (std::size_t j = 0; j < edges[i].size(); ++j)
       nbor_global_id[sum*num_gid_entries + j] = edges[i][j];
     sum += edges[i].size();
   }

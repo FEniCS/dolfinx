@@ -41,14 +41,14 @@ void GenericMatrix::ident_zeros()
                  "Matrix is not square");
   }
 
-  std::vector<uint> columns;
+  std::vector<std::size_t> columns;
   std::vector<double> values;
-  std::vector<uint> zero_rows;
-  const std::pair<uint, uint> row_range = local_range(0);
-  const uint m = row_range.second - row_range.first;
+  std::vector<DolfinIndex> zero_rows;
+  const std::pair<std::size_t, std::size_t> row_range = local_range(0);
+  const std::size_t m = row_range.second - row_range.first;
 
   // Check which rows are zero
-  for (uint row = 0; row < m; row++)
+  for (std::size_t row = 0; row < m; row++)
   {
     // Get global row number
     int global_row = row + row_range.first;
@@ -58,7 +58,7 @@ void GenericMatrix::ident_zeros()
 
     // Get maximum value in row
     double max = 0.0;
-    for (uint k = 0; k < values.size(); k++)
+    for (std::size_t k = 0; k < values.size(); k++)
       max = std::max(max, std::abs(values[k]));
 
     // Check if row is zero
@@ -72,9 +72,9 @@ void GenericMatrix::ident_zeros()
   // Insert one on the diagonal for rows with only zeros. Note that we
   // are not calling ident() since that fails in PETSc if nothing
   // has been assembled into those rows.
-  for (uint i = 0; i < zero_rows.size(); i++)
+  for (std::size_t i = 0; i < zero_rows.size(); i++)
   {
-    std::pair<uint, uint> ij(zero_rows[i], zero_rows[i]);
+    std::pair<DolfinIndex, DolfinIndex> ij(zero_rows[i], zero_rows[i]);
     setitem(ij, 1.0);
   }
 
@@ -103,21 +103,21 @@ void GenericMatrix::compress()
   GenericSparsityPattern& new_sparsity_pattern = *(new_layout->sparsity_pattern());
 
   // Retrieve global and local matrix info
-  std::vector<uint> global_dimensions(2);
+  std::vector<std::size_t> global_dimensions(2);
   global_dimensions[0] = size(0);
   global_dimensions[1] = size(1);
-  std::vector<std::pair<uint, uint> > local_range(2);
+  std::vector<std::pair<std::size_t, std::size_t> > local_range(2);
   local_range[0] = this->local_range(0);
   local_range[1] = this->local_range(0);
 
   // With the row-by-row algorithm used here there is no need for inserting non_local
   // rows and as such we can simply use a dummy for off_process_owner
-  std::vector<const boost::unordered_map<uint, uint>* > off_process_owner(2);
-  const boost::unordered_map<uint, uint> dummy;
+  std::vector<const boost::unordered_map<std::size_t, std::size_t>* > off_process_owner(2);
+  const boost::unordered_map<std::size_t, std::size_t> dummy;
   off_process_owner[0] = &dummy;
   off_process_owner[1] = &dummy;
-  const std::pair<uint, uint> row_range = local_range[0];
-  const uint m = row_range.second - row_range.first;
+  const std::pair<std::size_t, std::size_t> row_range = local_range[0];
+  const std::size_t m = row_range.second - row_range.first;
 
   // Initialize layout
   new_layout->init(global_dimensions, local_range);
@@ -126,27 +126,27 @@ void GenericMatrix::compress()
   new_sparsity_pattern.init(global_dimensions, local_range, off_process_owner);
 
   // Declare some variables used to extract matrix information
-  std::vector<uint> columns;
+  std::vector<std::size_t> columns;
   std::vector<double> values;
   std::vector<double> allvalues; // Hold all values of local matrix
-  std::vector<uint> allcolumns;  // Hold column id for all values of local matrix
-  std::vector<uint> offset(m + 1); // Hold accumulated number of cols on local matrix
+  std::vector<DolfinIndex> allcolumns;  // Hold column id for all values of local matrix
+  std::vector<DolfinIndex> offset(m + 1); // Hold accumulated number of cols on local matrix
   offset[0] = 0;
-  std::vector<uint> thisrow(1);
-  std::vector<uint> thiscolumn;
-  std::vector<const std::vector<uint>* > dofs(2);
+  std::vector<DolfinIndex> thisrow(1);
+  std::vector<DolfinIndex> thiscolumn;
+  std::vector<const std::vector<DolfinIndex>* > dofs(2);
   dofs[0] = &thisrow;
   dofs[1] = &thiscolumn;
 
   // Iterate over rows
-  for (uint i = 0; i < m; i++)
+  for (std::size_t i = 0; i < m; i++)
   {
     // Get row and locate nonzeros. Store non-zero values and columns for later
-    const uint global_row = i + row_range.first;
+    const std::size_t global_row = i + row_range.first;
     getrow(global_row, columns, values);
-    uint count = 0;
+    std::size_t count = 0;
     thiscolumn.clear();
-    for (uint j = 0; j < columns.size(); j++)
+    for (std::size_t j = 0; j < columns.size(); j++)
     {
       // Store if non-zero or diagonal entry. PETSc solvers require this
       if (std::abs(values[j]) > DOLFIN_EPS || columns[j] == global_row)
@@ -172,9 +172,9 @@ void GenericMatrix::compress()
   init(*new_layout);
 
   // Put the old values back in the newly compressed matrix
-  for (uint i = 0; i < m; i++)
+  for (std::size_t i = 0; i < m; i++)
   {
-    const uint global_row = i + row_range.first;
+    const DolfinIndex global_row = i + row_range.first;
     set(&allvalues[offset[i]], 1, &global_row,
         offset[i+1] - offset[i], &allcolumns[offset[i]]);
   }

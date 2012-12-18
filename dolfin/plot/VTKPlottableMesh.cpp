@@ -15,125 +15,106 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Joachim B Haga 2012
+// Modified by Benjamin Kehlet 2012
+//
 // First added:  2012-06-20
-// Last changed: 2012-06-26
+// Last changed: 2012-11-12
 
 #ifdef HAS_VTK
 
-#include <vtkStringArray.h>
 #include <vtkCellArray.h>
+#include <vtkCellCenters.h>
+#include <vtkCellData.h>
+#include <vtkFloatArray.h>
+#include <vtkGeometryFilter.h>
+#include <vtkIdFilter.h>
 #include <vtkPointData.h>
-#include <vtkPointSetToLabelHierarchy.h>
+#include <vtkPointSetAlgorithm.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkProperty.h>
+#include <vtkRenderer.h>
+#include <vtkSelectVisiblePoints.h>
+#include <vtkStringArray.h>
 #include <vtkTextProperty.h>
-#include <vtkLabelPlacementMapper.h>
+#include <vtkUnstructuredGrid.h>
+#include <vtkVectorNorm.h>
+
+#if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 4)
+#include <vtkLabeledDataMapper.h>
+#include <vtkPointSetToLabelHierarchy.h>
+#endif
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/CellType.h>
+
+#include "VTKWindowOutputStage.h"
 #include "VTKPlottableMesh.h"
 
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-VTKPlottableMesh::VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh) :
+VTKPlottableMesh::VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh, std::size_t entity_dim) :
   _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _full_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
   _geometryFilter(vtkSmartPointer<vtkGeometryFilter>::New()),
-  _mesh(mesh)
+  _mesh(mesh),
+  _entity_dim(entity_dim)
 {
   // Do nothing
 }
 //----------------------------------------------------------------------------
-void VTKPlottableMesh::init_pipeline()
+VTKPlottableMesh::VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh) :
+  _grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _full_grid(vtkSmartPointer<vtkUnstructuredGrid>::New()),
+  _geometryFilter(vtkSmartPointer<vtkGeometryFilter>::New()),
+  _mesh(mesh),
+  _entity_dim(mesh->topology().dim())
+{
+  // Do nothing
+}
+//----------------------------------------------------------------------------
+void VTKPlottableMesh::init_pipeline(const Parameters &parameters)
 {
   dolfin_assert(_geometryFilter);
 
   _geometryFilter->SetInput(_grid);
   _geometryFilter->Update();
 }
-
 //----------------------------------------------------------------------------
-void VTKPlottableMesh::update(const Parameters& parameters, int framecounter)
+void VTKPlottableMesh::connect_to_output(VTKWindowOutputStage& output)
 {
-  dolfin_assert(_grid);
+  bool has_nans = false;
 
-  Timer t("Construct VTK grid");
-
-  // Construct VTK point array from DOLFIN mesh vertices
-
-  // Create pint array
-  vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-  points->SetNumberOfPoints(_mesh->num_vertices());
-
-  // Create array to hold index labels
-  vtkSmartPointer<vtkStringArray> labels = vtkSmartPointer<vtkStringArray>::New();
-  std::stringstream label;
-  labels->SetNumberOfValues(_mesh->num_vertices());
-  labels->SetName("indices");
-
-  // Iterate vertices and add to point and label array
-  Point p;
-  for (VertexIterator vertex(*_mesh); !vertex.end(); ++vertex)
+  vtkFloatArray *pointdata = dynamic_cast<vtkFloatArray*>(_grid->GetPointData()->GetScalars());
+  if (pointdata && pointdata->GetNumberOfComponents() == 1)
   {
-    p = vertex->point();
-    points->SetPoint(vertex->index(), p.x(), p.y(), p.z());
-
-    // Reset label, convert integer index to string and add to array
-    label.str("");
-    label << vertex->index();
-    labels->SetValue(vertex->index(), label.str().c_str());
-  }
-
-  // Add mesh cells to VTK cell array. Note: Preallocation of storage
-  // in cell array did not give speedups when testing during development
-  vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
-  const std::vector<uint>& connectivity = _mesh->cells();
-  uint spatial_dim = _mesh->topology().dim();
-
-  for (uint i = 0; i < _mesh->num_cells(); ++i)
-  {
-    // Insert all vertex indices for a given cell. For a simplex cell in nD,
-    // n+1 indices are inserted. The connectivity array must be indexed at
-    // ((n+1) x cell_number + idx_offset)
-    cells->InsertNextCell(spatial_dim+1);
-    for(uint j = 0; j <= spatial_dim; ++j) {
-      cells->InsertCellPoint(connectivity[(spatial_dim+1)*i + j]);
+    for (int i = 0; i < pointdata->GetNumberOfTuples(); i++)
+    {
+      if (std::isnan(pointdata->GetValue(i)))
+      {
+        has_nans = true;
+        break;
+      }
     }
   }
-  // Free unused memory in cell array
-  // (automatically allocated during cell insertion)
-  cells->Squeeze();
 
-  // Insert points, vertex labels and cells in VTK unstructured grid
-  _grid->SetPoints(points);
-  _grid->GetPointData()->AddArray(labels);
-  switch (spatial_dim)
+  vtkFloatArray *celldata = dynamic_cast<vtkFloatArray*>(_grid->GetCellData()->GetScalars());
+  if (celldata && celldata->GetNumberOfComponents() == 1 && !has_nans)
   {
-    case 1:
-      _grid->SetCells(VTK_LINE, cells);
-      break;
-    case 2:
-      _grid->SetCells(VTK_TRIANGLE, cells);
-      break;
-    case 3:
-      _grid->SetCells(VTK_TETRA, cells);
-      break;
-    default:
-      // Should never be reached
-      break;
+    for (int i = 0; i < celldata->GetNumberOfTuples(); i++)
+    {
+      if (std::isnan(celldata->GetValue(i)))
+      {
+        has_nans = true;
+        break;
+      }
+    }
   }
 
-  // Is this needed?
-  // _grid->Modified();
-  // _geometryFilter->Modified();
-}
-//----------------------------------------------------------------------------
-void VTKPlottableMesh::update_range(double range[2])
-{
-  _grid->GetScalarRange(range);
-}
-//----------------------------------------------------------------------------
-dolfin::uint VTKPlottableMesh::dim()
-{
-  return _mesh->topology().dim();
+  output.set_translucent(has_nans, _entity_dim, dim());
+  output.set_input(get_output());
 }
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkAlgorithmOutput> VTKPlottableMesh::get_output() const
@@ -141,41 +122,372 @@ vtkSmartPointer<vtkAlgorithmOutput> VTKPlottableMesh::get_output() const
   return _geometryFilter->GetOutputPort();
 }
 //----------------------------------------------------------------------------
-vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor()
+bool VTKPlottableMesh::is_compatible(const Variable &var) const
 {
+  return dynamic_cast<const Mesh*>(&var);
+}
+//----------------------------------------------------------------------------
+void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int framecounter)
+{
+  if (var)
+  {
+    _mesh = boost::dynamic_pointer_cast<const Mesh>(var);
+  }
+  dolfin_assert(_grid);
+  dolfin_assert(_full_grid);
+  dolfin_assert(_mesh);
+
+  Timer t("VTK construct grid");
+
+  //
+  // Construct VTK point array from DOLFIN mesh vertices
+  //
+
+  // Create point array
+  vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+  points->SetNumberOfPoints(_mesh->num_vertices());
+
+  // Iterate vertices and add to point array
+  Point p;
+  for (VertexIterator vertex(*_mesh); !vertex.end(); ++vertex)
+  {
+    p = vertex->point();
+    points->SetPoint(vertex->index(), p.x(), p.y(), p.z());
+  }
+
+  // Insert points, vertex labels and cells in VTK unstructured grid
+  _full_grid->SetPoints(points);
+
+  //
+  // Construct VTK cells from DOLFIN facets
+  //
+
+  build_grid_cells(_full_grid, _mesh->topology().dim());
+  if (_entity_dim == dim())
+  {
+    _grid->ShallowCopy(_full_grid);
+  }
+  else
+  {
+    _grid->SetPoints(points);
+    build_grid_cells(_grid, _entity_dim);
+  }
+}
+//----------------------------------------------------------------------------
+void VTKPlottableMesh::build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &grid, std::size_t topological_dim)
+{
+  // Add mesh cells to VTK cell array. Note: Preallocation of storage
+  // in cell array did not give speedups when testing during development
+  vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
+
+  _mesh->init(topological_dim, 0);
+  const std::vector<std::size_t>& connectivity = _mesh->topology()(topological_dim, 0)();
+
+  for (std::size_t i = 0; i < _mesh->size(topological_dim); ++i)
+  {
+    // Insert all vertex indices for a given cell. For a simplex cell in nD,
+    // n+1 indices are inserted. The connectivity array must be indexed at
+    // ((n+1) x cell_number + idx_offset)
+    cells->InsertNextCell(topological_dim + 1);
+    for(std::size_t j = 0; j <= topological_dim; ++j)
+    {
+      cells->InsertCellPoint(connectivity[(topological_dim + 1)*i + j]);
+    }
+  }
+
+  // Free unused memory in cell array
+  // (automatically allocated during cell insertion)
+  cells->Squeeze();
+
+  switch (topological_dim)
+  {
+    case 0:
+      grid->SetCells(VTK_VERTEX, cells);
+      break;
+    case 1:
+      grid->SetCells(VTK_LINE, cells);
+      break;
+    case 2:
+      grid->SetCells(VTK_TRIANGLE, cells);
+      break;
+    case 3:
+      grid->SetCells(VTK_TETRA, cells);
+      break;
+    default:
+      dolfin_error("VTKPlottableMesh.cpp", "initialise cells", "Not implemented for dim>3");
+      break;
+  }
+}
+//----------------------------------------------------------------------------
+void VTKPlottableMesh::update_range(double range[2])
+{
+  _grid->GetScalarRange(range);
+}
+//----------------------------------------------------------------------------
+std::size_t VTKPlottableMesh::dim() const
+{
+  return _mesh->geometry().dim();
+}
+//----------------------------------------------------------------------------
+void VTKPlottableMesh::build_id_filter()
+{
+  if (!_idFilter)
+  {
+    _idFilter = vtkSmartPointer<vtkIdFilter>::New();
+    if (_entity_dim == dim() || _entity_dim == 0)
+    {
+      // Use the un-warped mesh if dimension is full. If dim is zero, use the
+      // original cells rather than vertices (the vertices are labeled by the
+      // vertex label actor anyway).
+      _idFilter->SetInputConnection(get_mesh_actor()->GetMapper()->GetInputConnection(0,0));
+    }
+    else
+    {
+      _idFilter->SetInputConnection(_geometryFilter->GetOutputPort());
+    }
+    _idFilter->PointIdsOn();
+    _idFilter->CellIdsOn();
+    _idFilter->FieldDataOn();
+  }
+}
+//----------------------------------------------------------------------------
+vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor(vtkSmartPointer<vtkRenderer> renderer)
+{
+#if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 4)
   // Return actor if already created
-  if (_vertexLabelActor)
-    return _vertexLabelActor;
+  if (!_vertexLabelActor)
+  {
+    build_id_filter();
 
-  // We create the actor on the first call to the method
+    vtkSmartPointer<vtkSelectVisiblePoints> vis = vtkSmartPointer<vtkSelectVisiblePoints>::New();
+    vis->SetInputConnection(_idFilter->GetOutputPort());
+    // If the tolerance is too high, too many labels are visible (especially at
+    // a distance).  If set too low, some labels are invisible. There isn't a
+    // "correct" value, it should really depend on distance and resolution.
+    vis->SetTolerance(1e-3);
+    vis->SetRenderer(renderer);
+    //vis->SelectionWindowOn();
+    //vis->SetSelection(0, 0.3, 0, 0.3);
 
-  // TODO: Should we use vtkLabeledDataMapper here instead? Together with
-  // vtkSelectVisiblePoints to only label visible points, and use vtkCellCenters
-  // to generate points at the center of cells to label cells. See
-  // http://www.vtk.org/doc/release/5.8/html/a01117.html
+    vtkSmartPointer<vtkLabeledDataMapper> ldm = vtkSmartPointer<vtkLabeledDataMapper>::New();
+    ldm->SetInputConnection(vis->GetOutputPort());
+    ldm->SetLabelModeToLabelFieldData();
+    ldm->GetLabelTextProperty()->SetColor(0.0, 0.0, 0.0);
+    ldm->GetLabelTextProperty()->ItalicOff();
+    ldm->GetLabelTextProperty()->ShadowOff();
 
-  // Generate the label hierarchy.
-  vtkSmartPointer<vtkPointSetToLabelHierarchy> pointSetToLabelHierarchyFilter
-    = vtkSmartPointer<vtkPointSetToLabelHierarchy>::New();
-  pointSetToLabelHierarchyFilter->SetInput(_grid);
-  pointSetToLabelHierarchyFilter->SetLabelArrayName("indices"); // This name must match the one set in "update"
-  // NOTE: One may set an integer array with priorites on the hierarchy filter.
-  // These priorities will indicate which labels will be shown when there is
-  // limited space.
-  //pointSetToLabelHierarchyFilter->SetPriorityArrayName("priorities");
-  pointSetToLabelHierarchyFilter->GetTextProperty()->SetColor(0, 0, 0);
-  pointSetToLabelHierarchyFilter->Update();
-
-  // Create a mapper and actor for the labels.
-  vtkSmartPointer<vtkLabelPlacementMapper> labelMapper
-    = vtkSmartPointer<vtkLabelPlacementMapper>::New();
-  labelMapper->SetInputConnection(
-    pointSetToLabelHierarchyFilter->GetOutputPort());
-  _vertexLabelActor = vtkSmartPointer<vtkActor2D>::New();
-  _vertexLabelActor->SetMapper(labelMapper);
+    _vertexLabelActor = vtkSmartPointer<vtkActor2D>::New();
+    _vertexLabelActor->SetMapper(ldm);
+  }
+#else
+  warning("Plotting of vertex labels requires VTK >= 5.4");
+#endif
 
   return _vertexLabelActor;
 }
 //----------------------------------------------------------------------------
+vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_cell_label_actor(vtkSmartPointer<vtkRenderer> renderer)
+{
+#if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 4)
+  if (!_cellLabelActor)
+  {
+    build_id_filter();
+
+    vtkSmartPointer<vtkCellCenters> cc = vtkSmartPointer<vtkCellCenters>::New();
+    cc->SetInputConnection(_idFilter->GetOutputPort());
+
+    vtkSmartPointer<vtkSelectVisiblePoints> vis = vtkSmartPointer<vtkSelectVisiblePoints>::New();
+    vis->SetTolerance(1e-4); // See comment for vertex labels
+    vis->SetInputConnection(cc->GetOutputPort());
+    vis->SetRenderer(renderer);
+
+    vtkSmartPointer<vtkLabeledDataMapper> ldm = vtkSmartPointer<vtkLabeledDataMapper>::New();
+    ldm->SetInputConnection(vis->GetOutputPort());
+    ldm->SetLabelModeToLabelFieldData();
+    ldm->GetLabelTextProperty()->SetColor(0.3, 0.3, 0.0);
+    ldm->GetLabelTextProperty()->ShadowOff();
+
+    _cellLabelActor = vtkSmartPointer<vtkActor2D>::New();
+    _cellLabelActor->SetMapper(ldm);
+  }
+#else
+  warning("Plotting of cell labels requires VTK >= 5.4");
+#endif
+
+  return _cellLabelActor;
+}
+//----------------------------------------------------------------------------
+vtkSmartPointer<vtkActor> VTKPlottableMesh::get_mesh_actor()
+{
+  if (!_meshActor)
+  {
+    vtkSmartPointer<vtkGeometryFilter> geomfilter = vtkSmartPointer<vtkGeometryFilter>::New();
+    geomfilter->SetInput(_full_grid);
+    geomfilter->Update();
+
+    vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+    mapper->SetInputConnection(geomfilter->GetOutputPort());
+
+    _meshActor = vtkSmartPointer<vtkActor>::New();
+    _meshActor->SetMapper(mapper);
+    _meshActor->GetProperty()->SetRepresentationToWireframe();
+    _meshActor->GetProperty()->SetColor(0.7, 0.7, 0.3);
+    _meshActor->GetProperty()->SetOpacity(0.5);
+    vtkMapper::SetResolveCoincidentTopologyToPolygonOffset();
+
+  }
+  return _meshActor;
+}
+//----------------------------------------------------------------------------
+boost::shared_ptr<const Mesh> VTKPlottableMesh::mesh() const
+{
+  return _mesh;
+}
+//----------------------------------------------------------------------------
+vtkSmartPointer<vtkUnstructuredGrid> VTKPlottableMesh::grid() const
+{
+  return _grid;
+}
+//----------------------------------------------------------------------------
+void VTKPlottableMesh::insert_filter(vtkSmartPointer<vtkPointSetAlgorithm> filter)
+{
+  if (filter)
+  {
+    filter->SetInput(_grid);
+    _geometryFilter->SetInput(filter->GetOutput());
+  }
+  else
+  {
+    _geometryFilter->SetInput(_grid);
+  }
+  _geometryFilter->Update();
+}
+//----------------------------------------------------------------------------
+VTKPlottableMesh *dolfin::CreateVTKPlottable(boost::shared_ptr<const Mesh> mesh)
+{
+  return new VTKPlottableMesh(mesh);
+}
+//---------------------------------------------------------------------------
+void VTKPlottableMesh::filter_scalars(vtkFloatArray *values, const Parameters &parameters)
+{
+  dolfin_assert(values);
+
+  const Parameter &param_hide_below = parameters["hide_below"];
+  const Parameter &param_hide_above = parameters["hide_above"];
+  if (param_hide_below.is_set() || param_hide_above.is_set())
+  {
+    float hide_above =  std::numeric_limits<float>::infinity();
+    float hide_below = -std::numeric_limits<float>::infinity();
+    if (param_hide_below.is_set()) hide_below = (double)param_hide_below;
+    if (param_hide_above.is_set()) hide_above = (double)param_hide_above;
+
+    const std::size_t num_tuples = static_cast<std::size_t>(values->GetNumberOfTuples());
+    for (std::size_t i = 0; i < num_tuples; i++)
+    {
+      float val = values->GetValue(i);
+
+      if (val < hide_below || val > hide_above)
+      {
+        values->SetValue(i, std::numeric_limits<float>::quiet_NaN());
+      }
+    }
+  }
+}
+//---------------------------------------------------------------------------
+template <class T>
+void VTKPlottableMesh::setPointValues(std::size_t size, const T* indata, const Parameters &parameters)
+{
+  const std::size_t num_vertices = _mesh->num_vertices();
+  const std::size_t num_components = size / num_vertices;
+
+  dolfin_assert(num_components > 0 && num_components <= 3);
+  dolfin_assert(num_vertices*num_components == size);
+
+  vtkSmartPointer<vtkFloatArray> values =
+    vtkSmartPointer<vtkFloatArray>::New();
+  if (num_components == 1)
+  {
+    values->SetNumberOfValues(num_vertices);
+    for (std::size_t i = 0; i < num_vertices; ++i)
+    {
+      values->SetValue(i, (double)indata[i]);
+    }
+
+    filter_scalars(values, parameters);
+
+    _grid->GetPointData()->SetScalars(values);
+  }
+  else
+  {
+    // NOTE: Allocation must be done in this order!
+    // Note also that the number of VTK vector components must always be 3
+    // regardless of the function vector value dimension
+    values->SetNumberOfComponents(3);
+    values->SetNumberOfTuples(num_vertices);
+    for (std::size_t i = 0; i < num_vertices; ++i)
+    {
+      // The entries in "vertex_values" must be copied to "vectors". Viewing
+      // these arrays as matrices, the transpose of vertex values should be copied,
+      // since DOLFIN and VTK store vector function values differently
+      for (std::size_t d = 0; d < num_components; d++)
+      {
+        values->SetValue(3*i+d, indata[i+num_vertices*d]);
+      }
+      for (std::size_t d = num_components; d < 3; d++)
+      {
+        values->SetValue(3*i+d, 0.0);
+      }
+    }
+    _grid->GetPointData()->SetVectors(values);
+
+    // Compute norms of vector data
+    vtkSmartPointer<vtkVectorNorm> norms =
+      vtkSmartPointer<vtkVectorNorm>::New();
+    norms->SetInput(_grid);
+    norms->SetAttributeModeToUsePointData();
+    //NOTE: This update is necessary to actually compute the norms
+    norms->Update();
+
+    // Attach vector norms as scalar point data in the VTK grid
+    _grid->GetPointData()->SetScalars(norms->GetOutput()->GetPointData()->GetScalars());
+  }
+}
+//----------------------------------------------------------------------------
+template <class T>
+void VTKPlottableMesh::setCellValues(std::size_t size, const T* indata, const Parameters &parameters)
+{
+  const std::size_t num_entities = _mesh->num_entities(_entity_dim);
+  dolfin_assert(num_entities == size);
+
+  vtkSmartPointer<vtkFloatArray> values =
+    vtkSmartPointer<vtkFloatArray>::New();
+  values->SetNumberOfValues(num_entities);
+
+  for (std::size_t i = 0; i < num_entities; ++i)
+  {
+    values->SetValue(i, (float)indata[i]);
+  }
+
+  filter_scalars(values, parameters);
+
+  _grid->GetCellData()->SetScalars(values);
+}
+
+//----------------------------------------------------------------------------
+// Instantiate function templates for valid types
+//----------------------------------------------------------------------------
+
+#define INSTANTIATE(T)                                                  \
+  template void dolfin::VTKPlottableMesh::setPointValues(std::size_t, const T*, const Parameters&); \
+  template void dolfin::VTKPlottableMesh::setCellValues(std::size_t, const T*, const Parameters&);
+
+INSTANTIATE(bool)
+INSTANTIATE(double)
+INSTANTIATE(float)
+INSTANTIATE(int)
+
+// Handle std::size_t and std::size_t. See note in VTKPlottableMeshFunction.cpp for explanation
+INSTANTIATE(unsigned int)
+INSTANTIATE(unsigned long)
 
 #endif

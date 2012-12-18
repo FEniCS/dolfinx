@@ -32,9 +32,9 @@
 // Ignore const array interface (Used if the Array type is a const)
 //-----------------------------------------------------------------------------
 %define CONST_ARRAY_IGNORES(TYPE)
-%ignore dolfin::Array<const TYPE>::Array(uint N);
+%ignore dolfin::Array<const TYPE>::Array(std::size_t N);
 %ignore dolfin::Array<const TYPE>::array();
-%ignore dolfin::Array<const TYPE>::resize(uint N);
+%ignore dolfin::Array<const TYPE>::resize(std::size_t N);
 %ignore dolfin::Array<const TYPE>::zero();
 %ignore dolfin::Array<const TYPE>::update();
 %ignore dolfin::Array<const TYPE>::__setitem__;

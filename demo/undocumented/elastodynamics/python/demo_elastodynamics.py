@@ -20,7 +20,7 @@
 # Modified by Anders Logg 2008-2011
 #
 # First added:  2010-04-30
-# Last changed: 2011-06-28
+# Last changed: 2012-11-12
 
 from dolfin import *
 
@@ -81,7 +81,7 @@ def right(x, on_boundary):
 
 # Load mesh and define function space
 #mesh = Mesh("dolfin-2.xml.gz")
-mesh = UnitSquare(32, 32)
+mesh = UnitSquareMesh(32, 32)
 
 # Define function space
 V = VectorFunctionSpace(mesh, "CG", 1)
@@ -128,7 +128,7 @@ p  = Traction(dt, t, False)
 p0 = Traction(dt, t, True)
 
 # Create mesh function over the cell facets
-boundary_subdomains = MeshFunction("uint", mesh, mesh.topology().dim() - 1)
+boundary_subdomains = MeshFunction("size_t", mesh, mesh.topology().dim() - 1)
 boundary_subdomains.set_all(0)
 force_boundary = AutoSubDomain(right)
 force_boundary.mark(boundary_subdomains, 3)

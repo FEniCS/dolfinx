@@ -64,7 +64,7 @@ namespace dolfin
     EpetraVector(std::string type="global");
 
     /// Create vector of size N
-    explicit EpetraVector(uint N, std::string type="global");
+    explicit EpetraVector(std::size_t N, std::string type="global");
 
     /// Copy constructor
     EpetraVector(const EpetraVector& x);
@@ -95,37 +95,37 @@ namespace dolfin
     virtual boost::shared_ptr<GenericVector> copy() const;
 
     /// Resize vector to size N
-    virtual void resize(uint N);
+    virtual void resize(std::size_t N);
 
     /// Resize vector with given ownership range
-    virtual void resize(std::pair<uint, uint> range);
+    virtual void resize(std::pair<std::size_t, std::size_t> range);
 
     /// Resize vector with given ownership range and with ghost values
-    virtual void resize(std::pair<uint, uint> range,
-                        const std::vector<uint>& ghost_indices);
+    virtual void resize(std::pair<std::size_t, std::size_t> range,
+                        const std::vector<std::size_t>& ghost_indices);
 
     /// Return true if vector is empty
     virtual bool empty() const;
 
     /// Return size of vector
-    virtual uint size() const;
+    virtual std::size_t size() const;
 
     /// Return size of local vector
-    virtual uint local_size() const;
+    virtual std::size_t local_size() const;
 
     /// Return local ownership range of a vector
-    virtual std::pair<uint, uint> local_range() const;
+    virtual std::pair<std::size_t, std::size_t> local_range() const;
 
     /// Determine whether global vector index is owned by this process
-    virtual bool owns_index(uint i) const;
+    virtual bool owns_index(std::size_t i) const;
 
     /// Set block of values
-    virtual void set(const double* block, uint m, const uint* rows);
+    virtual void set(const double* block, std::size_t m, const DolfinIndex* rows);
 
     /// Add block of values
-    virtual void add(const double* block, uint m, const uint* rows);
+    virtual void add(const double* block, std::size_t m, const DolfinIndex* rows);
 
-    virtual void get_local(double* block, uint m, const uint* rows) const;
+    virtual void get_local(double* block, std::size_t m, const DolfinIndex* rows) const;
 
     /// Get all values on local process
     virtual void get_local(std::vector<double>& values) const;
@@ -137,10 +137,10 @@ namespace dolfin
     virtual void add_local(const Array<double>& values);
 
     /// Gather entries into local vector x
-    virtual void gather(GenericVector& x, const std::vector<uint>& indices) const;
+    virtual void gather(GenericVector& x, const std::vector<DolfinIndex>& indices) const;
 
     /// Gather entries into x
-    virtual void gather(std::vector<double>& x, const std::vector<uint>& indices) const;
+    virtual void gather(std::vector<double>& x, const std::vector<DolfinIndex>& indices) const;
 
     /// Gather all entries into x on process 0
     virtual void gather_on_zero(std::vector<double>& x) const;
@@ -167,7 +167,7 @@ namespace dolfin
     virtual double sum() const;
 
     /// Return sum of selected rows in vector
-    virtual double sum(const Array<uint>& rows) const;
+    virtual double sum(const Array<std::size_t>& rows) const;
 
     /// Multiply vector by given number
     virtual const EpetraVector& operator*= (double a);
@@ -223,10 +223,10 @@ namespace dolfin
     boost::shared_ptr<Epetra_Vector> x_ghost;
 
     // Global-to-local map for ghost values
-    boost::unordered_map<uint, uint> ghost_global_to_local;
+    boost::unordered_map<std::size_t, std::size_t> ghost_global_to_local;
 
     // Cache of off-process 'set' values (versus 'add') to be communicated
-    boost::unordered_map<uint, double> off_process_set_values;
+    boost::unordered_map<std::size_t, double> off_process_set_values;
 
     // Local/global vector
     const std::string type;

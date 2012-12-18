@@ -42,7 +42,7 @@ set(CMAKE_LIBRARY_PATH ${LAPACK_DIR}/lib $ENV{LAPACK_DIR}/lib ${CMAKE_LIBRARY_PA
 find_package(AMD QUIET)
 find_package(BLAS QUIET)
 find_package(LAPACK QUIET)
-find_package(ParMETIS 3.2 QUIET)
+find_package(ParMETIS 4.0.2 QUIET)
 
 # FIXME: Should we have separate FindXX modules for CAMD, COLAMD, and CCOLAMD?
 # FIXME: find_package(CAMD)
@@ -114,6 +114,16 @@ if (LAPACK_FOUND)
 endif()
 if (BLAS_FOUND)
   set(CHOLMOD_LIBRARIES ${CHOLMOD_LIBRARIES} ${BLAS_LIBRARIES})
+endif()
+
+find_program(GFORTRAN_EXECUTABLE gfortran)
+if (GFORTRAN_EXECUTABLE)
+  execute_process(COMMAND ${GFORTRAN_EXECUTABLE} -print-file-name=libgfortran.so
+  OUTPUT_VARIABLE GFORTRAN_LIBRARY
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if (EXISTS "${GFORTRAN_LIBRARY}")
+    set(CHOLMOD_LIBRARIES ${CHOLMOD_LIBRARIES} ${GFORTRAN_LIBRARY})
+  endif()
 endif()
 
 mark_as_advanced(

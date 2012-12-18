@@ -22,6 +22,10 @@
 
 #include <cmath>
 #include "Point.h"
+#include <dolfin/common/constants.h>
+#include <dolfin/log/log.h>
+#include <dolfin/log/LogStream.h>
+#include <dolfin/math/basic.h>
 
 using namespace dolfin;
 
@@ -54,6 +58,18 @@ const Point Point::cross(const Point& p) const
 double Point::dot(const Point& p) const
 {
   return _x[0]*p._x[0] + _x[1]*p._x[1] + _x[2]*p._x[2];
+}
+//-----------------------------------------------------------------------------
+Point Point::rotate(const Point& k, double theta) const
+{
+  dolfin_assert(near(k.norm(), 1.0));
+
+  const Point& v = *this;
+  const double cosTheta = cos(theta);
+  const double sinTheta = sin(theta);
+
+  //Rodriques' rotation formula
+  return v*cosTheta + k.cross(v)*sinTheta + k*k.dot(v)*(1-cosTheta);
 }
 //-----------------------------------------------------------------------------
 std::string Point::str(bool verbose) const

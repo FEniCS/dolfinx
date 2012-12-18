@@ -38,22 +38,22 @@ namespace dolfin
   public:
 
     // Constructor
-    BlockMatrix(uint m=0, uint n=0);
+    BlockMatrix(std::size_t m=0, std::size_t n=0);
 
     // Destructor
     ~BlockMatrix();
 
     /// Set block
-    void set_block(uint i, uint j, boost::shared_ptr<GenericMatrix> m);
+    void set_block(std::size_t i, std::size_t j, boost::shared_ptr<GenericMatrix> m);
 
     /// Get block (const version)
-    const boost::shared_ptr<GenericMatrix> get_block(uint i, uint j) const;
+    const boost::shared_ptr<GenericMatrix> get_block(std::size_t i, std::size_t j) const;
 
     /// Get block
-    boost::shared_ptr<GenericMatrix> get_block(uint i, uint j);
+    boost::shared_ptr<GenericMatrix> get_block(std::size_t i, std::size_t j);
 
     /// Return size of given dimension
-    uint size(uint dim) const;
+    std::size_t size(std::size_t dim) const;
 
     /// Set all entries to zero and keep any sparse structure
     void zero();

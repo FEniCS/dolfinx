@@ -42,13 +42,12 @@
 #include <dolfin/common/types.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "LogLevel.h"
-#include "Table.h"
 #include "Logger.h"
 
 using namespace dolfin;
 
-typedef std::map<std::string, std::pair<dolfin::uint, double> >::iterator map_iterator;
-typedef std::map<std::string, std::pair<dolfin::uint, double> >::const_iterator const_map_iterator;
+typedef std::map<std::string, std::pair<std::size_t, double> >::iterator map_iterator;
+typedef std::map<std::string, std::pair<std::size_t, double> >::const_iterator const_map_iterator;
 
 // Function for monitoring memory usage, called by thread
 #ifdef __linux__
@@ -60,7 +59,7 @@ void _monitor_memory_usage(dolfin::Logger* logger)
   //std::fstream
 
   // Get process ID and page size
-  const dolfin::uint pid = getpid();
+  const std::size_t pid = getpid();
   const size_t page_size = getpagesize();
 
   // Print some info
@@ -134,7 +133,7 @@ void Logger::log_underline(std::string msg, int log_level) const
   s << "\n";
   for (int i = 0; i < indentation_level; i++)
     s << "  ";
-  for (uint i = 0; i < msg.size(); i++)
+  for (std::size_t i = 0; i < msg.size(); i++)
     s << "-";
 
   log(s.str(), log_level);
@@ -250,11 +249,11 @@ void Logger::register_timing(std::string task, double elapsed_time)
   log(line.str(), TRACE);
 
   // Store values for summary
-  map_iterator it = timings.find(task);
-  if (it == timings.end())
+  map_iterator it = _timings.find(task);
+  if (it == _timings.end())
   {
-    std::pair<uint, double> timing(1, elapsed_time);
-    timings[task] = timing;
+    std::pair<std::size_t, double> timing(1, elapsed_time);
+    _timings[task] = timing;
   }
   else
   {
@@ -263,30 +262,19 @@ void Logger::register_timing(std::string task, double elapsed_time)
   }
 }
 //-----------------------------------------------------------------------------
-void Logger::summary(bool reset)
+void Logger::list_timings(bool reset)
 {
   // Check if timings are empty
-  if (timings.empty())
+  if (_timings.empty())
   {
     log("Timings: no timings to report.");
     return;
   }
-
-  // Print summary as a table
-  log("");
-  Table table("Summary of timings");
-  for (const_map_iterator it = timings.begin(); it != timings.end(); ++it)
+  else
   {
-    const std::string task    = it->first;
-    const uint num_timings    = it->second.first;
-    const double total_time   = it->second.second;
-    const double average_time = total_time / static_cast<double>(num_timings);
-
-    table(task, "Average time") = average_time;
-    table(task, "Total time")   = total_time;
-    table(task, "Reps")         = num_timings;
+    log("");
+    log(timings(reset).str(true));
   }
-  log(table.str(true));
 
   // Print maximum memory usage if available
   if (_maximum_memory_usage >= 0)
@@ -296,16 +284,36 @@ void Logger::summary(bool reset)
     log(s.str());
   }
 
+}
+//-----------------------------------------------------------------------------
+Table Logger::timings(bool reset)
+{
+  // Generate timing table
+  Table table("Summary of timings");
+  for (const_map_iterator it = _timings.begin(); it != _timings.end(); ++it)
+  {
+    const std::string task    = it->first;
+    const std::size_t num_timings    = it->second.first;
+    const double total_time   = it->second.second;
+    const double average_time = total_time / static_cast<double>(num_timings);
+
+    table(task, "Average time") = average_time;
+    table(task, "Total time")   = total_time;
+    table(task, "Reps")         = num_timings;
+  }
+
   // Clear timings
   if (reset)
-    timings.clear();
+    _timings.clear();
+
+  return table;
 }
 //-----------------------------------------------------------------------------
 double Logger::timing(std::string task, bool reset)
 {
   // Find timing
-  map_iterator it = timings.find(task);
-  if (it == timings.end())
+  map_iterator it = _timings.find(task);
+  if (it == _timings.end())
   {
     std::stringstream line;
     line << "No timings registered for task \"" << task << "\".";
@@ -315,12 +323,12 @@ double Logger::timing(std::string task, bool reset)
   }
 
   // Compute average
-  const uint num_timings  = it->second.first;
+  const std::size_t num_timings  = it->second.first;
   const double total_time   = it->second.second;
   const double average_time = total_time / static_cast<double>(num_timings);
 
   // Clear timing
-  timings.erase(it);
+  _timings.erase(it);
 
   return average_time;
 }

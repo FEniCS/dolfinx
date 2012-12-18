@@ -67,7 +67,7 @@ LinearVariationalProblem(const Form& a,
     _u(reference_to_no_delete_pointer(u))
 {
   // Store boundary conditions
-  for (uint i = 0; i < bcs.size(); ++i)
+  for (std::size_t i = 0; i < bcs.size(); ++i)
     _bcs.push_back(reference_to_no_delete_pointer(*bcs[i]));
 
   // Check forms
@@ -83,7 +83,7 @@ LinearVariationalProblem(boost::shared_ptr<const Form> a,
     _a(a), _L(L), _u(u)
 {
   // Store boundary conditions
-  for (uint i = 0; i < bcs.size(); ++i)
+  for (std::size_t i = 0; i < bcs.size(); ++i)
     _bcs.push_back(bcs[i]);
 
   // Check forms

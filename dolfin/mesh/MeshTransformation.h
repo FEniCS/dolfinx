@@ -44,9 +44,9 @@ namespace dolfin
     ///         The mesh
     ///     angle (double)
     ///         The number of degrees (0-360) of rotation
-    ///     axis (uint)
+    ///     axis (std::size_t)
     ///         The coordinate axis around which to rotate the mesh
-    static void rotate(Mesh& mesh, double angle, uint axis);
+    static void rotate(Mesh& mesh, double angle, std::size_t axis);
 
     /// Rotate mesh around a coordinate axis through a given point
     ///
@@ -55,11 +55,11 @@ namespace dolfin
     ///         The mesh
     ///     angle (double)
     ///         The number of degrees (0-360) of rotation
-    ///     axis (uint)
+    ///     axis (std::size_t)
     ///         The coordinate axis around which to rotate the mesh
     ///     point (_Point_)
     ///         The point around which to rotate the mesh
-    static void rotate(Mesh& mesh, double angle, uint axis, const Point& p);
+    static void rotate(Mesh& mesh, double angle, std::size_t axis, const Point& p);
 
   };
 

@@ -58,12 +58,12 @@ const MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
   return *this;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint MeshTopology::dim() const
+std::size_t MeshTopology::dim() const
 {
   return num_entities.size() - 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint MeshTopology::size(uint dim) const
+std::size_t MeshTopology::size(std::size_t dim) const
 {
   if (num_entities.size() == 0)
     return 0;
@@ -72,7 +72,7 @@ dolfin::uint MeshTopology::size(uint dim) const
   return num_entities[dim];
 }
 //-----------------------------------------------------------------------------
-dolfin::uint MeshTopology::size_global(uint dim) const
+std::size_t MeshTopology::size_global(std::size_t dim) const
 {
   if (global_num_entities.empty())
     return 0;
@@ -90,33 +90,33 @@ void MeshTopology::clear()
   _global_indices.clear();
 }
 //-----------------------------------------------------------------------------
-void MeshTopology::clear(uint d0, uint d1)
+void MeshTopology::clear(std::size_t d0, std::size_t d1)
 {
   dolfin_assert(d0 < connectivity.size());
   dolfin_assert(d1 < connectivity[d0].size());
   connectivity[d0][d1].clear();
 }
 //-----------------------------------------------------------------------------
-void MeshTopology::init(uint dim)
+void MeshTopology::init(std::size_t dim)
 {
   // Clear old data if any
   clear();
 
   // Initialize number of mesh entities
-  num_entities = std::vector<uint>(dim + 1, 0);
-  global_num_entities = std::vector<uint>(dim + 1, 0);
+  num_entities = std::vector<std::size_t>(dim + 1, 0);
+  global_num_entities = std::vector<std::size_t>(dim + 1, 0);
 
   // Initialize storage for global indices
   _global_indices.resize(dim + 1);
 
   // Initialize mesh connectivity
   connectivity.resize(dim + 1);
-  for (uint d0 = 0; d0 <= dim; d0++)
-    for (uint d1 = 0; d1 <= dim; d1++)
+  for (std::size_t d0 = 0; d0 <= dim; d0++)
+    for (std::size_t d1 = 0; d1 <= dim; d1++)
       connectivity[d0].push_back(MeshConnectivity(d0, d1));
 }
 //-----------------------------------------------------------------------------
-void MeshTopology::init(uint dim, uint local_size)
+void MeshTopology::init(std::size_t dim, std::size_t local_size)
 {
   dolfin_assert(dim < num_entities.size());
   num_entities[dim] = local_size;
@@ -125,34 +125,34 @@ void MeshTopology::init(uint dim, uint local_size)
     init_global(dim, local_size);
 }
 //-----------------------------------------------------------------------------
-void MeshTopology::init_global(uint dim, uint global_size)
+void MeshTopology::init_global(std::size_t dim, std::size_t global_size)
 {
   dolfin_assert(dim < global_num_entities.size());
   global_num_entities[dim] = global_size;
 }
 //-----------------------------------------------------------------------------
-void MeshTopology::init_global_indices(uint dim, uint size)
+void MeshTopology::init_global_indices(std::size_t dim, std::size_t size)
 {
   dolfin_assert(dim < _global_indices.size());
-  _global_indices[dim] = std::vector<uint>(size);
+  _global_indices[dim] = std::vector<std::size_t>(size);
 }
 //-----------------------------------------------------------------------------
-dolfin::MeshConnectivity& MeshTopology::operator() (uint d0, uint d1)
+dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0, std::size_t d1)
 {
   dolfin_assert(d0 < connectivity.size());
   dolfin_assert(d1 < connectivity[d0].size());
   return connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------
-const dolfin::MeshConnectivity& MeshTopology::operator() (uint d0, uint d1) const
+const dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0, std::size_t d1) const
 {
   dolfin_assert(d0 < connectivity.size());
   dolfin_assert(d1 < connectivity[d0].size());
   return connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------
-std::map<unsigned int, std::set<unsigned int> >&
-  MeshTopology::shared_entities(uint dim)
+std::map<std::size_t, std::set<std::size_t> >&
+  MeshTopology::shared_entities(std::size_t dim)
 {
   if (dim != 0)
   {
@@ -163,8 +163,8 @@ std::map<unsigned int, std::set<unsigned int> >&
   return _shared_vertices;
 }
 //-----------------------------------------------------------------------------
-const std::map<unsigned int, std::set<unsigned int> >&
-  MeshTopology::shared_entities(uint dim) const
+const std::map<std::size_t, std::set<std::size_t> >&
+  MeshTopology::shared_entities(std::size_t dim) const
 {
   if (dim != 0)
   {
@@ -182,26 +182,26 @@ size_t MeshTopology::hash() const
 //-----------------------------------------------------------------------------
 std::string MeshTopology::str(bool verbose) const
 {
-  const uint _dim = num_entities.size() - 1;
+  const std::size_t _dim = num_entities.size() - 1;
   std::stringstream s;
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
 
     s << "  Number of entities:" << std::endl << std::endl;
-    for (uint d = 0; d <= _dim; d++)
+    for (std::size_t d = 0; d <= _dim; d++)
       s << "    dim = " << d << ": " << num_entities[d] << std::endl;
     s << std::endl;
 
     s << "  Connectivity matrix:" << std::endl << std::endl;
     s << "     ";
-    for (uint d1 = 0; d1 <= _dim; d1++)
+    for (std::size_t d1 = 0; d1 <= _dim; d1++)
       s << " " << d1;
     s << std::endl;
-    for (uint d0 = 0; d0 <= _dim; d0++)
+    for (std::size_t d0 = 0; d0 <= _dim; d0++)
     {
       s << "    " << d0;
-      for (uint d1 = 0; d1 <= _dim; d1++)
+      for (std::size_t d1 = 0; d1 <= _dim; d1++)
       {
         if ( !connectivity[d0][d1].empty() )
           s << " x";
@@ -212,9 +212,9 @@ std::string MeshTopology::str(bool verbose) const
     }
     s << std::endl;
 
-    for (uint d0 = 0; d0 <= _dim; d0++)
+    for (std::size_t d0 = 0; d0 <= _dim; d0++)
     {
-      for (uint d1 = 0; d1 <= _dim; d1++)
+      for (std::size_t d1 = 0; d1 <= _dim; d1++)
       {
         if ( connectivity[d0][d1].empty() )
           continue;

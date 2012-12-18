@@ -24,6 +24,7 @@
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/types.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include "ParMETIS.h"
 
@@ -36,7 +37,7 @@ using namespace dolfin;
 #ifdef HAS_PARMETIS
 
 //-----------------------------------------------------------------------------
-void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
+void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
                                  const LocalMeshData& mesh_data)
 {
   // This function prepares data for ParMETIS (which is a pain
@@ -46,11 +47,11 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
   Timer timer0("PARALLEL 1a: Build distributed dual graph (calling ParMETIS)");
 
   // Get number of processes and process number
-  const uint num_processes = MPI::num_processes();
+  const std::size_t num_processes = MPI::num_processes();
 
   // Get dimensions of local mesh_data
-  const uint num_local_cells = mesh_data.cell_vertices.size();
-  const uint num_cell_vertices = mesh_data.num_vertices_per_cell;
+  const std::size_t num_local_cells = mesh_data.cell_vertices.size();
+  const std::size_t num_cell_vertices = mesh_data.num_vertices_per_cell;
 
   // Check that number of local graph nodes (cells) is > 0
   if (num_local_cells == 0)
@@ -61,22 +62,22 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
   }
 
   // Communicate number of cells between all processors
-  std::vector<uint> num_cells;
+  std::vector<std::size_t> num_cells;
   MPI::all_gather(num_local_cells, num_cells);
 
   // Build elmdist array with cell offsets for all processors
   std::vector<int> elmdist(num_processes + 1, 0);
-  for (uint i = 1; i < num_processes + 1; ++i)
+  for (std::size_t i = 1; i < num_processes + 1; ++i)
     elmdist[i] = elmdist[i - 1] + num_cells[i - 1];
 
   // Build eptr and eind arrays storing cell-vertex connectivity
   std::vector<int> eptr(num_local_cells + 1);
   std::vector<int> eind(num_local_cells*num_cell_vertices, 0);
-  for (uint i = 0; i < num_local_cells; i++)
+  for (std::size_t i = 0; i < num_local_cells; i++)
   {
     dolfin_assert(mesh_data.cell_vertices[i].size() == num_cell_vertices);
     eptr[i] = i*num_cell_vertices;
-    for (uint j = 0; j < num_cell_vertices; j++)
+    for (std::size_t j = 0; j < num_cell_vertices; j++)
       eind[eptr[i] + j] = mesh_data.cell_vertices[i][j];
   }
   eptr[num_local_cells] = num_local_cells*num_cell_vertices;
@@ -151,11 +152,11 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
   //info("Partitioned mesh, edge cut is %d.", edgecut);
 
   // Copy cell partition data
-  cell_partition = std::vector<uint>(part.begin(), part.end());
+  cell_partition = std::vector<std::size_t>(part.begin(), part.end());
 }
 //-----------------------------------------------------------------------------
 #else
-void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
+void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
                                     const LocalMeshData& data)
 {
   dolfin_error("ParMETIS.cpp",

@@ -23,7 +23,7 @@
 import unittest
 from dolfin import *
 
-mesh = UnitCube(8, 8, 8)
+mesh = UnitCubeMesh(8, 8, 8)
 V = FunctionSpace(mesh, 'CG', 1)
 W = VectorFunctionSpace(mesh, 'CG', 1)
 Q = W*V
@@ -33,6 +33,14 @@ g = Function(W)
 W2 = g.function_space()
 
 class Interface(unittest.TestCase):
+
+    def test_component(self):
+        self.assertFalse(W.component())
+        self.assertFalse(V.component())
+        self.assertEqual(W.sub(0).component()[0], 0)
+        self.assertEqual(W.sub(1).component()[0], 1)
+        self.assertEqual(Q.sub(0).component()[0], 0)
+        self.assertEqual(Q.sub(1).component()[0], 1)
 
     def test_equality(self):
         self.assertEqual(V, V)
@@ -70,6 +78,53 @@ class Interface(unittest.TestCase):
         f0 = Function(V)
         f1 = Function(Vc)
         self.assertEqual(len(f0.vector()), len(f1.vector()))
-        
+
+    def test_argument_equality(self):
+        "Placed this test here because it's mainly about detecting differing function spaces."
+        mesh2 = UnitCubeMesh(8, 8, 8)
+        V3 = FunctionSpace(mesh2, 'CG', 1)
+        W3 = VectorFunctionSpace(mesh2, 'CG', 1)
+
+        for TF in (TestFunction, TrialFunction):
+            v = TF(V)
+            v2 = TF(V2)
+            v3 = TF(V3)
+            self.assertEqual(v, v2)
+            self.assertEqual(v2, v)
+            self.assertNotEqual(V, V3)
+            self.assertNotEqual(V2, V3)
+            self.assertTrue(not(v == v3))
+            self.assertTrue(not(v2 == v3))
+            self.assertTrue(v != v3)
+            self.assertTrue(v2 != v3)
+            self.assertNotEqual(v, v3)
+            self.assertNotEqual(v2, v3)
+
+            w = TF(W)
+            w2 = TF(W2)
+            w3 = TF(W3)
+            self.assertEqual(w, w2)
+            self.assertEqual(w2, w)
+            self.assertNotEqual(w, w3)
+            self.assertNotEqual(w2, w3)
+
+            self.assertNotEqual(v, w)
+            self.assertNotEqual(w, v)
+
+            s1 = set((v, w))
+            s2 = set((v2, w2))
+            s3 = set((v, v2, w, w2))
+            self.assertEqual(len(s1), 2)
+            self.assertEqual(len(s2), 2)
+            self.assertEqual(len(s3), 2)
+            self.assertEqual(s1, s2)
+            self.assertEqual(s1, s3)
+            self.assertEqual(s2, s3)
+
+            # Test that the dolfin implementation of Argument.__eq__
+            # is triggered when comparing ufl expressions
+            self.assertTrue(grad(v) == grad(v2))
+            self.assertTrue(grad(v) != grad(v3))
+
 if __name__ == "__main__":
     unittest.main()

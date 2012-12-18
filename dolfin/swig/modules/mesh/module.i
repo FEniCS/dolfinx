@@ -30,10 +30,13 @@
 // Include types from dependent modules
 
 // #include types from common submodule of module common
-#include "dolfin/common/types.h"
 #include "dolfin/common/Array.h"
 #include "dolfin/common/Variable.h"
 #include "dolfin/common/Hierarchical.h"
+
+// #include types from parameter submodule of module common
+#include "dolfin/parameter/Parameter.h"
+#include "dolfin/parameter/Parameters.h"
 
 // #include types from function submodule of module function
 #include "dolfin/function/GenericFunction.h"
@@ -86,23 +89,37 @@
 #include "dolfin/mesh/LocalMeshData.h"
 #include "dolfin/mesh/SubDomain.h"
 #include "dolfin/mesh/SubMesh.h"
+#include "dolfin/mesh/Restriction.h"
 #include "dolfin/mesh/DomainBoundary.h"
 #include "dolfin/mesh/BoundaryMesh.h"
 
 // #include types from generation submodule
-#include "dolfin/generation/Interval.h"
 #include "dolfin/generation/PolygonalMeshGenerator.h"
 #include "dolfin/generation/PolyhedralMeshGenerator.h"
 #include "dolfin/generation/Triangulate.h"
-#include "dolfin/generation/UnitTetrahedron.h"
+#include "dolfin/generation/BoxMesh.h"
+#include "dolfin/generation/RectangleMesh.h"
+#include "dolfin/generation/UnitTetrahedronMesh.h"
+#include "dolfin/generation/UnitCubeMesh.h"
 #include "dolfin/generation/UnitCube.h"
+#include "dolfin/generation/UnitIntervalMesh.h"
 #include "dolfin/generation/UnitInterval.h"
-#include "dolfin/generation/UnitTriangle.h"
+#include "dolfin/generation/UnitTriangleMesh.h"
+#include "dolfin/generation/UnitSquareMesh.h"
 #include "dolfin/generation/UnitSquare.h"
+#include "dolfin/generation/UnitCircleMesh.h"
 #include "dolfin/generation/UnitCircle.h"
-#include "dolfin/generation/Box.h"
-#include "dolfin/generation/Rectangle.h"
-#include "dolfin/generation/UnitSphere.h"
+#include "dolfin/generation/IntervalMesh.h"
+#include "dolfin/generation/Interval.h"
+#include "dolfin/generation/CSGGeometry.h"
+#include "dolfin/generation/CSGMeshGenerator.h"
+#include "dolfin/generation/CSGCGALMeshGenerator2D.h"
+#include "dolfin/generation/CSGCGALMeshGenerator3D.h"
+#include "dolfin/generation/CSGOperators.h"
+#include "dolfin/generation/CSGPrimitive.h"
+#include "dolfin/generation/CSGPrimitives2D.h"
+#include "dolfin/generation/CSGPrimitives3D.h"
+#include "dolfin/generation/CSGGeometries3D.h"
 
 // #include types from refinement submodule
 #include "dolfin/refinement/refine.h"
@@ -131,10 +148,14 @@ import_array();
 
 // %import types from submodule common of SWIG module common
 %include "dolfin/swig/common/pre.i"
-%import(module="common") "dolfin/common/types.h"
 %import(module="common") "dolfin/common/Array.h"
 %import(module="common") "dolfin/common/Variable.h"
 %import(module="common") "dolfin/common/Hierarchical.h"
+
+// %import types from submodule parameter of SWIG module common
+%include "dolfin/swig/parameter/pre.i"
+%import(module="common") "dolfin/parameter/Parameter.h"
+%import(module="common") "dolfin/parameter/Parameters.h"
 
 // %import types from submodule function of SWIG module function
 %include "dolfin/swig/function/pre.i"
@@ -198,24 +219,39 @@ import_array();
 %include "dolfin/mesh/LocalMeshData.h"
 %include "dolfin/mesh/SubDomain.h"
 %include "dolfin/mesh/SubMesh.h"
+%include "dolfin/mesh/Restriction.h"
 %include "dolfin/mesh/DomainBoundary.h"
 %include "dolfin/mesh/BoundaryMesh.h"
 %include "dolfin/swig/mesh/post.i"
 
 // %include types from submodule generation
-%include "dolfin/generation/Interval.h"
 %include "dolfin/generation/PolygonalMeshGenerator.h"
 %include "dolfin/generation/PolyhedralMeshGenerator.h"
 %include "dolfin/generation/Triangulate.h"
-%include "dolfin/generation/UnitTetrahedron.h"
+%include "dolfin/generation/BoxMesh.h"
+%include "dolfin/generation/RectangleMesh.h"
+%include "dolfin/generation/UnitTetrahedronMesh.h"
+%include "dolfin/generation/UnitCubeMesh.h"
 %include "dolfin/generation/UnitCube.h"
+%include "dolfin/generation/UnitIntervalMesh.h"
 %include "dolfin/generation/UnitInterval.h"
-%include "dolfin/generation/UnitTriangle.h"
+%include "dolfin/generation/UnitTriangleMesh.h"
+%include "dolfin/generation/UnitSquareMesh.h"
 %include "dolfin/generation/UnitSquare.h"
+%include "dolfin/generation/UnitCircleMesh.h"
 %include "dolfin/generation/UnitCircle.h"
-%include "dolfin/generation/Box.h"
-%include "dolfin/generation/Rectangle.h"
-%include "dolfin/generation/UnitSphere.h"
+%include "dolfin/generation/IntervalMesh.h"
+%include "dolfin/generation/Interval.h"
+%include "dolfin/generation/CSGGeometry.h"
+%include "dolfin/generation/CSGMeshGenerator.h"
+%include "dolfin/generation/CSGCGALMeshGenerator2D.h"
+%include "dolfin/generation/CSGCGALMeshGenerator3D.h"
+%include "dolfin/generation/CSGOperators.h"
+%include "dolfin/generation/CSGPrimitive.h"
+%include "dolfin/generation/CSGPrimitives2D.h"
+%include "dolfin/generation/CSGPrimitives3D.h"
+%include "dolfin/generation/CSGGeometries3D.h"
+%include "dolfin/swig/generation/post.i"
 
 // %include types from submodule refinement
 %include "dolfin/refinement/refine.h"

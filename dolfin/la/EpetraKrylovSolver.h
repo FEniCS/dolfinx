@@ -77,16 +77,16 @@ namespace dolfin
     const GenericLinearOperator& get_operator() const;
 
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(GenericVector& x, const GenericVector& b);
+    std::size_t solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(EpetraVector& x, const EpetraVector& b);
+    std::size_t solve(EpetraVector& x, const EpetraVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+    std::size_t solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);
+    std::size_t solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);
 
     /// Return residual from most recent solve
     double residual(const std::string residualtype) const;
@@ -117,17 +117,17 @@ namespace dolfin
     // Available solvers descriptions
     static const std::vector<std::pair<std::string, std::string> > _methods_descr;
 
-    // Underlying solver
-    boost::shared_ptr<AztecOO> solver;
-
-    // Preconditioner
-    boost::shared_ptr<TrilinosPreconditioner> preconditioner;
-
     // Operator (the matrix)
     boost::shared_ptr<const EpetraMatrix> A;
 
     // Matrix used to construct the preconditoner
     boost::shared_ptr<const EpetraMatrix> P;
+
+    // Preconditioner
+    boost::shared_ptr<TrilinosPreconditioner> preconditioner;
+
+    // Underlying solver
+    boost::shared_ptr<AztecOO> solver;
 
     bool preconditioner_set;
 

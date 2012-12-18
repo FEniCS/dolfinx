@@ -79,6 +79,7 @@ list(APPEND OPTIONAL_PACKAGES "Python")
 list(APPEND OPTIONAL_PACKAGES "Sphinx")
 list(APPEND OPTIONAL_PACKAGES "HDF5")
 list(APPEND OPTIONAL_PACKAGES "VTK")
+list(APPEND OPTIONAL_PACKAGES "QT")
 
 # Add options
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
@@ -215,16 +216,18 @@ endif()
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0 1.44 1.44.0 1.45 1.45.0 1.46 1.46.0 1.46.1 1.47 1.47.0 1.48 1.48.0 1.49 1.49.0 1.50 1.50.0)
 
+find_package(Boost 1.36 QUIET REQUIRED)
+
+set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams math_tr1)
 if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
-  find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams math_tr1 mpi serialization timer REQUIRED)
-else()
-  find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams math_tr1 REQUIRED)
+  list(APPEND DOLFIN_BOOST_COMPONENTS mpi serialization)
 endif()
 
 # Boost timer was not a separate Boost component until version 1.48
-# if ("${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}" VERSION_GREATER "1.47")
-#   find_package(Boost COMPONENTS timer REQUIRED)
-# endif()
+if ("${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}" VERSION_GREATER "1.47")
+  list(APPEND DOLFIN_BOOST_COMPONENTS timer)
+endif()
+find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
 # Check for required package UFC
 find_package(UFC 2.0.2 QUIET HINTS ${UFC_DIR})
@@ -247,9 +250,9 @@ find_package(LibXml2 REQUIRED)
 
 # Note: Check for Python interpreter even when Python is disabled because it
 #       is used to get the installation path for dolfin_utils
-find_package(PythonInterp)
+find_package(PythonInterp 2)
 if (DOLFIN_ENABLE_PYTHON)
-  find_package(PythonLibs)
+  find_package(PythonLibs 2)
 
   # If Python is found, check for NumPy and SWIG
   if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
@@ -268,7 +271,7 @@ endif()
 # Check for ParMETIS and SCOTCH
 if (DOLFIN_ENABLE_MPI AND MPI_C_FOUND)
   if (DOLFIN_ENABLE_PARMETIS)
-    find_package(ParMETIS 3.2)
+    find_package(ParMETIS 4.0.2)
   endif()
 
   if (DOLFIN_ENABLE_SCOTCH)
@@ -292,9 +295,14 @@ endif()
 if (DOLFIN_ENABLE_HDF5)
   find_package(HDF5)
 
+  if (NOT HDF5_FOUND)
+    # Give some hints and try again
+    find_package(HDF5 HINTS ${HDF5_DIR} $ENV{HDF5_DIR})
+  endif()
+
   # Check that HDF5 has parallel support
   if (DOLFIN_ENABLE_MPI)
-    if (NOT HDF5_IS_PARALLEL)
+    if (NOT (HDF5_IS_PARALLEL OR HDF5_ENABLE_PARALLEL))
       message(STATUS "HDF5 has been found, but is missing parallel support. It will not be enabled.")
       set(HDF5_FOUND false)
     endif()
@@ -311,6 +319,11 @@ if (DOLFIN_ENABLE_TRILINOS)
   message(STATUS "Checking for Trilinos")
   find_package(Trilinos PATHS ${TRILINOS_DIR} ${Trilinos_DIR} $ENV{TRILINOS_DIR} QUIET)
   set(DOLFIN_TRILINOS_PACKAGES "Epetra;Zoltan;ML;Ifpack;Amesos")
+
+  if ("${Trilinos_VERSION}" VERSION_LESS "11.0.0")
+    set(Trilinos_FOUND FALSE)
+    message(WARNING "Unable to find Trilinos (>= 11.0.0)")
+  endif()
 
   # Check for required packages
   set(DOLFIN_TRILINOS_PACKAGES_FOUND false)
@@ -397,14 +410,19 @@ if (DOLFIN_ENABLE_DOCS AND PYTHON_FOUND)
   find_package(Sphinx 1.0.7)
 endif()
 
+# Check for Qt4
+if (DOLFIN_ENABLE_QT)
+  find_package(Qt4)
+endif()
+
 # Check for VTK
 if (DOLFIN_ENABLE_VTK)
   find_package(VTK QUIET HINTS ${VTK_DIR} $ENV{VTK_DIR})
   set(VTK_VERSION "${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}")
   if (VTK_FOUND)
-    if ("${VTK_VERSION}" VERSION_LESS "5.8")
+    if ("${VTK_VERSION}" VERSION_LESS "5.2")
       set(VTK_FOUND FALSE)
-      message(WARNING "Unable to find VTK (>= 5.8)")
+      message(WARNING "Unable to find VTK (>= 5.2)")
     else()
       message(STATUS "Found VTK: ${VTK_DIR} (found version \"${VTK_VERSION}\")")
     endif()
@@ -568,6 +586,7 @@ set(DOLFIN_PKGCONFIG_DIR "lib/pkgconfig" CACHE PATH "pkg-config file installatio
 set(DOLFIN_SHARE_DIR "share/dolfin" CACHE PATH "Shared data installation directory.")
 set(DOLFIN_MAN_DIR "share/man" CACHE PATH "Manual page installation directory.")
 set(DOLFIN_DOC_DIR "${DOLFIN_SHARE_DIR}/doc" CACHE PATH "DOLFIN Documentation directory.")
+set(DOLFIN_ETC_DIR "etc" CACHE PATH "Configuration file directory.")
 
 # Add source directory
 add_subdirectory(dolfin)
@@ -661,7 +680,7 @@ install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
 
 if (DOLFIN_ENABLE_DOCS)
   if (NOT SPHINX_FOUND)
-    message(WARNING "Disabling generation of documentation because Sphinx is missing.")
+    message("Disabling generation of documentation because Sphinx is missing.")
   else()
     add_subdirectory(doc)
   endif()
@@ -718,6 +737,7 @@ if (DOLFIN_ENABLE_TESTING)
     PATTERN "*.ele"
     PATTERN "*.node"
     PATTERN "*.grid"
+    PATTERN "*.edge"
     PATTERN "CMakeFiles" EXCLUDE)
 
   # Add target "run_memorytests" for running memory tests

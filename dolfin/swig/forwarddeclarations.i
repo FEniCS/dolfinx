@@ -27,6 +27,9 @@
 namespace dolfin
 {
 
+  // common
+  class Table;
+
   // parameter
   class Parameters;
 

@@ -22,6 +22,10 @@
 
 import unittest
 from dolfin import *
+import sys
+
+
+mesh = UnitSquareMesh(3, 3)
 
 class AbstractBaseTest(object):
     count = 0
@@ -35,7 +39,6 @@ class AbstractBaseTest(object):
 
     def assemble_matrices(self, use_backend=False):
         " Assemble a pair of matrices, one (square) MxM and one MxN"
-        mesh = UnitSquare(3,3)
 
         V = FunctionSpace(mesh, "Lagrange", 2)
         W = FunctionSpace(mesh, "Lagrange", 1)
@@ -58,8 +61,6 @@ class AbstractBaseTest(object):
             return assemble(a), assemble(b)
 
     def assemble_vectors(self):
-        mesh = UnitSquare(3,3)
-
         V = FunctionSpace(mesh, "Lagrange", 2)
         W = FunctionSpace(mesh, "Lagrange", 1)
 
@@ -204,6 +205,11 @@ class AbstractBaseTest(object):
             self.assertRaises(RuntimeError,wrong_dim,[0,2],slice(0,4,1))
             self.assertRaises(TypeError,wrong_dim,0,slice(0,4,1))
 
+            # Tests bailout for these choices
+            if self.backend == "uBLAS" and sys.version_info[0]==2 and \
+                   sys.version_info[1]==6:
+                return
+
             A *= B
             A2 *= B2
             I = A*B
@@ -234,9 +240,17 @@ class AbstractBaseTest(object):
 
         # Reference values
         v_norm  = 0.181443684651
+        w_norm  = 0.278394377377
+        A_norm  = 31.947874212
+        B_norm  = 0.11052313564
         Av_norm = 0.575896483442
         Bw_norm = 0.0149136743079
         Cv_norm = 0.00951459156865
+
+        self.assertAlmostEqual(v.norm('l2'), v_norm)
+        self.assertAlmostEqual(w.norm('l2'), w_norm)
+        self.assertAlmostEqual(A.norm('frobenius'), A_norm)
+        self.assertAlmostEqual(B.norm('frobenius'), B_norm)
 
         u = A*v
 
@@ -315,10 +329,6 @@ if MPI.num_processes() == 1:
     class uBLASDenseTester(AbstractBaseTest, unittest.TestCase):
         backend     = "uBLAS"
         sub_backend = "Dense"
-
-    if has_linear_algebra_backend("MTL4"):
-        class MTL4Tester(AbstractBaseTest, unittest.TestCase):
-            backend    = "MTL4"
 
     if has_linear_algebra_backend("PETScCusp"):
         class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):

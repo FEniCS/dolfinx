@@ -61,13 +61,12 @@ namespace dolfin
     ~MUMPSLUSolver();
 
     /// Solve linear system Ax = b
-    unsigned int solve(GenericVector& x, const GenericVector& b);
+    std::size_t solve(GenericVector& x, const GenericVector& b);
 
     /// Default parameter values
     static Parameters default_parameters();
 
   private:
-
 
     // Operator (the matrix)
     boost::shared_ptr<const CoordinateMatrix> A;

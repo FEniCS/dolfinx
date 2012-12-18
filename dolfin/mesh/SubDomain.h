@@ -34,7 +34,7 @@ namespace dolfin
 
   /// This class defines the interface for definition of subdomains.
   /// Alternatively, subdomains may be defined by a _Mesh_ and a
-  /// _MeshFunction_ <uint> over the mesh.
+  /// _MeshFunction_ <std::size_t> over the mesh.
 
   class SubDomain
   {
@@ -78,47 +78,47 @@ namespace dolfin
 
     //--- Marking of Mesh ---
 
-    /// Set subdomain markers (uint) on cells for given subdomain number
+    /// Set subdomain markers (std::size_t) on cells for given subdomain number
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh to be marked.
-    ///     sub_domain (unsigned int)
+    ///     sub_domain (std::size_t)
     ///         The subdomain number.
-    void mark_cells(Mesh& mesh, unsigned int sub_domain) const;
+    void mark_cells(Mesh& mesh, std::size_t sub_domain) const;
 
-    /// Set subdomain markers (uint) on facets for given subdomain number
+    /// Set subdomain markers (std::size_t) on facets for given subdomain number
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh to be marked.
-    ///     sub_domain (unsigned int)
+    ///     sub_domain (std::size_t)
     ///         The subdomain number.
-    void mark_facets(Mesh& mesh, unsigned int sub_domain) const;
+    void mark_facets(Mesh& mesh, std::size_t sub_domain) const;
 
-    /// Set subdomain markers (uint) for given topological dimension
+    /// Set subdomain markers (std::size_t) for given topological dimension
     /// and subdomain number
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh to be marked.
-    ///     dim (unsigned int)
+    ///     dim (std::size_t)
     ///         The topological dimension of entities to be marked.
-    ///     sub_domain (unsigned int)
+    ///     sub_domain (std::size_t)
     ///         The subdomain number.
-    void mark(Mesh& mesh, unsigned int dim, unsigned int sub_domain) const;
+    void mark(Mesh& mesh, std::size_t dim, std::size_t sub_domain) const;
 
     //--- Marking of MeshFunction ---
 
-    /// Set subdomain markers (uint) for given subdomain number
+    /// Set subdomain markers (std::size_t) for given subdomain number
     ///
     /// *Arguments*
-    ///     sub_domains (_MeshFunction_ <unsigned int>)
+    ///     sub_domains (_MeshFunction_ <std::size_t>)
     ///         The subdomain markers.
-    ///     sub_domain (unsigned int)
+    ///     sub_domain (std::size_t)
     ///         The subdomain number.
-    void mark(MeshFunction<unsigned int>& sub_domains,
-              unsigned int sub_domain) const;
+    void mark(MeshFunction<std::size_t>& sub_domains,
+              std::size_t sub_domain) const;
 
     /// Set subdomain markers (int) for given subdomain number
     ///
@@ -149,17 +149,17 @@ namespace dolfin
 
     //--- Marking of MeshValueCollection ---
 
-    /// Set subdomain markers (uint) for given subdomain number
+    /// Set subdomain markers (std::size_t) for given subdomain number
     ///
     /// *Arguments*
-    ///     sub_domains (_MeshValueCollection_ <unsigned int>)
+    ///     sub_domains (_MeshValueCollection_ <std::size_t>)
     ///         The subdomain markers.
-    ///     sub_domain (unsigned int)
+    ///     sub_domain (std::size_t)
     ///         The subdomain number.
     ///     mesn (_Mesh_)
     ///         The mesh.
-    void mark(MeshValueCollection<unsigned int>& sub_domains,
-              unsigned int sub_domain,
+    void mark(MeshValueCollection<std::size_t>& sub_domains,
+              std::size_t sub_domain,
               const Mesh& mesh) const;
 
     /// Set subdomain markers (int) for given subdomain number
@@ -198,13 +198,13 @@ namespace dolfin
     /// Return geometric dimension
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The geometric dimension.
-    uint geometric_dimension() const;
+    std::size_t geometric_dimension() const;
 
   private:
 
-    /// Apply marker of type T (most likely an uint) to object of class
+    /// Apply marker of type T (most likely an std::size_t) to object of class
     /// S (most likely MeshFunction or MeshValueCollection)
     template<typename S, typename T>
     void apply_markers(S& sub_domains, T sub_domain, const Mesh& mesh) const;
@@ -215,7 +215,7 @@ namespace dolfin
 
     // Geometric dimension, needed for SWIG interface, will be set before
     // calls to inside() and map()
-    mutable uint _geometric_dimension;
+    mutable std::size_t _geometric_dimension;
 
   };
 

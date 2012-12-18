@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2011-09-13 
+// First added:  2011-09-13
 // Last changed: 2012-08-24
 
 #ifdef HAS_PETSC_CUSP
@@ -51,7 +51,7 @@ boost::shared_ptr<GenericVector> PETScCuspFactory:: create_local_vector() const
   return x;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<TensorLayout> PETScCuspFactory::create_layout(uint rank) const
+boost::shared_ptr<TensorLayout> PETScCuspFactory::create_layout(std::size_t rank) const
 {
   bool sparsity = false;
   if (rank > 1)

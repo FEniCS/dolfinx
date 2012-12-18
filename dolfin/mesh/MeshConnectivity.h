@@ -43,7 +43,7 @@ namespace dolfin
   public:
 
     /// Create empty connectivity between given dimensions (d0 -- d1)
-    MeshConnectivity(uint d0, uint d1);
+    MeshConnectivity(std::size_t d0, std::size_t d1);
 
     /// Copy constructor
     MeshConnectivity(const MeshConnectivity& connectivity);
@@ -59,18 +59,18 @@ namespace dolfin
     { return connections.empty(); }
 
     /// Return total number of connections
-    uint size() const
+    std::size_t size() const
     { return connections.size(); }
 
     /// Return number of connections for given entity
-    uint size(uint entity) const
+    std::size_t size(std::size_t entity) const
     {
       return ( (entity + 1) < index_to_position.size()
           ? index_to_position[entity + 1] - index_to_position[entity] : 0);
     }
 
     /// Return global number of connections for given entity
-    uint size_global(uint entity) const
+    std::size_t size_global(std::size_t entity) const
     {
       if (num_global_connections.empty())
         return size(entity);
@@ -82,14 +82,14 @@ namespace dolfin
     }
 
     /// Return array of connections for given entity
-    const uint* operator() (uint entity) const
+    const std::size_t* operator() (std::size_t entity) const
     {
       return ((entity + 1) < index_to_position.size()
         ? &connections[index_to_position[entity]] : 0);
     }
 
     /// Return contiguous array of connections for all entities
-    const std::vector<uint>& operator() () const
+    const std::vector<std::size_t>& operator() () const
     { return connections; }
 
     /// Clear all data
@@ -97,23 +97,23 @@ namespace dolfin
 
     /// Initialize number of entities and number of connections (equal
     /// for all)
-    void init(uint num_entities, uint num_connections);
+    void init(std::size_t num_entities, std::size_t num_connections);
 
     /// Initialize number of entities and number of connections
     /// (individually)
-    void init(std::vector<uint>& num_connections);
+    void init(std::vector<std::size_t>& num_connections);
 
     /// Set given connection for given entity
-    void set(uint entity, uint connection, uint pos);
+    void set(std::size_t entity, std::size_t connection, std::size_t pos);
 
     /// Set all connections for given entity
-    void set(uint entity, const std::vector<uint>& connections);
+    void set(std::size_t entity, const std::vector<std::size_t>& connections);
 
     /// Set all connections for given entity
-    void set(uint entity, uint* connections);
+    void set(std::size_t entity, std::size_t* connections);
 
     /// Set all connections for all entities (T is a container, e.g.
-    /// a std::vector<uint>, std::set<uint>, etc)
+    /// a std::vector<std::size_t>, std::set<std::size_t>, etc)
     template <typename T>
     void set(const std::vector<T>& connections)
     {
@@ -122,8 +122,8 @@ namespace dolfin
 
       // Initialize offsets and compute total size
       index_to_position.resize(connections.size() + 1);
-      uint size = 0;
-      for (uint e = 0; e < connections.size(); e++)
+      std::size_t size = 0;
+      for (std::size_t e = 0; e < connections.size(); e++)
       {
         index_to_position[e] = size;
         size += connections[e].size();
@@ -138,7 +138,7 @@ namespace dolfin
     }
 
     /// Set global number of connections for all local entities
-    void set_global_size(const std::vector<uint>& num_global_connections)
+    void set_global_size(const std::vector<std::size_t>& num_global_connections)
     {
       dolfin_assert(num_global_connections.size() == index_to_position.size() - 1);
       this->num_global_connections = num_global_connections;
@@ -157,17 +157,17 @@ namespace dolfin
     friend class MeshRenumbering;
 
     // Dimensions (only used for pretty-printing)
-    uint d0, d1;
+    std::size_t d0, d1;
 
     // Connections for all entities stored as a contiguous array
-    std::vector<uint> connections;
+    std::vector<std::size_t> connections;
 
     // Global number of connections for all entities (possibly not
     // computed)
-    std::vector<uint> num_global_connections;
+    std::vector<std::size_t> num_global_connections;
 
     // Position of first connection for each entity (using local index)
-    std::vector<uint> index_to_position;
+    std::vector<std::size_t> index_to_position;
 
   };
 

@@ -30,7 +30,6 @@
 // Include types from dependent modules
 
 // #include types from common submodule of module common
-#include "dolfin/common/types.h"
 #include "dolfin/common/Array.h"
 #include "dolfin/common/Variable.h"
 #include "dolfin/common/Hierarchical.h"
@@ -41,13 +40,19 @@
 
 // #include types from la submodule of module la
 #include "dolfin/la/LinearAlgebraObject.h"
+#include "dolfin/la/GenericLinearOperator.h"
 #include "dolfin/la/GenericTensor.h"
+#include "dolfin/la/GenericMatrix.h"
 #include "dolfin/la/GenericVector.h"
 #include "dolfin/la/Vector.h"
+#include "dolfin/la/Matrix.h"
 
 // #include types from mesh submodule of module mesh
+#include "dolfin/mesh/MeshData.h"
 #include "dolfin/mesh/Mesh.h"
 #include "dolfin/mesh/MeshFunction.h"
+#include "dolfin/mesh/MeshValueCollection.h"
+#include "dolfin/mesh/LocalMeshData.h"
 
 // #include types from function submodule of module function
 #include "dolfin/function/GenericFunction.h"
@@ -56,8 +61,8 @@
 #include "dolfin/function/FunctionSpace.h"
 
 // #include types from fem submodule of module fem
-#include "dolfin/fem/BoundaryCondition.h"
-#include "dolfin/fem/DirichletBC.h"
+#include "dolfin/fem/GenericDofMap.h"
+#include "dolfin/fem/DofMap.h"
 
 // Include types from present module io
 
@@ -66,6 +71,7 @@
 #include "dolfin/plot/VTKPlotter.h"
 
 // #include types from io submodule
+#include "dolfin/io/GenericFile.h"
 #include "dolfin/io/File.h"
 #include "dolfin/io/XDMFFile.h"
 #include "dolfin/io/HDF5File.h"
@@ -85,7 +91,6 @@ import_array();
 
 // %import types from submodule common of SWIG module common
 %include "dolfin/swig/common/pre.i"
-%import(module="common") "dolfin/common/types.h"
 %import(module="common") "dolfin/common/Array.h"
 %import(module="common") "dolfin/common/Variable.h"
 %import(module="common") "dolfin/common/Hierarchical.h"
@@ -98,14 +103,20 @@ import_array();
 // %import types from submodule la of SWIG module la
 %include "dolfin/swig/la/pre.i"
 %import(module="la") "dolfin/la/LinearAlgebraObject.h"
+%import(module="la") "dolfin/la/GenericLinearOperator.h"
 %import(module="la") "dolfin/la/GenericTensor.h"
+%import(module="la") "dolfin/la/GenericMatrix.h"
 %import(module="la") "dolfin/la/GenericVector.h"
 %import(module="la") "dolfin/la/Vector.h"
+%import(module="la") "dolfin/la/Matrix.h"
 
 // %import types from submodule mesh of SWIG module mesh
 %include "dolfin/swig/mesh/pre.i"
+%import(module="mesh") "dolfin/mesh/MeshData.h"
 %import(module="mesh") "dolfin/mesh/Mesh.h"
 %import(module="mesh") "dolfin/mesh/MeshFunction.h"
+%import(module="mesh") "dolfin/mesh/MeshValueCollection.h"
+%import(module="mesh") "dolfin/mesh/LocalMeshData.h"
 
 // %import types from submodule function of SWIG module function
 %include "dolfin/swig/function/pre.i"
@@ -116,8 +127,8 @@ import_array();
 
 // %import types from submodule fem of SWIG module fem
 %include "dolfin/swig/fem/pre.i"
-%import(module="fem") "dolfin/fem/BoundaryCondition.h"
-%import(module="fem") "dolfin/fem/DirichletBC.h"
+%import(module="fem") "dolfin/fem/GenericDofMap.h"
+%import(module="fem") "dolfin/fem/DofMap.h"
 
 // Turn on SWIG generated signature documentation and include doxygen
 // generated docstrings
@@ -130,6 +141,8 @@ import_array();
 %include "dolfin/plot/VTKPlotter.h"
 
 // %include types from submodule io
+%include "dolfin/swig/io/pre.i"
+%include "dolfin/io/GenericFile.h"
 %include "dolfin/io/File.h"
 %include "dolfin/io/XDMFFile.h"
 %include "dolfin/io/HDF5File.h"

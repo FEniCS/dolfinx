@@ -28,12 +28,12 @@ simple reaction-diffusion equation."""
 # Modified by Anders Logg, 2008.
 #
 # First added:  2007-11-14
-# Last changed: 2008-12-13
+# Last changed: 2012-11-12
 
 from dolfin import *
 
 # Create mesh and define function space
-mesh = UnitSquare(16, 16)
+mesh = UnitSquareMesh(16, 16)
 V = FunctionSpace(mesh, "CG", 2)
 
 # Define the function v

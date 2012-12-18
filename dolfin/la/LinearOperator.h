@@ -15,7 +15,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-08-20
-// Last changed: 2012-09-03
+// Last changed: 2012-12-12
 
 #ifndef __LINEAR_OPERATOR_H
 #define __LINEAR_OPERATOR_H
@@ -40,6 +40,10 @@ namespace dolfin
   {
   public:
 
+    // Create linear operator to match parallel layout of vectors
+    // x and y for product y = Ax.
+    LinearOperator(const GenericVector& x, const GenericVector& y);
+
     /// Create linear operator
     LinearOperator();
 
@@ -47,7 +51,7 @@ namespace dolfin
     virtual ~LinearOperator() {}
 
     /// Return size of given dimension
-    virtual uint size(uint dim) const = 0;
+    virtual std::size_t size(std::size_t dim) const = 0;
 
     /// Compute matrix-vector product y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const = 0;
@@ -70,9 +74,6 @@ namespace dolfin
     virtual boost::shared_ptr<LinearAlgebraObject> shared_instance();
 
   private:
-
-    // Initialize backend
-    void init();
 
     // Pointer to concrete implementation
     boost::shared_ptr<GenericLinearOperator> _A;
