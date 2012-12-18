@@ -50,7 +50,7 @@ x += 1.0
 # Iterate over angle
 theta = 0.0
 dtheta = 0.05*DOLFIN_PI
-intersection = MeshFunction("sizet", omega0, omega0.topology().dim())
+intersection = MeshFunction("size_t", omega0, omega0.topology().dim())
 _first = True
 
 p = VTKPlotter(intersection)
@@ -97,7 +97,7 @@ print "Maximum value is max(x()): ", max(x)
 # Iterate over angle
 theta = 0.0
 dtheta = 0.1*DOLFIN_PI
-intersection = MeshFunction("sizet", background_mesh, background_mesh.topology().dim())
+intersection = MeshFunction("size_t", background_mesh, background_mesh.topology().dim())
 _first = True
 
 while theta < 2*DOLFIN_PI + dtheta:

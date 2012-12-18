@@ -70,7 +70,7 @@ bc = DirichletBC(W.sub(0), Constant((0.0, 0.0)), Noslip())
 
 # Create boundary subdomains
 outflow = Outflow()
-outflow_markers = MeshFunction("sizet", mesh, mesh.topology().dim() - 1)
+outflow_markers = MeshFunction("size_t", mesh, mesh.topology().dim() - 1)
 outflow_markers.set_all(1)
 outflow.mark(outflow_markers, 0)
 

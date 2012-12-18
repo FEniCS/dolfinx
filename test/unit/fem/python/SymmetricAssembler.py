@@ -48,7 +48,7 @@ class TestSymmetricAssembler(unittest.TestCase):
 
     def test_cell_assembly(self):
 
-        mesh = UnitCube(4, 4, 4)
+        mesh = UnitCubeMesh(4, 4, 4)
         V = VectorFunctionSpace(mesh, "CG", 1)
 
         v = TestFunction(V)
@@ -75,7 +75,7 @@ class TestSymmetricAssembler(unittest.TestCase):
             print "FIXME: This unit test does not work in parallel, skipping"
             return
 
-        mesh = UnitSquare(24, 24)
+        mesh = UnitSquareMesh(24, 24)
         V = FunctionSpace(mesh, "CG", 1)
 
         # Define test and trial functions
@@ -112,7 +112,7 @@ class TestSymmetricAssembler(unittest.TestCase):
         "Test assembly over subdomains with markers stored as part of mesh"
 
         # Create a mesh of the unit cube
-        mesh = UnitCube(4, 4, 4)
+        mesh = UnitCubeMesh(4, 4, 4)
 
         # Define subdomains for 3 faces of the unit cube
         class F0(SubDomain):

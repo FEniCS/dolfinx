@@ -31,6 +31,7 @@
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/GenericLinearAlgebraFactory.h>
+#include <dolfin/la/TensorLayout.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/Mesh.h>
@@ -42,7 +43,6 @@
 #include "SparsityPatternBuilder.h"
 #include "AssemblerBase.h"
 
-#include <dolfin/la/TensorLayout.h>
 
 using namespace dolfin;
 
@@ -154,11 +154,9 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
             {
               pattern.get_edges(dofs[i], edges);
               const std::vector<double> block(edges.size(), 0.0);
-              DolfinIndex _dofs[2];
-              _dofs[0] = dofs[0];
-              _dofs[1] = dofs[1];
+              DolfinIndex _dof = dofs[i];
               const std::vector<DolfinIndex> _edges(edges.begin(), edges.end());
-              _A.set(&block[0], 1, _dofs, edges.size(), _edges.data());
+              _A.set(&block[0], 1, &_dof, edges.size(), _edges.data());
             }
           }
         }

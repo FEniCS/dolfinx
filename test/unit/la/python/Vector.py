@@ -37,7 +37,7 @@ class AbstractBaseTest(object):
             print "\nRunning:",type(self).__name__
 
     def assemble_vectors(self):
-        mesh = UnitSquare(7, 4)
+        mesh = UnitSquareMesh(7, 4)
 
         V = FunctionSpace(mesh, "Lagrange", 2)
         W = FunctionSpace(mesh, "Lagrange", 1)

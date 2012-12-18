@@ -66,7 +66,7 @@ print "Largest eigenvalue: ", r
 
 # Initialize function and assign eigenvector
 u = Function(V)
-u.vector()[:] = rx 
+u.vector()[:] = rx
 
 # Plot eigenfunction
 plot(u)

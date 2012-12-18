@@ -27,35 +27,35 @@ from dolfin import *
 
 if MPI.num_processes() == 1:
     mesh = UnitIntervalMesh(10)
-    print "Plotting a UnitInterval"
+    print "Plotting a UnitIntervalMesh"
     plot(mesh, title="Unit interval")
 
 mesh = UnitSquareMesh(10, 10)
-print "Plotting a UnitSquare"
+print "Plotting a UnitSquareMesh"
 plot(mesh, title="Unit square")
 
 mesh = UnitSquareMesh(10, 10, "left")
-print "Plotting a UnitSquare"
+print "Plotting a UnitSquareMesh"
 plot(mesh, title="Unit square (left)")
 
 mesh = UnitSquareMesh(10, 10, "crossed")
-print "Plotting a UnitSquare"
+print "Plotting a UnitSquareMesh"
 plot(mesh, title="Unit square (crossed)")
 
 mesh = UnitSquareMesh(10, 10, "right/left")
-print "Plotting a UnitSquare"
+print "Plotting a UnitSquareMesh"
 plot(mesh, title="Unit square (right/left)")
 
 mesh = RectangleMesh(0.0, 0.0, 10.0, 4.0, 10, 10)
-print "Plotting a Rectangle"
+print "Plotting a RectangleMesh"
 plot(mesh, title="Rectangle")
 
 mesh = RectangleMesh(-3.0, 2.0, 7.0, 6.0, 10, 10, "right/left")
-print "Plotting a Rectangle"
+print "Plotting a RectangleMesh"
 plot(mesh, title="Rectangle (right/left)")
 
 mesh = UnitCircleMesh(20, "right", "rotsumn")
-print "Plotting a UnitCircle"
+print "Plotting a UnitCircleMesh"
 plot(mesh, title="Unit circle (rotsum)")
 
 #mesh = UnitCircleMesh(20, "left", "sumn")
@@ -63,15 +63,15 @@ plot(mesh, title="Unit circle (rotsum)")
 #plot(mesh, title="Unit circle (sumn)")
 
 mesh = UnitCircleMesh(20, "right", "maxn")
-print "Plotting a UnitCircle"
+print "Plotting a UnitCircleMesh"
 plot(mesh, title="Unit circle (maxn)")
 
 mesh = UnitCubeMesh(10, 10, 10)
-print "Plotting a UnitCube"
+print "Plotting a UnitCubeMesh"
 plot(mesh, title="Unit cube")
 
 mesh = BoxMesh(0.0, 0.0, 0.0, 10.0, 4.0, 2.0, 10, 10, 10)
-print "Plotting a Box"
+print "Plotting a BoxMesh"
 plot(mesh, title="Box")
 
 interactive()

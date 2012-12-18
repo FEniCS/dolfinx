@@ -24,7 +24,7 @@ used in the demo."""
 from dolfin import *
 
 # Create mesh
-mesh = UnitSquare(32, 32)
+mesh = UnitSquareMesh(32, 32)
 
 # Create mesh functions for c00, c01, c11
 c00 = MeshFunction("double", mesh, 2)

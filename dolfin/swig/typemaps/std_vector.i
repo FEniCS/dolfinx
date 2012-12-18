@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-08-31
-// Last changed: 2012-05-09
+// Last changed: 2012-12-13
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -579,12 +579,12 @@ PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, double, -
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, NPY_DOUBLE)
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, NPY_INT)
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, NPY_UINT)
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, NPY_UINTP)
 
 READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, double)
 READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, int)
 READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, uint)
-//READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, uint)
-READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, sizet)
+READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, size_t)
 
 // This typemap handles PETSc index typemap. Untested for 64-bit integers
 READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(PetscInt, dolfin_index)

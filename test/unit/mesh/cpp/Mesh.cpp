@@ -30,13 +30,13 @@ using namespace dolfin;
 class SimpleShapes : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE(SimpleShapes);
-  CPPUNIT_TEST(testUnitSquare);
-  CPPUNIT_TEST(testUnitCube);
+  CPPUNIT_TEST(testUnitSquareMesh);
+  CPPUNIT_TEST(testUnitCubeMesh);
   CPPUNIT_TEST_SUITE_END();
 
 public:
 
-  void testUnitSquare()
+  void testUnitSquareMesh()
   {
     // Create mesh of unit square
     UnitSquareMesh mesh(5, 7);
@@ -44,7 +44,7 @@ public:
     CPPUNIT_ASSERT(mesh.num_cells() == 70);
   }
 
-  void testUnitCube()
+  void testUnitCubeMesh()
   {
     // Create mesh of unit cube
     UnitCubeMesh mesh(5, 7, 9);
@@ -57,13 +57,13 @@ public:
 class MeshRefinement : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE(MeshRefinement);
-  CPPUNIT_TEST(testRefineUnitSquare);
-  CPPUNIT_TEST(testRefineUnitCube);
+  CPPUNIT_TEST(testRefineUnitSquareMesh);
+  CPPUNIT_TEST(testRefineUnitCubeMesh);
   CPPUNIT_TEST_SUITE_END();
 
 public:
 
-  void testRefineUnitSquare()
+  void testRefineUnitSquareMesh()
   {
     // Refine mesh of unit square
     UnitSquareMesh mesh0(5, 7);
@@ -72,7 +72,7 @@ public:
     CPPUNIT_ASSERT(mesh1.num_cells() == 280);
   }
 
-  void testRefineUnitCube()
+  void testRefineUnitCubeMesh()
   {
     // Refine mesh of unit cube
     UnitCubeMesh mesh0(5, 7, 9);

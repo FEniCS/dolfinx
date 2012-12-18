@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-06-10
-// Last changed: 2010-06-14
+// Last changed: 2012-12-12
 //
 // Description: Benchmark for the evaluations of functions at arbitrary points.
 
@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
   tic();
   for (std::size_t N = 10; N < mesh_max_size; N += 2)
   {
-    UnitCube mesh(N, N, N);
+    UnitCubeMesh mesh(N, N, N);
 
     P1::FunctionSpace V0(mesh);
     Function f0(V0);

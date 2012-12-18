@@ -197,7 +197,6 @@ BoostBidirectionalGraph GraphBuilder::local_boost_graph(const Mesh& mesh,
 
   return graph;
 }
-
 //-----------------------------------------------------------------------------
 void GraphBuilder::compute_dual_graph_orig(const LocalMeshData& mesh_data,
                                 std::vector<std::set<std::size_t> >& local_graph,
@@ -309,10 +308,13 @@ void GraphBuilder::compute_dual_graph_orig(const LocalMeshData& mesh_data,
 
     const std::size_t p = sources[_offset];
     dolfin_assert(p < boundary_cells_per_process.size());
-    const std::size_t data_length = (num_cell_vertices + 1)*boundary_cells_per_process[p];
+    const std::size_t data_length
+      = (num_cell_vertices + 1)*boundary_cells_per_process[p];
 
-    std::vector<std::size_t>& _global_cell_indices         = candidate_ghost_cell_global_indices[p];
-    std::vector<std::vector<std::size_t> >& _cell_vertices = candidate_ghost_cell_vertices[p];
+    std::vector<std::size_t>& _global_cell_indices
+      = candidate_ghost_cell_global_indices[p];
+    std::vector<std::vector<std::size_t> >& _cell_vertices
+      = candidate_ghost_cell_vertices[p];
 
     // Loop over data for each cell
     for (std::size_t j = _offset; j < _offset + data_length; j += num_cell_vertices + 1)
@@ -347,11 +349,10 @@ void GraphBuilder::compute_dual_graph_orig(const LocalMeshData& mesh_data,
   ghost_vertices = ghost_cell_global_indices;
   info("Finish compute graph ghost edges.");;
 }
-
 //-----------------------------------------------------------------------------
 void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
-                                      std::vector<std::set<std::size_t> >& local_graph,
-                                      std::set<std::size_t>& ghost_vertices)
+                            std::vector<std::set<std::size_t> >& local_graph,
+                            std::set<std::size_t>& ghost_vertices)
 {
   Timer timer("Compute dual graph [new]");
 
@@ -411,7 +412,8 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
   // Copy to another map and re-label cells with offset
   vectormap othermap(facet_cell);
-  for(vectormap::iterator other_cell = othermap.begin(); other_cell != othermap.end(); ++other_cell)
+  for(vectormap::iterator other_cell = othermap.begin();
+        other_cell != othermap.end(); ++other_cell)
   {
     other_cell->second += offset;
   }
@@ -449,7 +451,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     }
 
     // Go through local facets, looking for a matching facet in othermap
-    vectormap::iterator fcell = facet_cell.begin(); 
+    vectormap::iterator fcell = facet_cell.begin();
     while(fcell != facet_cell.end())
     {
       vectormap::iterator join_cell = othermap.find(fcell->first);
@@ -465,7 +467,6 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
       else
         ++fcell;
     }
-    
   }
 
   // remaining facets are exterior boundary - could be useful
@@ -538,7 +539,6 @@ void GraphBuilder::compute_connectivity_orig(const boost::multi_array<std::size_
             local_graph[*connected_cell1].insert(*connected_cell0 + offset);
           }
         }
-
       }
     }
   }
@@ -630,8 +630,10 @@ std::size_t GraphBuilder::compute_ghost_connectivity(const boost::multi_array<st
       }
     }
   }
+
   tt = time() - tt;
   info("Time to build ghost dual graph: : %g", tt);
+
   return ghost_cells.size() - num_ghost_vertices_0;
 }
 //-----------------------------------------------------------------------------

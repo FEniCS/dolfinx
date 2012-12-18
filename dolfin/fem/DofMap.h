@@ -364,6 +364,9 @@ namespace dolfin
     // Friends
     friend class DofMapBuilder;
 
+    // Build dofmap
+    void build_common(const Mesh& dolfin_mesh);
+
     // Recursively extract UFC sub-dofmap and compute offset
     static ufc::dofmap* extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
                                             std::size_t& offset,
@@ -374,13 +377,6 @@ namespace dolfin
     // Initialize the UFC dofmap
     static void init_ufc_dofmap(ufc::dofmap& dofmap, const ufc::mesh ufc_mesh,
                                 const Mesh& dolfin_mesh);
-
-    // Initialize UFC dofmap for restricted space
-    static void init_ufc_dofmap(ufc::dofmap& dofmap,
-                                const ufc::mesh ufc_mesh,
-                                const Mesh& dolfin_mesh,
-                                const MeshFunction<std::size_t>& domain_markers,
-                                std::size_t domain);
 
     // Check dimensional consistency between UFC dofmap and the mesh
     static void check_dimensional_consistency(const ufc::dofmap& dofmap,
