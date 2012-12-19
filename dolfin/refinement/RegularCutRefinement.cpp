@@ -19,7 +19,6 @@
 // Last changed: 2012-09-27
 
 #include <vector>
-#include <boost/assign.hpp>
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/constants.h>
@@ -290,14 +289,16 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
 
   // Iterate over all cells and add new cells
   std::size_t current_cell = 0;
+  std::vector<std::vector<std::size_t> > cells(4, std::vector<std::size_t>(3));
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get marker
     const int marker = refinement_markers[cell->index()];
 
-    // No refinement: just copy cell to new mesh
     if (marker == no_refinement)
     {
+      // No refinement: just copy cell to new mesh
+
       std::vector<std::size_t> vertices;
       for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
         vertices.push_back(vertex->index());
@@ -321,10 +322,10 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
         }
       }
     }
-
-    // Regular refinement: divide into subsimplicies
     else if (marker == regular_refinement)
     {
+      // Regular refinement: divide into subsimplicies
+
       dolfin_assert(unrefined_cells[cell->index()] == -1);
 
       // Get vertices and edges
@@ -345,11 +346,10 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       const std::size_t e2 = offset + marked_edges.find(e[2]);
 
       // Create four new cells
-      std::vector<std::vector<std::size_t> > cells;
-      cells.push_back(boost::assign::list_of(v0)(e2)(e1));
-      cells.push_back(boost::assign::list_of(v1)(e0)(e2));
-      cells.push_back(boost::assign::list_of(v2)(e1)(e0));
-      cells.push_back(boost::assign::list_of(e0)(e1)(e2));
+      cells[0][0] = v0; cells[0][1] = e2; cells[0][2] = e1;
+      cells[1][0] = v1; cells[1][1] = e0; cells[1][2] = e2;
+      cells[2][0] = v2; cells[2][1] = e1; cells[2][2] = e0;
+      cells[3][0] = e0; cells[3][1] = e1; cells[3][2] = e2;
 
       // Add cells
       std::vector<std::vector<std::size_t> >::const_iterator _cell;
@@ -457,10 +457,10 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
         refined_bisection_twins[current_cell - 1] = current_cell - 2;
       }
     }
-
-    // One edge marked for refinement: do bisection
     else
     {
+      // One edge marked for refinement: do bisection
+
       dolfin_assert(unrefined_cells[cell->index()] == -1);
 
       // Get vertices and edges
