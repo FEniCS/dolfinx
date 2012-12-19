@@ -226,8 +226,7 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   std::size_t num_cells = 0;
 
   // Data structure to hold a cell
-  std::vector<std::size_t> cell_data;
-
+  std::vector<std::size_t> cell_data(3);
 
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
@@ -356,10 +355,11 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
         editor.add_cell(current_cell++, *_cell);
     }
-
-    // Special case: backtrack bisected cells
     else if (marker == backtrack_bisection || marker == backtrack_bisection_refine)
     {
+
+      // Special case: backtrack bisected cells
+
       dolfin_assert(unrefined_cells[cell->index()] == -1);
 
       // Get index for bisection twin
@@ -414,23 +414,26 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
         E1 = offset + marked_edges.find(edges_1[bisection_edges.second]);
 
       // Add middle two cells (always)
-      cell_data = boost::assign::list_of(e0)(e1)(e2);
+      dolfin_assert(cell_data.size() == 3);
+      cell_data[0] = e0; cell_data[1] = e1; cell_data[2] = e2;
       editor.add_cell(current_cell++, cell_data);
-      cell_data = boost::assign::list_of(v2)(e1)(e0);
+
+      cell_data[0] = v2; cell_data[1] = e1; cell_data[2] = e0;
       editor.add_cell(current_cell++, cell_data);
 
       // Add one or two remaining cells in current cell (left)
       if (marker == backtrack_bisection)
       {
-        cell_data = boost::assign::list_of(v0)(e2)(e1);
+        cell_data[0] = v0; cell_data[1] = e2; cell_data[2] = e1;
         editor.add_cell(current_cell++, cell_data);
       }
       else
       {
         // Add the two cells
-        cell_data = boost::assign::list_of(v0)(E0)(e1);
+        cell_data[0] = v0; cell_data[1] = E0; cell_data[2] = e1;
         editor.add_cell(current_cell++, cell_data);
-        cell_data = boost::assign::list_of(E0)(e2)(e1);
+
+        cell_data[0] = E0; cell_data[1] = e2; cell_data[2] = e1;
         editor.add_cell(current_cell++, cell_data);
 
         // Set bisection twins
@@ -441,15 +444,16 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       // Add one or two remaining cells in twin cell (right)
       if (twin_marker == backtrack_bisection)
       {
-        cell_data = boost::assign::list_of(v1)(e0)(e2);
+        cell_data[0] = v1; cell_data[1] = e0; cell_data[2] = e2;
         editor.add_cell(current_cell++, cell_data);
       }
       else
       {
         // Add the two cells
-        cell_data = boost::assign::list_of(v1)(e0)(E1);
+        cell_data[0] = v1; cell_data[1] = e0; cell_data[2] = E1;
         editor.add_cell(current_cell++, cell_data);
-        cell_data = boost::assign::list_of(e0)(e2)(E1);
+
+        cell_data[0] = e0; cell_data[1] = e2; cell_data[2] = E1;
         editor.add_cell(current_cell++, cell_data);
 
         // Set bisection twins
@@ -478,26 +482,26 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       // Add the two new cells
       if (local_edge_index == 0)
       {
-        cell_data = boost::assign::list_of(v[0])(ee)(v[1]);
+        cell_data[0] = v[0]; cell_data[1] = ee; cell_data[2] = v[1];
         editor.add_cell(current_cell++, cell_data);
 
-        cell_data = boost::assign::list_of(v[0])(ee)(v[2]);
+        cell_data[0] = v[0]; cell_data[1] = ee; cell_data[2] = v[2];
         editor.add_cell(current_cell++, cell_data);
       }
       else if (local_edge_index == 1)
       {
-        cell_data = boost::assign::list_of(v[1])(ee)(v[0]);
+        cell_data[0] = v[1]; cell_data[1] = ee; cell_data[2] = v[0];
         editor.add_cell(current_cell++, cell_data);
 
-        cell_data = boost::assign::list_of(v[1])(ee)(v[2]);
+        cell_data[0] = v[1]; cell_data[1] = ee; cell_data[2] = v[2];
         editor.add_cell(current_cell++, cell_data);
       }
       else
       {
-        cell_data = boost::assign::list_of(v[2])(ee)(v[0]);
+        cell_data[0] = v[2]; cell_data[1] = ee; cell_data[2] = v[0];
         editor.add_cell(current_cell++, cell_data);
 
-        cell_data = boost::assign::list_of(v[2])(ee)(v[1]);
+        cell_data[0] = v[2]; cell_data[1] = ee; cell_data[2] = v[1];
         editor.add_cell(current_cell++, cell_data);
       }
 
