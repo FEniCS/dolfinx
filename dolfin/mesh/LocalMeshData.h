@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2008-11-28
-// Last changed: 2012-11-23
+// Last changed: 2012-12-19
 //
 // Modified by Anders Logg, 2008-2009.
 // Modified by Kent-Andre Mardal, 2011.
@@ -133,6 +133,7 @@ namespace dolfin
     friend class GraphBuilder;
     friend class ParMETIS;
     friend class SCOTCH;
+    friend class ParallelRefinement2D;
 
   };
 
