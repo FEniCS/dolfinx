@@ -148,7 +148,7 @@ def rotate_2d_mesh(theta):
     boundarymesh = BoundaryMesh(cubemesh)
     mesh = SubMesh(boundarymesh, BottomEdge())
     
-    rotation = Rotation(0.0, theta)
+    rotation = Rotation(theta, theta)
     rotation.rotate(mesh)
 
     return mesh
@@ -178,7 +178,7 @@ class ManifoldBasisEvaluation(unittest.TestCase):
         self.basemesh = rotate_2d_mesh(0.0)
         self.rotmesh  = rotate_2d_mesh(numpy.pi/4)
 
-        self.rotation = Rotation(0.0, numpy.pi/4) 
+        self.rotation = Rotation(numpy.pi/4, numpy.pi/4) 
         
         for i in range(4):
             self.basis_test("CG", i+1)
@@ -215,10 +215,11 @@ class ManifoldBasisEvaluation(unittest.TestCase):
                         values_cmp = self.rotation.rotate_point(values_base) 
                     else:
                         values_cmp = values_base
-
+                    
                     f_rot.element().evaluate_basis(i, values_rot, 
                                                    self.rotation.rotate_point(point), 
                                                    cell_rot)
+
                     self.assertAlmostEqual(abs(values_cmp-values_rot).max(),0.0, 10)
         
 
