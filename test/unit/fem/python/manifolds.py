@@ -25,6 +25,7 @@ embedded in higher dimensional spaces."""
 
 import unittest
 from dolfin import *
+from itertools import izip
 
 import numpy
 # Subdomain to extract bottom boundary.
@@ -140,6 +141,18 @@ def poisson_manifold():
 
     return u
 
+def rotate_2d_mesh(theta):
+    """Unit square mesh in 2D rotated through theta about the x and z axes."""
+
+    cubemesh = UnitCubeMesh(1,1,1)        
+    boundarymesh = BoundaryMesh(cubemesh)
+    mesh = SubMesh(boundarymesh, BottomEdge())
+    
+    rotation = Rotation(0.0, theta)
+    rotation.rotate(mesh)
+
+    return mesh
+
 class ManifoldSolving(unittest.TestCase):
 
     def test_poisson2D_in_3D(self):
@@ -156,6 +169,58 @@ class ManifoldSolving(unittest.TestCase):
                                u_manifold.vector().max(), 10)
         self.assertAlmostEqual(u_2D.vector().min(),
                                u_manifold.vector().min(), 10)
+
+class ManifoldBasisEvaluation(unittest.TestCase):
+
+    def test_basis_evaluation_2D_in_3D(self):
+        """This test checks that basis functions and their 
+        derivatives are unaffected by rotations."""
+        self.basemesh = rotate_2d_mesh(0.0)
+        self.rotmesh  = rotate_2d_mesh(numpy.pi/4)
+
+        self.rotation = Rotation(0.0, numpy.pi/4) 
+        
+        for i in range(4):
+            self.basis_test("CG", i+1)
+        for i in range(5):
+            self.basis_test("DG", i)
+        for i in range(4):
+            self.basis_test("RT", i+1, piola=True)
+        for i in range(4):
+            self.basis_test("BDM", i+1, piola=True)
+        for i in range(4):
+            self.basis_test("N1curl", i+1, piola=True)
+        self.basis_test("BDFM", 2, piola=True)            
+
+    def basis_test(self, family, degree, piola=False):
+
+        f_base = FunctionSpace(self.basemesh, family, degree)
+        f_rot = FunctionSpace(self.rotmesh, family, degree)
+
+        points = numpy.array([[1.0, 1.0, 0.0],
+                              [0.5, 0.5, 0.0],
+                              [0.3, 0.7, 0.0],
+                              [0.4, 0.0, 0.0]]) 
+  
+        for cell_base, cell_rot in izip(cells(self.basemesh), cells(self.rotmesh)):
+
+            values_base = numpy.zeros(f_base.element().value_dimension(0))
+            values_rot = numpy.zeros(f_rot.element().value_dimension(0))
+
+            for i in range(f_base.element().space_dimension()):
+                for point in points:
+                    f_base.element().evaluate_basis(i, values_base, 
+                                                    point, cell_base)
+                    if piola:
+                        values_cmp = self.rotation.rotate_point(values_base) 
+                    else:
+                        values_cmp = values_base
+
+                    f_rot.element().evaluate_basis(i, values_rot, 
+                                                   self.rotation.rotate_point(point), 
+                                                   cell_rot)
+                    self.assertAlmostEqual(abs(values_cmp-values_rot).max(),0.0, 10)
+        
 
 if __name__ == "__main__":
     print ""
