@@ -25,8 +25,6 @@
 #ifndef __DOLFIN_TYPES_H
 #define __DOLFIN_TYPES_H
 
-//#include <complex>
-
 #ifdef HAS_PETSC
 #include <petscsys.h>
 #endif
@@ -36,16 +34,10 @@ namespace dolfin
 
   /// Index type for compatibility with linear algebra backend(s)
   #ifdef HAS_PETSC
-  typedef PetscInt DolfinIndex;
+  typedef PetscInt la_index;
   #else
-  typedef int DolfinIndex;
+  typedef int la_index;
   #endif
-
-  /// Unsigned integers
-  //typedef unsigned int uint;
-
-  /// Complex numbers
-  //typedef std::complex<double> complex;
 
 }
 

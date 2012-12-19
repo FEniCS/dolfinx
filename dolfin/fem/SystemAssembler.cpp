@@ -205,7 +205,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
     dolfin_assert(x0->size() == a.function_space(1)->dofmap()->global_dimension());
 
     const std::size_t num_bc_dofs = boundary_values.size();
-    std::vector<DolfinIndex> bc_indices;
+    std::vector<dolfin::la_index> bc_indices;
     std::vector<double> bc_values;
     bc_indices.reserve(num_bc_dofs);
     bc_values.reserve(num_bc_dofs);
@@ -299,8 +299,8 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     L_dofmaps.push_back(L.function_space(i)->dofmap().get());
 
   // Vector to hold dof map for a cell
-  std::vector<const std::vector<DolfinIndex>* > a_dofs(a_rank);
-  std::vector<const std::vector<DolfinIndex>* > L_dofs(L_rank);
+  std::vector<const std::vector<dolfin::la_index>* > a_dofs(a_rank);
+  std::vector<const std::vector<dolfin::la_index>* > L_dofs(L_rank);
 
   // Create pointers to hold integral objects
   const ufc::cell_integral* A_cell_integral(0);
@@ -489,7 +489,7 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
     L_dofmaps.push_back(L.function_space(i)->dofmap().get());
 
   // Vector to hold dof map for a cell
-  std::vector<const std::vector<DolfinIndex>* > a_dofs(a_rank), L_dofs(L_rank);
+  std::vector<const std::vector<dolfin::la_index>* > a_dofs(a_rank), L_dofs(L_rank);
 
   // Iterate over facets
   Progress p("Assembling system (facet-wise)", mesh.num_facets());
@@ -574,7 +574,7 @@ void SystemAssembler::compute_tensor_on_one_interior_facet(const Form& a,
 //-----------------------------------------------------------------------------
 inline void SystemAssembler::apply_bc(double* A, double* b,
                      const DirichletBC::Map& boundary_values,
-                     const std::vector<const std::vector<DolfinIndex>* >& global_dofs)
+                     const std::vector<const std::vector<dolfin::la_index>* >& global_dofs)
 {
   // Wrap matrix and vector as Armadillo. Armadillo matrix storgae is
   // column-major, so all operations are transposed.
@@ -637,13 +637,13 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
   const std::size_t cell1_index = cell1.index();
 
   // Tabulate dofs
-  const std::vector<DolfinIndex>& a0_dofs0 = a.function_space(0)->dofmap()->cell_dofs(cell0_index);
-  const std::vector<DolfinIndex>& a1_dofs0 = a.function_space(1)->dofmap()->cell_dofs(cell0_index);
-  const std::vector<DolfinIndex>& L_dofs0  = L.function_space(0)->dofmap()->cell_dofs(cell0_index);
+  const std::vector<dolfin::la_index>& a0_dofs0 = a.function_space(0)->dofmap()->cell_dofs(cell0_index);
+  const std::vector<dolfin::la_index>& a1_dofs0 = a.function_space(1)->dofmap()->cell_dofs(cell0_index);
+  const std::vector<dolfin::la_index>& L_dofs0  = L.function_space(0)->dofmap()->cell_dofs(cell0_index);
 
-  const std::vector<DolfinIndex>& a0_dofs1 = a.function_space(0)->dofmap()->cell_dofs(cell1_index);
-  const std::vector<DolfinIndex>& a1_dofs1 = a.function_space(1)->dofmap()->cell_dofs(cell1_index);
-  const std::vector<DolfinIndex>& L_dofs1  = L.function_space(0)->dofmap()->cell_dofs(cell1_index);
+  const std::vector<dolfin::la_index>& a0_dofs1 = a.function_space(0)->dofmap()->cell_dofs(cell1_index);
+  const std::vector<dolfin::la_index>& a1_dofs1 = a.function_space(1)->dofmap()->cell_dofs(cell1_index);
+  const std::vector<dolfin::la_index>& L_dofs1  = L.function_space(0)->dofmap()->cell_dofs(cell1_index);
 
   // Cell integrals
   const ufc::cell_integral* A_cell_integral = A_ufc.cell_integrals[0].get();
@@ -710,8 +710,8 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
   }
 
   // Vector to hold dofs for cells
-  std::vector<std::vector<DolfinIndex> > a_macro_dofs(2);
-  std::vector<std::vector<DolfinIndex> > L_macro_dofs(1);
+  std::vector<std::vector<dolfin::la_index> > a_macro_dofs(2);
+  std::vector<std::vector<dolfin::la_index> > L_macro_dofs(1);
 
   // Resize dof vector
   a_macro_dofs[0].resize(a0_dofs0.size() + a0_dofs1.size());
@@ -732,7 +732,7 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
             L_macro_dofs[0].begin() + L_dofs0.size());
 
   // Modify local matrix/element for Dirichlet boundary conditions
-  std::vector<const std::vector<DolfinIndex>* > _a_macro_dofs(2);
+  std::vector<const std::vector<dolfin::la_index>* > _a_macro_dofs(2);
   _a_macro_dofs[0] = &a_macro_dofs[0];
   _a_macro_dofs[1] = &a_macro_dofs[1];
 
@@ -797,8 +797,8 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
 
   // Tabulate dofs
   const std::size_t cell_index = cell.index();
-  std::vector<const std::vector<DolfinIndex>* > a_dofs(2);
-  std::vector<const std::vector<DolfinIndex>* > L_dofs(1);
+  std::vector<const std::vector<dolfin::la_index>* > a_dofs(2);
+  std::vector<const std::vector<dolfin::la_index>* > L_dofs(1);
   a_dofs[0] = &(a.function_space(0)->dofmap()->cell_dofs(cell_index));
   a_dofs[1] = &(a.function_space(1)->dofmap()->cell_dofs(cell_index));
   L_dofs[0] = &(L.function_space(0)->dofmap()->cell_dofs(cell_index));

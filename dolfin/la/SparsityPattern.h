@@ -60,11 +60,11 @@ namespace dolfin
               const std::vector<const boost::unordered_map<std::size_t, std::size_t>* > off_process_owner);
 
     /// Insert non-zero entries
-    void insert(const std::vector<const std::vector<DolfinIndex>* >& entries);
+    void insert(const std::vector<const std::vector<dolfin::la_index>* >& entries);
 
     /// Add edges (vertex = [index, owning process])
-    void add_edges(const std::pair<DolfinIndex, std::size_t>& vertex,
-                   const std::vector<DolfinIndex>& edges);
+    void add_edges(const std::pair<dolfin::la_index, std::size_t>& vertex,
+                   const std::vector<dolfin::la_index>& edges);
 
     /// Return rank
     std::size_t rank() const;
@@ -89,7 +89,7 @@ namespace dolfin
     void num_local_nonzeros(std::vector<std::size_t>& num_nonzeros) const;
 
     /// Fill vector with edges for given vertex
-    void get_edges(std::size_t vertex, std::vector<DolfinIndex>& edges) const;
+    void get_edges(std::size_t vertex, std::vector<dolfin::la_index>& edges) const;
 
     /// Finalize sparsity pattern
     void apply();

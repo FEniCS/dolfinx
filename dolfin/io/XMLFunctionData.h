@@ -46,10 +46,10 @@ namespace dolfin
 
   private:
 
-    static void build_global_to_cell_dof(std::vector<std::vector<std::pair<DolfinIndex, DolfinIndex> > >& global_dof_to_cell_dof,
+    static void build_global_to_cell_dof(std::vector<std::vector<std::pair<dolfin::la_index, dolfin::la_index> > >& global_dof_to_cell_dof,
                                          const FunctionSpace& V);
 
-    static void build_dof_map(std::vector<std::vector<DolfinIndex> >& global_dof_to_cell_dof,
+    static void build_dof_map(std::vector<std::vector<dolfin::la_index> >& global_dof_to_cell_dof,
                          const FunctionSpace& V);
 
   };

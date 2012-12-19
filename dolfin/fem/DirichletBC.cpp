@@ -267,7 +267,7 @@ void DirichletBC::zero(GenericMatrix& A) const
   compute_bc(boundary_values, data, _method);
 
   // Copy boundary value data to arrays
-  std::vector<DolfinIndex> dofs(boundary_values.size());
+  std::vector<dolfin::la_index> dofs(boundary_values.size());
   Map::const_iterator bv;
   std::size_t i = 0;
   for (bv = boundary_values.begin(); bv != boundary_values.end(); ++bv)
@@ -307,7 +307,7 @@ void DirichletBC::zero_columns(GenericMatrix& A,
   std::vector<std::size_t> cols;
   std::vector<double> vals;
   std::vector<double> b_vals;
-  std::vector<DolfinIndex> b_rows;
+  std::vector<dolfin::la_index> b_rows;
 
   for (std::size_t row = rows.first; row < rows.second; row++)
   {
@@ -500,7 +500,7 @@ void DirichletBC::apply(GenericMatrix* A,
 
   // Copy boundary value data to arrays
   const std::size_t size = boundary_values.size();
-  std::vector<DolfinIndex> dofs(size);
+  std::vector<dolfin::la_index> dofs(size);
   std::vector<double> values(size);
   Map::const_iterator bv;
   std::size_t i = 0;
@@ -803,7 +803,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     g->restrict(&data.w[0], *_function_space->element(), cell, ufc_cell);
 
     // Tabulate dofs on cell
-    const std::vector<DolfinIndex>& cell_dofs = dofmap.cell_dofs(cell.index());
+    const std::vector<dolfin::la_index>& cell_dofs = dofmap.cell_dofs(cell.index());
 
     // Tabulate which dofs are on the facet
     dofmap.tabulate_facet_dofs(&data.facet_dofs[0], facet_number);
@@ -878,7 +878,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
         bool interpolated = false;
 
         // Tabulate dofs on cell
-        const std::vector<DolfinIndex>& cell_dofs = dofmap.cell_dofs(c->index());
+        const std::vector<dolfin::la_index>& cell_dofs = dofmap.cell_dofs(c->index());
 
         // Loop over all dofs on cell
         for (std::size_t i = 0; i < cell_dofs.size(); ++i)
@@ -956,7 +956,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
     dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
 
     // Tabulate dofs on cell
-    const std::vector<DolfinIndex>& cell_dofs = dofmap.cell_dofs(cell->index());
+    const std::vector<dolfin::la_index>& cell_dofs = dofmap.cell_dofs(cell->index());
 
     // Interpolate function only once and only on cells where necessary
     bool already_interpolated = false;

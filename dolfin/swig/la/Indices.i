@@ -42,24 +42,24 @@ public:
   }
 
   // Returns an array of indices
-  dolfin::DolfinIndex* indices()
+  dolfin::la_index* indices()
   {
     // Construct the array if not excisting
     if (!_indices)
     {
-      _indices = new dolfin::DolfinIndex[size()];
+      _indices = new dolfin::la_index[size()];
       for (std::size_t i = 0; i < size(); i++)
         _indices[i] = index(i);
     }
     return _indices;
   }
 
-  dolfin::DolfinIndex* range()
+  dolfin::la_index* range()
   {
     // Construct the array if not excisting
     if (!_range)
     {
-      _range = new dolfin::DolfinIndex[size()];
+      _range = new dolfin::la_index[size()];
       for (std::size_t i = 0; i < size(); i++)
         _range[i] = i;
     }
@@ -91,8 +91,8 @@ public:
 protected:
 
   std::size_t _index_size;
-  dolfin::DolfinIndex* _indices;
-  dolfin::DolfinIndex* _range;
+  dolfin::la_index* _indices;
+  dolfin::la_index* _range;
 
 };
 
@@ -280,7 +280,7 @@ public:
     Py_DECREF(sum_res);
 
     // Construct the array and fill it with indices
-    _indices = new dolfin::DolfinIndex[_index_size];
+    _indices = new dolfin::la_index[_index_size];
 
     nz_ind = 0;
     for (i = 0; i < vector_size; i++)

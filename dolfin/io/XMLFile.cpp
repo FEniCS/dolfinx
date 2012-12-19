@@ -153,7 +153,7 @@ void XMLFile::operator>> (GenericVector& input)
   input.apply("insert");
 }
 //-----------------------------------------------------------------------------
-void XMLFile::read_vector(std::vector<double>& input, std::vector<DolfinIndex>& indices)
+void XMLFile::read_vector(std::vector<double>& input, std::vector<dolfin::la_index>& indices)
 {
   // Create XML doc and get DOLFIN node
   pugi::xml_document xml_doc;

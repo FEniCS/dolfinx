@@ -154,8 +154,8 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
   if (!parent_dofmap.ufc_map_to_dofmap.empty())
   {
     boost::unordered_map<std::size_t, std::size_t>::const_iterator ufc_to_current_dof;
-    std::vector<std::vector<DolfinIndex> >::iterator cell_map;
-    std::vector<DolfinIndex>::iterator dof;
+    std::vector<std::vector<dolfin::la_index> >::iterator cell_map;
+    std::vector<dolfin::la_index>::iterator dof;
     for (cell_map = _dofmap.begin(); cell_map != _dofmap.end(); ++cell_map)
     {
       for (dof = cell_map->begin(); dof != cell_map->end(); ++dof)
@@ -230,8 +230,8 @@ DofMap::DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
   collapsed_map.clear();
   for (std::size_t i = 0; i < mesh.num_cells(); ++i)
   {
-    const std::vector<DolfinIndex>& view_cell_dofs = dofmap_view._dofmap[i];
-    const std::vector<DolfinIndex>& cell_dofs = _dofmap[i];
+    const std::vector<dolfin::la_index>& view_cell_dofs = dofmap_view._dofmap[i];
+    const std::vector<dolfin::la_index>& cell_dofs = _dofmap[i];
     dolfin_assert(view_cell_dofs.size() == cell_dofs.size());
 
     for (std::size_t j = 0; j < view_cell_dofs.size(); ++j)
@@ -390,7 +390,7 @@ DofMap* DofMap::collapse(boost::unordered_map<std::size_t, std::size_t>& collaps
 //-----------------------------------------------------------------------------
 void DofMap::set(GenericVector& x, double value) const
 {
-  std::vector<std::vector<DolfinIndex> >::const_iterator cell_dofs;
+  std::vector<std::vector<dolfin::la_index> >::const_iterator cell_dofs;
   for (cell_dofs = _dofmap.begin(); cell_dofs != _dofmap.end(); ++cell_dofs)
   {
     std::vector<double> _value(cell_dofs->size(), value);
@@ -407,7 +407,7 @@ void DofMap::set_x(GenericVector& x, double value, std::size_t component,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get local-to-global map
-    const std::vector<DolfinIndex>& dofs = cell_dofs(cell->index());
+    const std::vector<dolfin::la_index>& dofs = cell_dofs(cell->index());
 
     // Tabulate dof coordinates
     tabulate_coordinates(coordinates, *cell);
@@ -564,7 +564,7 @@ boost::unordered_set<std::size_t> DofMap::dofs() const
 {
   // Build set of dofs
   boost::unordered_set<std::size_t> dof_list;
-  std::vector<std::vector<DolfinIndex> >::const_iterator cell_dofs;
+  std::vector<std::vector<dolfin::la_index> >::const_iterator cell_dofs;
   for (cell_dofs = _dofmap.begin(); cell_dofs != _dofmap.end(); ++cell_dofs)
     dof_list.insert(cell_dofs->begin(), cell_dofs->end());
 

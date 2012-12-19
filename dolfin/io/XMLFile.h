@@ -71,7 +71,7 @@ namespace dolfin
 
     // Vector
     void operator>> (GenericVector& input);
-    void read_vector(std::vector<double>& input, std::vector<DolfinIndex>& indices);
+    void read_vector(std::vector<double>& input, std::vector<dolfin::la_index>& indices);
     void operator<< (const GenericVector& output);
 
     // Parameters

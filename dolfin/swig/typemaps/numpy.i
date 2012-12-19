@@ -249,11 +249,11 @@ SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input,
 //-----------------------------------------------------------------------------
 UNSAFE_NUMPY_TYPEMAPS(std::size_t, INT32, NPY_UINTP, size_t, uintp)
 UNSAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,float_)
-UNSAFE_NUMPY_TYPEMAPS(dolfin::DolfinIndex,INT32,NPY_UINT,dolfin_index,intc)
+UNSAFE_NUMPY_TYPEMAPS(dolfin::la_index,INT32,NPY_UINT,dolfin_index,intc)
 //UNSAFE_NUMPY_TYPEMAPS(int,INT,NPY_INT,int,cint)
 
 SAFE_NUMPY_TYPEMAPS(std::size_t,INT32,NPY_UINTP,size_t,uintp)
-SAFE_NUMPY_TYPEMAPS(dolfin::DolfinIndex,INT32,NPY_INT,dolfin_index,intc)
+SAFE_NUMPY_TYPEMAPS(dolfin::la_index,INT32,NPY_INT,dolfin_index,intc)
 SAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,float_)
 SAFE_NUMPY_TYPEMAPS(int,INT32,NPY_INT,int,cint)
 
@@ -266,7 +266,7 @@ NUMPY_ARRAY_FRAGMENTS(double, NPY_DOUBLE, double)
 NUMPY_ARRAY_FRAGMENTS(int, NPY_INT, int)
 NUMPY_ARRAY_FRAGMENTS(bool, NPY_BOOL, bool)
 NUMPY_ARRAY_FRAGMENTS(std::size_t, NPY_UINTP, size_t)
-NUMPY_ARRAY_FRAGMENTS(dolfin::DolfinIndex, NPY_INT, dolfin_index)
+NUMPY_ARRAY_FRAGMENTS(dolfin::la_index, NPY_INT, dolfin_index)
 
 //-----------------------------------------------------------------------------
 // Typecheck for function expecting two-dimensional NumPy arrays of double
