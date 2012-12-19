@@ -23,7 +23,6 @@
 
 #include <ostream>
 #include <vector>
-#include <dolfin/common/types.h>
 
 namespace pugi
 {

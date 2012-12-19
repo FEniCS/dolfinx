@@ -33,7 +33,6 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/intersection/IntersectionOperator.h>

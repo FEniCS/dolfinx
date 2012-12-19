@@ -26,12 +26,12 @@
 // Last changed: 2012-10-24
 
 #include <dolfin/ale/ALE.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
+#include <dolfin/generation/CSGMeshGenerator.h>
 #include <dolfin/io/File.h>
 #include <dolfin/log/log.h>
-#include <dolfin/common/MPI.h>
-#include <dolfin/generation/CSGMeshGenerator.h>
 #include "BoundaryMesh.h"
 #include "Cell.h"
 #include "LocalMeshData.h"

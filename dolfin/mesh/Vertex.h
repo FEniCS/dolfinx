@@ -21,7 +21,6 @@
 #ifndef __VERTEX_H
 #define __VERTEX_H
 
-#include "dolfin/common/types.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"

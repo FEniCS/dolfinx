@@ -24,7 +24,7 @@
 #ifndef __CSG_GEOMETRY_H
 #define __CSG_GEOMETRY_H
 
-#include <dolfin/common/types.h>
+#include <cstddef>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin

@@ -21,7 +21,7 @@
 // First added:  2007-12-12
 // Last changed: 2010-01-19
 
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "Cell.h"
 #include "Facet.h"
 #include "MeshEditor.h"

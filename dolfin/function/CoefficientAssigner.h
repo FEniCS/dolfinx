@@ -21,7 +21,7 @@
 #ifndef __COEFFICIENT_ASSIGNER_H
 #define __COEFFICIENT_ASSIGNER_H
 
-#include <dolfin/common/types.h>
+#include <cstddef>
 
 namespace dolfin
 {

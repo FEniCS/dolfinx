@@ -21,8 +21,7 @@
 #include <vector>
 #include <boost/assign.hpp>
 
-#include <dolfin/log/dolfin_log.h>
-#include <dolfin/common/types.h>
+#include <dolfin/log/log.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/IndexSet.h>
 #include <dolfin/mesh/Mesh.h>
@@ -44,15 +43,19 @@ void RegularCutRefinement::refine(Mesh& refined_mesh,
 
   // Currently only implemented in 2D
   if (mesh.topology().dim() != 2)
+  {
     dolfin_error("RegularCutRefinement.cpp",
                  "refine mesh",
                  "Mesh is not two-dimensional: regular-cut mesh refinement is currently only implemented in 2D");
+  }
 
   // Check that mesh is ordered
   if (!mesh.ordered())
+  {
     dolfin_error("RegularCutRefinement.cpp",
                  "refine mesh",
                  "Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order()");
+  }
 
   // Initialize edges
   mesh.init(1);
@@ -372,9 +375,12 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       const int twin_marker = refinement_markers[bisection_twin];
 
       // Find common edge(s) and bisected edge(s)
-      const std::pair<std::size_t, std::size_t> common_edges = find_common_edges(*cell, mesh, bisection_twin);
-      const std::pair<std::size_t, std::size_t> bisection_edges = find_bisection_edges(*cell, mesh, bisection_twin);
-      const std::pair<std::size_t, std::size_t> bisection_vertices = find_bisection_vertices(*cell, mesh, bisection_twin, bisection_edges);
+      const std::pair<std::size_t, std::size_t> common_edges
+        = find_common_edges(*cell, mesh, bisection_twin);
+      const std::pair<std::size_t, std::size_t> bisection_edges
+        = find_bisection_edges(*cell, mesh, bisection_twin);
+      const std::pair<std::size_t, std::size_t> bisection_vertices
+        = find_bisection_vertices(*cell, mesh, bisection_twin, bisection_edges);
 
       // Get list of vertices and edges for both cells
       const Cell twin(mesh, bisection_twin);

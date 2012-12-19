@@ -24,7 +24,6 @@
 #define __LOG_H
 
 #include <string>
-#include <dolfin/common/types.h>
 #include "LogLevel.h"
 
 namespace dolfin

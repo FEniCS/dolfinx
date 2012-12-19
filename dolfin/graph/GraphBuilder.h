@@ -24,7 +24,6 @@
 #include <set>
 #include <vector>
 #include <boost/multi_array.hpp>
-#include <dolfin/common/types.h>
 #include "Graph.h"
 
 namespace dolfin

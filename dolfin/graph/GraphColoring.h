@@ -22,8 +22,8 @@
 #define __GRAPH_COLORING_H
 
 
+#include <cstddef>
 #include <vector>
-#include <dolfin/common/types.h>
 #include "Graph.h"
 
 namespace dolfin

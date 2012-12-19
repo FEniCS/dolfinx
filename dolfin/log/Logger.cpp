@@ -39,7 +39,6 @@
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/types.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "LogLevel.h"
 #include "Logger.h"

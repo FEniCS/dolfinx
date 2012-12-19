@@ -25,7 +25,6 @@
 
 #include <string>
 #include <vector>
-#include <dolfin/common/types.h>
 #include "CellType.h"
 
 namespace dolfin

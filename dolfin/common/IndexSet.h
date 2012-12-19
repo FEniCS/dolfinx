@@ -21,8 +21,8 @@
 #ifndef __INDEX_SET_H
 #define __INDEX_SET_H
 
+#include <cstddef>
 #include <vector>
-#include "types.h"
 
 namespace dolfin
 {
@@ -36,7 +36,8 @@ namespace dolfin
   public:
 
     /// Create index set of given size
-    IndexSet(std::size_t size) : _size(size), _has_index(size), _positions(size)
+    IndexSet(std::size_t size) : _size(size), _has_index(size),
+                                 _positions(size)
     {
       _indices.reserve(size);
       clear();

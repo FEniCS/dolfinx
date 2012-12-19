@@ -23,9 +23,9 @@
 #ifndef __LOG_STREAM_H
 #define __LOG_STREAM_H
 
+#include <complex>
 #include <string>
 #include <sstream>
-#include <dolfin/common/types.h>
 
 namespace dolfin
 {
@@ -73,8 +73,8 @@ namespace dolfin
     /// Output for double
     LogStream& operator<< (double a);
 
-    /// Output for complex
-    LogStream& operator<< (complex z);
+    /// Output for std::complex<double>
+    LogStream& operator<< (std::complex<double> z);
 
     /// Output for variable (calling str() method)
     LogStream& operator<< (const Variable& variable);

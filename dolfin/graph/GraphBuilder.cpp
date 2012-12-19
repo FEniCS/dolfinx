@@ -28,7 +28,6 @@
 #include <boost/unordered_map.hpp>
 
 #include <dolfin/log/log.h>
-#include <dolfin/common/types.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/GenericDofMap.h>

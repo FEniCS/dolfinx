@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
+#include <dolfin/common/types.h>
 #include "GenericFile.h"
 
 namespace pugi

@@ -22,7 +22,6 @@
 
 #include <boost/filesystem.hpp>
 
-#include <dolfin/common/types.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
 #include "HDF5File.h"
@@ -87,7 +86,7 @@ hid_t HDF5Interface::open_file(const std::string filename, const std::string mod
                    "open HDF5 file",
                    "Unknown file mode \"%s\"", mode.c_str());
     }
-    
+
   }
   dolfin_assert(file_id != HDF5_FAIL);
 

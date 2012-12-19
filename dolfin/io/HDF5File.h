@@ -29,7 +29,6 @@
 #include <utility>
 #include <vector>
 #include "dolfin/common/Timer.h"
-#include "dolfin/common/types.h"
 #include "dolfin/common/Variable.h"
 #include "dolfin/mesh/Mesh.h"
 #include "dolfin/mesh/MeshEditor.h"

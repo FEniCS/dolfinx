@@ -25,7 +25,7 @@
 #ifndef __DOLFIN_TYPES_H
 #define __DOLFIN_TYPES_H
 
-#include <complex>
+//#include <complex>
 
 #ifdef HAS_PETSC
 #include <petscsys.h>
@@ -45,7 +45,7 @@ namespace dolfin
   //typedef unsigned int uint;
 
   /// Complex numbers
-  typedef std::complex<double> complex;
+  //typedef std::complex<double> complex;
 
 }
 

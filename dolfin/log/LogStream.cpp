@@ -98,7 +98,7 @@ LogStream& LogStream::operator<< (double a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<< (complex z)
+LogStream& LogStream::operator<< (std::complex<double> z)
 {
   buffer << z.real() << " + " << z.imag() << "i";
   return *this;
