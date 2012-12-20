@@ -23,7 +23,7 @@
 #ifndef __UNIT_CUBE_MESH_H
 #define __UNIT_CUBE_MESH_H
 
-#include <string>
+#include <cstddef>
 #include "BoxMesh.h"
 
 namespace dolfin
@@ -54,7 +54,8 @@ namespace dolfin
     ///
     ///         UnitCubeMesh mesh(32, 32, 32);
     ///
-    UnitCubeMesh(std::size_t nx, std::size_t ny, std::size_t nz);
+    UnitCubeMesh(std::size_t nx, std::size_t ny, std::size_t nz)
+        : BoxMesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz) {}
 
   };
 
