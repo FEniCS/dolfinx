@@ -54,8 +54,11 @@ void dolfin::refine(Mesh& refined_mesh,
                     const Mesh& mesh,
                     const MeshFunction<bool>& cell_markers)
 {
-  // Call local mesh refinement algorithm
-  // LocalMeshRefinement::refine(refined_mesh, mesh, cell_markers);
-  ParallelRefinement2D::refine(refined_mesh, mesh, cell_markers);
+  // Call local mesh refinement algorithm or parallel, as appropriate
+  if (MPI::num_processes() == 1)
+    LocalMeshRefinement::refine(refined_mesh, mesh, cell_markers);
+  else
+    ParallelRefinement2D::refine(refined_mesh, mesh, cell_markers);
+
 }
 //-----------------------------------------------------------------------------

@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2012-12-19
-// Last Changed: 2012-12-19
+// Last Changed: 2012-12-20
 
 #include <vector>
 #include <map>
@@ -39,10 +39,14 @@
 using namespace dolfin;
 
 
-// This is needed to interface with LocalMeshData, which expects the vertices in global order
+// This is needed to interface with MeshPartitioning/LocalMeshData, 
+// which expects the vertices in global order 
+// This is inefficient, and needs to be addressed in MeshPartitioning.cpp
+// where they are redistributed again.
 
-void ParallelRefinement2D::reorder_vertices_by_global_indices(std::vector<double>& vertex_coords, const std::size_t gdim,
-                                        const std::vector<std::size_t>& global_indices)
+void ParallelRefinement2D::reorder_vertices_by_global_indices(std::vector<double>& vertex_coords,
+                                                              const std::size_t gdim,
+                                                              const std::vector<std::size_t>& global_indices)
 {
   Timer t("Parallel Refine: reorder vertices");
   // FIXME: be more efficient with MPI
@@ -118,10 +122,9 @@ void ParallelRefinement2D::update_logical_edgefunction(EdgeFunction<bool>& value
 {
   Timer t("update logical edgefunction");
   
-  //  const Mesh& mesh = values.mesh();
-  
   uint num_processes = MPI::num_processes();
-  
+
+  // Create a list of edges on this process that are 'true' and copy to remote sharing processes
   std::vector<uint>destinations(num_processes);
   std::vector<std::vector<std::size_t> > values_to_send(num_processes);
   std::vector<std::vector<std::size_t> > received_values;
@@ -132,11 +135,12 @@ void ParallelRefinement2D::update_logical_edgefunction(EdgeFunction<bool>& value
   for(boost::unordered_map<std::size_t, std::size_t>::const_iterator sh_edge = shared_edges.begin();
       sh_edge != shared_edges.end(); sh_edge++)
   {
-    std::size_t global_index = sh_edge->first;
-    std::size_t local_index = global_to_local.find(global_index)->second;
+    const std::size_t global_index = sh_edge->first;
+    //for const map, cannot use global_to_local[global_index]
+    const std::size_t local_index = global_to_local.find(global_index)->second; 
     if(values[local_index] == true)
     {
-      std::size_t proc = sh_edge->second;
+      const std::size_t proc = sh_edge->second;
       values_to_send[proc].push_back(global_index);
     }
   }
@@ -157,8 +161,7 @@ void ParallelRefinement2D::update_logical_edgefunction(EdgeFunction<bool>& value
 }
 
 //-----------------------------------------------------------------------------
-
-// work out which edge will be the reference edge for each cell
+// Work out which edge will be the reference edge for each cell
 
 void ParallelRefinement2D::generate_reference_edges(const Mesh& mesh, std::vector<std::size_t>& ref_edge)
 {
@@ -179,7 +182,8 @@ void ParallelRefinement2D::generate_reference_edges(const Mesh& mesh, std::vecto
       
     std::sort(lengths.begin(), lengths.end(), length_compare);
     
-    // for now - just pick longest edge
+    // for now - just pick longest edge - this is not the Carstensen algorithm, which tries
+    // to pair edges off. Because that is more difficult in parallel, it is not implemented yet.
     const std::size_t edge_index = lengths[0].second;
     ref_edge[cell_index] = edge_index;
   }
@@ -194,14 +198,13 @@ void ParallelRefinement2D::get_shared_edges(boost::unordered_map<std::size_t, st
   
   uint D = mesh.topology().dim();
 
-  // work out shared edges, and which processes they exist on
+  // Work out shared edges, and which processes they exist on
   // There are special cases where it is more difficult to determine
   // edge ownership, but these are rare in 2D. Raise an error if
   // it happens.
-
-  // copy shared vertices - add to them later on...
-  std::map<std::size_t, std::set<std::size_t> > 
-    shared_vertices(mesh.topology().shared_entities(0));
+  // Ultimately, this functionality will be provided inside MeshConnectivity or similar
+  
+  const std::map<std::size_t, std::set<std::size_t> >& shared_vertices = mesh.topology().shared_entities(0);
 
   for(EdgeIterator edge(mesh); !edge.end(); ++edge)
   {
@@ -211,7 +214,7 @@ void ParallelRefinement2D::get_shared_edges(boost::unordered_map<std::size_t, st
 
       // This is a shared edge - find sharing process
       // by taking the intersection of the sets of processes of 
-      // the two attached vertices
+      // the two attached vertices (in 2D)
       VertexIterator v(*edge);
       const std::set<std::size_t>& set1 
         = shared_vertices.find(v->global_index())->second;
@@ -222,8 +225,6 @@ void ParallelRefinement2D::get_shared_edges(boost::unordered_map<std::size_t, st
       std::vector<std::size_t> result(set1.size() + set2.size());
       uint nprocs = std::set_intersection(set1.begin(), set1.end(), set2.begin(), set2.end(), result.begin()) - result.begin();
 
-      //      std::cout << edge->index() << " - Found " << nprocs << " common processes..." << std::endl;
-
       if(nprocs == 1)
         shared_edges.insert(std::make_pair(edge->global_index(), result[0]));
       else
@@ -231,7 +232,7 @@ void ParallelRefinement2D::get_shared_edges(boost::unordered_map<std::size_t, st
     }
   }
   
-  std::cout << "n_shared_edges = " << shared_edges.size() << std::endl;
+  std::cout << "n(shared_edges) = " << shared_edges.size() << std::endl;
 
 }
 
@@ -244,7 +245,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   {
     dolfin_error("ParallelRefinement2D.cpp",
                  "refine mesh",
-                 "Only working in parallel");
+                 "Only works in parallel");
   }
 
   // Ensure connectivity is there
@@ -253,23 +254,22 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   {
     dolfin_error("ParallelRefinement2D.cpp",
                  "refine mesh",
-                 "Only working in 2D");
+                 "Only works in 2D");
   }
 
   uint D1 = D - 1;
-  //  MeshPartitioning::number_entities(mesh, D1);
   mesh.init(D1, D);
 
-  // Work out which edges are shared... this will be done in mesh topology soon.
   boost::unordered_map<std::size_t, std::size_t> shared_edges;   // global_index => process
-  boost::unordered_map<std::size_t, std::size_t> global_to_local;
+  boost::unordered_map<std::size_t, std::size_t> global_to_local; // self-explanatory map for shared edges
   get_shared_edges(shared_edges, global_to_local, mesh);
 
-  // Vector over all cells
+  // Vector over all cells - the reference edge is the cell's edge (0, 1 or 2) 
+  // which always must split, if any edge splits in the cell
   std::vector<std::size_t> ref_edge;
   generate_reference_edges(mesh, ref_edge);
   
-  // Output for diagnostics
+  // ***** Output for diagnostics
   EdgeFunction<bool> ref_edge_fn(mesh,false);
   CellFunction<std::size_t> ref_edge_fn2(mesh);
   for(CellIterator cell(mesh); !cell.end(); ++cell)
@@ -284,7 +284,9 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
 
   File refEdgeFile2("ref_edge2.xdmf");
   refEdgeFile2 << ref_edge_fn2;
-  
+  // *****
+
+
   // Set marked edges from marked cells
   EdgeFunction<bool> markedEdges(mesh,false);
   
@@ -333,6 +335,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   
   }
   
+  // Diagnostic output
   File markedEdgeFile("marked_edges.xdmf");
   markedEdgeFile << markedEdges;
 
@@ -350,79 +353,62 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   for(std::size_t process_j = 0; process_j < num_processes ; ++process_j)
     destinations[process_j] = process_j;
 
-  // mapping from global edge index to new global vertex index
+  // Mapping from global edge index to new global vertex index
   std::map<std::size_t, std::size_t> global_edge_to_new_vertex;
+
+  // Tally up unshared marked edges, and shared marked edges which are owned on this process.
+  // Index them sequentially from zero.
 
   std::size_t n=0;
   for(EdgeIterator edge(mesh); !edge.end(); ++edge)
   {
     if(markedEdges[*edge])
     {
-      uint share_count = shared_edges.count(edge->global_index());
-      // tally up unshared marked edges, and shared marked edges which are owned on this process
-      if(share_count == 0) //local new vertex
+      const std::size_t global_i = edge->global_index();
+
+      if(shared_edges.count(global_i) == 0) //local new vertex
       {
         midpoint_coordinates.push_back(edge->midpoint()[0]);
         midpoint_coordinates.push_back(edge->midpoint()[1]);
-        global_edge_to_new_vertex[edge->global_index()] = n++;
+        global_edge_to_new_vertex[global_i] = n++;
       }
-      else if(shared_edges.find(edge->global_index())->second > process_number)
+      else if(shared_edges.find(global_i)->second > process_number)
       { //local new vertex to be shared with another process
         midpoint_coordinates.push_back(edge->midpoint()[0]);
         midpoint_coordinates.push_back(edge->midpoint()[1]);
-        global_edge_to_new_vertex[edge->global_index()] = n;
-        uint remote_process = shared_edges[edge->global_index()];
-        values_to_send[remote_process].push_back(std::make_pair(edge->global_index(), n++));
+        global_edge_to_new_vertex[global_i] = n++;
       } 
-      else 
-      { //remote new vertex shared with this process
-        // need to get this with MPI
-      }
-      
+      // else new vertex is remotely owned
+       
     }
   }
 
   // Calculate global range for new local vertices
-  uint gdim = mesh.geometry().dim();
-  uint tdim = mesh.topology().dim();
-  std::size_t num_new_vertices = n;
-  std::size_t global_offset = MPI::global_offset(num_new_vertices, true) 
-    + mesh.size_global(0);
+  const uint gdim = mesh.geometry().dim();
+  const uint tdim = mesh.topology().dim();
+  const std::size_t num_new_vertices = n;
+  const std::size_t global_offset = MPI::global_offset(num_new_vertices, true) 
+                                  + mesh.size_global(0);
 
-  // extend list of global indices
-  std::vector<std::size_t> global_indices(mesh.topology().global_indices(0));
-  for(uint i=0; i < num_new_vertices; i++)
+  // Add offset to map, and collect up any shared new vertices that need to send the new index off-process
+  for(std::map<std::size_t, std::size_t>::iterator gl_edge = global_edge_to_new_vertex.begin();
+      gl_edge != global_edge_to_new_vertex.end(); ++gl_edge)
   {
-    global_indices.push_back(i+global_offset);
-  }
+    gl_edge->second += global_offset; // add global_offset to map, to get new global index of new vertices
 
-  // add offset to mapping too.
-  for(std::map<std::size_t, std::size_t>::iterator map_it = global_edge_to_new_vertex.begin(); 
-      map_it != global_edge_to_new_vertex.end(); ++map_it)
-  {
-    map_it->second += global_offset;
-  }
-  
-  // add midpoint vertices of local edges which are splitting  
-  std::vector<double> vertex_coordinates(mesh.coordinates());
-  vertex_coordinates.insert(vertex_coordinates.end(),
-                            midpoint_coordinates.begin(),
-                            midpoint_coordinates.end());
-
-
-  // add offset to all new vertices to be communicated remotely.
-  for(std::vector<std::vector<std::pair<std::size_t, std::size_t> > >::iterator p = values_to_send.begin();
-      p != values_to_send.end(); ++p)
-    for(std::vector<std::pair<std::size_t, std::size_t> >::iterator q = p->begin(); q != p->end(); ++q)
+    const std::size_t global_i = gl_edge->first;
+    if(shared_edges.count(global_i) != 0) //shared, but locally owned. 
     {
-      q->second += global_offset;
+      const uint remote_process = shared_edges[global_i];
+      values_to_send[remote_process].push_back(std::make_pair(global_i, gl_edge->second));
     }
+  }
 
-  // send new vertices to remote processes and receive
+  // send new vertex indices to remote processes and receive
   std::vector<std::vector<std::pair<std::size_t,std::size_t> > > received_values;
   MPI::distribute(values_to_send, destinations, received_values);
 
-  // add remote global indices to map - don't need anything else
+  // Flatten and add received remote global indices to map 
   for(std::vector<std::vector<std::pair<std::size_t, std::size_t> > >::iterator p = received_values.begin();
       p != received_values.end(); ++p)
     for(std::vector<std::pair<std::size_t, std::size_t> >::iterator q = p->begin(); q != p->end(); ++q)
@@ -434,85 +420,73 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
             << "Offset = " << global_offset
             << std::endl;
 
+  // Now add new vertex coordinates to existing, and index using new global indexing.
+  // Reorder so that MeshPartitioning.cpp can find them. After that, we are done with 
+  // coordinates, and just need to rebuild the topology.
+  
+  std::vector<double> vertex_coordinates(mesh.coordinates());
+  vertex_coordinates.insert(vertex_coordinates.end(),
+                            midpoint_coordinates.begin(),
+                            midpoint_coordinates.end());
 
-  // This is needed because of the way LocalMeshData works - spray the vertices around
+  std::vector<std::size_t> global_indices(mesh.topology().global_indices(0));
+  for(uint i=0; i < num_new_vertices; i++)
+  {
+    global_indices.push_back(i+global_offset);
+  }
   reorder_vertices_by_global_indices(vertex_coordinates, gdim, global_indices);
   
   std::cout << "vertices= " << vertex_coordinates.size() << std::endl;
 
-
   // Stage 4 - do refinement - keeping reference edges somehow?...
-
-  //  std::size_t ncells = mesh.num_cells();
-  //  uint vertices_per_cell = mesh.topology().dim() + 1;
-  //  boost::const_multi_array_ref<std::size_t, 2>
-  //    cell_topology(mesh.cells().data(), boost::extents[ncells][vertices_per_cell]);
 
   std::vector<std::size_t> new_cell_topology;
   std::vector<std::size_t> new_ref_edge;
 
+  // *******************
+  // N.B. although this works after a fashion, it is not right,
+  // and needs careful revision - particularly for assignment of the reference edges
+  // which are not carried forward, yet. 
+  // *******************
+
   for(CellIterator cell(mesh); !cell.end(); ++cell)
   {
     std::size_t cell_index = cell->index();
+    std::size_t ref = ref_edge[cell_index];
     std::vector<std::size_t>rgb_count;
+
     for(EdgeIterator edge(*cell); !edge.end(); ++edge)
     {
       if(markedEdges[*edge])
         rgb_count.push_back(edge->global_index());
     }
+
     if(rgb_count.size() == 0) //straight copy of cell - easy
     {
       for(VertexIterator v(*cell); !v.end(); ++v)
         new_cell_topology.push_back(v->global_index());
-      new_ref_edge.push_back(ref_edge[cell_index]);
+      new_ref_edge.push_back(ref);
     }
     else if(rgb_count.size() == 1) // "green" refinement
     {
-      // we are always splitting the reference edge...
+      // Always splitting the reference edge...
       
-      // need to make two cells: original is a,b,c -> (a,b,d) + (a,c,d)
       EdgeIterator e(*cell);
       VertexIterator v(*cell);
-      std::size_t v0 = v[0].global_index();
-      std::size_t v1 = v[1].global_index();
-      std::size_t v2 = v[2].global_index();        
-      if(rgb_count[0] == e[0].global_index())
-      {
-        std::size_t e0 = global_edge_to_new_vertex[rgb_count[0]];
-        new_cell_topology.push_back(e0);
-        new_cell_topology.push_back(v0);
-        new_cell_topology.push_back(v1);
+      std::size_t eref = global_edge_to_new_vertex[e[ref].global_index()];
+      std::size_t vref = v[ref].global_index();
+      std::size_t vnext = v[(ref + 1)%3].global_index();
+      std::size_t vlast = v[(ref + 2)%3].global_index();
+      
+      new_cell_topology.push_back(eref);
+      new_cell_topology.push_back(vref);
+      new_cell_topology.push_back(vnext);
+      new_ref_edge.push_back(ref);      
 
-        new_cell_topology.push_back(e0);
-        new_cell_topology.push_back(v0);
-        new_cell_topology.push_back(v2);
-      }
-      else if(rgb_count[0] == e[1].global_index())
-      {
-      std::size_t e1 = global_edge_to_new_vertex[rgb_count[0]];
-        new_cell_topology.push_back(e1);
-        new_cell_topology.push_back(v1);
-        new_cell_topology.push_back(v2);
-
-        new_cell_topology.push_back(e1);
-        new_cell_topology.push_back(v1);
-        new_cell_topology.push_back(v0);
-
-      }
-      else
-      {
-      std::size_t e2 = global_edge_to_new_vertex[rgb_count[0]];
-        new_cell_topology.push_back(e2);
-        new_cell_topology.push_back(v2);
-        new_cell_topology.push_back(v1);
-
-        new_cell_topology.push_back(e2);
-        new_cell_topology.push_back(v2);
-        new_cell_topology.push_back(v0);
-      }
-
-      new_ref_edge.push_back(ref_edge[cell_index]);      
-      new_ref_edge.push_back(ref_edge[cell_index]);      
+      new_cell_topology.push_back(eref);
+      new_cell_topology.push_back(vlast);
+      new_cell_topology.push_back(vref);
+      new_ref_edge.push_back(ref);      
 
     }
     else if(rgb_count.size() == 2) // "blue" refinement
@@ -520,12 +494,9 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
       EdgeIterator e(*cell);
       VertexIterator v(*cell);
 
-      std::size_t vref = ref_edge[cell->index()];
+      std::size_t vref = ref;
       std::size_t eref = e[vref].global_index();
       std::size_t vnonref, enonref, vother;
-
-      std::cout << "eref=" << eref << ", rgb=" << rgb_count[0] 
-                << ", " << rgb_count[1] << std::endl;
 
       if(eref == rgb_count[0])
         enonref = rgb_count[1];
@@ -573,7 +544,6 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
     }
     else if(rgb_count.size() == 3) // "red" refinement - all split (1->4) cells
     {
-      std::size_t cell_index = cell->index();
       EdgeIterator e(*cell);
       VertexIterator v(*cell);
       std::size_t e0 = global_edge_to_new_vertex[e[0].global_index()];
@@ -584,24 +554,24 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
       std::size_t v2 = v[2].global_index();
       
       new_cell_topology.push_back(v0);
-      new_cell_topology.push_back(e1);
       new_cell_topology.push_back(e2);
-      new_ref_edge.push_back(ref_edge[cell_index]);      
+      new_cell_topology.push_back(e1);
+      new_ref_edge.push_back(ref);      
 
+      new_cell_topology.push_back(e2);
       new_cell_topology.push_back(v1);
-      new_cell_topology.push_back(e2);
       new_cell_topology.push_back(e0);
-      new_ref_edge.push_back(ref_edge[cell_index]);
+      new_ref_edge.push_back(ref);
 
+      new_cell_topology.push_back(e1);
+      new_cell_topology.push_back(e0);
       new_cell_topology.push_back(v2);
-      new_cell_topology.push_back(e0);
-      new_cell_topology.push_back(e1);
-      new_ref_edge.push_back(ref_edge[cell_index]);
+      new_ref_edge.push_back(ref);
 
       new_cell_topology.push_back(e0);
       new_cell_topology.push_back(e1);
       new_cell_topology.push_back(e2);
-      new_ref_edge.push_back(ref_edge[cell_index]);
+      new_ref_edge.push_back(ref);
     }
      
     
@@ -658,3 +628,4 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   // new_ref_edge exists, but needs reordering...
 
 }
+
