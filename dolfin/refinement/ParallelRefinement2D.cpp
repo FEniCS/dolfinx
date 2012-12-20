@@ -240,6 +240,10 @@ void ParallelRefinement2D::get_shared_edges(boost::unordered_map<std::size_t, st
 void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh, 
                                   const MeshFunction<bool>& refinement_marker)
 {
+  const uint tdim = mesh.topology().dim();
+  const uint gdim = mesh.geometry().dim();
+
+  bool diag=false;   // Enable output for diagnostics
   
   if(MPI::num_processes()==1)
   {
@@ -248,45 +252,45 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
                  "Only works in parallel");
   }
 
-  // Ensure connectivity is there
-  uint D = mesh.topology().dim();
-  if(D != 2)
+  if(tdim != 2)
   {
     dolfin_error("ParallelRefinement2D.cpp",
                  "refine mesh",
                  "Only works in 2D");
   }
 
-  uint D1 = D - 1;
-  mesh.init(D1, D);
+  // Ensure connectivity is there
+  uint D1 = tdim - 1;
+  mesh.init(D1, tdim);
 
   boost::unordered_map<std::size_t, std::size_t> shared_edges;   // global_index => process
   boost::unordered_map<std::size_t, std::size_t> global_to_local; // self-explanatory map for shared edges
+
   get_shared_edges(shared_edges, global_to_local, mesh);
 
   // Vector over all cells - the reference edge is the cell's edge (0, 1 or 2) 
   // which always must split, if any edge splits in the cell
   std::vector<std::size_t> ref_edge;
   generate_reference_edges(mesh, ref_edge);
-  
-  // ***** Output for diagnostics
-  EdgeFunction<bool> ref_edge_fn(mesh,false);
-  CellFunction<std::size_t> ref_edge_fn2(mesh);
-  for(CellIterator cell(mesh); !cell.end(); ++cell)
+   
+  if(diag)
   {
-    EdgeIterator e(*cell);
-    ref_edge_fn[ e[ref_edge[cell->index()]] ] = true;
-    ref_edge_fn2[*cell] = ref_edge[cell->index()];
+    EdgeFunction<bool> ref_edge_fn(mesh,false);
+    CellFunction<std::size_t> ref_edge_fn2(mesh);
+    for(CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      EdgeIterator e(*cell);
+      ref_edge_fn[ e[ref_edge[cell->index()]] ] = true;
+      ref_edge_fn2[*cell] = ref_edge[cell->index()];
+    }
+    
+    File refEdgeFile("ref_edge.xdmf");
+    refEdgeFile << ref_edge_fn;
+    
+    File refEdgeFile2("ref_edge2.xdmf");
+    refEdgeFile2 << ref_edge_fn2;
   }
   
-  File refEdgeFile("ref_edge.xdmf");
-  refEdgeFile << ref_edge_fn;
-
-  File refEdgeFile2("ref_edge2.xdmf");
-  refEdgeFile2 << ref_edge_fn2;
-  // *****
-
-
   // Set marked edges from marked cells
   EdgeFunction<bool> markedEdges(mesh,false);
   
@@ -297,7 +301,6 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
       for(EdgeIterator edge(*cell); !edge.end(); ++edge)
         markedEdges[*edge] = true;
   }
-  
   
   // Mark reference edges of cells with any marked edge
   // and repeat until no more marking takes place
@@ -335,26 +338,17 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   
   }
   
-  // Diagnostic output
-  File markedEdgeFile("marked_edges.xdmf");
-  markedEdgeFile << markedEdges;
-
-  // Stage 3a - collect up marked edges which are owned locally...
-  // these will provide new vertices.
-  // if they are shared, then the new global index needs to be sent off-process
-
+  if(diag)
+  {
+      // Diagnostic output
+    File markedEdgeFile("marked_edges.xdmf");
+    markedEdgeFile << markedEdges;
+  }
+  
   const std::size_t num_processes = MPI::num_processes();
   const std::size_t process_number = MPI::process_number();
   std::vector<double> midpoint_coordinates;
-
-  std::vector<std::vector<std::pair<std::size_t, std::size_t> > > values_to_send(num_processes);
-  std::vector<std::size_t> destinations(num_processes);
-  // Set up destination vector for communication with remote processes
-  for(std::size_t process_j = 0; process_j < num_processes ; ++process_j)
-    destinations[process_j] = process_j;
-
-  // Mapping from global edge index to new global vertex index
-  std::map<std::size_t, std::size_t> global_edge_to_new_vertex;
+  std::map<std::size_t, std::size_t> global_edge_to_new_vertex;  // Mapping from global edge index to new global vertex index
 
   // Tally up unshared marked edges, and shared marked edges which are owned on this process.
   // Index them sequentially from zero.
@@ -384,11 +378,17 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   }
 
   // Calculate global range for new local vertices
-  const uint gdim = mesh.geometry().dim();
-  const uint tdim = mesh.topology().dim();
   const std::size_t num_new_vertices = n;
   const std::size_t global_offset = MPI::global_offset(num_new_vertices, true) 
                                   + mesh.size_global(0);
+
+  // If they are shared, then the new global index needs to be sent off-process.
+
+  std::vector<std::vector<std::pair<std::size_t, std::size_t> > > values_to_send(num_processes);
+  std::vector<std::size_t> destinations(num_processes);
+  // Set up destination vector for communication with remote processes
+  for(std::size_t process_j = 0; process_j < num_processes ; ++process_j)
+    destinations[process_j] = process_j;
 
   // Add offset to map, and collect up any shared new vertices that need to send the new index off-process
   for(std::map<std::size_t, std::size_t>::iterator gl_edge = global_edge_to_new_vertex.begin();
@@ -451,108 +451,92 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
 
   for(CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    std::size_t cell_index = cell->index();
-    std::size_t ref = ref_edge[cell_index];
-    std::vector<std::size_t>rgb_count;
-
+    
+    std::size_t rgb_count = 0;
     for(EdgeIterator edge(*cell); !edge.end(); ++edge)
     {
       if(markedEdges[*edge])
-        rgb_count.push_back(edge->global_index());
+        rgb_count++;
     }
 
-    if(rgb_count.size() == 0) //straight copy of cell - easy
+    EdgeIterator e(*cell);
+    VertexIterator v(*cell);
+
+    const std::size_t ref = ref_edge[cell->index()];
+    const std::size_t i0 = ref;
+    const std::size_t i1 = (ref + 1)%3;
+    const std::size_t i2 = (ref + 2)%3;
+    const std::size_t v0 = v[i0].global_index();
+    const std::size_t v1 = v[i1].global_index();
+    const std::size_t v2 = v[i2].global_index();
+    const std::size_t e0 = global_edge_to_new_vertex[e[i0].global_index()];
+    const std::size_t e1 = global_edge_to_new_vertex[e[i1].global_index()];
+    const std::size_t e2 = global_edge_to_new_vertex[e[i2].global_index()];
+
+    if(rgb_count == 0) //straight copy of cell (1->1)
     {
       for(VertexIterator v(*cell); !v.end(); ++v)
         new_cell_topology.push_back(v->global_index());
       new_ref_edge.push_back(ref);
     }
-    else if(rgb_count.size() == 1) // "green" refinement
+    else if(rgb_count == 1) // "green" refinement (1->2)
     {
       // Always splitting the reference edge...
       
-      EdgeIterator e(*cell);
-      VertexIterator v(*cell);
-      std::size_t eref = global_edge_to_new_vertex[e[ref].global_index()];
-      std::size_t vref = v[ref].global_index();
-      std::size_t vnext = v[(ref + 1)%3].global_index();
-      std::size_t vlast = v[(ref + 2)%3].global_index();
-      
-      new_cell_topology.push_back(eref);
-      new_cell_topology.push_back(vref);
-      new_cell_topology.push_back(vnext);
+      new_cell_topology.push_back(e0);
+      new_cell_topology.push_back(v0);
+      new_cell_topology.push_back(v1);
       new_ref_edge.push_back(ref);      
 
-      new_cell_topology.push_back(eref);
-      new_cell_topology.push_back(vlast);
-      new_cell_topology.push_back(vref);
+      new_cell_topology.push_back(e0);
+      new_cell_topology.push_back(v2);
+      new_cell_topology.push_back(v0);
       new_ref_edge.push_back(ref);      
 
     }
-    else if(rgb_count.size() == 2) // "blue" refinement
+    else if(rgb_count == 2) // "blue" refinement (1->3) left or right
     {
-      EdgeIterator e(*cell);
-      VertexIterator v(*cell);
-
-      std::size_t vref = ref;
-      std::size_t eref = e[vref].global_index();
-      std::size_t vnonref, enonref, vother;
-
-      if(eref == rgb_count[0])
-        enonref = rgb_count[1];
-      else
-        enonref = rgb_count[0];
-
-      if(enonref == e[0].global_index())
-      {
-        vnonref = 0;
-      }
-      else if(enonref == e[1].global_index())
-      {
-        vnonref = 1;
-      }
-      else
-      {
-        vnonref = 2;
-      }
-
-      vother = 3 - vref - vnonref;
       
-      vref = v[vref].global_index();
-      vnonref = v[vnonref].global_index();
-      vother = v[vother].global_index();
+      if(markedEdges[e[i2]])
+      {
+        new_cell_topology.push_back(e2);
+        new_cell_topology.push_back(v1);
+        new_cell_topology.push_back(e0);
+        new_ref_edge.push_back(ref);              
 
-      eref = global_edge_to_new_vertex[eref];
-      enonref = global_edge_to_new_vertex[enonref];
+        new_cell_topology.push_back(e2);
+        new_cell_topology.push_back(e0);
+        new_cell_topology.push_back(v0);
+        new_ref_edge.push_back(ref);              
 
-      new_cell_topology.push_back(eref);
-      new_cell_topology.push_back(enonref);
-      new_cell_topology.push_back(vref);
-      new_ref_edge.push_back(ref_edge[cell_index]);      
+        new_cell_topology.push_back(e0);
+        new_cell_topology.push_back(v2);
+        new_cell_topology.push_back(v0);
+        new_ref_edge.push_back(ref);              
+        
+      }
+      else if(markedEdges[e[i1]])
+      {
+        new_cell_topology.push_back(e0);
+        new_cell_topology.push_back(v0);
+        new_cell_topology.push_back(v1);
+        new_ref_edge.push_back(ref);              
 
-      new_cell_topology.push_back(eref);
-      new_cell_topology.push_back(vnonref);
-      new_cell_topology.push_back(vref);
-      new_ref_edge.push_back(ref_edge[cell_index]);      
+        new_cell_topology.push_back(e1);
+        new_cell_topology.push_back(e0);
+        new_cell_topology.push_back(v2);
+        new_ref_edge.push_back(ref);              
 
-      new_cell_topology.push_back(eref);
-      new_cell_topology.push_back(enonref);
-      new_cell_topology.push_back(vother);
-      new_ref_edge.push_back(ref_edge[cell_index]);      
+        new_cell_topology.push_back(e1);
+        new_cell_topology.push_back(v0);
+        new_cell_topology.push_back(e0);
+        new_ref_edge.push_back(ref);              
 
+      }
 
     }
-    else if(rgb_count.size() == 3) // "red" refinement - all split (1->4) cells
+    else if(rgb_count == 3) // "red" refinement - all split (1->4) cells
     {
-      EdgeIterator e(*cell);
-      VertexIterator v(*cell);
-      std::size_t e0 = global_edge_to_new_vertex[e[0].global_index()];
-      std::size_t e1 = global_edge_to_new_vertex[e[1].global_index()];
-      std::size_t e2 = global_edge_to_new_vertex[e[2].global_index()];
-      std::size_t v0 = v[0].global_index();
-      std::size_t v1 = v[1].global_index();
-      std::size_t v2 = v[2].global_index();
-      
       new_cell_topology.push_back(v0);
       new_cell_topology.push_back(e2);
       new_cell_topology.push_back(e1);
@@ -573,7 +557,6 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
       new_cell_topology.push_back(e2);
       new_ref_edge.push_back(ref);
     }
-     
     
   }
 
@@ -582,49 +565,42 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   mesh_data.tdim = tdim;
   mesh_data.gdim = gdim;
 
-  std::cout << "gdim = " << gdim << std::endl;
-  
-  std::size_t num_local_cells = new_cell_topology.size()/mesh_data.num_vertices_per_cell;
+  // Copy data to LocalMeshData structures
 
-  std::cout << "Num local cells = " << num_local_cells << std::endl;
-
+  const std::size_t num_local_cells = new_cell_topology.size()/mesh_data.num_vertices_per_cell;
   mesh_data.num_global_cells = MPI::sum(num_local_cells);
-  std::cout << "Num global cells = " << mesh_data.num_global_cells << std::endl;
   mesh_data.global_cell_indices.resize(num_local_cells);
-  std::size_t idx_global_offset = MPI::global_offset(num_local_cells, true);
+  const std::size_t idx_global_offset = MPI::global_offset(num_local_cells, true);
   for(std::size_t i = 0; i < num_local_cells ; i++)
     mesh_data.global_cell_indices[i] = idx_global_offset + i;
   
   mesh_data.cell_vertices.resize(boost::extents[num_local_cells][mesh_data.num_vertices_per_cell]);
   std::copy(new_cell_topology.begin(),new_cell_topology.end(),mesh_data.cell_vertices.data());
 
-  std::size_t num_local_vertices = vertex_coordinates.size()/gdim;
+  const std::size_t num_local_vertices = vertex_coordinates.size()/gdim;
   mesh_data.num_global_vertices = MPI::sum(num_local_vertices);
-  std::cout << "Num global vertices = " << mesh_data.num_global_vertices << std::endl;
-
   mesh_data.vertex_coordinates.resize(boost::extents[num_local_vertices][gdim]);
   std::copy(vertex_coordinates.begin(), vertex_coordinates.end(), mesh_data.vertex_coordinates.data());
   mesh_data.vertex_indices.resize(num_local_vertices);
 
-  std::pair<std::size_t, std::size_t> local_range = MPI::local_range(mesh_data.num_global_vertices, true);
+  const std::size_t vertex_global_offset = MPI::global_offset(num_local_vertices, true);
   for(std::size_t i = 0; i < num_local_vertices ; i++)
-    mesh_data.vertex_indices[i] = local_range.first + i;
+    mesh_data.vertex_indices[i] = vertex_global_offset + i;
 
-  //  Mesh new_mesh;
   MeshPartitioning::build_distributed_mesh(new_mesh, mesh_data);
 
-  CellFunction<std::size_t> partitioning1(mesh, process_number);
-  CellFunction<std::size_t> partitioning2(new_mesh, process_number);
-
-  File meshFile1("old_mesh.xdmf");
-  meshFile1 << partitioning1;  
-
-  File meshFile2("new_mesh.xdmf");
-  meshFile2 << partitioning2;  
-
-  //  HDF5File H5mesh("mesh.h5","w");
-  //  H5mesh.write(new_mesh,"new_mesh");
-
+  if(diag)
+  {
+    CellFunction<std::size_t> partitioning1(mesh, process_number);
+    CellFunction<std::size_t> partitioning2(new_mesh, process_number);
+    
+    File meshFile1("old_mesh.xdmf");
+    meshFile1 << partitioning1;  
+    
+    File meshFile2("new_mesh.xdmf");
+    meshFile2 << partitioning2;  
+  }
+  
   // new_ref_edge exists, but needs reordering...
 
 }
