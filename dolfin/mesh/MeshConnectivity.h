@@ -23,8 +23,7 @@
 
 #include <vector>
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/types.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 
 namespace dolfin
 {

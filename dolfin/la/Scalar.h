@@ -82,29 +82,29 @@ namespace dolfin
     }
 
     /// Get block of values
-    void get(double* block, const DolfinIndex* num_rows, const DolfinIndex * const * rows) const
+    void get(double* block, const dolfin::la_index* num_rows, const dolfin::la_index * const * rows) const
     { block[0] = value; }
 
     /// Set block of values
-    void set(const double* block, const DolfinIndex* num_rows, const DolfinIndex * const * rows)
+    void set(const double* block, const dolfin::la_index* num_rows, const dolfin::la_index * const * rows)
     { value = block[0]; }
 
     /// Add block of values
-    void add(const double* block, const DolfinIndex* num_rows, const DolfinIndex * const * rows)
+    void add(const double* block, const dolfin::la_index* num_rows, const dolfin::la_index * const * rows)
     {
       dolfin_assert(block);
       value += block[0];
     }
 
     /// Add block of values
-    void add(const double* block, const std::vector<const std::vector<DolfinIndex>* >& rows)
+    void add(const double* block, const std::vector<const std::vector<dolfin::la_index>* >& rows)
     {
       dolfin_assert(block);
       value += block[0];
     }
 
     /// Add block of values
-    void add(const double* block, const std::vector<std::vector<DolfinIndex> >& rows)
+    void add(const double* block, const std::vector<std::vector<dolfin::la_index> >& rows)
     {
       dolfin_assert(block);
       value += block[0];

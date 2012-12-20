@@ -222,7 +222,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<std::size_t>
     ///         Local-to-global mapping of dofs.
-    const std::vector<DolfinIndex>& cell_dofs(std::size_t cell_index) const
+    const std::vector<dolfin::la_index>& cell_dofs(std::size_t cell_index) const
     {
       dolfin_assert(cell_index < _dofmap.size());
       return _dofmap[cell_index];
@@ -345,7 +345,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<std::vector<dolfin::std::size_t> >
     ///         The local-to-global map for each cell.
-    const std::vector<std::vector<DolfinIndex> >& data() const
+    const std::vector<std::vector<dolfin::la_index> >& data() const
     { return _dofmap; }
 
     /// Return informal string representation (pretty-print)
@@ -383,7 +383,7 @@ namespace dolfin
                                               const Mesh& mesh);
 
     // Local-to-global dof map (dofs for cell dofmap[i])
-    std::vector<std::vector<DolfinIndex> > _dofmap;
+    std::vector<std::vector<dolfin::la_index> > _dofmap;
 
     // UFC dof map
     boost::scoped_ptr<ufc::dofmap> _ufc_dofmap;

@@ -24,7 +24,6 @@
 #include <map>
 #include <set>
 #include <vector>
-#include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin

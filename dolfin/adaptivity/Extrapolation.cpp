@@ -85,7 +85,7 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
     c0.update(*cell0);
 
     // Tabulate dofs for w on cell and store values
-    const std::vector<DolfinIndex>& dofs = W.dofmap()->cell_dofs(cell0->index());
+    const std::vector<dolfin::la_index>& dofs = W.dofmap()->cell_dofs(cell0->index());
 
     // Compute coefficients on this cell
     std::size_t offset = 0;
@@ -102,7 +102,7 @@ void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coef
                                          const FunctionSpace& W,
                                          const Cell& cell0,
                                          const ufc::cell& c0,
-                                         const std::vector<DolfinIndex>& dofs,
+                                         const std::vector<dolfin::la_index>& dofs,
                                          std::size_t& offset)
 {
   // Call recursively for mixed elements
@@ -236,7 +236,7 @@ Extrapolation::compute_unique_dofs(const Cell& cell, const ufc::cell& c,
                                    std::set<std::size_t>& unique_dofs)
 {
   dolfin_assert(V.dofmap());
-  const std::vector<DolfinIndex>& dofs = V.dofmap()->cell_dofs(cell.index());
+  const std::vector<dolfin::la_index>& dofs = V.dofmap()->cell_dofs(cell.index());
 
   // Data structure for current cell
   std::map<std::size_t, std::size_t> dof2row;

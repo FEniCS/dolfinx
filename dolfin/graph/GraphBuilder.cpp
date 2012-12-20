@@ -28,9 +28,9 @@
 #include <boost/unordered_map.hpp>
 
 #include <dolfin/log/log.h>
-#include <dolfin/common/types.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/types.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/LocalMeshData.h>
@@ -64,10 +64,10 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
   // Build graph
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    const std::vector<DolfinIndex>& dofs0 = dofmap0.cell_dofs(cell->index());
-    const std::vector<DolfinIndex>& dofs1 = dofmap1.cell_dofs(cell->index());
+    const std::vector<dolfin::la_index>& dofs0 = dofmap0.cell_dofs(cell->index());
+    const std::vector<dolfin::la_index>& dofs1 = dofmap1.cell_dofs(cell->index());
 
-    std::vector<DolfinIndex>::const_iterator node;
+    std::vector<dolfin::la_index>::const_iterator node;
     for (node = dofs0.begin(); node != dofs0.end(); ++node)
       graph[*node].insert(dofs1.begin(), dofs1.end());
   }

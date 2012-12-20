@@ -19,10 +19,8 @@
 // Last changed: 2012-09-27
 
 #include <vector>
-#include <boost/assign.hpp>
 
-#include <dolfin/log/dolfin_log.h>
-#include <dolfin/common/types.h>
+#include <dolfin/log/log.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/IndexSet.h>
 #include <dolfin/mesh/Mesh.h>
@@ -44,15 +42,19 @@ void RegularCutRefinement::refine(Mesh& refined_mesh,
 
   // Currently only implemented in 2D
   if (mesh.topology().dim() != 2)
+  {
     dolfin_error("RegularCutRefinement.cpp",
                  "refine mesh",
                  "Mesh is not two-dimensional: regular-cut mesh refinement is currently only implemented in 2D");
+  }
 
   // Check that mesh is ordered
   if (!mesh.ordered())
+  {
     dolfin_error("RegularCutRefinement.cpp",
                  "refine mesh",
                  "Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order()");
+  }
 
   // Initialize edges
   mesh.init(1);
@@ -224,8 +226,7 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   std::size_t num_cells = 0;
 
   // Data structure to hold a cell
-  std::vector<std::size_t> cell_data;
-
+  std::vector<std::size_t> cell_data(3);
 
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
@@ -287,14 +288,16 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
 
   // Iterate over all cells and add new cells
   std::size_t current_cell = 0;
+  std::vector<std::vector<std::size_t> > cells(4, std::vector<std::size_t>(3));
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get marker
     const int marker = refinement_markers[cell->index()];
 
-    // No refinement: just copy cell to new mesh
     if (marker == no_refinement)
     {
+      // No refinement: just copy cell to new mesh
+
       std::vector<std::size_t> vertices;
       for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
         vertices.push_back(vertex->index());
@@ -318,10 +321,10 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
         }
       }
     }
-
-    // Regular refinement: divide into subsimplicies
     else if (marker == regular_refinement)
     {
+      // Regular refinement: divide into subsimplicies
+
       dolfin_assert(unrefined_cells[cell->index()] == -1);
 
       // Get vertices and edges
@@ -342,21 +345,21 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       const std::size_t e2 = offset + marked_edges.find(e[2]);
 
       // Create four new cells
-      std::vector<std::vector<std::size_t> > cells;
-      cells.push_back(boost::assign::list_of(v0)(e2)(e1));
-      cells.push_back(boost::assign::list_of(v1)(e0)(e2));
-      cells.push_back(boost::assign::list_of(v2)(e1)(e0));
-      cells.push_back(boost::assign::list_of(e0)(e1)(e2));
+      cells[0][0] = v0; cells[0][1] = e2; cells[0][2] = e1;
+      cells[1][0] = v1; cells[1][1] = e0; cells[1][2] = e2;
+      cells[2][0] = v2; cells[2][1] = e1; cells[2][2] = e0;
+      cells[3][0] = e0; cells[3][1] = e1; cells[3][2] = e2;
 
       // Add cells
       std::vector<std::vector<std::size_t> >::const_iterator _cell;
       for (_cell = cells.begin(); _cell != cells.end(); ++_cell)
         editor.add_cell(current_cell++, *_cell);
     }
-
-    // Special case: backtrack bisected cells
     else if (marker == backtrack_bisection || marker == backtrack_bisection_refine)
     {
+
+      // Special case: backtrack bisected cells
+
       dolfin_assert(unrefined_cells[cell->index()] == -1);
 
       // Get index for bisection twin
@@ -372,9 +375,12 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       const int twin_marker = refinement_markers[bisection_twin];
 
       // Find common edge(s) and bisected edge(s)
-      const std::pair<std::size_t, std::size_t> common_edges = find_common_edges(*cell, mesh, bisection_twin);
-      const std::pair<std::size_t, std::size_t> bisection_edges = find_bisection_edges(*cell, mesh, bisection_twin);
-      const std::pair<std::size_t, std::size_t> bisection_vertices = find_bisection_vertices(*cell, mesh, bisection_twin, bisection_edges);
+      const std::pair<std::size_t, std::size_t> common_edges
+        = find_common_edges(*cell, mesh, bisection_twin);
+      const std::pair<std::size_t, std::size_t> bisection_edges
+        = find_bisection_edges(*cell, mesh, bisection_twin);
+      const std::pair<std::size_t, std::size_t> bisection_vertices
+        = find_bisection_vertices(*cell, mesh, bisection_twin, bisection_edges);
 
       // Get list of vertices and edges for both cells
       const Cell twin(mesh, bisection_twin);
@@ -408,23 +414,26 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
         E1 = offset + marked_edges.find(edges_1[bisection_edges.second]);
 
       // Add middle two cells (always)
-      cell_data = boost::assign::list_of(e0)(e1)(e2);
+      dolfin_assert(cell_data.size() == 3);
+      cell_data[0] = e0; cell_data[1] = e1; cell_data[2] = e2;
       editor.add_cell(current_cell++, cell_data);
-      cell_data = boost::assign::list_of(v2)(e1)(e0);
+
+      cell_data[0] = v2; cell_data[1] = e1; cell_data[2] = e0;
       editor.add_cell(current_cell++, cell_data);
 
       // Add one or two remaining cells in current cell (left)
       if (marker == backtrack_bisection)
       {
-        cell_data = boost::assign::list_of(v0)(e2)(e1);
+        cell_data[0] = v0; cell_data[1] = e2; cell_data[2] = e1;
         editor.add_cell(current_cell++, cell_data);
       }
       else
       {
         // Add the two cells
-        cell_data = boost::assign::list_of(v0)(E0)(e1);
+        cell_data[0] = v0; cell_data[1] = E0; cell_data[2] = e1;
         editor.add_cell(current_cell++, cell_data);
-        cell_data = boost::assign::list_of(E0)(e2)(e1);
+
+        cell_data[0] = E0; cell_data[1] = e2; cell_data[2] = e1;
         editor.add_cell(current_cell++, cell_data);
 
         // Set bisection twins
@@ -435,15 +444,16 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       // Add one or two remaining cells in twin cell (right)
       if (twin_marker == backtrack_bisection)
       {
-        cell_data = boost::assign::list_of(v1)(e0)(e2);
+        cell_data[0] = v1; cell_data[1] = e0; cell_data[2] = e2;
         editor.add_cell(current_cell++, cell_data);
       }
       else
       {
         // Add the two cells
-        cell_data = boost::assign::list_of(v1)(e0)(E1);
+        cell_data[0] = v1; cell_data[1] = e0; cell_data[2] = E1;
         editor.add_cell(current_cell++, cell_data);
-        cell_data = boost::assign::list_of(e0)(e2)(E1);
+
+        cell_data[0] = e0; cell_data[1] = e2; cell_data[2] = E1;
         editor.add_cell(current_cell++, cell_data);
 
         // Set bisection twins
@@ -451,10 +461,10 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
         refined_bisection_twins[current_cell - 1] = current_cell - 2;
       }
     }
-
-    // One edge marked for refinement: do bisection
     else
     {
+      // One edge marked for refinement: do bisection
+
       dolfin_assert(unrefined_cells[cell->index()] == -1);
 
       // Get vertices and edges
@@ -472,26 +482,26 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       // Add the two new cells
       if (local_edge_index == 0)
       {
-        cell_data = boost::assign::list_of(v[0])(ee)(v[1]);
+        cell_data[0] = v[0]; cell_data[1] = ee; cell_data[2] = v[1];
         editor.add_cell(current_cell++, cell_data);
 
-        cell_data = boost::assign::list_of(v[0])(ee)(v[2]);
+        cell_data[0] = v[0]; cell_data[1] = ee; cell_data[2] = v[2];
         editor.add_cell(current_cell++, cell_data);
       }
       else if (local_edge_index == 1)
       {
-        cell_data = boost::assign::list_of(v[1])(ee)(v[0]);
+        cell_data[0] = v[1]; cell_data[1] = ee; cell_data[2] = v[0];
         editor.add_cell(current_cell++, cell_data);
 
-        cell_data = boost::assign::list_of(v[1])(ee)(v[2]);
+        cell_data[0] = v[1]; cell_data[1] = ee; cell_data[2] = v[2];
         editor.add_cell(current_cell++, cell_data);
       }
       else
       {
-        cell_data = boost::assign::list_of(v[2])(ee)(v[0]);
+        cell_data[0] = v[2]; cell_data[1] = ee; cell_data[2] = v[0];
         editor.add_cell(current_cell++, cell_data);
 
-        cell_data = boost::assign::list_of(v[2])(ee)(v[1]);
+        cell_data[0] = v[2]; cell_data[1] = ee; cell_data[2] = v[1];
         editor.add_cell(current_cell++, cell_data);
       }
 

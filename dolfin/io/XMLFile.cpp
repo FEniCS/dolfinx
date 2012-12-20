@@ -32,7 +32,6 @@
 #include "pugixml.hpp"
 
 #include <dolfin/common/Array.h>
-#include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
@@ -154,7 +153,7 @@ void XMLFile::operator>> (GenericVector& input)
   input.apply("insert");
 }
 //-----------------------------------------------------------------------------
-void XMLFile::read_vector(std::vector<double>& input, std::vector<DolfinIndex>& indices)
+void XMLFile::read_vector(std::vector<double>& input, std::vector<dolfin::la_index>& indices)
 {
   // Create XML doc and get DOLFIN node
   pugi::xml_document xml_doc;

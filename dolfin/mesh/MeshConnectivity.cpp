@@ -19,7 +19,7 @@
 // Last changed: 2010-11-25
 
 #include <boost/functional/hash.hpp>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "MeshConnectivity.h"
 
 using namespace dolfin;

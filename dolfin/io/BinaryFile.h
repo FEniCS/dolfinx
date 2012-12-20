@@ -23,7 +23,6 @@
 
 #include <fstream>
 #include <boost/iostreams/filtering_streambuf.hpp>
-#include <dolfin/common/types.h>
 #include "GenericFile.h"
 
 namespace dolfin

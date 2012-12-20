@@ -35,7 +35,6 @@ extern "C"
 #include <vector>
 #include <utility>
 #include <boost/shared_array.hpp>
-#include <dolfin/common/types.h>
 #include "base64.h"
 
 namespace dolfin

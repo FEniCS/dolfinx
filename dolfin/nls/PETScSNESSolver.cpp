@@ -198,7 +198,7 @@ std::pair<std::size_t, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear_
 {
   PETScVector f;
   PETScMatrix A;
-  DolfinIndex its;
+  PetscInt its;
   SNESConvergedReason reason;
   struct snes_ctx_t snes_ctx;
 

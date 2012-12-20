@@ -183,7 +183,7 @@ boost::shared_ptr<GenericMatrix> BlockMatrix::schur_approximation(bool symmetry)
       const double val=vals_i[k];
       diag_ii -= val*val/A(j,j);
     }
-    const DolfinIndex _i = i;
+    const dolfin::la_index _i = i;
     S->add(&diag_ii, 1, &_i, 1, &_i);
   }
   return S;

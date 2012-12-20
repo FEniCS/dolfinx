@@ -32,7 +32,6 @@
 #include <boost/multi_array.hpp>
 #include <boost/bind.hpp>
 
-#include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>

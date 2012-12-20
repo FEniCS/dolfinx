@@ -101,18 +101,18 @@ namespace dolfin
     { dolfin_not_implemented(); }
 
     /// Get block of values
-    virtual void get(double* block, std::size_t m, const DolfinIndex* rows, std::size_t n,
-                     const DolfinIndex* cols) const
+    virtual void get(double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n,
+                     const dolfin::la_index* cols) const
     { dolfin_not_implemented(); }
 
     /// Set block of values
-    virtual void set(const double* block, std::size_t m, const DolfinIndex* rows, std::size_t n,
-                     const DolfinIndex* cols)
+    virtual void set(const double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n,
+                     const dolfin::la_index* cols)
     { dolfin_not_implemented(); }
 
     /// Add block of values
-    virtual void add(const double* block, std::size_t m, const DolfinIndex* rows, std::size_t n,
-                     const DolfinIndex* cols);
+    virtual void add(const double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n,
+                     const dolfin::la_index* cols);
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A,
@@ -132,11 +132,11 @@ namespace dolfin
     { dolfin_not_implemented(); }
 
     /// Set given rows to zero
-    virtual void zero(std::size_t m, const DolfinIndex* rows)
+    virtual void zero(std::size_t m, const dolfin::la_index* rows)
     { dolfin_not_implemented(); }
 
     /// Set given rows to identity matrix
-    virtual void ident(std::size_t m, const DolfinIndex* rows);
+    virtual void ident(std::size_t m, const dolfin::la_index* rows);
 
     // Matrix-vector product, y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const

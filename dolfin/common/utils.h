@@ -23,11 +23,10 @@
 #ifndef __UTILS_H
 #define __UTILS_H
 
-#include <string>
 #include <cstring>
 #include <limits>
+#include <string>
 #include <vector>
-#include "types.h"
 
 namespace dolfin
 {

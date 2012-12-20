@@ -24,7 +24,6 @@
 #define __TRIANGLE_CELL_H
 
 #include <vector>
-#include <dolfin/common/types.h>
 #include "CellType.h"
 
 namespace dolfin

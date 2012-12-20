@@ -24,11 +24,11 @@
 #ifndef __DOLFIN_ARRAY_H
 #define __DOLFIN_ARRAY_H
 
+#include <cstddef>
 #include <sstream>
 #include <string>
 
 #include <dolfin/common/constants.h>
-#include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 
 namespace dolfin

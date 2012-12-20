@@ -21,7 +21,6 @@
 #ifndef __DYNAMIC_MESH_EDITOR_H
 #define __DYNAMIC_MESH_EDITOR_H
 
-#include <dolfin/common/types.h>
 #include "CellType.h"
 
 namespace dolfin
