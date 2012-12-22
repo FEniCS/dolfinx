@@ -118,13 +118,13 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   const std::size_t size = num_cells*data_dim;
 
   // Build lists of dofs and create map
-  std::vector<DolfinIndex> dof_set;
+  std::vector<dolfin::la_index> dof_set;
   std::vector<std::size_t> offset(size + 1);
   std::vector<std::size_t>::iterator cell_offset = offset.begin();
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Tabulate dofs
-    const std::vector<DolfinIndex>& dofs = dofmap.cell_dofs(cell->index());
+    const std::vector<dolfin::la_index>& dofs = dofmap.cell_dofs(cell->index());
     for(std::size_t i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
       dof_set.push_back(dofs[i]);
 

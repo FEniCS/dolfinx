@@ -21,9 +21,9 @@
 #ifndef __RANGED_INDEX_SET_H
 #define __RANGED_INDEX_SET_H
 
+#include <cstddef>
 #include <vector>
 #include <dolfin/log/log.h>
-#include "types.h"
 
 namespace dolfin
 {

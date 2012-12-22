@@ -23,7 +23,8 @@
 #ifndef __INTERVAL_MESH_H
 #define __INTERVAL_MESH_H
 
-#include "dolfin/mesh/Mesh.h"
+#include <cstddef>
+#include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
 {

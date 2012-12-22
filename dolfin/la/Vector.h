@@ -122,15 +122,15 @@ namespace dolfin
     { return vector->owns_index(i); }
 
     /// Get block of values (values must all live on the local process)
-    virtual void get_local(double* block, std::size_t m, const DolfinIndex* rows) const
+    virtual void get_local(double* block, std::size_t m, const dolfin::la_index* rows) const
     { vector->get_local(block,m,rows); }
 
     /// Set block of values
-    virtual void set(const double* block, std::size_t m, const DolfinIndex* rows)
+    virtual void set(const double* block, std::size_t m, const dolfin::la_index* rows)
     { vector->set(block, m, rows); }
 
     /// Add block of values
-    virtual void add(const double* block, std::size_t m, const DolfinIndex* rows)
+    virtual void add(const double* block, std::size_t m, const dolfin::la_index* rows)
     { vector->add(block, m, rows); }
 
     /// Get all values on local process
@@ -146,11 +146,11 @@ namespace dolfin
     { vector->add_local(values); }
 
     /// Gather entries into local vector x
-    virtual void gather(GenericVector& x, const std::vector<DolfinIndex>& indices) const
+    virtual void gather(GenericVector& x, const std::vector<dolfin::la_index>& indices) const
     { vector->gather(x, indices); }
 
     /// Gather entries into x
-    virtual void gather(std::vector<double>& x, const std::vector<DolfinIndex>& indices) const
+    virtual void gather(std::vector<double>& x, const std::vector<dolfin::la_index>& indices) const
     { vector->gather(x, indices); }
 
     /// Gather all entries into x on process 0

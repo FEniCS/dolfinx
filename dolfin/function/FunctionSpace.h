@@ -25,11 +25,12 @@
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
 
+#include <cstddef>
 #include <map>
 #include <vector>
+
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
-#include <dolfin/common/types.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/Hierarchical.h>

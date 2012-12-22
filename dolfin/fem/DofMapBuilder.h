@@ -51,8 +51,8 @@ namespace dolfin
   {
 
     // FIXME: Test which 'map' is most efficient
-    typedef std::map<DolfinIndex, DolfinIndex> map;
-    typedef std::map<DolfinIndex, DolfinIndex>::const_iterator map_iterator;
+    typedef std::map<dolfin::la_index, dolfin::la_index> map;
+    typedef std::map<dolfin::la_index, dolfin::la_index>::const_iterator map_iterator;
 
     // FIXME: Test which 'set' is most efficient
 

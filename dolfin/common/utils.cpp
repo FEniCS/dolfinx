@@ -21,7 +21,6 @@
 #include <boost/functional/hash.hpp>
 #include <cstdlib>
 #include <sstream>
-#include "types.h"
 #include "utils.h"
 
 //-----------------------------------------------------------------------------

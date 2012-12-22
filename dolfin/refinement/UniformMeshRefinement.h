@@ -23,8 +23,6 @@
 #ifndef __UNIFORM_MESH_REFINEMENT_H
 #define __UNIFORM_MESH_REFINEMENT_H
 
-#include <dolfin/common/types.h>
-
 namespace dolfin
 {
 

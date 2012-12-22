@@ -24,7 +24,6 @@
 #include <string>
 #include <vector>
 #include <boost/cstdint.hpp>
-#include <dolfin/common/types.h>
 #include "Encoder.h"
 
 namespace dolfin

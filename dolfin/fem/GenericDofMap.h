@@ -86,7 +86,7 @@ namespace dolfin
     virtual const boost::unordered_map<std::size_t, std::size_t>& off_process_owner() const = 0;
 
     /// Local-to-global mapping of dofs on a cell
-    virtual const std::vector<DolfinIndex>& cell_dofs(std::size_t cell_index) const = 0;
+    virtual const std::vector<dolfin::la_index>& cell_dofs(std::size_t cell_index) const = 0;
 
     /// Tabulate local-local facet dofs
     virtual void tabulate_facet_dofs(unsigned int* dofs, std::size_t local_facet) const = 0;

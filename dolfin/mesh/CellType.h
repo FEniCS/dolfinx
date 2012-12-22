@@ -26,7 +26,6 @@
 
 #include <string>
 #include <vector>
-#include <dolfin/common/types.h>
 
 namespace dolfin
 {

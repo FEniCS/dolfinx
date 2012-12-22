@@ -181,13 +181,13 @@ namespace dolfin
     boost::shared_ptr<const SubDomain> _sub_domain;
 
     // Array of master dofs (size = num_dof_pairs)
-    std::vector<DolfinIndex> master_dofs;
+    std::vector<dolfin::la_index> master_dofs;
 
     // Owners of master dofs in parallel (size = num_dof_pairs)
     std::vector<std::size_t> master_owners;
 
     // Array of slave dofs (size = num_dof_pairs)
-    std::vector<DolfinIndex> slave_dofs;
+    std::vector<dolfin::la_index> slave_dofs;
 
     // Owners of slave dofs in parallel (size = num_dof_pairs)
     std::vector<std::size_t> slave_owners;

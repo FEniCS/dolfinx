@@ -23,9 +23,9 @@
 #ifndef __VARIABLE_H
 #define __VARIABLE_H
 
+#include <cstddef>
 #include <string>
 #include <dolfin/parameter/Parameters.h>
-#include "types.h"
 
 namespace dolfin
 {

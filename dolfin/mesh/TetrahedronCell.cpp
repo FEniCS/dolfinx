@@ -24,7 +24,7 @@
 // Last changed: 2011-11-21
 
 #include <algorithm>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "Cell.h"
 #include "Facet.h"
 #include "MeshEditor.h"

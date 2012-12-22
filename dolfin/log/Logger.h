@@ -28,7 +28,6 @@
 #include <map>
 #include <ostream>
 #include <string>
-#include <dolfin/common/types.h>
 #include "Table.h"
 #include "LogLevel.h"
 

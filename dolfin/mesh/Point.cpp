@@ -21,11 +21,11 @@
 // Last changed: 2010-02-28
 
 #include <cmath>
-#include "Point.h"
 #include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/math/basic.h>
+#include "Point.h"
 
 using namespace dolfin;
 
@@ -79,4 +79,3 @@ std::string Point::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-

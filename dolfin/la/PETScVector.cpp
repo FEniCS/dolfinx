@@ -309,11 +309,11 @@ void PETScVector::add_local(const Array<double>& values)
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get_local(double* block, std::size_t m,
-                           const DolfinIndex* rows) const
+                           const dolfin::la_index* rows) const
 {
   dolfin_assert(x);
   PetscInt _m = m;
-  const DolfinIndex* _rows = rows;
+  const dolfin::la_index* _rows = rows;
 
   // Handle case that m = 0 (VecGetValues is collective -> must be called be
   //                         all processes)
@@ -357,7 +357,7 @@ void PETScVector::get_local(double* block, std::size_t m,
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set(const double* block, std::size_t m,
-                      const DolfinIndex* rows)
+                      const dolfin::la_index* rows)
 {
   dolfin_assert(x);
 
@@ -368,7 +368,7 @@ void PETScVector::set(const double* block, std::size_t m,
 }
 //-----------------------------------------------------------------------------
 void PETScVector::add(const double* block, std::size_t m,
-                      const DolfinIndex* rows)
+                      const dolfin::la_index* rows)
 {
   dolfin_assert(x);
 
@@ -706,7 +706,7 @@ std::string PETScVector::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void PETScVector::gather(GenericVector& y, const std::vector<DolfinIndex>& indices) const
+void PETScVector::gather(GenericVector& y, const std::vector<dolfin::la_index>& indices) const
 {
   dolfin_assert(x);
 
@@ -768,7 +768,7 @@ void PETScVector::gather(GenericVector& y, const std::vector<DolfinIndex>& indic
   VecScatterDestroy(&scatter);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::gather(std::vector<double>& x, const std::vector<DolfinIndex>& indices) const
+void PETScVector::gather(std::vector<double>& x, const std::vector<dolfin::la_index>& indices) const
 {
   x.resize(indices.size());
   PETScVector y("local");
@@ -815,7 +815,7 @@ void PETScVector::_init(std::pair<std::size_t, std::size_t> range,
   x.reset(new Vec(0), PETScVectorDeleter());
 
   const std::size_t local_size = range.second - range.first;
-  dolfin_assert(range.second - range.first >= 0);
+  dolfin_assert(range.second >= range.first);
 
   // Initialize vector, either default or MPI vector
   if (!distributed)

@@ -22,6 +22,7 @@
 // Last changed: 2011-11-14
 
 #include <algorithm>
+
 #include <dolfin/log/dolfin_log.h>
 #include "Cell.h"
 #include "CellType.h"

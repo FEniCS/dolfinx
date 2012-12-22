@@ -24,7 +24,6 @@
 #include <map>
 #include <utility>
 #include <vector>
-#include <dolfin/common/types.h>
 #include "MeshConnectivity.h"
 
 namespace dolfin

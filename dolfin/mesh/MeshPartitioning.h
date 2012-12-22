@@ -30,7 +30,6 @@
 #include <vector>
 #include <boost/array.hpp>
 #include <boost/multi_array.hpp>
-#include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 #include "LocalMeshValueCollection.h"
 #include "Mesh.h"

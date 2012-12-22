@@ -24,7 +24,6 @@
 #define __FACET_H
 
 #include <utility>
-#include <dolfin/common/types.h>
 #include "Cell.h"
 #include "Mesh.h"
 #include "MeshEntity.h"

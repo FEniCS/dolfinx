@@ -21,7 +21,7 @@
 #ifndef __TIMING_H
 #define __TIMING_H
 
-#include <dolfin/common/types.h>
+#include <string>
 #include <dolfin/log/Table.h>
 
 namespace dolfin

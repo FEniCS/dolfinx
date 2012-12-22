@@ -27,9 +27,7 @@
 
 #include <vtkSmartPointer.h>
 
-#include <dolfin/common/types.h>
 #include <dolfin/mesh/Mesh.h>
-
 #include "GenericVTKPlottable.h"
 
 class vtkActor2D;

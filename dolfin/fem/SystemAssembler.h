@@ -133,7 +133,7 @@ namespace dolfin
 
     static void apply_bc(double* A, double* b,
                          const DirichletBC::Map& boundary_values,
-                         const std::vector<const std::vector<DolfinIndex>* >& global_dofs);
+                         const std::vector<const std::vector<dolfin::la_index>* >& global_dofs);
 
     // Class to hold temporary data
     class Scratch
