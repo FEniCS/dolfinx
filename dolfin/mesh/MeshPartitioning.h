@@ -99,6 +99,10 @@ namespace dolfin
     static void build_distributed_value_collection(MeshValueCollection<T>& values,
                const LocalMeshValueCollection<T>& local_data, const Mesh& mesh);
 
+    /// Compute entity ownership
+    //static void number_entities(boost::array<std::map<Entity, EntityData>, 3>& entity_ownership
+    //                            const Mesh& mesh, std::size_t d);
+
     /// Create global entity indices for entities of dimension d
     static void number_entities(const Mesh& mesh, std::size_t d);
 
@@ -111,17 +115,17 @@ namespace dolfin
     struct EntityData
     {
       // Constructor
-      EntityData() : index(0) {}
+      EntityData() : local_index(0) {}
 
       // Constructor
-      explicit EntityData(std::size_t index) : index(index) {}
+      explicit EntityData(std::size_t local_index) : local_index(local_index) {}
 
       // Constructor
-      EntityData(std::size_t index, const std::vector<std::size_t>& processes)
-        : index(index), processes(processes) {}
+      EntityData(std::size_t local_index, const std::vector<std::size_t>& processes)
+        : local_index(local_index), processes(processes) {}
 
-      // Entity index
-      std::size_t index;
+      // Local (this process) entity index
+      std::size_t local_index;
 
       // Processes on which entity resides
       std::vector<std::size_t> processes;
@@ -153,8 +157,7 @@ namespace dolfin
     //  [2]: not owned but shared (will be numbered by another process,
     //       and number commuicated to this processes)
     static boost::array<std::map<Entity, EntityData>, 3>
-          compute_entity_ownership(const std::map<Entity, std::size_t>& entities,
-               const std::map<std::size_t, std::set<std::size_t> >& shared_vertices);
+          compute_entity_ownership(const Mesh& mesh, std::size_t d);
 
     // Build preliminary 'guess' of shared enties
     static void compute_preliminary_entity_ownership(

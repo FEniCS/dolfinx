@@ -94,8 +94,6 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
 //-----------------------------------------------------------------------------
 void MeshPartitioning::number_entities(const Mesh& _mesh, std::size_t d)
 {
-  // FIXME: Break up this function
-
   Timer timer("PARALLEL x: Number mesh entities");
   Mesh& mesh = const_cast<Mesh&>(_mesh);
 
@@ -119,21 +117,6 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, std::size_t d)
   // Initialize entities of dimension d
   mesh.init(d);
 
-  // Get shared vertices (global index, [sharing processes])
-  std::map<std::size_t, std::set<std::size_t> >& shared_vertices
-                            = mesh.topology().shared_entities(0);
-
-  // Build entity(vertex list)-to-global-vertex-index map
-  std::map<std::vector<std::size_t>, std::size_t> entities;
-  for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
-  {
-    std::vector<std::size_t> entity;
-    for (VertexIterator vertex(*e); !vertex.end(); ++vertex)
-      entity.push_back(vertex->global_index());
-    std::sort(entity.begin(), entity.end());
-    entities[entity] = e->index();
-  }
-
   // Compute ownership of entities ([entity vertices], data):
   //  [0]: owned exclusively (will be numbered by this process)
   //  [1]: owned and shared (will be numbered by this process, and number
@@ -141,12 +124,11 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, std::size_t d)
   //  [2]: not owned but shared (will be numbered by another process, and number
   //       commuicated to this processes)
   const boost::array<std::map<Entity, EntityData>, 3> entity_ownership
-    = compute_entity_ownership(entities, shared_vertices);
+    = compute_entity_ownership(mesh, d);
 
   const std::map<Entity, EntityData>& owned_exclusive_entities = entity_ownership[0];
   const std::map<Entity, EntityData>& owned_shared_entities    = entity_ownership[1];
   const std::map<Entity, EntityData>& unowned_shared_entities  = entity_ownership[2];
-
 
   // ---- break function here
 
@@ -155,6 +137,17 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, std::size_t d)
   // Create mesh markers for exterior facets
   if (d == (mesh.topology().dim() - 1))
   {
+    // Build entity(vertex list)-to-global-vertex-index map
+    std::map<std::vector<std::size_t>, std::size_t> entities;
+    for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
+    {
+      std::vector<std::size_t> entity;
+      for (VertexIterator vertex(*e); !vertex.end(); ++vertex)
+        entity.push_back(vertex->global_index());
+      std::sort(entity.begin(), entity.end());
+      entities[entity] = e->index();
+    }
+
     std::vector<std::size_t> _num_connected_cells
       = num_connected_cells(mesh, entities, owned_shared_entities,
                             unowned_shared_entities);
@@ -187,12 +180,12 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, std::size_t d)
 
   // Number exlusively owned entities
   for (it = owned_exclusive_entities.begin(); it != owned_exclusive_entities.end(); ++it)
-    entity_indices[it->second.index] = offset++;
+    entity_indices[it->second.local_index] = offset++;
 
   // Number shared entities
   std::map<Entity, EntityData>::const_iterator it1;
   for (it1 = owned_shared_entities.begin(); it1 != owned_shared_entities.end(); ++it1)
-    entity_indices[it1->second.index] = offset++;
+    entity_indices[it1->second.local_index] = offset++;
 
   // Communicate indices for shared entities and get indices for ignored
   std::vector<std::size_t> send_values;
@@ -200,7 +193,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, std::size_t d)
   for (it1 = owned_shared_entities.begin(); it1 != owned_shared_entities.end(); ++it1)
   {
     // Get entity index
-    const std::size_t local_entity_index = it1->second.index;
+    const std::size_t local_entity_index = it1->second.local_index;
     const int entity_index = entity_indices[local_entity_index];
     dolfin_assert(entity_index != -1);
 
@@ -250,7 +243,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, std::size_t d)
     }
 
     const std::size_t local_entity_index
-      = unowned_shared_entities.find(entity)->second.index;
+      = unowned_shared_entities.find(entity)->second.local_index;
     dolfin_assert(entity_indices[local_entity_index] == -1);
     entity_indices[local_entity_index] = global_index;
   }
@@ -352,11 +345,32 @@ std::pair<std::size_t, std::size_t>
 }
 //-----------------------------------------------------------------------------
 boost::array<std::map<MeshPartitioning::Entity, MeshPartitioning::EntityData>, 3>
-  MeshPartitioning::compute_entity_ownership(
-          const std::map<Entity, std::size_t>& entities,
-          const std::map<std::size_t, std::set<std::size_t> >& shared_vertices)
+  MeshPartitioning::compute_entity_ownership(const Mesh& mesh, std::size_t d)
 {
-  // Entitity ownership list
+  // Initialize entities of dimension d
+  mesh.init(d);
+
+  // Get shared vertices (global index, [sharing processes])
+  const std::map<std::size_t, std::set<std::size_t> >& shared_vertices
+                            = mesh.topology().shared_entities(0);
+
+  // Build entity(vertex list)-to-global-vertex-index map
+  std::map<std::vector<std::size_t>, std::size_t> entities;
+  for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
+  {
+    std::vector<std::size_t> entity;
+    for (VertexIterator vertex(*e); !vertex.end(); ++vertex)
+      entity.push_back(vertex->global_index());
+    std::sort(entity.begin(), entity.end());
+    entities[entity] = e->index();
+  }
+
+  // Entity ownership list ([entity vertices], data):
+  //  [0]: owned exclusively (will be numbered by this process)
+  //  [1]: owned and shared (will be numbered by this process, and number
+  //       commuicated to other processes)
+  //  [2]: not owned but shared (will be numbered by another process, and number
+  //       commuicated to this processes)
   boost::array<std::map<Entity, EntityData>, 3> entity_ownership;
 
   // Compute preliminary ownership lists
@@ -572,7 +586,7 @@ void MeshPartitioning::compute_final_entity_ownership(boost::array<std::map<Enti
   for (it = unowned_shared_entities.begin(); it != unowned_shared_entities.end(); ++it)
   {
     const Entity& entity = it->first;
-    const std::size_t local_entity_index = it->second.index;
+    const std::size_t local_entity_index = it->second.local_index;
     if (entity_processes.find(entity) != entity_processes.end())
     {
       std::vector<std::size_t> common_processes = entity_processes[entity];
@@ -611,7 +625,7 @@ void MeshPartitioning::compute_final_entity_ownership(boost::array<std::map<Enti
          it != owned_shared_entities.end(); ++it)
   {
     const Entity& entity = it->first;
-    const std::size_t local_entity_index = it->second.index;
+    const std::size_t local_entity_index = it->second.local_index;
     if (entity_processes.find(entity) == entity_processes.end())
     {
       // Move from shared to owned
