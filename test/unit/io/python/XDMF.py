@@ -106,35 +106,35 @@ if has_hdf5():
         # FIXME: 1D seems to be broken
         def xtest_save_1d_mesh(self):
             mesh = UnitIntervalMesh(32)
-            mf = CellFunction("sizet", mesh)
+            mf = CellFunction("size_t", mesh)
             for cell in cells(mesh):
                 mf[cell] = cell.index()
             File("output/mf_1D.xdmf") << mf
 
         def test_save_2D_cell_function(self):
             mesh = UnitSquareMesh(32, 32)
-            mf = CellFunction("sizet", mesh)
+            mf = CellFunction("size_t", mesh)
             for cell in cells(mesh):
                 mf[cell] = cell.index()
             File("output/mf_2D.xdmf") << mf
 
         def test_save_3D_cell_function(self):
             mesh = UnitCubeMesh(8, 8, 8)
-            mf = CellFunction("sizet", mesh)
+            mf = CellFunction("size_t", mesh)
             for cell in cells(mesh):
                 mf[cell] = cell.index()
             File("output/mf_3D.xdmf") << mf
 
         def test_save_2D_facet_function(self):
             mesh = UnitSquareMesh(32, 32)
-            mf = FacetFunction("sizet", mesh)
+            mf = FacetFunction("size_t", mesh)
             for facet in facets(mesh):
                 mf[facet] = facet.index()
             File("output/mf_facet_2D.xdmf") << mf
 
         def test_save_3D_facet_function(self):
             mesh = UnitCubeMesh(8, 8, 8)
-            mf = FacetFunction("sizet", mesh)
+            mf = FacetFunction("size_t", mesh)
             for facet in facets(mesh):
                 mf[facet] = facet.index()
             File("output/mf_facet_3D.xdmf") << mf

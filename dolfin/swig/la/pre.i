@@ -183,11 +183,16 @@
 %ignore dolfin::PETScKrylovSolver(std::string, PETScUserPreconditioner&);
 
 //-----------------------------------------------------------------------------
-// PETSc backend
+// PETSc/SLEPc backend
 //-----------------------------------------------------------------------------
 #ifdef HAS_PETSC
 %ignore dolfin::PETScVector::vec;
 %ignore dolfin::PETScBaseMatrix::mat;
+#endif
+
+#ifdef HAS_SLEPC
+%ignore dolfin::SLEPcEigenSolver(const PETScMatrix&);
+%ignore dolfin::SLEPcEigenSolver(const PETScMatrix&, const PETScMatrix&);
 #endif
 
 //-----------------------------------------------------------------------------

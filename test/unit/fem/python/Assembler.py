@@ -216,12 +216,12 @@ class Assembly(unittest.TestCase):
 
         # Define some haphazardly chosen cell/facet function
         mesh = UnitSquareMesh(4, 4)
-        domains = CellFunction("sizet", mesh)
+        domains = CellFunction("size_t", mesh)
         domains.set_all(0)
         domains[0] = 1
         domains[1] = 1
 
-        boundaries = FacetFunction("sizet", mesh)
+        boundaries = FacetFunction("size_t", mesh)
         boundaries.set_all(0)
         boundaries[0] = 1
         boundaries[1] = 1
@@ -250,7 +250,7 @@ class Assembly(unittest.TestCase):
             parameters["num_threads"] = 0
 
         # Check that given exterior_facet_domains override
-        new_boundaries = FacetFunction("sizet", mesh)
+        new_boundaries = FacetFunction("size_t", mesh)
         new_boundaries.set_all(0)
         reference2 = 6.2001953125
         value2 = assemble(M, exterior_facet_domains=new_boundaries)
@@ -310,8 +310,8 @@ class Assembly(unittest.TestCase):
 
         # Mark mesh functions
         D = mesh.topology().dim()
-        cell_domains = MeshFunction("sizet", mesh, D)
-        exterior_facet_domains = MeshFunction("sizet", mesh, D - 1)
+        cell_domains = MeshFunction("size_t", mesh, D)
+        exterior_facet_domains = MeshFunction("size_t", mesh, D - 1)
         cell_domains.set_all(1)
         exterior_facet_domains.set_all(1)
         my_domain.mark(cell_domains, 0)

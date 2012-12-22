@@ -51,7 +51,7 @@ class Outflow(SubDomain):
 mesh = Mesh("dolfin-2.xml.gz")
 
 # Create mesh functions over the cell facets
-sub_domains = MeshFunction("sizet", mesh, mesh.topology().dim() - 1)
+sub_domains = MeshFunction("size_t", mesh, mesh.topology().dim() - 1)
 sub_domains_bool = MeshFunction("bool", mesh, mesh.topology().dim() - 1)
 sub_domains_double = MeshFunction("double", mesh, mesh.topology().dim() - 1)
 
