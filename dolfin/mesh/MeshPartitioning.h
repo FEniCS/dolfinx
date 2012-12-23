@@ -201,10 +201,7 @@ namespace dolfin
     /// Compute number of cells connected to each facet (globally). Facets
     /// on internal boundaries will be connected to two cells (with the
     /// cells residing on neighboring processes)
-    static std::vector<std::size_t> num_connected_cells(const Mesh& mesh,
-               const std::map<Entity, std::size_t>& entities,
-               const std::map<Entity, EntityData>& owned_shared_entities,
-               const std::map<Entity, EntityData>& unowned_shared_entities);
+    static void init_facet_cell_connections(Mesh& mesh);
   };
 
   //---------------------------------------------------------------------------

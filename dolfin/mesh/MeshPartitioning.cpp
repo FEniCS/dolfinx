@@ -48,7 +48,6 @@
 #include "Vertex.h"
 #include "MeshPartitioning.h"
 
-
 using namespace dolfin;
 
 // Explicitly instantiate some templated functions to help the Python
@@ -88,27 +87,38 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   // Create MeshDomains from local_data
   build_mesh_domains(mesh, local_data);
 
-  // Number facets (see https://bugs.launchpad.net/dolfin/+bug/733834)
-  number_entities(mesh, mesh.topology().dim() - 1);
+  // Initialise number of globally connected cells to each facet. This is
+  // necessary to distinguish between facets on a exterior boundary and
+  // facets on a partition boudnary (see
+  // https://bugs.launchpad.net/dolfin/+bug/733834).
+  init_facet_cell_connections(mesh);
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::number_entities(const Mesh& _mesh, std::size_t d)
 {
   Timer timer("PARALLEL x: Number mesh entities");
+
+  // Return if global entity indices have already been calculated
+  if (_mesh.topology().have_global_indices(d))
+    return;
+
   Mesh& mesh = const_cast<Mesh&>(_mesh);
 
-  // Check for vertices
-  if (d == 0 && mesh.topology().dim() > 1)
+  // Check that we're not re-nubering vertices
+  if (d == 0)
   {
     dolfin_error("MeshPartitioning.cpp",
                  "number mesh entities",
-                 "Vertex indices do not exist; need vertices to number entities of dimension 0");
+                 "Gloval vertex indices exist at input. Cannot be renumbered");
   }
 
-  // Return if global entity indices are already calculated (proceed if
-  // d is a facet because facets will be marked)
-  if (d != (mesh.topology().dim() - 1) && mesh.topology().have_global_indices(d))
-    return;
+  // Check that we're not re-nubering cells
+  if (d == mesh.topology().dim())
+  {
+    dolfin_error("MeshPartitioning.cpp",
+                 "number mesh entities",
+                 "Global cells indices exist at input. Cannot be renumbered");
+  }
 
   // Get number of processes and process number
   const std::size_t num_processes = MPI::num_processes();
@@ -125,53 +135,21 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, std::size_t d)
   //       commuicated to this processes)
   const boost::array<std::map<Entity, EntityData>, 3> entity_ownership
     = compute_entity_ownership(mesh, d);
-
   const std::map<Entity, EntityData>& owned_exclusive_entities = entity_ownership[0];
   const std::map<Entity, EntityData>& owned_shared_entities    = entity_ownership[1];
   const std::map<Entity, EntityData>& unowned_shared_entities  = entity_ownership[2];
 
-  // ---- break function here
-
-  /// --- Mark exterior facets
-
-  // Create mesh markers for exterior facets
-  if (d == (mesh.topology().dim() - 1))
-  {
-    // Build entity(vertex list)-to-global-vertex-index map
-    std::map<std::vector<std::size_t>, std::size_t> entities;
-    for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
-    {
-      std::vector<std::size_t> entity;
-      for (VertexIterator vertex(*e); !vertex.end(); ++vertex)
-        entity.push_back(vertex->global_index());
-      std::sort(entity.begin(), entity.end());
-      entities[entity] = e->index();
-    }
-
-    std::vector<std::size_t> _num_connected_cells
-      = num_connected_cells(mesh, entities, owned_shared_entities,
-                            unowned_shared_entities);
-    mesh.topology()(d, mesh.topology().dim()).set_global_size(_num_connected_cells);
-  }
-
-  // Compute global number of entities and process offset
+  // Number of entities 'owned' by this process
   const std::size_t num_local_entities = owned_exclusive_entities.size()
-                                        + owned_shared_entities.size();
+                                       + owned_shared_entities.size();
+
+  // Compute global number of entities and local process offset
   const std::pair<std::size_t, std::size_t> num_global_entities
       = compute_num_global_entities(num_local_entities, num_processes,
                                     process_number);
 
-  // Store number of global entities
-  mesh.topology().init_global(d, num_global_entities.first);
-
   // Extract offset
   std::size_t offset = num_global_entities.second;
-
-  // Return if global entity indices are already calculated
-  if (mesh.topology().have_global_indices(d))
-    return;
-
-  /// ---- Numbering
 
   // Prepare list of entity numbers. Check later that nothing is -1
   std::vector<int> entity_indices(mesh.size(d), -1);
@@ -187,7 +165,8 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, std::size_t d)
   for (it1 = owned_shared_entities.begin(); it1 != owned_shared_entities.end(); ++it1)
     entity_indices[it1->second.local_index] = offset++;
 
-  // Communicate indices for shared entities and get indices for ignored
+  // Communicate indices for shared entities and get indices for shared
+  // but not owned entities
   std::vector<std::size_t> send_values;
   std::vector<std::size_t> destinations;
   for (it1 = owned_shared_entities.begin(); it1 != owned_shared_entities.end(); ++it1)
@@ -248,7 +227,8 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, std::size_t d)
     entity_indices[local_entity_index] = global_index;
   }
 
-  // Create mesh data
+  // Set mesh topology and store number of global entities
+  mesh.topology().init_global(d, num_global_entities.first);
   mesh.topology().init_global_indices(d, entity_indices.size());
   for (std::size_t i = 0; i < entity_indices.size(); ++i)
   {
@@ -926,19 +906,41 @@ bool MeshPartitioning::in_overlap(const Entity& entity,
   return true;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t> MeshPartitioning::num_connected_cells(const Mesh& mesh,
-             const std::map<Entity, std::size_t>& entities,
-             const std::map<Entity, EntityData>& owned_shared_entities,
-             const std::map<Entity, EntityData>& unowned_shared_entities)
+void MeshPartitioning::init_facet_cell_connections(Mesh& mesh)
 {
   // Topological dimension
   const std::size_t D = mesh.topology().dim();
 
+  // Initialize entities of dimension d
+  mesh.init(D - 1);
+
+  // Build entity(vertex list)-to-global-vertex-index map
+  std::map<std::vector<std::size_t>, std::size_t> entities;
+  for (MeshEntityIterator e(mesh, D - 1); !e.end(); ++e)
+  {
+    std::vector<std::size_t> entity;
+    for (VertexIterator vertex(*e); !vertex.end(); ++vertex)
+      entity.push_back(vertex->global_index());
+    std::sort(entity.begin(), entity.end());
+    entities[entity] = e->index();
+  }
+
+  // Compute ownership of entities ([entity vertices], data):
+  //  [0]: owned exclusively (will be numbered by this process)
+  //  [1]: owned and shared (will be numbered by this process, and number
+  //       commuicated to other processes)
+  //  [2]: not owned but shared (will be numbered by another process, and number
+  //       commuicated to this processes)
+  const boost::array<std::map<Entity, EntityData>, 3> entity_ownership
+    = compute_entity_ownership(mesh, D - 1);
+
+  //const std::map<Entity, EntityData>& owned_exclusive_entities = entity_ownership[0];
+  const std::map<Entity, EntityData>& owned_shared_entities    = entity_ownership[1];
+  const std::map<Entity, EntityData>& unowned_shared_entities  = entity_ownership[2];
+
   // Create vector to hold number of cells connected to each facet. Assume
   // facet is internal, then modify for external facets.
   std::vector<std::size_t> num_global_neighbors(mesh.num_facets(), 2);
-
-  // FIXME: Check that everything is correctly initalised
 
   // Add facets that are locally connected to one cell only
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
@@ -949,12 +951,13 @@ std::vector<std::size_t> MeshPartitioning::num_connected_cells(const Mesh& mesh,
 
   // Handle facets on internal partition boundaries
   std::map<Entity, EntityData>::const_iterator it;
+
   for (it = owned_shared_entities.begin(); it != owned_shared_entities.end(); ++it)
     num_global_neighbors[entities.find(it->first)->second] = 2;
 
   for (it = unowned_shared_entities.begin(); it != unowned_shared_entities.end(); ++it)
     num_global_neighbors[entities.find(it->first)->second] = 2;
 
-  return num_global_neighbors;
+  mesh.topology()(D - 1, mesh.topology().dim()).set_global_size(num_global_neighbors);
 }
 //-----------------------------------------------------------------------------
