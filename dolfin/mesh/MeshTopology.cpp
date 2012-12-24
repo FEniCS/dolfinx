@@ -155,25 +155,22 @@ const dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0, std::s
 std::map<std::size_t, std::set<std::size_t> >&
   MeshTopology::shared_entities(std::size_t dim)
 {
-  if (dim != 0)
-  {
-    dolfin_error("MeshTopology.cpp",
-                 "get shared mesh entities",
-                 "Shared mesh entities are available for dim 0 (vertices) only");
-  }
-  return _shared_vertices;
+  dolfin_assert(dim < this->dim());
+  return _shared_entities[dim];
 }
 //-----------------------------------------------------------------------------
 const std::map<std::size_t, std::set<std::size_t> >&
   MeshTopology::shared_entities(std::size_t dim) const
 {
-  if (dim != 0)
+  std::map<std::size_t, std::map<std::size_t, std::set<std::size_t> > >::const_iterator e;
+  e = _shared_entities.find(dim);
+  if (e == _shared_entities.end())
   {
     dolfin_error("MeshTopology.cpp",
                  "get shared mesh entities",
-                 "Shared mesh entities are available for dim 0 (vertices) only");
+                 "Shared mesh entities have not been computed for dim %s", dim);
   }
-  return _shared_vertices;
+  return e->second;
 }
 //-----------------------------------------------------------------------------
 size_t MeshTopology::hash() const

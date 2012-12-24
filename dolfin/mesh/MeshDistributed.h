@@ -52,8 +52,14 @@ namespace dolfin
     /// entities will not appear in the map. Works only for vertices and
     /// cells
     static std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t> > >
-    local_off_process_entities(const std::vector<std::size_t>& entity_indices,
+    locate_off_process_entities(const std::vector<std::size_t>& entity_indices,
                               std::size_t dim, const Mesh& mesh);
+
+    /// Compute map from local index of shared entity to list
+    /// of sharing process and local index,
+    /// i.e. (local index my process, [sharing process p, local index on p])
+    static std::map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >
+      compute_shared_entities(const Mesh& mesh, std::size_t d);
 
   private:
 

@@ -156,9 +156,9 @@ namespace dolfin
     // Global indices for mesh entities (empty if not set)
     std::vector<std::vector<std::size_t> > _global_indices;
 
-    // Maps each shared vertex (entity of dim 0) to a list of the
+    // Maps each shared entity (global index) to a list of the
     // processes sharing the vertex
-    std::map<std::size_t, std::set<std::size_t> > _shared_vertices;
+    std::map<std::size_t, std::map<std::size_t, std::set<std::size_t> > > _shared_entities;
 
     // Connectivity for pairs of topological dimensions
     std::vector<std::vector<MeshConnectivity> > connectivity;

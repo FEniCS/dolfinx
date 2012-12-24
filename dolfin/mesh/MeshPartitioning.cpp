@@ -96,93 +96,6 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   MeshDistributed::init_facet_cell_connections(mesh);
 }
 //-----------------------------------------------------------------------------
-/*
-std::map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >
-  MeshPartitioning::compute_shared_entities(const Mesh& mesh, std::size_t d)
-{
-  // Compute ownership of entities ([entity vertices], data):
-  //  [0]: owned exclusively (will be numbered by this process)
-  //  [1]: owned and shared (will be numbered by this process, and number
-  //       commuicated to other processes)
-  //  [2]: not owned but shared (will be numbered by another process, and number
-  //       commuicated to this processes)
-  const boost::array<std::map<Entity, EntityData>, 3> entity_ownership
-    = compute_entity_ownership(mesh, d);
-  const std::map<Entity, EntityData>& shared_entities0 = entity_ownership[1];
-  const std::map<Entity, EntityData>& shared_entities1 = entity_ownership[2];
-
-  // Initialize entities of dimension d
-  mesh.init(d);
-
-  // Send my local index to sharing processes, and receive local index
-  // from sharing processes
-  std::map<Entity, EntityData>::const_iterator e;
-  std::map<std::size_t, std::vector<std::size_t> > send_local_indices;
-  for (e = shared_entities0.begin(); e != shared_entities0.end(); ++e)
-  {
-    std::vector<std::size_t>::const_iterator dest;
-    for (dest = e->second.processes.begin(); dest != e->second.processes.end(); ++dest)
-    {
-      send_local_indices[*dest].push_back(e->second.local_index);
-      send_local_indices[*dest].insert(send_local_indices[*dest].end(), e->first.begin(), e->first.end());
-    }
-  }
-  for (e = shared_entities1.begin(); e != shared_entities1.end(); ++e)
-  {
-    std::vector<std::size_t>::const_iterator dest;
-    for (dest = e->second.processes.begin(); dest != e->second.processes.end(); ++dest)
-    {
-      send_local_indices[*dest].push_back(e->second.local_index);
-      send_local_indices[*dest].insert(send_local_indices[*dest].end(), e->first.begin(), e->first.end());
-    }
-  }
-
-  // Send/receive data
-  MPICommunicator mpi_comm;
-  boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_attach);
-  std::vector<boost::mpi::request> reqs;
-  std::map<std::size_t, std::vector<std::size_t> >::const_iterator data;
-  std::map<std::size_t, std::vector<std::size_t> > recv;
-  for (data = send_local_indices.begin(); data != send_local_indices.end(); ++data)
-  {
-    reqs.push_back(comm.isend(data->first, MPI::process_number(), data->second));
-    reqs.push_back(comm.irecv(data->first, data->first, recv[data->first]));
-  }
-  boost::mpi::wait_all(reqs.begin(), reqs.end());
-
-  // Debug printing
-  {
-    const std::size_t local_proc = 3;
-    const std::size_t remote_proc = 1;
-    if (MPI::process_number() == local_proc && send_local_indices.find(remote_proc) != send_local_indices.end())
-    {
-      const std::vector<std::size_t>& data = send_local_indices.find(remote_proc)->second;
-      cout << "Start IO on proc " << local_proc << endl;
-      for (std::size_t i = 0; i < data.size(); ++i)
-        cout << data[i] << endl;
-    }
-    else if (MPI::process_number() == local_proc)
-      cout << "Do not share data with " << remote_proc << endl;
-
-    MPI::barrier();
-    cout << "-------------------------" << endl;
-    MPI::barrier();
-
-    if (MPI::process_number() == remote_proc)
-    {
-      const std::vector<std::size_t>& data = recv[local_proc];
-      cout << "Data received on "<< remote_proc << " from " << local_proc << endl;
-      for (std::size_t i = 0; i < data.size(); ++i)
-        cout << data[i] << endl;
-    }
-  }
-
-  std::map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > > sharing;
-
-  return sharing;
-}
-*/
-//-----------------------------------------------------------------------------
 void MeshPartitioning::partition(Mesh& mesh, const LocalMeshData& mesh_data)
 {
   // Compute cell partition
@@ -454,7 +367,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
         = mesh.topology().shared_entities(0);
   shared_vertices.clear();
 
-  // Distribute boundaries and build mappings
+  // Build shared vertex to sharing processes map
   for (std::size_t i = 1; i < num_processes; ++i)
   {
     // We send data to process p - i (i steps to the left)

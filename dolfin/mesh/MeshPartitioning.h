@@ -89,13 +89,6 @@ namespace dolfin
     static void build_distributed_value_collection(MeshValueCollection<T>& values,
                const LocalMeshValueCollection<T>& local_data, const Mesh& mesh);
 
-
-    /// Compute map from local index of shared entity to list
-    /// of sharing process and local index,
-    /// i.e. (local index my process, [sharing process p, local index on p])
-    //static std::map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >
-    //  compute_shared_entities(const Mesh& mesh, std::size_t d);
-
   private:
 
     // Create a partitioned mesh based on local mesh data
@@ -128,7 +121,8 @@ namespace dolfin
                    std::size_t num_global_vertices);
 
     // Create and attach distributed MeshDomains from local_data
-    static void build_mesh_domains(Mesh& mesh, const LocalMeshData& local_data);
+    static void build_mesh_domains(Mesh& mesh,
+                                   const LocalMeshData& local_data);
 
     // Create and attach distributed MeshDomains from local_data
     // [entry, (cell_index, local_index, value)]
@@ -220,7 +214,7 @@ namespace dolfin
 
     // Get destinations and local cell index at destination for off-process cells
     const std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t> > >
-      entity_hosts = MeshDistributed::local_off_process_entities(off_process_global_cell_entities, D, mesh);
+      entity_hosts = MeshDistributed::locate_off_process_entities(off_process_global_cell_entities, D, mesh);
 
     // Pack data to send to appropriate process
     std::vector<std::size_t> send_data0;
