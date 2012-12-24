@@ -107,12 +107,13 @@ namespace dolfin
       return !_global_indices[dim].empty();
     }
 
-    /// Return map from shared entiies to process that share the entity
+    /// Return map from shared entities (global index) to processes that
+    /// share the entity
     std::map<std::size_t, std::set<std::size_t> >&
       shared_entities(std::size_t dim);
 
-    /// Return map from shared entiies to process that share the entity
-    /// (const version)
+    /// Return map from shared entiies (global index) to process that
+    /// share the entity (const version)
     const std::map<std::size_t, std::set<std::size_t> >&
       shared_entities(std::size_t dim) const;
 

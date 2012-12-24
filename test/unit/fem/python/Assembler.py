@@ -137,10 +137,6 @@ class Assembly(unittest.TestCase):
 
         mesh = UnitSquareMesh(24, 24)
 
-        # This is a hack to get around a DOLFIN bug
-        if MPI.num_processes() > 1:
-            cpp.MeshPartitioning.number_entities(mesh, mesh.topology().dim() - 1);
-
         f = Constant(1.0)
         M0 = f*dx
         self.assertAlmostEqual(assemble(M0, mesh=mesh), 1.0)

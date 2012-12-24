@@ -18,6 +18,7 @@
 // First added:  2006-05-08
 // Last changed: 2012-10-25
 
+#include <numeric>
 #include <sstream>
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
@@ -134,7 +135,7 @@ void MeshTopology::init_global(std::size_t dim, std::size_t global_size)
 void MeshTopology::init_global_indices(std::size_t dim, std::size_t size)
 {
   dolfin_assert(dim < _global_indices.size());
-  _global_indices[dim] = std::vector<std::size_t>(size);
+  _global_indices[dim] = std::vector<std::size_t>(size, std::numeric_limits<std::size_t>::max());
 }
 //-----------------------------------------------------------------------------
 dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0, std::size_t d1)
