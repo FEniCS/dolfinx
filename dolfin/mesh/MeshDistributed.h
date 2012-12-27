@@ -57,7 +57,7 @@ namespace dolfin
 
     /// Compute map from local index of shared entity to list
     /// of sharing process and local index,
-    /// i.e. (local index my process, [sharing process p, local index on p])
+    /// i.e. (local index, [(sharing process p, local index on p)])
     static std::map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >
       compute_shared_entities(const Mesh& mesh, std::size_t d);
 
@@ -95,8 +95,9 @@ namespace dolfin
     static boost::array<std::map<Entity, EntityData>, 3>
           compute_entity_ownership(const Mesh& mesh, std::size_t d);
 
-    // Build preliminary 'guess' of shared enties
-    static void compute_preliminary_entity_ownership(
+    // Build preliminary 'guess' of shared enties. This function does
+    // not involve any inter-process communication.
+    static void compute_preliminary_entity_ownership(const Mesh& mesh,
           const std::map<std::size_t, std::set<std::size_t> >& shared_vertices,
           const std::map<Entity, std::size_t>& entities,
           boost::array<std::map<Entity, EntityData>, 3>& entity_ownership);

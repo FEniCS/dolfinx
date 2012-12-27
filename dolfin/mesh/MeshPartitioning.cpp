@@ -392,15 +392,15 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     for (global_index = intersection.begin(); global_index != intersection_end; ++global_index)
     {
       // Global indices
-      shared_vertices[*global_index].insert(q);
+      //shared_vertices[*global_index].insert(q);
 
-      /*
-      // Local indices
+      // Get local index
       std::map<std::size_t, std::size_t>::const_iterator local_index;
       local_index = vertex_global_to_local.find(*global_index);
       dolfin_assert(local_index != vertex_global_to_local.end());
+
+      // Insert (local index, [proc])
       shared_vertices[local_index->second].insert(q);
-      */
     }
   }
 }
