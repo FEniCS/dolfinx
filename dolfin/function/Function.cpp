@@ -628,6 +628,9 @@ void Function::init_vector()
   const std::pair<std::size_t, std::size_t> range = _function_space->dofmap()->ownership_range();
   const std::size_t local_size = range.second - range.first;
 
+
+
+
   // Determine ghost vertices if dof map is distributed
   std::vector<std::size_t> ghost_indices;
   if (N > local_size)
@@ -661,9 +664,10 @@ void Function::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
   dolfin_assert(_function_space->dofmap());
   const GenericDofMap& dofmap = *_function_space->dofmap();
 
+  // FIXME: Remove if not needed
   // Dofs per cell
-  dolfin_assert(_function_space->element());
-  const std::size_t num_dofs_per_cell = _function_space->element()->space_dimension();
+  //dolfin_assert(_function_space->element());
+  //const std::size_t num_dofs_per_cell = _function_space->element()->space_dimension();
 
   // Get local range
   const std::size_t n0 = range.first;
@@ -674,8 +678,7 @@ void Function::compute_ghost_indices(std::pair<std::size_t, std::size_t> range,
   {
     // Get dofs on cell
     const std::vector<DolfinIndex>& dofs = dofmap.cell_dofs(cell->index());
-
-    for (std::size_t d = 0; d < num_dofs_per_cell; ++d)
+    for (std::size_t d = 0; d < dofs.size(); ++d)
     {
       const std::size_t dof = dofs[d];
       if (dof < n0 || dof >= n1)

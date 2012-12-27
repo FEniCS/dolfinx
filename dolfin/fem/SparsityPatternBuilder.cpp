@@ -80,6 +80,11 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
       for (std::size_t i = 0; i < rank; ++i)
         dofs[i] = &dofmaps[i]->cell_dofs(cell->index());
 
+      // FIXME: Debugging
+      cout << "cell " << cell->index() << endl;
+      for (uint i = 0; i < dofmaps[0]->cell_dofs(cell->index()).size(); i++)
+        cout << "  dof = " << dofmaps[0]->cell_dofs(cell->index())[i] << endl;
+
       // Insert non-zeroes in sparsity pattern
       sparsity_pattern.insert(dofs);
       p++;
