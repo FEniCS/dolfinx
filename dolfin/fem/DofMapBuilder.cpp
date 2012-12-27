@@ -112,35 +112,21 @@ void DofMapBuilder::build(DofMap& dofmap,
     }
   }
 
-  // FIXME: debugging
-  if (restriction)
-  {
-    cout << "Number of restricted dofs: " << restricted_dofs.size() << endl;
-    for (map_iterator it = restricted_dofs.begin(); it != restricted_dofs.end(); ++it)
-      cout << "  " << it->first << " --> " << it->second << endl;
-  }
-
   // Set global dimension
   if (restriction)
     dofmap._global_dimension = restricted_dofs.size();
   else
     dofmap._global_dimension = dofmap._ufc_dofmap->global_dimension();
 
-  cout << "Global dimension: " << dofmap._global_dimension << endl;
-
   // Build (re-order) dofmap when running in parallel
   if (distributed)
   {
-    cout << "Building distributed dofmap" << endl;
-
     // Build set of global dofs
     const set global_dofs = compute_global_dofs(dofmap, dolfin_mesh);
 
     // Build distributed dof map
-    cout << "calling build_distributed" << endl;
     build_distributed(dofmap, global_dofs, dolfin_mesh,
                       restriction, restricted_dofs_inverse);
-    cout << "done" << endl;
   }
   else
   {
@@ -175,8 +161,6 @@ void DofMapBuilder::build(DofMap& dofmap,
     }
     dofmap._ownership_range = std::make_pair(0, dofmap.global_dimension());
   }
-
-  cout << "done in DofMapBuilder" << endl;
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::build_distributed(DofMap& dofmap,
@@ -282,12 +266,6 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
     }
   }
 
-  cout << "Shared dofs:" << endl;
-  for (set_iterator it = shared_owned_dofs.begin(); it != shared_owned_dofs.end(); ++it)
-  {
-    cout << "  " << *it << endl;
-  }
-
   // Decide ownership of shared dofs
   const std::size_t num_proc = MPI::num_processes();
   const std::size_t proc_num = MPI::process_number();
@@ -384,7 +362,6 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
     const std::size_t _owned_dim = owned_dofs.size();
     const std::size_t _global_dimension = MPI::sum(_owned_dim);
     dofmap._global_dimension = _global_dimension;
-    cout << "Global dimension of restricted space: " << _global_dimension << endl;
   }
   else
   {
@@ -534,15 +511,6 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
     dofmap._neighbours.insert(it->second.begin(), it->second.end());
   }
 
-  // FIXME: Debugging
-  cout << "Parallel renumbering:" << endl;
-  for (boost::unordered_map<std::size_t, std::size_t>::const_iterator
-         it = old_to_new_dof_index.begin();
-       it != old_to_new_dof_index.end(); ++it)
-  {
-    cout << "  " << it->first << " --> " << it->second << endl;
-  }
-
   // Build new dof map
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
@@ -571,10 +539,6 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
 
       // Insert dof
       new_dofmap[cell_index][i] = old_to_new_dof_index[old_index];
-
-      cout << "Setting dof: "
-           << old_index << " --> " << old_to_new_dof_index[old_index] << endl;
-
     }
   }
 
@@ -584,13 +548,6 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   // Set ownership range
   dofmap._ownership_range = std::make_pair<std::size_t, std::size_t>(process_offset,
                                           process_offset + owned_dofs.size());
-
-  // FIXME: Debug
-
-  cout << "After renumbering:" << endl;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-    for (uint i = 0; i < dofmap._dofmap[cell->index()].size(); i++)
-      cout << "  dof = " << dofmap._dofmap[cell->index()][i] << endl;
 
   log(TRACE, "Finished renumbering dofs for parallel dof map");
 }

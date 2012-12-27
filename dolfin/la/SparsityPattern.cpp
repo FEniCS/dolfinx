@@ -307,7 +307,6 @@ void SparsityPattern::apply()
     {
       // Get generalised row for non-local entry
       const std::size_t I = non_local[i];
-      cout << "Trying to find row I = " << I << endl;
 
       // Figure out which process owns the row
       boost::unordered_map<std::size_t, std::size_t>::const_iterator non_local_index
