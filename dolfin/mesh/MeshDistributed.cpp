@@ -375,7 +375,7 @@ MeshDistributed::locate_off_process_entities(const std::vector<std::size_t>& ent
   return processes;
 }
 //-----------------------------------------------------------------------------
-std::map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >
+boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >
   MeshDistributed::compute_shared_entities(const Mesh& mesh, std::size_t d)
 {
   // Number entities (globally)
@@ -392,11 +392,11 @@ std::map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >
   const std::vector<std::size_t>& global_indices_map = mesh.topology().global_indices(d);
 
   // Global-to-local map for each process
-  std::map<std::size_t, std::map<std::size_t, std::size_t> > global_to_local;
+  boost::unordered_map<std::size_t, boost::unordered_map<std::size_t, std::size_t> > global_to_local;
 
   // Pack global indices for sending to sharing processes
-  std::map<std::size_t, std::vector<std::size_t> > send_indices;
-  std::map<std::size_t, std::vector<std::size_t> > local_sent_indices;
+  boost::unordered_map<std::size_t, std::vector<std::size_t> > send_indices;
+  boost::unordered_map<std::size_t, std::vector<std::size_t> > local_sent_indices;
   std::map<std::size_t, std::set<std::size_t> >::const_iterator shared_entity;
   for (shared_entity = shared_entities.begin(); shared_entity != shared_entities.end(); ++shared_entity)
   {
@@ -426,8 +426,8 @@ std::map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >
 
   // Send/receive global indices
   std::vector<boost::mpi::request> reqs;
-  std::map<std::size_t, std::vector<std::size_t> > recv_entities;
-  std::map<std::size_t, std::vector<std::size_t> >::const_iterator global_indices;
+  boost::unordered_map<std::size_t, std::vector<std::size_t> > recv_entities;
+  boost::unordered_map<std::size_t, std::vector<std::size_t> >::const_iterator global_indices;
   for (global_indices = send_indices.begin(); global_indices != send_indices.end(); ++global_indices)
   {
     const std::size_t destination = global_indices->first;
@@ -440,7 +440,7 @@ std::map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >
   send_indices.clear();
 
   // Determine local entities indices for received global entity indices
-  std::map<std::size_t, std::vector<std::size_t> >::const_iterator received_global_indices;
+  boost::unordered_map<std::size_t, std::vector<std::size_t> >::const_iterator received_global_indices;
   for (received_global_indices = recv_entities.begin();
       received_global_indices != recv_entities.end(); ++received_global_indices)
   {
@@ -448,10 +448,10 @@ std::map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >
     const std::size_t sending_proc = received_global_indices->first;
 
     // Get global-to-local map for neighbour process
-    std::map<std::size_t, std::map<std::size_t, std::size_t> >::const_iterator
+    boost::unordered_map<std::size_t, boost::unordered_map<std::size_t, std::size_t> >::const_iterator
       it = global_to_local.find(sending_proc);
     dolfin_assert(it != global_to_local.end());
-    const std::map<std::size_t, std::size_t>& neighbour_global_to_local = it->second;
+    const boost::unordered_map<std::size_t, std::size_t>& neighbour_global_to_local = it->second;
 
     // Build vector of local indices
     const std::vector<std::size_t>& global_indices = received_global_indices->second;
@@ -461,7 +461,7 @@ std::map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >
       const std::size_t global_index = global_indices[i];
 
       // Find local index corresponding to global index
-      std::map<std::size_t, std::size_t>::const_iterator it = neighbour_global_to_local.find(global_index);
+      boost::unordered_map<std::size_t, std::size_t>::const_iterator it = neighbour_global_to_local.find(global_index);
 
       dolfin_assert(it != neighbour_global_to_local.end());
       const std::size_t my_local_index = it->second;
@@ -474,7 +474,7 @@ std::map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >
 
   // Send back/receive local indices
   std::vector<boost::mpi::request> reqs1;
-  std::map<std::size_t, std::vector<std::size_t> >::const_iterator local_indices;
+  boost::unordered_map<std::size_t, std::vector<std::size_t> >::const_iterator local_indices;
   for (local_indices = send_indices.begin(); local_indices != send_indices.end(); ++local_indices)
   {
     const std::size_t destination = local_indices->first;
@@ -485,10 +485,10 @@ std::map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >
 
 
   // Build map
-  std::map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > > shared_local_indices_map;
+  boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > > shared_local_indices_map;
 
   // Loop over data received from each process
-  std::map<std::size_t, std::vector<std::size_t> >::const_iterator received_local_indices;
+  boost::unordered_map<std::size_t, std::vector<std::size_t> >::const_iterator received_local_indices;
   for (received_local_indices = recv_entities.begin();
           received_local_indices != recv_entities.end(); ++received_local_indices)
   {

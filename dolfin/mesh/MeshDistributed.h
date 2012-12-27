@@ -25,6 +25,7 @@
 #include <set>
 #include <utility>
 #include <vector>
+#include <boost/unordered_map.hpp>
 
 namespace dolfin
 {
@@ -58,7 +59,7 @@ namespace dolfin
     /// Compute map from local index of shared entity to list
     /// of sharing process and local index,
     /// i.e. (local index, [(sharing process p, local index on p)])
-    static std::map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >
+    static boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >
       compute_shared_entities(const Mesh& mesh, std::size_t d);
 
   private:
