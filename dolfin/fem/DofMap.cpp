@@ -64,9 +64,6 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   dolfin_assert(_ufc_dofmap);
   dolfin_assert(_restriction);
 
-  warning("Restricted function space is an experimental feature.");
-  not_working_in_parallel("Restricted function space");
-
   // Get mesh
   const dolfin::Mesh& dolfin_mesh(restriction->mesh());
 
@@ -460,7 +457,7 @@ void DofMap::build_common(const Mesh& dolfin_mesh)
   // Initialize the UFC dofmap
   init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh);
 
-  // Build restricted dof map
+  // Build dof map
   const bool reorder = dolfin::parameters["reorder_dofs_serial"];
   DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, _restriction,
                        reorder, _distributed);
