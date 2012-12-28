@@ -126,9 +126,10 @@ namespace dolfin
     /// Return global index of mesh entity
     ///
     /// *Returns*
-    ///     int
-    ///         The global index. Set to -1 if global index has not been
-    ///         computed
+    ///     std::size_t
+    ///         The global index. Set to
+    ///         std::numerical_limits<std::size_t>::max() if global index
+    ///         has not been computed
     std::size_t global_index() const
     { return _mesh->topology().global_indices(_dim)[_local_index]; }
 

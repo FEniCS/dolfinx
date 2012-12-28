@@ -107,12 +107,13 @@ namespace dolfin
       return !_global_indices[dim].empty();
     }
 
-    /// Return map from shared entiies to process that share the entity
+    /// Return map from shared entities (global index) to processes that
+    /// share the entity
     std::map<std::size_t, std::set<std::size_t> >&
       shared_entities(std::size_t dim);
 
-    /// Return map from shared entiies to process that share the entity
-    /// (const version)
+    /// Return map from shared entiies (global index) to process that
+    /// share the entity (const version)
     const std::map<std::size_t, std::set<std::size_t> >&
       shared_entities(std::size_t dim) const;
 
@@ -155,9 +156,9 @@ namespace dolfin
     // Global indices for mesh entities (empty if not set)
     std::vector<std::vector<std::size_t> > _global_indices;
 
-    // Maps each shared vertex (entity of dim 0) to a list of the
+    // Maps each shared entity (global index) to a list of the
     // processes sharing the vertex
-    std::map<std::size_t, std::set<std::size_t> > _shared_vertices;
+    std::map<std::size_t, std::map<std::size_t, std::set<std::size_t> > > _shared_entities;
 
     // Connectivity for pairs of topological dimensions
     std::vector<std::vector<MeshConnectivity> > connectivity;

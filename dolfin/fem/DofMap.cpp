@@ -31,7 +31,7 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/BoundaryMesh.h>
-#include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/MeshDistributed.h>
 #include <dolfin/mesh/Restriction.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "DofMapBuilder.h"
@@ -447,7 +447,7 @@ void DofMap::build_common(const Mesh& dolfin_mesh)
     {
       dolfin_mesh.init(d);
       if (_distributed)
-        MeshPartitioning::number_entities(dolfin_mesh, d);
+        MeshDistributed::number_entities(dolfin_mesh, d);
     }
   }
 

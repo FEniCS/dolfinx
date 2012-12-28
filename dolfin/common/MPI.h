@@ -137,7 +137,8 @@ namespace dolfin
     // FIXME: The mother of all MPI calls! It does everything anyone would ever
     //        need to do with MPI... :-)
 
-    /// Distribute local arrays on all processors according to given partition
+    /// Distribute local arrays on all processors according to given
+    /// partition
     template<typename T, typename S>
     static void distribute(const std::vector<T>& in_values,
                            const std::vector<S>& destinations,
@@ -408,7 +409,7 @@ namespace dolfin
 
   //-----------------------------------------------------------------------------
   template<typename T, typename S>
-  void dolfin::MPI::distribute(const std::set<S> group,
+  void dolfin::MPI::distribute(const std::set<S> processes_group,
                                const std::map<S, T>& in_values_per_dest,
                                std::map<S, T>& out_values_per_src)
   {
@@ -421,10 +422,9 @@ namespace dolfin
     // Send and receive values to all processes in groups
     // (non-blocking). If a given process is not found in
     // in_values_per_dest, send empty data.
-
     out_values_per_src.clear();
     typename std::set<S>::const_iterator dest;
-    for (dest = group.begin(); dest != group.end(); ++dest)
+    for (dest = processes_group.begin(); dest != processes_group.end(); ++dest)
     {
       map_const_iterator values = in_values_per_dest.find(*dest);
       if (values != in_values_per_dest.end())
@@ -434,11 +434,9 @@ namespace dolfin
     }
 
     // Wait for all MPI calls before modifying out_values_per_src
-
     mpi.wait_all();
 
     // Remove received no_data entries.
-
     map_iterator it = out_values_per_src.begin();
     while (it != out_values_per_src.end())
     {
