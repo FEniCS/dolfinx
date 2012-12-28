@@ -75,16 +75,14 @@ void MeshDistributed::number_entities(const Mesh& _mesh, std::size_t d)
   //       commuicated to other processes)
   //  [2]: not owned but shared (will be numbered by another process, and number
   //       commuicated to this processes)
-  tic();
-  const boost::array<std::map<Entity, EntityData>, 3> entity_ownership
-    = compute_entity_ownership(mesh, d);
-  const std::map<Entity, EntityData>& owned_exclusive_entities = entity_ownership[0];
-  const std::map<Entity, EntityData>& owned_shared_entities    = entity_ownership[1];
-  const std::map<Entity, EntityData>& unowned_shared_entities  = entity_ownership[2];
-  cout << "Compute ownership: " << toc() << endl;
+  boost::array<std::map<Entity, EntityData>, 2> entity_ownership;
+  std::vector<std::size_t> owned_entities;
+  compute_entity_ownership(mesh, d, owned_entities, entity_ownership);
+  const std::map<Entity, EntityData>& owned_shared_entities    = entity_ownership[0];
+  const std::map<Entity, EntityData>& unowned_shared_entities  = entity_ownership[1];
 
   // Number of entities 'owned' by this process
-  const std::size_t num_local_entities = owned_exclusive_entities.size()
+  const std::size_t num_local_entities = owned_entities.size()
                                        + owned_shared_entities.size();
 
   // Compute global number of entities and local process offset
@@ -103,8 +101,8 @@ void MeshDistributed::number_entities(const Mesh& _mesh, std::size_t d)
   std::map<Entity, EntityData>::const_iterator it;
 
   // Number exlusively owned entities
-  for (it = owned_exclusive_entities.begin(); it != owned_exclusive_entities.end(); ++it)
-    global_entity_indices[it->second.local_index] = offset++;
+  for (std::size_t i = 0; i < owned_entities.size(); ++i)
+    global_entity_indices[owned_entities[i]] = offset++;
 
   // Number shared entities that this process is responsible for numbering
   std::map<Entity, EntityData>::const_iterator it1;
@@ -512,8 +510,9 @@ boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t
   return shared_local_indices_map;
 }
 //-----------------------------------------------------------------------------
-boost::array<std::map<MeshDistributed::Entity, MeshDistributed::EntityData>, 3>
-  MeshDistributed::compute_entity_ownership(const Mesh& mesh, std::size_t d)
+void MeshDistributed::compute_entity_ownership(const Mesh& mesh, std::size_t d,
+      std::vector<std::size_t>& owned_entities,
+      boost::array<std::map<Entity, EntityData>, 2>& shared_entities)
 {
   // Initialize entities of dimension d
   mesh.init(d);
@@ -538,6 +537,7 @@ boost::array<std::map<MeshDistributed::Entity, MeshDistributed::EntityData>, 3>
                             = mesh.topology().shared_entities(0);
 
   // Get local-to-global indices map
+  tic();
   const std::vector<std::size_t>& global_indices_map = mesh.topology().global_indices(0);
   std::map<std::size_t, std::set<std::size_t> > shared_vertices;
   std::map<std::size_t, std::set<std::size_t> >::const_iterator v;
@@ -546,6 +546,7 @@ boost::array<std::map<MeshDistributed::Entity, MeshDistributed::EntityData>, 3>
     dolfin_assert(v->first < global_indices_map.size());
     shared_vertices.insert(std::make_pair(global_indices_map[v->first], v->second));
   }
+  cout << "Build ownership inverse map: " << toc() << endl;
 
   // Entity ownership list ([entity vertices], data):
   //  [0]: owned exclusively (will be numbered by this process)
@@ -553,11 +554,13 @@ boost::array<std::map<MeshDistributed::Entity, MeshDistributed::EntityData>, 3>
   //       commuicated to other processes)
   //  [2]: not owned but shared (will be numbered by another process, and number
   //       commuicated to this processes)
-  boost::array<std::map<Entity, EntityData>, 3> entity_ownership;
+  //boost::array<std::map<Entity, EntityData>, 3> entity_ownership;
 
-  // Compute preliminary ownership lists
-  compute_preliminary_entity_ownership(mesh, shared_vertices, entities,
-                                       entity_ownership);
+  // Compute preliminary ownership lists (shared_entities)
+  tic();
+  compute_preliminary_entity_ownership(shared_vertices, entities,
+                                       owned_entities, shared_entities);
+  cout << "Compute preliminary ownership: " << toc() << endl;
 
   // Qualify boundary entities. We need to find out if the ignored
   // (shared with lower ranked process) entities are entities of a
@@ -565,25 +568,28 @@ boost::array<std::map<MeshDistributed::Entity, MeshDistributed::EntityData>, 3>
   // ranked process for the entity in question, and is therefore
   // responsible for communicating values to the higher ranked
   // processes (if any).
-  compute_final_entity_ownership(entity_ownership);
-
-  return entity_ownership;
+  tic();
+  compute_final_entity_ownership(owned_entities, shared_entities);
+  cout << "Compute final ownership: " << toc() << endl;
 }
 //-----------------------------------------------------------------------------
-void MeshDistributed::compute_preliminary_entity_ownership(const Mesh& mesh,
+void MeshDistributed::compute_preliminary_entity_ownership(
   const std::map<std::size_t, std::set<std::size_t> >& shared_vertices,
   const std::map<Entity, std::size_t>& entities,
-  boost::array<std::map<Entity, EntityData>, 3>& entity_ownership)
+  std::vector<std::size_t>& owned_entities,
+  boost::array<std::map<Entity, EntityData>, 2>& shared_entities)
 {
   // Entities
-  std::map<Entity, EntityData>& owned_exclusive_entities = entity_ownership[0];
-  std::map<Entity, EntityData>& owned_shared_entities = entity_ownership[1];
-  std::map<Entity, EntityData>& unowned_shared_entities = entity_ownership[2];
+  std::map<Entity, EntityData>& owned_shared_entities = shared_entities[0];
+  std::map<Entity, EntityData>& unowned_shared_entities = shared_entities[1];
 
   // Clear maps
-  owned_exclusive_entities.clear();
+  owned_entities.clear();
   owned_shared_entities.clear();
   unowned_shared_entities.clear();
+
+  std::vector<std::pair<Entity, EntityData> > tmp0;
+  std::vector<std::pair<Entity, EntityData> > tmp1;
 
   // Get my process number
   const std::size_t process_number = MPI::process_number();
@@ -635,7 +641,7 @@ void MeshDistributed::compute_preliminary_entity_ownership(const Mesh& mesh,
 
     // Check cases
     if (entity_processes.empty())
-      owned_exclusive_entities[entity] = EntityData(local_entity_index);
+      owned_entities.push_back(local_entity_index);
     else if (ignore)
     {
       unowned_shared_entities[entity] = EntityData(local_entity_index,
@@ -649,12 +655,12 @@ void MeshDistributed::compute_preliminary_entity_ownership(const Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
-void MeshDistributed::compute_final_entity_ownership(boost::array<std::map<Entity, EntityData>, 3>& entity_ownership)
+void MeshDistributed::compute_final_entity_ownership(std::vector<std::size_t>& owned_entities,
+  boost::array<std::map<Entity, EntityData>, 2>& shared_entities)
 {
   // Entities ([entity vertices], index) to be numbered
-  std::map<Entity, EntityData>& owned_exclusive_entities = entity_ownership[0];
-  std::map<Entity, EntityData>& owned_shared_entities = entity_ownership[1];
-  std::map<Entity, EntityData>& unowned_shared_entities = entity_ownership[2];
+  std::map<Entity, EntityData>& owned_shared_entities = shared_entities[0];
+  std::map<Entity, EntityData>& unowned_shared_entities = shared_entities[1];
 
   // Get MPI process number
   const std::size_t process_number = MPI::process_number();
@@ -726,8 +732,6 @@ void MeshDistributed::compute_final_entity_ownership(boost::array<std::map<Entit
     // Check if it is an entity (in which case it will be in owned or
     // unowned entities)
     bool is_entity = 0;
-    std::vector<std::size_t> test_ent(3);
-    test_ent[0] = 3445; test_ent[1] = 3446; test_ent[2] = 3463;
     if (unowned_shared_entities.find(entity) != unowned_shared_entities.end()
           || owned_shared_entities.find(entity) != owned_shared_entities.end())
     {
@@ -801,7 +805,7 @@ void MeshDistributed::compute_final_entity_ownership(boost::array<std::map<Entit
     else
     {
       // Move from unowned to owned exclusively
-      owned_exclusive_entities[entity_vertices] = EntityData(local_entity_index);
+      owned_entities.push_back(local_entity_index);
 
       // Add entity to list of entities that should be removed from the
       // shared but not owned entity list
@@ -823,8 +827,8 @@ void MeshDistributed::compute_final_entity_ownership(boost::array<std::map<Entit
     const std::size_t local_entity_index = it->second.local_index;
     if (entity_processes.find(entity) == entity_processes.end())
     {
-      // Move from shared to owned exlusievly
-      owned_exclusive_entities[entity] = EntityData(local_entity_index);
+      // Move from shared to owned exlusively
+      owned_entities.push_back(local_entity_index);
       unshare_entities.push_back(entity);
     }
     else
@@ -902,12 +906,12 @@ void MeshDistributed::init_facet_cell_connections(Mesh& mesh)
   //       commuicated to other processes)
   //  [2]: not owned but shared (will be numbered by another process, and number
   //       commuicated to this processes)
-  const boost::array<std::map<Entity, EntityData>, 3> entity_ownership
-    = compute_entity_ownership(mesh, D - 1);
+  std::vector<std::size_t> owned_entities;
+  boost::array<std::map<Entity, EntityData>, 2> entity_ownership;
+  compute_entity_ownership(mesh, D - 1, owned_entities, entity_ownership);
 
-  //const std::map<Entity, EntityData>& owned_exclusive_entities = entity_ownership[0];
-  const std::map<Entity, EntityData>& owned_shared_entities    = entity_ownership[1];
-  const std::map<Entity, EntityData>& unowned_shared_entities  = entity_ownership[2];
+  const std::map<Entity, EntityData>& owned_shared_entities    = entity_ownership[0];
+  const std::map<Entity, EntityData>& unowned_shared_entities  = entity_ownership[1];
 
   // Create vector to hold number of cells connected to each facet. Assume
   // facet is internal, then modify for external facets.
