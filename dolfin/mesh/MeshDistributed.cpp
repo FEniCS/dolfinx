@@ -65,15 +65,12 @@ void MeshDistributed::number_entities(const Mesh& _mesh, std::size_t d)
   const std::size_t process_number = MPI::process_number();
 
   // Initialize entities of dimension d
-  tic();
   mesh.init(d);
-  cout << "Mesh init time (renumber): " << toc() << ", " << d << endl;
 
   // Compute ownership of entities ([entity vertices], data):
-  //  [0]: owned exclusively (will be numbered by this process)
-  //  [1]: owned and shared (will be numbered by this process, and number
+  //  [0]: owned and shared (will be numbered by this process, and number
   //       commuicated to other processes)
-  //  [2]: not owned but shared (will be numbered by another process, and number
+  //  [1]: not owned but shared (will be numbered by another process, and number
   //       commuicated to this processes)
   boost::array<std::map<Entity, EntityData>, 2> entity_ownership;
   std::vector<std::size_t> owned_entities;
@@ -108,8 +105,6 @@ void MeshDistributed::number_entities(const Mesh& _mesh, std::size_t d)
   std::map<Entity, EntityData>::const_iterator it1;
   for (it1 = owned_shared_entities.begin(); it1 != owned_shared_entities.end(); ++it1)
     global_entity_indices[it1->second.local_index] = offset++;
-
-  tic();
 
   // Communicate indices for shared entities (owned by this process)
   // and get indices for shared but not owned entities
@@ -155,8 +150,12 @@ void MeshDistributed::number_entities(const Mesh& _mesh, std::size_t d)
     for (std::size_t j = 0; j < entity_size; ++j)
       entity.push_back(received_values[i++]);
 
+    // Access unowned entity data
+    std::map<Entity, EntityData>::const_iterator recv_entity;
+    recv_entity = unowned_shared_entities.find(entity)
+
     // Sanity check, should not receive an entity we don't need
-    if (unowned_shared_entities.find(entity) == unowned_shared_entities.end())
+    if (recv_entity == unowned_shared_entities.end())
     {
       std::stringstream msg;
       msg << "Process " << MPI::process_number() << " received illegal entity given by ";
@@ -167,12 +166,10 @@ void MeshDistributed::number_entities(const Mesh& _mesh, std::size_t d)
                    msg.str());
     }
 
-    const std::size_t local_entity_index
-      = unowned_shared_entities.find(entity)->second.local_index;
+    const std::size_t local_entity_index = recv_entity->second.local_index;
     dolfin_assert(global_entity_indices[local_entity_index] == std::numeric_limits<std::size_t>::max());
     global_entity_indices[local_entity_index] = global_index;
   }
-  cout << "Off proc numbering: " << toc() << endl;
 
   // Set mesh topology and store number of global entities
   mesh.topology().init_global(d, num_global_entities.first);
@@ -196,37 +193,12 @@ void MeshDistributed::number_entities(const Mesh& _mesh, std::size_t d)
   for (e = owned_shared_entities.begin(); e != owned_shared_entities.end(); ++e)
   {
     const EntityData& ed = e->second;
-    //const std::size_t global_index = global_entity_indices[ed.local_index];
-    //shared_entities[global_index] = std::set<std::size_t>(ed.processes.begin(),
-    //                                                      ed.processes.end());
     shared_entities[ed.local_index] = std::set<std::size_t>(ed.processes.begin(),
                                                             ed.processes.end());
-
-    //std::size_t global_index = global_entity_indices[ed.local_index];
-    //if (global_index == 11785)
-    //{
-    //  cout << "!! (a) Adding global entity 11785 (global), proc: ";
-    //  for (std::size_t i = 0; i < ed.processes.size(); ++i)
-    //    cout << ed.processes[i] << "  ";
-    //  cout << endl;
-   // }
   }
   for (e = unowned_shared_entities.begin(); e != unowned_shared_entities.end(); ++e)
   {
     const EntityData& ed = e->second;
-    //std::size_t global_index = global_entity_indices[ed.local_index];
-    //shared_entities[global_index] = std::set<std::size_t>(ed.processes.begin(),
-    //                                                      ed.processes.end());
-
-    //std::size_t global_index = global_entity_indices[ed.local_index];
-    //if (global_index == 11785)
-    //{
-    //  cout << "!! (b) Adding global entity 11785 (global), proc: ";
-    //  for (std::size_t i = 0; i < ed.processes.size(); ++i)
-    //    cout << ed.processes[i] << "  ";
-    //  cout << endl;
-    //}
-
     shared_entities[ed.local_index] = std::set<std::size_t>(ed.processes.begin(),
                                                             ed.processes.end());
   }
@@ -528,16 +500,11 @@ void MeshDistributed::compute_entity_ownership(const Mesh& mesh, std::size_t d,
     entities[entity] = e->index();
   }
 
-  // Get shared vertices (global index, [sharing processes])
-  //const std::map<std::size_t, std::set<std::size_t> >& shared_vertices
-  //                          = mesh.topology().shared_entities(0);
-
   // Get shared vertices (local index, [sharing processes])
   const std::map<std::size_t, std::set<std::size_t> >& shared_vertices_local
                             = mesh.topology().shared_entities(0);
 
-  // Get local-to-global indices map
-  tic();
+  // Build local-to-global indices map for shared vertices
   const std::vector<std::size_t>& global_indices_map = mesh.topology().global_indices(0);
   std::map<std::size_t, std::set<std::size_t> > shared_vertices;
   std::map<std::size_t, std::set<std::size_t> >::const_iterator v;
@@ -546,21 +513,16 @@ void MeshDistributed::compute_entity_ownership(const Mesh& mesh, std::size_t d,
     dolfin_assert(v->first < global_indices_map.size());
     shared_vertices.insert(std::make_pair(global_indices_map[v->first], v->second));
   }
-  cout << "Build ownership inverse map: " << toc() << endl;
 
   // Entity ownership list ([entity vertices], data):
-  //  [0]: owned exclusively (will be numbered by this process)
-  //  [1]: owned and shared (will be numbered by this process, and number
+  //  [0]: owned and shared (will be numbered by this process, and number
   //       commuicated to other processes)
-  //  [2]: not owned but shared (will be numbered by another process, and number
+  //  [1]: not owned but shared (will be numbered by another process, and number
   //       commuicated to this processes)
-  //boost::array<std::map<Entity, EntityData>, 3> entity_ownership;
 
   // Compute preliminary ownership lists (shared_entities)
-  tic();
   compute_preliminary_entity_ownership(shared_vertices, entities,
                                        owned_entities, shared_entities);
-  cout << "Compute preliminary ownership: " << toc() << endl;
 
   // Qualify boundary entities. We need to find out if the ignored
   // (shared with lower ranked process) entities are entities of a
@@ -568,9 +530,7 @@ void MeshDistributed::compute_entity_ownership(const Mesh& mesh, std::size_t d,
   // ranked process for the entity in question, and is therefore
   // responsible for communicating values to the higher ranked
   // processes (if any).
-  tic();
   compute_final_entity_ownership(owned_entities, shared_entities);
-  cout << "Compute final ownership: " << toc() << endl;
 }
 //-----------------------------------------------------------------------------
 void MeshDistributed::compute_preliminary_entity_ownership(
@@ -587,9 +547,6 @@ void MeshDistributed::compute_preliminary_entity_ownership(
   owned_entities.clear();
   owned_shared_entities.clear();
   unowned_shared_entities.clear();
-
-  std::vector<std::pair<Entity, EntityData> > tmp0;
-  std::vector<std::pair<Entity, EntityData> > tmp1;
 
   // Get my process number
   const std::size_t process_number = MPI::process_number();
@@ -884,10 +841,8 @@ void MeshDistributed::init_facet_cell_connections(Mesh& mesh)
   const std::size_t D = mesh.topology().dim();
 
   // Initialize entities of dimension d
-  tic();
   mesh.init(D - 1);
   std::size_t tmp = D - 1;
-  cout << "Mesh init time (facet): " << toc() << ", " << tmp << endl;
 
   // Build entity(vertex list)-to-global-vertex-index map
   std::map<std::vector<std::size_t>, std::size_t> entities;
@@ -901,10 +856,9 @@ void MeshDistributed::init_facet_cell_connections(Mesh& mesh)
   }
 
   // Compute ownership of entities ([entity vertices], data):
-  //  [0]: owned exclusively (will be numbered by this process)
-  //  [1]: owned and shared (will be numbered by this process, and number
+  //  [0]: owned and shared (will be numbered by this process, and number
   //       commuicated to other processes)
-  //  [2]: not owned but shared (will be numbered by another process, and number
+  //  [1]: not owned but shared (will be numbered by another process, and number
   //       commuicated to this processes)
   std::vector<std::size_t> owned_entities;
   boost::array<std::map<Entity, EntityData>, 2> entity_ownership;

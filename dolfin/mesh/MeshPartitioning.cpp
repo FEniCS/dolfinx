@@ -391,9 +391,6 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     std::vector<std::size_t>::const_iterator global_index;
     for (global_index = intersection.begin(); global_index != intersection_end; ++global_index)
     {
-      // Global indices
-      //shared_vertices[*global_index].insert(q);
-
       // Get local index
       std::map<std::size_t, std::size_t>::const_iterator local_index;
       local_index = vertex_global_to_local.find(*global_index);
