@@ -97,6 +97,11 @@ namespace dolfin
     void send_recv(const T& send_value, unsigned int dest, T& recv_value,
                    unsigned int source);
 
+    /// Non-blocking send and receive with tag
+    template<typename T>
+    void send_recv(const T& send_value, unsigned int dest_tag, unsigned int dest,
+                   T& recv_value, unsigned int source_tag, unsigned int source);
+
     /// Wait for all requests to finish
     void wait_all();
 
@@ -454,10 +459,19 @@ namespace dolfin
   void dolfin::MPINonblocking::send_recv(const T& send_value, unsigned int dest,
                                          T& recv_value, unsigned int source)
   {
+    MPINonblocking::send_recv(send_value, 0, dest, recv_value, 0, source);
+  }
+  //-----------------------------------------------------------------------------
+  template<typename T>
+  void dolfin::MPINonblocking::send_recv(const T& send_value, unsigned int dest_tag,
+                                         unsigned int dest,
+                                         T& recv_value, unsigned int source_tag,
+                                         unsigned int source)
+  {
     #ifdef HAS_MPI
     boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_attach);
-    reqs.push_back(comm.isend(dest, 0, send_value));
-    reqs.push_back(comm.irecv(source, 0, recv_value));
+    reqs.push_back(comm.isend(dest, dest_tag, send_value));
+    reqs.push_back(comm.irecv(source, source_tag, recv_value));
     #else
     dolfin_error("MPI.h",
                   "call MPINonblocking::send_recv",
