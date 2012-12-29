@@ -390,21 +390,19 @@ boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t
     }
   }
 
-  // Communicators
-  MPICommunicator mpi_comm;
-  boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_attach);
+  // DOLFIN MPI communicators
+  MPINonblocking mpi;
 
   // Send/receive global indices
-  std::vector<boost::mpi::request> reqs;
   boost::unordered_map<std::size_t, std::vector<std::size_t> > recv_entities;
   boost::unordered_map<std::size_t, std::vector<std::size_t> >::const_iterator global_indices;
   for (global_indices = send_indices.begin(); global_indices != send_indices.end(); ++global_indices)
   {
     const std::size_t destination = global_indices->first;
-    reqs.push_back(comm.isend(destination, MPI::process_number(), global_indices->second));
-    reqs.push_back(comm.irecv(destination, destination, recv_entities[destination]));
+    mpi.send_recv(global_indices->second, MPI::process_number(), destination,
+                  recv_entities[destination], destination, destination);
   }
-  boost::mpi::wait_all(reqs.begin(), reqs.end());
+  mpi.wait_all();
 
   // Clear send data
   send_indices.clear();
@@ -443,16 +441,14 @@ boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t
   recv_entities.clear();
 
   // Send back/receive local indices
-  std::vector<boost::mpi::request> reqs1;
   boost::unordered_map<std::size_t, std::vector<std::size_t> >::const_iterator local_indices;
   for (local_indices = send_indices.begin(); local_indices != send_indices.end(); ++local_indices)
   {
     const std::size_t destination = local_indices->first;
-    reqs1.push_back(comm.isend(destination, MPI::process_number(), local_indices->second));
-    reqs1.push_back(comm.irecv(destination, destination, recv_entities[destination]));
+    mpi.send_recv(local_indices->second, MPI::process_number(), destination,
+                  recv_entities[destination], destination, destination);
   }
-  boost::mpi::wait_all(reqs1.begin(), reqs1.end());
-
+  mpi.wait_all();
 
   // Build map
   boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > > shared_local_indices_map;
