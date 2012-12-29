@@ -44,7 +44,7 @@ void MeshDistributed::number_entities(const Mesh& _mesh, std::size_t d)
 
   Mesh& mesh = const_cast<Mesh&>(_mesh);
 
-  // Check that we're not re-nubering vertices
+  // Check that we're not re-numbering vertices
   if (d == 0)
   {
     dolfin_error("MeshPartitioning.cpp",
@@ -52,7 +52,7 @@ void MeshDistributed::number_entities(const Mesh& _mesh, std::size_t d)
                  "Gloval vertex indices exist at input. Cannot be renumbered");
   }
 
-  // Check that we're not re-nubering cells
+  // Check that we're not re-numbering cells
   if (d == mesh.topology().dim())
   {
     dolfin_error("MeshPartitioning.cpp",
@@ -69,9 +69,9 @@ void MeshDistributed::number_entities(const Mesh& _mesh, std::size_t d)
 
   // Compute ownership of entities ([entity vertices], data):
   //  [0]: owned and shared (will be numbered by this process, and number
-  //       commuicated to other processes)
+  //       communicated to other processes)
   //  [1]: not owned but shared (will be numbered by another process, and number
-  //       commuicated to this processes)
+  //       communicated to this processes)
   boost::array<std::map<Entity, EntityData>, 2> entity_ownership;
   std::vector<std::size_t> owned_entities;
   compute_entity_ownership(mesh, d, owned_entities, entity_ownership);
@@ -140,7 +140,7 @@ void MeshDistributed::number_entities(const Mesh& _mesh, std::size_t d)
   std::vector<std::size_t> sources;
   MPI::distribute(send_values, destinations, received_values, sources);
 
-  // Fill in global entity indices recieved from lower ranked processes
+  // Fill in global entity indices received from lower ranked processes
   for (std::size_t i = 0; i < received_values.size();)
   {
     const std::size_t p = sources[i];
@@ -152,7 +152,7 @@ void MeshDistributed::number_entities(const Mesh& _mesh, std::size_t d)
 
     // Access unowned entity data
     std::map<Entity, EntityData>::const_iterator recv_entity;
-    recv_entity = unowned_shared_entities.find(entity)
+    recv_entity = unowned_shared_entities.find(entity);
 
     // Sanity check, should not receive an entity we don't need
     if (recv_entity == unowned_shared_entities.end())
@@ -390,7 +390,7 @@ boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t
     }
   }
 
-  // Communicstors
+  // Communicators
   MPICommunicator mpi_comm;
   boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_attach);
 
@@ -516,9 +516,9 @@ void MeshDistributed::compute_entity_ownership(const Mesh& mesh, std::size_t d,
 
   // Entity ownership list ([entity vertices], data):
   //  [0]: owned and shared (will be numbered by this process, and number
-  //       commuicated to other processes)
+  //       communicated to other processes)
   //  [1]: not owned but shared (will be numbered by another process, and number
-  //       commuicated to this processes)
+  //       communicated to this processes)
 
   // Compute preliminary ownership lists (shared_entities)
   compute_preliminary_entity_ownership(shared_vertices, entities,
@@ -688,11 +688,11 @@ void MeshDistributed::compute_final_entity_ownership(std::vector<std::size_t>& o
 
     // Check if it is an entity (in which case it will be in owned or
     // unowned entities)
-    bool is_entity = 0;
+    bool is_entity = false;
     if (unowned_shared_entities.find(entity) != unowned_shared_entities.end()
           || owned_shared_entities.find(entity) != owned_shared_entities.end())
     {
-      is_entity = 1;
+      is_entity = true;
     }
 
     // Add information about entity (whether it's actually an entity) to send
@@ -784,7 +784,7 @@ void MeshDistributed::compute_final_entity_ownership(std::vector<std::size_t>& o
     const std::size_t local_entity_index = it->second.local_index;
     if (entity_processes.find(entity) == entity_processes.end())
     {
-      // Move from shared to owned exlusively
+      // Move from shared to owned elusively
       owned_entities.push_back(local_entity_index);
       unshare_entities.push_back(entity);
     }
@@ -842,7 +842,6 @@ void MeshDistributed::init_facet_cell_connections(Mesh& mesh)
 
   // Initialize entities of dimension d
   mesh.init(D - 1);
-  std::size_t tmp = D - 1;
 
   // Build entity(vertex list)-to-global-vertex-index map
   std::map<std::vector<std::size_t>, std::size_t> entities;
@@ -857,15 +856,15 @@ void MeshDistributed::init_facet_cell_connections(Mesh& mesh)
 
   // Compute ownership of entities ([entity vertices], data):
   //  [0]: owned and shared (will be numbered by this process, and number
-  //       commuicated to other processes)
+  //       communicated to other processes)
   //  [1]: not owned but shared (will be numbered by another process, and number
-  //       commuicated to this processes)
+  //       communicated to this processes)
   std::vector<std::size_t> owned_entities;
   boost::array<std::map<Entity, EntityData>, 2> entity_ownership;
   compute_entity_ownership(mesh, D - 1, owned_entities, entity_ownership);
 
-  const std::map<Entity, EntityData>& owned_shared_entities    = entity_ownership[0];
-  const std::map<Entity, EntityData>& unowned_shared_entities  = entity_ownership[1];
+  const std::map<Entity, EntityData>& owned_shared_entities   = entity_ownership[0];
+  const std::map<Entity, EntityData>& unowned_shared_entities = entity_ownership[1];
 
   // Create vector to hold number of cells connected to each facet. Assume
   // facet is internal, then modify for external facets.

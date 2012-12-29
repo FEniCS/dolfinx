@@ -28,7 +28,6 @@
 #include <map>
 #include <utility>
 #include <vector>
-#include <boost/array.hpp>
 #include <boost/multi_array.hpp>
 #include <dolfin/log/log.h>
 #include "LocalMeshValueCollection.h"
@@ -37,7 +36,7 @@
 
 namespace dolfin
 {
-  // Note: MeshFunction and MeshValueCollection cannot apear in the
+  // Note: MeshFunction and MeshValueCollection cannot appear in the
   // implementations that appear in this file of the templated functions
   // as this leads to a circular dependency. Therefore the functions are
   // templated over these types.
@@ -212,7 +211,8 @@ namespace dolfin
         off_process_global_cell_entities.push_back(global_cell_index);
     }
 
-    // Get destinations and local cell index at destination for off-process cells
+    // Get destinations and local cell index at destination for
+    // off-process cells
     const std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t> > >
       entity_hosts = MeshDistributed::locate_off_process_entities(off_process_global_cell_entities, D, mesh);
 
@@ -224,7 +224,8 @@ namespace dolfin
     std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t> > >::const_iterator entity_host;
 
     {
-      // Build a convenience map in order to speedup the loop over local data
+      // Build a convenience map in order to speedup the loop over
+      // local data
       std::map<std::size_t, std::set<std::size_t> > map_of_ldata;
       for (std::size_t i = 0; i < ldata.size(); ++i)
         map_of_ldata[ldata[i].first.first].insert(i);

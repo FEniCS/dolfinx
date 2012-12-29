@@ -90,8 +90,8 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   build_mesh_domains(mesh, local_data);
 
   // Initialise number of globally connected cells to each facet. This is
-  // necessary to distinguish between facets on a exterior boundary and
-  // facets on a partition boudnary (see
+  // necessary to distinguish between facets on an exterior boundary and
+  // facets on a partition boundary (see
   // https://bugs.launchpad.net/dolfin/+bug/733834).
   MeshDistributed::init_facet_cell_connections(mesh);
 }
@@ -236,8 +236,8 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
     vertex_location[location].push_back(*required_vertex);
   }
 
-  // Send required vertices to other proceses, and receive back vertices
-  // required by othe processes.
+  // Send required vertices to other processes, and receive back vertices
+  // required by other processes.
   std::vector<std::size_t> received_vertex_indices;
   std::vector<std::size_t> sources_vertex;
   MPI::distribute(send_vertex_indices, destinations_vertex,
@@ -264,7 +264,7 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
   MPI::distribute(send_vertex_coordinates, destinations_vertex_coordinates,
                   received_vertex_coordinates, sources_vertex_coordinates);
 
-  // Set index counters to first position in recieve buffers
+  // Set index counters to first position in receive buffers
   std::vector<std::size_t> index_counters(num_processes, 0);
 
   // Clear data

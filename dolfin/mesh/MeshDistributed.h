@@ -91,14 +91,14 @@ namespace dolfin
     // Compute ownership of entities ([entity vertices], data)
     //  [0]: owned exclusively (will be numbered by this process)
     //  [1]: owned and shared (will be numbered by this process, and number
-    //       commuicated to other processes)
+    //       communicated to other processes)
     //  [2]: not owned but shared (will be numbered by another process,
-    //       and number commuicated to this processes)
+    //       and number communicated to this processes)
     static void compute_entity_ownership(const Mesh& mesh, std::size_t d,
       std::vector<std::size_t>& owned_entities,
       boost::array<std::map<Entity, EntityData>, 2>& shared_entities);
 
-    // Build preliminary 'guess' of shared enties. This function does
+    // Build preliminary 'guess' of shared entities. This function does
     // not involve any inter-process communication.
     static void compute_preliminary_entity_ownership(
           const std::map<std::size_t, std::set<std::size_t> >& shared_vertices,
