@@ -213,6 +213,9 @@ if (BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
 endif()
 
+# Prevent FindBoost.cmake from looking for system  Boost{foo}.cmake files
+set(Boost_NO_BOOST_CMAKE true)
+
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0 1.44 1.44.0 1.45 1.45.0 1.46 1.46.0 1.46.1 1.47 1.47.0 1.48 1.48.0 1.49 1.49.0 1.50 1.50.0)
 
