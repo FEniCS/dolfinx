@@ -179,7 +179,7 @@ void MeshDistributed::number_entities(const Mesh& _mesh, std::size_t d)
     if (global_entity_indices[i] == std::numeric_limits<std::size_t>::max())
       log(WARNING, "Missing global number for local entity (%d, %d).", d, i);
 
-    dolfin_assert(global_entity_indices[i] >= 0);
+    dolfin_assert(global_entity_indices[i] != std::numeric_limits<std::size_t>::max());
     mesh.topology().set_global_index(d, i, global_entity_indices[i]);
   }
 
