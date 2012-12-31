@@ -48,19 +48,6 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
   const std::size_t n = dofmap0.global_dimension();
   Graph graph(n);
 
-  /*
-  // Build graph
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    const std::vector<std::size_t>& dofs0 = dofmap0.cell_dofs(cell->index());
-    const std::vector<std::size_t>& dofs1 = dofmap1.cell_dofs(cell->index());
-
-    std::vector<std::size_t>::const_iterator node;
-    for (node = dofs0.begin(); node != dofs0.end(); ++node)
-      graph[*node].insert(dofs1.begin(), dofs1.end());
-  }
-  */
-
   // Build graph
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
@@ -472,11 +459,12 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   // remaining facets are exterior boundary - could be useful
 
   const std::size_t n_exterior_facets = MPI::sum(facet_cell.size());
-  if(process_number == 0)
+  if (process_number == 0)
     std::cout << "n (exterior facets) = " << n_exterior_facets << std::endl;
 
   tt = time() - tt;
-  info("Time to build connectivity map [new]: %g", tt);
+  if (process_number == 0)
+    info("Time to build connectivity map [new]: %g", tt);
 }
 //-----------------------------------------------------------------------------
 void GraphBuilder::compute_connectivity_orig(const boost::multi_array<std::size_t, 2>& cell_vertices,
@@ -507,7 +495,8 @@ void GraphBuilder::compute_connectivity_orig(const boost::multi_array<std::size_
     }
   }
   tt = time() - tt;
-  info("Time to build vertex-cell connectivity map: %g", tt);
+  if (MPI::process_number() == 0)
+   info("Time to build vertex-cell connectivity map: %g", tt);
 
   std::vector<std::size_t>::const_iterator connected_cell0;
   std::vector<std::size_t>::const_iterator connected_cell1;
@@ -544,7 +533,8 @@ void GraphBuilder::compute_connectivity_orig(const boost::multi_array<std::size_
   }
   tt = time() - tt;
 
-  info("Time to build local dual graph: : %g", tt);
+  if (MPI::process_number() == 0)
+    info("Time to build local dual graph: : %g", tt);
 }
 //-----------------------------------------------------------------------------
 std::size_t GraphBuilder::compute_ghost_connectivity(const boost::multi_array<std::size_t, 2>& cell_vertices,
@@ -580,7 +570,8 @@ std::size_t GraphBuilder::compute_ghost_connectivity(const boost::multi_array<st
     }
   }
   tt = time() - tt;
-  info("Time to build local boundary vertex-cell connectivity map: %g", tt);
+  if (MPI::process_number() == 0)
+    info("Time to build local boundary vertex-cell connectivity map: %g", tt);
 
   // Build off-process boundary (global vertex)-(local cell) connectivity
   tt = time();
@@ -596,7 +587,8 @@ std::size_t GraphBuilder::compute_ghost_connectivity(const boost::multi_array<st
     }
   }
   tt = time() - tt;
-  info("Time to build ghost boundary vertex-cell connectivity map: %g", tt);
+  if (MPI::process_number() == 0)
+    info("Time to build ghost boundary vertex-cell connectivity map: %g", tt);
 
   // Iterate over local boundary cells
   tt = time();
@@ -632,7 +624,8 @@ std::size_t GraphBuilder::compute_ghost_connectivity(const boost::multi_array<st
   }
 
   tt = time() - tt;
-  info("Time to build ghost dual graph: : %g", tt);
+  if (MPI::process_number() == 0)
+    info("Time to build ghost dual graph: : %g", tt);
 
   return ghost_cells.size() - num_ghost_vertices_0;
 }

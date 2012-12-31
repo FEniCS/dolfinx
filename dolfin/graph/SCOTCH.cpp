@@ -55,17 +55,13 @@ void SCOTCH::compute_partition(std::vector<std::size_t>& cell_partition,
   std::set<std::size_t> ghost_vertices;
 
   // Compute local dual graph
-  info("Compute dual graph.");
   GraphBuilder::compute_dual_graph(mesh_data, local_graph, ghost_vertices);
-  info("End compute dual graph.");
 
   // Compute partitions
-  info("Start to compute partitions using SCOTCH");
   const std::size_t num_global_vertices = mesh_data.num_global_cells;
   const std::vector<std::size_t>& global_cell_indices = mesh_data.global_cell_indices;
   partition(local_graph, ghost_vertices, global_cell_indices,
             num_global_vertices, cell_partition);
-  info("Finished computing partitions using SCOTCH");
 }
 //-----------------------------------------------------------------------------
 std::vector<std::size_t> SCOTCH::compute_reordering(const Graph& graph)
@@ -303,7 +299,6 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
   }
 
   // Build SCOTCH distributed graph
-  info("Start SCOTCH graph building.");
   if (SCOTCH_dgraphBuild(&dgrafdat, baseval, vertlocnbr, vertlocnbr,
                               &vertloctab[0], NULL, NULL, NULL,
                               edgelocnbr, edgelocnbr,
@@ -313,7 +308,6 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
                  "partition mesh using SCOTCH",
                  "Error building SCOTCH graph");
   }
-  info("End SCOTCH graph building.");
 
   // Check graph data for consistency
   #ifdef DEBUG
@@ -350,14 +344,12 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
   SCOTCH_randomReset();
 
   // Partition graph
-  info("Start SCOTCH partitioning.");
   if (SCOTCH_dgraphPart(&dgrafdat, npart, &strat, __cell_partition))
   {
     dolfin_error("SCOTCH.cpp",
                  "partition mesh using SCOTCH",
                  "Error during partitioning");
   }
-  info("End SCOTCH partitioning.");
 
   // Clean up SCOTCH objects
   SCOTCH_dgraphExit(&dgrafdat);
