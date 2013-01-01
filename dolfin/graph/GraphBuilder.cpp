@@ -26,6 +26,7 @@
 #include <vector>
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
+#include <boost/functional/hash.hpp>
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
@@ -195,6 +196,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   const boost::multi_array<std::size_t, 2>& cell_vertices = mesh_data.cell_vertices;
   const std::size_t num_local_cells = mesh_data.global_cell_indices.size();
   const std::size_t num_vertices_per_cell = mesh_data.num_vertices_per_cell;
+  const std::size_t num_vertices_per_facet = num_vertices_per_cell - 1;
 
   dolfin_assert(num_local_cells == cell_vertices.shape()[0]);
   dolfin_assert(num_vertices_per_cell == cell_vertices.shape()[1]);
@@ -214,7 +216,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   VectorMap facet_cell;
 
   // Iterate over all cells
-  std::vector<std::size_t> facet(num_vertices_per_cell - 1);
+  std::vector<std::size_t> facet(num_vertices_per_facet);
   for (std::size_t i = 0; i < num_local_cells; ++i)
   {
     // Iterate over facets in cell
@@ -246,6 +248,24 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
       }
     }
   }
+
+  // Test with Boost hash
+  {
+    boost::hash<std::vector<std::set<std::size_t> > > uhash;
+    const std::size_t local_hash = uhash(local_graph);
+    std::vector<std::size_t> all_hashes;
+    MPI::gather(local_hash, all_hashes);
+
+    // Hash the received hash keys
+    boost::hash<std::vector<size_t> > sizet_hash;
+    std::size_t global_hash = sizet_hash(all_hashes);
+
+    // Broadcast hash key
+    MPI::broadcast(global_hash);
+    if (MPI::process_number() == 0)
+      cout << "Local graph hash: " << global_hash << endl;
+  }
+
 
   // Now facet_cell map only contains facets->cells with edge facets
   // either interprocess or external boundaries
@@ -279,12 +299,12 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   for(std::size_t i = 0; i < (num_processes - 1); ++i)
   {
     // Pack data in std::vector to send
-    comm_data_send.resize((num_vertices_per_cell + 1)*othermap.size());
+    comm_data_send.resize((num_vertices_per_facet + 1)*othermap.size());
     std::map<std::vector<std::size_t>, std::size_t>::const_iterator it;
     std::size_t k = 0;
     for (it = othermap.begin(); it != othermap.end(); ++it)
     {
-      for (std::size_t i = 0; i < num_vertices_per_cell; ++i)
+      for (std::size_t i = 0; i < num_vertices_per_facet; ++i)
         comm_data_send[k++] = (it->first)[i];
       comm_data_send[k++] = it->second;
     } 
@@ -293,16 +313,16 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     MPI::send_recv(comm_data_send, dest, comm_data_recv, source);
 
     // Unpack data
-    std::vector<std::size_t> facet(num_vertices_per_cell);
+    std::vector<std::size_t> facet(num_vertices_per_facet);
     othermap.clear();
-    for (std::size_t i = 0; i < num_vertices_per_cell; i += (num_vertices_per_cell + 1))
+    for (std::size_t i = 0; i < comm_data_recv.size(); i += (num_vertices_per_facet + 1))
     {
       std::size_t j = 0;
-      for (j = 0; j < num_vertices_per_cell; ++j)
+      for (j = 0; j < num_vertices_per_facet; ++j)
         facet[j] = comm_data_recv[i + j];
-      othermap.insert(othermap.end(), std::make_pair(facet, comm_data_recv[i + num_vertices_per_cell]));
+      othermap.insert(othermap.end(), std::make_pair(facet, comm_data_recv[i + j]));
     }
-  
+
     //const std::size_t mapsize = MPI::sum(othermap.size());
     //if(process_number == 0)
     //{
@@ -326,6 +346,39 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
         othermap.erase(join_cell);
       }
     }
+  }
+
+  // Test with Boost hash
+  {
+    boost::hash<std::vector<std::set<std::size_t> > > uhash;
+    const std::size_t local_hash = uhash(local_graph);
+    std::vector<std::size_t> all_hashes;
+    MPI::gather(local_hash, all_hashes);
+
+    // Hash the received hash keys
+    boost::hash<std::vector<size_t> > sizet_hash;
+    std::size_t global_hash = sizet_hash(all_hashes);
+
+    // Broadcast hash key
+    MPI::broadcast(global_hash);
+    if (process_number == 0)
+      cout << "Local graph hash (post parallel): " << global_hash << endl;
+  }
+
+  {
+    boost::hash<std::set<std::size_t> > uhash;
+    const std::size_t local_hash = uhash(ghost_vertices);
+    std::vector<std::size_t> all_hashes;
+    MPI::gather(local_hash, all_hashes);
+
+    // Hash the received hash keys
+    boost::hash<std::vector<size_t> > sizet_hash;
+    std::size_t global_hash = sizet_hash(all_hashes);
+
+    // Broadcast hash key
+    MPI::broadcast(global_hash);
+    if (process_number == 0)
+      cout << "Ghost graph hash: " << global_hash << endl;
   }
 
   // Remaining facets are exterior boundary - could be useful
