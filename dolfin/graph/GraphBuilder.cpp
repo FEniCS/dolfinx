@@ -295,12 +295,12 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     // Unpack data
     std::vector<std::size_t> facet(num_vertices_per_cell);
     othermap.clear();
-    for (std::size_t i = 0; i < num_vertices_per_cell; i += (num_vertices_per_cell +1))
+    for (std::size_t i = 0; i < num_vertices_per_cell; i += (num_vertices_per_cell + 1))
     {
       std::size_t j = 0;
       for (j = 0; j < num_vertices_per_cell; ++j)
         facet[j] = comm_data_recv[i + j];
-      othermap.insert(othermap.end(), std::make_pair(facet, j));
+      othermap.insert(othermap.end(), std::make_pair(facet, comm_data_recv[i + num_vertices_per_cell]));
     }
   
     //const std::size_t mapsize = MPI::sum(othermap.size());
