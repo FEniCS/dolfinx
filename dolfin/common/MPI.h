@@ -161,6 +161,12 @@ namespace dolfin
       distribute(in_values, destinations, out_values, sources);
     }
 
+    /// Distribute local arrays on all processors according to given
+    /// partition
+    template<typename T>
+    static void distribute_vector(const std::vector<std::vector<T> >& in_values,
+                                  std::vector<std::vector<T> >& out_values);
+
     /// Distribute local arrays on a group of processes (typically
     /// neighbours from GenericDofMap::neighbours()). It is important
     /// that each process' group includes exactly the processes that
@@ -411,7 +417,47 @@ namespace dolfin
                  "DOLFIN has been configured without MPI support");
   }
   #endif
+  //-----------------------------------------------------------------------------
+  #ifdef HAS_MPI
+  template<typename T>
+  void MPI::distribute_vector(const std::vector<std::vector<T> >& in_values,
+                              std::vector<std::vector<T> >& out_values)
+  {
+    // Get number of processes and process number
+    const unsigned int num_processes  = MPI::num_processes();
+    const unsigned int process_number = MPI::process_number();
 
+    // Require that size of destination matches number of processes 
+    dolfin_assert(in_values.size() == num_processes);
+
+    // Resize out_values and sources
+    out_values.resize(num_processes);
+
+    // Exchange data
+    for (std::size_t i = 1; i < num_processes; i++)
+    {
+      // We receive data from process p - i (i steps to the left)
+      const int source = (process_number - i + num_processes) % num_processes;
+
+      // We send data to process p + i (i steps to the right)
+      const int dest = (process_number + i) % num_processes;
+
+      // FIXME: Make this non-blocking for efficiency
+
+      // Send and receive data
+      MPI::send_recv(in_values[dest], dest, out_values[source], source);
+    }
+  }
+  #else
+  template<typename T>
+  void MPI::distribute_vector(const std::vector<std::vector<T> >& in_values,
+                              std::vector<std::vector<T> >& out_values)
+  {
+    dolfin_error("MPI.h",
+                 "call MPI::distribute_vector",
+                 "DOLFIN has been configured without MPI support");
+  }
+  #endif
   //-----------------------------------------------------------------------------
   template<typename T, typename S>
   void dolfin::MPI::distribute(const std::set<S> processes_group,
@@ -453,7 +499,6 @@ namespace dolfin
     error_no_mpi("call MPI::distribute");
     #endif
   }
-
   //-----------------------------------------------------------------------------
   template<typename T>
   void dolfin::MPINonblocking::send_recv(const T& send_value, unsigned int dest,

@@ -66,6 +66,11 @@ namespace dolfin
                                    std::vector<std::set<std::size_t> >& local_graph,
                                    std::set<std::size_t>& ghost_vertices);
 
+    /// Build distributed dual graph for mesh
+    static void compute_dual_graph_test(const LocalMeshData& mesh_data,
+                                   std::vector<std::set<std::size_t> >& local_graph,
+                                   std::set<std::size_t>& ghost_vertices);
+
   };
 
 }
