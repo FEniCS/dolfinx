@@ -214,6 +214,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   // Create mapping from facets (list of vertex indices) to cells
   typedef boost::unordered_map<std::vector<std::size_t>, std::size_t> VectorMap;
   VectorMap facet_cell;
+  facet_cell.rehash((facet_cell.size() + num_local_cells)/facet_cell.max_load_factor() + 1);
 
   // Iterate over all cells
   std::vector<std::size_t> facet(num_vertices_per_facet);
@@ -241,7 +242,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
         facet_cell[facet] = i;
       else
       {
-        // Already in map. Connect cells and delete facet from map.
+        // Already in map. Connect cells and delete facet from map
         local_graph[i].insert(join_cell->second + offset);
         local_graph[join_cell->second].insert(i + offset);
         facet_cell.erase(join_cell);
@@ -249,23 +250,11 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     }
   }
 
-  // Test with Boost hash
-  {
-    boost::hash<std::vector<std::set<std::size_t> > > uhash;
-    const std::size_t local_hash = uhash(local_graph);
-    std::vector<std::size_t> all_hashes;
-    MPI::gather(local_hash, all_hashes);
+  //tt = time() - tt;
+  //if (MPI::process_number() == 0)
+  //  info("Time to build local connectivity map: %g", tt);
 
-    // Hash the received hash keys
-    boost::hash<std::vector<size_t> > sizet_hash;
-    std::size_t global_hash = sizet_hash(all_hashes);
-
-    // Broadcast hash key
-    MPI::broadcast(global_hash);
-    if (MPI::process_number() == 0)
-      cout << "Local graph hash: " << global_hash << endl;
-  }
-
+  tt = time();
 
   // Now facet_cell map only contains facets->cells with edge facets
   // either interprocess or external boundaries
@@ -275,8 +264,8 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   // From this point relevant in parallel only (deals with ghosts edges)
 
   // Copy to a new map and re-label cells by adding an offset
-  std::map<std::vector<std::size_t>, std::size_t> othermap(facet_cell.begin(), facet_cell.end());
-  for(std::map<std::vector<std::size_t>, std::size_t>::iterator other_cell = othermap.begin();
+  boost::unordered_map<std::vector<std::size_t>, std::size_t> othermap(facet_cell.begin(), facet_cell.end());
+  for(boost::unordered_map<std::vector<std::size_t>, std::size_t>::iterator other_cell = othermap.begin();
         other_cell != othermap.end(); ++other_cell)
   {
     other_cell->second += offset;
@@ -300,7 +289,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   {
     // Pack data in std::vector to send
     comm_data_send.resize((num_vertices_per_facet + 1)*othermap.size());
-    std::map<std::vector<std::size_t>, std::size_t>::const_iterator it;
+    boost::unordered_map<std::vector<std::size_t>, std::size_t>::const_iterator it;
     std::size_t k = 0;
     for (it = othermap.begin(); it != othermap.end(); ++it)
     {
@@ -315,6 +304,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     // Unpack data
     std::vector<std::size_t> facet(num_vertices_per_facet);
     othermap.clear();
+    othermap.rehash((othermap.size() + comm_data_recv.size()/(num_vertices_per_facet + 1))/othermap.max_load_factor() + 1);
     for (std::size_t i = 0; i < comm_data_recv.size(); i += (num_vertices_per_facet + 1))
     {
       std::size_t j = 0;
@@ -335,7 +325,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     for (fcell = facet_cell.begin(); fcell != facet_cell.end(); ++fcell)
     {
       // Check if maps contains same facet
-      std::map<std::vector<std::size_t>, std::size_t>::iterator join_cell = othermap.find(fcell->first);
+      boost::unordered_map<std::vector<std::size_t>, std::size_t>::iterator join_cell = othermap.find(fcell->first);
       if (join_cell != othermap.end())
       {
         // Found neighbours, insert into local_graph and delete facets
@@ -348,6 +338,18 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     }
   }
 
+  tt = time() - tt;
+  double tt_max = MPI::max(tt);
+  if (process_number == 0)
+    info("Time to build connectivity (parallel) map: %g", tt_max);
+
+  // Remaining facets are exterior boundary - could be useful
+
+  const std::size_t n_exterior_facets = MPI::sum(facet_cell.size());
+  if (process_number == 0)
+    std::cout << "n (exterior facets) = " << n_exterior_facets << std::endl;
+
+  /*
   // Test with Boost hash
   {
     boost::hash<std::vector<std::set<std::size_t> > > uhash;
@@ -380,16 +382,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     if (process_number == 0)
       cout << "Ghost graph hash: " << global_hash << endl;
   }
-
-  // Remaining facets are exterior boundary - could be useful
-
-  const std::size_t n_exterior_facets = MPI::sum(facet_cell.size());
-  if (process_number == 0)
-    std::cout << "n (exterior facets) = " << n_exterior_facets << std::endl;
-
-  tt = time() - tt;
-  if (process_number == 0)
-    info("Time to build connectivity map: %g", tt);
+  */
 }
 //-----------------------------------------------------------------------------
 void GraphBuilder::compute_dual_graph_test(const LocalMeshData& mesh_data,
