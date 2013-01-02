@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-02-10
-// Last changed: 2012-12-19
+// Last changed: 2013-01-02
 
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
@@ -39,7 +39,11 @@ dolfin::Mesh dolfin::refine(const Mesh& mesh)
 //-----------------------------------------------------------------------------
 void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh)
 {
-  UniformMeshRefinement::refine(refined_mesh, mesh);
+  if(MPI::num_processes() == 1)
+    UniformMeshRefinement::refine(refined_mesh, mesh);
+  else
+    ParallelRefinement2D::refine(refined_mesh, mesh);
+  
 }
 //-----------------------------------------------------------------------------
 dolfin::Mesh dolfin::refine(const Mesh& mesh,

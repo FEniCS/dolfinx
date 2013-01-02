@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2012-12-19
-// Last Changed: 2012-12-19
+// Last Changed: 2013-01-02
 
 #include <boost/unordered_map.hpp>
 
@@ -31,31 +31,20 @@ namespace dolfin
   {
   public:
 
+    // refine with marker
     static void refine(Mesh& new_mesh, const Mesh& mesh, 
                        const MeshFunction<bool>& refinement_marker);
     
+    // uniform refine
+    static void refine(Mesh& new_mesh, const Mesh& mesh);
     
   private:
 
-    // Reorder vertices into global order - needed for LocalMeshData to re-partition
-    static void reorder_vertices_by_global_indices(std::vector<double>& vertex_coords, const std::size_t gdim,
-                                            const std::vector<std::size_t>& global_indices);
-  
     // Used to find longest edge of a cell
     static bool length_compare(std::pair<double, std::size_t> a, std::pair<double, std::size_t> b);
 
-    // Transmit shared values of an EdgeFunction between processes
-    static void update_logical_edgefunction(EdgeFunction<bool>& values, 
-                                     const boost::unordered_map<std::size_t, std::size_t>& global_to_local,
-                                     const boost::unordered_map<std::size_t, std::size_t>& shared_edges);
-
     // Calculate which edges should be 'reference' edges for the RGB Carstensen type triangulation
     static void generate_reference_edges(const Mesh& mesh, std::vector<std::size_t>& ref_edge);
-
-    // Work out shared edges - in the future, this will be obtained from MeshConnectivity
-    static void get_shared_edges(boost::unordered_map<std::size_t, std::size_t>& shared_edges,
-                          boost::unordered_map<std::size_t, std::size_t>& global_to_local,
-                          const Mesh &mesh);
   
   };
 
