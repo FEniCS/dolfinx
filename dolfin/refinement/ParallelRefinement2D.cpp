@@ -104,7 +104,6 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh)
   std::map<std::size_t, std::size_t>& global_edge_to_new_vertex = p.global_edge_to_new_vertex();
   
   // Generate new topology
-  std::vector<std::size_t> new_cell_topology;
 
   for(CellIterator cell(mesh); !cell.end(); ++cell)
   {
@@ -118,21 +117,10 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh)
     const std::size_t e1 = global_edge_to_new_vertex[e[1].global_index()];
     const std::size_t e2 = global_edge_to_new_vertex[e[2].global_index()];
 
-    new_cell_topology.push_back(v0);
-    new_cell_topology.push_back(e2);
-    new_cell_topology.push_back(e1);
-    
-    new_cell_topology.push_back(e2);
-    new_cell_topology.push_back(v1);
-    new_cell_topology.push_back(e0);
-
-    new_cell_topology.push_back(e1);
-    new_cell_topology.push_back(e0);
-    new_cell_topology.push_back(v2);
-
-    new_cell_topology.push_back(e0);
-    new_cell_topology.push_back(e1);
-    new_cell_topology.push_back(e2);    
+    p.new_cell(v0, e2, e1);
+    p.new_cell(e2, v1, e0);
+    p.new_cell(e1, e0, v2);
+    p.new_cell(e0, e1, e2);
   }
 
   LocalMeshData mesh_data;
@@ -142,7 +130,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh)
 
   // Copy data to LocalMeshData structures
 
-  const std::size_t num_local_cells = new_cell_topology.size()/mesh_data.num_vertices_per_cell;
+  const std::size_t num_local_cells = p.cell_topology().size()/mesh_data.num_vertices_per_cell;
   mesh_data.num_global_cells = MPI::sum(num_local_cells);
   mesh_data.global_cell_indices.resize(num_local_cells);
   const std::size_t idx_global_offset = MPI::global_offset(num_local_cells, true);
@@ -150,7 +138,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh)
     mesh_data.global_cell_indices[i] = idx_global_offset + i;
   
   mesh_data.cell_vertices.resize(boost::extents[num_local_cells][mesh_data.num_vertices_per_cell]);
-  std::copy(new_cell_topology.begin(),new_cell_topology.end(),mesh_data.cell_vertices.data());
+  std::copy(p.cell_topology().begin(),p.cell_topology().end(),mesh_data.cell_vertices.data());
 
   const std::size_t num_local_vertices = p.vertex_coordinates().size()/gdim;
   mesh_data.num_global_vertices = MPI::sum(num_local_vertices);

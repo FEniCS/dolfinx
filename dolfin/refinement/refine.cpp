@@ -25,6 +25,7 @@
 #include "UniformMeshRefinement.h"
 #include "LocalMeshRefinement.h"
 #include "ParallelRefinement2D.h"
+#include "ParallelRefinement3D.h"
 #include "refine.h"
 
 using namespace dolfin;
@@ -33,7 +34,7 @@ using namespace dolfin;
 dolfin::Mesh dolfin::refine(const Mesh& mesh)
 {
   Mesh refined_mesh;
-  UniformMeshRefinement::refine(refined_mesh, mesh);
+  refine(refined_mesh, mesh);
   return refined_mesh;
 }
 //-----------------------------------------------------------------------------
@@ -41,9 +42,10 @@ void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh)
 {
   if(MPI::num_processes() == 1)
     UniformMeshRefinement::refine(refined_mesh, mesh);
-  else
+  else if(mesh.topology().dim() == 2)
     ParallelRefinement2D::refine(refined_mesh, mesh);
-  
+  else if(mesh.topology().dim() == 3)
+    ParallelRefinement3D::refine(refined_mesh, mesh);
 }
 //-----------------------------------------------------------------------------
 dolfin::Mesh dolfin::refine(const Mesh& mesh,

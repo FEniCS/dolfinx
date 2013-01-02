@@ -52,6 +52,15 @@ namespace dolfin
 
     // New vertex coordinates after adding vertices given by marked edges.
     std::vector<double>& vertex_coordinates();
+    // index into vertex coordinates
+    double* vertex_coordinates(std::size_t i);
+    
+    // Add a new cell to the list
+    void new_cell(std::size_t i0, std::size_t i1, std::size_t i2, std::size_t i3); // tetrahedron
+    void new_cell(std::size_t i0, std::size_t i1, std::size_t i2); // triangle
+
+    // Get new cell topology 
+    std::vector<std::size_t>& cell_topology();
     
   private:
 
@@ -59,8 +68,9 @@ namespace dolfin
     boost::unordered_map<std::size_t, std::set<std::size_t> > _shared_edges;
     std::map<std::size_t, std::size_t> _global_edge_to_new_vertex;
     std::vector<double> new_vertex_coordinates;
+    std::vector<std::size_t> new_cell_topology;
+    
     std::vector<bool> marked_edges;
-    bool need_to_transfer;
 
     const Mesh& _mesh;
 

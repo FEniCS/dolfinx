@@ -41,7 +41,6 @@ ParallelRefinement::ParallelRefinement(const Mesh& mesh):_mesh(mesh)
 {
   get_shared_edges();
   marked_edges.assign(_mesh.num_edges(), false);
-  need_to_transfer = false;
 }
 //-----------------------------------------------------------------------------
 
@@ -74,6 +73,14 @@ std::vector<double>& ParallelRefinement::vertex_coordinates()
 {
   return new_vertex_coordinates;
 }
+
+//-----------------------------------------------------------------------------
+
+double* ParallelRefinement::vertex_coordinates(std::size_t i)
+{
+  return new_vertex_coordinates.data() + i*_mesh.geometry().dim();
+}
+
 //-----------------------------------------------------------------------------
 
 void ParallelRefinement::get_shared_edges()
@@ -89,33 +96,41 @@ void ParallelRefinement::get_shared_edges()
   
   const std::map<std::size_t, std::set<std::size_t> >& shared_vertices = _mesh.topology().shared_entities(0);
 
-  
-
   for(EdgeIterator edge(_mesh); !edge.end(); ++edge)
   {
-    if(edge->num_entities(D) < edge->num_global_entities(D))
+    if(edge->num_entities(D) < edge->num_global_entities(D)
+       || D == 3 ) // In 3D, have to check all edges because num_global_entities does not work
     {
-      // this is a shared edge - add an entry to the global->local map
-      _global_to_local.insert(std::make_pair(edge->global_index(),edge->index()));
-
       // Find sharing processes by taking the intersection of the sets of processes of 
       // the two attached vertices.
       // That does not provide a definitive answer, but it is a start.
       VertexIterator v(*edge);
-      const std::set<std::size_t>& set1 
-        = shared_vertices.find(v->global_index())->second;
-      ++v;
-      const std::set<std::size_t>& set2 
-        = shared_vertices.find(v->global_index())->second;
+      if(shared_vertices.count(v[0].global_index()) != 0 
+         && shared_vertices.count(v[1].global_index()) != 0)
+      {
+        const std::set<std::size_t>& set1 
+          = shared_vertices.find(v[0].global_index())->second;
+        const std::set<std::size_t>& set2 
+          = shared_vertices.find(v[1].global_index())->second;
       
-      std::vector<std::size_t> result(set1.size() + set2.size());
-      std::size_t nprocs = std::set_intersection(set1.begin(), set1.end(), set2.begin(), set2.end(), result.begin()) - result.begin();
-      std::set<std::size_t> resultant_set(result.data(),result.data() + nprocs);
-      _shared_edges.insert(std::make_pair(edge->global_index(), resultant_set ));
+        std::vector<std::size_t> result(set1.size() + set2.size());
+        std::size_t nprocs = std::set_intersection(set1.begin(), set1.end(), 
+                                                   set2.begin(), set2.end(), 
+                                                   result.begin()) - result.begin();
+        
+        if(nprocs > 0)
+        {
+          // this is probably a shared edge - add an entry to the global->local map
+          _global_to_local.insert(std::make_pair(edge->global_index(),edge->index()));
+          std::set<std::size_t> resultant_set(result.data(),result.data() + nprocs);
+          _shared_edges.insert(std::make_pair(edge->global_index(), resultant_set ));
+        }
+      }
     }
+    
   }
-
-  // Tell remote processes that this process shares these edges.
+  
+  // Tell remote processes that this process has these edges.
   // When receiving, ignore any edges that this process does not share.
 
   std::size_t num_processes = MPI::num_processes();
@@ -221,6 +236,8 @@ void ParallelRefinement::create_new_vertices(const EdgeFunction<bool>& markedEdg
   // Tally up unshared marked edges, and shared marked edges which are owned on this process.
   // Index them sequentially from zero.
 
+  const std::size_t gdim = _mesh.geometry().dim();
+
   std::size_t n=0;
   for(EdgeIterator edge(_mesh); !edge.end(); ++edge)
   {
@@ -230,8 +247,12 @@ void ParallelRefinement::create_new_vertices(const EdgeFunction<bool>& markedEdg
 
       if(_shared_edges.count(global_i) == 0) //local new vertex
       {
-        new_vertex_coordinates.push_back(edge->midpoint()[0]);
-        new_vertex_coordinates.push_back(edge->midpoint()[1]);
+        const Point& midpoint = edge->midpoint();
+        for(uint j = 0; j < gdim; ++j)
+        {
+          new_vertex_coordinates.push_back(midpoint[j]);
+        }
+
         _global_edge_to_new_vertex[global_i] = n++;
       }
       else 
@@ -246,8 +267,12 @@ void ParallelRefinement::create_new_vertices(const EdgeFunction<bool>& markedEdg
         }
         if(owner)
         { //local new vertex to be shared with another process
-          new_vertex_coordinates.push_back(edge->midpoint()[0]);
-          new_vertex_coordinates.push_back(edge->midpoint()[1]);
+          const Point& midpoint = edge->midpoint();
+          for(uint j = 0; j < gdim; ++j)
+          {
+            new_vertex_coordinates.push_back(midpoint[j]);
+          }    
+     
           _global_edge_to_new_vertex[global_i] = n++;
         } 
       }
@@ -392,4 +417,29 @@ void ParallelRefinement::reorder_vertices_by_global_indices(std::vector<double>&
   }
 }
 //-----------------------------------------------------------------------------
+
+void ParallelRefinement::new_cell(std::size_t i0, std::size_t i1, std::size_t i2, std::size_t i3)
+{
+  new_cell_topology.push_back(i0);
+  new_cell_topology.push_back(i1);
+  new_cell_topology.push_back(i2);
+  new_cell_topology.push_back(i3);
+}
+
+//-----------------------------------------------------------------------------
+
+void ParallelRefinement::new_cell(std::size_t i0, std::size_t i1, std::size_t i2)
+{
+  new_cell_topology.push_back(i0);
+  new_cell_topology.push_back(i1);
+  new_cell_topology.push_back(i2);
+}
+
+//-----------------------------------------------------------------------------
+
+
+std::vector<std::size_t>& ParallelRefinement::cell_topology()
+{
+  return new_cell_topology;
+}
 
