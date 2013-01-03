@@ -212,6 +212,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   const std::size_t offset = MPI::global_offset(num_local_cells, true);
 
   // Create mapping from facets (list of vertex indices) to cells
+  //typedef std::map<std::vector<std::size_t>, std::size_t> VectorMap;
   typedef boost::unordered_map<std::vector<std::size_t>, std::size_t> VectorMap;
   VectorMap facet_cell;
   facet_cell.rehash((facet_cell.size() + num_local_cells)/facet_cell.max_load_factor() + 1);
@@ -254,7 +255,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   //if (MPI::process_number() == 0)
   //  info("Time to build local connectivity map: %g", tt);
 
-  tt = time();
+  //tt = time();
 
   // Now facet_cell map only contains facets->cells with edge facets
   // either interprocess or external boundaries
@@ -322,6 +323,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
     // Go through local facets, looking for a matching facet in othermap
     VectorMap::iterator fcell;
+    //std::vector<VectorMap::iterator> to_remove;
     for (fcell = facet_cell.begin(); fcell != facet_cell.end(); ++fcell)
     {
       // Check if maps contains same facet
@@ -336,6 +338,8 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
         othermap.erase(join_cell);
       }
     }
+    //for (std::vector<VectorMap::iterator>::const_iterator it = to_remove.begin(); it != to_remove.end(); ++it)
+    //   facet_cell.erase(*it);
   }
 
   tt = time() - tt;
