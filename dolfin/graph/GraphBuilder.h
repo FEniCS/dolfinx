@@ -66,9 +66,25 @@ namespace dolfin
                                    std::vector<std::set<std::size_t> >& local_graph,
                                    std::set<std::size_t>& ghost_vertices);
 
-    /// Build distributed dual graph for mesh
+    /// Build distributed dual graph for mesh (test code - under development)
     static void compute_dual_graph_test(const LocalMeshData& mesh_data,
                                    std::vector<std::set<std::size_t> >& local_graph,
+                                   std::set<std::size_t>& ghost_vertices);
+
+  private:
+
+    typedef boost::unordered_map<std::vector<std::size_t>, std::size_t> FacetCellMap;
+
+    // Build local dual graph for mesh
+    static void compute_local_dual_graph(const LocalMeshData& mesh_data,
+                                   std::vector<std::set<std::size_t> >& local_graph,
+                                   FacetCellMap& facet_cell_map);
+
+    // Build nonlocal dual graph for mesh. compute_local_dual_graph
+    // should be called first.
+    static void compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
+                                   std::vector<std::set<std::size_t> >& local_graph,
+                                   FacetCellMap& facet_cell_map,
                                    std::set<std::size_t>& ghost_vertices);
 
   };
