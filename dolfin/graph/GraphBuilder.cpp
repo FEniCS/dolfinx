@@ -596,36 +596,7 @@ void GraphBuilder::compute_dual_graph_test(const LocalMeshData& mesh_data,
   dolfin_assert(local_vertex_cell_map_data.size() == num_processes);
 
   // Build required vertex-cell map (each vector will be sorted)
-  std::map<std::size_t, std::vector<std::size_t> > vertex_to_cell_map_tmp;
-  for (std::size_t p = 0; p < num_processes; ++p)
-  {
-    const std::vector<std::size_t>& req_vertices = required_vertices[p];
-    const std::vector<std::size_t>& data = local_vertex_cell_map_data[p];
-    std::size_t i = 0;
-    std::size_t vertex_pos = 0;
-    while (i < data.size())
-    {
-      const std::size_t vertex_index = req_vertices[vertex_pos++];  
-      const std::size_t num_cells = data[i];  
-      dolfin_assert(num_cells > 0);
-
-      if (process_number == 1)
-      {
-        cout << "Vertex index (map): " << vertex_index << ", " << my_vertices.size() << ":: "; 
-        for (std::size_t k = 0; k < num_cells; ++k )
-          cout << data[i+1 + k] << "  "; 
-        cout << endl;
-      }
-
-      vertex_to_cell_map_tmp[vertex_index] = std::vector<std::size_t>(&data[i+1], &data[i+1] + num_cells);
-      i += (num_cells + 1);
-    }  
-  }
-
-  MPI::barrier();
-
   std::vector<std::vector<std::size_t> > vertex_to_cell_map;
-  std::size_t count0 = 0;
   for (std::size_t p = 0; p < num_processes; ++p)
   {
     const std::vector<std::size_t>& data = local_vertex_cell_map_data[p];
@@ -633,69 +604,11 @@ void GraphBuilder::compute_dual_graph_test(const LocalMeshData& mesh_data,
     while (i < data.size())
     {
       const std::size_t num_cells = data[i];  
-
-      if (process_number == 1)
-      {
-        cout << "Vertex index (vec): " << count0 << ", " << i << ":: "; 
-        for (std::size_t k = 0; k < num_cells; ++k )
-          cout << data[i+1 + k] << "  "; 
-        cout << endl;
-      }
-
       dolfin_assert(num_cells > 0);
       vertex_to_cell_map.push_back(std::vector<std::size_t>(&data[i+1], &data[i+1] + num_cells));
       i += (num_cells + 1);
-
-      ++count0;
     }  
   }
-
-  //MPI::barrier();
-
-  if (process_number == 1)
-  {
-    cout << "Compare: "<< endl;
-    std::map<std::size_t, std::vector<std::size_t> >::const_iterator map_it;
-    std::size_t count = 0;
-    for (map_it = vertex_to_cell_map_tmp.begin(); map_it != vertex_to_cell_map_tmp.end(); ++map_it)
-    {
-      cout << "Map vals: ";
-      for (std::size_t i = 0; i < map_it->second.size(); ++i)
-        cout << "(" << i << ",  " << (map_it->second)[i] << ")  "  ;
-      cout << endl;
-
-      cout << "Vec vals: " << count << ", ";
-      for (std::size_t i = 0; i < vertex_to_cell_map[count].size(); ++i)
-        cout << "(" << i << ", " << vertex_to_cell_map[count][i] << ")  ";
-      cout << endl;
-      count++;
-    }
-  }
-
-  //MPI::barrier();
-
-  std::vector<std::vector<std::size_t> > vertex_to_cell_map_dbg;
-  for (std::map<std::size_t, std::vector<std::size_t> >::const_iterator it = vertex_to_cell_map_tmp.begin();
-    it != vertex_to_cell_map_tmp.end(); ++it)
-  {
-    vertex_to_cell_map_dbg.push_back(it->second);
-  }
-  dolfin_assert(vertex_to_cell_map_dbg == vertex_to_cell_map);
-
-
-  // Debug
-  /*
-  std::map<std::size_t, std::vector<std::size_t> >::const_iterator v_map;
-  for (std::size_t i = 0; i < num_local_cells; ++i)
-  {
-    // Iterate over facets in cell
-    for(std::size_t j = 0; j < num_vertices_per_cell; ++j)
-    {
-      v_map = vertex_to_cell_map.find(cell_vertices[i][j]);
-      dolfin_assert(v_map != vertex_to_cell_map.end());
-    }
-  }
-  */
 
   // Now, the rest is local (no more communication) --------------------------
 
@@ -712,31 +625,7 @@ void GraphBuilder::compute_dual_graph_test(const LocalMeshData& mesh_data,
   const std::pair<std::size_t, std::size_t> 
     my_cell_range = MPI::local_range(mesh_data.num_global_cells); 
 
-  // Test set
-  /*
-  std::vector<std::size_t> test0;
-  
-  //for (std::size_t p = 0; p < num_processes; ++p)
-  //{
-  //  const std::vector<std::size_t>& req_vertices = required_vertices[p];
-  //  for (std::size_t i = 0; i < req_vertices.size(); ++i)
-  //    test.insert(req_vertices[i]);
-  //}
-  std::map<std::size_t, std::vector<std::size_t> >::const_iterator tmp_it;
-  for (tmp_it = vertex_to_cell_map.begin(); tmp_it != vertex_to_cell_map.end(); ++tmp_it)
-    test0.push_back(tmp_it->first);
-    //test.insert(tmp_it->first);
-
-  std::vector<std::size_t> test1(my_vertices.begin(), my_vertices.end());
-  if (test0 == test1)
-    cout << "!!!!! Sets are equal" << endl;
-  else
-    cout << "!!!!! Sets are *not* equal" << endl;
-  */
-
-  cout << "Before re-order: " << my_vertices.size() << endl; 
-
-  // Reordering map
+  // Build renumvering ordering map (maps global to local)
   std::size_t count = 0;
   std::map<std::size_t, std::size_t> reorder;
   for (std::set<std::size_t>::const_iterator v = my_vertices.begin();
@@ -748,7 +637,6 @@ void GraphBuilder::compute_dual_graph_test(const LocalMeshData& mesh_data,
   // Renumber vertices to reduce look-ups later
   boost::multi_array<std::size_t, 2> cell_vertices_local = mesh_data.cell_vertices;
   std::size_t* _cell_vertices = cell_vertices_local.data();
-  //std::size_t pos = 0;
   for (std::size_t i = 0; i < cell_vertices_local.num_elements(); ++i)
   {
     std::map<std::size_t, std::size_t>::const_iterator local_v = reorder.find(_cell_vertices[i]); 
@@ -756,14 +644,9 @@ void GraphBuilder::compute_dual_graph_test(const LocalMeshData& mesh_data,
     _cell_vertices[i] = local_v->second;
   }
 
-  cout << "my_vertices size: " << my_vertices.size() << endl; 
-  cout << "vertex_to_cell_map size: " << vertex_to_cell_map.size() << endl; 
-
   // Iterate over all cells
   std::vector<std::size_t> facet(num_vertices_per_facet);
-  std::vector<std::size_t> facet_tmp(num_vertices_per_facet);
   std::vector<std::size_t> intersection;
-  std::vector<std::size_t> intersection_tmp;
   for (std::size_t i = 0; i < num_local_cells; ++i)
   {
     // Iterate over facets in cell
@@ -775,97 +658,19 @@ void GraphBuilder::compute_dual_graph_test(const LocalMeshData& mesh_data,
       for (std::size_t k = 0; k < num_vertices_per_cell; ++k)
       {
         if (k != j)
-        {
-          facet[pos] = cell_vertices_local[i][k];
-          facet_tmp[pos] = cell_vertices[i][k];
-          pos++;
-        }
+          facet[pos++] = cell_vertices_local[i][k];
       }
 
-      // Sort into order, so map indexing will be consistent
+      // Sort facet vertices to use set_intersection later
       std::sort(facet.begin(), facet.end());
-      std::sort(facet_tmp.begin(), facet_tmp.end());
 
       // Find intersection of connected cells for each facet vertex  
-      dolfin_assert(vertex_to_cell_map_tmp.find(facet_tmp[0]) != vertex_to_cell_map_tmp.end());
-      vertex_to_cell_map_tmp.find(facet_tmp[0])->second.begin();
-      intersection_tmp = vertex_to_cell_map_tmp.find(facet_tmp[0])->second;
-
-
       intersection = vertex_to_cell_map[facet[0]];
-
-      /*
-      if (process_number == 1)
-      {
-        cout << "test old: " << facet_tmp[0] << ":: ";
-        for (std::size_t i = 0; i < intersection.size(); ++i)
-          cout << intersection[i] << ", " ;
-        cout  << endl;
-
-        cout << "Old-to-new: " << my_vertices.find(facet_tmp[0])->second << endl;     
-      }
-
-      dolfin_assert(facet[0] < vertex_to_cell_map.size());  
-      intersection = vertex_to_cell_map[facet[0]];
-
-      if (process_number == 1)
-      {
-        cout << "test new: " << facet[0] << ":: ";
-        for (std::size_t i = 0; i < intersection.size(); ++i)
-          cout << intersection[i] << ", " ;
-        cout  << endl;
-        cout << endl;
-      }
-      */
-
-      cout  << endl;
-
-      std::vector<std::size_t>::iterator it_tmp = intersection_tmp.end();
-      for (std::size_t i = 0; i < facet_tmp.size(); ++i)
-      {
-        dolfin_assert(vertex_to_cell_map_tmp.find(facet_tmp[i]) != vertex_to_cell_map_tmp.end());
-        std::vector<std::size_t>& cells = vertex_to_cell_map_tmp.find(facet_tmp[i])->second;
-
-        if (process_number == 1)
-        {
-          cout << "Test old: " << facet_tmp[i] << ":: ";
-          for (std::size_t ii = 0; ii < cells.size(); ++ii)
-            cout << cells[ii] << ", " ;
-          cout  << endl;
-          //cout << "Old-to-new: " << my_vertices.find(facet_tmp[i])->second << endl;     
-        }
-
-
-       // it points to end of constructed range
-        it_tmp = std::set_intersection(intersection_tmp.begin(), it_tmp,
-                                   cells.begin(), cells.end(),
-                                   intersection_tmp.begin());         
-      }
-
-      // Numbers of cells in intersection
-      std::size_t intersection_size_tmp = it_tmp - intersection_tmp.begin();
-      if (process_number == 1)
-      {
-        cout << "Num intersections (old): " << intersection_size_tmp << endl;
-      }
-
       std::vector<std::size_t>::iterator it = intersection.end();
       for (std::size_t i = 0; i < facet.size(); ++i)
       {
-        ///dolfin_assert(vertex_to_cell_map.find(facet[i]) != vertex_to_cell_map.end());
-        //std::vector<std::size_t>& cells = vertex_to_cell_map.find(facet[i])->second;
-
         dolfin_assert(facet[i] < vertex_to_cell_map.size());  
         std::vector<std::size_t>& cells = vertex_to_cell_map[facet[i]];
-
-        if (process_number == 1)
-        {
-          cout << "Test new: " << facet[i] << ":: ";
-          for (std::size_t ii = 0; ii < cells.size(); ++ii)
-            cout << cells[ii] << ", " ;
-          cout  << endl;
-          cout  << endl;
-        }
 
         // it points to end of constructed range
         it = std::set_intersection(intersection.begin(), it,
@@ -876,13 +681,8 @@ void GraphBuilder::compute_dual_graph_test(const LocalMeshData& mesh_data,
       // Numbers of cells in intersection
       std::size_t intersection_size = it - intersection.begin();
 
-      if (process_number == 1)
-      {
-        cout << "Num intersections (new): " << intersection_size << endl;
-      }
-
-      dolfin_assert(intersection_size > 0); 
-      dolfin_assert(intersection_size < 3); 
+      // Should have 1 or 2 connections
+      dolfin_assert(intersection_size > 0 && intersection_size < 3); 
       if (intersection_size == 2)
       {
         const std::size_t cell0 = *(intersection.begin());
