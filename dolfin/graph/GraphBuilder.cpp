@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Garth N. Wells
+// Copyright (C) 2010-2013 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -18,17 +18,14 @@
 // Modified by Chris Richardson, 2012
 //
 // First added:  2010-02-19
-// Last changed: 2012-12-07
+// Last changed: 2013-01-03
 
 #include <algorithm>
 #include <numeric>
 #include <set>
 #include <vector>
-#include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
-#include <boost/functional/hash.hpp>
-
-#include <boost/container/flat_map.hpp>
+#include <boost/unordered_set.hpp>
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
@@ -188,271 +185,7 @@ BoostBidirectionalGraph GraphBuilder::local_boost_graph(const Mesh& mesh,
   return graph;
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_dual_graph_small(const LocalMeshData& mesh_data,
-                            std::vector<std::set<std::size_t> >& local_graph,
-                            std::set<std::size_t>& ghost_vertices)
-{
-  /*
-  double tt = time();
-
-  FacetCellMap facet_cell_map;
-  compute_local_dual_graph(mesh_data, local_graph, facet_cell_map);
-  compute_nonlocal_dual_graph_small(mesh_data, local_graph, facet_cell_map, ghost_vertices);
-  facet_cell_map.clear();
-
-  tt = time() - tt;
-  double tt_max = MPI::max(tt);
-  if (MPI::process_number() == 0)
-    info("Time to build dual graph (old) map: %g", tt_max);
-
-  // Test with Boost hash
-  {
-    boost::hash<std::vector<std::set<std::size_t> > > uhash;
-    const std::size_t local_hash = uhash(local_graph);
-    std::vector<std::size_t> all_hashes;
-    MPI::gather(local_hash, all_hashes);
-
-    // Hash the received hash keys
-    boost::hash<std::vector<size_t> > sizet_hash;
-    std::size_t global_hash = sizet_hash(all_hashes);
-
-    // Broadcast hash key
-    MPI::broadcast(global_hash);
-    if (MPI::process_number() == 0)
-      cout << "Local graph hash (old, post parallel): " << global_hash << endl;
-  }
-
-  {
-    boost::hash<std::set<std::size_t> > uhash;
-    const std::size_t local_hash = uhash(ghost_vertices);
-    std::vector<std::size_t> all_hashes;
-    MPI::gather(local_hash, all_hashes);
-
-    // Hash the received hash keys
-    boost::hash<std::vector<size_t> > sizet_hash;
-    std::size_t global_hash = sizet_hash(all_hashes);
-
-    // Broadcast hash key
-    MPI::broadcast(global_hash);
-    if (MPI::process_number() == 0)
-      cout << "Ghost graph hash (old): " << global_hash << endl;
-  }
-  */
-
-  double tt1 = time();  
-  compute_dual_graph_scalable(mesh_data, local_graph, ghost_vertices);
-  tt1 = time() - tt1;
-  double tt_max1 = MPI::max(tt1);
-  if (MPI::process_number() == 0)
-    info("Time to build dual graph (new, scalable) map: %g", tt_max1);
-
-  /*
-  // Test with Boost hash
-  {
-    boost::hash<std::vector<std::set<std::size_t> > > uhash;
-    const std::size_t local_hash = uhash(local_graph);
-    std::vector<std::size_t> all_hashes;
-    MPI::gather(local_hash, all_hashes);
-
-    // Hash the received hash keys
-    boost::hash<std::vector<size_t> > sizet_hash;
-    std::size_t global_hash = sizet_hash(all_hashes);
-
-    // Broadcast hash key
-    MPI::broadcast(global_hash);
-    if (MPI::process_number() == 0)
-      cout << "Local graph hash (new, post parallel): " << global_hash << endl;
-  }
-
-  {
-    boost::hash<std::set<std::size_t> > uhash;
-    const std::size_t local_hash = uhash(ghost_vertices);
-    std::vector<std::size_t> all_hashes;
-    MPI::gather(local_hash, all_hashes);
-
-    // Hash the received hash keys
-    boost::hash<std::vector<size_t> > sizet_hash;
-    std::size_t global_hash = sizet_hash(all_hashes);
-
-    // Broadcast hash key
-    MPI::broadcast(global_hash);
-    if (MPI::process_number() == 0)
-      cout << "Ghost graph hash (new): " << global_hash << endl;
-  }
-  */
-}
-//-----------------------------------------------------------------------------
-void GraphBuilder::compute_local_dual_graph(const LocalMeshData& mesh_data,
-                            std::vector<std::set<std::size_t> >& local_graph, 
-                            FacetCellMap& facet_cell_map)
-{
-  Timer timer("Compute dual graph");
-
-  // List of cell vertices
-  const boost::multi_array<std::size_t, 2>& cell_vertices = mesh_data.cell_vertices;
-  const std::size_t num_local_cells = mesh_data.global_cell_indices.size();
-  const std::size_t num_vertices_per_cell = mesh_data.num_vertices_per_cell;
-  const std::size_t num_vertices_per_facet = num_vertices_per_cell - 1;
-
-  dolfin_assert(num_local_cells == cell_vertices.shape()[0]);
-  dolfin_assert(num_vertices_per_cell == cell_vertices.shape()[1]);
-
-  local_graph.resize(num_local_cells);
-  facet_cell_map.clear();
-
-  // Compute local edges (cell-cell connections) using global (internal
-  // to this function, not the user numbering) numbering
-
-  // Get offset for this process
-  const std::size_t cell_offset = MPI::global_offset(num_local_cells, true);
-
-  // Create map from facet (list of vertex indices) to cells
-  facet_cell_map.rehash((facet_cell_map.size() + num_local_cells)/facet_cell_map.max_load_factor() + 1);
-
-  // Iterate over all cells
-  std::vector<std::size_t> facet(num_vertices_per_facet);
-  for (std::size_t i = 0; i < num_local_cells; ++i)
-  {
-    // Iterate over facets in cell
-    for(std::size_t j = 0; j < num_vertices_per_cell; ++j)
-    {
-      // Build set of vertices that make up a facet (all cell vertices,
-      // minus one cell vertex)
-      std::size_t pos = 0;
-      for (std::size_t k = 0; k < num_vertices_per_cell; ++k)
-      {
-        if (k != j)
-          facet[pos++] = cell_vertices[i][k];
-      }
-
-      // Sort into order, so map indexing will be consistent
-      std::sort(facet.begin(), facet.end());
-
-      // Look for facet in map
-      const FacetCellMap::const_iterator join_cell = facet_cell_map.find(facet);
-
-      // If facet not found in map, insert facet->cell into map
-      if(join_cell == facet_cell_map.end())
-        facet_cell_map[facet] = i;
-      else
-      {
-        // Already in map. Connect cells and delete facet from map
-        local_graph[i].insert(join_cell->second + cell_offset);
-        local_graph[join_cell->second].insert(i + cell_offset);
-        facet_cell_map.erase(join_cell);
-      }
-    }
-  }
-}
-//-----------------------------------------------------------------------------
-void GraphBuilder::compute_nonlocal_dual_graph_small(const LocalMeshData& mesh_data,
-                            std::vector<std::set<std::size_t> >& local_graph,
-                            FacetCellMap& facet_cell_map,
-                            std::set<std::size_t>& ghost_vertices)
-{
-  Timer timer("Compute dual graph");
-
-  // At this stage facet_cell map only contains facets->cells with edge
-  // facets either interprocess or external boundaries
-
-  // List of cell vertices
-  const boost::multi_array<std::size_t, 2>& cell_vertices = mesh_data.cell_vertices;
-  const std::size_t num_local_cells = mesh_data.global_cell_indices.size();
-  const std::size_t num_vertices_per_cell = mesh_data.num_vertices_per_cell;
-  const std::size_t num_vertices_per_facet = num_vertices_per_cell - 1;
-
-  dolfin_assert(num_local_cells == cell_vertices.shape()[0]);
-  dolfin_assert(num_vertices_per_cell == cell_vertices.shape()[1]);
-
-  // Compute local edges (cell-cell connections) using global (internal
-  // to this function, not the user numbering) numbering
-
-  // Get offset for this processe
-  const std::size_t offset = MPI::global_offset(num_local_cells, true);
-
-  // Copy to a new map and re-label cells by adding an offset
-  boost::unordered_map<std::vector<std::size_t>, std::size_t> 
-      othermap(facet_cell_map.begin(), facet_cell_map.end());
-  for(boost::unordered_map<std::vector<std::size_t>, std::size_t>::iterator other_cell = othermap.begin();
-        other_cell != othermap.end(); ++other_cell)
-  {
-    other_cell->second += offset;
-  }
-
-  const std::size_t num_processes = MPI::num_processes();
-  const std::size_t process_number = MPI::process_number();
-
-  // Clear ghost vertices
-  ghost_vertices.clear();
-
-  // Create MPI ring
-  const int source = (num_processes + process_number - 1) % num_processes;
-  const int dest   = (process_number + 1) % num_processes;
-
-  // Repeat (n-1) times, to go round ring
-  std::vector<std::size_t> comm_data_send;
-  std::vector<std::size_t> comm_data_recv;
-
-  for(std::size_t i = 0; i < (num_processes - 1); ++i)
-  {
-    // Pack data in std::vector to send
-    comm_data_send.resize((num_vertices_per_facet + 1)*othermap.size());
-    boost::unordered_map<std::vector<std::size_t>, std::size_t>::const_iterator it;
-    std::size_t k = 0;
-    for (it = othermap.begin(); it != othermap.end(); ++it)
-    {
-      for (std::size_t i = 0; i < num_vertices_per_facet; ++i)
-        comm_data_send[k++] = (it->first)[i];
-      comm_data_send[k++] = it->second;
-    } 
-
-    // Shift data to next process
-    MPI::send_recv(comm_data_send, dest, comm_data_recv, source);
-
-    // Unpack data
-    std::vector<std::size_t> facet(num_vertices_per_facet);
-    othermap.clear();
-    othermap.rehash((othermap.size() + comm_data_recv.size()/(num_vertices_per_facet + 1))/othermap.max_load_factor() + 1);
-    for (std::size_t i = 0; i < comm_data_recv.size(); i += (num_vertices_per_facet + 1))
-    {
-      std::size_t j = 0;
-      for (j = 0; j < num_vertices_per_facet; ++j)
-        facet[j] = comm_data_recv[i + j];
-      othermap.insert(othermap.end(), std::make_pair(facet, comm_data_recv[i + j]));
-    }
-
-    //const std::size_t mapsize = MPI::sum(othermap.size());
-    //if(process_number == 0)
-    //{
-    //  std::cout << "t = " << (time() - tt) << ", iteration: " << i
-    //      << ", average map size = " << mapsize/num_processes << std::endl;
-    //}
-
-    // Go through local facets, looking for a matching facet in othermap
-    FacetCellMap::iterator fcell;
-    for (fcell = facet_cell_map.begin(); fcell != facet_cell_map.end(); ++fcell)
-    {
-      // Check if maps contains same facet
-      boost::unordered_map<std::vector<std::size_t>, std::size_t>::iterator join_cell = othermap.find(fcell->first);
-      if (join_cell != othermap.end())
-      {
-        // Found neighbours, insert into local_graph and delete facets
-        // from both maps
-        local_graph[fcell->second].insert(join_cell->second);
-        ghost_vertices.insert(join_cell->second);
-        facet_cell_map.erase(fcell);
-        othermap.erase(join_cell);
-      }
-    }
-  }
-
-  // Remaining facets are exterior boundary - could be useful
-  const std::size_t n_exterior_facets = MPI::sum(facet_cell_map.size());
-  if (process_number == 0)
-    std::cout << "n (exterior facets) = " << n_exterior_facets << std::endl;
-}
-//-----------------------------------------------------------------------------
-void GraphBuilder::compute_dual_graph_scalable(const LocalMeshData& mesh_data,
+void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
                             std::vector<std::set<std::size_t> >& local_graph,
                             std::set<std::size_t>& ghost_vertices)
 {
@@ -726,10 +459,190 @@ void GraphBuilder::compute_dual_graph_scalable(const LocalMeshData& mesh_data,
   #else
 
   // Use algorithm that does not require MPI to be intalled 
-  compute_dual_graph_small(mesh_data, local_graph, ghost_vertices);
+  FacetCellMap facet_cell_map;
+  compute_local_dual_graph(mesh_data, local_graph, facet_cell_map);
 
   #endif
 
+}
+//-----------------------------------------------------------------------------
+void GraphBuilder::compute_dual_graph_small(const LocalMeshData& mesh_data,
+                            std::vector<std::set<std::size_t> >& local_graph,
+                            std::set<std::size_t>& ghost_vertices)
+{
+  FacetCellMap facet_cell_map;
+  compute_local_dual_graph(mesh_data, local_graph, facet_cell_map);
+  compute_nonlocal_dual_graph_small(mesh_data, local_graph, facet_cell_map, ghost_vertices);
+}
+//-----------------------------------------------------------------------------
+void GraphBuilder::compute_local_dual_graph(const LocalMeshData& mesh_data,
+                            std::vector<std::set<std::size_t> >& local_graph, 
+                            FacetCellMap& facet_cell_map)
+{
+  Timer timer("Compute dual graph");
+
+  // List of cell vertices
+  const boost::multi_array<std::size_t, 2>& cell_vertices = mesh_data.cell_vertices;
+  const std::size_t num_local_cells = mesh_data.global_cell_indices.size();
+  const std::size_t num_vertices_per_cell = mesh_data.num_vertices_per_cell;
+  const std::size_t num_vertices_per_facet = num_vertices_per_cell - 1;
+
+  dolfin_assert(num_local_cells == cell_vertices.shape()[0]);
+  dolfin_assert(num_vertices_per_cell == cell_vertices.shape()[1]);
+
+  local_graph.resize(num_local_cells);
+  facet_cell_map.clear();
+
+  // Compute local edges (cell-cell connections) using global (internal
+  // to this function, not the user numbering) numbering
+
+  // Get offset for this process
+  const std::size_t cell_offset = MPI::global_offset(num_local_cells, true);
+
+  // Create map from facet (list of vertex indices) to cells
+  facet_cell_map.rehash((facet_cell_map.size() + num_local_cells)/facet_cell_map.max_load_factor() + 1);
+
+  // Iterate over all cells
+  std::vector<std::size_t> facet(num_vertices_per_facet);
+  for (std::size_t i = 0; i < num_local_cells; ++i)
+  {
+    // Iterate over facets in cell
+    for(std::size_t j = 0; j < num_vertices_per_cell; ++j)
+    {
+      // Build set of vertices that make up a facet (all cell vertices,
+      // minus one cell vertex)
+      std::size_t pos = 0;
+      for (std::size_t k = 0; k < num_vertices_per_cell; ++k)
+      {
+        if (k != j)
+          facet[pos++] = cell_vertices[i][k];
+      }
+
+      // Sort into order, so map indexing will be consistent
+      std::sort(facet.begin(), facet.end());
+
+      // Look for facet in map
+      const FacetCellMap::const_iterator join_cell = facet_cell_map.find(facet);
+
+      // If facet not found in map, insert facet->cell into map
+      if(join_cell == facet_cell_map.end())
+        facet_cell_map[facet] = i;
+      else
+      {
+        // Already in map. Connect cells and delete facet from map
+        local_graph[i].insert(join_cell->second + cell_offset);
+        local_graph[join_cell->second].insert(i + cell_offset);
+        facet_cell_map.erase(join_cell);
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void GraphBuilder::compute_nonlocal_dual_graph_small(const LocalMeshData& mesh_data,
+                            std::vector<std::set<std::size_t> >& local_graph,
+                            FacetCellMap& facet_cell_map,
+                            std::set<std::size_t>& ghost_vertices)
+{
+  Timer timer("Compute dual graph");
+
+  // At this stage facet_cell map only contains facets->cells with edge
+  // facets either interprocess or external boundaries
+
+  // List of cell vertices
+  const boost::multi_array<std::size_t, 2>& cell_vertices = mesh_data.cell_vertices;
+  const std::size_t num_local_cells = mesh_data.global_cell_indices.size();
+  const std::size_t num_vertices_per_cell = mesh_data.num_vertices_per_cell;
+  const std::size_t num_vertices_per_facet = num_vertices_per_cell - 1;
+
+  dolfin_assert(num_local_cells == cell_vertices.shape()[0]);
+  dolfin_assert(num_vertices_per_cell == cell_vertices.shape()[1]);
+
+  // Compute local edges (cell-cell connections) using global (internal
+  // to this function, not the user numbering) numbering
+
+  // Get offset for this processe
+  const std::size_t offset = MPI::global_offset(num_local_cells, true);
+
+  // Copy to a new map and re-label cells by adding an offset
+  boost::unordered_map<std::vector<std::size_t>, std::size_t> 
+      othermap(facet_cell_map.begin(), facet_cell_map.end());
+  for(boost::unordered_map<std::vector<std::size_t>, std::size_t>::iterator other_cell = othermap.begin();
+        other_cell != othermap.end(); ++other_cell)
+  {
+    other_cell->second += offset;
+  }
+
+  const std::size_t num_processes = MPI::num_processes();
+  const std::size_t process_number = MPI::process_number();
+
+  // Clear ghost vertices
+  ghost_vertices.clear();
+
+  // Create MPI ring
+  const int source = (num_processes + process_number - 1) % num_processes;
+  const int dest   = (process_number + 1) % num_processes;
+
+  // Repeat (n-1) times, to go round ring
+  std::vector<std::size_t> comm_data_send;
+  std::vector<std::size_t> comm_data_recv;
+
+  for(std::size_t i = 0; i < (num_processes - 1); ++i)
+  {
+    // Pack data in std::vector to send
+    comm_data_send.resize((num_vertices_per_facet + 1)*othermap.size());
+    boost::unordered_map<std::vector<std::size_t>, std::size_t>::const_iterator it;
+    std::size_t k = 0;
+    for (it = othermap.begin(); it != othermap.end(); ++it)
+    {
+      for (std::size_t i = 0; i < num_vertices_per_facet; ++i)
+        comm_data_send[k++] = (it->first)[i];
+      comm_data_send[k++] = it->second;
+    } 
+
+    // Shift data to next process
+    MPI::send_recv(comm_data_send, dest, comm_data_recv, source);
+
+    // Unpack data
+    std::vector<std::size_t> facet(num_vertices_per_facet);
+    othermap.clear();
+    othermap.rehash((othermap.size() + comm_data_recv.size()/(num_vertices_per_facet + 1))/othermap.max_load_factor() + 1);
+    for (std::size_t i = 0; i < comm_data_recv.size(); i += (num_vertices_per_facet + 1))
+    {
+      std::size_t j = 0;
+      for (j = 0; j < num_vertices_per_facet; ++j)
+        facet[j] = comm_data_recv[i + j];
+      othermap.insert(othermap.end(), std::make_pair(facet, comm_data_recv[i + j]));
+    }
+
+    //const std::size_t mapsize = MPI::sum(othermap.size());
+    //if(process_number == 0)
+    //{
+    //  std::cout << "t = " << (time() - tt) << ", iteration: " << i
+    //      << ", average map size = " << mapsize/num_processes << std::endl;
+    //}
+
+    // Go through local facets, looking for a matching facet in othermap
+    FacetCellMap::iterator fcell;
+    for (fcell = facet_cell_map.begin(); fcell != facet_cell_map.end(); ++fcell)
+    {
+      // Check if maps contains same facet
+      boost::unordered_map<std::vector<std::size_t>, std::size_t>::iterator join_cell = othermap.find(fcell->first);
+      if (join_cell != othermap.end())
+      {
+        // Found neighbours, insert into local_graph and delete facets
+        // from both maps
+        local_graph[fcell->second].insert(join_cell->second);
+        ghost_vertices.insert(join_cell->second);
+        facet_cell_map.erase(fcell);
+        othermap.erase(join_cell);
+      }
+    }
+  }
+
+  // Remaining facets are exterior boundary - could be useful
+  const std::size_t n_exterior_facets = MPI::sum(facet_cell_map.size());
+  if (process_number == 0)
+    std::cout << "n (exterior facets) = " << n_exterior_facets << std::endl;
 }
 //-----------------------------------------------------------------------------
 

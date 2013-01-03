@@ -55,7 +55,7 @@ void SCOTCH::compute_partition(std::vector<std::size_t>& cell_partition,
   std::set<std::size_t> ghost_vertices;
 
   // Compute local dual graph
-  GraphBuilder::compute_dual_graph_scalable(mesh_data, local_graph, ghost_vertices);
+  GraphBuilder::compute_dual_graph(mesh_data, local_graph, ghost_vertices);
 
   // Compute partitions
   const std::size_t num_global_vertices = mesh_data.num_global_cells;
