@@ -451,6 +451,13 @@ void GraphBuilder::compute_dual_graph_test(const LocalMeshData& mesh_data,
                             std::vector<std::set<std::size_t> >& local_graph,
                             std::set<std::size_t>& ghost_vertices)
 {
+  // TODO: 1. Free up memory by clearing large data structures when not
+  //          longer used.
+  //       2. Look for efficiency gains
+
+  // Vertex-to-cell map type (must be ordered)    
+  typedef std::multimap<std::size_t, std::size_t> OrderedVertexCellMultiMap;
+
   Timer timer("Compute dual graph [experimental]");
 
   double tt = time();
@@ -467,15 +474,12 @@ void GraphBuilder::compute_dual_graph_test(const LocalMeshData& mesh_data,
   const std::size_t num_local_cells = mesh_data.global_cell_indices.size();
   const std::size_t num_vertices_per_cell = mesh_data.num_vertices_per_cell;
 
+  // Sanity checks
   dolfin_assert(num_local_cells == cell_vertices.shape()[0]);
   dolfin_assert(num_vertices_per_cell == cell_vertices.shape()[1]);
 
-  local_graph.resize(num_local_cells);
-
+  // Get cell index offset for this process
   const std::size_t cell_offset = MPI::global_offset(num_local_cells, true);
-
-  // Vertex-to-cell map type (must be ordered)    
-  typedef std::multimap<std::size_t, std::size_t> OrderedVertexCellMultiMap;
 
   // Build vertex-to-cell map    
   OrderedVertexCellMultiMap meshdata_vertex_to_cell_map;
@@ -490,7 +494,7 @@ void GraphBuilder::compute_dual_graph_test(const LocalMeshData& mesh_data,
   const std::pair<std::size_t, std::size_t> 
     my_vertex_range = MPI::local_range(mesh_data.num_global_vertices); 
 
-  // Ownership ranges for vertices 
+  // Ownership ranges for vertices for all processes 
   std::vector<std::size_t> ownership;
   for (std::size_t p = 0; p < num_processes; ++p)
     ownership.push_back(MPI::local_range(p, mesh_data.num_global_vertices, num_processes).second);
@@ -502,12 +506,11 @@ void GraphBuilder::compute_dual_graph_test(const LocalMeshData& mesh_data,
   std::size_t p = 0;
   for (vc = meshdata_vertex_to_cell_map.begin(); vc != meshdata_vertex_to_cell_map.end(); ++vc)
   {
+    // FIXME: Could look here to figure out size of send buffer,
+    //        and reserve memory in vectors
     while (vc->first >= ownership[p])
-    {
-      // FIXME: Could look here to figure out size of send buffer,
-      //        and reserve memory in vectors
       ++p;
-    }
+
     dolfin_assert(p < send_buffer.size()); 
     send_buffer[p].push_back(vc->first);
     send_buffer[p].push_back(vc->second);
@@ -534,7 +537,6 @@ void GraphBuilder::compute_dual_graph_test(const LocalMeshData& mesh_data,
   }
 
   // Build sorted set of my vertices  
-  double tt2 = time();
   std::set<std::size_t> my_vertices(cell_vertices.data(), 
                                     cell_vertices.data() + cell_vertices.num_elements());
 
@@ -545,22 +547,15 @@ void GraphBuilder::compute_dual_graph_test(const LocalMeshData& mesh_data,
   for (std::set<std::size_t>::const_iterator v = my_vertices.begin();
           v != my_vertices.end(); ++v) 
   {
+    // FIXME: Could look here to figure out size of send buffer,
+    //        and reserve memory in vectors
     while (*v >= ownership[p])
-    {
-      //cout << "Increment proc: " << p << ", " << vc->first << endl;
-      // FIXME: Could look here to figure out size of send buffer,
-      //        and reserve memory in vectors
       ++p;
-    }
+
     dolfin_assert(p < send_buffer.size()); 
     required_vertices[p].push_back(*v);
   }
 
-  tt2 = time() - tt2;
-  double tt_max2 = MPI::max(tt2);
-  if (process_number == 0)
-    info("Time to build set to request: %g", tt_max2);
-  
   // Send request to procesess that own required vertices
   std::vector<std::vector<std::size_t> > vertices_to_send;
   boost::mpi::all_to_all(comm, required_vertices, vertices_to_send);
@@ -610,24 +605,22 @@ void GraphBuilder::compute_dual_graph_test(const LocalMeshData& mesh_data,
     }  
   }
 
-  // Now, the rest is local (no more communication) --------------------------
+  // Now, the rest is local (no more communication . . . ,) ----------------
 
-  const std::size_t num_vertices_per_facet = num_vertices_per_cell - 1;
-
-  // Resize graph
+  // Resize graph and clear ghost vertices
   local_graph.resize(num_local_cells);
   ghost_vertices.clear();
 
-  // Compute local edges (cell-cell connections) using global (internal
-  // to this function, not the user numbering) numbering
+  // Number of vertices per facet
+  const std::size_t num_vertices_per_facet = num_vertices_per_cell - 1;
 
   // My local cell range
   const std::pair<std::size_t, std::size_t> 
     my_cell_range = MPI::local_range(mesh_data.num_global_cells); 
 
-  // Build renumvering ordering map (maps global to local)
+  // Build renumbering ordering map (maps global to local)
   std::size_t count = 0;
-  std::map<std::size_t, std::size_t> reorder;
+  boost::unordered_map<std::size_t, std::size_t> reorder;
   for (std::set<std::size_t>::const_iterator v = my_vertices.begin();
         v != my_vertices.end(); ++v)
   {
@@ -639,7 +632,8 @@ void GraphBuilder::compute_dual_graph_test(const LocalMeshData& mesh_data,
   std::size_t* _cell_vertices = cell_vertices_local.data();
   for (std::size_t i = 0; i < cell_vertices_local.num_elements(); ++i)
   {
-    std::map<std::size_t, std::size_t>::const_iterator local_v = reorder.find(_cell_vertices[i]); 
+    boost::unordered_map<std::size_t, std::size_t>::const_iterator local_v 
+      = reorder.find(_cell_vertices[i]); 
     dolfin_assert(local_v != reorder.end());
     _cell_vertices[i] = local_v->second;
   }
@@ -678,7 +672,7 @@ void GraphBuilder::compute_dual_graph_test(const LocalMeshData& mesh_data,
                                    intersection.begin());         
       }
 
-      // Numbers of cells in intersection
+      // Number of cells in intersection
       std::size_t intersection_size = it - intersection.begin();
 
       // Should have 1 or 2 connections
