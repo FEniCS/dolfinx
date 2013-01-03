@@ -192,9 +192,18 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
                             std::vector<std::set<std::size_t> >& local_graph,
                             std::set<std::size_t>& ghost_vertices)
 {
+  /*
+  double tt = time();
+
   FacetCellMap facet_cell_map;
   compute_local_dual_graph(mesh_data, local_graph, facet_cell_map);
-  compute_nonlocal_dual_graph(mesh_data, local_graph, facet_cell_map, ghost_vertices);
+  compute_nonlocal_dual_graph_small(mesh_data, local_graph, facet_cell_map, ghost_vertices);
+  facet_cell_map.clear();
+
+  tt = time() - tt;
+  double tt_max = MPI::max(tt);
+  if (MPI::process_number() == 0)
+    info("Time to build dual graph (old) map: %g", tt_max);
 
   // Test with Boost hash
   {
@@ -228,12 +237,16 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     if (MPI::process_number() == 0)
       cout << "Ghost graph hash (old): " << global_hash << endl;
   }
+  */
 
-  // Testing
-  local_graph.clear(); 
-  ghost_vertices.clear();
-  compute_dual_graph_test(mesh_data, local_graph, ghost_vertices);
+  double tt1 = time();  
+  compute_dual_graph_scalable(mesh_data, local_graph, ghost_vertices);
+  tt1 = time() - tt1;
+  double tt_max1 = MPI::max(tt1);
+  if (MPI::process_number() == 0)
+    info("Time to build dual graph (new, scalable) map: %g", tt_max1);
 
+  /*
   // Test with Boost hash
   {
     boost::hash<std::vector<std::set<std::size_t> > > uhash;
@@ -266,6 +279,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     if (MPI::process_number() == 0)
       cout << "Ghost graph hash (new): " << global_hash << endl;
   }
+  */
 }
 //-----------------------------------------------------------------------------
 void GraphBuilder::compute_local_dual_graph(const LocalMeshData& mesh_data,
@@ -331,7 +345,7 @@ void GraphBuilder::compute_local_dual_graph(const LocalMeshData& mesh_data,
   }
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
+void GraphBuilder::compute_nonlocal_dual_graph_small(const LocalMeshData& mesh_data,
                             std::vector<std::set<std::size_t> >& local_graph,
                             FacetCellMap& facet_cell_map,
                             std::set<std::size_t>& ghost_vertices)
@@ -352,8 +366,6 @@ void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
 
   // Compute local edges (cell-cell connections) using global (internal
   // to this function, not the user numbering) numbering
-
-  double tt = time();
 
   // Get offset for this processe
   const std::size_t offset = MPI::global_offset(num_local_cells, true);
@@ -434,40 +446,49 @@ void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
     }
   }
 
-  tt = time() - tt;
-  double tt_max = MPI::max(tt);
-  if (process_number == 0)
-    info("Time to build connectivity (parallel) map: %g", tt_max);
-
   // Remaining facets are exterior boundary - could be useful
-
   const std::size_t n_exterior_facets = MPI::sum(facet_cell_map.size());
   if (process_number == 0)
     std::cout << "n (exterior facets) = " << n_exterior_facets << std::endl;
-
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_dual_graph_test(const LocalMeshData& mesh_data,
+void GraphBuilder::compute_dual_graph_scalable(const LocalMeshData& mesh_data,
                             std::vector<std::set<std::size_t> >& local_graph,
                             std::set<std::size_t>& ghost_vertices)
 {
+  // This function builds the local part of a distributed dual graph
+  // by partitioning cell vertices evenlt across processes in ascending
+  // vertex index order. The 'owner' process holds a 
+  //
+  //  vertrex -> [connected cells]
+  //
+  // map. Each process then requests the map for each vertex that it
+  // requires. Since the vertex-cell map is ordered and distributed
+  // by index, a process knows which other process owns the required
+  // vertex-cells map.
+  //
+  // Once a processes has requested and received the necessary
+  // vertex-cells maps, it builds it's local part of the distributed
+  // dual graph without further communication.
+
+
   // TODO: 1. Free up memory by clearing large data structures when not
   //          longer used.
   //       2. Look for efficiency gains
+  //       3. Check if vectors can be used in instead of maps or sets in 
+  //          places. Maps and sets can be expensive to destroy.
 
   // Vertex-to-cell map type (must be ordered)    
   typedef std::multimap<std::size_t, std::size_t> OrderedVertexCellMultiMap;
 
   Timer timer("Compute dual graph [experimental]");
 
-  double tt = time();
-
-  // Communicator
+  // MPI communicator
   MPICommunicator mpi_comm;
   boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_attach);
 
+  // Number of MPI processes
   const std::size_t num_processes = MPI::num_processes();
-  const std::size_t process_number = MPI::process_number();
 
   // List of cell vertices
   const boost::multi_array<std::size_t, 2>& cell_vertices = mesh_data.cell_vertices;
@@ -675,7 +696,7 @@ void GraphBuilder::compute_dual_graph_test(const LocalMeshData& mesh_data,
       // Number of cells in intersection
       std::size_t intersection_size = it - intersection.begin();
 
-      // Should have 1 or 2 connections
+      // Should have 1 or 2 cell connections, otherwise something is wrong
       dolfin_assert(intersection_size > 0 && intersection_size < 3); 
       if (intersection_size == 2)
       {
@@ -699,13 +720,6 @@ void GraphBuilder::compute_dual_graph_test(const LocalMeshData& mesh_data,
       }
     }
   }
-
-  // -----------------------------------------------------
-  tt = time() - tt;
-  double tt_max = MPI::max(tt);
-  if (process_number == 0)
-    info("Time to build connectivity map [experimental]: %g", tt_max);
-
 }
 //-----------------------------------------------------------------------------
 
