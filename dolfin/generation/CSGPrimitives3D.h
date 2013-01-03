@@ -117,7 +117,7 @@ namespace dolfin
     /// *Arguments*
     ///     top (Point)
     ///         Center at top of cone.
-    ///      top_radius(double)
+    ///     top_radius(double)
     ///         Radius bottom of cone.
     ///     bottom(Point)
     ///         Center at top of cone.
