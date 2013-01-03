@@ -188,7 +188,7 @@ BoostBidirectionalGraph GraphBuilder::local_boost_graph(const Mesh& mesh,
   return graph;
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
+void GraphBuilder::compute_dual_graph_small(const LocalMeshData& mesh_data,
                             std::vector<std::set<std::size_t> >& local_graph,
                             std::set<std::size_t>& ghost_vertices)
 {
@@ -478,6 +478,8 @@ void GraphBuilder::compute_dual_graph_scalable(const LocalMeshData& mesh_data,
   //       3. Check if vectors can be used in instead of maps or sets in 
   //          places. Maps and sets can be expensive to destroy.
 
+  #ifdef HAS_MPI
+
   // Vertex-to-cell map type (must be ordered)    
   typedef std::multimap<std::size_t, std::size_t> OrderedVertexCellMultiMap;
 
@@ -720,6 +722,14 @@ void GraphBuilder::compute_dual_graph_scalable(const LocalMeshData& mesh_data,
       }
     }
   }
+
+  #else
+
+  // Use algorithm that does not require MPI to be intalled 
+  compute_dual_graph_small(mesh_data, local_graph, ghost_vertices);
+
+  #endif
+
 }
 //-----------------------------------------------------------------------------
 

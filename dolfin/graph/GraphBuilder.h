@@ -64,7 +64,7 @@ namespace dolfin
     /// Build distributed dual graph for mesh. This function is very
     /// fast for a small number of processes, but does not scale for
     /// increasing process count.
-    static void compute_dual_graph(const LocalMeshData& mesh_data,
+    static void compute_dual_graph_small(const LocalMeshData& mesh_data,
                                    std::vector<std::set<std::size_t> >& local_graph,
                                    std::set<std::size_t>& ghost_vertices);
 
