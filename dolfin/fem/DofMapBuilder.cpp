@@ -80,7 +80,7 @@ void DofMapBuilder::build(DofMap& dofmap,
     ufc_cell.update(*cell);
 
     // Get standard local dimension
-    const unsigned int local_dim = dofmap._ufc_dofmap->local_dimension(ufc_cell);
+    const std::size_t local_dim = dofmap._ufc_dofmap->local_dimension(ufc_cell);
 
     // Get container for cell dofs
     std::vector<dolfin::la_index>& cell_dofs = dofmap._dofmap[cell->index()];
