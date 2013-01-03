@@ -145,7 +145,21 @@ namespace dolfin
   class Cylinder : public Cone
   {
   public:
-    Cylinder(Point top, Point bottom, double r, std::size_t slices=32) : Cone(top, bottom, r, r, slices){}
+
+    /// Create cylinder defined by upper and lower center
+    /// and radius respectively.
+    ///
+    /// *Arguments*
+    ///     top (Point)
+    ///         Center at top of cylinder.
+    ///     bottom(Point)
+    ///         Center at top of cylinder.
+    ///     r (double)
+    ///         radius of cylinder.
+    ///     slices (std::size_t)
+    ///         number of faces on the side when generating a
+    ///         polyhedral approximation.
+    Cylinder(Point top, Point bottom, double r, std::size_t slices=32) : Cone(top, bottom, r, r, slices) {}
   };
 
   /// This class describes a Tetrahedron which can be used to build
@@ -153,6 +167,17 @@ namespace dolfin
   class Tetrahedron : public CSGPrimitive3D
   {
   public:
+    /// Create tetrahedron defined by four corner points.
+    ///
+    /// *Arguments*
+    ///     x0 (Point)
+    ///         Point.
+    ///     x1 (Point)
+    ///         Point.
+    ///     x2 (Point)
+    ///         Point.
+    ///     x3 (Point)
+    ///         Point.
     Tetrahedron(Point x0, Point x1, Point x2, Point x3);
 
     /// Informal string representation
@@ -160,7 +185,6 @@ namespace dolfin
 
     Type getType() const
     { return CSGGeometry::Tetrahedron; }
-
 
     Point x0, x1, x2, x3;
   };
