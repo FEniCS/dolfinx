@@ -61,9 +61,34 @@ namespace dolfin
                                                      std::size_t dim0,
                                                      std::size_t dim1);
 
-    /// Build distributed dual graph for mesh
+    /// Build distributed dual graph for mesh. This function is very
+    /// fast for a small number of processes, but does not scale for
+    /// increasing process count.
     static void compute_dual_graph(const LocalMeshData& mesh_data,
                                    std::vector<std::set<std::size_t> >& local_graph,
+                                   std::set<std::size_t>& ghost_vertices);
+
+    /// Build distributed dual graph for mesh. This function is slower
+    /// than 'compute_dual_graph_small' for low processes counts, but
+    // scales much better with increasing process count.
+    static void compute_dual_graph_scalable(const LocalMeshData& mesh_data,
+                                   std::vector<std::set<std::size_t> >& local_graph,
+                                   std::set<std::size_t>& ghost_vertices);
+
+  private:
+
+    typedef boost::unordered_map<std::vector<std::size_t>, std::size_t> FacetCellMap;
+
+    // Build local part of dual graph for mesh
+    static void compute_local_dual_graph(const LocalMeshData& mesh_data,
+                                   std::vector<std::set<std::size_t> >& local_graph,
+                                   FacetCellMap& facet_cell_map);
+
+    // Build nonlocal part od dual graph for
+    // mesh. compute_local_dual_graph should be called first.
+    static void compute_nonlocal_dual_graph_small(const LocalMeshData& mesh_data,
+                                   std::vector<std::set<std::size_t> >& local_graph,
+                                   FacetCellMap& facet_cell_map,
                                    std::set<std::size_t>& ghost_vertices);
 
   };
