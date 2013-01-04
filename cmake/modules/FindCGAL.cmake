@@ -62,6 +62,13 @@ else()
   set(CGAL_VERSION_OK TRUE)
 endif()
 
+# Add flag to fix bug in CGAL 4.1 for Intel compilers.
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+  if ("${CGAL_VERSION}" VERSION_GREATER "4.0.2")
+    set(CGAL_DEFINITIONS "-DCGAL_CFG_NO_STATEMENT_EXPRESSIONS")
+  endif()
+endif()
+
 # Set variables
 set(CGAL_INCLUDE_DIRS ${CGAL_INCLUDE_DIRS} ${CGAL_3RD_PARTY_INCLUDE_DIRS})
 set(CGAL_LIBRARIES ${CGAL_LIBRARY} ${CGAL_3RD_PARTY_LIBRARIES})
