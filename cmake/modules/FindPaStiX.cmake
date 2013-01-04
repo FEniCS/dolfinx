@@ -26,12 +26,12 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   find_library(RT_LIBRARY rt
     DOC "The RT library"
     )
-
-  # Check for rt header
-  find_library(RT_LIBRARY rt
-    DOC "The RT library"
+  # Check for math library
+  find_library(M_LIBRARY m
+    DOC "The math library"
     )
-  set(PASTIX_LIBRARIES ${PASTIX_LIBRARIES} ${RT_LIBRARY})
+  set(PASTIX_LIBRARIES ${PASTIX_LIBRARIES} ${RT_LIBRARY} ${M_LIBRARY})
+  message(STATUS "PASTIX_LIBRARIES ${PASTIX_LIBRARIES}")
 endif()
 
 # Check for hwloc header
