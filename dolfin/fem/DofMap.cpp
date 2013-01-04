@@ -31,7 +31,7 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/BoundaryMesh.h>
-#include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/MeshDistributed.h>
 #include <dolfin/mesh/Restriction.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "DofMapBuilder.h"
@@ -63,9 +63,6 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 {
   dolfin_assert(_ufc_dofmap);
   dolfin_assert(_restriction);
-
-  warning("Restricted function space is an experimental feature.");
-  not_working_in_parallel("Restricted function space");
 
   // Get mesh
   const dolfin::Mesh& dolfin_mesh(restriction->mesh());
@@ -450,7 +447,7 @@ void DofMap::build_common(const Mesh& dolfin_mesh)
     {
       dolfin_mesh.init(d);
       if (_distributed)
-        MeshPartitioning::number_entities(dolfin_mesh, d);
+        MeshDistributed::number_entities(dolfin_mesh, d);
     }
   }
 
@@ -460,7 +457,7 @@ void DofMap::build_common(const Mesh& dolfin_mesh)
   // Initialize the UFC dofmap
   init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh);
 
-  // Build restricted dof map
+  // Build dof map
   const bool reorder = dolfin::parameters["reorder_dofs_serial"];
   DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, _restriction,
                        reorder, _distributed);
