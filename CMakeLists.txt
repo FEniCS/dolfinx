@@ -228,7 +228,7 @@ endif()
 
 # Boost timer was not a separate Boost component until version 1.48
 if ("${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}" VERSION_GREATER "1.47")
-  list(APPEND DOLFIN_BOOST_COMPONENTS timer)
+  list(APPEND DOLFIN_BOOST_COMPONENTS timer chrono)
 endif()
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
