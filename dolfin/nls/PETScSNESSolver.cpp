@@ -59,7 +59,8 @@ struct snes_ctx_t
   PETScVector* dx;
 };
 
-#if PETSSC_RELEASE
+#if PETSC_VERSION_RELEASE
+
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2 // PETSc 3.2
   // Mapping from method string to PETSc
   const std::map<std::string, std::pair<std::string, const SNESType> > PETScSNESSolver::_methods
@@ -72,7 +73,7 @@ struct snes_ctx_t
 
   #elif PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3 // PETSc 3.3
   // Mapping from method string to PETSc
-  const std::map<std::string, std::pair<std::string, const SNESType>> PETScSNESSolver::_methods
+  const std::map<std::string, std::pair<std::string, const SNESType> > PETScSNESSolver::_methods
     = boost::assign::map_list_of
         ("default",     std::make_pair("default SNES method", ""))
         ("ls",          std::make_pair("Line search method", SNESLS))
@@ -87,9 +88,11 @@ struct snes_ctx_t
         ("fas",         std::make_pair("Full Approximation Scheme nonlinear multigrid method", SNESFAS))
         ("ms",          std::make_pair("Multistage smoothers", SNESMS));
   #endif
+
 #else // Development version
-// Mapping from method string to PETSc
- const std::map<std::string, std::pair<std::string, const SNESType> > PETScSNESSolver::_methods
+
+  // Mapping from method string to PETSc
+  const std::map<std::string, std::pair<std::string, const SNESType> > PETScSNESSolver::_methods
    = boost::assign::map_list_of
       ("default",      std::make_pair("default SNES method", ""))
       ("newtonls",     std::make_pair("Line search method", SNESNEWTONLS))
@@ -184,7 +187,6 @@ void PETScSNESSolver::init(const std::string& method)
   }
 
   _snes.reset(new SNES, PETScSNESDeleter());
-
   if (MPI::num_processes() > 1)
     SNESCreate(PETSC_COMM_WORLD, _snes.get());
   else
