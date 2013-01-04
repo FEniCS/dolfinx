@@ -29,12 +29,12 @@
 #include "dolfin/mesh/Vertex.h"
 #include "MeshFunction.h"
 
-#include "MeshDistributed.h"
+#include "DistributedMeshTools.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void MeshDistributed::number_entities(const Mesh& _mesh, std::size_t d)
+void DistributedMeshTools::number_entities(const Mesh& _mesh, std::size_t d)
 {
   Timer timer("PARALLEL x: Number mesh entities");
 
@@ -205,11 +205,11 @@ void MeshDistributed::number_entities(const Mesh& _mesh, std::size_t d)
 }
 //-----------------------------------------------------------------------------
 std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t> > >
-MeshDistributed::locate_off_process_entities(const std::vector<std::size_t>& entity_indices,
+DistributedMeshTools::locate_off_process_entities(const std::vector<std::size_t>& entity_indices,
                                              std::size_t dim, const Mesh& mesh)
 {
   if (dim == 0)
-    warning("MeshDistributed::host_processes has not been tested for vertices.");
+    warning("DistributedMeshTools::host_processes has not been tested for vertices.");
 
   // Mesh topology dim
   const std::size_t D = mesh.topology().dim();
@@ -217,15 +217,15 @@ MeshDistributed::locate_off_process_entities(const std::vector<std::size_t>& ent
   // Check that entity is a vertex or a cell
   if (dim != 0 && dim != D)
   {
-    dolfin_error("MeshDistributed.cpp",
+    dolfin_error("DistributedMeshTools.cpp",
                  "compute off-process indices",
-                 "This version of MeshDistributed::host_processes is only for vertices or cells");
+                 "This version of DistributedMeshTools::host_processes is only for vertices or cells");
   }
 
   // Check that global numbers have been computed.
   if (!mesh.topology().have_global_indices(dim))
   {
-    dolfin_error("MeshDistributed.cpp",
+    dolfin_error("DistributedMeshTools.cpp",
                  "compute off-process indices",
                  "Global mesh entity numbers have not been computed");
   }
@@ -233,7 +233,7 @@ MeshDistributed::locate_off_process_entities(const std::vector<std::size_t>& ent
   // Check that global numbers have been computed.
   if (!mesh.topology().have_global_indices(D))
   {
-    dolfin_error("MeshDistributed.cpp",
+    dolfin_error("DistributedMeshTools.cpp",
                  "compute off-process indices",
                  "Global mesh entity numbers have not been computed");
   }
@@ -337,7 +337,7 @@ MeshDistributed::locate_off_process_entities(const std::vector<std::size_t>& ent
   const std::size_t number_expected = test_set.size();
   if (number_expected != processes.size())
   {
-    dolfin_error("MeshDistributed.cpp",
+    dolfin_error("DistributedMeshTools.cpp",
                  "compute off-process indices",
                  "Sanity check failed");
   }
@@ -346,7 +346,7 @@ MeshDistributed::locate_off_process_entities(const std::vector<std::size_t>& ent
 }
 //-----------------------------------------------------------------------------
 boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >
-  MeshDistributed::compute_shared_entities(const Mesh& mesh, std::size_t d)
+  DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
 {
   // Number entities (globally)
   number_entities(mesh, d);
@@ -478,7 +478,7 @@ boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t
   return shared_local_indices_map;
 }
 //-----------------------------------------------------------------------------
-void MeshDistributed::compute_entity_ownership(const Mesh& mesh, std::size_t d,
+void DistributedMeshTools::compute_entity_ownership(const Mesh& mesh, std::size_t d,
       std::vector<std::size_t>& owned_entities,
       boost::array<std::map<Entity, EntityData>, 2>& shared_entities)
 {
@@ -529,7 +529,7 @@ void MeshDistributed::compute_entity_ownership(const Mesh& mesh, std::size_t d,
   compute_final_entity_ownership(owned_entities, shared_entities);
 }
 //-----------------------------------------------------------------------------
-void MeshDistributed::compute_preliminary_entity_ownership(
+void DistributedMeshTools::compute_preliminary_entity_ownership(
   const std::map<std::size_t, std::set<std::size_t> >& shared_vertices,
   const std::map<Entity, std::size_t>& entities,
   std::vector<std::size_t>& owned_entities,
@@ -608,7 +608,7 @@ void MeshDistributed::compute_preliminary_entity_ownership(
   }
 }
 //-----------------------------------------------------------------------------
-void MeshDistributed::compute_final_entity_ownership(std::vector<std::size_t>& owned_entities,
+void DistributedMeshTools::compute_final_entity_ownership(std::vector<std::size_t>& owned_entities,
   boost::array<std::map<Entity, EntityData>, 2>& shared_entities)
 {
   // Entities ([entity vertices], index) to be numbered
@@ -796,7 +796,7 @@ void MeshDistributed::compute_final_entity_ownership(std::vector<std::size_t>& o
     owned_shared_entities.erase(unshare_entities[i]);
 }
 //-----------------------------------------------------------------------------
-bool MeshDistributed::is_shared(const Entity& entity,
+bool DistributedMeshTools::is_shared(const Entity& entity,
          const std::map<std::size_t, std::set<std::size_t> >& shared_vertices)
 {
   // Iterate over entity vertices
@@ -812,7 +812,7 @@ bool MeshDistributed::is_shared(const Entity& entity,
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
-  MeshDistributed::compute_num_global_entities(std::size_t num_local_entities,
+  DistributedMeshTools::compute_num_global_entities(std::size_t num_local_entities,
                                                 std::size_t num_processes,
                                                 std::size_t process_number)
 {
@@ -831,7 +831,7 @@ std::pair<std::size_t, std::size_t>
   return std::make_pair(num_global, offset);
 }
 //-----------------------------------------------------------------------------
-void MeshDistributed::init_facet_cell_connections(Mesh& mesh)
+void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
 {
   // Topological dimension
   const std::size_t D = mesh.topology().dim();

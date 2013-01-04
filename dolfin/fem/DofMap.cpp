@@ -26,12 +26,11 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
-#include <dolfin/common/Set.h>
 #include <dolfin/common/types.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/BoundaryMesh.h>
-#include <dolfin/mesh/MeshDistributed.h>
+#include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/Restriction.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "DofMapBuilder.h"
@@ -447,7 +446,7 @@ void DofMap::build_common(const Mesh& dolfin_mesh)
     {
       dolfin_mesh.init(d);
       if (_distributed)
-        MeshDistributed::number_entities(dolfin_mesh, d);
+        DistributedMeshTools::number_entities(dolfin_mesh, d);
     }
   }
 

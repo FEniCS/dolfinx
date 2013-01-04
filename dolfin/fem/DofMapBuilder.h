@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2012 Anders Logg and Ola Skavhaug
+// Copyright (C) 2008-2013 Anders Logg, Ola Skavhaug and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -16,20 +16,20 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Niclas Jansson 2009
-// Modified by Garth Wells 2009-2012
+// Modified by Garth Wells 2009-2013
 //
 // First added:  2008-08-12
-// Last changed: 2012-11-05
+// Last changed: 2013-01-04
 
 #ifndef __DOF_MAP_BUILDER_H
 #define __DOF_MAP_BUILDER_H
 
 #include <set>
 #include <map>
-#include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
-#include <dolfin/common/types.h>
+#include <boost/unordered_set.hpp>
 #include <dolfin/common/Set.h>
+#include <dolfin/common/types.h>
 
 namespace ufc
 {
@@ -44,7 +44,9 @@ namespace dolfin
   class UFC;
   class UFCMesh;
 
-  /// Documentation of class
+  /// This class builds DOLFIN dofs maps from a UFC dof map and a Mesh. In
+  /// the parallel case, it decides on the ownership of shared degrees
+  /// of freedom.
 
   class DofMapBuilder
   {
@@ -65,8 +67,8 @@ namespace dolfin
 
   public:
 
-    // Build dofmap. The restriction may be a null pointer in which
-    // case it is ignored.
+    /// Build dofmap. The restriction may be a null pointer in which
+    /// case it is ignored.
     static void build(DofMap& dofmap,
                       const Mesh& dolfin_mesh,
                       const UFCMesh& ufc_mesh,
@@ -83,6 +85,7 @@ namespace dolfin
                                   boost::shared_ptr<const Restriction> restriction,
                                   const map& restricted_dofs_inverse);
 
+    // Compute ownership of dofs
     static void compute_ownership(set& owned_dofs, set& shared_owned_dofs,
                                   set& shared_unowned_dofs,
                                   vec_map& shared_dof_processes,
@@ -92,6 +95,7 @@ namespace dolfin
                                   boost::shared_ptr<const Restriction> restriction,
                                   const map& restricted_dofs_inverse);
 
+    // Renumber parallel dof map
     static void parallel_renumber(const set& owned_dofs,
                                   const set& shared_owned_dofs,
                                   const set& shared_unowned_dofs,
@@ -101,16 +105,16 @@ namespace dolfin
                                   boost::shared_ptr<const Restriction> restriction,
                                   const map& restricted_dofs_inverse);
 
-    /// Compute set of global dofs (e.g. Reals associated with global
-    /// Lagrnage multipliers) based on UFC numbering. Global dofs
-    /// are not associated with any mesh entity
-    static set compute_global_dofs(const DofMap& dofmap,
-                                   const Mesh& dolfin_mesh);
+    // Compute set of global dofs (e.g. Reals associated with global
+    // Lagrnage multipliers) based on UFC numbering. Global dofs
+    // are not associated with any mesh entity
+    static std::set<std::size_t> compute_global_dofs(const DofMap& dofmap,
+                                                     const Mesh& dolfin_mesh);
 
 
     // Iterate recursively over all sub-dof maps to find global
     // degrees of freedom
-    static void compute_global_dofs(set& global_dofs, std::size_t& offset,
+    static void compute_global_dofs(std::set<std::size_t>& global_dofs, std::size_t& offset,
                             boost::shared_ptr<const ufc::dofmap> dofmap,
                             const Mesh& dolfin_mesh, const UFCMesh& ufc_mesh);
 

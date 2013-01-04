@@ -1,11 +1,13 @@
 1.1.0 [not yet released]
+ - Add interface for SNES from PETSc (nonlinear solvers)
+ - Enabling Trilinos now requires Trilinos version 11. This brings support for long integers
  - Add support for solving singular problems with Krylov solvers (PETSc only)
  - Add new typdef dolfin::la_index for consistent indexing with linear algebra backends.
  - Change default unsigned integer type to std::size_t
  - Add suppprt to attaching operator null space to preconditioner
    (required for smoothed aggregation AMG)
  - Add basic interface to the PETSc AMG preconditioner
- - Make SCOTCH default graph partitioner (GNU compatible free license, unlike ParMETIS) 
+ - Make SCOTCH default graph partitioner (GNU-compatible free license, unlike ParMETIS)
  - Add scalable construction of mesh dual graph for mesh partitioning
  - Improve peformance of mesh building in parallel
  - Add mesh output to SVG

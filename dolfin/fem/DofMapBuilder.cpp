@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2012 Anders Logg and Ola Skavhaug
+// Copyright (C) 2008-2012 Anders Logg, Ola Skavhaug and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -16,11 +16,11 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Niclas Jansson 2009
-// Modified by Garth N. Wells 2010-2012
+// Modified by Garth N. Wells 2010-2013
 // Modified by Joachim B Haga 2012
 //
 // First added:  2008-08-12
-// Last changed: 2012-12-12
+// Last changed: 2013-01-04
 
 #include <ufc.h>
 #include <boost/random.hpp>
@@ -552,7 +552,7 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   log(TRACE, "Finished renumbering dofs for parallel dof map");
 }
 //-----------------------------------------------------------------------------
-DofMapBuilder::set DofMapBuilder::compute_global_dofs(const DofMap& dofmap,
+std::set<std::size_t> DofMapBuilder::compute_global_dofs(const DofMap& dofmap,
                                                       const Mesh& dolfin_mesh)
 {
   // Wrap UFC dof map
@@ -570,7 +570,7 @@ DofMapBuilder::set DofMapBuilder::compute_global_dofs(const DofMap& dofmap,
   return global_dof_indices;
 }
 //-----------------------------------------------------------------------------
-void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
+void DofMapBuilder::compute_global_dofs(std::set<std::size_t>& global_dofs,
                                         std::size_t& offset,
                                         boost::shared_ptr<const ufc::dofmap> dofmap,
                                         const Mesh& dolfin_mesh, const UFCMesh& ufc_mesh)
@@ -607,8 +607,7 @@ void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
       dofmap->tabulate_dofs(&dof, *ufc_mesh, *ufc_cell);
 
       // Insert global dof index
-      std::pair<DofMapBuilder::set::iterator, bool> ret = global_dofs.insert(dof + offset);
-      if (!ret.second)
+      if (!global_dofs.insert(dof + offset).second)
       {
         dolfin_error("DofMapBuilder.cpp",
                      "compute global degrees of freedom",

@@ -37,10 +37,10 @@
 #include <dolfin/graph/SCOTCH.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "BoundaryMesh.h"
+#include "DistributedMeshTools.h"
 #include "Facet.h"
 #include "LocalMeshData.h"
 #include "Mesh.h"
-#include "MeshDistributed.h"
 #include "MeshEditor.h"
 #include "MeshEntityIterator.h"
 #include "MeshFunction.h"
@@ -93,7 +93,7 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   // necessary to distinguish between facets on an exterior boundary and
   // facets on a partition boundary (see
   // https://bugs.launchpad.net/dolfin/+bug/733834).
-  MeshDistributed::init_facet_cell_connections(mesh);
+  DistributedMeshTools::init_facet_cell_connections(mesh);
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition(Mesh& mesh, const LocalMeshData& mesh_data)
