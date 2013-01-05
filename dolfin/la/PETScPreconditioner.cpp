@@ -422,7 +422,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     */
 
     // Set to smoothed aggregation
-    PetscOptionsSetValue("-pc_gamg_type", "sa");
+    PetscOptionsSetValue("-pc_gamg_type", "agg");
 
     // Number of smoother applications
     PetscOptionsSetValue("-pc_gamg_agg_nsmooths",
@@ -431,8 +431,8 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     //PetscOptionsSetValue("mg_levels_ksp_chebyshev_estimate_eigenvalues",
     //                      "0.1,1.1");
 
-    PetscOptionsSetValue("-pc_gamg_verbose",
-                         boost::lexical_cast<std::string>(2).c_str());
+    //PetscOptionsSetValue("-pc_gamg_verbose",
+    //                     boost::lexical_cast<std::string>(2).c_str());
 
     PetscOptionsSetValue("-mg_levels_ksp_max_it",
                           boost::lexical_cast<std::string>(2).c_str());
