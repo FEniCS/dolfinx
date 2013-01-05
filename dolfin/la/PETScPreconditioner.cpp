@@ -58,7 +58,9 @@ const std::map<std::string, const PCType> PETScPreconditioner::_methods
                               ("bjacobi",          PCBJACOBI)
                               ("sor",              PCSOR)
                               ("additive_schwarz", PCASM)
+                              #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
                               ("petsc_amg",        PCGAMG)
+                              #endif  
                               #if PETSC_HAVE_HYPRE
                               ("hypre_amg",        PCHYPRE)
                               ("hypre_euclid",     PCHYPRE)
@@ -80,7 +82,9 @@ const std::vector<std::pair<std::string, std::string> > PETScPreconditioner::_me
     ("ilu",              "Incomplete LU factorization")
     ("icc",              "Incomplete Cholesky factorization")
     ("sor",              "Successive over-relaxation")
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
     ("petsc_amg",        "PETSc algebraic multigrid")
+    #endif
     #if HAS_PETSC_CUSP
     ("jacobi",           "Jacobi iteration (GPU enabled)")
     ("bjacobi",          "Block Jacobi iteration (GPU enabled)")
@@ -398,6 +402,8 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   }
   else if (type == "petsc_amg")
   {
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
+
     // The PETSc AMG (smoothed aggegration) preconditioner
     PetscOptionsSetValue("-log_summary",
                          boost::lexical_cast<std::string>(1).c_str());
@@ -469,6 +475,11 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     //PCGAMGSetNlevels(pc, 5);
     //PCGAMGSetProcEqLim(pc, 1000);
     //PCGAMGSetSymGraph(pc, PETSC_TRUE);
+
+    #else
+    warning("PETSc native algebraic multigrid support requires PETSc"
+             "version > 3.2. Default PETSc preconditioner will be used.");
+    #endif
 
   }
   else if (type == "additive_schwarz")
