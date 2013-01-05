@@ -405,8 +405,8 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
 
     // The PETSc AMG (smoothed aggegration) preconditioner
-    PetscOptionsSetValue("-log_summary",
-                         boost::lexical_cast<std::string>(1).c_str());
+    //PetscOptionsSetValue("-log_summary",
+    //                     boost::lexical_cast<std::string>(1).c_str());
 
     // Set preconditioner to ML
     PCSetType(pc, PCGAMG);
