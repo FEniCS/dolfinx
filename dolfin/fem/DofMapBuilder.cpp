@@ -443,10 +443,8 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   }
 
   // Reorder dofs locally
-  std::cout << "Calling re-order locally: " << MPI::process_number() << std::endl;
   const std::vector<std::size_t> dof_remap
       = BoostGraphOrdering::compute_cuthill_mckee(graph, true);
-  std::cout << "End calling re-order locally: " << MPI::process_number() << std::endl;
 
   // Map from old to new index for dofs
   boost::unordered_map<std::size_t, std::size_t> old_to_new_dof_index;
