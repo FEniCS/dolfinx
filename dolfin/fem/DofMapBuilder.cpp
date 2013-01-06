@@ -401,38 +401,41 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   // Clear some data
   dofmap._off_process_owner.clear();
 
-  // Build vector of owned dofs
-  const std::vector<std::size_t> my_dofs(owned_dofs.begin(), owned_dofs.end());
-
-  // Create contiguous local numbering for locally owned dofs
-  std::size_t my_counter = 0;
-  boost::unordered_map<std::size_t, std::size_t> my_old_to_new_dof_index;
-  for (set_iterator owned_dof = owned_dofs.begin(); owned_dof != owned_dofs.end(); ++owned_dof, my_counter++)
-    my_old_to_new_dof_index[*owned_dof] = my_counter;
-
-  // Build local graph based on old dof map with contiguous numbering
+  // Create graph
   Graph graph(owned_dofs.size());
-  for (std::size_t cell = 0; cell < old_dofmap.size(); ++cell)
+
+  // Build graph for re-ordering. Below block is scoped to clear working
+  // data structures once graph is constructed.
   {
-    const std::vector<dolfin::la_index>& dofs0 = dofmap.cell_dofs(cell);
-    const std::vector<dolfin::la_index>& dofs1 = dofmap.cell_dofs(cell);
-    std::vector<dolfin::la_index>::const_iterator node0, node1;
-    for (node0 = dofs0.begin(); node0 != dofs0.end(); ++node0)
+    // Create contiguous local numbering for locally owned dofs
+    std::size_t my_counter = 0;
+    boost::unordered_map<std::size_t, std::size_t> my_old_to_new_dof_index;
+    for (set_iterator owned_dof = owned_dofs.begin(); owned_dof != owned_dofs.end(); ++owned_dof, my_counter++)
+      my_old_to_new_dof_index[*owned_dof] = my_counter;
+
+    // Build local graph based on old dof map with contiguous numbering
+    for (std::size_t cell = 0; cell < old_dofmap.size(); ++cell)
     {
-      boost::unordered_map<std::size_t, std::size_t>::const_iterator _node0
-          = my_old_to_new_dof_index.find(*node0);
-      if (_node0 != my_old_to_new_dof_index.end())
+      const std::vector<dolfin::la_index>& dofs0 = dofmap.cell_dofs(cell);
+      const std::vector<dolfin::la_index>& dofs1 = dofmap.cell_dofs(cell);
+      std::vector<dolfin::la_index>::const_iterator node0, node1;
+      for (node0 = dofs0.begin(); node0 != dofs0.end(); ++node0)
       {
-        const std::size_t local_node0 = _node0->second;
-        dolfin_assert(local_node0 < graph.size());
-        for (node1 = dofs1.begin(); node1 != dofs1.end(); ++node1)
+        boost::unordered_map<std::size_t, std::size_t>::const_iterator _node0
+            = my_old_to_new_dof_index.find(*node0);
+        if (_node0 != my_old_to_new_dof_index.end())
         {
-          boost::unordered_map<std::size_t, std::size_t>::const_iterator
-                _node1 = my_old_to_new_dof_index.find(*node1);
-          if (_node1 != my_old_to_new_dof_index.end())
+          const std::size_t local_node0 = _node0->second;
+          dolfin_assert(local_node0 < graph.size());
+          for (node1 = dofs1.begin(); node1 != dofs1.end(); ++node1)
           {
-            const std::size_t local_node1 = _node1->second;
-            graph[local_node0].insert(local_node1);
+            boost::unordered_map<std::size_t, std::size_t>::const_iterator
+                  _node1 = my_old_to_new_dof_index.find(*node1);
+            if (_node1 != my_old_to_new_dof_index.end())
+            {
+              const std::size_t local_node1 = _node1->second;
+              graph[local_node0].insert(local_node1);
+            }
           }
         }
       }
@@ -440,8 +443,10 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   }
 
   // Reorder dofs locally
+  std::cout << "Calling re-order locally: " << MPI::process_number() << std::endl;
   const std::vector<std::size_t> dof_remap
       = BoostGraphOrdering::compute_cuthill_mckee(graph, true);
+  std::cout << "End calling re-order locally: " << MPI::process_number() << std::endl;
 
   // Map from old to new index for dofs
   boost::unordered_map<std::size_t, std::size_t> old_to_new_dof_index;
