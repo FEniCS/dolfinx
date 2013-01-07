@@ -21,7 +21,8 @@
 #ifndef __UNIT_SQUARE_MESH_H
 #define __UNIT_SQUARE_MESH_H
 
-#include <dolfin/mesh/Mesh.h>
+#include <string>
+#include "RectangleMesh.h"
 
 namespace dolfin
 {
@@ -34,7 +35,7 @@ namespace dolfin
   /// std::string diagonal ("left", "right", "right/left", "left/right",
   /// or "crossed") indicates the direction of the diagonals.
 
-  class UnitSquareMesh : public Mesh
+  class UnitSquareMesh : public RectangleMesh
   {
   public:
 
@@ -42,9 +43,9 @@ namespace dolfin
     /// [0,1] x [0,1].
     ///
     /// *Arguments*
-    ///     nx (uint)
+    ///     nx (std::size_t)
     ///         Number of cells in horizontal direction.
-    ///     ny (uint)
+    ///     ny (std::size_t)
     ///         Number of cells in vertical direction.
     ///     diagonal (std::string)
     ///         Optional argument: A std::string indicating
@@ -56,7 +57,8 @@ namespace dolfin
     ///         UnitSquare mesh1(32, 32);
     ///         UnitSquare mesh2(32, 32, "crossed");
     ///
-    UnitSquareMesh(uint nx, uint ny, std::string diagonal="right");
+    UnitSquareMesh(std::size_t nx, std::size_t ny, std::string diagonal="right")
+      : RectangleMesh(0.0, 0.0, 1.0, 1.0, nx, ny, diagonal) {}
 
   };
 

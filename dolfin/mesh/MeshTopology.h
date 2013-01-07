@@ -24,7 +24,6 @@
 #include <map>
 #include <utility>
 #include <vector>
-#include <dolfin/common/types.h>
 #include "MeshConnectivity.h"
 
 namespace dolfin
@@ -57,37 +56,37 @@ namespace dolfin
     const MeshTopology& operator= (const MeshTopology& topology);
 
     /// Return topological dimension
-    uint dim() const;
+    std::size_t dim() const;
 
     /// Return number of entities for given dimension
-    uint size(uint dim) const;
+    std::size_t size(std::size_t dim) const;
 
     /// Return global number of entities for given dimension
-    std::size_t size_global(uint dim) const;
+    std::size_t size_global(std::size_t dim) const;
 
     /// Clear all data
     void clear();
 
     /// Clear data for given pair of topological dimensions
-    void clear(uint d0, uint d1);
+    void clear(std::size_t d0, std::size_t d1);
 
     /// Initialize topology of given maximum dimension
-    void init(uint dim);
+    void init(std::size_t dim);
 
     /// Set number of local entities (local_size) for given topological
     /// dimension
-    void init(uint dim, uint local_size);
+    void init(std::size_t dim, std::size_t local_size);
 
     /// Set number of global entities (global_size) for given topological
     /// dimension
-    void init_global(uint dim, std::size_t global_size);
+    void init_global(std::size_t dim, std::size_t global_size);
 
     /// Initialize storage for global entity numbering for entities of
     /// dimension dim
-    void init_global_indices(uint dim, uint size);
+    void init_global_indices(std::size_t dim, std::size_t size);
 
     /// Set global index for entity of dimension dim and with local index
-    void set_global_index(uint dim, uint local_index, uint global_index)
+    void set_global_index(std::size_t dim, std::size_t local_index, std::size_t global_index)
     {
       dolfin_assert(dim < _global_indices.size());
       dolfin_assert(local_index < _global_indices[dim].size());
@@ -95,33 +94,34 @@ namespace dolfin
     }
 
     /// Get local-to-global index map for entities of topological dimension d
-    const std::vector<std::size_t>& global_indices(uint d) const
+    const std::vector<std::size_t>& global_indices(std::size_t d) const
     {
       dolfin_assert(d < _global_indices.size());
       return _global_indices[d];
     }
 
     /// Check if global indices are available for entiries of dimension dim
-    bool have_global_indices(uint dim) const
+    bool have_global_indices(std::size_t dim) const
     {
       dolfin_assert(dim < _global_indices.size());
       return !_global_indices[dim].empty();
     }
 
-    /// Return map from shared entiies to process that share the entity
-    std::map<std::size_t, std::set<unsigned int> >&
-      shared_entities(uint dim);
+    /// Return map from shared entities (local index) to processes that
+    /// share the entity
+    std::map<std::size_t, std::set<std::size_t> >&
+      shared_entities(std::size_t dim);
 
-    /// Return map from shared entiies to process that share the entity
-    /// (const version)
-    const std::map<std::size_t, std::set<unsigned int> >&
-      shared_entities(uint dim) const;
-
-    /// Return connectivity for given pair of topological dimensions
-    dolfin::MeshConnectivity& operator() (uint d0, uint d1);
+    /// Return map from shared entiies (local index) to process that
+    /// share the entity (const version)
+    const std::map<std::size_t, std::set<std::size_t> >&
+      shared_entities(std::size_t dim) const;
 
     /// Return connectivity for given pair of topological dimensions
-    const dolfin::MeshConnectivity& operator() (uint d0, uint d1) const;
+    dolfin::MeshConnectivity& operator() (std::size_t d0, std::size_t d1);
+
+    /// Return connectivity for given pair of topological dimensions
+    const dolfin::MeshConnectivity& operator() (std::size_t d0, std::size_t d1) const;
 
     /// Return hash based on the hash of cell-vertex connectivity
     size_t hash() const;
@@ -156,9 +156,9 @@ namespace dolfin
     // Global indices for mesh entities (empty if not set)
     std::vector<std::vector<std::size_t> > _global_indices;
 
-    // Maps each shared vertex (entity of dim 0) to a list of the
+    // Maps each shared entity (global index) to a list of the
     // processes sharing the vertex
-    std::map<std::size_t, std::set<uint> > _shared_vertices;
+    std::map<std::size_t, std::map<std::size_t, std::set<std::size_t> > > _shared_entities;
 
     // Connectivity for pairs of topological dimensions
     std::vector<std::vector<MeshConnectivity> > connectivity;

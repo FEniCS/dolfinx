@@ -23,9 +23,9 @@
 #ifndef __VARIABLE_H
 #define __VARIABLE_H
 
+#include <cstddef>
 #include <string>
 #include <dolfin/parameter/Parameters.h>
-#include "types.h"
 
 namespace dolfin
 {
@@ -60,9 +60,9 @@ namespace dolfin
     /// Get unique identifier.
     ///
     /// *Returns*
-    ///     _uint_
+    ///     _std::size_t_
     ///         The unique integer identifier associated with the object.
-    uint id() const { return unique_id; }
+    std::size_t id() const { return unique_id; }
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
@@ -79,7 +79,7 @@ namespace dolfin
     std::string _label;
 
     // Unique identifier
-    const uint unique_id;
+    const std::size_t unique_id;
 
   };
 

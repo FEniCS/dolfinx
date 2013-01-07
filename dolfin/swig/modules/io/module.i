@@ -30,7 +30,6 @@
 // Include types from dependent modules
 
 // #include types from common submodule of module common
-#include "dolfin/common/types.h"
 #include "dolfin/common/Array.h"
 #include "dolfin/common/Variable.h"
 #include "dolfin/common/Hierarchical.h"
@@ -92,7 +91,6 @@ import_array();
 
 // %import types from submodule common of SWIG module common
 %include "dolfin/swig/common/pre.i"
-%import(module="common") "dolfin/common/types.h"
 %import(module="common") "dolfin/common/Array.h"
 %import(module="common") "dolfin/common/Variable.h"
 %import(module="common") "dolfin/common/Hierarchical.h"

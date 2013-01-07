@@ -143,9 +143,9 @@ namespace dolfin
     /// Return the number of degrees of freedom for primal problem
     ///
     /// *Returns*
-    ///     _uint_
+    ///     _std::size_t_
     ///         The number of degrees of freedom
-    virtual uint num_dofs_primal();
+    virtual std::size_t num_dofs_primal();
 
   private:
 

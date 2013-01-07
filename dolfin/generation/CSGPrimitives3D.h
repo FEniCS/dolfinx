@@ -36,7 +36,7 @@ namespace dolfin
   public:
 
     /// Return dimension of geometry
-    uint dim() const { return 3; }
+    std::size_t dim() const { return 3; }
 
   };
 
@@ -57,18 +57,18 @@ namespace dolfin
     ///         x2-coordinate of center.
     ///     r (double)
     ///         radius.
-    Sphere(Point c, double r, uint slices=16);
+    Sphere(Point c, double r, std::size_t slices=16);
 
     /// Informal string representation
     std::string str(bool verbose) const;
 
-    Type getType() const 
+    Type getType() const
     { return CSGGeometry::Sphere; }
-    
+
     const Point c;
     const double r;
-    const uint slices;
-    
+    const std::size_t slices;
+
   };
 
   /// This class describes a 3D box which can be used to build
@@ -98,7 +98,7 @@ namespace dolfin
 
     /// Informal string representation
     std::string str(bool verbose) const;
-    
+
     Type getType() const
     { return CSGGeometry::Box; }
 
@@ -117,67 +117,91 @@ namespace dolfin
     /// *Arguments*
     ///     top (Point)
     ///         Center at top of cone.
-    ///      top_radius(double)
+    ///     top_radius(double)
     ///         Radius bottom of cone.
     ///     bottom(Point)
     ///         Center at top of cone.
     ///     bottom_radius (double)
     ///         radius at top of cone.
-    ///     slices (uint)
-    ///         number of faces on the side when generating a 
+    ///     slices (std::size_t)
+    ///         number of faces on the side when generating a
     ///         polyhedral approximation.
-    Cone(Point top, Point bottom, double top_radius, double bottom_radius, uint slices=32);
+    Cone(Point top, Point bottom, double top_radius, double bottom_radius, std::size_t slices=32);
 
     /// Informal string representation
     std::string str(bool verbose) const;
-    
+
     Type getType() const
     { return CSGGeometry::Cone; }
-    
+
     const Point top, bottom;
     const double top_radius, bottom_radius;
-    const uint slices;
+    const std::size_t slices;
   };
-  
+
   /// This class describes a 3D cylinder which can be used to build
   /// geometries using Constructive Solid Geometry (CSG). A cylinder
   /// is here just a special case of a cone.
   class Cylinder : public Cone
   {
   public:
-    Cylinder(Point top, Point bottom, double r, uint slices=32) : Cone(top, bottom, r, r, slices){}
+
+    /// Create cylinder defined by upper and lower center
+    /// and radius respectively.
+    ///
+    /// *Arguments*
+    ///     top (Point)
+    ///         Center at top of cylinder.
+    ///     bottom(Point)
+    ///         Center at top of cylinder.
+    ///     r (double)
+    ///         radius of cylinder.
+    ///     slices (std::size_t)
+    ///         number of faces on the side when generating a
+    ///         polyhedral approximation.
+    Cylinder(Point top, Point bottom, double r, std::size_t slices=32) : Cone(top, bottom, r, r, slices) {}
   };
-  
+
   /// This class describes a Tetrahedron which can be used to build
   /// geometries using Constructive Solid Geometry (CSG).
   class Tetrahedron : public CSGPrimitive3D
   {
   public:
+    /// Create tetrahedron defined by four corner points.
+    ///
+    /// *Arguments*
+    ///     x0 (Point)
+    ///         Point.
+    ///     x1 (Point)
+    ///         Point.
+    ///     x2 (Point)
+    ///         Point.
+    ///     x3 (Point)
+    ///         Point.
     Tetrahedron(Point x0, Point x1, Point x2, Point x3);
-    
+
     /// Informal string representation
     std::string str(bool verbose) const;
 
     Type getType() const
     { return CSGGeometry::Tetrahedron; }
 
-
     Point x0, x1, x2, x3;
   };
-  
+
   /// This class describes a 3D surface loaded from file.
   /// The supported file types
   class Surface3D : public CSGPrimitive3D
   {
   public:
     Surface3D(std::string filename);
-    
+
     /// Informal string representation
     std::string str(bool verbose) const;
-    
+
     Type getType() const
     { return CSGGeometry::Surface3D; }
-    
+
     std::string filename;
   };
 }

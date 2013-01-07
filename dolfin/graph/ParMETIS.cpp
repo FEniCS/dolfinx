@@ -24,7 +24,6 @@
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/types.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include "ParMETIS.h"
 
@@ -61,6 +60,7 @@ void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
                  "ParMETIS cannot be used if a process has no cells (graph nodes). Use SCOTCH to perform partitioning instead");
   }
 
+  double tt = time();
   // Communicate number of cells between all processors
   std::vector<std::size_t> num_cells;
   MPI::all_gather(num_local_cells, num_cells);
@@ -128,6 +128,11 @@ void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
                                   &xadj, &adjncy,
                                   &(*comm));
   dolfin_assert(err == METIS_OK);
+  tt = time() - tt;
+  double tt_max = MPI::max(tt);
+  if (MPI::process_number() == 0)
+    info("Time to build (parallel) dual graph: %g", tt_max);
+
   timer0.stop();
 
   Timer timer1("PARALLEL 1b: Compute graph partition (calling ParMETIS)");

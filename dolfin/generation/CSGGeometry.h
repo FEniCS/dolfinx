@@ -24,7 +24,7 @@
 #ifndef __CSG_GEOMETRY_H
 #define __CSG_GEOMETRY_H
 
-#include <dolfin/common/types.h>
+#include <cstddef>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
@@ -44,7 +44,7 @@ namespace dolfin
     virtual ~CSGGeometry();
 
     /// Return dimension of geometry
-    virtual uint dim() const = 0;
+    virtual std::size_t dim() const = 0;
 
     /// Informal string representation
     virtual std::string str(bool verbose) const = 0;

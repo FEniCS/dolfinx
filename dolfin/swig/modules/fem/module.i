@@ -216,4 +216,5 @@ import_array();
 %include "dolfin/adaptivity/adapt.h"
 %include "dolfin/adaptivity/marking.h"
 %include "dolfin/adaptivity/adaptivesolve.h"
+%include "dolfin/swig/adaptivity/post.i"
 

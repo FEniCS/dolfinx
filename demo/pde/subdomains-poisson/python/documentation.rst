@@ -108,7 +108,7 @@ value):
 .. code-block:: python
 
     # Initialize mesh function for interior domains
-    domains = CellFunction("sizet", mesh)
+    domains = CellFunction("size_t", mesh)
     domains.set_all(0)
     obstacle.mark(domains, 1)
 
@@ -121,7 +121,7 @@ the edges on the left by ``1``, on the top by ``2``, on the right by
 .. code-block:: python
 
     # Initialize mesh function for boundary domains
-    boundaries = FacetFunction("sizet", mesh)
+    boundaries = FacetFunction("size_t", mesh)
     boundaries.set_all(0)
     left.mark(boundaries, 1)
     top.mark(boundaries, 2)

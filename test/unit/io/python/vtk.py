@@ -31,19 +31,19 @@ class VTK_Mesh_Output(unittest.TestCase):
 
     def test_save_1d_mesh(self):
         if MPI.num_processes() == 1:
-            mesh = UnitInterval(32)
+            mesh = UnitIntervalMesh(32)
             File("mesh.pvd") << mesh
             for file_option in file_options:
                 File("mesh.pvd", file_option) << mesh
 
     def test_save_2d_mesh(self):
-        mesh = UnitSquare(32, 32)
+        mesh = UnitSquareMesh(32, 32)
         File("mesh.pvd") << mesh
         for file_option in file_options:
             File("mesh.pvd", file_option) << mesh
 
     def test_save_3d_mesh(self):
-        mesh = UnitCube(8, 8, 8)
+        mesh = UnitCubeMesh(8, 8, 8)
         File("mesh.pvd") << mesh
         for file_option in file_options:
             File("mesh.pvd", file_option) << mesh
@@ -54,7 +54,7 @@ class VTK_Point_Function_Output(unittest.TestCase):
 
     def test_save_1d_scalar(self):
         if MPI.num_processes() == 1:
-            mesh = UnitInterval(32)
+            mesh = UnitIntervalMesh(32)
             u = Function(FunctionSpace(mesh, "Lagrange", 2))
             u.vector()[:] = 1.0
             File("u.pvd") << u
@@ -62,7 +62,7 @@ class VTK_Point_Function_Output(unittest.TestCase):
                 File("u.pvd", file_option) << u
 
     def test_save_2d_scalar(self):
-        mesh = UnitSquare(16, 16)
+        mesh = UnitSquareMesh(16, 16)
         u = Function(FunctionSpace(mesh, "Lagrange", 2))
         u.vector()[:] = 1.0
         File("u.pvd") << u
@@ -70,7 +70,7 @@ class VTK_Point_Function_Output(unittest.TestCase):
             File("u.pvd", file_option) << u
 
     def test_save_3d_scalar(self):
-        mesh = UnitCube(8, 8, 8)
+        mesh = UnitCubeMesh(8, 8, 8)
         u = Function(FunctionSpace(mesh, "Lagrange", 2))
         u.vector()[:] = 1.0
         File("u.pvd") << u
@@ -80,7 +80,7 @@ class VTK_Point_Function_Output(unittest.TestCase):
     # FFC fails for vector spaces in 1D
     #def test_save_1d_vector(self):
     #    if MPI.num_processes() == 1:
-    #        mesh = UnitInterval(32)
+    #        mesh = UnitIntervalMesh(32)
     #        u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
     #        u.vector()[:] = 1.0
     #        File("u.pvd") << u
@@ -88,7 +88,7 @@ class VTK_Point_Function_Output(unittest.TestCase):
     #            File("u.pvd", file_option) << u
 
     def test_save_2d_vector(self):
-        mesh = UnitSquare(16, 16)
+        mesh = UnitSquareMesh(16, 16)
         u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
         u.vector()[:] = 1.0
         File("u.pvd") << u
@@ -96,7 +96,7 @@ class VTK_Point_Function_Output(unittest.TestCase):
             File("u.pvd", file_option) << u
 
     def test_save_3d_vector(self):
-        mesh = UnitCube(8, 8, 8)
+        mesh = UnitCubeMesh(8, 8, 8)
         u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
         u.vector()[:] = 1.0
         File("u.pvd") << u
@@ -106,7 +106,7 @@ class VTK_Point_Function_Output(unittest.TestCase):
     # FFC fails for tensor spaces in 1D
     #def test_save_1d_tensor(self):
     #    if MPI.num_processes() == 1:
-    #        mesh = UnitInterval(32)
+    #        mesh = UnitIntervalMesh(32)
     #        u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
     #        u.vector()[:] = 1.0
     #        File("u.pvd") << u
@@ -114,7 +114,7 @@ class VTK_Point_Function_Output(unittest.TestCase):
     #            File("u.pvd", file_option) << u
 
     def test_save_2d_tensor(self):
-        mesh = UnitSquare(16, 16)
+        mesh = UnitSquareMesh(16, 16)
         u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
         u.vector()[:] = 1.0
         File("u.pvd") << u
@@ -122,7 +122,7 @@ class VTK_Point_Function_Output(unittest.TestCase):
             File("u.pvd", file_option) << u
 
     def test_save_3d_tensor(self):
-        mesh = UnitCube(8, 8, 8)
+        mesh = UnitCubeMesh(8, 8, 8)
         u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
         u.vector()[:] = 1.0
         File("u.pvd") << u

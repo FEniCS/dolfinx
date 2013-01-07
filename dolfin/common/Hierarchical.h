@@ -54,11 +54,11 @@ namespace dolfin
     /// child-parent relationships, including the object itself.
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The depth of the hierarchy.
-    uint depth() const
+    std::size_t depth() const
     {
-      uint d = 1;
+      std::size_t d = 1;
       for (boost::shared_ptr<const T> it = root_node_shared_ptr();
            it->_child; it = it->_child)
         d++;

@@ -29,7 +29,7 @@ class ErrorNorm(unittest.TestCase):
     def test_error_norm(self):
 
         # Approximation (zero)
-        mesh = UnitSquare(4, 4)
+        mesh = UnitSquareMesh(4, 4)
         V = FunctionSpace(mesh, "CG", 2)
         u_h = Function(V)
         u_h.vector().zero()

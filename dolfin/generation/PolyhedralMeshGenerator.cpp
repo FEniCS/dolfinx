@@ -92,7 +92,7 @@ typedef Polyhedron::HalfedgeDS HalfedgeDS;
 // Surface meshes
 // default triangulation for Surface_mesher
 //typedef CGAL::Triangulation_vertex_base_3<K> Vbase;
-//typedef CGAL::Triangulation_vertex_base_with_info_3<unsigned int, K, Vbase> Vb;
+//typedef CGAL::Triangulation_vertex_base_with_info_3<std::size_t, K, Vbase> Vb;
 //typedef CGAL::Triangulation_face_base_3<K> Fb;
 //typedef CGAL::Triangulation_data_structure_2<Vb, Fb> Tds;
 
@@ -141,7 +141,7 @@ class BuildSurface : public CGAL::Modifier_base<HDS>
 public:
 
   BuildSurface(const std::vector<Point>& vertices,
-               const std::vector<std::vector<unsigned int> >& facets)
+               const std::vector<std::vector<std::size_t> >& facets)
              : vertices(vertices), facets(facets)  {}
 
   void operator()(HDS& hds)
@@ -161,12 +161,12 @@ public:
       B.add_vertex(CPoint(p->x(), p->y(), p->z()));
 
     // Add facets
-    std::vector<std::vector<unsigned int> >::const_iterator f;
+    std::vector<std::vector<std::size_t> >::const_iterator f;
     for (f = facets.begin(); f != facets.end(); ++f)
     {
       // Add facet vertices
       B.begin_facet();
-      for (unsigned int i = 0; i < f->size(); ++i)
+      for (std::size_t i = 0; i < f->size(); ++i)
         B.add_vertex_to_facet((*f)[i]);
       B.end_facet();
     }
@@ -178,7 +178,7 @@ public:
 private:
 
   const std::vector<Point>& vertices;
-  const std::vector<std::vector<unsigned int> >& facets;
+  const std::vector<std::vector<std::size_t> >& facets;
 
 };
 //-----------------------------------------------------------------------------
@@ -212,7 +212,7 @@ void PolyhedralMeshGenerator::generate(Mesh& mesh, const std::string off_file,
 //-----------------------------------------------------------------------------
 void PolyhedralMeshGenerator::generate(Mesh& mesh,
                         const std::vector<Point>& vertices,
-                        const std::vector<std::vector<unsigned int> >& facets,
+                        const std::vector<std::vector<std::size_t> >& facets,
                         double cell_size, bool detect_sharp_features)
 {
   // Generate CGAL mesh on root process

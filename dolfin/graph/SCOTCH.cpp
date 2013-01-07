@@ -35,6 +35,7 @@
 #ifdef HAS_SCOTCH
 extern "C"
 {
+#include <stdint.h>
 #include <ptscotch.h>
 }
 #endif
@@ -54,17 +55,13 @@ void SCOTCH::compute_partition(std::vector<std::size_t>& cell_partition,
   std::set<std::size_t> ghost_vertices;
 
   // Compute local dual graph
-  info("Compute dual graph.");
   GraphBuilder::compute_dual_graph(mesh_data, local_graph, ghost_vertices);
-  info("End compute dual graph.");
 
   // Compute partitions
-  info("Start to compute partitions using SCOTCH");
   const std::size_t num_global_vertices = mesh_data.num_global_cells;
   const std::vector<std::size_t>& global_cell_indices = mesh_data.global_cell_indices;
   partition(local_graph, ghost_vertices, global_cell_indices,
             num_global_vertices, cell_partition);
-  info("Finished computing partitions using SCOTCH");
 }
 //-----------------------------------------------------------------------------
 std::vector<std::size_t> SCOTCH::compute_reordering(const Graph& graph)
@@ -86,7 +83,7 @@ void SCOTCH::compute_reordering(const Graph& graph,
   }
 
   // Number of local graph vertices (cells)
-  const int vertnbr = _graph.size();
+  const SCOTCH_Num vertnbr = _graph.size();
 
   // Data structures for graph input to SCOTCH (add 1 for case that graph size is zero)
   std::vector<SCOTCH_Num> verttab;
@@ -97,7 +94,7 @@ void SCOTCH::compute_reordering(const Graph& graph,
   // Build local graph input for SCOTCH
   // (number of local + ghost graph vertices (cells),
   // number of local edges + edges connecting to ghost vertices)
-  int edgenbr = 0;
+  SCOTCH_Num edgenbr = 0;
   verttab.push_back(0);
   Graph::const_iterator vertex;
   for(vertex = _graph.begin(); vertex != _graph.end(); ++vertex)
@@ -111,7 +108,7 @@ void SCOTCH::compute_reordering(const Graph& graph,
   SCOTCH_Graph scotch_graph;
 
   // C-style array indexing
-  const int baseval = 0;
+  const SCOTCH_Num baseval = 0;
 
   // Create SCOTCH graph and intialise
   if (SCOTCH_graphInit(&scotch_graph) != 0)
@@ -194,7 +191,7 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
   // Local data ---------------------------------
 
   // Number of local graph vertices (cells)
-  const int vertlocnbr = local_graph.size();
+  const SCOTCH_Num vertlocnbr = local_graph.size();
 
   // Data structures for graph input to SCOTCH (add 1 for case that local graph size is zero)
   std::vector<SCOTCH_Num> vertloctab;
@@ -204,7 +201,7 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
   // Build local graph input for SCOTCH
   // (number of local + ghost graph vertices (cells),
   // number of local edges + edges connecting to ghost vertices)
-  int edgelocnbr = 0;
+  SCOTCH_Num edgelocnbr = 0;
   vertloctab.push_back(0);
   std::vector<std::set<std::size_t> >::const_iterator vertex;
   for(vertex = local_graph.begin(); vertex != local_graph.end(); ++vertex)
@@ -240,7 +237,7 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
   const bool dislay_graph_data = false;
   if (dislay_graph_data)
   {
-    const std::size_t vertgstnbr = local_graph.size() + ghost_vertices.size();
+    const SCOTCH_Num vertgstnbr = local_graph.size() + ghost_vertices.size();
 
     // Total  (global) number of vertices (cells) in the graph
     const SCOTCH_Num vertglbnbr = num_global_vertices;
@@ -302,7 +299,6 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
   }
 
   // Build SCOTCH distributed graph
-  info("Start SCOTCH graph building.");
   if (SCOTCH_dgraphBuild(&dgrafdat, baseval, vertlocnbr, vertlocnbr,
                               &vertloctab[0], NULL, NULL, NULL,
                               edgelocnbr, edgelocnbr,
@@ -312,7 +308,6 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
                  "partition mesh using SCOTCH",
                  "Error building SCOTCH graph");
   }
-  info("End SCOTCH graph building.");
 
   // Check graph data for consistency
   #ifdef DEBUG
@@ -349,14 +344,12 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
   SCOTCH_randomReset();
 
   // Partition graph
-  info("Start SCOTCH partitioning.");
   if (SCOTCH_dgraphPart(&dgrafdat, npart, &strat, __cell_partition))
   {
     dolfin_error("SCOTCH.cpp",
                  "partition mesh using SCOTCH",
                  "Error during partitioning");
   }
-  info("End SCOTCH partitioning.");
 
   // Clean up SCOTCH objects
   SCOTCH_dgraphExit(&dgrafdat);

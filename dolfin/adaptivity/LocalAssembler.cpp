@@ -97,7 +97,7 @@ void LocalAssembler::assemble_exterior_facet(arma::mat& A,
                                              UFC& ufc,
                                              const Cell& cell,
                                              const Facet& facet,
-                                             const uint local_facet,
+                                             const std::size_t local_facet,
                                              const MeshFunction<std::size_t>* domains)
 {
   // Skip if there are no exterior facet integrals
@@ -139,7 +139,7 @@ void LocalAssembler::assemble_interior_facet(arma::mat& A,
                                              UFC& ufc,
                                              const Cell& cell,
                                              const Facet& facet,
-                                             const uint local_facet,
+                                             const std::size_t local_facet,
                                              const MeshFunction<std::size_t>* domains)
 {
   // Skip if there are no interior facet integrals

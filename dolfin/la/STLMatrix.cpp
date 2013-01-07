@@ -39,11 +39,11 @@ using namespace dolfin;
 
 struct CompareIndex
 {
-  CompareIndex(unsigned int index) : index(index) {}
-  bool operator()(const std::pair<unsigned int, double>& entry) const
+  CompareIndex(std::size_t index) : index(index) {}
+  bool operator()(const std::pair<std::size_t, double>& entry) const
   { return index == entry.first; }
   private:
-    const unsigned int index;
+    const std::size_t index;
 };
 
 //-----------------------------------------------------------------------------
@@ -58,7 +58,7 @@ void STLMatrix::init(const TensorLayout& tensor_layout)
   }
 
   //primary_dim = sparsity_pattern.primary_dim();
-  unsigned int primary_codim = 1;
+  std::size_t primary_codim = 1;
   if (primary_dim == 1)
     primary_codim = 0;
 
@@ -77,7 +77,7 @@ void STLMatrix::init(const TensorLayout& tensor_layout)
   //}
 }
 //-----------------------------------------------------------------------------
-std::size_t STLMatrix::size(unsigned int dim) const
+std::size_t STLMatrix::size(std::size_t dim) const
 {
   if (dim > 1)
   {
@@ -102,7 +102,7 @@ std::size_t STLMatrix::size(unsigned int dim) const
   }
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t> STLMatrix::local_range(unsigned int dim) const
+std::pair<std::size_t, std::size_t> STLMatrix::local_range(std::size_t dim) const
 {
   dolfin_assert(dim < 2);
   if (primary_dim == 0)
@@ -130,14 +130,14 @@ void STLMatrix::zero()
       entry->second = 0.0;
 }
 //-----------------------------------------------------------------------------
-void STLMatrix::add(const double* block, std::size_t m, const DolfinIndex* rows, std::size_t n,
-                    const DolfinIndex* cols)
+void STLMatrix::add(const double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n,
+                    const dolfin::la_index* cols)
 {
   // Perform a simple linear search along each column. Otherwise,
   // append the value (calling push_back).
 
-  const DolfinIndex* primary_slice = rows;
-  const DolfinIndex* secondary_slice = cols;
+  const dolfin::la_index* primary_slice = rows;
+  const dolfin::la_index* secondary_slice = cols;
 
   std::size_t dim   = m;
   std::size_t codim = n;
@@ -211,7 +211,7 @@ void STLMatrix::apply(std::string mode)
 
   // Data to send
   std::vector<std::size_t> send_non_local_rows, send_non_local_cols;
-  std::vector<unsigned int> destinations;
+  std::vector<std::size_t> destinations;
   std::vector<double> send_non_local_vals;
 
   std::vector<std::pair<std::size_t, std::size_t> > process_ranges;
@@ -306,7 +306,7 @@ void STLMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
   }
 }
 //-----------------------------------------------------------------------------
-void STLMatrix::ident(std::size_t m, const DolfinIndex* rows)
+void STLMatrix::ident(std::size_t m, const dolfin::la_index* rows)
 {
   if (primary_dim == 1)
   {

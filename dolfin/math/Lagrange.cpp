@@ -21,28 +21,27 @@
 // First added:  2003-06-12
 // Last changed: 2009-03-20
 
+#include <cmath>
 #include <dolfin/common/constants.h>
 #include "Lagrange.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Lagrange::Lagrange(unsigned int q)
-  :q(q), counter(0), points(q + 1, 0.0),
+Lagrange::Lagrange(std::size_t q)  : q(q), counter(0), points(q + 1, 0.0),
    instability_detected("Warning: Lagrange polynomial is not numerically stable. The degree is too high.")
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Lagrange::Lagrange(const Lagrange& p)
-  : q(p.q), counter(p.counter), points(p.points),
-    instability_detected(p.instability_detected)
+Lagrange::Lagrange(const Lagrange& p) : q(p.q), counter(p.counter),
+    points(p.points), instability_detected(p.instability_detected)
 {
   if (counter == size())
     init();
 }
 //-----------------------------------------------------------------------------
-void Lagrange::set(unsigned int i, double x)
+void Lagrange::set(std::size_t i, double x)
 {
   dolfin_assert(i <= q);
 
@@ -53,33 +52,33 @@ void Lagrange::set(unsigned int i, double x)
     init();
 }
 //-----------------------------------------------------------------------------
-unsigned int Lagrange::size() const
+std::size_t Lagrange::size() const
 {
   return points.size();
 }
 //-----------------------------------------------------------------------------
-unsigned int Lagrange::degree() const
+std::size_t Lagrange::degree() const
 {
   return q;
 }
 //-----------------------------------------------------------------------------
-double Lagrange::point(unsigned int i) const
+double Lagrange::point(std::size_t i) const
 {
   dolfin_assert(i < points.size());
   return points[i];
 }
 //-----------------------------------------------------------------------------
-double Lagrange::operator() (unsigned int i, double x)
+double Lagrange::operator() (std::size_t i, double x)
 {
   return eval(i, x);
 }
 //-----------------------------------------------------------------------------
-double Lagrange::eval(unsigned int i, double x)
+double Lagrange::eval(std::size_t i, double x)
 {
   dolfin_assert(i < points.size());
 
   double product(constants[i]);
-  for (unsigned int j = 0; j < points.size(); j++)
+  for (std::size_t j = 0; j < points.size(); j++)
   {
     if (j != i)
       product *= x - points[j];
@@ -88,7 +87,7 @@ double Lagrange::eval(unsigned int i, double x)
   return product;
 }
 //-----------------------------------------------------------------------------
-double Lagrange::ddx(uint i, double x)
+double Lagrange::ddx(std::size_t i, double x)
 {
   dolfin_assert(i < points.size());
 
@@ -96,7 +95,7 @@ double Lagrange::ddx(uint i, double x)
   double prod(1.0);
   bool x_equals_point = false;
 
-  for (uint j = 0; j < points.size(); ++j)
+  for (std::size_t j = 0; j < points.size(); ++j)
   {
     if (j != i)
     {
@@ -117,10 +116,10 @@ double Lagrange::ddx(uint i, double x)
     return prod*constants[i]*s;
 }
 //-----------------------------------------------------------------------------
-double Lagrange::dqdx(unsigned int i)
+double Lagrange::dqdx(std::size_t i)
 {
   double product = constants[i];
-  for (unsigned int j = 1; j <= q; j++)
+  for (std::size_t j = 1; j <= q; j++)
     product *= (double) j;
 
   return product;
@@ -133,29 +132,32 @@ std::string Lagrange::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-    for (unsigned int i = 0; i < points.size(); i++)
+    for (std::size_t i = 0; i < points.size(); i++)
       s << "  x[" << i << "] = " << points[i];
   }
   else
-    s << "<Lagrange polynomial of degree " << q << " with " << points.size() << " points>";
+  {
+    s << "<Lagrange polynomial of degree " << q << " with "
+          << points.size() << " points>";
+  }
 
   return s.str();
 }
 //-----------------------------------------------------------------------------
 void Lagrange::init()
 {
-  // Note: this will be computed when n nodal points have been set, assuming they are
-  // distinct. Precomputing the constants has a downside wrt. to numerical stability, since
-  // the constants will decrease as the degree increases (and for high order be less than
-  // epsilon.
+  // Note: this will be computed when n nodal points have been set,
+  // assuming they are distinct. Precomputing the constants has a downside
+  // wrt to numerical stability, since the constants will decrease as
+  // the degree increases (and for high order be less than epsilon.
 
   constants.resize(points.size());
 
   // Compute constants
-  for (unsigned int i = 0; i < points.size(); i++)
+  for (std::size_t i = 0; i < points.size(); i++)
   {
     double product = 1.0;
-    for (unsigned int j = 0; j < points.size(); j++)
+    for (std::size_t j = 0; j < points.size(); j++)
     {
       if (j != i)
       {

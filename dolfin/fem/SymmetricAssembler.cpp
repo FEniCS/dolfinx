@@ -105,7 +105,7 @@ void SymmetricAssembler::assemble(GenericMatrix& A,
   dolfin_assert(a.rank() == 2);
 
   #ifdef HAS_OPENMP
-  const uint num_threads = parameters["num_threads"];
+  const std::size_t num_threads = parameters["num_threads"];
   if (num_threads > 0)
   {
     dolfin_error("SymmetricAssembler.cpp", "assemble",
@@ -160,7 +160,7 @@ void SymmetricAssembler::assemble(GenericMatrix& A,
 //-----------------------------------------------------------------------------
 void SymmetricAssembler::add_to_global_tensor(GenericTensor &A,
                                               std::vector<double>& local_A,
-                                              std::vector<const std::vector<DolfinIndex>* >& dofs)
+                                              std::vector<const std::vector<dolfin::la_index>* >& dofs)
 {
   // Apply boundary conditions, and move affected columns of the local element
   // tensor, to restore symmetry.
@@ -173,8 +173,8 @@ void SymmetricAssembler::add_to_global_tensor(GenericTensor &A,
   bool local_B_is_set = false;
 
   // Convenience aliases
-  const std::vector<DolfinIndex>& row_dofs = *dofs[0];
-  const std::vector<DolfinIndex>& col_dofs = *dofs[1];
+  const std::vector<dolfin::la_index>& row_dofs = *dofs[0];
+  const std::vector<dolfin::la_index>& col_dofs = *dofs[1];
 
   if (impl->matching_bcs && row_dofs != col_dofs)
     dolfin_error("SymmetricAssembler.cpp",

@@ -27,9 +27,7 @@
 
 #include <vtkSmartPointer.h>
 
-#include <dolfin/common/types.h>
 #include <dolfin/mesh/Mesh.h>
-
 #include "GenericVTKPlottable.h"
 
 class vtkActor2D;
@@ -57,7 +55,7 @@ namespace dolfin
   {
   public:
 
-    explicit VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh, uint entity_dim);
+    explicit VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh, std::size_t entity_dim);
 
     explicit VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh);
 
@@ -86,7 +84,7 @@ namespace dolfin
     virtual void update_range(double range[2]);
 
     /// Return geometric dimension
-    virtual uint dim() const;
+    virtual std::size_t dim() const;
 
     /// Get an actor for showing vertex labels
     virtual vtkSmartPointer<vtkActor2D> get_vertex_label_actor(vtkSmartPointer<vtkRenderer>);
@@ -106,18 +104,18 @@ namespace dolfin
     void build_id_filter();
 
     // Build the grid from mesh
-    void build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &grid, uint entity_dim);
+    void build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &grid, std::size_t entity_dim);
 
     // Remove values from an array if hide_above/hide_below are set
     void filter_scalars(vtkFloatArray *, const Parameters &);
 
     /// Set scalar values on the mesh
     template <class T>
-    void setPointValues(uint size, const T *indata, const Parameters &parameters);
+    void setPointValues(std::size_t size, const T *indata, const Parameters &parameters);
 
     /// Set scalar values on the mesh
     template <class T>
-    void setCellValues(uint size, const T *indata, const Parameters &parameters);
+    void setCellValues(std::size_t size, const T *indata, const Parameters &parameters);
 
     boost::shared_ptr<const Mesh> mesh() const;
 
@@ -148,7 +146,7 @@ namespace dolfin
     vtkSmartPointer<vtkActor> _meshActor;
 
     // The dimension of the facets
-    const uint _entity_dim;
+    const std::size_t _entity_dim;
 
   };
 
@@ -158,4 +156,3 @@ namespace dolfin
 #endif
 
 #endif
-

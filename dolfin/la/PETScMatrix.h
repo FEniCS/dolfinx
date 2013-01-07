@@ -72,10 +72,10 @@ namespace dolfin
     virtual void init(const TensorLayout& tensor_layout);
 
     /// Return size of given dimension
-    std::size_t size(unsigned int dim) const { return PETScBaseMatrix::size(dim); }
+    std::size_t size(std::size_t dim) const { return PETScBaseMatrix::size(dim); }
 
     /// Return local ownership range
-    std::pair<std::size_t, std::size_t> local_range(unsigned int dim) const
+    std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const
     { return PETScBaseMatrix::local_range(dim); };
 
     /// Set all entries to zero and keep any sparse structure
@@ -105,22 +105,22 @@ namespace dolfin
     /// important.
     ///
     /// *Arguments*
-    ///     dim (unsigned int)
+    ///     dim (std::size_t)
     ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-    virtual void resize(GenericVector& z, unsigned int dim) const
+    virtual void resize(GenericVector& z, std::size_t dim) const
     { PETScBaseMatrix::resize(z, dim); }
 
     /// Get block of values
-    virtual void get(double* block, std::size_t m, const DolfinIndex* rows, std::size_t n,
-                     const DolfinIndex* cols) const;
+    virtual void get(double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n,
+                     const dolfin::la_index* cols) const;
 
     /// Set block of values
-    virtual void set(const double* block, std::size_t m, const DolfinIndex* rows, std::size_t n,
-                     const DolfinIndex* cols);
+    virtual void set(const double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n,
+                     const dolfin::la_index* cols);
 
     /// Add block of values
-    virtual void add(const double* block, std::size_t m, const DolfinIndex* rows, std::size_t n,
-                     const DolfinIndex* cols);
+    virtual void add(const double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n,
+                     const dolfin::la_index* cols);
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern);
@@ -136,10 +136,10 @@ namespace dolfin
                         const std::vector<double>& values);
 
     /// Set given rows to zero
-    virtual void zero(std::size_t m, const DolfinIndex* rows);
+    virtual void zero(std::size_t m, const dolfin::la_index* rows);
 
     /// Set given rows to identity matrix
-    virtual void ident(std::size_t m, const DolfinIndex* rows);
+    virtual void ident(std::size_t m, const dolfin::la_index* rows);
 
     // Matrix-vector product, y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const;

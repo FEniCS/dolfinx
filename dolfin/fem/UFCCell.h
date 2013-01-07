@@ -102,18 +102,18 @@ namespace dolfin
       geometric_dimension = mesh.geometry().dim();
 
       // Allocate arrays for local entity indices
-      entity_indices = new uint*[topological_dimension + 1];
-      for (uint d = 0; d < topological_dimension; d++)
+      entity_indices = new unsigned int*[topological_dimension + 1];
+      for (std::size_t d = 0; d < topological_dimension; d++)
       {
         // Store number of cell entities allocated for (this can change
         // between init() and update() which is why it's stored)
         num_cell_entities.push_back(cell.num_entities(d));
         if (cell.num_entities(d) > 0)
-          entity_indices[d] = new uint[cell.num_entities(d)];
+          entity_indices[d] = new unsigned int[cell.num_entities(d)];
         else
           entity_indices[d] = 0;
       }
-      entity_indices[topological_dimension] = new uint[1];
+      entity_indices[topological_dimension] = new unsigned int[1];
 
       // Allocate vertex coordinates
       coordinates = new double*[num_vertices];
@@ -127,7 +127,7 @@ namespace dolfin
     {
       if (entity_indices)
       {
-        for (uint d = 0; d <= topological_dimension; d++)
+        for (std::size_t d = 0; d <= topological_dimension; d++)
           delete [] entity_indices[d];
       }
       delete [] entity_indices;
@@ -165,21 +165,21 @@ namespace dolfin
 
       // Set orientation
       this->orientation = cell.mesh().cell_orientations()[cell.index()];
+      const std::size_t D = topological_dimension;
 
-      const uint D = topological_dimension;
       const MeshTopology& topology = cell.mesh().topology();
-      for (uint d = 0; d < D; ++d)
+      for (std::size_t d = 0; d < D; ++d)
       {
         //if (use_global_indices && topology.have_global_indices(d))
         if (topology.have_global_indices(d))
         {
           const std::vector<std::size_t>& global_indices = topology.global_indices(d);
-          for (uint i = 0; i < num_cell_entities[d]; ++i)
+          for (std::size_t i = 0; i < num_cell_entities[d]; ++i)
             entity_indices[d][i] = global_indices[cell.entities(d)[i]];
         }
         else
         {
-          for (uint i = 0; i < num_cell_entities[d]; ++i)
+          for (std::size_t i = 0; i < num_cell_entities[d]; ++i)
             entity_indices[d][i] = cell.entities(d)[i];
         }
       }
@@ -197,7 +197,7 @@ namespace dolfin
 
       // Set vertex coordinates
       const std::size_t* vertices = cell.entities(0);
-      for (uint i = 0; i < num_vertices; i++)
+      for (std::size_t i = 0; i < num_vertices; i++)
         coordinates[i] = const_cast<double*>(cell.mesh().geometry().x(vertices[i]));
     }
 
@@ -207,10 +207,10 @@ namespace dolfin
     //const bool use_global_indices;
 
     // Number of cell vertices
-    uint num_vertices;
+    std::size_t num_vertices;
 
     // Number of cell entities of dimension d at initialisation
-    std::vector<uint> num_cell_entities;
+    std::vector<std::size_t> num_cell_entities;
 
   };
 

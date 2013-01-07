@@ -26,12 +26,13 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 FiniteElement::FiniteElement(boost::shared_ptr<const ufc::finite_element> element)
-  : _ufc_element(element), _hash(dolfin::hash(signature()))
+  : _ufc_element(element), _hash(dolfin::hash_local(signature()))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const FiniteElement> FiniteElement::extract_sub_element(const std::vector<uint>& component) const
+boost::shared_ptr<const FiniteElement> 
+FiniteElement::extract_sub_element(const std::vector<std::size_t>& component) const
 {
   // Recursively extract sub element
   boost::shared_ptr<const FiniteElement> sub_finite_element = extract_sub_element(*this, component);
@@ -42,7 +43,7 @@ boost::shared_ptr<const FiniteElement> FiniteElement::extract_sub_element(const 
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const FiniteElement>
 FiniteElement::extract_sub_element(const FiniteElement& finite_element,
-                                   const std::vector<uint>& component)
+                                   const std::vector<std::size_t>& component)
 {
   // Check if there are any sub systems
   if (finite_element.num_sub_elements() == 0)
@@ -78,8 +79,8 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
     return sub_element;
 
   // Otherwise, recursively extract the sub sub system
-  std::vector<uint> sub_component;
-  for (uint i = 1; i < component.size(); i++)
+  std::vector<std::size_t> sub_component;
+  for (std::size_t i = 1; i < component.size(); i++)
     sub_component.push_back(component[i]);
   boost::shared_ptr<const FiniteElement> sub_sub_element = extract_sub_element(*sub_element, sub_component);
   //delete sub_element;

@@ -415,7 +415,7 @@ void RivaraRefinement::DMesh::propagate_facets(DCell* dcell, DCell* c0,
   // Initialize local facets
   std::vector<int> facets0(tdim + 1);
   std::vector<int> facets1(tdim + 1);
-  for(uint i = 0; i < tdim + 1; i++)
+  for(std::size_t i = 0; i < tdim + 1; i++)
   {
     facets0[i] = -2;
     facets1[i] = -2;
@@ -434,7 +434,7 @@ void RivaraRefinement::DMesh::propagate_facets(DCell* dcell, DCell* c0,
   // Changed facets
   int c0i = 0;
   int c1i = 0;
-  for (uint i = 0; i < tdim + 1; i++)
+  for (std::size_t i = 0; i < tdim + 1; i++)
   {
     if ( mv->id > c0->vertices[i]->id )
       c0i++;
@@ -446,13 +446,13 @@ void RivaraRefinement::DMesh::propagate_facets(DCell* dcell, DCell* c0,
 
   // Untouched facets
   std::vector<int> rest;
-  for (uint i = 0; i < tdim + 1; i++)
+  for (std::size_t i = 0; i < tdim + 1; i++)
   {
     if(i != ii && i != jj)
       rest.push_back(i);
   }
   int j = 0, k = 0;
-  for(uint i = 0; i < tdim + 1; i++)
+  for(std::size_t i = 0; i < tdim + 1; i++)
   {
     if(facets0[i] == -2)
       facets0[i] = rest[j++];
@@ -462,7 +462,7 @@ void RivaraRefinement::DMesh::propagate_facets(DCell* dcell, DCell* c0,
 
   // Rewrite facets whenever different that -1
   //   ( -1 for new, internal facets )
-  for (uint i = 0; i < tdim + 1; i++)
+  for (std::size_t i = 0; i < tdim + 1; i++)
   {
     if (facets0[i] != -1)
       c0->facets.push_back(dcell->facets[facets0[i]]);

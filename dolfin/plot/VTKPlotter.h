@@ -29,7 +29,6 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/parameter/Parameters.h>
 
@@ -305,7 +304,7 @@ namespace dolfin
     boost::scoped_ptr<VTKWindowOutputStage> vtk_pipeline;
 
     // The number of plotted frames
-    uint _frame_counter;
+    std::size_t _frame_counter;
 
     // The window id (derived from Variable::id unless overridden by user)
     std::string _key;

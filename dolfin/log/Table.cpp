@@ -56,7 +56,7 @@ void Table::set(std::string row, std::string col, int value)
   set(row, col, s.str());
 }
 //-----------------------------------------------------------------------------
-void Table::set(std::string row, std::string col, uint value)
+void Table::set(std::string row, std::string col, std::size_t value)
 {
   std::stringstream s;
   s << value;
@@ -197,69 +197,69 @@ std::string Table::str(bool verbose) const
     //s << str(false) << std::endl << std::endl;
 
     std::vector<std::vector<std::string> > tvalues;
-    std::vector<uint> col_sizes;
+    std::vector<std::size_t> col_sizes;
 
     // Format values and compute column sizes
     col_sizes.push_back(_title.size());
-    for (uint j = 0; j < cols.size(); j++)
+    for (std::size_t j = 0; j < cols.size(); j++)
       col_sizes.push_back(cols[j].size());
-    for (uint i = 0; i < rows.size(); i++)
+    for (std::size_t i = 0; i < rows.size(); i++)
     {
       tvalues.push_back(std::vector<std::string>());
-      col_sizes[0] = std::max(col_sizes[0], (dolfin::uint)(rows[i].size()));
-      for (uint j = 0; j < cols.size(); j++)
+      col_sizes[0] = std::max(col_sizes[0], rows[i].size());
+      for (std::size_t j = 0; j < cols.size(); j++)
       {
         std::string value = get(rows[i], cols[j]);
         tvalues[i].push_back(value);
-        col_sizes[j + 1] = std::max(col_sizes[j + 1], (dolfin::uint)(value.size()));
+        col_sizes[j + 1] = std::max(col_sizes[j + 1], value.size());
       }
     }
-    uint row_size = 2*col_sizes.size() + 1;
-    for (uint j = 0; j < col_sizes.size(); j++)
+    std::size_t row_size = 2*col_sizes.size() + 1;
+    for (std::size_t j = 0; j < col_sizes.size(); j++)
       row_size += col_sizes[j];
 
     // Write table
     s << _title;
-    for (uint k = 0; k < col_sizes[0] - _title.size(); k++)
+    for (std::size_t k = 0; k < col_sizes[0] - _title.size(); k++)
       s << " ";
     s << "  |";
-    for (uint j = 0; j < cols.size(); j++)
+    for (std::size_t j = 0; j < cols.size(); j++)
     {
       if (right_justify)
       {
-        for (uint k = 0; k < col_sizes[j + 1] - cols[j].size(); k++)
+        for (std::size_t k = 0; k < col_sizes[j + 1] - cols[j].size(); k++)
           s << " ";
         s << "  " << cols[j];
       }
       else
       {
         s << "  " << cols[j];
-        for (uint k = 0; k < col_sizes[j + 1] - cols[j].size(); k++)
+        for (std::size_t k = 0; k < col_sizes[j + 1] - cols[j].size(); k++)
           s << " ";
       }
     }
     s << "\n";
-    for (uint k = 0; k < row_size; k++)
+    for (std::size_t k = 0; k < row_size; k++)
       s << "-";
-    for (uint i = 0; i < rows.size(); i++)
+    for (std::size_t i = 0; i < rows.size(); i++)
     {
       s << "\n";
       s << rows[i];
-      for (uint k = 0; k < col_sizes[0] - rows[i].size(); k++)
+      for (std::size_t k = 0; k < col_sizes[0] - rows[i].size(); k++)
         s << " ";
       s << "  |";
-      for (uint j = 0; j < cols.size(); j++)
+      for (std::size_t j = 0; j < cols.size(); j++)
       {
         if (right_justify)
         {
-          for (uint k = 0; k < col_sizes[j + 1] - tvalues[i][j].size(); k++)
+          for (std::size_t k = 0; k < col_sizes[j + 1] - tvalues[i][j].size(); k++)
             s << " ";
           s << "  " << tvalues[i][j];
         }
         else
         {
           s << "  " << tvalues[i][j];
-          for (uint k = 0; k < col_sizes[j + 1] - tvalues[i][j].size(); k++)
+          for (std::size_t k = 0; k < col_sizes[j + 1] - tvalues[i][j].size(); k++)
             s << " ";
         }
       }
@@ -283,12 +283,12 @@ std::string Table::str_latex() const
   s << _title << "\n";
   s << "\\begin{center}\n";
   s << "\\begin{tabular}{|l|";
-  for (uint j = 0; j < cols.size(); j++)
+  for (std::size_t j = 0; j < cols.size(); j++)
     s << "|c";
   s << "|}\n";
   s << "\\hline\n";
   s << "& ";
-  for (uint j = 0; j < cols.size(); j++)
+  for (std::size_t j = 0; j < cols.size(); j++)
   {
     if (j < cols.size() - 1)
       s << cols[j] << " & ";
@@ -296,10 +296,10 @@ std::string Table::str_latex() const
       s << cols[j] << " \\\\\n";
   }
   s << "\\hline\\hline\n";
-  for (uint i = 0; i < rows.size(); i++)
+  for (std::size_t i = 0; i < rows.size(); i++)
   {
     s << rows[i] << " & ";
-    for (uint j = 0; j < cols.size(); j++)
+    for (std::size_t j = 0; j < cols.size(); j++)
     {
       if (j < cols.size() - 1)
         s << get(rows[i], cols[j]) << " & ";
@@ -325,7 +325,7 @@ TableEntry::~TableEntry()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const TableEntry& TableEntry::operator= (uint value)
+const TableEntry& TableEntry::operator= (std::size_t value)
 {
   table.set(row, col, value);
   return *this;

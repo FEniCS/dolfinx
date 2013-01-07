@@ -17,7 +17,7 @@
 //
 //
 // First added:  2012-10-13
-// Last changed: 2012-10-26
+// Last changed: 2012-12-05
 
 #ifndef __PETSC_SNES_SOLVER_H
 #define __PETSC_SNES_SOLVER_H
@@ -27,8 +27,9 @@
 #include <map>
 #include <petscsnes.h>
 #include <boost/shared_ptr.hpp>
-#include <dolfin/parameter/Parameters.h>
 #include <dolfin/nls/NewtonSolver.h>
+#include <dolfin/parameter/Parameters.h>
+#include <dolfin/la/PETScObject.h>
 
 namespace dolfin
 {
@@ -37,7 +38,8 @@ namespace dolfin
   /// via PETSc's SNES interface. It includes line search and trust
   /// region techniques for globalising the convergence of the
   /// nonlinear iteration.
-  class PETScSNESSolver
+
+  class PETScSNESSolver : public PETScObject
   {
   public:
 
@@ -57,11 +59,11 @@ namespace dolfin
     ///         The vector.
     ///
     /// *Returns*
-    ///     std::pair<uint, bool>
+    ///     std::pair<std::size_t, bool>
     ///         Pair of number of Newton iterations, and whether
     ///         iteration converged)
-    std::pair<uint, bool> solve(NonlinearProblem& nonlinear_function,
-                                GenericVector& x);
+    std::pair<std::size_t, bool> solve(NonlinearProblem& nonlinear_function,
+                                       GenericVector& x);
 
     /// Return a list of available solver methods
     static std::vector<std::pair<std::string, std::string> > methods();
@@ -83,10 +85,7 @@ namespace dolfin
     void init(const std::string& method);
 
     /// Available solvers
-    static const std::map<std::string, const SNESType> _methods;
-
-    /// Available solvers descriptions
-    static const std::vector<std::pair<std::string, std::string> > _methods_descr;
+    static const std::map<std::string, std::pair<std::string, const SNESType> > _methods;
 
     /// The callback for PETSc to compute F, the nonlinear residual
     static PetscErrorCode FormFunction(SNES snes, Vec x, Vec f, void* ctx);

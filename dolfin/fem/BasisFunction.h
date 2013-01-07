@@ -46,13 +46,13 @@ namespace dolfin
     /// Create basis function with given index on element on given cell
     ///
     /// *Arguments*
-    ///     index (uint)
+    ///     index (std::size_t)
     ///         The index of the basis function.
     ///     element (_FiniteElement_)
     ///         The element to create basis function on.
     ///     cell (ufc::cell)
     ///         The cell.
-    BasisFunction(uint index, const FiniteElement& element, const ufc::cell& cell)
+    BasisFunction(std::size_t index, const FiniteElement& element, const ufc::cell& cell)
       : index(index), element(element), cell(cell) {}
 
     /// Destructor
@@ -75,9 +75,9 @@ namespace dolfin
     ///         The values of derivatives at the point.
     ///     x (double)
     ///         The coordinates of the point.
-    ///     n (uint)
+    ///     n (std::size_t)
     ///         The order of derivation.
-    void eval_derivatives(double* values, const double* x, uint n) const
+    void eval_derivatives(double* values, const double* x, std::size_t n) const
     { element.evaluate_basis_derivatives(index, n, values, x, cell); }
 
     //--- Implementation of ufc::function interface ---
@@ -99,7 +99,7 @@ namespace dolfin
   private:
 
     /// The index
-    uint index;
+    std::size_t index;
 
     /// The finite element
     const FiniteElement& element;

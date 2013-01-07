@@ -21,7 +21,6 @@
 #ifndef __DYNAMIC_MESH_EDITOR_H
 #define __DYNAMIC_MESH_EDITOR_H
 
-#include <dolfin/common/types.h>
 #include "CellType.h"
 
 namespace dolfin
@@ -47,10 +46,10 @@ namespace dolfin
     ~DynamicMeshEditor();
 
     /// Open mesh of given cell type, topological and geometrical dimension
-    void open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim);
+    void open(Mesh& mesh, CellType::Type type, std::size_t tdim, std::size_t gdim);
 
     /// Open mesh of given cell type, topological and geometrical dimension
-    void open(Mesh& mesh, std::string type, uint tdim, uint gdim);
+    void open(Mesh& mesh, std::string type, std::size_t tdim, std::size_t gdim);
 
     /// Add vertex v at given point p
     void add_vertex(std::size_t v, const Point& p);
@@ -88,10 +87,10 @@ namespace dolfin
     Mesh* mesh;
 
     // Topological dimension
-    uint tdim;
+    std::size_t tdim;
 
     // Geometrical (Euclidean) dimension
-    uint gdim;
+    std::size_t gdim;
 
     // Cell type
     CellType* cell_type;

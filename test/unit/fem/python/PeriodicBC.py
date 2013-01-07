@@ -45,7 +45,7 @@ class PeriodicBCTest(unittest.TestCase):
 
     def test_instantiation(self):
         """ A rudimentary test for instantiation"""
-        mesh = UnitCube(8, 8, 8)
+        mesh = UnitCubeMesh(8, 8, 8)
         V = FunctionSpace(mesh, "CG", 1)
 
         sub_domain = PeriodicBoundary3()
@@ -58,7 +58,7 @@ class PeriodicBCTest(unittest.TestCase):
     def test_instantiation_mixed_element(self):
         """ A rudimentary test for instantiation with mixed elements"""
 
-        mesh = UnitSquare(8, 8)
+        mesh = UnitSquareMesh(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
         VV = V*V
 
@@ -69,7 +69,7 @@ class PeriodicBCTest(unittest.TestCase):
         """Test for problems with objects with directors going out
         of scope"""
 
-        mesh = UnitSquare(8, 8)
+        mesh = UnitSquareMesh(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
         bc = PeriodicBC(V, PeriodicBoundary2())
 
@@ -86,7 +86,7 @@ class PeriodicBCTest(unittest.TestCase):
             return
 
         # Create mesh and finite element
-        mesh = UnitSquare(8, 8)
+        mesh = UnitSquareMesh(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
 
         class DirichletBoundary(SubDomain):

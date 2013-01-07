@@ -125,7 +125,7 @@ namespace dolfin
     ///         The time series name
     ///     type_name (std::string)
     ///         The type of data
-    ///     index (uint)
+    ///     index (std::size_t)
     ///         The index
     ///     compressed (bool)
     ///         True if compressed file format
@@ -134,7 +134,7 @@ namespace dolfin
     ///     std::string
     ///         The filename
     static std::string filename_data(std::string series_name,
-                                     std::string type_name, uint index,
+                                     std::string type_name, std::size_t index,
 				     bool compressed);
 
     /// Return filename for times
@@ -171,13 +171,13 @@ namespace dolfin
     static bool monotone(const std::vector<double>& times);
 
     // Find index closest to given time
-    static uint find_closest_index(double t,
+    static std::size_t find_closest_index(double t,
                                    const std::vector<double>& times,
                                    std::string series_name,
                                    std::string type_name);
 
     // Find index pair closest to given time
-    static std::pair<uint, uint> find_closest_pair(double t,
+    static std::pair<std::size_t, std::size_t> find_closest_pair(double t,
                                                    const std::vector<double>& times,
                                                    std::string series_name,
                                                    std::string type_name);

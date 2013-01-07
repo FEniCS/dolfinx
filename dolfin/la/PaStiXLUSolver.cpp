@@ -54,7 +54,7 @@ Parameters PaStiXLUSolver::default_parameters()
   p.rename("pastix_lu_solver");
 
   // Number of threads per MPI process
-  p.add<unsigned int>("num_threads");
+  p.add<std::size_t>("num_threads");
 
   // max = 300 good with 1 thread on laptop
   // min, max = 180, 340 good with 2 thread on laptop
@@ -85,7 +85,7 @@ PaStiXLUSolver::PaStiXLUSolver(boost::shared_ptr<const STLMatrix> A) : A(A)
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
+std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   assert(A);
 
@@ -116,9 +116,9 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   }
 
   // Block sizes (affects performance)
-  const unsigned int min_block_size = parameters["min_block_size"];
+  const std::size_t min_block_size = parameters["min_block_size"];
   iparm[IPARM_MIN_BLOCKSIZE] = min_block_size;
-  const unsigned int max_block_size = parameters["max_block_size"];
+  const std::size_t max_block_size = parameters["max_block_size"];
   iparm[IPARM_MAX_BLOCKSIZE] = max_block_size;
   //iparm[IPARM_ABS] = API_YES;
 
@@ -152,9 +152,9 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
 
   // Number of threads per MPI process
   if (parameters["num_threads"].is_set())
-    iparm[IPARM_THREAD_NBR] = std::max((unsigned int) 1, (unsigned int) parameters["num_threads"]);
+    iparm[IPARM_THREAD_NBR] = std::max((std::size_t) 1, (std::size_t) parameters["num_threads"]);
   else
-    iparm[IPARM_THREAD_NBR] = std::max((unsigned int) 1, (unsigned int) dolfin::parameters["num_threads"]);
+    iparm[IPARM_THREAD_NBR] = std::max((std::size_t) 1, (std::size_t) dolfin::parameters["num_threads"]);
 
   // User-supplied RHS
   iparm[IPARM_RHS_MAKING] = API_RHS_B;
@@ -209,7 +209,7 @@ unsigned int PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
 
   // Get RHS data for this process
   std::vector<double> _b;
-  std::vector<DolfinIndex> idx(local_to_global_cols_ref.begin(), local_to_global_cols_ref.end());
+  std::vector<dolfin::la_index> idx(local_to_global_cols_ref.begin(), local_to_global_cols_ref.end());
   b.gather(_b, idx);
 
   // Solve

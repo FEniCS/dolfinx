@@ -33,7 +33,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 BoxMesh::BoxMesh(double x0, double y0, double z0,
                  double x1, double y1, double z1,
-                 uint nx, uint ny, uint nz) : Mesh()
+                 std::size_t nx, std::size_t ny, std::size_t nz) : Mesh()
 {
   Timer timer("generate unit cube mesh");
 

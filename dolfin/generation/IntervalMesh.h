@@ -23,7 +23,8 @@
 #ifndef __INTERVAL_MESH_H
 #define __INTERVAL_MESH_H
 
-#include "dolfin/mesh/Mesh.h"
+#include <cstddef>
+#include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
 {
@@ -39,7 +40,7 @@ namespace dolfin
     /// Constructor
     ///
     /// *Arguments*
-    ///     nx (uint)
+    ///     nx (std::size_t)
     ///         The number of cells.
     ///     a (double)
     ///         The minimum point (inclusive).
@@ -52,7 +53,7 @@ namespace dolfin
     ///         // Create a mesh of 25 cells in the interval [-1,1]
     ///         Interval mesh(25, -1.0, 1.0);
     ///
-    IntervalMesh(uint nx, double a, double b);
+    IntervalMesh(std::size_t nx, double a, double b);
 
   };
 

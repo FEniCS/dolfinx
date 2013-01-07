@@ -59,7 +59,7 @@ namespace dolfin
     ///
     ///     dim (int)
     ///         The value-dimension of the Functions
-    SpecialFacetFunction(std::vector<Function>& f_e, uint dim);
+    SpecialFacetFunction(std::vector<Function>& f_e, std::size_t dim);
 
     /// Evaluate SpecialFacetFunction (cf _Expression_.eval)
     /// Evaluate function for given cell
@@ -74,7 +74,7 @@ namespace dolfin
     ///
     /// *Returns*
     ///     _Function_
-    Function& operator[] (uint i) const;
+    Function& operator[] (std::size_t i) const;
 
   private:
 

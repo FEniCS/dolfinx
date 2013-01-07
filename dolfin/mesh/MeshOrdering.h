@@ -21,8 +21,6 @@
 #ifndef __MESH_ORDERING_H
 #define __MESH_ORDERING_H
 
-#include <dolfin/common/types.h>
-
 namespace dolfin
 {
 

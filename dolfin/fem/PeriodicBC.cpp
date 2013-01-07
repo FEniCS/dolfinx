@@ -252,7 +252,7 @@ void PeriodicBC::apply(GenericMatrix* A, GenericVector* b,
       std::vector<std::size_t> columns;
       std::vector<double> values;
       A->getrow(slave_dofs[i], columns, values);
-      std::vector<DolfinIndex> _columns(columns.begin(), columns.end());
+      std::vector<dolfin::la_index> _columns(columns.begin(), columns.end());
       A->add(values.data(), 1, &master_dofs[i], _columns.size(), _columns.data());
       A->apply("add");
     }
@@ -275,11 +275,11 @@ void PeriodicBC::apply(GenericMatrix* A, GenericVector* b,
     A->apply("insert");
 
     // Insert 1 and -1
-    DolfinIndex cols[2];
+    dolfin::la_index cols[2];
     const double vals[2] = {1.0, -1.0};
     for (std::size_t i = 0; i < num_dof_pairs; ++i)
     {
-      const DolfinIndex row = slave_dofs[i];
+      const dolfin::la_index row = slave_dofs[i];
       cols[0] = master_dofs[i];
       cols[1] = slave_dofs[i];
       A->set(vals, 1, &row, 2, cols);
@@ -332,10 +332,10 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& V,
 {
   // Call recursively for subspaces, should work for arbitrary nesting
   dolfin_assert(V.element());
-  const uint num_sub_spaces = V.element()->num_sub_elements();
+  const std::size_t num_sub_spaces = V.element()->num_sub_elements();
   if (num_sub_spaces > 0)
   {
-    for (uint i = 0; i < num_sub_spaces; ++i)
+    for (std::size_t i = 0; i < num_sub_spaces; ++i)
     {
       cout << "Extracting matching degrees of freedom for sub space " << i << "." << endl;
       extract_dof_pairs((*V[i]), dof_pairs);
@@ -358,8 +358,8 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& V,
   const GenericDofMap& dofmap = *V.dofmap();
 
   // Get dimensions
-  const uint tdim = mesh.topology().dim();
-  const uint gdim = mesh.geometry().dim();
+  const std::size_t tdim = mesh.topology().dim();
+  const std::size_t gdim = mesh.geometry().dim();
 
   // Set geometric dimension (needed for SWIG interface)
   dolfin_assert(_sub_domain);
@@ -383,7 +383,7 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& V,
   coordinate_map coordinate_dof_pairs;
 
   // MPI process number
-  const uint process_number = MPI::process_number();
+  const std::size_t process_number = MPI::process_number();
 
   // Iterate over all facets of the mesh (not only the boundary)
   Progress p("Applying periodic boundary conditions", mesh.size(tdim - 1));
@@ -391,10 +391,10 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& V,
   {
     // Get cell (there may be two, but pick first) and local facet index
     const Cell cell(mesh, facet->entities(tdim)[0]);
-    const uint local_facet = cell.index(*facet);
+    const std::size_t local_facet = cell.index(*facet);
 
     // Tabulate dofs and coordinates on cell
-    const std::vector<DolfinIndex>& cell_dofs = dofmap.cell_dofs(cell.index());
+    const std::vector<dolfin::la_index>& cell_dofs = dofmap.cell_dofs(cell.index());
     dofmap.tabulate_coordinates(data.coordinates, cell);
 
     // Tabulate which dofs are on the facet
@@ -481,7 +481,7 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& V,
     if (it->second.first.first == -1 || it->second.second.first == -1)
     {
       cout << "At coordinate: x =";
-      for (uint j = 0; j < gdim; ++j)
+      for (std::size_t j = 0; j < gdim; ++j)
         cout << " " << it->first[j];
       cout << endl;
       dolfin_error("PeriodicBC.cpp",
@@ -492,7 +492,7 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& V,
     if (it->second.first.second >= (int) MPI::num_processes() || it->second.first.second < 0)
     {
       cout << "At coordinate: x =";
-      for (uint j = 0; j < gdim; ++j)
+      for (std::size_t j = 0; j < gdim; ++j)
         cout << " " << it->first[j];
       cout << endl;
       cout << "degree of freedom: " << it->second.first.first << endl;
@@ -505,7 +505,7 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& V,
     if (it->second.second.second >= (int) MPI::num_processes() || it->second.second.second < 0)
     {
       cout << "At coordinate: x =";
-      for (uint j = 0; j < gdim; ++j)
+      for (std::size_t j = 0; j < gdim; ++j)
         cout << " " << it->first[j];
       cout << endl;
       cout << "degree of freedom: " << it->second.second.first << endl;
@@ -535,18 +535,18 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
   if (A)
   {
     // Data for a row -- master dof, cols, vals
-    typedef boost::tuples::tuple<DolfinIndex, std::vector<std::size_t>, std::vector<double> > row_type;
+    typedef boost::tuples::tuple<dolfin::la_index, std::vector<std::size_t>, std::vector<double> > row_type;
 
     // All rows to be sent to a particular process
     typedef std::vector<row_type> rows_type;
 
     // Which processor should the row data be sent to?
-    typedef std::map<uint, rows_type> row_map_type;
+    typedef std::map<std::size_t, rows_type> row_map_type;
 
     row_map_type row_map;
     //const std::pair<std::size_t, std::size_t> local_range = A->local_range(0);
-    const std::pair<DolfinIndex, DolfinIndex> local_range(A->local_range(0).first, A->local_range(0).second);
-    std::set<uint> communicating_processors;
+    const std::pair<dolfin::la_index, dolfin::la_index> local_range(A->local_range(0).first, A->local_range(0).second);
+    std::set<std::size_t> communicating_processors;
 
     for (std::size_t i = 0; i < num_dof_pairs; i++)
     {
@@ -557,7 +557,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
         A->getrow(slave_dofs[i], columns, values);
         row_type row = row_type(master_dofs[i], columns, values);
 
-        uint master_owner = master_owners[i];
+        std::size_t master_owner = master_owners[i];
 
         if (row_map.find(master_owner) == row_map.end())
         {
@@ -571,7 +571,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
       }
       else if (master_dofs[i] >= local_range.first && master_dofs[i] < local_range.second)
       {
-        uint slave_owner = slave_owners[i];
+        std::size_t slave_owner = slave_owners[i];
         communicating_processors.insert(slave_owner);
       }
     }
@@ -586,8 +586,8 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
       for (rows_type::const_iterator row_it = rows.begin(); row_it != rows.end(); ++row_it)
       {
         row_type row = *row_it;
-        const DolfinIndex& master_dof = row.get<0>();
-        const std::vector<DolfinIndex> columns(row.get<1>().begin(), row.get<1>().end());
+        const dolfin::la_index& master_dof = row.get<0>();
+        const std::vector<dolfin::la_index> columns(row.get<1>().begin(), row.get<1>().end());
         const std::vector<double>& values = row.get<2>();
         A->add(&values[0], 1, &master_dof, columns.size(), &columns[0]);
       }
@@ -602,14 +602,14 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
     A->apply("insert");
 
     // Insert 1 and -1 in the master and slave column of each slave row
-    DolfinIndex cols[2];
+    dolfin::la_index cols[2];
     const double vals[2] = {1.0, -1.0};
-    const std::pair<DolfinIndex, DolfinIndex> local_range(A->local_range(0).first, A->local_range(0).second);
+    const std::pair<dolfin::la_index, dolfin::la_index> local_range(A->local_range(0).first, A->local_range(0).second);
     for (std::size_t i = 0; i < num_dof_pairs; ++i)
     {
       if (slave_dofs[i] >= local_range.first && slave_dofs[i] < local_range.second)
       {
-        const DolfinIndex row = slave_dofs[i];
+        const dolfin::la_index row = slave_dofs[i];
         cols[0] = master_dofs[i];
         cols[1] = slave_dofs[i];
         A->set(vals, 1, &row, 2, cols);
@@ -625,13 +625,13 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
   std::vector<double> rhs_values_slave(num_dof_pairs, 0.0);
   if (x)
   {
-    typedef boost::tuples::tuple<DolfinIndex, double> x_type; // dof index, value
+    typedef boost::tuples::tuple<dolfin::la_index, double> x_type; // dof index, value
     typedef std::vector<x_type> xs_type; // all x-information to be sent to a particular process
-    typedef std::map<uint, xs_type> x_map_type; // processor to send it to
+    typedef std::map<std::size_t, xs_type> x_map_type; // processor to send it to
 
-    std::set<uint> communicating_processors;
+    std::set<std::size_t> communicating_processors;
     x_map_type x_map;
-    const std::pair<DolfinIndex, DolfinIndex> local_range(x->local_range().first, x->local_range().second);
+    const std::pair<dolfin::la_index, dolfin::la_index> local_range(x->local_range().first, x->local_range().second);
     for (std::size_t i = 0; i < num_dof_pairs; ++i)
     {
       if (slave_dofs[i] >= local_range.first && slave_dofs[i] < local_range.second)
@@ -639,7 +639,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
         double value;
         x->get_local(&value, 1, &slave_dofs[i]);
         x_type data = x_type(i, value);
-        uint master_owner = master_owners[i];
+        std::size_t master_owner = master_owners[i];
         if (x_map.find(master_owner) == x_map.end())
         {
           xs_type x_list; x_list.push_back(data);
@@ -652,7 +652,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
       }
       else if (master_dofs[i] >= local_range.first && master_dofs[i] < local_range.second)
       {
-        uint slave_owner = slave_owners[i];
+        std::size_t slave_owner = slave_owners[i];
         communicating_processors.insert(slave_owner);
       }
     }
@@ -664,7 +664,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
       xs_type xs = proc_it->second;
       for (xs_type::const_iterator x_it = xs.begin(); x_it != xs.end(); ++x_it)
       {
-        const DolfinIndex dof_idx = x_it->get<0>();
+        const dolfin::la_index dof_idx = x_it->get<0>();
         const double slave_value = x_it->get<1>();
         double master_value;
         x->get_local(&master_value, 1, &master_dofs[dof_idx]);
@@ -679,12 +679,12 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
   {
     typedef boost::tuples::tuple<std::size_t, double> vec_type; // master dof, value that should be added
     typedef std::vector<vec_type> vecs_type; // all vec_types that should be sent to a particular process
-    typedef std::map<uint, vecs_type> vec_map_type; // which processor should the vec_data be sent to?
+    typedef std::map<std::size_t, vecs_type> vec_map_type; // which processor should the vec_data be sent to?
 
     vec_map_type vec_map;
-    const std::pair<DolfinIndex, DolfinIndex> local_range(b->local_range().first, b->local_range().second);
-    std::set<uint> communicating_processors;
-    for (uint i = 0; i < num_dof_pairs; i++)
+    const std::pair<dolfin::la_index, dolfin::la_index> local_range(b->local_range().first, b->local_range().second);
+    std::set<std::size_t> communicating_processors;
+    for (std::size_t i = 0; i < num_dof_pairs; i++)
     {
       if (slave_dofs[i] >= local_range.first && slave_dofs[i] < local_range.second)
       {
@@ -692,7 +692,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
         b->get_local(&value, 1, &slave_dofs[i]);
         vec_type data = vec_type(master_dofs[i], value);
 
-        uint master_owner = master_owners[i];
+        std::size_t master_owner = master_owners[i];
         if (vec_map.find(master_owner) == vec_map.end())
         {
           vecs_type list; list.push_back(data);
@@ -705,7 +705,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
       }
       else if (master_dofs[i] >= local_range.first && master_dofs[i] < local_range.second)
       {
-        const uint slave_owner = slave_owners[i];
+        const std::size_t slave_owner = slave_owners[i];
         communicating_processors.insert(slave_owner);
       }
     }
@@ -719,7 +719,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
       vecs_type vecs = proc_it->second;
       for (vecs_type::const_iterator vec_it = vecs.begin(); vec_it != vecs.end(); ++vec_it)
       {
-        const DolfinIndex master_dof   = vec_it->get<0>();
+        const dolfin::la_index master_dof   = vec_it->get<0>();
         const double value      = vec_it->get<1>();
         b->add(&value, 1, &master_dof);
       }
@@ -730,7 +730,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
 
   if (b) // now zero the slave rows
   {
-    const std::pair<DolfinIndex, DolfinIndex> local_range(b->local_range().first, b->local_range().second);
+    const std::pair<dolfin::la_index, dolfin::la_index> local_range(b->local_range().first, b->local_range().second);
     for (std::size_t i = 0; i < num_dof_pairs; i++)
     {
       if (slave_dofs[i] >= local_range.first && slave_dofs[i] < local_range.second)

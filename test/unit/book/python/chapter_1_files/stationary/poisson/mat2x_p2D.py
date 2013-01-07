@@ -10,7 +10,7 @@ import sys, math, numpy
 mesh = UnitSquare(4, 6)
 
 # Define a MeshFunction over two subdomains
-subdomains = MeshFunction('sizet', mesh, 2)
+subdomains = MeshFunction('size_t', mesh, 2)
 
 class Omega0(SubDomain):
     def inside(self, x, on_boundary):

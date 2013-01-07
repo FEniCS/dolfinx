@@ -24,7 +24,6 @@
 #define __TRIANGLE_CELL_H
 
 #include <vector>
-#include <dolfin/common/types.h>
 #include "CellType.h"
 
 namespace dolfin
@@ -40,19 +39,19 @@ namespace dolfin
     TriangleCell() : CellType(triangle, interval) {}
 
     /// Return topological dimension of cell
-    uint dim() const;
+    std::size_t dim() const;
 
     /// Return number of entitites of given topological dimension
-    uint num_entities(uint dim) const;
+    std::size_t num_entities(std::size_t dim) const;
 
     /// Return number of vertices for entity of given topological dimension
-    uint num_vertices(uint dim) const;
+    std::size_t num_vertices(std::size_t dim) const;
 
     /// Return orientation of the cell
-    uint orientation(const Cell& cell) const;
+    std::size_t orientation(const Cell& cell) const;
 
     /// Create entities e of given topological dimension from vertices v
-    void create_entities(std::vector<std::vector<std::size_t> >& e, uint dim,
+    void create_entities(std::vector<std::vector<std::size_t> >& e, std::size_t dim,
                          const std::size_t* v) const;
 
     /// Refine cell uniformly
@@ -65,16 +64,16 @@ namespace dolfin
     double diameter(const MeshEntity& triangle) const;
 
     /// Compute component i of normal of given facet with respect to the cell
-    double normal(const Cell& cell, uint facet, uint i) const;
+    double normal(const Cell& cell, std::size_t facet, std::size_t i) const;
 
     /// Compute of given facet with respect to the cell
-    Point normal(const Cell& cell, uint facet) const;
+    Point normal(const Cell& cell, std::size_t facet) const;
 
     /// Compute normal to given cell (viewed as embedded in 3D)
     Point cell_normal(const Cell& cell) const;
 
     /// Compute the area/length of given facet with respect to the cell
-    double facet_area(const Cell& cell, uint facet) const;
+    double facet_area(const Cell& cell, std::size_t facet) const;
 
     /// Order entities locally
     void order(Cell& cell,
@@ -86,7 +85,7 @@ namespace dolfin
   private:
 
     // Find local index of edge i according to ordering convention
-    std::size_t find_edge(uint i, const Cell& cell) const;
+    std::size_t find_edge(std::size_t i, const Cell& cell) const;
 
   };
 

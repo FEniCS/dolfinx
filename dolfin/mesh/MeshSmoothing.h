@@ -34,12 +34,12 @@ namespace dolfin
   public:
 
     /// Smooth internal vertices of mesh by local averaging
-    static void smooth(Mesh& mesh, uint num_iterations=1);
+    static void smooth(Mesh& mesh, std::size_t num_iterations=1);
 
     /// Smooth boundary vertices of mesh by local averaging and
     /// (optionally) use harmonic smoothing on interior vertices
     static void smooth_boundary(Mesh& mesh,
-                                uint num_iterations=1,
+                                std::size_t num_iterations=1,
                                 bool harmonic_smoothing=true);
 
     /// Snap boundary vertices of mesh to match given sub domain and

@@ -316,7 +316,7 @@ class BaryCenter : public CppUnit::TestFixture
 
 
     //Check volume and barycenter for polyhedrons
-    for (dolfin::uint i = 0; i < reference_polyhedrons.size(); ++i)
+    for (std::size_t i = 0; i < reference_polyhedrons.size(); ++i)
     {
       BarycenterQuadrature quadrature_rule(reference_polyhedrons[i]);
       CPPUNIT_ASSERT_DOUBLES_EQUAL(reference_volumes[i],
@@ -584,7 +584,7 @@ class BaryCenter : public CppUnit::TestFixture
     //Instantiate quadrature rule
 
     //Check volume and barycenter for polyhedrons
-    for (dolfin::uint i = 0; i < reference_polyhedrons.size(); ++i)
+    for (std::size_t i = 0; i < reference_polyhedrons.size(); ++i)
     {
       BarycenterQuadrature quadrature_rule(reference_polyhedrons[i]);
       CPPUNIT_ASSERT_DOUBLES_EQUAL(reference_volumes[i],

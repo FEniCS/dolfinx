@@ -1,4 +1,4 @@
-# Last changed: 2011-06-18
+# Last changed: 2013-01-03
 
 This directory and its subdirectories contain (i) data and scripts for
 generating the DOLFIN library reference and consolidating the DOLFIN
@@ -20,6 +20,10 @@ library and the demos, follow these steps
    are available
 
 3. Run
+
+   ./cmake/scripts/generate-swig-docstrings
+
+4. Run
 
        make doc
 

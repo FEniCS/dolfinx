@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-11-27
+// Last changed: 2012-12-04
 
 #ifdef HAS_HDF5
 
@@ -32,7 +32,6 @@
 #include <boost/multi_array.hpp>
 #include <boost/bind.hpp>
 
-#include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
@@ -54,7 +53,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-HDF5File::HDF5File(const std::string filename, bool truncate, bool use_mpiio)
+HDF5File::HDF5File(const std::string filename, const std::string file_mode, bool use_mpiio)
   : hdf5_file_open(false), hdf5_file_id(0),
     mpi_io(MPI::num_processes() > 1 && use_mpiio ? true : false)
 {
@@ -62,7 +61,7 @@ HDF5File::HDF5File(const std::string filename, bool truncate, bool use_mpiio)
   parameters.add("chunking", false);
 
   // OPen HDF5 file
-  hdf5_file_id = HDF5Interface::open_file(filename, truncate, mpi_io);
+  hdf5_file_id = HDF5Interface::open_file(filename, file_mode, mpi_io);
   hdf5_file_open = true;
 }
 //-----------------------------------------------------------------------------
@@ -119,9 +118,9 @@ void HDF5File::write(const Mesh& mesh, const std::string name)
   write(mesh, mesh.topology().dim(), name);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::write(const Mesh& mesh, uint cell_dim, const std::string name)
+void HDF5File::write(const Mesh& mesh, std::size_t cell_dim, const std::string name)
 {
-  warning("Writing mesh with global index - not suitable for visualisation");
+  warning("Writing globally indexed mesh - not suitable for visualisation");
 
   dolfin_assert(hdf5_file_open);
 
@@ -153,7 +152,7 @@ void HDF5File::write(const Mesh& mesh, uint cell_dim, const std::string name)
 
     // Copy coordinates and indices and remove off-process values
     std::vector<double> vertex_coords(mesh.coordinates());
-    const uint gdim = mesh.geometry().dim();
+    const std::size_t gdim = mesh.geometry().dim();
     reorder_vertices_by_global_indices(vertex_coords, gdim, global_indices);
 
     // Write coordinates out from each process
@@ -200,7 +199,7 @@ void HDF5File::write_visualisation(const Mesh& mesh, const std::string name)
   write_visualisation(mesh, mesh.topology().dim(), name);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::write_visualisation(const Mesh& mesh, const uint cell_dim,
+void HDF5File::write_visualisation(const Mesh& mesh, const std::size_t cell_dim,
                                    const std::string name)
 {
   dolfin_assert(hdf5_file_open);
@@ -231,7 +230,7 @@ void HDF5File::write_visualisation(const Mesh& mesh, const uint cell_dim,
   // Write vertex data to HDF5 file
   const std::string coord_dataset = name + "/coordinates";
   {
-    const uint gdim = mesh.geometry().dim();
+    const std::size_t gdim = mesh.geometry().dim();
     const std::vector<double>& vertex_coords = mesh.coordinates();
 
     // Write coordinates contiguously from each process
@@ -284,7 +283,7 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
     error("Data set with name \"%s\" does not exist", _dataset_name.c_str());
 
   // Get dataset rank
-  const uint rank = HDF5Interface::dataset_rank(hdf5_file_id, _dataset_name);
+  const std::size_t rank = HDF5Interface::dataset_rank(hdf5_file_id, _dataset_name);
   dolfin_assert(rank == 1);
 
   // Get global dataset size
@@ -316,7 +315,7 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
       partitions.push_back(data_size[0]);
 
       // Initialise vector
-      const uint process_num = MPI::process_number();
+      const std::size_t process_num = MPI::process_number();
       const std::pair<std::size_t, std::size_t>
           local_range(partitions[process_num], partitions[process_num + 1]);
       x.resize(local_range);
@@ -357,7 +356,6 @@ std::string HDF5File::search_list(const std::vector<std::string>& list,
 void HDF5File::read(Mesh& input_mesh, const std::string name)
 {
   warning("HDF5 Mesh input is still experimental");
-  warning("HDF5 Mesh input will always repartition the mesh");
 
   dolfin_assert(hdf5_file_open);
 
@@ -391,8 +389,6 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
                                      const std::string coordinates_name,
                                      const std::string topology_name)
 {
-  // FIXME: should not call repartition if running serial
-  warning("HDF5 Mesh read will repartition this mesh");
   Timer t("HDF5: ReadMesh");
 
   // Structure to store local mesh
@@ -409,7 +405,7 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
   mesh_data.num_global_cells = num_global_cells;
 
   // Set vertices-per-cell from number of columns
-  const uint num_vertices_per_cell = topology_dim[1];
+  const std::size_t num_vertices_per_cell = topology_dim[1];
   mesh_data.num_vertices_per_cell = num_vertices_per_cell;
   mesh_data.tdim = topology_dim[1] - 1;
 
@@ -523,7 +519,7 @@ bool HDF5File::has_dataset(const std::string dataset_name) const
   return HDF5Interface::has_dataset(hdf5_file_id, dataset_name);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::reorder_vertices_by_global_indices(std::vector<double>& vertex_coords, uint gdim,
+void HDF5File::reorder_vertices_by_global_indices(std::vector<double>& vertex_coords, std::size_t gdim,
                                                   const std::vector<std::size_t>& global_indices)
 {
   Timer t("HDF5: reorder vertices");
@@ -536,46 +532,46 @@ void HDF5File::reorder_vertices_by_global_indices(std::vector<double>& vertex_co
 
   // Calculate size of overall global vector by finding max index value
   // anywhere
-  const uint global_vector_size
+  const std::size_t global_vector_size
     = MPI::max(*std::max_element(global_indices.begin(), global_indices.end())) + 1;
 
   // Send unwanted values off process
-  const uint num_processes = MPI::num_processes();
-  std::vector<std::vector<std::pair<uint, std::vector<double> > > > values_to_send(num_processes);
-  std::vector<uint> destinations(num_processes);
+  const std::size_t num_processes = MPI::num_processes();
+  std::vector<std::vector<std::pair<std::size_t, std::vector<double> > > > values_to_send(num_processes);
+  std::vector<std::size_t> destinations(num_processes);
 
   // Set up destination vector for communication with remote processes
-  for(uint process_j = 0; process_j < num_processes ; ++process_j)
+  for(std::size_t process_j = 0; process_j < num_processes ; ++process_j)
     destinations[process_j] = process_j;
 
   // Go through local vector and append value to the appropriate list
   // to send to correct process
-  for(uint i = 0; i < vertex_array.shape()[0] ; ++i)
+  for(std::size_t i = 0; i < vertex_array.shape()[0] ; ++i)
   {
-    const uint global_i = global_indices[i];
-    const uint process_i = MPI::index_owner(global_i, global_vector_size);
+    const std::size_t global_i = global_indices[i];
+    const std::size_t process_i = MPI::index_owner(global_i, global_vector_size);
     const std::vector<double> v(vertex_array[i].begin(), vertex_array[i].end());
     values_to_send[process_i].push_back(make_pair(global_i, v));
   }
 
   // Redistribute the values to the appropriate process - including self
   // All values are "in the air" at this point, so local vector can be cleared
-  std::vector<std::vector<std::pair<uint,std::vector<double> > > > received_values;
+  std::vector<std::vector<std::pair<std::size_t,std::vector<double> > > > received_values;
   MPI::distribute(values_to_send, destinations, received_values);
 
   // When receiving, just go through all received values
   // and place them in the local partition of the global vector.
-  std::pair<uint, uint> range = MPI::local_range(global_vector_size);
+  std::pair<std::size_t, std::size_t> range = MPI::local_range(global_vector_size);
   vertex_coords.resize((range.second - range.first)*gdim);
   boost::multi_array_ref<double, 2> new_vertex_array(vertex_coords.data(),
                      boost::extents[range.second - range.first][gdim]);
 
-  for(uint i = 0; i < received_values.size(); ++i)
+  for(std::size_t i = 0; i < received_values.size(); ++i)
   {
-    const std::vector<std::pair<uint, std::vector<double> > >& received_global_data = received_values[i];
-    for(uint j = 0; j < received_global_data.size(); ++j)
+    const std::vector<std::pair<std::size_t, std::vector<double> > >& received_global_data = received_values[i];
+    for(std::size_t j = 0; j < received_global_data.size(); ++j)
     {
-      const uint global_i = received_global_data[j].first;
+      const std::size_t global_i = received_global_data[j].first;
       if(global_i >= range.first && global_i < range.second)
         std::copy(received_global_data[j].second.begin(),
                   received_global_data[j].second.end(),

@@ -21,7 +21,6 @@
 #ifndef __VERTEX_H
 #define __VERTEX_H
 
-#include "dolfin/common/types.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
@@ -47,7 +46,7 @@ namespace dolfin
     ~Vertex() {}
 
     /// Return value of vertex coordinate i
-    double x(uint i) const
+    double x(std::size_t i) const
     { return _mesh->geometry().x(_local_index, i); }
 
     /// Return vertex coordinates as a 3D point value

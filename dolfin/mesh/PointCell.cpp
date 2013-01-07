@@ -21,7 +21,7 @@
 // First added:  2007-12-12
 // Last changed: 2010-01-19
 
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "Cell.h"
 #include "Facet.h"
 #include "MeshEditor.h"
@@ -32,12 +32,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::uint PointCell::dim() const
+std::size_t PointCell::dim() const
 {
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PointCell::num_entities(uint dim) const
+std::size_t PointCell::num_entities(std::size_t dim) const
 {
   switch (dim)
   {
@@ -52,7 +52,7 @@ dolfin::uint PointCell::num_entities(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PointCell::num_vertices(uint dim) const
+std::size_t PointCell::num_vertices(std::size_t dim) const
 {
   switch (dim)
   {
@@ -67,7 +67,7 @@ dolfin::uint PointCell::num_vertices(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PointCell::orientation(const Cell& cell) const
+std::size_t PointCell::orientation(const Cell& cell) const
 {
   dolfin_error("PointCell.cpp",
                "find orientation",
@@ -76,7 +76,7 @@ dolfin::uint PointCell::orientation(const Cell& cell) const
 }
 //-----------------------------------------------------------------------------
 void PointCell::create_entities(std::vector<std::vector<std::size_t> >& e,
-                                uint dim,
+                                std::size_t dim,
                                 const std::size_t* v) const
 {
   dolfin_error("PointCell.cpp",
@@ -108,7 +108,7 @@ double PointCell::diameter(const MeshEntity& triangle) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-double PointCell::normal(const Cell& cell, uint facet, uint i) const
+double PointCell::normal(const Cell& cell, std::size_t facet, std::size_t i) const
 {
   dolfin_error("PointCell.cpp",
                "find component of normal vector of cell",
@@ -116,7 +116,7 @@ double PointCell::normal(const Cell& cell, uint facet, uint i) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-Point PointCell::normal(const Cell& cell, uint facet) const
+Point PointCell::normal(const Cell& cell, std::size_t facet) const
 {
   dolfin_error("PointCell.cpp",
                "find normal vector of cell",
@@ -134,7 +134,7 @@ Point PointCell::cell_normal(const Cell& cell) const
   return p;
 }
 //-----------------------------------------------------------------------------
-double PointCell::facet_area(const Cell& cell, uint facet) const
+double PointCell::facet_area(const Cell& cell, std::size_t facet) const
 {
   dolfin_error("PointCell.cpp",
                "find facet area of cell",
@@ -157,7 +157,7 @@ std::string PointCell::description(bool plural) const
   return "points";
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PointCell::find_edge(uint i, const Cell& cell) const
+std::size_t PointCell::find_edge(std::size_t i, const Cell& cell) const
 {
   dolfin_error("PointCell.cpp",
                "find edge",

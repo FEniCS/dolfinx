@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-11-09
-// Last changed: 2012-11-09
+// Last changed: 2013-01-07
 
 #ifndef __UNIT_CUBE_H
 #define __UNIT_CUBE_H
@@ -41,11 +41,11 @@ namespace dolfin
     /// [0,1] x [0,1] x [0,1].
     ///
     /// *Arguments*
-    ///     nx (uint)
+    ///     nx (std::size_t)
     ///         Number of cells in :math:`x` direction.
-    ///     ny (uint)
+    ///     ny (std::size_t)
     ///         Number of cells in :math:`y` direction.
-    ///     nz (uint)
+    ///     nz (std::size_t)
     ///         Number of cells in :math:`z` direction.
     ///
     /// *Example*
@@ -53,11 +53,12 @@ namespace dolfin
     ///
     ///         UnitCubeMesh mesh(32, 32, 32);
     ///
-    UnitCube(uint nx, uint ny, uint nz)
+    UnitCube(std::size_t nx, std::size_t ny, std::size_t nz)
       : UnitCubeMesh(nx, ny, nz)
-      {
-	warning("UnitCube is deprecated. Use UnitCubeMesh");
-      }
+    {
+      deprecation("UnitCube", "1.1.0",
+                  "The class UnitCube has been replaced by UnitCubeMesh.");
+    }
 
   };
 

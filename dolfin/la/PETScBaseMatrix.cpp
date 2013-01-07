@@ -28,7 +28,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::size_t PETScBaseMatrix::size(unsigned int dim) const
+std::size_t PETScBaseMatrix::size(std::size_t dim) const
 {
   if (dim > 1)
   {
@@ -50,7 +50,7 @@ std::size_t PETScBaseMatrix::size(unsigned int dim) const
     return 0;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t> PETScBaseMatrix::local_range(unsigned int dim) const
+std::pair<std::size_t, std::size_t> PETScBaseMatrix::local_range(std::size_t dim) const
 {
   dolfin_assert(dim <= 1);
   if (dim == 1)
@@ -70,7 +70,7 @@ std::pair<std::size_t, std::size_t> PETScBaseMatrix::local_range(unsigned int di
     return std::make_pair(0, 0);
 }
 //-----------------------------------------------------------------------------
-void PETScBaseMatrix::resize(GenericVector& z, unsigned int dim) const
+void PETScBaseMatrix::resize(GenericVector& z, std::size_t dim) const
 {
   dolfin_assert(A);
 

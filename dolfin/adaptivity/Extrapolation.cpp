@@ -67,7 +67,7 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
   const Mesh& mesh = *V.mesh();
 
   // Initialize cell-cell connectivity
-  const uint D = mesh.topology().dim();
+  const std::size_t D = mesh.topology().dim();
   mesh.init(D, D);
 
   // UFC cell view of center cell
@@ -85,7 +85,7 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
     c0.update(*cell0);
 
     // Tabulate dofs for w on cell and store values
-    const std::vector<DolfinIndex>& dofs = W.dofmap()->cell_dofs(cell0->index());
+    const std::vector<dolfin::la_index>& dofs = W.dofmap()->cell_dofs(cell0->index());
 
     // Compute coefficients on this cell
     std::size_t offset = 0;
@@ -102,15 +102,15 @@ void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coef
                                          const FunctionSpace& W,
                                          const Cell& cell0,
                                          const ufc::cell& c0,
-                                         const std::vector<DolfinIndex>& dofs,
+                                         const std::vector<dolfin::la_index>& dofs,
                                          std::size_t& offset)
 {
   // Call recursively for mixed elements
   dolfin_assert(V.element());
-  const uint num_sub_spaces = V.element()->num_sub_elements();
+  const std::size_t num_sub_spaces = V.element()->num_sub_elements();
   if (num_sub_spaces > 0)
   {
-    for (uint k = 0; k < num_sub_spaces; k++)
+    for (std::size_t k = 0; k < num_sub_spaces; k++)
     {
       compute_coefficients(coefficients, v[k], *V[k], *W[k], cell0, c0,
                            dofs, offset);
@@ -158,7 +158,7 @@ void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coef
 
   // Insert resulting coefficients into global coefficient vector
   dolfin_assert(W.dofmap());
-  for (uint i = 0; i < W.dofmap()->cell_dimension(cell0.index()); ++i)
+  for (std::size_t i = 0; i < W.dofmap()->cell_dimension(cell0.index()); ++i)
     coefficients[dofs[i + offset]].push_back(x[i]);
 
   // Increase offset
@@ -236,12 +236,12 @@ Extrapolation::compute_unique_dofs(const Cell& cell, const ufc::cell& c,
                                    std::set<std::size_t>& unique_dofs)
 {
   dolfin_assert(V.dofmap());
-  const std::vector<DolfinIndex>& dofs = V.dofmap()->cell_dofs(cell.index());
+  const std::vector<dolfin::la_index>& dofs = V.dofmap()->cell_dofs(cell.index());
 
   // Data structure for current cell
   std::map<std::size_t, std::size_t> dof2row;
 
-  for (uint i = 0; i < V.dofmap()->cell_dimension(cell.index()); ++i)
+  for (std::size_t i = 0; i < V.dofmap()->cell_dimension(cell.index()); ++i)
   {
     // Ignore if this degree of freedom is already considered
     if (unique_dofs.find(dofs[i]) != unique_dofs.end())
@@ -269,7 +269,7 @@ void Extrapolation::average_coefficients(Function& w,
   for (std::size_t i = 0; i < W.dim(); i++)
   {
     double s = 0.0;
-    for (uint j = 0; j < coefficients[i].size(); ++j)
+    for (std::size_t j = 0; j < coefficients[i].size(); ++j)
       s += coefficients[i][j];
 
     s /= static_cast<double>(coefficients[i].size());

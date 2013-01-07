@@ -23,7 +23,7 @@
 #ifndef __MESH_ENTITY_ITERATOR_BASE_H
 #define __MESH_ENTITY_ITERATOR_BASE_H
 
-#include <dolfin/common/types.h>
+#include <cstddef>
 #include "Mesh.h"
 #include "MeshEntity.h"
 
@@ -121,7 +121,7 @@ namespace dolfin
     { entity._local_index = (index ? index[_pos] : _pos); return &entity; }
 
     /// Random access operator
-    T& operator[] (uint pos)
+    T& operator[] (std::size_t pos)
     { _pos = pos; return *operator->();}
 
     /// Check if iterator has reached the end

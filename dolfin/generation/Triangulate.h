@@ -39,7 +39,7 @@ namespace dolfin
 
     /// Create mesh from a triangulation of points
     static void triangulate(Mesh& mesh, const std::vector<Point>& vertices,
-                            unsigned int gdim);
+                            std::size_t gdim);
 
   private:
 

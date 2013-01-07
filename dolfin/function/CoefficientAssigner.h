@@ -21,7 +21,7 @@
 #ifndef __COEFFICIENT_ASSIGNER_H
 #define __COEFFICIENT_ASSIGNER_H
 
-#include <dolfin/common/types.h>
+#include <cstddef>
 
 namespace dolfin
 {
@@ -43,7 +43,7 @@ namespace dolfin
   public:
 
     /// Create coefficient assigner for coefficient with given number
-    CoefficientAssigner(Form& form, uint number);
+    CoefficientAssigner(Form& form, std::size_t number);
 
     /// Destructor
     ~CoefficientAssigner();
@@ -57,7 +57,7 @@ namespace dolfin
     Form& form;
 
     // The number of the coefficient
-    uint number;
+    std::size_t number;
 
   };
 

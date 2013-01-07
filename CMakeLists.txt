@@ -157,6 +157,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -wd161,488,654,858,1125,1170")
   set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -wd161,488,654,858,1125,1170")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -wd161,488,654,858,1125,1170")
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -wd161,488,654,858,1125,1170")
 endif()
 
 # Set system include flags to get around CMake bug on OSX
@@ -212,25 +213,30 @@ if (BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS on)
 endif()
 
+# Prevent FindBoost.cmake from looking for system  Boost{foo}.cmake files
+set(Boost_NO_BOOST_CMAKE true)
+
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
 set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0 1.44 1.44.0 1.45 1.45.0 1.46 1.46.0 1.46.1 1.47 1.47.0 1.48 1.48.0 1.49 1.49.0 1.50 1.50.0)
 
+find_package(Boost 1.36 QUIET REQUIRED)
+
+set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams math_tr1)
 if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
-  find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams math_tr1 mpi serialization REQUIRED)
-else()
-  find_package(Boost 1.36 COMPONENTS filesystem program_options system thread iostreams math_tr1 REQUIRED)
+  list(APPEND DOLFIN_BOOST_COMPONENTS mpi serialization)
 endif()
 
 # Boost timer was not a separate Boost component until version 1.48
 if ("${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}" VERSION_GREATER "1.47")
-  find_package(Boost COMPONENTS timer REQUIRED)
+  list(APPEND DOLFIN_BOOST_COMPONENTS timer chrono)
 endif()
+find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
 # Check for required package UFC
-find_package(UFC 2.0.2 QUIET HINTS ${UFC_DIR})
+find_package(UFC 2.1.0 QUIET HINTS ${UFC_DIR})
 if (NOT UFC_FOUND)
   message(FATAL_ERROR "Could not find a configuration file for package UFC that is "
-    "compatible with requested version 2.0.2.\n"
+    "compatible with requested version 2.1.0.\n"
     "Set UFC_DIR to the directory containing a CMake configuration file for UFC.")
 else()
   message(STATUS "UFC version: ${UFC_VERSION_STRING}")
@@ -247,9 +253,9 @@ find_package(LibXml2 REQUIRED)
 
 # Note: Check for Python interpreter even when Python is disabled because it
 #       is used to get the installation path for dolfin_utils
-find_package(PythonInterp)
+find_package(PythonInterp 2)
 if (DOLFIN_ENABLE_PYTHON)
-  find_package(PythonLibs)
+  find_package(PythonLibs 2)
 
   # If Python is found, check for NumPy and SWIG
   if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
@@ -674,7 +680,7 @@ install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
 
 if (DOLFIN_ENABLE_DOCS)
   if (NOT SPHINX_FOUND)
-    message(WARNING "Disabling generation of documentation because Sphinx is missing.")
+    message("Disabling generation of documentation because Sphinx is missing.")
   else()
     add_subdirectory(doc)
   endif()

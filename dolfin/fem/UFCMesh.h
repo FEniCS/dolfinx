@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-03-01
-// Last changed: 2012-11-05
+// Last changed: 2012-12-12
 
 #ifndef __UFC_MESH_H
 #define __UFC_MESH_H
@@ -54,15 +54,10 @@ namespace dolfin
 
       // Set number of entities of each topological dimension, using
       // the number of global entities if available (in parallel)
-      num_entities = new uint[topological_dimension + 1];
-      for (uint d = 0; d <= topological_dimension; d++)
+      num_entities = new unsigned int[topological_dimension + 1];
+      for (std::size_t d = 0; d <= topological_dimension; d++)
         num_entities[d] = mesh.size_global(d);
     }
-
-    // Create UFC mesh from restricted DOLFIN mesh
-    UFCMesh(const Mesh& mesh,
-            const MeshFunction<uint>& domain_markers,
-            uint domain);
 
     /// Copy constructor
     UFCMesh(const UFCMesh& mesh) : ufc::mesh()
@@ -84,8 +79,8 @@ namespace dolfin
       geometric_dimension = mesh.geometric_dimension;
 
       // Set number of entities of each dimension
-      num_entities = new uint[topological_dimension + 1];
-      for (uint d = 0; d <= topological_dimension; d++)
+      num_entities = new unsigned int[topological_dimension + 1];
+      for (std::size_t d = 0; d <= topological_dimension; d++)
         num_entities[d] = mesh.num_entities[d];
 
       return *this;

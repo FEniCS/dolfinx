@@ -95,7 +95,7 @@ void RAWFile::ResultsWrite(const Function& u) const
 
   // Get rank of Function
   dolfin_assert(V.element());
-  const uint rank = V.element()->value_rank();
+  const std::size_t rank = V.element()->value_rank();
   if (rank > 1)
   {
     dolfin_error("RAWFile.cpp",
@@ -104,13 +104,13 @@ void RAWFile::ResultsWrite(const Function& u) const
   }
 
   // Get number of components
-  uint dim = 1;
-  for (uint i = 0; i < rank; i++)
+  std::size_t dim = 1;
+  for (std::size_t i = 0; i < rank; i++)
     dim *= V.element()->value_dimension(i);
 
   // Test for cell-based element type
-  uint cell_based_dim = 1;
-  for (uint i = 0; i < rank; i++)
+  std::size_t cell_based_dim = 1;
+  for (std::size_t i = 0; i < rank; i++)
     cell_based_dim *= mesh.topology().dim();
   if (dofmap.max_cell_dimension() == cell_based_dim)
     data_type = "cell";
@@ -122,7 +122,7 @@ void RAWFile::ResultsWrite(const Function& u) const
   if (data_type == "cell")
   {
     // Allocate memory for function values at cell centres
-    //const uint size = mesh.num_cells()*dim;
+    //const std::size_t size = mesh.num_cells()*dim;
     std::vector<double> values;
 
     // Get function values on cells
@@ -130,7 +130,7 @@ void RAWFile::ResultsWrite(const Function& u) const
     u.vector()->get_local(values);
 
     // Write function data at cells
-    uint num_cells = mesh.num_cells();
+    std::size_t num_cells = mesh.num_cells();
     fp << num_cells << std::endl;
 
     std::ostringstream ss;
@@ -139,7 +139,7 @@ void RAWFile::ResultsWrite(const Function& u) const
     {
       // Write all components
       ss.str("");
-      for (uint i = 0; i < dim; i++)
+      for (std::size_t i = 0; i < dim; i++)
         ss  <<" "<< values[cell->index() + i*mesh.num_cells()];
       ss << std::endl;
       fp << ss.str();
@@ -148,14 +148,14 @@ void RAWFile::ResultsWrite(const Function& u) const
   else if (data_type == "point")
   {
     // Allocate memory for function values at vertices
-    //const uint size = mesh.num_vertices()*dim;
+    //const std::size_t size = mesh.num_vertices()*dim;
     std::vector<double> values;
 
     // Get function values at vertices
     u.compute_vertex_values(values, mesh);
 
     // Write function data at mesh vertices
-    uint num_vertices = mesh.num_vertices();
+    std::size_t num_vertices = mesh.num_vertices();
     fp << num_vertices << std::endl;
 
     std::ostringstream ss;
@@ -163,7 +163,7 @@ void RAWFile::ResultsWrite(const Function& u) const
     for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
     {
       ss.str("");
-      for(uint i=0; i<dim; i++)
+      for(std::size_t i = 0; i<dim; i++)
         ss << " " << values[vertex->index() + i*mesh.num_cells()];
 
       ss << std::endl;

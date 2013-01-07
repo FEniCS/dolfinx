@@ -49,9 +49,9 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh.
-    ///     index (uint)
+    ///     index (std::size_t)
     ///         The index.
-    Cell(const Mesh& mesh, uint index)
+    Cell(const Mesh& mesh, std::size_t index)
       : MeshEntity(mesh, mesh.topology().dim(), index) {}
 
     /// Destructor
@@ -64,9 +64,9 @@ namespace dolfin
     /// Compute orientation of cell
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         Orientation of the cell (0 is 'up'/'right', 1 is 'down'/'left')
-    uint orientation() const
+    std::size_t orientation() const
     { return _mesh->type().orientation(*this); }
 
     /// Compute orientation of cell relative to given 'up' direction
@@ -76,9 +76,9 @@ namespace dolfin
     ///         The direction defined as 'up'
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         Orientation of the cell (0 is 'same', 1 is 'opposite')
-    uint orientation(const Point& up) const
+    std::size_t orientation(const Point& up) const
     { return _mesh->type().orientation(*this, up); }
 
     /// Compute (generalized) volume of cell
@@ -122,27 +122,27 @@ namespace dolfin
     /// Compute component i of normal of given facet with respect to the cell
     ///
     /// *Arguments*
-    ///     facet (uint)
+    ///     facet (std::size_t)
     ///         Index of facet.
-    ///     i (uint)
+    ///     i (std::size_t)
     ///         Component.
     ///
     /// *Returns*
     ///     double
     ///         Component i of the normal of the facet.
-    double normal(uint facet, uint i) const
+    double normal(std::size_t facet, std::size_t i) const
     { return _mesh->type().normal(*this, facet, i); }
 
     /// Compute normal of given facet with respect to the cell
     ///
     /// *Arguments*
-    ///     facet (uint)
+    ///     facet (std::size_t)
     ///         Index of facet.
     ///
     /// *Returns*
     ///     _Point_
     ///         Normal of the facet.
-    Point normal(uint facet) const
+    Point normal(std::size_t facet) const
     { return _mesh->type().normal(*this, facet); }
 
     /// Compute normal to cell itself (viewed as embedded in 3D)
@@ -156,19 +156,19 @@ namespace dolfin
     /// Compute the area/length of given facet with respect to the cell
     ///
     /// *Arguments*
-    ///     facet (uint)
+    ///     facet (std::size_t)
     ///         Index of the facet.
     ///
     /// *Returns*
     ///     double
     ///         Area/length of the facet.
-    double facet_area(uint facet) const
+    double facet_area(std::size_t facet) const
     { return _mesh->type().facet_area(*this, facet); }
 
     /// Order entities locally
     ///
     /// *Arguments*
-    ///     global_vertex_indices (_MeshFunction_ <uint>)
+    ///     global_vertex_indices (_MeshFunction_ <std::size_t>)
     ///         The global vertex indices.
     void order(const std::vector<std::size_t>& local_to_global_vertex_indices)
     { _mesh->type().order(*this, local_to_global_vertex_indices); }
@@ -176,7 +176,7 @@ namespace dolfin
     /// Check if entities are ordered
     ///
     /// *Arguments*
-    ///     global_vertex_indices (_MeshFunction_ <uint>)
+    ///     global_vertex_indices (_MeshFunction_ <std::size_t>)
     ///         The global vertex indices.
     ///
     /// *Returns*

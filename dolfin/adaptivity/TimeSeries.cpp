@@ -49,7 +49,7 @@ void store_object(const T& object, double t,
   file_data << object;
 
   // Check that time values are strictly increasing
-  const dolfin::uint n = times.size();
+  const std::size_t n = times.size();
   if (n >= 2 and (times[n - 1] - times[n - 2])*(t - times[n - 1]) <= 0.0)
   {
     dolfin_error("TimeSeries.cpp",
@@ -159,9 +159,9 @@ void TimeSeries::retrieve(GenericVector& vector, double t, bool interpolate) con
   if (interpolate)
   {
     // Find closest pair
-    const std::pair<uint, uint> index_pair = find_closest_pair(t, _vector_times, _name, "vector");
-    const uint i0 = index_pair.first;
-    const uint i1 = index_pair.second;
+    const std::pair<std::size_t, std::size_t> index_pair = find_closest_pair(t, _vector_times, _name, "vector");
+    const std::size_t i0 = index_pair.first;
+    const std::size_t i1 = index_pair.second;
 
     // Special case: same index
     if (i0 == i1)
@@ -207,7 +207,7 @@ void TimeSeries::retrieve(GenericVector& vector, double t, bool interpolate) con
   else
   {
     // Find closest index
-    const uint index = find_closest_index(t, _vector_times, _name, "vector");
+    const std::size_t index = find_closest_index(t, _vector_times, _name, "vector");
 
     log(PROGRESS, "Reading vector at t = %g (close to t = %g).",
         _vector_times[index], t);
@@ -221,7 +221,7 @@ void TimeSeries::retrieve(GenericVector& vector, double t, bool interpolate) con
 void TimeSeries::retrieve(Mesh& mesh, double t) const
 {
   // Get index closest to given time
-  const uint index = find_closest_index(t, _mesh_times, _name, "mesh");
+  const std::size_t index = find_closest_index(t, _mesh_times, _name, "mesh");
 
   log(PROGRESS, "Reading mesh at t = %g (close to t = %g).",
       _mesh_times[index], t);
@@ -252,7 +252,7 @@ void TimeSeries::clear()
 //-----------------------------------------------------------------------------
 std::string TimeSeries::filename_data(std::string series_name,
                                       std::string type_name,
-                                      uint index,
+                                      std::size_t index,
 				      bool compressed)
 {
   std::stringstream s;
@@ -282,12 +282,12 @@ std::string TimeSeries::str(bool verbose) const
     s << str(false) << std::endl << std::endl;
 
     s << "Vectors:";
-    for (uint i = 0; i < _vector_times.size(); ++i)
+    for (std::size_t i = 0; i < _vector_times.size(); ++i)
       s << "  " << i << ": " << _vector_times[i];
     s << std::endl;
 
     s << "Meshes:";
-    for (uint i = 0; i < _mesh_times.size(); ++i)
+    for (std::size_t i = 0; i < _mesh_times.size(); ++i)
       s << "  " << i << ": " << _mesh_times[i];
     s << std::endl;
   }
@@ -313,7 +313,7 @@ bool TimeSeries::monotone(const std::vector<double>& times)
   if (times.size() == 2)
     return times[0] < times[1];
 
-  for (uint i = 0; i < times.size() - 2; i++)
+  for (std::size_t i = 0; i < times.size() - 2; i++)
   {
     if ((times[i + 2] - times[i + 1])*(times[i + 1] - times[i]) <= 0.0)
       return false;
@@ -321,30 +321,30 @@ bool TimeSeries::monotone(const std::vector<double>& times)
   return true;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint TimeSeries::find_closest_index(double t,
+std::size_t TimeSeries::find_closest_index(double t,
                                             const std::vector<double>& times,
                                             std::string series_name,
                                             std::string type_name)
 {
   // Get closest pair
-  const std::pair<uint, uint> index_pair = find_closest_pair(t, times, series_name, type_name);
-  const uint i0 = index_pair.first;
-  const uint i1 = index_pair.second;
+  const std::pair<std::size_t, std::size_t> index_pair = find_closest_pair(t, times, series_name, type_name);
+  const std::size_t i0 = index_pair.first;
+  const std::size_t i1 = index_pair.second;
 
   // Check which is closer
-  const uint i = (std::abs(t - times[i0]) < std::abs(t - times[i1]) ? i0 : i1);
+  const std::size_t i = (std::abs(t - times[i0]) < std::abs(t - times[i1]) ? i0 : i1);
   dolfin_debug2("Using closest value t[%d] = %g", i, times[i]);
 
   return i;
 }
 //-----------------------------------------------------------------------------
-std::pair<dolfin::uint, dolfin::uint>
+std::pair<std::size_t, std::size_t>
 TimeSeries::find_closest_pair(double t,
                               const std::vector<double>& times,
                               std::string series_name,
                               std::string type_name)
 {
-  //for (uint i = 0; i < times.size(); i++) cout << " " << times[i]; cout << endl;
+  //for (std::size_t i = 0; i < times.size(); i++) cout << " " << times[i]; cout << endl;
 
   // Must have at least one value stored
   if (times.empty())
@@ -374,8 +374,8 @@ TimeSeries::find_closest_pair(double t,
     lower = std::lower_bound(times.begin(), times.end(), t, std::less<double>());
 
   // Set indexlower and upper bound
-  uint i0 = 0;
-  uint i1 = 0;
+  std::size_t i0 = 0;
+  std::size_t i1 = 0;
   if (lower == times.begin())
     i0 = i1 = lower - times.begin();
   else if (lower == times.end())

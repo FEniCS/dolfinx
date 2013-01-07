@@ -78,7 +78,7 @@ namespace dolfin
     }
 
     /// Return geometric dimension
-    virtual uint dim() const = 0;
+    virtual std::size_t dim() const = 0;
 
     /// Get an actor for showing vertex labels
     virtual vtkSmartPointer<vtkActor2D> get_vertex_label_actor(vtkSmartPointer<vtkRenderer>)

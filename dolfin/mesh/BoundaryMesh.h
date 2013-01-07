@@ -24,7 +24,6 @@
 #ifndef __BOUNDARY_MESH_H
 #define __BOUNDARY_MESH_H
 
-#include <dolfin/common/types.h>
 #include "MeshFunction.h"
 #include "Mesh.h"
 

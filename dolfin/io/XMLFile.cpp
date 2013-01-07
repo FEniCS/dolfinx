@@ -32,7 +32,6 @@
 #include "pugixml.hpp"
 
 #include <dolfin/common/Array.h>
-#include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
@@ -126,7 +125,7 @@ void XMLFile::operator>> (GenericVector& input)
   pugi::xml_node dolfin_node(0);
 
   // Read vector size
-  uint size = 0;
+  std::size_t size = 0;
   if (MPI::process_number() == 0)
   {
     load_xml_doc(xml_doc);
@@ -136,8 +135,8 @@ void XMLFile::operator>> (GenericVector& input)
   MPI::broadcast(size);
 
   // Resize if necessary
-  const uint input_vector_size = input.size();
-  const uint num_proc = MPI::num_processes();
+  const std::size_t input_vector_size = input.size();
+  const std::size_t num_proc = MPI::num_processes();
   if (num_proc > 1 && input_vector_size != size)
     warning("Resizing parallel vector. Default partitioning will be used. To control distribution, initialize vector size before reading from file.");
   if (input.size() != size)
@@ -154,7 +153,7 @@ void XMLFile::operator>> (GenericVector& input)
   input.apply("insert");
 }
 //-----------------------------------------------------------------------------
-void XMLFile::read_vector(std::vector<double>& input, std::vector<DolfinIndex>& indices)
+void XMLFile::read_vector(std::vector<double>& input, std::vector<dolfin::la_index>& indices)
 {
   // Create XML doc and get DOLFIN node
   pugi::xml_document xml_doc;

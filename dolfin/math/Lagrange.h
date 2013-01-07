@@ -24,12 +24,12 @@
 #include <vector>
 
 #include <dolfin/log/Event.h>
-#include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
-  /// Lagrange polynomial (basis) with given degree q determined by n = q + 1 nodal points.
+  /// Lagrange polynomial (basis) with given degree q determined by
+  /// n = q + 1 nodal points.
   ///
   /// Example: q = 1 (n = 2)
   ///
@@ -39,7 +39,8 @@ namespace dolfin
   ///
   /// It is the callers reponsibility that the points are distinct.
   ///
-  /// This creates a Lagrange polynomial (actually two Lagrange polynomials):
+  /// This creates a Lagrange polynomial (actually two Lagrange
+  /// polynomials):
   ///
   ///   p(0,x) = 1 - x   (one at x = 0, zero at x = 1)
   ///   p(1,x) = x       (zero at x = 0, one at x = 1)
@@ -51,34 +52,34 @@ namespace dolfin
   public:
 
     /// Constructor
-    Lagrange(unsigned int q);
+    Lagrange(std::size_t q);
 
     /// Copy constructor
     Lagrange(const Lagrange& p);
 
     /// Specify point
-    void set(unsigned int i, double x);
+    void set(std::size_t i, double x);
 
     /// Return number of points
-    unsigned int size() const;
+    std::size_t size() const;
 
     /// Return degree
-    unsigned int degree() const;
+    std::size_t degree() const;
 
     /// Return point
-    double point(unsigned int i) const;
+    double point(std::size_t i) const;
 
     /// Return value of polynomial i at given point x
-    double operator() (unsigned int i, double x);
+    double operator() (std::size_t i, double x);
 
     /// Return value of polynomial i at given point x
-    double eval(unsigned int i, double x);
+    double eval(std::size_t i, double x);
 
     /// Return derivate of polynomial i at given point x
-    double ddx(unsigned int i, double x);
+    double ddx(std::size_t i, double x);
 
     /// Return derivative q (a constant) of polynomial
-    double dqdx(unsigned int i);
+    double dqdx(std::size_t i);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -87,11 +88,11 @@ namespace dolfin
 
     void init();
 
-    const unsigned int q;
+    const std::size_t q;
 
     // Counts the number of time set has been called to determine when
     // init should be called
-    uint counter;
+    std::size_t counter;
 
     std::vector<double> points;
     std::vector<double> constants;

@@ -24,7 +24,6 @@
 #define __FACET_H
 
 #include <utility>
-#include <dolfin/common/types.h>
 #include "Cell.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
@@ -47,7 +46,7 @@ namespace dolfin
     ~Facet() {}
 
     /// Compute component i of the normal to the facet
-    double normal(uint i) const;
+    double normal(std::size_t i) const;
 
     /// Compute normal to the facet
     Point normal() const;

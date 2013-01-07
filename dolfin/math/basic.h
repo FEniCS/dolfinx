@@ -21,20 +21,20 @@
 #ifndef __BASIC_H
 #define __BASIC_H
 
+#include <cstddef>
 #include <utility>
 #include <dolfin/common/constants.h>
-#include <dolfin/common/types.h>
 
 namespace dolfin
 {
   /// Return a to the power n
-  uint ipow(uint a, uint n);
+  std::size_t ipow(std::size_t a, std::size_t n);
 
   /// Return a random number, uniformly distributed between [0.0, 1.0)
   double rand();
 
   /// Seed random number generator
-  void seed(unsigned int s);
+  void seed(std::size_t s);
 
   /// Check whether x is close to x0 (to within DOLFIN_EPS)
   bool near(double x, double x0, double eps=DOLFIN_EPS);

@@ -23,9 +23,9 @@
 #ifndef __LOG_STREAM_H
 #define __LOG_STREAM_H
 
+#include <complex>
 #include <string>
 #include <sstream>
-#include <dolfin/common/types.h>
 
 namespace dolfin
 {
@@ -62,7 +62,7 @@ namespace dolfin
     LogStream& operator<< (int a);
 
     /// Output for unsigned int
-    LogStream& operator<< (uint a);
+    LogStream& operator<< (unsigned int a);
 
     /// Output for long int
     LogStream& operator<< (long int a);
@@ -73,8 +73,8 @@ namespace dolfin
     /// Output for double
     LogStream& operator<< (double a);
 
-    /// Output for complex
-    LogStream& operator<< (complex z);
+    /// Output for std::complex<double>
+    LogStream& operator<< (std::complex<double> z);
 
     /// Output for variable (calling str() method)
     LogStream& operator<< (const Variable& variable);
@@ -85,7 +85,7 @@ namespace dolfin
     /// Output for point (not subclass of Variable for efficiency)
     LogStream& operator<< (const Point& point);
 
-    void setprecision(uint n);
+    void setprecision(std::size_t n);
 
   private:
 

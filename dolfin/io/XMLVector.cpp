@@ -39,14 +39,14 @@ void XMLVector::read(GenericVector& x, const pugi::xml_node xml_dolfin)
 {
   // Read data in to vectors
   std::vector<double> data;
-  std::vector<DolfinIndex> indices;
+  std::vector<dolfin::la_index> indices;
   read(data, indices, xml_dolfin);
 
   // Set data (GenericVector::apply will be called by calling function)
   x.set(data.data(), data.size(), indices.data());
 }
 //-----------------------------------------------------------------------------
-void XMLVector::read(std::vector<double>& x, std::vector<DolfinIndex>& indices,
+void XMLVector::read(std::vector<double>& x, std::vector<dolfin::la_index>& indices,
                      const pugi::xml_node xml_dolfin)
 {
   // Check that we have a XML Vector
@@ -120,7 +120,7 @@ void XMLVector::write(const GenericVector& vector, pugi::xml_node xml_node,
   else
     vector.get_local(x);
 
-  const uint size = vector.size();
+  const std::size_t size = vector.size();
 
   // Check if size is zero
   if (size == 0)

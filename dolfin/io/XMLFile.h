@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
+#include <dolfin/common/types.h>
 #include "GenericFile.h"
 
 namespace pugi
@@ -70,7 +71,7 @@ namespace dolfin
 
     // Vector
     void operator>> (GenericVector& input);
-    void read_vector(std::vector<double>& input, std::vector<DolfinIndex>& indices);
+    void read_vector(std::vector<double>& input, std::vector<dolfin::la_index>& indices);
     void operator<< (const GenericVector& output);
 
     // Parameters
@@ -111,10 +112,16 @@ namespace dolfin
     void operator<< (const MeshFunction<bool>& input)
     { write_mesh_function(input, "bool"); }
 
-    // MeshValueCollection (uint)
+    // MeshValueCollection (unsigned int)
     void operator>> (MeshValueCollection<unsigned int>& input)
     { read_mesh_value_collection(input, "uint"); }
     void operator<< (const MeshValueCollection<unsigned int>& output)
+    { write_mesh_value_collection(output, "uint"); }
+
+    // MeshValueCollection (unsigned long int)
+    void operator>> (MeshValueCollection<unsigned long int>& input)
+    { read_mesh_value_collection(input, "uint"); }
+    void operator<< (const MeshValueCollection<unsigned long int>& output)
     { write_mesh_value_collection(output, "uint"); }
 
     // MeshValueCollection (int)
