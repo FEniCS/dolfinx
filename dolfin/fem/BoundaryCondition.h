@@ -91,7 +91,7 @@ namespace dolfin
       std::vector<double> w;
 
       // Facet dofs
-      std::vector<unsigned int> facet_dofs;
+      std::vector<std::size_t> facet_dofs;
 
       // Coordinates for dofs
       boost::multi_array<double, 2> coordinates;
