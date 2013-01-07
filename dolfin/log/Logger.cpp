@@ -192,12 +192,11 @@ void Logger::deprecation(std::string feature,
                          std::string message) const
 {
   std::stringstream s;
-  s << std::endl << std::endl
-    << "*** "
+  s << "*** "
     << "-------------------------------------------------------------------------"
     << std::endl
-    << "*** Warning: " << feature << "has been deprecated in DOLFIN version "
-    << version << std::endl
+    << "*** Warning: " << feature << " has been deprecated in DOLFIN version "
+    << version << "." << std::endl
     << "*** " << message << std::endl
     << "*** "
     << "-------------------------------------------------------------------------"
