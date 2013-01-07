@@ -150,6 +150,8 @@ def rotate_2d_mesh(theta):
     cubemesh = UnitCubeMesh(1,1,1)
     boundarymesh = BoundaryMesh(cubemesh)
     mesh = SubMesh(boundarymesh, BottomEdge())
+    
+    mesh.init_cell_orientations(Expression(("0.","0.","1.")))
 
     rotation = Rotation(theta, theta)
     rotation.rotate(mesh)
@@ -158,7 +160,7 @@ def rotate_2d_mesh(theta):
 
 class ManifoldSolving(unittest.TestCase):
 
-    def _test_poisson2D_in_3D(self):
+    def test_poisson2D_in_3D(self):
         """This test solves Poisson's equation on a unit square in 2D,
         and then on a unit square embedded in 3D and rotated pi/4
         radians about each of the z and x axes."""
@@ -188,14 +190,13 @@ class ManifoldBasisEvaluation(unittest.TestCase):
         for i in range(5):
             self.basis_test("DG", i)
 
-        # MER: FIXME: This doesn't run b/c of cell orientations
-        #for i in range(4):
-        #    self.basis_test("RT", i+1, piola=True)
-        #for i in range(4):
-        #    self.basis_test("BDM", i+1, piola=True)
+        for i in range(4):
+            self.basis_test("RT", i+1, piola=True)
+        for i in range(4):
+            self.basis_test("BDM", i+1, piola=True)
         for i in range(4):
             self.basis_test("N1curl", i+1, piola=True)
-        #self.basis_test("BDFM", 2, piola=True)
+        self.basis_test("BDFM", 2, piola=True)
 
     def basis_test(self, family, degree, piola=False):
 
