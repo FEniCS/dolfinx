@@ -1,13 +1,13 @@
 1.1.0 [not yet released]
  - Add support for solving singular problems with Krylov solvers (PETSc only)
- - Add new typdef dolfin::la_index for consistent indexing with linear algebra backends.
+ - Add new typedef dolfin::la_index for consistent indexing with linear algebra backends.
  - Change default unsigned integer type to std::size_t
- - Add suppprt to attaching operator null space to preconditioner
+ - Add support to attaching operator null space to preconditioner
    (required for smoothed aggregation AMG)
  - Add basic interface to the PETSc AMG preconditioner
- - Make SCOTCH default graph partitioner (GNU compatible free license, unlike ParMETIS) 
+ - Make SCOTCH default graph partitioner (GNU compatible free license, unlike ParMETIS)
  - Add scalable construction of mesh dual graph for mesh partitioning
- - Improve peformance of mesh building in parallel
+ - Improve performance of mesh building in parallel
  - Add mesh output to SVG
  - Add support for Facet and cell markers to mesh converted from Diffpack
  - Add support for Facet and cell markers/attributes to mesh converted from Triangle
@@ -41,27 +41,25 @@
  - Fix handling of parameter "report" in Krylov solvers
  - Add new linear algebra backend "PETScCusp" for GPU-accelerated linear algebra
  - Add sparray method in the Python interface of GenericMatrix, requires scipy.sparse
- - Make methods that return a view of contigous c-arrays, via a NumPy array, keep
-	 a reference from the object so it wont get out of scope
+ - Make methods that return a view of contiguous c-arrays, via a NumPy array, keep a reference from the object so it wont get out of scope
  - Add parameter: "use_petsc_signal_handler", which enables/disable PETSc system signals
- - Avoid unnessesary resize of result vector for A*b
+ - Avoid unnecessary resize of result vector for A*b
  - MPI functionality for distributing values between neighbours
  - SystemAssembler now works in parallel with topological/geometric boundary search
  - New symmetric assembler with ability for stand-alone RHS assemble
  - Major speed-up of DirichletBC computation and mesh marking
  - Major speed-up of assembly of functions and expressions
  - Major speed-up of mesh topology computation
- - Major speed-up of mesh topology computation
  - Add simple 2D and 3D mesh generation (via CGAL)
  - Add creation of mesh from triangulations of points (via CGAL)
  - Split the SWIG interface into six combined modules instead of one
- - Add has_foo to easy check what solver and precondictioners are available
+ - Add has_foo to easy check what solver and preconditioners are available
  - Add convenience functions for listing available linear_algebra_backends
  - Change naming convention for cpp unit tests test.cpp -> Foo.cpp
  - Added cpp unit test for GenericVector::operator{-,+,*,/}= for all la backends
  - Add functionality for rotating meshes
  - Add mesh generation based on NETGEN constructive solid geometry
- - Generalise SparsityPattern and STLMatrix to support column-wise storage
+ - Generalize SparsityPattern and STLMatrix to support column-wise storage
  - Add interfaces to wrap PaStiX and MUMPS direct solvers
  - Add CoordinateMatrix class
  - Make STLMatrix work in parallel
