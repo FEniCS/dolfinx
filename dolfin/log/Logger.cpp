@@ -187,6 +187,25 @@ void Logger::dolfin_error(std::string location,
   throw std::runtime_error(s.str());
 }
 //-----------------------------------------------------------------------------
+void Logger::deprecation(std::string feature,
+                         std::string version,
+                         std::string message) const
+{
+  std::stringstream s;
+  s << std::endl << std::endl
+    << "*** "
+    << "-------------------------------------------------------------------------"
+    << std::endl
+    << "*** Warning: " << feature << "has been deprecated in DOLFIN version "
+    << version << std::endl
+    << "*** " << message << std::endl
+    << "*** "
+    << "-------------------------------------------------------------------------"
+    << std::endl;
+
+  write(WARNING, s.str());
+}
+//-----------------------------------------------------------------------------
 void Logger::begin(std::string msg, int log_level)
 {
   // Write a message
