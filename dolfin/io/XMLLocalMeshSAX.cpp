@@ -78,7 +78,7 @@ void XMLLocalMeshSAX::read()
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshSAX::start_element(const xmlChar* name, const xmlChar** attrs,
-                                    uint num_attributes)
+                                    std::size_t num_attributes)
 {
   switch (state)
   {
@@ -315,7 +315,7 @@ void XMLLocalMeshSAX::sax_fatal_error(void *ctx, const char *msg, ...)
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshSAX::read_mesh(const xmlChar* name, const xmlChar** attrs,
-                                uint num_attributes)
+                                std::size_t num_attributes)
 {
   // Parse values
   std::string type = SAX2AttributeParser::parse<std::string>(name, attrs, "celltype", num_attributes);
@@ -331,10 +331,10 @@ void XMLLocalMeshSAX::read_mesh(const xmlChar* name, const xmlChar** attrs,
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshSAX::read_vertices(const xmlChar* name, const xmlChar** attrs,
-                                    uint num_attributes)
+                                    std::size_t num_attributes)
 {
   // Parse the number of global vertices
-  const uint num_global_vertices = SAX2AttributeParser::parse<uint>(name, attrs, "size", num_attributes);
+  const std::size_t num_global_vertices = SAX2AttributeParser::parse<unsigned int>(name, attrs, "size", num_attributes);
   mesh_data.num_global_vertices = num_global_vertices;
 
   // Compute vertex range
@@ -346,10 +346,10 @@ void XMLLocalMeshSAX::read_vertices(const xmlChar* name, const xmlChar** attrs,
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshSAX::read_vertex(const xmlChar* name, const xmlChar** attrs,
-                                  uint num_attributes)
+                                  std::size_t num_attributes)
 {
   // Read vertex index
-  const uint v = SAX2AttributeParser::parse<uint>(name, attrs, "index", num_attributes);
+  const std::size_t v = SAX2AttributeParser::parse<unsigned int>(name, attrs, "index", num_attributes);
 
   // Skip vertices not in range for this process
   if (v < vertex_range.first || v >= vertex_range.second)
@@ -358,18 +358,18 @@ void XMLLocalMeshSAX::read_vertex(const xmlChar* name, const xmlChar** attrs,
   const std::size_t local_index = v - vertex_range.first;
   const char *xyz[] = {"x", "y", "z"};
 
-  for(uint i = 0; i < gdim ; ++i)
+  for(std::size_t i = 0; i < gdim ; ++i)
     mesh_data.vertex_coordinates[local_index][i] = SAX2AttributeParser::parse<double>(name, attrs, xyz[i], num_attributes);
-    
+
   // Store global vertex numbering
   mesh_data.vertex_indices.push_back(v);
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshSAX::read_cells(const xmlChar* name, const xmlChar** attrs,
-                                 uint num_attributes)
+                                 std::size_t num_attributes)
 {
   // Parse the number of global cells
-  const uint num_global_cells = SAX2AttributeParser::parse<uint>(name, attrs, "size", num_attributes);
+  const std::size_t num_global_cells = SAX2AttributeParser::parse<unsigned int>(name, attrs, "size", num_attributes);
   mesh_data.num_global_cells = num_global_cells;
 
   // Compute cell range
@@ -383,7 +383,7 @@ void XMLLocalMeshSAX::read_cells(const xmlChar* name, const xmlChar** attrs,
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshSAX::read_interval(const xmlChar* name, const xmlChar** attrs,
-                                    uint num_attributes)
+                                    std::size_t num_attributes)
 {
   // Check dimension
   if (tdim != 1)
@@ -394,7 +394,7 @@ void XMLLocalMeshSAX::read_interval(const xmlChar* name, const xmlChar** attrs,
   }
 
   // Read cell index
-  const uint c = SAX2AttributeParser::parse<uint>(name, attrs, "index", num_attributes);
+  const std::size_t c = SAX2AttributeParser::parse<unsigned int>(name, attrs, "index", num_attributes);
 
   // Skip cells not in range for this process
   if (c < cell_range.first || c >= cell_range.second)
@@ -402,8 +402,8 @@ void XMLLocalMeshSAX::read_interval(const xmlChar* name, const xmlChar** attrs,
 
   // Add cell
   boost::multi_array<std::size_t , 2>::subarray<1>::type cell = mesh_data.cell_vertices[c - cell_range.first];
-  cell[0] = SAX2AttributeParser::parse<uint>(name, attrs, "v0", num_attributes);
-  cell[1] = SAX2AttributeParser::parse<uint>(name, attrs, "v1", num_attributes);
+  cell[0] = SAX2AttributeParser::parse<unsigned int>(name, attrs, "v0", num_attributes);
+  cell[1] = SAX2AttributeParser::parse<unsigned int>(name, attrs, "v1", num_attributes);
 
   // Add global cell index
   mesh_data.global_cell_indices.push_back(c);
@@ -414,7 +414,7 @@ void XMLLocalMeshSAX::read_interval(const xmlChar* name, const xmlChar** attrs,
 //-----------------------------------------------------------------------------
 void XMLLocalMeshSAX::read_triangle(const xmlChar *name,
                                     const xmlChar **attrs,
-                                    uint num_attributes)
+                                    std::size_t num_attributes)
 {
   // Check dimension
   if (tdim != 2)
@@ -425,7 +425,7 @@ void XMLLocalMeshSAX::read_triangle(const xmlChar *name,
   }
 
   // Read cell index
-  const uint c = SAX2AttributeParser::parse<uint>(name, attrs, "index", num_attributes);
+  const std::size_t c = SAX2AttributeParser::parse<unsigned int>(name, attrs, "index", num_attributes);
 
   // Skip cells not in range for this process
   if (c < cell_range.first || c >= cell_range.second)
@@ -433,9 +433,9 @@ void XMLLocalMeshSAX::read_triangle(const xmlChar *name,
 
   // Add cell
   boost::multi_array<std::size_t, 2>::subarray<1>::type cell = mesh_data.cell_vertices[c- cell_range.first];
-  cell[0] = SAX2AttributeParser::parse<uint>(name, attrs, "v0", num_attributes);
-  cell[1] = SAX2AttributeParser::parse<uint>(name, attrs, "v1", num_attributes);
-  cell[2] = SAX2AttributeParser::parse<uint>(name, attrs, "v2", num_attributes);
+  cell[0] = SAX2AttributeParser::parse<unsigned int>(name, attrs, "v0", num_attributes);
+  cell[1] = SAX2AttributeParser::parse<unsigned int>(name, attrs, "v1", num_attributes);
+  cell[2] = SAX2AttributeParser::parse<unsigned int>(name, attrs, "v2", num_attributes);
 
   // Add global cell index
   mesh_data.global_cell_indices.push_back(c);
@@ -446,7 +446,7 @@ void XMLLocalMeshSAX::read_triangle(const xmlChar *name,
 //-----------------------------------------------------------------------------
 void XMLLocalMeshSAX::read_tetrahedron(const xmlChar *name,
                                        const xmlChar **attrs,
-                                       uint num_attributes)
+                                       std::size_t num_attributes)
 {
   // Check dimension
   if (tdim != 3)
@@ -457,7 +457,7 @@ void XMLLocalMeshSAX::read_tetrahedron(const xmlChar *name,
   }
 
   // Read cell index
-  const uint c = SAX2AttributeParser::parse<uint>(name, attrs, "index", num_attributes);
+  const std::size_t c = SAX2AttributeParser::parse<unsigned int>(name, attrs, "index", num_attributes);
 
   // Skip cells not in range for this process
   if (c < cell_range.first || c >= cell_range.second)
@@ -465,10 +465,10 @@ void XMLLocalMeshSAX::read_tetrahedron(const xmlChar *name,
 
   // Add cell
   boost::multi_array<std::size_t, 2>::subarray<1>::type cell = mesh_data.cell_vertices[c - cell_range.first];
-  cell[0] = SAX2AttributeParser::parse<uint>(name, attrs, "v0", num_attributes);
-  cell[1] = SAX2AttributeParser::parse<uint>(name, attrs, "v1", num_attributes);
-  cell[2] = SAX2AttributeParser::parse<uint>(name, attrs, "v2", num_attributes);
-  cell[3] = SAX2AttributeParser::parse<uint>(name, attrs, "v3", num_attributes);
+  cell[0] = SAX2AttributeParser::parse<unsigned int>(name, attrs, "v0", num_attributes);
+  cell[1] = SAX2AttributeParser::parse<unsigned int>(name, attrs, "v1", num_attributes);
+  cell[2] = SAX2AttributeParser::parse<unsigned int>(name, attrs, "v2", num_attributes);
+  cell[3] = SAX2AttributeParser::parse<unsigned int>(name, attrs, "v3", num_attributes);
 
   // Add global cell index
   mesh_data.global_cell_indices.push_back(c);
@@ -479,12 +479,12 @@ void XMLLocalMeshSAX::read_tetrahedron(const xmlChar *name,
 //-----------------------------------------------------------------------------
 void XMLLocalMeshSAX::read_mesh_value_collection(const xmlChar* name,
                                                  const xmlChar** attrs,
-                                                 uint num_attributes)
+                                                 std::size_t num_attributes)
 {
   // Parse values
   const std::string type = SAX2AttributeParser::parse<std::string>(name, attrs, "type", num_attributes);
-  const uint dim = SAX2AttributeParser::parse<uint>(name, attrs, "dim", num_attributes);
-  const std::size_t size = SAX2AttributeParser::parse<uint>(name, attrs, "size", num_attributes);
+  const std::size_t dim = SAX2AttributeParser::parse<unsigned int>(name, attrs, "dim", num_attributes);
+  const std::size_t size = SAX2AttributeParser::parse<unsigned int>(name, attrs, "size", num_attributes);
 
   // Compute domain value range
   domain_value_range = MPI::local_range(size);
@@ -505,17 +505,17 @@ void XMLLocalMeshSAX::read_mesh_value_collection(const xmlChar* name,
 //-----------------------------------------------------------------------------
 void XMLLocalMeshSAX::read_mesh_value_collection_entry(const xmlChar* name,
                                                        const xmlChar** attrs,
-                                                       uint num_attributes)
+                                                       std::size_t num_attributes)
 {
   if (domain_value_counter >= domain_value_range.first && domain_value_counter < domain_value_range.second)
   {
     // Parse values
-    std::pair<std::pair<std::size_t, uint>, uint> entry_data;
-    entry_data.first.first  = SAX2AttributeParser::parse<uint>(name, attrs, "cell_index", num_attributes);
-    entry_data.first.second = SAX2AttributeParser::parse<uint>(name, attrs, "local_entity", num_attributes);
-    entry_data.second       = SAX2AttributeParser::parse<uint>(name, attrs, "value", num_attributes);
+    std::pair<std::pair<std::size_t, unsigned int>, unsigned int> entry_data;
+    entry_data.first.first  = SAX2AttributeParser::parse<unsigned int>(name, attrs, "cell_index", num_attributes);
+    entry_data.first.second = SAX2AttributeParser::parse<unsigned int>(name, attrs, "local_entity", num_attributes);
+    entry_data.second       = SAX2AttributeParser::parse<unsigned int>(name, attrs, "value", num_attributes);
 
-    std::vector<std::pair<std::pair<std::size_t, dolfin::uint>, dolfin::uint> >& data
+    std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::size_t> >& data
       = mesh_data.domain_data.find(domain_dim)->second;
     data.push_back(entry_data);
   }
@@ -523,12 +523,12 @@ void XMLLocalMeshSAX::read_mesh_value_collection_entry(const xmlChar* name,
   ++domain_value_counter;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint XMLLocalMeshSAX::num_local_vertices() const
+std::size_t XMLLocalMeshSAX::num_local_vertices() const
 {
   return vertex_range.second - vertex_range.first;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint XMLLocalMeshSAX::num_local_cells() const
+std::size_t XMLLocalMeshSAX::num_local_cells() const
 {
   return cell_range.second - cell_range.first;
 }

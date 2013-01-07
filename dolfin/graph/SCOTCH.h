@@ -21,10 +21,10 @@
 #ifndef __SCOTCH_PARTITIONER_H
 #define __SCOTCH_PARTITIONER_H
 
+#include <cstddef>
 #include <set>
 #include <vector>
 
-#include <dolfin/common/types.h>
 #include "Graph.h"
 
 namespace dolfin

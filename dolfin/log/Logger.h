@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2012 Anders Logg
+// Copyright (C) 2003-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -20,7 +20,7 @@
 // Modified by Ola Skavhaug 2007, 2009
 //
 // First added:  2003-03-13
-// Last changed: 2012-10-26
+// Last changed: 2013-01-07
 
 #ifndef __LOGGER_H
 #define __LOGGER_H
@@ -28,7 +28,6 @@
 #include <map>
 #include <ostream>
 #include <string>
-#include <dolfin/common/types.h>
 #include "Table.h"
 #include "LogLevel.h"
 
@@ -65,6 +64,11 @@ namespace dolfin
                       std::string task,
                       std::string reason) const;
 
+    /// Issue deprecation warning for removed feature
+    void deprecation(std::string feature,
+                     std::string version,
+                     std::string message) const;
+
     /// Begin task (increase indentation level)
     void begin(std::string msg, int log_level=INFO);
 
@@ -95,7 +99,7 @@ namespace dolfin
     /// Register timing (for later summary)
     void register_timing(std::string task, double elapsed_time);
 
-    /// Return a summary of timings and tasks as a Table, optionally clearing 
+    /// Return a summary of timings and tasks as a Table, optionally clearing
     /// stored timings
     Table timings(bool reset=false);
 
@@ -137,11 +141,11 @@ namespace dolfin
     std::ostream* logstream;
 
     // List of timings for tasks, map from string to (num_timings, total_time)
-    std::map<std::string, std::pair<uint, double> > _timings;
+    std::map<std::string, std::pair<std::size_t, double> > _timings;
 
     // MPI data (initialized to 0)
-    mutable uint num_processes;
-    mutable uint process_number;
+    mutable std::size_t num_processes;
+    mutable std::size_t process_number;
 
     // Thread used for monitoring memory usage
     boost::thread* _thread_monitor_memory_usage;

@@ -28,7 +28,7 @@ class Solving(unittest.TestCase):
     def test_bcs(self):
         "Check that the bcs argument is picked up"
 
-        mesh = UnitSquare(4, 4)
+        mesh = UnitSquareMesh(4, 4)
         V = FunctionSpace(mesh, "Lagrange", 1)
         u = TrialFunction(V)
         v = TestFunction(V)
@@ -63,7 +63,7 @@ class Solving(unittest.TestCase):
 
     def test_calling(self):
         "Test that unappropriate arguments are not allowed"
-        mesh = UnitSquare(4, 4)
+        mesh = UnitSquareMesh(4, 4)
         V = FunctionSpace(mesh, "Lagrange", 1)
         u = TrialFunction(V)
         v = TestFunction(V)
@@ -83,7 +83,7 @@ class Solving(unittest.TestCase):
 
         def wrong_solve_0():
             solve(A, x, b, **kwargs)
-        
+
         self.assertRaises(RuntimeError, wrong_solve_0)
 
         # FIXME: Include more tests for this versatile function

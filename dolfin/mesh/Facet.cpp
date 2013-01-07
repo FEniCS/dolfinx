@@ -28,9 +28,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-double Facet::normal(uint i) const
+double Facet::normal(std::size_t i) const
 {
-  const uint D = _mesh->topology().dim();
+  const std::size_t D = _mesh->topology().dim();
   _mesh->init(D - 1);
   _mesh->init(D - 1, D);
   dolfin_assert(_mesh->ordered());
@@ -39,14 +39,14 @@ double Facet::normal(uint i) const
   const Cell cell(*_mesh, this->entities(D)[0]);
 
   // Get local index of facet with respect to the cell
-  const uint local_facet = cell.index(*this);
+  const std::size_t local_facet = cell.index(*this);
 
   return cell.normal(local_facet, i);
 }
 //-----------------------------------------------------------------------------
 Point Facet::normal() const
 {
-  const uint D = _mesh->topology().dim();
+  const std::size_t D = _mesh->topology().dim();
   _mesh->init(D - 1);
   _mesh->init(D - 1, D);
   dolfin_assert(_mesh->ordered());
@@ -55,14 +55,14 @@ Point Facet::normal() const
   const Cell cell(*_mesh, this->entities(D)[0]);
 
   // Get local index of facet with respect to the cell
-  const uint local_facet = cell.index(*this);
+  const std::size_t local_facet = cell.index(*this);
 
   return cell.normal(local_facet);
 }
 //-----------------------------------------------------------------------------
 bool Facet::exterior() const
 {
-  const uint D = _mesh->topology().dim();
+  const std::size_t D = _mesh->topology().dim();
   if (this->num_global_entities(D) == 1)
     return true;
   else
@@ -75,7 +75,7 @@ Facet::adjacent_cells(const MeshFunction<std::size_t>* facet_orientation) const
   dolfin_assert(num_entities(dim() + 1) == 2);
 
   // Get cell indices
-  const uint D = dim() + 1;
+  const std::size_t D = dim() + 1;
   const std::size_t c0 = entities(D)[0];
   const std::size_t c1 = entities(D)[1];
 

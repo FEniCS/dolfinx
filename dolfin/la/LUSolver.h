@@ -57,10 +57,10 @@ namespace dolfin
     void set_operator(const boost::shared_ptr<const GenericLinearOperator> A);
 
     /// Solve linear system Ax = b
-    unsigned int solve(GenericVector& x, const GenericVector& b);
+    std::size_t solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system
-    unsigned int solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+    std::size_t solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
 
     /// Default parameter values
     static Parameters default_parameters()

@@ -23,7 +23,6 @@
 
 #include <fstream>
 #include <boost/iostreams/filtering_streambuf.hpp>
-#include <dolfin/common/types.h>
 #include "GenericFile.h"
 
 namespace dolfin
@@ -84,19 +83,19 @@ namespace dolfin
     // Close file for writing
     void close_write();
 
-    // Read uint
+    // Read std::size_t
     std::size_t read_uint();
 
-    // Read array (uint)
+    // Read array (std::size_t)
     void read_array(std::size_t n, std::size_t* values);
 
     // Read array (double)
     void read_array(std::size_t n, double* values);
 
-    // Write uint
+    // Write std::size_t
     void write_uint(std::size_t value);
 
-    // Write array (uint)
+    // Write array (std::size_t)
     void write_array(std::size_t n, const std::size_t* values);
 
     // Write array (double)

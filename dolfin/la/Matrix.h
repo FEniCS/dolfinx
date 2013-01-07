@@ -65,11 +65,11 @@ namespace dolfin
     { matrix->init(tensor_layout); }
 
     /// Return size of given dimension
-    virtual std::size_t size(unsigned int dim) const
+    virtual std::size_t size(std::size_t dim) const
     { return matrix->size(dim); }
 
     /// Return local ownership range
-    virtual std::pair<std::size_t, std::size_t> local_range(unsigned int dim) const
+    virtual std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const
     { return matrix->local_range(dim); }
 
     /// Set all entries to zero and keep any sparse structure
@@ -96,19 +96,19 @@ namespace dolfin
     /// Resize vector y such that is it compatible with matrix for
     /// multuplication Ax = b (dim = 0 -> b, dim = 1 -> x) In parallel
     /// case, size and layout are important.
-    virtual void resize(GenericVector& y, unsigned int dim) const
+    virtual void resize(GenericVector& y, std::size_t dim) const
     { matrix->resize(y, dim); }
 
     /// Get block of values
-    virtual void get(double* block, std::size_t m, const DolfinIndex* rows, std::size_t n, const DolfinIndex* cols) const
+    virtual void get(double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n, const dolfin::la_index* cols) const
     { matrix->get(block, m, rows, n, cols); }
 
     /// Set block of values
-    virtual void set(const double* block, std::size_t m, const DolfinIndex* rows, std::size_t n, const DolfinIndex* cols)
+    virtual void set(const double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n, const dolfin::la_index* cols)
     { matrix->set(block, m, rows, n, cols); }
 
     /// Add block of values
-    virtual void add(const double* block, std::size_t m, const DolfinIndex* rows, std::size_t n, const DolfinIndex* cols)
+    virtual void add(const double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n, const dolfin::la_index* cols)
     { matrix->add(block, m, rows, n, cols); }
 
     /// Add multiple of given matrix (AXPY operation)
@@ -130,11 +130,11 @@ namespace dolfin
     { matrix->setrow(row, columns, values); }
 
     /// Set given rows to zero
-    virtual void zero(std::size_t m, const DolfinIndex* rows)
+    virtual void zero(std::size_t m, const dolfin::la_index* rows)
     { matrix->zero(m, rows); }
 
     /// Set given rows to identity matrix
-    virtual void ident(std::size_t m, const DolfinIndex* rows)
+    virtual void ident(std::size_t m, const dolfin::la_index* rows)
     { matrix->ident(m, rows); }
 
     // Matrix-vector product, y = Ax

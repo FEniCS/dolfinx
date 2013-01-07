@@ -23,10 +23,10 @@
 
 #ifdef HAS_TRILINOS
 
+#include <cstddef>
 #include <vector>
 #include <zoltan_cpp.h>
 #include "dolfin/common/Set.h"
-#include "dolfin/common/types.h"
 
 namespace dolfin
 {

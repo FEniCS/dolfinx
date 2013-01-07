@@ -25,7 +25,7 @@ set_log_level(INFO)
 
 # Create mesh and function spaces
 n = 4
-mesh = UnitCube(n, n, n)
+mesh = UnitCubeMesh(n, n, n)
 
 k = 1
 V = VectorFunctionSpace(mesh, "CG", k+1)

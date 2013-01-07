@@ -43,7 +43,7 @@ namespace dolfin
 
     void read();
 
-    void start_element(const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+    void start_element(const xmlChar* name, const xmlChar** attrs, std::size_t num_attributes);
     void end_element(const xmlChar* name);
 
   private:
@@ -79,16 +79,16 @@ namespace dolfin
     static void sax_fatal_error (void *ctx, const char *msg, ...);
 
     // Callbacks for reading XML data
-    void read_mesh       (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
-    void read_vertices   (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
-    void read_vertex     (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
-    void read_cells      (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
-    void read_interval   (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
-    void read_triangle   (const xmlChar* name, const xmlChar** attrs, uint num_attributes);
-    void read_tetrahedron(const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+    void read_mesh       (const xmlChar* name, const xmlChar** attrs, std::size_t num_attributes);
+    void read_vertices   (const xmlChar* name, const xmlChar** attrs, std::size_t num_attributes);
+    void read_vertex     (const xmlChar* name, const xmlChar** attrs, std::size_t num_attributes);
+    void read_cells      (const xmlChar* name, const xmlChar** attrs, std::size_t num_attributes);
+    void read_interval   (const xmlChar* name, const xmlChar** attrs, std::size_t num_attributes);
+    void read_triangle   (const xmlChar* name, const xmlChar** attrs, std::size_t num_attributes);
+    void read_tetrahedron(const xmlChar* name, const xmlChar** attrs, std::size_t num_attributes);
 
-    void read_mesh_value_collection(const xmlChar* name, const xmlChar** attrs, uint num_attributes);
-    void read_mesh_value_collection_entry(const xmlChar* name, const xmlChar** attrs, uint num_attributes);
+    void read_mesh_value_collection(const xmlChar* name, const xmlChar** attrs, std::size_t num_attributes);
+    void read_mesh_value_collection_entry(const xmlChar* name, const xmlChar** attrs, std::size_t num_attributes);
 
     /*
     void read_mesh_function(const xmlChar* name, const xmlChar** attrs);
@@ -97,27 +97,27 @@ namespace dolfin
     */
 
     // Number of local vertices
-    uint num_local_vertices() const;
+    std::size_t num_local_vertices() const;
 
     // Number of local cells
-    uint num_local_cells() const;
+    std::size_t num_local_cells() const;
 
     // Geometrical mesh dimesion
-    uint gdim;
+    std::size_t gdim;
 
     // Topological mesh dimesion
-    uint tdim;
+    std::size_t tdim;
 
     // Range for vertices
-    std::pair<uint, uint> vertex_range;
+    std::pair<std::size_t, std::size_t> vertex_range;
 
     // Range for cells
-    std::pair<uint, uint> cell_range;
+    std::pair<std::size_t, std::size_t> cell_range;
 
     // Range for domain data and counter
-    std::pair<uint, uint> domain_value_range;
-    uint domain_value_counter;
-    uint domain_dim;
+    std::pair<std::size_t, std::size_t> domain_value_range;
+    std::size_t domain_value_counter;
+    std::size_t domain_dim;
 
     // State of parser
     ParserState state;

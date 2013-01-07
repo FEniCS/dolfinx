@@ -29,7 +29,7 @@
 //-----------------------------------------------------------------------------
 // Extend Function so f.function_space() return a dolfin.FunctionSpace
 //-----------------------------------------------------------------------------
-%extend dolfin::BoundaryCondition 
+%extend dolfin::BoundaryCondition
 {
 %pythoncode %{
 def function_space(self):
@@ -47,11 +47,11 @@ def function_space(self):
 def function_space(self, i):
     """
     Return function space for given argument
-    
+
      *Arguments*
-         i (uint)
+         i (std::size_t)
              Index
-    
+
      *Returns*
          _FunctionSpace_
              Function space shared pointer.
@@ -68,7 +68,7 @@ def function_space(self, i):
   void _tabulate_coordinates(PyObject* coordinates, const Cell& cell)
   {
     // NOTE: No NumPy array check. Assumed everything is coorect!
-        
+
     // Get NumPy array
     PyArrayObject *xa = reinterpret_cast<PyArrayObject*>(coordinates);
 
@@ -77,22 +77,22 @@ def function_space(self, i):
     boost::multi_array<double, 2> tmparray;
     tmparray.resize(extents[self->cell_dimension(cell.index())]\
 		    [self->geometric_dimension()]);
-    
+
     // Tabulate the coordinates
     dolfin::UFCCell ufc_cell(cell);
     self->tabulate_coordinates(tmparray, ufc_cell);
-    
+
     // Copy data
     double* data = static_cast<double*>(PyArray_DATA(xa));
-    for (dolfin::uint i=0; i<self->cell_dimension(cell.index()); i++)
-      for (dolfin::uint j=0; j<self->geometric_dimension(); j++)
+    for (std::size_t i=0; i<self->cell_dimension(cell.index()); i++)
+      for (std::size_t j=0; j<self->geometric_dimension(); j++)
 	data[i*self->geometric_dimension()+j] = tmparray[i][j];
   }
 
 %pythoncode %{
 def tabulate_coordinates(self, cell, coordinates=None):
-    """ Tabulate the coordinates of all dofs on a cell 
-    
+    """ Tabulate the coordinates of all dofs on a cell
+
     *Arguments*
         cell (_Cell_)
              The cell.
@@ -124,8 +124,8 @@ def tabulate_coordinates(self, cell, coordinates=None):
 //-----------------------------------------------------------------------------
 // Modifying the interface of FooProblem
 //-----------------------------------------------------------------------------
-%define PROBLEM_EXTENDS(NAME)
-%extend dolfin::NAME ## Problem
+%define PROBLEM_EXTENDS(TYPE)
+%extend dolfin::TYPE
 {
 %pythoncode %{
 def solution(self):
@@ -153,6 +153,22 @@ def test_space(self):
 }
 %enddef
 
-PROBLEM_EXTENDS(LinearVariational)
-PROBLEM_EXTENDS(NonlinearVariational)
-//PROBLEM_EXTENDS(LinearTimeDependent)
+//-----------------------------------------------------------------------------
+// Modifying the interface of Hierarchical
+//-----------------------------------------------------------------------------
+%define HIERARCHICAL_FEM_EXTENDS(TYPE)
+%pythoncode %{
+Hierarchical ## TYPE.leaf_node = Hierarchical ## TYPE._leaf_node
+Hierarchical ## TYPE.root_node = Hierarchical ## TYPE._root_node
+Hierarchical ## TYPE.child = Hierarchical ## TYPE._child
+Hierarchical ## TYPE.parent = Hierarchical ## TYPE._parent
+%}
+%enddef
+
+
+PROBLEM_EXTENDS(LinearVariationalProblem)
+PROBLEM_EXTENDS(NonlinearVariationalProblem)
+HIERARCHICAL_FEM_EXTENDS(LinearVariationalProblem)
+HIERARCHICAL_FEM_EXTENDS(NonlinearVariationalProblem)
+HIERARCHICAL_FEM_EXTENDS(Form)
+HIERARCHICAL_FEM_EXTENDS(DirichletBC)

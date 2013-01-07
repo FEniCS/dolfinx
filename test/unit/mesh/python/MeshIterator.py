@@ -29,7 +29,7 @@ class MeshIterator(unittest.TestCase):
     def test_vertex_iterators(self):
         "Iterate over vertices"
 
-        mesh = UnitCube(5, 5, 5)
+        mesh = UnitCubeMesh(5, 5, 5)
 
         # Test connectivity
         cons = [(i, mesh.topology()(0,i)) for i in xrange(4)]
@@ -59,7 +59,7 @@ class MeshIterator(unittest.TestCase):
     def test_edge_iterators(self):
         "Iterate over edges"
 
-        mesh = UnitCube(5, 5, 5)
+        mesh = UnitCubeMesh(5, 5, 5)
 
         # Test connectivity
         cons = [(i, mesh.topology()(1,i)) for i in xrange(4)]
@@ -81,7 +81,7 @@ class MeshIterator(unittest.TestCase):
     def test_face_iterator(self):
         "Iterate over faces"
 
-        mesh = UnitCube(5, 5, 5)
+        mesh = UnitCubeMesh(5, 5, 5)
 
         # Test connectivity
         cons = [(i, mesh.topology()(2,i)) for i in xrange(4)]
@@ -102,7 +102,7 @@ class MeshIterator(unittest.TestCase):
 
     def test_facet_iterators(self):
         "Iterate over facets"
-        mesh = UnitCube(5, 5, 5)
+        mesh = UnitCubeMesh(5, 5, 5)
         n = 0
         for f in facets(mesh):
             n += 1
@@ -110,7 +110,7 @@ class MeshIterator(unittest.TestCase):
 
     def test_cell_iterators(self):
         "Iterate over cells"
-        mesh = UnitCube(5, 5, 5)
+        mesh = UnitCubeMesh(5, 5, 5)
 
         # Test connectivity
         cons = [(i, mesh.topology()(3,i)) for i in xrange(4)]
@@ -132,7 +132,7 @@ class MeshIterator(unittest.TestCase):
     def test_mixed_iterators(self):
         "Iterate over vertices of cells"
 
-        mesh = UnitCube(5, 5, 5)
+        mesh = UnitCubeMesh(5, 5, 5)
         n = 0
         for c in cells(mesh):
             for v in vertices(c):

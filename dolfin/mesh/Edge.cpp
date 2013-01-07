@@ -21,7 +21,6 @@
 // Last changed: 2011-02-08
 
 #include <cmath>
-#include <dolfin/common/types.h>
 #include "Vertex.h"
 #include "Edge.h"
 
@@ -60,8 +59,8 @@ double Edge::dot(const Edge& edge) const
   const double* x11 = g.x(v1[1]);
 
   double sum = 0.0;
-  const uint gdim = g.dim();
-  for (uint i = 0; i < gdim; i++)
+  const std::size_t gdim = g.dim();
+  for (std::size_t i = 0; i < gdim; i++)
     sum += (x01[i] - x00[i]) * (x11[i] - x10[i]);
 
   return sum;

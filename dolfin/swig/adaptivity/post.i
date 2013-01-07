@@ -1,4 +1,5 @@
-// Copyright (C) 2005-2011 Anders Logg
+/* -*- C -*- */
+// Copyright (C) 2009 Johan Hake
 //
 // This file is part of DOLFIN.
 //
@@ -15,21 +16,23 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2005-02-13
-// Last changed: 2011-03-17
+// First added:  2012-11-30
+// Last changed: 2012-11-30
 
-#include <dolfin/common/constants.h>
-#include <dolfin/log/dolfin_log.h>
-#include "SubSystemsManager.h"
-#include "init.h"
+// ===========================================================================
+// SWIG directives for the DOLFIN fem kernel module (post)
+//
+// The directives in this file are applied _after_ the header files of the
+// modules has been loaded.
+// ===========================================================================
 
 //-----------------------------------------------------------------------------
-void dolfin::init(int argc, char* argv[])
-{
-  log(PROGRESS, "Initializing DOLFIN version %s.", DOLFIN_VERSION);
-
-  #ifdef HAS_PETSC
-  SubSystemsManager::init_petsc(argc, argv);
-  #endif
-}
+// Modifying the interface of Hierarchical
 //-----------------------------------------------------------------------------
+%pythoncode %{
+HierarchicalErrorControl.leaf_node = HierarchicalErrorControl._leaf_node
+HierarchicalErrorControl.root_node = HierarchicalErrorControl._root_node
+HierarchicalErrorControl.child = HierarchicalErrorControl._child
+HierarchicalErrorControl.parent = HierarchicalErrorControl._parent
+%}
+

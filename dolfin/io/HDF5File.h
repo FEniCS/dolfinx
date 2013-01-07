@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-11-27
+// Last changed: 2012-12-04
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -29,7 +29,6 @@
 #include <utility>
 #include <vector>
 #include "dolfin/common/Timer.h"
-#include "dolfin/common/types.h"
 #include "dolfin/common/Variable.h"
 #include "dolfin/mesh/Mesh.h"
 #include "dolfin/mesh/MeshEditor.h"
@@ -47,7 +46,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    HDF5File(const std::string filename, bool truncate, bool use_mpiio=true);
+    HDF5File(const std::string filename, const std::string file_mode, bool use_mpiio=true);
 
     /// Destructor
     ~HDF5File();
@@ -60,7 +59,7 @@ namespace dolfin
 
     /// Write Mesh of given cell dimension to file in a format suitable
     /// for re-reading
-    void write(const Mesh& mesh, const uint cell_dim, const std::string name);
+    void write(const Mesh& mesh, const std::size_t cell_dim, const std::string name);
 
     /// Write Mesh to file for visualisation (may contain duplicate
     /// entities and will not preserve global indices)
@@ -68,7 +67,7 @@ namespace dolfin
 
     /// Write Mesh of given cell dimension to file for visualisation (may
     /// contain duplicate entities and will not preserve global indices)
-    void write_visualisation(const Mesh& mesh, const uint cell_dim,
+    void write_visualisation(const Mesh& mesh, const std::size_t cell_dim,
                              const std::string name);
 
     /// Read vector from file
@@ -109,7 +108,7 @@ namespace dolfin
                                    const std::string& search_term);
 
     void reorder_vertices_by_global_indices(std::vector<double>& vertex_coords,
-              uint gdim, const std::vector<std::size_t>& global_indices);
+              std::size_t gdim, const std::vector<std::size_t>& global_indices);
 
     // HDF5 file descriptor/handle
     bool hdf5_file_open;

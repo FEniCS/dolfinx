@@ -35,22 +35,22 @@ class JIT(unittest.TestCase):
 
             parameters["form_compiler"]["representation"] = representation
 
-            M1 = assemble(Constant(1.0)*dx, mesh=UnitSquare(4, 4))
-            M2 = assemble(Constant(1.0)*dx, mesh=UnitCube(4, 4, 4))
+            M1 = assemble(Constant(1.0)*dx, mesh=UnitSquareMesh(4, 4))
+            M2 = assemble(Constant(1.0)*dx, mesh=UnitCubeMesh(4, 4, 4))
 
             self.assertAlmostEqual(M1, 1.0)
             self.assertAlmostEqual(M2, 1.0)
-    
+
     def test_compile_extension_module(self):
-        
+
         if not has_linear_algebra_backend("PETSc"):
             return
-        
+
         from numpy import arange, exp
         code = """
         namespace dolfin {
-        
-          void PETSc_exp(boost::shared_ptr<dolfin::PETScVector> vec) 
+
+          void PETSc_exp(boost::shared_ptr<dolfin::PETScVector> vec)
           {
             boost::shared_ptr<Vec> x = vec->vec();
             assert(x);

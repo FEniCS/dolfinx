@@ -27,7 +27,7 @@ from dolfin import *
 class DofMapTest(unittest.TestCase):
 
     def setUp(self):
-        self.mesh = UnitSquare(4, 4)
+        self.mesh = UnitSquareMesh(4, 4)
         self.V = FunctionSpace(self.mesh, "Lagrange", 1)
         self.Q = VectorFunctionSpace(self.mesh, "Lagrange", 1)
         self.W = self.V*self.Q
@@ -55,9 +55,12 @@ class DofMapTest(unittest.TestCase):
 
     def test_tabulate_dofs(self):
 
+        all_dofs = set()
         for i, cell in enumerate(cells(self.mesh)):
 
             dofs0 = self.W.sub(0).dofmap().cell_dofs(cell.index())
+
+            all_dofs.update(dofs0)
 
             L = self.W.sub(1)
             dofs1 = L.sub(0).dofmap().cell_dofs(cell.index())
@@ -78,9 +81,11 @@ class DofMapTest(unittest.TestCase):
             self.assertEqual(len(numpy.intersect1d(dofs1, dofs2)), 0)
             self.assertTrue(numpy.array_equal(numpy.append(dofs1, dofs2), dofs3))
 
+        self.assertFalse(all_dofs.difference(self.W.dofmap().dofs()))
+
     def test_global_dof_builder(self):
 
-        mesh = UnitSquare(3, 3)
+        mesh = UnitSquareMesh(3, 3)
 
         V = VectorFunctionSpace(mesh, "CG", 1)
         Q = FunctionSpace(mesh, "CG", 1)

@@ -87,7 +87,7 @@ namespace dolfin
   const GenericFunction& adapt(const GenericFunction& function,
                                boost::shared_ptr<const Mesh> adapted_mesh);
 
-  /// Refine mesh function<uint> based on mesh
+  /// Refine mesh function<std::size_t> based on mesh
   const MeshFunction<std::size_t>& adapt(const MeshFunction<std::size_t>& mesh_function,
                                   boost::shared_ptr<const Mesh> adapted_mesh);
 

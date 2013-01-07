@@ -34,7 +34,7 @@ int main()
   return 0;
 
   // Create mesh
-  UnitSquare mesh(20, 20);
+  UnitSquareMesh mesh(20, 20);
 
   // Create boundary mesh
   BoundaryMesh boundary(mesh);

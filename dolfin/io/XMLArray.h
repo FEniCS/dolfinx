@@ -101,13 +101,13 @@ namespace dolfin
     // Add attributes
     const std::size_t size = x.size();
     array_node.append_attribute("type") = type.c_str();
-    array_node.append_attribute("size") = (uint) size;
+    array_node.append_attribute("size") = (unsigned int) size;
 
     // Add data
     for (std::size_t i = 0; i < size; ++i)
     {
       pugi::xml_node element_node = array_node.append_child("element");
-      element_node.append_attribute("index") = (uint) i;
+      element_node.append_attribute("index") = (unsigned int) i;
       // NOTE: Casting to a string to avoid loss of precision when
       //       pugixml performs double-to-char conversion
       element_node.append_attribute("value")

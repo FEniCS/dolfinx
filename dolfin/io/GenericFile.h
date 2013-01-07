@@ -27,7 +27,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "dolfin/common/types.h"
 
 namespace dolfin
 {
@@ -71,14 +70,14 @@ namespace dolfin
     virtual void operator>> (MeshValueCollection<bool>& mesh_markers);
     virtual void operator>> (Parameters& parameters);
     virtual void operator>> (std::vector<int>& x);
-    virtual void operator>> (std::vector<uint>& x);
+    virtual void operator>> (std::vector<std::size_t>& x);
     virtual void operator>> (std::vector<double>& x);
-    virtual void operator>> (std::map<uint, int>& map);
-    virtual void operator>> (std::map<uint, uint>& map);
-    virtual void operator>> (std::map<uint, double>& map);
-    virtual void operator>> (std::map<uint, std::vector<int> >& array_map);
-    virtual void operator>> (std::map<uint, std::vector<uint> >& array_map);
-    virtual void operator>> (std::map<uint, std::vector<double> >& array_map);
+    virtual void operator>> (std::map<std::size_t, int>& map);
+    virtual void operator>> (std::map<std::size_t, std::size_t>& map);
+    virtual void operator>> (std::map<std::size_t, double>& map);
+    virtual void operator>> (std::map<std::size_t, std::vector<int> >& array_map);
+    virtual void operator>> (std::map<std::size_t, std::vector<std::size_t> >& array_map);
+    virtual void operator>> (std::map<std::size_t, std::vector<double> >& array_map);
     virtual void operator>> (Function& u);
 
     // Output
@@ -104,14 +103,14 @@ namespace dolfin
 
     virtual void operator<< (const Parameters& parameters);
     virtual void operator<< (const std::vector<int>& x);
-    virtual void operator<< (const std::vector<uint>& x);
+    virtual void operator<< (const std::vector<std::size_t>& x);
     virtual void operator<< (const std::vector<double>& x);
-    virtual void operator<< (const std::map<uint, int>& map);
-    virtual void operator<< (const std::map<uint, uint>& map);
-    virtual void operator<< (const std::map<uint, double>& map);
-    virtual void operator<< (const std::map<uint, std::vector<int> >& array_map);
-    virtual void operator<< (const std::map<uint, std::vector<uint> >& array_map);
-    virtual void operator<< (const std::map<uint, std::vector<double> >& array_map);
+    virtual void operator<< (const std::map<std::size_t, int>& map);
+    virtual void operator<< (const std::map<std::size_t, std::size_t>& map);
+    virtual void operator<< (const std::map<std::size_t, double>& map);
+    virtual void operator<< (const std::map<std::size_t, std::vector<int> >& array_map);
+    virtual void operator<< (const std::map<std::size_t, std::vector<std::size_t> >& array_map);
+    virtual void operator<< (const std::map<std::size_t, std::vector<double> >& array_map);
 
     void read();
     virtual void write();
@@ -135,9 +134,9 @@ namespace dolfin
     bool check_header;
 
     // Counters for the number of times various data has been written
-    uint counter;
-    uint counter1;
-    uint counter2;
+    std::size_t counter;
+    std::size_t counter1;
+    std::size_t counter2;
 
   };
 

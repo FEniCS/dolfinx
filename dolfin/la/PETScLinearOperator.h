@@ -18,7 +18,7 @@
 // Modified by Andy R. Terrel 2005
 //
 // First added:  2005-01-17
-// Last changed: 2012-08-31
+// Last changed: 2012-12-11
 
 #ifndef __PETSC_LINEAR_OPERATOR_H
 #define __PETSC_LINEAR_OPERATOR_H
@@ -50,7 +50,7 @@ namespace dolfin
     //--- Implementation of the GenericLinearOperator interface ---
 
     /// Return size of given dimension
-    virtual std::size_t size(unsigned int dim) const;
+    virtual std::size_t size(std::size_t dim) const;
 
     /// Compute matrix-vector product y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const;
@@ -69,7 +69,8 @@ namespace dolfin
   protected:
 
     // Initialization
-    void init(std::size_t M, std::size_t N, GenericLinearOperator* wrapper);
+    void init(const GenericVector& x, const GenericVector& y,
+              GenericLinearOperator* wrapper);
 
     // Pointer to wrapper
     GenericLinearOperator* _wrapper;

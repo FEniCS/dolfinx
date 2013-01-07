@@ -114,7 +114,7 @@ void SLEPcEigenSolver::solve()
   solve(A->size(0));
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::solve(unsigned int n)
+void SLEPcEigenSolver::solve(std::size_t n)
 {
   dolfin_assert(A);
 
@@ -130,8 +130,7 @@ void SLEPcEigenSolver::solve(unsigned int n)
 
   // Set number of eigenpairs to compute
   dolfin_assert(n <= A->size(0));
-  const unsigned int nn = static_cast<int>(n);
-  EPSSetDimensions(eps, nn, PETSC_DECIDE, PETSC_DECIDE);
+  EPSSetDimensions(eps, n, PETSC_DECIDE, PETSC_DECIDE);
 
   // Set parameters from local parameters
   read_parameters();
@@ -149,7 +148,7 @@ void SLEPcEigenSolver::solve(unsigned int n)
     warning("Eigenvalue solver did not converge");
 
   // Report solver status
-  int num_iterations = 0;
+  dolfin::la_index num_iterations = 0;
   EPSGetIterationNumber(eps, &num_iterations);
 
   const EPSType eps_type = 0;
@@ -177,12 +176,12 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
   get_eigenpair(lr, lc, r, c, 0);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, unsigned int i) const
+void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, std::size_t i) const
 {
-  const int ii = static_cast<int>(i);
+  const dolfin::la_index ii = static_cast<dolfin::la_index>(i);
 
   // Get number of computed values
-  int num_computed_eigenvalues;
+  dolfin::la_index num_computed_eigenvalues;
   EPSGetConverged(eps, &num_computed_eigenvalues);
 
   if (ii < num_computed_eigenvalues)
@@ -197,7 +196,7 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, unsigned int i) co
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
                                      GenericVector& r, GenericVector& c,
-                                     unsigned int i) const
+                                     std::size_t i) const
 {
   PETScVector& _r = as_type<PETScVector>(r);
   PETScVector& _c = as_type<PETScVector>(c);
@@ -206,12 +205,12 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
                                      PETScVector& r, PETScVector& c,
-                                     unsigned int i) const
+                                     std::size_t i) const
 {
-  const int ii = static_cast<int>(i);
+  const dolfin::la_index ii = static_cast<dolfin::la_index>(i);
 
   // Get number of computed eigenvectors/values
-  int num_computed_eigenvalues;
+  dolfin::la_index num_computed_eigenvalues;
   EPSGetConverged(eps, &num_computed_eigenvalues);
 
   if (ii < num_computed_eigenvalues)
@@ -232,9 +231,9 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
   }
 }
 //-----------------------------------------------------------------------------
-int SLEPcEigenSolver::get_number_converged() const
+std::size_t SLEPcEigenSolver::get_number_converged() const
 {
-  int num_conv;
+  dolfin::la_index num_conv;
   EPSGetConverged(eps, &num_conv);
   return num_conv;
 }
@@ -373,15 +372,15 @@ void SLEPcEigenSolver::set_solver(std::string solver)
   }
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::set_tolerance(double tolerance, unsigned int maxiter)
+void SLEPcEigenSolver::set_tolerance(double tolerance, std::size_t maxiter)
 {
   dolfin_assert(tolerance > 0.0);
-  EPSSetTolerances(eps, tolerance, static_cast<int>(maxiter));
+  EPSSetTolerances(eps, tolerance, maxiter);
 }
 //-----------------------------------------------------------------------------
-int SLEPcEigenSolver::get_iteration_number() const
+std::size_t SLEPcEigenSolver::get_iteration_number() const
 {
-  int num_iter;
+  dolfin::la_index num_iter;
   EPSGetIterationNumber(eps, &num_iter);
   return num_iter;
 }

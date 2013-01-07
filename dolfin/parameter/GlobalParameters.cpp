@@ -51,7 +51,7 @@ GlobalParameters::GlobalParameters() : Parameters("dolfin")
 #endif
 
   // Try reading parameters from files
-  for (uint i = 0; i < parameter_files.size(); ++i)
+  for (std::size_t i = 0; i < parameter_files.size(); ++i)
   {
     // Check if file exists
     std::ifstream f;
@@ -118,13 +118,13 @@ void GlobalParameters::parse(int argc, char* argv[])
 
   // Copy to argv lists
   char** argv_dolfin = new char*[args_dolfin.size()];
-  for (uint i = 0; i < args_dolfin.size(); ++i)
+  for (std::size_t i = 0; i < args_dolfin.size(); ++i)
   {
     argv_dolfin[i] = new char[args_dolfin[i].size() + 1];
     sprintf(argv_dolfin[i], "%s", args_dolfin[i].c_str());
   }
   char** argv_petsc = new char*[args_petsc.size()];
-  for (uint i = 0; i < args_petsc.size(); ++i)
+  for (std::size_t i = 0; i < args_petsc.size(); ++i)
   {
     argv_petsc[i] = new char[args_petsc[i].size() + 1];
     sprintf(argv_petsc[i], "%s", args_petsc[i].c_str());
@@ -135,11 +135,11 @@ void GlobalParameters::parse(int argc, char* argv[])
   if (debug)
   {
     cout << "DOLFIN args:";
-    for (uint i = 0; i < args_dolfin.size(); i++)
+    for (std::size_t i = 0; i < args_dolfin.size(); i++)
       cout << " " << args_dolfin[i];
     cout << endl;
     cout << "PETSc args: ";
-    for (uint i = 0; i < args_petsc.size(); i++)
+    for (std::size_t i = 0; i < args_petsc.size(); i++)
       cout << " " << args_petsc[i];
     cout << endl;
   }
@@ -149,9 +149,9 @@ void GlobalParameters::parse(int argc, char* argv[])
   parse_petsc(args_petsc.size(), argv_petsc);
 
   // Cleanup
-  for (uint i = 0; i < args_dolfin.size(); ++i)
+  for (std::size_t i = 0; i < args_dolfin.size(); ++i)
     delete [] argv_dolfin[i];
-  for (uint i = 0; i < args_petsc.size(); ++i)
+  for (std::size_t i = 0; i < args_petsc.size(); ++i)
     delete [] argv_petsc[i];
   delete [] argv_dolfin;
   delete [] argv_petsc;

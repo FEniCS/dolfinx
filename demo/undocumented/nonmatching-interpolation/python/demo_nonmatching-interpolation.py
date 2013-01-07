@@ -24,8 +24,8 @@ finite element spaces on non-matching meshes."""
 from dolfin import *
 
 # Create mesh and define function spaces
-mesh0 = UnitSquare(16, 16)
-mesh1 = UnitSquare(64, 64)
+mesh0 = UnitSquareMesh(16, 16)
+mesh1 = UnitSquareMesh(64, 64)
 
 P1 = FunctionSpace(mesh1, "CG", 1)
 P3 = FunctionSpace(mesh0, "CG", 3)

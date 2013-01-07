@@ -20,8 +20,7 @@
 // First added:  2006-05-16
 // Last changed: 2012-10-30
 
-#include <dolfin/log/dolfin_log.h>
-#include <dolfin/parameter/dolfin_parameter.h>
+#include <dolfin/log/log.h>
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"
@@ -42,7 +41,7 @@ MeshEditor::~MeshEditor()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::open(Mesh& mesh, uint tdim, uint gdim)
+void MeshEditor::open(Mesh& mesh, std::size_t tdim, std::size_t gdim)
 {
   switch (tdim)
   {
@@ -65,7 +64,7 @@ void MeshEditor::open(Mesh& mesh, uint tdim, uint gdim)
   }
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim)
+void MeshEditor::open(Mesh& mesh, CellType::Type type, std::size_t tdim, std::size_t gdim)
 {
   // Clear old mesh data
   mesh.clear();
@@ -89,7 +88,7 @@ void MeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim)
   vertices = std::vector<std::size_t>(mesh.type().num_vertices(tdim), 0);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::open(Mesh& mesh, std::string type, uint tdim, uint gdim)
+void MeshEditor::open(Mesh& mesh, std::string type, std::size_t tdim, std::size_t gdim)
 {
   if (type == "point")
     open(mesh, CellType::point, tdim, gdim);
@@ -183,7 +182,7 @@ void MeshEditor::add_vertex_global(std::size_t local_index,
                                    const Point& p)
 {
   // Geometric dimension
-  const uint gdim = mesh->geometry().dim();
+  const std::size_t gdim = mesh->geometry().dim();
 
   // Add vertex
   add_vertex_common(local_index, gdim);
@@ -273,7 +272,7 @@ void MeshEditor::close(bool order)
   clear();
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_vertex_common(std::size_t v, uint gdim)
+void MeshEditor::add_vertex_common(std::size_t v, std::size_t gdim)
 {
   // Check if we are currently editing a mesh
   if (!mesh)
@@ -314,7 +313,7 @@ void MeshEditor::add_vertex_common(std::size_t v, uint gdim)
   next_vertex++;
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::add_cell_common(std::size_t c, uint tdim)
+void MeshEditor::add_cell_common(std::size_t c, std::size_t tdim)
 {
   // Check if we are currently editing a mesh
   if (!mesh)

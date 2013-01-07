@@ -23,7 +23,6 @@
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
 
-#include <dolfin/common/types.h>
 #include "Mesh.h"
 #include "MeshEntity.h"
 
@@ -69,7 +68,7 @@ namespace dolfin
     MeshEntityIterator() : _pos(0), pos_end(0), index(0) {}
 
     /// Create iterator for mesh entities over given topological dimension
-    MeshEntityIterator(const Mesh& mesh, uint dim)
+    MeshEntityIterator(const Mesh& mesh, std::size_t dim)
       : entity(), _pos(0), pos_end(mesh.size(dim)), index(0)
     {
       // Check if mesh is empty
@@ -85,7 +84,7 @@ namespace dolfin
     }
 
     /// Create iterator for entities of given dimension connected to given entity
-    MeshEntityIterator(const MeshEntity& entity, uint dim)
+    MeshEntityIterator(const MeshEntity& entity, std::size_t dim)
       : entity(entity.mesh(), dim, 0), _pos(0), index(0)
     {
       // Get connectivity
@@ -158,7 +157,7 @@ namespace dolfin
     { entity._local_index = (index ? index[_pos] : _pos); return &entity; }
 
     /// Random access operator
-    MeshEntity& operator[] (uint pos)
+    MeshEntity& operator[] (std::size_t pos)
     { _pos = pos; return *operator->();}
 
     /// Check if iterator has reached the end

@@ -91,7 +91,7 @@ NonlinearVariationalProblem(const Form& F,
     _u(reference_to_no_delete_pointer(u))
 {
   // Store boundary conditions
-  for (uint i = 0; i < bcs.size(); ++i)
+  for (std::size_t i = 0; i < bcs.size(); ++i)
     _bcs.push_back(reference_to_no_delete_pointer(*bcs[i]));
 
   // Check forms
@@ -109,7 +109,7 @@ NonlinearVariationalProblem(const Form& F,
     _u(reference_to_no_delete_pointer(u))
 {
   // Store boundary conditions
-  for (uint i = 0; i < bcs.size(); ++i)
+  for (std::size_t i = 0; i < bcs.size(); ++i)
     _bcs.push_back(reference_to_no_delete_pointer(*bcs[i]));
 
   // Check forms
@@ -124,7 +124,7 @@ NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
     _F(F), _u(u)
 {
   // Store boundary conditions
-  for (uint i = 0; i < bcs.size(); ++i)
+  for (std::size_t i = 0; i < bcs.size(); ++i)
     _bcs.push_back(bcs[i]);
 
   // Check forms
@@ -140,7 +140,7 @@ NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
     _F(F), _J(J), _u(u)
 {
   // Store boundary conditions
-  for (uint i = 0; i < bcs.size(); ++i)
+  for (std::size_t i = 0; i < bcs.size(); ++i)
     _bcs.push_back(bcs[i]);
 
   // Check forms

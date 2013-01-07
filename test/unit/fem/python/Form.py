@@ -38,12 +38,15 @@ class FormTest(unittest.TestCase):
 
     def test_assemble(self):
         ufl_form = self.f*self.u*self.v*dx
+
         dolfin_form = Form(ufl_form)
         ufc_form = dolfin_form._compiled_form
+
         A_ufl_norm = assemble(ufl_form).norm("frobenius")
         A_dolfin_norm = assemble(dolfin_form).norm("frobenius")
         A_ufc_norm = assemble(ufc_form, coefficients=[self.f],
                               function_spaces=[self.V, self.V]).norm("frobenius")
+
         self.assertAlmostEqual(A_ufl_norm, A_dolfin_norm)
         self.assertAlmostEqual(A_ufl_norm, A_ufc_norm)
 

@@ -67,7 +67,7 @@ void XMLParameters::write(const Parameters& parameters, pugi::xml_node xml_node)
   parameters_node.append_attribute("name") = parameters.name().c_str();
 
   // Write each parameter item
-  for (uint i = 0; i < parameter_keys.size(); ++i)
+  for (std::size_t i = 0; i < parameter_keys.size(); ++i)
   {
     const Parameter& parameter = parameters[parameter_keys[i]];
 
@@ -94,7 +94,7 @@ void XMLParameters::write(const Parameters& parameters, pugi::xml_node xml_node)
   // Write nested parameter sets
   std::vector<std::string> nested_keys;
   parameters.get_parameter_set_keys(nested_keys);
-  for (uint i = 0; i < nested_keys.size(); ++i)
+  for (std::size_t i = 0; i < nested_keys.size(); ++i)
     write(parameters(nested_keys[i]), parameters_node);
 }
 //-----------------------------------------------------------------------------

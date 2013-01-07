@@ -37,9 +37,9 @@ namespace dolfin
   class GenericVector;
 
   /// Solve linear system Ax = b
-  unsigned int solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b,
-             std::string method = "lu",
-             std::string preconditioner = "none");
+  std::size_t solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b,
+                    std::string method = "lu",
+                    std::string preconditioner = "none");
 
   /// List available linear algebra backends
   void list_linear_algebra_backends();

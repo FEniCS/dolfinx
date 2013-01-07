@@ -21,9 +21,9 @@
 #ifndef __TENSOR_PRODUCT_MATRIX_H
 #define __TENSOR_PRODUCT_MATRIX_H
 
+#include <cstddef>
+#include <string>
 #include <vector>
-
-#include <dolfin/common/types.h>
 
 namespace dolfin
 {
@@ -53,7 +53,7 @@ namespace dolfin
   public:
 
     /// Create tensor product vector with given dimensions
-    TensorProductVector(const std::vector<unsigned int>& dims);
+    TensorProductVector(const std::vector<std::size_t>& dims);
 
     /// Destructor
     virtual ~TensorProductVector() {}

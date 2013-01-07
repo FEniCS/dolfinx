@@ -72,7 +72,7 @@ int main()
   std::vector<double>& coordinates = mesh.coordinates();
   const std::vector<double> original = coordinates;
 
-  for (dolfin::uint i = 0; i < 200; i++)
+  for (std::size_t i = 0; i < 200; i++)
   {
     if (X < H || X > 1.0 - H)
       dX = -dX;
@@ -83,7 +83,7 @@ int main()
     X += dX;
     Y += dY;
 
-    for (dolfin::uint j = 0; j < mesh.num_vertices(); ++j)
+    for (std::size_t j = 0; j < mesh.num_vertices(); ++j)
     {
       const double x = coordinates[2*j];
       const double y = coordinates[2*j + 1];
@@ -107,7 +107,7 @@ int main()
 
   ScalarExpression f_scalar;
 
-  for (dolfin::uint i = 0; i < 100; i++)
+  for (std::size_t i = 0; i < 100; i++)
   {
     f_scalar.t += 0.01;
     plot(f_scalar, mesh, p);
@@ -116,7 +116,7 @@ int main()
   // Plot vector function
   UnitSquareMesh unit_square(16, 16);
   VectorExpression f_vector;
-  for (dolfin::uint i = 0; i < 200; i++)
+  for (std::size_t i = 0; i < 200; i++)
   {
     f_vector.t += 0.005;
     plot(f_vector, unit_square, "Plotting vector function");

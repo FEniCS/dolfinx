@@ -21,7 +21,7 @@
 // First added:  2006-05-11
 // Last changed: 2012-06-12
 
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "Mesh.h"
 #include "MeshTopology.h"
 #include "Vertex.h"
@@ -30,13 +30,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshEntity::MeshEntity(const Mesh& mesh, uint dim, std::size_t index)
+MeshEntity::MeshEntity(const Mesh& mesh, std::size_t dim, std::size_t index)
   : _mesh(0), _dim(0), _local_index(0)
 {
   init(mesh, dim, index);
 }
 //-----------------------------------------------------------------------------
-void MeshEntity::init(const Mesh& mesh, uint dim, std::size_t index)
+void MeshEntity::init(const Mesh& mesh, std::size_t dim, std::size_t index)
 {
   // Store variables
   _mesh = &mesh; // Yes, we should probably use a shared pointer here...
@@ -74,10 +74,10 @@ bool MeshEntity::incident(const MeshEntity& entity) const
 
   // Get list of entities for given topological dimension
   const std::size_t* entities = _mesh->topology()(_dim, entity._dim)(_local_index);
-  const uint num_entities = _mesh->topology()(_dim, entity._dim).size(_local_index);
+  const std::size_t num_entities = _mesh->topology()(_dim, entity._dim).size(_local_index);
 
   // Check if any entity matches
-  for (uint i = 0; i < num_entities; ++i)
+  for (std::size_t i = 0; i < num_entities; ++i)
     if (entities[i] == entity._local_index)
       return true;
 
@@ -97,10 +97,10 @@ std::size_t MeshEntity::index(const MeshEntity& entity) const
 
   // Get list of entities for given topological dimension
   const std::size_t* entities = _mesh->topology()(_dim, entity._dim)(_local_index);
-  const uint num_entities = _mesh->topology()(_dim, entity._dim).size(_local_index);
+  const std::size_t num_entities = _mesh->topology()(_dim, entity._dim).size(_local_index);
 
   // Check if any entity matches
-  for (uint i = 0; i < num_entities; ++i)
+  for (std::size_t i = 0; i < num_entities; ++i)
     if (entities[i] == entity._local_index)
       return i;
 
@@ -119,7 +119,7 @@ Point MeshEntity::midpoint() const
     return _mesh->geometry().point(_local_index);
 
   // Other wise iterate over incident vertices and compute average
-  uint num_vertices = 0;
+  std::size_t num_vertices = 0;
 
   double x = 0.0;
   double y = 0.0;

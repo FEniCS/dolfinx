@@ -24,7 +24,6 @@
 #include <map>
 #include <set>
 #include <vector>
-#include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
@@ -63,7 +62,7 @@ namespace dolfin
     void set(std::string row, std::string col, int value);
 
     /// Set value of table entry
-    void set(std::string row, std::string col, uint value);
+    void set(std::string row, std::string col, std::size_t value);
 
     /// Set value of table entry
     void set(std::string row, std::string col, double value);
@@ -126,7 +125,7 @@ namespace dolfin
     ~TableEntry();
 
     /// Assign value to table entry
-    const TableEntry& operator= (uint value);
+    const TableEntry& operator= (std::size_t value);
 
     /// Assign value to table entry
     const TableEntry& operator= (int value);

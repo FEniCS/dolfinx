@@ -53,8 +53,8 @@ class Pressure : public Expression
   }
 };
 
-int main() {
-
+int main()
+{
   parameters["allow_extrapolation"] = true;
 
   // Create mesh and function space

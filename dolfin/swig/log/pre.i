@@ -27,8 +27,8 @@
 //=============================================================================
 
 //-----------------------------------------------------------------------------
-// Due to a SWIG bug when overloading a function that also use elipsis (...) 
-// argument in C++, we need to ignore other overloaded functions. They are 
+// Due to a SWIG bug when overloading a function that also use elipsis (...)
+// argument in C++, we need to ignore other overloaded functions. They are
 // reimplemented in log_post.i
 //-----------------------------------------------------------------------------
 %ignore dolfin::info(const Parameters& parameters, bool verbose=false);
@@ -38,7 +38,7 @@
 //-----------------------------------------------------------------------------
 // Need to ignore these dues to SWIG confusion of overloaded functions
 //-----------------------------------------------------------------------------
-%ignore dolfin::Table::set(std::string,std::string,uint);
+%ignore dolfin::Table::set(std::string,std::string,std::size_t);
 
 //-----------------------------------------------------------------------------
 // Ignore operators so SWIG stop complaining

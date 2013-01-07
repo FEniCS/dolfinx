@@ -72,7 +72,7 @@ if has_mpi() and (has_parmetis() or has_scotch()) and \
        (has_linear_algebra_backend("Epetra") or has_linear_algebra_backend("PETSc")):
     prefixes.append("mpirun -np 3 ")
 else:
-    print "DOLFIN has not been compiled with MPI and/or ParMETIS. Unit tests will not be run in parallel."
+    print "DOLFIN has not been compiled with MPI and/or ParMETIS/SCOTCH. Unit tests will not be run in parallel."
 
 # Allow to disable parallel testing
 if "DISABLE_PARALLEL_TESTING" in os.environ:

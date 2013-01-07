@@ -94,7 +94,7 @@ namespace dolfin
     /// to split the cell tensor into symmetric/antisymmetric parts.
     virtual void add_to_global_tensor(GenericTensor& A,
                                       std::vector<double>& local_A,
-                                      std::vector<const std::vector<DolfinIndex>* >& dofs);
+                                      std::vector<const std::vector<dolfin::la_index>* >& dofs);
 
   private:
 

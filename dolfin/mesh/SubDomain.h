@@ -21,7 +21,7 @@
 #ifndef __SUB_DOMAIN_H
 #define __SUB_DOMAIN_H
 
-#include <dolfin/common/types.h>
+#include <cstddef>
 
 namespace dolfin
 {
@@ -102,11 +102,11 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh to be marked.
-    ///     dim (unsigned int)
+    ///     dim (std::size_t)
     ///         The topological dimension of entities to be marked.
     ///     sub_domain (std::size_t)
     ///         The subdomain number.
-    void mark(Mesh& mesh, unsigned int dim, std::size_t sub_domain) const;
+    void mark(Mesh& mesh, std::size_t dim, std::size_t sub_domain) const;
 
     //--- Marking of MeshFunction ---
 
@@ -198,9 +198,9 @@ namespace dolfin
     /// Return geometric dimension
     ///
     /// *Returns*
-    ///     uint
+    ///     std::size_t
     ///         The geometric dimension.
-    uint geometric_dimension() const;
+    std::size_t geometric_dimension() const;
 
   private:
 
@@ -215,7 +215,7 @@ namespace dolfin
 
     // Geometric dimension, needed for SWIG interface, will be set before
     // calls to inside() and map()
-    mutable uint _geometric_dimension;
+    mutable std::size_t _geometric_dimension;
 
   };
 

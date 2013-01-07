@@ -22,7 +22,6 @@
 #define __RESTRICTION_H
 
 #include <boost/shared_ptr.hpp>
-
 #include "MeshFunction.h"
 
 namespace dolfin
@@ -55,35 +54,35 @@ namespace dolfin
     ///         The mesh
     ///     sub_domain (_SubDomain_)
     ///         Sub domain defining the restriction
-    ///     dim (uint)
+    ///     dim (std::size_t)
     ///         Dimension of restriction
-    Restriction(const Mesh& mesh, const SubDomain& sub_domain, uint dim);
+    Restriction(const Mesh& mesh, const SubDomain& sub_domain, std::size_t dim);
 
     /// Create restriction from domain markers
     ///
     /// *Arguments*
-    ///     domain_markers (_MeshFunction_ <uint>)
+    ///     domain_markers (_MeshFunction_ <std::size_t>)
     ///         Domain markers for the cells of the mesh.
-    ///     domain_number (uint)
+    ///     domain_number (std::size_t)
     ///         Identifier for domain.
     Restriction(const MeshFunction<std::size_t>& domain_markers,
-                uint domain_number);
+                std::size_t domain_number);
 
     /// Create restriction from domain markers (shared pointer version)
     ///
     /// *Arguments*
-    ///     domain_markers (_MeshFunction_ <uint>)
+    ///     domain_markers (_MeshFunction_ <std::size_t>)
     ///         Domain markers for the cells of the mesh.
-    ///     domain_number (uint)
+    ///     domain_number (std::size_t)
     ///         Identifier for domain.
     Restriction(boost::shared_ptr<const MeshFunction<std::size_t> > domain_markers,
-                uint domain_number);
+                std::size_t domain_number);
 
     /// Return the full unrestricted mesh
     const Mesh& mesh() const;
 
     /// Return topological dimension of restriction
-    uint dim() const;
+    std::size_t dim() const;
 
     /// Check whether restriction contains entity
     bool contains(const MeshEntity& entity) const
@@ -93,7 +92,7 @@ namespace dolfin
     }
 
     /// Check whether restriction contains entity (d, i)
-    bool contains(uint d, uint i) const
+    bool contains(std::size_t d, std::size_t i) const
     {
       dolfin_assert(_domain_markers);
       dolfin_assert(d == _domain_markers->dim());
@@ -104,13 +103,13 @@ namespace dolfin
 
     // Initialize domain markers from subdomain
     void init_from_subdomain(const Mesh& mesh,
-                             const SubDomain& sub_domain, uint dim);
+                             const SubDomain& sub_domain, std::size_t dim);
 
     // Domain markers
     boost::shared_ptr<const MeshFunction<std::size_t> > _domain_markers;
 
     // Identifier for domain
-    uint _domain_number;
+    std::size_t _domain_number;
 
   };
 

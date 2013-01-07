@@ -29,16 +29,18 @@
 
 // Make sure Python int from std::size_t can be constructed
 // It looks like SWIG_From_size_t is available but not SWIG_From_std_size_t
-%fragment("SWIG_From_std_size_t", "header") {
+%fragment("SWIG_From_std_size_t", "header")
+{
   SWIGINTERNINLINE PyObject * SWIG_From_std_size_t  (std::size_t value)
   {
     return SWIG_From_unsigned_SS_long (static_cast< unsigned long >(value));
   }
 }
 
-// Make sure Python int from DolfinIndex can be constructed
-%fragment("SWIG_From_dolfin_DolfinIndex", "header") {
-  SWIGINTERNINLINE PyObject * SWIG_From_dolfin_DolfinIndex  (dolfin::DolfinIndex value)
+// Make sure Python int from dolfin::la_index can be constructed
+%fragment("SWIG_From_dolfin_la_index", "header")
+{
+  SWIGINTERNINLINE PyObject * SWIG_From_dolfin_la_index(dolfin::la_index value)
   {
     return SWIG_From_unsigned_SS_long (static_cast< unsigned long >(value));
   }
@@ -48,7 +50,8 @@
 // A home brewed type check for checking integers
 // Needed due to problems with PyInt_Check from python 2.6 and NumPy
 //-----------------------------------------------------------------------------
-%fragment("PyInteger_Check", "header") {
+%fragment("PyInteger_Check", "header")
+{
   SWIGINTERNINLINE bool PyInteger_Check(PyObject* in)
   {
     return  PyInt_Check(in) || (PyArray_CheckScalar(in) &&
@@ -63,7 +66,8 @@
 //-----------------------------------------------------------------------------
 #define Py_convert_frag(Type) "Py_convert_" {Type}
 
-%fragment("Py_convert_std_size_t", "header", fragment="PyInteger_Check") {
+%fragment("Py_convert_std_size_t", "header", fragment="PyInteger_Check")
+{
   // A check for integer
   SWIGINTERNINLINE bool Py_convert_std_size_t(PyObject* in, std::size_t& value)
   {
@@ -188,4 +192,4 @@
 %fragment(SWIG_From_frag(unsigned int));
 %fragment(SWIG_From_frag(int));
 %fragment(SWIG_From_frag(std::size_t));
-%fragment(SWIG_From_frag(dolfin::DolfinIndex));
+%fragment(SWIG_From_frag(dolfin::la_index));

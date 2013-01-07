@@ -121,7 +121,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
   Timer timer("Assemble cells");
 
   // Set number of OpenMP threads (from parameter systems)
-  const unsigned int num_threads = parameters["num_threads"];
+  const std::size_t num_threads = parameters["num_threads"];
   omp_set_num_threads(num_threads);
 
   // Extract mesh
@@ -143,7 +143,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dof map for a cell
-  std::vector<const std::vector<DolfinIndex>* > dofs(form_rank);
+  std::vector<const std::vector<dolfin::la_index>* > dofs(form_rank);
 
   // Color mesh
   std::vector<std::size_t> coloring_type = a.coloring(mesh.topology().dim());
@@ -273,7 +273,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dof maps for a cell
-  std::vector<const std::vector<DolfinIndex>* > dofs(form_rank);
+  std::vector<const std::vector<dolfin::la_index>* > dofs(form_rank);
 
   // FIXME: Pass or determine coloring type
   // Define graph type
@@ -455,7 +455,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
     dofmaps.push_back(a.function_space(i)->dofmap().get());
 
   // Vector to hold dofs for cells
-  std::vector<std::vector<DolfinIndex> > macro_dofs(form_rank);
+  std::vector<std::vector<dolfin::la_index> > macro_dofs(form_rank);
 
   // Interior facet integral
   const ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0].get();
@@ -549,8 +549,8 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
       for (std::size_t i = 0; i < form_rank; i++)
       {
         // Get dofs for each cell
-        const std::vector<DolfinIndex>& cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
-        const std::vector<DolfinIndex>& cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
+        const std::vector<dolfin::la_index>& cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
+        const std::vector<dolfin::la_index>& cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
 
         // Create space in macro dof vector
         macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());

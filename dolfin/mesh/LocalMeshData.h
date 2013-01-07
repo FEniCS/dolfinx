@@ -29,7 +29,6 @@
 #include <map>
 #include <vector>
 #include <boost/multi_array.hpp>
-#include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include "CellType.h"
 
@@ -114,16 +113,16 @@ namespace dolfin
     std::size_t num_global_cells;
 
     // Number of vertices per cell
-    uint num_vertices_per_cell;
+    std::size_t num_vertices_per_cell;
 
     // Geometrical dimension
-    uint gdim;
+    std::size_t gdim;
 
     // Topological dimension
-    uint tdim;
+    std::size_t tdim;
 
     // Mesh domain data [dim](line, (cell_index, local_index, value))
-    std::map<std::size_t, std::vector<std::pair<std::pair<std::size_t, dolfin::uint>, dolfin::uint> > >
+    std::map<std::size_t, std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::size_t> > >
         domain_data;
 
     // Friends

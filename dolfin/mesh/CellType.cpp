@@ -22,6 +22,7 @@
 // Last changed: 2011-11-14
 
 #include <algorithm>
+
 #include <dolfin/log/dolfin_log.h>
 #include "Cell.h"
 #include "CellType.h"
@@ -136,11 +137,11 @@ bool CellType::ordered(const Cell& cell,
 {
   // Get mesh topology
   const MeshTopology& topology = cell.mesh().topology();
-  const uint dim = topology.dim();
+  const std::size_t dim = topology.dim();
   const std::size_t c = cell.index();
 
   // Get vertices
-  const uint num_vertices = topology(dim, 0).size(c);
+  const std::size_t num_vertices = topology(dim, 0).size(c);
   const std::size_t* vertices = topology(dim, 0)(c);
   dolfin_assert(vertices);
 
@@ -149,10 +150,10 @@ bool CellType::ordered(const Cell& cell,
     return false;
 
   // Note the comparison below: d + 1 < dim, not d < dim - 1
-  // Otherwise, d < dim - 1 will evaluate to true for dim = 0 with uint
+  // Otherwise, d < dim - 1 will evaluate to true for dim = 0 with std::size_t
 
   // Check numbering of entities of positive dimension and codimension
-  for (uint d = 1; d + 1 < dim; d++)
+  for (std::size_t d = 1; d + 1 < dim; d++)
   {
     // Check if entities exist, otherwise skip
     const MeshConnectivity& connectivity = topology(d, 0);
@@ -164,7 +165,7 @@ bool CellType::ordered(const Cell& cell,
     const std::size_t* entities = topology(dim, d)(c);
 
     // Iterate over entities
-    for (uint e = 1; e < num_entities; e++)
+    for (std::size_t e = 1; e < num_entities; e++)
     {
       // Get vertices for first entity
       const std::size_t  e0 = entities[e - 1];
@@ -185,7 +186,7 @@ bool CellType::ordered(const Cell& cell,
   return true;
 }
 //-----------------------------------------------------------------------------
-void CellType::sort_entities(uint num_vertices,
+void CellType::sort_entities(std::size_t num_vertices,
                             std::size_t* local_vertices,
                        const std::vector<std::size_t>& local_to_global_vertex_indices)
 {
@@ -197,13 +198,13 @@ void CellType::sort_entities(uint num_vertices,
     std::sort(local_vertices, local_vertices + num_vertices, global_sort);
 }
 //-----------------------------------------------------------------------------
-bool CellType::increasing(uint num_vertices, const std::size_t* local_vertices,
+bool CellType::increasing(std::size_t num_vertices, const std::size_t* local_vertices,
                        const std::vector<std::size_t>& local_to_global_vertex_indices)
 {
   // Two cases here, either check vertices directly (when running in serial)
   // or check based on the global indices (when running in parallel)
 
-  for (uint v = 1; v < num_vertices; v++)
+  for (std::size_t v = 1; v < num_vertices; v++)
     if (local_to_global_vertex_indices[local_vertices[v - 1]] >= local_to_global_vertex_indices[local_vertices[v]])
       return false;
   return true;
@@ -211,21 +212,21 @@ bool CellType::increasing(uint num_vertices, const std::size_t* local_vertices,
 //-----------------------------------------------------------------------------
 bool CellType::increasing(std::size_t n0, const std::size_t* v0,
                           std::size_t n1, const std::size_t* v1,
-                          uint num_vertices, const std::size_t* local_vertices,
+                          std::size_t num_vertices, const std::size_t* local_vertices,
                const std::vector<std::size_t>& local_to_global_vertex_indices)
 {
   dolfin_assert(n0 == n1);
   dolfin_assert(num_vertices > n0);
-  const uint num_non_incident = num_vertices - n0;
+  const std::size_t num_non_incident = num_vertices - n0;
 
   // Compute non-incident vertices for first entity
-  std::vector<uint> w0(num_non_incident);
-  uint k = 0;
-  for (uint i = 0; i < num_vertices; i++)
+  std::vector<std::size_t> w0(num_non_incident);
+  std::size_t k = 0;
+  for (std::size_t i = 0; i < num_vertices; i++)
   {
     const std::size_t v = local_vertices[i];
     bool incident = false;
-    for (uint j = 0; j < n0; j++)
+    for (std::size_t j = 0; j < n0; j++)
     {
       if (v0[j] == v)
       {
@@ -239,13 +240,13 @@ bool CellType::increasing(std::size_t n0, const std::size_t* v0,
   dolfin_assert(k == num_non_incident);
 
   // Compute non-incident vertices for second entity
-  std::vector<uint> w1(num_non_incident);
+  std::vector<std::size_t> w1(num_non_incident);
   k = 0;
-  for (uint i = 0; i < num_vertices; i++)
+  for (std::size_t i = 0; i < num_vertices; i++)
   {
-    const uint v = local_vertices[i];
+    const std::size_t v = local_vertices[i];
     bool incident = false;
-    for (uint j = 0; j < n1; j++)
+    for (std::size_t j = 0; j < n1; j++)
     {
       if (v1[j] == v)
       {
@@ -260,7 +261,7 @@ bool CellType::increasing(std::size_t n0, const std::size_t* v0,
   dolfin_assert(k == num_non_incident);
 
   // Compare lexicographic ordering of w0 and w1
-  for (uint k = 0; k < num_non_incident; k++)
+  for (std::size_t k = 0; k < num_non_incident; k++)
   {
     if (local_to_global_vertex_indices[w0[k]] < local_to_global_vertex_indices[w1[k]])
       return true;
@@ -271,7 +272,7 @@ bool CellType::increasing(std::size_t n0, const std::size_t* v0,
   return true;
 }
 //-----------------------------------------------------------------------------
-uint CellType::orientation(const Cell& cell, const Point& up) const
+std::size_t CellType::orientation(const Cell& cell, const Point& up) const
 {
   Point n = cell.cell_normal();
   return (n.dot(up) < 0.0 ? 1 : 0);

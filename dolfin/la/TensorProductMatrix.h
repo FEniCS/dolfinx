@@ -21,7 +21,8 @@
 #ifndef __TENSOR_PRODUCT_MATRIX_H
 #define __TENSOR_PRODUCT_MATRIX_H
 
-#include <dolfin/common/types.h>
+#include <cstddef>
+#include <string>
 
 namespace dolfin
 {
@@ -51,7 +52,7 @@ namespace dolfin
   public:
 
     /// Create tensor product matrix with given number of factors
-    TensorProductMatrix(unsigned int num_factors);
+    TensorProductMatrix(std::size_t num_factors);
 
     /// Destructor
     virtual ~TensorProductMatrix() {}

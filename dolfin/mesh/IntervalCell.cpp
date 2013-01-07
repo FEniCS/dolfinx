@@ -23,7 +23,7 @@
 // Last changed: 2011-11-14
 
 #include <algorithm>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "Cell.h"
 #include "MeshEditor.h"
 #include "MeshEntity.h"
@@ -33,12 +33,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::uint IntervalCell::dim() const
+std::size_t IntervalCell::dim() const
 {
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint IntervalCell::num_entities(uint dim) const
+std::size_t IntervalCell::num_entities(std::size_t dim) const
 {
   switch (dim)
   {
@@ -55,7 +55,7 @@ dolfin::uint IntervalCell::num_entities(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint IntervalCell::num_vertices(uint dim) const
+std::size_t IntervalCell::num_vertices(std::size_t dim) const
 {
   switch (dim)
   {
@@ -72,14 +72,14 @@ dolfin::uint IntervalCell::num_vertices(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint IntervalCell::orientation(const Cell& cell) const
+std::size_t IntervalCell::orientation(const Cell& cell) const
 {
   const Point up(0.0, 1.0);
   return cell.orientation(up);
 }
 //-----------------------------------------------------------------------------
 void IntervalCell::create_entities(std::vector<std::vector<std::size_t> >& e,
-                                   uint dim, const std::size_t* v) const
+                                   std::size_t dim, const std::size_t* v) const
 {
   // We don't need to create any entities
   dolfin_error("IntervalCell.cpp",
@@ -132,7 +132,7 @@ double IntervalCell::volume(const MeshEntity& interval) const
 
   // Compute length of interval (line segment)
   double sum = 0.0;
-  for (uint i = 0; i < geometry.dim(); ++i)
+  for (std::size_t i = 0; i < geometry.dim(); ++i)
   {
     const double dx = x1[i] - x0[i];
     sum += dx*dx;
@@ -155,12 +155,12 @@ double IntervalCell::diameter(const MeshEntity& interval) const
   return volume(interval);
 }
 //-----------------------------------------------------------------------------
-double IntervalCell::normal(const Cell& cell, uint facet, uint i) const
+double IntervalCell::normal(const Cell& cell, std::size_t facet, std::size_t i) const
 {
   return normal(cell, facet)[i];
 }
 //-----------------------------------------------------------------------------
-Point IntervalCell::normal(const Cell& cell, uint facet) const
+Point IntervalCell::normal(const Cell& cell, std::size_t facet) const
 {
   // Get mesh geometry
   const MeshGeometry& geometry = cell.mesh().geometry();
@@ -208,7 +208,7 @@ Point IntervalCell::cell_normal(const Cell& cell) const
   return n;
 }
 //-----------------------------------------------------------------------------
-double IntervalCell::facet_area(const Cell& cell, uint facet) const
+double IntervalCell::facet_area(const Cell& cell, std::size_t facet) const
 {
   return 1.0;
 }

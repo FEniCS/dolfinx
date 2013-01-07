@@ -85,16 +85,16 @@
 // Typemaps for GenericMatrix get and set functions
 //-----------------------------------------------------------------------------
 %typemap(in) const double* block = double* _array;
-%typemap(in) (std::size_t m, const dolfin::DolfinIndex* rows) = (std::size_t _array_dim, dolfin::DolfinIndex* _array);
-%typemap(in) (std::size_t n, const dolfin::DolfinIndex* cols) = (std::size_t _array_dim, dolfin::DolfinIndex* _array);
+%typemap(in) (std::size_t m, const dolfin::la_index* rows) = (std::size_t _array_dim, dolfin::la_index* _array);
+%typemap(in) (std::size_t n, const dolfin::la_index* cols) = (std::size_t _array_dim, dolfin::la_index* _array);
 
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (std::size_t m, const dolfin::DolfinIndex* rows)
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (std::size_t m, const dolfin::la_index* rows)
 {
   // rows typemap
   $1 = PyArray_Check($input);
 }
 
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (std::size_t n, const dolfin::DolfinIndex* cols)
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (std::size_t n, const dolfin::la_index* cols)
 {
   // cols typemap
   $1 = PyArray_Check($input);
@@ -104,9 +104,9 @@
 // Ignore low level interface
 //-----------------------------------------------------------------------------
 %ignore dolfin::LinearAlgebraObject::instance;
-%ignore dolfin::GenericTensor::get(double*, const  dolfin::DolfinIndex*,        const dolfin::DolfinIndex * const *) const;
-%ignore dolfin::GenericTensor::set(const double* , const dolfin::DolfinIndex* , const dolfin::DolfinIndex * const *);
-%ignore dolfin::GenericTensor::add(const double* , const dolfin::DolfinIndex* , const dolfin::DolfinIndex * const *);
+%ignore dolfin::GenericTensor::get(double*, const  dolfin::la_index*,        const dolfin::la_index * const *) const;
+%ignore dolfin::GenericTensor::set(const double* , const dolfin::la_index* , const dolfin::la_index * const *);
+%ignore dolfin::GenericTensor::add(const double* , const dolfin::la_index* , const dolfin::la_index * const *);
 %ignore dolfin::PETScLinearOperator::wrapper;
 
 //-----------------------------------------------------------------------------
@@ -144,8 +144,8 @@
 // NOTE: The %ignore has to be set using the actual type used in the declaration
 // so we cannot use dolfin::uint or unsigned int for uint. Strange...
 //-----------------------------------------------------------------------------
-%ignore dolfin::GenericVector::get(double*, std::size_t, const dolfin::DolfinIndex*) const;
-%ignore dolfin::GenericVector::set(const double* , std::size_t m, const dolfin::DolfinIndex*);
+%ignore dolfin::GenericVector::get(double*, std::size_t, const dolfin::la_index*) const;
+%ignore dolfin::GenericVector::set(const double* , std::size_t m, const dolfin::la_index*);
 
 %ignore dolfin::GenericVector::data() const;
 %ignore dolfin::GenericVector::data();
@@ -160,12 +160,12 @@
 %ignore dolfin::GenericMatrix::operator+=;
 %ignore dolfin::GenericMatrix::operator-=;
 
-%ignore dolfin::GenericMatrix::set(const double*, const dolfin::DolfinIndex*,
-                                   const dolfin::DolfinIndex * const *);
-%ignore dolfin::GenericMatrix::add(const double*, const dolfin::DolfinIndex*,
-                                   const dolfin::DolfinIndex * const * rows);
-%ignore dolfin::GenericMatrix::get(double*, const dolfin::DolfinIndex*,
-                                   const dolfin::DolfinIndex * const *) const;
+%ignore dolfin::GenericMatrix::set(const double*, const dolfin::la_index*,
+                                   const dolfin::la_index * const *);
+%ignore dolfin::GenericMatrix::add(const double*, const dolfin::la_index*,
+                                   const dolfin::la_index * const * rows);
+%ignore dolfin::GenericMatrix::get(double*, const dolfin::la_index*,
+                                   const dolfin::la_index * const *) const;
 %ignore dolfin::GenericMatrix::data;
 %ignore dolfin::GenericMatrix::getitem;
 %ignore dolfin::GenericMatrix::setitem;
@@ -183,11 +183,16 @@
 %ignore dolfin::PETScKrylovSolver(std::string, PETScUserPreconditioner&);
 
 //-----------------------------------------------------------------------------
-// PETSc backend
+// PETSc/SLEPc backend
 //-----------------------------------------------------------------------------
 #ifdef HAS_PETSC
 %ignore dolfin::PETScVector::vec;
 %ignore dolfin::PETScBaseMatrix::mat;
+#endif
+
+#ifdef HAS_SLEPC
+%ignore dolfin::SLEPcEigenSolver(const PETScMatrix&);
+%ignore dolfin::SLEPcEigenSolver(const PETScMatrix&, const PETScMatrix&);
 #endif
 
 //-----------------------------------------------------------------------------

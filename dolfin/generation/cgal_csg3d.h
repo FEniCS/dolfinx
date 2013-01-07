@@ -39,7 +39,7 @@ namespace dolfin
     typedef Exact_Polyhedron_3::HalfedgeDS Exact_HalfedgeDS;
     typedef Nef_polyhedron_3::Point_3 Exact_Point_3;
 
-    // Domain 
+    // Domain
     typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
     typedef CGAL::Mesh_polyhedron_3<K>::type Polyhedron_3;
     typedef K::Point_3 Point_3;

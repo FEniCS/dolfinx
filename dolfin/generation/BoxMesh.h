@@ -23,6 +23,7 @@
 #ifndef __BOX_H
 #define __BOX_H
 
+#include <cstddef>
 #include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
@@ -68,7 +69,7 @@ namespace dolfin
     ///         Box mesh(-1, -1, -1, 2, 2, 2, 6, 6, 6);
     ///
     BoxMesh(double x0, double y0, double z0, double x1, double y1, double z1,
-        uint nx, uint ny, uint nz);
+            std::size_t nx, std::size_t ny, std::size_t nz);
 
   };
 

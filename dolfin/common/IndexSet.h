@@ -21,8 +21,8 @@
 #ifndef __INDEX_SET_H
 #define __INDEX_SET_H
 
+#include <cstddef>
 #include <vector>
-#include "types.h"
 
 namespace dolfin
 {
@@ -36,7 +36,8 @@ namespace dolfin
   public:
 
     /// Create index set of given size
-    IndexSet(uint size) : _size(size), _has_index(size), _positions(size)
+    IndexSet(std::size_t size) : _size(size), _has_index(size),
+                                 _positions(size)
     {
       _indices.reserve(size);
       clear();
@@ -50,18 +51,18 @@ namespace dolfin
     { return _indices.empty(); }
 
     /// Return size of set
-    uint size() const
+    std::size_t size() const
     { return _indices.size(); }
 
     /// Check whether index is in set
-    bool has_index(uint index) const
+    bool has_index(std::size_t index) const
     {
       dolfin_assert(index < _size);
       return _has_index[index];
     }
 
     /// Return position (if any) for given index
-    uint find(uint index) const
+    std::size_t find(std::size_t index) const
     {
       dolfin_assert(index < _size);
       if (!_has_index[index])
@@ -72,21 +73,21 @@ namespace dolfin
     }
 
     /// Return given index
-    uint& operator[] (uint i)
+    std::size_t& operator[] (std::size_t i)
     {
       dolfin_assert(i < _indices.size());
       return _indices[i];
     }
 
     /// Return given index (const version)
-    const uint& operator[] (uint i) const
+    const std::size_t& operator[] (std::size_t i) const
     {
       dolfin_assert(i < _indices.size());
       return _indices[i];
     }
 
     /// Insert index into set
-    void insert(uint index)
+    void insert(std::size_t index)
     {
       dolfin_assert(index < _size);
       if (_has_index[index])
@@ -100,7 +101,7 @@ namespace dolfin
     void fill()
     {
       _indices.clear();
-      for (uint i = 0; i < _size; i++)
+      for (std::size_t i = 0; i < _size; i++)
         _indices.push_back(i);
       std::fill(_has_index.begin(), _has_index.end(), true);
     }
@@ -116,16 +117,16 @@ namespace dolfin
   private:
 
     // Size (maximum index + 1)
-    uint _size;
+    std::size_t _size;
 
     // Vector of indices
-    std::vector<uint> _indices;
+    std::vector<std::size_t> _indices;
 
     // Indicators for which indices are in the set
-    std::vector<uint> _has_index;
+    std::vector<std::size_t> _has_index;
 
     // Mapping from indices to positions
-    std::vector<uint> _positions;
+    std::vector<std::size_t> _positions;
 
   };
 

@@ -123,7 +123,7 @@ public:
 }; // end class Enriched_face_base_2
 
 typedef CGAL::Triangulation_vertex_base_2<Inexact_Kernel> Vb;
-typedef CGAL::Triangulation_vertex_base_with_info_2<unsigned int, Inexact_Kernel, Vb> Vbb;
+typedef CGAL::Triangulation_vertex_base_with_info_2<std::size_t, Inexact_Kernel, Vb> Vbb;
 typedef Enriched_face_base_2<Inexact_Kernel, Face_base> Fb;
 typedef CGAL::Triangulation_data_structure_2<Vbb, Fb> TDS;
 typedef CGAL::Exact_predicates_tag Itag;
@@ -153,7 +153,7 @@ Nef_polyhedron_2 make_circle(const Circle* c)
 {
   std::vector<Nef_point_2> pts;
 
-  for (dolfin::uint i = 0; i < c->fragments(); i++)
+  for (std::size_t i = 0; i < c->fragments(); i++)
   {
     const double phi = (2*DOLFIN_PI*i) / c->fragments();
     const double x = c->center().x() + c->radius()*cos(phi);
@@ -168,7 +168,7 @@ Nef_polyhedron_2 make_ellipse(const Ellipse* e)
 {
   std::vector<Nef_point_2> pts;
 
-  for (dolfin::uint i = 0; i < e->fragments(); i++)
+  for (std::size_t i = 0; i < e->fragments(); i++)
   {
     const double phi = (2*DOLFIN_PI*i) / e->fragments();
     const double x = e->center().x() + e->a()*cos(phi);
@@ -408,12 +408,12 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   mesh.clear();
 
   // Get various dimensions
-  const uint gdim = cdt.finite_vertices_begin()->point().dimension();
-  const uint tdim = cdt.dimension();
-  const uint num_vertices = cdt.number_of_vertices();
+  const std::size_t gdim = cdt.finite_vertices_begin()->point().dimension();
+  const std::size_t tdim = cdt.dimension();
+  const std::size_t num_vertices = cdt.number_of_vertices();
 
   // Count valid cells
-  unsigned int num_cells = 0;
+  std::size_t num_cells = 0;
   CDT::Finite_faces_iterator cgal_cell;
   for (cgal_cell = cdt.finite_faces_begin(); cgal_cell != cdt.finite_faces_end(); ++cgal_cell)
   {
@@ -431,7 +431,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   mesh_editor.init_cells(num_cells);
 
   // Add vertices to mesh
-  unsigned int vertex_index = 0;
+  std::size_t vertex_index = 0;
   CDT::Finite_vertices_iterator cgal_vertex;
   for (cgal_vertex = cdt.finite_vertices_begin();
        cgal_vertex != cdt.finite_vertices_end(); ++cgal_vertex)
@@ -452,7 +452,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   dolfin_assert(vertex_index == num_vertices);
 
   // Add cells to mesh
-  unsigned int cell_index = 0;
+  std::size_t cell_index = 0;
   for (cgal_cell = cdt.finite_faces_begin(); cgal_cell != cdt.finite_faces_end(); ++cgal_cell)
   {
     // Add cell if it is in the domain

@@ -24,7 +24,8 @@
 #ifndef __UNIT_INTERVAL_MESH_H
 #define __UNIT_INTERVAL_MESH_H
 
-#include <dolfin/mesh/Mesh.h>
+#include <cstddef>
+#include "IntervalMesh.h"
 
 namespace dolfin
 {
@@ -33,12 +34,12 @@ namespace dolfin
   /// (nx) in the axial direction. The total number of intervals will
   /// be nx and the total number of vertices will be (nx + 1).
 
-  class UnitIntervalMesh : public Mesh
+  class UnitIntervalMesh : public IntervalMesh
   {
   public:
 
     /// Create mesh of unit interval
-    UnitIntervalMesh(uint nx=1);
+    UnitIntervalMesh(std::size_t nx=1) : IntervalMesh(nx, 0.0, 1.0) {}
 
   };
 

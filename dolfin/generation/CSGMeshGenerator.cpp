@@ -35,7 +35,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void CSGMeshGenerator::generate(Mesh& mesh,
                                 const CSGGeometry& geometry,
-                                uint resolution)
+                                std::size_t resolution)
 {
   if (geometry.dim() == 2)
   {
@@ -86,7 +86,7 @@ void CSGMeshGenerator::generate(BoundaryMesh& mesh,
 #else
 void CSGMeshGenerator::generate(Mesh& mesh,
                                 const CSGGeometry& geometry,
-                                uint resolution)
+                                std::size_t resolution)
 {
   dolfin_error("CSGMeshGenerator.cpp",
 	       "create mesh from CSG geometry",

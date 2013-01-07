@@ -23,7 +23,6 @@
 #ifndef __FACE_H
 #define __FACE_H
 
-#include "dolfin/common/types.h"
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
 #include "MeshFunction.h"
@@ -41,7 +40,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    Face(const Mesh& mesh, uint index) : MeshEntity(mesh, 2, index) {}
+    Face(const Mesh& mesh, std::size_t index) : MeshEntity(mesh, 2, index) {}
 
     /// Destructor
     ~Face() {}
@@ -50,7 +49,7 @@ namespace dolfin
     double area() const;
 
     /// Compute component i of the normal to the face
-    double normal(uint i) const;
+    double normal(std::size_t i) const;
 
     /// Compute normal to the face
     Point normal() const;

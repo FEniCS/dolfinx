@@ -34,7 +34,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitCircleMesh::UnitCircleMesh(uint n, std::string diagonal,
+UnitCircleMesh::UnitCircleMesh(std::size_t n, std::string diagonal,
                                std::string transformation) : Mesh()
 {
   // Receive mesh according to parallel policy

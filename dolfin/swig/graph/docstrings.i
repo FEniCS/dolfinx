@@ -36,10 +36,34 @@ This class builds a Graph corresponding to various objects
 * local_graph\ (mesh, coloring_type)
 
   Build local graph from mesh (general version)
+
+* local_graph\ (mesh, dim0, dim1)
+
+  Build local graph (specialized version)
+";
+
+%feature("docstring")  dolfin::GraphBuilder::local_boost_graph "
+**Overloaded versions**
+
+* local_boost_graph\ (mesh, coloring_type)
+
+  Build local Boost graph (general version)
+
+* local_boost_graph\ (mesh, dim0, dim1)
+
+  Build local Boost graph (specialized version)
 ";
 
 %feature("docstring")  dolfin::GraphBuilder::compute_dual_graph "
-Build distributed dual graph for mesh
+Build distributed dual graph for mesh. This function is slower
+than 'compute_dual_graph_small' for low processes counts, but
+scales much better with increasing process count.
+";
+
+%feature("docstring")  dolfin::GraphBuilder::compute_dual_graph_small "
+Build distributed dual graph for mesh. This function is very
+fast for a small number of processes, but does not scale for
+increasing process count.
 ";
 
 // Documentation extracted from: (module=graph, header=BoostGraphOrdering.h)

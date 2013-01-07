@@ -52,8 +52,8 @@ int main()
   // and the corresponding right-eigenvector giving the coefficients of the
   // discrete system used to obtain the approximate field anywhere in the domain
   Forms::FunctionSpace V(mesh);
-  Forms::Form_0 s(V, V);
-  Forms::Form_1 t(V, V);
+  Forms::Form_a s(V, V);
+  Forms::Form_L t(V, V);
 
   // Assemble the system matrices stiffness (S) and mass matrices (T)
   PETScMatrix S;
@@ -79,7 +79,7 @@ int main()
   // which corresponds with cutoff wavenumber of the the dominant cutoff mode.
   double cutoff = -1.0;
   double lr, lc;
-  for (unsigned int i = 0; i < S.size(1); i++)
+  for (std::size_t i = 0; i < S.size(1); i++)
   {
     esolver.get_eigenvalue(lr, lc, i);
     if (lr > 1 && lc == 0)

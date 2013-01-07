@@ -29,7 +29,7 @@ print "This demo is presently broken. See https://bugs.launchpad.net/dolfin/+bug
 exit()
 
 # Create mesh
-mesh = UnitSquare(20, 20)
+mesh = UnitSquareMesh(20, 20)
 
 # Create boundary mesh
 boundary = BoundaryMesh(mesh)

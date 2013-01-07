@@ -23,7 +23,8 @@
 #ifndef __UNIT_CUBE_MESH_H
 #define __UNIT_CUBE_MESH_H
 
-#include <dolfin/mesh/Mesh.h>
+#include <cstddef>
+#include "BoxMesh.h"
 
 namespace dolfin
 {
@@ -33,7 +34,7 @@ namespace dolfin
   /// the total number of tetrahedra will be 6*nx*ny*nz and the
   /// total number of vertices will be (nx + 1)*(ny + 1)*(nz + 1).
 
-  class UnitCubeMesh : public Mesh
+  class UnitCubeMesh : public BoxMesh
   {
   public:
 
@@ -41,11 +42,11 @@ namespace dolfin
     /// [0,1] x [0,1] x [0,1].
     ///
     /// *Arguments*
-    ///     nx (uint)
+    ///     nx (std::size_t)
     ///         Number of cells in :math:`x` direction.
-    ///     ny (uint)
+    ///     ny (std::size_t)
     ///         Number of cells in :math:`y` direction.
-    ///     nz (uint)
+    ///     nz (std::size_t)
     ///         Number of cells in :math:`z` direction.
     ///
     /// *Example*
@@ -53,7 +54,8 @@ namespace dolfin
     ///
     ///         UnitCubeMesh mesh(32, 32, 32);
     ///
-    UnitCubeMesh(uint nx, uint ny, uint nz);
+    UnitCubeMesh(std::size_t nx, std::size_t ny, std::size_t nz)
+        : BoxMesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz) {}
 
   };
 

@@ -59,10 +59,10 @@
 // and ignore foo_shared_ptr for SWIG < 2.0
 //-----------------------------------------------------------------------------
 %ignore dolfin::Hierarchical::parent;
-%rename(parent) dolfin::Hierarchical::parent_shared_ptr;
+%rename(_parent) dolfin::Hierarchical::parent_shared_ptr;
 %ignore dolfin::Hierarchical::child;
-%rename(child) dolfin::Hierarchical::child_shared_ptr;
+%rename(_child) dolfin::Hierarchical::child_shared_ptr;
 %ignore dolfin::Hierarchical::root_node;
-%rename(root_node) dolfin::Hierarchical::root_node_shared_ptr;
+%rename(_root_node) dolfin::Hierarchical::root_node_shared_ptr;
 %ignore dolfin::Hierarchical::leaf_node;
-%rename(leaf_node) dolfin::Hierarchical::leaf_node_shared_ptr;
+%rename(_leaf_node) dolfin::Hierarchical::leaf_node_shared_ptr;

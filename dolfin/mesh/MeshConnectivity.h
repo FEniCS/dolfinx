@@ -23,8 +23,7 @@
 
 #include <vector>
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/types.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 
 namespace dolfin
 {
@@ -43,7 +42,7 @@ namespace dolfin
   public:
 
     /// Create empty connectivity between given dimensions (d0 -- d1)
-    MeshConnectivity(uint d0, uint d1);
+    MeshConnectivity(std::size_t d0, std::size_t d1);
 
     /// Copy constructor
     MeshConnectivity(const MeshConnectivity& connectivity);
@@ -63,14 +62,14 @@ namespace dolfin
     { return connections.size(); }
 
     /// Return number of connections for given entity
-    uint size(uint entity) const
+    std::size_t size(std::size_t entity) const
     {
       return ( (entity + 1) < index_to_position.size()
           ? index_to_position[entity + 1] - index_to_position[entity] : 0);
     }
 
     /// Return global number of connections for given entity
-    uint size_global(uint entity) const
+    std::size_t size_global(std::size_t entity) const
     {
       if (num_global_connections.empty())
         return size(entity);
@@ -97,11 +96,11 @@ namespace dolfin
 
     /// Initialize number of entities and number of connections (equal
     /// for all)
-    void init(std::size_t num_entities, uint num_connections);
+    void init(std::size_t num_entities, std::size_t num_connections);
 
     /// Initialize number of entities and number of connections
     /// (individually)
-    void init(std::vector<unsigned int>& num_connections);
+    void init(std::vector<std::size_t>& num_connections);
 
     /// Set given connection for given entity
     void set(std::size_t entity, std::size_t connection, std::size_t pos);
@@ -113,7 +112,7 @@ namespace dolfin
     void set(std::size_t entity, std::size_t* connections);
 
     /// Set all connections for all entities (T is a container, e.g.
-    /// a std::vector<uint>, std::set<uint>, etc)
+    /// a std::vector<std::size_t>, std::set<std::size_t>, etc)
     template <typename T>
     void set(const std::vector<T>& connections)
     {
@@ -138,7 +137,7 @@ namespace dolfin
     }
 
     /// Set global number of connections for all local entities
-    void set_global_size(const std::vector<unsigned int>& num_global_connections)
+    void set_global_size(const std::vector<std::size_t>& num_global_connections)
     {
       dolfin_assert(num_global_connections.size() == index_to_position.size() - 1);
       this->num_global_connections = num_global_connections;
@@ -157,14 +156,14 @@ namespace dolfin
     friend class MeshRenumbering;
 
     // Dimensions (only used for pretty-printing)
-    uint d0, d1;
+    std::size_t d0, d1;
 
     // Connections for all entities stored as a contiguous array
     std::vector<std::size_t> connections;
 
     // Global number of connections for all entities (possibly not
     // computed)
-    std::vector<unsigned int> num_global_connections;
+    std::vector<std::size_t> num_global_connections;
 
     // Position of first connection for each entity (using local index)
     std::vector<std::size_t> index_to_position;

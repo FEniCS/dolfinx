@@ -388,9 +388,9 @@ class TriangleTester(_TestCase):
         self.assertEqual(mesh.num_vertices(), 58)
         self.assertEqual(mesh.num_cells(), 58)
 
-        # Create a sizet CellFunction and assign the values based on the
+        # Create a size_t CellFunction and assign the values based on the
         # converted Meshfunction
-        cf = CellFunction("sizet", mesh)
+        cf = CellFunction("size_t", mesh)
         cf.array()[mfun.array()==10.0] = 0
         cf.array()[mfun.array()==-10.0] = 1
 

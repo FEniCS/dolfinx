@@ -48,7 +48,7 @@ t = -0.61
 x *= 0.7
 x += t
 
-intersection = MeshFunction("sizet", cube_mesh, cube_mesh.topology().dim())
+intersection = MeshFunction("size_t", cube_mesh, cube_mesh.topology().dim())
 _first = True
 
 counter = 0

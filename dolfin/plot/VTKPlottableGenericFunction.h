@@ -120,7 +120,7 @@ namespace dolfin
     // Mode flag
     std::string _mode;
 
-    uint value_rank() const;
+    std::size_t value_rank() const;
 
   };
 

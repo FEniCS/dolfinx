@@ -50,8 +50,8 @@ namespace dolfin
   {
 
     // FIXME: Test which 'map' is most efficient
-    typedef std::map<DolfinIndex, DolfinIndex> map;
-    typedef std::map<DolfinIndex, DolfinIndex>::const_iterator map_iterator;
+    typedef std::map<dolfin::la_index, dolfin::la_index> map;
+    typedef std::map<dolfin::la_index, dolfin::la_index>::const_iterator map_iterator;
 
     // FIXME: Test which 'set' is most efficient
     typedef std::set<std::size_t> set;
@@ -65,18 +65,12 @@ namespace dolfin
 
   public:
 
-    // Build dofmap
+    // Build dofmap. The restriction may be a null pointer in which
+    // case it is ignored.
     static void build(DofMap& dofmap,
                       const Mesh& dolfin_mesh,
                       const UFCMesh& ufc_mesh,
-                      bool reorder,
-                      bool distributed);
-
-    // Build restricted dofmap
-    static void build(DofMap& dofmap,
-                      const Mesh& dolfin_mesh,
-                      const UFCMesh& ufc_mesh,
-                      const Restriction& restriction,
+                      boost::shared_ptr<const Restriction> restriction,
                       bool reorder,
                       bool distributed);
 
@@ -85,20 +79,27 @@ namespace dolfin
     // Build distributed dof map
     static void build_distributed(DofMap& dofmap,
                                   const DofMapBuilder::set& global_dofs,
-                                  const Mesh& mesh);
+                                  const Mesh& mesh,
+                                  boost::shared_ptr<const Restriction> restriction,
+                                  const map& restricted_dofs_inverse);
 
     static void compute_ownership(set& owned_dofs, set& shared_owned_dofs,
                                   set& shared_unowned_dofs,
                                   vec_map& shared_dof_processes,
-                                  const DofMap& dofmap,
+                                  DofMap& dofmap,
                                   const DofMapBuilder::set& global_dofs,
-                                  const Mesh& mesh);
+                                  const Mesh& mesh,
+                                  boost::shared_ptr<const Restriction> restriction,
+                                  const map& restricted_dofs_inverse);
 
     static void parallel_renumber(const set& owned_dofs,
                                   const set& shared_owned_dofs,
                                   const set& shared_unowned_dofs,
                                   const vec_map& shared_dof_processes,
-                                  DofMap& dofmap, const Mesh& mesh);
+                                  DofMap& dofmap,
+                                  const Mesh& mesh,
+                                  boost::shared_ptr<const Restriction> restriction,
+                                  const map& restricted_dofs_inverse);
 
     /// Compute set of global dofs (e.g. Reals associated with global
     /// Lagrnage multipliers) based on UFC numbering. Global dofs

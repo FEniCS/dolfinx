@@ -39,7 +39,7 @@ class AbstractBaseTest(object):
 
     def assemble_matrices(self, use_backend=False):
         " Assemble a pair of matrices, one (square) MxM and one MxN"
-        mesh = UnitSquare(21, 23)
+        mesh = UnitSquareMesh(21, 23)
 
         V = FunctionSpace(mesh, "Lagrange", 2)
         W = FunctionSpace(mesh, "Lagrange", 1)
@@ -148,7 +148,7 @@ class AbstractBaseTest(object):
 
     #def create_sparsity_pattern(self):
     #    "Create a sparsity pattern"
-    #    mesh = UnitSquare(34, 33)
+    #    mesh = UnitSquareMesh(34, 33)
     #
     #    V = FunctionSpace(mesh, "Lagrange", 2)
     #    W = FunctionSpace(mesh, "Lagrange", 1)

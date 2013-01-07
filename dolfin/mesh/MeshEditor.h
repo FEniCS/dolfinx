@@ -22,7 +22,6 @@
 #define __MESH_EDITOR_H
 
 #include <vector>
-#include <dolfin/common/types.h>
 #include "CellType.h"
 
 namespace dolfin
@@ -50,9 +49,9 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh to open.
-    ///     tdim (uint)
+    ///     tdim (std::size_t)
     ///         The topological dimension.
-    ///     gdim (uint)
+    ///     gdim (std::size_t)
     ///         The geometrical dimension.
     ///
     /// *Example*
@@ -62,7 +61,7 @@ namespace dolfin
     ///         MeshEditor editor;
     ///         editor.open(mesh, 2, 2);
     ///
-    void open(Mesh& mesh, uint tdim, uint gdim);
+    void open(Mesh& mesh, std::size_t tdim, std::size_t gdim);
 
     /// Open mesh of given cell type, topological and geometrical dimension
     ///
@@ -71,11 +70,11 @@ namespace dolfin
     ///         The mesh to open.
     ///     type (CellType::Type)
     ///         Cell type.
-    ///     tdim (uint)
+    ///     tdim (std::size_t)
     ///         The topological dimension.
-    ///     gdim (uint)
+    ///     gdim (std::size_t)
     ///         The geometrical dimension.
-    void open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim);
+    void open(Mesh& mesh, CellType::Type type, std::size_t tdim, std::size_t gdim);
 
     /// Open mesh of given cell type, topological and geometrical dimension
     ///
@@ -84,16 +83,16 @@ namespace dolfin
     ///         The mesh to open.
     ///     type (std::string)
     ///         Cell type.
-    ///     tdim (uint)
+    ///     tdim (std::size_t)
     ///         The topological dimension.
-    ///     gdim (uint)
+    ///     gdim (std::size_t)
     ///         The geometrical dimension.
-    void open(Mesh& mesh, std::string type, uint tdim, uint gdim);
+    void open(Mesh& mesh, std::string type, std::size_t tdim, std::size_t gdim);
 
     /// Specify number of vertices
     ///
     /// *Arguments*
-    ///     num_vertices (uint)
+    ///     num_vertices (std::size_t)
     ///         The number of vertices.
     ///
     /// *Example*
@@ -109,7 +108,7 @@ namespace dolfin
     /// Specify number of cells
     ///
     /// *Arguments*
-    ///     num_cells (uint)
+    ///     num_cells (std::size_t)
     ///         The number of cells.
     ///
     /// *Example*
@@ -125,7 +124,7 @@ namespace dolfin
     /// Add vertex v at given point p
     ///
     /// *Arguments*
-    ///     index (uint)
+    ///     index (std::size_t)
     ///         The vertex (index).
     ///     p (_Point_)
     ///         The point.
@@ -134,7 +133,7 @@ namespace dolfin
     /// Add vertex v at given coordinate x
     ///
     /// *Arguments*
-    ///     index (uint)
+    ///     index (std::size_t)
     ///         The vertex (index).
     ///     x (std::vector<double>)
     ///         The x-coordinates.
@@ -143,7 +142,7 @@ namespace dolfin
     /// Add vertex v at given point x (for a 1D mesh)
     ///
     /// *Arguments*
-    ///     index (uint)
+    ///     index (std::size_t)
     ///         The vertex (index).
     ///     x (double)
     ///         The x-coordinate.
@@ -152,7 +151,7 @@ namespace dolfin
     /// Add vertex v at given point (x, y) (for a 2D mesh)
     ///
     /// *Arguments*
-    ///     index (uint)
+    ///     index (std::size_t)
     ///         The vertex (index).
     ///     x (double)
     ///         The x-coordinate.
@@ -163,7 +162,7 @@ namespace dolfin
     /// Add vertex v at given point (x, y, z) (for a 3D mesh)
     ///
     /// *Arguments*
-    ///     index (uint)
+    ///     index (std::size_t)
     ///         The vertex (index).
     ///     x (double)
     ///         The x-coordinate.
@@ -176,9 +175,9 @@ namespace dolfin
     /// Add vertex v at given point p
     ///
     /// *Arguments*
-    ///     local_index (uint)
+    ///     local_index (std::size_t)
     ///         The vertex (local index).
-    ///     global_index (uint)
+    ///     global_index (std::size_t)
     ///         The vertex (global_index).
     ///     p (_Point_)
     ///         The point.
@@ -188,9 +187,9 @@ namespace dolfin
     /// Add vertex v at given coordinate x
     ///
     /// *Arguments*
-    ///     local_index (uint)
+    ///     local_index (std::size_t)
     ///         The vertex (local index).
-    ///     global_index (uint)
+    ///     global_index (std::size_t)
     ///         The vertex (global_index).
     ///     x (std::vector<double>)
     ///         The x-coordinates.
@@ -200,39 +199,39 @@ namespace dolfin
     /// Add cell with given vertices (1D)
     ///
     /// *Arguments*
-    ///     c (uint)
+    ///     c (std::size_t)
     ///         The cell (index).
-    ///     v0 (std::vector<uint>)
+    ///     v0 (std::vector<std::size_t>)
     ///         The first vertex (local index).
-    ///     v1 (std::vector<uint>)
+    ///     v1 (std::vector<std::size_t>)
     ///         The second vertex (local index).
     void add_cell(std::size_t c, std::size_t v0, std::size_t v1);
 
     /// Add cell with given vertices (2D)
     ///
     /// *Arguments*
-    ///     c (uint)
+    ///     c (std::size_t)
     ///         The cell (index).
-    ///     v0 (std::vector<uint>)
+    ///     v0 (std::vector<std::size_t>)
     ///         The first vertex (local index).
-    ///     v1 (std::vector<uint>)
+    ///     v1 (std::vector<std::size_t>)
     ///         The second vertex (local index).
-    ///     v2 (std::vector<uint>)
+    ///     v2 (std::vector<std::size_t>)
     ///         The third vertex (local index).
     void add_cell(std::size_t c, std::size_t v0, std::size_t v1, std::size_t v2);
 
     /// Add cell with given vertices (3D)
     ///
     /// *Arguments*
-    ///     c (uint)
+    ///     c (std::size_t)
     ///         The cell (index).
-    ///     v0 (std::vector<uint>)
+    ///     v0 (std::vector<std::size_t>)
     ///         The first vertex (local index).
-    ///     v1 (std::vector<uint>)
+    ///     v1 (std::vector<std::size_t>)
     ///         The second vertex (local index).
-    ///     v2 (std::vector<uint>)
+    ///     v2 (std::vector<std::size_t>)
     ///         The third vertex (local index).
-    ///     v3 (std::vector<uint>)
+    ///     v3 (std::vector<std::size_t>)
     ///         The fourth vertex (local index).
     void add_cell(std::size_t c, std::size_t v0, std::size_t v1,
                   std::size_t v2, std::size_t v3);
@@ -240,20 +239,20 @@ namespace dolfin
     /// Add cell with given vertices
     ///
     /// *Arguments*
-    ///     c (uint)
+    ///     c (std::size_t)
     ///         The cell (index).
-    ///     v (std::vector<uint>)
+    ///     v (std::vector<std::size_t>)
     ///         The vertex indices (local indices)
     void add_cell(std::size_t c, const std::vector<std::size_t>& v);
 
     /// Add cell with given vertices
     ///
     /// *Arguments*
-    ///     local_index (uint)
+    ///     local_index (std::size_t)
     ///         The cell (index).
-    ///     global_index (uint)
+    ///     global_index (std::size_t)
     ///         The global (user) cell index.
-    ///     v (std::vector<uint>)
+    ///     v (std::vector<std::size_t>)
     ///         The vertex indices (local indices)
     void add_cell(std::size_t local_index, std::size_t global_index,
                   const std::vector<std::size_t>& v);
@@ -280,10 +279,10 @@ namespace dolfin
     friend class TetrahedronCell;
 
     // Add vertex, common part
-    void add_vertex_common(std::size_t v, uint dim);
+    void add_vertex_common(std::size_t v, std::size_t dim);
 
     // Add cell, common part
-    void add_cell_common(std::size_t v, uint dim);
+    void add_cell_common(std::size_t v, std::size_t dim);
 
     // Compute boundary indicators (exterior facets)
     void compute_boundary_indicators();
@@ -298,10 +297,10 @@ namespace dolfin
     Mesh* mesh;
 
     // Topological dimension
-    uint tdim;
+    std::size_t tdim;
 
     // Geometrical (Euclidean) dimension
-    uint gdim;
+    std::size_t gdim;
 
     // Number of vertices
     std::size_t num_vertices;

@@ -22,9 +22,8 @@
 #define __DOLFIN_SET_H
 
 #include <algorithm>
+#include <cstddef>
 #include <vector>
-
-#include "dolfin/common/types.h"
 
 namespace dolfin
 {
@@ -92,7 +91,7 @@ namespace dolfin
     { return _x.end(); }
 
     /// Set size
-    dolfin::uint size() const
+    std::size_t size() const
     { return _x.size(); }
 
     /// Erase an entry
@@ -112,7 +111,7 @@ namespace dolfin
     { _x.clear(); }
 
     /// Index the nth entry in the set
-    T operator[](uint n) const
+    T operator[](std::size_t n) const
     { return _x[n]; }
 
     /// Return the vector that stores the data in the Set

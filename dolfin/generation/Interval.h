@@ -25,7 +25,7 @@
 
 namespace dolfin
 {
-
+  /*
   /// Interval mesh of the 1D line [a,b].  Given the number of cells
   /// (nx) in the axial direction, the total number of intervals will
   /// be nx and the total number of vertices will be (nx + 1).
@@ -38,7 +38,7 @@ namespace dolfin
     /// Constructor
     ///
     /// *Arguments*
-    ///     nx (uint)
+    ///     nx (std::size_t)
     ///         The number of cells.
     ///     a (double)
     ///         The minimum point (inclusive).
@@ -51,14 +51,14 @@ namespace dolfin
     ///         // Create a mesh of 25 cells in the interval [-1,1]
     ///         Interval mesh(25, -1.0, 1.0);
     ///
-    Interval(uint nx, double a, double b)
+    Interval(std::size_t nx, double a, double b)
       : IntervalMesh(nx, a, b)
     {
-	warning("Interval is deprecated. Use IntervalMesh.");
+      warning("Interval is deprecated. Use IntervalMesh.");
     }
 
   };
-
+  */
 }
 
 #endif

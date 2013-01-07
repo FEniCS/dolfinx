@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-11-09
-// Last changed: 2012-11-09
+// Last changed: 2013-01-07
 
 #ifndef __UNIT_SQUARE_H
 #define __UNIT_SQUARE_H
@@ -43,9 +43,9 @@ namespace dolfin
     /// [0,1] x [0,1].
     ///
     /// *Arguments*
-    ///     nx (uint)
+    ///     nx (std::size_t)
     ///         Number of cells in horizontal direction.
-    ///     ny (uint)
+    ///     ny (std::size_t)
     ///         Number of cells in vertical direction.
     ///     diagonal (std::string)
     ///         Optional argument: A std::string indicating
@@ -57,10 +57,12 @@ namespace dolfin
     ///         UnitSquare mesh1(32, 32);
     ///         UnitSquare mesh2(32, 32, "crossed");
     ///
-    UnitSquare(uint nx, uint ny, std::string diagonal="right")
+    UnitSquare(std::size_t nx, std::size_t ny,
+               std::string diagonal="right")
       : UnitSquareMesh(nx, ny, diagonal)
     {
-      warning("UnitSquare is deprecated. Use UnitSquareMesh.");
+      deprecation("UnitSquare", "1.1.0",
+                  "The class UnitSquare has been replaced by UnitSquareMesh.");
     }
 
   };

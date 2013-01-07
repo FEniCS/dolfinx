@@ -65,7 +65,7 @@ double solve2D(int q, int n)
   printf("Solving Poisson's equation in 2D for q = %d, n = %d.\n", q, n);
 
   // Set up problem
-  UnitSquare mesh(n, n);
+  UnitSquareMesh mesh(n, n);
   Source2D f;
   Constant zero(0.0);
 
@@ -145,7 +145,7 @@ double solve3D(int q, int n)
   printf("Solving Poisson's equation in 3D for q = %d, n = %d.\n", q, n);
 
   // Set up problem
-  UnitCube mesh(n, n, n);
+  UnitCubeMesh mesh(n, n, n);
   Source3D f;
   Constant zero(0.0);
 

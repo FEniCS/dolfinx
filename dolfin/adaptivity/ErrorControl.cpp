@@ -25,6 +25,7 @@
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/types.h>
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/fem/assemble.h>
 #include <dolfin/fem/BoundaryCondition.h>
@@ -75,7 +76,7 @@ ErrorControl::ErrorControl(boost::shared_ptr<Form> a_star,
   _is_linear = is_linear;
 
   // Extract and store additional function spaces
-  const uint improved_dual = _residual->num_coefficients() - 1;
+  const std::size_t improved_dual = _residual->num_coefficients() - 1;
   const Function& e_tmp = dynamic_cast<const Function&>(*_residual->coefficient(improved_dual));
   _E = e_tmp.function_space();
 
@@ -106,7 +107,7 @@ double ErrorControl::estimate_error(const Function& u,
 
   // Extract number of coefficients in residual
   dolfin_assert(_residual);
-  const uint num_coeffs = _residual->num_coefficients();
+  const std::size_t num_coeffs = _residual->num_coefficients();
 
   // Attach improved dual approximation to residual
   _residual->set_coefficient(num_coeffs - 1, _Ez_h);
@@ -187,7 +188,7 @@ void ErrorControl::compute_indicators(MeshFunction<double>& indicators,
   // Create SpecialFacetFunction for the strong facet residual (R_dT)
   dolfin_assert(_a_R_dT);
   std::vector<Function> f_e;
-  for (uint i = 0; i <= _R_T->geometric_dimension(); i++)
+  for (std::size_t i = 0; i <= _R_T->geometric_dimension(); i++)
     f_e.push_back(Function(_a_R_dT->function_space(1)));
 
   if (f_e[0].value_rank() == 0)
@@ -234,7 +235,7 @@ void ErrorControl::compute_indicators(MeshFunction<double>& indicators,
   // Convert DG_0 vector to mesh function over cells
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    const std::vector<DolfinIndex>& dofs = dofmap.cell_dofs(cell->index());
+    const std::vector<dolfin::la_index>& dofs = dofmap.cell_dofs(cell->index());
     dolfin_assert(dofs.size() == 1);
     indicators[cell->index()] = x[dofs[0]];
   }
@@ -267,7 +268,7 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
   dolfin_assert(_cell_bubble);
 
   // Attach cell bubble to _a_R_T and _L_R_T
-  const uint num_coeffs = _L_R_T->num_coefficients();
+  const std::size_t num_coeffs = _L_R_T->num_coefficients();
   _a_R_T->set_coefficient(0, _cell_bubble);
   _L_R_T->set_coefficient(num_coeffs - 1, _cell_bubble);
 
@@ -318,7 +319,7 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
     x = arma::solve(A, b);
 
     // Get local-to-global dof map for cell
-    const std::vector<DolfinIndex>& dofs = dofmap.cell_dofs(cell->index());
+    const std::vector<dolfin::la_index>& dofs = dofmap.cell_dofs(cell->index());
 
     // Plug local solution into global vector
     dolfin_assert(R_T.vector());
@@ -351,7 +352,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   // Extract number of coefficients on right-hand side (for use with
   // attaching coefficients)
   dolfin_assert(_L_R_dT);
-  const uint L_R_dT_num_coefficients = _L_R_dT->num_coefficients();
+  const std::size_t L_R_dT_num_coefficients = _L_R_dT->num_coefficients();
 
   // Attach primal approximation if linear (already attached
   // otherwise).
@@ -377,7 +378,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   // Variables to be used for the construction of the cone function
   const std::size_t num_cells = mesh.num_cells();
   const std::vector<double> ones(num_cells, 1.0);
-  std::vector<DolfinIndex> facet_dofs(num_cells);
+  std::vector<dolfin::la_index> facet_dofs(num_cells);
 
   // Extract cell_domains etc from right-hand side form
   dolfin_assert(_L_R_T);
@@ -436,7 +437,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
       x = arma::solve(A, b);
 
       // Get local-to-global dof map for cell
-      const std::vector<DolfinIndex>& dofs = dofmap.cell_dofs(cell->index());
+      const std::vector<dolfin::la_index>& dofs = dofmap.cell_dofs(cell->index());
 
       // Plug local solution into global vector
       dolfin_assert(R_dT[local_facet].vector());
@@ -451,7 +452,7 @@ const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
 {
   // Create boundary conditions for extrapolated dual, and apply
   // these.
-  for (uint i = 0; i < bcs.size(); i++)
+  for (std::size_t i = 0; i < bcs.size(); i++)
   {
     // Only handle DirichletBCs
     const DirichletBC* bc = dynamic_cast<const DirichletBC*>(bcs[i].get());
@@ -459,7 +460,7 @@ const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
 
     // Extract SubSpace component
     dolfin_assert(bc->function_space());
-    const std::vector<uint> component = bc->function_space()->component();
+    const std::vector<std::size_t> component = bc->function_space()->component();
 
     // Extract sub-domain
     boost::shared_ptr<const SubDomain> sub_domain = bc->user_sub_domain();

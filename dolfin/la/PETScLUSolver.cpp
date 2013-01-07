@@ -120,7 +120,7 @@ Parameters PETScLUSolver::default_parameters()
   p.rename("petsc_lu_solver");
 
   // Number of threads per process for multi-threaded solvers
-  p.add<unsigned int>("num_threads");
+  p.add<std::size_t>("num_threads");
 
   return p;
 }
@@ -180,7 +180,7 @@ const GenericLinearOperator& PETScLUSolver::get_operator() const
   return *A;
 }
 //-----------------------------------------------------------------------------
-unsigned int PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
+std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   dolfin_assert(_ksp);
   dolfin_assert(A);
@@ -236,7 +236,7 @@ unsigned int PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   return 1;
 }
 //-----------------------------------------------------------------------------
-unsigned int PETScLUSolver::solve(const GenericLinearOperator& A,
+std::size_t PETScLUSolver::solve(const GenericLinearOperator& A,
                                   GenericVector& x,
                                   const GenericVector& b)
 {
@@ -245,7 +245,7 @@ unsigned int PETScLUSolver::solve(const GenericLinearOperator& A,
                as_type<const PETScVector>(b));
 }
 //-----------------------------------------------------------------------------
-unsigned int PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
+std::size_t PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
                                   const PETScVector& b)
 {
   boost::shared_ptr<const PETScMatrix> _A(&A, NoDeleter());

@@ -233,7 +233,7 @@ void Parameters::remove(std::string key)
   delete find_parameter_set(key);
 
   // Remove from maps (safe to remove both)
-  uint num_removed = 0;
+  std::size_t num_removed = 0;
   num_removed += _parameters.erase(key);
   num_removed += _parameter_sets.erase(key);
   dolfin_assert(num_removed == 1);
@@ -473,9 +473,11 @@ void Parameters::parse_common(int argc, char* argv[])
   // Collect and report unrecognized options
   const std::vector<std::string> unrecognized_options
     = po::collect_unrecognized(parsed.options, po::include_positional);
-  for (uint i = 0; i < unrecognized_options.size(); i++)
+  for (std::size_t i = 0; i < unrecognized_options.size(); i++)
+  {
     cout << "Skipping unrecognized option for parameter set \""
          << name() << "\": " << unrecognized_options[i] << endl;
+  }
 
   // Show help text
   if (vm.count("help"))

@@ -74,7 +74,7 @@ LogStream& LogStream::operator<< (int a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<< (uint a)
+LogStream& LogStream::operator<< (unsigned int a)
 {
   buffer << a;
   return *this;
@@ -98,7 +98,7 @@ LogStream& LogStream::operator<< (double a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<< (complex z)
+LogStream& LogStream::operator<< (std::complex<double> z)
 {
   buffer << z.real() << " + " << z.imag() << "i";
   return *this;
@@ -122,7 +122,7 @@ LogStream& LogStream::operator<< (const Point& point)
   return *this;
 }
 //-----------------------------------------------------------------------------
-void LogStream::setprecision(uint n)
+void LogStream::setprecision(std::size_t n)
 {
   buffer.precision(n);
 }

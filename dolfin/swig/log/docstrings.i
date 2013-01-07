@@ -205,7 +205,7 @@ Create log stream of given type
 
 * operator<<\ (z)
 
-  Output for complex
+  Output for std::complex<double>
 
 * operator<<\ (variable)
 

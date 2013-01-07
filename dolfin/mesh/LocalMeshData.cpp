@@ -172,7 +172,7 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
 void LocalMeshData::broadcast_mesh_data()
 {
   // Get number of processes
-  const uint num_processes = MPI::num_processes();
+  const std::size_t num_processes = MPI::num_processes();
 
   // Broadcast simple scalar data
   {
@@ -188,7 +188,7 @@ void LocalMeshData::broadcast_mesh_data()
   // Broadcast coordinates for vertices
   {
     std::vector<std::vector<double> > send_values(num_processes);
-    for (uint p = 0; p < num_processes; p++)
+    for (std::size_t p = 0; p < num_processes; p++)
     {
       const std::pair<std::size_t, std::size_t> local_range
           = MPI::local_range(p, num_global_vertices);
@@ -211,7 +211,7 @@ void LocalMeshData::broadcast_mesh_data()
   // Broadcast global vertex indices
   {
     std::vector<std::vector<std::size_t> > send_values(num_processes);
-    for (uint p = 0; p < num_processes; p++)
+    for (std::size_t p = 0; p < num_processes; p++)
     {
       const std::pair<std::size_t, std::size_t> local_range = MPI::local_range(p, num_global_vertices);
       send_values[p].reserve(local_range.second - local_range.first);
@@ -225,7 +225,7 @@ void LocalMeshData::broadcast_mesh_data()
   // Broadcast cell vertices
   {
     std::vector<std::vector<std::size_t> > send_values(num_processes);
-    for (uint p = 0; p < num_processes; p++)
+    for (std::size_t p = 0; p < num_processes; p++)
     {
       const std::pair<std::size_t, std::size_t> local_range = MPI::local_range(p, num_global_cells);
       log(TRACE, "Sending %d cells to process %d, range is (%d, %d)",
@@ -254,7 +254,7 @@ void LocalMeshData::receive_mesh_data()
     MPI::broadcast(values);
     dolfin_assert(values.size() == 5);
     gdim = values[0];
-    tdim = values[1]; 
+    tdim = values[1];
     num_global_vertices = values[2];
     num_global_cells = values[3];
     num_vertices_per_cell = values[4];
@@ -310,7 +310,7 @@ void LocalMeshData::unpack_cell_vertices(const std::vector<std::size_t>& values)
   for (std::size_t i = 0; i < num_cells; i++)
   {
     global_cell_indices.push_back(values[k++]);
-    for (uint j = 0; j < tdim + 1; j++)
+    for (std::size_t j = 0; j < tdim + 1; j++)
       cell_vertices[i][j] = values[k++];
   }
 
