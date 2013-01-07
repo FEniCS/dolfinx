@@ -103,13 +103,8 @@ namespace dolfin
     /// Compute component i of normal of given facet with respect to the cell
     virtual double normal(const Cell& cell, std::size_t facet, std::size_t i) const = 0;
 
-<<<<<<< TREE
-    /// Compute normal of given facet with respect to the cell
-    virtual Point normal(const Cell& cell, uint facet) const = 0;
-=======
     /// Compute of given facet with respect to the cell
     virtual Point normal(const Cell& cell, std::size_t facet) const = 0;
->>>>>>> MERGE-SOURCE
 
     /// Compute normal to given cell (viewed as embedded in 3D)
     virtual Point cell_normal(const Cell& cell) const = 0;
