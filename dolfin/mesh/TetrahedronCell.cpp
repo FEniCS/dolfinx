@@ -408,6 +408,15 @@ Point TetrahedronCell::normal(const Cell& cell, std::size_t facet) const
   return n;
 }
 //-----------------------------------------------------------------------------
+Point TetrahedronCell::cell_normal(const Cell& cell) const
+{
+  dolfin_error("TetrahedronCell.cpp",
+               "compute cell normal",
+               "cell_normal not implemented for TetrahedronCell");
+
+  return Point();
+}
+//-----------------------------------------------------------------------------
 double TetrahedronCell::facet_area(const Cell& cell, std::size_t facet) const
 {
   dolfin_assert(cell.mesh().topology().dim() == 3);

@@ -80,15 +80,8 @@ std::size_t TriangleCell::num_vertices(std::size_t dim) const
 //-----------------------------------------------------------------------------
 std::size_t TriangleCell::orientation(const Cell& cell) const
 {
-  const Vertex v0(cell.mesh(), cell.entities(0)[0]);
-  const Vertex v1(cell.mesh(), cell.entities(0)[1]);
-  const Vertex v2(cell.mesh(), cell.entities(0)[2]);
-
-  const Point p01 = v1.point() - v0.point();
-  const Point p02 = v2.point() - v0.point();
-  const Point n(-p01.y(), p01.x());
-
-  return (n.dot(p02) < 0.0 ? 1 : 0);
+  const Point up(0.0, 0.0, 1.0);
+  return cell.orientation(up);
 }
 //-----------------------------------------------------------------------------
 void TriangleCell::create_entities(std::vector<std::vector<std::size_t> >& e,
@@ -237,6 +230,8 @@ Point TriangleCell::normal(const Cell& cell, std::size_t facet) const
   Facet f(cell.mesh(), cell.entities(1)[facet]);
 
   // The normal vector is currently only defined for a triangle in R^2
+  // MER: This code is super for a triangle in R^3 too, this error
+  // could be removed, unless it is here for some other reason.
   if (cell.mesh().geometry().dim() != 2)
     dolfin_error("TriangleCell.cpp",
                  "find normal",
@@ -262,6 +257,35 @@ Point TriangleCell::normal(const Cell& cell, std::size_t facet) const
   t /= t.norm();
   Point n = p2 - p0;
   n -= n.dot(t)*t;
+
+  // Normalize
+  n /= n.norm();
+
+  return n;
+}
+//-----------------------------------------------------------------------------
+Point TriangleCell::cell_normal(const Cell& cell) const
+{
+  // Get mesh geometry
+  const MeshGeometry& geometry = cell.mesh().geometry();
+
+  // Cell_normal only defined for gdim = 2, 3:
+  const unsigned int gdim = geometry.dim();
+  if (gdim > 3)
+    dolfin_error("TriangleCell.cpp",
+                 "compute cell normal",
+                 "Illegal geometric dimension (%d)", gdim);
+
+  // Get the three vertices as points
+  const std::size_t* vertices = cell.entities(0);
+  Point p0 = geometry.point(vertices[0]);
+  Point p1 = geometry.point(vertices[1]);
+  Point p2 = geometry.point(vertices[2]);
+
+  // Defined cell normal via cross product of first two edges:
+  Point v01 = p1 - p0;
+  Point v02 = p2 - p0;
+  Point n = v01.cross(v02);
 
   // Normalize
   n /= n.norm();
