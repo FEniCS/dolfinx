@@ -47,7 +47,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& dolfin_mesh)
-  : _ufc_dofmap(ufc_dofmap->create()),
+    : _ufc_dofmap(ufc_dofmap->create()), // TODO: Don't have to copy anymore, can assume stateless?
     _global_dimension(0), _ufc_offset(0), _is_view(false),
     _distributed(MPI::num_processes() > 1)
 {
@@ -59,7 +59,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
                boost::shared_ptr<const Restriction> restriction)
-  : _ufc_dofmap(ufc_dofmap->create()),
+  : _ufc_dofmap(ufc_dofmap->create()), // TODO: Don't have to copy anymore, can assume stateless?
     _restriction(restriction),
     _global_dimension(0), _ufc_offset(0), _is_view(false),
     _distributed(MPI::num_processes() > 1)
@@ -252,7 +252,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
 DofMap::DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
                const DofMap& dofmap_view, const Mesh& mesh, bool distributed)
              :
-  _ufc_dofmap(dofmap_view._ufc_dofmap->create()),
+  _ufc_dofmap(dofmap_view._ufc_dofmap->create()), // TODO: Don't have to copy anymore, can assume stateless?
   _global_dimension(0), _ufc_offset(0),
   _is_view(false), _distributed(distributed)
 {
@@ -302,7 +302,7 @@ DofMap::DofMap(const DofMap& dofmap)
 {
   // Copy data
   _dofmap = dofmap._dofmap;
-  _ufc_dofmap.reset(dofmap._ufc_dofmap->create());
+  _ufc_dofmap.reset(dofmap._ufc_dofmap->create()); // TODO: Don't have to copy anymore, can assume stateless?
   ufc_map_to_dofmap = dofmap.ufc_map_to_dofmap;
   _global_dimension = dofmap._global_dimension;
   _ufc_offset = dofmap._ufc_offset;
@@ -433,7 +433,7 @@ boost::shared_ptr<GenericDofMap> DofMap::copy() const
 boost::shared_ptr<GenericDofMap> DofMap::build(const Mesh& new_mesh) const
 {
   // Get copy of underlying UFC dof map
-  boost::shared_ptr<const ufc::dofmap> ufc_dof_map(_ufc_dofmap->create());
+  boost::shared_ptr<const ufc::dofmap> ufc_dof_map(_ufc_dofmap->create()); // TODO: Don't have to copy anymore, can assume stateless?
   return boost::shared_ptr<GenericDofMap>(new DofMap(ufc_dof_map, new_mesh));
 }
 //-----------------------------------------------------------------------------

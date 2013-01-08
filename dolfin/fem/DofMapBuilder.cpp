@@ -70,7 +70,7 @@ void DofMapBuilder::build(DofMap& dofmap,
   map restricted_dofs;         // map from old to new dof
   map restricted_dofs_inverse; // map from new to old dof
 
-  // Store global entity dimensions in vector
+  // Store global entity dimensions in vector // TODO: These lines are repeated a few times
   std::vector<std::size_t> num_global_mesh_entities(dolfin_mesh.topology().dim() + 1);
   for (std::size_t d = 0; d < num_global_mesh_entities.size(); d++)
     num_global_mesh_entities[d] = dolfin_mesh.size_global(d);
@@ -617,7 +617,7 @@ void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
   dolfin_assert(dofmap);
   const std::size_t D = dolfin_mesh.topology().dim();
 
-  // Store global entity dimensions in vector
+  // Store global entity dimensions in vector // TODO: These lines are repeated a few times
   std::vector<std::size_t> num_global_mesh_entities(dolfin_mesh.topology().dim() + 1);
   for (std::size_t d = 0; d < num_global_mesh_entities.size(); d++)
     num_global_mesh_entities[d] = dolfin_mesh.size_global(d);
@@ -1096,8 +1096,13 @@ void DofMapBuilder::periodic_modification(DofMap& dofmap, const Mesh& mesh, set&
     _all_slaves.push_back(it->first);
   }
 
+  // Store global entity dimensions in vector // TODO: These lines are repeated a few times
+  std::vector<std::size_t> num_global_mesh_entities(mesh.topology().dim() + 1);
+  for (std::size_t d = 0; d < num_global_mesh_entities.size(); d++)
+    num_global_mesh_entities[d] = mesh.size_global(d);
+
   // Compute the new global dimension of dofmap
-  dofmap._global_dimension = dofmap._ufc_dofmap->global_dimension() - _slave_master_map.size();
+  dofmap._global_dimension = dofmap._ufc_dofmap->global_dimension(num_global_mesh_entities) - _slave_master_map.size();
 
   // Renumber all UFC-numbering based dofs due to deleted slave dofs
   // Could here alternatively create a map
