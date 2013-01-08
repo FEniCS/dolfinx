@@ -62,8 +62,8 @@ void DofMapBuilder::build(DofMap& dofmap,
   dofmap._off_process_owner.clear();
   dolfin_assert(dofmap._ufc_dofmap);
 
-  // Temporary holder until UFC supporte 64-bit integers
-  std::vector<std::size_t> tmp_dofs;
+  // Holder for UFC support 64-bit integers
+  std::vector<std::size_t> ufc_dofs;
 
   // FIXME: Remove restricted_dofs_inverse if not needed
 
@@ -90,10 +90,10 @@ void DofMapBuilder::build(DofMap& dofmap,
     cell_dofs.resize(local_dim);
 
     // Tabulate standard UFC dof map
-    tmp_dofs.resize(local_dim);
-    dofmap._ufc_dofmap->tabulate_dofs(&tmp_dofs[0],
+    ufc_dofs.resize(local_dim);
+    dofmap._ufc_dofmap->tabulate_dofs(&ufc_dofs[0],
                                       ufc_mesh, ufc_cell);
-    std::copy(tmp_dofs.begin(), tmp_dofs.end(), cell_dofs.begin());
+    std::copy(ufc_dofs.begin(), ufc_dofs.end(), cell_dofs.begin());
 
     // Renumber dofs if mesh is restricted
     if (restriction)
