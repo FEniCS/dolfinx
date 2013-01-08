@@ -1,4 +1,4 @@
-1.1.0 [not yet released]
+1.1.0 [2013-01-08]
  - Add support for solving singular problems with Krylov solvers (PETSc only)
  - Add new typedef dolfin::la_index for consistent indexing with linear algebra backends.
  - Change default unsigned integer type to std::size_t
