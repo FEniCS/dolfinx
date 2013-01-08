@@ -23,8 +23,8 @@
 
 using namespace dolfin;
 
-// Subdomain for domain 1
-class Domain1 : public SubDomain
+// Subdomain for domain 0
+class Domain0 : public SubDomain
 {
   bool inside(const Array<double>& x, bool on_boundary) const
   {
@@ -33,7 +33,7 @@ class Domain1 : public SubDomain
 };
 
 // Subdomain for domain 1
-class Domain2 : public SubDomain
+class Domain1 : public SubDomain
 {
   bool inside(const Array<double>& x, bool on_boundary) const
   {
@@ -47,24 +47,24 @@ int main()
   UnitSquareMesh mesh(8, 8);
 
   // Define restricted domains
+  Domain0 D0;
   Domain1 D1;
-  Domain1 D2;
+  Restriction R0(mesh, D0);
   Restriction R1(mesh, D1);
-  Restriction R2(mesh, D2);
 
   // Create restricted function space
-  MultiDomainPoisson::FunctionSpace W(R1);
+  MultiDomainPoisson::FunctionSpace W(R0);
 
   // Create forms and attach coefficients
   MultiDomainPoisson::BilinearForm a(W, W);
   MultiDomainPoisson::LinearForm L(W);
-  Constant k1(0.1);
-  Constant k2(0.2);
+  Constant k0(0.1);
+  Constant k1(0.2);
   Constant f(100.0);
+  a.k0 = k0;
   a.k1 = k1;
-  a.k2 = k2;
+  L.f0 = f;
   L.f1 = f;
-  L.f2 = f;
 
   // Define boundary condition
   //Constant zero(0.0, 0.0);
