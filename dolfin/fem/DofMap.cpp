@@ -20,10 +20,14 @@
 // Modified by Ola Skavhaug, 2009
 // Modified by Niclas Jansson, 2009
 // Modified by Joachim B Haga, 2012
+// Modified by Mikael Mortensen, 2012
 //
 // First added:  2007-03-01
 // Last changed: 2012-11-05
 
+#include <boost/unordered_map.hpp>
+#include <boost/serialization/map.hpp>
+#include <boost/serialization/set.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Set.h>
@@ -115,6 +119,12 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
   // Resize dofmap data structure
   _dofmap.resize(mesh.num_cells());
 
+  // Set to hold slave dofs on current processor
+  std::set<std::size_t> slave_dofs;
+
+  // Store original _slave_master_map on this sub_dofmap
+  _slave_master_map = parent_dofmap._slave_master_map;
+
   // Holder for copying UFC std::size_t dof maps into the a dof map that
   // is consistent with the linear algebra backend
   std::vector<std::size_t> tmp_dof_holder;
@@ -134,15 +144,68 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
 
     // Tabulate sub-dofs on cell (using UFC map)
     _ufc_dofmap->tabulate_dofs(&tmp_dof_holder[0], ufc_mesh, ufc_cell);
-    std::copy(tmp_dof_holder.begin(), tmp_dof_holder.end(), _dofmap[cell_index].begin());
 
     // Add UFC offset
-    for (std::size_t i = 0; i < _dofmap[cell_index].size(); ++i)
-      _dofmap[cell_index][i] += offset;
+    for (unsigned int i=0; i < tmp_dof_holder.size(); i++)
+      tmp_dof_holder[i] += offset;
+
+    if (mesh.is_periodic() && !_slave_master_map.empty())
+    {
+      // Check for slaves and modify
+      std::map<std::size_t, std::size_t>::const_iterator slave_it;
+      for (unsigned int i = 0; i < tmp_dof_holder.size(); i++)
+      {
+        const std::size_t dof = tmp_dof_holder[i];
+        slave_it = _slave_master_map.find(dof);
+        if (slave_it != _slave_master_map.end())
+        {
+          tmp_dof_holder[i] = slave_it->second; // Replace slave with master
+          slave_dofs.insert(slave_it->first);
+        }
+      }
+    }
+    std::copy(tmp_dof_holder.begin(), tmp_dof_holder.end(), _dofmap[cell_index].begin());
   }
 
-  // Set global dimension
-  _global_dimension = _ufc_dofmap->global_dimension();
+  if (mesh.is_periodic() && !_slave_master_map.empty())
+  {
+    // Periodic meshes need to renumber UFC-numbered dofs due to elimination of slave dofs
+    // For faster search get a vector of all slaves on parent dofmap (or parent of parent, aka the owner)
+    std::vector<std::size_t> parent_slaves;
+    for (std::map<std::size_t, std::size_t>::const_iterator it = _slave_master_map.begin();
+                              it != _slave_master_map.end(); ++it)
+    {
+      parent_slaves.push_back(it->first);
+    }
+
+    std::vector<std::size_t>::iterator it;
+    std::vector<std::vector<dolfin::la_index> >::iterator cell_map;
+    std::vector<dolfin::la_index>::iterator dof;
+    for (cell_map = _dofmap.begin(); cell_map != _dofmap.end(); ++cell_map)
+    {
+      for (dof = cell_map->begin(); dof != cell_map->end(); ++dof)
+      {
+        it = std::lower_bound(parent_slaves.begin(), parent_slaves.end(), *dof);
+        *dof -= std::size_t(it - parent_slaves.begin());
+      }
+    }
+
+    // Reduce the local slaves onto all processes to eliminate duplicates
+    std::vector<std::set<std::size_t> > all_slave_dofs;
+    MPI::all_gather(slave_dofs, all_slave_dofs);
+    for (std::size_t i = 0; i < all_slave_dofs.size(); i++)
+      if (i != MPI::process_number())
+        slave_dofs.insert(all_slave_dofs[i].begin(), all_slave_dofs[i].end());
+
+    // Set global dimension
+    _global_dimension = _ufc_dofmap->global_dimension() - slave_dofs.size();
+
+  }
+  else
+  {
+    // Set global dimension
+    _global_dimension = _ufc_dofmap->global_dimension();
+  }
 
   // Modify dofmap for non-UFC numbering
   ufc_map_to_dofmap.clear();
@@ -251,6 +314,8 @@ DofMap::DofMap(const DofMap& dofmap)
   _neighbours = dofmap._neighbours;
   _is_view = dofmap. _is_view;
   _distributed = dofmap._distributed;
+  _slave_master_map = dofmap._slave_master_map;
+  _master_processes = dofmap._master_processes;
 }
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()

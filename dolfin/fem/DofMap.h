@@ -19,6 +19,7 @@
 // Modified by Kent-Andre Mardal, 2009
 // Modified by Ola Skavhaug, 2009
 // Modified by Joachim B Haga, 2012
+// Modified by Mikael Mortensen, 2012
 //
 // First added:  2007-03-01
 // Last changed: 2012-11-05
@@ -358,7 +359,7 @@ namespace dolfin
     ///     std::string
     ///         An informal representation of the function space.
     std::string str(bool verbose) const;
-
+    
   private:
 
     // Friends
@@ -395,7 +396,7 @@ namespace dolfin
     boost::shared_ptr<const Restriction> _restriction;
 
     // Global dimension. Note that this may differ from the global dimension
-    // of the UFC dofmap if the function space is restricted.
+    // of the UFC dofmap if the function space is restricted or periodic.
     std::size_t _global_dimension;
 
     // UFC dof map offset
@@ -419,9 +420,14 @@ namespace dolfin
 
     // True iff running in parallel
     bool _distributed;
-
+    
+    // Map from slave dofs to master dofs using UFC numbering
+    std::map<std::size_t, std::size_t> _slave_master_map;
+    
+    // Map of processes that share master dofs (used by compute_ownership)
+    std::map<std::size_t, boost::unordered_set<std::size_t> > _master_processes;
+    
   };
-
 }
 
 #endif

@@ -25,15 +25,15 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # Modified by Anders Logg 2011
+# Modified by Mikael Mortensen 2012
 #
 # First added:  2007-11-15
-# Last changed: 2012-11-12
+# Last changed: 2012-11-8
 
 from dolfin import *
 
 # Create mesh and finite element
 mesh = UnitSquareMesh(32, 32)
-V = FunctionSpace(mesh, "CG", 1)
 
 # Source term
 class Source(Expression):
@@ -59,21 +59,38 @@ class PeriodicBoundary(SubDomain):
         y[0] = x[0] - 1.0
         y[1] = x[1]
 
+class PeriodicBoundaryRight(SubDomain):
+
+    # Left boundary is "target domain" G
+    def inside(self, x, on_boundary):
+        return bool(abs(x[0]-1.) < DOLFIN_EPS and on_boundary)
+
+pbc = PeriodicBoundary()
+pbr = PeriodicBoundaryRight()
+mf = FacetFunction('sizet', mesh)
+mf.set_all(0)
+pbc.mark(mf, 1)
+pbr.mark(mf, 2)
+
+# Three different ways of creating the periodicity
+#mesh.domains().markers(1).assign(mf)
+mesh.add_periodic_direction(pbc)
+#mesh.add_periodic_direction(1, 2)
+
+V = FunctionSpace(mesh, "CG", 2)
+
 # Create Dirichlet boundary condition
 u0 = Constant(0.0)
 dbc = DirichletBoundary()
 bc0 = DirichletBC(V, u0, dbc)
 
-# Create periodic boundary condition
-pbc = PeriodicBoundary()
-bc1 = PeriodicBC(V, pbc)
-
 # Collect boundary conditions
-bcs = [bc0, bc1]
+bcs = [bc0]
 
 # Define variational problem
 u = TrialFunction(V)
 v = TestFunction(V)
+
 f = Source()
 a = dot(grad(u), grad(v))*dx
 L = f*v*dx
@@ -83,10 +100,13 @@ u = Function(V)
 solve(a == L, u, bcs)
 
 # Save solution to file
-file = File("periodic.pvd")
+file = File("periodic_dofmap.xml.gz")
 file << u
+
+list_timings()
 
 # Plot solution
 plot(u, interactive=True)
 
-list_timings()
+
+
