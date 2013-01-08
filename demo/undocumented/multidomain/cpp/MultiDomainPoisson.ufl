@@ -1,0 +1,40 @@
+# Copyright (C) 2013 Anders Logg
+#
+# This file is part of DOLFIN.
+#
+# DOLFIN is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# DOLFIN is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+#
+# First added:  2013-01-08
+# Last changed: 2013-01-08
+#
+# This is a simple test problem for multidomain physis.
+#
+# Compile this form with FFC: ffc -l dolfin MultiDomainPoisson.ufl.
+
+V = FiniteElement("Lagrange", triangle, 1)
+W = V*V
+
+u1, u2 = TrialFunctions(W)
+v1, v2 = TestFunctions(W)
+
+k1 = Coefficient(V)
+k2 = Coefficient(V)
+f1 = Coefficient(V)
+f2 = Coefficient(V)
+
+eps = 1e-6
+
+a = k1*dot(grad(u1), grad(v1))*dx + k2*dot(grad(u2), grad(v2))*dx + \
+    eps*u1*v1*dx + eps*u2*v2*dx
+L = f1*v1*dx + f2*v2*dx
