@@ -156,8 +156,9 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'triangulate',                 'python'), \
    os.path.join(demodir, 'undocumented', 'restriction',                 'cpp'),    \
    os.path.join(demodir, 'undocumented', 'poisson1D-in-2D',             'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'poisson1D-in-2D',             'python'),
-     ]
+   os.path.join(demodir, 'undocumented', 'poisson1D-in-2D',             'python'), \
+   os.path.join(demodir, 'undocumented', 'multidomain',                 'cpp')
+   ]
 
 
 failed = []
