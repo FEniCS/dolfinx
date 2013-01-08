@@ -41,23 +41,24 @@
 using namespace dolfin;
 
 #define THETA DOLFIN_PI/4.0
-//#define THETA 0.0
+
 // Map the point x back to the horizontal line
 double to_interval(const Array<double>& x) {
   return (x[0]*cos(THETA) + x[1]*sin(THETA));
-};
+}
+
 // Rotate the mesh through theta
-void rotate(Mesh & mesh) 
+void rotate(Mesh & mesh)
 {
   std::vector<double>& x = mesh.coordinates();
   double tmpx;
-  for (int i = 0; i < mesh.num_vertices(); i++) {
+  for (std::size_t i = 0; i < mesh.num_vertices(); i++) {
     tmpx = x[2*i]*cos(THETA) - x[2*i+1]*sin(THETA);
-    
+
     x[2*i+1] = x[2*i]*sin(THETA) + x[2*i+1]*cos(THETA);
     x[2*i] = tmpx;
   }
-};
+}
 
 // Subdomain to extract the bottom boundary of the mesh.
 class BottomEdge : public SubDomain
@@ -67,7 +68,7 @@ class BottomEdge : public SubDomain
     return (std::abs(x[1]) < DOLFIN_EPS);
   }
 };
-  
+
 // Boundary condition
 class DirichletBoundary : public SubDomain
 {
@@ -104,10 +105,10 @@ int main()
 {
   // Create original square mesh
   UnitSquareMesh squaremesh(50, 2);
-  
+
   // Grab the surface of the mesh
   BoundaryMesh boundarymesh(squaremesh);
-  
+
   // The actual mesh is just the bottom.
   SubMesh mesh(boundarymesh, BottomEdge());
 
