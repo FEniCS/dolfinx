@@ -60,7 +60,7 @@ void DofMapBuilder::build(DofMap& dofmap,
   dolfin_assert(dofmap._ufc_dofmap);
 
   // Temporary holder until UFC supporte 64-bit integers
-  std::vector<unsigned int> tmp_dofs;
+  std::vector<std::size_t> tmp_dofs;
 
   // FIXME: Remove restricted_dofs_inverse if not needed
 
@@ -208,7 +208,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
 
   // Data structures for computing ownership
   boost::unordered_map<std::size_t, std::size_t> dof_vote;
-  std::vector<unsigned int> facet_dofs(dofmap.num_facet_dofs());
+  std::vector<std::size_t> facet_dofs(dofmap.num_facet_dofs());
 
   // Communication buffer
   std::vector<std::size_t> send_buffer;
@@ -606,7 +606,7 @@ void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
 
       boost::scoped_ptr<ufc::mesh> ufc_mesh(new ufc::mesh);
       boost::scoped_ptr<ufc::cell> ufc_cell(new ufc::cell);
-      unsigned int dof = 0;
+      std::size_t dof = 0;
       dofmap->tabulate_dofs(&dof, *ufc_mesh, *ufc_cell);
 
       // Insert global dof index

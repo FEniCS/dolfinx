@@ -235,7 +235,7 @@ namespace dolfin
     ///         Degrees of freedom.
     ///     local_facet (std::size_t)
     ///         The local facet.
-    void tabulate_facet_dofs(unsigned int* dofs, std::size_t local_facet) const;
+    void tabulate_facet_dofs(std::size_t* dofs, std::size_t local_facet) const;
 
     /// Tabulate the coordinates of all dofs on a cell (UFC cell
     /// version)

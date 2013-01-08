@@ -99,18 +99,18 @@ namespace dolfin
       geometric_dimension = mesh.geometry().dim();
 
       // Allocate arrays for local entity indices
-      entity_indices = new unsigned int*[topological_dimension + 1];
+      entity_indices = new std::size_t*[topological_dimension + 1];
       for (std::size_t d = 0; d < topological_dimension; d++)
       {
         // Store number of cell entities allocated for (this can change
         // between init() and update() which is why it's stored)
         num_cell_entities.push_back(cell.num_entities(d));
         if (cell.num_entities(d) > 0)
-          entity_indices[d] = new unsigned int[cell.num_entities(d)];
+          entity_indices[d] = new std::size_t[cell.num_entities(d)];
         else
           entity_indices[d] = 0;
       }
-      entity_indices[topological_dimension] = new unsigned int[1];
+      entity_indices[topological_dimension] = new std::size_t[1];
 
       // Allocate vertex coordinates
       coordinates = new double*[num_vertices];

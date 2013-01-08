@@ -115,8 +115,9 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
   // Resize dofmap data structure
   _dofmap.resize(mesh.num_cells());
 
-  // Hack to get around UFC using 32-bit integers
-  std::vector<unsigned int> tmp_dof_holder;
+  // Holder for copying UFC std::size_t dof maps into the a dof map that
+  // is consistent with the linear algebra backend
+  std::vector<std::size_t> tmp_dof_holder;
 
   // Build sub-map based on UFC dofmap
   UFCCell ufc_cell(mesh);
@@ -324,7 +325,7 @@ const std::set<std::size_t>& DofMap::neighbours() const
   return _neighbours;
 }
 //-----------------------------------------------------------------------------
-void DofMap::tabulate_facet_dofs(unsigned int* dofs, std::size_t local_facet) const
+void DofMap::tabulate_facet_dofs(std::size_t* dofs, std::size_t local_facet) const
 {
   dolfin_assert(_ufc_dofmap);
   _ufc_dofmap->tabulate_facet_dofs(dofs, local_facet);
