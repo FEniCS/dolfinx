@@ -22,6 +22,12 @@
 #
 # Compile this form with FFC: ffc -l dolfin MultiDomainPoisson.ufl.
 
+# MER: Important thing to decide: should functions defined on
+# restricted domains be extended by zero to the extended domain by
+# assumption/default?. Might be an good check if not; conversely might
+# be cumbersome if not. Could be a flag "extend_by_zero" to turn
+# on/off?
+
 V = FiniteElement("Lagrange", triangle, 1)
 W = V*V
 
@@ -36,7 +42,7 @@ f1 = Coefficient(V)
 eps = 1e-6
 
 dx0 = dx(0)
-dx1 = dx(1)
+dx1 = dx(0) # Using extension by zero convension
 
 a = k0*dot(grad(u0), grad(v0))*dx0 + k1*dot(grad(u1), grad(v1))*dx1 \
     + eps*u0*v0*dx0 + eps*u1*v1*dx1
