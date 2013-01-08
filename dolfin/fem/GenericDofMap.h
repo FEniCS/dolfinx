@@ -89,7 +89,7 @@ namespace dolfin
     virtual const std::vector<dolfin::la_index>& cell_dofs(std::size_t cell_index) const = 0;
 
     /// Tabulate local-local facet dofs
-    virtual void tabulate_facet_dofs(unsigned int* dofs, std::size_t local_facet) const = 0;
+    virtual void tabulate_facet_dofs(std::size_t* dofs, std::size_t local_facet) const = 0;
 
     /// Tabulate the coordinates of all dofs on a cell (UFC cell version)
     virtual void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,

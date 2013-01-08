@@ -35,7 +35,7 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/BoundaryMesh.h>
-#include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/MeshDistributed.h>
 #include <dolfin/mesh/Restriction.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "DofMapBuilder.h"
@@ -67,9 +67,6 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 {
   dolfin_assert(_ufc_dofmap);
   dolfin_assert(_restriction);
-
-  warning("Restricted function space is an experimental feature.");
-  not_working_in_parallel("Restricted function space");
 
   // Get mesh
   const dolfin::Mesh& dolfin_mesh(restriction->mesh());
@@ -122,14 +119,15 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
   // Resize dofmap data structure
   _dofmap.resize(mesh.num_cells());
 
-  // Hack to get around UFC using 32-bit integers
-  std::vector<unsigned int> tmp_dof_holder;
-  
   // Set to hold slave dofs on current processor
   std::set<std::size_t> slave_dofs;
-  
+
   // Store original _slave_master_map on this sub_dofmap
   _slave_master_map = parent_dofmap._slave_master_map;
+
+  // Holder for copying UFC std::size_t dof maps into the a dof map that
+  // is consistent with the linear algebra backend
+  std::vector<std::size_t> tmp_dof_holder;
 
   // Build sub-map based on UFC dofmap
   UFCCell ufc_cell(mesh);
@@ -146,7 +144,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
 
     // Tabulate sub-dofs on cell (using UFC map)
     _ufc_dofmap->tabulate_dofs(&tmp_dof_holder[0], ufc_mesh, ufc_cell);
-    
+
     // Add UFC offset
     for (unsigned int i=0; i < tmp_dof_holder.size(); i++)
       tmp_dof_holder[i] += offset;
@@ -165,13 +163,13 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
           slave_dofs.insert(slave_it->first);
         }
       }
-    }        
+    }
     std::copy(tmp_dof_holder.begin(), tmp_dof_holder.end(), _dofmap[cell_index].begin());
   }
 
   if (mesh.is_periodic() && !_slave_master_map.empty())
-  { 
-    // Periodic meshes need to renumber UFC-numbered dofs due to elimination of slave dofs      
+  {
+    // Periodic meshes need to renumber UFC-numbered dofs due to elimination of slave dofs
     // For faster search get a vector of all slaves on parent dofmap (or parent of parent, aka the owner)
     std::vector<std::size_t> parent_slaves;
     for (std::map<std::size_t, std::size_t>::const_iterator it = _slave_master_map.begin();
@@ -179,29 +177,29 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
     {
       parent_slaves.push_back(it->first);
     }
-    
-    std::vector<std::size_t>::iterator it; 
-    std::vector<std::vector<DolfinIndex> >::iterator cell_map;
-    std::vector<DolfinIndex>::iterator dof;
+
+    std::vector<std::size_t>::iterator it;
+    std::vector<std::vector<dolfin::la_index> >::iterator cell_map;
+    std::vector<dolfin::la_index>::iterator dof;
     for (cell_map = _dofmap.begin(); cell_map != _dofmap.end(); ++cell_map)
     {
       for (dof = cell_map->begin(); dof != cell_map->end(); ++dof)
       {
         it = std::lower_bound(parent_slaves.begin(), parent_slaves.end(), *dof);
-        *dof -= std::size_t(it - parent_slaves.begin());        
+        *dof -= std::size_t(it - parent_slaves.begin());
       }
-    }    
-        
-    // Reduce the local slaves onto all processes to eliminate duplicates 
+    }
+
+    // Reduce the local slaves onto all processes to eliminate duplicates
     std::vector<std::set<std::size_t> > all_slave_dofs;
-    MPI::all_gather(slave_dofs, all_slave_dofs);    
+    MPI::all_gather(slave_dofs, all_slave_dofs);
     for (std::size_t i = 0; i < all_slave_dofs.size(); i++)
       if (i != MPI::process_number())
         slave_dofs.insert(all_slave_dofs[i].begin(), all_slave_dofs[i].end());
-    
+
     // Set global dimension
     _global_dimension = _ufc_dofmap->global_dimension() - slave_dofs.size();
-        
+
   }
   else
   {
@@ -392,7 +390,7 @@ const std::set<std::size_t>& DofMap::neighbours() const
   return _neighbours;
 }
 //-----------------------------------------------------------------------------
-void DofMap::tabulate_facet_dofs(unsigned int* dofs, std::size_t local_facet) const
+void DofMap::tabulate_facet_dofs(std::size_t* dofs, std::size_t local_facet) const
 {
   dolfin_assert(_ufc_dofmap);
   _ufc_dofmap->tabulate_facet_dofs(dofs, local_facet);
@@ -515,7 +513,7 @@ void DofMap::build_common(const Mesh& dolfin_mesh)
     {
       dolfin_mesh.init(d);
       if (_distributed)
-        MeshPartitioning::number_entities(dolfin_mesh, d);
+        MeshDistributed::number_entities(dolfin_mesh, d);
     }
   }
 
@@ -525,7 +523,7 @@ void DofMap::build_common(const Mesh& dolfin_mesh)
   // Initialize the UFC dofmap
   init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh);
 
-  // Build restricted dof map
+  // Build dof map
   const bool reorder = dolfin::parameters["reorder_dofs_serial"];
   DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, _restriction,
                        reorder, _distributed);

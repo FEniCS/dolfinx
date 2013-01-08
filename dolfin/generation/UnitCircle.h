@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-11-09
-// Last changed: 2012-11-09
+// Last changed: 2013-01-07
 
 #ifndef __UNIT_CIRCLE_H
 #define __UNIT_CIRCLE_H
@@ -48,7 +48,8 @@ namespace dolfin
                std::string transformation="rotsumn")
       : UnitCircleMesh(n, diagonal, transformation)
     {
-      warning("UnitCircle is deprecated. Use UnitCircleMesh.");
+      deprecation("UnitCircle", "1.1.0",
+                  "The class UnitCircle has been replaced by UnitCircleMesh.");
     }
 
   };

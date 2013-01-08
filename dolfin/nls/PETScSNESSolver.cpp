@@ -21,6 +21,10 @@
 
 #ifdef HAS_PETSC
 
+#include <map>
+#include <string>
+#include <utility>
+
 #include "PETScSNESSolver.h"
 #include <boost/assign/list_of.hpp>
 #include <dolfin/common/MPI.h>
@@ -55,61 +59,65 @@ struct snes_ctx_t
   PETScVector* dx;
 };
 
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2 // PETSc 3.2
-// Mapping from method string to PETSc
-const std::map<std::string, const SNESType> PETScSNESSolver::_methods
-  = boost::assign::map_list_of("default",  "")
-                              ("ls",          SNESLS)
-                              ("tr",          SNESTR)
-                              ("vi",          SNESVI)
-                              ("test",        SNESTEST);
+#if PETSC_VERSION_RELEASE
 
-// Mapping from method string to description
-const std::vector<std::pair<std::string, std::string> >
-  PETScSNESSolver::_methods_descr = boost::assign::pair_list_of
-    ("default",     "default SNES method")
-    ("ls",          "Line search method")
-    ("tr",          "Trust region method")
-    ("vi",          "Reduced space active set solver method (for bounds)")
-    ("test",        "Tool to verify Jacobian approximation");
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2 // PETSc 3.2
+  // Mapping from method string to PETSc
+  const std::map<std::string, std::pair<std::string, const SNESType> > PETScSNESSolver::_methods
+    = boost::assign::map_list_of
+        ("default", std::make_pair("default SNES method", ""))
+        ("ls",      std::make_pair("Line search method",  SNESLS))
+        ("tr",      std::make_pair("Trust region method", SNESTR))
+        ("vi",      std::make_pair("Reduced space active set solver method (for bounds)", SNESVI))
+        ("test",    std::make_pair("Tool to verify Jacobian approximation", SNESTEST));
 
-#else // PETSc 3.3 and above
-// Mapping from method string to PETSc
-const std::map<std::string, const SNESType> PETScSNESSolver::_methods
-  = boost::assign::map_list_of("default",  "")
-                              ("ls",          SNESLS)
-                              ("tr",          SNESTR)
-                              ("test",        SNESTEST)
-                              ("ngmres",      SNESNGMRES)
-                              ("nrichardson", SNESNRICHARDSON)
-                              ("virs",        SNESVIRS)
-                              ("viss",        SNESVISS)
-                              ("qn",          SNESQN)
-                              ("ncg",         SNESNCG)
-                              ("fas",         SNESFAS)
-                              ("ms",          SNESMS);
+  #elif PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3 // PETSc 3.3
+  // Mapping from method string to PETSc
+  const std::map<std::string, std::pair<std::string, const SNESType> > PETScSNESSolver::_methods
+    = boost::assign::map_list_of
+        ("default",     std::make_pair("default SNES method", ""))
+        ("ls",          std::make_pair("Line search method", SNESLS))
+        ("tr",          std::make_pair("Trust region method",  SNESTR))
+        ("test",        std::make_pair("Tool to verify Jacobian approximation", SNESTEST))
+        ("ngmres",      std::make_pair("Nonlinear generalised minimum residual method", SNESNGMRES))
+        ("nrichardson", std::make_pair("Richardson nonlinear method (Picard iteration)", SNESNRICHARDSON))
+        ("virs",        std::make_pair("Reduced space active set solver method (for bounds)", SNESVIRS))
+        ("viss",        std::make_pair("Reduced space active set solver method (for bounds)", SNESVISS))
+        ("qn",          std::make_pair("Limited memory quasi-Newton", SNESQN))
+        ("ncg",         std::make_pair("Nonlinear conjugate gradient method", SNESNCG))
+        ("fas",         std::make_pair("Full Approximation Scheme nonlinear multigrid method", SNESFAS))
+        ("ms",          std::make_pair("Multistage smoothers", SNESMS));
+  #endif
 
-// Mapping from method string to description
-const std::vector<std::pair<std::string, std::string> >
-  PETScSNESSolver::_methods_descr = boost::assign::pair_list_of
-    ("default",     "default SNES method")
-    ("ls",          "Line search method")
-    ("tr",          "Trust region method")
-    ("test",        "Tool to verify Jacobian approximation")
-    ("ngmres",      "Nonlinear generalised minimum residual method")
-    ("nrichardson", "Richardson nonlinear method (Picard iteration)")
-    ("virs",        "Reduced space active set solver method (for bounds)")
-    ("viss",        "Reduced space active set solver method (for bounds)")
-    ("qn",          "Limited memory quasi-Newton")
-    ("ncg",         "Nonlinear conjugate gradient method")
-    ("fas",         "Full Approximation Scheme nonlinear multigrid method")
-    ("ms",          "Multistage smoothers");
+#else // Development version
+
+  // Mapping from method string to PETSc
+  const std::map<std::string, std::pair<std::string, const SNESType> > PETScSNESSolver::_methods
+   = boost::assign::map_list_of
+      ("default",      std::make_pair("default SNES method", ""))
+      ("newtonls",     std::make_pair("Line search method", SNESNEWTONLS))
+      ("newtontr",     std::make_pair("Trust region method", SNESNEWTONTR))
+      ("test",         std::make_pair("Tool to verify Jacobian approximation", SNESTEST))
+      ("ngmres",       std::make_pair("Nonlinear generalised minimum residual method", SNESNGMRES))
+      ("nrichardson",  std::make_pair("Richardson nonlinear method (Picard iteration)", SNESNRICHARDSON))
+      ("vinewtonrsls", std::make_pair("Reduced space active set solver method (for bounds)", SNESVINEWTONRSLS))
+      ("vinewtonssls", std::make_pair("Reduced space active set solver method (for bounds)", SNESVINEWTONSSLS))
+      ("qn",           std::make_pair("Limited memory quasi-Newton", SNESQN))
+      ("ncg",          std::make_pair("Nonlinear conjugate gradient method", SNESNCG))
+      ("fas",          std::make_pair("Full Approximation Scheme nonlinear multigrid method", SNESFAS))
+      ("ms",           std::make_pair("Multistage smoothers", SNESMS));
+  
 #endif
 
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> > PETScSNESSolver::methods()
 {
-  return PETScSNESSolver::_methods_descr;
+  std::vector<std::pair<std::string, std::string> > available_methods;
+  std::map<std::string, std::pair<std::string, const SNESType> >::const_iterator it;
+  for (it = _methods.begin(); it != _methods.end(); ++it)
+    available_methods.push_back(std::make_pair(it->first, it->second.first));
+
+  return available_methods;
 }
 //-----------------------------------------------------------------------------
 Parameters PETScSNESSolver::default_parameters()
@@ -179,7 +187,6 @@ void PETScSNESSolver::init(const std::string& method)
   }
 
   _snes.reset(new SNES, PETScSNESDeleter());
-
   if (MPI::num_processes() > 1)
     SNESCreate(PETSC_COMM_WORLD, _snes.get());
   else
@@ -190,7 +197,12 @@ void PETScSNESSolver::init(const std::string& method)
 
   // Set solver type
   if (method != "default")
-    SNESSetType(*_snes, _methods.find(method)->second);
+  {
+    std::map<std::string, std::pair<std::string, const SNESType> >::const_iterator it;
+    it = _methods.find(method);
+    dolfin_assert(it != _methods.end());
+    SNESSetType(*_snes, it->second.second);
+  }
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
@@ -222,21 +234,36 @@ std::pair<std::size_t, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear_
 
   // Set the method
   if (std::string(parameters["method"]) != "default")
-    SNESSetType(*_snes, _methods.find(std::string(parameters["method"]))->second);
+  {
+    std::map<std::string, std::pair<std::string, const SNESType> >::const_iterator it;
+    it = _methods.find(std::string(parameters["method"]));
+    dolfin_assert(it != _methods.end());
+    SNESSetType(*_snes, it->second.second);
   // If
   //      a) the user has set bounds (sign != default)
   // AND  b) the user has not set a solver (method == default)
   // THEN set a good method that supports bounds
   // (most methods do not support bounds)
+  }
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
   else if (std::string(parameters["method"]) == std::string("default") && std::string(parameters["sign"]) != "default")
-    SNESSetType(*_snes, _methods.find(std::string("vi"))->second);
+  {
+    std::map<std::string, std::pair<std::string, const SNESType> >::const_iterator it;
+    it = _methods.find(std::string("vi"));
+    dolfin_assert(it != _methods.end());
+    SNESSetType(*_snes, it->second.second);
+  }
   #else
   else if (std::string(parameters["method"]) == std::string("default") && std::string(parameters["sign"]) != "default")
-    SNESSetType(*_snes, _methods.find(std::string("viss"))->second);
+  {
+    std::map<std::string, std::pair<std::string, const SNESType> >::const_iterator it;
+    it = _methods.find(std::string("viss"));
+    dolfin_assert(it != _methods.end());
+    SNESSetType(*_snes, it->second.second);
+  }
   #endif
 
-// The line search business changed completely from PETSc 3.2 to 3.3.
+  // The line search business changed completely from PETSc 3.2 to 3.3.
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
   if (parameters["report"])
     SNESLineSearchSetMonitor(*_snes, PETSC_TRUE);
@@ -361,19 +388,27 @@ void PETScSNESSolver::set_linear_solver_parameters(Parameters ksp_parameters)
 
   if (linear_solver == "default")
   {
-    ; // Do nothing
+    // Do nothing
   }
   else if (PETScKrylovSolver::_methods.count(linear_solver) != 0)
   {
-    KSPSetType(ksp, PETScKrylovSolver::_methods.find(linear_solver)->second);
+    std::map<std::string, const KSPType>::const_iterator 
+      it  = PETScKrylovSolver::_methods.find(linear_solver);
+    dolfin_assert(it != PETScKrylovSolver::_methods.end());
+    KSPSetType(ksp, it->second);
     if (preconditioner != "default" && PETScPreconditioner::_methods.count(preconditioner) != 0)
-      PCSetType(pc, PETScPreconditioner::_methods.find(preconditioner)->second);
+    {
+      std::map<std::string, const PCType>::const_iterator it 
+        = PETScPreconditioner::_methods.find(preconditioner);
+      dolfin_assert(it != PETScPreconditioner::_methods.end());
+      PCSetType(pc, it->second);
+    }
   }
   else if (linear_solver == "lu" || PETScLUSolver::_methods.count(linear_solver) != 0)
   {
     std::string lu_method;
 
-    if (PETScLUSolver::_methods.count(linear_solver) != 0)
+    if (PETScLUSolver::_methods.find(linear_solver) != PETScLUSolver::_methods.end())
       lu_method = linear_solver;
     else
     {
@@ -414,7 +449,10 @@ void PETScSNESSolver::set_linear_solver_parameters(Parameters ksp_parameters)
 
     KSPSetType(ksp, KSPPREONLY);
     PCSetType(pc, PCLU);
-    PCFactorSetMatSolverPackage(pc, PETScLUSolver::_methods.find(lu_method)->second);
+    std::map<std::string, const MatSolverPackage>::const_iterator it 
+      = PETScLUSolver::_methods.find(lu_method);
+    dolfin_assert(it != PETScLUSolver::_methods.end());
+    PCFactorSetMatSolverPackage(pc, it->second);
   }
   else
   {
@@ -426,8 +464,8 @@ void PETScSNESSolver::set_linear_solver_parameters(Parameters ksp_parameters)
 //-----------------------------------------------------------------------------
 void PETScSNESSolver::set_bounds(GenericVector& x)
 {
-  // Here, x is the model vector from which we make our Vecs
-  // that tell PETSc the bounds.
+  // Here, x is the model vector from which we make our Vecs that tell
+  // PETSc the bounds.
 
   std::string sign = parameters["sign"];
 

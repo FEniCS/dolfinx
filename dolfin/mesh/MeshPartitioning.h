@@ -20,7 +20,7 @@
 // Modified by Kent-Andre Mardal, 2011
 //
 // First added:  2008-12-01
-// Last changed: 2012-05-18
+// Last changed: 2012-12-24
 
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
@@ -28,7 +28,6 @@
 #include <map>
 #include <utility>
 #include <vector>
-#include <boost/array.hpp>
 #include <boost/multi_array.hpp>
 #include <dolfin/log/log.h>
 #include "LocalMeshValueCollection.h"
@@ -37,7 +36,7 @@
 
 namespace dolfin
 {
-  // Note: MeshFunction and MeshValueCollection cannot apear in the
+  // Note: MeshFunction and MeshValueCollection cannot appear in the
   // implementations that appear in this file of the templated functions
   // as this leads to a circular dependency. Therefore the functions are
   // templated over these types.
@@ -47,23 +46,12 @@ namespace dolfin
   class LocalMeshData;
 
   /// This class partitions and distributes a mesh based on
-  /// partitioned local mesh data. Note that the local mesh data will
+  /// partitioned local mesh data.The local mesh data will
   /// also be repartitioned and redistributed during the computation
   /// of the mesh partitioning.
   ///
   /// After partitioning, each process has a local mesh and set of
   /// mesh data that couples the meshes together.
-  ///
-  /// The following mesh data is created:
-  ///
-  /// 1. "global entity indices 0" (MeshFunction<std::size_t>)
-  ///
-  /// This maps each local vertex to its global index.
-  ///
-  /// 2. "overlap" (std::map<std::size_t, std::vector<std::size_t> >)
-  ///
-  /// This maps each shared vertex to a list of the processes sharing
-  /// the vertex.
   ///
   /// 3. "global entity indices %d" (MeshFunction<std::size_t>)
   ///
@@ -89,97 +77,37 @@ namespace dolfin
   {
   public:
 
-   /// Build a partitioned mesh based on local meshes
+    /// Build a partitioned mesh based on a local mesh
     static void build_distributed_mesh(Mesh& mesh);
 
     /// Build a partitioned mesh based on local mesh data
     static void build_distributed_mesh(Mesh& mesh, const LocalMeshData& data);
 
+    /// Build a MeshValueCollection based on LocalMeshValueCollection
     template<typename T>
     static void build_distributed_value_collection(MeshValueCollection<T>& values,
                const LocalMeshValueCollection<T>& local_data, const Mesh& mesh);
 
-    /// Create global entity indices for entities of dimension d
-    static void number_entities(const Mesh& mesh, std::size_t d);
-
   private:
-
-    // Data structure for a mesh entity (list of vertices)
-    typedef std::vector<std::size_t> Entity;
-
-    // Data structure to mesh entity data
-    struct EntityData
-    {
-      // Constructor
-      EntityData() : index(0) {}
-
-      // Constructor
-      explicit EntityData(std::size_t index) : index(index) {}
-
-      // Constructor
-      EntityData(std::size_t index, const std::vector<std::size_t>& processes)
-        : index(index), processes(processes) {}
-
-      // Entity index
-      std::size_t index;
-
-      // Processes on which entity resides
-      std::vector<std::size_t> processes;
-    };
 
     // Create a partitioned mesh based on local mesh data
     static void partition(Mesh& mesh, const LocalMeshData& data);
 
-    // Create and attach distributed MeshDomains from local_data
-    static void build_mesh_domains(Mesh& mesh, const LocalMeshData& local_data);
-
-    // Create and attach distributed MeshDomains from local_data
-    // [entry, (cell_index, local_index, value)]
-    template<typename T, typename MeshValueCollection>
-    static void build_mesh_value_collection(const Mesh& mesh,
-      const std::vector<std::pair<std::pair<std::size_t, std::size_t>, T> >& local_value_data,
-      MeshValueCollection& mesh_values);
-
-    // Compute and return (number of global entities, process offset)
-    static std::pair<std::size_t, std::size_t>
-      compute_num_global_entities(std::size_t num_local_entities,
-                                  std::size_t num_processes,
-                                  std::size_t process_number);
-
-    // Compute ownership of entities ([entity vertices], data)
-    //  [0]: owned exclusively (will be numbered by this process)
-    //  [1]: owned and shared (will be numbered by this process, and number
-    //       commuicated to other processes)
-    //  [2]: not owned but shared (will be numbered by another process,
-    //       and number commuicated to this processes)
-    static boost::array<std::map<Entity, EntityData>, 3>
-          compute_entity_ownership(const std::map<Entity, std::size_t>& entities,
-               const std::map<std::size_t, std::set<std::size_t> >& shared_vertices);
-
-    // Build preliminary 'guess' of shared enties
-    static void compute_preliminary_entity_ownership(
-          const std::map<std::size_t, std::set<std::size_t> >& shared_vertices,
-          const std::map<Entity, std::size_t>& entities,
-          boost::array<std::map<Entity, EntityData>, 3>& entity_ownership);
-
-    // Communicate with other processes to finalise entity ownership
-    static void compute_final_entity_ownership(boost::array<std::map<Entity, EntityData>, 3>& entity_ownership);
-
     // This function takes the partition computed by the partitioner
     // (which tells us to which process each of the local cells stored in
     // LocalMeshData on this process belongs. We use MPI::distribute to
-    //redistribute all cells (the global vertex indices of all cells).
+    // redistribute all cells (the global vertex indices of all cells).
     static void distribute_cells(const LocalMeshData& data,
                                  const std::vector<std::size_t>& cell_partition,
-                                 std::vector<std::size_t>& global_cell_indices,
-                                 boost::multi_array<std::size_t, 2>& cell_vertices);
+                                 std::vector<std::size_t>& cell_local_to_global_indices,
+                                 boost::multi_array<std::size_t, 2>& cell_local_vertices);
 
     // Distribute vertices
     static void distribute_vertices(const LocalMeshData& data,
-                  const boost::multi_array<std::size_t, 2>& cell_vertices,
-                  std::vector<std::size_t>& vertex_indices,
-                  boost::multi_array<double, 2>& vertex_coordinates,
-                  std::map<std::size_t, std::size_t>& glob2loc);
+                  const boost::multi_array<std::size_t, 2>& cell_local_vertices,
+                  std::vector<std::size_t>& vertex_local_to_global_indices,
+                  std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
+                  boost::multi_array<double, 2>& vertex_coordinates);
 
     // Build mesh
     static void build_mesh(Mesh& mesh,
@@ -187,21 +115,20 @@ namespace dolfin
                    const boost::multi_array<std::size_t, 2>& cell_vertices,
                    const std::vector<std::size_t>& vertex_indices,
                    const boost::multi_array<double, 2>& vertex_coordinates,
-                   const std::map<std::size_t, std::size_t>& glob2loc,
+                   const std::map<std::size_t, std::size_t>& vertex_global_to_local_indices,
                    std::size_t tdim, std::size_t gdim, std::size_t num_global_cells,
                    std::size_t num_global_vertices);
 
-    // Check if all entity vertices are in overlap
-    static bool in_overlap(const std::vector<std::size_t>& entity_vertices,
-               const std::map<std::size_t, std::set<std::size_t> >& overlap);
+    // Create and attach distributed MeshDomains from local_data
+    static void build_mesh_domains(Mesh& mesh,
+                                   const LocalMeshData& local_data);
 
-    /// Compute number of cells connected to each facet (globally). Facets
-    /// on internal boundaries will be connected to two cells (with the
-    /// cells residing on neighboring processes)
-    static std::vector<std::size_t> num_connected_cells(const Mesh& mesh,
-               const std::map<Entity, std::size_t>& entities,
-               const std::map<Entity, EntityData>& owned_shared_entities,
-               const std::map<Entity, EntityData>& unowned_shared_entities);
+    // Create and attach distributed MeshDomains from local_data
+    // [entry, (cell_index, local_index, value)]
+    template<typename T, typename MeshValueCollection>
+    static void build_mesh_value_collection(const Mesh& mesh,
+      const std::vector<std::pair<std::pair<std::size_t, std::size_t>, T> >& local_value_data,
+      MeshValueCollection& mesh_values);
   };
 
   //---------------------------------------------------------------------------
@@ -230,8 +157,8 @@ namespace dolfin
     mesh_values.values().clear();
 
     // Initialise global entity numbering
-    MeshPartitioning::number_entities(mesh, dim);
-    MeshPartitioning::number_entities(mesh, D);
+    MeshDistributed::number_entities(mesh, dim);
+    MeshDistributed::number_entities(mesh, D);
 
     if (dim == 0)
     {
@@ -284,9 +211,10 @@ namespace dolfin
         off_process_global_cell_entities.push_back(global_cell_index);
     }
 
-    // Get destinations and local cell index at destination for off-process cells
+    // Get destinations and local cell index at destination for
+    // off-process cells
     const std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t> > >
-      entity_hosts = MeshDistributed::off_process_indices(off_process_global_cell_entities, D, mesh);
+      entity_hosts = MeshDistributed::locate_off_process_entities(off_process_global_cell_entities, D, mesh);
 
     // Pack data to send to appropriate process
     std::vector<std::size_t> send_data0;
@@ -296,7 +224,8 @@ namespace dolfin
     std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t> > >::const_iterator entity_host;
 
     {
-      // Build a convenience map in order to speedup the loop over local data
+      // Build a convenience map in order to speedup the loop over
+      // local data
       std::map<std::size_t, std::set<std::size_t> > map_of_ldata;
       for (std::size_t i = 0; i < ldata.size(); ++i)
         map_of_ldata[ldata[i].first.first].insert(i);
