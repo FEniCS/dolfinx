@@ -707,7 +707,8 @@ namespace dolfin
     ///         Id of master subdomain
     ///     std::size_t
     ///         Id of slave subdomain
-    void add_periodic_direction(const std::size_t sub_domain0, const std::size_t sub_domain1);
+    void add_periodic_direction(const std::size_t sub_domain0,
+                                const std::size_t sub_domain1);
 
     /// Return periodic facet-to-facet map
     ///
@@ -716,7 +717,9 @@ namespace dolfin
     ///         The periodic facet-to-facet map. First pair is master, second is slave.
     ///         First item of pairs is global facet index, second item is the process
     ///         number where the facet lives.
-    std::vector<std::pair< std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > > get_periodic_facet_pairs(std::size_t i) const;
+    std::vector<std::pair<std::pair<std::size_t, std::size_t>,
+      std::pair<std::size_t, std::size_t> > >
+      get_periodic_facet_pairs(std::size_t i) const;
 
     /// Check if mesh has one or more periodic directions
     ///
@@ -793,22 +796,26 @@ namespace dolfin
     mutable bool _ordered;
 
     // Create a container for data relating to one periodic direction.
-    // Sould perhaps use something else, like a tuple??
+    // Could perhaps use something else, like a tuple??
     class PeriodicDomain
     {
     public:
 
-      PeriodicDomain(std::size_t, std::size_t, std::vector<double>, std::vector<std::pair< std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > >);
+      PeriodicDomain(std::size_t, std::size_t, std::vector<double>,
+                     std::vector<std::pair< std::pair<std::size_t, std::size_t>,
+                     std::pair<std::size_t, std::size_t> > >);
 
       // The periodic facet-to-facet map. First pair is master, second is slave.
       // First item of pairs is global facet index, second item is the process
       // number where the facet lives.
-      std::vector<std::pair< std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > > facet_pairs;
+      std::vector<std::pair< std::pair<std::size_t, std::size_t>,
+                  std::pair<std::size_t, std::size_t> > > facet_pairs;
 
       // Distance between subdomains
       std::vector<double> dx;
 
-      // Markers for the two periodic subdomains used by _domains. master first, slave second
+      // Markers for the two periodic subdomains used by _domains. master
+      // first, slave second
       std::pair<std::size_t, std::size_t> sub_domains;
 
     };
@@ -817,7 +824,7 @@ namespace dolfin
     std::vector<int> _cell_orientations;
 
     // Container for each periodic direction
-    std::vector<const PeriodicDomain*> _periodic_domains;
+    std::vector<PeriodicDomain*> _periodic_domains;
 
   };
 }
