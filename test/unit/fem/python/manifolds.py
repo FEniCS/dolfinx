@@ -74,7 +74,7 @@ class Rotation(object):
     def rotate_point(self, point):
         """Rotate point through phi then theta."""
 
-        return numpy.dot(self.mat, point)
+        return numpy.dot(point, self.mat.T)
 
 def poisson_2d():
     # Create mesh and define function space
@@ -213,28 +213,41 @@ class ManifoldBasisEvaluation(unittest.TestCase):
         for cell_base, cell_rot in izip(cells(self.basemesh), cells(self.rotmesh)):
 
             values_base = numpy.zeros(f_base.element().value_dimension(0))
-            values_base2 = numpy.zeros(f_base.element().value_dimension(0))
+            derivs_base = numpy.zeros(f_base.element().value_dimension(0)*3)
             values_rot = numpy.zeros(f_rot.element().value_dimension(0))
+            derivs_rot = numpy.zeros(f_rot.element().value_dimension(0)*3)
 
             for i in range(f_base.element().space_dimension()):
                 for point in points:
                     f_base.element().evaluate_basis(i, values_base,
                                                     point, cell_base)
 
-                    f_base.element().evaluate_basis_derivatives(i, 0, values_base2,
+                    f_base.element().evaluate_basis_derivatives(i, 1, derivs_base,
                                                                 point, cell_base)
-
-                    if piola:
-                        values_cmp = self.rotation.rotate_point(values_base)
-                    else:
-                        values_cmp = values_base
 
                     f_rot.element().evaluate_basis(i, values_rot,
                                                    self.rotation.rotate_point(point),
                                                    cell_rot)
 
-                    self.assertAlmostEqual(abs(values_cmp-values_rot).max(),0.0, 10)
+                    f_base.element().evaluate_basis_derivatives(i, 1, derivs_rot,
+                                                                self.rotation.rotate_point(point),
+                                                                cell_rot)
 
+                    if piola:
+                        values_cmp = self.rotation.rotate_point(values_base)
+
+                        derivs_rot2 = derivs_rot.reshape(f_rot.element().value_dimension(0),3)
+                        derivs_base2 = derivs_base.reshape(f_base.element().value_dimension(0),3)
+                        # If D is the unrotated derivative tensor, then RDR^T is the rotated version.
+                        derivs_cmp = numpy.dot(self.rotation.mat, self.rotation.rotate_point(derivs_base2))
+                    else:
+                        values_cmp = values_base
+                        # Rotate the derivative for comparison.
+                        derivs_cmp = self.rotation.rotate_point(derivs_base)
+                        derivs_rot2 = derivs_rot
+
+                    self.assertAlmostEqual(abs(derivs_rot2-derivs_cmp).max(), 0.0, 10)
+                    self.assertAlmostEqual(abs(values_cmp-values_rot).max(), 0.0, 10)
 
 if __name__ == "__main__":
     print ""
