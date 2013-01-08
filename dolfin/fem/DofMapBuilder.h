@@ -64,7 +64,7 @@ namespace dolfin
 
     typedef std::vector<std::size_t>::const_iterator vector_it;
     typedef boost::unordered_map<std::size_t, std::vector<std::size_t> > vec_map;
-    
+
     typedef std::pair<std::size_t, std::size_t> facet_data;
     typedef std::map<std::size_t, std::size_t> periodic_map;
     typedef std::vector<facet_data> vector_of_pairs;
@@ -109,9 +109,9 @@ namespace dolfin
                                   boost::shared_ptr<const Restriction> restriction,
                                   const map& restricted_dofs_inverse);
 
-    /// Compute set of global dofs (e.g. Reals associated with global
-    /// Lagrnage multipliers) based on UFC numbering. Global dofs
-    /// are not associated with any mesh entity
+    // Compute set of global dofs (e.g. Reals associated with global
+    // Lagrange multipliers) based on UFC numbering. Global dofs
+    // are not associated with any mesh entity.
     static set compute_global_dofs(const DofMap& dofmap,
                                    const Mesh& dolfin_mesh);
 
@@ -125,7 +125,7 @@ namespace dolfin
     // Iterate recursively over all sub-dof maps to build a global
     // map from slave dofs to master dofs. Build also a map of all
     // processes that shares the master dofs
-    static void extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh, 
+    static void extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
                             periodic_map& _slave_master_map,
                             std::map<std::size_t, boost::unordered_set<std::size_t> >& _master_processes);
 
