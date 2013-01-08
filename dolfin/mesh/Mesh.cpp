@@ -574,7 +574,6 @@ std::string Mesh::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-<<<<<<< TREE
 const std::vector<int>& Mesh::cell_orientations() const
 {
   return _cell_orientations;
