@@ -150,7 +150,7 @@ def rotate_2d_mesh(theta):
     cubemesh = UnitCubeMesh(1,1,1)
     boundarymesh = BoundaryMesh(cubemesh)
     mesh = SubMesh(boundarymesh, BottomEdge())
-    
+
     mesh.init_cell_orientations(Expression(("0.","0.","1.")))
 
     rotation = Rotation(theta, theta)
@@ -164,6 +164,10 @@ class ManifoldSolving(unittest.TestCase):
         """This test solves Poisson's equation on a unit square in 2D,
         and then on a unit square embedded in 3D and rotated pi/4
         radians about each of the z and x axes."""
+
+        # Boundary mesh not working in parallel
+        if MPI.num_processes() > 1:
+            return
 
         u_2D = poisson_2d()
         u_manifold = poisson_manifold()
@@ -180,6 +184,11 @@ class ManifoldBasisEvaluation(unittest.TestCase):
     def test_basis_evaluation_2D_in_3D(self):
         """This test checks that basis functions and their
         derivatives are unaffected by rotations."""
+
+        # Boundary mesh not working in parallel
+        if MPI.num_processes() > 1:
+            return
+
         self.basemesh = rotate_2d_mesh(0.0)
         self.rotmesh  = rotate_2d_mesh(numpy.pi/4)
 
@@ -199,6 +208,10 @@ class ManifoldBasisEvaluation(unittest.TestCase):
         self.basis_test("BDFM", 2, piola=True)
 
     def basis_test(self, family, degree, piola=False):
+
+        # Boundary mesh not working in parallel
+        if MPI.num_processes() > 1:
+            return
 
         parameters["form_compiler"]["no-evaluate_basis_derivatives"] = False
 
@@ -253,4 +266,5 @@ if __name__ == "__main__":
     print ""
     print "Testing solving and evaluate basis over manifolds"
     print "-------------------------------------------------"
+
     unittest.main()
