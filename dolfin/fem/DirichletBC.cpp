@@ -53,7 +53,6 @@
 #include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include "GenericDofMap.h"
 #include "FiniteElement.h"
-#include "UFCMesh.h"
 #include "UFCCell.h"
 #include "DirichletBC.h"
 

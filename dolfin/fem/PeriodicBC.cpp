@@ -42,7 +42,6 @@
 #include "BoundaryCondition.h"
 #include "FiniteElement.h"
 #include "GenericDofMap.h"
-#include "UFCMesh.h"
 #include "PeriodicBC.h"
 
 using namespace dolfin;
