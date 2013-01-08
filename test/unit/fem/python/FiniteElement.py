@@ -33,6 +33,7 @@ class FiniteElementTest(unittest.TestCase):
         self.W = self.V * self.Q
 
     def test_evaluate_dofs(self):
+
         e = Expression("x[0]+x[1]")
         e2 = Expression(("x[0]+x[1]", "x[0]+x[1]"))
 
@@ -43,6 +44,8 @@ class FiniteElementTest(unittest.TestCase):
         values2 = numpy.zeros(3, dtype="d")
         values3 = numpy.zeros(3, dtype="d")
         values4 = numpy.zeros(6, dtype="d")
+
+
         for cell in cells(self.mesh):
             self.V.dofmap().tabulate_coordinates(cell, coords)
             for i in xrange(coords.shape[0]):
@@ -63,6 +66,11 @@ class FiniteElementTest(unittest.TestCase):
 
     def test_evaluate_dofs_manifolds_affine(self):
         "Testing evaluate_dofs vs tabulated coordinates."
+
+        # Boundary mesh not running in parallel
+        if MPI.num_processes() > 1:
+            return
+
         n = 4
         mesh = BoundaryMesh(UnitSquareMesh(n, n))
         mesh2 = BoundaryMesh(UnitCubeMesh(n, n, n))
