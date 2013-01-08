@@ -43,7 +43,6 @@ namespace dolfin
   class DofMap;
   class Mesh;
   class UFC;
-  class UFCMesh;
 
   /// Documentation of class
 
@@ -77,7 +76,6 @@ namespace dolfin
     // case it is ignored.
     static void build(DofMap& dofmap,
                       const Mesh& dolfin_mesh,
-                      const UFCMesh& ufc_mesh,
                       boost::shared_ptr<const Restriction> restriction,
                       bool reorder,
                       bool distributed);
@@ -120,7 +118,7 @@ namespace dolfin
     // degrees of freedom
     static void compute_global_dofs(set& global_dofs, std::size_t& offset,
                             boost::shared_ptr<const ufc::dofmap> dofmap,
-                            const Mesh& dolfin_mesh, const UFCMesh& ufc_mesh);
+                            const Mesh& dolfin_mesh);
 
     // Iterate recursively over all sub-dof maps to build a global
     // map from slave dofs to master dofs. Build also a map of all

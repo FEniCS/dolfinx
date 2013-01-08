@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2012 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2013 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Martin Alnes, 2008
+// Modified by Martin Alnes, 2008, 2013
 // Modified by Kent-Andre Mardal, 2009
 // Modified by Ola Skavhaug, 2009
 // Modified by Niclas Jansson, 2009
@@ -23,7 +23,7 @@
 // Modified by Mikael Mortensen, 2012
 //
 // First added:  2007-03-01
-// Last changed: 2012-11-05
+// Last changed: 2013-01-08
 
 #include <boost/unordered_map.hpp>
 #include <boost/serialization/map.hpp>
@@ -40,7 +40,6 @@
 #include <dolfin/parameter/GlobalParameters.h>
 #include "DofMapBuilder.h"
 #include "UFCCell.h"
-#include "UFCMesh.h"
 #include "DofMap.h"
 
 using namespace dolfin;
@@ -93,8 +92,10 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
 
   dolfin_assert(!component.empty());
 
-  // Create UFC mesh
-  const UFCMesh ufc_mesh(mesh);
+  // Store global entity dimensions in vector
+  std::vector<std::size_t> num_global_mesh_entities(mesh.topology().dim() + 1);
+  for (std::size_t d = 0; d < num_global_mesh_entities.size(); d++)
+    num_global_mesh_entities[d] = mesh.size_global(d);
 
   // Initialise offset from parent
   std::size_t offset = parent_dofmap._ufc_offset;
@@ -104,7 +105,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
 
   // Extract ufc sub-dofmap from parent and get offset
   _ufc_dofmap.reset(extract_ufc_sub_dofmap(parent_ufc_dofmap, offset,
-                                           component, ufc_mesh, mesh));
+                                           component, mesh));
   dolfin_assert(_ufc_dofmap);
 
   // Check for dimensional consistency between the dofmap and mesh
@@ -113,8 +114,8 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
   // Set UFC offset
   this->_ufc_offset = offset;
 
-  // Initialise UFC dofmap
-  init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, mesh);
+  // Check dimensional consistency between UFC dofmap and the mesh
+  check_provided_entities(*_ufc_dofmap, mesh);
 
   // Resize dofmap data structure
   _dofmap.resize(mesh.num_cells());
@@ -143,7 +144,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
     tmp_dof_holder.resize(_ufc_dofmap->local_dimension(ufc_cell));
 
     // Tabulate sub-dofs on cell (using UFC map)
-    _ufc_dofmap->tabulate_dofs(&tmp_dof_holder[0], ufc_mesh, ufc_cell);
+    _ufc_dofmap->tabulate_dofs(&tmp_dof_holder[0], num_global_mesh_entities, ufc_cell);
 
     // Add UFC offset
     for (unsigned int i=0; i < tmp_dof_holder.size(); i++)
@@ -198,13 +199,13 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
         slave_dofs.insert(all_slave_dofs[i].begin(), all_slave_dofs[i].end());
 
     // Set global dimension
-    _global_dimension = _ufc_dofmap->global_dimension() - slave_dofs.size();
+    _global_dimension = _ufc_dofmap->global_dimension(num_global_mesh_entities) - slave_dofs.size();
 
   }
   else
   {
     // Set global dimension
-    _global_dimension = _ufc_dofmap->global_dimension();
+    _global_dimension = _ufc_dofmap->global_dimension(num_global_mesh_entities);
   }
 
   // Modify dofmap for non-UFC numbering
@@ -269,15 +270,12 @@ DofMap::DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
                   "Consider calling mesh.order()");
   }
 
-  // Create the UFC mesh
-  const UFCMesh ufc_mesh(mesh);
-
-  // Initialize the UFC dofmap
-  init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, mesh);
+  // Check dimensional consistency between UFC dofmap and the mesh
+  check_provided_entities(*_ufc_dofmap, mesh);
 
   // Build dof map
   const bool reorder = dolfin::parameters["reorder_dofs_serial"];
-  DofMapBuilder::build(*this, mesh, ufc_mesh, _restriction, reorder, _distributed);
+  DofMapBuilder::build(*this, mesh, _restriction, reorder, _distributed);
 
   // Dimension checks
   dolfin_assert(dofmap_view._dofmap.size() == mesh.num_cells());
@@ -517,22 +515,18 @@ void DofMap::build_common(const Mesh& dolfin_mesh)
     }
   }
 
-  // Create the UFC mesh
-  const UFCMesh ufc_mesh(dolfin_mesh);
-
-  // Initialize the UFC dofmap
-  init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh);
+  // Check dimensional consistency between UFC dofmap and the mesh
+  check_provided_entities(*_ufc_dofmap, dolfin_mesh);
 
   // Build dof map
   const bool reorder = dolfin::parameters["reorder_dofs_serial"];
-  DofMapBuilder::build(*this, dolfin_mesh, ufc_mesh, _restriction,
+  DofMapBuilder::build(*this, dolfin_mesh, _restriction,
                        reorder, _distributed);
 }
 //-----------------------------------------------------------------------------
 ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
                                             std::size_t& offset,
                                             const std::vector<std::size_t>& component,
-                                            const ufc::mesh ufc_mesh,
                                             const Mesh& dolfin_mesh)
 {
   // Check if there are any sub systems
@@ -560,6 +554,11 @@ ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
                  component[0], ufc_dofmap.num_sub_dofmaps());
   }
 
+  // Store global entity dimensions in vector
+  std::vector<std::size_t> num_global_mesh_entities(dolfin_mesh.topology().dim() + 1);
+  for (std::size_t d = 0; d < num_global_mesh_entities.size(); d++)
+    num_global_mesh_entities[d] = dolfin_mesh.size_global(d);
+
   // Add to offset if necessary
   for (std::size_t i = 0; i < component[0]; i++)
   {
@@ -567,11 +566,11 @@ ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
     boost::scoped_ptr<ufc::dofmap> ufc_tmp_dofmap(ufc_dofmap.create_sub_dofmap(i));
     dolfin_assert(ufc_tmp_dofmap);
 
-    // Initialise
-    init_ufc_dofmap(*ufc_tmp_dofmap, ufc_mesh, dolfin_mesh);
+    // Check dimensional consistency between UFC dofmap and the mesh
+    check_dimensional_consistency(ufc_dofmap, dolfin_mesh);
 
     // Get offset
-    offset += ufc_tmp_dofmap->global_dimension();
+    offset += ufc_tmp_dofmap->global_dimension(num_global_mesh_entities);
   }
 
   // Create UFC sub-system
@@ -589,16 +588,15 @@ ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
       sub_component.push_back(component[i]);
 
     ufc::dofmap* sub_sub_dofmap = extract_ufc_sub_dofmap(*sub_dofmap, offset,
-                                                     sub_component, ufc_mesh,
+                                                     sub_component,
                                                      dolfin_mesh);
     delete sub_dofmap;
     return sub_sub_dofmap;
   }
 }
 //-----------------------------------------------------------------------------
-void DofMap::init_ufc_dofmap(ufc::dofmap& dofmap,
-                             const ufc::mesh ufc_mesh,
-                             const Mesh& dolfin_mesh)
+void DofMap::check_provided_entities(ufc::dofmap& dofmap,
+                                     const Mesh& dolfin_mesh)
 {
   // Check that we have all mesh entities
   for (std::size_t d = 0; d <= dolfin_mesh.topology().dim(); ++d)
@@ -607,19 +605,6 @@ void DofMap::init_ufc_dofmap(ufc::dofmap& dofmap,
       dolfin_error("DofMap.cpp",
                    "initialize mapping of degrees of freedom",
                    "Missing entities of dimension %d. Try calling mesh.init(%d)", d, d);
-  }
-
-  // Initialize UFC dof map
-  const bool init_cells = dofmap.init_mesh(ufc_mesh);
-  if (init_cells)
-  {
-    UFCCell ufc_cell(dolfin_mesh);
-    for (CellIterator cell(dolfin_mesh); !cell.end(); ++cell)
-    {
-      ufc_cell.update(*cell);
-      dofmap.init_cell(ufc_mesh, ufc_cell);
-    }
-    dofmap.init_cell_finalize();
   }
 }
 //-----------------------------------------------------------------------------

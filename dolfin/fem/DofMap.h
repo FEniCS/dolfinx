@@ -46,7 +46,6 @@ namespace dolfin
 
   class GenericVector;
   class UFC;
-  class UFCMesh;
   class Restriction;
 
   /// This class handles the mapping of degrees of freedom. It builds
@@ -370,18 +369,17 @@ namespace dolfin
 
     // Recursively extract UFC sub-dofmap and compute offset
     static ufc::dofmap* extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
-                                            std::size_t& offset,
-                                            const std::vector<std::size_t>& component,
-                                            const ufc::mesh ufc_mesh,
-                                            const Mesh& dolfin_mesh);
-
-    // Initialize the UFC dofmap
-    static void init_ufc_dofmap(ufc::dofmap& dofmap, const ufc::mesh ufc_mesh,
-                                const Mesh& dolfin_mesh);
+                                               std::size_t& offset,
+                                               const std::vector<std::size_t>& component,
+                                               const Mesh& dolfin_mesh);
 
     // Check dimensional consistency between UFC dofmap and the mesh
     static void check_dimensional_consistency(const ufc::dofmap& dofmap,
                                               const Mesh& mesh);
+
+    // Check that mesh provides the entities needed by dofmap
+    static void check_provided_entities(ufc::dofmap& dofmap,
+                                        const Mesh& dolfin_mesh);
 
     // Local-to-global dof map (dofs for cell dofmap[i])
     std::vector<std::vector<dolfin::la_index> > _dofmap;
