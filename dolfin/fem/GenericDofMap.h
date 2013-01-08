@@ -55,7 +55,7 @@ namespace dolfin
 
     /// True if dof map is a view into another map (is a sub-dofmap)
     virtual bool is_view() const = 0;
-
+    
     /// Return true iff mesh entities of topological dimension d are needed
     virtual bool needs_mesh_entities(std::size_t d) const = 0;
 
