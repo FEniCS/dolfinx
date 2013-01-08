@@ -92,6 +92,9 @@ namespace dolfin
       // Mesh
       const Mesh& mesh = cell.mesh();
 
+      // Set orientation (default to 0)
+      orientation = 0;
+
       // Set topological dimension
       topological_dimension = mesh.topology().dim();
 
@@ -136,6 +139,7 @@ namespace dolfin
       cell_shape = ufc::interval;
       topological_dimension = 0;
       geometric_dimension = 0;
+      orientation = 0;
     }
 
     // Update cell entities and coordinates
@@ -159,7 +163,10 @@ namespace dolfin
       // Set local facet (-1 means no local facet set)
       this->local_facet = local_facet;
 
+      // Set orientation
+      this->orientation = cell.mesh().cell_orientations()[cell.index()];
       const std::size_t D = topological_dimension;
+
       const MeshTopology& topology = cell.mesh().topology();
       for (std::size_t d = 0; d < D; ++d)
       {
@@ -181,7 +188,7 @@ namespace dolfin
       //if (use_global_indices && topology.have_global_indices(D))
       //  entity_indices[D][0] = cell.global_index();
       //else
-        entity_indices[D][0] = cell.index();
+      entity_indices[D][0] = cell.index();
 
       // FIXME: Using the local cell index is inconsistent with UFC, but
       //        necessary to make DOLFIN run
