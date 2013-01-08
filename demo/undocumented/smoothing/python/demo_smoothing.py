@@ -45,7 +45,7 @@ class Hole(SubDomain):
 
 # Mark hole and extract submesh
 hole = Hole()
-sub_domains = MeshFunction("uint", mesh, mesh.topology().dim())
+sub_domains = MeshFunction("size_t", mesh, mesh.topology().dim())
 sub_domains.set_all(0)
 hole.mark(sub_domains, 1)
 mesh = SubMesh(mesh, sub_domains, 0)

@@ -27,24 +27,24 @@ from dolfin import *
 
 class XMLMeshFunction(unittest.TestCase):
 
-    def test_io_uint(self):
-        "Test input/output for uint"
+    def test_io_size_t(self):
+        "Test input/output for size_t"
 
         if (MPI.num_processes() == 1):
             # Write some data
             mesh = UnitSquareMesh(5, 5)
-            f = MeshFunction("uint", mesh, 1)
+            f = MeshFunction("size_t", mesh, 1)
             f.set_all(0)
             f[2] = 3
             f[5] = 7
 
             # Write
-            output_file = File("XMLMeshFunction_test_io_uint.xml")
+            output_file = File("XMLMeshFunction_test_io_size_t.xml")
             output_file << f
 
             # Read from file
-            g = MeshFunction("uint", mesh, 1)
-            input_file = File("XMLMeshFunction_test_io_uint.xml")
+            g = MeshFunction("size_t", mesh, 1)
+            input_file = File("XMLMeshFunction_test_io_size_t.xml")
             input_file >> g
 
             # Check values
