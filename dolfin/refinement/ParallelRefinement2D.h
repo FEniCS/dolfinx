@@ -17,15 +17,11 @@
 // 
 // 
 // First Added: 2012-12-19
-// Last Changed: 2013-01-02
-
-#include <boost/unordered_map.hpp>
+// Last Changed: 2013-01-03
 
 namespace dolfin 
 {
   class Mesh;
-  template<typename T> class EdgeFunction;
-
 
   class ParallelRefinement2D
   {
@@ -40,7 +36,7 @@ namespace dolfin
     
   private:
 
-    // Used to find longest edge of a cell
+    // Used to find longest edge of a cell, when working out reference edges
     static bool length_compare(std::pair<double, std::size_t> a, std::pair<double, std::size_t> b);
 
     // Calculate which edges should be 'reference' edges for the RGB Carstensen type triangulation

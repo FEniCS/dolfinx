@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2013-01-02
-// Last Changed: 2013-01-02
+// Last Changed: 2013-01-03
 
 #include <vector>
 #include <map>
@@ -39,7 +39,9 @@ using namespace dolfin;
 
 ParallelRefinement::ParallelRefinement(const Mesh& mesh):_mesh(mesh)
 {
+  // work out which edges are shared between processes
   get_shared_edges();
+  // maybe take over marked edge assignment - experimenting with this
   marked_edges.assign(_mesh.num_edges(), false);
 }
 //-----------------------------------------------------------------------------
@@ -49,18 +51,6 @@ ParallelRefinement::~ParallelRefinement()
   // do nothing
 }
 
-//-----------------------------------------------------------------------------
-
-// boost::unordered_map<std::size_t, std::size_t>& ParallelRefinement::global_to_local()
-// {
-//   return _global_to_local;
-// }
-//-----------------------------------------------------------------------------
-
-// boost::unordered_map<std::size_t, std::size_t>& ParallelRefinement::shared_edges()
-// {
-//  return _shared_edges;
-// }
 //-----------------------------------------------------------------------------
 
 std::map<std::size_t, std::size_t>& ParallelRefinement::global_edge_to_new_vertex()
@@ -88,23 +78,31 @@ void ParallelRefinement::get_shared_edges()
   
   uint D = _mesh.topology().dim();
 
-  // Work out shared edges, and which processes they exist on
+  // Work out shared edges, and which processes they exist on.
   // There are special cases where it is more difficult to determine
   // edge ownership, but these are rare in 2D. 
-  // In 3D, it is necessary to communicate with MPI to check the ownership.
-  // Ultimately, this functionality will be provided inside MeshConnectivity or similar
+  // In 3D, it is always necessary to communicate with MPI
+  // to check the ownership. 
+  // Ultimately, this functionality will be provided inside 
+  // MeshConnectivity or similar
   
   const std::map<std::size_t, std::set<std::size_t> >& shared_vertices = _mesh.topology().shared_entities(0);
+
+  // Go through all edges, looking for possible shared edges.
+  // In 2D, it is possible to use the difference between num_global_entities
+  // and num_entities, but this is not working (yet) in 3D.
+
 
   for(EdgeIterator edge(_mesh); !edge.end(); ++edge)
   {
     if(edge->num_entities(D) < edge->num_global_entities(D)
-       || D == 3 ) // In 3D, have to check all edges because num_global_entities does not work
+       || D == 3 )
     {
-      // Find sharing processes by taking the intersection of the sets of processes of 
-      // the two attached vertices.
+      // Find sharing processes by taking the intersection of the sets of 
+      // processes of the two attached vertices.
       // That does not provide a definitive answer, but it is a start.
       VertexIterator v(*edge);
+      // First, make sure the edge has two shared vertices.
       if(shared_vertices.count(v[0].global_index()) != 0 
          && shared_vertices.count(v[1].global_index()) != 0)
       {
@@ -130,7 +128,7 @@ void ParallelRefinement::get_shared_edges()
     
   }
   
-  // Tell remote processes that this process has these edges.
+  // Tell remote processes that this process has these shared edges.
   // When receiving, ignore any edges that this process does not share.
 
   std::size_t num_processes = MPI::num_processes();
@@ -152,6 +150,7 @@ void ParallelRefinement::get_shared_edges()
 
   MPI::distribute(values_to_send, destinations, received_values, sources);  
 
+  // Copy map of probable shared edges, to compare with received shared edges
   boost::unordered_map<std::size_t, std::set<std::size_t> > original_shared_edges(_shared_edges);
   _shared_edges.clear();
 
@@ -161,7 +160,7 @@ void ParallelRefinement::get_shared_edges()
     for(std::vector<std::size_t>::iterator recv_edge = received_values[i].begin(); 
         recv_edge != received_values[i].end(); ++recv_edge)
     {
-      // only add if both this process and the remote process believe it is shared
+      // only add back if both this process and the remote process believe it is shared
       if(original_shared_edges.count(*recv_edge) != 0)
         _shared_edges[*recv_edge].insert(process);
     }

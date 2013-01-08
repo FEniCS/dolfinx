@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2013-01-02
-// Last Changed: 2013-01-02
+// Last Changed: 2013-01-03
 
 #include <boost/unordered_map.hpp>
 
@@ -32,49 +32,57 @@ namespace dolfin
     // Create any useful parallel data about the mesh (e.g. shared edges) and store
     ParallelRefinement(const Mesh& mesh);
     ~ParallelRefinement();
-    
+
+    // Experimental management of edge marking
     void mark_edge(std::size_t edge_index);
 
     // Transfer marked edges between processes
     void update_logical_edgefunction(EdgeFunction<bool>& values);
 
-    // Add new vertex for each marked edge, and create new_vertex_coordinates and global_edge->new_vertex mapping
+    // Add new vertex for each marked edge, 
+    // and create new_vertex_coordinates and global_edge->new_vertex mapping.
+    // Communicate new vertices with MPI to all affected processes.
     void create_new_vertices(const EdgeFunction<bool>& markedEdges);
 
-    // Mapping of global to local edges
-    //    boost::unordered_map<std::size_t, std::size_t>& global_to_local();
-
-    // Shared edges between processes, map from edge to process number
-    //    boost::unordered_map<std::size_t, std::size_t>& shared_edges();
-
-    // Mapping of old global edge (to be removed) to new vertex number.
+    // Mapping of old global edge (to be removed) to new global vertex number.
+    // Useful for forming new topology
     std::map<std::size_t, std::size_t>& global_edge_to_new_vertex();
 
     // New vertex coordinates after adding vertices given by marked edges.
     std::vector<double>& vertex_coordinates();
-    // index into vertex coordinates
+    // Indexed access into new vertex coordinates
     double* vertex_coordinates(std::size_t i);
     
-    // Add a new cell to the list
-    void new_cell(std::size_t i0, std::size_t i1, std::size_t i2, std::size_t i3); // tetrahedron
-    void new_cell(std::size_t i0, std::size_t i1, std::size_t i2); // triangle
+    // Add a new cell to the list in 3D or 2D
+    void new_cell(std::size_t i0, std::size_t i1, std::size_t i2, std::size_t i3); 
+    void new_cell(std::size_t i0, std::size_t i1, std::size_t i2); 
 
-    // Get new cell topology 
+    // Get new cell topology as created by new_cell() above
     std::vector<std::size_t>& cell_topology();
     
   private:
-
+    
+    // storage for mapping shared edge indices global->local
     boost::unordered_map<std::size_t, std::size_t> _global_to_local;
+    // shared edges between processes. In 2D, set size is 1
     boost::unordered_map<std::size_t, std::set<std::size_t> > _shared_edges;
+    // mapping from old global edge to new global vertex, needed to create new topology
     std::map<std::size_t, std::size_t> _global_edge_to_new_vertex;
+    // new storage for all coordinates when creating new vertices
     std::vector<double> new_vertex_coordinates;
+    // new storage for all cells when creating new topology
     std::vector<std::size_t> new_cell_topology;
     
+    // experimental management of marked edges
     std::vector<bool> marked_edges;
 
+    // Mesh reference
     const Mesh& _mesh;
 
+    // Work out shared edges - hopefully this will ultimately be made redundant
     void get_shared_edges();
+
+    // Reorder vertices into global order for partitioning
     void reorder_vertices_by_global_indices(std::vector<double>& vertex_coords,
                                             const std::size_t gdim,
                                             const std::vector<std::size_t>& global_indices);

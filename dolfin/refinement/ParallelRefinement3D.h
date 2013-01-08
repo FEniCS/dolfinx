@@ -17,8 +17,10 @@
 // 
 // 
 // First Added: 2013-01-02
-// Last Changed: 2013-01-02
+// Last Changed: 2013-01-03
 
+
+// Simple class to perform uniform refinement in 3D in parallel
 
 namespace dolfin 
 {
