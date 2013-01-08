@@ -191,7 +191,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 {
   // This function builds the local part of a distributed dual graph
   // by partitioning cell vertices evenlt across processes in ascending
-  // vertex index order. The 'owner' process holds a 
+  // vertex index order. The 'owner' process holds a
   //
   //  vertrex -> [connected cells]
   //
@@ -208,12 +208,12 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   // TODO: 1. Free up memory by clearing large data structures when not
   //          longer used.
   //       2. Look for efficiency gains
-  //       3. Check if vectors can be used in instead of maps or sets in 
+  //       3. Check if vectors can be used in instead of maps or sets in
   //          places. Maps and sets can be expensive to destroy.
 
   #ifdef HAS_MPI
 
-  // Vertex-to-cell map type (must be ordered)    
+  // Vertex-to-cell map type (must be ordered)
   typedef std::multimap<std::size_t, std::size_t> OrderedVertexCellMultiMap;
 
   Timer timer("Compute dual graph [experimental]");
@@ -237,20 +237,20 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   // Get cell index offset for this process
   const std::size_t cell_offset = MPI::global_offset(num_local_cells, true);
 
-  // Build vertex-to-cell map    
+  // Build vertex-to-cell map
   OrderedVertexCellMultiMap meshdata_vertex_to_cell_map;
   for (std::size_t i = 0; i < num_local_cells; ++i)
   {
-    // Iterate over cell vertices and add to map 
+    // Iterate over cell vertices and add to map
     for(std::size_t j = 0; j < num_vertices_per_cell; ++j)
-      meshdata_vertex_to_cell_map.insert(std::make_pair(cell_vertices[i][j], i + cell_offset));  
+      meshdata_vertex_to_cell_map.insert(std::make_pair(cell_vertices[i][j], i + cell_offset));
   }
 
   // My local vertex range
-  const std::pair<std::size_t, std::size_t> 
-    my_vertex_range = MPI::local_range(mesh_data.num_global_vertices); 
+  const std::pair<std::size_t, std::size_t>
+    my_vertex_range = MPI::local_range(mesh_data.num_global_vertices);
 
-  // Ownership ranges for vertices for all processes 
+  // Ownership ranges for vertices for all processes
   std::vector<std::size_t> ownership;
   for (std::size_t p = 0; p < num_processes; ++p)
     ownership.push_back(MPI::local_range(p, mesh_data.num_global_vertices, num_processes).second);
@@ -267,33 +267,33 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     while (vc->first >= ownership[p])
       ++p;
 
-    dolfin_assert(p < send_buffer.size()); 
+    dolfin_assert(p < send_buffer.size());
     send_buffer[p].push_back(vc->first);
     send_buffer[p].push_back(vc->second);
   }
 
-  // Receive buffer
+  // Create receive buffer
   std::vector<std::vector<std::size_t> > recv_buffer(num_processes);
 
   // Communicate data
   boost::mpi::all_to_all(comm, send_buffer, recv_buffer);
 
   // Build local vertex-cell map
-  std::vector<std::set<std::size_t> > 
+  std::vector<std::set<std::size_t> >
       my_vertex_cell_map(my_vertex_range.second - my_vertex_range.first);
-  for (std::size_t p = 0; p < num_processes; ++p) 
+  for (std::size_t p = 0; p < num_processes; ++p)
   {
     const std::vector<std::size_t>& recv_buffer_p = recv_buffer[p];
-    for (std::size_t i = 0; i < recv_buffer_p.size(); i += 2) 
+    for (std::size_t i = 0; i < recv_buffer_p.size(); i += 2)
     {
       const std::size_t pos = recv_buffer_p[i] - my_vertex_range.first;
       dolfin_assert(pos < my_vertex_cell_map.size());
-      my_vertex_cell_map[pos].insert(recv_buffer_p[i +1]);  
+      my_vertex_cell_map[pos].insert(recv_buffer_p[i +1]);
     }
   }
 
-  // Build sorted set of my vertices  
-  std::set<std::size_t> my_vertices(cell_vertices.data(), 
+  // Build sorted set of my vertices
+  std::set<std::size_t> my_vertices(cell_vertices.data(),
                                     cell_vertices.data() + cell_vertices.num_elements());
 
   // Request vertex-cell map for all vertices that I have from the owning
@@ -301,14 +301,14 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   p = 0;
   std::vector<std::vector<std::size_t> > required_vertices(num_processes);
   for (std::set<std::size_t>::const_iterator v = my_vertices.begin();
-          v != my_vertices.end(); ++v) 
+          v != my_vertices.end(); ++v)
   {
     // FIXME: Could look here to figure out size of send buffer,
     //        and reserve memory in vectors
     while (*v >= ownership[p])
       ++p;
 
-    dolfin_assert(p < send_buffer.size()); 
+    dolfin_assert(p < send_buffer.size());
     required_vertices[p].push_back(*v);
   }
 
@@ -319,25 +319,25 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
   // Build list of vertex-cell pairs to send back
   std::vector<std::vector<std::size_t> > remote_vertex_cell_map(num_processes);
-  for (std::size_t p = 0; p < num_processes; ++p) 
+  for (std::size_t p = 0; p < num_processes; ++p)
   {
     const std::vector<std::size_t>& vertices_to_send_p = vertices_to_send[p];
     std::vector<std::size_t>& vertex_cell_map = remote_vertex_cell_map[p];
-    for (std::size_t i = 0; i < vertices_to_send_p.size(); ++i) 
+    for (std::size_t i = 0; i < vertices_to_send_p.size(); ++i)
     {
       // Sanity check
-      dolfin_assert(vertices_to_send_p[i] >= my_vertex_range.first 
+      dolfin_assert(vertices_to_send_p[i] >= my_vertex_range.first
           &&  vertices_to_send_p[i] < my_vertex_range.second);
 
       // Local vertex index
       const std::size_t my_vertex = vertices_to_send_p[i] - my_vertex_range.first;
 
       dolfin_assert(my_vertex < my_vertex_cell_map.size());
-      const std::set<std::size_t>& cell_indices = my_vertex_cell_map[my_vertex]; 
+      const std::set<std::size_t>& cell_indices = my_vertex_cell_map[my_vertex];
 
       // Pack data (first number of cells, then cell indices)
       vertex_cell_map.push_back(cell_indices.size());
-      vertex_cell_map.insert(vertex_cell_map.end(), cell_indices.begin(), cell_indices.end()); 
+      vertex_cell_map.insert(vertex_cell_map.end(), cell_indices.begin(), cell_indices.end());
     }
   }
 
@@ -354,11 +354,11 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
     std::size_t i = 0;
     while (i < data.size())
     {
-      const std::size_t num_cells = data[i];  
+      const std::size_t num_cells = data[i];
       dolfin_assert(num_cells > 0);
       vertex_to_cell_map.push_back(std::vector<std::size_t>(&data[i+1], &data[i+1] + num_cells));
       i += (num_cells + 1);
-    }  
+    }
   }
 
   // Now, the rest is local (no more communication . . . ,) ----------------
@@ -371,8 +371,8 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   const std::size_t num_vertices_per_facet = num_vertices_per_cell - 1;
 
   // My local cell range
-  const std::pair<std::size_t, std::size_t> 
-    my_cell_range = MPI::local_range(mesh_data.num_global_cells); 
+  const std::pair<std::size_t, std::size_t>
+    my_cell_range = MPI::local_range(mesh_data.num_global_cells);
 
   // Build renumbering ordering map (maps global to local)
   std::size_t count = 0;
@@ -388,8 +388,8 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   std::size_t* _cell_vertices = cell_vertices_local.data();
   for (std::size_t i = 0; i < cell_vertices_local.num_elements(); ++i)
   {
-    boost::unordered_map<std::size_t, std::size_t>::const_iterator local_v 
-      = reorder.find(_cell_vertices[i]); 
+    boost::unordered_map<std::size_t, std::size_t>::const_iterator local_v
+      = reorder.find(_cell_vertices[i]);
     dolfin_assert(local_v != reorder.end());
     _cell_vertices[i] = local_v->second;
   }
@@ -414,25 +414,25 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
       // Sort facet vertices to use set_intersection later
       std::sort(facet.begin(), facet.end());
 
-      // Find intersection of connected cells for each facet vertex  
+      // Find intersection of connected cells for each facet vertex
       intersection = vertex_to_cell_map[facet[0]];
       std::vector<std::size_t>::iterator it = intersection.end();
       for (std::size_t i = 0; i < facet.size(); ++i)
       {
-        dolfin_assert(facet[i] < vertex_to_cell_map.size());  
+        dolfin_assert(facet[i] < vertex_to_cell_map.size());
         std::vector<std::size_t>& cells = vertex_to_cell_map[facet[i]];
 
         // it points to end of constructed range
         it = std::set_intersection(intersection.begin(), it,
                                    cells.begin(), cells.end(),
-                                   intersection.begin());         
+                                   intersection.begin());
       }
 
       // Number of cells in intersection
       std::size_t intersection_size = it - intersection.begin();
 
       // Should have 1 or 2 cell connections, otherwise something is wrong
-      dolfin_assert(intersection_size > 0 && intersection_size < 3); 
+      dolfin_assert(intersection_size > 0 && intersection_size < 3);
       if (intersection_size == 2)
       {
         const std::size_t cell0 = *(intersection.begin());
@@ -444,7 +444,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
         }
         else
           ghost_vertices.insert(cell0);
-          
+
         if (cell1 >= my_cell_range.first && cell1 < my_cell_range.second)
         {
           dolfin_assert((cell1 - my_cell_range.first) < local_graph.size());
@@ -458,7 +458,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
   #else
 
-  // Use algorithm that does not require MPI to be intalled 
+  // Use algorithm that does not require MPI to be intalled
   FacetCellMap facet_cell_map;
   compute_local_dual_graph(mesh_data, local_graph, facet_cell_map);
 
@@ -476,7 +476,7 @@ void GraphBuilder::compute_dual_graph_small(const LocalMeshData& mesh_data,
 }
 //-----------------------------------------------------------------------------
 void GraphBuilder::compute_local_dual_graph(const LocalMeshData& mesh_data,
-                            std::vector<std::set<std::size_t> >& local_graph, 
+                            std::vector<std::set<std::size_t> >& local_graph,
                             FacetCellMap& facet_cell_map)
 {
   Timer timer("Compute dual graph");
@@ -564,7 +564,7 @@ void GraphBuilder::compute_nonlocal_dual_graph_small(const LocalMeshData& mesh_d
   const std::size_t offset = MPI::global_offset(num_local_cells, true);
 
   // Copy to a new map and re-label cells by adding an offset
-  boost::unordered_map<std::vector<std::size_t>, std::size_t> 
+  boost::unordered_map<std::vector<std::size_t>, std::size_t>
       othermap(facet_cell_map.begin(), facet_cell_map.end());
   for(boost::unordered_map<std::vector<std::size_t>, std::size_t>::iterator other_cell = othermap.begin();
         other_cell != othermap.end(); ++other_cell)
@@ -597,7 +597,7 @@ void GraphBuilder::compute_nonlocal_dual_graph_small(const LocalMeshData& mesh_d
       for (std::size_t i = 0; i < num_vertices_per_facet; ++i)
         comm_data_send[k++] = (it->first)[i];
       comm_data_send[k++] = it->second;
-    } 
+    }
 
     // Shift data to next process
     MPI::send_recv(comm_data_send, dest, comm_data_recv, source);
@@ -645,4 +645,3 @@ void GraphBuilder::compute_nonlocal_dual_graph_small(const LocalMeshData& mesh_d
     std::cout << "n (exterior facets) = " << n_exterior_facets << std::endl;
 }
 //-----------------------------------------------------------------------------
-

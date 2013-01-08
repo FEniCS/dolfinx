@@ -638,12 +638,15 @@ struct lt_coordinate
     return false;
   }
 };
+//-----------------------------------------------------------------------------
 typedef std::pair<int, int> facet_data;
 typedef std::pair<facet_data, facet_data> facet_pair;
 typedef std::map<std::vector<double>, facet_pair, lt_coordinate> coordinate_map;
 typedef coordinate_map::iterator coordinate_iterator;
+//-----------------------------------------------------------------------------
 struct merge_coordinate_map
 {
+  //---------------------------------------------------------------------------
   coordinate_map operator() (coordinate_map x, coordinate_map y)
   {
     coordinate_map z;
@@ -671,6 +674,7 @@ struct merge_coordinate_map
 
     return z;
   }
+  //---------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 void Mesh::add_periodic_direction(const SubDomain& sub_domain)
@@ -686,8 +690,9 @@ void Mesh::add_periodic_direction(boost::shared_ptr<const SubDomain> sub_domain)
 
   MeshValueCollection<std::size_t>& mf = *(_domains.markers(tdim-1));
 
-  // Choose an integer to mark the domains. If there has been some sub_domains defined
-  // previously in mf, then choose a higher number (required, e.g., for multiple periodic directions)
+  // Choose an integer to mark the domains. If there has been some
+  // sub_domains defined previously in mf, then choose a higher number
+  // (required, e.g., for multiple periodic directions)
   std::size_t ii = 0;
   if (!mf.empty())
   {
@@ -732,7 +737,7 @@ void Mesh::add_periodic_direction(boost::shared_ptr<const SubDomain> sub_domain)
   }
 
   // Create the facet-to-facet list of matching periodic directions ii and ii+1
-  add_periodic_direction(ii, ii+1);
+  add_periodic_direction(ii, ii + 1);
 }
 //-----------------------------------------------------------------------------
 void Mesh::add_periodic_direction(const MeshFunction<std::size_t>& sub_domains,
@@ -746,7 +751,8 @@ void Mesh::add_periodic_direction(const MeshFunction<std::size_t>& sub_domains,
   add_periodic_direction(sub_domain0, sub_domain1);
 }
 //-----------------------------------------------------------------------------
-void Mesh::add_periodic_direction(const std::size_t sub_domain0, const std::size_t sub_domain1)
+void Mesh::add_periodic_direction(const std::size_t sub_domain0,
+                                  const std::size_t sub_domain1)
 {
   // All should end up calling this for computing the periodic facet-to-facet pairs
   Timer t0("Mesh compute facet pairs");
@@ -778,12 +784,12 @@ void Mesh::add_periodic_direction(const std::size_t sub_domain0, const std::size
   // Rename markers to help identify periodic meshes. The MeshValueCollection
   // will be stored with the mesh and as such, when read back one can simply
   // call add_periodic_direction to recreate the facet-to-facet maps
-//   std::ostringstream ost;
-//   if (_domains.markers(tdim-1)->name() == "m")
-//     ost << " Periodic " << sub_domain0 << ":" << sub_domain1 << " " ;
-//   else
-//     ost << _domains.markers(tdim-1)->name() << " Periodic" << sub_domain0 << ":" << sub_domain1 << " " ;
-//   _domains.markers(tdim-1)->rename(ost.str(), _domains.markers(tdim-1)->label()) ;
+  //   std::ostringstream ost;
+  //   if (_domains.markers(tdim-1)->name() == "m")
+  //     ost << " Periodic " << sub_domain0 << ":" << sub_domain1 << " " ;
+  //   else
+  //     ost << _domains.markers(tdim-1)->name() << " Periodic" << sub_domain0 << ":" << sub_domain1 << " " ;
+  //   _domains.markers(tdim-1)->rename(ost.str(), _domains.markers(tdim-1)->label()) ;
 
   // Compute distance between periodic subdomains
   std::size_t count0 = 0;
@@ -857,9 +863,7 @@ void Mesh::add_periodic_direction(const std::size_t sub_domain0, const std::size
     {
       coordinate_iterator it = coordinate_facet_pairs.find(x);
       if (it != coordinate_facet_pairs.end())
-      {
         it->second.first = facet_data(facet.index(), process_number);
-      }
       else
       {
         facet_data g_facet(facet.index(), process_number);
@@ -876,9 +880,7 @@ void Mesh::add_periodic_direction(const std::size_t sub_domain0, const std::size
 
       coordinate_iterator it = coordinate_facet_pairs.find(y);
       if (it != coordinate_facet_pairs.end())
-      {
         it->second.second = facet_data(facet.index(), process_number);
-      }
       else
       {
         facet_data l_facet(facet.index(), process_number);
@@ -929,16 +931,19 @@ void Mesh::add_periodic_direction(const std::size_t sub_domain0, const std::size
   }
 
   // Store the results as a new PeriodicDomain instance
-  const PeriodicDomain* _periodic_domain = new PeriodicDomain(sub_domain0, sub_domain1, dx, _facet_pairs);
-  _periodic_domains.push_back(_periodic_domain);
+  //const PeriodicDomain* _periodic_domain
+  //    = new PeriodicDomain(sub_domain0, sub_domain1, dx, _facet_pairs);
+  //_periodic_domains.push_back(_periodic_domain);
 
-   cout << "Facet pairs " << _periodic_domain->facet_pairs.size() << endl;
+  /*
+  cout << "Facet pairs " << _periodic_domain->facet_pairs.size() << endl;
   for (std::size_t i=0; i<_periodic_domain->facet_pairs.size(); i++)
   {
     facet_pair pair = _periodic_domain->facet_pairs[i];
     cout << " (" << pair.first.first << ", " << pair.first.second << ")"
               ", (" << pair.second.first << ", " << pair.second.second << ")" << endl;
   }
+  */
 }
 //-----------------------------------------------------------------------------
 std::vector<std::pair< std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > >
@@ -964,7 +969,10 @@ std::size_t Mesh::num_periodic_domains() const
   return _periodic_domains.size();
 }
 //-----------------------------------------------------------------------------
-Mesh::PeriodicDomain::PeriodicDomain(std::size_t master, std::size_t slave, std::vector<double> _dx, std::vector<std::pair< std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > > _facet_pairs)
+Mesh::PeriodicDomain::PeriodicDomain(std::size_t master, std::size_t slave,
+                    std::vector<double> _dx,
+                    std::vector<std::pair< std::pair<std::size_t, std::size_t>,
+                    std::pair<std::size_t, std::size_t> > > _facet_pairs)
 {
   sub_domains = std::pair<std::size_t, std::size_t>(master, slave);
   dx = _dx;
