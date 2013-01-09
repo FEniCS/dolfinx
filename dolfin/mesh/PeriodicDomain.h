@@ -24,20 +24,9 @@
 #ifndef __PERIODIC_DOMAIN_H
 #define __PERIODIC_DOMAIN_H
 
-#include <vector>
-#include <boost/shared_ptr.hpp>
-#include <dolfin/common/types.h>
-#include <dolfin/fem/BoundaryCondition.h>
-
-#include <boost/serialization/map.hpp>
-#include <dolfin/common/tuple_serialization.h>
-
 namespace dolfin
 {
 
-  class Form;
-  class GenericMatrix;
-  class GenericVector;
   class Mesh;
   class SubDomain;
 
