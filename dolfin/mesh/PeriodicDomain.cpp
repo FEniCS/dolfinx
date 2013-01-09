@@ -43,6 +43,8 @@ void PeriodicDomain::compute_periodic_facet_pairs(const Mesh& mesh,
 {
   error("PeriodicDomain::compute_periodic_facet_pairs is under development");
 
+  #ifdef HAS_MPI
+
   // Get topological and geometric dimensions
   const std::size_t gdim = mesh.geometry().dim();
   const std::size_t tdim = mesh.topology().dim();
@@ -118,5 +120,7 @@ void PeriodicDomain::compute_periodic_facet_pairs(const Mesh& mesh,
 
   // Send slave facet to
   //. . . .
+
+  #endif
 }
 //-----------------------------------------------------------------------------
