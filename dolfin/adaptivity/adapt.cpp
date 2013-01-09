@@ -21,7 +21,6 @@
 #include <map>
 #include <boost/shared_ptr.hpp>
 
-#include <dolfin/common/types.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/Form.h>

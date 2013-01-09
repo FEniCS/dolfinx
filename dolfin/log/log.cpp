@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2011 Anders Logg
+// Copyright (C) 2003-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -21,7 +21,7 @@
 // Modified by Garth N. Wells 2009
 //
 // First added:  2003-03-13
-// Last changed: 2012-02-09
+// Last changed: 2013-01-07
 
 #include <cstdarg>
 #include <cstdlib>
@@ -31,7 +31,6 @@
 #include <stdio.h>
 
 #include <boost/scoped_array.hpp>
-#include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/MPI.h>
@@ -133,6 +132,14 @@ void dolfin::dolfin_error(std::string location,
 {
   read(buffer.get(), reason);
   LogManager::logger.dolfin_error(location, task, buffer.get());
+}
+//-----------------------------------------------------------------------------
+void dolfin::deprecation(std::string feature,
+                         std::string version,
+                         std::string message, ...)
+{
+  read(buffer.get(), message);
+  LogManager::logger.deprecation(feature, version, buffer.get());
 }
 //-----------------------------------------------------------------------------
 void dolfin::log(int log_level, std::string msg, ...)

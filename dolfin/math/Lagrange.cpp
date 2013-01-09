@@ -21,6 +21,7 @@
 // First added:  2003-06-12
 // Last changed: 2009-03-20
 
+#include <cmath>
 #include <dolfin/common/constants.h>
 #include "Lagrange.h"
 

@@ -209,7 +209,7 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
 
   // Get RHS data for this process
   std::vector<double> _b;
-  std::vector<DolfinIndex> idx(local_to_global_cols_ref.begin(), local_to_global_cols_ref.end());
+  std::vector<dolfin::la_index> idx(local_to_global_cols_ref.begin(), local_to_global_cols_ref.end());
   b.gather(_b, idx);
 
   // Solve

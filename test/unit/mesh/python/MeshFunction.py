@@ -28,9 +28,9 @@ class NamedMeshFunctions(unittest.TestCase):
 
     def setUp(self):
         #self.names = ["Cell", "Vertex", "Edge", "Face", "Facet"]
-        #self.tps = ['int', 'uint', 'bool', 'double']
+        #self.tps = ['int', 'size_t', 'bool', 'double']
         self.names = ["Cell", "Vertex", "Edge", "Face", "Facet"]
-        self.tps = ['int', 'uint', 'bool', 'double']
+        self.tps = ['int', 'size_t', 'bool', 'double']
         self.mesh = UnitCubeMesh(3, 3, 3)
         self.funcs = {}
         for tp in self.tps:
@@ -51,7 +51,7 @@ class NamedMeshFunctions(unittest.TestCase):
                     self.assertEqual(a, b)
 
     def test_access_type(self):
-        type_dict = dict(int=int, uint=int, double=float, bool=bool)
+        type_dict = dict(int=int, size_t=int, double=float, bool=bool)
         for tp in self.tps:
             for name in self.names:
                 self.assertTrue(isinstance(self.funcs[(tp, name)][0], \
@@ -73,36 +73,36 @@ class MeshFunctions(unittest.TestCase):
 
     def testCreate(self):
         """Create MeshFunctions."""
-        v = MeshFunction("uint", self.mesh)
+        v = MeshFunction("size_t", self.mesh)
 
-        v = MeshFunction("uint", self.mesh, 0)
+        v = MeshFunction("size_t", self.mesh, 0)
         self.assertEqual(v.size(), self.mesh.num_vertices())
 
-        v = MeshFunction("uint", self.mesh, 1)
+        v = MeshFunction("size_t", self.mesh, 1)
         self.assertEqual(v.size(), self.mesh.num_edges())
 
-        v = MeshFunction("uint", self.mesh, 2)
+        v = MeshFunction("size_t", self.mesh, 2)
         self.assertEqual(v.size(), self.mesh.num_facets())
 
-        v = MeshFunction("uint", self.mesh, 3)
+        v = MeshFunction("size_t", self.mesh, 3)
         self.assertEqual(v.size(), self.mesh.num_cells())
 
     def testCreateAssign(self):
         """Create MeshFunctions with value."""
         i = 10
-        v = MeshFunction("uint", self.mesh, 0, i)
+        v = MeshFunction("size_t", self.mesh, 0, i)
         self.assertEqual(v.size(), self.mesh.num_vertices())
         self.assertEqual(v[0], i)
 
-        v = MeshFunction("uint", self.mesh, 1, i)
+        v = MeshFunction("size_t", self.mesh, 1, i)
         self.assertEqual(v.size(), self.mesh.num_edges())
         self.assertEqual(v[0], i)
 
-        v = MeshFunction("uint", self.mesh, 2, i)
+        v = MeshFunction("size_t", self.mesh, 2, i)
         self.assertEqual(v.size(), self.mesh.num_facets())
         self.assertEqual(v[0], i)
 
-        v = MeshFunction("uint", self.mesh, 3, i)
+        v = MeshFunction("size_t", self.mesh, 3, i)
         self.assertEqual(v.size(), self.mesh.num_cells())
         self.assertEqual(v[0], i)
 

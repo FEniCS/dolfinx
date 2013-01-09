@@ -25,9 +25,7 @@
 
 #include <vtkSmartPointer.h>
 
-#include <dolfin/common/types.h>
 #include <dolfin/mesh/Mesh.h>
-
 #include "VTKPlottableGenericFunction.h"
 
 class vtkXYPlotActor;
@@ -38,7 +36,7 @@ namespace dolfin
   class Mesh;
   class VTKWindowOutputStage;
 
-  /// 
+  ///
 
   class VTKPlottableGenericFunction1D : public VTKPlottableGenericFunction
   {
@@ -91,4 +89,3 @@ namespace dolfin
 #endif
 
 #endif
-

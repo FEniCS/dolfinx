@@ -88,7 +88,7 @@ namespace dolfin
                                      const Function&v, const FunctionSpace& V,
                                      const FunctionSpace& W, const Cell& cell0,
                                      const ufc::cell& c0,
-                                     const std::vector<DolfinIndex>& dofs,
+                                     const std::vector<dolfin::la_index>& dofs,
                                      std::size_t& offset);
 
     // Add equations for current cell

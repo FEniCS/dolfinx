@@ -21,7 +21,7 @@
 #ifndef __SUB_DOMAIN_H
 #define __SUB_DOMAIN_H
 
-#include <dolfin/common/types.h>
+#include <cstddef>
 
 namespace dolfin
 {
@@ -65,7 +65,7 @@ namespace dolfin
     /// *Arguments*
     ///     x (_Array_ <double>)
     ///         The coordinates in domain H.
-    ///     unnamed (_Array_ <double>)
+    ///     y (_Array_ <double>)
     ///         The coordinates in domain G.
     virtual void map(const Array<double>& x, Array<double>& y) const;
 

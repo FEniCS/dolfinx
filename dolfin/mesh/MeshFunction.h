@@ -29,7 +29,6 @@
 #include <boost/unordered_set.hpp>
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
 #include <dolfin/io/File.h>

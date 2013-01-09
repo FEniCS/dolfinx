@@ -26,7 +26,6 @@
 #include <vector>
 #include <string>
 #include <hdf5.h>
-#include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 
 namespace dolfin

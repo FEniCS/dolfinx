@@ -24,7 +24,6 @@
 #define __BOUNDARY_COMPUTATION_H
 
 #include <vector>
-#include <dolfin/common/types.h>
 
 namespace dolfin
 {

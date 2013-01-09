@@ -63,7 +63,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
 
   // Ensure connectivity is there etc
   mesh.init(1);
-  MeshPartitioning::number_entities(mesh, 1);
+ //  MeshPartitioning::number_entities(mesh, 1);
   mesh.init(1, tdim);
 
   std::cout << "Num edges = " << mesh.num_edges() << std::endl;

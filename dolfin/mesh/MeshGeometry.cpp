@@ -24,7 +24,7 @@
 #include <boost/functional/hash.hpp>
 
 #include <dolfin/common/MPI.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "MeshGeometry.h"
 
 using namespace dolfin;

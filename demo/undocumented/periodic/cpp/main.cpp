@@ -61,7 +61,7 @@ int main()
     // Left boundary is "target domain" G
     bool inside(const Array<double>& x, bool on_boundary) const
     {
-      return x[0] < DOLFIN_EPS && x[0] > -DOLFIN_EPS && on_boundary;
+      return std::abs(x[0]) < DOLFIN_EPS && on_boundary;
     }
 
     // Map right boundary (H) to left boundary (G)
@@ -74,6 +74,10 @@ int main()
 
   // Create mesh
   UnitSquareMesh mesh(32, 32);
+
+  // Create periodic boundary condition
+  PeriodicBoundary periodic_boundary;
+  mesh.add_periodic_direction(periodic_boundary);
 
   // Create functions
   Source f;
@@ -89,21 +93,16 @@ int main()
   DirichletBoundary dirichlet_boundary;
   DirichletBC bc0(V, u0, dirichlet_boundary);
 
-  // Create periodic boundary condition
-  PeriodicBoundary periodic_boundary;
-  PeriodicBC bc1(V, periodic_boundary);
-
   // Collect boundary conditions
   std::vector<const BoundaryCondition*> bcs;
   bcs.push_back(&bc0);
-  bcs.push_back(&bc1);
 
   // Compute solution
   Function u(V);
   solve(a == L, u, bcs);
 
   // Save solution in VTK format
-  File file("periodic.pvd");
+  File file("periodic_dofmap.pvd");
   file << u;
 
   // Plot solution

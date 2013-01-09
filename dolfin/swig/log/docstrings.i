@@ -84,6 +84,18 @@ Developers should read the file dolfin/log/README in the DOLFIN
 source tree for further notes about the use of this function.
 ";
 
+%feature("docstring")  dolfin::deprecation "
+Issue deprecation warning for removed feature
+
+*Arguments*
+    feature (str)
+       Name of the feature that has been removed.
+    version (str)
+       Version number of the release in which the feature was removed.
+    message (str)
+       A format string explaining the deprecation.
+";
+
 %feature("docstring")  dolfin::log "
 Print message at given debug level
 ";
@@ -205,7 +217,7 @@ Create log stream of given type
 
 * operator<<\ (z)
 
-  Output for complex
+  Output for std::complex<double>
 
 * operator<<\ (variable)
 

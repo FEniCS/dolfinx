@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-11-09
-// Last changed: 2012-11-09
+// Last changed: 2013-01-07
 
 #ifndef __UNIT_SQUARE_H
 #define __UNIT_SQUARE_H
@@ -61,7 +61,8 @@ namespace dolfin
                std::string diagonal="right")
       : UnitSquareMesh(nx, ny, diagonal)
     {
-      warning("UnitSquare is deprecated. Use UnitSquareMesh.");
+      deprecation("UnitSquare", "1.1.0",
+                  "The class UnitSquare has been replaced by UnitSquareMesh.");
     }
 
   };

@@ -22,7 +22,6 @@
 #define __MESH_EDITOR_H
 
 #include <vector>
-#include <dolfin/common/types.h>
 #include "CellType.h"
 
 namespace dolfin

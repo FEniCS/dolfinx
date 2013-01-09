@@ -26,7 +26,6 @@
 #include <set>
 #include <sstream>
 #include <string>
-#include <dolfin/common/types.h>
 
 namespace dolfin
 {

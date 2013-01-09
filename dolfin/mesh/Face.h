@@ -23,7 +23,6 @@
 #ifndef __FACE_H
 #define __FACE_H
 
-#include "dolfin/common/types.h"
 #include "MeshEntity.h"
 #include "MeshEntityIteratorBase.h"
 #include "MeshFunction.h"

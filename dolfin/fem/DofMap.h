@@ -19,6 +19,7 @@
 // Modified by Kent-Andre Mardal, 2009
 // Modified by Ola Skavhaug, 2009
 // Modified by Joachim B Haga, 2012
+// Modified by Mikael Mortensen, 2012
 //
 // First added:  2007-03-01
 // Last changed: 2012-11-05
@@ -45,7 +46,6 @@ namespace dolfin
 
   class GenericVector;
   class UFC;
-  class UFCMesh;
   class Restriction;
 
   /// This class handles the mapping of degrees of freedom. It builds
@@ -222,7 +222,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<std::size_t>
     ///         Local-to-global mapping of dofs.
-    const std::vector<DolfinIndex>& cell_dofs(std::size_t cell_index) const
+    const std::vector<dolfin::la_index>& cell_dofs(std::size_t cell_index) const
     {
       dolfin_assert(cell_index < _dofmap.size());
       return _dofmap[cell_index];
@@ -235,7 +235,7 @@ namespace dolfin
     ///         Degrees of freedom.
     ///     local_facet (std::size_t)
     ///         The local facet.
-    void tabulate_facet_dofs(unsigned int* dofs, std::size_t local_facet) const;
+    void tabulate_facet_dofs(std::size_t* dofs, std::size_t local_facet) const;
 
     /// Tabulate the coordinates of all dofs on a cell (UFC cell
     /// version)
@@ -345,7 +345,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<std::vector<dolfin::std::size_t> >
     ///         The local-to-global map for each cell.
-    const std::vector<std::vector<DolfinIndex> >& data() const
+    const std::vector<std::vector<dolfin::la_index> >& data() const
     { return _dofmap; }
 
     /// Return informal string representation (pretty-print)
@@ -358,7 +358,7 @@ namespace dolfin
     ///     std::string
     ///         An informal representation of the function space.
     std::string str(bool verbose) const;
-
+    
   private:
 
     // Friends
@@ -369,21 +369,20 @@ namespace dolfin
 
     // Recursively extract UFC sub-dofmap and compute offset
     static ufc::dofmap* extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
-                                            std::size_t& offset,
-                                            const std::vector<std::size_t>& component,
-                                            const ufc::mesh ufc_mesh,
-                                            const Mesh& dolfin_mesh);
-
-    // Initialize the UFC dofmap
-    static void init_ufc_dofmap(ufc::dofmap& dofmap, const ufc::mesh ufc_mesh,
-                                const Mesh& dolfin_mesh);
+                                               std::size_t& offset,
+                                               const std::vector<std::size_t>& component,
+                                               const Mesh& dolfin_mesh);
 
     // Check dimensional consistency between UFC dofmap and the mesh
     static void check_dimensional_consistency(const ufc::dofmap& dofmap,
                                               const Mesh& mesh);
 
+    // Check that mesh provides the entities needed by dofmap
+    static void check_provided_entities(ufc::dofmap& dofmap,
+                                        const Mesh& dolfin_mesh);
+
     // Local-to-global dof map (dofs for cell dofmap[i])
-    std::vector<std::vector<DolfinIndex> > _dofmap;
+    std::vector<std::vector<dolfin::la_index> > _dofmap;
 
     // UFC dof map
     boost::scoped_ptr<ufc::dofmap> _ufc_dofmap;
@@ -395,7 +394,7 @@ namespace dolfin
     boost::shared_ptr<const Restriction> _restriction;
 
     // Global dimension. Note that this may differ from the global dimension
-    // of the UFC dofmap if the function space is restricted.
+    // of the UFC dofmap if the function space is restricted or periodic.
     std::size_t _global_dimension;
 
     // UFC dof map offset
@@ -419,9 +418,14 @@ namespace dolfin
 
     // True iff running in parallel
     bool _distributed;
-
+    
+    // Map from slave dofs to master dofs using UFC numbering
+    std::map<std::size_t, std::size_t> _slave_master_map;
+    
+    // Map of processes that share master dofs (used by compute_ownership)
+    std::map<std::size_t, boost::unordered_set<std::size_t> > _master_processes;
+    
   };
-
 }
 
 #endif

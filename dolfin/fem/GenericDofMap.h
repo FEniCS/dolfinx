@@ -55,7 +55,7 @@ namespace dolfin
 
     /// True if dof map is a view into another map (is a sub-dofmap)
     virtual bool is_view() const = 0;
-
+    
     /// Return true iff mesh entities of topological dimension d are needed
     virtual bool needs_mesh_entities(std::size_t d) const = 0;
 
@@ -86,10 +86,10 @@ namespace dolfin
     virtual const boost::unordered_map<std::size_t, std::size_t>& off_process_owner() const = 0;
 
     /// Local-to-global mapping of dofs on a cell
-    virtual const std::vector<DolfinIndex>& cell_dofs(std::size_t cell_index) const = 0;
+    virtual const std::vector<dolfin::la_index>& cell_dofs(std::size_t cell_index) const = 0;
 
     /// Tabulate local-local facet dofs
-    virtual void tabulate_facet_dofs(unsigned int* dofs, std::size_t local_facet) const = 0;
+    virtual void tabulate_facet_dofs(std::size_t* dofs, std::size_t local_facet) const = 0;
 
     /// Tabulate the coordinates of all dofs on a cell (UFC cell version)
     virtual void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,

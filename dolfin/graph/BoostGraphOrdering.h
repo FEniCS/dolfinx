@@ -24,7 +24,6 @@
 #include <set>
 #include <utility>
 #include <vector>
-#include <dolfin/common/types.h>
 #include "Graph.h"
 
 namespace dolfin

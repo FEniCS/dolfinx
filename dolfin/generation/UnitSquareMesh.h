@@ -57,8 +57,8 @@ namespace dolfin
     ///         UnitSquare mesh1(32, 32);
     ///         UnitSquare mesh2(32, 32, "crossed");
     ///
-    UnitSquareMesh(std::size_t nx, std::size_t ny,
-                   std::string diagonal="right");
+    UnitSquareMesh(std::size_t nx, std::size_t ny, std::string diagonal="right")
+      : RectangleMesh(0.0, 0.0, 1.0, 1.0, nx, ny, diagonal) {}
 
   };
 

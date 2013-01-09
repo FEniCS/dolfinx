@@ -148,7 +148,7 @@ void SLEPcEigenSolver::solve(std::size_t n)
     warning("Eigenvalue solver did not converge");
 
   // Report solver status
-  DolfinIndex num_iterations = 0;
+  dolfin::la_index num_iterations = 0;
   EPSGetIterationNumber(eps, &num_iterations);
 
   const EPSType eps_type = 0;
@@ -178,10 +178,10 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, std::size_t i) const
 {
-  const DolfinIndex ii = static_cast<DolfinIndex>(i);
+  const dolfin::la_index ii = static_cast<dolfin::la_index>(i);
 
   // Get number of computed values
-  DolfinIndex num_computed_eigenvalues;
+  dolfin::la_index num_computed_eigenvalues;
   EPSGetConverged(eps, &num_computed_eigenvalues);
 
   if (ii < num_computed_eigenvalues)
@@ -207,10 +207,10 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
                                      PETScVector& r, PETScVector& c,
                                      std::size_t i) const
 {
-  const DolfinIndex ii = static_cast<DolfinIndex>(i);
+  const dolfin::la_index ii = static_cast<dolfin::la_index>(i);
 
   // Get number of computed eigenvectors/values
-  DolfinIndex num_computed_eigenvalues;
+  dolfin::la_index num_computed_eigenvalues;
   EPSGetConverged(eps, &num_computed_eigenvalues);
 
   if (ii < num_computed_eigenvalues)
@@ -233,7 +233,7 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
 //-----------------------------------------------------------------------------
 std::size_t SLEPcEigenSolver::get_number_converged() const
 {
-  DolfinIndex num_conv;
+  dolfin::la_index num_conv;
   EPSGetConverged(eps, &num_conv);
   return num_conv;
 }
@@ -380,7 +380,7 @@ void SLEPcEigenSolver::set_tolerance(double tolerance, std::size_t maxiter)
 //-----------------------------------------------------------------------------
 std::size_t SLEPcEigenSolver::get_iteration_number() const
 {
-  DolfinIndex num_iter;
+  dolfin::la_index num_iter;
   EPSGetIterationNumber(eps, &num_iter);
   return num_iter;
 }

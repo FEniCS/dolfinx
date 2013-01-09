@@ -24,7 +24,6 @@
 #include <vector>
 
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/common/types.h>
 #include <dolfin/common/NoDeleter.h>
 
 #include <dolfin/mesh/Mesh.h>

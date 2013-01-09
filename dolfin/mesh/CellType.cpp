@@ -22,6 +22,7 @@
 // Last changed: 2011-11-14
 
 #include <algorithm>
+
 #include <dolfin/log/dolfin_log.h>
 #include "Cell.h"
 #include "CellType.h"
@@ -269,5 +270,11 @@ bool CellType::increasing(std::size_t n0, const std::size_t* v0,
   }
 
   return true;
+}
+//-----------------------------------------------------------------------------
+std::size_t CellType::orientation(const Cell& cell, const Point& up) const
+{
+  Point n = cell.cell_normal();
+  return (n.dot(up) < 0.0 ? 1 : 0);
 }
 //-----------------------------------------------------------------------------

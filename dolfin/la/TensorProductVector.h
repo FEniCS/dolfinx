@@ -21,9 +21,9 @@
 #ifndef __TENSOR_PRODUCT_MATRIX_H
 #define __TENSOR_PRODUCT_MATRIX_H
 
+#include <cstddef>
+#include <string>
 #include <vector>
-
-#include <dolfin/common/types.h>
 
 namespace dolfin
 {

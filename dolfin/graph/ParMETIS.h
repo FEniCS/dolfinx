@@ -23,6 +23,7 @@
 #ifndef __PARMETIS_PARTITIONER_H
 #define __PARMETIS_PARTITIONER_H
 
+#include <cstddef>
 #include <vector>
 
 namespace dolfin

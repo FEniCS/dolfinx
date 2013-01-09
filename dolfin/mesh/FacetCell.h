@@ -21,7 +21,6 @@
 #ifndef __FACET_CELL_H
 #define __FACET_CELL_H
 
-#include <dolfin/common/types.h>
 #include "Cell.h"
 
 namespace dolfin

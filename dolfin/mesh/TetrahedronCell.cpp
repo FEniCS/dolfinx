@@ -24,7 +24,7 @@
 // Last changed: 2011-11-21
 
 #include <algorithm>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "Cell.h"
 #include "Facet.h"
 #include "MeshEditor.h"
@@ -406,6 +406,15 @@ Point TetrahedronCell::normal(const Cell& cell, std::size_t facet) const
     n *= -1.0;
 
   return n;
+}
+//-----------------------------------------------------------------------------
+Point TetrahedronCell::cell_normal(const Cell& cell) const
+{
+  dolfin_error("TetrahedronCell.cpp",
+               "compute cell normal",
+               "cell_normal not implemented for TetrahedronCell");
+
+  return Point();
 }
 //-----------------------------------------------------------------------------
 double TetrahedronCell::facet_area(const Cell& cell, std::size_t facet) const

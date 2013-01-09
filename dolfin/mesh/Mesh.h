@@ -21,9 +21,11 @@
 // Modified by Niclas Jansson 2008
 // Modified by Kristoffer Selim 2008
 // Modified by Andre Massing 2009-2010
+// Modified by Marie E. Rognes 2012
+// Modified by Mikael Mortensen 2012
 //
 // First added:  2006-05-08
-// Last changed: 2012-10-25
+// Last changed: 2012-12-13
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -33,7 +35,6 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/intersection/IntersectionOperator.h>
@@ -43,13 +44,14 @@
 #include "MeshConnectivity.h"
 #include "MeshTopology.h"
 #include "MeshDomains.h"
+#include "SubDomain.h"
 
 namespace dolfin
 {
-
   class CellType;
   class BoundaryMesh;
   class Function;
+  class Expression;
   class LocalMeshData;
   class MeshEntity;
   template <typename T> class MeshFunction;
@@ -672,6 +674,98 @@ namespace dolfin
     ///         No example code available for this function.
     std::string str(bool verbose) const;
 
+    /// Add Periodicity to the mesh
+    ///
+    /// *Arguments*
+    ///     sub_domain (_SubDomain_)
+    ///         The subdomain.
+    void add_periodic_direction(const SubDomain& sub_domain);
+
+    /// Add Periodicity to the mesh
+    ///
+    /// *Arguments*
+    ///     sub_domain (_SubDomain_)
+    ///         The subdomain.
+    void add_periodic_direction(boost::shared_ptr<const SubDomain> sub_domain);
+
+    /// Add Periodicity to the mesh
+    ///
+    /// *Arguments*
+    ///     MeshFunction (_MeshFunction_)
+    ///         FacetFunction marking the two periodic subdomains
+    ///     std::size_t
+    ///         Id of master subdomain
+    ///     std::size_t
+    ///         Id of slave subdomain
+    void add_periodic_direction(const MeshFunction<std::size_t>& sub_domains,
+                const std::size_t sub_domain0, const std::size_t sub_domain1);
+
+    /// Add Periodicity to the mesh. The mesh must contain markers for subdomains
+    ///
+    /// *Arguments*
+    ///     std::size_t
+    ///         Id of master subdomain
+    ///     std::size_t
+    ///         Id of slave subdomain
+    void add_periodic_direction(const std::size_t sub_domain0,
+                                const std::size_t sub_domain1);
+
+    /// Return periodic facet-to-facet map
+    ///
+    /// *Returns*
+    ///     std::vector<std::pair< std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > >
+    ///         The periodic facet-to-facet map. First pair is master, second is slave.
+    ///         First item of pairs is global facet index, second item is the process
+    ///         number where the facet lives.
+    std::vector<std::pair<std::pair<std::size_t, std::size_t>,
+      std::pair<std::size_t, std::size_t> > >
+      get_periodic_facet_pairs(std::size_t i) const;
+
+    /// Check if mesh has one or more periodic directions
+    ///
+    /// *Returns*
+    ///     bool
+    ///         The return value is True if one or more periodic directions has
+    ///         been added to the mesh
+    bool is_periodic() const;
+
+    /// Returns number of periodic directions
+    ///
+    /// *Returns*
+    ///     std::size_t
+    ///         Number of periodic directions that has been added to the mesh
+    std::size_t num_periodic_domains() const;
+
+    /// Returns the distance between two periodic subdomains
+    ///
+    /// *Returns*
+    ///     std::vector<double>
+    ///         The distance between two periodic subdomains
+    std::vector<double> get_periodic_distance(std::size_t i) const;
+
+    /// Return cell_orientations
+    ///
+    /// *Returns*
+    ///     std::vector<int>
+    ///         Map from cell index to orientation of cell
+    std::vector<int>& cell_orientations();
+
+    /// Return cell_orientations (const version)
+    ///
+    /// *Returns*
+    ///     std::vector<int>
+    ///         Map from cell index to orientation of cell
+    const std::vector<int>& cell_orientations() const;
+
+    /// Compute and initialize cell_orientations relative to a given
+    /// global outward direction/normal/orientation. Only defined if
+    /// mesh is orientable.
+    ///
+    /// *Arguments*
+    ///     global_normal (Expression)
+    ///         A global normal direction to the mesh
+    void init_cell_orientations(const Expression& global_normal);
+
   private:
 
     // Friends
@@ -701,8 +795,38 @@ namespace dolfin
     // True if mesh has been ordered
     mutable bool _ordered;
 
-  };
+    // Create a container for data relating to one periodic direction.
+    // Could perhaps use something else, like a tuple??
+    class PeriodicDomain
+    {
+    public:
 
+      PeriodicDomain(std::size_t, std::size_t, std::vector<double>,
+                     std::vector<std::pair< std::pair<std::size_t, std::size_t>,
+                     std::pair<std::size_t, std::size_t> > >);
+
+      // The periodic facet-to-facet map. First pair is master, second is slave.
+      // First item of pairs is global facet index, second item is the process
+      // number where the facet lives.
+      std::vector<std::pair< std::pair<std::size_t, std::size_t>,
+                  std::pair<std::size_t, std::size_t> > > facet_pairs;
+
+      // Distance between subdomains
+      std::vector<double> dx;
+
+      // Markers for the two periodic subdomains used by _domains. master
+      // first, slave second
+      std::pair<std::size_t, std::size_t> sub_domains;
+
+    };
+
+    // Orientation of cells relative to a global direction
+    std::vector<int> _cell_orientations;
+
+    // Container for each periodic direction
+    std::vector<PeriodicDomain*> _periodic_domains;
+
+  };
 }
 
 #endif

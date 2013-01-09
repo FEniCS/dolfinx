@@ -21,7 +21,7 @@
 #ifndef __UNIQUE_ID_GENERATOR_H
 #define __UNIQUE_ID_GENERATOR_H
 
-#include <dolfin/common/types.h>
+#include <cstddef>
 
 namespace dolfin
 {

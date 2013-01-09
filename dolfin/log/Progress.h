@@ -22,7 +22,6 @@
 #define __PROGRESS_H
 
 #include <string>
-#include <dolfin/common/types.h>
 
 namespace dolfin
 {
