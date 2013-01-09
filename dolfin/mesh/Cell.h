@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2010 Anders Logg
+// Copyright (C) 2006-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -20,10 +20,12 @@
 // Modified by Garth N. Wells 2010.
 //
 // First added:  2006-06-01
-// Last changed: 2011-10-26
+// Last changed: 2013-01-09
 
 #ifndef __CELL_H
 #define __CELL_H
+
+#include <ufc.h>
 
 #include "CellType.h"
 #include "Mesh.h"
@@ -37,7 +39,9 @@ namespace dolfin
 
   /// A Cell is a _MeshEntity_ of topological codimension 0.
 
-  class Cell : public MeshEntity
+  class Cell : public MeshEntity,
+               public ufc::cell_topology,
+               public ufc::cell_geometry
   {
   public:
 
@@ -184,6 +188,22 @@ namespace dolfin
     ///         True if ordered.
     bool ordered(const std::vector<std::size_t>& local_to_global_vertex_indices) const
     { return _mesh->type().ordered(*this, local_to_global_vertex_indices); }
+
+    //--- Implementation of the UFC cell_topology interface ---
+
+    /// Return array of global entity indices for topological dimension d
+    const std::size_t* entity_indices(std::size_t d) const
+    {
+      return _mesh->topology()(_dim, 0)(_local_index);
+    }
+
+    //--- Implementation of the UFC cell_geometry interface ---
+
+    /// Return array of coordinates for vertex i
+    const double* vertex_coordinates(std::size_t i) const
+    {
+      return _mesh->geometry().x(_mesh->topology()(_dim, 0)(_local_index)[i]);
+    }
 
   };
 
