@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2013-01-02
-// Last Changed: 2013-01-03
+// Last Changed: 2013-01-09
 
 #include <boost/unordered_map.hpp>
 
@@ -65,7 +65,7 @@ namespace dolfin
     // storage for mapping shared edge indices global->local
     boost::unordered_map<std::size_t, std::size_t> _global_to_local;
     // shared edges between processes. In 2D, set size is 1
-    boost::unordered_map<std::size_t, std::set<std::size_t> > _shared_edges;
+    boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > > _shared_edges;
     // mapping from old global edge to new global vertex, needed to create new topology
     std::map<std::size_t, std::size_t> _global_edge_to_new_vertex;
     // new storage for all coordinates when creating new vertices
