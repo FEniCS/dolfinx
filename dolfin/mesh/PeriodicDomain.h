@@ -24,6 +24,10 @@
 #ifndef __PERIODIC_DOMAIN_H
 #define __PERIODIC_DOMAIN_H
 
+#include <map>
+#include <utility>
+#include <vector>
+
 namespace dolfin
 {
 
@@ -62,9 +66,16 @@ namespace dolfin
   {
   public:
 
-    static void compute_periodic_facet_pairs(const Mesh& mesh,
-                                             const SubDomain& sub_domain);
+    static std::map<std::size_t, std::pair<std::size_t, std::size_t> >
+      compute_periodic_facet_pairs(const Mesh& mesh,
+                                   const SubDomain& sub_domain);
 
+
+  private:
+
+    // Return true is point lies within bounding box
+    static bool in_bounding_box(const std::vector<double>& point,
+                                const std::vector<double>& bounding_box);
 
   };
 
