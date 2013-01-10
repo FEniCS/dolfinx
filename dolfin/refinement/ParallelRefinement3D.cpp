@@ -63,7 +63,6 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
 
   // Ensure connectivity is there etc
   mesh.init(1);
- //  MeshPartitioning::number_entities(mesh, 1);
   mesh.init(1, tdim);
 
   std::cout << "Num edges = " << mesh.num_edges() << std::endl;
@@ -83,6 +82,9 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
     EdgeIterator e(*cell);
     VertexIterator v(*cell);
 
+    //     std::cout << cell->index() << std::endl;
+    
+
     const std::size_t v0 = v[0].global_index();
     const std::size_t v1 = v[1].global_index();
     const std::size_t v2 = v[2].global_index();
@@ -94,6 +96,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
     const std::size_t e4 = edge_to_new_vertex[e[4].index()];
     const std::size_t e5 = edge_to_new_vertex[e[5].index()];
 
+
     //mostly duplicated from TetrahedronCell.cpp
 
     p.new_cell(v0, e3, e4, e5);
@@ -101,12 +104,12 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
     p.new_cell(v2, e0, e2, e4);
     p.new_cell(v3, e0, e1, e3);
 
-    const Point p0(gdim, p.vertex_coordinates(e0));
-    const Point p1(gdim, p.vertex_coordinates(e1));
-    const Point p2(gdim, p.vertex_coordinates(e2));
-    const Point p3(gdim, p.vertex_coordinates(e3));
-    const Point p4(gdim, p.vertex_coordinates(e4));
-    const Point p5(gdim, p.vertex_coordinates(e5));
+    const Point p0 = e[0].midpoint();
+    const Point p1 = e[1].midpoint();
+    const Point p2 = e[2].midpoint();
+    const Point p3 = e[3].midpoint();
+    const Point p4 = e[4].midpoint();
+    const Point p5 = e[5].midpoint();
     const double d05 = p0.distance(p5);
     const double d14 = p1.distance(p4);
     const double d23 = p2.distance(p3);
@@ -135,6 +138,9 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
     }
 
   }
+
+  std::cout << "Added " << p.cell_topology().size() << " as cell topology" << std::endl;
+  std::cout << "Added " << p.vertex_coordinates().size() << " as vertices" << std::endl;
 
   LocalMeshData mesh_data;
   mesh_data.num_vertices_per_cell = tdim + 1;

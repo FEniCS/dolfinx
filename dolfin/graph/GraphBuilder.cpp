@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2012
 //
 // First added:  2010-02-19
-// Last changed: 2013-01-03
+// Last changed: 2013-01-10
 
 #include <algorithm>
 #include <numeric>
@@ -189,6 +189,15 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
                             std::vector<std::set<std::size_t> >& local_graph,
                             std::set<std::size_t>& ghost_vertices)
 {
+
+  compute_dual_graph_small(mesh_data,
+                           local_graph,
+                           ghost_vertices);
+
+  return;
+  
+
+
   // This function builds the local part of a distributed dual graph
   // by partitioning cell vertices evenlt across processes in ascending
   // vertex index order. The 'owner' process holds a
