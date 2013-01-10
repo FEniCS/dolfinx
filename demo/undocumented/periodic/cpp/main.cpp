@@ -93,7 +93,7 @@ int main()
   */
 
   // Create mesh
-  UnitCubeMesh mesh(1, 1, 1);
+  UnitCubeMesh mesh(16, 16, 16);
 
   // Create periodic boundary condition
   PeriodicBoundary periodic_boundary;
@@ -101,13 +101,14 @@ int main()
   std::map<std::size_t, std::pair<std::size_t, std::size_t> > test
     = PeriodicDomain::compute_periodic_facet_pairs(mesh, periodic_boundary);
 
+  /*
   std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator it;
-
   for (it = test.begin(); it != test.end(); ++it)
   {
     cout << "*** Slave facet (local), proc owner master, master index on owner: " << it->first
         << ", " << it->second.first << ", " <<  it->second.second << endl;
   }
+  */
 
   return 0;
 

@@ -145,7 +145,7 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
       if (sub_domain.inside(_y, true))
       {
         // Insert (slave midpoint coordinate, master local facet index) into map
-        cout << "--Insert slave y: " << y[0] << ", " << y[1] << ", " << y[2] << endl;
+        //cout << "--Insert slave y: " << y[0] << ", " << y[1] << ", " << y[2] << endl;
         slave_facets.push_back(facet->index());
         slave_mapped_midpoints.push_back(y);
       }
@@ -153,7 +153,7 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
     }
   }
 
-  cout << "*** Number of slave facets: " << slave_facets.size() << endl;
+  //cout << "*** Number of slave facets: " << slave_facets.size() << endl;
 
   //cout << "Bounding box:" << endl;
   //for (std::size_t i = 0; i < x_min_max.size(); ++i)
@@ -184,10 +184,10 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
       //cout << "Point to check:" << endl;
       //cout << slave_mapped_midpoints[i][0] << ", " << slave_mapped_midpoints[i][1]  << endl;
 
-      cout << "x: " << slave_mapped_midpoints[i][0] << ", " << slave_mapped_midpoints[i][1] << ", " << slave_mapped_midpoints[i][2] << endl;
+      //cout << "x: " << slave_mapped_midpoints[i][0] << ", " << slave_mapped_midpoints[i][1] << ", " << slave_mapped_midpoints[i][2] << endl;
       if (in_bounding_box(slave_mapped_midpoints[i], bounding_boxes[p]))
       {
-        cout << "!!! Slave facet might be on process " << p << endl;
+        //cout << "!!! Slave facet might be on process " << p << endl;
         sent_slave_indices[p].push_back(slave_facets[i]);
         slave_mapped_midpoints_send_p.insert(slave_mapped_midpoints_send_p.end(),
                                  slave_mapped_midpoints[i].begin(),
@@ -195,6 +195,7 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
       }
       else
       {
+        /*
         cout << "??? Slave facet cannot be on process " << p << endl;
         if (!bounding_boxes[p].empty())
         {
@@ -207,6 +208,7 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
         }
         else
           cout << "Empty bb" << endl;
+        */
       }
     }
   }
@@ -309,8 +311,8 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
   const std::size_t num_global_master_facets = MPI::sum(master_midpoint_to_facet_index.size());
   const std::size_t num_global_slave_facets = MPI::sum(num_local_slave_facets);
 
-  cout << "Num global, master/slave periodic facets: " << num_global_master_facets << ", "
-      << num_global_slave_facets << endl;
+  //cout << "Num global, master/slave periodic facets: " << num_global_master_facets << ", "
+  //    << num_global_slave_facets << endl;
 
   // Check that number of global master and slave facets match
   if (num_global_master_facets != num_global_slave_facets)
@@ -335,11 +337,9 @@ bool PeriodicDomain::in_bounding_box(const std::vector<double>& point,
   dolfin_assert(bounding_box.size() == 2*gdim);
   for (std::size_t i = 0; i < gdim; ++i)
   {
-    //if (!(point[i] >= (bounding_box[i] - DOLFIN_EPS) && point[i] <= (bounding_box[gdim + 1] + DOLFIN_EPS)))
-    if (!(point[i] >= (bounding_box[i]) && point[i] <= (bounding_box[gdim + 1])))
+    if (!(point[i] >= (bounding_box[i] - DOLFIN_EPS)
+      && point[i] <= (bounding_box[gdim + i] + DOLFIN_EPS)))
     {
-      cout << "Returning false: " << i << ", " <<  point[i] << ", " << bounding_box[i]
-          << ", " << bounding_box[gdim +i] << endl;
       return false;
     }
   }
