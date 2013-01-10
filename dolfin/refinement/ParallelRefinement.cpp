@@ -191,10 +191,10 @@ void ParallelRefinement::create_new_vertices(const EdgeFunction<bool>& markedEdg
   // If they are shared, then the new global vertex index needs to be sent off-process.
 
   std::vector<std::vector<std::pair<std::size_t, std::size_t> > > values_to_send(num_processes);
-  std::vector<std::size_t> destinations(num_processes);
+  //  std::vector<std::size_t> destinations(num_processes);
   // Set up destination vector for communication with remote processes
-  for(std::size_t process_j = 0; process_j < num_processes ; ++process_j)
-    destinations[process_j] = process_j;
+  //  for(std::size_t process_j = 0; process_j < num_processes ; ++process_j)
+  //    destinations[process_j] = process_j;
 
   // Add offset to map, and collect up any shared new vertices that need to send the new index off-process
   for(std::map<std::size_t, std::size_t>::iterator local_edge = local_edge_to_new_vertex.begin();
@@ -220,9 +220,13 @@ void ParallelRefinement::create_new_vertices(const EdgeFunction<bool>& markedEdg
   }
 
   // send new vertex indices to remote processes and receive
-  std::vector<std::vector<std::pair<std::size_t,std::size_t> > > received_values;
-  MPI::distribute(values_to_send, destinations, received_values);
-
+  std::vector<std::vector<std::pair<std::size_t,std::size_t> > > received_values(num_processes);
+  //  MPI::distribute(values_to_send, destinations, received_values);
+  
+  MPICommunicator mpi_comm;
+  boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_attach);
+  boost::mpi::all_to_all(comm, values_to_send, received_values);
+  
   // Flatten and add received remote global vertex indices to map 
   for(std::vector<std::vector<std::pair<std::size_t, std::size_t> > >::iterator p = received_values.begin();
       p != received_values.end(); ++p)

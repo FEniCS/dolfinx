@@ -67,7 +67,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
 
   std::cout << "Num edges = " << mesh.num_edges() << std::endl;
 
-  // Create a class to hold most of the refinement information
+  // Instantiate a class to hold most of the refinement information
   ParallelRefinement p(mesh);
   
   // Mark all edges, and create new vertices
@@ -144,34 +144,6 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
 
   p.partition(new_mesh);
 
-  // LocalMeshData mesh_data;
-  // mesh_data.num_vertices_per_cell = tdim + 1;
-  // mesh_data.tdim = tdim;
-  // mesh_data.gdim = gdim;
-
-  // // Copy topology to LocalMeshData structures
-  // const std::size_t num_local_cells = p.cell_topology().size()/mesh_data.num_vertices_per_cell;
-  // mesh_data.num_global_cells = MPI::sum(num_local_cells);
-  // mesh_data.global_cell_indices.resize(num_local_cells);
-  // const std::size_t idx_global_offset = MPI::global_offset(num_local_cells, true);
-  // for(std::size_t i = 0; i < num_local_cells ; i++)
-  //   mesh_data.global_cell_indices[i] = idx_global_offset + i;
-  
-  // mesh_data.cell_vertices.resize(boost::extents[num_local_cells][mesh_data.num_vertices_per_cell]);
-  // std::copy(p.cell_topology().begin(),p.cell_topology().end(),mesh_data.cell_vertices.data());
-
-  // // Copy coordinates to LocalMeshData structures
-  // const std::size_t num_local_vertices = p.vertex_coordinates().size()/gdim;
-  // mesh_data.num_global_vertices = MPI::sum(num_local_vertices);
-  // mesh_data.vertex_coordinates.resize(boost::extents[num_local_vertices][gdim]);
-  // std::copy(p.vertex_coordinates().begin(), p.vertex_coordinates().end(), mesh_data.vertex_coordinates.data());
-
-  // mesh_data.vertex_indices.resize(num_local_vertices);
-  // const std::size_t vertex_global_offset = MPI::global_offset(num_local_vertices, true);
-  // for(std::size_t i = 0; i < num_local_vertices ; i++)
-  //   mesh_data.vertex_indices[i] = vertex_global_offset + i;
-
-  // MeshPartitioning::build_distributed_mesh(new_mesh, mesh_data);
 
 }
 

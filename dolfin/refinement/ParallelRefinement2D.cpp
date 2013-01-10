@@ -72,6 +72,7 @@ void ParallelRefinement2D::generate_reference_edges(const Mesh& mesh, std::vecto
   }
 }
 
+//-----------------------------------------------------------------------------
 void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh)
 {
   if(MPI::num_processes()==1)
@@ -125,6 +126,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh)
 
 }
 
+//-----------------------------------------------------------------------------
 void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh, 
                                   const MeshFunction<bool>& refinement_marker)
 {
@@ -232,21 +234,13 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
     markedEdgeFile << markedEdges;
   }
 
-  // Generate new vertices from marked edges, and assign global indices.
-  // Also, create mapping from the old edge index to the new vertex index.
+  // Generate new vertices from marked edges, and assign global vertex index map.
+
   p.create_new_vertices(markedEdges);
   std::map<std::size_t, std::size_t>& edge_to_new_vertex = p.edge_to_new_vertex();
 
-  // Stage 4 - do refinement - keeping reference edges somehow?...
-
-  std::vector<std::size_t> new_cell_topology;
-  std::vector<std::size_t> new_ref_edge;
-
-  // *******************
-  // N.B. although this works after a fashion, it is not right,
-  // and needs careful revision - particularly for assignment of the reference edges
-  // which are not carried forward, yet. 
-  // *******************
+  // Stage 4 - do refinement 
+  // FIXME - keep reference edges somehow?...
 
   for(CellIterator cell(mesh); !cell.end(); ++cell)
   {
@@ -308,6 +302,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
     
   }
 
+  // Call partitioning from within ParallelRefinement class
   p.partition(new_mesh);
 
   if(diag)
@@ -323,7 +318,6 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
     meshFile2 << partitioning2;  
   }
   
-  // new_ref_edge exists, but needs reordering...
 
 }
 
