@@ -55,9 +55,6 @@ namespace dolfin
 
     /// True if dof map is a view into another map (is a sub-dofmap)
     virtual bool is_view() const = 0;
-    
-    /// Return true iff mesh entities of topological dimension d are needed
-    virtual bool needs_mesh_entities(std::size_t d) const = 0;
 
     /// Return the dimension of the global finite element function space
     virtual std::size_t global_dimension() const = 0;
@@ -102,8 +99,8 @@ namespace dolfin
     /// Create a copy of the dof map
     virtual boost::shared_ptr<GenericDofMap> copy() const = 0;
 
-    /// Build a new dof map on new mesh
-    virtual boost::shared_ptr<GenericDofMap> build(const Mesh& new_mesh) const = 0;
+    /// Create a new dof map on new mesh
+    virtual boost::shared_ptr<GenericDofMap> create(const Mesh& new_mesh) const = 0;
 
     /// Extract sub dofmap component
     virtual GenericDofMap* extract_sub_dofmap(const std::vector<std::size_t>& component,

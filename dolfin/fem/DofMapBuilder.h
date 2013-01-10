@@ -74,13 +74,13 @@ namespace dolfin
 
     // Build dofmap. The restriction may be a null pointer in which
     // case it is ignored.
-    static void build_new(DofMap& dofmap, const Mesh& dolfin_mesh,
-        const std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facets,
-        boost::shared_ptr<const Restriction> restriction);
+    static void build(DofMap& dofmap, const Mesh& dolfin_mesh,
+        boost::shared_ptr<const Restriction> restriction,
+        const std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facets);
 
     // Build dofmap. The restriction may be a null pointer in which
     // case it is ignored.
-    static void build(DofMap& dofmap,
+    static void build_old(DofMap& dofmap,
                       const Mesh& dolfin_mesh,
                       boost::shared_ptr<const Restriction> restriction,
                       bool reorder);

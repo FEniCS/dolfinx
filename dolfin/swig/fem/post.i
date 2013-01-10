@@ -73,20 +73,20 @@ def function_space(self, i):
     PyArrayObject *xa = reinterpret_cast<PyArrayObject*>(coordinates);
 
     // Initialize the boost::multi_array structure
-    boost::multi_array<double, 2>::extent_gen extents;
     boost::multi_array<double, 2> tmparray;
-    tmparray.resize(extents[self->cell_dimension(cell.index())]\
-		    [self->geometric_dimension()]);
 
     // Tabulate the coordinates
     dolfin::UFCCell ufc_cell(cell);
     self->tabulate_coordinates(tmparray, ufc_cell);
 
+    // Get geometric dimension
+    std::size_t gdim = tmparray.shape()[1];
+
     // Copy data
     double* data = static_cast<double*>(PyArray_DATA(xa));
-    for (std::size_t i=0; i<self->cell_dimension(cell.index()); i++)
-      for (std::size_t j=0; j<self->geometric_dimension(); j++)
-	data[i*self->geometric_dimension()+j] = tmparray[i][j];
+    for (std::size_t i = 0; i < self->cell_dimension(cell.index()); i++)
+      for (std::size_t j = 0; j < gdim; j++)
+        data[i*gdim + j] = tmparray[i][j];
   }
 
 %pythoncode %{

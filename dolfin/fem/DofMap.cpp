@@ -47,10 +47,9 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   const Mesh& mesh) : _ufc_dofmap(ufc_dofmap),  _global_dimension(0),
   _ufc_offset(0), _is_view(false)
 {
-  dolfin_assert(_ufc_dofmap);
-
-  // Call common build
-  build_common(mesh);
+  // Call dofmap builder
+  const std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facets;
+  DofMapBuilder::build(*this, mesh, _restriction, slave_to_master_facets);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
@@ -72,19 +71,21 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
                  "Only cell-based restriction of function spaces are currently supported. ");
   }
 
-  // Call common build
-  build_common(mesh);
+  // Call dofmap builder
+  const std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facets;
+  DofMapBuilder::build(*this, mesh, restriction, slave_to_master_facets);
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& component,
-               const Mesh& mesh) : _global_dimension(0), _ufc_offset(0),
+DofMap::DofMap(const DofMap& parent_dofmap,
+               const std::vector<std::size_t>& component,
+  const Mesh& mesh) : _global_dimension(0), _ufc_offset(0),
   _ownership_range(0, 0), _is_view(true)
 {
   // Note: Ownership range is set to zero since dofmap is a view
 
   dolfin_assert(!component.empty());
 
-  // Store global entity dimensions in vector
+  // Store global mesh entity dimensions in vector
   std::vector<std::size_t> num_global_mesh_entities(mesh.topology().dim() + 1);
   for (std::size_t d = 0; d < num_global_mesh_entities.size(); d++)
     num_global_mesh_entities[d] = mesh.size_global(d);
@@ -229,7 +230,8 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
         *dof = ufc_to_current_dof->second;
 
         // Add to off-process dof owner map
-        boost::unordered_map<std::size_t, std::size_t>::const_iterator parent_off_proc = parent_dofmap._off_process_owner.find(*dof);
+        boost::unordered_map<std::size_t, std::size_t>::const_iterator
+          parent_off_proc = parent_dofmap._off_process_owner.find(*dof);
         if (parent_off_proc != parent_dofmap._off_process_owner.end())
           _off_process_owner.insert(*parent_off_proc);
 
@@ -268,8 +270,8 @@ DofMap::DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
   check_provided_entities(*_ufc_dofmap, mesh);
 
   // Build dof map
-  const bool reorder = dolfin::parameters["reorder_dofs_serial"];
-  DofMapBuilder::build(*this, mesh, _restriction, reorder);
+  const std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facets;
+  DofMapBuilder::build(*this, mesh, _restriction, slave_to_master_facets);
 
   // Dimension checks
   dolfin_assert(dofmap_view._dofmap.size() == mesh.num_cells());
@@ -312,12 +314,6 @@ DofMap::DofMap(const DofMap& dofmap)
 DofMap::~DofMap()
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-bool DofMap::needs_mesh_entities(std::size_t d) const
-{
-  dolfin_assert(_ufc_dofmap);
-  return _ufc_dofmap->needs_mesh_entities(d);
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::global_dimension() const
@@ -391,14 +387,15 @@ void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
                                   const ufc::cell& ufc_cell) const
 {
   // FIXME: This is a hack because UFC wants a double pointer for coordinates
+  dolfin_assert(_ufc_dofmap);
 
   // Check dimensions
   if (coordinates.shape()[0] != cell_dimension(ufc_cell.index) ||
-      coordinates.shape()[1] != geometric_dimension())
+      coordinates.shape()[1] != _ufc_dofmap->geometric_dimension())
   {
     boost::multi_array<double, 2>::extent_gen extents;
     const std::size_t cell_dim = cell_dimension(ufc_cell.index);
-    coordinates.resize(extents[cell_dim][geometric_dimension()]);
+    coordinates.resize(extents[cell_dim][_ufc_dofmap->geometric_dimension()]);
   }
 
   // Set vertex coordinates
@@ -423,10 +420,10 @@ boost::shared_ptr<GenericDofMap> DofMap::copy() const
   return boost::shared_ptr<GenericDofMap>(new DofMap(*this));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericDofMap> DofMap::build(const Mesh& new_mesh) const
+boost::shared_ptr<GenericDofMap> DofMap::create(const Mesh& new_mesh) const
 {
-  // Get copy of underlying UFC dof map
-  boost::shared_ptr<const ufc::dofmap> ufc_dof_map(_ufc_dofmap->create()); // TODO: Don't have to copy anymore, can assume stateless?
+  // Get underlying UFC dof map
+  boost::shared_ptr<const ufc::dofmap> ufc_dof_map(_ufc_dofmap);
   return boost::shared_ptr<GenericDofMap>(new DofMap(ufc_dof_map, new_mesh));
 }
 //-----------------------------------------------------------------------------
@@ -476,45 +473,6 @@ void DofMap::set_x(GenericVector& x, double value, std::size_t component,
     // Set x[component] values in vector
     x.set(x_values.data(), dofs.size(), dofs.data());
   }
-}
-//-----------------------------------------------------------------------------
-void DofMap::build_common(const Mesh& mesh)
-{
-  // FIXME: Parts of this might be consolidated with the code in
-  // DofMapBuilder. It's not clear which parts should happen here and
-  // which parts should happen inside DofMapBuilder.
-
-  // Check for dimensional consistency between the dofmap and mesh
-  check_dimensional_consistency(*_ufc_dofmap, mesh);
-
-  // Check that mesh has been ordered
-  if (!mesh.ordered())
-  {
-     dolfin_error("DofMap.cpp",
-                  "create mapping of degrees of freedom",
-                  "Mesh is not ordered according to the UFC numbering convention. "
-                  "Consider calling mesh.order()");
-  }
-
-  // Generate and number all mesh entities
-  const bool distributed = MPI::num_processes() > 1;
-  const std::size_t D = mesh.topology().dim();
-  for (std::size_t d = 1; d <= D; ++d)
-  {
-    if (_ufc_dofmap->needs_mesh_entities(d) || (distributed && d == (D - 1)))
-    {
-      mesh.init(d);
-      if (distributed)
-        MeshDistributed::number_entities(mesh, d);
-    }
-  }
-
-  // Check dimensional consistency between UFC dofmap and the mesh
-  check_provided_entities(*_ufc_dofmap, mesh);
-
-  // Build dof map
-  const bool reorder = dolfin::parameters["reorder_dofs_serial"];
-  DofMapBuilder::build(*this, mesh, _restriction, reorder);
 }
 //-----------------------------------------------------------------------------
 ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
@@ -581,8 +539,8 @@ ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
       sub_component.push_back(component[i]);
 
     ufc::dofmap* sub_sub_dofmap = extract_ufc_sub_dofmap(*sub_dofmap, offset,
-                                                     sub_component,
-                                                     mesh);
+                                                         sub_component,
+                                                         mesh);
     delete sub_dofmap;
     return sub_sub_dofmap;
   }
