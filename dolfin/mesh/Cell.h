@@ -25,8 +25,6 @@
 #ifndef __CELL_H
 #define __CELL_H
 
-#include <ufc.h>
-
 #include "CellType.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
@@ -39,9 +37,7 @@ namespace dolfin
 
   /// A Cell is a _MeshEntity_ of topological codimension 0.
 
-  class Cell : public MeshEntity,
-               public ufc::cell_topology,
-               public ufc::cell_geometry
+  class Cell : public MeshEntity
   {
   public:
 
@@ -188,23 +184,6 @@ namespace dolfin
     ///         True if ordered.
     bool ordered(const std::vector<std::size_t>& local_to_global_vertex_indices) const
     { return _mesh->type().ordered(*this, local_to_global_vertex_indices); }
-
-    //--- Implementation of the UFC cell_topology interface ---
-
-    /// Return array of global entity indices for topological dimension d
-    //const std::size_t* entity_indices(std::size_t d) const
-    // {
-    //  return _mesh->topology()(_dim, 0)(_local_index);
-    // }
-
-    //--- Implementation of the UFC cell_geometry interface ---
-
-    /// Return array of coordinates for vertex i
-    //void get_vertex_coordinates(const double* x[]) const
-    // {
-    //  for (unsigned int i = 0; i <= _dim; i++)
-    //    x[i] = _mesh->geometry().x(_mesh->topology()(_dim, 0)(_local_index)[i]);
-    // }
 
   };
 
