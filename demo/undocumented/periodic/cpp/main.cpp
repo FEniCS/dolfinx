@@ -99,7 +99,7 @@ int main()
   PeriodicBoundary periodic_boundary;
 
   std::map<std::size_t, std::pair<std::size_t, std::size_t> > test
-    = PeriodicDomain::compute_periodic_facet_pairs(mesh, periodic_boundary);
+    = PeriodicBoundaryComputation::compute_periodic_facet_pairs(mesh, periodic_boundary);
 
   FacetFunction<std::size_t> master_slave_facets(mesh, 0);
   periodic_boundary.mark(master_slave_facets, 1);

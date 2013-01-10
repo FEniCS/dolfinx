@@ -47,8 +47,43 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+void DofMapBuilder::build_new(DofMap& dofmap, const Mesh& mesh,
+  const std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facets,
+  boost::shared_ptr<const Restriction> restriction)
+{
+  dolfin_assert(dofmap._ufc_dofmap);
+  dolfin_assert(dofmap._ufc_dofmap->geometric_dimension() == mesh.geometry().dim());
+  dolfin_assert(dofmap._ufc_dofmap->topological_dimension() == mesh.topology().dim());
+
+  // Check that mesh has been ordered
+  if (!mesh.ordered())
+  {
+     dolfin_error("DofMapBuiler.cpp",
+                  "create mapping of degrees of freedom",
+                  "Mesh is not ordered according to the UFC numbering convention. "
+                  "Consider calling mesh.order()");
+  }
+
+  // Generate and number required mesh entities
+  const bool distributed = MPI::num_processes() > 1;
+  const std::size_t D = mesh.topology().dim();
+  for (std::size_t d = 1; d <= D; ++d)
+  {
+    if (dofmap._ufc_dofmap->needs_mesh_entities(d) || (distributed && d == (D - 1)))
+    {
+      mesh.init(d);
+      if (distributed)
+        MeshDistributed::number_entities(mesh, d);
+    }
+  }
+
+  // Build dof map
+  const bool reorder = dolfin::parameters["reorder_dofs_serial"];
+  build(dofmap, mesh, restriction, reorder);
+}
+//-----------------------------------------------------------------------------
 void DofMapBuilder::build(DofMap& dofmap,
-                          const Mesh& dolfin_mesh,
+                          const Mesh& mesh,
                           boost::shared_ptr<const Restriction> restriction,
                           bool reorder)
 {
@@ -56,7 +91,7 @@ void DofMapBuilder::build(DofMap& dofmap,
   Timer t0("Init dofmap");
 
   // Create space for dof map
-  dofmap._dofmap.resize(dolfin_mesh.num_cells());
+  dofmap._dofmap.resize(mesh.num_cells());
   dofmap._off_process_owner.clear();
   dolfin_assert(dofmap._ufc_dofmap);
 
@@ -70,13 +105,13 @@ void DofMapBuilder::build(DofMap& dofmap,
   map restricted_dofs_inverse; // map from new to old dof
 
   // Store global entity dimensions in vector // TODO: These lines are repeated a few times
-  std::vector<std::size_t> num_global_mesh_entities(dolfin_mesh.topology().dim() + 1);
+  std::vector<std::size_t> num_global_mesh_entities(mesh.topology().dim() + 1);
   for (std::size_t d = 0; d < num_global_mesh_entities.size(); d++)
-    num_global_mesh_entities[d] = dolfin_mesh.size_global(d);
+    num_global_mesh_entities[d] = mesh.size_global(d);
 
   // Build dofmap from ufc::dofmap
-  dolfin::UFCCell ufc_cell(dolfin_mesh);
-  for (dolfin::CellIterator cell(dolfin_mesh); !cell.end(); ++cell)
+  dolfin::UFCCell ufc_cell(mesh);
+  for (dolfin::CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Skip cells not included in restriction
     if (restriction && !restriction->contains(*cell))
@@ -127,29 +162,29 @@ void DofMapBuilder::build(DofMap& dofmap,
   if (MPI::num_processes() > 1)
   {
     // Build set of global dofs
-    set global_dofs = compute_global_dofs(dofmap, dolfin_mesh);
+    set global_dofs = compute_global_dofs(dofmap, mesh);
 
     // Periodic modification of the UFC-numbered dofmap.
     // Computes slave-master map and eliminates slaves from dofmap.
     // Computes processes that share master dofs. Recomputes _global_dimension
-    //if (dolfin_mesh.is_periodic())
-    //  periodic_modification(dofmap, dolfin_mesh, global_dofs);
+    //if (mesh.is_periodic())
+    //  periodic_modification(dofmap, mesh, global_dofs);
 
     // Build distributed dof map
-    build_distributed(dofmap, global_dofs, dolfin_mesh,
+    build_distributed(dofmap, global_dofs, mesh,
                       restriction, restricted_dofs_inverse);
   }
   else
   {
     set global_dofs;
-    //if (dolfin_mesh.is_periodic())
-    //  periodic_modification(dofmap, dolfin_mesh, global_dofs);
+    //if (mesh.is_periodic())
+    //  periodic_modification(dofmap, mesh, global_dofs);
 
     if (reorder)
     {
       // Build graph
       Graph graph(dofmap.global_dimension());
-      for (CellIterator cell(dolfin_mesh); !cell.end(); ++cell)
+      for (CellIterator cell(mesh); !cell.end(); ++cell)
       {
         const std::vector<dolfin::la_index>& dofs0 = dofmap.cell_dofs(cell->index());
         const std::vector<dolfin::la_index>& dofs1 = dofmap.cell_dofs(cell->index());
@@ -594,7 +629,7 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
 }
 //-----------------------------------------------------------------------------
 DofMapBuilder::set DofMapBuilder::compute_global_dofs(const DofMap& dofmap,
-                                                      const Mesh& dolfin_mesh)
+                                                      const Mesh& mesh)
 {
   // Wrap UFC dof map
   boost::shared_ptr<const ufc::dofmap> _dofmap(dofmap._ufc_dofmap.get(),
@@ -603,7 +638,7 @@ DofMapBuilder::set DofMapBuilder::compute_global_dofs(const DofMap& dofmap,
   // Compute global dof indices
   std::size_t offset = 0;
   set global_dof_indices;
-  compute_global_dofs(global_dof_indices, offset, _dofmap, dolfin_mesh);
+  compute_global_dofs(global_dof_indices, offset, _dofmap, mesh);
 
   return global_dof_indices;
 }
@@ -611,15 +646,15 @@ DofMapBuilder::set DofMapBuilder::compute_global_dofs(const DofMap& dofmap,
 void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
                                         std::size_t& offset,
                                         boost::shared_ptr<const ufc::dofmap> dofmap,
-                                        const Mesh& dolfin_mesh)
+                                        const Mesh& mesh)
 {
   dolfin_assert(dofmap);
-  const std::size_t D = dolfin_mesh.topology().dim();
+  const std::size_t D = mesh.topology().dim();
 
   // Store global entity dimensions in vector // TODO: These lines are repeated a few times
-  std::vector<std::size_t> num_global_mesh_entities(dolfin_mesh.topology().dim() + 1);
+  std::vector<std::size_t> num_global_mesh_entities(mesh.topology().dim() + 1);
   for (std::size_t d = 0; d < num_global_mesh_entities.size(); d++)
-    num_global_mesh_entities[d] = dolfin_mesh.size_global(d);
+    num_global_mesh_entities[d] = mesh.size_global(d);
 
   if (dofmap->num_sub_dofmaps() == 0)
   {
@@ -665,9 +700,9 @@ void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
     {
       // Extract sub-dofmap and intialise
       boost::shared_ptr<ufc::dofmap> sub_dofmap(dofmap->create_sub_dofmap(i));
-      DofMap::check_provided_entities(*sub_dofmap, dolfin_mesh);
+      DofMap::check_provided_entities(*sub_dofmap, mesh);
 
-      compute_global_dofs(global_dofs, offset, sub_dofmap, dolfin_mesh);
+      compute_global_dofs(global_dofs, offset, sub_dofmap, mesh);
 
       // Get offset
       if (sub_dofmap->num_sub_dofmaps() == 0)

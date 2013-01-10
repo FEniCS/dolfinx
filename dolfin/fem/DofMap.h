@@ -365,13 +365,13 @@ namespace dolfin
     friend class DofMapBuilder;
 
     // Build dofmap
-    void build_common(const Mesh& dolfin_mesh);
+    void build_common(const Mesh& mesh);
 
     // Recursively extract UFC sub-dofmap and compute offset
     static ufc::dofmap* extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
                                                std::size_t& offset,
                                                const std::vector<std::size_t>& component,
-                                               const Mesh& dolfin_mesh);
+                                               const Mesh& mesh);
 
     // Check dimensional consistency between UFC dofmap and the mesh
     static void check_dimensional_consistency(const ufc::dofmap& dofmap,
@@ -379,7 +379,7 @@ namespace dolfin
 
     // Check that mesh provides the entities needed by dofmap
     static void check_provided_entities(const ufc::dofmap& dofmap,
-                                        const Mesh& dolfin_mesh);
+                                        const Mesh& mesh);
 
     // Local-to-global dof map (dofs for cell dofmap[i])
     std::vector<std::vector<dolfin::la_index> > _dofmap;
