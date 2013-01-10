@@ -133,8 +133,8 @@ void DofMapBuilder::build(DofMap& dofmap,
     // Periodic modification of the UFC-numbered dofmap.
     // Computes slave-master map and eliminates slaves from dofmap.
     // Computes processes that share master dofs. Recomputes _global_dimension
-    if (dolfin_mesh.is_periodic())
-      periodic_modification(dofmap, dolfin_mesh, global_dofs);
+    //if (dolfin_mesh.is_periodic())
+    //  periodic_modification(dofmap, dolfin_mesh, global_dofs);
 
     // Build distributed dof map
     build_distributed(dofmap, global_dofs, dolfin_mesh,
@@ -143,8 +143,8 @@ void DofMapBuilder::build(DofMap& dofmap,
   else
   {
     set global_dofs;
-    if (dolfin_mesh.is_periodic())
-      periodic_modification(dofmap, dolfin_mesh, global_dofs);
+    //if (dolfin_mesh.is_periodic())
+    //  periodic_modification(dofmap, dolfin_mesh, global_dofs);
 
     if (reorder)
     {
@@ -678,9 +678,10 @@ void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
-                                      periodic_map& _slave_master_map,
-                                      std::map<std::size_t, boost::unordered_set<std::size_t> >& _master_processes)
+    periodic_map& _slave_master_map,
+    std::map<std::size_t, boost::unordered_set<std::size_t> >& _master_processes)
 {
+  /*
   Timer t0("Extracting dof pairs");
 
   const std::size_t num_sub_dofmaps = dofmap._ufc_dofmap->num_sub_dofmaps();
@@ -728,9 +729,9 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
   for (std::size_t periodic_domain = 0; periodic_domain < mesh.num_periodic_domains(); periodic_domain++)
   {
     // Get periodic info
-    facet_pair_type facet_pairs = mesh.get_periodic_facet_pairs(periodic_domain);
-    dx = mesh.get_periodic_distance(periodic_domain);  // Distance between periodic domains
-    const std::size_t num_periodic_faces = facet_pairs.size();
+    //facet_pair_type facet_pairs = mesh.get_periodic_facet_pairs(periodic_domain);
+    //dx = mesh.get_periodic_distance(periodic_domain);  // Distance between periodic domains
+    //const std::size_t num_periodic_faces = facet_pairs.size();
 
     // Map to hold all information being sent from slaves to masters
     facet_info_map_type facet_info_map;
@@ -1009,10 +1010,12 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
 //          cout << " " << *sit;
 //       cout << endl;
 //     }
+*/
 }
 
 void DofMapBuilder::periodic_modification(DofMap& dofmap, const Mesh& mesh, set& global_dofs)
 {
+  /*
   Timer t0("Periodic dofmap modification");
 
   periodic_map _slave_master_map;
@@ -1140,4 +1143,5 @@ void DofMapBuilder::periodic_modification(DofMap& dofmap, const Mesh& mesh, set&
     new_global_dofs.insert(*sit - std::size_t(it - _all_slaves.begin()));
   }
   global_dofs = new_global_dofs;
+  */
 }

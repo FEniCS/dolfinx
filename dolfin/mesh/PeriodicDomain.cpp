@@ -183,7 +183,8 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
     for (std::size_t i = 0; i < slave_mapped_midpoints_p.size(); i += gdim)
     {
       // Unpack rceived mapped slave midpoint coordinate
-      std::copy(&slave_mapped_midpoints_p[i], &slave_mapped_midpoints_p[i] + gdim, midpoint.begin());
+      std::copy(&slave_mapped_midpoints_p[i],
+                &slave_mapped_midpoints_p[i] + gdim, midpoint.begin());
 
       // Check is this process has a master facet that is paired with
       // a received slave facet
