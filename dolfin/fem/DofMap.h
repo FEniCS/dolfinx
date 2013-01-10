@@ -102,7 +102,7 @@ namespace dolfin
     ///         True if the dof map is a sub-dof map (a view into
     ///         another map).
     bool is_view() const
-    { return _ownership_range.first == 0 && _ownership_range.second == 0; }
+    { return (_ownership_range.first == 0 && _ownership_range.second == 0); }
 
     /// True iff dof map is restricted
     ///

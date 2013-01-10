@@ -354,7 +354,8 @@ void DofMapBuilder::build_sub_map(DofMap& sub_dofmap,
     boost::unordered_map<std::size_t, std::size_t>::const_iterator ufc_to_current_dof;
     std::vector<std::vector<dolfin::la_index> >::iterator cell_map;
     std::vector<dolfin::la_index>::iterator dof;
-    for (cell_map = sub_dofmap._dofmap.begin(); cell_map != sub_dofmap._dofmap.end(); ++cell_map)
+    for (cell_map = sub_dofmap._dofmap.begin();
+        cell_map != sub_dofmap._dofmap.end(); ++cell_map)
     {
       for (dof = cell_map->begin(); dof != cell_map->end(); ++dof)
       {

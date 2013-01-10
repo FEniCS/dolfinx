@@ -191,7 +191,7 @@ boost::shared_ptr<const dolfin::Restriction> DofMap::restriction() const
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t> DofMap::ownership_range() const
 {
-  if (ownership_range().first == 0 && ownership_range().second == 0)
+  if (_ownership_range.first == 0 && _ownership_range.second == 0)
   {
     dolfin_error("DofMap.cpp",
                  "access ownership range of degree of freedom mapping",
