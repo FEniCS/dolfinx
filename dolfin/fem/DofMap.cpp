@@ -26,8 +26,8 @@
 // Last changed: 2013-01-08
 
 #include <boost/unordered_map.hpp>
-#include <boost/serialization/map.hpp>
-#include <boost/serialization/set.hpp>
+//#include <boost/serialization/map.hpp>
+//#include <boost/serialization/set.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Set.h>
@@ -47,9 +47,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
                const Mesh& dolfin_mesh)
-    : _ufc_dofmap(ufc_dofmap->create()), // TODO: Don't have to copy anymore, can assume stateless?
-    _global_dimension(0), _ufc_offset(0), _is_view(false),
-    _distributed(MPI::num_processes() > 1)
+    : _ufc_dofmap(ufc_dofmap),  _global_dimension(0), _ufc_offset(0),
+      _is_view(false)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -59,10 +58,8 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
                boost::shared_ptr<const Restriction> restriction)
-  : _ufc_dofmap(ufc_dofmap->create()), // TODO: Don't have to copy anymore, can assume stateless?
-    _restriction(restriction),
-    _global_dimension(0), _ufc_offset(0), _is_view(false),
-    _distributed(MPI::num_processes() > 1)
+  : _ufc_dofmap(ufc_dofmap), _restriction(restriction),
+    _global_dimension(0), _ufc_offset(0), _is_view(false)
 {
   dolfin_assert(_ufc_dofmap);
   dolfin_assert(_restriction);
@@ -83,10 +80,8 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& component,
-               const Mesh& mesh, bool distributed) :
-  _global_dimension(0), _ufc_offset(0),
-  _ownership_range(0, 0), _is_view(true),
-  _distributed(distributed)
+               const Mesh& mesh) : _global_dimension(0), _ufc_offset(0),
+  _ownership_range(0, 0), _is_view(true)
 {
   // Note: Ownership range is set to zero since dofmap is a view
 
@@ -155,7 +150,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
     {
       // Check for slaves and modify
       std::map<std::size_t, std::size_t>::const_iterator slave_it;
-      for (unsigned int i = 0; i < tmp_dof_holder.size(); i++)
+      for (unsigned int i = 0; i < tmp_dof_holder.size();ck i++)
       {
         const std::size_t dof = tmp_dof_holder[i];
         slave_it = _slave_master_map.find(dof);
@@ -254,11 +249,9 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
-               const DofMap& dofmap_view, const Mesh& mesh, bool distributed)
-             :
-  _ufc_dofmap(dofmap_view._ufc_dofmap->create()), // TODO: Don't have to copy anymore, can assume stateless?
-  _global_dimension(0), _ufc_offset(0),
-  _is_view(false), _distributed(distributed)
+               const DofMap& dofmap_view, const Mesh& mesh)
+   :  _ufc_dofmap(dofmap_view._ufc_dofmap), _global_dimension(0), _ufc_offset(0),
+      _is_view(false)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -279,7 +272,7 @@ DofMap::DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
 
   // Build dof map
   const bool reorder = dolfin::parameters["reorder_dofs_serial"];
-  DofMapBuilder::build(*this, mesh, _restriction, reorder, _distributed);
+  DofMapBuilder::build(*this, mesh, _restriction, reorder);
 
   // Dimension checks
   dolfin_assert(dofmap_view._dofmap.size() == mesh.num_cells());
@@ -306,7 +299,7 @@ DofMap::DofMap(const DofMap& dofmap)
 {
   // Copy data
   _dofmap = dofmap._dofmap;
-  _ufc_dofmap.reset(dofmap._ufc_dofmap->create()); // TODO: Don't have to copy anymore, can assume stateless?
+  _ufc_dofmap = dofmap._ufc_dofmap;
   ufc_map_to_dofmap = dofmap.ufc_map_to_dofmap;
   _global_dimension = dofmap._global_dimension;
   _ufc_offset = dofmap._ufc_offset;
@@ -315,7 +308,6 @@ DofMap::DofMap(const DofMap& dofmap)
   _shared_dofs = dofmap._shared_dofs;
   _neighbours = dofmap._neighbours;
   _is_view = dofmap. _is_view;
-  _distributed = dofmap._distributed;
   _slave_master_map = dofmap._slave_master_map;
   _master_processes = dofmap._master_processes;
 }
@@ -444,13 +436,13 @@ boost::shared_ptr<GenericDofMap> DofMap::build(const Mesh& new_mesh) const
 DofMap* DofMap::extract_sub_dofmap(const std::vector<std::size_t>& component,
                                    const Mesh& mesh) const
 {
-  return new DofMap(*this, component, mesh, _distributed);
+  return new DofMap(*this, component, mesh);
 }
 //-----------------------------------------------------------------------------
 DofMap* DofMap::collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
                          const Mesh& mesh) const
 {
-  return new DofMap(collapsed_map, *this, mesh, _distributed);
+  return new DofMap(collapsed_map, *this, mesh);
 }
 //-----------------------------------------------------------------------------
 void DofMap::set(GenericVector& x, double value) const
@@ -508,13 +500,14 @@ void DofMap::build_common(const Mesh& dolfin_mesh)
   }
 
   // Generate and number all mesh entities
+  const bool distributed = MPI::num_processes() > 1;
   const std::size_t D = dolfin_mesh.topology().dim();
   for (std::size_t d = 1; d <= D; ++d)
   {
-    if (_ufc_dofmap->needs_mesh_entities(d) || (_distributed && d == (D - 1)))
+    if (_ufc_dofmap->needs_mesh_entities(d) || (distributed && d == (D - 1)))
     {
       dolfin_mesh.init(d);
-      if (_distributed)
+      if (distributed)
         MeshDistributed::number_entities(dolfin_mesh, d);
     }
   }
@@ -524,8 +517,7 @@ void DofMap::build_common(const Mesh& dolfin_mesh)
 
   // Build dof map
   const bool reorder = dolfin::parameters["reorder_dofs_serial"];
-  DofMapBuilder::build(*this, dolfin_mesh, _restriction,
-                       reorder, _distributed);
+  DofMapBuilder::build(*this, dolfin_mesh, _restriction, reorder);
 }
 //-----------------------------------------------------------------------------
 ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
@@ -599,7 +591,7 @@ ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
   }
 }
 //-----------------------------------------------------------------------------
-void DofMap::check_provided_entities(ufc::dofmap& dofmap,
+void DofMap::check_provided_entities(const ufc::dofmap& dofmap,
                                      const Mesh& dolfin_mesh)
 {
   // Check that we have all mesh entities

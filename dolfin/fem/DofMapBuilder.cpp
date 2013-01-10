@@ -50,8 +50,7 @@ using namespace dolfin;
 void DofMapBuilder::build(DofMap& dofmap,
                           const Mesh& dolfin_mesh,
                           boost::shared_ptr<const Restriction> restriction,
-                          bool reorder,
-                          bool distributed)
+                          bool reorder)
 {
   // Start timer for dofmap initialization
   Timer t0("Init dofmap");
@@ -125,7 +124,7 @@ void DofMapBuilder::build(DofMap& dofmap,
     dofmap._global_dimension = dofmap._ufc_dofmap->global_dimension(num_global_mesh_entities);
 
   // Build (re-order) dofmap when running in parallel
-  if (distributed)
+  if (MPI::num_processes() > 1)
   {
     // Build set of global dofs
     set global_dofs = compute_global_dofs(dofmap, dolfin_mesh);
