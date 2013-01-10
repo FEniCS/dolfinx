@@ -69,10 +69,6 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
    PeriodicDomain::compute_periodic_facet_pairs(const Mesh& mesh,
                                                 const SubDomain& sub_domain)
 {
-  //error("PeriodicDomain::compute_periodic_facet_pairs is under development");
-
-  #ifdef HAS_MPI
-
   // Get topological and geometric dimensions
   const std::size_t gdim = mesh.geometry().dim();
   const std::size_t tdim = mesh.topology().dim();
@@ -90,18 +86,15 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
   Array<double> _x(gdim, x.data());
   Array<double> _y(gdim, y.data());
 
-  //typedef std::map<std::vector<double>, dof_pair, lt_coordinate> coordinate_map;
-
-  //std::vector<std::size_t> master_facets;
   std::vector<std::size_t> slave_facets;
   std::vector<std::vector<double> > slave_mapped_midpoints;
 
-  // Min/max coordinates of facet midpoints [min_x, max_x]. Used to build
-  // bounding box of all master facet midpoints on this process
+  // Min/max coordinates of facet midpoints [min_x, max_x]. Used to
+  // build bounding box of all master facet midpoints on this process
   std::vector<double> x_min_max;
 
+  // Map from master facet midpoint coordinate to local facet index
   std::map<std::vector<double>, std::size_t, lt_coordinate> master_midpoint_to_facet_index;
-  //std::map<std::vector<double>, std::size_t, lt_coordinate> slave_midpoint_to_master_facet_index;
 
   // Iterate over facets to find master/slave facets
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
@@ -109,19 +102,15 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
     if (!facet->exterior())
       continue;
 
-    // Get mid-side of vertex
+    // Get midpoint of facet
     const Point midpoint = facet->midpoint();
     std::copy(midpoint.coordinates(), midpoint.coordinates() + gdim,
               x.begin());
 
-    //cout << "x_mid: " << x[0] << ", " << x[1] << ", " << x[2] << endl;
-
     // Check if facet lies on a 'master' or 'slave' boundary
     if (sub_domain.inside(_x, true))
     {
-      //cout << "Got a master facet" << endl;
-
-      // Build bounding box data for master facet
+      // Build bounding box data for master facet midpoints
       if (x_min_max.empty())
       {
         x_min_max = x;
@@ -132,20 +121,19 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
        x_min_max[i]        = std::min(x_min_max[i], x[i]);
        x_min_max[i + gdim] = std::max(x_min_max[i + gdim], x[i]);
       }
+
+      // Insert (midpoint coordinates, local index) into map
       master_midpoint_to_facet_index.insert(std::make_pair(x, facet->index()));
     }
     else
     {
-      // Get midpoint (y) of slave facet
+      // Get mapped midpoint (y) of slave facet
       sub_domain.map(_x, _y);
-
-      //cout << "y    : " << y[0] << ", " << y[1] << ", " << y[2] << endl;
 
       // Check if facet lies on a 'slave' boundary
       if (sub_domain.inside(_y, true))
       {
-        // Insert (slave midpoint coordinate, master local facet index) into map
-        //cout << "--Insert slave y: " << y[0] << ", " << y[1] << ", " << y[2] << endl;
+        // Store slave local index and midpoint coordinates
         slave_facets.push_back(facet->index());
         slave_mapped_midpoints.push_back(y);
       }
@@ -153,20 +141,15 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
     }
   }
 
-  //cout << "*** Number of slave facets: " << slave_facets.size() << endl;
-
-  //cout << "Bounding box:" << endl;
-  //for (std::size_t i = 0; i < x_min_max.size(); ++i)
-  //  cout << x_min_max[i] << endl;
-
   // Communicate bounding boxes for master facets
   std::vector<std::vector<double> > bounding_boxes;
   MPI::all_gather(x_min_max, bounding_boxes);
 
+  // Number of MPI processes
   std::size_t num_processes = MPI::num_processes();
 
-  // Build send buffer of slave midpoint coordinate to processes that
-  // may own the master facet
+  // Build send buffer of mapped slave midpoint coordinate to processes
+  // that may own the master facet
   std::vector<std::vector<double> > slave_mapped_midpoints_send(num_processes);
   std::vector<std::vector<std::size_t> > sent_slave_indices(num_processes);
   for (std::size_t i = 0; i < slave_facets.size(); ++i)
@@ -174,67 +157,28 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
     //cout << "Going over facet: " << i << ", " << slave_facets.size() << endl;
     for (std::size_t p = 0; p < num_processes; ++p)
     {
-      //cout << "About to check bb for point: " << slave_mapped_midpoints[i][0] << ", "  << slave_mapped_midpoints[i][1] << endl;
+      // Slave mapped midpoints from process p
       std::vector<double>& slave_mapped_midpoints_send_p = slave_mapped_midpoints_send[p];
 
-      //cout << "Bounding box:" << p << endl;
-      //for (std::size_t j = 0; j < bounding_boxes[p].size(); ++j)
-      //  cout << bounding_boxes[p][j] << endl;
-
-      //cout << "Point to check:" << endl;
-      //cout << slave_mapped_midpoints[i][0] << ", " << slave_mapped_midpoints[i][1]  << endl;
-
-      //cout << "x: " << slave_mapped_midpoints[i][0] << ", " << slave_mapped_midpoints[i][1] << ", " << slave_mapped_midpoints[i][2] << endl;
+      // Check if mapped slave falls within master facet bounding box
+      // on process p
       if (in_bounding_box(slave_mapped_midpoints[i], bounding_boxes[p]))
       {
-        //cout << "!!! Slave facet might be on process " << p << endl;
         sent_slave_indices[p].push_back(slave_facets[i]);
         slave_mapped_midpoints_send_p.insert(slave_mapped_midpoints_send_p.end(),
-                                 slave_mapped_midpoints[i].begin(),
-                                 slave_mapped_midpoints[i].end());
-      }
-      else
-      {
-        /*
-        cout << "??? Slave facet cannot be on process " << p << endl;
-        if (!bounding_boxes[p].empty())
-        {
-          cout << "bb: " << bounding_boxes[p][0] << ", " <<
-                            bounding_boxes[p][1] << ", " <<
-                            bounding_boxes[p][2] << ", " <<
-                            bounding_boxes[p][3] << ", " <<
-                            bounding_boxes[p][4] << ", " <<
-                            bounding_boxes[p][5] << endl;
-        }
-        else
-          cout << "Empty bb" << endl;
-        */
+                                             slave_mapped_midpoints[i].begin(),
+                                             slave_mapped_midpoints[i].end());
       }
     }
   }
 
-  //for (std::size_t p = 0; p < slave_mapped_midpoints_send.size(); ++p)
-  //{
-  //  cout << "Size of slave mid-point data to send to proc " << p
-  //      << ": " << slave_mapped_midpoints_send[p].size() << endl;
-  //}
-
-  /*
-  std::map<std::vector<double>, std::size_t, lt_coordinate>::const_iterator it;
-  for (it = slave_midpoint_to_master_facet_index.begin();
-      it != slave_midpoint_to_master_facet_index.end(); ++it)
-  {
-    cout << "*** Map: " << (it->first)[0] << ", " << (it->first)[1] << ", " << it->second << endl;
-  }
-  */
-
   // Communicator
-  MPICommunicator mpi_comm;
-  boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_attach);
+  //MPICommunicator mpi_comm;
+  //boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_attach);
 
   // Send slave midpoints to possible owners of correspoding master facet
   std::vector<std::vector<double> > slave_mapped_midpoints_recv;
-  boost::mpi::all_to_all(comm, slave_mapped_midpoints_send, slave_mapped_midpoints_recv);
+  MPI::all_to_all(slave_mapped_midpoints_send, slave_mapped_midpoints_recv);
   dolfin_assert(slave_mapped_midpoints_recv.size() == num_processes);
 
   //for (std::size_t p = 0; p < slave_mapped_midpoints_recv.size(); ++p)
@@ -279,7 +223,7 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
 
   // Send local index of master facet back to owner of slave facet
   std::vector<std::vector<std::size_t> > master_facet_local_index_recv;
-  boost::mpi::all_to_all(comm, master_local_facet,  master_facet_local_index_recv);
+  MPI::all_to_all(master_local_facet,  master_facet_local_index_recv);
 
   // Build map from slave facets on this process to master facet (local facet index, process owner)
   std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facet;
@@ -323,7 +267,6 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
   }
 
   return slave_to_master_facet;
-  #endif
 }
 //-----------------------------------------------------------------------------
 bool PeriodicDomain::in_bounding_box(const std::vector<double>& point,
