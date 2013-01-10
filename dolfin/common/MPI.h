@@ -142,6 +142,24 @@ namespace dolfin
     // FIXME: The mother of all MPI calls! It does everything anyone would ever
     //        need to do with MPI... :-)
 
+    /// Send in_values[p0] to process p0 and receive values from process
+    /// p1 in out_values[p1]
+    template<typename T>
+    static void all_to_all(const std::vector<std::vector<T> >& in_values,
+                           std::vector<std::vector<T> >& out_values)
+    {
+      #ifdef HAS_MPI
+      MPICommunicator mpi_comm;
+      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_attach);
+      boost::mpi::all_to_all(comm, in_values, out_values);
+      #else
+      dolfin_assert(in_values.size() == 1);
+      out_values = in_values;
+      #endif
+
+    }
+
+
     /// Distribute local arrays on all processors according to given
     /// partition
     template<typename T, typename S>
@@ -427,7 +445,7 @@ namespace dolfin
     const unsigned int num_processes  = MPI::num_processes();
     const unsigned int process_number = MPI::process_number();
 
-    // Require that size of destination matches number of processes 
+    // Require that size of destination matches number of processes
     dolfin_assert(in_values.size() == num_processes);
 
     // Resize out_values and sources

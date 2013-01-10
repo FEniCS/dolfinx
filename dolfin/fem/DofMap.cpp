@@ -150,6 +150,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
     for (unsigned int i=0; i < tmp_dof_holder.size(); i++)
       tmp_dof_holder[i] += offset;
 
+    /*
     if (mesh.is_periodic() && !_slave_master_map.empty())
     {
       // Check for slaves and modify
@@ -165,9 +166,11 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
         }
       }
     }
+    */
     std::copy(tmp_dof_holder.begin(), tmp_dof_holder.end(), _dofmap[cell_index].begin());
   }
 
+  /*
   if (mesh.is_periodic() && !_slave_master_map.empty())
   {
     // Periodic meshes need to renumber UFC-numbered dofs due to elimination of slave dofs
@@ -203,6 +206,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
 
   }
   else
+  */
   {
     // Set global dimension
     _global_dimension = _ufc_dofmap->global_dimension(num_global_mesh_entities);
