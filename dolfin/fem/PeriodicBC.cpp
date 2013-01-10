@@ -399,10 +399,10 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& V,
     dofmap.tabulate_coordinates(data.coordinates, cell);
 
     // Tabulate which dofs are on the facet
-    dofmap.tabulate_facet_dofs(&data.facet_dofs[0], local_facet);
+    dofmap.tabulate_facet_dofs(data.facet_dofs, local_facet);
 
     // Iterate over facet dofs
-    for (std::size_t i = 0; i < dofmap.num_facet_dofs(); ++i)
+    for (std::size_t i = 0; i < data.facet_dofs.size(); ++i)
     {
       // Get dof and coordinate of dof
       const std::size_t local_dof = data.facet_dofs[i];

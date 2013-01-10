@@ -462,7 +462,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
       const std::vector<dolfin::la_index>& cell_dofs = dofmap.cell_dofs(c.index());
 
       // Tabulate which dofs are on the facet
-      dofmap.tabulate_facet_dofs(&facet_dofs[0], c.index(f));
+      dofmap.tabulate_facet_dofs(facet_dofs, c.index(f));
 
       // Insert shared dofs into set and assign a 'vote'
       for (std::size_t i = 0; i < dofmap.num_facet_dofs(); i++)
@@ -966,7 +966,7 @@ void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
         const Cell cell(mesh, facet.entities(tdim)[0]);
         const std::vector<dolfin::la_index> global_dofs = dofmap.cell_dofs(cell.index());
         dofmap.tabulate_coordinates(facet_coors, cell);
-        dofmap.tabulate_facet_dofs(&facet_dofs[0], cell.index(facet));
+        dofmap.tabulate_facet_dofs(facet_dofs, cell.index(facet));
         communicating_processors.insert(master_process);
 
         std::vector<std::vector<double> > coors_of_dofs;

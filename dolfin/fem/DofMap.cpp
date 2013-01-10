@@ -109,17 +109,17 @@ DofMap::DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
   // Check dimensional consistency between UFC dofmap and the mesh
   check_provided_entities(*_ufc_dofmap, mesh);
 
-  // Build dof map
+  // Build new dof map
   const std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facets;
   DofMapBuilder::build(*this, mesh, _restriction, slave_to_master_facets);
 
-  // Dimension checks
+  // Dimension sanity checks
   dolfin_assert(dofmap_view._dofmap.size() == mesh.num_cells());
   dolfin_assert(global_dimension() == dofmap_view.global_dimension());
   dolfin_assert(_dofmap.size() == mesh.num_cells());
 
-  // FIXME: Could we use a std::vector instead of std::map if the collapsed
-  //        dof map is contiguous (0, . . . , n)?
+  // FIXME: Could we use a std::vector instead of std::map if the
+  //        collapsed dof map is contiguous (0, . . . , n)?
 
   // Build map from collapsed dof index to original dof index
   collapsed_map.clear();
@@ -216,10 +216,12 @@ const std::set<std::size_t>& DofMap::neighbours() const
   return _neighbours;
 }
 //-----------------------------------------------------------------------------
-void DofMap::tabulate_facet_dofs(std::size_t* dofs, std::size_t local_facet) const
+void DofMap::tabulate_facet_dofs(std::vector<std::size_t>& dofs,
+                                 std::size_t local_facet) const
 {
   dolfin_assert(_ufc_dofmap);
-  _ufc_dofmap->tabulate_facet_dofs(dofs, local_facet);
+  dofs.resize(_ufc_dofmap->num_facet_dofs());
+  _ufc_dofmap->tabulate_facet_dofs(dofs.data(), local_facet);
 }
 //-----------------------------------------------------------------------------
 void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
