@@ -87,11 +87,7 @@ namespace dolfin
     DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
            const DofMap& dofmap_view, const Mesh& mesh);
 
-    /// Copy constructor
-    ///
-    /// *Arguments*
-    ///     dofmap (_DofMap_)
-    ///         The object to be copied.
+    // Copy constructor
     DofMap(const DofMap& dofmap);
 
   public:
@@ -106,7 +102,7 @@ namespace dolfin
     ///         True if the dof map is a sub-dof map (a view into
     ///         another map).
     bool is_view() const
-    { return _is_view; }
+    { return _ownership_range.first == 0 && _ownership_range.second == 0; }
 
     /// True iff dof map is restricted
     ///
@@ -352,12 +348,6 @@ namespace dolfin
     // Friends
     friend class DofMapBuilder;
 
-    // Recursively extract UFC sub-dofmap and compute offset
-    static ufc::dofmap* extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
-                                               std::size_t& offset,
-                                               const std::vector<std::size_t>& component,
-                                               const Mesh& mesh);
-
     // Check dimensional consistency between UFC dofmap and the mesh
     static void check_dimensional_consistency(const ufc::dofmap& dofmap,
                                               const Mesh& mesh);
@@ -378,14 +368,16 @@ namespace dolfin
     // Restriction, pointer zero if not restricted
     boost::shared_ptr<const Restriction> _restriction;
 
-    // Global dimension. Note that this may differ from the global dimension
-    // of the UFC dofmap if the function space is restricted or periodic.
+    // Global dimension. Note that this may differ from the global
+    // dimension of the UFC dofmap if the function space is restricted
+    // or periodic.
     std::size_t _global_dimension;
 
     // UFC dof map offset
     std::size_t _ufc_offset;
 
-    // Ownership range (dofs in this range are owned by this process)
+    // Ownership range (dofs in this range are owned by this process). Set
+    // to (0, 0) if dofmap is a view
     std::pair<std::size_t, std::size_t> _ownership_range;
 
     // Owner (process) of dofs in local dof map that do not belong to
@@ -398,14 +390,11 @@ namespace dolfin
     // Neighbours (processes that we share dofs with)
     std::set<std::size_t> _neighbours;
 
-    // True iff sub-dofmap (a view, i.e. not collapsed)
-    bool _is_view;
-
     // Map from slave dofs to master dofs using UFC numbering
-    std::map<std::size_t, std::size_t> _slave_master_map;
+    //std::map<std::size_t, std::size_t> _slave_master_map;
 
     // Map of processes that share master dofs (used by compute_ownership)
-    std::map<std::size_t, boost::unordered_set<std::size_t> > _master_processes;
+    //std::map<std::size_t, boost::unordered_set<std::size_t> > _master_processes;
 
   };
 }

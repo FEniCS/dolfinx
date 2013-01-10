@@ -85,6 +85,14 @@ namespace dolfin
                       boost::shared_ptr<const Restriction> restriction,
                       bool reorder);
 
+
+    // Build dofmap. The restriction may be a null pointer in which
+    // case it is ignored.
+    static void build_sub_map(DofMap& sub_dofmap,
+                              const DofMap& parent_dofmap,
+                              const std::vector<std::size_t>& component,
+                              const Mesh& mesh);
+
   private:
 
     // Build distributed dof map
@@ -134,6 +142,13 @@ namespace dolfin
     // Make all necessary modifications to dofmap due to periodicity of the mesh
     static void periodic_modification(DofMap& dofmap, const Mesh& dolfin_mesh,
       DofMapBuilder::set& global_dofs);
+
+    // Recursively extract UFC sub-dofmap and compute offset
+    static ufc::dofmap* extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
+                                               std::size_t& offset,
+                                               const std::vector<std::size_t>& component,
+                                               const Mesh& mesh);
+
   };
 }
 

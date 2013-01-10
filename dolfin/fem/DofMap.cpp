@@ -45,8 +45,10 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   const Mesh& mesh) : _ufc_dofmap(ufc_dofmap),  _global_dimension(0),
-  _ufc_offset(0), _is_view(false)
+  _ufc_offset(0)
 {
+  dolfin_assert(_ufc_dofmap);
+
   // Call dofmap builder
   const std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facets;
   DofMapBuilder::build(*this, mesh, _restriction, slave_to_master_facets);
@@ -55,7 +57,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
                boost::shared_ptr<const Restriction> restriction)
   : _ufc_dofmap(ufc_dofmap), _restriction(restriction), _global_dimension(0),
-    _ufc_offset(0), _is_view(false)
+    _ufc_offset(0)
 {
   dolfin_assert(_ufc_dofmap);
   dolfin_assert(_restriction);
@@ -77,180 +79,18 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap,
-               const std::vector<std::size_t>& component,
-  const Mesh& mesh) : _global_dimension(0), _ufc_offset(0),
-  _ownership_range(0, 0), _is_view(true)
+  const std::vector<std::size_t>& component, const Mesh& mesh)
+  : _global_dimension(0), _ufc_offset(0), _ownership_range(0, 0)
 {
   // Note: Ownership range is set to zero since dofmap is a view
 
-  dolfin_assert(!component.empty());
-
-  // Store global mesh entity dimensions in vector
-  std::vector<std::size_t> num_global_mesh_entities(mesh.topology().dim() + 1);
-  for (std::size_t d = 0; d < num_global_mesh_entities.size(); d++)
-    num_global_mesh_entities[d] = mesh.size_global(d);
-
-  // Initialise offset from parent
-  std::size_t offset = parent_dofmap._ufc_offset;
-
-  // Get parent UFC dof map
-  const ufc::dofmap& parent_ufc_dofmap = *(parent_dofmap._ufc_dofmap);
-
-  // Extract ufc sub-dofmap from parent and get offset
-  _ufc_dofmap.reset(extract_ufc_sub_dofmap(parent_ufc_dofmap, offset,
-                                           component, mesh));
-  dolfin_assert(_ufc_dofmap);
-
-  // Check for dimensional consistency between the dofmap and mesh
-  check_dimensional_consistency(*_ufc_dofmap, mesh);
-
-  // Set UFC offset
-  this->_ufc_offset = offset;
-
-  // Check dimensional consistency between UFC dofmap and the mesh
-  check_provided_entities(*_ufc_dofmap, mesh);
-
-  // Resize dofmap data structure
-  _dofmap.resize(mesh.num_cells());
-
-  // Set to hold slave dofs on current processor
-  std::set<std::size_t> slave_dofs;
-
-  // Store original _slave_master_map on this sub_dofmap
-  _slave_master_map = parent_dofmap._slave_master_map;
-
-  // Holder for copying UFC std::size_t dof maps into the a dof map that
-  // is consistent with the linear algebra backend
-  std::vector<std::size_t> tmp_dof_holder;
-
-  // Build sub-map based on UFC dofmap
-  UFCCell ufc_cell(mesh);
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    const std::size_t cell_index = cell->index();
-
-    // Update to current cell
-    ufc_cell.update(*cell);
-
-    // Resize list for cell
-    _dofmap[cell_index].resize(_ufc_dofmap->local_dimension(ufc_cell));
-    tmp_dof_holder.resize(_ufc_dofmap->local_dimension(ufc_cell));
-
-    // Tabulate sub-dofs on cell (using UFC map)
-    _ufc_dofmap->tabulate_dofs(&tmp_dof_holder[0], num_global_mesh_entities, ufc_cell);
-
-    // Add UFC offset
-    for (unsigned int i=0; i < tmp_dof_holder.size(); i++)
-      tmp_dof_holder[i] += offset;
-
-    /*
-    if (mesh.is_periodic() && !_slave_master_map.empty())
-    {
-      // Check for slaves and modify
-      std::map<std::size_t, std::size_t>::const_iterator slave_it;
-      for (unsigned int i = 0; i < tmp_dof_holder.size();ck i++)
-      {
-        const std::size_t dof = tmp_dof_holder[i];
-        slave_it = _slave_master_map.find(dof);
-        if (slave_it != _slave_master_map.end())
-        {
-          tmp_dof_holder[i] = slave_it->second; // Replace slave with master
-          slave_dofs.insert(slave_it->first);
-        }
-      }
-    }
-    */
-    std::copy(tmp_dof_holder.begin(), tmp_dof_holder.end(), _dofmap[cell_index].begin());
-  }
-
-  /*
-  if (mesh.is_periodic() && !_slave_master_map.empty())
-  {
-    // Periodic meshes need to renumber UFC-numbered dofs due to elimination of slave dofs
-    // For faster search get a vector of all slaves on parent dofmap (or parent of parent, aka the owner)
-    std::vector<std::size_t> parent_slaves;
-    for (std::map<std::size_t, std::size_t>::const_iterator it = _slave_master_map.begin();
-                              it != _slave_master_map.end(); ++it)
-    {
-      parent_slaves.push_back(it->first);
-    }
-
-    std::vector<std::size_t>::iterator it;
-    std::vector<std::vector<dolfin::la_index> >::iterator cell_map;
-    std::vector<dolfin::la_index>::iterator dof;
-    for (cell_map = _dofmap.begin(); cell_map != _dofmap.end(); ++cell_map)
-    {
-      for (dof = cell_map->begin(); dof != cell_map->end(); ++dof)
-      {
-        it = std::lower_bound(parent_slaves.begin(), parent_slaves.end(), *dof);
-        *dof -= std::size_t(it - parent_slaves.begin());
-      }
-    }
-
-    // Reduce the local slaves onto all processes to eliminate duplicates
-    std::vector<std::set<std::size_t> > all_slave_dofs;
-    MPI::all_gather(slave_dofs, all_slave_dofs);
-    for (std::size_t i = 0; i < all_slave_dofs.size(); i++)
-      if (i != MPI::process_number())
-        slave_dofs.insert(all_slave_dofs[i].begin(), all_slave_dofs[i].end());
-
-    // Set global dimension
-    _global_dimension = _ufc_dofmap->global_dimension(num_global_mesh_entities) - slave_dofs.size();
-
-  }
-  else
-  */
-  {
-    // Set global dimension
-    _global_dimension = _ufc_dofmap->global_dimension(num_global_mesh_entities);
-  }
-
-  // Modify dofmap for non-UFC numbering
-  ufc_map_to_dofmap.clear();
-  _off_process_owner.clear();
-  _shared_dofs.clear();
-  _neighbours.clear();
-  if (!parent_dofmap.ufc_map_to_dofmap.empty())
-  {
-    boost::unordered_map<std::size_t, std::size_t>::const_iterator ufc_to_current_dof;
-    std::vector<std::vector<dolfin::la_index> >::iterator cell_map;
-    std::vector<dolfin::la_index>::iterator dof;
-    for (cell_map = _dofmap.begin(); cell_map != _dofmap.end(); ++cell_map)
-    {
-      for (dof = cell_map->begin(); dof != cell_map->end(); ++dof)
-      {
-        // Get dof index
-        ufc_to_current_dof = parent_dofmap.ufc_map_to_dofmap.find(*dof);
-        dolfin_assert(ufc_to_current_dof != parent_dofmap.ufc_map_to_dofmap.end());
-
-        // Add to ufc-to-current dof map
-        ufc_map_to_dofmap.insert(*ufc_to_current_dof);
-
-        // Set dof index
-        *dof = ufc_to_current_dof->second;
-
-        // Add to off-process dof owner map
-        boost::unordered_map<std::size_t, std::size_t>::const_iterator
-          parent_off_proc = parent_dofmap._off_process_owner.find(*dof);
-        if (parent_off_proc != parent_dofmap._off_process_owner.end())
-          _off_process_owner.insert(*parent_off_proc);
-
-        // Add to shared-dof process map, and update the set of neighbours
-        boost::unordered_map<std::size_t, std::vector<std::size_t> >::const_iterator parent_shared = parent_dofmap._shared_dofs.find(*dof);
-        if (parent_shared != parent_dofmap._shared_dofs.end())
-        {
-          _shared_dofs.insert(*parent_shared);
-          _neighbours.insert(parent_shared->second.begin(), parent_shared->second.end());
-        }
-      }
-    }
-  }
+  // Build sub-dofmap
+  DofMapBuilder::build_sub_map(*this, parent_dofmap, component, mesh);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
                const DofMap& dofmap_view, const Mesh& mesh)
-   :  _ufc_dofmap(dofmap_view._ufc_dofmap), _global_dimension(0), _ufc_offset(0),
-      _is_view(false)
+   :  _ufc_dofmap(dofmap_view._ufc_dofmap), _global_dimension(0), _ufc_offset(0)
 {
   dolfin_assert(_ufc_dofmap);
 
@@ -306,9 +146,8 @@ DofMap::DofMap(const DofMap& dofmap)
   _off_process_owner = dofmap._off_process_owner;
   _shared_dofs = dofmap._shared_dofs;
   _neighbours = dofmap._neighbours;
-  _is_view = dofmap. _is_view;
-  _slave_master_map = dofmap._slave_master_map;
-  _master_processes = dofmap._master_processes;
+  //_slave_master_map = dofmap._slave_master_map;
+  //_master_processes = dofmap._master_processes;
 }
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()
@@ -352,7 +191,7 @@ boost::shared_ptr<const dolfin::Restriction> DofMap::restriction() const
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t> DofMap::ownership_range() const
 {
-  if (is_view())
+  if (ownership_range().first == 0 && ownership_range().second == 0)
   {
     dolfin_error("DofMap.cpp",
                  "access ownership range of degree of freedom mapping",
@@ -472,77 +311,6 @@ void DofMap::set_x(GenericVector& x, double value, std::size_t component,
 
     // Set x[component] values in vector
     x.set(x_values.data(), dofs.size(), dofs.data());
-  }
-}
-//-----------------------------------------------------------------------------
-ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
-                                            std::size_t& offset,
-                                            const std::vector<std::size_t>& component,
-                                            const Mesh& mesh)
-{
-  // Check if there are any sub systems
-  if (ufc_dofmap.num_sub_dofmaps() == 0)
-  {
-    dolfin_error("DofMap.cpp",
-                 "extract subsystem of degree of freedom mapping",
-                 "There are no subsystems");
-  }
-
-  // Check that a sub system has been specified
-  if (component.empty())
-  {
-    dolfin_error("DofMap.cpp",
-                 "extract subsystem of degree of freedom mapping",
-                 "No system was specified");
-  }
-
-  // Check the number of available sub systems
-  if (component[0] >= ufc_dofmap.num_sub_dofmaps())
-  {
-    dolfin_error("DofMap.cpp",
-                 "extract subsystem of degree of freedom mapping",
-                 "Requested subsystem (%d) out of range [0, %d)",
-                 component[0], ufc_dofmap.num_sub_dofmaps());
-  }
-
-  // Store global entity dimensions in vector
-  std::vector<std::size_t> num_global_mesh_entities(mesh.topology().dim() + 1);
-  for (std::size_t d = 0; d < num_global_mesh_entities.size(); d++)
-    num_global_mesh_entities[d] = mesh.size_global(d);
-
-  // Add to offset if necessary
-  for (std::size_t i = 0; i < component[0]; i++)
-  {
-    // Extract sub dofmap
-    boost::scoped_ptr<ufc::dofmap> ufc_tmp_dofmap(ufc_dofmap.create_sub_dofmap(i));
-    dolfin_assert(ufc_tmp_dofmap);
-
-    // Check dimensional consistency between UFC dofmap and the mesh
-    check_dimensional_consistency(ufc_dofmap, mesh);
-
-    // Get offset
-    offset += ufc_tmp_dofmap->global_dimension(num_global_mesh_entities);
-  }
-
-  // Create UFC sub-system
-  ufc::dofmap* sub_dofmap = ufc_dofmap.create_sub_dofmap(component[0]);
-  dolfin_assert(sub_dofmap);
-
-  // Return sub-system if sub-sub-system should not be extracted, otherwise
-  // recursively extract the sub sub system
-  if (component.size() == 1)
-    return sub_dofmap;
-  else
-  {
-    std::vector<std::size_t> sub_component;
-    for (std::size_t i = 1; i < component.size(); ++i)
-      sub_component.push_back(component[i]);
-
-    ufc::dofmap* sub_sub_dofmap = extract_ufc_sub_dofmap(*sub_dofmap, offset,
-                                                         sub_component,
-                                                         mesh);
-    delete sub_dofmap;
-    return sub_sub_dofmap;
   }
 }
 //-----------------------------------------------------------------------------
