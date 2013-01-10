@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2013-01-02
-// Last Changed: 2013-01-09
+// Last Changed: 2013-01-10
 
 #include <boost/unordered_map.hpp>
 
@@ -44,9 +44,9 @@ namespace dolfin
     // Communicate new vertices with MPI to all affected processes.
     void create_new_vertices(const EdgeFunction<bool>& markedEdges);
 
-    // Mapping of old global edge (to be removed) to new global vertex number.
+    // Mapping of old edge (to be removed) to new global vertex number.
     // Useful for forming new topology
-    std::map<std::size_t, std::size_t>& global_edge_to_new_vertex();
+    std::map<std::size_t, std::size_t>& edge_to_new_vertex();
 
     // New vertex coordinates after adding vertices given by marked edges.
     std::vector<double>& vertex_coordinates();
@@ -62,14 +62,15 @@ namespace dolfin
     
   private:
     
-    // storage for mapping shared edge indices global->local
-    boost::unordered_map<std::size_t, std::size_t> _global_to_local;
-    // shared edges between processes. In 2D, set size is 1
+    // shared edges between processes. In 2D, vector size is 1
     boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > > _shared_edges;
-    // mapping from old global edge to new global vertex, needed to create new topology
-    std::map<std::size_t, std::size_t> _global_edge_to_new_vertex;
+
+    // mapping from old local edge index to new global vertex, needed to create new topology
+    std::map<std::size_t, std::size_t> local_edge_to_new_vertex;
+
     // new storage for all coordinates when creating new vertices
     std::vector<double> new_vertex_coordinates;
+
     // new storage for all cells when creating new topology
     std::vector<std::size_t> new_cell_topology;
     

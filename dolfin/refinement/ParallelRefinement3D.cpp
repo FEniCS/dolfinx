@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2012-12-19
-// Last Changed: 2013-01-02
+// Last Changed: 2013-01-10
 
 #include <vector>
 #include <map>
@@ -74,7 +74,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
   // Mark all edges, and create new vertices
   EdgeFunction<bool> markedEdges(mesh, true);
   p.create_new_vertices(markedEdges);
-  std::map<std::size_t, std::size_t>& global_edge_to_new_vertex = p.global_edge_to_new_vertex();
+  std::map<std::size_t, std::size_t>& edge_to_new_vertex = p.edge_to_new_vertex();
   
   // Generate new topology
 
@@ -87,12 +87,12 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
     const std::size_t v1 = v[1].global_index();
     const std::size_t v2 = v[2].global_index();
     const std::size_t v3 = v[3].global_index();
-    const std::size_t e0 = global_edge_to_new_vertex[e[0].global_index()];
-    const std::size_t e1 = global_edge_to_new_vertex[e[1].global_index()];
-    const std::size_t e2 = global_edge_to_new_vertex[e[2].global_index()];
-    const std::size_t e3 = global_edge_to_new_vertex[e[3].global_index()];
-    const std::size_t e4 = global_edge_to_new_vertex[e[4].global_index()];
-    const std::size_t e5 = global_edge_to_new_vertex[e[5].global_index()];
+    const std::size_t e0 = edge_to_new_vertex[e[0].index()];
+    const std::size_t e1 = edge_to_new_vertex[e[1].index()];
+    const std::size_t e2 = edge_to_new_vertex[e[2].index()];
+    const std::size_t e3 = edge_to_new_vertex[e[3].index()];
+    const std::size_t e4 = edge_to_new_vertex[e[4].index()];
+    const std::size_t e5 = edge_to_new_vertex[e[5].index()];
 
     //mostly duplicated from TetrahedronCell.cpp
 

@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2012-12-19
-// Last Changed: 2013-01-02
+// Last Changed: 2013-01-10
 
 #include <vector>
 #include <map>
@@ -101,7 +101,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh)
   // Mark all edges, and create new vertices
   EdgeFunction<bool> markedEdges(mesh, true);
   p.create_new_vertices(markedEdges);
-  std::map<std::size_t, std::size_t>& global_edge_to_new_vertex = p.global_edge_to_new_vertex();
+  std::map<std::size_t, std::size_t>& edge_to_new_vertex = p.edge_to_new_vertex();
   
   // Generate new topology
 
@@ -113,9 +113,9 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh)
     const std::size_t v0 = v[0].global_index();
     const std::size_t v1 = v[1].global_index();
     const std::size_t v2 = v[2].global_index();
-    const std::size_t e0 = global_edge_to_new_vertex[e[0].global_index()];
-    const std::size_t e1 = global_edge_to_new_vertex[e[1].global_index()];
-    const std::size_t e2 = global_edge_to_new_vertex[e[2].global_index()];
+    const std::size_t e0 = edge_to_new_vertex[e[0].index()];
+    const std::size_t e1 = edge_to_new_vertex[e[1].index()];
+    const std::size_t e2 = edge_to_new_vertex[e[2].index()];
 
     p.new_cell(v0, e2, e1);
     p.new_cell(e2, v1, e0);
@@ -263,9 +263,9 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   }
 
   // Generate new vertices from marked edges, and assign global indices.
-  // Also, create mapping from the old global edge index to the new vertex index.
+  // Also, create mapping from the old edge index to the new vertex index.
   p.create_new_vertices(markedEdges);
-  std::map<std::size_t, std::size_t>& global_edge_to_new_vertex = p.global_edge_to_new_vertex();
+  std::map<std::size_t, std::size_t>& edge_to_new_vertex = p.edge_to_new_vertex();
 
   // Stage 4 - do refinement - keeping reference edges somehow?...
 
@@ -298,9 +298,9 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
     const std::size_t v0 = v[i0].global_index();
     const std::size_t v1 = v[i1].global_index();
     const std::size_t v2 = v[i2].global_index();
-    const std::size_t e0 = global_edge_to_new_vertex[e[i0].global_index()];
-    const std::size_t e1 = global_edge_to_new_vertex[e[i1].global_index()];
-    const std::size_t e2 = global_edge_to_new_vertex[e[i2].global_index()];
+    const std::size_t e0 = edge_to_new_vertex[e[i0].index()];
+    const std::size_t e1 = edge_to_new_vertex[e[i1].index()];
+    const std::size_t e2 = edge_to_new_vertex[e[i2].index()];
 
     if(rgb_count == 0) //straight copy of cell (1->1)
     {
