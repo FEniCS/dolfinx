@@ -246,7 +246,7 @@ namespace dolfin
     ///     ufc_cell (ufc::cell)
     ///         The cell.
     void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-                                      const ufc::cell& ufc_cell) const;
+                              const ufc::cell& ufc_cell) const;
 
     /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell
     /// version)
@@ -257,7 +257,7 @@ namespace dolfin
     ///     cell (_Cell_)
     ///         The cell.
     void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-                                      const Cell& cell) const;
+                              const Cell& cell) const;
 
     /// Create a copy of the dof map
     ///
@@ -363,9 +363,6 @@ namespace dolfin
 
     // Friends
     friend class DofMapBuilder;
-
-    // Build dofmap
-    void build_common(const Mesh& mesh);
 
     // Recursively extract UFC sub-dofmap and compute offset
     static ufc::dofmap* extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,

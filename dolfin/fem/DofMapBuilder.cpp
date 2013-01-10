@@ -47,9 +47,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void DofMapBuilder::build_new(DofMap& dofmap, const Mesh& mesh,
-  const std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facets,
-  boost::shared_ptr<const Restriction> restriction)
+void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
+  boost::shared_ptr<const Restriction> restriction,
+  const std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facets)
 {
   dolfin_assert(dofmap._ufc_dofmap);
   dolfin_assert(dofmap._ufc_dofmap->geometric_dimension() == mesh.geometry().dim());
@@ -79,10 +79,10 @@ void DofMapBuilder::build_new(DofMap& dofmap, const Mesh& mesh,
 
   // Build dof map
   const bool reorder = dolfin::parameters["reorder_dofs_serial"];
-  build(dofmap, mesh, restriction, reorder);
+  build_old(dofmap, mesh, restriction, reorder);
 }
 //-----------------------------------------------------------------------------
-void DofMapBuilder::build(DofMap& dofmap,
+void DofMapBuilder::build_old(DofMap& dofmap,
                           const Mesh& mesh,
                           boost::shared_ptr<const Restriction> restriction,
                           bool reorder)
