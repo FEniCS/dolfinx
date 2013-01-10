@@ -31,7 +31,6 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/mesh/LocalMeshData.h>
 
 #include <dolfin/refinement/ParallelRefinement.h>
 
@@ -83,9 +82,8 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh)
   }
 
   const uint tdim = mesh.topology().dim();
-  const uint gdim = mesh.geometry().dim();
 
-  if(tdim != 2 || gdim != 2)
+  if(tdim != 2)
   {
     dolfin_error("ParallelRefinement2D.cpp",
                  "refine mesh",
@@ -123,34 +121,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh)
     p.new_cell(e0, e1, e2);
   }
 
-  LocalMeshData mesh_data;
-  mesh_data.num_vertices_per_cell = tdim + 1;
-  mesh_data.tdim = tdim;
-  mesh_data.gdim = gdim;
-
-  // Copy data to LocalMeshData structures
-
-  const std::size_t num_local_cells = p.cell_topology().size()/mesh_data.num_vertices_per_cell;
-  mesh_data.num_global_cells = MPI::sum(num_local_cells);
-  mesh_data.global_cell_indices.resize(num_local_cells);
-  const std::size_t idx_global_offset = MPI::global_offset(num_local_cells, true);
-  for(std::size_t i = 0; i < num_local_cells ; i++)
-    mesh_data.global_cell_indices[i] = idx_global_offset + i;
-  
-  mesh_data.cell_vertices.resize(boost::extents[num_local_cells][mesh_data.num_vertices_per_cell]);
-  std::copy(p.cell_topology().begin(),p.cell_topology().end(),mesh_data.cell_vertices.data());
-
-  const std::size_t num_local_vertices = p.vertex_coordinates().size()/gdim;
-  mesh_data.num_global_vertices = MPI::sum(num_local_vertices);
-  mesh_data.vertex_coordinates.resize(boost::extents[num_local_vertices][gdim]);
-  std::copy(p.vertex_coordinates().begin(), p.vertex_coordinates().end(), mesh_data.vertex_coordinates.data());
-  mesh_data.vertex_indices.resize(num_local_vertices);
-
-  const std::size_t vertex_global_offset = MPI::global_offset(num_local_vertices, true);
-  for(std::size_t i = 0; i < num_local_vertices ; i++)
-    mesh_data.vertex_indices[i] = vertex_global_offset + i;
-
-  MeshPartitioning::build_distributed_mesh(new_mesh, mesh_data);
+  p.partition(new_mesh);
 
 }
 
@@ -158,7 +129,6 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
                                   const MeshFunction<bool>& refinement_marker)
 {
   const uint tdim = mesh.topology().dim();
-  const uint gdim = mesh.geometry().dim();
 
   bool diag=false;   // Enable output for diagnostics
   
@@ -169,7 +139,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
                  "Only works in parallel");
   }
 
-  if(tdim != 2 || gdim != 2)
+  if(tdim != 2)
   {
     dolfin_error("ParallelRefinement2D.cpp",
                  "refine mesh",
@@ -304,119 +274,41 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
 
     if(rgb_count == 0) //straight copy of cell (1->1)
     {
-      for(VertexIterator v(*cell); !v.end(); ++v)
-        new_cell_topology.push_back(v->global_index());
-      new_ref_edge.push_back(ref);
+      p.new_cell(v0, v1, v2);
     }
     else if(rgb_count == 1) // "green" refinement (1->2)
     {
       // Always splitting the reference edge...
-      
-      new_cell_topology.push_back(e0);
-      new_cell_topology.push_back(v0);
-      new_cell_topology.push_back(v1);
-      new_ref_edge.push_back(ref);      
-
-      new_cell_topology.push_back(e0);
-      new_cell_topology.push_back(v2);
-      new_cell_topology.push_back(v0);
-      new_ref_edge.push_back(ref);      
-
+      p.new_cell(e0, v0, v1);
+      p.new_cell(e0, v2, v0);
     }
     else if(rgb_count == 2) // "blue" refinement (1->3) left or right
     {
-      
       if(markedEdges[e[i2]])
       {
-        new_cell_topology.push_back(e2);
-        new_cell_topology.push_back(v1);
-        new_cell_topology.push_back(e0);
-        new_ref_edge.push_back(ref);              
-
-        new_cell_topology.push_back(e2);
-        new_cell_topology.push_back(e0);
-        new_cell_topology.push_back(v0);
-        new_ref_edge.push_back(ref);              
-
-        new_cell_topology.push_back(e0);
-        new_cell_topology.push_back(v2);
-        new_cell_topology.push_back(v0);
-        new_ref_edge.push_back(ref);              
-        
+        p.new_cell(e2, v1, e0);
+        p.new_cell(e2, e0, v0);
+        p.new_cell(e0, v2, v0);
       }
       else if(markedEdges[e[i1]])
       {
-        new_cell_topology.push_back(e0);
-        new_cell_topology.push_back(v0);
-        new_cell_topology.push_back(v1);
-        new_ref_edge.push_back(ref);              
-
-        new_cell_topology.push_back(e1);
-        new_cell_topology.push_back(e0);
-        new_cell_topology.push_back(v2);
-        new_ref_edge.push_back(ref);              
-
-        new_cell_topology.push_back(e1);
-        new_cell_topology.push_back(v0);
-        new_cell_topology.push_back(e0);
-        new_ref_edge.push_back(ref);              
-
+        p.new_cell(e0, v0, v1);
+        p.new_cell(e1, e0, v2);
+        p.new_cell(e1, v0, e0);
       }
 
     }
     else if(rgb_count == 3) // "red" refinement - all split (1->4) cells
     {
-      new_cell_topology.push_back(v0);
-      new_cell_topology.push_back(e2);
-      new_cell_topology.push_back(e1);
-      new_ref_edge.push_back(ref);      
-
-      new_cell_topology.push_back(e2);
-      new_cell_topology.push_back(v1);
-      new_cell_topology.push_back(e0);
-      new_ref_edge.push_back(ref);
-
-      new_cell_topology.push_back(e1);
-      new_cell_topology.push_back(e0);
-      new_cell_topology.push_back(v2);
-      new_ref_edge.push_back(ref);
-
-      new_cell_topology.push_back(e0);
-      new_cell_topology.push_back(e1);
-      new_cell_topology.push_back(e2);
-      new_ref_edge.push_back(ref);
+      p.new_cell(v0, e2, e1);
+      p.new_cell(e2, v1, e0);
+      p.new_cell(e1, e0, v2);
+      p.new_cell(e0, e1, e2);
     }
     
   }
 
-  LocalMeshData mesh_data;
-  mesh_data.num_vertices_per_cell = tdim + 1;
-  mesh_data.tdim = tdim;
-  mesh_data.gdim = gdim;
-
-  // Copy data to LocalMeshData structures
-
-  const std::size_t num_local_cells = new_cell_topology.size()/mesh_data.num_vertices_per_cell;
-  mesh_data.num_global_cells = MPI::sum(num_local_cells);
-  mesh_data.global_cell_indices.resize(num_local_cells);
-  const std::size_t idx_global_offset = MPI::global_offset(num_local_cells, true);
-  for(std::size_t i = 0; i < num_local_cells ; i++)
-    mesh_data.global_cell_indices[i] = idx_global_offset + i;
-  
-  mesh_data.cell_vertices.resize(boost::extents[num_local_cells][mesh_data.num_vertices_per_cell]);
-  std::copy(new_cell_topology.begin(),new_cell_topology.end(),mesh_data.cell_vertices.data());
-
-  const std::size_t num_local_vertices = p.vertex_coordinates().size()/gdim;
-  mesh_data.num_global_vertices = MPI::sum(num_local_vertices);
-  mesh_data.vertex_coordinates.resize(boost::extents[num_local_vertices][gdim]);
-  std::copy(p.vertex_coordinates().begin(), p.vertex_coordinates().end(), mesh_data.vertex_coordinates.data());
-  mesh_data.vertex_indices.resize(num_local_vertices);
-
-  const std::size_t vertex_global_offset = MPI::global_offset(num_local_vertices, true);
-  for(std::size_t i = 0; i < num_local_vertices ; i++)
-    mesh_data.vertex_indices[i] = vertex_global_offset + i;
-
-  MeshPartitioning::build_distributed_mesh(new_mesh, mesh_data);
+  p.partition(new_mesh);
 
   if(diag)
   {

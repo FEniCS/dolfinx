@@ -61,7 +61,7 @@ int main()
     // Left boundary is "target domain" G
     bool inside(const Array<double>& x, bool on_boundary) const
     {
-      return std::abs(x[0]) < DOLFIN_EPS && on_boundary;
+      return (std::abs(x[0]) < DOLFIN_EPS) && on_boundary;
     }
 
     // Map right boundary (H) to left boundary (G)
@@ -69,16 +69,63 @@ int main()
     {
       y[0] = x[0] - 1.0;
       y[1] = x[1];
+      y[2] = x[2];
     }
   };
 
+  /*
   // Create mesh
   UnitSquareMesh mesh(32, 32);
 
   // Create periodic boundary condition
   PeriodicBoundary periodic_boundary;
-  mesh.add_periodic_direction(periodic_boundary);
+  //mesh.add_periodic_direction(periodic_boundary);
 
+  std::map<std::size_t, std::pair<std::size_t, std::size_t> > test
+    = PeriodicDomain::compute_periodic_facet_pairs(mesh, periodic_boundary);
+
+  std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator it;
+  for (it = test.begin(); it != test.end(); ++it)
+  {
+    cout << "*** Slave facet, proc owne ,masterr, master index on owner: " << it->first
+        << ", " << it->second.first << ", " <<  it->second.second << endl;
+  }
+  */
+
+  // Create mesh
+  UnitCubeMesh mesh(16, 16, 16);
+
+  // Create periodic boundary condition
+  PeriodicBoundary periodic_boundary;
+
+  std::map<std::size_t, std::pair<std::size_t, std::size_t> > test
+    = PeriodicBoundaryComputation::compute_periodic_facet_pairs(mesh, periodic_boundary);
+
+  FacetFunction<std::size_t> master_slave_facets(mesh, 0);
+  periodic_boundary.mark(master_slave_facets, 1);
+
+  std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator it;
+  for (it = test.begin(); it != test.end(); ++it)
+  {
+    master_slave_facets[it->first] = 2;
+  }
+
+  File file("facets.pvd");
+  file << master_slave_facets;
+
+
+  /*
+  std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator it;
+  for (it = test.begin(); it != test.end(); ++it)
+  {
+    cout << "*** Slave facet (local), proc owner master, master index on owner: " << it->first
+        << ", " << it->second.first << ", " <<  it->second.second << endl;
+  }
+  */
+
+  return 0;
+
+  /*
   // Create functions
   Source f;
 
@@ -110,4 +157,5 @@ int main()
   interactive();
 
   return 0;
+  */
 }

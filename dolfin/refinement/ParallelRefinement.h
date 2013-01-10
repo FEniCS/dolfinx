@@ -57,6 +57,10 @@ namespace dolfin
 
     // Get new cell topology as created by new_cell() above
     std::vector<std::size_t>& cell_topology();
+
+    // Use vertex and topology data to partition new mesh
+    void partition(Mesh& new_mesh);
+    
     
   private:
     

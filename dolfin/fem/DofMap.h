@@ -81,11 +81,11 @@ namespace dolfin
 
     // Create a sub-dofmap (a view) from parent_dofmap
     DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& component,
-           const Mesh& mesh, bool distributed);
+           const Mesh& mesh);
 
     // Create a collapsed dofmap from parent_dofmap
     DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
-           const DofMap& dofmap_view, const Mesh& mesh, bool distributed);
+           const DofMap& dofmap_view, const Mesh& mesh);
 
     /// Copy constructor
     ///
@@ -358,34 +358,34 @@ namespace dolfin
     ///     std::string
     ///         An informal representation of the function space.
     std::string str(bool verbose) const;
-    
+
   private:
 
     // Friends
     friend class DofMapBuilder;
 
     // Build dofmap
-    void build_common(const Mesh& dolfin_mesh);
+    void build_common(const Mesh& mesh);
 
     // Recursively extract UFC sub-dofmap and compute offset
     static ufc::dofmap* extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
                                                std::size_t& offset,
                                                const std::vector<std::size_t>& component,
-                                               const Mesh& dolfin_mesh);
+                                               const Mesh& mesh);
 
     // Check dimensional consistency between UFC dofmap and the mesh
     static void check_dimensional_consistency(const ufc::dofmap& dofmap,
                                               const Mesh& mesh);
 
     // Check that mesh provides the entities needed by dofmap
-    static void check_provided_entities(ufc::dofmap& dofmap,
-                                        const Mesh& dolfin_mesh);
+    static void check_provided_entities(const ufc::dofmap& dofmap,
+                                        const Mesh& mesh);
 
     // Local-to-global dof map (dofs for cell dofmap[i])
     std::vector<std::vector<dolfin::la_index> > _dofmap;
 
     // UFC dof map
-    boost::scoped_ptr<ufc::dofmap> _ufc_dofmap;
+    boost::shared_ptr<const ufc::dofmap> _ufc_dofmap;
 
     // Map from UFC dof numbering to renumbered dof (ufc_dof, actual_dof)
     boost::unordered_map<std::size_t, std::size_t> ufc_map_to_dofmap;
@@ -416,15 +416,12 @@ namespace dolfin
     // True iff sub-dofmap (a view, i.e. not collapsed)
     bool _is_view;
 
-    // True iff running in parallel
-    bool _distributed;
-    
     // Map from slave dofs to master dofs using UFC numbering
     std::map<std::size_t, std::size_t> _slave_master_map;
-    
+
     // Map of processes that share master dofs (used by compute_ownership)
     std::map<std::size_t, boost::unordered_set<std::size_t> > _master_processes;
-    
+
   };
 }
 

@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2008-11-28
-// Last changed: 2013-01-02
+// Last changed: 2013-01-10
 //
 // Modified by Anders Logg, 2008-2009.
 // Modified by Kent-Andre Mardal, 2011.
@@ -134,6 +134,7 @@ namespace dolfin
     friend class SCOTCH;
     friend class ParallelRefinement2D;
     friend class ParallelRefinement3D;
+    friend class ParallelRefinement;
 
   };
 

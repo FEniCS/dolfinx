@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2010 Anders Logg
+// Copyright (C) 2006-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -20,7 +20,7 @@
 // Modified by Garth N. Wells 2010.
 //
 // First added:  2006-06-01
-// Last changed: 2011-10-26
+// Last changed: 2013-01-09
 
 #ifndef __CELL_H
 #define __CELL_H

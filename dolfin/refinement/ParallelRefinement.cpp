@@ -325,6 +325,43 @@ void ParallelRefinement::reorder_vertices_by_global_indices(std::vector<double>&
   }
 }
 //-----------------------------------------------------------------------------
+void ParallelRefinement::partition(Mesh& new_mesh)
+{
+
+  LocalMeshData mesh_data;
+  mesh_data.tdim = _mesh.topology().dim();
+  const std::size_t gdim = _mesh.geometry().dim();
+  mesh_data.gdim = gdim;
+  mesh_data.num_vertices_per_cell = mesh_data.tdim + 1;
+
+  // Copy data to LocalMeshData structures
+
+  const std::size_t num_local_cells = new_cell_topology.size()/mesh_data.num_vertices_per_cell;
+  mesh_data.num_global_cells = MPI::sum(num_local_cells);
+  mesh_data.global_cell_indices.resize(num_local_cells);
+  const std::size_t idx_global_offset = MPI::global_offset(num_local_cells, true);
+  for(std::size_t i = 0; i < num_local_cells ; i++)
+    mesh_data.global_cell_indices[i] = idx_global_offset + i;
+  
+  mesh_data.cell_vertices.resize(boost::extents[num_local_cells][mesh_data.num_vertices_per_cell]);
+  std::copy(new_cell_topology.begin(),new_cell_topology.end(),mesh_data.cell_vertices.data());
+
+  const std::size_t num_local_vertices = new_vertex_coordinates.size()/gdim;
+  mesh_data.num_global_vertices = MPI::sum(num_local_vertices);
+  mesh_data.vertex_coordinates.resize(boost::extents[num_local_vertices][gdim]);
+  std::copy(new_vertex_coordinates.begin(), new_vertex_coordinates.end(), mesh_data.vertex_coordinates.data());
+
+  mesh_data.vertex_indices.resize(num_local_vertices);
+  const std::size_t vertex_global_offset = MPI::global_offset(num_local_vertices, true);
+  for(std::size_t i = 0; i < num_local_vertices ; i++)
+    mesh_data.vertex_indices[i] = vertex_global_offset + i;
+
+  MeshPartitioning::build_distributed_mesh(new_mesh, mesh_data);
+
+}
+
+
+//-----------------------------------------------------------------------------
 
 void ParallelRefinement::new_cell(std::size_t i0, std::size_t i1, std::size_t i2, std::size_t i3)
 {

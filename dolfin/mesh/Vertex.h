@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-06-01
-// Last changed: 2012-05-09
+// Last changed: 2013-01-09
 
 #ifndef __VERTEX_H
 #define __VERTEX_H

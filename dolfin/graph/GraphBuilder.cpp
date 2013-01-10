@@ -191,18 +191,18 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 {
 
   compute_dual_graph_small(mesh_data,
-                           local_graph,
-                           ghost_vertices);
+                       local_graph,
+                       ghost_vertices);
 
-  return;
+ return;
   
 
 
   // This function builds the local part of a distributed dual graph
-  // by partitioning cell vertices evenlt across processes in ascending
+  // by partitioning cell vertices evenly across processes in ascending
   // vertex index order. The 'owner' process holds a
   //
-  //  vertrex -> [connected cells]
+  //  vertex -> [connected cells]
   //
   // map. Each process then requests the map for each vertex that it
   // requires. Since the vertex-cell map is ordered and distributed
@@ -382,7 +382,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   // My local cell range
   const std::pair<std::size_t, std::size_t>
     my_cell_range = MPI::local_range(mesh_data.num_global_cells);
-
+  
   // Build renumbering ordering map (maps global to local)
   std::size_t count = 0;
   boost::unordered_map<std::size_t, std::size_t> reorder;

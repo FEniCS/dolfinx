@@ -74,11 +74,16 @@ namespace dolfin
 
     // Build dofmap. The restriction may be a null pointer in which
     // case it is ignored.
+    static void build_new(DofMap& dofmap, const Mesh& dolfin_mesh,
+        const std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facets,
+        boost::shared_ptr<const Restriction> restriction);
+
+    // Build dofmap. The restriction may be a null pointer in which
+    // case it is ignored.
     static void build(DofMap& dofmap,
                       const Mesh& dolfin_mesh,
                       boost::shared_ptr<const Restriction> restriction,
-                      bool reorder,
-                      bool distributed);
+                      bool reorder);
 
   private:
 
@@ -113,7 +118,6 @@ namespace dolfin
     static set compute_global_dofs(const DofMap& dofmap,
                                    const Mesh& dolfin_mesh);
 
-
     // Iterate recursively over all sub-dof maps to find global
     // degrees of freedom
     static void compute_global_dofs(set& global_dofs, std::size_t& offset,
@@ -124,11 +128,12 @@ namespace dolfin
     // map from slave dofs to master dofs. Build also a map of all
     // processes that shares the master dofs
     static void extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
-                            periodic_map& _slave_master_map,
-                            std::map<std::size_t, boost::unordered_set<std::size_t> >& _master_processes);
+        periodic_map& _slave_master_map,
+        std::map<std::size_t, boost::unordered_set<std::size_t> >& _master_processes);
 
     // Make all necessary modifications to dofmap due to periodicity of the mesh
-    static void periodic_modification(DofMap& dofmap, const Mesh& dolfin_mesh, DofMapBuilder::set& global_dofs);
+    static void periodic_modification(DofMap& dofmap, const Mesh& dolfin_mesh,
+      DofMapBuilder::set& global_dofs);
   };
 }
 
