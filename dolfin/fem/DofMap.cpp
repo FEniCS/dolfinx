@@ -76,7 +76,8 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   DofMapBuilder::build(*this, mesh, restriction, slave_to_master_facets);
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& component,
+DofMap::DofMap(const DofMap& parent_dofmap,
+               const std::vector<std::size_t>& component,
   const Mesh& mesh) : _global_dimension(0), _ufc_offset(0),
   _ownership_range(0, 0), _is_view(true)
 {
@@ -84,7 +85,7 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
 
   dolfin_assert(!component.empty());
 
-  // Store global entity dimensions in vector
+  // Store global mesh entity dimensions in vector
   std::vector<std::size_t> num_global_mesh_entities(mesh.topology().dim() + 1);
   for (std::size_t d = 0; d < num_global_mesh_entities.size(); d++)
     num_global_mesh_entities[d] = mesh.size_global(d);
@@ -229,7 +230,8 @@ DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& comp
         *dof = ufc_to_current_dof->second;
 
         // Add to off-process dof owner map
-        boost::unordered_map<std::size_t, std::size_t>::const_iterator parent_off_proc = parent_dofmap._off_process_owner.find(*dof);
+        boost::unordered_map<std::size_t, std::size_t>::const_iterator
+          parent_off_proc = parent_dofmap._off_process_owner.find(*dof);
         if (parent_off_proc != parent_dofmap._off_process_owner.end())
           _off_process_owner.insert(*parent_off_proc);
 
@@ -314,12 +316,6 @@ DofMap::~DofMap()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-bool DofMap::needs_mesh_entities(std::size_t d) const
-{
-  dolfin_assert(_ufc_dofmap);
-  return _ufc_dofmap->needs_mesh_entities(d);
-}
-//-----------------------------------------------------------------------------
 std::size_t DofMap::global_dimension() const
 {
   return _global_dimension;
@@ -391,14 +387,15 @@ void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
                                   const ufc::cell& ufc_cell) const
 {
   // FIXME: This is a hack because UFC wants a double pointer for coordinates
+  dolfin_assert(_ufc_dofmap);
 
   // Check dimensions
   if (coordinates.shape()[0] != cell_dimension(ufc_cell.index) ||
-      coordinates.shape()[1] != geometric_dimension())
+      coordinates.shape()[1] != _ufc_dofmap->geometric_dimension())
   {
     boost::multi_array<double, 2>::extent_gen extents;
     const std::size_t cell_dim = cell_dimension(ufc_cell.index);
-    coordinates.resize(extents[cell_dim][geometric_dimension()]);
+    coordinates.resize(extents[cell_dim][_ufc_dofmap->geometric_dimension()]);
   }
 
   // Set vertex coordinates
@@ -423,10 +420,10 @@ boost::shared_ptr<GenericDofMap> DofMap::copy() const
   return boost::shared_ptr<GenericDofMap>(new DofMap(*this));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericDofMap> DofMap::build(const Mesh& new_mesh) const
+boost::shared_ptr<GenericDofMap> DofMap::create(const Mesh& new_mesh) const
 {
-  // Get copy of underlying UFC dof map
-  boost::shared_ptr<const ufc::dofmap> ufc_dof_map(_ufc_dofmap->create()); // TODO: Don't have to copy anymore, can assume stateless?
+  // Get underlying UFC dof map
+  boost::shared_ptr<const ufc::dofmap> ufc_dof_map(_ufc_dofmap);
   return boost::shared_ptr<GenericDofMap>(new DofMap(ufc_dof_map, new_mesh));
 }
 //-----------------------------------------------------------------------------
@@ -542,8 +539,8 @@ ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
       sub_component.push_back(component[i]);
 
     ufc::dofmap* sub_sub_dofmap = extract_ufc_sub_dofmap(*sub_dofmap, offset,
-                                                     sub_component,
-                                                     mesh);
+                                                         sub_component,
+                                                         mesh);
     delete sub_dofmap;
     return sub_sub_dofmap;
   }

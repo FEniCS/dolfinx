@@ -116,18 +116,6 @@ namespace dolfin
     bool is_restricted() const
     { return static_cast<bool>(_restriction); }
 
-    /// Return true iff mesh entities of topological dimension d are
-    /// needed
-    ///
-    /// *Arguments*
-    ///     d (std::size_t)
-    ///         Topological dimension.
-    ///
-    /// *Returns*
-    ///     bool
-    ///         True if the mesh entities are needed.
-    bool needs_mesh_entities(std::size_t d) const;
-
     /// Return the dimension of the global finite element function
     /// space
     ///
@@ -198,8 +186,8 @@ namespace dolfin
     ///         The map from non-local dofs.
     const boost::unordered_map<std::size_t, std::size_t>& off_process_owner() const;
 
-    /// Return map from all shared dofs to the processes (not including the current
-    /// process) that share it.
+    /// Return map from all shared dofs to the sharing processes (not
+    /// including the current process) that share it.
     ///
     /// *Returns*
     ///     boost::unordered_map<std::size_t, std::vector<std::size_t> >
@@ -266,16 +254,16 @@ namespace dolfin
     ///         The Dofmap copy.
     boost::shared_ptr<GenericDofMap> copy() const;
 
-    /// Create a copy of the dof map
+    /// Create a copy of the dof map on a new mesh
     ///
     /// *Arguments*
     ///     new_mesh (_Mesh_)
-    ///         The new mesh to build the dof map on.
+    ///         The new mesh to create the dof map on.
     ///
     /// *Returns*
     ///     DofMap
     ///         The new Dofmap copy.
-    boost::shared_ptr<GenericDofMap> build(const Mesh& new_mesh) const;
+    boost::shared_ptr<GenericDofMap> create(const Mesh& new_mesh) const;
 
 
     /// Extract subdofmap component
