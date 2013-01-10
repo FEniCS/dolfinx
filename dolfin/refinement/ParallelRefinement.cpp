@@ -40,7 +40,11 @@ using namespace dolfin;
 ParallelRefinement::ParallelRefinement(const Mesh& mesh):_mesh(mesh)
 {
   // work out which edges are shared between processes
-  get_shared_edges();
+  const std::size_t edge_dim = 1;
+  std::cout << "Calling compute shared entities" << std::endl;  
+  shared_edges = MeshDistributed::compute_shared_entities(_mesh, edge_dim);
+  std::cout << "n(shared_edges) = " << shared_edges.size() << std::endl;
+
   // maybe take over marked edge assignment - experimenting with this
   marked_edges.assign(_mesh.num_edges(), false);
 }
@@ -66,123 +70,9 @@ std::vector<double>& ParallelRefinement::vertex_coordinates()
 
 //-----------------------------------------------------------------------------
 
-double* ParallelRefinement::vertex_coordinates(std::size_t i)
-{
-  return new_vertex_coordinates.data() + i*_mesh.geometry().dim();
-}
-
-//-----------------------------------------------------------------------------
-
-void ParallelRefinement::get_shared_edges()
-{
-
-  const std::size_t edge_dim = 1;
-
-  std::cout << "Calling compute shared entities" << std::endl;
-  
-  _shared_edges = MeshDistributed::compute_shared_entities(_mesh, edge_dim);
-  
-  std::cout << "n(shared_edges) = " << _shared_edges.size() << std::endl;
-
-  // uint D = _mesh.topology().dim();
-
-  // // Work out shared edges, and which processes they exist on.
-  // // There are special cases where it is more difficult to determine
-  // // edge ownership, but these are rare in 2D. 
-  // // In 3D, it is always necessary to communicate with MPI
-  // // to check the ownership. 
-  // // Ultimately, this functionality will be provided inside 
-  // // MeshConnectivity or similar
-  
-  // const std::map<std::size_t, std::set<std::size_t> >& shared_vertices = _mesh.topology().shared_entities(0);
-
-  // // Go through all edges, looking for possible shared edges.
-  // // In 2D, it is possible to use the difference between num_global_entities
-  // // and num_entities, but this is not working (yet) in 3D.
-
-
-  // for(EdgeIterator edge(_mesh); !edge.end(); ++edge)
-  // {
-  //   if(edge->num_entities(D) < edge->num_global_entities(D)
-  //      || D == 3 )
-  //   {
-  //     // Find sharing processes by taking the intersection of the sets of 
-  //     // processes of the two attached vertices.
-  //     // That does not provide a definitive answer, but it is a start.
-  //     VertexIterator v(*edge);
-  //     // First, make sure the edge has two shared vertices.
-  //     if(shared_vertices.count(v[0].global_index()) != 0 
-  //        && shared_vertices.count(v[1].global_index()) != 0)
-  //     {
-  //       const std::set<std::size_t>& set1 
-  //         = shared_vertices.find(v[0].global_index())->second;
-  //       const std::set<std::size_t>& set2 
-  //         = shared_vertices.find(v[1].global_index())->second;
-      
-  //       std::vector<std::size_t> result(set1.size() + set2.size());
-  //       std::size_t nprocs = std::set_intersection(set1.begin(), set1.end(), 
-  //                                                  set2.begin(), set2.end(), 
-  //                                                  result.begin()) - result.begin();
-        
-  //       if(nprocs > 0)
-  //       {
-  //         // this is probably a shared edge - add an entry to the global->local map
-  //         _global_to_local.insert(std::make_pair(edge->global_index(),edge->index()));
-  //         std::set<std::size_t> resultant_set(result.data(),result.data() + nprocs);
-  //         //          _shared_edges.insert(std::make_pair(edge->global_index(), resultant_set ));
-  //       }
-  //     }
-  //   }
-    
-  // }
-  
-  // // Tell remote processes that this process has these shared edges.
-  // // When receiving, ignore any edges that this process does not share.
-
-  // std::size_t num_processes = MPI::num_processes();
-  // std::vector<uint>destinations(num_processes);
-  // std::vector<uint>sources(num_processes);
-  // std::vector<std::vector<std::size_t> > values_to_send(num_processes);
-  // std::vector<std::vector<std::size_t> > received_values(num_processes);
-
-  // for(std::size_t i = 0; i < num_processes; ++i)
-  //   destinations[i] = i;
-
-  // // send a list of global_edge indices to remote processes that probably share with this process
-  // for(boost::unordered_map<std::size_t, std::set<std::size_t> >::iterator s = _shared_edges.begin();
-  //     s != _shared_edges.end(); ++s)
-  // {
-  //   for(std::set<std::size_t>::iterator p = s->second.begin(); p != s->second.end(); ++p)
-  //     values_to_send[*p].push_back(s->first);
-  // }
-
-  // MPI::distribute(values_to_send, destinations, received_values, sources);  
-
-  // // Copy map of probable shared edges, to compare with received shared edges
-  // boost::unordered_map<std::size_t, std::set<std::size_t> > original_shared_edges(_shared_edges);
-  // _shared_edges.clear();
-
-  // for(std::size_t i = 0; i < sources.size(); ++i)
-  // {
-  //   std::size_t process = sources[i];
-  //   for(std::vector<std::size_t>::iterator recv_edge = received_values[i].begin(); 
-  //       recv_edge != received_values[i].end(); ++recv_edge)
-  //   {
-  //     // only add back if both this process and the remote process believe it is shared
-  //     if(original_shared_edges.count(*recv_edge) != 0)
-  //       _shared_edges[*recv_edge].insert(process);
-  //   }
-  // }
-
-  // std::cout << "n(shared_edges) = " << _shared_edges.size() << std::endl;
-
-}
-
-//-----------------------------------------------------------------------------
-
 void ParallelRefinement::mark_edge(std::size_t edge_index)
 {
-  dolfin_assert(marked_edges.size() == _mesh.num_edges());
+  dolfin_assert(edge_index < _mesh.num_edges());
   marked_edges[edge_index] = true;
 }
 
@@ -203,8 +93,8 @@ void ParallelRefinement::update_logical_edgefunction(EdgeFunction<bool>& values)
   for(uint i = 0; i < num_processes; ++i)
     destinations[i] = i;
 
-  for(boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >::iterator sh_edge = _shared_edges.begin();
-      sh_edge != _shared_edges.end(); sh_edge++)
+  for(boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >::iterator sh_edge = shared_edges.begin();
+      sh_edge != shared_edges.end(); sh_edge++)
   {
     const std::size_t local_index = sh_edge->first;
 
@@ -254,7 +144,7 @@ void ParallelRefinement::create_new_vertices(const EdgeFunction<bool>& markedEdg
     {
       const std::size_t local_i = edge->index();
 
-      if(_shared_edges.count(local_i) == 0) //local new vertex - not shared
+      if(shared_edges.count(local_i) == 0) //local new vertex - not shared
       {
         const Point& midpoint = edge->midpoint();
         for(uint j = 0; j < gdim; ++j)
@@ -270,8 +160,8 @@ void ParallelRefinement::create_new_vertices(const EdgeFunction<bool>& markedEdg
 
         // check if any other sharing process has a lower rank
         for(std::vector<std::pair<std::size_t, std::size_t> >::iterator proc_edge 
-              = _shared_edges.find(local_i)->second.begin();
-            proc_edge != _shared_edges.find(local_i)->second.end(); ++proc_edge)
+              = shared_edges.find(local_i)->second.begin();
+            proc_edge != shared_edges.find(local_i)->second.end(); ++proc_edge)
         {
           const std::size_t proc_num = proc_edge->first;
           if(proc_num < process_number)
@@ -314,11 +204,11 @@ void ParallelRefinement::create_new_vertices(const EdgeFunction<bool>& markedEdg
     local_edge->second += global_offset; 
 
     const std::size_t local_i = local_edge->first;
-    if(_shared_edges.count(local_i) != 0) //shared, but locally owned. 
+    if(shared_edges.count(local_i) != 0) //shared, but locally owned. 
     {
       for(std::vector<std::pair<std::size_t, std::size_t> >::iterator remote_process_edge 
-            = _shared_edges[local_i].begin(); 
-          remote_process_edge != _shared_edges[local_i].end();
+            = shared_edges[local_i].begin(); 
+          remote_process_edge != shared_edges[local_i].end();
           ++remote_process_edge)
       {
         const std::size_t remote_proc_num = remote_process_edge->first;

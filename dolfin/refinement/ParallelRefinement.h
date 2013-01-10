@@ -50,8 +50,6 @@ namespace dolfin
 
     // New vertex coordinates after adding vertices given by marked edges.
     std::vector<double>& vertex_coordinates();
-    // Indexed access into new vertex coordinates
-    double* vertex_coordinates(std::size_t i);
     
     // Add a new cell to the list in 3D or 2D
     void new_cell(std::size_t i0, std::size_t i1, std::size_t i2, std::size_t i3); 
@@ -63,7 +61,7 @@ namespace dolfin
   private:
     
     // shared edges between processes. In 2D, vector size is 1
-    boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > > _shared_edges;
+    boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > > shared_edges;
 
     // mapping from old local edge index to new global vertex, needed to create new topology
     std::map<std::size_t, std::size_t> local_edge_to_new_vertex;
@@ -79,9 +77,6 @@ namespace dolfin
 
     // Mesh reference
     const Mesh& _mesh;
-
-    // Work out shared edges - hopefully this will ultimately be made redundant
-    void get_shared_edges();
 
     // Reorder vertices into global order for partitioning
     void reorder_vertices_by_global_indices(std::vector<double>& vertex_coords,
