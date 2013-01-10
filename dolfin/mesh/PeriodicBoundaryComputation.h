@@ -18,8 +18,8 @@
 // First added:  2012-01-10
 // Last changed:
 
-#ifndef __PERIODIC_DOMAIN_H
-#define __PERIODIC_DOMAIN_H
+#ifndef __PERIODIC_BOUNDARY_COMPUTATION_H
+#define __PERIODIC_BOUNDARY_COMPUTATION_H
 
 #include <map>
 #include <utility>
@@ -33,7 +33,7 @@ namespace dolfin
 
   /// This class computes map from slave facet to master facet
 
-  class PeriodicDomain
+  class PeriodicBoundaryComputation
   {
   public:
 

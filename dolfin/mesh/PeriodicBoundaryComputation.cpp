@@ -31,7 +31,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
-#include "PeriodicDomain.h"
+#include "PeriodicBoundaryComputation.h"
 
 using namespace dolfin;
 
@@ -63,7 +63,7 @@ struct lt_coordinate
 
 //-----------------------------------------------------------------------------
 std::map<std::size_t, std::pair<std::size_t, std::size_t> >
-   PeriodicDomain::compute_periodic_facet_pairs(const Mesh& mesh,
+   PeriodicBoundaryComputation::compute_periodic_facet_pairs(const Mesh& mesh,
                                                 const SubDomain& sub_domain)
 {
   // Get topological and geometric dimensions
@@ -245,7 +245,7 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
   return slave_to_master_facet;
 }
 //-----------------------------------------------------------------------------
-bool PeriodicDomain::in_bounding_box(const std::vector<double>& point,
+bool PeriodicBoundaryComputation::in_bounding_box(const std::vector<double>& point,
                                      const std::vector<double>& bounding_box)
 {
   // Return false if bounding box is empty
