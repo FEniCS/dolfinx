@@ -26,8 +26,6 @@
 // Last changed: 2013-01-08
 
 #include <boost/unordered_map.hpp>
-//#include <boost/serialization/map.hpp>
-//#include <boost/serialization/set.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Set.h>
@@ -46,29 +44,28 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
-               const Mesh& dolfin_mesh)
-    : _ufc_dofmap(ufc_dofmap),  _global_dimension(0), _ufc_offset(0),
-      _is_view(false)
+  const Mesh& mesh) : _ufc_dofmap(ufc_dofmap),  _global_dimension(0),
+  _ufc_offset(0), _is_view(false)
 {
   dolfin_assert(_ufc_dofmap);
 
   // Call common build
-  build_common(dolfin_mesh);
+  build_common(mesh);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
                boost::shared_ptr<const Restriction> restriction)
-  : _ufc_dofmap(ufc_dofmap), _restriction(restriction),
-    _global_dimension(0), _ufc_offset(0), _is_view(false)
+  : _ufc_dofmap(ufc_dofmap), _restriction(restriction), _global_dimension(0),
+    _ufc_offset(0), _is_view(false)
 {
   dolfin_assert(_ufc_dofmap);
   dolfin_assert(_restriction);
 
   // Get mesh
-  const dolfin::Mesh& dolfin_mesh(restriction->mesh());
+  const dolfin::Mesh& mesh = restriction->mesh();
 
   // Check that we get cell markers, extend later
-  if (restriction->dim() != dolfin_mesh.topology().dim())
+  if (restriction->dim() != mesh.topology().dim())
   {
     dolfin_error("DofMap.cpp",
                  "create mapping of degrees of freedom",
@@ -76,7 +73,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   }
 
   // Call common build
-  build_common(dolfin_mesh);
+  build_common(mesh);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& component,
@@ -481,17 +478,17 @@ void DofMap::set_x(GenericVector& x, double value, std::size_t component,
   }
 }
 //-----------------------------------------------------------------------------
-void DofMap::build_common(const Mesh& dolfin_mesh)
+void DofMap::build_common(const Mesh& mesh)
 {
   // FIXME: Parts of this might be consolidated with the code in
   // DofMapBuilder. It's not clear which parts should happen here and
   // which parts should happen inside DofMapBuilder.
 
   // Check for dimensional consistency between the dofmap and mesh
-  check_dimensional_consistency(*_ufc_dofmap, dolfin_mesh);
+  check_dimensional_consistency(*_ufc_dofmap, mesh);
 
   // Check that mesh has been ordered
-  if (!dolfin_mesh.ordered())
+  if (!mesh.ordered())
   {
      dolfin_error("DofMap.cpp",
                   "create mapping of degrees of freedom",
@@ -501,29 +498,29 @@ void DofMap::build_common(const Mesh& dolfin_mesh)
 
   // Generate and number all mesh entities
   const bool distributed = MPI::num_processes() > 1;
-  const std::size_t D = dolfin_mesh.topology().dim();
+  const std::size_t D = mesh.topology().dim();
   for (std::size_t d = 1; d <= D; ++d)
   {
     if (_ufc_dofmap->needs_mesh_entities(d) || (distributed && d == (D - 1)))
     {
-      dolfin_mesh.init(d);
+      mesh.init(d);
       if (distributed)
-        MeshDistributed::number_entities(dolfin_mesh, d);
+        MeshDistributed::number_entities(mesh, d);
     }
   }
 
   // Check dimensional consistency between UFC dofmap and the mesh
-  check_provided_entities(*_ufc_dofmap, dolfin_mesh);
+  check_provided_entities(*_ufc_dofmap, mesh);
 
   // Build dof map
   const bool reorder = dolfin::parameters["reorder_dofs_serial"];
-  DofMapBuilder::build(*this, dolfin_mesh, _restriction, reorder);
+  DofMapBuilder::build(*this, mesh, _restriction, reorder);
 }
 //-----------------------------------------------------------------------------
 ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
                                             std::size_t& offset,
                                             const std::vector<std::size_t>& component,
-                                            const Mesh& dolfin_mesh)
+                                            const Mesh& mesh)
 {
   // Check if there are any sub systems
   if (ufc_dofmap.num_sub_dofmaps() == 0)
@@ -551,9 +548,9 @@ ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
   }
 
   // Store global entity dimensions in vector
-  std::vector<std::size_t> num_global_mesh_entities(dolfin_mesh.topology().dim() + 1);
+  std::vector<std::size_t> num_global_mesh_entities(mesh.topology().dim() + 1);
   for (std::size_t d = 0; d < num_global_mesh_entities.size(); d++)
-    num_global_mesh_entities[d] = dolfin_mesh.size_global(d);
+    num_global_mesh_entities[d] = mesh.size_global(d);
 
   // Add to offset if necessary
   for (std::size_t i = 0; i < component[0]; i++)
@@ -563,7 +560,7 @@ ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
     dolfin_assert(ufc_tmp_dofmap);
 
     // Check dimensional consistency between UFC dofmap and the mesh
-    check_dimensional_consistency(ufc_dofmap, dolfin_mesh);
+    check_dimensional_consistency(ufc_dofmap, mesh);
 
     // Get offset
     offset += ufc_tmp_dofmap->global_dimension(num_global_mesh_entities);
@@ -585,22 +582,24 @@ ufc::dofmap* DofMap::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
 
     ufc::dofmap* sub_sub_dofmap = extract_ufc_sub_dofmap(*sub_dofmap, offset,
                                                      sub_component,
-                                                     dolfin_mesh);
+                                                     mesh);
     delete sub_dofmap;
     return sub_sub_dofmap;
   }
 }
 //-----------------------------------------------------------------------------
 void DofMap::check_provided_entities(const ufc::dofmap& dofmap,
-                                     const Mesh& dolfin_mesh)
+                                     const Mesh& mesh)
 {
   // Check that we have all mesh entities
-  for (std::size_t d = 0; d <= dolfin_mesh.topology().dim(); ++d)
+  for (std::size_t d = 0; d <= mesh.topology().dim(); ++d)
   {
-    if (dofmap.needs_mesh_entities(d) && dolfin_mesh.num_entities(d) == 0)
+    if (dofmap.needs_mesh_entities(d) && mesh.num_entities(d) == 0)
+    {
       dolfin_error("DofMap.cpp",
                    "initialize mapping of degrees of freedom",
                    "Missing entities of dimension %d. Try calling mesh.init(%d)", d, d);
+    }
   }
 }
 //-----------------------------------------------------------------------------
