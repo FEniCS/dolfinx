@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Anders Logg
+// Copyright (C) 2013 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,11 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells 2007-2012
-// Modified by Johan Hake 2009
-//
-// First added:  2007-07-08
-// Last changed: 2012-08-18
+// First added:  2012-01-10
+// Last changed:
 
 #ifndef __PERIODIC_DOMAIN_H
 #define __PERIODIC_DOMAIN_H
@@ -34,42 +31,17 @@ namespace dolfin
   class Mesh;
   class SubDomain;
 
-  /// This class specifies the interface for setting periodic boundaries
-  ///
-  /// .. math::
-  ///
-  ///     u(x) &= u(F^{-1}(x)) \hbox { on } G,
-  ///
-  ///     u(x) &= u(F(x))      \hbox{ on } H,
-  ///
-  /// where F : H --> G is a map from a subdomain H to a subdomain G.
-  ///
-  /// A periodic boundary condition must be defined by the domain G
-  /// and the map F pulling coordinates back from H to G. The domain
-  /// and the map are both defined by a subclass of _SubDomain_ which
-  /// must overload both the inside() function, which specifies the
-  /// points of G, and the map() function, which specifies the map
-  /// from the points of H to the points of G.
-  ///
-  /// The implementation is based on matching degrees of freedom on G
-  /// with degrees of freedom on H and only works when the mapping F
-  /// is bijective between the sets of coordinates associated with the
-  /// two domains. In other words, the nodes (degrees of freedom) must
-  /// be aligned on G and H.
-  ///
-  /// The matching of degrees of freedom is done at the construction
-  /// of the periodic boundary condition and is reused on subsequent
-  /// applications to a linear system. The matching may be recomputed
-  /// by calling the ``rebuild()`` function.
+  /// This class computes map from slave facet to master facet
 
   class PeriodicDomain
   {
   public:
 
+    /// Compute map from a slave facet on this process (local index)
+    /// to its master facet (owning process, local index on owner)
     static std::map<std::size_t, std::pair<std::size_t, std::size_t> >
       compute_periodic_facet_pairs(const Mesh& mesh,
                                    const SubDomain& sub_domain);
-
 
   private:
 

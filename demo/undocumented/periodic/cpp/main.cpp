@@ -101,6 +101,19 @@ int main()
   std::map<std::size_t, std::pair<std::size_t, std::size_t> > test
     = PeriodicDomain::compute_periodic_facet_pairs(mesh, periodic_boundary);
 
+  FacetFunction<std::size_t> master_slave_facets(mesh, 0);
+  periodic_boundary.mark(master_slave_facets, 1);
+
+  std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator it;
+  for (it = test.begin(); it != test.end(); ++it)
+  {
+    master_slave_facets[it->first] = 2;
+  }
+
+  File file("facets.pvd");
+  file << master_slave_facets;
+
+
   /*
   std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator it;
   for (it = test.begin(); it != test.end(); ++it)

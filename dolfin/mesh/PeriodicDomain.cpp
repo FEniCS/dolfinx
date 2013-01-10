@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Anders Logg
+// Copyright (C) 2013 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -15,11 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells 2007
-// Modified by Johan Hake 2009
-//
-// First added:  2007-07-08
-// Last changed: 2011-11-14
+// First added:  2013-01-10
+// Last changed:
 
 #include <limits>
 #include <map>
@@ -172,20 +169,10 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
     }
   }
 
-  // Communicator
-  //MPICommunicator mpi_comm;
-  //boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_attach);
-
   // Send slave midpoints to possible owners of correspoding master facet
   std::vector<std::vector<double> > slave_mapped_midpoints_recv;
   MPI::all_to_all(slave_mapped_midpoints_send, slave_mapped_midpoints_recv);
   dolfin_assert(slave_mapped_midpoints_recv.size() == num_processes);
-
-  //for (std::size_t p = 0; p < slave_mapped_midpoints_recv.size(); ++p)
-  //{
-  //  cout << "Size of slave mid-point data to received from " << p
-  //      << ": " << slave_mapped_midpoints_recv[p].size() << endl;
-  //}
 
   // Check if this process owns the master facet for a reveived (mapped)
   std::vector<double> midpoint(gdim);
@@ -198,9 +185,6 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
       // Unpack rceived mapped slave midpoint coordinate
       std::copy(&slave_mapped_midpoints_p[i], &slave_mapped_midpoints_p[i] + gdim, midpoint.begin());
 
-      //cout << "Test midpoint: "<< endl;
-      //cout << midpoint[0] << ", " << midpoint[1] << endl;
-
       // Check is this process has a master facet that is paired with
       // a received slave facet
       std::map<std::vector<double>, std::size_t, lt_coordinate>::const_iterator
@@ -209,15 +193,9 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
       // If this process owns the master, insert master facet index,
       // else insert std::numeric_limits<std::size_t>::max()
       if (it !=  master_midpoint_to_facet_index.end())
-      {
-        //cout << "This process has master facet: " << it->second << endl;
         master_local_facet[p].push_back(it->second);
-      }
       else
-      {
-        //cout << "This process does not have has master facet." << endl;
         master_local_facet[p].push_back(std::numeric_limits<std::size_t>::max());
-      }
     }
   }
 
@@ -225,7 +203,8 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
   std::vector<std::vector<std::size_t> > master_facet_local_index_recv;
   MPI::all_to_all(master_local_facet,  master_facet_local_index_recv);
 
-  // Build map from slave facets on this process to master facet (local facet index, process owner)
+  // Build map from slave facets on this process to master facet (local
+  // facet index, process owner)
   std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facet;
   std::size_t num_local_slave_facets = 0;
   for (std::size_t p = 0; p < num_processes; ++p)
@@ -245,7 +224,6 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
           dolfin_error("PeriodicDomain.cpp",
                        "build peridic master-slave mapping",
                        "More than one master facts for slave facet");
-
         }
       }
     }
@@ -254,9 +232,6 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
   // Number global master and slave facets
   const std::size_t num_global_master_facets = MPI::sum(master_midpoint_to_facet_index.size());
   const std::size_t num_global_slave_facets = MPI::sum(num_local_slave_facets);
-
-  //cout << "Num global, master/slave periodic facets: " << num_global_master_facets << ", "
-  //    << num_global_slave_facets << endl;
 
   // Check that number of global master and slave facets match
   if (num_global_master_facets != num_global_slave_facets)
