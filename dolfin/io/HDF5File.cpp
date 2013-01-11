@@ -523,6 +523,7 @@ void HDF5File::reorder_vertices_by_global_indices(std::vector<double>& vertex_co
                                                   const std::vector<std::size_t>& global_indices)
 {
   Timer t("HDF5: reorder vertices");
+
   // FIXME: be more efficient with MPI
 
   dolfin_assert(gdim*global_indices.size() == vertex_coords.size());
@@ -568,7 +569,8 @@ void HDF5File::reorder_vertices_by_global_indices(std::vector<double>& vertex_co
 
   for(std::size_t p = 0; p < num_processes; ++p)
   {
-    const std::vector<std::pair<std::size_t, std::vector<double> > >& received_global_data = received_values[p];
+    const std::vector<std::pair<std::size_t, std::vector<double> > >& 
+      received_global_data = received_values[p];
     for(std::size_t j = 0; j < received_global_data.size(); ++j)
     {
       const std::size_t global_i = received_global_data[j].first;
