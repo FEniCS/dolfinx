@@ -569,18 +569,8 @@ void GraphBuilder::compute_nonlocal_dual_graph_small(const LocalMeshData& mesh_d
   // Compute local edges (cell-cell connections) using global (internal
   // to this function, not the user numbering) numbering
 
-  // Get offset for this processe
+  // Get offset for this process
   const std::size_t offset = MPI::global_offset(num_local_cells, true);
-
-  // Copy to a new map and re-label cells by adding an offset
-  boost::unordered_map<std::vector<std::size_t>, std::size_t>
-      othermap(facet_cell_map.begin(), facet_cell_map.end());
-  for(boost::unordered_map<std::vector<std::size_t>, std::size_t>::iterator other_cell = othermap.begin();
-        other_cell != othermap.end(); ++other_cell)
-  {
-    other_cell->second += offset;
-  }
-
   const std::size_t num_processes = MPI::num_processes();
   const std::size_t process_number = MPI::process_number();
 
@@ -597,7 +587,7 @@ void GraphBuilder::compute_nonlocal_dual_graph_small(const LocalMeshData& mesh_d
 
   // Pack map data and send to match-maker process
   boost::unordered_map<std::vector<std::size_t>, std::size_t>::const_iterator it;
-  for (it = othermap.begin(); it != othermap.end(); ++it)
+  for (it = facet_cell_map.begin(); it != facet_cell_map.end(); ++it)
   {
     // Use first vertex of facet to partition into blocks
     // FIXME: could use a better index?
@@ -605,14 +595,9 @@ void GraphBuilder::compute_nonlocal_dual_graph_small(const LocalMeshData& mesh_d
     // Pack map into vectors
     for (std::size_t i = 0; i < num_vertices_per_facet; ++i)
       data_to_send[dest_proc].push_back((it->first)[i]);
-    data_to_send[dest_proc].push_back(it->second);
+    data_to_send[dest_proc].push_back(it->second + offset);
   }
   
-  std::cout << "Distribute map to match-makers" << std::endl;
-  for(std::size_t i = 0; i < num_processes; ++i)
-    std::cout << "Send from " << process_number << " to " << i << " = " 
-              << data_to_send[i].size() << std::endl;
-
   MPI::distribute(data_to_send, destinations, data_received, sources);
 
   // Clean out send vector for later reuse
@@ -647,24 +632,18 @@ void GraphBuilder::compute_nonlocal_dual_graph_small(const LocalMeshData& mesh_d
         data_to_send[proc1].push_back(cell2);
         data_to_send[proc2].push_back(cell2);
         data_to_send[proc2].push_back(cell1);        
-        std::cout << proc1 << "<->" << proc2 
-                  << " " << cell1 << "=" << cell2 << std::endl;
-        
       }
       
     }    
   }
 
-  std::cout << "Sending back to owners" << std::endl;
-
   MPI::distribute(data_to_send, destinations, data_received);
   
+  // Flatten received data and insert connected cells into local map
   for (std::vector<std::vector<std::size_t> >::iterator r = data_received.begin(); r != data_received.end(); ++r)
     for (std::size_t i = 0 ; i < r->size() ; i+=2)
     {
       const std::vector<std::size_t>& cell_list = *r;
-      std::cout << process_number << ": " 
-                << cell_list[i] << " " << cell_list[i+1] << std::endl;
       local_graph[cell_list[i] - offset].insert(cell_list[i+1]);
       ghost_vertices.insert(cell_list[i+1]);
     }
