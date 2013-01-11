@@ -87,13 +87,6 @@ namespace dolfin
 
   private:
 
-    // Build dofmap. The restriction may be a null pointer in which
-    // case it is ignored.
-    static void build_old(DofMap& dofmap,
-                      const Mesh& mesh,
-                      boost::shared_ptr<const Restriction> restriction,
-                      bool reorder);
-
     // Build UFC-based dofmap
     static void build_ufc(DofMap& dofmap, map& restricted_dofs_inverse,
                          const Mesh& mesh,
