@@ -24,7 +24,7 @@
 # Poisson's equation in 1D embedded in 2D space.
 #
 # Compile this form with FFC: ffc -l dolfin Poisson.ufl
-domain = Cell("interval", Space(2))
+domain = Cell("interval", geometric_dimension=2)
 
 element = FiniteElement("Lagrange", domain, 1)
 
