@@ -108,7 +108,7 @@ void MeshDistributed::number_entities(const Mesh& _mesh, std::size_t d)
 
   // Communicate indices for shared entities (owned by this process)
   // and get indices for shared but not owned entities
-  std::vector<std::size_t> send_values;
+  std::vector<std::vector<std::size_t> > send_values(num_processes);
   std::vector<std::size_t> destinations;
   for (it1 = owned_shared_entities.begin(); it1 != owned_shared_entities.end(); ++it1)
   {
@@ -128,47 +128,48 @@ void MeshDistributed::number_entities(const Mesh& _mesh, std::size_t d)
     {
       // Store interleaved: entity index, number of vertices, global
       // vertex indices
-      send_values.push_back(global_entity_index);
-      send_values.push_back(entity.size());
-      send_values.insert(send_values.end(), entity.begin(), entity.end());
-      destinations.insert(destinations.end(), entity.size() + 2, entity_processes[j]);
+      std::size_t p = entity_processes[j];
+      send_values[p].push_back(global_entity_index);
+      send_values[p].push_back(entity.size());
+      send_values[p].insert(send_values[p].end(), entity.begin(), entity.end());
     }
   }
 
   // Send data
-  std::vector<std::size_t> received_values;
-  std::vector<std::size_t> sources;
-  MPI::distribute(send_values, destinations, received_values, sources);
+  std::vector<std::vector<std::size_t> > received_values;
+  MPI::all_to_all(send_values, received_values);
 
   // Fill in global entity indices received from lower ranked processes
-  for (std::size_t i = 0; i < received_values.size();)
+  for (std::size_t p = 0; p < num_processes; ++p)
   {
-    const std::size_t p = sources[i];
-    const std::size_t global_index = received_values[i++];
-    const std::size_t entity_size = received_values[i++];
-    Entity entity;
-    for (std::size_t j = 0; j < entity_size; ++j)
-      entity.push_back(received_values[i++]);
-
-    // Access unowned entity data
-    std::map<Entity, EntityData>::const_iterator recv_entity;
-    recv_entity = unowned_shared_entities.find(entity);
-
-    // Sanity check, should not receive an entity we don't need
-    if (recv_entity == unowned_shared_entities.end())
+    for (std::size_t i = 0; i < received_values[p].size();)
     {
-      std::stringstream msg;
-      msg << "Process " << MPI::process_number() << " received illegal entity given by ";
-      msg << " with global index " << global_index;
-      msg << " from process " << p;
-      dolfin_error("MeshPartitioning.cpp",
-                   "number mesh entities",
-                   msg.str());
-    }
+      const std::size_t global_index = received_values[p][i++];
+      const std::size_t entity_size = received_values[p][i++];
+      Entity entity;
+      for (std::size_t j = 0; j < entity_size; ++j)
+        entity.push_back(received_values[p][i++]);
 
-    const std::size_t local_entity_index = recv_entity->second.local_index;
-    dolfin_assert(global_entity_indices[local_entity_index] == std::numeric_limits<std::size_t>::max());
-    global_entity_indices[local_entity_index] = global_index;
+      // Access unowned entity data
+      std::map<Entity, EntityData>::const_iterator recv_entity;
+      recv_entity = unowned_shared_entities.find(entity);
+
+      // Sanity check, should not receive an entity we don't need
+      if (recv_entity == unowned_shared_entities.end())
+      {
+        std::stringstream msg;
+        msg << "Process " << MPI::process_number() << " received illegal entity given by ";
+        msg << " with global index " << global_index;
+        msg << " from process " << p;
+        dolfin_error("MeshPartitioning.cpp",
+                     "number mesh entities",
+                     msg.str());
+      }
+
+      const std::size_t local_entity_index = recv_entity->second.local_index;
+      dolfin_assert(global_entity_indices[local_entity_index] == std::numeric_limits<std::size_t>::max());
+      global_entity_indices[local_entity_index] = global_index;
+    }
   }
 
   // Set mesh topology and store number of global entities
