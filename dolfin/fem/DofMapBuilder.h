@@ -80,14 +80,6 @@ namespace dolfin
 
     // Build dofmap. The restriction may be a null pointer in which
     // case it is ignored.
-    static void build_old(DofMap& dofmap,
-                      const Mesh& dolfin_mesh,
-                      boost::shared_ptr<const Restriction> restriction,
-                      bool reorder);
-
-
-    // Build dofmap. The restriction may be a null pointer in which
-    // case it is ignored.
     static void build_sub_map(DofMap& sub_dofmap,
                               const DofMap& parent_dofmap,
                               const std::vector<std::size_t>& component,
@@ -95,14 +87,28 @@ namespace dolfin
 
   private:
 
-    // Build distributed dof map
-    static void build_distributed(DofMap& dofmap,
-                                  const DofMapBuilder::set& global_dofs,
+    // Build dofmap. The restriction may be a null pointer in which
+    // case it is ignored.
+    static void build_old(DofMap& dofmap,
+                      const Mesh& mesh,
+                      boost::shared_ptr<const Restriction> restriction,
+                      bool reorder);
+
+    // Build UFC-based dofmap
+    static void build_ufc(DofMap& dofmap, map& restricted_dofs_inverse,
+                         const Mesh& mesh,
+                         boost::shared_ptr<const Restriction> restriction);
+
+    // Re-order dofmap locally for dof spatial locality
+    static void reorder_local(DofMap& dofmap, const Mesh& mesh);
+
+    // Re-order distributed dof map for process locality
+    static void reorder_distributed(DofMap& dofmap,
                                   const Mesh& mesh,
                                   boost::shared_ptr<const Restriction> restriction,
                                   const map& restricted_dofs_inverse);
 
-    static void compute_ownership(set& owned_dofs, set& shared_owned_dofs,
+    static void compute_dof_ownership(set& owned_dofs, set& shared_owned_dofs,
                                   set& shared_unowned_dofs,
                                   vec_map& shared_dof_processes,
                                   DofMap& dofmap,
