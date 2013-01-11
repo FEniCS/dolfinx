@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2012
 //
 // First added:  2010-02-19
-// Last changed: 2013-01-10
+// Last changed: 2013-01-11
 
 #include <algorithm>
 #include <numeric>
@@ -587,70 +587,87 @@ void GraphBuilder::compute_nonlocal_dual_graph_small(const LocalMeshData& mesh_d
   // Clear ghost vertices
   ghost_vertices.clear();
 
-  // Create MPI ring
-  const int source = (num_processes + process_number - 1) % num_processes;
-  const int dest   = (process_number + 1) % num_processes;
+  // send facet-cell map to intermediary match-making processes
+  std::vector<std::vector<std::size_t> > data_to_send(num_processes);
+  std::vector<std::size_t> destinations(num_processes);
+  for(std::size_t j = 0; j < num_processes; ++j)
+    destinations[j]=j;
+  std::vector<std::vector<std::size_t> > data_received;
+  std::vector<std::size_t> sources;
 
-  // Repeat (n-1) times, to go round ring
-  std::vector<std::size_t> comm_data_send;
-  std::vector<std::size_t> comm_data_recv;
-
-  for(std::size_t i = 0; i < (num_processes - 1); ++i)
+  // Pack map data and send to match-maker process
+  boost::unordered_map<std::vector<std::size_t>, std::size_t>::const_iterator it;
+  for (it = othermap.begin(); it != othermap.end(); ++it)
   {
-    // Pack data in std::vector to send
-    comm_data_send.resize((num_vertices_per_facet + 1)*othermap.size());
-    boost::unordered_map<std::vector<std::size_t>, std::size_t>::const_iterator it;
-    std::size_t k = 0;
-    for (it = othermap.begin(); it != othermap.end(); ++it)
-    {
-      for (std::size_t i = 0; i < num_vertices_per_facet; ++i)
-        comm_data_send[k++] = (it->first)[i];
-      comm_data_send[k++] = it->second;
-    }
+    // Use first vertex of facet to partition into blocks
+    // FIXME: could use a better index?
+    std::size_t dest_proc = MPI::index_owner((it->first)[0], mesh_data.num_global_vertices);
+    // Pack map into vectors
+    for (std::size_t i = 0; i < num_vertices_per_facet; ++i)
+      data_to_send[dest_proc].push_back((it->first)[i]);
+    data_to_send[dest_proc].push_back(it->second);
+  }
+  
+  std::cout << "Distribute map to match-makers" << std::endl;
+  for(std::size_t i = 0; i < num_processes; ++i)
+    std::cout << "Send from " << process_number << " to " << i << " = " 
+              << data_to_send[i].size() << std::endl;
 
-    // Shift data to next process
-    MPI::send_recv(comm_data_send, dest, comm_data_recv, source);
+  MPI::distribute(data_to_send, destinations, data_received, sources);
 
-    // Unpack data
-    std::vector<std::size_t> facet(num_vertices_per_facet);
-    othermap.clear();
-    othermap.rehash((othermap.size() + comm_data_recv.size()/(num_vertices_per_facet + 1))/othermap.max_load_factor() + 1);
-    for (std::size_t i = 0; i < comm_data_recv.size(); i += (num_vertices_per_facet + 1))
+  // Clean out send vector for later reuse
+  for(std::size_t i = 0; i < num_processes; i++)
+    data_to_send[i].clear();
+
+  // Map to connect processes and cells, using facet as key
+  boost::unordered_map<std::vector<std::size_t>, std::pair<std::size_t, std::size_t> > matchmap;
+    
+  std::vector<std::size_t> facet(num_vertices_per_facet);
+
+  for (std::size_t k = 0; k < data_received.size(); ++k)
+  {
+    const std::size_t proc_k = sources[k];
+    const std::vector<std::size_t>& data_k = data_received[k];
+    // Unpack into map
+    for (std::size_t i = 0; i < data_k.size(); i += (num_vertices_per_facet + 1))
     {
       std::size_t j = 0;
       for (j = 0; j < num_vertices_per_facet; ++j)
-        facet[j] = comm_data_recv[i + j];
-      othermap.insert(othermap.end(), std::make_pair(facet, comm_data_recv[i + j]));
-    }
-
-    //const std::size_t mapsize = MPI::sum(othermap.size());
-    //if(process_number == 0)
-    //{
-    //  std::cout << "t = " << (time() - tt) << ", iteration: " << i
-    //      << ", average map size = " << mapsize/num_processes << std::endl;
-    //}
-
-    // Go through local facets, looking for a matching facet in othermap
-    FacetCellMap::iterator fcell;
-    for (fcell = facet_cell_map.begin(); fcell != facet_cell_map.end(); ++fcell)
-    {
-      // Check if maps contains same facet
-      boost::unordered_map<std::vector<std::size_t>, std::size_t>::iterator join_cell = othermap.find(fcell->first);
-      if (join_cell != othermap.end())
+        facet[j] = data_k[i + j];
+      if(matchmap.find(facet) == matchmap.end())
+        matchmap[facet] = std::make_pair(proc_k, data_k[i + j]);
+      else
       {
-        // Found neighbours, insert into local_graph and delete facets
-        // from both maps
-        local_graph[fcell->second].insert(join_cell->second);
-        ghost_vertices.insert(join_cell->second);
-        facet_cell_map.erase(fcell);
-        othermap.erase(join_cell);
+        //found a match of two facets - send back to owners
+        const std::size_t proc1 = matchmap[facet].first;
+        const std::size_t cell1 = matchmap[facet].second;
+        const std::size_t proc2 = proc_k;
+        const std::size_t cell2 = data_k[i + j];
+        data_to_send[proc1].push_back(cell1);
+        data_to_send[proc1].push_back(cell2);
+        data_to_send[proc2].push_back(cell2);
+        data_to_send[proc2].push_back(cell1);        
+        std::cout << proc1 << "<->" << proc2 
+                  << " " << cell1 << "=" << cell2 << std::endl;
+        
       }
-    }
+      
+    }    
   }
 
-  // Remaining facets are exterior boundary - could be useful
-  const std::size_t n_exterior_facets = MPI::sum(facet_cell_map.size());
-  if (process_number == 0)
-    std::cout << "n (exterior facets) = " << n_exterior_facets << std::endl;
+  std::cout << "Sending back to owners" << std::endl;
+
+  MPI::distribute(data_to_send, destinations, data_received);
+  
+  for (std::vector<std::vector<std::size_t> >::iterator r = data_received.begin(); r != data_received.end(); ++r)
+    for (std::size_t i = 0 ; i < r->size() ; i+=2)
+    {
+      const std::vector<std::size_t>& cell_list = *r;
+      std::cout << process_number << ": " 
+                << cell_list[i] << " " << cell_list[i+1] << std::endl;
+      local_graph[cell_list[i] - offset].insert(cell_list[i+1]);
+      ghost_vertices.insert(cell_list[i+1]);
+    }
+
 }
 //-----------------------------------------------------------------------------

@@ -222,7 +222,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
       }
     }
 
-    std::cout << MPI::process_number() << ":" << update_count << std::endl;
+    //    std::cout << MPI::process_number() << ":" << update_count << std::endl;
     update_count = MPI::sum(update_count);
   
   }
