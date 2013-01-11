@@ -138,10 +138,6 @@ namespace dolfin
     /// Set a barrier (synchronization point)
     static void barrier();
 
-    // FIXME: Write documentation for this very fancy and versatile function!
-    // FIXME: The mother of all MPI calls! It does everything anyone would ever
-    //        need to do with MPI... :-)
-
     /// Send in_values[p0] to process p0 and receive values from process
     /// p1 in out_values[p1]
     template<typename T>
