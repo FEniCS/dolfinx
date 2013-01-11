@@ -69,7 +69,7 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   build_ufc(dofmap, restricted_dofs_inverse, mesh, restriction);
 
   // Check if dofmap is distributed
-  const bool distributed = MPI::num_processes();
+  const bool distributed = MPI::num_processes() > 1;
 
   // Re-order dofmap when distributed for process locality
   if (distributed)
