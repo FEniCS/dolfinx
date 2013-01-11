@@ -430,6 +430,10 @@ void EpetraMatrix::ident(std::size_t m, const dolfin::la_index* rows)
 
   typedef boost::unordered_set<std::size_t> MySet;
 
+  // Number of MPI processes
+  const std::size_t num_processes = MPI::num_processes();
+  const std::size_t process_number = MPI::process_number();
+
   // Build lists of local and nonlocal rows
   MySet local_rows;
   std::vector<std::size_t> non_local_rows;
@@ -442,31 +446,34 @@ void EpetraMatrix::ident(std::size_t m, const dolfin::la_index* rows)
   }
 
   // If parallel, send non_local rows to all processes
-  if (MPI::num_processes() > 1)
+  if (num_processes > 1)
   {
     // Send list of nonlocal rows to all processes
-    std::vector<std::size_t> destinations;
-    std::vector<std::size_t> send_data;
-    for (std::size_t i = 0; i < MPI::num_processes(); ++i)
+    //std::vector<std::size_t> destinations;
+    std::vector<std::vector<std::size_t> >  send_data(num_processes);
+    for (std::size_t p = 0; p < num_processes; ++p)
     {
-      if (i != MPI::process_number())
+      if (p != process_number)
       {
-        send_data.insert(send_data.end(), non_local_rows.begin(),
-                             non_local_rows.end());
-        destinations.insert(destinations.end(), non_local_rows.size(), i);
+        send_data[p].insert(send_data[p].end(), non_local_rows.begin(),
+                            non_local_rows.end());
+        //destinations.insert(destinations.end(), non_local_rows.size(), i);
       }
     }
 
-    std::vector<std::size_t> received_data;
-    MPI::distribute(send_data, destinations, received_data);
+    std::vector<std::vector<std::size_t> > received_data;
+    MPI::all_to_all(send_data, received_data);
 
     // Unpack data
-    for (std::size_t i = 0; i < received_data.size(); ++i)
+    for (std::size_t p = 0; p < num_processes; ++p)
     {
-      // Insert row into set if it's local
-      const int new_index = received_data[i];
-      if (A->MyGlobalRow(new_index))
-        local_rows.insert(new_index);
+      for (std::size_t i = 0; i < received_data[p].size(); ++i)
+      {
+        // Insert row into set if it's local
+        const dolfin::la_index new_index = received_data[p][i];
+        if (A->MyGlobalRow(new_index))
+          local_rows.insert(new_index);
+      }
     }
   }
   //-------------------------
