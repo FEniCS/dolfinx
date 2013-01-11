@@ -539,11 +539,6 @@ void HDF5File::reorder_vertices_by_global_indices(std::vector<double>& vertex_co
   // Send unwanted values off process
   const std::size_t num_processes = MPI::num_processes();
   std::vector<std::vector<std::pair<std::size_t, std::vector<double> > > > values_to_send(num_processes);
-  //std::vector<std::size_t> destinations(num_processes);
-
-  // Set up destination vector for communication with remote processes
-  //for(std::size_t process_j = 0; process_j < num_processes ; ++process_j)
-  //  destinations[process_j] = process_j;
 
   // Go through local vector and append value to the appropriate list
   // to send to correct process

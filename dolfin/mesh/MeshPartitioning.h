@@ -222,8 +222,6 @@ namespace dolfin
     // Pack data to send to appropriate process
     std::vector<std::vector<std::size_t> > send_data0(num_processes);
     std::vector<std::vector<T> > send_data1(num_processes);
-    //std::vector<std::size_t> destinations0;
-    //std::vector<std::size_t> destinations1;
     std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t> > >::const_iterator entity_host;
 
     {
@@ -256,10 +254,7 @@ namespace dolfin
 
               send_data0[proc].push_back(local_cell_entity);
               send_data0[proc].push_back(local_entity_index);
-              //destinations0.insert(destinations0.end(), 2, proc);
-
               send_data1[proc].push_back(domain_value);
-              //destinations1.push_back(proc);
             }
           }
         }
@@ -271,7 +266,6 @@ namespace dolfin
     std::vector<std::vector<T> > received_data1;
     MPI::all_to_all(send_data0, received_data0);
     MPI::all_to_all(send_data1, received_data1);
-    //dolfin_assert(2*received_data1.size() == received_data0.size());
 
     // Add received data to mesh domain
     for (std::size_t p = 0; p < num_processes; ++p)
