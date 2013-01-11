@@ -32,7 +32,6 @@
 #include <utility>
 #include <vector>
 #include <boost/multi_array.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
 #include <ufc.h>

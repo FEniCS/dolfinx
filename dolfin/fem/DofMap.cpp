@@ -28,14 +28,10 @@
 #include <boost/unordered_map.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
-#include <dolfin/common/Set.h>
 #include <dolfin/common/types.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/LogStream.h>
-#include <dolfin/mesh/BoundaryMesh.h>
-#include <dolfin/mesh/MeshDistributed.h>
 #include <dolfin/mesh/Restriction.h>
-#include <dolfin/parameter/GlobalParameters.h>
 #include "DofMapBuilder.h"
 #include "UFCCell.h"
 #include "DofMap.h"
