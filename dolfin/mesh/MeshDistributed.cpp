@@ -616,7 +616,8 @@ void MeshDistributed::compute_final_entity_ownership(std::vector<std::size_t>& o
   std::map<Entity, EntityData>& owned_shared_entities = shared_entities[0];
   std::map<Entity, EntityData>& unowned_shared_entities = shared_entities[1];
 
-  // Get MPI process number
+  // Get MPI number of processes and process number
+  const std::size_t num_processes = MPI::num_processes();
   const std::size_t process_number = MPI::process_number();
 
   // Convenience iterator
@@ -624,8 +625,7 @@ void MeshDistributed::compute_final_entity_ownership(std::vector<std::size_t>& o
 
   // Communicate common entities, starting with the entities we think
   // are shared but not owned
-  std::vector<std::size_t> send_common_entity_values;
-  std::vector<std::size_t> destinations_common_entity;
+  std::vector<std::vector<std::size_t> > send_common_entity_values(num_processes);
   for (it = unowned_shared_entities.begin(); it != unowned_shared_entities.end(); ++it)
   {
     // Get entity vertices (global vertex indices)
@@ -638,9 +638,8 @@ void MeshDistributed::compute_final_entity_ownership(std::vector<std::size_t>& o
     for (std::size_t j = 0; j < entity_processes.size(); ++j)
     {
       const std::size_t p = entity_processes[j];
-      send_common_entity_values.push_back(entity.size());
-      send_common_entity_values.insert(send_common_entity_values.end(), entity.begin(), entity.end());
-      destinations_common_entity.insert(destinations_common_entity.end(), entity.size() + 1, p);
+      send_common_entity_values[p].push_back(entity.size());
+      send_common_entity_values[p].insert(send_common_entity_values[p].end(), entity.begin(), entity.end());
     }
   }
 
@@ -659,72 +658,66 @@ void MeshDistributed::compute_final_entity_ownership(std::vector<std::size_t>& o
     {
       const std::size_t p = entity_processes[j];
       dolfin_assert(process_number < p);
-      send_common_entity_values.push_back(entity.size());
-      send_common_entity_values.insert(send_common_entity_values.end(), entity.begin(), entity.end());
-      destinations_common_entity.insert(destinations_common_entity.end(), entity.size() + 1, p);
+      send_common_entity_values[p].push_back(entity.size());
+      send_common_entity_values[p].insert(send_common_entity_values[p].end(), entity.begin(), entity.end());
     }
   }
 
   // Communicate common entities
-  std::vector<std::size_t> received_common_entity_values;
-  std::vector<std::size_t> sources_common_entity;
-  MPI::distribute(send_common_entity_values, destinations_common_entity,
-                  received_common_entity_values, sources_common_entity);
+  std::vector<std::vector<std::size_t> > received_common_entity_values;
+  MPI::all_to_all(send_common_entity_values, received_common_entity_values);
 
   // Check if entities received are really entities
-  std::vector<std::size_t> send_is_entity_values;
-  std::vector<std::size_t> destinations_is_entity;
-  for (std::size_t i = 0; i < received_common_entity_values.size();)
+  std::vector<std::vector<std::size_t> > send_is_entity_values(num_processes);
+  for (std::size_t p = 0; p < num_processes; ++p)
   {
-    // Get entity
-    const std::size_t p =  sources_common_entity[i];
-    const std::size_t entity_size = received_common_entity_values[i++];
-    Entity entity;
-    for (std::size_t j = 0; j < entity_size; ++j)
-      entity.push_back(received_common_entity_values[i++]);
-
-    // Check if it is an entity (in which case it will be in owned or
-    // unowned entities)
-    bool is_entity = false;
-    if (unowned_shared_entities.find(entity) != unowned_shared_entities.end()
-          || owned_shared_entities.find(entity) != owned_shared_entities.end())
+    for (std::size_t i = 0; i < received_common_entity_values[p].size();)
     {
-      is_entity = true;
-    }
+      // Get entity
+      const std::size_t entity_size = received_common_entity_values[p][i++];
+      Entity entity;
+      for (std::size_t j = 0; j < entity_size; ++j)
+        entity.push_back(received_common_entity_values[p][i++]);
 
-    // Add information about entity (whether it's actually an entity) to send
-    // to other processes
-    send_is_entity_values.push_back(entity_size);
-    destinations_is_entity.push_back(p);
-    for (std::size_t j = 0; j < entity_size; ++j)
-    {
-      send_is_entity_values.push_back(entity[j]);
-      destinations_is_entity.push_back(p);
+      // Check if it is an entity (in which case it will be in owned or
+      // unowned entities)
+      bool is_entity = false;
+      if (unowned_shared_entities.find(entity) != unowned_shared_entities.end()
+            || owned_shared_entities.find(entity) != owned_shared_entities.end())
+      {
+        is_entity = true;
+      }
+
+      // Add information about entity (whether it's actually an entity) to send
+      // to other processes
+      send_is_entity_values[p].push_back(entity_size);
+      for (std::size_t j = 0; j < entity_size; ++j)
+        send_is_entity_values[p].push_back(entity[j]);
+      send_is_entity_values[p].push_back(is_entity);
     }
-    send_is_entity_values.push_back(is_entity);
-    destinations_is_entity.push_back(p);
   }
 
   // Send data back (list of requested entities that are really entities)
-  std::vector<std::size_t> received_is_entity_values;
-  std::vector<std::size_t> sources_is_entity;
-  MPI::distribute(send_is_entity_values, destinations_is_entity,
-                  received_is_entity_values, sources_is_entity);
+  std::vector<std::vector<std::size_t> > received_is_entity_values;
+  MPI::all_to_all(send_is_entity_values, received_is_entity_values);
 
   // Create map from entities to processes where it is an entity
   std::map<Entity, std::vector<std::size_t> > entity_processes;
-  for (std::size_t i = 0; i < received_is_entity_values.size();)
+  for (std::size_t p = 0; p < num_processes; ++p)
   {
-    const std::size_t p = sources_is_entity[i];
-    const std::size_t entity_size = received_is_entity_values[i++];
-    Entity entity;
-    for (std::size_t j = 0; j < entity_size; ++j)
-      entity.push_back(received_is_entity_values[i++]);
-    const std::size_t is_entity = received_is_entity_values[i++];
-    if (is_entity == 1)
+    for (std::size_t i = 0; i < received_is_entity_values[p].size();)
     {
-      // Add entity since it is actually an entity for process p
-      entity_processes[entity].push_back(p);
+      //const std::size_t p = sources_is_entity[i];
+      const std::size_t entity_size = received_is_entity_values[p][i++];
+      Entity entity;
+      for (std::size_t j = 0; j < entity_size; ++j)
+        entity.push_back(received_is_entity_values[p][i++]);
+      const std::size_t is_entity = received_is_entity_values[p][i++];
+      if (is_entity == 1)
+      {
+        // Add entity since it is actually an entity for process p
+        entity_processes[entity].push_back(p);
+      }
     }
   }
 

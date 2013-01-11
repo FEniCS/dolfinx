@@ -538,11 +538,11 @@ void HDF5File::reorder_vertices_by_global_indices(std::vector<double>& vertex_co
   // Send unwanted values off process
   const std::size_t num_processes = MPI::num_processes();
   std::vector<std::vector<std::pair<std::size_t, std::vector<double> > > > values_to_send(num_processes);
-  std::vector<std::size_t> destinations(num_processes);
+  //std::vector<std::size_t> destinations(num_processes);
 
   // Set up destination vector for communication with remote processes
-  for(std::size_t process_j = 0; process_j < num_processes ; ++process_j)
-    destinations[process_j] = process_j;
+  //for(std::size_t process_j = 0; process_j < num_processes ; ++process_j)
+  //  destinations[process_j] = process_j;
 
   // Go through local vector and append value to the appropriate list
   // to send to correct process
@@ -557,7 +557,7 @@ void HDF5File::reorder_vertices_by_global_indices(std::vector<double>& vertex_co
   // Redistribute the values to the appropriate process - including self
   // All values are "in the air" at this point, so local vector can be cleared
   std::vector<std::vector<std::pair<std::size_t,std::vector<double> > > > received_values;
-  MPI::distribute(values_to_send, destinations, received_values);
+  MPI::all_to_all(values_to_send, received_values);
 
   // When receiving, just go through all received values
   // and place them in the local partition of the global vector.
@@ -566,16 +566,18 @@ void HDF5File::reorder_vertices_by_global_indices(std::vector<double>& vertex_co
   boost::multi_array_ref<double, 2> new_vertex_array(vertex_coords.data(),
                      boost::extents[range.second - range.first][gdim]);
 
-  for(std::size_t i = 0; i < received_values.size(); ++i)
+  for(std::size_t p = 0; p < num_processes; ++p)
   {
-    const std::vector<std::pair<std::size_t, std::vector<double> > >& received_global_data = received_values[i];
+    const std::vector<std::pair<std::size_t, std::vector<double> > >& received_global_data = received_values[p];
     for(std::size_t j = 0; j < received_global_data.size(); ++j)
     {
       const std::size_t global_i = received_global_data[j].first;
       if(global_i >= range.first && global_i < range.second)
+      {
         std::copy(received_global_data[j].second.begin(),
                   received_global_data[j].second.end(),
                   new_vertex_array[global_i - range.first].begin());
+      } 
       else
       {
         dolfin_error("HDF5File.cpp",

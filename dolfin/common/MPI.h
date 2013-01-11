@@ -162,7 +162,7 @@ namespace dolfin
 
     /// Distribute local arrays on all processors according to given
     /// partition
-    public:
+    private:
     template<typename T, typename S>
     static void distribute(const std::vector<T>& in_values,
                            const std::vector<S>& destinations,
