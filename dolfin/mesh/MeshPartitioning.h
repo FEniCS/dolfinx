@@ -217,10 +217,10 @@ namespace dolfin
       entity_hosts = MeshDistributed::locate_off_process_entities(off_process_global_cell_entities, D, mesh);
 
     // Pack data to send to appropriate process
-    std::vector<std::size_t> send_data0;
-    std::vector<T> send_data1;
-    std::vector<std::size_t> destinations0;
-    std::vector<std::size_t> destinations1;
+    std::vector<std::vector<std::size_t> > send_data0;
+    std::vector<std::vector<T> > send_data1;
+    //std::vector<std::size_t> destinations0;
+    //std::vector<std::size_t> destinations1;
     std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t> > >::const_iterator entity_host;
 
     {
@@ -251,12 +251,12 @@ namespace dolfin
               const std::size_t proc = process_data->first;
               const std::size_t local_cell_entity = process_data->second;
 
-              send_data0.push_back(local_cell_entity);
-              send_data0.push_back(local_entity_index);
-              destinations0.insert(destinations0.end(), 2, proc);
+              send_data0[proc].push_back(local_cell_entity);
+              send_data0[proc].push_back(local_entity_index);
+              //destinations0.insert(destinations0.end(), 2, proc);
 
-              send_data1.push_back(domain_value);
-              destinations1.push_back(proc);
+              send_data1[proc].push_back(domain_value);
+              //destinations1.push_back(proc);
             }
           }
         }
@@ -264,20 +264,27 @@ namespace dolfin
     }
 
     // Send/receive data
-    std::vector<std::size_t> received_data0;
-    std::vector<T> received_data1;
-    MPI::distribute(send_data0, destinations0, received_data0);
-    MPI::distribute(send_data1, destinations1, received_data1);
-    dolfin_assert(2*received_data1.size() == received_data0.size());
+    std::vector<std::vector<std::size_t> > received_data0;
+    std::vector<std::vector<T> > received_data1;
+    //MPI::distribute(send_data0, destinations0, received_data0);
+    //MPI::distribute(send_data1, destinations1, received_data1);
+    MPI::all_to_all(send_data0, received_data0);
+    MPI::all_to_all(send_data1, received_data1);
 
     // Add received data to mesh domain
-    for (std::size_t i = 0; i < received_data1.size(); ++i)
+    for (std::size_t p = 0; p < received_data0.size(); ++p)
     {
-      const std::size_t local_cell_entity = received_data0[2*i];
-      const std::size_t local_entity_index = received_data0[2*i + 1];
-      const T value = received_data1[i];
-      dolfin_assert(local_cell_entity < mesh.num_cells());
-      markers.set_value(local_cell_entity, local_entity_index, value);
+      const std::vector<std::size_t>& received_data0_p = received_data0[p];
+      const std::vector<T>& received_data1_p = received_data1[p];
+      dolfin_assert(2*received_data1_p.size() == received_data0_p.size());
+      for (std::size_t i = 0; i < received_data1_p.size(); ++i)
+      {
+        const std::size_t local_cell_entity = received_data0_p[2*i];
+        const std::size_t local_entity_index = received_data0_p[2*i + 1];
+        const T value = received_data1_p[i];
+        dolfin_assert(local_cell_entity < mesh.num_cells());
+        markers.set_value(local_cell_entity, local_entity_index, value);
+      }
     }
   }
   //---------------------------------------------------------------------------

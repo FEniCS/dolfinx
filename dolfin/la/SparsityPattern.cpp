@@ -302,11 +302,14 @@ void SparsityPattern::apply()
   {
     // Figure out correct process for each non-local entry
     dolfin_assert(non_local.size() % 2 == 0);
-    std::vector<std::size_t> destinations(non_local.size());
+    //std::vector<std::vector<std::size_t> > destinations(non_local.size());
+    std::vector<std::vector<std::size_t> > non_local_send(num_processes);
+
     for (std::size_t i = 0; i < non_local.size(); i += 2)
     {
       // Get generalised row for non-local entry
       const std::size_t I = non_local[i];
+      const std::size_t J = non_local[i + 1];
 
       // Figure out which process owns the row
       boost::unordered_map<std::size_t, std::size_t>::const_iterator non_local_index
@@ -317,44 +320,53 @@ void SparsityPattern::apply()
       dolfin_assert(p < num_processes);
       dolfin_assert(p != proc_number);
 
-      destinations[i] = p;
-      destinations[i + 1] = p;
+      non_local_send[p].push_back(I);
+      non_local_send[p].push_back(J);
+
+      //destinations[i] = p;
+      //destinations[i + 1] = p;
     }
 
     // Communicate non-local entries to other processes
-    std::vector<std::size_t> non_local_received;
-    MPI::distribute(non_local, destinations, non_local_received);
+    std::vector<std::vector<std::size_t> > non_local_received;
+    //MPI::distribute(non_local, destinations, non_local_received);
+    MPI::all_to_all(non_local_send, non_local_received);
 
     // Insert non-local entries received from other processes
-    dolfin_assert(non_local_received.size() % 2 == 0);
-    for (std::size_t i = 0; i < non_local_received.size(); i += 2)
+    for (std::size_t p = 0; p < num_processes; ++p)
     {
-      // Get generalised row and column
-      std::size_t I = non_local_received[i];
-      const std::size_t J = non_local_received[i + 1];
+      const std::vector<std::size_t>& non_local_received_p = non_local_received[p];
+      dolfin_assert(non_local_received_p.size() % 2 == 0);
 
-      // Sanity check
-      if (I < _local_range[_primary_dim].first || I >= _local_range[_primary_dim].second)
+      for (std::size_t i = 0; i < non_local_received_p.size(); i += 2)
       {
-        dolfin_error("SparsityPattern.cpp",
-                     "apply changes to sparsity pattern",
-                     "Received illegal sparsity pattern entry for row/column %d, not in range [%d, %d]",
-                     I, _local_range[_primary_dim].first, _local_range[_primary_dim].second);
-      }
+        // Get generalised row and column
+        std::size_t I = non_local_received_p[i];
+        const std::size_t J = non_local_received_p[i + 1];
 
-      // Subtract offset
-      I -= _local_range[_primary_dim].first;
+        // Sanity check
+        if (I < _local_range[_primary_dim].first || I >= _local_range[_primary_dim].second)
+        {
+          dolfin_error("SparsityPattern.cpp",
+                       "apply changes to sparsity pattern",
+                       "Received illegal sparsity pattern entry for row/column %d, not in range [%d, %d]",
+                       I, _local_range[_primary_dim].first, _local_range[_primary_dim].second);
+        }
 
-      // Insert in diagonal or off-diagonal block
-      if (_local_range[primary_codim].first <= J && J < _local_range[primary_codim].second)
-      {
-        dolfin_assert(I < diagonal.size());
-        diagonal[I].insert(J);
-      }
-      else
-      {
-        dolfin_assert(I < off_diagonal.size());
-        off_diagonal[I].insert(J);
+        // Subtract offset
+        I -= _local_range[_primary_dim].first;
+
+        // Insert in diagonal or off-diagonal block
+        if (_local_range[primary_codim].first <= J && J < _local_range[primary_codim].second)
+        {
+          dolfin_assert(I < diagonal.size());
+          diagonal[I].insert(J);
+        }
+        else
+        {
+          dolfin_assert(I < off_diagonal.size());
+          off_diagonal[I].insert(J);
+        }
       }
     }
   }
