@@ -67,7 +67,7 @@ class PeriodicBoundaryRight(SubDomain):
 
 pbc = PeriodicBoundary()
 pbr = PeriodicBoundaryRight()
-mf = FacetFunction('sizet', mesh)
+mf = FacetFunction('size_t', mesh)
 mf.set_all(0)
 pbc.mark(mf, 1)
 pbr.mark(mf, 2)
