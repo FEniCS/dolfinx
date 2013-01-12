@@ -27,13 +27,10 @@
 #include <ufc.h>
 #include <boost/random.hpp>
 #include <boost/unordered_map.hpp>
-#include <boost/serialization/map.hpp>
-#include <dolfin/common/tuple_serialization.h>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/graph/BoostGraphOrdering.h>
 #include <dolfin/graph/GraphBuilder.h>
-#include <dolfin/graph/SCOTCH.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/Facet.h>
@@ -71,7 +68,8 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   // Check if dofmap is distributed
   const bool distributed = MPI::num_processes() > 1;
 
-  // Re-order dofmap when distributed for process locality
+  // Re-order dofmap when distributed for process locality and set
+  // local_range
   if (distributed)
     reorder_distributed(dofmap, mesh, restriction, restricted_dofs_inverse);
   else
@@ -104,6 +102,7 @@ void DofMapBuilder::build_sub_map(DofMap& sub_dofmap,
   std::size_t offset = parent_dofmap._ufc_offset;
 
   // Get parent UFC dof map
+  dolfin_assert(parent_dofmap._ufc_dofmap);
   const ufc::dofmap& parent_ufc_dofmap = *(parent_dofmap._ufc_dofmap);
 
   // Extract ufc sub-dofmap from parent and get offset
