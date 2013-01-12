@@ -21,23 +21,31 @@
 // Modified by Kristoffer Selim 2008
 // Modified by Andre Massing 2009-2010
 // Modified by Johannes Ring 2012
+// Modified by Marie E. Rognes 2012
+// Modified by Mikael Mortensen 2012
 //
 // First added:  2006-05-09
-// Last changed: 2012-10-24
+// Last changed: 2012-12-13
 
+#include <boost/serialization/map.hpp>
+#include <dolfin/common/Array.h>
+#include <dolfin/mesh/Facet.h>
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
+#include <dolfin/common/Array.h>
 #include <dolfin/generation/CSGMeshGenerator.h>
 #include <dolfin/io/File.h>
 #include <dolfin/log/log.h>
+#include <dolfin/function/Expression.h>
 #include "BoundaryMesh.h"
 #include "Cell.h"
 #include "LocalMeshData.h"
 #include "MeshColoring.h"
 #include "MeshData.h"
 #include "MeshFunction.h"
+#include "MeshValueCollection.h"
 #include "MeshOrdering.h"
 #include "MeshPartitioning.h"
 #include "MeshRenumbering.h"
@@ -55,7 +63,8 @@ Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
                _data(*this),
                _cell_type(0),
                _intersection_operator(*this),
-               _ordered(false)
+               _ordered(false),
+               _cell_orientations(0)
 {
   // Do nothing
 }
@@ -65,7 +74,8 @@ Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
                                _data(*this),
                                _cell_type(0),
                                _intersection_operator(*this),
-                               _ordered(false)
+                               _ordered(false),
+                               _cell_orientations(0)
 {
   *this = mesh;
 }
@@ -75,10 +85,13 @@ Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
                                    _data(*this),
                                    _cell_type(0),
                                    _intersection_operator(*this),
-                                   _ordered(false)
+                                   _ordered(false),
+                                   _cell_orientations(0)
 {
   File file(filename);
   file >> *this;
+
+  _cell_orientations.resize(this->num_cells(), -1);
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(LocalMeshData& local_mesh_data)
@@ -87,7 +100,8 @@ Mesh::Mesh(LocalMeshData& local_mesh_data)
                                    _data(*this),
                                    _cell_type(0),
                                    _intersection_operator(*this),
-                                   _ordered(false)
+                                   _ordered(false),
+                                   _cell_orientations(0)
 {
   MeshPartitioning::build_distributed_mesh(*this, local_mesh_data);
 }
@@ -98,7 +112,9 @@ Mesh::Mesh(const CSGGeometry& geometry, std::size_t mesh_resolution)
     _data(*this),
     _cell_type(0),
     _intersection_operator(*this),
-    _ordered(false)
+    _ordered(false),
+    _cell_orientations(0)
+
 {
   // Build mesh on process 0
   if (MPI::process_number() == 0)
@@ -115,7 +131,8 @@ Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry, std::size_t resolution
     _data(*this),
     _cell_type(0),
     _intersection_operator(*this),
-    _ordered(false)
+    _ordered(false),
+    _cell_orientations(0)
 {
   assert(geometry);
 
@@ -145,6 +162,7 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
   _data = mesh._data;
   if (mesh._cell_type)
     _cell_type = CellType::create(mesh._cell_type->cell_type());
+  _cell_orientations = mesh._cell_orientations;
 
   // Rename
   rename(mesh.name(), mesh.label());
@@ -262,6 +280,7 @@ void Mesh::clear()
   _cell_type = 0;
   _intersection_operator.clear();
   _ordered = false;
+  _cell_orientations.clear();
 }
 //-----------------------------------------------------------------------------
 void Mesh::clean()
@@ -284,6 +303,9 @@ void Mesh::order()
 
   // Remember that the mesh has been ordered
   _ordered = true;
+
+  // Clear cell_orientations (as these depend on the ordering)
+  _cell_orientations.clear();
 }
 //-----------------------------------------------------------------------------
 bool Mesh::ordered() const
@@ -434,10 +456,10 @@ void Mesh::intersected_cells(const std::vector<MeshEntity>& entities,
     // Num cells == 1
     const Cell cell(*this, 0);
     for (std::vector<MeshEntity>::const_iterator entity = entities.begin();
-	 entity != entities.end(); ++entity)
+            entity != entities.end(); ++entity)
     {
       if (cell.intersects(*entity))
-	cells.insert(0);
+        cells.insert(0);
     }
   }
 }
@@ -541,7 +563,8 @@ std::string Mesh::str(bool verbose) const
     std::string cell_type("undefined cell type");
     if (_cell_type)
       cell_type = _cell_type->description(true);
-    s << "<Mesh of topological dimension "
+
+   s << "<Mesh of topological dimension "
       << topology().dim() << " ("
       << cell_type << ") with "
       << num_vertices() << " vertices and "
@@ -550,5 +573,45 @@ std::string Mesh::str(bool verbose) const
   }
 
   return s.str();
+}
+//-----------------------------------------------------------------------------
+const std::vector<int>& Mesh::cell_orientations() const
+{
+  return _cell_orientations;
+}
+//-----------------------------------------------------------------------------
+std::vector<int>& Mesh::cell_orientations()
+{
+  return _cell_orientations;
+}
+//-----------------------------------------------------------------------------
+void Mesh::init_cell_orientations(const Expression& global_normal)
+{
+  // Check that global_normal has the right size
+  if (global_normal.value_size() != 3)
+  {
+     dolfin_error("Mesh.cpp",
+                  "initialize cell orientations",
+                  "Global normal value size is assumed to be 3 (not %d)",
+                  global_normal.value_size());
+  }
+
+  Array<double> values(3);
+  Point up;
+  for (CellIterator cell(*this); !cell.end(); ++cell)
+  {
+    // Extract cell midpoint as Array
+    const Array<double> x(3, cell->midpoint().coordinates());
+
+    // Evaluate global normal at cell midpoint
+    global_normal.eval(values, x);
+
+    // Extract values as Point
+    for (unsigned int i = 0; i < 3; i++)
+      up[i] = values[i];
+
+    // Set orientation as orientation relative to up direction.
+    _cell_orientations[cell->index()] = cell->orientation(up);
+  }
 }
 //-----------------------------------------------------------------------------

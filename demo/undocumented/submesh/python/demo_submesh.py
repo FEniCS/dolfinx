@@ -35,7 +35,7 @@ class Structure(SubDomain):
 mesh = Rectangle(0.0, 0.0, 3.0, 1.0, 60, 20)
 
 # Create sub domain markers and mark everaything as 0
-sub_domains = MeshFunction("uint", mesh, mesh.topology().dim())
+sub_domains = MeshFunction("size_t", mesh, mesh.topology().dim())
 sub_domains.set_all(0)
 
 # Mark structure domain as 1

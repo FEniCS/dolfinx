@@ -92,6 +92,9 @@ namespace dolfin
       // Mesh
       const Mesh& mesh = cell.mesh();
 
+      // Set orientation (default to 0)
+      orientation = 0;
+
       // Set topological dimension
       topological_dimension = mesh.topology().dim();
 
@@ -99,18 +102,18 @@ namespace dolfin
       geometric_dimension = mesh.geometry().dim();
 
       // Allocate arrays for local entity indices
-      entity_indices = new unsigned int*[topological_dimension + 1];
+      entity_indices = new std::size_t*[topological_dimension + 1];
       for (std::size_t d = 0; d < topological_dimension; d++)
       {
         // Store number of cell entities allocated for (this can change
         // between init() and update() which is why it's stored)
         num_cell_entities.push_back(cell.num_entities(d));
         if (cell.num_entities(d) > 0)
-          entity_indices[d] = new unsigned int[cell.num_entities(d)];
+          entity_indices[d] = new std::size_t[cell.num_entities(d)];
         else
           entity_indices[d] = 0;
       }
-      entity_indices[topological_dimension] = new unsigned int[1];
+      entity_indices[topological_dimension] = new std::size_t[1];
 
       // Allocate vertex coordinates
       coordinates = new double*[num_vertices];
@@ -136,6 +139,7 @@ namespace dolfin
       cell_shape = ufc::interval;
       topological_dimension = 0;
       geometric_dimension = 0;
+      orientation = 0;
     }
 
     // Update cell entities and coordinates
@@ -159,7 +163,10 @@ namespace dolfin
       // Set local facet (-1 means no local facet set)
       this->local_facet = local_facet;
 
+      // Set orientation
+      this->orientation = cell.mesh().cell_orientations()[cell.index()];
       const std::size_t D = topological_dimension;
+
       const MeshTopology& topology = cell.mesh().topology();
       for (std::size_t d = 0; d < D; ++d)
       {
@@ -181,7 +188,7 @@ namespace dolfin
       //if (use_global_indices && topology.have_global_indices(D))
       //  entity_indices[D][0] = cell.global_index();
       //else
-        entity_indices[D][0] = cell.index();
+      entity_indices[D][0] = cell.index();
 
       // FIXME: Using the local cell index is inconsistent with UFC, but
       //        necessary to make DOLFIN run

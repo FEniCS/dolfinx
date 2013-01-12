@@ -54,9 +54,10 @@ UFC::~UFC()
 //-----------------------------------------------------------------------------
 void UFC::init(const Form& form)
 {
-  // Initialize mesh
-  UFCMesh ufc_mesh(form.mesh());
-  this->mesh = ufc_mesh;
+  // Initialize mesh dimensions // TODO MSA: Do we need this?
+  //this->num_global_mesh_entities(form.mesh().topology().dim() + 1);
+  //for (std::size_t d = 0; d < this->num_global_mesh_entities.size(); d++)
+  //  this->num_global_mesh_entities[d] = form.mesh().size_global(d);
 
   // Get function spaces for arguments
   std::vector<boost::shared_ptr<const FunctionSpace> > V = form.function_spaces();

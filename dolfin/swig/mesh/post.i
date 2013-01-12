@@ -95,7 +95,7 @@ def mark(self, *args):
         common.dolfin_error("dolfin.cpp.mesh.py",
                             "mark MeshFunction",
                             "Expected a MeshFunction of type \"size_t\", \"int\", \"double\" or \"bool\"")
-            
+
     self._mark(*args)
 
 %}
@@ -159,7 +159,6 @@ HierarchicalMeshFunction ## TYPENAME.parent = HierarchicalMeshFunction ## TYPENA
 // Run Macros to declare the different MeshFunctions
 //-----------------------------------------------------------------------------
 DECLARE_MESHFUNCTION(std::size_t, Sizet)
-DECLARE_MESHFUNCTION(unsigned int, UInt)
 DECLARE_MESHFUNCTION(int, Int)
 DECLARE_MESHFUNCTION(double, Double)
 DECLARE_MESHFUNCTION(bool, Bool)
@@ -172,11 +171,11 @@ _doc_string += """
   *Arguments*
     tp (str)
       String defining the type of the MeshFunction
-      Allowed: 'int', 'size_t', 'uint', 'double', and 'bool'
+      Allowed: 'int', 'size_t', 'double', and 'bool'
     mesh (_Mesh_)
       A DOLFIN mesh.
       Optional.
-    dim (uint)
+    dim (unsigned int)
       The topological dimension of the MeshFunction.
       Optional.
     filename (str)
@@ -192,7 +191,9 @@ class MeshFunction(object):
         if tp == "int":
             return MeshFunctionInt(*args)
         if tp == "uint":
-            return MeshFunctionUInt(*args)
+            common.deprecation("uint-valued MeshFunction", "1.1.0",
+                               "Typename \"uint\" has been changed to \"size_t\".")
+            return MeshFunctionSizet(*args)
         elif tp == "size_t":
             return MeshFunctionSizet(*args)
         elif tp == "double":
@@ -205,14 +206,14 @@ class MeshFunction(object):
 del _doc_string
 
 def _new_closure(MeshType):
-    assert(isinstance(MeshType,str))
+    assert(isinstance(MeshType, str))
     def new(cls, tp, mesh, value=0):
         if not isinstance(tp, str):
             raise TypeError, "expected a 'str' as first argument"
         if tp == "int":
             return eval("%sInt(mesh, value)"%MeshType)
         if tp == "uint":
-            return eval("%sUInt(mesh, value)"%MeshType)
+            return eval("%sSizet(mesh, value)"%MeshType)
         if tp == "size_t":
             return eval("%sSizet(mesh, value)"%MeshType)
         elif tp == "double":
@@ -276,7 +277,6 @@ CellFunction = type("CellFunction", (),\
 // Run macros for declaring MeshValueCollection
 //-----------------------------------------------------------------------------
 DECLARE_MESHVALUECOLLECTION(std::size_t, Sizet)
-DECLARE_MESHVALUECOLLECTION(unsigned int, UInt)
 DECLARE_MESHVALUECOLLECTION(int, Int)
 DECLARE_MESHVALUECOLLECTION(double, Double)
 DECLARE_MESHVALUECOLLECTION(bool, Bool)
@@ -289,8 +289,8 @@ _meshvaluecollection_doc_string += """
   *Arguments*
       tp (str)
          String defining the type of the MeshValueCollection
-          Allowed: 'int', 'uint', 'size_t', 'double', and 'bool'
-      dim (uint)
+          Allowed: 'int', 'size_t', 'double', and 'bool'
+      dim (unsigned int)
           The topological dimension of the MeshValueCollection.
           Optional.
       mesh_function (_MeshFunction_)
@@ -303,7 +303,7 @@ _meshvaluecollection_doc_string += """
       filename (std::string)
           The XML file name.
           Optional, used when read from file.
-      dim (uint)
+      dim (unsigned int)
           The mesh entity dimension for the mesh value collection.
           Optional, used when read from file
 """
@@ -315,7 +315,9 @@ class MeshValueCollection(object):
         if tp == "int":
             return MeshValueCollectionInt(*args)
         if tp == "uint":
-            return MeshValueCollectionUInt(*args)
+            common.deprecation("uint-valued MeshFunction", "1.1.0",
+                               "Typename \"uint\" has been changed to \"size_t\".")
+            return MeshValueCollectionSizet(*args)
         elif tp == "size_t":
             return MeshValueCollectionSizet(*args)
         elif tp == "double":
@@ -351,8 +353,10 @@ def ufl_cell(self):
     The cell corresponds to the topological dimension of the mesh.
     """
     import ufl
-    cells = { 1: ufl.interval, 2: ufl.triangle, 3: ufl.tetrahedron }
-    return cells[self.topology().dim()]
+    tdim = self.topology().dim()
+    gdim = self.geometry().dim()
+    dim2domain = { 1: 'interval', 2: 'triangle', 3: 'tetrahedron' }
+    return ufl.Cell(dim2domain[tdim], geometric_dimension=gdim)
 
 def coordinates(self):
     """
@@ -382,6 +386,22 @@ def coordinates(self):
     _attach_base_to_numpy_array(coord, self)
 
     return coord
+
+def cell_orientations(self):
+    """
+    Get the cell orientations set.
+
+    *Returns*
+        numpy.array(int)
+            Cell orientations
+    """
+    # Get coordinates
+    orientations = self._cell_orientations()
+
+    # Attach a reference to the Mesh to the orientations array
+    _attach_base_to_numpy_array(orientations, self)
+
+    return orientations
 
 def cells(self):
     """
@@ -419,4 +439,3 @@ HierarchicalMesh.root_node = HierarchicalMesh._root_node
 HierarchicalMesh.child = HierarchicalMesh._child
 HierarchicalMesh.parent = HierarchicalMesh._parent
 %}
-
