@@ -37,7 +37,7 @@ class Constants(unittest.TestCase):
           c2 = Constant([[2,3], [3,4]], triangle)
           c3 = Constant(array([2,3]), tetrahedron)
 
-          self.assertTrue(c0.cell().is_undefined())
+          self.assertTrue(c0.cell() is None)
           self.assertTrue(c1.cell() == interval)
           self.assertTrue(c2.cell() == triangle)
           self.assertTrue(c3.cell() == tetrahedron)

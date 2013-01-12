@@ -263,10 +263,10 @@ class Instantiation(unittest.TestCase):
                     return (2,2)
 
           e0 = Expression("1")
-          self.assertTrue(e0.ufl_element().cell().is_undefined())
+          self.assertTrue(e0.ufl_element().cell() is None)
 
           e1 = Expression("1", cell=triangle)
-          self.assertFalse(e1.ufl_element().cell().is_undefined())
+          self.assertFalse(e1.ufl_element().cell() is None)
 
           e2 = Expression("1", cell=triangle, degree=2)
           self.assertEqual(e2.ufl_element().degree(), 2)
@@ -278,10 +278,10 @@ class Instantiation(unittest.TestCase):
           self.assertTrue(isinstance(e4.ufl_element(), TensorElement))
 
           f0 = F0()
-          self.assertTrue(f0.ufl_element().cell().is_undefined())
+          self.assertTrue(f0.ufl_element().cell() is None)
 
           f1 = F0(cell=triangle)
-          self.assertFalse(f1.ufl_element().cell().is_undefined())
+          self.assertFalse(f1.ufl_element().cell() is None)
 
           f2 = F0(cell=triangle, degree=2)
           self.assertEqual(f2.ufl_element().degree(), 2)
