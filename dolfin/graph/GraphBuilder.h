@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-19
-// Last changed: 2013-01-03
+// Last changed: 2013-01-10
 
 #ifndef __GRAPH_BUILDER_H
 #define __GRAPH_BUILDER_H

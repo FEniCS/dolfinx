@@ -8,11 +8,11 @@
 # without needing to specify an installation directory.
 
 # Number of processes to use during build
-: ${PROCS:=3}
+: ${PROCS:=16}
 
 CMAKE_EXTRA_ARGS=$@
 
-INSTALLDIR=$PWD/local
+INSTALLDIR=/raid/chris/FEniCS
 BUILDDIR=$PWD/build
 
 mkdir -p $BUILDDIR
