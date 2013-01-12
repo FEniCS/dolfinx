@@ -575,7 +575,6 @@ void GraphBuilder::compute_nonlocal_dual_graph_small(const LocalMeshData& mesh_d
   // Get offset for this process
   const std::size_t offset = MPI::global_offset(num_local_cells, true);
   const std::size_t num_processes = MPI::num_processes();
-  const std::size_t process_number = MPI::process_number();
 
   // Clear ghost vertices
   ghost_vertices.clear();

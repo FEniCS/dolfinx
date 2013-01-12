@@ -178,28 +178,28 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
       VertexIterator v0(e[new_edge_0]);
       VertexIterator v1(e[new_edge_1]);
 
-      std::size_t v_common, v_leg_0, v_leg_1;      
-      for(std::size_t i = 0; i < 2; ++i)
-        for(std::size_t j = 0; j < 2; ++j)
+      std::size_t v_common(0), v_leg_0(0), v_leg_1(0);      
+      for (std::size_t i = 0; i < 2; ++i)
+      {
+        for (std::size_t j = 0; j < 2; ++j)
         {
-          if(v0[i] == v1[j])
+          if (v0[i] == v1[j])
           {
             v_common = v0[i].index();
-            v_leg_0 = v0[1-i].index();
-            v_leg_1 = v1[1-j].index();
+            v_leg_0 = v0[1 - i].index();
+            v_leg_1 = v1[1 - j].index();
           }
         }
-            
+      }
+      
       // need to find the 'uncommon' vertex of the two edges
       // which is furthest from both
-      std::size_t v_far;
+      std::size_t v_far = 0;
       
-      for(std::size_t i = 0; i < 4;++i)
+      for(std::size_t i = 0; i < 4; ++i)
       {
         const std::size_t v_i = v[i].index();
-        if(v_i != v_common && 
-           v_i != v_leg_0 &&
-           v_i != v_leg_1)
+        if(v_i != v_common && v_i != v_leg_0 && v_i != v_leg_1)
         {
           v_far = v_i;
         }
@@ -237,14 +237,12 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
         p.new_cell(v_far, e1, e0, v_leg_0);
         p.new_cell(v_far, e1, v_leg_1, v_leg_0);
       }
-      
     }
     else if(rgb.size() == 3) // refinement of one face into 4 triangles
     {
         dolfin_error("ParallelRefinement3D.cpp",
                      "refine",
                      "Error in making new cells");
-
     }
     else if(rgb.size() == 6)
     {
