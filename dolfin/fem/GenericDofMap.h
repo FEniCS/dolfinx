@@ -104,12 +104,14 @@ namespace dolfin
     virtual boost::shared_ptr<GenericDofMap> create(const Mesh& new_mesh) const = 0;
 
     /// Extract sub dofmap component
-    virtual GenericDofMap* extract_sub_dofmap(const std::vector<std::size_t>& component,
-                                              const Mesh& mesh) const = 0;
+    virtual boost::shared_ptr<GenericDofMap> 
+        extract_sub_dofmap(const std::vector<std::size_t>& component,
+                           const Mesh& mesh) const = 0;
 
     /// Create a "collapsed" a dofmap (collapses from a sub-dofmap view)
-    virtual GenericDofMap* collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
-                                    const Mesh& mesh) const = 0;
+    virtual boost::shared_ptr<GenericDofMap> 
+        collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
+                 const Mesh& mesh) const = 0;
 
     /// Set dof entries in vector to a specified value. Parallel layout
     /// of vector must be consistent with dof map range.

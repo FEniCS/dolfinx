@@ -27,8 +27,9 @@
 
 #include <set>
 #include <map>
-#include <boost/unordered_set.hpp>
+#include <boost/array.hpp>
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Set.h>
 
@@ -89,20 +90,25 @@ namespace dolfin
 
     // Build UFC-based dofmap
     static void build_ufc(DofMap& dofmap, map& restricted_dofs_inverse,
-                         const Mesh& mesh,
-                         boost::shared_ptr<const Restriction> restriction);
+                          const Mesh& mesh,
+                          boost::shared_ptr<const Restriction> restriction);
 
-    // Re-order dofmap locally for dof spatial locality
+    // Re-order local dofmap for dof spatial locality. Re-ordering is
+    // optional, but re-ordering can make other algorithms
+    // (e.g. matrix-vector products) significantly faster.
     static void reorder_local(DofMap& dofmap, const Mesh& mesh);
 
     // Re-order distributed dof map for process locality
     static void reorder_distributed(DofMap& dofmap,
-                                  const Mesh& mesh,
-                                  boost::shared_ptr<const Restriction> restriction,
-                                  const map& restricted_dofs_inverse);
+                                   const Mesh& mesh,
+                                   boost::shared_ptr<const Restriction> restriction,
+                                   const map& restricted_dofs_inverse);
 
-    static void compute_dof_ownership(set& owned_dofs, set& shared_owned_dofs,
-                                  set& shared_unowned_dofs,
+    // Compute which process 'owns' each degree of freedom 
+    //   dof_ownership[0] -> all dofs owned by this process (will intersect dof_ownership[1]) 
+    //   dof_ownership[1] -> dofs shared with other processes and owned by this process
+    //   dof_ownership[2] -> dofs shared with other processes and owned by another process
+    static void compute_dof_ownership(boost::array<set, 3>& dof_ownership,
                                   vec_map& shared_dof_processes,
                                   DofMap& dofmap,
                                   const DofMapBuilder::set& global_dofs,
@@ -110,9 +116,8 @@ namespace dolfin
                                   boost::shared_ptr<const Restriction> restriction,
                                   const map& restricted_dofs_inverse);
 
-    static void parallel_renumber(const set& owned_dofs,
-                                  const set& shared_owned_dofs,
-                                  const set& shared_unowned_dofs,
+    // Re-order distributed dofmap for process locality based on ownership data
+    static void parallel_renumber(const boost::array<set, 3>& dof_ownership,
                                   const vec_map& shared_dof_processes,
                                   DofMap& dofmap,
                                   const Mesh& mesh,
@@ -143,10 +148,11 @@ namespace dolfin
       DofMapBuilder::set& global_dofs);
 
     // Recursively extract UFC sub-dofmap and compute offset
-    static ufc::dofmap* extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
-                                               std::size_t& offset,
-                                               const std::vector<std::size_t>& component,
-                                               const Mesh& mesh);
+    static boost::shared_ptr<ufc::dofmap> 
+        extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
+                               std::size_t& offset,
+                               const std::vector<std::size_t>& component,
+                               const Mesh& mesh);
 
   };
 }

@@ -264,16 +264,18 @@ boost::shared_ptr<GenericDofMap> DofMap::create(const Mesh& new_mesh) const
   return boost::shared_ptr<GenericDofMap>(new DofMap(ufc_dof_map, new_mesh));
 }
 //-----------------------------------------------------------------------------
-DofMap* DofMap::extract_sub_dofmap(const std::vector<std::size_t>& component,
-                                   const Mesh& mesh) const
+boost::shared_ptr<GenericDofMap> 
+  DofMap::extract_sub_dofmap(const std::vector<std::size_t>& component,
+                             const Mesh& mesh) const
 {
-  return new DofMap(*this, component, mesh);
+  return boost::shared_ptr<GenericDofMap>(new DofMap(*this, component, mesh));
 }
 //-----------------------------------------------------------------------------
-DofMap* DofMap::collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
-                         const Mesh& mesh) const
+boost::shared_ptr<GenericDofMap> 
+  DofMap::collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
+                   const Mesh& mesh) const
 {
-  return new DofMap(collapsed_map, *this, mesh);
+  return boost::shared_ptr<GenericDofMap>(new DofMap(collapsed_map, *this, mesh));
 }
 //-----------------------------------------------------------------------------
 void DofMap::set(GenericVector& x, double value) const
