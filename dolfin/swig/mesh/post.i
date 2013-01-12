@@ -353,8 +353,10 @@ def ufl_cell(self):
     The cell corresponds to the topological dimension of the mesh.
     """
     import ufl
-    cells = { 1: ufl.interval, 2: ufl.triangle, 3: ufl.tetrahedron }
-    return cells[self.topology().dim()]
+    tdim = self.topology().dim()
+    gdim = self.geometry().dim()
+    dim2domain = { 1: 'interval', 2: 'triangle', 3: 'tetrahedron' }
+    return ufl.Cell(dim2domain[tdim], geometric_dimension=gdim)
 
 def coordinates(self):
     """
@@ -437,4 +439,3 @@ HierarchicalMesh.root_node = HierarchicalMesh._root_node
 HierarchicalMesh.child = HierarchicalMesh._child
 HierarchicalMesh.parent = HierarchicalMesh._parent
 %}
-

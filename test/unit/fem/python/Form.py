@@ -311,7 +311,7 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
             return
 
         "Testing assembly of normals for 1D meshes embedded in 2D"
-        n = ufl.Cell("interval", Space(2)).n
+        n = ufl.Cell("interval", geometric_dimension=2).n
         a = inner(n, n)*ds
         value_bottom1 = assemble(a, mesh=self.bottom1)
         self.assertAlmostEqual(value_bottom1, 2.0)
@@ -329,7 +329,7 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         if MPI.num_processes() > 1:
             return
 
-        n = ufl.Cell("interval", Space(3)).n
+        n = ufl.Cell("interval", geometric_dimension=3).n
         a = inner(n, n)*ds
         v1 = assemble(a, mesh=self.bottom3)
         self.assertAlmostEqual(v1, 2.0)
@@ -347,7 +347,7 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         if MPI.num_processes() > 1:
             return
 
-        n = ufl.Cell("triangle", Space(3)).n
+        n = ufl.Cell("triangle", geometric_dimension=3).n
         a = inner(n, n)*ds
         v1 = assemble(a, mesh=self.bottom2)
         self.assertAlmostEqual(v1, 4.0)
@@ -365,17 +365,17 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         if MPI.num_processes() > 1:
             return
 
-        volume = ufl.Cell("interval", Space(2)).volume
+        volume = ufl.Cell("interval", geometric_dimension=2).volume
         a = volume*dx
         b = assemble(a, mesh=self.bottom1)
         self.assertAlmostEqual(b, 1.0/self.m)
 
-        volume = ufl.Cell("interval", Space(3)).volume
+        volume = ufl.Cell("interval", geometric_dimension=3).volume
         a = volume*dx
         b = assemble(a, mesh=self.bottom3)
         self.assertAlmostEqual(b, 1.0/self.m)
 
-        volume = ufl.Cell("triangle", Space(3)).volume
+        volume = ufl.Cell("triangle", geometric_dimension=3).volume
         a = volume*dx
         b = assemble(a, mesh=self.bottom2)
         self.assertAlmostEqual(b, 1.0/(2*self.m*self.m))
@@ -387,20 +387,20 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         if MPI.num_processes() > 1:
             return
 
-        r = ufl.Cell("interval", Space(2)).circumradius
+        r = ufl.Cell("interval", geometric_dimension=2).circumradius
         a = r*dx
         b = assemble(a, mesh=self.bottom1)
         self.assertAlmostEqual(b, 1.0/self.m)
 
-        r = ufl.Cell("interval", Space(3)).circumradius
+        r = ufl.Cell("interval", geometric_dimension=3).circumradius
         a = r*dx
         b = assemble(a, mesh=self.bottom3)
         self.assertAlmostEqual(b, 1.0/self.m)
 
-        r = ufl.Cell("triangle", Space(2)).circumradius
+        r = ufl.Cell("triangle", geometric_dimension=2).circumradius
         a = r*dx
         b0 = assemble(a, mesh=UnitSquareMesh(self.m, self.m))
-        r = ufl.Cell("triangle", Space(3)).circumradius
+        r = ufl.Cell("triangle", geometric_dimension=3).circumradius
         a = r*dx
         b1 = assemble(a, mesh=self.bottom2)
         self.assertAlmostEqual(b0, b1)
@@ -412,21 +412,21 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         if MPI.num_processes() > 1:
             return
 
-        area = ufl.Cell("interval", Space(2)).facet_area
+        area = ufl.Cell("interval", geometric_dimension=2).facet_area
         a = area*ds
         b = assemble(a, mesh=self.bottom1)
         self.assertAlmostEqual(b, 2.0)
 
-        area = ufl.Cell("interval", Space(3)).facet_area
+        area = ufl.Cell("interval", geometric_dimension=3).facet_area
         a = area*ds
         b = assemble(a, mesh=self.bottom3)
         self.assertAlmostEqual(b, 2.0)
 
-        area = ufl.Cell("triangle", Space(2)).facet_area
+        area = ufl.Cell("triangle", geometric_dimension=2).facet_area
         a = area*ds
         b0 = assemble(a, mesh=UnitSquareMesh(self.m, self.m))
 
-        area = ufl.Cell("triangle", Space(3)).facet_area
+        area = ufl.Cell("triangle", geometric_dimension=3).facet_area
         a = area*ds
         b1 = assemble(a, mesh=self.bottom2)
         self.assertAlmostEqual(b0, b1)
