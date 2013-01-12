@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2013-01-02
-// Last Changed: 2013-01-03
+// Last Changed: 2013-01-11
 
 
 // Simple class to perform uniform refinement in 3D in parallel
@@ -32,7 +32,17 @@ namespace dolfin
     
     // uniform refine
     static void refine(Mesh& new_mesh, const Mesh& mesh);
+
+    // refine with markers
+    void refine(Mesh& new_mesh, const Mesh& mesh,
+                const MeshFunction<bool>& refinement_marker);
+
+
+  private:
+    void vertex_edge_pair(std::size_t e1, std::size_t e2);
     
   };
+
+
 
 }

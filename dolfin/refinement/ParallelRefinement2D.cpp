@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2012-12-19
-// Last Changed: 2013-01-10
+// Last Changed: 2013-01-11
 
 #include <vector>
 #include <map>
@@ -194,7 +194,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   // Mark reference edges of cells with any marked edge
   // and repeat until no more marking takes place
 
-  uint update_count = 1;
+  std::size_t update_count = 1;
   while(update_count != 0)
   {
     update_count = 0;

@@ -467,7 +467,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
   #else
 
-  // Use algorithm that does not require MPI to be intalled
+  // Use algorithm that does not require MPI to be installed
   FacetCellMap facet_cell_map;
   compute_local_dual_graph(mesh_data, local_graph, facet_cell_map);
 
@@ -534,7 +534,7 @@ void GraphBuilder::compute_local_dual_graph(const LocalMeshData& mesh_data,
       const FacetCellMap::const_iterator join_cell = facet_cell_map.find(facet);
 
       // If facet not found in map, insert facet->cell into map
-      if(join_cell == facet_cell_map.end())
+      if (join_cell == facet_cell_map.end())
         facet_cell_map[facet] = i;
       else
       {
@@ -553,6 +553,9 @@ void GraphBuilder::compute_nonlocal_dual_graph_small(const LocalMeshData& mesh_d
                             std::set<std::size_t>& ghost_vertices)
 {
   Timer timer("Compute dual graph");
+
+  MPICommunicator mpi_comm;
+  boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_attach);  
 
   // At this stage facet_cell map only contains facets->cells with edge
   // facets either interprocess or external boundaries
@@ -577,31 +580,28 @@ void GraphBuilder::compute_nonlocal_dual_graph_small(const LocalMeshData& mesh_d
   // Clear ghost vertices
   ghost_vertices.clear();
 
-  // send facet-cell map to intermediary match-making processes
+  // Send facet-cell map to intermediary match-making processes
   std::vector<std::vector<std::size_t> > data_to_send(num_processes);
-  std::vector<std::size_t> destinations(num_processes);
-  for(std::size_t j = 0; j < num_processes; ++j)
-    destinations[j]=j;
-  std::vector<std::vector<std::size_t> > data_received;
-  std::vector<std::size_t> sources;
+  std::vector<std::vector<std::size_t> > data_received(num_processes);
 
   // Pack map data and send to match-maker process
   boost::unordered_map<std::vector<std::size_t>, std::size_t>::const_iterator it;
   for (it = facet_cell_map.begin(); it != facet_cell_map.end(); ++it)
   {
     // Use first vertex of facet to partition into blocks
-    // FIXME: could use a better index?
+    // FIXME: could use a better index? First vertex is slightly skewed towards low values - may not be important
     std::size_t dest_proc = MPI::index_owner((it->first)[0], mesh_data.num_global_vertices);
-    // Pack map into vectors
+    // Pack map into vectors to send
     for (std::size_t i = 0; i < num_vertices_per_facet; ++i)
       data_to_send[dest_proc].push_back((it->first)[i]);
+    // Add offset to cell numbers sent off process
     data_to_send[dest_proc].push_back(it->second + offset);
   }
-  
-  MPI::distribute(data_to_send, destinations, data_received, sources);
 
+  boost::mpi::all_to_all(comm, data_to_send, data_received);
+  
   // Clean out send vector for later reuse
-  for(std::size_t i = 0; i < num_processes; i++)
+  for (std::size_t i = 0; i < num_processes; i++)
     data_to_send[i].clear();
 
   // Map to connect processes and cells, using facet as key
@@ -609,17 +609,17 @@ void GraphBuilder::compute_nonlocal_dual_graph_small(const LocalMeshData& mesh_d
     
   std::vector<std::size_t> facet(num_vertices_per_facet);
 
-  for (std::size_t k = 0; k < data_received.size(); ++k)
+  for (std::size_t proc_k = 0; proc_k < num_processes; ++proc_k)
   {
-    const std::size_t proc_k = sources[k];
-    const std::vector<std::size_t>& data_k = data_received[k];
+    const std::vector<std::size_t>& data_k = data_received[proc_k];
     // Unpack into map
     for (std::size_t i = 0; i < data_k.size(); i += (num_vertices_per_facet + 1))
     {
       std::size_t j = 0;
       for (j = 0; j < num_vertices_per_facet; ++j)
         facet[j] = data_k[i + j];
-      if(matchmap.find(facet) == matchmap.end())
+   
+      if (matchmap.find(facet) == matchmap.end())
         matchmap[facet] = std::make_pair(proc_k, data_k[i + j]);
       else
       {
@@ -637,16 +637,18 @@ void GraphBuilder::compute_nonlocal_dual_graph_small(const LocalMeshData& mesh_d
     }    
   }
 
-  MPI::distribute(data_to_send, destinations, data_received);
+  boost::mpi::all_to_all(comm, data_to_send, data_received);
   
   // Flatten received data and insert connected cells into local map
   for (std::vector<std::vector<std::size_t> >::iterator r = data_received.begin(); r != data_received.end(); ++r)
+  {
+    const std::vector<std::size_t>& cell_list = *r;
     for (std::size_t i = 0 ; i < r->size() ; i+=2)
     {
-      const std::vector<std::size_t>& cell_list = *r;
       local_graph[cell_list[i] - offset].insert(cell_list[i+1]);
       ghost_vertices.insert(cell_list[i+1]);
     }
-
+  }
+  
 }
 //-----------------------------------------------------------------------------
