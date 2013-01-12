@@ -449,7 +449,6 @@ void EpetraMatrix::ident(std::size_t m, const dolfin::la_index* rows)
   if (num_processes > 1)
   {
     // Send list of nonlocal rows to all processes
-    //std::vector<std::size_t> destinations;
     std::vector<std::vector<std::size_t> >  send_data(num_processes);
     for (std::size_t p = 0; p < num_processes; ++p)
     {
@@ -457,7 +456,6 @@ void EpetraMatrix::ident(std::size_t m, const dolfin::la_index* rows)
       {
         send_data[p].insert(send_data[p].end(), non_local_rows.begin(),
                             non_local_rows.end());
-        //destinations.insert(destinations.end(), non_local_rows.size(), i);
       }
     }
 
