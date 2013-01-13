@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2010-2011.
 //
 // First added:  2010-02-10
-// Last changed: 2013-01-02
+// Last changed: 2013-01-13
 
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
@@ -46,6 +46,10 @@ void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh)
     ParallelRefinement2D::refine(refined_mesh, mesh);
   else if(mesh.topology().dim() == 3)
     ParallelRefinement3D::refine(refined_mesh, mesh);
+  else
+    dolfin_error("refine.cpp",
+                 "refine mesh",
+                 "Unknown dimension in parallel");
 }
 //-----------------------------------------------------------------------------
 dolfin::Mesh dolfin::refine(const Mesh& mesh,
@@ -63,8 +67,15 @@ void dolfin::refine(Mesh& refined_mesh,
   // Call local mesh refinement algorithm or parallel, as appropriate
   if (MPI::num_processes() == 1)
     LocalMeshRefinement::refine(refined_mesh, mesh, cell_markers);
-  else
+  else if (mesh.topology().dim() == 2)
     ParallelRefinement2D::refine(refined_mesh, mesh, cell_markers);
-
+  else if (mesh.topology().dim() == 3)
+    ParallelRefinement3D::refine(refined_mesh, mesh, cell_markers);
+  else
+    dolfin_error("refine.cpp",
+                 "refine mesh",
+                 "Unknown dimension in parallel");
+  
+                 
 }
 //-----------------------------------------------------------------------------

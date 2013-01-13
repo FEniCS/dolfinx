@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2013-01-02
-// Last Changed: 2013-01-11
+// Last Changed: 2013-01-13
 
 #include <vector>
 #include <map>
@@ -136,9 +136,7 @@ void ParallelRefinement::create_new_vertices(const EdgeFunction<bool>& markedEdg
       {
         const Point& midpoint = edge->midpoint();
         for(std::size_t j = 0; j < gdim; ++j)
-        {
           new_vertex_coordinates.push_back(midpoint[j]);
-        }
 
         local_edge_to_new_vertex[local_i] = n++;
       }
@@ -161,7 +159,7 @@ void ParallelRefinement::create_new_vertices(const EdgeFunction<bool>& markedEdg
           const Point& midpoint = edge->midpoint();
           for(std::size_t j = 0; j < gdim; ++j)
             new_vertex_coordinates.push_back(midpoint[j]);
-     
+          
           local_edge_to_new_vertex[local_i] = n++;
         } 
       }
@@ -236,6 +234,7 @@ void ParallelRefinement::create_new_vertices(const EdgeFunction<bool>& markedEdg
   std::vector<std::size_t> global_indices(_mesh.topology().global_indices(0));
   for(std::size_t i = 0; i < num_new_vertices; i++)
     global_indices.push_back(i+global_offset);
+
   reorder_vertices_by_global_indices(new_vertex_coordinates, _mesh.geometry().dim(), global_indices);
   
   std::cout << "vertices= " << new_vertex_coordinates.size() << std::endl;

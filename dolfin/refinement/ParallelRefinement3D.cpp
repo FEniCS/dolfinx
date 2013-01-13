@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2012-12-19
-// Last Changed: 2013-01-12
+// Last Changed: 2013-01-13
 
 #include <vector>
 #include <map>
@@ -57,6 +57,8 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
   EdgeFunction<bool> markedEdges(mesh, false);
 
   // Mark all edges of marked cells
+
+  std::cout << "Marking edges of marked cells" << std::endl;
   
   for(CellIterator cell(mesh); !cell.end(); ++cell)
   {
@@ -74,6 +76,9 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
   while (update_count != 0)
   {
     // Transmit shared marked edges
+    std::cout << "Transmit edgefunction (" 
+              << MPI::process_number() << ")" << std::endl;
+    
     p.update_logical_edgefunction(markedEdges);
 
     update_count = 0;
@@ -87,11 +92,11 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
           n_marked++;
       }
       
-      if (n_marked > 3)
+      if (n_marked > 3 && n_marked !=6)
       { // mark all, if more than 3 edges are already marked 
         for (EdgeIterator edge(*cell); !edge.end(); ++edge)
           markedEdges[*edge] = true;
-        update_count = 1;
+        update_count++;
       }
       
       if (n_marked == 3)
@@ -112,24 +117,31 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
         {
           for (EdgeIterator edge(*cell); !edge.end(); ++edge)
             markedEdges[*edge] = true;
-          update_count = 1;
+          update_count++;
         }
       }
 
     }
 
     update_count = MPI::sum(update_count);
-    
+    if(MPI::process_number()==0)
+      std::cout << "update_count = " << update_count << std::endl;
+
   }
   
   // All cells now have either 0, 1, 2, 3* or 6 edges marked.
   // * (3 are all on the same face)
 
+  std::cout << "Create vertices" << std::endl;
+  
   // Create new vertices
   p.create_new_vertices(markedEdges);
 
   std::map<std::size_t, std::size_t>& edge_to_new_vertex = p.edge_to_new_vertex();
 
+
+  std::cout << "Create topology" << std::endl;
+  
   // Create new topology
 
   for(CellIterator cell(mesh); !cell.end(); ++cell)
@@ -178,45 +190,65 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
       VertexIterator v0(e[new_edge_0]);
       VertexIterator v1(e[new_edge_1]);
 
-      std::size_t v_common(0), v_leg_0(0), v_leg_1(0);      
-      for (std::size_t i = 0; i < 2; ++i)
+      // Opposite edges add up to 5
+      // This is effectively a double bisection
+      if( (new_edge_0 + new_edge_1) == 5) // opposites
       {
-        for (std::size_t j = 0; j < 2; ++j)
-        {
-          if (v0[i] == v1[j])
+        const std::size_t e0v0 = v0[0].global_index();
+        const std::size_t e0v1 = v0[1].global_index();
+        const std::size_t e1v0 = v1[0].global_index();
+        const std::size_t e1v1 = v1[1].global_index();
+        
+        p.new_cell(e0, e1, e0v0, e1v0);
+        p.new_cell(e0, e1, e0v1, e1v0);
+        p.new_cell(e0, e1, e0v0, e1v1);
+        p.new_cell(e0, e1, e0v1, e1v1);
+        
+      }
+      else //both edges on same face
+      {
+
+        // Find shared and non-shared vertices
+        std::size_t v_common, v_leg_0, v_leg_1;      
+        double d0, d1;
+        
+        for(std::size_t i = 0; i < 2; ++i)
+          for(std::size_t j = 0; j < 2; ++j)
           {
-            v_common = v0[i].index();
-            v_leg_0 = v0[1 - i].index();
-            v_leg_1 = v1[1 - j].index();
+            if(v0[i] == v1[j])
+            {
+              v_common = v0[i].global_index();
+              v_leg_0 = v0[1-i].global_index();
+              v_leg_1 = v1[1-j].global_index();
+
+              // Find distance across trapezoid
+              const Point p_leg_0 = v0[1-i].point();
+              const Point p_leg_1 = v1[1-j].point();
+              d0 = p_leg_0.distance(e[new_edge_1].midpoint());
+              d1 = p_leg_1.distance(e[new_edge_0].midpoint());
+            }
+          }
+        
+        // need to find the 'uncommon' vertex of the two edges
+        // which is furthest from both
+        std::size_t v_far;
+      
+        for(std::size_t i = 0; i < 4;++i)
+        {
+          const std::size_t v_i = v[i].global_index();
+          if(v_i != v_common && 
+             v_i != v_leg_0 &&
+             v_i != v_leg_1)
+          {
+            v_far = v_i;
           }
         }
-      }
-      
-      // need to find the 'uncommon' vertex of the two edges
-      // which is furthest from both
-      std::size_t v_far = 0;
-      
-      for(std::size_t i = 0; i < 4; ++i)
-      {
-        const std::size_t v_i = v[i].index();
-        if(v_i != v_common && v_i != v_leg_0 && v_i != v_leg_1)
-        {
-          v_far = v_i;
-        }
-      }
-      
-      // find distance across trapezoid, and choose shortest, if possible
-      const Point p_leg_0 = Vertex(mesh, v_leg_0).point();
-      const Point p_leg_1 = Vertex(mesh, v_leg_1).point();
-      const double d0 = p_leg_0.distance(e[new_edge_1].midpoint());
-      const double d1 = p_leg_1.distance(e[new_edge_0].midpoint());
 
-      p.new_cell(v_far, v_common, e0, e1);
+        // Add 'top cell' always the same
+        p.new_cell(v_far, v_common, e0, e1);
       
-      if(d0 == d1) // problem case - use global index to determine precedence
-      {
-        if(Vertex(mesh, v_leg_0).global_index() 
-           > Vertex(mesh, v_leg_1).global_index())
+        // Choose bottom cell consistently
+        if(d0 > d1 || (d0 == d1 && v_leg_0 > v_leg_1)) 
         {
           p.new_cell(v_far, e0, e1, v_leg_1);
           p.new_cell(v_far, e0, v_leg_0, v_leg_1);
@@ -226,23 +258,53 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
           p.new_cell(v_far, e1, e0, v_leg_0);
           p.new_cell(v_far, e1, v_leg_1, v_leg_0);
         }
-      } 
-      else if(d0 > d1) // vleg0->e1 is longer
-      {
-        p.new_cell(v_far, e0, e1, v_leg_1);
-        p.new_cell(v_far, e0, v_leg_0, v_leg_1);
+
       }
-      else 
-      {
-        p.new_cell(v_far, e1, e0, v_leg_0);
-        p.new_cell(v_far, e1, v_leg_1, v_leg_0);
-      }
+      
     }
     else if(rgb.size() == 3) // refinement of one face into 4 triangles
     {
-        dolfin_error("ParallelRefinement3D.cpp",
-                     "refine",
-                     "Error in making new cells");
+      // Assumes edges are on one face - will break otherwise
+
+      VertexIterator v0(e[rgb[0]]);
+      VertexIterator v1(e[rgb[1]]);
+      VertexIterator v2(e[rgb[2]]);
+      const std::size_t e0 = edge_to_new_vertex[e[rgb[0]].index()];
+      const std::size_t e1 = edge_to_new_vertex[e[rgb[1]].index()];
+      const std::size_t e2 = edge_to_new_vertex[e[rgb[2]].index()];
+
+      std::size_t v01, v12, v20, v_far;
+      
+      for(std::size_t i = 0; i < 2; ++i)
+        for(std::size_t j = 0; j < 2; ++j)
+        {
+          if(v0[i]==v1[j])
+            v01=v0[i].global_index();
+
+          if(v1[i]==v2[j])
+            v12=v1[i].global_index();
+
+          if(v2[i]==v0[j])
+            v20=v2[i].global_index();
+        }
+
+      for(std::size_t i = 0; i<4 ;++i)
+      {
+        const std::size_t v_i=v[i].global_index();
+        if(v_i != v01 
+        && v_i != v12
+        && v_i != v20)
+        {
+          v_far = v_i;
+        }
+        
+      }
+      
+      p.new_cell(v_far, e0, e1, e2);
+      p.new_cell(v_far, e0, v01, e1);
+      p.new_cell(v_far, e1, v12, e2);
+      p.new_cell(v_far, e2, v20, e0);
+
     }
     else if(rgb.size() == 6)
     {
@@ -299,6 +361,8 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
     }
   }
   
+  std::cout << "Call partitioning" << std::endl;
+
   p.partition(new_mesh);
 
 }
