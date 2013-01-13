@@ -40,7 +40,7 @@
 
 using namespace dolfin;
 
-
+//-----------------------------------------------------------------------------
 void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
                                   const MeshFunction<bool>& refinement_marker)
 {
@@ -156,7 +156,6 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
         rgb.push_back(j);
     }
 
-
     if(rgb.size() == 0) //straight copy of cell (1->1)
     {
       const std::size_t v0 = v[0].global_index();
@@ -192,7 +191,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
 
       // Opposite edges add up to 5
       // This is effectively a double bisection
-      if( (new_edge_0 + new_edge_1) == 5) // opposites
+      if( (new_edge_0 + new_edge_1) == 5)
       {
         const std::size_t e0v0 = v0[0].global_index();
         const std::size_t e0v1 = v0[1].global_index();
@@ -205,7 +204,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
         p.new_cell(e0, e1, e0v1, e1v1);
         
       }
-      else //both edges on same face
+      else // Both edges on same face
       {
 
         // Find shared and non-shared vertices
@@ -229,7 +228,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
             }
           }
         
-        // need to find the 'uncommon' vertex of the two edges
+        // Need to find the 'uncommon' vertex of the two edges
         // which is furthest from both
         std::size_t v_far;
       
@@ -366,13 +365,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
   p.partition(new_mesh);
 
 }
-
-  
- 
-
-
-// Uniform refinement
-
+//-----------------------------------------------------------------------------
 void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
 {
   if(MPI::num_processes()==1)
@@ -422,8 +415,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
     const std::size_t e4 = edge_to_new_vertex[e[4].index()];
     const std::size_t e5 = edge_to_new_vertex[e[5].index()];
 
-
-    //mostly duplicated from TetrahedronCell.cpp
+    // Mostly duplicated from TetrahedronCell.cpp
 
     p.new_cell(v0, e3, e4, e5);
     p.new_cell(v1, e1, e2, e5);
@@ -468,28 +460,4 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
   p.partition(new_mesh);
 
 }
-
-// std::vector<std::size_t> ParallelRefinement3D::edge_vertex_one(std::size_t e1)
-// {
-//   // Work out opposite and neighbouring vertices of an edge
-// }
-
-
-  
-
-// void ParallelRefinement3D::vertex_edge_pair(std::size_t e1, std::size_t e2)
-// {
-//   // Work out the opposite vertex and the shared vertex for two edges in a tetrahedron
-//   static unsigned  char tdata[] = {0x03, 0x05, 0x09, 0x06, 0x0A, 0x0C};
-//   static char rmap[] = {-1, 0, 1, -1, 2, -1, -1, -1, 3};
-  
-//   std::size_t v_idx = (tdata[e1] & tdata[e2]);
-  
-//   std::size_t v_opp = rmap[v_idx];
-  
-//   v_idx = (~tdata[e1] & ~tdata[e2])&0x0F;
-  
-//   std::size_t v_shared = rmap[v_idx];
-  
-// }
-
+//-----------------------------------------------------------------------------
