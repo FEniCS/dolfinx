@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2013-01-02
-// Last Changed: 2013-01-13
+// Last Changed: 2013-01-14
 
 
 // Simple class to perform uniform refinement in 3D in parallel
@@ -25,6 +25,8 @@
 namespace dolfin 
 {
   class Mesh;
+  class Cell;
+  class ParallelRefinement;
 
   class ParallelRefinement3D
   {
@@ -40,6 +42,8 @@ namespace dolfin
 
   private:
 
+    // Full refinement of a tetrahedral cell
+    //    void eightfold_division(Cell& cell, ParallelRefinement& p);
     
   };
 

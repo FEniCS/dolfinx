@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2012-12-19
-// Last Changed: 2013-01-13
+// Last Changed: 2013-01-14
 
 #include <vector>
 #include <map>
@@ -98,8 +98,8 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh)
   ParallelRefinement p(mesh);
   
   // Mark all edges, and create new vertices
-  EdgeFunction<bool> markedEdges(mesh, true);
-  p.create_new_vertices(markedEdges);
+  p.mark_all();
+  p.create_new_vertices();
   std::map<std::size_t, std::size_t>& edge_to_new_vertex = p.edge_to_new_vertex();
   
   // Generate new topology
@@ -132,8 +132,13 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
 {
   const uint tdim = mesh.topology().dim();
 
-  bool diag=false;   // Enable output for diagnostics
-  
+  if(refinement_marker.dim() != tdim)
+  {
+    dolfin_error("ParallelRefinement3D.cpp",
+                 "mark edges",
+                 "Only Cell based markers are supported at present");
+  }
+
   if (MPI::num_processes()==1)
   {
     dolfin_error("ParallelRefinement2D.cpp",
@@ -154,71 +159,41 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   // Create a class to hold most of the refinement information
   ParallelRefinement p(mesh);
 
+  // This refinement algorithm creates a 'reference' edge for each cell.
+  // In this case, the reference edge is the longest edge.
+  // Any cell with edges marked for bisection, must also bisect the reference edge.
+
   // Vector over all cells - the reference edge is the cell's edge (0, 1 or 2) 
   // which always must split, if any edge splits in the cell
   std::vector<std::size_t> ref_edge;
   generate_reference_edges(mesh, ref_edge);
    
-  if (diag)
-  {
-    EdgeFunction<bool> ref_edge_fn(mesh,false);
-    CellFunction<std::size_t> ref_edge_fn2(mesh);
-    for(CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      EdgeIterator e(*cell);
-      ref_edge_fn[ e[ref_edge[cell->index()]] ] = true;
-      ref_edge_fn2[*cell] = ref_edge[cell->index()];
-    }
-    
-    File refEdgeFile("ref_edge.xdmf");
-    refEdgeFile << ref_edge_fn;
-    
-    File refEdgeFile2("ref_edge2.xdmf");
-    refEdgeFile2 << ref_edge_fn2;
-  }
-  
   // Set marked edges from marked cells
-  EdgeFunction<bool> markedEdges(mesh,false);
-  
-  // Mark all edges of marked cells
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    if (refinement_marker[*cell])
-      for (EdgeIterator edge(*cell); !edge.end(); ++edge)
-      {
-        //        p.mark_edge(edge->index());
-        markedEdges[*edge] = true;
-      }
-  }
+  p.mark(refinement_marker);
   
   // Mark reference edges of cells with any marked edge
   // and repeat until no more marking takes place
 
   std::size_t update_count = 1;
+
   while (update_count != 0)
   {
     update_count = 0;
     
     // Transmit values between processes - could be streamlined
-    p.update_logical_edgefunction(markedEdges);
+    p.update_logical_edgefunction();
     
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      bool marked = false;
-      // Check if any edge of this cell is marked
-      for (EdgeIterator edge(*cell); !edge.end(); ++edge)
-      {
-        if (markedEdges[*edge])
-          marked = true;
-      }
+      std::size_t n_marked = p.marked_edge_count(*cell);
 
       EdgeIterator edge(*cell);
       std::size_t ref_edge_index = edge[ref_edge[cell->index()]].index();
 
-      if (marked && markedEdges[ref_edge_index] == false)
+      if (n_marked != 0 && p.is_marked(ref_edge_index) == false)
       {
-        update_count = 1;
-        markedEdges[ref_edge_index] = true;
+        p.mark(ref_edge_index);
+        update_count++;
       }
     }
 
@@ -227,16 +202,9 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   
   }
   
-  if (diag)
-  {
-      // Diagnostic output
-    File markedEdgeFile("marked_edges.xdmf");
-    markedEdgeFile << markedEdges;
-  }
-
   // Generate new vertices from marked edges, and assign global vertex index map.
 
-  p.create_new_vertices(markedEdges);
+  p.create_new_vertices();
   std::map<std::size_t, std::size_t>& edge_to_new_vertex = p.edge_to_new_vertex();
 
   // Stage 4 - do refinement 
@@ -245,12 +213,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     
-    std::size_t rgb_count = 0;
-    for (EdgeIterator edge(*cell); !edge.end(); ++edge)
-    {
-      if (markedEdges[*edge])
-        rgb_count++;
-    }
+    std::size_t rgb_count = p.marked_edge_count(*cell);
 
     EdgeIterator e(*cell);
     VertexIterator v(*cell);
@@ -278,13 +241,13 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
     }
     else if (rgb_count == 2) // "blue" refinement (1->3) left or right
     {
-      if(markedEdges[e[i2]])
+      if(p.is_marked(e[i2].index()))
       {
         p.new_cell(e2, v1, e0);
         p.new_cell(e2, e0, v0);
         p.new_cell(e0, v2, v0);
       }
-      else if(markedEdges[e[i1]])
+      else if(p.is_marked(e[i1].index()))
       {
         p.new_cell(e0, v0, v1);
         p.new_cell(e1, e0, v2);
@@ -304,19 +267,6 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
 
   // Call partitioning from within ParallelRefinement class
   p.partition(new_mesh);
-
-  if (diag)
-  {
-    const std::size_t process_number = MPI::process_number();
-    CellFunction<std::size_t> partitioning1(mesh, process_number);
-    CellFunction<std::size_t> partitioning2(new_mesh, process_number);
-    
-    File meshFile1("old_mesh.xdmf");
-    meshFile1 << partitioning1;  
-    
-    File meshFile2("new_mesh.xdmf");
-    meshFile2 << partitioning2;  
-  }
 }
 //-----------------------------------------------------------------------------
 

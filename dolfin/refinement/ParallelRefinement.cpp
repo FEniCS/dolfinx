@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2013-01-02
-// Last Changed: 2013-01-13
+// Last Changed: 2013-01-14
 
 #include <vector>
 #include <map>
@@ -31,6 +31,7 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/LocalMeshData.h>
 
 #include "ParallelRefinement.h"
@@ -40,13 +41,10 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 ParallelRefinement::ParallelRefinement(const Mesh& mesh) : _mesh(mesh)
 {
-  // work out which edges are shared between processes
-  const std::size_t edge_dim = 1;
-  std::cout << "Calling compute shared entities" << std::endl;  
-  shared_edges = MeshDistributed::compute_shared_entities(_mesh, edge_dim);
-  std::cout << "n(shared_edges) = " << shared_edges.size() << std::endl;
+  // Work out which edges are shared between processes
+  shared_edges = MeshDistributed::compute_shared_entities(_mesh, 1);
 
-  // maybe take over marked edge assignment - experimenting with this
+  // Marked edge assignment - experimenting with this
   marked_edges.assign(_mesh.num_edges(), false);
 }
 //-----------------------------------------------------------------------------
@@ -65,16 +63,55 @@ std::vector<double>& ParallelRefinement::vertex_coordinates()
   return new_vertex_coordinates;
 }
 //-----------------------------------------------------------------------------
-void ParallelRefinement::mark_edge(std::size_t edge_index)
+void ParallelRefinement::mark_all()
+{
+  marked_edges.assign(_mesh.num_edges(), true);
+}
+//-----------------------------------------------------------------------------
+bool ParallelRefinement::is_marked(std::size_t edge_index)
+{
+  dolfin_assert(edge_index < _mesh.num_edges());
+  return marked_edges[edge_index];
+}
+//-----------------------------------------------------------------------------
+void ParallelRefinement::mark(std::size_t edge_index)
 {
   dolfin_assert(edge_index < _mesh.num_edges());
   marked_edges[edge_index] = true;
 }
 //-----------------------------------------------------------------------------
-// logical "or" of edgefunction on boundaries
-void ParallelRefinement::update_logical_edgefunction(EdgeFunction<bool>& values)
+void ParallelRefinement::mark(MeshEntity& cell)
 {
-  Timer t("update logical edgefunction");
+  for (EdgeIterator edge(cell); !edge.end(); ++edge)
+    marked_edges[edge->index()] = true;
+}
+//-----------------------------------------------------------------------------
+void ParallelRefinement::mark(MeshFunction<bool> refinement_marker)
+{
+  for(MeshEntityIterator cell(_mesh, refinement_marker.dim()); !cell.end(); ++cell)
+  {
+    if(refinement_marker[*cell])
+    {
+      for (EdgeIterator edge(*cell); !edge.end(); ++edge)
+        marked_edges[edge->index()] = true;
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+std::size_t ParallelRefinement::marked_edge_count(MeshEntity& cell)
+{
+  std::size_t n_marked=0;
+  for(EdgeIterator edge(cell); !edge.end(); ++edge)
+  {
+    if(marked_edges[edge->index()]) 
+      n_marked++;
+  }
+  return n_marked;
+}
+//-----------------------------------------------------------------------------
+// logical "or" of edgefunction on boundaries
+void ParallelRefinement::update_logical_edgefunction()
+{
   
   const std::size_t num_processes = MPI::num_processes();
 
@@ -82,12 +119,13 @@ void ParallelRefinement::update_logical_edgefunction(EdgeFunction<bool>& values)
   std::vector<std::vector<std::size_t> > values_to_send(num_processes);
   std::vector<std::vector<std::size_t> > received_values;
 
-  for(boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >::iterator sh_edge = shared_edges.begin();
+  for(boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >::iterator 
+      sh_edge = shared_edges.begin();
       sh_edge != shared_edges.end(); sh_edge++)
   {
     const std::size_t local_index = sh_edge->first;
 
-    if(values[local_index] == true)
+    if(marked_edges[local_index] == true)
     {
       for(std::vector<std::pair<std::size_t, std::size_t> >::iterator proc_edge = sh_edge->second.begin(); 
           proc_edge != sh_edge->second.end(); ++proc_edge)
@@ -108,14 +146,18 @@ void ParallelRefinement::update_logical_edgefunction(EdgeFunction<bool>& values)
     for(std::vector<std::size_t>::iterator local_index = r->begin(); 
         local_index != r->end(); ++local_index)
     {
-      values[*local_index] = true;
+      marked_edges[*local_index] = true;
     }
   }
 }
+  
 //-----------------------------------------------------------------------------
-void ParallelRefinement::create_new_vertices(const EdgeFunction<bool>& markedEdges)
+void ParallelRefinement::create_new_vertices()
 {
-  // Take markedEdges and use to create new vertices
+  // Take marked_edges and use to create new vertices
+
+  EdgeFunction<bool> markedEdges(_mesh);
+  markedEdges.set_values(marked_edges);
   
   const std::size_t num_processes = MPI::num_processes();
   const std::size_t process_number = MPI::process_number();

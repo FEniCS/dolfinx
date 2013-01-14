@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2013-01-02
-// Last Changed: 2013-01-10
+// Last Changed: 2013-01-14
 
 #include <boost/unordered_map.hpp>
 
@@ -33,17 +33,32 @@ namespace dolfin
     ParallelRefinement(const Mesh& mesh);
     ~ParallelRefinement();
 
-    // Experimental management of edge marking
-    void mark_edge(std::size_t edge_index);
+    // Return marked status of edge
+    bool is_marked(std::size_t edge_index);
+
+    // Mark all edges in mesh
+    void mark_all();
+
+    // Mark edge by index
+    void mark(std::size_t edge_index);
+
+    // Mark all edges incident on entities indicated by refinement marker
+    void mark(MeshFunction<bool> refinement_marker);
+
+    // Mark all incident edges of an entity
+    void mark(MeshEntity& cell);
+
+    // Return number of marked edges incident on this MeshEntity - usually a cell
+    std::size_t marked_edge_count(MeshEntity& cell);
 
     // Transfer marked edges between processes
-    void update_logical_edgefunction(EdgeFunction<bool>& values);
+    void update_logical_edgefunction();
 
     // Add new vertex for each marked edge, 
     // and create new_vertex_coordinates and global_edge->new_vertex mapping.
     // Communicate new vertices with MPI to all affected processes.
-    void create_new_vertices(const EdgeFunction<bool>& markedEdges);
-
+    void create_new_vertices();
+    
     // Mapping of old edge (to be removed) to new global vertex number.
     // Useful for forming new topology
     std::map<std::size_t, std::size_t>& edge_to_new_vertex();

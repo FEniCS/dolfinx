@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2012-12-19
-// Last Changed: 2013-01-13
+// Last Changed: 2013-01-14
 
 #include <vector>
 #include <map>
@@ -46,117 +46,83 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
 {
   std::size_t tdim = mesh.topology().dim();
   
-  warning("not working yet");
-
+  if(refinement_marker.dim() != tdim)
+  {
+    dolfin_error("ParallelRefinement3D.cpp",
+                 "mark edges",
+                 "Only Cell based markers are supported at present");
+  }
+  
   // Ensure connectivity from cells to edges
   mesh.init(1);
   mesh.init(1, tdim);
 
   ParallelRefinement p(mesh);
-  
-  EdgeFunction<bool> markedEdges(mesh, false);
 
   // Mark all edges of marked cells
+  p.mark(refinement_marker);
 
-  std::cout << "Marking edges of marked cells" << std::endl;
-  
-  for(CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    if(refinement_marker[*cell])
-    {
-      for (EdgeIterator edge(*cell); !edge.end(); ++edge)
-      {
-        markedEdges[*edge] = true;
-      }
-    }
-  }
-  
   std::size_t update_count = 1;
   
   while (update_count != 0)
   {
-    // Transmit shared marked edges
-    std::cout << "Transmit edgefunction (" 
-              << MPI::process_number() << ")" << std::endl;
-    
-    p.update_logical_edgefunction(markedEdges);
-
     update_count = 0;
     
+    // Transmit shared marked edges
+    p.update_logical_edgefunction();
+
     for(CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      std::size_t n_marked = 0;
-      for (EdgeIterator edge(*cell); !edge.end(); ++edge)
-      {
-        if(markedEdges[*edge]) 
-          n_marked++;
-      }
+      std::size_t n_marked = p.marked_edge_count(*cell);
       
-      if (n_marked > 3 && n_marked !=6)
-      { // mark all, if more than 3 edges are already marked 
-        for (EdgeIterator edge(*cell); !edge.end(); ++edge)
-          markedEdges[*edge] = true;
+      // If more than 3 edges are already marked, mark all
+      if (n_marked == 4 || n_marked == 5)
+      { 
+        p.mark(*cell);
         update_count++;
       }
-      
+
+      // With 3 marked edges, they must be all on the same face, otherwise, just mark all
       if (n_marked == 3)
       {
-        // With 3 marked edges, they must be all on the same face, otherwise, just mark all
-        std::size_t nmax=0;
+        std::size_t nmax = 0;
         for (FaceIterator face(*cell); !face.end(); ++face)
         {
-          std::size_t n=0;
-          for(EdgeIterator edge(*face); !edge.end(); ++edge)
-          {
-            if(markedEdges[*edge])
-              n++;
-          }
-          nmax = (n > nmax) ? n : nmax;
+          const std::size_t n_face = p.marked_edge_count(*face);
+          nmax = (n_face > nmax) ? n_face : nmax;
         }        
         if(nmax != 3)
         {
-          for (EdgeIterator edge(*cell); !edge.end(); ++edge)
-            markedEdges[*edge] = true;
+          p.mark(*cell);
           update_count++;
         }
       }
-
     }
-
     update_count = MPI::sum(update_count);
-    if(MPI::process_number()==0)
-      std::cout << "update_count = " << update_count << std::endl;
-
   }
   
   // All cells now have either 0, 1, 2, 3* or 6 edges marked.
   // * (3 are all on the same face)
 
-  std::cout << "Create vertices" << std::endl;
-  
   // Create new vertices
-  p.create_new_vertices(markedEdges);
-
+  p.create_new_vertices();
   std::map<std::size_t, std::size_t>& edge_to_new_vertex = p.edge_to_new_vertex();
-
-
-  std::cout << "Create topology" << std::endl;
   
   // Create new topology
 
   for(CellIterator cell(mesh); !cell.end(); ++cell)
   {    
-    EdgeIterator e(*cell);
     VertexIterator v(*cell);
+    EdgeIterator e(*cell);
 
-    std::vector<std::size_t> rgb;
+    std::vector<std::size_t> marked_edges;
     for(std::size_t j = 0 ; j < 6 ; ++j)
     {
-      if(markedEdges[e[j]])
-        rgb.push_back(j);
+      if (p.is_marked(e[j].index()))
+        marked_edges.push_back(j);
     }
 
-    if(rgb.size() == 0) //straight copy of cell (1->1)
+    if(marked_edges.size() == 0) //straight copy of cell (1->1)
     {
       const std::size_t v0 = v[0].global_index();
       const std::size_t v1 = v[1].global_index();
@@ -164,9 +130,9 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
       const std::size_t v3 = v[3].global_index();
       p.new_cell(v0, v1, v2, v3);
     }
-    else if(rgb.size() == 1) // "green" refinement (bisection)
+    else if(marked_edges.size() == 1) // "green" refinement (bisection)
     {
-      const std::size_t new_edge = rgb[0];
+      const std::size_t new_edge = marked_edges[0];
       const std::size_t v_new = edge_to_new_vertex[e[new_edge].index()];
       VertexIterator vn(e[new_edge]);
       const std::size_t v_near_0 = vn[0].global_index();
@@ -180,10 +146,10 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
       p.new_cell(v_far_0, v_far_1, v_new, v_near_0);
       p.new_cell(v_far_0, v_far_1, v_new, v_near_1);
     }
-    else if(rgb.size() == 2) 
+    else if(marked_edges.size() == 2) 
     {
-      const std::size_t new_edge_0 = rgb[0];
-      const std::size_t new_edge_1 = rgb[1];
+      const std::size_t new_edge_0 = marked_edges[0];
+      const std::size_t new_edge_1 = marked_edges[1];
       const std::size_t e0 = edge_to_new_vertex[e[new_edge_0].index()];
       const std::size_t e1 = edge_to_new_vertex[e[new_edge_1].index()];
       VertexIterator v0(e[new_edge_0]);
@@ -202,11 +168,9 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
         p.new_cell(e0, e1, e0v1, e1v0);
         p.new_cell(e0, e1, e0v0, e1v1);
         p.new_cell(e0, e1, e0v1, e1v1);
-        
       }
       else // Both edges on same face
       {
-
         // Find shared and non-shared vertices
         std::size_t v_common, v_leg_0, v_leg_1;      
         double d0, d1;
@@ -257,20 +221,17 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
           p.new_cell(v_far, e1, e0, v_leg_0);
           p.new_cell(v_far, e1, v_leg_1, v_leg_0);
         }
-
       }
-      
     }
-    else if(rgb.size() == 3) // refinement of one face into 4 triangles
+    else if(marked_edges.size() == 3) // refinement of one face into 4 triangles
     {
       // Assumes edges are on one face - will break otherwise
-
-      VertexIterator v0(e[rgb[0]]);
-      VertexIterator v1(e[rgb[1]]);
-      VertexIterator v2(e[rgb[2]]);
-      const std::size_t e0 = edge_to_new_vertex[e[rgb[0]].index()];
-      const std::size_t e1 = edge_to_new_vertex[e[rgb[1]].index()];
-      const std::size_t e2 = edge_to_new_vertex[e[rgb[2]].index()];
+      VertexIterator v0(e[marked_edges[0]]);
+      VertexIterator v1(e[marked_edges[1]]);
+      VertexIterator v2(e[marked_edges[2]]);
+      const std::size_t e0 = edge_to_new_vertex[e[marked_edges[0]].index()];
+      const std::size_t e1 = edge_to_new_vertex[e[marked_edges[1]].index()];
+      const std::size_t e2 = edge_to_new_vertex[e[marked_edges[2]].index()];
 
       std::size_t v01, v12, v20, v_far;
       
@@ -305,7 +266,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
       p.new_cell(v_far, e2, v20, e0);
 
     }
-    else if(rgb.size() == 6)
+    else if(marked_edges.size() == 6)
     {
       const std::size_t v0 = v[0].global_index();
       const std::size_t v1 = v[1].global_index();
@@ -360,10 +321,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
     }
   }
   
-  std::cout << "Call partitioning" << std::endl;
-
   p.partition(new_mesh);
-
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
@@ -393,8 +351,8 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
   ParallelRefinement p(mesh);
   
   // Mark all edges, and create new vertices
-  EdgeFunction<bool> markedEdges(mesh, true);
-  p.create_new_vertices(markedEdges);
+  p.mark_all();
+  p.create_new_vertices();
   std::map<std::size_t, std::size_t>& edge_to_new_vertex = p.edge_to_new_vertex();
   
   // Generate new topology
