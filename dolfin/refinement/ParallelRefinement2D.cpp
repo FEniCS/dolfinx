@@ -203,7 +203,6 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   }
   
   // Generate new vertices from marked edges, and assign global vertex index map.
-
   p.create_new_vertices();
   std::map<std::size_t, std::size_t>& edge_to_new_vertex = p.edge_to_new_vertex();
 
@@ -231,7 +230,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
 
     if (rgb_count == 0) //straight copy of cell (1->1)
     {
-      p.new_cell(v0, v1, v2);
+      p.new_cell(*cell);
     }
     else if (rgb_count == 1) // "green" refinement (1->2)
     {
@@ -241,6 +240,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
     }
     else if (rgb_count == 2) // "blue" refinement (1->3) left or right
     {
+      // FIXME: more possibilities here - need to do more tests 
       if(p.is_marked(e[i2].index()))
       {
         p.new_cell(e2, v1, e0);

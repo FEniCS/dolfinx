@@ -67,6 +67,7 @@ namespace dolfin
     std::vector<double>& vertex_coordinates();
     
     // Add a new cell to the list in 3D or 2D
+    void new_cell(const Cell& cell);
     void new_cell(std::size_t i0, std::size_t i1, std::size_t i2, std::size_t i3); 
     void new_cell(std::size_t i0, std::size_t i1, std::size_t i2); 
 

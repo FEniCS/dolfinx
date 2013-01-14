@@ -46,13 +46,6 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
 {
   std::size_t tdim = mesh.topology().dim();
   
-  if(refinement_marker.dim() != tdim)
-  {
-    dolfin_error("ParallelRefinement3D.cpp",
-                 "mark edges",
-                 "Only Cell based markers are supported at present");
-  }
-  
   // Ensure connectivity from cells to edges
   mesh.init(1);
   mesh.init(1, tdim);
@@ -63,6 +56,11 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
   p.mark(refinement_marker);
 
   std::size_t update_count = 1;
+
+  // Ensure consistent rules are applied to all cells
+  // 1. The number of marked edges can be 0, 1, 2, 3 or 6
+  // 2. If three edges are marked, they must be on the same face, otherwise mark all edges of the cell.
+  // 3. Iterate until no more edges need to be marked
   
   while (update_count != 0)
   {
@@ -75,14 +73,14 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
     {
       std::size_t n_marked = p.marked_edge_count(*cell);
       
-      // If more than 3 edges are already marked, mark all
+      // If more than 3 edges are already marked, mark all edges
       if (n_marked == 4 || n_marked == 5)
       { 
         p.mark(*cell);
         update_count++;
       }
 
-      // With 3 marked edges, they must be all on the same face, otherwise, just mark all
+      // With 3 marked edges, they must be all on the same face, otherwise, mark all edges
       if (n_marked == 3)
       {
         std::size_t nmax = 0;
@@ -124,11 +122,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
 
     if(marked_edges.size() == 0) //straight copy of cell (1->1)
     {
-      const std::size_t v0 = v[0].global_index();
-      const std::size_t v1 = v[1].global_index();
-      const std::size_t v2 = v[2].global_index();
-      const std::size_t v3 = v[3].global_index();
-      p.new_cell(v0, v1, v2, v3);
+      p.new_cell(*cell);
     }
     else if(marked_edges.size() == 1) // "green" refinement (bisection)
     {

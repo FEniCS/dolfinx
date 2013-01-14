@@ -373,8 +373,14 @@ void ParallelRefinement::partition(Mesh& new_mesh)
 
 }
 //-----------------------------------------------------------------------------
-void ParallelRefinement::new_cell(std::size_t i0, std::size_t i1, 
-                                  std::size_t i2, std::size_t i3)
+void ParallelRefinement::new_cell(const Cell& cell)
+{
+  for(VertexIterator v(cell); !v.end(); ++v)
+    new_cell_topology.push_back(v->global_index());
+}
+//-----------------------------------------------------------------------------
+void ParallelRefinement::new_cell(const std::size_t i0, const std::size_t i1, 
+                                  const std::size_t i2, const std::size_t i3)
 {
   new_cell_topology.push_back(i0);
   new_cell_topology.push_back(i1);
@@ -382,7 +388,8 @@ void ParallelRefinement::new_cell(std::size_t i0, std::size_t i1,
   new_cell_topology.push_back(i3);
 }
 //-----------------------------------------------------------------------------
-void ParallelRefinement::new_cell(std::size_t i0, std::size_t i1, std::size_t i2)
+void ParallelRefinement::new_cell(const std::size_t i0, const std::size_t i1, 
+                                  const std::size_t i2)
 {
   new_cell_topology.push_back(i0);
   new_cell_topology.push_back(i1);
