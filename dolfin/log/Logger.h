@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2012 Anders Logg
+// Copyright (C) 2003-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -20,7 +20,7 @@
 // Modified by Ola Skavhaug 2007, 2009
 //
 // First added:  2003-03-13
-// Last changed: 2012-10-26
+// Last changed: 2013-01-07
 
 #ifndef __LOGGER_H
 #define __LOGGER_H
@@ -28,7 +28,6 @@
 #include <map>
 #include <ostream>
 #include <string>
-#include <dolfin/common/types.h>
 #include "Table.h"
 #include "LogLevel.h"
 
@@ -64,6 +63,11 @@ namespace dolfin
     void dolfin_error(std::string location,
                       std::string task,
                       std::string reason) const;
+
+    /// Issue deprecation warning for removed feature
+    void deprecation(std::string feature,
+                     std::string version,
+                     std::string message) const;
 
     /// Begin task (increase indentation level)
     void begin(std::string msg, int log_level=INFO);

@@ -18,6 +18,7 @@
 // First added:  2006-05-08
 // Last changed: 2012-10-25
 
+#include <numeric>
 #include <sstream>
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
@@ -134,7 +135,7 @@ void MeshTopology::init_global(std::size_t dim, std::size_t global_size)
 void MeshTopology::init_global_indices(std::size_t dim, std::size_t size)
 {
   dolfin_assert(dim < _global_indices.size());
-  _global_indices[dim] = std::vector<std::size_t>(size);
+  _global_indices[dim] = std::vector<std::size_t>(size, std::numeric_limits<std::size_t>::max());
 }
 //-----------------------------------------------------------------------------
 dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0, std::size_t d1)
@@ -154,25 +155,22 @@ const dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0, std::s
 std::map<std::size_t, std::set<std::size_t> >&
   MeshTopology::shared_entities(std::size_t dim)
 {
-  if (dim != 0)
-  {
-    dolfin_error("MeshTopology.cpp",
-                 "get shared mesh entities",
-                 "Shared mesh entities are available for dim 0 (vertices) only");
-  }
-  return _shared_vertices;
+  dolfin_assert(dim < this->dim());
+  return _shared_entities[dim];
 }
 //-----------------------------------------------------------------------------
 const std::map<std::size_t, std::set<std::size_t> >&
   MeshTopology::shared_entities(std::size_t dim) const
 {
-  if (dim != 0)
+  std::map<std::size_t, std::map<std::size_t, std::set<std::size_t> > >::const_iterator e;
+  e = _shared_entities.find(dim);
+  if (e == _shared_entities.end())
   {
     dolfin_error("MeshTopology.cpp",
                  "get shared mesh entities",
-                 "Shared mesh entities are available for dim 0 (vertices) only");
+                 "Shared mesh entities have not been computed for dim %s", dim);
   }
-  return _shared_vertices;
+  return e->second;
 }
 //-----------------------------------------------------------------------------
 size_t MeshTopology::hash() const

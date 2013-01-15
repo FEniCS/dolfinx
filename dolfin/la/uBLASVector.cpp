@@ -142,7 +142,7 @@ bool uBLASVector::owns_index(std::size_t i) const
     return false;
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::get_local(double* block, std::size_t m, const DolfinIndex* rows) const
+void uBLASVector::get_local(double* block, std::size_t m, const dolfin::la_index* rows) const
 {
   for (std::size_t i = 0; i < m; i++)
     block[i] = (*x)(rows[i]);
@@ -169,7 +169,7 @@ void uBLASVector::add_local(const Array<double>& values)
     (*x)(i) += values[i];
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::gather(GenericVector& x, const std::vector<DolfinIndex>& indices) const
+void uBLASVector::gather(GenericVector& x, const std::vector<dolfin::la_index>& indices) const
 {
   not_working_in_parallel("uBLASVector::gather)");
 
@@ -182,7 +182,7 @@ void uBLASVector::gather(GenericVector& x, const std::vector<DolfinIndex>& indic
     _x(i) = (*this->x)(indices[i]);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::gather(std::vector<double>& x, const std::vector<DolfinIndex>& indices) const
+void uBLASVector::gather(std::vector<double>& x, const std::vector<dolfin::la_index>& indices) const
 {
   not_working_in_parallel("uBLASVector::gather)");
 
@@ -200,13 +200,13 @@ void uBLASVector::gather_on_zero(std::vector<double>& x) const
   get_local(x);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::set(const double* block, std::size_t m, const DolfinIndex* rows)
+void uBLASVector::set(const double* block, std::size_t m, const dolfin::la_index* rows)
 {
   for (std::size_t i = 0; i < m; i++)
     (*x)(rows[i]) = block[i];
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::add(const double* block, std::size_t m, const DolfinIndex* rows)
+void uBLASVector::add(const double* block, std::size_t m, const dolfin::la_index* rows)
 {
   for (std::size_t i = 0; i < m; i++)
     (*x)(rows[i]) += block[i];

@@ -27,7 +27,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "dolfin/common/types.h"
 
 namespace dolfin
 {

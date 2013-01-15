@@ -20,8 +20,7 @@
 // First added:  2006-05-16
 // Last changed: 2012-10-30
 
-#include <dolfin/log/dolfin_log.h>
-#include <dolfin/parameter/dolfin_parameter.h>
+#include <dolfin/log/log.h>
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"
@@ -265,6 +264,9 @@ void MeshEditor::close(bool order)
   dolfin_assert(mesh);
   if (order && !mesh->ordered())
     mesh->order();
+
+  // Initialize cell orientations
+  mesh->cell_orientations().resize(mesh->num_cells(), -1);
 
   // Clear data
   clear();

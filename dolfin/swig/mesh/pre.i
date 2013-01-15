@@ -46,6 +46,10 @@
     return %make_numpy_array(2, size_t)(self->num_cells(), self->topology().dim()+1,
 				      &(self->cells()[0]), false);
   }
+
+  PyObject* _cell_orientations() {
+    return %make_numpy_array(1, int)(self->num_cells(), &(self->cell_orientations()[0]), true);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -75,6 +79,7 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
 //-----------------------------------------------------------------------------
 %ignore dolfin::Mesh::cells;
 %ignore dolfin::Mesh::coordinates;
+%ignore dolfin::Mesh::cell_orientations;
 %ignore dolfin::MeshFunction::values;
 
 //-----------------------------------------------------------------------------

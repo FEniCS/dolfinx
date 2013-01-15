@@ -58,6 +58,9 @@ const std::map<std::string, const PCType> PETScPreconditioner::_methods
                               ("bjacobi",          PCBJACOBI)
                               ("sor",              PCSOR)
                               ("additive_schwarz", PCASM)
+                              #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
+                              ("petsc_amg",        PCGAMG)
+                              #endif  
                               #if PETSC_HAVE_HYPRE
                               ("hypre_amg",        PCHYPRE)
                               ("hypre_euclid",     PCHYPRE)
@@ -79,6 +82,9 @@ const std::vector<std::pair<std::string, std::string> > PETScPreconditioner::_me
     ("ilu",              "Incomplete LU factorization")
     ("icc",              "Incomplete Cholesky factorization")
     ("sor",              "Successive over-relaxation")
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
+    ("petsc_amg",        "PETSc algebraic multigrid")
+    #endif
     #if HAS_PETSC_CUSP
     ("jacobi",           "Jacobi iteration (GPU enabled)")
     ("bjacobi",          "Block Jacobi iteration (GPU enabled)")
@@ -393,6 +399,88 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
             "algerbraic multigrid. Default PETSc solver will be used. "
             "For performance, installation of ML is recommended.");
     #endif
+  }
+  else if (type == "petsc_amg")
+  {
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
+
+    // The PETSc AMG (smoothed aggegration) preconditioner
+    //PetscOptionsSetValue("-log_summary",
+    //                     boost::lexical_cast<std::string>(1).c_str());
+
+    // Set preconditioner to ML
+    PCSetType(pc, PCGAMG);
+
+    // Coarse level solver
+    #if PETSC_HAVE_MUMPS
+    PetscOptionsSetValue("-mg_coarse_ksp_type", "preonly");
+    PetscOptionsSetValue("-mg_coarse_pc_type", "lu");
+    PetscOptionsSetValue("-mg_coarse_pc_factor_mat_solver_package", "mumps");
+    #endif
+
+    /*
+    if (parameters("mg")["num_levels"].is_set())
+    {
+      const uint num_levels = parameters("mg")["num_levels"];
+      PetscOptionsSetValue("-pc_mg_num_levels",
+                           boost::lexical_cast<std::string>(num_levels).c_str());
+    }
+    */
+
+    // Set to smoothed aggregation
+    PetscOptionsSetValue("-pc_gamg_type", "agg");
+
+    // Number of smoother applications
+    PetscOptionsSetValue("-pc_gamg_agg_nsmooths",
+                         boost::lexical_cast<std::string>(1).c_str());
+
+    //PetscOptionsSetValue("mg_levels_ksp_chebyshev_estimate_eigenvalues",
+    //                      "0.1,1.1");
+
+    //PetscOptionsSetValue("-pc_gamg_verbose",
+    //                     boost::lexical_cast<std::string>(2).c_str());
+
+    PetscOptionsSetValue("-mg_levels_ksp_max_it",
+                          boost::lexical_cast<std::string>(2).c_str());
+    PetscOptionsSetValue("-mg_levels_pc_type", "jacobi");
+
+    PetscOptionsSetValue("-pc_gamg_threshold",
+                         boost::lexical_cast<std::string>(0.01).c_str());
+
+    //PetscOptionsSetValue("-pc_gamg_eigtarget",
+    //                      "0.1,1.1");
+
+    PetscOptionsSetValue("-pc_gamg_coarse_eq_limit",
+                         boost::lexical_cast<std::string>(2048).c_str());
+
+    //PetscOptionsSetValue("-pc_gamg_process_eq_limit",
+    //                     boost::lexical_cast<std::string>(16).c_str());
+
+    //PetscOptionsSetValue("-pc_gamg_use_agg_gasm",
+    //                     boost::lexical_cast<std::string>(1).c_str());
+
+    //PetscOptionsSetValue("-pc_gamg_repartition",
+    //                     boost::lexical_cast<std::string>(1).c_str());
+
+    //PetscOptionsSetValue("-pc_gamg_sym_graph",
+    //                     boost::lexical_cast<std::string>(1).c_str());
+
+    PetscOptionsSetValue("-pc_gamg_square_graph",
+                         boost::lexical_cast<std::string>(1).c_str());
+
+    //PetscOptionsSetValue("-pc_mg_levels",
+    //                     boost::lexical_cast<std::string>(4).c_str());
+
+    //PCMGSetLevels(pc, 5, &PETSC_COMM_WORLD);
+    //PCGAMGSetNlevels(pc, 5);
+    //PCGAMGSetProcEqLim(pc, 1000);
+    //PCGAMGSetSymGraph(pc, PETSC_TRUE);
+
+    #else
+    warning("PETSc native algebraic multigrid support requires PETSc"
+             "version > 3.2. Default PETSc preconditioner will be used.");
+    #endif
+
   }
   else if (type == "additive_schwarz")
   {

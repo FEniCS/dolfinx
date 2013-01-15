@@ -69,7 +69,17 @@
 
 using namespace dolfin;
 
-namespace // anonymous
+
+// The below is a work-around for Intel compilers which have a problem
+// with unamed namespaces. See
+//     http://software.intel.com/en-us/articles/compiler-reports-error-1757-when-compiling-chromium-os-code
+// and
+//     https://bugs.launchpad.net/dolfin/+bug/1086526
+
+namespace d_anonymous { /* empty body */ }
+using namespace d_anonymous;
+
+namespace d_anonymous
 {
   //----------------------------------------------------------------------------
   class PrivateVTKInteractorStyle : public vtkInteractorStyleTrackballCamera
@@ -153,14 +163,14 @@ namespace // anonymous
       double e[2] = {10, 10};
 
       _force_visible = !_force_visible;
-      if (_force_visible) {
+      if (_force_visible)
+      {
         EnabledOn();
         rep->SetBalloonText(text.c_str());
         rep->StartWidgetInteraction(e);
       }
-      else {
+      else
         rep->EndWidgetInteraction(e);
-      }
     }
 
     bool _force_visible;
@@ -168,7 +178,7 @@ namespace // anonymous
   };
   vtkStandardNewMacro(PrivateVTKBalloonWidget)
   //----------------------------------------------------------------------------
-#ifdef HAS_QVTK
+  #ifdef HAS_QVTK
   void create_qApp()
   {
     if (!qApp)
@@ -179,10 +189,11 @@ namespace // anonymous
       new QApplication(dummy_argc, &dummy_argv0_ptr);
     }
   }
-#endif
+  #endif
   //----------------------------------------------------------------------------
-  unsigned char gauss_120[256*4] = {
-#include "gauss_120.dat"
+  unsigned char gauss_120[256*4] =
+  {
+  #include "gauss_120.dat"
   };
 }
 //----------------------------------------------------------------------------
@@ -190,9 +201,9 @@ namespace // anonymous
 //----------------------------------------------------------------------------
 VTKWindowOutputStage::VTKWindowOutputStage(QVTKWidget *user_widget)
 {
-#ifdef HAS_QVTK
+  #ifdef HAS_QVTK
   widget = user_widget;
-#endif
+  #endif
 
   vtkMapper::GlobalImmediateModeRenderingOn(); // FIXME: Check if faster or not
 
@@ -221,9 +232,9 @@ VTKWindowOutputStage::~VTKWindowOutputStage()
 
   //log(DBG, "VTK pipeline destroyed");
 
-#ifdef HAS_QVTK
+  #ifdef HAS_QVTK
   widget = NULL;
-#endif
+  #endif
 
   helptextActor = NULL;
   balloonRep = NULL;
@@ -256,7 +267,7 @@ void VTKWindowOutputStage::init(VTKPlotter *parent, const Parameters &parameters
     vtkSmartPointer<PrivateVTKInteractorStyle>::New();
   style->_plotter = parent;
 
-#ifdef HAS_QVTK
+  #ifdef HAS_QVTK
   if (!widget)
   {
     // Create new top-level widget -- make sure a QApplication exists first
@@ -267,22 +278,16 @@ void VTKWindowOutputStage::init(VTKPlotter *parent, const Parameters &parameters
 
   widget->SetRenderWindow(_renderWindow);
   if (widget->parentWidget())
-  {
     widget->resize(widget->parentWidget()->size());
-  }
   else
-  {
     widget->resize(parameters["window_width"], parameters["window_height"]);
-  }
-#else
+  #else
   _renderWindow->SetInteractor(vtkSmartPointer<vtkRenderWindowInteractor>::New());
   const int width  = parameters["window_width"];
   const int height = parameters["window_height"];
   if (width > 0 && height > 0)
-  {
     _renderWindow->SetSize(width, height);
-  }
-#endif
+  #endif
   _renderWindow->GetInteractor()->SetInteractorStyle(style);
   style->SetCurrentRenderer(_renderer);
 
@@ -371,49 +376,49 @@ void VTKWindowOutputStage::set_helptext(std::string text)
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::set_window_title(std::string title)
 {
-#ifdef HAS_QVTK
+  #ifdef HAS_QVTK
   widget->setWindowTitle(title.c_str());
-#else
+  #else
   _renderWindow->SetWindowName(title.c_str());
-#endif
+  #endif
 }
 //----------------------------------------------------------------------------
 std::string VTKWindowOutputStage::get_window_title()
 {
-#ifdef HAS_QVTK
+  #ifdef HAS_QVTK
   return widget->windowTitle().toStdString();
-#else
+  #else
   return _renderWindow->GetWindowName();
-#endif
+  #endif
 }
 //----------------------------------------------------------------------------
 QVTKWidget *VTKWindowOutputStage::get_widget() const
 {
-#ifdef HAS_QVTK
+  #ifdef HAS_QVTK
   return widget;
-#else
+  #else
   return NULL;
-#endif
+  #endif
 }
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::close_window()
 {
-#ifdef HAS_QVTK
+  #ifdef HAS_QVTK
   widget->close();
-#else
+  #else
   warning("Window close not implemented on VTK event loop");
-#endif
-    }
+  #endif
+}
 //----------------------------------------------------------------------------
 bool VTKWindowOutputStage::resurrect_window()
 {
-#ifdef HAS_QVTK
+  #ifdef HAS_QVTK
   if (widget->isHidden())
   {
     widget->show();
     return true;
   }
-#endif
+  #endif
   return false;
 }
 //----------------------------------------------------------------------------
@@ -423,21 +428,21 @@ void VTKWindowOutputStage::start_interaction(bool enter_eventloop)
   render();
   if (enter_eventloop)
   {
-#ifdef HAS_QVTK
+    #ifdef HAS_QVTK
     qApp->exec();
-#else
+    #else
     get_interactor()->Start();
-#endif
+    #endif
   }
 }
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::stop_interaction()
 {
-#ifdef HAS_QVTK
+  #ifdef HAS_QVTK
   qApp->quit();
-#else
+  #else
   get_interactor()->TerminateApp();
-#endif
+  #endif
 }
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::write_png(std::string filename)
@@ -467,9 +472,9 @@ void VTKWindowOutputStage::write_png(std::string filename)
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::write_pdf(std::string filename)
 {
-#ifdef VTK_USE_GL2PS
-  vtkSmartPointer<vtkGL2PSExporter> exporter =
-    vtkSmartPointer<vtkGL2PSExporter>::New();
+  #ifdef VTK_USE_GL2PS
+  vtkSmartPointer<vtkGL2PSExporter> exporter
+    = vtkSmartPointer<vtkGL2PSExporter>::New();
   exporter->SetFilePrefix(filename.c_str());
   //exporter->SetTitle(get_window_title().c_str());
   if (_input == _depthSort)
@@ -485,9 +490,9 @@ void VTKWindowOutputStage::write_pdf(std::string filename)
   //exporter->SilentOn();
   exporter->SetRenderWindow(_renderWindow);
   exporter->Write();
-#else
+  #else
   warning("VTK not configured for PDF output");
-#endif
+  #endif
 }
 //----------------------------------------------------------------------------
 vtkCamera* VTKWindowOutputStage::get_camera()
@@ -538,7 +543,8 @@ void VTKWindowOutputStage::toggle_boundingbox()
 {
   PrivateVTKInteractorStyle *style
     = dynamic_cast<PrivateVTKInteractorStyle*>(get_interactor()->GetInteractorStyle());
-  if (style) {
+  if (style)
+  {
     style->_highlighted = !style->_highlighted;
     style->HighlightProp(style->_highlighted ? _actor : NULL);
   }
@@ -546,8 +552,8 @@ void VTKWindowOutputStage::toggle_boundingbox()
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::toggle_helptext(std::string text)
 {
-  PrivateVTKBalloonWidget *balloon =
-    dynamic_cast<PrivateVTKBalloonWidget*>((vtkBalloonWidget*)balloonwidget);
+  PrivateVTKBalloonWidget *balloon
+    = dynamic_cast<PrivateVTKBalloonWidget*>((vtkBalloonWidget*)balloonwidget);
   balloon->toggle_popup(text, balloonRep);
 }
 //----------------------------------------------------------------------------
@@ -559,39 +565,39 @@ void VTKWindowOutputStage::render()
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::get_window_size(int& width, int& height)
 {
-#ifdef HAS_QVTK
+  #ifdef HAS_QVTK
   QSize size = widget->frameSize();
   width = size.width();
   height = size.height();
-#else
+  #else
   get_interactor()->GetSize(width, height);
   // Guess window decoration (frame) size
   width += 6;
   height += 30;
-#endif
+  #endif
 }
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::get_screen_size(int& width, int& height)
 {
-#ifdef HAS_QVTK
+  #ifdef HAS_QVTK
   QRect geom = QApplication::desktop()->availableGeometry();
   width = geom.width();
   height = geom.height();
-#else
+  #else
   int *size = _renderWindow->GetScreenSize();
   width = size[0];
   height = size[1];
-#endif
+  #endif
 }
 //----------------------------------------------------------------------------
 void VTKWindowOutputStage::place_window(int x, int y)
 {
-#ifdef HAS_QVTK
+  #ifdef HAS_QVTK
   widget->move(x, y);
   widget->show();
-#else
+  #else
   _renderWindow->SetPosition(x, y);
-#endif
+  #endif
 }
 //----------------------------------------------------------------------------
 bool VTKWindowOutputStage::add_viewprop(vtkSmartPointer<vtkProp> prop)
@@ -627,9 +633,7 @@ void VTKWindowOutputStage::set_translucent(bool onoff, std::size_t topo_dim,
     _input = _depthSort;
   }
   else
-  {
     _input = _mapper;
-  }
 }
 //----------------------------------------------------------------------------
 

@@ -24,7 +24,6 @@
 #define __TRIANGLE_CELL_H
 
 #include <vector>
-#include <dolfin/common/types.h>
 #include "CellType.h"
 
 namespace dolfin
@@ -69,6 +68,9 @@ namespace dolfin
 
     /// Compute of given facet with respect to the cell
     Point normal(const Cell& cell, std::size_t facet) const;
+
+    /// Compute normal to given cell (viewed as embedded in 3D)
+    Point cell_normal(const Cell& cell) const;
 
     /// Compute the area/length of given facet with respect to the cell
     double facet_area(const Cell& cell, std::size_t facet) const;

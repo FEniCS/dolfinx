@@ -21,7 +21,6 @@
 #include <map>
 #include <boost/shared_ptr.hpp>
 
-#include <dolfin/common/types.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/Form.h>
@@ -150,7 +149,8 @@ const dolfin::FunctionSpace& dolfin::adapt(const FunctionSpace& space,
   dolfin_assert(space.element());
   boost::shared_ptr<const FiniteElement>
     refined_element(space.element()->create());
-  boost::shared_ptr<const GenericDofMap> refined_dofmap(space.dofmap()->build(*adapted_mesh));
+  boost::shared_ptr<const GenericDofMap>
+      refined_dofmap(space.dofmap()->create(*adapted_mesh));
 
   // Create new function space
   boost::shared_ptr<FunctionSpace>

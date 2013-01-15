@@ -23,7 +23,6 @@
 // Last changed: 2011-04-07
 
 #include <boost/shared_ptr.hpp>
-#include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Facet.h>

@@ -21,9 +21,11 @@
 // Modified by Niclas Jansson 2008
 // Modified by Kristoffer Selim 2008
 // Modified by Andre Massing 2009-2010
+// Modified by Marie E. Rognes 2012
+// Modified by Mikael Mortensen 2012
 //
 // First added:  2006-05-08
-// Last changed: 2012-10-25
+// Last changed: 2012-12-13
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -33,7 +35,6 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/intersection/IntersectionOperator.h>
@@ -43,13 +44,14 @@
 #include "MeshConnectivity.h"
 #include "MeshTopology.h"
 #include "MeshDomains.h"
+#include "SubDomain.h"
 
 namespace dolfin
 {
-
   class CellType;
   class BoundaryMesh;
   class Function;
+  class Expression;
   class LocalMeshData;
   class MeshEntity;
   template <typename T> class MeshFunction;
@@ -672,6 +674,29 @@ namespace dolfin
     ///         No example code available for this function.
     std::string str(bool verbose) const;
 
+    /// Return cell_orientations
+    ///
+    /// *Returns*
+    ///     std::vector<int>
+    ///         Map from cell index to orientation of cell
+    std::vector<int>& cell_orientations();
+
+    /// Return cell_orientations (const version)
+    ///
+    /// *Returns*
+    ///     std::vector<int>
+    ///         Map from cell index to orientation of cell
+    const std::vector<int>& cell_orientations() const;
+
+    /// Compute and initialize cell_orientations relative to a given
+    /// global outward direction/normal/orientation. Only defined if
+    /// mesh is orientable.
+    ///
+    /// *Arguments*
+    ///     global_normal (Expression)
+    ///         A global normal direction to the mesh
+    void init_cell_orientations(const Expression& global_normal);
+
   private:
 
     // Friends
@@ -701,8 +726,10 @@ namespace dolfin
     // True if mesh has been ordered
     mutable bool _ordered;
 
-  };
+    // Orientation of cells relative to a global direction
+    std::vector<int> _cell_orientations;
 
+  };
 }
 
 #endif

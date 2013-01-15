@@ -21,7 +21,7 @@
 // First added:  2006-05-11
 // Last changed: 2012-06-12
 
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "Mesh.h"
 #include "MeshTopology.h"
 #include "Vertex.h"

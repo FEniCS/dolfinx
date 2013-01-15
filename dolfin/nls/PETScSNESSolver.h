@@ -27,8 +27,8 @@
 #include <map>
 #include <petscsnes.h>
 #include <boost/shared_ptr.hpp>
-#include <dolfin/parameter/Parameters.h>
 #include <dolfin/nls/NewtonSolver.h>
+#include <dolfin/parameter/Parameters.h>
 #include <dolfin/la/PETScObject.h>
 
 namespace dolfin
@@ -38,6 +38,7 @@ namespace dolfin
   /// via PETSc's SNES interface. It includes line search and trust
   /// region techniques for globalising the convergence of the
   /// nonlinear iteration.
+
   class PETScSNESSolver : public PETScObject
   {
   public:
@@ -84,10 +85,7 @@ namespace dolfin
     void init(const std::string& method);
 
     /// Available solvers
-    static const std::map<std::string, const SNESType> _methods;
-
-    /// Available solvers descriptions
-    static const std::vector<std::pair<std::string, std::string> > _methods_descr;
+    static const std::map<std::string, std::pair<std::string, const SNESType> > _methods;
 
     /// The callback for PETSc to compute F, the nonlinear residual
     static PetscErrorCode FormFunction(SNES snes, Vec x, Vec f, void* ctx);

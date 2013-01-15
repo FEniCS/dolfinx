@@ -24,7 +24,6 @@
 #define __MESH_RENUMBERING_H
 
 #include <vector>
-#include "dolfin/common/types.h"
 
 namespace dolfin
 {

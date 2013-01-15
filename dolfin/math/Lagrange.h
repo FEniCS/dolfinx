@@ -24,7 +24,6 @@
 #include <vector>
 
 #include <dolfin/log/Event.h>
-#include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin

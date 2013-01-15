@@ -54,7 +54,8 @@ set(tao_dir_locations "")
 list(APPEND tao_dir_locations "/usr/local/lib/tao")
 list(APPEND tao_dir_locations "$ENV{HOME}/tao")
 list(APPEND tao_dir_locations "$ENV{TAO_DIR}")
-list(APPEND tao_dir_locations "${TAO_DIR}")
+list(APPEND tao_dir_locations "$ENV{TAO_DIR}")
+list(APPEND tao_dir_locations "$ENV{TAO_DIR}/$ENV{PETSC_ARCH}")
 
 # Try to figure out TAO_DIR by finding tao.h
 find_path(TAO_DIR /include/tao.h
@@ -74,7 +75,7 @@ if (TAO_DIR)
 
   find_library(TAO_LIBRARY
     NAMES tao
-    HINTS ${TAO_DIR}/lib $ENV{TAO_DIR}/lib
+    HINTS ${TAO_DIR} $ENV{TAO_DIR} ${TAO_DIR}/${PETSC_ARCH}/lib $ENV{TAO_DIR}/$ENV{PETSC_ARCH}/lib
     DOC "The TAO library"
     )
   mark_as_advanced(TAO_LIBRARY)

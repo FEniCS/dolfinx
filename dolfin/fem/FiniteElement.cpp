@@ -26,12 +26,13 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 FiniteElement::FiniteElement(boost::shared_ptr<const ufc::finite_element> element)
-  : _ufc_element(element), _hash(dolfin::hash(signature()))
+  : _ufc_element(element), _hash(dolfin::hash_local(signature()))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const FiniteElement> FiniteElement::extract_sub_element(const std::vector<std::size_t>& component) const
+boost::shared_ptr<const FiniteElement> 
+FiniteElement::extract_sub_element(const std::vector<std::size_t>& component) const
 {
   // Recursively extract sub element
   boost::shared_ptr<const FiniteElement> sub_finite_element = extract_sub_element(*this, component);

@@ -22,7 +22,6 @@
 #define __RESTRICTION_H
 
 #include <boost/shared_ptr.hpp>
-
 #include "MeshFunction.h"
 
 namespace dolfin

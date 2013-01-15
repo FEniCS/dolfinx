@@ -27,7 +27,6 @@
 
 #include<boost/shared_ptr.hpp>
 
-#include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 #include "Mesh.h"
 #include "MeshEntity.h"

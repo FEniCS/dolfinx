@@ -29,7 +29,6 @@
 #include <map>
 #include <vector>
 #include <boost/multi_array.hpp>
-#include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include "CellType.h"
 

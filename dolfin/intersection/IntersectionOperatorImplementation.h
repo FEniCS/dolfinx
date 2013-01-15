@@ -29,7 +29,6 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/optional.hpp>
 
-#include <dolfin/common/types.h>
 #include <dolfin/mesh/Point.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/SubsetIterator.h>

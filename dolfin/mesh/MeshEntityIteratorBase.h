@@ -23,7 +23,7 @@
 #ifndef __MESH_ENTITY_ITERATOR_BASE_H
 #define __MESH_ENTITY_ITERATOR_BASE_H
 
-#include <dolfin/common/types.h>
+#include <cstddef>
 #include "Mesh.h"
 #include "MeshEntity.h"
 

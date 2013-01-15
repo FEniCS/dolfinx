@@ -18,10 +18,8 @@
 // First added:  2009-08-09
 // Last changed: 2010-11-18
 
-#include <boost/functional/hash.hpp>
 #include <cstdlib>
 #include <sstream>
-#include "types.h"
 #include "utils.h"
 
 //-----------------------------------------------------------------------------
@@ -41,13 +39,6 @@ std::string dolfin::indent(std::string block)
   return s.str();
 }
 //-----------------------------------------------------------------------------
-std::string dolfin::to_string(int n)
-{
-  std::stringstream s;
-  s << n;
-  return s.str();
-}
-//-----------------------------------------------------------------------------
 std::string dolfin::to_string(const double* x, std::size_t n)
 {
   std::stringstream s;
@@ -64,9 +55,4 @@ std::string dolfin::to_string(const double* x, std::size_t n)
   return s.str();
 }
 //-----------------------------------------------------------------------------
-std::size_t dolfin::hash(std::string signature)
-{
-  boost::hash<std::string> string_hash;
-  return string_hash(signature);
-}
-//-----------------------------------------------------------------------------
+

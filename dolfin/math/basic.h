@@ -21,9 +21,9 @@
 #ifndef __BASIC_H
 #define __BASIC_H
 
+#include <cstddef>
 #include <utility>
 #include <dolfin/common/constants.h>
-#include <dolfin/common/types.h>
 
 namespace dolfin
 {

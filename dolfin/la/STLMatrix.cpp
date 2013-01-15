@@ -130,14 +130,14 @@ void STLMatrix::zero()
       entry->second = 0.0;
 }
 //-----------------------------------------------------------------------------
-void STLMatrix::add(const double* block, std::size_t m, const DolfinIndex* rows, std::size_t n,
-                    const DolfinIndex* cols)
+void STLMatrix::add(const double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n,
+                    const dolfin::la_index* cols)
 {
   // Perform a simple linear search along each column. Otherwise,
   // append the value (calling push_back).
 
-  const DolfinIndex* primary_slice = rows;
-  const DolfinIndex* secondary_slice = cols;
+  const dolfin::la_index* primary_slice = rows;
+  const dolfin::la_index* secondary_slice = cols;
 
   std::size_t dim   = m;
   std::size_t codim = n;
@@ -209,10 +209,12 @@ void STLMatrix::apply(std::string mode)
 {
   Timer("Apply (matrix)");
 
+  // Number of processes
+  const std::size_t num_processes = MPI::num_processes();
+
   // Data to send
-  std::vector<std::size_t> send_non_local_rows, send_non_local_cols;
-  std::vector<std::size_t> destinations;
-  std::vector<double> send_non_local_vals;
+  std::vector<std::vector<std::size_t> > send_non_local_rows, send_non_local_cols(num_processes);
+  std::vector<std::vector<double> > send_non_local_vals(num_processes);
 
   std::vector<std::pair<std::size_t, std::size_t> > process_ranges;
   dolfin::MPI::all_gather(_local_range, process_ranges);
@@ -237,36 +239,43 @@ void STLMatrix::apply(std::string mode)
       }
     }
 
-    send_non_local_rows.push_back(global_row);
-    send_non_local_cols.push_back(entry->first.second);
-    send_non_local_vals.push_back(entry->second);
-    destinations.push_back(owner);
+    send_non_local_rows[owner].push_back(global_row);
+    send_non_local_cols[owner].push_back(entry->first.second);
+    send_non_local_vals[owner].push_back(entry->second);
   }
 
   // Send/receive data
-  std::vector<std::size_t> received_non_local_rows, received_non_local_cols;
-  std::vector<double> received_non_local_vals;
-  dolfin::MPI::distribute(send_non_local_rows, destinations, received_non_local_rows);
-  dolfin::MPI::distribute(send_non_local_cols, destinations, received_non_local_cols);
-  dolfin::MPI::distribute(send_non_local_vals, destinations, received_non_local_vals);
-
-  assert(received_non_local_rows.size() == received_non_local_cols.size());
-  assert(received_non_local_rows.size() == received_non_local_vals.size());
+  std::vector<std::vector<std::size_t> > received_non_local_rows, received_non_local_cols;
+  std::vector<std::vector<double> > received_non_local_vals;
+  dolfin::MPI::all_to_all(send_non_local_rows, received_non_local_rows);
+  dolfin::MPI::all_to_all(send_non_local_cols, received_non_local_cols);
+  dolfin::MPI::all_to_all(send_non_local_vals, received_non_local_vals);
 
   // Add/insert off-process data
-  for (std::size_t i = 0; i < received_non_local_rows.size(); ++i)
+  for (std::size_t p = 0; p < num_processes; ++p)
   {
-    dolfin_assert(received_non_local_rows[i] < _local_range.second && received_non_local_rows[i] >= _local_range.first);
-    const std::size_t I_local = received_non_local_rows[i] - _local_range.first;
-    assert(I_local < _values.size());
+    const std::vector<std::size_t>& received_non_local_rows_p = received_non_local_rows[p];
+    const std::vector<std::size_t>& received_non_local_cols_p = received_non_local_cols[p];
+    const std::vector<double>&      received_non_local_vals_p = received_non_local_vals[p];
 
-    const std::size_t J = received_non_local_cols[i];
-    std::vector<std::pair<std::size_t, double> >::iterator entry
-          = std::find_if(_values[I_local].begin(), _values[I_local].end(), CompareIndex(J));
-    if (entry != _values[I_local].end())
-      entry->second += received_non_local_vals[i];
-    else
-      _values[I_local].push_back(std::make_pair(J, received_non_local_vals[i]));
+    assert(received_non_local_rows_p.size() == received_non_local_cols_p.size());
+    assert(received_non_local_rows_p.size() == received_non_local_vals_p.size());
+
+    for (std::size_t i = 0; i < received_non_local_rows.size(); ++i)
+    {
+      dolfin_assert(received_non_local_rows_p[i] < _local_range.second
+                          && received_non_local_rows_p[i] >= _local_range.first);
+      const std::size_t I_local = received_non_local_rows_p[i] - _local_range.first;
+      assert(I_local < _values.size());
+
+      const std::size_t J = received_non_local_cols_p[i];
+      std::vector<std::pair<std::size_t, double> >::iterator entry
+            = std::find_if(_values[I_local].begin(), _values[I_local].end(), CompareIndex(J));
+      if (entry != _values[I_local].end())
+        entry->second += received_non_local_vals_p[i];
+      else
+        _values[I_local].push_back(std::make_pair(J, received_non_local_vals_p[i]));
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -306,7 +315,7 @@ void STLMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
   }
 }
 //-----------------------------------------------------------------------------
-void STLMatrix::ident(std::size_t m, const DolfinIndex* rows)
+void STLMatrix::ident(std::size_t m, const dolfin::la_index* rows)
 {
   if (primary_dim == 1)
   {

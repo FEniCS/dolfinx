@@ -39,7 +39,6 @@
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/types.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "LogLevel.h"
 #include "Logger.h"
@@ -186,6 +185,24 @@ void Logger::dolfin_error(std::string location,
     << std::endl;
 
   throw std::runtime_error(s.str());
+}
+//-----------------------------------------------------------------------------
+void Logger::deprecation(std::string feature,
+                         std::string version,
+                         std::string message) const
+{
+  std::stringstream s;
+  s << "*** "
+    << "-------------------------------------------------------------------------"
+    << std::endl
+    << "*** Warning: " << feature << " has been deprecated in DOLFIN version "
+    << version << "." << std::endl
+    << "*** " << message << std::endl
+    << "*** "
+    << "-------------------------------------------------------------------------"
+    << std::endl;
+
+  write(WARNING, s.str());
 }
 //-----------------------------------------------------------------------------
 void Logger::begin(std::string msg, int log_level)

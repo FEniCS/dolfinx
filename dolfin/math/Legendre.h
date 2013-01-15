@@ -21,7 +21,7 @@
 #ifndef __LEGENDRE_H
 #define __LEGENDRE_H
 
-#include <dolfin/common/types.h>
+#include <cstddef>
 
 namespace dolfin
 {

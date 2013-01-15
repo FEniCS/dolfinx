@@ -15,8 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Johannes Ring, 2012
+//
 // First added:  2012-05-12
-// Last changed: 2012-11-12
+// Last changed: 2012-12-20
+
+#include <cmath>
 
 #include "CSGGeometries3D.h"
 #include "CSGGeometry.h"

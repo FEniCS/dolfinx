@@ -1,0 +1,50 @@
+# Copyright (C) 2013 Anders Logg
+#
+# This file is part of DOLFIN.
+#
+# DOLFIN is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# DOLFIN is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+#
+# First added:  2013-01-08
+# Last changed: 2013-01-08
+#
+# This is a simple test problem for multidomain physis.
+#
+# Compile this form with FFC: ffc -l dolfin MultiDomainPoisson.ufl.
+
+# MER: Important thing to decide: should functions defined on
+# restricted domains be extended by zero to the extended domain by
+# assumption/default?. Might be an good check if not; conversely might
+# be cumbersome if not. Could be a flag "extend_by_zero" to turn
+# on/off?
+
+V = FiniteElement("Lagrange", triangle, 1)
+W = V*V
+
+u0, u1 = TrialFunctions(W)
+v0, v1 = TestFunctions(W)
+
+k0 = Coefficient(V)
+k1 = Coefficient(V)
+f0 = Coefficient(V)
+f1 = Coefficient(V)
+
+eps = 1e-6
+
+dx0 = dx(0)
+dx1 = dx(0) # Using extension by zero convension
+
+a = k0*dot(grad(u0), grad(v0))*dx0 + k1*dot(grad(u1), grad(v1))*dx1 \
+    + eps*u0*v0*dx0 + eps*u1*v1*dx1
+
+L = f0*v0*dx0 + f1*v1*dx1

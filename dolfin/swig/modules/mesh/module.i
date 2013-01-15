@@ -40,6 +40,7 @@
 
 // #include types from function submodule of module function
 #include "dolfin/function/GenericFunction.h"
+#include "dolfin/function/Expression.h"
 #include "dolfin/function/Function.h"
 #include "dolfin/function/FunctionSpace.h"
 
@@ -92,12 +93,15 @@
 #include "dolfin/mesh/Restriction.h"
 #include "dolfin/mesh/DomainBoundary.h"
 #include "dolfin/mesh/BoundaryMesh.h"
+#include "dolfin/mesh/PeriodicBoundaryComputation.h"
 
 // #include types from generation submodule
 #include "dolfin/generation/PolygonalMeshGenerator.h"
 #include "dolfin/generation/PolyhedralMeshGenerator.h"
 #include "dolfin/generation/Triangulate.h"
 #include "dolfin/generation/BoxMesh.h"
+#include "dolfin/generation/IntervalMesh.h"
+#include "dolfin/generation/Interval.h"
 #include "dolfin/generation/RectangleMesh.h"
 #include "dolfin/generation/UnitTetrahedronMesh.h"
 #include "dolfin/generation/UnitCubeMesh.h"
@@ -109,8 +113,6 @@
 #include "dolfin/generation/UnitSquare.h"
 #include "dolfin/generation/UnitCircleMesh.h"
 #include "dolfin/generation/UnitCircle.h"
-#include "dolfin/generation/IntervalMesh.h"
-#include "dolfin/generation/Interval.h"
 #include "dolfin/generation/CSGGeometry.h"
 #include "dolfin/generation/CSGMeshGenerator.h"
 #include "dolfin/generation/CSGCGALMeshGenerator2D.h"
@@ -160,6 +162,7 @@ import_array();
 // %import types from submodule function of SWIG module function
 %include "dolfin/swig/function/pre.i"
 %import(module="function") "dolfin/function/GenericFunction.h"
+%import(module="function") "dolfin/function/Expression.h"
 %import(module="function") "dolfin/function/Function.h"
 %import(module="function") "dolfin/function/FunctionSpace.h"
 
@@ -222,6 +225,7 @@ import_array();
 %include "dolfin/mesh/Restriction.h"
 %include "dolfin/mesh/DomainBoundary.h"
 %include "dolfin/mesh/BoundaryMesh.h"
+%include "dolfin/mesh/PeriodicBoundaryComputation.h"
 %include "dolfin/swig/mesh/post.i"
 
 // %include types from submodule generation
@@ -229,6 +233,8 @@ import_array();
 %include "dolfin/generation/PolyhedralMeshGenerator.h"
 %include "dolfin/generation/Triangulate.h"
 %include "dolfin/generation/BoxMesh.h"
+%include "dolfin/generation/IntervalMesh.h"
+%include "dolfin/generation/Interval.h"
 %include "dolfin/generation/RectangleMesh.h"
 %include "dolfin/generation/UnitTetrahedronMesh.h"
 %include "dolfin/generation/UnitCubeMesh.h"
@@ -240,8 +246,6 @@ import_array();
 %include "dolfin/generation/UnitSquare.h"
 %include "dolfin/generation/UnitCircleMesh.h"
 %include "dolfin/generation/UnitCircle.h"
-%include "dolfin/generation/IntervalMesh.h"
-%include "dolfin/generation/Interval.h"
 %include "dolfin/generation/CSGGeometry.h"
 %include "dolfin/generation/CSGMeshGenerator.h"
 %include "dolfin/generation/CSGCGALMeshGenerator2D.h"

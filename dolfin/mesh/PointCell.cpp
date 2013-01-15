@@ -21,7 +21,7 @@
 // First added:  2007-12-12
 // Last changed: 2010-01-19
 
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "Cell.h"
 #include "Facet.h"
 #include "MeshEditor.h"
@@ -120,6 +120,15 @@ Point PointCell::normal(const Cell& cell, std::size_t facet) const
 {
   dolfin_error("PointCell.cpp",
                "find normal vector of cell",
+               "Normal vector of a point cell is not defined");
+  Point p;
+  return p;
+}
+//-----------------------------------------------------------------------------
+Point PointCell::cell_normal(const Cell& cell) const
+{
+  dolfin_error("PointCell.cpp",
+               "compute cell normal",
                "Normal vector of a point cell is not defined");
   Point p;
   return p;

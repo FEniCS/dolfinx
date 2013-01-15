@@ -84,7 +84,7 @@ if (SLEPC_DIR)
 
   find_library(SLEPC_LIBRARY
     NAMES slepc
-    HINTS ${SLEPC_DIR}/lib $ENV{SLEPC_DIR}/lib
+    HINTS ${SLEPC_DIR}/lib $ENV{SLEPC_DIR}/lib  ${SLEPC_DIR}/${PETSC_ARCH}/lib $ENV{SLEPC_DIR}/$ENV{PETSC_ARCH}/lib 
     DOC "The SLEPc library"
     )
   mark_as_advanced(SLEPC_LIBRARY)

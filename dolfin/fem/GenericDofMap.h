@@ -56,9 +56,6 @@ namespace dolfin
     /// True if dof map is a view into another map (is a sub-dofmap)
     virtual bool is_view() const = 0;
 
-    /// Return true iff mesh entities of topological dimension d are needed
-    virtual bool needs_mesh_entities(std::size_t d) const = 0;
-
     /// Return the dimension of the global finite element function space
     virtual std::size_t global_dimension() const = 0;
 
@@ -86,10 +83,11 @@ namespace dolfin
     virtual const boost::unordered_map<std::size_t, std::size_t>& off_process_owner() const = 0;
 
     /// Local-to-global mapping of dofs on a cell
-    virtual const std::vector<DolfinIndex>& cell_dofs(std::size_t cell_index) const = 0;
+    virtual const std::vector<dolfin::la_index>& cell_dofs(std::size_t cell_index) const = 0;
 
     /// Tabulate local-local facet dofs
-    virtual void tabulate_facet_dofs(unsigned int* dofs, std::size_t local_facet) const = 0;
+    virtual void tabulate_facet_dofs(std::vector<std::size_t>& dofs,
+                                     std::size_t local_facet) const = 0;
 
     /// Tabulate the coordinates of all dofs on a cell (UFC cell version)
     virtual void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
@@ -102,16 +100,18 @@ namespace dolfin
     /// Create a copy of the dof map
     virtual boost::shared_ptr<GenericDofMap> copy() const = 0;
 
-    /// Build a new dof map on new mesh
-    virtual boost::shared_ptr<GenericDofMap> build(const Mesh& new_mesh) const = 0;
+    /// Create a new dof map on new mesh
+    virtual boost::shared_ptr<GenericDofMap> create(const Mesh& new_mesh) const = 0;
 
     /// Extract sub dofmap component
-    virtual GenericDofMap* extract_sub_dofmap(const std::vector<std::size_t>& component,
-                                              const Mesh& mesh) const = 0;
+    virtual boost::shared_ptr<GenericDofMap> 
+        extract_sub_dofmap(const std::vector<std::size_t>& component,
+                           const Mesh& mesh) const = 0;
 
     /// Create a "collapsed" a dofmap (collapses from a sub-dofmap view)
-    virtual GenericDofMap* collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
-                                    const Mesh& mesh) const = 0;
+    virtual boost::shared_ptr<GenericDofMap> 
+        collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
+                 const Mesh& mesh) const = 0;
 
     /// Set dof entries in vector to a specified value. Parallel layout
     /// of vector must be consistent with dof map range.

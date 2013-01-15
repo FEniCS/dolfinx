@@ -21,7 +21,6 @@
 // Last changed: 2011-02-08
 
 #include <cmath>
-#include <dolfin/common/types.h>
 #include "Vertex.h"
 #include "Edge.h"
 

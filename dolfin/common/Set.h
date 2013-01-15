@@ -22,9 +22,8 @@
 #define __DOLFIN_SET_H
 
 #include <algorithm>
+#include <cstddef>
 #include <vector>
-
-#include "dolfin/common/types.h"
 
 namespace dolfin
 {
