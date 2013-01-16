@@ -535,12 +535,13 @@ void GraphBuilder::compute_local_dual_graph(const LocalMeshData& mesh_data,
       // Look for facet in map
       const FacetCellMap::const_iterator join_cell = facet_cell_map.find(facet);
 
-      // If facet not found in map, insert facet->cell into map
+      // If facet not found in map, insert [facet => local cell index] into map
       if (join_cell == facet_cell_map.end())
         facet_cell_map[facet] = i;
       else
       {
         // Already in map. Connect cells and delete facet from map
+        // Add offset to cell index when inserting into local_graph
         local_graph[i].insert(join_cell->second + cell_offset);
         local_graph[join_cell->second].insert(i + cell_offset);
         facet_cell_map.erase(join_cell);
@@ -554,7 +555,7 @@ void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
                             FacetCellMap& facet_cell_map,
                             std::set<std::size_t>& ghost_vertices)
 {
-  Timer timer("Non-local dual graph [matchmaker]");
+  Timer timer("Compute non-local dual graph");
 
   // At this stage facet_cell map only contains facets->cells with edge
   // facets either interprocess or external boundaries
@@ -587,7 +588,8 @@ void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
   for (it = facet_cell_map.begin(); it != facet_cell_map.end(); ++it)
   {
     // Use first vertex of facet to partition into blocks
-    // FIXME: could use a better index? First vertex is slightly skewed towards low values - may not be important
+    // FIXME: could use a better index? 
+    // First vertex is slightly skewed towards low values - may not be important
     std::size_t dest_proc = MPI::index_owner((it->first)[0], mesh_data.num_global_vertices);
     // Pack map into vectors to send
     for (std::size_t i = 0; i < num_vertices_per_facet; ++i)
@@ -604,6 +606,7 @@ void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
 
   // Map to connect processes and cells, using facet as key
   boost::unordered_map<std::vector<std::size_t>, std::pair<std::size_t, std::size_t> > matchmap;
+  // FIXME: set hash size
     
   std::vector<std::size_t> facet(num_vertices_per_facet);
 
@@ -623,7 +626,7 @@ void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
       }
       else
       {
-        //found a match of two facets - send back to owners
+        // Found a match of two facets - send back to owners
         const std::size_t proc1 = matchmap[facet].first;
         const std::size_t cell1 = matchmap[facet].second;
         const std::size_t proc2 = proc_k;
@@ -641,7 +644,8 @@ void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
   MPI::all_to_all(data_to_send, data_received);
 
   // Flatten received data and insert connected cells into local map
-  for (std::vector<std::vector<std::size_t> >::iterator r = data_received.begin(); r != data_received.end(); ++r)
+  for (std::vector<std::vector<std::size_t> >::iterator r = data_received.begin(); 
+       r != data_received.end(); ++r)
   {
     const std::vector<std::size_t>& cell_list = *r;
     for (std::size_t i = 0 ; i < r->size() ; i+=2)
