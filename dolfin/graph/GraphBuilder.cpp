@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2012
 //
 // First added:  2010-02-19
-// Last changed: 2013-01-11
+// Last changed: 2013-01-16
 
 #include <algorithm>
 #include <numeric>
@@ -185,18 +185,10 @@ BoostBidirectionalGraph GraphBuilder::local_boost_graph(const Mesh& mesh,
   return graph;
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
-                            std::vector<std::set<std::size_t> >& local_graph,
-                            std::set<std::size_t>& ghost_vertices)
+void GraphBuilder::compute_dual_graph_orig(const LocalMeshData& mesh_data,
+                                           std::vector<std::set<std::size_t> >& local_graph,
+                                           std::set<std::size_t>& ghost_vertices)
 {
-
-  compute_dual_graph_small(mesh_data,
-                       local_graph,
-                       ghost_vertices);
-
- return;
-  
-
 
   // This function builds the local part of a distributed dual graph
   // by partitioning cell vertices evenly across processes in ascending
@@ -475,20 +467,30 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_dual_graph_small(const LocalMeshData& mesh_data,
+void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
                             std::vector<std::set<std::size_t> >& local_graph,
                             std::set<std::size_t>& ghost_vertices)
 {
   FacetCellMap facet_cell_map;
+
+  #ifdef HAS_MPI
+
   compute_local_dual_graph(mesh_data, local_graph, facet_cell_map);
-  compute_nonlocal_dual_graph_small(mesh_data, local_graph, facet_cell_map, ghost_vertices);
+  compute_nonlocal_dual_graph(mesh_data, local_graph, facet_cell_map, ghost_vertices);
+
+  #else
+
+  compute_local_dual_graph(mesh_data, local_graph, facet_cell_map);
+
+  #endif
+
 }
 //-----------------------------------------------------------------------------
 void GraphBuilder::compute_local_dual_graph(const LocalMeshData& mesh_data,
                             std::vector<std::set<std::size_t> >& local_graph,
                             FacetCellMap& facet_cell_map)
 {
-  Timer timer("Compute dual graph");
+  Timer timer("Compute local dual graph");
 
   // List of cell vertices
   const boost::multi_array<std::size_t, 2>& cell_vertices = mesh_data.cell_vertices;
@@ -547,15 +549,12 @@ void GraphBuilder::compute_local_dual_graph(const LocalMeshData& mesh_data,
   }
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_nonlocal_dual_graph_small(const LocalMeshData& mesh_data,
+void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
                             std::vector<std::set<std::size_t> >& local_graph,
                             FacetCellMap& facet_cell_map,
                             std::set<std::size_t>& ghost_vertices)
 {
-  Timer timer("Compute dual graph");
-
-  MPICommunicator mpi_comm;
-  boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_attach);  
+  Timer timer("Non-local dual graph [matchmaker]");
 
   // At this stage facet_cell map only contains facets->cells with edge
   // facets either interprocess or external boundaries
@@ -597,7 +596,7 @@ void GraphBuilder::compute_nonlocal_dual_graph_small(const LocalMeshData& mesh_d
     data_to_send[dest_proc].push_back(it->second + offset);
   }
 
-  boost::mpi::all_to_all(comm, data_to_send, data_received);
+  MPI::all_to_all(data_to_send, data_received);
   
   // Clean out send vector for later reuse
   for (std::size_t i = 0; i < num_processes; i++)
@@ -619,7 +618,9 @@ void GraphBuilder::compute_nonlocal_dual_graph_small(const LocalMeshData& mesh_d
         facet[j] = data_k[i + j];
    
       if (matchmap.find(facet) == matchmap.end())
+      {
         matchmap[facet] = std::make_pair(proc_k, data_k[i + j]);
+      }
       else
       {
         //found a match of two facets - send back to owners
@@ -631,19 +632,23 @@ void GraphBuilder::compute_nonlocal_dual_graph_small(const LocalMeshData& mesh_d
         data_to_send[proc1].push_back(cell2);
         data_to_send[proc2].push_back(cell2);
         data_to_send[proc2].push_back(cell1);        
+        matchmap.erase(facet); // saves memory and search time
       }
       
     }    
   }
 
-  boost::mpi::all_to_all(comm, data_to_send, data_received);
-  
+  MPI::all_to_all(data_to_send, data_received);
+
   // Flatten received data and insert connected cells into local map
   for (std::vector<std::vector<std::size_t> >::iterator r = data_received.begin(); r != data_received.end(); ++r)
   {
     const std::vector<std::size_t>& cell_list = *r;
     for (std::size_t i = 0 ; i < r->size() ; i+=2)
     {
+      dolfin_assert(cell_list[i] >= offset);
+      dolfin_assert(cell_list[i] - offset < local_graph.size());
+      
       local_graph[cell_list[i] - offset].insert(cell_list[i+1]);
       ghost_vertices.insert(cell_list[i+1]);
     }
