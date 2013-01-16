@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2012-12-19
-// Last Changed: 2013-01-14
+// Last Changed: 2013-01-16
 
 #include <vector>
 #include <map>
@@ -188,7 +188,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
         
         // Need to find the 'uncommon' vertex of the two edges
         // which is furthest from both
-        std::size_t v_far;
+        std::size_t v_far = 0;
       
         for(std::size_t i = 0; i < 4;++i)
         {
@@ -227,7 +227,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
       const std::size_t e1 = edge_to_new_vertex[e[marked_edges[1]].index()];
       const std::size_t e2 = edge_to_new_vertex[e[marked_edges[2]].index()];
 
-      std::size_t v01, v12, v20, v_far;
+      std::size_t v01 = 0, v12 = 0, v20 = 0, v_far = 0;
       
       for(std::size_t i = 0; i < 2; ++i)
         for(std::size_t j = 0; j < 2; ++j)
