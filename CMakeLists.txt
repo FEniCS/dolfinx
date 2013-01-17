@@ -160,10 +160,17 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -wd161,488,654,858,1125,1170")
 endif()
 
-# Set system include flags to get around CMake bug on OSX
+# Set system include flags to get around CMake bug on OSX with gcc
 # See http://public.kitware.com/Bug/print_bug_page.php?bug_id=10837
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
+endif()
+
+if (APPLE)
+  set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
+  set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -Wno-long-long")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wno-long-long")
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -Wno-long-long")
 endif()
 
 #------------------------------------------------------------------------------
