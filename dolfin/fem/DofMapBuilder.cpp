@@ -28,7 +28,6 @@
 #include <boost/random.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/serialization/map.hpp>
-#include <dolfin/common/tuple_serialization.h>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/graph/BoostGraphOrdering.h>
