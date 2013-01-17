@@ -44,7 +44,7 @@ using namespace dolfin;
 void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
                                   const MeshFunction<bool>& refinement_marker)
 {
-  std::size_t tdim = mesh.topology().dim();
+  const std::size_t tdim = mesh.topology().dim();
   
   // Ensure connectivity from cells to edges
   mesh.init(1);
@@ -69,9 +69,9 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
     // Transmit shared marked edges
     p.update_logical_edgefunction();
 
-    for(CellIterator cell(mesh); !cell.end(); ++cell)
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      std::size_t n_marked = p.marked_edge_count(*cell);
+      const std::size_t n_marked = p.marked_edge_count(*cell);
       
       // If more than 3 edges are already marked, mark all edges
       if (n_marked == 4 || n_marked == 5)
@@ -89,7 +89,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
           const std::size_t n_face = p.marked_edge_count(*face);
           nmax = (n_face > nmax) ? n_face : nmax;
         }        
-        if(nmax != 3)
+        if (nmax != 3)
         {
           p.mark(*cell);
           ++update_count;
@@ -108,23 +108,23 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
   
   // Create new topology
 
-  for(CellIterator cell(mesh); !cell.end(); ++cell)
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
   {    
     VertexIterator v(*cell);
     EdgeIterator e(*cell);
 
     std::vector<std::size_t> marked_edges;
-    for(std::size_t j = 0 ; j < 6 ; ++j)
+    for (std::size_t j = 0 ; j < 6 ; ++j)
     {
       if (p.is_marked(e[j].index()))
         marked_edges.push_back(j);
     }
 
-    if(marked_edges.size() == 0) //straight copy of cell (1->1)
+    if (marked_edges.size() == 0) //straight copy of cell (1->1)
     {
       p.new_cell(*cell);
     }
-    else if(marked_edges.size() == 1) // "green" refinement (bisection)
+    else if (marked_edges.size() == 1) // "green" refinement (bisection)
     {
       const std::size_t new_edge = marked_edges[0];
       const std::size_t v_new = edge_to_new_vertex[e[new_edge].index()];
@@ -140,7 +140,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
       p.new_cell(v_far_0, v_far_1, v_new, v_near_0);
       p.new_cell(v_far_0, v_far_1, v_new, v_near_1);
     }
-    else if(marked_edges.size() == 2) 
+    else if (marked_edges.size() == 2) 
     {
       const std::size_t new_edge_0 = marked_edges[0];
       const std::size_t new_edge_1 = marked_edges[1];
@@ -149,7 +149,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
 
       // Opposite edges add up to 5
       // This is effectively a double bisection
-      if( (new_edge_0 + new_edge_1) == 5)
+      if ( (new_edge_0 + new_edge_1) == 5)
       {
         VertexIterator v0(e[new_edge_0]);
         VertexIterator v1(e[new_edge_1]);
@@ -190,7 +190,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
         p.new_cell(v_far, v_common, e0, e1);
       
         // Choose bottom cell consistently
-        if(d0 > d1 || (d0 == d1 && v_leg_0 > v_leg_1)) 
+        if (d0 > d1 || (d0 == d1 && v_leg_0 > v_leg_1)) 
         {
           p.new_cell(v_far, e0, e1, v_leg_1);
           p.new_cell(v_far, e0, v_leg_0, v_leg_1);
@@ -202,7 +202,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
         }
       }
     }
-    else if(marked_edges.size() == 3) // refinement of one face into 4 triangles
+    else if (marked_edges.size() == 3) // refinement of one face into 4 triangles
     {
       // Assumes edges are on one face - will break otherwise
 
@@ -224,7 +224,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
       p.new_cell(v_far, e2, v20, e0);
 
     }
-    else if(marked_edges.size() == 6)
+    else if (marked_edges.size() == 6)
     {
       eightfold_division(*cell, p);
     }
@@ -235,17 +235,17 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
 //-----------------------------------------------------------------------------
 void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
 {
-  if(MPI::num_processes()==1)
+  if (MPI::num_processes()==1)
   {
     dolfin_error("ParallelRefinement3D.cpp",
                  "refine mesh",
                  "Only works in parallel");
   }
 
-  const uint tdim = mesh.topology().dim();
-  const uint gdim = mesh.geometry().dim();
+  const std::size_t tdim = mesh.topology().dim();
+  const std::size_t gdim = mesh.geometry().dim();
 
-  if(tdim != 3 || gdim != 3)
+  if (tdim != 3 || gdim != 3)
   {
     dolfin_error("ParallelRefinement3D.cpp",
                  "refine mesh",
@@ -266,10 +266,8 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
   
   // Generate new topology
 
-  for(CellIterator cell(mesh); !cell.end(); ++cell)
-  {
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
     eightfold_division(*cell, p);
-  }
 
   p.partition(new_mesh);
 
@@ -279,6 +277,12 @@ std::vector<std::size_t> ParallelRefinement3D::common_vertices(const Cell& cell,
                                                                const std::size_t edge0, 
                                                                const std::size_t edge1)
 {
+  // Order the four vertex indices of cell so that
+  // result[0] is in neither edge
+  // result[1] is only in e0
+  // result[2] is only in e1
+  // result[3] is in both edges
+
   std::vector<std::size_t> result(4);
   
   EdgeIterator e(cell);
@@ -287,7 +291,7 @@ std::vector<std::size_t> ParallelRefinement3D::common_vertices(const Cell& cell,
 
   bool found_common = false;
   
-  for(VertexIterator vc(cell); !vc.end(); ++vc)
+  for (VertexIterator vc(cell); !vc.end(); ++vc)
   {
     std::size_t idx = 2*(std::size_t)(e1.incident(*vc)) 
                       + (std::size_t)(e0.incident(*vc));
@@ -299,11 +303,6 @@ std::vector<std::size_t> ParallelRefinement3D::common_vertices(const Cell& cell,
 
   // If edges do not share any vertices, output will be garbage
   dolfin_assert(found_common);
-
-  // result[0] is in neither edge
-  // result[1] is only in e0
-  // result[2] is only in e1
-  // result[3] is in both edges
 
   return result;
 }

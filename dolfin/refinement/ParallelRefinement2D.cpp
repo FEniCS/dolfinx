@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2012-12-19
-// Last Changed: 2013-01-14
+// Last Changed: 2013-01-17
 
 #include <vector>
 #include <map>
@@ -53,13 +53,13 @@ void ParallelRefinement2D::generate_reference_edges(const Mesh& mesh,
   
   ref_edge.resize(mesh.size(D));
   
-  for(CellIterator cell(mesh); !cell.end(); ++cell)
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     std::size_t cell_index = cell->index();
     
     std::vector<std::pair<double,std::size_t> > lengths;
     EdgeIterator celledge(*cell);
-    for(std::size_t i = 0; i < 3; i++)
+    for (std::size_t i = 0; i < 3; i++)
     {
       lengths.push_back(std::make_pair(celledge[i].length(), i));
     }
@@ -132,13 +132,6 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
 {
   const uint tdim = mesh.topology().dim();
 
-  if(refinement_marker.dim() != tdim)
-  {
-    dolfin_error("ParallelRefinement3D.cpp",
-                 "mark edges",
-                 "Only Cell based markers are supported at present");
-  }
-
   if (MPI::num_processes()==1)
   {
     dolfin_error("ParallelRefinement2D.cpp",
@@ -148,6 +141,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
 
   if (tdim != 2)
   {
+    // Note: gdim may be 3
     dolfin_error("ParallelRefinement2D.cpp",
                  "refine mesh",
                  "Only works in 2D");
@@ -241,13 +235,13 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
     else if (rgb_count == 2) // "blue" refinement (1->3) left or right
     {
       // FIXME: more possibilities here - need to do more tests 
-      if(p.is_marked(e[i2].index()))
+      if (p.is_marked(e[i2].index()))
       {
         p.new_cell(e2, v1, e0);
         p.new_cell(e2, e0, v0);
         p.new_cell(e0, v2, v0);
       }
-      else if(p.is_marked(e[i1].index()))
+      else if (p.is_marked(e[i1].index()))
       {
         p.new_cell(e0, v0, v1);
         p.new_cell(e1, e0, v2);

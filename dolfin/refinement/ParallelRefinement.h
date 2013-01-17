@@ -77,7 +77,6 @@ namespace dolfin
     // Use vertex and topology data to partition new mesh
     void partition(Mesh& new_mesh);
     
-    
   private:
     
     // shared edges between processes. In 2D, vector size is 1

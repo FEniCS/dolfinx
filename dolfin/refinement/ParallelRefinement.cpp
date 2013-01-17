@@ -109,7 +109,6 @@ std::size_t ParallelRefinement::marked_edge_count(MeshEntity& cell)
   return n_marked;
 }
 //-----------------------------------------------------------------------------
-// logical "or" of edgefunction on boundaries
 void ParallelRefinement::update_logical_edgefunction()
 {
   
@@ -130,11 +129,10 @@ void ParallelRefinement::update_logical_edgefunction()
       for (std::vector<std::pair<std::size_t, std::size_t> >::iterator proc_edge = sh_edge->second.begin(); 
           proc_edge != sh_edge->second.end(); ++proc_edge)
       {
-        const std::size_t proc_num = proc_edge->first;
-        values_to_send[proc_num].push_back(proc_edge->second);
+        values_to_send[proc_edge->first].push_back(proc_edge->second);
       }
-      
     }
+
   }
   
   MPI::all_to_all(values_to_send, received_values);
