@@ -42,7 +42,6 @@
 #include "BoundaryCondition.h"
 #include "FiniteElement.h"
 #include "GenericDofMap.h"
-#include "UFCMesh.h"
 #include "PeriodicBC.h"
 
 using namespace dolfin;
@@ -177,7 +176,8 @@ void PeriodicBC::rebuild()
   cout << "Building mapping between periodic degrees of freedom." << endl;
 
   // Build list of dof pairs
-  std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > > dof_pairs;
+  std::vector<std::pair<std::pair<std::size_t, std::size_t>,
+      std::pair<std::size_t, std::size_t> > > dof_pairs;
   compute_dof_pairs(dof_pairs);
 
   // Resize arrays
@@ -328,7 +328,8 @@ void PeriodicBC::compute_dof_pairs(
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::extract_dof_pairs(const FunctionSpace& V,
-   std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > >& dof_pairs) const
+   std::vector<std::pair<std::pair<std::size_t, std::size_t>,
+   std::pair<std::size_t, std::size_t> > >& dof_pairs) const
 {
   // Call recursively for subspaces, should work for arbitrary nesting
   dolfin_assert(V.element());
@@ -398,17 +399,18 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& V,
     dofmap.tabulate_coordinates(data.coordinates, cell);
 
     // Tabulate which dofs are on the facet
-    dofmap.tabulate_facet_dofs(&data.facet_dofs[0], local_facet);
+    dofmap.tabulate_facet_dofs(data.facet_dofs, local_facet);
 
     // Iterate over facet dofs
-    for (std::size_t i = 0; i < dofmap.num_facet_dofs(); ++i)
+    for (std::size_t i = 0; i < data.facet_dofs.size(); ++i)
     {
       // Get dof and coordinate of dof
       const std::size_t local_dof = data.facet_dofs[i];
       const int global_dof = cell_dofs[local_dof];
 
       // Only handle dofs that are owned by this process
-      if (global_dof >= (int) ownership_range.first && global_dof < (int) ownership_range.second)
+      if (global_dof >= (int) ownership_range.first
+            && global_dof < (int) ownership_range.second)
       {
         std::copy(data.coordinates[local_dof].begin(),
                   data.coordinates[local_dof].end(), x.begin());

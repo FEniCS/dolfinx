@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-02-08
-// Last changed: 2010-02-08
+// Last changed: 2013-01-09
 
 #include "BoundaryMesh.h"
 #include "Facet.h"

@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2010 Anders Logg
+// Copyright (C) 2006-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -20,7 +20,7 @@
 // Modified by Garth N. Wells 2010.
 //
 // First added:  2006-06-01
-// Last changed: 2011-10-26
+// Last changed: 2013-01-09
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -65,9 +65,21 @@ namespace dolfin
     ///
     /// *Returns*
     ///     std::size_t
-    ///         Orientation of the cell (0 is right, 1 is left).
+    ///         Orientation of the cell (0 is 'up'/'right', 1 is 'down'/'left')
     std::size_t orientation() const
     { return _mesh->type().orientation(*this); }
+
+    /// Compute orientation of cell relative to given 'up' direction
+    ///
+    /// *Arguments*
+    ///     up (_Point_)
+    ///         The direction defined as 'up'
+    ///
+    /// *Returns*
+    ///     std::size_t
+    ///         Orientation of the cell (0 is 'same', 1 is 'opposite')
+    std::size_t orientation(const Point& up) const
+    { return _mesh->type().orientation(*this, up); }
 
     /// Compute (generalized) volume of cell
     ///
@@ -132,6 +144,14 @@ namespace dolfin
     ///         Normal of the facet.
     Point normal(std::size_t facet) const
     { return _mesh->type().normal(*this, facet); }
+
+    /// Compute normal to cell itself (viewed as embedded in 3D)
+    ///
+    /// *Returns*
+    ///     _Point_
+    ///         Normal of the cell
+    Point cell_normal() const
+    { return _mesh->type().cell_normal(*this); }
 
     /// Compute the area/length of given facet with respect to the cell
     ///

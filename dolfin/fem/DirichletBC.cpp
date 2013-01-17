@@ -53,7 +53,6 @@
 #include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include "GenericDofMap.h"
 #include "FiniteElement.h"
-#include "UFCMesh.h"
 #include "UFCCell.h"
 #include "DirichletBC.h"
 
@@ -806,7 +805,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     const std::vector<dolfin::la_index>& cell_dofs = dofmap.cell_dofs(cell.index());
 
     // Tabulate which dofs are on the facet
-    dofmap.tabulate_facet_dofs(&data.facet_dofs[0], facet_number);
+    dofmap.tabulate_facet_dofs(data.facet_dofs, facet_number);
 
     // Pick values for facet
     for (std::size_t i = 0; i < dofmap.num_facet_dofs(); i++)

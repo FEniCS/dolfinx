@@ -27,7 +27,6 @@
 #include <boost/shared_ptr.hpp>
 #include <ufc.h>
 #include "UFCCell.h"
-#include "UFCMesh.h"
 
 namespace dolfin
 {
@@ -98,8 +97,15 @@ namespace dolfin
     // Form
     const ufc::form& form;
 
-    // Mesh
-    UFCMesh mesh;
+    // Global Mesh dimensions
+    // FIXME MSA: Do we need this instead of ufc::mesh?
+    //std::vector<std::size_t> num_global_mesh_entities;
+
+    // FIXME AL: Check which data is actually used and remove the rest
+    // FIXME AL: Remove UFCCell class
+
+
+
 
     // Current cell
     UFCCell cell;

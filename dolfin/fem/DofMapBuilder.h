@@ -15,21 +15,23 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Niclas Jansson 2009
-// Modified by Garth Wells 2009-2013
+// Modified by Niclas Jansson 2009.
+// Modified by Garth Wells 2009-2012
+// Modified by Mikael Mortensen 2012.
 //
 // First added:  2008-08-12
-// Last changed: 2013-01-04
+// Last changed: 2012-11-05
 
 #ifndef __DOF_MAP_BUILDER_H
 #define __DOF_MAP_BUILDER_H
 
 #include <set>
 #include <map>
+#include <boost/array.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
-#include <dolfin/common/Set.h>
 #include <dolfin/common/types.h>
+#include <dolfin/common/Set.h>
 
 namespace ufc
 {
@@ -42,11 +44,8 @@ namespace dolfin
   class DofMap;
   class Mesh;
   class UFC;
-  class UFCMesh;
 
-  /// This class builds DOLFIN dofs maps from a UFC dof map and a Mesh. In
-  /// the parallel case, it decides on the ownership of shared degrees
-  /// of freedom.
+  /// Documentation of class
 
   class DofMapBuilder
   {
@@ -56,38 +55,60 @@ namespace dolfin
     typedef std::map<dolfin::la_index, dolfin::la_index>::const_iterator map_iterator;
 
     // FIXME: Test which 'set' is most efficient
-    typedef std::set<std::size_t> set;
-    typedef std::set<std::size_t>::const_iterator set_iterator;
 
-    //typedef boost::unordered_set<dolfin::std::size_t> set;
-    //typedef boost::unordered_set<dolfin::std::size_t>::const_iterator set_iterator;
+    //typedef std::set<std::size_t> set;
+    //typedef std::set<std::size_t>::const_iterator set_iterator;
+
+    typedef boost::unordered_set<std::size_t> set;
+    typedef boost::unordered_set<std::size_t>::const_iterator set_iterator;
 
     typedef std::vector<std::size_t>::const_iterator vector_it;
     typedef boost::unordered_map<std::size_t, std::vector<std::size_t> > vec_map;
 
+    typedef std::pair<std::size_t, std::size_t> facet_data;
+    typedef std::map<std::size_t, std::size_t> periodic_map;
+    typedef std::vector<facet_data> vector_of_pairs;
+    typedef periodic_map::iterator periodic_map_iterator;
+    typedef std::vector<std::pair<facet_data, facet_data> > facet_pair_type;
+
   public:
 
-    /// Build dofmap. The restriction may be a null pointer in which
-    /// case it is ignored.
-    static void build(DofMap& dofmap,
-                      const Mesh& dolfin_mesh,
-                      const UFCMesh& ufc_mesh,
-                      boost::shared_ptr<const Restriction> restriction,
-                      bool reorder,
-                      bool distributed);
+    // Build dofmap. The restriction may be a null pointer in which
+    // case it is ignored.
+    static void build(DofMap& dofmap, const Mesh& dolfin_mesh,
+        boost::shared_ptr<const Restriction> restriction,
+        const std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facets);
+
+    // Build dofmap. The restriction may be a null pointer in which
+    // case it is ignored.
+    static void build_sub_map(DofMap& sub_dofmap,
+                              const DofMap& parent_dofmap,
+                              const std::vector<std::size_t>& component,
+                              const Mesh& mesh);
 
   private:
 
-    // Build distributed dof map
-    static void build_distributed(DofMap& dofmap,
-                                  const DofMapBuilder::set& global_dofs,
-                                  const Mesh& mesh,
-                                  boost::shared_ptr<const Restriction> restriction,
-                                  const map& restricted_dofs_inverse);
+    // Build UFC-based dofmap
+    static void build_ufc(DofMap& dofmap, map& restricted_dofs_inverse,
+                          const Mesh& mesh,
+                          boost::shared_ptr<const Restriction> restriction);
 
-    // Compute ownership of dofs
-    static void compute_ownership(set& owned_dofs, set& shared_owned_dofs,
-                                  set& shared_unowned_dofs,
+    // Re-order local dofmap for dof spatial locality. Re-ordering is
+    // optional, but re-ordering can make other algorithms
+    // (e.g. matrix-vector products) significantly faster.
+    static void reorder_local(DofMap& dofmap, const Mesh& mesh);
+
+    // Re-order distributed dof map for process locality
+    static void reorder_distributed(DofMap& dofmap,
+                                   const Mesh& mesh,
+                                   boost::shared_ptr<const Restriction> restriction,
+                                   const map& restricted_dofs_inverse);
+
+    // Compute which process 'owns' each degree of freedom
+    //   dof_ownership[0] -> all dofs owned by this process (will intersect dof_ownership[1])
+    //   dof_ownership[1] -> dofs shared with other processes and owned by this process
+    //   dof_ownership[2] -> dofs shared with other processes and owned by another process
+    static void compute_dof_ownership(boost::array<set, 3>& dof_ownership,
                                   vec_map& shared_dof_processes,
                                   DofMap& dofmap,
                                   const DofMapBuilder::set& global_dofs,
@@ -95,10 +116,8 @@ namespace dolfin
                                   boost::shared_ptr<const Restriction> restriction,
                                   const map& restricted_dofs_inverse);
 
-    // Renumber parallel dof map
-    static void parallel_renumber(const set& owned_dofs,
-                                  const set& shared_owned_dofs,
-                                  const set& shared_unowned_dofs,
+    // Re-order distributed dofmap for process locality based on ownership data
+    static void parallel_renumber(const boost::array<set, 3>& dof_ownership,
                                   const vec_map& shared_dof_processes,
                                   DofMap& dofmap,
                                   const Mesh& mesh,
@@ -106,21 +125,36 @@ namespace dolfin
                                   const map& restricted_dofs_inverse);
 
     // Compute set of global dofs (e.g. Reals associated with global
-    // Lagrnage multipliers) based on UFC numbering. Global dofs
-    // are not associated with any mesh entity
-    static std::set<std::size_t> compute_global_dofs(const DofMap& dofmap,
-                                                     const Mesh& dolfin_mesh);
-
+    // Lagrange multipliers) based on UFC numbering. Global dofs
+    // are not associated with any mesh entity.
+    static set compute_global_dofs(const DofMap& dofmap,
+                                   const Mesh& dolfin_mesh);
 
     // Iterate recursively over all sub-dof maps to find global
     // degrees of freedom
-    static void compute_global_dofs(std::set<std::size_t>& global_dofs, std::size_t& offset,
+    static void compute_global_dofs(set& global_dofs, std::size_t& offset,
                             boost::shared_ptr<const ufc::dofmap> dofmap,
-                            const Mesh& dolfin_mesh, const UFCMesh& ufc_mesh);
+                            const Mesh& dolfin_mesh);
 
+    // Iterate recursively over all sub-dof maps to build a global
+    // map from slave dofs to master dofs. Build also a map of all
+    // processes that shares the master dofs
+    static void extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
+        periodic_map& _slave_master_map,
+        std::map<std::size_t, boost::unordered_set<std::size_t> >& _master_processes);
+
+    // Make all necessary modifications to dofmap due to periodicity of the mesh
+    static void periodic_modification(DofMap& dofmap, const Mesh& dolfin_mesh,
+      DofMapBuilder::set& global_dofs);
+
+    // Recursively extract UFC sub-dofmap and compute offset
+    static boost::shared_ptr<ufc::dofmap>
+        extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
+                               std::size_t& offset,
+                               const std::vector<std::size_t>& component,
+                               const Mesh& mesh);
 
   };
-
 }
 
 #endif

@@ -40,6 +40,7 @@
 
 // #include types from function submodule of module function
 #include "dolfin/function/GenericFunction.h"
+#include "dolfin/function/Expression.h"
 #include "dolfin/function/Function.h"
 #include "dolfin/function/FunctionSpace.h"
 
@@ -160,6 +161,7 @@ import_array();
 // %import types from submodule function of SWIG module function
 %include "dolfin/swig/function/pre.i"
 %import(module="function") "dolfin/function/GenericFunction.h"
+%import(module="function") "dolfin/function/Expression.h"
 %import(module="function") "dolfin/function/Function.h"
 %import(module="function") "dolfin/function/FunctionSpace.h"
 

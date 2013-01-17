@@ -36,7 +36,7 @@ tests = {
     "book":           ["chapter_1", "chapter_10"],
     "fem":            ["solving", "Assembler", "DirichletBC", "DofMap",
                        "FiniteElement", "Form", "SystemAssembler",
-                       "PeriodicBC"],
+                       "PeriodicBC", "manifolds"],
     "function":       ["Constant", "Expression", "Function", "FunctionSpace",
                        "SpecialFunctions"],
     "io":             ["vtk", "XMLMeshFunction", "XMLMesh",

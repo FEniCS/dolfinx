@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-11-09
-// Last changed: 2012-11-09
+// Last changed: 2013-01-07
 
 #ifndef __UNIT_INTERVAL_H
 #define __UNIT_INTERVAL_H
@@ -38,7 +38,10 @@ namespace dolfin
 
     /// Create mesh of unit interval
     UnitInterval(std::size_t nx=1) : UnitIntervalMesh(nx)
-    { warning("UnitInterval is deprecated. Use UnitIntervalMesh."); }
+    {
+      deprecation("UnitInterval", "1.1.0",
+                  "The class UnitInterval has been replaced by UnitIntervalMesh.");
+    }
 
   };
 }

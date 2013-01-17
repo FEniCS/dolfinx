@@ -5,7 +5,7 @@
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
-set(PROJECT_NAME demo_lift-drag2)
+set(PROJECT_NAME demo_multidomain)
 project(${PROJECT_NAME})
 
 # Set verbose output while testing CMake
