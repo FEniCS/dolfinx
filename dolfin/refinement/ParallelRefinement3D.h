@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2013-01-02
-// Last Changed: 2013-01-14
+// Last Changed: 2013-01-17
 
 
 // Simple class to perform uniform refinement in 3D in parallel
@@ -25,6 +25,7 @@
 namespace dolfin 
 {
   class Mesh;
+  class Edge;
   class Cell;
   class ParallelRefinement;
 
@@ -43,10 +44,11 @@ namespace dolfin
   private:
 
     // Full refinement of a tetrahedral cell
-    //    void eightfold_division(Cell& cell, ParallelRefinement& p);
+    static void eightfold_division(const Cell& cell, ParallelRefinement& p);
     
-  };
-
-
-
+    // Work out vertices which are shared by both, one or neither edge
+    static std::vector<std::size_t> common_vertices(const Cell& cell, 
+                                                    const std::size_t edge0,
+                                                    const std::size_t edge1);
+   };
 }

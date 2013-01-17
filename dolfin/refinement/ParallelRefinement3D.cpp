@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2012-12-19
-// Last Changed: 2013-01-16
+// Last Changed: 2013-01-17
 
 #include <vector>
 #include <map>
@@ -77,7 +77,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
       if (n_marked == 4 || n_marked == 5)
       { 
         p.mark(*cell);
-        update_count++;
+        ++update_count;
       }
 
       // With 3 marked edges, they must be all on the same face, otherwise, mark all edges
@@ -92,7 +92,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
         if(nmax != 3)
         {
           p.mark(*cell);
-          update_count++;
+          ++update_count;
         }
       }
     }
@@ -146,13 +146,13 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
       const std::size_t new_edge_1 = marked_edges[1];
       const std::size_t e0 = edge_to_new_vertex[e[new_edge_0].index()];
       const std::size_t e1 = edge_to_new_vertex[e[new_edge_1].index()];
-      VertexIterator v0(e[new_edge_0]);
-      VertexIterator v1(e[new_edge_1]);
 
       // Opposite edges add up to 5
       // This is effectively a double bisection
       if( (new_edge_0 + new_edge_1) == 5)
       {
+        VertexIterator v0(e[new_edge_0]);
+        VertexIterator v1(e[new_edge_1]);
         const std::size_t e0v0 = v0[0].global_index();
         const std::size_t e0v1 = v0[1].global_index();
         const std::size_t e1v0 = v1[0].global_index();
@@ -163,44 +163,29 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
         p.new_cell(e0, e1, e0v0, e1v1);
         p.new_cell(e0, e1, e0v1, e1v1);
       }
-      else // Both edges on same face
+      else 
       {
-        // Find shared and non-shared vertices
-        std::size_t v_common, v_leg_0, v_leg_1;      
-        double d0, d1;
-        
-        for(std::size_t i = 0; i < 2; ++i)
-          for(std::size_t j = 0; j < 2; ++j)
-          {
-            if(v0[i] == v1[j])
-            {
-              v_common = v0[i].global_index();
-              v_leg_0 = v0[1-i].global_index();
-              v_leg_1 = v1[1-j].global_index();
+        // Both edges on same face
+        // In this case, there is a choice of how to divide the
+        // face with two splitting edges. In order to be consistent
+        // across the mesh, always cut on the shortest distance
+        // in the bottom trapezoid. If distances measure as equal,
+        // use the global index to decide.
 
-              // Find distance across trapezoid
-              const Point p_leg_0 = v0[1-i].point();
-              const Point p_leg_1 = v1[1-j].point();
-              d0 = p_leg_0.distance(e[new_edge_1].midpoint());
-              d1 = p_leg_1.distance(e[new_edge_0].midpoint());
-            }
-          }
-        
-        // Need to find the 'uncommon' vertex of the two edges
-        // which is furthest from both
-        std::size_t v_far = 0;
-      
-        for(std::size_t i = 0; i < 4;++i)
-        {
-          const std::size_t v_i = v[i].global_index();
-          if(v_i != v_common && 
-             v_i != v_leg_0 &&
-             v_i != v_leg_1)
-          {
-            v_far = v_i;
-          }
-        }
+        const std::vector<std::size_t> com_v
+          = common_vertices(*cell, new_edge_0, new_edge_1);
 
+        const std::size_t v_far = Vertex(mesh, com_v[0]).global_index();        
+        const std::size_t v_leg_0 = Vertex(mesh, com_v[1]).global_index();
+        const std::size_t v_leg_1 = Vertex(mesh, com_v[2]).global_index();
+        const std::size_t v_common = Vertex(mesh, com_v[3]).global_index();
+
+        // Find distance across trapezoid
+        const Point p_leg_0 = Vertex(mesh, com_v[1]).point();
+        const Point p_leg_1 = Vertex(mesh, com_v[2]).point();
+        const double d0 = p_leg_0.distance(e[new_edge_1].midpoint());
+        const double d1 = p_leg_1.distance(e[new_edge_0].midpoint());
+        
         // Add 'top cell' always the same
         p.new_cell(v_far, v_common, e0, e1);
       
@@ -220,39 +205,18 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
     else if(marked_edges.size() == 3) // refinement of one face into 4 triangles
     {
       // Assumes edges are on one face - will break otherwise
-      VertexIterator v0(e[marked_edges[0]]);
-      VertexIterator v1(e[marked_edges[1]]);
-      VertexIterator v2(e[marked_edges[2]]);
+
       const std::size_t e0 = edge_to_new_vertex[e[marked_edges[0]].index()];
       const std::size_t e1 = edge_to_new_vertex[e[marked_edges[1]].index()];
       const std::size_t e2 = edge_to_new_vertex[e[marked_edges[2]].index()];
 
-      std::size_t v01 = 0, v12 = 0, v20 = 0, v_far = 0;
-      
-      for(std::size_t i = 0; i < 2; ++i)
-        for(std::size_t j = 0; j < 2; ++j)
-        {
-          if(v0[i]==v1[j])
-            v01=v0[i].global_index();
+      const std::vector<std::size_t> com_v 
+        = common_vertices(*cell, marked_edges[0], marked_edges[1]);
 
-          if(v1[i]==v2[j])
-            v12=v1[i].global_index();
-
-          if(v2[i]==v0[j])
-            v20=v2[i].global_index();
-        }
-
-      for(std::size_t i = 0; i<4 ;++i)
-      {
-        const std::size_t v_i=v[i].global_index();
-        if(v_i != v01 
-        && v_i != v12
-        && v_i != v20)
-        {
-          v_far = v_i;
-        }
-        
-      }
+      const std::size_t v_far = Vertex(mesh, com_v[0]).global_index();
+      const std::size_t v20 = Vertex(mesh, com_v[1]).global_index();
+      const std::size_t v12 = Vertex(mesh, com_v[2]).global_index();
+      const std::size_t v01 = Vertex(mesh, com_v[3]).global_index();
       
       p.new_cell(v_far, e0, e1, e2);
       p.new_cell(v_far, e0, v01, e1);
@@ -262,56 +226,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
     }
     else if(marked_edges.size() == 6)
     {
-      const std::size_t v0 = v[0].global_index();
-      const std::size_t v1 = v[1].global_index();
-      const std::size_t v2 = v[2].global_index();
-      const std::size_t v3 = v[3].global_index();
-
-      const std::size_t e0 = edge_to_new_vertex[e[0].index()];
-      const std::size_t e1 = edge_to_new_vertex[e[1].index()];
-      const std::size_t e2 = edge_to_new_vertex[e[2].index()];
-      const std::size_t e3 = edge_to_new_vertex[e[3].index()];
-      const std::size_t e4 = edge_to_new_vertex[e[4].index()];
-      const std::size_t e5 = edge_to_new_vertex[e[5].index()];
-
-      p.new_cell(v0, e3, e4, e5);
-      p.new_cell(v1, e1, e2, e5);
-      p.new_cell(v2, e0, e2, e4);
-      p.new_cell(v3, e0, e1, e3);
-
-      const Point p0 = e[0].midpoint();
-      const Point p1 = e[1].midpoint();
-      const Point p2 = e[2].midpoint();
-      const Point p3 = e[3].midpoint();
-      const Point p4 = e[4].midpoint();
-      const Point p5 = e[5].midpoint();
-      const double d05 = p0.distance(p5);
-      const double d14 = p1.distance(p4);
-      const double d23 = p2.distance(p3);
-      
-      // Then divide the remaining octahedron into 4 tetrahedra
-      if (d05 <= d14 && d14 <= d23)
-      {
-        p.new_cell(e0, e1, e2, e5);
-        p.new_cell(e0, e1, e3, e5);
-        p.new_cell(e0, e2, e4, e5);
-        p.new_cell(e0, e3, e4, e5);
-      }
-      else if (d14 <= d23)
-      {
-        p.new_cell(e0, e1, e2, e4);
-        p.new_cell(e0, e1, e3, e4);
-        p.new_cell(e1, e2, e4, e5);
-        p.new_cell(e1, e3, e4, e5);
-      }
-      else
-      {
-        p.new_cell(e0, e1, e2, e3);
-        p.new_cell(e0, e2, e3, e4);
-        p.new_cell(e1, e2, e3, e5);
-        p.new_cell(e2, e3, e4, e5);
-      }
-      
+      eightfold_division(*cell, p);
     }
   }
   
@@ -353,63 +268,102 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
 
   for(CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    EdgeIterator e(*cell);
-    VertexIterator v(*cell);
-
-    const std::size_t v0 = v[0].global_index();
-    const std::size_t v1 = v[1].global_index();
-    const std::size_t v2 = v[2].global_index();
-    const std::size_t v3 = v[3].global_index();
-    const std::size_t e0 = edge_to_new_vertex[e[0].index()];
-    const std::size_t e1 = edge_to_new_vertex[e[1].index()];
-    const std::size_t e2 = edge_to_new_vertex[e[2].index()];
-    const std::size_t e3 = edge_to_new_vertex[e[3].index()];
-    const std::size_t e4 = edge_to_new_vertex[e[4].index()];
-    const std::size_t e5 = edge_to_new_vertex[e[5].index()];
-
-    // Mostly duplicated from TetrahedronCell.cpp
-
-    p.new_cell(v0, e3, e4, e5);
-    p.new_cell(v1, e1, e2, e5);
-    p.new_cell(v2, e0, e2, e4);
-    p.new_cell(v3, e0, e1, e3);
-
-    const Point p0 = e[0].midpoint();
-    const Point p1 = e[1].midpoint();
-    const Point p2 = e[2].midpoint();
-    const Point p3 = e[3].midpoint();
-    const Point p4 = e[4].midpoint();
-    const Point p5 = e[5].midpoint();
-    const double d05 = p0.distance(p5);
-    const double d14 = p1.distance(p4);
-    const double d23 = p2.distance(p3);
-
-    // Then divide the remaining octahedron into 4 tetrahedra
-    if (d05 <= d14 && d14 <= d23)
-    {
-      p.new_cell(e0, e1, e2, e5);
-      p.new_cell(e0, e1, e3, e5);
-      p.new_cell(e0, e2, e4, e5);
-      p.new_cell(e0, e3, e4, e5);
-    }
-    else if (d14 <= d23)
-    {
-      p.new_cell(e0, e1, e2, e4);
-      p.new_cell(e0, e1, e3, e4);
-      p.new_cell(e1, e2, e4, e5);
-      p.new_cell(e1, e3, e4, e5);
-    }
-    else
-    {
-      p.new_cell(e0, e1, e2, e3);
-      p.new_cell(e0, e2, e3, e4);
-      p.new_cell(e1, e2, e3, e5);
-      p.new_cell(e2, e3, e4, e5);
-    }
-
+    eightfold_division(*cell, p);
   }
 
   p.partition(new_mesh);
 
 }
 //-----------------------------------------------------------------------------
+std::vector<std::size_t> ParallelRefinement3D::common_vertices(const Cell& cell,
+                                                               const std::size_t edge0, 
+                                                               const std::size_t edge1)
+{
+  std::vector<std::size_t> result(4);
+  
+  EdgeIterator e(cell);
+  const Edge e0 = e[edge0];
+  const Edge e1 = e[edge1];
+
+  bool found_common = false;
+  
+  for(VertexIterator vc(cell); !vc.end(); ++vc)
+  {
+    std::size_t idx = 2*(std::size_t)(e1.incident(*vc)) 
+                      + (std::size_t)(e0.incident(*vc));
+    if (idx == 3)
+      found_common = true;
+    
+    result[idx]=vc->index();
+  }
+
+  // If edges do not share any vertices, output will be garbage
+  dolfin_assert(found_common);
+
+  // result[0] is in neither edge
+  // result[1] is only in e0
+  // result[2] is only in e1
+  // result[3] is in both edges
+
+  return result;
+}
+//-----------------------------------------------------------------------------
+void ParallelRefinement3D::eightfold_division(const Cell& cell, ParallelRefinement& p)
+{
+  VertexIterator v(cell);
+  EdgeIterator e(cell);
+  
+  const std::size_t v0 = v[0].global_index();
+  const std::size_t v1 = v[1].global_index();
+  const std::size_t v2 = v[2].global_index();
+  const std::size_t v3 = v[3].global_index();
+
+  std::map<std::size_t, std::size_t>& edge_to_new_vertex = p.edge_to_new_vertex();  
+
+  const std::size_t e0 = edge_to_new_vertex[e[0].index()];
+  const std::size_t e1 = edge_to_new_vertex[e[1].index()];
+  const std::size_t e2 = edge_to_new_vertex[e[2].index()];
+  const std::size_t e3 = edge_to_new_vertex[e[3].index()];
+  const std::size_t e4 = edge_to_new_vertex[e[4].index()];
+  const std::size_t e5 = edge_to_new_vertex[e[5].index()];
+
+  p.new_cell(v0, e3, e4, e5);
+  p.new_cell(v1, e1, e2, e5);
+  p.new_cell(v2, e0, e2, e4);
+  p.new_cell(v3, e0, e1, e3);
+  
+  const Point p0 = e[0].midpoint();
+  const Point p1 = e[1].midpoint();
+  const Point p2 = e[2].midpoint();
+  const Point p3 = e[3].midpoint();
+  const Point p4 = e[4].midpoint();
+  const Point p5 = e[5].midpoint();
+  const double d05 = p0.distance(p5);
+  const double d14 = p1.distance(p4);
+  const double d23 = p2.distance(p3);
+      
+  // Then divide the remaining octahedron into 4 tetrahedra
+  if (d05 <= d14 && d14 <= d23)
+  {
+    p.new_cell(e0, e1, e2, e5);
+    p.new_cell(e0, e1, e3, e5);
+    p.new_cell(e0, e2, e4, e5);
+    p.new_cell(e0, e3, e4, e5);
+  }
+  else if (d14 <= d23)
+  {
+    p.new_cell(e0, e1, e2, e4);
+    p.new_cell(e0, e1, e3, e4);
+    p.new_cell(e1, e2, e4, e5);
+    p.new_cell(e1, e3, e4, e5);
+  }
+  else
+  {
+    p.new_cell(e0, e1, e2, e3);
+    p.new_cell(e0, e2, e3, e4);
+    p.new_cell(e1, e2, e3, e5);
+    p.new_cell(e2, e3, e4, e5);
+  }
+
+}
+

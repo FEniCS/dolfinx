@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2013-01-02
-// Last Changed: 2013-01-14
+// Last Changed: 2013-01-17
 
 #include <boost/unordered_map.hpp>
 
@@ -92,7 +92,7 @@ namespace dolfin
     // new storage for all cells when creating new topology
     std::vector<std::size_t> new_cell_topology;
     
-    // experimental management of marked edges
+    // management of marked edges
     std::vector<bool> marked_edges;
 
     // Mesh reference

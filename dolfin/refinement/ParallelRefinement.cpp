@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2013-01-02
-// Last Changed: 2013-01-14
+// Last Changed: 2013-01-17
 
 #include <vector>
 #include <map>
@@ -88,9 +88,9 @@ void ParallelRefinement::mark(MeshEntity& cell)
 //-----------------------------------------------------------------------------
 void ParallelRefinement::mark(MeshFunction<bool> refinement_marker)
 {
-  for(MeshEntityIterator cell(_mesh, refinement_marker.dim()); !cell.end(); ++cell)
+  for (MeshEntityIterator cell(_mesh, refinement_marker.dim()); !cell.end(); ++cell)
   {
-    if(refinement_marker[*cell])
+    if (refinement_marker[*cell])
     {
       for (EdgeIterator edge(*cell); !edge.end(); ++edge)
         marked_edges[edge->index()] = true;
@@ -101,9 +101,9 @@ void ParallelRefinement::mark(MeshFunction<bool> refinement_marker)
 std::size_t ParallelRefinement::marked_edge_count(MeshEntity& cell)
 {
   std::size_t n_marked=0;
-  for(EdgeIterator edge(cell); !edge.end(); ++edge)
+  for (EdgeIterator edge(cell); !edge.end(); ++edge)
   {
-    if(marked_edges[edge->index()]) 
+    if (marked_edges[edge->index()]) 
       n_marked++;
   }
   return n_marked;
@@ -119,15 +119,15 @@ void ParallelRefinement::update_logical_edgefunction()
   std::vector<std::vector<std::size_t> > values_to_send(num_processes);
   std::vector<std::vector<std::size_t> > received_values;
 
-  for(boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >::iterator 
+  for (boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >::iterator 
       sh_edge = shared_edges.begin();
       sh_edge != shared_edges.end(); sh_edge++)
   {
     const std::size_t local_index = sh_edge->first;
 
-    if(marked_edges[local_index] == true)
+    if (marked_edges[local_index] == true)
     {
-      for(std::vector<std::pair<std::size_t, std::size_t> >::iterator proc_edge = sh_edge->second.begin(); 
+      for (std::vector<std::pair<std::size_t, std::size_t> >::iterator proc_edge = sh_edge->second.begin(); 
           proc_edge != sh_edge->second.end(); ++proc_edge)
       {
         const std::size_t proc_num = proc_edge->first;
@@ -140,11 +140,11 @@ void ParallelRefinement::update_logical_edgefunction()
   MPI::all_to_all(values_to_send, received_values);
 
   // Flatten received values and set EdgeFunction true at each index received
-  for(std::vector<std::vector<std::size_t> >::iterator r=received_values.begin();
-      r != received_values.end(); ++r)
+  for (std::vector<std::vector<std::size_t> >::iterator r=received_values.begin();
+       r != received_values.end(); ++r)
   {
-    for(std::vector<std::size_t>::iterator local_index = r->begin(); 
-        local_index != r->end(); ++local_index)
+    for (std::vector<std::size_t>::iterator local_index = r->begin(); 
+         local_index != r->end(); ++local_index)
     {
       marked_edges[*local_index] = true;
     }
@@ -156,9 +156,6 @@ void ParallelRefinement::create_new_vertices()
 {
   // Take marked_edges and use to create new vertices
 
-  EdgeFunction<bool> markedEdges(_mesh);
-  markedEdges.set_values(marked_edges);
-  
   const std::size_t num_processes = MPI::num_processes();
   const std::size_t process_number = MPI::process_number();
 
@@ -168,45 +165,37 @@ void ParallelRefinement::create_new_vertices()
   const std::size_t gdim = _mesh.geometry().dim();
 
   std::size_t n=0;
-  for(EdgeIterator edge(_mesh); !edge.end(); ++edge)
+  for (std::size_t local_i = 0 ; local_i < _mesh.num_edges(); ++local_i)
   {
-    if(markedEdges[*edge])
+    if(marked_edges[local_i] == true)
     {
-      const std::size_t local_i = edge->index();
+      // Assume this edge is owned locally
+      bool owner = true;
 
-      if(shared_edges.count(local_i) == 0) //local new vertex - not shared
+      // If shared, check that this is true
+      if (shared_edges.count(local_i) != 0)
       {
-        const Point& midpoint = edge->midpoint();
-        for(std::size_t j = 0; j < gdim; ++j)
-          new_vertex_coordinates.push_back(midpoint[j]);
-
-        local_edge_to_new_vertex[local_i] = n++;
-      }
-      else 
-      {
-        bool owner = true;
-
         // check if any other sharing process has a lower rank
         for(std::vector<std::pair<std::size_t, std::size_t> >::iterator proc_edge 
               = shared_edges.find(local_i)->second.begin();
             proc_edge != shared_edges.find(local_i)->second.end(); ++proc_edge)
         {
-          const std::size_t proc_num = proc_edge->first;
-          if(proc_num < process_number)
+          if(proc_edge->first < process_number)
             owner = false;
         }
-
-        if(owner)
-        { //local new vertex to be shared with another process
-          const Point& midpoint = edge->midpoint();
-          for(std::size_t j = 0; j < gdim; ++j)
-            new_vertex_coordinates.push_back(midpoint[j]);
-          
-          local_edge_to_new_vertex[local_i] = n++;
-        } 
       }
-      // else new vertex is remotely owned, and we will be informed about it later
+      
+      // If it is still believed to be owned on this process, add to list
+      if (owner)
+      { 
+        const Point& midpoint = Edge(_mesh, local_i).midpoint();
+        for(std::size_t j = 0; j < gdim; ++j)
+          new_vertex_coordinates.push_back(midpoint[j]);
+        
+        local_edge_to_new_vertex[local_i] = n++;
+      } 
     }
+
   }
 
   // Calculate global range for new local vertices
@@ -219,17 +208,18 @@ void ParallelRefinement::create_new_vertices()
   std::vector<std::vector<std::pair<std::size_t, std::size_t> > > values_to_send(num_processes);
 
   // Add offset to map, and collect up any shared new vertices that need to send the new index off-process
-  for(std::map<std::size_t, std::size_t>::iterator local_edge = local_edge_to_new_vertex.begin();
-      local_edge != local_edge_to_new_vertex.end(); ++local_edge)
+  for (std::map<std::size_t, std::size_t>::iterator 
+       local_edge = local_edge_to_new_vertex.begin();
+       local_edge != local_edge_to_new_vertex.end(); ++local_edge)
   {
     // Add global_offset to map, to get new global index of new vertices
     local_edge->second += global_offset; 
 
     const std::size_t local_i = local_edge->first;
-    if(shared_edges.count(local_i) != 0) //shared, but locally owned. 
+    if (shared_edges.count(local_i) != 0) //shared, but locally owned : remote owned are not in list. 
     {
-      for(std::vector<std::pair<std::size_t, std::size_t> >::iterator remote_process_edge 
-            = shared_edges[local_i].begin(); 
+      for (std::vector<std::pair<std::size_t, std::size_t> >::iterator remote_process_edge 
+             = shared_edges[local_i].begin(); 
           remote_process_edge != shared_edges[local_i].end();
           ++remote_process_edge)
       {
@@ -247,16 +237,18 @@ void ParallelRefinement::create_new_vertices()
   MPI::all_to_all(values_to_send, received_values);
   
   // Flatten and add received remote global vertex indices to map 
-  for(std::vector<std::vector<std::pair<std::size_t, std::size_t> > >::iterator p = received_values.begin();
-      p != received_values.end(); ++p)
-    for(std::vector<std::pair<std::size_t, std::size_t> >::iterator q = p->begin(); q != p->end(); ++q)
+  for (std::vector<std::vector<std::pair<std::size_t, std::size_t> > >::iterator 
+         p = received_values.begin();
+         p != received_values.end(); ++p)
+    for (std::vector<std::pair<std::size_t, std::size_t> >::iterator 
+           q = p->begin(); q != p->end(); ++q)
     {
       local_edge_to_new_vertex[q->first] = q->second;
     }
   
-  std::cout << "Process:" << process_number << " " << num_new_vertices << " new vertices, "
-            << "Offset = " << global_offset
-            << std::endl;
+  //  std::cout << "Process:" << process_number << " " << num_new_vertices << " new vertices, "
+  //            << "Offset = " << global_offset
+  //            << std::endl;
 
   // Now add new vertex coordinates to existing, and index using new global indexing.
   // Reorder so that MeshPartitioning.cpp can find them. After that, we are done with 
@@ -267,12 +259,12 @@ void ParallelRefinement::create_new_vertices()
                                 _mesh.coordinates().end());
 
   std::vector<std::size_t> global_indices(_mesh.topology().global_indices(0));
-  for(std::size_t i = 0; i < num_new_vertices; i++)
+  for (std::size_t i = 0; i < num_new_vertices; i++)
     global_indices.push_back(i+global_offset);
 
   reorder_vertices_by_global_indices(new_vertex_coordinates, _mesh.geometry().dim(), global_indices);
   
-  std::cout << "vertices= " << new_vertex_coordinates.size() << std::endl;
+  //   std::cout << "vertices = " << new_vertex_coordinates.size() << std::endl;
 }
 //-----------------------------------------------------------------------------
 
@@ -304,7 +296,7 @@ void ParallelRefinement::reorder_vertices_by_global_indices(std::vector<double>&
 
   // Go through local vector and append value to the appropriate list
   // to send to correct process
-  for(std::size_t i = 0; i < vertex_array.shape()[0] ; ++i)
+  for (std::size_t i = 0; i < vertex_array.shape()[0] ; ++i)
   {
     const std::size_t global_i = global_indices[i];
     const std::size_t process_i = MPI::index_owner(global_i, global_vector_size);
@@ -324,10 +316,10 @@ void ParallelRefinement::reorder_vertices_by_global_indices(std::vector<double>&
   boost::multi_array_ref<double, 2> new_vertex_array(vertex_coords.data(),
                      boost::extents[range.second - range.first][gdim]);
 
-  for(std::size_t i = 0; i < received_values.size(); ++i)
+  for (std::size_t i = 0; i < received_values.size(); ++i)
   {
     const std::vector<std::pair<std::size_t, std::vector<double> > >& received_global_data = received_values[i];
-    for(std::size_t j = 0; j < received_global_data.size(); ++j)
+    for (std::size_t j = 0; j < received_global_data.size(); ++j)
     {
       const std::size_t global_i = received_global_data[j].first;
       dolfin_assert(global_i >= range.first && global_i < range.second);
@@ -353,7 +345,7 @@ void ParallelRefinement::partition(Mesh& new_mesh)
   mesh_data.num_global_cells = MPI::sum(num_local_cells);
   mesh_data.global_cell_indices.resize(num_local_cells);
   const std::size_t idx_global_offset = MPI::global_offset(num_local_cells, true);
-  for(std::size_t i = 0; i < num_local_cells ; i++)
+  for (std::size_t i = 0; i < num_local_cells ; i++)
     mesh_data.global_cell_indices[i] = idx_global_offset + i;
   
   mesh_data.cell_vertices.resize(boost::extents[num_local_cells][mesh_data.num_vertices_per_cell]);
@@ -366,7 +358,7 @@ void ParallelRefinement::partition(Mesh& new_mesh)
 
   mesh_data.vertex_indices.resize(num_local_vertices);
   const std::size_t vertex_global_offset = MPI::global_offset(num_local_vertices, true);
-  for(std::size_t i = 0; i < num_local_vertices ; i++)
+  for (std::size_t i = 0; i < num_local_vertices ; i++)
     mesh_data.vertex_indices[i] = vertex_global_offset + i;
 
   MeshPartitioning::build_distributed_mesh(new_mesh, mesh_data);
