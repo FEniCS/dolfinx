@@ -28,9 +28,7 @@
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 #include "BoundaryCondition.h"
-
 #include <boost/serialization/map.hpp>
-#include <dolfin/common/tuple_serialization.h>
 
 namespace dolfin
 {
