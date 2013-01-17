@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2012 Anders Logg and Ola Skavhaug
+// Copyright (C) 2008-2013 Anders Logg, Ola Skavhaug and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -104,8 +104,8 @@ namespace dolfin
                                    boost::shared_ptr<const Restriction> restriction,
                                    const map& restricted_dofs_inverse);
 
-    // Compute which process 'owns' each degree of freedom 
-    //   dof_ownership[0] -> all dofs owned by this process (will intersect dof_ownership[1]) 
+    // Compute which process 'owns' each degree of freedom
+    //   dof_ownership[0] -> all dofs owned by this process (will intersect dof_ownership[1])
     //   dof_ownership[1] -> dofs shared with other processes and owned by this process
     //   dof_ownership[2] -> dofs shared with other processes and owned by another process
     static void compute_dof_ownership(boost::array<set, 3>& dof_ownership,
@@ -148,7 +148,7 @@ namespace dolfin
       DofMapBuilder::set& global_dofs);
 
     // Recursively extract UFC sub-dofmap and compute offset
-    static boost::shared_ptr<ufc::dofmap> 
+    static boost::shared_ptr<ufc::dofmap>
         extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
                                std::size_t& offset,
                                const std::vector<std::size_t>& component,
