@@ -41,7 +41,7 @@ namespace dolfin
 
   /// This class defines a common interface for matrices.
 
-  class GenericMatrix : public GenericTensor, public GenericLinearOperator
+  class GenericMatrix : public GenericTensor, public virtual GenericLinearOperator
   {
   public:
 
@@ -49,9 +49,6 @@ namespace dolfin
     virtual ~GenericMatrix() {}
 
     //--- Implementation of the GenericTensor interface ---
-
-    /// Initialize zero tensor using tensor layout
-    virtual void init(const TensorLayout& tensor_layout) = 0;
 
     /// Return tensor rank (number of dimensions)
     virtual std::size_t rank() const
