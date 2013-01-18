@@ -126,6 +126,8 @@ class PeriodicBCTest(unittest.TestCase):
         self.assertAlmostEqual(u.vector().norm("l2"), 0.3567245204026249, 10)
 
 if __name__ == "__main__":
+    if MPI.num_processes() > 1:
+        return
     print ""
     print "Testing Dirichlet boundary conditions"
     print "------------------------------------------------"
