@@ -31,6 +31,8 @@
 
 from dolfin import *
 
+not_working_in_parallel("Periodoc boundary conditions")
+
 # Create mesh and finite element
 mesh = UnitSquareMesh(32, 32)
 V = FunctionSpace(mesh, "CG", 1)
