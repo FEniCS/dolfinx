@@ -17,9 +17,10 @@
 //
 // Modified by Anders Logg 2008-2011
 // Modified by Joachim B Haga 2012
+// Modified by Jan Blechta 2013
 //
 // First added:  2009-06-22
-// Last changed: 2012-11-17
+// Last changed: 2013-01-18
 
 #include <armadillo>
 #include <dolfin/common/Timer.h>
@@ -91,13 +92,14 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
       {
         if (a.cell_domains_shared_ptr() != L.cell_domains_shared_ptr())
           warning("Bilinear and linear form must have same attached cell subdomains in SystemAssembler.");
+        cell_domains = a.cell_domains_shared_ptr().get();
       }
       else if (a.cell_domains_shared_ptr())
         cell_domains = a.cell_domains_shared_ptr().get();
       else
         cell_domains = L.cell_domains_shared_ptr().get();
 
-      if (mesh.domains().facet_domains(mesh))
+      if (mesh.domains().cell_domains(mesh))
         warning("Ignoring cell domains defined as part of mesh in system assembler.");
     }
     else
@@ -113,6 +115,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
       {
         if (a.exterior_facet_domains_shared_ptr() != L.exterior_facet_domains_shared_ptr())
           warning("Bilinear and linear form must have same attached exterior facet subdomains in SystemAssembler.");
+        exterior_facet_domains = a.exterior_facet_domains_shared_ptr().get();
       }
       else if (a.exterior_facet_domains_shared_ptr())
         exterior_facet_domains = a.exterior_facet_domains_shared_ptr().get();
@@ -135,6 +138,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
       {
         if (a.interior_facet_domains_shared_ptr() != L.interior_facet_domains_shared_ptr())
           warning("Bilinear and linear form must have same attached interior facet subdomains in SystemAssembler.");
+        interior_facet_domains = a.interior_facet_domains_shared_ptr().get();
       }
       else if (a.interior_facet_domains_shared_ptr())
         interior_facet_domains = a.interior_facet_domains_shared_ptr().get();
