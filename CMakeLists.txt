@@ -340,7 +340,7 @@ if (DOLFIN_ENABLE_TRILINOS)
 
   if ("${Trilinos_VERSION}" VERSION_LESS "11.0.0")
     set(Trilinos_FOUND FALSE)
-    message(WARNING "Unable to find Trilinos (>= 11.0.0)")
+    message(STATUS "Unable to find Trilinos (>= 11.0.0)")
   endif()
 
   # Check for required packages
