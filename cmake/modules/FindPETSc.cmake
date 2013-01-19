@@ -175,8 +175,6 @@ show :
 
       if (EXISTS "${GFORTRAN_LIBRARY}")
           list(APPEND PETSC_EXTERNAL_LIBRARIES ${GFORTRAN_LIBRARY})
-          message("New to add: ${GFORTRAN_LIBRARY}")
-          message("News PETSc external libs: ${PETSC_EXTERNAL_LIBRARIES}")
       endif()
     endif()
 

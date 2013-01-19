@@ -687,7 +687,7 @@ install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
 
 if (DOLFIN_ENABLE_DOCS)
   if (NOT SPHINX_FOUND)
-    message("Disabling generation of documentation because Sphinx is missing.")
+    message(STATUS "Disabling generation of documentation because Sphinx is missing.")
   else()
     add_subdirectory(doc)
   endif()
