@@ -60,6 +60,7 @@ set(petsc_dir_locations "")
 list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.2")    # Debian location
 list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.1")    # Debian location
 list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.0.0")  # Debian location
+list(APPEND petsc_dir_locations "/opt/local/lib/petsc")     # Macports location
 list(APPEND petsc_dir_locations "/usr/local/lib/petsc")     # User location
 list(APPEND petsc_dir_locations "$ENV{HOME}/petsc")         # User location
 
