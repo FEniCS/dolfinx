@@ -162,8 +162,24 @@ show :
   resolve_libraries(PETSC_LIBRARIES "${PETSC_LIB}")
   resolve_libraries(PETSC_EXTERNAL_LIBRARIES "${PETSC_EXTERNAL_LIB_BASIC}")
 
-  # Add X11 includes and libraries on Mac
+  # Add some extra libraries on OSX
   if (APPLE)
+
+    # CMake will have troubel finding the gfortan libraries if compiling
+    # with clang (the libs may be required by 3rd party Fortran libraries) 
+    find_program(GFORTRAN_EXECUTABLE gfortran)
+    if (GFORTRAN_EXECUTABLE)
+      execute_process(COMMAND ${GFORTRAN_EXECUTABLE} -print-file-name=libgfortran.dylib
+      OUTPUT_VARIABLE GFORTRAN_LIBRARY
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+      if (EXISTS "${GFORTRAN_LIBRARY}")
+          list(APPEND CMAKE_REQUIRED_LIBRARIES ${GFORTRAN_LIBRARY})
+          list(APPEND PETSC_EXTERNAL_LIB_BASIC ${GFORTRAN_LIBRARY})
+          endif()
+      endif()
+    endif()
+
     find_package(X11)
     list(APPEND PETSC_INCLUDE_DIRS ${X11_X11_INCLUDE_PATH})
     list(APPEND PETSC_LIBRARIES ${X11_LIBRARIES})
