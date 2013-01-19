@@ -150,6 +150,9 @@ show :
   petsc_get_variable(PETSC_LIB_DIR PETSC_LIB_DIR)
   set(PETSC_LIB "-L${PETSC_LIB_DIR} ${PETSC_LIB_BASIC}")
 
+  # Call macro to get the PETSc 3rd-party libraries
+  petsc_get_variable(PETSC_EXTERNAL_LIB_BASIC PETSC_EXTERNAL_LIB_BASIC)
+
   # Remove temporary Makefile
   file(REMOVE ${petsc_config_makefile})
 
@@ -157,6 +160,7 @@ show :
   include(ResolveCompilerPaths)
   resolve_includes(PETSC_INCLUDE_DIRS "${PETSC_INCLUDE}")
   resolve_libraries(PETSC_LIBRARIES "${PETSC_LIB}")
+  resolve_libraries(PETSC_EXTERNAL_LIBRARIES "${PETSC_EXTERNAL_LIB_BASIC}")
 
   # Add X11 includes and libraries on Mac
   if (APPLE)
@@ -167,7 +171,7 @@ show :
 
   # Add variables to CMake cache and mark as advanced
   set(PETSC_INCLUDE_DIRS ${PETSC_INCLUDE_DIRS} CACHE STRING "PETSc include paths." FORCE)
-  set(PETSC_LIBRARIES ${PETSC_LIBRARIES} CACHE STRING "PETSc libraries." FORCE)
+  set(PETSC_LIBRARIES ${PETSC_LIBRARIES} ${PETSC_EXTERNAL_LIBRARIES}  CACHE STRING "PETSc libraries." FORCE)
   mark_as_advanced(PETSC_INCLUDE_DIRS PETSC_LIBRARIES)
 
 endif()
