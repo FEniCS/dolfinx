@@ -45,6 +45,10 @@ class PeriodicBCTest(unittest.TestCase):
 
     def test_instantiation(self):
         """ A rudimentary test for instantiation"""
+
+        if MPI.num_processes() > 1:
+            return
+
         mesh = UnitCubeMesh(8, 8, 8)
         V = FunctionSpace(mesh, "CG", 1)
 
@@ -58,6 +62,9 @@ class PeriodicBCTest(unittest.TestCase):
     def test_instantiation_mixed_element(self):
         """ A rudimentary test for instantiation with mixed elements"""
 
+        if MPI.num_processes() > 1:
+            return
+
         mesh = UnitSquareMesh(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
         VV = V*V
@@ -69,6 +76,9 @@ class PeriodicBCTest(unittest.TestCase):
         """Test for problems with objects with directors going out
         of scope"""
 
+        if MPI.num_processes() > 1:
+            return
+
         mesh = UnitSquareMesh(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1)
         bc = PeriodicBC(V, PeriodicBoundary2())
@@ -79,6 +89,9 @@ class PeriodicBCTest(unittest.TestCase):
     def test_solution(self):
         """Test application Periodic boundary conditions by checking
         solution to a PDE."""
+
+        if MPI.num_processes() > 1:
+            return
 
         # FIXME: This hack should be removed once periodic boundary
         # FIXME: conditions have been implemented properly
@@ -126,8 +139,7 @@ class PeriodicBCTest(unittest.TestCase):
         self.assertAlmostEqual(u.vector().norm("l2"), 0.3567245204026249, 10)
 
 if __name__ == "__main__":
-    if MPI.num_processes() == 1:
-        print ""
-        print "Testing Dirichlet boundary conditions"
-        print "------------------------------------------------"
-        unittest.main()
+    print ""
+    print "Testing Dirichlet boundary conditions"
+    print "------------------------------------------------"
+    unittest.main()
