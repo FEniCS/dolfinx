@@ -174,15 +174,16 @@ show :
       OUTPUT_STRIP_TRAILING_WHITESPACE)
 
       if (EXISTS "${GFORTRAN_LIBRARY}")
-          list(APPEND CMAKE_REQUIRED_LIBRARIES ${GFORTRAN_LIBRARY})
-          list(APPEND PETSC_EXTERNAL_LIB_BASIC ${GFORTRAN_LIBRARY})
-          endif()
+          list(APPEND PETSC_EXTERNAL_LIBRARIES ${GFORTRAN_LIBRARY})
+          message("New to add: ${GFORTRAN_LIBRARY}")
+          message("News PETSc external libs: ${PETSC_EXTERNAL_LIBRARIES}")
       endif()
     endif()
 
     find_package(X11)
     list(APPEND PETSC_INCLUDE_DIRS ${X11_X11_INCLUDE_PATH})
     list(APPEND PETSC_LIBRARIES ${X11_LIBRARIES})
+
   endif()
 
   # Add variables to CMake cache and mark as advanced
