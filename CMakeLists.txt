@@ -278,6 +278,14 @@ if (DOLFIN_ENABLE_PYTHON)
 
 endif()
 
+# Check for PETSc and SLEPc
+if (DOLFIN_ENABLE_PETSC)
+  find_package(PETSc 3.2)
+  if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
+    find_package(SLEPc 3.2)
+  endif()
+endif()
+
 # Check for ParMETIS and SCOTCH
 if (DOLFIN_ENABLE_MPI AND MPI_C_FOUND)
   if (DOLFIN_ENABLE_PARMETIS)
@@ -386,14 +394,6 @@ if (DOLFIN_ENABLE_TRILINOS)
 
   else()
     message(STATUS "Trilinos could not be found")
-  endif()
-endif()
-
-# Check for PETSc and SLEPc
-if (DOLFIN_ENABLE_PETSC)
-  find_package(PETSc 3.2)
-  if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
-    find_package(SLEPc 3.2)
   endif()
 endif()
 
