@@ -482,8 +482,8 @@ endif()
 
 # Print information about packages that were not found
 if (OPTIONAL_PACKAGES_NOT_FOUND)
-  message(STATUS "The following optional packages could not be found:")
-  message(STATUS "---------------------------------------------------")
+  message(STATUS "The following optional packages were not be found:")
+  message(STATUS "--------------------------------------------------")
   foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES_NOT_FOUND})
     string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
     message(STATUS "(**) ${OPTIONAL_PACKAGE}")
