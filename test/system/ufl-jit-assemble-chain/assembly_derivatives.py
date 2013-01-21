@@ -133,7 +133,7 @@ class IntegrateDerivatives(unittest.TestCase):
         debug = 0
         for F, acc in F_list:
             # Apply UFL differentiation
-            f = diff(F, x)
+            f = diff(F, cell.x)[...,0]
             if debug:
                 print F
                 print x
