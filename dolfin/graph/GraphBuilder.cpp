@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2012
 //
 // First added:  2010-02-19
-// Last changed: 2013-01-16
+// Last changed: 2013-01-18
 
 #include <algorithm>
 #include <numeric>
@@ -185,7 +185,7 @@ BoostBidirectionalGraph GraphBuilder::local_boost_graph(const Mesh& mesh,
   return graph;
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_dual_graph_orig(const LocalMeshData& mesh_data,
+void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
                                            std::vector<std::set<std::size_t> >& local_graph,
                                            std::set<std::size_t>& ghost_vertices)
 {
@@ -467,7 +467,7 @@ void GraphBuilder::compute_dual_graph_orig(const LocalMeshData& mesh_data,
 
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
+void GraphBuilder::compute_dual_graph_orig(const LocalMeshData& mesh_data,
                             std::vector<std::set<std::size_t> >& local_graph,
                             std::set<std::size_t>& ghost_vertices)
 {

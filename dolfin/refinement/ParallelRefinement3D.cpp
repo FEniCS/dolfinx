@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2012-12-19
-// Last Changed: 2013-01-17
+// Last Changed: 2013-01-22
 
 #include <vector>
 #include <map>
@@ -45,6 +45,16 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
                                   const MeshFunction<bool>& refinement_marker)
 {
   const std::size_t tdim = mesh.topology().dim();
+
+  //  boost::shared_ptr<std::vector<std::size_t> > mesh_in_array = mesh.data().array("experimental_data");
+
+  // process information about previous refinement, if any
+  //  if(mesh_in_array != 0)
+  //  {
+  //    
+  //  }
+
+  warning("ParallelRefinement3D does not take care of mesh quality.\n Multiple levels of refinement may generate bad quality tetrahedra.");
   
   // Ensure connectivity from cells to edges
   mesh.init(1);
@@ -109,7 +119,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
   // Create new topology
 
   for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {    
+  { 
     VertexIterator v(*cell);
     EdgeIterator e(*cell);
 
@@ -231,6 +241,11 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
   }
   
   p.partition(new_mesh);
+
+  // Save some data about partial refinements to assist with future subdivision
+  //  boost::shared_ptr<std::vector<std::size_t> > mesh_out_array = 
+  // new_mesh.data().create_array("experimental_data");
+
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
@@ -270,7 +285,6 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
     eightfold_division(*cell, p);
 
   p.partition(new_mesh);
-
 }
 //-----------------------------------------------------------------------------
 std::vector<std::size_t> ParallelRefinement3D::common_vertices(const Cell& cell,
