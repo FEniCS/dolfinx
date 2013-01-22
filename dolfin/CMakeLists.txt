@@ -390,10 +390,13 @@ configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-config.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/dolfin-config.cmake @ONLY)
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-config-version.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/dolfin-config-version.cmake @ONLY)
+configure_file(${DOLFIN_CMAKE_DIR}/templates/UseDOLFIN.cmake.in
+  ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake @ONLY)
 install(
   FILES
     ${CMAKE_BINARY_DIR}/dolfin/dolfin-config.cmake
     ${CMAKE_BINARY_DIR}/dolfin/dolfin-config-version.cmake
+    ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake
   DESTINATION ${DOLFIN_SHARE_DIR}/cmake
   COMPONENT Development
   )
