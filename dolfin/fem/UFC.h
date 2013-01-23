@@ -86,25 +86,23 @@ namespace dolfin
   public:
 
     // Cell integrals
+    boost::shared_ptr<ufc::cell_integral> default_cell_integral;
     std::vector<boost::shared_ptr<ufc::cell_integral> > cell_integrals;
 
     // Exterior facet integrals
+    boost::shared_ptr<ufc::exterior_facet_integral> default_exterior_facet_integral;
     std::vector<boost::shared_ptr<ufc::exterior_facet_integral> > exterior_facet_integrals;
 
     // Interior facet integrals
+    boost::shared_ptr<ufc::interior_facet_integral> default_interior_facet_integral;
     std::vector<boost::shared_ptr<ufc::interior_facet_integral> > interior_facet_integrals;
 
     // Form
     const ufc::form& form;
 
-    // Global Mesh dimensions
-    // FIXME MSA: Do we need this instead of ufc::mesh?
-    //std::vector<std::size_t> num_global_mesh_entities;
 
     // FIXME AL: Check which data is actually used and remove the rest
     // FIXME AL: Remove UFCCell class
-
-
 
 
     // Current cell
