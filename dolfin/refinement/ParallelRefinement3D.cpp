@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2012-12-19
-// Last Changed: 2013-01-22
+// Last Changed: 2013-01-23
 
 #include <vector>
 #include <map>
@@ -277,7 +277,6 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
   // Mark all edges, and create new vertices
   p.mark_all();
   p.create_new_vertices();
-  std::map<std::size_t, std::size_t>& edge_to_new_vertex = p.edge_to_new_vertex();
   
   // Generate new topology
 

@@ -1,6 +1,5 @@
 """This demo program solves Poisson's equation
 
-
     - div grad u(x, y) = f(x, y)
 
 on the unit square with source f given by
@@ -33,7 +32,7 @@ edge (jump) terms and the size of the interpolation constant.
 # Modified by Anders Logg 2008-2011
 #
 # First added:  2008-04-03
-# Last changed: 2012-12-21
+# Last changed: 2013-01-23
 
 from dolfin import *
 from numpy import array, sqrt
@@ -47,7 +46,6 @@ if not has_cgal():
 TOL = 5e-4           # Error tolerance
 REFINE_RATIO = 0.50  # Refine 50 % of the cells in each iteration
 MAX_ITER = 20        # Maximal number of iterations
-
 
 # Create initial mesh
 mesh = UnitSquareMesh(4, 4)
@@ -85,7 +83,7 @@ for level in xrange(MAX_ITER):
 
     # Check convergence
     if E < TOL:
-        info("Success, solution converged after %d iterations", level)
+        info("Success, solution converged after %d iterations" % level)
         break
 
     # Mark cells for refinement
@@ -98,10 +96,8 @@ for level in xrange(MAX_ITER):
     # Refine mesh
     mesh = refine(mesh, cell_markers)
 
-    XDMF = File("mesh-test%d.xdmf"%level)
-    XDMF << u
     # Plot mesh
-    # plot(mesh)
+    plot(mesh)
 
 # Hold plot
-# interactive()
+interactive()
