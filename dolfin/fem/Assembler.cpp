@@ -19,9 +19,10 @@
 // Modified by Ola Skavhaug 2007-2009
 // Modified by Kent-Andre Mardal 2008
 // Modified by Joachim B Haga 2012
+// Modified by Martin Alnaes 2013
 //
 // First added:  2007-01-17
-// Last changed: 2012-10-04
+// Last changed: 2013-01-18
 
 #include <boost/scoped_ptr.hpp>
 
