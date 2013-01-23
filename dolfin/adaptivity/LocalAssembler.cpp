@@ -62,7 +62,7 @@ void LocalAssembler::assemble_cell(arma::mat& A,
     return;
 
   // Extract default cell integral
-  ufc::cell_integral* integral = ufc.cell_integrals[0].get();
+  ufc::cell_integral* integral = ufc.default_cell_integral.get();
 
   // Get integral for sub domain (if any)
   if (domains && !domains->empty())
@@ -71,7 +71,7 @@ void LocalAssembler::assemble_cell(arma::mat& A,
     if (domain < ufc.form.num_cell_domains())
       integral = ufc.cell_integrals[domain].get();
     else
-      return;
+      integral = ufc.default_cell_integral.get();
   }
 
   // Skip integral if zero
@@ -105,7 +105,7 @@ void LocalAssembler::assemble_exterior_facet(arma::mat& A,
     return;
 
   // Extract default exterior facet integral
-  ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0].get();
+  ufc::exterior_facet_integral* integral = ufc.default_exterior_facet_integral.get();
 
   // Get integral for sub domain (if any)
   if (domains && !domains->empty())
@@ -114,7 +114,7 @@ void LocalAssembler::assemble_exterior_facet(arma::mat& A,
     if (domain < ufc.form.num_exterior_facet_domains())
       integral = ufc.exterior_facet_integrals[domain].get();
     else
-      return;
+      integral = ufc.default_exterior_facet_integral.get();
   }
 
   // Skip integral if zero
@@ -147,7 +147,7 @@ void LocalAssembler::assemble_interior_facet(arma::mat& A,
     return;
 
   // Extract default interior facet integral
-  ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0].get();
+  ufc::interior_facet_integral* integral = ufc.default_interior_facet_integral.get();
 
   // Get integral for sub domain (if any)
   if (domains && !domains->empty())
@@ -156,7 +156,7 @@ void LocalAssembler::assemble_interior_facet(arma::mat& A,
     if (domain < ufc.form.num_interior_facet_domains())
       integral = ufc.interior_facet_integrals[domain].get();
     else
-      return;
+      integral = ufc.default_interior_facet_integral.get();
   }
 
   // Skip integral if zero

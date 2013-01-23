@@ -280,7 +280,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   std::vector<const std::vector<dolfin::la_index>* > dofs(form_rank);
 
   // Exterior facet integral
-  const ufc::exterior_facet_integral* integral = ufc.default_exterior_facet.get();
+  const ufc::exterior_facet_integral* integral = ufc.default_exterior_facet_integral.get();
   dolfin_assert(integral || !ufc.exterior_facet_integrals.empty());
 
   // Compute facets and facet - cell connectivity if not already computed
@@ -308,7 +308,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
       if (domain < ufc.form.num_exterior_facet_domains())
         integral = ufc.exterior_facet_integrals[domain].get();
       else
-        integral = ufc.default_exterior_facet.get();
+        integral = ufc.default_exterior_facet_integral.get();
     }
 
     // Skip integral if zero
