@@ -17,7 +17,7 @@
 // 
 // 
 // First Added: 2013-01-02
-// Last Changed: 2013-01-17
+// Last Changed: 2013-01-23
 
 #include <vector>
 #include <map>
@@ -42,7 +42,7 @@ using namespace dolfin;
 ParallelRefinement::ParallelRefinement(const Mesh& mesh) : _mesh(mesh)
 {
   // Work out which edges are shared between processes
-  shared_edges = MeshDistributed::compute_shared_entities(_mesh, 1);
+  shared_edges = DistributedMeshTools::compute_shared_entities(_mesh, 1);
 
   // Marked edge assignment - experimenting with this
   marked_edges.assign(_mesh.num_edges(), false);

@@ -74,7 +74,7 @@ void SymmetricAssembler::assemble(GenericMatrix& A,
 
   // Extract cell domains
   boost::scoped_ptr<MeshFunction<std::size_t> > cell_domains;
-  if (a.ufc_form()->num_cell_domains() > 0)
+  if (a.ufc_form()->has_cell_integrals())
   {
     cell_domains.reset(new MeshFunction<std::size_t>(mesh, mesh.topology().dim(), 1));
     sub_domain.mark(*cell_domains, 0);
@@ -82,8 +82,8 @@ void SymmetricAssembler::assemble(GenericMatrix& A,
 
   // Extract facet domains
   boost::scoped_ptr<MeshFunction<std::size_t> > facet_domains;
-  if (a.ufc_form()->num_exterior_facet_domains() > 0 ||
-      a.ufc_form()->num_interior_facet_domains() > 0)
+  if (a.ufc_form()->has_exterior_facet_integrals() ||
+      a.ufc_form()->has_interior_facet_integrals())
   {
     facet_domains.reset(new MeshFunction<std::size_t>(mesh, mesh.topology().dim() - 1, 1));
     sub_domain.mark(*facet_domains, 0);

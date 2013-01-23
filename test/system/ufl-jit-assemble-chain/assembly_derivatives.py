@@ -44,7 +44,7 @@ class IntegrateDerivatives(unittest.TestCase):
         mesh.coordinates()[:] += x0
 
         cell = mesh.ufl_cell()
-        x = cell.x
+        x = cell.x[0]
         xs = 0.1+0.8*x/x1 # scaled to be within [0.1,0.9]
 
         # Define list of expressions to test, and configure
@@ -133,7 +133,7 @@ class IntegrateDerivatives(unittest.TestCase):
         debug = 0
         for F, acc in F_list:
             # Apply UFL differentiation
-            f = diff(F, x)
+            f = diff(F, cell.x)[...,0]
             if debug:
                 print F
                 print x

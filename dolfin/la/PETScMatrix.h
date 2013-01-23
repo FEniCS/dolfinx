@@ -69,7 +69,7 @@ namespace dolfin
     //--- Implementation of the GenericTensor interface ---
 
     /// Initialize zero tensor using tensor layout
-    virtual void init(const TensorLayout& tensor_layout);
+    void init(const TensorLayout& tensor_layout);
 
     /// Return size of given dimension
     std::size_t size(std::size_t dim) const { return PETScBaseMatrix::size(dim); }

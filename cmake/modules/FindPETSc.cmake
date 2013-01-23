@@ -60,6 +60,7 @@ set(petsc_dir_locations "")
 list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.2")    # Debian location
 list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.1")    # Debian location
 list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.0.0")  # Debian location
+list(APPEND petsc_dir_locations "/opt/local/lib/petsc")     # Macports location
 list(APPEND petsc_dir_locations "/usr/local/lib/petsc")     # User location
 list(APPEND petsc_dir_locations "$ENV{HOME}/petsc")         # User location
 
@@ -150,6 +151,9 @@ show :
   petsc_get_variable(PETSC_LIB_DIR PETSC_LIB_DIR)
   set(PETSC_LIB "-L${PETSC_LIB_DIR} ${PETSC_LIB_BASIC}")
 
+  # Call macro to get the PETSc 3rd-party libraries
+  petsc_get_variable(PETSC_EXTERNAL_LIB_BASIC PETSC_EXTERNAL_LIB_BASIC)
+
   # Remove temporary Makefile
   file(REMOVE ${petsc_config_makefile})
 
@@ -157,17 +161,33 @@ show :
   include(ResolveCompilerPaths)
   resolve_includes(PETSC_INCLUDE_DIRS "${PETSC_INCLUDE}")
   resolve_libraries(PETSC_LIBRARIES "${PETSC_LIB}")
+  resolve_libraries(PETSC_EXTERNAL_LIBRARIES "${PETSC_EXTERNAL_LIB_BASIC}")
 
-  # Add X11 includes and libraries on Mac
+  # Add some extra libraries on OSX
   if (APPLE)
+
+    # CMake will have troubel finding the gfortan libraries if compiling
+    # with clang (the libs may be required by 3rd party Fortran libraries) 
+    find_program(GFORTRAN_EXECUTABLE gfortran)
+    if (GFORTRAN_EXECUTABLE)
+      execute_process(COMMAND ${GFORTRAN_EXECUTABLE} -print-file-name=libgfortran.dylib
+      OUTPUT_VARIABLE GFORTRAN_LIBRARY
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+      if (EXISTS "${GFORTRAN_LIBRARY}")
+          list(APPEND PETSC_EXTERNAL_LIBRARIES ${GFORTRAN_LIBRARY})
+      endif()
+    endif()
+
     find_package(X11)
     list(APPEND PETSC_INCLUDE_DIRS ${X11_X11_INCLUDE_PATH})
     list(APPEND PETSC_LIBRARIES ${X11_LIBRARIES})
+
   endif()
 
   # Add variables to CMake cache and mark as advanced
   set(PETSC_INCLUDE_DIRS ${PETSC_INCLUDE_DIRS} CACHE STRING "PETSc include paths." FORCE)
-  set(PETSC_LIBRARIES ${PETSC_LIBRARIES} CACHE STRING "PETSc libraries." FORCE)
+  set(PETSC_LIBRARIES ${PETSC_LIBRARIES} ${PETSC_EXTERNAL_LIBRARIES}  CACHE STRING "PETSc libraries." FORCE)
   mark_as_advanced(PETSC_INCLUDE_DIRS PETSC_LIBRARIES)
 
 endif()

@@ -525,6 +525,10 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& V,
 void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
                                 const GenericVector* x) const
 {
+  dolfin_error("PeriodicBC.cpp",
+               "calling parallel_apply",
+               "PeriodicBC::parallel_apply is not working. It will be removed before the next release");
+
   const std::size_t num_dof_pairs = master_dofs.size();
   dolfin_assert(num_dof_pairs > 0);
 
@@ -579,7 +583,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
     }
 
     row_map_type received_rows;
-    MPI::distribute(communicating_processors, row_map, received_rows);
+    //MPI::distribute(communicating_processors, row_map, received_rows);
 
     for (row_map_type::const_iterator proc_it = received_rows.begin();
             proc_it != received_rows.end(); ++proc_it)
@@ -660,7 +664,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
     }
 
     x_map_type received_x;
-    MPI::distribute(communicating_processors, x_map, received_x);
+    //MPI::distribute(communicating_processors, x_map, received_x);
     for (x_map_type::const_iterator proc_it = received_x.begin(); proc_it != received_x.end(); ++proc_it)
     {
       xs_type xs = proc_it->second;
@@ -713,7 +717,7 @@ void PeriodicBC::parallel_apply(GenericMatrix* A, GenericVector* b,
     }
 
     vec_map_type received_vecs;
-    MPI::distribute(communicating_processors, vec_map, received_vecs);
+    //MPI::distribute(communicating_processors, vec_map, received_vecs);
 
     for (vec_map_type::const_iterator proc_it = received_vecs.begin();
             proc_it != received_vecs.end(); ++proc_it)
