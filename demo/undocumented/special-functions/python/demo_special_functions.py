@@ -32,7 +32,7 @@ n = 100
 eps = 1e-8
 mesh = Interval(n, -2.0, +2.0)
 mesh2 = Interval(n, 0.0+eps, 1.0-eps)
-x = interval.x
+x = interval.x[0]
 
 k = 0
 def plotstrings(strings, mesh):

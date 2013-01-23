@@ -180,7 +180,7 @@ void Assembler::assemble_cells(GenericTensor& A,
                                std::vector<double>* values)
 {
   // Skip assembly if there are no cell integrals
-  if (ufc.form.num_cell_domains() == 0)
+  if (!ufc.form.has_cell_integrals())
     return;
 
   // Set timer
@@ -258,8 +258,10 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
                                          std::vector<double>* values)
 {
   // Skip assembly if there are no exterior facet integrals
-  if (ufc.form.num_exterior_facet_domains() == 0)
+  if (!ufc.form.has_exterior_facet_integrals())
     return;
+
+  // Set timer
   Timer timer("Assemble exterior facets");
 
   // Extract mesh
@@ -344,11 +346,12 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
                                          std::vector<double>* values)
 {
   // Skip assembly if there are no interior facet integrals
-  if (ufc.form.num_interior_facet_domains() == 0)
+  if (!ufc.form.has_interior_facet_integrals())
     return;
 
   not_working_in_parallel("Assembly over interior facets");
 
+  // Set timer
   Timer timer("Assemble interior facets");
 
   // Extract mesh and coefficients

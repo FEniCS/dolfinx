@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2013 Anders Logg and Ola Skavhaug
+// Copyright (C) 2008-2013 Anders Logg, Ola Skavhaug and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -28,7 +28,6 @@
 #include <boost/random.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/serialization/map.hpp>
-#include <dolfin/common/tuple_serialization.h>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/graph/BoostGraphOrdering.h>
@@ -36,10 +35,11 @@
 #include <dolfin/graph/SCOTCH.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/BoundaryMesh.h>
+#include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Restriction.h>
+#include <dolfin/mesh/Vertex.h>
 #include "DofMap.h"
 #include "UFCCell.h"
 #include "DofMapBuilder.h"
@@ -312,7 +312,7 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
     {
       mesh.init(d);
       if (distributed)
-        MeshDistributed::number_entities(mesh, d);
+        DistributedMeshTools::number_entities(mesh, d);
     }
   }
 
@@ -408,8 +408,8 @@ void DofMapBuilder::reorder_distributed(DofMap& dofmap,
   DofMapBuilder::vec_map shared_dof_processes;
 
   // Computed owned and shared dofs (and owned and un-owned)
-  compute_dof_ownership(dof_ownership, shared_dof_processes, dofmap, 
-                        global_dofs, mesh, restriction, 
+  compute_dof_ownership(dof_ownership, shared_dof_processes, dofmap,
+                        global_dofs, mesh, restriction,
                         restricted_dofs_inverse);
 
   // Renumber owned dofs and receive new numbering for unowned shared dofs
@@ -726,7 +726,7 @@ void DofMapBuilder::parallel_renumber(const boost::array<set, 3>& dof_ownership,
   // another process
   std::size_t counter = 0;
   std::vector<std::size_t> send_buffer;
-  for (set_iterator owned_dof = owned_dofs.begin(); 
+  for (set_iterator owned_dof = owned_dofs.begin();
           owned_dof != owned_dofs.end(); ++owned_dof, counter++)
   {
     // Set new dof number
@@ -1388,7 +1388,7 @@ void DofMapBuilder::periodic_modification(DofMap& dofmap, const Mesh& mesh, set&
   */
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<ufc::dofmap> 
+boost::shared_ptr<ufc::dofmap>
     DofMapBuilder::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
                                           std::size_t& offset,
                                           const std::vector<std::size_t>& component,
@@ -1452,7 +1452,7 @@ boost::shared_ptr<ufc::dofmap>
     for (std::size_t i = 1; i < component.size(); ++i)
       sub_component.push_back(component[i]);
 
-    boost::shared_ptr<ufc::dofmap> sub_sub_dofmap 
+    boost::shared_ptr<ufc::dofmap> sub_sub_dofmap
         = extract_ufc_sub_dofmap(*sub_dofmap, offset, sub_component, mesh);
 
     return sub_sub_dofmap;

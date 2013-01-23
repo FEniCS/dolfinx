@@ -30,16 +30,16 @@
 #include <vector>
 #include <boost/multi_array.hpp>
 #include <dolfin/log/log.h>
+#include "DistributedMeshTools.h"
 #include "LocalMeshValueCollection.h"
 #include "Mesh.h"
-#include "MeshDistributed.h"
 
 namespace dolfin
 {
-  // Note: MeshFunction and MeshValueCollection cannot appear in the
-  // implementations that appear in this file of the templated functions
-  // as this leads to a circular dependency. Therefore the functions are
-  // templated over these types.
+  // Developer note: MeshFunction and MeshValueCollection cannot appear
+  // in the implementations that appear in this file of the templated
+  // functions as this leads to a circular dependency. Therefore the
+  // functions are templated over these types.
 
   template <typename T> class MeshFunction;
   template <typename T> class MeshValueCollection;
@@ -50,37 +50,18 @@ namespace dolfin
   /// also be repartitioned and redistributed during the computation
   /// of the mesh partitioning.
   ///
-  /// After partitioning, each process has a local mesh and set of
-  /// mesh data that couples the meshes together.
-  ///
-  /// 3. "global entity indices %d" (MeshFunction<std::size_t>)
-  ///
-  /// After partitioning, the function number_entities() may be called
-  /// to create global indices for all entities of a given topological
-  /// dimension. These are stored as mesh data (MeshFunction<std::size_t>)
-  /// named
-  ///
-  ///    "global entity indices 1"
-  ///    "global entity indices 2"
-  ///    etc
-  ///
-  /// 4. "num global entities" (std::vector<std::size_t>)
-  ///
-  /// The function number_entities also records the number of global
-  /// entities for the dimension of the numbered entities in the array
-  /// named "num global entities". This array has size D + 1, where D
-  /// is the topological dimension of the mesh. This array is
-  /// initially created by the mesh and then contains only the number
-  /// entities of dimension 0 (vertices) and dimension D (cells).
+  /// After partitioning, each process has a local mesh and some data
+  /// that couples the meshes together.
 
   class MeshPartitioning
   {
   public:
 
-    /// Build a partitioned mesh based on a local mesh
+    /// Build a partitioned mesh based on a local mesh on process 0
     static void build_distributed_mesh(Mesh& mesh);
 
-    /// Build a partitioned mesh based on local mesh data
+    /// Build a partitioned mesh based on local mesh data that is
+    /// distributed across processes
     static void build_distributed_mesh(Mesh& mesh, const LocalMeshData& data);
 
     /// Build a MeshValueCollection based on LocalMeshValueCollection
@@ -157,8 +138,8 @@ namespace dolfin
     mesh_values.values().clear();
 
     // Initialise global entity numbering
-    MeshDistributed::number_entities(mesh, dim);
-    MeshDistributed::number_entities(mesh, D);
+    DistributedMeshTools::number_entities(mesh, dim);
+    DistributedMeshTools::number_entities(mesh, D);
 
     if (dim == 0)
     {
@@ -214,7 +195,7 @@ namespace dolfin
     // Get destinations and local cell index at destination for
     // off-process cells
     const std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t> > >
-      entity_hosts = MeshDistributed::locate_off_process_entities(off_process_global_cell_entities, D, mesh);
+      entity_hosts = DistributedMeshTools::locate_off_process_entities(off_process_global_cell_entities, D, mesh);
 
     // Number of MPI processes
     const std::size_t num_processes = MPI::num_processes();

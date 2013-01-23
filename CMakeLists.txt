@@ -160,10 +160,17 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -wd161,488,654,858,1125,1170")
 endif()
 
-# Set system include flags to get around CMake bug on OSX
+# Set system include flags to get around CMake bug on OSX with gcc
 # See http://public.kitware.com/Bug/print_bug_page.php?bug_id=10837
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
+endif()
+
+if (APPLE)
+  set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
+  set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -Wno-long-long")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wno-long-long")
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -Wno-long-long")
 endif()
 
 #------------------------------------------------------------------------------
@@ -271,6 +278,14 @@ if (DOLFIN_ENABLE_PYTHON)
 
 endif()
 
+# Check for PETSc and SLEPc
+if (DOLFIN_ENABLE_PETSC)
+  find_package(PETSc 3.2)
+  if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
+    find_package(SLEPc 3.2)
+  endif()
+endif()
+
 # Check for ParMETIS and SCOTCH
 if (DOLFIN_ENABLE_MPI AND MPI_C_FOUND)
   if (DOLFIN_ENABLE_PARMETIS)
@@ -325,7 +340,7 @@ if (DOLFIN_ENABLE_TRILINOS)
 
   if ("${Trilinos_VERSION}" VERSION_LESS "11.0.0")
     set(Trilinos_FOUND FALSE)
-    message(WARNING "Unable to find Trilinos (>= 11.0.0)")
+    message(STATUS "Unable to find Trilinos (>= 11.0.0)")
   endif()
 
   # Check for required packages
@@ -379,14 +394,6 @@ if (DOLFIN_ENABLE_TRILINOS)
 
   else()
     message(STATUS "Trilinos could not be found")
-  endif()
-endif()
-
-# Check for PETSc and SLEPc
-if (DOLFIN_ENABLE_PETSC)
-  find_package(PETSc 3.2)
-  if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
-    find_package(SLEPc 3.2)
   endif()
 endif()
 
@@ -475,8 +482,8 @@ endif()
 
 # Print information about packages that were not found
 if (OPTIONAL_PACKAGES_NOT_FOUND)
-  message(STATUS "The following optional packages could not be found:")
-  message(STATUS "---------------------------------------------------")
+  message(STATUS "The following optional packages were not be found:")
+  message(STATUS "--------------------------------------------------")
   foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES_NOT_FOUND})
     string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
     message(STATUS "(**) ${OPTIONAL_PACKAGE}")
@@ -680,7 +687,7 @@ install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
 
 if (DOLFIN_ENABLE_DOCS)
   if (NOT SPHINX_FOUND)
-    message("Disabling generation of documentation because Sphinx is missing.")
+    message(STATUS "Disabling generation of documentation because Sphinx is missing.")
   else()
     add_subdirectory(doc)
   endif()
