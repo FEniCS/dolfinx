@@ -48,7 +48,7 @@ message(STATUS "Checking for package 'SCOTCH-PT'")
 
 # Check for header file
 find_path(SCOTCH_INCLUDE_DIRS ptscotch.h
-  HINTS ${SCOTCH_DIR}/include $ENV{SCOTCH_DIR}/include
+  HINTS ${SCOTCH_DIR}/include $ENV{SCOTCH_DIR}/include ${PETSC_DIR}/include
   PATH_SUFFIXES scotch
   DOC "Directory where the SCOTCH-PT header is located"
   )
@@ -56,7 +56,7 @@ find_path(SCOTCH_INCLUDE_DIRS ptscotch.h
 # Check for scotch
 find_library(SCOTCH_LIBRARY
   NAMES scotch
-  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib
+  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_DIR}/lib
   DOC "The SCOTCH library"
   )
 
@@ -70,14 +70,14 @@ find_library(SCOTCHERR_LIBRARY
 # Check for ptscotch
 find_library(PTSCOTCH_LIBRARY
   NAMES ptscotch
-  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib
+  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_DIR}/lib
   DOC "The PTSCOTCH library"
   )
 
 # Check for ptscotcherr
 find_library(PTSCOTCHERR_LIBRARY
   NAMES ptscotcherr
-  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib
+  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_DIR}/lib
   DOC "The PTSCOTCH-ERROR library"
   )
 
@@ -119,7 +119,7 @@ elseif (SCOTCH_INCLUDE_DIRS AND SCOTCH_LIBRARIES)
 #include <stdint.h>
 #include <stdio.h>
 #include <mpi.h>
-#include <scotch.h>
+#include <ptscotch.h>
 #include <iostream>
 
 int main() {

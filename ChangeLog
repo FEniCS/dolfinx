@@ -6,7 +6,7 @@
  - Add support to attaching operator null space to preconditioner
    (required for smoothed aggregation AMG)
  - Add basic interface to the PETSc AMG preconditioner
- - Make SCOTCH default graph partitioner (GNU compatible free license, unlike ParMETIS)
+ - Make SCOTCH default graph partitioner (GNU-compatible free license, unlike ParMETIS)
  - Add scalable construction of mesh dual graph for mesh partitioning
  - Improve performance of mesh building in parallel
  - Add mesh output to SVG

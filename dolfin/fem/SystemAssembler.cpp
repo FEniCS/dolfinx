@@ -17,9 +17,10 @@
 //
 // Modified by Anders Logg 2008-2011
 // Modified by Joachim B Haga 2012
+// Modified by Jan Blechta 2013
 //
 // First added:  2009-06-22
-// Last changed: 2012-11-17
+// Last changed: 2013-01-18
 
 #include <armadillo>
 #include <dolfin/common/Timer.h>
@@ -91,13 +92,14 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
       {
         if (a.cell_domains_shared_ptr() != L.cell_domains_shared_ptr())
           warning("Bilinear and linear form must have same attached cell subdomains in SystemAssembler.");
+        cell_domains = a.cell_domains_shared_ptr().get();
       }
       else if (a.cell_domains_shared_ptr())
         cell_domains = a.cell_domains_shared_ptr().get();
       else
         cell_domains = L.cell_domains_shared_ptr().get();
 
-      if (mesh.domains().facet_domains(mesh))
+      if (mesh.domains().cell_domains(mesh))
         warning("Ignoring cell domains defined as part of mesh in system assembler.");
     }
     else
@@ -113,6 +115,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
       {
         if (a.exterior_facet_domains_shared_ptr() != L.exterior_facet_domains_shared_ptr())
           warning("Bilinear and linear form must have same attached exterior facet subdomains in SystemAssembler.");
+        exterior_facet_domains = a.exterior_facet_domains_shared_ptr().get();
       }
       else if (a.exterior_facet_domains_shared_ptr())
         exterior_facet_domains = a.exterior_facet_domains_shared_ptr().get();
@@ -135,6 +138,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
       {
         if (a.interior_facet_domains_shared_ptr() != L.interior_facet_domains_shared_ptr())
           warning("Bilinear and linear form must have same attached interior facet subdomains in SystemAssembler.");
+        interior_facet_domains = a.interior_facet_domains_shared_ptr().get();
       }
       else if (a.interior_facet_domains_shared_ptr())
         interior_facet_domains = a.interior_facet_domains_shared_ptr().get();
@@ -226,8 +230,8 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   }
 
   // Check whether we should do cell-wise or facet-wise assembly
-  if (A_ufc.form.num_interior_facet_domains() == 0 &&
-      b_ufc.form.num_interior_facet_domains() == 0)
+  if (!A_ufc.form.has_interior_facet_integrals() &&
+      !b_ufc.form.has_interior_facet_integrals())
   {
     // Assemble cell-wise (no interior facet integrals)
     cell_wise_assembly(A, b, a, L,
@@ -242,6 +246,8 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
     not_working_in_parallel("System assembly over interior facets");
 
     // Facet-wise assembly does not support subdomains
+    // FIXME: MSA says: I don't understand this, so I have no idea
+    //        if this will break with the introduction of a default integral
     if (A_ufc.form.num_cell_domains() > 1 ||
         b_ufc.form.num_cell_domains() > 1 ||
         A_ufc.form.num_exterior_facet_domains() > 1 ||
@@ -251,8 +257,8 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
     {
       dolfin_error("SystemAssembler.cpp",
                    "assemble system",
-                   "System assembler does not support subdomains forms containing "
-                   "interior facet integrals");
+                   "System assembler does not support forms containing "
+                   "integrals over subdomains");
     }
 
     // Assemble facet-wise (including cell assembly)
@@ -321,8 +327,8 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     b_exterior_facet_integral = b_ufc.exterior_facet_integrals[0].get();
 
   // If using external facet integrals
-  if (A_ufc.form.num_exterior_facet_domains() > 0 ||
-      b_ufc.form.num_exterior_facet_domains() > 0)
+  if (A_ufc.form.has_exterior_facet_integrals() ||
+      b_ufc.form.has_exterior_facet_integrals())
   {
     // Compute facets and facet - cell connectivity if not already computed
     const std::size_t D = mesh.topology().dim();
@@ -377,8 +383,8 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     }
 
     // Compute exterior facet integral if present
-    if (A_ufc.form.num_exterior_facet_domains() > 0 ||
-        b_ufc.form.num_exterior_facet_domains() > 0)
+    if (A_ufc.form.has_exterior_facet_integrals() ||
+        b_ufc.form.has_exterior_facet_integrals())
     {
       for (FacetIterator facet(*cell); !facet.end(); ++facet)
       {
@@ -650,11 +656,11 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
   const ufc::cell_integral* b_cell_integral = b_ufc.cell_integrals[0].get();
 
   // Compute facet contribution to A
-  if (A_ufc.form.num_interior_facet_domains() > 0)
+  if (A_ufc.form.has_interior_facet_integrals())
     compute_tensor_on_one_interior_facet(a, A_ufc, cell0, cell1, facet, 0);
 
   // Compute facet contribution to
-  if (b_ufc.form.num_interior_facet_domains() > 0)
+  if (b_ufc.form.has_interior_facet_integrals())
     compute_tensor_on_one_interior_facet(L, b_ufc, cell0, cell1, facet, 0);
 
   // Get local facet index
@@ -664,9 +670,10 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
   // If we have local facet 0, compute cell contribution
   if (facet0 == 0)
   {
-    if (A_ufc.form.num_cell_domains() > 0)
+    if (A_ufc.form.has_cell_integrals())
     {
       A_ufc.update(cell0);
+
       A_cell_integral->tabulate_tensor(&A_ufc.A[0], A_ufc.w(), A_ufc.cell);
       const std::size_t nn = a0_dofs0.size();
       const std::size_t mm = a1_dofs0.size();
@@ -675,9 +682,10 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
           A_ufc.macro_A[2*i*nn+j] += A_ufc.A[i*nn+j];
     }
 
-    if (b_ufc.form.num_cell_domains() > 0)
+    if (b_ufc.form.has_cell_integrals())
     {
       b_ufc.update(cell0);
+
       b_cell_integral->tabulate_tensor(&b_ufc.A[0], b_ufc.w(), b_ufc.cell);
       for (std::size_t i = 0; i < L_dofs0.size(); i++)
         b_ufc.macro_A[i] += b_ufc.A[i];
@@ -687,7 +695,7 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
   // If we have local facet 0, compute and add cell contribution
   if (facet1 == 0)
   {
-    if (A_ufc.form.num_cell_domains() > 0)
+    if (A_ufc.form.has_cell_integrals())
     {
       A_ufc.update(cell1);
 
@@ -699,7 +707,7 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
           A_ufc.macro_A[2*nn*mm + 2*i*nn + nn + j] += A_ufc.A[i*nn+j];
     }
 
-    if (b_ufc.form.num_cell_domains() > 0)
+    if (b_ufc.form.has_cell_integrals())
     {
       b_ufc.update(cell1);
 
@@ -752,7 +760,7 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
 {
   const std::size_t local_facet = cell.index(facet);
 
-  if (A_ufc.form.num_exterior_facet_domains() > 0 )
+  if (A_ufc.form.has_exterior_facet_integrals())
   {
     ufc::exterior_facet_integral* A_facet_integral = A_ufc.exterior_facet_integrals[0].get();
 
@@ -761,7 +769,7 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
     for (std::size_t i = 0; i < data.Ae.size(); i++)
       data.Ae[i] += A_ufc.A[i];
   }
-  if (b_ufc.form.num_exterior_facet_domains() > 0 )
+  if (b_ufc.form.has_exterior_facet_integrals())
   {
     const ufc::exterior_facet_integral* b_facet_integral = b_ufc.exterior_facet_integrals[0].get();
 
@@ -774,7 +782,7 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
   // If we have local facet 0, assemble cell integral
   if (local_facet == 0)
   {
-    if (A_ufc.form.num_cell_domains() > 0 )
+    if (A_ufc.form.has_cell_integrals())
     {
       const ufc::cell_integral* A_cell_integral = A_ufc.cell_integrals[0].get();
 
@@ -784,7 +792,7 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
         data.Ae[i] += A_ufc.A[i];
     }
 
-    if (b_ufc.form.num_cell_domains() > 0 )
+    if (b_ufc.form.has_cell_integrals())
     {
       const ufc::cell_integral* b_cell_integral = b_ufc.cell_integrals[0].get();
 
