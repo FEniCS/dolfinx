@@ -48,7 +48,7 @@
 //-----------------------------------------------------------------------------
 %rename(_function_space) dolfin::Function::function_space;
 %rename(_sub) dolfin::Function::operator[];
-%rename(assign) dolfin::Function::operator=;
+%rename(_assign) dolfin::Function::operator=;
 %rename(_in) dolfin::Function::in;
 
 //-----------------------------------------------------------------------------

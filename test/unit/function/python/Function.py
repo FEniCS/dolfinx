@@ -52,6 +52,55 @@ class Interface(unittest.TestCase):
 
         self.assertTrue(all(u_values==1))
 
+    def test_assign(self):
+        from ufl.algorithms import replace
+        
+        u = Function(V)
+        u0 = Function(V)
+        u1 = Function(V)
+        u2 = Function(V)
+        u3 = Function(W)
+        
+        u.vector()[:] =  1.0
+        u0.vector()[:] = 2.0
+        u1.vector()[:] = 3.0
+        u2.vector()[:] = 4.0
+        u3.vector()[:] = 5.0
+
+        scalars = {u:1.0, u0:2.0, u1:3.0, u2:4.0, u3:5.0}
+        
+        uu = Function(V)
+        uu.assign(2*u)
+        self.assertEqual(uu.vector().sum(), u0.vector().sum())
+
+        uu = Function(W)
+        uu.assign(3*u)
+        self.assertEqual(uu.vector().sum(), u1.vector().sum())
+
+        # Test complex assignment
+        expr = 3*u-4*u1-0.1*4*u*4+u2+3*u0/3./0.5
+        uu.assign(expr)
+        self.assertAlmostEqual(uu.vector().sum(), \
+                               float(replace(expr, scalars)*uu.vector().size()))
+        
+        # Test self assignment
+        expr = 3*u - 5*u2 + u1 - 5*u
+        u.assign(expr)
+        self.assertAlmostEqual(u.vector().sum(), \
+                               float(replace(expr, scalars)*u.vector().size()))
+
+        # Test zero assignment
+        u.assign(-u2/2+2*u1-u1/0.5+u2*0.5)
+        self.assertAlmostEqual(u.vector().sum(), 0.0)
+
+        # Test errounious assignments
+        uu = Function(W)
+        f = Expression("1.0")
+        self.assertRaises(RuntimeError, lambda: uu.assign(u*u0))
+        self.assertRaises(RuntimeError, lambda: uu.assign(1.0))
+        self.assertRaises(RuntimeError, lambda: uu.assign(4*f))
+        self.assertRaises(RuntimeError, lambda: uu.assign(4/u0))
+        self.assertRaises(RuntimeError, lambda: uu.assign(4*u*u1))
 
 class ScalarFunctions(unittest.TestCase):
     def test_constant_float_conversion(self):
