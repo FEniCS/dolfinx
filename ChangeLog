@@ -1,4 +1,4 @@
- - Feature: Add support assigning a Function with linear combinations of Functions
+ - Feature: Add support for assigning a Function with linear combinations of Functions, which lives in the same FunctionSpace (Only works in Python)
  - Feature: Add support for solving on m dimensional meshes embedded in n >= m dimensions
 1.1.0 [2013-01-08]
  - Add support for solving singular problems with Krylov solvers (PETSc only)
