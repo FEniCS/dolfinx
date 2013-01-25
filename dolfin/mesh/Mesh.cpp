@@ -23,9 +23,10 @@
 // Modified by Johannes Ring 2012
 // Modified by Marie E. Rognes 2012
 // Modified by Mikael Mortensen 2012
+// Modified by Jan Blechta 2013
 //
 // First added:  2006-05-09
-// Last changed: 2012-12-13
+// Last changed: 2013-01-25
 
 #include <boost/serialization/map.hpp>
 #include <dolfin/common/Array.h>
@@ -346,7 +347,7 @@ void Mesh::move(Mesh& mesh)
   ALE::move(*this, mesh);
 }
 //-----------------------------------------------------------------------------
-void Mesh::move(const Function& displacement)
+void Mesh::move(const GenericFunction& displacement)
 {
   ALE::move(*this, displacement);
 }
