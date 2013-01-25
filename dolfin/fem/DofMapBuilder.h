@@ -93,6 +93,10 @@ namespace dolfin
                           const Mesh& mesh,
                           boost::shared_ptr<const Restriction> restriction);
 
+    // Build modified global entity indices that account for periodic bcs
+    static void build_mesh_indices(DofMap& dofmap, const Mesh& mesh,
+     const std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facets);
+
     // Re-order local dofmap for dof spatial locality. Re-ordering is
     // optional, but re-ordering can make other algorithms
     // (e.g. matrix-vector products) significantly faster.
@@ -135,17 +139,6 @@ namespace dolfin
     static void compute_global_dofs(set& global_dofs, std::size_t& offset,
                             boost::shared_ptr<const ufc::dofmap> dofmap,
                             const Mesh& dolfin_mesh);
-
-    // Iterate recursively over all sub-dof maps to build a global
-    // map from slave dofs to master dofs. Build also a map of all
-    // processes that shares the master dofs
-    static void extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
-        periodic_map& _slave_master_map,
-        std::map<std::size_t, boost::unordered_set<std::size_t> >& _master_processes);
-
-    // Make all necessary modifications to dofmap due to periodicity of the mesh
-    static void periodic_modification(DofMap& dofmap, const Mesh& dolfin_mesh,
-      DofMapBuilder::set& global_dofs);
 
     // Recursively extract UFC sub-dofmap and compute offset
     static boost::shared_ptr<ufc::dofmap>
