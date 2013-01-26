@@ -123,12 +123,6 @@ void DofMapBuilder::build_sub_map(DofMap& sub_dofmap,
   // Resize dofmap data structure
   sub_dofmap._dofmap.resize(mesh.num_cells());
 
-  // Set to hold slave dofs on current processor
-  //std::set<std::size_t> slave_dofs;
-
-  // Store original _slave_master_map on this sub_dofmap
-  //_slave_master_map = parent_dofmap._slave_master_map;
-
   // Holder for copying UFC std::size_t dof maps into the a dof map that
   // is consistent with the linear algebra backend
   std::vector<std::size_t> dof_holder;
@@ -147,74 +141,21 @@ void DofMapBuilder::build_sub_map(DofMap& sub_dofmap,
     dof_holder.resize(sub_dofmap._ufc_dofmap->local_dimension(ufc_cell));
 
     // Tabulate sub-dofs on cell (using UFC map)
-    sub_dofmap._ufc_dofmap->tabulate_dofs(&dof_holder[0], num_global_mesh_entities, ufc_cell);
+    sub_dofmap._ufc_dofmap->tabulate_dofs(&dof_holder[0], 
+                                          num_global_mesh_entities, 
+                                          ufc_cell);
 
     // Add UFC offset
-    for (unsigned int i=0; i < dof_holder.size(); i++)
+    for (unsigned int i = 0; i < dof_holder.size(); i++)
       dof_holder[i] += offset;
 
-    /*
-    if (mesh.is_periodic() && !_slave_master_map.empty())
-    {
-      // Check for slaves and modify
-      std::map<std::size_t, std::size_t>::const_iterator slave_it;
-      for (unsigned int i = 0; i < dof_holder.size();ck i++)
-      {
-        const std::size_t dof = dof_holder[i];
-        slave_it = _slave_master_map.find(dof);
-        if (slave_it != _slave_master_map.end())
-        {
-          dof_holder[i] = slave_it->second; // Replace slave with master
-          slave_dofs.insert(slave_it->first);
-        }
-      }
-    }
-    */
-    std::copy(dof_holder.begin(), dof_holder.end(), sub_dofmap._dofmap[cell_index].begin());
+    std::copy(dof_holder.begin(), dof_holder.end(), 
+              sub_dofmap._dofmap[cell_index].begin());
   }
 
-  /*
-  if (mesh.is_periodic() && !_slave_master_map.empty())
-  {
-    // Periodic meshes need to renumber UFC-numbered dofs due to elimination of slave dofs
-    // For faster search get a vector of all slaves on parent dofmap (or parent of parent, aka the owner)
-    std::vector<std::size_t> parent_slaves;
-    for (std::map<std::size_t, std::size_t>::const_iterator it = _slave_master_map.begin();
-                              it != _slave_master_map.end(); ++it)
-    {
-      parent_slaves.push_back(it->first);
-    }
-
-    std::vector<std::size_t>::iterator it;
-    std::vector<std::vector<dolfin::la_index> >::iterator cell_map;
-    std::vector<dolfin::la_index>::iterator dof;
-    for (cell_map = _dofmap.begin(); cell_map != _dofmap.end(); ++cell_map)
-    {
-      for (dof = cell_map->begin(); dof != cell_map->end(); ++dof)
-      {
-        it = std::lower_bound(parent_slaves.begin(), parent_slaves.end(), *dof);
-        *dof -= std::size_t(it - parent_slaves.begin());
-      }
-    }
-
-    // Reduce the local slaves onto all processes to eliminate duplicates
-    std::vector<std::set<std::size_t> > all_slave_dofs;
-    MPI::all_gather(slave_dofs, all_slave_dofs);
-    for (std::size_t i = 0; i < all_slave_dofs.size(); i++)
-      if (i != MPI::process_number())
-        slave_dofs.insert(all_slave_dofs[i].begin(), all_slave_dofs[i].end());
-
-    // Set global dimension
-    _global_dimension = _ufc_dofmap->global_dimension(num_global_mesh_entities) - slave_dofs.size();
-
-  }
-  else
-  */
-  {
-    // Set global dimension
-    sub_dofmap._global_dimension
-      = sub_dofmap._ufc_dofmap->global_dimension(num_global_mesh_entities);
-  }
+  // Set global dimension
+  sub_dofmap._global_dimension
+    = sub_dofmap._ufc_dofmap->global_dimension(num_global_mesh_entities);
 
   // Modify dofmap for non-UFC numbering
   sub_dofmap.ufc_map_to_dofmap.clear();
@@ -260,34 +201,66 @@ void DofMapBuilder::build_sub_map(DofMap& sub_dofmap,
   }
 }
 //-----------------------------------------------------------------------------
-void DofMapBuilder::build_mesh_indices(DofMap& dofmap, const Mesh& mesh,
+void DofMapBuilder::build_periodic_mesh_indices(DofMap& dofmap, const Mesh& mesh,
  const std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facets)
 {
-  // Slave vertex markers
-  std::vector<bool> slave_vertex(mesh.num_vertices(), false);
+  /*
+  // Mark shared vertices
+  std::vector<bool> shared_vertex(mesh.num_vertices(), false);
+  const std::map<std::size_t, std::set<std::size_t> shared_entities = mesh.topology().shared_entities(0);
+  std::map<std::size_t, std::set<std::size_t>::const_iterator shared_entity;
+  for (shared_entity = shared_entities.begin(); shared_entity != shared_entities.end(); ++shared_entity)
+  {
+    dolfin_assert([shared_entity->first < shared_vertex.size());
+    shared_vertex[shared_entity->first] = true;
+  }
 
-  //std::size_t num_slave_vertices = 0;
+  // Must check is slave vertex is shared
 
   // Mark slave vertices
+  std::vector<bool> slave_vertex(mesh.num_vertices(), false);
   std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator slave;
+
+  //std::map<std::size_t, Point> slave_vertex;
+  std::vector<double> slave_vertex;
   for (slave = slave_to_master_facets.begin(); slave != slave_to_master_facets.end(); ++slave)
   {
-    // Create facet
+    // Create facet and mark vertices
     const Facet facet(mesh, slave->first);
-
     for (VertexIterator vertex(facet); !vertex.end(); ++vertex)
     {
+      slave_vertex
       dolfin_assert(vertex->index() < slave_vertex.size());
       slave_vertex[vertex->index()] = true;
 
-      //++num_slave_vertices;
     }
   }
 
-  //std::vector<bool> modified_global_indices(mesh.num_vertices(), false);
   // Compute modified global vertex indices
+  std::vector<std::size_t> modified_global_indices(mesh.num_vertices());
+  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+  {
+    const std::size_t local_index = vertex->index();
+    if (slave_vertex[local_index])
+    {
+      // Slave, need to find master vertex index and need to communicate
+      // to any sharing processes
+    }
+    else if (shared_vertex[local_index])
+    {
+      // Shared, decide if I should number this index or not
+    }
+    else
+      modified_global_indices[vertex->local_index()] = new_index++;
+  }
 
+  // Send number of owned entities to compute offeset 
 
+  // Add process offset 
+
+  // Send new indices to process that share a vertex but were not
+  // responsible for re-numbering
+  */
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::reorder_local(DofMap& dofmap, const Mesh& mesh)
@@ -351,11 +324,8 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
   dofmap._off_process_owner.clear();
   dolfin_assert(dofmap._ufc_dofmap);
 
-  // FIXME: Remove restricted_dofs_inverse if not needed
-
   // Maps used to renumber dofs for restricted meshes
   map restricted_dofs;         // map from old to new dof
-  //map restricted_dofs_inverse; // map from new to old dof
 
   // Store bumber of global entities
   std::vector<std::size_t> num_global_mesh_entities(mesh.topology().dim() + 1);

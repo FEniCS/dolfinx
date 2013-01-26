@@ -37,11 +37,12 @@ namespace dolfin
   {
   public:
 
-    /// Compute map from a slave facet on this process (local index)
-    /// to its master facet (owning process, local index on owner)
+    /// For entities of dimension dim, compute map from a slave entity on
+    /// this process (local index) to its master entity (owning process,
+    /// local index on owner)
     static std::map<std::size_t, std::pair<std::size_t, std::size_t> >
-      compute_periodic_facet_pairs(const Mesh& mesh,
-                                   const SubDomain& sub_domain);
+      compute_periodic_pairs(const Mesh& mesh, const SubDomain& sub_domain, 
+                             const std::size_t dim);
 
   private:
 

@@ -32,9 +32,6 @@ using namespace dolfin;
 
 int main()
 {
-  not_working_in_parallel("Periodoc boundary conditions");
-
-
   // Source term
   class Source : public Expression
   {
@@ -64,7 +61,8 @@ int main()
     // Left boundary is "target domain" G
     bool inside(const Array<double>& x, bool on_boundary) const
     {
-      return (std::abs(x[0]) < DOLFIN_EPS) && on_boundary;
+      //return (std::abs(x[0]) < DOLFIN_EPS) && on_boundary;
+      return (std::abs(x[0]) < DOLFIN_EPS);
     }
 
     // Map right boundary (H) to left boundary (G)
@@ -72,39 +70,62 @@ int main()
     {
       y[0] = x[0] - 1.0;
       y[1] = x[1];
-      y[2] = x[2];
+      //y[2] = x[2];
     }
   };
 
-  /*
   // Create mesh
-  UnitSquareMesh mesh(32, 32);
+  UnitSquareMesh mesh(2, 2);
 
   // Create periodic boundary condition
   PeriodicBoundary periodic_boundary;
-  //mesh.add_periodic_direction(periodic_boundary);
+
+  const std::size_t dim = 0;
 
   std::map<std::size_t, std::pair<std::size_t, std::size_t> > test
-    = PeriodicDomain::compute_periodic_facet_pairs(mesh, periodic_boundary);
+    = PeriodicBoundaryComputation::compute_periodic_pairs(mesh, periodic_boundary, dim);
 
+  /*
+  const bool parallel = MPI::num_processes() > 1;
   std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator it;
   for (it = test.begin(); it != test.end(); ++it)
   {
-    cout << "*** Slave facet, proc owne ,masterr, master index on owner: " << it->first
+    cout << "*** Slave facet, proc owne, master, master index on owner: " << it->first
         << ", " << it->second.first << ", " <<  it->second.second << endl;
+    if (!parallel)
+    {
+      const Vertex v0(mesh, it->first), v1(mesh, it->second.second); 
+      cout << "  " << v0.point().str() << endl;
+      cout << "  " << v1.point().str() << endl;
+    }
   }
   */
 
+  MeshFunction<std::size_t> master_slave_entities(mesh, dim, 0);
+  periodic_boundary.mark(master_slave_entities, 1);
+
+  std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator it;
+  for (it = test.begin(); it != test.end(); ++it)
+    master_slave_entities[it->first] = 2;
+
+  for (MeshEntityIterator e(mesh, dim); !e.end(); ++e)
+    cout << "Test mf: " << master_slave_entities[*e] << endl;
+
+  File file("markers.pvd");
+  file << master_slave_entities;
+
+  /*
   // Create mesh
-  UnitCubeMesh mesh(16, 16, 16);
+  UnitCubeMesh mesh(2, 2, 2);
 
   // Create periodic boundary condition
   PeriodicBoundary periodic_boundary;
 
+  const std::size_t dim = 0;
   std::map<std::size_t, std::pair<std::size_t, std::size_t> > test
-    = PeriodicBoundaryComputation::compute_periodic_facet_pairs(mesh, periodic_boundary);
+    = PeriodicBoundaryComputation::compute_periodic_pairs(mesh, periodic_boundary, dim);
 
-  FacetFunction<std::size_t> master_slave_facets(mesh, 0);
+  MeshFunction<std::size_t> master_slave_facets(mesh, dim, 0);
   periodic_boundary.mark(master_slave_facets, 1);
 
   std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator it;
@@ -113,9 +134,9 @@ int main()
     master_slave_facets[it->first] = 2;
   }
 
-  File file("facets.pvd");
+  File file("markers.pvd");
   file << master_slave_facets;
-
+  */
 
   /*
   std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator it;

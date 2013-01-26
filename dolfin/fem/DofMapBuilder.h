@@ -94,7 +94,7 @@ namespace dolfin
                           boost::shared_ptr<const Restriction> restriction);
 
     // Build modified global entity indices that account for periodic bcs
-    static void build_mesh_indices(DofMap& dofmap, const Mesh& mesh,
+    static void build_periodic_mesh_indices(DofMap& dofmap, const Mesh& mesh,
      const std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facets);
 
     // Re-order local dofmap for dof spatial locality. Re-ordering is
