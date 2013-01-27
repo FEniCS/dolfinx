@@ -456,7 +456,7 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
 
   // Build set of dofs on process boundary (first assuming that all are
   // owned by this process)
-  const MeshFunction<std::size_t>& cell_map = interior_boundary.cell_map();
+  const MeshFunction<std::size_t>& cell_map = interior_boundary.entity_map(interior_boundary.topology().dim());
   if (!cell_map.empty())
   {
     for (CellIterator _f(interior_boundary); !_f.end(); ++_f)

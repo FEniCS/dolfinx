@@ -60,6 +60,23 @@ void BoundaryMesh::init_interior_boundary(const Mesh& mesh)
   BoundaryComputation::compute_interior_boundary(mesh, *this);
 }
 //-----------------------------------------------------------------------------
+MeshFunction<std::size_t>& BoundaryMesh::entity_map(std::size_t d)
+{ 
+  if (d == 0)
+    return _vertex_map; 
+  else if (d == this->topology().dim())
+    return _cell_map; 
+  else
+  {
+    dolfin_error("BoundaryMesh.cpp",
+                 "access entity map (from boundary mesh underlying mesh",
+                 "Can onlt access vertex and cells maps");
+  }
+
+  // Return something to keep compilers happy, code is never reached
+  return _cell_map;
+}
+//-----------------------------------------------------------------------------
 const MeshFunction<std::size_t>& BoundaryMesh::entity_map(std::size_t d) const
 { 
   if (d == 0)

@@ -65,28 +65,13 @@ namespace dolfin
     /// Initialize interior boundary of given mesh
     void init_interior_boundary(const Mesh& mesh);
 
-    /// Get index map for entities of dimension d from the boundary mesh
-    /// to the original full mesh
+    /// Get index map for entities of dimension d in the boundary mesh
+    /// to the entity in the original full mesh
+    MeshFunction<std::size_t>& entity_map(std::size_t d);
+
+    /// Get index map for entities of dimension d in the boundary mesh
+    /// to the entity in the original full mesh (const version)
     const MeshFunction<std::size_t>& entity_map(std::size_t d) const;
-
-    /// Get cell mapping from the boundary mesh to the original full mesh
-    MeshFunction<std::size_t>& cell_map()
-    { return _cell_map; }
-
-    /// Get cell mapping from the boundary mesh to the original full mesh
-    /// (const version)
-    const MeshFunction<std::size_t>& cell_map() const
-    { return _cell_map; }
-
-    /// Get vertex mapping from the boundary mesh to the original
-    /// full mesh
-    MeshFunction<std::size_t>& vertex_map()
-    { return _vertex_map; }
-
-    /// Get vertex mapping from the boundary mesh to the original full
-    /// mesh (const version)
-    const MeshFunction<std::size_t>& vertex_map() const
-    { return _vertex_map; }
 
   private:
 
