@@ -220,7 +220,7 @@ void Extrapolation::add_cell_equations(arma::Mat<double>& A,
       // Evaluate dof on basis function
       const double dof_value = V.element()->evaluate_dof(i,
                                                          phi,
-                                                         c1.vertex_coordinates,
+                                                         &c1.vertex_coordinates[0],
                                                          c1);
 
       // Insert dof_value into matrix

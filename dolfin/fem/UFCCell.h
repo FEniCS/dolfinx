@@ -119,7 +119,7 @@ namespace dolfin
       coordinates = new double*[num_vertices];
 
       // FIXME: Temporary until we remove UFCCell
-      vertex_coordinates = new double[num_vertices*geometric_dimension];
+      vertex_coordinates.resize(num_vertices*geometric_dimension);
 
       // Update cell data
       update(cell);
@@ -139,8 +139,7 @@ namespace dolfin
       delete [] coordinates;
       coordinates = 0;
 
-      delete [] vertex_coordinates;
-      vertex_coordinates = 0;
+      vertex_coordinates.clear();
 
       cell_shape = ufc::interval;
       topological_dimension = 0;
@@ -208,6 +207,7 @@ namespace dolfin
 
       // FIXME: Temporary until we remove UFCCell
       const std::size_t gdim = cell.mesh().geometry().dim();
+      dolfin_assert(vertex_coordinates.size() == num_vertices*gdim);
       for (std::size_t i = 0; i < num_vertices; i++)
         for (std::size_t j = 0; j < gdim; j++)
           vertex_coordinates[i*gdim + j] = cell.mesh().geometry().x(vertices[i])[j];
