@@ -97,36 +97,47 @@ class DofMapTest(unittest.TestCase):
         W = MixedFunctionSpace([R, V])
 
     def test_tabulate_vertex_map(self):
-        u = Function(self.V)
-        e = Expression("x[0]+x[1]")
-        u.interpolate(e)
-        
-        vert_values = self.mesh.coordinates().sum(1)
-        func_values = -1*np.ones(len(vert_values))
-        func_values[self.V.dofmap().tabulate_vertex_map(self.mesh)] = u.vector().array()
-        
-        for v_val, f_val in zip(vert_values, func_values):
-            # Do not compare dofs owned by other process
-            if f_val != -1:
-                self.assertAlmostEqual(f_val, v_val)
 
-        c0 = Constant((1,2))
-        u0 = Function(self.Q)
-        u0.interpolate(c0)
+        # Check for both reordered and UFC ordered dofs
+        for reorder_dofs in [True, False]:
+            parameters.reorder_dofs_serial = reorder_dofs
 
-        vert_values = np.zeros(self.mesh.num_vertices()*2)
-        u1 = Function(self.Q)
-        vert_values[::2] = 1
-        vert_values[1::2] = 2
-        
-        u1.vector().set_local(vert_values[self.Q.dofmap().tabulate_vertex_map(self.mesh)].copy())
-        self.assertAlmostEqual((u0.vector()-u1.vector()).sum(), 0.0)
+            V = FunctionSpace(self.mesh, "Lagrange", 1)
+            Q = VectorFunctionSpace(self.mesh, "Lagrange", 1)
+            W = V*Q
 
-        W = FunctionSpace(self.mesh, "DG", 0)
-        self.assertRaises(RuntimeError, lambda : W.dofmap().tabulate_vertex_map(self.mesh))
-
-        W = self.Q*FunctionSpace(self.mesh, "R", 0)
-        self.assertRaises(RuntimeError, lambda : W.dofmap().tabulate_vertex_map(self.mesh))
+            u = Function(V)
+            e = Expression("x[0]+x[1]")
+            u.interpolate(e)
+            
+            vert_values = self.mesh.coordinates().sum(1)
+            func_values = -1*np.ones(len(vert_values))
+            func_values[V.dofmap().tabulate_vertex_map(self.mesh)] = u.vector().array()
+            
+            for v_val, f_val in zip(vert_values, func_values):
+                # Do not compare dofs owned by other process
+                if f_val != -1:
+                    self.assertAlmostEqual(f_val, v_val)
+            
+            c0 = Constant((1,2))
+            u0 = Function(Q)
+            u0.interpolate(c0)
+            
+            vert_values = np.zeros(self.mesh.num_vertices()*2)
+            u1 = Function(Q)
+            vert_values[::2] = 1
+            vert_values[1::2] = 2
+            
+            u1.vector().set_local(vert_values[Q.dofmap().tabulate_vertex_map(self.mesh)].copy())
+            self.assertAlmostEqual((u0.vector()-u1.vector()).sum(), 0.0)
+            
+            W = FunctionSpace(self.mesh, "DG", 0)
+            self.assertRaises(RuntimeError, lambda : W.dofmap().tabulate_vertex_map(self.mesh))
+            
+            W = Q*FunctionSpace(self.mesh, "R", 0)
+            self.assertRaises(RuntimeError, lambda : W.dofmap().tabulate_vertex_map(self.mesh))
+            W = FunctionSpace(self.mesh, "CG", 2)
+            self.assertRaises(RuntimeError, lambda : W.dofmap().tabulate_vertex_map(self.mesh))
 
 if __name__ == "__main__":
     print ""
