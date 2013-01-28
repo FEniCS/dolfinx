@@ -75,7 +75,7 @@ int main()
   };
 
   // Create mesh
-  UnitSquareMesh mesh(2, 2);
+  UnitSquareMesh mesh(32, 32);
 
   // Create periodic boundary condition
   PeriodicBoundary periodic_boundary;
@@ -114,6 +114,8 @@ int main()
   File file("markers.pvd");
   file << master_slave_entities;
 
+  mesh.periodic_vertex_map = test;
+
   /*
   // Create mesh
   UnitCubeMesh mesh(2, 2, 2);
@@ -147,9 +149,8 @@ int main()
   }
   */
 
-  return 0;
+  //return 0;
 
-  /*
   // Create functions
   Source f;
 
@@ -173,13 +174,12 @@ int main()
   solve(a == L, u, bcs);
 
   // Save solution in VTK format
-  File file("periodic_dofmap.pvd");
-  file << u;
+  File file_u("periodic_dofmap.pvd");
+  file_u << u;
 
   // Plot solution
   plot(u);
   interactive();
 
   return 0;
-  */
 }

@@ -125,14 +125,14 @@ namespace dolfin
     /// *Arguments*
     ///     geometry (CSGGeometry)
     ///         The CSG geometry
-    explicit Mesh(const CSGGeometry& geometry, std::size_t mesh_resolution);
+    Mesh(const CSGGeometry& geometry, std::size_t mesh_resolution);
 
     /// Create mesh defined by Constructive Solid Geometry (CSG)
     ///
     /// *Arguments*
     ///     geometry (CSGGeometry)
     ///         The CSG geometry
-    explicit Mesh(boost::shared_ptr<const CSGGeometry> geometry, std::size_t resolution);
+    Mesh(boost::shared_ptr<const CSGGeometry> geometry, std::size_t resolution);
 
     /// Destructor.
     ~Mesh();
@@ -696,6 +696,9 @@ namespace dolfin
     ///     global_normal (Expression)
     ///         A global normal direction to the mesh
     void init_cell_orientations(const Expression& global_normal);
+
+    // Temporary hack
+    std::map<std::size_t, std::pair<std::size_t, std::size_t> > periodic_vertex_map;
 
   private:
 

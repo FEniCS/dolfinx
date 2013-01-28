@@ -201,43 +201,35 @@ void DofMapBuilder::build_sub_map(DofMap& sub_dofmap,
   }
 }
 //-----------------------------------------------------------------------------
-void DofMapBuilder::build_periodic_mesh_indices(DofMap& dofmap, const Mesh& mesh,
- const std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facets)
+std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
+ const std::map<std::size_t, std::pair<std::size_t, std::size_t> >& slave_to_master_vertices,
+ std::vector<std::size_t>& modified_global_indices)
 {
-  /*
   // Mark shared vertices
   std::vector<bool> shared_vertex(mesh.num_vertices(), false);
-  const std::map<std::size_t, std::set<std::size_t> shared_entities = mesh.topology().shared_entities(0);
-  std::map<std::size_t, std::set<std::size_t>::const_iterator shared_entity;
-  for (shared_entity = shared_entities.begin(); shared_entity != shared_entities.end(); ++shared_entity)
-  {
-    dolfin_assert([shared_entity->first < shared_vertex.size());
-    shared_vertex[shared_entity->first] = true;
-  }
+  //const std::map<std::size_t, std::set<std::size_t> > shared_entities 
+  //  = mesh.topology().shared_entities(0);
+  //std::map<std::size_t, std::set<std::size_t> >::const_iterator shared_entity;
+  //for (shared_entity = shared_entities.begin(); shared_entity != shared_entities.end(); ++shared_entity)
+  //{
+  //  dolfin_assert(shared_entity->first < shared_vertex.size());
+  //  shared_vertex[shared_entity->first] = true;
+  //}
 
-  // Must check is slave vertex is shared
+  // Must check if slave vertex is shared
 
   // Mark slave vertices
   std::vector<bool> slave_vertex(mesh.num_vertices(), false);
   std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator slave;
-
-  //std::map<std::size_t, Point> slave_vertex;
-  std::vector<double> slave_vertex;
-  for (slave = slave_to_master_facets.begin(); slave != slave_to_master_facets.end(); ++slave)
+  for (slave = slave_to_master_vertices.begin(); slave != slave_to_master_vertices.end(); ++slave)
   {
-    // Create facet and mark vertices
-    const Facet facet(mesh, slave->first);
-    for (VertexIterator vertex(facet); !vertex.end(); ++vertex)
-    {
-      slave_vertex
-      dolfin_assert(vertex->index() < slave_vertex.size());
-      slave_vertex[vertex->index()] = true;
-
-    }
+    dolfin_assert(slave->first < slave_vertex.size());
+    slave_vertex[slave->first] = true;
   }
 
   // Compute modified global vertex indices
-  std::vector<std::size_t> modified_global_indices(mesh.num_vertices());
+  std::size_t new_index = 0;
+  modified_global_indices.resize(mesh.num_vertices());
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
     const std::size_t local_index = vertex->index();
@@ -251,16 +243,26 @@ void DofMapBuilder::build_periodic_mesh_indices(DofMap& dofmap, const Mesh& mesh
       // Shared, decide if I should number this index or not
     }
     else
-      modified_global_indices[vertex->local_index()] = new_index++;
+      modified_global_indices[vertex->index()] = new_index++;
   }
 
   // Send number of owned entities to compute offeset 
+  std::size_t offset = MPI::global_offset(new_index, true);
 
   // Add process offset 
+  for (std::size_t i = 0; i < modified_global_indices.size(); ++i)
+    modified_global_indices[i] += offset;
+
+  // Serial hack
+  for (slave = slave_to_master_vertices.begin(); slave != slave_to_master_vertices.end(); ++slave)
+  {
+    dolfin_assert(slave->first < modified_global_indices.size());
+    modified_global_indices[slave->first] = modified_global_indices[slave->second.second];
+  }
 
   // Send new indices to process that share a vertex but were not
   // responsible for re-numbering
-  */
+  return MPI::sum(new_index);
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::reorder_local(DofMap& dofmap, const Mesh& mesh)
@@ -327,24 +329,67 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
   // Maps used to renumber dofs for restricted meshes
   map restricted_dofs;         // map from old to new dof
 
-  // Store bumber of global entities
-  std::vector<std::size_t> num_global_mesh_entities(mesh.topology().dim() + 1);
-  for (std::size_t d = 0; d < num_global_mesh_entities.size(); d++)
-    num_global_mesh_entities[d] = mesh.size_global(d);
-
   // Holder for UFC support 64-bit integers
   std::vector<std::size_t> ufc_dofs;
 
+  // Build new vertex numbers
+  const std::map<std::size_t, std::pair<std::size_t, std::size_t> >& 
+    slave_to_master_vertices = mesh.periodic_vertex_map;
+  std::vector<std::size_t> modified_global_vertex_indices;
+
+  cout << "Num slave vertices: " << slave_to_master_vertices.size() << endl;
+
+  const std::size_t num_vertices = build_constrained_vertex_indices(mesh,
+        slave_to_master_vertices, modified_global_vertex_indices);
+  cout << "Num vertices: " << num_vertices << ", " << mesh.num_vertices() << endl;
+
+  // Store number of global entities
+  std::vector<std::size_t> num_global_mesh_entities(mesh.topology().dim() + 1);
+  for (std::size_t d = 0; d < num_global_mesh_entities.size(); d++)
+    num_global_mesh_entities[d] = mesh.size_global(d);
+  num_global_mesh_entities[0] -= slave_to_master_vertices.size();
+
   // Build dofmap from ufc::dofmap
-  dolfin::UFCCell ufc_cell(mesh);
-  for (dolfin::CellIterator cell(mesh); !cell.end(); ++cell)
+  UFCCell ufc_cell(mesh);
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Skip cells not included in restriction
     if (restriction && !restriction->contains(*cell))
       continue;
 
+
     // Update UFC cell
-    ufc_cell.update(*cell);
+    //ufc_cell.update(*cell);
+    {
+      // Set orientation
+      ufc_cell.orientation = cell->mesh().cell_orientations()[cell->index()];
+      const MeshTopology& topology = cell->mesh().topology();
+      for (std::size_t i = 0; i < ufc_cell.num_cell_entities[0]; ++i)
+      {
+        cout << "dofs: " << cell->entities(0)[i] << ", " 
+            <<  modified_global_vertex_indices[cell->entities(0)[i]] << endl;
+        ufc_cell.entity_indices[0][i] = modified_global_vertex_indices[cell->entities(0)[i]];
+      } 
+  
+      for (std::size_t d = 1; d < D; ++d)
+      {
+        if (topology.have_global_indices(d))
+        {
+          const std::vector<std::size_t>& global_indices = topology.global_indices(d);
+          for (std::size_t i = 0; i < ufc_cell.num_cell_entities[d]; ++i)
+            ufc_cell.entity_indices[d][i] = global_indices[cell->entities(d)[i]];
+        }
+        else
+        {
+          for (std::size_t i = 0; i < ufc_cell.num_cell_entities[d]; ++i)
+            ufc_cell.entity_indices[d][i] = cell->entities(d)[i];
+        }
+      }
+
+      // Check the below two for local vs global
+      ufc_cell.entity_indices[D][0] = cell->index();
+      ufc_cell.index = cell->index();
+    }
 
     // Get standard local dimension
     const std::size_t local_dim = dofmap._ufc_dofmap->local_dimension(ufc_cell);
@@ -503,32 +548,6 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
       }
     }
   }
-
-  // Periodic contribution because the boundary between periodic domains
-  // is not captured by the interior_boundary of a BoundaryMesh
-  /*
-  std::map<std::size_t, boost::unordered_set<std::size_t> >::const_iterator map_it;
-  for (map_it = dofmap._master_processes.begin();
-       map_it != dofmap._master_processes.end(); ++map_it)
-  {
-    std::size_t master_dof = map_it->first;
-    for (boost::unordered_set<std::size_t>::const_iterator sit = map_it->second.begin();
-          sit != map_it->second.end(); ++sit)
-    {
-      if (*sit == MPI::process_number())
-      {
-        if (shared_owned_dofs.find(master_dof) == shared_owned_dofs.end())
-        {
-          shared_owned_dofs.insert(master_dof);
-          dof_vote[master_dof] = rng();
-
-          send_buffer.push_back(master_dof);
-          send_buffer.push_back(dof_vote[master_dof]);
-        }
-      }
-    }
-  }
-  */
 
   // FIXME: The below algortihm can be improved (made more scalable)
   //        by distributing (dof, process) pairs to 'owner' range owner,

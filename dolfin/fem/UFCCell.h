@@ -170,7 +170,6 @@ namespace dolfin
       const MeshTopology& topology = cell.mesh().topology();
       for (std::size_t d = 0; d < D; ++d)
       {
-        //if (use_global_indices && topology.have_global_indices(d))
         if (topology.have_global_indices(d))
         {
           const std::vector<std::size_t>& global_indices = topology.global_indices(d);
@@ -203,11 +202,10 @@ namespace dolfin
 
   private:
 
-    // True if global entity indices should be used
-    //const bool use_global_indices;
-
     // Number of cell vertices
     std::size_t num_vertices;
+
+  public:
 
     // Number of cell entities of dimension d at initialisation
     std::vector<std::size_t> num_cell_entities;
