@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Anders Logg
+// Copyright (C) 2007-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -21,7 +21,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2007-01-17
-// Last changed: 2012-10-04
+// Last changed: 2013-01-10
 
 #include <boost/scoped_ptr.hpp>
 
@@ -238,7 +238,7 @@ void Assembler::assemble_cells(GenericTensor& A,
       continue;
 
     // Tabulate cell tensor
-    integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell);
+    integral->tabulate_tensor(&ufc.A[0], ufc.w(), &ufc.vertex_coordinates[0]);
 
     // Add entries to global tensor. Either store values cell-by-cell
     // (currently only available for functionals)
@@ -328,7 +328,10 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
       dofs[i] = &(dofmaps[i]->cell_dofs(mesh_cell.index()));
 
     // Tabulate exterior facet tensor
-    integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell, local_facet);
+    integral->tabulate_tensor(&ufc.A[0],
+                              ufc.w(),
+                              &ufc.vertex_coordinates[0],
+                              local_facet);
 
     // Add entries to global tensor
     add_to_global_tensor(A, ufc.A, dofs);
@@ -449,8 +452,12 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     }
 
     // Tabulate exterior interior facet tensor on macro element
-    integral->tabulate_tensor(&ufc.macro_A[0], ufc.macro_w(), ufc.cell0, ufc.cell1,
-                              local_facet0, local_facet1);
+    integral->tabulate_tensor(&ufc.macro_A[0],
+                              ufc.macro_w(),
+                              &ufc.vertex_coordinates_0[0],
+                              &ufc.vertex_coordinates_1[0],
+                              local_facet0,
+                              local_facet1);
 
     // Add entries to global tensor
     add_to_global_tensor(A, ufc.macro_A, macro_dof_ptrs);

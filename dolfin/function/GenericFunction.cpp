@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011 Anders Logg
+// Copyright (C) 2009-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-09-28
-// Last changed: 2011-11-14
+// Last changed: 2013-01-27
 
 #include <string>
 #include <dolfin/fem/FiniteElement.h>
@@ -193,6 +193,6 @@ void GenericFunction::restrict_as_ufc_function(double* w,
   dolfin_assert(w);
 
   // Evaluate dofs to get the expansion coefficients
-  element.evaluate_dofs(w, *this, ufc_cell);
+  element.evaluate_dofs(w, *this, ufc_cell.vertex_coordinates, ufc_cell);
 }
 //-----------------------------------------------------------------------------

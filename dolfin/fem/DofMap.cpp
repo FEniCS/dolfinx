@@ -415,7 +415,7 @@ void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
     coords[i] = &(coordinates[i][0]);
 
   // Tabulate coordinates
-  _ufc_dofmap->tabulate_coordinates(&coords[0], ufc_cell);
+  _ufc_dofmap->tabulate_coordinates(&coords[0], &ufc_cell.vertex_coordinates[0]);
 }
 //-----------------------------------------------------------------------------
 void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
@@ -649,7 +649,7 @@ std::string DofMap::str(bool verbose) const
 void DofMap::check_dimensional_consistency(const ufc::dofmap& dofmap,
                                             const Mesh& mesh)
 {
-  // Check geometric dimension
+  // Check geometric dimension4
   if (dofmap.geometric_dimension() != mesh.geometry().dim())
   {
     dolfin_error("DofMap.cpp",

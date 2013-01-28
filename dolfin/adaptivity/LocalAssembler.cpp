@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Anders Logg 2013
+//
 // First added:  2011-01-04
-// Last changed: 2011-03-15
+// Last changed: 2013-01-10
 
 #include <armadillo>
 #include <dolfin/fem/UFC.h>
@@ -82,15 +84,14 @@ void LocalAssembler::assemble_cell(arma::mat& A,
   ufc.update(cell);
 
   // Tabulate cell tensor
-  integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell);
+  integral->tabulate_tensor(&ufc.A[0], ufc.w(), &ufc.vertex_coordinates[0]);
 
   // Stuff a_ufc.A into A
   const std::size_t M = A.n_rows;
   const std::size_t N = A.n_cols;
-  for (std::size_t i=0; i < M; i++)
-    for (std::size_t j=0; j < N; j++)
+  for (std::size_t i = 0; i < M; i++)
+    for (std::size_t j = 0; j < N; j++)
       A(i, j) += ufc.A[N*i + j];
-
 }
 //------------------------------------------------------------------------------
 void LocalAssembler::assemble_exterior_facet(arma::mat& A,
@@ -125,7 +126,8 @@ void LocalAssembler::assemble_exterior_facet(arma::mat& A,
   ufc.update(cell, local_facet);
 
   // Tabulate exterior facet tensor
-  integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell, local_facet);
+  integral->tabulate_tensor(&ufc.A[0], ufc.w(), &ufc.vertex_coordinates[0],
+                            local_facet);
 
   // Stuff a_ufc.A into A
   const std::size_t M = A.n_rows;
@@ -168,7 +170,8 @@ void LocalAssembler::assemble_interior_facet(arma::mat& A,
 
   // Tabulate interior facet tensor on macro element
   integral->tabulate_tensor(&ufc.macro_A[0], ufc.macro_w(),
-                            ufc.cell0, ufc.cell1,
+                            &ufc.vertex_coordinates_0[0],
+                            &ufc.vertex_coordinates_1[0],
                             local_facet, local_facet);
 
   // Stuff upper left quadrant (corresponding to this cell) into A

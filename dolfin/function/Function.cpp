@@ -378,7 +378,7 @@ void Function::eval(Array<double>& values,
   // Compute linear combination
   for (std::size_t i = 0; i < element.space_dimension(); ++i)
   {
-    element.evaluate_basis(i, &basis[0], &x[0], ufc_cell);
+    element.evaluate_basis(i, &basis[0], &x[0], ufc_cell.vertex_coordinates);
     for (std::size_t j = 0; j < value_size_loc; ++j)
       values[j] += coefficients[i]*basis[j];
   }
