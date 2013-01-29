@@ -58,7 +58,7 @@ void LocalAssembler::assemble_cell(arma::mat& A,
                                    const MeshFunction<std::size_t>* domains)
 {
   // Skip if there are no cell integrals
-  if (ufc.form.num_cell_domains() == 0)
+  if (!ufc.form.has_cell_integrals())
     return;
 
   // Extract default cell integral
@@ -101,7 +101,7 @@ void LocalAssembler::assemble_exterior_facet(arma::mat& A,
                                              const MeshFunction<std::size_t>* domains)
 {
   // Skip if there are no exterior facet integrals
-  if (ufc.form.num_exterior_facet_domains() == 0)
+  if (!ufc.form.has_exterior_facet_integrals())
     return;
 
   // Extract default exterior facet integral
@@ -143,7 +143,7 @@ void LocalAssembler::assemble_interior_facet(arma::mat& A,
                                              const MeshFunction<std::size_t>* domains)
 {
   // Skip if there are no interior facet integrals
-  if (ufc.form.num_interior_facet_domains() == 0)
+  if (!ufc.form.has_interior_facet_integrals())
     return;
 
   // Extract default interior facet integral
