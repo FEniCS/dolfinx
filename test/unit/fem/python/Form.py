@@ -150,7 +150,7 @@ class FormTestsOverManifolds(unittest.TestCase):
         self.assertAlmostEqual(a, b)
 
         bottom = compile_subdomains("near(x[1], 0.0)")
-        foo = abs(assemble(inner(grad(u)[0], grad(v)[0])*ds,
+        foo = abs(assemble(inner(grad(u)[0], grad(v)[0])*ds(0),
                            exterior_facet_domains=bottom).array()).sum()
         BV = FunctionSpace(SubMesh(self.mesh1, bottom), "CG", 1)
         bu = TrialFunction(BV)
@@ -176,7 +176,7 @@ class FormTestsOverManifolds(unittest.TestCase):
         self.assertAlmostEqual(a, b)
 
         bottom = compile_subdomains("near(x[1], 0.0)")
-        foo = abs(assemble(inner(grad(u)[0], grad(v)[0])*ds,
+        foo = abs(assemble(inner(grad(u)[0], grad(v)[0])*ds(0),
                            exterior_facet_domains=bottom).array()).sum()
         BV = FunctionSpace(SubMesh(self.mesh1, bottom), "CG", 1)
         bu = TrialFunction(BV)

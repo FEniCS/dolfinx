@@ -100,7 +100,7 @@ void OpenMpAssembler::assemble(GenericTensor& A, const Form& a,
 
   if (a.ufc_form()->has_exterior_facet_integrals())
     assemble_cells_and_exterior_facets(A, a, ufc, cell_domains,
-				       exterior_facet_domains, 0);
+                                       exterior_facet_domains, 0);
   else
     assemble_cells(A, a, ufc, cell_domains, 0);
 
@@ -135,7 +135,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
   const std::size_t form_rank = ufc.form.rank();
 
   // Cell integral
-  const ufc::cell_integral* integral = ufc.cell_integrals[0].get();
+  const ufc::cell_integral* integral = ufc.default_cell_integral.get();
 
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> dofmaps;
@@ -194,7 +194,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
         if (domain < ufc.form.num_cell_domains())
           integral = ufc.cell_integrals[domain].get();
         else
-          continue;
+          integral = ufc.default_cell_integral.get();
       }
 
       // Skip integral if zero
@@ -231,10 +231,10 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
 }
 //-----------------------------------------------------------------------------
 void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
-			     const Form& a, UFC& _ufc,
-			     const MeshFunction<std::size_t>* cell_domains,
-			     const MeshFunction<std::size_t>* exterior_facet_domains,
-           std::vector<double>* values)
+          const Form& a, UFC& _ufc,
+          const MeshFunction<std::size_t>* cell_domains,
+          const MeshFunction<std::size_t>* exterior_facet_domains,
+          std::vector<double>* values)
 {
   Timer timer("Assemble cells and exterior facets");
 
@@ -262,10 +262,8 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   const std::size_t form_rank = ufc.form.rank();
 
   // Cell and facet integrals
-  ufc::cell_integral* cell_integral = 0;
-  if (!ufc.cell_integrals.empty())
-    cell_integral = ufc.cell_integrals[0].get();
-  ufc::exterior_facet_integral* facet_integral = ufc.exterior_facet_integrals[0].get();
+  ufc::cell_integral* cell_integral = ufc.default_cell_integral.get();
+  ufc::exterior_facet_integral* facet_integral = ufc.default_exterior_facet_integral.get();
 
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> dofmaps;
@@ -325,7 +323,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
         if (cell_domain < ufc.form.num_cell_domains())
           cell_integral = ufc.cell_integrals[cell_domain].get();
         else
-          cell_integral = 0;
+          cell_integral = ufc.default_cell_integral.get();
       }
 
       // Update to current cell
@@ -342,7 +340,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 
       // Tabulate cell tensor if we have a cell_integral
       if (cell_integral)
-	      cell_integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell);
+        cell_integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell);
       else
         std::fill(ufc.A.begin(), ufc.A.end(), 0.0);
 
@@ -370,7 +368,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
           if (facet_domain < ufc.form.num_exterior_facet_domains())
             facet_integral = ufc.exterior_facet_integrals[facet_domain].get();
           else
-            continue;
+            facet_integral = ufc.default_exterior_facet_integral.get();
         }
 
         // Skip integral if zero
@@ -458,7 +456,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
   std::vector<std::vector<dolfin::la_index> > macro_dofs(form_rank);
 
   // Interior facet integral
-  const ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0].get();
+  const ufc::interior_facet_integral* integral = ufc.default_interior_facet_integral.get();
 
   // Compute facets and facet - cell connectivity if not already computed
   mesh.init(mesh.topology().dim() - 1);
@@ -526,7 +524,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
         if (domain < ufc.form.num_interior_facet_domains())
           integral = ufc.interior_facet_integrals[domain].get();
         else
-          continue;
+          integral = ufc.default_interior_facet_integral.get();
       }
 
       // Skip integral if zero
