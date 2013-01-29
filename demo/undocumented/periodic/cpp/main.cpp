@@ -77,7 +77,8 @@ int main()
   // Create mesh
   UnitSquareMesh mesh(32, 32);
 
-  return 0;
+  if (MPI::num_processes() > 1)
+    return 0;
 
   // Create periodic boundary condition
   PeriodicBoundary periodic_boundary;

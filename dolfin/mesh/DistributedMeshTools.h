@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Garth N. Wells
+// Copyright (C) 2011-2013 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -16,17 +16,16 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-09-17
-// Last changed:
+// Last changed: 2013-01-29
 
-#ifndef __MESH_DISTRIBUTED_H
-#define __MESH_DISTRIBUTED_H
+#ifndef __MESH_DISTRIBUTED_TOOLS_H
+#define __MESH_DISTRIBUTED_TOOLS_H
 
 #include <map>
 #include <set>
 #include <utility>
 #include <vector>
 #include <boost/array.hpp>
-#include <boost/tuple/tuple.hpp>
 #include <boost/unordered_map.hpp>
 
 namespace dolfin

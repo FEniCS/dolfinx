@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Garth N. Wells
+// Copyright (C) 2011-2013 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -18,16 +18,16 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2011-09-17
-// Last changed: 2011-11-14
+// Last changed: 2013-01-29
 
 #include "dolfin/common/MPI.h"
 #include "dolfin/common/Timer.h"
 #include "dolfin/log/log.h"
-#include "dolfin/mesh/Facet.h"
-#include "dolfin/mesh/Mesh.h"
-#include "dolfin/mesh/MeshEntityIterator.h"
-#include "dolfin/mesh/Vertex.h"
+#include "Facet.h"
+#include "Mesh.h"
+#include "MeshEntityIterator.h"
 #include "MeshFunction.h"
+#include "Vertex.h"
 
 #include "DistributedMeshTools.h"
 
