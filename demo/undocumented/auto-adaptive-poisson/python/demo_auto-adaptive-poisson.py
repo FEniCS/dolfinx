@@ -36,14 +36,14 @@ v = TestFunction(V)
 f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)",
                degree=1)
 g = Expression("sin(5*x[0])", degree=1)
-a = inner(grad(u), grad(v))*dx
-L = f*v*dx + g*v*ds
+a = inner(grad(u), grad(v))*dx()
+L = f*v*dx() + g*v*ds()
 
 # Define function for the solution
 u = Function(V)
 
 # Define goal functional (quantity of interest)
-M = u*dx
+M = u*dx()
 
 # Define error tolerance
 tol = 1.e-5

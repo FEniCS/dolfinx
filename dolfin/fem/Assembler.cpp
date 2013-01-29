@@ -19,9 +19,10 @@
 // Modified by Ola Skavhaug 2007-2009
 // Modified by Kent-Andre Mardal 2008
 // Modified by Joachim B Haga 2012
+// Modified by Martin Alnaes 2013
 //
 // First added:  2007-01-17
-// Last changed: 2012-10-04
+// Last changed: 2013-01-18
 
 #include <boost/scoped_ptr.hpp>
 
@@ -53,35 +54,6 @@ using namespace dolfin;
 void Assembler::assemble(GenericTensor& A, const Form& a)
 {
   assemble(A, a, 0, 0, 0);
-}
-//-----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A, const Form& a,
-                         const SubDomain& sub_domain)
-{
-  dolfin_assert(a.ufc_form());
-
-  // Extract mesh
-  const Mesh& mesh = a.mesh();
-
-  // Extract cell domains
-  boost::scoped_ptr<MeshFunction<std::size_t> > cell_domains;
-  if (a.ufc_form()->num_cell_domains() > 0)
-  {
-    cell_domains.reset(new MeshFunction<std::size_t>(mesh, mesh.topology().dim(), 1));
-    sub_domain.mark(*cell_domains, 0);
-  }
-
-  // Extract facet domains
-  boost::scoped_ptr<MeshFunction<std::size_t> > facet_domains;
-  if (a.ufc_form()->num_exterior_facet_domains() > 0 ||
-      a.ufc_form()->num_interior_facet_domains() > 0)
-  {
-    facet_domains.reset(new MeshFunction<std::size_t>(mesh, mesh.topology().dim() - 1, 1));
-    sub_domain.mark(*facet_domains, 0);
-  }
-
-  // Assemble
-  assemble(A, a, cell_domains.get(), facet_domains.get(), facet_domains.get());
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A,
@@ -201,8 +173,8 @@ void Assembler::assemble_cells(GenericTensor& A,
   std::vector<const std::vector<dolfin::la_index>* > dofs(form_rank);
 
   // Cell integral
-  dolfin_assert(!ufc.cell_integrals.empty());
-  ufc::cell_integral* integral = ufc.cell_integrals[0].get();
+  ufc::cell_integral* integral = ufc.default_cell_integral.get();
+  dolfin_assert(integral || !ufc.cell_integrals.empty());
 
   // Assemble over cells
   Progress p(AssemblerBase::progress_message(A.rank(), "cells"), mesh.num_cells());
@@ -215,7 +187,7 @@ void Assembler::assemble_cells(GenericTensor& A,
       if (domain < ufc.form.num_cell_domains())
         integral = ufc.cell_integrals[domain].get();
       else
-        continue;
+        integral = ufc.default_cell_integral.get();
     }
 
     // Skip if no integral on current domain
@@ -279,9 +251,8 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   std::vector<const std::vector<dolfin::la_index>* > dofs(form_rank);
 
   // Exterior facet integral
-  dolfin_assert(!ufc.exterior_facet_integrals.empty());
-  const ufc::exterior_facet_integral*
-    integral = ufc.exterior_facet_integrals[0].get();
+  const ufc::exterior_facet_integral* integral = ufc.default_exterior_facet_integral.get();
+  dolfin_assert(integral || !ufc.exterior_facet_integrals.empty());
 
   // Compute facets and facet - cell connectivity if not already computed
   const std::size_t D = mesh.topology().dim();
@@ -308,7 +279,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
       if (domain < ufc.form.num_exterior_facet_domains())
         integral = ufc.exterior_facet_integrals[domain].get();
       else
-        continue;
+        integral = ufc.default_exterior_facet_integral.get();
     }
 
     // Skip integral if zero
@@ -374,9 +345,8 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   }
 
   // Interior facet integral
-  dolfin_assert(!ufc.interior_facet_integrals.empty());
-  const ufc::interior_facet_integral*
-    integral = ufc.interior_facet_integrals[0].get();
+  const ufc::interior_facet_integral* integral = ufc.default_interior_facet_integral.get();
+  dolfin_assert(integral || !ufc.interior_facet_integrals.empty());
 
   // Compute facets and facet - cell connectivity if not already computed
   const std::size_t D = mesh.topology().dim();
@@ -414,7 +384,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
       if (domain < ufc.form.num_interior_facet_domains())
         integral = ufc.interior_facet_integrals[domain].get();
       else
-        continue;
+        integral = ufc.default_interior_facet_integral.get();
     }
 
     // Skip integral if zero
@@ -451,7 +421,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
                 macro_dofs[i].begin() + cell_dofs0.size());
     }
 
-    // Tabulate exterior interior facet tensor on macro element
+    // Tabulate interior facet tensor on macro element
     integral->tabulate_tensor(&ufc.macro_A[0], ufc.macro_w(), ufc.cell0, ufc.cell1,
                               local_facet0, local_facet1);
 

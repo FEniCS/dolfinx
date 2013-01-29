@@ -180,28 +180,85 @@ class Assembly(unittest.TestCase):
         s0 = S0()
         f0.mark_facets(mesh, 0)
         f1.mark_facets(mesh, 1)
-        f2.mark_facets(mesh, 2)
+        f2.mark_facets(mesh, 3) # NB! 3, to leave a gap
         s0.mark_cells(mesh, 0)
 
         # Assemble a form on marked subdomains
-        M0 = Constant(1.0)*dx(0) + \
-             Constant(2.0)*ds(0) + Constant(3.0)*ds(1) + Constant(4.0)*ds(2)
+        M0 = (Constant(1.0)*dx(0)
+              + Constant(2.0)*ds(0)
+              + Constant(0.5)*ds(1)
+              + Constant(1.5)*ds(3)
+              + Constant(2.5)*ds((1,3))
+              + Constant(1.0)*ds())
         m0 = assemble(M0, mesh=mesh)
 
         # Assemble a form on unmarked subdomains (should be zero)
-        M1 = Constant(1.0)*dx(1) + Constant(2.0)*ds(3)
+        M1 = Constant(1.0)*dx(1) + Constant(2.0)*ds(4)
         m1 = assemble(M1, mesh=mesh)
 
         # Check values
-        self.assertAlmostEqual(m0, 9.5)
+        self.assertAlmostEqual(m0, 9.5+6.0)
         self.assertAlmostEqual(m1, 0.0)
 
         # Assemble form  (multi-threaded)
         if MPI.num_processes() == 1:
             parameters["num_threads"] = 4
-            self.assertAlmostEqual(assemble(M0, mesh=mesh), 9.5)
+            self.assertAlmostEqual(assemble(M0, mesh=mesh), 9.5+6.0)
             self.assertAlmostEqual(assemble(M1, mesh=mesh), 0.0)
             parameters["num_threads"] = 0
+
+    def test_subdomain_and_fulldomain_assembly_meshdomains(self):
+        "Test assembly over subdomains AND the full domain with markers stored as part of the mesh."
+
+        # Create a mesh of the unit cube
+        mesh = UnitCubeMesh(4, 4, 4)
+
+        # Define subdomains for 3 faces of the unit cube
+        class F0(SubDomain):
+            def inside(self, x, inside):
+                return near(x[0], 0.0)
+        class F1(SubDomain):
+            def inside(self, x, inside):
+                return near(x[1], 0.0)
+        class F2(SubDomain):
+            def inside(self, x, inside):
+                return near(x[2], 0.0)
+
+        # Define subdomains for 3 parts of the unit cube
+        class S0(SubDomain):
+            def inside(self, x, inside):
+                return x[0] > 0.25
+        class S1(SubDomain):
+            def inside(self, x, inside):
+                return x[0] > 0.5
+        class S2(SubDomain):
+            def inside(self, x, inside):
+                return x[0] > 0.75
+
+        # Mark mesh
+        f0 = F0()
+        f1 = F1()
+        f2 = F2()
+        f0.mark_facets(mesh, 0)
+        f1.mark_facets(mesh, 1)
+        f2.mark_facets(mesh, 3) # NB! 3, to leave a gap
+
+        s0 = S0()
+        s1 = S1()
+        s2 = S2()
+        s0.mark_cells(mesh, 0)
+        s1.mark_cells(mesh, 1)
+        s2.mark_cells(mesh, 3) # NB! 3, to leave a gap
+
+        # Assemble forms on subdomains and full domain and compare
+        krange = list(range(5))
+        for dmu in (dx, ds):
+            full = assemble(Constant(3.0)*dmu(), mesh=mesh)
+            subplusfull = [assemble(Constant(3.0)*dmu() + Constant(1.0)*dmu(k), mesh=mesh) for k in krange]
+            sub = [assemble(Constant(1.0)*dmu(k), mesh=mesh) for k in krange]
+            for k in krange:
+                #print sub[k] + full, subplusfull[k]
+                self.assertAlmostEqual(sub[k] + full, subplusfull[k])
 
     def test_subdomain_assembly_form_1(self):
         "Test assembly over subdomains with markers stored as part of form"

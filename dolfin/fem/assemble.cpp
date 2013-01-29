@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Anders Logg
+// Copyright (C) 2007-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,9 +18,10 @@
 // Modified by Garth N. Wells, 2008.
 // Modified by Johan Hake, 2009.
 // Modified by Joachim B. Haga, 2012.
+// Modified by Martin S. Alnaes, 2013.
 //
 // First added:  2007-01-17
-// Last changed: 2012-02-01
+// Last changed: 2013-01-29
 
 #include <dolfin/la/Scalar.h>
 #include "Form.h"
@@ -45,22 +46,6 @@ void dolfin::assemble(GenericTensor& A,
   assembler.finalize_tensor = finalize_tensor;
   assembler.keep_diagonal = keep_diagonal;
   assembler.assemble(A, a);
-}
-//-----------------------------------------------------------------------------
-void dolfin::assemble(GenericTensor& A,
-                      const Form& a,
-                      const SubDomain& sub_domain,
-                      bool reset_sparsity,
-                      bool add_values,
-                      bool finalize_tensor,
-                      bool keep_diagonal)
-{
-  Assembler assembler;
-  assembler.reset_sparsity = reset_sparsity;
-  assembler.add_values = add_values;
-  assembler.finalize_tensor = finalize_tensor;
-  assembler.keep_diagonal = keep_diagonal;
-  assembler.assemble(A, a, sub_domain);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble(GenericTensor& A,
@@ -220,28 +205,6 @@ double dolfin::assemble(const Form& a,
 
   Scalar s;
   assembler.assemble(s, a);
-  return s;
-}
-//-----------------------------------------------------------------------------
-double dolfin::assemble(const Form& a,
-                        const SubDomain& sub_domain,
-                        bool reset_sparsity,
-                        bool add_values,
-                        bool finalize_tensor)
-{
-  if (a.rank() != 0)
-  {
-    dolfin_error("assemble.cpp",
-                 "assemble form",
-                 "Expecting a scalar form but rank is %d",
-                 a.rank());
-  }
-  Assembler assembler;
-  assembler.reset_sparsity = reset_sparsity;
-  assembler.add_values = add_values;
-  assembler.finalize_tensor = finalize_tensor;
-  Scalar s;
-  assembler.assemble(s, a, sub_domain);
   return s;
 }
 //-----------------------------------------------------------------------------
