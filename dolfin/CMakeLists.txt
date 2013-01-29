@@ -205,25 +205,16 @@ endif()
 # Qt4
 if (DOLFIN_ENABLE_QT AND QT_FOUND)
   include(${QT_USE_FILE})
-
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_QT4")
   list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${QT_INCLUDE_DIR})
-
-  # Loop over libs and get full path
-  foreach (lib ${QT_LIBRARIES})
-    find_library(QT_LIB_${lib} ${lib} HINTS ${QT_LIBRARY_DIRS})
-    if (QT_LIB_${lib})
-      list(APPEND DOLFIN_QT_LIBRARIES ${QT_LIB_${lib}})
-    endif()
-  endforeach()
-
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${DOLFIN_QT_LIBRARIES})
+  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${QT_LIBRARIES})
 endif()
 
 # VTK
 if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
   include(${VTK_USE_FILE})
 
+  # The Macports VTK library includes some deprecated gcc code
   if (APPLE)
     set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} -Wno-deprecated")
   endif()
@@ -267,7 +258,7 @@ if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
       list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_QVTK")
       list(APPEND DOLFIN_VTK_LIBRARIES ${VTK_LIB_QVTK})
     else()
-      message(WARNING "QVTK not found, disabling QT for plotting")
+      message(STATUS "QVTK not found, disabling QT for plotting")
     endif()
   endif()
 
@@ -406,10 +397,13 @@ configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-config.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/dolfin-config.cmake @ONLY)
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-config-version.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/dolfin-config-version.cmake @ONLY)
+configure_file(${DOLFIN_CMAKE_DIR}/templates/UseDOLFIN.cmake.in
+  ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake @ONLY)
 install(
   FILES
     ${CMAKE_BINARY_DIR}/dolfin/dolfin-config.cmake
     ${CMAKE_BINARY_DIR}/dolfin/dolfin-config-version.cmake
+    ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake
   DESTINATION ${DOLFIN_SHARE_DIR}/cmake
   COMPONENT Development
   )

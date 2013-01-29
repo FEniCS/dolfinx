@@ -33,7 +33,7 @@ LinearOperator::LinearOperator(const GenericVector& x,
   dolfin_assert(_A);
 
   // Initialize implementation
-  _A->init(x, y, this);
+  _A->init_layout(x, y, this);
 }
 //-----------------------------------------------------------------------------
 LinearOperator::LinearOperator()

@@ -95,10 +95,10 @@ void OpenMpAssembler::assemble(GenericTensor& A, const Form& a,
 
   // FIXME: The below selections should be made robust
 
-  if (a.ufc_form()->num_interior_facet_domains() != 0)
+  if (a.ufc_form()->has_interior_facet_integrals())
     assemble_interior_facets(A, a, ufc, interior_facet_domains, 0);
 
-  if (a.ufc_form()->num_exterior_facet_domains() != 0)
+  if (a.ufc_form()->has_exterior_facet_integrals())
     assemble_cells_and_exterior_facets(A, a, ufc, cell_domains,
 				       exterior_facet_domains, 0);
   else
@@ -115,7 +115,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
                                      std::vector<double>* values)
 {
   // Skip assembly if there are no cell integrals
-  if (_ufc.form.num_cell_domains() == 0)
+  if (!_ufc.form.has_cell_integrals())
     return;
 
   Timer timer("Assemble cells");
@@ -420,7 +420,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
   dolfin_assert(!values);
 
   // Skip assembly if there are no interior facet integrals
-  if (_ufc.form.num_interior_facet_domains() == 0)
+  if (!_ufc.form.has_interior_facet_integrals())
     return;
 
   Timer timer("Assemble interior facets");

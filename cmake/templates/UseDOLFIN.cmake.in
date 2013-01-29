@@ -1,0 +1,26 @@
+#
+# This file sets up include directories, link directories, and
+# compiler settings for a project to use DOLFIN. It should not be
+# included directly, but rather through the DOLFIN_USE_FILE setting
+# obtained from dolfin-config.cmake.
+#
+
+if (NOT DOLFIN_USE_FILE_INCLUDED)
+  set(DOLFIN_USE_FILE_INCLUDED 1)
+
+  # Add compiler definitions needed to use DOLFIN
+  add_definitions(${DOLFIN_CXX_DEFINITIONS})
+
+  # Add compiler flags needed to use DOLFIN
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${DOLFIN_LINK_FLAGS}")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${DOLFIN_LINK_FLAGS}")
+  set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} ${DOLFIN_LINK_FLAGS}")
+
+  # Add include directories needed to use DOLFIN
+  include_directories(${DOLFIN_INCLUDE_DIRS})
+  include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
+
+  # Add link directories needed to use DOLFIN
+  link_directories(${DOLFIN_3RD_PARTY_LIBRARY_DIRS})
+endif()

@@ -64,7 +64,7 @@ if (QT_FOUND AND VTK_FOUND AND QVTK_ENABLED)
 
 else()
 
-  message(WARNING "QT not found, or QT/VTK not enabled in DOLFIN. Not building " ${PROJECT_NAME})
+  message(STATUS "QT not found, or QT/VTK not enabled in DOLFIN. Not building " ${PROJECT_NAME})
 
 endif()
 

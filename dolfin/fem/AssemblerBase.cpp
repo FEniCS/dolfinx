@@ -90,9 +90,9 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
       GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
       SparsityPatternBuilder::build(pattern,
                                 a.mesh(), dofmaps, periodic_master_slave_dofs,
-                                a.ufc_form()->num_cell_domains(),
-                                a.ufc_form()->num_interior_facet_domains(),
-                                a.ufc_form()->num_exterior_facet_domains(),
+                                a.ufc_form()->has_cell_integrals(),
+                                a.ufc_form()->has_interior_facet_integrals(),
+                                a.ufc_form()->has_exterior_facet_integrals(),
                                 keep_diagonal);
     }
     t0.stop();

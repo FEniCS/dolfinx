@@ -32,6 +32,9 @@ using namespace dolfin;
 
 int main()
 {
+  not_working_in_parallel("Periodoc boundary conditions");
+
+
   // Source term
   class Source : public Expression
   {

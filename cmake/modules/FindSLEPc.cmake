@@ -55,6 +55,7 @@ set(slepc_dir_locations "")
 list(APPEND slepc_dir_locations "/usr/lib/slepcdir/3.2")
 list(APPEND slepc_dir_locations "/usr/lib/slepcdir/3.1")
 list(APPEND slepc_dir_locations "/usr/lib/slepcdir/3.0.0")
+list(APPEND slepc_dir_locations "/opt/local/lib/petsc")    # Macports
 list(APPEND slepc_dir_locations "/usr/local/lib/slepc")
 list(APPEND slepc_dir_locations "$ENV{HOME}/slepc")
 
