@@ -64,7 +64,8 @@ int main()
     // Left boundary is "target domain" G
     bool inside(const Array<double>& x, bool on_boundary) const
     {
-      return (std::abs(x[0]) < DOLFIN_EPS) && on_boundary;
+      //return (std::abs(x[0]) < DOLFIN_EPS) && on_boundary;
+      return (std::abs(x[0]) < DOLFIN_EPS);
     }
 
     // Map right boundary (H) to left boundary (G)
