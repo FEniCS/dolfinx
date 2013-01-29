@@ -56,35 +56,6 @@ void Assembler::assemble(GenericTensor& A, const Form& a)
   assemble(A, a, 0, 0, 0);
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A, const Form& a,
-                         const SubDomain& sub_domain)
-{
-  dolfin_assert(a.ufc_form());
-
-  // Extract mesh
-  const Mesh& mesh = a.mesh();
-
-  // Extract cell domains
-  boost::scoped_ptr<MeshFunction<std::size_t> > cell_domains;
-  if (a.ufc_form()->num_cell_domains() > 0)
-  {
-    cell_domains.reset(new MeshFunction<std::size_t>(mesh, mesh.topology().dim(), 1));
-    sub_domain.mark(*cell_domains, 0);
-  }
-
-  // Extract facet domains
-  boost::scoped_ptr<MeshFunction<std::size_t> > facet_domains;
-  if (a.ufc_form()->num_exterior_facet_domains() > 0 ||
-      a.ufc_form()->num_interior_facet_domains() > 0)
-  {
-    facet_domains.reset(new MeshFunction<std::size_t>(mesh, mesh.topology().dim() - 1, 1));
-    sub_domain.mark(*facet_domains, 0);
-  }
-
-  // Assemble
-  assemble(A, a, cell_domains.get(), facet_domains.get(), facet_domains.get());
-}
-//-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A,
                          const Form& a,
                          const MeshFunction<std::size_t>* cell_domains,

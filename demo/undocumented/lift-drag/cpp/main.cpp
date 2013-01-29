@@ -62,8 +62,9 @@ int main()
 
   // Assemble functionals over sub domain
   Fish fish;
-  const double lift = assemble(L, fish);
-  const double drag = assemble(D, fish);
+  fish.mark_facets(mesh, 1);
+  const double lift = assemble(L);
+  const double drag = assemble(D);
 
   info("Lift: %f", lift);
   info("Drag: %f", drag);
