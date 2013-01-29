@@ -29,6 +29,11 @@ from dolfin import *
 
 class Assembly(unittest.TestCase):
 
+    def test_cell_size_assembly_1D(self):
+        mesh = UnitIntervalMesh(10)
+        self.assertAlmostEqual(assemble(CellSize(mesh)*dx, mesh=mesh), 0.1, 12)
+        self.assertAlmostEqual(assemble(CellVolume(mesh)*dx, mesh=mesh), 0.1, 12)
+
     def test_cell_assembly_1D(self):
 
         mesh = UnitIntervalMesh(48)
