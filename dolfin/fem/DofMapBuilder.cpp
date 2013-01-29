@@ -310,7 +310,7 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
   // Check for periodic constraints
   const bool periodic = MPI::sum(mesh.periodic_vertex_map.size()) > 0;
 
-  // Modified global vertex number (used only for periodic bcs)
+  // Modified global enity indices (used only for periodic bcs)
   std::vector<std::vector<std::size_t> > global_entity_indices(mesh.topology().dim() + 1);
 
   // Generate and number required mesh entities
@@ -323,7 +323,7 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
     num_global_mesh_entities[0] = mesh.size_global(0);
     for (std::size_t d = 1; d <= D; ++d)
     {
-      if (dofmap._ufc_dofmap->needs_mesh_entities(d) || (distributed && d == (D - 1)))
+      if (dofmap._ufc_dofmap->needs_mesh_entities(d))
       {
         // Initialise local (this process) entities
         mesh.init(d);
@@ -354,7 +354,7 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
     num_global_mesh_entities[0] = num_vertices;
     for (std::size_t d = 1; d <= D; ++d)
     {
-      if (dofmap._ufc_dofmap->needs_mesh_entities(d) || (distributed && d == (D - 1)))
+      if (dofmap._ufc_dofmap->needs_mesh_entities(d))
       {
         //cout << "Init dim d = " << d << endl;
 
