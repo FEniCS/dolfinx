@@ -67,17 +67,35 @@ void UFC::init(const Form& form)
   // Create cell integrals
   default_cell_integral = boost::shared_ptr<ufc::cell_integral>(this->form.create_default_cell_integral());
   for (std::size_t i = 0; i < this->form.num_cell_domains(); i++)
-    cell_integrals.push_back(boost::shared_ptr<ufc::cell_integral>(this->form.create_cell_integral(i)));
+  {
+    boost::shared_ptr<ufc::cell_integral> integral(this->form.create_cell_integral(i));
+    if (integral.get())
+      cell_integrals.push_back(integral);
+    else
+      cell_integrals.push_back(default_cell_integral);
+  }
 
   // Create exterior facet integrals
   default_exterior_facet_integral = boost::shared_ptr<ufc::exterior_facet_integral>(this->form.create_default_exterior_facet_integral());
   for (std::size_t i = 0; i < this->form.num_exterior_facet_domains(); i++)
-    exterior_facet_integrals.push_back(boost::shared_ptr<ufc::exterior_facet_integral>(this->form.create_exterior_facet_integral(i)));
+  {
+    boost::shared_ptr<ufc::exterior_facet_integral> integral(this->form.create_exterior_facet_integral(i));
+    if (integral.get())
+      exterior_facet_integrals.push_back(integral);
+    else
+      exterior_facet_integrals.push_back(default_exterior_facet_integral);
+  }
 
   // Create interior facet integrals
   default_interior_facet_integral = boost::shared_ptr<ufc::interior_facet_integral>(this->form.create_default_interior_facet_integral());
   for (std::size_t i = 0; i < this->form.num_interior_facet_domains(); i++)
-    interior_facet_integrals.push_back(boost::shared_ptr<ufc::interior_facet_integral>(this->form.create_interior_facet_integral(i)));
+  {
+    boost::shared_ptr<ufc::interior_facet_integral> integral(this->form.create_interior_facet_integral(i));
+    if (integral.get())
+      interior_facet_integrals.push_back(integral);
+    else
+      interior_facet_integrals.push_back(default_interior_facet_integral);
+  }
 
   // Get maximum local dimensions
   std::vector<std::size_t> max_local_dimension;
