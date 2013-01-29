@@ -390,12 +390,12 @@ class TestGeometricQuantitiesOverManifolds(unittest.TestCase):
         r = ufl.Cell("interval", geometric_dimension=2).circumradius
         a = r*dx
         b = assemble(a, mesh=self.bottom1)
-        self.assertAlmostEqual(b, 1.0/self.m)
+        self.assertAlmostEqual(b, 0.5*(1.0/self.m))
 
         r = ufl.Cell("interval", geometric_dimension=3).circumradius
         a = r*dx
         b = assemble(a, mesh=self.bottom3)
-        self.assertAlmostEqual(b, 1.0/self.m)
+        self.assertAlmostEqual(b, 0.5*(1.0/self.m))
 
         r = ufl.Cell("triangle", geometric_dimension=2).circumradius
         a = r*dx
