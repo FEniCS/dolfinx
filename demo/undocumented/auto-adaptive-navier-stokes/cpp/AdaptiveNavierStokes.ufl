@@ -41,8 +41,8 @@ n = V.cell().n
 
 # Define variational form
 L = (nu*inner(grad(u), grad(v)) - p*div(v) + div(u)*q
-     + inner(v, grad(u)*u))*dx \
-     + p0*dot(v, n)*ds
+     + inner(v, grad(u)*u))*dx() \
+     + p0*dot(v, n)*ds()
 
 # Define goal functional
 M = w[0]*ds(0)

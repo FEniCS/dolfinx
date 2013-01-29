@@ -41,8 +41,8 @@ class ErrorControlTest(unittest.TestCase):
         v = TestFunction(V)
         f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
         g = Expression("sin(5*x[0])", degree=1)
-        a = inner(grad(u), grad(v))*dx
-        L = f*v*dx + g*v*ds
+        a = inner(grad(u), grad(v))*dx()
+        L = f*v*dx() + g*v*ds()
 
         # Define solution function
         u = Function(V)
@@ -51,7 +51,7 @@ class ErrorControlTest(unittest.TestCase):
         problem = LinearVariationalProblem(a, L, u, bc)
 
         # Define goal
-        M = u*dx
+        M = u*dx()
         self.goal = M
 
         # Generate ErrorControl object
