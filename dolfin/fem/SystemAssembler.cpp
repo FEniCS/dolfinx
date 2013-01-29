@@ -247,14 +247,12 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
     not_working_in_parallel("System assembly over interior facets");
 
     // Facet-wise assembly does not support subdomains
-    // FIXME: MSA says: I don't understand this, so I have no idea
-    //        if this will break with the introduction of a default integral
-    if (A_ufc.form.num_cell_domains() > 1 ||
-        b_ufc.form.num_cell_domains() > 1 ||
-        A_ufc.form.num_exterior_facet_domains() > 1 ||
-        b_ufc.form.num_exterior_facet_domains() > 1 ||
-        A_ufc.form.num_interior_facet_domains() > 1 ||
-        b_ufc.form.num_interior_facet_domains() > 1)
+    if (A_ufc.form.num_cell_domains() > 0 ||
+        b_ufc.form.num_cell_domains() > 0 ||
+        A_ufc.form.num_exterior_facet_domains() > 0 ||
+        b_ufc.form.num_exterior_facet_domains() > 0 ||
+        A_ufc.form.num_interior_facet_domains() > 0 ||
+        b_ufc.form.num_interior_facet_domains() > 0)
     {
       dolfin_error("SystemAssembler.cpp",
                    "assemble system",
