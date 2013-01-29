@@ -1,4 +1,4 @@
-# Copyright (C) 2011 Marie E. Rognes
+# Copyright (C) 2011-2013 Marie E. Rognes, Martin S. Alnaes
 #
 # This file is part of DOLFIN.
 #
@@ -16,24 +16,28 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2011-11-09
-# Last changed: 2012-08-06
+# Last changed: 2013-01-29
 
 # Begin demo
+
+#
+# NB! This demo is work in progress and will be updated as we get further in the multidomain features implementation.
+#
 
 from dolfin import *
 
 # Create classes for defining parts of the interior of the domain
 class Left(SubDomain):
     def inside(self, x, on_boundary):
-        return (x[0] < 0.3)
+        return (x[0] <= 0.25+DOLFIN_EPS)
 
 class Mid(SubDomain):
     def inside(self, x, on_boundary):
-        return (x[0] >= 0.3) and (x[0] <= 0.7)
+        return (x[0] >= 0.375-DOLFIN_EPS) and (x[0] <= 0.625+DOLFIN_EPS)
 
 class Right(SubDomain):
     def inside(self, x, on_boundary):
-        return (x[0] > 0.7)
+        return (x[0] >= 0.75-DOLFIN_EPS)
 
 # Initialize sub-domain instances
 left = Left()
@@ -65,9 +69,12 @@ v = TestFunction(V)
 # e.g. passing mesh to Domain, or making Mesh a subclass of Domain,
 # or associating domains with Domain instead of the measure.
 D = Domain(cell, "MyDomain")
-DL = Region(D, (1,2), "LeftAndMid")
-DM = Region(D, (2,), "Mid")
-DR = Region(D, (2,3), "RightAndMid")
+if 1: # Two alternative specifications
+    DL = Region(D, (1,2), "LeftAndMid")
+    DM = Region(D, (2,), "Mid")
+    DR = Region(D, (2,3), "RightAndMid")
+else:
+    DL, DM, DR = (1,2), (2,), (2,3)
 
 # Define new measures associated with the interior domains
 dx = Measure("dx")[domains]
@@ -81,7 +88,7 @@ u = Function(V)
 solve(a == L, u)
 
 # Evaluate integral of u over each subdomain and region
-regions = (0, 1, 2, 3, DR, DL, DM, D)
+regions = (0, 1, 2, 3, (1,2), DL, DM, (2,3), DR, D)
 for R in regions:
     m2 = u*dx(R)
     v2 = assemble(m2)
@@ -89,6 +96,7 @@ for R in regions:
 
 # Plot solution and gradient
 if 1:
+    plot(domains, 'Domains')
     plot(u, title="u")
     plot(grad(u), title="Projected grad(u)")
     interactive()
