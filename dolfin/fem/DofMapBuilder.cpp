@@ -141,15 +141,15 @@ void DofMapBuilder::build_sub_map(DofMap& sub_dofmap,
     dof_holder.resize(sub_dofmap._ufc_dofmap->local_dimension(ufc_cell));
 
     // Tabulate sub-dofs on cell (using UFC map)
-    sub_dofmap._ufc_dofmap->tabulate_dofs(&dof_holder[0], 
-                                          num_global_mesh_entities, 
+    sub_dofmap._ufc_dofmap->tabulate_dofs(&dof_holder[0],
+                                          num_global_mesh_entities,
                                           ufc_cell);
 
     // Add UFC offset
     for (unsigned int i = 0; i < dof_holder.size(); i++)
       dof_holder[i] += offset;
 
-    std::copy(dof_holder.begin(), dof_holder.end(), 
+    std::copy(dof_holder.begin(), dof_holder.end(),
               sub_dofmap._dofmap[cell_index].begin());
   }
 
@@ -207,7 +207,7 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
 {
   // Mark shared vertices
   std::vector<bool> shared_vertex(mesh.num_vertices(), false);
-  //const std::map<std::size_t, std::set<std::size_t> > shared_entities 
+  //const std::map<std::size_t, std::set<std::size_t> > shared_entities
   //  = mesh.topology().shared_entities(0);
   //std::map<std::size_t, std::set<std::size_t> >::const_iterator shared_entity;
   //for (shared_entity = shared_entities.begin(); shared_entity != shared_entities.end(); ++shared_entity)
@@ -246,10 +246,10 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
       modified_global_indices[vertex->index()] = new_index++;
   }
 
-  // Send number of owned entities to compute offeset 
+  // Send number of owned entities to compute offeset
   std::size_t offset = MPI::global_offset(new_index, true);
 
-  // Add process offset 
+  // Add process offset
   for (std::size_t i = 0; i < modified_global_indices.size(); ++i)
     modified_global_indices[i] += offset;
 
@@ -315,6 +315,7 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
   {
     if (dofmap._ufc_dofmap->needs_mesh_entities(d) || (distributed && d == (D - 1)))
     {
+      // Initialise local (this process) entities
       mesh.init(d);
       if (distributed)
         DistributedMeshTools::number_entities(mesh, d);
@@ -333,21 +334,27 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
   std::vector<std::size_t> ufc_dofs;
 
   // Build new vertex numbers
-  const std::map<std::size_t, std::pair<std::size_t, std::size_t> >& 
+  /*
+  const std::map<std::size_t, std::pair<std::size_t, std::size_t> >&
     slave_to_master_vertices = mesh.periodic_vertex_map;
-  std::vector<std::size_t> modified_global_vertex_indices;
-
   cout << "Num slave vertices: " << slave_to_master_vertices.size() << endl;
 
+  // Compute global vertex indices
+  std::vector<std::size_t> modified_global_vertex_indices;
   const std::size_t num_vertices = build_constrained_vertex_indices(mesh,
         slave_to_master_vertices, modified_global_vertex_indices);
   cout << "Num vertices: " << num_vertices << ", " << mesh.num_vertices() << endl;
+  */
+
+  std::vector<std::size_t> modified_global_vertex_indices(mesh.num_vertices());
+  for (VertexIterator v(mesh); !v.end(); ++v)
+    modified_global_vertex_indices[v->index()] = v->global_index();
 
   // Store number of global entities
   std::vector<std::size_t> num_global_mesh_entities(mesh.topology().dim() + 1);
   for (std::size_t d = 0; d < num_global_mesh_entities.size(); d++)
     num_global_mesh_entities[d] = mesh.size_global(d);
-  num_global_mesh_entities[0] -= slave_to_master_vertices.size();
+  //num_global_mesh_entities[0] -= slave_to_master_vertices.size();
 
   // Build dofmap from ufc::dofmap
   UFCCell ufc_cell(mesh);
@@ -357,7 +364,6 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
     if (restriction && !restriction->contains(*cell))
       continue;
 
-
     // Update UFC cell
     //ufc_cell.update(*cell);
     {
@@ -366,11 +372,11 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
       const MeshTopology& topology = cell->mesh().topology();
       for (std::size_t i = 0; i < ufc_cell.num_cell_entities[0]; ++i)
       {
-        cout << "dofs: " << cell->entities(0)[i] << ", " 
-            <<  modified_global_vertex_indices[cell->entities(0)[i]] << endl;
+        //cout << "dofs: " << cell->entities(0)[i] << ", "
+        //    <<  modified_global_vertex_indices[cell->entities(0)[i]] << endl;
         ufc_cell.entity_indices[0][i] = modified_global_vertex_indices[cell->entities(0)[i]];
-      } 
-  
+      }
+
       for (std::size_t d = 1; d < D; ++d)
       {
         if (topology.have_global_indices(d))

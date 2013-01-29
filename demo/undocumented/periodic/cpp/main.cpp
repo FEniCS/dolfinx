@@ -77,6 +77,8 @@ int main()
   // Create mesh
   UnitSquareMesh mesh(32, 32);
 
+  return 0;
+
   // Create periodic boundary condition
   PeriodicBoundary periodic_boundary;
 
@@ -94,7 +96,7 @@ int main()
         << ", " << it->second.first << ", " <<  it->second.second << endl;
     if (!parallel)
     {
-      const Vertex v0(mesh, it->first), v1(mesh, it->second.second); 
+      const Vertex v0(mesh, it->first), v1(mesh, it->second.second);
       cout << "  " << v0.point().str() << endl;
       cout << "  " << v1.point().str() << endl;
     }
