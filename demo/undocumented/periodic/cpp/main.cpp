@@ -109,7 +109,7 @@ int main()
   MeshFunction<std::size_t> master_slave_entities(mesh, dim, 0);
   periodic_boundary.mark(master_slave_entities, 1);
   std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator it;
-  for (it = test.begin(); it != test.end(); ++it)
+  for (it = periodic_vertex_pairs.begin(); it != periodic_vertex_pairs.end(); ++it)
     master_slave_entities[it->first] = 2;
   File file("markers.pvd");
   file << master_slave_entities;
