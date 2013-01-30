@@ -365,11 +365,13 @@ boost::uint8_t VTKWriter::vtk_cell_type(const Mesh& mesh, std::size_t cell_dim)
     cell_type = mesh.type().cell_type();
   else if (mesh.topology().dim() - 1 == cell_dim)
     cell_type = mesh.type().facet_type();
+  else if (cell_dim == 0)
+    cell_type = CellType::point;
   else
   {
     dolfin_error("VTKWriter.cpp",
                  "write data to VTK file",
-                 "Can only handle cells and cell facets with VTK output for now");
+                 "Can only handle cells, cell facets or points with VTK output for now");
   }
 
   // Determine VTK cell type
@@ -380,6 +382,8 @@ boost::uint8_t VTKWriter::vtk_cell_type(const Mesh& mesh, std::size_t cell_dim)
     vtk_cell_type = 5;
   else if (cell_type == CellType::interval)
     vtk_cell_type = 3;
+  else if (cell_type == CellType::point)
+    vtk_cell_type = 1;
   else
   {
     dolfin_error("VTKWriter.cpp",

@@ -84,7 +84,7 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
   Vector b(N);
 
   // Get array of dofs for boundary vertices
-  const MeshFunction<std::size_t>& vertex_map = new_boundary.vertex_map();
+  const MeshFunction<std::size_t>& vertex_map = new_boundary.entity_map(0);
   const std::size_t num_dofs = vertex_map.size();
   const std::vector<dolfin::la_index> dofs(vertex_map.values(), vertex_map.values() + num_dofs);
 

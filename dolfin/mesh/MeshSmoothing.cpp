@@ -47,7 +47,7 @@ void MeshSmoothing::smooth(Mesh& mesh, std::size_t num_iterations)
 
   // Mark vertices on the boundary so we may skip them
   BoundaryMesh boundary(mesh);
-  const MeshFunction<std::size_t> vertex_map = boundary.vertex_map();
+  const MeshFunction<std::size_t> vertex_map = boundary.entity_map(0);
   MeshFunction<bool> on_boundary(mesh, 0);
   on_boundary = false;
   if (boundary.num_vertices() > 0)
@@ -180,7 +180,7 @@ void MeshSmoothing::move_interior_vertices(Mesh& mesh,
   else
   {
     // Use vertex map to update boundary coordinates of original mesh
-    const MeshFunction<std::size_t>& vertex_map = boundary.vertex_map();
+    const MeshFunction<std::size_t>& vertex_map = boundary.entity_map(0);
     const std::size_t d = mesh.geometry().dim();
     for (VertexIterator v(boundary); !v.end(); ++v)
     {

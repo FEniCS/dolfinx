@@ -47,8 +47,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   dolfin_assert(_ufc_dofmap);
 
   // Call dofmap builder
-  const std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facets;
-  DofMapBuilder::build(*this, mesh, _restriction, slave_to_master_facets);
+  DofMapBuilder::build(*this, mesh, _restriction);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
@@ -71,8 +70,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   }
 
   // Call dofmap builder
-  const std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facets;
-  DofMapBuilder::build(*this, mesh, restriction, slave_to_master_facets);
+  DofMapBuilder::build(*this, mesh, restriction);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap,
@@ -107,8 +105,7 @@ DofMap::DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
   check_provided_entities(*_ufc_dofmap, mesh);
 
   // Build new dof map
-  const std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facets;
-  DofMapBuilder::build(*this, mesh, _restriction, slave_to_master_facets);
+  DofMapBuilder::build(*this, mesh, _restriction);
 
   // Dimension sanity checks
   dolfin_assert(dofmap_view._dofmap.size() == mesh.num_cells());
@@ -143,8 +140,6 @@ DofMap::DofMap(const DofMap& dofmap)
   _off_process_owner = dofmap._off_process_owner;
   _shared_dofs = dofmap._shared_dofs;
   _neighbours = dofmap._neighbours;
-  //_slave_master_map = dofmap._slave_master_map;
-  //_master_processes = dofmap._master_processes;
 }
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()

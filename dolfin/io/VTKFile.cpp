@@ -658,19 +658,11 @@ void VTKFile::mesh_function_write(T& meshfunction)
   const Mesh& mesh = meshfunction.mesh();
   const std::size_t cell_dim = meshfunction.dim();
 
-  // Throw error for MeshFunctions on vertices for interval elements
-  if (mesh.topology().dim() == 1 && cell_dim == 0)
+  if (cell_dim != mesh.topology().dim() && cell_dim != mesh.topology().dim() - 1 && cell_dim != 0)
   {
     dolfin_error("VTKFile.cpp",
                  "write mesh function to VTK file",
-                 "VTK output of mesh functions on interval facets is not supported");
-  }
-
-  if (cell_dim != mesh.topology().dim() && cell_dim != mesh.topology().dim() - 1)
-  {
-    dolfin_error("VTKFile.cpp",
-                 "write mesh function to VTK file",
-                 "VTK output of mesh functions is implemented for cell- and facet-based functions only");
+                 "VTK output of mesh functions is implemented for cell-, facet- and vertex-based functions only");
   }
 
   // Update vtu file name and clear file
