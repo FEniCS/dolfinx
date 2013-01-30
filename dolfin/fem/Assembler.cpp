@@ -174,7 +174,6 @@ void Assembler::assemble_cells(GenericTensor& A,
 
   // Cell integral
   ufc::cell_integral* integral = ufc.default_cell_integral.get();
-  dolfin_assert(integral || !ufc.cell_integrals.empty());
 
   bool use_domains = domains && !domains->empty();
 
@@ -248,7 +247,6 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
 
   // Exterior facet integral
   const ufc::exterior_facet_integral* integral = ufc.default_exterior_facet_integral.get();
-  dolfin_assert(integral || !ufc.exterior_facet_integrals.empty());
 
   bool use_domains = domains && !domains->empty();
 
@@ -338,7 +336,6 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
 
   // Interior facet integral
   const ufc::interior_facet_integral* integral = ufc.default_interior_facet_integral.get();
-  dolfin_assert(integral || !ufc.interior_facet_integrals.empty());
 
   bool use_domains = domains && !domains->empty();
 
