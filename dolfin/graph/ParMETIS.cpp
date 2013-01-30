@@ -82,10 +82,11 @@ void ParMETIS::recompute_partition(std::vector<std::size_t>& cell_partition,
   #endif
 
   // Options for ParMETIS, use default
-  int options[3];
+  int options[4];
   options[0] = 1;
   options[1] = 0;
   options[2] = 15;
+  options[3] = PARMETIS_PSR_COUPLED;
 
   // Partitioning array to be computed by ParMETIS (note bug in manual: vertices, not cells!)
   std::vector<int> part(num_local_cells);
@@ -123,7 +124,7 @@ void ParMETIS::recompute_partition(std::vector<std::size_t>& cell_partition,
 
   Timer timer1("PARALLEL 1b: Recompute graph partition (calling ParMETIS)");
 
-  real_t itr=1000.0;
+  real_t itr=10.0;
   std::vector<idx_t>vsize(xadj.size(), 1);
 
   // Call ParMETIS to partition graph
