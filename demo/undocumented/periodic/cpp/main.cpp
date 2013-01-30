@@ -77,6 +77,7 @@ int main()
   // Create mesh
   UnitSquareMesh mesh(32, 32);
 
+  // Not working in parallel yet - it will soon
   if (MPI::num_processes() > 1)
     return 0;
 
@@ -85,7 +86,7 @@ int main()
 
   const std::size_t dim = 0;
 
-  std::map<std::size_t, std::pair<std::size_t, std::size_t> > test
+  const std::map<std::size_t, std::pair<std::size_t, std::size_t> > periodic_vertex_pairs
     = PeriodicBoundaryComputation::compute_periodic_pairs(mesh, periodic_boundary, dim);
 
   /*
@@ -104,55 +105,17 @@ int main()
   }
   */
 
+  // Mark periodic boundary conditions for plotting
   MeshFunction<std::size_t> master_slave_entities(mesh, dim, 0);
   periodic_boundary.mark(master_slave_entities, 1);
-
   std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator it;
   for (it = test.begin(); it != test.end(); ++it)
     master_slave_entities[it->first] = 2;
-
-  for (MeshEntityIterator e(mesh, dim); !e.end(); ++e)
-    cout << "Test mf: " << master_slave_entities[*e] << endl;
-
   File file("markers.pvd");
   file << master_slave_entities;
 
-  mesh.periodic_vertex_map = test;
-
-  /*
-  // Create mesh
-  UnitCubeMesh mesh(2, 2, 2);
-
-  // Create periodic boundary condition
-  PeriodicBoundary periodic_boundary;
-
-  const std::size_t dim = 0;
-  std::map<std::size_t, std::pair<std::size_t, std::size_t> > test
-    = PeriodicBoundaryComputation::compute_periodic_pairs(mesh, periodic_boundary, dim);
-
-  MeshFunction<std::size_t> master_slave_facets(mesh, dim, 0);
-  periodic_boundary.mark(master_slave_facets, 1);
-
-  std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator it;
-  for (it = test.begin(); it != test.end(); ++it)
-  {
-    master_slave_facets[it->first] = 2;
-  }
-
-  File file("markers.pvd");
-  file << master_slave_facets;
-  */
-
-  /*
-  std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator it;
-  for (it = test.begin(); it != test.end(); ++it)
-  {
-    cout << "*** Slave facet (local), proc owner master, master index on owner: " << it->first
-        << ", " << it->second.first << ", " <<  it->second.second << endl;
-  }
-  */
-
-  //return 0;
+  // Attach periodic vertex pairs to mesh
+  mesh.periodic_vertex_map = periodic_vertex_pairs;
 
   // Create functions
   Source f;
@@ -177,7 +140,7 @@ int main()
   solve(a == L, u, bcs);
 
   // Save solution in VTK format
-  File file_u("periodic_dofmap.pvd");
+  File file_u("periodic.pvd");
   file_u << u;
 
   // Plot solution
