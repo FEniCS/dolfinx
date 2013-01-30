@@ -18,7 +18,7 @@
 // Modified by Fredrik Valdmanis, 2011
 //
 // First added:  2009-07-02
-// Last changed: 2012-03-12
+// Last changed: 2013-01-30
 
 #ifndef __GLOBAL_PARAMETERS_H
 #define __GLOBAL_PARAMETERS_H
@@ -71,6 +71,7 @@ namespace dolfin
       // Allowed partitioners (not necessarily installed)
       std::set<std::string> allowed_mesh_partitioners;
       allowed_mesh_partitioners.insert("ParMETIS");
+      allowed_mesh_partitioners.insert("ParMETIS_repart");
       allowed_mesh_partitioners.insert("SCOTCH");
 
       // Set default graph/mesh partitioner

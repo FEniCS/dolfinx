@@ -21,7 +21,7 @@
 // Modified by Garth N. Wells 2011-2012
 //
 // First added:  2008-12-01
-// Last changed: 2012-12-24
+// Last changed: 2013-01-30
 
 #include <algorithm>
 #include <iterator>
@@ -105,6 +105,8 @@ void MeshPartitioning::partition(Mesh& mesh, const LocalMeshData& mesh_data)
     SCOTCH::compute_partition(cell_partition, mesh_data);
   else if (partitioner == "ParMETIS")
     ParMETIS::compute_partition(cell_partition, mesh_data);
+  else if (partitioner == "ParMETIS_repart")
+    ParMETIS::recompute_partition(cell_partition, mesh_data);
   else
   {
     dolfin_error("MeshPartitioning.cpp",

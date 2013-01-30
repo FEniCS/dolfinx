@@ -38,9 +38,12 @@ namespace dolfin
   public:
 
     // Compute cell partition
+    static void recompute_partition(std::vector<std::size_t>& cell_partition,
+                                    const LocalMeshData& mesh_data);
+
     static void compute_partition(std::vector<std::size_t>& cell_partition,
                                   const LocalMeshData& mesh_data);
-
+    
   };
 
 }
