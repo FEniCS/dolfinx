@@ -180,7 +180,7 @@ endif()
 include(language_support_v2)
 workaround_9220(Fortran Fortran_language_works)
 if (Fortran_language_works)
- enable_language(Fortran)
+  enable_language(Fortran OPTIONAL)
 endif()
 
 #------------------------------------------------------------------------------
