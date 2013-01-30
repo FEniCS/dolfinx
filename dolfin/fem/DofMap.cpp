@@ -33,6 +33,7 @@
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/MeshDistributed.h>
 #include <dolfin/mesh/Restriction.h>
+#include <dolfin/mesh/Vertex.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "DofMapBuilder.h"
 #include "UFCCell.h"
@@ -359,6 +360,71 @@ void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
 {
   UFCCell ufc_cell(cell);
   tabulate_coordinates(coordinates, ufc_cell);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::size_t> DofMap::vertex_to_dof_map(Mesh& mesh) const
+{
+  // Check that we only have dofs living on vertices
+  assert(_ufc_dofmap);
+  
+  // Initialize vertex to cell connections
+  const std::size_t top_dim = mesh.topology().dim();
+  mesh.init(0, top_dim);
+
+  // Num dofs per vertex
+  const std::size_t dofs_per_vert = _ufc_dofmap->num_entity_dofs(0);
+  const std::size_t vert_per_cell = mesh.topology()(top_dim, 0).size(0);
+
+  if (vert_per_cell*dofs_per_vert != _ufc_dofmap->max_local_dimension())
+    dolfin_error("DofMap.cpp",
+                 "tabulating vertex to dof map",
+                 "Can only tabulate dofs on vertices");
+
+  // Allocate data for tabulating local to local map
+  std::vector<unsigned int> local_to_local_map(dofs_per_vert);
+  
+  // Create return data structure
+  const dolfin::la_index n0 = _ownership_range.first;
+  const dolfin::la_index n1 = _ownership_range.second;
+  std::vector<std::size_t> vertex_map(n1-n0);
+
+  // Iterate over vertices
+  std::size_t local_vert_ind = 0;
+  dolfin::la_index global_dof;
+  for (VertexIterator vert(mesh); !vert.end(); ++vert)
+  {
+    // Get the first cell connected to the vertex
+    const Cell cell(mesh, vert->entities(top_dim)[0]);
+
+    // Find local vertex number
+    for (std::size_t i=0; i<cell.num_entities(0); i++)
+    {
+      if (cell.entities(0)[i]==vert->index())
+      {
+	local_vert_ind = i;
+	break;
+      }
+    }
+
+    // Get all cell dofs
+    const std::vector<dolfin::la_index>& _cell_dofs = cell_dofs(cell.index());
+
+    // Tabulate local to local map of dofs on local vertex
+    _ufc_dofmap->tabulate_entity_dofs(&local_to_local_map[0], 0, local_vert_ind);
+    
+    // Fill local dofs for the vertex
+    for (std::size_t local_dof = 0; local_dof < dofs_per_vert; local_dof++)
+    {
+      global_dof = _cell_dofs[local_to_local_map[local_dof]];
+      
+      // Of global dof is within ownership range add it to the map
+      if (global_dof>=n0 && global_dof < n1)
+	vertex_map[global_dof-n0] = dofs_per_vert*vert->index()+local_dof;
+    }
+  }
+
+  // Return the map
+  return vertex_map;
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<GenericDofMap> DofMap::copy() const

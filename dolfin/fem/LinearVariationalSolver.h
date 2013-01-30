@@ -53,7 +53,11 @@ namespace dolfin
     {
       Parameters p("linear_variational_solver");
 
-      p.add("linear_solver", "default");
+      std::set<std::string> allowed_linear_solvers;
+      allowed_linear_solvers.insert("default");
+      allowed_linear_solvers.insert("iterative");
+      allowed_linear_solvers.insert("direct");
+      p.add("linear_solver", "default", allowed_linear_solvers);
       p.add("preconditioner", "default");
       p.add("symmetric", false);
       p.add("reset_jacobian", true);
