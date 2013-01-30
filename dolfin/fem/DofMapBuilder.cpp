@@ -311,11 +311,11 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
   // Check for periodic constraints
   const bool periodic = MPI::sum(mesh.periodic_vertex_map.size()) > 0;
 
-  // Modified global enity indices (used only for periodic bcs)
+  // Global enity indices
   std::vector<std::vector<std::size_t> > global_entity_indices(mesh.topology().dim() + 1);
 
-  // Generate and number required mesh entities
-  const bool distributed = MPI::num_processes() > 1;
+  // Generate and number required mesh entities. Mesh indices are modified
+  // for periodic bcs
   const std::size_t D = mesh.topology().dim();
   std::vector<std::size_t> num_global_mesh_entities(mesh.topology().dim() + 1, 0);
   if (!periodic)
@@ -325,22 +325,13 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
     {
       if (dofmap._ufc_dofmap->needs_mesh_entities(d))
       {
-        // Initialise local (this process) entities
-        mesh.init(d);
-
         // Number entities globally
+        DistributedMeshTools::number_entities(mesh, d);
+
+        // Store entity indices
         global_entity_indices[d].resize(mesh.size(d));
-        if (!distributed)
-        {
-          for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
-            global_entity_indices[d][e->index()] = e->index();
-        }
-        else
-        {
-          DistributedMeshTools::number_entities(mesh, d);
-          for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
-            global_entity_indices[d][e->index()] = e->global_index();
-        }
+        for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
+          global_entity_indices[d][e->index()] = e->global_index();
 
         // Store number of global entities
         num_global_mesh_entities[d] = mesh.size_global(d);
@@ -366,15 +357,13 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
     {
       if (dofmap._ufc_dofmap->needs_mesh_entities(d))
       {
-        //cout << "Init dim d = " << d << endl;
-
         // Initialise local entities
         std::map<std::size_t, std::set<std::size_t> > shared_entities;
         const std::size_t num_entities
           = DistributedMeshTools::number_entities(mesh, global_entity_indices[0],
                                        global_entity_indices[d], shared_entities, d);
 
-        num_global_mesh_entities[d] =  num_entities;
+        num_global_mesh_entities[d] = num_entities;
       }
     }
   }
@@ -387,7 +376,7 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
   // Maps used to renumber dofs for restricted meshes
   map restricted_dofs;         // map from old to new dof
 
-  // Holder for UFC support 64-bit integers
+  // Holder for UFC 64-bit dofmap integers
   std::vector<std::size_t> ufc_dofs;
 
   // Build dofmap from ufc::dofmap
@@ -398,50 +387,23 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
     if (restriction && !restriction->contains(*cell))
       continue;
 
-    // Update UFC cell
+    // Update UFC cell data
+    ufc_cell.orientation = cell->mesh().cell_orientations()[cell->index()];
+    for (std::size_t d = 0; d < D; ++d)
     {
-      // Set orientation
-      ufc_cell.orientation = cell->mesh().cell_orientations()[cell->index()];
-      if (!periodic)
+      if (!global_entity_indices[d].empty())
       {
-        const MeshTopology& topology = cell->mesh().topology();
-        for (std::size_t i = 0; i < ufc_cell.num_cell_entities[0]; ++i)
-          ufc_cell.entity_indices[0][i] = topology.global_indices(0)[cell->entities(0)[i]];
-
-        for (std::size_t d = 1; d < D; ++d)
-        {
-          if (topology.have_global_indices(d))
-          {
-            const std::vector<std::size_t>& global_indices = topology.global_indices(d);
-            for (std::size_t i = 0; i < ufc_cell.num_cell_entities[d]; ++i)
-              ufc_cell.entity_indices[d][i] = global_indices[cell->entities(d)[i]];
-          }
-          else
-          {
-            for (std::size_t i = 0; i < ufc_cell.num_cell_entities[d]; ++i)
-              ufc_cell.entity_indices[d][i] = cell->entities(d)[i];
-          }
-        }
+        //cout << "Testing: " << d << ", " << global_entity_indices.size() << ", " << mesh.num_entities(d) << endl;
+        for (std::size_t i = 0; i < ufc_cell.num_cell_entities[d]; ++i)
+          ufc_cell.entity_indices[d][i] = global_entity_indices[d][cell->entities(d)[i]];
       }
-      else
-      {
-        for (std::size_t d = 0; d < D; ++d)
-        {
-          if (!global_entity_indices[d].empty())
-          {
-            //cout << "Testing: " << d << ", " << global_entity_indices.size() << ", " << mesh.num_entities(d) << endl;
-            for (std::size_t i = 0; i < ufc_cell.num_cell_entities[d]; ++i)
-              ufc_cell.entity_indices[d][i] = global_entity_indices[d][cell->entities(d)[i]];
-          }
-        }
-      }
-
-      // Check the below two for local vs global
-      ufc_cell.entity_indices[D][0] = cell->index();
-      ufc_cell.index = cell->index();
     }
 
-    // Get standard local dimension
+    // FIXME: Check the below two for local vs global
+    ufc_cell.entity_indices[D][0] = cell->index();
+    ufc_cell.index = cell->index();
+
+    // Get standard local element dimension
     const std::size_t local_dim = dofmap._ufc_dofmap->local_dimension(ufc_cell);
 
     // Get container for cell dofs
