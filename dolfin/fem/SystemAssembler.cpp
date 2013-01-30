@@ -326,6 +326,9 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
   const ufc::exterior_facet_integral* A_exterior_facet_integral = A_ufc.default_exterior_facet_integral.get();
   const ufc::exterior_facet_integral* b_exterior_facet_integral = b_ufc.default_exterior_facet_integral.get();
 
+  bool use_cell_domains = cell_domains && !cell_domains->empty();
+  bool use_exterior_facet_domains = exterior_facet_domains && !exterior_facet_domains->empty();
+
   // Iterate over all cells
   Progress p("Assembling system (cell-wise)", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -335,18 +338,11 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     std::fill(data.be.begin(), data.be.end(), 0.0);
 
     // Get cell integrals for sub domain (if any)
-    if (cell_domains && !cell_domains->empty())
+    if (use_cell_domains)
     {
       const std::size_t domain = (*cell_domains)[*cell];
-      if (domain < A_ufc.form.num_cell_domains())
-        A_cell_integral = A_ufc.cell_integrals[domain].get();
-      else
-        A_cell_integral = A_ufc.default_cell_integral.get();
-
-      if (domain < b_ufc.form.num_cell_domains())
-        b_cell_integral = b_ufc.cell_integrals[domain].get();
-      else
-        b_cell_integral = b_ufc.default_cell_integral.get();
+      A_cell_integral = A_ufc.get_cell_integral(domain);
+      b_cell_integral = b_ufc.get_cell_integral(domain);
     }
 
     // Compute cell tensor for A
@@ -383,18 +379,11 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
           continue;
 
         // Get exterior facet integrals for sub domain (if any)
-        if (exterior_facet_domains && !exterior_facet_domains->empty())
+        if (use_exterior_facet_domains)
         {
           const std::size_t domain = (*exterior_facet_domains)[*facet];
-          if (domain < A_ufc.form.num_exterior_facet_domains())
-            A_exterior_facet_integral = A_ufc.exterior_facet_integrals[domain].get();
-          else
-            A_exterior_facet_integral = A_ufc.default_exterior_facet_integral.get();
-
-          if (domain < b_ufc.form.num_exterior_facet_domains())
-            b_exterior_facet_integral = b_ufc.exterior_facet_integrals[domain].get();
-          else
-            b_exterior_facet_integral = b_ufc.default_exterior_facet_integral.get();
+          A_exterior_facet_integral = A_ufc.get_exterior_facet_integral(domain);
+          b_exterior_facet_integral = b_ufc.get_exterior_facet_integral(domain);
         }
 
         // Skip if there are no integrals
@@ -553,8 +542,7 @@ void SystemAssembler::compute_tensor_on_one_interior_facet(const Form& a,
   if (interior_facet_domains && !interior_facet_domains->empty())
   {
     const std::size_t domain = (*interior_facet_domains)[facet];
-    if (domain < ufc.form.num_interior_facet_domains())
-      interior_facet_integral = ufc.interior_facet_integrals[domain].get();
+    interior_facet_integral = ufc.get_interior_facet_integral(domain);
   }
 
   // Get local index of facet with respect to each cell
