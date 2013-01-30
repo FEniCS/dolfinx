@@ -36,6 +36,7 @@
 #include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/Restriction.h>
 #include <dolfin/mesh/Vertex.h>
 #include "DofMap.h"
@@ -320,8 +321,7 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
   if (!periodic)
   {
     // Compute number of mesh entities
-    num_global_mesh_entities[0] = mesh.size_global(0);
-    for (std::size_t d = 1; d <= D; ++d)
+    for (std::size_t d = 0; d <= D; ++d)
     {
       if (dofmap._ufc_dofmap->needs_mesh_entities(d))
       {
@@ -329,8 +329,18 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
         mesh.init(d);
 
         // Number entities globally
-        if (distributed)
+        global_entity_indices[d].resize(mesh.size(d));
+        if (!distributed)
+        {
+          for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
+            global_entity_indices[d][e->index()] = e->index();
+        }
+        else
+        {
           DistributedMeshTools::number_entities(mesh, d);
+          for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
+            global_entity_indices[d][e->index()] = e->global_index();
+        }
 
         // Store number of global entities
         num_global_mesh_entities[d] = mesh.size_global(d);
