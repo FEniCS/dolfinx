@@ -1,4 +1,4 @@
- - Feature: Add tabulate_vertex_map to DofMap, which map vertices and dofs
+ - Feature: Add vertex_to_dof_map to DofMap, which map vertex indices to dolfin dofs
  - Feature: Add support for solving on m dimensional meshes embedded in n >= m dimensions
 1.1.0 [2013-01-08]
  - Add support for solving singular problems with Krylov solvers (PETSc only)

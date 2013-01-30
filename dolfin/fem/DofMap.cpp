@@ -253,7 +253,7 @@ void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
   tabulate_coordinates(coordinates, ufc_cell);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t> DofMap::tabulate_vertex_map(Mesh& mesh) const
+std::vector<std::size_t> DofMap::vertex_to_dof_map(Mesh& mesh) const
 {
   // Check that we only have dofs living on vertices
   assert(_ufc_dofmap);
@@ -268,7 +268,7 @@ std::vector<std::size_t> DofMap::tabulate_vertex_map(Mesh& mesh) const
 
   if (vert_per_cell*dofs_per_vert != _ufc_dofmap->max_local_dimension())
     dolfin_error("DofMap.cpp",
-                 "tabulating vertex to dofs",
+                 "tabulating vertex to dof map",
                  "Can only tabulate dofs on vertices");
 
   // Allocate data for tabulating local to local map
