@@ -205,10 +205,6 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
  const std::map<std::size_t, std::pair<std::size_t, std::size_t> >& slave_to_master_vertices,
  std::vector<std::size_t>& modified_global_indices)
 {
-  // Get vertex sharing information
-  //const std::map<std::size_t, std::set<std::size_t> > shared_entities
-  //  = mesh.topology().shared_entities(0);
-
   // Get vertex sharing information (local index, [(sharing process p, local index on p)])
   const boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >
     shared_vertices = DistributedMeshTools::compute_shared_entities(mesh, 0);
@@ -222,8 +218,6 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
     vertex_shared[shared_vertex->first] = true;
   }
 
-  // Must check if slave vertex is shared
-
   // Mark slave vertices
   std::vector<bool> slave_vertex(mesh.num_vertices(), false);
   std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator slave;
@@ -233,7 +227,7 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
     slave_vertex[slave->first] = true;
   }
 
-  // Mark shared vertices
+  // MPI process number
   const std::size_t proc_num = MPI::process_number();
 
   // Communication data structures
@@ -244,6 +238,8 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
   modified_global_indices = std::vector<std::size_t>(mesh.num_vertices(), std::numeric_limits<std::size_t>::max());
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
+    //cout << "New index (0): " << new_index << endl;
+
     const std::size_t local_index = vertex->index();
     if (slave_vertex[local_index])
     {
@@ -251,21 +247,23 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
     }
     else if (vertex_shared[local_index])
     {
-      cout << "*********** Should not be here in serial" << endl;
-
       // If shared, let lowest rank process number the vertex
       boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >::const_iterator
         it = shared_vertices.find(local_index);
       dolfin_assert(it != shared_vertices.end());
       const std::vector<std::pair<std::size_t, std::size_t> >& sharing_procs = it->second;
 
-      // Let lowest rank process number vertex
-      const std::pair<std::size_t, std::size_t> _proc_num(proc_num, 0);
-      if (_proc_num < *std::min_element(sharing_procs.begin(), sharing_procs.end()))
+      // Figure out if this is the lowest rank process sharing the vertex
+      std::vector<std::pair<std::size_t, std::size_t> >::const_iterator
+       min_sharing_rank = std::min_element(sharing_procs.begin(), sharing_procs.end());
+      std::size_t _min_sharing_rank = proc_num + 1;
+      if (min_sharing_rank != sharing_procs.end())
+        _min_sharing_rank = min_sharing_rank->first;
+
+      if (proc_num <= _min_sharing_rank)
       {
         // Re-number vertex
-        const std::size_t _new_index = new_index++;;
-        modified_global_indices[vertex->index()] = _new_index;
+        modified_global_indices[vertex->index()] = new_index;
 
         // Add to list to communicate
         std::vector<std::pair<std::size_t, std::size_t> >::const_iterator p;
@@ -277,12 +275,18 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
           new_shared_vertex_indices[p->first].push_back(p->second);
 
           // Modified global index
-          new_shared_vertex_indices[p->first].push_back(_new_index);
+          new_shared_vertex_indices[p->first].push_back(new_index);
         }
+
+        //cout << "New index: new_index
+        //cout << "Incrementing new index: " << new_index << endl;
+        new_index++;
       }
     }
     else
+    {
       modified_global_indices[vertex->index()] = new_index++;
+    }
   }
 
   // Send number of owned entities to compute offeset
@@ -291,6 +295,11 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
   // Add process offset
   for (std::size_t i = 0; i < modified_global_indices.size(); ++i)
     modified_global_indices[i] += offset;
+
+  for (std::size_t p = 0; p < new_shared_vertex_indices.size(); ++p)
+    for (std::size_t i = 1; i < new_shared_vertex_indices[p].size(); i += 2)
+      new_shared_vertex_indices[p][i] += offset;
+
 
   // Send/receive new indices for shared vertices
   std::vector<std::vector<std::size_t> > received_vertex_data;
@@ -306,7 +315,7 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
       const std::size_t recv_new_index = received_vertex_data_p[i + 1];
 
       dolfin_assert(local_index < modified_global_indices.size());
-      dolfin_assert(modified_global_indices[local_index] == std::numeric_limits<std::size_t>::max());
+      //dolfin_assert(modified_global_indices[local_index] == std::numeric_limits<std::size_t>::max());
       modified_global_indices[local_index] = recv_new_index;
     }
   }
@@ -319,42 +328,55 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
   {
     const std::size_t local_index = master->first;
     const std::size_t master_proc = master->second.first;
-    const std::size_t remote_local_index = master->second.second;
+    const std::size_t remote_master_local_index = master->second.second;
     dolfin_assert(master_proc < local_slave_index.size());
     dolfin_assert(master_proc < master_send_buffer.size());
-
     local_slave_index[master_proc].push_back(local_index);
-    master_send_buffer[master_proc].push_back(remote_local_index);
+    master_send_buffer[master_proc].push_back(remote_master_local_index);
   }
 
-  // Send/receive new indices for slave vertices
+  // Send/receive master local indices for slave vertices
   std::vector<std::vector<std::size_t> > received_slave_vertex_indices;
-  MPI::all_to_all(new_shared_vertex_indices, received_slave_vertex_indices);
+  MPI::all_to_all(master_send_buffer, received_slave_vertex_indices);
 
-  // Set index for slave vertices
+  // Send back new master vertex index
+  std::vector<std::vector<std::size_t> > master_vertex_indices(MPI::num_processes());
   for (std::size_t p = 0; p < received_slave_vertex_indices.size(); ++p)
   {
-    const std::vector<std::size_t>& new_indices = received_slave_vertex_indices[p];
+    const std::vector<std::size_t>& local_master_indices = received_slave_vertex_indices[p];
+    for (std::size_t i = 0; i < local_master_indices.size(); ++i)
+    {
+      std::size_t master_local_index = local_master_indices[i];
+      dolfin_assert(master_local_index < modified_global_indices.size());
+      master_vertex_indices[p].push_back(modified_global_indices[master_local_index]);
+    }
+  }
+
+  // Send/receive new global master indices for slave vertices
+  std::vector<std::vector<std::size_t> > received_new_slave_vertex_indices;
+  MPI::all_to_all(master_vertex_indices, received_new_slave_vertex_indices);
+
+  // Set index for slave vertices
+  for (std::size_t p = 0; p < received_new_slave_vertex_indices.size(); ++p)
+  {
+    const std::vector<std::size_t>& new_indices = received_new_slave_vertex_indices[p];
     const std::vector<std::size_t>& local_indices = local_slave_index[p];
     for (std::size_t i = 0; i < new_indices.size(); ++i)
     {
       const std::size_t local_index = local_indices[i];
-      const std::size_t new_index = new_indices[i];
+      const std::size_t new_index   = new_indices[i];
 
       dolfin_assert(local_index < modified_global_indices.size());
-      dolfin_assert(modified_global_indices[local_index] == std::numeric_limits<std::size_t>::max());
+      //dolfin_assert(modified_global_indices[local_index] == std::numeric_limits<std::size_t>::max());
       modified_global_indices[local_index] = new_index;
     }
   }
 
-  for (std::size_t i = 0; i < modified_global_indices.size(); ++i)
-    cout << "Index: " << modified_global_indices[i] << endl;
-
   // Sanity check
-  for (std::size_t i = 0; i < modified_global_indices.size(); ++i)
-  {
-    dolfin_assert(modified_global_indices[i] != std::numeric_limits<std::size_t>::max());
-  }
+  //for (std::size_t i = 0; i < modified_global_indices.size(); ++i)
+  //{
+  //  dolfin_assert(modified_global_indices[i] != std::numeric_limits<std::size_t>::max());
+  //}
 
   // Serial hack
   //for (slave = slave_to_master_vertices.begin(); slave != slave_to_master_vertices.end(); ++slave)
@@ -451,8 +473,8 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
     const std::size_t num_vertices = build_constrained_vertex_indices(mesh,
           slave_to_master_vertices, global_entity_indices[0]);
 
-    cout << "Num vertices: " << num_vertices << ", " << mesh.num_vertices() << endl;
-    cout << "Num slave vertices: " << slave_to_master_vertices.size() << endl;
+    cout << "*** Num vertices: " << num_vertices << ", " << mesh.num_vertices() << endl;
+    cout << "*** Num slave vertices: " << slave_to_master_vertices.size() << endl;
 
     // Compute number of mesh entities
     num_global_mesh_entities[0] = num_vertices;
@@ -497,6 +519,7 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
       if (!global_entity_indices[d].empty())
       {
         //cout << "Testing: " << d << ", " << global_entity_indices.size() << ", " << mesh.num_entities(d) << endl;
+
         for (std::size_t i = 0; i < ufc_cell.num_cell_entities[d]; ++i)
           ufc_cell.entity_indices[d][i] = global_entity_indices[d][cell->entities(d)[i]];
       }
@@ -518,6 +541,14 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
     dofmap._ufc_dofmap->tabulate_dofs(&ufc_dofs[0],
                                       num_global_mesh_entities, ufc_cell);
     std::copy(ufc_dofs.begin(), ufc_dofs.end(), cell_dofs.begin());
+
+    /*
+    cout << "dofs" << endl;
+    for (std::size_t j = 0; j < ufc_dofs.size(); ++j)
+    {
+      cout << ufc_dofs[j] << endl;
+    }
+    */
 
     // Renumber dofs if mesh is restricted
     if (restriction)
@@ -604,8 +635,7 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
   std::vector<std::size_t> send_buffer;
 
   // Extract the interior boundary
-  BoundaryMesh interior_boundary;
-  interior_boundary.init_interior_boundary(mesh);
+  BoundaryMesh boundary(mesh, "local");
 
   // Create a random number generator for ownership 'voting'
   boost::mt19937 engine(MPI::process_number());
@@ -616,11 +646,13 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
   // Build set of dofs on process boundary (first assuming that all are
   // owned by this process)
   const MeshFunction<std::size_t>& cell_map
-    = interior_boundary.entity_map(interior_boundary.topology().dim());
+    = boundary.entity_map(boundary.topology().dim());
   if (!cell_map.empty())
   {
-    for (CellIterator _f(interior_boundary); !_f.end(); ++_f)
+    for (CellIterator _f(boundary); !_f.end(); ++_f)
     {
+      //cout << "Looping over boundary mesh" << endl;
+
       // Get boundary facet
       Facet f(mesh, cell_map[*_f]);
 
@@ -656,6 +688,8 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
         {
           shared_owned_dofs.insert(facet_dof);
           dof_vote[facet_dof] = rng();
+
+          //cout << "Dof and vote: " << facet_dof << ", " << dof_vote[facet_dof] << endl;
 
           send_buffer.push_back(facet_dof);
           send_buffer.push_back(dof_vote[facet_dof]);
@@ -734,7 +768,7 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
     }
   }
 
-  // Mark all shared and owned dofs as owned by the processes
+  // Mark all shared-and-owned dofs as owned by the processes
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     const std::vector<dolfin::la_index>& cell_dofs = dofmap.cell_dofs(cell->index());
@@ -754,9 +788,20 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
 
       // Mark dof as owned if not in unowned set
       if (shared_unowned_dofs.find(cell_dof) == shared_unowned_dofs.end())
+      {
+        //cout << "Marking dof as owned: " << cell_dof << endl;
         owned_dofs.insert(cell_dof);
+      }
     }
   }
+
+  /*
+  set::const_iterator it;
+  for (it = owned_dofs.begin(); it != owned_dofs.end(); ++it)
+  {
+    cout << "Owned dof: " << *it << endl;
+  }
+  */
 
   // Check or set global dimension
   if (restriction)

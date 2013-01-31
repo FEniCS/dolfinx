@@ -41,8 +41,8 @@ void ALE::move(Mesh& mesh0, const Mesh& mesh1)
   not_working_in_parallel("ALE mesh smoothing");
 
   // Extract boundary meshes
-  BoundaryMesh boundary0(mesh0);
-  BoundaryMesh boundary1(mesh1);
+  BoundaryMesh boundary0(mesh0, "exterior");
+  BoundaryMesh boundary1(mesh1, "exterior");
 
   // Get vertex mappings
   boost::shared_ptr<MeshFunction<std::size_t> > local_to_global_0

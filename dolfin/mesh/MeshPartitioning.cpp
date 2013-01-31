@@ -354,7 +354,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   mesh.topology().init_global(tdim,  num_global_cells);
 
   // Construct boundary mesh
-  BoundaryMesh bmesh(mesh);
+  BoundaryMesh bmesh(mesh, "exterior");
 
   const MeshFunction<std::size_t>& boundary_vertex_map = bmesh.entity_map(0);
   const std::size_t boundary_size = boundary_vertex_map.size();
@@ -377,7 +377,6 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
   // FIXME: Remove computation from inside communication loop
 
-  tic();
   // Build shared vertex to sharing processes map
   for (std::size_t i = 1; i < num_processes; ++i)
   {
@@ -411,9 +410,6 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
       shared_vertices[local_index->second].insert(q);
     }
   }
-
-  double timex = toc();
-  cout << "Time to find shared vertices: " << timex << endl;
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_mesh_domains(Mesh& mesh,

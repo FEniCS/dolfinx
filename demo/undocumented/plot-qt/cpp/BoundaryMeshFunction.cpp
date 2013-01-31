@@ -24,7 +24,7 @@ using namespace dolfin;
 
 //----------------------------------------------------------------------------
 BoundaryMeshFunction::BoundaryMeshFunction(const Mesh& mesh)
-  : _bmesh(mesh)
+  : _bmesh(mesh, "exterior")
 {
   MeshFunction<bool>::init(_bmesh, _bmesh.topology().dim());
   set_all(false);

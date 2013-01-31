@@ -33,7 +33,8 @@ int main()
   UnitCircleMesh omega0(20);
   UnitSquareMesh omega1(20, 20);
 
-  boost::shared_ptr<dolfin::MeshFunction<std::size_t> >intersection1(new dolfin::MeshFunction<std::size_t>(omega0, omega0.topology().dim()));
+  boost::shared_ptr<dolfin::MeshFunction<std::size_t> >
+    intersection1(new dolfin::MeshFunction<std::size_t>(omega0, omega0.topology().dim()));
 
   VTKPlotter p(intersection1);
   p.parameters["rescale"] = true;
@@ -66,7 +67,7 @@ int main()
     for (double theta = 0; theta < 2*DOLFIN_PI; theta += dtheta)
     {
       // Compute intersection with boundary of square
-      BoundaryMesh boundary(omega1);
+      BoundaryMesh boundary(omega1, "exterior");
       std::set<std::size_t> cells;
       omega0.intersected_cells(boundary, cells);
 

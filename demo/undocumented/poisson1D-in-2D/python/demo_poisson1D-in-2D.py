@@ -42,7 +42,7 @@ import numpy
 # Create mesh and function space
 squaremesh = UnitSquareMesh(50,2)
 
-boundarymesh = BoundaryMesh(squaremesh)
+boundarymesh = BoundaryMesh(squaremesh. "exterior")
 
 # Subdomain to extract bottom boundary.
 class BottomEdge(SubDomain):
