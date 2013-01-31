@@ -123,13 +123,6 @@ void UFC::init(const Form& form)
     _macro_w[i].resize(n);
     macro_w_pointer[i] = &_macro_w[i][0];
   }
-
-  // Initialize vertex coordinates
-  const CellType& cell_type = form.mesh().type();
-  const std::size_t n = cell_type.num_entities(0)*form.mesh().geometry().dim();
-  vertex_coordinates.resize(n);
-  vertex_coordinates_0.resize(n);
-  vertex_coordinates_1.resize(n);
 }
 //-----------------------------------------------------------------------------
 void UFC::update(const Cell& cell)

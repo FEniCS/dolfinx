@@ -238,7 +238,9 @@ void Assembler::assemble_cells(GenericTensor& A,
       continue;
 
     // Tabulate cell tensor
-    integral->tabulate_tensor(&ufc.A[0], ufc.w(), &ufc.vertex_coordinates[0]);
+    integral->tabulate_tensor(&ufc.A[0],
+                              ufc.w(),
+                              &ufc.cell.vertex_coordinates[0]);
 
     // Add entries to global tensor. Either store values cell-by-cell
     // (currently only available for functionals)
@@ -330,7 +332,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
     // Tabulate exterior facet tensor
     integral->tabulate_tensor(&ufc.A[0],
                               ufc.w(),
-                              &ufc.vertex_coordinates[0],
+                              &ufc.cell.vertex_coordinates[0],
                               local_facet);
 
     // Add entries to global tensor
@@ -454,8 +456,8 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     // Tabulate exterior interior facet tensor on macro element
     integral->tabulate_tensor(&ufc.macro_A[0],
                               ufc.macro_w(),
-                              &ufc.vertex_coordinates_0[0],
-                              &ufc.vertex_coordinates_1[0],
+                              &ufc.cell0.vertex_coordinates[0],
+                              &ufc.cell1.vertex_coordinates[0],
                               local_facet0,
                               local_facet1);
 

@@ -104,11 +104,6 @@ namespace dolfin
     // FIXME AL: Check which data is actually used and remove the rest
     // FIXME AL: Remove UFCCell class
 
-    // Vertex coordinates
-    std::vector<double> vertex_coordinates;
-    std::vector<double> vertex_coordinates_0;
-    std::vector<double> vertex_coordinates_1;
-
     // Current cell
     UFCCell cell;
 
