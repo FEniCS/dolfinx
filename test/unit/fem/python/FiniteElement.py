@@ -72,8 +72,8 @@ class FiniteElementTest(unittest.TestCase):
             return
 
         n = 4
-        mesh = BoundaryMesh(UnitSquareMesh(n, n))
-        mesh2 = BoundaryMesh(UnitCubeMesh(n, n, n))
+        mesh = BoundaryMesh(UnitSquareMesh(n, n), "exterior")
+        mesh2 = BoundaryMesh(UnitCubeMesh(n, n, n), "exterior")
         DG0 = FunctionSpace(mesh, "DG", 0)
         DG1 = FunctionSpace(mesh, "DG", 1)
         CG1 = FunctionSpace(mesh, "CG", 1)
