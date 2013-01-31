@@ -60,9 +60,9 @@ p0 = Expression("(4.0 - x[0])/4.0")
 
 # Define variational forms
 n = FacetNormal(mesh)
-a = (nu*inner(grad(u), grad(v)) - div(v)*p + q*div(u))*dx
-a = a + inner(grad(u)*u, v)*dx
-L = - p0*dot(v, n)*ds
+a = (nu*inner(grad(u), grad(v)) - div(v)*p + q*div(u))*dx()
+a = a + inner(grad(u)*u, v)*dx()
+L = - p0*dot(v, n)*ds()
 F = a - L
 
 # Define boundary conditions

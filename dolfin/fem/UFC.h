@@ -83,28 +83,68 @@ namespace dolfin
     // Finite elements for coefficients
     std::vector<FiniteElement> coefficient_elements;
 
-  public:
-
-    // Cell integrals
+    // Cell integrals (access through get_cell_integral to get proper fallback to default)
     std::vector<boost::shared_ptr<ufc::cell_integral> > cell_integrals;
 
-    // Exterior facet integrals
+    // Exterior facet integrals (access through get_exterior_facet_integral to get proper fallback to default)
     std::vector<boost::shared_ptr<ufc::exterior_facet_integral> > exterior_facet_integrals;
 
-    // Interior facet integrals
+    // Interior facet integrals (access through get_interior_facet_integral to get proper fallback to default)
     std::vector<boost::shared_ptr<ufc::interior_facet_integral> > interior_facet_integrals;
+
+  public:
+
+    // Default cell integral
+    boost::shared_ptr<ufc::cell_integral> default_cell_integral;
+
+    // Default exterior facet integral
+    boost::shared_ptr<ufc::exterior_facet_integral> default_exterior_facet_integral;
+
+    // Default interior facet integral
+    boost::shared_ptr<ufc::interior_facet_integral> default_interior_facet_integral;
+
+    /// Get cell integral over a given domain, falling back to the default if necessary
+    ufc::cell_integral * get_cell_integral(std::size_t domain)
+    {
+      if (domain < form.num_cell_domains())
+      {
+        ufc::cell_integral * integral = cell_integrals[domain].get();
+        if (integral)
+          return integral;
+      }
+      return default_cell_integral.get();
+    }
+
+    /// Get exterior facet integral over a given domain, falling back to the default if necessary
+    ufc::exterior_facet_integral * get_exterior_facet_integral(std::size_t domain)
+    {
+      if (domain < form.num_exterior_facet_domains())
+      {
+        ufc::exterior_facet_integral * integral = exterior_facet_integrals[domain].get();
+        if (integral)
+          return integral;
+      }
+      return default_exterior_facet_integral.get();
+    }
+
+    /// Get interior facet integral over a given domain, falling back to the default if necessary
+    ufc::interior_facet_integral * get_interior_facet_integral(std::size_t domain)
+    {
+      if (domain < form.num_interior_facet_domains())
+      {
+        ufc::interior_facet_integral * integral = interior_facet_integrals[domain].get();
+        if (integral)
+          return integral;
+      }
+      return default_interior_facet_integral.get();
+    }
 
     // Form
     const ufc::form& form;
 
-    // Global Mesh dimensions
-    // FIXME MSA: Do we need this instead of ufc::mesh?
-    //std::vector<std::size_t> num_global_mesh_entities;
 
     // FIXME AL: Check which data is actually used and remove the rest
     // FIXME AL: Remove UFCCell class
-
-
 
 
     // Current cell

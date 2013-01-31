@@ -54,11 +54,6 @@ UFC::~UFC()
 //-----------------------------------------------------------------------------
 void UFC::init(const Form& form)
 {
-  // Initialize mesh dimensions // TODO MSA: Do we need this?
-  //this->num_global_mesh_entities(form.mesh().topology().dim() + 1);
-  //for (std::size_t d = 0; d < this->num_global_mesh_entities.size(); d++)
-  //  this->num_global_mesh_entities[d] = form.mesh().size_global(d);
-
   // Get function spaces for arguments
   std::vector<boost::shared_ptr<const FunctionSpace> > V = form.function_spaces();
 
@@ -70,14 +65,17 @@ void UFC::init(const Form& form)
   }
 
   // Create cell integrals
+  default_cell_integral = boost::shared_ptr<ufc::cell_integral>(this->form.create_default_cell_integral());
   for (std::size_t i = 0; i < this->form.num_cell_domains(); i++)
     cell_integrals.push_back(boost::shared_ptr<ufc::cell_integral>(this->form.create_cell_integral(i)));
 
   // Create exterior facet integrals
+  default_exterior_facet_integral = boost::shared_ptr<ufc::exterior_facet_integral>(this->form.create_default_exterior_facet_integral());
   for (std::size_t i = 0; i < this->form.num_exterior_facet_domains(); i++)
     exterior_facet_integrals.push_back(boost::shared_ptr<ufc::exterior_facet_integral>(this->form.create_exterior_facet_integral(i)));
 
   // Create interior facet integrals
+  default_interior_facet_integral = boost::shared_ptr<ufc::interior_facet_integral>(this->form.create_default_interior_facet_integral());
   for (std::size_t i = 0; i < this->form.num_interior_facet_domains(); i++)
     interior_facet_integrals.push_back(boost::shared_ptr<ufc::interior_facet_integral>(this->form.create_interior_facet_integral(i)));
 

@@ -357,7 +357,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // Construct boundary mesh
   BoundaryMesh bmesh(mesh);
 
-  const MeshFunction<std::size_t>& boundary_vertex_map = bmesh.vertex_map();
+  const MeshFunction<std::size_t>& boundary_vertex_map = bmesh.entity_map(0);
   const std::size_t boundary_size = boundary_vertex_map.size();
 
   // Build sorted array of global boundary vertex indices (global

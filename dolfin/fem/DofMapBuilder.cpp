@@ -27,17 +27,16 @@
 #include <ufc.h>
 #include <boost/random.hpp>
 #include <boost/unordered_map.hpp>
-#include <boost/serialization/map.hpp>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/graph/BoostGraphOrdering.h>
 #include <dolfin/graph/GraphBuilder.h>
-#include <dolfin/graph/SCOTCH.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/Restriction.h>
 #include <dolfin/mesh/Vertex.h>
 #include "DofMap.h"
@@ -48,8 +47,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
-  boost::shared_ptr<const Restriction> restriction,
-  const std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facets)
+  boost::shared_ptr<const Restriction> restriction)
 {
   // Start timer for dofmap initialization
   Timer t0("Init dofmap");
@@ -71,7 +69,8 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   // Check if dofmap is distributed
   const bool distributed = MPI::num_processes() > 1;
 
-  // Re-order dofmap when distributed for process locality
+  // Re-order dofmap when distributed for process locality and set
+  // local_range
   if (distributed)
     reorder_distributed(dofmap, mesh, restriction, restricted_dofs_inverse);
   else
@@ -104,6 +103,7 @@ void DofMapBuilder::build_sub_map(DofMap& sub_dofmap,
   std::size_t offset = parent_dofmap._ufc_offset;
 
   // Get parent UFC dof map
+  dolfin_assert(parent_dofmap._ufc_dofmap);
   const ufc::dofmap& parent_ufc_dofmap = *(parent_dofmap._ufc_dofmap);
 
   // Extract ufc sub-dofmap from parent and get offset
@@ -123,12 +123,6 @@ void DofMapBuilder::build_sub_map(DofMap& sub_dofmap,
   // Resize dofmap data structure
   sub_dofmap._dofmap.resize(mesh.num_cells());
 
-  // Set to hold slave dofs on current processor
-  //std::set<std::size_t> slave_dofs;
-
-  // Store original _slave_master_map on this sub_dofmap
-  //_slave_master_map = parent_dofmap._slave_master_map;
-
   // Holder for copying UFC std::size_t dof maps into the a dof map that
   // is consistent with the linear algebra backend
   std::vector<std::size_t> dof_holder;
@@ -147,74 +141,21 @@ void DofMapBuilder::build_sub_map(DofMap& sub_dofmap,
     dof_holder.resize(sub_dofmap._ufc_dofmap->local_dimension(ufc_cell));
 
     // Tabulate sub-dofs on cell (using UFC map)
-    sub_dofmap._ufc_dofmap->tabulate_dofs(&dof_holder[0], num_global_mesh_entities, ufc_cell);
+    sub_dofmap._ufc_dofmap->tabulate_dofs(&dof_holder[0],
+                                          num_global_mesh_entities,
+                                          ufc_cell);
 
     // Add UFC offset
-    for (unsigned int i=0; i < dof_holder.size(); i++)
+    for (unsigned int i = 0; i < dof_holder.size(); i++)
       dof_holder[i] += offset;
 
-    /*
-    if (mesh.is_periodic() && !_slave_master_map.empty())
-    {
-      // Check for slaves and modify
-      std::map<std::size_t, std::size_t>::const_iterator slave_it;
-      for (unsigned int i = 0; i < dof_holder.size();ck i++)
-      {
-        const std::size_t dof = dof_holder[i];
-        slave_it = _slave_master_map.find(dof);
-        if (slave_it != _slave_master_map.end())
-        {
-          dof_holder[i] = slave_it->second; // Replace slave with master
-          slave_dofs.insert(slave_it->first);
-        }
-      }
-    }
-    */
-    std::copy(dof_holder.begin(), dof_holder.end(), sub_dofmap._dofmap[cell_index].begin());
+    std::copy(dof_holder.begin(), dof_holder.end(),
+              sub_dofmap._dofmap[cell_index].begin());
   }
 
-  /*
-  if (mesh.is_periodic() && !_slave_master_map.empty())
-  {
-    // Periodic meshes need to renumber UFC-numbered dofs due to elimination of slave dofs
-    // For faster search get a vector of all slaves on parent dofmap (or parent of parent, aka the owner)
-    std::vector<std::size_t> parent_slaves;
-    for (std::map<std::size_t, std::size_t>::const_iterator it = _slave_master_map.begin();
-                              it != _slave_master_map.end(); ++it)
-    {
-      parent_slaves.push_back(it->first);
-    }
-
-    std::vector<std::size_t>::iterator it;
-    std::vector<std::vector<dolfin::la_index> >::iterator cell_map;
-    std::vector<dolfin::la_index>::iterator dof;
-    for (cell_map = _dofmap.begin(); cell_map != _dofmap.end(); ++cell_map)
-    {
-      for (dof = cell_map->begin(); dof != cell_map->end(); ++dof)
-      {
-        it = std::lower_bound(parent_slaves.begin(), parent_slaves.end(), *dof);
-        *dof -= std::size_t(it - parent_slaves.begin());
-      }
-    }
-
-    // Reduce the local slaves onto all processes to eliminate duplicates
-    std::vector<std::set<std::size_t> > all_slave_dofs;
-    MPI::all_gather(slave_dofs, all_slave_dofs);
-    for (std::size_t i = 0; i < all_slave_dofs.size(); i++)
-      if (i != MPI::process_number())
-        slave_dofs.insert(all_slave_dofs[i].begin(), all_slave_dofs[i].end());
-
-    // Set global dimension
-    _global_dimension = _ufc_dofmap->global_dimension(num_global_mesh_entities) - slave_dofs.size();
-
-  }
-  else
-  */
-  {
-    // Set global dimension
-    sub_dofmap._global_dimension
-      = sub_dofmap._ufc_dofmap->global_dimension(num_global_mesh_entities);
-  }
+  // Set global dimension
+  sub_dofmap._global_dimension
+    = sub_dofmap._ufc_dofmap->global_dimension(num_global_mesh_entities);
 
   // Modify dofmap for non-UFC numbering
   sub_dofmap.ufc_map_to_dofmap.clear();
@@ -260,6 +201,70 @@ void DofMapBuilder::build_sub_map(DofMap& sub_dofmap,
   }
 }
 //-----------------------------------------------------------------------------
+std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
+ const std::map<std::size_t, std::pair<std::size_t, std::size_t> >& slave_to_master_vertices,
+ std::vector<std::size_t>& modified_global_indices)
+{
+  // Mark shared vertices
+  std::vector<bool> shared_vertex(mesh.num_vertices(), false);
+  //const std::map<std::size_t, std::set<std::size_t> > shared_entities
+  //  = mesh.topology().shared_entities(0);
+  //std::map<std::size_t, std::set<std::size_t> >::const_iterator shared_entity;
+  //for (shared_entity = shared_entities.begin(); shared_entity != shared_entities.end(); ++shared_entity)
+  //{
+  //  dolfin_assert(shared_entity->first < shared_vertex.size());
+  //  shared_vertex[shared_entity->first] = true;
+  //}
+
+  // Must check if slave vertex is shared
+
+  // Mark slave vertices
+  std::vector<bool> slave_vertex(mesh.num_vertices(), false);
+  std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator slave;
+  for (slave = slave_to_master_vertices.begin(); slave != slave_to_master_vertices.end(); ++slave)
+  {
+    dolfin_assert(slave->first < slave_vertex.size());
+    slave_vertex[slave->first] = true;
+  }
+
+  // Compute modified global vertex indices
+  std::size_t new_index = 0;
+  modified_global_indices.resize(mesh.num_vertices());
+  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+  {
+    const std::size_t local_index = vertex->index();
+    if (slave_vertex[local_index])
+    {
+      // Slave, need to find master vertex index and need to communicate
+      // to any sharing processes
+    }
+    else if (shared_vertex[local_index])
+    {
+      // Shared, decide if I should number this index or not
+    }
+    else
+      modified_global_indices[vertex->index()] = new_index++;
+  }
+
+  // Send number of owned entities to compute offeset
+  std::size_t offset = MPI::global_offset(new_index, true);
+
+  // Add process offset
+  for (std::size_t i = 0; i < modified_global_indices.size(); ++i)
+    modified_global_indices[i] += offset;
+
+  // Serial hack
+  for (slave = slave_to_master_vertices.begin(); slave != slave_to_master_vertices.end(); ++slave)
+  {
+    dolfin_assert(slave->first < modified_global_indices.size());
+    modified_global_indices[slave->first] = modified_global_indices[slave->second.second];
+  }
+
+  // Send new indices to process that share a vertex but were not
+  // responsible for re-numbering
+  return MPI::sum(new_index);
+}
+//-----------------------------------------------------------------------------
 void DofMapBuilder::reorder_local(DofMap& dofmap, const Mesh& mesh)
 {
   // Build graph
@@ -303,16 +308,63 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
   dolfin_assert(dofmap._ufc_dofmap->geometric_dimension() == mesh.geometry().dim());
   dolfin_assert(dofmap._ufc_dofmap->topological_dimension() == mesh.topology().dim());
 
-  // Generate and number required mesh entities
-  const bool distributed = MPI::num_processes() > 1;
+  // Check for periodic constraints
+  const bool periodic = MPI::sum(mesh.periodic_vertex_map.size()) > 0;
+
+  // Global enity indices
+  std::vector<std::vector<std::size_t> > global_entity_indices(mesh.topology().dim() + 1);
+
+  // Generate and number required mesh entities. Mesh indices are modified
+  // for periodic bcs
   const std::size_t D = mesh.topology().dim();
-  for (std::size_t d = 1; d <= D; ++d)
+  std::vector<std::size_t> num_global_mesh_entities(mesh.topology().dim() + 1, 0);
+  if (!periodic)
   {
-    if (dofmap._ufc_dofmap->needs_mesh_entities(d) || (distributed && d == (D - 1)))
+    // Compute number of mesh entities
+    for (std::size_t d = 0; d <= D; ++d)
     {
-      mesh.init(d);
-      if (distributed)
+      if (dofmap._ufc_dofmap->needs_mesh_entities(d))
+      {
+        // Number entities globally
         DistributedMeshTools::number_entities(mesh, d);
+
+        // Store entity indices
+        global_entity_indices[d].resize(mesh.size(d));
+        for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
+          global_entity_indices[d][e->index()] = e->global_index();
+
+        // Store number of global entities
+        num_global_mesh_entities[d] = mesh.size_global(d);
+      }
+    }
+  }
+  else
+  {
+    // Get master-slave vertex map
+    const std::map<std::size_t, std::pair<std::size_t, std::size_t> >&
+      slave_to_master_vertices = mesh.periodic_vertex_map;
+
+    // Compute modified global vertex indices
+    const std::size_t num_vertices = build_constrained_vertex_indices(mesh,
+          slave_to_master_vertices, global_entity_indices[0]);
+
+    cout << "Num vertices: " << num_vertices << ", " << mesh.num_vertices() << endl;
+    cout << "Num slave vertices: " << slave_to_master_vertices.size() << endl;
+
+    // Compute number of mesh entities
+    num_global_mesh_entities[0] = num_vertices;
+    for (std::size_t d = 1; d <= D; ++d)
+    {
+      if (dofmap._ufc_dofmap->needs_mesh_entities(d))
+      {
+        // Initialise local entities
+        std::map<std::size_t, std::set<std::size_t> > shared_entities;
+        const std::size_t num_entities
+          = DistributedMeshTools::number_entities(mesh, global_entity_indices[0],
+                                       global_entity_indices[d], shared_entities, d);
+
+        num_global_mesh_entities[d] = num_entities;
+      }
     }
   }
 
@@ -321,32 +373,37 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
   dofmap._off_process_owner.clear();
   dolfin_assert(dofmap._ufc_dofmap);
 
-  // FIXME: Remove restricted_dofs_inverse if not needed
-
   // Maps used to renumber dofs for restricted meshes
   map restricted_dofs;         // map from old to new dof
-  //map restricted_dofs_inverse; // map from new to old dof
 
-  // Store bumber of global entities
-  std::vector<std::size_t> num_global_mesh_entities(mesh.topology().dim() + 1);
-  for (std::size_t d = 0; d < num_global_mesh_entities.size(); d++)
-    num_global_mesh_entities[d] = mesh.size_global(d);
-
-  // Holder for UFC support 64-bit integers
+  // Holder for UFC 64-bit dofmap integers
   std::vector<std::size_t> ufc_dofs;
 
   // Build dofmap from ufc::dofmap
-  dolfin::UFCCell ufc_cell(mesh);
-  for (dolfin::CellIterator cell(mesh); !cell.end(); ++cell)
+  UFCCell ufc_cell(mesh);
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Skip cells not included in restriction
     if (restriction && !restriction->contains(*cell))
       continue;
 
-    // Update UFC cell
-    ufc_cell.update(*cell);
+    // Update UFC cell data
+    ufc_cell.orientation = cell->mesh().cell_orientations()[cell->index()];
+    for (std::size_t d = 0; d < D; ++d)
+    {
+      if (!global_entity_indices[d].empty())
+      {
+        //cout << "Testing: " << d << ", " << global_entity_indices.size() << ", " << mesh.num_entities(d) << endl;
+        for (std::size_t i = 0; i < ufc_cell.num_cell_entities[d]; ++i)
+          ufc_cell.entity_indices[d][i] = global_entity_indices[d][cell->entities(d)[i]];
+      }
+    }
 
-    // Get standard local dimension
+    // FIXME: Check the below two for local vs global
+    ufc_cell.entity_indices[D][0] = cell->index();
+    ufc_cell.index = cell->index();
+
+    // Get standard local element dimension
     const std::size_t local_dim = dofmap._ufc_dofmap->local_dimension(ufc_cell);
 
     // Get container for cell dofs
@@ -402,7 +459,6 @@ void DofMapBuilder::reorder_distributed(DofMap& dofmap,
   // Allocate data structure to hold dof ownership
   boost::array<DofMapBuilder::set, 3> dof_ownership;
 
-
   // Allocate map data structure from a shared dof to the processes that
   // share it
   DofMapBuilder::vec_map shared_dof_processes;
@@ -456,7 +512,7 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
 
   // Build set of dofs on process boundary (first assuming that all are
   // owned by this process)
-  const MeshFunction<std::size_t>& cell_map = interior_boundary.cell_map();
+  const MeshFunction<std::size_t>& cell_map = interior_boundary.entity_map(interior_boundary.topology().dim());
   if (!cell_map.empty())
   {
     for (CellIterator _f(interior_boundary); !_f.end(); ++_f)
@@ -503,32 +559,6 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
       }
     }
   }
-
-  // Periodic contribution because the boundary between periodic domains
-  // is not captured by the interior_boundary of a BoundaryMesh
-  /*
-  std::map<std::size_t, boost::unordered_set<std::size_t> >::const_iterator map_it;
-  for (map_it = dofmap._master_processes.begin();
-       map_it != dofmap._master_processes.end(); ++map_it)
-  {
-    std::size_t master_dof = map_it->first;
-    for (boost::unordered_set<std::size_t>::const_iterator sit = map_it->second.begin();
-          sit != map_it->second.end(); ++sit)
-    {
-      if (*sit == MPI::process_number())
-      {
-        if (shared_owned_dofs.find(master_dof) == shared_owned_dofs.end())
-        {
-          shared_owned_dofs.insert(master_dof);
-          dof_vote[master_dof] = rng();
-
-          send_buffer.push_back(master_dof);
-          send_buffer.push_back(dof_vote[master_dof]);
-        }
-      }
-    }
-  }
-  */
 
   // FIXME: The below algortihm can be improved (made more scalable)
   //        by distributing (dof, process) pairs to 'owner' range owner,
@@ -916,476 +946,6 @@ void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
         offset += sub_dofmap->global_dimension(num_global_mesh_entities);
     }
   }
-}
-//-----------------------------------------------------------------------------
-void DofMapBuilder::extract_dof_pairs(const DofMap& dofmap, const Mesh& mesh,
-    periodic_map& _slave_master_map,
-    std::map<std::size_t, boost::unordered_set<std::size_t> >& _master_processes)
-{
-  /*
-  Timer t0("Extracting dof pairs");
-
-  const std::size_t num_sub_dofmaps = dofmap._ufc_dofmap->num_sub_dofmaps();
-  if (num_sub_dofmaps > 0)
-  {
-    // Call recursively for all sub_dofmaps
-    std::vector<std::size_t> component(1);
-    for (std::size_t i=0; i<num_sub_dofmaps; i++)
-    {
-      component[0] = i;
-      DofMap* sub_dofmap = dofmap.extract_sub_dofmap(component, mesh);
-      extract_dof_pairs(*sub_dofmap, mesh, _slave_master_map, _master_processes);
-    }
-    return;
-  }
-
-  // Get dimensions
-  const std::size_t tdim = mesh.topology().dim();
-  const std::size_t gdim = mesh.geometry().dim();
-
-  // Arrays used for mapping coordinates
-  std::vector<double> x(gdim);
-  std::vector<double> y(gdim);
-  std::vector<double> dx(gdim);
-
-  const std::size_t process_number = MPI::process_number();
-
-  // Declare some variables used to hold information on each facet
-  std::vector<std::size_t> facet_dofs(dofmap.num_facet_dofs());
-  boost::multi_array<double, 2> facet_coors(boost::extents[dofmap.max_cell_dimension()][gdim]);
-
-  // First send all relevant information on the slave facets to adjoining master.
-  // Create a type to hold all info that will be sent. The info is:
-  //    (periodic facet id, global slave dofs and coordinates of all slave dofs)
-  typedef boost::tuples::tuple<std::size_t, std::vector<std::size_t>,
-                    std::vector<std::vector<double> > > facet_info_type;
-  typedef std::vector<facet_info_type> facets_info_type;
-  typedef std::map<std::size_t, facets_info_type> facet_info_map_type;
-  typedef std::map<std::size_t, std::vector<std::vector<double> > > coor_map_type;
-
-  // Use a master_slave map for faster master search. Only the slave_master_map is stored
-  periodic_map _current_master_slave_map;
-  periodic_map _current_slave_master_map;
-
-  // Run over periodic domains and build the global _slave_master_map
-  for (std::size_t periodic_domain = 0; periodic_domain < mesh.num_periodic_domains(); periodic_domain++)
-  {
-    // Get periodic info
-    //facet_pair_type facet_pairs = mesh.get_periodic_facet_pairs(periodic_domain);
-    //dx = mesh.get_periodic_distance(periodic_domain);  // Distance between periodic domains
-    //const std::size_t num_periodic_faces = facet_pairs.size();
-
-    // Map to hold all information being sent from slaves to masters
-    facet_info_map_type facet_info_map;
-
-    // Communicating processes
-    std::set<std::size_t> communicating_processors;
-
-    // Run over periodic facets and collect all info that should be sent
-    for (std::size_t i = 0; i < num_periodic_faces; i++)
-    {
-      const std::size_t master_process = facet_pairs[i].first.second;
-      const std::size_t slave_process = facet_pairs[i].second.second;
-
-      if (master_process == process_number)
-        communicating_processors.insert(slave_process);
-
-      if (slave_process == process_number)
-      {
-        // Get dofs and dof-coordinates from slave facet
-        const Facet facet(mesh, facet_pairs[i].second.first);
-        const Cell cell(mesh, facet.entities(tdim)[0]);
-        const std::vector<dolfin::la_index> global_dofs = dofmap.cell_dofs(cell.index());
-        dofmap.tabulate_coordinates(facet_coors, cell);
-        dofmap.tabulate_facet_dofs(facet_dofs, cell.index(facet));
-        communicating_processors.insert(master_process);
-
-        std::vector<std::vector<double> > coors_of_dofs;
-        std::vector<std::size_t> dofs_on_facet;
-        for (std::size_t k = 0; k < dofmap.num_facet_dofs(); k++)
-        {
-          std::copy(facet_coors[facet_dofs[k]].begin(),
-                    facet_coors[facet_dofs[k]].end(), y.begin());
-          coors_of_dofs.push_back(y);
-          dofs_on_facet.push_back(global_dofs[facet_dofs[k]]);
-        }
-
-        // Put info in type used for communicating with master
-        if (facet_info_map.find(master_process) == facet_info_map.end())
-        {
-          facet_info_type facet_info = facet_info_type(i, dofs_on_facet, coors_of_dofs);
-          facets_info_type facets_info;
-          facets_info.push_back(facet_info);
-          facet_info_map[master_process] = facets_info;
-        }
-        else
-          facet_info_map[master_process].push_back(facet_info_type(i, dofs_on_facet, coors_of_dofs));
-      }
-    }
-
-    // Send slave info from all slaves to all masters
-    facet_info_map_type received_info;
-    MPI::distribute(communicating_processors, facet_info_map, received_info);
-
-    // Put info from slave facets into new variables
-    coor_map_type coors_on_slave;
-    vec_map slave_dofs;
-    for (facet_info_map_type::const_iterator proc_it = received_info.begin();
-             proc_it != received_info.end(); ++proc_it)
-    {
-      facets_info_type info_list = proc_it->second;
-      for (std::size_t j = 0; j < info_list.size(); j++)
-      {
-        std::size_t i = info_list[j].get<0>();  // The periodic facet number
-        slave_dofs[i] = info_list[j].get<1>();
-        coors_on_slave[i] = info_list[j].get<2>();
-      }
-    }
-
-    // Declare map used to hold global matching pairs of dofs on this process
-    periodic_map matching_dofs;
-
-    // Map from master dof to processes sharing it for one single periodic direction
-    std::map<std::size_t, std::pair<std::size_t, std::size_t> > master_processes;
-
-    // Run over periodic facets and locate matching dof pairs
-    for (std::size_t i = 0; i < num_periodic_faces; i++)
-    {
-      const std::size_t master_process = facet_pairs[i].first.second;
-      const std::size_t slave_process = facet_pairs[i].second.second;
-
-      // Compare only on master process
-      if (master_process == process_number)
-      {
-        // Get info from master facet: cell, dofs, coordinates
-        const Facet facet(mesh, facet_pairs[i].first.first);
-        const Cell cell(mesh, facet.entities(tdim)[0]);
-        const std::vector<dolfin::la_index> global_dofs = dofmap.cell_dofs(cell.index());
-        dofmap.tabulate_coordinates(facet_coors, cell);
-        dofmap.tabulate_facet_dofs(&facet_dofs[0], cell.index(facet));
-
-//         //////////////////////////////////////////////////////////////
-//           // Faster search, but this is not really a timeconsuming process anyway...
-//         if (dofmap.num_facet_dofs() == 0)
-//         {
-//           continue;
-//         }
-//         else if (dofmap.num_facet_dofs() == 1)
-//         {
-//           std::size_t master_dof = global_dofs[facet_dofs[0]];
-//           std::size_t slave_dof = slave_dofs[i][0];
-//           if (master_dof >= ownership_range.first && master_dof < ownership_range.second)
-//             matching_dofs[master_dof] = slave_dof;
-//         }
-//         else
-//         {
-//           // Get global master dof and coordinates of first local dof
-//           std::size_t master_dof = global_dofs[facet_dofs[0]];
-//           std::copy(facet_coors[facet_dofs[0]].begin(),
-//                     facet_coors[facet_dofs[0]].end(), x.begin());
-//           // Look for a match in coordinates of the first local slave dof
-//           y = coors_on_slave[i][0];
-//           double error = 0.;
-//           for(std::size_t l = 0; l < gdim; l++)
-//             error += std::abs(x[l] - y[l] + dx[l]);
-//
-//           if (error < 1.0e-12)    // Match! Assuming the dofs are laid out in the same order
-//                                            // on the facet the remaining are simply copied without control
-//           {
-//             for (std::size_t j = 0; j < dofmap.num_facet_dofs(); j++)
-//             {
-//               master_dof = global_dofs[facet_dofs[j]];
-//               matching_dofs[master_dof] = slave_dofs[i][j];
-//             }
-//           }
-//           else  // If local dofs 0/0 don't match the order must be opposite
-//           {
-//             for (std::size_t j = 0; j < dofmap.num_facet_dofs(); j++)
-//             {
-//               master_dof = global_dofs[facet_dofs[j]];
-//               matching_dofs[master_dof] = slave_dofs[i][dofmap.num_facet_dofs()-j-1];
-//             }
-//           }
-//         }
-//         ////////////////////////////////////////////////////////
-
-        // Match master and slave dofs and put pair in map
-        for (std::size_t j = 0; j < dofmap.num_facet_dofs(); j++)
-        {
-          // Get global master dof and coordinates
-          std::size_t master_dof = global_dofs[facet_dofs[j]];
-
-          // Check new master_dofs only
-          if (matching_dofs.find(master_dof) == matching_dofs.end())
-          {
-            std::copy(facet_coors[facet_dofs[j]].begin(),
-                      facet_coors[facet_dofs[j]].end(), x.begin());
-
-            for (std::size_t k = 0; k < dofmap.num_facet_dofs(); k++)
-            {
-              // Look for a match in coordinates
-              y = coors_on_slave[i][k];
-              double error = 0.;
-              for(std::size_t l = 0; l < gdim; l++)
-                error += std::abs(x[l] - y[l] + dx[l]);
-
-              if (error < 1.0e-12) // Match! Store master and slave in matching_dofs
-              {
-                matching_dofs[master_dof] = slave_dofs[i][k];
-                break;
-              }
-              if (k == dofmap.num_facet_dofs()-1)
-                dolfin_error("DofMapBuilder.cpp",
-                              "extracting dof pairs",
-                              "Could not find a pair of matching degrees of freedom");
-            }
-          }
-          // Store the processes that share the slave/master pair
-          master_processes[master_dof] = std::make_pair(master_process, slave_process);
-
-        }  // Finished on facet. Move to next periodic facet pair
-      }
-    }   // Finished all periodic pairs on periodic domain
-
-    // At this point there should be a match between dofs in matching_dofs.
-    // Put the matching dof pairs on all processes
-    std::vector<periodic_map> all_dof_pairs;
-    MPI::all_gather(matching_dofs, all_dof_pairs);
-
-    // Store also on all processors the processes that share each master dof
-    std::vector<std::map<std::size_t, std::pair<std::size_t, std::size_t> > > all_process_pairs;
-    MPI::all_gather(master_processes, all_process_pairs);
-
-    // Add to the global _slave_master_map and _master_processes
-    for (std::size_t i = 0; i < all_dof_pairs.size(); i++)
-    {
-      periodic_map matching_dofs = all_dof_pairs[i];
-      std::map<std::size_t, std::pair<std::size_t, std::size_t> > master_processes = all_process_pairs[i];
-
-      for (periodic_map_iterator it = matching_dofs.begin();
-                                 it != matching_dofs.end(); ++it)
-      {
-        std::size_t master_dof = it->first;
-        std::size_t slave_dof = it->second;
-
-        if (periodic_domain == 0)     // First periodic direction, just copy down
-        {
-          _current_slave_master_map[slave_dof] = master_dof;
-          _current_master_slave_map[master_dof] = slave_dof;
-          _master_processes[master_dof].insert(master_processes[master_dof].first);
-          _master_processes[master_dof].insert(master_processes[master_dof].second);
-        }
-        else
-        {
-          // At this point we need to do something clever in case of more than one
-          // periodic direction. For example, a rectangular mesh with two periodic
-          // directions will have four corners that should be equal. In that case
-          // we will here end up with one master and three slaves of the same master.
-          // A 3D Cube with 8 corners should similarily have 7 slaves of the same master.
-          if (_current_slave_master_map.find(slave_dof) == _current_slave_master_map.end())
-          {
-            // If the slave does not exist, then simply add to maps.
-            _current_slave_master_map[slave_dof] = master_dof;
-            _current_master_slave_map[master_dof] = slave_dof;
-            _master_processes[master_dof].insert(master_processes[master_dof].first);
-            _master_processes[master_dof].insert(master_processes[master_dof].second);
-
-            // Need to check if this is a "corner dof" by checking
-            // whether the slave has been used as a master previously.
-            if (_current_master_slave_map.find(slave_dof) != _current_master_slave_map.end())
-            {
-              // The slave dof has been previously used as master
-              // Get the old slave of slave_dof
-              std::size_t old_slave = _current_master_slave_map[slave_dof];
-
-              // Use latest master for previous slave as well
-              _current_slave_master_map[old_slave] = master_dof;
-
-              // slave_dof should no longer be used as a master.
-              _current_master_slave_map.erase(slave_dof);
-
-              // Get the processes that share slave_dof and add to the ultimate master
-              _master_processes[master_dof].insert(_master_processes[slave_dof].begin(), _master_processes[slave_dof].end());
-              _master_processes.erase(slave_dof);
-            }
-          }
-          else // Corner dof. The slave_dof exists as slave from before
-          {
-            // Check if the master_dof has been used previously as a slave
-            if (_current_slave_master_map.find(master_dof) != _current_slave_master_map.end())
-            {
-              // Get the dof that will be master for all corner dofs
-              std::size_t ultimate_master = _current_slave_master_map[master_dof];
-
-              // Get the previous master
-              std::size_t old_master = _current_slave_master_map[slave_dof];
-
-              // Use ultimate master for the current slave as well
-              _current_slave_master_map[slave_dof] = ultimate_master;
-
-              // Put the processes that shared the old master in the ultimate master set
-              _master_processes[ultimate_master].insert(_master_processes[old_master].begin(), _master_processes[old_master].end());
-
-              // Update _current_master_slave_map
-              _current_master_slave_map[ultimate_master] = slave_dof;
-            }
-          }
-        }
-      }
-    }
-  } // Finished with all periodic domains
-
-  // Update the global _slave_master_map (the map for all sub_dofmaps)
-  _slave_master_map.insert(_current_slave_master_map.begin(), _current_slave_master_map.end());
-
-//     cout << "Map" << endl;
-//     for (periodic_map_iterator it = _slave_master_map.begin();
-//                                it != _slave_master_map.end(); ++it)
-//     {
-//       cout << "   " << it->first << " " << it->second << endl;
-//     }
-//     for (std::map<std::size_t, set>::iterator it = _master_processes.begin();
-//                                     it != _master_processes.end(); ++it)
-//     {
-//       cout << " Master " << it->first << endl;
-//       for (set_iterator sit = it->second.begin(); sit != it->second.end(); ++sit)
-//          cout << " " << *sit;
-//       cout << endl;
-//     }
-*/
-}
-
-void DofMapBuilder::periodic_modification(DofMap& dofmap, const Mesh& mesh, set& global_dofs)
-{
-  /*
-  Timer t0("Periodic dofmap modification");
-
-  periodic_map _slave_master_map;
-  std::map<std::size_t, boost::unordered_set<std::size_t> > _master_processes;
-
-  // Recursively extract a map from slaves to master dofs for all sub-dofmaps of dofmap.
-  // Create also a map of the processes that share the master dofs.
-  extract_dof_pairs(dofmap, mesh, _slave_master_map, _master_processes);
-
-  // Store the global _slave_master_map
-  dofmap._slave_master_map = _slave_master_map;
-
-  // Get topological dimension
-  const std::size_t tdim = mesh.topology().dim();
-
-  // Eliminate all slaves from the dofmap by placing the master in all locations
-  // where a slave is found. For efficiency first find all cells that could contain a slave.
-  set cells_with_slave;
-  for (std::size_t periodic_domain = 0; periodic_domain < mesh.num_periodic_domains(); periodic_domain++)
-  {
-    // Get periodic facet-to-facet map
-    facet_pair_type facet_pairs = mesh.get_periodic_facet_pairs(periodic_domain);
-
-    for (std::size_t i = 0; i < facet_pairs.size(); i++)
-    {
-      const std::size_t slave_process = facet_pairs[i].second.second;
-      if (slave_process == MPI::process_number())
-      {
-        // Get all cells with vertex on the periodic facet.
-        const Facet facet(mesh, facet_pairs[i].second.first);
-        const std::size_t* facet_vertices = facet.entities(0);
-        if (tdim == 1) // Special treatment of 1D
-        {
-          const Cell cell(mesh, facet.entities(1)[0]);
-          cells_with_slave.insert(cell.index());
-        }
-        else
-        {
-          for (std::size_t j = 0; j < facet.num_entities(0); j++)
-          {
-            const Vertex v(mesh, facet_vertices[j]);
-            const std::size_t* vertex_cells = v.entities(tdim);
-            for (std::size_t k = 0; k < v.num_entities(tdim); k++)
-              cells_with_slave.insert(vertex_cells[k]);
-          }
-        }
-      }
-    }
-  }
-
-  // Run over cells with potential slave and eliminate slaves from dofmap
-  for (set_iterator it = cells_with_slave.begin();
-                    it != cells_with_slave.end(); ++it)
-  {
-    const std::vector<dolfin::la_index> global_dofs = dofmap.cell_dofs(*it);
-    for (std::size_t j = 0; j < dofmap.max_cell_dimension(); j++)
-    {
-      const std::size_t dof = global_dofs[j];
-      if (_slave_master_map.find(dof) != _slave_master_map.end())
-      {
-        dofmap._dofmap[*it][j] = _slave_master_map[dof]; // Switch slave for master
-      }
-    }
-  }
-
-  // At this point the slaves should be completely removed from the dofmap
-  // and the global dimension of the dofmap can be reduced.
-  // To do this:
-  //   1) Compute the total number of slaves that has been eliminated
-  //   2) Renumber all UFC-numbering based dofs by subtracting current
-  //        dof-number with the number of eliminated slaves with a number
-  //        less than the current
-  //   3) Recompute global_dimension (set _global_dimension)
-  //   4) Renumber global_dofs and _master_processes
-
-  // Get the keys of _slave_master_map for faster search (to avoid std::distance)
-  std::vector<std::size_t> _all_slaves;
-  for (periodic_map_iterator it = _slave_master_map.begin();
-                             it != _slave_master_map.end(); ++it)
-  {
-    _all_slaves.push_back(it->first);
-  }
-
-  // Store global entity dimensions in vector // TODO: These lines are repeated a few times
-  std::vector<std::size_t> num_global_mesh_entities(mesh.topology().dim() + 1);
-  for (std::size_t d = 0; d < num_global_mesh_entities.size(); d++)
-    num_global_mesh_entities[d] = mesh.size_global(d);
-
-  // Compute the new global dimension of dofmap
-  dofmap._global_dimension = dofmap._ufc_dofmap->global_dimension(num_global_mesh_entities) - _slave_master_map.size();
-
-  // Renumber all UFC-numbering based dofs due to deleted slave dofs
-  // Could here alternatively create a map
-  std::vector<std::size_t>::iterator it;
-  periodic_map_iterator pit;
-  std::vector<std::vector<dolfin::la_index> >::iterator cell_map;
-  std::vector<dolfin::la_index>::iterator dof;
-  for (cell_map = dofmap._dofmap.begin(); cell_map != dofmap._dofmap.end(); ++cell_map)
-  {
-    for (dof = cell_map->begin(); dof != cell_map->end(); ++dof)
-    {
-      it = std::lower_bound(_all_slaves.begin(), _all_slaves.end(), *dof);
-      *dof -= std::size_t(it - _all_slaves.begin());
-//      pit = _slave_master_map.lower_bound(*dof);
-//      *dof -= std::distance(_slave_master_map.begin(), pit); // slow
-    }
-  }
-
-  // Renumber _master_processes and global_dofs
-  std::map<std::size_t, boost::unordered_set<std::size_t> > new_master_processes;
-  for (std::map<std::size_t, boost::unordered_set<std::size_t> >::iterator sit = _master_processes.begin();
-                                            sit != _master_processes.end(); ++sit)
-  {
-    const std::size_t dof = sit->first;
-    it = std::lower_bound(_all_slaves.begin(), _all_slaves.end(), dof);
-    const std::size_t new_dof = dof - std::size_t(it - _all_slaves.begin());
-    new_master_processes[new_dof] = sit->second;
-  }
-  dofmap._master_processes = new_master_processes;
-
-  set new_global_dofs;
-  for (set_iterator sit = global_dofs.begin(); sit != global_dofs.end(); ++sit)
-  {
-    it = std::lower_bound(_all_slaves.begin(), _all_slaves.end(), *sit);
-    new_global_dofs.insert(*sit - std::size_t(it - _all_slaves.begin()));
-  }
-  global_dofs = new_global_dofs;
-  */
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<ufc::dofmap>

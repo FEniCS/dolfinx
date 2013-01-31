@@ -32,9 +32,6 @@ using namespace dolfin;
 
 int main()
 {
-  not_working_in_parallel("Periodoc boundary conditions");
-
-
   // Source term
   class Source : public Expression
   {
@@ -64,7 +61,8 @@ int main()
     // Left boundary is "target domain" G
     bool inside(const Array<double>& x, bool on_boundary) const
     {
-      return (std::abs(x[0]) < DOLFIN_EPS) && on_boundary;
+      //return (std::abs(x[0]) < DOLFIN_EPS) && on_boundary;
+      return (std::abs(x[0]) < DOLFIN_EPS);
     }
 
     // Map right boundary (H) to left boundary (G)
@@ -72,63 +70,53 @@ int main()
     {
       y[0] = x[0] - 1.0;
       y[1] = x[1];
-      y[2] = x[2];
+      //y[2] = x[2];
     }
   };
 
-  /*
   // Create mesh
   UnitSquareMesh mesh(32, 32);
 
-  // Create periodic boundary condition
-  PeriodicBoundary periodic_boundary;
-  //mesh.add_periodic_direction(periodic_boundary);
-
-  std::map<std::size_t, std::pair<std::size_t, std::size_t> > test
-    = PeriodicDomain::compute_periodic_facet_pairs(mesh, periodic_boundary);
-
-  std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator it;
-  for (it = test.begin(); it != test.end(); ++it)
-  {
-    cout << "*** Slave facet, proc owne ,masterr, master index on owner: " << it->first
-        << ", " << it->second.first << ", " <<  it->second.second << endl;
-  }
-  */
-
-  // Create mesh
-  UnitCubeMesh mesh(16, 16, 16);
+  // Not working in parallel yet - it will soon
+  if (MPI::num_processes() > 1)
+    return 0;
 
   // Create periodic boundary condition
   PeriodicBoundary periodic_boundary;
 
-  std::map<std::size_t, std::pair<std::size_t, std::size_t> > test
-    = PeriodicBoundaryComputation::compute_periodic_facet_pairs(mesh, periodic_boundary);
+  const std::size_t dim = 0;
 
-  FacetFunction<std::size_t> master_slave_facets(mesh, 0);
-  periodic_boundary.mark(master_slave_facets, 1);
-
-  std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator it;
-  for (it = test.begin(); it != test.end(); ++it)
-  {
-    master_slave_facets[it->first] = 2;
-  }
-
-  File file("facets.pvd");
-  file << master_slave_facets;
-
+  const std::map<std::size_t, std::pair<std::size_t, std::size_t> > periodic_vertex_pairs
+    = PeriodicBoundaryComputation::compute_periodic_pairs(mesh, periodic_boundary, dim);
 
   /*
+  const bool parallel = MPI::num_processes() > 1;
   std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator it;
   for (it = test.begin(); it != test.end(); ++it)
   {
-    cout << "*** Slave facet (local), proc owner master, master index on owner: " << it->first
+    cout << "*** Slave facet, proc owne, master, master index on owner: " << it->first
         << ", " << it->second.first << ", " <<  it->second.second << endl;
+    if (!parallel)
+    {
+      const Vertex v0(mesh, it->first), v1(mesh, it->second.second);
+      cout << "  " << v0.point().str() << endl;
+      cout << "  " << v1.point().str() << endl;
+    }
   }
   */
 
-  return 0;
+  // Mark periodic boundary conditions for plotting
+  MeshFunction<std::size_t> master_slave_entities(mesh, dim, 0);
+  periodic_boundary.mark(master_slave_entities, 1);
+  std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator it;
+  for (it = periodic_vertex_pairs.begin(); it != periodic_vertex_pairs.end(); ++it)
+    master_slave_entities[it->first] = 2;
+  File file("markers.pvd");
+  file << master_slave_entities;
 
-  /*
+  // Attach periodic vertex pairs to mesh
+  mesh.periodic_vertex_map = periodic_vertex_pairs;
+
   // Create functions
   Source f;
 
@@ -152,13 +140,12 @@ int main()
   solve(a == L, u, bcs);
 
   // Save solution in VTK format
-  File file("periodic_dofmap.pvd");
-  file << u;
+  File file_u("periodic.pvd");
+  file_u << u;
 
   // Plot solution
   plot(u);
   interactive();
 
   return 0;
-  */
 }
