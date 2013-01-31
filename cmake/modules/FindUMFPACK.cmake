@@ -9,7 +9,7 @@ message(STATUS "Checking for package 'UMFPACK'")
 
 # Find packages that UMFPACK depends on
 set(CMAKE_LIBRARY_PATH ${BLAS_DIR}/lib $ENV{BLAS_DIR}/lib ${CMAKE_LIBRARY_PATH})
-find_package(AMD QUIET)
+find_package(AMD)
 find_package(BLAS QUIET)
 find_package(CHOLMOD QUIET)
 
