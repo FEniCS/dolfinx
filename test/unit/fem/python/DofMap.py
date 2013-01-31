@@ -21,7 +21,7 @@
 # Last changed: 2009-07-28
 
 import unittest
-import numpy
+import numpy as np
 from dolfin import *
 
 class DofMapTest(unittest.TestCase):
@@ -34,10 +34,10 @@ class DofMapTest(unittest.TestCase):
 
     def test_tabulate_coord(self):
 
-        coord0 = numpy.zeros((3,2), dtype="d")
-        coord1 = numpy.zeros((3,2), dtype="d")
-        coord2 = numpy.zeros((3,2), dtype="d")
-        coord3 = numpy.zeros((3,2), dtype="d")
+        coord0 = np.zeros((3,2), dtype="d")
+        coord1 = np.zeros((3,2), dtype="d")
+        coord2 = np.zeros((3,2), dtype="d")
+        coord3 = np.zeros((3,2), dtype="d")
 
         for cell in cells(self.mesh):
             self.V.dofmap().tabulate_coordinates(cell, coord0)
@@ -67,19 +67,19 @@ class DofMapTest(unittest.TestCase):
             dofs2 = L.sub(1).dofmap().cell_dofs(cell.index())
             dofs3 = L.dofmap().cell_dofs(cell.index())
 
-            self.assertTrue(numpy.array_equal(dofs0, \
+            self.assertTrue(np.array_equal(dofs0, \
                                 self.W.sub(0).dofmap().cell_dofs(i)))
-            self.assertTrue(numpy.array_equal(dofs1,
+            self.assertTrue(np.array_equal(dofs1,
                                 L.sub(0).dofmap().cell_dofs(i)))
-            self.assertTrue(numpy.array_equal(dofs2,
+            self.assertTrue(np.array_equal(dofs2,
                                 L.sub(1).dofmap().cell_dofs(i)))
-            self.assertTrue(numpy.array_equal(dofs3,
+            self.assertTrue(np.array_equal(dofs3,
                                 L.dofmap().cell_dofs(i)))
 
-            self.assertEqual(len(numpy.intersect1d(dofs0, dofs1)), 0)
-            self.assertEqual(len(numpy.intersect1d(dofs0, dofs2)), 0)
-            self.assertEqual(len(numpy.intersect1d(dofs1, dofs2)), 0)
-            self.assertTrue(numpy.array_equal(numpy.append(dofs1, dofs2), dofs3))
+            self.assertEqual(len(np.intersect1d(dofs0, dofs1)), 0)
+            self.assertEqual(len(np.intersect1d(dofs0, dofs2)), 0)
+            self.assertEqual(len(np.intersect1d(dofs1, dofs2)), 0)
+            self.assertTrue(np.array_equal(np.append(dofs1, dofs2), dofs3))
 
         self.assertFalse(all_dofs.difference(self.W.dofmap().dofs()))
 
@@ -95,6 +95,49 @@ class DofMapTest(unittest.TestCase):
         W = MixedFunctionSpace([Q, Q, R, Q])
         W = MixedFunctionSpace([V, R])
         W = MixedFunctionSpace([R, V])
+
+    def test_vertex_to_dof_map(self):
+
+        # Check for both reordered and UFC ordered dofs
+        for reorder_dofs in [True, False]:
+            parameters.reorder_dofs_serial = reorder_dofs
+
+            V = FunctionSpace(self.mesh, "Lagrange", 1)
+            Q = VectorFunctionSpace(self.mesh, "Lagrange", 1)
+            W = V*Q
+
+            u = Function(V)
+            e = Expression("x[0]+x[1]")
+            u.interpolate(e)
+            
+            vert_values = self.mesh.coordinates().sum(1)
+            func_values = -1*np.ones(len(vert_values))
+            func_values[V.dofmap().vertex_to_dof_map(self.mesh)] = u.vector().array()
+            
+            for v_val, f_val in zip(vert_values, func_values):
+                # Do not compare dofs owned by other process
+                if f_val != -1:
+                    self.assertAlmostEqual(f_val, v_val)
+            
+            c0 = Constant((1,2))
+            u0 = Function(Q)
+            u0.interpolate(c0)
+            
+            vert_values = np.zeros(self.mesh.num_vertices()*2)
+            u1 = Function(Q)
+            vert_values[::2] = 1
+            vert_values[1::2] = 2
+            
+            u1.vector().set_local(vert_values[Q.dofmap().vertex_to_dof_map(self.mesh)].copy())
+            self.assertAlmostEqual((u0.vector()-u1.vector()).sum(), 0.0)
+            
+            W = FunctionSpace(self.mesh, "DG", 0)
+            self.assertRaises(RuntimeError, lambda : W.dofmap().vertex_to_dof_map(self.mesh))
+            
+            W = Q*FunctionSpace(self.mesh, "R", 0)
+            self.assertRaises(RuntimeError, lambda : W.dofmap().vertex_to_dof_map(self.mesh))
+            W = FunctionSpace(self.mesh, "CG", 2)
+            self.assertRaises(RuntimeError, lambda : W.dofmap().vertex_to_dof_map(self.mesh))
 
 if __name__ == "__main__":
     print ""

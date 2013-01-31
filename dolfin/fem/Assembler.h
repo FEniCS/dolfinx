@@ -80,18 +80,6 @@ namespace dolfin
     ///         The form to assemble the tensor from.
     void assemble(GenericTensor& A, const Form& a);
 
-    /// Assemble tensor from given form on subdomain
-    ///
-    /// *Arguments*
-    ///     A (_GenericTensor_)
-    ///         The tensor to assemble.
-    ///     a (_Form_)
-    ///         The form to assemble the tensor from.
-    ///     sub_domain (_SubDomain_)
-    ///         The subdomain to assemble on.
-    void assemble(GenericTensor& A, const Form& a,
-                  const SubDomain& sub_domain);
-
     /// Assemble tensor from given form on subdomains
     ///
     /// *Arguments*

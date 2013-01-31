@@ -49,8 +49,8 @@ void ALE::move(Mesh& mesh0, const Mesh& mesh1)
     = mesh0.data().mesh_function("parent_vertex_indices");
   boost::shared_ptr<MeshFunction<std::size_t> > local_to_global_1
     = mesh1.data().mesh_function("parent_vertex_indices");
-  const MeshFunction<std::size_t>& boundary_to_mesh_0 = boundary0.vertex_map();
-  const MeshFunction<std::size_t>& boundary_to_mesh_1 = boundary1.vertex_map();
+  const MeshFunction<std::size_t>& boundary_to_mesh_0 = boundary0.entity_map(0);
+  const MeshFunction<std::size_t>& boundary_to_mesh_1 = boundary1.entity_map(0);
   dolfin_assert(local_to_global_0);
   dolfin_assert(local_to_global_1);
 

@@ -27,6 +27,6 @@ v = TestFunction(element)
 f = Coefficient(element)
 g = Coefficient(element)
 
-a = dot(grad(u), grad(v))*dx
-L = f*v*dx + g*v*ds
-M = u*dx
+a = dot(grad(u), grad(v))*dx()
+L = f*v*dx() + g*v*ds()
+M = u*dx()

@@ -112,12 +112,12 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   editor.init_cells(num_boundary_cells);
 
   // Initialize mapping from vertices in boundary to vertices in mesh
-  MeshFunction<std::size_t>& vertex_map = boundary.vertex_map();
+  MeshFunction<std::size_t>& vertex_map = boundary.entity_map(0);
   if (num_boundary_vertices > 0)
     vertex_map.init(boundary, 0, num_boundary_vertices);
 
   // Initialize mapping from cells in boundary to facets in mesh
-  MeshFunction<std::size_t>& cell_map = boundary.cell_map();
+  MeshFunction<std::size_t>& cell_map = boundary.entity_map(D - 1);
   if (num_boundary_cells > 0)
     cell_map.init(boundary, D - 1, num_boundary_cells);
 

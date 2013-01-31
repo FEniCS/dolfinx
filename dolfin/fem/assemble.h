@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Anders Logg
+// Copyright (C) 2007-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -18,9 +18,10 @@
 // Modified by Garth N. Wells, 2008, 2009.
 // Modified by Johan Hake, 2009.
 // Modified by Joachim B. Haga, 2012.
+// Modified by Martin S. Alnaes, 2013.
 //
 // First added:  2007-01-17
-// Last changed: 2012-02-01
+// Last changed: 2013-01-29
 //
 // This file duplicates the Assembler::assemble* and SystemAssembler::assemble*
 // functions in namespace dolfin, and adds special versions returning the value
@@ -42,22 +43,12 @@ namespace dolfin
   class GenericMatrix;
   class GenericVector;
   template<typename T> class MeshFunction;
-  class SubDomain;
 
   //--- Copies of assembly functions in Assembler.h ---
 
   /// Assemble tensor
   void assemble(GenericTensor& A,
                 const Form& a,
-                bool reset_sparsity=true,
-                bool add_values=false,
-                bool finalize_tensor=true,
-                bool keep_diagonal=false);
-
-  /// Assemble tensor on sub domain
-  void assemble(GenericTensor& A,
-                const Form& a,
-                const SubDomain& sub_domain,
                 bool reset_sparsity=true,
                 bool add_values=false,
                 bool finalize_tensor=true,
@@ -158,13 +149,6 @@ namespace dolfin
 
   /// Assemble scalar
   double assemble(const Form& a,
-                  bool reset_sparsity=true,
-                  bool add_values=false,
-                  bool finalize_tensor=true);
-
-  /// Assemble scalar on sub domain
-  double assemble(const Form& a,
-                  const SubDomain& sub_domain,
                   bool reset_sparsity=true,
                   bool add_values=false,
                   bool finalize_tensor=true);

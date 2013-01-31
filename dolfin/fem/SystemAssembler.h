@@ -34,15 +34,11 @@ namespace dolfin
 
   // Forward declarations
   class GenericMatrix;
-  class GenericTensor;
   class GenericVector;
   class Form;
-  class Mesh;
-  class SubDomain;
   class UFC;
   class Cell;
   class Facet;
-  class Function;
   template<typename T> class MeshFunction;
 
   /// This class provides implements an assembler for systems
