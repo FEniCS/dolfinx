@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2012
 //
 // First added:  2010-02-19
-// Last changed: 2013-01-23
+// Last changed: 2013-01-31
 
 #include <algorithm>
 #include <numeric>
@@ -513,25 +513,21 @@ void GraphBuilder::compute_local_dual_graph(const LocalMeshData& mesh_data,
   // Create map from facet (list of vertex indices) to cells
   facet_cell_map.rehash((facet_cell_map.size() + num_local_cells)/facet_cell_map.max_load_factor() + 1);
 
-  // Iterate over all cells
+  std::vector<std::size_t> cellvtx(num_vertices_per_cell);
   std::vector<std::size_t> facet(num_vertices_per_facet);
+
+  // Iterate over all cells
   for (std::size_t i = 0; i < num_local_cells; ++i)
   {
+    // Copy cell vertices and sort into order, taking a subset (minus one vertex) 
+    // to form a set of facet vertices
+    std::copy(cell_vertices[i].begin(), cell_vertices[i].end(), cellvtx.begin());
+    std::sort(cellvtx.begin(), cellvtx.end());
+    std::copy(cellvtx.begin() + 1, cellvtx.end(), facet.begin());
+    
     // Iterate over facets in cell
     for(std::size_t j = 0; j < num_vertices_per_cell; ++j)
     {
-      // Build set of vertices that make up a facet (all cell vertices,
-      // minus one cell vertex)
-      std::size_t pos = 0;
-      for (std::size_t k = 0; k < num_vertices_per_cell; ++k)
-      {
-        if (k != j)
-          facet[pos++] = cell_vertices[i][k];
-      }
-
-      // Sort into order, so map indexing will be consistent
-      std::sort(facet.begin(), facet.end());
-
       // Look for facet in map
       const FacetCellMap::const_iterator join_cell = facet_cell_map.find(facet);
 
@@ -544,8 +540,14 @@ void GraphBuilder::compute_local_dual_graph(const LocalMeshData& mesh_data,
         // Add offset to cell index when inserting into local_graph
         local_graph[i].insert(join_cell->second + cell_offset);
         local_graph[join_cell->second].insert(i + cell_offset);
+        // Save memory and search time by erasing
         facet_cell_map.erase(join_cell);
       }
+
+      // Change facet by one entry, cycling from [1,2,3]->[0,2,3]->[0,1,3]->[0,1,2] (for tetrahedron)
+      if (j != num_vertices_per_facet)
+        facet[j] = cellvtx[j];
+
     }
   }
 }
