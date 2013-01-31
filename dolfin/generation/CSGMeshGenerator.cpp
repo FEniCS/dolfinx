@@ -67,8 +67,7 @@ void CSGMeshGenerator::generate(BoundaryMesh& mesh,
     Mesh full_mesh;
     generator.generate(full_mesh);
 
-    mesh.clear();
-    mesh.init_exterior_boundary(full_mesh);
+    mesh = BoundaryMesh(full_mesh, "exterior");
   }
   else if (geometry.dim() == 3)
   {

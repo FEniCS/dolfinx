@@ -107,7 +107,7 @@ def poisson_manifold():
     # Create mesh
     cubemesh = UnitCubeMesh(32,32,2)
 
-    boundarymesh = BoundaryMesh(cubemesh)
+    boundarymesh = BoundaryMesh(cubemesh, "exterior")
 
     mesh = SubMesh(boundarymesh, BottomEdge())
 
@@ -148,7 +148,7 @@ def rotate_2d_mesh(theta):
     """Unit square mesh in 2D rotated through theta about the x and z axes."""
 
     cubemesh = UnitCubeMesh(1,1,1)
-    boundarymesh = BoundaryMesh(cubemesh)
+    boundarymesh = BoundaryMesh(cubemesh, "exterior")
     mesh = SubMesh(boundarymesh, BottomEdge())
 
     mesh.init_cell_orientations(Expression(("0.","0.","1.")))

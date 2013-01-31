@@ -30,15 +30,10 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BoundaryMesh::BoundaryMesh() : Mesh()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-BoundaryMesh::BoundaryMesh(const Mesh& mesh, bool order) : Mesh()
+BoundaryMesh::BoundaryMesh(const Mesh& mesh, std::string type, bool order) : Mesh()
 {
   // Create boundary mesh
-  init_exterior_boundary(mesh);
+  BoundaryComputation::compute_boundary(mesh, type, *this);
 
   // Order mesh if requested
   if (order)
@@ -50,22 +45,12 @@ BoundaryMesh::~BoundaryMesh()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void BoundaryMesh::init_exterior_boundary(const Mesh& mesh)
-{
-  BoundaryComputation::compute_exterior_boundary(mesh, *this);
-}
-//-----------------------------------------------------------------------------
-void BoundaryMesh::init_interior_boundary(const Mesh& mesh)
-{
-  BoundaryComputation::compute_interior_boundary(mesh, *this);
-}
-//-----------------------------------------------------------------------------
 MeshFunction<std::size_t>& BoundaryMesh::entity_map(std::size_t d)
-{ 
+{
   if (d == 0)
-    return _vertex_map; 
+    return _vertex_map;
   else if (d == this->topology().dim())
-    return _cell_map; 
+    return _cell_map;
   else
   {
     dolfin_error("BoundaryMesh.cpp",
@@ -78,11 +63,11 @@ MeshFunction<std::size_t>& BoundaryMesh::entity_map(std::size_t d)
 }
 //-----------------------------------------------------------------------------
 const MeshFunction<std::size_t>& BoundaryMesh::entity_map(std::size_t d) const
-{ 
+{
   if (d == 0)
-    return _vertex_map; 
+    return _vertex_map;
   else if (d == this->topology().dim())
-    return _cell_map; 
+    return _cell_map;
   else
   {
     dolfin_error("BoundaryMesh.cpp",
@@ -94,4 +79,3 @@ const MeshFunction<std::size_t>& BoundaryMesh::entity_map(std::size_t d) const
   return _cell_map;
 }
 //-----------------------------------------------------------------------------
-

@@ -73,7 +73,7 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
   const std::size_t gdim = mesh.geometry().dim();
 
   // Create boundary mesh
-  BoundaryMesh bmesh(mesh);
+  BoundaryMesh bmesh(mesh, "exterior");
 
   // Arrays used for mapping coordinates
   std::vector<double> x(gdim);
@@ -174,7 +174,8 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
   MPI::all_to_all(slave_mapped_coords_send, slave_mapped_coords_recv);
   dolfin_assert(slave_mapped_coords_recv.size() == num_processes);
 
-  // Check if this process owns the master facet for a reveived (mapped)
+  // Check if this process owns the master facet for a received (mapped)
+  // slave
   std::vector<double> coordinates(gdim);
   std::vector<std::vector<std::size_t> > master_local_entity(num_processes);
   for (std::size_t p = 0; p < num_processes; ++p)
@@ -219,27 +220,10 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
       if (master_entity_index_p[i] < std::numeric_limits<std::size_t>::max())
       {
         ++num_local_slave_entities;
-        if (!slave_to_master_entity.insert(std::make_pair(sent_slaves_p[i],
-                                     std::make_pair(p, master_entity_index_p[i]))).second)
-        {
-          dolfin_error("PeriodicDomain.cpp",
-                       "build peridic master-slave mapping",
-                       "More than one master entity for slave entity");
-        }
+        slave_to_master_entity.insert(std::make_pair(sent_slaves_p[i],
+                                      std::make_pair(p, master_entity_index_p[i])));
       }
     }
-  }
-
-  // Number global master and slave facets
-  const std::size_t num_global_master_entities = MPI::sum(master_coord_to_entity_index.size());
-  const std::size_t num_global_slave_entities = MPI::sum(num_local_slave_entities);
-
-  // Check that number of global master and slave entities match
-  if (num_global_master_entities != num_global_slave_entities)
-  {
-    dolfin_error("PeriodicDomain.cpp",
-                 "global number of slave and master facets",
-                 "Number of slave and master facets is not equal");
   }
 
   return slave_to_master_entity;
