@@ -61,7 +61,6 @@ int main()
     // Left boundary is "target domain" G
     bool inside(const Array<double>& x, bool on_boundary) const
     {
-      //return (std::abs(x[0]) < DOLFIN_EPS) && on_boundary;
       return (std::abs(x[0]) < DOLFIN_EPS);
     }
 
@@ -70,13 +69,11 @@ int main()
     {
       y[0] = x[0] - 1.0;
       y[1] = x[1];
-      y[2] = x[2];
     }
   };
 
   // Create mesh
-  //UnitSquareMesh mesh(32, 32);
-  UnitCubeMesh mesh(17, 17, 16);
+  UnitSquareMesh mesh(32, 32);
 
   // Create periodic boundary condition
   PeriodicBoundary periodic_boundary;
