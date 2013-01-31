@@ -205,16 +205,22 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
  const std::map<std::size_t, std::pair<std::size_t, std::size_t> >& slave_to_master_vertices,
  std::vector<std::size_t>& modified_global_indices)
 {
-  // Mark shared vertices
-  std::vector<bool> shared_vertex(mesh.num_vertices(), false);
+  // Get vertex sharing information
   //const std::map<std::size_t, std::set<std::size_t> > shared_entities
   //  = mesh.topology().shared_entities(0);
-  //std::map<std::size_t, std::set<std::size_t> >::const_iterator shared_entity;
-  //for (shared_entity = shared_entities.begin(); shared_entity != shared_entities.end(); ++shared_entity)
-  //{
-  //  dolfin_assert(shared_entity->first < shared_vertex.size());
-  //  shared_vertex[shared_entity->first] = true;
-  //}
+
+  // Get vertex sharing information (local index, [(sharing process p, local index on p)])
+  const boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >
+    shared_vertices = DistributedMeshTools::compute_shared_entities(mesh, 0);
+
+   // Mark shared vertices
+  std::vector<bool> vertex_shared(mesh.num_vertices(), false);
+  boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >::const_iterator shared_vertex;
+  for (shared_vertex = shared_vertices.begin(); shared_vertex != shared_vertices.end(); ++shared_vertex)
+  {
+    dolfin_assert(shared_vertex->first < vertex_shared.size());
+    vertex_shared[shared_vertex->first] = true;
+  }
 
   // Must check if slave vertex is shared
 
@@ -227,20 +233,53 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
     slave_vertex[slave->first] = true;
   }
 
+  // Mark shared vertices
+  const std::size_t proc_num = MPI::process_number();
+
+  // Communication data structures
+  std::vector<std::vector<std::size_t> > new_shared_vertex_indices(MPI::num_processes());
+
   // Compute modified global vertex indices
   std::size_t new_index = 0;
-  modified_global_indices.resize(mesh.num_vertices());
+  modified_global_indices = std::vector<std::size_t>(mesh.num_vertices(), std::numeric_limits<std::size_t>::max());
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
     const std::size_t local_index = vertex->index();
     if (slave_vertex[local_index])
     {
-      // Slave, need to find master vertex index and need to communicate
-      // to any sharing processes
+      // Do nothing, will get master index later
     }
-    else if (shared_vertex[local_index])
+    else if (vertex_shared[local_index])
     {
-      // Shared, decide if I should number this index or not
+      cout << "*********** Should not be here in serial" << endl;
+
+      // If shared, let lowest rank process number the vertex
+      boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >::const_iterator
+        it = shared_vertices.find(local_index);
+      dolfin_assert(it != shared_vertices.end());
+      const std::vector<std::pair<std::size_t, std::size_t> >& sharing_procs = it->second;
+
+      // Let lowest rank process number vertex
+      const std::pair<std::size_t, std::size_t> _proc_num(proc_num, 0);
+      if (_proc_num < *std::min_element(sharing_procs.begin(), sharing_procs.end()))
+      {
+        // Re-number vertex
+        const std::size_t _new_index = new_index++;;
+        modified_global_indices[vertex->index()] = _new_index;
+
+        // Add to list to communicate
+        std::vector<std::pair<std::size_t, std::size_t> >::const_iterator p;
+        for (p = sharing_procs.begin(); p != sharing_procs.end(); ++p)
+        {
+          dolfin_assert(p->first < new_shared_vertex_indices.size());
+
+          // Local index on remote process
+          new_shared_vertex_indices[p->first].push_back(p->second);
+
+          // Modified global index
+          new_shared_vertex_indices[p->first].push_back(_new_index);
+        }
+      }
     }
     else
       modified_global_indices[vertex->index()] = new_index++;
@@ -253,12 +292,76 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
   for (std::size_t i = 0; i < modified_global_indices.size(); ++i)
     modified_global_indices[i] += offset;
 
-  // Serial hack
-  for (slave = slave_to_master_vertices.begin(); slave != slave_to_master_vertices.end(); ++slave)
+  // Send/receive new indices for shared vertices
+  std::vector<std::vector<std::size_t> > received_vertex_data;
+  MPI::all_to_all(new_shared_vertex_indices, received_vertex_data);
+
+  // Set index for shared vertices that have been numbered by another process
+  for (std::size_t p = 0; p < received_vertex_data.size(); ++p)
   {
-    dolfin_assert(slave->first < modified_global_indices.size());
-    modified_global_indices[slave->first] = modified_global_indices[slave->second.second];
+    const std::vector<std::size_t>& received_vertex_data_p = received_vertex_data[p];
+    for (std::size_t i = 0; i < received_vertex_data_p.size(); i += 2)
+    {
+      const std::size_t local_index = received_vertex_data_p[i];
+      const std::size_t recv_new_index = received_vertex_data_p[i + 1];
+
+      dolfin_assert(local_index < modified_global_indices.size());
+      dolfin_assert(modified_global_indices[local_index] == std::numeric_limits<std::size_t>::max());
+      modified_global_indices[local_index] = recv_new_index;
+    }
   }
+
+  // Request master vertex index from master owner
+  std::vector<std::vector<std::size_t> > master_send_buffer(MPI::num_processes());
+  std::vector<std::vector<std::size_t> > local_slave_index(MPI::num_processes());
+  std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator master;
+  for (master = slave_to_master_vertices.begin(); master != slave_to_master_vertices.end(); ++master)
+  {
+    const std::size_t local_index = master->first;
+    const std::size_t master_proc = master->second.first;
+    const std::size_t remote_local_index = master->second.second;
+    dolfin_assert(master_proc < local_slave_index.size());
+    dolfin_assert(master_proc < master_send_buffer.size());
+
+    local_slave_index[master_proc].push_back(local_index);
+    master_send_buffer[master_proc].push_back(remote_local_index);
+  }
+
+  // Send/receive new indices for slave vertices
+  std::vector<std::vector<std::size_t> > received_slave_vertex_indices;
+  MPI::all_to_all(new_shared_vertex_indices, received_slave_vertex_indices);
+
+  // Set index for slave vertices
+  for (std::size_t p = 0; p < received_slave_vertex_indices.size(); ++p)
+  {
+    const std::vector<std::size_t>& new_indices = received_slave_vertex_indices[p];
+    const std::vector<std::size_t>& local_indices = local_slave_index[p];
+    for (std::size_t i = 0; i < new_indices.size(); ++i)
+    {
+      const std::size_t local_index = local_indices[i];
+      const std::size_t new_index = new_indices[i];
+
+      dolfin_assert(local_index < modified_global_indices.size());
+      dolfin_assert(modified_global_indices[local_index] == std::numeric_limits<std::size_t>::max());
+      modified_global_indices[local_index] = new_index;
+    }
+  }
+
+  for (std::size_t i = 0; i < modified_global_indices.size(); ++i)
+    cout << "Index: " << modified_global_indices[i] << endl;
+
+  // Sanity check
+  for (std::size_t i = 0; i < modified_global_indices.size(); ++i)
+  {
+    dolfin_assert(modified_global_indices[i] != std::numeric_limits<std::size_t>::max());
+  }
+
+  // Serial hack
+  //for (slave = slave_to_master_vertices.begin(); slave != slave_to_master_vertices.end(); ++slave)
+  //{
+  //  dolfin_assert(slave->first < modified_global_indices.size());
+  //  modified_global_indices[slave->first] = modified_global_indices[slave->second.second];
+  //}
 
   // Send new indices to process that share a vertex but were not
   // responsible for re-numbering
@@ -512,7 +615,8 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
 
   // Build set of dofs on process boundary (first assuming that all are
   // owned by this process)
-  const MeshFunction<std::size_t>& cell_map = interior_boundary.entity_map(interior_boundary.topology().dim());
+  const MeshFunction<std::size_t>& cell_map
+    = interior_boundary.entity_map(interior_boundary.topology().dim());
   if (!cell_map.empty())
   {
     for (CellIterator _f(interior_boundary); !_f.end(); ++_f)
@@ -607,7 +711,8 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
     }
   }
 
-  // Add/remove global dofs to/from relevant sets (process 0 owns global dofs)
+  // Add/remove global dofs to/from relevant sets (process 0 owns
+  // global dofs)
   if (process_number == 0)
   {
     shared_owned_dofs.insert(global_dofs.begin(), global_dofs.end());

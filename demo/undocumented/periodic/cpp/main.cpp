@@ -75,7 +75,7 @@ int main()
   };
 
   // Create mesh
-  UnitSquareMesh mesh(32, 32);
+  UnitSquareMesh mesh(1, 1);
 
   // Not working in parallel yet - it will soon
   if (MPI::num_processes() > 1)

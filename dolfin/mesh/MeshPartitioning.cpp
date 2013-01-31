@@ -166,7 +166,7 @@ void MeshPartitioning::distribute_cells(const LocalMeshData& mesh_data,
   std::vector<std::vector<std::size_t> > send_cell_vertices(num_processes);
   for (std::size_t i = 0; i < num_local_cells; i++)
   {
-    const std::size_t dest = cell_partition[i]; 
+    const std::size_t dest = cell_partition[i];
     send_cell_vertices[dest].push_back(mesh_data.global_cell_indices[i]);
     for (std::size_t j = 0; j < num_cell_vertices; j++)
       send_cell_vertices[dest].push_back(mesh_data.cell_vertices[i][j]);
@@ -234,7 +234,7 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
         required_vertex != needed_vertex_indices.end(); ++required_vertex)
   {
     // Get process that has required vertex
-    const std::size_t location 
+    const std::size_t location
       = MPI::index_owner(*required_vertex, mesh_data.num_global_vertices);
     send_vertex_indices[location].push_back(*required_vertex);
     vertex_location[location].push_back(*required_vertex);
@@ -247,10 +247,11 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
 
   // Distribute vertex coordinates
   std::vector<std::vector<double> > send_vertex_coordinates(num_processes);
-  const std::pair<std::size_t, std::size_t> local_vertex_range 
+  const std::pair<std::size_t, std::size_t> local_vertex_range
       = MPI::local_range(mesh_data.num_global_vertices);
   for (std::size_t p = 0; p < num_processes; ++p)
   {
+    send_vertex_coordinates[p].reserve(received_vertex_indices[p].size()*gdim);
     for (std::size_t i = 0; i < received_vertex_indices[p].size(); ++i)
     {
       dolfin_assert(received_vertex_indices[p][i] >= local_vertex_range.first
@@ -374,6 +375,9 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
         = mesh.topology().shared_entities(0);
   shared_vertices.clear();
 
+  // FIXME: Remove computation from inside communication loop
+
+  tic();
   // Build shared vertex to sharing processes map
   for (std::size_t i = 1; i < num_processes; ++i)
   {
@@ -407,6 +411,9 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
       shared_vertices[local_index->second].insert(q);
     }
   }
+
+  double timex = toc();
+  cout << "Time to find shared vertices: " << timex << endl;
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_mesh_domains(Mesh& mesh,
