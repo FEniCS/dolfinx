@@ -38,7 +38,7 @@ static boost::shared_ptr<dolfin::Mesh> getBoundaryMesh(const CSGGeometry& geomet
 
   if (geometry.dim() == 3)
   {
-    // Convert geometry to a CGAL polyhedron 
+    // Convert geometry to a CGAL polyhedron
     csg::Polyhedron_3 p;
     GeometryToCGALConverter::convert(geometry, p, false);
 
@@ -50,18 +50,18 @@ static boost::shared_ptr<dolfin::Mesh> getBoundaryMesh(const CSGGeometry& geomet
     dolfin::cout << "  Done" << dolfin::endl;
     return mesh;
 
-  } else 
+  } else
   {
     dolfin_assert(geometry.dim() == 2);
 
     // We're cheating a bit here: Generate a mesh and extract the boundary.
-    // TODO: Implement this properly by extracting the boundary from 
+    // TODO: Implement this properly by extracting the boundary from
     // the geometry.
 
     Mesh m;
     CSGCGALMeshGenerator2D generator(geometry);
     generator.generate(m);
-    return boost::shared_ptr<dolfin::Mesh>(new BoundaryMesh(m));
+    return boost::shared_ptr<dolfin::Mesh>(new BoundaryMesh(m, "exterior"));
   }
 
   #else

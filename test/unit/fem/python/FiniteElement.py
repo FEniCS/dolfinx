@@ -45,17 +45,20 @@ class FiniteElementTest(unittest.TestCase):
         values3 = numpy.zeros(3, dtype="d")
         values4 = numpy.zeros(6, dtype="d")
 
+        L0  = self.W.sub(0)
+        L1  = self.W.sub(1)
+        L01 = L1.sub(0)
+        L11 = L1.sub(1)
 
         for cell in cells(self.mesh):
             self.V.dofmap().tabulate_coordinates(cell, coords)
             for i in xrange(coords.shape[0]):
                 coord[:] = coords[i,:]
                 values0[i] = e(*coord)
-            self.W.sub(0).element().evaluate_dofs(values1, e, cell)
-            L = self.W.sub(1)
-            L.sub(0).element().evaluate_dofs(values2, e, cell)
-            L.sub(1).element().evaluate_dofs(values3, e, cell)
-            L.element().evaluate_dofs(values4, e2, cell)
+            L0.element().evaluate_dofs(values1, e, cell)
+            L01.element().evaluate_dofs(values2, e, cell)
+            L11.element().evaluate_dofs(values3, e, cell)
+            L1.element().evaluate_dofs(values4, e2, cell)
 
             for i in range(3):
                 self.assertAlmostEqual(values0[i], values1[i])
@@ -72,8 +75,8 @@ class FiniteElementTest(unittest.TestCase):
             return
 
         n = 4
-        mesh = BoundaryMesh(UnitSquareMesh(n, n))
-        mesh2 = BoundaryMesh(UnitCubeMesh(n, n, n))
+        mesh = BoundaryMesh(UnitSquareMesh(n, n), "exterior")
+        mesh2 = BoundaryMesh(UnitCubeMesh(n, n, n), "exterior")
         DG0 = FunctionSpace(mesh, "DG", 0)
         DG1 = FunctionSpace(mesh, "DG", 1)
         CG1 = FunctionSpace(mesh, "CG", 1)
@@ -117,13 +120,17 @@ class DofMapTest(unittest.TestCase):
         coord3 = numpy.zeros((3,2), dtype="d")
         coord4 = numpy.zeros((6,2), dtype="d")
 
+        L0  = self.W.sub(0)
+        L1  = self.W.sub(1)
+        L01 = L1.sub(0)
+        L11 = L1.sub(1)
+
         for cell in cells(self.mesh):
             self.V.dofmap().tabulate_coordinates(cell, coord0)
-            self.W.sub(0).dofmap().tabulate_coordinates(cell, coord1)
-            L = self.W.sub(1)
-            L.sub(0).dofmap().tabulate_coordinates(cell, coord2)
-            L.sub(1).dofmap().tabulate_coordinates(cell, coord3)
-            L.dofmap().tabulate_coordinates(cell, coord4)
+            L0.dofmap().tabulate_coordinates(cell, coord1)
+            L01.dofmap().tabulate_coordinates(cell, coord2)
+            L11.dofmap().tabulate_coordinates(cell, coord3)
+            L1.dofmap().tabulate_coordinates(cell, coord4)
 
             self.assertTrue((coord0 == coord1).all())
             self.assertTrue((coord0 == coord2).all())

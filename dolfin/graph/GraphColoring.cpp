@@ -28,7 +28,7 @@
 #include <dolfin/common/Array.h>
 #include <dolfin/log/log.h>
 #include <dolfin/parameter/GlobalParameters.h>
-#include "BoostGraphInterface.h"
+#include "BoostGraphColoring.h"
 #include "Graph.h"
 #include "ZoltanInterface.h"
 #include "GraphColoring.h"
@@ -44,7 +44,7 @@ std::size_t GraphColoring::compute_local_vertex_coloring(const Graph& graph,
 
   // Color mesh
   if (colorer == "Boost")
-    return BoostGraphInterface::compute_local_vertex_coloring(graph, colors);
+    return BoostGraphColoring::compute_local_vertex_coloring(graph, colors);
   else if (colorer == "Zoltan")
     return ZoltanInterface::compute_local_vertex_coloring(graph, colors);
   else

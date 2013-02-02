@@ -109,7 +109,6 @@ DofMap::DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
 
   // Dimension sanity checks
   dolfin_assert(dofmap_view._dofmap.size() == mesh.num_cells());
-  dolfin_assert(global_dimension() == dofmap_view.global_dimension());
   dolfin_assert(_dofmap.size() == mesh.num_cells());
 
   // FIXME: Could we use a std::vector instead of std::map if the
@@ -252,43 +251,45 @@ std::vector<std::size_t> DofMap::vertex_to_dof_map(Mesh& mesh) const
 {
   // Check that we only have dofs living on vertices
   assert(_ufc_dofmap);
-  
+
   // Initialize vertex to cell connections
   const std::size_t top_dim = mesh.topology().dim();
   mesh.init(0, top_dim);
 
   // Num dofs per vertex
-  const std::size_t dofs_per_vert = _ufc_dofmap->num_entity_dofs(0);
+  const std::size_t dofs_per_vertex = _ufc_dofmap->num_entity_dofs(0);
   const std::size_t vert_per_cell = mesh.topology()(top_dim, 0).size(0);
 
-  if (vert_per_cell*dofs_per_vert != _ufc_dofmap->max_local_dimension())
+  if (vert_per_cell*dofs_per_vertex != _ufc_dofmap->max_local_dimension())
+  {
     dolfin_error("DofMap.cpp",
                  "tabulating vertex to dof map",
                  "Can only tabulate dofs on vertices");
+  }
 
   // Allocate data for tabulating local to local map
-  std::vector<std::size_t> local_to_local_map(dofs_per_vert);
-  
+  std::vector<std::size_t> local_to_local_map(dofs_per_vertex);
+
   // Create return data structure
   const dolfin::la_index n0 = _ownership_range.first;
   const dolfin::la_index n1 = _ownership_range.second;
-  std::vector<std::size_t> vertex_map(n1-n0);
+  std::vector<std::size_t> vertex_map(n1 - n0);
 
   // Iterate over vertices
-  std::size_t local_vert_ind = 0;
+  std::size_t local_vertex_ind = 0;
   dolfin::la_index global_dof;
-  for (VertexIterator vert(mesh); !vert.end(); ++vert)
+  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
     // Get the first cell connected to the vertex
-    const Cell cell(mesh, vert->entities(top_dim)[0]);
+    const Cell cell(mesh, vertex->entities(top_dim)[0]);
 
     // Find local vertex number
-    for (std::size_t i=0; i<cell.num_entities(0); i++)
+    for (std::size_t i = 0; i < cell.num_entities(0); i++)
     {
-      if (cell.entities(0)[i]==vert->index())
+      if (cell.entities(0)[i] == vertex->index())
       {
-	local_vert_ind = i;
-	break;
+        local_vertex_ind = i;
+        break;
       }
     }
 
@@ -296,16 +297,16 @@ std::vector<std::size_t> DofMap::vertex_to_dof_map(Mesh& mesh) const
     const std::vector<dolfin::la_index>& _cell_dofs = cell_dofs(cell.index());
 
     // Tabulate local to local map of dofs on local vertex
-    _ufc_dofmap->tabulate_entity_dofs(&local_to_local_map[0], 0, local_vert_ind);
-    
+    _ufc_dofmap->tabulate_entity_dofs(local_to_local_map.data(), 0, local_vertex_ind);
+
     // Fill local dofs for the vertex
-    for (std::size_t local_dof = 0; local_dof < dofs_per_vert; local_dof++)
+    for (std::size_t local_dof = 0; local_dof < dofs_per_vertex; local_dof++)
     {
       global_dof = _cell_dofs[local_to_local_map[local_dof]];
-      
+
       // Of global dof is within ownership range add it to the map
-      if (global_dof>=n0 && global_dof < n1)
-	vertex_map[global_dof-n0] = dofs_per_vert*vert->index()+local_dof;
+      if (global_dof >= n0 && global_dof < n1)
+        vertex_map[global_dof - n0] = dofs_per_vertex*vertex->index() + local_dof;
     }
   }
 
@@ -325,14 +326,14 @@ boost::shared_ptr<GenericDofMap> DofMap::create(const Mesh& new_mesh) const
   return boost::shared_ptr<GenericDofMap>(new DofMap(ufc_dof_map, new_mesh));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericDofMap> 
+boost::shared_ptr<GenericDofMap>
   DofMap::extract_sub_dofmap(const std::vector<std::size_t>& component,
                              const Mesh& mesh) const
 {
   return boost::shared_ptr<GenericDofMap>(new DofMap(*this, component, mesh));
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<GenericDofMap> 
+boost::shared_ptr<GenericDofMap>
   DofMap::collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
                    const Mesh& mesh) const
 {

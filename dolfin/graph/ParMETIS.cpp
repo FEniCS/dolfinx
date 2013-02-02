@@ -39,9 +39,8 @@ using namespace dolfin;
 void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
                                  const LocalMeshData& mesh_data)
 {
-  // This function prepares data for ParMETIS (which is a pain
-  // since ParMETIS has the worst possible interface), calls
-  // ParMETIS, and then collects the results from ParMETIS.
+  // This function prepares data for ParMETIS calls ParMETIS, and then
+  // collects the results from ParMETIS.
 
   Timer timer0("PARALLEL 1a: Build distributed dual graph (calling ParMETIS)");
 
@@ -60,7 +59,6 @@ void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
                  "ParMETIS cannot be used if a process has no cells (graph nodes). Use SCOTCH to perform partitioning instead");
   }
 
-  double tt = time();
   // Communicate number of cells between all processors
   std::vector<std::size_t> num_cells;
   MPI::all_gather(num_local_cells, num_cells);
@@ -104,7 +102,8 @@ void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
   options[1] = 0;
   options[2] = 15;
 
-  // Partitioning array to be computed by ParMETIS (note bug in manual: vertices, not cells!)
+  // Partitioning array to be computed by ParMETIS (note bug in manual:
+  // vertices, not cells!)
   std::vector<int> part(num_local_cells);
 
   // Prepare remaining arguments for ParMETIS
@@ -113,12 +112,12 @@ void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
   int numflag = 0;
   int edgecut = 0;
 
-  // Construct communicator (copy of MPI_COMM_WORLD)
-  MPICommunicator comm;
-
   dolfin_assert(!elmdist.empty());
   dolfin_assert(!eptr.empty());
   dolfin_assert(!eind.empty());
+
+  // Construct communicator (copy of MPI_COMM_WORLD)
+  MPICommunicator comm;
 
   // Build dual graph from mesh
   idx_t* xadj = 0;
@@ -128,10 +127,6 @@ void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
                                   &xadj, &adjncy,
                                   &(*comm));
   dolfin_assert(err == METIS_OK);
-  tt = time() - tt;
-  double tt_max = MPI::max(tt);
-  if (MPI::process_number() == 0)
-    info("Time to build (parallel) dual graph: %g", tt_max);
 
   timer0.stop();
 
@@ -147,14 +142,11 @@ void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
                              &edgecut, &part[0], &(*comm));
   dolfin_assert(err == METIS_OK);
 
-  // Length of xadj = # local nodes + 1
+  // Length of xadj = #local nodes + 1
   // Length of adjncy = xadj[-1]
-
 
   METIS_Free(xadj);
   METIS_Free(adjncy);
-
-  //info("Partitioned mesh, edge cut is %d.", edgecut);
 
   // Copy cell partition data
   cell_partition = std::vector<std::size_t>(part.begin(), part.end());

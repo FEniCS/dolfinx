@@ -27,16 +27,14 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/compressed_sparse_row_graph.hpp>
 
-#include <dolfin/common/Array.h>
-#include "dolfin/common/Timer.h"
-#include "dolfin/log/log.h"
+#include <dolfin/log/log.h>
 #include "Graph.h"
-#include "BoostGraphInterface.h"
+#include "BoostGraphColoring.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::size_t BoostGraphInterface::compute_local_vertex_coloring(const Graph& graph,
+std::size_t BoostGraphColoring::compute_local_vertex_coloring(const Graph& graph,
                                                  std::vector<std::size_t>& colors)
 {
   // Number of vertices

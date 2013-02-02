@@ -25,18 +25,16 @@
 #include <vector>
 
 #include <boost/graph/sequential_vertex_coloring.hpp>
-#include <dolfin/common/Array.h>
 #include <dolfin/graph/Graph.h>
 
 namespace dolfin
 {
 
-  template<typename T> class Array;
   class Mesh;
 
   /// This class colors a graph using the Boost Graph Library.
 
-  class BoostGraphInterface
+  class BoostGraphColoring
   {
 
   public:

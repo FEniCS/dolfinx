@@ -219,7 +219,7 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   for (VertexIterator v(mesh); !v.end(); ++v)
     vertex_boundary[v->index()] = false;
 
-  BoundaryMesh boundary(mesh);
+  BoundaryMesh boundary(mesh, "exterior");
   MeshFunction<std::size_t>& bnd_vertex_map = boundary.entity_map(0);
   for (VertexIterator v(boundary); !v.end(); ++v)
     vertex_boundary[bnd_vertex_map[v->index()]] = true;
