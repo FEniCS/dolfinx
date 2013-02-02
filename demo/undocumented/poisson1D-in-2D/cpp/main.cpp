@@ -43,7 +43,8 @@ using namespace dolfin;
 #define THETA DOLFIN_PI/4.0
 
 // Map the point x back to the horizontal line
-double to_interval(const Array<double>& x) {
+double to_interval(const Array<double>& x)
+{
   return (x[0]*cos(THETA) + x[1]*sin(THETA));
 }
 
@@ -52,11 +53,12 @@ void rotate(Mesh & mesh)
 {
   std::vector<double>& x = mesh.coordinates();
   double tmpx;
-  for (std::size_t i = 0; i < mesh.num_vertices(); i++) {
+  for (std::size_t i = 0; i < mesh.num_vertices(); i++)
+  {
     tmpx = x[2*i]*cos(THETA) - x[2*i+1]*sin(THETA);
 
     x[2*i+1] = x[2*i]*sin(THETA) + x[2*i+1]*cos(THETA);
-    x[2*i] = tmpx;
+    x[2*i]   = tmpx;
   }
 }
 
@@ -64,18 +66,14 @@ void rotate(Mesh & mesh)
 class BottomEdge : public SubDomain
 {
   bool inside(const Array<double>& x, bool on_boundary) const
-  {
-    return (std::abs(x[1]) < DOLFIN_EPS);
-  }
+  { return (std::abs(x[1]) < DOLFIN_EPS); }
 };
 
 // Boundary condition
 class DirichletBoundary : public SubDomain
 {
   bool inside(const Array<double>& x, bool on_boundary) const
-  {
-    return (std::abs(to_interval(x)) < DOLFIN_EPS);
-  }
+  { return (std::abs(to_interval(x)) < DOLFIN_EPS); }
 };
 
 // Source term
@@ -84,9 +82,7 @@ class Source : public Expression
 public:
 
   void eval(Array<double>& values, const Array<double>& x) const
-  {
-    values[0] = 9.0*DOLFIN_PI*DOLFIN_PI*sin(3.0*DOLFIN_PI*to_interval(x));
-  }
+  { values[0] = 9.0*DOLFIN_PI*DOLFIN_PI*sin(3.0*DOLFIN_PI*to_interval(x)); }
 
 };
 
@@ -96,9 +92,8 @@ class Flux : public Expression
 public:
 
   void eval(Array<double>& values, const Array<double>& x) const
-  {
-    values[0] = 3.0*DOLFIN_PI*cos(3.0*DOLFIN_PI*to_interval(x));
-  }
+  { values[0] = 3.0*DOLFIN_PI*cos(3.0*DOLFIN_PI*to_interval(x)); }
+
 };
 
 int main()
@@ -107,7 +102,7 @@ int main()
   UnitSquareMesh squaremesh(50, 2);
 
   // Grab the surface of the mesh
-  BoundaryMesh boundarymesh(squaremesh);
+  BoundaryMesh boundarymesh(squaremesh, "exterior");
 
   // The actual mesh is just the bottom.
   SubMesh mesh(boundarymesh, BottomEdge());

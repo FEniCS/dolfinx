@@ -61,7 +61,6 @@ int main()
     // Left boundary is "target domain" G
     bool inside(const Array<double>& x, bool on_boundary) const
     {
-      //return (std::abs(x[0]) < DOLFIN_EPS) && on_boundary;
       return (std::abs(x[0]) < DOLFIN_EPS);
     }
 
@@ -70,43 +69,21 @@ int main()
     {
       y[0] = x[0] - 1.0;
       y[1] = x[1];
-      //y[2] = x[2];
     }
   };
 
   // Create mesh
   UnitSquareMesh mesh(32, 32);
 
-  // Not working in parallel yet - it will soon
-  if (MPI::num_processes() > 1)
-    return 0;
-
   // Create periodic boundary condition
   PeriodicBoundary periodic_boundary;
 
-  const std::size_t dim = 0;
-
+  // Create vertex mast-slave map
   const std::map<std::size_t, std::pair<std::size_t, std::size_t> > periodic_vertex_pairs
-    = PeriodicBoundaryComputation::compute_periodic_pairs(mesh, periodic_boundary, dim);
+    = PeriodicBoundaryComputation::compute_periodic_pairs(mesh, periodic_boundary, 0);
 
-  /*
-  const bool parallel = MPI::num_processes() > 1;
-  std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator it;
-  for (it = test.begin(); it != test.end(); ++it)
-  {
-    cout << "*** Slave facet, proc owne, master, master index on owner: " << it->first
-        << ", " << it->second.first << ", " <<  it->second.second << endl;
-    if (!parallel)
-    {
-      const Vertex v0(mesh, it->first), v1(mesh, it->second.second);
-      cout << "  " << v0.point().str() << endl;
-      cout << "  " << v1.point().str() << endl;
-    }
-  }
-  */
-
-  // Mark periodic boundary conditions for plotting
-  MeshFunction<std::size_t> master_slave_entities(mesh, dim, 0);
+  // Creat MehsFunction marking periodic boundary conditions for plotting
+  MeshFunction<std::size_t> master_slave_entities(mesh, 0, 0);
   periodic_boundary.mark(master_slave_entities, 1);
   std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator it;
   for (it = periodic_vertex_pairs.begin(); it != periodic_vertex_pairs.end(); ++it)
@@ -138,6 +115,8 @@ int main()
   // Compute solution
   Function u(V);
   solve(a == L, u, bcs);
+
+  cout << "Solution vector norm: " << u.vector()->norm("l2") << endl;
 
   // Save solution in VTK format
   File file_u("periodic.pvd");

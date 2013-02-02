@@ -1,3 +1,4 @@
+ - Use CMake to configure JIT compilation of extension modules
  - Feature: Add vertex_to_dof_map to DofMap, which map vertex indices to dolfin dofs
  - Feature: Add support for solving on m dimensional meshes embedded in n >= m dimensions
 1.1.0 [2013-01-08]

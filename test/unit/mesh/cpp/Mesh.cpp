@@ -172,7 +172,7 @@ public:
   {
     // Compute boundary of mesh
     UnitCubeMesh mesh(2, 2, 2);
-    BoundaryMesh boundary(mesh);
+    BoundaryMesh boundary(mesh, "exterior");
     CPPUNIT_ASSERT(boundary.num_vertices() == 26);
     CPPUNIT_ASSERT(boundary.num_cells() == 48);
   }
@@ -190,10 +190,9 @@ public:
     // constructor in Mesh will be used).
 
     UnitCubeMesh mesh(2, 2, 2);
-    BoundaryMesh b0(mesh);
-    BoundaryMesh b1;
+    BoundaryMesh b0(mesh, "exterior");
     b0.order();
-    b1.init_exterior_boundary(b0);
+    BoundaryMesh b1(b0, "exterior");
     CPPUNIT_ASSERT(b1.num_vertices() == 0);
     CPPUNIT_ASSERT(b1.num_cells() == 0);
   }

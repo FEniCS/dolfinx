@@ -106,7 +106,7 @@ class DirichletBCTest(unittest.TestCase):
         n = 4
         side = compile_subdomains("near(x[2], 0.0)")
 
-        mesh = SubMesh(BoundaryMesh(UnitCubeMesh(n, n, n)), side)
+        mesh = SubMesh(BoundaryMesh(UnitCubeMesh(n, n, n), "exterior"), side)
         square = UnitSquareMesh(n, n)
         mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
 

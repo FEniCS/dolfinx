@@ -408,11 +408,15 @@ DistributedMeshTools::locate_off_process_entities(const std::vector<std::size_t>
 boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >
   DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
 {
-  // Number entities (globally)
-  number_entities(mesh, d);
+  // Return empty set if running in serial
+  if (MPI::num_processes() == 1)
+    return boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >();
 
   // Initialize entities of dimension d
   mesh.init(d);
+
+  // Number entities (globally)
+  number_entities(mesh, d);
 
   // Get shared entities to processes map
   const std::map<std::size_t, std::set<std::size_t> >&

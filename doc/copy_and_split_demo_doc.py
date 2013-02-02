@@ -112,8 +112,10 @@ def copy_split_demo_doc(input_dir, cpp_output_dir, python_output_dir):
 
     # Get list of files in demo directories
     try:
-        # This may fail if we're not in a bzr repo
         bzr_files = check_output(["bzr", "ls", "-R", "-V", input_dir])
+        if not bzr_files:
+            # Workaround for when we're not in a bzr repo
+            bzr_files = check_output(["find", input_dir])
         bzr_files = [f for f in bzr_files.split("\n") if "demo/" in f]
         for (i, f) in enumerate(bzr_files):
             if f[-1] == "/":
