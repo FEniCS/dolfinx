@@ -244,9 +244,9 @@ namespace dolfin
     void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
                               const Cell& cell) const;
 
-    /// Return a map between vertices and dofs 
+    /// Return a map between vertices and dofs
     /// (vert_ind = vertex_to_dof_map[dof_ind])
-    /// 
+    ///
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh to create the map between
@@ -255,7 +255,7 @@ namespace dolfin
     ///     std::vector<std::size_t>
     ///         The vertex to dof map
     std::vector<std::size_t> vertex_to_dof_map(Mesh& mesh) const;
-    
+
     /// Create a copy of the dof map
     ///
     /// *Returns*
@@ -286,7 +286,7 @@ namespace dolfin
     /// *Returns*
     ///     DofMap
     ///         The subdofmap component.
-    boost::shared_ptr<GenericDofMap> 
+    boost::shared_ptr<GenericDofMap>
         extract_sub_dofmap(const std::vector<std::size_t>& component,
                            const Mesh& mesh) const;
 
@@ -301,7 +301,7 @@ namespace dolfin
     /// *Returns*
     ///     DofMap
     ///         The collapsed dofmap.
-    boost::shared_ptr<GenericDofMap> 
+    boost::shared_ptr<GenericDofMap>
           collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
                    const Mesh& mesh) const;
 
@@ -377,6 +377,11 @@ namespace dolfin
     // UFC dof map
     boost::shared_ptr<const ufc::dofmap> _ufc_dofmap;
 
+    // Number global mesh entities. This is usually the same as what
+    // is reported by the mesh, but will differ for constrained dofmap,
+    // e.g. dofmaps with periodoc bcs
+    std::vector<std::size_t> num_global_mesh_entities;
+
     // Map from UFC dof numbering to renumbered dof (ufc_dof, actual_dof)
     boost::unordered_map<std::size_t, std::size_t> ufc_map_to_dofmap;
 
@@ -404,12 +409,6 @@ namespace dolfin
 
     // Neighbours (processes that we share dofs with)
     std::set<std::size_t> _neighbours;
-
-    // Map from slave dofs to master dofs using UFC numbering
-    //std::map<std::size_t, std::size_t> _slave_master_map;
-
-    // Map of processes that share master dofs (used by compute_ownership)
-    //std::map<std::size_t, boost::unordered_set<std::size_t> > _master_processes;
 
   };
 }

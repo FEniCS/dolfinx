@@ -50,30 +50,15 @@ namespace dolfin
     static Graph local_graph(const Mesh& mesh,
                              const std::vector<std::size_t>& coloring_type);
 
-    /// Build local Boost graph (general version)
-    static BoostBidirectionalGraph local_boost_graph(const Mesh& mesh,
-                               const std::vector<std::size_t>& coloring_type);
-
     /// Build local graph (specialized version)
-    static Graph local_graph(const Mesh& mesh, std::size_t dim0, 
-                             std::size_t dim1);
+    static Graph local_graph(const Mesh& mesh, std::size_t dim0,
+                                               std::size_t dim1);
 
-    /// Build local Boost graph (specialized version)
-    static BoostBidirectionalGraph local_boost_graph(const Mesh& mesh,
-                                                     std::size_t dim0,
-                                                     std::size_t dim1);
-
-    /// Build distributed dual graph for mesh. 
-    /// This function calls compute_local_dual_graph,
-    /// and then compute_nonlocal_dual_graph if using MPI
+    /// Build distributed dual graph (cell-cell connections) for from
+    /// LocalMeshData
     static void compute_dual_graph(const LocalMeshData& mesh_data,
                                    std::vector<std::set<std::size_t> >& local_graph,
                                    std::set<std::size_t>& ghost_vertices);
-
-    /// Build distributed dual graph for mesh. 
-    static void compute_dual_graph_orig(const LocalMeshData& mesh_data,
-                               std::vector<std::set<std::size_t> >& local_graph,
-                               std::set<std::size_t>& ghost_vertices);
 
   private:
 
@@ -84,8 +69,8 @@ namespace dolfin
                                    std::vector<std::set<std::size_t> >& local_graph,
                                    FacetCellMap& facet_cell_map);
 
-    // Build nonlocal part of dual graph for
-    // mesh. compute_local_dual_graph should be called first.
+    // Build nonlocal part of dual graph for mesh.
+    // GraphBuilder::compute_local_dual_graph should be called first.
     static void compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
                                             std::vector<std::set<std::size_t> >& local_graph,
                                             FacetCellMap& facet_cell_map,
