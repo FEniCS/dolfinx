@@ -94,12 +94,6 @@ void DofMapBuilder::build_sub_map(DofMap& sub_dofmap,
 
   dolfin_assert(!component.empty());
 
-  // FIXME: This break for constrained/periodic dof maps
-  // Collect global mesh entity dimensions in a vector
-  //std::vector<std::size_t> num_global_mesh_entities(mesh.topology().dim() + 1);
-  //for (std::size_t d = 0; d < num_global_mesh_entities.size(); d++)
-  //  num_global_mesh_entities[d] = mesh.size_global(d);
-
   // Initialise offset from parent
   std::size_t offset = parent_dofmap._ufc_offset;
 
@@ -128,48 +122,6 @@ void DofMapBuilder::build_sub_map(DofMap& sub_dofmap,
   for (std::size_t i = 0; i < sub_dofmap._dofmap.size(); ++i)
     for (std::size_t j = 0; j < sub_dofmap._dofmap[i].size(); ++j)
       sub_dofmap._dofmap[i][j] += offset;
-
-  /*
-  // Resize dofmap data structure
-  sub_dofmap._dofmap.resize(mesh.num_cells());
-
-  // Holder for copying UFC std::size_t dof maps into the a dof map that
-  // is consistent with the linear algebra backend
-  std::vector<std::size_t> dof_holder;
-
-  // Build sub-map based on UFC dofmap
-  UFCCell ufc_cell(mesh);
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    const std::size_t cell_index = cell->index();
-
-    // Update to current cell
-    ufc_cell.update(*cell);
-
-    // Resize dof holder list for cell
-    sub_dofmap._dofmap[cell_index].resize(sub_dofmap._ufc_dofmap->local_dimension(ufc_cell));
-    dof_holder.resize(sub_dofmap._ufc_dofmap->local_dimension(ufc_cell));
-
-    // Tabulate sub-dofs on cell (using UFC map)
-    sub_dofmap._ufc_dofmap->tabulate_dofs(dof_holder.data(),
-                                          num_global_mesh_entities,
-                                          ufc_cell);
-
-    // Add UFC offset to UFC dofmap
-    for (unsigned int i = 0; i < dof_holder.size(); i++)
-      dof_holder[i] += offset;
-
-    // Copy dofs into dofmap (this is necessary to deal with different
-    // integer types)
-    std::copy(dof_holder.begin(), dof_holder.end(),
-              sub_dofmap._dofmap[cell_index].begin());
-  }
-
-  // FIXME: This does not handle periodic/constrained dofs
-  // Set global dimension
-  sub_dofmap._global_dimension
-    = sub_dofmap._ufc_dofmap->global_dimension(num_global_mesh_entities);
-  */
 
   // Correct dofmap for non-UFC numbering
   sub_dofmap.ufc_map_to_dofmap.clear();
@@ -259,7 +211,7 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
     const std::size_t local_index = vertex->index();
     if (slave_vertex[local_index])
     {
-      // Do nothing, will get master index later
+      // Do nothing, will get new master index later
     }
     else if (vertex_shared[local_index])
     {
@@ -298,22 +250,20 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
       }
     }
     else
-    {
       modified_global_indices[vertex->index()] = new_index++;
-    }
   }
 
   // Send number of owned entities to compute offeset
   std::size_t offset = MPI::global_offset(new_index, true);
 
-  // Add process offset
+  // Add process offset to modified indices
   for (std::size_t i = 0; i < modified_global_indices.size(); ++i)
     modified_global_indices[i] += offset;
 
+  // Add process offset to shared vertex indices before sending
   for (std::size_t p = 0; p < new_shared_vertex_indices.size(); ++p)
     for (std::size_t i = 1; i < new_shared_vertex_indices[p].size(); i += 2)
       new_shared_vertex_indices[p][i] += offset;
-
 
   // Send/receive new indices for shared vertices
   std::vector<std::vector<std::size_t> > received_vertex_data;
@@ -329,7 +279,6 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
       const std::size_t recv_new_index = received_vertex_data_p[i + 1];
 
       dolfin_assert(local_index < modified_global_indices.size());
-      //dolfin_assert(modified_global_indices[local_index] == std::numeric_limits<std::size_t>::max());
       modified_global_indices[local_index] = recv_new_index;
     }
   }
@@ -482,8 +431,8 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
     const std::size_t num_vertices = build_constrained_vertex_indices(mesh,
           slave_to_master_vertices, global_entity_indices[0]);
 
-    cout << "*** Num vertices: " << num_vertices << ", " << mesh.num_vertices() << endl;
-    cout << "*** Num slave vertices: " << slave_to_master_vertices.size() << endl;
+    //cout << "*** Num vertices: " << num_vertices << ", " << mesh.num_vertices() << endl;
+    //cout << "*** Num slave vertices: " << slave_to_master_vertices.size() << endl;
 
     // Compute number of mesh entities
     dofmap.num_global_mesh_entities[0] = num_vertices;
@@ -790,10 +739,7 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
 
       // Mark dof as owned if not in unowned set
       if (shared_unowned_dofs.find(cell_dof) == shared_unowned_dofs.end())
-      {
-        //cout << "Marking dof as owned: " << cell_dof << endl;
         owned_dofs.insert(cell_dof);
-      }
     }
   }
 
