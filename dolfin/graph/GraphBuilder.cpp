@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <numeric>
 #include <set>
+#include <utility>
 #include <vector>
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
@@ -192,16 +193,11 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   FacetCellMap facet_cell_map;
 
   #ifdef HAS_MPI
-
   compute_local_dual_graph(mesh_data, local_graph, facet_cell_map);
   compute_nonlocal_dual_graph(mesh_data, local_graph, facet_cell_map, ghost_vertices);
-
   #else
-
   compute_local_dual_graph(mesh_data, local_graph, facet_cell_map);
-
   #endif
-
 }
 //-----------------------------------------------------------------------------
 void GraphBuilder::compute_local_dual_graph(const LocalMeshData& mesh_data,
@@ -231,42 +227,42 @@ void GraphBuilder::compute_local_dual_graph(const LocalMeshData& mesh_data,
   // Create map from facet (list of vertex indices) to cells
   facet_cell_map.rehash((facet_cell_map.size() + num_local_cells)/facet_cell_map.max_load_factor() + 1);
 
-  std::vector<std::size_t> cellvtx(num_vertices_per_cell);
-  std::vector<std::size_t> facet(num_vertices_per_facet);
-
   // Iterate over all cells
+  std::vector<std::size_t> cellvtx(num_vertices_per_cell);
+  std::pair<std::vector<std::size_t>, std::size_t> map_entry(std::vector<std::size_t>(num_vertices_per_facet), 0);
   for (std::size_t i = 0; i < num_local_cells; ++i)
   {
     // Copy cell vertices and sort into order, taking a subset (minus
     // one vertex) to form a set of facet vertices
     std::copy(cell_vertices[i].begin(), cell_vertices[i].end(), cellvtx.begin());
     std::sort(cellvtx.begin(), cellvtx.end());
-    std::copy(cellvtx.begin() + 1, cellvtx.end(), facet.begin());
+
+    // Copy data to map_entry
+    std::copy(cellvtx.begin() + 1, cellvtx.end(), map_entry.first.begin());
+    map_entry.second = i;
 
     // Iterate over facets in cell
-    for(std::size_t j = 0; j < num_vertices_per_cell; ++j)
+    for (std::size_t j = 0; j < num_vertices_per_cell; ++j)
     {
-      // Look for facet in map
-      const FacetCellMap::const_iterator join_cell = facet_cell_map.find(facet);
+      // Map lookup/insert
+      std::pair<FacetCellMap::iterator, bool> map_lookup = facet_cell_map.insert(map_entry);
 
-      // If facet not found in map, insert [facet => local cell index] into map
-      if (join_cell == facet_cell_map.end())
-        facet_cell_map[facet] = i;
-      else
+      // If facet was already in the map
+      if (!map_lookup.second)
       {
         // Already in map. Connect cells and delete facet from map
         // Add offset to cell index when inserting into local_graph
-        local_graph[i].insert(join_cell->second + cell_offset);
-        local_graph[join_cell->second].insert(i + cell_offset);
+        local_graph[i].insert(map_lookup.first->second + cell_offset);
+        local_graph[map_lookup.first->second].insert(i + cell_offset);
 
         // Save memory and search time by erasing
-        facet_cell_map.erase(join_cell);
+        facet_cell_map.erase(map_lookup.first);
       }
 
       // Change facet by one entry, cycling from [1,2,3] -> [0,2,3]- >
       // [0,1,3] -> [0,1,2] (for tetrahedron)
       if (j != num_vertices_per_facet)
-        facet[j] = cellvtx[j];
+        map_entry.first[j] = cellvtx[j];
     }
   }
 }
@@ -276,6 +272,7 @@ void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
                             FacetCellMap& facet_cell_map,
                             std::set<std::size_t>& ghost_vertices)
 {
+  tic();
   Timer timer("Compute non-local dual graph");
 
   // At this stage facet_cell map only contains facets->cells with edge
@@ -326,28 +323,34 @@ void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
   send_buffer = std::vector<std::vector<std::size_t> >(num_processes);
 
   // Map to connect processes and cells, using facet as key
-  boost::unordered_map<std::vector<std::size_t>, std::pair<std::size_t, std::size_t> > matchmap;
-  // FIXME: set hash size
+  typedef boost::unordered_map<std::vector<std::size_t>,
+              std::pair<std::size_t, std::size_t> > MatchMap;
+  MatchMap matchmap;
 
   // Look for matches to send back to other processes
-  std::vector<std::size_t> facet(num_vertices_per_facet);
+  std::pair<std::vector<std::size_t>, std::pair<std::size_t, std::size_t> > key;
+  key.first.resize(num_vertices_per_facet);
   for (std::size_t p = 0; p < num_processes; ++p)
   {
     // Unpack into map
     const std::vector<std::size_t>& data_p = received_buffer[p];
     for (std::size_t i = 0; i < data_p.size(); i += (num_vertices_per_facet + 1))
     {
-      for (std::size_t j = 0; j < num_vertices_per_facet; ++j)
-        facet[j] = data_p[i + j];
+      // Build map key
+      std::copy(&data_p[i], &data_p[i] + num_vertices_per_facet, key.first.begin());
+      key.second.first = p;
+      key.second.second = data_p[i + num_vertices_per_facet];
 
-      if (matchmap.find(facet) == matchmap.end())
-        matchmap[facet] = std::make_pair(p, data_p[i + num_vertices_per_facet]);
-      else
+      // Perform map insertion/look-up
+      std::pair<MatchMap::iterator, bool> data = matchmap.insert(key);
+
+      // If data is already in the map, extract data and remove from map
+      if (!data.second)
       {
         // Found a match of two facets - send back to owners
-        const std::size_t proc1 = matchmap[facet].first;
+        const std::size_t proc1 = data.first->second.first;
         const std::size_t proc2 = p;
-        const std::size_t cell1 = matchmap[facet].second;
+        const std::size_t cell1 = data.first->second.second;
         const std::size_t cell2 = data_p[i + num_vertices_per_facet];
         send_buffer[proc1].push_back(cell1);
         send_buffer[proc1].push_back(cell2);
@@ -355,7 +358,7 @@ void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
         send_buffer[proc2].push_back(cell1);
 
         // Remove facet - saves memory and search time
-        matchmap.erase(facet);
+        matchmap.erase(data.first);
       }
     }
   }
@@ -379,5 +382,7 @@ void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
       ghost_vertices.insert(cell_list[i + 1]);
     }
   }
+  double timex = toc();
+  cout << "Off proc graph time: " << timex << endl;;
 }
 //-----------------------------------------------------------------------------
