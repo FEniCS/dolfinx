@@ -209,7 +209,6 @@ void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
                             FacetCellMap& facet_cell_map,
                             std::set<std::size_t>& ghost_vertices)
 {
-  tic();
   Timer timer("Compute non-local dual graph");
 
   // At this stage facet_cell map only contains facets->cells with edge
@@ -319,7 +318,5 @@ void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
       ghost_vertices.insert(cell_list[i + 1]);
     }
   }
-  double timex = toc();
-  cout << "Off proc graph time: " << timex << endl;;
 }
 //-----------------------------------------------------------------------------

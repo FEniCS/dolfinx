@@ -377,6 +377,11 @@ namespace dolfin
     // UFC dof map
     boost::shared_ptr<const ufc::dofmap> _ufc_dofmap;
 
+    // Number global mesh entities. This is usually the same as what
+    // is reported by the mesh, but will differ for constrained dofmap,
+    // e.g. dofmaps with periodoc bcs
+    std::vector<std::size_t> num_global_mesh_entities;
+
     // Map from UFC dof numbering to renumbered dof (ufc_dof, actual_dof)
     boost::unordered_map<std::size_t, std::size_t> ufc_map_to_dofmap;
 
@@ -404,12 +409,6 @@ namespace dolfin
 
     // Neighbours (processes that we share dofs with)
     std::set<std::size_t> _neighbours;
-
-    // Map from slave dofs to master dofs using UFC numbering
-    //std::map<std::size_t, std::size_t> _slave_master_map;
-
-    // Map of processes that share master dofs (used by compute_ownership)
-    //std::map<std::size_t, boost::unordered_set<std::size_t> > _master_processes;
 
   };
 }

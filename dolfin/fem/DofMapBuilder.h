@@ -145,7 +145,7 @@ namespace dolfin
         extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
                                std::size_t& offset,
                                const std::vector<std::size_t>& component,
-                               const Mesh& mesh);
+                               const std::vector<std::size_t>& num_global_mesh_entities);
 
   };
 }
