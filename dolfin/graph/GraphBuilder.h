@@ -50,20 +50,12 @@ namespace dolfin
     static Graph local_graph(const Mesh& mesh,
                              const std::vector<std::size_t>& coloring_type);
 
-    /// Build local Boost graph (general version)
-    static BoostBidirectionalGraph local_boost_graph(const Mesh& mesh,
-                               const std::vector<std::size_t>& coloring_type);
-
     /// Build local graph (specialized version)
     static Graph local_graph(const Mesh& mesh, std::size_t dim0,
-                             std::size_t dim1);
+                                               std::size_t dim1);
 
-    /// Build local Boost graph (specialized version)
-    static BoostBidirectionalGraph local_boost_graph(const Mesh& mesh,
-                                                     std::size_t dim0,
-                                                     std::size_t dim1);
-
-    /// Build distributed dual graph for mesh.
+    /// Build distributed dual graph (cell-cell connections) for from
+    /// LocalMeshData
     static void compute_dual_graph(const LocalMeshData& mesh_data,
                                    std::vector<std::set<std::size_t> >& local_graph,
                                    std::set<std::size_t>& ghost_vertices);

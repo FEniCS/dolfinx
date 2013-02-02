@@ -392,20 +392,12 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
 //-----------------------------------------------------------------------------
 void DofMapBuilder::reorder_local(DofMap& dofmap, const Mesh& mesh)
 {
-  // Build graph
-  Graph graph(dofmap.global_dimension());
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    const std::vector<dolfin::la_index>& dofs0 = dofmap.cell_dofs(cell->index());
-    const std::vector<dolfin::la_index>& dofs1 = dofmap.cell_dofs(cell->index());
-    std::vector<dolfin::la_index>::const_iterator node;
-    for (node = dofs0.begin(); node != dofs0.end(); ++node)
-      graph[*node].insert(dofs1.begin(), dofs1.end());
-  }
+  // Build local graph
+  const Graph graph = GraphBuilder::local_graph(mesh, dofmap, dofmap);
 
   // Reorder graph (reverse Cuthill-McKee)
   const std::vector<std::size_t> dof_remap
-      = BoostGraphOrdering::compute_cuthill_mckee(graph, true);
+    = BoostGraphOrdering::compute_cuthill_mckee(graph, true);
 
   // Store re-ordering map (from UFC dofmap)
   dolfin_assert(dofmap.ufc_map_to_dofmap.empty());
@@ -608,12 +600,12 @@ void DofMapBuilder::reorder_distributed(DofMap& dofmap,
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
-                                      vec_map& shared_dof_processes,
-                                      DofMap& dofmap,
-                                      const DofMapBuilder::set& global_dofs,
-                                      const Mesh& mesh,
-                                      boost::shared_ptr<const Restriction> restriction,
-                                      const map& restricted_dofs_inverse)
+                              vec_map& shared_dof_processes,
+                              DofMap& dofmap,
+                              const DofMapBuilder::set& global_dofs,
+                              const Mesh& mesh,
+                              boost::shared_ptr<const Restriction> restriction,
+                              const map& restricted_dofs_inverse)
 {
   log(TRACE, "Determining dof ownership for parallel dof map");
 
@@ -794,14 +786,6 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
       }
     }
   }
-
-  /*
-  set::const_iterator it;
-  for (it = owned_dofs.begin(); it != owned_dofs.end(); ++it)
-  {
-    cout << "Owned dof: " << *it << endl;
-  }
-  */
 
   // Check or set global dimension
   if (restriction)

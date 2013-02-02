@@ -54,7 +54,6 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
   {
     const std::vector<dolfin::la_index>& dofs0 = dofmap0.cell_dofs(cell->index());
     const std::vector<dolfin::la_index>& dofs1 = dofmap1.cell_dofs(cell->index());
-
     std::vector<dolfin::la_index>::const_iterator node;
     for (node = dofs0.begin(); node != dofs0.end(); ++node)
       graph[*node].insert(dofs1.begin(), dofs1.end());
@@ -118,68 +117,6 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
     {
       for (MeshEntityIterator neighbor(*entity, dim0); !neighbor.end(); ++neighbor)
         graph[colored_entity_index].insert(neighbor->index());
-    }
-  }
-
-  return graph;
-}
-//-----------------------------------------------------------------------------
-BoostBidirectionalGraph GraphBuilder::local_boost_graph(const Mesh& mesh,
-                                const std::vector<std::size_t>& coloring_type)
-{
-  // Check coloring type
-  dolfin_assert(coloring_type.size() >= 2);
-  dolfin_assert(coloring_type.front() == coloring_type.back());
-
-  // Create graph
-  const std::size_t num_verticies = mesh.num_entities(coloring_type[0]);
-  BoostBidirectionalGraph graph(num_verticies);
-
-  // Build graph
-  for (MeshEntityIterator vertex_entity(mesh, coloring_type[0]); !vertex_entity.end(); ++vertex_entity)
-  {
-    boost::unordered_set<std::size_t> entity_list0;
-    boost::unordered_set<std::size_t> entity_list1;
-    entity_list0.insert(vertex_entity->index());
-
-    // Build list of entities, moving between levels
-    boost::unordered_set<std::size_t>::const_iterator entity_index;
-    for (std::size_t level = 1; level < coloring_type.size(); ++level)
-    {
-      for (entity_index = entity_list0.begin(); entity_index != entity_list0.end(); ++entity_index)
-      {
-        const MeshEntity entity(mesh, coloring_type[level -1], *entity_index);
-        for (MeshEntityIterator neighbor(entity, coloring_type[level]); !neighbor.end(); ++neighbor)
-          entity_list1.insert(neighbor->index());
-      }
-      entity_list0 = entity_list1;
-      entity_list1.clear();
-    }
-
-    // Add edges to graph
-    const std::size_t vertex_entity_index = vertex_entity->index();
-    for (entity_index = entity_list0.begin(); entity_index != entity_list0.end(); ++entity_index)
-      boost::add_edge(vertex_entity_index, *entity_index, graph);
-  }
-
-  return graph;
-}
-//-----------------------------------------------------------------------------
-BoostBidirectionalGraph GraphBuilder::local_boost_graph(const Mesh& mesh,
-                                           std::size_t dim0, std::size_t dim1)
-{
-  // Create graph
-  const std::size_t num_verticies = mesh.num_entities(dim0);
-  BoostBidirectionalGraph graph(num_verticies);
-
-  // Build graph
-  for (MeshEntityIterator colored_entity(mesh, dim0); !colored_entity.end(); ++colored_entity)
-  {
-    const std::size_t colored_entity_index = colored_entity->index();
-    for (MeshEntityIterator entity(*colored_entity, dim1); !entity.end(); ++entity)
-    {
-      for (MeshEntityIterator neighbor(*entity, dim0); !neighbor.end(); ++neighbor)
-        boost::add_edge(colored_entity_index, neighbor->index(), graph);
     }
   }
 
