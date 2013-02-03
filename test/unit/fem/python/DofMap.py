@@ -241,7 +241,7 @@ class DofMapTest(unittest.TestCase):
             self.assertEqual(len(np.intersect1d(dofs1, dofs2)), 0)
             self.assertTrue(np.array_equal(np.append(dofs1, dofs2), dofs3))
 
-        self.assertFalse(all_dofs.difference(self.W.dofmap().dofs()))
+        self.assertFalse(all_dofs.difference(W.dofmap().dofs()))
 
     def test_global_dof_builder(self):
 
