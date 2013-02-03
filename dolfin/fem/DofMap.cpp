@@ -109,6 +109,7 @@ DofMap::DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
 
   // Dimension sanity checks
   dolfin_assert(dofmap_view._dofmap.size() == mesh.num_cells());
+  dolfin_assert(global_dimension() == dofmap_view.global_dimension());
   dolfin_assert(_dofmap.size() == mesh.num_cells());
 
   // FIXME: Could we use a std::vector instead of std::map if the

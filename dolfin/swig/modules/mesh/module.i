@@ -93,6 +93,7 @@
 #include "dolfin/mesh/Restriction.h"
 #include "dolfin/mesh/DomainBoundary.h"
 #include "dolfin/mesh/BoundaryMesh.h"
+#include "dolfin/mesh/PeriodicBoundaryComputation.h"
 
 // #include types from generation submodule
 #include "dolfin/generation/PolygonalMeshGenerator.h"
@@ -224,6 +225,7 @@ import_array();
 %include "dolfin/mesh/Restriction.h"
 %include "dolfin/mesh/DomainBoundary.h"
 %include "dolfin/mesh/BoundaryMesh.h"
+%include "dolfin/mesh/PeriodicBoundaryComputation.h"
 %include "dolfin/swig/mesh/post.i"
 
 // %include types from submodule generation
