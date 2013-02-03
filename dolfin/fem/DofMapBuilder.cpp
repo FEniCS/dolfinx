@@ -392,7 +392,7 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
   dofmap.ufc_map_to_dofmap.clear();
 
   // Check for periodic constraints
-  const bool periodic = MPI::sum(mesh.periodic_vertex_map.size()) > 0;
+  const bool periodic = MPI::sum(mesh.periodic_index_map.size()) > 0;
 
   // Global enity indices
   std::vector<std::vector<std::size_t> > global_entity_indices(mesh.topology().dim() + 1);
@@ -424,8 +424,9 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
   else
   {
     // Get master-slave vertex map
+    dolfin_assert(mesh.periodic_index_map.find(0) != mesh.periodic_index_map.end());
     const std::map<std::size_t, std::pair<std::size_t, std::size_t> >&
-      slave_to_master_vertices = mesh.periodic_vertex_map;
+      slave_to_master_vertices = mesh.periodic_index_map.find(0)->second;
 
     // Compute modified global vertex indices
     const std::size_t num_vertices = build_constrained_vertex_indices(mesh,
@@ -440,11 +441,17 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
     {
       if (dofmap._ufc_dofmap->needs_mesh_entities(d))
       {
+        // Get master-slave map
+        dolfin_assert(mesh.periodic_index_map.find(d) != mesh.periodic_index_map.end());
+        const std::map<std::size_t, std::pair<std::size_t, std::size_t> >&
+          slave_to_master_entities = mesh.periodic_index_map.find(1)->second;
+
         // Initialise local entities
         std::map<std::size_t, std::set<std::size_t> > shared_entities;
         const std::size_t num_entities
-          = DistributedMeshTools::number_entities(mesh, global_entity_indices[0],
-                                       global_entity_indices[d], shared_entities, d);
+          = DistributedMeshTools::number_entities(mesh, slave_to_master_entities,
+                                                  global_entity_indices[d],
+                                                  shared_entities, d);
 
         dofmap.num_global_mesh_entities[d] = num_entities;
       }

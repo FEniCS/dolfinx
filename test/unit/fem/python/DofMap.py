@@ -197,7 +197,7 @@ class DofMapTest(unittest.TestCase):
         # Create periodic boundary condition
         periodic_boundary = PeriodicBoundary2()
         periodic_vertex_pairs = cpp.PeriodicBoundaryComputation.compute_periodic_pairs(mesh, periodic_boundary, 0);
-        mesh.periodic_vertex_map = periodic_vertex_pairs;
+        mesh.set_periodic_pairs(0, periodic_vertex_pairs);
 
         V = FunctionSpace(mesh, "Lagrange", 1)
         Q = VectorFunctionSpace(mesh, "Lagrange", 1)
