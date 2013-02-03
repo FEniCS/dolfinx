@@ -196,11 +196,12 @@ class DofMapTest(unittest.TestCase):
 
         # Create periodic boundary condition
         periodic_boundary = PeriodicBoundary2()
-        periodic_vertex_pairs = cpp.PeriodicBoundaryComputation.compute_periodic_pairs(mesh, periodic_boundary, 0);
-        mesh.set_periodic_pairs(0, periodic_vertex_pairs);
+        for i in range(2):
+            pairs = cpp.PeriodicBoundaryComputation.compute_periodic_pairs(mesh, periodic_boundary, i);
+            mesh.set_periodic_pairs(i, pairs);
 
-        V = FunctionSpace(mesh, "Lagrange", 1)
-        Q = VectorFunctionSpace(mesh, "Lagrange", 1)
+        V = FunctionSpace(mesh, "Lagrange", 2)
+        Q = VectorFunctionSpace(mesh, "Lagrange", 2)
         W = V*Q
 
         L0   = W.sub(0)
@@ -209,8 +210,8 @@ class DofMapTest(unittest.TestCase):
         L11  = L1.sub(1)
 
         # Check dimensions
-        self.assertEqual(V.dim(), 20)
-        self.assertEqual(Q.dim(), 40)
+        self.assertEqual(V.dim(), 72)
+        self.assertEqual(Q.dim(), 144)
         self.assertEqual(L0.dim(), V.dim())
         self.assertEqual(L1.dim(), Q.dim())
         self.assertEqual(L01.dim(), V.dim())
