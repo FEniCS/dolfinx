@@ -92,7 +92,7 @@ int main()
   file << master_slave_entities;
 
   // Attach periodic vertex pairs to mesh
-  mesh.periodic_vertex_map = periodic_vertex_pairs;
+  mesh.periodic_index_map[0] = periodic_vertex_pairs;
 
   // Create functions
   Source f;
