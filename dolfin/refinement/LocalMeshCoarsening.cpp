@@ -219,8 +219,8 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   for (VertexIterator v(mesh); !v.end(); ++v)
     vertex_boundary[v->index()] = false;
 
-  BoundaryMesh boundary(mesh);
-  MeshFunction<std::size_t>& bnd_vertex_map = boundary.vertex_map();
+  BoundaryMesh boundary(mesh, "exterior");
+  MeshFunction<std::size_t>& bnd_vertex_map = boundary.entity_map(0);
   for (VertexIterator v(boundary); !v.end(); ++v)
     vertex_boundary[bnd_vertex_map[v->index()]] = true;
 
@@ -230,6 +230,7 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
     for (VertexIterator v(boundary); !v.end(); ++v)
       vertex_forbidden[bnd_vertex_map[v->index()]] = true;
   }
+
   // Initialise data for finding which vertex to remove
   bool _collapse_edge = false;
   const std::size_t* edge_vertex;
@@ -258,7 +259,7 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
 
   // Find shortest edge of cell c
   _collapse_edge = false;
-  lmin = 1.0e10 * c.diameter();
+  lmin = 1.0e10*c.diameter();
   for (EdgeIterator e(c); !e.end(); ++e)
   {
     edge_vertex = e->entities(0);
@@ -294,6 +295,7 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
       editor.close();
       return false;
     }
+
     if(vertex_forbidden[edge_vertex[0]] == true)
       vert2remove_idx = edge_vertex[1];
     else if(vertex_forbidden[edge_vertex[1]] == true)
@@ -316,10 +318,6 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   }
 
   Vertex vertex_to_remove(mesh, vert2remove_idx);
-
-  //cout << "edge vertices2: " << edge_vertex[0] << " " << edge_vertex[1] << endl;
-  //cout << "vertex2: " << vertex_to_remove.index() << endl;
-  //cout << "collapse: " << _collapse_edge << endl;
 
   // Remove cells around edge
   num_cells_to_remove = 0;

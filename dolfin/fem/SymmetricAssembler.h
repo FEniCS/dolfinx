@@ -75,19 +75,6 @@ namespace dolfin
                   const MeshFunction<std::size_t>* exterior_facet_domains=NULL,
                   const MeshFunction<std::size_t>* interior_facet_domains=NULL);
 
-    /// Assemble a and apply Dirichlet boundary conditions. Returns two
-    /// matrices, where the second contains the symmetric modifications
-    /// suitable for modifying RHS vectors.
-    ///
-    /// Note: row_bcs and col_bcs will normally be the same, but are different
-    /// for e.g. off-diagonal block matrices in a mixed PDE.
-    void assemble(GenericMatrix& A,
-                  GenericMatrix& B,
-                  const Form& a,
-                  const std::vector<const DirichletBC*> row_bcs,
-                  const std::vector<const DirichletBC*> col_bcs,
-                  const SubDomain& sub_domain);
-
   protected:
 
     /// Add cell tensor to global tensor. Hook to allow the SymmetricAssembler

@@ -56,7 +56,7 @@ int main()
   while (t < 1.4)
   {
     // Compute intersection with boundary of square
-    BoundaryMesh boundary(sphere_mesh);
+    BoundaryMesh boundary(sphere_mesh, "exterior");
     std::set<std::size_t> cells;
     cube_mesh.intersected_cells(boundary, cells);
 

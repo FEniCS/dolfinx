@@ -24,11 +24,13 @@
 #ifndef __BOUNDARY_MESH_H
 #define __BOUNDARY_MESH_H
 
+#include <string>
 #include "MeshFunction.h"
 #include "Mesh.h"
 
 namespace dolfin
 {
+
   /// A BoundaryMesh is a mesh over the boundary of some given mesh.
   /// The cells of the boundary mesh (facets of the original mesh) are
   /// oriented to produce outward pointing normals relative to the
@@ -38,14 +40,17 @@ namespace dolfin
   {
   public:
 
-    /// Create an empty boundary mesh
-    BoundaryMesh();
-
     /// Create boundary mesh from given mesh.
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         Another _Mesh_ object.
+    ///     type (_std::string_)
+    ///         The type of BoundaryMesh, which can be "exterior",
+    ///         "interior" or "local". "exterior" is the globally
+    ///         external boundary, "interior" is the inter-process mesh
+    ///         and "local" is the boudary of the local (this process)
+    ///         mesh.
     ///     order (bool)
     ///         Optional argument which can be used to control whether
     ///         or not the boundary mesh should be ordered according
@@ -53,32 +58,22 @@ namespace dolfin
     ///         boundary mesh will be ordered with right-oriented
     ///         facets (outward-pointing unit normals). The default
     ///         value is true.
-    BoundaryMesh(const Mesh& mesh, bool order=true);
+    BoundaryMesh(const Mesh& mesh, std::string type, bool order=true);
 
     /// Destructor
     ~BoundaryMesh();
 
-    /// Initialize exterior boundary of given mesh
-    void init_exterior_boundary(const Mesh& mesh);
+    /// Get index map for entities of dimension d in the boundary mesh
+    /// to the entity in the original full mesh
+    MeshFunction<std::size_t>& entity_map(std::size_t d);
 
-    /// Initialize interior boundary of given mesh
-    void init_interior_boundary(const Mesh& mesh);
-
-    MeshFunction<std::size_t>& cell_map()
-    { return _cell_map; }
-
-    /// Get cell mapping from the boundary mesh to the original full mesh
-    const MeshFunction<std::size_t>& cell_map() const
-    { return _cell_map; }
-
-    /// Get vertex mapping from the boundary mesh to the original full mesh
-    MeshFunction<std::size_t>& vertex_map()
-    { return _vertex_map; }
-
-    const MeshFunction<std::size_t>& vertex_map() const
-    { return _vertex_map; }
+    /// Get index map for entities of dimension d in the boundary mesh
+    /// to the entity in the original full mesh (const version)
+    const MeshFunction<std::size_t>& entity_map(std::size_t d) const;
 
   private:
+
+    BoundaryMesh() {}
 
     MeshFunction<std::size_t> _cell_map;
 

@@ -30,7 +30,7 @@ element = FiniteElement("Lagrange", cell, 1)
 
 n = cell.n
 p = Coefficient(element)
-drag = -p*n[0]*ds
-lift = p*n[1]*ds
+drag = -p*n[0]*ds(1)
+lift = p*n[1]*ds(1)
 
 forms = [drag, lift]

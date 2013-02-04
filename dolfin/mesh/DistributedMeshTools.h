@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Garth N. Wells
+// Copyright (C) 2011-2013 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-09-17
-// Last changed:
+// Last changed: 2013-01-29
 
-#ifndef __MESH_DISTRIBUTED_H
-#define __MESH_DISTRIBUTED_H
+#ifndef __MESH_DISTRIBUTED_TOOLS_H
+#define __MESH_DISTRIBUTED_TOOLS_H
 
 #include <map>
 #include <set>
@@ -42,6 +42,14 @@ namespace dolfin
 
     /// Create global entity indices for entities of dimension d
     static void number_entities(const Mesh& mesh, std::size_t d);
+
+    /// Create global entity indices for entities of dimension d for
+    /// given global vertex indices.
+    static std::size_t number_entities(const Mesh& mesh,
+            const std::vector<std::size_t>& global_vertex_indices,
+            std::vector<std::size_t>& global_entity_indices,
+            std::map<std::size_t, std::set<std::size_t> >& shared_entities,
+            std::size_t d);
 
     // Compute number of cells connected to each facet (globally). Facets
     // on internal boundaries will be connected to two cells (with the
@@ -94,8 +102,10 @@ namespace dolfin
     //       communicated to other processes)
     //  [2]: not owned but shared (will be numbered by another process,
     //       and number communicated to this processes)
-    static void compute_entity_ownership(const Mesh& mesh, std::size_t d,
-      std::vector<std::size_t>& owned_entities,
+    static void compute_entity_ownership(const std::map<std::vector<std::size_t>, std::size_t>& entities,
+      const std::map<std::size_t, std::set<std::size_t> >& shared_vertices_local,
+      const std::vector<std::size_t>& global_vertex_indices,
+      std::size_t d, std::vector<std::size_t>& owned_entities,
       boost::array<std::map<Entity, EntityData>, 2>& shared_entities);
 
     // Build preliminary 'guess' of shared entities. This function does

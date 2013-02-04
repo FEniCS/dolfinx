@@ -41,27 +41,40 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void BoundaryComputation::compute_exterior_boundary(const Mesh& mesh,
-                                                    BoundaryMesh& boundary)
-{
-  compute_boundary_common(mesh, boundary, false);
-}
+//void BoundaryComputation::compute_exterior_boundary(const Mesh& mesh,
+//                                                    BoundaryMesh& boundary)
+//{
+//  compute_boundary_common(mesh, boundary, false);
+//}
+////-----------------------------------------------------------------------------
+//void BoundaryComputation::compute_interior_boundary(const Mesh& mesh,
+//                                                    BoundaryMesh& boundary)
+//{
+//  compute_boundary_common(mesh, boundary, true);
+//}
 //-----------------------------------------------------------------------------
-void BoundaryComputation::compute_interior_boundary(const Mesh& mesh,
-                                                    BoundaryMesh& boundary)
-{
-  compute_boundary_common(mesh, boundary, true);
-}
-//-----------------------------------------------------------------------------
-void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
-                                                  BoundaryMesh& boundary,
-                                                  bool interior_boundary)
+void BoundaryComputation::compute_boundary(const Mesh& mesh,
+                                           const std::string type,
+                                           BoundaryMesh& boundary)
 {
   // We iterate over all facets in the mesh and check if they are on
   // the boundary. A facet is on the boundary if it is connected to
   // exactly one cell.
 
   log(TRACE, "Computing boundary mesh.");
+
+  bool exterior = true;
+  bool interior = true;
+  if (type == "exterior")
+    interior = false;
+  else if (type == "interior")
+    exterior = false;
+  else if (type != "local")
+  {
+    dolfin_error("BoundaryComputation.cpp",
+                 "determine bpundary mesh type",
+                 "Unknown boundary type (%d)", type.c_str());
+  }
 
   // Open boundary mesh for editing
   const std::size_t D = mesh.topology().dim();
@@ -86,9 +99,9 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
     if (f->num_entities(D) == 1)
     {
       const bool global_exterior_facet =  (f->num_global_entities(D) == 1);
-      if (global_exterior_facet && !interior_boundary)
+      if (global_exterior_facet && exterior)
         boundary_facet[*f] = true;
-      else if (!global_exterior_facet && interior_boundary)
+      else if (!global_exterior_facet && interior)
         boundary_facet[*f] = true;
 
       if (boundary_facet[*f])
@@ -112,12 +125,12 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   editor.init_cells(num_boundary_cells);
 
   // Initialize mapping from vertices in boundary to vertices in mesh
-  MeshFunction<std::size_t>& vertex_map = boundary.vertex_map();
+  MeshFunction<std::size_t>& vertex_map = boundary.entity_map(0);
   if (num_boundary_vertices > 0)
     vertex_map.init(boundary, 0, num_boundary_vertices);
 
   // Initialize mapping from cells in boundary to facets in mesh
-  MeshFunction<std::size_t>& cell_map = boundary.cell_map();
+  MeshFunction<std::size_t>& cell_map = boundary.entity_map(D - 1);
   if (num_boundary_cells > 0)
     cell_map.init(boundary, D - 1, num_boundary_cells);
 

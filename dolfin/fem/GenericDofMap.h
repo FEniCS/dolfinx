@@ -89,6 +89,9 @@ namespace dolfin
     virtual void tabulate_facet_dofs(std::vector<std::size_t>& dofs,
                                      std::size_t local_facet) const = 0;
 
+    /// Return a map between vertices and dofs
+    virtual std::vector<std::size_t> vertex_to_dof_map(Mesh& mesh) const = 0;
+
     /// Tabulate the coordinates of all dofs on a cell (UFC cell version)
     virtual void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
                                       const ufc::cell& ufc_cell) const = 0;

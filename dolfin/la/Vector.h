@@ -232,6 +232,11 @@ namespace dolfin
     virtual double* data()
     { return vector->data(); }
 
+    /// Update ghost values
+    virtual void update_ghost_values()
+    {
+      vector->update_ghost_values();
+    }
     //--- Special functions ---
 
     /// Return linear algebra backend factory

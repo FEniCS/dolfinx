@@ -85,15 +85,15 @@ if MPI.num_processes() == 1:
         def testBoundaryComputation(self):
             """Compute boundary of mesh."""
             mesh = UnitCubeMesh(2, 2, 2)
-            boundary = BoundaryMesh(mesh)
+            boundary = BoundaryMesh(mesh, "exterior")
             self.assertEqual(boundary.num_vertices(), 26)
             self.assertEqual(boundary.num_cells(), 48)
 
         def testBoundaryBoundary(self):
             """Compute boundary of boundary."""
             mesh = UnitCubeMesh(2, 2, 2)
-            b0 = BoundaryMesh(mesh)
-            b1 = BoundaryMesh(b0)
+            b0 = BoundaryMesh(mesh, "exterior")
+            b1 = BoundaryMesh(b0, "exterior")
             self.assertEqual(b1.num_vertices(), 0)
             self.assertEqual(b1.num_cells(), 0)
 
@@ -333,10 +333,9 @@ class MeshOrientations(unittest.TestCase):
             for i in range(mesh.num_cells()):
                 self.assertEqual(mesh.cell_orientations()[i], reference[i])
 
-        mesh = BoundaryMesh(UnitSquareMesh(2, 2))
+        mesh = BoundaryMesh(UnitSquareMesh(2, 2), "exterior")
         mesh.init_cell_orientations(Expression(("x[0]", "x[1]", "x[2]")))
         print mesh.cell_orientations()
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -103,11 +103,11 @@ namespace dolfin
     bool is_view() const
     { return (_ownership_range.first == 0 && _ownership_range.second == 0); }
 
-    /// True iff dof map is restricted
+    /// True if dof map is restricted
     ///
     /// *Returns*
     ///     bool
-    ///         True iff dof map is restricted
+    ///         True if dof map is restricted
     bool is_restricted() const
     { return static_cast<bool>(_restriction); }
 
@@ -244,6 +244,18 @@ namespace dolfin
     void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
                               const Cell& cell) const;
 
+    /// Return a map between vertices and dofs 
+    /// (vert_ind = vertex_to_dof_map[dof_ind])
+    /// 
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh to create the map between
+    ///
+    /// *Returns*
+    ///     std::vector<std::size_t>
+    ///         The vertex to dof map
+    std::vector<std::size_t> vertex_to_dof_map(Mesh& mesh) const;
+    
     /// Create a copy of the dof map
     ///
     /// *Returns*

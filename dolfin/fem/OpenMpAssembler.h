@@ -36,7 +36,6 @@ namespace dolfin
   // Forward declarations
   class GenericTensor;
   class Form;
-  class SubDomain;
   class UFC;
   template<typename T> class MeshFunction;
 

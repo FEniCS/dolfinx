@@ -21,7 +21,6 @@
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/la/GenericMatrix.h>
-#include <dolfin/mesh/SubDomain.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "Form.h"
 #include "UFC.h"
@@ -54,44 +53,6 @@ class SymmetricAssembler::Private
   std::vector<bool> local_row_is_bc;
 
 };
-//-----------------------------------------------------------------------------
-void SymmetricAssembler::assemble(GenericMatrix& A,
-                                  GenericMatrix& B,
-                                  const Form& a,
-                                  const std::vector<const DirichletBC*> row_bcs,
-                                  const std::vector<const DirichletBC*> col_bcs,
-                                  const SubDomain &sub_domain)
-{
-  //
-  // Convert the SubDomain to meshfunctions, suitable for the real assemble
-  // method. Copied from Assembler, except for the final assemble(...) call.
-  //
-
-  dolfin_assert(a.ufc_form());
-
-  // Extract mesh
-  const Mesh& mesh = a.mesh();
-
-  // Extract cell domains
-  boost::scoped_ptr<MeshFunction<std::size_t> > cell_domains;
-  if (a.ufc_form()->has_cell_integrals())
-  {
-    cell_domains.reset(new MeshFunction<std::size_t>(mesh, mesh.topology().dim(), 1));
-    sub_domain.mark(*cell_domains, 0);
-  }
-
-  // Extract facet domains
-  boost::scoped_ptr<MeshFunction<std::size_t> > facet_domains;
-  if (a.ufc_form()->has_exterior_facet_integrals() ||
-      a.ufc_form()->has_interior_facet_integrals())
-  {
-    facet_domains.reset(new MeshFunction<std::size_t>(mesh, mesh.topology().dim() - 1, 1));
-    sub_domain.mark(*facet_domains, 0);
-  }
-
-  // Assemble
-  assemble(A, B, a, row_bcs, col_bcs, cell_domains.get(), facet_domains.get(), facet_domains.get());
-}
 //-----------------------------------------------------------------------------
 void SymmetricAssembler::assemble(GenericMatrix& A,
                                   GenericMatrix& B,
