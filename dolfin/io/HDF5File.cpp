@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2012-12-10
+// Last changed: 2013-02-05
 
 #ifdef HAS_HDF5
 
@@ -131,6 +131,8 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim, const std::string n
     _cell_type = mesh.type().cell_type();
   else if (cell_dim == mesh.topology().dim() - 1)
     _cell_type = mesh.type().facet_type();
+  else if (cell_dim == 0)
+    _cell_type = CellType::point;
   else
   {
     dolfin_error("HDF5File.cpp",
@@ -211,6 +213,8 @@ void HDF5File::write_visualisation(const Mesh& mesh, const std::size_t cell_dim,
     _cell_type = mesh.type().cell_type();
   else if (cell_dim == mesh.topology().dim() - 1)
     _cell_type = mesh.type().facet_type();
+  else if (cell_dim == 0)
+    _cell_type = CellType::point;
   else
   {
     dolfin_error("HDF5File.cpp",
