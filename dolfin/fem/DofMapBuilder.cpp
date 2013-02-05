@@ -38,6 +38,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/Restriction.h>
+#include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
 #include "DofMap.h"
 #include "UFCCell.h"
@@ -47,6 +48,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
+  boost::shared_ptr<const SubDomain> constrained_boundary,
+  std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > >& slave_master_entities,
   boost::shared_ptr<const Restriction> restriction)
 {
   // Start timer for dofmap initialization

@@ -41,13 +41,29 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
-  const Mesh& mesh) : _ufc_dofmap(ufc_dofmap),  _global_dimension(0),
+               const Mesh& mesh,
+               const SubDomain& constrained_boundary)
+  : _ufc_dofmap(ufc_dofmap),  _global_dimension(0), _ufc_offset(0)
+{
+  dolfin_assert(_ufc_dofmap);
+
+  // Call dofmap builder
+  boost::shared_ptr<const SubDomain>
+    _constrained_boundary(&constrained_boundary, NoDeleter());
+  DofMapBuilder::build(*this, mesh, _constrained_boundary,
+                       slave_master_mesh_entities, _restriction);
+}
+//-----------------------------------------------------------------------------
+DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
+               const Mesh& mesh) : _ufc_dofmap(ufc_dofmap),  _global_dimension(0),
   _ufc_offset(0)
 {
   dolfin_assert(_ufc_dofmap);
 
   // Call dofmap builder
-  DofMapBuilder::build(*this, mesh, _restriction);
+  boost::shared_ptr<const SubDomain> _constrained_boundary;
+  DofMapBuilder::build(*this, mesh, _constrained_boundary,
+                       slave_master_mesh_entities, _restriction);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
@@ -70,7 +86,9 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   }
 
   // Call dofmap builder
-  DofMapBuilder::build(*this, mesh, restriction);
+  boost::shared_ptr<const SubDomain> _constrained_boundary;
+  DofMapBuilder::build(*this, mesh, _constrained_boundary,
+                       slave_master_mesh_entities, restriction);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap,
@@ -105,7 +123,9 @@ DofMap::DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
   check_provided_entities(*_ufc_dofmap, mesh);
 
   // Build new dof map
-  DofMapBuilder::build(*this, mesh, _restriction);
+  boost::shared_ptr<const SubDomain> _constrained_boundary;
+  DofMapBuilder::build(*this, mesh, _constrained_boundary,
+                       slave_master_mesh_entities, _restriction);
 
   // Dimension sanity checks
   dolfin_assert(dofmap_view._dofmap.size() == mesh.num_cells());
