@@ -2,7 +2,7 @@
 # This file sets up include directories, link directories, and
 # compiler settings for a project to use DOLFIN. It should not be
 # included directly, but rather through the DOLFIN_USE_FILE setting
-# obtained from dolfin-config.cmake.
+# obtained from DOLFINConfig.cmake.
 #
 
 if (NOT DOLFIN_USE_FILE_INCLUDED)

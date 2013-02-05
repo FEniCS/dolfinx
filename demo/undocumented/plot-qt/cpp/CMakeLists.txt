@@ -9,8 +9,8 @@ set(HEADERS Plotter.h PlotWidget.h CoordLabel.h BoundaryMeshFunction.h)
 # Ignore whitespace in library paths
 cmake_policy(SET CMP0004 OLD)
 
-# Get DOLFIN configuration data (dolfin-config.cmake must be in DOLFIN_CMAKE_CONFIG_PATH)
-find_package(dolfin REQUIRED)
+# Get DOLFIN configuration data (DOLFINConfig.cmake must be in DOLFIN_CMAKE_CONFIG_PATH)
+find_package(DOLFIN REQUIRED)
 
 # Default build type (can be overridden by user)
 if (NOT CMAKE_BUILD_TYPE)
@@ -43,7 +43,7 @@ if (VTK_FOUND)
 endif()
 
 # If built stand-alone (in demo directory), DOLFIN_ENABLE_FOO are not set. We
-# have to parse the definitions to see if qvtk is enabled in dolfin.
+# have to parse the definitions to see if qvtk is enabled in DOLFIN.
 get_directory_property(cmake_defs COMPILE_DEFINITIONS)
 foreach(d ${cmake_defs})
   if (${d} STREQUAL HAS_QVTK)
