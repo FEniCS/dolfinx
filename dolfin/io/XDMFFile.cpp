@@ -401,12 +401,6 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   const std::size_t cell_dim = meshfunction.dim();
 
   dolfin_assert(cell_dim <= mesh.topology().dim());
-  //   if (cell_dim < (mesh.topology().dim() - 1))
-  //  {
-  //   dolfin_error("XDMFFile.cpp",
-  //                "write mesh function to XDMF file",
-  //                "XDMF output of mesh functions only available for cell-based or facet-based functions");
-  // }
 
   if (meshfunction.size() == 0)
   {

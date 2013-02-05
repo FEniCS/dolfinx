@@ -131,6 +131,8 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim, const std::string n
     _cell_type = mesh.type().cell_type();
   else if (cell_dim == mesh.topology().dim() - 1)
     _cell_type = mesh.type().facet_type();
+  else if (cell_dim == 1)
+    _cell_type = CellType::interval;
   else if (cell_dim == 0)
     _cell_type = CellType::point;
   else
@@ -213,6 +215,8 @@ void HDF5File::write_visualisation(const Mesh& mesh, const std::size_t cell_dim,
     _cell_type = mesh.type().cell_type();
   else if (cell_dim == mesh.topology().dim() - 1)
     _cell_type = mesh.type().facet_type();
+  else if (cell_dim == 1)
+    _cell_type = CellType::interval;
   else if (cell_dim == 0)
     _cell_type = CellType::point;
   else
