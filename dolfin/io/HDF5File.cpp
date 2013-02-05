@@ -42,6 +42,7 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
@@ -121,12 +122,15 @@ void HDF5File::write(const Mesh& mesh, const std::string name)
 void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
                      const std::string name)
 {
+  Timer t("HDF5: write mesh to file");
+
   dolfin_assert(hdf5_file_open);
 
   // Create Mesh group in HDF5 file
   if (!HDF5Interface::has_group(hdf5_file_id, "/Mesh"))
     HDF5Interface::add_group(hdf5_file_id, "/Mesh");
 
+  // Get cell type
   CellType::Type _cell_type = mesh.type().cell_type();
   if (cell_dim == mesh.topology().dim())
     _cell_type = mesh.type().cell_type();
@@ -143,59 +147,46 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
                  "Only Mesh for Mesh facets can be written to file");
   }
 
+  // Get cell type string
   const std::string cell_type = CellType::type2string(_cell_type);
 
   // ---------- Vertices (coordinates)
-
-  //const std::vector<std::size_t>& global_indices = mesh.topology().global_indices(0);
-
   {
     // Write vertex data to HDF5 file
     const std::string coord_dataset = name + "/coordinates";
 
     // Copy coordinates and indices and remove off-process values
-    //std::vector<double> vertex_coords(mesh.coordinates());
     const std::size_t gdim = mesh.geometry().dim();
-    const std::vector<double> vertex_coords = reorder_vertices_by_global_indices(mesh);
+    const std::vector<double> vertex_coords
+      = reorder_vertices_by_global_indices(mesh);
 
     // Write coordinates out from each process
     std::vector<std::size_t> global_size(2);
-    global_size[0] = MPI::sum(vertex_coords.size()/gdim); // reduced after reorder
+    global_size[0] = MPI::sum(vertex_coords.size()/gdim);
     global_size[1] = gdim;
     write_data(coord_dataset, vertex_coords, global_size);
   }
 
   // ---------- Topology
-
-  // Get/build topology data
-  std::vector<std::size_t> topological_data;
-  //if (cell_dim == mesh.topology().dim())
-  //{
-  //  topological_data.resize(mesh.cells().size());
-  //
-  //  // Re-index using global indices
-  //  std::transform(mesh.cells().begin(), mesh.cells().end(),
-  //                 topological_data.begin(),
-  //                  boost::bind<const std::size_t &>(&std::vector<std::size_t>::at,
-  //                                                   &global_indices, _1));
-  //}
-  //else
-  //{
+  {
+    // Get/build topology data
+    std::vector<std::size_t> topological_data;
     topological_data.reserve(mesh.num_entities(cell_dim)*(cell_dim + 1));
     for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
       for (VertexIterator v(*c); !v.end(); ++v)
         topological_data.push_back(v->global_index());
-  //}
 
-  // Write topology data
-  const std::string topology_dataset = name + "/topology";
-  std::vector<std::size_t> global_size(2);
-  global_size[0] = MPI::sum(topological_data.size()/(cell_dim + 1));
-  global_size[1] = cell_dim + 1;
-  write_data(topology_dataset, topological_data, global_size);
+    // Write topology data
+    const std::string topology_dataset = name + "/topology";
+    std::vector<std::size_t> global_size(2);
+    global_size[0] = MPI::sum(topological_data.size()/(cell_dim + 1));
+    global_size[1] = cell_dim + 1;
+    write_data(topology_dataset, topological_data, global_size);
 
-  HDF5Interface::add_attribute(hdf5_file_id, topology_dataset, "celltype",
-                               cell_type);
+    // Add cell type attribute
+    HDF5Interface::add_attribute(hdf5_file_id, topology_dataset,
+                                 "celltype", cell_type);
+  }
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write_visualisation(const Mesh& mesh, const std::string name)
@@ -206,6 +197,8 @@ void HDF5File::write_visualisation(const Mesh& mesh, const std::string name)
 void HDF5File::write_visualisation(const Mesh& mesh, const std::size_t cell_dim,
                                    const std::string name)
 {
+  Timer t("HDF5: write mesh to file (visualisation version)");
+
   dolfin_assert(hdf5_file_open);
 
   // Create VisualisationMesh group in HDF5 file
@@ -534,11 +527,14 @@ std::vector<double>
   const std::map<std::size_t, std::set<std::size_t> >& shared_vertices
       = mesh.topology().shared_entities(0);
 
+  // My process rank
   const std::size_t my_rank = MPI::process_number();
+
+  // Number of processes
+  const std::size_t num_processes = MPI::num_processes();
 
   // Build list of vertices to send. Only send shared vertex if I'm the
   // lowest rank process
-  std::size_t number_to_send = 0;
   std::vector<bool> vertex_sender(mesh.num_vertices(), true);
   std::map<std::size_t, std::set<std::size_t> >::const_iterator it;
   for (it = shared_vertices.begin(); it != shared_vertices.end(); ++it)
@@ -547,29 +543,27 @@ std::vector<double>
     if (!it->second.empty())
     {
       // Check if I am the lowest rank owner
-      const std::size_t sharing_min_rank = *std::min_element(it->second.begin(), it->second.end());
+      const std::size_t sharing_min_rank
+        = *std::min_element(it->second.begin(), it->second.end());
       if (my_rank > sharing_min_rank)
         vertex_sender[it->first] = false;
-      else
-        ++number_to_send;
     }
-    else
-        ++number_to_send;
   }
 
   // Global size
   const std::size_t N = mesh.size_global(0);
-  dolfin_assert(N == MPI::sum(number_to_send));
 
   // Geometric dimension
   const std::size_t gdim = mesh.geometry().dim();
 
   // Process offset
-  const std::size_t offset = MPI::global_offset(N, true);
+  const std::pair<std::size_t, std::size_t> local_range
+    = MPI::local_range(N);
+  const std::size_t offset = local_range.first;
 
   // Build buffer of indices and coords to send
-  std::vector<std::vector<std::size_t> > send_buffer_index(MPI::num_processes());
-  std::vector<std::vector<double> > send_buffer_coords(MPI::num_processes());
+  std::vector<std::vector<std::size_t> > send_buffer_index(num_processes);
+  std::vector<std::vector<double> > send_buffer_coords(num_processes);
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     if (vertex_sender[v->index()])
@@ -577,8 +571,7 @@ std::vector<double>
       std::size_t owner = MPI::index_owner(v->global_index(), N);
       send_buffer_index[owner].push_back(v->global_index());
       send_buffer_coords[owner].insert(send_buffer_coords[owner].end(),
-                                      v->x(), v->x() + gdim);
-
+                                       v->x(), v->x() + gdim);
     }
   }
 
@@ -591,8 +584,7 @@ std::vector<double>
   MPI::all_to_all(send_buffer_coords, receive_buffer_coords);
 
   // Build vectors of coords
-  const std::pair<std::size_t, std::size_t> local_range = MPI::local_range(N);
-  std::vector<double> ordered_coords(local_range.first - local_range.second);
+  std::vector<double> ordered_coords(gdim*(local_range.second - local_range.first));
   dolfin_assert(receive_buffer_index.size() == receive_buffer_coords.size());
   for (std::size_t p = 0; p < receive_buffer_index.size(); ++p)
   {
@@ -602,7 +594,12 @@ std::vector<double>
       dolfin_assert(receive_buffer_index[p][i] >= local_range.first && receive_buffer_index[p][i] < local_range.second);
       const std::size_t local_index = receive_buffer_index[p][i] - offset;
       for (std::size_t j = 0; j < gdim; ++j)
-        ordered_coords[gdim*local_index + j] = receive_buffer_coords[p][i*gdim + j];
+      {
+
+        //dolfin_assert((local_index + j) < ordered_coords.size());
+        //dolfin_assert((i*gdim + j) < receive_buffer_coords[p].size());
+        ordered_coords[local_index + j] = receive_buffer_coords[p][i*gdim + j];
+      }
     }
   }
 

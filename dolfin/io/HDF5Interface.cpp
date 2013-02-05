@@ -55,7 +55,7 @@ hid_t HDF5Interface::open_file(const std::string filename, const std::string mod
   }
 
   hid_t file_id = HDF5_FAIL;
-  if (mode=="w")
+  if (mode == "w")
   {
     // Create file for write, (overwriting existing file, if present)
     file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT,
@@ -71,12 +71,12 @@ hid_t HDF5Interface::open_file(const std::string filename, const std::string mod
                    "File does not exist");
     }
 
-    if(mode=="a")
+    if(mode == "a")
     {
       // Open file existing file for append
       file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
     }
-    else if(mode=="r")
+    else if(mode == "r")
     {
       file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, plist_id);
     }

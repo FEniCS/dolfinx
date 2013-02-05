@@ -28,11 +28,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "dolfin/common/Timer.h"
 #include "dolfin/common/Variable.h"
-#include "dolfin/mesh/Mesh.h"
-#include "dolfin/mesh/MeshEditor.h"
-#include "dolfin/mesh/Vertex.h"
 #include "HDF5Interface.h"
 
 namespace dolfin
@@ -40,13 +36,17 @@ namespace dolfin
 
   class Function;
   class GenericVector;
+  class LocalMeshData;
+  class Mesh;
 
   class HDF5File : public Variable
   {
   public:
 
-    /// Constructor
-    HDF5File(const std::string filename, const std::string file_mode, bool use_mpiio=true);
+    /// Constructor. file_mode should "a" (append), "w" (write) ot "r"
+    /// (read).
+    HDF5File(const std::string filename, const std::string file_mode,
+             bool use_mpiio=true);
 
     /// Destructor
     ~HDF5File();
