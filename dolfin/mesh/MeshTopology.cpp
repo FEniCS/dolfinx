@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-05-08
-// Last changed: 2012-10-25
+// Last changed: 2013-02-03
 
 #include <numeric>
 #include <sstream>
@@ -32,7 +32,9 @@ using namespace dolfin;
 MeshTopology::MeshTopology()
 
 {
-  // Do nothing
+  // Make shared vertices empty when in serial
+  if (MPI::num_processes() == 1)
+    shared_entities(0);
 }
 //-----------------------------------------------------------------------------
 MeshTopology::MeshTopology(const MeshTopology& topology)
@@ -168,7 +170,7 @@ const std::map<std::size_t, std::set<std::size_t> >&
   {
     dolfin_error("MeshTopology.cpp",
                  "get shared mesh entities",
-                 "Shared mesh entities have not been computed for dim %s", dim);
+                 "Shared mesh entities have not been computed for dim %d", dim);
   }
   return e->second;
 }

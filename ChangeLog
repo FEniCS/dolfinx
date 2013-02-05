@@ -1,3 +1,4 @@
+ - Rename dolfin-config.cmake to DOLFINConfig.cmake
  - Use CMake to configure JIT compilation of extension modules
  - Feature: Add vertex_to_dof_map to DofMap, which map vertex indices to dolfin dofs
  - Feature: Add support for solving on m dimensional meshes embedded in n >= m dimensions

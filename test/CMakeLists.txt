@@ -13,11 +13,11 @@ endif()
 
 # Find DOLFIN config file (not used here, but checks that tests will be able
 # to find it
-find_package(dolfin REQUIRED)
+find_package(DOLFIN REQUIRED)
 
 # If config file is found, add all demo sub-directories, else print helper
 # message
-if (dolfin_FOUND)
+if (DOLFIN_FOUND)
 
   # Build list of all cpp directories
   file(GLOB_RECURSE initial_list "*/*.cpp")
@@ -58,6 +58,6 @@ if (dolfin_FOUND)
 
 else()
 
-  message(STATUS "Could not locate dolfin-config.cmake file. Did you do 'make install' for the DOLFIN library and set the appropriate paths (source <build_dir>/dolfin.conf)?")
+  message(STATUS "Could not locate DOLFINConfig.cmake file. Did you do 'make install' for the DOLFIN library and set the appropriate paths (source <build_dir>/dolfin.conf)?")
 
 endif()
