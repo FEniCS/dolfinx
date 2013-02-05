@@ -399,7 +399,7 @@ namespace dolfin
     boost::unordered_map<std::size_t, std::size_t> ufc_map_to_dofmap;
 
     // Map from slave to master mesh entities
-    std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > >
+    boost::shared_ptr<std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > > >
       slave_master_mesh_entities;
 
     // Restriction, pointer zero if not restricted
