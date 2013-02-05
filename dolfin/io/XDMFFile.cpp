@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2013-01-14
+// Last changed: 2013-02-05
 
 #ifdef HAS_HDF5
 
@@ -400,14 +400,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   const std::size_t gdim = mesh.geometry().dim();
   const std::size_t cell_dim = meshfunction.dim();
 
-  // Only allow cell-based MeshFunctions
   dolfin_assert(cell_dim <= mesh.topology().dim());
-  if (cell_dim < (mesh.topology().dim() - 1))
-  {
-    dolfin_error("XDMFFile.cpp",
-                 "write mesh function to XDMF file",
-                 "XDMF output of mesh functions only available for cell-based or facet-based functions");
-  }
 
   if (meshfunction.size() == 0)
   {
@@ -419,7 +412,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   // Collate data in a vector
   std::vector<T> data_values(meshfunction.values(),
                              meshfunction.values() + meshfunction.size());
-
+  
   dolfin_assert(hdf5_file);
 
   // Get counts of mesh cells and vertices
@@ -549,7 +542,12 @@ void XDMFFile::xml_mesh_topology(pugi::xml_node &xdmf_topology,
   xdmf_topology.append_attribute("NumberOfElements") = (unsigned int) num_global_cells;
 
   // Cell type
-  if (cell_dim == 1)
+  if (cell_dim == 0)
+  {
+    xdmf_topology.append_attribute("TopologyType") = "PolyVertex";
+    xdmf_topology.append_attribute("NodesPerElement") = "1";
+  } 
+  else if (cell_dim == 1)
   {
     xdmf_topology.append_attribute("TopologyType") = "PolyLine";
     xdmf_topology.append_attribute("NodesPerElement") = "2";
