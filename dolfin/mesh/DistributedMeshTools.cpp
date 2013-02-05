@@ -120,7 +120,8 @@ std::size_t DistributedMeshTools::number_entities(const Mesh& mesh,
   for (s = slave_entities.begin(); s != slave_entities.end(); ++s)
     exclude[s->first] = true;
 
-  // Build entity global [vertex list]-to-[local entity index] map
+  // Build entity global [vertex list]-to-[local entity index]
+  // map. Exclude any slave entities.
   std::map<std::vector<std::size_t>, std::size_t> entities;
   std::pair<std::vector<std::size_t>, std::size_t> entity;
   for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
@@ -171,8 +172,6 @@ std::size_t DistributedMeshTools::number_entities(const Mesh& mesh,
 
   // Extract offset
   std::size_t offset = num_global_entities.second;
-
-  cout << "Num global mesh entities: " << num_global_entities.first << endl;
 
   // Prepare list of global entity numbers. Check later that nothing is
   // equal to std::numeric_limits<std::size_t>::max()
@@ -700,18 +699,15 @@ void DistributedMeshTools::compute_preliminary_entity_ownership(
 
     if (entity_processes.empty())
     {
-      cout << "Owned entity: " << local_entity_index << endl;
       owned_entities.push_back(local_entity_index);
     }
     else if (shared_but_not_owned)
     {
-      cout << "Shared but NOT owned entity: " << local_entity_index << endl;
       unowned_shared_entities[entity] = EntityData(local_entity_index,
                                                    entity_processes);
     }
     else
     {
-      cout << "Shared and owned entity: " << local_entity_index << endl;
       owned_shared_entities[entity] = EntityData(local_entity_index,
                                                  entity_processes);
     }
