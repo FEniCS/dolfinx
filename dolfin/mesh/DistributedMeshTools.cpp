@@ -37,6 +37,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void DistributedMeshTools::number_entities(const Mesh& mesh, std::size_t d)
 {
+  Timer timer("Build mesh number mesh entities");
+
   // Return if global entity indices have already been calculated
   if (mesh.topology().have_global_indices(d))
     return;
