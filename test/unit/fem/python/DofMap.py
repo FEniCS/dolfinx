@@ -34,6 +34,11 @@ class DofMapTest(unittest.TestCase):
 
     def test_tabulate_coord(self):
 
+        L0  = self.W.sub(0)
+        L1  = self.W.sub(1)
+        L01 = L1.sub(0)
+        L11 = L1.sub(1)
+
         coord0 = np.zeros((3,2), dtype="d")
         coord1 = np.zeros((3,2), dtype="d")
         coord2 = np.zeros((3,2), dtype="d")
@@ -41,11 +46,56 @@ class DofMapTest(unittest.TestCase):
 
         for cell in cells(self.mesh):
             self.V.dofmap().tabulate_coordinates(cell, coord0)
-            self.W.sub(0).dofmap().tabulate_coordinates(cell, coord1)
-            L = self.W.sub(1)
-            L.sub(0).dofmap().tabulate_coordinates(cell, coord2)
-            L.sub(1).dofmap().tabulate_coordinates(cell, coord3)
-            coord4 = L.dofmap().tabulate_coordinates(cell)
+            L0.dofmap().tabulate_coordinates(cell, coord1)
+            L01.dofmap().tabulate_coordinates(cell, coord2)
+            L11.dofmap().tabulate_coordinates(cell, coord3)
+            coord4 = L1.dofmap().tabulate_coordinates(cell)
+
+            self.assertTrue((coord0 == coord1).all())
+            self.assertTrue((coord0 == coord2).all())
+            self.assertTrue((coord0 == coord3).all())
+            self.assertTrue((coord4[:3] == coord0).all())
+            self.assertTrue((coord4[3:] == coord0).all())
+
+    def test_tabulate_coord_periodic(self):
+
+        class PeriodicBoundary2(SubDomain):
+            def inside(self, x, on_boundary):
+                return x[0] < DOLFIN_EPS
+            def map(self, x, y):
+                y[0] = x[0] - 1.0
+                y[1] = x[1]
+
+        # Create periodic boundary condition
+        periodic_boundary = PeriodicBoundary2()
+
+        mesh = UnitSquareMesh(4, 4)
+
+        # Create vertex mast-slave map
+        periodic_vertex_pairs = cpp.PeriodicBoundaryComputation.compute_periodic_pairs(mesh, periodic_boundary, 0);
+
+        mesh.periodic_vertex_map = periodic_vertex_pairs;
+
+        V = FunctionSpace(mesh, "Lagrange", 1)
+        Q = VectorFunctionSpace(mesh, "Lagrange", 1)
+        W = V*Q
+
+        L0  = W.sub(0)
+        L1  = W.sub(1)
+        L01 = L1.sub(0)
+        L11 = L1.sub(1)
+
+        coord0 = np.zeros((3,2), dtype="d")
+        coord1 = np.zeros((3,2), dtype="d")
+        coord2 = np.zeros((3,2), dtype="d")
+        coord3 = np.zeros((3,2), dtype="d")
+
+        for cell in cells(self.mesh):
+            self.V.dofmap().tabulate_coordinates(cell, coord0)
+            L0.dofmap().tabulate_coordinates(cell, coord1)
+            L01.dofmap().tabulate_coordinates(cell, coord2)
+            L11.dofmap().tabulate_coordinates(cell, coord3)
+            coord4 = L1.dofmap().tabulate_coordinates(cell)
 
             self.assertTrue((coord0 == coord1).all())
             self.assertTrue((coord0 == coord2).all())
@@ -55,26 +105,30 @@ class DofMapTest(unittest.TestCase):
 
     def test_tabulate_dofs(self):
 
+        L0   = self.W.sub(0)
+        L1   = self.W.sub(1)
+        L01  = L1.sub(0)
+        L11  = L1.sub(1)
+
         all_dofs = set()
         for i, cell in enumerate(cells(self.mesh)):
 
-            dofs0 = self.W.sub(0).dofmap().cell_dofs(cell.index())
+            dofs0 = L0.dofmap().cell_dofs(cell.index())
 
             all_dofs.update(dofs0)
 
-            L = self.W.sub(1)
-            dofs1 = L.sub(0).dofmap().cell_dofs(cell.index())
-            dofs2 = L.sub(1).dofmap().cell_dofs(cell.index())
-            dofs3 = L.dofmap().cell_dofs(cell.index())
+            dofs1 = L01.dofmap().cell_dofs(cell.index())
+            dofs2 = L11.dofmap().cell_dofs(cell.index())
+            dofs3 = L1.dofmap().cell_dofs(cell.index())
 
             self.assertTrue(np.array_equal(dofs0, \
-                                self.W.sub(0).dofmap().cell_dofs(i)))
+                                L0.dofmap().cell_dofs(i)))
             self.assertTrue(np.array_equal(dofs1,
-                                L.sub(0).dofmap().cell_dofs(i)))
+                                L01.dofmap().cell_dofs(i)))
             self.assertTrue(np.array_equal(dofs2,
-                                L.sub(1).dofmap().cell_dofs(i)))
+                                L11.dofmap().cell_dofs(i)))
             self.assertTrue(np.array_equal(dofs3,
-                                L.dofmap().cell_dofs(i)))
+                                L1.dofmap().cell_dofs(i)))
 
             self.assertEqual(len(np.intersect1d(dofs0, dofs1)), 0)
             self.assertEqual(len(np.intersect1d(dofs0, dofs2)), 0)
@@ -82,6 +136,113 @@ class DofMapTest(unittest.TestCase):
             self.assertTrue(np.array_equal(np.append(dofs1, dofs2), dofs3))
 
         self.assertFalse(all_dofs.difference(self.W.dofmap().dofs()))
+
+    def test_tabulate_coord_periodic(self):
+
+        class PeriodicBoundary2(SubDomain):
+            def inside(self, x, on_boundary):
+                return x[0] < DOLFIN_EPS
+            def map(self, x, y):
+                y[0] = x[0] - 1.0
+                y[1] = x[1]
+
+        # Create periodic boundary condition
+        periodic_boundary = PeriodicBoundary2()
+
+        mesh = UnitSquareMesh(4, 4)
+
+        # Create vertex mast-slave map
+        periodic_vertex_pairs = cpp.PeriodicBoundaryComputation.compute_periodic_pairs(mesh, periodic_boundary, 0);
+
+        mesh.periodic_vertex_map = periodic_vertex_pairs;
+
+        V = FunctionSpace(mesh, "Lagrange", 1)
+        Q = VectorFunctionSpace(mesh, "Lagrange", 1)
+        W = V*Q
+
+        L0  = W.sub(0)
+        L1  = W.sub(1)
+        L01 = L1.sub(0)
+        L11 = L1.sub(1)
+
+        coord0 = np.zeros((3,2), dtype="d")
+        coord1 = np.zeros((3,2), dtype="d")
+        coord2 = np.zeros((3,2), dtype="d")
+        coord3 = np.zeros((3,2), dtype="d")
+
+        for cell in cells(mesh):
+            V.dofmap().tabulate_coordinates(cell, coord0)
+            L0.dofmap().tabulate_coordinates(cell, coord1)
+            L01.dofmap().tabulate_coordinates(cell, coord2)
+            L11.dofmap().tabulate_coordinates(cell, coord3)
+            coord4 = L1.dofmap().tabulate_coordinates(cell)
+
+            self.assertTrue((coord0 == coord1).all())
+            self.assertTrue((coord0 == coord2).all())
+            self.assertTrue((coord0 == coord3).all())
+            self.assertTrue((coord4[:3] == coord0).all())
+            self.assertTrue((coord4[3:] == coord0).all())
+
+    def test_tabulate_dofs_periodic(self):
+
+        class PeriodicBoundary2(SubDomain):
+            def inside(self, x, on_boundary):
+                return x[0] < DOLFIN_EPS
+            def map(self, x, y):
+                y[0] = x[0] - 1.0
+                y[1] = x[1]
+
+        mesh = UnitSquareMesh(4, 4)
+
+        # Create periodic boundary condition
+        periodic_boundary = PeriodicBoundary2()
+        for i in range(2):
+            pairs = cpp.PeriodicBoundaryComputation.compute_periodic_pairs(mesh, periodic_boundary, i);
+            mesh.set_periodic_pairs(i, pairs);
+
+        V = FunctionSpace(mesh, "Lagrange", 2)
+        Q = VectorFunctionSpace(mesh, "Lagrange", 2)
+        W = V*Q
+
+        L0   = W.sub(0)
+        L1   = W.sub(1)
+        L01  = L1.sub(0)
+        L11  = L1.sub(1)
+
+        # Check dimensions
+        self.assertEqual(V.dim(), 72)
+        self.assertEqual(Q.dim(), 144)
+        self.assertEqual(L0.dim(), V.dim())
+        self.assertEqual(L1.dim(), Q.dim())
+        self.assertEqual(L01.dim(), V.dim())
+        self.assertEqual(L11.dim(), V.dim())
+
+        all_dofs = set()
+        for i, cell in enumerate(cells(mesh)):
+
+            dofs0 = L0.dofmap().cell_dofs(cell.index())
+
+            all_dofs.update(dofs0)
+
+            dofs1 = L01.dofmap().cell_dofs(cell.index())
+            dofs2 = L11.dofmap().cell_dofs(cell.index())
+            dofs3 = L1.dofmap().cell_dofs(cell.index())
+
+            self.assertTrue(np.array_equal(dofs0, \
+                                L0.dofmap().cell_dofs(i)))
+            self.assertTrue(np.array_equal(dofs1,
+                                L01.dofmap().cell_dofs(i)))
+            self.assertTrue(np.array_equal(dofs2,
+                                L11.dofmap().cell_dofs(i)))
+            self.assertTrue(np.array_equal(dofs3,
+                                L1.dofmap().cell_dofs(i)))
+
+            self.assertEqual(len(np.intersect1d(dofs0, dofs1)), 0)
+            self.assertEqual(len(np.intersect1d(dofs0, dofs2)), 0)
+            self.assertEqual(len(np.intersect1d(dofs1, dofs2)), 0)
+            self.assertTrue(np.array_equal(np.append(dofs1, dofs2), dofs3))
+
+        self.assertFalse(all_dofs.difference(W.dofmap().dofs()))
 
     def test_global_dof_builder(self):
 
@@ -109,31 +270,31 @@ class DofMapTest(unittest.TestCase):
             u = Function(V)
             e = Expression("x[0]+x[1]")
             u.interpolate(e)
-            
+
             vert_values = self.mesh.coordinates().sum(1)
             func_values = -1*np.ones(len(vert_values))
             func_values[V.dofmap().vertex_to_dof_map(self.mesh)] = u.vector().array()
-            
+
             for v_val, f_val in zip(vert_values, func_values):
                 # Do not compare dofs owned by other process
                 if f_val != -1:
                     self.assertAlmostEqual(f_val, v_val)
-            
+
             c0 = Constant((1,2))
             u0 = Function(Q)
             u0.interpolate(c0)
-            
+
             vert_values = np.zeros(self.mesh.num_vertices()*2)
             u1 = Function(Q)
             vert_values[::2] = 1
             vert_values[1::2] = 2
-            
+
             u1.vector().set_local(vert_values[Q.dofmap().vertex_to_dof_map(self.mesh)].copy())
             self.assertAlmostEqual((u0.vector()-u1.vector()).sum(), 0.0)
-            
+
             W = FunctionSpace(self.mesh, "DG", 0)
             self.assertRaises(RuntimeError, lambda : W.dofmap().vertex_to_dof_map(self.mesh))
-            
+
             W = Q*FunctionSpace(self.mesh, "R", 0)
             self.assertRaises(RuntimeError, lambda : W.dofmap().vertex_to_dof_map(self.mesh))
             W = FunctionSpace(self.mesh, "CG", 2)

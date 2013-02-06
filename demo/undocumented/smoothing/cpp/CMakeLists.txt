@@ -13,8 +13,8 @@ project(demo_smoothing)
 # Set CMake behavior
 cmake_policy(SET CMP0004 OLD)
 
-# Get DOLFIN configuration data (dolfin-config.cmake must be in DOLFIN_CMAKE_CONFIG_PATH)
-find_package(dolfin)
+# Get DOLFIN configuration data (DOLFINConfig.cmake must be in DOLFIN_CMAKE_CONFIG_PATH)
+find_package(DOLFIN)
 
 # Default build type (can be overridden by user)
 if (NOT CMAKE_BUILD_TYPE)

@@ -1,4 +1,5 @@
- - Feature: Add support for assigning a Function with linear combinations of Functions, which lives in the same FunctionSpace (Only works in Python)
+ - Feature: Add support for assigning a Function with linear combinations of Functions, which lives in the same FunctionSpace (Only works in Python, C++ interface on its way)
+ - Rename dolfin-config.cmake to DOLFINConfig.cmake
  - Use CMake to configure JIT compilation of extension modules
  - Feature: Add vertex_to_dof_map to DofMap, which map vertex indices to dolfin dofs
  - Feature: Add support for solving on m dimensional meshes embedded in n >= m dimensions

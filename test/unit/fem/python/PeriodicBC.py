@@ -27,7 +27,6 @@ from dolfin import *
 class PeriodicBoundary2(SubDomain):
     def inside(self, x, on_boundary):
         return bool(x[0] < DOLFIN_EPS and x[0] > -DOLFIN_EPS and on_boundary)
-
     def map(self, x, y):
         y[0] = x[0] - 1.0
         y[1] = x[1]
