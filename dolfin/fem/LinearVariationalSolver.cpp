@@ -30,7 +30,6 @@
 #include "AssemblerBase.h"
 #include "assemble.h"
 #include "DirichletBC.h"
-#include "PeriodicBC.h"
 #include "Form.h"
 #include "LinearVariationalProblem.h"
 #include "LinearVariationalSolver.h"
@@ -121,22 +120,6 @@ void LinearVariationalSolver::solve()
     typedef std::pair<std::size_t, std::size_t> DofOwnerPair;
     typedef std::pair<DofOwnerPair, DofOwnerPair> MasterSlavePair;
     std::vector<MasterSlavePair> dof_pairs;
-    for (std::size_t i = 0; i < bcs.size(); i++)
-    {
-      dolfin_assert(bcs[i]);
-      const PeriodicBC* _bc = dynamic_cast<const PeriodicBC*>(bcs[i].get());
-      if (_bc)
-      {
-        if (!dof_pairs.empty())
-        {
-          dolfin_error("LinearVariationalSolver.cpp",
-                       "extract periodic boundary conditions in linear variational solver",
-                       "Cannot have more than one PeriodicBC object");
-        }
-        _bc->compute_dof_pairs(dof_pairs);
-      }
-    }
-
 
     // Intialise matrix, taking into account periodic dofs
     Assembler assembler;
