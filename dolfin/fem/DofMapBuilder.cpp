@@ -48,7 +48,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
-  const std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > >& slave_master_entities,
+  boost::shared_ptr<const std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > > > slave_master_entities,
   boost::shared_ptr<const Restriction> restriction)
 {
   // Start timer for dofmap initialization
@@ -94,15 +94,7 @@ void DofMapBuilder::build_sub_map(DofMap& sub_dofmap,
                                   const Mesh& mesh)
 {
   // Note: Ownership range is set to zero since dofmap is a view
-
   dolfin_assert(!component.empty());
-
-  // Get peridoc slave-master constrain from parent
-  dolfin_assert(parent_dofmap.slave_master_mesh_entities);
-  const std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > >&
-    slave_master_entities = *(parent_dofmap.slave_master_mesh_entities);
-  cout << "Testing subdof slave map: " << slave_master_entities.find(0)->second.size() << endl;
-
 
   // Initialise offset from parent
   std::size_t offset = parent_dofmap._ufc_offset;
@@ -126,7 +118,7 @@ void DofMapBuilder::build_sub_map(DofMap& sub_dofmap,
   // Build UFC-based dof map for sub-dofmap
   map restricted_dofs_inverse;
   boost::shared_ptr<const Restriction> restriction;
-  build_ufc(sub_dofmap, restricted_dofs_inverse, mesh, slave_master_entities,
+  build_ufc(sub_dofmap, restricted_dofs_inverse, mesh, parent_dofmap.slave_master_mesh_entities,
             restriction);
 
   // Add offset to dofmap
@@ -387,7 +379,7 @@ void DofMapBuilder::reorder_local(DofMap& dofmap, const Mesh& mesh)
 void DofMapBuilder::build_ufc(DofMap& dofmap,
     DofMapBuilder::map& restricted_dofs_inverse,
     const Mesh& mesh,
-    const std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > >& slave_master_entities,
+    boost::shared_ptr<const std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > > > slave_master_entities,
     boost::shared_ptr<const Restriction> restriction)
 {
   // Start timer for dofmap initialization
@@ -401,10 +393,6 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
   // Clear ufc-dofs-to-actual-dofs
   dofmap.ufc_map_to_dofmap.clear();
 
-  // Check for periodic constraints
-  const bool periodic = MPI::sum(slave_master_entities.size()) > 0;
-  //const bool periodic = MPI::sum(mesh.periodic_index_map.size()) > 0;
-
   // Global enity indices
   std::vector<std::vector<std::size_t> > global_entity_indices(mesh.topology().dim() + 1);
 
@@ -412,7 +400,7 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
   // for periodic bcs
   const std::size_t D = mesh.topology().dim();
   dofmap.num_global_mesh_entities = std::vector<std::size_t>(mesh.topology().dim() + 1, 0);
-  if (!periodic)
+  if (!slave_master_entities)
   {
     // Compute number of mesh entities
     for (std::size_t d = 0; d <= D; ++d)
@@ -435,21 +423,15 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
   else
   {
     // Get master-slave vertex map
-    dolfin_assert(slave_master_entities.find(0) != slave_master_entities.end());
+    dolfin_assert(slave_master_entities->find(0) != slave_master_entities->end());
     const std::map<std::size_t, std::pair<std::size_t, std::size_t> >&
-      slave_to_master_vertices = slave_master_entities.find(0)->second;
-    //dolfin_assert(mesh.periodic_index_map.find(0) != mesh.periodic_index_map.end());
-    //const std::map<std::size_t, std::pair<std::size_t, std::size_t> >&
-    //  slave_to_master_vertices = mesh.periodic_index_map.find(0)->second;
+      slave_to_master_vertices = slave_master_entities->find(0)->second;
 
     //cout << "Size check: " << slave_to_master_vertices.size() << ", " << slave_master_entities_xx.find(0)->second.size() << endl;
 
     // Compute modified global vertex indices
     const std::size_t num_vertices = build_constrained_vertex_indices(mesh,
           slave_to_master_vertices, global_entity_indices[0]);
-
-    cout << "*** Num vertices: " << num_vertices << ", " << mesh.num_vertices() << endl;
-    cout << "*** Num slave vertices: " << slave_to_master_vertices.size() << endl;
 
     // Compute number of mesh entities
     dofmap.num_global_mesh_entities[0] = num_vertices;
@@ -458,12 +440,9 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
       if (dofmap._ufc_dofmap->needs_mesh_entities(d))
       {
         // Get master-slave map
-        dolfin_assert(slave_master_entities.find(d) != slave_master_entities.end());
+        dolfin_assert(slave_master_entities->find(d) != slave_master_entities->end());
         const std::map<std::size_t, std::pair<std::size_t, std::size_t> >&
-          slave_to_master_entities = slave_master_entities.find(d)->second;
-        //dolfin_assert(mesh.periodic_index_map.find(d) != mesh.periodic_index_map.end());
-        //const std::map<std::size_t, std::pair<std::size_t, std::size_t> >&
-        //  slave_to_master_entities = mesh.periodic_index_map.find(d)->second;
+          slave_to_master_entities = slave_master_entities->find(d)->second;
 
         // Initialise local entities
         std::map<std::size_t, std::set<std::size_t> > shared_entities;

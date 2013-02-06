@@ -32,7 +32,7 @@ class DofMapTest(unittest.TestCase):
         self.Q = VectorFunctionSpace(self.mesh, "Lagrange", 1)
         self.W = self.V*self.Q
 
-    def xtest_tabulate_coord(self):
+    def test_tabulate_coord(self):
 
         L0  = self.W.sub(0)
         L1  = self.W.sub(1)
@@ -57,7 +57,7 @@ class DofMapTest(unittest.TestCase):
             self.assertTrue((coord4[:3] == coord0).all())
             self.assertTrue((coord4[3:] == coord0).all())
 
-    def xtest_tabulate_dofs(self):
+    def test_tabulate_dofs(self):
 
         L0   = self.W.sub(0)
         L1   = self.W.sub(1)
@@ -91,7 +91,7 @@ class DofMapTest(unittest.TestCase):
 
         self.assertFalse(all_dofs.difference(self.W.dofmap().dofs()))
 
-    def xtest_tabulate_coord_periodic(self):
+    def test_tabulate_coord_periodic(self):
 
         class PeriodicBoundary2(SubDomain):
             def inside(self, x, on_boundary):
@@ -105,8 +105,8 @@ class DofMapTest(unittest.TestCase):
 
         mesh = UnitSquareMesh(4, 4)
 
-        V = FunctionSpace(mesh, "Lagrange", 1,  periodic_domain=periodic_boundary)
-        Q = VectorFunctionSpace(mesh, "Lagrange", 1,  periodic_domain=periodic_boundary)
+        V = FunctionSpace(mesh, "Lagrange", 1,  constrained_domain=periodic_boundary)
+        Q = VectorFunctionSpace(mesh, "Lagrange", 1,  constrained_domain=periodic_boundary)
         W = V*Q
 
         L0  = W.sub(0)
@@ -146,28 +146,24 @@ class DofMapTest(unittest.TestCase):
         # Create periodic boundary
         periodic_boundary = PeriodicBoundary2()
 
-        print "Start"
-
-        V = FunctionSpace(mesh, "Lagrange", 2, periodic_domain=periodic_boundary)
-        Q = VectorFunctionSpace(mesh, "Lagrange", 2, periodic_domain=periodic_boundary)
-        print "Mixed"
+        V = FunctionSpace(mesh, "Lagrange", 2, constrained_domain=periodic_boundary)
+        Q = VectorFunctionSpace(mesh, "Lagrange", 2, constrained_domain=periodic_boundary)
         W = V*Q
 
-        #L0   = W.sub(0)
-        #L1   = W.sub(1)
-        #L01  = L1.sub(0)
-        #L11  = L1.sub(1)
+        L0   = W.sub(0)
+        L1   = W.sub(1)
+        L01  = L1.sub(0)
+        L11  = L1.sub(1)
 
         # Check dimensions
-        #self.assertEqual(V.dim(), 72)
-        #self.assertEqual(Q.dim(), 144)
-        #self.assertEqual(L0.dim(), V.dim())
-        #self.assertEqual(L1.dim(), Q.dim())
-        #self.assertEqual(L01.dim(), V.dim())
-        #self.assertEqual(L11.dim(), V.dim())
+        self.assertEqual(V.dim(), 72)
+        self.assertEqual(Q.dim(), 144)
+        self.assertEqual(L0.dim(), V.dim())
+        self.assertEqual(L1.dim(), Q.dim())
+        self.assertEqual(L01.dim(), V.dim())
+        self.assertEqual(L11.dim(), V.dim())
 
         all_dofs = set()
-        """
         for i, cell in enumerate(cells(mesh)):
 
             dofs0 = L0.dofmap().cell_dofs(cell.index())
@@ -193,9 +189,8 @@ class DofMapTest(unittest.TestCase):
             self.assertTrue(np.array_equal(np.append(dofs1, dofs2), dofs3))
 
         self.assertFalse(all_dofs.difference(W.dofmap().dofs()))
-        """
 
-    def xtest_global_dof_builder(self):
+    def test_global_dof_builder(self):
 
         mesh = UnitSquareMesh(3, 3)
 

@@ -78,7 +78,7 @@ namespace dolfin
     /// Build dofmap. The restriction may be a null pointer in which
     /// case it is ignored.
     static void build(DofMap& dofmap, const Mesh& dolfin_mesh,
-        const std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > >& slave_master_entities,
+        boost::shared_ptr<const std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > > > slave_master_entities,
         boost::shared_ptr<const Restriction> restriction);
 
     /// Build sub-dofmap
@@ -92,7 +92,7 @@ namespace dolfin
     // Build UFC-based dofmap
     static void build_ufc(DofMap& dofmap, map& restricted_dofs_inverse,
       const Mesh& mesh,
-      const std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > >& slave_master_entities,
+      boost::shared_ptr<const std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > > > slave_master_entities,
       boost::shared_ptr<const Restriction> restriction);
 
     // Build modified global entity indices that account for periodic bcs
