@@ -117,31 +117,8 @@ void LinearVariationalSolver::solve()
   }
   else
   {
-    // Check for any periodic bcs
-    typedef std::pair<std::size_t, std::size_t> DofOwnerPair;
-    typedef std::pair<DofOwnerPair, DofOwnerPair> MasterSlavePair;
-    std::vector<MasterSlavePair> dof_pairs;
-    for (std::size_t i = 0; i < bcs.size(); i++)
-    {
-      dolfin_assert(bcs[i]);
-      const PeriodicBC* _bc = dynamic_cast<const PeriodicBC*>(bcs[i].get());
-      if (_bc)
-      {
-        if (!dof_pairs.empty())
-        {
-          dolfin_error("LinearVariationalSolver.cpp",
-                       "extract periodic boundary conditions in linear variational solver",
-                       "Cannot have more than one PeriodicBC object");
-        }
-        _bc->compute_dof_pairs(dof_pairs);
-      }
-    }
-
-
-    // Intialise matrix, taking into account periodic dofs
+    // Intialise matrix
     Assembler assembler;
-    assembler.init_global_tensor(*A, *a, dof_pairs);
-    assembler.reset_sparsity = false;
 
     // Assemble linear system
     assembler.assemble(*A, *a);

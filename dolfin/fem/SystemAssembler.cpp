@@ -185,9 +185,8 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   UFC A_ufc(a), b_ufc(L);
 
   // Initialize global tensors
-  const std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > > periodic_master_slave_dofs;
-  init_global_tensor(A, a, periodic_master_slave_dofs);
-  init_global_tensor(b, L, periodic_master_slave_dofs);
+  init_global_tensor(A, a);
+  init_global_tensor(b, L);
 
   // Allocate data
   Scratch data(a, L);
@@ -566,7 +565,6 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
   arma::mat _A(A, global_dofs[1]->size(), global_dofs[0]->size(), false, true);
   arma::rowvec _b(b, global_dofs[0]->size(), false, true);
 
-  //bool bc_applied = false;
   // Loop over rows
   for (std::size_t i = 0; i < _A.n_rows; ++i)
   {
@@ -796,8 +794,8 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
 //-----------------------------------------------------------------------------
 SystemAssembler::Scratch::Scratch(const Form& a, const Form& L)
 {
-  std::size_t A_num_entries  = a.function_space(0)->dofmap()->max_cell_dimension();
-  A_num_entries      *= a.function_space(1)->dofmap()->max_cell_dimension();
+  std::size_t A_num_entries = a.function_space(0)->dofmap()->max_cell_dimension();
+  A_num_entries *= a.function_space(1)->dofmap()->max_cell_dimension();
   Ae.resize(A_num_entries);
 
   be.resize(L.function_space(0)->dofmap()->max_cell_dimension());
