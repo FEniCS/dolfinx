@@ -26,7 +26,6 @@
 
 #include <dolfin/common/Array.h>
 #include <dolfin/log/log.h>
-#include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
@@ -69,11 +68,9 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
                                                 const SubDomain& sub_domain,
                                                 const std::size_t dim)
 {
-  // Get geometric dimension
+  // Get geometric and topological dimensions
   const std::size_t gdim = mesh.geometry().dim();
-
-  // Create boundary mesh
-  BoundaryMesh bmesh(mesh, "exterior");
+  const std::size_t tdim = mesh.topology().dim();
 
   // Arrays used for mapping coordinates
   std::vector<double> x(gdim);
@@ -93,49 +90,64 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
   // Map from master entity midpoint coordinate to local facet index
   std::map<std::vector<double>, std::size_t, lt_coordinate> master_coord_to_entity_index;
 
-  // Iterate over entities to find master/slave facets
-  const MeshFunction<std::size_t>& entity_map = bmesh.entity_map(dim);
-  for (MeshEntityIterator e(bmesh, dim); !e.end(); ++e)
+  // Intialise facet-cell connectivity
+  mesh.init(tdim - 1, tdim);
+  mesh.init(dim);
+
+  std::vector<bool> visited(mesh.num_entities(dim), false);
+  for (FacetIterator f(mesh); !f.end(); ++f)
   {
-    // Create entity
-    const MeshEntity entity(mesh, dim, entity_map[*e]);
-
-    // Copy entity coordinate
-    const Point midpoint = entity.midpoint();
-    std::copy(midpoint.coordinates(), midpoint.coordinates() + gdim,
-              x.begin());
-
-    // Check if entity lies on a 'master' or 'slave' boundary
-    if (sub_domain.inside(_x, true))
+    // Consider boundary entities only
+    const bool global_exterior_facet = (f->num_global_entities(tdim) == 1);
+    if (global_exterior_facet)
     {
-      // Build bounding box data for master entity midpoints
-      if (x_min_max.empty())
+      for (MeshEntityIterator e(*f, dim); !e.end(); ++e)
       {
-        x_min_max = x;
-        x_min_max.insert(x_min_max.end(), x.begin(), x.end());
-      }
-      for (std::size_t i = 0; i < gdim; ++i)
-      {
-       x_min_max[i]        = std::min(x_min_max[i], x[i]);
-       x_min_max[i + gdim] = std::max(x_min_max[i + gdim], x[i]);
-      }
 
-      // Insert (midpoint coordinates, local index) into map
-      master_coord_to_entity_index.insert(std::make_pair(x, entity.index()));
-    }
-    else
-    {
-      // Get mapped midpoint (y) of slave entity
-      sub_domain.map(_x, _y);
+        // Avoid visiting entities more than once
+        if (visited[e->index()])
+        {
+          visited[e->index()] = true;
+          continue;
+        }
 
-      // Check if entity lies on a 'slave' boundary
-      if (sub_domain.inside(_y, true))
-      {
-        // Store slave local index and midpoint coordinates
-        slave_entities.push_back(entity.index());
-        slave_mapped_coords.push_back(y);
+        // Copy entity coordinate
+        const Point midpoint = e->midpoint();
+        std::copy(midpoint.coordinates(), midpoint.coordinates() + gdim,
+                  x.begin());
+
+        // Check if entity lies on a 'master' or 'slave' boundary
+        if (sub_domain.inside(_x, true))
+        {
+          // Build bounding box data for master entity midpoints
+          if (x_min_max.empty())
+          {
+            x_min_max = x;
+            x_min_max.insert(x_min_max.end(), x.begin(), x.end());
+          }
+          for (std::size_t i = 0; i < gdim; ++i)
+          {
+           x_min_max[i]        = std::min(x_min_max[i], x[i]);
+           x_min_max[i + gdim] = std::max(x_min_max[i + gdim], x[i]);
+          }
+
+          // Insert (midpoint coordinates, local index) into map
+          master_coord_to_entity_index.insert(std::make_pair(x, e->index()));
+        }
+        else
+        {
+          // Get mapped midpoint (y) of slave entity
+          sub_domain.map(_x, _y);
+
+          // Check if entity lies on a 'slave' boundary
+          if (sub_domain.inside(_y, true))
+          {
+            // Store slave local index and midpoint coordinates
+            slave_entities.push_back(e->index());
+            slave_mapped_coords.push_back(y);
+          }
+        }
       }
-
     }
   }
 
