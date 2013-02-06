@@ -116,18 +116,8 @@ void LinearVariationalSolver::solve()
   }
   else
   {
-    // Check for any periodic bcs
-    typedef std::pair<std::size_t, std::size_t> DofOwnerPair;
-    typedef std::pair<DofOwnerPair, DofOwnerPair> MasterSlavePair;
-    std::vector<MasterSlavePair> dof_pairs;
-
-    // Intialise matrix, taking into account periodic dofs
-    Assembler assembler;
-    assembler.init_global_tensor(*A, *a, dof_pairs);
-    assembler.reset_sparsity = false;
-
     // Assemble linear system
-    assembler.assemble(*A, *a);
+    assemble(*A, *a);
     if (L->ufc_form())
       assemble(*b, *L);
     else

@@ -44,7 +44,6 @@ namespace dolfin
     /// Build sparsity pattern for assembly of given form
     static void build(GenericSparsityPattern& sparsity_pattern,
       const Mesh& mesh, const std::vector<const GenericDofMap*> dofmaps,
-      const std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > >& master_slave_dofs,
       bool cells, bool interior_facets, bool exterior_facets, bool diagonal);
 
   };
