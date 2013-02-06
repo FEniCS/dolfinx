@@ -124,17 +124,10 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
   editor.init_vertices(num_boundary_vertices);
   editor.init_cells(num_boundary_cells);
 
-  // Initialize mapping from vertices in boundary to vertices in mesh
+  // Create vertices and vertex-vertex map between boundary and parent
   MeshFunction<std::size_t>& vertex_map = boundary.entity_map(0);
   if (num_boundary_vertices > 0)
     vertex_map.init(boundary, 0, num_boundary_vertices);
-
-  // Initialize mapping from cells in boundary to facets in mesh
-  MeshFunction<std::size_t>& cell_map = boundary.entity_map(D - 1);
-  if (num_boundary_cells > 0)
-    cell_map.init(boundary, D - 1, num_boundary_cells);
-
-  // Create vertices
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     const std::size_t vertex_index = boundary_vertices[v->index()];
@@ -150,7 +143,10 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
     }
   }
 
-  // Create cells (facets)
+  // Create cells (facets) and map between boundary mesh cells and facets parent
+  MeshFunction<std::size_t>& cell_map = boundary.entity_map(D - 1);
+  if (num_boundary_cells > 0)
+    cell_map.init(boundary, D - 1, num_boundary_cells);
   std::vector<std::size_t> cell(boundary.type().num_vertices(boundary.topology().dim()));
   std::size_t current_cell = 0;
   for (FacetIterator f(mesh); !f.end(); ++f)
