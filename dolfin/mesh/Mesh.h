@@ -23,9 +23,10 @@
 // Modified by Andre Massing 2009-2010
 // Modified by Marie E. Rognes 2012
 // Modified by Mikael Mortensen 2012
+// Modified by Jan Blechta 2013
 //
 // First added:  2006-05-08
-// Last changed: 2012-12-13
+// Last changed: 2013-01-25
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -50,7 +51,7 @@ namespace dolfin
 {
   class CellType;
   class BoundaryMesh;
-  class Function;
+  class GenericFunction;
   class Expression;
   class LocalMeshData;
   class MeshEntity;
@@ -432,9 +433,9 @@ namespace dolfin
     /// Move coordinates of mesh according to displacement function.
     ///
     /// *Arguments*
-    ///     displacement (_Function_)
-    ///         A _Function_ object.
-    void move(const Function& displacement);
+    ///     displacement (_GenericFunction_)
+    ///         A _GenericFunction_ object.
+    void move(const GenericFunction& displacement);
 
     /// Smooth internal vertices of mesh by local averaging.
     ///
