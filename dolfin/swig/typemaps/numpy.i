@@ -248,14 +248,15 @@ SWIGINTERN bool convert_numpy_to_array_with_check_ ## TYPE_NAME(PyObject* input,
 //       typemap function will not be used
 //-----------------------------------------------------------------------------
 UNSAFE_NUMPY_TYPEMAPS(std::size_t, INT32, NPY_UINTP, size_t, uintp)
-UNSAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,float_)
-UNSAFE_NUMPY_TYPEMAPS(dolfin::la_index,INT32,NPY_UINT,dolfin_index,intc)
+UNSAFE_NUMPY_TYPEMAPS(double, DOUBLE, NPY_DOUBLE, double, float_)
+UNSAFE_NUMPY_TYPEMAPS(dolfin::la_index, INT32, NPY_UINT, dolfin_index, intc)
+UNSAFE_NUMPY_TYPEMAPS(unsigned int, INT32, NPY_UINT, uint, intc)
 //UNSAFE_NUMPY_TYPEMAPS(int,INT,NPY_INT,int,cint)
 
-SAFE_NUMPY_TYPEMAPS(std::size_t,INT32,NPY_UINTP,size_t,uintp)
-SAFE_NUMPY_TYPEMAPS(dolfin::la_index,INT32,NPY_INT,dolfin_index,intc)
-SAFE_NUMPY_TYPEMAPS(double,DOUBLE,NPY_DOUBLE,double,float_)
-SAFE_NUMPY_TYPEMAPS(int,INT32,NPY_INT,int,cint)
+SAFE_NUMPY_TYPEMAPS(std::size_t, INT32, NPY_UINTP, size_t, uintp)
+SAFE_NUMPY_TYPEMAPS(dolfin::la_index, INT32, NPY_INT, dolfin_index, intc)
+SAFE_NUMPY_TYPEMAPS(double, DOUBLE, NPY_DOUBLE, double, float_)
+SAFE_NUMPY_TYPEMAPS(int, INT32, NPY_INT, int, intc)
 
 // Instantiate the code used by the make_numpy_array macro.
 // The first argument name the C++ type, the second the corresponding
