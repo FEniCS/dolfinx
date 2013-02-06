@@ -31,12 +31,6 @@
 
 from dolfin import *
 
-not_working_in_parallel("Periodoc boundary conditions")
-
-# Create mesh and finite element
-mesh = UnitSquareMesh(32, 32)
-V = FunctionSpace(mesh, "CG", 1)
-
 # Source term
 class Source(Expression):
     def eval(self, values, x):
@@ -61,17 +55,23 @@ class PeriodicBoundary(SubDomain):
         y[0] = x[0] - 1.0
         y[1] = x[1]
 
+# Create periodic boundary condition
+pbc = PeriodicBoundary()
+
+# Create mesh and finite element
+mesh = UnitSquareMesh(32, 32)
+V = FunctionSpace(mesh, "CG", 1, constrained_domain=pbc)
+
+
 # Create Dirichlet boundary condition
 u0 = Constant(0.0)
 dbc = DirichletBoundary()
 bc0 = DirichletBC(V, u0, dbc)
 
-# Create periodic boundary condition
-pbc = PeriodicBoundary()
-bc1 = PeriodicBC(V, pbc)
+#bc1 = PeriodicBC(V, pbc)
 
 # Collect boundary conditions
-bcs = [bc0, bc1]
+bcs = [bc0]
 
 # Define variational problem
 u = TrialFunction(V)
@@ -90,5 +90,3 @@ file << u
 
 # Plot solution
 plot(u, interactive=True)
-
-list_timings()

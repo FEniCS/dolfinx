@@ -31,6 +31,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/LogStream.h>
+#include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/mesh/Restriction.h>
 #include <dolfin/mesh/Vertex.h>
 #include "DofMapBuilder.h"
@@ -41,19 +42,48 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
-  const Mesh& mesh) : _ufc_dofmap(ufc_dofmap),  _global_dimension(0),
-  _ufc_offset(0)
+               const Mesh& mesh)
+  : _ufc_dofmap(ufc_dofmap),
+    _global_dimension(0), _ufc_offset(0)
 {
   dolfin_assert(_ufc_dofmap);
 
   // Call dofmap builder
-  DofMapBuilder::build(*this, mesh, _restriction);
+  DofMapBuilder::build(*this, mesh, slave_master_mesh_entities, _restriction);
+}
+//-----------------------------------------------------------------------------
+DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
+               const Mesh& mesh,
+               boost::shared_ptr<const SubDomain> constrained_domain)
+  : _ufc_dofmap(ufc_dofmap),
+    _global_dimension(0), _ufc_offset(0)
+{
+  dolfin_assert(_ufc_dofmap);
+
+  this->constrained_domain = constrained_domain;
+
+  // Compute slave-master pairs
+  dolfin_assert(constrained_domain);
+  const std::size_t D = mesh.topology().dim();
+  slave_master_mesh_entities.reset(new std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > >());
+  dolfin_assert(slave_master_mesh_entities);
+  for (std::size_t d = 0; d <= D; ++d)
+  {
+    if (_ufc_dofmap->needs_mesh_entities(d))
+    {
+      slave_master_mesh_entities->insert(std::make_pair(d,
+          PeriodicBoundaryComputation::compute_periodic_pairs(mesh, *constrained_domain, d)));
+    }
+  }
+
+  // Call dofmap builder
+  DofMapBuilder::build(*this, mesh, slave_master_mesh_entities, _restriction);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
                boost::shared_ptr<const Restriction> restriction)
-  : _ufc_dofmap(ufc_dofmap), _restriction(restriction), _global_dimension(0),
-    _ufc_offset(0)
+  : _ufc_dofmap(ufc_dofmap),
+    _restriction(restriction), _global_dimension(0), _ufc_offset(0)
 {
   dolfin_assert(_ufc_dofmap);
   dolfin_assert(_restriction);
@@ -70,7 +100,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   }
 
   // Call dofmap builder
-  DofMapBuilder::build(*this, mesh, restriction);
+  DofMapBuilder::build(*this, mesh, slave_master_mesh_entities, restriction);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap,
@@ -78,6 +108,9 @@ DofMap::DofMap(const DofMap& parent_dofmap,
   : _global_dimension(0), _ufc_offset(0), _ownership_range(0, 0)
 {
   // Note: Ownership range is set to zero since dofmap is a view
+
+  // Share slave-master map with parent
+  this->slave_master_mesh_entities = parent_dofmap.slave_master_mesh_entities;
 
   // Build sub-dofmap
   DofMapBuilder::build_sub_map(*this, parent_dofmap, component, mesh);
@@ -104,8 +137,12 @@ DofMap::DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
   // Check dimensional consistency between UFC dofmap and the mesh
   check_provided_entities(*_ufc_dofmap, mesh);
 
+  // Copy slave-master map (copy or share?)
+  if (dofmap_view.slave_master_mesh_entities)
+    slave_master_mesh_entities.reset(new std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > >(*dofmap_view.slave_master_mesh_entities));
+
   // Build new dof map
-  DofMapBuilder::build(*this, mesh, _restriction);
+  DofMapBuilder::build(*this, mesh, slave_master_mesh_entities, _restriction);
 
   // Dimension sanity checks
   dolfin_assert(dofmap_view._dofmap.size() == mesh.num_cells());
@@ -140,6 +177,7 @@ DofMap::DofMap(const DofMap& dofmap)
   _off_process_owner = dofmap._off_process_owner;
   _shared_dofs = dofmap._shared_dofs;
   _neighbours = dofmap._neighbours;
+  slave_master_mesh_entities = dofmap.slave_master_mesh_entities;
 }
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()

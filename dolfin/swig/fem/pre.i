@@ -73,9 +73,6 @@ PROBLEM_RENAMES(NonlinearVariational)
 					 const std::vector<std::pair<std::size_t, std::size_t> >&,
 					 std::string method="topological");
 
-%ignore dolfin::PeriodicBC::PeriodicBC(const FunctionSpace&,
-                                       const SubDomain&);
-
 %ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
                                                                    const Form&,
                                                                    Function&);
