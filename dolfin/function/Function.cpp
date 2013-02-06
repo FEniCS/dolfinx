@@ -32,7 +32,6 @@
 #include <dolfin/common/utils.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Array.h>
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/DirichletBC.h>

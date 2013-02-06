@@ -30,7 +30,6 @@
 #include "AssemblerBase.h"
 #include "assemble.h"
 #include "DirichletBC.h"
-#include "PeriodicBC.h"
 #include "Form.h"
 #include "LinearVariationalProblem.h"
 #include "LinearVariationalSolver.h"
@@ -117,11 +116,8 @@ void LinearVariationalSolver::solve()
   }
   else
   {
-    // Intialise matrix
-    Assembler assembler;
-
     // Assemble linear system
-    assembler.assemble(*A, *a);
+    assemble(*A, *a);
     if (L->ufc_form())
       assemble(*b, *L);
     else

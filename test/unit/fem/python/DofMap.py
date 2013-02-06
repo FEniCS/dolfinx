@@ -57,52 +57,6 @@ class DofMapTest(unittest.TestCase):
             self.assertTrue((coord4[:3] == coord0).all())
             self.assertTrue((coord4[3:] == coord0).all())
 
-    def test_tabulate_coord_periodic(self):
-
-        class PeriodicBoundary2(SubDomain):
-            def inside(self, x, on_boundary):
-                return x[0] < DOLFIN_EPS
-            def map(self, x, y):
-                y[0] = x[0] - 1.0
-                y[1] = x[1]
-
-        # Create periodic boundary condition
-        periodic_boundary = PeriodicBoundary2()
-
-        mesh = UnitSquareMesh(4, 4)
-
-        # Create vertex mast-slave map
-        periodic_vertex_pairs = cpp.PeriodicBoundaryComputation.compute_periodic_pairs(mesh, periodic_boundary, 0);
-
-        mesh.periodic_vertex_map = periodic_vertex_pairs;
-
-        V = FunctionSpace(mesh, "Lagrange", 1)
-        Q = VectorFunctionSpace(mesh, "Lagrange", 1)
-        W = V*Q
-
-        L0  = W.sub(0)
-        L1  = W.sub(1)
-        L01 = L1.sub(0)
-        L11 = L1.sub(1)
-
-        coord0 = np.zeros((3,2), dtype="d")
-        coord1 = np.zeros((3,2), dtype="d")
-        coord2 = np.zeros((3,2), dtype="d")
-        coord3 = np.zeros((3,2), dtype="d")
-
-        for cell in cells(self.mesh):
-            self.V.dofmap().tabulate_coordinates(cell, coord0)
-            L0.dofmap().tabulate_coordinates(cell, coord1)
-            L01.dofmap().tabulate_coordinates(cell, coord2)
-            L11.dofmap().tabulate_coordinates(cell, coord3)
-            coord4 = L1.dofmap().tabulate_coordinates(cell)
-
-            self.assertTrue((coord0 == coord1).all())
-            self.assertTrue((coord0 == coord2).all())
-            self.assertTrue((coord0 == coord3).all())
-            self.assertTrue((coord4[:3] == coord0).all())
-            self.assertTrue((coord4[3:] == coord0).all())
-
     def test_tabulate_dofs(self):
 
         L0   = self.W.sub(0)
@@ -151,13 +105,8 @@ class DofMapTest(unittest.TestCase):
 
         mesh = UnitSquareMesh(4, 4)
 
-        # Create vertex mast-slave map
-        periodic_vertex_pairs = cpp.PeriodicBoundaryComputation.compute_periodic_pairs(mesh, periodic_boundary, 0);
-
-        mesh.periodic_vertex_map = periodic_vertex_pairs;
-
-        V = FunctionSpace(mesh, "Lagrange", 1)
-        Q = VectorFunctionSpace(mesh, "Lagrange", 1)
+        V = FunctionSpace(mesh, "Lagrange", 1,  constrained_domain=periodic_boundary)
+        Q = VectorFunctionSpace(mesh, "Lagrange", 1,  constrained_domain=periodic_boundary)
         W = V*Q
 
         L0  = W.sub(0)
@@ -194,14 +143,11 @@ class DofMapTest(unittest.TestCase):
 
         mesh = UnitSquareMesh(4, 4)
 
-        # Create periodic boundary condition
+        # Create periodic boundary
         periodic_boundary = PeriodicBoundary2()
-        for i in range(2):
-            pairs = cpp.PeriodicBoundaryComputation.compute_periodic_pairs(mesh, periodic_boundary, i);
-            mesh.set_periodic_pairs(i, pairs);
 
-        V = FunctionSpace(mesh, "Lagrange", 2)
-        Q = VectorFunctionSpace(mesh, "Lagrange", 2)
+        V = FunctionSpace(mesh, "Lagrange", 2, constrained_domain=periodic_boundary)
+        Q = VectorFunctionSpace(mesh, "Lagrange", 2, constrained_domain=periodic_boundary)
         W = V*Q
 
         L0   = W.sub(0)
@@ -257,7 +203,7 @@ class DofMapTest(unittest.TestCase):
         W = MixedFunctionSpace([V, R])
         W = MixedFunctionSpace([R, V])
 
-    def test_vertex_to_dof_map(self):
+    def xtest_vertex_to_dof_map(self):
 
         # Check for both reordered and UFC ordered dofs
         for reorder_dofs in [True, False]:
