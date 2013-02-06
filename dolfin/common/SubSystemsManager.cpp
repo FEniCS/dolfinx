@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2008-2012
 //
 // First added:  2008-01-07
-// Last changed: 2012-10-13
+// Last changed: 2013-02-03
 
 #ifdef HAS_MPI
 #define MPICH_IGNORE_CXX_SEEK 1
@@ -288,7 +288,7 @@ bool SubSystemsManager::mpi_finalized()
 {
   #ifdef HAS_MPI
   int mpi_finalized;
-  MPI_Initialized(&mpi_finalized);
+  MPI_Finalized(&mpi_finalized);
   return mpi_finalized;
   #else
   // DOLFIN is not configured for MPI (it might be through PETSc)
