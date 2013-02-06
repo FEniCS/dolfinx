@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Jan Blechta 2013
+//
 // First added:  2008-05-02
-// Last changed: 2010-03-02
+// Last changed: 2013-01-25
 
 #ifndef __ALE_H
 #define __ALE_H
@@ -26,7 +28,7 @@ namespace dolfin
 
   class Mesh;
   class BoundaryMesh;
-  class Function;
+  class GenericFunction;
 
   /// This class provides functionality useful for implementation of
   /// ALE (Arbitrary Lagrangian-Eulerian) methods, in particular
@@ -44,7 +46,7 @@ namespace dolfin
     static void move(Mesh& mesh0, const Mesh& mesh1);
 
     /// Move coordinates of mesh according to displacement function
-    static void move(Mesh& mesh, const Function& displacement);
+    static void move(Mesh& mesh, const GenericFunction& displacement);
 
   };
 
