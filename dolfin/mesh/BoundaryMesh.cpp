@@ -55,7 +55,7 @@ MeshFunction<std::size_t>& BoundaryMesh::entity_map(std::size_t d)
   {
     dolfin_error("BoundaryMesh.cpp",
                  "access entity map (from boundary mesh underlying mesh",
-                 "Can onlt access vertex and cells maps");
+                 "Can only access vertex and cells maps");
   }
 
   // Return something to keep compilers happy, code is never reached
@@ -72,7 +72,7 @@ const MeshFunction<std::size_t>& BoundaryMesh::entity_map(std::size_t d) const
   {
     dolfin_error("BoundaryMesh.cpp",
                  "access entity map (from boundary mesh underlying mesh",
-                 "Can onlt access vertex and cells maps");
+                 "Can only access vertex and cells maps");
   }
 
   // Return something to keep compilers happy, code is never reached

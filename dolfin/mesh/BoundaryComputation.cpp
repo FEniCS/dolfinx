@@ -72,7 +72,7 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
   else if (type != "local")
   {
     dolfin_error("BoundaryComputation.cpp",
-                 "determine bpundary mesh type",
+                 "determine boundary mesh type",
                  "Unknown boundary type (%d)", type.c_str());
   }
 
