@@ -98,8 +98,7 @@ void SymmetricAssembler::assemble(GenericMatrix& A,
   }
 
   // Initialize the global nonsymmetric tensor (the symmetric one is handled by Assembler)
-  const std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > > periodic_master_slave_dofs;
-  init_global_tensor(impl->B, a, periodic_master_slave_dofs);
+  init_global_tensor(impl->B, a);
 
   // Get dofs that are local to this processor
   impl->processor_dof_range = impl->B.local_range(0);

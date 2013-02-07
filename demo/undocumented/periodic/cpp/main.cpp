@@ -78,6 +78,7 @@ int main()
   // Create periodic boundary condition
   PeriodicBoundary periodic_boundary;
 
+  /*
   // Create vertex mast-slave map
   const std::map<std::size_t, std::pair<std::size_t, std::size_t> > periodic_vertex_pairs
     = PeriodicBoundaryComputation::compute_periodic_pairs(mesh, periodic_boundary, 0);
@@ -92,13 +93,15 @@ int main()
   file << master_slave_entities;
 
   // Attach periodic vertex pairs to mesh
-  mesh.periodic_vertex_map = periodic_vertex_pairs;
+  mesh.periodic_index_map[0] = periodic_vertex_pairs;
+  */
 
   // Create functions
   Source f;
 
   // Define PDE
-  Poisson::FunctionSpace V(mesh);
+  Poisson::FunctionSpace V(mesh, periodic_boundary);
+  //Poisson::FunctionSpace V(mesh);
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
   L.f = f;

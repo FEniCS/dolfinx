@@ -128,8 +128,7 @@ void Assembler::assemble(GenericTensor& A,
     coefficients[i]->update();
 
   // Initialize global tensor
-  const std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > > periodic_master_slave_dofs;
-  init_global_tensor(A, a, periodic_master_slave_dofs);
+  init_global_tensor(A, a);
 
   // Assemble over cells
   assemble_cells(A, a, ufc, cell_domains, 0);

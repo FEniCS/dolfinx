@@ -33,7 +33,7 @@
 
 #include "pugixml.hpp"
 
-#include <dolfin/common/Array.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
@@ -93,6 +93,8 @@ VTKFile::~VTKFile()
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const Mesh& mesh)
 {
+  Timer t("Write mesh to PVD/VTK file");
+
   // Get vtu file name and intialise out files
   std::string vtu_filename = init(mesh, mesh.topology().dim());
 

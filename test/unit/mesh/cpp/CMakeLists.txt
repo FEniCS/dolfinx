@@ -14,8 +14,8 @@ project(${PROJECT_NAME})
 # Set CMake behavior
 cmake_policy(SET CMP0004 OLD)
 
-# Get DOLFIN configuration data (dolfin-config.cmake must be in DOLFIN_CMAKE_CONFIG_PATH)
-find_package(dolfin)
+# Get DOLFIN configuration data (DOLFINConfig.cmake must be in DOLFIN_CMAKE_CONFIG_PATH)
+find_package(DOLFIN)
 
 # Default build type (can be overridden by user)
 if (NOT CMAKE_BUILD_TYPE)
@@ -34,9 +34,9 @@ include_directories(${DOLFIN_INCLUDE_DIRS})
 include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
-add_executable(test_MeshValueCollection MeshValueCollection.cpp)
 add_executable(test_Mesh Mesh.cpp)
+add_executable(test_MeshValueCollection MeshValueCollection.cpp)
 
 # Target libraries
-target_link_libraries(test_MeshValueCollection ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
 target_link_libraries(test_Mesh ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
+target_link_libraries(test_MeshValueCollection ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})

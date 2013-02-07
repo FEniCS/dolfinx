@@ -138,10 +138,6 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'python'), \
    os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'cpp'),    \
    os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'python'), \
-   os.path.join(demodir, 'undocumented', 'periodic' ,                   'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'periodic',                    'python'), \
-   os.path.join(demodir, 'undocumented', 'poisson1D',                   'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'poisson1D',                   'python'), \
    os.path.join(demodir, 'undocumented', 'refinement',                  'cpp'),    \
    os.path.join(demodir, 'undocumented', 'refinement',                  'python'), \
    os.path.join(demodir, 'undocumented', 'simple',                      'cpp'),    \

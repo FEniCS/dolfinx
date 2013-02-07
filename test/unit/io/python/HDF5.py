@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2012-09-14
-# Last changed: 2012-10-02
+# Last changed: 2012-12-10
 
 import unittest
 from dolfin import *
@@ -47,6 +47,39 @@ if has_hdf5():
             vector_file.read(y, "my_vector")
             self.assertEqual(y.size(), x.size())
             self.assertEqual((x - y).norm("l1"), 0.0)
+
+    class HDF5_Mesh(unittest.TestCase):
+
+        def test_save_and_read_mesh_2D(self):
+            # Write to file
+            M = UnitSquareMesh(20,20)
+            mesh_file = HDF5File("mesh.h5", "w")
+            mesh_file.write(M, "my_mesh")
+            del mesh_file
+
+            M2 = Mesh()
+            mesh_file = HDF5File("mesh.h5", "r")
+            mesh_file.read(M2, "my_mesh")
+
+            self.assertEqual(M.size_global(0), M2.size_global(0))
+            dim = M.topology().dim()
+            self.assertEqual(M.size_global(dim), M2.size_global(dim))
+
+        def test_save_and_read_mesh_3D(self):
+            # Write to file
+            M = UnitCubeMesh(10,10,10)
+            mesh_file = HDF5File("mesh.h5", "w")
+            mesh_file.write(M, "my_mesh")
+            del mesh_file
+
+            M2 = Mesh()
+            mesh_file = HDF5File("mesh.h5", "r")
+            mesh_file.read(M2, "my_mesh")
+
+            self.assertEqual(M.size_global(0), M2.size_global(0))
+            dim = M.topology().dim()
+            self.assertEqual(M.size_global(dim), M2.size_global(dim))
+
 
 if __name__ == "__main__":
     unittest.main()

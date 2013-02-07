@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2012-09-14
-# Last changed: 2012-10-02
+# Last changed: 2013-02-05
 
 import unittest
 from dolfin import *
@@ -138,6 +138,27 @@ if has_hdf5():
             for facet in facets(mesh):
                 mf[facet] = facet.index()
             File("output/mf_facet_3D.xdmf") << mf
+
+        def test_save_3D_edge_function(self):
+            mesh = UnitCubeMesh(8, 8, 8)
+            mf = EdgeFunction("size_t", mesh)
+            for edge in edges(mesh):
+                mf[edge] = edge.index()
+            File("output/mf_edge_3D.xdmf") << mf
+
+        def test_save_2D_vertex_function(self):
+            mesh = UnitSquareMesh(32, 32)
+            mf = VertexFunction("size_t", mesh)
+            for vertex in vertices(mesh):
+                mf[vertex] = vertex.index()
+            File("output/mf_vertex_2D.xdmf") << mf
+
+        def test_save_3D_vertex_function(self):
+            mesh = UnitCubeMesh(8, 8, 8)
+            mf = VertexFunction("size_t", mesh)
+            for vertex in vertices(mesh):
+                mf[vertex] = vertex.index()
+            File("output/mf_vertex_3D.xdmf") << mf
 
 if __name__ == "__main__":
     unittest.main()

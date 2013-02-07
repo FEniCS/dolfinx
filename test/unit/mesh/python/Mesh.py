@@ -19,9 +19,10 @@
 #
 # Modified by Benjamin Kehlet 2012
 # Modified by Marie E. Rognes 2012
+# Modified by Johannes Ring 2013
 #
 # First added:  2006-08-08
-# Last changed: 2012-12-13
+# Last changed: 2013-02-06
 
 import unittest
 import numpy
@@ -308,7 +309,7 @@ class MeshOrientations(unittest.TestCase):
 
     def test_basic_cell_orientations(self):
         "Test that default cell orientations initialize and update as expected."
-        mesh = UnitIntervalMesh(4)
+        mesh = UnitIntervalMesh(6)
         orientations = mesh.cell_orientations()
         self.assertEqual(len(orientations), mesh.num_cells())
         for i in range(mesh.num_cells()):
@@ -319,7 +320,7 @@ class MeshOrientations(unittest.TestCase):
 
     def test_cell_orientations(self):
         "Test that cell orientations update as expected."
-        mesh = UnitIntervalMesh(4)
+        mesh = UnitIntervalMesh(6)
         mesh.init_cell_orientations(Expression(("0.0", "1.0", "0.0")))
         for i in range(mesh.num_cells()):
             self.assertEqual(mesh.cell_orientations()[i], 0)
