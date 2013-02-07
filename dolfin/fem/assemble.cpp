@@ -27,7 +27,6 @@
 #include "Form.h"
 #include "Assembler.h"
 #include "SystemAssembler.h"
-#include "SymmetricAssembler.h"
 #include "assemble.h"
 
 using namespace dolfin;
@@ -141,49 +140,6 @@ void dolfin::assemble_system(GenericMatrix& A,
   assembler.keep_diagonal = keep_diagonal;
   assembler.assemble(A, b, a, L, bcs, cell_domains, exterior_facet_domains,
                      interior_facet_domains, x0);
-}
-//-----------------------------------------------------------------------------
-void dolfin::symmetric_assemble(GenericMatrix& As,
-                                GenericMatrix& An,
-                                const Form& a,
-                                const std::vector<const DirichletBC*> bcs,
-                                const MeshFunction<std::size_t>* cell_domains,
-                                const MeshFunction<std::size_t>* exterior_facet_domains,
-                                const MeshFunction<std::size_t>* interior_facet_domains,
-                                bool reset_sparsity,
-                                bool add_values,
-                                bool finalize_tensor,
-                                bool keep_diagonal)
-{
-  SymmetricAssembler assembler;
-  assembler.reset_sparsity = reset_sparsity;
-  assembler.add_values = add_values;
-  assembler.finalize_tensor = finalize_tensor;
-  assembler.keep_diagonal = keep_diagonal;
-  assembler.assemble(As, An, a, bcs, bcs,
-                     cell_domains, exterior_facet_domains, interior_facet_domains);
-}
-//-----------------------------------------------------------------------------
-void dolfin::symmetric_assemble(GenericMatrix& As,
-                                GenericMatrix& An,
-                                const Form& a,
-                                const std::vector<const DirichletBC*> row_bcs,
-                                const std::vector<const DirichletBC*> col_bcs,
-                                const MeshFunction<std::size_t>* cell_domains,
-                                const MeshFunction<std::size_t>* exterior_facet_domains,
-                                const MeshFunction<std::size_t>* interior_facet_domains,
-                                bool reset_sparsity,
-                                bool add_values,
-                                bool finalize_tensor,
-                                bool keep_diagonal)
-{
-  SymmetricAssembler assembler;
-  assembler.reset_sparsity = reset_sparsity;
-  assembler.add_values = add_values;
-  assembler.finalize_tensor = finalize_tensor;
-  assembler.keep_diagonal = keep_diagonal;
-  assembler.assemble(As, An, a, row_bcs, col_bcs, cell_domains,
-                     exterior_facet_domains, interior_facet_domains);
 }
 //-----------------------------------------------------------------------------
 double dolfin::assemble(const Form& a,
