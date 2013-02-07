@@ -194,10 +194,6 @@ void LinearVariationalSolver::solve()
     solver.solve(*A, *u->vector(), *b);
   }
 
-
-  info(*u->vector(), true);
-
-
   end();
 }
 //-----------------------------------------------------------------------------
