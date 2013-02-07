@@ -278,6 +278,9 @@ void STLMatrix::apply(std::string mode)
         _values[I_local].push_back(std::make_pair(J, received_non_local_vals_p[i]));
     }
   }
+
+  // Sort columns (csr)/rows (csc)
+  sort();
 }
 //-----------------------------------------------------------------------------
 double STLMatrix::norm(std::string norm_type) const
