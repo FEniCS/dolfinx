@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Jan Blechta 2013
+//
 // First added:  2008-05-02
-// Last changed: 2012-11-23
+// Last changed: 2013-01-25
 
 #include <vector>
-#include <dolfin/function/Function.h>
-#include <dolfin/function/FunctionSpace.h>
-#include <dolfin/fem/FiniteElement.h>
+#include <dolfin/function/GenericFunction.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/Vertex.h>
 #include "HarmonicSmoothing.h"
@@ -98,14 +98,12 @@ void ALE::move(Mesh& mesh0, const Mesh& mesh1)
   mesh0.move(boundary0);
 }
 //-----------------------------------------------------------------------------
-void ALE::move(Mesh& mesh, const Function& displacement)
+void ALE::move(Mesh& mesh, const GenericFunction& displacement)
 {
   // Check dimensions
-  dolfin_assert(displacement.function_space()->element());
-  const FiniteElement& element = *displacement.function_space()->element();
   const std::size_t gdim = mesh.geometry().dim();
-  if (!((element.value_rank() == 0 && gdim == 0) ||
-        (element.value_rank() == 1 && gdim == element.value_dimension(0))))
+  if (!((displacement.value_rank() == 0 && gdim == 0) ||
+        (displacement.value_rank() == 1 && gdim == displacement.value_dimension(0))))
   {
     dolfin_error("ALE.cpp",
                  "move mesh using mesh smoothing",

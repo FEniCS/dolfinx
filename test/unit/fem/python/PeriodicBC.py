@@ -45,61 +45,34 @@ class PeriodicBCTest(unittest.TestCase):
     def test_instantiation(self):
         """ A rudimentary test for instantiation"""
 
-        if MPI.num_processes() > 1:
-            return
-
-        mesh = UnitCubeMesh(8, 8, 8)
-        V = FunctionSpace(mesh, "CG", 1)
-
         sub_domain = PeriodicBoundary3()
-        bc0 = PeriodicBC(V, sub_domain)
-
-        # Uncomment if/when PeriodicBC gets a copy constructor
-        #bc1 = PeriodicBC(bc0)
-        #self.assertTrue(bc0.function_space() == bc1.function_space())
+        mesh = UnitCubeMesh(8, 8, 8)
+        V = FunctionSpace(mesh, "CG", 1, constrained_domain=sub_domain)
 
     def test_instantiation_mixed_element(self):
         """ A rudimentary test for instantiation with mixed elements"""
 
-        if MPI.num_processes() > 1:
-            return
-
-        mesh = UnitSquareMesh(8, 8)
-        V = FunctionSpace(mesh, "Lagrange", 1)
-        VV = V*V
-
         pbc = PeriodicBoundary2()
-        bc  = PeriodicBC(VV, pbc)
+        mesh = UnitSquareMesh(8, 8)
+        V = FunctionSpace(mesh, "Lagrange", 1, constrained_domain=pbc)
+        VV = V*V
 
     def test_director_lifetime(self):
         """Test for problems with objects with directors going out
         of scope"""
 
-        if MPI.num_processes() > 1:
-            return
-
         mesh = UnitSquareMesh(8, 8)
-        V = FunctionSpace(mesh, "Lagrange", 1)
-        bc = PeriodicBC(V, PeriodicBoundary2())
-
-        # FIXME: need to wrap output from below function in Python
-        #bc.compute_dof_pairs();
+        V = FunctionSpace(mesh, "Lagrange", 1, constrained_domain=PeriodicBoundary2())
 
     def test_solution(self):
         """Test application Periodic boundary conditions by checking
         solution to a PDE."""
 
-        if MPI.num_processes() > 1:
-            return
-
-        # FIXME: This hack should be removed once periodic boundary
-        # FIXME: conditions have been implemented properly
-        if parameters["linear_algebra_backend"] == "Epetra":
-            return
-
         # Create mesh and finite element
         mesh = UnitSquareMesh(8, 8)
-        V = FunctionSpace(mesh, "Lagrange", 1)
+        #V = FunctionSpace(mesh, "Lagrange", 1)
+        pbc = PeriodicBoundary2()
+        V = FunctionSpace(mesh, "Lagrange", 1, constrained_domain=pbc)
 
         class DirichletBoundary(SubDomain):
             def inside(self, x, on_boundary):
@@ -108,10 +81,7 @@ class PeriodicBCTest(unittest.TestCase):
         # Dirichlet boundary condition
         dirichlet_boundary = DirichletBoundary()
         bc0 = DirichletBC(V, 0.0, dirichlet_boundary)
-        #periodic_boundary = PeriodicBoundary2()
-        #bc1 = PeriodicBC(V, periodic_boundary)
-        bc1 = PeriodicBC(V, PeriodicBoundary2())
-        bcs = [bc0, bc1]
+        bcs = [bc0]
 
         # Define variational problem, linear formulation
         u, v = TrialFunction(V), TestFunction(V)
@@ -123,7 +93,7 @@ class PeriodicBCTest(unittest.TestCase):
         u = Function(V)
         solve(a == L, u, bcs)
 
-        self.assertAlmostEqual(u.vector().norm("l2"), 0.3567245204026249, 10)
+        self.assertAlmostEqual(u.vector().norm("l2"), 0.3368694028630991, 10)
 
         # Define variational problem, nonlinear formulation
         u, v = Function(V), TestFunction(V)
@@ -135,7 +105,7 @@ class PeriodicBCTest(unittest.TestCase):
         # Compute solution
         solve(F == 0, u, bcs)
 
-        self.assertAlmostEqual(u.vector().norm("l2"), 0.3567245204026249, 10)
+        self.assertAlmostEqual(u.vector().norm("l2"), 0.3368694028630991, 10)
 
 if __name__ == "__main__":
     print ""

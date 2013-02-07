@@ -28,6 +28,7 @@
 #include <set>
 #include <map>
 #include <boost/array.hpp>
+#include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 #include <dolfin/common/types.h>
@@ -43,6 +44,7 @@ namespace dolfin
 
   class DofMap;
   class Mesh;
+  class SubDomain;
   class UFC;
 
   /// Documentation of class
@@ -76,6 +78,7 @@ namespace dolfin
     /// Build dofmap. The restriction may be a null pointer in which
     /// case it is ignored.
     static void build(DofMap& dofmap, const Mesh& dolfin_mesh,
+        boost::shared_ptr<const std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > > > slave_master_entities,
         boost::shared_ptr<const Restriction> restriction);
 
     /// Build sub-dofmap
@@ -88,8 +91,9 @@ namespace dolfin
 
     // Build UFC-based dofmap
     static void build_ufc(DofMap& dofmap, map& restricted_dofs_inverse,
-                          const Mesh& mesh,
-                          boost::shared_ptr<const Restriction> restriction);
+      const Mesh& mesh,
+      boost::shared_ptr<const std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > > > slave_master_entities,
+      boost::shared_ptr<const Restriction> restriction);
 
     // Build modified global entity indices that account for periodic bcs
     static std::size_t build_constrained_vertex_indices(const Mesh& mesh,
