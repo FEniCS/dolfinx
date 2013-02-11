@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-02-11
-// Last changed: 2011-08-23
+// Last changed: 2013-02-11
 
 #ifndef __SUB_MESH_H
 #define __SUB_MESH_H
@@ -46,6 +46,9 @@ namespace dolfin
     /// Create subset of given mesh marked by mesh function
     SubMesh(const Mesh& mesh, const MeshFunction<std::size_t>& sub_domains,
             std::size_t sub_domain);
+
+    /// Create subset of given mesh from stored MeshValueCollection
+    SubMesh(const Mesh& mesh, std::size_t sub_domain);
 
     /// Destructor
     ~SubMesh();

@@ -50,7 +50,7 @@ namespace dolfin
   public:
 
     /// Create empty mesh domains
-    MeshDomains();
+    MeshDomains(Mesh& mesh);
 
     /// Destructor
     ~MeshDomains();
@@ -82,22 +82,22 @@ namespace dolfin
     /// cached for later access and will be computed on the first call
     /// to this function.
     boost::shared_ptr<const MeshFunction<std::size_t> >
-      cell_domains(const Mesh& mesh,
-                   std::size_t unset_value=MeshDomains::default_unset_value) const;
+      cell_domains(std::size_t unset_value=MeshDomains::default_unset_value) const;
 
     /// Get facet domains. This function computes the mesh function
     /// corresponding to markers of dimension D-1. The mesh function
     /// is cached for later access and will be computed on the first
     /// call to this function.
     boost::shared_ptr<const MeshFunction<std::size_t> >
-      facet_domains(const Mesh& mesh,
-                    std::size_t unset_value=MeshDomains::default_unset_value) const;
+      facet_domains(std::size_t unset_value=MeshDomains::default_unset_value) const;
 
     /// Create a mesh function corresponding to the MeshCollection 'collection'
-    static boost::shared_ptr<MeshFunction<std::size_t> >
-      mesh_function(const Mesh& mesh,
-          const MeshValueCollection<std::size_t>& collection,
-          std::size_t unset_value=MeshDomains::default_unset_value);
+    boost::shared_ptr<MeshFunction<std::size_t> >
+      mesh_function(const MeshValueCollection<std::size_t>& collection,
+		    std::size_t unset_value=MeshDomains::default_unset_value) const;
+
+    /// Assignment operator
+    const MeshDomains& operator= (const MeshDomains& domains);
 
     /// Initialize mesh domains for given topological dimension
     void init(std::size_t dim);
@@ -106,6 +106,9 @@ namespace dolfin
     void clear();
 
   private:
+
+    // The mesh
+    Mesh& _mesh;
 
     // Subdomain markers for each geometric dim
     std::vector<boost::shared_ptr<MeshValueCollection<std::size_t> > > _markers;

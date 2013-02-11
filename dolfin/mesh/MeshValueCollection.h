@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-08-30
-// Last changed: 2011-11-15
+// Last changed: 2013-02-11
 
 #ifndef __MESH_VALUE_COLLECTION_H
 #define __MESH_VALUE_COLLECTION_H
@@ -391,6 +391,12 @@ namespace dolfin
     const std::pair<std::size_t, std::size_t> pos(std::make_pair(cell_index, local_entity));
     std::pair<typename std::map<std::pair<std::size_t, std::size_t>, T>::iterator, bool> it;
     it = _values.insert(std::make_pair(pos, value));
+
+    // If an item with same key already excists the value has not been
+    // set and we need to update it
+    if (!it.second)
+      it.first->second = value;
+
     return it.second;
   }
   //---------------------------------------------------------------------------
@@ -407,7 +413,14 @@ namespace dolfin
       const std::pair<std::size_t, std::size_t> pos(std::make_pair(entity_index, 0));
       std::pair<typename std::map<std::pair<std::size_t, std::size_t>, T>::iterator, bool> it;
       it = _values.insert(std::make_pair(pos, value));
+
+      // If an item with same key already excists the value has not been
+      // set and we need to update it
+      if (!it.second)
+	it.first->second = value;
+
       return it.second;
+
     }
 
     // Get mesh connectivity d --> D
@@ -427,6 +440,12 @@ namespace dolfin
     const std::pair<std::size_t, std::size_t> pos(std::make_pair(cell.index(), local_entity));
     std::pair<typename std::map<std::pair<std::size_t, std::size_t>, T>::iterator, bool> it;
     it = _values.insert(std::make_pair(pos, value));
+
+    // If an item with same key already excists the value has not been
+    // set and we need to update it
+    if (!it.second)
+      it.first->second = value;
+
     return it.second;
   }
   //---------------------------------------------------------------------------
