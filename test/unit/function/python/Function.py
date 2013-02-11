@@ -85,13 +85,27 @@ class Interface(unittest.TestCase):
             self.assertAlmostEqual(uu.vector().sum(), \
                                    float(expr_scalar*uu.vector().size()))
             
+            # Test expression scaling
+            expr = 3*expr
+            expr_scalar *= 3
+            uu.assign(expr)
+            self.assertAlmostEqual(uu.vector().sum(), \
+                                   float(expr_scalar*uu.vector().size()))
+            
+            # Test expression scaling
+            expr = expr/4.5
+            expr_scalar /= 4.5
+            uu.assign(expr)
+            self.assertAlmostEqual(uu.vector().sum(), \
+                                   float(expr_scalar*uu.vector().size()))
+            
             # Test self assignment
-            expr = 3*u - 5*u2 + u1 - 5*u
+            expr = 3*u - Constant(5)*u2 + u1 - 5*u
             expr_scalar = 3 - 5*4. + 3. - 5
             u.assign(expr)
             self.assertAlmostEqual(u.vector().sum(), \
                                    float(expr_scalar*u.vector().size()))
-            
+
             # Test zero assignment
             u.assign(-u2/2+2*u1-u1/0.5+u2*0.5)
             self.assertAlmostEqual(u.vector().sum(), 0.0)
