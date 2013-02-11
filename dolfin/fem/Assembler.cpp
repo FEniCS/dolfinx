@@ -80,7 +80,7 @@ void Assembler::assemble(GenericTensor& A,
   {
     cell_domains = a.cell_domains_shared_ptr().get();
     if (!cell_domains)
-      cell_domains = a.mesh().domains().cell_domains(a.mesh()).get();
+      cell_domains = a.mesh().domains().cell_domains().get();
   }
 
   // Get exterior facet domains
@@ -88,7 +88,7 @@ void Assembler::assemble(GenericTensor& A,
   {
     exterior_facet_domains = a.exterior_facet_domains_shared_ptr().get();
     if (!exterior_facet_domains)
-      exterior_facet_domains = a.mesh().domains().facet_domains(a.mesh()).get();
+      exterior_facet_domains = a.mesh().domains().facet_domains().get();
   }
 
   // Get interior facet domains
@@ -96,7 +96,7 @@ void Assembler::assemble(GenericTensor& A,
   {
     interior_facet_domains = a.interior_facet_domains_shared_ptr().get();
     if (!interior_facet_domains)
-      interior_facet_domains = a.mesh().domains().facet_domains(a.mesh()).get();
+      interior_facet_domains = a.mesh().domains().facet_domains().get();
   }
 
   // Check whether we should call the multi-core assembler
@@ -128,8 +128,7 @@ void Assembler::assemble(GenericTensor& A,
     coefficients[i]->update();
 
   // Initialize global tensor
-  const std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > > periodic_master_slave_dofs;
-  init_global_tensor(A, a, periodic_master_slave_dofs);
+  init_global_tensor(A, a);
 
   // Assemble over cells
   assemble_cells(A, a, ufc, cell_domains, 0);

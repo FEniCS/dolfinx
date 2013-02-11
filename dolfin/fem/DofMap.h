@@ -56,7 +56,7 @@ namespace dolfin
   {
   public:
 
-    /// Create dof map on mesh (data is not shared)
+    /// Create dof map on mesh (mesh is not stored)
     ///
     /// *Arguments*
     ///     ufc_dofmap (ufc::dofmap)
@@ -66,7 +66,20 @@ namespace dolfin
     DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
            const Mesh& mesh);
 
-    /// Create restricted dof map on mesh (data is not shared)
+    /// Create a periodic dof map on mesh (mesh is not stored)
+    ///
+    /// *Arguments*
+    ///     ufc_dofmap (ufc::dofmap)
+    ///         The ufc::dofmap.
+    ///     mesh (_Mesh_)
+    ///         The mesh.
+    ///     conatrained_boundary (_SubDomain_)
+    ///         The subdomain marking the constrained (tied) boudaries.
+    DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
+           const Mesh& mesh,
+           boost::shared_ptr<const SubDomain> constrained_domain);
+
+    /// Create restricted dof map on mesh
     ///
     /// *Arguments*
     ///     ufc_dofmap (ufc::dofmap)
@@ -409,6 +422,10 @@ namespace dolfin
 
     // Neighbours (processes that we share dofs with)
     std::set<std::size_t> _neighbours;
+
+    // Map from slave to master mesh entities
+    boost::shared_ptr<std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > > >
+      slave_master_mesh_entities;
 
   };
 }

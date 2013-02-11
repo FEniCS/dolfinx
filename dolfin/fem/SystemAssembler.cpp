@@ -100,11 +100,11 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
       else
         cell_domains = L.cell_domains_shared_ptr().get();
 
-      if (mesh.domains().cell_domains(mesh))
+      if (mesh.domains().cell_domains())
         warning("Ignoring cell domains defined as part of mesh in system assembler.");
     }
     else
-      cell_domains = mesh.domains().cell_domains(mesh).get();
+      cell_domains = mesh.domains().cell_domains().get();
   }
 
   // Get exterior facet domains
@@ -123,11 +123,11 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
       else
         exterior_facet_domains = L.exterior_facet_domains_shared_ptr().get();
 
-      if (mesh.domains().facet_domains(mesh))
+      if (mesh.domains().facet_domains())
         warning("Ignoring exterior facet domains defined as part of mesh in system assembler.");
     }
     else
-      exterior_facet_domains = mesh.domains().facet_domains(mesh).get();
+      exterior_facet_domains = mesh.domains().facet_domains().get();
   }
 
   // Get interior facet domains
@@ -146,11 +146,11 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
       else
         interior_facet_domains = L.interior_facet_domains_shared_ptr().get();
 
-      if (mesh.domains().facet_domains(mesh))
+      if (mesh.domains().facet_domains())
         warning("Ignoring interior facet domains defined as part of mesh in system assembler.");
     }
     else
-      interior_facet_domains = mesh.domains().facet_domains(mesh).get();
+      interior_facet_domains = mesh.domains().facet_domains().get();
   }
 
   // Check forms
@@ -185,9 +185,8 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   UFC A_ufc(a), b_ufc(L);
 
   // Initialize global tensors
-  const std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > > periodic_master_slave_dofs;
-  init_global_tensor(A, a, periodic_master_slave_dofs);
-  init_global_tensor(b, L, periodic_master_slave_dofs);
+  init_global_tensor(A, a);
+  init_global_tensor(b, L);
 
   // Allocate data
   Scratch data(a, L);
@@ -566,7 +565,6 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
   arma::mat _A(A, global_dofs[1]->size(), global_dofs[0]->size(), false, true);
   arma::rowvec _b(b, global_dofs[0]->size(), false, true);
 
-  //bool bc_applied = false;
   // Loop over rows
   for (std::size_t i = 0; i < _A.n_rows; ++i)
   {
@@ -796,8 +794,8 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
 //-----------------------------------------------------------------------------
 SystemAssembler::Scratch::Scratch(const Form& a, const Form& L)
 {
-  std::size_t A_num_entries  = a.function_space(0)->dofmap()->max_cell_dimension();
-  A_num_entries      *= a.function_space(1)->dofmap()->max_cell_dimension();
+  std::size_t A_num_entries = a.function_space(0)->dofmap()->max_cell_dimension();
+  A_num_entries *= a.function_space(1)->dofmap()->max_cell_dimension();
   Ae.resize(A_num_entries);
 
   be.resize(L.function_space(0)->dofmap()->max_cell_dimension());

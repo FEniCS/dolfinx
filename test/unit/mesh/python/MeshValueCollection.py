@@ -44,6 +44,10 @@ class MeshValueCollections(unittest.TestCase):
           value = ncells - cell.index()
           self.assertEqual(value, g.get_value(cell.index(), 0))
 
+      old_value = g.get_value(0,0)
+      g.set_value(0, 0, old_value+1)
+      self.assertEqual(old_value+1, g.get_value(0, 0))
+
   def testAssign2DFacets(self):
       mesh = UnitSquareMesh(3, 3)
       mesh.init(2,1)
