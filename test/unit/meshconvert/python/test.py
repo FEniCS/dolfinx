@@ -410,7 +410,7 @@ class TriangleTester(_TestCase):
         self.assertAlmostEqual(area0+area1, total_area)
         
         # Measure the edge length of the two edge domains
-        edge_markers = mesh.domains().facet_domains(mesh)
+        edge_markers = mesh.domains().facet_domains()
         self.assertTrue(edge_markers is not None)
         length0 = reduce(add, (Edge(mesh, e.index()).length() \
                             for e in SubsetIterator(edge_markers, 0)), 0.0)
