@@ -213,7 +213,8 @@ void STLMatrix::apply(std::string mode)
   const std::size_t num_processes = MPI::num_processes();
 
   // Data to send
-  std::vector<std::vector<std::size_t> > send_non_local_rows, send_non_local_cols(num_processes);
+  std::vector<std::vector<std::size_t> > send_non_local_rows(num_processes);
+  std::vector<std::vector<std::size_t> > send_non_local_cols(num_processes);
   std::vector<std::vector<double> > send_non_local_vals(num_processes);
 
   std::vector<std::pair<std::size_t, std::size_t> > process_ranges;
@@ -261,7 +262,7 @@ void STLMatrix::apply(std::string mode)
     assert(received_non_local_rows_p.size() == received_non_local_cols_p.size());
     assert(received_non_local_rows_p.size() == received_non_local_vals_p.size());
 
-    for (std::size_t i = 0; i < received_non_local_rows.size(); ++i)
+    for (std::size_t i = 0; i < received_non_local_rows_p.size(); ++i)
     {
       dolfin_assert(received_non_local_rows_p[i] < _local_range.second
                           && received_non_local_rows_p[i] >= _local_range.first);
@@ -277,6 +278,9 @@ void STLMatrix::apply(std::string mode)
         _values[I_local].push_back(std::make_pair(J, received_non_local_vals_p[i]));
     }
   }
+
+  // Sort columns (csr)/rows (csc)
+  sort();
 }
 //-----------------------------------------------------------------------------
 double STLMatrix::norm(std::string norm_type) const
