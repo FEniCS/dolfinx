@@ -95,26 +95,16 @@ void _monitor_memory_usage(dolfin::Logger* logger)
 //-----------------------------------------------------------------------------
 Logger::Logger()
   : active(true), log_level(INFO), indentation_level(0), logstream(&std::cout),
-    num_processes(0), process_number(0),
-    _thread_monitor_memory_usage(0), _maximum_memory_usage(-1)
+    num_processes(0), process_number(0), _maximum_memory_usage(-1)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Logger::~Logger()
 {
-  // Uncommenting the following lines leads to an MPI error:
-  //
-  //*** The MPI_Comm_rank() function was called after MPI_FINALIZE was invoked.
-  //*** This is disallowed by the MPI standard.
-  //*** Your MPI job will now abort.
-
   // Join memory monitor thread if it exists
-  //  if (_thread_monitor_memory_usage)
-  // {
-  //  _thread_monitor_memory_usage->join();
-  //  delete _thread_monitor_memory_usage;
-  //}
+  if (_thread_monitor_memory_usage)
+    _thread_monitor_memory_usage->join();
 }
 //-----------------------------------------------------------------------------
 void Logger::log(std::string msg, int log_level) const
@@ -352,12 +342,11 @@ double Logger::timing(std::string task, bool reset)
 //-----------------------------------------------------------------------------
 void Logger::monitor_memory_usage()
 {
-#ifndef __linux__
-
+  #ifndef __linux__
   warning("Unable to initialize memory monitor; only available on GNU/Linux.");
   return;
 
-#else
+  #else
 
   // Check that thread has not alrady been started
   if (_thread_monitor_memory_usage)
@@ -367,10 +356,9 @@ void Logger::monitor_memory_usage()
   }
 
   // Create thread
-  _thread_monitor_memory_usage
-    = new boost::thread(boost::bind(&_monitor_memory_usage, this));
+  _thread_monitor_memory_usage.reset(new boost::thread(boost::bind(&_monitor_memory_usage, this)));
 
-#endif
+  #endif
 }
 //-----------------------------------------------------------------------------
 void Logger::_report_memory_usage(size_t num_mb)
