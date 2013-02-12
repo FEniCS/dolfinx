@@ -48,6 +48,16 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
   // Extract mesh
   const Mesh& mesh = a.mesh();
 
+  // Update off-process coefficients
+  const std::vector<boost::shared_ptr<const GenericFunction> >
+    coefficients_a = a.coefficients();
+  for (std::size_t i = 0; i < coefficients_a.size(); ++i)
+    coefficients_a[i]->update();
+  const std::vector<boost::shared_ptr<const GenericFunction> >
+    coefficients_L = L.coefficients();
+  for (std::size_t i = 0; i < coefficients_L.size(); ++i)
+    coefficients_L[i]->update();
+
   // Form ranks
   const std::size_t rank_a = ufc_a.form.rank();
   const std::size_t rank_L = ufc_L.form.rank();
@@ -76,6 +86,10 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
   ufc::cell_integral* integral_a = ufc_a.default_cell_integral.get();
   ufc::cell_integral* integral_L = ufc_L.default_cell_integral.get();
 
+  // Armadillo data structures
+  arma::mat A;
+  arma::vec b, x_local;
+
   // Assemble over cells
   Progress p("Performing local (cell-wise) solve", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -89,28 +103,31 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
     const std::vector<dolfin::la_index>& dofs_a1 = dofmap_a1->cell_dofs(cell->index());
     const std::vector<dolfin::la_index>& dofs_L  = dofmap_L->cell_dofs(cell->index());
 
+    // Check that local problem is square and a and L match
     dolfin_assert(dofs_a0.size() == dofs_a1.size());
     dolfin_assert(dofs_a1.size() == dofs_L.size());
 
-    arma::mat A(dofs_a0.size(), dofs_a1.size());
-    arma::vec b(dofs_L.size());
+    // Resize A and b
+    A.set_size(dofs_a0.size(), dofs_a1.size());
+    b.set_size(dofs_L.size());
 
-    // Tabulate cell tensors
+    // Tabulate A, and b on cell
     integral_a->tabulate_tensor(A.memptr(), ufc_a.w(), ufc_a.cell);
     integral_L->tabulate_tensor(b.memptr(), ufc_L.w(), ufc_L.cell);
 
     // Solve local problem (Armadillo uses column-major)
-    arma::vec x_local;
     if (symmetric)
-      x_local = arma::solve(A, b);
+      arma::solve(x_local, A, b);
     else
-      x_local = arma::solve(A.t(), b);
+      arma::solve(x_local, A.t(), b);
 
-    // Add solution to vector
+    // Set solution in global vector
     x.set(x_local.memptr(), dofs_a0.size(), dofs_a0.data());
 
     p++;
   }
+
+  // Finalise vector
   x.apply("insert");
 }
 //-----------------------------------------------------------------------------
