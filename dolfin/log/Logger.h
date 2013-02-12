@@ -147,6 +147,9 @@ namespace dolfin
     mutable std::size_t num_processes;
     mutable std::size_t process_number;
 
+    // Thread used for monitoring memory usage
+    boost::thread* _thread_monitor_memory_usage;
+
     // Maximum memory usage so far
     long int _maximum_memory_usage;
 

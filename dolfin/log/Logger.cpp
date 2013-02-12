@@ -95,7 +95,8 @@ void _monitor_memory_usage(dolfin::Logger* logger)
 //-----------------------------------------------------------------------------
 Logger::Logger()
   : active(true), log_level(INFO), indentation_level(0), logstream(&std::cout),
-    num_processes(0), process_number(0), _maximum_memory_usage(-1)
+    num_processes(0), process_number(0),
+    _thread_monitor_memory_usage(0), _maximum_memory_usage(-1)
 {
   // Do nothing
 }
