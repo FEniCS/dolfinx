@@ -29,12 +29,14 @@
 #include <stdexcept>
 #include <string>
 
-#ifdef __linux__
-#include <sys/types.h>
-#include <unistd.h>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+
+
+#ifdef __linux__
+#include <sys/types.h>
+#include <unistd.h>
 #endif
 
 #include <dolfin/common/constants.h>
