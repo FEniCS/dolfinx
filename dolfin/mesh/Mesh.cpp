@@ -61,6 +61,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
                Hierarchical<Mesh>(*this),
+               _domains(*this),
                _data(*this),
                _cell_type(0),
                _intersection_operator(*this),
@@ -72,6 +73,7 @@ Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
                                Hierarchical<Mesh>(*this),
+			       _domains(*this),
                                _data(*this),
                                _cell_type(0),
                                _intersection_operator(*this),
@@ -83,6 +85,7 @@ Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
 //-----------------------------------------------------------------------------
 Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
                                    Hierarchical<Mesh>(*this),
+				   _domains(*this),
                                    _data(*this),
                                    _cell_type(0),
                                    _intersection_operator(*this),
@@ -98,6 +101,7 @@ Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
 Mesh::Mesh(LocalMeshData& local_mesh_data)
                                  : Variable("mesh", "DOLFIN mesh"),
                                    Hierarchical<Mesh>(*this),
+				   _domains(*this),
                                    _data(*this),
                                    _cell_type(0),
                                    _intersection_operator(*this),
@@ -110,6 +114,7 @@ Mesh::Mesh(LocalMeshData& local_mesh_data)
 Mesh::Mesh(const CSGGeometry& geometry, std::size_t mesh_resolution)
   : Variable("mesh", "DOLFIN mesh"),
     Hierarchical<Mesh>(*this),
+    _domains(*this),
     _data(*this),
     _cell_type(0),
     _intersection_operator(*this),
@@ -129,6 +134,7 @@ Mesh::Mesh(const CSGGeometry& geometry, std::size_t mesh_resolution)
 Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry, std::size_t resolution)
   : Variable("mesh", "DOLFIN mesh"),
     Hierarchical<Mesh>(*this),
+    _domains(*this),
     _data(*this),
     _cell_type(0),
     _intersection_operator(*this),

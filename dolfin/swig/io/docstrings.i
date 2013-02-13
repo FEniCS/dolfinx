@@ -163,7 +163,8 @@ Constructor
 
 // Documentation extracted from: (module=io, header=HDF5File.h)
 %feature("docstring")  dolfin::HDF5File::HDF5File "
-Constructor
+Constructor. file_mode should \"a\" (append), \"w\" (write) ot \"r\"
+(read).
 ";
 
 %feature("docstring")  dolfin::HDF5File::write "

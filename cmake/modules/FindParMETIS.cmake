@@ -63,14 +63,15 @@ if (MPI_CXX_FOUND)
     set(PARMETIS_VERSION_OK TRUE)
   elseif (PARMETIS_INCLUDE_DIRS AND PARMETIS_LIBRARY)
 
-    # Set flags for building test program
-    set(CMAKE_REQUIRED_INCLUDES ${PARMETIS_INCLUDE_DIRS} ${MPI_CXX_INCLUDE_PATH})
-    set(CMAKE_REQUIRED_LIBRARIES ${PARMETIS_LIBRARIES}  ${MPI_CXX_LIBRARIES})
+  # Set flags for building test program
+  set(CMAKE_REQUIRED_INCLUDES  ${PARMETIS_INCLUDE_DIRS} ${MPI_CXX_INCLUDE_PATH})
+  set(CMAKE_REQUIRED_LIBRARIES ${PARMETIS_LIBRARIES}    ${MPI_CXX_LIBRARIES})
+  set(CMAKE_REQUIRED_FLAGS     ${CMAKE_REQUIRED_FLAGS}  ${MPI_CXX_COMPILE_FLAGS})
 
-    # Check ParMETIS version
-    set(PARMETIS_CONFIG_TEST_VERSION_CPP
-      "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/parmetis_config_test_version.cpp")
-    file(WRITE ${PARMETIS_CONFIG_TEST_VERSION_CPP} "
+  # Check ParMETIS version
+  set(PARMETIS_CONFIG_TEST_VERSION_CPP
+    "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/parmetis_config_test_version.cpp")
+  file(WRITE ${PARMETIS_CONFIG_TEST_VERSION_CPP} "
 #define MPICH_IGNORE_CXX_SEEK 1
 #include <iostream>
 #include \"parmetis.h\"
@@ -126,12 +127,6 @@ int main() {
 int main()
 {
   // FIXME: Find a simple but sensible test for ParMETIS
-
-  // Initialise MPI
-  MPI::Init();
-
-  // Finalize MPI
-  MPI::Finalize();
 
   return 0;
 }

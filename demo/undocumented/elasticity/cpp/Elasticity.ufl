@@ -42,3 +42,13 @@ def sigma(v):
 
 a = inner(sigma(u), epsilon(v))*dx
 L = inner(f, v)*dx
+
+element_s = TensorElement("Discontinuous Lagrange", cell, 0)
+stress = TrialFunction(element_s)
+w      = TestFunction(element_s)
+disp   = Coefficient(element)
+
+a_s = inner(stress, w)*dx
+L_s = inner(sigma(disp), w)*dx
+
+forms = [a, L, a_s, L_s]

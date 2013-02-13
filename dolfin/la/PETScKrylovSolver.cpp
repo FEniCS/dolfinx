@@ -135,7 +135,7 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
                                      PETScPreconditioner& preconditioner)
-  : preconditioner(reference_to_no_delete_pointer(preconditioner)),
+ : preconditioner(reference_to_no_delete_pointer(preconditioner)),
     preconditioner_set(false)
 {
   // Set parameter values
@@ -540,7 +540,7 @@ void PETScKrylovSolver::write_report(int num_iterations,
   PCType sub_pc_type;
   #endif
   PC sub_pc;
-  KSP* sub_ksp;
+  KSP* sub_ksp = NULL;
   if (pc_type_str == PCASM || pc_type_str == PCBJACOBI)
   {
     if (pc_type_str == PCASM)
