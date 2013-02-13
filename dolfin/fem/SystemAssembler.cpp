@@ -87,18 +87,18 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   // Get cell domains
   if (!cell_domains || cell_domains->empty())
   {
-    if (a.cell_domains_shared_ptr() || L.cell_domains_shared_ptr())
+    if (a.cell_domains() || L.cell_domains())
     {
-      if (a.cell_domains_shared_ptr() && L.cell_domains_shared_ptr())
+      if (a.cell_domains() && L.cell_domains())
       {
-        if (a.cell_domains_shared_ptr() != L.cell_domains_shared_ptr())
+        if (a.cell_domains() != L.cell_domains())
           warning("Bilinear and linear form must have same attached cell subdomains in SystemAssembler.");
-        cell_domains = a.cell_domains_shared_ptr().get();
+        cell_domains = a.cell_domains().get();
       }
-      else if (a.cell_domains_shared_ptr())
-        cell_domains = a.cell_domains_shared_ptr().get();
+      else if (a.cell_domains())
+        cell_domains = a.cell_domains().get();
       else
-        cell_domains = L.cell_domains_shared_ptr().get();
+        cell_domains = L.cell_domains().get();
 
       if (mesh.domains().cell_domains())
         warning("Ignoring cell domains defined as part of mesh in system assembler.");
@@ -110,18 +110,18 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   // Get exterior facet domains
   if (!exterior_facet_domains || exterior_facet_domains->empty())
   {
-    if (a.exterior_facet_domains_shared_ptr() || L.exterior_facet_domains_shared_ptr())
+    if (a.exterior_facet_domains() || L.exterior_facet_domains())
     {
-      if (a.exterior_facet_domains_shared_ptr() && L.exterior_facet_domains_shared_ptr())
+      if (a.exterior_facet_domains() && L.exterior_facet_domains())
       {
-        if (a.exterior_facet_domains_shared_ptr() != L.exterior_facet_domains_shared_ptr())
+        if (a.exterior_facet_domains() != L.exterior_facet_domains())
           warning("Bilinear and linear form must have same attached exterior facet subdomains in SystemAssembler.");
-        exterior_facet_domains = a.exterior_facet_domains_shared_ptr().get();
+        exterior_facet_domains = a.exterior_facet_domains().get();
       }
-      else if (a.exterior_facet_domains_shared_ptr())
-        exterior_facet_domains = a.exterior_facet_domains_shared_ptr().get();
+      else if (a.exterior_facet_domains())
+        exterior_facet_domains = a.exterior_facet_domains().get();
       else
-        exterior_facet_domains = L.exterior_facet_domains_shared_ptr().get();
+        exterior_facet_domains = L.exterior_facet_domains().get();
 
       if (mesh.domains().facet_domains())
         warning("Ignoring exterior facet domains defined as part of mesh in system assembler.");
@@ -133,18 +133,18 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   // Get interior facet domains
   if (!interior_facet_domains || interior_facet_domains->empty())
   {
-    if (a.interior_facet_domains_shared_ptr() || L.interior_facet_domains_shared_ptr())
+    if (a.interior_facet_domains() || L.interior_facet_domains())
     {
-      if (a.interior_facet_domains_shared_ptr() && L.interior_facet_domains_shared_ptr())
+      if (a.interior_facet_domains() && L.interior_facet_domains())
       {
-        if (a.interior_facet_domains_shared_ptr() != L.interior_facet_domains_shared_ptr())
+        if (a.interior_facet_domains() != L.interior_facet_domains())
           warning("Bilinear and linear form must have same attached interior facet subdomains in SystemAssembler.");
-        interior_facet_domains = a.interior_facet_domains_shared_ptr().get();
+        interior_facet_domains = a.interior_facet_domains().get();
       }
-      else if (a.interior_facet_domains_shared_ptr())
-        interior_facet_domains = a.interior_facet_domains_shared_ptr().get();
+      else if (a.interior_facet_domains())
+        interior_facet_domains = a.interior_facet_domains().get();
       else
-        interior_facet_domains = L.interior_facet_domains_shared_ptr().get();
+        interior_facet_domains = L.interior_facet_domains().get();
 
       if (mesh.domains().facet_domains())
         warning("Ignoring interior facet domains defined as part of mesh in system assembler.");

@@ -38,17 +38,6 @@ void dolfin::assemble(GenericTensor& A, const Form& a)
   assembler.assemble(A, a);
 }
 //-----------------------------------------------------------------------------
-void dolfin::assemble(GenericTensor& A,
-                      const Form& a,
-                      const MeshFunction<std::size_t>* cell_domains,
-                      const MeshFunction<std::size_t>* exterior_facet_domains,
-                      const MeshFunction<std::size_t>* interior_facet_domains)
-{
-  Assembler assembler;
-  assembler.assemble(A, a, cell_domains, exterior_facet_domains,
-                      interior_facet_domains);
-}
-//-----------------------------------------------------------------------------
 void dolfin::assemble_system(GenericMatrix& A,
                              GenericVector& b,
                              const Form& a,
@@ -83,14 +72,10 @@ void dolfin::assemble_system(GenericMatrix& A,
                              const Form& a,
                              const Form& L,
                              const std::vector<const DirichletBC*> bcs,
-                             const MeshFunction<std::size_t>* cell_domains,
-                             const MeshFunction<std::size_t>* exterior_facet_domains,
-                             const MeshFunction<std::size_t>* interior_facet_domains,
                              const GenericVector* x0)
 {
   SystemAssembler assembler;
-  assembler.assemble(A, b, a, L, bcs, cell_domains, exterior_facet_domains,
-                     interior_facet_domains, x0);
+  assembler.assemble(A, b, a, L, bcs, x0);
 }
 //-----------------------------------------------------------------------------
 double dolfin::assemble(const Form& a)
