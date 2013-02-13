@@ -31,7 +31,6 @@ using namespace dolfin;
 
 int main()
 {
-  /*
   // Dirichlet boundary condition for clamp at left end
   class Clamp : public Expression
   {
@@ -47,20 +46,17 @@ int main()
     }
 
   };
-  */
 
   // Sub domain for clamp at left end
   class Left : public SubDomain
   {
     bool inside(const Array<double>& x, bool on_boundary) const
     {
-      //return x[0] < 0.5;// && on_boundary;
-      return x[0] < 0.001;// && on_boundary;
+      return x[0] < 0.5 && on_boundary;
     }
   };
 
   // Dirichlet boundary condition for rotation at right end
-  /*
   class Rotation : public Expression
   {
   public:
@@ -87,38 +83,32 @@ int main()
     }
 
   };
-  */
 
   // Sub domain for rotation at right end
   class Right : public SubDomain
   {
     bool inside(const Array<double>& x, bool on_boundary) const
     {
-      //return x[0] > 0.9;// && on_boundary;
-      return x[0] > 0.999;// && on_boundary;
+      return x[0] > 0.9 && on_boundary;
     }
   };
 
   // Read mesh and create function space
-  //Mesh mesh("gear.xml.gz");
-  UnitCubeMesh mesh(16, 16, 16);
+  Mesh mesh("gear.xml.gz");
   Elasticity::Form_a::TestSpace V(mesh);
 
   // Create right-hand side
   Constant f(0.0, 0.0, 0.0);
 
   // Set up boundary condition at left end
-  //Clamp c;
+  Clamp c;
   Left left;
-  //DirichletBC bcl(V, c, left);
-  DirichletBC bcl(V, f, left);
+  DirichletBC bcl(V, c, left);
 
   // Set up boundary condition at right end
-  //Rotation r;
+  Rotation r;
   Right right;
-  //DirichletBC bcr(V, r, right);
-  Constant load(1.0, 0.0, 0.0);
-  DirichletBC bcr(V, load, right);
+  DirichletBC bcr(V, r, right);
 
   // Collect boundary conditions
   std::vector<const BoundaryCondition*> bcs;
@@ -131,7 +121,7 @@ int main()
 
   // Set elasticity parameters
   double E  = 10.0;
-  double nu = 0.0;
+  double nu = 0.3;
   Constant mu(E / (2*(1 + nu)));
   Constant lambda(E*nu / ((1 + nu)*(1 - 2*nu)));
 
@@ -149,7 +139,7 @@ int main()
   solver.parameters["linear_solver"] = "direct";
   solver.solve();
 
-  // Extract solution components
+  // Extract solution components (deep copy)
   Function ux = u[0];
   Function uy = u[1];
   Function uz = u[2];
@@ -172,14 +162,7 @@ int main()
 
   Function stress(W);
   LocalSolver local_solver;
-  cout << "Start local solve" << endl;
   local_solver.solve(*stress.vector(), a_s, L_s);
-  cout << "End local solve" << endl;
-  //LinearVariationalProblem problem_s(a_s, L_s, stress);
-  //LinearVariationalSolver solver_s(problem_s);
-  //solver.parameters["symmetric"] = true;
-  //solver.parameters["linear_solver"] = "iterative";
-  //solver_s.solve();
 
   File file_stress("stress.pvd");
   file_stress << stress;
