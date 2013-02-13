@@ -78,15 +78,20 @@ void Assembler::assemble(GenericTensor& A,
   // Get cell domains
   if (!cell_domains || cell_domains->empty())
   {
-    cell_domains = a.cell_domains_shared_ptr().get();
+    cout << "Get cell domains from form" << endl;
+    cell_domains = a.cell_domains().get();
     if (!cell_domains)
+    {
       cell_domains = a.mesh().domains().cell_domains().get();
+      if (cell_domains)
+        cout << ".....Getting cell domains from mesh" << endl;
+    }
   }
 
   // Get exterior facet domains
   if (!exterior_facet_domains || exterior_facet_domains->empty())
   {
-    exterior_facet_domains = a.exterior_facet_domains_shared_ptr().get();
+    exterior_facet_domains = a.exterior_facet_domains().get();
     if (!exterior_facet_domains)
       exterior_facet_domains = a.mesh().domains().facet_domains().get();
   }
@@ -94,7 +99,7 @@ void Assembler::assemble(GenericTensor& A,
   // Get interior facet domains
   if (!interior_facet_domains || interior_facet_domains->empty())
   {
-    interior_facet_domains = a.interior_facet_domains_shared_ptr().get();
+    interior_facet_domains = a.interior_facet_domains().get();
     if (!interior_facet_domains)
       interior_facet_domains = a.mesh().domains().facet_domains().get();
   }

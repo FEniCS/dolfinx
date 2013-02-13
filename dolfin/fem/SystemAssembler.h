@@ -85,6 +85,15 @@ namespace dolfin
                          const MeshFunction<std::size_t>* interior_facet_domains,
                          const GenericVector* x0);
 
+    /// Assemble system (A, b) and apply Dirichlet boundary conditions
+    void assemble(GenericMatrix& A,
+                         GenericVector& b,
+                         const Form& a,
+                         const Form& L,
+                         const std::vector<const DirichletBC*> bcs,
+                         const GenericVector* x0)
+    { assemble(A, b, a, L, bcs, 0, 0, 0, x0); }
+
   private:
 
     class Scratch;
