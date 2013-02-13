@@ -101,7 +101,7 @@ int main()
 
   // Read mesh and create function space
   //Mesh mesh("gear.xml.gz");
-  UnitCubeMesh mesh(32, 32, 32);
+  UnitCubeMesh mesh(16, 16, 16);
   Elasticity::Form_a::TestSpace V(mesh);
 
   // Create right-hand side

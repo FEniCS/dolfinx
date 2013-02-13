@@ -18,7 +18,6 @@
 #include <dolfin/fem/AssemblerBase.h>
 #include <dolfin/fem/Assembler.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
-#include <dolfin/fem/SymmetricAssembler.h>
 #include <dolfin/fem/SystemAssembler.h>
 #include <dolfin/fem/LinearVariationalProblem.h>
 #include <dolfin/fem/LinearVariationalSolver.h>
