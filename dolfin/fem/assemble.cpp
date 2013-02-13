@@ -94,23 +94,3 @@ double dolfin::assemble(const Form& a)
   return s;
 }
 //-----------------------------------------------------------------------------
-double dolfin::assemble(const Form& a,
-                        const MeshFunction<std::size_t>* cell_domains,
-                        const MeshFunction<std::size_t>* exterior_facet_domains,
-                        const MeshFunction<std::size_t>* interior_facet_domains)
-{
-  if (a.rank() != 0)
-  {
-    dolfin_error("assemble.cpp",
-                 "assemble form",
-                 "Expecting a scalar form but rank is %d",
-                 a.rank());
-  }
-
-  Scalar s;
-  Assembler assembler;
-  assembler.assemble(s, a, cell_domains, exterior_facet_domains,
-                      interior_facet_domains);
-  return s;
-}
-//-----------------------------------------------------------------------------

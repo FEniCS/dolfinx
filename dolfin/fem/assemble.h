@@ -77,16 +77,10 @@ namespace dolfin
                        const std::vector<const DirichletBC*> bcs,
                        const GenericVector* x0);
 
-  //--- Specialized versions for scalars ---
+  //--- Specialized version for scalars ---
 
   /// Assemble scalar
   double assemble(const Form& a);
-
-  /// Assemble scalar on sub domains
-  double assemble(const Form& a,
-                  const MeshFunction<std::size_t>* cell_domains,
-                  const MeshFunction<std::size_t>* exterior_facet_domains,
-                  const MeshFunction<std::size_t>* interior_facet_domains);
 
 }
 
