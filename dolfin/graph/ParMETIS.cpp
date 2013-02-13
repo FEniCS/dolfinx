@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Garth N. Wells 2010
+// Modified by Chris Richardson 2013
 //
 // First added:  2010-02-10
-// Last changed: 2013-01-30
+// Last changed: 2013-02-13
 
 #include <dolfin/log/dolfin_log.h>
 
@@ -39,11 +40,8 @@ using namespace dolfin;
 void ParMETIS::recompute_partition(std::vector<std::size_t>& cell_partition,
                                  const LocalMeshData& mesh_data)
 {
-  // This function prepares data for ParMETIS (which is a pain
-  // since ParMETIS has the worst possible interface), calls
-  // ParMETIS, and then collects the results from ParMETIS.
-
-  Timer timer0("PARALLEL 1a: Build distributed dual graph (not calling ParMETIS)");
+  // Recompute partitioning based on existing
+  // Useful when refining mesh etc.
 
   // Get number of processes and process number
   const std::size_t num_processes = MPI::num_processes();
@@ -55,7 +53,7 @@ void ParMETIS::recompute_partition(std::vector<std::size_t>& cell_partition,
   if (num_local_cells == 0)
   {
     dolfin_error("ParMETIS.cpp",
-                 "compute mesh partitioning using ParMETIS",
+                 "recompute mesh partitioning using ParMETIS",
                  "ParMETIS cannot be used if a process has no cells (graph nodes). Use SCOTCH to perform partitioning instead");
   }
 
@@ -88,7 +86,6 @@ void ParMETIS::recompute_partition(std::vector<std::size_t>& cell_partition,
   options[2] = 15;
   options[3] = PARMETIS_PSR_COUPLED;
 
-  // Partitioning array to be computed by ParMETIS (note bug in manual: vertices, not cells!)
   std::vector<int> part(num_local_cells);
 
   // Prepare remaining arguments for ParMETIS
@@ -103,6 +100,7 @@ void ParMETIS::recompute_partition(std::vector<std::size_t>& cell_partition,
   std::vector<std::set<std::size_t> > local_graph;
   std::set<std::size_t> ghost_vertices;
 
+  // Calculate the dual graph for existing mesh 
   GraphBuilder::compute_dual_graph(mesh_data, local_graph, ghost_vertices);
   std::vector<idx_t> adjncy;
   std::vector<idx_t> xadj;
@@ -120,14 +118,14 @@ void ParMETIS::recompute_partition(std::vector<std::size_t>& cell_partition,
   if (MPI::process_number() == 0)
     info("Time to build (parallel) dual graph: %g", tt_max);
 
-  timer0.stop();
-
   Timer timer1("PARALLEL 1b: Recompute graph partition (calling ParMETIS)");
 
+  // FIXME: make these parameters adjustable
+  // Parameters affecting repartitioning
   real_t itr=10.0;
   std::vector<idx_t>vsize(xadj.size(), 1);
 
-  // Call ParMETIS to partition graph
+  // Call ParMETIS to repartition graph
   dolfin_assert(!tpwgts.empty());
   dolfin_assert(!ubvec.empty());
   dolfin_assert(!part.empty());
@@ -269,6 +267,14 @@ void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
 {
   dolfin_error("ParMETIS.cpp",
                "compute mesh partitioning using ParMETIS",
+               "DOLFIN has been configured without support for ParMETIS");
+}
+
+void ParMETIS::recompute_partition(std::vector<std::size_t>& cell_partition,
+                                    const LocalMeshData& data)
+{
+  dolfin_error("ParMETIS.cpp",
+               "recompute mesh partitioning using ParMETIS",
                "DOLFIN has been configured without support for ParMETIS");
 }
 //-----------------------------------------------------------------------------
