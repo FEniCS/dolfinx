@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2008.
+// Modified by Garth N. Wells, 2008-2013.
 // Modified by Johan Hake, 2009.
 // Modified by Joachim B. Haga, 2012.
 // Modified by Martin S. Alnaes, 2013.
 //
 // First added:  2007-01-17
-// Last changed: 2013-01-29
+// Last changed: 2013-02-13
 
 #include <dolfin/la/Scalar.h>
 #include "Form.h"
@@ -32,18 +32,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void dolfin::assemble(GenericTensor& A,
-                      const Form& a,
-                      bool reset_sparsity,
-                      bool add_values,
-                      bool finalize_tensor,
-                      bool keep_diagonal)
+void dolfin::assemble(GenericTensor& A, const Form& a)
 {
   Assembler assembler;
-  assembler.reset_sparsity = reset_sparsity;
-  assembler.add_values = add_values;
-  assembler.finalize_tensor = finalize_tensor;
-  assembler.keep_diagonal = keep_diagonal;
   assembler.assemble(A, a);
 }
 //-----------------------------------------------------------------------------
@@ -51,17 +42,9 @@ void dolfin::assemble(GenericTensor& A,
                       const Form& a,
                       const MeshFunction<std::size_t>* cell_domains,
                       const MeshFunction<std::size_t>* exterior_facet_domains,
-                      const MeshFunction<std::size_t>* interior_facet_domains,
-                      bool reset_sparsity,
-                      bool add_values,
-                      bool finalize_tensor,
-                      bool keep_diagonal)
+                      const MeshFunction<std::size_t>* interior_facet_domains)
 {
   Assembler assembler;
-  assembler.reset_sparsity = reset_sparsity;
-  assembler.add_values = add_values;
-  assembler.finalize_tensor = finalize_tensor;
-  assembler.keep_diagonal = keep_diagonal;
   assembler.assemble(A, a, cell_domains, exterior_facet_domains,
                       interior_facet_domains);
 }
@@ -69,17 +52,9 @@ void dolfin::assemble(GenericTensor& A,
 void dolfin::assemble_system(GenericMatrix& A,
                              GenericVector& b,
                              const Form& a,
-                             const Form& L,
-                             bool reset_sparsity,
-                             bool add_values,
-                             bool finalize_tensor,
-                             bool keep_diagonal)
+                             const Form& L)
 {
   SystemAssembler assembler;
-  assembler.reset_sparsity = reset_sparsity;
-  assembler.add_values = add_values;
-  assembler.finalize_tensor = finalize_tensor;
-  assembler.keep_diagonal = keep_diagonal;
   assembler.assemble(A, b, a, L);
 }
 //-----------------------------------------------------------------------------
@@ -87,17 +62,9 @@ void dolfin::assemble_system(GenericMatrix& A,
                              GenericVector& b,
                              const Form& a,
                              const Form& L,
-                             const DirichletBC& bc,
-                             bool reset_sparsity,
-                             bool add_values,
-                             bool finalize_tensor,
-                             bool keep_diagonal)
+                             const DirichletBC& bc)
 {
   SystemAssembler assembler;
-  assembler.reset_sparsity = reset_sparsity;
-  assembler.add_values = add_values;
-  assembler.finalize_tensor = finalize_tensor;
-  assembler.keep_diagonal = keep_diagonal;
   assembler.assemble(A, b, a, L, bc);
 }
 //-----------------------------------------------------------------------------
@@ -105,17 +72,9 @@ void dolfin::assemble_system(GenericMatrix& A,
                              GenericVector& b,
                              const Form& a,
                              const Form& L,
-                             const std::vector<const DirichletBC*> bcs,
-                             bool reset_sparsity,
-                             bool add_values,
-                             bool finalize_tensor,
-                             bool keep_diagonal)
+                             const std::vector<const DirichletBC*> bcs)
 {
   SystemAssembler assembler;
-  assembler.reset_sparsity = reset_sparsity;
-  assembler.add_values = add_values;
-  assembler.finalize_tensor = finalize_tensor;
-  assembler.keep_diagonal = keep_diagonal;
   assembler.assemble(A, b, a, L, bcs);
 }
 //-----------------------------------------------------------------------------
@@ -127,25 +86,14 @@ void dolfin::assemble_system(GenericMatrix& A,
                              const MeshFunction<std::size_t>* cell_domains,
                              const MeshFunction<std::size_t>* exterior_facet_domains,
                              const MeshFunction<std::size_t>* interior_facet_domains,
-                             const GenericVector* x0,
-                             bool reset_sparsity,
-                             bool add_values,
-                             bool finalize_tensor,
-                             bool keep_diagonal)
+                             const GenericVector* x0)
 {
   SystemAssembler assembler;
-  assembler.reset_sparsity = reset_sparsity;
-  assembler.add_values = add_values;
-  assembler.finalize_tensor = finalize_tensor;
-  assembler.keep_diagonal = keep_diagonal;
   assembler.assemble(A, b, a, L, bcs, cell_domains, exterior_facet_domains,
                      interior_facet_domains, x0);
 }
 //-----------------------------------------------------------------------------
-double dolfin::assemble(const Form& a,
-                        bool reset_sparsity,
-                        bool add_values,
-                        bool finalize_tensor)
+double dolfin::assemble(const Form& a)
 {
   if (a.rank() != 0)
   {
@@ -154,12 +102,9 @@ double dolfin::assemble(const Form& a,
                  "Expecting a scalar form but rank is %d",
                  a.rank());
   }
-  Assembler assembler;
-  assembler.reset_sparsity = reset_sparsity;
-  assembler.add_values = add_values;
-  assembler.finalize_tensor = finalize_tensor;
 
   Scalar s;
+  Assembler assembler;
   assembler.assemble(s, a);
   return s;
 }
@@ -167,10 +112,7 @@ double dolfin::assemble(const Form& a,
 double dolfin::assemble(const Form& a,
                         const MeshFunction<std::size_t>* cell_domains,
                         const MeshFunction<std::size_t>* exterior_facet_domains,
-                        const MeshFunction<std::size_t>* interior_facet_domains,
-                        bool reset_sparsity,
-                        bool add_values,
-                        bool finalize_tensor)
+                        const MeshFunction<std::size_t>* interior_facet_domains)
 {
   if (a.rank() != 0)
   {
@@ -180,12 +122,8 @@ double dolfin::assemble(const Form& a,
                  a.rank());
   }
 
-  Assembler assembler;
-  assembler.reset_sparsity = reset_sparsity;
-  assembler.add_values = add_values;
-  assembler.finalize_tensor = finalize_tensor;
-
   Scalar s;
+  Assembler assembler;
   assembler.assemble(s, a, cell_domains, exterior_facet_domains,
                       interior_facet_domains);
   return s;

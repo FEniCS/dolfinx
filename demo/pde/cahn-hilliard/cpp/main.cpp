@@ -83,8 +83,10 @@ class CahnHilliardEquation : public NonlinearProblem
     // User defined assemble of Jacobian
     void J(GenericMatrix& A, const GenericVector& x)
     {
-      // Assemble system and RHS (Neumann boundary conditions)
-      assemble(A, *a, reset_Jacobian);
+      // Assemble system
+      Assembler assembler;
+      assembler.reset_sparsity = reset_Jacobian;
+      assembler.assemble(A, *a);
       reset_Jacobian = false;
     }
 
