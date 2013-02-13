@@ -21,10 +21,12 @@
 // Last changed: 2011-03-29
 
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/fem/BoundaryCondition.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/function/Function.h>
 #include "assemble.h"
+#include "Assembler.h"
 #include "Form.h"
 #include "NonlinearVariationalProblem.h"
 #include "NonlinearVariationalSolver.h"
@@ -163,8 +165,8 @@ NonlinearDiscreteProblem::F(GenericVector& b, const GenericVector& x)
     info(b, true);
 }
 //-----------------------------------------------------------------------------
-void NonlinearVariationalSolver::
-NonlinearDiscreteProblem::J(GenericMatrix& A, const GenericVector& x)
+void NonlinearVariationalSolver::NonlinearDiscreteProblem::J(GenericMatrix& A,
+                                                        const GenericVector& x)
 {
   // Get problem data
   dolfin_assert(problem);
@@ -178,7 +180,9 @@ NonlinearDiscreteProblem::J(GenericMatrix& A, const GenericVector& x)
 
   // Assemble left-hand side
   dolfin_assert(J);
-  assemble(A, *J, reset_sparsity);
+  Assembler assembler;
+  assembler.reset_sparsity = reset_sparsity;
+  assembler.assemble(A, *J);
 
   // Remember that Jacobian has been initialized
   jacobian_initialized = true;
