@@ -53,56 +53,9 @@ using namespace dolfin;
 //----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A, const Form& a)
 {
-  assemble(A, a, 0, 0, 0);
-}
-//-----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A,
-                         const Form& a,
-                         const MeshFunction<std::size_t>* cell_domains,
-                         const MeshFunction<std::size_t>* exterior_facet_domains,
-                         const MeshFunction<std::size_t>* interior_facet_domains)
-{
   // All assembler functions above end up calling this function, which
   // in turn calls the assembler functions below to assemble over
   // cells, exterior and interior facets.
-  //
-  // Important notes:
-  //
-  // 1. Note the importance of treating empty mesh functions as null
-  // pointers for the PyDOLFIN interface.
-  //
-  // 2. Note that subdomains given as input to this function override
-  // subdomains attached to forms, which in turn override subdomains
-  // stored as part of the mesh.
-
-  // Get cell domains
-  if (!cell_domains || cell_domains->empty())
-  {
-    cout << "Get cell domains from form" << endl;
-    cell_domains = a.cell_domains().get();
-    if (!cell_domains)
-    {
-      cell_domains = a.mesh().domains().cell_domains().get();
-      if (cell_domains)
-        cout << ".....Getting cell domains from mesh" << endl;
-    }
-  }
-
-  // Get exterior facet domains
-  if (!exterior_facet_domains || exterior_facet_domains->empty())
-  {
-    exterior_facet_domains = a.exterior_facet_domains().get();
-    if (!exterior_facet_domains)
-      exterior_facet_domains = a.mesh().domains().facet_domains().get();
-  }
-
-  // Get interior facet domains
-  if (!interior_facet_domains || interior_facet_domains->empty())
-  {
-    interior_facet_domains = a.interior_facet_domains().get();
-    if (!interior_facet_domains)
-      interior_facet_domains = a.mesh().domains().facet_domains().get();
-  }
 
   // Check whether we should call the multi-core assembler
   #ifdef HAS_OPENMP
@@ -114,11 +67,21 @@ void Assembler::assemble(GenericTensor& A,
     assembler.add_values = add_values;
     assembler.finalize_tensor = finalize_tensor;
     assembler.keep_diagonal = keep_diagonal;
-    assembler.assemble(A, a, cell_domains, exterior_facet_domains,
-                       interior_facet_domains);
+    assembler.assemble(A, a);
     return;
   }
   #endif
+
+  // Get cell domains
+  const MeshFunction<std::size_t>* cell_domains = a.cell_domains().get();
+
+  // Get exterior facet domains
+  const MeshFunction<std::size_t>* exterior_facet_domains
+      = a.exterior_facet_domains().get();
+
+  // Get interior facet domains
+  const MeshFunction<std::size_t>* interior_facet_domains
+      = a.interior_facet_domains().get();
 
   // Check form
   AssemblerBase::check(a);

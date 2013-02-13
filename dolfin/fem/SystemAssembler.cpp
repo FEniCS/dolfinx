@@ -50,7 +50,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                const Form& a, const Form& L)
 {
   std::vector<const DirichletBC*> bcs;
-  assemble(A, b, a, L, bcs, 0, 0, 0, 0);
+  assemble(A, b, a, L, bcs, 0);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
@@ -59,22 +59,19 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
 {
   std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc);
-  assemble(A, b, a, L, bcs, 0, 0, 0, 0);
+  assemble(A, b, a, L, bcs, 0);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                const Form& a, const Form& L,
                                const std::vector<const DirichletBC*> bcs)
 {
-  assemble(A, b, a, L, bcs, 0, 0, 0, 0);
+  assemble(A, b, a, L, bcs, 0);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                const Form& a, const Form& L,
                                const std::vector<const DirichletBC*> bcs,
-                               const MeshFunction<std::size_t>* cell_domains,
-                               const MeshFunction<std::size_t>* exterior_facet_domains,
-                               const MeshFunction<std::size_t>* interior_facet_domains,
                                const GenericVector* x0)
 {
   // Set timer
@@ -85,73 +82,19 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   dolfin_assert(mesh.ordered());
 
   // Get cell domains
-  if (!cell_domains || cell_domains->empty())
-  {
-    if (a.cell_domains() || L.cell_domains())
-    {
-      if (a.cell_domains() && L.cell_domains())
-      {
-        if (a.cell_domains() != L.cell_domains())
-          warning("Bilinear and linear form must have same attached cell subdomains in SystemAssembler.");
-        cell_domains = a.cell_domains().get();
-      }
-      else if (a.cell_domains())
-        cell_domains = a.cell_domains().get();
-      else
-        cell_domains = L.cell_domains().get();
-
-      if (mesh.domains().cell_domains())
-        warning("Ignoring cell domains defined as part of mesh in system assembler.");
-    }
-    else
-      cell_domains = mesh.domains().cell_domains().get();
-  }
+  const MeshFunction<std::size_t>* cell_domains = a.cell_domains().get();
+  if (cell_domains != L.cell_domains().get())
+    warning("Bilinear and linear forms do not have same cell facet subdomains in SystemAssembler. Taking subdomains from bilinear form");
 
   // Get exterior facet domains
-  if (!exterior_facet_domains || exterior_facet_domains->empty())
-  {
-    if (a.exterior_facet_domains() || L.exterior_facet_domains())
-    {
-      if (a.exterior_facet_domains() && L.exterior_facet_domains())
-      {
-        if (a.exterior_facet_domains() != L.exterior_facet_domains())
-          warning("Bilinear and linear form must have same attached exterior facet subdomains in SystemAssembler.");
-        exterior_facet_domains = a.exterior_facet_domains().get();
-      }
-      else if (a.exterior_facet_domains())
-        exterior_facet_domains = a.exterior_facet_domains().get();
-      else
-        exterior_facet_domains = L.exterior_facet_domains().get();
-
-      if (mesh.domains().facet_domains())
-        warning("Ignoring exterior facet domains defined as part of mesh in system assembler.");
-    }
-    else
-      exterior_facet_domains = mesh.domains().facet_domains().get();
-  }
+  const MeshFunction<std::size_t>* exterior_facet_domains = a.exterior_facet_domains().get();
+  if (exterior_facet_domains != L.exterior_facet_domains().get())
+    warning("Bilinear and linear forms do not have same exterior facet subdomains in SystemAssembler. Taking subdomains from bilinear form");
 
   // Get interior facet domains
-  if (!interior_facet_domains || interior_facet_domains->empty())
-  {
-    if (a.interior_facet_domains() || L.interior_facet_domains())
-    {
-      if (a.interior_facet_domains() && L.interior_facet_domains())
-      {
-        if (a.interior_facet_domains() != L.interior_facet_domains())
-          warning("Bilinear and linear form must have same attached interior facet subdomains in SystemAssembler.");
-        interior_facet_domains = a.interior_facet_domains().get();
-      }
-      else if (a.interior_facet_domains())
-        interior_facet_domains = a.interior_facet_domains().get();
-      else
-        interior_facet_domains = L.interior_facet_domains().get();
-
-      if (mesh.domains().facet_domains())
-        warning("Ignoring interior facet domains defined as part of mesh in system assembler.");
-    }
-    else
-      interior_facet_domains = mesh.domains().facet_domains().get();
-  }
+  const MeshFunction<std::size_t>* interior_facet_domains = a.interior_facet_domains().get();
+  if (interior_facet_domains != L.interior_facet_domains().get())
+    warning("Bilinear and linear forms do not have same interior facet subdomains in SystemAssembler. Taking subdomains from bilinear form");
 
   // Check forms
   AssemblerBase::check(a);
