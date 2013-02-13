@@ -24,6 +24,20 @@
 namespace dolfin
 {
 
+  /// This class solves problems cell-wise. It computes the local
+  /// left-hand side A_local and the local right-hand side b_local
+  /// (for one cell), and solves A_local x_local = b_local. The result
+  /// x_local is copied into the global vector x. The operator A_local
+  /// must be square.
+  ///
+  /// For forms with no coupling across cell edges, this function is
+  /// identical to a global solve. For problems with coupling across
+  /// cells it is not.
+  ///
+  /// This class can be used for post-processing solutions, e.g. computing
+  /// stress fields for visualisation, far more cheaply that using
+  /// global projections.
+
   // Forward declarations
   class GenericVector;
   class Form;
@@ -32,7 +46,9 @@ namespace dolfin
   {
   public:
 
-    void solve(GenericVector& u, const Form& a, const Form& L,
+    /// Solve local (cell-wise) problem and copy result into global
+    /// vector x.
+    void solve(GenericVector& x, const Form& a, const Form& L,
                bool symmetric=false) const;
 
   };
