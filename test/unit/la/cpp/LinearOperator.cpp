@@ -62,7 +62,9 @@ public:
         *u.vector() = x;
 
         // Assemble action
-        assemble(y, a_action, false);
+        Assembler assembler;
+        assembler.reset_sparsity = false;
+        assembler.assemble(y, a_action);
       }
 
     private:

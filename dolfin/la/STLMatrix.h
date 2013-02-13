@@ -292,9 +292,9 @@ namespace dolfin
           cols.push_back(_values[local_row][column].first);
           vals.push_back(_values[local_row][column].second);
 
-          row_ptr.push_back(row_ptr.back() + _values[local_row].size());
-          local_to_global_row.push_back(_local_range.first + local_row);
         }
+        local_to_global_row.push_back(_local_range.first + local_row);
+        row_ptr.push_back(row_ptr.back() + _values[local_row].size());
       }
     }
     else
@@ -313,14 +313,13 @@ namespace dolfin
           const std::size_t index = _values[local_row][i].first;
           if (index >= global_row_index)
           {
-            vals.push_back(_values[local_row][i].second);
             cols.push_back(index);
+            vals.push_back(_values[local_row][i].second);
             ++counter;
           }
         }
-
-        row_ptr.push_back(row_ptr.back() + counter);
         local_to_global_row.push_back(global_row_index);
+        row_ptr.push_back(row_ptr.back() + counter);
       }
     }
   }

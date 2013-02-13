@@ -33,8 +33,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Progress::Progress(std::string title, unsigned int n)
-  : title(title), n(n), i(0), p_step(0.1), t_step(0.5), c_step(1),
-    p(0), t(0), tc(0),
+  : title(title), n(n), i(0), t_step(0.5), c_step(1), p(0), t(0), tc(0),
     always(false), finished(false), displayed(false), counter(0)
 {
   if (n <= 0)
@@ -53,8 +52,7 @@ Progress::Progress(std::string title, unsigned int n)
 }
 //-----------------------------------------------------------------------------
 Progress::Progress(std::string title)
-  : title(title), n(0), i(0), p_step(0.1), t_step(0.5), c_step(1),
-    p(0), t(0), tc(0),
+  : title(title), n(0), i(0), t_step(0.5), c_step(1), p(0), t(0), tc(0),
     always(false), finished(false), displayed(false), counter(0)
 {
   // LogManager::logger.progress(title, 0.0);
@@ -118,7 +116,7 @@ void Progress::update(double p)
   const bool t_check = (t - this->t >= t_step - DOLFIN_EPS);
 
   // Adjust counter step
-  const bool fraction = 0.1;
+  const double fraction = 0.1;
   if (t - this->tc < fraction * t_step)
     c_step *= 2;
   else if (t - this->tc > t_step && c_step >= 2)

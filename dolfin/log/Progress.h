@@ -103,9 +103,6 @@ namespace dolfin
     // Current position
     std::size_t i;
 
-    // Minimum progress increment
-    double p_step;
-
     // Minimum time increment
     double t_step;
 

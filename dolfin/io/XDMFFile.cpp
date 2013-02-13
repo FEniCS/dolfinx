@@ -83,7 +83,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   // FIXME: Split up this function?
 
   dolfin_assert(ut.first);
-  const Function &u = *(ut.first);
+  const Function& u = *(ut.first);
   const double time_step = ut.second;
 
   // Update any ghost values
@@ -124,38 +124,111 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   std::size_t num_local_entities = 0;
   std::size_t num_total_entities = 0;
-
   if (vertex_data)
   {
     num_local_entities = num_local_vertices; // includes duplicates
     num_total_entities = num_total_vertices;
     u.compute_vertex_values(data_values, mesh);
+
+    // Interleave the values for vector or tensor fields and pad 2D
+    // vectors and tensors to 3D
+    if (value_rank > 0)
+    {
+      if (value_size == 2)
+        padded_value_size = 3;
+      if (value_size == 4)
+        padded_value_size = 9;
+
+      std::vector<double> _data_values(padded_value_size*num_local_entities, 0.0);
+      for(std::size_t i = 0; i < num_local_entities; i++)
+      {
+        for (std::size_t j = 0; j < value_size; j++)
+        {
+          std::size_t tensor_2d_offset = (j > 1 && value_size == 4) ? 1 : 0;
+          _data_values[i*padded_value_size + j + tensor_2d_offset]
+              = data_values[i + j*num_local_entities];
+        }
+      }
+      data_values = _data_values;
+    }
   }
   else
   {
     num_local_entities = num_local_cells;
     num_total_entities = num_global_cells;
-    const GenericVector& v = *u.vector();
-    v.get_local(data_values);
-  }
+    dolfin_assert(u.function_space()->dofmap());
+    const GenericDofMap& dofmap = *u.function_space()->dofmap();
+    dolfin_assert(u.vector());
 
-  // Interleave the values for vector or tensor fields and pad 2D
-  // vectors and tensors to 3D
-  if (value_rank > 0)
-  {
+    const std::size_t data_dim = u.value_size();
+
+    // Allocate memory for function values at cell centres
+    const std::size_t size = mesh.num_cells()*data_dim;
+
+    // Build lists of dofs and create map
+    std::vector<dolfin::la_index> dof_set;
+    std::vector<std::size_t> offset(size + 1);
+    std::vector<std::size_t>::iterator cell_offset = offset.begin();
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      // Tabulate dofs
+      const std::vector<dolfin::la_index>& dofs = dofmap.cell_dofs(cell->index());
+      for(std::size_t i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
+        dof_set.push_back(dofs[i]);
+
+      // Add local dimension to cell offset and increment
+      *(cell_offset + 1) = *(cell_offset) + dofmap.cell_dimension(cell->index());
+      ++cell_offset;
+    }
+
+    // Get  values
+    data_values.resize(dof_set.size());
+    dolfin_assert(u.vector());
+    u.vector()->get_local(data_values.data(), dof_set.size(), dof_set.data());
+
     if (value_size == 2)
       padded_value_size = 3;
     if (value_size == 4)
       padded_value_size = 9;
 
+    cell_offset = offset.begin();
     std::vector<double> _data_values(padded_value_size*num_local_entities, 0.0);
-    for(std::size_t i = 0; i < num_local_entities; i++)
+    std::size_t count = 0;
+    if (value_rank == 1 && data_dim == 2)
     {
-      for (std::size_t j = 0; j < value_size; j++)
+      for (CellIterator cell(mesh); !cell.end(); ++cell)
       {
-        std::size_t tensor_2d_offset = (j > 1 && value_size == 4) ? 1 : 0;
-        _data_values[i*padded_value_size + j + tensor_2d_offset]
-            = data_values[i + j*num_local_entities];
+        _data_values[count++] = data_values[*cell_offset];
+        _data_values[count++] = data_values[*cell_offset + 1];
+        count++;
+      }
+      ++cell_offset;
+    }
+    else if (value_rank == 2 && data_dim == 4)
+    {
+      // Pad with 0.0 to 2D tensors to make them 3D
+      for (CellIterator cell(mesh); !cell.end(); ++cell)
+      {
+        for(std::size_t i = 0; i < 2; i++)
+        {
+          cout << "test: " << *cell_offset + 2*i << ", " << *cell_offset + 2*i + 1
+              << ", " << data_values[*cell_offset + 2*i] << ", " << data_values[*cell_offset + 2*i + 1] << endl;
+          _data_values[count++] = data_values[*cell_offset + 2*i];
+          _data_values[count++] = data_values[*cell_offset + 2*i + 1];
+          count++;
+        }
+        count += 3;
+        ++cell_offset;
+      }
+    }
+    else
+    {
+      // Write all components
+      for (CellIterator cell(mesh); !cell.end(); ++cell)
+      {
+        for (std::size_t i = 0; i < data_dim; i++)
+          _data_values[count++] = data_values[*cell_offset + i];
+        ++cell_offset;
       }
     }
     data_values = _data_values;

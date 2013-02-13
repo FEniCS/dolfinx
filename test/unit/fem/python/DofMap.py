@@ -141,7 +141,7 @@ class DofMapTest(unittest.TestCase):
                 y[0] = x[0] - 1.0
                 y[1] = x[1]
 
-        mesh = UnitSquareMesh(4, 4)
+        mesh = UnitSquareMesh(5, 5)
 
         # Create periodic boundary
         periodic_boundary = PeriodicBoundary2()
@@ -156,8 +156,8 @@ class DofMapTest(unittest.TestCase):
         L11  = L1.sub(1)
 
         # Check dimensions
-        self.assertEqual(V.dim(), 72)
-        self.assertEqual(Q.dim(), 144)
+        self.assertEqual(V.dim(), 110)
+        self.assertEqual(Q.dim(), 220)
         self.assertEqual(L0.dim(), V.dim())
         self.assertEqual(L1.dim(), Q.dim())
         self.assertEqual(L01.dim(), V.dim())

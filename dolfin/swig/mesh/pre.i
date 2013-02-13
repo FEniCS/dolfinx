@@ -109,6 +109,7 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
 %ignore dolfin::MeshEntity::operator->;
 %ignore dolfin::SubsetIterator::operator->;
 %ignore dolfin::SubsetIterator::operator[];
+%ignore dolfin::MeshDomains::operator=;
 
 //-----------------------------------------------------------------------------
 // Map increment, decrease and dereference operators for iterators

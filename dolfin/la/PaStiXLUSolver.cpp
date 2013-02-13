@@ -127,25 +127,37 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   std::vector<pastix_int_t> rows, col_ptr, local_to_global_cols;
   A->csc(vals, rows, col_ptr, local_to_global_cols, symmetric);
 
-  dolfin_assert(local_to_global_cols.size() > 0);
-
   // Copy local-to-global
   const std::vector<pastix_int_t> local_to_global_cols_ref = local_to_global_cols;
 
+  // Convert to base 1
+  for (std::size_t i = 0;  i < rows.size(); ++i)
+    rows[i] += 1;
+  for (std::size_t i = 0;  i < col_ptr.size(); ++i)
+    col_ptr[i] += 1;
+  for (std::size_t i = 0;  i < local_to_global_cols.size(); ++i)
+    local_to_global_cols[i] += 1;
+
+  dolfin_assert(local_to_global_cols.size() > 0);
+
+  // Pointers to data structures
   pastix_int_t* _col_ptr = col_ptr.data();
   pastix_int_t* _rows = rows.data();
   pastix_int_t* _local_to_global_cols = local_to_global_cols.data();
 
+  // Matrix size
   const pastix_int_t n = col_ptr.size() - 1;
 
   // Check matrix
   if (parameters["check_matrix"])
   {
     double* _vals = vals.data();
-    d_pastix_checkMatrix(mpi_comm, API_VERBOSE_YES, iparm[IPARM_SYM], API_YES,
+    d_pastix_checkMatrix(mpi_comm, API_VERBOSE_YES, iparm[IPARM_SYM], API_NO,
   		                   n, &_col_ptr, &_rows, &_vals,
                          &_local_to_global_cols, 1);
   }
+  else
+    iparm[IPARM_MATRIX_VERIFICATION] = API_NO;
 
   // PaStiX object
   pastix_data_t* pastix_data = NULL;
@@ -166,15 +178,15 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
     iparm[IPARM_VERBOSE] = API_VERBOSE_NO;
 
   // Graph (matrix) distributed
-  if (MPI::num_processes() > 1)
+  //if (MPI::num_processes() > 1)
     iparm[IPARM_GRAPHDIST] = API_YES;
-  else
-    iparm[IPARM_GRAPHDIST] = API_NO;
+  //else
+  //  iparm[IPARM_GRAPHDIST] = API_NO;
 
+  // Allocate space for solver
   dolfin_assert(local_to_global_cols.size() > 0);
   std::vector<pastix_int_t> perm(local_to_global_cols.size());
   std::vector<pastix_int_t> invp(local_to_global_cols.size());
-
 
   // Renumbering
   const bool renumber = parameters["renumber"];
