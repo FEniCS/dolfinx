@@ -29,7 +29,7 @@ class LocalSolver(unittest.TestCase):
     def test_local_solve(self):
 
         mesh = UnitCubeMesh(16, 16, 16)
-        V = FunctionSpace(mesh, "Discontinuous Lagrange", 1)
+        V = FunctionSpace(mesh, "Lagrange", 2)
 
         v = TestFunction(V)
         u = TrialFunction(V)
