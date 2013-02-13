@@ -95,7 +95,7 @@ int main()
 
   // Read mesh and create function space
   Mesh mesh("gear.xml.gz");
-  Elasticity::FunctionSpace V(mesh);
+  Elasticity::Form_a::TestSpace V(mesh);
 
   // Create right-hand side
   Constant f(0.0, 0.0, 0.0);
@@ -126,9 +126,9 @@ int main()
   Constant lambda(E*nu / ((1 + nu)*(1 - 2*nu)));
 
   // Define variational problem
-  Elasticity::BilinearForm a(V, V);
+  Elasticity::Form_a a(V, V);
   a.mu = mu; a.lmbda = lambda;
-  Elasticity::LinearForm L(V);
+  Elasticity::Form_L L(V);
   L.f = f;
   Function u(V);
   LinearVariationalProblem problem(a, L, u, bcs);
@@ -152,6 +152,24 @@ int main()
   File vtk_file("elasticity.pvd", "compressed");
   vtk_file << u;
 
+  // Extract stress and write in VTK format
+  Elasticity::Form_a_s::TestSpace W(mesh);
+  Elasticity::Form_a_s a_s(W, W);
+  Elasticity::Form_L_s L_s(W);
+  L_s.mu = mu;
+  L_s.lmbda = lambda;
+  L_s.disp = u;
+
+  Function stress(W);
+  LinearVariationalProblem problem_s(a_s, L_s, stress);
+  LinearVariationalSolver solver_s(problem_s);
+  solver.parameters["symmetric"] = true;
+  solver.parameters["linear_solver"] = "iterative";
+  solver_s.solve();
+
+  File file_stress("stress.pvd", "compressed");
+  file_stress << stress;
+
   // Save colored mesh paritions in VTK format if running in parallel
   if (dolfin::MPI::num_processes() > 1)
   {
@@ -160,12 +178,6 @@ int main()
     file << partitions;
   }
 
-  // Plot solution
-  plot(u, "Displacement", "displacement");
-
-  // Displace mesh and plot displaced mesh
-  mesh.move(u);
-  plot(mesh, "Deformed mesh");
 
   // Write boundary condition facets markers to VTK format
   MeshFunction<std::size_t> facet_markers(mesh, 2, 0);
@@ -173,6 +185,13 @@ int main()
   right.mark(facet_markers, 2);
   File facet_file("facet_markers.pvd");
   facet_file << facet_markers;
+
+  // Plot solution
+  plot(u, "Displacement", "displacement");
+
+  // Displace mesh and plot displaced mesh
+  mesh.move(u);
+  plot(mesh, "Deformed mesh");
 
   // Make plot windows interactive
   interactive();
