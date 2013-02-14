@@ -27,7 +27,6 @@
 #include "Graph.h"
 #include "BoostGraphOrdering.h"
 
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -43,21 +42,31 @@ std::vector<std::size_t>
   // Build Boost graph
   const BoostGraph boost_graph = build_csr_directed_graph<BoostGraph>(graph);
 
-  // Boost vertex -> index map
-  const boost::property_map<BoostGraph, boost::vertex_index_t>::type
-    boost_index_map = get(boost::vertex_index, boost_graph);
-
-  // Compute graph re-ordering
-  std::vector<std::size_t> inv_perm(n);
-  if (!reverse)
-    boost::cuthill_mckee_ordering(boost_graph, inv_perm.begin());
-  else
-    boost::cuthill_mckee_ordering(boost_graph, inv_perm.rbegin());
-
-  // Build old-to-new vertex map
+  // Check if graph has no edges
   std::vector<std::size_t> map(n);
-  for (std::size_t i = 0; i < n; ++i)
-    map[boost_index_map[inv_perm[i]]] = i;
+  if (boost::num_edges(boost_graph) == 0)
+  {
+    // Graph has no edges, so no need to re-order
+    for (std::size_t i = 0; i < map.size(); ++i)
+      map[i] = i;
+  }
+  else
+  {
+    // Boost vertex -> index map
+    const boost::property_map<BoostGraph, boost::vertex_index_t>::type
+      boost_index_map = get(boost::vertex_index, boost_graph);
+
+    // Compute graph re-ordering
+    std::vector<std::size_t> inv_perm(n);
+    if (!reverse)
+      boost::cuthill_mckee_ordering(boost_graph, inv_perm.begin());
+    else
+      boost::cuthill_mckee_ordering(boost_graph, inv_perm.rbegin());
+
+    // Build old-to-new vertex map
+    for (std::size_t i = 0; i < map.size(); ++i)
+      map[boost_index_map[inv_perm[i]]] = i;
+  }
 
   return map;
 }
@@ -73,21 +82,31 @@ std::vector<std::size_t>
   const BoostGraph boost_graph(boost::edges_are_unsorted_multi_pass,
                          edges.begin(), edges.end(), size);
 
-  // Get Boost vertex -> index map
-  const boost::property_map<BoostGraph, boost::vertex_index_t>::type
-    boost_index_map = get(boost::vertex_index, boost_graph);
-
-  // Compute graph re-ordering
-  std::vector<std::size_t> inv_perm(size);
-  if (!reverse)
-    boost::cuthill_mckee_ordering(boost_graph, inv_perm.begin());
-  else
-    boost::cuthill_mckee_ordering(boost_graph, inv_perm.rbegin());
-
-  // Build old-to-new vertex map
+  // Check if graph has no edges
   std::vector<std::size_t> map(size);
-  for (std::size_t i = 0; i < size; ++i)
-    map[boost_index_map[inv_perm[i]]] = i;
+  if (boost::num_edges(boost_graph) == 0)
+  {
+    // Graph has no edges, so no need to re-order
+    for (std::size_t i = 0; i < map.size(); ++i)
+      map[i] = i;
+  }
+  else
+  {
+    // Get Boost vertex -> index map
+    const boost::property_map<BoostGraph, boost::vertex_index_t>::type
+      boost_index_map = get(boost::vertex_index, boost_graph);
+
+    // Compute graph re-ordering
+    std::vector<std::size_t> inv_perm(size);
+    if (!reverse)
+      boost::cuthill_mckee_ordering(boost_graph, inv_perm.begin());
+    else
+      boost::cuthill_mckee_ordering(boost_graph, inv_perm.rbegin());
+
+    // Build old-to-new vertex map
+    for (std::size_t i = 0; i < size; ++i)
+      map[boost_index_map[inv_perm[i]]] = i;
+  }
 
   return map;
 }
