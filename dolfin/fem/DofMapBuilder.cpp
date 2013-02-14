@@ -826,7 +826,8 @@ void DofMapBuilder::parallel_renumber(const boost::array<set, 3>& dof_ownership,
             if (_node1 != my_old_to_new_dof_index.end())
             {
               const std::size_t local_node1 = _node1->second;
-              graph[local_node0].insert(local_node1);
+              if (local_node0 != local_node1)
+                graph[local_node0].insert(local_node1);
             }
           }
         }

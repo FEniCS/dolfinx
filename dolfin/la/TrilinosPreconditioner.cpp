@@ -241,7 +241,7 @@ void TrilinosPreconditioner::set_ml(AztecOO& solver, const Epetra_RowMatrix& P)
   //ML_Epetra::SetDefaults("DD", mlist);
   //mlist.set("increasing or decreasing", "decreasing");
   //mlist.set("aggregation: type", "ParMETIS");
-  //mlist.set("coarse: max size", 30);
+  //mlist.set("coarse: max size", 1024);
 
   //mlist.set("aggregation: nodes per aggregate", 4);
   //mlist.set("coarse: type","Amesos-KLU");
@@ -254,6 +254,15 @@ void TrilinosPreconditioner::set_ml(AztecOO& solver, const Epetra_RowMatrix& P)
   // Set output level
   //const int output_level = parameters("ml")["output_level"];
   //mlist.set("ML output", output_level);
+
+  /*
+  mlist.set("smoother: type", "Chebyshev");
+  mlist.set("smoother: sweeps", 2);
+  mlist.set("smoother: pre or post", "both");
+  mlist.set("coarse: type","Chebyshev");
+  mlist.set("coarse: sweeps", 2);
+  mlist.set("coarse: pre or post", "both");
+  */
 
   // Set any user-provided parameters
   if (parameter_list)
