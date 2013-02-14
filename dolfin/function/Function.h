@@ -34,6 +34,7 @@
 
 #include <dolfin/common/Hierarchical.h>
 #include "GenericFunction.h"
+#include "FunctionAXPY.h"
 
 namespace ufc
 {
@@ -156,6 +157,13 @@ namespace dolfin
     ///         The expression.
     const Function& operator= (const Expression& v);
 
+    /// Assignment from linear combination of function
+    ///
+    /// *Arguments*
+    ///     v (_FunctionAXPY_)
+    ///         A linear combination of other Functions
+    void operator=(const FunctionAXPY& axpy);
+
     /// Extract subfunction
     ///
     /// *Arguments*
@@ -163,6 +171,48 @@ namespace dolfin
     ///         Index of subfunction.
     Function& operator[] (std::size_t i) const;
 
+    /// Add operator with other function
+    ///
+    /// *Returns*
+    ///     _FunctionAXPY_
+    ///         Return a linear combination of Functions
+    FunctionAXPY operator+(const Function& other) const;
+
+    /// Add operator with other linear combination of functions
+    ///
+    /// *Returns*
+    ///     _FunctionAXPY_
+    ///         Return a linear combination of Functions
+    FunctionAXPY operator+(const FunctionAXPY& axpy) const;
+
+    /// Substraction operator with other function
+    ///
+    /// *Returns*
+    ///     _FunctionAXPY_
+    ///         Return a linear combination of Functions
+    FunctionAXPY operator-(const Function& other) const;
+
+    /// Substraction operator with other linear combination of functions
+    ///
+    /// *Returns*
+    ///     _FunctionAXPY_
+    ///         Return a linear combination of Functions
+    FunctionAXPY operator-(const FunctionAXPY& axpy) const;
+
+    /// Scale operator 
+    ///
+    /// *Returns*
+    ///     _FunctionAXPY_
+    ///         Return a linear combination of Functions
+    FunctionAXPY operator*(double scalar) const;
+
+    /// Scale operator 
+    ///
+    /// *Returns*
+    ///     _FunctionAXPY_
+    ///         Return a linear combination of Functions
+    FunctionAXPY operator/(double scalar) const;
+    
     /// Return shared pointer to function space
     ///
     /// *Returns*

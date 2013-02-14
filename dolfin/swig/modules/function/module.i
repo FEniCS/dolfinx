@@ -56,6 +56,7 @@
 // #include types from function submodule
 #include "dolfin/function/GenericFunction.h"
 #include "dolfin/function/Expression.h"
+#include "dolfin/function/FunctionAXPY.h"
 #include "dolfin/function/Function.h"
 #include "dolfin/function/FunctionSpace.h"
 #include "dolfin/function/SubSpace.h"
@@ -117,6 +118,7 @@ import_array();
 %include "dolfin/swig/function/pre.i"
 %include "dolfin/function/GenericFunction.h"
 %include "dolfin/function/Expression.h"
+%include "dolfin/function/FunctionAXPY.h"
 %include "dolfin/function/Function.h"
 %include "dolfin/function/FunctionSpace.h"
 %include "dolfin/function/SubSpace.h"

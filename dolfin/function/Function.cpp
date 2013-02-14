@@ -266,6 +266,58 @@ Function& Function::operator[] (std::size_t i) const
   }
 }
 //-----------------------------------------------------------------------------
+FunctionAXPY Function::operator+(const Function& other) const
+{
+  return FunctionAXPY(*this, other, FunctionAXPY::ADD_ADD);
+}
+//-----------------------------------------------------------------------------
+FunctionAXPY Function::operator+(const FunctionAXPY& axpy) const
+{
+  return FunctionAXPY(axpy, *this, FunctionAXPY::ADD_ADD);
+}
+//-----------------------------------------------------------------------------
+FunctionAXPY Function::operator-(const Function& other) const
+{
+  return FunctionAXPY(*this, other, FunctionAXPY::ADD_SUB);
+}
+//-----------------------------------------------------------------------------
+FunctionAXPY Function::operator-(const FunctionAXPY& axpy) const
+{
+  return FunctionAXPY(axpy, *this, FunctionAXPY::SUB_ADD);
+}
+//-----------------------------------------------------------------------------
+FunctionAXPY Function::operator*(double scalar) const
+{
+  return FunctionAXPY(*this, scalar);
+}
+//-----------------------------------------------------------------------------
+FunctionAXPY Function::operator/(double scalar) const
+{
+  return FunctionAXPY(*this, 1.0/scalar);
+}
+//-----------------------------------------------------------------------------
+void Function::operator=(const FunctionAXPY& axpy)
+{
+  if (axpy.pairs().size()==0)
+  {
+    dolfin_error("Function.cpp",
+                 "assign function",
+                 "FunctionAXPY is empty.");
+  }
+  
+  // Make an initial assign and scale
+  *this = *(axpy.pairs()[0].second);
+  if (axpy.pairs()[0].first != 1.0)
+    *_vector *= axpy.pairs()[0].first;
+
+  // Start from item 2 and axpy 
+  for (std::vector<std::pair<double, const Function*> >::const_iterator \
+	 it=axpy.pairs().begin()+1;
+       it!=axpy.pairs().end(); it++)
+    _vector->axpy(it->first, *(it->second->vector()));
+  
+}
+//-----------------------------------------------------------------------------
 boost::shared_ptr<const FunctionSpace> Function::function_space() const
 {
   dolfin_assert(_function_space);

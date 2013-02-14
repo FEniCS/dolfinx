@@ -121,6 +121,85 @@ class Interface(unittest.TestCase):
                 self.assertRaises(RuntimeError, lambda: uu.assign(4/u0))
                 self.assertRaises(RuntimeError, lambda: uu.assign(4*u*u1))
 
+    def test_axpy(self):
+
+        for V0, V1, vector_space in [(V, W, False), (W, V, True)]:
+            u = Function(V0)
+            u0 = Function(V0)
+            u1 = Function(V0)
+            u2 = Function(V0)
+            u3 = Function(V1)
+            
+            u.vector()[:] =  1.0
+            u0.vector()[:] = 2.0
+            u1.vector()[:] = 3.0
+            u2.vector()[:] = 4.0
+            u3.vector()[:] = 5.0
+
+            axpy = FunctionAXPY(u1, 2.0)
+            u.assign(axpy)
+            expr_scalar = 3*2
+
+            self.assertAlmostEqual(u.vector().sum(), \
+                                   float(expr_scalar*u.vector().size()))
+
+            axpy = FunctionAXPY([(2.0, u1), (3.0, u2)])
+
+            u.assign(axpy)
+            expr_scalar = 3*2+3*4.0
+
+            self.assertAlmostEqual(u.vector().sum(), \
+                                   float(expr_scalar*u.vector().size()))
+
+            axpy = axpy*3
+            u.assign(axpy)
+            expr_scalar *= 3
+
+            self.assertAlmostEqual(u.vector().sum(), \
+                                   float(expr_scalar*u.vector().size()))
+
+            axpy0 = axpy/5
+            u.assign(axpy0)
+            expr_scalar0 = expr_scalar/5
+
+            self.assertAlmostEqual(u.vector().sum(), \
+                                   float(expr_scalar0*u.vector().size()))
+            
+            axpy1 = axpy0+axpy
+            u.assign(axpy1)
+            expr_scalar1 = expr_scalar0 + expr_scalar
+
+            self.assertAlmostEqual(u.vector().sum(), \
+                                   float(expr_scalar1*u.vector().size()))
+            
+            axpy1 = axpy0-axpy
+            u.assign(axpy1)
+            expr_scalar1 = expr_scalar0 - expr_scalar
+
+            self.assertAlmostEqual(u.vector().sum(), \
+                                   float(expr_scalar1*u.vector().size()))
+            
+            axpy1 = axpy0+u1
+            u.assign(axpy1)
+            expr_scalar1 = expr_scalar0 + 3.0
+
+            self.assertAlmostEqual(u.vector().sum(), \
+                                   float(expr_scalar1*u.vector().size()))
+            
+            axpy1 = axpy0-u2
+            u.assign(axpy1)
+            expr_scalar1 = expr_scalar0 - 4.0
+
+            self.assertAlmostEqual(u.vector().sum(), \
+                                   float(expr_scalar1*u.vector().size()))
+
+            self.assertRaises(RuntimeError, FunctionAXPY, u, u3, 0)
+
+            axpy = FunctionAXPY(u3, 2.0)
+
+            self.assertRaises(RuntimeError, lambda : axpy+u)
+            
+
 class ScalarFunctions(unittest.TestCase):
     def test_constant_float_conversion(self):
         c = Constant(3.45)

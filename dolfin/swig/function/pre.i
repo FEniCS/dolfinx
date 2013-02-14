@@ -39,11 +39,6 @@
 %ignore dolfin::Function::Function(const FunctionSpace&, std::string);
 
 //-----------------------------------------------------------------------------
-// Modifying the interface of GenericFunction
-//-----------------------------------------------------------------------------
-//%rename(_compute_vertex_values) dolfin::GenericFunction::compute_vertex_values;
-
-//-----------------------------------------------------------------------------
 // Modifying the interface of Function
 //-----------------------------------------------------------------------------
 %rename(_function_space) dolfin::Function::function_space;
@@ -57,6 +52,15 @@
 %rename(sub) dolfin::FunctionSpace::operator[];
 %rename(assign) dolfin::FunctionSpace::operator=;
 %ignore dolfin::FunctionSpace::collapse() const;
+
+//-----------------------------------------------------------------------------
+// Modifying the interface of Function
+//-----------------------------------------------------------------------------
+%ignore dolfin::FunctionAXPY::pair;
+%rename(__add__) dolfin::FunctionAXPY::operator+;
+%rename(__sub__) dolfin::FunctionAXPY::operator-;
+%rename(__mul__) dolfin::FunctionAXPY::operator*;
+%rename(__div__) dolfin::FunctionAXPY::operator/;
 
 //-----------------------------------------------------------------------------
 // Rename [] for SpecialFacetFunction -> _sub
