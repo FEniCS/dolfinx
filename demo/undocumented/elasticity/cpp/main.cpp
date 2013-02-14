@@ -52,7 +52,7 @@ int main()
   {
     bool inside(const Array<double>& x, bool on_boundary) const
     {
-      return x[0] < 0.5;// && on_boundary;
+      return x[0] < 0.5 && on_boundary;
     }
   };
 
@@ -89,7 +89,7 @@ int main()
   {
     bool inside(const Array<double>& x, bool on_boundary) const
     {
-      return x[0] > 0.9;// && on_boundary;
+      return x[0] > 0.9 && on_boundary;
     }
   };
 
@@ -139,7 +139,7 @@ int main()
   solver.parameters["linear_solver"] = "direct";
   solver.solve();
 
-  // Extract solution components
+  // Extract solution components (deep copy)
   Function ux = u[0];
   Function uy = u[1];
   Function uz = u[2];
@@ -161,13 +161,10 @@ int main()
   L_s.disp = u;
 
   Function stress(W);
-  LinearVariationalProblem problem_s(a_s, L_s, stress);
-  LinearVariationalSolver solver_s(problem_s);
-  solver.parameters["symmetric"] = true;
-  solver.parameters["linear_solver"] = "iterative";
-  solver_s.solve();
+  LocalSolver local_solver;
+  local_solver.solve(*stress.vector(), a_s, L_s);
 
-  File file_stress("stress.pvd", "compressed");
+  File file_stress("stress.pvd");
   file_stress << stress;
 
   // Save colored mesh paritions in VTK format if running in parallel
@@ -187,14 +184,14 @@ int main()
   facet_file << facet_markers;
 
   // Plot solution
-  plot(u, "Displacement", "displacement");
+  //plot(u, "Displacement", "displacement");
 
   // Displace mesh and plot displaced mesh
-  mesh.move(u);
-  plot(mesh, "Deformed mesh");
+  //mesh.move(u);
+  //plot(mesh, "Deformed mesh");
 
   // Make plot windows interactive
-  interactive();
+  //interactive();
 
  return 0;
 }

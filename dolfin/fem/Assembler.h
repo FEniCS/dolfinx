@@ -26,7 +26,6 @@
 #define __ASSEMBLER_H
 
 #include <vector>
-#include <dolfin/common/types.h>
 #include "AssemblerBase.h"
 
 namespace dolfin
@@ -35,7 +34,6 @@ namespace dolfin
   // Forward declarations
   class GenericTensor;
   class Form;
-  class SubDomain;
   class UFC;
   template<typename T> class MeshFunction;
 
@@ -43,27 +41,15 @@ namespace dolfin
   /// more generally, assembly of a sparse tensor from a given
   /// variational form.
   ///
-  /// Subdomains for cells and facets may be specified in a number of
-  /// different ways:
-  ///
-  /// 1. By explicitly passing _MeshFunction_ (as pointers) to the
-  ///    assemble functions
-  ///
-  /// 2. By assigning subdomain indicators specified by _MeshFunction_
-  ///    to the _Form_ being assembled:
+  /// Subdomains for cells and facets may be specified by assigning
+  /// subdomain indicators specified by _MeshFunction_ to the _Form_
+  /// being assembled:
   ///
   ///    .. code-block:: c++
   ///
   ///        form.dx = cell_domains
   ///        form.ds = exterior_facet_domains
   ///        form.dS = interior_facet_domains
-  ///
-  /// 3. By markers stored as part of the _Mesh_ (in _MeshDomains_)
-  ///
-  /// 4. By specifying a _SubDomain_ which specifies the domain numbered
-  ///    as 0 (with the rest treated as domain number 1)
-  ///
-  /// Note that (1) overrides (2), which overrides (3).
 
   class Assembler : public AssemblerBase
   {
@@ -79,24 +65,6 @@ namespace dolfin
     ///     a (_Form_)
     ///         The form to assemble the tensor from.
     void assemble(GenericTensor& A, const Form& a);
-
-    /// Assemble tensor from given form on subdomains
-    ///
-    /// *Arguments*
-    ///     A (_GenericTensor_)
-    ///         The tensor to assemble.
-    ///     a (_Form_)
-    ///         The form to assemble the tensor from.
-    ///     cell_domains (_MeshFunction_ <std::size_t>)
-    ///         Cell domains.
-    ///     exterior_facet_domains (_MeshFunction_ <std::size_t>)
-    ///         The exterior facet domains.
-    ///     interior_facet_domains (_MeshFunction_ <std::size_t>)
-    ///         The interior facet domains.
-    void assemble(GenericTensor& A, const Form& a,
-                  const MeshFunction<std::size_t>* cell_domains,
-                  const MeshFunction<std::size_t>* exterior_facet_domains,
-                  const MeshFunction<std::size_t>* interior_facet_domains);
 
     /// Assemble tensor from given form over cells. This function is
     /// provided for users who wish to build a customized assembler.

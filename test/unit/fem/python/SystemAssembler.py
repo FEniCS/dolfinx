@@ -92,66 +92,6 @@ class TestSystemAssembler(unittest.TestCase):
         self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
         self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
 
-    def test_subdomain_assembly_meshdomains(self):
-        "Test assembly over subdomains with markers stored as part of mesh"
-
-        # Create a mesh of the unit cube
-        mesh = UnitCubeMesh(4, 4, 4)
-
-        # Define subdomains for 3 faces of the unit cube
-        class F0(SubDomain):
-            def inside(self, x, inside):
-                return near(x[0], 0.0)
-        class F1(SubDomain):
-            def inside(self, x, inside):
-                return near(x[1], 0.0)
-        class F2(SubDomain):
-            def inside(self, x, inside):
-                return near(x[2], 0.0)
-
-        # Define subdomain for left of x = 0.5
-        class S0(SubDomain):
-            def inside(self, x, inside):
-                return x[0] < 0.5 + DOLFIN_EPS
-
-        # Mark mesh
-        f0 = F0()
-        f1 = F1()
-        f2 = F2()
-        s0 = S0()
-        f0.mark_facets(mesh, 0)
-        f1.mark_facets(mesh, 1)
-        f2.mark_facets(mesh, 2)
-        s0.mark_cells(mesh, 0)
-
-        # Define test and trial functions
-        V = FunctionSpace(mesh, "Lagrange", 1)
-        u = TrialFunction(V)
-        v = TestFunction(V)
-
-        # Define forms on marked subdomains
-        a0 = 1*u*v*dx(0) + 2*u*v*ds(0) + 3*u*v*ds(1) + 4*u*v*ds(2)
-        L0 = 1*v*dx(0) + 2*v*ds(0) + 3*v*ds(1) + 4*v*ds(2)
-
-        # Defined forms on unmarked subdomains (should be zero)
-        a1 = 1*u*v*dx(1) + 2*u*v*ds(3)
-        L1 = 1*v*dx(1) + 2*v*ds(3)
-
-        # Used for computing reference values
-        #A0 = assemble(a0)
-        #b0 = assemble(L0)
-        #A1 = assemble(a1)
-        #b1 = assemble(L1)
-
-        # Assemble system
-        A0, b0 = assemble_system(a0, L0)
-        A1, b1 = assemble_system(a1, L1)
-
-        # Assemble and check values
-        self.assertAlmostEqual(A0.norm("frobenius"), 0.693043954566, 10)
-        self.assertAlmostEqual(b0.norm("l2"),        1.28061997552,  10)
-        self.assertAlmostEqual(A1.norm("frobenius"), 0.0,  10)
-        self.assertAlmostEqual(b1.norm("l2"),        0.0,  10)
 
 if __name__ == "__main__":
     print ""

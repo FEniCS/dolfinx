@@ -261,7 +261,7 @@ namespace dolfin
     /// *Returns*
     ///     _MeshFunction_ <std::size_t>
     ///         The cell domains.
-    boost::shared_ptr<const MeshFunction<std::size_t> > cell_domains_shared_ptr() const;
+    boost::shared_ptr<const MeshFunction<std::size_t> > cell_domains() const;
 
     /// Return exterior facet domains (zero pointer if no domains have
     /// been specified)
@@ -269,7 +269,7 @@ namespace dolfin
     /// *Returns*
     ///     boost::shared_ptr<_MeshFunction_ <std::size_t> >
     ///         The exterior facet domains.
-    boost::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains_shared_ptr() const;
+    boost::shared_ptr<const MeshFunction<std::size_t> > exterior_facet_domains() const;
 
     /// Return interior facet domains (zero pointer if no domains have
     /// been specified)
@@ -277,7 +277,7 @@ namespace dolfin
     /// *Returns*
     ///     _MeshFunction_ <std::size_t>
     ///         The interior facet domains.
-    boost::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains_shared_ptr() const;
+    boost::shared_ptr<const MeshFunction<std::size_t> > interior_facet_domains() const;
 
     /// Set cell domains
     ///

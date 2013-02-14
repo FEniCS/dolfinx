@@ -25,7 +25,6 @@
 
 #include <map>
 #include <vector>
-#include <dolfin/common/types.h>
 #include "DirichletBC.h"
 #include "AssemblerBase.h"
 
@@ -80,9 +79,6 @@ namespace dolfin
                          const Form& a,
                          const Form& L,
                          const std::vector<const DirichletBC*> bcs,
-                         const MeshFunction<std::size_t>* cell_domains,
-                         const MeshFunction<std::size_t>* exterior_facet_domains,
-                         const MeshFunction<std::size_t>* interior_facet_domains,
                          const GenericVector* x0);
 
   private:
