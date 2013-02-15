@@ -1,3 +1,4 @@
+ - Feature: Add support for passing a Constant as default value to a CompiledExpression
  - Fix bug in dimension check for 1-D ALE
  - Remove some redundant graph code
  - Improvements in speed of parallel dual grapj builder
