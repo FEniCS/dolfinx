@@ -84,8 +84,14 @@ void BinaryFile::operator>> (Mesh& mesh)
   // Read mesh topology
   MeshTopology& t = mesh._topology;
   std::size_t D = read_uint();
-  t.num_entities.resize(D + 1);
-  read_array(D + 1, t.num_entities.data());
+
+  std::vector<std::size_t> t_num_entities(D + 1);
+  read_array(D + 1, t_num_entities.data());
+  //t.num_entities.resize(D + 1);
+  //read_array(D + 1, t.num_entities.data());
+
+  t.num_entities = std::vector<unsigned int>(t_num_entities.begin(), t_num_entities.end());
+
   t.connectivity.resize(D + 1);
   for (std::size_t i = 0; i <= D; i++)
   {
@@ -161,7 +167,11 @@ void BinaryFile::operator<< (const Mesh& mesh)
   const std::size_t D = t.dim();
   write_uint(D);
   if (_store_connectivity)
-    write_array(D + 1, t.num_entities.data());
+  {
+    std::vector<std::size_t> t_num_entities(t.num_entities.begin(), t.num_entities.end());
+    write_array(D + 1, t_num_entities.data());
+    //write_array(D + 1, t.num_entities.data());
+  }
   else
   {
     for (std::size_t i = 0; i <= D; i++)

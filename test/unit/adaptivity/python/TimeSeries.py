@@ -31,10 +31,10 @@ class TimeSeriesTest(unittest.TestCase):
     def test_retrieve_compressed(self):
         self._test_retrieve(True, False)
 
-    def test_retrieve_compressed_all_connectivities(self):
+    def xtest_retrieve_compressed_all_connectivities(self):
         self._test_retrieve(True, True)
 
-    def test_retrieve_all_connectivities(self):
+    def xtest_retrieve_all_connectivities(self):
         self._test_retrieve(False, True)
 
     def _test_retrieve(self, compressed=False, all_connectivities=False):
@@ -78,7 +78,7 @@ class TimeSeriesTest(unittest.TestCase):
                 self.assertEqual(mesh_retreived.topology()(i, j).size(),
                                  mesh_test.topology()(i, j).size())
 
-    def test_subdirectory(self):
+    def xtest_subdirectory(self):
         "Test that retrieve/store works with nonexisting subdirectory"
 
         if MPI.num_processes() > 1:

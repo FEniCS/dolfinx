@@ -41,7 +41,7 @@ namespace dolfin
     /// this process (local index) to its master entity (owning process,
     /// local index on owner). If a master entity is shared by processes,
     /// only one of the owning processes is returned.
-    static std::map<std::size_t, std::pair<std::size_t, std::size_t> >
+    static std::map<unsigned int, std::pair<unsigned int, unsigned int> >
       compute_periodic_pairs(const Mesh& mesh, const SubDomain& sub_domain,
                              const std::size_t dim);
 

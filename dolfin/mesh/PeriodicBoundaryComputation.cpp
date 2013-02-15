@@ -63,7 +63,7 @@ struct lt_coordinate
 };
 
 //-----------------------------------------------------------------------------
-std::map<std::size_t, std::pair<std::size_t, std::size_t> >
+std::map<unsigned int, std::pair<unsigned int, unsigned int> >
   PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
                                                 const SubDomain& sub_domain,
                                                 const std::size_t dim)
@@ -88,7 +88,7 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
   std::vector<double> x_min_max;
 
   // Map from master entity midpoint coordinate to local facet index
-  std::map<std::vector<double>, std::size_t, lt_coordinate> master_coord_to_entity_index;
+  std::map<std::vector<double>, unsigned int, lt_coordinate> master_coord_to_entity_index;
 
   // Intialise facet-cell connectivity
   mesh.init(tdim - 1, tdim);
@@ -161,7 +161,7 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
   // Build send buffer of mapped slave midpoint coordinate to processes
   // that may own the master entity
   std::vector<std::vector<double> > slave_mapped_coords_send(num_processes);
-  std::vector<std::vector<std::size_t> > sent_slave_indices(num_processes);
+  std::vector<std::vector<unsigned int> > sent_slave_indices(num_processes);
   for (std::size_t i = 0; i < slave_entities.size(); ++i)
   {
     for (std::size_t p = 0; p < num_processes; ++p)
@@ -189,7 +189,7 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
   // Check if this process owns the master facet for a received (mapped)
   // slave
   std::vector<double> coordinates(gdim);
-  std::vector<std::vector<std::size_t> > master_local_entity(num_processes);
+  std::vector<std::vector<unsigned int> > master_local_entity(num_processes);
   for (std::size_t p = 0; p < num_processes; ++p)
   {
     const std::vector<double>& slave_mapped_coords_p = slave_mapped_coords_recv[p];
@@ -201,7 +201,7 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
 
       // Check is this process has a master entity that is paired with
       // a received slave entity
-      std::map<std::vector<double>, std::size_t, lt_coordinate>::const_iterator
+      std::map<std::vector<double>, unsigned int, lt_coordinate>::const_iterator
         it = master_coord_to_entity_index.find(coordinates);
 
       // If this process owns the master, insert master entity index,
@@ -209,27 +209,27 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
       if (it !=  master_coord_to_entity_index.end())
         master_local_entity[p].push_back(it->second);
       else
-        master_local_entity[p].push_back(std::numeric_limits<std::size_t>::max());
+        master_local_entity[p].push_back(std::numeric_limits<unsigned int>::max());
     }
   }
 
   // Send local index of master entity back to owner of slave entity
-  std::vector<std::vector<std::size_t> > master_entity_local_index_recv;
+  std::vector<std::vector<unsigned int> > master_entity_local_index_recv;
   MPI::all_to_all(master_local_entity,  master_entity_local_index_recv);
 
   // Build map from slave facets on this process to master facet (local
   // facet index, process owner)
-  std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_entity;
+  std::map<unsigned int, std::pair<unsigned int, unsigned int> > slave_to_master_entity;
   std::size_t num_local_slave_entities = 0;
   for (std::size_t p = 0; p < num_processes; ++p)
   {
-    const std::vector<std::size_t> master_entity_index_p = master_entity_local_index_recv[p];
-    const std::vector<std::size_t> sent_slaves_p = sent_slave_indices[p];
+    const std::vector<unsigned int> master_entity_index_p = master_entity_local_index_recv[p];
+    const std::vector<unsigned int> sent_slaves_p = sent_slave_indices[p];
     dolfin_assert(master_entity_index_p.size() == sent_slaves_p.size());
 
     for (std::size_t i = 0; i < master_entity_index_p.size(); ++i)
     {
-      if (master_entity_index_p[i] < std::numeric_limits<std::size_t>::max())
+      if (master_entity_index_p[i] < std::numeric_limits<unsigned int>::max())
       {
         ++num_local_slave_entities;
         slave_to_master_entity.insert(std::make_pair(sent_slaves_p[i],

@@ -48,7 +48,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
-  boost::shared_ptr<const std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > > > slave_master_entities,
+  boost::shared_ptr<const std::map<unsigned int, std::map<unsigned int, std::pair<unsigned int, unsigned int> > > > slave_master_entities,
   boost::shared_ptr<const Restriction> restriction)
 {
   // Start timer for dofmap initialization
@@ -173,16 +173,16 @@ void DofMapBuilder::build_sub_map(DofMap& sub_dofmap,
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
- const std::map<std::size_t, std::pair<std::size_t, std::size_t> >& slave_to_master_vertices,
+ const std::map<unsigned int, std::pair<unsigned int, unsigned int> >& slave_to_master_vertices,
  std::vector<std::size_t>& modified_global_indices)
 {
   // Get vertex sharing information (local index, [(sharing process p, local index on p)])
-  const boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >
+  const boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >
     shared_vertices = DistributedMeshTools::compute_shared_entities(mesh, 0);
 
    // Mark shared vertices
   std::vector<bool> vertex_shared(mesh.num_vertices(), false);
-  boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >::const_iterator shared_vertex;
+  boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >::const_iterator shared_vertex;
   for (shared_vertex = shared_vertices.begin(); shared_vertex != shared_vertices.end(); ++shared_vertex)
   {
     dolfin_assert(shared_vertex->first < vertex_shared.size());
@@ -191,7 +191,7 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
 
   // Mark slave vertices
   std::vector<bool> slave_vertex(mesh.num_vertices(), false);
-  std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator slave;
+  std::map<unsigned int, std::pair<unsigned int, unsigned int> >::const_iterator slave;
   for (slave = slave_to_master_vertices.begin(); slave != slave_to_master_vertices.end(); ++slave)
   {
     dolfin_assert(slave->first < slave_vertex.size());
@@ -217,13 +217,13 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
     else if (vertex_shared[local_index])
     {
       // If shared, let lowest rank process number the vertex
-      boost::unordered_map<std::size_t, std::vector<std::pair<std::size_t, std::size_t> > >::const_iterator
+      boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >::const_iterator
         it = shared_vertices.find(local_index);
       dolfin_assert(it != shared_vertices.end());
-      const std::vector<std::pair<std::size_t, std::size_t> >& sharing_procs = it->second;
+      const std::vector<std::pair<unsigned int, unsigned int> >& sharing_procs = it->second;
 
       // Figure out if this is the lowest rank process sharing the vertex
-      std::vector<std::pair<std::size_t, std::size_t> >::const_iterator
+      std::vector<std::pair<unsigned int, unsigned int> >::const_iterator
        min_sharing_rank = std::min_element(sharing_procs.begin(), sharing_procs.end());
       std::size_t _min_sharing_rank = proc_num + 1;
       if (min_sharing_rank != sharing_procs.end())
@@ -235,7 +235,7 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
         modified_global_indices[vertex->index()] = new_index;
 
         // Add to list to communicate
-        std::vector<std::pair<std::size_t, std::size_t> >::const_iterator p;
+        std::vector<std::pair<unsigned int, unsigned int> >::const_iterator p;
         for (p = sharing_procs.begin(); p != sharing_procs.end(); ++p)
         {
           dolfin_assert(p->first < new_shared_vertex_indices.size());
@@ -276,7 +276,7 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
     const std::vector<std::size_t>& received_vertex_data_p = received_vertex_data[p];
     for (std::size_t i = 0; i < received_vertex_data_p.size(); i += 2)
     {
-      const std::size_t local_index = received_vertex_data_p[i];
+      const unsigned int local_index = received_vertex_data_p[i];
       const std::size_t recv_new_index = received_vertex_data_p[i + 1];
 
       dolfin_assert(local_index < modified_global_indices.size());
@@ -287,12 +287,12 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
   // Request master vertex index from master owner
   std::vector<std::vector<std::size_t> > master_send_buffer(MPI::num_processes());
   std::vector<std::vector<std::size_t> > local_slave_index(MPI::num_processes());
-  std::map<std::size_t, std::pair<std::size_t, std::size_t> >::const_iterator master;
+  std::map<unsigned int, std::pair<unsigned int, unsigned int> >::const_iterator master;
   for (master = slave_to_master_vertices.begin(); master != slave_to_master_vertices.end(); ++master)
   {
-    const std::size_t local_index = master->first;
-    const std::size_t master_proc = master->second.first;
-    const std::size_t remote_master_local_index = master->second.second;
+    const unsigned int local_index = master->first;
+    const unsigned int master_proc = master->second.first;
+    const unsigned int remote_master_local_index = master->second.second;
     dolfin_assert(master_proc < local_slave_index.size());
     dolfin_assert(master_proc < master_send_buffer.size());
     local_slave_index[master_proc].push_back(local_index);
@@ -379,7 +379,7 @@ void DofMapBuilder::reorder_local(DofMap& dofmap, const Mesh& mesh)
 void DofMapBuilder::build_ufc(DofMap& dofmap,
     DofMapBuilder::map& restricted_dofs_inverse,
     const Mesh& mesh,
-    boost::shared_ptr<const std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > > > slave_master_entities,
+    boost::shared_ptr<const std::map<unsigned int, std::map<unsigned int, std::pair<unsigned int, unsigned int> > > > slave_master_entities,
     boost::shared_ptr<const Restriction> restriction)
 {
   // Start timer for dofmap initialization
@@ -424,7 +424,7 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
   {
     // Get master-slave vertex map
     dolfin_assert(slave_master_entities->find(0) != slave_master_entities->end());
-    const std::map<std::size_t, std::pair<std::size_t, std::size_t> >&
+    const std::map<unsigned int, std::pair<unsigned int, unsigned int> >&
       slave_to_master_vertices = slave_master_entities->find(0)->second;
 
     //cout << "Size check: " << slave_to_master_vertices.size() << ", " << slave_master_entities_xx.find(0)->second.size() << endl;
@@ -441,11 +441,11 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
       {
         // Get master-slave map
         dolfin_assert(slave_master_entities->find(d) != slave_master_entities->end());
-        const std::map<std::size_t, std::pair<std::size_t, std::size_t> >&
+        const std::map<unsigned int, std::pair<unsigned int, unsigned int> >&
           slave_to_master_entities = slave_master_entities->find(d)->second;
 
         // Initialise local entities
-        std::map<std::size_t, std::set<std::size_t> > shared_entities;
+        std::map<unsigned int, std::set<unsigned int> > shared_entities;
         const std::size_t num_entities
           = DistributedMeshTools::number_entities(mesh, slave_to_master_entities,
                                                   global_entity_indices[d],
