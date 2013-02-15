@@ -163,6 +163,15 @@ namespace dolfin
 
     ///--- STLMatrix interface ---
 
+    /// Clear matrix. Destroys data and sparse layout
+    void clear()
+    {
+      _local_range = std::pair<std::size_t, std::size_t>(0, 0);
+      num_codim_entities = 0;
+      _values.clear();
+      off_processs_data.clear();
+    }
+
     void sort()
     {
       std::vector<std::vector<std::pair<std::size_t, double> > >::iterator row;
