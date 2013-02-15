@@ -250,7 +250,7 @@ else()
 endif()
 
 # Check for required package Armadillo
-find_package(Armadillo REQUIRED)
+find_package(Armadillo 2.4.2 REQUIRED)
 
 # Check for required package LibXml2
 find_package(LibXml2 REQUIRED)
