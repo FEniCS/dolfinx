@@ -102,7 +102,7 @@ void ALE::move(Mesh& mesh, const GenericFunction& displacement)
 {
   // Check dimensions
   const std::size_t gdim = mesh.geometry().dim();
-  if (!((displacement.value_rank() == 0 && gdim == 0) ||
+  if (!((displacement.value_rank() == 0 && gdim == 1) ||
         (displacement.value_rank() == 1 && gdim == displacement.value_dimension(0))))
   {
     dolfin_error("ALE.cpp",

@@ -1,3 +1,4 @@
+ - Fix bug in dimension check for 1-D ALE
  - Remove some redundant graph code
  - Improvements in speed of parallel dual grapj builder
  - Fix bug in XMDF output for cell-based Functions
