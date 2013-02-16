@@ -166,7 +166,7 @@ namespace dolfin
     std::vector<unsigned int> num_global_connections;
 
     // Position of first connection for each entity (using local index)
-    std::vector<std::size_t> index_to_position;
+    std::vector<unsigned int> index_to_position;
 
   };
 

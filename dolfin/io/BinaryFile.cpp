@@ -286,32 +286,38 @@ std::size_t BinaryFile::read_uint()
   return value;
 }
 //-----------------------------------------------------------------------------
-void BinaryFile::read_array(std::size_t n, std::size_t* values)
+template <typename T>
+void BinaryFile::read_array(std::size_t n, T* values)
 {
   for (std::size_t i = 0; i < n; ++i)
-    boost::iostreams::read(ifilter, (char*) (values + i), (std::streamsize) sizeof(std::size_t));
+    boost::iostreams::read(ifilter, (char*) (values + i), (std::streamsize) sizeof(T));
 }
 //-----------------------------------------------------------------------------
+/*
 void BinaryFile::read_array(std::size_t n, double* values)
 {
   for (std::size_t i = 0; i < n; ++i)
     boost::iostreams::read(ifilter, (char*) (values + i), (std::streamsize) sizeof(double));
 }
+*/
 //-----------------------------------------------------------------------------
 void BinaryFile::write_uint(std::size_t value)
 {
   boost::iostreams::write(ofilter, (char*) &value, (std::streamsize) sizeof(std::size_t));
 }
 //-----------------------------------------------------------------------------
-void BinaryFile::write_array(std::size_t n, const std::size_t* values)
+template <typename T>
+void BinaryFile::write_array(std::size_t n, const T* values)
 {
   for (std::size_t i = 0; i < n; ++i)
-    boost::iostreams::write(ofilter, (char*) &values[i], (std::streamsize) sizeof(std::size_t));
+    boost::iostreams::write(ofilter, (char*) &values[i], (std::streamsize) sizeof(T));
 }
 //-----------------------------------------------------------------------------
+/*
 void BinaryFile::write_array(std::size_t n, const double* values)
 {
   for (std::size_t i = 0; i < n; ++i)
     boost::iostreams::write(ofilter, (char*) &values[i], (std::streamsize) sizeof(double));
 }
+*/
 //-----------------------------------------------------------------------------
