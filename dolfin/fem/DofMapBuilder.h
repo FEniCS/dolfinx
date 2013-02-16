@@ -78,7 +78,7 @@ namespace dolfin
     /// Build dofmap. The restriction may be a null pointer in which
     /// case it is ignored.
     static void build(DofMap& dofmap, const Mesh& dolfin_mesh,
-        boost::shared_ptr<const std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > > > slave_master_entities,
+        boost::shared_ptr<const std::map<unsigned int, std::map<unsigned int, std::pair<unsigned int, unsigned int> > > > slave_master_entities,
         boost::shared_ptr<const Restriction> restriction);
 
     /// Build sub-dofmap
@@ -92,12 +92,12 @@ namespace dolfin
     // Build UFC-based dofmap
     static void build_ufc(DofMap& dofmap, map& restricted_dofs_inverse,
       const Mesh& mesh,
-      boost::shared_ptr<const std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > > > slave_master_entities,
+      boost::shared_ptr<const std::map<unsigned int, std::map<unsigned int, std::pair<unsigned int, unsigned int> > > > slave_master_entities,
       boost::shared_ptr<const Restriction> restriction);
 
     // Build modified global entity indices that account for periodic bcs
     static std::size_t build_constrained_vertex_indices(const Mesh& mesh,
-        const std::map<std::size_t, std::pair<std::size_t, std::size_t> >& slave_to_master_vertices,
+        const std::map<unsigned int, std::pair<unsigned int, unsigned int> >& slave_to_master_vertices,
         std::vector<std::size_t>& modified_global_indices);
 
     // Re-order local dofmap for dof spatial locality. Re-ordering is
