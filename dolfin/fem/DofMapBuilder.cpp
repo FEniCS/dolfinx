@@ -805,14 +805,18 @@ void DofMapBuilder::parallel_renumber(const boost::array<set, 3>& dof_ownership,
     for (set_iterator owned_dof = owned_dofs.begin(); owned_dof != owned_dofs.end(); ++owned_dof, my_counter++)
       my_old_to_new_dof_index[*owned_dof] = my_counter;
 
-    // Build local graph based on old dof map with contiguous numbering
+    // Build local graph, based on old dof map, with contiguous numbering
     for (std::size_t cell = 0; cell < old_dofmap.size(); ++cell)
     {
+      // Cell dofmaps with old indices
       const std::vector<dolfin::la_index>& dofs0 = dofmap.cell_dofs(cell);
       const std::vector<dolfin::la_index>& dofs1 = dofmap.cell_dofs(cell);
+
+      // Loop over each dof in dofs0
       std::vector<dolfin::la_index>::const_iterator node0, node1;
       for (node0 = dofs0.begin(); node0 != dofs0.end(); ++node0)
       {
+        // Get new index from contiguous map
         boost::unordered_map<std::size_t, std::size_t>::const_iterator _node0
             = my_old_to_new_dof_index.find(*node0);
         if (_node0 != my_old_to_new_dof_index.end())
