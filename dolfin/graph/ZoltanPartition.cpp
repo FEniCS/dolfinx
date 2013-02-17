@@ -206,6 +206,11 @@ void ZoltanPartition::compute_partition(std::vector<std::size_t>& cell_partition
     cell_partition[idx] = (std::size_t)export_procs[i];
   }
 
+  // Free data structures allocated by Zoltan::LB_Partition
+  zoltan.LB_Free_Part(&import_gids, &import_lids, &import_procs, &import_parts);
+  zoltan.LB_Free_Part(&export_gids, &export_lids, &export_procs, &export_parts);
+
+
 }
 //-----------------------------------------------------------------------------
 #else
