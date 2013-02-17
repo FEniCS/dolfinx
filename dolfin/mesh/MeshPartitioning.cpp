@@ -21,7 +21,7 @@
 // Modified by Garth N. Wells 2011-2012
 //
 // First added:  2008-12-01
-// Last changed: 2013-01-30
+// Last changed: 2013-02-16
 
 #include <algorithm>
 #include <iterator>
@@ -35,6 +35,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/graph/ParMETIS.h>
 #include <dolfin/graph/SCOTCH.h>
+#include <dolfin/graph/ZoltanPartition.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "BoundaryMesh.h"
 #include "DistributedMeshTools.h"
@@ -107,11 +108,13 @@ void MeshPartitioning::partition(Mesh& mesh, const LocalMeshData& mesh_data)
     ParMETIS::compute_partition(cell_partition, mesh_data);
   else if (partitioner == "ParMETIS_repart")
     ParMETIS::recompute_partition(cell_partition, mesh_data);
+  else if (partitioner == "Zoltan")
+    ZoltanPartition::compute_partition(cell_partition, mesh_data);
   else
   {
     dolfin_error("MeshPartitioning.cpp",
                  "partition mesh",
-                 "Mesh partitioner '%s' is not known. Known partitioners are 'SCOTCH' or 'ParMETIS'", partitioner.c_str());
+                 "Mesh partitioner '%s' is not known. Known partitioners are 'SCOTCH', 'ParMETIS'", partitioner.c_str());
   }
 
   // Distribute cells
