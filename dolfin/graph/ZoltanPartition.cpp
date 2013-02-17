@@ -20,11 +20,11 @@
 
 #include<boost/lexical_cast.hpp>
 
-// Included here to avoid a C++ problem with some MPI implementations
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/mesh/LocalMeshData.h>
-#include "GraphBuilder.h"
 
+#include "GraphBuilder.h"
 #include "ZoltanPartition.h"
 
 using namespace dolfin;
@@ -131,6 +131,8 @@ void ZoltanPartition::get_all_edges(void* data,
 void ZoltanPartition::compute_partition(std::vector<std::size_t>& cell_partition,
                                         const LocalMeshData& mesh_data)
 {
+
+  Timer timer0("Partition graph (calling Zoltan PHG)");
 
   // Create data structures to hold graph
   std::vector<std::set<std::size_t> > local_graph;
