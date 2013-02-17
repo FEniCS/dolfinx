@@ -173,7 +173,7 @@ class Eval(unittest.TestCase):
 
           mesh = UnitCubeMesh(3,3,3)
           f1 = F1()
-          self.assertRaises(RuntimeError, lambda : assemble(f1*dx, mesh=mesh))
+          self.assertRaises(StandardError, lambda : assemble(f1*dx, mesh=mesh))
 
 class MeshEvaluation(unittest.TestCase):
 
