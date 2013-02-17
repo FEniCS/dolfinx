@@ -59,7 +59,7 @@ void ZoltanPartition::get_object_list(void *data,
   
   int offset = MPI::global_offset(local_graph->size(), true);
   
-  for(int i = 0; i < local_graph->size(); ++i)
+  for(std::size_t i = 0; i < local_graph->size(); ++i)
   {
     global_id[i] = i + offset;
   }
@@ -82,9 +82,9 @@ void ZoltanPartition::get_number_edges(void *data,
 
   dolfin_assert(num_gid_entries == 1);
   dolfin_assert(num_lid_entries == 0);
-  dolfin_assert(num_obj == local_graph->size());
+  dolfin_assert(num_obj == (int)local_graph->size());
 
-  for(int i = 0; i < local_graph->size(); ++i)
+  for(std::size_t i = 0; i < local_graph->size(); ++i)
   {
     num_edges[i] = (*local_graph)[i].size();
   }
@@ -110,7 +110,7 @@ void ZoltanPartition::get_all_edges(void* data,
   MPI::all_gather(local_offset, offsets);
   offsets.push_back(MPI::sum(local_graph->size()));
 
-  int i = 0;
+  std::size_t i = 0;
   for(std::vector<std::set<std::size_t> >::iterator node = local_graph->begin();
       node != local_graph->end(); ++node)
   {
@@ -202,7 +202,7 @@ void ZoltanPartition::compute_partition(std::vector<std::size_t>& cell_partition
   
   std::size_t offset = MPI::global_offset(local_graph.size(), true);
   
-  for(std::size_t i = 0; i < num_export; ++i)
+  for(std::size_t i = 0; i < (std::size_t)num_export; ++i)
   {
     const std::size_t idx = export_gids[i] - offset;
     cell_partition[idx] = (std::size_t)export_procs[i];

@@ -55,7 +55,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
   //  }
 
   warning("ParallelRefinement3D does not take care of mesh quality.\n Multiple levels of refinement may generate bad quality tetrahedra.");
-  
+
   // Ensure connectivity from cells to edges
   mesh.init(1);
   mesh.init(1, tdim);
@@ -250,6 +250,8 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
 //-----------------------------------------------------------------------------
 void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
 {
+  Timer t0("Parallel-refine 3D");
+
   if (MPI::num_processes()==1)
   {
     dolfin_error("ParallelRefinement3D.cpp",
@@ -283,6 +285,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh)
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     eightfold_division(*cell, p);
 
+  t0.stop();
   p.partition(new_mesh);
 }
 //-----------------------------------------------------------------------------
