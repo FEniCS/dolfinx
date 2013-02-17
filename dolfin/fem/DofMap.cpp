@@ -381,10 +381,11 @@ boost::shared_ptr<GenericDofMap>
 //-----------------------------------------------------------------------------
 void DofMap::set(GenericVector& x, double value) const
 {
+  std::vector<double> _value;
   std::vector<std::vector<dolfin::la_index> >::const_iterator cell_dofs;
   for (cell_dofs = _dofmap.begin(); cell_dofs != _dofmap.end(); ++cell_dofs)
   {
-    std::vector<double> _value(cell_dofs->size(), value);
+    _value.resize(cell_dofs->size(), value);
     x.set(_value.data(), cell_dofs->size(), cell_dofs->data());
   }
   x.apply("add");
