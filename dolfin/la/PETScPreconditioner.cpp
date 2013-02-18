@@ -26,7 +26,6 @@
 #include <boost/lexical_cast.hpp>
 #include <petscksp.h>
 #include <petscmat.h>
-#include <petscpcmg.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/log/dolfin_log.h>
 #include "GenericVector.h"
@@ -60,7 +59,7 @@ const std::map<std::string, const PCType> PETScPreconditioner::_methods
                               ("additive_schwarz", PCASM)
                               #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
                               ("petsc_amg",        PCGAMG)
-                              #endif  
+                              #endif
                               #if PETSC_HAVE_HYPRE
                               ("hypre_amg",        PCHYPRE)
                               ("hypre_euclid",     PCHYPRE)
