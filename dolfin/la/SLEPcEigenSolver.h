@@ -196,6 +196,7 @@ namespace dolfin
       p.add("maximum_iterations", 10000);
       p.add("spectral_transform", "default");
       p.add("spectral_shift",     0.0);
+      p.add("verbose",            false);
 
       return p;
     }
