@@ -21,7 +21,7 @@
 // Modified by Garth N. Wells 2011-2012
 //
 // First added:  2008-12-01
-// Last changed: 2013-02-16
+// Last changed: 2013-02-18
 
 #include <algorithm>
 #include <iterator>
@@ -108,13 +108,15 @@ void MeshPartitioning::partition(Mesh& mesh, const LocalMeshData& mesh_data)
     ParMETIS::compute_partition(cell_partition, mesh_data);
   else if (partitioner == "ParMETIS_repart")
     ParMETIS::recompute_partition(cell_partition, mesh_data);
-  else if (partitioner == "Zoltan")
-    ZoltanPartition::compute_partition(cell_partition, mesh_data);
+  else if (partitioner == "Zoltan_RCB")
+    ZoltanPartition::compute_RCB_partition(cell_partition, mesh_data);
+  else if (partitioner == "Zoltan_PHG")
+    ZoltanPartition::compute_PHG_partition(cell_partition, mesh_data);
   else
   {
     dolfin_error("MeshPartitioning.cpp",
                  "partition mesh",
-                 "Mesh partitioner '%s' is not known. Known partitioners are 'SCOTCH', 'ParMETIS'", partitioner.c_str());
+                 "Mesh partitioner '%s' is not known.", partitioner.c_str());
   }
 
   // Distribute cells

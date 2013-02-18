@@ -19,12 +19,13 @@
 // Modified by Chris Richardson 2013
 //
 // First added:  2010-02-10
-// Last changed: 2013-02-13
+// Last changed: 2013-02-18
 
 #include <dolfin/log/dolfin_log.h>
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include "ParMETIS.h"
 #include "GraphBuilder.h"
@@ -104,12 +105,13 @@ void ParMETIS::recompute_partition(std::vector<std::size_t>& cell_partition,
   GraphBuilder::compute_dual_graph(mesh_data, local_graph, ghost_vertices);
   std::vector<idx_t> adjncy;
   std::vector<idx_t> xadj;
-  xadj.reserve(num_local_cells+1);
+  xadj.reserve(num_local_cells + 1);
   xadj.push_back(0);
   
-  for(std::vector<std::set<std::size_t> >::iterator cell_c = local_graph.begin();cell_c != local_graph.end(); ++cell_c)
+  for(std::vector<std::set<std::size_t> >::iterator cell_c = local_graph.begin();
+      cell_c != local_graph.end(); ++cell_c)
   {
-    adjncy.insert(adjncy.end(),cell_c->begin(),cell_c->end());
+    adjncy.insert(adjncy.end(), cell_c->begin(), cell_c->end());
     xadj.push_back(adjncy.size());
   }
     
@@ -120,10 +122,8 @@ void ParMETIS::recompute_partition(std::vector<std::size_t>& cell_partition,
 
   Timer timer1("PARALLEL 1b: Recompute graph partition (calling ParMETIS)");
 
-  // FIXME: make these parameters adjustable
-  // Parameters affecting repartitioning
-  real_t itr=10.0;
-  std::vector<idx_t>vsize(xadj.size(), 1);
+  real_t itr = (real_t)parameters["ParMETIS_repartitioning_weight"];
+  std::vector<idx_t> vsize(xadj.size(), 1);
 
   // Call ParMETIS to repartition graph
   dolfin_assert(!tpwgts.empty());
