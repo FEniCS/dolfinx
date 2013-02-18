@@ -77,6 +77,7 @@ namespace dolfin
   ///   "lanczos"             (Lanczos)
   ///   "krylov-schur"        (Krylov-Schur)
   ///   "lapack"              (LAPACK, all values, direct, small systems only)
+  ///   "arpack"              (ARPACK)
   ///
   /// The default is "krylov-schur"
   ///
@@ -105,6 +106,7 @@ namespace dolfin
   ///   "non_hermitian"           (Non-Hermitian)
   ///   "gen_hermitian"           (Generalized Hermitian)
   ///   "gen_non_hermitian"       (Generalized Non-Hermitian)
+  ///   "pos_gen_non_hermitian"   (Generalized Non-Hermitian with positive semidefinite B)
   ///
   /// 6. "spectral_transform"
   ///
