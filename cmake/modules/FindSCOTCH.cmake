@@ -74,6 +74,13 @@ find_library(PTSCOTCH_LIBRARY
   DOC "The PTSCOTCH library"
   )
 
+# Check for ptesmumps  
+find_library(PTESMUMPS_LIBRARY
+  NAMES ptesmumps esmumps
+  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_DIR}/lib
+  DOC "The PTSCOTCH-ESMUMPS library"
+  )
+
 # Check for ptscotcherr
 find_library(PTSCOTCHERR_LIBRARY
   NAMES ptscotcherr
@@ -81,21 +88,13 @@ find_library(PTSCOTCHERR_LIBRARY
   DOC "The PTSCOTCH-ERROR library"
   )
 
-# Check for ptesmumps
-find_library(PTESMUMPS_LIBRARY
-  NAMES ptesmumps esmumps
-  HINTS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib ${PETSC_DIR}/lib
-  DOC "The PTSCOTCH-MUMPS library"
-  )
-
-
 #set(SCOTCH_DEBUG 1)
 set(CMAKE_CXX_FLAGS "-DMPICH_IGNORE_CXX_SEEK")
 set(SCOTCH_LIBRARIES ${PTSCOTCH_LIBRARY})
 if (PTESMUMPS_LIBRARY)
-  set(SCOTCH_LIBRARIES ${PTESMUMPS_LIBRARY})
+  set(SCOTCH_LIBRARIES ${SCOTCH_LIBRARIES}  ${PTESMUMPS_LIBRARY})
 endif()
-set(SCOTCH_LIBRARIES ${PTSCOTCHERR_LIBRARY})
+set(SCOTCH_LIBRARIES ${SCOTCH_LIBRARIES} ${PTSCOTCHERR_LIBRARY})
 
 # Try compiling and running test program
 if (DOLFIN_SKIP_BUILD_TESTS)
@@ -115,6 +114,7 @@ elseif (SCOTCH_INCLUDE_DIRS AND SCOTCH_LIBRARIES)
   # Set flags for building test program
   set(CMAKE_REQUIRED_INCLUDES ${SCOTCH_INCLUDE_DIRS})
   set(CMAKE_REQUIRED_LIBRARIES ${SCOTCH_LIBRARIES})
+  #set(CMAKE_REQUIRED_LIBRARIES ${SCOTCH_LIBRARY} ${SCOTCHERR_LIBRARY})
 
   # Add MPI variables if MPI has been found
   if (MPI_CXX_FOUND)
