@@ -48,13 +48,6 @@ namespace dolfin
   /// Assemble tensor
   void assemble(GenericTensor& A, const Form& a);
 
-  /// Assemble tensor on sub domains
-  void assemble(GenericTensor& A,
-                const Form& a,
-                const MeshFunction<std::size_t>* cell_domains,
-                const MeshFunction<std::size_t>* exterior_facet_domains,
-                const MeshFunction<std::size_t>* interior_facet_domains);
-
   /// Assemble system (A, b)
   void assemble_system(GenericMatrix& A,
                        GenericVector& b,
@@ -75,27 +68,19 @@ namespace dolfin
                        const Form& L,
                        const std::vector<const DirichletBC*> bcs);
 
-  /// Assemble system (A, b) on sub domains and apply Dirichlet boundary conditions
+  /// Assemble system (A, b) on sub domains and apply Dirichlet boundary
+  /// conditions
   void assemble_system(GenericMatrix& A,
                        GenericVector& b,
                        const Form& a,
                        const Form& L,
                        const std::vector<const DirichletBC*> bcs,
-                       const MeshFunction<std::size_t>* cell_domains,
-                       const MeshFunction<std::size_t>* exterior_facet_domains,
-                       const MeshFunction<std::size_t>* interior_facet_domains,
                        const GenericVector* x0);
 
-  //--- Specialized versions for scalars ---
+  //--- Specialized version for scalars ---
 
   /// Assemble scalar
   double assemble(const Form& a);
-
-  /// Assemble scalar on sub domains
-  double assemble(const Form& a,
-                  const MeshFunction<std::size_t>* cell_domains,
-                  const MeshFunction<std::size_t>* exterior_facet_domains,
-                  const MeshFunction<std::size_t>* interior_facet_domains);
 
 }
 

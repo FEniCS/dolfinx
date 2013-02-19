@@ -138,10 +138,10 @@ namespace dolfin
     std::vector<double> coordinates;
 
     // Local coordinate indices (array position -> index)
-    std::vector<std::size_t> position_to_local_index;
+    std::vector<unsigned int> position_to_local_index;
 
     // Local coordinate indices (local index -> array position)
-    std::vector<std::size_t> local_index_to_position;
+    std::vector<unsigned int> local_index_to_position;
 
   };
 

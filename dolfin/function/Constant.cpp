@@ -96,7 +96,7 @@ const Constant& Constant::operator= (double constant)
   if (!value_shape.empty())
   {
     dolfin_error("Constant.cpp",
-                 "assigne scalar value to constant",
+                 "assign scalar value to constant",
                  "Constant is not a scalar");
   }
 

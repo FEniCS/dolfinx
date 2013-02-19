@@ -55,14 +55,6 @@ using namespace dolfin;
 //----------------------------------------------------------------------------
 void OpenMpAssembler::assemble(GenericTensor& A, const Form& a)
 {
-  assemble(A, a, 0, 0, 0);
-}
-//-----------------------------------------------------------------------------
-void OpenMpAssembler::assemble(GenericTensor& A, const Form& a,
-                               const MeshFunction<std::size_t>* cell_domains,
-                               const MeshFunction<std::size_t>* exterior_facet_domains,
-                               const MeshFunction<std::size_t>* interior_facet_domains)
-{
   if (MPI::num_processes() > 1)
   {
     dolfin_error("OpenMPAssembler.cpp",
@@ -77,6 +69,15 @@ void OpenMpAssembler::assemble(GenericTensor& A, const Form& a,
   // cells, exterior and interior facets. Note the importance of
   // treating empty mesh functions as null pointers for the PyDOLFIN
   // interface.
+
+  // Get cell domains
+  const MeshFunction<std::size_t>* cell_domains = a.cell_domains().get();
+
+  // Get exterior facet domains
+  const MeshFunction<std::size_t>* exterior_facet_domains = a.exterior_facet_domains().get();
+
+  // Get interior facet domains
+  const MeshFunction<std::size_t>* interior_facet_domains = a.interior_facet_domains().get();
 
   // Check form
   AssemblerBase::check(a);

@@ -173,7 +173,7 @@ class Eval(unittest.TestCase):
 
           mesh = UnitCubeMesh(3,3,3)
           f1 = F1()
-          self.assertRaises(RuntimeError, lambda : assemble(f1*dx, mesh=mesh))
+          self.assertRaises(StandardError, lambda : assemble(f1*dx, mesh=mesh))
 
 class MeshEvaluation(unittest.TestCase):
 
@@ -307,7 +307,30 @@ class Instantiation(unittest.TestCase):
           e1 = Expression("sin(x[0])*std::cos(x[1])")
           self.assertAlmostEqual(assemble(e0*dx, mesh=mesh), \
                                  assemble(e1*dx, mesh=mesh))
+     
+     def test_constant_attributes(self):
+          t = Constant(1.0)
+          e0 = Expression(["2*t", "-t"], t=t)
+          e1 = Expression(["2*t", "-t"], t=1.0)
+          e2 = Expression("t", t=t)
+          
+          self.assertAlmostEqual(assemble(inner(e0,e0)*dx, mesh=mesh), \
+                                 assemble(inner(e1,e1)*dx, mesh=mesh))
 
+          t.assign(3.0)
+          e1.t = float(t)
 
+          self.assertAlmostEqual(assemble(inner(e0,e0)*dx, mesh=mesh), \
+                                 assemble(inner(e1,e1)*dx, mesh=mesh))
+          t.assign(5.0)
+          self.assertNotEqual(assemble(inner(e0,e0)*dx, mesh=mesh), \
+                              assemble(inner(e1,e1)*dx, mesh=mesh))
+
+          self.assertAlmostEqual(assemble(e0[0]*dx, mesh=mesh), \
+                                 assemble(2*e2*dx, mesh=mesh))
+          
+          self.assertRaises(TypeError, lambda : Expression("t", t=Constant((1,0))))
+          self.assertRaises(TypeError, lambda : Expression("t", t=Function(V)))
+          
 if __name__ == "__main__":
     unittest.main()

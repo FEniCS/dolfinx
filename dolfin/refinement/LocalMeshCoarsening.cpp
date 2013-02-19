@@ -161,8 +161,6 @@ void LocalMeshCoarsening::collapse_edge(Mesh& mesh, Edge& edge,
   std::size_t vert_slave = vertex_to_remove.index();
   std::size_t vert_master = 0;
   const std::size_t* edge_vertex = edge.entities(0);
-  //cout << "edge vertices: " << edge_vertex[0] << " " << edge_vertex[1] << endl;
-  //cout << "vertex: " << vertex_to_remove.index() << endl;
 
   if ( edge_vertex[0] == vert_slave )
     vert_master = edge_vertex[1];

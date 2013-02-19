@@ -168,6 +168,13 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   else
     iparm[IPARM_THREAD_NBR] = std::max((std::size_t) 1, (std::size_t) dolfin::parameters["num_threads"]);
 
+  // PaStiX thread type 
+  // This needs to be set via the build system
+  iparm[IPARM_THREAD_COMM_MODE] = API_THREAD_FUNNELED;
+  //iparm[IPARM_THREAD_COMM_MODE] = API_THREAD_COMM_ONE;
+  //iparm[IPARM_THREAD_COMM_MODE] = API_THREAD_COMM_DEFINED;
+  //iparm[IPARM_THREAD_COMM_MODE] = API_THREAD_MULTIPLE;
+
   // User-supplied RHS
   iparm[IPARM_RHS_MAKING] = API_RHS_B;
 
