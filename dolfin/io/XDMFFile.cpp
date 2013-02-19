@@ -79,8 +79,6 @@ void XDMFFile::operator<< (const Function& u)
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 {
-  // FIXME: Split up this function?
-
   dolfin_assert(ut.first);
   const Function& u = *(ut.first);
   const double time_step = ut.second;
@@ -459,7 +457,14 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
   dolfin_assert(0 < gdim && gdim <= 3);
   std::string geometry_type;
   if (gdim == 1)
-    geometry_type = "X"; // geometry "X" not supported?
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "write 1D mesh",
+                 "One dimensional geometry not supported in XDMF");
+    // FIXME: geometry "X" is not supported
+    // This could be fixed by padding vertex coordinates to 2D and using "XY"
+    geometry_type = "X"; 
+  }
   else if (gdim == 2)
     geometry_type = "XY";
   else if (gdim == 3)
@@ -483,7 +488,7 @@ void XDMFFile::output_XML(const double time_step, const bool vertex_data,
                           const std::size_t cell_dim, const std::size_t num_global_cells, 
                           const std::size_t gdim, const std::size_t num_total_vertices, 
                           const std::size_t value_rank, const std::size_t padded_value_size,
-                          const std::string name, const std::string hdf5_filename)
+                          const std::string name, const std::string hdf5_filename) const
 {
   // Working data structure for formatting XML file
   std::string s;

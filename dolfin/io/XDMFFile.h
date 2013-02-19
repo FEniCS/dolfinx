@@ -98,7 +98,7 @@ namespace dolfin
                     const std::size_t cell_dim, const std::size_t num_global_cells, 
                     const std::size_t gdim, const std::size_t num_total_vertices, 
                     const std::size_t value_rank, const std::size_t padded_value_size,
-                    const std::string name, const std::string hdf5_filename);
+                    const std::string name, const std::string hdf5_filename) const;
     
     // Helper function to add topology reference to XDMF XML file
     void xml_mesh_topology(pugi::xml_node& xdmf_topology,
