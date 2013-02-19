@@ -20,9 +20,10 @@
 // Modified by Ola Skavhaug 2007-2009.
 // Modified by Magnus Vikstrøm 2007-2008.
 // Modified by Fredrik Valdmanis 2011-2012
+// Modified by Jan Blechta 2013
 //
 // First added:  2004
-// Last changed: 2012-03-15
+// Last changed: 2013-02-19
 
 #ifdef HAS_PETSC
 
@@ -318,10 +319,19 @@ void PETScMatrix::ident(std::size_t m, const dolfin::la_index* rows)
 {
   dolfin_assert(A);
 
+  PetscErrorCode ierr;
   IS is = 0;
   PetscScalar one = 1.0;
-  ISCreateGeneral(PETSC_COMM_SELF, m, rows, PETSC_COPY_VALUES, &is);
-  MatZeroRowsIS(*A, is, one, NULL, NULL);
+  const PetscInt _m = m;
+  ISCreateGeneral(PETSC_COMM_SELF, _m, rows, PETSC_COPY_VALUES, &is);
+  ierr = MatZeroRowsIS(*A, is, one, NULL, NULL);
+  if (ierr == PETSC_ERR_ARG_WRONGSTATE)
+  {
+    dolfin_error("PETScMatrix.cpp",
+                 "set given rows to identity matrix",
+                 "some diagonal elements not preallocated "
+                 "(try assembler option keep_diagonal)");
+  }
   ISDestroy(&is);
 }
 //-----------------------------------------------------------------------------

@@ -18,7 +18,7 @@
 // Modified by Mikael Mortensen 2011
 //
 // First added:  2010-02-23
-// Last changed: 2012-04-17
+// Last changed: 2013-02-19
 
 #include <boost/scoped_array.hpp>
 #include <dolfin/common/constants.h>
@@ -69,14 +69,8 @@ void GenericMatrix::ident_zeros()
   // Write a message
   log(TRACE, "Found %d zero row(s), inserting ones on the diagonal.", zero_rows.size());
 
-  // Insert one on the diagonal for rows with only zeros. Note that we
-  // are not calling ident() since that fails in PETSc if nothing
-  // has been assembled into those rows.
-  for (std::size_t i = 0; i < zero_rows.size(); i++)
-  {
-    std::pair<dolfin::la_index, dolfin::la_index> ij(zero_rows[i], zero_rows[i]);
-    setitem(ij, 1.0);
-  }
+  // Insert one on the diagonal for rows with only zeros.
+  ident(zero_rows.size(), zero_rows.data());
 
   // Apply changes
   apply("insert");
