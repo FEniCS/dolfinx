@@ -131,11 +131,10 @@ Parameters PETScPreconditioner::default_parameters()
   p_ml.add<double>("threshold");
   p_ml.add<std::size_t>("max_num_levels");
   p_ml.add<std::size_t>("print_level", 0, 10);
-
-  std::set<std::string> ml_schemes;
-  ml_schemes.insert("v");
-  ml_schemes.insert("w");
-  p_ml.add<std::string>("cycle_type", ml_schemes);
+  p_ml.add<std::string>("cycle_type", boost::assign::list_of("v")("w"));
+  p_ml.add<int>("energy_minimization", -1, 4);
+  p_ml.add<double>("energy_minimization_threshold");
+  p_ml.add<double>("auxiliary_threshold");
 
   std::set<std::string> aggregation_schemes;
   aggregation_schemes.insert("Uncoupled");
@@ -338,6 +337,31 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
                             boost::lexical_cast<std::string>(threshold).c_str());
     }
 
+    // Energy minimization strategy
+    if (parameters("ml")["energy_minimization"].is_set())
+    {
+      const int method = parameters("ml")["energy_minimization"];
+      cout << "Setting energy min" << endl;
+      PetscOptionsSetValue("-pc_ml_EnergyMinimization",
+                            boost::lexical_cast<std::string>(method).c_str());
+
+      // Energy minimization drop tolerance
+      if (parameters("ml")["energy_minimization_threshold"].is_set())
+      {
+        const double threshold = parameters("ml")["energy_minimization_threshold"];
+        PetscOptionsSetValue("-pc_ml_EnergyMinimizationDropTol",
+                              boost::lexical_cast<std::string>(threshold).c_str());
+      }
+    }
+
+    // Auxiliary threshold drop tolerance
+    if (parameters("ml")["auxiliary_threshold"].is_set())
+    {
+      const double threshold = parameters("ml")["auxiliary_threshold"];
+      PetscOptionsSetValue("-pc_ml_AuxThreshold",
+                            boost::lexical_cast<std::string>(threshold).c_str());
+    }
+
     // --- PETSc parameters
 
     // Number of smmoother applications
@@ -369,7 +393,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     //                      "0.0,1.1");
     //PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
     PetscOptionsSetValue("-mg_levels_ksp_max_it",
-                          boost::lexical_cast<std::string>(3).c_str());
+                          boost::lexical_cast<std::string>(1).c_str());
 
     //PetscOptionsSetValue("-mg_levels_pc_type", "none");
     PetscOptionsSetValue("-mg_levels_pc_type", "jacobi");
@@ -377,6 +401,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     //PetscOptionsSetValue("-mg_levels_1_pc_sor_its",
     //                      boost::lexical_cast<std::string>(2).c_str());
 
+    /*
     // Level 1 smoother (0 is coarse, N is finest)
     PetscOptionsSetValue("-mg_levels_1_ksp_type", "chebyshev");
     PetscOptionsSetValue("-mg_levels_1_ksp_max_it",
@@ -392,6 +417,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     PetscOptionsSetValue("-mg_levels_2_pc_type", "sor");
     PetscOptionsSetValue("-mg_levels_2_pc_sor_its",
 			 boost::lexical_cast<std::string>(1).c_str());
+    */
 
     #else
     warning("PETSc has not been compiled with the ML library for   "

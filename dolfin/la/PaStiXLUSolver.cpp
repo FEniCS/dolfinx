@@ -58,8 +58,7 @@ Parameters PaStiXLUSolver::default_parameters()
   p.add<std::size_t>("num_threads");
 
   // Thread mode (see PaStiX user documentation)
-  p.add<std::string>("thread_mode");
-  std::set<std::string> thread_modes
+  const std::set<std::string> thread_modes
     = boost::assign::list_of("multiple")("single")("funnel");
   p.add<std::string>("thread_mode", thread_modes);
 
