@@ -101,20 +101,20 @@ void ParMETIS::recompute_partition(std::vector<std::size_t>& cell_partition,
   std::vector<std::set<std::size_t> > local_graph;
   std::set<std::size_t> ghost_vertices;
 
-  // Calculate the dual graph for existing mesh 
+  // Calculate the dual graph for existing mesh
   GraphBuilder::compute_dual_graph(mesh_data, local_graph, ghost_vertices);
   std::vector<idx_t> adjncy;
   std::vector<idx_t> xadj;
   xadj.reserve(num_local_cells + 1);
   xadj.push_back(0);
-  
+
   for(std::vector<std::set<std::size_t> >::iterator cell_c = local_graph.begin();
       cell_c != local_graph.end(); ++cell_c)
   {
     adjncy.insert(adjncy.end(), cell_c->begin(), cell_c->end());
     xadj.push_back(adjncy.size());
   }
-    
+
   tt = time() - tt;
   double tt_max = MPI::max(tt);
   if (MPI::process_number() == 0)
@@ -122,7 +122,8 @@ void ParMETIS::recompute_partition(std::vector<std::size_t>& cell_partition,
 
   Timer timer1("PARALLEL 1b: Recompute graph partition (calling ParMETIS)");
 
-  real_t itr = (real_t)parameters["ParMETIS_repartitioning_weight"];
+  const double itr = parameters["ParMETIS_repartitioning_weight"];
+  real_t _itr = itr;
   std::vector<idx_t> vsize(xadj.size(), 1);
 
   // Call ParMETIS to repartition graph
@@ -131,7 +132,7 @@ void ParMETIS::recompute_partition(std::vector<std::size_t>& cell_partition,
   dolfin_assert(!part.empty());
   int err = ParMETIS_V3_AdaptiveRepart(&elmdist[0], &xadj[0], &adjncy[0], elmwgt,
                                        NULL, &vsize[0], &wgtflag, &numflag, &ncon, &nparts,
-                                       &tpwgts[0], &ubvec[0], &itr, options,
+                                       &tpwgts[0], &ubvec[0], &_itr, options,
                                        &edgecut, &part[0], &(*comm));
   dolfin_assert(err == METIS_OK);
 

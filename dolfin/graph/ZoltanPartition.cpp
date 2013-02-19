@@ -47,21 +47,21 @@ void ZoltanPartition::get_object_list(void *data,
                                       ZOLTAN_ID_PTR local_id, int wgt_dim,
                                       float* obj_wgts, int* ierr)
 {
-  LocalMeshData* local_mesh_data 
+  LocalMeshData* local_mesh_data
     = (LocalMeshData*)data;
 
   dolfin_assert(num_gid_entries == 1);
   dolfin_assert(num_lid_entries == 0);
-  
+
   std::size_t nlocal = local_mesh_data->cell_vertices.shape()[0];
   std::size_t offset = MPI::global_offset(nlocal, true);
-  
+
   for(std::size_t i = 0; i < nlocal; ++i)
         global_id[i] = i + offset;
 
   dolfin_assert(wgt_dim == 0);
   obj_wgts = NULL;
-  
+
   *ierr = ZOLTAN_OK;
 }
 //-----------------------------------------------------------------------------
@@ -72,7 +72,7 @@ void ZoltanPartition::get_number_edges(void *data,
                                        ZOLTAN_ID_PTR local_ids, int *num_edges,
                                        int *ierr)
 {
-  std::vector<std::set<std::size_t> > *local_graph 
+  std::vector<std::set<std::size_t> > *local_graph
     = (std::vector<std::set<std::size_t> >*)data;
 
   dolfin_assert(num_gid_entries == 1);
@@ -83,7 +83,7 @@ void ZoltanPartition::get_number_edges(void *data,
   {
     num_edges[i] = (*local_graph)[i].size();
   }
-  
+
   *ierr = ZOLTAN_OK;
 }
 //-----------------------------------------------------------------------------
@@ -97,7 +97,7 @@ void ZoltanPartition::get_all_edges(void* data,
                                  int* nbor_procs, int wgt_dim,
                                  float* ewgts, int* ierr)
 {
-  std::vector<std::set<std::size_t> > *local_graph 
+  std::vector<std::set<std::size_t> > *local_graph
     = (std::vector<std::set<std::size_t> >*)data;
 
   std::vector<std::size_t> offsets;
@@ -112,7 +112,7 @@ void ZoltanPartition::get_all_edges(void* data,
     for(std::set<std::size_t>::iterator edge = node->begin(); edge != node->end(); ++edge)
     {
       nbor_global_id[i] = *edge;
-      nbor_procs[i] = std::upper_bound(offsets.begin(), offsets.end(), *edge) - offsets.begin() - 1; 
+      nbor_procs[i] = std::upper_bound(offsets.begin(), offsets.end(), *edge) - offsets.begin() - 1;
       i++;
     }
   }
@@ -120,34 +120,33 @@ void ZoltanPartition::get_all_edges(void* data,
   dolfin_assert(wgt_dim == 0);
   ewgts = NULL;
   *ierr = ZOLTAN_OK;
-  
 }
 //-----------------------------------------------------------------------------
 int ZoltanPartition::get_geom(void* data, int* ierr)
 {
   LocalMeshData* local_mesh_data=(LocalMeshData*)data;
-  
+
   *ierr = ZOLTAN_OK;
   return local_mesh_data->gdim;
 }
 //-----------------------------------------------------------------------------
-void ZoltanPartition::get_all_geom(void *data, 
-                                   int num_gid_entries, int num_lid_entries, int num_obj, 
-                                   ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids, 
+void ZoltanPartition::get_all_geom(void *data,
+                                   int num_gid_entries, int num_lid_entries, int num_obj,
+                                   ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
                                    int num_dim, double *geom_vec, int *ierr)
 {
   LocalMeshData* local_mesh_data=(LocalMeshData*)data;
-  
+
   dolfin_assert(num_gid_entries == 1);
   dolfin_assert(num_lid_entries == 0);
 
   std::size_t gdim = local_mesh_data->gdim;
-  dolfin_assert(num_dim == gdim);
-  
-  std::size_t num_local_cells = local_mesh_data->cell_vertices.shape()[0];  
+  dolfin_assert(num_dim == (int)gdim);
+
+  std::size_t num_local_cells = local_mesh_data->cell_vertices.shape()[0];
   std::size_t cell_offset = MPI::global_offset(num_local_cells, true);
   std::size_t num_vertices_per_cell = local_mesh_data->cell_vertices.shape()[1];
-  dolfin_assert(num_obj == num_local_cells);
+  dolfin_assert(num_obj == (int)num_local_cells);
 
   // Work out all ranges for vertices
   std::size_t num_local_vertices = local_mesh_data->vertex_coordinates.shape()[0];
@@ -155,27 +154,28 @@ void ZoltanPartition::get_all_geom(void *data,
   std::size_t local_vertex_offset = MPI::global_offset(num_local_vertices, true);
   MPI::all_gather(local_vertex_offset, vertex_offsets);
   vertex_offsets.push_back(MPI::sum(num_local_vertices));
-    
+
   // Need to get all vertex coordinates which are referred to by topology
-  // onto this process... 
+  // onto this process...
   std::map<std::size_t, std::vector<double> > vertex;
 
   // Insert local vertices into map
   for(std::size_t i = 0; i < num_local_vertices; ++i)
   {
-    vertex[i + local_vertex_offset] = std::vector<double>(local_mesh_data->vertex_coordinates[i].begin(), local_mesh_data->vertex_coordinates[i].end());
+    vertex[i + local_vertex_offset] = std::vector<double>(local_mesh_data->vertex_coordinates[i].begin(),
+                                                          local_mesh_data->vertex_coordinates[i].end());
   }
 
   std::size_t num_processes = MPI::num_processes();
   std::vector<std::vector<std::size_t> >send_buffer(num_processes);
   std::vector<std::vector<std::size_t> >receive_buffer(num_processes);
-  
+
   // Make list of requested remote vertices for each remote process
-  for(std::size_t i = 0; i < num_local_cells; ++i)
-    for(std::size_t j = 0; j < num_vertices_per_cell; ++j)
+  for (std::size_t i = 0; i < num_local_cells; ++i)
+    for (std::size_t j = 0; j < num_vertices_per_cell; ++j)
     {
       std::size_t ivtx = local_mesh_data->cell_vertices[i][j];
-      if(ivtx < local_vertex_offset 
+      if (ivtx < local_vertex_offset
          || ivtx >= (local_vertex_offset + num_local_vertices))
       {
         // Find owner of this vertex and then add to request list for that process
@@ -188,25 +188,25 @@ void ZoltanPartition::get_all_geom(void *data,
 
   std::vector<std::vector<double> > dsend_buffer(num_processes);
   std::vector<std::vector<double> > dreceive_buffer(num_processes);
-  
+
   // Get received requests for vertices from remote processes, and put together answer
   // to send back
-  for(std::vector<std::vector<std::size_t> >::iterator p = receive_buffer.begin();
+  for (std::vector<std::vector<std::size_t> >::iterator p = receive_buffer.begin();
       p != receive_buffer.end(); ++p)
   {
     std::size_t proc = p - receive_buffer.begin();
-    for(std::vector<std::size_t>::iterator vidx = p->begin(); vidx != p->end(); ++vidx)
+    for (std::vector<std::size_t>::iterator vidx = p->begin(); vidx != p->end(); ++vidx)
     {
       dolfin_assert(*vidx >= local_vertex_offset);
       dolfin_assert(*vidx < (local_vertex_offset + num_local_vertices));
-      dsend_buffer[proc].insert(dsend_buffer[proc].end(), 
-                                local_mesh_data->vertex_coordinates[*vidx - local_vertex_offset].begin(), 
+      dsend_buffer[proc].insert(dsend_buffer[proc].end(),
+                                local_mesh_data->vertex_coordinates[*vidx - local_vertex_offset].begin(),
                                 local_mesh_data->vertex_coordinates[*vidx - local_vertex_offset].end());
     }
   }
 
   MPI::all_to_all(dsend_buffer, dreceive_buffer);
-  
+
   // insert received coordinates into local map.
   for(std::size_t i = 0; i < num_processes; ++i)
   {
@@ -219,13 +219,12 @@ void ZoltanPartition::get_all_geom(void *data,
   }
 
   double *geom_ptr = geom_vec;
-  for(std::size_t i = 0; i < num_local_cells; ++i)
+  for (std::size_t i = 0; i < num_local_cells; ++i)
   {
     std::vector<double> x(gdim, 0.0);
     for(std::size_t j = 0; j < num_vertices_per_cell ; ++j)
     {
       std::size_t idx = local_mesh_data->cell_vertices[global_ids[i] - cell_offset][j] ;
-      
       for(std::size_t k=0; k < gdim ; ++k)
         x[k] += vertex[idx][k];
     }
@@ -233,16 +232,14 @@ void ZoltanPartition::get_all_geom(void *data,
     std::copy(x.begin(), x.end(), geom_ptr);
     geom_ptr += gdim;
   }
-  
+
   *ierr = ZOLTAN_OK;
 }
-
- 
 //-----------------------------------------------------------------------------
 void ZoltanPartition::compute_RCB_partition(std::vector<std::size_t>& cell_partition,
                                     const LocalMeshData& mesh_data)
 {
-  Timer timer0("Partition graph (calling Zoltan RCB)");  
+  Timer timer0("Partition graph (calling Zoltan RCB)");
 
   std::size_t nlocal = mesh_data.cell_vertices.shape()[0];
 
@@ -256,18 +253,18 @@ void ZoltanPartition::compute_RCB_partition(std::vector<std::size_t>& cell_parti
   Zoltan zoltan;
 
   // Set parameters
-  zoltan.Set_Param("NUM_GID_ENTRIES", "1");  
-  zoltan.Set_Param("NUM_LID_ENTRIES", "0");  
+  zoltan.Set_Param("NUM_GID_ENTRIES", "1");
+  zoltan.Set_Param("NUM_LID_ENTRIES", "0");
 
-  zoltan.Set_Param("NUM_GLOBAL_PARTS", 
-                   boost::lexical_cast<std::string>(MPI::num_processes())); 
+  zoltan.Set_Param("NUM_GLOBAL_PARTS",
+                   boost::lexical_cast<std::string>(MPI::num_processes()));
 
-  zoltan.Set_Param("NUM_LOCAL_PARTS", "1"); 
-  zoltan.Set_Param("LB_METHOD", "RCB"); 
+  zoltan.Set_Param("NUM_LOCAL_PARTS", "1");
+  zoltan.Set_Param("LB_METHOD", "RCB");
 
   // Set call-back functions
   void *mesh_data_ptr = (void *)&mesh_data;
-  
+
   zoltan.Set_Num_Obj_Fn(get_number_of_objects, mesh_data_ptr);
   zoltan.Set_Obj_List_Fn(get_object_list, mesh_data_ptr);
   zoltan.Set_Num_Geom_Fn(get_geom, mesh_data_ptr);
@@ -286,8 +283,8 @@ void ZoltanPartition::compute_RCB_partition(std::vector<std::size_t>& cell_parti
   int* export_procs;
   int* import_parts;
   int* export_parts;
-  
-  int rc = zoltan.LB_Partition(changes, num_gids, num_lids, 
+
+  int rc = zoltan.LB_Partition(changes, num_gids, num_lids,
            num_import, import_gids, import_lids, import_procs, import_parts,
            num_export, export_gids, export_lids, export_procs, export_parts);
 
@@ -295,7 +292,7 @@ void ZoltanPartition::compute_RCB_partition(std::vector<std::size_t>& cell_parti
   dolfin_assert(num_lids == 0);
 
   std::size_t proc = MPI::process_number();
-  
+
   if (rc != ZOLTAN_OK)
   {
     dolfin_error("ZoltanPartition.cpp",
@@ -306,7 +303,7 @@ void ZoltanPartition::compute_RCB_partition(std::vector<std::size_t>& cell_parti
   // Assign all nodes to this processor
   cell_partition.assign(nlocal, proc);
   std::size_t offset = MPI::global_offset(nlocal, true);
-  
+
   // Change nodes to be exported to the appropriate remote processor
   for(std::size_t i = 0; i < (std::size_t)num_export; ++i)
   {
@@ -319,12 +316,10 @@ void ZoltanPartition::compute_RCB_partition(std::vector<std::size_t>& cell_parti
   zoltan.LB_Free_Part(&export_gids, &export_lids, &export_procs, &export_parts);
 
 }
-
-
+//-----------------------------------------------------------------------------
 void ZoltanPartition::compute_PHG_partition(std::vector<std::size_t>& cell_partition,
                                         const LocalMeshData& mesh_data)
 {
-
   Timer timer0("Partition graph (calling Zoltan PHG)");
 
   // Create data structures to hold graph
@@ -343,14 +338,14 @@ void ZoltanPartition::compute_PHG_partition(std::vector<std::size_t>& cell_parti
   Zoltan zoltan;
 
   // Set parameters
-  zoltan.Set_Param("NUM_GID_ENTRIES", "1");  
-  zoltan.Set_Param("NUM_LID_ENTRIES", "0");  
+  zoltan.Set_Param("NUM_GID_ENTRIES", "1");
+  zoltan.Set_Param("NUM_LID_ENTRIES", "0");
 
-  zoltan.Set_Param("NUM_GLOBAL_PARTS", 
-                   boost::lexical_cast<std::string>(MPI::num_processes())); 
+  zoltan.Set_Param("NUM_GLOBAL_PARTS",
+                   boost::lexical_cast<std::string>(MPI::num_processes()));
 
-  zoltan.Set_Param("NUM_LOCAL_PARTS", "1"); 
-  zoltan.Set_Param("LB_METHOD", "GRAPH"); 
+  zoltan.Set_Param("NUM_LOCAL_PARTS", "1");
+  zoltan.Set_Param("LB_METHOD", "GRAPH");
 
   // Get partition method: 'PARTITION', 'REPARTITION' or 'REFINE'
   std::string lb_approach = parameters["Zoltan_PHG_LB_APPROACH"];
@@ -360,7 +355,7 @@ void ZoltanPartition::compute_PHG_partition(std::vector<std::size_t>& cell_parti
   double phg_repart_multiplier = parameters["Zoltan_PHG_REPART_MULTIPLIER"];
   zoltan.Set_Param("PHG_REPART_MULTIPLIER",
                    boost::lexical_cast<std::string>(phg_repart_multiplier));
-  
+
 
   // Set call-back functions
   void *mesh_data_ptr = (void *)&mesh_data;
@@ -384,8 +379,8 @@ void ZoltanPartition::compute_PHG_partition(std::vector<std::size_t>& cell_parti
   int* export_procs;
   int* import_parts;
   int* export_parts;
-  
-  int rc = zoltan.LB_Partition(changes, num_gids, num_lids, 
+
+  int rc = zoltan.LB_Partition(changes, num_gids, num_lids,
            num_import, import_gids, import_lids, import_procs, import_parts,
            num_export, export_gids, export_lids, export_procs, export_parts);
 
@@ -393,7 +388,7 @@ void ZoltanPartition::compute_PHG_partition(std::vector<std::size_t>& cell_parti
   dolfin_assert(num_lids == 0);
 
   std::size_t proc = MPI::process_number();
-  
+
   if (rc != ZOLTAN_OK)
   {
     dolfin_error("ZoltanPartition.cpp",
@@ -402,9 +397,8 @@ void ZoltanPartition::compute_PHG_partition(std::vector<std::size_t>& cell_parti
   }
 
   cell_partition.assign(local_graph.size(), proc);
-  
+
   std::size_t offset = MPI::global_offset(local_graph.size(), true);
-  
   for(std::size_t i = 0; i < (std::size_t)num_export; ++i)
   {
     const std::size_t idx = export_gids[i] - offset;
@@ -414,8 +408,6 @@ void ZoltanPartition::compute_PHG_partition(std::vector<std::size_t>& cell_parti
   // Free data structures allocated by Zoltan::LB_Partition
   zoltan.LB_Free_Part(&import_gids, &import_lids, &import_procs, &import_parts);
   zoltan.LB_Free_Part(&export_gids, &export_lids, &export_procs, &export_parts);
-
-
 }
 //-----------------------------------------------------------------------------
 #else

@@ -17,7 +17,7 @@
 //
 // First added:  2013-02-15
 // Last changed: 2013-02-18
- 
+
 #ifndef __DOLFIN_ZOLTAN_PARTITION_H
 #define __DOLFIN_ZOLTAN_PARTITION_H
 
@@ -37,35 +37,36 @@ namespace dolfin
 
   public:
 
-    // Calculate partitioning using Parallel HyperGraph (Zoltan PHG)
+    /// Calculate partitioning using Parallel HyperGraph (Zoltan PHG)
     static void compute_PHG_partition(std::vector<std::size_t>& cell_partition,
                                       const LocalMeshData& mesh_data);
 
-    // Calculate partitioning using recursive block bisection (Zoltan RCB - geometric partitioner)
+    /// Calculate partitioning using recursive block bisection (Zoltan
+    /// RCB - geometric partitioner)
     static void compute_RCB_partition(std::vector<std::size_t>& cell_partition,
                                       const LocalMeshData& mesh_data);
- 
+
   private:
 
     #ifdef HAS_TRILINOS
 
     static void num_vertex_edges(void * data, unsigned int* num_edges);
-    
+
     static int get_number_of_objects(void* data, int* ierr);
-    
+
     static void get_object_list(void *data,
                                 int sizeGID, int sizeLID,
                                 ZOLTAN_ID_PTR global_id,
                                 ZOLTAN_ID_PTR local_id, int wgt_dim,
                                 float* obj_wgts, int* ierr);
-    
+
     static void get_number_edges(void *data,
                                  int num_gid_entries,
                                  int num_lid_entries,
                                  int num_obj, ZOLTAN_ID_PTR global_ids,
                                  ZOLTAN_ID_PTR local_ids, int *num_edges,
                                  int *ierr);
-    
+
     static void get_all_edges(void* data,
                               int num_gid_entries,
                               int num_lid_entries, int num_obj,
@@ -75,13 +76,13 @@ namespace dolfin
                               ZOLTAN_ID_PTR nbor_global_id,
                               int* nbor_procs, int wgt_dim,
                               float* ewgts, int* ierr);
-    
 
-    static void get_all_geom(void *data, 
-                             int num_gid_entries, int num_lid_entries, int num_obj, 
-                             ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids, 
+
+    static void get_all_geom(void *data,
+                             int num_gid_entries, int num_lid_entries, int num_obj,
+                             ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
                              int num_dim, double *geom_vec, int *ierr);
-    
+
     static int get_geom(void* data, int* ierr);
 
     #endif
