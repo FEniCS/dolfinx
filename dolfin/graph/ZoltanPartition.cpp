@@ -22,8 +22,8 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/mesh/LocalMeshData.h>
+#include <dolfin/parameter/GlobalParameters.h>
 
 #include "GraphBuilder.h"
 #include "ZoltanPartition.h"
@@ -47,17 +47,16 @@ void ZoltanPartition::get_object_list(void *data,
                                       ZOLTAN_ID_PTR local_id, int wgt_dim,
                                       float* obj_wgts, int* ierr)
 {
-  LocalMeshData* local_mesh_data
-    = (LocalMeshData*)data;
+  LocalMeshData* local_mesh_data = (LocalMeshData*)data;
 
   dolfin_assert(num_gid_entries == 1);
   dolfin_assert(num_lid_entries == 0);
 
-  std::size_t nlocal = local_mesh_data->cell_vertices.shape()[0];
-  std::size_t offset = MPI::global_offset(nlocal, true);
+  const std::size_t nlocal = local_mesh_data->cell_vertices.shape()[0];
+  const std::size_t offset = MPI::global_offset(nlocal, true);
 
-  for(std::size_t i = 0; i < nlocal; ++i)
-        global_id[i] = i + offset;
+  for (std::size_t i = 0; i < nlocal; ++i)
+    global_id[i] = i + offset;
 
   dolfin_assert(wgt_dim == 0);
   obj_wgts = NULL;
@@ -72,17 +71,15 @@ void ZoltanPartition::get_number_edges(void *data,
                                        ZOLTAN_ID_PTR local_ids, int *num_edges,
                                        int *ierr)
 {
-  std::vector<std::set<std::size_t> > *local_graph
+  std::vector<std::set<std::size_t> >* local_graph
     = (std::vector<std::set<std::size_t> >*)data;
 
   dolfin_assert(num_gid_entries == 1);
   dolfin_assert(num_lid_entries == 0);
   dolfin_assert(num_obj == (int)local_graph->size());
 
-  for(std::size_t i = 0; i < local_graph->size(); ++i)
-  {
+  for (std::size_t i = 0; i < local_graph->size(); ++i)
     num_edges[i] = (*local_graph)[i].size();
-  }
 
   *ierr = ZOLTAN_OK;
 }
@@ -97,7 +94,7 @@ void ZoltanPartition::get_all_edges(void* data,
                                  int* nbor_procs, int wgt_dim,
                                  float* ewgts, int* ierr)
 {
-  std::vector<std::set<std::size_t> > *local_graph
+  std::vector<std::set<std::size_t> >* local_graph
     = (std::vector<std::set<std::size_t> >*)data;
 
   std::vector<std::size_t> offsets;
@@ -241,7 +238,7 @@ void ZoltanPartition::compute_RCB_partition(std::vector<std::size_t>& cell_parti
 {
   Timer timer0("Partition graph (calling Zoltan RCB)");
 
-  std::size_t nlocal = mesh_data.cell_vertices.shape()[0];
+  const std::size_t nlocal = mesh_data.cell_vertices.shape()[0];
 
   // Initialise Zoltan
   float version;
@@ -291,7 +288,7 @@ void ZoltanPartition::compute_RCB_partition(std::vector<std::size_t>& cell_parti
   dolfin_assert(num_gids == 1);
   dolfin_assert(num_lids == 0);
 
-  std::size_t proc = MPI::process_number();
+  const std::size_t proc = MPI::process_number();
 
   if (rc != ZOLTAN_OK)
   {
@@ -314,7 +311,6 @@ void ZoltanPartition::compute_RCB_partition(std::vector<std::size_t>& cell_parti
   // Free data structures allocated by Zoltan::LB_Partition
   zoltan.LB_Free_Part(&import_gids, &import_lids, &import_procs, &import_parts);
   zoltan.LB_Free_Part(&export_gids, &export_lids, &export_procs, &export_parts);
-
 }
 //-----------------------------------------------------------------------------
 void ZoltanPartition::compute_PHG_partition(std::vector<std::size_t>& cell_partition,
