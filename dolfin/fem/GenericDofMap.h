@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2011 Anders Logg and Garth N. Wells
+// Copyright (C) 2010-2013 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga, 2012
 //
 // First added:  2010-05-26
-// Last changed: 2012-02-29
+// Last changed: 2013-02-19
 
 #ifndef __GENERIC_DOF_MAP_H
 #define __GENERIC_DOF_MAP_H
@@ -46,7 +46,6 @@ namespace dolfin
   class GenericVector;
   class Mesh;
   class Restriction;
-  template<typename T> class Set;
   class SubDomain;
 
   /// This class provides a generic interface for dof maps
@@ -103,12 +102,13 @@ namespace dolfin
     virtual void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
                                       const ufc::cell& ufc_cell) const = 0;
 
-    /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell version)
+    /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell
+    /// version)
     virtual void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
                                       const Cell& cell) const = 0;
 
     /// Tabulate the coordinates of all dofs owned by this process
-    virtual std::vector<double> tabulate_coordinates(const Mesh& mesh) const = 0;
+    virtual std::vector<double> tabulate_all_coordinates(const Mesh& mesh) const = 0;
 
     /// Create a copy of the dof map
     virtual boost::shared_ptr<GenericDofMap> copy() const = 0;

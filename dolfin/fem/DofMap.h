@@ -266,7 +266,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<double>
     ///         The dof coordinates (x0, y0, x1, y1, . . .)
-    std::vector<double> tabulate_coordinates(const Mesh& mesh) const;
+    std::vector<double> tabulate_all_coordinates(const Mesh& mesh) const;
 
     /// Return a map between vertices and dofs
     /// (vert_ind = vertex_to_dof_map[dof_ind])
