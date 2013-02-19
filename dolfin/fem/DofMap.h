@@ -424,7 +424,7 @@ namespace dolfin
     std::set<std::size_t> _neighbours;
 
     // Map from slave to master mesh entities
-    boost::shared_ptr<std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > > >
+    boost::shared_ptr<std::map<unsigned int, std::map<unsigned int, std::pair<unsigned int, unsigned int> > > >
       slave_master_mesh_entities;
 
   };

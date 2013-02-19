@@ -300,11 +300,11 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
 
   // Extract cell_domains etc from right-hand side form
   const MeshFunction<std::size_t>*
-    cell_domains = _L_R_T->cell_domains_shared_ptr().get();
+    cell_domains = _L_R_T->cell_domains().get();
   const MeshFunction<std::size_t>*
-    exterior_facet_domains = _L_R_T->exterior_facet_domains_shared_ptr().get();
+    exterior_facet_domains = _L_R_T->exterior_facet_domains().get();
   const MeshFunction<std::size_t>*
-    interior_facet_domains = _L_R_T->interior_facet_domains_shared_ptr().get();
+    interior_facet_domains = _L_R_T->interior_facet_domains().get();
 
   // Assemble and solve local linear systems
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -383,11 +383,11 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   // Extract cell_domains etc from right-hand side form
   dolfin_assert(_L_R_T);
   const MeshFunction<std::size_t>*
-    cell_domains = _L_R_T->cell_domains_shared_ptr().get();
+    cell_domains = _L_R_T->cell_domains().get();
   const MeshFunction<std::size_t>*
-    exterior_facet_domains = _L_R_T->exterior_facet_domains_shared_ptr().get();
+    exterior_facet_domains = _L_R_T->exterior_facet_domains().get();
   const MeshFunction<std::size_t>*
-    interior_facet_domains = _L_R_T->interior_facet_domains_shared_ptr().get();
+    interior_facet_domains = _L_R_T->interior_facet_domains().get();
 
   dolfin_assert(_a_R_dT);
   // Compute the facet residual for each local facet number

@@ -65,7 +65,7 @@ DofMap::DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
   // Compute slave-master pairs
   dolfin_assert(constrained_domain);
   const std::size_t D = mesh.topology().dim();
-  slave_master_mesh_entities.reset(new std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > >());
+  slave_master_mesh_entities.reset(new std::map<unsigned int, std::map<unsigned int, std::pair<unsigned int, unsigned int> > >());
   dolfin_assert(slave_master_mesh_entities);
   for (std::size_t d = 0; d <= D; ++d)
   {
@@ -139,7 +139,7 @@ DofMap::DofMap(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
 
   // Copy slave-master map (copy or share?)
   if (dofmap_view.slave_master_mesh_entities)
-    slave_master_mesh_entities.reset(new std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > >(*dofmap_view.slave_master_mesh_entities));
+    slave_master_mesh_entities.reset(new std::map<unsigned int, std::map<unsigned int, std::pair<unsigned int, unsigned int> > >(*dofmap_view.slave_master_mesh_entities));
 
   // Build new dof map
   DofMapBuilder::build(*this, mesh, slave_master_mesh_entities, _restriction);
@@ -381,10 +381,11 @@ boost::shared_ptr<GenericDofMap>
 //-----------------------------------------------------------------------------
 void DofMap::set(GenericVector& x, double value) const
 {
+  std::vector<double> _value;
   std::vector<std::vector<dolfin::la_index> >::const_iterator cell_dofs;
   for (cell_dofs = _dofmap.begin(); cell_dofs != _dofmap.end(); ++cell_dofs)
   {
-    std::vector<double> _value(cell_dofs->size(), value);
+    _value.resize(cell_dofs->size(), value);
     x.set(_value.data(), cell_dofs->size(), cell_dofs->data());
   }
   x.apply("add");

@@ -106,7 +106,7 @@ void MeshTopology::init(std::size_t dim)
   clear();
 
   // Initialize number of mesh entities
-  num_entities = std::vector<std::size_t>(dim + 1, 0);
+  num_entities = std::vector<unsigned int>(dim + 1, 0);
   global_num_entities = std::vector<std::size_t>(dim + 1, 0);
 
   // Initialize storage for global indices
@@ -154,17 +154,17 @@ const dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0, std::s
   return connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------
-std::map<std::size_t, std::set<std::size_t> >&
-  MeshTopology::shared_entities(std::size_t dim)
+std::map<unsigned int, std::set<unsigned int> >&
+  MeshTopology::shared_entities(unsigned int dim)
 {
   dolfin_assert(dim < this->dim());
   return _shared_entities[dim];
 }
 //-----------------------------------------------------------------------------
-const std::map<std::size_t, std::set<std::size_t> >&
-  MeshTopology::shared_entities(std::size_t dim) const
+const std::map<unsigned int, std::set<unsigned int> >&
+  MeshTopology::shared_entities(unsigned int dim) const
 {
-  std::map<std::size_t, std::map<std::size_t, std::set<std::size_t> > >::const_iterator e;
+  std::map<unsigned int, std::map<unsigned int, std::set<unsigned int> > >::const_iterator e;
   e = _shared_entities.find(dim);
   if (e == _shared_entities.end())
   {

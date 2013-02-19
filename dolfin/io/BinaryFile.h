@@ -87,19 +87,21 @@ namespace dolfin
     std::size_t read_uint();
 
     // Read array (std::size_t)
-    void read_array(std::size_t n, std::size_t* values);
+    template<typename T>
+    void read_array(std::size_t n, T* values);
 
     // Read array (double)
-    void read_array(std::size_t n, double* values);
+    //void read_array(std::size_t n, double* values);
 
     // Write std::size_t
     void write_uint(std::size_t value);
 
     // Write array (std::size_t)
-    void write_array(std::size_t n, const std::size_t* values);
+    template<typename T>
+    void write_array(std::size_t n, const T* values);
 
     // Write array (double)
-    void write_array(std::size_t n, const double* values);
+    //void write_array(std::size_t n, const double* values);
 
     // Store all connectivity in a mesh
     bool _store_connectivity;
