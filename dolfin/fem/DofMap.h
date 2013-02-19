@@ -257,6 +257,17 @@ namespace dolfin
     void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
                               const Cell& cell) const;
 
+    /// Tabulate the coordinates of all dofs on this process
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh.
+    ///
+    /// *Returns*
+    ///     std::vector<double>
+    ///         The dof coordinates (x0, y0, x1, y1, . . .)
+    std::vector<double> tabulate_coordinates(const Mesh& mesh) const;
+
     /// Return a map between vertices and dofs
     /// (vert_ind = vertex_to_dof_map[dof_ind])
     ///

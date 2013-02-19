@@ -286,6 +286,38 @@ void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
   tabulate_coordinates(coordinates, ufc_cell);
 }
 //-----------------------------------------------------------------------------
+std::vector<double> tabulate_coordinates(const Mesh& mesh) const
+{
+  dolfin_error("DofMap.cpp",
+               "tabulating coordidnates for all dofs",
+               "Not implemented");
+
+  std::vector<double> x;
+  return x;
+  /*
+  std::vector<double> x_values;
+  boost::multi_array<double, 2> coordinates;
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Get local-to-global map
+    const std::vector<dolfin::la_index>& dofs = cell_dofs(cell->index());
+
+    // Tabulate dof coordinates
+    tabulate_coordinates(coordinates, *cell);
+    dolfin_assert(coordinates.shape()[0] == dofs.size());
+    dolfin_assert(component < coordinates.shape()[1]);
+
+    // Copy coordinate (it may be possible to avoid this)
+    x_values.resize(dofs.size());
+    for (std::size_t i = 0; i < coordinates.shape()[0]; ++i)
+      x_values[i] = value*coordinates[i][component];
+
+    // Set x[component] values in vector
+    x.set(x_values.data(), dofs.size(), dofs.data());
+  }
+  */
+}
+//-----------------------------------------------------------------------------
 std::vector<std::size_t> DofMap::vertex_to_dof_map(Mesh& mesh) const
 {
   // Check that we only have dofs living on vertices

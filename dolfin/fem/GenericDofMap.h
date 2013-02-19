@@ -61,14 +61,16 @@ namespace dolfin
     /// Return the dimension of the global finite element function space
     virtual std::size_t global_dimension() const = 0;
 
-    /// Return the dimension of the local finite element function space on a
-    /// cell
+    /// Return the dimension of the local finite element function space
+    /// on a cell
     virtual std::size_t cell_dimension(std::size_t index) const = 0;
 
-    /// Return the maximum dimension of the local finite element function space
+    /// Return the maximum dimension of the local finite element
+    /// function space
     virtual std::size_t max_cell_dimension() const = 0;
 
-    // Return the geometric dimension of the coordinates this dof map provides
+    /// Return the geometric dimension of the coordinates this dof map
+    // provides
     virtual std::size_t geometric_dimension() const = 0;
 
     /// Return number of facet dofs
@@ -78,11 +80,14 @@ namespace dolfin
     /// pointer is returned.
     virtual boost::shared_ptr<const Restriction> restriction() const = 0;
 
-    /// Return the ownership range (dofs in this range are owned by this process)
+    /// Return the ownership range (dofs in this range are owned by
+    /// this process)
     virtual std::pair<std::size_t, std::size_t> ownership_range() const = 0;
 
-    /// Return map from nonlocal-dofs (that appear in local dof map) to owning process
-    virtual const boost::unordered_map<std::size_t, std::size_t>& off_process_owner() const = 0;
+    /// Return map from nonlocal-dofs (that appear in local dof map)
+    /// to owning process
+    virtual const boost::unordered_map<std::size_t, std::size_t>&
+      off_process_owner() const = 0;
 
     /// Local-to-global mapping of dofs on a cell
     virtual const std::vector<dolfin::la_index>& cell_dofs(std::size_t cell_index) const = 0;
@@ -101,6 +106,9 @@ namespace dolfin
     /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell version)
     virtual void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
                                       const Cell& cell) const = 0;
+
+    /// Tabulate the coordinates of all dofs owned by this process
+    virtual std::vector<double> tabulate_coordinates(const Mesh& mesh) const = 0;
 
     /// Create a copy of the dof map
     virtual boost::shared_ptr<GenericDofMap> copy() const = 0;
