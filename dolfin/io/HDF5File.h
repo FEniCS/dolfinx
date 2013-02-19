@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-12-04
+// Last changed: 2013-02-19
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -95,7 +95,10 @@ namespace dolfin
                                const std::string topology_name);
 
     // Convert LocalMeshData into a Mesh, when running serially
-    void build_local_mesh(Mesh &mesh, const LocalMeshData& mesh_data);
+    void build_local_mesh(Mesh &mesh, const LocalMeshData& mesh_data) const;
+
+    // Get description of cells to be written to file
+    const std::string cell_type(const std::size_t cell_dim, const Mesh& mesh);
 
     // Write contiguous data to HDF5 data set. Data is flattened into
     // a 1D array, e.g. [x0, y0, z0, x1, y1, z1] for a vector in 3D

@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-02-05
+// Last changed: 2013-02-19
 
 #ifdef HAS_HDF5
 
@@ -130,30 +130,10 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
   if (!HDF5Interface::has_group(hdf5_file_id, "/Mesh"))
     HDF5Interface::add_group(hdf5_file_id, "/Mesh");
 
-  // Get cell type
-  CellType::Type _cell_type = mesh.type().cell_type();
-  if (cell_dim == mesh.topology().dim())
-    _cell_type = mesh.type().cell_type();
-  else if (cell_dim == mesh.topology().dim() - 1)
-    _cell_type = mesh.type().facet_type();
-  else if (cell_dim == 1)
-    _cell_type = CellType::interval;
-  else if (cell_dim == 0)
-    _cell_type = CellType::point;
-  else
-  {
-    dolfin_error("HDF5File.cpp",
-                 "write mesh to file",
-                 "Only Mesh for Mesh facets can be written to file");
-  }
-
-  // Get cell type string
-  const std::string cell_type = CellType::type2string(_cell_type);
-
   // ---------- Vertices (coordinates)
   {
     // Write vertex data to HDF5 file
-    const std::string coord_dataset = name + "/coordinates";
+    const std::string coord_dataset =  name + "/coordinates";
 
     // Copy coordinates and indices and remove off-process values
     const std::size_t gdim = mesh.geometry().dim();
@@ -177,7 +157,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
         topological_data.push_back(v->global_index());
 
     // Write topology data
-    const std::string topology_dataset = name + "/topology";
+    const std::string topology_dataset =  name + "/topology";
     std::vector<std::size_t> global_size(2);
     global_size[0] = MPI::sum(topological_data.size()/(cell_dim + 1));
     global_size[1] = cell_dim + 1;
@@ -185,7 +165,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
 
     // Add cell type attribute
     HDF5Interface::add_attribute(hdf5_file_id, topology_dataset,
-                                 "celltype", cell_type);
+                                 "celltype", cell_type(cell_dim, mesh));
   }
 }
 //-----------------------------------------------------------------------------
@@ -205,31 +185,12 @@ void HDF5File::write_visualisation(const Mesh& mesh, const std::size_t cell_dim,
   if (!HDF5Interface::has_group(hdf5_file_id, "/VisualisationMesh"))
     HDF5Interface::add_group(hdf5_file_id, "/VisualisationMesh");
 
-  CellType::Type _cell_type = mesh.type().cell_type();
-  if (cell_dim == mesh.topology().dim())
-    _cell_type = mesh.type().cell_type();
-  else if (cell_dim == mesh.topology().dim() - 1)
-    _cell_type = mesh.type().facet_type();
-  else if (cell_dim == 1)
-    _cell_type = CellType::interval;
-  else if (cell_dim == 0)
-    _cell_type = CellType::point;
-  else
-  {
-    dolfin_error("HDF5File.cpp",
-                 "write mesh to file",
-                 "Only Mesh for Mesh facets can be written to file");
-  }
-
-  // Cell type string
-  const std::string cell_type = CellType::type2string(_cell_type);
-
   // Vertex numbers, ranges and offsets
   const std::size_t num_local_vertices = mesh.num_vertices();
   const std::size_t vertex_offset = MPI::global_offset(num_local_vertices, true);
 
   // Write vertex data to HDF5 file
-  const std::string coord_dataset = name + "/coordinates";
+  const std::string coord_dataset =  name + "/coordinates";
   {
     const std::size_t gdim = mesh.geometry().dim();
     const std::vector<double>& vertex_coords = mesh.coordinates();
@@ -261,14 +222,14 @@ void HDF5File::write_visualisation(const Mesh& mesh, const std::size_t cell_dim,
     }
 
     // Write topology data
-    const std::string topology_dataset = name + "/topology";
+    const std::string topology_dataset =  name + "/topology";
     std::vector<std::size_t> global_size(2);
     global_size[0] = MPI::sum(topological_data.size()/(cell_dim + 1));
     global_size[1] = cell_dim + 1;
     write_data(topology_dataset, topological_data, global_size);
 
     HDF5Interface::add_attribute(hdf5_file_id, topology_dataset, "celltype",
-                                 cell_type);
+                                 cell_type(cell_dim, mesh));
   }
 }
 //-----------------------------------------------------------------------------
@@ -388,7 +349,7 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
                                      const std::string coordinates_name,
                                      const std::string topology_name)
 {
-  Timer t("HDF5: ReadMesh");
+  Timer t("HDF5: read mesh");
 
   // Structure to store local mesh
   LocalMeshData mesh_data;
@@ -464,26 +425,12 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
     MeshPartitioning::build_distributed_mesh(input_mesh, mesh_data);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::build_local_mesh(Mesh &mesh, const LocalMeshData& mesh_data)
+void HDF5File::build_local_mesh(Mesh &mesh, const LocalMeshData& mesh_data) const
 {
   // Create mesh for editing
   MeshEditor editor;
-  std::string cell_type_str;
-
-  switch(mesh_data.tdim)
-  {
-  case 1:
-    cell_type_str = "interval";
-    break;
-  case 2:
-    cell_type_str = "triangle";
-    break;
-  case 3:
-    cell_type_str = "tetrahedron";
-    break;
-  default:
-    dolfin_error("HDF5File.cpp","resolve cell type","Topological dimension out of range");
-  }
+  dolfin_assert(mesh_data.tdim != 0);
+  std::string cell_type_str = CellType::type2string((CellType::Type)mesh_data.tdim);
 
   editor.open(mesh, cell_type_str, mesh_data.tdim, mesh_data.gdim);
   editor.init_vertices(mesh_data.num_global_vertices);
@@ -584,17 +531,16 @@ std::vector<double> HDF5File::reorder_vertices_by_global_indices(const Mesh& mes
 
   // Build vectors of coords
   std::vector<double> ordered_coords(gdim*(local_range.second - local_range.first));
-  dolfin_assert(receive_buffer_index.size() == receive_buffer_coords.size());
+  // dolfin_assert(receive_buffer_index.size() == receive_buffer_coords.size());
   for (std::size_t p = 0; p < receive_buffer_index.size(); ++p)
   {
-    dolfin_assert(gdim*receive_buffer_index[p].size() == receive_buffer_coords[p].size());
+    // dolfin_assert(gdim*receive_buffer_index[p].size() == receive_buffer_coords[p].size());
     for (std::size_t i = 0; i < receive_buffer_index[p].size(); ++i)
     {
-      dolfin_assert(receive_buffer_index[p][i] >= local_range.first && receive_buffer_index[p][i] < local_range.second);
+      //      dolfin_assert(receive_buffer_index[p][i] >= local_range.first && receive_buffer_index[p][i] < local_range.second);
       const std::size_t local_index = receive_buffer_index[p][i] - offset;
       for (std::size_t j = 0; j < gdim; ++j)
       {
-
         //dolfin_assert((local_index + j) < ordered_coords.size());
         //dolfin_assert((i*gdim + j) < receive_buffer_coords[p].size());
         ordered_coords[local_index + j] = receive_buffer_coords[p][i*gdim + j];
@@ -604,6 +550,26 @@ std::vector<double> HDF5File::reorder_vertices_by_global_indices(const Mesh& mes
 
   return ordered_coords;
 }
+//-----------------------------------------------------------------------------
+
+const std::string HDF5File::cell_type(const std::size_t cell_dim, const Mesh& mesh)
+{
+  // Get cell type
+  CellType::Type _cell_type = mesh.type().cell_type();
+  dolfin_assert(cell_dim <= mesh.topology().dim());
+  if (cell_dim == mesh.topology().dim())
+    _cell_type = mesh.type().cell_type();
+  else if (cell_dim == mesh.topology().dim() - 1)
+    _cell_type = mesh.type().facet_type();
+  else if (cell_dim == 1)
+    _cell_type = CellType::interval;
+  else if (cell_dim == 0)
+    _cell_type = CellType::point;
+
+  // Get cell type string
+  return CellType::type2string(_cell_type);
+}
+
 //-----------------------------------------------------------------------------
 
 #endif
