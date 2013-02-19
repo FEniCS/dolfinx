@@ -157,10 +157,8 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     const GenericDofMap& dofmap = *u.function_space()->dofmap();
     dolfin_assert(u.vector());
 
-    const std::size_t data_dim = u.value_size();
-
     // Allocate memory for function values at cell centres
-    const std::size_t size = mesh.num_cells()*data_dim;
+    const std::size_t size = num_local_cells*value_size;
 
     // Build lists of dofs and create map
     std::vector<dolfin::la_index> dof_set;
@@ -191,7 +189,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     cell_offset = offset.begin();
     std::vector<double> _data_values(padded_value_size*num_local_entities, 0.0);
     std::size_t count = 0;
-    if (value_rank == 1 && data_dim == 2)
+    if (value_rank == 1 && value_size == 2)
     {
       for (CellIterator cell(mesh); !cell.end(); ++cell)
       {
@@ -201,7 +199,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
       }
       ++cell_offset;
     }
-    else if (value_rank == 2 && data_dim == 4)
+    else if (value_rank == 2 && value_size == 4)
     {
       // Pad with 0.0 to 2D tensors to make them 3D
       for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -223,7 +221,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
       // Write all components
       for (CellIterator cell(mesh); !cell.end(); ++cell)
       {
-        for (std::size_t i = 0; i < data_dim; i++)
+        for (std::size_t i = 0; i < value_size; i++)
           _data_values[count++] = data_values[*cell_offset + i];
         ++cell_offset;
       }
@@ -234,7 +232,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   // FIXME: Below is messy. Should query HDF5 file writer for existing
   //        mesh name
   // Write mesh to HDF5 file
-  if (parameters["rewrite_function_mesh"])
+  if (parameters["rewrite_function_mesh"] || counter == 0)
   {
     current_mesh_name = "/VisualisationMesh/" + boost::lexical_cast<std::string>(counter);
     hdf5_file->write_visualisation(mesh, current_mesh_name);
@@ -330,8 +328,8 @@ void XDMFFile::operator<< (const MeshFunction<bool>& meshfunction)
   const Mesh& mesh = meshfunction.mesh();
   const std::size_t cell_dim = meshfunction.dim();
 
-  // HDF5 does not support a boolean type, so copy to a std::size_t with values
-  // 1 and 0
+  // HDF5 does not support a boolean type, 
+  // so copy to a std::size_t with values 1 and 0
   MeshFunction<std::size_t> uint_meshfunction(mesh, cell_dim);
   for (MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
     uint_meshfunction[cell->index()] = (meshfunction[cell->index()] ? 1 : 0);
@@ -581,7 +579,7 @@ void XDMFFile::output_XML(const double time_step, const bool vertex_data,
     pugi::xml_node xdmf_data = xdmf_values.append_child("DataItem");
     xdmf_data.append_attribute("Format") = "HDF";
 
-    std::size_t num_total_entities = vertex_data ? num_total_vertices : num_global_cells;
+    const std::size_t num_total_entities = vertex_data ? num_total_vertices : num_global_cells;
 
     s = boost::lexical_cast<std::string>(num_total_entities) + " "
       + boost::lexical_cast<std::string>(padded_value_size);
