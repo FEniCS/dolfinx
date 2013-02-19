@@ -311,11 +311,15 @@ std::vector<double> DofMap::tabulate_all_coordinates(const Mesh& mesh) const
     // Copy dof coordinates into vector
     for (std::size_t i = 0; i < dofs.size(); ++i)
     {
-      const std::size_t local_index = dofs[i] - offset;
-      for (std::size_t j = 0; j < gdim; ++j)
+      const std::size_t dof = dofs[i];
+      if (dof >=  _ownership_range.first && dof < _ownership_range.second)
       {
-        dolfin_assert(gdim*local_index + j < x.size());
-        x[gdim*local_index + j] = coordinates[i][j];
+        const std::size_t local_index = dof - offset;
+        for (std::size_t j = 0; j < gdim; ++j)
+        {
+          dolfin_assert(gdim*local_index + j < x.size());
+          x[gdim*local_index + j] = coordinates[i][j];
+        }
       }
     }
   }

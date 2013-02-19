@@ -135,13 +135,10 @@ Parameters PETScPreconditioner::default_parameters()
   p_ml.add<int>("energy_minimization", -1, 4);
   p_ml.add<double>("energy_minimization_threshold");
   p_ml.add<double>("auxiliary_threshold");
-
-  std::set<std::string> aggregation_schemes;
-  aggregation_schemes.insert("Uncoupled");
-  aggregation_schemes.insert("Coupled");
-  aggregation_schemes.insert("MIS");
-  aggregation_schemes.insert("METIS");
-  p_ml.add<std::string>("aggregation_scheme", aggregation_schemes);
+  p_ml.add<bool>("repartition");
+  p_ml.add<std::string>("repartition_type", boost::assign::list_of("Zoltan")("ParMETIS"));
+  p_ml.add<std::string>("zoltan_repartition_scheme", boost::assign::list_of("RCB")("hypergraph")("fast_hypergraph"));
+  p_ml.add<std::string>("aggregation_scheme", boost::assign::list_of("Uncoupled")("Coupled")("MIS")("METIS"));
   p.add(p_ml);
 
   // Hypre/ParaSails parameters
@@ -185,7 +182,7 @@ PETScPreconditioner::~PETScPreconditioner()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PETScPreconditioner::set(PETScKrylovSolver& solver) const
+void PETScPreconditioner::set(PETScKrylovSolver& solver)
 {
   dolfin_assert(solver.ksp());
 
@@ -341,7 +338,6 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     if (parameters("ml")["energy_minimization"].is_set())
     {
       const int method = parameters("ml")["energy_minimization"];
-      cout << "Setting energy min" << endl;
       PetscOptionsSetValue("-pc_ml_EnergyMinimization",
                             boost::lexical_cast<std::string>(method).c_str());
 
@@ -355,11 +351,30 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     }
 
     // Auxiliary threshold drop tolerance
+    /*
+    PetscOptionsSetValue("-pc_ml_Aux", "1");
     if (parameters("ml")["auxiliary_threshold"].is_set())
     {
       const double threshold = parameters("ml")["auxiliary_threshold"];
       PetscOptionsSetValue("-pc_ml_AuxThreshold",
                             boost::lexical_cast<std::string>(threshold).c_str());
+    }
+    */
+
+    // Allow ML to re-partition problem
+    if (parameters("ml")["repartition"].is_set())
+    {
+      const bool repartition = parameters("ml")["repartition"];
+      if (repartition)
+      {
+        PetscOptionsSetValue("-pc_ml_repartition", "1");
+        if (parameters("ml")["repartition_type"].is_set())
+          PetscOptionsSetValue("-pc_ml_repartitionType", parameters("ml")["repartition_type"].value_str().c_str());
+        if (parameters("ml")["zoltan_repartition_scheme"].is_set())
+          PetscOptionsSetValue("-pc_ml_repartitionZoltanScheme", parameters("ml")["zoltan_repartition_scheme"].value_str().c_str());
+      }
+      else
+        PetscOptionsSetValue("-pc_ml_repartition", "0");
     }
 
     // --- PETSc parameters
@@ -553,6 +568,13 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   // Make sure options are set
   PCSetFromOptions(pc);
 
+  // Set physical coordinates for row dofs
+  if (!_coordinates.empty())
+    PCSetCoordinates(pc, 3, _coordinates.size()/3, _coordinates.data());
+
+  // Clear memeory
+  _coordinates.clear();
+
   // Print preconditioner information
   const bool report = parameters["report"];
   if (report)
@@ -598,6 +620,11 @@ void PETScPreconditioner::set_nullspace(const std::vector<const GenericVector*> 
                        &petsc_vec[0], petsc_nullspace.get());
   }
   #endif
+}
+//-----------------------------------------------------------------------------
+void PETScPreconditioner::set_coordinates(const std::vector<double>& x)
+{
+  _coordinates = x;
 }
 //-----------------------------------------------------------------------------
 std::string PETScPreconditioner::str(bool verbose) const

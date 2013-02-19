@@ -58,7 +58,7 @@ namespace dolfin
     virtual ~PETScPreconditioner();
 
     /// Set the precondtioner type and parameters
-    virtual void set(PETScKrylovSolver& solver) const;
+    virtual void set(PETScKrylovSolver& solver);
 
     /// Set the (approximate) null space of the preconditioner operator
     /// (matrix). This is required for certain preconditioner types,
@@ -68,6 +68,12 @@ namespace dolfin
     /// Return the PETSc null space
     boost::shared_ptr<const MatNullSpace> nullspace() const
     { return petsc_nullspace; }
+
+    /// Set the coordinates of the operator (matrix) rows. This is
+    /// can be used by required for certain preconditioners, e.g. ML.
+    /// The input for this function can be generated using
+    /// GenericDofMap::tabulate_all_dofs.
+    void set_coordinates(const std::vector<double>& x);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -98,6 +104,9 @@ namespace dolfin
     // doesn't support custom deleters. Change to std::unique_ptr in
     // the future.
     boost::shared_ptr<MatNullSpace> petsc_nullspace;
+
+    // Operator row coordinates
+    std::vector<double> _coordinates;
 
   };
 
