@@ -539,8 +539,8 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
 void PETScPreconditioner::set_nullspace(const std::vector<const GenericVector*> nullspace)
 {
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR < 3
-  dolfin_error("PETScMatrix.cpp",
-               "set approximate null space for PETSc matrix",
+  dolfin_error("PETScPreconditioner.cpp",
+               "set approximate null space for PETSc preconditioner",
                "This is supported by PETSc version > 3.2");
   #else
   if (nullspace.empty())
