@@ -246,17 +246,6 @@ namespace dolfin
     void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
                               const ufc::cell& ufc_cell) const;
 
-    /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell
-    /// version)
-    ///
-    /// *Arguments*
-    ///     coordinates (boost::multi_array<double, 2>)
-    ///         The coordinates of all dofs on a cell.
-    ///     cell (_Cell_)
-    ///         The cell.
-    void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-                              const Cell& cell) const;
-
     /// Tabulate the coordinates of all dofs on this process
     ///
     /// *Arguments*

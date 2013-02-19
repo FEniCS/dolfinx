@@ -102,11 +102,6 @@ namespace dolfin
     virtual void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
                                       const ufc::cell& ufc_cell) const = 0;
 
-    /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell
-    /// version)
-    virtual void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-                                      const Cell& cell) const = 0;
-
     /// Tabulate the coordinates of all dofs owned by this process
     virtual std::vector<double> tabulate_all_coordinates(const Mesh& mesh) const = 0;
 

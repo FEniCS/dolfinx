@@ -278,13 +278,6 @@ void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
   _ufc_dofmap->tabulate_coordinates(coords.data(), ufc_cell);
 }
 //-----------------------------------------------------------------------------
-void DofMap::tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-                                  const Cell& cell) const
-{
-  UFCCell ufc_cell(cell);
-  tabulate_coordinates(coordinates, ufc_cell);
-}
-//-----------------------------------------------------------------------------
 std::vector<double> DofMap::tabulate_all_coordinates(const Mesh& mesh) const
 {
   // Geometric dimension
