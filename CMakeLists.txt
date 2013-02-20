@@ -332,7 +332,7 @@ endif()
 
 # Check for PaStiX
 if (DOLFIN_ENABLE_PASTIX)
-  find_package(PaStiX)
+  find_package(PaStiX 5.2.1)
 endif()
 
 # Check for Trilinos and the requires Trilinos packages
