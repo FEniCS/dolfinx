@@ -570,7 +570,13 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
 
   // Set physical coordinates for row dofs
   if (!_coordinates.empty())
+  {
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR < 3
+    PCSetCoordinates(pc, 3, _coordinates.data());
+  #else
     PCSetCoordinates(pc, 3, _coordinates.size()/3, _coordinates.data());
+  #endif
+  }
 
   // Clear memeory
   _coordinates.clear();
