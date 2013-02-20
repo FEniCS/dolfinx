@@ -163,7 +163,7 @@ Parameters PETScPreconditioner::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-PETScPreconditioner::PETScPreconditioner(std::string type) : type(type)
+PETScPreconditioner::PETScPreconditioner(std::string type) : type(type), gdim(0)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -570,7 +570,10 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
 
   // Set physical coordinates for row dofs
   if (!_coordinates.empty())
-    PCSetCoordinates(pc, 3, _coordinates.size()/3, _coordinates.data());
+  {
+    dolfin_assert(gdim > 0);
+    PCSetCoordinates(pc, gdim, _coordinates.size()/gdim, _coordinates.data());
+  }
 
   // Clear memeory
   _coordinates.clear();
@@ -622,9 +625,11 @@ void PETScPreconditioner::set_nullspace(const std::vector<const GenericVector*> 
   #endif
 }
 //-----------------------------------------------------------------------------
-void PETScPreconditioner::set_coordinates(const std::vector<double>& x)
+void PETScPreconditioner::set_coordinates(const std::vector<double>& x,
+                                          std::size_t dim)
 {
   _coordinates = x;
+  gdim = dim;
 }
 //-----------------------------------------------------------------------------
 std::string PETScPreconditioner::str(bool verbose) const

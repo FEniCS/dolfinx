@@ -69,11 +69,11 @@ namespace dolfin
     boost::shared_ptr<const MatNullSpace> nullspace() const
     { return petsc_nullspace; }
 
-    /// Set the coordinates of the operator (matrix) rows. This is
-    /// can be used by required for certain preconditioners, e.g. ML.
-    /// The input for this function can be generated using
-    /// GenericDofMap::tabulate_all_dofs.
-    void set_coordinates(const std::vector<double>& x);
+    /// Set the coordinates of the operator (matrix) rows and geometric
+    /// dimension d. This is can be used by required for certain
+    /// preconditioners, e.g. ML. The input for this function can be
+    /// generated using GenericDofMap::tabulate_all_dofs.
+    void set_coordinates(const std::vector<double>& x, std::size_t dim);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -107,6 +107,9 @@ namespace dolfin
 
     // Operator row coordinates
     std::vector<double> _coordinates;
+
+    // Geometric dimension associates with coordinates
+    std::size_t gdim;
 
   };
 
