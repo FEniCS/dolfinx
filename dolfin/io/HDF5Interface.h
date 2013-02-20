@@ -196,12 +196,14 @@ namespace dolfin
     hid_t chunking_properties;
     if (use_chunking)
     {
-      // Set chunk size and limit to 1MB
-      hsize_t chunk_size = dimsf[0];
+      // Set chunk size and limit to 1kB min/1MB max
+      hsize_t chunk_size = dimsf[0]/2;
       if (chunk_size > 1048576)
         chunk_size = 1048576;
+      if (chunk_size < 1024)
+        chunk_size = 1024;
 
-      hsize_t chunk_dims[2] = {chunk_size, 1};
+      hsize_t chunk_dims[2] = {chunk_size, dimsf[1]};
       chunking_properties = H5Pcreate(H5P_DATASET_CREATE);
       H5Pset_chunk(chunking_properties, rank, chunk_dims);
     }

@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2013-02-19
+// Last changed: 2013-02-20
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -136,15 +136,6 @@ namespace dolfin
     if (!HDF5Interface::has_group(hdf5_file_id, group_name))
       HDF5Interface::add_group(hdf5_file_id, group_name);
 
-    /*
-    if (global_size.size() > 2)
-    {
-      dolfin_error("HDF5File.h",
-                   "write data set to HDF5 file",
-                   "Writing data of rank > 2 is not yet supported. It will be fixed soon");
-    }
-    */
-
     dolfin_assert(global_size.size() > 0);
 
     // Get number of 'items'
@@ -157,9 +148,10 @@ namespace dolfin
     const std::size_t offset = MPI::global_offset(num_local_items, true);
     std::pair<std::size_t, std::size_t> range(offset, offset + num_local_items);
 
+    const bool chunking = parameters["chunking"];
     // Write data to HDF5 file
     HDF5Interface::write_dataset(hdf5_file_id, dataset_name, data,
-                                 range, global_size, mpi_io, false);
+                                 range, global_size, mpi_io, chunking);
   }
   //---------------------------------------------------------------------------
 
