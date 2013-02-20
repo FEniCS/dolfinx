@@ -83,8 +83,7 @@ namespace dolfin
     MeshValueCollection(const Mesh& mesh, const std::string filename, std::size_t dim);
 
     /// Destructor
-    ~MeshValueCollection()
-    {}
+    ~MeshValueCollection() {}
 
     /// Assignment operator
     ///
@@ -388,11 +387,11 @@ namespace dolfin
                                          std::size_t local_entity,
                                          const T& value)
   {
-    const std::pair<std::size_t, std::size_t> pos(std::make_pair(cell_index, local_entity));
+    const std::pair<std::size_t, std::size_t> pos(cell_index, local_entity);
     std::pair<typename std::map<std::pair<std::size_t, std::size_t>, T>::iterator, bool> it;
     it = _values.insert(std::make_pair(pos, value));
 
-    // If an item with same key already excists the value has not been
+    // If an item with same key already exists the value has not been
     // set and we need to update it
     if (!it.second)
       it.first->second = value;
@@ -410,17 +409,16 @@ namespace dolfin
     if (_dim == D)
     {
       // Set local entity index to zero when we mark a cell
-      const std::pair<std::size_t, std::size_t> pos(std::make_pair(entity_index, 0));
+      const std::pair<std::size_t, std::size_t> pos(entity_index, 0);
       std::pair<typename std::map<std::pair<std::size_t, std::size_t>, T>::iterator, bool> it;
       it = _values.insert(std::make_pair(pos, value));
 
-      // If an item with same key already excists the value has not been
+      // If an item with same key already exists the value has not been
       // set and we need to update it
       if (!it.second)
-	it.first->second = value;
+        it.first->second = value;
 
       return it.second;
-
     }
 
     // Get mesh connectivity d --> D
@@ -437,11 +435,11 @@ namespace dolfin
     const std::size_t local_entity = cell.index(entity);
 
     // Add value
-    const std::pair<std::size_t, std::size_t> pos(std::make_pair(cell.index(), local_entity));
+    const std::pair<std::size_t, std::size_t> pos(cell.index(), local_entity);
     std::pair<typename std::map<std::pair<std::size_t, std::size_t>, T>::iterator, bool> it;
     it = _values.insert(std::make_pair(pos, value));
 
-    // If an item with same key already excists the value has not been
+    // If an item with same key already exists the value has not been
     // set and we need to update it
     if (!it.second)
       it.first->second = value;
@@ -453,15 +451,17 @@ namespace dolfin
   T MeshValueCollection<T>::get_value(std::size_t cell_index,
 				      std::size_t local_entity)
   {
-    const std::pair<std::size_t, std::size_t> pos(std::make_pair(cell_index, local_entity));
-    const typename std::map<std::pair<std::size_t, std::size_t>, T>::const_iterator it =
-      _values.find(pos);
+    const std::pair<std::size_t, std::size_t> pos(cell_index, local_entity);
+    const typename std::map<std::pair<std::size_t, std::size_t>, T>::const_iterator
+      it = _values.find(pos);
 
     if (it == _values.end())
+    {
       dolfin_error("MeshValueCollection.h",
                    "extract value",
                    "No value stored for cell index: %d and local index: %d",
                    cell_index, local_entity);
+    }
 
     return it->second;
   }
@@ -495,8 +495,10 @@ namespace dolfin
       warning("Verbose output of MeshValueCollection must be implemented manually.");
     }
     else
+    {
       s << "<MeshValueCollection of topological dimension " << dim()
         << " containing " << size() << " values>";
+    }
 
     return s.str();
   }

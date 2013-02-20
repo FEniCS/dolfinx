@@ -110,6 +110,7 @@ namespace dolfin
           XMLMeshValueCollection::read<T>(mesh_value_collection, type, xml_meshfunction);
           dim = mesh_value_collection.dim();
         }
+
         MPI::broadcast(dim);
         mesh_value_collection.set_dim(dim);
 
@@ -119,6 +120,7 @@ namespace dolfin
         // Distribute MeshValueCollection
         MeshPartitioning::build_distributed_value_collection<T>(mesh_value_collection,
                                                                local_data, mesh);
+
       }
 
       // Assign collection to mesh function (this is a local operation)

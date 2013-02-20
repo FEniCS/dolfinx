@@ -297,16 +297,17 @@ namespace dolfin
 
   private:
 
-    /// Values at the set of mesh entities
+    // Values at the set of mesh entities. We don't use a std::vector<T>
+    // here because it has trouble with bool, which C++ specialises.
     boost::scoped_array<T> _values;
 
-    /// The mesh
+    // The mesh
     const Mesh* _mesh;
 
-    /// Topological dimension
+    // Topological dimension
     std::size_t _dim;
 
-    /// Number of mesh entities
+    // Number of mesh entities
     std::size_t _size;
   };
 
@@ -318,26 +319,24 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template <typename T>
   MeshFunction<T>::MeshFunction() : Variable("f", "unnamed MeshFunction"),
-    Hierarchical<MeshFunction<T> >(*this),
-    _values(0), _mesh(0), _dim(0), _size(0)
+    Hierarchical<MeshFunction<T> >(*this), _values(0), _mesh(0), _dim(0),
+    _size(0)
   {
     // Do nothing
   }
   //---------------------------------------------------------------------------
   template <typename T>
   MeshFunction<T>::MeshFunction(const Mesh& mesh) :
-      Variable("f", "unnamed MeshFunction"),
-      Hierarchical<MeshFunction<T> >(*this),
-      _mesh(&mesh), _dim(0), _size(0)
+    Variable("f", "unnamed MeshFunction"),
+    Hierarchical<MeshFunction<T> >(*this), _mesh(&mesh), _dim(0), _size(0)
   {
     // Do nothing
   }
   //---------------------------------------------------------------------------
   template <typename T>
   MeshFunction<T>::MeshFunction(const Mesh& mesh, std::size_t dim) :
-      Variable("f", "unnamed MeshFunction"),
-      Hierarchical<MeshFunction<T> >(*this),
-      _mesh(&mesh), _dim(0), _size(0)
+    Variable("f", "unnamed MeshFunction"),
+    Hierarchical<MeshFunction<T> >(*this), _mesh(&mesh), _dim(0), _size(0)
   {
     init(dim);
   }
@@ -354,9 +353,8 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template <typename T>
   MeshFunction<T>::MeshFunction(const Mesh& mesh, const std::string filename) :
-      Variable("f", "unnamed MeshFunction"),
-      Hierarchical<MeshFunction<T> >(*this),
-      _mesh(&mesh), _dim(0), _size(0)
+    Variable("f", "unnamed MeshFunction"),
+    Hierarchical<MeshFunction<T> >(*this), _mesh(&mesh), _dim(0), _size(0)
   {
     File file(filename);
     file >> *this;
@@ -364,19 +362,18 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template <typename T>
   MeshFunction<T>::MeshFunction(const Mesh& mesh,
-      const MeshValueCollection<T>& value_collection) :
-      Variable("f", "unnamed MeshFunction"),
-      Hierarchical<MeshFunction<T> >(*this),
-      _mesh(&mesh), _dim(value_collection.dim()), _size(0)
+    const MeshValueCollection<T>& value_collection) :
+    Variable("f", "unnamed MeshFunction"),
+    Hierarchical<MeshFunction<T> >(*this), _mesh(&mesh),
+    _dim(value_collection.dim()), _size(0)
   {
     *this = value_collection;
   }
   //---------------------------------------------------------------------------
   template <typename T>
   MeshFunction<T>::MeshFunction(const MeshFunction<T>& f) :
-      Variable("f", "unnamed MeshFunction"),
-      Hierarchical<MeshFunction<T> >(*this),
-      _mesh(0), _dim(0), _size(0)
+    Variable("f", "unnamed MeshFunction"),
+    Hierarchical<MeshFunction<T> >(*this), _mesh(0), _dim(0), _size(0)
   {
     *this = f;
   }
@@ -384,10 +381,17 @@ namespace dolfin
   template <typename T>
   MeshFunction<T>& MeshFunction<T>::operator= (const MeshFunction<T>& f)
   {
+    if (_size != f._size)
+    {
+      // Below seems to cause a leak, the two-line approach seems OK.
+      //_values.reset(new T[_size]);
+
+      _values.reset();
+      _values.reset(new T[f._size]);
+    }
     _mesh = f._mesh;
     _dim  = f._dim;
     _size = f._size;
-    _values.reset(new T[_size]);
     std::copy(f._values.get(), f._values.get() + _size, _values.get());
 
     Hierarchical<MeshFunction<T> >::operator=(f);
@@ -578,10 +582,18 @@ namespace dolfin
     dolfin_assert(mesh.size(dim) == size);
 
     // Initialize data
+    if (_size != size)
+    {
+      // Below seems to cause a leak, the two-line approach seems OK.
+      //_values.reset(new T[size]);
+
+      _values.reset();
+      _values.reset(new T[size]);
+    }
+
     _mesh = &mesh;
     _dim = dim;
     _size = size;
-    _values.reset(new T[size]);
   }
   //---------------------------------------------------------------------------
   template <typename T>
