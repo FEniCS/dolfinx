@@ -159,11 +159,11 @@ namespace dolfin
     ///
     ///         UnitSquare mesh(1, 1);
     ///         Cell cell(mesh, 0);
-    ///         info("%g", cell.inradius());
+    ///         info("%g", cell.radius_ratio());
     ///
     ///     output::
     ///
-    ///
+    ///         0.828427
     double radius_ratio() const
     {
       // We would need facet areas

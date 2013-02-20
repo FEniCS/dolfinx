@@ -674,12 +674,14 @@ namespace dolfin
     ///         No example code available for this function.
     double rmax() const;
 
-    /// Compute minimum radius ratio.
+    /// Compute minimum normalized radius ratio of cells.
     ///
     /// *Returns*
     ///     double
-    ///         The minimum cell radius ratio ( = cell_dimension *
-    ///         * inradius / circumradius)
+    ///         The minimum over cells of normalized cell
+    ///         radius ratio (which is = cell_dimension *
+    ///         * inradius / circumradius; cell_dimension
+    ///         is normalization factor).
     ///
     /// *Example*
     ///     .. note::
@@ -687,12 +689,14 @@ namespace dolfin
     ///         No example code available for this function.
     double radius_ratio_min() const;
 
-    /// Compute maximum radius ratio.
+    /// Compute maximum normalized radius ratio of cells.
     ///
     /// *Returns*
     ///     double
-    ///         The maximum cell radius ratio ( = cell_dimension *
-    ///         * inradius / circumradius)
+    ///         The maximum over cells of normalized cell
+    ///         radius ratio (which is = cell_dimension *
+    ///         * inradius / circumradius; cell_dimension
+    ///         is normalization factor).
     ///
     /// *Example*
     ///     .. note::

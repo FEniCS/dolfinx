@@ -64,7 +64,7 @@ namespace dolfin
     /// Compute diameter of triangle
     double diameter(const MeshEntity& triangle) const;
 
-    /// Compute dim*inradius/circumradius for given triangle
+    /// Compute 2.*inradius/circumradius for given triangle
     virtual double radius_ratio(const Cell& triangle) const;
 
     /// Compute component i of normal of given facet with respect to the cell
