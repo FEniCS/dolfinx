@@ -94,8 +94,8 @@ namespace dolfin
     // Choose data type
     if (type == "uint")
     {
-      for (pugi::xml_node_iterator it = mvc_node->begin();
-           it != mvc_node->end(); ++it)
+      pugi::xml_node_iterator it;
+      for (it = mvc_node->begin(); it != mvc_node->end(); ++it)
       {
         const std::size_t cell_index = it->attribute("cell_index").as_uint();
         const std::size_t local_entity = it->attribute("local_entity").as_uint();
@@ -105,8 +105,8 @@ namespace dolfin
     }
     else if (type == "int")
     {
-      for (pugi::xml_node_iterator it = mvc_node->begin();
-           it != mvc_node->end(); ++it)
+      pugi::xml_node_iterator it;
+      for (it = mvc_node->begin(); it != mvc_node->end(); ++it)
       {
         const std::size_t cell_index = it->attribute("cell_index").as_uint();
         const std::size_t local_entity = it->attribute("local_entity").as_uint();
@@ -116,8 +116,8 @@ namespace dolfin
     }
     else if (type == "double")
     {
-      for (pugi::xml_node_iterator it = mvc_node->begin();
-           it != mvc_node->end(); ++it)
+      pugi::xml_node_iterator it;
+      for (it = mvc_node->begin(); it != mvc_node->end(); ++it)
       {
         const std::size_t cell_index = it->attribute("cell_index").as_uint();
         const std::size_t local_entity = it->attribute("local_entity").as_uint();
@@ -127,8 +127,8 @@ namespace dolfin
     }
     else if (type == "bool")
     {
-      for (pugi::xml_node_iterator it = mvc_node->begin();
-           it != mvc_node->end(); ++it)
+      pugi::xml_node_iterator it;
+      for (it = mvc_node->begin(); it != mvc_node->end(); ++it)
       {
         const std::size_t cell_index = it->attribute("cell_index").as_uint();
         const std::size_t local_entity = it->attribute("local_entity").as_uint();

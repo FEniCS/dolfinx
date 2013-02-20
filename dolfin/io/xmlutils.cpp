@@ -26,8 +26,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const pugi::xml_node>
-dolfin::get_node(const pugi::xml_node& xml_node,
-                 std::string node_name)
+  dolfin::get_node(const pugi::xml_node& xml_node, std::string node_name)
 {
   // Check node itself
   if (xml_node.name() == node_name)

@@ -135,7 +135,7 @@ namespace dolfin
     const std::size_t dim = mesh_values.dim();
 
     // Clear MeshValueCollection values
-    mesh_values.values().clear();
+    mesh_values.clear();
 
     // Initialise global entity numbering
     DistributedMeshTools::number_entities(mesh, dim);

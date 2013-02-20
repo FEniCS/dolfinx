@@ -20,7 +20,6 @@
 // First added:  2010-02-23
 // Last changed: 2012-04-17
 
-#include <boost/scoped_array.hpp>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Timer.h>
 #include "GenericSparsityPattern.h"
