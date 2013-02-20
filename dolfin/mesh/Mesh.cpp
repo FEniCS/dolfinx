@@ -26,7 +26,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-09
-// Last changed: 2013-01-25
+// Last changed: 2013-02-20
 
 #include <boost/serialization/map.hpp>
 #include <dolfin/common/Array.h>
@@ -543,6 +543,46 @@ double Mesh::hmax() const
     h = std::max(h, cell->diameter());
 
   return h;
+}
+//-----------------------------------------------------------------------------
+double Mesh::rmin() const
+{
+  CellIterator cell(*this);
+  double r = cell->inradius();
+  for (; !cell.end(); ++cell)
+    r = std::min(r, cell->inradius());
+
+  return r;
+}
+//-----------------------------------------------------------------------------
+double Mesh::rmax() const
+{
+  CellIterator cell(*this);
+  double r = cell->inradius();
+  for (; !cell.end(); ++cell)
+    r = std::max(r, cell->inradius());
+
+  return r;
+}
+//-----------------------------------------------------------------------------
+double Mesh::radius_ratio_min() const
+{
+  CellIterator cell(*this);
+  double q = cell->radius_ratio();
+  for (; !cell.end(); ++cell)
+    q = std::min(q, cell->radius_ratio());
+
+  return q;
+}
+//-----------------------------------------------------------------------------
+double Mesh::radius_ratio_max() const
+{
+  CellIterator cell(*this);
+  double q = cell->radius_ratio();
+  for (; !cell.end(); ++cell)
+    q = std::max(q, cell->radius_ratio());
+
+  return q;
 }
 //-----------------------------------------------------------------------------
 std::size_t Mesh::hash() const
