@@ -238,16 +238,40 @@ void XMLFile::operator<< (const Function& output)
 template<typename T> void XMLFile::read_mesh_function(MeshFunction<T>& t,
                                                   const std::string type) const
 {
-  pugi::xml_document xml_doc;
-
-  // Open file on process 0 only
-  pugi::xml_node dolfin_node;
-  if (MPI::process_number() == 0)
+  if (MPI::num_processes() == 1)
   {
+    pugi::xml_document xml_doc;
     load_xml_doc(xml_doc);
-    dolfin_node = get_dolfin_xml_node(xml_doc);
+    pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
+    XMLMeshFunction::read(t, type, dolfin_node);
   }
-  XMLMeshFunction::read(t, type, dolfin_node);
+  else
+  {
+    // Read a MeshValueCollection on processs 0, then communicate to other procs
+    std::size_t dim = 0;
+    MeshValueCollection<T> mvc;
+    if (MPI::process_number() == 0)
+    {
+      pugi::xml_document xml_doc;
+      load_xml_doc(xml_doc);
+      pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
+      XMLMeshFunction::read(mvc, type, dolfin_node);
+      dim = mvc.dim();
+    }
+
+    // Broadcast and set dimension
+    MPI::broadcast(dim);
+    mvc.set_dim(dim);
+
+    // Build local data
+    LocalMeshValueCollection<T> local_data(mvc, dim);
+
+    // Distribute MeshValueCollection
+    MeshPartitioning::build_distributed_value_collection<T>(mvc, local_data, t.mesh());
+
+    // Assign collection to mesh function (this is a local operation)
+    t = mvc;
+  }
 }
 //-----------------------------------------------------------------------------
 template<typename T> void XMLFile::write_mesh_function(const MeshFunction<T>& t,
@@ -319,6 +343,7 @@ void XMLFile::load_xml_doc(pugi::xml_document& xml_doc) const
   else
     result = xml_doc.load_file(filename.c_str());
 
+  // Check the XML file was opened successfully
   if (!result)
   {
     dolfin_error("XMLFile.cpp",

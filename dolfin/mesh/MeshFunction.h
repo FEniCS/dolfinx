@@ -382,13 +382,7 @@ namespace dolfin
   MeshFunction<T>& MeshFunction<T>::operator= (const MeshFunction<T>& f)
   {
     if (_size != f._size)
-    {
-      // Below seems to cause a leak, the two-line approach seems OK.
-      //_values.reset(new T[_size]);
-
-      _values.reset();
       _values.reset(new T[f._size]);
-    }
     _mesh = f._mesh;
     _dim  = f._dim;
     _size = f._size;
@@ -583,14 +577,7 @@ namespace dolfin
 
     // Initialize data
     if (_size != size)
-    {
-      // Below seems to cause a leak, the two-line approach seems OK.
-      //_values.reset(new T[size]);
-
-      _values.reset();
       _values.reset(new T[size]);
-    }
-
     _mesh = &mesh;
     _dim = dim;
     _size = size;
