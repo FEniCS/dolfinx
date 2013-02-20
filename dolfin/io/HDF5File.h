@@ -54,11 +54,11 @@ namespace dolfin
     /// Write Vector to file in a format suitable for re-reading
     void write(const GenericVector& x, const std::string name);
 
-    /// Write Mesh to file
+    /// Write Mesh to file in a format suitable for re-reading
     void write(const Mesh& mesh, const std::string name);
 
-    /// Write Mesh of given cell dimension to file in a format suitable
-    /// for re-reading
+    /// Write Mesh of given cell dimension to file 
+    /// in a format suitable for re-reading
     void write(const Mesh& mesh, const std::size_t cell_dim,
                const std::string name);
 
@@ -89,7 +89,7 @@ namespace dolfin
     // Friend
     friend class XDMFFile;
 
-    // Read a mesh which has locally indexed topology and repartition
+    // Read a mesh and repartition (if running in parallel)
     void read_mesh_repartition(Mesh &input_mesh,
                                const std::string coordinates_name,
                                const std::string topology_name);
@@ -111,7 +111,9 @@ namespace dolfin
     static std::string search_list(const std::vector<std::string>& list,
                                    const std::string& search_term);
 
-    std::vector<double>
+    // Reorder vertices into global index order, so they can be saved
+    // correctly for HDF5 mesh output
+    std::vector<double> 
       reorder_vertices_by_global_indices(const Mesh& mesh) const;
 
     // HDF5 file descriptor/handle
