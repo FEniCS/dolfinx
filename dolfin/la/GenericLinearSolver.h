@@ -82,6 +82,25 @@ namespace dolfin
       return 0;
     }
 
+    /// Solve linear system A^Tx = b
+    virtual std::size_t solve_transpose(const GenericLinearOperator& A, GenericVector& x,
+                       const GenericVector& b)
+    {
+      dolfin_error("GenericLinearSolver.h",
+                   "solve linear system transpose",
+                   "Not supported by current linear algebra backend. Consider using solve_transpose(x, b)");
+      return 0;
+    }
+
+    /// Solve linear system A^Tx = b
+    virtual std::size_t solve_transpose(GenericVector& x, const GenericVector& b)
+    {
+      dolfin_error("GenericLinearSolver.h",
+                   "solve linear system transpose",
+                   "Not supported by current linear algebra backend. Consider using solve_transpose(x, b)");
+      return 0;
+    }
+
   protected:
 
     // Developer note: The functions here provide similar
