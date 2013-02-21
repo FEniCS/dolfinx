@@ -435,12 +435,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   
   // Write values to HDF5
   std::vector<std::size_t> global_size(1, MPI::sum(data_values.size()));
-  if(cell_dim == 0 && !parameters["visualisation_mesh"])
-  {
-    global_size.push_back(1);
-    hdf5_file->reorder_values_by_global_indices(mesh, data_values, global_size);
-  }
-  
+
   hdf5_file->write_data("/VisualisationVector/" + boost::lexical_cast<std::string>(counter),
                         data_values, global_size);
 
