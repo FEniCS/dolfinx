@@ -28,8 +28,13 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#include <boost/multi_array.hpp>
+
 #include "dolfin/common/Timer.h"
 #include "dolfin/common/Variable.h"
+#include "dolfin/mesh/Mesh.h"
+#include "dolfin/mesh/Vertex.h"
 #include "HDF5Interface.h"
 
 namespace dolfin
@@ -38,7 +43,7 @@ namespace dolfin
   class Function;
   class GenericVector;
   class LocalMeshData;
-  class Mesh;
+  //  class Mesh;
 
   class HDF5File : public Variable
   {
@@ -245,7 +250,7 @@ namespace dolfin
       num_local_items *= global_size[i];
     num_local_items = data.size()/num_local_items;
 
-    // Compute offet
+    // Compute offset
     const std::size_t offset = MPI::global_offset(num_local_items, true);
     std::pair<std::size_t, std::size_t> range(offset, offset + num_local_items);
 
