@@ -177,7 +177,7 @@ void HDF5File::write_visualisation(const Mesh& mesh, const std::string name)
 void HDF5File::write_visualisation(const Mesh& mesh, const std::size_t cell_dim,
                                    const std::string name)
 {
-  Timer t0("HDF5: write mesh to file (visual) [a]");
+  Timer t0("HDF5: write mesh to file (visualisation)");
 
   dolfin_assert(hdf5_file_open);
 
@@ -202,9 +202,6 @@ void HDF5File::write_visualisation(const Mesh& mesh, const std::size_t cell_dim,
     write_data(coord_dataset, vertex_coords, global_size);
   }
 
-  t0.stop();
-  Timer t1("HDF5: write mesh to file (visual) [b]");
-
   // Write connectivity to HDF5 file (using local indices + offset)
   {
     // Get/build topology data
@@ -224,18 +221,12 @@ void HDF5File::write_visualisation(const Mesh& mesh, const std::size_t cell_dim,
          topological_data.push_back(v->index() + vertex_offset);
     }
 
-    t1.stop();
-    Timer t2("HDF5: write mesh to file (visual) [c]");
-
     // Write topology data
     const std::string topology_dataset =  name + "/topology";
     std::vector<std::size_t> global_size(2);
     global_size[0] = MPI::sum(topological_data.size()/(cell_dim + 1));
     global_size[1] = cell_dim + 1;
     write_data(topology_dataset, topological_data, global_size);
-
-    t2.stop();
-    Timer t3("HDF5: write mesh to file (visual) [d]");
 
     HDF5Interface::add_attribute(hdf5_file_id, topology_dataset, "celltype",
                                  cell_type(cell_dim, mesh));
