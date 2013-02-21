@@ -205,7 +205,7 @@ void HDF5File::write_visualisation(const Mesh& mesh, const std::size_t cell_dim,
   // Write connectivity to HDF5 file (using local indices + offset)
   {
     // Get/build topology data
-    std::vector<std::size_t> topological_data;
+    std::vector<unsigned int> topological_data;
     if (cell_dim == mesh.topology().dim())
     {
       topological_data = mesh.cells();

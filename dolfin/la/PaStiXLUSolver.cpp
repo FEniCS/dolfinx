@@ -22,6 +22,7 @@
 #include <numeric>
 #include <string>
 #include <vector>
+#include <boost/assign/list_of.hpp>
 
 // Necessary since pastix.h does not include it
 #include <stdint.h>
@@ -56,10 +57,14 @@ Parameters PaStiXLUSolver::default_parameters()
   // Number of threads per MPI process
   p.add<std::size_t>("num_threads");
 
-  // max = 300 good with 1 thread on laptop
-  // min, max = 180, 340 good with 2 thread on laptop
+  // Thread mode (see PaStiX user documentation)
+  const std::set<std::string> thread_modes
+    = boost::assign::list_of("multiple")("single")("funnel");
+  p.add<std::string>("thread_mode", thread_modes);
 
-  // Min/max block size for BLAS
+  // Min/max block size for BLAS. This paramerers can have a significant
+  // effect on peformance. Best settings depends on systems and BLAS
+  // implementation.
   p.add("min_block_size", 180);
   p.add("max_block_size", 340);
 
@@ -115,7 +120,7 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
     iparm[IPARM_FACTORIZATION] = API_FACT_LU;
   }
 
-  // Block sizes (affects performance)
+  // Set block sizes (affects performance)
   const std::size_t min_block_size = parameters["min_block_size"];
   iparm[IPARM_MIN_BLOCKSIZE] = min_block_size;
   const std::size_t max_block_size = parameters["max_block_size"];
@@ -168,12 +173,23 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   else
     iparm[IPARM_THREAD_NBR] = std::max((std::size_t) 1, (std::size_t) dolfin::parameters["num_threads"]);
 
-  // PaStiX thread type 
-  // This needs to be set via the build system
-  iparm[IPARM_THREAD_COMM_MODE] = API_THREAD_FUNNELED;
-  //iparm[IPARM_THREAD_COMM_MODE] = API_THREAD_COMM_ONE;
-  //iparm[IPARM_THREAD_COMM_MODE] = API_THREAD_COMM_DEFINED;
-  //iparm[IPARM_THREAD_COMM_MODE] = API_THREAD_MULTIPLE;
+  // PaStiX threading mode
+  if (parameters["thread_mode"].is_set())
+  {
+    const std::string thread_mode = parameters["thread_mode"];
+    if (thread_mode == "multiple")
+      iparm[IPARM_THREAD_COMM_MODE] = API_THREAD_MULTIPLE;
+    else if (thread_mode == "single")
+      iparm[IPARM_THREAD_COMM_MODE] = API_THREAD_COMM_ONE;
+    else if (thread_mode == "funnel")
+      iparm[IPARM_THREAD_COMM_MODE] = API_THREAD_FUNNELED;
+    else
+    {
+      dolfin_error("PaStiXLUSolver.cpp",
+                   "set PaStiX thread mode",
+                   "Unknown mode \"%s\"", thread_mode.c_str());
+    }
+  }
 
   // User-supplied RHS
   iparm[IPARM_RHS_MAKING] = API_RHS_B;
@@ -185,10 +201,7 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
     iparm[IPARM_VERBOSE] = API_VERBOSE_NO;
 
   // Graph (matrix) distributed
-  //if (MPI::num_processes() > 1)
-    iparm[IPARM_GRAPHDIST] = API_YES;
-  //else
-  //  iparm[IPARM_GRAPHDIST] = API_NO;
+  iparm[IPARM_GRAPHDIST] = API_YES;
 
   // Allocate space for solver
   dolfin_assert(local_to_global_cols.size() > 0);

@@ -142,7 +142,7 @@ bool CellType::ordered(const Cell& cell,
 
   // Get vertices
   const std::size_t num_vertices = topology(dim, 0).size(c);
-  const std::size_t* vertices = topology(dim, 0)(c);
+  const unsigned int* vertices = topology(dim, 0)(c);
   dolfin_assert(vertices);
 
   // Check that vertices are in ascending order
@@ -162,7 +162,7 @@ bool CellType::ordered(const Cell& cell,
 
     // Get entities
     const std::size_t num_entities = topology(dim, d).size(c);
-    const std::size_t* entities = topology(dim, d)(c);
+    const unsigned int* entities = topology(dim, d)(c);
 
     // Iterate over entities
     for (std::size_t e = 1; e < num_entities; e++)
@@ -170,15 +170,16 @@ bool CellType::ordered(const Cell& cell,
       // Get vertices for first entity
       const std::size_t  e0 = entities[e - 1];
       const std::size_t  n0 = connectivity.size(e0);
-      const std::size_t* v0 = connectivity(e0);
+      const unsigned int* v0 = connectivity(e0);
 
       // Get vertices for second entity
       const std::size_t  e1 = entities[e];
       const std::size_t  n1 = connectivity.size(e1);
-      const std::size_t* v1 = connectivity(e1);
+      const unsigned int* v1 = connectivity(e1);
 
       // Check ordering of entities
-      if (!increasing(n0, v0, n1, v1, num_vertices, vertices, local_to_global_vertex_indices))
+      if (!increasing(n0, v0, n1, v1, num_vertices, vertices,
+                      local_to_global_vertex_indices))
         return false;
     }
   }
@@ -187,7 +188,7 @@ bool CellType::ordered(const Cell& cell,
 }
 //-----------------------------------------------------------------------------
 void CellType::sort_entities(std::size_t num_vertices,
-                            std::size_t* local_vertices,
+                            unsigned int* local_vertices,
                        const std::vector<std::size_t>& local_to_global_vertex_indices)
 {
   // Two cases here, either sort vertices directly (when running in serial)
@@ -198,7 +199,7 @@ void CellType::sort_entities(std::size_t num_vertices,
     std::sort(local_vertices, local_vertices + num_vertices, global_sort);
 }
 //-----------------------------------------------------------------------------
-bool CellType::increasing(std::size_t num_vertices, const std::size_t* local_vertices,
+bool CellType::increasing(std::size_t num_vertices, const unsigned int* local_vertices,
                        const std::vector<std::size_t>& local_to_global_vertex_indices)
 {
   // Two cases here, either check vertices directly (when running in serial)
@@ -210,9 +211,9 @@ bool CellType::increasing(std::size_t num_vertices, const std::size_t* local_ver
   return true;
 }
 //-----------------------------------------------------------------------------
-bool CellType::increasing(std::size_t n0, const std::size_t* v0,
-                          std::size_t n1, const std::size_t* v1,
-                          std::size_t num_vertices, const std::size_t* local_vertices,
+bool CellType::increasing(std::size_t n0, const unsigned int* v0,
+                          std::size_t n1, const unsigned int* v1,
+                          std::size_t num_vertices, const unsigned int* local_vertices,
                const std::vector<std::size_t>& local_to_global_vertex_indices)
 {
   dolfin_assert(n0 == n1);

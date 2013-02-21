@@ -131,18 +131,14 @@ Parameters PETScPreconditioner::default_parameters()
   p_ml.add<double>("threshold");
   p_ml.add<std::size_t>("max_num_levels");
   p_ml.add<std::size_t>("print_level", 0, 10);
-
-  std::set<std::string> ml_schemes;
-  ml_schemes.insert("v");
-  ml_schemes.insert("w");
-  p_ml.add<std::string>("cycle_type", ml_schemes);
-
-  std::set<std::string> aggregation_schemes;
-  aggregation_schemes.insert("Uncoupled");
-  aggregation_schemes.insert("Coupled");
-  aggregation_schemes.insert("MIS");
-  aggregation_schemes.insert("METIS");
-  p_ml.add<std::string>("aggregation_scheme", aggregation_schemes);
+  p_ml.add<std::string>("cycle_type", boost::assign::list_of("v")("w"));
+  p_ml.add<int>("energy_minimization", -1, 4);
+  p_ml.add<double>("energy_minimization_threshold");
+  p_ml.add<double>("auxiliary_threshold");
+  p_ml.add<bool>("repartition");
+  p_ml.add<std::string>("repartition_type", boost::assign::list_of("Zoltan")("ParMETIS"));
+  p_ml.add<std::string>("zoltan_repartition_scheme", boost::assign::list_of("RCB")("hypergraph")("fast_hypergraph"));
+  p_ml.add<std::string>("aggregation_scheme", boost::assign::list_of("Uncoupled")("Coupled")("MIS")("METIS"));
   p.add(p_ml);
 
   // Hypre/ParaSails parameters
@@ -167,7 +163,7 @@ Parameters PETScPreconditioner::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-PETScPreconditioner::PETScPreconditioner(std::string type) : type(type)
+PETScPreconditioner::PETScPreconditioner(std::string type) : type(type), gdim(0)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -186,7 +182,7 @@ PETScPreconditioner::~PETScPreconditioner()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PETScPreconditioner::set(PETScKrylovSolver& solver) const
+void PETScPreconditioner::set(PETScKrylovSolver& solver)
 {
   dolfin_assert(solver.ksp());
 
@@ -338,6 +334,49 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
                             boost::lexical_cast<std::string>(threshold).c_str());
     }
 
+    // Energy minimization strategy
+    if (parameters("ml")["energy_minimization"].is_set())
+    {
+      const int method = parameters("ml")["energy_minimization"];
+      PetscOptionsSetValue("-pc_ml_EnergyMinimization",
+                            boost::lexical_cast<std::string>(method).c_str());
+
+      // Energy minimization drop tolerance
+      if (parameters("ml")["energy_minimization_threshold"].is_set())
+      {
+        const double threshold = parameters("ml")["energy_minimization_threshold"];
+        PetscOptionsSetValue("-pc_ml_EnergyMinimizationDropTol",
+                              boost::lexical_cast<std::string>(threshold).c_str());
+      }
+    }
+
+    // Auxiliary threshold drop tolerance
+    /*
+    PetscOptionsSetValue("-pc_ml_Aux", "1");
+    if (parameters("ml")["auxiliary_threshold"].is_set())
+    {
+      const double threshold = parameters("ml")["auxiliary_threshold"];
+      PetscOptionsSetValue("-pc_ml_AuxThreshold",
+                            boost::lexical_cast<std::string>(threshold).c_str());
+    }
+    */
+
+    // Allow ML to re-partition problem
+    if (parameters("ml")["repartition"].is_set())
+    {
+      const bool repartition = parameters("ml")["repartition"];
+      if (repartition)
+      {
+        PetscOptionsSetValue("-pc_ml_repartition", "1");
+        if (parameters("ml")["repartition_type"].is_set())
+          PetscOptionsSetValue("-pc_ml_repartitionType", parameters("ml")["repartition_type"].value_str().c_str());
+        if (parameters("ml")["zoltan_repartition_scheme"].is_set())
+          PetscOptionsSetValue("-pc_ml_repartitionZoltanScheme", parameters("ml")["zoltan_repartition_scheme"].value_str().c_str());
+      }
+      else
+        PetscOptionsSetValue("-pc_ml_repartition", "0");
+    }
+
     // --- PETSc parameters
 
     // Number of smmoother applications
@@ -369,7 +408,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     //                      "0.0,1.1");
     //PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
     PetscOptionsSetValue("-mg_levels_ksp_max_it",
-                          boost::lexical_cast<std::string>(3).c_str());
+                          boost::lexical_cast<std::string>(1).c_str());
 
     //PetscOptionsSetValue("-mg_levels_pc_type", "none");
     PetscOptionsSetValue("-mg_levels_pc_type", "jacobi");
@@ -377,6 +416,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     //PetscOptionsSetValue("-mg_levels_1_pc_sor_its",
     //                      boost::lexical_cast<std::string>(2).c_str());
 
+    /*
     // Level 1 smoother (0 is coarse, N is finest)
     PetscOptionsSetValue("-mg_levels_1_ksp_type", "chebyshev");
     PetscOptionsSetValue("-mg_levels_1_ksp_max_it",
@@ -392,6 +432,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     PetscOptionsSetValue("-mg_levels_2_pc_type", "sor");
     PetscOptionsSetValue("-mg_levels_2_pc_sor_its",
 			 boost::lexical_cast<std::string>(1).c_str());
+    */
 
     #else
     warning("PETSc has not been compiled with the ML library for   "
@@ -527,6 +568,20 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   // Make sure options are set
   PCSetFromOptions(pc);
 
+  // Set physical coordinates for row dofs
+  if (!_coordinates.empty())
+  {
+    dolfin_assert(gdim > 0);
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR < 3
+    PCSetCoordinates(pc, gdim, _coordinates.data());
+    #else
+    PCSetCoordinates(pc, gdim, _coordinates.size()/gdim, _coordinates.data());
+    #endif
+  }
+
+  // Clear memeory
+  _coordinates.clear();
+
   // Print preconditioner information
   const bool report = parameters["report"];
   if (report)
@@ -539,8 +594,8 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
 void PETScPreconditioner::set_nullspace(const std::vector<const GenericVector*> nullspace)
 {
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR < 3
-  dolfin_error("PETScMatrix.cpp",
-               "set approximate null space for PETSc matrix",
+  dolfin_error("PETScPreconditioner.cpp",
+               "set approximate null space for PETSc preconditioner",
                "This is supported by PETSc version > 3.2");
   #else
   if (nullspace.empty())
@@ -572,6 +627,13 @@ void PETScPreconditioner::set_nullspace(const std::vector<const GenericVector*> 
                        &petsc_vec[0], petsc_nullspace.get());
   }
   #endif
+}
+//-----------------------------------------------------------------------------
+void PETScPreconditioner::set_coordinates(const std::vector<double>& x,
+                                          std::size_t dim)
+{
+  _coordinates = x;
+  gdim = dim;
 }
 //-----------------------------------------------------------------------------
 std::string PETScPreconditioner::str(bool verbose) const

@@ -1,3 +1,6 @@
+ - Allow setting of row dof coordinates in preconditioners (only works with PETSc backed for now)
+ - Expose more PETSc/ML parameters
+ - Improve speed to tabulating coordinates in some DofMap functions
  - Feature: Add support for passing a Constant as default value to a CompiledExpression
  - Fix bug in dimension check for 1-D ALE
  - Remove some redundant graph code

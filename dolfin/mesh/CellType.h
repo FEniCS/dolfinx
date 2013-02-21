@@ -88,7 +88,7 @@ namespace dolfin
 
     /// Create entities e of given topological dimension from vertices v
     virtual void create_entities(std::vector<std::vector<std::size_t> >& e,
-                                 std::size_t dim, const std::size_t* v) const = 0;
+                                 std::size_t dim, const unsigned int* v) const = 0;
 
     /// Refine cell uniformly
     virtual void refine_cell(Cell& cell, MeshEditor& editor,
@@ -133,19 +133,19 @@ namespace dolfin
 
     // Sort vertices based on global entity indices
     static void sort_entities(std::size_t num_vertices,
-                      std::size_t* vertices,
+                      unsigned int* vertices,
                       const std::vector<std::size_t>& local_to_global_vertex_indices);
 
   private:
 
     // Check if list of vertices is increasing
-    static bool increasing(std::size_t num_vertices, const std::size_t* vertices,
+    static bool increasing(std::size_t num_vertices, const unsigned int* vertices,
                      const std::vector<std::size_t>& local_to_global_vertex_indices);
 
     // Check that <entity e0 with vertices v0> <= <entity e1 with vertices v1>
-    static bool increasing(std::size_t n0, const std::size_t* v0,
-                       std::size_t n1, const std::size_t* v1,
-                       std::size_t num_vertices, const std::size_t* vertices,
+    static bool increasing(std::size_t n0, const unsigned int* v0,
+                       std::size_t n1,     const unsigned int* v1,
+                       std::size_t num_vertices, const unsigned int* vertices,
                        const std::vector<std::size_t>& local_to_global_vertex_indices);
 
   };

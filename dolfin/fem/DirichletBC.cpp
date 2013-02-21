@@ -212,9 +212,9 @@ void DirichletBC::gather(Map& boundary_values) const
   typedef std::vector<std::pair<std::size_t, double> > bv_vec_type;
   typedef std::map<std::size_t, bv_vec_type> map_type;
 
-  typedef boost::unordered_map<std::size_t, std::vector<std::size_t> > shared_dof_type;
+  typedef boost::unordered_map<std::size_t, std::vector<unsigned int> > shared_dof_type;
   typedef shared_dof_type::const_iterator shared_dof_iterator;
-  typedef std::vector<std::size_t>::const_iterator proc_iterator;
+  typedef std::vector<unsigned int>::const_iterator proc_iterator;
 
   dolfin_assert(_function_space->dofmap());
   const GenericDofMap& dofmap = *_function_space->dofmap();
@@ -680,7 +680,7 @@ void DirichletBC::init_from_mesh_function(const MeshFunction<std::size_t>& sub_d
     // Get cell to which facet belongs. If mesh is restricted, make
     // sure we pick the right cell in case there are two.
     dolfin_assert(facet->num_entities(D) > 0);
-    const std::size_t* cell_indices = facet->entities(D);
+    const unsigned int* cell_indices = facet->entities(D);
     std::size_t cell_index = 0;
     if (restriction && facet->num_entities(D) > 1)
     {

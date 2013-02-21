@@ -117,7 +117,7 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
     ce_list[c_index].reserve(max_ce_connections);
 
     // Get vertices from cell
-    const std::size_t* vertices = c->entities(0);
+    const unsigned int* vertices = c->entities(0);
     dolfin_assert(vertices);
 
     // Create entities

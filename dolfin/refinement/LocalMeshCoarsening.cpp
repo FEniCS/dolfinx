@@ -160,7 +160,7 @@ void LocalMeshCoarsening::collapse_edge(Mesh& mesh, Edge& edge,
 
   std::size_t vert_slave = vertex_to_remove.index();
   std::size_t vert_master = 0;
-  const std::size_t* edge_vertex = edge.entities(0);
+  const unsigned int* edge_vertex = edge.entities(0);
 
   if ( edge_vertex[0] == vert_slave )
     vert_master = edge_vertex[1];
@@ -231,7 +231,7 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
 
   // Initialise data for finding which vertex to remove
   bool _collapse_edge = false;
-  const std::size_t* edge_vertex;
+  const unsigned int* edge_vertex;
   std::size_t shortest_edge_index = 0;
   double lmin, l;
   std::size_t num_cells_to_remove = 0;
