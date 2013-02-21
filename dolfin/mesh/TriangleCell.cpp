@@ -418,10 +418,16 @@ double TriangleCell::radius_ratio(const Cell& triangle) const
 {
   // See Jonathan Richard Shewchuk: What Is a Good Linear Finite Element?,
   // online: http://www.cs.berkeley.edu/~jrs/papers/elemj.pdf
-  double S = volume(triangle);
-  double a = facet_area(triangle, 0);
-  double b = facet_area(triangle, 1);
-  double c = facet_area(triangle, 2);
+  
+  const double S = volume(triangle);
+  
+  // Handle degenerate case
+  if (S == 0.0) {return 0.0;}
+  
+  const double a = facet_area(triangle, 0);
+  const double b = facet_area(triangle, 1);
+  const double c = facet_area(triangle, 2);
+  
   return 16.0*S*S/(a*b*c*(a+b+c));
 }
 //-----------------------------------------------------------------------------

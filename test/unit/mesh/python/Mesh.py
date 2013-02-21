@@ -302,6 +302,74 @@ if MPI.num_processes() == 1:
             id = mesh.closest_cell(point)
             self.assertEqual(id, 0)
 
+
+    class CellRadii(unittest.TestCase):
+
+        def setUp(self):
+            # Create 1D mesh with degenerate cell
+            self.mesh1d = UnitIntervalMesh(4)
+            self.mesh1d.coordinates()[4] = self.mesh1d.coordinates()[3]
+
+            # Create 2D mesh with one equilateral triangle
+            self.mesh2d = UnitSquareMesh(1, 1, 'left')
+            self.mesh2d.coordinates()[3] += 0.5*(sqrt(3.0)-1.0)
+
+            # Create 3D mesh with regular tetrahedron and degenerate cells
+            self.mesh3d = UnitCubeMesh(1, 1, 1)
+            self.mesh3d.coordinates()[2][0] = 1.0
+            self.mesh3d.coordinates()[7][1] = 0.0
+            # Original tetrahedron from UnitCubeMesh(1, 1, 1)
+            self.c0 = Cell(self.mesh3d, 0)
+            # Degenerate cell
+            self.c1 = Cell(self.mesh3d, 1)
+            # Regular tetrahedron with edge sqrt(2)
+            self.c5 = Cell(self.mesh3d, 5)
+
+        def test_cell_inradius(self):
+            self.assertAlmostEqual(self.c0.inradius(), (3.0-sqrt(3.0))/6.0)
+            self.assertAlmostEqual(self.c1.inradius(), 0.0)
+            self.assertAlmostEqual(self.c5.inradius(), sqrt(3.0)/6.0)
+
+        def test_cell_diameter(self):
+            from math import isnan
+            self.assertAlmostEqual(self.c0.diameter(), sqrt(3.0))
+            # Implementation of diameter() does not work accurately
+            # for degenerate cells - sometimes yields NaN
+            self.assertTrue(isnan(self.c1.diameter()))
+            self.assertAlmostEqual(self.c5.diameter(), sqrt(3.0))
+
+        def test_cell_radius_ratio(self):
+            self.assertAlmostEqual(self.c0.radius_ratio(), sqrt(3.0)-1.0)
+            self.assertAlmostEqual(self.c1.radius_ratio(), 0.0)
+            self.assertAlmostEqual(self.c5.radius_ratio(), 1.0)
+
+        def test_hmin_hmax(self):
+            self.assertAlmostEqual(self.mesh1d.hmin(), 0.0)
+            self.assertAlmostEqual(self.mesh1d.hmax(), 0.25)
+            self.assertAlmostEqual(self.mesh2d.hmin(), sqrt(2.0))
+            self.assertAlmostEqual(self.mesh2d.hmax(), 2.0*sqrt(6.0)/3.0)
+            # nans are not taken into account in hmax and hmin
+            self.assertAlmostEqual(self.mesh3d.hmin(), sqrt(3.0))
+            self.assertAlmostEqual(self.mesh3d.hmax(), sqrt(3.0))
+
+        def test_rmin_rmax(self):
+            self.assertAlmostEqual(self.mesh1d.rmin(), 0.0)
+            self.assertAlmostEqual(self.mesh1d.rmax(), 0.125)
+            self.assertAlmostEqual(self.mesh2d.rmin(), 1.0/(2.0+sqrt(2.0)))
+            self.assertAlmostEqual(self.mesh2d.rmax(), sqrt(6.0)/6.0)
+            self.assertAlmostEqual(self.mesh3d.rmin(), 0.0)
+            self.assertAlmostEqual(self.mesh3d.rmax(), sqrt(3.0)/6.0)
+
+        def test_radius_ratio_min_radius_ratio_max(self):
+            self.assertAlmostEqual(self.mesh1d.radius_ratio_min(), 0.0)
+            self.assertAlmostEqual(self.mesh1d.radius_ratio_max(), 1.0)
+            self.assertAlmostEqual(self.mesh2d.radius_ratio_min(),
+                                     2.0*sqrt(2.0)/(2.0+sqrt(2.0)) )
+            self.assertAlmostEqual(self.mesh2d.radius_ratio_max(), 1.0)
+            self.assertAlmostEqual(self.mesh3d.radius_ratio_min(), 0.0)
+            self.assertAlmostEqual(self.mesh3d.radius_ratio_max(), 1.0)
+
+
 class MeshOrientations(unittest.TestCase):
 
     def setUp(self):

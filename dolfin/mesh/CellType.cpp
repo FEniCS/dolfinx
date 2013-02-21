@@ -292,10 +292,13 @@ double CellType::inradius(const Cell& cell) const
   }
 
   // Pick dim
-  size_t d = dim();
+  const size_t d = dim();
 
   // Compute volume
-  double V = volume(cell);
+  const double V = volume(cell);
+
+  // Handle degenerate case
+  if (V == 0.0) {return 0.0;}
 
   // Compute total area of facets
   double A = 0;
@@ -312,6 +315,11 @@ double CellType::inradius(const Cell& cell) const
 //-----------------------------------------------------------------------------
 double CellType::radius_ratio(const Cell& cell) const
 {
-  return 2.0*dim()*inradius(cell)/diameter(cell);
+  const double r = inradius(cell);
+
+  // Handle degenerate case
+  if (r == 0.0) {return 0.0;}
+
+  return 2.0*dim()*r/diameter(cell);
 }
 //-----------------------------------------------------------------------------
