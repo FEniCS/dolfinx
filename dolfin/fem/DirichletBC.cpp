@@ -212,9 +212,9 @@ void DirichletBC::gather(Map& boundary_values) const
   typedef std::vector<std::pair<std::size_t, double> > bv_vec_type;
   typedef std::map<std::size_t, bv_vec_type> map_type;
 
-  typedef boost::unordered_map<std::size_t, std::vector<std::size_t> > shared_dof_type;
+  typedef boost::unordered_map<std::size_t, std::vector<unsigned int> > shared_dof_type;
   typedef shared_dof_type::const_iterator shared_dof_iterator;
-  typedef std::vector<std::size_t>::const_iterator proc_iterator;
+  typedef std::vector<unsigned int>::const_iterator proc_iterator;
 
   dolfin_assert(_function_space->dofmap());
   const GenericDofMap& dofmap = *_function_space->dofmap();

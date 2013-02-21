@@ -85,7 +85,7 @@ namespace dolfin
 
     /// Return map from nonlocal-dofs (that appear in local dof map)
     /// to owning process
-    virtual const boost::unordered_map<std::size_t, std::size_t>&
+    virtual const boost::unordered_map<std::size_t, unsigned int>&
       off_process_owner() const = 0;
 
     /// Local-to-global mapping of dofs on a cell
@@ -131,14 +131,12 @@ namespace dolfin
     virtual void set_x(GenericVector& x, double value, std::size_t component,
                        const Mesh& mesh) const = 0;
 
-    /// Return the set of dof indices
-    virtual boost::unordered_set<std::size_t> dofs() const = 0;
-
     /// Return map from shared dofs to the processes (not including the current
     /// process) that share it.
-    virtual const boost::unordered_map<std::size_t, std::vector<std::size_t> >& shared_dofs() const = 0;
+    virtual const boost::unordered_map<std::size_t, std::vector<unsigned int> >&
+      shared_dofs() const = 0;
 
-    /// Return set of all processes that share dofs with the current process.
+    /// Return set of processes that share dofs with the this process
     virtual const std::set<std::size_t>& neighbours() const = 0;
 
     /// Return informal string representation (pretty-print)

@@ -152,13 +152,13 @@ void DofMapBuilder::build_sub_map(DofMap& sub_dofmap,
         *dof = ufc_to_current_dof->second;
 
         // Add to off-process dof owner map
-        boost::unordered_map<std::size_t, std::size_t>::const_iterator
+        boost::unordered_map<std::size_t, unsigned int>::const_iterator
           parent_off_proc = parent_dofmap._off_process_owner.find(*dof);
         if (parent_off_proc != parent_dofmap._off_process_owner.end())
           sub_dofmap._off_process_owner.insert(*parent_off_proc);
 
         // Add to shared-dof process map, and update the set of neighbours
-        boost::unordered_map<std::size_t, std::vector<std::size_t> >::const_iterator
+        boost::unordered_map<std::size_t, std::vector<unsigned int> >::const_iterator
           parent_shared = parent_dofmap._shared_dofs.find(*dof);
         if (parent_shared != parent_dofmap._shared_dofs.end())
         {

@@ -64,12 +64,9 @@ class DofMapTest(unittest.TestCase):
         L01  = L1.sub(0)
         L11  = L1.sub(1)
 
-        all_dofs = set()
         for i, cell in enumerate(cells(self.mesh)):
 
             dofs0 = L0.dofmap().cell_dofs(cell.index())
-
-            all_dofs.update(dofs0)
 
             dofs1 = L01.dofmap().cell_dofs(cell.index())
             dofs2 = L11.dofmap().cell_dofs(cell.index())
@@ -88,8 +85,6 @@ class DofMapTest(unittest.TestCase):
             self.assertEqual(len(np.intersect1d(dofs0, dofs2)), 0)
             self.assertEqual(len(np.intersect1d(dofs1, dofs2)), 0)
             self.assertTrue(np.array_equal(np.append(dofs1, dofs2), dofs3))
-
-        self.assertFalse(all_dofs.difference(self.W.dofmap().dofs()))
 
     def test_tabulate_coord_periodic(self):
 
@@ -163,12 +158,9 @@ class DofMapTest(unittest.TestCase):
         self.assertEqual(L01.dim(), V.dim())
         self.assertEqual(L11.dim(), V.dim())
 
-        all_dofs = set()
         for i, cell in enumerate(cells(mesh)):
 
             dofs0 = L0.dofmap().cell_dofs(cell.index())
-
-            all_dofs.update(dofs0)
 
             dofs1 = L01.dofmap().cell_dofs(cell.index())
             dofs2 = L11.dofmap().cell_dofs(cell.index())
@@ -187,8 +179,6 @@ class DofMapTest(unittest.TestCase):
             self.assertEqual(len(np.intersect1d(dofs0, dofs2)), 0)
             self.assertEqual(len(np.intersect1d(dofs1, dofs2)), 0)
             self.assertTrue(np.array_equal(np.append(dofs1, dofs2), dofs3))
-
-        self.assertFalse(all_dofs.difference(W.dofmap().dofs()))
 
     def test_global_dof_builder(self):
 
