@@ -230,12 +230,12 @@ std::pair<std::size_t, std::size_t> DofMap::ownership_range() const
   return _ownership_range;
 }
 //-----------------------------------------------------------------------------
-const boost::unordered_map<std::size_t, std::size_t>& DofMap::off_process_owner() const
+const boost::unordered_map<std::size_t, unsigned int>& DofMap::off_process_owner() const
 {
   return _off_process_owner;
 }
 //-----------------------------------------------------------------------------
-const boost::unordered_map<std::size_t, std::vector<std::size_t> >& DofMap::shared_dofs() const
+const boost::unordered_map<std::size_t, std::vector<unsigned int> >& DofMap::shared_dofs() const
 {
   return _shared_dofs;
 }
@@ -474,17 +474,6 @@ void DofMap::check_provided_entities(const ufc::dofmap& dofmap,
                    "Missing entities of dimension %d. Try calling mesh.init(%d)", d, d);
     }
   }
-}
-//-----------------------------------------------------------------------------
-boost::unordered_set<std::size_t> DofMap::dofs() const
-{
-  // Build set of dofs
-  boost::unordered_set<std::size_t> dof_list;
-  std::vector<std::vector<dolfin::la_index> >::const_iterator cell_dofs;
-  for (cell_dofs = _dofmap.begin(); cell_dofs != _dofmap.end(); ++cell_dofs)
-    dof_list.insert(cell_dofs->begin(), cell_dofs->end());
-
-  return dof_list;
 }
 //-----------------------------------------------------------------------------
 std::string DofMap::str(bool verbose) const

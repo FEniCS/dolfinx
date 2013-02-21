@@ -40,7 +40,7 @@ SparsityPattern::SparsityPattern(std::size_t primary_dim)
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(const std::vector<std::size_t>& dims,
   const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
-  const std::vector<const boost::unordered_map<std::size_t, std::size_t>* > off_process_owner,
+  const std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner,
     std::size_t primary_dim)
   : GenericSparsityPattern(primary_dim), distributed(false)
 {
@@ -49,7 +49,7 @@ SparsityPattern::SparsityPattern(const std::vector<std::size_t>& dims,
 //-----------------------------------------------------------------------------
 void SparsityPattern::init(const std::vector<std::size_t>& dims,
   const std::vector<std::pair<std::size_t, std::size_t> >& local_range,
-  const std::vector<const boost::unordered_map<std::size_t, std::size_t>* > off_process_owner)
+  const std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner)
 {
   // Only rank 2 sparsity patterns are supported
   dolfin_assert(dims.size() == 2);
@@ -302,7 +302,6 @@ void SparsityPattern::apply()
   {
     // Figure out correct process for each non-local entry
     dolfin_assert(non_local.size() % 2 == 0);
-    //std::vector<std::vector<std::size_t> > destinations(non_local.size());
     std::vector<std::vector<std::size_t> > non_local_send(num_processes);
 
     for (std::size_t i = 0; i < non_local.size(); i += 2)
@@ -312,7 +311,7 @@ void SparsityPattern::apply()
       const std::size_t J = non_local[i + 1];
 
       // Figure out which process owns the row
-      boost::unordered_map<std::size_t, std::size_t>::const_iterator non_local_index
+      boost::unordered_map<std::size_t, unsigned int>::const_iterator non_local_index
           = off_process_owner[_primary_dim].find(I);
       dolfin_assert(non_local_index != off_process_owner[_primary_dim].end());
       const std::size_t p = non_local_index->second;
@@ -322,14 +321,10 @@ void SparsityPattern::apply()
 
       non_local_send[p].push_back(I);
       non_local_send[p].push_back(J);
-
-      //destinations[i] = p;
-      //destinations[i + 1] = p;
     }
 
     // Communicate non-local entries to other processes
     std::vector<std::vector<std::size_t> > non_local_received;
-    //MPI::distribute(non_local, destinations, non_local_received);
     MPI::all_to_all(non_local_send, non_local_received);
 
     // Insert non-local entries received from other processes
@@ -438,7 +433,7 @@ void SparsityPattern::info_statistics() const
     num_nonzeros_off_diagonal += off_diagonal[i].size();
 
   // Count nonzeros in non-local block
-  const std::size_t num_nonzeros_non_local = non_local.size() / 2;
+  const std::size_t num_nonzeros_non_local = non_local.size()/2;
 
   // Count total number of nonzeros
   const std::size_t num_nonzeros_total

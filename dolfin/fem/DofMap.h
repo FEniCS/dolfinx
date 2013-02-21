@@ -192,17 +192,17 @@ namespace dolfin
     /// *Returns*
     ///     boost::unordered_map<std::size_t, std::size_t>
     ///         The map from non-local dofs.
-    const boost::unordered_map<std::size_t, std::size_t>& off_process_owner() const;
+    const boost::unordered_map<std::size_t, unsigned int>& off_process_owner() const;
 
     /// Return map from all shared dofs to the sharing processes (not
     /// including the current process) that share it.
     ///
     /// *Returns*
-    ///     boost::unordered_map<std::size_t, std::vector<std::size_t> >
+    ///     boost::unordered_map<std::size_t, std::vector<unsigned int> >
     ///         The map from dofs to list of processes
-    const boost::unordered_map<std::size_t, std::vector<std::size_t> >& shared_dofs() const;
+    const boost::unordered_map<std::size_t, std::vector<unsigned int> >& shared_dofs() const;
 
-    /// Return set of all neighbouring processes.
+    /// Return set of processes that share dofs with this process
     ///
     /// *Returns*
     ///     std::set<std::size_t>
@@ -344,13 +344,6 @@ namespace dolfin
     void set_x(GenericVector& x, double value, std::size_t component,
                const Mesh& mesh) const;
 
-    /// Return the set of dof indices
-    ///
-    /// *Returns*
-    ///     boost::unordered_set<dolfin::std::size_t>
-    ///         The set of dof indices.
-    boost::unordered_set<std::size_t> dofs() const;
-
     /// Return the underlying dof map data. Intended for internal library
     /// use only.
     ///
@@ -391,7 +384,7 @@ namespace dolfin
     boost::shared_ptr<const ufc::dofmap> _ufc_dofmap;
 
     // Number global mesh entities. This is usually the same as what
-    // is reported by the mesh, but will differ for constrained dofmap,
+    // is reported by the mesh, but will differ for dofmaps constrained,
     // e.g. dofmaps with periodoc bcs
     std::vector<std::size_t> num_global_mesh_entities;
 
@@ -413,12 +406,12 @@ namespace dolfin
     // to (0, 0) if dofmap is a view
     std::pair<std::size_t, std::size_t> _ownership_range;
 
-    // Owner (process) of dofs in local dof map that do not belong to
-    // this process
-    boost::unordered_map<std::size_t, std::size_t> _off_process_owner;
+    // Map from dofs in local dof map are not owned by this process to
+    // the owner process
+    boost::unordered_map<std::size_t, unsigned int> _off_process_owner;
 
     // List of processes that share a given dof
-    boost::unordered_map<std::size_t, std::vector<std::size_t> > _shared_dofs;
+    boost::unordered_map<std::size_t, std::vector<unsigned int> > _shared_dofs;
 
     // Neighbours (processes that we share dofs with)
     std::set<std::size_t> _neighbours;
