@@ -187,7 +187,7 @@ show :
 
   # Add variables to CMake cache and mark as advanced
   set(PETSC_INCLUDE_DIRS ${PETSC_INCLUDE_DIRS} CACHE STRING "PETSc include paths." FORCE)
-  set(PETSC_LIBRARIES ${PETSC_LIBRARIES} ${PETSC_EXTERNAL_LIBRARIES}  CACHE STRING "PETSc libraries." FORCE)
+  set(PETSC_LIBRARIES ${PETSC_LIBRARIES} CACHE STRING "PETSc libraries." FORCE)
   mark_as_advanced(PETSC_INCLUDE_DIRS PETSC_LIBRARIES)
 
 endif()
@@ -253,8 +253,9 @@ int main() {
   mark_as_advanced(PETSC_VERSION_OK)
 
   # Run PETSc test program
-  include(CheckCXXSourceRuns)
-  check_cxx_source_runs("
+  set(PETSC_TEST_LIB_CPP
+    "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/petsc_test_lib.cpp")
+  file(WRITE ${PETSC_TEST_LIB_CPP} "
 #include \"petscts.h\"
 #include \"petsc.h\"
 int main()
@@ -274,15 +275,53 @@ int main()
   ierr = PetscFinalize();CHKERRQ(ierr);
   return 0;
 }
-" PETSC_TEST_RUNS)
+")
 
-  if (PETSC_TEST_RUNS)
-    message(STATUS "PETSc test runs")
+  try_run(
+    PETSC_TEST_LIB_EXITCODE
+    PETSC_TEST_LIB_COMPILED
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${PETSC_TEST_LIB_CPP}
+    CMAKE_FLAGS
+      "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
+      "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
+    COMPILE_OUTPUT_VARIABLE PETSC_TEST_LIB_COMPILE_OUTPUT
+    RUN_OUTPUT_VARIABLE PETSC_TEST_LIB_OUTPUT
+    )
+
+  if (PETSC_TEST_LIB_COMPILED AND PETSC_TEST_LIB_EXITCODE EQUAL 0)
+    message(STATUS "Performing test PETSC_TEST_RUNS - Success")
+    set(PETSC_TEST_RUNS TRUE)
   else()
-    message(STATUS "PETSc test failed")
+    message(STATUS "Performing test PETSC_TEST_RUNS - Failed")
+
+    # Test program does not run - try adding PETSc 3rd party libs and test again
+    list(APPEND CMAKE_REQUIRED_LIBRARIES ${PETSC_EXTERNAL_LIBRARIES})
+
+    try_run(
+      PETSC_TEST_3RD_PARTY_LIBS_EXITCODE
+      PETSC_TEST_3RD_PARTY_LIBS_COMPILED
+      ${CMAKE_CURRENT_BINARY_DIR}
+      ${PETSC_TEST_LIB_CPP}
+      CMAKE_FLAGS
+        "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
+	"-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
+      COMPILE_OUTPUT_VARIABLE PETSC_TEST_3RD_PARTY_LIBS_COMPILE_OUTPUT
+      RUN_OUTPUT_VARIABLE PETSC_TEST_3RD_PARTY_LIBS_OUTPUT
+      )
+
+    if (PETSC_TEST_3RD_PARTY_LIBS_COMPILED AND PETSC_TEST_3RD_PARTY_LIBS_EXITCODE EQUAL 0)
+      message(STATUS "Performing test PETSC_TEST_3RD_PARTY_LIBS_RUNS - Success")
+      set(PETSC_LIBRARIES ${PETSC_LIBRARIES} ${PETSC_EXTERNAL_LIBRARIES}
+	CACHE STRING "PETSc libraries." FORCE)
+      set(PETSC_TEST_RUNS TRUE)
+    else()
+      message(STATUS "Performing test PETSC_TEST_3RD_PARTY_LIBS_RUNS - Failed")
+    endif()
   endif()
 
   # Run test program to check for PETSc Cusp
+  include(CheckCXXSourceRuns)
   check_cxx_source_runs("
 #include \"petsc.h\"
 int main()
