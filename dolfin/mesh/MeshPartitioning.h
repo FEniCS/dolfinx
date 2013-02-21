@@ -139,7 +139,6 @@ namespace dolfin
 
     // Initialise global entity numbering
     DistributedMeshTools::number_entities(mesh, dim);
-    DistributedMeshTools::number_entities(mesh, D);
 
     if (dim == 0)
     {
