@@ -104,9 +104,15 @@ std::size_t DistributedMeshTools::number_entities(const Mesh& mesh,
   // construction)
   if (d == mesh.topology().dim())
   {
+    shared_entities.clear();
+    global_entity_indices = mesh.topology().global_indices(d);
+    return mesh.size_global(d);
+
+    /*
     dolfin_error("MeshPartitioning.cpp",
                  "number mesh entities",
                  "Global cells indices exist at input. Cannot be renumbered");
+    */
   }
 
   // Get number of processes and process number
