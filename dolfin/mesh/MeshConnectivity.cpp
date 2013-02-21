@@ -69,8 +69,9 @@ void MeshConnectivity::init(std::size_t num_entities, std::size_t num_connection
   // Compute the total size
   const std::size_t size = num_entities*num_connections;
 
-  // Allocate data
-  connections = std::vector<std::size_t>(size, 0);
+  // Allocate
+  connections.resize(size);
+  std::fill(connections.begin(), connections.end(), 0);
   index_to_position.resize(num_entities + 1);
 
   // Initialize data
@@ -95,7 +96,8 @@ void MeshConnectivity::init(std::vector<std::size_t>& num_connections)
   index_to_position[num_entities] = size;
 
   // Initialize connections
-  connections = std::vector<std::size_t>(size, 0);
+  connections.resize(size);
+  std::fill(connections.begin(), connections.end(), 0);
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::set(std::size_t entity, std::size_t connection,
@@ -131,7 +133,7 @@ void MeshConnectivity::set(std::size_t entity, std::size_t* connections)
 std::size_t MeshConnectivity::hash() const
 {
   // Compute local hash key
-  boost::hash<std::vector<std::size_t> > uhash;
+  boost::hash<std::vector<unsigned int> > uhash;
   const std::size_t local_hash = uhash(connections);
 
   // Gather all hash keys

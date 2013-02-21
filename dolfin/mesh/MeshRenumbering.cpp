@@ -226,7 +226,7 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
       Cell cell(mesh, colored_cells[i]);
 
       // Get array of vertices for current cell
-      const std::size_t* cell_vertices = cell.entities(0);
+      const unsigned int* cell_vertices = cell.entities(0);
       const std::size_t num_vertices   = cell.num_entities(0);
 
       // Iterate over cell vertices

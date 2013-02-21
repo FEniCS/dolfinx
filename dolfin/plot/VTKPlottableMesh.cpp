@@ -87,7 +87,8 @@ void VTKPlottableMesh::connect_to_output(VTKWindowOutputStage& output)
 {
   bool has_nans = false;
 
-  vtkFloatArray *pointdata = dynamic_cast<vtkFloatArray*>(_grid->GetPointData()->GetScalars());
+  vtkFloatArray* pointdata
+    = dynamic_cast<vtkFloatArray*>(_grid->GetPointData()->GetScalars());
   if (pointdata && pointdata->GetNumberOfComponents() == 1)
   {
     for (int i = 0; i < pointdata->GetNumberOfTuples(); i++)
@@ -127,12 +128,12 @@ bool VTKPlottableMesh::is_compatible(const Variable &var) const
   return dynamic_cast<const Mesh*>(&var);
 }
 //----------------------------------------------------------------------------
-void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int framecounter)
+void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var,
+                              const Parameters& parameters, int framecounter)
 {
   if (var)
-  {
     _mesh = boost::dynamic_pointer_cast<const Mesh>(var);
-  }
+
   dolfin_assert(_grid);
   dolfin_assert(_full_grid);
   dolfin_assert(_mesh);
@@ -164,9 +165,7 @@ void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var, const Param
 
   build_grid_cells(_full_grid, _mesh->topology().dim());
   if (_entity_dim == dim())
-  {
     _grid->ShallowCopy(_full_grid);
-  }
   else
   {
     _grid->SetPoints(points);
@@ -174,14 +173,15 @@ void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var, const Param
   }
 }
 //----------------------------------------------------------------------------
-void VTKPlottableMesh::build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &grid, std::size_t topological_dim)
+void VTKPlottableMesh::build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid>& grid,
+                                        std::size_t topological_dim)
 {
   // Add mesh cells to VTK cell array. Note: Preallocation of storage
   // in cell array did not give speedups when testing during development
   vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
 
   _mesh->init(topological_dim, 0);
-  const std::vector<std::size_t>& connectivity = _mesh->topology()(topological_dim, 0)();
+  const std::vector<unsigned int>& connectivity = _mesh->topology()(topological_dim, 0)();
 
   for (std::size_t i = 0; i < _mesh->size(topological_dim); ++i)
   {
@@ -190,9 +190,7 @@ void VTKPlottableMesh::build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &gr
     // ((n+1) x cell_number + idx_offset)
     cells->InsertNextCell(topological_dim + 1);
     for(std::size_t j = 0; j <= topological_dim; ++j)
-    {
       cells->InsertCellPoint(connectivity[(topological_dim + 1)*i + j]);
-    }
   }
 
   // Free unused memory in cell array
@@ -242,9 +240,8 @@ void VTKPlottableMesh::build_id_filter()
       _idFilter->SetInputConnection(get_mesh_actor()->GetMapper()->GetInputConnection(0,0));
     }
     else
-    {
       _idFilter->SetInputConnection(_geometryFilter->GetOutputPort());
-    }
+
     _idFilter->PointIdsOn();
     _idFilter->CellIdsOn();
     _idFilter->FieldDataOn();
@@ -253,7 +250,7 @@ void VTKPlottableMesh::build_id_filter()
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor(vtkSmartPointer<vtkRenderer> renderer)
 {
-#if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 4)
+  #if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 4)
   // Return actor if already created
   if (!_vertexLabelActor)
   {
@@ -279,16 +276,16 @@ vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_vertex_label_actor(vtkSmartPoi
     _vertexLabelActor = vtkSmartPointer<vtkActor2D>::New();
     _vertexLabelActor->SetMapper(ldm);
   }
-#else
+  #else
   warning("Plotting of vertex labels requires VTK >= 5.4");
-#endif
+  #endif
 
   return _vertexLabelActor;
 }
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_cell_label_actor(vtkSmartPointer<vtkRenderer> renderer)
 {
-#if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 4)
+  #if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 4)
   if (!_cellLabelActor)
   {
     build_id_filter();
@@ -310,9 +307,9 @@ vtkSmartPointer<vtkActor2D> VTKPlottableMesh::get_cell_label_actor(vtkSmartPoint
     _cellLabelActor = vtkSmartPointer<vtkActor2D>::New();
     _cellLabelActor->SetMapper(ldm);
   }
-#else
+  #else
   warning("Plotting of cell labels requires VTK >= 5.4");
-#endif
+  #endif
 
   return _cellLabelActor;
 }
@@ -334,7 +331,6 @@ vtkSmartPointer<vtkActor> VTKPlottableMesh::get_mesh_actor()
     _meshActor->GetProperty()->SetColor(0.7, 0.7, 0.3);
     _meshActor->GetProperty()->SetOpacity(0.5);
     vtkMapper::SetResolveCoincidentTopologyToPolygonOffset();
-
   }
   return _meshActor;
 }
@@ -357,9 +353,8 @@ void VTKPlottableMesh::insert_filter(vtkSmartPointer<vtkPointSetAlgorithm> filte
     _geometryFilter->SetInput(filter->GetOutput());
   }
   else
-  {
     _geometryFilter->SetInput(_grid);
-  }
+
   _geometryFilter->Update();
 }
 //----------------------------------------------------------------------------
@@ -385,11 +380,8 @@ void VTKPlottableMesh::filter_scalars(vtkFloatArray *values, const Parameters &p
     for (std::size_t i = 0; i < num_tuples; i++)
     {
       float val = values->GetValue(i);
-
       if (val < hide_below || val > hide_above)
-      {
         values->SetValue(i, std::numeric_limits<float>::quiet_NaN());
-      }
     }
   }
 }
@@ -430,13 +422,9 @@ void VTKPlottableMesh::setPointValues(std::size_t size, const T* indata, const P
       // these arrays as matrices, the transpose of vertex values should be copied,
       // since DOLFIN and VTK store vector function values differently
       for (std::size_t d = 0; d < num_components; d++)
-      {
         values->SetValue(3*i+d, indata[i+num_vertices*d]);
-      }
       for (std::size_t d = num_components; d < 3; d++)
-      {
         values->SetValue(3*i+d, 0.0);
-      }
     }
     _grid->GetPointData()->SetVectors(values);
 
@@ -464,12 +452,9 @@ void VTKPlottableMesh::setCellValues(std::size_t size, const T* indata, const Pa
   values->SetNumberOfValues(num_entities);
 
   for (std::size_t i = 0; i < num_entities; ++i)
-  {
     values->SetValue(i, (float)indata[i]);
-  }
 
   filter_scalars(values, parameters);
-
   _grid->GetCellData()->SetScalars(values);
 }
 

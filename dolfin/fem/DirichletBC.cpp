@@ -680,7 +680,7 @@ void DirichletBC::init_from_mesh_function(const MeshFunction<std::size_t>& sub_d
     // Get cell to which facet belongs. If mesh is restricted, make
     // sure we pick the right cell in case there are two.
     dolfin_assert(facet->num_entities(D) > 0);
-    const std::size_t* cell_indices = facet->entities(D);
+    const unsigned int* cell_indices = facet->entities(D);
     std::size_t cell_index = 0;
     if (restriction && facet->num_entities(D) > 1)
     {

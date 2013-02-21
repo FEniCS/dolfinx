@@ -43,7 +43,7 @@
 
   PyObject* _cells() {
     // FIXME: Works only for Mesh with Intervals, Triangles and Tetrahedrons
-    return %make_numpy_array(2, size_t)(self->num_cells(), self->topology().dim()+1,
+    return %make_numpy_array(2, uint)(self->num_cells(), self->topology().dim()+1,
 				      &(self->cells()[0]), false);
   }
 
@@ -201,12 +201,12 @@ MESHENTITYITERATORBASE(Vertex, vertices)
 %extend dolfin::MeshConnectivity {
   PyObject* __call__()
   {
-    return %make_numpy_array(1, size_t)(self->size(), &(*self)()[0], false);
+    return %make_numpy_array(1, uint)(self->size(), &(*self)()[0], false);
   }
 
   PyObject* __call__(std::size_t entity)
   {
-    return %make_numpy_array(1, size_t)(self->size(entity), (*self)(entity), false);
+    return %make_numpy_array(1, uint)(self->size(entity), (*self)(entity), false);
   }
 }
 
