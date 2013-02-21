@@ -55,7 +55,7 @@ counter = 0
 while t < 1.4 :
 
     # Compute intersection with boundary of square
-    boundary = BoundaryMesh(sphere_mesh)
+    boundary = BoundaryMesh(sphere_mesh, "local")
     cells = cube_mesh.intersected_cells(boundary)
 
     # Mark intersected values
