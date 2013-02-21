@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2013-02-19
+// Last changed: 2013-02-21
 
 #ifdef HAS_HDF5
 
@@ -64,6 +64,9 @@ XDMFFile::XDMFFile(const std::string filename) : GenericFile(filename, "XDMF")
   // Flush datasets to disk at each timestep
   // Allows inspection of the HDF5 file whilst running, at some performance cost
   parameters.add("flush_output", false);
+
+  // Switch between mesh output methods
+  parameters.add("visualisation_mesh", false);
 }
 //----------------------------------------------------------------------------
 XDMFFile::~XDMFFile()
@@ -114,7 +117,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   const std::size_t num_local_cells = mesh.num_cells();
   const std::size_t num_local_vertices = mesh.num_vertices();
   const std::size_t num_global_cells = MPI::sum(num_local_cells);
-  const std::size_t num_total_vertices = MPI::sum(num_local_vertices);
+  std::size_t num_total_vertices = MPI::sum(num_local_vertices);
 
   // Get Function data at vertices/cell centres
   std::vector<double> data_values;
@@ -148,7 +151,9 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
       }
       data_values = _data_values;
     }
+
   }
+  
   else
   {
     num_local_entities = num_local_cells;
@@ -234,8 +239,16 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   // Write mesh to HDF5 file
   if (parameters["rewrite_function_mesh"] || counter == 0)
   {
-    current_mesh_name = "/VisualisationMesh/" + boost::lexical_cast<std::string>(counter);
-    hdf5_file->write_visualisation(mesh, current_mesh_name);
+    if(parameters["visualisation_mesh"])
+    {
+      current_mesh_name = "/VisualisationMesh/" + boost::lexical_cast<std::string>(counter);
+      hdf5_file->write_visualisation(mesh, current_mesh_name);
+    }
+    else
+    {
+      current_mesh_name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
+      hdf5_file->write(mesh, current_mesh_name);
+    }
   }
 
   // Vertex/cell values are saved in the hdf5 group /VisualisationVector
@@ -247,6 +260,12 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   global_size[0] = num_total_entities;
   global_size[1] = padded_value_size;
 
+  if(!parameters["visualisation_mesh"] && vertex_data) 
+  {
+    hdf5_file->reorder_values_by_global_indices(mesh, data_values, global_size);
+    num_total_vertices = global_size[0];
+  }
+ 
   hdf5_file->write_data("/VisualisationVector/" + boost::lexical_cast<std::string>(counter),
                         data_values, global_size);
 
@@ -274,8 +293,19 @@ void XDMFFile::operator<< (const Mesh& mesh)
   warning("Mesh saved to XDMF is only suitable for visualisation.");
 
   // Output data name
-  const std::string name = "/VisualisationMesh/" + boost::lexical_cast<std::string>(counter);
-  hdf5_file->write_visualisation(mesh, name);
+
+  std::string name;
+  
+  if(parameters["visualisation_mesh"])
+  {
+    name = "/VisualisationMesh/" + boost::lexical_cast<std::string>(counter);
+    hdf5_file->write_visualisation(mesh, name);
+  }
+  else
+  {
+    name = "/Mesh/" + boost::lexical_cast<std::string>(counter);   
+    hdf5_file->write(mesh, name);
+  }
 
   // Get number of local/global cells/vertices
 
@@ -389,10 +419,19 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   const std::size_t num_total_vertices = MPI::sum(num_local_vertices);
 
   // Work out HDF5 dataset names
-  current_mesh_name = "/VisualisationMesh/" + boost::lexical_cast<std::string>(counter);
-  // Write mesh to HDF5
-  hdf5_file->write_visualisation(mesh, cell_dim, current_mesh_name);
 
+  // Write mesh to HDF5
+  if(parameters["visualisation_mesh"])
+  {
+    current_mesh_name = "/VisualisationMesh/" + boost::lexical_cast<std::string>(counter);
+    hdf5_file->write_visualisation(mesh, cell_dim, current_mesh_name);
+  }
+  else
+  {
+    current_mesh_name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
+    hdf5_file->write(mesh, cell_dim, current_mesh_name);
+  }
+  
   // Write values to HDF5
   const std::vector<std::size_t> global_size(1, MPI::sum(data_values.size()));
   hdf5_file->write_data("/VisualisationVector/" + boost::lexical_cast<std::string>(counter),

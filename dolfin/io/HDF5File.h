@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2013-02-20
+// Last changed: 2013-02-21
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -116,6 +116,10 @@ namespace dolfin
     std::vector<double> 
       reorder_vertices_by_global_indices(const Mesh& mesh) const;
 
+    // Reorder data values into global index order
+    void reorder_values_by_global_indices(const Mesh& mesh, std::vector<double>& data, 
+                                          std::vector<std::size_t>& global_size) const;
+
     // HDF5 file descriptor/handle
     bool hdf5_file_open;
     hid_t hdf5_file_id;
@@ -123,7 +127,9 @@ namespace dolfin
     // Parallel mode
     const bool mpi_io;
   };
-  //---------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------
+
   template <typename T>
   void HDF5File::write_data(const std::string dataset_name,
                             const std::vector<T>& data,
