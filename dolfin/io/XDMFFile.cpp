@@ -416,7 +416,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   const std::size_t num_local_cells = mesh.num_entities(cell_dim);
   const std::size_t num_local_vertices = mesh.num_vertices();
   const std::size_t num_global_cells = MPI::sum(num_local_cells);
-  const std::size_t num_total_vertices = MPI::sum(num_local_vertices);
+  std::size_t num_total_vertices = MPI::sum(num_local_vertices);
 
   // Work out HDF5 dataset names
 
@@ -430,17 +430,24 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   {
     current_mesh_name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
     hdf5_file->write(mesh, cell_dim, current_mesh_name);
+    num_total_vertices = mesh.size_global(0);
   }
   
   // Write values to HDF5
-  const std::vector<std::size_t> global_size(1, MPI::sum(data_values.size()));
+  std::vector<std::size_t> global_size(1, MPI::sum(data_values.size()));
+  if(cell_dim == 0 && !parameters["visualisation_mesh"])
+  {
+    global_size.push_back(1);
+    hdf5_file->reorder_values_by_global_indices(mesh, data_values, global_size);
+  }
+  
   hdf5_file->write_data("/VisualisationVector/" + boost::lexical_cast<std::string>(counter),
                         data_values, global_size);
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero
   if (MPI::process_number() == 0)
   {
-    output_XML((double)counter, false, 
+    output_XML((double)counter, false,
                cell_dim, num_global_cells, gdim, num_total_vertices, 
                0, 1, meshfunction.name(), hdf5_filename);
   }

@@ -28,6 +28,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "dolfin/common/Timer.h"
 #include "dolfin/common/Variable.h"
 #include "HDF5Interface.h"
 
@@ -117,7 +118,8 @@ namespace dolfin
       reorder_vertices_by_global_indices(const Mesh& mesh) const;
 
     // Reorder data values into global index order
-    void reorder_values_by_global_indices(const Mesh& mesh, std::vector<double>& data, 
+    template <typename T>
+    void reorder_values_by_global_indices(const Mesh& mesh, std::vector<T>& data, 
                                           std::vector<std::size_t>& global_size) const;
 
     // HDF5 file descriptor/handle
@@ -128,8 +130,99 @@ namespace dolfin
     const bool mpi_io;
   };
 
-//---------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
+  template <typename T>
+  void HDF5File::reorder_values_by_global_indices(const Mesh& mesh, std::vector<T>& data, 
+                                                  std::vector<std::size_t>& global_size) const
+  {
+    Timer t("HDF5: reorder vertex values");
+    
+    dolfin_assert(global_size.size() == 2);
+    dolfin_assert(mesh.num_vertices()*global_size[1] == data.size());
+    dolfin_assert(MPI::sum(mesh.num_vertices()) == global_size[0]);
+
+    const std::size_t width = global_size[1];
+
+    // Get shared vertices
+    const std::map<unsigned int, std::set<unsigned int> >& shared_vertices
+      = mesh.topology().shared_entities(0);
+
+    // My process rank
+    const unsigned int my_rank = MPI::process_number();
+
+    // Number of processes
+    const unsigned int num_processes = MPI::num_processes();
+
+    // Build list of vertex data to send. Only send shared vertex if I'm the
+    // lowest rank process
+    std::vector<bool> vertex_sender(mesh.num_vertices(), true);
+    std::map<unsigned int, std::set<unsigned int> >::const_iterator it;
+    for (it = shared_vertices.begin(); it != shared_vertices.end(); ++it)
+    {
+      // Check if vertex is shared
+      if (!it->second.empty())
+      {
+        // Check if I am the lowest rank owner
+        const std::size_t sharing_min_rank
+          = *std::min_element(it->second.begin(), it->second.end());
+        if (my_rank > sharing_min_rank)
+          vertex_sender[it->first] = false;
+      }
+    }
+
+    // Global size
+    const std::size_t N = mesh.size_global(0);
+
+    // Process offset
+    const std::pair<std::size_t, std::size_t> local_range
+      = MPI::local_range(N);
+    const std::size_t offset = local_range.first;
+
+    // Build buffer of indices and coords to send
+    std::vector<std::vector<std::size_t> > send_buffer_index(num_processes);
+    std::vector<std::vector<T> > send_buffer_values(num_processes);
+    // Reference to data to send, reorganised as a 2D boost::multi_array
+    boost::multi_array_ref<T, 2> data_array(data.data(), boost::extents[mesh.num_vertices()][width]);
+
+    for (VertexIterator v(mesh); !v.end(); ++v)
+    {
+      const std::size_t vidx = v->index();
+      if (vertex_sender[vidx])
+      {
+        std::size_t owner = MPI::index_owner(v->global_index(), N);
+        send_buffer_index[owner].push_back(v->global_index());
+        send_buffer_values[owner].insert(send_buffer_values[owner].end(),
+                                         data_array[vidx].begin(), data_array[vidx].end());
+      }
+    }
+
+    // Send/receive indices
+    std::vector<std::vector<std::size_t> > receive_buffer_index;
+    MPI::all_to_all(send_buffer_index, receive_buffer_index);
+
+    // Send/receive coords
+    std::vector<std::vector<T> > receive_buffer_values;
+    MPI::all_to_all(send_buffer_values, receive_buffer_values);
+
+    // Build vectors of ordered values
+    std::vector<T> ordered_values(width*(local_range.second - local_range.first));
+    for (std::size_t p = 0; p < receive_buffer_index.size(); ++p)
+    {
+      for (std::size_t i = 0; i < receive_buffer_index[p].size(); ++i)
+      {
+        const std::size_t local_index = receive_buffer_index[p][i] - offset;
+        for (std::size_t j = 0; j < width; ++j)
+        {
+          ordered_values[local_index*width + j] = receive_buffer_values[p][i*width + j];
+        }
+      }
+    }
+
+    data.assign(ordered_values.begin(), ordered_values.end());
+    global_size[0] = N;
+  }
+  //---------------------------------------------------------------------------
   template <typename T>
   void HDF5File::write_data(const std::string dataset_name,
                             const std::vector<T>& data,

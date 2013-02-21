@@ -122,7 +122,7 @@ void HDF5File::write(const Mesh& mesh, const std::string name)
 void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
                      const std::string name)
 {
-  Timer t0("HDF5: write mesh to file [a]");
+  Timer t0("HDF5: write mesh to file");
 
   dolfin_assert(hdf5_file_open);
 
@@ -147,9 +147,6 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     write_data(coord_dataset, vertex_coords, global_size);
   }
 
-  t0.stop();
-  Timer t1("HDF5: write mesh to file [b]");
-
   // ---------- Topology
   {
     // Get/build topology data
@@ -159,18 +156,12 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
       for (VertexIterator v(*c); !v.end(); ++v)
         topological_data.push_back(v->global_index());
 
-    t1.stop();
-    Timer t2("HDF5: write mesh to file [c]");
-
     // Write topology data
     const std::string topology_dataset =  name + "/topology";
     std::vector<std::size_t> global_size(2);
     global_size[0] = MPI::sum(topological_data.size()/(cell_dim + 1));
     global_size[1] = cell_dim + 1;
     write_data(topology_dataset, topological_data, global_size);
-
-    t2.stop();
-    Timer t3("HDF5: write mesh to file [d]");
 
     // Add cell type attribute
     HDF5Interface::add_attribute(hdf5_file_id, topology_dataset,
@@ -492,96 +483,6 @@ std::vector<double> HDF5File::reorder_vertices_by_global_indices(const Mesh& mes
   std::vector<double> ordered_coordinates(mesh.coordinates());
   reorder_values_by_global_indices(mesh, ordered_coordinates, global_size);  
   return ordered_coordinates;
-}
-//-----------------------------------------------------------------------------
-void HDF5File::reorder_values_by_global_indices(const Mesh& mesh, std::vector<double>& data, 
-                                                               std::vector<std::size_t>& global_size) const
-{
-  Timer t("HDF5: reorder vertex values");
-
-  dolfin_assert(global_size.size() == 2);
-  dolfin_assert(mesh.num_vertices()*global_size[1] == data.size());
-  dolfin_assert(MPI::sum(mesh.num_vertices()) == global_size[0]);
-
-  const std::size_t width = global_size[1];
-
-  // Get shared vertices
-  const std::map<unsigned int, std::set<unsigned int> >& shared_vertices
-      = mesh.topology().shared_entities(0);
-
-  // My process rank
-  const unsigned int my_rank = MPI::process_number();
-
-  // Number of processes
-  const unsigned int num_processes = MPI::num_processes();
-
-  // Build list of vertex data to send. Only send shared vertex if I'm the
-  // lowest rank process
-  std::vector<bool> vertex_sender(mesh.num_vertices(), true);
-  std::map<unsigned int, std::set<unsigned int> >::const_iterator it;
-  for (it = shared_vertices.begin(); it != shared_vertices.end(); ++it)
-  {
-    // Check if vertex is shared
-    if (!it->second.empty())
-    {
-      // Check if I am the lowest rank owner
-      const std::size_t sharing_min_rank
-        = *std::min_element(it->second.begin(), it->second.end());
-      if (my_rank > sharing_min_rank)
-        vertex_sender[it->first] = false;
-    }
-  }
-
-  // Global size
-  const std::size_t N = mesh.size_global(0);
-
-  // Process offset
-  const std::pair<std::size_t, std::size_t> local_range
-    = MPI::local_range(N);
-  const std::size_t offset = local_range.first;
-
-  // Build buffer of indices and coords to send
-  std::vector<std::vector<std::size_t> > send_buffer_index(num_processes);
-  std::vector<std::vector<double> > send_buffer_values(num_processes);
-  // Reference to data to send, reorganised as a 2D boost::multi_array
-  boost::multi_array_ref<double, 2> data_array(data.data(), boost::extents[mesh.num_vertices()][width]);
-
-  for (VertexIterator v(mesh); !v.end(); ++v)
-  {
-    const std::size_t vidx = v->index();
-    if (vertex_sender[vidx])
-    {
-      std::size_t owner = MPI::index_owner(v->global_index(), N);
-      send_buffer_index[owner].push_back(v->global_index());
-      send_buffer_values[owner].insert(send_buffer_values[owner].end(),
-                                       data_array[vidx].begin(), data_array[vidx].end());
-    }
-  }
-
-  // Send/receive indices
-  std::vector<std::vector<std::size_t> > receive_buffer_index;
-  MPI::all_to_all(send_buffer_index, receive_buffer_index);
-
-  // Send/receive coords
-  std::vector<std::vector<double> > receive_buffer_values;
-  MPI::all_to_all(send_buffer_values, receive_buffer_values);
-
-  // Build vectors of ordered values
-  std::vector<double> ordered_values(width*(local_range.second - local_range.first));
-  for (std::size_t p = 0; p < receive_buffer_index.size(); ++p)
-  {
-    for (std::size_t i = 0; i < receive_buffer_index[p].size(); ++i)
-    {
-      const std::size_t local_index = receive_buffer_index[p][i] - offset;
-      for (std::size_t j = 0; j < width; ++j)
-      {
-        ordered_values[local_index*width + j] = receive_buffer_values[p][i*width + j];
-      }
-    }
-  }
-
-  data.assign(ordered_values.begin(), ordered_values.end());
-  global_size[0] = N;
 }
 //-----------------------------------------------------------------------------
 
