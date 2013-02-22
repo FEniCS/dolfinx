@@ -94,7 +94,7 @@ namespace dolfin
 
     // Write XML description for Function and MeshFunction output
     // updating time-series if need be
-    void output_XML(const double time_step, const bool vertex_data,
+    void output_xml(const double time_step, const bool vertex_data,
                     const std::size_t cell_dim, const std::size_t num_global_cells,
                     const std::size_t gdim, const std::size_t num_total_vertices,
                     const std::size_t value_rank, const std::size_t padded_value_size,

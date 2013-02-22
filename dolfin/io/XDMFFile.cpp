@@ -264,10 +264,12 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero
   if (MPI::process_number() == 0)
-    output_XML(time_step, vertex_data,
+  {
+    output_xml(time_step, vertex_data,
                cell_dim, num_global_cells, gdim, num_total_vertices,
                value_rank, padded_value_size,
                u.name(), hdf5_filename);
+  }
 
   // Increment counter
   counter++;
@@ -436,7 +438,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   // Write the XML meta description (see http://www.xdmf.org) on process zero
   if (MPI::process_number() == 0)
   {
-    output_XML((double)counter, false,
+    output_xml((double)counter, false,
                cell_dim, mesh.size_global(cell_dim),
                mesh.topology().dim(), mesh.size_global(0),
                0, 1, meshfunction.name(), hdf5_filename);
@@ -518,7 +520,7 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
   xdmf_geom_data.append_child(pugi::node_pcdata).set_value(geometry_reference.c_str());
 }
 //----------------------------------------------------------------------------
-void XDMFFile::output_XML(const double time_step, const bool vertex_data,
+void XDMFFile::output_xml(const double time_step, const bool vertex_data,
                           const std::size_t cell_dim, const std::size_t num_global_cells,
                           const std::size_t gdim, const std::size_t num_total_vertices,
                           const std::size_t value_rank, const std::size_t padded_value_size,
