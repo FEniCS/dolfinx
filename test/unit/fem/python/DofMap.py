@@ -193,7 +193,7 @@ class DofMapTest(unittest.TestCase):
         W = MixedFunctionSpace([V, R])
         W = MixedFunctionSpace([R, V])
 
-    def xtest_vertex_to_dof_map(self):
+    def test_vertex_to_dof_map(self):
 
         # Check for both reordered and UFC ordered dofs
         for reorder_dofs in [True, False]:
