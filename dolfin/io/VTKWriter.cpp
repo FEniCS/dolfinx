@@ -365,6 +365,8 @@ boost::uint8_t VTKWriter::vtk_cell_type(const Mesh& mesh, std::size_t cell_dim)
     cell_type = mesh.type().cell_type();
   else if (mesh.topology().dim() - 1 == cell_dim)
     cell_type = mesh.type().facet_type();
+  else if (cell_dim == 1)
+    cell_type = CellType::interval;
   else if (cell_dim == 0)
     cell_type = CellType::point;
   else

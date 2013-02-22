@@ -660,12 +660,12 @@ void VTKFile::mesh_function_write(T& meshfunction)
   const Mesh& mesh = meshfunction.mesh();
   const std::size_t cell_dim = meshfunction.dim();
 
-  if (cell_dim != mesh.topology().dim() && cell_dim != mesh.topology().dim() - 1 && cell_dim != 0)
-  {
-    dolfin_error("VTKFile.cpp",
-                 "write mesh function to VTK file",
-                 "VTK output of mesh functions is implemented for cell-, facet- and vertex-based functions only");
-  }
+  //if (cell_dim != mesh.topology().dim() && cell_dim != mesh.topology().dim() - 1 && cell_dim != 0)
+  //{
+  //  dolfin_error("VTKFile.cpp",
+  //               "write mesh function to VTK file",
+  //               "VTK output of mesh functions is implemented for cell-, facet- and vertex-based functions only");
+  //}
 
   // Update vtu file name and clear file
   std::string vtu_filename = init(mesh, cell_dim);
