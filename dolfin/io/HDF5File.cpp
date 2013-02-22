@@ -152,10 +152,9 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     std::vector<std::size_t> topological_data;
     topological_data.reserve(mesh.num_entities(cell_dim)*(cell_dim + 1));
 
-    // Usual case, with cell output, none shared with another process.
-
     if (cell_dim == mesh.topology().dim())
     {
+      // Usual case, with cell output, none shared with another process.
       // Get/build topology data
       for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
         for (VertexIterator v(*c); !v.end(); ++v)
@@ -164,12 +163,12 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     else
     {
       // Drop duplicate topology for shared entities of less than mesh dimension
-      const std::size_t my_rank = MPI::process_number();
 
       // If not already numbered, number entities of order cell_dim
       // so we can get shared_entities
       DistributedMeshTools::number_entities(mesh, cell_dim);    
-      
+
+      const std::size_t my_rank = MPI::process_number();      
       const std::map<unsigned int, std::set<unsigned int> >& shared_entities
         = mesh.topology().shared_entities(cell_dim);
 
@@ -178,19 +177,21 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
         std::map<unsigned int, std::set<unsigned int> >::const_iterator sh 
           = shared_entities.find(c->index());
 
-        bool local_ownership = false;      
+        // If unshared, or owned locally, append to topology
         if(sh == shared_entities.end())
-          local_ownership = true;
+        {
+          for (VertexIterator v(*c); !v.end(); ++v)
+            topological_data.push_back(v->global_index());
+        }
         else
         {
           std::set<unsigned int>::iterator lowest_proc = sh->second.begin();
           if(*lowest_proc > my_rank) 
-            local_ownership = true;
+          {
+            for (VertexIterator v(*c); !v.end(); ++v)
+              topological_data.push_back(v->global_index());
+          }
         }
-        
-        if (local_ownership)
-          for (VertexIterator v(*c); !v.end(); ++v)
-            topological_data.push_back(v->global_index());
       }
     }
 

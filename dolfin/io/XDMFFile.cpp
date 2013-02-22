@@ -412,8 +412,12 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   dolfin_assert(hdf5_file);
 
   // Get counts of mesh cells and vertices
-  //  const std::size_t num_local_cells = mesh.num_entities(cell_dim);
   const std::size_t num_local_vertices = mesh.num_vertices();
+
+  // If not already numbered, number entities of order cell_dim
+  // so we can get shared_entities and correct size_global(cell_dim)
+  DistributedMeshTools::number_entities(mesh, cell_dim);
+
   const std::size_t num_global_cells = mesh.size_global(cell_dim);
   std::size_t num_total_vertices = MPI::sum(num_local_vertices);
 
@@ -434,17 +438,15 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   
   if(cell_dim == mesh.topology().dim())
   {
+    // No duplicates
     data_values.assign(meshfunction.values(), meshfunction.values() + meshfunction.size());
   }
   else
   {
+    data_values.reserve(num_global_cells);
+    
     // Drop duplicate data
     const std::size_t my_rank = MPI::process_number();
-
-    // If not already numbered, number entities of order cell_dim
-    // so we can get shared_entities
-    DistributedMeshTools::number_entities(mesh, cell_dim);
-    
     const std::map<unsigned int, std::set<unsigned int> >& shared_entities
       = mesh.topology().shared_entities(cell_dim);
 
@@ -453,19 +455,14 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
       std::map<unsigned int, std::set<unsigned int> >::const_iterator sh 
         = shared_entities.find(i);
 
-      bool local_ownership = false;      
+      // If unshared, or shared and locally owned, append to vector
       if(sh == shared_entities.end())
-        local_ownership = true;
+        data_values.push_back(meshfunction[i]);
       else
       {
         std::set<unsigned int>::iterator lowest_proc = sh->second.begin();
         if(*lowest_proc > my_rank) 
-          local_ownership = true;
-      }
-      
-      if (local_ownership) 
-      {
-        data_values.push_back(meshfunction[i]);
+          data_values.push_back(meshfunction[i]);
       }
     }
   }
