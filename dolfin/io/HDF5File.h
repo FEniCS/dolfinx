@@ -68,14 +68,10 @@ namespace dolfin
     void write(const Mesh& mesh, const std::size_t cell_dim,
                const std::string name);
 
-    /// Write Mesh to file for visualisation (may contain duplicate
-    /// entities and will not preserve global indices)
-    void write_visualisation(const Mesh& mesh, const std::string name);
-
-    /// Write Mesh of given cell dimension to file for visualisation (may
-    /// contain duplicate entities and will not preserve global indices)
-    void write_visualisation(const Mesh& mesh, const std::size_t cell_dim,
-                             const std::string name);
+    /// Write MeshFunction to file
+    /// in a format suitable for re-reading
+    /// FIXME: not working yet
+    void write(const MeshFunction<std::size_t>& meshfunction, const std::string name);
 
     /// Read vector from file
     void read(GenericVector& x, const std::string dataset_name,
@@ -105,6 +101,10 @@ namespace dolfin
 
     // Get description of cells to be written to file
     const std::string cell_type(const std::size_t cell_dim, const Mesh& mesh);
+
+    // Write a MeshFunction to file
+    template <typename T>
+    void write_mesh_function(const MeshFunction<T>& meshfunction, const std::string name);
 
     // Write contiguous data to HDF5 data set. Data is flattened into
     // a 1D array, e.g. [x0, y0, z0, x1, y1, z1] for a vector in 3D

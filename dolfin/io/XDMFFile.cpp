@@ -65,8 +65,6 @@ XDMFFile::XDMFFile(const std::string filename) : GenericFile(filename, "XDMF")
   // Allows inspection of the HDF5 file whilst running, at some performance cost
   parameters.add("flush_output", false);
 
-  // Switch between mesh output methods
-  parameters.add("visualisation_mesh", false);
 }
 //----------------------------------------------------------------------------
 XDMFFile::~XDMFFile()
@@ -211,8 +209,8 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
       {
         for(std::size_t i = 0; i < 2; i++)
         {
-          cout << "test: " << *cell_offset + 2*i << ", " << *cell_offset + 2*i + 1
-               << ", " << data_values[*cell_offset + 2*i] << ", " << data_values[*cell_offset + 2*i + 1] << endl;
+          //          cout << "test: " << *cell_offset + 2*i << ", " << *cell_offset + 2*i + 1
+          //   << ", " << data_values[*cell_offset + 2*i] << ", " << data_values[*cell_offset + 2*i + 1] << endl;
           _data_values[count++] = data_values[*cell_offset + 2*i];
           _data_values[count++] = data_values[*cell_offset + 2*i + 1];
           count++;
@@ -239,16 +237,8 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   // Write mesh to HDF5 file
   if (parameters["rewrite_function_mesh"] || counter == 0)
   {
-    if(parameters["visualisation_mesh"])
-    {
-      current_mesh_name = "/VisualisationMesh/" + boost::lexical_cast<std::string>(counter);
-      hdf5_file->write_visualisation(mesh, current_mesh_name);
-    }
-    else
-    {
       current_mesh_name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
       hdf5_file->write(mesh, current_mesh_name);
-    }
   }
 
   // Vertex/cell values are saved in the hdf5 group /VisualisationVector
@@ -260,7 +250,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   global_size[0] = num_total_entities;
   global_size[1] = padded_value_size;
 
-  if(!parameters["visualisation_mesh"] && vertex_data) 
+  if(vertex_data) 
   {
     hdf5_file->reorder_values_by_global_indices(mesh, data_values, global_size);
     num_total_vertices = global_size[0];
@@ -290,22 +280,11 @@ void XDMFFile::operator<< (const Mesh& mesh)
   // Write Mesh to HDF5 file (use contiguous vertex indices for topology)
   dolfin_assert(hdf5_file);
 
-  warning("Mesh saved to XDMF is only suitable for visualisation.");
-
   // Output data name
-
   std::string name;
   
-  if(parameters["visualisation_mesh"])
-  {
-    name = "/VisualisationMesh/" + boost::lexical_cast<std::string>(counter);
-    hdf5_file->write_visualisation(mesh, name);
-  }
-  else
-  {
-    name = "/Mesh/" + boost::lexical_cast<std::string>(counter);   
-    hdf5_file->write(mesh, name);
-  }
+  name = "/Mesh/" + boost::lexical_cast<std::string>(counter);   
+  hdf5_file->write(mesh, name);
 
   // Get number of local/global cells/vertices
 
@@ -390,14 +369,7 @@ void XDMFFile::operator<< (const MeshFunction<double>& meshfunction)
 template<typename T>
 void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 {
-  // Get mesh
-  const Mesh& mesh = meshfunction.mesh();
-
-  // Get some dimensions
-  const std::size_t gdim = mesh.geometry().dim();
-  const std::size_t cell_dim = meshfunction.dim();
-
-  dolfin_assert(cell_dim <= mesh.topology().dim());
+  dolfin_assert(hdf5_file);
 
   if (meshfunction.size() == 0)
   {
@@ -406,44 +378,33 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
                  "No values in MeshFunction");
   }
 
+  // Get mesh
+  const Mesh& mesh = meshfunction.mesh();
+
+  const std::size_t cell_dim = meshfunction.dim();
+  dolfin_assert(cell_dim <= mesh.topology().dim());
+
   // Collate data in a vector
   std::vector<T> data_values;
-
-  dolfin_assert(hdf5_file);
-
-  // Get counts of mesh cells and vertices
-  const std::size_t num_local_vertices = mesh.num_vertices();
 
   // If not already numbered, number entities of order cell_dim
   // so we can get shared_entities and correct size_global(cell_dim)
   DistributedMeshTools::number_entities(mesh, cell_dim);
 
-  const std::size_t num_global_cells = mesh.size_global(cell_dim);
-  std::size_t num_total_vertices = MPI::sum(num_local_vertices);
-
   // Work out HDF5 dataset names
 
   // Write mesh to HDF5
-  if(parameters["visualisation_mesh"])
-  {
-    current_mesh_name = "/VisualisationMesh/" + boost::lexical_cast<std::string>(counter);
-    hdf5_file->write_visualisation(mesh, cell_dim, current_mesh_name);
-  }
-  else
-  {
-    current_mesh_name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
-    hdf5_file->write(mesh, cell_dim, current_mesh_name);
-    num_total_vertices = mesh.size_global(0);
-  }
+  current_mesh_name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
+  hdf5_file->write(mesh, cell_dim, current_mesh_name);
   
-  if(cell_dim == mesh.topology().dim())
+  if(cell_dim == mesh.topology().dim() || MPI::num_processes() == 1)
   {
     // No duplicates
     data_values.assign(meshfunction.values(), meshfunction.values() + meshfunction.size());
   }
   else
   {
-    data_values.reserve(num_global_cells);
+    data_values.reserve(mesh.size(cell_dim));
     
     // Drop duplicate data
     const std::size_t my_rank = MPI::process_number();
@@ -477,7 +438,8 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   if (MPI::process_number() == 0)
   {
     output_XML((double)counter, false,
-               cell_dim, num_global_cells, gdim, num_total_vertices, 
+               cell_dim, mesh.size_global(cell_dim), 
+               mesh.topology().dim(), mesh.size_global(0), 
                0, 1, meshfunction.name(), hdf5_filename);
   }
   
