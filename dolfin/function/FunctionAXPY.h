@@ -64,6 +64,9 @@ namespace dolfin
     /// Constructor
     FunctionAXPY(std::vector<std::pair<double, const Function*> > pairs);
 
+    /// Copy constructor
+    FunctionAXPY(const FunctionAXPY& axpy);
+    
     /// Addition operator
     FunctionAXPY operator+(const Function& func) const;
     

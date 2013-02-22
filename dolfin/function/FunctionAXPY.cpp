@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-11
-// Last changed: 2013-02-14
+// Last changed: 2013-02-15
 
 #include <dolfin/log/log.h>
 #include "Function.h"
@@ -76,6 +76,10 @@ FunctionAXPY::FunctionAXPY(const FunctionAXPY& axpy0, const FunctionAXPY& axpy1,
   _register(axpy0, direction % 2 == 0 ? 1.0 : -1.0);
   _register(axpy1, direction < 2 ? 1.0 : -1.0);
 }
+//-----------------------------------------------------------------------------
+FunctionAXPY::FunctionAXPY(const FunctionAXPY& axpy) : 
+  _pairs(axpy._pairs)
+{}
 //-----------------------------------------------------------------------------
 FunctionAXPY::FunctionAXPY(std::vector<std::pair<double, const Function*> > pairs) : 
   _pairs(pairs)
