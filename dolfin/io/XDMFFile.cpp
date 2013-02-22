@@ -149,9 +149,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
       }
       data_values = _data_values;
     }
-
   }
-  
   else
   {
     num_local_entities = num_local_cells;
@@ -250,12 +248,12 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   global_size[0] = num_total_entities;
   global_size[1] = padded_value_size;
 
-  if(vertex_data) 
+  if(vertex_data)
   {
     hdf5_file->reorder_values_by_global_indices(mesh, data_values, global_size);
     num_total_vertices = global_size[0];
   }
- 
+
   hdf5_file->write_data("/VisualisationVector/" + boost::lexical_cast<std::string>(counter),
                         data_values, global_size);
 
@@ -266,9 +264,9 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero
   if (MPI::process_number() == 0)
-    output_XML(time_step, vertex_data, 
-               cell_dim, num_global_cells, gdim, num_total_vertices, 
-               value_rank, padded_value_size, 
+    output_XML(time_step, vertex_data,
+               cell_dim, num_global_cells, gdim, num_total_vertices,
+               value_rank, padded_value_size,
                u.name(), hdf5_filename);
 
   // Increment counter
@@ -282,20 +280,21 @@ void XDMFFile::operator<< (const Mesh& mesh)
 
   // Output data name
   std::string name;
-  
-  name = "/Mesh/" + boost::lexical_cast<std::string>(counter);   
-  hdf5_file->write(mesh, name);
 
-  // Get number of local/global cells/vertices
-
-  const std::size_t num_local_cells = mesh.num_cells();
-  const std::size_t num_global_cells = MPI::sum(num_local_cells);
-  const std::size_t num_local_vertices = mesh.num_vertices();
-  const std::size_t num_total_vertices = MPI::sum(num_local_vertices);
+  // Topological and geometric dimensions
   const std::size_t cell_dim = mesh.topology().dim();
-
-  // Get geometric dimension
   const std::size_t gdim = mesh.geometry().dim();
+
+  // Make sure entities are numbered
+  DistributedMeshTools::number_entities(mesh, cell_dim);
+
+  // Get number of global cells and vertices
+  const std::size_t num_global_cells   = mesh.size_global(cell_dim);
+  const std::size_t num_total_vertices = mesh.size_global(0);
+
+  // Write mesh to HDF5 file
+  name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
+  hdf5_file->write(mesh, cell_dim, name);
 
   // FIXME: Names should be returned by HDF5::write_mesh
   // Mesh data set names
@@ -337,13 +336,13 @@ void XDMFFile::operator<< (const MeshFunction<bool>& meshfunction)
   const Mesh& mesh = meshfunction.mesh();
   const std::size_t cell_dim = meshfunction.dim();
 
-  // HDF5 does not support a boolean type, 
+  // HDF5 does not support a boolean type,
   // so copy to a std::size_t with values 1 and 0
-  MeshFunction<std::size_t> uint_meshfunction(mesh, cell_dim);
+  MeshFunction<std::size_t> mf(mesh, cell_dim);
   for (MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
-    uint_meshfunction[cell->index()] = (meshfunction[cell->index()] ? 1 : 0);
+    mf[cell->index()] = (meshfunction[cell->index()] ? 1 : 0);
 
-  write_mesh_function(uint_meshfunction);
+  write_mesh_function(mf);
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const MeshFunction<int>& meshfunction)
@@ -396,7 +395,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   // Write mesh to HDF5
   current_mesh_name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
   hdf5_file->write(mesh, cell_dim, current_mesh_name);
-  
+
   if(cell_dim == mesh.topology().dim() || MPI::num_processes() == 1)
   {
     // No duplicates
@@ -405,7 +404,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   else
   {
     data_values.reserve(mesh.size(cell_dim));
-    
+
     // Drop duplicate data
     const std::size_t my_rank = MPI::process_number();
     const std::map<unsigned int, std::set<unsigned int> >& shared_entities
@@ -413,7 +412,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 
     for(std::size_t i = 0; i < meshfunction.size(); ++i)
     {
-      std::map<unsigned int, std::set<unsigned int> >::const_iterator sh 
+      std::map<unsigned int, std::set<unsigned int> >::const_iterator sh
         = shared_entities.find(i);
 
       // If unshared, or shared and locally owned, append to vector
@@ -422,7 +421,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
       else
       {
         std::set<unsigned int>::iterator lowest_proc = sh->second.begin();
-        if(*lowest_proc > my_rank) 
+        if(*lowest_proc > my_rank)
           data_values.push_back(meshfunction[i]);
       }
     }
@@ -438,11 +437,11 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   if (MPI::process_number() == 0)
   {
     output_XML((double)counter, false,
-               cell_dim, mesh.size_global(cell_dim), 
-               mesh.topology().dim(), mesh.size_global(0), 
+               cell_dim, mesh.size_global(cell_dim),
+               mesh.topology().dim(), mesh.size_global(0),
                0, 1, meshfunction.name(), hdf5_filename);
   }
-  
+
   counter++;
 }
 //----------------------------------------------------------------------------
@@ -498,7 +497,7 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
                  "One dimensional geometry not supported in XDMF");
     // FIXME: geometry "X" is not supported
     // This could be fixed by padding vertex coordinates to 2D and using "XY"
-    geometry_type = "X"; 
+    geometry_type = "X";
   }
   else if (gdim == 2)
     geometry_type = "XY";
@@ -520,8 +519,8 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
 }
 //----------------------------------------------------------------------------
 void XDMFFile::output_XML(const double time_step, const bool vertex_data,
-                          const std::size_t cell_dim, const std::size_t num_global_cells, 
-                          const std::size_t gdim, const std::size_t num_total_vertices, 
+                          const std::size_t cell_dim, const std::size_t num_global_cells,
+                          const std::size_t gdim, const std::size_t num_total_vertices,
                           const std::size_t value_rank, const std::size_t padded_value_size,
                           const std::string name, const std::string hdf5_filename) const
 {
@@ -530,7 +529,7 @@ void XDMFFile::output_XML(const double time_step, const bool vertex_data,
   pugi::xml_document xml_doc;
   pugi::xml_node xdmf_timegrid;
   pugi::xml_node xdmf_timedata;
-  
+
   if (counter == 0)
   {
     // First time step - create document template, adding a mesh and
@@ -540,13 +539,13 @@ void XDMFFile::output_XML(const double time_step, const bool vertex_data,
     xdmf.append_attribute("Version") = "2.0";
     xdmf.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
     pugi::xml_node xdmf_domain = xdmf.append_child("Domain");
-    
+
     //  /Xdmf/Domain/Grid - actually a TimeSeries, not a spatial grid
     xdmf_timegrid = xdmf_domain.append_child("Grid");
     xdmf_timegrid.append_attribute("Name") = "TimeSeries";
     xdmf_timegrid.append_attribute("GridType") = "Collection";
     xdmf_timegrid.append_attribute("CollectionType") = "Temporal";
-    
+
     //  /Xdmf/Domain/Grid/Time
     pugi::xml_node xdmf_time = xdmf_timegrid.append_child("Time");
     xdmf_time.append_attribute("TimeType") = "List";
@@ -565,16 +564,16 @@ void XDMFFile::output_XML(const double time_step, const bool vertex_data,
                    "write data to XDMF file",
                    "XML parsing error when reading from existing file");
     }
-    
+
     // Get data node
     xdmf_timegrid = xml_doc.child("Xdmf").child("Domain").child("Grid");
     dolfin_assert(xdmf_timegrid);
-    
+
     // Get time series node
     xdmf_timedata = xdmf_timegrid.child("Time").child("DataItem");
     dolfin_assert(xdmf_timedata);
   }
-  
+
   //  Add a time step to the TimeSeries List
   xdmf_timedata.attribute("Dimensions").set_value(static_cast<unsigned int>(counter + 1));
   s = boost::lexical_cast<std::string>(xdmf_timedata.first_child().value())
