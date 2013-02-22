@@ -466,7 +466,7 @@ namespace dolfin
   template<>
   inline void HDF5Interface::add_attribute_value(const hid_t dset_id,
                                         const std::string attribute_name,
-                                        const std::vector<unsigned long int>& attribute_value)
+                                        const std::vector<std::size_t>& attribute_value)
   {
 
     // Create a vector dataspace
@@ -534,7 +534,7 @@ namespace dolfin
   template<>
   inline void HDF5Interface::get_attribute_value(const hid_t attr_type,
                                                  const hid_t attr_id,
-                                                 unsigned long int& attribute_value)
+                                                 std::size_t& attribute_value)
   {
     // FIXME: more complete check of type
     dolfin_assert(H5Tget_class(attr_type) == H5T_INTEGER);
@@ -596,7 +596,7 @@ namespace dolfin
   template<>
   inline void HDF5Interface::get_attribute_value(const hid_t attr_type,
                                           const hid_t attr_id,
-                                          std::vector<unsigned long int>& attribute_value)
+                                          std::vector<std::size_t>& attribute_value)
   {
     // FIXME: more complete check of type
     dolfin_assert(H5Tget_class(attr_type) == H5T_INTEGER);
@@ -630,7 +630,7 @@ namespace dolfin
   { return H5T_NATIVE_UINT; }
   //-----------------------------------------------------------------------------
   template <>
-  inline hid_t HDF5Interface::hdf5_type<unsigned long int>()
+  inline hid_t HDF5Interface::hdf5_type<std::size_t>()
   { return H5T_NATIVE_ULONG; }
   //-----------------------------------------------------------------------------
 

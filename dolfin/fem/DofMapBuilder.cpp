@@ -427,8 +427,6 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
     const std::map<unsigned int, std::pair<unsigned int, unsigned int> >&
       slave_to_master_vertices = slave_master_entities->find(0)->second;
 
-    //cout << "Size check: " << slave_to_master_vertices.size() << ", " << slave_master_entities_xx.find(0)->second.size() << endl;
-
     // Compute modified global vertex indices
     const std::size_t num_vertices = build_constrained_vertex_indices(mesh,
           slave_to_master_vertices, global_entity_indices[0]);

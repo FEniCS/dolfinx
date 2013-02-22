@@ -263,7 +263,8 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    std::size_t size(std::size_t dim) const { return _topology.size(dim); }
+    std::size_t size(std::size_t dim) const
+    { return _topology.size(dim); }
 
     /// Get global number of entities of given topological dimension.
     ///
@@ -279,37 +280,44 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    std::size_t size_global(std::size_t dim) const { return _topology.size_global(dim); }
+    std::size_t size_global(std::size_t dim) const
+    { return _topology.size_global(dim); }
 
     /// Get mesh topology.
     ///
     /// *Returns*
     ///     _MeshTopology_
     ///         The topology object associated with the mesh.
-    MeshTopology& topology() { return _topology; }
+    MeshTopology& topology()
+    { return _topology; }
 
     /// Get mesh topology (const version).
-    const MeshTopology& topology() const { return _topology; }
+    const MeshTopology& topology() const
+    { return _topology; }
 
     /// Get mesh geometry.
     ///
     /// *Returns*
     ///     _MeshGeometry_
     ///         The geometry object associated with the mesh.
-    MeshGeometry& geometry() { return _geometry; }
+    MeshGeometry& geometry()
+    { return _geometry; }
 
     /// Get mesh geometry (const version).
-    const MeshGeometry& geometry() const { return _geometry; }
+    const MeshGeometry& geometry() const
+    { return _geometry; }
 
     /// Get mesh (sub)domains.
     ///
     /// *Returns*
     ///     _MeshDomains_
     ///         The (sub)domains associated with the mesh.
-    MeshDomains& domains() { return _domains; }
+    MeshDomains& domains()
+    { return _domains; }
 
     /// Get mesh (sub)domains.
-    const MeshDomains& domains() const { return _domains; }
+    const MeshDomains& domains() const
+    { return _domains; }
 
     /// Get intersection operator.
     ///

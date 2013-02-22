@@ -77,7 +77,7 @@ namespace dolfin
     void operator<< (const MeshFunction<bool>& meshfunction);
     void operator<< (const MeshFunction<int>& meshfunction);
     void operator<< (const MeshFunction<unsigned int>& meshfunction);
-    void operator<< (const MeshFunction<unsigned long int>& meshfunction);
+    void operator<< (const MeshFunction<std::size_t>& meshfunction);
     void operator<< (const MeshFunction<double>& meshfunction);
 
   private:
