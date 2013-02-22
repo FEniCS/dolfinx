@@ -63,8 +63,10 @@
 // #include types from function submodule of module function
 #include "dolfin/function/GenericFunction.h"
 #include "dolfin/function/Expression.h"
+#include "dolfin/function/FunctionAXPY.h"
 #include "dolfin/function/Function.h"
 #include "dolfin/function/FunctionSpace.h"
+#include "dolfin/function/Constant.h"
 #include "dolfin/function/SpecialFacetFunction.h"
 
 // Include types from present module fem
@@ -93,6 +95,8 @@
 #include "dolfin/fem/LinearVariationalSolver.h"
 #include "dolfin/fem/NonlinearVariationalProblem.h"
 #include "dolfin/fem/NonlinearVariationalSolver.h"
+#include "dolfin/fem/ButcherScheme.h"
+#include "dolfin/fem/RKSolver.h"
 #include "dolfin/fem/OpenMpAssembler.h"
 #include "dolfin/fem/VariationalProblem.h"
 
@@ -161,8 +165,10 @@ import_array();
 %include "dolfin/swig/function/pre.i"
 %import(module="function") "dolfin/function/GenericFunction.h"
 %import(module="function") "dolfin/function/Expression.h"
+%import(module="function") "dolfin/function/FunctionAXPY.h"
 %import(module="function") "dolfin/function/Function.h"
 %import(module="function") "dolfin/function/FunctionSpace.h"
+%import(module="function") "dolfin/function/Constant.h"
 %import(module="function") "dolfin/function/SpecialFacetFunction.h"
 
 // Turn on SWIG generated signature documentation and include doxygen
@@ -197,6 +203,8 @@ import_array();
 %include "dolfin/fem/LinearVariationalSolver.h"
 %include "dolfin/fem/NonlinearVariationalProblem.h"
 %include "dolfin/fem/NonlinearVariationalSolver.h"
+%include "dolfin/fem/ButcherScheme.h"
+%include "dolfin/fem/RKSolver.h"
 %include "dolfin/fem/OpenMpAssembler.h"
 %include "dolfin/fem/VariationalProblem.h"
 %include "dolfin/swig/fem/post.i"

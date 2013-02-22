@@ -212,6 +212,84 @@ PROBLEM_RENAMES(NonlinearVariational)
   }
 }
 
+%define IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_SHARED_POINTERS(TYPE)
+
+//-----------------------------------------------------------------------------
+// The std::vector<std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::Type*> > > 
+// typecheck
+//-----------------------------------------------------------------------------
+%typecheck(SWIG_TYPECHECK_POINTER) std::vector<std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<const dolfin::TYPE> > >
+{
+  $1 = PyList_Check($input) ? 1 : 0;
+}
+
+//-----------------------------------------------------------------------------
+// The std::vector<std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::Type*> > > 
+// typemap
+//-----------------------------------------------------------------------------
+   %typemap (in) std::vector<std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<const dolfin::TYPE> > > (std::vector<std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<const dolfin::TYPE> > >  tmp_vec_0, std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<const dolfin::TYPE> >  tmp_vec_1, SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared)
+{
+  // IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE, CONST, CONST_VECTOR), shared_ptr version
+  if (!PyList_Check($input))
+    SWIG_exception(SWIG_TypeError, "list of lists of TYPE expected");
+
+  // Size of first list
+  int size_0 = PyList_Size($input);
+  int res = 0;
+  PyObject* py_item_0 = 0;
+  PyObject* py_item_1 = 0;
+  void* itemp = 0;
+  int newmem = 0;
+  tmp_vec_0.reserve(size_0);
+
+  // Iterate over first list
+  for (int i = 0; i < size_0; i++)
+  {
+    py_item_0 = PyList_GetItem($input, i);
+
+    // Check list items are list
+    if (!PyList_Check(py_item_0))
+      SWIG_exception(SWIG_TypeError, "list of lists of TYPE expected");
+    
+    // Size of second list
+    int size_1 = PyList_Size(py_item_0);
+    tmp_vec_1.reserve(size_1);
+
+    // Iterate over second list
+    for (int j = 0; j < size_1; j++)
+    {
+      newmem = 0;
+
+      // Grab item from second list
+      py_item_1 = PyList_GetItem(py_item_0, j);
+
+      // Try convert it
+      res = SWIG_ConvertPtrAndOwn(py_item_1, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
+      
+      if (!SWIG_IsOK(res))
+	SWIG_exception(SWIG_TypeError, "expected a list of list of TYPE (Bad conversion)");  
+
+      tempshared = *(reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE> *>(itemp));
+      tmp_vec_1.push_back(tempshared);
+
+      if (newmem & SWIG_CAST_NEW_MEMORY)
+	delete reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE> *>(itemp);
+      tmp_vec_0.push_back(tmp_vec_1);
+      tmp_vec_1.clear();
+      
+    }
+  }
+  $1 = tmp_vec_0;
+
+}
+
+%enddef
+
+//-----------------------------------------------------------------------------
+// Instantiate typemap
+//-----------------------------------------------------------------------------
+IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_SHARED_POINTERS(Form)
+
 //-----------------------------------------------------------------------------
 // Instantiate Hierarchical classes
 //-----------------------------------------------------------------------------
