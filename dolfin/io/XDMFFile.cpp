@@ -440,7 +440,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   {
     output_xml((double)counter, false,
                cell_dim, mesh.size_global(cell_dim),
-               mesh.topology().dim(), mesh.size_global(0),
+               mesh.geometry().dim(), mesh.size_global(0),
                0, 1, meshfunction.name(), hdf5_filename);
   }
 
