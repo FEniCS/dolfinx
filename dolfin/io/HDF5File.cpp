@@ -165,6 +165,11 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     {
       // Drop duplicate topology for shared entities of less than mesh dimension
       const std::size_t my_rank = MPI::process_number();
+
+      // If not already numbered, number entities of order cell_dim
+      // so we can get shared_entities
+      DistributedMeshTools::number_entities(mesh, cell_dim);    
+      
       const std::map<unsigned int, std::set<unsigned int> >& shared_entities
         = mesh.topology().shared_entities(cell_dim);
 

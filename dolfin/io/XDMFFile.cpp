@@ -440,6 +440,11 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   {
     // Drop duplicate data
     const std::size_t my_rank = MPI::process_number();
+
+    // If not already numbered, number entities of order cell_dim
+    // so we can get shared_entities
+    DistributedMeshTools::number_entities(mesh, cell_dim);
+    
     const std::map<unsigned int, std::set<unsigned int> >& shared_entities
       = mesh.topology().shared_entities(cell_dim);
 
@@ -465,11 +470,8 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
     }
   }
 
-  std::cout << data_values.size() << std::endl;
-
   // Write values to HDF5
   std::vector<std::size_t> global_size(1, MPI::sum(data_values.size()));
-
 
   hdf5_file->write_data("/VisualisationVector/" + boost::lexical_cast<std::string>(counter),
                         data_values, global_size);
