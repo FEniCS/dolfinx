@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-02-21
+// Last changed: 2013-02-22
 
 #ifdef HAS_HDF5
 
@@ -149,12 +149,45 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
 
   // ---------- Topology
   {
-    // Get/build topology data
     std::vector<std::size_t> topological_data;
     topological_data.reserve(mesh.num_entities(cell_dim)*(cell_dim + 1));
-    for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
-      for (VertexIterator v(*c); !v.end(); ++v)
-        topological_data.push_back(v->global_index());
+
+    // Usual case, with cell output, none shared with another process.
+
+    if (cell_dim == mesh.topology().dim())
+    {
+      // Get/build topology data
+      for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
+        for (VertexIterator v(*c); !v.end(); ++v)
+          topological_data.push_back(v->global_index());
+    }
+    else
+    {
+      // Drop duplicate topology for shared entities of less than mesh dimension
+      const std::size_t my_rank = MPI::process_number();
+      const std::map<unsigned int, std::set<unsigned int> >& shared_entities
+        = mesh.topology().shared_entities(cell_dim);
+
+      for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
+      {
+        std::map<unsigned int, std::set<unsigned int> >::const_iterator sh 
+          = shared_entities.find(c->index());
+
+        bool local_ownership = false;      
+        if(sh == shared_entities.end())
+          local_ownership = true;
+        else
+        {
+          std::set<unsigned int>::iterator lowest_proc = sh->second.begin();
+          if(*lowest_proc > my_rank) 
+            local_ownership = true;
+        }
+        
+        if (local_ownership)
+          for (VertexIterator v(*c); !v.end(); ++v)
+            topological_data.push_back(v->global_index());
+      }
+    }
 
     // Write topology data
     const std::string topology_dataset =  name + "/topology";

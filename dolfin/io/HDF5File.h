@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2013-02-21
+// Last changed: 2013-02-22
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
