@@ -284,7 +284,6 @@ void XDMFFile::operator<< (const Mesh& mesh)
   std::string name;
 
   // Topological and geometric dimensions
-  const std::size_t cell_dim = mesh.topology().dim();
   const std::size_t gdim = mesh.geometry().dim();
 
   // Make sure entities are numbered
