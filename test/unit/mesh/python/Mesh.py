@@ -20,9 +20,10 @@
 # Modified by Benjamin Kehlet 2012
 # Modified by Marie E. Rognes 2012
 # Modified by Johannes Ring 2013
+# Modified by Jan Blechta 2013
 #
 # First added:  2006-08-08
-# Last changed: 2013-02-06
+# Last changed: 2013-02-22
 
 import unittest
 import numpy
