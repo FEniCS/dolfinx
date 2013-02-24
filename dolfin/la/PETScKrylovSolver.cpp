@@ -44,7 +44,7 @@
 
 using namespace dolfin;
 
-// Utility function
+// Utility functions
 namespace dolfin
 {
   class PETScKSPDeleter
@@ -55,6 +55,20 @@ namespace dolfin
       if (_ksp)
         KSPDestroy(_ksp);
       delete _ksp;
+    }
+  };
+}
+
+namespace dolfin
+{
+  class PETScMatNullSpaceDeleter
+  {
+  public:
+    void operator() (MatNullSpace* ns)
+    {
+      if (*ns)
+        MatNullSpaceDestroy(ns);
+      delete ns;
     }
   };
 }
@@ -216,7 +230,6 @@ void PETScKrylovSolver::set_operators(const boost::shared_ptr<const PETScBaseMat
 void PETScKrylovSolver::set_nullspace(const std::vector<const GenericVector*> nullspace)
 {
   // Copy vectors
-  _nullspace.clear();
   for (std::size_t i = 0; i < nullspace.size(); ++i)
   {
     dolfin_assert(nullspace[i]);
@@ -235,17 +248,14 @@ void PETScKrylovSolver::set_nullspace(const std::vector<const GenericVector*> nu
     VecNormalize(petsc_vec[i], &val);
   }
 
-  // Create null space (does not not store vectors)
-  MatNullSpace petsc_nullspace;
-  MatNullSpaceCreate(PETSC_COMM_SELF, PETSC_FALSE, nullspace.size(),
-                     &petsc_vec[0], &petsc_nullspace);
+  // Create null space
+  petsc_nullspace.reset(new MatNullSpace, PETScMatNullSpaceDeleter());
+  MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE, nullspace.size(),
+                     petsc_vec.data(), petsc_nullspace.get());
 
   // Set null space
   dolfin_assert(_ksp);
-  KSPSetNullSpace(*_ksp, petsc_nullspace);
-
-  // Clean up null space
-  MatNullSpaceDestroy(&petsc_nullspace);
+  KSPSetNullSpace(*_ksp, *petsc_nullspace);
 }
 //-----------------------------------------------------------------------------
 const PETScBaseMatrix& PETScKrylovSolver::get_operator() const
