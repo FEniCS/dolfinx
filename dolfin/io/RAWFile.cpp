@@ -55,11 +55,6 @@ void RAWFile::operator<<(const MeshFunction<int>& meshfunction)
   MeshFunctionWrite(meshfunction);
 }
 //----------------------------------------------------------------------------
-void RAWFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
-{
-  MeshFunctionWrite(meshfunction);
-}
-//----------------------------------------------------------------------------
 void RAWFile::operator<<(const MeshFunction<double>& meshfunction)
 {
   MeshFunctionWrite(meshfunction);

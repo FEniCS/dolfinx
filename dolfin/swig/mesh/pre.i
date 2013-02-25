@@ -70,7 +70,6 @@ PyObject* _array()
 ALL_VALUES(dolfin::MeshFunction<double>, double)
 ALL_VALUES(dolfin::MeshFunction<int>, int)
 ALL_VALUES(dolfin::MeshFunction<bool>, bool)
-ALL_VALUES(dolfin::MeshFunction<unsigned int>, uint)
 ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
 
 

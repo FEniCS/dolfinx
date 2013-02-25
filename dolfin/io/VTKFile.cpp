@@ -123,12 +123,7 @@ void VTKFile::operator<<(const MeshFunction<bool>& meshfunction)
   mesh_function_write(meshfunction);
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
-{
-  mesh_function_write(meshfunction);
-}
-//----------------------------------------------------------------------------
-void VTKFile::operator<<(const MeshFunction<unsigned long int>& meshfunction)
+void VTKFile::operator<<(const MeshFunction<std::size_t>& meshfunction)
 {
   mesh_function_write(meshfunction);
 }

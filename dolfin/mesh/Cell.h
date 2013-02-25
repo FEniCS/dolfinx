@@ -18,9 +18,10 @@
 // Modified by Johan Hoffman 2006.
 // Modified by Andre Massing 2009.
 // Modified by Garth N. Wells 2010.
+// Modified by Jan Blechta 2013
 //
 // First added:  2006-06-01
-// Last changed: 2013-01-09
+// Last changed: 2013-02-21
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -118,6 +119,58 @@ namespace dolfin
     ///         1.41421
     double diameter() const
     { return _mesh->type().diameter(*this); }
+
+    /// Compute inradius of cell
+    ///
+    /// *Returns*
+    ///     double
+    ///         Radius of the sphere inscribed in the cell.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         UnitSquare mesh(1, 1);
+    ///         Cell cell(mesh, 0);
+    ///         info("%g", cell.inradius());
+    ///
+    ///     output::
+    ///
+    ///         0.29289
+    double inradius() const
+    {
+      // We would need facet areas
+      _mesh->init(_mesh->type().dim() - 1);
+      
+      return _mesh->type().inradius(*this);
+    }
+
+    /// Compute ratio of inradius to circumradius times dim for cell.
+    /// Useful as cell quality measure. Returns 1. for equilateral
+    /// and 0. for degenerate cell.
+    /// See Jonathan Richard Shewchuk: What Is a Good Linear Finite Element?,
+    /// online: http://www.cs.berkeley.edu/~jrs/papers/elemj.pdf
+    ///
+    /// *Returns*
+    ///     double
+    ///         cell_dimension * inradius / circumradius
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         UnitSquare mesh(1, 1);
+    ///         Cell cell(mesh, 0);
+    ///         info("%g", cell.radius_ratio());
+    ///
+    ///     output::
+    ///
+    ///         0.828427
+    double radius_ratio() const
+    {
+      // We would need facet areas
+      _mesh->init(_mesh->type().dim() - 1);
+      
+      return _mesh->type().radius_ratio(*this);
+    }
 
     /// Compute component i of normal of given facet with respect to the cell
     ///
