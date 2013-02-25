@@ -274,10 +274,9 @@ PROBLEM_RENAMES(NonlinearVariational)
 
       if (newmem & SWIG_CAST_NEW_MEMORY)
 	delete reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE> *>(itemp);
-      tmp_vec_0.push_back(tmp_vec_1);
-      tmp_vec_1.clear();
-      
     }
+    tmp_vec_0.push_back(tmp_vec_1);
+    tmp_vec_1.clear();
   }
   $1 = tmp_vec_0;
 
@@ -305,3 +304,8 @@ IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_SHARED_POINTERS(Form)
 //#ifdef IOMODULE // Conditional template instiantiation for IO module
 //%template (HierarchicalDirichletBC) dolfin::Hierarchical<dolfin::DirichletBC>;
 //#endif
+
+//-----------------------------------------------------------------------------
+// Add director classes
+//-----------------------------------------------------------------------------
+//%feature("director") dolfin::ButcherScheme;

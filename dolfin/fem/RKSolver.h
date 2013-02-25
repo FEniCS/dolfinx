@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-02-22
+// Last changed: 2013-02-25
 
 #ifndef __RKSOLVER_H
 #define __RKSOLVER_H
@@ -39,6 +39,7 @@ namespace dolfin
   public:
 
     /// Constructor
+    /// FIXME: Include version where one can pass a Solver
     RKSolver(boost::shared_ptr<ButcherScheme> scheme);
 
     /// Step solver with time step dt

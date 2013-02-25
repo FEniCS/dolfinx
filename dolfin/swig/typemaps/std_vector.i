@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-08-31
-// Last changed: 2013-02-15
+// Last changed: 2013-02-25
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -55,7 +55,7 @@ namespace std
 // Run the macros for the combination of const and no const of
 // {const} std::vector<{const} dolfin::TYPE *>
 //-----------------------------------------------------------------------------
-//IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,,)
+IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,,)
 IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,)
 IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,,const)
 IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
@@ -87,7 +87,9 @@ dolfin::TYPE * arg)
 {
   // IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE, CONST, CONST_VECTOR)
   if (!PyList_Check($input))
+  {
     SWIG_exception(SWIG_TypeError, "list of TYPE expected");
+  }
   int size = PyList_Size($input);
   int res = 0;
   PyObject * py_item = 0;
@@ -106,19 +108,18 @@ dolfin::TYPE * arg)
       // try with shared_ptr conversion
       newmem = 0;
       res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
-      if (SWIG_IsOK(res))
+      if (!SWIG_IsOK(res))
       {
-        if (itemp)
-        {
-          tempshared = *(reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> * >(itemp));
-          tmp_vec.push_back(tempshared.get());
-        }
-        // If we need to release memory
-        if (newmem & SWIG_CAST_NEW_MEMORY)
-          delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
-      }
-      else
         SWIG_exception(SWIG_TypeError, "list of TYPE expected (Bad conversion)");
+      }
+      if (itemp)
+      {
+	tempshared = *(reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> * >(itemp));
+	tmp_vec.push_back(tempshared.get());
+      }
+      // If we need to release memory
+      if (newmem & SWIG_CAST_NEW_MEMORY)
+	delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
     }
   }
   $1 = tmp_vec;
@@ -142,36 +143,37 @@ std::vector<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<CONST dolfin::TYPE> > tmp_vec
 SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared)
 {
   // IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE, CONST, CONST_VECTOR), shared_ptr version
-  if (PyList_Check($input))
+  if (!PyList_Check($input))
   {
-    int size = PyList_Size($input);
-    int res = 0;
-    PyObject * py_item = 0;
-    void * itemp = 0;
-    int newmem = 0;
-    tmp_vec.reserve(size);
-    for (int i = 0; i < size; i++)
-    {
-      newmem = 0;
-      py_item = PyList_GetItem($input, i);
-      res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
-      if (SWIG_IsOK(res))
-      {
-	      if (itemp)
-	      {
-	        tempshared = *(reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE> *>(itemp));
-	        tmp_vec.push_back(tempshared);
-	      }
-	      if (newmem & SWIG_CAST_NEW_MEMORY)
-	        delete reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE> *>(itemp);
-      }
-      else
-        SWIG_exception(SWIG_TypeError, "expected a list of shared_ptr<TYPE> (Bad conversion)");
-    }
-    $1 = tmp_vec;
-  }
-  else
     SWIG_exception(SWIG_TypeError, "list of TYPE expected");
+  }
+  
+  int size = PyList_Size($input);
+  int res = 0;
+  PyObject * py_item = 0;
+  void * itemp = 0;
+  int newmem = 0;
+  tmp_vec.reserve(size);
+  for (int i = 0; i < size; i++)
+  {
+    newmem = 0;
+    py_item = PyList_GetItem($input, i);
+    res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
+    if (!SWIG_IsOK(res)) 
+    {
+      SWIG_exception(SWIG_TypeError, "expected a list of shared_ptr<TYPE> (Bad conversion)");
+    }
+    if (itemp)
+    {
+      tempshared = *(reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE> *>(itemp));
+      tmp_vec.push_back(tempshared);
+    }
+    if (newmem & SWIG_CAST_NEW_MEMORY)
+    {
+      delete reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE> *>(itemp);
+    }
+  }
+  $1 = tmp_vec;
 }
 
 //-----------------------------------------------------------------------------
@@ -245,35 +247,32 @@ const std::vector<TYPE>&  ARG_NAME
   // IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_UPPER, ARG_NAME,
   //                                     NUMPY_TYPE, TYPE_NAME, DESCR)
   {
-    if (PyArray_Check($input))
-    {
-      PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
-      if ( PyArray_TYPE(xa) == NUMPY_TYPE )
-      {
-        const std::size_t size = PyArray_DIM(xa, 0);
-        temp.resize(size);
-        TYPE* array = static_cast<TYPE*>(PyArray_DATA(xa));
-        if (PyArray_ISCONTIGUOUS(xa))
-          std::copy(array, array + size, temp.begin());
-        else
-        {
-          const npy_intp strides = PyArray_STRIDE(xa, 0)/sizeof(TYPE);
-          for (std::size_t i = 0; i < size; i++)
-            temp[i] = array[i*strides];
-        }
-        $1 = &temp;
-      }
-      else
-      {
-        SWIG_exception(SWIG_TypeError, "(1) numpy array of 'TYPE_NAME' expected."\
-          " Make sure that the numpy array use dtype=DESCR.");
-      }
-    }
-    else
+    if (!PyArray_Check($input))
     {
       SWIG_exception(SWIG_TypeError, "(2) numpy array of 'TYPE_NAME' expected. "\
 		     "Make sure that the numpy array use dtype=DESCR.");
     }
+    
+    PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
+    if ( PyArray_TYPE(xa) != NUMPY_TYPE )
+    {
+      SWIG_exception(SWIG_TypeError, "(1) numpy array of 'TYPE_NAME' expected."	\
+		     " Make sure that the numpy array use dtype=DESCR.");
+    }
+    const std::size_t size = PyArray_DIM(xa, 0);
+    temp.resize(size);
+    TYPE* array = static_cast<TYPE*>(PyArray_DATA(xa));
+    if (PyArray_ISCONTIGUOUS(xa))
+    {
+      std::copy(array, array + size, temp.begin());
+    }
+    else
+    {
+      const npy_intp strides = PyArray_STRIDE(xa, 0)/sizeof(TYPE);
+      for (std::size_t i = 0; i < size; i++)
+	temp[i] = array[i*strides];
+    }
+    $1 = &temp;
   }
 }
 
@@ -346,8 +345,10 @@ const std::vector<TYPE>&  ARG_NAME
 
   // A first sequence test
   if (!PySequence_Check($input))
+  {
     SWIG_exception(SWIG_TypeError, "expected a sequence for argument $argnum");
-
+  }
+  
   // Get sequence length
   Py_ssize_t pyseq_length = PySequence_Size($input);
   if (SEQ_LENGTH >= 0 && pyseq_length > SEQ_LENGTH)
@@ -427,8 +428,10 @@ const std::vector<TYPE>&  ARG_NAME
   // IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES, TYPE
   // A first sequence test
   if (!PyList_Check($input))
+  {
     SWIG_exception(SWIG_TypeError, "expected a list of TYPE for argument $argnum");
-
+  }
+  
   int size = PyList_Size($input);
   int res = 0;
   PyObject * py_item = 0;
@@ -439,9 +442,13 @@ const std::vector<TYPE>&  ARG_NAME
     py_item = PyList_GetItem($input,i);
     res = SWIG_ConvertPtr(py_item, &itemp, $descriptor(dolfin::TYPE*), 0);
     if (SWIG_IsOK(res))
+    {
       tmp_vec.push_back(*reinterpret_cast<dolfin::TYPE *>(itemp));
+    }
     else
+    {
       SWIG_exception(SWIG_TypeError, "expected a list of TYPE for argument $argnum, (Bad conversion)");
+    }
   }
   $1 = &tmp_vec;
 }
@@ -473,8 +480,10 @@ const std::vector<TYPE>&  ARG_NAME
 
   // A first sequence test
   if (!PySequence_Check($input))
+  {
     SWIG_exception(SWIG_TypeError, "expected a sequence for argument $argnum");
-
+  }
+  
   // Get outer sequence length
   Py_ssize_t pyseq_length_0 = PySequence_Size($input);
 
@@ -541,6 +550,7 @@ const std::vector<TYPE>&  ARG_NAME
 // NOTE: Because of bug introduced by SWIG 2.0.5 we cannot use templated versions
 // NOTE: of typdefs, which means we need to use unsigned int instead of dolfin::uint
 // NOTE: in typemaps
+TYPEMAPS_STD_VECTOR_OF_POINTERS(Function)
 TYPEMAPS_STD_VECTOR_OF_POINTERS(DirichletBC)
 TYPEMAPS_STD_VECTOR_OF_POINTERS(BoundaryCondition)
 TYPEMAPS_STD_VECTOR_OF_POINTERS(GenericFunction)
@@ -575,6 +585,7 @@ IN_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(PetscInt, INT32, , NPY_INT, intc, intc)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t, INT32, coloring_type, std_size_t, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(std::size_t, INT32, value_shape, std_size_t, -1)
 PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, double, -1)
+PY_SEQUENCE_OF_SCALARS_TO_VECTOR_OF_PRIMITIVES(double, DOUBLE, time_step_offset, double, -1)
 
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, NPY_DOUBLE)
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, NPY_INT)
