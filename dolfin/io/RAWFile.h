@@ -42,7 +42,6 @@ namespace dolfin
       ~RAWFile();
 
       void operator<< (const MeshFunction<int>& meshfunction);
-      void operator<< (const MeshFunction<unsigned int>& meshfunction);
       void operator<< (const MeshFunction<double>& meshfunction);
       void operator<< (const Function& u);
 
