@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-02-22
+// Last changed: 2013-02-25
 
 #ifdef HAS_HDF5
 
@@ -30,7 +30,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/assign.hpp>
 #include <boost/multi_array.hpp>
-#include <boost/bind.hpp>
+#include <boost/unordered_map.hpp>
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
@@ -218,6 +218,231 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
 void HDF5File::write(const MeshFunction<std::size_t>& meshfunction, const std::string name)
 {
   write_mesh_function(meshfunction, name);
+}
+//-----------------------------------------------------------------------------
+void HDF5File::read(MeshFunction<std::size_t>& meshfunction, const std::string name)
+{
+  read_mesh_function(meshfunction, name);
+}
+//-----------------------------------------------------------------------------
+template <typename T>
+void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction, const std::string name)
+{
+  warning("Experimental MeshFunction input");
+
+  const Mesh& mesh = meshfunction.mesh();
+
+  dolfin_assert(hdf5_file_open);
+  
+  const std::vector<std::string> _dataset_list =
+    HDF5Interface::dataset_list(hdf5_file_id, name);
+
+  std::string topology_name = search_list(_dataset_list,"topology");
+  if (topology_name.size() == 0)
+  {
+    dolfin_error("HDF5File.cpp",
+                 "read topology dataset",
+                 "Dataset not found");
+  }
+  topology_name = name + "/" + topology_name;
+
+  // Look for Coordinates dataset - but not used
+  std::string coordinates_name=search_list(_dataset_list,"coordinates");
+  if(coordinates_name.size()==0)
+  {
+    dolfin_error("HDF5File.cpp",
+                 "read coordinates dataset",
+                 "Dataset not found");
+  }
+  coordinates_name = name + "/" + coordinates_name;
+
+  // Look for Values dataset
+  std::string values_name=search_list(_dataset_list,"values");
+  if(coordinates_name.size()==0)
+  {
+    dolfin_error("HDF5File.cpp",
+                 "read values dataset",
+                 "Dataset not found");
+  }
+  values_name = name + "/" + values_name;
+
+  // --- Topology ---
+  // Discover size of topology dataset
+  const std::vector<std::size_t> topology_dim
+      = HDF5Interface::get_dataset_size(hdf5_file_id, topology_name);
+
+  // Some consistency checks
+
+  const std::size_t num_global_cells = topology_dim[0];
+  const std::size_t vert_per_cell = topology_dim[1];
+  const std::size_t cell_dim = vert_per_cell - 1;
+
+  if(cell_dim != meshfunction.dim())
+  {
+    dolfin_error("HDF5File.cpp",
+                 "read meshfunction topology",
+                 "Cell dimension mismatch");
+  }
+
+  // Ensure global_size is set
+  DistributedMeshTools::number_entities(mesh, cell_dim);
+
+  if(num_global_cells != mesh.size_global(cell_dim))
+  {
+    dolfin_error("HDF5File.cpp",
+                 "read meshfunction topology",
+                 "Size mismatch");
+  }
+  
+  // Divide up cells ~equally between processes
+  const std::pair<std::size_t,std::size_t> cell_range = MPI::local_range(num_global_cells);
+  const std::size_t num_read_cells = cell_range.second - cell_range.first;
+
+  // Read a block of cells
+  std::vector<std::size_t> topology_data;
+  topology_data.reserve(num_read_cells*vert_per_cell);
+  HDF5Interface::read_dataset(hdf5_file_id, topology_name, cell_range, topology_data);
+
+  boost::multi_array_ref<std::size_t, 2> topology_array(topology_data.data(), 
+                                                        boost::extents[num_read_cells][vert_per_cell]);
+
+  std::vector<T> value_data;
+  value_data.reserve(num_read_cells);
+  HDF5Interface::read_dataset(hdf5_file_id, values_name, cell_range, value_data);
+
+  const std::size_t num_processes = MPI::num_processes();
+  std::vector<std::vector<std::size_t> > send_requests(num_processes);
+  std::vector<std::vector<std::size_t> > receive_requests(num_processes);
+
+  // Go through MeshFunction and send requests for data to processes,
+  // based on the lowest vertex of the topology of each constituent cell
+  const std::size_t max_vertex = mesh.size_global(0);
+  const std::size_t process_number = MPI::process_number();
+
+  for(MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
+  {
+    std::vector<std::size_t> cell_topology;
+    for(VertexIterator v(*cell); !v.end(); ++v)
+    {
+      cell_topology.push_back(v->global_index());
+    }
+    std::sort(cell_topology.begin(), cell_topology.end());
+
+    // Use first vertex to decide where to send this request
+    std::size_t send_to_process = MPI::index_owner(cell_topology.front(), max_vertex);
+    // Add process number to map entry to process
+    cell_topology.push_back(process_number);
+    send_requests[send_to_process].insert(send_requests[send_to_process].end(),
+                                          cell_topology.begin(), cell_topology.end());
+  }
+
+  MPI::all_to_all(send_requests, receive_requests);
+
+  // Now send the read data to each process on the same basis
+  std::vector<std::vector<std::size_t> > send_topology(num_processes);
+  std::vector<std::vector<std::size_t> > receive_topology(num_processes);
+  std::vector<std::vector<T> > send_values(num_processes);
+  std::vector<std::vector<T> > receive_values(num_processes);
+
+  for(std::size_t i = 0; i < num_read_cells ; ++i)
+  {
+    std::vector<std::size_t> cell_topology(vert_per_cell);
+    for(std::size_t j = 0; j < vert_per_cell; ++j)
+      cell_topology[j] = topology_array[i][j];
+    
+    std::sort(cell_topology.begin(), cell_topology.end());
+
+    // Use first vertex to decide where to send this data
+    const std::size_t send_to_process = MPI::index_owner(cell_topology.front(), max_vertex);
+
+    send_topology[send_to_process].insert(send_topology[send_to_process].end(),
+                                          cell_topology.begin(), cell_topology.end());
+    send_values[send_to_process].push_back(value_data[i]);
+  }
+  
+  MPI::all_to_all(send_topology, receive_topology);
+  MPI::all_to_all(send_values, receive_values);
+
+  // At this point, the data with its associated vertices 
+  // is in receive_values and receive_topology
+  // and the final destinations are stored in receive_requests
+  // as [vertices][process][vertices][process]...
+  // Some data will have more than one destination
+
+  // Create a mapping from the topology vector to the desired data
+  typedef boost::unordered_map<std::vector<std::size_t>, T> VectorKeyMap;
+  VectorKeyMap cell_to_data;
+  
+  for(std::size_t i = 0; i < receive_values.size(); ++i)
+  {
+    dolfin_assert(receive_values[i].size()*vert_per_cell == receive_topology[i].size());
+    std::vector<std::size_t>::iterator p = receive_topology[i].begin();
+    for(std::size_t j = 0; j < receive_values[i].size(); ++j)
+    {
+      const std::vector<std::size_t> cell(p, p + vert_per_cell);
+      cell_to_data[cell] = receive_values[i][j];
+      p += vert_per_cell;
+    }
+  }
+
+  send_topology = std::vector<std::vector<std::size_t> >(num_processes);
+  send_values = std::vector<std::vector<T> >(num_processes);
+
+  // Go through requests, which are stacked as [vertex, vertex, ...] [proc] etc.
+  // Use the vertices as the key for the map (above) to retrieve the data to send to proc
+  for(std::size_t i = 0; i < receive_requests.size(); ++i)
+  {
+    for(std::vector<std::size_t>::iterator p = receive_requests[i].begin();
+        p != receive_requests[i].end(); p += (vert_per_cell + 1))
+    {
+      const std::vector<std::size_t> cell(p, p + vert_per_cell);
+      const std::size_t send_to_proc = *(p + vert_per_cell);
+      send_values[send_to_proc].push_back(cell_to_data[cell]);
+      send_topology[send_to_proc].insert(send_topology[send_to_proc].end(), 
+                                         cell.begin(), cell.end());
+    }
+  }
+
+  cell_to_data.clear();
+  
+  MPI::all_to_all(send_topology, receive_topology);
+  MPI::all_to_all(send_values, receive_values);
+
+  // At this point, receive_topology should only list the locally available topology
+  // and received values should have the appropriate values for each - now need to match them up
+
+  // Recreate map
+  for(std::size_t i = 0; i < receive_values.size(); ++i)
+  {
+    dolfin_assert(receive_values[i].size()*vert_per_cell == receive_topology[i].size());
+    std::vector<std::size_t>::iterator p = receive_topology[i].begin();
+    for(std::size_t j = 0; j < receive_values[i].size(); ++j)
+    {
+      const std::vector<std::size_t> cell(p, p + vert_per_cell);
+      cell_to_data[cell] = receive_values[i][j];
+      p += vert_per_cell;
+    }
+  }
+
+  // Now go through mesh again, and find matching cells - which should all be there
+
+  for(MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
+  {
+    std::vector<std::size_t> cell_topology;
+    for(VertexIterator v(*cell); !v.end(); ++v)
+    {
+      cell_topology.push_back(v->global_index());
+    }
+    std::sort(cell_topology.begin(), cell_topology.end());
+
+    typename VectorKeyMap::iterator p = cell_to_data.find(cell_topology);
+    dolfin_assert(p != cell_to_data.end());
+
+    meshfunction[cell->index()] = p->second;
+
+  }
+    
+  
 }
 //-----------------------------------------------------------------------------
 template <typename T>
