@@ -158,7 +158,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
 
     // Copy number of non-zeros to PetscInt type
     const std::vector<PetscInt> _num_nonzeros(num_nonzeros.begin(), num_nonzeros.end());
-    MatSeqAIJSetPreallocation(*A, PETSC_NULL, &_num_nonzeros[0]);
+    MatSeqAIJSetPreallocation(*A, 0, _num_nonzeros.data());
 
     // Set column indices
     /*
@@ -210,8 +210,8 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
                                                        num_nonzeros_diagonal.end());
     const std::vector<PetscInt> _num_nonzeros_off_diagonal(num_nonzeros_off_diagonal.begin(),
                                                            num_nonzeros_off_diagonal.end());
-    MatMPIAIJSetPreallocation(*A, PETSC_NULL, &_num_nonzeros_diagonal[0],
-                                  PETSC_NULL, &_num_nonzeros_off_diagonal[0]);
+    MatMPIAIJSetPreallocation(*A, 0, _num_nonzeros_diagonal.data(),
+                                  0, _num_nonzeros_off_diagonal.data());
   }
 
   // Set some options

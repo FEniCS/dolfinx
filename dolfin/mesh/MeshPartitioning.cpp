@@ -371,7 +371,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
   // Create shared_vertices data structure: mapping from shared vertices
   // to list of neighboring processes
-  std::map<std::size_t, std::set<std::size_t> >& shared_vertices
+  std::map<unsigned int, std::set<unsigned int> >& shared_vertices
         = mesh.topology().shared_entities(0);
   shared_vertices.clear();
 

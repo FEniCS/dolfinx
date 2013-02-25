@@ -257,19 +257,19 @@ const dolfin::Form& dolfin::adapt(const Form& form,
   refined_form->set_mesh(adapted_mesh);
 
   // Attached refined sub domains
-  const MeshFunction<std::size_t>* cell_domains = form.cell_domains_shared_ptr().get();
+  const MeshFunction<std::size_t>* cell_domains = form.cell_domains().get();
   if (cell_domains)
   {
     adapt(*cell_domains, adapted_mesh);
     refined_form->dx = cell_domains->child_shared_ptr();
   }
-  const MeshFunction<std::size_t>* exterior_domains = form.exterior_facet_domains_shared_ptr().get();
+  const MeshFunction<std::size_t>* exterior_domains = form.exterior_facet_domains().get();
   if (exterior_domains)
   {
     adapt(*exterior_domains, adapted_mesh);
     refined_form->ds = exterior_domains->child_shared_ptr();
   }
-  const MeshFunction<std::size_t>* interior_domains = form.interior_facet_domains_shared_ptr().get();
+  const MeshFunction<std::size_t>* interior_domains = form.interior_facet_domains().get();
   if (interior_domains)
   {
     adapt(*interior_domains, adapted_mesh);

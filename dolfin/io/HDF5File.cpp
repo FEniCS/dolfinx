@@ -244,7 +244,7 @@ void HDF5File::write_visualisation(const Mesh& mesh, const std::size_t cell_dim,
   // Write connectivity to HDF5 file (using local indices + offset)
   {
     // Get/build topology data
-    std::vector<std::size_t> topological_data;
+    std::vector<unsigned int> topological_data;
     if (cell_dim == mesh.topology().dim())
     {
       topological_data = mesh.cells();
@@ -518,25 +518,24 @@ bool HDF5File::has_dataset(const std::string dataset_name) const
   return HDF5Interface::has_dataset(hdf5_file_id, dataset_name);
 }
 //-----------------------------------------------------------------------------
-std::vector<double>
-    HDF5File::reorder_vertices_by_global_indices(const Mesh& mesh) const
+std::vector<double> HDF5File::reorder_vertices_by_global_indices(const Mesh& mesh) const
 {
   Timer t("HDF5: reorder vertices");
 
   // Get shared vertices
-  const std::map<std::size_t, std::set<std::size_t> >& shared_vertices
+  const std::map<unsigned int, std::set<unsigned int> >& shared_vertices
       = mesh.topology().shared_entities(0);
 
   // My process rank
-  const std::size_t my_rank = MPI::process_number();
+  const unsigned int my_rank = MPI::process_number();
 
   // Number of processes
-  const std::size_t num_processes = MPI::num_processes();
+  const unsigned int num_processes = MPI::num_processes();
 
   // Build list of vertices to send. Only send shared vertex if I'm the
   // lowest rank process
   std::vector<bool> vertex_sender(mesh.num_vertices(), true);
-  std::map<std::size_t, std::set<std::size_t> >::const_iterator it;
+  std::map<unsigned int, std::set<unsigned int> >::const_iterator it;
   for (it = shared_vertices.begin(); it != shared_vertices.end(); ++it)
   {
     // Check if vertex is shared

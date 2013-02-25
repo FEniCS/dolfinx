@@ -109,13 +109,13 @@ namespace dolfin
 
     /// Return map from shared entities (local index) to processes that
     /// share the entity
-    std::map<std::size_t, std::set<std::size_t> >&
-      shared_entities(std::size_t dim);
+    std::map<unsigned int, std::set<unsigned int> >&
+      shared_entities(unsigned int dim);
 
     /// Return map from shared entiies (local index) to process that
     /// share the entity (const version)
-    const std::map<std::size_t, std::set<std::size_t> >&
-      shared_entities(std::size_t dim) const;
+    const std::map<unsigned int, std::set<unsigned int> >&
+      shared_entities(unsigned int dim) const;
 
     /// Return connectivity for given pair of topological dimensions
     dolfin::MeshConnectivity& operator() (std::size_t d0, std::size_t d1);
@@ -148,7 +148,7 @@ namespace dolfin
     friend class BinaryFile;
 
     // Number of mesh entities for each topological dimension
-    std::vector<std::size_t> num_entities;
+    std::vector<unsigned int> num_entities;
 
     // Global number of mesh entities for each topological dimension
     std::vector<std::size_t> global_num_entities;
@@ -156,9 +156,9 @@ namespace dolfin
     // Global indices for mesh entities (empty if not set)
     std::vector<std::vector<std::size_t> > _global_indices;
 
-    // For entities of a given dimension, maps each shared entity
+    // For entities of a given dimension d , maps each shared entity
     // (local index) to a list of the processes sharing the vertex
-    std::map<std::size_t, std::map<std::size_t, std::set<std::size_t> > > _shared_entities;
+    std::map<unsigned int, std::map<unsigned int, std::set<unsigned int> > > _shared_entities;
 
     // Connectivity for pairs of topological dimensions
     std::vector<std::vector<MeshConnectivity> > connectivity;

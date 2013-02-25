@@ -58,7 +58,7 @@ namespace dolfin
 
     /// Create entities e of given topological dimension from vertices v
     void create_entities(std::vector<std::vector<std::size_t> >& e, std::size_t dim,
-                         const std::size_t* v) const;
+                         const unsigned int* v) const;
 
     /// Refine cell uniformly
     void refine_cell(Cell& cell, MeshEditor& editor, std::size_t& current_cell) const;

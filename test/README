@@ -1,2 +1,44 @@
-To build the unit tests using CMake, DOLFIN must be configured with the
-DOLFIN_ENABLE_UNIT_TESTS set.
+To build the unit tests using CMake, DOLFIN must be configured with
+the DOLFIN_ENABLE_UNIT_TESTS set. This will automatically be set when
+running the cmake.local script in the top level directory (see the
+INSTALL file for more info).
+
+After DOLFIN has been built and installed successfully, make sure to
+update the environment variables, for instance by sourcing
+'dolfin.conf' in the build directory. Then, to run the complete test
+suite, navigate to the build directory and enter
+
+  make runtest
+
+This will build and run all unit tests and (almost) all demos, both
+C++ and Python versions. The tests will also be run in parallel,
+unless the environment variable DISABLE_PARALLEL_TESTING has been set.
+
+There are also other make targets that can be used depending on the
+type of test that should be run. Here is a list of the most commonly
+used targets for testing:
+
+  make run_regressiontests  # run regression tests (demos) only
+  make run_unittests        # run unit tests only
+  make run_quicktest        # run Python unit tests only
+
+Type 'make' followed by a space and tap 'tab' twice to see a complete
+list of make targets.
+
+To run individual tests, enter the desired test sub directory in the
+build directory and start the test from there. For instance, to run
+the LinearOperator.py Python unit tests, do
+
+  cd build/test/unit/la/python
+  python LinearOperator.py
+
+Similarly, to run one of the C++ unit tests, do
+
+  cd build/test/unit/la/cpp
+  make
+  ./test_LinearOperator
+
+Modifications of tests should be made in the source directory, not in
+the build directory. After a modification, simply run cmake (or the
+cmake.local script) to copy the tests to the build folder. Then run
+the tests from the build folder.

@@ -160,7 +160,7 @@ namespace dolfin
     std::size_t pos_end;
 
     // Mapping from pos to index (if any)
-    const std::size_t* index;
+    const unsigned int* index;
 
   };
 

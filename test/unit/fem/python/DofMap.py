@@ -64,12 +64,9 @@ class DofMapTest(unittest.TestCase):
         L01  = L1.sub(0)
         L11  = L1.sub(1)
 
-        all_dofs = set()
         for i, cell in enumerate(cells(self.mesh)):
 
             dofs0 = L0.dofmap().cell_dofs(cell.index())
-
-            all_dofs.update(dofs0)
 
             dofs1 = L01.dofmap().cell_dofs(cell.index())
             dofs2 = L11.dofmap().cell_dofs(cell.index())
@@ -88,8 +85,6 @@ class DofMapTest(unittest.TestCase):
             self.assertEqual(len(np.intersect1d(dofs0, dofs2)), 0)
             self.assertEqual(len(np.intersect1d(dofs1, dofs2)), 0)
             self.assertTrue(np.array_equal(np.append(dofs1, dofs2), dofs3))
-
-        self.assertFalse(all_dofs.difference(self.W.dofmap().dofs()))
 
     def test_tabulate_coord_periodic(self):
 
@@ -141,7 +136,7 @@ class DofMapTest(unittest.TestCase):
                 y[0] = x[0] - 1.0
                 y[1] = x[1]
 
-        mesh = UnitSquareMesh(4, 4)
+        mesh = UnitSquareMesh(5, 5)
 
         # Create periodic boundary
         periodic_boundary = PeriodicBoundary2()
@@ -156,19 +151,16 @@ class DofMapTest(unittest.TestCase):
         L11  = L1.sub(1)
 
         # Check dimensions
-        self.assertEqual(V.dim(), 72)
-        self.assertEqual(Q.dim(), 144)
+        self.assertEqual(V.dim(), 110)
+        self.assertEqual(Q.dim(), 220)
         self.assertEqual(L0.dim(), V.dim())
         self.assertEqual(L1.dim(), Q.dim())
         self.assertEqual(L01.dim(), V.dim())
         self.assertEqual(L11.dim(), V.dim())
 
-        all_dofs = set()
         for i, cell in enumerate(cells(mesh)):
 
             dofs0 = L0.dofmap().cell_dofs(cell.index())
-
-            all_dofs.update(dofs0)
 
             dofs1 = L01.dofmap().cell_dofs(cell.index())
             dofs2 = L11.dofmap().cell_dofs(cell.index())
@@ -188,8 +180,6 @@ class DofMapTest(unittest.TestCase):
             self.assertEqual(len(np.intersect1d(dofs1, dofs2)), 0)
             self.assertTrue(np.array_equal(np.append(dofs1, dofs2), dofs3))
 
-        self.assertFalse(all_dofs.difference(W.dofmap().dofs()))
-
     def test_global_dof_builder(self):
 
         mesh = UnitSquareMesh(3, 3)
@@ -203,7 +193,7 @@ class DofMapTest(unittest.TestCase):
         W = MixedFunctionSpace([V, R])
         W = MixedFunctionSpace([R, V])
 
-    def xtest_vertex_to_dof_map(self):
+    def test_vertex_to_dof_map(self):
 
         # Check for both reordered and UFC ordered dofs
         for reorder_dofs in [True, False]:

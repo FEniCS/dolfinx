@@ -1,5 +1,20 @@
+ - Feature: Add RKSolver and ButcherScheme for general time integral solvers
  - Feature: Add support for assigning a Function with linear combinations of Functions, which lives in the same FunctionSpace
- - SubMesh can now be constructed without a CellFunction argument, if the MeshDomain containes marked celldomains.
+ - Allow setting of row dof coordinates in preconditioners (only works with PETSc backed for now)
+ - Expose more PETSc/ML parameters
+ - Improve speed to tabulating coordinates in some DofMap functions
+ - Feature: Add support for passing a Constant as default value to a CompiledExpression
+ - Fix bug in dimension check for 1-D ALE
+ - Remove some redundant graph code
+ - Improvements in speed of parallel dual grapj builder
+ - Fix bug in XMDF output for cell-based Functions
+ - Fixes for latest version of clang compiler
+ - LocalSolver class added to efficiently solve cell-wise problems
+ - New implementation of periodic boundary conditions. Now incorporated into the dofmap
+ - Optional arguments to assemblers removed
+ - SymmetricAssembler removed
+ - Domains for assemblers can now only be attached to forms
+ - SubMesh can now be constructed without a CellFunction argument, if the MeshDomain contains marked celldomains.
  - MeshDomains are propagated to a SubMesh during construction
  - Simplify generation of a MeshFunction from MeshDomains: No need to call mesh_function with mesh
  - Rename dolfin-config.cmake to DOLFINConfig.cmake

@@ -45,7 +45,8 @@ int main(int argc, char* argv[])
   Matrix A;
   dolfin::MPI::barrier();
   double t = time();
-  assemble(A, a);
+  Assembler assembler;
+  assembler.assemble(A, a);
   dolfin::MPI::barrier();
   t = time() - t;
 
@@ -56,7 +57,8 @@ int main(int argc, char* argv[])
   // Re-assemble matrix
   dolfin::MPI::barrier();
   t = time();
-  assemble(A, a, false);
+  assembler.reset_sparsity = false;
+  assembler.assemble(A, a);
   dolfin::MPI::barrier();
   t = time() - t;
 

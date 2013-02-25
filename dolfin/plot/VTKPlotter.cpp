@@ -103,7 +103,6 @@ namespace dolfin
     DISPATCH(MeshFunction<double>);
     //DISPATCH(MeshFunction<float>);
     DISPATCH(MeshFunction<int>);
-    DISPATCH(MeshFunction<unsigned int>);
     DISPATCH(MeshFunction<std::size_t>);
 
     if (dynamic_cast<const Expression*>(var.get()))

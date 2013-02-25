@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2008 Anders Logg
+// Copyright (C) 2006-2013 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -20,7 +20,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2006-06-21
-// Last changed: 2011-03-17
+// Last changed: 2013-02-21
 
 #include <dolfin/common/timing.h>
 
@@ -40,18 +40,6 @@
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
-//void BoundaryComputation::compute_exterior_boundary(const Mesh& mesh,
-//                                                    BoundaryMesh& boundary)
-//{
-//  compute_boundary_common(mesh, boundary, false);
-//}
-////-----------------------------------------------------------------------------
-//void BoundaryComputation::compute_interior_boundary(const Mesh& mesh,
-//                                                    BoundaryMesh& boundary)
-//{
-//  compute_boundary_common(mesh, boundary, true);
-//}
 //-----------------------------------------------------------------------------
 void BoundaryComputation::compute_boundary(const Mesh& mesh,
                                            const std::string type,
@@ -154,7 +142,7 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh,
     if (boundary_facet[*f])
     {
       // Compute new vertex numbers for cell
-      const std::size_t* vertices = f->entities(0);
+      const unsigned int* vertices = f->entities(0);
       for (std::size_t i = 0; i < cell.size(); i++)
         cell[i] = boundary_vertices[vertices[i]];
 

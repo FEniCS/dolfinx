@@ -54,9 +54,11 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
   {
     const std::vector<dolfin::la_index>& dofs0 = dofmap0.cell_dofs(cell->index());
     const std::vector<dolfin::la_index>& dofs1 = dofmap1.cell_dofs(cell->index());
-    std::vector<dolfin::la_index>::const_iterator node;
-    for (node = dofs0.begin(); node != dofs0.end(); ++node)
-      graph[*node].insert(dofs1.begin(), dofs1.end());
+    std::vector<dolfin::la_index>::const_iterator node0, node1;
+    for (node0 = dofs0.begin(); node0 != dofs0.end(); ++node0)
+      for (node1 = dofs1.begin(); node1 != dofs1.end(); ++node1)
+        if (*node0 != *node1)
+          graph[*node0].insert(*node1);
   }
 
   return graph;

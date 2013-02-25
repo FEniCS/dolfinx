@@ -27,7 +27,7 @@
 #include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include <dolfin/la/LinearSolver.h>
 #include "Assembler.h"
-#include "AssemblerBase.h"
+#include "SystemAssembler.h"
 #include "assemble.h"
 #include "DirichletBC.h"
 #include "Form.h"
@@ -107,12 +107,8 @@ void LinearVariationalSolver::solve()
     }
 
     // Assemble linear system and apply boundary conditions
-    assemble_system(*A, *b,
-                    *a, *L,
-                    _bcs,
-                    0, 0, 0,
-                    0,
-                    true, false);
+    SystemAssembler assembler;
+    assembler.assemble(*A, *b, *a, *L, _bcs);
   }
   else
   {

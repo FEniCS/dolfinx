@@ -365,7 +365,7 @@ void XMLMesh::write_mesh(const Mesh& mesh, pugi::xml_node mesh_node)
     pugi::xml_node cell_node = cells_node.append_child(cell_type.c_str());
     cell_node.append_attribute("index") = (unsigned int) c->index();
 
-    const std::size_t* vertices = c->entities(0);
+    const unsigned int* vertices = c->entities(0);
     dolfin_assert(vertices);
 
     switch (_cell_type)

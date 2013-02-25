@@ -28,6 +28,7 @@
 #include <map>
 #include <ostream>
 #include <string>
+#include <boost/scoped_ptr.hpp>
 #include "Table.h"
 #include "LogLevel.h"
 
@@ -148,7 +149,7 @@ namespace dolfin
     mutable std::size_t process_number;
 
     // Thread used for monitoring memory usage
-    boost::thread* _thread_monitor_memory_usage;
+    boost::scoped_ptr<boost::thread> _thread_monitor_memory_usage;
 
     // Maximum memory usage so far
     long int _maximum_memory_usage;

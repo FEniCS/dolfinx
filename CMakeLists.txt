@@ -250,7 +250,7 @@ else()
 endif()
 
 # Check for required package Armadillo
-find_package(Armadillo REQUIRED)
+find_package(Armadillo 2.4.2 REQUIRED)
 
 # Check for required package LibXml2
 find_package(LibXml2 REQUIRED)
@@ -323,13 +323,16 @@ if (DOLFIN_ENABLE_HDF5)
         message(STATUS "HDF5 has been found, but is missing parallel support. It will not be enabled.")
         set(HDF5_FOUND false)
       endif()
+    else()
+      message(STATUS "HDF5 has been found, but MPI support is missing. It will not be enabled.")
+      set(HDF5_FOUND false)
     endif()
   endif()
 endif()
 
 # Check for PaStiX
 if (DOLFIN_ENABLE_PASTIX)
-  find_package(PaStiX)
+  find_package(PaStiX 5.2.1)
 endif()
 
 # Check for Trilinos and the requires Trilinos packages

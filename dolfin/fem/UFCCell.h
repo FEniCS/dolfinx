@@ -25,6 +25,8 @@
 #define __UFC_CELL_H
 
 #include <vector>
+#include <ufc.h>
+
 #include <dolfin/common/types.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/log/dolfin_log.h>
@@ -32,7 +34,6 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/fem/ufcexp.h>
 
 namespace dolfin
 {
@@ -41,18 +42,18 @@ namespace dolfin
   /// a layer between a DOLFIN cell and a UFC cell. When run in
   /// parallel, it attempts to use global numbering.
 
-  class UFCCell : public ufcexp::cell
+  class UFCCell : public ufc::cell
   {
   public:
 
     /// Create UFC cell from DOLFIN cell
-    UFCCell(const Cell& cell) : ufcexp::cell(), num_vertices(0)
+    UFCCell(const Cell& cell) : ufc::cell(), num_vertices(0)
     {
       init(cell);
     }
 
     /// Create UFC cell for first DOLFIN cell in mesh
-    UFCCell(const Mesh& mesh) : ufcexp::cell(), num_vertices(0)
+    UFCCell(const Mesh& mesh) : ufc::cell(), num_vertices(0)
     {
       CellIterator cell(mesh);
       init(*cell);
@@ -195,7 +196,7 @@ namespace dolfin
       index = cell.index();
 
       // Set vertex coordinates
-      const std::size_t* vertices = cell.entities(0);
+      const unsigned int* vertices = cell.entities(0);
       for (std::size_t i = 0; i < num_vertices; i++)
         coordinates[i] = const_cast<double*>(cell.mesh().geometry().x(vertices[i]));
     }
