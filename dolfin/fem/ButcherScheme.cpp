@@ -31,7 +31,6 @@ using namespace dolfin;
 ButcherScheme::ButcherScheme(std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
 			     const FunctionAXPY& last_stage, 
 			     std::vector<boost::shared_ptr<Function> > stage_solutions,
-			     std::vector<double> time_step_offset,
 			     boost::shared_ptr<Function> u, 
 			     boost::shared_ptr<Constant> t, 
 			     boost::shared_ptr<Constant> dt,
@@ -39,7 +38,7 @@ ButcherScheme::ButcherScheme(std::vector<std::vector<boost::shared_ptr<const For
 			     const std::string name,
 			     const std::string human_form) : 
   Variable(name, ""), _stage_forms(stage_forms), _last_stage(last_stage), 
-  _stage_solutions(stage_solutions), _time_step_offset(time_step_offset), _u(u), 
+  _stage_solutions(stage_solutions), _u(u), 
   _t(t), _dt(dt), _order(order), _implicit(false), _human_form(human_form)
 {
   _check_arguments();
@@ -48,7 +47,6 @@ ButcherScheme::ButcherScheme(std::vector<std::vector<boost::shared_ptr<const For
 ButcherScheme::ButcherScheme(std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
 			     const FunctionAXPY& last_stage, 
 			     std::vector<boost::shared_ptr<Function> > stage_solutions,
-			     std::vector<double> time_step_offset,
 			     boost::shared_ptr<Function> u, 
 			     boost::shared_ptr<Constant> t, 
 			     boost::shared_ptr<Constant> dt,
@@ -57,7 +55,7 @@ ButcherScheme::ButcherScheme(std::vector<std::vector<boost::shared_ptr<const For
 			     const std::string human_form,
 			     std::vector<const BoundaryCondition* > bcs) :
   Variable(name, ""), _stage_forms(stage_forms), _last_stage(last_stage), 
-  _stage_solutions(stage_solutions), _time_step_offset(time_step_offset), _u(u), 
+  _stage_solutions(stage_solutions), _u(u), 
   _t(t), _dt(dt), _order(order), _implicit(false), _human_form(human_form), 
   _bcs(bcs)
 {

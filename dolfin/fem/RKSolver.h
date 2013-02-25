@@ -39,14 +39,14 @@ namespace dolfin
   public:
 
     /// Constructor
-    /// FIXME: Include version where one can pass a Solver
+    /// FIXME: Include version where one can pass a Solver and/or Parameters
     RKSolver(boost::shared_ptr<ButcherScheme> scheme);
 
     /// Step solver with time step dt
     void step(double dt);
 
-    /// Step solver with time step dt
-    void step_interval(double t0, double t1);
+    /// Step solver an interval using dt as time step
+    void step_interval(double t0, double t1, double dt=0.1);
 
   private:
 

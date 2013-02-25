@@ -18,6 +18,9 @@
 // First added:  2013-02-15
 // Last changed: 2013-02-25
 
+#include <cmath>
+
+#include <dolfin/log/log.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/Constant.h>
 #include <dolfin/la/GenericVector.h>
@@ -37,6 +40,8 @@ RKSolver::RKSolver(boost::shared_ptr<ButcherScheme> scheme) :
 //-----------------------------------------------------------------------------
 void RKSolver::step(double dt)
 {
+  dolfin_assert(dt > 0.0);
+
   // Update time constant of scheme
   *_scheme->dt() = dt;
 
@@ -82,9 +87,11 @@ void RKSolver::step(double dt)
   
   // Start from item 2 and axpy 
   for (std::vector<std::pair<double, const Function*> >::const_iterator \
-	 it=last_stage.pairs().begin()+1;
+	 it=last_stage.pairs().begin();
        it!=last_stage.pairs().end(); it++)
+  {
     solution_vector.axpy(it->first, *(it->second->vector()));
+  }
 
   // Update time
   const double t = *_scheme->t();
@@ -92,8 +99,35 @@ void RKSolver::step(double dt)
   
 }
 //-----------------------------------------------------------------------------
-void RKSolver::step_interval(double t0, double t1)
+void RKSolver::step_interval(double t0, double t1, double dt)
 {
+  if (dt<=0.0)
+  {
+    dolfin_error("RKSolver.cpp",
+		 "stepping RKSolver",
+		 "Expecting a positive dt");
+  }
+
+  if (t0>=t1)
+  {
+    dolfin_error("RKSolver.cpp",
+		 "stepping RKSolver",
+		 "Expecting t0 to be smaller than t1");
+  }
   
+  // Set start time
+  *_scheme->t() = t0;
+  double t = t0;
+  double next_dt = std::min(t1-t, dt);
+
+  // Step interval
+  while (t + next_dt <= t1)
+  {
+    if (next_dt < DOLFIN_EPS)
+      break;
+    step(next_dt);
+    t = *_scheme->t();
+    next_dt = std::min(t1-t, dt);
+  }
 }
 //-----------------------------------------------------------------------------

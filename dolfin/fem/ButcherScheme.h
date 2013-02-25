@@ -50,7 +50,6 @@ namespace dolfin
     ButcherScheme(std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
 		  const FunctionAXPY& last_stage, 
 		  std::vector<boost::shared_ptr<Function> > stage_solutions,
-		  std::vector<double> time_step_offset,
 		  boost::shared_ptr<Function> u, 
 		  boost::shared_ptr<Constant> t, 
 		  boost::shared_ptr<Constant> dt,
@@ -62,7 +61,6 @@ namespace dolfin
     ButcherScheme(std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
 		  const FunctionAXPY& last_stage, 
 		  std::vector<boost::shared_ptr<Function> > stage_solutions,
-		  std::vector<double> time_step_offset,
 		  boost::shared_ptr<Function> u, 
 		  boost::shared_ptr<Constant> t, 
 		  boost::shared_ptr<Constant> dt, 
@@ -120,9 +118,6 @@ namespace dolfin
     
     // Solutions for the different stages
     std::vector<boost::shared_ptr<Function> > _stage_solutions;
-
-    // List of time step offsets for stage evaluations
-    std::vector<double> _time_step_offset;
 
     // The solution
     boost::shared_ptr<Function> _u;
