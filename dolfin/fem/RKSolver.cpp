@@ -59,7 +59,7 @@ void RKSolver::step(double dt)
     {
 
       // Just do an assemble
-      assemble(*stage_solutions[i]->vector(), *stage_forms[i][0], true, false, true, true);
+      _assembler.assemble(*stage_solutions[i]->vector(), *stage_forms[i][0]);
       
       // Apply boundary conditions
       for (unsigned int j = 0; j < bcs.size(); j++)

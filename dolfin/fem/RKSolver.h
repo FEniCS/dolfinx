@@ -26,6 +26,8 @@
 
 #include <dolfin/function/FunctionAXPY.h>
 
+#include "Assembler.h"
+
 namespace dolfin
 {
 
@@ -52,6 +54,9 @@ namespace dolfin
 
     // The ButcherScheme
     boost::shared_ptr<ButcherScheme> _scheme;
+
+    // Assembler for explicit stages
+    Assembler _assembler;
 
   };
 
