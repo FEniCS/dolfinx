@@ -225,6 +225,16 @@ void HDF5File::read(MeshFunction<std::size_t>& meshfunction, const std::string n
   read_mesh_function(meshfunction, name);
 }
 //-----------------------------------------------------------------------------
+void HDF5File::write(const MeshFunction<double>& meshfunction, const std::string name)
+{
+  write_mesh_function(meshfunction, name);
+}
+//-----------------------------------------------------------------------------
+void HDF5File::read(MeshFunction<double>& meshfunction, const std::string name)
+{
+  read_mesh_function(meshfunction, name);
+}
+//-----------------------------------------------------------------------------
 template <typename T>
 void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction, const std::string name)
 {
@@ -448,6 +458,14 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction, const std::stri
 template <typename T>
 void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction, const std::string name)
 {
+
+  if (meshfunction.size() == 0)
+  {
+    dolfin_error("HDF5File.cpp",
+                 "save empty MeshFunction",
+                 "No values in MeshFunction");
+  }
+
   const Mesh& mesh = meshfunction.mesh();
   const std::size_t cell_dim = meshfunction.dim();
 

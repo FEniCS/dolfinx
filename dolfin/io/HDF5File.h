@@ -70,8 +70,11 @@ namespace dolfin
 
     /// Write MeshFunction to file
     /// in a format suitable for re-reading
-    /// FIXME: not working yet
     void write(const MeshFunction<std::size_t>& meshfunction, const std::string name);
+
+    /// Write MeshFunction to file
+    /// in a format suitable for re-reading
+    void write(const MeshFunction<double>& meshfunction, const std::string name);
 
     /// Read vector from file
     void read(GenericVector& x, const std::string dataset_name,
@@ -81,8 +84,10 @@ namespace dolfin
     void read(Mesh& mesh, const std::string name);
 
     /// Read MeshFunction from file
-    /// FIXME: experimental still
     void read(MeshFunction<std::size_t>& meshfunction, const std::string name);
+
+    /// Read MeshFunction from file
+    void read(MeshFunction<double>& meshfunction, const std::string name);
 
     /// Check if dataset exists in HDF5 file
     bool has_dataset(const std::string dataset_name) const;
