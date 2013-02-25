@@ -30,6 +30,8 @@
 namespace dolfin
 {
 
+  class LocalMeshData;
+
   /// This class partitions a graph using Zoltan (part of Trilinos).
 
   class ZoltanPartition
@@ -38,12 +40,12 @@ namespace dolfin
   public:
 
     /// Calculate partitioning using Parallel HyperGraph (Zoltan PHG)
-    static void compute_PHG_partition(std::vector<std::size_t>& cell_partition,
+    static void compute_partition_phg(std::vector<std::size_t>& cell_partition,
                                       const LocalMeshData& mesh_data);
 
     /// Calculate partitioning using recursive block bisection (Zoltan
     /// RCB - geometric partitioner)
-    static void compute_RCB_partition(std::vector<std::size_t>& cell_partition,
+    static void compute_partition_rcb(std::vector<std::size_t>& cell_partition,
                                       const LocalMeshData& mesh_data);
 
   private:

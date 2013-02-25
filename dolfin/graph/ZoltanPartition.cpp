@@ -18,24 +18,202 @@
 // First added:  2013-02-13
 // Last changed: 2013-02-18
 
+#include<set>
+#include<vector>
 #include<boost/lexical_cast.hpp>
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/parameter/GlobalParameters.h>
-
 #include "GraphBuilder.h"
 #include "ZoltanPartition.h"
 
 using namespace dolfin;
 
 #ifdef HAS_TRILINOS
+
+//-----------------------------------------------------------------------------
+void ZoltanPartition::compute_partition_phg(std::vector<std::size_t>& cell_partition,
+                                        const LocalMeshData& mesh_data)
+{
+  Timer timer0("Partition graph (calling Zoltan PHG)");
+
+  // Create data structures to hold graph
+  std::vector<std::set<std::size_t> > local_graph;
+  std::set<std::size_t> ghost_vertices;
+
+  // Compute local dual graph
+  GraphBuilder::compute_dual_graph(mesh_data, local_graph, ghost_vertices);
+
+  // Initialise Zoltan
+  float version;
+  int argc = 0;
+  char** argv = NULL;
+  Zoltan_Initialize(argc, argv, &version);
+
+  // Create Zoltan object
+  Zoltan zoltan;
+
+  // Set Zolatn parameters
+  zoltan.Set_Param("NUM_GID_ENTRIES", "1");
+  zoltan.Set_Param("NUM_LID_ENTRIES", "0");
+
+  zoltan.Set_Param("NUM_GLOBAL_PARTS",
+                   boost::lexical_cast<std::string>(MPI::num_processes()));
+
+  zoltan.Set_Param("NUM_LOCAL_PARTS", "1");
+  zoltan.Set_Param("LB_METHOD", "GRAPH");
+
+  // Get partition method: 'PARTITION', 'REPARTITION' or 'REFINE'
+  std::string lb_approach = parameters["Zoltan_PHG_LB_APPROACH"];
+  zoltan.Set_Param("LB_APPROACH", lb_approach.c_str());
+
+  // Repartitioning weighting
+  double phg_repart_multiplier = parameters["Zoltan_PHG_REPART_MULTIPLIER"];
+  zoltan.Set_Param("PHG_REPART_MULTIPLIER",
+                   boost::lexical_cast<std::string>(phg_repart_multiplier));
+
+
+  // Set call-back functions
+  void *mesh_data_ptr = (void *)&mesh_data;
+  zoltan.Set_Num_Obj_Fn(get_number_of_objects, mesh_data_ptr);
+  zoltan.Set_Obj_List_Fn(get_object_list, mesh_data_ptr);
+
+  void *graph_data_ptr = (void *)&local_graph;
+  zoltan.Set_Num_Edges_Multi_Fn(get_number_edges, graph_data_ptr);
+  zoltan.Set_Edge_List_Multi_Fn(get_all_edges, graph_data_ptr);
+
+  // Call Zoltan function to compute partitions
+  int changes = 0;
+  int num_gids = 0;
+  int num_lids = 0;
+  int num_import, num_export;
+  ZOLTAN_ID_PTR import_lids;
+  ZOLTAN_ID_PTR export_lids;
+  ZOLTAN_ID_PTR import_gids;
+  ZOLTAN_ID_PTR export_gids;
+  int* import_procs;
+  int* export_procs;
+  int* import_parts;
+  int* export_parts;
+
+  int rc = zoltan.LB_Partition(changes, num_gids, num_lids,
+           num_import, import_gids, import_lids, import_procs, import_parts,
+           num_export, export_gids, export_lids, export_procs, export_parts);
+
+  dolfin_assert(num_gids == 1);
+  dolfin_assert(num_lids == 0);
+
+  std::size_t proc = MPI::process_number();
+
+  if (rc != ZOLTAN_OK)
+  {
+    dolfin_error("ZoltanPartition.cpp",
+                 "partition mesh using Zoltan",
+                 "Call to Zoltan failed");
+  }
+
+  cell_partition.assign(local_graph.size(), proc);
+
+  std::size_t offset = MPI::global_offset(local_graph.size(), true);
+  for(int i = 0; i < num_export; ++i)
+  {
+    const std::size_t idx = export_gids[i] - offset;
+    cell_partition[idx] = (std::size_t)export_procs[i];
+  }
+
+  // Free data structures allocated by Zoltan::LB_Partition
+  zoltan.LB_Free_Part(&import_gids, &import_lids, &import_procs, &import_parts);
+  zoltan.LB_Free_Part(&export_gids, &export_lids, &export_procs, &export_parts);
+}
+//-----------------------------------------------------------------------------
+void ZoltanPartition::compute_partition_rcb(std::vector<std::size_t>& cell_partition,
+                                    const LocalMeshData& mesh_data)
+{
+  Timer timer0("Partition graph (calling Zoltan RCB)");
+
+  // Get number of local graph vertices
+  const std::size_t nlocal = mesh_data.cell_vertices.shape()[0];
+
+  // Initialise Zoltan
+  float version;
+  int argc = 0;
+  char** argv = NULL;
+  Zoltan_Initialize(argc, argv, &version);
+
+  // Create Zoltan object
+  Zoltan zoltan;
+
+  // Set Zoltan parameters
+  zoltan.Set_Param("NUM_GID_ENTRIES", "1");
+  zoltan.Set_Param("NUM_LID_ENTRIES", "0");
+
+  zoltan.Set_Param("NUM_GLOBAL_PARTS",
+                   boost::lexical_cast<std::string>(MPI::num_processes()));
+
+  zoltan.Set_Param("NUM_LOCAL_PARTS", "1");
+  zoltan.Set_Param("LB_METHOD", "RCB");
+
+  // Set call-back functions
+  void *mesh_data_ptr = (void *)&mesh_data;
+
+  zoltan.Set_Num_Obj_Fn(get_number_of_objects, mesh_data_ptr);
+  zoltan.Set_Obj_List_Fn(get_object_list, mesh_data_ptr);
+  zoltan.Set_Num_Geom_Fn(get_geom, mesh_data_ptr);
+  zoltan.Set_Geom_Multi_Fn(get_all_geom, mesh_data_ptr);
+
+  // Call Zoltan function to compute partitions
+  int changes = 0;
+  int num_gids = 0;
+  int num_lids = 0;
+  int num_import, num_export;
+  ZOLTAN_ID_PTR import_lids;
+  ZOLTAN_ID_PTR export_lids;
+  ZOLTAN_ID_PTR import_gids;
+  ZOLTAN_ID_PTR export_gids;
+  int* import_procs;
+  int* export_procs;
+  int* import_parts;
+  int* export_parts;
+
+  int rc = zoltan.LB_Partition(changes, num_gids, num_lids,
+           num_import, import_gids, import_lids, import_procs, import_parts,
+           num_export, export_gids, export_lids, export_procs, export_parts);
+
+  dolfin_assert(num_gids == 1);
+  dolfin_assert(num_lids == 0);
+
+
+  // Get my process rank
+  const std::size_t my_rank = MPI::process_number();
+
+  if (rc != ZOLTAN_OK)
+  {
+    dolfin_error("ZoltanPartition.cpp",
+                 "partition mesh using Zoltan",
+                 "Call to Zoltan failed");
+  }
+
+  // Assign all nodes to this processor
+  cell_partition.assign(nlocal, my_rank);
+  std::size_t offset = MPI::global_offset(nlocal, true);
+
+  // Change nodes to be exported to the appropriate remote processor
+  for(int i = 0; i < num_export; ++i)
+  {
+    const std::size_t idx = export_gids[i] - offset;
+    cell_partition[idx] = export_procs[i];
+  }
+
+  // Free data structures allocated by Zoltan::LB_Partition
+  zoltan.LB_Free_Part(&import_gids, &import_lids, &import_procs, &import_parts);
+  zoltan.LB_Free_Part(&export_gids, &export_lids, &export_procs, &export_parts);
+}
 //-----------------------------------------------------------------------------
 int ZoltanPartition::get_number_of_objects(void* data, int* ierr)
 {
-  LocalMeshData* local_mesh_data
-    = (LocalMeshData*)data;
+  LocalMeshData* local_mesh_data = (LocalMeshData*)data;
   *ierr = ZOLTAN_OK;
   return local_mesh_data->cell_vertices.shape()[0];
 }
@@ -233,181 +411,16 @@ void ZoltanPartition::get_all_geom(void *data,
   *ierr = ZOLTAN_OK;
 }
 //-----------------------------------------------------------------------------
-void ZoltanPartition::compute_RCB_partition(std::vector<std::size_t>& cell_partition,
-                                    const LocalMeshData& mesh_data)
-{
-  Timer timer0("Partition graph (calling Zoltan RCB)");
-
-  const std::size_t nlocal = mesh_data.cell_vertices.shape()[0];
-
-  // Initialise Zoltan
-  float version;
-  int argc = 0;
-  char** argv = NULL;
-  Zoltan_Initialize(argc, argv, &version);
-
-  // Create Zoltan object
-  Zoltan zoltan;
-
-  // Set parameters
-  zoltan.Set_Param("NUM_GID_ENTRIES", "1");
-  zoltan.Set_Param("NUM_LID_ENTRIES", "0");
-
-  zoltan.Set_Param("NUM_GLOBAL_PARTS",
-                   boost::lexical_cast<std::string>(MPI::num_processes()));
-
-  zoltan.Set_Param("NUM_LOCAL_PARTS", "1");
-  zoltan.Set_Param("LB_METHOD", "RCB");
-
-  // Set call-back functions
-  void *mesh_data_ptr = (void *)&mesh_data;
-
-  zoltan.Set_Num_Obj_Fn(get_number_of_objects, mesh_data_ptr);
-  zoltan.Set_Obj_List_Fn(get_object_list, mesh_data_ptr);
-  zoltan.Set_Num_Geom_Fn(get_geom, mesh_data_ptr);
-  zoltan.Set_Geom_Multi_Fn(get_all_geom, mesh_data_ptr);
-
-  // Call Zoltan function to compute partitions
-  int changes = 0;
-  int num_gids = 0;
-  int num_lids = 0;
-  int num_import, num_export;
-  ZOLTAN_ID_PTR import_lids;
-  ZOLTAN_ID_PTR export_lids;
-  ZOLTAN_ID_PTR import_gids;
-  ZOLTAN_ID_PTR export_gids;
-  int* import_procs;
-  int* export_procs;
-  int* import_parts;
-  int* export_parts;
-
-  int rc = zoltan.LB_Partition(changes, num_gids, num_lids,
-           num_import, import_gids, import_lids, import_procs, import_parts,
-           num_export, export_gids, export_lids, export_procs, export_parts);
-
-  dolfin_assert(num_gids == 1);
-  dolfin_assert(num_lids == 0);
-
-  const std::size_t proc = MPI::process_number();
-
-  if (rc != ZOLTAN_OK)
-  {
-    dolfin_error("ZoltanPartition.cpp",
-                 "partition mesh using Zoltan",
-                 "Call to Zoltan failed");
-  }
-
-  // Assign all nodes to this processor
-  cell_partition.assign(nlocal, proc);
-  std::size_t offset = MPI::global_offset(nlocal, true);
-
-  // Change nodes to be exported to the appropriate remote processor
-  for(std::size_t i = 0; i < (std::size_t)num_export; ++i)
-  {
-    const std::size_t idx = export_gids[i] - offset;
-    cell_partition[idx] = (std::size_t)export_procs[i];
-  }
-
-  // Free data structures allocated by Zoltan::LB_Partition
-  zoltan.LB_Free_Part(&import_gids, &import_lids, &import_procs, &import_parts);
-  zoltan.LB_Free_Part(&export_gids, &export_lids, &export_procs, &export_parts);
-}
-//-----------------------------------------------------------------------------
+#else
 void ZoltanPartition::compute_PHG_partition(std::vector<std::size_t>& cell_partition,
                                         const LocalMeshData& mesh_data)
 {
-  Timer timer0("Partition graph (calling Zoltan PHG)");
-
-  // Create data structures to hold graph
-  std::vector<std::set<std::size_t> > local_graph;
-  std::set<std::size_t> ghost_vertices;
-  // Compute local dual graph
-  GraphBuilder::compute_dual_graph(mesh_data, local_graph, ghost_vertices);
-
-  // Initialise Zoltan
-  float version;
-  int argc = 0;
-  char** argv = NULL;
-  Zoltan_Initialize(argc, argv, &version);
-
-  // Create Zoltan object
-  Zoltan zoltan;
-
-  // Set parameters
-  zoltan.Set_Param("NUM_GID_ENTRIES", "1");
-  zoltan.Set_Param("NUM_LID_ENTRIES", "0");
-
-  zoltan.Set_Param("NUM_GLOBAL_PARTS",
-                   boost::lexical_cast<std::string>(MPI::num_processes()));
-
-  zoltan.Set_Param("NUM_LOCAL_PARTS", "1");
-  zoltan.Set_Param("LB_METHOD", "GRAPH");
-
-  // Get partition method: 'PARTITION', 'REPARTITION' or 'REFINE'
-  std::string lb_approach = parameters["Zoltan_PHG_LB_APPROACH"];
-  zoltan.Set_Param("LB_APPROACH", lb_approach.c_str());
-
-  // Repartitioning weighting
-  double phg_repart_multiplier = parameters["Zoltan_PHG_REPART_MULTIPLIER"];
-  zoltan.Set_Param("PHG_REPART_MULTIPLIER",
-                   boost::lexical_cast<std::string>(phg_repart_multiplier));
-
-
-  // Set call-back functions
-  void *mesh_data_ptr = (void *)&mesh_data;
-  zoltan.Set_Num_Obj_Fn(get_number_of_objects, mesh_data_ptr);
-  zoltan.Set_Obj_List_Fn(get_object_list, mesh_data_ptr);
-
-  void *graph_data_ptr = (void *)&local_graph;
-  zoltan.Set_Num_Edges_Multi_Fn(get_number_edges, graph_data_ptr);
-  zoltan.Set_Edge_List_Multi_Fn(get_all_edges, graph_data_ptr);
-
-  // Call Zoltan function to compute partitions
-  int changes = 0;
-  int num_gids = 0;
-  int num_lids = 0;
-  int num_import, num_export;
-  ZOLTAN_ID_PTR import_lids;
-  ZOLTAN_ID_PTR export_lids;
-  ZOLTAN_ID_PTR import_gids;
-  ZOLTAN_ID_PTR export_gids;
-  int* import_procs;
-  int* export_procs;
-  int* import_parts;
-  int* export_parts;
-
-  int rc = zoltan.LB_Partition(changes, num_gids, num_lids,
-           num_import, import_gids, import_lids, import_procs, import_parts,
-           num_export, export_gids, export_lids, export_procs, export_parts);
-
-  dolfin_assert(num_gids == 1);
-  dolfin_assert(num_lids == 0);
-
-  std::size_t proc = MPI::process_number();
-
-  if (rc != ZOLTAN_OK)
-  {
-    dolfin_error("ZoltanPartition.cpp",
-                 "partition mesh using Zoltan",
-                 "Call to Zoltan failed");
-  }
-
-  cell_partition.assign(local_graph.size(), proc);
-
-  std::size_t offset = MPI::global_offset(local_graph.size(), true);
-  for(std::size_t i = 0; i < (std::size_t)num_export; ++i)
-  {
-    const std::size_t idx = export_gids[i] - offset;
-    cell_partition[idx] = (std::size_t)export_procs[i];
-  }
-
-  // Free data structures allocated by Zoltan::LB_Partition
-  zoltan.LB_Free_Part(&import_gids, &import_lids, &import_procs, &import_parts);
-  zoltan.LB_Free_Part(&export_gids, &export_lids, &export_procs, &export_parts);
+  dolfin_error("ZoltanPartition.cpp",
+               "partition mesh using Zoltan",
+               "DOLFIN has been configured without support for Zoltan from Trilinos");
 }
 //-----------------------------------------------------------------------------
-#else
-void ZoltanPartition::compute_partition(std::vector<std::size_t>& cell_partition,
+void ZoltanPartition::compute_PHG_partition(std::vector<std::size_t>& cell_partition,
                                         const LocalMeshData& mesh_data)
 {
   dolfin_error("ZoltanPartition.cpp",
