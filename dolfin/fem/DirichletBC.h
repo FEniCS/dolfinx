@@ -145,7 +145,7 @@ namespace dolfin
     ///         The function space.
     ///     g (_GenericFunction_)
     ///         The value.
-    ///     sub_domains (_MeshFunction_ <unsigned int>)
+    ///     sub_domains (_MeshFunction_ <std::size_t>)
     ///         Subdomain markers
     ///     sub_domain (std::size_t)
     ///         The subdomain index (number)
@@ -165,7 +165,7 @@ namespace dolfin
     ///         The function space.
     ///     g (_GenericFunction_)
     ///         The value.
-    ///     sub_domains (_MeshFunction_ <unsigned int>)
+    ///     sub_domains (_MeshFunction_ <std::size_t>)
     ///         Subdomain markers
     ///     sub_domain (std::size_t)
     ///         The subdomain index (number)

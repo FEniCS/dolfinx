@@ -17,9 +17,10 @@
 //
 // Modified by Kristoffer Selim 2008
 // Modified by Andre Massing 2010
+// Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2011-11-14
+// Last changed: 2013-02-21
 
 #include <algorithm>
 
@@ -142,7 +143,7 @@ bool CellType::ordered(const Cell& cell,
 
   // Get vertices
   const std::size_t num_vertices = topology(dim, 0).size(c);
-  const std::size_t* vertices = topology(dim, 0)(c);
+  const unsigned int* vertices = topology(dim, 0)(c);
   dolfin_assert(vertices);
 
   // Check that vertices are in ascending order
@@ -162,7 +163,7 @@ bool CellType::ordered(const Cell& cell,
 
     // Get entities
     const std::size_t num_entities = topology(dim, d).size(c);
-    const std::size_t* entities = topology(dim, d)(c);
+    const unsigned int* entities = topology(dim, d)(c);
 
     // Iterate over entities
     for (std::size_t e = 1; e < num_entities; e++)
@@ -170,15 +171,16 @@ bool CellType::ordered(const Cell& cell,
       // Get vertices for first entity
       const std::size_t  e0 = entities[e - 1];
       const std::size_t  n0 = connectivity.size(e0);
-      const std::size_t* v0 = connectivity(e0);
+      const unsigned int* v0 = connectivity(e0);
 
       // Get vertices for second entity
       const std::size_t  e1 = entities[e];
       const std::size_t  n1 = connectivity.size(e1);
-      const std::size_t* v1 = connectivity(e1);
+      const unsigned int* v1 = connectivity(e1);
 
       // Check ordering of entities
-      if (!increasing(n0, v0, n1, v1, num_vertices, vertices, local_to_global_vertex_indices))
+      if (!increasing(n0, v0, n1, v1, num_vertices, vertices,
+                      local_to_global_vertex_indices))
         return false;
     }
   }
@@ -187,7 +189,7 @@ bool CellType::ordered(const Cell& cell,
 }
 //-----------------------------------------------------------------------------
 void CellType::sort_entities(std::size_t num_vertices,
-                            std::size_t* local_vertices,
+                            unsigned int* local_vertices,
                        const std::vector<std::size_t>& local_to_global_vertex_indices)
 {
   // Two cases here, either sort vertices directly (when running in serial)
@@ -198,7 +200,7 @@ void CellType::sort_entities(std::size_t num_vertices,
     std::sort(local_vertices, local_vertices + num_vertices, global_sort);
 }
 //-----------------------------------------------------------------------------
-bool CellType::increasing(std::size_t num_vertices, const std::size_t* local_vertices,
+bool CellType::increasing(std::size_t num_vertices, const unsigned int* local_vertices,
                        const std::vector<std::size_t>& local_to_global_vertex_indices)
 {
   // Two cases here, either check vertices directly (when running in serial)
@@ -210,9 +212,9 @@ bool CellType::increasing(std::size_t num_vertices, const std::size_t* local_ver
   return true;
 }
 //-----------------------------------------------------------------------------
-bool CellType::increasing(std::size_t n0, const std::size_t* v0,
-                          std::size_t n1, const std::size_t* v1,
-                          std::size_t num_vertices, const std::size_t* local_vertices,
+bool CellType::increasing(std::size_t n0, const unsigned int* v0,
+                          std::size_t n1, const unsigned int* v1,
+                          std::size_t num_vertices, const unsigned int* local_vertices,
                const std::vector<std::size_t>& local_to_global_vertex_indices)
 {
   dolfin_assert(n0 == n1);
@@ -276,5 +278,49 @@ std::size_t CellType::orientation(const Cell& cell, const Point& up) const
 {
   Point n = cell.cell_normal();
   return (n.dot(up) < 0.0 ? 1 : 0);
+}
+//-----------------------------------------------------------------------------
+double CellType::inradius(const Cell& cell) const
+{ 
+  // Check cell type
+  if (_cell_type != interval &&
+      _cell_type != triangle &&
+      _cell_type != tetrahedron)
+  {
+    dolfin_error("Cell.h",
+                 "compute cell inradius",
+                 "formula not implemented for non-simplicial cells");
+  }
+
+  // Pick dim
+  const size_t d = dim();
+
+  // Compute volume
+  const double V = volume(cell);
+
+  // Handle degenerate case
+  if (V == 0.0) {return 0.0;}
+
+  // Compute total area of facets
+  double A = 0;
+  size_t i;
+  for (i = 0; i <= d; i++)
+  {
+    A += facet_area(cell, i);
+  }
+
+  // See Jonathan Richard Shewchuk: What Is a Good Linear Finite Element?,
+  // online: http://www.cs.berkeley.edu/~jrs/papers/elemj.pdf
+  return d*V/A;
+}
+//-----------------------------------------------------------------------------
+double CellType::radius_ratio(const Cell& cell) const
+{
+  const double r = inradius(cell);
+
+  // Handle degenerate case
+  if (r == 0.0) {return 0.0;}
+
+  return 2.0*dim()*r/diameter(cell);
 }
 //-----------------------------------------------------------------------------

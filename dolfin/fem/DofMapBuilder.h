@@ -65,7 +65,7 @@ namespace dolfin
     typedef boost::unordered_set<std::size_t>::const_iterator set_iterator;
 
     typedef std::vector<std::size_t>::const_iterator vector_it;
-    typedef boost::unordered_map<std::size_t, std::vector<std::size_t> > vec_map;
+    typedef boost::unordered_map<std::size_t, std::vector<unsigned int> > vec_map;
 
     typedef std::pair<std::size_t, std::size_t> facet_data;
     typedef std::map<std::size_t, std::size_t> periodic_map;

@@ -33,8 +33,11 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/MeshValueCollection.h>
 #include "XMLMesh.h"
 #include "XMLMeshValueCollection.h"
+
+#include <dolfin/common/Timer.h>
 
 namespace dolfin
 {
@@ -46,17 +49,17 @@ namespace dolfin
     // Read XML MeshFunction
     template <typename T>
     static void read(MeshFunction<T>& mesh_function, const std::string type,
-                     const pugi::xml_node xml_mesh);
+                     const pugi::xml_node& xml_mesh);
 
     // Read XML MeshFunction as a MeshValueCollection
     template <typename T>
     static void read(MeshValueCollection<T>& mesh_value_collection,
-                     const std::string type, const pugi::xml_node xml_mesh);
+                     const std::string type, const pugi::xml_node& xml_mesh);
 
     /// Write the XML file
     template<typename T>
     static void write(const MeshFunction<T>& mesh_function,
-                      const std::string type, pugi::xml_node xml_node,
+                      const std::string type, pugi::xml_node& xml_node,
                       bool write_mesh=true);
 
   };
@@ -65,75 +68,40 @@ namespace dolfin
   template <typename T>
   inline void XMLMeshFunction::read(MeshFunction<T>& mesh_function,
                                     const std::string type,
-                                    const pugi::xml_node xml_mesh)
+                                    const pugi::xml_node& xml_mesh)
   {
     // Check for old tag
     bool new_format = false;
     std::string tag_name = "mesh_function";
     const pugi::xml_node xml_meshfunction = xml_mesh.child(tag_name.c_str());
-    if (MPI::process_number() == 0)
+    if (xml_mesh.child("meshfunction"))
     {
-      if (xml_mesh.child("meshfunction"))
-      {
-        warning("The XML tag <meshfunction> has been changed to <mesh_function>. "
-                "I'll be nice and read your XML data anyway, for now, but you will "
-                "need to update your XML files (a simple search and replace) to use "
-                "future versions of DOLFIN.");
-        tag_name = "meshfunction";
-      }
-
-      // Read main tag
-      if (!xml_meshfunction)
-        std::cout << "Not a DOLFIN MeshFunction XML file." << std::endl;
-
-      if (xml_meshfunction.attributes_begin() == xml_meshfunction.attributes_end())
-        new_format = true;
+      warning("The XML tag <meshfunction> has been changed to <mesh_function>. "
+              "I'll be nice and read your XML data anyway, for now, but you will "
+              "need to update your XML files (a simple search and replace) to use "
+              "future versions of DOLFIN.");
+      tag_name = "meshfunction";
     }
 
-    // Broadcast format type from zero process
-    MPI::broadcast(new_format);
+    // Read main tag
+    if (!xml_meshfunction)
+      std::cout << "Not a DOLFIN MeshFunction XML file." << std::endl;
+
+    if (xml_meshfunction.attributes_begin() == xml_meshfunction.attributes_end())
+      new_format = true;
 
     // Check for new (MeshValueCollection) / old storage
     if (new_format)
     {
-      const Mesh& mesh = mesh_function.mesh();
-
       // Read new-style MeshFunction
       MeshValueCollection<T> mesh_value_collection;
-      if (MPI::num_processes() == 1)
-        XMLMeshValueCollection::read<T>(mesh_value_collection, type, xml_meshfunction);
-      else
-      {
-        std::size_t dim = 0;
-        if (MPI::process_number() == 0)
-        {
-          XMLMeshValueCollection::read<T>(mesh_value_collection, type, xml_meshfunction);
-          dim = mesh_value_collection.dim();
-        }
-        MPI::broadcast(dim);
-        mesh_value_collection.set_dim(dim);
-
-        // Build local data
-        LocalMeshValueCollection<T> local_data(mesh_value_collection, dim);
-
-        // Distribute MeshValueCollection
-        MeshPartitioning::build_distributed_value_collection<T>(mesh_value_collection,
-                                                               local_data, mesh);
-      }
+      XMLMeshValueCollection::read<T>(mesh_value_collection, type, xml_meshfunction);
 
       // Assign collection to mesh function (this is a local operation)
       mesh_function = mesh_value_collection;
     }
     else
     {
-      // Read old-style MeshFunction
-      if (MPI::num_processes() > 1)
-      {
-        dolfin_error("XMLMeshFunction.h",
-                     "read mesh function from XML file",
-                     "Reading old-style XML MeshFunctions is not supported in parallel. Consider using the new format");
-      }
-
       // Get type and size
       const std::string file_data_type = xml_meshfunction.attribute("type").value();
       const std::size_t dim = xml_meshfunction.attribute("dim").as_uint();
@@ -200,7 +168,7 @@ namespace dolfin
   template <typename T>
   inline void XMLMeshFunction::read(MeshValueCollection<T>& mesh_value_collection,
                                     const std::string type,
-                                    const pugi::xml_node xml_mesh)
+                                    const pugi::xml_node& xml_mesh)
   {
     // Check for old tag
     std::string tag_name("mesh_function");
@@ -235,7 +203,7 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template<typename T>
   void XMLMeshFunction::write(const MeshFunction<T>& mesh_function,
-                              const std::string type, pugi::xml_node xml_node,
+                              const std::string type, pugi::xml_node& xml_node,
                               bool write_mesh)
   {
     not_working_in_parallel("MeshFunction XML output");

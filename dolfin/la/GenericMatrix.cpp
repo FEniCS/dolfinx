@@ -20,7 +20,6 @@
 // First added:  2010-02-23
 // Last changed: 2012-04-17
 
-#include <boost/scoped_array.hpp>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Timer.h>
 #include "GenericSparsityPattern.h"
@@ -112,8 +111,8 @@ void GenericMatrix::compress()
 
   // With the row-by-row algorithm used here there is no need for inserting non_local
   // rows and as such we can simply use a dummy for off_process_owner
-  std::vector<const boost::unordered_map<std::size_t, std::size_t>* > off_process_owner(2);
-  const boost::unordered_map<std::size_t, std::size_t> dummy;
+  std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner(2);
+  const boost::unordered_map<std::size_t, unsigned int> dummy;
   off_process_owner[0] = &dummy;
   off_process_owner[1] = &dummy;
   const std::pair<std::size_t, std::size_t> row_range = local_range[0];

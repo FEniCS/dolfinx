@@ -26,7 +26,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-08
-// Last changed: 2013-01-25
+// Last changed: 2013-02-21
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -246,7 +246,8 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    const std::vector<std::size_t>& cells() const { return _topology(_topology.dim(), 0)(); }
+    const std::vector<unsigned int>& cells() const
+    { return _topology(_topology.dim(), 0)(); }
 
     /// Get number of local entities of given topological dimension.
     ///
@@ -262,7 +263,8 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    std::size_t size(std::size_t dim) const { return _topology.size(dim); }
+    std::size_t size(std::size_t dim) const
+    { return _topology.size(dim); }
 
     /// Get global number of entities of given topological dimension.
     ///
@@ -278,37 +280,44 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    std::size_t size_global(std::size_t dim) const { return _topology.size_global(dim); }
+    std::size_t size_global(std::size_t dim) const
+    { return _topology.size_global(dim); }
 
     /// Get mesh topology.
     ///
     /// *Returns*
     ///     _MeshTopology_
     ///         The topology object associated with the mesh.
-    MeshTopology& topology() { return _topology; }
+    MeshTopology& topology()
+    { return _topology; }
 
     /// Get mesh topology (const version).
-    const MeshTopology& topology() const { return _topology; }
+    const MeshTopology& topology() const
+    { return _topology; }
 
     /// Get mesh geometry.
     ///
     /// *Returns*
     ///     _MeshGeometry_
     ///         The geometry object associated with the mesh.
-    MeshGeometry& geometry() { return _geometry; }
+    MeshGeometry& geometry()
+    { return _geometry; }
 
     /// Get mesh geometry (const version).
-    const MeshGeometry& geometry() const { return _geometry; }
+    const MeshGeometry& geometry() const
+    { return _geometry; }
 
     /// Get mesh (sub)domains.
     ///
     /// *Returns*
     ///     _MeshDomains_
     ///         The (sub)domains associated with the mesh.
-    MeshDomains& domains() { return _domains; }
+    MeshDomains& domains()
+    { return _domains; }
 
     /// Get mesh (sub)domains.
-    const MeshDomains& domains() const { return _domains; }
+    const MeshDomains& domains() const
+    { return _domains; }
 
     /// Get intersection operator.
     ///
@@ -649,6 +658,60 @@ namespace dolfin
     ///
     ///         No example code available for this function.
     double hmax() const;
+
+    /// Compute minimum cell inradius.
+    ///
+    /// *Returns*
+    ///     double
+    ///         The minimum of cells' inscribed sphere radii
+    ///
+    /// *Example*
+    ///     .. note::
+    ///
+    ///         No example code available for this function.
+    double rmin() const;
+
+    /// Compute maximum cell inradius.
+    ///
+    /// *Returns*
+    ///     double
+    ///         The maximum of cells' inscribed sphere radii
+    ///
+    /// *Example*
+    ///     .. note::
+    ///
+    ///         No example code available for this function.
+    double rmax() const;
+
+    /// Compute minimum normalized radius ratio of cells.
+    ///
+    /// *Returns*
+    ///     double
+    ///         The minimum over cells of normalized cell
+    ///         radius ratio (which is = cell_dimension *
+    ///         * inradius / circumradius; cell_dimension
+    ///         is normalization factor).
+    ///
+    /// *Example*
+    ///     .. note::
+    ///
+    ///         No example code available for this function.
+    double radius_ratio_min() const;
+
+    /// Compute maximum normalized radius ratio of cells.
+    ///
+    /// *Returns*
+    ///     double
+    ///         The maximum over cells of normalized cell
+    ///         radius ratio (which is = cell_dimension *
+    ///         * inradius / circumradius; cell_dimension
+    ///         is normalization factor).
+    ///
+    /// *Example*
+    ///     .. note::
+    ///
+    ///         No example code available for this function.
+    double radius_ratio_max() const;
 
     /// Compute hash of mesh, currently based on the has of the mesh
     /// geometry and mesh topology.

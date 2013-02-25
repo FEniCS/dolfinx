@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-11-01
-// Last changed: 2012-11-01
+// Last changed: 2013-02-21
 
 %ignore dolfin::GenericFile::operator>> (std::vector<int>& x);
 %ignore dolfin::GenericFile::operator>> (std::vector<std::size_t>& x);

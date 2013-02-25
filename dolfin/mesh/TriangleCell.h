@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Kristoffer Selim, 2008.
+// Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2010-01-15
+// Last changed: 2013-02-21
 
 #ifndef __TRIANGLE_CELL_H
 #define __TRIANGLE_CELL_H
@@ -52,7 +53,7 @@ namespace dolfin
 
     /// Create entities e of given topological dimension from vertices v
     void create_entities(std::vector<std::vector<std::size_t> >& e, std::size_t dim,
-                         const std::size_t* v) const;
+                         const unsigned int* v) const;
 
     /// Refine cell uniformly
     void refine_cell(Cell& cell, MeshEditor& editor, std::size_t& current_cell) const;
@@ -62,6 +63,9 @@ namespace dolfin
 
     /// Compute diameter of triangle
     double diameter(const MeshEntity& triangle) const;
+
+    /// Compute 2.*inradius/circumradius for given triangle
+    virtual double radius_ratio(const Cell& triangle) const;
 
     /// Compute component i of normal of given facet with respect to the cell
     double normal(const Cell& cell, std::size_t facet, std::size_t i) const;
