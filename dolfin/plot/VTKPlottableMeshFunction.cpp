@@ -68,13 +68,6 @@ template class dolfin::VTKPlottableMeshFunction<bool>;
 template class dolfin::VTKPlottableMeshFunction<double>;
 template class dolfin::VTKPlottableMeshFunction<float>;
 template class dolfin::VTKPlottableMeshFunction<int>;
-
-// Note: We want to be able to plot meshfunctions of unsigned int and
-// std::size_t. Instansiating with these two types, however, gives
-// "error: duplicate explicit instantiation" on 32 bit platforms. The
-// following seems to work
-template class dolfin::VTKPlottableMeshFunction<unsigned int>;
-template class dolfin::VTKPlottableMeshFunction<unsigned long>;
-BOOST_STATIC_ASSERT(sizeof(std::size_t)==sizeof(unsigned int) || sizeof(std::size_t) == sizeof(unsigned long));
+template class dolfin::VTKPlottableMeshFunction<std::size_t>;
 
 #endif

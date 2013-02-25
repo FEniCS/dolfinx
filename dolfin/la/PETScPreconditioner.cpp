@@ -624,7 +624,7 @@ void PETScPreconditioner::set_nullspace(const std::vector<const GenericVector*> 
     // Create null space
     petsc_nullspace.reset(new MatNullSpace, PETScMatNullSpaceDeleter());
     MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE, nullspace.size(),
-                       &petsc_vec[0], petsc_nullspace.get());
+                       petsc_vec.data(), petsc_nullspace.get());
   }
   #endif
 }

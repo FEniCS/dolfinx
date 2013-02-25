@@ -17,9 +17,10 @@
 //
 // Modified by Kristoffer Selim, 2008.
 // Modified by Andre Massing, 2009-2010.
+// Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2011-03-17
+// Last changed: 2013-02-20
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
@@ -99,6 +100,12 @@ namespace dolfin
 
     /// Compute diameter of mesh entity
     virtual double diameter(const MeshEntity& entity) const = 0;
+
+    /// Compute inradius of cell
+    virtual double inradius(const Cell& cell) const;
+
+    /// Compute dim*inradius/circumradius for given cell
+    virtual double radius_ratio(const Cell& cell) const;
 
     /// Compute component i of normal of given facet with respect to the cell
     virtual double normal(const Cell& cell, std::size_t facet, std::size_t i) const = 0;

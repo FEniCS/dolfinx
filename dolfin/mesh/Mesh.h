@@ -26,7 +26,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-08
-// Last changed: 2013-01-25
+// Last changed: 2013-02-21
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -658,6 +658,60 @@ namespace dolfin
     ///
     ///         No example code available for this function.
     double hmax() const;
+
+    /// Compute minimum cell inradius.
+    ///
+    /// *Returns*
+    ///     double
+    ///         The minimum of cells' inscribed sphere radii
+    ///
+    /// *Example*
+    ///     .. note::
+    ///
+    ///         No example code available for this function.
+    double rmin() const;
+
+    /// Compute maximum cell inradius.
+    ///
+    /// *Returns*
+    ///     double
+    ///         The maximum of cells' inscribed sphere radii
+    ///
+    /// *Example*
+    ///     .. note::
+    ///
+    ///         No example code available for this function.
+    double rmax() const;
+
+    /// Compute minimum normalized radius ratio of cells.
+    ///
+    /// *Returns*
+    ///     double
+    ///         The minimum over cells of normalized cell
+    ///         radius ratio (which is = cell_dimension *
+    ///         * inradius / circumradius; cell_dimension
+    ///         is normalization factor).
+    ///
+    /// *Example*
+    ///     .. note::
+    ///
+    ///         No example code available for this function.
+    double radius_ratio_min() const;
+
+    /// Compute maximum normalized radius ratio of cells.
+    ///
+    /// *Returns*
+    ///     double
+    ///         The maximum over cells of normalized cell
+    ///         radius ratio (which is = cell_dimension *
+    ///         * inradius / circumradius; cell_dimension
+    ///         is normalization factor).
+    ///
+    /// *Example*
+    ///     .. note::
+    ///
+    ///         No example code available for this function.
+    double radius_ratio_max() const;
 
     /// Compute hash of mesh, currently based on the has of the mesh
     /// geometry and mesh topology.

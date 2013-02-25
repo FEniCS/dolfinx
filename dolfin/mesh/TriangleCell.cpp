@@ -19,9 +19,10 @@
 // Modified by Kristian Oelgaard 2006-2007
 // Modified by Dag Lindbo 2008
 // Modified by Kristoffer Selim 2008
+// Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2011-11-14
+// Last changed: 2013-02-21
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -411,5 +412,22 @@ std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const
                "find specified edge in cell",
                "Edge really not found");
   return 0;
+}
+//-----------------------------------------------------------------------------
+double TriangleCell::radius_ratio(const Cell& triangle) const
+{
+  // See Jonathan Richard Shewchuk: What Is a Good Linear Finite Element?,
+  // online: http://www.cs.berkeley.edu/~jrs/papers/elemj.pdf
+  
+  const double S = volume(triangle);
+  
+  // Handle degenerate case
+  if (S == 0.0) {return 0.0;}
+  
+  const double a = facet_area(triangle, 0);
+  const double b = facet_area(triangle, 1);
+  const double c = facet_area(triangle, 2);
+  
+  return 16.0*S*S/(a*b*c*(a+b+c));
 }
 //-----------------------------------------------------------------------------

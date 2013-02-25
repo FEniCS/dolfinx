@@ -138,6 +138,19 @@ void SLEPcEigenSolver::solve(std::size_t n)
   // Set parameters from PETSc parameter database
   EPSSetFromOptions(eps);
 
+  if (parameters["verbose"])
+  {
+    KSP ksp;
+    ST st;
+    EPSMonitorSet(eps, EPSMonitorAll, PETSC_NULL, PETSC_NULL);
+    EPSSetType(eps, EPSARPACK);
+    EPSGetST(eps, &st);
+    STGetKSP(st, &ksp);
+    KSPMonitorSet(ksp, KSPMonitorDefault, PETSC_NULL, PETSC_NULL);
+    EPSView(eps, PETSC_VIEWER_STDOUT_SELF);
+  }
+
+
   // Solve
   EPSSolve(eps);
 
@@ -268,6 +281,8 @@ void SLEPcEigenSolver::set_problem_type(std::string type)
     EPSSetProblemType(eps, EPS_GHEP);
   else if (type == "gen_non_hermitian")
     EPSSetProblemType(eps, EPS_GNHEP);
+  else if (type == "pos_gen_non_hermitian")
+    EPSSetProblemType(eps, EPS_PGNHEP);
   else
   {
     dolfin_error("SLEPcEigenSolver.cpp",
@@ -364,6 +379,8 @@ void SLEPcEigenSolver::set_solver(std::string solver)
     EPSSetType(eps, EPSKRYLOVSCHUR);
   else if (solver == "lapack")
     EPSSetType(eps, EPSLAPACK);
+  else if (solver == "arpack")
+    EPSSetType(eps, EPSARPACK);
   else
   {
     dolfin_error("SLEPcEigenSolver.cpp",

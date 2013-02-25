@@ -303,7 +303,7 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction, const std::stri
                  "read meshfunction topology",
                  "Size mismatch");
   }
-  
+
   // Divide up cells ~equally between processes
   const std::pair<std::size_t,std::size_t> cell_range = MPI::local_range(num_global_cells);
   const std::size_t num_read_cells = cell_range.second - cell_range.first;
@@ -412,8 +412,6 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction, const std::stri
                                          cell.begin(), cell.end());
     }
   }
-
-  cell_to_data.clear();
   
   MPI::all_to_all(send_topology, receive_topology);
   MPI::all_to_all(send_values, receive_values);
@@ -421,7 +419,10 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction, const std::stri
   // At this point, receive_topology should only list the locally available topology
   // and received values should have the appropriate values for each - now need to match them up
 
-  // Recreate map
+  // Clear map for reuse
+  cell_to_data.clear();
+
+  // Recreate map from topology to data, which should now list all local entities of dimension cell_dim
   for(std::size_t i = 0; i < receive_values.size(); ++i)
   {
     dolfin_assert(receive_values[i].size()*vert_per_cell == receive_topology[i].size());
