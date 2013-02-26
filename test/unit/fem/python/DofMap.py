@@ -236,6 +236,36 @@ class DofMapTest(unittest.TestCase):
             W = FunctionSpace(self.mesh, "CG", 2)
             self.assertRaises(RuntimeError, lambda : W.dofmap().vertex_to_dof_map(self.mesh))
 
+
+    def test_num_entity_dofs(self):
+        
+        # Test that num entity dofs is correctly wrapped to dolfin::DofMap
+        V = FunctionSpace(self.mesh, "CG", 1)
+        self.assertEqual(V.dofmap().num_entity_dofs(0), 1)
+        self.assertEqual(V.dofmap().num_entity_dofs(1), 0)
+        self.assertEqual(V.dofmap().num_entity_dofs(2), 0)
+
+        V = FunctionSpace(self.mesh, "CG", 2)
+        self.assertEqual(V.dofmap().num_entity_dofs(0), 1)
+        self.assertEqual(V.dofmap().num_entity_dofs(1), 1)
+        self.assertEqual(V.dofmap().num_entity_dofs(2), 0)
+
+        V = FunctionSpace(self.mesh, "CG", 3)
+        self.assertEqual(V.dofmap().num_entity_dofs(0), 1)
+        self.assertEqual(V.dofmap().num_entity_dofs(1), 2)
+        self.assertEqual(V.dofmap().num_entity_dofs(2), 1)
+
+        V = FunctionSpace(self.mesh, "DG", 0)
+        self.assertEqual(V.dofmap().num_entity_dofs(0), 0)
+        self.assertEqual(V.dofmap().num_entity_dofs(1), 0)
+        self.assertEqual(V.dofmap().num_entity_dofs(2), 1)
+        
+        V = FunctionSpace(self.mesh, "DG", 1)
+        self.assertEqual(V.dofmap().num_entity_dofs(0), 0)
+        self.assertEqual(V.dofmap().num_entity_dofs(1), 0)
+        self.assertEqual(V.dofmap().num_entity_dofs(2), 3)
+        
+
 if __name__ == "__main__":
     print ""
     print "Testing PyDOLFIN DofMap operations"
