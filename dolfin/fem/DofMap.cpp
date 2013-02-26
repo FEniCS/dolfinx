@@ -201,6 +201,12 @@ std::size_t DofMap::max_cell_dimension() const
   return _ufc_dofmap->max_local_dimension();
 }
 //-----------------------------------------------------------------------------
+std::size_t DofMap::num_entity_dofs(std::size_t dim) const
+{
+  dolfin_assert(_ufc_dofmap);
+  return _ufc_dofmap->num_entity_dofs(dim);
+}
+//-----------------------------------------------------------------------------
 std::size_t DofMap::geometric_dimension() const
 {
   dolfin_assert(_ufc_dofmap);

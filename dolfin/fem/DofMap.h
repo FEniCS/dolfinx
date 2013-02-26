@@ -155,6 +155,17 @@ namespace dolfin
     ///         space.
     std::size_t max_cell_dimension() const;
 
+    /// Return the number of dofs for a given entity dimension
+    ///
+    /// *Arguments*
+    ///     dim (std::size_t)
+    ///         Entity dimension
+    ///
+    /// *Returns*
+    ///     std::size_t
+    ///         Number of dofs associated with given entity dimension
+    virtual std::size_t num_entity_dofs(std::size_t dim) const;
+
     /// Return the geometric dimension of the coordinates this dof map
     /// provides
     ///

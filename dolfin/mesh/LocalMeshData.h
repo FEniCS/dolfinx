@@ -54,9 +54,6 @@ namespace dolfin
   /// data, at that point corresponding to topologically connected
   /// meshes instead of local mesh data.
 
-  // FIXME: Provide a better public interface rather than using 'friend
-  //        class'
-
   class LocalMeshData : public Variable
   {
   public:
@@ -72,8 +69,6 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
-
-  private:
 
     // Clear all data
     void clear();
@@ -124,14 +119,6 @@ namespace dolfin
     // Mesh domain data [dim](line, (cell_index, local_index, value))
     std::map<std::size_t, std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::size_t> > >
         domain_data;
-
-    // Friends
-    friend class XMLLocalMeshSAX;
-    friend class HDF5File;
-    friend class MeshPartitioning;
-    friend class GraphBuilder;
-    friend class ParMETIS;
-    friend class SCOTCH;
 
   };
 
