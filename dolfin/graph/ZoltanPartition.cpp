@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-13
-// Last changed: 2013-02-18
+// Last changed: 2013-02-26
 
 #include<set>
 #include<vector>
@@ -66,7 +66,7 @@ void ZoltanPartition::compute_partition_phg(std::vector<std::size_t>& cell_parti
   zoltan.Set_Param("LB_METHOD", "GRAPH");
 
   // Get partition method: 'PARTITION', 'REPARTITION' or 'REFINE'
-  std::string lb_approach = parameters["Zoltan_PHG_LB_APPROACH"];
+  std::string lb_approach = parameters["partitioning_approach"];
   zoltan.Set_Param("LB_APPROACH", lb_approach.c_str());
 
   // Repartitioning weighting
@@ -412,7 +412,7 @@ void ZoltanPartition::get_all_geom(void *data,
 }
 //-----------------------------------------------------------------------------
 #else
-void ZoltanPartition::compute_PHG_partition(std::vector<std::size_t>& cell_partition,
+void ZoltanPartition::compute_partition_phg(std::vector<std::size_t>& cell_partition,
                                         const LocalMeshData& mesh_data)
 {
   dolfin_error("ZoltanPartition.cpp",
@@ -420,7 +420,7 @@ void ZoltanPartition::compute_PHG_partition(std::vector<std::size_t>& cell_parti
                "DOLFIN has been configured without support for Zoltan from Trilinos");
 }
 //-----------------------------------------------------------------------------
-void ZoltanPartition::compute_PHG_partition(std::vector<std::size_t>& cell_partition,
+void ZoltanPartition::compute_partition_rcb(std::vector<std::size_t>& cell_partition,
                                         const LocalMeshData& mesh_data)
 {
   dolfin_error("ZoltanPartition.cpp",

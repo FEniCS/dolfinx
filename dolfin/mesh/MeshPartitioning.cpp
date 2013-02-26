@@ -21,7 +21,7 @@
 // Modified by Garth N. Wells 2011-2012
 //
 // First added:  2008-12-01
-// Last changed: 2013-02-18
+// Last changed: 2013-02-26
 
 #include <algorithm>
 #include <iterator>
@@ -108,8 +108,6 @@ void MeshPartitioning::partition(Mesh& mesh, const LocalMeshData& mesh_data)
     SCOTCH::compute_partition(cell_partition, mesh_data);
   else if (partitioner == "ParMETIS")
     ParMETIS::compute_partition(cell_partition, mesh_data);
-  else if (partitioner == "ParMETIS_repart")
-    ParMETIS::recompute_partition(cell_partition, mesh_data);
   else if (partitioner == "Zoltan_RCB")
     ZoltanPartition::compute_partition_rcb(cell_partition, mesh_data);
   else if (partitioner == "Zoltan_PHG")

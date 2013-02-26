@@ -18,7 +18,7 @@
 // Modified by Fredrik Valdmanis, 2011
 //
 // First added:  2009-07-02
-// Last changed: 2013-02-18
+// Last changed: 2013-02-26
 
 #ifndef __GLOBAL_PARAMETERS_H
 #define __GLOBAL_PARAMETERS_H
@@ -71,7 +71,6 @@ namespace dolfin
       // Allowed partitioners (not necessarily installed)
       std::set<std::string> allowed_mesh_partitioners;
       allowed_mesh_partitioners.insert("ParMETIS");
-      allowed_mesh_partitioners.insert("ParMETIS_repart");
       allowed_mesh_partitioners.insert("SCOTCH");
       allowed_mesh_partitioners.insert("Zoltan_RCB");
       allowed_mesh_partitioners.insert("Zoltan_PHG");
@@ -88,6 +87,17 @@ namespace dolfin
       p.add("mesh_partitioner",
             default_mesh_partitioner,
             allowed_mesh_partitioners);
+
+      // Approaches to partitioning (following Zoltan syntax)
+      // but applies to both Zoltan PHG and ParMETIS
+      std::set<std::string> allowed_partitioning_approaches;
+      allowed_partitioning_approaches.insert("PARTITION");
+      allowed_partitioning_approaches.insert("REPARTITION");
+      allowed_partitioning_approaches.insert("REFINE");
+      
+      p.add("partitioning_approach",
+            "PARTITION",
+            allowed_partitioning_approaches);
       
       #ifdef HAS_PARMETIS
       // Repartitioning parameter, determines how strongly to hold on to cells
@@ -96,12 +106,7 @@ namespace dolfin
       #endif
 
       #ifdef HAS_TRILINOS
-      // Zoltan PHG partitioner methods
-      std::set<std::string> allowed_lb_approach;
-      allowed_lb_approach.insert("PARTITION");
-      allowed_lb_approach.insert("REPARTITION");
-      allowed_lb_approach.insert("REFINE");
-      p.add("Zoltan_PHG_LB_APPROACH", "PARTITION", allowed_lb_approach);
+      // Zoltan PHG partitioner parameters
       p.add("Zoltan_PHG_REPART_MULTIPLIER", 1.0);
       #endif
 
