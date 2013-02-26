@@ -15,41 +15,58 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2013-02-12
-// Last changed:
+// First added:  2013-02-15
+// Last changed: 2013-02-26
 
-#ifndef __LOCAL_SOLVER_H
-#define __LOCAL_SOLVER_H
+#ifndef __RKSOLVER_H
+#define __RKSOLVER_H
+
+#include <vector>
+#include <boost/shared_ptr.hpp>
+
+#include <dolfin/function/FunctionAXPY.h>
+
+#include "Assembler.h"
 
 namespace dolfin
 {
 
-  /// This class is a general time integrator for a PointIntegral solves problems cell-wise. It computes the local
-  /// left-hand side A_local and the local right-hand side b_local
-  /// (for one cell), and solves A_local x_local = b_local. The result
-  /// x_local is copied into the global vector x. The operator A_local
-  /// must be square.
-  ///
-  /// For forms with no coupling across cell edges, this function is
-  /// identical to a global solve. For problems with coupling across
-  /// cells it is not.
-  ///
-  /// This class can be used for post-processing solutions, e.g. computing
-  /// stress fields for visualisation, far more cheaply that using
-  /// global projections.
+  /// This class is a time integrator for general Runge Kutta forms,
+  /// which only includes Point integrals with piecewise linear test
+  /// functions. Such problems are disconnected at the vertices and
+  /// can therefore be solved locally.
 
   // Forward declarations
-  class GenericVector;
-  class Form;
+  class ButcherScheme;
 
   class PointIntegralSolver
   {
   public:
 
-    /// Solve local (cell-wise) problem and copy result into global
-    /// vector x.
-    void solve(GenericVector& x, const Form& a, const Form& L,
-               bool symmetric=false) const;
+    /// Constructor
+    /// FIXME: Include version where one can pass a Solver and/or Parameters
+    PointIntegralSolver(boost::shared_ptr<ButcherScheme> scheme);
+
+    /// Step solver with time step dt
+    void step(double dt);
+
+    /// Step solver an interval using dt as time step
+    void step_interval(double t0, double t1, double dt=0.1);
+
+  private:
+
+    // Check the forms making sure they only include piecewise linear
+    // test functions
+    void _check_forms();
+
+    // Build map between vertices, cells and the correspondning local vertex
+    void _build_vertex_map();
+
+    // The ButcherScheme
+    boost::shared_ptr<ButcherScheme> _scheme;
+
+    // Assembler for explicit stages
+    Assembler _assembler;
 
   };
 
