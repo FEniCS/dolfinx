@@ -412,7 +412,7 @@ void ZoltanPartition::get_all_geom(void *data,
 }
 //-----------------------------------------------------------------------------
 #else
-void ZoltanPartition::compute_PHG_partition(std::vector<std::size_t>& cell_partition,
+void ZoltanPartition::compute_partition_phg(std::vector<std::size_t>& cell_partition,
                                         const LocalMeshData& mesh_data)
 {
   dolfin_error("ZoltanPartition.cpp",
@@ -420,7 +420,7 @@ void ZoltanPartition::compute_PHG_partition(std::vector<std::size_t>& cell_parti
                "DOLFIN has been configured without support for Zoltan from Trilinos");
 }
 //-----------------------------------------------------------------------------
-void ZoltanPartition::compute_PHG_partition(std::vector<std::size_t>& cell_partition,
+void ZoltanPartition::compute_partition_rcb(std::vector<std::size_t>& cell_partition,
                                         const LocalMeshData& mesh_data)
 {
   dolfin_error("ZoltanPartition.cpp",
