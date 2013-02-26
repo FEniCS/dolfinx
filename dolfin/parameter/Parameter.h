@@ -159,12 +159,15 @@ namespace dolfin
     ~IntParameter();
 
     /// Set range
+    using Parameter::set_range;
     void set_range(int min_value, int max_value);
 
     /// Get range
+    using Parameter::get_range;
     void get_range(int &min_value, int &max_value) const;
 
     /// Assignment
+    using Parameter::operator=;
     const IntParameter& operator= (int value);
 
     /// Cast parameter to int
@@ -210,12 +213,15 @@ namespace dolfin
     ~DoubleParameter();
 
     /// Set range
+    using Parameter::set_range;
     void set_range(double min_value, double max_value);
 
     /// Get range
+    using Parameter::get_range;
     void get_range(double &min_value, double &max_value) const;
 
     /// Assignment
+    using Parameter::operator=;
     const DoubleParameter& operator= (double value);
 
     /// Cast parameter to double
@@ -258,12 +264,15 @@ namespace dolfin
     ~StringParameter();
 
     /// Set range
+    using Parameter::set_range;
     void set_range(std::set<std::string> range);
 
     /// Get range
+    using Parameter::get_range;
     void get_range(std::set<std::string>& range) const;
 
     /// Assignment
+    using Parameter::operator=;
     const StringParameter& operator= (std::string value);
 
     /// Assignment
@@ -309,6 +318,7 @@ namespace dolfin
     ~BoolParameter();
 
     /// Assignment
+    using Parameter::operator=;
     const BoolParameter& operator= (bool value);
 
     /// Cast parameter to bool
