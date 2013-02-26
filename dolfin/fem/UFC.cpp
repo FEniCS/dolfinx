@@ -32,7 +32,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UFC::UFC(const Form& form) : form(*form.ufc_form()), cell(form.mesh()),
+UFC::UFC(const Form& form) :
+  form(*form.ufc_form()), cell(form.mesh()),
   cell0(form.mesh()), cell1(form.mesh()),
   coefficients(form.coefficients()), dolfin_form(form)
 {
