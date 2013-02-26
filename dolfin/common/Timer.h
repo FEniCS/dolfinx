@@ -44,7 +44,7 @@ namespace dolfin
   /// Timings are stored globally and a summary may be printed
   /// by calling
   ///
-  ///   summary();
+  ///   list_timings();
 
   class Timer
   {
