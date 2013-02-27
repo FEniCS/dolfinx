@@ -18,10 +18,10 @@
 // Modified by Garth N. Wells 2007-2009
 // Modified by Ola Skavhaug 2007-2009
 // Modified by Kent-Andre Mardal 2008
-// Modified by Anders Logg 2010-2011
+// Modified by Anders Logg 2010-2013
 //
 // First added:  2010-11-10
-// Last changed: 2011-11-14
+// Last changed: 2013-02-26
 
 #ifdef HAS_OPENMP
 
@@ -137,7 +137,11 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
   // Cell integral
   const ufc::cell_integral* integral = ufc.default_cell_integral.get();
 
+  // Check whether integral is domain-dependent
   bool use_domains = domains && !domains->empty();
+
+  // FIXME: Assume cell orientation is 0
+  const int cell_orientation = 0;
 
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> dofmaps;
@@ -205,7 +209,10 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
         dofs[i] = &(dofmaps[i]->cell_dofs(index));
 
       // Tabulate cell tensor
-      integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell);
+      integral->tabulate_tensor(&ufc.A[0],
+                                ufc.w(),
+                                &ufc.cell.vertex_coordinates[0],
+                                cell_orientation);
 
       // Add entries to global tensor
       if (values && form_rank == 0)
@@ -261,8 +268,12 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   ufc::cell_integral* cell_integral = ufc.default_cell_integral.get();
   ufc::exterior_facet_integral* facet_integral = ufc.default_exterior_facet_integral.get();
 
+  // Check whether integrals are domain-dependent
   bool use_cell_domains = cell_domains && !cell_domains->empty();
   bool use_exterior_facet_domains = exterior_facet_domains && !exterior_facet_domains->empty();
+
+  // FIXME: Assume cell orientation is 0
+  const int cell_orientation = 0;
 
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> dofmaps;
@@ -333,7 +344,10 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
 
       // Tabulate cell tensor if we have a cell_integral
       if (cell_integral)
-        cell_integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell);
+        cell_integral->tabulate_tensor(&ufc.A[0],
+                                       ufc.w(),
+                                       &ufc.cell.vertex_coordinates[0],
+                                       cell_orientation);
       else
         std::fill(ufc.A.begin(), ufc.A.end(), 0.0);
 
@@ -368,7 +382,10 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
         ufc.update(cell, local_facet);
 
         // Tabulate tensor
-        facet_integral->tabulate_tensor(&ufc.A_facet[0], ufc.w(), ufc.cell, local_facet);
+        facet_integral->tabulate_tensor(&ufc.A_facet[0],
+                                        ufc.w(),
+                                        &ufc.cell.vertex_coordinates[0],
+                                        local_facet);
 
         // Add facet contribution
         for (std::size_t i = 0; i < dim; ++i)
@@ -543,9 +560,12 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
       }
 
       // Tabulate exterior interior facet tensor on macro element
-      integral->tabulate_tensor(&ufc.macro_A[0], ufc.macro_w(),
-                                ufc.cell0, ufc.cell1,
-                                local_facet0, local_facet1);
+      integral->tabulate_tensor(&ufc.macro_A[0],
+                                ufc.macro_w(),
+                                &ufc.cell0.vertex_coordinates[0],
+                                &ufc.cell1.vertex_coordinates[0],
+                                local_facet0,
+                                local_facet1);
 
       // Add entries to global tensor
       A.add(&ufc.macro_A[0], macro_dofs);

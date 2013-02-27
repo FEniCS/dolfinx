@@ -142,7 +142,11 @@ void Assembler::assemble_cells(GenericTensor& A,
   // Cell integral
   ufc::cell_integral* integral = ufc.default_cell_integral.get();
 
+  // Check whether integral is domain-dependent
   bool use_domains = domains && !domains->empty();
+
+  // FIXME: Assume cell orientation is 0
+  const int cell_orientation = 0;
 
   // Assemble over cells
   Progress p(AssemblerBase::progress_message(A.rank(), "cells"), mesh.num_cells());
@@ -172,7 +176,9 @@ void Assembler::assemble_cells(GenericTensor& A,
       continue;
 
     // Tabulate cell tensor
-    integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell);
+    integral->tabulate_tensor(&ufc.A[0], ufc.w(),
+                              &ufc.cell.vertex_coordinates[0],
+                              cell_orientation);
 
     // Add entries to global tensor. Either store values cell-by-cell
     // (currently only available for functionals)
@@ -215,6 +221,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   // Exterior facet integral
   const ufc::exterior_facet_integral* integral = ufc.default_exterior_facet_integral.get();
 
+  // Check whether integral is domain-dependent
   bool use_domains = domains && !domains->empty();
 
   // Compute facets and facet - cell connectivity if not already computed
@@ -258,7 +265,10 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
       dofs[i] = &(dofmaps[i]->cell_dofs(mesh_cell.index()));
 
     // Tabulate exterior facet tensor
-    integral->tabulate_tensor(&ufc.A[0], ufc.w(), ufc.cell, local_facet);
+    integral->tabulate_tensor(&ufc.A[0],
+                              ufc.w(),
+                              &ufc.cell.vertex_coordinates[0],
+                              local_facet);
 
     // Add entries to global tensor
     add_to_global_tensor(A, ufc.A, dofs);
@@ -304,6 +314,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   // Interior facet integral
   const ufc::interior_facet_integral* integral = ufc.default_interior_facet_integral.get();
 
+  // Check whether integral is domain-dependent
   bool use_domains = domains && !domains->empty();
 
   // Compute facets and facet - cell connectivity if not already computed
@@ -374,8 +385,12 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     }
 
     // Tabulate interior facet tensor on macro element
-    integral->tabulate_tensor(&ufc.macro_A[0], ufc.macro_w(), ufc.cell0, ufc.cell1,
-                              local_facet0, local_facet1);
+    integral->tabulate_tensor(&ufc.macro_A[0],
+                              ufc.macro_w(),
+                              &ufc.cell0.vertex_coordinates[0],
+                              &ufc.cell1.vertex_coordinates[0],
+                              local_facet0,
+                              local_facet1);
 
     // Add entries to global tensor
     add_to_global_tensor(A, ufc.macro_A, macro_dof_ptrs);

@@ -78,7 +78,11 @@ void LocalAssembler::assemble_cell(arma::mat& A,
   ufc.update(cell);
 
   // Tabulate cell tensor
-  integral->tabulate_tensor(&ufc.A[0], ufc.w(), &ufc.cell.vertex_coordinates[0]);
+  const int cell_orientation = 0;
+  integral->tabulate_tensor(&ufc.A[0],
+                            ufc.w(),
+                            &ufc.cell.vertex_coordinates[0],
+                            cell_orientation);
 
   // Stuff a_ufc.A into A
   const std::size_t M = A.n_rows;
