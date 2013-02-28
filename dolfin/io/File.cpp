@@ -21,7 +21,7 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2012-12-01
+// Last changed: 2013-02-27
 
 #include <fstream>
 #include <string>
@@ -33,6 +33,7 @@
 #include "BinaryFile.h"
 #include "RAWFile.h"
 #include "VTKFile.h"
+#include "ExodusFile.h"
 #include "XMLFile.h"
 #include "XYZFile.h"
 #include "XDMFFile.h"
@@ -73,6 +74,10 @@ File::File(const std::string filename, std::string encoding)
     file.reset(new XMLFile(filename));
   else if (extension == ".pvd")
     file.reset(new VTKFile(filename, encoding));
+#ifdef HAS_VTK && HAS_VTK_EXODUS
+  else if (extension == ".e")
+    file.reset(new ExodusFile(filename));
+#endif
   else if (extension == ".raw")
     file.reset(new RAWFile(filename));
   else if (extension == ".xyz")
