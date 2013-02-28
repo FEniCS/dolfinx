@@ -330,4 +330,4 @@ void ExodusFile::perform_write(const vtkSmartPointer<vtkUnstructuredGrid> & vtk_
   return;
 }
 //----------------------------------------------------------------------------
-#endif // HAS_VTK
+#endif // HAS_VTK && HAS_VTK_EXODUS

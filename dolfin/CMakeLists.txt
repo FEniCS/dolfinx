@@ -261,9 +261,12 @@ if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
   #     $ nm -D /usr/lib/libvtkParallel.so | grep ExodusIIWriter
   # but on some systems, this doesn't seem to be the case. Check if the
   # appropriate header exists and store this information in HAS_VTK_EXODUS.
-  INCLUDE(CheckIncludeFileCXX)
-  SET(CMAKE_REQUIRED_INCLUDES "${VTK_INCLUDE_DIRS}")
+  include(CheckIncludeFileCXX)
+  set(CMAKE_REQUIRED_INCLUDES "${VTK_INCLUDE_DIRS}")
   CHECK_INCLUDE_FILE_CXX(vtkExodusIIWriter.h  HAS_VTK_EXODUS)
+  if(HAS_VTK_EXODUS)
+    list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_VTK_EXODUS")
+  endif()
 
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${DOLFIN_VTK_LIBRARIES})
 endif()
