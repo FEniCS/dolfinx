@@ -103,6 +103,20 @@ namespace dolfin
       _ufc_element->evaluate_basis(i, values, x, vertex_coordinates, cell_orientation);
     }
 
+    // FIXME: This is a temporary (?) shortcut.
+    // FIXME: Need to discuss the role of dolfin::FiniteElement vs
+    // FIXME: ufc::finite_element.
+
+    /// Evaluate basis function i at given point in cell
+    void evaluate_basis(std::size_t i,
+                        double* values,
+                        const double* x,
+                        const ufc::cell c) const
+    {
+      dolfin_assert(_ufc_element);
+      _ufc_element->evaluate_basis(i, values, x, &c.vertex_coordinates[0], c.orientation);
+    }
+
     /// Evaluate all basis functions at given point in cell
     void evaluate_basis_all(double* values,
                             const double* x,
@@ -111,6 +125,20 @@ namespace dolfin
     {
       dolfin_assert(_ufc_element);
       _ufc_element->evaluate_basis_all(values, x, vertex_coordinates, cell_orientation);
+    }
+
+    // FIXME: This is a temporary (?) shortcut.
+    // FIXME: Need to discuss the role of dolfin::FiniteElement vs
+    // FIXME: ufc::finite_element.
+
+    /// Evaluate all basis functions at given point in cell
+    void evaluate_basis_all(double* values,
+                            const double* x,
+                            const double* vertex_coordinates,
+                            const ufc::cell c) const
+    {
+      dolfin_assert(_ufc_element);
+      _ufc_element->evaluate_basis_all(values, x, vertex_coordinates, c.orientation);
     }
 
     /// Evaluate order n derivatives of basis function i at given point in cell
@@ -125,6 +153,21 @@ namespace dolfin
       _ufc_element->evaluate_basis_derivatives(i, n, values, x, vertex_coordinates, cell_orientation);
     }
 
+    // FIXME: This is a temporary (?) shortcut.
+    // FIXME: Need to discuss the role of dolfin::FiniteElement vs
+    // FIXME: ufc::finite_element.
+
+    /// Evaluate order n derivatives of basis function i at given point in cell
+    void evaluate_basis_derivatives(unsigned int i,
+                                    unsigned int n,
+                                    double* values,
+                                    const double* x,
+                                    const ufc::cell c) const
+    {
+      dolfin_assert(_ufc_element);
+      _ufc_element->evaluate_basis_derivatives(i, n, values, x, &c.vertex_coordinates[0], c.orientation);
+    }
+
     /// Evaluate order n derivatives of all basis functions at given point in cell
     void evaluate_basis_derivatives_all(unsigned int n,
                                         double* values,
@@ -134,6 +177,20 @@ namespace dolfin
     {
       dolfin_assert(_ufc_element);
       _ufc_element->evaluate_basis_derivatives_all(n, values, x, vertex_coordinates, cell_orientation);
+    }
+
+    // FIXME: This is a temporary (?) shortcut.
+    // FIXME: Need to discuss the role of dolfin::FiniteElement vs
+    // FIXME: ufc::finite_element.
+
+    /// Evaluate order n derivatives of all basis functions at given point in cell
+    void evaluate_basis_derivatives_all(unsigned int n,
+                                        double* values,
+                                        const double* x,
+                                        const ufc::cell c) const
+    {
+      dolfin_assert(_ufc_element);
+      _ufc_element->evaluate_basis_derivatives_all(n, values, x, &c.vertex_coordinates[0], c.orientation);
     }
 
     /// Evaluate linear functional for dof i on the function f
@@ -147,7 +204,7 @@ namespace dolfin
       return _ufc_element->evaluate_dof(i, function, vertex_coordinates, cell_orientation, c);
     }
 
-    // FIXME: This is a temporary (?) shortcut for evaluate_dof.
+    // FIXME: This is a temporary (?) shortcut.
     // FIXME: Need to discuss the role of dolfin::FiniteElement vs
     // FIXME: ufc::finite_element.
 
@@ -175,7 +232,7 @@ namespace dolfin
       _ufc_element->evaluate_dofs(values, f, vertex_coordinates, cell_orientation, c);
     }
 
-    // FIXME: This is a temporary (?) shortcut for evaluate_dof.
+    // FIXME: This is a temporary (?) shortcut.
     // FIXME: Need to discuss the role of dolfin::FiniteElement vs
     // FIXME: ufc::finite_element.
 
