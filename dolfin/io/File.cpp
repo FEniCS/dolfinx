@@ -74,9 +74,11 @@ File::File(const std::string filename, std::string encoding)
     file.reset(new XMLFile(filename));
   else if (extension == ".pvd")
     file.reset(new VTKFile(filename, encoding));
-#ifdef HAS_VTK && HAS_VTK_EXODUS
+#ifdef HAS_VTK
+#ifdef HAS_VTK_EXODUS
   else if (extension == ".e")
     file.reset(new ExodusFile(filename));
+#endif
 #endif
   else if (extension == ".raw")
     file.reset(new RAWFile(filename));

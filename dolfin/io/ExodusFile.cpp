@@ -17,7 +17,8 @@
 //
 // First added:  2013-02-27
 
-#ifdef HAS_VTK && HAS_VTK_EXODUS
+#ifdef HAS_VTK
+#ifdef HAS_VTK_EXODUS
 
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Function.h>
@@ -330,4 +331,5 @@ void ExodusFile::perform_write(const vtkSmartPointer<vtkUnstructuredGrid> & vtk_
   return;
 }
 //----------------------------------------------------------------------------
-#endif // HAS_VTK && HAS_VTK_EXODUS
+#endif // HAS_VTK_EXODUS
+#endif // HAS_VTK

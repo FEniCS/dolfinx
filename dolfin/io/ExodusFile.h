@@ -20,7 +20,8 @@
 #ifndef __EXODUS_FILE_H
 #define __EXODUS_FILE_H
 
-#ifdef HAS_VTK && HAS_VTK_EXODUS
+#ifdef HAS_VTK
+#ifdef HAS_VTK_EXODUS
 
 #include "GenericFile.h"
 
@@ -69,5 +70,6 @@ private:
 
 }
 
-#endif // HAS_VTK && HAS_VTK_EXODUS
+#endif // HAS_VTK_EXODUS
+#endif // HAS_VTK
 #endif // __EXODUS_FILE_H
