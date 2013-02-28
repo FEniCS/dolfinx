@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-02-25
+// Last changed: 2013-02-28
 
 #ifdef HAS_HDF5
 
@@ -133,7 +133,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
   // ---------- Vertices (coordinates)
   {
     // Write vertex data to HDF5 file
-    const std::string coord_dataset = name + "/coordinates";
+    const std::string coord_dataset = "/Mesh/" + name + "/coordinates";
 
     // Copy coordinates and indices and remove off-process values
     const std::size_t gdim = mesh.geometry().dim();
@@ -202,7 +202,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     }
 
     // Write topology data
-    const std::string topology_dataset =  name + "/topology";
+    const std::string topology_dataset =  "/Mesh/" + name + "/topology";
     std::vector<std::size_t> global_size(2);
     global_size[0] = MPI::sum(topological_data.size()/(cell_dim + 1));
     global_size[1] = cell_dim + 1;
@@ -242,10 +242,12 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction, const std::stri
 
   const Mesh& mesh = meshfunction.mesh();
 
+  const std::string mesh_name = "/Mesh/" + name;
+
   dolfin_assert(hdf5_file_open);
   
   const std::vector<std::string> _dataset_list =
-    HDF5Interface::dataset_list(hdf5_file_id, name);
+    HDF5Interface::dataset_list(hdf5_file_id, mesh_name);
 
   std::string topology_name = search_list(_dataset_list,"topology");
   if (topology_name.size() == 0)
@@ -254,7 +256,7 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction, const std::stri
                  "read topology dataset",
                  "Dataset not found");
   }
-  topology_name = name + "/" + topology_name;
+  topology_name = mesh_name + "/" + topology_name;
 
   // Look for Coordinates dataset - but not used
   std::string coordinates_name=search_list(_dataset_list,"coordinates");
@@ -264,7 +266,7 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction, const std::stri
                  "read coordinates dataset",
                  "Dataset not found");
   }
-  coordinates_name = name + "/" + coordinates_name;
+  coordinates_name = mesh_name + "/" + coordinates_name;
 
   // Look for Values dataset
   std::string values_name=search_list(_dataset_list,"values");
@@ -274,7 +276,7 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction, const std::stri
                  "read values dataset",
                  "Dataset not found");
   }
-  values_name = name + "/" + values_name;
+  values_name = mesh_name + "/" + values_name;
 
   // --- Topology ---
   // Discover size of topology dataset
@@ -511,7 +513,7 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction, const st
   // Write values to HDF5
   std::vector<std::size_t> global_size(1, MPI::sum(data_values.size()));
 
-  write_data(name + "/values", data_values, global_size);
+  write_data("/Mesh/" + name + "/values", data_values, global_size);
 
 }
 //-----------------------------------------------------------------------------
@@ -589,8 +591,10 @@ void HDF5File::read(Mesh& input_mesh, const std::string name)
 {
   dolfin_assert(hdf5_file_open);
 
+  std::string mesh_name = "/Mesh/" + name;
+
   std::vector<std::string> _dataset_list =
-    HDF5Interface::dataset_list(hdf5_file_id, name);
+    HDF5Interface::dataset_list(hdf5_file_id, mesh_name);
 
   std::string topology_name = search_list(_dataset_list,"topology");
   if (topology_name.size() == 0)
@@ -599,7 +603,7 @@ void HDF5File::read(Mesh& input_mesh, const std::string name)
                  "read topology dataset",
                  "Dataset not found");
   }
-  topology_name = name + "/" + topology_name;
+  topology_name = mesh_name + "/" + topology_name;
 
   // Look for Coordinates dataset
   std::string coordinates_name=search_list(_dataset_list,"coordinates");
@@ -609,7 +613,7 @@ void HDF5File::read(Mesh& input_mesh, const std::string name)
                  "read coordinates dataset",
                  "Dataset not found");
   }
-  coordinates_name = name + "/" + coordinates_name;
+  coordinates_name = mesh_name + "/" + coordinates_name;
 
   read_mesh_repartition(input_mesh, coordinates_name,
                                    topology_name);

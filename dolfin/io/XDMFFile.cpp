@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2013-02-22
+// Last changed: 2013-02-28
 
 #ifdef HAS_HDF5
 
@@ -235,7 +235,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   // Write mesh to HDF5 file
   if (parameters["rewrite_function_mesh"] || counter == 0)
   {
-      current_mesh_name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
+      current_mesh_name = boost::lexical_cast<std::string>(counter);
       hdf5_file->write(mesh, current_mesh_name);
   }
 
@@ -254,8 +254,10 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     num_total_vertices = global_size[0];
   }
 
-  hdf5_file->write_data("/VisualisationVector/" + boost::lexical_cast<std::string>(counter),
-                        data_values, global_size);
+  const std::string dataset_name = "/VisualisationVector/" 
+    + boost::lexical_cast<std::string>(counter);
+
+  hdf5_file->write_data(dataset_name, data_values, global_size);
 
   // Flush file. Improves chances of recovering data if interrupted. Also
   // makes file somewhat readable between writes.
@@ -268,7 +270,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     output_xml(time_step, vertex_data,
                cell_dim, num_global_cells, gdim, num_total_vertices,
                value_rank, padded_value_size,
-               u.name(), hdf5_filename);
+               u.name(), dataset_name);
   }
 
   // Increment counter
@@ -281,7 +283,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
   dolfin_assert(hdf5_file);
 
   // Output data name
-  std::string name;
+  const std::string name = mesh.name();
 
   // Topological and geometric dimensions
   const std::size_t gdim = mesh.geometry().dim();
@@ -295,13 +297,14 @@ void XDMFFile::operator<< (const Mesh& mesh)
   const std::size_t num_total_vertices = mesh.size_global(0);
 
   // Write mesh to HDF5 file
-  name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
+  // The XML below will obliterate any existing XDMF file
+
   hdf5_file->write(mesh, cell_dim, name);
 
   // FIXME: Names should be returned by HDF5::write_mesh
   // Mesh data set names
-  const std::string mesh_topology_name = name + "/topology";
-  const std::string mesh_coords_name = name + "/coordinates";
+  const std::string mesh_topology_name = "/Mesh/" + name + "/topology";
+  const std::string mesh_coords_name = "/Mesh/" + name + "/coordinates";
 
   // Write the XML meta description on process zero
   if (MPI::process_number() == 0)
@@ -331,6 +334,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
 
     xml_doc.save_file(filename.c_str(), "  ");
   }
+
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const MeshFunction<bool>& meshfunction)
@@ -390,7 +394,8 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   // Work out HDF5 dataset names
 
   // Write mesh to HDF5
-  current_mesh_name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
+  // FIXME: should this be allowed to be optional (using parameter as for Function)
+  current_mesh_name = boost::lexical_cast<std::string>(counter);
   hdf5_file->write(mesh, cell_dim, current_mesh_name);
 
   if(cell_dim == mesh.topology().dim() || MPI::num_processes() == 1)
@@ -427,8 +432,10 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   // Write values to HDF5
   std::vector<std::size_t> global_size(1, MPI::sum(data_values.size()));
 
-  hdf5_file->write_data("/VisualisationVector/" + boost::lexical_cast<std::string>(counter),
-                        data_values, global_size);
+  // Save MeshFunction values in the /Mesh group
+  const std::string dataset_name = "/Mesh/" + current_mesh_name + "/values";
+  
+  hdf5_file->write_data(dataset_name, data_values, global_size);
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero
   if (MPI::process_number() == 0)
@@ -436,7 +443,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
     output_xml((double)counter, false,
                cell_dim, mesh.size_global(cell_dim),
                mesh.geometry().dim(), mesh.size_global(0),
-               0, 1, meshfunction.name(), hdf5_filename);
+               0, 1, meshfunction.name(), dataset_name);
   }
 
   counter++;
@@ -519,7 +526,7 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
                           const std::size_t cell_dim, const std::size_t num_global_cells,
                           const std::size_t gdim, const std::size_t num_total_vertices,
                           const std::size_t value_rank, const std::size_t padded_value_size,
-                          const std::string name, const std::string hdf5_filename) const
+                          const std::string name, const std::string dataset_name) const
 {
   // Working data structure for formatting XML file
   std::string s;
@@ -586,12 +593,12 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
   // Grid/Topology
   pugi::xml_node xdmf_topology = xdmf_grid.append_child("Topology");
   xml_mesh_topology(xdmf_topology, cell_dim, num_global_cells,
-                    current_mesh_name + "/topology");
+                    "/Mesh/" + current_mesh_name + "/topology");
 
   // Grid/Geometry
   pugi::xml_node xdmf_geometry = xdmf_grid.append_child("Geometry");
   xml_mesh_geometry(xdmf_geometry, num_total_vertices, gdim,
-                    current_mesh_name + "/coordinates");
+                    "/Mesh/" + current_mesh_name + "/coordinates");
 
   // Grid/Attribute (Function value data)
   pugi::xml_node xdmf_values = xdmf_grid.append_child("Attribute");
@@ -620,8 +627,7 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
     xdmf_data.append_attribute("Dimensions") = s.c_str();
 
     boost::filesystem::path p(hdf5_filename);
-    s = p.filename().string() + ":/VisualisationVector/"
-          + boost::lexical_cast<std::string>(counter);
+    s = p.filename().string() + ":" + dataset_name;
     xdmf_data.append_child(pugi::node_pcdata).set_value(s.c_str());
 
     // Write XML file

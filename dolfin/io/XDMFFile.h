@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2013-02-19
+// Last changed: 2013-02-28
 
 #ifndef __DOLFIN_XDMFFILE_H
 #define __DOLFIN_XDMFFILE_H
@@ -97,7 +97,7 @@ namespace dolfin
                     const std::size_t cell_dim, const std::size_t num_global_cells,
                     const std::size_t gdim, const std::size_t num_total_vertices,
                     const std::size_t value_rank, const std::size_t padded_value_size,
-                    const std::string name, const std::string hdf5_filename) const;
+                    const std::string name, const std::string dataset_name) const;
 
     // Helper function to add topology reference to XDMF XML file
     void xml_mesh_topology(pugi::xml_node& xdmf_topology,
