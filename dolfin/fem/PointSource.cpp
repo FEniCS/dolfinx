@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-04-13
-// Last changed: 2012-04-17
+// Last changed: 2013-02-27
 
 #include <boost/scoped_array.hpp>
 
@@ -96,7 +96,11 @@ void PointSource::apply(GenericVector& b)
   dolfin_assert(V->element());
   dolfin_assert(V->element()->value_rank() == 0);
   std::vector<double> values(V->element()->space_dimension());
-  V->element()->evaluate_basis_all(&values[0], p.coordinates(), ufc_cell);
+  const int cell_orientation = 0;
+  V->element()->evaluate_basis_all(&values[0],
+                                   p.coordinates(),
+                                   &ufc_cell.vertex_coordinates[0],
+                                   cell_orientation);
 
   // Scale by magnitude
   for (std::size_t i = 0; i < V->element()->space_dimension(); i++)

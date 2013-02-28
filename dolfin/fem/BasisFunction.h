@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Anders Logg
+// Copyright (C) 2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-01-01
-// Last changed: 2011-07-18
+// Last changed: 2013-02-27
 
 #ifndef __BASIS_FUNCTION_H
 #define __BASIS_FUNCTION_H
@@ -66,7 +66,10 @@ namespace dolfin
     ///     x (double)
     ///         The coordinates of the point.
     void eval(double* values, const double* x) const
-    { element.evaluate_basis(index, values, x, cell); }
+    {
+      // Note: assuming cell_orientation = 0
+      element.evaluate_basis(index, values, x, &cell.vertex_coordinates[0], 0);
+    }
 
     /// Evaluate all order n derivatives at given point
     ///
@@ -78,7 +81,10 @@ namespace dolfin
     ///     n (std::size_t)
     ///         The order of derivation.
     void eval_derivatives(double* values, const double* x, std::size_t n) const
-    { element.evaluate_basis_derivatives(index, n, values, x, cell); }
+    {
+      // Note: assuming cell_orientation = 0
+      element.evaluate_basis_derivatives(index, n, values, x, &cell.vertex_coordinates[0], 0);
+    }
 
     //--- Implementation of ufc::function interface ---
 

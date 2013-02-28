@@ -1,4 +1,4 @@
-// Copyright (C) 2008-20011 Anders Logg and Garth N. Wells
+// Copyright (C) 2008-2013 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-09-11
-// Last changed: 2011-04-13
+// Last changed: 2013-02-27
 
 #ifndef __FINITE_ELEMENT_H
 #define __FINITE_ELEMENT_H
@@ -93,20 +93,24 @@ namespace dolfin
     }
 
     /// Evaluate basis function i at given point in cell
-    void evaluate_basis(std::size_t i, double* values, const double* x,
-                        const ufc::cell& cell) const
+    void evaluate_basis(std::size_t i,
+                        double* values,
+                        const double* x,
+                        const double* vertex_coordinates,
+                        int cell_orientation) const
     {
       dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_basis(i, values, x, cell);
+      _ufc_element->evaluate_basis(i, values, x, vertex_coordinates, cell_orientation);
     }
 
     /// Evaluate all basis functions at given point in cell
     void evaluate_basis_all(double* values,
-                            const double* coordinates,
-                            const ufc::cell& c) const
+                            const double* x,
+                            const double* vertex_coordinates,
+                            int cell_orientation) const
     {
       dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_basis_all(values, coordinates, c);
+      _ufc_element->evaluate_basis_all(values, x, vertex_coordinates, cell_orientation);
     }
 
     /// Evaluate order n derivatives of basis function i at given point in cell
@@ -114,47 +118,54 @@ namespace dolfin
                                     unsigned int n,
                                     double* values,
                                     const double* x,
-                                    const ufc::cell& cell) const
+                                    const double* vertex_coordinates,
+                                    int cell_orientation) const
     {
       dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_basis_derivatives(i, n, values, x, cell);
+      _ufc_element->evaluate_basis_derivatives(i, n, values, x, vertex_coordinates, cell_orientation);
     }
 
     /// Evaluate order n derivatives of all basis functions at given point in cell
     void evaluate_basis_derivatives_all(unsigned int n,
                                         double* values,
-                                        const double* coordinates,
-                                        const ufc::cell& c) const
+                                        const double* x,
+                                        const double* vertex_coordinates,
+                                        int cell_orientation) const
     {
       dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_basis_derivatives_all(n, values, coordinates, c);
+      _ufc_element->evaluate_basis_derivatives_all(n, values, x, vertex_coordinates, cell_orientation);
     }
 
     /// Evaluate linear functional for dof i on the function f
     double evaluate_dof(std::size_t i,
                         const ufc::function& function,
-                        const ufc::cell& cell) const
+                        const double* vertex_coordinates,
+                        int cell_orientation,
+                        const ufc::cell& c) const
     {
       dolfin_assert(_ufc_element);
-      return _ufc_element->evaluate_dof(i, function, cell);
+      return _ufc_element->evaluate_dof(i, function, vertex_coordinates, cell_orientation, c);
     }
 
     /// Evaluate linear functionals for all dofs on the function f
     void evaluate_dofs(double* values,
                        const ufc::function& f,
+                       const double* vertex_coordinates,
+                       int cell_orientation,
                        const ufc::cell& c) const
     {
       dolfin_assert(_ufc_element);
-      _ufc_element->evaluate_dofs(values, f, c);
+      _ufc_element->evaluate_dofs(values, f, vertex_coordinates, cell_orientation, c);
     }
 
     /// Interpolate vertex values from dof values
     void interpolate_vertex_values(double* vertex_values,
                                    double* coefficients,
+                                   int cell_orientation,
                                    const ufc::cell& cell) const
     {
       dolfin_assert(_ufc_element);
-      _ufc_element->interpolate_vertex_values(vertex_values, coefficients, cell);
+      _ufc_element->interpolate_vertex_values(vertex_values, coefficients, &cell.vertex_coordinates[0], cell_orientation, cell);
     }
 
     /// Map coordinate xhat from reference cell to coordinate x in cell
@@ -187,24 +198,6 @@ namespace dolfin
     /// Return simple hash of the signature string
     std::size_t hash() const
     { return _hash; }
-
-    /// Evaluate basis function i at given point in cell
-    void evaluate_basis(std::size_t i, double* values, const double* x,
-                        const Cell& cell) const
-    {
-      dolfin_assert(_ufc_element);
-      UFCCell ufc_cell(cell);
-      _ufc_element->evaluate_basis(i, values, x, ufc_cell);
-    }
-
-    /// Evaluate all basis functions at given point in cell
-    void evaluate_basis_all(double* values, const double* coordinates,
-                            const Cell& cell) const
-    {
-      dolfin_assert(_ufc_element);
-      UFCCell ufc_cell(cell);
-      _ufc_element->evaluate_basis_all(values, coordinates, ufc_cell);
-    }
 
     /// Create a new finite element for sub element i (for a mixed element)
     boost::shared_ptr<const FiniteElement> create_sub_element(std::size_t i) const
