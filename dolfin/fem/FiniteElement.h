@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-09-11
-// Last changed: 2013-02-27
+// Last changed: 2013-02-28
 
 #ifndef __FINITE_ELEMENT_H
 #define __FINITE_ELEMENT_H
@@ -147,6 +147,23 @@ namespace dolfin
       return _ufc_element->evaluate_dof(i, function, vertex_coordinates, cell_orientation, c);
     }
 
+    // FIXME: This is a temporary (?) shortcut for evaluate_dof.
+    // FIXME: Need to discuss the role of dolfin::FiniteElement vs
+    // FIXME: ufc::finite_element.
+
+    /// Evaluate linear functional for dof i on the function f
+    double evaluate_dof(std::size_t i,
+                        const ufc::function& function,
+                        const ufc::cell& c) const
+    {
+      dolfin_assert(_ufc_element);
+      return _ufc_element->evaluate_dof(i,
+                                        function,
+                                        &c.vertex_coordinates[0],
+                                        0,
+                                        c);
+    }
+
     /// Evaluate linear functionals for all dofs on the function f
     void evaluate_dofs(double* values,
                        const ufc::function& f,
@@ -156,6 +173,23 @@ namespace dolfin
     {
       dolfin_assert(_ufc_element);
       _ufc_element->evaluate_dofs(values, f, vertex_coordinates, cell_orientation, c);
+    }
+
+    // FIXME: This is a temporary (?) shortcut for evaluate_dof.
+    // FIXME: Need to discuss the role of dolfin::FiniteElement vs
+    // FIXME: ufc::finite_element.
+
+    /// Evaluate linear functionals for all dofs on the function f
+    void evaluate_dofs(double* values,
+                       const ufc::function& f,
+                       const ufc::cell& c) const
+    {
+      dolfin_assert(_ufc_element);
+      _ufc_element->evaluate_dofs(values,
+                                  f,
+                                  &c.vertex_coordinates[0],
+                                  0,
+                                  c);
     }
 
     /// Interpolate vertex values from dof values
