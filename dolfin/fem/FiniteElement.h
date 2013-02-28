@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-09-11
-// Last changed: 2013-02-28
+// Last changed: 2013-03-01
 
 #ifndef __FINITE_ELEMENT_H
 #define __FINITE_ELEMENT_H
@@ -111,7 +111,7 @@ namespace dolfin
     void evaluate_basis(std::size_t i,
                         double* values,
                         const double* x,
-                        const ufc::cell c) const
+                        const ufc::cell& c) const
     {
       dolfin_assert(_ufc_element);
       _ufc_element->evaluate_basis(i, values, x, &c.vertex_coordinates[0], c.orientation);
@@ -135,7 +135,7 @@ namespace dolfin
     void evaluate_basis_all(double* values,
                             const double* x,
                             const double* vertex_coordinates,
-                            const ufc::cell c) const
+                            const ufc::cell& c) const
     {
       dolfin_assert(_ufc_element);
       _ufc_element->evaluate_basis_all(values, x, vertex_coordinates, c.orientation);
@@ -162,7 +162,7 @@ namespace dolfin
                                     unsigned int n,
                                     double* values,
                                     const double* x,
-                                    const ufc::cell c) const
+                                    const ufc::cell& c) const
     {
       dolfin_assert(_ufc_element);
       _ufc_element->evaluate_basis_derivatives(i, n, values, x, &c.vertex_coordinates[0], c.orientation);
@@ -187,7 +187,7 @@ namespace dolfin
     void evaluate_basis_derivatives_all(unsigned int n,
                                         double* values,
                                         const double* x,
-                                        const ufc::cell c) const
+                                        const ufc::cell& c) const
     {
       dolfin_assert(_ufc_element);
       _ufc_element->evaluate_basis_derivatives_all(n, values, x, &c.vertex_coordinates[0], c.orientation);
