@@ -98,6 +98,10 @@ namespace dolfin
     virtual void tabulate_facet_dofs(std::vector<std::size_t>& dofs,
                                      std::size_t local_facet) const = 0;
 
+    /// Tabulate the local-to-local mapping of dofs on entity (dim, local_entity)
+    virtual void tabulate_entity_dofs(std::vector<std::size_t>& dofs,
+				      std::size_t dim, std::size_t local_entity) const = 0;
+
     /// Return a map between vertices and dofs
     virtual std::vector<std::size_t> vertex_to_dof_map(Mesh& mesh) const = 0;
 
