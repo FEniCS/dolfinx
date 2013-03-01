@@ -27,7 +27,7 @@ if has_hdf5():
     class XDMF_Mesh_Output(unittest.TestCase):
         """Test output of Meshes to XDMF files"""
 
-        def xtest_save_1d_mesh(self):
+        def test_save_1d_mesh(self):
             mesh = UnitIntervalMesh(32)
             File("output/mesh.xdmf") << mesh
             XDMFFile("output/mesh.xdmf") << mesh
@@ -45,7 +45,7 @@ if has_hdf5():
     class XDMF_Vertex_Function_Output(unittest.TestCase):
         """Test output of vertex-based Functions to XDMF files"""
 
-        def xtest_save_1d_scalar(self):
+        def test_save_1d_scalar(self):
             mesh = UnitIntervalMesh(32)
             u = Function(FunctionSpace(mesh, "Lagrange", 2))
             u.vector()[:] = 1.0
@@ -125,8 +125,7 @@ if has_hdf5():
     class XDMF_MeshFunction_Output(unittest.TestCase):
         """Test output of Meshes to XDMF files"""
 
-        # FIXME: 1D seems to be broken
-        def xtest_save_1d_mesh(self):
+        def test_save_1d_mesh(self):
             mesh = UnitIntervalMesh(32)
             mf = CellFunction("size_t", mesh)
             for cell in cells(mesh):
