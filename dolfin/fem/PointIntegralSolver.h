@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-02-26
+// Last changed: 2013-03-01
 
 #ifndef __RKSOLVER_H
 #define __RKSOLVER_H
@@ -38,6 +38,7 @@ namespace dolfin
 
   // Forward declarations
   class ButcherScheme;
+  class UFC;
 
   class PointIntegralSolver
   {
@@ -51,7 +52,7 @@ namespace dolfin
     void step(double dt);
 
     /// Step solver an interval using dt as time step
-    void step_interval(double t0, double t1, double dt=0.1);
+    void step_interval(double t0, double t1, double dt);
 
   private:
 
@@ -60,13 +61,20 @@ namespace dolfin
     void _check_forms();
 
     // Build map between vertices, cells and the correspondning local vertex
-    void _build_vertex_map();
+    // and initialize UFC data for each form
+    void _init();
 
     // The ButcherScheme
     boost::shared_ptr<ButcherScheme> _scheme;
 
     // Assembler for explicit stages
     Assembler _assembler;
+
+    // Vertex map between vertices, cells and corresponding local vertex
+    std::vector<std::pair<std::size_t, unsigned int> > _vertex_map;
+
+    // UFC objects, one for each form
+    std::vector<std::vector<boost::shared_ptr<UFC> > > _ufcs;
 
   };
 

@@ -79,6 +79,11 @@ void UFC::init(const Form& form)
   for (std::size_t i = 0; i < this->form.num_interior_facet_domains(); i++)
     interior_facet_integrals.push_back(boost::shared_ptr<ufc::interior_facet_integral>(this->form.create_interior_facet_integral(i)));
 
+  // Create point integrals
+  default_point_integral = boost::shared_ptr<ufc::point_integral>(this->form.create_default_point_integral());
+  for (std::size_t i = 0; i < this->form.num_point_domains(); i++)
+    point_integrals.push_back(boost::shared_ptr<ufc::point_integral>(this->form.create_point_integral(i)));
+
   // Get maximum local dimensions
   std::vector<std::size_t> max_local_dimension;
   std::vector<std::size_t> max_macro_local_dimension;

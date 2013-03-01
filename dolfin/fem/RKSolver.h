@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-02-25
+// Last changed: 2013-02-28
 
 #ifndef __RKSOLVER_H
 #define __RKSOLVER_H
@@ -48,7 +48,7 @@ namespace dolfin
     void step(double dt);
 
     /// Step solver an interval using dt as time step
-    void step_interval(double t0, double t1, double dt=0.1);
+    void step_interval(double t0, double t1, double dt);
 
   private:
 

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-02-26
+// Last changed: 2013-03-01
 
 #include <cmath>
 
@@ -62,6 +62,8 @@ void RKSolver::step(double dt)
       _assembler.assemble(*stage_solutions[i]->vector(), *stage_forms[i][0]);
       
       // Apply boundary conditions
+      // FIXME: stage solutions are time derivatives and we cannot apply the 
+      // bcs directly on them
       for (unsigned int j = 0; j < bcs.size(); j++)
       {
 	dolfin_assert(bcs[j]);
@@ -73,6 +75,7 @@ void RKSolver::step(double dt)
     // or an implicit stage (2 forms)
     else
     {
+      // FIXME: applying the bcs on stage solutions are probably wrong...
       // FIXME: Include solver parameters
       // Do a nonlinear solve
       solve(*stage_forms[i][0] == 0, *stage_solutions[i], bcs, *stage_forms[i][1]);
@@ -85,7 +88,7 @@ void RKSolver::step(double dt)
   // Update solution with last stage
   GenericVector& solution_vector = *_scheme->solution()->vector();
   
-  // Start from item 2 and axpy 
+  // Update with stage solutions
   for (std::vector<std::pair<double, const Function*> >::const_iterator \
 	 it=last_stage.pairs().begin();
        it!=last_stage.pairs().end(); it++)
