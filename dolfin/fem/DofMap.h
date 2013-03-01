@@ -155,6 +155,17 @@ namespace dolfin
     ///         space.
     std::size_t max_cell_dimension() const;
 
+    /// Return the number of dofs for a given entity dimension
+    ///
+    /// *Arguments*
+    ///     dim (std::size_t)
+    ///         Entity dimension
+    ///
+    /// *Returns*
+    ///     std::size_t
+    ///         Number of dofs associated with given entity dimension
+    virtual std::size_t num_entity_dofs(std::size_t dim) const;
+
     /// Return the geometric dimension of the coordinates this dof map
     /// provides
     ///
@@ -231,9 +242,20 @@ namespace dolfin
     ///         Degrees of freedom.
     ///     local_facet (std::size_t)
     ///         The local facet.
-    //void tabulate_facet_dofs(std::size_t* dofs, std::size_t local_facet) const;
     void tabulate_facet_dofs(std::vector<std::size_t>& dofs,
                              std::size_t local_facet) const;
+
+    /// Tabulate local-local mapping of dofs on entity (dim, local_entity)
+    ///
+    /// *Arguments*
+    ///     dofs (std::size_t)
+    ///         Degrees of freedom.
+    ///     dim (std::size_t)
+    ///         The entity dimension
+    ///     local_entity (std::size_t)
+    ///         The local entity index
+    void tabulate_entity_dofs(std::vector<std::size_t>& dofs,
+			      std::size_t dim, std::size_t local_entity) const;
 
     /// Tabulate the coordinates of all dofs on a cell (UFC cell
     /// version)

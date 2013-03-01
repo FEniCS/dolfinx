@@ -57,6 +57,7 @@ const MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
   global_num_entities = topology.global_num_entities;
   connectivity = topology.connectivity;
   _global_indices = topology._global_indices;
+  coloring = topology.coloring;
 
   return *this;
 }
@@ -91,6 +92,7 @@ void MeshTopology::clear()
   global_num_entities.clear();
   connectivity.clear();
   _global_indices.clear();
+  coloring.clear();
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::clear(std::size_t d0, std::size_t d1)

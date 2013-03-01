@@ -1,4 +1,5 @@
-// Copyright (C) 2007-2012 Anders Logg, Garth N. Wells, Ola Skavhaug, Martin Alnæs
+// Copyright (C) 2007-2012 Anders Logg, Garth N. Wells, Ola Skavhaug,
+// Martin Alnæs
 //
 // This file is part of DOLFIN.
 //

@@ -133,8 +133,8 @@ std::size_t uBLASKrylovSolver::solve(GenericVector& x, const GenericVector& b)
 }
 //-----------------------------------------------------------------------------
 std::size_t uBLASKrylovSolver::solve(const GenericLinearOperator& A,
-                                      GenericVector& x,
-                                      const GenericVector& b)
+                                     GenericVector& x,
+                                     const GenericVector& b)
 {
   // Set operator
   boost::shared_ptr<const GenericLinearOperator> _A(&A, NoDeleter());

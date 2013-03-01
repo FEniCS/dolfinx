@@ -303,6 +303,8 @@ void XDMFFile::operator<< (const Mesh& mesh)
 
   // FIXME: Names should be returned by HDF5::write_mesh
   // Mesh data set names
+  const std::string mesh_topology_name = "/Mesh/" + name + "/topology";
+  const std::string mesh_coords_name = "/Mesh/" + name + "/coordinates";
 
   // Write the XML meta description on process zero
   if (MPI::process_number() == 0)
@@ -322,11 +324,13 @@ void XDMFFile::operator<< (const Mesh& mesh)
 
     // Describe topological connectivity
     pugi::xml_node xdmf_topology = xdmf_grid.append_child("Topology");
-    xml_mesh_topology(xdmf_topology, cell_dim, num_global_cells, name);
+    xml_mesh_topology(xdmf_topology, cell_dim, num_global_cells,
+                      mesh_topology_name);
 
     // Describe geometric coordinates
     pugi::xml_node xdmf_geometry = xdmf_grid.append_child("Geometry");
-    xml_mesh_geometry(xdmf_geometry, num_total_vertices, gdim, name);
+    xml_mesh_geometry(xdmf_geometry, num_total_vertices, gdim,
+                      mesh_coords_name);
 
     xml_doc.save_file(filename.c_str(), "  ");
   }
@@ -380,12 +384,59 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   const std::size_t cell_dim = meshfunction.dim();
   dolfin_assert(cell_dim <= mesh.topology().dim());
 
+  // // Collate data in a vector
+  // std::vector<T> data_values;
+
+  // // If not already numbered, number entities of order cell_dim
+  // // so we can get shared_entities and correct size_global(cell_dim)
+  // DistributedMeshTools::number_entities(mesh, cell_dim);
+
+
   current_mesh_name = boost::lexical_cast<std::string>(counter);
   hdf5_file->write_mesh_function(meshfunction, current_mesh_name);
   
-  // Values are saved with this name (needed for XML output)
+
+  // hdf5_file->write(mesh, cell_dim, current_mesh_name);
+
+  // if(cell_dim == mesh.topology().dim() || MPI::num_processes() == 1)
+  // {
+  //   // No duplicates
+  //   data_values.assign(meshfunction.values(), meshfunction.values() + meshfunction.size());
+  // }
+  // else
+  // {
+  //   data_values.reserve(mesh.size(cell_dim));
+
+  //   // Drop duplicate data
+  //   const std::size_t my_rank = MPI::process_number();
+  //   const std::map<unsigned int, std::set<unsigned int> >& shared_entities
+  //     = mesh.topology().shared_entities(cell_dim);
+
+  //   for(std::size_t i = 0; i < meshfunction.size(); ++i)
+  //   {
+  //     std::map<unsigned int, std::set<unsigned int> >::const_iterator sh
+  //       = shared_entities.find(i);
+
+  //     // If unshared, or shared and locally owned, append to vector
+  //     if(sh == shared_entities.end())
+  //       data_values.push_back(meshfunction[i]);
+  //     else
+  //     {
+  //       std::set<unsigned int>::iterator lowest_proc = sh->second.begin();
+  //       if(*lowest_proc > my_rank)
+  //         data_values.push_back(meshfunction[i]);
+  //     }
+  //   }
+  // }
+
+  // // Write values to HDF5
+  // std::vector<std::size_t> global_size(1, MPI::sum(data_values.size()));
+
+  // Save MeshFunction values in the /Mesh group
   const std::string dataset_name = "/Mesh/" + current_mesh_name + "/values";
   
+  // hdf5_file->write_data(dataset_name, data_values, global_size);
+
   // Write the XML meta description (see http://www.xdmf.org) on process zero
   if (MPI::process_number() == 0)
   {
@@ -401,7 +452,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 void XDMFFile::xml_mesh_topology(pugi::xml_node &xdmf_topology,
                                  const std::size_t cell_dim,
                                  const std::size_t num_global_cells,
-                                 const std::string name) const
+                                 const std::string topology_dataset_name) const
 {
   xdmf_topology.append_attribute("NumberOfElements") = (unsigned int) num_global_cells;
 
@@ -432,20 +483,24 @@ void XDMFFile::xml_mesh_topology(pugi::xml_node &xdmf_topology,
   // filenames such as "results/data.xdmf" correctly index h5 files in
   // the same directory
   boost::filesystem::path p(hdf5_filename);
-  std::string topology_reference = p.filename().string() + ":/Mesh/" + name + "/topology";
+  std::string topology_reference = p.filename().string() + ":" + topology_dataset_name;
   xdmf_topology_data.append_child(pugi::node_pcdata).set_value(topology_reference.c_str());
 }
 //----------------------------------------------------------------------------
 void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
                                  const std::size_t num_total_vertices,
                                  const std::size_t gdim,
-                                 const std::string name) const
+                                 const std::string geometry_dataset_name) const
 {
   dolfin_assert(0 < gdim && gdim <= 3);
   std::string geometry_type;
   if (gdim == 1)
   {
-    // XDMF geometry "X" is not supported
+    //    dolfin_error("XDMFFile.cpp",
+    //                 "write 1D mesh",
+    //                 "One dimensional geometry not supported in XDMF");
+    // FIXME: geometry "X" is not supported
+    // This could be fixed by padding vertex coordinates to 2D and using "XY"
     geometry_type = "X_Y_Z";
   }
   else if (gdim == 2)
@@ -460,37 +515,39 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
   std::string geom_dim = boost::lexical_cast<std::string>(num_total_vertices)
     + " " + boost::lexical_cast<std::string>(gdim);
   xdmf_geom_data.append_attribute("Dimensions") = geom_dim.c_str();
-  
-  boost::filesystem::path p(hdf5_filename);
-  const std::string geometry_reference
-    = p.filename().string() + ":/Mesh/" + name + "/coordinates";
 
+  // FIXME: improve this workaround
+  // When gdim==1, XDMF does not support a 1D geometry "X",
+  // so need to provide some dummy Y and Z values.
+  // Using the "X_Y_Z" geometry the Y and Z values can be supplied
+  // as separate datasets, here in plain text (though it could be done in HDF5 too).
+  // Cannot write HDF5 here, as we are only running on rank 0, and will deadlock.
+  
   if(gdim == 1)
   {
-    // FIXME: improve this workaround
-    // When gdim==1, XDMF does not support a 1D geometry "X",
-    // so need to provide some dummy Y and Z values.
-
-    std::string dummy_name = "/Mesh/" + name + "/zero";
-    std::vector<double> dummy_zero(num_total_vertices, 0); 
-    std::vector<std::size_t> global_size(1, num_total_vertices);
-    hdf5_file->write_data(dummy_name, dummy_zero, global_size);
-    dummy_name = p.filename().string() + ":" + dummy_name;
+    std::string dummy_zeros;
+    dummy_zeros.reserve(2*num_total_vertices);
+    for(std::size_t i = 0; i < num_total_vertices; ++i)
+      dummy_zeros += "0 ";
 
     pugi::xml_node xdmf_geom_1 = xdmf_geometry.append_child("DataItem");
-    xdmf_geom_1.append_attribute("Format") = "HDF";
+    xdmf_geom_1.append_attribute("Format") = "XML";
     geom_dim = boost::lexical_cast<std::string>(num_total_vertices) + " 1" ;
     xdmf_geom_1.append_attribute("Dimensions") = geom_dim.c_str();
-    xdmf_geom_1.append_child(pugi::node_pcdata).set_value(dummy_name.c_str());
+    xdmf_geom_1.append_child(pugi::node_pcdata).set_value(dummy_zeros.c_str());
 
     pugi::xml_node xdmf_geom_2 = xdmf_geometry.append_child("DataItem");
-    xdmf_geom_2.append_attribute("Format") = "HDF";
+    xdmf_geom_2.append_attribute("Format") = "XML";
     geom_dim = boost::lexical_cast<std::string>(num_total_vertices) + " 1" ;
     xdmf_geom_2.append_attribute("Dimensions") = geom_dim.c_str();
-    xdmf_geom_2.append_child(pugi::node_pcdata).set_value(dummy_name.c_str());
+    xdmf_geom_2.append_child(pugi::node_pcdata).set_value(dummy_zeros.c_str());
 
   }
   
+
+  boost::filesystem::path p(hdf5_filename);
+  const std::string geometry_reference
+    = p.filename().string() + ":" + geometry_dataset_name;
   xdmf_geom_data.append_child(pugi::node_pcdata).set_value(geometry_reference.c_str());
 }
 //----------------------------------------------------------------------------
@@ -564,11 +621,13 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
 
   // Grid/Topology
   pugi::xml_node xdmf_topology = xdmf_grid.append_child("Topology");
-  xml_mesh_topology(xdmf_topology, cell_dim, num_global_cells, current_mesh_name);
+  xml_mesh_topology(xdmf_topology, cell_dim, num_global_cells,
+                    "/Mesh/" + current_mesh_name + "/topology");
 
   // Grid/Geometry
   pugi::xml_node xdmf_geometry = xdmf_grid.append_child("Geometry");
-  xml_mesh_geometry(xdmf_geometry, num_total_vertices, gdim, current_mesh_name);
+  xml_mesh_geometry(xdmf_geometry, num_total_vertices, gdim,
+                    "/Mesh/" + current_mesh_name + "/coordinates");
 
   // Grid/Attribute (Function value data)
   pugi::xml_node xdmf_values = xdmf_grid.append_child("Attribute");

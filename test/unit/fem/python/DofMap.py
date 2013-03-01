@@ -236,6 +236,49 @@ class DofMapTest(unittest.TestCase):
             W = FunctionSpace(self.mesh, "CG", 2)
             self.assertRaises(RuntimeError, lambda : W.dofmap().vertex_to_dof_map(self.mesh))
 
+
+    def test_entity_dofs(self):
+        
+        # Test that num entity dofs is correctly wrapped to dolfin::DofMap
+        V = FunctionSpace(self.mesh, "CG", 1)
+        self.assertEqual(V.dofmap().num_entity_dofs(0), 1)
+        self.assertEqual(V.dofmap().num_entity_dofs(1), 0)
+        self.assertEqual(V.dofmap().num_entity_dofs(2), 0)
+
+        V = VectorFunctionSpace(self.mesh, "CG", 1)
+        self.assertEqual(V.dofmap().num_entity_dofs(0), 2)
+        self.assertEqual(V.dofmap().num_entity_dofs(1), 0)
+        self.assertEqual(V.dofmap().num_entity_dofs(2), 0)
+
+        V = FunctionSpace(self.mesh, "CG", 2)
+        self.assertEqual(V.dofmap().num_entity_dofs(0), 1)
+        self.assertEqual(V.dofmap().num_entity_dofs(1), 1)
+        self.assertEqual(V.dofmap().num_entity_dofs(2), 0)
+
+        V = FunctionSpace(self.mesh, "CG", 3)
+        self.assertEqual(V.dofmap().num_entity_dofs(0), 1)
+        self.assertEqual(V.dofmap().num_entity_dofs(1), 2)
+        self.assertEqual(V.dofmap().num_entity_dofs(2), 1)
+
+        V = FunctionSpace(self.mesh, "DG", 0)
+        self.assertEqual(V.dofmap().num_entity_dofs(0), 0)
+        self.assertEqual(V.dofmap().num_entity_dofs(1), 0)
+        self.assertEqual(V.dofmap().num_entity_dofs(2), 1)
+        
+        V = FunctionSpace(self.mesh, "DG", 1)
+        self.assertEqual(V.dofmap().num_entity_dofs(0), 0)
+        self.assertEqual(V.dofmap().num_entity_dofs(1), 0)
+        self.assertEqual(V.dofmap().num_entity_dofs(2), 3)
+
+        V = VectorFunctionSpace(self.mesh, "CG", 1)
+
+        # Note this numbering is dependent on FFC and can change
+        # This test is here just to check that we get correct numbers
+        # mapped from ufc generated code to dolfin
+        for i, cdofs in enumerate([[0,3], [1,4], [2,5]]):
+            dofs = V.dofmap().tabulate_entity_dofs(0, i)
+            self.assertTrue(all(d==cd for d, cd in zip(dofs, cdofs)))
+
 if __name__ == "__main__":
     print ""
     print "Testing PyDOLFIN DofMap operations"
