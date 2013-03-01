@@ -1,3 +1,5 @@
+ - Expose ufc::dofmap::tabulate_entity_dofs to GenericDofMap interface
+ - Expose ufc::dofmap::num_entity_dofs to GenericDofMap interface
  - Allow setting of row dof coordinates in preconditioners (only works with PETSc backed for now)
  - Expose more PETSc/ML parameters
  - Improve speed to tabulating coordinates in some DofMap functions

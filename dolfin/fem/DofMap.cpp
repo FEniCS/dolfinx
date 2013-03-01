@@ -201,6 +201,12 @@ std::size_t DofMap::max_cell_dimension() const
   return _ufc_dofmap->max_local_dimension();
 }
 //-----------------------------------------------------------------------------
+std::size_t DofMap::num_entity_dofs(std::size_t dim) const
+{
+  dolfin_assert(_ufc_dofmap);
+  return _ufc_dofmap->num_entity_dofs(dim);
+}
+//-----------------------------------------------------------------------------
 std::size_t DofMap::geometric_dimension() const
 {
   dolfin_assert(_ufc_dofmap);
@@ -243,6 +249,17 @@ const boost::unordered_map<std::size_t, std::vector<unsigned int> >& DofMap::sha
 const std::set<std::size_t>& DofMap::neighbours() const
 {
   return _neighbours;
+}
+//-----------------------------------------------------------------------------
+void DofMap::tabulate_entity_dofs(std::vector<std::size_t>& dofs,
+				  std::size_t dim, std::size_t local_entity) const
+{
+  dolfin_assert(_ufc_dofmap);
+  if (_ufc_dofmap->num_entity_dofs(dim)==0)
+    return ;
+  
+  dofs.resize(_ufc_dofmap->num_entity_dofs(dim));
+  _ufc_dofmap->tabulate_entity_dofs(&dofs[0], dim, local_entity);
 }
 //-----------------------------------------------------------------------------
 void DofMap::tabulate_facet_dofs(std::vector<std::size_t>& dofs,

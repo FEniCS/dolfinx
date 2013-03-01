@@ -41,7 +41,7 @@ namespace dolfin
 
   /// This class defines a common interface for matrices.
 
-  class GenericMatrix : public GenericTensor, public virtual GenericLinearOperator
+  class GenericMatrix : public GenericTensor, public GenericLinearOperator
   {
   public:
 

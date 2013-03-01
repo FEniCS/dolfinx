@@ -126,12 +126,13 @@ Parameters PETScPreconditioner::default_parameters()
 
   // ML package parameters
   Parameters p_ml("ml");
+  p_ml.add<std::size_t>("print_level", 0, 10);
+  p_ml.add<std::string>("cycle_type", boost::assign::list_of("v")("w"));
+  p_ml.add<std::size_t>("max_num_levels");
   p_ml.add<std::size_t>("max_coarse_size");
   p_ml.add<double>("aggregation_damping_factor");
   p_ml.add<double>("threshold");
-  p_ml.add<std::size_t>("max_num_levels");
-  p_ml.add<std::size_t>("print_level", 0, 10);
-  p_ml.add<std::string>("cycle_type", boost::assign::list_of("v")("w"));
+  p_ml.add<bool>("use_spectral_Anorm");
   p_ml.add<int>("energy_minimization", -1, 4);
   p_ml.add<double>("energy_minimization_threshold");
   p_ml.add<double>("auxiliary_threshold");
@@ -332,6 +333,16 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
       const double threshold = parameters("ml")["threshold"];
       PetscOptionsSetValue("-pc_ml_Threshold",
                             boost::lexical_cast<std::string>(threshold).c_str());
+    }
+
+    // Spectral norm
+    if (parameters("ml")["use_spectral_Anorm"].is_set())
+    {
+      const bool Anorm = parameters("ml")["use_spectral_Anorm"];
+      if (Anorm)
+        PetscOptionsSetValue("-pc_ml_SpectralNormScheme_Anorm", "1");
+      else
+        PetscOptionsSetValue("-pc_ml_SpectralNormScheme_Anorm", "0");
     }
 
     // Energy minimization strategy
