@@ -93,15 +93,6 @@ namespace dolfin
     /// Return linear algebra backend factory
     virtual GenericLinearAlgebraFactory& factory() const = 0;
 
-    /// Assignment (must be overloaded by subclass)
-    virtual const GenericTensor& operator= (const GenericTensor& x)
-    {
-      dolfin_error("GenericTensor.h",
-                   "assign tensor",
-                   "Assignment operator not implemented by subclass");
-      return *this;
-    }
-
   };
 
 }

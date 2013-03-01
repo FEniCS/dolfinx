@@ -251,6 +251,17 @@ const std::set<std::size_t>& DofMap::neighbours() const
   return _neighbours;
 }
 //-----------------------------------------------------------------------------
+void DofMap::tabulate_entity_dofs(std::vector<std::size_t>& dofs,
+				  std::size_t dim, std::size_t local_entity) const
+{
+  dolfin_assert(_ufc_dofmap);
+  if (_ufc_dofmap->num_entity_dofs(dim)==0)
+    return ;
+  
+  dofs.resize(_ufc_dofmap->num_entity_dofs(dim));
+  _ufc_dofmap->tabulate_entity_dofs(&dofs[0], dim, local_entity);
+}
+//-----------------------------------------------------------------------------
 void DofMap::tabulate_facet_dofs(std::vector<std::size_t>& dofs,
                                  std::size_t local_facet) const
 {
