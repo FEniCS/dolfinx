@@ -151,9 +151,19 @@ if (DOLFIN_ENABLE_CODE_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
 endif()
 
-# Use -isystem incluse flag with Intel compiler
+# Settings for Intel compilers
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+  # Use -isystem incluse flag with Intel compiler
   set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
+
+  # Stop spurious warnings from older Intel compilers
+  if("${CMAKE_CXX_COMPILER_VERSION}" LESS "13")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd161,488,654,858,1125,1170")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -wd161,488,654,858,1125,1170")
+    set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -wd161,488,654,858,1125,1170")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -wd161,488,654,858,1125,1170")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -wd161,488,654,858,1125,1170")
+  endif()
 endif()
 
 # Set system include flags to get around CMake bug on OSX with gcc
