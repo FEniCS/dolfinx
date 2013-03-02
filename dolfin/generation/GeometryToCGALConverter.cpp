@@ -219,8 +219,8 @@ class Build_sphere : public CGAL::Modifier_base<csg::Exact_HalfedgeDS>
 
   void operator()( csg::Exact_HalfedgeDS& hds )
   {
-    const std::size_t num_slices = _sphere.slices;
-    const std::size_t num_sectors = _sphere.slices*2 + 1;
+    const std::size_t num_slices = _sphere._slices;
+    const std::size_t num_sectors = _sphere._slices*2 + 1;
 
     const dolfin::Point top = _sphere.c + Point(_sphere.r, 0, 0);
     const dolfin::Point bottom = _sphere.c - Point(_sphere.r, 0, 0);
@@ -334,14 +334,14 @@ class Build_box : public CGAL::Modifier_base<csg::Exact_HalfedgeDS>
     const double x2 = std::min(_box->_x2, _box->_y2);
     const double y2 = std::max(_box->_x2, _box->_y2);
 
-    add_vertex(builder, csg::Exact_Point_3( y0,  x1,  x2));
-    add_vertex(builder, csg::Exact_Point_3( x0,  x1,  y2));
-    add_vertex(builder, csg::Exact_Point_3( x0,  x1,  x2));
-    add_vertex(builder, csg::Exact_Point_3( x0,  y1,  x2));
-    add_vertex(builder, csg::Exact_Point_3( y0,  x1,  y2));
-    add_vertex(builder, csg::Exact_Point_3( x0,  y1,  y2));
-    add_vertex(builder, csg::Exact_Point_3( y0,  y1,  x2));
-    add_vertex(builder, csg::Exact_Point_3( y0,  y1,  y2));
+    add_vertex(builder, csg::Exact_Point_3(y0, x1, x2));
+    add_vertex(builder, csg::Exact_Point_3(x0, x1, y2));
+    add_vertex(builder, csg::Exact_Point_3(x0, x1, x2));
+    add_vertex(builder, csg::Exact_Point_3(x0, y1, x2));
+    add_vertex(builder, csg::Exact_Point_3(y0, x1, y2));
+    add_vertex(builder, csg::Exact_Point_3(x0, y1, y2));
+    add_vertex(builder, csg::Exact_Point_3(y0, y1, x2));
+    add_vertex(builder, csg::Exact_Point_3(y0, y1, y2));
 
     {
       std::vector<int> f;
@@ -455,10 +455,10 @@ static void make_box(const Box* b, csg::Exact_Polyhedron_3& P)
 //-----------------------------------------------------------------------------
 static void make_tetrahedron(const Tetrahedron* b, csg::Exact_Polyhedron_3& P)
 {
-  P.make_tetrahedron(csg::Exact_Point_3(b->x0.x(), b->x0.y(), b->x0.z()),
-                     csg::Exact_Point_3(b->x1.x(), b->x1.y(), b->x1.z()),
-                     csg::Exact_Point_3(b->x2.x(), b->x2.y(), b->x2.z()),
-                     csg::Exact_Point_3(b->x3.x(), b->x3.y(), b->x3.z()));
+  P.make_tetrahedron(csg::Exact_Point_3(b->_x0.x(), b->_x0.y(), b->_x0.z()),
+                     csg::Exact_Point_3(b->_x1.x(), b->_x1.y(), b->_x1.z()),
+                     csg::Exact_Point_3(b->_x2.x(), b->_x2.y(), b->_x2.z()),
+                     csg::Exact_Point_3(b->_x3.x(), b->_x3.y(), b->_x3.z()));
 }
 //-----------------------------------------------------------------------------
 // Return some vector orthogonal to a
@@ -479,14 +479,14 @@ class Build_cone : public CGAL::Modifier_base<csg::Exact_HalfedgeDS>
 
   void operator()(csg::Exact_HalfedgeDS& hds)
   {
-    const dolfin::Point axis = (_cone->top - _cone->bottom)/(_cone->top - _cone->bottom).norm();
+    const dolfin::Point axis = (_cone->_top - _cone->_bottom)/(_cone->_top - _cone->_bottom).norm();
     dolfin::Point initial = generate_orthogonal(axis);
 
     CGAL::Polyhedron_incremental_builder_3<csg::Exact_HalfedgeDS> builder(hds, true);
 
-    const int num_sides = _cone->slices;
-    const bool top_degenerate = near(_cone->top_radius, 0.0);
-    const bool bottom_degenerate = near(_cone->bottom_radius, 0.0);
+    const int num_sides = _cone->_slices;
+    const bool top_degenerate = near(_cone->_top_radius, 0.0);
+    const bool bottom_degenerate = near(_cone->_bottom_radius, 0.0);
 
     const int num_vertices = (top_degenerate || bottom_degenerate) ? num_sides+2 : num_sides*2+2;
 
@@ -499,23 +499,23 @@ class Build_cone : public CGAL::Modifier_base<csg::Exact_HalfedgeDS>
       const Point rotated = initial.rotate(axis, theta);
       if (!bottom_degenerate)
       {
-        const Point p = _cone->bottom + rotated*_cone->bottom_radius;
+        const Point p = _cone->_bottom + rotated*_cone->_bottom_radius;
         const csg::Exact_Point_3 p_(p.x(), p.y(), p.z());
         add_vertex(builder, p_);
       }
       if (!top_degenerate)
       {
-        const Point p = _cone->top + rotated*_cone->top_radius;
+        const Point p = _cone->_top + rotated*_cone->_top_radius;
         const csg::Exact_Point_3 p_(p.x(), p.y(), p.z());
         add_vertex(builder, p_);
       }
     }
 
     // The top and bottom vertices
-    add_vertex(builder, csg::Exact_Point_3(_cone->bottom.x(), _cone->bottom.y(),
-                                           _cone->bottom.z()));
-    add_vertex(builder, csg::Exact_Point_3(_cone->top.x(), _cone->top.y(),
-                                           _cone->top.z()));
+    add_vertex(builder, csg::Exact_Point_3(_cone->_bottom.x(), _cone->_bottom.y(),
+                                           _cone->_bottom.z()));
+    add_vertex(builder, csg::Exact_Point_3(_cone->_top.x(), _cone->_top.y(),
+                                           _cone->_top.z()));
 
     // bottom vertex has index num_vertices-2, top vertex has index num_vertices-1
 
@@ -526,17 +526,17 @@ class Build_cone : public CGAL::Modifier_base<csg::Exact_HalfedgeDS>
       if (top_degenerate)
       {
         std::vector<int> f;
-        f.push_back((i+1)%num_sides);
+        f.push_back((i + 1)%num_sides);
         f.push_back(i);
-        f.push_back(num_vertices-1);
+        f.push_back(num_vertices - 1);
         add_facet(builder, f);
       }
       else if (bottom_degenerate)
       {
         std::vector<int> f;
         f.push_back( (i) );
-        f.push_back( (i+1) % num_sides);
-        f.push_back(num_vertices-1);
+        f.push_back( (i + 1) % num_sides);
+        f.push_back(num_vertices - 1);
         add_facet(builder, f);
       }
       else
@@ -547,7 +547,7 @@ class Build_cone : public CGAL::Modifier_base<csg::Exact_HalfedgeDS>
         // First triangle
         std::vector<int> f;
         f.push_back(vertex_offset);
-        f.push_back(vertex_offset+1);
+        f.push_back(vertex_offset + 1);
         f.push_back((vertex_offset + 2) % (num_sides*2));
         add_facet(builder, f);
 
@@ -555,7 +555,7 @@ class Build_cone : public CGAL::Modifier_base<csg::Exact_HalfedgeDS>
         std::vector<int> g;
         g.push_back((vertex_offset + 3) % (num_sides*2));
         g.push_back((vertex_offset + 2) % (num_sides*2));
-        g.push_back(vertex_offset+1);
+        g.push_back(vertex_offset + 1);
         add_facet(builder, g);
       }
     }
@@ -622,7 +622,8 @@ static void make_cone(const Cone* c, csg::Exact_Polyhedron_3& P)
 //-----------------------------------------------------------------------------
 static void make_surface3D(const Surface3D* s, csg::Exact_Polyhedron_3& P)
 {
-  PolyhedronUtils::readSurfaceFile(s->filename, P);
+  dolfin_assert(s);
+  PolyhedronUtils::readSurfaceFile(s->_filename, P);
 
   // if (P.is_valid())
   //   dolfin_error("GeometryToCGALConverter.cpp",
@@ -644,89 +645,89 @@ static void make_surface3D(const Surface3D* s, csg::Exact_Polyhedron_3& P)
 //-----------------------------------------------------------------------------
 static boost::shared_ptr<csg::Nef_polyhedron_3> convertSubTree(const CSGGeometry *geometry)
 {
-  switch (geometry->getType()) {
+  switch (geometry->getType())
+  {
+    case CSGGeometry::Union :
+    {
+      const CSGUnion* u = dynamic_cast<const CSGUnion*>(geometry);
+      dolfin_assert(u);
+      boost::shared_ptr<csg::Nef_polyhedron_3> g0 = convertSubTree(u->_g0.get());
+      boost::shared_ptr<csg::Nef_polyhedron_3> g1 = convertSubTree(u->_g1.get());
+      (*g0) += (*g1);
+      return g0;
 
-  case CSGGeometry::Union :
-  {
-    const CSGUnion* u = dynamic_cast<const CSGUnion*>(geometry);
-    dolfin_assert(u);
-    boost::shared_ptr<csg::Nef_polyhedron_3> g0 = convertSubTree(u->_g0.get());
-    boost::shared_ptr<csg::Nef_polyhedron_3> g1 = convertSubTree(u->_g1.get());
-    (*g0) += (*g1);
-    return g0;
+      break;
+    }
+    case CSGGeometry::Intersection :
+    {
+      const CSGIntersection* u = dynamic_cast<const CSGIntersection*>(geometry);
+      dolfin_assert(u);
+      boost::shared_ptr<csg::Nef_polyhedron_3> g0 = convertSubTree(u->_g0.get());
+      boost::shared_ptr<csg::Nef_polyhedron_3> g1 = convertSubTree(u->_g1.get());
+      (*g0) *= (*g1);
+      return g0;
+      break;
+    }
+    case CSGGeometry::Difference :
+    {
+      const CSGDifference* u = dynamic_cast<const CSGDifference*>(geometry);
+      dolfin_assert(u);
+      boost::shared_ptr<csg::Nef_polyhedron_3> g0 = convertSubTree(u->_g0.get());
+      boost::shared_ptr<csg::Nef_polyhedron_3> g1 = convertSubTree(u->_g1.get());
+      (*g0) -= (*g1);
+      return g0;
+      break;
+    }
+    case CSGGeometry::Cone :
+    {
+      const Cone* c = dynamic_cast<const Cone*>(geometry);
+      dolfin_assert(c);
+      csg::Exact_Polyhedron_3 P;
+      make_cone(c, P);
+      return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
+      break;
+    }
+    case CSGGeometry::Sphere :
+    {
+      const Sphere* s = dynamic_cast<const Sphere*>(geometry);
+      dolfin_assert(s);
+      csg::Exact_Polyhedron_3 P;
+      make_sphere(s, P);
+      return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
+      break;
+    }
+    case CSGGeometry::Box :
+    {
+      const Box* b = dynamic_cast<const Box*>(geometry);
+      dolfin_assert(b);
+      csg::Exact_Polyhedron_3 P;
+      make_box(b, P);
+      return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
+      break;
+    }
 
-    break;
-  }
-  case CSGGeometry::Intersection :
-  {
-    const CSGIntersection* u = dynamic_cast<const CSGIntersection*>(geometry);
-    dolfin_assert(u);
-    boost::shared_ptr<csg::Nef_polyhedron_3> g0 = convertSubTree(u->_g0.get());
-    boost::shared_ptr<csg::Nef_polyhedron_3> g1 = convertSubTree(u->_g1.get());
-    (*g0) *= (*g1);
-    return g0;
-    break;
-  }
-  case CSGGeometry::Difference :
-  {
-    const CSGDifference* u = dynamic_cast<const CSGDifference*>(geometry);
-    dolfin_assert(u);
-    boost::shared_ptr<csg::Nef_polyhedron_3> g0 = convertSubTree(u->_g0.get());
-    boost::shared_ptr<csg::Nef_polyhedron_3> g1 = convertSubTree(u->_g1.get());
-    (*g0) -= (*g1);
-    return g0;
-    break;
-  }
-  case CSGGeometry::Cone :
-  {
-    const Cone* c = dynamic_cast<const Cone*>(geometry);
-    dolfin_assert(c);
-    csg::Exact_Polyhedron_3 P;
-    make_cone(c, P);
-    return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
-    break;
-  }
-  case CSGGeometry::Sphere :
-  {
-    const Sphere* s = dynamic_cast<const Sphere*>(geometry);
-    dolfin_assert(s);
-    csg::Exact_Polyhedron_3 P;
-    make_sphere(s, P);
-    return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
-    break;
-  }
-  case CSGGeometry::Box :
-  {
-    const Box* b = dynamic_cast<const Box*>(geometry);
-    dolfin_assert(b);
-    csg::Exact_Polyhedron_3 P;
-    make_box(b, P);
-    return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
-    break;
-  }
-
-  case CSGGeometry::Tetrahedron :
-  {
-    const Tetrahedron* b = dynamic_cast<const Tetrahedron*>(geometry);
-    dolfin_assert(b);
-    csg::Exact_Polyhedron_3 P;
-    make_tetrahedron(b, P);
-    return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
-    break;
-  }
-  case CSGGeometry::Surface3D :
-  {
-    const Surface3D* b = dynamic_cast<const Surface3D*>(geometry);
-    dolfin_assert(b);
-    csg::Exact_Polyhedron_3 P;
-    make_surface3D(b, P);
-    return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
-    break;
-  }
-  default:
-    dolfin_error("GeometryToCGALConverter.cpp",
-		 "converting geometry to cgal polyhedron",
-		 "Unhandled primitive type");
+    case CSGGeometry::Tetrahedron :
+    {
+      const Tetrahedron* b = dynamic_cast<const Tetrahedron*>(geometry);
+      dolfin_assert(b);
+      csg::Exact_Polyhedron_3 P;
+      make_tetrahedron(b, P);
+      return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
+      break;
+    }
+    case CSGGeometry::Surface3D :
+    {
+      const Surface3D* b = dynamic_cast<const Surface3D*>(geometry);
+      dolfin_assert(b);
+      csg::Exact_Polyhedron_3 P;
+      make_surface3D(b, P);
+      return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3(P));
+      break;
+    }
+    default:
+      dolfin_error("GeometryToCGALConverter.cpp",
+		   "converting geometry to cgal polyhedron",
+		   "Unhandled primitive type");
   }
 
   // Make compiler happy.
@@ -807,13 +808,10 @@ void GeometryToCGALConverter::convert(const CSGGeometry& geometry, csg::Polyhedr
   }
   else
   {
-
     cout << "Convert to nef polyhedron" << endl;
     boost::shared_ptr<csg::Nef_polyhedron_3> cgal_geometry = convertSubTree(&geometry);
-
     dolfin_assert(cgal_geometry->is_valid());
     dolfin_assert(cgal_geometry->is_simple());
-
     cgal_geometry->convert_to_polyhedron(P);
   }
 
