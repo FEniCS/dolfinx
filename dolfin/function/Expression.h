@@ -57,7 +57,7 @@ namespace dolfin
     /// *Arguments*
     ///     dim (std::size_t)
     ///         Dimension of the vector-valued expression.
-    Expression(std::size_t dim);
+    explicit Expression(std::size_t dim);
 
     /// Create matrix-valued expression with given dimensions.
     ///
@@ -73,7 +73,7 @@ namespace dolfin
     /// *Arguments*
     ///     value_shape (std::vector<std::size_t>)
     ///         Shape of expression.
-    Expression(std::vector<std::size_t> value_shape);
+    explicit Expression(std::vector<std::size_t> value_shape);
 
     /// Copy constructor
     ///

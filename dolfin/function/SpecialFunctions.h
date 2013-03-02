@@ -40,7 +40,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    MeshCoordinates(const Mesh& mesh);
+    explicit MeshCoordinates(const Mesh& mesh);
 
     /// Evaluate function
     void eval(Array<double>& values,
@@ -60,7 +60,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    FacetArea(const Mesh& mesh);
+    explicit FacetArea(const Mesh& mesh);
 
     /// Evaluate function
     void eval(Array<double>& values,
