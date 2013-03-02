@@ -146,13 +146,9 @@ if (DOLFIN_ENABLE_CGAL AND CGAL_FOUND)
   # Add necessary CGAL flags (usually related to floating point)
   set(DOLFIN_CXX_FLAGS ${DOLFIN_CXX_FLAGS} ${CGAL_CXX_FLAGS_INIT})
 
-  # Add -frounding-math if we have a GNU compiler
+  # Add options that will allow valgrind to run
   if (CGAL_DISABLE_ROUNDING_MATH_CHECK)
     list(APPEND DOLFIN_CXX_DEFINITIONS "-DCGAL_DISABLE_ROUNDING_MATH_CHECK")
-  else()
-    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-      set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} -frounding-math")
-    endif()
   endif()
 
 endif()
