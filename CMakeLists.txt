@@ -156,8 +156,6 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
   # Use -isystem incluse flag with Intel compiler
   set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
 
-  set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -w3 -wd981,383,869,1418,111")
-
   # Stop spurious warnings from older Intel compilers
   if("${CMAKE_CXX_COMPILER_VERSION}" LESS "13")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd654,1125")
