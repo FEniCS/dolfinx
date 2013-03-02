@@ -44,6 +44,10 @@ namespace dolfin
 
   class VTKFile : public GenericFile
   {
+
+    using GenericFile::operator<<;
+    using GenericFile::operator>>;
+
   public:
 
     VTKFile(const std::string filename, std::string encoding);

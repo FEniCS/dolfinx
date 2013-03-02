@@ -47,6 +47,8 @@ endforeach()
 #       compiler flags, in which case the path should be appended to
 #       DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES
 
+set(DOLFIN_CXX_FLAGS "-w3 -wd981,383,869,1418,111")
+
 # libXml2
 list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${LIBXML2_INCLUDE_DIR})
 list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${LIBXML2_LIBRARIES})
@@ -144,7 +146,7 @@ if (DOLFIN_ENABLE_CGAL AND CGAL_FOUND)
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${CGAL_LIBRARIES})
 
   # Add necessary CGAL flags (usually related to floating point)
-  set(DOLFIN_CXX_FLAGS ${DOLFIN_CXX_FLAGS} ${CGAL_CXX_FLAGS_INIT})
+  set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${CGAL_CXX_FLAGS_INIT}")
 
   # Add options that will allow valgrind to run
   if (CGAL_DISABLE_ROUNDING_MATH_CHECK)

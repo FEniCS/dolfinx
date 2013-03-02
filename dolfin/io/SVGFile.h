@@ -31,6 +31,10 @@ namespace dolfin
 
   class SVGFile : public GenericFile
   {
+
+    using GenericFile::operator<<;
+    using GenericFile::operator>>;
+
   public:
 
     /// Constructor

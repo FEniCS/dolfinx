@@ -52,6 +52,11 @@ namespace dolfin
 
   class STLMatrix : public GenericMatrix
   {
+
+    using GenericMatrix::add;
+    using GenericMatrix::get;
+    using GenericMatrix::set;
+
   public:
 
     /// Create empty matrix

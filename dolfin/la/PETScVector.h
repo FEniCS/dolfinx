@@ -68,6 +68,13 @@ namespace dolfin
 
   class PETScVector : public GenericVector, public PETScObject
   {
+
+    using GenericVector::add;
+    using GenericVector::local_range;
+    using GenericVector::resize;
+    using GenericVector::set;
+    using GenericVector::size;
+
   public:
 
     /// Create empty vector

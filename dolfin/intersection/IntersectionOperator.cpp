@@ -189,7 +189,7 @@ IntersectionOperatorImplementation*
         default: dolfin_error("IntersectionOperator.cpp",
                             "create intersection operator",
                             "Cell type of mesh is not known. Allowed cell types are point, interval, triangle and tetrahedron");
-		 return 0;
+        return 0;
       }
     }
     else  // Default is SimpleCartesion
@@ -205,6 +205,7 @@ IntersectionOperatorImplementation*
           dolfin_error("IntersectionOperator.cpp",
                        "create intersection operator",
                        "Cell type of mesh is not known. Allowed cell types are point, interval, triangle and tetrahedron");
+          return 0;
         }
       }
     }
