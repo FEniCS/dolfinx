@@ -40,7 +40,7 @@ typedef std::map<std::string, boost::shared_ptr<std::vector<std::size_t> > >
 ::const_iterator a_const_iterator;
 
 //-----------------------------------------------------------------------------
-MeshData::MeshData(Mesh& mesh) : mesh(mesh)
+MeshData::MeshData(Mesh& mesh) : _mesh(mesh)
 {
   // Add list of deprecated names
   _deprecated_names.push_back("boundary_facet_cells");
@@ -103,7 +103,7 @@ boost::shared_ptr<MeshFunction<std::size_t> >
   check_deprecated(name);
 
   // Create new data
-  boost::shared_ptr<MeshFunction<std::size_t> > f(new MeshFunction<std::size_t>(mesh));
+  boost::shared_ptr<MeshFunction<std::size_t> > f(new MeshFunction<std::size_t>(_mesh));
   dolfin_assert(f);
 
   // Add to map

@@ -61,15 +61,15 @@ std::size_t VTKPlottableGenericFunction::value_rank() const
   return _function->value_rank();
 }
 //----------------------------------------------------------------------------
-void VTKPlottableGenericFunction::init_pipeline(const Parameters &parameters)
+void VTKPlottableGenericFunction::init_pipeline(const Parameters& p)
 {
   _warpscalar = vtkSmartPointer<vtkWarpScalar>::New();
   _warpvector = vtkSmartPointer<vtkWarpVector>::New();
   _glyphs = vtkSmartPointer<vtkGlyph3D>::New();
 
-  VTKPlottableMesh::init_pipeline(parameters);
+  VTKPlottableMesh::init_pipeline(p);
 
-  _mode = (std::string)parameters["mode"];
+  _mode = (std::string)p["mode"];
 
   switch (_function->value_rank())
   {
@@ -188,7 +188,8 @@ bool VTKPlottableGenericFunction::is_compatible(const Variable &var) const
   return VTKPlottableMesh::is_compatible(*mesh);
 }
 //----------------------------------------------------------------------------
-void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int frame_counter)
+void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var,
+                                         const Parameters& p, int frame_counter)
 {
   boost::shared_ptr<const Mesh> mesh = VTKPlottableMesh::mesh();
   if (var)
@@ -209,7 +210,7 @@ void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var, 
   }
 
   // Update the mesh
-  VTKPlottableMesh::update(mesh, parameters, frame_counter);
+  VTKPlottableMesh::update(mesh, p, frame_counter);
 
   // Update the values on the mesh
   const Function *func = dynamic_cast<const Function *>(_function.get());
@@ -223,19 +224,19 @@ void VTKPlottableGenericFunction::update(boost::shared_ptr<const Variable> var, 
     insert_filter(NULL); // expel the warpscalar filter
     std::vector<double> cell_values;
     func->vector()->get_local(cell_values);
-    setCellValues(cell_values.size(), &cell_values[0], parameters);
+    setCellValues(cell_values.size(), &cell_values[0], p);
   }
   else
   {
     std::vector<double> vertex_values;
     _function->compute_vertex_values(vertex_values, *mesh);
-    setPointValues(vertex_values.size(), &vertex_values[0], parameters);
+    setPointValues(vertex_values.size(), &vertex_values[0], p);
   }
 }
 //----------------------------------------------------------------------------
-void VTKPlottableGenericFunction::rescale(double range[2], const Parameters &parameters)
+void VTKPlottableGenericFunction::rescale(double range[2], const Parameters& p)
 {
-  const double scale = parameters["scale"];
+  const double scale = p["scale"];
 
   const double* bounds = grid()->GetBounds();
   const double length[3] = {bounds[1]-bounds[0], bounds[3]-bounds[2], bounds[5]-bounds[4]};

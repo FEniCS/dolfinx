@@ -37,10 +37,10 @@ std::size_t PETScBaseMatrix::size(std::size_t dim) const
                  "Illegal axis (%d), must be 0 or 1", dim);
   }
 
-  if (A)
+  if (_A)
   {
     PetscInt m(0), n(0);
-    MatGetSize(*A, &m, &n);
+    MatGetSize(*_A, &m, &n);
     if (dim == 0)
       return m;
     else
@@ -60,10 +60,10 @@ std::pair<std::size_t, std::size_t> PETScBaseMatrix::local_range(std::size_t dim
                  "Only local row range is available for PETSc matrices");
   }
 
-  if (A)
+  if (_A)
   {
     PetscInt m(0), n(0);
-    MatGetOwnershipRange(*A, &m, &n);
+    MatGetOwnershipRange(*_A, &m, &n);
     return std::make_pair(m, n);
   }
   else
@@ -72,7 +72,7 @@ std::pair<std::size_t, std::size_t> PETScBaseMatrix::local_range(std::size_t dim
 //-----------------------------------------------------------------------------
 void PETScBaseMatrix::resize(GenericVector& z, std::size_t dim) const
 {
-  dolfin_assert(A);
+  dolfin_assert(_A);
 
   // Downcast vector
   PETScVector& _z = as_type<PETScVector>(z);
@@ -83,9 +83,9 @@ void PETScBaseMatrix::resize(GenericVector& z, std::size_t dim) const
   // Create new PETSc vector
   boost::shared_ptr<Vec> x(new Vec(0), PETScVectorDeleter());
   if (dim == 0)
-    MatGetVecs(*A, PETSC_NULL, x.get());
+    MatGetVecs(*_A, PETSC_NULL, x.get());
   else if (dim == 1)
-    MatGetVecs(*A, x.get(), PETSC_NULL);
+    MatGetVecs(*_A, x.get(), PETSC_NULL);
   else
   {
     dolfin_error("PETScBaseMatrix.cpp",
@@ -94,7 +94,7 @@ void PETScBaseMatrix::resize(GenericVector& z, std::size_t dim) const
   }
 
   // Associate new PETSc vector with _z
-  _z.x = x;
+  _z._x = x;
 }
 //-----------------------------------------------------------------------------
 

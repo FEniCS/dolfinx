@@ -44,7 +44,7 @@ namespace dolfin
   public:
 
     // Constructor
-    CellDomainAssigner(Form& form) : form(form) {}
+    CellDomainAssigner(Form& form) : _form(form) {}
 
     // Assign reference
     const CellDomainAssigner& operator= (const MeshFunction<std::size_t>& domains);
@@ -55,7 +55,7 @@ namespace dolfin
   private:
 
     // The form
-    Form& form;
+    Form& _form;
 
   };
 
@@ -65,7 +65,7 @@ namespace dolfin
   public:
 
     // Constructor
-    ExteriorFacetDomainAssigner(Form& form) : form(form) {}
+    ExteriorFacetDomainAssigner(Form& form) : _form(form) {}
 
     // Assign reference
     const ExteriorFacetDomainAssigner& operator= (const MeshFunction<std::size_t>& domains);
@@ -76,7 +76,7 @@ namespace dolfin
   private:
 
     // The form
-    Form& form;
+    Form& _form;
 
   };
 
@@ -86,7 +86,7 @@ namespace dolfin
   public:
 
     // Constructor
-    InteriorFacetDomainAssigner(Form& form) : form(form) {}
+    InteriorFacetDomainAssigner(Form& form) : _form(form) {}
 
     // Assign reference
     const InteriorFacetDomainAssigner& operator= (const MeshFunction<std::size_t>& domains);
@@ -97,7 +97,7 @@ namespace dolfin
   private:
 
     // The form
-    Form& form;
+    Form& _form;
 
   };
 

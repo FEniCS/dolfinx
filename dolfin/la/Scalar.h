@@ -44,7 +44,7 @@ namespace dolfin
   public:
 
     /// Create zero scalar
-    Scalar() : GenericTensor(), value(0.0) {}
+    Scalar() : GenericTensor(), _value(0.0) {}
 
     /// Destructor
     virtual ~Scalar() {}
@@ -53,11 +53,11 @@ namespace dolfin
 
     /// Resize tensor to given dimensions
     virtual void resize(std::size_t rank, const std::size_t* dims)
-    { dolfin_assert(rank == 0); value = 0.0; }
+    { dolfin_assert(rank == 0); _value = 0.0; }
 
     /// Initialize zero tensor using sparsity pattern
     void init(const TensorLayout& tensor_layout)
-    { value = 0.0; }
+    { _value = 0.0; }
 
     /// Return tensor rank (number of dimensions)
     std::size_t rank() const
@@ -83,46 +83,46 @@ namespace dolfin
 
     /// Get block of values
     void get(double* block, const dolfin::la_index* num_rows, const dolfin::la_index * const * rows) const
-    { block[0] = value; }
+    { block[0] = _value; }
 
     /// Set block of values
     void set(const double* block, const dolfin::la_index* num_rows, const dolfin::la_index * const * rows)
-    { value = block[0]; }
+    { _value = block[0]; }
 
     /// Add block of values
     void add(const double* block, const dolfin::la_index* num_rows, const dolfin::la_index * const * rows)
     {
       dolfin_assert(block);
-      value += block[0];
+      _value += block[0];
     }
 
     /// Add block of values
     void add(const double* block, const std::vector<const std::vector<dolfin::la_index>* >& rows)
     {
       dolfin_assert(block);
-      value += block[0];
+      _value += block[0];
     }
 
     /// Add block of values
     void add(const double* block, const std::vector<std::vector<dolfin::la_index> >& rows)
     {
       dolfin_assert(block);
-      value += block[0];
+      _value += block[0];
     }
 
     /// Set all entries to zero and keep any sparse structure
     void zero()
-    { value = 0.0; }
+    { _value = 0.0; }
 
     /// Finalize assembly of tensor
     void apply(std::string mode)
-    { value = MPI::sum(value); }
+    { _value = MPI::sum(_value); }
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const
     {
       std::stringstream s;
-      s << "<Scalar value " << value << ">";
+      s << "<Scalar value " << _value << ">";
       return s.str();
     }
 
@@ -132,17 +132,17 @@ namespace dolfin
     virtual boost::shared_ptr<Scalar> copy() const
     {
       boost::shared_ptr<Scalar> s(new Scalar);
-      s->value = value;
+      s->_value = _value;
       return s;
     }
 
     /// Cast to double
     operator double() const
-    { return value; }
+    { return _value; }
 
     /// Assignment from double
     const Scalar& operator= (double value)
-    { this->value = value; return *this; }
+    { _value = value; return *this; }
 
     //--- Special functions
 
@@ -156,12 +156,12 @@ namespace dolfin
 
     /// Get value
     double getval() const
-    { return value; }
+    { return _value; }
 
   private:
 
     // Value of scalar
-    double value;
+    double _value;
 
   };
 

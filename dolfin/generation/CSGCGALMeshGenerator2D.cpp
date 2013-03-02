@@ -91,12 +91,12 @@ protected:
   int status;
 
 public:
-  Enriched_face_base_2(): Fb(), status(-1) {};
+  Enriched_face_base_2(): Fb(), status(-1) {}
 
   Enriched_face_base_2(Vertex_handle v0,
                        Vertex_handle v1,
                        Vertex_handle v2)
-    : Fb(v0,v1,v2), status(-1) {};
+    : Fb(v0,v1,v2), status(-1) {}
 
   Enriched_face_base_2(Vertex_handle v0,
                        Vertex_handle v1,
@@ -104,23 +104,28 @@ public:
                        Face_handle n0,
                        Face_handle n1,
                        Face_handle n2)
-    : Fb(v0,v1,v2,n0,n1,n2), status(-1) {};
+    : Fb(v0,v1,v2,n0,n1,n2), status(-1) {}
 
   inline
-  bool is_in_domain() const { return (status%2 == 1); };
+  bool is_in_domain() const
+  { return (status%2 == 1); }
 
   inline
-  void set_in_domain(const bool b) { status = (b ? 1 : 0); };
+  void set_in_domain(const bool b)
+  { status = (b ? 1 : 0); }
 
   inline
-  void set_counter(int i) { status = i; };
+  void set_counter(int i)
+  { status = i; }
 
   inline
-  int counter() const { return status; };
+  int counter() const
+  { return status; }
 
   inline
-  int& counter() { return status; };
-}; // end class Enriched_face_base_2
+  int& counter()
+  { return status; }
+};
 
 typedef CGAL::Triangulation_vertex_base_2<Inexact_Kernel> Vb;
 typedef CGAL::Triangulation_vertex_base_with_info_2<std::size_t, Inexact_Kernel, Vb> Vbb;
@@ -142,7 +147,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 CSGCGALMeshGenerator2D::CSGCGALMeshGenerator2D(const CSGGeometry& geometry)
-  : geometry(geometry)
+  : _geometry(geometry)
 {
   parameters = default_parameters();
 }
@@ -330,22 +335,22 @@ void mark_domains(CDT& cdt)
 //-----------------------------------------------------------------------------
 void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
 {
-  Nef_polyhedron_2 cgal_geometry = convertSubTree(&geometry);
+  Nef_polyhedron_2 cgal_geometry = convertSubTree(&_geometry);
 
   // Create empty CGAL triangulation
   CDT cdt;
 
   // Explore the Nef polyhedron and insert constraints in the triangulation
   Explorer explorer = cgal_geometry.explorer();
-  Face_const_iterator fit = explorer.faces_begin();
-  for (; fit != explorer.faces_end(); fit++)
+  for (Face_const_iterator fit = explorer.faces_begin() ; fit != explorer.faces_end(); fit++)
   {
     // Skip face if it is not part of polygon
     if (!explorer.mark(fit))
       continue;
 
     Halfedge_around_face_const_circulator hafc = explorer.face_cycle(fit), done(hafc);
-    do {
+    do
+    {
       Vertex_handle va = cdt.insert(Point_2(to_double(hafc->vertex()->point().x()),
                                             to_double(hafc->vertex()->point().y())));
       Vertex_handle vb = cdt.insert(Point_2(to_double(hafc->next()->vertex()->point().x()),
@@ -357,15 +362,16 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
     Hole_const_iterator hit = explorer.holes_begin(fit);
     for (; hit != explorer.holes_end(fit); hit++)
     {
-      Halfedge_around_face_const_circulator hafc(hit), done(hit);
-      do {
-        Vertex_handle va = cdt.insert(Point_2(to_double(hafc->vertex()->point().x()),
-                                              to_double(hafc->vertex()->point().y())));
-        Vertex_handle vb = cdt.insert(Point_2(to_double(hafc->next()->vertex()->point().x()),
-                                              to_double(hafc->next()->vertex()->point().y())));
+      Halfedge_around_face_const_circulator hafc1(hit), done1(hit);
+      do
+      {
+        Vertex_handle va = cdt.insert(Point_2(to_double(hafc1->vertex()->point().x()),
+                                              to_double(hafc1->vertex()->point().y())));
+        Vertex_handle vb = cdt.insert(Point_2(to_double(hafc1->next()->vertex()->point().x()),
+                                              to_double(hafc1->next()->vertex()->point().y())));
         cdt.insert_constraint(va, vb);
-        hafc++;
-      } while (hafc != done);
+        hafc1++;
+      } while (hafc1 != done1);
     }
   }
 
@@ -478,18 +484,22 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
 namespace dolfin
 {
   CSGCGALMeshGenerator2D::CSGCGALMeshGenerator2D(const CSGGeometry& geometry)
-    :geometry(geometry)
   {
     dolfin_error("CSGCGALMeshGenerator2D.cpp",
-		 "Create mesh generator",
-		 "Dolfin must be compiled with CGAL to use this feature.");
+                 "Create mesh generator",
+                 "Dolfin must be compiled with CGAL to use this feature.");
   }
   //-----------------------------------------------------------------------------
-  CSGCGALMeshGenerator2D::~CSGCGALMeshGenerator2D(){}
+  CSGCGALMeshGenerator2D::~CSGCGALMeshGenerator2D()
+  {
+    // Do nothing
+  }
   //-----------------------------------------------------------------------------
-  void CSGCGALMeshGenerator2D::generate(Mesh& mesh) {}
+  void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
+  {
+    // Do nothing
+  }
 }
-
 
 #endif
 //-----------------------------------------------------------------------------

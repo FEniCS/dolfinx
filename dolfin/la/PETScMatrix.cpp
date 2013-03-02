@@ -90,13 +90,13 @@ PETScMatrix::~PETScMatrix()
 boost::shared_ptr<GenericMatrix> PETScMatrix::copy() const
 {
   boost::shared_ptr<GenericMatrix> B;
-  if (!A)
+  if (!_A)
     B.reset(new PETScMatrix());
   else
   {
     // Create copy of PETSc matrix
     boost::shared_ptr<Mat> _Acopy(new Mat, PETScMatrixDeleter());
-    MatDuplicate(*A, MAT_COPY_VALUES, _Acopy.get());
+    MatDuplicate(*_A, MAT_COPY_VALUES, _Acopy.get());
 
     // Create PETScMatrix
     B.reset(new PETScMatrix(_Acopy));
@@ -122,13 +122,13 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   const GenericSparsityPattern& sparsity_pattern = *tensor_layout.sparsity_pattern();
 
   // Create matrix (any old matrix is destroyed automatically)
-  if (A && !A.unique())
+  if (_A && !_A.unique())
   {
     dolfin_error("PETScMatrix.cpp",
                  "initialize PETSc matrix",
                  "More than one object points to the underlying PETSc object");
   }
-  A.reset(new Mat, PETScMatrixDeleter());
+  _A.reset(new Mat, PETScMatrixDeleter());
 
   // Initialize matrix
   if (row_range.first == 0 && row_range.second == M)
@@ -139,17 +139,17 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     sparsity_pattern.num_nonzeros_diagonal(num_nonzeros);
 
     // Create matrix
-    MatCreate(PETSC_COMM_SELF, A.get());
+    MatCreate(PETSC_COMM_SELF, _A.get());
 
     // Set size
-    MatSetSizes(*A, M, N, M, N);
+    MatSetSizes(*_A, M, N, M, N);
 
     // Set matrix type according to chosen architecture
     if (!_use_gpu)
-      MatSetType(*A, MATSEQAIJ);
+      MatSetType(*_A, MATSEQAIJ);
     #ifdef HAS_PETSC_CUSP
     else
-      MatSetType(*A, MATSEQAIJCUSP);
+      MatSetType(*_A, MATSEQAIJCUSP);
     #endif
 
     // FIXME: Change to MatSeqAIJSetPreallicationCSR for improved performance?
@@ -158,7 +158,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
 
     // Copy number of non-zeros to PetscInt type
     const std::vector<PetscInt> _num_nonzeros(num_nonzeros.begin(), num_nonzeros.end());
-    MatSeqAIJSetPreallocation(*A, 0, _num_nonzeros.data());
+    MatSeqAIJSetPreallocation(*_A, 0, _num_nonzeros.data());
 
     // Set column indices
     /*
@@ -173,7 +173,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
       //  cout << "  Col: " << _column_indices[i][j] << endl;
       column_indices.insert(column_indices.end(), _column_indices[i].begin(), _column_indices[i].end());
     }
-    MatSeqAIJSetColumnIndices(*A, &column_indices[0]);
+    MatSeqAIJSetColumnIndices(*_A, &column_indices[0]);
     */
   }
   else
@@ -197,32 +197,32 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     sparsity_pattern.num_nonzeros_off_diagonal(num_nonzeros_off_diagonal);
 
     // Create matrix
-    MatCreate(PETSC_COMM_WORLD, A.get());
+    MatCreate(PETSC_COMM_WORLD, _A.get());
 
     // Set size
-    MatSetSizes(*A, m, n, M, N);
+    MatSetSizes(*_A, m, n, M, N);
 
     // Set matrix type
-    MatSetType(*A, MATMPIAIJ);
+    MatSetType(*_A, MATMPIAIJ);
 
     // Allocate space (using data from sparsity pattern)
     const std::vector<PetscInt> _num_nonzeros_diagonal(num_nonzeros_diagonal.begin(),
                                                        num_nonzeros_diagonal.end());
     const std::vector<PetscInt> _num_nonzeros_off_diagonal(num_nonzeros_off_diagonal.begin(),
                                                            num_nonzeros_off_diagonal.end());
-    MatMPIAIJSetPreallocation(*A, 0, _num_nonzeros_diagonal.data(),
+    MatMPIAIJSetPreallocation(*_A, 0, _num_nonzeros_diagonal.data(),
                                   0, _num_nonzeros_off_diagonal.data());
   }
 
   // Set some options
 
   // Do not allow more entries than have been pre-allocated
-  MatSetOption(*A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
-  MatSetOption(*A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
-  MatSetFromOptions(*A);
+  MatSetOption(*_A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
+  MatSetOption(*_A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
+  MatSetFromOptions(*_A);
 
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
-  MatSetUp(*A.get());
+  MatSetUp(*_A.get());
   #endif
 }
 //-----------------------------------------------------------------------------
@@ -230,58 +230,58 @@ void PETScMatrix::get(double* block, std::size_t m, const dolfin::la_index* rows
                                      std::size_t n, const dolfin::la_index* cols) const
 {
   // Get matrix entries (must be on this process)
-  dolfin_assert(A);
-  MatGetValues(*A, m, rows, n, cols, block);
+  dolfin_assert(_A);
+  MatGetValues(*_A, m, rows, n, cols, block);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::set(const double* block, std::size_t m, const dolfin::la_index* rows,
                                            std::size_t n, const dolfin::la_index* cols)
 {
-  dolfin_assert(A);
-  MatSetValues(*A, m, rows, n, cols, block, INSERT_VALUES);
+  dolfin_assert(_A);
+  MatSetValues(*_A, m, rows, n, cols, block, INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::add(const double* block, std::size_t m, const dolfin::la_index* rows,
                                            std::size_t n, const dolfin::la_index* cols)
 {
-  dolfin_assert(A);
-  MatSetValues(*A, m, rows, n, cols, block, ADD_VALUES);
+  dolfin_assert(_A);
+  MatSetValues(*_A, m, rows, n, cols, block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::axpy(double a, const GenericMatrix& A,
                        bool same_nonzero_pattern)
 {
   const PETScMatrix* AA = &as_type<const PETScMatrix>(A);
-  dolfin_assert(this->A);
+  dolfin_assert(_A);
   dolfin_assert(AA->mat());
   if (same_nonzero_pattern)
-    MatAXPY(*(this->A), a, *AA->mat(), SAME_NONZERO_PATTERN);
+    MatAXPY(*_A, a, *AA->mat(), SAME_NONZERO_PATTERN);
   else
-    MatAXPY(*(this->A), a, *AA->mat(), DIFFERENT_NONZERO_PATTERN);
+    MatAXPY(*_A, a, *AA->mat(), DIFFERENT_NONZERO_PATTERN);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
                          std::vector<double>& values) const
 {
-  dolfin_assert(A);
+  dolfin_assert(_A);
 
   const PetscInt *cols = 0;
   const double *vals = 0;
   PetscInt ncols = 0;
-  MatGetRow(*A, row, &ncols, &cols, &vals);
+  MatGetRow(*_A, row, &ncols, &cols, &vals);
 
   // Assign values to std::vectors
   columns.assign(cols, cols + ncols);
   values.assign(vals, vals + ncols);
 
-  MatRestoreRow(*A, row, &ncols, &cols, &vals);
+  MatRestoreRow(*_A, row, &ncols, &cols, &vals);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::setrow(std::size_t row,
                          const std::vector<std::size_t>& columns,
                          const std::vector<double>& values)
 {
-  dolfin_assert(A);
+  dolfin_assert(_A);
 
   // Check size of arrays
   if (columns.size() != values.size())
@@ -304,30 +304,30 @@ void PETScMatrix::setrow(std::size_t row,
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero(std::size_t m, const dolfin::la_index* rows)
 {
-  dolfin_assert(A);
+  dolfin_assert(_A);
 
   IS is = 0;
   PetscScalar null = 0.0;
   const PetscInt _m = m;
   ISCreateGeneral(PETSC_COMM_SELF, _m, rows, PETSC_COPY_VALUES, &is);
-  MatZeroRowsIS(*A, is, null, NULL, NULL);
+  MatZeroRowsIS(*_A, is, null, NULL, NULL);
   ISDestroy(&is);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::ident(std::size_t m, const dolfin::la_index* rows)
 {
-  dolfin_assert(A);
+  dolfin_assert(_A);
 
   IS is = 0;
   PetscScalar one = 1.0;
   ISCreateGeneral(PETSC_COMM_SELF, m, rows, PETSC_COPY_VALUES, &is);
-  MatZeroRowsIS(*A, is, one, NULL, NULL);
+  MatZeroRowsIS(*_A, is, one, NULL, NULL);
   ISDestroy(&is);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
 {
-  dolfin_assert(A);
+  dolfin_assert(_A);
 
   const PETScVector& xx = as_type<const PETScVector>(x);
   PETScVector& yy = as_type<PETScVector>(y);
@@ -350,12 +350,12 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
                  "Vector for matrix-vector result has wrong size");
   }
 
-  MatMult(*A, *xx.vec(), *yy.vec());
+  MatMult(*_A, *xx.vec(), *yy.vec());
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
 {
-  dolfin_assert(A);
+  dolfin_assert(_A);
 
   const PETScVector& xx = as_type<const PETScVector>(x);
   PETScVector& yy = as_type<PETScVector>(y);
@@ -378,12 +378,12 @@ void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
                  "Vector for transpose matrix-vector result has wrong size");
   }
 
-  MatMultTranspose(*A, *xx.vec(), *yy.vec());
+  MatMultTranspose(*_A, *xx.vec(), *yy.vec());
 }
 //-----------------------------------------------------------------------------
 double PETScMatrix::norm(std::string norm_type) const
 {
-  dolfin_assert(A);
+  dolfin_assert(_A);
 
   // Check that norm is known
   if (norm_types.count(norm_type) == 0)
@@ -394,7 +394,7 @@ double PETScMatrix::norm(std::string norm_type) const
   }
 
   double value = 0.0;
-  MatNorm(*A, norm_types.find(norm_type)->second, &value);
+  MatNorm(*_A, norm_types.find(norm_type)->second, &value);
   return value;
 }
 //-----------------------------------------------------------------------------
@@ -402,21 +402,21 @@ void PETScMatrix::apply(std::string mode)
 {
   Timer("Apply (matrix)");
 
-  dolfin_assert(A);
+  dolfin_assert(_A);
   if (mode == "add")
   {
-    MatAssemblyBegin(*A, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(*A, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(*_A, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(*_A, MAT_FINAL_ASSEMBLY);
   }
   else if (mode == "insert")
   {
-    MatAssemblyBegin(*A, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(*A, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(*_A, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(*_A, MAT_FINAL_ASSEMBLY);
   }
   else if (mode == "flush")
   {
-    MatAssemblyBegin(*A, MAT_FLUSH_ASSEMBLY);
-    MatAssemblyEnd(*A, MAT_FLUSH_ASSEMBLY);
+    MatAssemblyBegin(*_A, MAT_FLUSH_ASSEMBLY);
+    MatAssemblyEnd(*_A, MAT_FLUSH_ASSEMBLY);
   }
   else
   {
@@ -428,21 +428,21 @@ void PETScMatrix::apply(std::string mode)
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero()
 {
-  dolfin_assert(A);
-  MatZeroEntries(*A);
+  dolfin_assert(_A);
+  MatZeroEntries(*_A);
 }
 //-----------------------------------------------------------------------------
 const PETScMatrix& PETScMatrix::operator*= (double a)
 {
-  dolfin_assert(A);
-  MatScale(*A, a);
+  dolfin_assert(_A);
+  MatScale(*_A, a);
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScMatrix& PETScMatrix::operator/= (double a)
 {
-  dolfin_assert(A);
-  MatScale(*A, 1.0/a);
+  dolfin_assert(_A);
+  MatScale(*_A, 1.0/a);
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -455,19 +455,19 @@ const GenericMatrix& PETScMatrix::operator= (const GenericMatrix& A)
 const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
 {
   if (!A.mat())
-    this->A.reset();
+    _A.reset();
   else if (this != &A) // Check for self-assignment
   {
-    if (this->A && !this->A.unique())
+    if (_A && !_A.unique())
     {
       dolfin_error("PETScMatrix.cpp",
                    "assign to PETSc matrix",
                    "More than one object points to the underlying PETSc object");
     }
-    this->A.reset(new Mat, PETScMatrixDeleter());
+    _A.reset(new Mat, PETScMatrixDeleter());
 
     // Duplicate with the same pattern as A.A
-    MatDuplicate(*A.mat(), MAT_COPY_VALUES, this->A.get());
+    MatDuplicate(*A.mat(), MAT_COPY_VALUES, _A.get());
   }
   return *this;
 }
@@ -477,13 +477,13 @@ void PETScMatrix::binary_dump(std::string file_name) const
   PetscViewer view_out;
   PetscViewerBinaryOpen(PETSC_COMM_WORLD, file_name.c_str(),
                         FILE_MODE_WRITE, &view_out);
-  MatView(*(A.get()), view_out);
+  MatView(*(_A.get()), view_out);
   PetscViewerDestroy(&view_out);
 }
 //-----------------------------------------------------------------------------
 std::string PETScMatrix::str(bool verbose) const
 {
-  if (!A)
+  if (!_A)
     return "<Uninitialized PETScMatrix>";
 
   std::stringstream s;
@@ -493,11 +493,11 @@ std::string PETScMatrix::str(bool verbose) const
     warning("Verbose output for PETScMatrix not implemented, calling PETSc MatView directly.");
 
     // FIXME: Maybe this could be an option?
-    dolfin_assert(A);
+    dolfin_assert(_A);
     if (MPI::num_processes() > 1)
-      MatView(*A, PETSC_VIEWER_STDOUT_WORLD);
+      MatView(*_A, PETSC_VIEWER_STDOUT_WORLD);
     else
-      MatView(*A, PETSC_VIEWER_STDOUT_SELF);
+      MatView(*_A, PETSC_VIEWER_STDOUT_SELF);
   }
   else
     s << "<PETScMatrix of size " << size(0) << " x " << size(1) << ">";

@@ -89,7 +89,7 @@ namespace dolfin
 
 
     // Tensor layout
-    const TensorLayout& tensor_layout;
+    const TensorLayout& _tensor_layout;
 
   };
 

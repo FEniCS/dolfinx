@@ -70,7 +70,7 @@ namespace dolfin
   private:
 
     // The linear problem
-    boost::shared_ptr<LinearVariationalProblem> problem;
+    boost::shared_ptr<LinearVariationalProblem> _problem;
 
   };
 

@@ -217,7 +217,7 @@ namespace dolfin
   private:
 
     // Epetra_FEVector pointer
-    boost::shared_ptr<Epetra_FEVector> x;
+    boost::shared_ptr<Epetra_FEVector> _x;
 
     // Epetra_FEVector pointer
     boost::shared_ptr<Epetra_Vector> x_ghost;
@@ -229,7 +229,7 @@ namespace dolfin
     boost::unordered_map<std::size_t, double> off_process_set_values;
 
     // Local/global vector
-    const std::string type;
+    const std::string _type;
 
   };
 

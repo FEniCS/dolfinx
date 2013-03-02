@@ -263,11 +263,11 @@ bool CellType::increasing(std::size_t n0, const unsigned int* v0,
   dolfin_assert(k == num_non_incident);
 
   // Compare lexicographic ordering of w0 and w1
-  for (std::size_t k = 0; k < num_non_incident; k++)
+  for (std::size_t i = 0; i < num_non_incident; i++)
   {
-    if (local_to_global_vertex_indices[w0[k]] < local_to_global_vertex_indices[w1[k]])
+    if (local_to_global_vertex_indices[w0[i]] < local_to_global_vertex_indices[w1[i]])
       return true;
-    else if (local_to_global_vertex_indices[w0[k]] > local_to_global_vertex_indices[w1[k]])
+    else if (local_to_global_vertex_indices[w0[i]] > local_to_global_vertex_indices[w1[i]])
       return false;
   }
 
@@ -281,7 +281,7 @@ std::size_t CellType::orientation(const Cell& cell, const Point& up) const
 }
 //-----------------------------------------------------------------------------
 double CellType::inradius(const Cell& cell) const
-{ 
+{
   // Check cell type
   if (_cell_type != interval &&
       _cell_type != triangle &&

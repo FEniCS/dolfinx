@@ -57,7 +57,7 @@ namespace dolfin
     ///         x2-coordinate of center.
     ///     r (double)
     ///         radius.
-    Sphere(Point c, double r, std::size_t slices=16);
+    Sphere(Point center, double radius, std::size_t slices=16);
 
     /// Informal string representation
     std::string str(bool verbose) const;
@@ -67,7 +67,7 @@ namespace dolfin
 
     const Point c;
     const double r;
-    const std::size_t slices;
+    const std::size_t _slices;
 
   };
 
@@ -134,9 +134,9 @@ namespace dolfin
     Type getType() const
     { return CSGGeometry::Cone; }
 
-    const Point top, bottom;
-    const double top_radius, bottom_radius;
-    const std::size_t slices;
+    const Point _top, _bottom;
+    const double _top_radius, _bottom_radius;
+    const std::size_t _slices;
   };
 
   /// This class describes a 3D cylinder which can be used to build
@@ -186,7 +186,7 @@ namespace dolfin
     Type getType() const
     { return CSGGeometry::Tetrahedron; }
 
-    Point x0, x1, x2, x3;
+    Point _x0, _x1, _x2, _x3;
   };
 
   /// This class describes a 3D surface loaded from file.
@@ -202,7 +202,7 @@ namespace dolfin
     Type getType() const
     { return CSGGeometry::Surface3D; }
 
-    std::string filename;
+    std::string _filename;
   };
 }
 #endif

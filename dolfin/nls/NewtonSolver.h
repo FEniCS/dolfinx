@@ -128,16 +128,16 @@ namespace dolfin
     double _residual, residual0;
 
     /// Solver
-    boost::shared_ptr<GenericLinearSolver> solver;
+    boost::shared_ptr<GenericLinearSolver> _solver;
 
     /// Jacobian matrix
-    boost::shared_ptr<GenericMatrix> A;
+    boost::shared_ptr<GenericMatrix> _A;
 
     /// Solution vector
-    boost::shared_ptr<GenericVector> dx;
+    boost::shared_ptr<GenericVector> _dx;
 
     /// Resdiual vector
-    boost::shared_ptr<GenericVector> b;
+    boost::shared_ptr<GenericVector> _b;
 
   };
 

@@ -157,7 +157,6 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     num_local_entities = num_local_cells;
     num_total_entities = num_global_cells;
     dolfin_assert(u.function_space()->dofmap());
-    const GenericDofMap& dofmap = *u.function_space()->dofmap();
     dolfin_assert(u.vector());
 
     const std::size_t data_dim = u.value_size();
@@ -296,7 +295,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     else
     {
       // Subsequent timestep - read in existing XDMF file
-      pugi::xml_parse_result result = xml_doc.load_file(filename.c_str());
+      pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
       if (!result)
       {
         dolfin_error("XDMFFile.cpp",
@@ -365,7 +364,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     xdmf_data.append_child(pugi::node_pcdata).set_value(s.c_str());
 
     // Write XML file
-    xml_doc.save_file(filename.c_str(), "  ");
+    xml_doc.save_file(_filename.c_str(), "  ");
   }
 
   // Increment counter
@@ -425,7 +424,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
     xml_mesh_geometry(xdmf_geometry, num_total_vertices, gdim,
                       mesh_coords_name);
 
-    xml_doc.save_file(filename.c_str(), "  ");
+    xml_doc.save_file(_filename.c_str(), "  ");
   }
 }
 //----------------------------------------------------------------------------
@@ -543,7 +542,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
     else
     {
       // Subsequent timestep - read in existing XDMF file
-      pugi::xml_parse_result result = xml_doc.load_file(filename.c_str());
+      pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
       if (!result)
       {
         dolfin_error("XDMFFile.cpp",
@@ -596,7 +595,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
     xdmf_data.append_child(pugi::node_pcdata).set_value(mesh_function_dataset_name.c_str());
 
     // Output to storage
-    xml_doc.save_file(filename.c_str(), "  ");
+    xml_doc.save_file(_filename.c_str(), "  ");
   }
 
   counter++;
