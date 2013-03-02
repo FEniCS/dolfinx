@@ -55,10 +55,6 @@ namespace dolfin
 
   class XDMFFile : public GenericFile, public Variable
   {
-
-    using GenericFile::operator<<;
-    using GenericFile::operator>>;
-
   public:
 
     /// Constructor

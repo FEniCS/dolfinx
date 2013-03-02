@@ -47,9 +47,6 @@ namespace dolfin
 
   class CholmodCholeskySolver : public GenericLinearSolver
   {
-
-    using GenericLinearSolver::solve;
-
   public:
 
     /// Constructor

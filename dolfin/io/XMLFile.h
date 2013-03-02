@@ -51,10 +51,6 @@ namespace dolfin
 
   class XMLFile : public GenericFile
   {
-
-    using GenericFile::operator<<;
-    using GenericFile::operator>>;
-
   public:
 
     /// Constructor

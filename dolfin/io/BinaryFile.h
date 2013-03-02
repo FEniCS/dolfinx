@@ -39,10 +39,6 @@ namespace dolfin
 
   class BinaryFile : public GenericFile
   {
-
-    using GenericFile::operator<<;
-    using GenericFile::operator>>;
-
   public:
 
     /// Constructor

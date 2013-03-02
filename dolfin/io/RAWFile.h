@@ -31,10 +31,6 @@ namespace dolfin
 
   class RAWFile : public GenericFile
   {
-
-    using GenericFile::operator<<;
-    using GenericFile::operator>>;
-
   public:
 
     /// Write results in raw format

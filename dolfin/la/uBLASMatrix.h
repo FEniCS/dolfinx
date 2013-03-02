@@ -63,11 +63,6 @@ namespace dolfin
   template<typename Mat>
   class uBLASMatrix : public GenericMatrix
   {
-
-    using GenericMatrix::add;
-    using GenericMatrix::get;
-    using GenericMatrix::set;
-
   public:
 
     /// Create empty matrix

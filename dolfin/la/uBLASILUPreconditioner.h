@@ -38,9 +38,6 @@ namespace dolfin
 
   class uBLASILUPreconditioner : public uBLASPreconditioner
   {
-
-    using uBLASPreconditioner::init;
-
   public:
 
     /// Constructor
