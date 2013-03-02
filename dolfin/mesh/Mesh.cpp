@@ -26,7 +26,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-09
-// Last changed: 2013-02-20
+// Last changed: 2013-03-02
 
 #include <boost/serialization/map.hpp>
 #include <dolfin/common/Array.h>
@@ -343,9 +343,9 @@ void Mesh::rotate(double angle, std::size_t axis, const Point& p)
   MeshTransformation::rotate(*this, angle, axis, p);
 }
 //-----------------------------------------------------------------------------
-void Mesh::move(BoundaryMesh& boundary)
+void Mesh::move(BoundaryMesh& boundary, const std::string mode)
 {
-  ALE::move(*this, boundary);
+  ALE::move(*this, boundary, mode);
 }
 //-----------------------------------------------------------------------------
 void Mesh::move(Mesh& mesh)

@@ -18,7 +18,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2008-05-02
-// Last changed: 2013-01-25
+// Last changed: 2013-03-02
 
 #include <vector>
 #include <dolfin/function/GenericFunction.h>
@@ -30,15 +30,18 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void ALE::move(Mesh& mesh, const BoundaryMesh& new_boundary)
+void ALE::move(Mesh& mesh, const BoundaryMesh& new_boundary,
+               const std::string mode)
 {
-  not_working_in_parallel("ALE mesh smoothing");
-  HarmonicSmoothing::move(mesh, new_boundary);
+  HarmonicSmoothing::move(mesh, new_boundary, mode);
 }
 //-----------------------------------------------------------------------------
 void ALE::move(Mesh& mesh0, const Mesh& mesh1)
 {
-  not_working_in_parallel("ALE mesh smoothing");
+  // FIXME: Maybe this works in parallel but there is no obvious way to
+  //        test it as SubMesh::init does not work in parallel
+  not_working_in_parallel("Move coordinates of mesh0 according "
+                          "to mesh1 with common global vertices");
 
   // Extract boundary meshes
   BoundaryMesh boundary0(mesh0, "exterior");
