@@ -110,8 +110,7 @@ endif()
 # Add some strict compiler checks
 CHECK_CXX_COMPILER_FLAG("-Wall -Werror -pedantic" HAVE_PEDANTIC)
 if (HAVE_PEDANTIC)
-  #set(DOLFIN_CXX_DEVELOPER_FLAGS "-Weverything -Wall -Wno-weak-vtables -Wno-padded  -pedantic ${DOLFIN_CXX_DEVELOPER_FLAGS}")
-  set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wshadow -Wall -Werror -Wno-system-headers  -Wno-weak-vtables -Wno-padded  -pedantic ${DOLFIN_CXX_DEVELOPER_FLAGS}")
+  set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wall -Werror -pedantic ${DOLFIN_CXX_DEVELOPER_FLAGS}")
 endif()
 
 CHECK_CXX_COMPILER_FLAG(-std=c++98 HAVE_STD)
