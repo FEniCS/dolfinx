@@ -88,7 +88,7 @@ Parameters EpetraKrylovSolver::default_parameters()
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
                                        std::string preconditioner)
-  : method(method), preconditioner(new TrilinosPreconditioner(preconditioner)),
+  : _method(method), _preconditioner(new TrilinosPreconditioner(preconditioner)),
     solver(new AztecOO), relative_residual(0.0),
     absolute_residual(0.0)
 
@@ -110,7 +110,7 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
                                        TrilinosPreconditioner& preconditioner)
-  : method(method),  preconditioner(reference_to_no_delete_pointer(preconditioner)),
+  : _method(method),  _preconditioner(reference_to_no_delete_pointer(preconditioner)),
     solver(new AztecOO), relative_residual(0.0),
     absolute_residual(0.0)
 {
@@ -143,21 +143,21 @@ void EpetraKrylovSolver::set_operator(const boost::shared_ptr<const GenericLinea
 void EpetraKrylovSolver::set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
                                        const boost::shared_ptr<const GenericLinearOperator> P)
 {
-  this->A = as_type<const EpetraMatrix>(require_matrix(A));
-  this->P = as_type<const EpetraMatrix>(require_matrix(P));
-  dolfin_assert(this->A);
-  dolfin_assert(this->P);
+  _A = as_type<const EpetraMatrix>(require_matrix(A));
+  _P = as_type<const EpetraMatrix>(require_matrix(P));
+  dolfin_assert(_A);
+  dolfin_assert(_P);
 }
 //-----------------------------------------------------------------------------
 const GenericLinearOperator& EpetraKrylovSolver::get_operator() const
 {
-  if (!A)
+  if (!_A)
   {
     dolfin_error("EpetraKrylovSolver.cpp",
                  "access operator for Epetra Krylov solver",
                  "Operator has not been set");
   }
-  return *A;
+  return *_A;
 }
 //-----------------------------------------------------------------------------
 std::size_t EpetraKrylovSolver::solve(GenericVector& x,
@@ -169,12 +169,12 @@ std::size_t EpetraKrylovSolver::solve(GenericVector& x,
 std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
 {
   dolfin_assert(solver);
-  dolfin_assert(A);
-  dolfin_assert(P);
+  dolfin_assert(_A);
+  dolfin_assert(_P);
 
   // Check dimensions
-  const std::size_t M = A->size(0);
-  const std::size_t N = A->size(1);
+  const std::size_t M = _A->size(0);
+  const std::size_t N = _A->size(1);
   if (N != b.size())
   {
     dolfin_error("EpetraKrylovSolver.cpp",
@@ -190,14 +190,14 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   // Reinitialize solution vector if necessary
   if (x.size() != M)
   {
-    A->resize(x, 1);
+    _A->resize(x, 1);
     x.zero();
   }
   else if (!parameters["nonzero_initial_guess"])
     x.zero();
 
   // Create linear problem
-  Epetra_LinearProblem linear_problem(A->mat().get(), x.vec().get(),
+  Epetra_LinearProblem linear_problem(_A->mat().get(), x.vec().get(),
                                       b.vec().get());
   // Set-up linear solver
   solver->SetProblem(linear_problem);
@@ -211,8 +211,8 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   else
     solver->SetAztecOption(AZ_output, AZ_none);
 
-  dolfin_assert(P);
-  preconditioner->set(*this, *P);
+  dolfin_assert(_P);
+  _preconditioner->set(*this, *_P);
 
   // Set covergence check method
   solver->SetAztecOption(AZ_conv, AZ_rhs);
@@ -238,7 +238,7 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
       errorDescription = "unknown error";
 
     std::stringstream message;
-    message << "Epetra (AztecOO) Krylov solver (" << method << ", " << preconditioner->name() << ") "
+    message << "Epetra (AztecOO) Krylov solver (" << _method << ", " << _preconditioner->name() << ") "
             << "failed to converge after " << (int)status[AZ_its] << " iterations "
             << "(" << errorDescription << ", error code " << (int)status[AZ_why] << ")";
 
@@ -254,7 +254,7 @@ std::size_t EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
   else
   {
     info("Epetra (AztecOO) Krylov solver (%s, %s) converged in %d iterations.",
-          method.c_str(), preconditioner->name().c_str(), solver->NumIters());
+          _method.c_str(), _preconditioner->name().c_str(), solver->NumIters());
   }
 
   // Update residuals
@@ -277,8 +277,8 @@ std::size_t EpetraKrylovSolver::solve(const GenericLinearOperator& A,
 std::size_t EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
                                        const EpetraVector& b)
 {
-  boost::shared_ptr<const EpetraMatrix> _A(&A, NoDeleter());
-  set_operator(_A);
+  boost::shared_ptr<const EpetraMatrix> Atmp(&A, NoDeleter());
+  set_operator(Atmp);
   return solve(x, b);
 }
 //-----------------------------------------------------------------------------

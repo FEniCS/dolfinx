@@ -89,7 +89,7 @@ namespace dolfin
   private:
 
     /// Named preconditioner
-    std::string type;
+    std::string _type;
 
     // Available names preconditioners
     static const std::map<std::string, const PCType> _methods;

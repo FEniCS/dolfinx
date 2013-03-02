@@ -51,13 +51,13 @@ Parameters MUMPSLUSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 MUMPSLUSolver::MUMPSLUSolver(const CoordinateMatrix& A)
-  : A(reference_to_no_delete_pointer(A))
+  : _A(reference_to_no_delete_pointer(A))
 {
   // Set parameter values
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-MUMPSLUSolver::MUMPSLUSolver(boost::shared_ptr<const CoordinateMatrix> A) : A(A)
+MUMPSLUSolver::MUMPSLUSolver(boost::shared_ptr<const CoordinateMatrix> A) : _A(A)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -70,7 +70,7 @@ MUMPSLUSolver::~MUMPSLUSolver()
 //-----------------------------------------------------------------------------
 std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  assert(A);
+  assert(_A);
 
   DMUMPS_STRUC_C data;
 
@@ -128,16 +128,16 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
   data.ICNTL(29) = 0;
 
   // Global size
-  assert(A->size(0) == A->size(1));
-  data.n = A->size(0);
+  assert(_A->size(0) == _A->size(1));
+  data.n = _A->size(0);
 
-  if (!A->base_one())
+  if (!_A->base_one())
     error("MUMPS requires a CoordinateMatrix with Fortran-style base 1 indexing.");
 
   // Get matrix coordindate and value data
-  const std::vector<std::size_t>& rows = A->rows();
-  const std::vector<std::size_t>& cols = A->columns();
-  const std::vector<double>& vals = A->values();
+  const std::vector<std::size_t>& rows = _A->rows();
+  const std::vector<std::size_t>& cols = _A->columns();
+  const std::vector<double>& vals = _A->values();
 
   // Number of non-zero entries on this process
   data.nz_loc = rows.size();

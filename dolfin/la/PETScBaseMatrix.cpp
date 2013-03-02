@@ -94,7 +94,7 @@ void PETScBaseMatrix::resize(GenericVector& z, std::size_t dim) const
   }
 
   // Associate new PETSc vector with _z
-  _z.x = x;
+  _z._x = x;
 }
 //-----------------------------------------------------------------------------
 

@@ -59,7 +59,7 @@ Parameters uBLASKrylovSolver::default_parameters()
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(std::string method,
                                      std::string preconditioner)
-  : method(method), report(false)
+  : _method(method), report(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -69,7 +69,7 @@ uBLASKrylovSolver::uBLASKrylovSolver(std::string method,
 }
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(uBLASPreconditioner& pc)
-  : method("default"), pc(reference_to_no_delete_pointer(pc)), report(false)
+  : _method("default"), _pc(reference_to_no_delete_pointer(pc)), report(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -77,7 +77,7 @@ uBLASKrylovSolver::uBLASKrylovSolver(uBLASPreconditioner& pc)
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(std::string method,
                                      uBLASPreconditioner& pc)
-  : method(method), pc(reference_to_no_delete_pointer(pc)), report(false)
+  : _method(method), _pc(reference_to_no_delete_pointer(pc)), report(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -135,23 +135,23 @@ std::size_t uBLASKrylovSolver::solve(const GenericLinearOperator& A,
                                      const GenericVector& b)
 {
   // Set operator
-  boost::shared_ptr<const GenericLinearOperator> _A(&A, NoDeleter());
-  set_operator(_A);
+  boost::shared_ptr<const GenericLinearOperator> Atmp(&A, NoDeleter());
+  set_operator(Atmp);
   return solve(as_type<uBLASVector>(x), as_type<const uBLASVector>(b));
 }
 //-----------------------------------------------------------------------------
 void uBLASKrylovSolver::select_preconditioner(std::string preconditioner)
 {
   if (preconditioner == "none")
-    pc.reset(new uBLASDummyPreconditioner());
+    _pc.reset(new uBLASDummyPreconditioner());
   else if (preconditioner == "ilu")
-    pc.reset(new uBLASILUPreconditioner(parameters));
+    _pc.reset(new uBLASILUPreconditioner(parameters));
   else if (preconditioner == "default")
-    pc.reset(new uBLASILUPreconditioner(parameters));
+    _pc.reset(new uBLASILUPreconditioner(parameters));
   else
   {
     warning("Requested preconditioner is not available for uBLAS Krylov solver. Using ILU.");
-    pc.reset(new uBLASILUPreconditioner(parameters));
+    _pc.reset(new uBLASILUPreconditioner(parameters));
   }
 }
 //-----------------------------------------------------------------------------
