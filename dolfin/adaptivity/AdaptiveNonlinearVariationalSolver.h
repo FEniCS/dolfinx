@@ -101,7 +101,7 @@ namespace dolfin
 
 
     /// Destructor
-    ~AdaptiveNonlinearVariationalSolver() {/* Do nothing */};
+    ~AdaptiveNonlinearVariationalSolver() {}
 
     /// Solve the primal problem.
     ///

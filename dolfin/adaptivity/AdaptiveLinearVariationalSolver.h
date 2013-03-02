@@ -101,7 +101,7 @@ namespace dolfin
                                     boost::shared_ptr<ErrorControl> control);
 
     /// Destructor
-    ~AdaptiveLinearVariationalSolver() {/* Do nothing */};
+    ~AdaptiveLinearVariationalSolver() {}
 
     /// Solve the primal problem.
     ///

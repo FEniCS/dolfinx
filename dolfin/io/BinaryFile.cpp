@@ -222,16 +222,16 @@ void BinaryFile::operator<< (const Mesh& mesh)
 void BinaryFile::open_read()
 {
   // Get file path and extension
-  const boost::filesystem::path path(filename);
+  const boost::filesystem::path path(_filename);
   const std::string extension = boost::filesystem::extension(path);
 
   // FIXME: Check that file exists
-  if (!boost::filesystem::is_regular_file(filename))
+  if (!boost::filesystem::is_regular_file(_filename))
   {
     dolfin_error("BinaryFile.cpp",
                  "open binary file",
                  "File \"%s\" does not exist or is not a regular file",
-                 filename.c_str());
+                 _filename.c_str());
   }
 
   // Load xml file (unzip if necessary) into parser
@@ -239,12 +239,12 @@ void BinaryFile::open_read()
     // Decompress file
     ifilter.push(boost::iostreams::gzip_decompressor());
 
-  ifile.open(filename.c_str(), std::ios::in | std::ios::binary);
+  ifile.open(_filename.c_str(), std::ios::in | std::ios::binary);
   if (!ifile.is_open())
   {
     dolfin_error("BinaryFile.cpp",
                  "open binary file",
-                 "Cannot open file \"%s\" for reading", filename.c_str());
+                 "Cannot open file \"%s\" for reading", _filename.c_str());
   }
   ifilter.push(ifile);
 }
@@ -252,18 +252,18 @@ void BinaryFile::open_read()
 void BinaryFile::open_write()
 {
   // Compress if filename has extension '.gz'
-  const boost::filesystem::path path(filename);
+  const boost::filesystem::path path(_filename);
   const std::string extension = boost::filesystem::extension(path);
 
   if (extension == ".gz")
     ofilter.push(boost::iostreams::gzip_compressor());
 
-  ofile.open(filename.c_str(), std::ios::out | std::ios::binary);
+  ofile.open(_filename.c_str(), std::ios::out | std::ios::binary);
   if (!ofile.is_open())
   {
     dolfin_error("BinaryFile.cpp",
                  "open binary file",
-                 "Cannot open file \"%s\" for writing", filename.c_str());
+                 "Cannot open file \"%s\" for writing", _filename.c_str());
   }
   ofilter.push(ofile);
 }

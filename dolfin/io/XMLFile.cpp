@@ -87,7 +87,7 @@ void XMLFile::operator>> (Mesh& input_mesh)
     // Read local mesh data
     Timer t("XML: readSAX");
     LocalMeshData local_mesh_data;
-    XMLLocalMeshSAX xml_object(local_mesh_data, filename);
+    XMLLocalMeshSAX xml_object(local_mesh_data, _filename);
     xml_object.read();
     t.stop();
 
@@ -108,7 +108,7 @@ void XMLFile::operator<< (const Mesh& output_mesh)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (LocalMeshData& input_data)
 {
-  XMLLocalMeshSAX xml_object(input_data, filename);
+  XMLLocalMeshSAX xml_object(input_data, _filename);
   xml_object.read();
 }
 //-----------------------------------------------------------------------------
@@ -313,22 +313,22 @@ void XMLFile::load_xml_doc(pugi::xml_document& xml_doc) const
   pugi::xml_parse_result result;
 
   // Get file path and extension
-  const boost::filesystem::path path(filename);
+  const boost::filesystem::path path(_filename);
   const std::string extension = boost::filesystem::extension(path);
 
   // FIXME: Check that file exists
-  if (!boost::filesystem::is_regular_file(filename))
+  if (!boost::filesystem::is_regular_file(_filename))
   {
     dolfin_error("XMLFile.cpp",
                  "read data from XML file",
-                 "Unable to open file \"%s\"", filename.c_str());
+                 "Unable to open file \"%s\"", _filename.c_str());
   }
 
   // Load xml file (unzip if necessary) into parser
   if (extension == ".gz")
   {
     // Decompress file
-    std::ifstream file(filename.c_str(), std::ios_base::in|std::ios_base::binary);
+    std::ifstream file(_filename.c_str(), std::ios_base::in|std::ios_base::binary);
     boost::iostreams::filtering_streambuf<boost::iostreams::input> in;
     in.push(boost::iostreams::gzip_decompressor());
     in.push(file);
@@ -341,7 +341,7 @@ void XMLFile::load_xml_doc(pugi::xml_document& xml_doc) const
     result = xml_doc.load(dst);
   }
   else
-    result = xml_doc.load_file(filename.c_str());
+    result = xml_doc.load_file(_filename.c_str());
 
   // Check the XML file was opened successfully
   if (!result)
@@ -359,21 +359,21 @@ void XMLFile::save_xml_doc(const pugi::xml_document& xml_doc) const
   else
   {
     // Compress if filename has extension '.gz'
-    const boost::filesystem::path path(filename);
+    const boost::filesystem::path path(_filename);
     const std::string extension = boost::filesystem::extension(path);
     if (extension == ".gz")
     {
       std::stringstream xml_stream;
       xml_doc.save(xml_stream, "  ");
 
-      std::ofstream file(filename.c_str(), std::ios_base::out | std::ios_base::binary);
+      std::ofstream file(_filename.c_str(), std::ios_base::out | std::ios_base::binary);
       boost::iostreams::filtering_streambuf<boost::iostreams::output> out;
       out.push(boost::iostreams::gzip_compressor());
       out.push(file);
       boost::iostreams::copy(xml_stream, out);
     }
     else
-      xml_doc.save_file(filename.c_str(), "  ");
+      xml_doc.save_file(_filename.c_str(), "  ");
   }
 }
 //-----------------------------------------------------------------------------

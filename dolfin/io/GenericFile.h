@@ -113,15 +113,15 @@ namespace dolfin
 
     // Return filename
     std::string name() const
-    { return filename; }
+    { return _filename; }
 
   protected:
 
     void read_not_impl(const std::string object) const;
     void write_not_impl(const std::string object) const;
 
-    std::string filename;
-    std::string filetype;
+    std::string _filename;
+    std::string _filetype;
 
     bool opened_read;
     bool opened_write;

@@ -91,12 +91,12 @@ protected:
   int status;
 
 public:
-  Enriched_face_base_2(): Fb(), status(-1) {};
+  Enriched_face_base_2(): Fb(), status(-1) {}
 
   Enriched_face_base_2(Vertex_handle v0,
                        Vertex_handle v1,
                        Vertex_handle v2)
-    : Fb(v0,v1,v2), status(-1) {};
+    : Fb(v0,v1,v2), status(-1) {}
 
   Enriched_face_base_2(Vertex_handle v0,
                        Vertex_handle v1,
@@ -104,23 +104,28 @@ public:
                        Face_handle n0,
                        Face_handle n1,
                        Face_handle n2)
-    : Fb(v0,v1,v2,n0,n1,n2), status(-1) {};
+    : Fb(v0,v1,v2,n0,n1,n2), status(-1) {}
 
   inline
-  bool is_in_domain() const { return (status%2 == 1); };
+  bool is_in_domain() const
+  { return (status%2 == 1); }
 
   inline
-  void set_in_domain(const bool b) { status = (b ? 1 : 0); };
+  void set_in_domain(const bool b)
+  { status = (b ? 1 : 0); }
 
   inline
-  void set_counter(int i) { status = i; };
+  void set_counter(int i)
+  { status = i; }
 
   inline
-  int counter() const { return status; };
+  int counter() const
+  { return status; }
 
   inline
-  int& counter() { return status; };
-}; // end class Enriched_face_base_2
+  int& counter()
+  { return status; }
+};
 
 typedef CGAL::Triangulation_vertex_base_2<Inexact_Kernel> Vb;
 typedef CGAL::Triangulation_vertex_base_with_info_2<std::size_t, Inexact_Kernel, Vb> Vbb;

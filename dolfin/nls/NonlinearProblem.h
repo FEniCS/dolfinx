@@ -41,7 +41,7 @@ namespace dolfin
     NonlinearProblem() {}
 
     /// Destructor
-    virtual ~NonlinearProblem() {};
+    virtual ~NonlinearProblem() {}
 
     /// Function called by Newton solver before requesting F or J.
     /// This can be used to compute F and J together

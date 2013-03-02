@@ -40,10 +40,10 @@ namespace dolfin
   public:
 
     /// Constructor
-    uBLASPreconditioner() {};
+    uBLASPreconditioner() {}
 
     /// Destructor
-    virtual ~uBLASPreconditioner() {};
+    virtual ~uBLASPreconditioner() {}
 
     /// Initialise preconditioner (sparse matrix)
     virtual void init(const uBLASMatrix<ublas_sparse_matrix>& P)
