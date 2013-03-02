@@ -49,7 +49,7 @@ namespace dolfin
     ///
     ///         Constant c(1.0);
     ///
-    Constant(double value);
+    explicit Constant(double value);
 
     /// Create vector constant (dim = 2)
     ///
@@ -88,7 +88,7 @@ namespace dolfin
     /// *Arguments*
     ///     values (std::vector<double>)
     ///         Values to create a vector-valued constant from.
-    Constant(std::vector<double> values);
+    explicit Constant(std::vector<double> values);
 
     /// Create tensor-valued constant for flattened array of values
     ///
