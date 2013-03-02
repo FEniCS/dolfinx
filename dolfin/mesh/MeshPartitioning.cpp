@@ -327,13 +327,13 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
   // Add vertices
   editor.init_vertices(vertex_coordinates.size());
-  Point p(gdim);
+  Point point(gdim);
   dolfin_assert(vertex_indices.size() == vertex_coordinates.size());
   for (std::size_t i = 0; i < vertex_coordinates.size(); ++i)
   {
     for (std::size_t j = 0; j < gdim; ++j)
-      p[j] = vertex_coordinates[i][j];
-    editor.add_vertex_global(i, vertex_indices[i], p);
+      point[j] = vertex_coordinates[i][j];
+    editor.add_vertex_global(i, vertex_indices[i], point);
   }
 
   // Add cells

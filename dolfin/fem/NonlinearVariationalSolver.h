@@ -107,8 +107,8 @@ namespace dolfin
     private:
 
       // Problem and solver objects
-      boost::shared_ptr<NonlinearVariationalProblem> problem;
-      boost::shared_ptr<NonlinearVariationalSolver> solver;
+      boost::shared_ptr<NonlinearVariationalProblem> _problem;
+      boost::shared_ptr<NonlinearVariationalSolver> _solver;
 
       // True if Jacobian has been initialized
       bool jacobian_initialized;
@@ -116,7 +116,7 @@ namespace dolfin
     };
 
     // The nonlinear problem
-    boost::shared_ptr<NonlinearVariationalProblem> problem;
+    boost::shared_ptr<NonlinearVariationalProblem> _problem;
 
     // The nonlinear discrete problem
     boost::shared_ptr<NonlinearDiscreteProblem> nonlinear_problem;

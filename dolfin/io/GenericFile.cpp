@@ -31,7 +31,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 GenericFile::GenericFile(std::string filename, std::string filetype)
- : filename(filename), filetype(filetype),
+ : _filename(filename), _filetype(filetype),
    opened_read(false),  opened_write(false), check_header(false),
    counter(0), counter1(0), counter2(0)
 {
@@ -298,20 +298,20 @@ void GenericFile::read()
 void GenericFile::write()
 {
   // pvd files should only be cleared by one process
-  if (filetype == "VTK" && MPI::process_number() > 0)
+  if (_filetype == "VTK" && MPI::process_number() > 0)
     opened_write = true;
 
   // Open file
   if (!opened_write)
   {
     // Clear file
-    std::ofstream file(filename.c_str(), std::ios::trunc);
+    std::ofstream file(_filename.c_str(), std::ios::trunc);
     if (!file.good())
     {
       dolfin_error("GenericFile.cpp",
                    "write to file",
                    "Unable to open file \"%s\" for writing",
-                   filename.c_str());
+                   _filename.c_str());
     }
     file.close();
   }
@@ -323,7 +323,7 @@ void GenericFile::read_not_impl(const std::string object) const
   dolfin_error("GenericFile.cpp",
                "read object from file",
                "Cannot read objects of type %s from %s files",
-               object.c_str(), filetype.c_str());
+               object.c_str(), _filetype.c_str());
 }
 //-----------------------------------------------------------------------------
 void GenericFile::write_not_impl(const std::string object) const
@@ -331,6 +331,6 @@ void GenericFile::write_not_impl(const std::string object) const
   dolfin_error("GenericFile.cpp",
                "write object to file",
                "Cannot write objects of type %s to %s files",
-               object.c_str(), filetype.c_str());
+               object.c_str(), _filetype.c_str());
 }
 //-----------------------------------------------------------------------------

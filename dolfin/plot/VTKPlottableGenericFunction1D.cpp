@@ -54,9 +54,9 @@ VTKPlottableGenericFunction1D::VTKPlottableGenericFunction1D(boost::shared_ptr<c
   // Do nothing
 }
 //----------------------------------------------------------------------------
-void VTKPlottableGenericFunction1D::init_pipeline(const Parameters &parameters)
+void VTKPlottableGenericFunction1D::init_pipeline(const Parameters& p)
 {
-  VTKPlottableGenericFunction::init_pipeline(parameters);
+  VTKPlottableGenericFunction::init_pipeline(p);
 
   _actor->AddInput(grid());
   _actor->SetXValuesToValue();
@@ -82,9 +82,9 @@ void VTKPlottableGenericFunction1D::init_pipeline(const Parameters &parameters)
   _actor->GetPosition2Coordinate()->SetValue(1, 1, 0);
   _actor->SetBorder(30);
 
-#if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 6)
+  #if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 6)
   _actor->SetReferenceYValue(0.0);
-#endif
+  #endif
   _actor->SetAdjustYLabels(false); // Use the ranges set in rescale()
 }
 //----------------------------------------------------------------------------
@@ -116,28 +116,26 @@ bool VTKPlottableGenericFunction1D::is_compatible(const Variable &var) const
   return VTKPlottableGenericFunction::is_compatible(var);
 }
 //----------------------------------------------------------------------------
-void VTKPlottableGenericFunction1D::update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int framecounter)
+void VTKPlottableGenericFunction1D::update(boost::shared_ptr<const Variable> var,
+                                           const Parameters& p, int framecounter)
 {
-  VTKPlottableGenericFunction::update(var, parameters, framecounter);
+  VTKPlottableGenericFunction::update(var, p, framecounter);
   dolfin_assert(dim() == 1);
 
   double* bounds = grid()->GetBounds(); // [xmin xmax ymin ymax zmin zmax]
   _actor->SetXRange(bounds);
 }
 //----------------------------------------------------------------------------
-void VTKPlottableGenericFunction1D::rescale(double range[2], const Parameters &parameters)
+void VTKPlottableGenericFunction1D::rescale(double range[2],
+                                            const Parameters& p)
 {
   _actor->SetYRange(range);
-#if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 6)
+  #if (VTK_MAJOR_VERSION == 5) && (VTK_MINOR_VERSION >= 6)
   if (range[0] < 0 && range[1] > 0)
-  {
     _actor->ShowReferenceYLineOn();
-  }
   else
-  {
     _actor->ShowReferenceYLineOff();
-  }
-#endif
+  #endif
 }
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkActor2D> VTKPlottableGenericFunction1D::get_vertex_label_actor(vtkSmartPointer<vtkRenderer> renderer)

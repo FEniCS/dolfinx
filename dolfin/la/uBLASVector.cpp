@@ -44,23 +44,23 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBLASVector::uBLASVector(std::string type): x(new ublas_vector(0))
+uBLASVector::uBLASVector(std::string type): _x(new ublas_vector(0))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBLASVector::uBLASVector(std::size_t N, std::string type): x(new ublas_vector(N))
+uBLASVector::uBLASVector(std::size_t N, std::string type): _x(new ublas_vector(N))
 {
   // Set all entries to zero
-  x->clear();
+  _x->clear();
 }
 //-----------------------------------------------------------------------------
-uBLASVector::uBLASVector(const uBLASVector& x): x(new ublas_vector(*(x.x)))
+uBLASVector::uBLASVector(const uBLASVector& x): _x(new ublas_vector(*(x._x)))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBLASVector::uBLASVector(boost::shared_ptr<ublas_vector> x) : x(x)
+uBLASVector::uBLASVector(boost::shared_ptr<ublas_vector> x) : _x(x)
 {
   // Do nothing
 }
@@ -78,13 +78,13 @@ boost::shared_ptr<GenericVector> uBLASVector::copy() const
 //-----------------------------------------------------------------------------
 void uBLASVector::resize(std::size_t N)
 {
-  if (x->size() == N)
+  if (_x->size() == N)
     return;
-  x->resize(N, false);
+  _x->resize(N, false);
 
   // Set vector to zero to prevent random numbers entering the vector.
   // Fixes this bug: https://bugs.launchpad.net/dolfin/+bug/594954
-  x->clear();
+  _x->clear();
 }
 //-----------------------------------------------------------------------------
 void uBLASVector::resize(std::pair<std::size_t, std::size_t> range)
@@ -121,12 +121,12 @@ void uBLASVector::resize(std::pair<std::size_t, std::size_t> range,
 //-----------------------------------------------------------------------------
 bool uBLASVector::empty() const
 {
-  return x->empty();
+  return _x->empty();
 }
 //-----------------------------------------------------------------------------
 std::size_t uBLASVector::size() const
 {
-  return x->size();
+  return _x->size();
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t> uBLASVector::local_range() const
@@ -145,28 +145,28 @@ bool uBLASVector::owns_index(std::size_t i) const
 void uBLASVector::get_local(double* block, std::size_t m, const dolfin::la_index* rows) const
 {
   for (std::size_t i = 0; i < m; i++)
-    block[i] = (*x)(rows[i]);
+    block[i] = (*_x)(rows[i]);
 }
 //-----------------------------------------------------------------------------
 void uBLASVector::get_local(std::vector<double>& values) const
 {
   values.resize(size());
   for (std::size_t i = 0; i < size(); i++)
-    values[i] = (*x)(i);
+    values[i] = (*_x)(i);
 }
 //-----------------------------------------------------------------------------
 void uBLASVector::set_local(const std::vector<double>& values)
 {
   dolfin_assert(values.size() == size());
   for (std::size_t i = 0; i < size(); i++)
-    (*x)(i) = values[i];
+    (*_x)(i) = values[i];
 }
 //-----------------------------------------------------------------------------
 void uBLASVector::add_local(const Array<double>& values)
 {
   dolfin_assert(values.size() == size());
   for (std::size_t i = 0; i < size(); i++)
-    (*x)(i) += values[i];
+    (*_x)(i) += values[i];
 }
 //-----------------------------------------------------------------------------
 void uBLASVector::gather(GenericVector& x, const std::vector<dolfin::la_index>& indices) const
@@ -177,12 +177,13 @@ void uBLASVector::gather(GenericVector& x, const std::vector<dolfin::la_index>& 
   dolfin_assert(this->size() >= _size);
 
   x.resize(_size);
-  ublas_vector& _x = as_type<uBLASVector>(x).vec();
+  ublas_vector& tmp = as_type<uBLASVector>(x).vec();
   for (std::size_t i = 0; i < _size; i++)
-    _x(i) = (*this->x)(indices[i]);
+    tmp(i) = (*_x)(indices[i]);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::gather(std::vector<double>& x, const std::vector<dolfin::la_index>& indices) const
+void uBLASVector::gather(std::vector<double>& x,
+                         const std::vector<dolfin::la_index>& indices) const
 {
   not_working_in_parallel("uBLASVector::gather)");
 
@@ -190,7 +191,7 @@ void uBLASVector::gather(std::vector<double>& x, const std::vector<dolfin::la_in
   x.resize(_size);
   dolfin_assert(x.size() == _size);
   for (std::size_t i = 0; i < _size; i++)
-    x[i] = (*this->x)(indices[i]);
+    x[i] = (*_x)(indices[i]);
 }
 //-----------------------------------------------------------------------------
 void uBLASVector::gather_on_zero(std::vector<double>& x) const
@@ -203,13 +204,13 @@ void uBLASVector::gather_on_zero(std::vector<double>& x) const
 void uBLASVector::set(const double* block, std::size_t m, const dolfin::la_index* rows)
 {
   for (std::size_t i = 0; i < m; i++)
-    (*x)(rows[i]) = block[i];
+    (*_x)(rows[i]) = block[i];
 }
 //-----------------------------------------------------------------------------
 void uBLASVector::add(const double* block, std::size_t m, const dolfin::la_index* rows)
 {
   for (std::size_t i = 0; i < m; i++)
-    (*x)(rows[i]) += block[i];
+    (*_x)(rows[i]) += block[i];
 }
 //-----------------------------------------------------------------------------
 void uBLASVector::apply(std::string mode)
@@ -221,17 +222,17 @@ void uBLASVector::apply(std::string mode)
 //-----------------------------------------------------------------------------
 void uBLASVector::zero()
 {
-  x->clear();
+  _x->clear();
 }
 //-----------------------------------------------------------------------------
 double uBLASVector::norm(std::string norm_type) const
 {
   if (norm_type == "l1")
-    return norm_1(*x);
+    return norm_1(*_x);
   else if (norm_type == "l2")
-    return norm_2(*x);
+    return norm_2(*_x);
   else if (norm_type == "linf")
-    return norm_inf(*x);
+    return norm_inf(*_x);
   else
   {
     dolfin_error("uBLASVector.cpp",
@@ -244,19 +245,19 @@ double uBLASVector::norm(std::string norm_type) const
 //-----------------------------------------------------------------------------
 double uBLASVector::min() const
 {
-  double value = *std::min_element(x->begin(), x->end());
+  double value = *std::min_element(_x->begin(), _x->end());
   return value;
 }
 //-----------------------------------------------------------------------------
 double uBLASVector::max() const
 {
-  double value = *std::max_element(x->begin(), x->end());
+  double value = *std::max_element(_x->begin(), _x->end());
   return value;
 }
 //-----------------------------------------------------------------------------
 double uBLASVector::sum() const
 {
-  return ublas::sum(*x);
+  return ublas::sum(*_x);
 }
 //-----------------------------------------------------------------------------
 double uBLASVector::sum(const Array<std::size_t>& rows) const
@@ -269,7 +270,7 @@ double uBLASVector::sum(const Array<std::size_t>& rows) const
     dolfin_assert(index < size());
     if (row_set.find(index) == row_set.end())
     {
-      _sum += (*x)[index];
+      _sum += (*_x)[index];
       row_set.insert(index);
     }
   }
@@ -285,20 +286,20 @@ void uBLASVector::axpy(double a, const GenericVector& y)
                  "Vectors are not of the same size");
   }
 
-  (*x) += a * as_type<const uBLASVector>(y).vec();
+  (*_x) += a * as_type<const uBLASVector>(y).vec();
 }
 //-----------------------------------------------------------------------------
 void uBLASVector::abs()
 {
-  dolfin_assert(x);
-  const std::size_t size = x->size();
+  dolfin_assert(_x);
+  const std::size_t size = _x->size();
   for (std::size_t i = 0; i < size; i++)
-    (*x)[i] = std::abs((*x)[i]);
+    (*_x)[i] = std::abs((*_x)[i]);
 }
 //-----------------------------------------------------------------------------
 double uBLASVector::inner(const GenericVector& y) const
 {
-  return ublas::inner_prod(*x, as_type<const uBLASVector>(y).vec());
+  return ublas::inner_prod(*_x, as_type<const uBLASVector>(y).vec());
 }
 //-----------------------------------------------------------------------------
 const GenericVector& uBLASVector::operator= (const GenericVector& v)
@@ -317,58 +318,58 @@ const uBLASVector& uBLASVector::operator= (const uBLASVector& v)
                  "Consider using the copy constructor instead");
   }
 
-  assert(x);
-  *x = v.vec();
+  assert(_x);
+  *_x = v.vec();
   return *this;
 }
 //-----------------------------------------------------------------------------
 const uBLASVector& uBLASVector::operator= (double a)
 {
-  x->ublas_vector::assign(ublas::scalar_vector<double> (x->size(), a));
+  _x->ublas_vector::assign(ublas::scalar_vector<double> (_x->size(), a));
   return *this;
 }
 //-----------------------------------------------------------------------------
 const uBLASVector& uBLASVector::operator*= (const double a)
 {
-  (*x) *= a;
+  (*_x) *= a;
   return *this;
 }
 //-----------------------------------------------------------------------------
 const uBLASVector& uBLASVector::operator*= (const GenericVector& y)
 {
-  *x = ublas::element_prod(*x, as_type<const uBLASVector>(y).vec());
+  *_x = ublas::element_prod(*_x, as_type<const uBLASVector>(y).vec());
   return *this;
 }
 //-----------------------------------------------------------------------------
 const uBLASVector& uBLASVector::operator/= (const double a)
 {
-  (*x) /= a;
+  (*_x) /= a;
   return *this;
 }
 //-----------------------------------------------------------------------------
 const uBLASVector& uBLASVector::operator+= (const GenericVector& y)
 {
-  *x += as_type<const uBLASVector>(y).vec();
+  *_x += as_type<const uBLASVector>(y).vec();
   return *this;
 }
 //-----------------------------------------------------------------------------
 const uBLASVector& uBLASVector::operator+= (double a)
 {
-  boost::numeric::ublas::scalar_vector<double> _a(x->size(), a);
-  *x += _a;
+  boost::numeric::ublas::scalar_vector<double> _a(_x->size(), a);
+  *_x += _a;
   return *this;
 }
 //-----------------------------------------------------------------------------
 const uBLASVector& uBLASVector::operator-= (const GenericVector& y)
 {
-  *x -= as_type<const uBLASVector>(y).vec();
+  *_x -= as_type<const uBLASVector>(y).vec();
   return *this;
 }
 //-----------------------------------------------------------------------------
 const uBLASVector& uBLASVector::operator-= (double a)
 {
-  boost::numeric::ublas::scalar_vector<double> _a(x->size(), a);
-  *x -= _a;
+  boost::numeric::ublas::scalar_vector<double> _a(_x->size(), a);
+  *_x -= _a;
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -381,7 +382,7 @@ std::string uBLASVector::str(bool verbose) const
     s << str(false) << std::endl << std::endl;
 
     s << "[";
-    for (ublas_vector::const_iterator it = x->begin(); it != x->end(); ++it)
+    for (ublas_vector::const_iterator it = _x->begin(); it != _x->end(); ++it)
     {
       std::stringstream entry;
       entry << std::setiosflags(std::ios::scientific);
@@ -392,9 +393,7 @@ std::string uBLASVector::str(bool verbose) const
     s << "]";
   }
   else
-  {
     s << "<uBLASVector of size " << size() << ">";
-  }
 
   return s.str();
 }

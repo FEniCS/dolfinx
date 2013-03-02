@@ -294,19 +294,19 @@ namespace dolfin
     void check_vertices(const std::vector<std::size_t>& v) const;
 
     // The mesh
-    Mesh* mesh;
+    Mesh* _mesh;
 
     // Topological dimension
-    std::size_t tdim;
+    std::size_t _tdim;
 
     // Geometrical (Euclidean) dimension
-    std::size_t gdim;
+    std::size_t _gdim;
 
     // Number of vertices
-    std::size_t num_vertices;
+    std::size_t _num_vertices;
 
     // Number of cells
-    std::size_t num_cells;
+    std::size_t _num_cells;
 
     // Next available vertex
     std::size_t next_vertex;
@@ -315,7 +315,7 @@ namespace dolfin
     std::size_t next_cell;
 
     // Temporary storage for local cell data
-    std::vector<std::size_t> vertices;
+    std::vector<std::size_t> _vertices;
 
   };
 

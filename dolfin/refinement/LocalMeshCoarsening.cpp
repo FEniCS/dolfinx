@@ -238,7 +238,7 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
 
   // Get cell type
   const CellType& cell_type = mesh.type();
-  const Cell c(mesh, cellid);
+  const Cell cell(mesh, cellid);
 
   MeshEditor editor;
   editor.open(coarse_mesh, cell_type.cell_type(),
@@ -257,8 +257,8 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
 
   // Find shortest edge of cell c
   _collapse_edge = false;
-  lmin = 1.0e10*c.diameter();
-  for (EdgeIterator e(c); !e.end(); ++e)
+  lmin = 1.0e10*cell.diameter();
+  for (EdgeIterator e(cell); !e.end(); ++e)
   {
     edge_vertex = e->entities(0);
     if (!vertex_forbidden[edge_vertex[0]] || !vertex_forbidden[edge_vertex[1]])

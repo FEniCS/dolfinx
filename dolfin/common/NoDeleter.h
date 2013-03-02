@@ -33,7 +33,7 @@ namespace dolfin
   class NoDeleter
   {
   public:
-    void operator() (const void *p) {}
+    void operator() (const void *) {}
   };
 
   /// Helper function to construct shared pointer with NoDeleter with cleaner syntax

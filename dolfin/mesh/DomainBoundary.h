@@ -36,7 +36,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    DomainBoundary() {};
+    DomainBoundary() {}
 
     /// Destructor
     virtual ~DomainBoundary() {}

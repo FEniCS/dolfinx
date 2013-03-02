@@ -234,8 +234,7 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
     dolfin_assert(procvrttab[i] >= (procvrttab[i - 1] + proccnttab[i - 1]));
 
   // Print graph data -------------------------------------
-  const bool dislay_graph_data = false;
-  if (dislay_graph_data)
+  /*
   {
     const SCOTCH_Num vertgstnbr = local_graph.size() + ghost_vertices.size();
 
@@ -284,6 +283,7 @@ void SCOTCH::partition(const std::vector<std::set<std::size_t> >& local_graph,
     }
     MPI::barrier();
   }
+  */
   // ------------------------------------------------------
 
   // Construct communicator (copy of MPI_COMM_WORLD)

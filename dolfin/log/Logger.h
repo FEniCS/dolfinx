@@ -89,13 +89,13 @@ namespace dolfin
     void set_log_active(bool active);
 
     /// Return true iff logging is active
-    inline bool is_active() { return active; }
+    inline bool is_active() { return _active; }
 
     /// Set log level
     void set_log_level(int log_level);
 
     /// Get log level
-    inline int get_log_level() const { return log_level; }
+    inline int get_log_level() const { return _log_level; }
 
     /// Register timing (for later summary)
     void register_timing(std::string task, double elapsed_time);
@@ -130,10 +130,10 @@ namespace dolfin
     void write(int log_level, std::string msg) const;
 
     // True iff logging is active
-    bool active;
+    bool _active;
 
     // Current log level
-    int log_level;
+    int _log_level;
 
     // Current indentation level
     int indentation_level;

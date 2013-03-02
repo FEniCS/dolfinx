@@ -50,7 +50,7 @@ namespace dolfin
   private:
 
     // The mesh
-    const Mesh& mesh;
+    const Mesh& _mesh;
 
   };
 
@@ -70,7 +70,7 @@ namespace dolfin
   private:
 
     // The mesh
-    const Mesh& mesh;
+    const Mesh& _mesh;
 
     // Warning when evaluating on cells
     mutable Event not_on_boundary;

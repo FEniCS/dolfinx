@@ -29,7 +29,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 CoefficientAssigner::CoefficientAssigner(Form& form, std::size_t number)
-  : form(form), number(number)
+  : _form(form), _number(number)
 {
   // Do nothing
 }
@@ -42,6 +42,6 @@ CoefficientAssigner::~CoefficientAssigner()
 void CoefficientAssigner::operator= (const GenericFunction& coefficient)
 {
   boost::shared_ptr<const GenericFunction> c(&coefficient, NoDeleter());
-  form.set_coefficient(number, c);
+  _form.set_coefficient(_number, c);
 }
 //-----------------------------------------------------------------------------

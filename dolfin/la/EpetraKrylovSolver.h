@@ -109,7 +109,7 @@ namespace dolfin
   private:
 
     // Solver type
-    std::string method;
+    std::string _method;
 
     // Available solvers
     static const std::map<std::string, int> _methods;
@@ -118,18 +118,16 @@ namespace dolfin
     static const std::vector<std::pair<std::string, std::string> > _methods_descr;
 
     // Operator (the matrix)
-    boost::shared_ptr<const EpetraMatrix> A;
+    boost::shared_ptr<const EpetraMatrix> _A;
 
     // Matrix used to construct the preconditoner
-    boost::shared_ptr<const EpetraMatrix> P;
+    boost::shared_ptr<const EpetraMatrix> _P;
 
     // Preconditioner
-    boost::shared_ptr<TrilinosPreconditioner> preconditioner;
+    boost::shared_ptr<TrilinosPreconditioner> _preconditioner;
 
     // Underlying solver
     boost::shared_ptr<AztecOO> solver;
-
-    bool preconditioner_set;
 
     // Residuals
     double relative_residual;

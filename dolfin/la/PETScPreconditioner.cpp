@@ -164,7 +164,7 @@ Parameters PETScPreconditioner::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-PETScPreconditioner::PETScPreconditioner(std::string type) : type(type), gdim(0)
+PETScPreconditioner::PETScPreconditioner(std::string type) : _type(type), gdim(0)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -192,7 +192,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
   KSPGetPC(*(solver.ksp()), &pc);
 
   // Treat special cases  first
-  if (type.find("hypre") != std::string::npos)
+  if (_type.find("hypre") != std::string::npos)
   {
     #if PETSC_HAVE_HYPRE
     PCSetType(pc, PCHYPRE);
@@ -200,7 +200,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
     PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
     PCFactorSetShiftAmount(pc, PETSC_DECIDE);
 
-    if (type == "hypre_amg" || type == "amg")
+    if (_type == "hypre_amg" || _type == "amg")
     {
       PCHYPRESetType(pc, "boomeramg");
       if (parameters("mg")["num_sweeps"].is_set())
@@ -239,7 +239,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
                             boost::lexical_cast<std::string>(levels).c_str() );
       }
     }
-    else if (type == "hypre_parasails")
+    else if (_type == "hypre_parasails")
     {
       PCHYPRESetType(pc, "parasails");
       if (parameters("hypre")("parasails")["threshold"].is_set())
@@ -253,7 +253,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
         PetscOptionsSetValue("-pc_hypre_parasails_nlevels", boost::lexical_cast<std::string>(levels).c_str());
       }
     }
-    else if (type == "hypre_euclid")
+    else if (_type == "hypre_euclid")
     {
       PCHYPRESetType(pc, "euclid");
       const std::size_t ilu_level = parameters("ilu")["fill_level"];
@@ -273,7 +273,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
             "For performance, installation of HYPRE is recommended.");
     #endif
   }
-  else if (type == "amg_ml" || type == "ml_amg")
+  else if (_type == "amg_ml" || _type == "ml_amg")
   {
     #if PETSC_HAVE_ML
 
@@ -451,7 +451,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
             "For performance, installation of ML is recommended.");
     #endif
   }
-  else if (type == "petsc_amg")
+  else if (_type == "petsc_amg")
   {
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR > 2
 
@@ -533,7 +533,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
     #endif
 
   }
-  else if (type == "additive_schwarz")
+  else if (_type == "additive_schwarz")
   {
     // Select method and overlap
     PCSetType(pc, _methods.find("additive_schwarz")->second);
@@ -566,9 +566,9 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
     //KSPMonitorSet(sub_ksps[0], KSPMonitorTrueResidualNorm, 0, 0);
     */
   }
-  else if (type != "default")
+  else if (_type != "default")
   {
-    PCSetType(pc, _methods.find(type)->second);
+    PCSetType(pc, _methods.find(_type)->second);
     PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
     PCFactorSetShiftAmount(pc, parameters["shift_nonzero"]);
   }

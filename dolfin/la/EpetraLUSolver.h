@@ -90,7 +90,7 @@ namespace dolfin
     bool symbolic_factorized, numeric_factorized;
 
     // Operator (the matrix)
-    boost::shared_ptr<const EpetraMatrix> A;
+    boost::shared_ptr<const EpetraMatrix> _A;
 
     // Epetra linear problem
     boost::scoped_ptr<Epetra_LinearProblem> linear_problem;
@@ -99,7 +99,7 @@ namespace dolfin
     boost::scoped_ptr<Amesos_BaseSolver> solver;
 
     // Solver method
-    std::string method;
+    std::string _method;
 
   };
 

@@ -28,13 +28,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Lagrange::Lagrange(std::size_t q)  : q(q), counter(0), points(q + 1, 0.0),
+Lagrange::Lagrange(std::size_t q) : _q(q), counter(0), points(q + 1, 0.0),
    instability_detected("Warning: Lagrange polynomial is not numerically stable. The degree is too high.")
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Lagrange::Lagrange(const Lagrange& p) : q(p.q), counter(p.counter),
+Lagrange::Lagrange(const Lagrange& p) : _q(p._q), counter(p.counter),
     points(p.points), instability_detected(p.instability_detected)
 {
   if (counter == size())
@@ -43,7 +43,7 @@ Lagrange::Lagrange(const Lagrange& p) : q(p.q), counter(p.counter),
 //-----------------------------------------------------------------------------
 void Lagrange::set(std::size_t i, double x)
 {
-  dolfin_assert(i <= q);
+  dolfin_assert(i <= _q);
 
   points[i] = x;
 
@@ -59,7 +59,7 @@ std::size_t Lagrange::size() const
 //-----------------------------------------------------------------------------
 std::size_t Lagrange::degree() const
 {
-  return q;
+  return _q;
 }
 //-----------------------------------------------------------------------------
 double Lagrange::point(std::size_t i) const
@@ -119,7 +119,7 @@ double Lagrange::ddx(std::size_t i, double x)
 double Lagrange::dqdx(std::size_t i)
 {
   double product = constants[i];
-  for (std::size_t j = 1; j <= q; j++)
+  for (std::size_t j = 1; j <= _q; j++)
     product *= (double) j;
 
   return product;
@@ -137,7 +137,7 @@ std::string Lagrange::str(bool verbose) const
   }
   else
   {
-    s << "<Lagrange polynomial of degree " << q << " with "
+    s << "<Lagrange polynomial of degree " << _q << " with "
           << points.size() << " points>";
   }
 

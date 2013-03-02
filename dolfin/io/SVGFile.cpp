@@ -45,7 +45,7 @@ void SVGFile::operator<< (const Mesh& mesh)
 {
   // Get file path and generate filename
   std::string prefix;
-  prefix.assign(filename, 0, filename.find_last_of("."));
+  prefix.assign(_filename, 0, _filename.find_last_of("."));
   std::ostringstream _filename;
   _filename << prefix;
   if (MPI::num_processes() > 1)

@@ -38,7 +38,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 GraphOrdering::GraphOrdering(const TensorLayout& tensor_layout)
-      : tensor_layout(tensor_layout)
+      : _tensor_layout(tensor_layout)
 {
   if (tensor_layout.rank() != 2)
   {
@@ -113,24 +113,24 @@ std::vector<std::size_t> GraphOrdering::compute_local_reordering_map()
 //-----------------------------------------------------------------------------
 int GraphOrdering::num_global_objects() const
 {
-  return tensor_layout.size(0);
+  return _tensor_layout.size(0);
 }
 //-----------------------------------------------------------------------------
 int GraphOrdering::num_local_objects() const
 {
-  return tensor_layout.size(0);
+  return _tensor_layout.size(0);
 }
 //-----------------------------------------------------------------------------
 void GraphOrdering::num_edges_per_vertex(std::vector<std::size_t>& num_edges) const
 {
-  dolfin_assert(tensor_layout.sparsity_pattern());
-  tensor_layout.sparsity_pattern()->num_nonzeros_diagonal(num_edges);
+  dolfin_assert(_tensor_layout.sparsity_pattern());
+  _tensor_layout.sparsity_pattern()->num_nonzeros_diagonal(num_edges);
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::vector<std::size_t> > GraphOrdering::edges() const
 {
-  dolfin_assert(tensor_layout.sparsity_pattern());
-  return tensor_layout.sparsity_pattern()->diagonal_pattern(GenericSparsityPattern::unsorted);
+  dolfin_assert(_tensor_layout.sparsity_pattern());
+  return _tensor_layout.sparsity_pattern()->diagonal_pattern(GenericSparsityPattern::unsorted);
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
