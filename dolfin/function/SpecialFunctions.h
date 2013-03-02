@@ -37,6 +37,9 @@ namespace dolfin
   /// This Function represents the mesh coordinates on a given mesh.
   class MeshCoordinates : public Expression
   {
+
+    using Expression::eval;
+
   public:
 
     /// Constructor
@@ -57,6 +60,9 @@ namespace dolfin
   /// This function represents the area/length of a cell facet on a given mesh.
   class FacetArea : public Expression
   {
+
+    using Expression::eval;
+
   public:
 
     /// Constructor

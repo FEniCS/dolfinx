@@ -47,6 +47,7 @@ namespace dolfin
 
   class Expression : public GenericFunction
   {
+
   public:
 
     /// Create scalar expression.

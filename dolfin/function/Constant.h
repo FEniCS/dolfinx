@@ -36,6 +36,9 @@ namespace dolfin
 
   class Constant : public Expression
   {
+
+    using Expression::eval;
+
   public:
 
     /// Create scalar constant

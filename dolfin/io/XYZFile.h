@@ -34,6 +34,10 @@ namespace dolfin
 
   class XYZFile : public GenericFile
   {
+
+    using GenericFile::operator<<;
+    using GenericFile::operator>>;
+
   public:
 
     /// Simple and light file format for use with Xd3d. Supports

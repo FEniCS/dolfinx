@@ -52,6 +52,11 @@ namespace dolfin
 
   class PETScMatrix : public GenericMatrix, public PETScBaseMatrix
   {
+
+    using GenericMatrix::add;
+    using GenericMatrix::get;
+    using GenericMatrix::set;
+
   public:
 
     /// Create empty matrix

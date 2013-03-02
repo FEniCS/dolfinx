@@ -49,6 +49,11 @@ namespace dolfin
 
   class EpetraMatrix : public GenericMatrix
   {
+
+    using GenericMatrix::add;
+    using GenericMatrix::get;
+    using GenericMatrix::set;
+
   public:
 
     /// Create empty matrix
