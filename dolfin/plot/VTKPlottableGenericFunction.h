@@ -54,19 +54,18 @@ namespace dolfin
   {
   public:
 
+    virtual ~VTKPlottableGenericFunction() {}
+
     explicit
     VTKPlottableGenericFunction(boost::shared_ptr<const Function> function);
 
-    explicit
     VTKPlottableGenericFunction(boost::shared_ptr<const Expression> expression,
                                 boost::shared_ptr<const Mesh> mesh);
 
     //--- Implementation of the GenericVTKPlottable interface ---
 
     /// Additional parameters for VTKPlottableGenericFunction
-    virtual void modify_default_parameters(Parameters& p)
-    {
-    }
+    virtual void modify_default_parameters(Parameters& p) {}
 
     virtual void modify_user_parameters(Parameters& p)
     {

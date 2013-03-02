@@ -200,10 +200,12 @@ IntersectionOperatorImplementation*
         case CellType::interval   : return new IntersectionOperatorImplementation_d< IntervalCell, SCK  >(_mesh);
         case CellType::triangle   : return new IntersectionOperatorImplementation_d< TriangleCell, SCK >(_mesh);
         case CellType::tetrahedron: return new IntersectionOperatorImplementation_d< TetrahedronCell, SCK  >(_mesh);
-        default: dolfin_error("IntersectionOperator.cpp",
-                            "create intersection operator",
-                            "Cell type of mesh is not known. Allowed cell types are point, interval, triangle and tetrahedron");
-	    	 return 0;
+        default:
+        {
+          dolfin_error("IntersectionOperator.cpp",
+                       "create intersection operator",
+                       "Cell type of mesh is not known. Allowed cell types are point, interval, triangle and tetrahedron");
+        }
       }
     }
   }

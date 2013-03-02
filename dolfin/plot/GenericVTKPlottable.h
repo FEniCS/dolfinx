@@ -45,6 +45,8 @@ namespace dolfin
   {
   public:
 
+    virtual ~GenericVTKPlottable() {}
+
     /// To be redefined in classes that require special parameters. Called once
     /// with the default parameters.
     virtual void modify_default_parameters(Parameters& p) = 0;
