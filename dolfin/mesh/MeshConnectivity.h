@@ -156,7 +156,7 @@ namespace dolfin
     friend class MeshRenumbering;
 
     // Dimensions (only used for pretty-printing)
-    std::size_t d0, d1;
+    std::size_t _d0, _d1;
 
     // Connections for all entities stored as a contiguous array
     std::vector<unsigned int> _connections;

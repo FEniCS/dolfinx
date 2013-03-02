@@ -155,13 +155,13 @@ void TetrahedronCell::refine_cell(Cell& cell, MeshEditor& editor,
   // to make the partition in a way that does not make the aspect
   // ratio worse in each refinement. We do this by cutting the middle
   // octahedron along the shortest of three possible paths.
-  dolfin_assert(editor.mesh);
-  const Point p0 = editor.mesh->geometry().point(e0);
-  const Point p1 = editor.mesh->geometry().point(e1);
-  const Point p2 = editor.mesh->geometry().point(e2);
-  const Point p3 = editor.mesh->geometry().point(e3);
-  const Point p4 = editor.mesh->geometry().point(e4);
-  const Point p5 = editor.mesh->geometry().point(e5);
+  dolfin_assert(editor._mesh);
+  const Point p0 = editor._mesh->geometry().point(e0);
+  const Point p1 = editor._mesh->geometry().point(e1);
+  const Point p2 = editor._mesh->geometry().point(e2);
+  const Point p3 = editor._mesh->geometry().point(e3);
+  const Point p4 = editor._mesh->geometry().point(e4);
+  const Point p5 = editor._mesh->geometry().point(e5);
   const double d05 = p0.distance(p5);
   const double d14 = p1.distance(p4);
   const double d23 = p2.distance(p3);

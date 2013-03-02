@@ -84,16 +84,16 @@ namespace dolfin
     void clear();
 
     // The mesh
-    Mesh* mesh;
+    Mesh* _mesh;
 
     // Topological dimension
-    std::size_t tdim;
+    std::size_t _tdim;
 
     // Geometrical (Euclidean) dimension
-    std::size_t gdim;
+    std::size_t _gdim;
 
     // Cell type
-    CellType* cell_type;
+    CellType* _cell_type;
 
     // Dynamic storage for vertex coordinates
     std::vector<double> vertex_coordinates;

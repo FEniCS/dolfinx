@@ -25,13 +25,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshConnectivity::MeshConnectivity(std::size_t d0, std::size_t d1) : d0(d0), d1(d1)
+MeshConnectivity::MeshConnectivity(std::size_t d0, std::size_t d1)
+  : _d0(d0), _d1(d1)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 MeshConnectivity::MeshConnectivity(const MeshConnectivity& connectivity)
-  : d0(0), d1(0)
+  : _d0(0), _d1(0)
 {
   *this = connectivity;
 }
@@ -47,8 +48,8 @@ const MeshConnectivity& MeshConnectivity::operator= (const MeshConnectivity& con
   clear();
 
   // Copy data
-  d0 = connectivity.d0;
-  d1 = connectivity.d1;
+  _d0 = connectivity._d0;
+  _d1 = connectivity._d1;
   _connections = connectivity._connections;
   index_to_position = connectivity.index_to_position;
 
@@ -115,7 +116,7 @@ void MeshConnectivity::set(std::size_t entity, const std::vector<std::size_t>& c
 
   // Copy data
   std::copy(connections.begin(), connections.end(),
-            _>connections.begin() + index_to_position[entity]);
+            _connections.begin() + index_to_position[entity]);
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::set(std::size_t entity, std::size_t* connections)
@@ -168,7 +169,7 @@ std::string MeshConnectivity::str(bool verbose) const
   }
   else
   {
-    s << "<MeshConnectivity " << d0 << " -- " << d1 << " of size "
+    s << "<MeshConnectivity " << _d0 << " -- " << _d1 << " of size "
           << _connections.size() << ">";
   }
 
