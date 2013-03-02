@@ -127,7 +127,7 @@ namespace dolfin
     std::vector<std::size_t> non_local;
 
     // Map from non-local vertex to owning process index
-    std::vector<boost::unordered_map<std::size_t, unsigned int> > off_process_owner;
+    std::vector<boost::unordered_map<std::size_t, unsigned int> > _off_process_owner;
 
   };
 

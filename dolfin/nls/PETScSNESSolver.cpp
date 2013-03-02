@@ -106,7 +106,7 @@ struct snes_ctx_t
       ("ncg",          std::make_pair("Nonlinear conjugate gradient method", SNESNCG))
       ("fas",          std::make_pair("Full Approximation Scheme nonlinear multigrid method", SNESFAS))
       ("ms",           std::make_pair("Multistage smoothers", SNESMS));
-  
+
 #endif
 
 //-----------------------------------------------------------------------------
@@ -392,13 +392,13 @@ void PETScSNESSolver::set_linear_solver_parameters(Parameters ksp_parameters)
   }
   else if (PETScKrylovSolver::_methods.count(linear_solver) != 0)
   {
-    std::map<std::string, const KSPType>::const_iterator 
-      it  = PETScKrylovSolver::_methods.find(linear_solver);
-    dolfin_assert(it != PETScKrylovSolver::_methods.end());
-    KSPSetType(ksp, it->second);
+    std::map<std::string, const KSPType>::const_iterator
+      solver_pair = PETScKrylovSolver::_methods.find(linear_solver);
+    dolfin_assert(solver_pair != PETScKrylovSolver::_methods.end());
+    KSPSetType(ksp, solver_pair->second);
     if (preconditioner != "default" && PETScPreconditioner::_methods.count(preconditioner) != 0)
     {
-      std::map<std::string, const PCType>::const_iterator it 
+      std::map<std::string, const PCType>::const_iterator it
         = PETScPreconditioner::_methods.find(preconditioner);
       dolfin_assert(it != PETScPreconditioner::_methods.end());
       PCSetType(pc, it->second);
@@ -449,7 +449,7 @@ void PETScSNESSolver::set_linear_solver_parameters(Parameters ksp_parameters)
 
     KSPSetType(ksp, KSPPREONLY);
     PCSetType(pc, PCLU);
-    std::map<std::string, const MatSolverPackage>::const_iterator it 
+    std::map<std::string, const MatSolverPackage>::const_iterator it
       = PETScLUSolver::_methods.find(lu_method);
     dolfin_assert(it != PETScLUSolver::_methods.end());
     PCFactorSetMatSolverPackage(pc, it->second);

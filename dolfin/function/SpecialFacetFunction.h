@@ -42,6 +42,8 @@ namespace dolfin
   class SpecialFacetFunction : public Expression
   {
 
+    using Expression::eval;
+
   public:
 
     /// Create (scalar-valued) SpecialFacetFunction
@@ -78,7 +80,7 @@ namespace dolfin
 
   private:
 
-    std::vector<Function>& f_e;
+    std::vector<Function>& _f_e;
 
   };
 

@@ -74,7 +74,7 @@ namespace dolfin
     { _x[0] = p._x[0]; _x[1] = p._x[1]; _x[2] = p._x[2]; }
 
     /// Destructor
-    ~Point() {};
+    ~Point() {}
 
     /// Return address of coordinate in direction i
     ///

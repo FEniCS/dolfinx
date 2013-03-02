@@ -47,6 +47,7 @@ namespace dolfin
 
   class Expression : public GenericFunction
   {
+
   public:
 
     /// Create scalar expression.
@@ -157,7 +158,7 @@ namespace dolfin
   protected:
 
     // Value shape
-    std::vector<std::size_t> value_shape;
+    std::vector<std::size_t> _value_shape;
 
   };
 

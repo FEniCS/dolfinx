@@ -28,42 +28,42 @@ using namespace dolfin;
 const CellDomainAssigner&
 CellDomainAssigner::operator= (const MeshFunction<std::size_t>& domains)
 {
-  form.set_cell_domains(reference_to_no_delete_pointer(domains));
+  _form.set_cell_domains(reference_to_no_delete_pointer(domains));
   return *this;
 }
 //-----------------------------------------------------------------------------
 const CellDomainAssigner&
 CellDomainAssigner::operator= (boost::shared_ptr<const MeshFunction<std::size_t> > domains)
 {
-  form.set_cell_domains(domains);
+  _form.set_cell_domains(domains);
   return *this;
 }
 //-----------------------------------------------------------------------------
 const ExteriorFacetDomainAssigner&
 ExteriorFacetDomainAssigner::operator= (const MeshFunction<std::size_t>& domains)
 {
-  form.set_exterior_facet_domains(reference_to_no_delete_pointer(domains));
+  _form.set_exterior_facet_domains(reference_to_no_delete_pointer(domains));
   return *this;
 }
 //-----------------------------------------------------------------------------
 const ExteriorFacetDomainAssigner&
 ExteriorFacetDomainAssigner::operator= (boost::shared_ptr<const MeshFunction<std::size_t> > domains)
 {
-  form.set_exterior_facet_domains(domains);
+  _form.set_exterior_facet_domains(domains);
   return *this;
 }
 //-----------------------------------------------------------------------------
 const InteriorFacetDomainAssigner&
 InteriorFacetDomainAssigner::operator= (const MeshFunction<std::size_t>& domains)
 {
-  form.set_interior_facet_domains(reference_to_no_delete_pointer(domains));
+  _form.set_interior_facet_domains(reference_to_no_delete_pointer(domains));
   return *this;
 }
 //-----------------------------------------------------------------------------
 const InteriorFacetDomainAssigner&
 InteriorFacetDomainAssigner::operator= (boost::shared_ptr<const MeshFunction<std::size_t> > domains)
 {
-  form.set_interior_facet_domains(domains);
+  _form.set_interior_facet_domains(domains);
   return *this;
 }
 //-----------------------------------------------------------------------------

@@ -103,8 +103,8 @@ void BinaryFile::operator>> (Mesh& mesh)
       if (size > 0)
       {
         const std::size_t num_entities = read_uint();
-        c.connections = std::vector<unsigned int>(size);
-        read_array(size, &(c.connections)[0]);
+        c._connections = std::vector<unsigned int>(size);
+        read_array(size, &(c._connections)[0]);
         c.index_to_position.resize(num_entities + 1);
         read_array(c.index_to_position.size(), c.index_to_position.data());
       }
@@ -170,7 +170,6 @@ void BinaryFile::operator<< (const Mesh& mesh)
   {
     std::vector<std::size_t> t_num_entities(t.num_entities.begin(), t.num_entities.end());
     write_array(D + 1, t_num_entities.data());
-    //write_array(D + 1, t.num_entities.data());
   }
   else
   {
@@ -195,7 +194,7 @@ void BinaryFile::operator<< (const Mesh& mesh)
         if (!c.empty())
         {
           write_uint(c.index_to_position.size() - 1);
-          write_array(c.size(), c.connections.data());
+          write_array(c.size(), c._connections.data());
           write_array(c.index_to_position.size(), c.index_to_position.data());
         }
       }
@@ -223,16 +222,16 @@ void BinaryFile::operator<< (const Mesh& mesh)
 void BinaryFile::open_read()
 {
   // Get file path and extension
-  const boost::filesystem::path path(filename);
+  const boost::filesystem::path path(_filename);
   const std::string extension = boost::filesystem::extension(path);
 
   // FIXME: Check that file exists
-  if (!boost::filesystem::is_regular_file(filename))
+  if (!boost::filesystem::is_regular_file(_filename))
   {
     dolfin_error("BinaryFile.cpp",
                  "open binary file",
                  "File \"%s\" does not exist or is not a regular file",
-                 filename.c_str());
+                 _filename.c_str());
   }
 
   // Load xml file (unzip if necessary) into parser
@@ -240,12 +239,12 @@ void BinaryFile::open_read()
     // Decompress file
     ifilter.push(boost::iostreams::gzip_decompressor());
 
-  ifile.open(filename.c_str(), std::ios::in | std::ios::binary);
+  ifile.open(_filename.c_str(), std::ios::in | std::ios::binary);
   if (!ifile.is_open())
   {
     dolfin_error("BinaryFile.cpp",
                  "open binary file",
-                 "Cannot open file \"%s\" for reading", filename.c_str());
+                 "Cannot open file \"%s\" for reading", _filename.c_str());
   }
   ifilter.push(ifile);
 }
@@ -253,18 +252,18 @@ void BinaryFile::open_read()
 void BinaryFile::open_write()
 {
   // Compress if filename has extension '.gz'
-  const boost::filesystem::path path(filename);
+  const boost::filesystem::path path(_filename);
   const std::string extension = boost::filesystem::extension(path);
 
   if (extension == ".gz")
     ofilter.push(boost::iostreams::gzip_compressor());
 
-  ofile.open(filename.c_str(), std::ios::out | std::ios::binary);
+  ofile.open(_filename.c_str(), std::ios::out | std::ios::binary);
   if (!ofile.is_open())
   {
     dolfin_error("BinaryFile.cpp",
                  "open binary file",
-                 "Cannot open file \"%s\" for writing", filename.c_str());
+                 "Cannot open file \"%s\" for writing", _filename.c_str());
   }
   ofilter.push(ofile);
 }

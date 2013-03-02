@@ -28,8 +28,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DynamicMeshEditor::DynamicMeshEditor() : mesh(0), tdim(0), gdim(0),
-                                         cell_type(0)
+DynamicMeshEditor::DynamicMeshEditor() : _mesh(0), _tdim(0), _gdim(0),
+                                         _cell_type(0)
 {
   // Do nothing
 }
@@ -47,13 +47,14 @@ void DynamicMeshEditor::open(Mesh& mesh, CellType::Type type, std::size_t tdim,
   clear();
 
   // Save data
-  this->mesh = &mesh;
-  this->gdim = gdim;
-  this->tdim = tdim;
-  this->cell_type = CellType::create(type);
+  _mesh = &mesh;
+  _gdim = gdim;
+  _tdim = tdim;
+  _cell_type = CellType::create(type);
 }
 //-----------------------------------------------------------------------------
-void DynamicMeshEditor::open(Mesh& mesh, std::string type, std::size_t tdim, std::size_t gdim)
+void DynamicMeshEditor::open(Mesh& mesh, std::string type, std::size_t tdim,
+                             std::size_t gdim)
 {
   if (type == "point")
     open(mesh, CellType::point, tdim, gdim);
@@ -74,13 +75,13 @@ void DynamicMeshEditor::open(Mesh& mesh, std::string type, std::size_t tdim, std
 void DynamicMeshEditor::add_vertex(std::size_t v, const Point& p)
 {
   // Resize array if necessary
-  const std::size_t offset = v*gdim;
-  const std::size_t size = offset + gdim;
+  const std::size_t offset = v*_gdim;
+  const std::size_t size = offset + _gdim;
   if (size > vertex_coordinates.size())
     vertex_coordinates.resize(size, 0.0);
 
   // Set coordinates
-  for (std::size_t i = 0; i < gdim; i++)
+  for (std::size_t i = 0; i < _gdim; i++)
     vertex_coordinates[offset + i] = p[i];
 }
 //-----------------------------------------------------------------------------
@@ -106,7 +107,7 @@ void DynamicMeshEditor::add_cell(std::size_t c,
                                  const std::vector<std::size_t>& v)
 {
   // Check size of array
-  const std::size_t vertices_per_cell = cell_type->num_vertices(tdim);
+  const std::size_t vertices_per_cell = _cell_type->num_vertices(_tdim);
   if (v.size() != vertices_per_cell)
   {
     dolfin_error("DynamicMeshEditor.cpp",
@@ -158,28 +159,28 @@ void DynamicMeshEditor::add_cell(std::size_t c, std::size_t v0,
 //-----------------------------------------------------------------------------
 void DynamicMeshEditor::close(bool order)
 {
-  dolfin_assert(mesh);
-  dolfin_assert(cell_type);
+  dolfin_assert(_mesh);
+  dolfin_assert(_cell_type);
 
   // Open default mesh editor
   MeshEditor editor;
-  editor.open(*mesh, cell_type->cell_type(), tdim, gdim);
+  editor.open(*_mesh, _cell_type->cell_type(), _tdim, _gdim);
 
   // Set number of vertices
-  const std::size_t num_vertices = vertex_coordinates.size() / gdim;
+  const std::size_t num_vertices = vertex_coordinates.size()/_gdim;
   editor.init_vertices(num_vertices);
 
   // Set number of cells
-  const std::size_t vertices_per_cell = cell_type->num_vertices(gdim);
-  const std::size_t num_cells = cell_vertices.size() / vertices_per_cell;
+  const std::size_t vertices_per_cell = _cell_type->num_vertices(_gdim);
+  const std::size_t num_cells = cell_vertices.size()/vertices_per_cell;
   editor.init_cells(num_cells);
 
   // Add vertices
-  std::vector<double> p(gdim);
+  std::vector<double> p(_gdim);
   for (std::size_t v = 0; v < num_vertices; v++)
   {
-    const std::size_t offset = v*gdim;
-    for (std::size_t i = 0; i < gdim; i++)
+    const std::size_t offset = v*_gdim;
+    for (std::size_t i = 0; i < _gdim; i++)
       p[i] = vertex_coordinates[offset + i];
     editor.add_vertex(v, p);
   }
@@ -203,12 +204,12 @@ void DynamicMeshEditor::close(bool order)
 //-----------------------------------------------------------------------------
 void DynamicMeshEditor::clear()
 {
-  mesh = 0;
-  tdim = 0;
-  gdim = 0;
+  _mesh = 0;
+  _tdim = 0;
+  _gdim = 0;
 
-  delete cell_type;
-  cell_type = 0;
+  delete _cell_type;
+  _cell_type = 0;
 
   vertex_coordinates.clear();
   cell_vertices.clear();

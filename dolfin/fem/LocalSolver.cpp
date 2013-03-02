@@ -74,10 +74,6 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
   dolfin_assert(dofmap_a1);
   dolfin_assert(dofmap_L);
 
-  // Vector to hold dof map for a cell
-  std::vector<const std::vector<dolfin::la_index>* > dofs_a(2);
-  std::vector<const std::vector<dolfin::la_index>* > dofs_L(1);
-
   // Initialise vector
   std::pair<std::size_t, std::size_t> local_range = dofmap_L->ownership_range();
   x.resize(local_range);

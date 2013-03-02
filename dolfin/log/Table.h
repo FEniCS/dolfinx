@@ -108,7 +108,7 @@ namespace dolfin
     std::map<std::pair<std::string, std::string>, double> dvalues;
 
     // True if we should right-justify the table entries
-    bool right_justify;
+    bool _right_justify;
 
   };
 
@@ -142,13 +142,13 @@ namespace dolfin
   private:
 
     // Row
-    std::string row;
+    std::string _row;
 
     // Column
-    std::string col;
+    std::string _col;
 
     // Table
-    Table& table;
+    Table& _table;
 
   };
 

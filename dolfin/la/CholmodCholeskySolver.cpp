@@ -141,8 +141,8 @@ std::size_t CholmodCholeskySolver::solve(const GenericLinearOperator& A,
 {
   warning("CHOLMOD must be installed to peform a Cholesky solve for the current backend. Attemping to use UMFPACK solver.");
 
-  boost::shared_ptr<const GenericLinearOperator> _A(&A, NoDeleter());
-  UmfpackLUSolver solver(_A);
+  boost::shared_ptr<const GenericLinearOperator> Atmp(&A, NoDeleter());
+  UmfpackLUSolver solver(Atmp);
   return solver.solve(x, b);
 }
 //-----------------------------------------------------------------------------

@@ -54,45 +54,43 @@ namespace dolfin
   {
   public:
 
+    virtual ~VTKPlottableGenericFunction() {}
+
     explicit
     VTKPlottableGenericFunction(boost::shared_ptr<const Function> function);
 
-    explicit
     VTKPlottableGenericFunction(boost::shared_ptr<const Expression> expression,
                                 boost::shared_ptr<const Mesh> mesh);
 
     //--- Implementation of the GenericVTKPlottable interface ---
 
     /// Additional parameters for VTKPlottableGenericFunction
-    virtual void modify_default_parameters(Parameters &parameters)
-    {
-    }
+    virtual void modify_default_parameters(Parameters& p) {}
 
-    virtual void modify_user_parameters(Parameters &parameters)
+    virtual void modify_user_parameters(Parameters& p)
     {
-      std::string mode = parameters["mode"];
-      Parameter &elevate = parameters["elevate"];
+      std::string mode = p["mode"];
+      Parameter& elevate = p["elevate"];
       if (dim() < 3 && value_rank() == 0 && mode != "color" && !elevate.is_set())
-      {
         elevate = -65.0;
-      }
     }
 
     /// Initialize the parts of the pipeline that this class controls
-    void init_pipeline(const Parameters &parameters);
+    void init_pipeline(const Parameters& p);
 
     /// Update the plottable data
-    void update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int framecounter);
+    void update(boost::shared_ptr<const Variable> var, const Parameters& p,
+                int framecounter);
 
     /// Check if the plotter is compatible with a given variable (same-rank
     /// function on same mesh for example)
-    bool is_compatible(const Variable &var) const;
+    bool is_compatible(const Variable& var) const;
 
     /// Update the scalar range of the plottable data
     void update_range(double range[2]);
 
     /// Inform the plottable about the range.
-    virtual void rescale(double range[2], const Parameters& parameters);
+    virtual void rescale(double range[2], const Parameters& p);
 
     /// Return data to visualize
     vtkSmartPointer<vtkAlgorithmOutput> get_output() const;

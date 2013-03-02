@@ -74,11 +74,11 @@ boost::shared_ptr<VTKPlotter> get_plotter(boost::shared_ptr<const Variable> obj,
 //-----------------------------------------------------------------------------
 // Function for plotting objects
 boost::shared_ptr<VTKPlotter> plot_object(boost::shared_ptr<const Variable> obj,
-					  boost::shared_ptr<const Parameters> parameters,
+                                          boost::shared_ptr<const Parameters> p,
                                           std::string key)
 {
   // Get plotter from cache. Key given as parameter takes precedence.
-  const Parameter *param_key = parameters->find_parameter("key");
+  const Parameter *param_key = p->find_parameter("key");
   if (param_key && param_key->is_set())
   {
     key = (std::string)*param_key;
@@ -87,7 +87,7 @@ boost::shared_ptr<VTKPlotter> plot_object(boost::shared_ptr<const Variable> obj,
   boost::shared_ptr<VTKPlotter> plotter = get_plotter(obj, key);
 
   // Set plotter parameters
-  plotter->parameters.update(*parameters);
+  plotter->parameters.update(*p);
 
   // Plot
   plotter->plot(obj);
@@ -97,13 +97,13 @@ boost::shared_ptr<VTKPlotter> plot_object(boost::shared_ptr<const Variable> obj,
 //-----------------------------------------------------------------------------
 boost::shared_ptr<Parameters> new_parameters(std::string title, std::string mode)
 {
-  boost::shared_ptr<Parameters> parameters(new Parameters());
+  boost::shared_ptr<Parameters> p(new Parameters());
   if (!title.empty())
   {
-    parameters->add("title", title);
+    p->add("title", title);
   }
-  parameters->add("mode", mode);
-  return parameters;
+  p->add("mode", mode);
+  return p;
 }
 //-----------------------------------------------------------------------------
 void dolfin::interactive(bool really)
@@ -125,16 +125,16 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Variable> var
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<VTKPlotter> dolfin::plot(const Variable& var,
-					   const Parameters& parameters)
+					   const Parameters& p)
 {
   return plot(reference_to_no_delete_pointer(var),
-	      reference_to_no_delete_pointer(parameters));
+	      reference_to_no_delete_pointer(p));
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Variable> var,
-					   boost::shared_ptr<const Parameters> parameters)
+					   boost::shared_ptr<const Parameters> p)
 {
-  return plot_object(var, parameters, VTKPlotter::to_key(*var));
+  return plot_object(var, p, VTKPlotter::to_key(*var));
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<VTKPlotter> dolfin::plot(const Expression& expression,
@@ -154,18 +154,18 @@ boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Expression> e
 //-----------------------------------------------------------------------------
 boost::shared_ptr<VTKPlotter> dolfin::plot(const Expression& expression,
                                            const Mesh& mesh,
-					   const Parameters& parameters)
+                                            const Parameters& p)
 {
   return plot(reference_to_no_delete_pointer(expression),
 	      reference_to_no_delete_pointer(mesh),
-	      reference_to_no_delete_pointer(parameters));
+	      reference_to_no_delete_pointer(p));
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<VTKPlotter> dolfin::plot(boost::shared_ptr<const Expression> expression,
 					   boost::shared_ptr<const Mesh> mesh,
-					   boost::shared_ptr<const Parameters> parameters)
+					   boost::shared_ptr<const Parameters> p)
 {
   boost::shared_ptr<const ExpressionWrapper>
     wrapper(new ExpressionWrapper(expression, mesh));
-  return plot_object(wrapper, parameters, VTKPlotter::to_key(*expression));
+  return plot_object(wrapper, p, VTKPlotter::to_key(*expression));
 }

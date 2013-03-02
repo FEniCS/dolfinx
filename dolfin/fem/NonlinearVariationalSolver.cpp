@@ -36,7 +36,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 NonlinearVariationalSolver::
 NonlinearVariationalSolver(NonlinearVariationalProblem& problem)
-  : problem(reference_to_no_delete_pointer(problem))
+  : _problem(reference_to_no_delete_pointer(problem))
 {
   // Set parameters
   parameters = default_parameters();
@@ -44,7 +44,7 @@ NonlinearVariationalSolver(NonlinearVariationalProblem& problem)
 //-----------------------------------------------------------------------------
 NonlinearVariationalSolver::
 NonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem)
-  : problem(problem)
+  : _problem(problem)
 {
   // Set parameters
   parameters = default_parameters();
@@ -55,22 +55,22 @@ std::pair<std::size_t, bool>  NonlinearVariationalSolver::solve()
   begin("Solving nonlinear variational problem.");
 
   // Check that the Jacobian has been defined
-  dolfin_assert(problem);
-  if (!problem->has_jacobian())
+  dolfin_assert(_problem);
+  if (!_problem->has_jacobian())
     dolfin_error("NonlinearVariationalSolver.cpp",
                  "solve nonlinear variational problem",
                  "The Jacobian form has not been defined");
 
   // Get problem data
-  dolfin_assert(problem);
-  boost::shared_ptr<Function> u(problem->solution());
+  dolfin_assert(_problem);
+  boost::shared_ptr<Function> u(_problem->solution());
 
   const bool reset_jacobian = parameters["reset_jacobian"];
 
   // Create nonlinear problem
   if (!nonlinear_problem || reset_jacobian)
   {
-    nonlinear_problem = boost::shared_ptr<NonlinearDiscreteProblem>(new NonlinearDiscreteProblem(problem,
+    nonlinear_problem = boost::shared_ptr<NonlinearDiscreteProblem>(new NonlinearDiscreteProblem(_problem,
                                              reference_to_no_delete_pointer(*this)));
   }
 
@@ -128,7 +128,7 @@ NonlinearVariationalSolver::
 NonlinearDiscreteProblem::
 NonlinearDiscreteProblem(boost::shared_ptr<NonlinearVariationalProblem> problem,
                          boost::shared_ptr<NonlinearVariationalSolver> solver)
-  : problem(problem), solver(solver), jacobian_initialized(false)
+  : _problem(problem), _solver(solver), jacobian_initialized(false)
 {
   // Do nothing
 }
@@ -143,9 +143,9 @@ void NonlinearVariationalSolver::
 NonlinearDiscreteProblem::F(GenericVector& b, const GenericVector& x)
 {
   // Get problem data
-  dolfin_assert(problem);
-  boost::shared_ptr<const Form> F(problem->residual_form());
-  std::vector<boost::shared_ptr<const BoundaryCondition> > bcs(problem->bcs());
+  dolfin_assert(_problem);
+  boost::shared_ptr<const Form> F(_problem->residual_form());
+  std::vector<boost::shared_ptr<const BoundaryCondition> > bcs(_problem->bcs());
 
   // Assemble right-hand side
   dolfin_assert(F);
@@ -159,8 +159,8 @@ NonlinearDiscreteProblem::F(GenericVector& b, const GenericVector& x)
   }
 
   // Print vector
-  dolfin_assert(solver);
-  const bool print_rhs = solver->parameters["print_rhs"];
+  dolfin_assert(_solver);
+  const bool print_rhs = _solver->parameters["print_rhs"];
   if (print_rhs)
     info(b, true);
 }
@@ -169,13 +169,13 @@ void NonlinearVariationalSolver::NonlinearDiscreteProblem::J(GenericMatrix& A,
                                                         const GenericVector& x)
 {
   // Get problem data
-  dolfin_assert(problem);
-  boost::shared_ptr<const Form> J(problem->jacobian_form());
-  std::vector<boost::shared_ptr<const BoundaryCondition> > bcs(problem->bcs());
+  dolfin_assert(_problem);
+  boost::shared_ptr<const Form> J(_problem->jacobian_form());
+  std::vector<boost::shared_ptr<const BoundaryCondition> > bcs(_problem->bcs());
 
   // Check if Jacobian matrix sparsity pattern should be reset
-  dolfin_assert(solver);
-  const bool reset_jacobian = solver->parameters["reset_jacobian"];
+  dolfin_assert(_solver);
+  const bool reset_jacobian = _solver->parameters["reset_jacobian"];
   bool reset_sparsity = reset_jacobian || !jacobian_initialized;
 
   // Assemble left-hand side
@@ -195,8 +195,8 @@ void NonlinearVariationalSolver::NonlinearDiscreteProblem::J(GenericMatrix& A,
   }
 
   // Print matrix
-  dolfin_assert(solver);
-  const bool print_matrix = solver->parameters["print_matrix"];
+  dolfin_assert(_solver);
+  const bool print_matrix = _solver->parameters["print_matrix"];
   if (print_matrix)
     info(A, true);
 }

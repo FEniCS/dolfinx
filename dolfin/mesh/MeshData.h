@@ -196,7 +196,7 @@ namespace dolfin
     void check_deprecated(std::string name) const;
 
     // The mesh
-    Mesh& mesh;
+    Mesh& _mesh;
 
     // A map from named mesh data to MeshFunctions
     std::map<std::string, boost::shared_ptr<MeshFunction<std::size_t> > > mesh_functions;

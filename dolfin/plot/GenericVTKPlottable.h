@@ -45,25 +45,28 @@ namespace dolfin
   {
   public:
 
+    virtual ~GenericVTKPlottable() {}
+
     /// To be redefined in classes that require special parameters. Called once
     /// with the default parameters.
-    virtual void modify_default_parameters(Parameters &parameters) = 0;
+    virtual void modify_default_parameters(Parameters& p) = 0;
 
     /// To be redefined in classes that require special parameters. Called once
     /// with user-specified parameters, but before init_pipeline.
-    virtual void modify_user_parameters(Parameters &parameters)
+    virtual void modify_user_parameters(Parameters& p)
     {
     }
 
     /// Initialize the parts of the pipeline that this class controls
-    virtual void init_pipeline(const Parameters& parameters) = 0;
+    virtual void init_pipeline(const Parameters& p) = 0;
 
     /// Connect or reconnect to the output stage.
     virtual void connect_to_output(VTKWindowOutputStage& output) = 0;
 
     /// Update the plottable data. The variable may be empty, or it may be a
     /// new variable to plot. is_compatible(var) must be true.
-    virtual void update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int framecounter) = 0;
+    virtual void update(boost::shared_ptr<const Variable> var,
+                        const Parameters& p, int framecounter) = 0;
 
     /// Return whether this plottable is compatible with the variable
     virtual bool is_compatible(const Variable &var) const = 0;
@@ -73,7 +76,7 @@ namespace dolfin
 
     /// Inform the plottable about the range. Most plottables don't care, since
     /// this is handled in the output stage.
-    virtual void rescale(double range[2], const Parameters& parameters)
+    virtual void rescale(double range[2], const Parameters& p)
     {
     }
 

@@ -187,7 +187,8 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   return connectivity_ev.size();
 }
 //-----------------------------------------------------------------------------
-void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0, std::size_t d1)
+void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
+                                               std::size_t d1)
 {
   // This is where all the logic takes place to find a stragety for
   // the connectivity computation. For any given pair (d0, d1), the
@@ -234,10 +235,10 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0, std::
   // Decide how to compute the connectivity
   if (d0 == 0 && d1 == 0)
   {
-    std::vector<std::vector<std::size_t> > connectivity(topology.size(0), std::vector<std::size_t>(1));
+    std::vector<std::vector<std::size_t> > connectivity00(topology.size(0), std::vector<std::size_t>(1));
     for (MeshEntityIterator v(mesh, 0); !v.end(); ++v)
-      connectivity[v->index()][0] = v->index();
-    topology(0, 0).set(connectivity);
+      connectivity00[v->index()][0] = v->index();
+    topology(0, 0).set(connectivity00);
   }
   else if (d0 < d1)
   {

@@ -59,8 +59,8 @@ Parameters NewtonSolver::default_parameters()
 NewtonSolver::NewtonSolver(std::string solver_type, std::string pc_type)
   : Variable("Newton solver", "unamed"),
     newton_iteration(0), _residual(0.0), residual0(0.0),
-    solver(new LinearSolver(solver_type, pc_type)),
-    A(new Matrix), dx(new Vector), b(new Vector)
+    _solver(new LinearSolver(solver_type, pc_type)),
+    _A(new Matrix), _dx(new Vector), _b(new Vector)
 {
   // Set default parameters
   parameters = default_parameters();
@@ -70,10 +70,10 @@ NewtonSolver::NewtonSolver(boost::shared_ptr<GenericLinearSolver> solver,
                            GenericLinearAlgebraFactory& factory)
   : Variable("Newton solver", "unamed"),
     newton_iteration(0), _residual(0.0), residual0(0.0),
-    solver(solver),
-    A(factory.create_matrix()),
-    dx(factory.create_vector()),
-    b(factory.create_vector())
+    _solver(solver),
+    _A(factory.create_matrix()),
+    _dx(factory.create_vector()),
+    _b(factory.create_vector())
 {
   // Set default parameters
   parameters = default_parameters();
@@ -87,10 +87,10 @@ NewtonSolver::~NewtonSolver()
 std::pair<std::size_t, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
                                                   GenericVector& x)
 {
-  dolfin_assert(A);
-  dolfin_assert(b);
-  dolfin_assert(dx);
-  dolfin_assert(solver);
+  dolfin_assert(_A);
+  dolfin_assert(_b);
+  dolfin_assert(_dx);
+  dolfin_assert(_solver);
 
   const std::size_t maxiter = parameters["maximum_iterations"];
 
@@ -99,46 +99,46 @@ std::pair<std::size_t, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pro
   bool newton_converged = false;
 
   // Compute F(u)
-  nonlinear_problem.form(*A, *b, x);
-  nonlinear_problem.F(*b, x);
+  nonlinear_problem.form(*_A, *_b, x);
+  nonlinear_problem.F(*_b, x);
 
-  solver->set_operator(A);
+  _solver->set_operator(_A);
 
   // Start iterations
   while (!newton_converged && newton_iteration < maxiter)
   {
     // Compute Jacobian
-    nonlinear_problem.J(*A, x);
+    nonlinear_problem.J(*_A, x);
 
     // FIXME: This reset is a hack to handle a deficiency in the Trilinos wrappers
-    solver->set_operator(A);
+    _solver->set_operator(_A);
 
     // Perform linear solve and update total number of Krylov iterations
-    if (!dx->empty())
-      dx->zero();
-    krylov_iterations += solver->solve(*dx, *b);
+    if (!_dx->empty())
+      _dx->zero();
+    krylov_iterations += _solver->solve(*_dx, *_b);
 
     // Compute initial residual
     if (newton_iteration == 0)
-      newton_converged = converged(*b, *dx, nonlinear_problem);
+      newton_converged = converged(*_b, *_dx, nonlinear_problem);
 
     // Update solution
     const double relaxation = parameters["relaxation_parameter"];
     if (std::abs(1.0 - relaxation) < DOLFIN_EPS)
-      x -= (*dx);
+      x -= (*_dx);
     else
-      x.axpy(-relaxation, *dx);
+      x.axpy(-relaxation, *_dx);
 
     // Update number of iterations
     ++newton_iteration;
 
     //FIXME: this step is not needed if residual is based on dx and this has converged.
     // Compute F
-    nonlinear_problem.form(*A, *b, x);
-    nonlinear_problem.F(*b, x);
+    nonlinear_problem.form(*_A, *_b, x);
+    nonlinear_problem.F(*_b, x);
 
     // Test for convergence
-    newton_converged = converged(*b, *dx, nonlinear_problem);
+    newton_converged = converged(*_b, *_dx, nonlinear_problem);
   }
 
   if (newton_converged)
@@ -180,8 +180,8 @@ double NewtonSolver::relative_residual() const
 //-----------------------------------------------------------------------------
 GenericLinearSolver& NewtonSolver::linear_solver() const
 {
-  dolfin_assert(solver);
-  return *solver;
+  dolfin_assert(_solver);
+  return *_solver;
 }
 //-----------------------------------------------------------------------------
 bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx,

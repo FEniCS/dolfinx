@@ -39,7 +39,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 LinearVariationalSolver::
 LinearVariationalSolver(LinearVariationalProblem& problem)
-  : problem(reference_to_no_delete_pointer(problem))
+  : _problem(reference_to_no_delete_pointer(problem))
 {
   // Set parameters
   parameters = default_parameters();
@@ -47,7 +47,7 @@ LinearVariationalSolver(LinearVariationalProblem& problem)
 //-----------------------------------------------------------------------------
 LinearVariationalSolver::
 LinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem)
-  : problem(problem)
+  : _problem(problem)
 {
   // Set parameters
   parameters = default_parameters();
@@ -65,11 +65,11 @@ void LinearVariationalSolver::solve()
   const bool print_matrix   = parameters["print_matrix"];
 
   // Get problem data
-  dolfin_assert(problem);
-  boost::shared_ptr<const Form> a(problem->bilinear_form());
-  boost::shared_ptr<const Form> L(problem->linear_form());
-  boost::shared_ptr<Function> u(problem->solution());
-  std::vector<boost::shared_ptr<const BoundaryCondition> > bcs(problem->bcs());
+  dolfin_assert(_problem);
+  boost::shared_ptr<const Form> a(_problem->bilinear_form());
+  boost::shared_ptr<const Form> L(_problem->linear_form());
+  boost::shared_ptr<Function> u(_problem->solution());
+  std::vector<boost::shared_ptr<const BoundaryCondition> > bcs(_problem->bcs());
 
   dolfin_assert(a);
   dolfin_assert(L);

@@ -92,9 +92,9 @@ namespace dolfin
 
     /// Add cell tensor to global tensor. Hook to allow the SymmetricAssembler
     /// to split the cell tensor into symmetric/antisymmetric parts.
-    virtual void add_to_global_tensor(GenericTensor& A,
-                                      std::vector<double>& cell_tensor,
-                                      std::vector<const std::vector<dolfin::la_index>* >& dofs);
+    void add_to_global_tensor(GenericTensor& A,
+                              std::vector<double>& cell_tensor,
+                              std::vector<const std::vector<dolfin::la_index>* >& dofs);
 
   };
 

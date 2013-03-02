@@ -68,13 +68,16 @@ namespace dolfin
     }
 
     /// Solve linear system Ax = b for a sparse matrix using CHOLMOD
-    virtual std::size_t solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+    virtual std::size_t solve(const GenericLinearOperator& A,
+                              GenericVector& x,
+                              const GenericVector& b);
 
     /// Cholesky-factor sparse matrix A if CHOLMOD is installed
     virtual std::size_t factorize(const GenericLinearOperator& A);
 
     /// Solve factorized system (CHOLMOD).
-    virtual std::size_t factorized_solve(GenericVector& x, const GenericVector& b);
+    virtual std::size_t factorized_solve(GenericVector& x,
+                                         const GenericVector& b);
 
     /// Default parameter values
     static Parameters default_parameters();
@@ -97,7 +100,8 @@ namespace dolfin
       void clear();
 
       /// Initialise with matrix
-      void init(long int* Ap, long int* Ai, double* Ax, std::size_t M, std::size_t nz);
+      void init(long int* Ap, long int* Ai, double* Ax, std::size_t M,
+                std::size_t nz);
 
       /// Factorize
       void factorize();

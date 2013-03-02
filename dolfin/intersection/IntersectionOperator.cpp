@@ -172,7 +172,6 @@ const IntersectionOperatorImplementation& IntersectionOperator::rImpl() const
 }
 //-----------------------------------------------------------------------------
 #ifdef HAS_CGAL
-
 IntersectionOperatorImplementation*
     IntersectionOperator::create_intersection_operator(
 				    const std::string& kernel_type = "SimpleCartesian")
@@ -201,10 +200,12 @@ IntersectionOperatorImplementation*
         case CellType::interval   : return new IntersectionOperatorImplementation_d< IntervalCell, SCK  >(_mesh);
         case CellType::triangle   : return new IntersectionOperatorImplementation_d< TriangleCell, SCK >(_mesh);
         case CellType::tetrahedron: return new IntersectionOperatorImplementation_d< TetrahedronCell, SCK  >(_mesh);
-        default: dolfin_error("IntersectionOperator.cpp",
-                            "create intersection operator",
-                            "Cell type of mesh is not known. Allowed cell types are point, interval, triangle and tetrahedron");
-	    	 return 0;
+        default:
+        {
+          dolfin_error("IntersectionOperator.cpp",
+                       "create intersection operator",
+                       "Cell type of mesh is not known. Allowed cell types are point, interval, triangle and tetrahedron");
+        }
       }
     }
   }
@@ -250,6 +251,11 @@ IntersectionOperatorImplementation*
   dolfin_error("IntersectionOperator.cpp",
                "create intersection operator",
                "IntersectionOperatorImplementation is not available, DOLFIN has been compiled without CGAL");
+
+  // Use to member variable to avoid fuss compiler warnings
+  dolfin_assert(_label);
+  dolfin_assert(_use_labels);
+
   return 0;
 }
 #endif
