@@ -40,17 +40,19 @@ namespace dolfin
     explicit
     VTKPlottableMeshFunction(boost::shared_ptr<const MeshFunction<T> > mesh_function);
 
+    virtual ~VTKPlottableMeshFunction() {}
+
     //--- Implementation of the GenericVTKPlottable interface ---
 
     /// Additional parameters for VTKPlottableMeshFunction
-    virtual void modify_default_parameters(Parameters &parameters)
-    {
-    }
+    virtual void modify_default_parameters(Parameters& p) {}
 
     /// Update the plottable data
-    void update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int frame_counter);
+    void update(boost::shared_ptr<const Variable> var, const Parameters& p,
+                int frame_counter);
 
-    bool is_compatible(const Variable &var) const { return dynamic_cast<const MeshFunction<T>*>(&var); }
+    bool is_compatible(const Variable &var) const
+    { return dynamic_cast<const MeshFunction<T>*>(&var); }
 
   private:
 
@@ -60,18 +62,16 @@ namespace dolfin
   };
 
   //----------------------------------------------------------------------------
-
   template <typename T>
   VTKPlottableMeshFunction<T> *CreateVTKPlottable(boost::shared_ptr<const MeshFunction<T> > meshfunc)
   {
     return new VTKPlottableMeshFunction<T>(meshfunc);
   }
-
+  //----------------------------------------------------------------------------
   template <typename T>
   VTKPlottableMeshFunction<T> *CreateVTKPlottable(boost::shared_ptr<MeshFunction<T> > meshfunc)
-  {
-    return new VTKPlottableMeshFunction<T>(meshfunc);
-  }
+  { return new VTKPlottableMeshFunction<T>(meshfunc); }
+  //----------------------------------------------------------------------------
 
 }
 

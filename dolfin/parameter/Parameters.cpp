@@ -591,6 +591,6 @@ Parameters* Parameters::find_parameter_set(std::string key) const
 //-----------------------------------------------------------------------------
 namespace dolfin
 {
-  Parameters empty_parameters("empy");
+  Parameters empty_parameters("empty");
 }
 //-----------------------------------------------------------------------------

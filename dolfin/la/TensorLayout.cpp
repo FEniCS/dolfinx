@@ -26,18 +26,18 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TensorLayout::TensorLayout(std::size_t primary_dim, bool sparsity_pattern)
-    : primary_dim(primary_dim)
+TensorLayout::TensorLayout(std::size_t pdim, bool sparsity_pattern)
+    : primary_dim(pdim)
 {
   // Create empty sparsity pattern
   if (sparsity_pattern)
     _sparsity_pattern.reset(new SparsityPattern(primary_dim));
 }
 //-----------------------------------------------------------------------------
-TensorLayout::TensorLayout(const std::vector<std::size_t>& dims, std::size_t primary_dim,
+TensorLayout::TensorLayout(const std::vector<std::size_t>& dims, std::size_t pdim,
   const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range,
   bool sparsity_pattern)
-  : primary_dim(primary_dim), shape(dims), ownership_range(ownership_range)
+  : primary_dim(pdim), _shape(dims), _ownership_range(ownership_range)
 {
   // Only rank 2 sparsity patterns are supported
   dolfin_assert(!(sparsity_pattern && dims.size() != 2));
@@ -60,27 +60,27 @@ void TensorLayout::init(const std::vector<std::size_t>& dims,
   dolfin_assert(dims.size() == ownership_range.size());
 
   // Store dimensions
-  shape = dims;
+  _shape = dims;
 
   // Store ownership range
-  this->ownership_range = ownership_range;
+  _ownership_range = ownership_range;
 }
 //-----------------------------------------------------------------------------
 std::size_t TensorLayout::rank() const
 {
-  return shape.size();
+  return _shape.size();
 }
 //-----------------------------------------------------------------------------
 std::size_t TensorLayout::size(std::size_t i) const
 {
-  dolfin_assert(i < shape.size());
-  return shape[i];
+  dolfin_assert(i < _shape.size());
+  return _shape[i];
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t> TensorLayout::local_range(std::size_t dim) const
 {
   dolfin_assert(dim < 2);
-  return ownership_range[dim];
+  return _ownership_range[dim];
 }
 //-----------------------------------------------------------------------------
 std::string TensorLayout::str() const
@@ -89,8 +89,8 @@ std::string TensorLayout::str() const
   s << "<TensorLayout for tensor of rank " << rank() << ">" << std::endl;
   for (std::size_t i = 0; i < rank(); i++)
   {
-    s << " Local range for dim " << i << ": [" << ownership_range[i].first
-        << ", " << ownership_range[i].second << ")" << std::endl;
+    s << " Local range for dim " << i << ": [" << _ownership_range[i].first
+        << ", " << _ownership_range[i].second << ")" << std::endl;
   }
   return s.str();
 }

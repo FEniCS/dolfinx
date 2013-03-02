@@ -75,7 +75,7 @@ VTKPlottableMesh::VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh) :
   // Do nothing
 }
 //----------------------------------------------------------------------------
-void VTKPlottableMesh::init_pipeline(const Parameters &parameters)
+void VTKPlottableMesh::init_pipeline(const Parameters& p)
 {
   dolfin_assert(_geometryFilter);
 
@@ -129,7 +129,7 @@ bool VTKPlottableMesh::is_compatible(const Variable &var) const
 }
 //----------------------------------------------------------------------------
 void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var,
-                              const Parameters& parameters, int framecounter)
+                              const Parameters& p, int framecounter)
 {
   if (var)
     _mesh = boost::dynamic_pointer_cast<const Mesh>(var);
@@ -149,11 +149,11 @@ void VTKPlottableMesh::update(boost::shared_ptr<const Variable> var,
   points->SetNumberOfPoints(_mesh->num_vertices());
 
   // Iterate vertices and add to point array
-  Point p;
+  Point point;
   for (VertexIterator vertex(*_mesh); !vertex.end(); ++vertex)
   {
-    p = vertex->point();
-    points->SetPoint(vertex->index(), p.x(), p.y(), p.z());
+    point = vertex->point();
+    points->SetPoint(vertex->index(), point.x(), point.y(), point.z());
   }
 
   // Insert points, vertex labels and cells in VTK unstructured grid
@@ -363,12 +363,13 @@ VTKPlottableMesh *dolfin::CreateVTKPlottable(boost::shared_ptr<const Mesh> mesh)
   return new VTKPlottableMesh(mesh);
 }
 //---------------------------------------------------------------------------
-void VTKPlottableMesh::filter_scalars(vtkFloatArray *values, const Parameters &parameters)
+void VTKPlottableMesh::filter_scalars(vtkFloatArray *values,
+                                      const Parameters& p)
 {
   dolfin_assert(values);
 
-  const Parameter &param_hide_below = parameters["hide_below"];
-  const Parameter &param_hide_above = parameters["hide_above"];
+  const Parameter &param_hide_below = p["hide_below"];
+  const Parameter &param_hide_above = p["hide_above"];
   if (param_hide_below.is_set() || param_hide_above.is_set())
   {
     float hide_above =  std::numeric_limits<float>::infinity();
@@ -387,7 +388,8 @@ void VTKPlottableMesh::filter_scalars(vtkFloatArray *values, const Parameters &p
 }
 //---------------------------------------------------------------------------
 template <class T>
-void VTKPlottableMesh::setPointValues(std::size_t size, const T* indata, const Parameters &parameters)
+void VTKPlottableMesh::setPointValues(std::size_t size, const T* indata,
+                                      const Parameters& p)
 {
   const std::size_t num_vertices = _mesh->num_vertices();
   const std::size_t num_components = size / num_vertices;
@@ -401,11 +403,9 @@ void VTKPlottableMesh::setPointValues(std::size_t size, const T* indata, const P
   {
     values->SetNumberOfValues(num_vertices);
     for (std::size_t i = 0; i < num_vertices; ++i)
-    {
       values->SetValue(i, (double)indata[i]);
-    }
 
-    filter_scalars(values, parameters);
+    filter_scalars(values, p);
 
     _grid->GetPointData()->SetScalars(values);
   }
@@ -442,7 +442,8 @@ void VTKPlottableMesh::setPointValues(std::size_t size, const T* indata, const P
 }
 //----------------------------------------------------------------------------
 template <class T>
-void VTKPlottableMesh::setCellValues(std::size_t size, const T* indata, const Parameters &parameters)
+void VTKPlottableMesh::setCellValues(std::size_t size, const T* indata,
+                                     const Parameters& p)
 {
   const std::size_t num_entities = _mesh->num_entities(_entity_dim);
   dolfin_assert(num_entities == size);
@@ -454,7 +455,7 @@ void VTKPlottableMesh::setCellValues(std::size_t size, const T* indata, const Pa
   for (std::size_t i = 0; i < num_entities; ++i)
     values->SetValue(i, (float)indata[i]);
 
-  filter_scalars(values, parameters);
+  filter_scalars(values, p);
   _grid->GetCellData()->SetScalars(values);
 }
 

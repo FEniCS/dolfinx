@@ -90,7 +90,7 @@ namespace d_anonymous
     PrivateVTKInteractorStyle() : _plotter(NULL), _highlighted(false) {}
 
     static PrivateVTKInteractorStyle* New();
-    vtkTypeMacro(PrivateVTKInteractorStyle, vtkInteractorStyleTrackballCamera);
+    vtkTypeMacro(PrivateVTKInteractorStyle, vtkInteractorStyleTrackballCamera)
 
     virtual void OnKeyPress()
     {
@@ -147,7 +147,7 @@ namespace d_anonymous
     PrivateVTKBalloonWidget() : _force_visible(false) {}
 
     static PrivateVTKBalloonWidget* New();
-    vtkTypeMacro(PrivateVTKBalloonWidget, vtkBalloonWidget);
+    vtkTypeMacro(PrivateVTKBalloonWidget, vtkBalloonWidget)
 
     virtual int SubclassEndHoverAction()
     {
@@ -244,7 +244,7 @@ VTKWindowOutputStage::~VTKWindowOutputStage()
   _renderWindow = NULL;
 }
 //----------------------------------------------------------------------------
-void VTKWindowOutputStage::init(VTKPlotter *parent, const Parameters &parameters)
+void VTKWindowOutputStage::init(VTKPlotter *parent, const Parameters& p)
 {
   // Connect the parts
   _mapper->SetLookupTable(_lut);
@@ -254,7 +254,8 @@ void VTKWindowOutputStage::init(VTKPlotter *parent, const Parameters &parameters
   _renderWindow->AddRenderer(_renderer);
 
   // Load the lookup table
-  vtkSmartPointer<vtkUnsignedCharArray> lut_data = vtkSmartPointer<vtkUnsignedCharArray>::New();
+  vtkSmartPointer<vtkUnsignedCharArray> lut_data
+    = vtkSmartPointer<vtkUnsignedCharArray>::New();
   lut_data->SetNumberOfComponents(4);
   lut_data->SetArray(gauss_120, 256*4, 1);
   _lut->SetTable(lut_data.GetPointer());
@@ -280,11 +281,11 @@ void VTKWindowOutputStage::init(VTKPlotter *parent, const Parameters &parameters
   if (widget->parentWidget())
     widget->resize(widget->parentWidget()->size());
   else
-    widget->resize(parameters["window_width"], parameters["window_height"]);
+    widget->resize(p["window_width"], p["window_height"]);
   #else
   _renderWindow->SetInteractor(vtkSmartPointer<vtkRenderWindowInteractor>::New());
-  const int width  = parameters["window_width"];
-  const int height = parameters["window_height"];
+  const int width  = p["window_width"];
+  const int height = p["window_height"];
   if (width > 0 && height > 0)
     _renderWindow->SetSize(width, height);
   #endif
@@ -306,10 +307,10 @@ void VTKWindowOutputStage::init(VTKPlotter *parent, const Parameters &parameters
   labelprop->SetFontSize(20);
   labelprop->ItalicOff();
   labelprop->BoldOff();
-  if (parameters["scalarbar"])
+  if (p["scalarbar"])
     _renderer->AddActor(_scalarBar);
 
-  if (parameters["axes"])
+  if (p["axes"])
   {
     //axes->SetShaftTypeToCylinder();
     _axesActor->GetXAxisCaptionActor2D()->GetCaptionTextProperty()->SetFontSize(12);
@@ -328,14 +329,14 @@ void VTKWindowOutputStage::init(VTKPlotter *parent, const Parameters &parameters
   }
 
   // Create help text actor
-  helptextActor->SetPosition(10,10);
+  helptextActor->SetPosition(10, 10);
   helptextActor->SetInput("Help ");
   helptextActor->GetTextProperty()->SetColor(0.0, 0.0, 0.0);
   helptextActor->GetTextProperty()->SetFontSize(16);
   helptextActor->GetTextProperty()->SetFontFamilyToCourier();
 
   // Set up the representation for the hover-over help text box
-  balloonRep->SetOffset(5,5);
+  balloonRep->SetOffset(5, 5);
   balloonRep->GetTextProperty()->SetFontSize(14);
   balloonRep->GetTextProperty()->BoldOff();
   balloonRep->GetTextProperty()->SetFontFamilyToCourier();

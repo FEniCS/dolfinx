@@ -63,20 +63,20 @@ dolfin::LogStream& operator << (dolfin::LogStream& stream, const boost::tuple<do
 }
 
 template <class HDS>
-class BuildFromSTL : public CGAL::Modifier_base<HDS> {
+class BuildFromSTL : public CGAL::Modifier_base<HDS>
+{
 public:
-  BuildFromSTL(std::string filename) : filename(filename){}
-  void operator()( HDS& hds)
+  BuildFromSTL(std::string filename) : _filename(filename){}
+  void operator()(HDS& hds)
   {
-    cout << "Reading surface from " << filename << endl;
+    cout << "Reading surface from " << _filename << endl;
 
     CGAL::Polyhedron_incremental_builder_3<HDS> builder( hds, true);
     builder.begin_surface(100000, 100000);
 
-
     typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
 
-    std::ifstream file(filename.c_str());
+    std::ifstream file(_filename.c_str());
     if (!file.is_open())
     {
       dolfin_error("PolyhedronUtils.cpp",
@@ -95,9 +95,11 @@ public:
     boost::algorithm::trim(line);
 
     if (line.substr(0, 5) != "solid")
+    {
       dolfin_error("PolyhedronUtils.cpp",
                    "open .stl file to read 3D surface",
                    "File does not start with \"solid\"");
+    }
 
     // TODO: Read name of solid
 
@@ -106,7 +108,6 @@ public:
 
     while (file.good())
     {
-
       //bool has_normal = false;
       //Point normal;
 
@@ -175,11 +176,11 @@ public:
         tokenizer::iterator tok_iter = tokens.begin();
 
         if (*tok_iter != "vertex")
+        {
           dolfin_error("PolyhedronUtils.cpp",
                        "open .stl file to read 3D surface",
                        "Expected key word vertex");
-
-
+        }
         ++tok_iter;
 
         const double x = strToDouble(*tok_iter); ++tok_iter;
@@ -189,9 +190,7 @@ public:
         boost::tuple<double, double, double> v(x, y, z);
 
         if (vertex_map.count(v) > 0)
-        {
           v_indices[i] = vertex_map[v];
-        }
         else
         {
           vertex_map[v] = num_vertices;
@@ -217,16 +216,20 @@ public:
       std::getline(file, line);
       boost::algorithm::trim(line);
       if (line != "endloop")
+      {
         dolfin_error("PolyhedronUtils.cpp",
                      "open .stl file to read 3D surface",
                      "Expected key word endloop");
+      }
 
       std::getline(file, line);
       boost::algorithm::trim(line);
       if (line != "endfacet")
+      {
         dolfin_error("PolyhedronUtils.cpp",
                      "open .stl file to read 3D surface",
                      "Expected key word endfacet");
+      }
 
       std::getline(file, line);
       boost::algorithm::trim(line);
@@ -240,10 +243,11 @@ public:
     tokenizer::iterator tok_iter = tokens.begin();
 
     if (*tok_iter != "endsolid")
+    {
       dolfin_error("PolyhedronUtils.cpp",
                    "open .stl file to read 3D surface",
                    "Expected key word endsolid");
-
+    }
     ++tok_iter;
 
     // Add all the facets
@@ -260,7 +264,7 @@ public:
 
     cout << "Done reading surface" << endl;
   }
-    std::string filename;
+    const std::string _filename;
 };
 //-----------------------------------------------------------------------------
 void PolyhedronUtils::readSurfaceFile(std::string filename, csg::Exact_Polyhedron_3& p)
@@ -290,17 +294,17 @@ void PolyhedronUtils::readSTLFile(std::string filename, csg::Exact_Polyhedron_3&
 //-----------------------------------------------------------------------------
 CGAL::Bbox_3 PolyhedronUtils::getBoundingBox(csg::Polyhedron_3& polyhedron)
 {
-  csg::Polyhedron_3::Vertex_iterator it=polyhedron.vertices_begin();
+  csg::Polyhedron_3::Vertex_iterator it = polyhedron.vertices_begin();
 
   // Initialize bounding box with the first point
-  csg::Polyhedron_3::Point_3 p = it->point();
-  CGAL::Bbox_3 b(p[0],p[1],p[2],p[0],p[1],p[2]);
+  csg::Polyhedron_3::Point_3 p0 = it->point();
+  CGAL::Bbox_3 b(p0[0], p0[1], p0[2], p0[0], p0[1], p0[2]);
   ++it;
 
   for (; it != polyhedron.vertices_end(); ++it)
   {
-    csg::Polyhedron_3::Point_3 p = it->point();
-    b = b + CGAL::Bbox_3(p[0],p[1],p[2],p[0],p[1],p[2]);
+    csg::Polyhedron_3::Point_3 p1 = it->point();
+    b = b + CGAL::Bbox_3(p1[0], p1[1], p1[2], p1[0], p1[1], p1[2]);
   }
 
   return b;
@@ -331,8 +335,8 @@ double PolyhedronUtils::getBoundingSphereRadius(csg::Polyhedron_3& polyhedron)
 template<typename Polyhedron>
 static inline double get_edge_length(typename Polyhedron::Halfedge::Halfedge_handle halfedge)
 {
-  //return std::sqrt((halfedge->vertex()->point() - halfedge->opposite()->vertex()->point()).squared_length());
-  return CGAL::to_double((halfedge->vertex()->point() - halfedge->opposite()->vertex()->point()).squared_length());
+  return CGAL::to_double((halfedge->vertex()->point() -
+    halfedge->opposite()->vertex()->point()).squared_length());
 }
 //-----------------------------------------------------------------------------
 template <typename Polyhedron>
@@ -349,7 +353,8 @@ template<typename Polyhedron>
 static inline double get_min_edge_length(typename Polyhedron::Facet_handle facet)
 {
   typename Polyhedron::Facet::Halfedge_around_facet_circulator half_edge = facet->facet_begin();
-  double min_length = CGAL::to_double((half_edge->vertex()->point() - half_edge->opposite()->vertex()->point()).squared_length());
+  double min_length = CGAL::to_double((half_edge->vertex()->point()
+      - half_edge->opposite()->vertex()->point()).squared_length());
 
   half_edge++;
   min_length = std::min(min_length, get_edge_length<Polyhedron>(half_edge));
@@ -369,7 +374,8 @@ bool facet_is_degenerate(typename Polyhedron::Facet_handle facet, const double t
   // else
   //   cout << "Not degenerate" << endl;
 
-  return get_min_edge_length<Polyhedron>(facet) < threshold || get_triangle_area<Polyhedron>(facet) < threshold;
+  return get_min_edge_length<Polyhedron>(facet) < threshold
+      || get_triangle_area<Polyhedron>(facet) < threshold;
   //return get_min_edge_length(facet) < threshold;
 }
 //-----------------------------------------------------------------------------
@@ -381,7 +387,6 @@ static int number_of_degenerate_facets(Polyhedron& p, const double threshold)
        facet != p.facets_end(); facet++)
   {
     dolfin_assert(facet->is_triangle());
-
     if ( facet_is_degenerate<Polyhedron>(facet, threshold) )
       count++;
   }

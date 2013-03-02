@@ -155,7 +155,6 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     num_local_entities = num_local_cells;
     num_total_entities = num_global_cells;
     dolfin_assert(u.function_space()->dofmap());
-    const GenericDofMap& dofmap = *u.function_space()->dofmap();
     dolfin_assert(u.vector());
 
     // Allocate memory for function values at cell centres
@@ -254,7 +253,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     num_total_vertices = global_size[0];
   }
 
-  const std::string dataset_name = "/VisualisationVector/" 
+  const std::string dataset_name = "/VisualisationVector/"
     + boost::lexical_cast<std::string>(counter);
 
   hdf5_file->write_data(dataset_name, data_values, global_size);
@@ -332,7 +331,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
     xml_mesh_geometry(xdmf_geometry, num_total_vertices, gdim,
                       mesh_coords_name);
 
-    xml_doc.save_file(filename.c_str(), "  ");
+    xml_doc.save_file(_filename.c_str(), "  ");
   }
 
 }
@@ -394,7 +393,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 
   current_mesh_name = boost::lexical_cast<std::string>(counter);
   hdf5_file->write_mesh_function(meshfunction, current_mesh_name);
-  
+
 
   // hdf5_file->write(mesh, cell_dim, current_mesh_name);
 
@@ -434,7 +433,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 
   // Save MeshFunction values in the /Mesh group
   const std::string dataset_name = "/Mesh/" + current_mesh_name + "/values";
-  
+
   // hdf5_file->write_data(dataset_name, data_values, global_size);
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero
@@ -522,7 +521,7 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
   // Using the "X_Y_Z" geometry the Y and Z values can be supplied
   // as separate datasets, here in plain text (though it could be done in HDF5 too).
   // Cannot write HDF5 here, as we are only running on rank 0, and will deadlock.
-  
+
   if(gdim == 1)
   {
     std::string dummy_zeros;
@@ -543,7 +542,7 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
     xdmf_geom_2.append_child(pugi::node_pcdata).set_value(dummy_zeros.c_str());
 
   }
-  
+
 
   boost::filesystem::path p(hdf5_filename);
   const std::string geometry_reference

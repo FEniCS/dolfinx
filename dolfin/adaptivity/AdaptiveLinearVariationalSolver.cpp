@@ -38,7 +38,7 @@ using namespace dolfin;
 AdaptiveLinearVariationalSolver::
 AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem,
                                 GoalFunctional& goal)
-  : problem(reference_to_no_delete_pointer(problem))
+  : _problem(reference_to_no_delete_pointer(problem))
 {
   init(reference_to_no_delete_pointer(problem),
        reference_to_no_delete_pointer(goal));
@@ -47,7 +47,7 @@ AdaptiveLinearVariationalSolver(LinearVariationalProblem& problem,
 AdaptiveLinearVariationalSolver::
 AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem,
                                 boost::shared_ptr<GoalFunctional> goal)
-  : problem(problem)
+  : _problem(problem)
 {
   init(problem, goal);
 }
@@ -56,7 +56,7 @@ AdaptiveLinearVariationalSolver::
 AdaptiveLinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem,
                                 boost::shared_ptr<Form> goal,
                                 boost::shared_ptr<ErrorControl> control)
-  : problem(problem)
+  : _problem(problem)
 {
   this->goal = goal;
   this->control = control;
@@ -94,7 +94,7 @@ init(boost::shared_ptr<LinearVariationalProblem> problem,
 boost::shared_ptr<const Function>
 AdaptiveLinearVariationalSolver::solve_primal()
 {
-  LinearVariationalProblem& current = problem->leaf_node();
+  LinearVariationalProblem& current = _problem->leaf_node();
   LinearVariationalSolver solver(current);
   solver.parameters.update(parameters("linear_variational_solver"));
   solver.solve();
@@ -104,7 +104,7 @@ AdaptiveLinearVariationalSolver::solve_primal()
 std::vector<boost::shared_ptr<const BoundaryCondition> >
 AdaptiveLinearVariationalSolver::extract_bcs() const
 {
-  const LinearVariationalProblem& current = problem->leaf_node();
+  const LinearVariationalProblem& current = _problem->leaf_node();
   return current.bcs();
 }
 // ----------------------------------------------------------------------------
@@ -119,13 +119,13 @@ evaluate_goal(Form& M, boost::shared_ptr<const Function> u) const
 void AdaptiveLinearVariationalSolver::
 adapt_problem(boost::shared_ptr<const Mesh> mesh)
 {
-  const LinearVariationalProblem& current = problem->leaf_node();
+  const LinearVariationalProblem& current = _problem->leaf_node();
   adapt(current, mesh);
 }
 // ----------------------------------------------------------------------------
 std::size_t AdaptiveLinearVariationalSolver::num_dofs_primal()
 {
-  const LinearVariationalProblem& current = problem->leaf_node();
+  const LinearVariationalProblem& current = _problem->leaf_node();
   const FunctionSpace& V = *(current.trial_space());
   return V.dim();
 }

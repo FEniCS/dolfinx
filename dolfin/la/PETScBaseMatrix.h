@@ -61,7 +61,7 @@ namespace dolfin
     PETScBaseMatrix() {}
 
     /// Constructor
-    PETScBaseMatrix(boost::shared_ptr<Mat> A) : A(A) {}
+    PETScBaseMatrix(boost::shared_ptr<Mat> A) : _A(A) {}
 
     /// Return number of rows (dim = 0) or columns (dim = 1)
     std::size_t size(std::size_t dim) const;
@@ -80,7 +80,7 @@ namespace dolfin
 
     /// Return PETSc Mat pointer
     boost::shared_ptr<Mat> mat() const
-    { return A; }
+    { return _A; }
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;
@@ -88,7 +88,7 @@ namespace dolfin
   protected:
 
     // PETSc Mat pointer
-    boost::shared_ptr<Mat> A;
+    boost::shared_ptr<Mat> _A;
 
   };
 

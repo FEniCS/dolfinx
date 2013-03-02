@@ -328,11 +328,11 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
     for (std::size_t i = 0; i < new_indices.size(); ++i)
     {
       const std::size_t local_index = local_indices[i];
-      const std::size_t new_index   = new_indices[i];
+      const std::size_t new_global_index   = new_indices[i];
 
       dolfin_assert(local_index < modified_global_indices.size());
       //dolfin_assert(modified_global_indices[local_index] == std::numeric_limits<std::size_t>::max());
-      modified_global_indices[local_index] = new_index;
+      modified_global_indices[local_index] = new_global_index;
     }
   }
 

@@ -36,7 +36,7 @@ LogStream dolfin::cout(LogStream::COUT);
 LogStream dolfin::endl(LogStream::ENDL);
 
 //-----------------------------------------------------------------------------
-LogStream::LogStream(Type type) : type(type)
+LogStream::LogStream(Type type) : _type(type)
 {
   // Do nothing
 }
@@ -48,7 +48,7 @@ LogStream::~LogStream()
 //-----------------------------------------------------------------------------
 LogStream& LogStream::operator<< (const LogStream& stream)
 {
-  if (stream.type == ENDL)
+  if (stream._type == ENDL)
   {
     // Send buffer to log system
     info(buffer.str());
@@ -122,7 +122,7 @@ LogStream& LogStream::operator<< (const Point& point)
   return *this;
 }
 //-----------------------------------------------------------------------------
-void LogStream::setprecision(std::size_t n)
+void LogStream::setprecision(std::streamsize n)
 {
   buffer.precision(n);
 }

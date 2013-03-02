@@ -47,7 +47,7 @@ namespace dolfin
     Hierarchical(T& self) : _self(reference_to_no_delete_pointer(self)) {}
 
     /// Destructor
-    ~Hierarchical() {}
+    virtual ~Hierarchical() {}
 
     /// Return depth of the hierarchy; that is, the total number of
     /// objects in the hierarchy linked to the current object via

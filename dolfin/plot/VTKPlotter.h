@@ -162,17 +162,17 @@ namespace dolfin
     /// Create plotter for a variable. If a widget is supplied, this widget
     /// will be used for drawing, instead of a new top-level widget. Ownership
     /// is transferred.
-    explicit VTKPlotter(boost::shared_ptr<const Variable>, QVTKWidget *widget = NULL);
+    VTKPlotter(boost::shared_ptr<const Variable>, QVTKWidget *widget = NULL);
 
     /// Create plotter for an Expression with associated Mesh. If a widget is
     /// supplied, this widget will be used for drawing, instead of a new
     /// top-level widget. Ownership is transferred.
-    explicit VTKPlotter(boost::shared_ptr<const Expression> expression,
-                        boost::shared_ptr<const Mesh> mesh,
-                        QVTKWidget *wiget = NULL);
+    VTKPlotter(boost::shared_ptr<const Expression> expression,
+               boost::shared_ptr<const Mesh> mesh,
+               QVTKWidget *wiget = NULL);
 
     /// Destructor
-    ~VTKPlotter();
+    virtual ~VTKPlotter();
 
     /// Default parameter values
     static Parameters default_parameters()

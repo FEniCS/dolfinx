@@ -40,7 +40,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    MeshCoordinates(const Mesh& mesh);
+    explicit MeshCoordinates(const Mesh& mesh);
 
     /// Evaluate function
     void eval(Array<double>& values,
@@ -50,7 +50,7 @@ namespace dolfin
   private:
 
     // The mesh
-    const Mesh& mesh;
+    const Mesh& _mesh;
 
   };
 
@@ -60,7 +60,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    FacetArea(const Mesh& mesh);
+    explicit FacetArea(const Mesh& mesh);
 
     /// Evaluate function
     void eval(Array<double>& values,
@@ -70,7 +70,7 @@ namespace dolfin
   private:
 
     // The mesh
-    const Mesh& mesh;
+    const Mesh& _mesh;
 
     // Warning when evaluating on cells
     mutable Event not_on_boundary;

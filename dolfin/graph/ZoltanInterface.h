@@ -57,8 +57,12 @@ namespace dolfin
       /// Constructor
       ZoltanGraphInterface(const Graph& graph);
 
-      /// Graph object
-      const Graph& graph;
+      private:
+
+      // Graph object
+      const Graph& _graph;
+
+      public:
 
       /// Number of edges from each vertex
       void num_vertex_edges(unsigned int* num_edges) const;

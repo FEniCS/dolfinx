@@ -54,10 +54,10 @@ namespace dolfin
   private:
 
     // The form
-    Form& form;
+    Form& _form;
 
     // The number of the coefficient
-    std::size_t number;
+    std::size_t _number;
 
   };
 

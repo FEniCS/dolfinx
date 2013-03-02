@@ -72,11 +72,12 @@ namespace dolfin
     void init(const TensorLayout& tensor_layout);
 
     /// Return size of given dimension
-    std::size_t size(std::size_t dim) const { return PETScBaseMatrix::size(dim); }
+    std::size_t size(std::size_t dim) const
+    { return PETScBaseMatrix::size(dim); }
 
     /// Return local ownership range
     std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const
-    { return PETScBaseMatrix::local_range(dim); };
+    { return PETScBaseMatrix::local_range(dim); }
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();

@@ -545,11 +545,11 @@ const StringParameter& StringParameter::operator= (const char* value)
   // Check value
   if (!_range.empty() && _range.find(s) == _range.end())
   {
-    std::stringstream s;
-    s << "Illegal value for parameter. Allowed values are: " << range_str();
+    std::stringstream stream;
+    stream << "Illegal value for parameter. Allowed values are: " << range_str();
     dolfin_error("Parameter.cpp",
                  "assign parameter value",
-                 s.str());
+                 stream.str());
   }
 
   // Set value

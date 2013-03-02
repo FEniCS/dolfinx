@@ -84,10 +84,11 @@ namespace dolfin
         cell_shape = ufc::tetrahedron;
         num_vertices = 4;
         break;
-      default:
+      case CellType::point:
         dolfin_error("UFCCell.h",
                      "create UFC cell wrapper",
-                     "Unknown cell type (%d)", cell.type());
+                     "Cannot create UFC wrapper for %d", cell.type());
+        break;
       }
 
       // Mesh

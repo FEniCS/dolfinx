@@ -273,7 +273,7 @@ a terminal time :math:`T` is reached:
 
     # Step in time
     t = 0.0
-    T = 80*dt
+    T = 50*dt
     while (t < T):
         t += dt
         u0.vector()[:] = u.vector()
@@ -305,4 +305,3 @@ Complete code
 
 .. literalinclude:: demo_cahn-hilliard.py
    :start-after: # Begin demo
-
