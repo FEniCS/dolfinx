@@ -47,7 +47,7 @@ namespace dolfin
     /// Create iterator for given mesh function. The iterator visits
     /// all entities that match the given label.
     SubsetIterator(const MeshFunction<std::size_t>& labels, std::size_t label)
-      : entity(labels.mesh(), labels.dim(), 0),
+      : _entity(labels.mesh(), labels.dim(), 0),
         _subset(new std::vector<std::size_t>()),
         subset(*_subset)
     {
@@ -67,7 +67,7 @@ namespace dolfin
 
     /// Copy Constructor
     SubsetIterator(const SubsetIterator& subset_iter)
-    : entity(subset_iter.entity),_subset(subset_iter._subset),
+    : _entity(subset_iter._entity), _subset(subset_iter._subset),
     subset(*_subset), it(subset_iter.it)
     {}
 
@@ -99,7 +99,7 @@ namespace dolfin
 
     /// Member access operator
     MeshEntity* operator->()
-    { entity._local_index = *it; return &entity; }
+    { _entity._local_index = *it; return &_entity; }
 
     /// Check if iterator has reached the end
     bool end() const
@@ -119,7 +119,7 @@ namespace dolfin
     { it = subset.end(); }
 
     // Mesh entity
-    MeshEntity entity;
+    MeshEntity _entity;
 
     // Subset in shared data form
     boost::shared_ptr< std::vector<std::size_t> > _subset;

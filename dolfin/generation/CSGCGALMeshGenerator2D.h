@@ -38,8 +38,11 @@ namespace dolfin
   class CSGCGALMeshGenerator2D : public Variable
   {
   public :
+
     CSGCGALMeshGenerator2D(const CSGGeometry& geometry);
+
     ~CSGCGALMeshGenerator2D();
+
     void generate(Mesh& mesh);
 
     /// Default parameter values
@@ -53,7 +56,11 @@ namespace dolfin
     }
 
   private:
+
+    #ifdef HAS_CGAL
     const CSGGeometry& geometry;
+    #endif
+
   };
 
 }

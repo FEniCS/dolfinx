@@ -191,11 +191,11 @@ namespace dolfin
 
     /// Return pointer to underlying data (const version)
     virtual const double* data() const
-    { return &x->data()[0]; }
+    { return &_x->data()[0]; }
 
     /// Return pointer to underlying data
     virtual double* data()
-    { return &x->data()[0]; }
+    { return &_x->data()[0]; }
 
     //--- Special functions ---
 
@@ -206,19 +206,19 @@ namespace dolfin
 
     /// Return reference to uBLAS vector (const version)
     const ublas_vector& vec() const
-    { return *x; }
+    { return *_x; }
 
     /// Return reference to uBLAS vector (non-const version)
     ublas_vector& vec()
-    { return *x; }
+    { return *_x; }
 
     /// Access value of given entry (const version)
     virtual double operator[] (dolfin::la_index i) const
-    { return (*x)(i); };
+    { return (*_x)(i); };
 
     /// Access value of given entry (non-const version)
     double& operator[] (dolfin::la_index i)
-    { return (*x)(i); };
+    { return (*_x)(i); };
 
     /// Assignment operator
     const uBLASVector& operator= (const uBLASVector& x);
@@ -226,7 +226,7 @@ namespace dolfin
   private:
 
     // Smart pointer to uBLAS vector object
-    boost::shared_ptr<ublas_vector> x;
+    boost::shared_ptr<ublas_vector> _x;
 
   };
 

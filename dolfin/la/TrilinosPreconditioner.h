@@ -103,7 +103,7 @@ namespace dolfin
     void set_ml(AztecOO& solver, const Epetra_RowMatrix& P);
 
     /// Named preconditioner
-    std::string preconditioner;
+    std::string _preconditioner;
 
     // Available named preconditioners
     static const std::map<std::string, int> _preconditioners;

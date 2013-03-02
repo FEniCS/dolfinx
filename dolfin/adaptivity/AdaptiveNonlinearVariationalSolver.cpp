@@ -38,7 +38,7 @@ using namespace dolfin;
 AdaptiveNonlinearVariationalSolver::
 AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem& problem,
                                    GoalFunctional& goal)
-  : problem(reference_to_no_delete_pointer(problem))
+  : _problem(reference_to_no_delete_pointer(problem))
 {
   init(reference_to_no_delete_pointer(problem),
        reference_to_no_delete_pointer(goal));
@@ -47,7 +47,7 @@ AdaptiveNonlinearVariationalSolver(NonlinearVariationalProblem& problem,
 AdaptiveNonlinearVariationalSolver::
 AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem,
                                    boost::shared_ptr<GoalFunctional> goal)
-  : problem(problem)
+  : _problem(problem)
 {
   init(problem, goal);
 }
@@ -56,7 +56,7 @@ AdaptiveNonlinearVariationalSolver::
 AdaptiveNonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem,
                                 boost::shared_ptr<Form> goal,
                                 boost::shared_ptr<ErrorControl> control)
-  : problem(problem)
+  : _problem(problem)
 {
   this->goal = goal;
   this->control = control;
@@ -94,7 +94,7 @@ init(boost::shared_ptr<NonlinearVariationalProblem> problem,
 boost::shared_ptr<const Function>
 AdaptiveNonlinearVariationalSolver::solve_primal()
 {
-  NonlinearVariationalProblem& current = problem->leaf_node();
+  NonlinearVariationalProblem& current = _problem->leaf_node();
   NonlinearVariationalSolver solver(current);
   solver.parameters.update(parameters("nonlinear_variational_solver"));
   solver.solve();
@@ -104,7 +104,7 @@ AdaptiveNonlinearVariationalSolver::solve_primal()
 std::vector<boost::shared_ptr<const BoundaryCondition> >
 AdaptiveNonlinearVariationalSolver::extract_bcs() const
 {
-  const NonlinearVariationalProblem& current = problem->leaf_node();
+  const NonlinearVariationalProblem& current = _problem->leaf_node();
   return current.bcs();
 }
 // ----------------------------------------------------------------------------
@@ -117,13 +117,13 @@ evaluate_goal(Form& M, boost::shared_ptr<const Function> u) const
 void AdaptiveNonlinearVariationalSolver::
 adapt_problem(boost::shared_ptr<const Mesh> mesh)
 {
-  const NonlinearVariationalProblem& current = problem->leaf_node();
+  const NonlinearVariationalProblem& current = _problem->leaf_node();
   adapt(current, mesh);
 }
 // ----------------------------------------------------------------------------
 std::size_t AdaptiveNonlinearVariationalSolver::num_dofs_primal()
 {
-  const NonlinearVariationalProblem& current = problem->leaf_node();
+  const NonlinearVariationalProblem& current = _problem->leaf_node();
   const FunctionSpace& V = *(current.trial_space());
   return V.dim();
 }

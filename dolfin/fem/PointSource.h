@@ -60,13 +60,13 @@ namespace dolfin
     void check_is_scalar(const FunctionSpace& V);
 
     // The function space
-    boost::shared_ptr<const FunctionSpace> V;
+    boost::shared_ptr<const FunctionSpace> _V;
 
     // The point
-    Point p;
+    Point _p;
 
     // Magnitude
-    double magnitude;
+    double _magnitude;
 
   };
 

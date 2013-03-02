@@ -29,7 +29,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 uBLASILUPreconditioner::uBLASILUPreconditioner(const Parameters& krylov_parameters)
-  : krylov_parameters(krylov_parameters)
+  : parameters(krylov_parameters)
 {
   // Do nothing
 }
@@ -48,7 +48,7 @@ void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& P)
   _M.assign(P.mat());
 
   // Add term to diagonal to avoid negative pivots
-  const double zero_shift = krylov_parameters("preconditioner")["shift_nonzero"];
+  const double zero_shift = parameters("preconditioner")["shift_nonzero"];
   if(zero_shift > 0.0)
     _M.plus_assign( zero_shift*ublas::identity_matrix<double>(size) );
 

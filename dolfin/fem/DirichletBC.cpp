@@ -66,7 +66,7 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
                          const SubDomain& sub_domain, std::string method)
   : BoundaryCondition(V),
     Hierarchical<DirichletBC>(*this),
-    g(reference_to_no_delete_pointer(g)),
+    _g(reference_to_no_delete_pointer(g)),
     _method(method), _user_sub_domain(reference_to_no_delete_pointer(sub_domain))
 {
   check();
@@ -79,7 +79,7 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          std::string method)
   : BoundaryCondition(V),
     Hierarchical<DirichletBC>(*this),
-    g(g), _method(method), _user_sub_domain(sub_domain)
+    _g(g), _method(method), _user_sub_domain(sub_domain)
 {
   check();
   parameters = default_parameters();
@@ -90,7 +90,7 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
                          std::size_t sub_domain, std::string method)
   : BoundaryCondition(V),
     Hierarchical<DirichletBC>(*this),
-    g(reference_to_no_delete_pointer(g)),
+    _g(reference_to_no_delete_pointer(g)),
     _method(method),
     _user_mesh_function(reference_to_no_delete_pointer(sub_domains)),
     _user_sub_domain_marker(sub_domain)
@@ -106,7 +106,7 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          std::string method)
   : BoundaryCondition(V),
     Hierarchical<DirichletBC>(*this),
-    g(g), _method(method),
+    _g(g), _method(method),
     _user_mesh_function(sub_domains),
     _user_sub_domain_marker(sub_domain)
 {
@@ -118,7 +118,7 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
                          std::size_t sub_domain, std::string method)
   : BoundaryCondition(V),
     Hierarchical<DirichletBC>(*this),
-    g(reference_to_no_delete_pointer(g)), _method(method),
+    _g(reference_to_no_delete_pointer(g)), _method(method),
     _user_sub_domain_marker(sub_domain)
 {
   check();
@@ -130,7 +130,7 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          std::size_t sub_domain, std::string method)
   : BoundaryCondition(V),
     Hierarchical<DirichletBC>(*this),
-    g(g), _method(method),
+    _g(g), _method(method),
     _user_sub_domain_marker(sub_domain)
 {
   check();
@@ -143,7 +143,7 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          std::string method)
   : BoundaryCondition(V),
     Hierarchical<DirichletBC>(*this),
-    g(g), _method(method), facets(markers)
+    _g(g), _method(method), facets(markers)
 {
   check();
   parameters = default_parameters();
@@ -167,7 +167,7 @@ DirichletBC::~DirichletBC()
 const DirichletBC& DirichletBC::operator= (const DirichletBC& bc)
 {
   _function_space = bc._function_space;
-  g = bc.g;
+  _g = bc._g;
   _method = bc._method;
   _user_sub_domain = bc._user_sub_domain;
   facets = bc.facets;
@@ -363,7 +363,7 @@ const std::vector<std::pair<std::size_t, std::size_t> >& DirichletBC::markers() 
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const GenericFunction> DirichletBC::value() const
 {
-  return g;
+  return _g;
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const SubDomain> DirichletBC::user_sub_domain() const
@@ -442,19 +442,19 @@ bool DirichletBC::is_compatible(GenericFunction& v) const
 //-----------------------------------------------------------------------------
 void DirichletBC::set_value(const GenericFunction& g)
 {
-  this->g = reference_to_no_delete_pointer(g);
+  _g = reference_to_no_delete_pointer(g);
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::homogenize()
 {
-  const std::size_t value_rank = g->value_rank();
+  const std::size_t value_rank = _g->value_rank();
   if (!value_rank)
   {
     boost::shared_ptr<Constant> zero(new Constant(0.0));
     set_value(zero);
   } else if (value_rank == 1)
   {
-    const std::size_t value_dim = g->value_dimension(0);
+    const std::size_t value_dim = _g->value_dimension(0);
     std::vector<double> values(value_dim, 0.0);
     boost::shared_ptr<Constant> zero(new Constant(values));
     set_value(zero);
@@ -462,8 +462,8 @@ void DirichletBC::homogenize()
   {
     std::vector<std::size_t> value_shape;
     for (std::size_t i = 0; i < value_rank; i++)
-      value_shape.push_back(g->value_dimension(i));
-    std::vector<double> values(g->value_size(), 0.0);
+      value_shape.push_back(_g->value_dimension(i));
+    std::vector<double> values(_g->value_size(), 0.0);
     boost::shared_ptr<Constant> zero(new Constant(value_shape, values));
     set_value(zero);
   }
@@ -471,7 +471,7 @@ void DirichletBC::homogenize()
 //-----------------------------------------------------------------------------
 void DirichletBC::set_value(boost::shared_ptr<const GenericFunction> g)
 {
-  this->g = g;
+  _g = g;
 }
 //-----------------------------------------------------------------------------
 std::string DirichletBC::method() const
@@ -502,11 +502,11 @@ void DirichletBC::apply(GenericMatrix* A,
   std::vector<dolfin::la_index> dofs(size);
   std::vector<double> values(size);
   Map::const_iterator bv;
-  std::size_t i = 0;
+  std::size_t counter = 0;
   for (bv = boundary_values.begin(); bv != boundary_values.end(); ++bv)
   {
-    dofs[i]     = bv->first;
-    values[i++] = bv->second;
+    dofs[counter]     = bv->first;
+    values[counter++] = bv->second;
   }
 
   // Modify boundary values for nonlinear problems
@@ -553,17 +553,17 @@ void DirichletBC::apply(GenericMatrix* A,
 //-----------------------------------------------------------------------------
 void DirichletBC::check() const
 {
-  dolfin_assert(g);
+  dolfin_assert(_g);
   dolfin_assert(_function_space->element());
 
   // Check for common errors, message below might be cryptic
-  if (g->value_rank() == 0 && _function_space->element()->value_rank() == 1)
+  if (_g->value_rank() == 0 && _function_space->element()->value_rank() == 1)
   {
     dolfin_error("DirichletBC.cpp",
                  "create Dirichlet boundary condition",
                  "Expecting a vector-valued boundary value but given function is scalar");
   }
-  if (g->value_rank() == 1 && _function_space->element()->value_rank() == 0)
+  if (_g->value_rank() == 1 && _function_space->element()->value_rank() == 0)
   {
     dolfin_error("DirichletBC.cpp",
                  "create Dirichlet boundary condition",
@@ -571,21 +571,21 @@ void DirichletBC::check() const
   }
 
   // Check that value shape of boundary value
-  if (g->value_rank() != _function_space->element()->value_rank())
+  if (_g->value_rank() != _function_space->element()->value_rank())
   {
     dolfin_error("DirichletBC.cpp",
                  "create Dirichlet boundary condition",
                  "Illegal value rank (%d), expecting (%d)",
-                 g->value_rank(), _function_space->element()->value_rank());
+                 _g->value_rank(), _function_space->element()->value_rank());
   }
-  for (std::size_t i = 0; i < g->value_rank(); i++)
+  for (std::size_t i = 0; i < _g->value_rank(); i++)
   {
-    if (g->value_dimension(i) != _function_space->element()->value_dimension(i))
+    if (_g->value_dimension(i) != _function_space->element()->value_dimension(i))
     {
       dolfin_error("DirichletBC.cpp",
                    "create Dirichlet boundary condition",
                    "Illegal value dimension (%d), expecting (%d)",
-                   g->value_dimension(i),
+                   _g->value_dimension(i),
                    _function_space->element()->value_dimension(i));
     }
   }
@@ -764,7 +764,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
                                          BoundaryCondition::LocalData& data) const
 {
   dolfin_assert(_function_space);
-  dolfin_assert(g);
+  dolfin_assert(_g);
 
   init_facets();
 
@@ -799,7 +799,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     ufc_cell.update(cell, facet_number);
 
     // Restrict coefficient to cell
-    g->restrict(&data.w[0], *_function_space->element(), cell, ufc_cell);
+    _g->restrict(&data.w[0], *_function_space->element(), cell, ufc_cell);
 
     // Tabulate dofs on cell
     const std::vector<dolfin::la_index>& cell_dofs = dofmap.cell_dofs(cell.index());
@@ -823,7 +823,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
 {
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->element());
-  dolfin_assert(g);
+  dolfin_assert(_g);
 
   init_facets();
 
@@ -902,7 +902,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
           // Restrict if not already done
           if (!interpolated)
           {
-            g->restrict(&data.w[0], *_function_space->element(), cell, ufc_cell);
+            _g->restrict(&data.w[0], *_function_space->element(), cell, ufc_cell);
             interpolated = true;
           }
 
@@ -920,7 +920,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
 {
   dolfin_assert(_function_space);
   dolfin_assert(_function_space->element());
-  dolfin_assert(g);
+  dolfin_assert(_g);
 
   if (!_user_sub_domain)
     dolfin_error("DirichletBC.cpp",
@@ -979,7 +979,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
         already_interpolated = true;
 
         // Restrict coefficient to cell
-        g->restrict(&data.w[0], *_function_space->element(), *cell, ufc_cell);
+        _g->restrict(&data.w[0], *_function_space->element(), *cell, ufc_cell);
       }
 
       // Set boundary value

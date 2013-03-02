@@ -172,7 +172,6 @@ const IntersectionOperatorImplementation& IntersectionOperator::rImpl() const
 }
 //-----------------------------------------------------------------------------
 #ifdef HAS_CGAL
-
 IntersectionOperatorImplementation*
     IntersectionOperator::create_intersection_operator(
 				    const std::string& kernel_type = "SimpleCartesian")
@@ -250,6 +249,11 @@ IntersectionOperatorImplementation*
   dolfin_error("IntersectionOperator.cpp",
                "create intersection operator",
                "IntersectionOperatorImplementation is not available, DOLFIN has been compiled without CGAL");
+
+  // Use to member variable to avoid fuss compiler warnings
+  dolfin_assert(_label);
+  dolfin_assert(_use_labels);
+
   return 0;
 }
 #endif

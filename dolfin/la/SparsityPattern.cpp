@@ -64,17 +64,17 @@ void SparsityPattern::init(const std::vector<std::size_t>& dims,
   diagonal.clear();
   off_diagonal.clear();
   non_local.clear();
-  this->off_process_owner.clear();
+  _off_process_owner.clear();
 
   // Set ownership range
   _local_range = local_range;
 
   // Store copy of nonlocal index to owning process map
-  this->off_process_owner.reserve(off_process_owner.size());
+  _off_process_owner.reserve(off_process_owner.size());
   for (std::size_t i = 0; i < off_process_owner.size(); ++i)
   {
     dolfin_assert(off_process_owner[i]);
-    this->off_process_owner.push_back(*off_process_owner[i]);
+    _off_process_owner.push_back(*off_process_owner[i]);
   }
 
   // Check that primary dimension is valid
@@ -189,7 +189,7 @@ void SparsityPattern::add_edges(const std::pair<dolfin::la_index, std::size_t>& 
 
   // Add off-process owner if vertex is not owned by this process
   if (vertex_index < local_range.first || vertex_index >= local_range.second)
-    off_process_owner[_primary_dim].insert(vertex);
+    _off_process_owner[_primary_dim].insert(vertex);
 
   // Add edges
   std::vector<dolfin::la_index> dofs0(1, vertex.first);
@@ -312,8 +312,8 @@ void SparsityPattern::apply()
 
       // Figure out which process owns the row
       boost::unordered_map<std::size_t, unsigned int>::const_iterator non_local_index
-          = off_process_owner[_primary_dim].find(I);
-      dolfin_assert(non_local_index != off_process_owner[_primary_dim].end());
+          = _off_process_owner[_primary_dim].find(I);
+      dolfin_assert(non_local_index != _off_process_owner[_primary_dim].end());
       const std::size_t p = non_local_index->second;
 
       dolfin_assert(p < num_processes);

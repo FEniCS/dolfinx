@@ -450,7 +450,7 @@ namespace dolfin
     bool on_facet(double* coordinates, Facet& facet) const;
 
     // The function
-    boost::shared_ptr<const GenericFunction> g;
+    boost::shared_ptr<const GenericFunction> _g;
 
     // Search method
     std::string _method;

@@ -129,8 +129,6 @@ namespace dolfin
     // Underlying solver
     boost::shared_ptr<AztecOO> solver;
 
-    bool preconditioner_set;
-
     // Residuals
     double relative_residual;
     double absolute_residual;

@@ -78,7 +78,7 @@ namespace dolfin
 
   private:
 
-    std::vector<Function>& f_e;
+    std::vector<Function>& _f_e;
 
   };
 

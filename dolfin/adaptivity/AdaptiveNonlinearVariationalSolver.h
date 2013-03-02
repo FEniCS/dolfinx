@@ -160,7 +160,7 @@ namespace dolfin
               boost::shared_ptr<GoalFunctional> goal);
 
     // The problem
-    boost::shared_ptr<NonlinearVariationalProblem> problem;
+    boost::shared_ptr<NonlinearVariationalProblem> _problem;
 
   };
 

@@ -163,13 +163,13 @@ namespace dolfin
     boost::shared_ptr<KSP> _ksp;
 
     // Preconditioner
-    boost::shared_ptr<PETScPreconditioner> preconditioner;
+    boost::shared_ptr<PETScPreconditioner> _preconditioner;
 
     // Operator (the matrix)
-    boost::shared_ptr<const PETScBaseMatrix> A;
+    boost::shared_ptr<const PETScBaseMatrix> _A;
 
     // Matrix used to construct the preconditoner
-    boost::shared_ptr<const PETScBaseMatrix> P;
+    boost::shared_ptr<const PETScBaseMatrix> _P;
 
     // Null space vectors
     std::vector<PETScVector> _nullspace;
