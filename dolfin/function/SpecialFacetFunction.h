@@ -41,7 +41,6 @@ namespace dolfin
 
   class SpecialFacetFunction : public Expression
   {
-
   public:
 
     /// Create (scalar-valued) SpecialFacetFunction
