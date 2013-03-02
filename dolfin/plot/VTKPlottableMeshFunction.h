@@ -40,6 +40,8 @@ namespace dolfin
     explicit
     VTKPlottableMeshFunction(boost::shared_ptr<const MeshFunction<T> > mesh_function);
 
+    virtual ~VTKPlottableMeshFunction() {}
+
     //--- Implementation of the GenericVTKPlottable interface ---
 
     /// Additional parameters for VTKPlottableMeshFunction

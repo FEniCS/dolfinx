@@ -55,10 +55,12 @@ namespace dolfin
   {
   public:
 
-    explicit VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh,
-                              std::size_t entity_dim);
+    VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh,
+                     std::size_t entity_dim);
 
     explicit VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh);
+
+    virtual ~VTKPlottableMesh() {}
 
     //--- Implementation of the GenericVTKPlottable interface ---
 
