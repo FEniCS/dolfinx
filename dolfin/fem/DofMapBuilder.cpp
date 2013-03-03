@@ -699,7 +699,7 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
   if (process_number == 0)
   {
     shared_owned_dofs.insert(global_dofs.begin(), global_dofs.end());
-    for (set::const_iterator dof = global_dofs.begin(); dof != global_dofs.begin(); ++dof)
+    for (set::const_iterator dof = global_dofs.begin(); dof != global_dofs.end(); ++dof)
     {
       set::const_iterator _dof = shared_unowned_dofs.find(*dof);
       if (_dof != shared_unowned_dofs.end())
@@ -709,7 +709,7 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
   else
   {
     shared_unowned_dofs.insert(global_dofs.begin(), global_dofs.end());
-    for (set::const_iterator dof = global_dofs.begin(); dof != global_dofs.begin(); ++dof)
+    for (set::const_iterator dof = global_dofs.begin(); dof != global_dofs.end(); ++dof)
     {
       set::const_iterator _dof = shared_owned_dofs.find(*dof);
       if (_dof != shared_owned_dofs.end())
