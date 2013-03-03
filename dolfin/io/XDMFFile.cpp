@@ -589,7 +589,7 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
   else
   {
     // Subsequent timestep - read in existing XDMF file
-    pugi::xml_parse_result result = xml_doc.load_file(filename.c_str());
+    pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
     if (!result)
     {
       dolfin_error("XDMFFile.cpp",
@@ -659,7 +659,7 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
     xdmf_data.append_child(pugi::node_pcdata).set_value(s.c_str());
 
     // Write XML file
-    xml_doc.save_file(filename.c_str(), "  ");
+    xml_doc.save_file(_filename.c_str(), "  ");
   }
 //----------------------------------------------------------------------------
 #endif
