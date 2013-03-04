@@ -244,10 +244,8 @@ void HDF5File::read(MeshFunction<double>& meshfunction, const std::string name)
 template <typename T>
 void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction, const std::string name)
 {
-  warning("Experimental MeshFunction input");
 
   const Mesh& mesh = meshfunction.mesh();
-
   const std::string mesh_name = "/Mesh/" + name;
 
   dolfin_assert(hdf5_file_open);

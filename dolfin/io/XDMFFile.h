@@ -84,6 +84,12 @@ namespace dolfin
     void operator<< (const MeshFunction<std::size_t>& meshfunction);
     void operator<< (const MeshFunction<double>& meshfunction);
 
+    /// Read first MeshFunction from file
+    void operator>> (MeshFunction<bool>& meshfunction);
+    void operator>> (MeshFunction<int>& meshfunction);
+    void operator>> (MeshFunction<std::size_t>& meshfunction);
+    void operator>> (MeshFunction<double>& meshfunction);
+
   private:
 
     // HDF5 data file
@@ -98,6 +104,10 @@ namespace dolfin
     // Generic MeshFunction writer
     template<typename T>
       void write_mesh_function(const MeshFunction<T>& meshfunction);
+
+    // Generic MeshFunction reader
+    template<typename T>
+      void read_mesh_function(MeshFunction<T>& meshfunction);
 
     // Write XML description for Function and MeshFunction output
     // updating time-series if need be
