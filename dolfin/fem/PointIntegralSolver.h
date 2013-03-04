@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-03-01
+// Last changed: 2013-03-04
 
 #ifndef __RKSOLVER_H
 #define __RKSOLVER_H
@@ -75,6 +75,9 @@ namespace dolfin
 
     // UFC objects, one for each form
     std::vector<std::vector<boost::shared_ptr<UFC> > > _ufcs;
+
+    // Solution coefficient index in form
+    std::vector<std::vector<int> > _coefficient_index;
 
   };
 
