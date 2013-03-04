@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Joachim B Haga, 2012
+// Modified by Jan Blechta, 2013
 //
 // First added:  2010-05-26
-// Last changed: 2013-02-19
+// Last changed: 2013-03-04
 
 #ifndef __GENERIC_DOF_MAP_H
 #define __GENERIC_DOF_MAP_H
@@ -94,6 +95,9 @@ namespace dolfin
     /// Tabulate local-local facet dofs
     virtual void tabulate_facet_dofs(std::vector<std::size_t>& dofs,
                                      std::size_t local_facet) const = 0;
+
+    /// Return a map between vertices and dofs
+    virtual std::vector<dolfin::la_index> dof_to_vertex_map(Mesh& mesh) const = 0;
 
     /// Return a map between vertices and dofs
     virtual std::vector<std::size_t> vertex_to_dof_map(Mesh& mesh) const = 0;
