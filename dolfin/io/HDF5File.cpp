@@ -840,11 +840,7 @@ void HDF5File::reorder_values_by_global_indices(const Mesh& mesh, std::vector<do
     data.assign(ordered_values.begin(), ordered_values.end());
     global_size[0] = N;
   }
-
-
-
 //-----------------------------------------------------------------------------
-
 const std::string HDF5File::cell_type(const std::size_t cell_dim, const Mesh& mesh)
 {
   // Get cell type
@@ -862,7 +858,6 @@ const std::string HDF5File::cell_type(const std::size_t cell_dim, const Mesh& me
   // Get cell type string
   return CellType::type2string(_cell_type);
 }
-
 //-----------------------------------------------------------------------------
 
 #endif

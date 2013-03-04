@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2013-03-01
+// Last changed: 2013-03-04
 
 #ifdef HAS_HDF5
 
@@ -383,58 +383,12 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   const std::size_t cell_dim = meshfunction.dim();
   dolfin_assert(cell_dim <= mesh.topology().dim());
 
-  // // Collate data in a vector
-  // std::vector<T> data_values;
-
-  // // If not already numbered, number entities of order cell_dim
-  // // so we can get shared_entities and correct size_global(cell_dim)
-  // DistributedMeshTools::number_entities(mesh, cell_dim);
-
-
+  // Use HDF5 function to output MeshFunction
   current_mesh_name = boost::lexical_cast<std::string>(counter);
   hdf5_file->write_mesh_function(meshfunction, current_mesh_name);
 
-
-  // hdf5_file->write(mesh, cell_dim, current_mesh_name);
-
-  // if(cell_dim == mesh.topology().dim() || MPI::num_processes() == 1)
-  // {
-  //   // No duplicates
-  //   data_values.assign(meshfunction.values(), meshfunction.values() + meshfunction.size());
-  // }
-  // else
-  // {
-  //   data_values.reserve(mesh.size(cell_dim));
-
-  //   // Drop duplicate data
-  //   const std::size_t my_rank = MPI::process_number();
-  //   const std::map<unsigned int, std::set<unsigned int> >& shared_entities
-  //     = mesh.topology().shared_entities(cell_dim);
-
-  //   for(std::size_t i = 0; i < meshfunction.size(); ++i)
-  //   {
-  //     std::map<unsigned int, std::set<unsigned int> >::const_iterator sh
-  //       = shared_entities.find(i);
-
-  //     // If unshared, or shared and locally owned, append to vector
-  //     if(sh == shared_entities.end())
-  //       data_values.push_back(meshfunction[i]);
-  //     else
-  //     {
-  //       std::set<unsigned int>::iterator lowest_proc = sh->second.begin();
-  //       if(*lowest_proc > my_rank)
-  //         data_values.push_back(meshfunction[i]);
-  //     }
-  //   }
-  // }
-
-  // // Write values to HDF5
-  // std::vector<std::size_t> global_size(1, MPI::sum(data_values.size()));
-
-  // Save MeshFunction values in the /Mesh group
+  // Saved MeshFunction values are in the /Mesh group
   const std::string dataset_name = "/Mesh/" + current_mesh_name + "/values";
-
-  // hdf5_file->write_data(dataset_name, data_values, global_size);
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero
   if (MPI::process_number() == 0)
@@ -495,11 +449,7 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
   std::string geometry_type;
   if (gdim == 1)
   {
-    //    dolfin_error("XDMFFile.cpp",
-    //                 "write 1D mesh",
-    //                 "One dimensional geometry not supported in XDMF");
-    // FIXME: geometry "X" is not supported
-    // This could be fixed by padding vertex coordinates to 2D and using "XY"
+    // geometry "X" is not supported in XDMF
     geometry_type = "X_Y_Z";
   }
   else if (gdim == 2)
@@ -515,15 +465,15 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
     + " " + boost::lexical_cast<std::string>(gdim);
   xdmf_geom_data.append_attribute("Dimensions") = geom_dim.c_str();
 
-  // FIXME: improve this workaround
-  // When gdim==1, XDMF does not support a 1D geometry "X",
-  // so need to provide some dummy Y and Z values.
-  // Using the "X_Y_Z" geometry the Y and Z values can be supplied
-  // as separate datasets, here in plain text (though it could be done in HDF5 too).
-  // Cannot write HDF5 here, as we are only running on rank 0, and will deadlock.
-
   if(gdim == 1)
   {
+    // FIXME: improve this workaround
+    // When gdim==1, XDMF does not support a 1D geometry "X",
+    // so need to provide some dummy Y and Z values.
+    // Using the "X_Y_Z" geometry the Y and Z values can be supplied
+    // as separate datasets, here in plain text (though it could be done in HDF5 too).
+    // Cannot write HDF5 here, as we are only running on rank 0, and will deadlock.
+
     std::string dummy_zeros;
     dummy_zeros.reserve(2*num_total_vertices);
     for(std::size_t i = 0; i < num_total_vertices; ++i)
@@ -540,9 +490,7 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
     geom_dim = boost::lexical_cast<std::string>(num_total_vertices) + " 1" ;
     xdmf_geom_2.append_attribute("Dimensions") = geom_dim.c_str();
     xdmf_geom_2.append_child(pugi::node_pcdata).set_value(dummy_zeros.c_str());
-
   }
-
 
   boost::filesystem::path p(hdf5_filename);
   const std::string geometry_reference
