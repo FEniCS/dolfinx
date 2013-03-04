@@ -16,12 +16,12 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2011-11-14
-# Last changed: 2011-11-14
+# Last changed: 2013-03-04
 
 import sys
 from dolfin_utils.commands import getstatusoutput
 
-tests = ["assembly_derivatives.py"]
+tests = ["assembly_derivatives.py", "form_operations"]
 
 failed = []
 for test in tests:
