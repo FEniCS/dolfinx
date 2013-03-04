@@ -157,6 +157,9 @@ namespace dolfin
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& A);
 
+    /// Test if matrix is symmetric
+    virtual bool is_symmetric(double tol=0.0) const;
+
     //--- Special functions ---
 
     /// Return linear algebra backend factory
