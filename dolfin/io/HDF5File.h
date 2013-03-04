@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2013-03-01
+// Last changed: 2013-03-04
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -34,7 +34,7 @@
 #include "dolfin/common/Timer.h"
 #include "dolfin/common/Variable.h"
 #include "dolfin/mesh/Mesh.h"
-#include "dolfin/mesh/Vertex.h"
+
 #include "HDF5Interface.h"
 
 namespace dolfin
@@ -43,7 +43,6 @@ namespace dolfin
   class Function;
   class GenericVector;
   class LocalMeshData;
-  //  class Mesh;
 
   class HDF5File : public Variable
   {
@@ -142,7 +141,8 @@ namespace dolfin
     std::vector<double> 
       reorder_vertices_by_global_indices(const Mesh& mesh) const;
 
-    // Reorder data values into global index order
+    // Reorder data values of type double into global index order
+    // Shape of 2D array is given in global_size
     void reorder_values_by_global_indices(const Mesh& mesh, std::vector<double>& data, 
                                           std::vector<std::size_t>& global_size) const;
 
