@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-08-11
-// Last changed: 2013-03-02
+// Last changed: 2013-03-04
 
 #include <boost/shared_ptr.hpp>
 
@@ -79,18 +79,12 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary,
   Assembler assembler;
   assembler.assemble(A, *form);
 
-  // Number of vertices
   const std::size_t num_vertices = mesh.num_vertices();
 
-  // Mapping of dofs to mesh vertex numbers (excluding ghost dofs)
-  const std::vector<std::size_t> vertex_to_dof_map =
-                                   V->dofmap()->vertex_to_dof_map(mesh);
-
-  // Number of dofs (excluding ghost dofs)
-  const std::size_t num_dofs = vertex_to_dof_map.size();
-
-  // Number of boundary dofs (excluding ghost dofs), set below
-  std::size_t num_boundary_dofs = 0;
+  // Dof range
+  const dolfin::la_index n0 = V->dofmap()->ownership_range().first;
+  const dolfin::la_index n1 = V->dofmap()->ownership_range().second;
+  const dolfin::la_index num_dofs = n1 - n0;
 
   // Mapping of new_boundary vertex numbers to mesh vertex numbers
   const MeshFunction<std::size_t>& vertex_map_mesh_func =
@@ -99,32 +93,42 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary,
   const std::vector<std::size_t> vertex_map(vertex_map_mesh_func.values(),
                       vertex_map_mesh_func.values() + num_boundary_vertices);
 
-  // Dummy for handling ghost dofs
-  // FIXME: Is this safe? Are dof numbers always uints?
-  const dolfin::la_index ghost = -1;
+  // Mapping of mesh vertex numbers to dofs (including ghost dofs)
+  const std::vector<dolfin::la_index> dof_to_vertex_map =
+                                   V->dofmap()->dof_to_vertex_map(mesh);
 
-  // Inversion of vertex_to_dof_map. Ghost nodes take dof number = ghost
-  std::vector<dolfin::la_index> dof_to_vertex_map(num_vertices, ghost);
-  for (std::size_t i = 0; i < num_dofs; i++)
-    dof_to_vertex_map[vertex_to_dof_map[i]] = i;
+  // Inversion of dof_to_vertex_map. Ghost nodes are ommited. Inversion is
+  // performed by hand instead of using DofMap::vertex_to_dof_map()
+  // in order to avoid double computation of dof_to_vertex_map.
+  std::vector<std::size_t> vertex_to_dof_map(num_dofs);
+  // Array of all dofs (including ghosts) with global numbering
+  std::vector<dolfin::la_index> all_global_dofs(num_vertices);
+  for (std::size_t i = 0; i < num_vertices; i++)
+  {
+    const dolfin::la_index dof = dof_to_vertex_map[i];
+    all_global_dofs[i] = dof + n0;
 
-  // Local-to-global dof numbers offset
-  const dolfin::la_index offset = A.local_range(0).first;
+    // Skip ghost dofs
+    if (dof >= 0 && dof < num_dofs)
+      vertex_to_dof_map[dof] = i;
+  }
 
   // Create arrays for setting bcs.
   // Their indexing does not matter - same ordering does.
+  std::size_t num_boundary_dofs = 0;
   std::vector<dolfin::la_index> boundary_dofs;
   boundary_dofs.reserve(num_boundary_vertices);
   std::vector<std::size_t> boundary_vertices;
   boundary_vertices.reserve(num_boundary_vertices);
-  // TODO: We could use VertexIterator here
   for (std::size_t vert = 0; vert < num_boundary_vertices; vert++)
   {
     const dolfin::la_index dof = dof_to_vertex_map[vertex_map[vert]];
-    if (dof != ghost)
+
+    // Skip ghosts
+    if (dof >= 0 && dof < num_dofs)
     {
       // Global dof numbers
-      boundary_dofs.push_back(dof + offset);
+      boundary_dofs.push_back(dof + n0);
 
       // new_boundary vertex indices
       boundary_vertices.push_back(vert);
@@ -146,7 +150,7 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary,
   const std::string prec(has_krylov_solver_preconditioner("amg")
                          ? "amg" : "default");
 
-  // We will need Function::compute_vertex_values()
+  // TODO: Is there better way to obtain Vector with needed distribution?
   Function u(V);
   boost::shared_ptr<GenericVector> x(u.vector());
 
@@ -197,15 +201,13 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary,
     // Solve system
     solve(A, *x, b, "cg", prec);
 
+    // PETScVector::update_ghost_values() segfaults in serial - is it a BUG?
+    if (MPI::num_processes() > 1)
+      x->update_ghost_values();
+
     // Get new coordinates
-    // FIXME: compute_vertex_values could be avoided if vertex_to_dof_map would
-    //        be also defined on ghost dofs. Now we don't know where in *x are
-    //        stored ghost-nodes values. Version of get_local which would supply
-    //        ghost values would be also helpful.
-    // Note that for diplacement mode new_coordinates are not actully
-    // new coordinates but displacement.
-    std::vector<double> _new_coordinates;
-    u.compute_vertex_values(_new_coordinates);
+    std::vector<double> _new_coordinates(num_vertices);
+    x->get_local(_new_coordinates.data(), num_vertices, all_global_dofs.data());
     new_coordinates.insert(new_coordinates.end(),
                            _new_coordinates.begin(),
                            _new_coordinates.end());
