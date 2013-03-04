@@ -19,6 +19,7 @@
 #
 #
 # First added:  2013-03-02
+# Last changed: 2013-03-04
 
 import unittest
 from dolfin import UnitSquareMesh, BoundaryMesh, Expression, \
@@ -26,12 +27,11 @@ from dolfin import UnitSquareMesh, BoundaryMesh, Expression, \
 
 class HarmonicSmoothingTest(unittest.TestCase):
 
-    def _test(self, mode):
+    def test_HarmonicSmoothing(self):
 
         print ""
         print "Testing HarmonicSmoothing::move(Mesh& mesh, " \
-              "const BoundaryMesh& new_boundary, const std::string mode)"
-        print "with mode=\""+mode+"\""
+              "const BoundaryMesh& new_boundary)"
 
         # Create some mesh and its boundary
         mesh = UnitSquareMesh(10, 10)
@@ -42,7 +42,7 @@ class HarmonicSmoothingTest(unittest.TestCase):
         boundary.move(disp)
 
         # Move mesh according to given boundary
-        mesh.move(boundary, mode)
+        mesh.move(boundary)
 
         # Check that new boundary topology corresponds to given one
         boundary_new = BoundaryMesh(mesh, 'exterior')
@@ -58,12 +58,6 @@ class HarmonicSmoothingTest(unittest.TestCase):
         # Check mesh quality
         magic_number = 0.35
         self.assertGreater(mesh.radius_ratio_min(), magic_number)
-
-    def test_coordinates_mode(self):
-        self._test("coordinates")
-
-    def test_displacement_mode(self):
-        self._test("displacement")
 
 
 if MPI.num_processes() == 1:

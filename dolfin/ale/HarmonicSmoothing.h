@@ -15,15 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Jan Blechta 2013
-//
 // First added:  2008-08-11
-// Last changed: 2013-03-02
+// Last changed: 2008-08-11
 
 #ifndef __HARMONIC_SMOOTHING_H
 #define __HARMONIC_SMOOTHING_H
-
-#include <string>
 
 namespace dolfin
 {
@@ -40,12 +36,8 @@ namespace dolfin
   {
   public:
 
-    /// Move coordinates of mesh according to new boundary coordinates.
-    /// Optional argument mode={"displacement", "coordinates"} specifies 
-    /// whether to solve Laplace problem for displacement or directly
-    /// for coordinates themselves.
-    static void move(Mesh& mesh, const BoundaryMesh& new_boundary,
-                     const std::string mode="displacement");
+    /// Move coordinates of mesh according to new boundary coordinates
+    static void move(Mesh& mesh, const BoundaryMesh& new_boundary);
 
   };
 

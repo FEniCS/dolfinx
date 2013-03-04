@@ -39,8 +39,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary,
-                             const std::string mode)
+void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
 {
   // Now this works regardless of reorder_dofs_serial value
   const bool reorder_dofs_serial = parameters["reorder_dofs_serial"];
@@ -143,8 +142,8 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary,
 
   // Arrays for storing dirichlet condition and solution
   std::vector<double> boundary_values(num_boundary_dofs);
-  std::vector<double> new_coordinates;
-  new_coordinates.reserve(d*num_vertices);
+  std::vector<double> displacement;
+  displacement.reserve(d*num_vertices);
 
   // Pick amg as preconditioner if available
   const std::string prec(has_krylov_solver_preconditioner("amg")
@@ -160,43 +159,16 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary,
   // Solve system for each dimension
   for (std::size_t dim = 0; dim < d; dim++)
   {
-    if (mode == "coordinates")
-    {
-      if (dim > 0)
-        b.zero();
+    if (dim > 0)
+      b.zero();
 
-      // Initialize solution for faster convergence
-      std::vector<double> initial_values(num_dofs);
-      for (std::size_t dof = 0; dof < num_dofs; dof++)
-        initial_values[dof] = mesh.geometry().x(vertex_to_dof_map[dof], dim);
-      x->set_local(initial_values);
-
-      // Store bc into RHS and solution so that CG solver can be used
-      for (std::size_t i = 0; i < num_boundary_dofs; i++)
-        boundary_values[i] = new_boundary.geometry().x(boundary_vertices[i], dim);
-      b.set(boundary_values.data(), num_boundary_dofs, boundary_dofs.data());
-      b.apply("insert");
-      x->set(boundary_values.data(), num_boundary_dofs, boundary_dofs.data());
-      x->apply("insert");
-    }
-    else if (mode == "displacement")
-    {
-      if (dim > 0)
-        b.zero();
-
-      // Store bc into RHS and solution so that CG solver can be used
-      for (std::size_t i = 0; i < num_boundary_dofs; i++)
-        boundary_values[i] = new_boundary.geometry().x(boundary_vertices[i], dim)
-                           - mesh.geometry().x(vertex_map[boundary_vertices[i]], dim);
-      b.set(boundary_values.data(), num_boundary_dofs, boundary_dofs.data());
-      b.apply("insert");
-      *x = b;
-    }
-    else
-      dolfin_error("HarmonicSmoothing.cpp",
-                   "move mesh harmonically",
-                   "unknown mode = %s",
-                   mode.c_str());
+    // Store bc into RHS and solution so that CG solver can be used
+    for (std::size_t i = 0; i < num_boundary_dofs; i++)
+      boundary_values[i] = new_boundary.geometry().x(boundary_vertices[i], dim)
+                         - mesh.geometry().x(vertex_map[boundary_vertices[i]], dim);
+    b.set(boundary_values.data(), num_boundary_dofs, boundary_dofs.data());
+    b.apply("insert");
+    *x = b;
 
     // Solve system
     solve(A, *x, b, "cg", prec);
@@ -205,30 +177,22 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary,
     if (MPI::num_processes() > 1)
       x->update_ghost_values();
 
-    // Get new coordinates
-    std::vector<double> _new_coordinates(num_vertices);
-    x->get_local(_new_coordinates.data(), num_vertices, all_global_dofs.data());
-    new_coordinates.insert(new_coordinates.end(),
-                           _new_coordinates.begin(),
-                           _new_coordinates.end());
+    // Get displacement
+    std::vector<double> _displacement(num_vertices);
+    x->get_local(_displacement.data(), num_vertices, all_global_dofs.data());
+    displacement.insert(displacement.end(),
+                        _displacement.begin(),
+                        _displacement.end());
   }
 
   // Modify mesh coordinates
   MeshGeometry& geometry = mesh.geometry();
   std::vector<double> coord(d);
-  if (mode == "coordinates")
-    for (std::size_t i = 0; i < num_vertices; i++)
-    {
-      for (std::size_t dim = 0; dim < d; dim++)
-        coord[dim] = new_coordinates[dim*num_vertices + i];
-      geometry.set(i, coord);
-    }
-  else if (mode == "displacement")
-    for (std::size_t i = 0; i < num_vertices; i++)
-    {
-      for (std::size_t dim = 0; dim < d; dim++)
-        coord[dim] = new_coordinates[dim*num_vertices + i] + geometry.x(i, dim);
-      geometry.set(i, coord);
-    }
+  for (std::size_t i = 0; i < num_vertices; i++)
+  {
+    for (std::size_t dim = 0; dim < d; dim++)
+      coord[dim] = displacement[dim*num_vertices + i] + geometry.x(i, dim);
+    geometry.set(i, coord);
+  }
 }
 //-----------------------------------------------------------------------------

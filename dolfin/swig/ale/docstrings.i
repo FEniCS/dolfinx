@@ -31,12 +31,9 @@ the new coordinates for the interior vertices accordingly.
 %feature("docstring")  dolfin::ALE::move "
 **Overloaded versions**
 
-* move\ (mesh, new_boundary, mode=\"displacement\")
+* move\ (mesh, new_boundary)
 
-  Move coordinates of mesh according to new boundary coordinates.
-  Optional argument mode={\"displacement\", \"coordinates\"} specifies
-  whether to solve Laplace problem for displacement or directly
-  for coordinates themselves.
+  Move coordinates of mesh according to new boundary coordinates
 
 * move\ (mesh0, mesh1)
 

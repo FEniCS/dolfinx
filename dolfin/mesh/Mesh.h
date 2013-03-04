@@ -26,7 +26,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-08
-// Last changed: 2013-03-02
+// Last changed: 2013-02-21
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -429,10 +429,7 @@ namespace dolfin
     /// *Arguments*
     ///     boundary (_BoundaryMesh_)
     ///         A mesh containing just the boundary cells.
-    ///     mode (std::string)
-    ///         Optional. Specifies whether to solve Laplace problem
-    ///         for "displacement" or directly for "coordinates" themselves.
-    void move(BoundaryMesh& boundary, const std::string mode="displacement");
+    void move(BoundaryMesh& boundary);
 
     /// Move coordinates of mesh according to adjacent mesh with common global
     /// vertices.

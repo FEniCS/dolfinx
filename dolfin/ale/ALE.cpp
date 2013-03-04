@@ -30,10 +30,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void ALE::move(Mesh& mesh, const BoundaryMesh& new_boundary,
-               const std::string mode)
+void ALE::move(Mesh& mesh, const BoundaryMesh& new_boundary)
 {
-  HarmonicSmoothing::move(mesh, new_boundary, mode);
+  HarmonicSmoothing::move(mesh, new_boundary);
 }
 //-----------------------------------------------------------------------------
 void ALE::move(Mesh& mesh0, const Mesh& mesh1)
