@@ -69,7 +69,10 @@ namespace dolfin
     /// file to store the mesh, and a related XDMF file with metadata.
     void operator<< (const Mesh& mesh);
 
-    /// Save a Function to XDMF/HDF files for visualisation.
+    /// Read in a mesh from the associated HDF5 file
+    void operator>> (Mesh& mesh);
+
+    /// Save a Function to XDMF/HDF5 files for visualisation.
     void operator<< (const Function& u);
 
     /// Save Function + time stamp to file
@@ -88,6 +91,9 @@ namespace dolfin
 
     // HDF5 filename
     std::string hdf5_filename;
+    
+    // HDF5 file mode (r/w)
+    std::string hdf5_filemode;
 
     // Generic MeshFunction writer
     template<typename T>

@@ -25,6 +25,7 @@
 #include <ostream>
 #include <sstream>
 #include <vector>
+#include <boost/algorithm/string.hpp>
 #include <boost/assign.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
@@ -54,8 +55,8 @@ XDMFFile::XDMFFile(const std::string filename) : GenericFile(filename, "XDMF")
   p.replace_extension(".h5");
   hdf5_filename = p.string();
 
-  // Create HDF5 file (truncate)
-  hdf5_file.reset(new HDF5File(hdf5_filename, "w"));
+  // File mode will be set when reading or writing
+  hdf5_filemode = "";
 
   // Rewrite the mesh at every time step in a time series
   // Should be turned off if the mesh remains constant
@@ -80,6 +81,14 @@ void XDMFFile::operator<< (const Function& u)
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 {
+
+  if(hdf5_filemode != "w")
+  {
+    // Create HDF5 file (truncate)
+    hdf5_file.reset(new HDF5File(hdf5_filename, "w"));
+    hdf5_filemode = "w";
+  }
+  
   dolfin_assert(ut.first);
   const Function& u = *(ut.first);
   const double time_step = ut.second;
@@ -276,10 +285,77 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   counter++;
 }
 //----------------------------------------------------------------------------
+void XDMFFile::operator>> (Mesh& mesh)
+{
+  if(hdf5_filemode != "r")
+  {
+    hdf5_file.reset(new HDF5File(hdf5_filename, "r"));
+    hdf5_filemode = "r";
+  }
+
+  dolfin_assert(hdf5_file);
+
+  // FIXME: parse XDMF here for mesh name and check size
+  pugi::xml_document xml_doc;
+  pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
+  if (!result)
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "read mesh from XDMF/H5 files",
+                 "XML parsing error when reading from file");
+  }
+
+  // Topology - check format and get dataset name
+  pugi::xml_node xdmf_topology = xml_doc.child("Xdmf").child("Domain").child("Grid").child("Topology").child("DataItem");
+  dolfin_assert(xdmf_topology);
+
+  const std::string topo_fmt(xdmf_topology.attribute("Format").value());
+  dolfin_assert(topo_fmt == "HDF");
+
+  const std::string topo_ref(xdmf_topology.first_child().value());
+  std::vector<std::string> topo_bits;
+  boost::split(topo_bits, topo_ref, boost::is_any_of(":/"));
+
+  // Should have 5 elements "filename.h5", "", "Mesh", "meshname", "topology" 
+  dolfin_assert(topo_bits.size() == 5);
+  dolfin_assert(topo_bits[0] == hdf5_filename);
+  dolfin_assert(topo_bits[2] == "Mesh");
+  dolfin_assert(topo_bits[4] == "topology");
+
+  // Geometry - check format and get dataset name
+  pugi::xml_node xdmf_geometry = xml_doc.child("Xdmf").child("Domain").child("Grid").child("Geometry").child("DataItem");
+  dolfin_assert(xdmf_geometry);
+
+  const std::string geom_fmt(xdmf_geometry.attribute("Format").value());
+  dolfin_assert(geom_fmt == "HDF");
+
+  const std::string geom_ref(xdmf_geometry.first_child().value());
+  std::vector<std::string> geom_bits;
+  boost::split(geom_bits, geom_ref, boost::is_any_of(":/"));
+
+  // Should have 5 elements "filename.h5", "", "Mesh", "meshname", "coordinates" 
+  dolfin_assert(geom_bits.size() == 5);
+  dolfin_assert(geom_bits[0] == hdf5_filename);
+  dolfin_assert(geom_bits[2] == "Mesh");
+  dolfin_assert(geom_bits[3] == topo_bits[3]);
+  dolfin_assert(geom_bits[4] == "coordinates");
+
+  // Try to read the mesh from the associated HDF5 file
+  hdf5_file->read(mesh, geom_bits[3]);
+
+}
+//----------------------------------------------------------------------------
+  
 void XDMFFile::operator<< (const Mesh& mesh)
 {
   // Write Mesh to HDF5 file (use contiguous vertex indices for topology)
-  dolfin_assert(hdf5_file);
+
+  if(hdf5_filemode != "w")
+  {
+    // Create HDF5 file (truncate)
+    hdf5_file.reset(new HDF5File(hdf5_filename, "w"));
+    hdf5_filemode = "w";
+  }
 
   // Output data name
   const std::string name = mesh.name();
@@ -318,7 +394,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
     xdmf.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
     pugi::xml_node xdmf_domain = xdmf.append_child("Domain");
     pugi::xml_node xdmf_grid = xdmf_domain.append_child("Grid");
-    xdmf_grid.append_attribute("Name") = "dolfin_mesh";
+    xdmf_grid.append_attribute("Name") = name.c_str();
     xdmf_grid.append_attribute("GridType") = "Uniform";
 
     // Describe topological connectivity
@@ -368,7 +444,13 @@ void XDMFFile::operator<< (const MeshFunction<double>& meshfunction)
 template<typename T>
 void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 {
-  dolfin_assert(hdf5_file);
+
+  if(hdf5_filemode != "w")
+  {
+    // Create HDF5 file (truncate)
+    hdf5_file.reset(new HDF5File(hdf5_filename, "w"));
+    hdf5_filemode = "w";
+  }
 
   if (meshfunction.size() == 0)
   {
