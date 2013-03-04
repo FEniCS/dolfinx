@@ -101,7 +101,7 @@ Parameters TrilinosPreconditioner::default_parameters()
 }
 //-----------------------------------------------------------------------------
 TrilinosPreconditioner::TrilinosPreconditioner(std::string preconditioner)
-  : preconditioner(preconditioner)
+  : _preconditioner(preconditioner)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -132,7 +132,7 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
   AztecOO& _solver = *(solver.aztecoo());
 
   // Set preconditioner
-  if (preconditioner == "default" || preconditioner == "ilu" || preconditioner == "icc")
+  if (_preconditioner == "default" || _preconditioner == "ilu" || _preconditioner == "icc")
   {
     // Get/set some parameters
     const int ilu_fill_level       = parameters("ilu")["fill_level"];
@@ -145,12 +145,12 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
     plist.set("schwarz: reordering type", reordering);
 
     // Create preconditioner
-    if (preconditioner == "icc")
-      preconditioner = "IC";
+    if (_preconditioner == "icc")
+      _preconditioner = "IC";
     else
-      preconditioner = "ILU";
+      _preconditioner = "ILU";
     Ifpack ifpack_factory;
-    ifpack_preconditioner.reset(ifpack_factory.Create(preconditioner, _P, overlap));
+    ifpack_preconditioner.reset(ifpack_factory.Create(_preconditioner, _P, overlap));
     dolfin_assert(ifpack_preconditioner != 0);
 
     // Set any user-provided parameters
@@ -163,17 +163,17 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
     ifpack_preconditioner->Compute();
     _solver.SetPrecOperator(ifpack_preconditioner.get());
   }
-  else if (preconditioner == "hypre_amg")
+  else if (_preconditioner == "hypre_amg")
   {
     info("Hypre AMG not available for Trilinos. Using ML instead.");
     set_ml(_solver, *_P);
   }
-  else if (preconditioner == "ml_amg" || preconditioner == "amg")
+  else if (_preconditioner == "ml_amg" || _preconditioner == "amg")
     set_ml(_solver, *_P);
   else
   {
     _solver.SetAztecOption(AZ_precond,
-                           _preconditioners.find(preconditioner)->second);
+                           _preconditioners.find(_preconditioner)->second);
     _solver.SetPrecMatrix(_P);
   }
 }
@@ -219,7 +219,7 @@ void TrilinosPreconditioner::set_nullspace(const std::vector<const GenericVector
 //-----------------------------------------------------------------------------
 std::string TrilinosPreconditioner::name() const
 {
-  return preconditioner;
+  return _preconditioner;
 }
 //-----------------------------------------------------------------------------
 std::string TrilinosPreconditioner::str(bool verbose) const

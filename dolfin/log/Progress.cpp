@@ -33,7 +33,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Progress::Progress(std::string title, unsigned int n)
-  : title(title), n(n), i(0), t_step(0.5), c_step(1), p(0), t(0), tc(0),
+  : _title(title), _n(n), i(0), t_step(0.5), c_step(1), _p(0), _t(0), tc(0),
     always(false), finished(false), displayed(false), counter(0)
 {
   if (n <= 0)
@@ -44,7 +44,7 @@ Progress::Progress(std::string title, unsigned int n)
   }
 
   // LogManager::logger.progress(title, 0.0);
-  t = time();
+  _t = time();
 
   // When log level is TRACE or lower, always display at least the 100% message
   if (LogManager::logger.get_log_level() <= TRACE )
@@ -52,11 +52,11 @@ Progress::Progress(std::string title, unsigned int n)
 }
 //-----------------------------------------------------------------------------
 Progress::Progress(std::string title)
-  : title(title), n(0), i(0), t_step(0.5), c_step(1), p(0), t(0), tc(0),
+  : _title(title), _n(0), i(0), t_step(0.5), c_step(1), _p(0), _t(0), tc(0),
     always(false), finished(false), displayed(false), counter(0)
 {
   // LogManager::logger.progress(title, 0.0);
-  t = time();
+  _t = time();
 
   // When log level is TRACE or lower, always display at least the 100% message
   if (LogManager::logger.get_log_level() <= TRACE )
@@ -67,12 +67,12 @@ Progress::~Progress()
 {
   // Display last progress bar if not displayed
   if (displayed && !finished)
-    LogManager::logger.progress(title, 1.0);
+    LogManager::logger.progress(_title, 1.0);
 }
 //-----------------------------------------------------------------------------
 void Progress::operator=(double p)
 {
-  if (n != 0)
+  if (_n != 0)
   {
     dolfin_error("Progress.cpp",
                  "update progress bar",
@@ -84,17 +84,17 @@ void Progress::operator=(double p)
 //-----------------------------------------------------------------------------
 void Progress::operator++(int)
 {
-  if (n == 0)
+  if (_n == 0)
   {
     dolfin_error("Progress.cpp",
                  "increment progress bar",
                  "Cannot step progress bar for session with unknown number of steps");
   }
 
-  if (i < n)
+  if (i < _n)
     i++;
 
-  update(static_cast<double>(i) / static_cast<double>(n));
+  update(static_cast<double>(i) / static_cast<double>(_n));
 }
 //-----------------------------------------------------------------------------
 void Progress::update(double p)
@@ -113,7 +113,7 @@ void Progress::update(double p)
 
   // Check that enough time has passed since last update
   const double t = time();
-  const bool t_check = (t - this->t >= t_step - DOLFIN_EPS);
+  const bool t_check = (t - _t >= t_step - DOLFIN_EPS);
 
   // Adjust counter step
   const double fraction = 0.1;
@@ -126,8 +126,8 @@ void Progress::update(double p)
   // Reset time for next update
   if (t_check)
   {
-    this->p = p;
-    this->t = t;
+    _p = p;
+    _t = t;
   }
 
   // Assume we want to update the progress
@@ -158,7 +158,7 @@ void Progress::update(double p)
   // Only update when the increase is significant
   if (do_log_update)
   {
-    LogManager::logger.progress(title, p);
+    LogManager::logger.progress(_title, p);
     displayed = true;
   }
 }

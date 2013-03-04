@@ -116,7 +116,7 @@ namespace dolfin
     boost::shared_ptr<KSP> _ksp;
 
     // Operator (the matrix)
-    boost::shared_ptr<const PETScMatrix> A;
+    boost::shared_ptr<const PETScMatrix> _A;
 
   };
 

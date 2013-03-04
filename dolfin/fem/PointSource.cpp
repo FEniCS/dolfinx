@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-04-13
-// Last changed: 2012-04-17
+// Last changed: 2013-02-27
 
 #include <boost/scoped_array.hpp>
 
@@ -35,7 +35,7 @@ using namespace dolfin;
 PointSource::PointSource(const FunctionSpace& V,
                          const Point& p,
                          double magnitude)
-  : V(reference_to_no_delete_pointer(V)), p(p), magnitude(magnitude)
+  : _V(reference_to_no_delete_pointer(V)), _p(p), _magnitude(magnitude)
 {
   // Check that function space is scalar
   check_is_scalar(V);
@@ -44,7 +44,7 @@ PointSource::PointSource(const FunctionSpace& V,
 PointSource::PointSource(boost::shared_ptr<const FunctionSpace> V,
                          const Point& p,
                          double magnitude)
-  : V(V), p(p), magnitude(magnitude)
+  : _V(V), _p(p), _magnitude(magnitude)
 {
   // Check that function space is scalar
   check_is_scalar(*V);
@@ -57,16 +57,16 @@ PointSource::~PointSource()
 //-----------------------------------------------------------------------------
 void PointSource::apply(GenericVector& b)
 {
-  dolfin_assert(V);
+  dolfin_assert(_V);
 
   log(PROGRESS, "Applying point source to right-hand side vector.");
 
   // Find the cell containing the point (may be more than one cell but
   // we only care about the first). Well-defined if the basis
   // functions are continuous but may give unexpected results for DG.
-  dolfin_assert(V->mesh());
-  const Mesh& mesh = *V->mesh();
-  const int cell_index = mesh.intersected_cell(p);
+  dolfin_assert(_V->mesh());
+  const Mesh& mesh = *_V->mesh();
+  const int cell_index = mesh.intersected_cell(_p);
 
   // Check that we found the point on at least one processor
   int num_found = 0;
@@ -78,7 +78,7 @@ void PointSource::apply(GenericVector& b)
   {
     dolfin_error("PointSource.cpp",
                  "apply point source to vector",
-                 "The point is outside of the domain (%s)", p.str().c_str());
+                 "The point is outside of the domain (%s)", _p.str().c_str());
   }
 
   // Only continue if we found the point
@@ -93,22 +93,26 @@ void PointSource::apply(GenericVector& b)
   UFCCell ufc_cell(cell);
 
   // Evaluate all basis functions at the point()
-  dolfin_assert(V->element());
-  dolfin_assert(V->element()->value_rank() == 0);
-  std::vector<double> values(V->element()->space_dimension());
-  V->element()->evaluate_basis_all(&values[0], p.coordinates(), ufc_cell);
+  dolfin_assert(_V->element());
+  dolfin_assert(_V->element()->value_rank() == 0);
+  std::vector<double> values(_V->element()->space_dimension());
+  const int cell_orientation = 0;
+  _V->element()->evaluate_basis_all(values.data(),
+                                   _p.coordinates(),
+                                   &ufc_cell.vertex_coordinates[0],
+                                   cell_orientation);
 
   // Scale by magnitude
-  for (std::size_t i = 0; i < V->element()->space_dimension(); i++)
-    values[i] *= magnitude;
+  for (std::size_t i = 0; i < _V->element()->space_dimension(); i++)
+    values[i] *= _magnitude;
 
   // Compute local-to-global mapping
-  dolfin_assert(V->dofmap());
-  const std::vector<dolfin::la_index>& dofs = V->dofmap()->cell_dofs(cell.index());
+  dolfin_assert(_V->dofmap());
+  const std::vector<dolfin::la_index>& dofs = _V->dofmap()->cell_dofs(cell.index());
 
   // Add values to vector
-  dolfin_assert(V->element()->space_dimension() == V->dofmap()->cell_dimension(cell.index()));
-  b.add(&values[0], V->element()->space_dimension(), &dofs[0]);
+  dolfin_assert(_V->element()->space_dimension() == _V->dofmap()->cell_dimension(cell.index()));
+  b.add(values.data(), _V->element()->space_dimension(), dofs.data());
   b.apply("add");
 }
 //-----------------------------------------------------------------------------

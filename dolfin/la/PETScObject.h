@@ -36,6 +36,8 @@ namespace dolfin
 
     PETScObject() { SubSystemsManager::init_petsc(); }
 
+    virtual ~PETScObject() {}
+
   };
 
 }

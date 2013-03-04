@@ -130,6 +130,27 @@ namespace dolfin
     return dynamic_cast<Y&>(*x.instance());
   }
 
+  // This function has been copied from Boost 1.53.0
+  // (boost/smart_ptr/shared_ptr.hpp) and modified. It has been modified
+  // because the line
+  //
+  //     (void) dynamic_cast< T* >( static_cast< U* >( 0 ) );
+  //
+  // breaks with the Intel C++ compiler (icpc 13.0.1 20121010). This
+  // modified function should only be called when using the Intel compiler
+  // and compiler and Boost updates should be tested.
+  #if defined __INTEL_COMPILER
+  template<class T, class U>
+  boost::shared_ptr<T> dolfin_dynamic_pointer_cast(boost::shared_ptr<U> const & r )
+  {
+      // Below give error with icpc 13.0.1 20121010
+      //(void) dynamic_cast< T* >( static_cast< U* >( 0 ) );
+      typedef typename boost::shared_ptr<T>::element_type E;
+      E * p = dynamic_cast< E* >( r.get() );
+      return p? boost::shared_ptr<T>( r, p ): boost::shared_ptr<T>();
+  }
+  #endif
+
   /// Cast shared pointer object to its derived class, if possible.
   /// Caller must check for success (returns null if cast fails).
   template<typename Y, typename X>
@@ -143,7 +164,15 @@ namespace dolfin
     {
       // Try to get instance to unwrapped object and cast
       if (x->shared_instance())
+      {
+        // Called modified function if using Intel compiler. See comments
+        // on above function.
+        #if defined __INTEL_COMPILER
+        y = dolfin_dynamic_pointer_cast<Y>(x->shared_instance());
+        #else
         y = boost::dynamic_pointer_cast<Y>(x->shared_instance());
+        #endif
+      }
     }
     return y;
   }

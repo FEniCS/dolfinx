@@ -36,6 +36,8 @@ namespace dolfin
   {
   public:
 
+    virtual ~GenericPreconditioner() {}
+
     /// Set the (approximate) null space of the preconditioner operator
     /// (matrix). This is required for certain preconditioner types,
     /// e.g. smoothed aggregation multigrid

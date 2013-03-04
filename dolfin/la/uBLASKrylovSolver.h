@@ -68,26 +68,27 @@ namespace dolfin
     /// Set operator (matrix) and preconditioner matrix
     void set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
                        const boost::shared_ptr<const GenericLinearOperator> P)
-    { this->A = A; this->P = P; }
+    { _A = A; _P = P; }
 
 
     /// Return the operator (matrix)
     const GenericLinearOperator& get_operator() const
     {
-      if (!A)
+      if (!_A)
       {
         dolfin_error("uBLASKrylovSolver.cpp",
                      "access operator for uBLAS Krylov solver",
                      "Operator has not been set");
       }
-      return *A;
+      return *_A;
     }
 
     /// Solve linear system Ax = b and return number of iterations
     std::size_t solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
-    std::size_t solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+    std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
+                      const GenericVector& b);
 
     /// Return a list of available solver methods
     static std::vector<std::pair<std::string, std::string> > methods();
@@ -129,10 +130,10 @@ namespace dolfin
     void read_parameters();
 
     /// Krylov method
-    std::string method;
+    std::string _method;
 
     /// Preconditioner
-    boost::shared_ptr<uBLASPreconditioner> pc;
+    boost::shared_ptr<uBLASPreconditioner> _pc;
 
     /// Solver parameters
     double rtol, atol, div_tol;
@@ -140,10 +141,10 @@ namespace dolfin
     bool report;
 
     /// Operator (the matrix)
-    boost::shared_ptr<const GenericLinearOperator> A;
+    boost::shared_ptr<const GenericLinearOperator> _A;
 
     /// Matrix used to construct the preconditoner
-    boost::shared_ptr<const GenericLinearOperator> P;
+    boost::shared_ptr<const GenericLinearOperator> _P;
 
   };
   //---------------------------------------------------------------------------
@@ -180,24 +181,24 @@ namespace dolfin
       info("Solving linear system of size %d x %d (uBLAS Krylov solver).", M, N);
 
     // Initialise preconditioner if necessary
-    pc->init(P);
+    _pc->init(P);
 
     // Choose solver and solve
     bool converged = false;
     std::size_t iterations = 0;
-    if (method == "cg")
+    if (_method == "cg")
       iterations = solveCG(A, x, b, converged);
-    else if (method == "gmres")
+    else if (_method == "gmres")
       iterations = solveGMRES(A, x, b, converged);
-    else if (method == "bicgstab")
+    else if (_method == "bicgstab")
       iterations = solveBiCGStab(A, x, b, converged);
-    else if (method == "default")
+    else if (_method == "default")
       iterations = solveBiCGStab(A, x, b, converged);
     else
     {
       dolfin_error("uBLASKrylovSolver.h",
                    "solve linear system using uBLAS Krylov solver",
-                   "Requested Krylov method (\"%s\") is unknown", method.c_str());
+                   "Requested Krylov method (\"%s\") is unknown", _method.c_str());
     }
 
     // Check for convergence
@@ -278,7 +279,7 @@ namespace dolfin
 
       // Apply preconditioner (use w for temporary storage)
       _w.assign(_r);
-      pc->solve(r, w);
+      _pc->solve(r, w);
 
       // L2 norm of residual (for most recent restart)
       const double beta = norm_2(_r);
@@ -312,7 +313,7 @@ namespace dolfin
 
         // Apply preconditioner (use r for temporary storage)
         _r.assign(_w);
-        pc->solve(w, r);
+        _pc->solve(w, r);
 
         for (std::size_t i=0; i <= j; ++i)
         {
@@ -435,7 +436,7 @@ namespace dolfin
     // Apply preconditioner to r^start. This is a trick to avoid problems in which
     // (r^start, r) = 0  after the first iteration (such as PDE's with homogeneous
     // Neumann bc's and no forcing/source term.
-    pc->solve(rstar, r);
+    _pc->solve(rstar, r);
 
     // Right-preconditioned Bi-CGSTAB
 
@@ -463,7 +464,7 @@ namespace dolfin
       noalias(_p) += _r - beta*omega*_v;
 
       // My = p
-      pc->solve(y, p);
+      _pc->solve(y, p);
 
       // v = A*y
       //axpy_prod(A, y, v, true);
@@ -476,7 +477,7 @@ namespace dolfin
       noalias(_s) = _r - alpha*_v;
 
       // Mz = s
-      pc->solve(z, s);
+      _pc->solve(z, s);
 
       // t = A*z
       //axpy_prod(A, z, t, true);

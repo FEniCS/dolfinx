@@ -55,27 +55,31 @@ namespace dolfin
   {
   public:
 
-    explicit VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh, std::size_t entity_dim);
+    VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh,
+                     std::size_t entity_dim);
 
     explicit VTKPlottableMesh(boost::shared_ptr<const Mesh> mesh);
+
+    virtual ~VTKPlottableMesh() {}
 
     //--- Implementation of the GenericVTKPlottable interface ---
 
     /// Additional parameters for VTKPlottableMesh
-    virtual void modify_default_parameters(Parameters &parameters)
+    virtual void modify_default_parameters(Parameters& p)
     {
-      parameters["wireframe"] = true;
-      parameters["scalarbar"] = false;
+      p["wireframe"] = true;
+      p["scalarbar"] = false;
     }
 
     /// Initialize the parts of the pipeline that this class controls
-    virtual void init_pipeline(const Parameters &parameters);
+    virtual void init_pipeline(const Parameters& p);
 
     /// Connect or reconnect to the output stage.
     virtual void connect_to_output(VTKWindowOutputStage& output);
 
     /// Update the plottable data
-    virtual void update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int frame_counter);
+    virtual void update(boost::shared_ptr<const Variable> var,
+                        const Parameters& p, int frame_counter);
 
     /// Return whether this plottable is compatible with the variable
     virtual bool is_compatible(const Variable &var) const;
@@ -104,18 +108,19 @@ namespace dolfin
     void build_id_filter();
 
     // Build the grid from mesh
-    void build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &grid, std::size_t entity_dim);
+    void build_grid_cells(vtkSmartPointer<vtkUnstructuredGrid> &grid,
+                         std::size_t entity_dim);
 
     // Remove values from an array if hide_above/hide_below are set
     void filter_scalars(vtkFloatArray *, const Parameters &);
 
     /// Set scalar values on the mesh
     template <class T>
-    void setPointValues(std::size_t size, const T *indata, const Parameters &parameters);
+    void setPointValues(std::size_t size, const T *indata, const Parameters& p);
 
     /// Set scalar values on the mesh
     template <class T>
-    void setCellValues(std::size_t size, const T *indata, const Parameters &parameters);
+    void setCellValues(std::size_t size, const T *indata, const Parameters& p);
 
     boost::shared_ptr<const Mesh> mesh() const;
 

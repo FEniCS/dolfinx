@@ -57,14 +57,15 @@ namespace dolfin
 
   public:
 
-    /// If a widget is supplied, this widget will be used for drawing, instead of a new top-level widget. Ownership is transferred.
-    VTKWindowOutputStage(QVTKWidget *widget = NULL);
+    /// If a widget is supplied, this widget will be used for drawing,
+    /// instead of a new top-level widget. Ownership is transferred.
+    VTKWindowOutputStage(QVTKWidget* widget = NULL);
 
     /// Destructor
     ~VTKWindowOutputStage();
 
     /// Initialise the pipeline
-    void init(VTKPlotter *parent, const Parameters &parameters);
+    void init(VTKPlotter* parent, const Parameters& parameters);
 
     /// Get the vtkRenderWindowInteractor for the window
     vtkRenderWindowInteractor* get_interactor();
@@ -84,8 +85,9 @@ namespace dolfin
     /// Retrieve the window title
     std::string get_window_title();
 
-    /// Return a pointer to the plotting widget. The pointer is valid from
-    /// after init() is called (if no widget was passed in the contructor).
+    /// Return a pointer to the plotting widget. The pointer is valid
+    /// from after init() is called (if no widget was passed in the
+    /// contructor).
     QVTKWidget *get_widget() const;
 
     /// Close the plotting window (only Qt). The window is not destroyed.
@@ -187,12 +189,12 @@ namespace dolfin
     vtkSmartPointer<vtkBalloonRepresentation> balloonRep;
     vtkSmartPointer<vtkBalloonWidget> balloonwidget;
 
-#ifdef HAS_QVTK
+    #ifdef HAS_QVTK
     QVTKWidget *widget;
-#endif
+    #endif
 
   };
 
-} // namespace dolfin
+}
 
 #endif

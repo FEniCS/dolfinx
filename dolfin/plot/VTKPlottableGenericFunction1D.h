@@ -45,16 +45,17 @@ namespace dolfin
     explicit
     VTKPlottableGenericFunction1D(boost::shared_ptr<const Function> function);
 
-    explicit
     VTKPlottableGenericFunction1D(boost::shared_ptr<const Expression> expression,
                                   boost::shared_ptr<const Mesh> mesh);
+
+    virtual ~VTKPlottableGenericFunction1D() {}
 
     //--- Implementation of the GenericVTKPlottable interface ---
 
     /// Additional parameters for VTKPlottableGenericFunction1D
-    virtual void modify_default_parameters(Parameters &parameters)
+    virtual void modify_default_parameters(Parameters& p)
     {
-      parameters["scalarbar"] = false;
+      p["scalarbar"] = false;
     }
 
     /// Initialize the parts of the pipeline that this class controls
@@ -64,13 +65,14 @@ namespace dolfin
     virtual void connect_to_output(VTKWindowOutputStage& output);
 
     /// Update the plottable data
-    virtual void update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int frame_counter);
+    virtual void update(boost::shared_ptr<const Variable> var,
+                        const Parameters& p, int frame_counter);
 
     /// Inform the plottable about the range.
-    virtual void rescale(double range[2], const Parameters& parameters);
+    virtual void rescale(double range[2], const Parameters& p);
 
     /// Return whether this plottable is compatible with the variable
-    virtual bool is_compatible(const Variable &var) const;
+    virtual bool is_compatible(const Variable& var) const;
 
     /// Get an actor for showing vertex labels
     virtual vtkSmartPointer<vtkActor2D> get_vertex_label_actor(vtkSmartPointer<vtkRenderer>);

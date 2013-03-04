@@ -48,7 +48,7 @@ namespace dolfin
     GenericSparsityPattern(std::size_t primary_dim) : _primary_dim(primary_dim) {}
 
     /// Destructor
-    virtual ~GenericSparsityPattern() {};
+    virtual ~GenericSparsityPattern() {}
 
     /// Initialize sparsity pattern for a generic tensor
     virtual void init(const std::vector<std::size_t>& dims,

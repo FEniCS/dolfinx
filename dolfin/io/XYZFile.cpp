@@ -62,7 +62,7 @@ void XYZFile::operator<<(const Function& u)
   counter++;
 
   cout << "Saved function " << u.name() << " (" << u.label()
-       << ") to file " << filename << " in xd3d xyz format." << endl;
+       << ") to file " << _filename << " in xd3d xyz format." << endl;
 }
 //----------------------------------------------------------------------------
 void XYZFile::results_write(const Function& u) const
@@ -73,7 +73,7 @@ void XYZFile::results_write(const Function& u) const
   {
     dolfin_error("XYZFile.cpp",
                  "write function to XYZ file"
-                 "Unable to open file \"%s\"", filename.c_str());
+                 "Unable to open file \"%s\"", _filename.c_str());
   }
 
   const std::size_t rank = u.function_space()->element()->value_rank();
@@ -128,8 +128,8 @@ void XYZFile::xyz_name_update()
   fileid.fill('0');
   fileid.width(6);
 
-  filestart.assign(filename, 0, filename.find("."));
-  extension.assign(filename, filename.find("."), filename.size());
+  filestart.assign(_filename, 0, _filename.find("."));
+  extension.assign(_filename, _filename.find("."), _filename.size());
 
   fileid << counter;
   newfilename << filestart << fileid.str() << ".xyz";
@@ -145,12 +145,12 @@ void XYZFile::xyz_name_update()
   }
 
   // Add to index file
-  std::ofstream fp_index(filename.c_str(), std::ios_base::trunc);
+  std::ofstream fp_index(_filename.c_str(), std::ios_base::trunc);
   if (!fp_index)
   {
     dolfin_error("XYZFile.cpp",
                  "write data to XYZ file",
-                 "Unable to open file \"%s\"", filename.c_str());
+                 "Unable to open file \"%s\"", _filename.c_str());
   }
   else
   {
@@ -160,12 +160,12 @@ void XYZFile::xyz_name_update()
     // cleanup but we can sort that out later.
     for (std::size_t i = 0; i < counter + 1; i++)
     {
-      std::ostringstream fileid;
-      fileid.fill('0');
-      fileid.width(6);
-      fileid << i;
+      std::ostringstream fileid0;
+      fileid0.fill('0');
+      fileid0.width(6);
+      fileid0 << i;
       std::ostringstream f;
-      f << filestart << fileid.str() << ".xyz";
+      f << filestart << fileid0.str() << ".xyz";
       fp_index << f.str() << "\n";
     }
   }
@@ -192,7 +192,7 @@ void XYZFile::mesh_function_write(T& meshfunction)
   {
     dolfin_error("XYZFile.cpp",
                  "write mesh function to XYZ file",
-                 "Unable to open file \"%s\"", filename.c_str());
+                 "Unable to open file \"%s\"", _filename.c_str());
   }
 
   fp << mesh.num_cells() << std::endl;
@@ -204,6 +204,6 @@ void XYZFile::mesh_function_write(T& meshfunction)
 
   cout << "saved mesh function " << counter << " times." << endl;
   cout << "Saved mesh function " << mesh.name() << " (" << mesh.label()
-       << ") to file " << filename << " in XYZ format." << endl;
+       << ") to file " << _filename << " in XYZ format." << endl;
 }
 //----------------------------------------------------------------------------

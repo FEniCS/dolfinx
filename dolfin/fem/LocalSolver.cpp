@@ -74,10 +74,6 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
   dolfin_assert(dofmap_a1);
   dolfin_assert(dofmap_L);
 
-  // Vector to hold dof map for a cell
-  std::vector<const std::vector<dolfin::la_index>* > dofs_a(2);
-  std::vector<const std::vector<dolfin::la_index>* > dofs_L(1);
-
   // Initialise vector
   std::pair<std::size_t, std::size_t> local_range = dofmap_L->ownership_range();
   x.resize(local_range);
@@ -111,9 +107,15 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
     A.set_size(dofs_a0.size(), dofs_a1.size());
     b.set_size(dofs_L.size());
 
-    // Tabulate A, and b on cell
-    integral_a->tabulate_tensor(A.memptr(), ufc_a.w(), ufc_a.cell);
-    integral_L->tabulate_tensor(b.memptr(), ufc_L.w(), ufc_L.cell);
+    // Tabulate A and b on cell
+    integral_a->tabulate_tensor(A.memptr(),
+                                ufc_a.w(),
+                                &ufc_a.cell.vertex_coordinates[0],
+                                ufc_a.cell.orientation);
+    integral_L->tabulate_tensor(b.memptr(),
+                                ufc_L.w(),
+                                &ufc_L.cell.vertex_coordinates[0],
+                                ufc_L.cell.orientation);
 
     // Solve local problem (Armadillo uses column-major)
     if (symmetric)

@@ -163,6 +163,15 @@ namespace dolfin
       return *this;
     }
 
+    /// Test if matrix is symmetric
+    virtual bool is_symmetric(double tol) const
+    {
+      dolfin_error("GenericMatrix.h",
+                   "test if matrix is symmetric",
+                   "Not implemented by current linear algebra backend");
+      return false;
+    }
+
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& x) = 0;
 

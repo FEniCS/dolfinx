@@ -60,7 +60,7 @@ namespace dolfin
     // Diagonal
     std::vector<std::size_t> diagonal;
 
-    const Parameters& krylov_parameters;
+    const Parameters& parameters;
 
   };
 

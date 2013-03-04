@@ -427,9 +427,11 @@ void Function::eval(Array<double>& values,
     values[j] = 0.0;
 
   // Compute linear combination
+  const int cell_orientation = 0;
   for (std::size_t i = 0; i < element.space_dimension(); ++i)
   {
-    element.evaluate_basis(i, &basis[0], &x[0], ufc_cell);
+    element.evaluate_basis(i, &basis[0], &x[0], &ufc_cell.vertex_coordinates[0],
+                           cell_orientation);
     for (std::size_t j = 0; j < value_size_loc; ++j)
       values[j] += coefficients[i]*basis[j];
   }
@@ -630,8 +632,11 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
     restrict(&coefficients[0], element, *cell, ufc_cell);
 
     // Interpolate values at the vertices
+    const int cell_orientation = 0;
     element.interpolate_vertex_values(&cell_vertex_values[0],
-                                      &coefficients[0], ufc_cell);
+                                      &coefficients[0],
+                                      cell_orientation,
+                                      ufc_cell);
 
     // Copy values to array of vertex values
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)

@@ -123,29 +123,29 @@ PETScVector::PETScVector(const GenericSparsityPattern& sparsity_pattern)
   resize(sparsity_pattern.local_range(0), ghost_indices);
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(boost::shared_ptr<Vec> x): x(x), _use_gpu(false)
+PETScVector::PETScVector(boost::shared_ptr<Vec> x): _x(x), _use_gpu(false)
 {
   // Do nothing else
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(const PETScVector& v)
-  : x(new Vec(0), PETScVectorDeleter()), _use_gpu(false)
+  : _x(new Vec(0), PETScVectorDeleter()), _use_gpu(false)
 {
-  dolfin_assert(v.x);
+  dolfin_assert(v._x);
 
   // Create new vector
-  VecDuplicate(*(v.x), x.get());
+  VecDuplicate(*(v._x), _x.get());
 
   // Copy data
-  VecCopy(*(v.x), *x);
+  VecCopy(*(v._x), *_x);
 
   // Copy ghost data
-  this->ghost_global_to_local = v.ghost_global_to_local;
+  ghost_global_to_local = v.ghost_global_to_local;
 
   // Create ghost view
-  this->x_ghosted.reset(new Vec(0), PETScVectorDeleter());
+  x_ghosted.reset(new Vec(0), PETScVectorDeleter());
   if (!ghost_global_to_local.empty())
-    VecGhostGetLocalForm(*x, x_ghosted.get());
+    VecGhostGetLocalForm(*_x, x_ghosted.get());
 }
 //-----------------------------------------------------------------------------
 PETScVector::~PETScVector()
@@ -155,7 +155,7 @@ PETScVector::~PETScVector()
 //-----------------------------------------------------------------------------
 bool PETScVector::distributed() const
 {
-  dolfin_assert(x);
+  dolfin_assert(_x);
 
   // Get type
   #if PETSC_VERSION_RELEASE
@@ -163,7 +163,7 @@ bool PETScVector::distributed() const
   #else
   VecType petsc_type;
   #endif
-  VecGetType(*x, &petsc_type);
+  VecGetType(*_x, &petsc_type);
 
   // Return type
   bool _distributed = false;
@@ -196,10 +196,10 @@ boost::shared_ptr<GenericVector> PETScVector::copy() const
 //-----------------------------------------------------------------------------
 void PETScVector::resize(std::size_t N)
 {
-  if (x && this->size() == N)
+  if (_x && this->size() == N)
     return;
 
-  if (!x)
+  if (!_x)
   {
     dolfin_error("PETScVector.cpp",
                  "resize PETSc vector",
@@ -247,7 +247,7 @@ void PETScVector::resize(std::pair<std::size_t, std::size_t> range,
 //-----------------------------------------------------------------------------
 void PETScVector::get_local(std::vector<double>& values) const
 {
-  dolfin_assert(x);
+  dolfin_assert(_x);
   const std::size_t n0 = local_range().first;
   const std::size_t local_size = local_range().second - local_range().first;
   values.resize(local_size);
@@ -259,12 +259,12 @@ void PETScVector::get_local(std::vector<double>& values) const
   for (std::size_t i = 0; i < local_size; ++i)
     rows[i] += i;
 
-  VecGetValues(*x, local_size, rows.data(), values.data());
+  VecGetValues(*_x, local_size, rows.data(), values.data());
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set_local(const std::vector<double>& values)
 {
-  dolfin_assert(x);
+  dolfin_assert(_x);
   const std::size_t n0 = local_range().first;
   const std::size_t local_size = local_range().second - local_range().first;
   if (values.size() != local_size)
@@ -282,12 +282,12 @@ void PETScVector::set_local(const std::vector<double>& values)
   for (std::size_t i = 0; i < local_size; ++i)
     rows[i] += i;
 
-  VecSetValues(*x, local_size, rows.data(), values.data(), INSERT_VALUES);
+  VecSetValues(*_x, local_size, rows.data(), values.data(), INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::add_local(const Array<double>& values)
 {
-  dolfin_assert(x);
+  dolfin_assert(_x);
   const std::size_t n0 = local_range().first;
   const std::size_t local_size = local_range().second - local_range().first;
   if (values.size() != local_size)
@@ -305,13 +305,13 @@ void PETScVector::add_local(const Array<double>& values)
   for (std::size_t i = 0; i < local_size; ++i)
     rows[i] += i;
 
-  VecSetValues(*x, local_size, rows.data(), values.data(), ADD_VALUES);
+  VecSetValues(*_x, local_size, rows.data(), values.data(), ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get_local(double* block, std::size_t m,
 			    const dolfin::la_index* rows) const
 {
-  dolfin_assert(x);
+  dolfin_assert(_x);
   PetscInt _m = m;
   const dolfin::la_index* _rows = rows;
 
@@ -326,7 +326,7 @@ void PETScVector::get_local(double* block, std::size_t m,
 
   // Use VecGetValues if no ghost points, otherwise check for ghost values
   if (ghost_global_to_local.empty() || m == 0)
-    VecGetValues(*x, _m, _rows, block);
+    VecGetValues(*_x, _m, _rows, block);
   else
   {
     dolfin_assert(x_ghosted);
@@ -359,38 +359,38 @@ void PETScVector::get_local(double* block, std::size_t m,
 void PETScVector::set(const double* block, std::size_t m,
                       const dolfin::la_index* rows)
 {
-  dolfin_assert(x);
+  dolfin_assert(_x);
 
   if (m == 0)
     return;
 
-  VecSetValues(*x, m, rows, block, INSERT_VALUES);
+  VecSetValues(*_x, m, rows, block, INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::add(const double* block, std::size_t m,
                       const dolfin::la_index* rows)
 {
-  dolfin_assert(x);
+  dolfin_assert(_x);
 
   if (m == 0)
     return;
 
-  VecSetValues(*x, m, rows, block, ADD_VALUES);
+  VecSetValues(*_x, m, rows, block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::apply(std::string mode)
 {
   Timer("Apply (vector)");
-  dolfin_assert(x);
-  VecAssemblyBegin(*x);
-  VecAssemblyEnd(*x);
+  dolfin_assert(_x);
+  VecAssemblyBegin(*_x);
+  VecAssemblyEnd(*_x);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::zero()
 {
-  dolfin_assert(x);
+  dolfin_assert(_x);
   double a = 0.0;
-  VecSet(*x, a);
+  VecSet(*_x, a);
 }
 //-----------------------------------------------------------------------------
 bool PETScVector::empty() const
@@ -401,23 +401,23 @@ bool PETScVector::empty() const
 std::size_t PETScVector::size() const
 {
   PetscInt n = 0;
-  if (x)
-    VecGetSize(*x, &n);
+  if (_x)
+    VecGetSize(*_x, &n);
   return n;
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScVector::local_size() const
 {
   PetscInt n = 0;
-  if (x)
-    VecGetLocalSize(*x, &n);
+  if (_x)
+    VecGetLocalSize(*_x, &n);
   return n;
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t> PETScVector::local_range() const
 {
   PetscInt n0, n1;
-  VecGetOwnershipRange(*x, &n0, &n1);
+  VecGetOwnershipRange(*_x, &n0, &n1);
   dolfin_assert(n0 <= n1);
   return std::make_pair(n0, n1);
 }
@@ -460,65 +460,65 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
   if (this != &v)
   {
     // Copy data (local operatrion)
-    dolfin_assert(v.x);
-    dolfin_assert(x);
-    VecCopy(*(v.x), *x);
+    dolfin_assert(v._x);
+    dolfin_assert(_x);
+    VecCopy(*(v._x), *_x);
   }
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator= (double a)
 {
-  dolfin_assert(x);
-  VecSet(*x, a);
+  dolfin_assert(_x);
+  VecSet(*_x, a);
   return *this;
 }
 //-----------------------------------------------------------------------------
 void PETScVector::update_ghost_values()
 {
-  VecGhostUpdateBegin(*x, INSERT_VALUES, SCATTER_FORWARD);
-  VecGhostUpdateEnd(*x, INSERT_VALUES, SCATTER_FORWARD);
+  VecGhostUpdateBegin(*_x, INSERT_VALUES, SCATTER_FORWARD);
+  VecGhostUpdateEnd(*_x, INSERT_VALUES, SCATTER_FORWARD);
 }
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator+= (const GenericVector& x)
 {
-  this->axpy(1.0, x);
+  axpy(1.0, x);
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator+= (double a)
 {
-  dolfin_assert(x);
-  VecShift(*x, a);
+  dolfin_assert(_x);
+  VecShift(*_x, a);
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator-= (const GenericVector& x)
 {
-  this->axpy(-1.0, x);
+  axpy(-1.0, x);
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator-= (double a)
 {
-  dolfin_assert(x);
-  VecShift(*x, -a);
+  dolfin_assert(_x);
+  VecShift(*_x, -a);
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator*= (const double a)
 {
-  dolfin_assert(x);
-  VecScale(*x, a);
+  dolfin_assert(_x);
+  VecScale(*_x, a);
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator*= (const GenericVector& y)
 {
-  dolfin_assert(x);
+  dolfin_assert(_x);
 
   const PETScVector& v = as_type<const PETScVector>(y);
-  dolfin_assert(v.x);
+  dolfin_assert(v._x);
 
   if (size() != v.size())
   {
@@ -527,38 +527,38 @@ const PETScVector& PETScVector::operator*= (const GenericVector& y)
                  "Vectors are not of the same size");
   }
 
-  VecPointwiseMult(*x,*x,*v.x);
+  VecPointwiseMult(*_x, *_x, *v._x);
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator/= (const double a)
 {
-  dolfin_assert(x);
+  dolfin_assert(_x);
   dolfin_assert(a != 0.0);
 
   const double b = 1.0/a;
-  VecScale(*x, b);
+  VecScale(*_x, b);
   return *this;
 }
 //-----------------------------------------------------------------------------
 double PETScVector::inner(const GenericVector& y) const
 {
-  dolfin_assert(x);
+  dolfin_assert(_x);
 
   const PETScVector& _y = as_type<const PETScVector>(y);
-  dolfin_assert(_y.x);
+  dolfin_assert(_y._x);
 
   double a;
-  VecDot(*(_y.x), *x, &a);
+  VecDot(*(_y._x), *_x, &a);
   return a;
 }
 //-----------------------------------------------------------------------------
 void PETScVector::axpy(double a, const GenericVector& y)
 {
-  dolfin_assert(x);
+  dolfin_assert(_x);
 
   const PETScVector& _y = as_type<const PETScVector>(y);
-  dolfin_assert(_y.x);
+  dolfin_assert(_y._x);
 
   if (size() != _y.size())
   {
@@ -567,18 +567,18 @@ void PETScVector::axpy(double a, const GenericVector& y)
                  "Vectors are not of the same size");
   }
 
-  VecAXPY(*x, a, *(_y.x));
+  VecAXPY(*_x, a, *(_y._x));
 }
 //-----------------------------------------------------------------------------
 void PETScVector::abs()
 {
-  dolfin_assert(x);
-  VecAbs(*x);
+  dolfin_assert(_x);
+  VecAbs(*_x);
 }
 //-----------------------------------------------------------------------------
 double PETScVector::norm(std::string norm_type) const
 {
-  dolfin_assert(x);
+  dolfin_assert(_x);
   if (norm_types.count(norm_type) == 0)
   {
     dolfin_error("PETScVector.cpp",
@@ -587,42 +587,42 @@ double PETScVector::norm(std::string norm_type) const
   }
 
   double value = 0.0;
-  VecNorm(*x, norm_types.find(norm_type)->second, &value);
+  VecNorm(*_x, norm_types.find(norm_type)->second, &value);
   return value;
 }
 //-----------------------------------------------------------------------------
 double PETScVector::min() const
 {
-  dolfin_assert(x);
+  dolfin_assert(_x);
 
   double value = 0.0;
   PetscInt position = 0;
-  VecMin(*x, &position, &value);
+  VecMin(*_x, &position, &value);
   return value;
 }
 //-----------------------------------------------------------------------------
 double PETScVector::max() const
 {
-  dolfin_assert(x);
+  dolfin_assert(_x);
 
   double value = 0.0;
   PetscInt position = 0;
-  VecMax(*x, &position, &value);
+  VecMax(*_x, &position, &value);
   return value;
 }
 //-----------------------------------------------------------------------------
 double PETScVector::sum() const
 {
-  dolfin_assert(x);
+  dolfin_assert(_x);
 
   double value = 0.0;
-  VecSum(*x, &value);
+  VecSum(*_x, &value);
   return value;
 }
 //-----------------------------------------------------------------------------
 double PETScVector::sum(const Array<std::size_t>& rows) const
 {
-  dolfin_assert(x);
+  dolfin_assert(_x);
   const std::size_t n0 = local_range().first;
   const std::size_t n1 = local_range().second;
 
@@ -672,7 +672,7 @@ double PETScVector::sum(const Array<std::size_t>& rows) const
 //-----------------------------------------------------------------------------
 std::string PETScVector::str(bool verbose) const
 {
-  if (!x)
+  if (!_x)
     return "<Uninitialized PETScVector>";
 
   std::stringstream s;
@@ -685,16 +685,16 @@ std::string PETScVector::str(bool verbose) const
     #else
     VecType petsc_type;
     #endif
-    dolfin_assert(x);
-    VecGetType(*x, &petsc_type);
+    dolfin_assert(_x);
+    VecGetType(*_x, &petsc_type);
 
     if (strcmp(petsc_type, VECSEQ) == 0)
-      VecView(*x, PETSC_VIEWER_STDOUT_SELF);
+      VecView(*_x, PETSC_VIEWER_STDOUT_SELF);
     else if (strcmp(petsc_type, VECMPI) == 0)
-      VecView(*x, PETSC_VIEWER_STDOUT_WORLD);
+      VecView(*_x, PETSC_VIEWER_STDOUT_WORLD);
     #ifdef HAS_PETSC_CUSP
     else if (strcmp(petsc_type, VECSEQCUSP) == 0)
-      VecView(*x, PETSC_VIEWER_STDOUT_SELF);
+      VecView(*_x, PETSC_VIEWER_STDOUT_SELF);
     // TODO: Uncomment these two lines after implementing MPI Cusp vectors
     //else if (strcmp(petsc_type, VECMPICUSP) == 0)
     //  VecView(*x, PETSC_VIEWER_STDOUT_WORLD);
@@ -708,7 +708,7 @@ std::string PETScVector::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void PETScVector::gather(GenericVector& y, const std::vector<dolfin::la_index>& indices) const
 {
-  dolfin_assert(x);
+  dolfin_assert(_x);
 
   // Down cast to a PETScVector
   PETScVector& _y = as_type<PETScVector>(y);
@@ -758,9 +758,9 @@ void PETScVector::gather(GenericVector& y, const std::vector<dolfin::la_index>& 
 
   // Perform scatter
   VecScatter scatter;
-  VecScatterCreate(*x, from, *(_y.vec()), to, &scatter);
-  VecScatterBegin(scatter, *x, *(_y.vec()), INSERT_VALUES, SCATTER_FORWARD);
-  VecScatterEnd(scatter, *x, *(_y.vec()), INSERT_VALUES, SCATTER_FORWARD);
+  VecScatterCreate(*_x, from, *(_y.vec()), to, &scatter);
+  VecScatterBegin(scatter, *_x, *(_y.vec()), INSERT_VALUES, SCATTER_FORWARD);
+  VecScatterEnd(scatter, *_x, *(_y.vec()), INSERT_VALUES, SCATTER_FORWARD);
 
   // Clean up
   ISDestroy(&from);
@@ -787,10 +787,10 @@ void PETScVector::gather_on_zero(std::vector<double>& x) const
 
   boost::shared_ptr<Vec> vout(new Vec(0), PETScVectorDeleter());
   VecScatter scatter;
-  VecScatterCreateToZero(*this->x, &scatter, vout.get());
+  VecScatterCreateToZero(*_x, &scatter, vout.get());
 
-  VecScatterBegin(scatter, *this->x, *vout, INSERT_VALUES, SCATTER_FORWARD);
-  VecScatterEnd(scatter, *this->x, *vout, INSERT_VALUES, SCATTER_FORWARD);
+  VecScatterBegin(scatter, *_x, *vout, INSERT_VALUES, SCATTER_FORWARD);
+  VecScatterEnd(scatter, *_x, *vout, INSERT_VALUES, SCATTER_FORWARD);
   VecScatterDestroy(&scatter);
 
   // Wrap PETSc vector
@@ -806,13 +806,13 @@ void PETScVector::_init(std::pair<std::size_t, std::size_t> range,
                         bool distributed)
 {
   // Create vector
-  if (x && !x.unique())
+  if (_x && !_x.unique())
   {
     dolfin_error("PETScVector.cpp",
                  "initialize PETSc vector",
                  "More than one object points to the underlying PETSc object");
   }
-  x.reset(new Vec(0), PETScVectorDeleter());
+  _x.reset(new Vec(0), PETScVectorDeleter());
 
   const std::size_t local_size = range.second - range.first;
   dolfin_assert(range.second >= range.first);
@@ -820,17 +820,17 @@ void PETScVector::_init(std::pair<std::size_t, std::size_t> range,
   // Initialize vector, either default or MPI vector
   if (!distributed)
   {
-    VecCreate(PETSC_COMM_SELF, x.get());
+    VecCreate(PETSC_COMM_SELF, _x.get());
     // Set type to be either standard or Cusp sequential vector
     if (!_use_gpu)
-      VecSetType(*x, VECSEQ);
+      VecSetType(*_x, VECSEQ);
     #ifdef HAS_PETSC_CUSP
     else
-      VecSetType(*x, VECSEQCUSP);
+      VecSetType(*_x, VECSEQCUSP);
     #endif
 
-    VecSetSizes(*x, local_size, PETSC_DECIDE);
-    VecSetFromOptions(*x);
+    VecSetSizes(*_x, local_size, PETSC_DECIDE);
+    VecSetFromOptions(*_x);
   }
   else
   {
@@ -847,7 +847,7 @@ void PETScVector::_init(std::pair<std::size_t, std::size_t> range,
     const std::vector<PetscInt> _ghost_indices(ghost_indices.begin(), ghost_indices.end());
 
     VecCreateGhost(PETSC_COMM_WORLD, local_size, PETSC_DECIDE,
-                   ghost_indices.size(), _ghost_indices.data(), x.get());
+                   ghost_indices.size(), _ghost_indices.data(), _x.get());
 
     // Build global-to-local map for ghost indices
     for (std::size_t i = 0; i < ghost_indices.size(); ++i)
@@ -855,18 +855,18 @@ void PETScVector::_init(std::pair<std::size_t, std::size_t> range,
 
     // Create ghost view
     x_ghosted.reset(new Vec(0), PETScVectorDeleter());
-    VecGhostGetLocalForm(*x, x_ghosted.get());
+    VecGhostGetLocalForm(*_x, x_ghosted.get());
   }
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<Vec> PETScVector::vec() const
 {
-  return x;
+  return _x;
 }
 //-----------------------------------------------------------------------------
 void PETScVector::reset()
 {
-  x.reset();
+  _x.reset();
   x_ghosted.reset();
   ghost_global_to_local.clear();
 }
@@ -875,10 +875,10 @@ GenericLinearAlgebraFactory& PETScVector::factory() const
 {
   if (!_use_gpu)
     return PETScFactory::instance();
-#ifdef HAS_PETSC_CUSP
+  #ifdef HAS_PETSC_CUSP
   else
     return PETScCuspFactory::instance();
-#endif
+  #endif
 
   // Return something to keep the compiler happy. Code will never be reached.
   return PETScFactory::instance();

@@ -40,10 +40,10 @@ namespace dolfin
     ~uBLASDummyPreconditioner();
 
     /// Initialise preconditioner (dense matrix)
-    void init(const uBLASMatrix<ublas_sparse_matrix>& A) {};
+    void init(const uBLASMatrix<ublas_sparse_matrix>& A) {}
 
     /// Initialise preconditioner (virtual matrix)
-    void init(const uBLASLinearOperator& A) {};
+    void init(const uBLASLinearOperator& A) {}
 
     /// Solve linear system Ax = b approximately
     void solve(uBLASVector& x, const uBLASVector& b) const;

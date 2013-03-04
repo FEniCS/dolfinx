@@ -26,21 +26,21 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 SpecialFacetFunction::SpecialFacetFunction(std::vector<Function>& f_e, std::size_t dim)
-  : Expression(dim), f_e(f_e)
+  : Expression(dim), _f_e(f_e)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 SpecialFacetFunction::SpecialFacetFunction(std::vector<Function>& f_e)
-  : Expression(), f_e(f_e)
+  : Expression(), _f_e(f_e)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Function& SpecialFacetFunction::operator[] (std::size_t i) const
 {
-  dolfin_assert(i < f_e.size());
-  return f_e[i];
+  dolfin_assert(i < _f_e.size());
+  return _f_e[i];
 }
 //-----------------------------------------------------------------------------
 void SpecialFacetFunction::eval(Array<double>& values, const Array<double>& x,
@@ -48,6 +48,6 @@ void SpecialFacetFunction::eval(Array<double>& values, const Array<double>& x,
 {
   values[0] = 0.0;
   if (cell.local_facet >= 0)
-    f_e[cell.local_facet].eval(values, x, cell);
+    _f_e[cell.local_facet].eval(values, x, cell);
 }
 //-----------------------------------------------------------------------------

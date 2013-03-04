@@ -84,7 +84,7 @@ namespace dolfin
                  bool is_linear);
 
     /// Destructor.
-    ~ErrorControl() { /* Do nothing */};
+    ~ErrorControl() {}
 
     /// Default parameter values:
     static Parameters default_parameters()
