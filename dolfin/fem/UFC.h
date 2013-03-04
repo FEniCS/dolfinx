@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Anders Logg
+// Copyright (C) 2007-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2009
+// Modified by Garth N. Wells 2009
 //
 // First added:  2007-01-17
-// Last changed: 2011-01-31
+// Last changed: 2013-02-26
 
 #ifndef __UFC_DATA_H
 #define __UFC_DATA_H
@@ -142,10 +142,8 @@ namespace dolfin
     // Form
     const ufc::form& form;
 
-
     // FIXME AL: Check which data is actually used and remove the rest
     // FIXME AL: Remove UFCCell class
-
 
     // Current cell
     UFCCell cell;
