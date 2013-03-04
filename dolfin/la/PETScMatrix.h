@@ -158,7 +158,7 @@ namespace dolfin
     virtual const GenericMatrix& operator= (const GenericMatrix& A);
 
     /// Test if matrix is symmetric
-    virtual bool is_symmetric(double tol=0.0) const;
+    virtual bool is_symmetric(double tol) const;
 
     //--- Special functions ---
 

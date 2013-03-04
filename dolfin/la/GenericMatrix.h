@@ -164,7 +164,7 @@ namespace dolfin
     }
 
     /// Test if matrix is symmetric
-    bool is_symmetric(double tol) const
+    virtual bool is_symmetric(double tol) const
     {
       dolfin_error("GenericMatrix.h",
                    "test if matrix is symmetric",
