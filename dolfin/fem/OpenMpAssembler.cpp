@@ -140,9 +140,6 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
   // Check whether integral is domain-dependent
   bool use_domains = domains && !domains->empty();
 
-  // FIXME: Assume cell orientation is 0
-  const int cell_orientation = 0;
-
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> dofmaps;
   for (std::size_t i = 0; i < form_rank; ++i)
@@ -212,7 +209,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A, const Form& a,
       integral->tabulate_tensor(&ufc.A[0],
                                 ufc.w(),
                                 &ufc.cell.vertex_coordinates[0],
-                                cell_orientation);
+                                ufc.cell.orientation);
 
       // Add entries to global tensor
       if (values && form_rank == 0)
@@ -271,9 +268,6 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
   // Check whether integrals are domain-dependent
   bool use_cell_domains = cell_domains && !cell_domains->empty();
   bool use_exterior_facet_domains = exterior_facet_domains && !exterior_facet_domains->empty();
-
-  // FIXME: Assume cell orientation is 0
-  const int cell_orientation = 0;
 
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> dofmaps;
@@ -347,7 +341,7 @@ void OpenMpAssembler::assemble_cells_and_exterior_facets(GenericTensor& A,
         cell_integral->tabulate_tensor(&ufc.A[0],
                                        ufc.w(),
                                        &ufc.cell.vertex_coordinates[0],
-                                       cell_orientation);
+                                       ufc.cell.orientation);
       else
         std::fill(ufc.A.begin(), ufc.A.end(), 0.0);
 

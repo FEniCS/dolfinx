@@ -272,9 +272,6 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
   bool use_cell_domains = cell_domains && !cell_domains->empty();
   bool use_exterior_facet_domains = exterior_facet_domains && !exterior_facet_domains->empty();
 
-  // FIXME: Assume cell orientation is 0
-  const int cell_orientation = 0;
-
   // Iterate over all cells
   Progress p("Assembling system (cell-wise)", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -301,7 +298,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
       A_cell_integral->tabulate_tensor(&A_ufc.A[0],
                                        A_ufc.w(),
                                        &A_ufc.cell.vertex_coordinates[0],
-                                       cell_orientation);
+                                       A_ufc.cell.orientation);
       for (std::size_t i = 0; i < data.Ae.size(); ++i)
         data.Ae[i] += A_ufc.A[i];
     }
@@ -316,7 +313,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
       b_cell_integral->tabulate_tensor(&b_ufc.A[0],
                                        b_ufc.w(),
                                        &b_ufc.cell.vertex_coordinates[0],
-                                       cell_orientation);
+                                       b_ufc.cell.orientation);
       for (std::size_t i = 0; i < data.be.size(); ++i)
         data.be[i] += b_ufc.A[i];
     }
@@ -606,7 +603,10 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
     {
       A_ufc.update(cell0);
 
-      A_cell_integral->tabulate_tensor(&A_ufc.A[0], A_ufc.w(), &A_ufc.cell.vertex_coordinates[0], 0);
+      A_cell_integral->tabulate_tensor(&A_ufc.A[0],
+                                       A_ufc.w(),
+                                       &A_ufc.cell.vertex_coordinates[0],
+                                       A_ufc.cell.orientation);
       const std::size_t nn = a0_dofs0.size();
       const std::size_t mm = a1_dofs0.size();
       for (std::size_t i = 0; i < mm; i++)
@@ -618,7 +618,10 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
     {
       b_ufc.update(cell0);
 
-      b_cell_integral->tabulate_tensor(&b_ufc.A[0], b_ufc.w(), &b_ufc.cell.vertex_coordinates[0], 0);
+      b_cell_integral->tabulate_tensor(&b_ufc.A[0],
+                                       b_ufc.w(),
+                                       &b_ufc.cell.vertex_coordinates[0],
+                                       b_ufc.cell.orientation);
       for (std::size_t i = 0; i < L_dofs0.size(); i++)
         b_ufc.macro_A[i] += b_ufc.A[i];
     }
@@ -631,7 +634,10 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
     {
       A_ufc.update(cell1);
 
-      A_cell_integral->tabulate_tensor(&A_ufc.A[0], A_ufc.w(), &A_ufc.cell.vertex_coordinates[0], 0);
+      A_cell_integral->tabulate_tensor(&A_ufc.A[0],
+                                       A_ufc.w(),
+                                       &A_ufc.cell.vertex_coordinates[0],
+                                       A_ufc.cell.orientation);
       const std::size_t nn = a0_dofs1.size();
       const std::size_t mm = a1_dofs1.size();
       for (std::size_t i = 0; i < mm; i++)
@@ -643,7 +649,10 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
     {
       b_ufc.update(cell1);
 
-      b_cell_integral->tabulate_tensor(&b_ufc.A[0], b_ufc.w(), &b_ufc.cell.vertex_coordinates[0], 0);
+      b_cell_integral->tabulate_tensor(&b_ufc.A[0],
+                                       b_ufc.w(),
+                                       &b_ufc.cell.vertex_coordinates[0],
+                                       b_ufc.cell.orientation);
       for (std::size_t i = 0; i < L_dofs0.size(); i++)
         b_ufc.macro_A[L_dofs0.size() + i] += b_ufc.A[i];
     }
@@ -696,15 +705,22 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
   if (A_facet_integral)
   {
     A_ufc.update(cell, local_facet);
-    A_facet_integral->tabulate_tensor(&A_ufc.A[0], A_ufc.w(), &A_ufc.cell.vertex_coordinates[0], local_facet);
+    A_facet_integral->tabulate_tensor(&A_ufc.A[0],
+                                      A_ufc.w(),
+                                      &A_ufc.cell.vertex_coordinates[0],
+                                      local_facet);
     for (std::size_t i = 0; i < data.Ae.size(); i++)
       data.Ae[i] += A_ufc.A[i];
   }
-  const ufc::exterior_facet_integral* b_facet_integral = b_ufc.default_exterior_facet_integral.get();
+  const ufc::exterior_facet_integral*
+    b_facet_integral = b_ufc.default_exterior_facet_integral.get();
   if (b_facet_integral)
   {
     b_ufc.update(cell, local_facet);
-    b_facet_integral->tabulate_tensor(&b_ufc.A[0], b_ufc.w(), &b_ufc.cell.vertex_coordinates[0], local_facet);
+    b_facet_integral->tabulate_tensor(&b_ufc.A[0],
+                                      b_ufc.w(),
+                                      &b_ufc.cell.vertex_coordinates[0],
+                                      local_facet);
     for (std::size_t i = 0; i < data.be.size(); i++)
       data.be[i] += b_ufc.A[i];
   }
@@ -716,7 +732,10 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
     if (A_cell_integral)
     {
       A_ufc.update(cell);
-      A_cell_integral->tabulate_tensor(&A_ufc.A[0], A_ufc.w(), &A_ufc.cell.vertex_coordinates[0], 0);
+      A_cell_integral->tabulate_tensor(&A_ufc.A[0],
+                                       A_ufc.w(),
+                                       &A_ufc.cell.vertex_coordinates[0],
+                                       A_ufc.cell.orientation);
       for (std::size_t i = 0; i < data.Ae.size(); i++)
         data.Ae[i] += A_ufc.A[i];
     }
@@ -725,7 +744,10 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
     if (b_cell_integral)
     {
       b_ufc.update(cell);
-      b_cell_integral->tabulate_tensor(&b_ufc.A[0], b_ufc.w(), &b_ufc.cell.vertex_coordinates[0], 0);
+      b_cell_integral->tabulate_tensor(&b_ufc.A[0],
+                                       b_ufc.w(),
+                                       &b_ufc.cell.vertex_coordinates[0],
+                                       b_ufc.cell.orientation);
       for (std::size_t i = 0; i < data.be.size(); i++)
         data.be[i] += b_ufc.A[i];
     }

@@ -111,16 +111,15 @@ void LocalSolver::solve(GenericVector& x, const Form& a, const Form& L,
     A.set_size(dofs_a0.size(), dofs_a1.size());
     b.set_size(dofs_L.size());
 
-    // Tabulate A, and b on cell
-    const int cell_orientation = 0;
+    // Tabulate A and b on cell
     integral_a->tabulate_tensor(A.memptr(),
                                 ufc_a.w(),
                                 &ufc_a.cell.vertex_coordinates[0],
-                                cell_orientation);
+                                ufc_a.cell.orientation);
     integral_L->tabulate_tensor(b.memptr(),
                                 ufc_L.w(),
                                 &ufc_L.cell.vertex_coordinates[0],
-                                cell_orientation);
+                                ufc_L.cell.orientation);
 
     // Solve local problem (Armadillo uses column-major)
     if (symmetric)

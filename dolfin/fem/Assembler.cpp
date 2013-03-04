@@ -145,9 +145,6 @@ void Assembler::assemble_cells(GenericTensor& A,
   // Check whether integral is domain-dependent
   bool use_domains = domains && !domains->empty();
 
-  // FIXME: Assume cell orientation is 0
-  const int cell_orientation = 0;
-
   // Assemble over cells
   Progress p(AssemblerBase::progress_message(A.rank(), "cells"), mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -178,7 +175,7 @@ void Assembler::assemble_cells(GenericTensor& A,
     // Tabulate cell tensor
     integral->tabulate_tensor(&ufc.A[0], ufc.w(),
                               &ufc.cell.vertex_coordinates[0],
-                              cell_orientation);
+                              ufc.cell.orientation);
 
     // Add entries to global tensor. Either store values cell-by-cell
     // (currently only available for functionals)
