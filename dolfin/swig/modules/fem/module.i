@@ -97,6 +97,7 @@
 #include "dolfin/fem/NonlinearVariationalSolver.h"
 #include "dolfin/fem/ButcherScheme.h"
 #include "dolfin/fem/RKSolver.h"
+#include "dolfin/fem/PointIntegralSolver.h"
 #include "dolfin/fem/OpenMpAssembler.h"
 #include "dolfin/fem/VariationalProblem.h"
 
@@ -205,6 +206,7 @@ import_array();
 %include "dolfin/fem/NonlinearVariationalSolver.h"
 %include "dolfin/fem/ButcherScheme.h"
 %include "dolfin/fem/RKSolver.h"
+%include "dolfin/fem/PointIntegralSolver.h"
 %include "dolfin/fem/OpenMpAssembler.h"
 %include "dolfin/fem/VariationalProblem.h"
 %include "dolfin/swig/fem/post.i"

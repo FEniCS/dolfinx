@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-03-04
+// Last changed: 2013-03-05
 
-#ifndef __RKSOLVER_H
-#define __RKSOLVER_H
+#ifndef __POINTINTEGRALSOLVER_H
+#define __POINTINTEGRALSOLVER_H
 
 #include <vector>
 #include <boost/shared_ptr.hpp>
@@ -66,9 +66,6 @@ namespace dolfin
 
     // The ButcherScheme
     boost::shared_ptr<ButcherScheme> _scheme;
-
-    // Assembler for explicit stages
-    Assembler _assembler;
 
     // Vertex map between vertices, cells and corresponding local vertex
     std::vector<std::pair<std::size_t, unsigned int> > _vertex_map;

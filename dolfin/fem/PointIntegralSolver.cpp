@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-03-04
+// Last changed: 2013-03-05
 
 #include <cmath>
 #include <armadillo>
@@ -64,13 +64,16 @@ void PointIntegralSolver::step(double dt)
   
   // Get size of system (num dofs per vertex)
   const unsigned int N = dofmap.num_entity_dofs(0);
-  
-  // Local solution vector
-  arma::vec local_solution(N, 0.0);
+  const unsigned int num_stages = _scheme->stage_forms().size();
+
+  // Local solution vector at start of time step
+  arma::vec u0;
+  u0.set_size(N);
 
   // Local stage solutions
-  std::vector<arma::vec> local_stage_solutions(_scheme->stage_solutions().size(), \
-					       local_solution);
+  std::vector<arma::vec> local_stage_solutions(_scheme->stage_solutions().size());
+  for (unsigned int stage=0; stage<num_stages; stage++)
+    local_stage_solutions[stage].set_size(N);
 
   /// Local to local dofs to be used in tabulate entity dofs
   std::vector<std::size_t> local_to_local_dofs(N);
@@ -100,128 +103,206 @@ void PointIntegralSolver::step(double dt)
     for (unsigned int row=0; row<N; row++)
       local_to_global_dofs[row] = cell_dofs[local_to_local_dofs[row]];
 
-    // Get local u_0 solution
-    _scheme->solution()->vector()->get_local(&local_solution[0], local_solution.size(), \
-					     &local_to_global_dofs[0]);
-        
     // Iterate over stage forms
-    for (unsigned int i=0; i < _ufcs.size(); i++)
+    for (unsigned int stage=0; stage<num_stages; stage++)
     {
+
+      if (vert_ind == 0)
+	info("vert 0, stage: %d", stage);
+
       // Check if we have an explicit stage (only 1 form)
-      if (_ufcs[i].size()==1)
+      if (_ufcs[stage].size()==1)
       {
 
 	// Point integral
-	const ufc::point_integral& integral = *_ufcs[i][0]->default_point_integral;
+	const ufc::point_integral& integral = *_ufcs[stage][0]->default_point_integral;
 
 	// Update to current cell
-	_ufcs[i][0]->update(cell);
+	_ufcs[stage][0]->update(cell);
 
 	// Tabulate cell tensor
-	integral.tabulate_tensor(&_ufcs[i][0]->A[0], _ufcs[i][0]->w(), \
-				 _ufcs[i][0]->cell, local_vert);
+	integral.tabulate_tensor(&_ufcs[stage][0]->A[0], _ufcs[stage][0]->w(), 
+				 &_ufcs[stage][0]->cell.vertex_coordinates[0], 
+				 local_vert);
 
 	// Extract vertex dofs from tabulated tensor and put them into the local 
 	// stage solution vector
 	// Extract vertex dofs from tabulated tensor
 	for (unsigned int row=0; row < N; row++)
-	  local_stage_solutions[i](row) = _ufcs[i][0]->A[local_to_local_dofs[row]];
+	  local_stage_solutions[stage](row) = _ufcs[stage][0]->A[local_to_local_dofs[row]];
+
+	// Put solution back into global stage solution vector
+	_scheme->stage_solutions()[stage]->vector()->set(
+			    local_stage_solutions[stage].memptr(), N, 
+			    &local_to_global_dofs[0]);
       }
     
       // or an implicit stage (2 forms)
       else
       {
 	
-	// Find coefficient index for local solution in both forms
+	// Local solution
+	arma::vec& u = local_stage_solutions[stage];
 	
-	
-	// FIXME: Include solver parameters
+	// FIXME: Include as some sort of solver parameters
 	unsigned int newton_iteration = 0;
 	bool newton_converged = false;
 	const std::size_t maxiter = 10;
+	//const bool recompute_jacobian = true;
+	const double relaxation = 1.0;
+	const std::string convergence_criterion = "residual";
+	const double rtol = 1e-10;
+	const double atol = 1e-10;
+	const bool report = true;
+	//const int num_threads = 0;
+
+	/// Most recent residual and intitial residual
+	double residual = 1.0;
+	double residual0 = 1.0;
+	double relative_residual;
+      
 	//const double relaxation = 1.0;
       
 	// Initialize la structures
 	arma::mat J(N, N);
-	arma::vec F(N);
-	arma::vec dx(N);
+	arma::vec F;
+	arma::vec dx;
+	F.set_size(N);
+	dx.set_size(N);
       
 	// Get point integrals
-	const ufc::point_integral& F_integral = *_ufcs[i][0]->default_point_integral;
-	const ufc::point_integral& J_integral = *_ufcs[i][1]->default_point_integral;
+	const ufc::point_integral& F_integral = *_ufcs[stage][0]->default_point_integral;
+	const ufc::point_integral& J_integral = *_ufcs[stage][1]->default_point_integral;
       
-	// Update to current cell
-	_ufcs[i][0]->update(cell);
-	_ufcs[i][1]->update(cell);
+	// Update to current cell. This only need to be done once for each stage and 
+	// vertex
+	_ufcs[stage][0]->update(cell);
+	_ufcs[stage][1]->update(cell);
 
 	// Tabulate an initial residual solution
-	F_integral.tabulate_tensor(&_ufcs[i][0]->A[0], _ufcs[i][0]->w(), \
-				   _ufcs[i][0]->cell, local_vert);
+	F_integral.tabulate_tensor(&_ufcs[stage][0]->A[0], _ufcs[stage][0]->w(), 
+				   &_ufcs[stage][0]->cell.vertex_coordinates[0], 
+				   local_vert);
 
-	// Extract vertex dofs from tabulated tensor
+	// Extract vertex dofs from tabulated tensor, together with the old stage 
+	// solution
 	for (unsigned int row=0; row < N; row++)
-	  F(row) = _ufcs[i][0]->A[local_to_local_dofs[row]];
-      
+	{
+	  F(row) = _ufcs[stage][0]->A[local_to_local_dofs[row]];
+
+	  // Grab old value of stage solution as an initial start value. This 
+	  // value was also used to tabulate the initial value of the F_integral above 
+	  // and we therefore just grab it from the restricted coeffcients
+	  u(row) = _ufcs[stage][0]->w()[_coefficient_index[stage][0]][local_to_local_dofs[row]];
+
+	}
+
 	// Start iterations
 	while (!newton_converged && newton_iteration < maxiter)
 	{
         
 	  // Tabulate Jacobian
-	  J_integral.tabulate_tensor(&_ufcs[i][1]->A[0], _ufcs[i][1]->w(), \
-				     _ufcs[i][1]->cell, local_vert);
+	  J_integral.tabulate_tensor(&_ufcs[stage][1]->A[0], _ufcs[stage][1]->w(), 
+				     &_ufcs[stage][1]->cell.vertex_coordinates[0], 
+				     local_vert);
       
 	  // Extract vertex dofs from tabulated tensor
 	  for (unsigned int row=0; row < N; row++)
 	    for (unsigned int col=0; col < N; col++)
-	      J(row, col) = _ufcs[i][0]->A[local_to_local_dofs[row]*N+\
+	      J(row, col) = _ufcs[stage][0]->A[local_to_local_dofs[row]*N+
 					   local_to_local_dofs[col]];
 	  
-	  // Perform linear solve and update total number of Krylov iterations
-	  // FIXME: Should we use transpose here?
-	  arma::solve(dx, J.t(), F);
-      
-	  // Compute initial residual
-	  //if (newton_iteration == 0)
-	  //  newton_converged = converged(*b, *dx, nonlinear_problem);
-      	  //
-	  //// Update solution
-	  //if (std::abs(1.0 - relaxation) < DOLFIN_EPS)
-	  //  x -= (*dx);
-	  //else
-	  //  x.axpy(-relaxation, *dx);
-      
+          // Perform linear solve and update total number of Krylov iterations
+          arma::solve(dx, J, F);
+	  
+	  // Compute resdiual
+	  if (convergence_criterion == "residual")
+	    residual = arma::norm(F, 2);
+	  else if (convergence_criterion == "incremental")
+	    residual = arma::norm(dx, 2);
+	  else
+	    error("Unknown Newton convergence criterion");
+
+          // If initial residual
+          if (newton_iteration == 0)
+	    residual0 = residual;
+	  
+	  // Relative residual
+	  relative_residual = residual / residual0;
+	  
+	  // Update solution
+          if (std::abs(1.0 - relaxation) < DOLFIN_EPS)
+            u -= dx;
+          else
+            u -= relaxation*dx;
+        
 	  // Update number of iterations
 	  ++newton_iteration;
 	  
-	  //FIXME: this step is not needed if residual is based on dx and this has converged.
-	  // Compute F
-	  //nonlinear_problem.form(*A, *b, x);
-	  //nonlinear_problem.F(*b, x);
-      
-	  // Test for convergence
-	  //newton_converged = converged(*b, *dx, nonlinear_problem);
+	  // Put solution back into restricted coefficients before tabulate new residual
+	  for (unsigned int row=0; row < N; row++)
+	    _ufcs[stage][0]->w()[_coefficient_index[stage][0]][local_to_local_dofs[row]] = u(row);
+
+	  // Tabulate new residual 
+	  F_integral.tabulate_tensor(&_ufcs[stage][0]->A[0], _ufcs[stage][0]->w(), 
+				     &_ufcs[stage][0]->cell.vertex_coordinates[0], 
+				     local_vert);
+
+	  // Extract vertex dofs from tabulated tensor
+	  for (unsigned int row=0; row < N; row++)
+	    F(row) = _ufcs[stage][0]->A[local_to_local_dofs[row]];
+
+	  // Output iteration number and residual (only first vertex)
+	  if (report && (newton_iteration > 0) && (vert_ind == 0))
+	  {
+	    info("Point solver newton iteration %d: r (abs) = %.3e (tol = %.3e) "\
+		 "r (rel) = %.3e (tol = %.3e)", newton_iteration, residual, atol, 
+		 relative_residual, rtol);
+	  }
+	  
+	  // Return true of convergence criterion is met
+	  if (relative_residual < rtol || residual < atol)
+	    newton_converged = true;
+
+	  // Put solution back into restricted coefficients before tabulate new jacobian
+	  for (unsigned int row=0; row < N; row++)
+	    _ufcs[stage][1]->w()[_coefficient_index[stage][1]][local_to_local_dofs[row]] = u(row);
+
 	}
       
+        if (newton_converged)
+        {
+          // Put solution back into global stage solution vector
+          _scheme->stage_solutions()[stage]->vector()->set(u.memptr(), u.size(), 
+							   &local_to_global_dofs[0]);
+	}
+        else
+        {
+          info("Last iteration before error %d: r (abs) = %.3e (tol = %.3e) "
+	       "r (rel) = %.3e (tol = %.3e)", newton_iteration, residual, atol, 
+	       relative_residual, rtol);
+	  error("Newton solver in PointIntegralSolver did not converge.");
+        }
       }
     }
 
-    // Do the last stage
+    // Get local u0 solution and add the stage derivatives
+    _scheme->solution()->vector()->get_local(&u0[0], u0.size(), 
+					     &local_to_global_dofs[0]);
+    
+    // Do the last stage and put back into solution vector
     FunctionAXPY last_stage = _scheme->last_stage()*dt;
   
-    // Update solution with last stage
-    GenericVector& solution_vector = *_scheme->solution()->vector();
-  
-    // Start from item 2 and axpy 
-    for (std::vector<std::pair<double, const Function*> >::const_iterator \
-	   it=last_stage.pairs().begin();
-	 it!=last_stage.pairs().end(); it++)
-    {
-      solution_vector.axpy(it->first, *(it->second->vector()));
-    }
-
+    // Axpy local solution vectors
+    for (unsigned int stage=0; stage < num_stages; stage++)
+      u0 += last_stage.pairs()[stage].first*local_stage_solutions[stage] ;
+    
+    // Update global solution with last stage
+    _scheme->solution()->vector()->set(u0.memptr(), local_to_global_dofs.size(), 
+				       &local_to_global_dofs[0]);
+    
     p++;
   }
-
 
   // Update time
   const double t = *_scheme->t();
@@ -264,7 +345,7 @@ void PointIntegralSolver::step_interval(double t0, double t1, double dt)
 void PointIntegralSolver::_check_forms()
 {
   // Iterate over stage forms and check they include point integrals
-  std::vector<std::vector<boost::shared_ptr<const Form> > >& stage_forms = \
+  std::vector<std::vector<boost::shared_ptr<const Form> > >& stage_forms = 
     _scheme->stage_forms();
   for (unsigned int i=0; i < stage_forms.size(); i++)
   {
@@ -299,34 +380,41 @@ void PointIntegralSolver::_init()
 {
   
   // Get stage forms
-  std::vector<std::vector<boost::shared_ptr<const Form> > >& stage_forms = \
+  std::vector<std::vector<boost::shared_ptr<const Form> > >& stage_forms = 
     _scheme->stage_forms();
 
-  // Init coefficient index
+  // Init coefficient index and ufcs
   _coefficient_index.resize(stage_forms.size());
+  _ufcs.resize(stage_forms.size());
 
   // Iterate over stages and collect information
-  for (unsigned int i=0; i < stage_forms.size(); i++)
+  for (unsigned int stage=0; stage < stage_forms.size(); stage++)
   {
+    info("Stage form size: %d:%d", stage_forms.size(), stage_forms[stage].size());
+
     // Create a UFC object for first form
-    _ufcs[i].push_back(boost::make_shared<UFC>(*stage_forms[i][0]));
+    _ufcs[stage].push_back(boost::make_shared<UFC>(*stage_forms[stage][0]));
       
     //  If implicit stage
-    if (stage_forms[i].size()==2)
+    if (stage_forms[stage].size()==2)
     {
       
       // Create a UFC object for second form
-      _ufcs[i].push_back(boost::make_shared<UFC>(*stage_forms[i][1]));
+      _ufcs[stage].push_back(boost::make_shared<UFC>(*stage_forms[stage][1]));
       
       // Find coefficient index for each of the two implicit forms
-      for (unsigned int j=0; j<stage_forms[i][0]->num_coefficients(); j++)
+      for (unsigned int i=0; i<2; i++)
       {
-	
-	// Check if stage solution is the same as 
-	if (stage_forms[i][1]->coefficients()[j]->id() == _scheme->stage_solutions()[i]->id())
+	for (unsigned int j=0; j<stage_forms[stage][i]->num_coefficients(); j++)
 	{
-	  _coefficient_index[i].push_back(j);
-	  break;
+	
+	  // Check if stage solution is the same as coefficient j
+	  if (stage_forms[stage][i]->coefficients()[j]->id() == 
+	      _scheme->stage_solutions()[stage]->id())
+	  {
+	    _coefficient_index[stage].push_back(j);
+	    break;
+	  }
 	}
       }
     }
