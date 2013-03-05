@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-02-07
-// Last changed: 2012-11-12
+// Last changed: 2013-01-31
 //
 // This demo program solves Poisson's equation
 //

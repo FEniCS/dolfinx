@@ -157,6 +157,10 @@ namespace dolfin
     virtual const GenericMatrix& operator= (const GenericMatrix& A)
     { *matrix = A; return *this; }
 
+    /// Test if matrix is symmetric
+    virtual bool is_symmetric(double tol) const
+    { return matrix->is_symmetric(tol); }
+
     /// Return pointers to underlying compressed storage data.
     /// See GenericMatrix for documentation.
     virtual boost::tuples::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const

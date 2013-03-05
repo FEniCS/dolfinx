@@ -452,6 +452,26 @@ const GenericMatrix& PETScMatrix::operator= (const GenericMatrix& A)
   return *this;
 }
 //-----------------------------------------------------------------------------
+bool PETScMatrix::is_symmetric(double tol) const
+{
+  PetscBool symmetric = PETSC_FALSE;
+  MatIsSymmetric(*_A, tol, &symmetric);
+  return symmetric == PETSC_TRUE ? true : false;
+}
+//-----------------------------------------------------------------------------
+GenericLinearAlgebraFactory& PETScMatrix::factory() const
+{
+  if (!_use_gpu)
+    return PETScFactory::instance();
+  #ifdef HAS_PETSC_CUSP
+  else
+    return PETScCuspFactory::instance();
+  #endif
+
+  // Return something to keep the compiler happy. Code will never be reached.
+  return PETScFactory::instance();
+}
+//-----------------------------------------------------------------------------
 const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
 {
   if (!A.mat())
@@ -503,19 +523,6 @@ std::string PETScMatrix::str(bool verbose) const
     s << "<PETScMatrix of size " << size(0) << " x " << size(1) << ">";
 
   return s.str();
-}
-//-----------------------------------------------------------------------------
-GenericLinearAlgebraFactory& PETScMatrix::factory() const
-{
-  if (!_use_gpu)
-    return PETScFactory::instance();
-  #ifdef HAS_PETSC_CUSP
-  else
-    return PETScCuspFactory::instance();
-  #endif
-
-  // Return something to keep the compiler happy. Code will never be reached.
-  return PETScFactory::instance();
 }
 //-----------------------------------------------------------------------------
 
