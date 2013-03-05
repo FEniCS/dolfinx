@@ -96,21 +96,10 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
   const std::vector<dolfin::la_index> dof_to_vertex_map =
                                    V->dofmap()->dof_to_vertex_map(mesh);
 
-  // Inversion of dof_to_vertex_map. Ghost nodes are ommited. Inversion is
-  // performed by hand instead of using DofMap::vertex_to_dof_map()
-  // in order to avoid double computation of dof_to_vertex_map.
-  std::vector<std::size_t> vertex_to_dof_map(num_dofs);
   // Array of all dofs (including ghosts) with global numbering
   std::vector<dolfin::la_index> all_global_dofs(num_vertices);
   for (std::size_t i = 0; i < num_vertices; i++)
-  {
-    const dolfin::la_index dof = dof_to_vertex_map[i];
-    all_global_dofs[i] = dof + n0;
-
-    // Skip ghost dofs
-    if (dof >= 0 && dof < num_dofs)
-      vertex_to_dof_map[dof] = i;
-  }
+    all_global_dofs[i] = dof_to_vertex_map[i] + n0;
 
   // Create arrays for setting bcs.
   // Their indexing does not matter - same ordering does.
