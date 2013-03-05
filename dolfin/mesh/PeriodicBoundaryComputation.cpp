@@ -26,12 +26,11 @@
 
 #include <dolfin/common/Array.h>
 #include <dolfin/log/log.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/Facet.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshEntityIterator.h>
-#include <dolfin/mesh/SubDomain.h>
-#include <dolfin/mesh/Vertex.h>
+#include "DistributedMeshTools.h"
+#include "Facet.h"
+#include "Mesh.h"
+#include "MeshEntityIterator.h"
+#include "SubDomain.h"
 #include "PeriodicBoundaryComputation.h"
 
 using namespace dolfin;
@@ -239,6 +238,84 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
   }
 
   return slave_to_master_entity;
+}
+//-----------------------------------------------------------------------------
+MeshFunction<std::size_t>
+  PeriodicBoundaryComputation::masters_slaves(boost::shared_ptr<const Mesh> mesh,
+                                              const SubDomain& sub_domain,
+                                              const std::size_t dim)
+{
+  dolfin_assert(mesh);
+
+  // Create MeshFunction and initialse to zero
+  MeshFunction<std::size_t> mf(*mesh, dim, 0);
+
+  // Compute markers
+  const std::map<unsigned int, std::pair<unsigned int, unsigned int> >
+    slaves = compute_periodic_pairs(*mesh, sub_domain, dim);
+
+  // Mark master and slaves, and pack off-process masters to send
+  std::vector<std::vector<std::size_t> > master_dofs_send(MPI::num_processes());
+  std::map<unsigned int, std::pair<unsigned int, unsigned int> >::const_iterator slave;
+  for (slave = slaves.begin(); slave != slaves.end(); ++slave)
+  {
+    // Set slave
+    mf[slave->first] = 2;
+
+    // Pack master entity to send to all sharing proceses
+    dolfin_assert(slave->second.first < master_dofs_send.size());
+    master_dofs_send[slave->second.first].push_back(slave->second.second);
+  }
+
+  // Send/receive master entities
+  std::vector<std::vector<std::size_t> > master_dofs_recv;
+  MPI::all_to_all(master_dofs_send, master_dofs_recv);
+
+  // Build list of sharing processes
+  boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >
+    shared_entities_map = DistributedMeshTools::compute_shared_entities(*mesh, dim);
+  boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >::const_iterator e;
+  std::vector<std::vector<std::pair<unsigned int, unsigned int> > > shared_entities(mesh->num_entities(dim));
+  for (e = shared_entities_map.begin(); e != shared_entities_map.end(); ++e)
+  {
+    dolfin_assert(e->first < shared_entities.size());
+    shared_entities[e->first] = e->second;
+  }
+
+  // Mark and pack master to send to all sharing proceses
+  master_dofs_send.clear();
+  master_dofs_send.resize(MPI::num_processes());
+  for (std::size_t p = 0; p < master_dofs_recv.size(); ++p)
+  {
+    for (std::size_t i = 0; i < master_dofs_recv[p].size(); ++i)
+    {
+      // Get local index
+      const std::size_t local_index = master_dofs_recv[p][i];
+
+      // Mark locally
+      mf[local_index] = 1;
+
+      // Pack to send to sharing processes
+      const std::vector<std::pair<unsigned int, unsigned int> > sharing = shared_entities[local_index] ;
+      for (std::size_t j = 0; j < sharing.size(); ++j)
+      {
+        dolfin_assert(sharing[j].first < master_dofs_send.size());
+        master_dofs_send[sharing[j].first].push_back(sharing[j].second);
+      }
+    }
+  }
+
+  // Send/receive master entities
+  MPI::all_to_all(master_dofs_send, master_dofs_recv);
+
+  // Mark master entities in mesh function
+  for (std::size_t i = 0; i < master_dofs_recv.size(); ++i)
+  {
+    for (std::size_t j = 0; j < master_dofs_recv[i].size(); ++j)
+      mf[master_dofs_recv[i][j]] = 1;
+  }
+
+  return mf;
 }
 //-----------------------------------------------------------------------------
 bool PeriodicBoundaryComputation::in_bounding_box(const std::vector<double>& point,

@@ -25,8 +25,8 @@
 #ifndef __DOF_MAP_BUILDER_H
 #define __DOF_MAP_BUILDER_H
 
-#include <set>
 #include <map>
+#include <set>
 #include <boost/array.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
@@ -134,14 +134,13 @@ namespace dolfin
     // Compute set of global dofs (e.g. Reals associated with global
     // Lagrange multipliers) based on UFC numbering. Global dofs
     // are not associated with any mesh entity.
-    static set compute_global_dofs(const DofMap& dofmap,
-                                   const Mesh& dolfin_mesh);
+    static set compute_global_dofs(const DofMap& dofmap);
 
     // Iterate recursively over all sub-dof maps to find global
     // degrees of freedom
     static void compute_global_dofs(set& global_dofs, std::size_t& offset,
-                            boost::shared_ptr<const ufc::dofmap> dofmap,
-                            const Mesh& dolfin_mesh);
+                            boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
+                            const DofMap& dofmap);
 
     // Recursively extract UFC sub-dofmap and compute offset
     static boost::shared_ptr<ufc::dofmap>
