@@ -155,6 +155,27 @@ namespace dolfin
   };
 
   //-----------------------------------------------------------------------------
+  template <>
+  inline hid_t HDF5Interface::hdf5_type<double>()
+  { return H5T_NATIVE_DOUBLE; }
+  //-----------------------------------------------------------------------------
+  template <>
+  inline hid_t HDF5Interface::hdf5_type<int>()
+  { return H5T_NATIVE_INT; }
+  //-----------------------------------------------------------------------------
+  template <>
+  inline hid_t HDF5Interface::hdf5_type<std::size_t>()
+  { 
+    if(sizeof(std::size_t) == sizeof(unsigned long))
+      return H5T_NATIVE_ULONG; 
+    else if(sizeof(std::size_t) == sizeof(unsigned int))
+      return H5T_NATIVE_UINT;
+    else
+      dolfin_error("HDF5Interface.h",
+                   "determine size of std::size_t",
+                   "std::size_t is not the same size as long or int");
+  }
+  //-----------------------------------------------------------------------------
   template <typename T>
   inline void HDF5Interface::write_dataset(const hid_t file_handle,
                                            const std::string dataset_name,
@@ -175,7 +196,7 @@ namespace dolfin
     }
 
     // Get HDF5 data type
-    const int h5type = hdf5_type<T>();
+    const hid_t h5type = hdf5_type<T>();
 
     // Hyperslab selection parameters
     std::vector<hsize_t> count(global_size.begin(), global_size.end());
@@ -391,21 +412,23 @@ namespace dolfin
   //-----------------------------------------------------------------------------
   template<>
   inline void HDF5Interface::add_attribute_value(const hid_t dset_id,
-                                          const std::string attribute_name,
+                                                 const std::string attribute_name,
                                                  const std::size_t& attribute_value)
   {
     // Create a scalar dataspace
     hid_t dataspace_id = H5Screate(H5S_SCALAR);
     dolfin_assert(dataspace_id != HDF5_FAIL);
 
+    const hid_t h5type = hdf5_type<std::size_t>();
+
     // Create attribute of type std::size_t
     hid_t attribute_id = H5Acreate2(dset_id, attribute_name.c_str(),
-                                   H5T_NATIVE_ULONG, dataspace_id,
+                                   h5type, dataspace_id,
                                    H5P_DEFAULT, H5P_DEFAULT);
     dolfin_assert(attribute_id != HDF5_FAIL);
 
     // Write attribute to dataset
-    herr_t status = H5Awrite(attribute_id, H5T_NATIVE_ULONG, &attribute_value);
+    herr_t status = H5Awrite(attribute_id, h5type, &attribute_value);
     dolfin_assert(status != HDF5_FAIL);
 
     // Close attribute
@@ -419,6 +442,8 @@ namespace dolfin
                                         const std::vector<std::size_t>& attribute_value)
   {
 
+    const hid_t h5type = hdf5_type<std::size_t>();
+
     // Create a vector dataspace
     const hsize_t dimsf = attribute_value.size();
     const hid_t dataspace_id = H5Screate_simple(1, &dimsf, NULL);
@@ -426,12 +451,12 @@ namespace dolfin
 
     // Create an attribute of type uint in the dataspace
     const hid_t attribute_id = H5Acreate2(dset_id, attribute_name.c_str(),
-                                         H5T_NATIVE_ULONG, dataspace_id,
+                                         h5type, dataspace_id,
                                          H5P_DEFAULT, H5P_DEFAULT);
     dolfin_assert(attribute_id != HDF5_FAIL);
 
     // Write attribute to dataset
-    herr_t status = H5Awrite(attribute_id, H5T_NATIVE_ULONG, &attribute_value[0]);
+    herr_t status = H5Awrite(attribute_id, h5type, &attribute_value[0]);
     dolfin_assert(status != HDF5_FAIL);
 
     // Close attribute
@@ -473,11 +498,13 @@ namespace dolfin
                                                  const hid_t attr_id,
                                                  std::size_t& attribute_value)
   {
+    const hid_t h5type = hdf5_type<std::size_t>();
+
     // FIXME: more complete check of type
     dolfin_assert(H5Tget_class(attr_type) == H5T_INTEGER);
 
     // Read value
-    herr_t status = H5Aread(attr_id, H5T_NATIVE_ULONG, &attribute_value);
+    herr_t status = H5Aread(attr_id, h5type, &attribute_value);
     dolfin_assert(status != HDF5_FAIL);
   }
   //-----------------------------------------------------------------------------
@@ -511,6 +538,8 @@ namespace dolfin
                                           const hid_t attr_id,
                                           std::vector<std::size_t>& attribute_value)
   {
+    const hid_t h5type = hdf5_type<std::size_t>();
+
     // FIXME: more complete check of type
     dolfin_assert(H5Tget_class(attr_type) == H5T_INTEGER);
 
@@ -526,21 +555,9 @@ namespace dolfin
     attribute_value.resize(cur_size[0]);
 
     // Read value to vector
-    herr_t status = H5Aread(attr_id, H5T_NATIVE_ULONG, attribute_value.data());
+    herr_t status = H5Aread(attr_id, h5type, attribute_value.data());
     dolfin_assert(status != HDF5_FAIL);
   }
-  //-----------------------------------------------------------------------------
-  template <>
-  inline hid_t HDF5Interface::hdf5_type<double>()
-  { return H5T_NATIVE_DOUBLE; }
-  //-----------------------------------------------------------------------------
-  template <>
-  inline hid_t HDF5Interface::hdf5_type<int>()
-  { return H5T_NATIVE_INT; }
-  //-----------------------------------------------------------------------------
-  template <>
-  inline hid_t HDF5Interface::hdf5_type<std::size_t>()
-  { return H5T_NATIVE_ULONG; }
   //-----------------------------------------------------------------------------
 
 }
