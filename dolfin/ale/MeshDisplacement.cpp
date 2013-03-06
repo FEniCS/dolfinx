@@ -57,7 +57,9 @@ MeshDisplacement::MeshDisplacement(const Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 MeshDisplacement::MeshDisplacement(const MeshDisplacement& mesh_displacement)
-  : Expression(mesh_displacement._dim), _dim(mesh_displacement._dim)
+  : Expression(mesh_displacement._dim),
+    _dim(mesh_displacement._dim),
+    _displacements(mesh_displacement._displacements)
 {
   // Do nothing
 }
