@@ -129,7 +129,8 @@ EpetraLUSolver::EpetraLUSolver(std::string method)
 //-----------------------------------------------------------------------------
 EpetraLUSolver::EpetraLUSolver(boost::shared_ptr<const GenericLinearOperator> A,
                                std::string method)
-  : symbolic_factorized(false), numeric_factorized(false),
+  : symbolic_factorized(false),
+    numeric_factorized(false),
     linear_problem(new Epetra_LinearProblem)
 {
   // Set default parameters
@@ -192,8 +193,16 @@ std::size_t EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Write a message
   if (parameters["report"] && dolfin::MPI::process_number() == 0)
   {
-    info("Solving linear system of size %d x %d using Epetra LU solver (%s).",
-         _A->size(0), _A->size(1), _method.c_str());
+    if (solver->UseTranspose())
+    {
+      info("Solving linear system transposed of size %d x %d using Epetra LU solver (%s).",
+           A->size(0), A->size(1), method.c_str());
+    }
+    else
+    {
+      info("Solving linear system of size %d x %d using Epetra LU solver (%s).",
+           A->size(0), A->size(1), method.c_str());
+    }
   }
 
   // Downcast vector
@@ -278,6 +287,36 @@ std::size_t EpetraLUSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   boost::shared_ptr<const EpetraMatrix> Atmp(&A, NoDeleter());
   set_operator(Atmp);
   return solve(x, b);
+}
+//-----------------------------------------------------------------------------
+std::size_t EpetraLUSolver::solve_transpose(GenericVector& x, const GenericVector& b)
+{
+  dolfin_assert(solver);
+  solver->SetUseTranspose(true);
+  std::size_t out = solve(x, b);
+  solver->SetUseTranspose(false);
+  return out;
+}
+//-----------------------------------------------------------------------------
+std::size_t EpetraLUSolver::solve_transpose(const GenericLinearOperator& A,
+                                   GenericVector& x,
+                                   const GenericVector& b)
+{
+  dolfin_assert(solver);
+  solver->SetUseTranspose(true);
+  std::size_t out = solve(A, x, b);
+  solver->SetUseTranspose(false);
+  return out;
+}
+//-----------------------------------------------------------------------------
+std::size_t EpetraLUSolver::solve_transpose(const EpetraMatrix& A, EpetraVector& x,
+                                   const EpetraVector& b)
+{
+  dolfin_assert(solver);
+  solver->SetUseTranspose(true);
+  std::size_t out = solve(A, x, b);
+  solver->SetUseTranspose(false);
+  return out;
 }
 //-----------------------------------------------------------------------------
 std::string EpetraLUSolver::str(bool verbose) const
