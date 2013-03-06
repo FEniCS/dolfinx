@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2012-09-14
-# Last changed: 2012-12-10
+# Last changed: 2013-03-05
 
 import unittest
 from dolfin import *
@@ -47,6 +47,61 @@ if has_hdf5():
             vector_file.read(y, "my_vector")
             self.assertEqual(y.size(), x.size())
             self.assertEqual((x - y).norm("l1"), 0.0)
+
+    class HDF5_MeshFunction(unittest.TestCase):
+
+        def test_save_and_read_meshfunction_2D(self):
+            # Write to file
+            M = UnitSquareMesh(20,20)
+            mf_file = HDF5File("meshfn-2d.h5", "w")
+
+            # save meshfuns to compare when reading back
+            meshfuns=[]
+            for i in range(0,3):
+                mf = MeshFunction('double', M, i)
+                # NB choose a value to set which will be the same
+                # on every process for each entity
+                for cell in entities(M, i):
+                    mf[cell] = cell.midpoint()[0]
+                meshfuns.append(mf)
+                mf_file.write(mf, "meshfun%d"%i)
+            
+            del mf_file
+
+            # Read back from file
+            mf_file = HDF5File("meshfn-2d.h5", "r")
+            for i in range(0,3):
+                mf2 = MeshFunction('double', M, i)
+                mf_file.read(mf2, "meshfun%d"%i)
+                for cell in entities(M, i):
+                    self.assertEqual(meshfuns[i][cell], mf2[cell])
+
+        def test_save_and_read_meshfunction_3D(self):
+            # Write to file
+            M = UnitCubeMesh(10,10,10)
+            mf_file = HDF5File("meshfn-3d.h5", "w")
+
+            # save meshfuns to compare when reading back
+            meshfuns=[]
+            for i in range(0,4):
+                mf = MeshFunction('double', M, i)
+                # NB choose a value to set which will be the same
+                # on every process for each entity
+                for cell in entities(M, i):
+                    mf[cell] = cell.midpoint()[0]
+                meshfuns.append(mf)
+                mf_file.write(mf, "meshfun%d"%i)
+            
+            del mf_file
+
+            # Read back from file
+            mf_file = HDF5File("meshfn-3d.h5", "r")
+            for i in range(0,4):
+                mf2 = MeshFunction('double', M, i)
+                mf_file.read(mf2, "meshfun%d"%i)
+                for cell in entities(M, i):
+                    self.assertEqual(meshfuns[i][cell], mf2[cell])
+
 
     class HDF5_Mesh(unittest.TestCase):
 

@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2012-11-25
+// Last changed: 2013-03-04
 
 #ifndef __DOLFIN_XDMFFILE_H
 #define __DOLFIN_XDMFFILE_H
@@ -28,7 +28,9 @@
 #include <string>
 #include <utility>
 #include <boost/scoped_ptr.hpp>
+
 #include "dolfin/common/Variable.h"
+
 #include "GenericFile.h"
 
 namespace pugi
@@ -67,7 +69,10 @@ namespace dolfin
     /// file to store the mesh, and a related XDMF file with metadata.
     void operator<< (const Mesh& mesh);
 
-    /// Save a Function to XDMF/HDF files for visualisation.
+    /// Read in a mesh from the associated HDF5 file
+    void operator>> (Mesh& mesh);
+
+    /// Save a Function to XDMF/HDF5 files for visualisation.
     void operator<< (const Function& u);
 
     /// Save Function + time stamp to file
@@ -79,6 +84,12 @@ namespace dolfin
     void operator<< (const MeshFunction<std::size_t>& meshfunction);
     void operator<< (const MeshFunction<double>& meshfunction);
 
+    /// Read first MeshFunction from file
+    void operator>> (MeshFunction<bool>& meshfunction);
+    void operator>> (MeshFunction<int>& meshfunction);
+    void operator>> (MeshFunction<std::size_t>& meshfunction);
+    void operator>> (MeshFunction<double>& meshfunction);
+
   private:
 
     // HDF5 data file
@@ -86,10 +97,25 @@ namespace dolfin
 
     // HDF5 filename
     std::string hdf5_filename;
+    
+    // HDF5 file mode (r/w)
+    std::string hdf5_filemode;
 
     // Generic MeshFunction writer
     template<typename T>
       void write_mesh_function(const MeshFunction<T>& meshfunction);
+
+    // Generic MeshFunction reader
+    template<typename T>
+      void read_mesh_function(MeshFunction<T>& meshfunction);
+
+    // Write XML description for Function and MeshFunction output
+    // updating time-series if need be
+    void output_xml(const double time_step, const bool vertex_data,
+                    const std::size_t cell_dim, const std::size_t num_global_cells,
+                    const std::size_t gdim, const std::size_t num_total_vertices,
+                    const std::size_t value_rank, const std::size_t padded_value_size,
+                    const std::string name, const std::string dataset_name) const;
 
     // Helper function to add topology reference to XDMF XML file
     void xml_mesh_topology(pugi::xml_node& xdmf_topology,
@@ -103,13 +129,9 @@ namespace dolfin
                            const std::size_t gdim,
                            const std::string geometry_dataset_name) const;
 
-
     // Most recent mesh name
     std::string current_mesh_name;
-
   };
-
-
 }
 #endif
 #endif
