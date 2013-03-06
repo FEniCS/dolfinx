@@ -105,9 +105,9 @@ GenericLinearOperator* PETScLinearOperator::wrapper()
   return _wrapper;
 }
 //-----------------------------------------------------------------------------
-void PETScLinearOperator::init(const GenericVector& x,
-                               const GenericVector& y,
-                               GenericLinearOperator* wrapper)
+void PETScLinearOperator::init_layout(const GenericVector& x,
+				      const GenericVector& y,
+				      GenericLinearOperator* wrapper)
 {
   // Store wrapper
   _wrapper = wrapper;

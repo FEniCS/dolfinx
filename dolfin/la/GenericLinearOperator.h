@@ -61,12 +61,13 @@ namespace dolfin
 
     // Initialize linear operator to match parallel layout of vectors
     // x and y for product y = Ax. Needs to be implemented by backend.
-    virtual void init_layout(const GenericVector& x, const GenericVector& y,
-                      GenericLinearOperator* wrapper)
+    virtual void init_layout(const GenericVector& x, 
+			     const GenericVector& y,
+			     GenericLinearOperator* wrapper)
     {
       dolfin_error("GenericLinearOperator.h",
                    "initialize backend implementation of linear operator",
-                   "Missing init() function");
+                   "Missing init_layout() function for backend");
     }
 
   };
