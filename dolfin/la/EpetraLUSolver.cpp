@@ -196,12 +196,12 @@ std::size_t EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
     if (solver->UseTranspose())
     {
       info("Solving linear system transposed of size %d x %d using Epetra LU solver (%s).",
-           A->size(0), A->size(1), method.c_str());
+           _A->size(0), _A->size(1), _method.c_str());
     }
     else
     {
       info("Solving linear system of size %d x %d using Epetra LU solver (%s).",
-           A->size(0), A->size(1), method.c_str());
+           _A->size(0), _A->size(1), _method.c_str());
     }
   }
 
