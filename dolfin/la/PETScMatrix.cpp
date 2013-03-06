@@ -464,6 +464,7 @@ const GenericMatrix& PETScMatrix::operator= (const GenericMatrix& A)
 //-----------------------------------------------------------------------------
 bool PETScMatrix::is_symmetric(double tol) const
 {
+  dolfin_assert(_A);
   PetscBool symmetric = PETSC_FALSE;
   MatIsSymmetric(*_A, tol, &symmetric);
   return symmetric == PETSC_TRUE ? true : false;
