@@ -208,7 +208,7 @@ void PointIntegralSolver::step(double dt)
 	  // Extract vertex dofs from tabulated tensor
 	  for (unsigned int row=0; row < N; row++)
 	    for (unsigned int col=0; col < N; col++)
-	      J(row, col) = _ufcs[stage][1]->A[local_to_local_dofs[row]*dof_offset+
+	      J(row, col) = _ufcs[stage][1]->A[local_to_local_dofs[row]*dof_offset*N+
 					       local_to_local_dofs[col]];
 
           // Perform linear solve and update total number of Krylov iterations
