@@ -21,7 +21,7 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2012-12-01
+// Last changed: 2013-03-04
 
 #include <fstream>
 #include <string>
@@ -82,9 +82,9 @@ File::File(const std::string filename, std::string encoding)
 #ifdef HAS_HDF5
   else if (extension == ".xdmf")
     file.reset(new XDMFFile(filename));
+#endif
   else if (extension == ".svg")
     file.reset(new SVGFile(filename));
-#endif
   else
   {
     dolfin_error("File.cpp",
