@@ -134,8 +134,6 @@ namespace dolfin
     // Whether or not parameter has been set
     bool _is_set;
 
-  private:
-
     // Parameter key
     std::string _key;
 
