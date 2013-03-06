@@ -174,6 +174,7 @@ namespace dolfin
       dolfin_error("HDF5Interface.h",
                    "determine size of std::size_t",
                    "std::size_t is not the same size as long or int");
+    return 0;
   }
   //-----------------------------------------------------------------------------
   template <typename T>
