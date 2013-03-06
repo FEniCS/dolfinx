@@ -16,10 +16,12 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-08-11
-// Last changed: 2008-08-11
+// Last changed: 2013-03-05
 
 #ifndef __HARMONIC_SMOOTHING_H
 #define __HARMONIC_SMOOTHING_H
+
+#include "MeshDisplacement.h"
 
 namespace dolfin
 {
@@ -36,8 +38,9 @@ namespace dolfin
   {
   public:
 
-    /// Move coordinates of mesh according to new boundary coordinates
-    static void move(Mesh& mesh, const BoundaryMesh& new_boundary);
+    /// Move coordinates of mesh according to new boundary coordinates.
+    /// Returns displacement.
+    static MeshDisplacement move(Mesh& mesh, const BoundaryMesh& new_boundary);
 
   };
 

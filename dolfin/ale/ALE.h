@@ -18,10 +18,12 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2008-05-02
-// Last changed: 2013-01-25
+// Last changed: 2013-03-05
 
 #ifndef __ALE_H
 #define __ALE_H
+
+#include "MeshDisplacement.h"
 
 namespace dolfin
 {
@@ -39,11 +41,13 @@ namespace dolfin
   {
   public:
 
-    /// Move coordinates of mesh according to new boundary coordinates
-    static void move(Mesh& mesh, const BoundaryMesh& new_boundary);
+    /// Move coordinates of mesh according to new boundary coordinates.
+    /// Returns displacement (encapsulated in Expression subclass MeshDisplacement)
+    static MeshDisplacement move(Mesh& mesh, const BoundaryMesh& new_boundary);
 
-    /// Move coordinates of mesh0 according to mesh1 with common global vertices
-    static void move(Mesh& mesh0, const Mesh& mesh1);
+    /// Move coordinates of mesh0 according to mesh1 with common global vertices.
+    /// Returns displacement (encapsulated in Expression subclass MeshDisplacement)
+    static MeshDisplacement move(Mesh& mesh0, const Mesh& mesh1);
 
     /// Move coordinates of mesh according to displacement function
     static void move(Mesh& mesh, const GenericFunction& displacement);

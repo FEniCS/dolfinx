@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-08-11
-// Last changed: 2013-03-04
+// Last changed: 2013-03-05
 
 #include <boost/shared_ptr.hpp>
 
@@ -39,7 +39,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
+MeshDisplacement HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
 {
   // Now this works regardless of reorder_dofs_serial value
   const bool reorder_dofs_serial = parameters["reorder_dofs_serial"];
@@ -138,16 +138,18 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
   const std::string prec(has_krylov_solver_preconditioner("amg")
                          ? "amg" : "default");
 
-  // TODO: Is there better way to obtain Vector with needed distribution?
-  Function u(V);
-  boost::shared_ptr<GenericVector> x(u.vector());
+  // Displacement solution wrapped in Expression subclass MeshDisplacement
+  MeshDisplacement u(mesh);
 
   // RHS vector
-  Vector b(*x);
+  Vector b(*u[0].vector());
 
   // Solve system for each dimension
   for (std::size_t dim = 0; dim < d; dim++)
   {
+    // Get solution vector
+    boost::shared_ptr<GenericVector> x = u[dim].vector();
+
     if (dim > 0)
       b.zero();
 
@@ -183,5 +185,8 @@ void HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
       coord[dim] = displacement[dim*num_vertices + i] + geometry.x(i, dim);
     geometry.set(i, coord);
   }
+
+  // Return calculated displacement
+  return u;
 }
 //-----------------------------------------------------------------------------

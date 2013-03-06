@@ -18,7 +18,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2008-05-02
-// Last changed: 2013-03-02
+// Last changed: 2013-03-05
 
 #include <vector>
 #include <dolfin/function/GenericFunction.h>
@@ -30,12 +30,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void ALE::move(Mesh& mesh, const BoundaryMesh& new_boundary)
+MeshDisplacement ALE::move(Mesh& mesh, const BoundaryMesh& new_boundary)
 {
-  HarmonicSmoothing::move(mesh, new_boundary);
+  return HarmonicSmoothing::move(mesh, new_boundary);
 }
 //-----------------------------------------------------------------------------
-void ALE::move(Mesh& mesh0, const Mesh& mesh1)
+MeshDisplacement ALE::move(Mesh& mesh0, const Mesh& mesh1)
 {
   // FIXME: Maybe this works in parallel but there is no obvious way to
   //        test it as SubMesh::init does not work in parallel
@@ -97,7 +97,7 @@ void ALE::move(Mesh& mesh0, const Mesh& mesh1)
   }
 
   // Move mesh
-  mesh0.move(boundary0);
+  return HarmonicSmoothing::move(mesh0, boundary0);
 }
 //-----------------------------------------------------------------------------
 void ALE::move(Mesh& mesh, const GenericFunction& displacement)

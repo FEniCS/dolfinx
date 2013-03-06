@@ -26,7 +26,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-08
-// Last changed: 2013-02-21
+// Last changed: 2013-03-05
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -40,6 +40,7 @@
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/intersection/IntersectionOperator.h>
 #include <dolfin/log/log.h>
+#include <dolfin/ale/MeshDisplacement.h>
 #include "MeshData.h"
 #include "MeshGeometry.h"
 #include "MeshConnectivity.h"
@@ -429,7 +430,11 @@ namespace dolfin
     /// *Arguments*
     ///     boundary (_BoundaryMesh_)
     ///         A mesh containing just the boundary cells.
-    void move(BoundaryMesh& boundary);
+    ///
+    /// *Returns*
+    ///     MeshDisplacement
+    ///         Displacement encapsulated in Expression subclass MeshDisplacement
+    MeshDisplacement move(BoundaryMesh& boundary);
 
     /// Move coordinates of mesh according to adjacent mesh with common global
     /// vertices.
@@ -437,7 +442,11 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         A _Mesh_ object.
-    void move(Mesh& mesh);
+    ///
+    /// *Returns*
+    ///     MeshDisplacement
+    ///         Displacement encapsulated in Expression subclass MeshDisplacement
+    MeshDisplacement move(Mesh& mesh);
 
     /// Move coordinates of mesh according to displacement function.
     ///
