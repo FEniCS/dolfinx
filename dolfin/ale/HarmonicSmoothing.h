@@ -39,8 +39,8 @@ namespace dolfin
   {
   public:
 
-    /// Move coordinates of mesh according to new boundary coordinates.
-    /// Returns displacement.
+    /// Move coordinates of mesh according to new boundary coordinates
+    /// and return the displacement
     static boost::shared_ptr<MeshDisplacement> move(Mesh& mesh, 
                                         const BoundaryMesh& new_boundary);
 

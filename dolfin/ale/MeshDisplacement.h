@@ -16,6 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-03-05
+// Last changed: 2013-03-05
 
 #ifndef __MESH_DISPLACEMENT_H
 #define __MESH_DISPLACEMENT_H
@@ -30,14 +31,15 @@ namespace dolfin
 {
   class Mesh;
 
-  /// This class encapsulates vector of CG1 functions into Expression.
-  /// This is particularly useful as displacement returned by mesh smoothers
-  /// which can subsequently be used in evaluating forms. Value rank is 1
-  /// and value shape is equal to geometric dimension of mesh.
+  /// This class encapsulates the CG1 representation of the
+  /// displacement of a mesh as an Expression. This is particularly
+  /// useful for the displacement returned by mesh smoothers which can
+  /// subsequently be used in evaluating forms. The value rank is 1
+  /// and the value shape is equal to the geometric dimension of the
+  /// mesh.
 
   class MeshDisplacement : public Expression
   {
-
   public:
 
     /// Create MeshDisplacement of given mesh
@@ -81,7 +83,8 @@ namespace dolfin
     ///         The coordinates of the point.
     ///     cell (ufc::cell)
     ///         The cell which contains the given point.
-    virtual void eval(Array<double>& values, const Array<double>& x,
+    virtual void eval(Array<double>& values,
+		      const Array<double>& x,
                       const ufc::cell& cell) const;
 
     /// Compute values at all mesh vertices.

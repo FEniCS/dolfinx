@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-#
 # First added:  2013-03-02
 # Last changed: 2013-03-04
 
@@ -58,7 +57,6 @@ class HarmonicSmoothingTest(unittest.TestCase):
         # Check mesh quality
         magic_number = 0.35
         self.assertGreater(mesh.radius_ratio_min(), magic_number)
-
 
 if MPI.num_processes() == 1:
 
