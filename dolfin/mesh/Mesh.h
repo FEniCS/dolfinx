@@ -26,7 +26,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-08
-// Last changed: 2013-03-05
+// Last changed: 2013-03-06
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -434,7 +434,7 @@ namespace dolfin
     /// *Returns*
     ///     MeshDisplacement
     ///         Displacement encapsulated in Expression subclass MeshDisplacement
-    MeshDisplacement move(BoundaryMesh& boundary);
+    boost::shared_ptr<MeshDisplacement> move(BoundaryMesh& boundary);
 
     /// Move coordinates of mesh according to adjacent mesh with common global
     /// vertices.
@@ -446,7 +446,7 @@ namespace dolfin
     /// *Returns*
     ///     MeshDisplacement
     ///         Displacement encapsulated in Expression subclass MeshDisplacement
-    MeshDisplacement move(Mesh& mesh);
+    boost::shared_ptr<MeshDisplacement> move(Mesh& mesh);
 
     /// Move coordinates of mesh according to displacement function.
     ///

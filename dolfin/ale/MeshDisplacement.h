@@ -24,11 +24,11 @@
 #include <ufc.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/function/Expression.h>
+#include <dolfin/function/Function.h>
 
 namespace dolfin
 {
   class Mesh;
-  class Function;
 
   /// This class encapsulates vector of CG1 functions into Expression.
   /// This is particularly useful as displacement returned by mesh smoothers
@@ -58,6 +58,7 @@ namespace dolfin
     virtual ~MeshDisplacement();
 
     /// Extract subfunction
+    /// In python available as MeshDisplacement.sub(i)
     ///
     /// *Arguments*
     ///     i (std::size_t)

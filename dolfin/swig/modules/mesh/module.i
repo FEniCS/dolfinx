@@ -269,6 +269,7 @@ import_array();
 %include "dolfin/swig/graph/post.i"
 
 // %include types from submodule ale
+%include "dolfin/swig/ale/pre.i"
 %include "dolfin/ale/ALE.h"
 %include "dolfin/ale/MeshDisplacement.h"
 

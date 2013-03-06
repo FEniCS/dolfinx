@@ -16,9 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2008-08-11
-// Last changed: 2013-03-05
-
-#include <boost/shared_ptr.hpp>
+// Last changed: 2013-03-06
 
 #include <dolfin/common/Array.h>
 #include <dolfin/parameter/GlobalParameters.h>
@@ -39,7 +37,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshDisplacement HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_boundary)
+boost::shared_ptr<MeshDisplacement> HarmonicSmoothing::move(Mesh& mesh, 
+                                            const BoundaryMesh& new_boundary)
 {
   // Now this works regardless of reorder_dofs_serial value
   const bool reorder_dofs_serial = parameters["reorder_dofs_serial"];
@@ -139,16 +138,16 @@ MeshDisplacement HarmonicSmoothing::move(Mesh& mesh, const BoundaryMesh& new_bou
                          ? "amg" : "default");
 
   // Displacement solution wrapped in Expression subclass MeshDisplacement
-  MeshDisplacement u(mesh);
+  boost::shared_ptr<MeshDisplacement> u(new MeshDisplacement(mesh));
 
   // RHS vector
-  Vector b(*u[0].vector());
+  Vector b(*(*u)[0].vector());
 
   // Solve system for each dimension
   for (std::size_t dim = 0; dim < d; dim++)
   {
     // Get solution vector
-    boost::shared_ptr<GenericVector> x = u[dim].vector();
+    boost::shared_ptr<GenericVector> x = (*u)[dim].vector();
 
     if (dim > 0)
       b.zero();

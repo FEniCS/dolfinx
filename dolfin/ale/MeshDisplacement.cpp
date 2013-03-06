@@ -18,7 +18,6 @@
 // First added:  2013-03-05
 
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/Function.h>
 #include <dolfin/mesh/Mesh.h>
 #include "Poisson1D.h"
 #include "Poisson2D.h"
