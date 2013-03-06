@@ -56,8 +56,9 @@ namespace dolfin
   protected:
 
     // Initialization
-    void init(const GenericVector& x, const GenericVector& y,
-              GenericLinearOperator* wrapper);
+    void init_layout(const GenericVector& x,
+		     const GenericVector& y,
+		     GenericLinearOperator* wrapper);
 
     // Pointer to wrapper
     GenericLinearOperator* _wrapper;
