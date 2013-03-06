@@ -23,6 +23,8 @@
 import unittest
 from dolfin import *
 
+parameters.form_compiler.optimize=True
+
 import numpy as np
 
 def convergence_order(errors, base = 2):
@@ -52,8 +54,7 @@ class PointIntegralSolverTest(unittest.TestCase):
         form = u*v*dP
         
         tstop = 1.0
-        u_true = Function(V)
-        u_true.interpolate(Expression("exp(t)", t=tstop))
+        u_true = Expression("exp(t)", t=tstop) 
             
         for Scheme in [BackwardEuler, CN2, ForwardEuler, ExplicitMidPoint,
                        RK4]:
@@ -66,13 +67,12 @@ class PointIntegralSolverTest(unittest.TestCase):
                 solver.step_interval(0., tstop, dt)
                 u_errors.append(errornorm(u_true, u))
             
-            print u_errors
             self.assertAlmostEqual(min(convergence_order(u_errors)),
                                    scheme.order(), 1)
 
         #cpp.set_log_level(LEVEL)
 
-    def xtest_butcher_schemes_vector(self):
+    def test_butcher_schemes_vector(self):
         
         if cpp.MPI.num_processes() > 1:
             return
@@ -92,16 +92,15 @@ class PointIntegralSolverTest(unittest.TestCase):
                        CN2, RK4]:
             scheme = Scheme(form, u)
             solver = PointIntegralSolver(scheme)
-            u_errors_0 = []
-            u_errors_1 = []
-            #for dt in [0.05, 0.025, 0.0125]:
-            #    u.interpolate(Constant((1.0, 0.0)))
-            #    solver.step_interval(0., tstop, dt)
-            #    u_errors_0.append(u_true(0.0, 0.0)[0] - u(0.0, 0.0)[0])
-            #    u_errors_1.append(u_true(0.0, 0.0)[1] - u(0.0, 0.0)[1])
-            #
-            #self.assertAlmostEqual(min(convergence_order(u_errors_0)),
-            #                       scheme.order(), 1)
+            u_errors = []
+            for dt in [0.05, 0.025, 0.0125]:
+                u.interpolate(Constant((1.0, 0.0)))
+                solver.step_interval(0., tstop, dt)
+                u_errors.append(errornorm(u_true, u))
+                #u_errors_1.append(u_true(0.0, 0.0)[1] - u(0.0, 0.0)[1])
+            
+            self.assertAlmostEqual(min(convergence_order(u_errors)),
+                                   scheme.order(), 1)
             #self.assertAlmostEqual(min(convergence_order(u_errors_1)),
             #                       scheme.order(), 1)
 

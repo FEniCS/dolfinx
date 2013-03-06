@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-03-05
+// Last changed: 2013-03-06
 
 #include <cmath>
 #include <armadillo>
@@ -64,6 +64,7 @@ void PointIntegralSolver::step(double dt)
   
   // Get size of system (num dofs per vertex)
   const unsigned int N = dofmap.num_entity_dofs(0);
+  const unsigned int dof_offset = mesh.type().num_entities(0);
   const unsigned int num_stages = _scheme->stage_forms().size();
 
   // Local solution vector at start of time step
@@ -101,14 +102,13 @@ void PointIntegralSolver::step(double dt)
     
     // Fill local to global dof map
     for (unsigned int row=0; row<N; row++)
+    {
       local_to_global_dofs[row] = cell_dofs[local_to_local_dofs[row]];
+    }
 
     // Iterate over stage forms
     for (unsigned int stage=0; stage<num_stages; stage++)
     {
-
-      if (vert_ind == 0)
-	info("vert 0, stage: %d", stage);
 
       // Check if we have an explicit stage (only 1 form)
       if (_ufcs[stage].size()==1)
@@ -153,7 +153,7 @@ void PointIntegralSolver::step(double dt)
 	const std::string convergence_criterion = "residual";
 	const double rtol = 1e-10;
 	const double atol = 1e-10;
-	const bool report = true;
+	const bool report = false;
 	//const int num_threads = 0;
 
 	/// Most recent residual and intitial residual
@@ -194,7 +194,6 @@ void PointIntegralSolver::step(double dt)
 	  // value was also used to tabulate the initial value of the F_integral above 
 	  // and we therefore just grab it from the restricted coeffcients
 	  u(row) = _ufcs[stage][0]->w()[_coefficient_index[stage][0]][local_to_local_dofs[row]];
-
 	}
 
 	// Start iterations
@@ -209,9 +208,9 @@ void PointIntegralSolver::step(double dt)
 	  // Extract vertex dofs from tabulated tensor
 	  for (unsigned int row=0; row < N; row++)
 	    for (unsigned int col=0; col < N; col++)
-	      J(row, col) = _ufcs[stage][0]->A[local_to_local_dofs[row]*N+
-					   local_to_local_dofs[col]];
-	  
+	      J(row, col) = _ufcs[stage][1]->A[local_to_local_dofs[row]*dof_offset+
+					       local_to_local_dofs[col]];
+
           // Perform linear solve and update total number of Krylov iterations
           arma::solve(dx, J, F);
 	  
@@ -264,9 +263,13 @@ void PointIntegralSolver::step(double dt)
 	  if (relative_residual < rtol || residual < atol)
 	    newton_converged = true;
 
-	  // Put solution back into restricted coefficients before tabulate new jacobian
-	  for (unsigned int row=0; row < N; row++)
-	    _ufcs[stage][1]->w()[_coefficient_index[stage][1]][local_to_local_dofs[row]] = u(row);
+	  // If there is a solution coefficient in the jacobian form
+	  if (_coefficient_index[stage].size()==2)
+	  {
+	    // Put solution back into restricted coefficients before tabulate new jacobian
+	    for (unsigned int row=0; row < N; row++)
+	      _ufcs[stage][1]->w()[_coefficient_index[stage][1]][local_to_local_dofs[row]] = u(row);
+	  }
 
 	}
       
@@ -390,7 +393,6 @@ void PointIntegralSolver::_init()
   // Iterate over stages and collect information
   for (unsigned int stage=0; stage < stage_forms.size(); stage++)
   {
-    info("Stage form size: %d:%d", stage_forms.size(), stage_forms[stage].size());
 
     // Create a UFC object for first form
     _ufcs[stage].push_back(boost::make_shared<UFC>(*stage_forms[stage][0]));
