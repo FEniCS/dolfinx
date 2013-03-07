@@ -356,24 +356,50 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
 //-----------------------------------------------------------------------------
 void DofMapBuilder::reorder_local(DofMap& dofmap, const Mesh& mesh)
 {
-  // Build local graph
-  const Graph graph = GraphBuilder::local_graph(mesh, dofmap, dofmap);
+  // Assume unit block size
+  std::size_t block_size = 1;
 
-  // Reorder graph (reverse Cuthill-McKee)
-  const std::vector<std::size_t> dof_remap
+  // Simple method to determine block size
+  dolfin_assert(dofmap._ufc_dofmap);
+  if (dofmap._ufc_dofmap->num_sub_dofmaps() > 0)
+    if (dofmap._ufc_dofmap->max_local_dimension() % dofmap._ufc_dofmap->num_sub_dofmaps() == 0)
+      block_size = dofmap._ufc_dofmap->num_sub_dofmaps();
+
+  // Global dimension
+  const std::size_t N = dofmap.global_dimension();
+  dolfin_assert(N % block_size == 0);
+
+  // Create empty graph
+  const std::size_t num_blocks = N/block_size;
+  Graph graph(num_blocks);
+
+  // Build local graph for blocks
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    const std::vector<dolfin::la_index>& dofs0 = dofmap.cell_dofs(cell->index());
+    const std::vector<dolfin::la_index>& dofs1 = dofmap.cell_dofs(cell->index());
+    std::vector<dolfin::la_index>::const_iterator node0, node1;
+    for (node0 = dofs0.begin(); node0 != dofs0.end(); node0 += block_size)
+      for (node1 = dofs1.begin(); node1 != dofs1.end(); node1 += block_size)
+        if (*node0 != *node1)
+          graph[*node0/block_size].insert(*node1/block_size);
+  }
+
+  // Reorder block graph (reverse Cuthill-McKee)
+  const std::vector<std::size_t> block_remap
     = BoostGraphOrdering::compute_cuthill_mckee(graph, true);
-
-  // Store re-ordering map (from UFC dofmap)
-  dolfin_assert(dofmap.ufc_map_to_dofmap.empty());
-  for (std::size_t i = 0; i < dofmap.global_dimension(); ++i)
-    dofmap.ufc_map_to_dofmap[i] = dof_remap[i];
 
   // Re-number dofs for each cell
   std::vector<std::vector<dolfin::la_index> >::iterator cell_map;
   std::vector<dolfin::la_index>::iterator dof;
   for (cell_map = dofmap._dofmap.begin(); cell_map != dofmap._dofmap.end(); ++cell_map)
     for (dof = cell_map->begin(); dof != cell_map->end(); ++dof)
-      *dof = dof_remap[*dof];
+      *dof = block_remap[*dof/block_size]*block_size + (*dof % block_size);
+
+  // Store re-ordering map (from UFC dofmap)
+  dolfin_assert(dofmap.ufc_map_to_dofmap.empty());
+  for (std::size_t i = 0; i < dofmap.global_dimension(); ++i)
+    dofmap.ufc_map_to_dofmap[i] = block_remap[i/block_size]*block_size + (i % block_size);
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::build_ufc(DofMap& dofmap,
