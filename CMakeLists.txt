@@ -659,6 +659,16 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-version
         COMPONENT RuntimeExecutables)
 
 #------------------------------------------------------------------------------
+# Generate and install utility script dolfin-get-demos
+
+configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-get-demos.in
+               ${CMAKE_BINARY_DIR}/dolfin-get-demos @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
+        DESTINATION ${DOLFIN_BIN_DIR}
+	PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+        COMPONENT RuntimeExecutables)
+
+#------------------------------------------------------------------------------
 # Add demos and install demo source files and mesh files
 
 # Add demo but do not add to default target

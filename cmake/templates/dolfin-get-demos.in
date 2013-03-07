@@ -1,0 +1,34 @@
+#!/bin/bash
+#
+# Utility script for installing demos in user's home directory
+
+DEMO_DIR=@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/demo
+INSTALL_DIR=$HOME/dolfin-demos
+URL="http://fenicsproject.org/documentation/doc_"`echo @DOLFIN_VERSION@ | cut -d'+' -f1`".html"
+
+echo "This script will install the DOLFIN demos in your home directory:"
+echo
+echo "  $INSTALL_DIR"
+echo
+echo -n "Do you want to install the DOLFIN demos in your home directory? [y] "
+read answer
+
+if [[ $answer == "y" || $answer == "" ]]; then
+    echo "Installing demos..."
+    cp -r $DEMO_DIR $INSTALL_DIR
+    echo
+    echo "The demos have now been installed in $INSTALL_DIR."
+    echo
+    echo "-------------------------------------------------------------------------------"
+    echo "To get started, enter the following command:"
+    echo
+    echo "  cd $INSTALL_DIR/pde"
+    echo
+    echo "The documentation can be found at the following address:"
+    echo
+    echo "  $URL"
+    echo "-------------------------------------------------------------------------------"
+    echo
+else
+    echo "ok, demos not installed"
+fi
