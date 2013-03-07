@@ -423,17 +423,16 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
   else
   {
     // Get master-slave vertex map
-    dolfin_assert(slave_master_entities->find(0) != slave_master_entities->end());
-    const std::map<unsigned int, std::pair<unsigned int, unsigned int> >&
-      slave_to_master_vertices = slave_master_entities->find(0)->second;
+    //dolfin_assert(slave_master_entities->find(0) != slave_master_entities->end());
+    //const std::map<unsigned int, std::pair<unsigned int, unsigned int> >&
+    //  slave_to_master_vertices = slave_master_entities->find(0)->second;
 
     // Compute modified global vertex indices
-    const std::size_t num_vertices = build_constrained_vertex_indices(mesh,
-          slave_to_master_vertices, global_entity_indices[0]);
+    //const std::size_t num_vertices = build_constrained_vertex_indices(mesh,
+    //      slave_to_master_vertices, global_entity_indices[0]);
 
     // Compute number of mesh entities
-    dofmap.num_global_mesh_entities[0] = num_vertices;
-    for (std::size_t d = 1; d <= D; ++d)
+    for (std::size_t d = 0; d <= D; ++d)
     {
       if (dofmap._ufc_dofmap->needs_mesh_entities(d))
       {
@@ -442,14 +441,23 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
         const std::map<unsigned int, std::pair<unsigned int, unsigned int> >&
           slave_to_master_entities = slave_master_entities->find(d)->second;
 
-        // Initialise local entities
-        std::map<unsigned int, std::set<unsigned int> > shared_entities;
-        const std::size_t num_entities
-          = DistributedMeshTools::number_entities(mesh, slave_to_master_entities,
-                                                  global_entity_indices[d],
-                                                  shared_entities, d);
-
-        dofmap.num_global_mesh_entities[d] = num_entities;
+        if (d == 0)
+        {
+          // Compute modified global vertex indices
+          const std::size_t num_vertices = build_constrained_vertex_indices(mesh,
+                slave_to_master_entities, global_entity_indices[0]);
+          dofmap.num_global_mesh_entities[0] = num_vertices;
+        }
+        else
+        {
+          // Get number of entities
+          std::map<unsigned int, std::set<unsigned int> > shared_entities;
+          const std::size_t num_entities
+            = DistributedMeshTools::number_entities(mesh, slave_to_master_entities,
+                                                    global_entity_indices[d],
+                                                    shared_entities, d);
+          dofmap.num_global_mesh_entities[d] = num_entities;
+        }
       }
     }
   }
