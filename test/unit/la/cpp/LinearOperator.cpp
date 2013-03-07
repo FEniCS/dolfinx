@@ -48,7 +48,8 @@ public:
     public:
 
       MyLinearOperator(Form& a_action, Function& u)
-        : LinearOperator(), a_action(a_action), u(u)
+        : LinearOperator(*u.vector(), *u.vector()), 
+	  a_action(a_action), u(u)
       {
         // Do nothing
       }
@@ -77,6 +78,17 @@ public:
     // Iterate over backends supporting linear operators
     for (std::size_t i = 0; i < backends.size(); i++)
     {
+      // Check whether backend is available
+      if (!has_linear_algebra_backend(backends[i]))
+	continue;
+
+      // Skip testing uBLAS in parallel
+      if (MPI::num_processes() > 1 && backends[i] == "uBLAS")
+      {
+	info("Not running uBLAS test in parallel");
+	continue;
+      }
+
       // Set linear algebra backend
       parameters["linear_algebra_backend"] = backends[i];
 

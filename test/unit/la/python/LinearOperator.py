@@ -59,7 +59,7 @@ class TestLinearOperator(unittest.TestCase):
             # Skip testing uBLAS in parallel
             if MPI.num_processes() > 1 and backend == "uBLAS":
                 print "Not running uBLAS test in parallel"
-                return
+                continue
 
             # Set linear algebra backend
             parameters["linear_algebra_backend"] = backend
