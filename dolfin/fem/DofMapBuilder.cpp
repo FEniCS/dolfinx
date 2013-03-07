@@ -356,6 +356,9 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
 //-----------------------------------------------------------------------------
 void DofMapBuilder::reorder_local(DofMap& dofmap, const Mesh& mesh)
 {
+  // Global dimension
+  const std::size_t N = dofmap.global_dimension();
+
   // Assume unit block size
   std::size_t block_size = 1;
 
@@ -369,9 +372,6 @@ void DofMapBuilder::reorder_local(DofMap& dofmap, const Mesh& mesh)
       block_size = dofmap._ufc_dofmap->num_sub_dofmaps();
     }
   }
-
-  // Global dimension
-  const std::size_t N = dofmap.global_dimension();
 
   // Create empty graph
   const std::size_t num_blocks = N/block_size;
