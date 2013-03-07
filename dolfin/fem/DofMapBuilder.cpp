@@ -362,12 +362,16 @@ void DofMapBuilder::reorder_local(DofMap& dofmap, const Mesh& mesh)
   // Simple method to determine block size
   dolfin_assert(dofmap._ufc_dofmap);
   if (dofmap._ufc_dofmap->num_sub_dofmaps() > 0)
-    if (dofmap._ufc_dofmap->max_local_dimension() % dofmap._ufc_dofmap->num_sub_dofmaps() == 0)
+  {
+    if (dofmap._ufc_dofmap->max_local_dimension() % dofmap._ufc_dofmap->num_sub_dofmaps() == 0
+          && N % dofmap._ufc_dofmap->num_sub_dofmaps() == 0)
+    {
       block_size = dofmap._ufc_dofmap->num_sub_dofmaps();
+    }
+  }
 
   // Global dimension
   const std::size_t N = dofmap.global_dimension();
-  dolfin_assert(N % block_size == 0);
 
   // Create empty graph
   const std::size_t num_blocks = N/block_size;
