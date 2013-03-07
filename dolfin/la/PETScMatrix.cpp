@@ -20,6 +20,7 @@
 // Modified by Ola Skavhaug 2007-2009.
 // Modified by Magnus Vikstrøm 2007-2008.
 // Modified by Fredrik Valdmanis 2011-2012
+// Modified by Jan Blechta 2013
 //
 // First added:  2004
 // Last changed: 2012-03-15
@@ -211,7 +212,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     const std::vector<PetscInt> _num_nonzeros_off_diagonal(num_nonzeros_off_diagonal.begin(),
                                                            num_nonzeros_off_diagonal.end());
     MatMPIAIJSetPreallocation(*_A, 0, _num_nonzeros_diagonal.data(),
-                                  0, _num_nonzeros_off_diagonal.data());
+                                   0, _num_nonzeros_off_diagonal.data());
   }
 
   // Set some options
@@ -318,10 +319,19 @@ void PETScMatrix::ident(std::size_t m, const dolfin::la_index* rows)
 {
   dolfin_assert(_A);
 
+  PetscErrorCode ierr;
   IS is = 0;
   PetscScalar one = 1.0;
-  ISCreateGeneral(PETSC_COMM_SELF, m, rows, PETSC_COPY_VALUES, &is);
-  MatZeroRowsIS(*_A, is, one, NULL, NULL);
+  const PetscInt _m = m;
+  ISCreateGeneral(PETSC_COMM_SELF, _m, rows, PETSC_COPY_VALUES, &is);
+  ierr = MatZeroRowsIS(*_A, is, one, NULL, NULL);
+  if (ierr == PETSC_ERR_ARG_WRONGSTATE)
+  {
+    dolfin_error("PETScMatrix.cpp",
+                 "set given rows to identity matrix",
+                 "some diagonal elements not preallocated "
+                 "(try assembler option keep_diagonal)");
+  }
   ISDestroy(&is);
 }
 //-----------------------------------------------------------------------------
@@ -454,6 +464,7 @@ const GenericMatrix& PETScMatrix::operator= (const GenericMatrix& A)
 //-----------------------------------------------------------------------------
 bool PETScMatrix::is_symmetric(double tol) const
 {
+  dolfin_assert(_A);
   PetscBool symmetric = PETSC_FALSE;
   MatIsSymmetric(*_A, tol, &symmetric);
   return symmetric == PETSC_TRUE ? true : false;

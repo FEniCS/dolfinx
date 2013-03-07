@@ -167,7 +167,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
 
     // Modify bc values
     std::vector<double> x0_values(num_bc_dofs);
-    x0->get_local(&x0_values[0], num_bc_dofs, &bc_indices[0]);
+    x0->get_local(x0_values.data(), num_bc_dofs, bc_indices.data());
     for (std::size_t i = 0; i < num_bc_dofs; i++)
       bc_values[i] = x0_values[i] - bc_values[i];
   }
@@ -295,9 +295,9 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
       A_ufc.update(*cell);
 
       // Tabulate cell tensor
-      A_cell_integral->tabulate_tensor(&A_ufc.A[0],
+      A_cell_integral->tabulate_tensor(A_ufc.A.data(),
                                        A_ufc.w(),
-                                       &A_ufc.cell.vertex_coordinates[0],
+                                       A_ufc.cell.vertex_coordinates.data(),
                                        A_ufc.cell.orientation);
       for (std::size_t i = 0; i < data.Ae.size(); ++i)
         data.Ae[i] += A_ufc.A[i];
@@ -310,9 +310,9 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
       b_ufc.update(*cell);
 
       // Tabulate cell tensor
-      b_cell_integral->tabulate_tensor(&b_ufc.A[0],
+      b_cell_integral->tabulate_tensor(b_ufc.A.data(),
                                        b_ufc.w(),
-                                       &b_ufc.cell.vertex_coordinates[0],
+                                       b_ufc.cell.vertex_coordinates.data(),
                                        b_ufc.cell.orientation);
       for (std::size_t i = 0; i < data.be.size(); ++i)
         data.be[i] += b_ufc.A[i];
@@ -349,9 +349,9 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
           A_ufc.update(*cell, local_facet);
 
           // Tabulate exterior facet tensor
-          A_exterior_facet_integral->tabulate_tensor(&A_ufc.A[0],
+          A_exterior_facet_integral->tabulate_tensor(A_ufc.A.data(),
                                                      A_ufc.w(),
-                                                     &A_ufc.cell.vertex_coordinates[0],
+                                                     A_ufc.cell.vertex_coordinates.data(),
                                                      local_facet);
           for (std::size_t i = 0; i < data.Ae.size(); i++)
             data.Ae[i] += A_ufc.A[i];
@@ -364,9 +364,9 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
           b_ufc.update(*cell, local_facet);
 
           // Tabulate exterior facet tensor
-          b_exterior_facet_integral->tabulate_tensor(&b_ufc.A[0],
+          b_exterior_facet_integral->tabulate_tensor(b_ufc.A.data(),
                                                      b_ufc.w(),
-                                                     &b_ufc.cell.vertex_coordinates[0],
+                                                     b_ufc.cell.vertex_coordinates.data(),
                                                      local_facet);
           for (std::size_t i = 0; i < data.be.size(); i++)
             data.be[i] += b_ufc.A[i];
@@ -382,11 +382,11 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     dolfin_assert(L_dofs[0] == a_dofs[1]);
 
     // Modify local matrix/element for Dirichlet boundary conditions
-    apply_bc(&(data.Ae)[0], &(data.be)[0], boundary_values, a_dofs);
+    apply_bc(data.Ae.data(), data.be.data(), boundary_values, a_dofs);
 
     // Add entries to global tensor
-    A.add(&data.Ae[0], a_dofs);
-    b.add(&data.be[0], L_dofs);
+    A.add(data.Ae.data(), a_dofs);
+    b.add(data.be.data(), L_dofs);
 
     p++;
   }
@@ -502,9 +502,9 @@ void SystemAssembler::compute_tensor_on_one_interior_facet(const Form& a,
   ufc.update(cell0, local_facet0, cell1, local_facet1);
 
   // Integrate over facet
-  interior_facet_integral->tabulate_tensor(&ufc.macro_A[0], ufc.macro_w(),
-                                           &ufc.cell0.vertex_coordinates[0],
-                                           &ufc.cell1.vertex_coordinates[0],
+  interior_facet_integral->tabulate_tensor(ufc.macro_A.data(), ufc.macro_w(),
+                                           ufc.cell0.vertex_coordinates.data(),
+                                           ufc.cell1.vertex_coordinates.data(),
                                            local_facet0, local_facet1);
 }
 //-----------------------------------------------------------------------------
@@ -603,9 +603,9 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
     {
       A_ufc.update(cell0);
 
-      A_cell_integral->tabulate_tensor(&A_ufc.A[0],
+      A_cell_integral->tabulate_tensor(A_ufc.A.data(),
                                        A_ufc.w(),
-                                       &A_ufc.cell.vertex_coordinates[0],
+                                       A_ufc.cell.vertex_coordinates.data(),
                                        A_ufc.cell.orientation);
       const std::size_t nn = a0_dofs0.size();
       const std::size_t mm = a1_dofs0.size();
@@ -618,9 +618,9 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
     {
       b_ufc.update(cell0);
 
-      b_cell_integral->tabulate_tensor(&b_ufc.A[0],
+      b_cell_integral->tabulate_tensor(b_ufc.A.data(),
                                        b_ufc.w(),
-                                       &b_ufc.cell.vertex_coordinates[0],
+                                       b_ufc.cell.vertex_coordinates.data(),
                                        b_ufc.cell.orientation);
       for (std::size_t i = 0; i < L_dofs0.size(); i++)
         b_ufc.macro_A[i] += b_ufc.A[i];
@@ -634,9 +634,9 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
     {
       A_ufc.update(cell1);
 
-      A_cell_integral->tabulate_tensor(&A_ufc.A[0],
+      A_cell_integral->tabulate_tensor(A_ufc.A.data(),
                                        A_ufc.w(),
-                                       &A_ufc.cell.vertex_coordinates[0],
+                                       A_ufc.cell.vertex_coordinates.data(),
                                        A_ufc.cell.orientation);
       const std::size_t nn = a0_dofs1.size();
       const std::size_t mm = a1_dofs1.size();
@@ -649,9 +649,9 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
     {
       b_ufc.update(cell1);
 
-      b_cell_integral->tabulate_tensor(&b_ufc.A[0],
+      b_cell_integral->tabulate_tensor(b_ufc.A.data(),
                                        b_ufc.w(),
-                                       &b_ufc.cell.vertex_coordinates[0],
+                                       b_ufc.cell.vertex_coordinates.data(),
                                        b_ufc.cell.orientation);
       for (std::size_t i = 0; i < L_dofs0.size(); i++)
         b_ufc.macro_A[L_dofs0.size() + i] += b_ufc.A[i];
@@ -685,11 +685,11 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
   _a_macro_dofs[0] = &a_macro_dofs[0];
   _a_macro_dofs[1] = &a_macro_dofs[1];
 
-  apply_bc(&A_ufc.macro_A[0], &b_ufc.macro_A[0], boundary_values, _a_macro_dofs);
+  apply_bc(A_ufc.macro_A.data(), b_ufc.macro_A.data(), boundary_values, _a_macro_dofs);
 
   // Add entries to global tensor
-  A.add(&A_ufc.macro_A[0], a_macro_dofs);
-  b.add(&b_ufc.macro_A[0], L_macro_dofs);
+  A.add(A_ufc.macro_A.data(), a_macro_dofs);
+  b.add(b_ufc.macro_A.data(), L_macro_dofs);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b,
@@ -705,9 +705,9 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
   if (A_facet_integral)
   {
     A_ufc.update(cell, local_facet);
-    A_facet_integral->tabulate_tensor(&A_ufc.A[0],
+    A_facet_integral->tabulate_tensor(A_ufc.A.data(),
                                       A_ufc.w(),
-                                      &A_ufc.cell.vertex_coordinates[0],
+                                      A_ufc.cell.vertex_coordinates.data(),
                                       local_facet);
     for (std::size_t i = 0; i < data.Ae.size(); i++)
       data.Ae[i] += A_ufc.A[i];
@@ -717,9 +717,9 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
   if (b_facet_integral)
   {
     b_ufc.update(cell, local_facet);
-    b_facet_integral->tabulate_tensor(&b_ufc.A[0],
+    b_facet_integral->tabulate_tensor(b_ufc.A.data(),
                                       b_ufc.w(),
-                                      &b_ufc.cell.vertex_coordinates[0],
+                                      b_ufc.cell.vertex_coordinates.data(),
                                       local_facet);
     for (std::size_t i = 0; i < data.be.size(); i++)
       data.be[i] += b_ufc.A[i];
@@ -732,9 +732,9 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
     if (A_cell_integral)
     {
       A_ufc.update(cell);
-      A_cell_integral->tabulate_tensor(&A_ufc.A[0],
+      A_cell_integral->tabulate_tensor(A_ufc.A.data(),
                                        A_ufc.w(),
-                                       &A_ufc.cell.vertex_coordinates[0],
+                                       A_ufc.cell.vertex_coordinates.data(),
                                        A_ufc.cell.orientation);
       for (std::size_t i = 0; i < data.Ae.size(); i++)
         data.Ae[i] += A_ufc.A[i];
@@ -744,9 +744,9 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
     if (b_cell_integral)
     {
       b_ufc.update(cell);
-      b_cell_integral->tabulate_tensor(&b_ufc.A[0],
+      b_cell_integral->tabulate_tensor(b_ufc.A.data(),
                                        b_ufc.w(),
-                                       &b_ufc.cell.vertex_coordinates[0],
+                                       b_ufc.cell.vertex_coordinates.data(),
                                        b_ufc.cell.orientation);
       for (std::size_t i = 0; i < data.be.size(); i++)
         data.be[i] += b_ufc.A[i];
@@ -762,11 +762,11 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
   L_dofs[0] = &(L.function_space(0)->dofmap()->cell_dofs(cell_index));
 
   // Modify local matrix/element for Dirichlet boundary conditions
-  apply_bc(&data.Ae[0], &data.be[0], boundary_values, a_dofs);
+  apply_bc(data.Ae.data(), data.be.data(), boundary_values, a_dofs);
 
   // Add entries to global tensor
-  A.add(&data.Ae[0], a_dofs);
-  b.add(&data.be[0], L_dofs);
+  A.add(data.Ae.data(), a_dofs);
+  b.add(data.be.data(), L_dofs);
 }
 //-----------------------------------------------------------------------------
 SystemAssembler::Scratch::Scratch(const Form& a, const Form& L)

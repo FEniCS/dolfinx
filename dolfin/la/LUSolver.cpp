@@ -77,6 +77,25 @@ std::size_t LUSolver::solve(const GenericLinearOperator& A, GenericVector& x,
   return solver->solve(A, x, b);
 }
 //-----------------------------------------------------------------------------
+std::size_t LUSolver::solve_transpose(GenericVector& x, const GenericVector& b)
+{
+  dolfin_assert(solver);
+
+  Timer timer("LU solver");
+  solver->parameters.update(parameters);
+  return solver->solve_transpose(x, b);
+}
+//-----------------------------------------------------------------------------
+std::size_t LUSolver::solve_transpose(const GenericLinearOperator& A, GenericVector& x,
+                             const GenericVector& b)
+{
+  dolfin_assert(solver);
+
+  Timer timer("LU solver");
+  solver->parameters.update(parameters);
+  return solver->solve_transpose(A, x, b);
+}
+//-----------------------------------------------------------------------------
 void LUSolver::init(std::string method)
 {
   // Get default linear algebra factory
