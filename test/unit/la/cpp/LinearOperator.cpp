@@ -96,13 +96,17 @@ public:
       UnitSquareMesh mesh(8, 8);
       ReactionDiffusion::FunctionSpace V(mesh);
       ReactionDiffusion::BilinearForm a(V, V);
+      ReactionDiffusion::LinearForm L(V);
+      Constant f(1.0);
+      L.f = f;
       Matrix A;
-      Vector x;
-      Vector b(V.dim());
-      b = 1.0;
+      Vector x, b;
       assemble(A, a);
+      assemble(b, L);
       solve(A, x, b, "gmres", "none");
       const double norm_ref = norm(x, "l2");
+
+      continue;
 
       // Solve using linear operator defined by form action
       ReactionDiffusionAction::LinearForm a_action(V);
