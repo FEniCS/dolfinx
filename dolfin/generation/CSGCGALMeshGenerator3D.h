@@ -71,7 +71,7 @@ namespace dolfin
     }
 
   private:
-    boost::shared_ptr<const CSGGeometry> geometry;
+    boost::shared_ptr<const CSGGeometry> _geometry;
   };
 
 }

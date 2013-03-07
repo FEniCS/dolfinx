@@ -328,11 +328,11 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
     for (std::size_t i = 0; i < new_indices.size(); ++i)
     {
       const std::size_t local_index = local_indices[i];
-      const std::size_t new_index   = new_indices[i];
+      const std::size_t new_global_index   = new_indices[i];
 
       dolfin_assert(local_index < modified_global_indices.size());
       //dolfin_assert(modified_global_indices[local_index] == std::numeric_limits<std::size_t>::max());
-      modified_global_indices[local_index] = new_index;
+      modified_global_indices[local_index] = new_global_index;
     }
   }
 
@@ -537,7 +537,7 @@ void DofMapBuilder::reorder_distributed(DofMap& dofmap,
 {
   // Build set of dofs that are not associated with a mesh entity
   // (global dofs)
-  set global_dofs = compute_global_dofs(dofmap, mesh);
+  set global_dofs = compute_global_dofs(dofmap);
 
   // Allocate data structure to hold dof ownership
   boost::array<DofMapBuilder::set, 3> dof_ownership;
@@ -699,7 +699,7 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
   if (process_number == 0)
   {
     shared_owned_dofs.insert(global_dofs.begin(), global_dofs.end());
-    for (set::const_iterator dof = global_dofs.begin(); dof != global_dofs.begin(); ++dof)
+    for (set::const_iterator dof = global_dofs.begin(); dof != global_dofs.end(); ++dof)
     {
       set::const_iterator _dof = shared_unowned_dofs.find(*dof);
       if (_dof != shared_unowned_dofs.end())
@@ -709,7 +709,7 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
   else
   {
     shared_unowned_dofs.insert(global_dofs.begin(), global_dofs.end());
-    for (set::const_iterator dof = global_dofs.begin(); dof != global_dofs.begin(); ++dof)
+    for (set::const_iterator dof = global_dofs.begin(); dof != global_dofs.end(); ++dof)
     {
       set::const_iterator _dof = shared_owned_dofs.find(*dof);
       if (_dof != shared_owned_dofs.end())
@@ -956,41 +956,30 @@ void DofMapBuilder::parallel_renumber(const boost::array<set, 3>& dof_ownership,
   log(TRACE, "Finished renumbering dofs for parallel dof map");
 }
 //-----------------------------------------------------------------------------
-DofMapBuilder::set DofMapBuilder::compute_global_dofs(const DofMap& dofmap,
-                                                      const Mesh& mesh)
+DofMapBuilder::set DofMapBuilder::compute_global_dofs(const DofMap& dofmap)
 {
-  // Wrap UFC dof map
-  boost::shared_ptr<const ufc::dofmap> _dofmap(dofmap._ufc_dofmap.get(),
-                                               NoDeleter());
-
   // Compute global dof indices
   std::size_t offset = 0;
   set global_dof_indices;
-  compute_global_dofs(global_dof_indices, offset, _dofmap, mesh);
+  compute_global_dofs(global_dof_indices, offset, dofmap._ufc_dofmap, dofmap);
 
   return global_dof_indices;
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
-                                        std::size_t& offset,
-                                        boost::shared_ptr<const ufc::dofmap> dofmap,
-                                        const Mesh& mesh)
+                          std::size_t& offset,
+                          boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
+                          const DofMap& dofmap)
 {
-  dolfin_assert(dofmap);
-  const std::size_t D = mesh.topology().dim();
+  dolfin_assert(ufc_dofmap);
 
-  // Store global entity dimensions in vector
-  std::vector<std::size_t> num_global_mesh_entities(mesh.topology().dim() + 1);
-  for (std::size_t d = 0; d < num_global_mesh_entities.size(); d++)
-    num_global_mesh_entities[d] = mesh.size_global(d);
-
-  if (dofmap->num_sub_dofmaps() == 0)
+  if (ufc_dofmap->num_sub_dofmaps() == 0)
   {
     // Check if dofmap is for global dofs
     bool global_dof = true;
-    for (std::size_t d = 0; d <= D; ++d)
+    for (std::size_t d = 0; d < dofmap.num_global_mesh_entities.size(); ++d)
     {
-      if (dofmap->needs_mesh_entities(d))
+      if (ufc_dofmap->needs_mesh_entities(d))
       {
         global_dof = false;
         break;
@@ -1000,7 +989,7 @@ void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
     if (global_dof)
     {
       // Check that we have just one dof
-      if (dofmap->global_dimension(num_global_mesh_entities) != 1)
+      if (ufc_dofmap->global_dimension(dofmap.num_global_mesh_entities) != 1)
       {
         dolfin_error("DofMapBuilder.cpp",
                      "compute global degrees of freedom",
@@ -1010,7 +999,7 @@ void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
       // Create dummy cell argument to tabulate single global dof
       boost::scoped_ptr<ufc::cell> ufc_cell(new ufc::cell);
       std::size_t dof = 0;
-      dofmap->tabulate_dofs(&dof, num_global_mesh_entities, *ufc_cell);
+      ufc_dofmap->tabulate_dofs(&dof, dofmap.num_global_mesh_entities, *ufc_cell);
 
       // Insert global dof index
       std::pair<DofMapBuilder::set::iterator, bool> ret = global_dofs.insert(dof + offset);
@@ -1024,18 +1013,17 @@ void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
   }
   else
   {
-    // Loop through sub-dofmao looking for globak dofs
-    for (std::size_t i = 0; i < dofmap->num_sub_dofmaps(); ++i)
+    // Loop through sub-dofmap looking for global dofs
+    for (std::size_t i = 0; i < ufc_dofmap->num_sub_dofmaps(); ++i)
     {
       // Extract sub-dofmap and intialise
-      boost::shared_ptr<ufc::dofmap> sub_dofmap(dofmap->create_sub_dofmap(i));
-      DofMap::check_provided_entities(*sub_dofmap, mesh);
+      boost::shared_ptr<ufc::dofmap> sub_dofmap(ufc_dofmap->create_sub_dofmap(i));
 
-      compute_global_dofs(global_dofs, offset, sub_dofmap, mesh);
+      compute_global_dofs(global_dofs, offset, sub_dofmap, dofmap);
 
       // Get offset
       if (sub_dofmap->num_sub_dofmaps() == 0)
-        offset += sub_dofmap->global_dimension(num_global_mesh_entities);
+        offset += sub_dofmap->global_dimension(dofmap.num_global_mesh_entities);
     }
   }
 }

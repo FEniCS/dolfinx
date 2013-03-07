@@ -56,7 +56,7 @@ void ExodusFile::operator<<(const Mesh& mesh)
 {
   perform_write(create_vtk_mesh(mesh));
   log(TRACE, "Saved mesh %s (%s) to file %s in Exodus format.",
-      mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
+      mesh.name().c_str(), mesh.label().c_str(), _filename.c_str());
   return;
 }
 //----------------------------------------------------------------------------
@@ -97,7 +97,7 @@ void ExodusFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
   perform_write(vtk_mesh);
 
   log(TRACE, "Saved mesh function %s (%s) to file %s in Exodus format.",
-      mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
+      mesh.name().c_str(), mesh.label().c_str(), _filename.c_str());
 }
 //----------------------------------------------------------------------------
 void ExodusFile::operator<<(const MeshFunction<int>& meshfunction)
@@ -137,7 +137,7 @@ void ExodusFile::operator<<(const MeshFunction<int>& meshfunction)
   perform_write(vtk_mesh);
 
   log(TRACE, "Saved mesh function %s (%s) to file %s in Exodus format.",
-      mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
+      mesh.name().c_str(), mesh.label().c_str(), _filename.c_str());
 }
 //----------------------------------------------------------------------------
 void ExodusFile::operator<<(const MeshFunction<double>& meshfunction)
@@ -177,7 +177,7 @@ void ExodusFile::operator<<(const MeshFunction<double>& meshfunction)
   perform_write(vtk_mesh);
 
   log(TRACE, "Saved mesh function %s (%s) to file %s in Exodus format.",
-      mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
+      mesh.name().c_str(), mesh.label().c_str(), _filename.c_str());
 }
 //----------------------------------------------------------------------------
 void ExodusFile::operator<<(const Function& u)
@@ -279,7 +279,7 @@ void ExodusFile::write_function(const Function& u, double time) const
   perform_write(vtk_mesh);
 
   log(TRACE, "Saved function %s (%s) to file %s in Exodus format.",
-      u.name().c_str(), u.label().c_str(), filename.c_str());
+      u.name().c_str(), u.label().c_str(), _filename.c_str());
 }
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkUnstructuredGrid> ExodusFile::create_vtk_mesh(const Mesh& mesh) const
@@ -324,7 +324,7 @@ void ExodusFile::perform_write(const vtkSmartPointer<vtkUnstructuredGrid> & vtk_
     vtkSmartPointer<vtkExodusIIWriter>::New();
 
   // Write out to file.
-  writer->SetFileName(filename.c_str());
+  writer->SetFileName(_filename.c_str());
   writer->SetInput(vtk_mesh);
   writer->Write();
 

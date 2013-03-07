@@ -20,9 +20,10 @@
 // Modified by Ola Skavhaug, 2009
 // Modified by Joachim B Haga, 2012
 // Modified by Mikael Mortensen, 2012
+// Modified by Jan Blechta, 2013
 //
 // First added:  2007-03-01
-// Last changed: 2012-11-05
+// Last changed: 2013-03-04
 
 #ifndef __DOLFIN_DOF_MAP_H
 #define __DOLFIN_DOF_MAP_H
@@ -227,7 +228,7 @@ namespace dolfin
     ///         The cell index.
     ///
     /// *Returns*
-    ///     std::vector<std::size_t>
+    ///     std::vector<dolfin::la_index>
     ///         Local-to-global mapping of dofs.
     const std::vector<dolfin::la_index>& cell_dofs(std::size_t cell_index) const
     {
@@ -242,9 +243,20 @@ namespace dolfin
     ///         Degrees of freedom.
     ///     local_facet (std::size_t)
     ///         The local facet.
-    //void tabulate_facet_dofs(std::size_t* dofs, std::size_t local_facet) const;
     void tabulate_facet_dofs(std::vector<std::size_t>& dofs,
                              std::size_t local_facet) const;
+
+    /// Tabulate local-local mapping of dofs on entity (dim, local_entity)
+    ///
+    /// *Arguments*
+    ///     dofs (std::size_t)
+    ///         Degrees of freedom.
+    ///     dim (std::size_t)
+    ///         The entity dimension
+    ///     local_entity (std::size_t)
+    ///         The local entity index
+    void tabulate_entity_dofs(std::vector<std::size_t>& dofs,
+			      std::size_t dim, std::size_t local_entity) const;
 
     /// Tabulate the coordinates of all dofs on a cell (UFC cell
     /// version)
@@ -269,7 +281,25 @@ namespace dolfin
     std::vector<double> tabulate_all_coordinates(const Mesh& mesh) const;
 
     /// Return a map between vertices and dofs
-    /// (vert_ind = vertex_to_dof_map[dof_ind])
+    /// (dof_ind = dof_to_vertex_map[vert_ind*dofs_per_vertex + local_dof],
+    /// where local_dof = 0, ..., dofs_per_vertex)
+    /// Ghost dofs are included - then dof_ind gets negative value
+    /// or value greater than process-local number of dofs.
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh to create the map between
+    ///
+    /// *Returns*
+    ///     std::vector<dolfin::la_index>
+    ///         The dof to vertex map
+    std::vector<dolfin::la_index> dof_to_vertex_map(Mesh& mesh) const;
+
+    /// Return a map between vertices and dofs
+    /// (vert_ind*dofs_per_vertex + local_dof = vertex_to_dof_map[dof_ind],
+    /// where local_dof = 0, ..., dofs_per_vertex)
+    /// Ghost dofs are not included. This map is
+    /// an inversion of dof_to_vertex_map.
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
@@ -359,7 +389,7 @@ namespace dolfin
     /// use only.
     ///
     /// *Returns*
-    ///     std::vector<std::vector<dolfin::std::size_t> >
+    ///     std::vector<std::vector<dolfin::la_index> >
     ///         The local-to-global map for each cell.
     const std::vector<std::vector<dolfin::la_index> >& data() const
     { return _dofmap; }

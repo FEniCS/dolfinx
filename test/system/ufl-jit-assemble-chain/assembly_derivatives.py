@@ -40,7 +40,7 @@ class IntegrateDerivatives(unittest.TestCase):
 
         # Shift and scale mesh
         x0, x1 = 1.5, 3.14
-        mesh.coordinates()[:] *= (x1-x0)
+        mesh.coordinates()[:] *= (x1 - x0)
         mesh.coordinates()[:] += x0
 
         cell = mesh.ufl_cell()

@@ -59,7 +59,7 @@ Parameters uBLASKrylovSolver::default_parameters()
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(std::string method,
                                      std::string preconditioner)
-  : method(method), report(false)
+  : _method(method), report(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -69,8 +69,7 @@ uBLASKrylovSolver::uBLASKrylovSolver(std::string method,
 }
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(uBLASPreconditioner& pc)
-  : method("default"), pc(reference_to_no_delete_pointer(pc)),
-    report(false)
+  : _method("default"), _pc(reference_to_no_delete_pointer(pc)), report(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -78,8 +77,7 @@ uBLASKrylovSolver::uBLASKrylovSolver(uBLASPreconditioner& pc)
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(std::string method,
                                      uBLASPreconditioner& pc)
-  : method(method), pc(reference_to_no_delete_pointer(pc)),
-    report(false)
+  : _method(method), _pc(reference_to_no_delete_pointer(pc)), report(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -92,68 +90,68 @@ uBLASKrylovSolver::~uBLASKrylovSolver()
 //-----------------------------------------------------------------------------
 std::size_t uBLASKrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  dolfin_assert(A);
-  dolfin_assert(P);
+  dolfin_assert(_A);
+  dolfin_assert(_P);
 
   // Try to first use operator as a uBLAS matrix
-  if (has_type<const uBLASMatrix<ublas_sparse_matrix> >(*A))
+  if (has_type<const uBLASMatrix<ublas_sparse_matrix> >(*_A))
   {
-    boost::shared_ptr<const uBLASMatrix<ublas_sparse_matrix> > _A
-      = as_type<const uBLASMatrix<ublas_sparse_matrix> >(A);
-    boost::shared_ptr<const uBLASMatrix<ublas_sparse_matrix> > _P
-      = as_type<const uBLASMatrix<ublas_sparse_matrix> >(P);
+    boost::shared_ptr<const uBLASMatrix<ublas_sparse_matrix> > A
+      = as_type<const uBLASMatrix<ublas_sparse_matrix> >(_A);
+    boost::shared_ptr<const uBLASMatrix<ublas_sparse_matrix> > P
+      = as_type<const uBLASMatrix<ublas_sparse_matrix> >(_P);
 
-    dolfin_assert(_A);
-    dolfin_assert(_P);
+    dolfin_assert(A);
+    dolfin_assert(P);
 
-    return solve_krylov(*_A,
+    return solve_krylov(*A,
                         as_type<uBLASVector>(x),
                         as_type<const uBLASVector>(b),
-                        *_P);
+                        *P);
   }
 
   // If that fails, try to use it as a uBLAS linear operator
-  if (has_type<const uBLASLinearOperator>(*A))
+  if (has_type<const uBLASLinearOperator>(*_A))
   {
-    boost::shared_ptr<const uBLASLinearOperator> _A
-      =  as_type<const uBLASLinearOperator>(A);
-    boost::shared_ptr<const uBLASLinearOperator> _P
-      =  as_type<const uBLASLinearOperator>(P);
+    boost::shared_ptr<const uBLASLinearOperator> A
+      =  as_type<const uBLASLinearOperator>(_A);
+    boost::shared_ptr<const uBLASLinearOperator> P
+      =  as_type<const uBLASLinearOperator>(_P);
 
-    dolfin_assert(_A);
-    dolfin_assert(_P);
+    dolfin_assert(A);
+    dolfin_assert(P);
 
-    return solve_krylov(*_A,
+    return solve_krylov(*A,
                         as_type<uBLASVector>(x),
                         as_type<const uBLASVector>(b),
-                        *_P);
+                        *P);
   }
 
   return 0;
 }
 //-----------------------------------------------------------------------------
 std::size_t uBLASKrylovSolver::solve(const GenericLinearOperator& A,
-                                      GenericVector& x,
-                                      const GenericVector& b)
+                                     GenericVector& x,
+                                     const GenericVector& b)
 {
   // Set operator
-  boost::shared_ptr<const GenericLinearOperator> _A(&A, NoDeleter());
-  set_operator(_A);
+  boost::shared_ptr<const GenericLinearOperator> Atmp(&A, NoDeleter());
+  set_operator(Atmp);
   return solve(as_type<uBLASVector>(x), as_type<const uBLASVector>(b));
 }
 //-----------------------------------------------------------------------------
 void uBLASKrylovSolver::select_preconditioner(std::string preconditioner)
 {
   if (preconditioner == "none")
-    pc.reset(new uBLASDummyPreconditioner());
+    _pc.reset(new uBLASDummyPreconditioner());
   else if (preconditioner == "ilu")
-    pc.reset(new uBLASILUPreconditioner(parameters));
+    _pc.reset(new uBLASILUPreconditioner(parameters));
   else if (preconditioner == "default")
-    pc.reset(new uBLASILUPreconditioner(parameters));
+    _pc.reset(new uBLASILUPreconditioner(parameters));
   else
   {
     warning("Requested preconditioner is not available for uBLAS Krylov solver. Using ILU.");
-    pc.reset(new uBLASILUPreconditioner(parameters));
+    _pc.reset(new uBLASILUPreconditioner(parameters));
   }
 }
 //-----------------------------------------------------------------------------

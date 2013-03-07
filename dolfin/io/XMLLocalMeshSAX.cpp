@@ -40,8 +40,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 XMLLocalMeshSAX::XMLLocalMeshSAX(LocalMeshData& mesh_data,
-  const std::string filename) : state(OUTSIDE), mesh_data(mesh_data),
-  filename(filename)
+  const std::string filename) : state(OUTSIDE), _mesh_data(mesh_data),
+  _filename(filename)
 {
   // Do nothing
 }
@@ -49,7 +49,7 @@ XMLLocalMeshSAX::XMLLocalMeshSAX(LocalMeshData& mesh_data,
 void XMLLocalMeshSAX::read()
 {
   // Clear mesh data
-  mesh_data.clear();
+  _mesh_data.clear();
 
   // Create SAX2 handler
   xmlSAXHandler sax_handler;
@@ -67,13 +67,13 @@ void XMLLocalMeshSAX::read()
   sax_handler.error = XMLLocalMeshSAX::sax_error;
 
   // Parse file
-  int err = xmlSAXUserParseFile(&sax_handler, (void *) this, filename.c_str());
+  int err = xmlSAXUserParseFile(&sax_handler, (void *) this, _filename.c_str());
   if (err != 0)
   {
     dolfin_error("XMLLocalMeshSAX.cpp",
                  "read local mesh data",
                  "Error encountered by libxml2 when parsing XML file \"%s\"",
-                 filename.c_str());
+                 _filename.c_str());
   }
 }
 //-----------------------------------------------------------------------------
@@ -326,8 +326,8 @@ void XMLLocalMeshSAX::read_mesh(const xmlChar* name, const xmlChar** attrs,
   tdim = cell_type->dim();
 
   // Get number of entities for topological dimension 0
-  mesh_data.tdim = tdim;
-  mesh_data.gdim = gdim;
+  _mesh_data.tdim = tdim;
+  _mesh_data.gdim = gdim;
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshSAX::read_vertices(const xmlChar* name, const xmlChar** attrs,
@@ -335,14 +335,14 @@ void XMLLocalMeshSAX::read_vertices(const xmlChar* name, const xmlChar** attrs,
 {
   // Parse the number of global vertices
   const std::size_t num_global_vertices = SAX2AttributeParser::parse<unsigned int>(name, attrs, "size", num_attributes);
-  mesh_data.num_global_vertices = num_global_vertices;
+  _mesh_data.num_global_vertices = num_global_vertices;
 
   // Compute vertex range
   vertex_range = MPI::local_range(num_global_vertices);
 
   // Reserve space for local-to-global vertex map and vertex coordinates
-  mesh_data.vertex_indices.reserve(num_local_vertices());
-  mesh_data.vertex_coordinates.resize(boost::extents[num_local_vertices()][mesh_data.gdim]);
+  _mesh_data.vertex_indices.reserve(num_local_vertices());
+  _mesh_data.vertex_coordinates.resize(boost::extents[num_local_vertices()][_mesh_data.gdim]);
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshSAX::read_vertex(const xmlChar* name, const xmlChar** attrs,
@@ -359,10 +359,10 @@ void XMLLocalMeshSAX::read_vertex(const xmlChar* name, const xmlChar** attrs,
   const char *xyz[] = {"x", "y", "z"};
 
   for(std::size_t i = 0; i < gdim ; ++i)
-    mesh_data.vertex_coordinates[local_index][i] = SAX2AttributeParser::parse<double>(name, attrs, xyz[i], num_attributes);
+    _mesh_data.vertex_coordinates[local_index][i] = SAX2AttributeParser::parse<double>(name, attrs, xyz[i], num_attributes);
 
   // Store global vertex numbering
-  mesh_data.vertex_indices.push_back(v);
+  _mesh_data.vertex_indices.push_back(v);
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshSAX::read_cells(const xmlChar* name, const xmlChar** attrs,
@@ -370,16 +370,16 @@ void XMLLocalMeshSAX::read_cells(const xmlChar* name, const xmlChar** attrs,
 {
   // Parse the number of global cells
   const std::size_t num_global_cells = SAX2AttributeParser::parse<unsigned int>(name, attrs, "size", num_attributes);
-  mesh_data.num_global_cells = num_global_cells;
+  _mesh_data.num_global_cells = num_global_cells;
 
   // Compute cell range
   cell_range = MPI::local_range(num_global_cells);
 
   // Allocate space for cells
-  mesh_data.cell_vertices.resize(boost::extents[num_local_cells()][mesh_data.tdim + 1]);
+  _mesh_data.cell_vertices.resize(boost::extents[num_local_cells()][_mesh_data.tdim + 1]);
 
   // Reserve space for global cell indices
-  mesh_data.global_cell_indices.reserve(num_local_cells());
+  _mesh_data.global_cell_indices.reserve(num_local_cells());
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshSAX::read_interval(const xmlChar* name, const xmlChar** attrs,
@@ -401,15 +401,16 @@ void XMLLocalMeshSAX::read_interval(const xmlChar* name, const xmlChar** attrs,
     return;
 
   // Add cell
-  boost::multi_array<std::size_t , 2>::subarray<1>::type cell = mesh_data.cell_vertices[c - cell_range.first];
+  boost::multi_array<std::size_t , 2>::subarray<1>::type cell
+      = _mesh_data.cell_vertices[c - cell_range.first];
   cell[0] = SAX2AttributeParser::parse<unsigned int>(name, attrs, "v0", num_attributes);
   cell[1] = SAX2AttributeParser::parse<unsigned int>(name, attrs, "v1", num_attributes);
 
   // Add global cell index
-  mesh_data.global_cell_indices.push_back(c);
+  _mesh_data.global_cell_indices.push_back(c);
 
   // Vertices per cell
-  mesh_data.num_vertices_per_cell = 2;
+  _mesh_data.num_vertices_per_cell = 2;
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshSAX::read_triangle(const xmlChar *name,
@@ -432,16 +433,17 @@ void XMLLocalMeshSAX::read_triangle(const xmlChar *name,
     return;
 
   // Add cell
-  boost::multi_array<std::size_t, 2>::subarray<1>::type cell = mesh_data.cell_vertices[c- cell_range.first];
+  boost::multi_array<std::size_t, 2>::subarray<1>::type cell
+    = _mesh_data.cell_vertices[c- cell_range.first];
   cell[0] = SAX2AttributeParser::parse<unsigned int>(name, attrs, "v0", num_attributes);
   cell[1] = SAX2AttributeParser::parse<unsigned int>(name, attrs, "v1", num_attributes);
   cell[2] = SAX2AttributeParser::parse<unsigned int>(name, attrs, "v2", num_attributes);
 
   // Add global cell index
-  mesh_data.global_cell_indices.push_back(c);
+  _mesh_data.global_cell_indices.push_back(c);
 
   // Vertices per cell
-  mesh_data.num_vertices_per_cell = 3;
+  _mesh_data.num_vertices_per_cell = 3;
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshSAX::read_tetrahedron(const xmlChar *name,
@@ -464,17 +466,18 @@ void XMLLocalMeshSAX::read_tetrahedron(const xmlChar *name,
     return;
 
   // Add cell
-  boost::multi_array<std::size_t, 2>::subarray<1>::type cell = mesh_data.cell_vertices[c - cell_range.first];
+  boost::multi_array<std::size_t, 2>::subarray<1>::type cell
+    = _mesh_data.cell_vertices[c - cell_range.first];
   cell[0] = SAX2AttributeParser::parse<unsigned int>(name, attrs, "v0", num_attributes);
   cell[1] = SAX2AttributeParser::parse<unsigned int>(name, attrs, "v1", num_attributes);
   cell[2] = SAX2AttributeParser::parse<unsigned int>(name, attrs, "v2", num_attributes);
   cell[3] = SAX2AttributeParser::parse<unsigned int>(name, attrs, "v3", num_attributes);
 
   // Add global cell index
-  mesh_data.global_cell_indices.push_back(c);
+  _mesh_data.global_cell_indices.push_back(c);
 
   // Vertices per cell
-  mesh_data.num_vertices_per_cell = 4;
+  _mesh_data.num_vertices_per_cell = 4;
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshSAX::read_mesh_value_collection(const xmlChar* name,
@@ -497,7 +500,7 @@ void XMLLocalMeshSAX::read_mesh_value_collection(const xmlChar* name,
                  "XMLLocalMeshSAX can only read unsigned integer domain values");
   }
 
-  mesh_data.domain_data.insert(std::make_pair(dim, 0));
+  _mesh_data.domain_data.insert(std::make_pair(dim, 0));
 
   // Reset counter
   domain_value_counter = 0;
@@ -516,7 +519,7 @@ void XMLLocalMeshSAX::read_mesh_value_collection_entry(const xmlChar* name,
     entry_data.second       = SAX2AttributeParser::parse<unsigned int>(name, attrs, "value", num_attributes);
 
     std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::size_t> >& data
-      = mesh_data.domain_data.find(domain_dim)->second;
+      = _mesh_data.domain_data.find(domain_dim)->second;
     data.push_back(entry_data);
   }
 

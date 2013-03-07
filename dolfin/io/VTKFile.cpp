@@ -53,7 +53,7 @@ using namespace dolfin;
 //----------------------------------------------------------------------------
 VTKFile::VTKFile(const std::string filename, std::string encoding)
   : GenericFile(filename, "VTK"),
-    encoding(encoding), binary(false), compress(false)
+    _encoding(encoding), binary(false), compress(false)
 {
   if (encoding != "ascii" && encoding != "base64" && encoding != "compressed")
   {
@@ -115,7 +115,7 @@ void VTKFile::operator<<(const Mesh& mesh)
   finalize(vtu_filename, counter);
 
   log(TRACE, "Saved mesh %s (%s) to file %s in VTK format.",
-      mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
+      mesh.name().c_str(), mesh.label().c_str(), _filename.c_str());
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const MeshFunction<bool>& meshfunction)
@@ -180,7 +180,7 @@ void VTKFile::write_function(const Function& u, double time)
   finalize(vtu_filename, time);
 
   log(TRACE, "Saved function %s (%s) to file %s in VTK format.",
-      u.name().c_str(), u.label().c_str(), filename.c_str());
+      u.name().c_str(), u.label().c_str(), _filename.c_str());
 }
 //----------------------------------------------------------------------------
 std::string VTKFile::init(const Mesh& mesh, std::size_t cell_dim) const
@@ -302,7 +302,7 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
     fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">";
   }
 
-  if (encoding == "ascii")
+  if (_encoding == "ascii")
   {
     std::ostringstream ss;
     ss << std::scientific;
@@ -341,7 +341,7 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
     // Send to file
     fp << ss.str();
   }
-  else if (encoding == "base64" || encoding == "compressed")
+  else if (_encoding == "base64" || _encoding == "compressed")
   {
     // Number of zero paddings per point
     std::size_t padding_per_point = 0;
@@ -370,7 +370,8 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
   fp << "</PointData> " << std::endl;
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvd_file_write(std::size_t step, double time, std::string _filename)
+void VTKFile::pvd_file_write(std::size_t step, double time,
+                             std::string fname)
 {
   pugi::xml_document xml_doc;
   if (step == 0)
@@ -382,7 +383,7 @@ void VTKFile::pvd_file_write(std::size_t step, double time, std::string _filenam
   }
   else
   {
-    pugi::xml_parse_result result = xml_doc.load_file(filename.c_str());
+    pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
     if (!result)
     {
       dolfin_error("VTKFile.cpp",
@@ -392,7 +393,7 @@ void VTKFile::pvd_file_write(std::size_t step, double time, std::string _filenam
   }
 
   // Remove directory path from name for pvd file
-  const std::string fname = strip_path(_filename);
+  const std::string fname_strip = strip_path(fname);
 
   // Get Collection node
   pugi::xml_node xml_collections = xml_doc.child("VTKFile").child("Collection");
@@ -402,10 +403,10 @@ void VTKFile::pvd_file_write(std::size_t step, double time, std::string _filenam
   pugi::xml_node dataset_node = xml_collections.append_child("DataSet");
   dataset_node.append_attribute("timestep") = time;
   dataset_node.append_attribute("part") = "0";
-  dataset_node.append_attribute("file") = fname.c_str();
+  dataset_node.append_attribute("file") = fname_strip.c_str();
 
   // Save file
-  xml_doc.save_file(filename.c_str(), "  ");
+  xml_doc.save_file(_filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
 void VTKFile::pvtu_write_mesh(pugi::xml_node xml_node) const
@@ -435,7 +436,7 @@ void VTKFile::pvtu_write_mesh(pugi::xml_node xml_node) const
 void VTKFile::pvtu_write_function(std::size_t dim, std::size_t rank,
                                   const std::string data_location,
                                   const std::string name,
-                                  const std::string filename) const
+                                  const std::string fname) const
 {
   // Create xml doc
   pugi::xml_document xml_doc;
@@ -506,10 +507,10 @@ void VTKFile::pvtu_write_function(std::size_t dim, std::size_t rank,
     piece_node.append_attribute("Source") = tmp_string.c_str();
   }
 
-  xml_doc.save_file(filename.c_str(), "  ");
+  xml_doc.save_file(fname.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvtu_write_mesh(const std::string filename) const
+void VTKFile::pvtu_write_mesh(const std::string fname) const
 {
   // Create xml doc
   pugi::xml_document xml_doc;
@@ -530,10 +531,10 @@ void VTKFile::pvtu_write_mesh(const std::string filename) const
     piece_node.append_attribute("Source") = tmp_string.c_str();
   }
 
-  xml_doc.save_file(filename.c_str(), "  ");
+  xml_doc.save_file(fname.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvtu_write(const Function& u, const std::string filename) const
+void VTKFile::pvtu_write(const Function& u, const std::string fname) const
 {
   dolfin_assert(u.function_space()->element());
   const std::size_t rank = u.function_space()->element()->value_rank();
@@ -557,7 +558,7 @@ void VTKFile::pvtu_write(const Function& u, const std::string filename) const
   if (u.function_space()->dofmap()->max_cell_dimension() == cell_based_dim)
     data_type = "cell";
 
-  pvtu_write_function(dim, rank, data_type, u.name(), filename);
+  pvtu_write_function(dim, rank, data_type, u.name(), fname);
 }
 //----------------------------------------------------------------------------
 void VTKFile::vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
@@ -570,7 +571,7 @@ void VTKFile::vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
   {
     dolfin_error("VTKFile.cpp",
                  "write data to VTK file",
-                 "Unable to open file \"%s\"", filename.c_str());
+                 "Unable to open file \"%s\"", _filename.c_str());
   }
 
   // Figure out endianness of machine
@@ -590,7 +591,7 @@ void VTKFile::vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
 
   // Compression string
   std::string compressor = "";
-  if (encoding == "compressed")
+  if (_encoding == "compressed")
     compressor = "compressor=\"vtkZLibDataCompressor\"";
 
   // Write headers
@@ -612,7 +613,7 @@ void VTKFile::vtk_header_close(std::string vtu_filename) const
   {
     dolfin_error("VTKFile.cpp",
                  "write data to VTK file",
-                 "Unable to open file \"%s\"", filename.c_str());
+                 "Unable to open file \"%s\"", _filename.c_str());
   }
 
   // Close headers
@@ -631,8 +632,8 @@ std::string VTKFile::vtu_name(const int process, const int num_processes,
   fileid.fill('0');
   fileid.width(6);
 
-  filestart.assign(filename, 0, filename.find_last_of("."));
-  extension.assign(filename, filename.find_last_of("."), filename.size());
+  filestart.assign(_filename, 0, _filename.find_last_of("."));
+  extension.assign(_filename, _filename.find_last_of("."), _filename.size());
 
   fileid << counter;
 
@@ -655,12 +656,12 @@ void VTKFile::mesh_function_write(T& meshfunction)
   const Mesh& mesh = meshfunction.mesh();
   const std::size_t cell_dim = meshfunction.dim();
 
-  if (cell_dim != mesh.topology().dim() && cell_dim != mesh.topology().dim() - 1 && cell_dim != 0)
-  {
-    dolfin_error("VTKFile.cpp",
-                 "write mesh function to VTK file",
-                 "VTK output of mesh functions is implemented for cell-, facet- and vertex-based functions only");
-  }
+  //if (cell_dim != mesh.topology().dim() && cell_dim != mesh.topology().dim() - 1 && cell_dim != 0)
+  //{
+  //  dolfin_error("VTKFile.cpp",
+  //               "write mesh function to VTK file",
+  //               "VTK output of mesh functions is implemented for cell-, facet- and vertex-based functions only");
+  //}
 
   // Update vtu file name and clear file
   std::string vtu_filename = init(mesh, cell_dim);
@@ -699,7 +700,7 @@ void VTKFile::mesh_function_write(T& meshfunction)
   finalize(vtu_filename, counter);
 
   log(TRACE, "Saved mesh function %s (%s) to file %s in VTK format.",
-      mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
+      mesh.name().c_str(), mesh.label().c_str(), _filename.c_str());
 }
 //----------------------------------------------------------------------------
 void VTKFile::clear_file(std::string file) const
@@ -718,7 +719,7 @@ void VTKFile::clear_file(std::string file) const
 std::string VTKFile::strip_path(std::string file) const
 {
   std::string fname;
-  fname.assign(file, filename.find_last_of("/") + 1, file.size());
+  fname.assign(file, _filename.find_last_of("/") + 1, file.size());
   return fname;
 }
 //----------------------------------------------------------------------------

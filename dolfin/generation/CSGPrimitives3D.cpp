@@ -30,20 +30,21 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 // Sphere
 //-----------------------------------------------------------------------------
-Sphere::Sphere(Point c, double r, std::size_t slices)
-  : c(c), r(r), slices(slices)
+Sphere::Sphere(Point center, double radius, std::size_t slices)
+  : c(center), r(radius), _slices(slices)
 {
   if (r < DOLFIN_EPS)
+  {
     dolfin_error("CSGPrimitives3D.cpp",
 		   "Create sphere",
 		   "Sphere with center (%f, %f, %f) has zero or negative radius", c.x(), c.y(), c.z());
+  }
 
   if (slices < 1)
   {
     dolfin_error("CSGPrimitives3D.cpp",
 		 "Create sphere",
 		 "Can't create sphere with zero slices");
-
   }
 }
 //-----------------------------------------------------------------------------
@@ -98,66 +99,64 @@ std::string Box::str(bool verbose) const
 //-----------------------------------------------------------------------------
 // Cone
 //-----------------------------------------------------------------------------
-Cone::Cone(Point top, Point bottom, double top_radius, double bottom_radius, std::size_t slices)
-  : top(top), bottom(bottom), top_radius(top_radius), bottom_radius(bottom_radius), slices(slices)
+Cone::Cone(Point top, Point bottom, double top_radius, double bottom_radius,
+           std::size_t slices)
+  : _top(top), _bottom(bottom), _top_radius(top_radius),
+    _bottom_radius(bottom_radius), _slices(slices)
 {
   if (near(top_radius, 0.0) && near(bottom_radius, 0.0))
+  {
       dolfin_error("CSGPrimitives3D.cpp",
 		   "Create cone",
 		   "Cone with zero thickness");
+  }
 
   if (top.distance(bottom) < DOLFIN_EPS)
+  {
     dolfin_error("CSGPrimitives3D.cpp",
 		 "Create cone",
 		 "Cone with zero length");
-
+  }
 }
 //-----------------------------------------------------------------------------
 std::string Cone::str(bool verbose) const
 {
   std::stringstream s;
-
   if (verbose)
   {
-    s << "<Cone with top at " << top << ", top radius " << top_radius
-      << " and bottom at " << bottom << ", bottom radius " << bottom_radius << ", with " << slices << " slices>";
+    s << "<Cone with top at " << _top << ", top radius " << _top_radius
+      << " and bottom at " << _bottom << ", bottom radius " << _bottom_radius << ", with " << _slices << " slices>";
   }
   else
   {
-    s << "Cone( "
-      << top << ", " << bottom << ", " << top_radius << ", " << bottom_radius << " )";
+    s << "Cone( " << _top << ", " << _bottom << ", " << _top_radius << ", " << _bottom_radius << " )";
   }
 
   return s.str();
 }
 //-----------------------------------------------------------------------------
 Tetrahedron::Tetrahedron(Point x0, Point x1, Point x2, Point x3)
-  : x0(x0), x1(x1), x2(x2), x3(x3)
+  : _x0(x0), _x1(x1), _x2(x2), _x3(x3)
 {}
 //-----------------------------------------------------------------------------
 /// Informal string representation
 std::string Tetrahedron::str(bool verbose) const
 {
   std::stringstream s;
-
   if (verbose)
-  {
-    s << "<Tetrahedron with point at " << x0 << ", " << x1 << ", " << x2 << ", " << x3 << ">";
-  }
+    s << "<Tetrahedron with point at " << _x0 << ", " << _x1 << ", " << _x2 << ", " << _x3 << ">";
   else
-  {
-    s << "Tetrahedron( " << x0 << ", " << x1 << ", " << x2 << ", " << x3 << ")";
-
-  }
+    s << "Tetrahedron( " << _x0 << ", " << _x1 << ", " << _x2 << ", " << _x3 << ")";
 
   return s.str();
 }
 //-----------------------------------------------------------------------------
-Surface3D::Surface3D(std::string filename)
-  : filename(filename)
-{}
+Surface3D::Surface3D(std::string filename) : _filename(filename)
+{
+  // Do nothing
+}
 //-----------------------------------------------------------------------------
 std::string Surface3D::str(bool verbose) const
 {
-  return std::string("Surface3D from file ") + filename;
+  return std::string("Surface3D from file ") + _filename;
 }

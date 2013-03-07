@@ -73,6 +73,15 @@ namespace dolfin
     /// Solve linear system Ax = b
     std::size_t solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);
 
+    /// Solve linear system A^Tx = b
+    std::size_t solve_transpose(GenericVector& x, const GenericVector& b);
+
+    /// Solve linear system A^Tx = b
+    std::size_t solve_transpose(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+
+    /// Solve linear system A^Tx = b
+    std::size_t solve_transpose(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);
+
     /// Return a list of available solver methods
     static std::vector<std::pair<std::string, std::string> > methods();
 
@@ -90,7 +99,7 @@ namespace dolfin
     bool symbolic_factorized, numeric_factorized;
 
     // Operator (the matrix)
-    boost::shared_ptr<const EpetraMatrix> A;
+    boost::shared_ptr<const EpetraMatrix> _A;
 
     // Epetra linear problem
     boost::scoped_ptr<Epetra_LinearProblem> linear_problem;
@@ -99,7 +108,7 @@ namespace dolfin
     boost::scoped_ptr<Amesos_BaseSolver> solver;
 
     // Solver method
-    std::string method;
+    std::string _method;
 
   };
 

@@ -108,7 +108,7 @@ std::size_t ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
 //-----------------------------------------------------------------------------
 #ifdef HAS_TRILINOS
 ZoltanInterface::ZoltanGraphInterface::ZoltanGraphInterface(const Graph& graph)
-    : graph(graph)
+    : _graph(graph)
 {
   // Do nothing
 }
@@ -118,8 +118,8 @@ void ZoltanInterface::ZoltanGraphInterface::num_vertex_edges(unsigned int* num_e
   dolfin_assert(num_edges);
 
   // Compute nunber of edges from each graph node
-  for (std::size_t i = 0; i < graph.size(); ++i)
-    num_edges[i] = graph[i].size();
+  for (std::size_t i = 0; i < _graph.size(); ++i)
+    num_edges[i] = _graph[i].size();
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -128,7 +128,7 @@ int ZoltanInterface::ZoltanGraphInterface::get_number_of_objects(void* data,
 {
   ZoltanGraphInterface *objs = (ZoltanGraphInterface *)data;
   *ierr = ZOLTAN_OK;
-  return objs->graph.size();
+  return objs->_graph.size();
 }
 //-----------------------------------------------------------------------------
 void ZoltanInterface::ZoltanGraphInterface::get_object_list(void *data,
@@ -139,7 +139,7 @@ void ZoltanInterface::ZoltanGraphInterface::get_object_list(void *data,
 {
   ZoltanGraphInterface *objs = (ZoltanGraphInterface *)data;
   *ierr = ZOLTAN_OK;
-  for (std::size_t i = 0; i< objs->graph.size(); i++)
+  for (std::size_t i = 0; i< objs->_graph.size(); i++)
   {
     global_id[i] = i;
     local_id[i]  = i;
@@ -170,7 +170,7 @@ void ZoltanInterface::ZoltanGraphInterface::get_all_edges(void* data,
   ZoltanGraphInterface *objs = (ZoltanGraphInterface *)data;
 
   // Get graph
-  const Graph graph = objs->graph;
+  const Graph graph = objs->_graph;
 
   unsigned int entry = 0;
   for (unsigned int i = 0; i < graph.size(); ++i)

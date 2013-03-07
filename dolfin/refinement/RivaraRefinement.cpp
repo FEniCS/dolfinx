@@ -148,18 +148,17 @@ void RivaraRefinement::DMesh::import_mesh(const Mesh& mesh)
   for (CellIterator ci(mesh); !ci.end(); ++ci)
   {
     DCell* dc = new DCell;
-
     std::vector<DVertex*> vs(ci->num_entities(0));
-    std::size_t i = 0;
+    std::size_t counter = 0;
     for (VertexIterator vi(*ci); !vi.end(); ++vi)
     {
       DVertex* dv = vertexvec[vi->index()];
-      vs[i] = dv;
-      i++;
+      vs[counter] = dv;
+      counter++;
     }
 
     // Initialize facets
-    for (std::size_t i=0; i < cell_type->num_entities(0); i++)
+    for (std::size_t i = 0; i < cell_type->num_entities(0); i++)
       dc->facets.push_back(i);
 
     add_cell(dc, vs, ci->index());

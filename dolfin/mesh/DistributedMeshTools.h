@@ -82,16 +82,16 @@ namespace dolfin
       // Constructor
       EntityData() : local_index(0) {}
 
-      // Constructor
-      explicit EntityData(unsigned int local_index) : local_index(local_index) {}
+      // Constructor  (index is local)
+      explicit EntityData(unsigned int index) : local_index(index) {}
 
-      // Constructor
-      EntityData(unsigned int local_index, const std::vector<unsigned int>& processes)
-        : local_index(local_index), processes(processes) {}
+      // Constructor (index is local)
+      EntityData(unsigned int index, const std::vector<unsigned int>& procs)
+        : local_index(index), processes(procs) {}
 
-      // Constructor
-      EntityData(unsigned int local_index, unsigned int process)
-        : local_index(local_index), processes(1, process) {}
+      // Constructor  (index is local)
+      EntityData(unsigned int index, unsigned int process)
+        : local_index(index), processes(1, process) {}
 
       // Local (this process) entity index
       unsigned int local_index;

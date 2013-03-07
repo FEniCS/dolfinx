@@ -142,7 +142,7 @@ public:
 
   BuildSurface(const std::vector<Point>& vertices,
                const std::vector<std::vector<std::size_t> >& facets)
-             : vertices(vertices), facets(facets)  {}
+             : _vertices(vertices), _facets(facets)  {}
 
   void operator()(HDS& hds)
   {
@@ -150,19 +150,19 @@ public:
     CGAL::Polyhedron_incremental_builder_3<HDS> B(hds, true);
 
     // Initialise polyhedron building
-    B.begin_surface(vertices.size(), facets.size(), 0);
+    B.begin_surface(_vertices.size(), _facets.size(), 0);
 
     typedef typename HDS::Vertex CVertex;
     typedef typename CVertex::Point CPoint;
 
     // Add vertices
     std::vector<Point>::const_iterator p;
-    for (p = vertices.begin(); p != vertices.end(); ++p)
+    for (p = _vertices.begin(); p != _vertices.end(); ++p)
       B.add_vertex(CPoint(p->x(), p->y(), p->z()));
 
     // Add facets
     std::vector<std::vector<std::size_t> >::const_iterator f;
-    for (f = facets.begin(); f != facets.end(); ++f)
+    for (f = _facets.begin(); f != _facets.end(); ++f)
     {
       // Add facet vertices
       B.begin_facet();
@@ -177,8 +177,8 @@ public:
 
 private:
 
-  const std::vector<Point>& vertices;
-  const std::vector<std::vector<std::size_t> >& facets;
+  const std::vector<Point>& _vertices;
+  const std::vector<std::vector<std::size_t> >& _facets;
 
 };
 //-----------------------------------------------------------------------------

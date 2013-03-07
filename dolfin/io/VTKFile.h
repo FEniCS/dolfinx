@@ -101,7 +101,7 @@ namespace dolfin
     void pvtu_write_mesh(pugi::xml_node xml_node) const;
 
     // File encoding
-    const std::string encoding;
+    const std::string _encoding;
     std::string encode_string;
 
     bool binary;

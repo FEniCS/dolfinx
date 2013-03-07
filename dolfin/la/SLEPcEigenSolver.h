@@ -224,8 +224,8 @@ namespace dolfin
     void set_tolerance(double tolerance, std::size_t maxiter);
 
     // Operators (A x = \lambda x or Ax = \lambda B x)
-    boost::shared_ptr<const PETScMatrix> A;
-    boost::shared_ptr<const PETScMatrix> B;
+    boost::shared_ptr<const PETScMatrix> _A;
+    boost::shared_ptr<const PETScMatrix> _B;
 
     // SLEPc solver pointer
     EPS eps;

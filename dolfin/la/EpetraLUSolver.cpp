@@ -111,11 +111,11 @@ EpetraLUSolver::EpetraLUSolver(std::string method)
   parameters = default_parameters();
 
   // Choose method
-  this->method = choose_method(method);
+  _method = choose_method(method);
 
   // Initialize solver
   Amesos factory;
-  solver.reset(factory.Create(this->method, *linear_problem));
+  solver.reset(factory.Create(_method, *linear_problem));
 
   // Check that solver was initialized correctly
   if (!solver)
@@ -123,7 +123,7 @@ EpetraLUSolver::EpetraLUSolver(std::string method)
     dolfin_error("EpetraLUSolver.cpp",
                  "create Epetra LU solver",
                  "Epetra was not able to create linear solver \"%s\"",
-                 this->method.c_str());
+                 _method.c_str());
   }
 }
 //-----------------------------------------------------------------------------
@@ -137,15 +137,15 @@ EpetraLUSolver::EpetraLUSolver(boost::shared_ptr<const GenericLinearOperator> A,
   parameters = default_parameters();
 
   // Set operator
-  this->A = as_type<const EpetraMatrix>(require_matrix(A));
-  dolfin_assert(this->A);
+  _A = as_type<const EpetraMatrix>(require_matrix(A));
+  dolfin_assert(_A);
 
   // Choose method
-  this->method = choose_method(method);
+  _method = choose_method(method);
 
   // Initialize solver
   Amesos factory;
-  solver.reset(factory.Create(this->method, *linear_problem));
+  solver.reset(factory.Create(_method, *linear_problem));
 
   // Check that solver was initialized correctly
   if (!solver)
@@ -153,7 +153,7 @@ EpetraLUSolver::EpetraLUSolver(boost::shared_ptr<const GenericLinearOperator> A,
     dolfin_error("EpetraLUSolver.cpp",
                  "create Epetra LU solver",
                  "Epetra was not able to create linear solver \"%s\"",
-                 this->method.c_str());
+                 _method.c_str());
   }
 }
 //-----------------------------------------------------------------------------
@@ -166,9 +166,9 @@ void EpetraLUSolver::set_operator(const boost::shared_ptr<const GenericLinearOpe
 {
   dolfin_assert(linear_problem);
 
-  this->A = as_type<const EpetraMatrix>(require_matrix(A));
-  dolfin_assert(this->A);
-  linear_problem->SetOperator(this->A->mat().get());
+  _A = as_type<const EpetraMatrix>(require_matrix(A));
+  dolfin_assert(_A);
+  linear_problem->SetOperator(_A->mat().get());
 
   symbolic_factorized = false;
   numeric_factorized  = false;
@@ -176,13 +176,13 @@ void EpetraLUSolver::set_operator(const boost::shared_ptr<const GenericLinearOpe
 //-----------------------------------------------------------------------------
 const GenericLinearOperator& EpetraLUSolver::get_operator() const
 {
-  if (!A)
+  if (!_A)
   {
     dolfin_error("EpetraLUSolver.cpp",
                  "access operator for Epetra LU solver",
                  "Operator has not been set");
   }
-  return *A;
+  return *_A;
 }
 //-----------------------------------------------------------------------------
 std::size_t EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
@@ -193,8 +193,16 @@ std::size_t EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Write a message
   if (parameters["report"] && dolfin::MPI::process_number() == 0)
   {
-    info("Solving linear system of size %d x %d using Epetra LU solver (%s).",
-         A->size(0), A->size(1), method.c_str());
+    if (solver->UseTranspose())
+    {
+      info("Solving linear system transposed of size %d x %d using Epetra LU solver (%s).",
+           _A->size(0), _A->size(1), _method.c_str());
+    }
+    else
+    {
+      info("Solving linear system of size %d x %d using Epetra LU solver (%s).",
+           _A->size(0), _A->size(1), _method.c_str());
+    }
   }
 
   // Downcast vector
@@ -222,7 +230,7 @@ std::size_t EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Initialize solution vector
   if (x.size() != M)
   {
-    this->A->resize(x, 1);
+    _A->resize(x, 1);
     x.zero();
   }
 
@@ -276,9 +284,39 @@ std::size_t EpetraLUSolver::solve(const GenericLinearOperator& A,
 std::size_t EpetraLUSolver::solve(const EpetraMatrix& A, EpetraVector& x,
                                    const EpetraVector& b)
 {
-  boost::shared_ptr<const EpetraMatrix> _A(&A, NoDeleter());
-  set_operator(_A);
+  boost::shared_ptr<const EpetraMatrix> Atmp(&A, NoDeleter());
+  set_operator(Atmp);
   return solve(x, b);
+}
+//-----------------------------------------------------------------------------
+std::size_t EpetraLUSolver::solve_transpose(GenericVector& x, const GenericVector& b)
+{
+  dolfin_assert(solver);
+  solver->SetUseTranspose(true);
+  std::size_t out = solve(x, b);
+  solver->SetUseTranspose(false);
+  return out;
+}
+//-----------------------------------------------------------------------------
+std::size_t EpetraLUSolver::solve_transpose(const GenericLinearOperator& A,
+                                   GenericVector& x,
+                                   const GenericVector& b)
+{
+  dolfin_assert(solver);
+  solver->SetUseTranspose(true);
+  std::size_t out = solve(A, x, b);
+  solver->SetUseTranspose(false);
+  return out;
+}
+//-----------------------------------------------------------------------------
+std::size_t EpetraLUSolver::solve_transpose(const EpetraMatrix& A, EpetraVector& x,
+                                   const EpetraVector& b)
+{
+  dolfin_assert(solver);
+  solver->SetUseTranspose(true);
+  std::size_t out = solve(A, x, b);
+  solver->SetUseTranspose(false);
+  return out;
 }
 //-----------------------------------------------------------------------------
 std::string EpetraLUSolver::str(bool verbose) const

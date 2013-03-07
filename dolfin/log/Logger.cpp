@@ -33,7 +33,6 @@
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-
 #ifdef __linux__
 #include <sys/types.h>
 #include <unistd.h>
@@ -95,9 +94,9 @@ void _monitor_memory_usage(dolfin::Logger* logger)
 #endif
 
 //-----------------------------------------------------------------------------
-Logger::Logger()
-  : active(true), log_level(INFO), indentation_level(0), logstream(&std::cout),
-    num_processes(0), process_number(0), _maximum_memory_usage(-1)
+Logger::Logger() : _active(true), _log_level(INFO), indentation_level(0),
+  logstream(&std::cout), num_processes(0), process_number(0),
+  _maximum_memory_usage(-1)
 {
   // Do nothing
 }
@@ -238,12 +237,12 @@ void Logger::set_output_stream(std::ostream& ostream)
 //-----------------------------------------------------------------------------
 void Logger::set_log_active(bool active)
 {
-  this->active = active;
+  _active = active;
 }
 //-----------------------------------------------------------------------------
 void Logger::set_log_level(int log_level)
 {
-  this->log_level = log_level;
+  _log_level = log_level;
 }
 //-----------------------------------------------------------------------------
 void Logger::register_timing(std::string task, double elapsed_time)
@@ -393,7 +392,7 @@ void Logger::__dolfin_assert(std::string file, unsigned long line,
 void Logger::write(int log_level, std::string msg) const
 {
   // Check log level
-  if (!active || log_level < this->log_level)
+  if (!_active || log_level < _log_level)
     return;
 
   // Get data from MPI (only first time)

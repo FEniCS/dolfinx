@@ -37,25 +37,25 @@ Expression::Expression()
 //-----------------------------------------------------------------------------
 Expression::Expression(std::size_t dim)
 {
-  value_shape.resize(1);
-  value_shape[0] = dim;
+  _value_shape.resize(1);
+  _value_shape[0] = dim;
 }
 //-----------------------------------------------------------------------------
 Expression::Expression(std::size_t dim0, std::size_t dim1)
 {
-  value_shape.resize(2);
-  value_shape[0] = dim0;
-  value_shape[1] = dim1;
+  _value_shape.resize(2);
+  _value_shape[0] = dim0;
+  _value_shape[1] = dim1;
 }
 //-----------------------------------------------------------------------------
 Expression::Expression(std::vector<std::size_t> value_shape)
-  : value_shape(value_shape)
+  : _value_shape(value_shape)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Expression::Expression(const Expression& expression)
-  : value_shape(expression.value_shape)
+  : _value_shape(expression._value_shape)
 {
   // Do nothing
 }
@@ -82,19 +82,19 @@ void Expression::eval(Array<double>& values, const Array<double>& x) const
 //-----------------------------------------------------------------------------
 std::size_t Expression::value_rank() const
 {
-  return value_shape.size();
+  return _value_shape.size();
 }
 //-----------------------------------------------------------------------------
 std::size_t Expression::value_dimension(std::size_t i) const
 {
-  if (i >= value_shape.size())
+  if (i >= _value_shape.size())
   {
     dolfin_error("Expression.cpp",
                  "evaluate expression",
                  "Illegal axis %d for value dimension for value of rank %d",
-                 i, value_shape.size());
+                 i, _value_shape.size());
   }
-  return value_shape[i];
+  return _value_shape[i];
 }
 //-----------------------------------------------------------------------------
 void Expression::restrict(double* w,

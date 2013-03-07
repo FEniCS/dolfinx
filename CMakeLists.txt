@@ -151,13 +151,19 @@ if (DOLFIN_ENABLE_CODE_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
 endif()
 
-# Disable some warnings for Intel compilers
+# Settings for Intel compilers
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd161,488,654,858,1125,1170")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -wd161,488,654,858,1125,1170")
-  set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -wd161,488,654,858,1125,1170")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -wd161,488,654,858,1125,1170")
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -wd161,488,654,858,1125,1170")
+  # Use -isystem incluse flag with Intel compiler
+  set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
+
+  # Stop spurious warnings from older Intel compilers
+  if("${CMAKE_CXX_COMPILER_VERSION}" LESS "13")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd654,1125")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -wd654,1125")
+    set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -wd654,1125")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -wd654,1125")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -wd654,1125")
+  endif()
 endif()
 
 # Set system include flags to get around CMake bug on OSX with gcc
@@ -648,6 +654,16 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-version.in
                ${CMAKE_BINARY_DIR}/dolfin-version @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin-version
+        DESTINATION ${DOLFIN_BIN_DIR}
+	PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+        COMPONENT RuntimeExecutables)
+
+#------------------------------------------------------------------------------
+# Generate and install utility script dolfin-get-demos
+
+configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-get-demos.in
+               ${CMAKE_BINARY_DIR}/dolfin-get-demos @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
         DESTINATION ${DOLFIN_BIN_DIR}
 	PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
         COMPONENT RuntimeExecutables)

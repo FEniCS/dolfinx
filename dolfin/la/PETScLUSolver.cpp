@@ -135,7 +135,7 @@ PETScLUSolver::PETScLUSolver(std::string method)
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver(boost::shared_ptr<const PETScMatrix> A,
-                             std::string method) : A(A)
+                             std::string method) : _A(A)
 {
   // Check dimensions
   if (A->size(0) != A->size(1))
@@ -159,38 +159,43 @@ PETScLUSolver::~PETScLUSolver()
 //-----------------------------------------------------------------------------
 void PETScLUSolver::set_operator(const boost::shared_ptr<const GenericLinearOperator> A)
 {
-  this->A = as_type<const PETScMatrix>(require_matrix(A));
-  dolfin_assert(this->A);
+  _A = as_type<const PETScMatrix>(require_matrix(A));
+  dolfin_assert(_A);
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::set_operator(const boost::shared_ptr<const PETScMatrix> A)
 {
-  this->A = A;
-  dolfin_assert(this->A);
+  _A = A;
+  dolfin_assert(_A);
 }
 //-----------------------------------------------------------------------------
 const GenericLinearOperator& PETScLUSolver::get_operator() const
 {
-  if (!A)
+  if (!_A)
   {
     dolfin_error("PETScLUSolver.cpp",
                  "access operator of PETSc LU solver",
                  "Operator has not been set");
   }
-  return *A;
+  return *_A;
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
+  return solve(x, b, false);
+}
+//-----------------------------------------------------------------------------
+std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b, bool transpose)
+{
   dolfin_assert(_ksp);
-  dolfin_assert(A);
+  dolfin_assert(_A);
 
   // Downcast matrix and vectors
   const PETScVector& _b = as_type<const PETScVector>(b);
   PETScVector& _x = as_type<PETScVector>(x);
 
   // Check dimensions
-  if (A->size(0) != b.size())
+  if (_A->size(0) != b.size())
   {
     dolfin_error("PETScLUSolver.cpp",
                  "solve linear system using PETSc LU solver",
@@ -198,14 +203,14 @@ std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   }
 
   // Initialize solution vector if required (make compatible with A in parallel)
-  if (A->size(1) != x.size())
-    A->resize(x, 1);
+  if (_A->size(1) != x.size())
+    _A->resize(x, 1);
 
   // Set PETSc operators (depends on factorization re-use options);
   set_petsc_operators();
 
   // Write a pre-solve message
-  pre_report(*A);
+  pre_report(*_A);
 
   // Get package used to solve sytem
   PC pc;
@@ -231,7 +236,14 @@ std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   }
 
   // Solve linear system
-  KSPSolve(*_ksp, *_b.vec(), *_x.vec());
+  if (!transpose)
+  {
+    KSPSolve(*_ksp, *_b.vec(), *_x.vec());
+  }
+  else
+  {
+    KSPSolveTranspose(*_ksp, *_b.vec(), *_x.vec());
+  }
 
   return 1;
 }
@@ -248,9 +260,28 @@ std::size_t PETScLUSolver::solve(const GenericLinearOperator& A,
 std::size_t PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
                                   const PETScVector& b)
 {
+  boost::shared_ptr<const PETScMatrix> Atmp(&A, NoDeleter());
+  set_operator(Atmp);
+  return solve(x, b);
+}
+//-----------------------------------------------------------------------------
+std::size_t PETScLUSolver::solve_transpose(GenericVector& x, const GenericVector& b)
+{
+return solve(x, b, true);
+}
+//-----------------------------------------------------------------------------
+std::size_t PETScLUSolver::solve_transpose(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b)
+{
+  return solve_transpose(as_type<const PETScMatrix>(require_matrix(A)),
+               as_type<PETScVector>(x),
+               as_type<const PETScVector>(b));
+}
+//-----------------------------------------------------------------------------
+std::size_t PETScLUSolver::solve_transpose(const PETScMatrix& A, PETScVector& x, const PETScVector& b)
+{
   boost::shared_ptr<const PETScMatrix> _A(&A, NoDeleter());
   set_operator(_A);
-  return solve(x, b);
+  return solve_transpose(x, b);
 }
 //-----------------------------------------------------------------------------
 std::string PETScLUSolver::str(bool verbose) const
@@ -365,7 +396,7 @@ void PETScLUSolver::init_solver(std::string& method)
 //-----------------------------------------------------------------------------
 void PETScLUSolver::set_petsc_operators()
 {
-  dolfin_assert(A->mat());
+  dolfin_assert(_A->mat());
 
   // Get some parameters
   const bool reuse_fact   = parameters["reuse_factorization"];
@@ -373,11 +404,11 @@ void PETScLUSolver::set_petsc_operators()
 
   // Set operators with appropriate preconditioner option
   if (reuse_fact)
-    KSPSetOperators(*_ksp, *A->mat(), *A->mat(), SAME_PRECONDITIONER);
+    KSPSetOperators(*_ksp, *_A->mat(), *_A->mat(), SAME_PRECONDITIONER);
   else if (same_pattern)
-    KSPSetOperators(*_ksp, *A->mat(), *A->mat(), SAME_NONZERO_PATTERN);
+    KSPSetOperators(*_ksp, *_A->mat(), *_A->mat(), SAME_NONZERO_PATTERN);
   else
-    KSPSetOperators(*_ksp, *A->mat(), *A->mat(), DIFFERENT_NONZERO_PATTERN);
+    KSPSetOperators(*_ksp, *_A->mat(), *_A->mat(), DIFFERENT_NONZERO_PATTERN);
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::pre_report(const PETScMatrix& A) const

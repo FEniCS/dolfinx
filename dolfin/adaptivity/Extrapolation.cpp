@@ -218,7 +218,12 @@ void Extrapolation::add_cell_equations(arma::Mat<double>& A,
       const BasisFunction phi(j, *W.element(), c0);
 
       // Evaluate dof on basis function
-      const double dof_value = V.element()->evaluate_dof(i, phi, c1);
+      const int cell_orientation = 0;
+      const double dof_value = V.element()->evaluate_dof(i,
+                                                         phi,
+                                                         &c1.vertex_coordinates[0],
+                                                         cell_orientation,
+                                                         c1);
 
       // Insert dof_value into matrix
       A(row, j) = dof_value;

@@ -84,10 +84,11 @@ namespace dolfin
         cell_shape = ufc::tetrahedron;
         num_vertices = 4;
         break;
-      default:
+      case CellType::point:
         dolfin_error("UFCCell.h",
                      "create UFC cell wrapper",
-                     "Unknown cell type (%d)", cell.type());
+                     "Cannot create UFC wrapper for %d", cell.type());
+        break;
       }
 
       // Mesh
@@ -119,6 +120,9 @@ namespace dolfin
       // Allocate vertex coordinates
       coordinates = new double*[num_vertices];
 
+      // FIXME: Temporary until we remove UFCCell
+      vertex_coordinates.resize(num_vertices*geometric_dimension);
+
       // Update cell data
       update(cell);
     }
@@ -136,6 +140,8 @@ namespace dolfin
 
       delete [] coordinates;
       coordinates = 0;
+
+      vertex_coordinates.clear();
 
       cell_shape = ufc::interval;
       topological_dimension = 0;
@@ -199,6 +205,13 @@ namespace dolfin
       const unsigned int* vertices = cell.entities(0);
       for (std::size_t i = 0; i < num_vertices; i++)
         coordinates[i] = const_cast<double*>(cell.mesh().geometry().x(vertices[i]));
+
+      // FIXME: Temporary until we remove UFCCell
+      const std::size_t gdim = cell.mesh().geometry().dim();
+      dolfin_assert(vertex_coordinates.size() == num_vertices*gdim);
+      for (std::size_t i = 0; i < num_vertices; i++)
+        for (std::size_t j = 0; j < gdim; j++)
+          vertex_coordinates[i*gdim + j] = cell.mesh().geometry().x(vertices[i])[j];
     }
 
   private:

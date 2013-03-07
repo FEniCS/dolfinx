@@ -175,7 +175,6 @@ int main()
     file << partitions;
   }
 
-
   // Write boundary condition facets markers to VTK format
   MeshFunction<std::size_t> facet_markers(mesh, 2, 0);
   left.mark(facet_markers, 1);
@@ -184,14 +183,14 @@ int main()
   facet_file << facet_markers;
 
   // Plot solution
-  //plot(u, "Displacement", "displacement");
+  plot(u, "Displacement", "displacement");
 
   // Displace mesh and plot displaced mesh
-  //mesh.move(u);
-  //plot(mesh, "Deformed mesh");
+  mesh.move(u);
+  plot(mesh, "Deformed mesh");
 
   // Make plot windows interactive
-  //interactive();
+  interactive();
 
  return 0;
 }

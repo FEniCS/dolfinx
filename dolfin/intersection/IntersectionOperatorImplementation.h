@@ -190,7 +190,7 @@ namespace dolfin
           tree->all_intersected_primitives(PrimitiveTraits<TriangleCell,K>::datum(*entity), output_it); break;
         case 3:
           tree->all_intersected_primitives(PrimitiveTraits<TetrahedronCell,K>::datum(*entity), output_it); break;
-      default: dolfin_error("IntersectionOperatorImplementation.h",
+        default: dolfin_error("IntersectionOperatorImplementation.h",
                             "find all intersected entities",
                             "Cannot handle mesh entities of dimension %d. Allowed dimensions are 0, 1, 2, 3", entity->dim());
       }
@@ -222,7 +222,7 @@ namespace dolfin
           for (CellIterator cell(another_mesh); !cell.end(); ++cell)
             tree->all_intersected_primitives(PrimitiveTraits<TetrahedronCell,K>::datum(*cell), output_it);
           break;
-    default: dolfin_error("IntersectionOperatorImplementation.h",
+      default: dolfin_error("IntersectionOperatorImplementation.h",
                           "find all intersected entities",
                           "Cell type of mesh is not known. Allowed cell types are point, interval, triangle and tetrahedron");
     }
@@ -233,7 +233,7 @@ namespace dolfin
   {
     boost::optional<std::size_t> id = tree->any_intersected_primitive(PrimitiveTraits<PointPrimitive,K>::datum(point));
     if (id)
-      return *id;
+      return (int) *id;
     else
       return -1;
   }
