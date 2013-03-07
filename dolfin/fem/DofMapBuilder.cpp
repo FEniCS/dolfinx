@@ -422,15 +422,6 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
   }
   else
   {
-    // Get master-slave vertex map
-    //dolfin_assert(slave_master_entities->find(0) != slave_master_entities->end());
-    //const std::map<unsigned int, std::pair<unsigned int, unsigned int> >&
-    //  slave_to_master_vertices = slave_master_entities->find(0)->second;
-
-    // Compute modified global vertex indices
-    //const std::size_t num_vertices = build_constrained_vertex_indices(mesh,
-    //      slave_to_master_vertices, global_entity_indices[0]);
-
     // Compute number of mesh entities
     for (std::size_t d = 0; d <= D; ++d)
     {
