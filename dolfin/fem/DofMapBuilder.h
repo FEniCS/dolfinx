@@ -75,10 +75,11 @@ namespace dolfin
 
   public:
 
-    /// Build dofmap. The restriction may be a null pointer in which
+    /// Build dofmap. The restriction may be a null pointer, in which
     /// case it is ignored.
     static void build(DofMap& dofmap, const Mesh& dolfin_mesh,
-        boost::shared_ptr<const std::map<unsigned int, std::map<unsigned int, std::pair<unsigned int, unsigned int> > > > slave_master_entities,
+        boost::shared_ptr<const std::map<unsigned int, std::map<unsigned int,
+          std::pair<unsigned int, unsigned int> > > > slave_master_entities,
         boost::shared_ptr<const Restriction> restriction);
 
     /// Build sub-dofmap
@@ -90,9 +91,10 @@ namespace dolfin
   private:
 
     // Build UFC-based dofmap
-    static void build_ufc(DofMap& dofmap, map& restricted_dofs_inverse,
+    static void build_ufc_dofmap(DofMap& dofmap, map& restricted_dofs_inverse,
       const Mesh& mesh,
-      boost::shared_ptr<const std::map<unsigned int, std::map<unsigned int, std::pair<unsigned int, unsigned int> > > > slave_master_entities,
+      boost::shared_ptr<const std::map<unsigned int, std::map<unsigned int,
+        std::pair<unsigned int, unsigned int> > > > slave_master_entities,
       boost::shared_ptr<const Restriction> restriction);
 
     // Build modified global entity indices that account for periodic bcs
@@ -101,35 +103,39 @@ namespace dolfin
         std::vector<std::size_t>& modified_global_indices);
 
     // Re-order local dofmap for dof spatial locality. Re-ordering is
-    // optional, but re-ordering can make other algorithms
-    // (e.g. matrix-vector products) significantly faster.
-    static void reorder_local(DofMap& dofmap, const Mesh& mesh);
+    // optional, but re-ordering can make other algorithms (e.g.,
+    // matrix-vector products) significantly faster.
+    static void reorder_local(DofMap& dofmap, const Mesh& mesh,
+                              std::size_t block_size);
 
     // Re-order distributed dof map for process locality
     static void reorder_distributed(DofMap& dofmap,
                                    const Mesh& mesh,
                                    boost::shared_ptr<const Restriction> restriction,
-                                   const map& restricted_dofs_inverse);
+                                   const map& restricted_dofs_inverse,
+                                   std::size_t block_size);
 
-    // Compute which process 'owns' each degree of freedom
-    //   dof_ownership[0] -> all dofs owned by this process (will intersect dof_ownership[1])
-    //   dof_ownership[1] -> dofs shared with other processes and owned by this process
-    //   dof_ownership[2] -> dofs shared with other processes and owned by another process
-    static void compute_dof_ownership(boost::array<set, 3>& dof_ownership,
-                                  vec_map& shared_dof_processes,
+    // Compute which process 'owns' each node (point at which dofs live)
+    //   node_ownership[0] -> all dofs owned by this process (will intersect dof_ownership[1])
+    //   node_ownership[1] -> dofs shared with other processes and owned by this process
+    //   node_ownership[2] -> dofs shared with other processes and owned by another process
+    static void compute_node_ownership(boost::array<set, 3>& node_ownership,
+                                  vec_map& shared_node_processes,
                                   DofMap& dofmap,
                                   const DofMapBuilder::set& global_dofs,
                                   const Mesh& mesh,
                                   boost::shared_ptr<const Restriction> restriction,
-                                  const map& restricted_dofs_inverse);
+                                  const map& restricted_dofs_inverse,
+                                  std::size_t block_size);
 
     // Re-order distributed dofmap for process locality based on ownership data
-    static void parallel_renumber(const boost::array<set, 3>& dof_ownership,
-                                  const vec_map& shared_dof_processes,
+    static void parallel_renumber(const boost::array<set, 3>& node_ownership,
+                                  const vec_map& shared_node_processes,
                                   DofMap& dofmap,
                                   const Mesh& mesh,
                                   boost::shared_ptr<const Restriction> restriction,
-                                  const map& restricted_dofs_inverse);
+                                  const map& restricted_dofs_inverse,
+                                  std::size_t block_size);
 
     // Compute set of global dofs (e.g. Reals associated with global
     // Lagrange multipliers) based on UFC numbering. Global dofs
