@@ -20,7 +20,7 @@
 // Modified by Ola Skavhaug 2009
 //
 // First added:  2002-11-12
-// Last changed: 2012-12-01
+// Last changed: 2013-03-08
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -125,6 +125,19 @@ namespace dolfin
     ///         file << std::make_pair<const Function*, double>(&u, t);
     ///
     void operator<<(const std::pair<const Function*, double> u);
+
+    /// Write MeshFunction to file with time
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         File file("markers.pvd", "compressed");
+    ///         file << std::make_pair<const MeshFunction<typename T>*, double>(&f, t);
+    ///
+    void operator<<(const std::pair<const MeshFunction<int>*, double> f);
+    void operator<<(const std::pair<const MeshFunction<std::size_t>*, double> f);
+    void operator<<(const std::pair<const MeshFunction<double>*, double> f);
+    void operator<<(const std::pair<const MeshFunction<bool>*, double> f);
 
     /// Write object to file
     template<typename T> void operator<<(const T& t)

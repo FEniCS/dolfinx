@@ -22,7 +22,7 @@
 // Modified by Johannes Ring 2012
 //
 // First added:  2005-07-05
-// Last changed: 2012-09-14
+// Last changed: 2013-03-08
 
 #include <ostream>
 #include <sstream>
@@ -120,22 +120,22 @@ void VTKFile::operator<<(const Mesh& mesh)
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const MeshFunction<bool>& meshfunction)
 {
-  mesh_function_write(meshfunction);
+  mesh_function_write(meshfunction, counter);
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const MeshFunction<std::size_t>& meshfunction)
 {
-  mesh_function_write(meshfunction);
+  mesh_function_write(meshfunction, counter);
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const MeshFunction<int>& meshfunction)
 {
-  mesh_function_write(meshfunction);
+  mesh_function_write(meshfunction, counter);
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const MeshFunction<double>& meshfunction)
 {
-  mesh_function_write(meshfunction);
+  mesh_function_write(meshfunction, counter);
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const Function& u)
@@ -149,6 +149,30 @@ void VTKFile::operator<<(const std::pair<const Function*, double> u)
   dolfin_assert(u.first);
   u.first->update();
   write_function(*(u.first), u.second);
+}
+//----------------------------------------------------------------------------
+void VTKFile::operator<<(const std::pair<const MeshFunction<int>*, double> f)
+{
+  dolfin_assert(f.first);
+  mesh_function_write(*(f.first), f.second);
+}
+//----------------------------------------------------------------------------
+void VTKFile::operator<<(const std::pair<const MeshFunction<std::size_t>*, double> f)
+{
+  dolfin_assert(f.first);
+  mesh_function_write(*(f.first), f.second);
+}
+//----------------------------------------------------------------------------
+void VTKFile::operator<<(const std::pair<const MeshFunction<double>*, double> f)
+{
+  dolfin_assert(f.first);
+  mesh_function_write(*(f.first), f.second);
+}
+//----------------------------------------------------------------------------
+void VTKFile::operator<<(const std::pair<const MeshFunction<bool>*, double> f)
+{
+  dolfin_assert(f.first);
+  mesh_function_write(*(f.first), f.second);
 }
 //----------------------------------------------------------------------------
 void VTKFile::write_function(const Function& u, double time)
@@ -651,7 +675,7 @@ std::string VTKFile::vtu_name(const int process, const int num_processes,
 }
 //----------------------------------------------------------------------------
 template<typename T>
-void VTKFile::mesh_function_write(T& meshfunction)
+void VTKFile::mesh_function_write(T& meshfunction, double time)
 {
   const Mesh& mesh = meshfunction.mesh();
   const std::size_t cell_dim = meshfunction.dim();
@@ -691,13 +715,13 @@ void VTKFile::mesh_function_write(T& meshfunction)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
     pvtu_write_function(1, 0, "cell", meshfunction.name(), pvtu_filename);
-    pvd_file_write(counter, counter, pvtu_filename);
+    pvd_file_write(counter, time, pvtu_filename);
   }
   else if (MPI::num_processes() == 1)
-    pvd_file_write(counter, counter, vtu_filename);
+    pvd_file_write(counter, time, vtu_filename);
 
   // Write pvd files
-  finalize(vtu_filename, counter);
+  finalize(vtu_filename, time);
 
   log(TRACE, "Saved mesh function %s (%s) to file %s in VTK format.",
       mesh.name().c_str(), mesh.label().c_str(), _filename.c_str());

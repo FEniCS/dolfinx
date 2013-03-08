@@ -21,7 +21,7 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2013-03-04
+// Last changed: 2013-03-08
 
 #include <fstream>
 #include <string>
@@ -141,6 +141,30 @@ void File::operator<<(const std::pair<const Function*, double> u)
   u.first->update();
   file->write();
   *file << u;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(const std::pair<const MeshFunction<int>*, double> f)
+{
+  file->write();
+  *file << f;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(const std::pair<const MeshFunction<std::size_t>*, double> f)
+{
+  file->write();
+  *file << f;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(const std::pair<const MeshFunction<double>*, double> f)
+{
+  file->write();
+  *file << f;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(const std::pair<const MeshFunction<bool>*, double> f)
+{
+  file->write();
+  *file << f;
 }
 //-----------------------------------------------------------------------------
 bool File::exists(std::string filename)

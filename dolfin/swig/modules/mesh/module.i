@@ -38,6 +38,9 @@
 #include "dolfin/parameter/Parameter.h"
 #include "dolfin/parameter/Parameters.h"
 
+// #include types from la submodule of module la
+#include "dolfin/la/LinearAlgebraObject.h"
+
 // #include types from function submodule of module function
 #include "dolfin/function/GenericFunction.h"
 #include "dolfin/function/Expression.h"
@@ -159,6 +162,10 @@ import_array();
 %include "dolfin/swig/parameter/pre.i"
 %import(module="common") "dolfin/parameter/Parameter.h"
 %import(module="common") "dolfin/parameter/Parameters.h"
+
+// %import types from submodule la of SWIG module la
+%include "dolfin/swig/la/pre.i"
+%import(module="la") "dolfin/la/LinearAlgebraObject.h"
 
 // %import types from submodule function of SWIG module function
 %include "dolfin/swig/function/pre.i"

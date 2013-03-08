@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-01-25
-// Last changed: 2011-01-25
+// Last changed: 2013-03-08
 
 //-----------------------------------------------------------------------------
 // User macro for defining in typmaps for std::pair of a pointer to some
@@ -119,6 +119,11 @@ IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE,const,const)
 // Run the different macros and instantiate the typemaps
 //-----------------------------------------------------------------------------
 IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(Function)
+IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunction)
+IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunctionInt)
+IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunctionSizet)
+IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunctionDouble)
+IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunctionBool)
 
 //-----------------------------------------------------------------------------
 // In typemap for std::pair<TYPE,TYPE>
