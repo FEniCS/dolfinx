@@ -258,7 +258,7 @@ void DofMap::tabulate_entity_dofs(std::vector<std::size_t>& dofs,
   dolfin_assert(_ufc_dofmap);
   if (_ufc_dofmap->num_entity_dofs(dim)==0)
     return ;
-  
+
   dofs.resize(_ufc_dofmap->num_entity_dofs(dim));
   _ufc_dofmap->tabulate_entity_dofs(&dofs[0], dim, local_entity);
 }
