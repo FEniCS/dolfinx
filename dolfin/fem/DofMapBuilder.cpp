@@ -982,11 +982,13 @@ void DofMapBuilder::parallel_renumber(const boost::array<set, 3>& node_ownership
         // Store map from off-process dof to owner
         for (std::size_t i = 0; i < block_size; ++i)
         {
-          dofmap._off_process_owner[received_new_node_index*block_size + i] = src;
+          const std::size_t new_dof_index = received_new_node_index*block_size + i;
+          dofmap._off_process_owner[new_dof_index] = src;
 
           // Update UFC-to-renumbered map
+          //const std::size_t old_dof_index = received_new_node_index*block_size + i;
           dofmap.ufc_map_to_dofmap[received_old_node_index*block_size + i]
-            = received_new_node_index;
+            = new_dof_index;
         }
         //dofmap._off_process_owner[received_new_node_index] = src;
 
