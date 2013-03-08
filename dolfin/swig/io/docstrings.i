@@ -150,7 +150,7 @@ Constructor
 
 * operator<<\ (u)
 
-  Save a Function to XDMF/HDF files for visualisation.
+  Save a Function to XDMF/HDF5 files for visualisation.
 
 * operator<<\ (Function*, ut)
 
@@ -159,6 +159,18 @@ Constructor
 * operator<<\ (meshfunction)
 
   Save MeshFunction to file
+";
+
+%feature("docstring")  dolfin::XDMFFile::operator>> "
+**Overloaded versions**
+
+* operator>>\ (mesh)
+
+  Read in a mesh from the associated HDF5 file
+
+* operator>>\ (meshfunction)
+
+  Read first MeshFunction from file
 ";
 
 // Documentation extracted from: (module=io, header=HDF5File.h)
@@ -176,26 +188,27 @@ Constructor. file_mode should \"a\" (append), \"w\" (write) ot \"r\"
 
 * write\ (mesh, name)
 
-  Write Mesh to file
+  Write Mesh to file in a format suitable for re-reading
 
 * write\ (mesh, cell_dim, name)
 
-  Write Mesh of given cell dimension to file in a format suitable
-  for re-reading
-";
+  Write Mesh of given cell dimension to file
+  in a format suitable for re-reading
 
-%feature("docstring")  dolfin::HDF5File::write_visualisation "
-**Overloaded versions**
+* write\ (meshfunction, name)
 
-* write_visualisation\ (mesh, name)
+  Write MeshFunction to file
+  in a format suitable for re-reading
 
-  Write Mesh to file for visualisation (may contain duplicate
-  entities and will not preserve global indices)
+* write\ (meshfunction, name)
 
-* write_visualisation\ (mesh, cell_dim, name)
+  Write MeshFunction to file
+  in a format suitable for re-reading
 
-  Write Mesh of given cell dimension to file for visualisation (may
-  contain duplicate entities and will not preserve global indices)
+* write\ (meshfunction, name)
+
+  Write MeshFunction to file
+  in a format suitable for re-reading
 ";
 
 %feature("docstring")  dolfin::HDF5File::read "
@@ -208,6 +221,18 @@ Constructor. file_mode should \"a\" (append), \"w\" (write) ot \"r\"
 * read\ (mesh, name)
 
   Read Mesh from file
+
+* read\ (meshfunction, name)
+
+  Read MeshFunction from file
+
+* read\ (meshfunction, name)
+
+  Read MeshFunction from file
+
+* read\ (meshfunction, name)
+
+  Read MeshFunction from file
 ";
 
 %feature("docstring")  dolfin::HDF5File::has_dataset "

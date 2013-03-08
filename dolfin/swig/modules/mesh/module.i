@@ -137,6 +137,7 @@
 
 // #include types from ale submodule
 #include "dolfin/ale/ALE.h"
+#include "dolfin/ale/MeshDisplacement.h"
 
 // NumPy includes
 #define PY_ARRAY_UNIQUE_SYMBOL PyDOLFIN_MESH
@@ -275,5 +276,7 @@ import_array();
 %include "dolfin/swig/graph/post.i"
 
 // %include types from submodule ale
+%include "dolfin/swig/ale/pre.i"
 %include "dolfin/ale/ALE.h"
+%include "dolfin/ale/MeshDisplacement.h"
 

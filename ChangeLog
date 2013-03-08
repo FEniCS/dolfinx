@@ -1,5 +1,7 @@
  - Feature: Add RKSolver and ButcherScheme for general time integral solvers
  - Feature: Add support for assigning a Function with linear combinations of Functions, which lives in the same FunctionSpace
+ - Add utility script dolfin-get-demos
+ - MeshFunctions in python now support iterable protocol
  - Expose ufc::dofmap::tabulate_entity_dofs to GenericDofMap interface
  - Expose ufc::dofmap::num_entity_dofs to GenericDofMap interface
  - Allow setting of row dof coordinates in preconditioners (only works with PETSc backed for now)

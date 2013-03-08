@@ -117,11 +117,11 @@ del _subdomain_mark_doc_string
 // Extend MeshFunction interface for get and set items
 %extend dolfin::MeshFunction<TYPE>
 {
-  TYPE __getitem__(std::size_t i) { return (*self)[i]; }
-  void __setitem__(std::size_t i, TYPE val) { (*self)[i] = val; }
+  TYPE _getitem(std::size_t i) { return (*self)[i]; }
+  void _setitem(std::size_t i, TYPE val) { (*self)[i] = val; }
 
-  TYPE __getitem__(dolfin::MeshEntity& e) { return (*self)[e]; }
-  void __setitem__(dolfin::MeshEntity& e, TYPE val) { (*self)[e] = val; }
+  TYPE _getitem(dolfin::MeshEntity& e) { return (*self)[e]; }
+  void _setitem(dolfin::MeshEntity& e, TYPE val) { (*self)[e] = val; }
 
 %pythoncode%{
 def array(self):
@@ -132,6 +132,22 @@ def array(self):
     _attach_base_to_numpy_array(data, self)
     return data
 
+def __getitem__(self, index):
+    try:
+        return self._getitem(index)
+    except:
+        index = index.index() if isinstance(index, Cell) else index
+        raise IndexError("Index %d out of bound" % index)
+
+def __setitem__(self, index, value):
+    try:
+        self._setitem(index, value)
+    except RuntimeError:
+        index = index.index() if isinstance(index, Cell) else index
+        raise IndexError("Index %d out of bound" % index)
+
+def __len__(self):
+    return self.size()
 %}
 }
 

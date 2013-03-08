@@ -356,24 +356,54 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
 //-----------------------------------------------------------------------------
 void DofMapBuilder::reorder_local(DofMap& dofmap, const Mesh& mesh)
 {
-  // Build local graph
-  const Graph graph = GraphBuilder::local_graph(mesh, dofmap, dofmap);
+  // Global dimension
+  const std::size_t N = dofmap.global_dimension();
 
-  // Reorder graph (reverse Cuthill-McKee)
-  const std::vector<std::size_t> dof_remap
+  // Assume unit block size
+  std::size_t block_size = 1;
+
+  // Simple method to determine block size
+  dolfin_assert(dofmap._ufc_dofmap);
+  if (dofmap._ufc_dofmap->num_sub_dofmaps() > 0)
+  {
+    if (dofmap._ufc_dofmap->max_local_dimension() % dofmap._ufc_dofmap->num_sub_dofmaps() == 0
+          && N % dofmap._ufc_dofmap->num_sub_dofmaps() == 0)
+    {
+      block_size = dofmap._ufc_dofmap->num_sub_dofmaps();
+    }
+  }
+
+  // Create empty graph
+  const std::size_t num_blocks = N/block_size;
+  Graph graph(num_blocks);
+
+  // Build local graph for blocks
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    const std::vector<dolfin::la_index>& dofs0 = dofmap.cell_dofs(cell->index());
+    const std::vector<dolfin::la_index>& dofs1 = dofmap.cell_dofs(cell->index());
+    std::vector<dolfin::la_index>::const_iterator node0, node1;
+    for (node0 = dofs0.begin(); node0 != dofs0.end(); node0 += block_size)
+      for (node1 = dofs1.begin(); node1 != dofs1.end(); node1 += block_size)
+        if (*node0 != *node1)
+          graph[*node0/block_size].insert(*node1/block_size);
+  }
+
+  // Reorder block graph (reverse Cuthill-McKee)
+  const std::vector<std::size_t> block_remap
     = BoostGraphOrdering::compute_cuthill_mckee(graph, true);
-
-  // Store re-ordering map (from UFC dofmap)
-  dolfin_assert(dofmap.ufc_map_to_dofmap.empty());
-  for (std::size_t i = 0; i < dofmap.global_dimension(); ++i)
-    dofmap.ufc_map_to_dofmap[i] = dof_remap[i];
 
   // Re-number dofs for each cell
   std::vector<std::vector<dolfin::la_index> >::iterator cell_map;
   std::vector<dolfin::la_index>::iterator dof;
   for (cell_map = dofmap._dofmap.begin(); cell_map != dofmap._dofmap.end(); ++cell_map)
     for (dof = cell_map->begin(); dof != cell_map->end(); ++dof)
-      *dof = dof_remap[*dof];
+      *dof = block_remap[*dof/block_size]*block_size + (*dof % block_size);
+
+  // Store re-ordering map (from UFC dofmap)
+  dolfin_assert(dofmap.ufc_map_to_dofmap.empty());
+  for (std::size_t i = 0; i < dofmap.global_dimension(); ++i)
+    dofmap.ufc_map_to_dofmap[i] = block_remap[i/block_size]*block_size + (i % block_size);
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::build_ufc(DofMap& dofmap,
@@ -422,18 +452,8 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
   }
   else
   {
-    // Get master-slave vertex map
-    dolfin_assert(slave_master_entities->find(0) != slave_master_entities->end());
-    const std::map<unsigned int, std::pair<unsigned int, unsigned int> >&
-      slave_to_master_vertices = slave_master_entities->find(0)->second;
-
-    // Compute modified global vertex indices
-    const std::size_t num_vertices = build_constrained_vertex_indices(mesh,
-          slave_to_master_vertices, global_entity_indices[0]);
-
     // Compute number of mesh entities
-    dofmap.num_global_mesh_entities[0] = num_vertices;
-    for (std::size_t d = 1; d <= D; ++d)
+    for (std::size_t d = 0; d <= D; ++d)
     {
       if (dofmap._ufc_dofmap->needs_mesh_entities(d))
       {
@@ -442,14 +462,23 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
         const std::map<unsigned int, std::pair<unsigned int, unsigned int> >&
           slave_to_master_entities = slave_master_entities->find(d)->second;
 
-        // Initialise local entities
-        std::map<unsigned int, std::set<unsigned int> > shared_entities;
-        const std::size_t num_entities
-          = DistributedMeshTools::number_entities(mesh, slave_to_master_entities,
-                                                  global_entity_indices[d],
-                                                  shared_entities, d);
-
-        dofmap.num_global_mesh_entities[d] = num_entities;
+        if (d == 0)
+        {
+          // Compute modified global vertex indices
+          const std::size_t num_vertices = build_constrained_vertex_indices(mesh,
+                slave_to_master_entities, global_entity_indices[0]);
+          dofmap.num_global_mesh_entities[0] = num_vertices;
+        }
+        else
+        {
+          // Get number of entities
+          std::map<unsigned int, std::set<unsigned int> > shared_entities;
+          const std::size_t num_entities
+            = DistributedMeshTools::number_entities(mesh, slave_to_master_entities,
+                                                    global_entity_indices[d],
+                                                    shared_entities, d);
+          dofmap.num_global_mesh_entities[d] = num_entities;
+        }
       }
     }
   }

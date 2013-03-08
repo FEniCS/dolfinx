@@ -23,7 +23,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2007-11-25
-// Last changed: 2012-11-12
+// Last changed: 2013-03-06
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -69,6 +69,9 @@
 %shared_ptr(dolfin::GoalFunctional)
 %shared_ptr(dolfin::SpecialFacetFunction)
 %shared_ptr(dolfin::TimeSeries)
+
+// ale
+%shared_ptr(dolfin::MeshDisplacement)
 
 // common
 %shared_ptr(dolfin::Variable)

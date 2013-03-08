@@ -21,7 +21,7 @@
 import sys
 from dolfin_utils.commands import getstatusoutput
 
-tests = ["assembly_derivatives.py", "form_operations"]
+tests = ["assembly_derivatives.py", "form_operations.py"]
 
 failed = []
 for test in tests:

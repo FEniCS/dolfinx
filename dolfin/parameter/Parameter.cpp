@@ -524,7 +524,8 @@ const StringParameter& StringParameter::operator= (std::string value)
   if (!_range.empty() && _range.find(value) == _range.end())
   {
     std::stringstream s;
-    s << "Illegal value for parameter. Allowed values are: " << range_str();
+    s << "Illegal value for parameter \"" << _key << "\". "
+      << "Allowed values are: " << range_str();
     dolfin_error("Parameter.cpp",
                  "assign parameter value",
                  s.str());
@@ -546,7 +547,8 @@ const StringParameter& StringParameter::operator= (const char* value)
   if (!_range.empty() && _range.find(s) == _range.end())
   {
     std::stringstream stream;
-    stream << "Illegal value for parameter. Allowed values are: " << range_str();
+    stream << "Illegal value for parameter \"" << _key << "\". "
+	   << "Allowed values are: " << range_str();
     dolfin_error("Parameter.cpp",
                  "assign parameter value",
                  stream.str());
