@@ -460,7 +460,6 @@ namespace dolfin
     // Map from slave to master mesh entities
     boost::shared_ptr<std::map<unsigned int, std::map<unsigned int, std::pair<unsigned int, unsigned int> > > >
       slave_master_mesh_entities;
-
   };
 }
 
