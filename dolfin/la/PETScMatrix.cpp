@@ -153,7 +153,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
       MatSetType(*_A, MATSEQAIJCUSP);
     #endif
 
-    MatSetBlockSize(*_A, 3);
+    //MatSetBlockSize(*_A, 3);
     // FIXME: Change to MatSeqAIJSetPreallicationCSR for improved performance?
 
     // Allocate space (using data from sparsity pattern)
