@@ -74,26 +74,16 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   const bool distributed = MPI::num_processes() > 1;
 
   // Simple method to determine block size
-  std::size_t block_size = 1;
-  const std::size_t N = dofmap.global_dimension();
   dolfin_assert(dofmap._ufc_dofmap);
-  if (dofmap._ufc_dofmap->num_sub_dofmaps() > 0)
-  {
-    if (dofmap._ufc_dofmap->max_local_dimension() % dofmap._ufc_dofmap->num_sub_dofmaps() == 0
-          && N % dofmap._ufc_dofmap->num_sub_dofmaps() == 0)
-    {
-      block_size = dofmap._ufc_dofmap->num_sub_dofmaps();
-    }
-  }
+  const std::size_t block_size = compute_blocksize(*dofmap._ufc_dofmap);
+  std::cout << "***** block size: " << block_size << std::endl;
 
   // Re-order dofmap when distributed for process locality and set
   // local_range
   if (distributed)
   {
-    if (distributed)
-    {
-      reorder_distributed(dofmap, mesh, restriction, restricted_dofs_inverse, 3);
-    }
+    reorder_distributed(dofmap, mesh, restriction, restricted_dofs_inverse,
+                        block_size);
   }
   else
   {
@@ -399,13 +389,6 @@ void DofMapBuilder::reorder_local(DofMap& dofmap, const Mesh& mesh,
       for (std::size_t j = 0; j < nodes_per_cell; ++j)
         if (dofs0[i] != dofs1[j])
           graph[dofs0[i] % num_nodes].insert(dofs1[j] % num_nodes);
-
-    /*
-    for (node0 = dofs0.begin(); node0 != dofs0.end(); node0 += block_size)
-      for (node1 = dofs1.begin(); node1 != dofs1.end(); node1 += block_size)
-        if (*node0 != *node1)
-          graph[*node0/block_size].insert(*node1/block_size);
-    */
   }
 
   // Reorder block graph (reverse Cuthill-McKee)
@@ -686,6 +669,9 @@ void DofMapBuilder::compute_node_ownership(boost::array<set, 3>& node_ownership,
       dofmap.tabulate_facet_dofs(facet_dofs, c.index(f));
 
       // Insert shared nodes into set and assign a 'vote'
+      //cout << "Testing: " << dofmap.num_facet_dofs() << ", " << block_size << endl;
+      if (dofmap.num_facet_dofs() % block_size != 0)
+        std::cout << "Oops: " << dofmap.num_facet_dofs() << ", " <<  block_size << std::endl;
       dolfin_assert(dofmap.num_facet_dofs() % block_size == 0);
       for (std::size_t i = 0; i < dofmap.num_facet_dofs(); ++i)
       {
@@ -819,7 +805,6 @@ void DofMapBuilder::compute_node_ownership(boost::array<set, 3>& node_ownership,
   else
   {
     const std::size_t _owned_dim = owned_nodes.size();
-    cout << "Owned dim: " << block_size*MPI::sum(_owned_dim) << ", " << dofmap.global_dimension() << endl;
     dolfin_assert(block_size*MPI::sum(_owned_dim) == dofmap.global_dimension());
   }
 
@@ -1051,14 +1036,12 @@ void DofMapBuilder::parallel_renumber(const boost::array<set, 3>& node_ownership
       //std::size_t old_node = old_dofmap[cell_index][i] % num_nodes;
 
       // Map back to original (and common) numbering for restricted space
-      /*
-      if (restriction)
-      {
-        const map_iterator it = restricted_nodes_inverse.find(old_index);
-        dolfin_assert(it != restricted_nodes_inverse.end());
-        old_index = it->second;
-      }
-      */
+      //if (restriction)
+      //{
+      //  const map_iterator it = restricted_nodes_inverse.find(old_index);
+      //  dolfin_assert(it != restricted_nodes_inverse.end());
+      //  old_index = it->second;
+      //}
 
       // Insert dof
       //new_dofmap[cell_index][i] = old_to_new_node_index[old_index];
@@ -1220,5 +1203,47 @@ boost::shared_ptr<ufc::dofmap>
 
     return sub_sub_dofmap;
   }
+}
+//-----------------------------------------------------------------------------
+std::size_t DofMapBuilder::compute_blocksize(const ufc::dofmap& ufc_dofmap)
+{
+  bool has_block_structure = false;
+  if (ufc_dofmap.num_sub_dofmaps() > 1)
+  {
+    // Create UFC first sub-dofmap
+    boost::scoped_ptr<ufc::dofmap> ufc_sub_dofmap0(ufc_dofmap.create_sub_dofmap(0));
+    dolfin_assert(ufc_sub_dofmap0);
+
+    // Create UFC sub-dofmaps and check that all sub dofmaps have the
+    // same number of dofs per entity
+    if (ufc_sub_dofmap0->num_sub_dofmaps() != 0)
+      has_block_structure = false;
+    else
+    {
+      // Assume dof map has block structure, then check
+      has_block_structure = true;
+
+      // Create UFC sub-dofmaps and check that all sub dofmaps have the
+      // same number of dofs per entity
+      for (std::size_t i = 1; i < ufc_dofmap.num_sub_dofmaps(); ++i)
+      {
+        boost::scoped_ptr<ufc::dofmap> ufc_sub_dofmap(ufc_dofmap.create_sub_dofmap(i));
+        dolfin_assert(ufc_sub_dofmap);
+        for (std::size_t d = 0; d <= ufc_dofmap.topological_dimension(); ++d)
+        {
+          if (ufc_sub_dofmap->num_entity_dofs(d) != ufc_sub_dofmap->num_entity_dofs(d))
+          {
+            has_block_structure = false;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  if (has_block_structure)
+    return ufc_dofmap.num_sub_dofmaps();
+  else
+    return 1;
 }
 //-----------------------------------------------------------------------------

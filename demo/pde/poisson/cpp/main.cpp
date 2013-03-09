@@ -68,7 +68,7 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   // Create mesh and function space
-  UnitSquareMesh mesh(6, 6);
+  UnitSquareMesh mesh(32, 32);
   Poisson::FunctionSpace V(mesh);
 
   // Define boundary condition

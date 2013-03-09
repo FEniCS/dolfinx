@@ -435,6 +435,13 @@ void PETScMatrix::apply(std::string mode)
                  "apply changes to PETSc matrix",
                  "Unknown apply mode \"%s\"", mode.c_str());
   }
+
+  PetscInt nodes = 0;
+  Mat Adiag;
+  MatGetDiagonalBlock(*_A, &Adiag);
+  MatInodeGetInodeSizes(Adiag, &nodes, PETSC_NULL, PETSC_NULL);
+  cout << "***** Inode count: " << 3*MPI::sum(nodes) << endl;
+  cout << "***** Range: " << local_range(0).first << ", " << local_range(0).second << endl;
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero()

@@ -155,6 +155,9 @@ namespace dolfin
                                const std::vector<std::size_t>& component,
                                const std::vector<std::size_t>& num_global_mesh_entities);
 
+    // Compute block size, e.g. in 3D elasticity block_size = 3
+    static std::size_t compute_blocksize(const ufc::dofmap& ufc_dofmap);
+
   };
 }
 
