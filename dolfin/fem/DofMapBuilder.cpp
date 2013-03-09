@@ -1231,7 +1231,7 @@ std::size_t DofMapBuilder::compute_blocksize(const ufc::dofmap& ufc_dofmap)
         dolfin_assert(ufc_sub_dofmap);
         for (std::size_t d = 0; d <= ufc_dofmap.topological_dimension(); ++d)
         {
-          if (ufc_sub_dofmap->num_entity_dofs(d) != ufc_sub_dofmap->num_entity_dofs(d))
+          if (ufc_sub_dofmap->num_entity_dofs(d) != ufc_sub_dofmap0->num_entity_dofs(d))
           {
             has_block_structure = false;
             break;

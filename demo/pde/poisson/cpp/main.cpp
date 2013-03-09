@@ -80,13 +80,6 @@ int main()
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
 
-  Matrix A;
-  assemble(A, a);
-  info(A, true);
-
-  return 0;
-
-
   Source f;
   dUdN g;
   L.f = f;
