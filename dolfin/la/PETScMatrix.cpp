@@ -207,6 +207,8 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     // Set matrix type
     MatSetType(*_A, MATMPIAIJ);
 
+    //MatSetBlockSize(*_A, 3);
+
     // Allocate space (using data from sparsity pattern)
     const std::vector<PetscInt> _num_nonzeros_diagonal(num_nonzeros_diagonal.begin(),
                                                        num_nonzeros_diagonal.end());
@@ -436,12 +438,15 @@ void PETScMatrix::apply(std::string mode)
                  "Unknown apply mode \"%s\"", mode.c_str());
   }
 
+  /*
   PetscInt nodes = 0;
   Mat Adiag;
   MatGetDiagonalBlock(*_A, &Adiag);
   MatInodeGetInodeSizes(Adiag, &nodes, PETSC_NULL, PETSC_NULL);
-  cout << "***** Inode count: " << 3*MPI::sum(nodes) << endl;
-  cout << "***** Range: " << local_range(0).first << ", " << local_range(0).second << endl;
+  PetscInt m(0), n(0);
+  MatGetSize(Adiag, &m, &n);
+  cout << "***** Inode count: " << MPI::sum(nodes) << ", " << m << ", " << n << endl;
+  */
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero()

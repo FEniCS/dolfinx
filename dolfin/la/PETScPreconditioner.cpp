@@ -482,17 +482,6 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
     PetscOptionsSetValue("-mg_coarse_pc_factor_mat_solver_package", "mumps");
     #endif
 
-    //PetscOptionsSetValue("mg_levels_ksp_chebyshev_estimate_eigenvalues",
-    //                      "0.1,1.1");
-
-    //PetscOptionsSetValue("-pc_gamg_eigtarget",
-    //                      "0.1,1.1");
-
-    // Smoother
-    //PetscOptionsSetValue("-mg_levels_ksp_max_it",
-    //                      boost::lexical_cast<std::string>(4).c_str());
-    //PetscOptionsSetValue("-mg_levels_pc_type", "jacobi");
-
     // Output level
     if (parameters("gamg")["verbose"].is_set())
     {
@@ -537,7 +526,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
     // -------- AMG options
 
     PetscOptionsSetValue("-mg_levels_ksp_max_it",
-                          boost::lexical_cast<std::string>(2).c_str());
+                          boost::lexical_cast<std::string>(4).c_str());
     PetscOptionsSetValue("-mg_levels_pc_type", "jacobi");
 
     // Threshold parameters used in aggregation

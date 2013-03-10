@@ -44,6 +44,8 @@
 #include "UFCCell.h"
 #include "DofMapBuilder.h"
 
+#include <dolfin/common/utils.h>
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -73,10 +75,9 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   // Check if dofmap is distributed
   const bool distributed = MPI::num_processes() > 1;
 
-  // Simple method to determine block size
+  // Determine dof block size
   dolfin_assert(dofmap._ufc_dofmap);
   const std::size_t block_size = compute_blocksize(*dofmap._ufc_dofmap);
-  std::cout << "***** block size: " << block_size << std::endl;
 
   // Re-order dofmap when distributed for process locality and set
   // local_range
@@ -669,9 +670,6 @@ void DofMapBuilder::compute_node_ownership(boost::array<set, 3>& node_ownership,
       dofmap.tabulate_facet_dofs(facet_dofs, c.index(f));
 
       // Insert shared nodes into set and assign a 'vote'
-      //cout << "Testing: " << dofmap.num_facet_dofs() << ", " << block_size << endl;
-      if (dofmap.num_facet_dofs() % block_size != 0)
-        std::cout << "Oops: " << dofmap.num_facet_dofs() << ", " <<  block_size << std::endl;
       dolfin_assert(dofmap.num_facet_dofs() % block_size == 0);
       for (std::size_t i = 0; i < dofmap.num_facet_dofs(); ++i)
       {
@@ -873,7 +871,7 @@ void DofMapBuilder::parallel_renumber(const boost::array<set, 3>& node_ownership
       dolfin_assert(dofs0.size() % block_size == 0);
       const std::size_t nodes_per_cell = dofs0.size()/block_size;
 
-      // Loop over each dof in dofs0
+      // Loop over each node in dofs0
       std::vector<dolfin::la_index>::const_iterator dof0, dof1;
       for (std::size_t i = 0; i < nodes_per_cell; ++i)
       {
@@ -888,7 +886,7 @@ void DofMapBuilder::parallel_renumber(const boost::array<set, 3>& node_ownership
           dolfin_assert(n0_local < graph.size());
           for (std::size_t j = 0; j < nodes_per_cell; ++j)
           {
-            const std::size_t n1_old = dofs1[i] % num_nodes;
+            const std::size_t n1_old = dofs1[j] % num_nodes;
             boost::unordered_map<std::size_t, std::size_t>::const_iterator
               n1 = my_old_to_new_node_index.find(n1_old);
             if (n1 != my_old_to_new_node_index.end())
