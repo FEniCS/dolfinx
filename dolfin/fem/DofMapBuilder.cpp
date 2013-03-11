@@ -75,9 +75,10 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   // Check if dofmap is distributed
   const bool distributed = MPI::num_processes() > 1;
 
-  // Determine dof block size
+  // Determine and set dof block size
   dolfin_assert(dofmap._ufc_dofmap);
   const std::size_t block_size = compute_blocksize(*dofmap._ufc_dofmap);
+  dofmap.block_size = block_size;
 
   // Re-order dofmap when distributed for process locality and set
   // local_range
