@@ -80,10 +80,10 @@ void ExodusFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
                  "Exodus output of mesh functions is implemented for cell- and facet-based functions only");
   }
 
-  // Create Exodus mesh.
+  // Create Exodus mesh
   vtkSmartPointer<vtkUnstructuredGrid> vtk_mesh = create_vtk_mesh(mesh);
 
-  // Add cell data.
+  // Add cell data
   const int dim = meshfunction.dim();
   const int numCells = mesh.num_cells();
   vtkSmartPointer<vtkUnsignedIntArray> cellData =
@@ -120,10 +120,10 @@ void ExodusFile::operator<<(const MeshFunction<int>& meshfunction)
                  "Exodus output of mesh functions is implemented for cell- and facet-based functions only");
   }
 
-  // Create Exodus mesh.
+  // Create Exodus mesh
   vtkSmartPointer<vtkUnstructuredGrid> vtk_mesh = create_vtk_mesh(mesh);
 
-  // Add cell data.
+  // Add cell data
   const int dim = meshfunction.dim();
   const int numCells = mesh.num_cells();
   vtkSmartPointer<vtkIntArray> cellData =
@@ -133,7 +133,7 @@ void ExodusFile::operator<<(const MeshFunction<int>& meshfunction)
   cellData->SetName(meshfunction.name().c_str());
   vtk_mesh->GetCellData()->AddArray(cellData);
 
-  // Write out.
+  // Write out
   perform_write(vtk_mesh);
 
   log(TRACE, "Saved mesh function %s (%s) to file %s in Exodus format.",
@@ -160,10 +160,10 @@ void ExodusFile::operator<<(const MeshFunction<double>& meshfunction)
                  "Exodus output of mesh functions is implemented for cell- and facet-based functions only");
   }
 
-  // Create Exodus mesh.
+  // Create Exodus mesh
   vtkSmartPointer<vtkUnstructuredGrid> vtk_mesh = create_vtk_mesh(mesh);
 
-  // Add cell data.
+  // Add cell data
   const int dim = meshfunction.dim();
   const int numCells = mesh.num_cells();
   vtkSmartPointer<vtkDoubleArray> cellData =
@@ -173,7 +173,7 @@ void ExodusFile::operator<<(const MeshFunction<double>& meshfunction)
   cellData->SetName(meshfunction.name().c_str());
   vtk_mesh->GetCellData()->AddArray(cellData);
 
-  // Write out.
+  // Write out
   perform_write(vtk_mesh);
 
   log(TRACE, "Saved mesh function %s (%s) to file %s in Exodus format.",
@@ -230,13 +230,14 @@ void ExodusFile::write_function(const Function& u, double time) const
 
   dolfin_assert(u.function_space()->dofmap());
   const GenericDofMap& dofmap = *u.function_space()->dofmap();
+
   // Define the vector that holds the values outside the if
   // to make sure it doesn't get destroyed before the data
   // is written out to a file
   std::vector<double> values;
   if (dofmap.max_cell_dimension() == cell_based_dim)
   {
-    // Extract DOFs from u.
+    // Extract DOFs from u
     const uint num_cells = mesh.num_cells();
     const uint size = num_cells*dim;
     std::vector<int> dof_set;
@@ -251,7 +252,7 @@ void ExodusFile::write_function(const Function& u, double time) const
     dolfin_assert(u.vector());
     u.vector()->get_local(&values[0], dof_set.size(), &dof_set[0]);
 
-    // Set the cell array.
+    // Set the cell array
     vtkSmartPointer<vtkDoubleArray> cellData =
       vtkSmartPointer<vtkDoubleArray>::New();
     cellData->SetNumberOfComponents(dim);
@@ -261,12 +262,13 @@ void ExodusFile::write_function(const Function& u, double time) const
   }
   else
   {
-    // Extract point values.
+    // Extract point values
     const uint num_vertices = mesh.num_vertices();
     const uint size = num_vertices*dim;
     values.resize(size);
     u.compute_vertex_values(values, mesh);
-    // Set the point array.
+
+    // Set the point array
     vtkSmartPointer<vtkDoubleArray> pointData =
       vtkSmartPointer<vtkDoubleArray>::New();
     pointData->SetNumberOfComponents(dim);
@@ -275,7 +277,7 @@ void ExodusFile::write_function(const Function& u, double time) const
     vtk_mesh->GetPointData()->AddArray(pointData);
   }
 
-  // Actually write out the data.
+  // Actually write out the data
   perform_write(vtk_mesh);
 
   log(TRACE, "Saved function %s (%s) to file %s in Exodus format.",
@@ -284,10 +286,11 @@ void ExodusFile::write_function(const Function& u, double time) const
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkUnstructuredGrid> ExodusFile::create_vtk_mesh(const Mesh& mesh) const
 {
-  // Build Exodus unstructured grid object.
+  // Build Exodus unstructured grid object
   vtkSmartPointer<vtkUnstructuredGrid> unstructuredGrid =
     vtkSmartPointer<vtkUnstructuredGrid>::New();
-  // Set the points.
+
+  // Set the points
   const int numPoints = mesh.num_vertices();
   vtkSmartPointer<vtkDoubleArray> pointData =
     vtkSmartPointer<vtkDoubleArray>::New();
@@ -297,6 +300,7 @@ vtkSmartPointer<vtkUnstructuredGrid> ExodusFile::create_vtk_mesh(const Mesh& mes
     vtkSmartPointer<vtkPoints>::New();
   points->SetData(pointData);
   unstructuredGrid->SetPoints(points);
+
   // Set cells. Those need to be copied over since the
   // default Dolfin node ID data type is dolfin::uint
   // (typically unsigned int), and the node ID of Exodus
@@ -331,5 +335,6 @@ void ExodusFile::perform_write(const vtkSmartPointer<vtkUnstructuredGrid> & vtk_
   return;
 }
 //----------------------------------------------------------------------------
+
 #endif // HAS_VTK_EXODUS
 #endif // HAS_VTK
