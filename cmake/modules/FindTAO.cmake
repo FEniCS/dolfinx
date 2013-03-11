@@ -180,7 +180,6 @@ int main()
   return 0;
 }
 " TAO_TEST_RUNS)
-  set(TAO_TEST_RUNS  TRUE)
   if (TAO_TEST_RUNS)
     message(STATUS "TAO test runs")
   else()
