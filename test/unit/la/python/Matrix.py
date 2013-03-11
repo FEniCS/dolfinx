@@ -233,9 +233,9 @@ class DataTester:
         rows, cols, values = A.data(False)
         def write_data(data):
             data[0] = 1
-        self.assertRaises(RuntimeError, write_data, rows)
-        self.assertRaises(RuntimeError, write_data, cols)
-        self.assertRaises(RuntimeError, write_data, values)
+        self.assertRaises(StandardError, write_data, rows)
+        self.assertRaises(StandardError, write_data, cols)
+        self.assertRaises(StandardError, write_data, values)
 
         # Test for as_backend_typeed Matrix
         A = as_backend_type(A)

@@ -26,11 +26,11 @@
 
 #include <dolfin/common/Array.h>
 #include <dolfin/log/log.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/Facet.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/SubDomain.h>
-#include <dolfin/mesh/Vertex.h>
+#include "DistributedMeshTools.h"
+#include "Facet.h"
+#include "Mesh.h"
+#include "MeshEntityIterator.h"
+#include "SubDomain.h"
 #include "PeriodicBoundaryComputation.h"
 
 using namespace dolfin;
@@ -62,18 +62,14 @@ struct lt_coordinate
 };
 
 //-----------------------------------------------------------------------------
-std::map<std::size_t, std::pair<std::size_t, std::size_t> >
-   PeriodicBoundaryComputation::compute_periodic_facet_pairs(const Mesh& mesh,
-                                                const SubDomain& sub_domain)
+std::map<unsigned int, std::pair<unsigned int, unsigned int> >
+  PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
+                                                const SubDomain& sub_domain,
+                                                const std::size_t dim)
 {
-  // Get topological and geometric dimensions
+  // Get geometric and topological dimensions
   const std::size_t gdim = mesh.geometry().dim();
   const std::size_t tdim = mesh.topology().dim();
-
-  // Make sure we have the facet - cell connectivity
-  mesh.init(tdim - 1, tdim);
-
-  // Number facets globally
 
   // Arrays used for mapping coordinates
   std::vector<double> x(gdim);
@@ -83,62 +79,78 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
   Array<double> _x(gdim, x.data());
   Array<double> _y(gdim, y.data());
 
-  std::vector<std::size_t> slave_facets;
-  std::vector<std::vector<double> > slave_mapped_midpoints;
+  std::vector<std::size_t> slave_entities;
+  std::vector<std::vector<double> > slave_mapped_coords;
 
   // Min/max coordinates of facet midpoints [min_x, max_x]. Used to
-  // build bounding box of all master facet midpoints on this process
+  // build bounding box of all master entity midpoints on this process
   std::vector<double> x_min_max;
 
-  // Map from master facet midpoint coordinate to local facet index
-  std::map<std::vector<double>, std::size_t, lt_coordinate> master_midpoint_to_facet_index;
+  // Map from master entity midpoint coordinate to local facet index
+  std::map<std::vector<double>, unsigned int, lt_coordinate> master_coord_to_entity_index;
 
-  // Iterate over facets to find master/slave facets
-  for (FacetIterator facet(mesh); !facet.end(); ++facet)
+  // Intialise facet-cell connectivity
+  mesh.init(tdim - 1, tdim);
+  mesh.init(dim);
+
+  std::vector<bool> visited(mesh.num_entities(dim), false);
+  for (FacetIterator f(mesh); !f.end(); ++f)
   {
-    if (!facet->exterior())
-      continue;
-
-    // Get midpoint of facet
-    const Point midpoint = facet->midpoint();
-    std::copy(midpoint.coordinates(), midpoint.coordinates() + gdim,
-              x.begin());
-
-    // Check if facet lies on a 'master' or 'slave' boundary
-    if (sub_domain.inside(_x, true))
+    // Consider boundary entities only
+    const bool global_exterior_facet = (f->num_global_entities(tdim) == 1);
+    if (global_exterior_facet)
     {
-      // Build bounding box data for master facet midpoints
-      if (x_min_max.empty())
+      for (MeshEntityIterator e(*f, dim); !e.end(); ++e)
       {
-        x_min_max = x;
-        x_min_max.insert(x_min_max.end(), x.begin(), x.end());
-      }
-      for (std::size_t i = 0; i < gdim; ++i)
-      {
-       x_min_max[i]        = std::min(x_min_max[i], x[i]);
-       x_min_max[i + gdim] = std::max(x_min_max[i + gdim], x[i]);
-      }
 
-      // Insert (midpoint coordinates, local index) into map
-      master_midpoint_to_facet_index.insert(std::make_pair(x, facet->index()));
-    }
-    else
-    {
-      // Get mapped midpoint (y) of slave facet
-      sub_domain.map(_x, _y);
+        // Avoid visiting entities more than once
+        if (visited[e->index()])
+        {
+          visited[e->index()] = true;
+          continue;
+        }
 
-      // Check if facet lies on a 'slave' boundary
-      if (sub_domain.inside(_y, true))
-      {
-        // Store slave local index and midpoint coordinates
-        slave_facets.push_back(facet->index());
-        slave_mapped_midpoints.push_back(y);
+        // Copy entity coordinate
+        const Point midpoint = e->midpoint();
+        std::copy(midpoint.coordinates(), midpoint.coordinates() + gdim,
+                  x.begin());
+
+        // Check if entity lies on a 'master' or 'slave' boundary
+        if (sub_domain.inside(_x, true))
+        {
+          // Build bounding box data for master entity midpoints
+          if (x_min_max.empty())
+          {
+            x_min_max = x;
+            x_min_max.insert(x_min_max.end(), x.begin(), x.end());
+          }
+          for (std::size_t i = 0; i < gdim; ++i)
+          {
+           x_min_max[i]        = std::min(x_min_max[i], x[i]);
+           x_min_max[i + gdim] = std::max(x_min_max[i + gdim], x[i]);
+          }
+
+          // Insert (midpoint coordinates, local index) into map
+          master_coord_to_entity_index.insert(std::make_pair(x, e->index()));
+        }
+        else
+        {
+          // Get mapped midpoint (y) of slave entity
+          sub_domain.map(_x, _y);
+
+          // Check if entity lies on a 'slave' boundary
+          if (sub_domain.inside(_y, true))
+          {
+            // Store slave local index and midpoint coordinates
+            slave_entities.push_back(e->index());
+            slave_mapped_coords.push_back(y);
+          }
+        }
       }
-
     }
   }
 
-  // Communicate bounding boxes for master facets
+  // Communicate bounding boxes for master entities
   std::vector<std::vector<double> > bounding_boxes;
   MPI::all_gather(x_min_max, bounding_boxes);
 
@@ -146,103 +158,164 @@ std::map<std::size_t, std::pair<std::size_t, std::size_t> >
   std::size_t num_processes = MPI::num_processes();
 
   // Build send buffer of mapped slave midpoint coordinate to processes
-  // that may own the master facet
-  std::vector<std::vector<double> > slave_mapped_midpoints_send(num_processes);
-  std::vector<std::vector<std::size_t> > sent_slave_indices(num_processes);
-  for (std::size_t i = 0; i < slave_facets.size(); ++i)
+  // that may own the master entity
+  std::vector<std::vector<double> > slave_mapped_coords_send(num_processes);
+  std::vector<std::vector<unsigned int> > sent_slave_indices(num_processes);
+  for (std::size_t i = 0; i < slave_entities.size(); ++i)
   {
-    //cout << "Going over facet: " << i << ", " << slave_facets.size() << endl;
     for (std::size_t p = 0; p < num_processes; ++p)
     {
-      // Slave mapped midpoints from process p
-      std::vector<double>& slave_mapped_midpoints_send_p = slave_mapped_midpoints_send[p];
+      // Slave mapped coordinates from process p
+      std::vector<double>& slave_mapped_coords_send_p = slave_mapped_coords_send[p];
 
-      // Check if mapped slave falls within master facet bounding box
+      // Check if mapped slave falls within master entity bounding box
       // on process p
-      if (in_bounding_box(slave_mapped_midpoints[i], bounding_boxes[p]))
+      if (in_bounding_box(slave_mapped_coords[i], bounding_boxes[p]))
       {
-        sent_slave_indices[p].push_back(slave_facets[i]);
-        slave_mapped_midpoints_send_p.insert(slave_mapped_midpoints_send_p.end(),
-                                             slave_mapped_midpoints[i].begin(),
-                                             slave_mapped_midpoints[i].end());
+        sent_slave_indices[p].push_back(slave_entities[i]);
+        slave_mapped_coords_send_p.insert(slave_mapped_coords_send_p.end(),
+                                          slave_mapped_coords[i].begin(),
+                                          slave_mapped_coords[i].end());
       }
     }
   }
 
-  // Send slave midpoints to possible owners of correspoding master facet
-  std::vector<std::vector<double> > slave_mapped_midpoints_recv;
-  MPI::all_to_all(slave_mapped_midpoints_send, slave_mapped_midpoints_recv);
-  dolfin_assert(slave_mapped_midpoints_recv.size() == num_processes);
+  // Send slave midpoints to possible owners of correspoding master entity
+  std::vector<std::vector<double> > slave_mapped_coords_recv;
+  MPI::all_to_all(slave_mapped_coords_send, slave_mapped_coords_recv);
+  dolfin_assert(slave_mapped_coords_recv.size() == num_processes);
 
-  // Check if this process owns the master facet for a reveived (mapped)
-  std::vector<double> midpoint(gdim);
-  std::vector<std::vector<std::size_t> > master_local_facet(num_processes);
+  // Check if this process owns the master facet for a received (mapped)
+  // slave
+  std::vector<double> coordinates(gdim);
+  std::vector<std::vector<unsigned int> > master_local_entity(num_processes);
   for (std::size_t p = 0; p < num_processes; ++p)
   {
-    const std::vector<double>& slave_mapped_midpoints_p = slave_mapped_midpoints_recv[p];
-    for (std::size_t i = 0; i < slave_mapped_midpoints_p.size(); i += gdim)
+    const std::vector<double>& slave_mapped_coords_p = slave_mapped_coords_recv[p];
+    for (std::size_t i = 0; i < slave_mapped_coords_p.size(); i += gdim)
     {
-      // Unpack rceived mapped slave midpoint coordinate
-      std::copy(&slave_mapped_midpoints_p[i],
-                &slave_mapped_midpoints_p[i] + gdim, midpoint.begin());
+      // Unpack received mapped slave midpoint coordinate
+      std::copy(&slave_mapped_coords_p[i],
+                &slave_mapped_coords_p[i] + gdim, coordinates.begin());
 
-      // Check is this process has a master facet that is paired with
-      // a received slave facet
-      std::map<std::vector<double>, std::size_t, lt_coordinate>::const_iterator
-        it = master_midpoint_to_facet_index.find(midpoint);
+      // Check is this process has a master entity that is paired with
+      // a received slave entity
+      std::map<std::vector<double>, unsigned int, lt_coordinate>::const_iterator
+        it = master_coord_to_entity_index.find(coordinates);
 
-      // If this process owns the master, insert master facet index,
+      // If this process owns the master, insert master entity index,
       // else insert std::numeric_limits<std::size_t>::max()
-      if (it !=  master_midpoint_to_facet_index.end())
-        master_local_facet[p].push_back(it->second);
+      if (it !=  master_coord_to_entity_index.end())
+        master_local_entity[p].push_back(it->second);
       else
-        master_local_facet[p].push_back(std::numeric_limits<std::size_t>::max());
+        master_local_entity[p].push_back(std::numeric_limits<unsigned int>::max());
     }
   }
 
-  // Send local index of master facet back to owner of slave facet
-  std::vector<std::vector<std::size_t> > master_facet_local_index_recv;
-  MPI::all_to_all(master_local_facet,  master_facet_local_index_recv);
+  // Send local index of master entity back to owner of slave entity
+  std::vector<std::vector<unsigned int> > master_entity_local_index_recv;
+  MPI::all_to_all(master_local_entity,  master_entity_local_index_recv);
 
   // Build map from slave facets on this process to master facet (local
   // facet index, process owner)
-  std::map<std::size_t, std::pair<std::size_t, std::size_t> > slave_to_master_facet;
-  std::size_t num_local_slave_facets = 0;
+  std::map<unsigned int, std::pair<unsigned int, unsigned int> > slave_to_master_entity;
+  std::size_t num_local_slave_entities = 0;
   for (std::size_t p = 0; p < num_processes; ++p)
   {
-    const std::vector<std::size_t> master_facet_index_p = master_facet_local_index_recv[p];
-    const std::vector<std::size_t> sent_slaves_p = sent_slave_indices[p];
-    dolfin_assert(master_facet_index_p.size() == sent_slaves_p.size());
+    const std::vector<unsigned int> master_entity_index_p = master_entity_local_index_recv[p];
+    const std::vector<unsigned int> sent_slaves_p = sent_slave_indices[p];
+    dolfin_assert(master_entity_index_p.size() == sent_slaves_p.size());
 
-    for (std::size_t i = 0; i < master_facet_index_p.size(); ++i)
+    for (std::size_t i = 0; i < master_entity_index_p.size(); ++i)
     {
-      if (master_facet_index_p[i] < std::numeric_limits<std::size_t>::max())
+      if (master_entity_index_p[i] < std::numeric_limits<unsigned int>::max())
       {
-        ++num_local_slave_facets;
-        if (!slave_to_master_facet.insert(std::make_pair(sent_slaves_p[i],
-                                     std::make_pair(p, master_facet_index_p[i]))).second)
-        {
-          dolfin_error("PeriodicDomain.cpp",
-                       "build peridic master-slave mapping",
-                       "More than one master facts for slave facet");
-        }
+        ++num_local_slave_entities;
+        slave_to_master_entity.insert(std::make_pair(sent_slaves_p[i],
+                                      std::make_pair(p, master_entity_index_p[i])));
       }
     }
   }
 
-  // Number global master and slave facets
-  const std::size_t num_global_master_facets = MPI::sum(master_midpoint_to_facet_index.size());
-  const std::size_t num_global_slave_facets = MPI::sum(num_local_slave_facets);
+  return slave_to_master_entity;
+}
+//-----------------------------------------------------------------------------
+MeshFunction<std::size_t>
+  PeriodicBoundaryComputation::masters_slaves(boost::shared_ptr<const Mesh> mesh,
+                                              const SubDomain& sub_domain,
+                                              const std::size_t dim)
+{
+  dolfin_assert(mesh);
 
-  // Check that number of global master and slave facets match
-  if (num_global_master_facets != num_global_slave_facets)
+  // Create MeshFunction and initialse to zero
+  MeshFunction<std::size_t> mf(*mesh, dim, 0);
+
+  // Compute markers
+  const std::map<unsigned int, std::pair<unsigned int, unsigned int> >
+    slaves = compute_periodic_pairs(*mesh, sub_domain, dim);
+
+  // Mark master and slaves, and pack off-process masters to send
+  std::vector<std::vector<std::size_t> > master_dofs_send(MPI::num_processes());
+  std::map<unsigned int, std::pair<unsigned int, unsigned int> >::const_iterator slave;
+  for (slave = slaves.begin(); slave != slaves.end(); ++slave)
   {
-    dolfin_error("PeriodicDomain.cpp",
-                 "global number of slave and master facets",
-                 "Number of slave and master facets is not equal");
+    // Set slave
+    mf[slave->first] = 2;
+
+    // Pack master entity to send to all sharing proceses
+    dolfin_assert(slave->second.first < master_dofs_send.size());
+    master_dofs_send[slave->second.first].push_back(slave->second.second);
   }
 
-  return slave_to_master_facet;
+  // Send/receive master entities
+  std::vector<std::vector<std::size_t> > master_dofs_recv;
+  MPI::all_to_all(master_dofs_send, master_dofs_recv);
+
+  // Build list of sharing processes
+  boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >
+    shared_entities_map = DistributedMeshTools::compute_shared_entities(*mesh, dim);
+  boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >::const_iterator e;
+  std::vector<std::vector<std::pair<unsigned int, unsigned int> > > shared_entities(mesh->num_entities(dim));
+  for (e = shared_entities_map.begin(); e != shared_entities_map.end(); ++e)
+  {
+    dolfin_assert(e->first < shared_entities.size());
+    shared_entities[e->first] = e->second;
+  }
+
+  // Mark and pack master to send to all sharing proceses
+  master_dofs_send.clear();
+  master_dofs_send.resize(MPI::num_processes());
+  for (std::size_t p = 0; p < master_dofs_recv.size(); ++p)
+  {
+    for (std::size_t i = 0; i < master_dofs_recv[p].size(); ++i)
+    {
+      // Get local index
+      const std::size_t local_index = master_dofs_recv[p][i];
+
+      // Mark locally
+      mf[local_index] = 1;
+
+      // Pack to send to sharing processes
+      const std::vector<std::pair<unsigned int, unsigned int> > sharing = shared_entities[local_index] ;
+      for (std::size_t j = 0; j < sharing.size(); ++j)
+      {
+        dolfin_assert(sharing[j].first < master_dofs_send.size());
+        master_dofs_send[sharing[j].first].push_back(sharing[j].second);
+      }
+    }
+  }
+
+  // Send/receive master entities
+  MPI::all_to_all(master_dofs_send, master_dofs_recv);
+
+  // Mark master entities in mesh function
+  for (std::size_t i = 0; i < master_dofs_recv.size(); ++i)
+  {
+    for (std::size_t j = 0; j < master_dofs_recv[i].size(); ++j)
+      mf[master_dofs_recv[i][j]] = 1;
+  }
+
+  return mf;
 }
 //-----------------------------------------------------------------------------
 bool PeriodicBoundaryComputation::in_bounding_box(const std::vector<double>& point,

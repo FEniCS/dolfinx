@@ -39,18 +39,18 @@ using namespace dolfin;
 
 struct CompareIndex
 {
-  CompareIndex(std::size_t index) : index(index) {}
+  CompareIndex(std::size_t index) : _index(index) {}
   bool operator()(const std::pair<std::size_t, double>& entry) const
-  { return index == entry.first; }
+  { return _index == entry.first; }
   private:
-    const std::size_t index;
+    const std::size_t _index;
 };
 
 //-----------------------------------------------------------------------------
 void STLMatrix::init(const TensorLayout& tensor_layout)
 {
   // Check that sparsity pattern has correct storage (row vs column storage)
-  if (primary_dim != tensor_layout.primary_dim)
+  if (_primary_dim != tensor_layout.primary_dim)
   {
     dolfin_error("STLMatrix.cpp",
                  "initialization of STL matrix",
@@ -59,10 +59,10 @@ void STLMatrix::init(const TensorLayout& tensor_layout)
 
   //primary_dim = sparsity_pattern.primary_dim();
   std::size_t primary_codim = 1;
-  if (primary_dim == 1)
+  if (_primary_dim == 1)
     primary_codim = 0;
 
-  _local_range = tensor_layout.local_range(primary_dim);
+  _local_range = tensor_layout.local_range(_primary_dim);
   num_codim_entities = tensor_layout.size(primary_codim);
 
   const std::size_t num_primary_entiries = _local_range.second - _local_range.first;
@@ -86,7 +86,7 @@ std::size_t STLMatrix::size(std::size_t dim) const
                  "Illegal axis (%d), must be 0 or 1", dim);
   }
 
-  if (primary_dim == 0)
+  if (_primary_dim == 0)
   {
     if (dim == 0)
       return dolfin::MPI::sum(_local_range.second - _local_range.first);
@@ -105,7 +105,7 @@ std::size_t STLMatrix::size(std::size_t dim) const
 std::pair<std::size_t, std::size_t> STLMatrix::local_range(std::size_t dim) const
 {
   dolfin_assert(dim < 2);
-  if (primary_dim == 0)
+  if (_primary_dim == 0)
   {
     if (dim == 0)
       return _local_range;
@@ -143,7 +143,7 @@ void STLMatrix::add(const double* block, std::size_t m, const dolfin::la_index* 
   std::size_t codim = n;
   std::size_t map0  = 1;
   std::size_t map1  = n;
-  if (primary_dim == 1)
+  if (_primary_dim == 1)
   {
     dim = n;
     codim = m;
@@ -213,7 +213,8 @@ void STLMatrix::apply(std::string mode)
   const std::size_t num_processes = MPI::num_processes();
 
   // Data to send
-  std::vector<std::vector<std::size_t> > send_non_local_rows, send_non_local_cols(num_processes);
+  std::vector<std::vector<std::size_t> > send_non_local_rows(num_processes);
+  std::vector<std::vector<std::size_t> > send_non_local_cols(num_processes);
   std::vector<std::vector<double> > send_non_local_vals(num_processes);
 
   std::vector<std::pair<std::size_t, std::size_t> > process_ranges;
@@ -261,7 +262,7 @@ void STLMatrix::apply(std::string mode)
     assert(received_non_local_rows_p.size() == received_non_local_cols_p.size());
     assert(received_non_local_rows_p.size() == received_non_local_vals_p.size());
 
-    for (std::size_t i = 0; i < received_non_local_rows.size(); ++i)
+    for (std::size_t i = 0; i < received_non_local_rows_p.size(); ++i)
     {
       dolfin_assert(received_non_local_rows_p[i] < _local_range.second
                           && received_non_local_rows_p[i] >= _local_range.first);
@@ -269,14 +270,17 @@ void STLMatrix::apply(std::string mode)
       assert(I_local < _values.size());
 
       const std::size_t J = received_non_local_cols_p[i];
-      std::vector<std::pair<std::size_t, double> >::iterator entry
+      std::vector<std::pair<std::size_t, double> >::iterator e
             = std::find_if(_values[I_local].begin(), _values[I_local].end(), CompareIndex(J));
-      if (entry != _values[I_local].end())
-        entry->second += received_non_local_vals_p[i];
+      if (e != _values[I_local].end())
+        e->second += received_non_local_vals_p[i];
       else
         _values[I_local].push_back(std::make_pair(J, received_non_local_vals_p[i]));
     }
   }
+
+  // Sort columns (csr)/rows (csc)
+  sort();
 }
 //-----------------------------------------------------------------------------
 double STLMatrix::norm(std::string norm_type) const
@@ -296,7 +300,7 @@ double STLMatrix::norm(std::string norm_type) const
 void STLMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
                        std::vector<double>& values) const
 {
-  if (primary_dim == 1)
+  if (_primary_dim == 1)
   {
     dolfin_error("STLMatrix.cpp",
                  "getting row from matrix",
@@ -317,7 +321,7 @@ void STLMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
 //-----------------------------------------------------------------------------
 void STLMatrix::ident(std::size_t m, const dolfin::la_index* rows)
 {
-  if (primary_dim == 1)
+  if (_primary_dim == 1)
   {
     dolfin_error("STLMatrix.cpp",
                  "creating identity row",
@@ -332,8 +336,8 @@ void STLMatrix::ident(std::size_t m, const dolfin::la_index* rows)
     {
       const std::size_t local_row = global_row - row_range.first;
       dolfin_assert(local_row < _values.size());
-      for (std::size_t i = 0; i < _values[local_row].size(); ++i)
-        _values[local_row][i].second = 0.0;
+      for (std::size_t j = 0; j < _values[local_row].size(); ++j)
+        _values[local_row][j].second = 0.0;
 
       // Place one on diagonal
       std::vector<std::pair<std::size_t, double> >::iterator diagonal
@@ -370,7 +374,7 @@ std::string STLMatrix::str(bool verbose) const
 
   if (verbose)
   {
-    if (primary_dim == 1)
+    if (_primary_dim == 1)
     {
       dolfin_error("STLMatrix.cpp",
                    "verbose string output of matrix",
@@ -407,7 +411,7 @@ std::string STLMatrix::str(bool verbose) const
 //-----------------------------------------------------------------------------
 GenericLinearAlgebraFactory& STLMatrix::factory() const
 {
-  if (primary_dim == 0)
+  if (_primary_dim == 0)
     return STLFactory::instance();
   else
     return STLFactoryCSC::instance();

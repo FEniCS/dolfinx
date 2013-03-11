@@ -18,9 +18,8 @@
 // Modified by Mikael Mortensen 2011
 //
 // First added:  2010-02-23
-// Last changed: 2012-04-17
+// Last changed: 2013-02-19
 
-#include <boost/scoped_array.hpp>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Timer.h>
 #include "GenericSparsityPattern.h"
@@ -69,14 +68,8 @@ void GenericMatrix::ident_zeros()
   // Write a message
   log(TRACE, "Found %d zero row(s), inserting ones on the diagonal.", zero_rows.size());
 
-  // Insert one on the diagonal for rows with only zeros. Note that we
-  // are not calling ident() since that fails in PETSc if nothing
-  // has been assembled into those rows.
-  for (std::size_t i = 0; i < zero_rows.size(); i++)
-  {
-    std::pair<dolfin::la_index, dolfin::la_index> ij(zero_rows[i], zero_rows[i]);
-    setitem(ij, 1.0);
-  }
+  // Insert one on the diagonal for rows with only zeros.
+  ident(zero_rows.size(), zero_rows.data());
 
   // Apply changes
   apply("insert");
@@ -112,8 +105,8 @@ void GenericMatrix::compress()
 
   // With the row-by-row algorithm used here there is no need for inserting non_local
   // rows and as such we can simply use a dummy for off_process_owner
-  std::vector<const boost::unordered_map<std::size_t, std::size_t>* > off_process_owner(2);
-  const boost::unordered_map<std::size_t, std::size_t> dummy;
+  std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner(2);
+  const boost::unordered_map<std::size_t, unsigned int> dummy;
   off_process_owner[0] = &dummy;
   off_process_owner[1] = &dummy;
   const std::pair<std::size_t, std::size_t> row_range = local_range[0];

@@ -25,6 +25,8 @@
 #define __UFC_CELL_H
 
 #include <vector>
+#include <ufc.h>
+
 #include <dolfin/common/types.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/log/dolfin_log.h>
@@ -32,7 +34,6 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/fem/ufcexp.h>
 
 namespace dolfin
 {
@@ -41,18 +42,18 @@ namespace dolfin
   /// a layer between a DOLFIN cell and a UFC cell. When run in
   /// parallel, it attempts to use global numbering.
 
-  class UFCCell : public ufcexp::cell
+  class UFCCell : public ufc::cell
   {
   public:
 
     /// Create UFC cell from DOLFIN cell
-    UFCCell(const Cell& cell) : ufcexp::cell(), num_vertices(0)
+    UFCCell(const Cell& cell) : ufc::cell(), num_vertices(0)
     {
       init(cell);
     }
 
     /// Create UFC cell for first DOLFIN cell in mesh
-    UFCCell(const Mesh& mesh) : ufcexp::cell(), num_vertices(0)
+    UFCCell(const Mesh& mesh) : ufc::cell(), num_vertices(0)
     {
       CellIterator cell(mesh);
       init(*cell);
@@ -83,10 +84,11 @@ namespace dolfin
         cell_shape = ufc::tetrahedron;
         num_vertices = 4;
         break;
-      default:
+      case CellType::point:
         dolfin_error("UFCCell.h",
                      "create UFC cell wrapper",
-                     "Unknown cell type (%d)", cell.type());
+                     "Cannot create UFC wrapper for %d", cell.type());
+        break;
       }
 
       // Mesh
@@ -118,6 +120,9 @@ namespace dolfin
       // Allocate vertex coordinates
       coordinates = new double*[num_vertices];
 
+      // FIXME: Temporary until we remove UFCCell
+      vertex_coordinates.resize(num_vertices*geometric_dimension);
+
       // Update cell data
       update(cell);
     }
@@ -135,6 +140,8 @@ namespace dolfin
 
       delete [] coordinates;
       coordinates = 0;
+
+      vertex_coordinates.clear();
 
       cell_shape = ufc::interval;
       topological_dimension = 0;
@@ -170,7 +177,6 @@ namespace dolfin
       const MeshTopology& topology = cell.mesh().topology();
       for (std::size_t d = 0; d < D; ++d)
       {
-        //if (use_global_indices && topology.have_global_indices(d))
         if (topology.have_global_indices(d))
         {
           const std::vector<std::size_t>& global_indices = topology.global_indices(d);
@@ -196,18 +202,24 @@ namespace dolfin
       index = cell.index();
 
       // Set vertex coordinates
-      const std::size_t* vertices = cell.entities(0);
+      const unsigned int* vertices = cell.entities(0);
       for (std::size_t i = 0; i < num_vertices; i++)
         coordinates[i] = const_cast<double*>(cell.mesh().geometry().x(vertices[i]));
+
+      // FIXME: Temporary until we remove UFCCell
+      const std::size_t gdim = cell.mesh().geometry().dim();
+      dolfin_assert(vertex_coordinates.size() == num_vertices*gdim);
+      for (std::size_t i = 0; i < num_vertices; i++)
+        for (std::size_t j = 0; j < gdim; j++)
+          vertex_coordinates[i*gdim + j] = cell.mesh().geometry().x(vertices[i])[j];
     }
 
   private:
 
-    // True if global entity indices should be used
-    //const bool use_global_indices;
-
     // Number of cell vertices
     std::size_t num_vertices;
+
+  public:
 
     // Number of cell entities of dimension d at initialisation
     std::vector<std::size_t> num_cell_entities;

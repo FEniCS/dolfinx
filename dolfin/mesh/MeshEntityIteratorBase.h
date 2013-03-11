@@ -37,26 +37,26 @@ namespace dolfin
 
     /// Create iterator for mesh entities over given topological dimension
     explicit MeshEntityIteratorBase(const Mesh& mesh)
-      : entity(mesh, 0), _pos(0), pos_end(0), index(0)
+      : _entity(mesh, 0), _pos(0), pos_end(0), index(0)
     {
       // Check if mesh is empty
       if (mesh.num_vertices() == 0)
         return;
 
       // Get number of entities
-      pos_end = mesh.init(entity.dim());
+      pos_end = mesh.init(_entity.dim());
     }
 
     /// Create iterator for entities of given dimension connected to given entity
     explicit MeshEntityIteratorBase(const MeshEntity& entity)
-      : entity(entity.mesh(), 0), _pos(0), index(0)
+      : _entity(entity.mesh(), 0), _pos(0), index(0)
     {
       // Get connectivity
-      const MeshConnectivity& c = entity.mesh().topology()(entity.dim(), this->entity.dim());
+      const MeshConnectivity& c = entity.mesh().topology()(entity.dim(), _entity.dim());
 
       // Compute connectivity if empty
       if (c.empty())
-        entity.mesh().init(entity.dim(), this->entity.dim());
+        entity.mesh().init(entity.dim(), _entity.dim());
 
       // Get size and index map
       if (c.empty())
@@ -73,7 +73,7 @@ namespace dolfin
 
     /// Copy constructor
     MeshEntityIteratorBase(const MeshEntityIteratorBase& it)
-      : entity(it.entity), _pos(it._pos), pos_end(it.pos_end), index(it.index) {}
+      : _entity(it._entity), _pos(it._pos), pos_end(it.pos_end), index(it.index) {}
 
     /// Destructor
     ~MeshEntityIteratorBase() {}
@@ -118,7 +118,7 @@ namespace dolfin
 
     /// Member access operator
     T* operator->()
-    { entity._local_index = (index ? index[_pos] : _pos); return &entity; }
+    { _entity._local_index = (index ? index[_pos] : _pos); return &_entity; }
 
     /// Random access operator
     T& operator[] (std::size_t pos)
@@ -151,7 +151,7 @@ namespace dolfin
     { _pos = pos_end; }
 
     // Mesh entity
-    T entity;
+    T _entity;
 
     // Current position
     std::size_t _pos;
@@ -160,7 +160,7 @@ namespace dolfin
     std::size_t pos_end;
 
     // Mapping from pos to index (if any)
-    const std::size_t* index;
+    const unsigned int* index;
 
   };
 

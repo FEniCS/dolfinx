@@ -41,12 +41,14 @@ namespace dolfin
     NonlinearProblem() {}
 
     /// Destructor
-    virtual ~NonlinearProblem() {};
+    virtual ~NonlinearProblem() {}
 
     /// Function called by Newton solver before requesting F or J.
     /// This can be used to compute F and J together
     virtual void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
-    { /* Do nothing if not supplied by the user */ };
+    {
+      // Do nothing if not supplied by the user
+    }
 
     /// Compute F at current point x
     virtual void F(GenericVector& b, const GenericVector& x) = 0;

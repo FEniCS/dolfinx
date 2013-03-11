@@ -102,7 +102,7 @@ void BisectionRefinement::transform_data(Mesh& newmesh, const Mesh& oldmesh,
   // Rewrite materials
   if (oldmesh.data().mesh_function("material_indicators"))
   {
-    boost::shared_ptr<MeshFunction<unsigned int> > mat;
+    boost::shared_ptr<MeshFunction<std::size_t> > mat;
     mat = newmesh.data().create_mesh_function("material_indicators", newmesh.type().dim());
 
     for(std::size_t i=0; i < newmesh.num_cells(); i++)

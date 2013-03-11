@@ -63,7 +63,7 @@ using namespace dolfin;
         for (VertexIterator vertex(*entity); !vertex.end(); ++vertex)
         {
           std::size_t num_ent = vertex->num_entities(dim0);
-          const std::size_t * entities = vertex->entities(dim0);
+          const unsigned int* entities = vertex->entities(dim0);
           for (std::size_t i = 0; i < num_ent; ++i)
             ids_result_2.push_back(entities[i]);
         }
@@ -72,7 +72,7 @@ using namespace dolfin;
       else if (dim0 > 0)
       {
         std::size_t num_ent = entity->num_entities(dim0);
-        const std::size_t * entities = entity->entities(dim0);
+        const unsigned int* entities = entity->entities(dim0);
         for (std::size_t i = 0; i < num_ent; ++i)
           ids_result_2.push_back(entities[i]);
       }

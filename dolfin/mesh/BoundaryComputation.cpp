@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2008 Anders Logg
+// Copyright (C) 2006-2013 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -20,7 +20,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2006-06-21
-// Last changed: 2011-03-17
+// Last changed: 2013-02-21
 
 #include <dolfin/common/timing.h>
 
@@ -41,27 +41,28 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void BoundaryComputation::compute_exterior_boundary(const Mesh& mesh,
-                                                    BoundaryMesh& boundary)
-{
-  compute_boundary_common(mesh, boundary, false);
-}
-//-----------------------------------------------------------------------------
-void BoundaryComputation::compute_interior_boundary(const Mesh& mesh,
-                                                    BoundaryMesh& boundary)
-{
-  compute_boundary_common(mesh, boundary, true);
-}
-//-----------------------------------------------------------------------------
-void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
-                                                  BoundaryMesh& boundary,
-                                                  bool interior_boundary)
+void BoundaryComputation::compute_boundary(const Mesh& mesh,
+                                           const std::string type,
+                                           BoundaryMesh& boundary)
 {
   // We iterate over all facets in the mesh and check if they are on
   // the boundary. A facet is on the boundary if it is connected to
   // exactly one cell.
 
   log(TRACE, "Computing boundary mesh.");
+
+  bool exterior = true;
+  bool interior = true;
+  if (type == "exterior")
+    interior = false;
+  else if (type == "interior")
+    exterior = false;
+  else if (type != "local")
+  {
+    dolfin_error("BoundaryComputation.cpp",
+                 "determine boundary mesh type",
+                 "Unknown boundary type (%d)", type.c_str());
+  }
 
   // Open boundary mesh for editing
   const std::size_t D = mesh.topology().dim();
@@ -86,9 +87,9 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
     if (f->num_entities(D) == 1)
     {
       const bool global_exterior_facet =  (f->num_global_entities(D) == 1);
-      if (global_exterior_facet && !interior_boundary)
+      if (global_exterior_facet && exterior)
         boundary_facet[*f] = true;
-      else if (!global_exterior_facet && interior_boundary)
+      else if (!global_exterior_facet && interior)
         boundary_facet[*f] = true;
 
       if (boundary_facet[*f])
@@ -111,17 +112,10 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   editor.init_vertices(num_boundary_vertices);
   editor.init_cells(num_boundary_cells);
 
-  // Initialize mapping from vertices in boundary to vertices in mesh
-  MeshFunction<std::size_t>& vertex_map = boundary.vertex_map();
+  // Create vertices and vertex-vertex map between boundary and parent
+  MeshFunction<std::size_t>& vertex_map = boundary.entity_map(0);
   if (num_boundary_vertices > 0)
     vertex_map.init(boundary, 0, num_boundary_vertices);
-
-  // Initialize mapping from cells in boundary to facets in mesh
-  MeshFunction<std::size_t>& cell_map = boundary.cell_map();
-  if (num_boundary_cells > 0)
-    cell_map.init(boundary, D - 1, num_boundary_cells);
-
-  // Create vertices
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     const std::size_t vertex_index = boundary_vertices[v->index()];
@@ -137,7 +131,10 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
     }
   }
 
-  // Create cells (facets)
+  // Create cells (facets) and map between boundary mesh cells and facets parent
+  MeshFunction<std::size_t>& cell_map = boundary.entity_map(D - 1);
+  if (num_boundary_cells > 0)
+    cell_map.init(boundary, D - 1, num_boundary_cells);
   std::vector<std::size_t> cell(boundary.type().num_vertices(boundary.topology().dim()));
   std::size_t current_cell = 0;
   for (FacetIterator f(mesh); !f.end(); ++f)
@@ -145,7 +142,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
     if (boundary_facet[*f])
     {
       // Compute new vertex numbers for cell
-      const std::size_t* vertices = f->entities(0);
+      const unsigned int* vertices = f->entities(0);
       for (std::size_t i = 0; i < cell.size(); i++)
         cell[i] = boundary_vertices[vertices[i]];
 

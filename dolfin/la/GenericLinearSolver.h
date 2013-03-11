@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2012 Garth N. Wells
+// Copyright (C) 2008-2013 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2009-2012
 //
 // First added:  2008-08-26
-// Last changed: 2012-10-31
+// Last changed: 2013-02-26
 
 #ifndef __GENERIC_LINEAR_SOLVER_H
 #define __GENERIC_LINEAR_SOLVER_H
@@ -82,58 +82,44 @@ namespace dolfin
       return 0;
     }
 
+    /// Solve linear system A^Tx = b
+    virtual std::size_t solve_transpose(const GenericLinearOperator& A, GenericVector& x,
+                       const GenericVector& b)
+    {
+      dolfin_error("GenericLinearSolver.h",
+                   "solve linear system transpose",
+                   "Not supported by current linear algebra backend. Consider using solve_transpose(x, b)");
+      return 0;
+    }
+
+    /// Solve linear system A^Tx = b
+    virtual std::size_t solve_transpose(GenericVector& x, const GenericVector& b)
+    {
+      dolfin_error("GenericLinearSolver.h",
+                   "solve linear system transpose",
+                   "Not supported by current linear algebra backend. Consider using solve_transpose(x, b)");
+      return 0;
+    }
+
   protected:
 
-    // Developer note: The functions here provide similar
-    // functionality as the as_type functions in the
-    // LinearAlgebraObject base class. The difference is that they
-    // specifically complain that a matrix is required, which gives a
-    // user a more informative error message from solvers that don't
-    // support matrix-free representation of linear operators.
+    // Developer note: The functions here provide similar functionality
+    // as the as_type functions in the LinearAlgebraObject base class. The
+    // difference is that they specifically complain that a matrix is
+    // required, which gives a user a more informative error message
+    //from solvers that don't support matrix-free representation of
+    //linear operators.
 
     // Down-cast GenericLinearOperator to GenericMatrix when an actual
     // matrix is required, not only a linear operator. This is the
     // const reference version of the down-cast.
-    static const GenericMatrix& require_matrix(const GenericLinearOperator& A)
-    {
-      // Try to dynamic cast to a GenericMatrix
-      try
-      {
-        return dynamic_cast<const GenericMatrix&>(A);
-      }
-      catch (std::exception& e)
-      {
-        dolfin_error("GenericLinearSolver.h",
-                     "use linear operator as a matrix (real matrix required)",
-                     "%s", e.what());
-      }
-
-      // Return something to keep the compiler happy, code will not be reached
-      return dynamic_cast<const GenericMatrix&>(A);
-    }
+    static const GenericMatrix& require_matrix(const GenericLinearOperator& A);
 
     // Down-cast GenericLinearOperator to GenericMatrix when an actual
     // matrix is required, not only a linear operator. This is the
     // const reference version of the down-cast.
-    static const boost::shared_ptr<const GenericMatrix>
-    require_matrix(const boost::shared_ptr<const GenericLinearOperator> A)
-    {
-      // Try to down cast shared pointer
-      boost::shared_ptr<const GenericMatrix> _A
-        = boost::dynamic_pointer_cast<const GenericMatrix>(A);
-
-      // Check results. Note the difference from the as_type functions
-      // in LinearAlgebraObject in that we check the return value here
-      // and throw an error if the cast fails.
-      if (!_A)
-      {
-        dolfin_error("GenericLinearSolver.h",
-                     "use linear operator as a matrix (real matrix required)",
-                     "Dynamic cast failed");
-      }
-
-      return _A;
-    }
+    static boost::shared_ptr<const GenericMatrix>
+    require_matrix(const boost::shared_ptr<const GenericLinearOperator> A);
 
   };
 

@@ -52,7 +52,7 @@ namespace dolfin
 
     /// Create entities e of given topological dimension from vertices v
     void create_entities(std::vector<std::vector<std::size_t> >& e, std::size_t dim,
-                         const std::size_t* v) const;
+                         const unsigned int* v) const;
 
     /// Order entities locally (connectivity 1-0, 2-0, 2-1)
     void order(Cell& cell,

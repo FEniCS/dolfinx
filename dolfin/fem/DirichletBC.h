@@ -145,7 +145,7 @@ namespace dolfin
     ///         The function space.
     ///     g (_GenericFunction_)
     ///         The value.
-    ///     sub_domains (_MeshFunction_ <unsigned int>)
+    ///     sub_domains (_MeshFunction_ <std::size_t>)
     ///         Subdomain markers
     ///     sub_domain (std::size_t)
     ///         The subdomain index (number)
@@ -165,7 +165,7 @@ namespace dolfin
     ///         The function space.
     ///     g (_GenericFunction_)
     ///         The value.
-    ///     sub_domains (_MeshFunction_ <unsigned int>)
+    ///     sub_domains (_MeshFunction_ <std::size_t>)
     ///         Subdomain markers
     ///     sub_domain (std::size_t)
     ///         The subdomain index (number)
@@ -450,7 +450,7 @@ namespace dolfin
     bool on_facet(double* coordinates, Facet& facet) const;
 
     // The function
-    boost::shared_ptr<const GenericFunction> g;
+    boost::shared_ptr<const GenericFunction> _g;
 
     // Search method
     std::string _method;

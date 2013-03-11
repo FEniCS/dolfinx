@@ -77,7 +77,7 @@ Constant::~Constant()
 const Constant& Constant::operator= (const Constant& constant)
 {
   // Check value shape
-  if (constant.value_shape != value_shape)
+  if (constant._value_shape != _value_shape)
   {
     dolfin_error("Constant.cpp",
                  "assign value to constant",
@@ -93,10 +93,10 @@ const Constant& Constant::operator= (const Constant& constant)
 const Constant& Constant::operator= (double constant)
 {
   // Check value shape
-  if (!value_shape.empty())
+  if (!_value_shape.empty())
   {
     dolfin_error("Constant.cpp",
-                 "assigne scalar value to constant",
+                 "assign scalar value to constant",
                  "Constant is not a scalar");
   }
 
@@ -110,7 +110,7 @@ const Constant& Constant::operator= (double constant)
 Constant::operator double() const
 {
   // Check value shape
-  if (!value_shape.empty())
+  if (!_value_shape.empty())
   {
     dolfin_error("Constant.cpp",
                  "convert constant to double",

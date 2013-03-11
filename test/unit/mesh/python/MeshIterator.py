@@ -38,7 +38,7 @@ class MeshIterator(unittest.TestCase):
         for i, con in cons:
             def assign(con, i):
                 con(i)[0] = 1
-            self.assertRaises(RuntimeError, assign, con, i)
+            self.assertRaises(StandardError, assign, con, i)
 
         n = 0
         for i, v in enumerate(vertices(mesh)):
@@ -68,7 +68,7 @@ class MeshIterator(unittest.TestCase):
         for i, con in cons:
             def assign(con, i):
                 con(i)[0] = 1
-            self.assertRaises(RuntimeError, assign, con, i)
+            self.assertRaises(StandardError, assign, con, i)
 
         n = 0
         for i, e in enumerate(edges(mesh)):
@@ -90,7 +90,7 @@ class MeshIterator(unittest.TestCase):
         for i, con in cons:
             def assign(con, i):
                 con(i)[0] = 1
-            self.assertRaises(RuntimeError, assign, con, i)
+            self.assertRaises(StandardError, assign, con, i)
 
         n = 0
         for i, f in enumerate(faces(mesh)):
@@ -119,7 +119,7 @@ class MeshIterator(unittest.TestCase):
         for i, con in cons:
             def assign(con, i):
                 con(i)[0] = 1
-            self.assertRaises(RuntimeError, assign, con, i)
+            self.assertRaises(StandardError, assign, con, i)
 
         n = 0
         for i, c in enumerate(cells(mesh)):

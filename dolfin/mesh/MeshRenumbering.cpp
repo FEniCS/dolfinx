@@ -22,7 +22,6 @@
 
 #include <algorithm>
 #include <vector>
-#include <boost/scoped_array.hpp>
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/Timer.h>
@@ -227,11 +226,11 @@ void MeshRenumbering::compute_renumbering(const Mesh& mesh,
       Cell cell(mesh, colored_cells[i]);
 
       // Get array of vertices for current cell
-      const std::size_t* cell_vertices = cell.entities(0);
-      const std::size_t num_vertices   = cell.num_entities(0);
+      const unsigned int* cell_vertices = cell.entities(0);
+      const std::size_t num_cell_vertices   = cell.num_entities(0);
 
       // Iterate over cell vertices
-      for (std::size_t j = 0; j < num_vertices; j++)
+      for (std::size_t j = 0; j < num_cell_vertices; j++)
       {
         // Get vertex index
         const std::size_t vertex_index = cell_vertices[j];

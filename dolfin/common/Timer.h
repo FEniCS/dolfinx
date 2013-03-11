@@ -44,17 +44,17 @@ namespace dolfin
   /// Timings are stored globally and a summary may be printed
   /// by calling
   ///
-  ///   summary();
+  ///   list_timings();
 
   class Timer
   {
   public:
 
     /// Create timer
-    Timer(std::string task) : task(""), t(time()), stopped(false)
+    Timer(std::string task) : _task(""), t(time()), stopped(false)
     {
       const std::string prefix = parameters["timer_prefix"];
-      this->task = prefix + task;
+      _task = prefix + task;
     }
 
     /// Destructor
@@ -69,7 +69,7 @@ namespace dolfin
     double stop()
     {
       t = time() - t;
-      LogManager::logger.register_timing(task, t);
+      LogManager::logger.register_timing(_task, t);
       stopped = true;
       return t;
     }
@@ -81,7 +81,7 @@ namespace dolfin
   private:
 
     // Name of task
-    std::string task;
+    std::string _task;
 
     // Start time
     double t;

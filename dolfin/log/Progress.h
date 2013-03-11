@@ -95,16 +95,13 @@ namespace dolfin
     void update(double p);
 
     // Title of progress bar
-    std::string title;
+    std::string _title;
 
     // Number of steps
-    std::size_t n;
+    std::size_t _n;
 
     // Current position
     std::size_t i;
-
-    // Minimum progress increment
-    double p_step;
 
     // Minimum time increment
     double t_step;
@@ -113,10 +110,10 @@ namespace dolfin
     std::size_t c_step;
 
     // Current progress
-    double p;
+    double _p;
 
     // Time for latest update
-    double t;
+    double _t;
 
     // Time for last checking the time
     double tc;

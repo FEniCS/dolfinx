@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-01-20
-// Last changed: 2012-06-25
+// Last changed: 2013-03-06
 
 //=============================================================================
 // Forward declarations of common types in DOLFIN needed for template
@@ -26,6 +26,8 @@
 
 namespace dolfin
 {
+  // ale
+  class MeshDisplacement;
 
   // common
   class Table;

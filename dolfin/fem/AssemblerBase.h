@@ -67,15 +67,14 @@ namespace dolfin
     bool finalize_tensor;
 
     /// keep_diagonal (bool)
-    ///     Default value is true.
+    ///     Default value is false.
     ///     This controls whether the assembler enures that a diagonal
     ///     entry exists in an assembled matrix. It may be removed
     ///     if the matrix is finalised.
     bool keep_diagonal;
 
     // Initialize global tensor
-    void init_global_tensor(GenericTensor& A, const Form& a,
-         const std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > >& periodic_master_slave_dofs);
+    void init_global_tensor(GenericTensor& A, const Form& a);
 
   protected:
 

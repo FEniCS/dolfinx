@@ -37,7 +37,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A)
-  : A(reference_to_no_delete_pointer(const_cast<PETScMatrix&>(A)))
+  : _A(reference_to_no_delete_pointer(const_cast<PETScMatrix&>(A)))
 {
   dolfin_assert(A.size(0) == A.size(1));
 
@@ -52,8 +52,8 @@ SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A)
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A, const PETScMatrix& B)
-   : A(reference_to_no_delete_pointer(A)),
-     B(reference_to_no_delete_pointer(B))
+   : _A(reference_to_no_delete_pointer(A)),
+     _B(reference_to_no_delete_pointer(B))
 
 {
   dolfin_assert(A.size(0) == A.size(1));
@@ -70,7 +70,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A, const PETScMatrix& B)
     EPSCreate(PETSC_COMM_SELF, &eps);
 }
 //-----------------------------------------------------------------------------
-SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A) : A(A)
+SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A) : _A(A)
 {
   dolfin_assert(A->size(0) == A->size(1));
 
@@ -85,7 +85,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A) : A(A
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A,
-                           boost::shared_ptr<const PETScMatrix> B) : A(A), B(B)
+                         boost::shared_ptr<const PETScMatrix> B) : _A(A), _B(B)
 
 {
   dolfin_assert(A->size(0) == A->size(1));
@@ -111,25 +111,25 @@ SLEPcEigenSolver::~SLEPcEigenSolver()
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve()
 {
-  solve(A->size(0));
+  solve(_A->size(0));
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(std::size_t n)
 {
-  dolfin_assert(A);
+  dolfin_assert(_A);
 
   // Associate matrix (matrices) with eigenvalue solver
-  dolfin_assert(A->size(0) == A->size(1));
-  if (B)
+  dolfin_assert(_A->size(0) == _A->size(1));
+  if (_B)
   {
-    dolfin_assert(B->size(0) == B->size(1) && B->size(0) == A->size(0));
-    EPSSetOperators(eps, *A->mat(), *B->mat());
+    dolfin_assert(_B->size(0) == _B->size(1) && _B->size(0) == _A->size(0));
+    EPSSetOperators(eps, *_A->mat(), *_B->mat());
   }
   else
-    EPSSetOperators(eps, *A->mat(), PETSC_NULL);
+    EPSSetOperators(eps, *_A->mat(), PETSC_NULL);
 
   // Set number of eigenpairs to compute
-  dolfin_assert(n <= A->size(0));
+  dolfin_assert(n <= _A->size(0));
   EPSSetDimensions(eps, n, PETSC_DECIDE, PETSC_DECIDE);
 
   // Set parameters from local parameters
@@ -137,6 +137,19 @@ void SLEPcEigenSolver::solve(std::size_t n)
 
   // Set parameters from PETSc parameter database
   EPSSetFromOptions(eps);
+
+  if (parameters["verbose"])
+  {
+    KSP ksp;
+    ST st;
+    EPSMonitorSet(eps, EPSMonitorAll, PETSC_NULL, PETSC_NULL);
+    EPSSetType(eps, EPSARPACK);
+    EPSGetST(eps, &st);
+    STGetKSP(st, &ksp);
+    KSPMonitorSet(ksp, KSPMonitorDefault, PETSC_NULL, PETSC_NULL);
+    EPSView(eps, PETSC_VIEWER_STDOUT_SELF);
+  }
+
 
   // Solve
   EPSSolve(eps);
@@ -215,9 +228,9 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
 
   if (ii < num_computed_eigenvalues)
   {
-    dolfin_assert(A);
-    A->resize(r, 0);
-    A->resize(c, 0);
+    dolfin_assert(_A);
+    _A->resize(r, 0);
+    _A->resize(c, 0);
 
     dolfin_assert(r.vec());
     dolfin_assert(c.vec());
@@ -268,6 +281,8 @@ void SLEPcEigenSolver::set_problem_type(std::string type)
     EPSSetProblemType(eps, EPS_GHEP);
   else if (type == "gen_non_hermitian")
     EPSSetProblemType(eps, EPS_GNHEP);
+  else if (type == "pos_gen_non_hermitian")
+    EPSSetProblemType(eps, EPS_PGNHEP);
   else
   {
     dolfin_error("SLEPcEigenSolver.cpp",
@@ -364,6 +379,8 @@ void SLEPcEigenSolver::set_solver(std::string solver)
     EPSSetType(eps, EPSKRYLOVSCHUR);
   else if (solver == "lapack")
     EPSSetType(eps, EPSLAPACK);
+  else if (solver == "arpack")
+    EPSSetType(eps, EPSARPACK);
   else
   {
     dolfin_error("SLEPcEigenSolver.cpp",

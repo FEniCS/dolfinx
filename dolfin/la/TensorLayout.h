@@ -79,10 +79,10 @@ namespace dolfin
   private:
 
     // Shape of tensor
-    std::vector<std::size_t> shape;
+    std::vector<std::size_t> _shape;
 
     // Ownership range for each dimension
-    std::vector<std::pair<std::size_t, std::size_t> > ownership_range;
+    std::vector<std::pair<std::size_t, std::size_t> > _ownership_range;
 
     // Sparsity pattern
     boost::shared_ptr<GenericSparsityPattern> _sparsity_pattern;

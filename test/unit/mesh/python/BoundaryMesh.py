@@ -30,8 +30,7 @@ class BoundaryMeshConstruction(unittest.TestCase):
         mesh = UnitIntervalMesh(32)
 
         # Create global boundary mesh
-        bmesh1 = BoundaryMesh()
-        bmesh1.init_exterior_boundary(mesh)
+        bmesh1 = BoundaryMesh(mesh, "exterior")
         self.assertEqual(MPI.sum(bmesh1.num_cells()), 2)
         self.assertEqual(bmesh1.topology().dim(), 0)
 
@@ -39,8 +38,7 @@ class BoundaryMeshConstruction(unittest.TestCase):
         mesh = UnitSquareMesh(8, 8)
 
         # Create global boundary mesh
-        bmesh1 = BoundaryMesh()
-        bmesh1.init_exterior_boundary(mesh)
+        bmesh1 = BoundaryMesh(mesh, "exterior")
         self.assertEqual(MPI.sum(bmesh1.num_cells()), 4*8)
         self.assertEqual(bmesh1.topology().dim(), 1)
 
@@ -48,8 +46,7 @@ class BoundaryMeshConstruction(unittest.TestCase):
         mesh = UnitCubeMesh(8, 8, 8)
 
         # Create global boundary mesh
-        bmesh1 = BoundaryMesh()
-        bmesh1.init_exterior_boundary(mesh)
+        bmesh1 = BoundaryMesh(mesh, "exterior")
         self.assertEqual(MPI.sum(bmesh1.num_cells()), 6*8*8*2)
         self.assertEqual(bmesh1.topology().dim(), 2)
 

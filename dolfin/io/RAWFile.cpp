@@ -39,8 +39,7 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-RAWFile::RAWFile(const std::string filename)
-  : GenericFile(filename, "RAW")
+RAWFile::RAWFile(const std::string filename) : GenericFile(filename, "RAW")
 {
   // Do nothing
 }
@@ -51,11 +50,6 @@ RAWFile::~RAWFile()
 }
 //----------------------------------------------------------------------------
 void RAWFile::operator<<(const MeshFunction<int>& meshfunction)
-{
-  MeshFunctionWrite(meshfunction);
-}
-//----------------------------------------------------------------------------
-void RAWFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
 {
   MeshFunctionWrite(meshfunction);
 }
@@ -77,7 +71,7 @@ void RAWFile::operator<<(const Function& u)
   counter++;
 
   cout << "Saved function " << u.name() << " (" << u.label()
-       << ") to file " << filename << " in RAW format." << endl;
+       << ") to file " << _filename << " in RAW format." << endl;
 }
 //----------------------------------------------------------------------------
 void RAWFile::ResultsWrite(const Function& u) const
@@ -186,8 +180,8 @@ void RAWFile::rawNameUpdate(const int counter)
   fileid.fill('0');
   fileid.width(6);
 
-  filestart.assign(filename, 0, filename.find("."));
-  extension.assign(filename, filename.find("."), filename.size());
+  filestart.assign(_filename, 0, _filename.find("."));
+  extension.assign(_filename, _filename.find("."), _filename.size());
 
   fileid << counter;
   newfilename << filestart << fileid.str() << ".raw";
@@ -236,6 +230,6 @@ void RAWFile::MeshFunctionWrite(T& meshfunction)
   cout << "saved mesh function " << counter << " times." << endl;
 
   cout << "Saved mesh function " << mesh.name() << " (" << mesh.label()
-       << ") to file " << filename << " in RAW format." << endl;
+       << ") to file " << _filename << " in RAW format." << endl;
 }
 //----------------------------------------------------------------------------

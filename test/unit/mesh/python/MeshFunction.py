@@ -42,11 +42,11 @@ class NamedMeshFunctions(unittest.TestCase):
         for tp in self.tps:
             for name in self.names:
                 if name is "Vertex":
-                    a = self.funcs[(tp, name)].size()
+                    a = len(self.funcs[(tp, name)])
                     b = self.mesh.num_vertices()
                     self.assertEqual(a, b)
                 else:
-                    a = self.funcs[(tp, name)].size()
+                    a = len(self.funcs[(tp, name)])
                     b = getattr(self.mesh, "num_%ss"%name.lower())()
                     self.assertEqual(a, b)
 
@@ -65,6 +65,21 @@ class NamedMeshFunctions(unittest.TestCase):
                 self.assertTrue(all(values[i]==self.funcs[(tp, name)][i]
                                     for i in xrange(len(values))))
 
+    def test_iterate(self):
+        for tp in self.tps:
+            for name in self.names:
+                for index, value in enumerate(self.funcs[(tp, name)]):
+                    pass
+                self.assertEqual(index, len(self.funcs[(tp, name)])-1)
+                self.assertRaises(IndexError, self.funcs[(tp, name)].__getitem__, len(self.funcs[(tp, name)]))
+
+    def test_setvalues(self):
+        for tp in self.tps:
+            if tp == 'bool':
+                continue
+            for name in self.names:
+                self.assertRaises(TypeError, self.funcs[(tp, name)].__setitem__, len(self.funcs[(tp, name)]), "jada")
+                
 class MeshFunctions(unittest.TestCase):
 
     def setUp(self):

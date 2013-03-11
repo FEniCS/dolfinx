@@ -4,13 +4,16 @@
 #  PASTIX_FOUND        - system has PaStiX
 #  PASTIX_INCLUDE_DIRS - include directories for PaStiX
 #  PASTIX_LIBRARIES    - libraries for PaStiX
+#  PASTIX_VERSION      - the PaStiX version string (MAJOR.MEDIUM.MINOR)
 
 # Check for PaStiX header file
-find_path(PASTIX_INCLUDE_DIRS pastix.h
+find_path(PASTIX_INCLUDE_DIR pastix.h
   HINTS ${PASTIX_DIR}/include $ENV{PASTIX_DIR}/include ${PASTIX_DIR} $ENV{PASTIX_DIR}
   PATH_SUFFIXES install
   DOC "Directory where the PaStiX header is located"
  )
+
+set(PASTIX_INCLUDE_DIRS ${PASTIX_INCLUDE_DIR})
 
 # Check for PaStiX library
 find_library(PASTIX_LIBRARY pastix
@@ -67,11 +70,36 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   endif()
 endif()
 
+#Find PaStiX version by looking at pastix.h
+if (EXISTS ${PASTIX_INCLUDE_DIR}/pastix.h)
+  file(STRINGS ${PASTIX_INCLUDE_DIR}/pastix.h PASTIX_VERSIONS_TMP
+    REGEX "^#define PASTIX_[A-Z]+_VERSION[ \t]+[0-9]+$")
+  if (PASTIX_VERSIONS_TMP)
+    string(REGEX REPLACE ".*#define PASTIX_MAJOR_VERSION[ \t]+([0-9]+).*" "\\1" PASTIX_MAJOR_VERSION ${PASTIX_VERSIONS_TMP})
+    string(REGEX REPLACE ".*#define PASTIX_MEDIUM_VERSION[ \t]+([0-9]+).*" "\\1" PASTIX_MEDIUM_VERSION ${PASTIX_VERSIONS_TMP})
+    string(REGEX REPLACE ".*#define PASTIX_MINOR_VERSION[ \t]+([0-9]+).*" "\\1" PASTIX_MINOR_VERSION ${PASTIX_VERSIONS_TMP})
+    set(PASTIX_VERSION ${PASTIX_MAJOR_VERSION}.${PASTIX_MEDIUM_VERSION}.${PASTIX_MINOR_VERSION} CACHE TYPE STRING)
+  else()
+    set(PASTIX_VERSION "UNKNOWN")
+  endif()
+endif()
+
+if (PaStiX_FIND_VERSION)
+  # Check if version found is >= required version
+  if (NOT "${PASTIX_VERSION}" VERSION_LESS "${PaStiX_FIND_VERSION}")
+    set(PASTIX_VERSION_OK TRUE)
+  endif()
+else()
+  # No specific version requested
+  set(PASTIX_VERSION_OK TRUE)
+endif()
 
 mark_as_advanced(
+  PASTIX_INCLUDE_DIR
   PASTIX_INCLUDE_DIRS
   PASTIX_LIBRARY
   PASTIX_LIBRARIES
+  PASTIX_VERSION
   )
 
 # Try to run a test program that uses PaStiX
@@ -123,8 +151,9 @@ int main()
 " PASTIX_TEST_RUNS)
 
 endif()
+
 # Standard package handling
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(PASTIX
   "PaStiX could not be found. Be sure to set PASTIX_DIR."
-  PASTIX_LIBRARIES PASTIX_INCLUDE_DIRS PASTIX_TEST_RUNS)
+  PASTIX_LIBRARIES PASTIX_INCLUDE_DIRS PASTIX_TEST_RUNS PASTIX_VERSION PASTIX_VERSION_OK)

@@ -40,14 +40,15 @@ namespace dolfin
     VTKPlottableCSGGeometry(boost::shared_ptr<const CSGGeometry> geometry);
 
     /// Additional parameters for VTKPlottableCSGGeometry
-    virtual void modify_default_parameters(Parameters &parameters)
+    virtual void modify_default_parameters(Parameters& p)
     {
-      parameters["wireframe"] = true;
-      parameters["scalarbar"] = false;
+      p["wireframe"] = true;
+      p["scalarbar"] = false;
     }
 
     /// Update the plottable data
-    void update(boost::shared_ptr<const Variable> var, const Parameters& parameters, int frame_counter);
+    void update(boost::shared_ptr<const Variable> var, const Parameters& p,
+                int frame_counter);
 
     /// Return whether this plottable is compatible with the variable
     bool is_compatible(const Variable &var) const;

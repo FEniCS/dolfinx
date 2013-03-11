@@ -9,8 +9,8 @@ set(HEADERS Plotter.h PlotWidget.h CoordLabel.h BoundaryMeshFunction.h)
 # Ignore whitespace in library paths
 cmake_policy(SET CMP0004 OLD)
 
-# Get DOLFIN configuration data (dolfin-config.cmake must be in DOLFIN_CMAKE_CONFIG_PATH)
-find_package(dolfin REQUIRED)
+# Get DOLFIN configuration data (DOLFINConfig.cmake must be in DOLFIN_CMAKE_CONFIG_PATH)
+find_package(DOLFIN REQUIRED)
 
 # Default build type (can be overridden by user)
 if (NOT CMAKE_BUILD_TYPE)
@@ -43,18 +43,47 @@ if (VTK_FOUND)
 endif()
 
 # If built stand-alone (in demo directory), DOLFIN_ENABLE_FOO are not set. We
-# have to parse the definitions to see if qvtk is enabled in dolfin.
+# have to parse the definitions to see if qvtk is enabled in DOLFIN.
 get_directory_property(cmake_defs COMPILE_DEFINITIONS)
 foreach(d ${cmake_defs})
   if (${d} STREQUAL HAS_QVTK)
     set(QVTK_ENABLED 1)
   endif()
 endforeach()
-  
+
 if (QT_FOUND AND VTK_FOUND AND QVTK_ENABLED)
 
   # Define headers to run moc on. The OPTIONS ... works around a problem with moc+boost (QT bug #22829).
-  qt4_wrap_cpp(HEADERS_MOC ${HEADERS} OPTIONS -DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED)
+  qt4_wrap_cpp(HEADERS_MOC ${HEADERS} OPTIONS   -DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_BIT_AND_ASSIGN_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_BIT_AND_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_BIT_OR_ASSIGN_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_BIT_OR_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_BIT_XOR_ASSIGN_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_BIT_XOR_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_DIVIDES_ASSIGN_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_DIVIDES_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_EQUAL_TO_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_GREATER_EQUAL_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_GREATER_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_LEFT_SHIFT_ASSIGN_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_LEFT_SHIFT_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_LESS_EQUAL_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_LESS_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_LOGICAL_AND_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_LOGICAL_OR_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_MINUS_ASSIGN_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_MINUS_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_MODULUS_ASSIGN_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_MODULUS_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_MULTIPLIES_ASSIGN_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_MULTIPLIES_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_NOT_EQUAL_TO_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_PLUS_ASSIGN_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_PLUS_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_RIGHT_SHIFT_ASSIGN_HPP_INCLUDED
+                                                -DBOOST_TT_HAS_RIGHT_SHIFT_HPP_INCLUDED
+                                                )
 
   # Executable
   add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS_MOC})
@@ -67,4 +96,3 @@ else()
   message(STATUS "QT not found, or QT/VTK not enabled in DOLFIN. Not building " ${PROJECT_NAME})
 
 endif()
-

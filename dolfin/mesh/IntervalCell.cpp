@@ -79,7 +79,7 @@ std::size_t IntervalCell::orientation(const Cell& cell) const
 }
 //-----------------------------------------------------------------------------
 void IntervalCell::create_entities(std::vector<std::vector<std::size_t> >& e,
-                                   std::size_t dim, const std::size_t* v) const
+                                   std::size_t dim, const unsigned int* v) const
 {
   // We don't need to create any entities
   dolfin_error("IntervalCell.cpp",
@@ -91,7 +91,7 @@ void IntervalCell::refine_cell(Cell& cell, MeshEditor& editor,
                                std::size_t& current_cell) const
 {
   // Get vertices
-  const std::size_t* v = cell.entities(0);
+  const unsigned int* v = cell.entities(0);
   dolfin_assert(v);
 
   // Get offset for new vertex indices
@@ -126,7 +126,7 @@ double IntervalCell::volume(const MeshEntity& interval) const
   const MeshGeometry& geometry = interval.mesh().geometry();
 
   // Get the coordinates of the two vertices
-  const std::size_t* vertices = interval.entities(0);
+  const unsigned int* vertices = interval.entities(0);
   const double* x0 = geometry.x(vertices[0]);
   const double* x1 = geometry.x(vertices[1]);
 
@@ -166,7 +166,7 @@ Point IntervalCell::normal(const Cell& cell, std::size_t facet) const
   const MeshGeometry& geometry = cell.mesh().geometry();
 
   // Get the two vertices as points
-  const std::size_t* vertices = cell.entities(0);
+  const unsigned int* vertices = cell.entities(0);
   Point p0 = geometry.point(vertices[0]);
   Point p1 = geometry.point(vertices[1]);
 
@@ -187,14 +187,14 @@ Point IntervalCell::cell_normal(const Cell& cell) const
   const MeshGeometry& geometry = cell.mesh().geometry();
 
   // Cell_normal only defined for gdim = 1, 2 for now
-  const unsigned int gdim = geometry.dim();
+  const std::size_t gdim = geometry.dim();
   if (gdim > 2)
     dolfin_error("IntervalCell.cpp",
                  "compute cell normal",
                  "Illegal geometric dimension (%d)", gdim);
 
   // Get the two vertices as points
-  const std::size_t* vertices = cell.entities(0);
+  const unsigned int* vertices = cell.entities(0);
   Point p0 = geometry.point(vertices[0]);
   Point p1 = geometry.point(vertices[1]);
 
@@ -224,7 +224,7 @@ void IntervalCell::order(Cell& cell,
   // Sort local vertices in ascending order, connectivity 1 - 0
   if (!topology(1, 0).empty())
   {
-    std::size_t* cell_vertices = const_cast<std::size_t*>(cell.entities(0));
+    unsigned int* cell_vertices = const_cast<unsigned int*>(cell.entities(0));
     sort_entities(2, cell_vertices, local_to_global_vertex_indices);
   }
 }
@@ -233,6 +233,7 @@ std::string IntervalCell::description(bool plural) const
 {
   if (plural)
     return "intervals";
-  return "interval";
+  else
+    return "interval";
 }
 //-----------------------------------------------------------------------------

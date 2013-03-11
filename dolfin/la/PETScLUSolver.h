@@ -73,10 +73,22 @@ namespace dolfin
     std::size_t solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b
+    std::size_t solve(GenericVector& x, const GenericVector& b, bool transpose);
+
+    /// Solve linear system Ax = b
     std::size_t solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b
     std::size_t solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b);
+
+    /// Solve linear system A^Tx = b
+    std::size_t solve_transpose(GenericVector& x, const GenericVector& b);
+
+    /// Solve linear system A^Tx = b
+    std::size_t solve_transpose(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+
+    /// Solve linear system A^Tx = b
+    std::size_t solve_transpose(const PETScMatrix& A, PETScVector& x, const PETScVector& b);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -116,7 +128,7 @@ namespace dolfin
     boost::shared_ptr<KSP> _ksp;
 
     // Operator (the matrix)
-    boost::shared_ptr<const PETScMatrix> A;
+    boost::shared_ptr<const PETScMatrix> _A;
 
   };
 

@@ -80,6 +80,8 @@ endif()
 
 if (DOLFIN_SKIP_BUILD_TESTS)
   set(ARMADILLO_TEST_RUNS TRUE)
+  set(ARMADILLO_VERSION "UNKNOWN")
+  set(ARMADILLO_VERSION_OK TRUE)
 elseif (ARMADILLO_INCLUDE_DIRS AND ARMADILLO_LIBRARIES)
   include(CheckCXXSourceRuns)
 
@@ -133,6 +135,17 @@ int main() {
     set(ARMADILLO_VERSION ${OUTPUT} CACHE TYPE STRING)
     mark_as_advanced(ARMADILLO_VERSION)
   endif()
+
+  if (Armadillo_FIND_VERSION)
+    # Check if version found is >= required version
+    if (NOT "${ARMADILLO_VERSION}" VERSION_LESS "${Armadillo_FIND_VERSION}")
+      set(ARMADILLO_VERSION_OK TRUE)
+    endif()
+  else()
+    # No specific version requested
+    set(ARMADILLO_VERSION_OK TRUE)
+  endif()
+  mark_as_advanced(ARMADILLO_VERSION_OK)
 
   set(armadillo_test_str "
 #include <armadillo>
@@ -227,4 +240,8 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Armadillo
   "Armadillo could not be found. Be sure to set ARMADILLO_DIR."
-  ARMADILLO_LIBRARIES ARMADILLO_INCLUDE_DIRS ARMADILLO_TEST_RUNS)
+  ARMADILLO_LIBRARIES
+  ARMADILLO_INCLUDE_DIRS
+  ARMADILLO_TEST_RUNS
+  ARMADILLO_VERSION
+  ARMADILLO_VERSION_OK)

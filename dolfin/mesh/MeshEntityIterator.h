@@ -69,14 +69,14 @@ namespace dolfin
 
     /// Create iterator for mesh entities over given topological dimension
     MeshEntityIterator(const Mesh& mesh, std::size_t dim)
-      : entity(), _pos(0), pos_end(mesh.size(dim)), index(0)
+      : _entity(), _pos(0), pos_end(mesh.size(dim)), index(0)
     {
       // Check if mesh is empty
       if (mesh.num_vertices() == 0)
         return;
 
       // Initialize mesh entity
-      entity.init(mesh, dim, 0);
+      _entity.init(mesh, dim, 0);
 
       // Update end position if entities need to be generated first
       if (pos_end == 0)
@@ -85,7 +85,7 @@ namespace dolfin
 
     /// Create iterator for entities of given dimension connected to given entity
     MeshEntityIterator(const MeshEntity& entity, std::size_t dim)
-      : entity(entity.mesh(), dim, 0), _pos(0), index(0)
+      : _entity(entity.mesh(), dim, 0), _pos(0), index(0)
     {
       // Get connectivity
       const MeshConnectivity& c = entity.mesh().topology()(entity.dim(), dim);
@@ -109,7 +109,7 @@ namespace dolfin
 
     /// Copy constructor
     MeshEntityIterator(const MeshEntityIterator& it)
-      : entity(it.entity), _pos(it._pos), pos_end(it.pos_end), index(it.index) {}
+      : _entity(it._entity), _pos(it._pos), pos_end(it.pos_end), index(it.index) {}
 
     /// Destructor
     virtual ~MeshEntityIterator() {}
@@ -154,7 +154,7 @@ namespace dolfin
 
     /// Member access operator
     MeshEntity* operator->()
-    { entity._local_index = (index ? index[_pos] : _pos); return &entity; }
+    { _entity._local_index = (index ? index[_pos] : _pos); return &_entity; }
 
     /// Random access operator
     MeshEntity& operator[] (std::size_t pos)
@@ -188,7 +188,7 @@ namespace dolfin
     { _pos = pos_end; }
 
     // Mesh entity
-    MeshEntity entity;
+    MeshEntity _entity;
 
     // Current position
     std::size_t _pos;
@@ -197,7 +197,7 @@ namespace dolfin
     std::size_t pos_end;
 
     // Mapping from pos to index (if any)
-    const std::size_t* index;
+    const unsigned int* index;
 
   };
 

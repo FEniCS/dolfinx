@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-05-08
-// Last changed: 2012-10-25
+// Last changed: 2013-02-03
 
 #include <numeric>
 #include <sstream>
@@ -32,7 +32,9 @@ using namespace dolfin;
 MeshTopology::MeshTopology()
 
 {
-  // Do nothing
+  // Make shared vertices empty when in serial
+  if (MPI::num_processes() == 1)
+    shared_entities(0);
 }
 //-----------------------------------------------------------------------------
 MeshTopology::MeshTopology(const MeshTopology& topology)
@@ -55,6 +57,7 @@ const MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
   global_num_entities = topology.global_num_entities;
   connectivity = topology.connectivity;
   _global_indices = topology._global_indices;
+  coloring = topology.coloring;
 
   return *this;
 }
@@ -89,6 +92,7 @@ void MeshTopology::clear()
   global_num_entities.clear();
   connectivity.clear();
   _global_indices.clear();
+  coloring.clear();
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::clear(std::size_t d0, std::size_t d1)
@@ -104,7 +108,7 @@ void MeshTopology::init(std::size_t dim)
   clear();
 
   // Initialize number of mesh entities
-  num_entities = std::vector<std::size_t>(dim + 1, 0);
+  num_entities = std::vector<unsigned int>(dim + 1, 0);
   global_num_entities = std::vector<std::size_t>(dim + 1, 0);
 
   // Initialize storage for global indices
@@ -152,23 +156,23 @@ const dolfin::MeshConnectivity& MeshTopology::operator() (std::size_t d0, std::s
   return connectivity[d0][d1];
 }
 //-----------------------------------------------------------------------------
-std::map<std::size_t, std::set<std::size_t> >&
-  MeshTopology::shared_entities(std::size_t dim)
+std::map<unsigned int, std::set<unsigned int> >&
+  MeshTopology::shared_entities(unsigned int dim)
 {
   dolfin_assert(dim < this->dim());
   return _shared_entities[dim];
 }
 //-----------------------------------------------------------------------------
-const std::map<std::size_t, std::set<std::size_t> >&
-  MeshTopology::shared_entities(std::size_t dim) const
+const std::map<unsigned int, std::set<unsigned int> >&
+  MeshTopology::shared_entities(unsigned int dim) const
 {
-  std::map<std::size_t, std::map<std::size_t, std::set<std::size_t> > >::const_iterator e;
+  std::map<unsigned int, std::map<unsigned int, std::set<unsigned int> > >::const_iterator e;
   e = _shared_entities.find(dim);
   if (e == _shared_entities.end())
   {
     dolfin_error("MeshTopology.cpp",
                  "get shared mesh entities",
-                 "Shared mesh entities have not been computed for dim %s", dim);
+                 "Shared mesh entities have not been computed for dim %d", dim);
   }
   return e->second;
 }

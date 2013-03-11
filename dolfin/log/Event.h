@@ -64,7 +64,7 @@ namespace dolfin
 
   private:
 
-    std::string msg;
+    std::string _msg;
     unsigned int _maxcount;
     unsigned int _count;
 

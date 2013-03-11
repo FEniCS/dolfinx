@@ -37,7 +37,7 @@ namespace dolfin
   public:
 
     /// Create parameter for given key
-    Parameter(std::string key);
+    explicit Parameter(std::string key);
 
     /// Destructor
     virtual ~Parameter();
@@ -134,8 +134,6 @@ namespace dolfin
     // Whether or not parameter has been set
     bool _is_set;
 
-  private:
-
     // Parameter key
     std::string _key;
 
@@ -150,7 +148,7 @@ namespace dolfin
   public:
 
     /// Create unset int-valued
-    IntParameter(std::string key);
+    explicit IntParameter(std::string key);
 
     /// Create int-valued parameter
     IntParameter(std::string key, int value);
@@ -201,7 +199,7 @@ namespace dolfin
   public:
 
     /// Create unset double-valued parameter
-    DoubleParameter(std::string key);
+    explicit DoubleParameter(std::string key);
 
     /// Create double-valued parameter
     DoubleParameter(std::string key, double value);
@@ -249,7 +247,7 @@ namespace dolfin
   public:
 
     /// Create unset string-valued parameter
-    StringParameter(std::string key);
+    explicit StringParameter(std::string key);
 
     /// Create string-valued parameter
     StringParameter(std::string key, std::string value);
@@ -300,7 +298,7 @@ namespace dolfin
   public:
 
     /// Create unset bool-valued parameter
-    BoolParameter(std::string key);
+    explicit BoolParameter(std::string key);
 
     /// Create bool-valued parameter
     BoolParameter(std::string key, bool value);

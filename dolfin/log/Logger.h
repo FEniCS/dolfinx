@@ -28,6 +28,7 @@
 #include <map>
 #include <ostream>
 #include <string>
+#include <boost/scoped_ptr.hpp>
 #include "Table.h"
 #include "LogLevel.h"
 
@@ -88,13 +89,13 @@ namespace dolfin
     void set_log_active(bool active);
 
     /// Return true iff logging is active
-    inline bool is_active() { return active; }
+    inline bool is_active() { return _active; }
 
     /// Set log level
     void set_log_level(int log_level);
 
     /// Get log level
-    inline int get_log_level() const { return log_level; }
+    inline int get_log_level() const { return _log_level; }
 
     /// Register timing (for later summary)
     void register_timing(std::string task, double elapsed_time);
@@ -129,10 +130,10 @@ namespace dolfin
     void write(int log_level, std::string msg) const;
 
     // True iff logging is active
-    bool active;
+    bool _active;
 
     // Current log level
-    int log_level;
+    int _log_level;
 
     // Current indentation level
     int indentation_level;
@@ -148,7 +149,7 @@ namespace dolfin
     mutable std::size_t process_number;
 
     // Thread used for monitoring memory usage
-    boost::thread* _thread_monitor_memory_usage;
+    boost::scoped_ptr<boost::thread> _thread_monitor_memory_usage;
 
     // Maximum memory usage so far
     long int _maximum_memory_usage;

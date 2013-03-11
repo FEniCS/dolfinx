@@ -15,18 +15,23 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Jan Blechta 2013
+//
 // First added:  2008-05-02
-// Last changed: 2010-03-02
+// Last changed: 2013-03-06
 
 #ifndef __ALE_H
 #define __ALE_H
+
+#include <boost/shared_ptr.hpp>
+#include "MeshDisplacement.h"
 
 namespace dolfin
 {
 
   class Mesh;
   class BoundaryMesh;
-  class Function;
+  class GenericFunction;
 
   /// This class provides functionality useful for implementation of
   /// ALE (Arbitrary Lagrangian-Eulerian) methods, in particular
@@ -37,14 +42,18 @@ namespace dolfin
   {
   public:
 
-    /// Move coordinates of mesh according to new boundary coordinates
-    static void move(Mesh& mesh, const BoundaryMesh& new_boundary);
+    /// Move coordinates of mesh according to new boundary coordinates.
+    /// Returns displacement (encapsulated in Expression subclass MeshDisplacement)
+    static boost::shared_ptr<MeshDisplacement> move(Mesh& mesh,
+                                            const BoundaryMesh& new_boundary);
 
-    /// Move coordinates of mesh0 according to mesh1 with common global vertices
-    static void move(Mesh& mesh0, const Mesh& mesh1);
+    /// Move coordinates of mesh0 according to mesh1 with common global vertices.
+    /// Returns displacement (encapsulated in Expression subclass MeshDisplacement)
+    static boost::shared_ptr<MeshDisplacement> move(Mesh& mesh0,
+                                                    const Mesh& mesh1);
 
     /// Move coordinates of mesh according to displacement function
-    static void move(Mesh& mesh, const Function& displacement);
+    static void move(Mesh& mesh, const GenericFunction& displacement);
 
   };
 

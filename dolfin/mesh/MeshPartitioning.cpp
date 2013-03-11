@@ -21,7 +21,7 @@
 // Modified by Garth N. Wells 2011-2012
 //
 // First added:  2008-12-01
-// Last changed: 2012-12-24
+// Last changed: 2013-02-18
 
 #include <algorithm>
 #include <iterator>
@@ -35,6 +35,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/graph/ParMETIS.h>
 #include <dolfin/graph/SCOTCH.h>
+#include <dolfin/graph/ZoltanPartition.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "BoundaryMesh.h"
 #include "DistributedMeshTools.h"
@@ -98,18 +99,26 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition(Mesh& mesh, const LocalMeshData& mesh_data)
 {
-  // Compute cell partition
+  // Data structure to hold cell partitions
   std::vector<std::size_t> cell_partition;
+
+  // Compute cell partition using partitioner from parameter system
   const std::string partitioner = parameters["mesh_partitioner"];
   if (partitioner == "SCOTCH")
     SCOTCH::compute_partition(cell_partition, mesh_data);
   else if (partitioner == "ParMETIS")
     ParMETIS::compute_partition(cell_partition, mesh_data);
+  else if (partitioner == "ParMETIS_repart")
+    ParMETIS::recompute_partition(cell_partition, mesh_data);
+  else if (partitioner == "Zoltan_RCB")
+    ZoltanPartition::compute_partition_rcb(cell_partition, mesh_data);
+  else if (partitioner == "Zoltan_PHG")
+    ZoltanPartition::compute_partition_phg(cell_partition, mesh_data);
   else
   {
     dolfin_error("MeshPartitioning.cpp",
                  "partition mesh",
-                 "Mesh partitioner '%s' is not known. Known partitioners are 'SCOTCH' or 'ParMETIS'", partitioner.c_str());
+                 "Mesh partitioner '%s' is not known.", partitioner.c_str());
   }
 
   // Distribute cells
@@ -166,7 +175,7 @@ void MeshPartitioning::distribute_cells(const LocalMeshData& mesh_data,
   std::vector<std::vector<std::size_t> > send_cell_vertices(num_processes);
   for (std::size_t i = 0; i < num_local_cells; i++)
   {
-    const std::size_t dest = cell_partition[i]; 
+    const std::size_t dest = cell_partition[i];
     send_cell_vertices[dest].push_back(mesh_data.global_cell_indices[i]);
     for (std::size_t j = 0; j < num_cell_vertices; j++)
       send_cell_vertices[dest].push_back(mesh_data.cell_vertices[i][j]);
@@ -234,7 +243,7 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
         required_vertex != needed_vertex_indices.end(); ++required_vertex)
   {
     // Get process that has required vertex
-    const std::size_t location 
+    const std::size_t location
       = MPI::index_owner(*required_vertex, mesh_data.num_global_vertices);
     send_vertex_indices[location].push_back(*required_vertex);
     vertex_location[location].push_back(*required_vertex);
@@ -247,10 +256,11 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
 
   // Distribute vertex coordinates
   std::vector<std::vector<double> > send_vertex_coordinates(num_processes);
-  const std::pair<std::size_t, std::size_t> local_vertex_range 
+  const std::pair<std::size_t, std::size_t> local_vertex_range
       = MPI::local_range(mesh_data.num_global_vertices);
   for (std::size_t p = 0; p < num_processes; ++p)
   {
+    send_vertex_coordinates[p].reserve(received_vertex_indices[p].size()*gdim);
     for (std::size_t i = 0; i < received_vertex_indices[p].size(); ++i)
     {
       dolfin_assert(received_vertex_indices[p][i] >= local_vertex_range.first
@@ -317,13 +327,13 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
   // Add vertices
   editor.init_vertices(vertex_coordinates.size());
-  Point p(gdim);
+  Point point(gdim);
   dolfin_assert(vertex_indices.size() == vertex_coordinates.size());
   for (std::size_t i = 0; i < vertex_coordinates.size(); ++i)
   {
     for (std::size_t j = 0; j < gdim; ++j)
-      p[j] = vertex_coordinates[i][j];
-    editor.add_vertex_global(i, vertex_indices[i], p);
+      point[j] = vertex_coordinates[i][j];
+    editor.add_vertex_global(i, vertex_indices[i], point);
   }
 
   // Add cells
@@ -353,9 +363,9 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   mesh.topology().init_global(tdim,  num_global_cells);
 
   // Construct boundary mesh
-  BoundaryMesh bmesh(mesh);
+  BoundaryMesh bmesh(mesh, "exterior");
 
-  const MeshFunction<std::size_t>& boundary_vertex_map = bmesh.vertex_map();
+  const MeshFunction<std::size_t>& boundary_vertex_map = bmesh.entity_map(0);
   const std::size_t boundary_size = boundary_vertex_map.size();
 
   // Build sorted array of global boundary vertex indices (global
@@ -370,9 +380,11 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
   // Create shared_vertices data structure: mapping from shared vertices
   // to list of neighboring processes
-  std::map<std::size_t, std::set<std::size_t> >& shared_vertices
+  std::map<unsigned int, std::set<unsigned int> >& shared_vertices
         = mesh.topology().shared_entities(0);
   shared_vertices.clear();
+
+  // FIXME: Remove computation from inside communication loop
 
   // Build shared vertex to sharing processes map
   for (std::size_t i = 1; i < num_processes; ++i)

@@ -41,7 +41,7 @@ namespace dolfin
 
   /// This class defines a common interface for matrices.
 
-  class GenericMatrix : public GenericTensor, public virtual GenericLinearOperator
+  class GenericMatrix : public GenericTensor, public GenericLinearOperator
   {
   public:
 
@@ -161,6 +161,15 @@ namespace dolfin
     {
       axpy(-1.0, A, false);
       return *this;
+    }
+
+    /// Test if matrix is symmetric
+    virtual bool is_symmetric(double tol) const
+    {
+      dolfin_error("GenericMatrix.h",
+                   "test if matrix is symmetric",
+                   "Not implemented by current linear algebra backend");
+      return false;
     }
 
     /// Assignment operator

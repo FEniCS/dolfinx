@@ -85,12 +85,12 @@ namespace dolfin
     /// Output for point (not subclass of Variable for efficiency)
     LogStream& operator<< (const Point& point);
 
-    void setprecision(std::size_t n);
+    void setprecision(std::streamsize n);
 
   private:
 
     // Type of stream
-    Type type;
+    Type _type;
 
     // Buffer
     std::stringstream buffer;

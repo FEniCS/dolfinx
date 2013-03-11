@@ -101,5 +101,10 @@ File("elasticity.pvd", "compressed") << u
 if MPI.num_processes() > 1:
     File("partitions.pvd") << CellFunction("uint", mesh, MPI.process_number())
 
+# Project and write stress field to post-processing file
+W = TensorFunctionSpace(mesh, "Discontinuous Lagrange", 0)
+stress = project(sigma(u), V=W)
+File("streess.pvd") << stress
+
 # Plot solution
 plot(u, interactive=True)

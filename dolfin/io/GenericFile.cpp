@@ -31,7 +31,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 GenericFile::GenericFile(std::string filename, std::string filetype)
- : filename(filename), filetype(filetype),
+ : _filename(filename), _filetype(filetype),
    opened_read(false),  opened_write(false), check_header(false),
    counter(0), counter1(0), counter2(0)
 {
@@ -73,14 +73,9 @@ void GenericFile::operator>> (MeshFunction<int>& mesh_function)
   read_not_impl("MeshFunction<int>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator>> (MeshFunction<unsigned long int>& mesh_function)
+void GenericFile::operator>> (MeshFunction<std::size_t>& mesh_function)
 {
-  read_not_impl("MeshFunction<unsigned long int>");
-}
-//-----------------------------------------------------------------------------
-void GenericFile::operator>> (MeshFunction<unsigned int>& mesh_function)
-{
-  read_not_impl("MeshFunction<unsigned int>");
+  read_not_impl("MeshFunction<std::size_t>");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator>> (MeshFunction<double>& mesh_function)
@@ -98,14 +93,9 @@ void GenericFile::operator>> (MeshValueCollection<int>& mesh_markers)
   read_not_impl("MeshValueCollection<int>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator>> (MeshValueCollection<unsigned long int>& mesh_markers)
+void GenericFile::operator>> (MeshValueCollection<std::size_t>& mesh_markers)
 {
-  read_not_impl("MeshValueCollection<unsigned long int>");
-}
-//-----------------------------------------------------------------------------
-void GenericFile::operator>> (MeshValueCollection<unsigned int>& mesh_markers)
-{
-  read_not_impl("MeshValueCollection<unsigned int>");
+  read_not_impl("MeshValueCollection<std::size_t>");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator>> (MeshValueCollection<double>& mesh_markers)
@@ -202,15 +192,9 @@ void GenericFile::operator<< (const MeshFunction<int>& mesh_function)
 {
   write_not_impl("MeshFunction<int>");
 }
-//-----------------------------------------------------------------------------
-void GenericFile::operator<< (const MeshFunction<unsigned long int>& mesh_function)
+void GenericFile::operator<< (const MeshFunction<std::size_t>& mesh_function)
 {
-  write_not_impl("MeshFunction<unsigned long int>");
-}
-//-----------------------------------------------------------------------------
-void GenericFile::operator<< (const MeshFunction<unsigned int>& mesh_function)
-{
-  write_not_impl("MeshFunction<unsigned int>");
+  write_not_impl("MeshFunction<std::size_t>");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator<< (const MeshFunction<double>& mesh_function)
@@ -228,14 +212,9 @@ void GenericFile::operator<< (const MeshValueCollection<int>& mesh_markers)
   write_not_impl("MeshValueCollection<int>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<< (const MeshValueCollection<unsigned long int>& mesh_markers)
+void GenericFile::operator<< (const MeshValueCollection<std::size_t>& mesh_markers)
 {
-  write_not_impl("MeshValueCollection<unsigned long int>");
-}
-//-----------------------------------------------------------------------------
-void GenericFile::operator<< (const MeshValueCollection<unsigned int>& mesh_markers)
-{
-  write_not_impl("MeshValueCollection<unsigned int>");
+  write_not_impl("MeshValueCollection<std::size_t>");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator<< (const MeshValueCollection<double>& mesh_markers)
@@ -319,20 +298,20 @@ void GenericFile::read()
 void GenericFile::write()
 {
   // pvd files should only be cleared by one process
-  if (filetype == "VTK" && MPI::process_number() > 0)
+  if (_filetype == "VTK" && MPI::process_number() > 0)
     opened_write = true;
 
   // Open file
   if (!opened_write)
   {
     // Clear file
-    std::ofstream file(filename.c_str(), std::ios::trunc);
+    std::ofstream file(_filename.c_str(), std::ios::trunc);
     if (!file.good())
     {
       dolfin_error("GenericFile.cpp",
                    "write to file",
                    "Unable to open file \"%s\" for writing",
-                   filename.c_str());
+                   _filename.c_str());
     }
     file.close();
   }
@@ -344,7 +323,7 @@ void GenericFile::read_not_impl(const std::string object) const
   dolfin_error("GenericFile.cpp",
                "read object from file",
                "Cannot read objects of type %s from %s files",
-               object.c_str(), filetype.c_str());
+               object.c_str(), _filetype.c_str());
 }
 //-----------------------------------------------------------------------------
 void GenericFile::write_not_impl(const std::string object) const
@@ -352,6 +331,6 @@ void GenericFile::write_not_impl(const std::string object) const
   dolfin_error("GenericFile.cpp",
                "write object to file",
                "Cannot write objects of type %s to %s files",
-               object.c_str(), filetype.c_str());
+               object.c_str(), _filetype.c_str());
 }
 //-----------------------------------------------------------------------------

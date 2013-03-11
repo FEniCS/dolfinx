@@ -27,7 +27,6 @@
 #ifdef HAS_OPENMP
 
 #include <vector>
-#include <dolfin/common/types.h>
 #include "AssemblerBase.h"
 
 namespace dolfin
@@ -36,7 +35,6 @@ namespace dolfin
   // Forward declarations
   class GenericTensor;
   class Form;
-  class SubDomain;
   class UFC;
   template<typename T> class MeshFunction;
 
@@ -61,14 +59,6 @@ namespace dolfin
     void assemble(GenericTensor& A, const Form& a);
 
   private:
-
-    friend class Assembler;
-
-    /// Assemble tensor from given form on sub domains
-    void assemble(GenericTensor& A, const Form& a,
-                  const MeshFunction<std::size_t>* cell_domains,
-                  const MeshFunction<std::size_t>* exterior_facet_domains,
-                  const MeshFunction<std::size_t>* interior_facet_domains);
 
     // Assemble over cells
     void assemble_cells(GenericTensor& A, const Form& a, UFC& ufc,

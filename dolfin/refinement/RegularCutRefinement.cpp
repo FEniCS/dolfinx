@@ -328,8 +328,8 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       dolfin_assert(unrefined_cells[cell->index()] == -1);
 
       // Get vertices and edges
-      const std::size_t* v = cell->entities(0);
-      const std::size_t* e = cell->entities(1);
+      const unsigned int* v = cell->entities(0);
+      const unsigned int* e = cell->entities(1);
       dolfin_assert(v);
       dolfin_assert(e);
 
@@ -384,10 +384,10 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
 
       // Get list of vertices and edges for both cells
       const Cell twin(mesh, bisection_twin);
-      const std::size_t* vertices_0 = cell->entities(0);
-      const std::size_t* vertices_1 = twin.entities(0);
-      const std::size_t* edges_0 = cell->entities(1);
-      const std::size_t* edges_1 = twin.entities(1);
+      const unsigned int* vertices_0 = cell->entities(0);
+      const unsigned int* vertices_1 = twin.entities(0);
+      const unsigned int* edges_0 = cell->entities(1);
+      const unsigned int* edges_1 = twin.entities(1);
       dolfin_assert(vertices_0);
       dolfin_assert(vertices_1);
       dolfin_assert(edges_0);
@@ -468,8 +468,8 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
       dolfin_assert(unrefined_cells[cell->index()] == -1);
 
       // Get vertices and edges
-      const std::size_t* v = cell->entities(0);
-      const std::size_t* e = cell->entities(1);
+      const unsigned int* v = cell->entities(0);
+      const unsigned int* e = cell->entities(1);
       dolfin_assert(v);
       dolfin_assert(e);
 
@@ -579,8 +579,8 @@ RegularCutRefinement::find_common_edges(const Cell& cell,
 {
   // Get list of edges for both cells
   const Cell twin(mesh, bisection_twin);
-  const std::size_t* e0 = cell.entities(1);
-  const std::size_t* e1 = twin.entities(1);
+  const unsigned int* e0 = cell.entities(1);
+  const unsigned int* e1 = twin.entities(1);
   dolfin_assert(e0);
   dolfin_assert(e1);
 
@@ -606,8 +606,8 @@ RegularCutRefinement::find_bisection_edges(const Cell& cell,
 {
   // Get list of edges for both cells
   const Cell twin(mesh, bisection_twin);
-  const std::size_t* e0 = cell.entities(1);
-  const std::size_t* e1 = twin.entities(1);
+  const unsigned int* e0 = cell.entities(1);
+  const unsigned int* e1 = twin.entities(1);
   dolfin_assert(e0);
   dolfin_assert(e1);
 
@@ -617,7 +617,7 @@ RegularCutRefinement::find_bisection_edges(const Cell& cell,
   {
     // Get list of vertices for edge
     const Edge edge_0(mesh, e0[i]);
-    const std::size_t* v0 = edge_0.entities(0);
+    const unsigned int* v0 = edge_0.entities(0);
     dolfin_assert(v0);
 
     for (std::size_t j = 0; j < num_edges; j++)
@@ -628,7 +628,7 @@ RegularCutRefinement::find_bisection_edges(const Cell& cell,
 
       // Get list of vertices for edge
       const Edge edge_1(mesh, e1[j]);
-      const std::size_t* v1 = edge_1.entities(0);
+      const unsigned int* v1 = edge_1.entities(0);
       dolfin_assert(v1);
 
       // Check that we have a common vertex
@@ -661,16 +661,16 @@ RegularCutRefinement::find_bisection_vertices(const Cell& cell,
 {
   // Get list of edges for both cells
   const Cell twin(mesh, bisection_twin);
-  const std::size_t* e0 = cell.entities(1);
-  const std::size_t* e1 = twin.entities(1);
+  const unsigned int* e0 = cell.entities(1);
+  const unsigned int* e1 = twin.entities(1);
   dolfin_assert(e0);
   dolfin_assert(e1);
 
   // Get vertices of the two edges
   Edge edge_0(mesh, e0[bisection_edges.first]);
   Edge edge_1(mesh, e1[bisection_edges.second]);
-  const std::size_t* v0 = edge_0.entities(0);
-  const std::size_t* v1 = edge_1.entities(0);
+  const unsigned int* v0 = edge_0.entities(0);
+  const unsigned int* v1 = edge_1.entities(0);
   dolfin_assert(v0);
   dolfin_assert(v1);
 

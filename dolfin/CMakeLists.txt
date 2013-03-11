@@ -56,7 +56,7 @@ list(APPEND DOLFIN_CXX_DEFINITIONS ${LIBXML2_DEFINITIONS})
 list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${UFC_INCLUDE_DIRS})
 
 # Armadillo
-list(APPEND DOLFIN_DEP_INCLUDE_DIRECTORIES ${ARMADILLO_INCLUDE_DIRS})
+list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${ARMADILLO_INCLUDE_DIRS})
 list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${ARMADILLO_LIBRARIES})
 list(APPEND DOLFIN_LINK_FLAGS ${ARMADILLO_LINK_FLAGS})
 
@@ -64,7 +64,6 @@ list(APPEND DOLFIN_LINK_FLAGS ${ARMADILLO_LINK_FLAGS})
 list(APPEND DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
 list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${Boost_LIBRARIES})
 list(APPEND APPEND DOLFIN_TARGET_LINK_LIBRARIES_DIRS ${Boost_LIBRARY_DIRS})
-
 
 #------------------------------------------------------------------------------
 
@@ -152,15 +151,11 @@ if (DOLFIN_ENABLE_CGAL AND CGAL_FOUND)
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${CGAL_LIBRARIES})
 
   # Add necessary CGAL flags (usually related to floating point)
-  set(DOLFIN_CXX_FLAGS ${DOLFIN_CXX_FLAGS} ${CGAL_CXX_FLAGS_INIT})
+  set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${CGAL_CXX_FLAGS_INIT}")
 
-  # Add -frounding-math if we have a GNU compiler
+  # Add options that will allow valgrind to run
   if (CGAL_DISABLE_ROUNDING_MATH_CHECK)
     list(APPEND DOLFIN_CXX_DEFINITIONS "-DCGAL_DISABLE_ROUNDING_MATH_CHECK")
-  else()
-    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-      set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} -frounding-math")
-    endif()
   endif()
 
 endif()
@@ -386,13 +381,18 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.pc
   )
 
 #------------------------------------------------------------------------------
-# Generate CMake config files (dolfin-config{,-version}.cmake)
+# Generate CMake config files (DOLFINConfig{,Version}.cmake)
 
 # Set library location
 get_target_property(DOLFIN_LIBRARY_LOCATION dolfin LOCATION)
 get_filename_component(DOLFIN_LIBRARY_FILENAME ${DOLFIN_LIBRARY_LOCATION} NAME)
 set(DOLFIN_LIBRARY "${CMAKE_INSTALL_PREFIX}/${DOLFIN_LIB_DIR}/${DOLFIN_LIBRARY_FILENAME}")
 
+configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfig.cmake.in
+  ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake @ONLY)
+configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfigVersion.cmake.in
+  ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake @ONLY)
+# Keep dolfin-config{-version}.cmake for backwards compatability
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-config.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/dolfin-config.cmake @ONLY)
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-config-version.cmake.in
@@ -401,6 +401,8 @@ configure_file(${DOLFIN_CMAKE_DIR}/templates/UseDOLFIN.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake @ONLY)
 install(
   FILES
+    ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
+    ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake
     ${CMAKE_BINARY_DIR}/dolfin/dolfin-config.cmake
     ${CMAKE_BINARY_DIR}/dolfin/dolfin-config-version.cmake
     ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake

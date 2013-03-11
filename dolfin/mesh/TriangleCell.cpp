@@ -19,9 +19,10 @@
 // Modified by Kristian Oelgaard 2006-2007
 // Modified by Dag Lindbo 2008
 // Modified by Kristoffer Selim 2008
+// Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2011-11-14
+// Last changed: 2013-02-21
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -85,7 +86,7 @@ std::size_t TriangleCell::orientation(const Cell& cell) const
 }
 //-----------------------------------------------------------------------------
 void TriangleCell::create_entities(std::vector<std::vector<std::size_t> >& e,
-                                   std::size_t dim, const std::size_t* v) const
+                                   std::size_t dim, const unsigned int* v) const
 {
   // We only need to know how to create edges
   if (dim != 1)
@@ -105,8 +106,8 @@ void TriangleCell::refine_cell(Cell& cell, MeshEditor& editor,
                                std::size_t& current_cell) const
 {
   // Get vertices and edges
-  const std::size_t* v = cell.entities(0);
-  const std::size_t* e = cell.entities(1);
+  const unsigned int* v = cell.entities(0);
+  const unsigned int* e = cell.entities(1);
   dolfin_assert(v);
   dolfin_assert(e);
 
@@ -148,7 +149,7 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   const MeshGeometry& geometry = triangle.mesh().geometry();
 
   // Get the coordinates of the three vertices
-  const std::size_t* vertices = triangle.entities(0);
+  const unsigned int* vertices = triangle.entities(0);
   const double* x0 = geometry.x(vertices[0]);
   const double* x1 = geometry.x(vertices[1]);
   const double* x2 = geometry.x(vertices[2]);
@@ -199,7 +200,7 @@ double TriangleCell::diameter(const MeshEntity& triangle) const
                  "Only know how to compute diameter when embedded in R^2 or R^3");
 
   // Get the coordinates of the three vertices
-  const std::size_t* vertices = triangle.entities(0);
+  const unsigned int* vertices = triangle.entities(0);
   const Point p0 = geometry.point(vertices[0]);
   const Point p1 = geometry.point(vertices[1]);
   const Point p2 = geometry.point(vertices[2]);
@@ -270,14 +271,14 @@ Point TriangleCell::cell_normal(const Cell& cell) const
   const MeshGeometry& geometry = cell.mesh().geometry();
 
   // Cell_normal only defined for gdim = 2, 3:
-  const unsigned int gdim = geometry.dim();
+  const std::size_t gdim = geometry.dim();
   if (gdim > 3)
     dolfin_error("TriangleCell.cpp",
                  "compute cell normal",
                  "Illegal geometric dimension (%d)", gdim);
 
   // Get the three vertices as points
-  const std::size_t* vertices = cell.entities(0);
+  const unsigned int* vertices = cell.entities(0);
   Point p0 = geometry.point(vertices[0]);
   Point p1 = geometry.point(vertices[1]);
   Point p2 = geometry.point(vertices[2]);
@@ -334,12 +335,12 @@ void TriangleCell::order(Cell& cell,
     dolfin_assert(!topology(2, 1).empty());
 
     // Get edge indices (local)
-    const std::size_t* cell_edges = cell.entities(1);
+    const unsigned int* cell_edges = cell.entities(1);
 
     // Sort vertices on each edge
     for (std::size_t i = 0; i < 3; i++)
     {
-      std::size_t* edge_vertices = const_cast<std::size_t*>(topology(1, 0)(cell_edges[i]));
+      unsigned int* edge_vertices = const_cast<unsigned int*>(topology(1, 0)(cell_edges[i]));
       sort_entities(2, edge_vertices, local_to_global_vertex_indices);
     }
   }
@@ -347,7 +348,7 @@ void TriangleCell::order(Cell& cell,
   // Sort local vertices on cell in ascending order, connectivity 2 - 0
   if (!topology(2, 0).empty())
   {
-    std::size_t* cell_vertices = const_cast<std::size_t*>(cell.entities(0));
+    unsigned int* cell_vertices = const_cast<unsigned int*>(cell.entities(0));
     sort_entities(3, cell_vertices, local_to_global_vertex_indices);
   }
 
@@ -357,8 +358,8 @@ void TriangleCell::order(Cell& cell,
     dolfin_assert(!topology(2, 1).empty());
 
     // Get cell vertiex and edge indices (local)
-    const std::size_t* cell_vertices = cell.entities(0);
-    std::size_t* cell_edges = const_cast<std::size_t*>(cell.entities(1));
+    const unsigned int* cell_vertices = cell.entities(0);
+    unsigned int* cell_edges = const_cast<unsigned int*>(cell.entities(1));
 
     // Loop over vertices on cell
     for (std::size_t i = 0; i < 3; i++)
@@ -366,7 +367,7 @@ void TriangleCell::order(Cell& cell,
       // Loop over edges on cell
       for (std::size_t j = i; j < 3; j++)
       {
-        const std::size_t* edge_vertices = topology(1, 0)(cell_edges[j]);
+        const unsigned int* edge_vertices = topology(1, 0)(cell_edges[j]);
 
         // Check if the ith vertex of the cell is non-incident with edge j
         if (std::count(edge_vertices, edge_vertices + 2, cell_vertices[i]) == 0)
@@ -392,15 +393,15 @@ std::string TriangleCell::description(bool plural) const
 std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const
 {
   // Get vertices and edges
-  const std::size_t* v = cell.entities(0);
-  const std::size_t* e = cell.entities(1);
+  const unsigned int* v = cell.entities(0);
+  const unsigned int* e = cell.entities(1);
   dolfin_assert(v);
   dolfin_assert(e);
 
   // Look for edge satisfying ordering convention
   for (std::size_t j = 0; j < 3; j++)
   {
-    const std::size_t* ev = cell.mesh().topology()(1, 0)(e[j]);
+    const unsigned int* ev = cell.mesh().topology()(1, 0)(e[j]);
     dolfin_assert(ev);
     if (ev[0] != v[i] && ev[1] != v[i])
       return j;
@@ -411,5 +412,22 @@ std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const
                "find specified edge in cell",
                "Edge really not found");
   return 0;
+}
+//-----------------------------------------------------------------------------
+double TriangleCell::radius_ratio(const Cell& triangle) const
+{
+  // See Jonathan Richard Shewchuk: What Is a Good Linear Finite Element?,
+  // online: http://www.cs.berkeley.edu/~jrs/papers/elemj.pdf
+  
+  const double S = volume(triangle);
+  
+  // Handle degenerate case
+  if (S == 0.0) {return 0.0;}
+  
+  const double a = facet_area(triangle, 0);
+  const double b = facet_area(triangle, 1);
+  const double c = facet_area(triangle, 2);
+  
+  return 16.0*S*S/(a*b*c*(a+b+c));
 }
 //-----------------------------------------------------------------------------

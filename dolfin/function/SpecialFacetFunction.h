@@ -41,7 +41,6 @@ namespace dolfin
 
   class SpecialFacetFunction : public Expression
   {
-
   public:
 
     /// Create (scalar-valued) SpecialFacetFunction
@@ -49,7 +48,7 @@ namespace dolfin
     /// *Arguments*
     ///     f_e (std::vector<_Function_>)
     ///        Separate _Function_s for each facet
-    SpecialFacetFunction(std::vector<Function>& f_e);
+    explicit SpecialFacetFunction(std::vector<Function>& f_e);
 
     /// Create (vector-valued) SpecialFacetFunction
     ///
@@ -78,7 +77,7 @@ namespace dolfin
 
   private:
 
-    std::vector<Function>& f_e;
+    std::vector<Function>& _f_e;
 
   };
 

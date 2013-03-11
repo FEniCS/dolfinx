@@ -88,7 +88,7 @@ namespace dolfin
 
     void init();
 
-    const std::size_t q;
+    const std::size_t _q;
 
     // Counts the number of time set has been called to determine when
     // init should be called

@@ -46,8 +46,8 @@ void MeshSmoothing::smooth(Mesh& mesh, std::size_t num_iterations)
   mesh.order();
 
   // Mark vertices on the boundary so we may skip them
-  BoundaryMesh boundary(mesh);
-  const MeshFunction<std::size_t> vertex_map = boundary.vertex_map();
+  BoundaryMesh boundary(mesh, "exterior");
+  const MeshFunction<std::size_t> vertex_map = boundary.entity_map(0);
   MeshFunction<bool> on_boundary(mesh, 0);
   on_boundary = false;
   if (boundary.num_vertices() > 0)
@@ -138,7 +138,7 @@ void MeshSmoothing::smooth_boundary(Mesh& mesh,
   cout << "Smoothing boundary of mesh: " << mesh << endl;
 
   // Extract boundary of mesh
-  BoundaryMesh boundary(mesh);
+  BoundaryMesh boundary(mesh, "exterior");
 
   // Smooth boundary
   smooth(boundary, num_iterations);
@@ -154,7 +154,7 @@ void MeshSmoothing::snap_boundary(Mesh& mesh,
   cout << "Snapping boundary of mesh: " << mesh << endl;
 
   // Extract boundary of mesh
-  BoundaryMesh boundary(mesh);
+  BoundaryMesh boundary(mesh, "exterior");
 
   const std::size_t dim = mesh.geometry().dim();
 
@@ -180,7 +180,7 @@ void MeshSmoothing::move_interior_vertices(Mesh& mesh,
   else
   {
     // Use vertex map to update boundary coordinates of original mesh
-    const MeshFunction<std::size_t>& vertex_map = boundary.vertex_map();
+    const MeshFunction<std::size_t>& vertex_map = boundary.entity_map(0);
     const std::size_t d = mesh.geometry().dim();
     for (VertexIterator v(boundary); !v.end(); ++v)
     {

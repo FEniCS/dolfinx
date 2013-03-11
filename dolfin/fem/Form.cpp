@@ -247,20 +247,17 @@ std::string Form::coefficient_name(std::size_t i) const
   return name.str();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const MeshFunction<std::size_t> >
-Form::cell_domains_shared_ptr() const
+boost::shared_ptr<const MeshFunction<std::size_t> > Form::cell_domains() const
 {
   return _cell_domains;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const MeshFunction<std::size_t> >
-Form::exterior_facet_domains_shared_ptr() const
+boost::shared_ptr<const MeshFunction<std::size_t> > Form::exterior_facet_domains() const
 {
   return _exterior_facet_domains;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const MeshFunction<std::size_t> >
-Form::interior_facet_domains_shared_ptr() const
+boost::shared_ptr<const MeshFunction<std::size_t> > Form::interior_facet_domains() const
 {
   return _interior_facet_domains;
 }

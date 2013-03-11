@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Jan Blechta 2013
+//
 // First added:  2008-05-02
-// Last changed: 2012-11-23
+// Last changed: 2013-03-06
 
 #include <vector>
-#include <dolfin/function/Function.h>
-#include <dolfin/function/FunctionSpace.h>
-#include <dolfin/fem/FiniteElement.h>
+#include <dolfin/function/GenericFunction.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/Vertex.h>
 #include "HarmonicSmoothing.h"
@@ -30,27 +30,30 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void ALE::move(Mesh& mesh, const BoundaryMesh& new_boundary)
+boost::shared_ptr<MeshDisplacement> ALE::move(Mesh& mesh,
+                                              const BoundaryMesh& new_boundary)
 {
-  not_working_in_parallel("ALE mesh smoothing");
-  HarmonicSmoothing::move(mesh, new_boundary);
+  return HarmonicSmoothing::move(mesh, new_boundary);
 }
 //-----------------------------------------------------------------------------
-void ALE::move(Mesh& mesh0, const Mesh& mesh1)
+boost::shared_ptr<MeshDisplacement> ALE::move(Mesh& mesh0, const Mesh& mesh1)
 {
-  not_working_in_parallel("ALE mesh smoothing");
+  // FIXME: Maybe this works in parallel but there is no obvious way to
+  //        test it as SubMesh::init does not work in parallel
+  not_working_in_parallel("Move coordinates of mesh0 according "
+                          "to mesh1 with common global vertices");
 
   // Extract boundary meshes
-  BoundaryMesh boundary0(mesh0);
-  BoundaryMesh boundary1(mesh1);
+  BoundaryMesh boundary0(mesh0, "exterior");
+  BoundaryMesh boundary1(mesh1, "exterior");
 
   // Get vertex mappings
   boost::shared_ptr<MeshFunction<std::size_t> > local_to_global_0
     = mesh0.data().mesh_function("parent_vertex_indices");
   boost::shared_ptr<MeshFunction<std::size_t> > local_to_global_1
     = mesh1.data().mesh_function("parent_vertex_indices");
-  const MeshFunction<std::size_t>& boundary_to_mesh_0 = boundary0.vertex_map();
-  const MeshFunction<std::size_t>& boundary_to_mesh_1 = boundary1.vertex_map();
+  const MeshFunction<std::size_t>& boundary_to_mesh_0 = boundary0.entity_map(0);
+  const MeshFunction<std::size_t>& boundary_to_mesh_1 = boundary1.entity_map(0);
   dolfin_assert(local_to_global_0);
   dolfin_assert(local_to_global_1);
 
@@ -95,17 +98,15 @@ void ALE::move(Mesh& mesh0, const Mesh& mesh1)
   }
 
   // Move mesh
-  mesh0.move(boundary0);
+  return HarmonicSmoothing::move(mesh0, boundary0);
 }
 //-----------------------------------------------------------------------------
-void ALE::move(Mesh& mesh, const Function& displacement)
+void ALE::move(Mesh& mesh, const GenericFunction& displacement)
 {
   // Check dimensions
-  dolfin_assert(displacement.function_space()->element());
-  const FiniteElement& element = *displacement.function_space()->element();
   const std::size_t gdim = mesh.geometry().dim();
-  if (!((element.value_rank() == 0 && gdim == 0) ||
-        (element.value_rank() == 1 && gdim == element.value_dimension(0))))
+  if (!((displacement.value_rank() == 0 && gdim == 1) ||
+        (displacement.value_rank() == 1 && gdim == displacement.value_dimension(0))))
   {
     dolfin_error("ALE.cpp",
                  "move mesh using mesh smoothing",

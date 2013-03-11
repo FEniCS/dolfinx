@@ -105,9 +105,9 @@ GenericLinearOperator* PETScLinearOperator::wrapper()
   return _wrapper;
 }
 //-----------------------------------------------------------------------------
-void PETScLinearOperator::init(const GenericVector& x,
-                               const GenericVector& y,
-                               GenericLinearOperator* wrapper)
+void PETScLinearOperator::init_layout(const GenericVector& x,
+				      const GenericVector& y,
+				      GenericLinearOperator* wrapper)
 {
   // Store wrapper
   _wrapper = wrapper;
@@ -128,9 +128,9 @@ void PETScLinearOperator::init(const GenericVector& x,
   }
 
   // Initialize PETSc matrix
-  A.reset(new Mat, PETScMatrixDeleter());
-  MatCreateShell(PETSC_COMM_WORLD, m_local, n_local, M, N, (void*) this, A.get());
-  MatShellSetOperation(*A, MATOP_MULT, (void (*)()) usermult);
+  _A.reset(new Mat, PETScMatrixDeleter());
+  MatCreateShell(PETSC_COMM_WORLD, m_local, n_local, M, N, (void*) this, _A.get());
+  MatShellSetOperation(*_A, MATOP_MULT, (void (*)()) usermult);
 }
 //-----------------------------------------------------------------------------
 

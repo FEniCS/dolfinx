@@ -23,7 +23,7 @@
 // Modified by Benjamin Kehlet, 2012
 //
 // First added:  2007-11-25
-// Last changed: 2012-11-12
+// Last changed: 2013-03-06
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -70,6 +70,9 @@
 %shared_ptr(dolfin::SpecialFacetFunction)
 %shared_ptr(dolfin::TimeSeries)
 
+// ale
+%shared_ptr(dolfin::MeshDisplacement)
+
 // common
 %shared_ptr(dolfin::Variable)
 
@@ -92,7 +95,6 @@
 %shared_ptr(dolfin::BoundaryCondition)
 %shared_ptr(dolfin::Hierarchical<dolfin::DirichletBC>)
 %shared_ptr(dolfin::DirichletBC)
-%shared_ptr(dolfin::PeriodicBC)
 
 // function
 %shared_ptr(dolfin::Hierarchical<dolfin::FunctionSpace>)
@@ -151,8 +153,6 @@
 %shared_ptr(dolfin::CSGCGALMeshGenerator2D)
 %shared_ptr(dolfin::CSGCGALMeshGenerator3D)
 
-
-
 %shared_ptr(dolfin::SubDomain)
 %shared_ptr(dolfin::DomainBoundary)
 
@@ -164,21 +164,12 @@
 // NOTE: mesh/pre.i, mesh/post.i
 %shared_ptr(dolfin::Hierarchical<dolfin::MeshFunction<std::size_t> >)
 %shared_ptr(dolfin::MeshFunction<std::size_t>)
-%shared_ptr(dolfin::Hierarchical<dolfin::MeshFunction<dolfin::uint> >)
-%shared_ptr(dolfin::MeshFunction<dolfin::uint>)
 
 %shared_ptr(dolfin::CellFunction<std::size_t>)
 %shared_ptr(dolfin::EdgeFunction<std::size_t>)
 %shared_ptr(dolfin::FaceFunction<std::size_t>)
 %shared_ptr(dolfin::FacetFunction<std::size_t>)
 %shared_ptr(dolfin::VertexFunction<std::size_t>)
-
-// FIXME: Do we need to declare dolfin::uint?
-%shared_ptr(dolfin::CellFunction<dolfin::uint>)
-%shared_ptr(dolfin::EdgeFunction<dolfin::uint>)
-%shared_ptr(dolfin::FaceFunction<dolfin::uint>)
-%shared_ptr(dolfin::FacetFunction<dolfin::uint>)
-%shared_ptr(dolfin::VertexFunction<dolfin::uint>)
 
 // parameters
 %shared_ptr(dolfin::Parameters)

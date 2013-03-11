@@ -25,7 +25,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Event::Event(const std::string msg, unsigned int maxcount) :
-  msg(msg), _maxcount(maxcount), _count(0)
+  _msg(msg), _maxcount(maxcount), _count(0)
 {
   // Do nothing
 }
@@ -38,7 +38,7 @@ Event::~Event()
 void Event::operator() ()
 {
   if ( _count < _maxcount)
-    info(msg);
+    info(_msg);
 
   _count++;
 

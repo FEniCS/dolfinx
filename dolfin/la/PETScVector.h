@@ -238,7 +238,7 @@ namespace dolfin
     bool distributed() const;
 
     // PETSc Vec pointer
-    boost::shared_ptr<Vec> x;
+    boost::shared_ptr<Vec> _x;
 
     // PETSc Vec pointer (local ghosted)
     mutable boost::shared_ptr<Vec> x_ghosted;

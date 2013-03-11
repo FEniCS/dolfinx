@@ -38,7 +38,6 @@ using namespace dolfin;
 void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
                    const Mesh& mesh,
                    const std::vector<const GenericDofMap*> dofmaps,
-                   const std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > >& master_slave_dofs,
                    bool cells, bool interior_facets, bool exterior_facets, bool diagonal)
 {
   const std::size_t rank = dofmaps.size();
@@ -46,7 +45,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   // Get global dimensions and local range
   std::vector<std::size_t> global_dimensions(rank);
   std::vector<std::pair<std::size_t, std::size_t> > local_range(rank);
-  std::vector<const boost::unordered_map<std::size_t, std::size_t>* > off_process_owner(rank);
+  std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner(rank);
   for (std::size_t i = 0; i < rank; ++i)
   {
     global_dimensions[i] = dofmaps[i]->global_dimension();
@@ -179,39 +178,6 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   }
 
   // Finalize sparsity pattern (communicate off-process terms)
-  sparsity_pattern.apply();
-
-  // Add master-slave rows positions for periodic boundary conditions
-  std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > >::const_iterator master_slave;
-  for (master_slave = master_slave_dofs.begin(); master_slave != master_slave_dofs.end(); ++master_slave)
-  {
-    const std::size_t master_dof = master_slave->first.first;
-    const std::size_t slave_dof  = master_slave->second.first;
-
-    if (master_dof >= local_range[0].first && master_dof < local_range[0].second)
-    {
-      // Get non-zero columns for master row
-      std::vector<dolfin::la_index> column_indices;
-      sparsity_pattern.get_edges(master_dof, column_indices);
-      column_indices.push_back(slave_dof);
-
-      // Add non-zero columns to slave row
-      sparsity_pattern.add_edges(master_slave->second, column_indices);
-    }
-
-    if (slave_dof >= local_range[0].first && slave_dof < local_range[0].second)
-    {
-      // Get non-zero columns for slace row
-      std::vector<dolfin::la_index> column_indices;
-      sparsity_pattern.get_edges(slave_dof, column_indices);
-      column_indices.push_back(master_dof);
-
-      // Add non-zero columns to master row
-      sparsity_pattern.add_edges(master_slave->first, column_indices);
-    }
-  }
-
-  // Finalize sparsity pattern
   sparsity_pattern.apply();
 }
 //-----------------------------------------------------------------------------

@@ -66,22 +66,22 @@ EpetraMatrix::EpetraMatrix()
 EpetraMatrix::EpetraMatrix(const EpetraMatrix& A)
 {
   if (A.mat())
-    this->A.reset(new Epetra_FECrsMatrix(*A.mat()));
+    _A.reset(new Epetra_FECrsMatrix(*A.mat()));
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(Teuchos::RCP<Epetra_FECrsMatrix> A)
-  : A(reference_to_no_delete_pointer(*A.get())), ref_keeper(A)
+  : _A(reference_to_no_delete_pointer(*A.get())), ref_keeper(A)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EpetraMatrix::EpetraMatrix(boost::shared_ptr<Epetra_FECrsMatrix> A) : A(A)
+EpetraMatrix::EpetraMatrix(boost::shared_ptr<Epetra_FECrsMatrix> A) : _A(A)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(const Epetra_CrsGraph& graph)
-    : A(new Epetra_FECrsMatrix(Copy, graph))
+    : _A(new Epetra_FECrsMatrix(Copy, graph))
 {
   // Do nothing
 }
@@ -93,7 +93,7 @@ EpetraMatrix::~EpetraMatrix()
 //-----------------------------------------------------------------------------
 void EpetraMatrix::init(const TensorLayout& tensor_layout)
 {
-  if (A && !A.unique())
+  if (_A && !_A.unique())
   {
     dolfin_error("EpetraMatrix.cpp",
                  "initialize Epetra matrix",
@@ -167,7 +167,7 @@ void EpetraMatrix::init(const TensorLayout& tensor_layout)
   }
 
   // Create matrix
-  A.reset(new Epetra_FECrsMatrix(Copy, matrix_map));
+  _A.reset(new Epetra_FECrsMatrix(Copy, matrix_map));
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<GenericMatrix> EpetraMatrix::copy() const
@@ -185,10 +185,10 @@ std::size_t EpetraMatrix::size(std::size_t dim) const
                  "Illegal axis (%d), must be 0 or 1", dim);
   }
 
-  if (A)
+  if (_A)
   {
-    const std::size_t M = A->NumGlobalRows64();
-    const std::size_t N = A->NumGlobalCols64();
+    const std::size_t M = _A->NumGlobalRows64();
+    const std::size_t N = _A->NumGlobalCols64();
     return (dim == 0 ? M : N);
   }
   else
@@ -205,7 +205,8 @@ std::pair<std::size_t, std::size_t> EpetraMatrix::local_range(std::size_t dim) c
                  "Only local row range is available for Epetra matrices");
   }
 
-  const Epetra_BlockMap& row_map = A->RowMap();
+  dolfin_assert(_A);
+  const Epetra_BlockMap& row_map = _A->RowMap();
   dolfin_assert(row_map.LinearMap());
 
   return std::make_pair(row_map.MinMyGID64(), row_map.MaxMyGID64() + 1);
@@ -213,14 +214,14 @@ std::pair<std::size_t, std::size_t> EpetraMatrix::local_range(std::size_t dim) c
 //-----------------------------------------------------------------------------
 void EpetraMatrix::resize(GenericVector& z, std::size_t dim) const
 {
-  dolfin_assert(A);
+  dolfin_assert(_A);
 
   // Get map appropriate map
   const Epetra_Map* map = 0;
   if (dim == 0)
-    map = &(A->RangeMap());
+    map = &(_A->RangeMap());
   else if (dim == 1)
-    map = &(A->DomainMap());
+    map = &(_A->DomainMap());
   else
   {
     dolfin_error("EpetraMatrix.cpp",
@@ -236,7 +237,7 @@ void EpetraMatrix::resize(GenericVector& z, std::size_t dim) const
 void EpetraMatrix::get(double* block, std::size_t m, const dolfin::la_index* rows,
                        std::size_t n, const dolfin::la_index* cols) const
 {
-  dolfin_assert(A);
+  dolfin_assert(_A);
 
   int num_entities = 0;
   int* indices;
@@ -246,9 +247,9 @@ void EpetraMatrix::get(double* block, std::size_t m, const dolfin::la_index* row
   for(std::size_t i = 0; i < m; ++i)
   {
     // Extract the values and indices from row: rows[i]
-    if (A->IndicesAreLocal())
+    if (_A->IndicesAreLocal())
     {
-      const int err = A->ExtractMyRowView(rows[i], num_entities, values,
+      const int err = _A->ExtractMyRowView(rows[i], num_entities, values,
                                           indices);
       if (err != 0)
       {
@@ -259,7 +260,7 @@ void EpetraMatrix::get(double* block, std::size_t m, const dolfin::la_index* row
     }
     else
     {
-      const int err = A->ExtractGlobalRowView(rows[i], num_entities, values, indices);
+      const int err = _A->ExtractGlobalRowView(rows[i], num_entities, values, indices);
       if (err != 0)
       {
         dolfin_error("EpetraMatrix",
@@ -294,9 +295,9 @@ void EpetraMatrix::set(const double* block,
   // This function is awkward and somewhat restrictive because of the
   // poor support for setting off-process values in Epetra
 
-  dolfin_assert(A);
+  dolfin_assert(_A);
 
-  const int err = A->ReplaceGlobalValues(m, rows, n, cols, block,
+  const int err = _A->ReplaceGlobalValues(m, rows, n, cols, block,
                                          Epetra_FECrsMatrix::ROW_MAJOR);
   if (err != 0)
   {
@@ -310,8 +311,8 @@ void EpetraMatrix::add(const double* block,
                        std::size_t m, const dolfin::la_index* rows,
                        std::size_t n, const dolfin::la_index* cols)
 {
-  dolfin_assert(A);
-  const int err = A->SumIntoGlobalValues(m, rows, n, cols, block,
+  dolfin_assert(_A);
+  const int err = _A->SumIntoGlobalValues(m, rows, n, cols, block,
                                          Epetra_FECrsMatrix::ROW_MAJOR);
   if (err != 0)
   {
@@ -333,7 +334,7 @@ void EpetraMatrix::axpy(double a, const GenericMatrix& A,
   }
 
   const int err = EpetraExt::MatrixMatrix::Add(*(AA->mat()), false, a,
-                                               *(this->A), 1.0);
+                                               *_A, 1.0);
   if (err != 0)
   {
     dolfin_error("EpetraMatrix.cpp",
@@ -344,12 +345,13 @@ void EpetraMatrix::axpy(double a, const GenericMatrix& A,
 //-----------------------------------------------------------------------------
 double EpetraMatrix::norm(std::string norm_type) const
 {
+  dolfin_assert(_A);
   if (norm_type == "l1")
-    return A->NormOne();
+    return _A->NormOne();
   else if (norm_type == "linf")
-    return A->NormInf();
+    return _A->NormInf();
   else if (norm_type == "frobenius")
-    return A->NormFrobenius();
+    return _A->NormFrobenius();
   else
   {
     dolfin_error("EpetraMatrix.cpp",
@@ -361,8 +363,8 @@ double EpetraMatrix::norm(std::string norm_type) const
 //-----------------------------------------------------------------------------
 void EpetraMatrix::zero()
 {
-  dolfin_assert(A);
-  const int err = A->PutScalar(0.0);
+  dolfin_assert(_A);
+  const int err = _A->PutScalar(0.0);
   if (err != 0)
   {
     dolfin_error("EpetraMatrix.cpp",
@@ -374,12 +376,12 @@ void EpetraMatrix::zero()
 void EpetraMatrix::apply(std::string mode)
 {
   Timer("Apply (matrix)");
-  dolfin_assert(A);
+  dolfin_assert(_A);
   int err = 0;
   if (mode == "add")
-    err = A->GlobalAssemble(true, Add);
+    err = _A->GlobalAssemble(true, Add);
   else if (mode == "insert")
-    err = A->GlobalAssemble(true);
+    err = _A->GlobalAssemble(true);
   else if (mode == "flush")
   {
     // Do nothing
@@ -401,15 +403,15 @@ void EpetraMatrix::apply(std::string mode)
 //-----------------------------------------------------------------------------
 std::string EpetraMatrix::str(bool verbose) const
 {
-  if (!A)
+  if (!_A)
     return "<Uninitialized EpetraMatrix>";
 
   std::stringstream s;
   if (verbose)
   {
     warning("Verbose output for EpetraMatrix not implemented, calling Epetra Print directly.");
-    dolfin_assert(A);
-    A->Print(std::cout);
+    dolfin_assert(_A);
+    _A->Print(std::cout);
   }
   else
     s << "<EpetraMatrix of size " << size(0) << " x " << size(1) << ">";
@@ -419,8 +421,8 @@ std::string EpetraMatrix::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void EpetraMatrix::ident(std::size_t m, const dolfin::la_index* rows)
 {
-  dolfin_assert(A);
-  dolfin_assert(A->Filled() == true);
+  dolfin_assert(_A);
+  dolfin_assert(_A->Filled() == true);
 
   // FIXME: This is a major hack and will not scale for large numbers of
   // processes. The problem is that a dof is not guaranteed to reside on
@@ -439,7 +441,7 @@ void EpetraMatrix::ident(std::size_t m, const dolfin::la_index* rows)
   std::vector<std::size_t> non_local_rows;
   for (std::size_t i = 0; i < m; ++i)
   {
-    if (A->MyGlobalRow(rows[i]))
+    if (_A->MyGlobalRow(rows[i]))
       local_rows.insert(rows[i]);
     else
       non_local_rows.push_back(rows[i]);
@@ -469,20 +471,20 @@ void EpetraMatrix::ident(std::size_t m, const dolfin::la_index* rows)
       {
         // Insert row into set if it's local
         const dolfin::la_index new_index = received_data[p][i];
-        if (A->MyGlobalRow(new_index))
+        if (_A->MyGlobalRow(new_index))
           local_rows.insert(new_index);
       }
     }
   }
   //-------------------------
 
-  const Epetra_CrsGraph& graph = A->Graph();
+  const Epetra_CrsGraph& graph = _A->Graph();
   MySet::const_iterator global_row;
   for (global_row = local_rows.begin(); global_row != local_rows.end(); ++global_row)
   {
     // Get local row index
     const dolfin::la_index _global_row = *global_row;
-    const int local_row = A->LRID(_global_row);
+    const int local_row = _A->LRID(_global_row);
 
     // If this process owns row, then zero row
     if (local_row >= 0)
@@ -500,7 +502,7 @@ void EpetraMatrix::ident(std::size_t m, const dolfin::la_index* rows)
 
       // Zero row
       std::vector<double> block(num_nz, 0.0);
-      err = A->ReplaceMyValues(local_row, num_nz, &block[0], column_indices);
+      err = _A->ReplaceMyValues(local_row, num_nz, &block[0], column_indices);
       if (err != 0)
       {
         dolfin_error("EpetraMatrix.cpp",
@@ -510,7 +512,7 @@ void EpetraMatrix::ident(std::size_t m, const dolfin::la_index* rows)
 
       // Place one on the diagonal
       const double one = 1.0;
-      A->ReplaceMyValues(local_row, 1, &one, &local_row);
+      _A->ReplaceMyValues(local_row, 1, &one, &local_row);
     }
   }
 }
@@ -520,8 +522,8 @@ void EpetraMatrix::zero(std::size_t m, const dolfin::la_index* rows)
   // FIXME: This can be made more efficient by eliminating creation of
   //        some obejcts inside the loop
 
-  dolfin_assert(A);
-  const Epetra_CrsGraph& graph = A->Graph();
+  dolfin_assert(_A);
+  const Epetra_CrsGraph& graph = _A->Graph();
   for (std::size_t i = 0; i < m; ++i)
   {
     const int row = rows[i];
@@ -532,7 +534,7 @@ void EpetraMatrix::zero(std::size_t m, const dolfin::la_index* rows)
     graph.ExtractGlobalRowCopy(row, num_nz, out_num, &indices[0]);
 
     std::vector<double> block(num_nz);
-    const int err = A->ReplaceGlobalValues(row, num_nz, &block[0], &indices[0]);
+    const int err = _A->ReplaceGlobalValues(row, num_nz, &block[0], &indices[0]);
     if (err != 0)
     {
       dolfin_error("EpetraMatrix.cpp",
@@ -544,7 +546,7 @@ void EpetraMatrix::zero(std::size_t m, const dolfin::la_index* rows)
 //-----------------------------------------------------------------------------
 void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
 {
-  dolfin_assert(A);
+  dolfin_assert(_A);
   const EpetraVector& x = as_type<const EpetraVector>(x_);
   EpetraVector& Ax = as_type<EpetraVector>(Ax_);
 
@@ -570,7 +572,7 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
 
   dolfin_assert(x.vec());
   dolfin_assert(Ax.vec());
-  const int err = A->Multiply(false, *(x.vec()), *(Ax.vec()));
+  const int err = _A->Multiply(false, *(x.vec()), *(Ax.vec()));
   if (err != 0)
   {
     dolfin_error("EpetraMatrix.cpp",
@@ -581,7 +583,7 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
 //-----------------------------------------------------------------------------
 void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
 {
-  dolfin_assert(A);
+  dolfin_assert(_A);
   const EpetraVector& x = as_type<const EpetraVector>(x_);
   EpetraVector& Ax = as_type<EpetraVector>(Ax_);
 
@@ -605,7 +607,7 @@ void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
                  "Vector for transpose matrix-vector result has wrong size");
   }
 
-  const int err = A->Multiply(true, *(x.vec()), *(Ax.vec()));
+  const int err = _A->Multiply(true, *(x.vec()), *(Ax.vec()));
   if (err != 0)
   {
     dolfin_error("EpetraMatrix.cpp",
@@ -617,11 +619,11 @@ void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
 void EpetraMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
                           std::vector<double>& values) const
 {
-  dolfin_assert(A);
+  dolfin_assert(_A);
 
   // Get local row index
   const dolfin::la_index _row = row;
-  const int local_row_index = A->LRID(_row);
+  const int local_row_index = _A->LRID(_row);
 
   // If this process has part of the row, get values
   if (local_row_index >= 0)
@@ -632,7 +634,7 @@ void EpetraMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
     int num_entries;
 
     // Extract data from Epetra matrix
-    const int err = A->ExtractMyRowView(local_row_index, num_entries, vals, indices);
+    const int err = _A->ExtractMyRowView(local_row_index, num_entries, vals, indices);
     if (err != 0)
     {
       dolfin_error("EpetraMatrix.cpp",
@@ -645,7 +647,7 @@ void EpetraMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
     values.resize(num_entries);
     for (int i = 0; i < num_entries; i++)
     {
-      columns[i] = A->GCID(indices[i]);  // Return global column indices
+      columns[i] = _A->GCID(indices[i]);  // Return global column indices
       values[i]  = vals[i];
     }
   }
@@ -682,13 +684,13 @@ GenericLinearAlgebraFactory& EpetraMatrix::factory() const
 //-----------------------------------------------------------------------------
 boost::shared_ptr<Epetra_FECrsMatrix> EpetraMatrix::mat() const
 {
-  return A;
+  return _A;
 }
 //-----------------------------------------------------------------------------
 const EpetraMatrix& EpetraMatrix::operator*= (double a)
 {
-  dolfin_assert(A);
-  const int err = A->Scale(a);
+  dolfin_assert(_A);
+  const int err = _A->Scale(a);
   if (err !=0)
   {
     dolfin_error("EpetraMatrix.cpp",
@@ -700,8 +702,8 @@ const EpetraMatrix& EpetraMatrix::operator*= (double a)
 //-----------------------------------------------------------------------------
 const EpetraMatrix& EpetraMatrix::operator/= (double a)
 {
-  dolfin_assert(A);
-  int err = A->Scale(1.0/a);
+  dolfin_assert(_A);
+  int err = _A->Scale(1.0/a);
   if (err !=0)
   {
     dolfin_error("EpetraMatrix.cpp",
@@ -720,7 +722,7 @@ const GenericMatrix& EpetraMatrix::operator= (const GenericMatrix& A)
 const EpetraMatrix& EpetraMatrix::operator= (const EpetraMatrix& A)
 {
   if (A.mat())
-    this->A.reset(new Epetra_FECrsMatrix(*A.mat()));
+    _A.reset(new Epetra_FECrsMatrix(*A.mat()));
   else
     A.mat().reset();
 

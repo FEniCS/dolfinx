@@ -104,12 +104,12 @@ static void build_dolfin_mesh(const csg::C3t3& c3t3, Mesh& mesh)
 CSGCGALMeshGenerator3D::CSGCGALMeshGenerator3D(const CSGGeometry& geometry)
 {
   boost::shared_ptr<const CSGGeometry> tmp = reference_to_no_delete_pointer<const CSGGeometry>(geometry);
-  this->geometry = tmp;
+  _geometry = tmp;
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 CSGCGALMeshGenerator3D::CSGCGALMeshGenerator3D(boost::shared_ptr<const CSGGeometry> geometry)
-  : geometry(geometry)
+  : _geometry(geometry)
 {
   parameters = default_parameters();
 }
@@ -121,7 +121,7 @@ void CSGCGALMeshGenerator3D::generate(Mesh& mesh) const
   csg::Polyhedron_3 p;
 
   cout << "Converting geometry to cgal types." << endl;
-  GeometryToCGALConverter::convert(*geometry, p, parameters["remove_degenerated"]);
+  GeometryToCGALConverter::convert(*_geometry, p, parameters["remove_degenerated"]);
   dolfin_assert(p.is_pure_triangle());
 
   csg::Mesh_domain domain(p);
@@ -204,7 +204,7 @@ void CSGCGALMeshGenerator3D::save_off(std::string filename) const
   csg::Polyhedron_3 p;
 
   cout << "Converting geometry to cgal types." << endl;
-  GeometryToCGALConverter::convert(*geometry, p);
+  GeometryToCGALConverter::convert(*_geometry, p);
 
   cout << "Writing to file " << filename << endl;
   std::ofstream outfile(filename.c_str());

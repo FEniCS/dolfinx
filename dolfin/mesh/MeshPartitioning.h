@@ -135,11 +135,10 @@ namespace dolfin
     const std::size_t dim = mesh_values.dim();
 
     // Clear MeshValueCollection values
-    mesh_values.values().clear();
+    mesh_values.clear();
 
     // Initialise global entity numbering
     DistributedMeshTools::number_entities(mesh, dim);
-    DistributedMeshTools::number_entities(mesh, D);
 
     if (dim == 0)
     {
@@ -168,7 +167,6 @@ namespace dolfin
       = mesh.topology().global_indices(D);
 
     // Add local (to this process) data to domain marker
-    std::vector<std::size_t>::iterator it;
     std::vector<std::size_t> off_process_global_cell_entities;
 
     // Build and populate a local map for global_entity_indices
@@ -179,11 +177,11 @@ namespace dolfin
     for (std::size_t i = 0; i < ldata.size(); ++i)
     {
       const std::size_t global_cell_index = ldata[i].first.first;
-      std::map<std::size_t, std::size_t>::const_iterator it
+      std::map<std::size_t, std::size_t>::const_iterator data
         = map_of_global_entity_indices.find(global_cell_index);
-      if (it != map_of_global_entity_indices.end())
+      if (data != map_of_global_entity_indices.end())
       {
-        const std::size_t local_cell_index = it->second;
+        const std::size_t local_cell_index = data->second;
         const std::size_t entity_local_index = ldata[i].first.second;
         const T value = ldata[i].second;
         markers.set_value(local_cell_index, entity_local_index, value);

@@ -25,7 +25,7 @@ endif()
 set(DOLFIN_CMAKE_DIR "${DOLFIN_SOURCE_DIR}/cmake" CACHE INTERNAL "")
 set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
 
-# Make sure CMake uses the correct dolfin-config.cmake for tests and demos
+# Make sure CMake uses the correct DOLFINConfig.cmake for tests and demos
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_BINARY_DIR}/dolfin)
 
 #------------------------------------------------------------------------------
@@ -152,13 +152,19 @@ if (DOLFIN_ENABLE_CODE_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
 endif()
 
-# Disable some warnings for Intel compilers
+# Settings for Intel compilers
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd161,488,654,858,1125,1170")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -wd161,488,654,858,1125,1170")
-  set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -wd161,488,654,858,1125,1170")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -wd161,488,654,858,1125,1170")
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -wd161,488,654,858,1125,1170")
+  # Use -isystem incluse flag with Intel compiler
+  set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
+
+  # Stop spurious warnings from older Intel compilers
+  if("${CMAKE_CXX_COMPILER_VERSION}" LESS "13")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd654,1125")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -wd654,1125")
+    set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -wd654,1125")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -wd654,1125")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -wd654,1125")
+  endif()
 endif()
 
 # Set system include flags to get around CMake bug on OSX with gcc
@@ -181,7 +187,7 @@ endif()
 include(language_support_v2)
 workaround_9220(Fortran Fortran_language_works)
 if (Fortran_language_works)
- enable_language(Fortran)
+  enable_language(Fortran OPTIONAL)
 endif()
 
 #------------------------------------------------------------------------------
@@ -229,7 +235,7 @@ set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0 1.44 1.44.0 1.45 1.45.0 1.46 1.46.0 1.
 
 find_package(Boost 1.36 QUIET REQUIRED)
 
-set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams math_tr1)
+set(DOLFIN_BOOST_COMPONENTS filesystem program_options system thread iostreams)
 if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
   list(APPEND DOLFIN_BOOST_COMPONENTS mpi serialization)
 endif()
@@ -251,7 +257,7 @@ else()
 endif()
 
 # Check for required package Armadillo
-find_package(Armadillo REQUIRED)
+find_package(Armadillo 2.4.2 REQUIRED)
 
 # Check for required package LibXml2
 find_package(LibXml2 REQUIRED)
@@ -315,17 +321,20 @@ endif()
 
 # Check for HDF5
 if (DOLFIN_ENABLE_HDF5)
+  if (NOT DEFINED ENV{HDF5_ROOT})
+    set(ENV{HDF5_ROOT} "$ENV{HDF5_DIR}")
+  endif()
   find_package(HDF5)
 
-  if (NOT HDF5_FOUND)
-    # Give some hints and try again
-    find_package(HDF5 HINTS ${HDF5_DIR} $ENV{HDF5_DIR})
-  endif()
-
   # Check that HDF5 has parallel support
-  if (DOLFIN_ENABLE_MPI)
-    if (NOT (HDF5_IS_PARALLEL OR HDF5_ENABLE_PARALLEL))
-      message(STATUS "HDF5 has been found, but is missing parallel support. It will not be enabled.")
+  if (HDF5_FOUND)
+    if (DOLFIN_ENABLE_MPI)
+      if (NOT (HDF5_IS_PARALLEL OR HDF5_ENABLE_PARALLEL))
+        message(STATUS "HDF5 has been found, but is missing parallel support. It will not be enabled.")
+        set(HDF5_FOUND false)
+      endif()
+    else()
+      message(STATUS "HDF5 has been found, but MPI support is missing. It will not be enabled.")
       set(HDF5_FOUND false)
     endif()
   endif()
@@ -333,7 +342,7 @@ endif()
 
 # Check for PaStiX
 if (DOLFIN_ENABLE_PASTIX)
-  find_package(PaStiX)
+  find_package(PaStiX 5.2.1)
 endif()
 
 # Check for Trilinos and the requires Trilinos packages
@@ -650,6 +659,16 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-version.in
                ${CMAKE_BINARY_DIR}/dolfin-version @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin-version
+        DESTINATION ${DOLFIN_BIN_DIR}
+	PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+        COMPONENT RuntimeExecutables)
+
+#------------------------------------------------------------------------------
+# Generate and install utility script dolfin-get-demos
+
+configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-get-demos.in
+               ${CMAKE_BINARY_DIR}/dolfin-get-demos @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
         DESTINATION ${DOLFIN_BIN_DIR}
 	PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
         COMPONENT RuntimeExecutables)

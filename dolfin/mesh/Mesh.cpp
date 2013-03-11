@@ -23,9 +23,10 @@
 // Modified by Johannes Ring 2012
 // Modified by Marie E. Rognes 2012
 // Modified by Mikael Mortensen 2012
+// Modified by Jan Blechta 2013
 //
 // First added:  2006-05-09
-// Last changed: 2012-12-13
+// Last changed: 2013-03-06
 
 #include <boost/serialization/map.hpp>
 #include <dolfin/common/Array.h>
@@ -60,6 +61,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
                Hierarchical<Mesh>(*this),
+               _domains(*this),
                _data(*this),
                _cell_type(0),
                _intersection_operator(*this),
@@ -71,6 +73,7 @@ Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
                                Hierarchical<Mesh>(*this),
+			       _domains(*this),
                                _data(*this),
                                _cell_type(0),
                                _intersection_operator(*this),
@@ -82,6 +85,7 @@ Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
 //-----------------------------------------------------------------------------
 Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
                                    Hierarchical<Mesh>(*this),
+				   _domains(*this),
                                    _data(*this),
                                    _cell_type(0),
                                    _intersection_operator(*this),
@@ -97,6 +101,7 @@ Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
 Mesh::Mesh(LocalMeshData& local_mesh_data)
                                  : Variable("mesh", "DOLFIN mesh"),
                                    Hierarchical<Mesh>(*this),
+				   _domains(*this),
                                    _data(*this),
                                    _cell_type(0),
                                    _intersection_operator(*this),
@@ -109,6 +114,7 @@ Mesh::Mesh(LocalMeshData& local_mesh_data)
 Mesh::Mesh(const CSGGeometry& geometry, std::size_t mesh_resolution)
   : Variable("mesh", "DOLFIN mesh"),
     Hierarchical<Mesh>(*this),
+    _domains(*this),
     _data(*this),
     _cell_type(0),
     _intersection_operator(*this),
@@ -128,6 +134,7 @@ Mesh::Mesh(const CSGGeometry& geometry, std::size_t mesh_resolution)
 Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry, std::size_t resolution)
   : Variable("mesh", "DOLFIN mesh"),
     Hierarchical<Mesh>(*this),
+    _domains(*this),
     _data(*this),
     _cell_type(0),
     _intersection_operator(*this),
@@ -336,17 +343,17 @@ void Mesh::rotate(double angle, std::size_t axis, const Point& p)
   MeshTransformation::rotate(*this, angle, axis, p);
 }
 //-----------------------------------------------------------------------------
-void Mesh::move(BoundaryMesh& boundary)
+boost::shared_ptr<MeshDisplacement> Mesh::move(BoundaryMesh& boundary)
 {
-  ALE::move(*this, boundary);
+  return ALE::move(*this, boundary);
 }
 //-----------------------------------------------------------------------------
-void Mesh::move(Mesh& mesh)
+boost::shared_ptr<MeshDisplacement> Mesh::move(Mesh& mesh)
 {
-  ALE::move(*this, mesh);
+  return ALE::move(*this, mesh);
 }
 //-----------------------------------------------------------------------------
-void Mesh::move(const Function& displacement)
+void Mesh::move(const GenericFunction& displacement)
 {
   ALE::move(*this, displacement);
 }
@@ -536,6 +543,46 @@ double Mesh::hmax() const
     h = std::max(h, cell->diameter());
 
   return h;
+}
+//-----------------------------------------------------------------------------
+double Mesh::rmin() const
+{
+  CellIterator cell(*this);
+  double r = cell->inradius();
+  for (; !cell.end(); ++cell)
+    r = std::min(r, cell->inradius());
+
+  return r;
+}
+//-----------------------------------------------------------------------------
+double Mesh::rmax() const
+{
+  CellIterator cell(*this);
+  double r = cell->inradius();
+  for (; !cell.end(); ++cell)
+    r = std::max(r, cell->inradius());
+
+  return r;
+}
+//-----------------------------------------------------------------------------
+double Mesh::radius_ratio_min() const
+{
+  CellIterator cell(*this);
+  double q = cell->radius_ratio();
+  for (; !cell.end(); ++cell)
+    q = std::min(q, cell->radius_ratio());
+
+  return q;
+}
+//-----------------------------------------------------------------------------
+double Mesh::radius_ratio_max() const
+{
+  CellIterator cell(*this);
+  double q = cell->radius_ratio();
+  for (; !cell.end(); ++cell)
+    q = std::max(q, cell->radius_ratio());
+
+  return q;
 }
 //-----------------------------------------------------------------------------
 std::size_t Mesh::hash() const

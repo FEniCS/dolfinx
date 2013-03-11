@@ -47,9 +47,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
-          const std::vector<std::pair<std::pair<std::size_t, std::size_t>,
-                      std::pair<std::size_t, std::size_t> > >& periodic_master_slave_dofs)
+void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
 {
   dolfin_assert(a.ufc_form());
 
@@ -89,7 +87,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
     {
       GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
       SparsityPatternBuilder::build(pattern,
-                                a.mesh(), dofmaps, periodic_master_slave_dofs,
+                                a.mesh(), dofmaps,
                                 a.ufc_form()->has_cell_integrals(),
                                 a.ufc_form()->has_interior_facet_integrals(),
                                 a.ufc_form()->has_exterior_facet_integrals(),
@@ -120,48 +118,6 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a,
         _A.set(&block, 1, &_i, 1, &_i);
       }
       A.apply("flush");
-    }
-
-    // Insert zeros in positions required for periodic boundary
-    // conditions. These are applied post-assembly, and may be prematurely
-    // optimised away by the linear algebra backend when calling
-    // GenericMatrix::apply, e.g. PETSc does this
-    if (A.rank() == 2)
-    {
-      if (tensor_layout->sparsity_pattern())
-      {
-        const GenericSparsityPattern& pattern = *tensor_layout->sparsity_pattern();
-        if (pattern.primary_dim() != 0)
-        {
-          dolfin_error("AssemblerBase.cpp",
-                       "insert zero values in periodic boundary condition positions",
-                       "Modifcation of non-zero matrix pattern for periodic boundary conditions is supported row-wise matrices only");
-        }
-
-        const std::pair<std::size_t, std::size_t> local_range = pattern.local_range(0);
-
-        GenericMatrix& _A = A.down_cast<GenericMatrix>();
-        std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t> > >::const_iterator dof_pair;
-        for (dof_pair = periodic_master_slave_dofs.begin();
-                    dof_pair != periodic_master_slave_dofs.end(); ++dof_pair)
-        {
-          const std::size_t dofs[2] = {dof_pair->first.first, dof_pair->second.first};
-
-          std::vector<dolfin::la_index> edges;
-          for (std::size_t i = 0; i < 2; ++i)
-          {
-            if (dofs[i] >= local_range.first && dofs[i] < local_range.second)
-            {
-              pattern.get_edges(dofs[i], edges);
-              const std::vector<double> block(edges.size(), 0.0);
-              dolfin::la_index _dof = dofs[i];
-              const std::vector<dolfin::la_index> _edges(edges.begin(), edges.end());
-              _A.set(&block[0], 1, &_dof, edges.size(), _edges.data());
-            }
-          }
-        }
-        A.apply("flush");
-      }
     }
 
     // Delete sparsity pattern

@@ -23,9 +23,10 @@
 // Modified by Andre Massing 2009-2010
 // Modified by Marie E. Rognes 2012
 // Modified by Mikael Mortensen 2012
+// Modified by Jan Blechta 2013
 //
 // First added:  2006-05-08
-// Last changed: 2012-12-13
+// Last changed: 2013-03-06
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -39,6 +40,7 @@
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/intersection/IntersectionOperator.h>
 #include <dolfin/log/log.h>
+#include <dolfin/ale/MeshDisplacement.h>
 #include "MeshData.h"
 #include "MeshGeometry.h"
 #include "MeshConnectivity.h"
@@ -50,7 +52,7 @@ namespace dolfin
 {
   class CellType;
   class BoundaryMesh;
-  class Function;
+  class GenericFunction;
   class Expression;
   class LocalMeshData;
   class MeshEntity;
@@ -125,14 +127,14 @@ namespace dolfin
     /// *Arguments*
     ///     geometry (CSGGeometry)
     ///         The CSG geometry
-    explicit Mesh(const CSGGeometry& geometry, std::size_t mesh_resolution);
+    Mesh(const CSGGeometry& geometry, std::size_t mesh_resolution);
 
     /// Create mesh defined by Constructive Solid Geometry (CSG)
     ///
     /// *Arguments*
     ///     geometry (CSGGeometry)
     ///         The CSG geometry
-    explicit Mesh(boost::shared_ptr<const CSGGeometry> geometry, std::size_t resolution);
+    Mesh(boost::shared_ptr<const CSGGeometry> geometry, std::size_t resolution);
 
     /// Destructor.
     ~Mesh();
@@ -245,7 +247,8 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    const std::vector<std::size_t>& cells() const { return _topology(_topology.dim(), 0)(); }
+    const std::vector<unsigned int>& cells() const
+    { return _topology(_topology.dim(), 0)(); }
 
     /// Get number of local entities of given topological dimension.
     ///
@@ -261,7 +264,8 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    std::size_t size(std::size_t dim) const { return _topology.size(dim); }
+    std::size_t size(std::size_t dim) const
+    { return _topology.size(dim); }
 
     /// Get global number of entities of given topological dimension.
     ///
@@ -277,37 +281,44 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    std::size_t size_global(std::size_t dim) const { return _topology.size_global(dim); }
+    std::size_t size_global(std::size_t dim) const
+    { return _topology.size_global(dim); }
 
     /// Get mesh topology.
     ///
     /// *Returns*
     ///     _MeshTopology_
     ///         The topology object associated with the mesh.
-    MeshTopology& topology() { return _topology; }
+    MeshTopology& topology()
+    { return _topology; }
 
     /// Get mesh topology (const version).
-    const MeshTopology& topology() const { return _topology; }
+    const MeshTopology& topology() const
+    { return _topology; }
 
     /// Get mesh geometry.
     ///
     /// *Returns*
     ///     _MeshGeometry_
     ///         The geometry object associated with the mesh.
-    MeshGeometry& geometry() { return _geometry; }
+    MeshGeometry& geometry()
+    { return _geometry; }
 
     /// Get mesh geometry (const version).
-    const MeshGeometry& geometry() const { return _geometry; }
+    const MeshGeometry& geometry() const
+    { return _geometry; }
 
     /// Get mesh (sub)domains.
     ///
     /// *Returns*
     ///     _MeshDomains_
     ///         The (sub)domains associated with the mesh.
-    MeshDomains& domains() { return _domains; }
+    MeshDomains& domains()
+    { return _domains; }
 
     /// Get mesh (sub)domains.
-    const MeshDomains& domains() const { return _domains; }
+    const MeshDomains& domains() const
+    { return _domains; }
 
     /// Get intersection operator.
     ///
@@ -419,7 +430,11 @@ namespace dolfin
     /// *Arguments*
     ///     boundary (_BoundaryMesh_)
     ///         A mesh containing just the boundary cells.
-    void move(BoundaryMesh& boundary);
+    ///
+    /// *Returns*
+    ///     MeshDisplacement
+    ///         Displacement encapsulated in Expression subclass MeshDisplacement
+    boost::shared_ptr<MeshDisplacement> move(BoundaryMesh& boundary);
 
     /// Move coordinates of mesh according to adjacent mesh with common global
     /// vertices.
@@ -427,14 +442,18 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         A _Mesh_ object.
-    void move(Mesh& mesh);
+    ///
+    /// *Returns*
+    ///     MeshDisplacement
+    ///         Displacement encapsulated in Expression subclass MeshDisplacement
+    boost::shared_ptr<MeshDisplacement> move(Mesh& mesh);
 
     /// Move coordinates of mesh according to displacement function.
     ///
     /// *Arguments*
-    ///     displacement (_Function_)
-    ///         A _Function_ object.
-    void move(const Function& displacement);
+    ///     displacement (_GenericFunction_)
+    ///         A _GenericFunction_ object.
+    void move(const GenericFunction& displacement);
 
     /// Smooth internal vertices of mesh by local averaging.
     ///
@@ -649,6 +668,60 @@ namespace dolfin
     ///         No example code available for this function.
     double hmax() const;
 
+    /// Compute minimum cell inradius.
+    ///
+    /// *Returns*
+    ///     double
+    ///         The minimum of cells' inscribed sphere radii
+    ///
+    /// *Example*
+    ///     .. note::
+    ///
+    ///         No example code available for this function.
+    double rmin() const;
+
+    /// Compute maximum cell inradius.
+    ///
+    /// *Returns*
+    ///     double
+    ///         The maximum of cells' inscribed sphere radii
+    ///
+    /// *Example*
+    ///     .. note::
+    ///
+    ///         No example code available for this function.
+    double rmax() const;
+
+    /// Compute minimum normalized radius ratio of cells.
+    ///
+    /// *Returns*
+    ///     double
+    ///         The minimum over cells of normalized cell
+    ///         radius ratio (which is = cell_dimension *
+    ///         * inradius / circumradius; cell_dimension
+    ///         is normalization factor).
+    ///
+    /// *Example*
+    ///     .. note::
+    ///
+    ///         No example code available for this function.
+    double radius_ratio_min() const;
+
+    /// Compute maximum normalized radius ratio of cells.
+    ///
+    /// *Returns*
+    ///     double
+    ///         The maximum over cells of normalized cell
+    ///         radius ratio (which is = cell_dimension *
+    ///         * inradius / circumradius; cell_dimension
+    ///         is normalization factor).
+    ///
+    /// *Example*
+    ///     .. note::
+    ///
+    ///         No example code available for this function.
+    double radius_ratio_max() const;
+
     /// Compute hash of mesh, currently based on the has of the mesh
     /// geometry and mesh topology.
     ///
@@ -696,6 +769,11 @@ namespace dolfin
     ///     global_normal (Expression)
     ///         A global normal direction to the mesh
     void init_cell_orientations(const Expression& global_normal);
+
+    // Temporary hack
+    //void set_periodic_pairs(std::size_t d, std::map<std::size_t, std::pair<std::size_t, std::size_t> >& pairs)
+    //{ periodic_index_map[d] = pairs; }
+    //std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > > periodic_index_map;
 
   private:
 

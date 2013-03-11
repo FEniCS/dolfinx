@@ -4,6 +4,9 @@
 
 # FIXME: Check that naming conforms to CMake standards
 
+# This file is deprecated
+message(WARNING "find_package(dolfin) is deprecated - use find_package(DOLFIN) instead.")
+
 # Package found
 set(DOLFIN_FOUND TRUE)
 

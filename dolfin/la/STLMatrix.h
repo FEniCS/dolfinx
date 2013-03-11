@@ -55,7 +55,7 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-    STLMatrix(std::size_t primary_dim=0) : primary_dim(primary_dim),
+    STLMatrix(std::size_t primary_dim=0) : _primary_dim(primary_dim),
       _local_range(0, 0), num_codim_entities(0) {}
 
     /// Destructor
@@ -163,6 +163,15 @@ namespace dolfin
 
     ///--- STLMatrix interface ---
 
+    /// Clear matrix. Destroys data and sparse layout
+    void clear()
+    {
+      _local_range = std::pair<std::size_t, std::size_t>(0, 0);
+      num_codim_entities = 0;
+      _values.clear();
+      off_processs_data.clear();
+    }
+
     void sort()
     {
       std::vector<std::vector<std::pair<std::size_t, double> > >::iterator row;
@@ -201,7 +210,7 @@ namespace dolfin
                             bool symmetric) const;
 
     // Primary dimension (0=row-wise storage, 1=column-wise storage)
-    const std::size_t primary_dim;
+    const std::size_t _primary_dim;
 
     // Local ownership range (row range for row-wise storage, column
     // range for column-wise storage)
@@ -228,7 +237,7 @@ namespace dolfin
                       std::vector<T>& local_to_global_row,
                       bool symmetric) const
   {
-    if (primary_dim != 0)
+    if (_primary_dim != 0)
     {
       dolfin_error("STLMatrix.cpp",
                    "creating compressed row storage data",
@@ -243,7 +252,7 @@ namespace dolfin
                       std::vector<T>& local_to_global_col,
                       bool symmetric) const
   {
-    if (primary_dim != 1)
+    if (_primary_dim != 1)
     {
       dolfin_error("STLMatrix.cpp",
                    "creating compressed column storage data",
@@ -292,9 +301,9 @@ namespace dolfin
           cols.push_back(_values[local_row][column].first);
           vals.push_back(_values[local_row][column].second);
 
-          row_ptr.push_back(row_ptr.back() + _values[local_row].size());
-          local_to_global_row.push_back(_local_range.first + local_row);
         }
+        local_to_global_row.push_back(_local_range.first + local_row);
+        row_ptr.push_back(row_ptr.back() + _values[local_row].size());
       }
     }
     else
@@ -313,14 +322,13 @@ namespace dolfin
           const std::size_t index = _values[local_row][i].first;
           if (index >= global_row_index)
           {
-            vals.push_back(_values[local_row][i].second);
             cols.push_back(index);
+            vals.push_back(_values[local_row][i].second);
             ++counter;
           }
         }
-
-        row_ptr.push_back(row_ptr.back() + counter);
         local_to_global_row.push_back(global_row_index);
+        row_ptr.push_back(row_ptr.back() + counter);
       }
     }
   }

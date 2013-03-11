@@ -30,7 +30,7 @@
 #include "dolfin/common/Set.h"
 #include "dolfin/common/types.h"
 #include "GenericSparsityPattern.h"
-#include <boost/unordered_set.hpp>
+#include <boost/unordered_map.hpp>
 
 namespace dolfin
 {
@@ -41,9 +41,10 @@ namespace dolfin
   class SparsityPattern : public GenericSparsityPattern
   {
 
+    // NOTE: Do not change this typedef without performing careful
+    //       performance profiling
     // Set type used for the rows of the sparsity pattern
-    //typedef dolfin::Set<std::size_t> set_type;
-    typedef boost::unordered_set<std::size_t>   set_type;
+    typedef dolfin::Set<std::size_t> set_type;
 
   public:
 
@@ -53,13 +54,13 @@ namespace dolfin
     /// Create sparsity pattern for a generic tensor
     SparsityPattern(const std::vector<std::size_t>& dims,
                     const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range,
-                    const std::vector<const boost::unordered_map<std::size_t, std::size_t>* > off_process_owner,
+                    const std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner,
                     std::size_t primary_dim);
 
     /// Initialize sparsity pattern for a generic tensor
     void init(const std::vector<std::size_t>& dims,
               const std::vector<std::pair<std::size_t, std::size_t> >& ownership_range,
-              const std::vector<const boost::unordered_map<std::size_t, std::size_t>* > off_process_owner);
+              const std::vector<const boost::unordered_map<std::size_t, unsigned int>* > off_process_owner);
 
     /// Insert non-zero entries
     void insert(const std::vector<const std::vector<dolfin::la_index>* >& entries);
@@ -126,7 +127,7 @@ namespace dolfin
     std::vector<std::size_t> non_local;
 
     // Map from non-local vertex to owning process index
-    std::vector<boost::unordered_map<std::size_t, std::size_t> > off_process_owner;
+    std::vector<boost::unordered_map<std::size_t, unsigned int> > _off_process_owner;
 
   };
 

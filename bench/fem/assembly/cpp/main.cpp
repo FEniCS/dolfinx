@@ -31,7 +31,8 @@ double assemble_form(Form& form)
   // Assemble once
   const double t0 = time();
   Matrix A;
-  assemble(A, form);
+  Assembler assembler;
+  assembler.assemble(A, form);
   return time() - t0;
 }
 
@@ -39,11 +40,13 @@ double reassemble_form(Form& form)
 {
   // Assemble once
   Matrix A;
-  assemble(A, form);
+  Assembler assembler;
+  assembler.assemble(A, form);
 
   // Reassemble
   const double t0 = time();
-  assemble(A, form, false);
+  assembler.reset_sparsity = false;
+  assembler.assemble(A, form);
   return time() - t0;
 }
 

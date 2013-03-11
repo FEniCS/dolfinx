@@ -20,9 +20,10 @@
 // Modified by Ola Skavhaug, 2009
 // Modified by Joachim B Haga, 2012
 // Modified by Mikael Mortensen, 2012
+// Modified by Jan Blechta, 2013
 //
 // First added:  2007-03-01
-// Last changed: 2012-11-05
+// Last changed: 2013-03-04
 
 #ifndef __DOLFIN_DOF_MAP_H
 #define __DOLFIN_DOF_MAP_H
@@ -56,7 +57,7 @@ namespace dolfin
   {
   public:
 
-    /// Create dof map on mesh (data is not shared)
+    /// Create dof map on mesh (mesh is not stored)
     ///
     /// *Arguments*
     ///     ufc_dofmap (ufc::dofmap)
@@ -66,7 +67,20 @@ namespace dolfin
     DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
            const Mesh& mesh);
 
-    /// Create restricted dof map on mesh (data is not shared)
+    /// Create a periodic dof map on mesh (mesh is not stored)
+    ///
+    /// *Arguments*
+    ///     ufc_dofmap (ufc::dofmap)
+    ///         The ufc::dofmap.
+    ///     mesh (_Mesh_)
+    ///         The mesh.
+    ///     conatrained_boundary (_SubDomain_)
+    ///         The subdomain marking the constrained (tied) boudaries.
+    DofMap(boost::shared_ptr<const ufc::dofmap> ufc_dofmap,
+           const Mesh& mesh,
+           boost::shared_ptr<const SubDomain> constrained_domain);
+
+    /// Create restricted dof map on mesh
     ///
     /// *Arguments*
     ///     ufc_dofmap (ufc::dofmap)
@@ -142,6 +156,17 @@ namespace dolfin
     ///         space.
     std::size_t max_cell_dimension() const;
 
+    /// Return the number of dofs for a given entity dimension
+    ///
+    /// *Arguments*
+    ///     dim (std::size_t)
+    ///         Entity dimension
+    ///
+    /// *Returns*
+    ///     std::size_t
+    ///         Number of dofs associated with given entity dimension
+    virtual std::size_t num_entity_dofs(std::size_t dim) const;
+
     /// Return the geometric dimension of the coordinates this dof map
     /// provides
     ///
@@ -179,17 +204,17 @@ namespace dolfin
     /// *Returns*
     ///     boost::unordered_map<std::size_t, std::size_t>
     ///         The map from non-local dofs.
-    const boost::unordered_map<std::size_t, std::size_t>& off_process_owner() const;
+    const boost::unordered_map<std::size_t, unsigned int>& off_process_owner() const;
 
     /// Return map from all shared dofs to the sharing processes (not
     /// including the current process) that share it.
     ///
     /// *Returns*
-    ///     boost::unordered_map<std::size_t, std::vector<std::size_t> >
+    ///     boost::unordered_map<std::size_t, std::vector<unsigned int> >
     ///         The map from dofs to list of processes
-    const boost::unordered_map<std::size_t, std::vector<std::size_t> >& shared_dofs() const;
+    const boost::unordered_map<std::size_t, std::vector<unsigned int> >& shared_dofs() const;
 
-    /// Return set of all neighbouring processes.
+    /// Return set of processes that share dofs with this process
     ///
     /// *Returns*
     ///     std::set<std::size_t>
@@ -203,7 +228,7 @@ namespace dolfin
     ///         The cell index.
     ///
     /// *Returns*
-    ///     std::vector<std::size_t>
+    ///     std::vector<dolfin::la_index>
     ///         Local-to-global mapping of dofs.
     const std::vector<dolfin::la_index>& cell_dofs(std::size_t cell_index) const
     {
@@ -218,9 +243,20 @@ namespace dolfin
     ///         Degrees of freedom.
     ///     local_facet (std::size_t)
     ///         The local facet.
-    //void tabulate_facet_dofs(std::size_t* dofs, std::size_t local_facet) const;
     void tabulate_facet_dofs(std::vector<std::size_t>& dofs,
                              std::size_t local_facet) const;
+
+    /// Tabulate local-local mapping of dofs on entity (dim, local_entity)
+    ///
+    /// *Arguments*
+    ///     dofs (std::size_t)
+    ///         Degrees of freedom.
+    ///     dim (std::size_t)
+    ///         The entity dimension
+    ///     local_entity (std::size_t)
+    ///         The local entity index
+    void tabulate_entity_dofs(std::vector<std::size_t>& dofs,
+			      std::size_t dim, std::size_t local_entity) const;
 
     /// Tabulate the coordinates of all dofs on a cell (UFC cell
     /// version)
@@ -233,18 +269,37 @@ namespace dolfin
     void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
                               const ufc::cell& ufc_cell) const;
 
-    /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell
-    /// version)
+    /// Tabulate the coordinates of all dofs on this process
     ///
     /// *Arguments*
-    ///     coordinates (boost::multi_array<double, 2>)
-    ///         The coordinates of all dofs on a cell.
-    ///     cell (_Cell_)
-    ///         The cell.
-    void tabulate_coordinates(boost::multi_array<double, 2>& coordinates,
-                              const Cell& cell) const;
+    ///     mesh (_Mesh_)
+    ///         The mesh.
+    ///
+    /// *Returns*
+    ///     std::vector<double>
+    ///         The dof coordinates (x0, y0, x1, y1, . . .)
+    std::vector<double> tabulate_all_coordinates(const Mesh& mesh) const;
 
-    /// Tabulate a map between dofs and vertices
+    /// Return a map between vertices and dofs
+    /// (dof_ind = dof_to_vertex_map[vert_ind*dofs_per_vertex + local_dof],
+    /// where local_dof = 0, ..., dofs_per_vertex)
+    /// Ghost dofs are included - then dof_ind gets negative value
+    /// or value greater than process-local number of dofs.
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh to create the map between
+    ///
+    /// *Returns*
+    ///     std::vector<dolfin::la_index>
+    ///         The dof to vertex map
+    std::vector<dolfin::la_index> dof_to_vertex_map(Mesh& mesh) const;
+
+    /// Return a map between vertices and dofs
+    /// (vert_ind*dofs_per_vertex + local_dof = vertex_to_dof_map[dof_ind],
+    /// where local_dof = 0, ..., dofs_per_vertex)
+    /// Ghost dofs are not included. This map is
+    /// an inversion of dof_to_vertex_map.
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
@@ -252,9 +307,9 @@ namespace dolfin
     ///
     /// *Returns*
     ///     std::vector<std::size_t>
-    ///         The vertex map
-    std::vector<std::size_t> tabulate_vertex_map(Mesh& mesh) const;
-    
+    ///         The vertex to dof map
+    std::vector<std::size_t> vertex_to_dof_map(Mesh& mesh) const;
+
     /// Create a copy of the dof map
     ///
     /// *Returns*
@@ -285,7 +340,7 @@ namespace dolfin
     /// *Returns*
     ///     DofMap
     ///         The subdofmap component.
-    boost::shared_ptr<GenericDofMap> 
+    boost::shared_ptr<GenericDofMap>
         extract_sub_dofmap(const std::vector<std::size_t>& component,
                            const Mesh& mesh) const;
 
@@ -300,7 +355,7 @@ namespace dolfin
     /// *Returns*
     ///     DofMap
     ///         The collapsed dofmap.
-    boost::shared_ptr<GenericDofMap> 
+    boost::shared_ptr<GenericDofMap>
           collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
                    const Mesh& mesh) const;
 
@@ -330,18 +385,11 @@ namespace dolfin
     void set_x(GenericVector& x, double value, std::size_t component,
                const Mesh& mesh) const;
 
-    /// Return the set of dof indices
-    ///
-    /// *Returns*
-    ///     boost::unordered_set<dolfin::std::size_t>
-    ///         The set of dof indices.
-    boost::unordered_set<std::size_t> dofs() const;
-
     /// Return the underlying dof map data. Intended for internal library
     /// use only.
     ///
     /// *Returns*
-    ///     std::vector<std::vector<dolfin::std::size_t> >
+    ///     std::vector<std::vector<dolfin::la_index> >
     ///         The local-to-global map for each cell.
     const std::vector<std::vector<dolfin::la_index> >& data() const
     { return _dofmap; }
@@ -376,6 +424,11 @@ namespace dolfin
     // UFC dof map
     boost::shared_ptr<const ufc::dofmap> _ufc_dofmap;
 
+    // Number global mesh entities. This is usually the same as what
+    // is reported by the mesh, but will differ for dofmaps constrained,
+    // e.g. dofmaps with periodoc bcs
+    std::vector<std::size_t> num_global_mesh_entities;
+
     // Map from UFC dof numbering to renumbered dof (ufc_dof, actual_dof)
     boost::unordered_map<std::size_t, std::size_t> ufc_map_to_dofmap;
 
@@ -394,22 +447,19 @@ namespace dolfin
     // to (0, 0) if dofmap is a view
     std::pair<std::size_t, std::size_t> _ownership_range;
 
-    // Owner (process) of dofs in local dof map that do not belong to
-    // this process
-    boost::unordered_map<std::size_t, std::size_t> _off_process_owner;
+    // Map from dofs in local dof map are not owned by this process to
+    // the owner process
+    boost::unordered_map<std::size_t, unsigned int> _off_process_owner;
 
     // List of processes that share a given dof
-    boost::unordered_map<std::size_t, std::vector<std::size_t> > _shared_dofs;
+    boost::unordered_map<std::size_t, std::vector<unsigned int> > _shared_dofs;
 
     // Neighbours (processes that we share dofs with)
     std::set<std::size_t> _neighbours;
 
-    // Map from slave dofs to master dofs using UFC numbering
-    //std::map<std::size_t, std::size_t> _slave_master_map;
-
-    // Map of processes that share master dofs (used by compute_ownership)
-    //std::map<std::size_t, boost::unordered_set<std::size_t> > _master_processes;
-
+    // Map from slave to master mesh entities
+    boost::shared_ptr<std::map<unsigned int, std::map<unsigned int, std::pair<unsigned int, unsigned int> > > >
+      slave_master_mesh_entities;
   };
 }
 

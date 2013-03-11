@@ -24,6 +24,7 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <dolfin/mesh/MeshFunction.h>
 
 namespace dolfin
 {
@@ -37,11 +38,27 @@ namespace dolfin
   {
   public:
 
-    /// Compute map from a slave facet on this process (local index)
-    /// to its master facet (owning process, local index on owner)
-    static std::map<std::size_t, std::pair<std::size_t, std::size_t> >
-      compute_periodic_facet_pairs(const Mesh& mesh,
-                                   const SubDomain& sub_domain);
+    /// For entities of dimension dim, compute map from a slave entity on
+    /// this process (local index) to its master entity (owning process,
+    /// local index on owner). If a master entity is shared by processes,
+    /// only one of the owning processes is returned.
+    static std::map<unsigned int, std::pair<unsigned int, unsigned int> >
+      compute_periodic_pairs(const Mesh& mesh, const SubDomain& sub_domain,
+                             const std::size_t dim);
+
+    /// This function returns a MeshFunction which marks mesh entities
+    /// of dimension dim according to:
+    ///
+    ///     2: slave entities
+    ///     1: master entities
+    ///     0: all other entities
+    ///
+    /// It is useful for visualising and debugging the Expression::map
+    /// function that is used to apply periodic boundary conditions.
+    static MeshFunction<std::size_t>
+      masters_slaves(boost::shared_ptr<const Mesh> mesh,
+                     const SubDomain& sub_domain,
+                     const std::size_t dim);
 
   private:
 

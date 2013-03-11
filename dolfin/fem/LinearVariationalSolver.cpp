@@ -27,10 +27,9 @@
 #include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include <dolfin/la/LinearSolver.h>
 #include "Assembler.h"
-#include "AssemblerBase.h"
+#include "SystemAssembler.h"
 #include "assemble.h"
 #include "DirichletBC.h"
-#include "PeriodicBC.h"
 #include "Form.h"
 #include "LinearVariationalProblem.h"
 #include "LinearVariationalSolver.h"
@@ -40,7 +39,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 LinearVariationalSolver::
 LinearVariationalSolver(LinearVariationalProblem& problem)
-  : problem(reference_to_no_delete_pointer(problem))
+  : _problem(reference_to_no_delete_pointer(problem))
 {
   // Set parameters
   parameters = default_parameters();
@@ -48,7 +47,7 @@ LinearVariationalSolver(LinearVariationalProblem& problem)
 //-----------------------------------------------------------------------------
 LinearVariationalSolver::
 LinearVariationalSolver(boost::shared_ptr<LinearVariationalProblem> problem)
-  : problem(problem)
+  : _problem(problem)
 {
   // Set parameters
   parameters = default_parameters();
@@ -66,11 +65,11 @@ void LinearVariationalSolver::solve()
   const bool print_matrix   = parameters["print_matrix"];
 
   // Get problem data
-  dolfin_assert(problem);
-  boost::shared_ptr<const Form> a(problem->bilinear_form());
-  boost::shared_ptr<const Form> L(problem->linear_form());
-  boost::shared_ptr<Function> u(problem->solution());
-  std::vector<boost::shared_ptr<const BoundaryCondition> > bcs(problem->bcs());
+  dolfin_assert(_problem);
+  boost::shared_ptr<const Form> a(_problem->bilinear_form());
+  boost::shared_ptr<const Form> L(_problem->linear_form());
+  boost::shared_ptr<Function> u(_problem->solution());
+  std::vector<boost::shared_ptr<const BoundaryCondition> > bcs(_problem->bcs());
 
   dolfin_assert(a);
   dolfin_assert(L);
@@ -108,43 +107,13 @@ void LinearVariationalSolver::solve()
     }
 
     // Assemble linear system and apply boundary conditions
-    assemble_system(*A, *b,
-                    *a, *L,
-                    _bcs,
-                    0, 0, 0,
-                    0,
-                    true, false);
+    SystemAssembler assembler;
+    assembler.assemble(*A, *b, *a, *L, _bcs);
   }
   else
   {
-    // Check for any periodic bcs
-    typedef std::pair<std::size_t, std::size_t> DofOwnerPair;
-    typedef std::pair<DofOwnerPair, DofOwnerPair> MasterSlavePair;
-    std::vector<MasterSlavePair> dof_pairs;
-    for (std::size_t i = 0; i < bcs.size(); i++)
-    {
-      dolfin_assert(bcs[i]);
-      const PeriodicBC* _bc = dynamic_cast<const PeriodicBC*>(bcs[i].get());
-      if (_bc)
-      {
-        if (!dof_pairs.empty())
-        {
-          dolfin_error("LinearVariationalSolver.cpp",
-                       "extract periodic boundary conditions in linear variational solver",
-                       "Cannot have more than one PeriodicBC object");
-        }
-        _bc->compute_dof_pairs(dof_pairs);
-      }
-    }
-
-
-    // Intialise matrix, taking into account periodic dofs
-    Assembler assembler;
-    assembler.init_global_tensor(*A, *a, dof_pairs);
-    assembler.reset_sparsity = false;
-
     // Assemble linear system
-    assembler.assemble(*A, *a);
+    assemble(*A, *a);
     if (L->ufc_form())
       assemble(*b, *L);
     else
@@ -172,25 +141,65 @@ void LinearVariationalSolver::solve()
   if (print_matrix)
     info(*A, true);
 
+  // Get list of available methods
+  std::vector<std::pair<std::string, std::string> >
+    lu_methods = u->vector()->factory().lu_solver_methods();
+  std::vector<std::pair<std::string, std::string> >
+    krylov_methods = u->vector()->factory().krylov_solver_methods();
+  std::vector<std::pair<std::string, std::string> >
+    preconditioners = u->vector()->factory().krylov_solver_preconditioners();
+
   // Choose linear solver
-  if (solver_type == "iterative")
+  if (solver_type == "direct" || solver_type == "lu" || LinearSolver::in_list(solver_type, lu_methods))
   {
-    // Adjust iterative solver type
-    if (symmetric)
-      solver_type = "cg";
+    std::string lu_method;
+
+    if (solver_type == "direct" || solver_type == "lu")
+    {
+      lu_method = "default";
+    }
     else
-      solver_type = "gmres";
+    {
+      lu_method = solver_type;
+    }
 
     // Solve linear system
-    KrylovSolver solver(solver_type, pc_type);
-    solver.parameters.update(parameters("krylov_solver"));
+    LUSolver solver(lu_method);
+    solver.parameters.update(parameters("lu_solver"));
     solver.solve(*A, *u->vector(), *b);
   }
   else
   {
+    if (solver_type == "iterative" || solver_type == "krylov")
+    {
+      // Adjust iterative solver type
+      if (symmetric)
+        solver_type = "cg";
+      else
+        solver_type = "gmres";
+    }
+
+    if (!LinearSolver::in_list(solver_type, krylov_methods))
+    {
+      dolfin_error("LinearVariationalSolver.cpp",
+                   "solve linear system",
+                   "Unknown solver method \"%s\". "
+                   "Use list_linear_solver_methods() to list available methods",
+                   solver_type.c_str());
+    }
+
+    if (pc_type != "default" && !LinearSolver::in_list(pc_type, preconditioners))
+    {
+      dolfin_error("LinearVariationalSolver.cpp",
+                   "solve linear system",
+                   "Unknown preconditioner method \"%s\". "
+                   "Use list_krylov_solver_preconditioners() to list available methods",
+                   pc_type.c_str());
+    }
+
     // Solve linear system
-    LUSolver solver;
-    solver.parameters.update(parameters("lu_solver"));
+    KrylovSolver solver(solver_type, pc_type);
+    solver.parameters.update(parameters("krylov_solver"));
     solver.solve(*A, *u->vector(), *b);
   }
 

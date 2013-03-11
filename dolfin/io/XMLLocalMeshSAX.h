@@ -122,9 +122,9 @@ namespace dolfin
     // State of parser
     ParserState state;
 
-    LocalMeshData& mesh_data;
+    LocalMeshData& _mesh_data;
 
-    const std::string filename;
+    const std::string _filename;
 
   };
 

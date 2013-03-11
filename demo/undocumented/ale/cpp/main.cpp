@@ -37,7 +37,7 @@ int main()
   UnitSquareMesh mesh(20, 20);
 
   // Create boundary mesh
-  BoundaryMesh boundary(mesh);
+  BoundaryMesh boundary(mesh, "exterior");
 
   // Move vertices in boundary
   MeshGeometry& geometry = boundary.geometry();
