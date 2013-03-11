@@ -127,6 +127,8 @@ namespace dolfin
     /// *Arguments*
     ///     geometry (CSGGeometry)
     ///         The CSG geometry
+    ///     resolution (std::size_t)
+    ///         An integer specifying the mesh resolution
     Mesh(const CSGGeometry& geometry, std::size_t mesh_resolution);
 
     /// Create mesh defined by Constructive Solid Geometry (CSG)
@@ -134,6 +136,8 @@ namespace dolfin
     /// *Arguments*
     ///     geometry (CSGGeometry)
     ///         The CSG geometry
+    ///     resolution (std::size_t)
+    ///         An integer specifying the mesh resolution
     Mesh(boost::shared_ptr<const CSGGeometry> geometry, std::size_t resolution);
 
     /// Destructor.
