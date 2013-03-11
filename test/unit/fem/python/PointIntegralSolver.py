@@ -34,7 +34,7 @@ def convergence_order(errors, base = 2):
         try:
             orders[i] = math.log(errors[i]/errors[i+1], base)
         except ZeroDivisionError:
-            orders[i] = numpy.nan
+            orders[i] = np.nan
     
     return orders
 
@@ -47,7 +47,7 @@ class PointIntegralSolverTest(unittest.TestCase):
 
         #LEVEL = cpp.get_log_level()
         #cpp.set_log_level(cpp.WARNING)
-        mesh = UnitSquareMesh(5, 5)
+        mesh = UnitSquareMesh(10, 10)
         V = FunctionSpace(mesh, "CG", 1)
         u = Function(V)
         v = TestFunction(V)
@@ -57,7 +57,7 @@ class PointIntegralSolverTest(unittest.TestCase):
         u_true = Expression("exp(t)", t=tstop) 
             
         for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
-                       BackwardEuler, CN2]:
+                       BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
             scheme = Scheme(form, u)
             info(scheme)
             solver = PointIntegralSolver(scheme)
@@ -67,8 +67,7 @@ class PointIntegralSolverTest(unittest.TestCase):
                 solver.step_interval(0., tstop, dt)
                 u_errors.append(errornorm(u_true, u))
             
-            self.assertAlmostEqual(min(convergence_order(u_errors)),
-                                   scheme.order(), 1)
+            self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)
 
         #cpp.set_log_level(LEVEL)
 
@@ -79,7 +78,7 @@ class PointIntegralSolverTest(unittest.TestCase):
 
         #LEVEL = cpp.get_log_level()
         #cpp.set_log_level(cpp.WARNING)
-        mesh = UnitSquareMesh(4, 4)
+        mesh = UnitSquareMesh(10, 10)
         V = VectorFunctionSpace(mesh, "CG", 1, dim=2)
         u = Function(V)
         v = TestFunction(V)
@@ -89,7 +88,7 @@ class PointIntegralSolverTest(unittest.TestCase):
         u_true = Expression(("cos(t)", "sin(t)"), t=tstop)
             
         for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
-                       BackwardEuler, CN2]:
+                       BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
           
             scheme = Scheme(form, u)
             info(scheme)
@@ -100,8 +99,7 @@ class PointIntegralSolverTest(unittest.TestCase):
                 solver.step_interval(0., tstop, dt)
                 u_errors.append(errornorm(u_true, u))
             
-            self.assertAlmostEqual(min(convergence_order(u_errors)),
-                                   scheme.order(), 1)
+            self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)
 
         #cpp.set_log_level(LEVEL)
 
@@ -110,3 +108,5 @@ if __name__ == "__main__":
     print "Testing PyDOLFIN PointIntegralSolver operations"
     print "------------------------------------------------"
     unittest.main()
+    cpp.set_log_level(INFO)
+    list_timings()
