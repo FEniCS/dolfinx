@@ -22,7 +22,7 @@
 // Modified by Johannes Ring 2012
 //
 // First added:  2005-07-05
-// Last changed: 2013-03-08
+// Last changed: 2013-03-11
 
 #include <ostream>
 #include <sstream>
@@ -93,29 +93,7 @@ VTKFile::~VTKFile()
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const Mesh& mesh)
 {
-  Timer t("Write mesh to PVD/VTK file");
-
-  // Get vtu file name and intialise out files
-  std::string vtu_filename = init(mesh, mesh.topology().dim());
-
-  // Write local mesh to vtu file
-  VTKWriter::write_mesh(mesh, mesh.topology().dim(), vtu_filename, binary, compress);
-
-  // Parallel-specific files
-  if (MPI::num_processes() > 1 && MPI::process_number() == 0)
-  {
-    std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
-    pvtu_write_mesh(pvtu_filename);
-    pvd_file_write(counter, counter, pvtu_filename);
-  }
-  else if (MPI::num_processes() == 1)
-    pvd_file_write(counter, counter, vtu_filename);
-
-  // Finalise
-  finalize(vtu_filename, counter);
-
-  log(TRACE, "Saved mesh %s (%s) to file %s in VTK format.",
-      mesh.name().c_str(), mesh.label().c_str(), _filename.c_str());
+  write_mesh(mesh, counter);
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const MeshFunction<bool>& meshfunction)
@@ -144,11 +122,10 @@ void VTKFile::operator<<(const Function& u)
   write_function(u, counter);
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(const std::pair<const Function*, double> u)
+void VTKFile::operator<<(const std::pair<const Mesh*, double> mesh)
 {
-  dolfin_assert(u.first);
-  u.first->update();
-  write_function(*(u.first), u.second);
+  dolfin_assert(mesh.first);
+  write_mesh(*(mesh.first), mesh.second);
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const std::pair<const MeshFunction<int>*, double> f)
@@ -173,6 +150,13 @@ void VTKFile::operator<<(const std::pair<const MeshFunction<bool>*, double> f)
 {
   dolfin_assert(f.first);
   mesh_function_write(*(f.first), f.second);
+}
+//----------------------------------------------------------------------------
+void VTKFile::operator<<(const std::pair<const Function*, double> u)
+{
+  dolfin_assert(u.first);
+  u.first->update();
+  write_function(*(u.first), u.second);
 }
 //----------------------------------------------------------------------------
 void VTKFile::write_function(const Function& u, double time)
@@ -205,6 +189,33 @@ void VTKFile::write_function(const Function& u, double time)
 
   log(TRACE, "Saved function %s (%s) to file %s in VTK format.",
       u.name().c_str(), u.label().c_str(), _filename.c_str());
+}
+//----------------------------------------------------------------------------
+void VTKFile::write_mesh(const Mesh& mesh, double time)
+{
+  Timer t("Write mesh to PVD/VTK file");
+
+  // Get vtu file name and intialise out files
+  std::string vtu_filename = init(mesh, mesh.topology().dim());
+
+  // Write local mesh to vtu file
+  VTKWriter::write_mesh(mesh, mesh.topology().dim(), vtu_filename, binary, compress);
+
+  // Parallel-specific files
+  if (MPI::num_processes() > 1 && MPI::process_number() == 0)
+  {
+    std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
+    pvtu_write_mesh(pvtu_filename);
+    pvd_file_write(counter, time, pvtu_filename);
+  }
+  else if (MPI::num_processes() == 1)
+    pvd_file_write(counter, time, vtu_filename);
+
+  // Finalise
+  finalize(vtu_filename, time);
+
+  log(TRACE, "Saved mesh %s (%s) to file %s in VTK format.",
+      mesh.name().c_str(), mesh.label().c_str(), _filename.c_str());
 }
 //----------------------------------------------------------------------------
 std::string VTKFile::init(const Mesh& mesh, std::size_t cell_dim) const

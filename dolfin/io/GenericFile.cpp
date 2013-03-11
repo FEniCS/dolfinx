@@ -20,7 +20,7 @@
 // Modified by Garth N. Wells 2009
 //
 // First added:  2002-11-12
-// Last changed: 2013-03-08
+// Last changed: 2013-03-11
 
 #include <fstream>
 #include <dolfin/common/MPI.h>
@@ -232,9 +232,9 @@ void GenericFile::operator<< (const Function& u)
   write_not_impl("Function");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<< (const std::pair<const Function*, double> u)
+void GenericFile::operator<< (const std::pair<const Mesh*, double> mesh)
 {
-  write_not_impl("std::pair<Function*, double>");
+  write_not_impl("std::pair<Mesh*, double>");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator<< (const std::pair<const MeshFunction<int>*, double> f)
@@ -255,6 +255,11 @@ void GenericFile::operator<< (const std::pair<const MeshFunction<double>*, doubl
 void GenericFile::operator<< (const std::pair<const MeshFunction<bool>*, double> f)
 {
   write_not_impl("std::pair<MeshFunction<bool>*, double>");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator<< (const std::pair<const Function*, double> u)
+{
+  write_not_impl("std::pair<Function*, double>");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator<< (const Parameters& parameters)

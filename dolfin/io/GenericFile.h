@@ -18,7 +18,7 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2003-07-15
-// Last changed: 2013-03-08
+// Last changed: 2013-03-11
 
 #ifndef __GENERIC_FILE_H
 #define __GENERIC_FILE_H
@@ -95,11 +95,12 @@ namespace dolfin
     virtual void operator<< (const Function& u);
 
     // Output with time
-    virtual void operator<< (const std::pair<const Function*, double> u);
+    virtual void operator<< (const std::pair<const Mesh*, double> mesh);
     virtual void operator<< (const std::pair<const MeshFunction<int>*, double> f);
     virtual void operator<< (const std::pair<const MeshFunction<std::size_t>*, double> f);
     virtual void operator<< (const std::pair<const MeshFunction<double>*, double> f);
     virtual void operator<< (const std::pair<const MeshFunction<bool>*, double> f);
+    virtual void operator<< (const std::pair<const Function*, double> u);
 
     virtual void operator<< (const Parameters& parameters);
     virtual void operator<< (const std::vector<int>& x);
