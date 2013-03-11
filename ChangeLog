@@ -1,3 +1,4 @@
+ - Fixes bug where child/parent hierarchy in Python were destroyed
  - Add utility script dolfin-get-demos
  - MeshFunctions in python now support iterable protocol
  - Expose ufc::dofmap::tabulate_entity_dofs to GenericDofMap interface
