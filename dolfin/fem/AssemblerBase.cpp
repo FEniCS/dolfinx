@@ -74,13 +74,25 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
 
     std::vector<std::size_t> global_dimensions(a.rank());
     std::vector<std::pair<std::size_t, std::size_t> > local_range(a.rank());
+    std::vector<std::size_t> block_sizes;
     for (std::size_t i = 0; i < a.rank(); i++)
     {
       dolfin_assert(dofmaps[i]);
       global_dimensions[i] = dofmaps[i]->global_dimension();
       local_range[i]       = dofmaps[i]->ownership_range();
+      block_sizes.push_back(dofmaps[i]->block_size);
     }
-    tensor_layout->init(global_dimensions, local_range);
+
+    // Set block size for sparsity graphs
+    std::size_t block_size = 1;
+    if (a.rank() == 2)
+    {
+      const std::vector<std::size_t> _bs(a.rank(), dofmaps[0]->block_size);
+      block_size = (block_sizes == _bs) ? dofmaps[0]->block_size : 1;
+    }
+
+    // Initialise tensor layout
+    tensor_layout->init(global_dimensions, block_size, local_range);
 
     // Build sparsity pattern if required
     if (tensor_layout->sparsity_pattern())

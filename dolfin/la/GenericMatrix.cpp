@@ -113,7 +113,7 @@ void GenericMatrix::compress()
   const std::size_t m = row_range.second - row_range.first;
 
   // Initialize layout
-  new_layout->init(global_dimensions, local_range);
+  new_layout->init(global_dimensions, 1, local_range);
 
   // Initialize sparsity pattern
   new_sparsity_pattern.init(global_dimensions, local_range, off_process_owner);
