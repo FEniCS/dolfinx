@@ -55,7 +55,7 @@ class RKSolverTest(unittest.TestCase):
         u_true = Expression("exp(t)", t=tstop)
             
         for Scheme in [ForwardEuler, BackwardEuler, ExplicitMidPoint,
-                       CranckNicolson, RK4]:
+                       CN2, RK4]:
             scheme = Scheme(form, u)
             solver = RKSolver(scheme)
             u_errors = []
@@ -86,7 +86,7 @@ class RKSolverTest(unittest.TestCase):
         u_true = Expression(("cos(t)", "sin(t)"), t=tstop)
             
         for Scheme in [ForwardEuler, BackwardEuler, ExplicitMidPoint,
-                       CranckNicolson, RK4]:
+                       CN2, RK4]:
             scheme = Scheme(form, u)
             solver = RKSolver(scheme)
             u_errors_0 = []

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-02-25
+// Last changed: 2013-03-11
 
 #include <sstream>
 #include <boost/shared_ptr.hpp>
@@ -34,12 +34,14 @@ ButcherScheme::ButcherScheme(std::vector<std::vector<boost::shared_ptr<const For
 			     boost::shared_ptr<Function> u, 
 			     boost::shared_ptr<Constant> t, 
 			     boost::shared_ptr<Constant> dt,
+			     std::vector<double> dt_stage_offset, 
 			     unsigned int order,
 			     const std::string name,
 			     const std::string human_form) : 
   Variable(name, ""), _stage_forms(stage_forms), _last_stage(last_stage), 
-  _stage_solutions(stage_solutions), _u(u), 
-  _t(t), _dt(dt), _order(order), _implicit(false), _human_form(human_form)
+  _stage_solutions(stage_solutions), _u(u), _t(t), _dt(dt), 
+  _dt_stage_offset(dt_stage_offset), _order(order), _implicit(false), 
+  _human_form(human_form)
 {
   _check_arguments();
 }
@@ -50,13 +52,15 @@ ButcherScheme::ButcherScheme(std::vector<std::vector<boost::shared_ptr<const For
 			     boost::shared_ptr<Function> u, 
 			     boost::shared_ptr<Constant> t, 
 			     boost::shared_ptr<Constant> dt,
+			     std::vector<double> dt_stage_offset, 
 			     unsigned int order,
 			     const std::string name,
 			     const std::string human_form,
 			     std::vector<const BoundaryCondition* > bcs) :
   Variable(name, ""), _stage_forms(stage_forms), _last_stage(last_stage), 
-  _stage_solutions(stage_solutions), _u(u), 
-  _t(t), _dt(dt), _order(order), _implicit(false), _human_form(human_form), 
+  _stage_solutions(stage_solutions), _u(u), _t(t), _dt(dt), 
+  _dt_stage_offset(dt_stage_offset), _order(order), _implicit(false), 
+  _human_form(human_form), 
   _bcs(bcs)
 {
   _check_arguments();
@@ -95,6 +99,11 @@ boost::shared_ptr<Constant> ButcherScheme::t()
 boost::shared_ptr<Constant> ButcherScheme::dt()
 {
   return _dt;
+}
+//-----------------------------------------------------------------------------
+const std::vector<double>& ButcherScheme::dt_stage_offset() const
+{
+  return _dt_stage_offset;
 }
 //-----------------------------------------------------------------------------
 unsigned int ButcherScheme::order() const

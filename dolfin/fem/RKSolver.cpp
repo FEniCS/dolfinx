@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-03-01
+// Last changed: 2013-03-11
 
 #include <cmath>
 
@@ -45,6 +45,9 @@ void RKSolver::step(double dt)
   // Update time constant of scheme
   *_scheme->dt() = dt;
 
+  // Time at start of timestep
+  const double t0 = *_scheme->t();
+
   // Get scheme data
   std::vector<std::vector<boost::shared_ptr<const Form> > >& stage_forms = \
     _scheme->stage_forms();
@@ -52,14 +55,18 @@ void RKSolver::step(double dt)
   std::vector<const BoundaryCondition* > bcs = _scheme->bcs();
   
   // Iterate over stage forms
-  for (unsigned int i=0; i < stage_forms.size(); i++)
+  for (unsigned int stage=0; stage < stage_forms.size(); stage++)
   {
+
+    // Update time
+    *_scheme->t() = t0 + dt*_scheme->dt_stage_offset()[stage];
+
     // Check if we have an explicit stage (only 1 form)
-    if (stage_forms[i].size()==1)
+    if (stage_forms[stage].size()==1)
     {
 
       // Just do an assemble
-      _assembler.assemble(*stage_solutions[i]->vector(), *stage_forms[i][0]);
+      _assembler.assemble(*stage_solutions[stage]->vector(), *stage_forms[stage][0]);
       
       // Apply boundary conditions
       // FIXME: stage solutions are time derivatives and we cannot apply the 
@@ -67,7 +74,7 @@ void RKSolver::step(double dt)
       for (unsigned int j = 0; j < bcs.size(); j++)
       {
 	dolfin_assert(bcs[j]);
-	bcs[j]->apply(*stage_solutions[i]->vector());
+	bcs[j]->apply(*stage_solutions[stage]->vector());
       }
       
     }
@@ -78,7 +85,7 @@ void RKSolver::step(double dt)
       // FIXME: applying the bcs on stage solutions are probably wrong...
       // FIXME: Include solver parameters
       // Do a nonlinear solve
-      solve(*stage_forms[i][0] == 0, *stage_solutions[i], bcs, *stage_forms[i][1]);
+      solve(*stage_forms[stage][0] == 0, *stage_solutions[stage], bcs, *stage_forms[stage][1]);
     }
   }
 
@@ -97,8 +104,7 @@ void RKSolver::step(double dt)
   }
 
   // Update time
-  const double t = *_scheme->t();
-  *_scheme->t() = t + dt;
+  *_scheme->t() = t0 + dt;
   
 }
 //-----------------------------------------------------------------------------

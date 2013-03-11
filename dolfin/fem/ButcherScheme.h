@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-02-25
+// Last changed: 2013-03-11
 
 #ifndef __BUTCHERSCHEME_H
 #define __BUTCHERSCHEME_H
@@ -47,12 +47,14 @@ namespace dolfin
   public:
 
     /// Constructor
+    /// FIXME: This constructor is a MESS. Needs clean up...
     ButcherScheme(std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
 		  const FunctionAXPY& last_stage, 
 		  std::vector<boost::shared_ptr<Function> > stage_solutions,
 		  boost::shared_ptr<Function> u, 
 		  boost::shared_ptr<Constant> t, 
 		  boost::shared_ptr<Constant> dt,
+		  std::vector<double> dt_stage_offset, 
 		  unsigned int order,
 		  const std::string name,
 		  const std::string human_form);
@@ -64,6 +66,7 @@ namespace dolfin
 		  boost::shared_ptr<Function> u, 
 		  boost::shared_ptr<Constant> t, 
 		  boost::shared_ptr<Constant> dt, 
+		  std::vector<double> dt_stage_offset, 
 		  unsigned int order,
 		  const std::string name,
 		  const std::string human_form,
@@ -89,6 +92,9 @@ namespace dolfin
 
     /// Return local timestep
     boost::shared_ptr<Constant> dt();
+
+    /// Return local timestep
+    const std::vector<double>& dt_stage_offset() const;
 
     /// Return the order of the scheme
     unsigned int order() const;
@@ -128,6 +134,9 @@ namespace dolfin
     // The local time step
     boost::shared_ptr<Constant> _dt;
     
+    // The time step offset. (c from the ButcherTableau)
+    std::vector<double> _dt_stage_offset;
+
     // The order of the scheme
     unsigned int _order;
 

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-03-06
+// Last changed: 2013-03-11
 
 #include <cmath>
 #include <armadillo>
@@ -54,6 +54,9 @@ void PointIntegralSolver::step(double dt)
 
   // Update time constant of scheme
   *_scheme->dt() = dt;
+
+  // Time at start of timestep
+  const double t0 = *_scheme->t();
 
   // Extract mesh
   const Mesh& mesh = _scheme->stage_forms()[0][0]->mesh();
@@ -109,6 +112,9 @@ void PointIntegralSolver::step(double dt)
     // Iterate over stage forms
     for (unsigned int stage=0; stage<num_stages; stage++)
     {
+
+      // Update time
+      *_scheme->t() = t0 + dt*_scheme->dt_stage_offset()[stage];
 
       // Check if we have an explicit stage (only 1 form)
       if (_ufcs[stage].size()==1)
@@ -308,8 +314,7 @@ void PointIntegralSolver::step(double dt)
   }
 
   // Update time
-  const double t = *_scheme->t();
-  *_scheme->t() = t + dt;
+  *_scheme->t() = t0 + dt;
   
 }
 //-----------------------------------------------------------------------------
