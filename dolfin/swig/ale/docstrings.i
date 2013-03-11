@@ -48,10 +48,12 @@ the new coordinates for the interior vertices accordingly.
 
 // Documentation extracted from: (module=ale, header=MeshDisplacement.h)
 %feature("docstring")  dolfin::MeshDisplacement "
-This class encapsulates vector of CG1 functions into Expression.
-This is particularly useful as displacement returned by mesh smoothers
-which can subsequently be used in evaluating forms. Value rank is 1
-and value shape is equal to geometric dimension of mesh.
+This class encapsulates the CG1 representation of the
+displacement of a mesh as an Expression. This is particularly
+useful for the displacement returned by mesh smoothers which can
+subsequently be used in evaluating forms. The value rank is 1
+and the value shape is equal to the geometric dimension of the
+mesh.
 ";
 
 %feature("docstring")  dolfin::MeshDisplacement::MeshDisplacement "
@@ -80,6 +82,7 @@ and value shape is equal to geometric dimension of mesh.
 * operator[]\ (i)
 
   Extract subfunction
+  In python available as MeshDisplacement.sub(i)
   
   *Arguments*
       i (std::size_t)
