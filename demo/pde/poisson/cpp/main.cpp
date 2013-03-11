@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-02-07
-// Last changed: 2013-01-31
+// Last changed: 2013-03-11
 //
 // This demo program solves Poisson's equation
 //
@@ -79,6 +79,7 @@ int main()
   // Define variational forms
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
+
   Source f;
   dUdN g;
   L.f = f;

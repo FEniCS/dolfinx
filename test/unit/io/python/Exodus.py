@@ -19,73 +19,74 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-02-27
-# Last changed:
+# Last changed: 2013-03-11
 
 import unittest
 from dolfin import *
 
-class Exodus_Mesh_Output(unittest.TestCase):
-    """Test output of Meshes to Exodus files"""
+if has_exodus():
+    class Exodus_Mesh_Output(unittest.TestCase):
+        """Test output of Meshes to Exodus files"""
 
-    def test_save_1d_mesh(self):
-        if MPI.num_processes() == 1:
-            mesh = UnitIntervalMesh(32)
+        def test_save_1d_mesh(self):
+            if MPI.num_processes() == 1:
+                mesh = UnitIntervalMesh(32)
+                File("mesh.e") << mesh
+
+        def test_save_2d_mesh(self):
+            mesh = UnitSquareMesh(32, 32)
             File("mesh.e") << mesh
 
-    def test_save_2d_mesh(self):
-        mesh = UnitSquareMesh(32, 32)
-        File("mesh.e") << mesh
-
-    def test_save_3d_mesh(self):
-        mesh = UnitCubeMesh(8, 8, 8)
-        File("mesh.e") << mesh
+        def test_save_3d_mesh(self):
+            mesh = UnitCubeMesh(8, 8, 8)
+            File("mesh.e") << mesh
 
 
-class Exodus_Point_Function_Output(unittest.TestCase):
-    """Test output of point-based Functions to Exodus files"""
+    class Exodus_Point_Function_Output(unittest.TestCase):
+        """Test output of point-based Functions to Exodus files"""
 
-    def test_save_1d_scalar(self):
-        if MPI.num_processes() == 1:
-            mesh = UnitIntervalMesh(32)
+        def test_save_1d_scalar(self):
+            if MPI.num_processes() == 1:
+                mesh = UnitIntervalMesh(32)
+                u = Function(FunctionSpace(mesh, "Lagrange", 2))
+                u.vector()[:] = 1.0
+                File("u.e") << u
+
+        def test_save_2d_scalar(self):
+            mesh = UnitSquareMesh(16, 16)
             u = Function(FunctionSpace(mesh, "Lagrange", 2))
             u.vector()[:] = 1.0
             File("u.e") << u
 
-    def test_save_2d_scalar(self):
-        mesh = UnitSquareMesh(16, 16)
-        u = Function(FunctionSpace(mesh, "Lagrange", 2))
-        u.vector()[:] = 1.0
-        File("u.e") << u
+        def test_save_3d_scalar(self):
+            mesh = UnitCubeMesh(8, 8, 8)
+            u = Function(FunctionSpace(mesh, "Lagrange", 2))
+            u.vector()[:] = 1.0
+            File("u.e") << u
 
-    def test_save_3d_scalar(self):
-        mesh = UnitCubeMesh(8, 8, 8)
-        u = Function(FunctionSpace(mesh, "Lagrange", 2))
-        u.vector()[:] = 1.0
-        File("u.e") << u
+        def test_save_2d_vector(self):
+            mesh = UnitSquareMesh(16, 16)
+            u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
+            u.vector()[:] = 1.0
+            File("u.e") << u
 
-    def test_save_2d_vector(self):
-        mesh = UnitSquareMesh(16, 16)
-        u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
-        u.vector()[:] = 1.0
-        File("u.e") << u
+        def test_save_3d_vector(self):
+            mesh = UnitCubeMesh(8, 8, 8)
+            u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
+            u.vector()[:] = 1.0
+            File("u.e") << u
 
-    def test_save_3d_vector(self):
-        mesh = UnitCubeMesh(8, 8, 8)
-        u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
-        u.vector()[:] = 1.0
-        File("u.e") << u
+        def test_save_2d_tensor(self):
+            mesh = UnitSquareMesh(16, 16)
+            u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
+            u.vector()[:] = 1.0
+            File("u.e") << u
 
-    def test_save_2d_tensor(self):
-        mesh = UnitSquareMesh(16, 16)
-        u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
-        u.vector()[:] = 1.0
-        File("u.e") << u
-
-    #def test_save_3d_tensor(self):
-    #    mesh = UnitCubeMesh(8, 8, 8)
-    #    u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
-    #    u.vector()[:] = 1.0
-    #    File("u.e") << u
+        #def test_save_3d_tensor(self):
+        #    mesh = UnitCubeMesh(8, 8, 8)
+        #    u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
+        #    u.vector()[:] = 1.0
+        #    File("u.e") << u
 
 if __name__ == "__main__":
     unittest.main()
