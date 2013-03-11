@@ -145,9 +145,10 @@ Parameters PETScPreconditioner::default_parameters()
   // PETSc GAMG parameters
   Parameters p_gamg("gamg");
   p_gamg.add<std::size_t>("verbose");
-  p_gamg.add<std::size_t>("num_aggregation_smooths");
+  p_gamg.add("num_aggregation_smooths", 1);
   p_gamg.add<double>("threshold");
   p_gamg.add<std::size_t>("max_coarse_size");
+  p_gamg.add<std::size_t>("max_process_coarse_size");
   p_gamg.add<bool>("repartition");
   p_gamg.add<bool>("square_graph");
   p_gamg.add<bool>("symmetrize_graph");
@@ -481,17 +482,6 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
     PetscOptionsSetValue("-mg_coarse_pc_factor_mat_solver_package", "mumps");
     #endif
 
-    //PetscOptionsSetValue("mg_levels_ksp_chebyshev_estimate_eigenvalues",
-    //                      "0.1,1.1");
-
-    //PetscOptionsSetValue("-pc_gamg_eigtarget",
-    //                      "0.1,1.1");
-
-    // Smoother
-    //PetscOptionsSetValue("-mg_levels_ksp_max_it",
-    //                      boost::lexical_cast<std::string>(4).c_str());
-    //PetscOptionsSetValue("-mg_levels_pc_type", "jacobi");
-
     // Output level
     if (parameters("gamg")["verbose"].is_set())
     {
@@ -509,24 +499,35 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
     if (parameters("gamg")["num_aggregation_smooths"].is_set())
     {
       const std::size_t num_smooths = parameters("gamg")["num_aggregation_smooths"];
-      PCGAMGSetNSmooths(pc, num_smooths);
+      PetscOptionsSetValue("-pc_gamg_agg_nsmooths",
+                           boost::lexical_cast<std::string>(num_smooths).c_str());
+      // Note: Below seems to have no effect
+      //PCGAMGSetNSmooths(pc, num_smooths);
     }
 
     // Square graph
     if (parameters("gamg")["square_graph"].is_set())
     {
       const bool square = parameters("gamg")["square_graph"];
-      PCGAMGSetSquareGraph(pc, square ? PETSC_TRUE : PETSC_FALSE);
+      PetscOptionsSetValue("-pc_gamg_square_graph",
+                         boost::lexical_cast<std::string>(square).c_str());
+      //PCGAMGSetSquareGraph(pc, square ? PETSC_TRUE : PETSC_FALSE);
     }
 
     // Symmetrize graph (if not square)
     if (parameters("gamg")["symmetrize_graph"].is_set())
     {
-      const bool symmetric = parameters("gamg")["symmetrize_graph"];
-      PCGAMGSetSymGraph(pc, symmetric ? PETSC_TRUE : PETSC_FALSE);
+      const bool symmetrize = parameters("gamg")["symmetrize_graph"];
+      PetscOptionsSetValue("-pc_gamg_sym_graph",
+                           boost::lexical_cast<std::string>(symmetrize).c_str());
+      //PCGAMGSetSymGraph(pc, symmetric ? PETSC_TRUE : PETSC_FALSE);
     }
 
     // -------- AMG options
+
+    PetscOptionsSetValue("-mg_levels_ksp_max_it",
+                          boost::lexical_cast<std::string>(4).c_str());
+    PetscOptionsSetValue("-mg_levels_pc_type", "jacobi");
 
     // Threshold parameters used in aggregation
     if (parameters("gamg")["threshold"].is_set())
@@ -542,6 +543,13 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
       PCGAMGSetCoarseEqLim(pc, max_size);
     }
 
+    // Maximum coarse level problem size on a process
+    if (parameters("gamg")["max_process_coarse_size"].is_set())
+    {
+      const std::size_t max_size = parameters("gamg")["max_process_coarse_size"];
+      PCGAMGSetProcEqLim(pc, max_size);
+    }
+
     // Allow GAMG to re-partition problem
     if (parameters("gamg")["repartition"].is_set())
     {
@@ -549,19 +557,13 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
       PCGAMGSetRepartitioning(pc, repartition ? PETSC_TRUE : PETSC_FALSE);
     }
 
-    //PetscOptionsSetValue("-pc_gamg_process_eq_limit",
-    //                     boost::lexical_cast<std::string>(16).c_str());
-
-    //PetscOptionsSetValue("-pc_gamg_use_agg_gasm",
-    //                     boost::lexical_cast<std::string>(1).c_str());
-
     // Maximum numebr of levels
     if (parameters("gamg")["max_num_levels"].is_set())
     {
       const std::size_t num_levels = parameters("gamg")["max_num_levels"];
       PetscOptionsSetValue("-pc_mg_levels",
                            boost::lexical_cast<std::string>(num_levels).c_str());
-      // FIXME: Below doesn't appear to work
+      // Note: Below doesn't appear to work
       //PCGAMGSetNlevels(pc, num_levels);
     }
 

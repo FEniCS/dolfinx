@@ -39,7 +39,7 @@ namespace dolfin
   std::string indent(std::string block);
 
   /// Return string representation of int
-  template <class T> 
+  template <class T>
   std::string to_string(T x)
   {
     std::stringstream s;
@@ -51,7 +51,7 @@ namespace dolfin
   std::string to_string(const double* x, std::size_t n);
 
   /// Return a hash of a given object
-  template <class T> 
+  template <class T>
   std::size_t hash_local(const T& x)
   {
     boost::hash<T> hash;
@@ -61,7 +61,7 @@ namespace dolfin
   /// Return a hash for a distributed (MPI) object. A hash is computed
   /// on each process, and the hash of the std::vector of all local hash
   /// keys is returned. This function is collective.
-  template <class T> 
+  template <class T>
   std::size_t hash_global(const T& x)
   {
     // Compute local hash
@@ -81,7 +81,7 @@ namespace dolfin
   }
 
   /// Fast zero-fill of numeric vectors/blocks.
-  template <class T> 
+  template <class T>
   void zerofill(T* arr, std::size_t n)
   {
     if (std::numeric_limits<T>::is_integer || std::numeric_limits<T>::is_iec559)
@@ -91,7 +91,7 @@ namespace dolfin
       std::fill_n(arr, n, T(0));
   }
 
-  template <class T> 
+  template <class T>
   void zerofill(std::vector<T>& vec)
   { zerofill(&vec[0], vec.size()); }
 
