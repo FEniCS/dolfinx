@@ -261,6 +261,8 @@ if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
   CHECK_INCLUDE_FILE_CXX(vtkExodusIIWriter.h  HAS_VTK_EXODUS)
   if(HAS_VTK_EXODUS)
     list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_VTK_EXODUS")
+  else()
+    message(STATUS "vtkExodusIIWriter not found, disabling Exodus file writing")
   endif()
 
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${DOLFIN_VTK_LIBRARIES})
