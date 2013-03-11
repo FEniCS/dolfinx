@@ -118,14 +118,14 @@ namespace dolfin
     /// Create a distributed mesh from local (per process) data.
     ///
     /// *Arguments*
-    ///     local_mesh_data (LocalMeshData)
+    ///     local_mesh_data (_LocalMeshData_)
     ///         Data from which to build the mesh.
     explicit Mesh(LocalMeshData& local_mesh_data);
 
     /// Create mesh defined by Constructive Solid Geometry (CSG)
     ///
     /// *Arguments*
-    ///     geometry (CSGGeometry)
+    ///     geometry (_CSGGeometry_)
     ///         The CSG geometry
     ///     resolution (std::size_t)
     ///         An integer specifying the mesh resolution
@@ -134,7 +134,7 @@ namespace dolfin
     /// Create mesh defined by Constructive Solid Geometry (CSG)
     ///
     /// *Arguments*
-    ///     geometry (CSGGeometry)
+    ///     geometry (_CSGGeometry_)
     ///         The CSG geometry
     ///     resolution (std::size_t)
     ///         An integer specifying the mesh resolution
