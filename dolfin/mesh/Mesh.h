@@ -129,7 +129,7 @@ namespace dolfin
     ///         The CSG geometry
     ///     resolution (std::size_t)
     ///         An integer specifying the mesh resolution
-    Mesh(const CSGGeometry& geometry, std::size_t mesh_resolution);
+    Mesh(const CSGGeometry& geometry, std::size_t resolution);
 
     /// Create mesh defined by Constructive Solid Geometry (CSG)
     ///

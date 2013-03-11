@@ -111,7 +111,7 @@ Mesh::Mesh(LocalMeshData& local_mesh_data)
   MeshPartitioning::build_distributed_mesh(*this, local_mesh_data);
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(const CSGGeometry& geometry, std::size_t mesh_resolution)
+Mesh::Mesh(const CSGGeometry& geometry, std::size_t resolution)
   : Variable("mesh", "DOLFIN mesh"),
     Hierarchical<Mesh>(*this),
     _domains(*this),
@@ -124,7 +124,7 @@ Mesh::Mesh(const CSGGeometry& geometry, std::size_t mesh_resolution)
 {
   // Build mesh on process 0
   if (MPI::process_number() == 0)
-    CSGMeshGenerator::generate(*this, geometry, mesh_resolution);
+    CSGMeshGenerator::generate(*this, geometry, resolution);
 
   // Build distributed mesh
   if (MPI::num_processes() > 1)
