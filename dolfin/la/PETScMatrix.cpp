@@ -212,10 +212,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
 
     // Set block size
     if (tensor_layout.block_size > 1)
-    {
-      cout << "Setting block size: " << tensor_layout.block_size << endl;
       MatSetBlockSize(*_A, tensor_layout.block_size);
-    }
 
     // Allocate space (using data from sparsity pattern)
     const std::vector<PetscInt> _num_nonzeros_diagonal(num_nonzeros_diagonal.begin(),
