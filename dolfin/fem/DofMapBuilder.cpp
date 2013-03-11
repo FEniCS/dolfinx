@@ -44,11 +44,14 @@
 #include "UFCCell.h"
 #include "DofMapBuilder.h"
 
+#include <dolfin/common/utils.h>
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
-  boost::shared_ptr<const std::map<unsigned int, std::map<unsigned int, std::pair<unsigned int, unsigned int> > > > slave_master_entities,
+  boost::shared_ptr<const std::map<unsigned int, std::map<unsigned int,
+    std::pair<unsigned int, unsigned int> > > > slave_master_entities,
   boost::shared_ptr<const Restriction> restriction)
 {
   // Start timer for dofmap initialization
@@ -66,22 +69,29 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   // Build dofmap based on UFC-provided map. This function does not
   // set local_range
   map restricted_dofs_inverse;
-  build_ufc(dofmap, restricted_dofs_inverse, mesh, slave_master_entities,
+  build_ufc_dofmap(dofmap, restricted_dofs_inverse, mesh, slave_master_entities,
             restriction);
 
   // Check if dofmap is distributed
   const bool distributed = MPI::num_processes() > 1;
 
+  // Determine dof block size
+  dolfin_assert(dofmap._ufc_dofmap);
+  const std::size_t block_size = compute_blocksize(*dofmap._ufc_dofmap);
+
   // Re-order dofmap when distributed for process locality and set
   // local_range
   if (distributed)
-    reorder_distributed(dofmap, mesh, restriction, restricted_dofs_inverse);
+  {
+    reorder_distributed(dofmap, mesh, restriction, restricted_dofs_inverse,
+                        block_size);
+  }
   else
   {
     // Optionally re-order local dofmap for spatial locality
     const bool reorder = dolfin::parameters["reorder_dofs_serial"];
     if (reorder)
-      reorder_local(dofmap, mesh);
+      reorder_local(dofmap, mesh, block_size);
 
     // Set local dof ownbership range
     dofmap._ownership_range = std::make_pair(0, dofmap.global_dimension());
@@ -118,8 +128,8 @@ void DofMapBuilder::build_sub_map(DofMap& sub_dofmap,
   // Build UFC-based dof map for sub-dofmap
   map restricted_dofs_inverse;
   boost::shared_ptr<const Restriction> restriction;
-  build_ufc(sub_dofmap, restricted_dofs_inverse, mesh, parent_dofmap.slave_master_mesh_entities,
-            restriction);
+  build_ufc_dofmap(sub_dofmap, restricted_dofs_inverse, mesh,
+                   parent_dofmap.slave_master_mesh_entities, restriction);
 
   // Add offset to dofmap
   for (std::size_t i = 0; i < sub_dofmap._dofmap.size(); ++i)
@@ -182,7 +192,8 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
 
    // Mark shared vertices
   std::vector<bool> vertex_shared(mesh.num_vertices(), false);
-  boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > >::const_iterator shared_vertex;
+  boost::unordered_map<unsigned int, std::vector<std::pair<unsigned int,
+      unsigned int> > >::const_iterator shared_vertex;
   for (shared_vertex = shared_vertices.begin(); shared_vertex != shared_vertices.end(); ++shared_vertex)
   {
     dolfin_assert(shared_vertex->first < vertex_shared.size());
@@ -354,39 +365,31 @@ std::size_t DofMapBuilder::build_constrained_vertex_indices(const Mesh& mesh,
   return MPI::sum(new_index);
 }
 //-----------------------------------------------------------------------------
-void DofMapBuilder::reorder_local(DofMap& dofmap, const Mesh& mesh)
+void DofMapBuilder::reorder_local(DofMap& dofmap, const Mesh& mesh,
+                                  std::size_t block_size)
 {
   // Global dimension
   const std::size_t N = dofmap.global_dimension();
 
-  // Assume unit block size
-  std::size_t block_size = 1;
-
-  // Simple method to determine block size
-  dolfin_assert(dofmap._ufc_dofmap);
-  if (dofmap._ufc_dofmap->num_sub_dofmaps() > 0)
-  {
-    if (dofmap._ufc_dofmap->max_local_dimension() % dofmap._ufc_dofmap->num_sub_dofmaps() == 0
-          && N % dofmap._ufc_dofmap->num_sub_dofmaps() == 0)
-    {
-      block_size = dofmap._ufc_dofmap->num_sub_dofmaps();
-    }
-  }
-
   // Create empty graph
-  const std::size_t num_blocks = N/block_size;
-  Graph graph(num_blocks);
+  dolfin_assert(N % block_size == 0);
+  const std::size_t num_nodes = N/block_size;
+  Graph graph(num_nodes);
 
   // Build local graph for blocks
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     const std::vector<dolfin::la_index>& dofs0 = dofmap.cell_dofs(cell->index());
     const std::vector<dolfin::la_index>& dofs1 = dofmap.cell_dofs(cell->index());
+
+    dolfin_assert(dofs0.size() % block_size == 0);
+    const std::size_t nodes_per_cell = dofs0.size()/block_size;
+
     std::vector<dolfin::la_index>::const_iterator node0, node1;
-    for (node0 = dofs0.begin(); node0 != dofs0.end(); node0 += block_size)
-      for (node1 = dofs1.begin(); node1 != dofs1.end(); node1 += block_size)
-        if (*node0 != *node1)
-          graph[*node0/block_size].insert(*node1/block_size);
+    for (std::size_t i = 0; i < nodes_per_cell; ++i)
+      for (std::size_t j = 0; j < nodes_per_cell; ++j)
+        if (dofs0[i] != dofs1[j])
+          graph[dofs0[i] % num_nodes].insert(dofs1[j] % num_nodes);
   }
 
   // Reorder block graph (reverse Cuthill-McKee)
@@ -397,19 +400,30 @@ void DofMapBuilder::reorder_local(DofMap& dofmap, const Mesh& mesh)
   std::vector<std::vector<dolfin::la_index> >::iterator cell_map;
   std::vector<dolfin::la_index>::iterator dof;
   for (cell_map = dofmap._dofmap.begin(); cell_map != dofmap._dofmap.end(); ++cell_map)
+  {
     for (dof = cell_map->begin(); dof != cell_map->end(); ++dof)
-      *dof = block_remap[*dof/block_size]*block_size + (*dof % block_size);
+    {
+      const std::size_t old_node = (*dof) % num_nodes;
+      const std::size_t new_node = block_remap[old_node];
+      *dof = new_node*block_size + (*dof)/num_nodes;
+    }
+  }
 
   // Store re-ordering map (from UFC dofmap)
   dolfin_assert(dofmap.ufc_map_to_dofmap.empty());
   for (std::size_t i = 0; i < dofmap.global_dimension(); ++i)
-    dofmap.ufc_map_to_dofmap[i] = block_remap[i/block_size]*block_size + (i % block_size);
+  {
+    const std::size_t old_node = i % num_nodes;
+    const std::size_t new_node = block_remap[old_node];
+    dofmap.ufc_map_to_dofmap[i] = new_node*block_size + i/num_nodes;
+  }
 }
 //-----------------------------------------------------------------------------
-void DofMapBuilder::build_ufc(DofMap& dofmap,
+void DofMapBuilder::build_ufc_dofmap(DofMap& dofmap,
     DofMapBuilder::map& restricted_dofs_inverse,
     const Mesh& mesh,
-    boost::shared_ptr<const std::map<unsigned int, std::map<unsigned int, std::pair<unsigned int, unsigned int> > > > slave_master_entities,
+    boost::shared_ptr<const std::map<unsigned int, std::map<unsigned int,
+      std::pair<unsigned int, unsigned int> > > > slave_master_entities,
     boost::shared_ptr<const Restriction> restriction)
 {
   // Start timer for dofmap initialization
@@ -560,53 +574,63 @@ void DofMapBuilder::build_ufc(DofMap& dofmap,
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::reorder_distributed(DofMap& dofmap,
-                                      const Mesh& mesh,
-                                      boost::shared_ptr<const Restriction> restriction,
-                                      const map& restricted_dofs_inverse)
+                            const Mesh& mesh,
+                            boost::shared_ptr<const Restriction> restriction,
+                            const map& restricted_dofs_inverse,
+                            std::size_t block_size)
 {
   // Build set of dofs that are not associated with a mesh entity
   // (global dofs)
   set global_dofs = compute_global_dofs(dofmap);
 
-  // Allocate data structure to hold dof ownership
-  boost::array<DofMapBuilder::set, 3> dof_ownership;
+  // Allocate data structure to hold node ownership (multiple dofs can
+  // live at one node)
+  boost::array<DofMapBuilder::set, 3> node_ownership;
 
-  // Allocate map data structure from a shared dof to the processes that
+  // Allocate map data structure from a shared node to the processes that
   // share it
-  DofMapBuilder::vec_map shared_dof_processes;
+  DofMapBuilder::vec_map shared_node_processes;
 
-  // Computed owned and shared dofs (and owned and un-owned)
-  compute_dof_ownership(dof_ownership, shared_dof_processes, dofmap,
-                        global_dofs, mesh, restriction,
-                        restricted_dofs_inverse);
+  // Computed owned and shared nodes (and owned and un-owned)
+  compute_node_ownership(node_ownership, shared_node_processes, dofmap,
+                         global_dofs, mesh, restriction,
+                         restricted_dofs_inverse, block_size);
 
   // Renumber owned dofs and receive new numbering for unowned shared dofs
-  parallel_renumber(dof_ownership, shared_dof_processes, dofmap, mesh,
-                    restriction, restricted_dofs_inverse);
+  parallel_renumber(node_ownership, shared_node_processes, dofmap, mesh,
+                    restriction, restricted_dofs_inverse, block_size);
 }
 //-----------------------------------------------------------------------------
-void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
-                              vec_map& shared_dof_processes,
+void DofMapBuilder::compute_node_ownership(boost::array<set, 3>& node_ownership,
+                              vec_map& shared_node_processes,
                               DofMap& dofmap,
                               const DofMapBuilder::set& global_dofs,
                               const Mesh& mesh,
                               boost::shared_ptr<const Restriction> restriction,
-                              const map& restricted_dofs_inverse)
+                              const map& restricted_nodes_inverse,
+                              std::size_t block_size)
 {
   log(TRACE, "Determining dof ownership for parallel dof map");
 
-  // References to dof ownership sets
-  set& owned_dofs          = dof_ownership[0];
-  set& shared_owned_dofs   = dof_ownership[1];
-  set& shared_unowned_dofs = dof_ownership[2];
+  const std::size_t N = dofmap.global_dimension();
+  dolfin_assert(N % block_size == 0);
+  const std::size_t num_nodes = N/block_size;
+
+  if (restriction)
+    dolfin_assert(block_size == 1);
+
+  // References to 'node' ownership sets
+  set& owned_nodes          = node_ownership[0];
+  set& shared_owned_nodes   = node_ownership[1];
+  set& shared_unowned_nodes = node_ownership[2];
 
   // Clear data structures
-  owned_dofs.clear();
-  shared_owned_dofs.clear();
-  shared_unowned_dofs.clear();
+  owned_nodes.clear();
+  shared_owned_nodes.clear();
+  shared_unowned_nodes.clear();
 
   // Data structures for computing ownership
-  boost::unordered_map<std::size_t, std::size_t> dof_vote;
+  boost::unordered_map<std::size_t, std::size_t> node_vote;
   std::vector<std::size_t> facet_dofs(dofmap.num_facet_dofs());
 
   // Communication buffer
@@ -629,8 +653,6 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
   {
     for (CellIterator _f(boundary); !_f.end(); ++_f)
     {
-      //cout << "Looping over boundary mesh" << endl;
-
       // Get boundary facet
       Facet f(mesh, cell_map[*_f]);
 
@@ -647,30 +669,29 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
       // Tabulate which dofs are on the facet
       dofmap.tabulate_facet_dofs(facet_dofs, c.index(f));
 
-      // Insert shared dofs into set and assign a 'vote'
-      for (std::size_t i = 0; i < dofmap.num_facet_dofs(); i++)
+      // Insert shared nodes into set and assign a 'vote'
+      dolfin_assert(dofmap.num_facet_dofs() % block_size == 0);
+      for (std::size_t i = 0; i < dofmap.num_facet_dofs(); ++i)
       {
-        // Get facet dof
-        size_t facet_dof = cell_dofs[facet_dofs[i]];
+        // Get facet node
+        size_t facet_node = cell_dofs[facet_dofs[i]] % num_nodes;
 
         // Map back to original (and common) numbering for restricted space
         if (restriction)
         {
-          const map_iterator it = restricted_dofs_inverse.find(facet_dof);
-          dolfin_assert(it != restricted_dofs_inverse.end());
-          facet_dof = it->second;
+          const map_iterator it = restricted_nodes_inverse.find(facet_node);
+          dolfin_assert(it != restricted_nodes_inverse.end());
+          facet_node = it->second;
         }
 
-        // Add to list of shared dofs
-        if (shared_owned_dofs.find(facet_dof) == shared_owned_dofs.end())
+        // Add to list of shared nodes
+        if (shared_owned_nodes.find(facet_node) == shared_owned_nodes.end())
         {
-          shared_owned_dofs.insert(facet_dof);
-          dof_vote[facet_dof] = rng();
+          shared_owned_nodes.insert(facet_node);
+          node_vote[facet_node] = rng();
 
-          //cout << "Dof and vote: " << facet_dof << ", " << dof_vote[facet_dof] << endl;
-
-          send_buffer.push_back(facet_dof);
-          send_buffer.push_back(dof_vote[facet_dof]);
+          send_buffer.push_back(facet_node);
+          send_buffer.push_back(node_vote[facet_node]);
         }
       }
     }
@@ -681,7 +702,7 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
   //        then letting each process get the sharing process list. This
   //        will avoid interleaving communication and computation.
 
-  // Decide ownership of shared dofs
+  // Decide ownership of shared nodes
   const std::size_t num_prococesses = MPI::num_processes();
   const std::size_t process_number = MPI::process_number();
   std::vector<std::size_t> recv_buffer;
@@ -693,32 +714,32 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
 
     for (std::size_t i = 0; i < recv_buffer.size(); i += 2)
     {
-      const std::size_t received_dof  = recv_buffer[i];
+      const std::size_t received_node = recv_buffer[i];
       const std::size_t received_vote = recv_buffer[i + 1];
 
-      if (shared_owned_dofs.find(received_dof) != shared_owned_dofs.end())
+      if (shared_owned_nodes.find(received_node) != shared_owned_nodes.end())
       {
         // Move dofs with higher ownership votes from shared to shared
         // but not owned
-        if (received_vote < dof_vote[received_dof])
+        if (received_vote < node_vote[received_node])
         {
-          shared_unowned_dofs.insert(received_dof);
-          shared_owned_dofs.erase(received_dof);
+          shared_unowned_nodes.insert(received_node);
+          shared_owned_nodes.erase(received_node);
         }
-        else if (received_vote == dof_vote[received_dof] && process_number > src)
+        else if (received_vote == node_vote[received_node] && process_number > src)
         {
           // If votes are equal, let lower rank process take ownership
-          shared_unowned_dofs.insert(received_dof);
-          shared_owned_dofs.erase(received_dof);
+          shared_unowned_nodes.insert(received_node);
+          shared_owned_nodes.erase(received_node);
         }
 
-        // Remember the sharing of the dof
-        shared_dof_processes[received_dof].push_back(src);
+        // Remember the sharing of the node
+        shared_node_processes[received_node].push_back(src);
       }
-      else if (shared_unowned_dofs.find(received_dof) != shared_unowned_dofs.end())
+      else if (shared_unowned_nodes.find(received_node) != shared_unowned_nodes.end())
       {
-        // Remember the sharing of the dof
-        shared_dof_processes[received_dof].push_back(src);
+        // Remember the sharing of the node
+        shared_node_processes[received_node].push_back(src);
       }
     }
   }
@@ -727,22 +748,22 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
   // global dofs)
   if (process_number == 0)
   {
-    shared_owned_dofs.insert(global_dofs.begin(), global_dofs.end());
+    shared_owned_nodes.insert(global_dofs.begin(), global_dofs.end());
     for (set::const_iterator dof = global_dofs.begin(); dof != global_dofs.end(); ++dof)
     {
-      set::const_iterator _dof = shared_unowned_dofs.find(*dof);
-      if (_dof != shared_unowned_dofs.end())
-        shared_unowned_dofs.erase(_dof);
+      set::const_iterator _dof = shared_unowned_nodes.find(*dof);
+      if (_dof != shared_unowned_nodes.end())
+        shared_unowned_nodes.erase(_dof);
     }
   }
   else
   {
-    shared_unowned_dofs.insert(global_dofs.begin(), global_dofs.end());
+    shared_unowned_nodes.insert(global_dofs.begin(), global_dofs.end());
     for (set::const_iterator dof = global_dofs.begin(); dof != global_dofs.end(); ++dof)
     {
-      set::const_iterator _dof = shared_owned_dofs.find(*dof);
-      if (_dof != shared_owned_dofs.end())
-        shared_owned_dofs.erase(_dof);
+      set::const_iterator _dof = shared_owned_nodes.find(*dof);
+      if (_dof != shared_owned_nodes.end())
+        shared_owned_nodes.erase(_dof);
     }
   }
 
@@ -750,23 +771,23 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     const std::vector<dolfin::la_index>& cell_dofs = dofmap.cell_dofs(cell->index());
-    const std::size_t cell_dimension = dofmap.cell_dimension(cell->index());
-    for (std::size_t i = 0; i < cell_dimension; ++i)
+    //const std::size_t cell_dimension = dofmap.cell_dimension(cell->index());
+    for (std::size_t i = 0; i < cell_dofs.size(); ++i)
     {
-      // Get cell dof
-      size_t cell_dof = cell_dofs[i];
+      // Get cell node
+      size_t cell_node = cell_dofs[i] % num_nodes;
 
       // Map back to original (and common) numbering for restricted space
       if (restriction)
       {
-        const map_iterator it = restricted_dofs_inverse.find(cell_dof);
-        dolfin_assert(it != restricted_dofs_inverse.end());
-        cell_dof = it->second;
+        const map_iterator it = restricted_nodes_inverse.find(cell_node);
+        dolfin_assert(it != restricted_nodes_inverse.end());
+        cell_node = it->second;
       }
 
       // Mark dof as owned if not in unowned set
-      if (shared_unowned_dofs.find(cell_dof) == shared_unowned_dofs.end())
-        owned_dofs.insert(cell_dof);
+      if (shared_unowned_nodes.find(cell_node) == shared_unowned_nodes.end())
+        owned_nodes.insert(cell_node);
     }
   }
 
@@ -775,32 +796,37 @@ void DofMapBuilder::compute_dof_ownership(boost::array<set, 3>& dof_ownership,
   {
     // Global dimension for restricted space needs to be computed here
     // since it is not know by the UFC dof map.
-    const std::size_t _owned_dim = owned_dofs.size();
-    const std::size_t _global_dimension = MPI::sum(_owned_dim);
+    const std::size_t _owned_dim = owned_nodes.size();
+    const std::size_t _global_dimension = block_size*MPI::sum(_owned_dim);
     dofmap._global_dimension = _global_dimension;
   }
   else
   {
-    const std::size_t _owned_dim = owned_dofs.size();
-    dolfin_assert(MPI::sum(_owned_dim) == dofmap.global_dimension());
+    const std::size_t _owned_dim = owned_nodes.size();
+    dolfin_assert(block_size*MPI::sum(_owned_dim) == dofmap.global_dimension());
   }
 
   log(TRACE, "Finished determining dof ownership for parallel dof map");
 }
 //-----------------------------------------------------------------------------
-void DofMapBuilder::parallel_renumber(const boost::array<set, 3>& dof_ownership,
-                                      const vec_map& shared_dof_processes,
+void DofMapBuilder::parallel_renumber(const boost::array<set, 3>& node_ownership,
+                                      const vec_map& shared_node_processes,
                                       DofMap& dofmap,
                                       const Mesh& mesh,
                                       boost::shared_ptr<const Restriction> restriction,
-                                      const map& restricted_dofs_inverse)
+                                      const map& restricted_nodes_inverse,
+                                      std::size_t block_size)
 {
   log(TRACE, "Renumber dofs for parallel dof map");
 
+  const std::size_t N = dofmap.global_dimension();
+  dolfin_assert(N % block_size == 0);
+  const std::size_t num_nodes = N/block_size;
+
   // References to dof ownership sets
-  const set& owned_dofs          = dof_ownership[0];
-  const set& shared_owned_dofs   = dof_ownership[1];
-  const set& shared_unowned_dofs = dof_ownership[2];
+  const set& owned_nodes          = node_ownership[0];
+  const set& shared_owned_nodes   = node_ownership[1];
+  const set& shared_unowned_nodes = node_ownership[2];
 
   // FIXME: Handle double-renumbered dof map
   if (!dofmap.ufc_map_to_dofmap.empty())
@@ -814,23 +840,26 @@ void DofMapBuilder::parallel_renumber(const boost::array<set, 3>& dof_ownership,
   std::vector<std::vector<dolfin::la_index> > new_dofmap(old_dofmap.size());
   dolfin_assert(old_dofmap.size() == mesh.num_cells());
 
-  // Compute offset for owned and non-shared dofs
-  const std::size_t process_offset = MPI::global_offset(owned_dofs.size(), true);
+  // Compute offset for owned and non-shared nodes
+  const std::size_t process_offset = MPI::global_offset(owned_nodes.size(), true);
 
   // Clear some data
   dofmap._off_process_owner.clear();
 
   // Create graph
-  Graph graph(owned_dofs.size());
+  Graph graph(owned_nodes.size());
 
   // Build graph for re-ordering. Below block is scoped to clear working
   // data structures once graph is constructed.
   {
     // Create contiguous local numbering for locally owned dofs
     std::size_t my_counter = 0;
-    boost::unordered_map<std::size_t, std::size_t> my_old_to_new_dof_index;
-    for (set_iterator owned_dof = owned_dofs.begin(); owned_dof != owned_dofs.end(); ++owned_dof, my_counter++)
-      my_old_to_new_dof_index[*owned_dof] = my_counter;
+    boost::unordered_map<std::size_t, std::size_t> my_old_to_new_node_index;
+    for (set_iterator owned_node = owned_nodes.begin();
+          owned_node != owned_nodes.end(); ++owned_node, my_counter++)
+    {
+      my_old_to_new_node_index[*owned_node] = my_counter;
+    }
 
     // Build local graph, based on old dof map, with contiguous numbering
     for (std::size_t cell = 0; cell < old_dofmap.size(); ++cell)
@@ -839,26 +868,32 @@ void DofMapBuilder::parallel_renumber(const boost::array<set, 3>& dof_ownership,
       const std::vector<dolfin::la_index>& dofs0 = dofmap.cell_dofs(cell);
       const std::vector<dolfin::la_index>& dofs1 = dofmap.cell_dofs(cell);
 
-      // Loop over each dof in dofs0
-      std::vector<dolfin::la_index>::const_iterator node0, node1;
-      for (node0 = dofs0.begin(); node0 != dofs0.end(); ++node0)
+      dolfin_assert(dofs0.size() % block_size == 0);
+      const std::size_t nodes_per_cell = dofs0.size()/block_size;
+
+      // Loop over each node in dofs0
+      std::vector<dolfin::la_index>::const_iterator dof0, dof1;
+      for (std::size_t i = 0; i < nodes_per_cell; ++i)
       {
-        // Get new index from contiguous map
-        boost::unordered_map<std::size_t, std::size_t>::const_iterator _node0
-            = my_old_to_new_dof_index.find(*node0);
-        if (_node0 != my_old_to_new_dof_index.end())
+        const std::size_t n0_old = dofs0[i] % num_nodes;
+
+        // Get new node index from contiguous map
+        boost::unordered_map<std::size_t, std::size_t>::const_iterator n0
+            = my_old_to_new_node_index.find(n0_old);
+        if (n0 != my_old_to_new_node_index.end())
         {
-          const std::size_t local_node0 = _node0->second;
-          dolfin_assert(local_node0 < graph.size());
-          for (node1 = dofs1.begin(); node1 != dofs1.end(); ++node1)
+          const std::size_t n0_local = n0->second;
+          dolfin_assert(n0_local < graph.size());
+          for (std::size_t j = 0; j < nodes_per_cell; ++j)
           {
+            const std::size_t n1_old = dofs1[j] % num_nodes;
             boost::unordered_map<std::size_t, std::size_t>::const_iterator
-                  _node1 = my_old_to_new_dof_index.find(*node1);
-            if (_node1 != my_old_to_new_dof_index.end())
+              n1 = my_old_to_new_node_index.find(n1_old);
+            if (n1 != my_old_to_new_node_index.end())
             {
-              const std::size_t local_node1 = _node1->second;
-              if (local_node0 != local_node1)
-                graph[local_node0].insert(local_node1);
+              const std::size_t n1_local = n1->second;
+              if (n0_local != n1_local)
+                graph[n0_local].insert(n1_local);
             }
           }
         }
@@ -866,31 +901,37 @@ void DofMapBuilder::parallel_renumber(const boost::array<set, 3>& dof_ownership,
     }
   }
 
-  // Reorder dofs locally
-  const std::vector<std::size_t> dof_remap
+  // Reorder nodes locally
+  const std::vector<std::size_t> node_remap
       = BoostGraphOrdering::compute_cuthill_mckee(graph, true);
 
   // Map from old to new index for dofs
-  boost::unordered_map<std::size_t, std::size_t> old_to_new_dof_index;
+  boost::unordered_map<std::size_t, std::size_t> old_to_new_node_index;
 
-  // Renumber owned dofs and buffer dofs that are owned but shared with
+  // Renumber owned dofs and buffer nodes that are owned but shared with
   // another process
   std::size_t counter = 0;
   std::vector<std::size_t> send_buffer;
-  for (set_iterator owned_dof = owned_dofs.begin();
-          owned_dof != owned_dofs.end(); ++owned_dof, counter++)
+  for (set_iterator owned_node = owned_nodes.begin();
+          owned_node != owned_nodes.end(); ++owned_node, counter++)
   {
-    // Set new dof number
-    old_to_new_dof_index[*owned_dof] = process_offset + dof_remap[counter];
+    // Set new node number
+    old_to_new_node_index[*owned_node] = process_offset + node_remap[counter];
 
-    // Update UFC-to-renumbered map for new number
-    dofmap.ufc_map_to_dofmap[*owned_dof] = process_offset + dof_remap[counter];
-
-    // If this dof is shared and owned, buffer old and new index for sending
-    if (shared_owned_dofs.find(*owned_dof) != shared_owned_dofs.end())
+    // Update UFC-to-renumbered map for new dof number
+    for (std::size_t i = 0; i < block_size; ++i)
     {
-      send_buffer.push_back(*owned_dof);
-      send_buffer.push_back(process_offset + dof_remap[counter]);
+      std::size_t ufc_dof_index = *owned_node + i*num_nodes;
+      std::size_t new_dof_index = (process_offset + node_remap[counter])*block_size + i;
+
+      dofmap.ufc_map_to_dofmap[ufc_dof_index] = new_dof_index;
+    }
+
+    // If this node is shared and owned, buffer old and new index for sending
+    if (shared_owned_nodes.find(*owned_node) != shared_owned_nodes.end())
+    {
+      send_buffer.push_back(*owned_node);
+      send_buffer.push_back(process_offset + node_remap[counter]);
     }
   }
 
@@ -899,7 +940,7 @@ void DofMapBuilder::parallel_renumber(const boost::array<set, 3>& dof_ownership,
   //        then letting each process get the sharing process list. This
   //        will avoid interleaving communication and computation.
 
-  // Exchange new dof numbers for dofs that are shared
+  // Exchange new node numbers for nodes that are shared
   const std::size_t num_processes = MPI::num_processes();
   const std::size_t process_number = MPI::process_number();
   std::vector<std::size_t> recv_buffer;
@@ -912,35 +953,64 @@ void DofMapBuilder::parallel_renumber(const boost::array<set, 3>& dof_ownership,
     // Add dofs renumbered by another process to the old-to-new map
     for (std::size_t i = 0; i < recv_buffer.size(); i += 2)
     {
-      const std::size_t received_old_dof_index = recv_buffer[i];
-      const std::size_t received_new_dof_index = recv_buffer[i + 1];
+      const std::size_t received_old_node_index = recv_buffer[i];
+      const std::size_t received_new_node_index = recv_buffer[i + 1];
 
       // Check if this process has shared dof (and is not the owner)
-      if (shared_unowned_dofs.find(received_old_dof_index) != shared_unowned_dofs.end())
+      if (shared_unowned_nodes.find(received_old_node_index) != shared_unowned_nodes.end())
       {
-        // Add to old-to-new dof map
-        old_to_new_dof_index[received_old_dof_index] = received_new_dof_index;
+        // Add to old-to-new node map
+        old_to_new_node_index[received_old_node_index] = received_new_node_index;
 
-        // Store map from off-process dof to owner
-        dofmap._off_process_owner[received_new_dof_index] = src;
+        // Store map from off-process dof to owner and update
+        // UFC-to-renumbered map
+        for (std::size_t i = 0; i < block_size; ++i)
+        {
+          std::size_t ufc_dof_index = received_old_node_index + i*num_nodes;
+          std::size_t new_dof_index = received_new_node_index*block_size + i;
+          dofmap._off_process_owner[new_dof_index] = src;
+
+          // Update UFC-to-renumbered map
+          //const std::size_t old_dof_index = received_new_node_index*block_size + i;
+          dofmap.ufc_map_to_dofmap[ufc_dof_index] = new_dof_index;
+        }
+        //dofmap._off_process_owner[received_new_node_index] = src;
 
         // Update UFC-to-renumbered map
-        dofmap.ufc_map_to_dofmap[received_old_dof_index] = received_new_dof_index;
+        //dofmap.ufc_map_to_dofmap[received_old_node_index] = received_new_node_index;
       }
     }
   }
 
+  // FIXME: Should dofmap._shared_dofs be cleared?
+
   // Insert the shared-dof-to-process mapping into the dofmap, renumbering
   // as necessary
-  for (vec_map::const_iterator it = shared_dof_processes.begin();
-            it != shared_dof_processes.end(); ++it)
+  for (vec_map::const_iterator it = shared_node_processes.begin();
+            it != shared_node_processes.end(); ++it)
   {
+    // Check for shared node in old_to_new_node_index map
     boost::unordered_map<std::size_t, std::size_t>::const_iterator
-      new_index = old_to_new_dof_index.find(it->first);
-    if (new_index == old_to_new_dof_index.end())
-      dofmap._shared_dofs.insert(*it);
+      new_index = old_to_new_node_index.find(it->first);
+
+    if (new_index == old_to_new_node_index.end())
+    {
+      for (std::size_t i = 0; i < block_size; ++i)
+      {
+        const std::size_t dof = it->first*block_size + i;
+        dofmap._shared_dofs.insert(std::make_pair(dof, it->second));
+      }
+      //dofmap._shared_dofs.insert(*it);
+    }
     else
-      dofmap._shared_dofs.insert(std::make_pair(new_index->second, it->second));
+    {
+      for (std::size_t i = 0; i < block_size; ++i)
+      {
+        const std::size_t dof = (new_index->second)*block_size + i;
+        dofmap._shared_dofs.insert(std::make_pair(dof, it->second));
+      }
+      //dofmap._shared_dofs.insert(std::make_pair(new_index->second, it->second));
+    }
     dofmap._neighbours.insert(it->second.begin(), it->second.end());
   }
 
@@ -960,18 +1030,25 @@ void DofMapBuilder::parallel_renumber(const boost::array<set, 3>& dof_ownership,
     for (std::size_t i = 0; i < cell_dimension; ++i)
     {
       // Get old dof
-      std::size_t old_index = old_dofmap[cell_index][i];
+      //std::size_t old_index = old_dofmap[cell_index][i];
+      //std::size_t old_node = old_dofmap[cell_index][i] % num_nodes;
 
       // Map back to original (and common) numbering for restricted space
-      if (restriction)
-      {
-        const map_iterator it = restricted_dofs_inverse.find(old_index);
-        dolfin_assert(it != restricted_dofs_inverse.end());
-        old_index = it->second;
-      }
+      //if (restriction)
+      //{
+      //  const map_iterator it = restricted_nodes_inverse.find(old_index);
+      //  dolfin_assert(it != restricted_nodes_inverse.end());
+      //  old_index = it->second;
+      //}
 
       // Insert dof
-      new_dofmap[cell_index][i] = old_to_new_dof_index[old_index];
+      //new_dofmap[cell_index][i] = old_to_new_node_index[old_index];
+      //new_dofmap[cell_index][i] = old_to_new_node_index[old_index];
+
+      const std::size_t old_index = old_dofmap[cell_index][i];
+      const std::size_t old_node  = old_index % num_nodes;
+      const std::size_t new_node  = old_to_new_node_index[old_node];
+      new_dofmap[cell_index][i]   = new_node*block_size + old_index/num_nodes;
     }
   }
 
@@ -979,8 +1056,9 @@ void DofMapBuilder::parallel_renumber(const boost::array<set, 3>& dof_ownership,
   dofmap._dofmap = new_dofmap;
 
   // Set ownership range
-  dofmap._ownership_range = std::make_pair(process_offset,
-                                          process_offset + owned_dofs.size());
+  dofmap._ownership_range
+    = std::make_pair(block_size*process_offset,
+                     block_size*(process_offset + owned_nodes.size()));
 
   log(TRACE, "Finished renumbering dofs for parallel dof map");
 }
@@ -1031,7 +1109,8 @@ void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
       ufc_dofmap->tabulate_dofs(&dof, dofmap.num_global_mesh_entities, *ufc_cell);
 
       // Insert global dof index
-      std::pair<DofMapBuilder::set::iterator, bool> ret = global_dofs.insert(dof + offset);
+      std::pair<DofMapBuilder::set::iterator, bool> ret
+        = global_dofs.insert(dof + offset);
       if (!ret.second)
       {
         dolfin_error("DofMapBuilder.cpp",
@@ -1059,9 +1138,9 @@ void DofMapBuilder::compute_global_dofs(DofMapBuilder::set& global_dofs,
 //-----------------------------------------------------------------------------
 boost::shared_ptr<ufc::dofmap>
     DofMapBuilder::extract_ufc_sub_dofmap(const ufc::dofmap& ufc_dofmap,
-                                          std::size_t& offset,
-                                          const std::vector<std::size_t>& component,
-                                          const std::vector<std::size_t>& num_global_mesh_entities)
+                      std::size_t& offset,
+                      const std::vector<std::size_t>& component,
+                      const std::vector<std::size_t>& num_global_mesh_entities)
 {
   // Check if there are any sub systems
   if (ufc_dofmap.num_sub_dofmaps() == 0)
@@ -1122,5 +1201,47 @@ boost::shared_ptr<ufc::dofmap>
 
     return sub_sub_dofmap;
   }
+}
+//-----------------------------------------------------------------------------
+std::size_t DofMapBuilder::compute_blocksize(const ufc::dofmap& ufc_dofmap)
+{
+  bool has_block_structure = false;
+  if (ufc_dofmap.num_sub_dofmaps() > 1)
+  {
+    // Create UFC first sub-dofmap
+    boost::scoped_ptr<ufc::dofmap> ufc_sub_dofmap0(ufc_dofmap.create_sub_dofmap(0));
+    dolfin_assert(ufc_sub_dofmap0);
+
+    // Create UFC sub-dofmaps and check that all sub dofmaps have the
+    // same number of dofs per entity
+    if (ufc_sub_dofmap0->num_sub_dofmaps() != 0)
+      has_block_structure = false;
+    else
+    {
+      // Assume dof map has block structure, then check
+      has_block_structure = true;
+
+      // Create UFC sub-dofmaps and check that all sub dofmaps have the
+      // same number of dofs per entity
+      for (std::size_t i = 1; i < ufc_dofmap.num_sub_dofmaps(); ++i)
+      {
+        boost::scoped_ptr<ufc::dofmap> ufc_sub_dofmap(ufc_dofmap.create_sub_dofmap(i));
+        dolfin_assert(ufc_sub_dofmap);
+        for (std::size_t d = 0; d <= ufc_dofmap.topological_dimension(); ++d)
+        {
+          if (ufc_sub_dofmap->num_entity_dofs(d) != ufc_sub_dofmap0->num_entity_dofs(d))
+          {
+            has_block_structure = false;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  if (has_block_structure)
+    return ufc_dofmap.num_sub_dofmaps();
+  else
+    return 1;
 }
 //-----------------------------------------------------------------------------
