@@ -105,10 +105,9 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
 
         // Avoid visiting entities more than once
         if (visited[e->index()])
-        {
-          visited[e->index()] = true;
           continue;
-        }
+        else
+          visited[e->index()] = true;
 
         // Copy entity coordinate
         const Point midpoint = e->midpoint();
