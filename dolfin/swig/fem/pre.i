@@ -110,9 +110,6 @@ PROBLEM_RENAMES(NonlinearVariational)
 %ignore dolfin::SystemAssembler(const Form& a, const Form&, const DirichletBC&);
 %ignore dolfin::SystemAssembler(const Form& a, const Form&,
                                 const std::vector<const DirichletBC*>);
-%ignore dolfin::SystemAssembler(boost::shared_ptr<const Form>,
-                                boost::shared_ptr<const Form>);
-
 
 //-----------------------------------------------------------------------------
 // Ignore operator= for DirichletBC to avoid warning
