@@ -238,7 +238,6 @@ void ExodusFile::write_function(const Function& u, double time) const
   if (dofmap.max_cell_dimension() == cell_based_dim)
   {
     // Extract DOFs from u
-    const uint num_cells = mesh.num_cells();
     std::vector<int> dof_set;
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
