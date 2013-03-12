@@ -26,7 +26,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-08
-// Last changed: 2013-02-21
+// Last changed: 2013-03-06
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -40,6 +40,7 @@
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/intersection/IntersectionOperator.h>
 #include <dolfin/log/log.h>
+#include <dolfin/ale/MeshDisplacement.h>
 #include "MeshData.h"
 #include "MeshGeometry.h"
 #include "MeshConnectivity.h"
@@ -117,22 +118,26 @@ namespace dolfin
     /// Create a distributed mesh from local (per process) data.
     ///
     /// *Arguments*
-    ///     local_mesh_data (LocalMeshData)
+    ///     local_mesh_data (_LocalMeshData_)
     ///         Data from which to build the mesh.
     explicit Mesh(LocalMeshData& local_mesh_data);
 
     /// Create mesh defined by Constructive Solid Geometry (CSG)
     ///
     /// *Arguments*
-    ///     geometry (CSGGeometry)
+    ///     geometry (_CSGGeometry_)
     ///         The CSG geometry
-    Mesh(const CSGGeometry& geometry, std::size_t mesh_resolution);
+    ///     resolution (std::size_t)
+    ///         An integer specifying the mesh resolution
+    Mesh(const CSGGeometry& geometry, std::size_t resolution);
 
     /// Create mesh defined by Constructive Solid Geometry (CSG)
     ///
     /// *Arguments*
-    ///     geometry (CSGGeometry)
+    ///     geometry (_CSGGeometry_)
     ///         The CSG geometry
+    ///     resolution (std::size_t)
+    ///         An integer specifying the mesh resolution
     Mesh(boost::shared_ptr<const CSGGeometry> geometry, std::size_t resolution);
 
     /// Destructor.
@@ -429,7 +434,11 @@ namespace dolfin
     /// *Arguments*
     ///     boundary (_BoundaryMesh_)
     ///         A mesh containing just the boundary cells.
-    void move(BoundaryMesh& boundary);
+    ///
+    /// *Returns*
+    ///     MeshDisplacement
+    ///         Displacement encapsulated in Expression subclass MeshDisplacement
+    boost::shared_ptr<MeshDisplacement> move(BoundaryMesh& boundary);
 
     /// Move coordinates of mesh according to adjacent mesh with common global
     /// vertices.
@@ -437,7 +446,11 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         A _Mesh_ object.
-    void move(Mesh& mesh);
+    ///
+    /// *Returns*
+    ///     MeshDisplacement
+    ///         Displacement encapsulated in Expression subclass MeshDisplacement
+    boost::shared_ptr<MeshDisplacement> move(Mesh& mesh);
 
     /// Move coordinates of mesh according to displacement function.
     ///

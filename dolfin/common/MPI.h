@@ -373,7 +373,7 @@ namespace dolfin
     {
       map_iterator tmp = it++;
       if (tmp->second.empty())
-        out_values_per_src.erase(tmp); 
+        out_values_per_src.erase(tmp);
     }
     #else
     error_no_mpi("call MPI::distribute");

@@ -33,14 +33,89 @@ the new coordinates for the interior vertices accordingly.
 
 * move\ (mesh, new_boundary)
 
-  Move coordinates of mesh according to new boundary coordinates
+  Move coordinates of mesh according to new boundary coordinates.
+  Returns displacement (encapsulated in Expression subclass MeshDisplacement)
 
 * move\ (mesh0, mesh1)
 
-  Move coordinates of mesh0 according to mesh1 with common global vertices
+  Move coordinates of mesh0 according to mesh1 with common global vertices.
+  Returns displacement (encapsulated in Expression subclass MeshDisplacement)
 
 * move\ (mesh, displacement)
 
   Move coordinates of mesh according to displacement function
+";
+
+// Documentation extracted from: (module=ale, header=MeshDisplacement.h)
+%feature("docstring")  dolfin::MeshDisplacement "
+This class encapsulates the CG1 representation of the
+displacement of a mesh as an Expression. This is particularly
+useful for the displacement returned by mesh smoothers which can
+subsequently be used in evaluating forms. The value rank is 1
+and the value shape is equal to the geometric dimension of the
+mesh.
+";
+
+%feature("docstring")  dolfin::MeshDisplacement::MeshDisplacement "
+**Overloaded versions**
+
+* MeshDisplacement\ (mesh)
+
+  Create MeshDisplacement of given mesh
+  
+  *Arguments*
+      mesh (:py:class:`Mesh`)
+          Mesh to be displacement defined on.
+
+* MeshDisplacement\ (mesh_displacement)
+
+  Copy constructor
+  
+  *Arguments*
+      mesh_displacement (:py:class:`MeshDisplacement`)
+          Object to be copied.
+";
+
+%feature("docstring")  dolfin::MeshDisplacement::operator[] "
+**Overloaded versions**
+
+* operator[]\ (i)
+
+  Extract subfunction
+  In python available as MeshDisplacement.sub(i)
+  
+  *Arguments*
+      i (std::size_t)
+          Index of subfunction.
+
+* operator[]\ (i)
+
+  Extract subfunction. Const version
+  
+  *Arguments*
+      i (std::size_t)
+          Index of subfunction.
+";
+
+%feature("docstring")  dolfin::MeshDisplacement::eval "
+Evaluate at given point in given cell.
+
+*Arguments*
+    values (numpy.array(float))
+        The values at the point.
+    x (numpy.array(float))
+        The coordinates of the point.
+    cell (ufc::cell)
+        The cell which contains the given point.
+";
+
+%feature("docstring")  dolfin::MeshDisplacement::compute_vertex_values "
+Compute values at all mesh vertices.
+
+*Arguments*
+    vertex_values (numpy.array(float))
+        The values at all vertices.
+    mesh (:py:class:`Mesh`)
+        The mesh.
 ";
 

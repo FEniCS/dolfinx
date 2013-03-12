@@ -1,5 +1,5 @@
 /* -*- C -*- */
-// Copyright (C) 2012 Johan Hake
+// Copyright (C) 2009 Johan Hake
 //
 // This file is part of DOLFIN.
 //
@@ -16,53 +16,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2012-01-20
-// Last changed: 2013-03-06
+// First added:  2013-03-06
 
 //=============================================================================
-// Forward declarations of common types in DOLFIN needed for template
-// instantiations
+// SWIG directives for the DOLFIN common kernel module (pre)
+//
+// The directives in this file are applied _before_ the header files of the
+// modules has been loaded.
 //=============================================================================
 
-namespace dolfin
-{
-  // ale
-  class MeshDisplacement;
-
-  // common
-  class Table;
-
-  // parameter
-  class Parameters;
-
-  // common
-  template<typename T> class Hierarchical;
-
-  // mesh
-  class IntersectionOperator;
-  class Vertex;
-  class Mesh;
-  class MeshEntity;
-  class LocalMeshData;
-  template<typename T> class MeshFunction;
-  template<typename T> class MeshValueCollection;
-
-  // adaptivity
-  class ErrorControl;
-
-  // fem
-  class Form;
-  class LinearVariationalProblem;
-  class NonlinearVariationalProblem;
-  class DirichletBC;
-  class FiniteElement;
-
-  // function
-  class FunctionSpace;
-  class Function;
-
-  // la
-  class GenericVector;
-  class GenericMatrix;
-
-}
+%rename(sub) dolfin::MeshDisplacement::operator[];

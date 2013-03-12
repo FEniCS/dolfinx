@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-01-30
-// Last changed: 2012-11-29
+// Last changed: 2013-03-11
 
 #ifndef __HIERARCHICAL_H
 #define __HIERARCHICAL_H

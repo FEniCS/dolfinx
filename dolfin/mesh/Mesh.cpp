@@ -26,7 +26,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-09
-// Last changed: 2013-02-20
+// Last changed: 2013-03-06
 
 #include <boost/serialization/map.hpp>
 #include <dolfin/common/Array.h>
@@ -111,7 +111,7 @@ Mesh::Mesh(LocalMeshData& local_mesh_data)
   MeshPartitioning::build_distributed_mesh(*this, local_mesh_data);
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(const CSGGeometry& geometry, std::size_t mesh_resolution)
+Mesh::Mesh(const CSGGeometry& geometry, std::size_t resolution)
   : Variable("mesh", "DOLFIN mesh"),
     Hierarchical<Mesh>(*this),
     _domains(*this),
@@ -124,7 +124,7 @@ Mesh::Mesh(const CSGGeometry& geometry, std::size_t mesh_resolution)
 {
   // Build mesh on process 0
   if (MPI::process_number() == 0)
-    CSGMeshGenerator::generate(*this, geometry, mesh_resolution);
+    CSGMeshGenerator::generate(*this, geometry, resolution);
 
   // Build distributed mesh
   if (MPI::num_processes() > 1)
@@ -343,14 +343,14 @@ void Mesh::rotate(double angle, std::size_t axis, const Point& p)
   MeshTransformation::rotate(*this, angle, axis, p);
 }
 //-----------------------------------------------------------------------------
-void Mesh::move(BoundaryMesh& boundary)
+boost::shared_ptr<MeshDisplacement> Mesh::move(BoundaryMesh& boundary)
 {
-  ALE::move(*this, boundary);
+  return ALE::move(*this, boundary);
 }
 //-----------------------------------------------------------------------------
-void Mesh::move(Mesh& mesh)
+boost::shared_ptr<MeshDisplacement> Mesh::move(Mesh& mesh)
 {
-  ALE::move(*this, mesh);
+  return ALE::move(*this, mesh);
 }
 //-----------------------------------------------------------------------------
 void Mesh::move(const GenericFunction& displacement)

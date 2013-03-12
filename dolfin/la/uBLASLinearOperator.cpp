@@ -68,9 +68,9 @@ std::string uBLASLinearOperator::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void uBLASLinearOperator::init(const GenericVector& x,
-                               const GenericVector& y,
-                               GenericLinearOperator* wrapper)
+void uBLASLinearOperator::init_layout(const GenericVector& x,
+				      const GenericVector& y,
+				      GenericLinearOperator* wrapper)
 {
   // Store dimensions
   this->M = y.size();

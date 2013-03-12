@@ -67,7 +67,7 @@ namespace dolfin
     bool finalize_tensor;
 
     /// keep_diagonal (bool)
-    ///     Default value is true.
+    ///     Default value is false.
     ///     This controls whether the assembler enures that a diagonal
     ///     entry exists in an assembled matrix. It may be removed
     ///     if the matrix is finalised.
