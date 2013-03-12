@@ -116,10 +116,10 @@ def test_uint(code, filename):
     return False
 
 # List of C++ tests
-cpp_tests = [test_dolfin_error]
+cpp_tests = [test_dolfin_error, test_uint]
 
 # List of Python tests
-python_tests = [test_dolfin_error, test_raise_exception, test_uint]
+python_tests = [test_dolfin_error, test_raise_exception]
 
 if __name__ == "__main__":
 
