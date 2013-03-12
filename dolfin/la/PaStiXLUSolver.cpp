@@ -44,7 +44,6 @@
 extern "C"
 {
 #include <pastix.h>
-#include <murge.h>
 }
 
 using namespace dolfin;
@@ -293,7 +292,6 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   for (std::size_t i = 0; i < local_to_global_cols_ref.size(); ++i)
     for (std::size_t j = 0; j < block_size; ++j)
       idx[i*block_size + j] = local_to_global_cols_ref[i]*block_size + j;
-  //std::vector<dolfin::la_index> idx(local_to_global_cols_ref.begin(), local_to_global_cols_ref.end());
   b.gather(_b, idx);
 
   // Solve
