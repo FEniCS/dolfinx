@@ -98,11 +98,28 @@ def test_raise_exception(code, filename):
 
     return False
 
+def test_uint(code, filename):
+    "Test for use of uint"
+
+    # Skip exceptions
+    exceptions = []
+    if filename in exceptions:
+        return True
+
+    # Check for raising of exception
+    if re.search(r"\buint\b", code) is None:
+        return True
+
+    # Write an error message
+    print "* Warning: uint is used in %s when std::size_t should be used" % filename
+
+    return False
+
 # List of C++ tests
 cpp_tests = [test_dolfin_error]
 
 # List of Python tests
-python_tests = [test_dolfin_error, test_raise_exception]
+python_tests = [test_dolfin_error, test_raise_exception, test_uint]
 
 if __name__ == "__main__":
 
