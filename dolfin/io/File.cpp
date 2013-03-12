@@ -21,7 +21,7 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2013-03-11
+// Last changed: 2013-03-04
 
 #include <fstream>
 #include <string>
@@ -141,36 +141,6 @@ File::File(std::ostream& outstream)
 File::~File()
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-void File::operator<<(const std::pair<const Mesh*, double> mesh)
-{
-  file->write();
-  *file << mesh;
-}
-//-----------------------------------------------------------------------------
-void File::operator<<(const std::pair<const MeshFunction<int>*, double> f)
-{
-  file->write();
-  *file << f;
-}
-//-----------------------------------------------------------------------------
-void File::operator<<(const std::pair<const MeshFunction<std::size_t>*, double> f)
-{
-  file->write();
-  *file << f;
-}
-//-----------------------------------------------------------------------------
-void File::operator<<(const std::pair<const MeshFunction<double>*, double> f)
-{
-  file->write();
-  *file << f;
-}
-//-----------------------------------------------------------------------------
-void File::operator<<(const std::pair<const MeshFunction<bool>*, double> f)
-{
-  file->write();
-  *file << f;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const Function*, double> u)
