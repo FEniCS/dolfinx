@@ -35,6 +35,8 @@
 #include "TensorLayout.h"
 #include "GenericMatrix.h"
 
+#include <dolfin/log/dolfin_log.h>
+
 namespace dolfin
 {
 
@@ -56,7 +58,7 @@ namespace dolfin
 
     /// Create empty matrix
     STLMatrix(std::size_t primary_dim=0) : _primary_dim(primary_dim),
-      _local_range(0, 0), num_codim_entities(0) {}
+      _block_size(1), _local_range(0, 0), num_codim_entities(0) {}
 
     /// Destructor
     virtual ~STLMatrix() {}
@@ -163,6 +165,10 @@ namespace dolfin
 
     ///--- STLMatrix interface ---
 
+    /// Return matrix block size
+    std::size_t block_size() const
+    { return _block_size; }
+
     /// Clear matrix. Destroys data and sparse layout
     void clear()
     {
@@ -184,6 +190,7 @@ namespace dolfin
     void csr(std::vector<double>& vals, std::vector<T>& cols,
              std::vector<T>& row_ptr,
              std::vector<T>& local_to_global_row,
+             bool block,
              bool symmetric) const;
 
     /// Return matrix in CSC format
@@ -191,6 +198,7 @@ namespace dolfin
     void csc(std::vector<double>& vals, std::vector<T>& rows,
              std::vector<T>& col_ptr,
              std::vector<T>& local_to_global_col,
+             bool block,
              bool symmetric) const;
 
     /// Return number of global non-zero entries
@@ -207,10 +215,14 @@ namespace dolfin
                             std::vector<T>& rows,
                             std::vector<T>& col_ptr,
                             std::vector<T>& local_to_global_col,
+                            bool block,
                             bool symmetric) const;
 
     // Primary dimension (0=row-wise storage, 1=column-wise storage)
     const std::size_t _primary_dim;
+
+    // Block size, e.g. 3 for 3D elasticity with appropriate dof ordering
+    std::size_t _block_size;
 
     // Local ownership range (row range for row-wise storage, column
     // range for column-wise storage)
@@ -235,6 +247,7 @@ namespace dolfin
   void STLMatrix::csr(std::vector<double>& vals, std::vector<T>& cols,
                       std::vector<T>& row_ptr,
                       std::vector<T>& local_to_global_row,
+                      bool block,
                       bool symmetric) const
   {
     if (_primary_dim != 0)
@@ -243,13 +256,14 @@ namespace dolfin
                    "creating compressed row storage data",
                    "Cannot create CSR matrix from STLMatrix with column-wise storage.");
     }
-    compressed_storage(vals, cols, row_ptr, local_to_global_row, symmetric);
+    compressed_storage(vals, cols, row_ptr, local_to_global_row, block, symmetric);
   }
   //-----------------------------------------------------------------------------
   template<typename T>
   void STLMatrix::csc(std::vector<double>& vals, std::vector<T>& rows,
                       std::vector<T>& col_ptr,
                       std::vector<T>& local_to_global_col,
+                      bool block,
                       bool symmetric) const
   {
     if (_primary_dim != 1)
@@ -258,7 +272,7 @@ namespace dolfin
                    "creating compressed column storage data",
                    "Cannot create CSC matrix from STLMatrix with row-wise storage.");
     }
-    compressed_storage(vals, rows, col_ptr, local_to_global_col, symmetric);
+    compressed_storage(vals, rows, col_ptr, local_to_global_col, block, symmetric);
   }
   //-----------------------------------------------------------------------------
   template<typename T>
@@ -266,6 +280,7 @@ namespace dolfin
                                      std::vector<T>& cols,
                                      std::vector<T>& row_ptr,
                                      std::vector<T>& local_to_global_row,
+                                     bool block,
                                      bool symmetric) const
   {
     // Reset data structures
@@ -294,16 +309,17 @@ namespace dolfin
       cols.reserve(_local_nnz);
 
       // Build data structures
-      for (std::size_t local_row = 0; local_row < num_local_rows; ++local_row)
+      for (std::size_t local_row = 0; local_row < num_local_rows; local_row += _block_size)
       {
-        for (std::size_t column = 0; column < _values[local_row].size(); ++column)
+        for (std::size_t column = 0; column < _values[local_row].size(); column += _block_size)
         {
-          cols.push_back(_values[local_row][column].first);
-          vals.push_back(_values[local_row][column].second);
-
+          cols.push_back(_values[local_row][column].first/_block_size);
+          for (std::size_t b0 = 0; b0 < _block_size; ++b0)
+            for (std::size_t b1 = 0; b1 < _block_size; ++b1)
+              vals.push_back(_values[local_row + b0][column + b1].second);
         }
-        local_to_global_row.push_back(_local_range.first + local_row);
-        row_ptr.push_back(row_ptr.back() + _values[local_row].size());
+        local_to_global_row.push_back( (_local_range.first + local_row)/_block_size );
+        row_ptr.push_back(row_ptr.back() + _values[local_row].size()/_block_size);
       }
     }
     else
@@ -313,17 +329,19 @@ namespace dolfin
       cols.reserve((_local_nnz - num_local_rows)/2 + num_local_rows);
 
       // Build data structures
-      for (std::size_t local_row = 0; local_row < _values.size(); ++local_row)
+      for (std::size_t local_row = 0; local_row < _values.size(); local_row += _block_size)
       {
-        const std::size_t global_row_index = local_row + _local_range.first;
+        const std::size_t global_row_index = (local_row + _local_range.first)/_block_size;
         std::size_t counter = 0;
-        for (std::size_t i = 0; i < _values[local_row].size(); ++i)
+        for (std::size_t column = 0; column < _values[local_row].size(); column += _block_size)
         {
-          const std::size_t index = _values[local_row][i].first;
+          const std::size_t index = _values[local_row][column].first/_block_size;
           if (index >= global_row_index)
           {
             cols.push_back(index);
-            vals.push_back(_values[local_row][i].second);
+            for (std::size_t b0 = 0; b0 < _block_size; ++b0)
+              for (std::size_t b1 = 0; b1 < _block_size; ++b1)
+                vals.push_back(_values[local_row + b0][column + b1].second);
             ++counter;
           }
         }
