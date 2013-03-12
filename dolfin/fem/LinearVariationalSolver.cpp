@@ -107,8 +107,8 @@ void LinearVariationalSolver::solve()
     }
 
     // Assemble linear system and apply boundary conditions
-    SystemAssembler assembler;
-    assembler.assemble(*A, *b, *a, *L, _bcs);
+    SystemAssembler assembler(a, L, _bcs);
+    assembler.assemble(*A, *b);
   }
   else
   {

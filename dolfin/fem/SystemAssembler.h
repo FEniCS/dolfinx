@@ -25,6 +25,7 @@
 
 #include <map>
 #include <vector>
+#include <boost/shared_ptr.hpp>
 #include "DirichletBC.h"
 #include "AssemblerBase.h"
 
@@ -51,37 +52,46 @@ namespace dolfin
   public:
 
     /// Constructor
-    SystemAssembler() {}
+    SystemAssembler(const Form& a, const Form& L);
+
+    /// Constructor
+    SystemAssembler(const Form& a, const Form& L, const DirichletBC& bc);
+
+    /// Constructor
+    SystemAssembler(const Form& a, const Form& L,
+                    const std::vector<const DirichletBC*> bcs);
+
+    /// Constructor
+    SystemAssembler(boost::shared_ptr<const Form> a,
+                    boost::shared_ptr<const Form> L);
+
+    /// Constructor
+    SystemAssembler(boost::shared_ptr<const Form> a,
+                    boost::shared_ptr<const Form> L,
+                    const DirichletBC& bc);
+
+    /// Constructor
+    SystemAssembler(boost::shared_ptr<const Form> a,
+                    boost::shared_ptr<const Form> L,
+                    const std::vector<const DirichletBC*> bcs);
 
     /// Assemble system (A, b)
-    void assemble(GenericMatrix& A,
-                         GenericVector& b,
-                         const Form& a,
-                         const Form& L);
-
-    /// Assemble system (A, b) and apply Dirichlet boundary condition
-    void assemble(GenericMatrix& A,
-                         GenericVector& b,
-                         const Form& a,
-                         const Form& L,
-                         const DirichletBC& bc);
+    void assemble(GenericMatrix& A, GenericVector& b);
 
     /// Assemble system (A, b) and apply Dirichlet boundary conditions
-    void assemble(GenericMatrix& A,
-                         GenericVector& b,
-                         const Form& a,
-                         const Form& L,
-                         const std::vector<const DirichletBC*> bcs);
-
-    /// Assemble system (A, b) and apply Dirichlet boundary conditions
-    void assemble(GenericMatrix& A,
-                         GenericVector& b,
-                         const Form& a,
-                         const Form& L,
-                         const std::vector<const DirichletBC*> bcs,
-                         const GenericVector* x0);
+    void assemble(GenericMatrix& A, GenericVector& b,
+                  const GenericVector* x0);
 
   private:
+
+    // Bilinear form
+    boost::shared_ptr<const Form> _a;
+
+    // Linear form
+    boost::shared_ptr<const Form> _L;
+
+    // Boundary conditions
+    std::vector<const DirichletBC*> _bcs;
 
     class Scratch;
 
@@ -92,14 +102,14 @@ namespace dolfin
                                                      const Facet& facet,
                                                      const MeshFunction<std::size_t>* exterior_facet_domains);
 
-    static void cell_wise_assembly(GenericMatrix& A, GenericVector& b,
+    static void cell_wise_assembly(GenericMatrix* A, GenericVector* b,
                                    const Form& a, const Form& L,
                                    UFC& A_ufc, UFC& b_ufc, Scratch& data,
                                    const DirichletBC::Map& boundary_values,
                                    const MeshFunction<std::size_t>* cell_domains,
                                    const MeshFunction<std::size_t>* exterior_facet_domains);
 
-    static void facet_wise_assembly(GenericMatrix& A, GenericVector& b,
+    static void facet_wise_assembly(GenericMatrix* A, GenericVector* b,
                                     const Form& a, const Form& L,
                                     UFC& A_ufc, UFC& b_ufc, Scratch& data,
                                     const DirichletBC::Map& boundary_values,
@@ -107,7 +117,7 @@ namespace dolfin
                                     const MeshFunction<std::size_t>* exterior_facet_domains,
                                     const MeshFunction<std::size_t>* interior_facet_domains);
 
-    static void assemble_interior_facet(GenericMatrix& A, GenericVector& b,
+    static void assemble_interior_facet(GenericMatrix* A, GenericVector* b,
                                         UFC& A_ufc, UFC& b_ufc,
                                         const Form& a, const Form& L,
                                         const Cell& cell0, const Cell& cell1,
@@ -115,7 +125,7 @@ namespace dolfin
                                         Scratch& data,
                                         const DirichletBC::Map& boundary_values);
 
-    static void assemble_exterior_facet(GenericMatrix& A, GenericVector& b,
+    static void assemble_exterior_facet(GenericMatrix* A, GenericVector* b,
                                         UFC& A_ufc, UFC& b_ufc,
                                         const Form& a,
                                         const Form& L,
