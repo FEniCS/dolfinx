@@ -63,7 +63,7 @@ void ExodusFile::operator<<(const Mesh& mesh)
 void ExodusFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
 {
   const Mesh& mesh = meshfunction.mesh();
-  const uint cell_dim = meshfunction.dim();
+  const std::size_t cell_dim = meshfunction.dim();
 
   // Throw error for MeshFunctions on vertices for interval elements
   if (mesh.topology().dim() == 1 && cell_dim == 0)
@@ -103,7 +103,7 @@ void ExodusFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
 void ExodusFile::operator<<(const MeshFunction<int>& meshfunction)
 {
   const Mesh& mesh = meshfunction.mesh();
-  const uint cell_dim = meshfunction.dim();
+  const std::size_t cell_dim = meshfunction.dim();
 
   // Throw error for MeshFunctions on vertices for interval elements
   if (mesh.topology().dim() == 1 && cell_dim == 0)
@@ -143,7 +143,7 @@ void ExodusFile::operator<<(const MeshFunction<int>& meshfunction)
 void ExodusFile::operator<<(const MeshFunction<double>& meshfunction)
 {
   const Mesh& mesh = meshfunction.mesh();
-  const uint cell_dim = meshfunction.dim();
+  const std::size_t cell_dim = meshfunction.dim();
 
   // Throw error for MeshFunctions on vertices for interval elements
   if (mesh.topology().dim() == 1 && cell_dim == 0)
@@ -197,7 +197,7 @@ void ExodusFile::write_function(const Function& u, double time) const
 {
   // Write results
   // Get rank of Function
-  const uint rank = u.value_rank();
+  const std::size_t rank = u.value_rank();
   if (rank > 2)
   {
     dolfin_error("ExodusFile.cpp",
@@ -206,7 +206,7 @@ void ExodusFile::write_function(const Function& u, double time) const
   }
 
   // Get number of components
-  const uint dim = u.value_size();
+  const std::size_t dim = u.value_size();
 
   // Check that function type can be handled, cf.
   // http://www.vtk.org/Bug/view.php?id=13508.
@@ -224,8 +224,8 @@ void ExodusFile::write_function(const Function& u, double time) const
   vtkSmartPointer<vtkUnstructuredGrid> vtk_mesh =
     create_vtk_mesh(mesh);
 
-  uint cell_based_dim = 1;
-  for (uint i = 0; i < rank; i++)
+  std::size_t cell_based_dim = 1;
+  for (std::size_t i = 0; i < rank; i++)
     cell_based_dim *= mesh.topology().dim();
 
   dolfin_assert(u.function_space()->dofmap());
@@ -242,7 +242,7 @@ void ExodusFile::write_function(const Function& u, double time) const
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       const std::vector<int>& dofs = dofmap.cell_dofs(cell->index());
-      for(uint i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
+      for(std::size_t i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
         dof_set.push_back(dofs[i]);
     }
     // Get  values
@@ -261,8 +261,8 @@ void ExodusFile::write_function(const Function& u, double time) const
   else
   {
     // Extract point values
-    const uint num_vertices = mesh.num_vertices();
-    const uint size = num_vertices*dim;
+    const std::size_t num_vertices = mesh.num_vertices();
+    const std::size_t size = num_vertices*dim;
     values.resize(size);
     u.compute_vertex_values(values, mesh);
 
@@ -299,10 +299,9 @@ vtkSmartPointer<vtkUnstructuredGrid> ExodusFile::create_vtk_mesh(const Mesh& mes
   points->SetData(pointData);
   unstructuredGrid->SetPoints(points);
 
-  // Set cells. Those need to be copied over since the
-  // default Dolfin node ID data type is dolfin::uint
-  // (typically unsigned int), and the node ID of Exodus
-  // is vtkIdType (typically long long int).
+  // Set cells. Those need to be copied over since the default Dolfin
+  // node ID data type is std::size_t and the node ID of Exodus is
+  // vtkIdType (typically long long int).
   const int numCells = mesh.num_cells();
   const std::vector<unsigned int> cells = mesh.cells();
   vtkSmartPointer<vtkCellArray> cellData =
