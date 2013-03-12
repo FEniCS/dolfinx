@@ -72,7 +72,7 @@ void dolfin::assemble_system(GenericMatrix& A,
                              const Form& a,
                              const Form& L,
                              const std::vector<const DirichletBC*> bcs,
-                             const GenericVector* x0)
+                             const GenericVector& x0)
 {
   SystemAssembler assembler(a, L, bcs);
   assembler.assemble(A, b, x0);

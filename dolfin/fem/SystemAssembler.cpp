@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2012 Kent-Andre Mardal and Garth N. Wells
+// Copyright (C) 2008-2013 Kent-Andre Mardal and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -21,7 +21,7 @@
 // Modified by Martin Alnaes 2013
 //
 // First added:  2009-06-22
-// Last changed: 2013-02-26
+// Last changed: 2013-03-12
 
 #include <armadillo>
 #include <dolfin/common/Timer.h>
@@ -51,7 +51,7 @@ SystemAssembler::SystemAssembler(const Form& a, const Form& L)
     _L(reference_to_no_delete_pointer(L))
 {
   // Check arity of forms
-
+  check_arity(_a, _L);
 }
 //-----------------------------------------------------------------------------
 SystemAssembler::SystemAssembler(const Form& a, const Form& L,
@@ -60,6 +60,7 @@ SystemAssembler::SystemAssembler(const Form& a, const Form& L,
     _L(reference_to_no_delete_pointer(L))
 {
   // Check arity of forms
+  check_arity(_a, _L);
 
   // Store Dirichlet boundary condition
   _bcs.push_back(&bc);
@@ -71,6 +72,7 @@ SystemAssembler::SystemAssembler(const Form& a, const Form& L,
     _L(reference_to_no_delete_pointer(L)), _bcs(bcs)
 {
   // Check arity of forms
+  check_arity(_a, _L);
 }
 //-----------------------------------------------------------------------------
 SystemAssembler::SystemAssembler(boost::shared_ptr<const Form> a,
@@ -78,17 +80,7 @@ SystemAssembler::SystemAssembler(boost::shared_ptr<const Form> a,
                                 : _a(a), _L(L)
 {
   // Check arity of forms
-  dolfin_assert(a);
-  if (a->rank() != 2)
-  {
-    // Error message here
-  }
-
-  dolfin_assert(L);
-  if (L->rank() != 1)
-  {
-    // Error message here
-  }
+  check_arity(_a, _L);
 }
 //-----------------------------------------------------------------------------
 SystemAssembler::SystemAssembler(boost::shared_ptr<const Form> a,
@@ -97,17 +89,7 @@ SystemAssembler::SystemAssembler(boost::shared_ptr<const Form> a,
                                 : _a(a), _L(L)
 {
   // Check arity of forms
-  dolfin_assert(a);
-  if (a->rank() != 2)
-  {
-    // Error message here
-  }
-
-  dolfin_assert(L);
-  if (L->rank() != 1)
-  {
-    // Error message here
-  }
+  check_arity(_a, _L);
 
   // Store Dirichlet boundary condition
   _bcs.push_back(&bc);
@@ -119,25 +101,63 @@ SystemAssembler::SystemAssembler(boost::shared_ptr<const Form> a,
                                 : _a(a), _L(L), _bcs(bcs)
 {
   // Check arity of forms
-  dolfin_assert(a);
-  if (a->rank() != 2)
-  {
-    // Error message here
-  }
-
-  dolfin_assert(L);
-  if (L->rank() != 1)
-  {
-    // Error message here
-  }
+  check_arity(_a, _L);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b)
 {
-  assemble(A, b, NULL);
+  assemble(&A, &b, NULL);
+}
+//-----------------------------------------------------------------------------
+void SystemAssembler::assemble(GenericMatrix& A)
+{
+  assemble(&A, NULL, NULL);
+}
+//-----------------------------------------------------------------------------
+void SystemAssembler::assemble(GenericVector& b)
+{
+  assemble(NULL, &b, NULL);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
+                               const GenericVector& x0)
+{
+  assemble(&A, &b, &x0);
+}
+//-----------------------------------------------------------------------------
+void SystemAssembler::assemble(GenericVector& b,
+                               const GenericVector& x0)
+{
+  assemble(NULL, &b, &x0);
+}
+//-----------------------------------------------------------------------------
+void SystemAssembler::check_arity(boost::shared_ptr<const Form> a,
+                                  boost::shared_ptr<const Form> L)
+{
+  // Check that a is a bilinear form
+  if (a)
+  {
+    if (a->rank() != 2)
+    {
+      dolfin_error("SystemAssembler.cpp",
+                   "assemble system",
+                   "expected a bilinear form for a");
+    }
+  }
+
+  // Check that a is a bilinear form
+  if (L)
+  {
+    if (L->rank() != 1)
+    {
+      dolfin_error("SystemAssembler.cpp",
+                   "assemble system",
+                   "expected a linear form for L");
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
                                const GenericVector* x0)
 {
   dolfin_assert(_a);
@@ -197,8 +217,10 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   UFC A_ufc(*_a), b_ufc(*_L);
 
   // Initialize global tensors
-  init_global_tensor(A, *_a);
-  init_global_tensor(b, *_L);
+  if (A)
+    init_global_tensor(*A, *_a);
+  if (b)
+    init_global_tensor(*b, *_L);
 
   // Allocate data
   Scratch data(*_a, *_L);
@@ -246,7 +268,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
       !b_ufc.form.has_interior_facet_integrals())
   {
     // Assemble cell-wise (no interior facet integrals)
-    cell_wise_assembly(&A, &b, *_a, *_L,
+    cell_wise_assembly(A, b, *_a, *_L,
                        A_ufc, b_ufc,
                        data, boundary_values,
                        cell_domains,
@@ -272,7 +294,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
     }
 
     // Assemble facet-wise (including cell assembly)
-    facet_wise_assembly(&A, &b, *_a, *_L,
+    facet_wise_assembly(A, b, *_a, *_L,
                         A_ufc, b_ufc,
                         data, boundary_values,
                         cell_domains,
@@ -283,8 +305,10 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   // Finalise assembly
   if (finalize_tensor)
   {
-    A.apply("add");
-    b.apply("add");
+    if (A)
+      A->apply("add");
+    if (b)
+      b->apply("add");
   }
 }
 //-----------------------------------------------------------------------------

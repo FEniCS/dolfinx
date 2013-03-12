@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2009 Kent-Andre Mardal and Garth N. Wells
+// Copyright (C) 2008-2013 Kent-Andre Mardal and Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2008-2011
 //
 // First added:  2009-06-22
-// Last changed: 2011-01-25
+// Last changed: 2013-03-12
 
 #ifndef __SYSTEM_ASSEMBLER_H
 #define __SYSTEM_ASSEMBLER_H
@@ -33,19 +33,18 @@ namespace dolfin
 {
 
   // Forward declarations
-  class GenericMatrix;
-  class GenericVector;
-  class Form;
-  class UFC;
   class Cell;
   class Facet;
+  class Form;
+  class GenericMatrix;
+  class GenericVector;
   template<typename T> class MeshFunction;
+  class UFC;
 
-  /// This class provides implements an assembler for systems
-  /// of the form Ax = b. It differs from the default DOLFIN
-  /// assembler in that it assembles both A and b and the same
-  /// time (leading to better performance) and in that it applies
-  /// boundary conditions at the time of assembly.
+  /// This class provides implements an assembler for systems of the
+  /// form Ax = b. It differs from the default DOLFIN assembler in that
+  /// it applies boundary conditions at the time of assembly, which
+  /// preserves any symmetries in A.
 
   class SystemAssembler : public AssemblerBase
   {
@@ -78,17 +77,32 @@ namespace dolfin
     /// Assemble system (A, b)
     void assemble(GenericMatrix& A, GenericVector& b);
 
-    /// Assemble system (A, b) and apply Dirichlet boundary conditions
-    void assemble(GenericMatrix& A, GenericVector& b,
-                  const GenericVector* x0);
+    /// Assemble matrix A
+    void assemble(GenericMatrix& A);
+
+    /// Assemble vector b
+    void assemble(GenericVector& b);
+
+    /// Assemble system (A, b) (suitable for use inside a (quasi-)
+    /// Newton solver)
+    void assemble(GenericMatrix& A, GenericVector& b, const GenericVector& x0);
+
+    /// Assemble vectpr b (suitable for use inside a (quasi-) Newton
+    /// solver)
+    void assemble(GenericVector& b, const GenericVector& x0);
 
   private:
 
-    // Bilinear form
-    boost::shared_ptr<const Form> _a;
+    // Check form arity
+    static void check_arity(boost::shared_ptr<const Form> a,
+                            boost::shared_ptr<const Form> L);
 
-    // Linear form
-    boost::shared_ptr<const Form> _L;
+    // Assemble system
+    void assemble(GenericMatrix* A, GenericVector* b,
+                  const GenericVector* x0);
+
+    // Bilinear and linear forms
+    boost::shared_ptr<const Form> _a, _L;
 
     // Boundary conditions
     std::vector<const DirichletBC*> _bcs;
