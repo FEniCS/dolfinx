@@ -315,10 +315,8 @@ namespace dolfin
         {
           cols.push_back(_values[local_row][column].first/_block_size);
           for (std::size_t b0 = 0; b0 < _block_size; ++b0)
-          {
             for (std::size_t b1 = 0; b1 < _block_size; ++b1)
               vals.push_back(_values[local_row + b0][column + b1].second);
-          }
         }
         local_to_global_row.push_back( (_local_range.first + local_row)/_block_size );
         row_ptr.push_back(row_ptr.back() + _values[local_row].size()/_block_size);
@@ -337,46 +335,19 @@ namespace dolfin
         std::size_t counter = 0;
         for (std::size_t column = 0; column < _values[local_row].size(); column += _block_size)
         {
-          cout << "Column (A): " << column << endl;
           const std::size_t index = _values[local_row][column].first/_block_size;
           if (index >= global_row_index)
           {
-            cout << "Column (B): " << column << endl;
             cols.push_back(index);
             for (std::size_t b0 = 0; b0 < _block_size; ++b0)
-            {
               for (std::size_t b1 = 0; b1 < _block_size; ++b1)
                 vals.push_back(_values[local_row + b0][column + b1].second);
-            }
-
-            //cols.push_back(index);
-            //vals.push_back(_values[local_row][column].second);
             ++counter;
           }
         }
         local_to_global_row.push_back(global_row_index);
         row_ptr.push_back(row_ptr.back() + counter);
       }
-
-      /*
-      for (std::size_t local_row = 0; local_row < _values.size(); ++local_row)
-      {
-        const std::size_t global_row_index = local_row + _local_range.first;
-        std::size_t counter = 0;
-        for (std::size_t i = 0; i < _values[local_row].size(); ++i)
-        {
-          const std::size_t index = _values[local_row][i].first;
-          if (index >= global_row_index)
-          {
-            cols.push_back(index);
-            vals.push_back(_values[local_row][i].second);
-            ++counter;
-          }
-        }
-        local_to_global_row.push_back(global_row_index);
-        row_ptr.push_back(row_ptr.back() + counter);
-      }
-      */
     }
   }
 //-----------------------------------------------------------------------------
