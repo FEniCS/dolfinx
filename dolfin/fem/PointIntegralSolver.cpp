@@ -23,6 +23,7 @@
 #include <boost/make_shared.hpp>
 
 #include <dolfin/log/log.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
@@ -85,10 +86,38 @@ void PointIntegralSolver::step(double dt)
   // Local to global dofs used when solution is fanned out to global vector
   std::vector<dolfin::la_index> local_to_global_dofs(N);
   
+  Timer t_vert("update vert");
+  t_vert.stop();
+
+  Timer t_expl("Explicit stage");
+  t_expl.stop();
+
+  Timer t_expl_set("Explicit stage set");
+  t_expl_set.stop();
+
+  Timer t_expl_update("Explicit stage: update_cell");
+  t_expl_update.stop();
+
+  Timer t_expl_tt("Explicit stage: tabulate_tensor");
+  t_expl_tt.stop();
+  
+  Timer t_impl("Implicit stage");
+  t_impl.stop();
+
+  Timer t_impl_update("Implicit stage: update_cell");
+  t_impl_update.stop();
+
+  Timer t_impl_tt("Implicit stage: tabulate_tensor");
+  t_impl_tt.stop();
+
+
+
   // Iterate over vertices
   Progress p("Solving local point integral problems", mesh.num_vertices());
   for (std::size_t vert_ind=0; vert_ind< mesh.num_vertices(); ++vert_ind)
   {
+
+    t_vert.start();
 
     // Cell containing vertex
     const Cell cell(mesh, _vertex_map[vert_ind].first);
@@ -109,6 +138,8 @@ void PointIntegralSolver::step(double dt)
       local_to_global_dofs[row] = cell_dofs[local_to_local_dofs[row]];
     }
 
+    t_vert.stop();
+
     // Iterate over stage forms
     for (unsigned int stage=0; stage<num_stages; stage++)
     {
@@ -120,16 +151,22 @@ void PointIntegralSolver::step(double dt)
       if (_ufcs[stage].size()==1)
       {
 
+	t_expl.start();
+
 	// Point integral
 	const ufc::point_integral& integral = *_ufcs[stage][0]->default_point_integral;
 
 	// Update to current cell
+	t_expl_update.start();
 	_ufcs[stage][0]->update(cell);
+	t_expl_update.stop();
 
 	// Tabulate cell tensor
+	t_expl_tt.start();
 	integral.tabulate_tensor(&_ufcs[stage][0]->A[0], _ufcs[stage][0]->w(), 
 				 &_ufcs[stage][0]->cell.vertex_coordinates[0], 
 				 local_vert);
+	t_expl_tt.stop();
 
 	// Extract vertex dofs from tabulated tensor and put them into the local 
 	// stage solution vector
@@ -138,15 +175,19 @@ void PointIntegralSolver::step(double dt)
 	  local_stage_solutions[stage](row) = _ufcs[stage][0]->A[local_to_local_dofs[row]];
 
 	// Put solution back into global stage solution vector
+	t_expl_set.start();
 	_scheme->stage_solutions()[stage]->vector()->set(
 			    local_stage_solutions[stage].memptr(), N, 
 			    &local_to_global_dofs[0]);
+	t_expl_set.stop();
+	t_expl.stop();
       }
     
       // or an implicit stage (2 forms)
       else
       {
-	
+	t_impl.start();
+
 	// Local solution
 	arma::vec& u = local_stage_solutions[stage];
 	
@@ -182,13 +223,18 @@ void PointIntegralSolver::step(double dt)
       
 	// Update to current cell. This only need to be done once for each stage and 
 	// vertex
+
+	t_impl_update.start();
 	_ufcs[stage][0]->update(cell);
 	_ufcs[stage][1]->update(cell);
+	t_impl_update.stop();
 
 	// Tabulate an initial residual solution
+	t_impl_tt.start();
 	F_integral.tabulate_tensor(&_ufcs[stage][0]->A[0], _ufcs[stage][0]->w(), 
 				   &_ufcs[stage][0]->cell.vertex_coordinates[0], 
 				   local_vert);
+	t_impl_tt.stop();
 
 	// Extract vertex dofs from tabulated tensor, together with the old stage 
 	// solution
@@ -207,9 +253,11 @@ void PointIntegralSolver::step(double dt)
 	{
         
 	  // Tabulate Jacobian
+	  t_impl_tt.start();
 	  J_integral.tabulate_tensor(&_ufcs[stage][1]->A[0], _ufcs[stage][1]->w(), 
 				     &_ufcs[stage][1]->cell.vertex_coordinates[0], 
 				     local_vert);
+	  t_impl_tt.stop();
       
 	  // Extract vertex dofs from tabulated tensor
 	  for (unsigned int row=0; row < N; row++)
@@ -249,9 +297,11 @@ void PointIntegralSolver::step(double dt)
 	    _ufcs[stage][0]->w()[_coefficient_index[stage][0]][local_to_local_dofs[row]] = u(row);
 
 	  // Tabulate new residual 
+	  t_impl_tt.start();
 	  F_integral.tabulate_tensor(&_ufcs[stage][0]->A[0], _ufcs[stage][0]->w(), 
 				     &_ufcs[stage][0]->cell.vertex_coordinates[0], 
 				     local_vert);
+	  t_impl_tt.stop();
 
 	  // Extract vertex dofs from tabulated tensor
 	  for (unsigned int row=0; row < N; row++)
@@ -292,7 +342,11 @@ void PointIntegralSolver::step(double dt)
 	       relative_residual, rtol);
 	  error("Newton solver in PointIntegralSolver did not converge.");
         }
+	
+	t_impl.stop();
+
       }
+
     }
 
     // Get local u0 solution and add the stage derivatives
