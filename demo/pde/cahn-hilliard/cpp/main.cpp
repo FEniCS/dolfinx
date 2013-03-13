@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2006-03-02
-// Last changed: 2012-11-12
+// Last changed: 2013-03-13
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving
 // the Cahn-Hilliard equation.
@@ -178,7 +178,7 @@ int main(int argc, char* argv[])
     newton_solver.solve(cahn_hilliard, *u.vector());
 
     // Save function to file
-    file << std::make_pair(&(u[0]), t);
+    file << std::make_pair<const Function*, double>(&(u[0]), t);
   }
 
   // Plot solution
