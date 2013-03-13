@@ -69,7 +69,7 @@ void LinearVariationalSolver::solve()
   boost::shared_ptr<const Form> a(_problem->bilinear_form());
   boost::shared_ptr<const Form> L(_problem->linear_form());
   boost::shared_ptr<Function> u(_problem->solution());
-  std::vector<boost::shared_ptr<const BoundaryCondition> > bcs(_problem->bcs());
+  std::vector<boost::shared_ptr<const DirichletBC> > bcs(_problem->bcs());
 
   dolfin_assert(a);
   dolfin_assert(L);
@@ -107,8 +107,8 @@ void LinearVariationalSolver::solve()
     }
 
     // Assemble linear system and apply boundary conditions
-    SystemAssembler assembler;
-    assembler.assemble(*A, *b, *a, *L, _bcs);
+    SystemAssembler assembler(a, L, _bcs);
+    assembler.assemble(*A, *b);
   }
   else
   {
@@ -141,25 +141,65 @@ void LinearVariationalSolver::solve()
   if (print_matrix)
     info(*A, true);
 
+  // Get list of available methods
+  std::vector<std::pair<std::string, std::string> >
+    lu_methods = u->vector()->factory().lu_solver_methods();
+  std::vector<std::pair<std::string, std::string> >
+    krylov_methods = u->vector()->factory().krylov_solver_methods();
+  std::vector<std::pair<std::string, std::string> >
+    preconditioners = u->vector()->factory().krylov_solver_preconditioners();
+
   // Choose linear solver
-  if (solver_type == "iterative")
+  if (solver_type == "direct" || solver_type == "lu" || LinearSolver::in_list(solver_type, lu_methods))
   {
-    // Adjust iterative solver type
-    if (symmetric)
-      solver_type = "cg";
+    std::string lu_method;
+
+    if (solver_type == "direct" || solver_type == "lu")
+    {
+      lu_method = "default";
+    }
     else
-      solver_type = "gmres";
+    {
+      lu_method = solver_type;
+    }
 
     // Solve linear system
-    KrylovSolver solver(solver_type, pc_type);
-    solver.parameters.update(parameters("krylov_solver"));
+    LUSolver solver(lu_method);
+    solver.parameters.update(parameters("lu_solver"));
     solver.solve(*A, *u->vector(), *b);
   }
   else
   {
+    if (solver_type == "iterative" || solver_type == "krylov")
+    {
+      // Adjust iterative solver type
+      if (symmetric)
+        solver_type = "cg";
+      else
+        solver_type = "gmres";
+    }
+
+    if (!LinearSolver::in_list(solver_type, krylov_methods))
+    {
+      dolfin_error("LinearVariationalSolver.cpp",
+                   "solve linear system",
+                   "Unknown solver method \"%s\". "
+                   "Use list_linear_solver_methods() to list available methods",
+                   solver_type.c_str());
+    }
+
+    if (pc_type != "default" && !LinearSolver::in_list(pc_type, preconditioners))
+    {
+      dolfin_error("LinearVariationalSolver.cpp",
+                   "solve linear system",
+                   "Unknown preconditioner method \"%s\". "
+                   "Use list_krylov_solver_preconditioners() to list available methods",
+                   pc_type.c_str());
+    }
+
     // Solve linear system
-    LUSolver solver;
-    solver.parameters.update(parameters("lu_solver"));
+    KrylovSolver solver(solver_type, pc_type);
+    solver.parameters.update(parameters("krylov_solver"));
     solver.solve(*A, *u->vector(), *b);
   }
 

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-03-11
+// Last changed: 2013-03-13
 
 #include <cmath>
 
@@ -27,7 +27,7 @@
 
 #include "assemble.h"
 #include "solve.h"
-#include "BoundaryCondition.h"
+#include "DirichletBC.h"
 #include "ButcherScheme.h"
 #include "RKSolver.h"
 
@@ -52,7 +52,7 @@ void RKSolver::step(double dt)
   std::vector<std::vector<boost::shared_ptr<const Form> > >& stage_forms = \
     _scheme->stage_forms();
   std::vector<boost::shared_ptr<Function> >& stage_solutions = _scheme->stage_solutions();
-  std::vector<const BoundaryCondition* > bcs = _scheme->bcs();
+  std::vector<const DirichletBC* > bcs = _scheme->bcs();
   
   // Iterate over stage forms
   for (unsigned int stage=0; stage < stage_forms.size(); stage++)

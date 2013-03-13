@@ -26,12 +26,12 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
-#include <dolfin/fem/BoundaryCondition.h>
 #include <dolfin/adaptivity/ErrorControl.h>
 
 namespace dolfin
 {
   // Forward declarations
+  class DirichletBC;
   class Form;
   class Function;
   class FunctionSpace;
@@ -68,9 +68,9 @@ namespace dolfin
     /// be overloaded in subclass.
     ///
     /// *Returns*
-    ///     std::vector<_BoundaryCondition_>
+    ///     std::vector<_DirichletBC_>
     ///         The primal boundary conditions
-    virtual std::vector<boost::shared_ptr<const BoundaryCondition> >
+    virtual std::vector<boost::shared_ptr<const DirichletBC> >
       extract_bcs() const = 0;
 
     /// Evaluate the goal functional. Must be overloaded in subclass.

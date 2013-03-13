@@ -112,7 +112,7 @@ int main()
   DirichletBC bc0(V, u0, dirichlet_boundary);
 
   // Collect boundary conditions
-  std::vector<const BoundaryCondition*> bcs;
+  std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc0);
 
   // Compute solution

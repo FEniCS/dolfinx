@@ -18,48 +18,41 @@
 // First added:  2011-06-30
 // Last changed: 2012-11-12
 
+#include <dolfin/fem/Equation.h>
 #include <dolfin/fem/Form.h>
-#include <dolfin/function/Function.h>
 #include <dolfin/fem/LinearVariationalProblem.h>
 #include <dolfin/fem/NonlinearVariationalProblem.h>
-#include <dolfin/fem/Equation.h>
+#include <dolfin/function/Function.h>
 
 #include "AdaptiveLinearVariationalSolver.h"
 #include "AdaptiveNonlinearVariationalSolver.h"
 #include "adaptivesolve.h"
 
 //-----------------------------------------------------------------------------
-void dolfin::solve(const Equation& equation,
-                   Function& u,
-                   const double tol,
+void dolfin::solve(const Equation& equation, Function& u, const double tol,
                    GoalFunctional& M)
 {
   // Create empty list of boundary conditions
-  std::vector<const BoundaryCondition*> bcs;
+  std::vector<const DirichletBC*> bcs;
 
   // Call common adaptive solve function
   solve(equation, u, bcs, tol, M);
 }
 //-----------------------------------------------------------------------------
-void dolfin::solve(const Equation& equation,
-                   Function& u,
-                   const BoundaryCondition& bc,
-                   const double tol,
-                   GoalFunctional& M)
+void dolfin::solve(const Equation& equation, Function& u,
+                   const DirichletBC& bc, const double tol, GoalFunctional& M)
 {
   // Create list containing single boundary condition
-  std::vector<const BoundaryCondition*> bcs;
+  std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc);
 
   // Call common adaptive solve function
   solve(equation, u, bcs, tol, M);
 }
 //-----------------------------------------------------------------------------
-void dolfin::solve(const Equation& equation,
-                   Function& u,
-                   std::vector<const BoundaryCondition*> bcs,
-                   const double tol,
-                   GoalFunctional& M)
+void dolfin::solve(const Equation& equation, Function& u,
+                   std::vector<const DirichletBC*> bcs,
+                   const double tol, GoalFunctional& M)
 
 {
   // Solve linear problem
@@ -68,7 +61,8 @@ void dolfin::solve(const Equation& equation,
     LinearVariationalProblem problem(*equation.lhs(), *equation.rhs(), u, bcs);
     AdaptiveLinearVariationalSolver solver(problem, M);
     solver.solve(tol);
-  } else
+  }
+  else
   {
     // Raise error if the problem is nonlinear (for now)
     dolfin_error("solve.cpp",
@@ -79,28 +73,22 @@ void dolfin::solve(const Equation& equation,
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-void dolfin::solve(const Equation& equation,
-                   Function& u,
-                   const Form& J,
-                   const double tol,
-                   GoalFunctional& M)
+void dolfin::solve(const Equation& equation, Function& u,  const Form& J,
+                   const double tol, GoalFunctional& M)
 {
   // Create empty list of boundary conditions
-  std::vector<const BoundaryCondition*> bcs;
+  std::vector<const DirichletBC*> bcs;
 
   // Call common adaptive solve function with Jacobian
   solve(equation, u, bcs, J, tol, M);
 }
 //-----------------------------------------------------------------------------
-void dolfin::solve(const Equation& equation,
-                   Function& u,
-                   const BoundaryCondition& bc,
-                   const Form& J,
-                   const double tol,
+void dolfin::solve(const Equation& equation, Function& u,
+                   const DirichletBC& bc, const Form& J, const double tol,
                    GoalFunctional& M)
 {
   // Create list containing single boundary condition
-  std::vector<const BoundaryCondition*> bcs;
+  std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc);
 
   // Call common adaptive solve function with Jacobian
@@ -109,7 +97,7 @@ void dolfin::solve(const Equation& equation,
 //-----------------------------------------------------------------------------
 void dolfin::solve(const Equation& equation,
                    Function& u,
-                   std::vector<const BoundaryCondition*> bcs,
+                   std::vector<const DirichletBC*> bcs,
                    const Form& J,
                    const double tol,
                    GoalFunctional& M)

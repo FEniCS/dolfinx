@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-03-11
+// Last changed: 2013-03-13
 
 #ifndef __BUTCHERSCHEME_H
 #define __BUTCHERSCHEME_H
@@ -39,7 +39,7 @@ namespace dolfin
   // Forward declarations
   class Form;
   class Function;
-  class BoundaryCondition;
+  class DirichletBC;
   class Constant;
 
   class ButcherScheme : public Variable
@@ -70,7 +70,7 @@ namespace dolfin
 		  unsigned int order,
 		  const std::string name,
 		  const std::string human_form,
-		  std::vector<const BoundaryCondition* > bcs);
+		  std::vector<const DirichletBC* > bcs);
 
     /// Return the stages
     std::vector<std::vector<boost::shared_ptr<const Form> > >& stage_forms();
@@ -100,7 +100,7 @@ namespace dolfin
     unsigned int order() const;
 
     /// Return boundary conditions
-    std::vector<const BoundaryCondition* > bcs() const;
+    std::vector<const DirichletBC* > bcs() const;
 
     /// Return true if stage is implicit
     bool implicit(unsigned int stage) const;
@@ -147,7 +147,7 @@ namespace dolfin
     std::string _human_form;
 
     // The boundary conditions
-    std::vector<const BoundaryCondition* > _bcs;
+    std::vector<const DirichletBC* > _bcs;
 
   };
 

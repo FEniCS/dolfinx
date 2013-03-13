@@ -181,6 +181,7 @@
 // Ignore reference version of constructor
 %ignore dolfin::PETScKrylovSolver(std::string, PETScPreconditioner&);
 %ignore dolfin::PETScKrylovSolver(std::string, PETScUserPreconditioner&);
+%ignore dolfin::PaStiXLUSolver(const STLMatrix& A);
 
 //-----------------------------------------------------------------------------
 // PETSc/SLEPc backend

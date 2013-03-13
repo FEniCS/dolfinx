@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-03-11
+// Last changed: 2013-03-13
 
 #include <sstream>
 #include <boost/shared_ptr.hpp>
@@ -56,7 +56,7 @@ ButcherScheme::ButcherScheme(std::vector<std::vector<boost::shared_ptr<const For
 			     unsigned int order,
 			     const std::string name,
 			     const std::string human_form,
-			     std::vector<const BoundaryCondition* > bcs) :
+			     std::vector<const DirichletBC* > bcs) :
   Variable(name, ""), _stage_forms(stage_forms), _last_stage(last_stage), 
   _stage_solutions(stage_solutions), _u(u), _t(t), _dt(dt), 
   _dt_stage_offset(dt_stage_offset), _order(order), _implicit(false), 
@@ -111,7 +111,7 @@ unsigned int ButcherScheme::order() const
   return _order;
 }
 //-----------------------------------------------------------------------------
-std::vector<const BoundaryCondition* > ButcherScheme::bcs() const
+std::vector<const DirichletBC* > ButcherScheme::bcs() const
 {
   return _bcs;
 }

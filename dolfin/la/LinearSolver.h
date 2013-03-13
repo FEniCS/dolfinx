@@ -36,6 +36,7 @@ namespace dolfin
   class GenericVector;
   class LUSolver;
   class KrylovSolver;
+  class LinearVariationalSolver;
 
   /// This class provides a general solver for linear systems Ax = b.
 
@@ -76,6 +77,7 @@ namespace dolfin
     // Friends
     friend class LUSolver;
     friend class KrylovSolver;
+    friend class LinearVariationalSolver;
 
     // Check whether string is contained in list
     static bool

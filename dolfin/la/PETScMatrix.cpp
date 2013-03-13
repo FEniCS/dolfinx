@@ -153,6 +153,10 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
       MatSetType(*_A, MATSEQAIJCUSP);
     #endif
 
+    // Set block size
+    if (tensor_layout.block_size > 1)
+      MatSetBlockSize(*_A, tensor_layout.block_size);
+
     // FIXME: Change to MatSeqAIJSetPreallicationCSR for improved performance?
 
     // Allocate space (using data from sparsity pattern)
@@ -205,6 +209,10 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
 
     // Set matrix type
     MatSetType(*_A, MATMPIAIJ);
+
+    // Set block size
+    if (tensor_layout.block_size > 1)
+      MatSetBlockSize(*_A, tensor_layout.block_size);
 
     // Allocate space (using data from sparsity pattern)
     const std::vector<PetscInt> _num_nonzeros_diagonal(num_nonzeros_diagonal.begin(),
@@ -434,6 +442,16 @@ void PETScMatrix::apply(std::string mode)
                  "apply changes to PETSc matrix",
                  "Unknown apply mode \"%s\"", mode.c_str());
   }
+
+  /*
+  PetscInt nodes = 0;
+  Mat Adiag;
+  MatGetDiagonalBlock(*_A, &Adiag);
+  MatInodeGetInodeSizes(Adiag, &nodes, PETSC_NULL, PETSC_NULL);
+  PetscInt m(0), n(0);
+  MatGetSize(Adiag, &m, &n);
+  cout << "***** Inode count: " << MPI::sum(nodes) << ", " << m << ", " << n << endl;
+  */
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero()

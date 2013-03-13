@@ -135,16 +135,14 @@ def array(self):
 def __getitem__(self, index):
     try:
         return self._getitem(index)
-    except:
-        index = index.index() if isinstance(index, Cell) else index
-        raise IndexError("Index %d out of bound" % index)
+    except RuntimeError:
+        raise IndexError("Index out of bound")
 
 def __setitem__(self, index, value):
     try:
         self._setitem(index, value)
     except RuntimeError:
-        index = index.index() if isinstance(index, Cell) else index
-        raise IndexError("Index %d out of bound" % index)
+        raise IndexError("Index out of bound")
 
 def __len__(self):
     return self.size()

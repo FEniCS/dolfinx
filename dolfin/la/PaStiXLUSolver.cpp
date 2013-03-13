@@ -90,12 +90,22 @@ PaStiXLUSolver::PaStiXLUSolver(boost::shared_ptr<const STLMatrix> A) : A(A)
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
+PaStiXLUSolver::~PaStiXLUSolver()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  assert(A);
+  dolfin_assert(A);
 
+  // Get block size from STLMatrix
+  const std::size_t block_size = A->block_size();
+
+  // MPI communicator
   MPI_Comm mpi_comm = MPI_COMM_WORLD;
 
+  // Intitialise PaStiX parameters
   pastix_int_t iparm[IPARM_SIZE];
   double dparm[DPARM_SIZE];
   for (int i = 0; i < IPARM_SIZE; i++)
@@ -106,7 +116,7 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Set default parameters
   pastix_initParam(iparm, dparm);
 
-  // LU or Cholesky
+  // Set LU or Cholesky depending on operator symmetry
   const bool symmetric = parameters["symmetric_operator"];
   if (symmetric)
   {
@@ -120,20 +130,45 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
     iparm[IPARM_FACTORIZATION] = API_FACT_LU;
   }
 
-  // Set block sizes (affects performance)
+  // Number of dofs per node (block size)
+  iparm[IPARM_DOF_NBR] = block_size;
+
+  // Set BLAS block sizes (affects performance)
   const std::size_t min_block_size = parameters["min_block_size"];
   iparm[IPARM_MIN_BLOCKSIZE] = min_block_size;
   const std::size_t max_block_size = parameters["max_block_size"];
   iparm[IPARM_MAX_BLOCKSIZE] = max_block_size;
   //iparm[IPARM_ABS] = API_YES;
 
-  // Matrix data in compressed sparse column format (C indexing)
+  // Get matrix data in compressed sparse column format (C indexing)
   std::vector<double> vals;
   std::vector<pastix_int_t> rows, col_ptr, local_to_global_cols;
-  A->csc(vals, rows, col_ptr, local_to_global_cols, symmetric);
+  A->csc(vals, rows, col_ptr, local_to_global_cols, true, symmetric);
 
   // Copy local-to-global
   const std::vector<pastix_int_t> local_to_global_cols_ref = local_to_global_cols;
+
+  /*
+  for (std::size_t i = 0; i < vals.size(); ++i)
+    cout << "  " << vals[i];
+  cout << endl;
+
+  cout << "-------------------" << endl;
+  for (std::size_t i = 0; i < rows.size(); ++i)
+    cout << "  " << rows[i];
+  cout << endl;
+
+  cout << "-------------------" << endl;
+  for (std::size_t i = 0; i < col_ptr.size(); ++i)
+    cout << "  " << col_ptr[i];
+  cout << endl;
+
+  cout << "-------------------" << endl;
+  for (std::size_t i = 0; i < local_to_global_cols.size(); ++i)
+    cout << "  " << local_to_global_cols[i];
+  cout << endl;
+  cout << "-------------------" << endl;
+  */
 
   // Convert to base 1
   for (std::size_t i = 0;  i < rows.size(); ++i)
@@ -143,6 +178,17 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   for (std::size_t i = 0;  i < local_to_global_cols.size(); ++i)
     local_to_global_cols[i] += 1;
 
+  /*
+  //std::size_t num_blocks = A.size(0)/3;
+
+  for (std::size_t i = 0;  i < rows.size(); i += 3)
+    rows[i/3] = rows[i]/3 + 1;
+  for (std::size_t i = 0;  i < col_ptr.size(); i += 3)
+    col_ptr[i/3] = col_ptr[i]/3 + 1;
+  for (std::size_t i = 0;  i < local_to_global_cols.size(); i += 3)
+    local_to_global_cols[i/3] = local_to_global_cols[i]/3 + 1;
+  */
+
   dolfin_assert(local_to_global_cols.size() > 0);
 
   // Pointers to data structures
@@ -150,8 +196,11 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   pastix_int_t* _rows = rows.data();
   pastix_int_t* _local_to_global_cols = local_to_global_cols.data();
 
+  // Graph (matrix) distributed
+  iparm[IPARM_GRAPHDIST] = API_YES;
+
   // Matrix size
-  const pastix_int_t n = col_ptr.size() - 1;
+  const pastix_int_t n = (col_ptr.size() - 1);
 
   // Check matrix
   if (parameters["check_matrix"])
@@ -159,7 +208,7 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
     double* _vals = vals.data();
     d_pastix_checkMatrix(mpi_comm, API_VERBOSE_YES, iparm[IPARM_SYM], API_NO,
   		                   n, &_col_ptr, &_rows, &_vals,
-                         &_local_to_global_cols, 1);
+                         &_local_to_global_cols, block_size);
   }
   else
     iparm[IPARM_MATRIX_VERIFICATION] = API_NO;
@@ -200,9 +249,6 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   else
     iparm[IPARM_VERBOSE] = API_VERBOSE_NO;
 
-  // Graph (matrix) distributed
-  iparm[IPARM_GRAPHDIST] = API_YES;
-
   // Allocate space for solver
   dolfin_assert(local_to_global_cols.size() > 0);
   std::vector<pastix_int_t> perm(local_to_global_cols.size());
@@ -241,7 +287,11 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
 
   // Get RHS data for this process
   std::vector<double> _b;
-  std::vector<dolfin::la_index> idx(local_to_global_cols_ref.begin(), local_to_global_cols_ref.end());
+  std::vector<dolfin::la_index> idx(block_size*n);
+  dolfin_assert((int) local_to_global_cols_ref.size() ==  n);
+  for (std::size_t i = 0; i < local_to_global_cols_ref.size(); ++i)
+    for (std::size_t j = 0; j < block_size; ++j)
+      idx[i*block_size + j] = local_to_global_cols_ref[i]*block_size + j;
   b.gather(_b, idx);
 
   // Solve
@@ -252,8 +302,9 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
             _b.data(), nrhs, iparm, dparm);
 
   // Distribute solution
-  assert(b.size() == x.size());
-  x.set(_b.data(), local_to_global_cols_ref.size(), idx.data());
+  //assert(b.size() == x.size());
+  x.resize(b.size());
+  x.set(_b.data(), idx.size(), idx.data());
   x.apply("insert");
 
   // Clean up
@@ -265,11 +316,6 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
             _b.data(), nrhs, iparm, dparm);
 
   return 1;
-}
-//-----------------------------------------------------------------------------
-PaStiXLUSolver::~PaStiXLUSolver()
-{
-  // Do nothing
 }
 //-----------------------------------------------------------------------------
 #endif
