@@ -29,7 +29,7 @@
 //-----------------------------------------------------------------------------
 // Extend Function so f.function_space() return a dolfin.FunctionSpace
 //-----------------------------------------------------------------------------
-%extend dolfin::BoundaryCondition
+%extend dolfin::DirichletBC
 {
 %pythoncode %{
 def function_space(self):

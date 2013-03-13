@@ -30,7 +30,7 @@ void dolfin::solve(const Equation& equation,
                    Function& u, Parameters parameters)
 {
   // Create empty list of boundary conditions
-  std::vector<const BoundaryCondition*> bcs;
+  std::vector<const DirichletBC*> bcs;
 
   // Call common solve function
   solve(equation, u, bcs, parameters);
@@ -38,11 +38,11 @@ void dolfin::solve(const Equation& equation,
 //-----------------------------------------------------------------------------
 void dolfin::solve(const Equation& equation,
                    Function& u,
-                   const BoundaryCondition& bc,
+                   const DirichletBC& bc,
 		   Parameters parameters)
 {
   // Create list containing single boundary condition
-  std::vector<const BoundaryCondition*> bcs;
+  std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc);
 
   // Call common solve function
@@ -51,7 +51,7 @@ void dolfin::solve(const Equation& equation,
 //-----------------------------------------------------------------------------
 void dolfin::solve(const Equation& equation,
                    Function& u,
-                   std::vector<const BoundaryCondition*> bcs,
+                   std::vector<const DirichletBC*> bcs,
 		   Parameters parameters)
 {
   // Solve linear problem
@@ -79,7 +79,7 @@ void dolfin::solve(const Equation& equation,
 		   Parameters parameters)
 {
   // Create empty list of boundary conditions
-  std::vector<const BoundaryCondition*> bcs;
+  std::vector<const DirichletBC*> bcs;
 
   // Call common solve function
   solve(equation, u, bcs, J, parameters);
@@ -87,12 +87,12 @@ void dolfin::solve(const Equation& equation,
 //-----------------------------------------------------------------------------
 void dolfin::solve(const Equation& equation,
                    Function& u,
-                   const BoundaryCondition& bc,
+                   const DirichletBC& bc,
                    const Form& J,
                     Parameters parameters)
 {
   // Create list containing single boundary condition
-  std::vector<const BoundaryCondition*> bcs;
+  std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc);
 
   // Call common solve function
@@ -101,7 +101,7 @@ void dolfin::solve(const Equation& equation,
 //-----------------------------------------------------------------------------
 void dolfin::solve(const Equation& equation,
                    Function& u,
-                   std::vector<const BoundaryCondition*> bcs,
+                   std::vector<const DirichletBC*> bcs,
                    const Form& J,
 		   Parameters parameters)
 {

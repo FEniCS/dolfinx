@@ -30,7 +30,7 @@ namespace dolfin
   // Forward declarations
   class Equation;
   class Function;
-  class BoundaryCondition;
+  class DirichletBC;
   class Form;
 
   //--- Linear / nonlinear problems (no Jacobian specified) ---
@@ -51,7 +51,7 @@ namespace dolfin
   /// or NonlinearVariationalSolver classes.
   void solve(const Equation& equation,
              Function& u,
-             const BoundaryCondition& bc,
+             const DirichletBC& bc,
              Parameters parameters=empty_parameters);
 
   /// Solve linear variational problem a(u, v) == L(v) or nonlinear
@@ -61,7 +61,7 @@ namespace dolfin
   /// or NonlinearVariationalSolver classes.
   void solve(const Equation& equation,
              Function& u,
-             std::vector<const BoundaryCondition*> bcs,
+             std::vector<const DirichletBC*> bcs,
              Parameters parameters=empty_parameters);
 
   //--- Nonlinear problems (Jacobian specified) ---
@@ -85,7 +85,7 @@ namespace dolfin
   /// or NonlinearVariationalSolver classes.
   void solve(const Equation& equation,
              Function& u,
-             const BoundaryCondition& bc,
+             const DirichletBC& bc,
              const Form& J,
              Parameters parameters=empty_parameters);
 
@@ -97,7 +97,7 @@ namespace dolfin
   /// or NonlinearVariationalSolver classes.
   void solve(const Equation& equation,
              Function& u,
-             std::vector<const BoundaryCondition*> bcs,
+             std::vector<const DirichletBC*> bcs,
              const Form& J,
              Parameters parameters=empty_parameters);
 

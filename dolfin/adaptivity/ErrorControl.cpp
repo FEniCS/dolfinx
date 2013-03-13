@@ -28,7 +28,6 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/fem/assemble.h>
-#include <dolfin/fem/BoundaryCondition.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/DofMap.h>
@@ -95,7 +94,7 @@ ErrorControl::ErrorControl(boost::shared_ptr<Form> a_star,
 }
 //-----------------------------------------------------------------------------
 double ErrorControl::estimate_error(const Function& u,
-  const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
+  const std::vector<boost::shared_ptr<const DirichletBC> > bcs)
 {
   // Compute discrete dual approximation
   dolfin_assert(_a_star);
@@ -129,23 +128,18 @@ double ErrorControl::estimate_error(const Function& u,
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::compute_dual(Function& z,
-   const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
+   const std::vector<boost::shared_ptr<const DirichletBC> > bcs)
 {
   log(PROGRESS, "Solving dual problem.");
 
   // Create dual boundary conditions by homogenizing
-  std::vector<boost::shared_ptr<const BoundaryCondition> > dual_bcs;
+  std::vector<boost::shared_ptr<const DirichletBC> > dual_bcs;
   for (std::size_t i = 0; i < bcs.size(); i++)
   {
-    // Only handle DirichletBCs
-    const DirichletBC* bc_ptr = dynamic_cast<const DirichletBC*>(bcs[i].get());
-    if (!bc_ptr)
-      dolfin_error("ErrorControl.cpp",
-                   "compute dual solution",
-                   "Only DirichletBCs can be homogenized (for now)");
+    dolfin_assert(bcs[i]);
 
     // Create shared_ptr to boundary condition
-    boost::shared_ptr<DirichletBC> dual_bc_ptr(new DirichletBC(*bc_ptr));
+    boost::shared_ptr<DirichletBC> dual_bc_ptr(new DirichletBC(*bcs[i]));
 
     // Run homogenize
     dual_bc_ptr->homogenize();
@@ -165,7 +159,7 @@ void ErrorControl::compute_dual(Function& z,
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::compute_extrapolation(const Function& z,
-   const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
+   const std::vector<boost::shared_ptr<const DirichletBC> > bcs)
 {
   log(PROGRESS, "Extrapolating dual solution.");
 
@@ -448,22 +442,20 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::apply_bcs_to_extrapolation(
-const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
+const std::vector<boost::shared_ptr<const DirichletBC> > bcs)
 {
   // Create boundary conditions for extrapolated dual, and apply
   // these.
   for (std::size_t i = 0; i < bcs.size(); i++)
   {
-    // Only handle DirichletBCs
-    const DirichletBC* bc = dynamic_cast<const DirichletBC*>(bcs[i].get());
-    dolfin_assert(bc);
+    dolfin_assert(bcs[i]);
 
     // Extract SubSpace component
-    dolfin_assert(bc->function_space());
-    const std::vector<std::size_t> component = bc->function_space()->component();
+    dolfin_assert(bcs[i]->function_space());
+    const std::vector<std::size_t> component = bcs[i]->function_space()->component();
 
     // Extract sub-domain
-    boost::shared_ptr<const SubDomain> sub_domain = bc->user_sub_domain();
+    boost::shared_ptr<const SubDomain> sub_domain = bcs[i]->user_sub_domain();
 
     // Create zero-valued boundary condition on extrapolation space.
     // (Sub-spaces need special handling, and boundary conditions can
@@ -473,17 +465,17 @@ const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
     if (component.empty())
     {
       if (sub_domain)
-        e_bc.reset(new DirichletBC(_E, bc->value(), sub_domain, bc->method()));
+        e_bc.reset(new DirichletBC(_E, bcs[i]->value(), sub_domain, bcs[i]->method()));
       else
-        e_bc.reset(new DirichletBC(_E, bc->value(), bc->markers(), bc->method()));
+        e_bc.reset(new DirichletBC(_E, bcs[i]->value(), bcs[i]->markers(), bcs[i]->method()));
     }
     else
     {
       boost::shared_ptr<SubSpace> S(new SubSpace(*_E, component));
       if (sub_domain)
-        e_bc.reset(new DirichletBC(S, bc->value(), sub_domain, bc->method()));
+        e_bc.reset(new DirichletBC(S, bcs[i]->value(), sub_domain, bcs[i]->method()));
       else
-        e_bc.reset(new DirichletBC(S, bc->value(), bc->markers(), bc->method()));
+        e_bc.reset(new DirichletBC(S, bcs[i]->value(), bcs[i]->markers(), bcs[i]->method()));
     }
     e_bc->homogenize();
 

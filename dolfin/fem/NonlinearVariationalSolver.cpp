@@ -21,7 +21,7 @@
 // Last changed: 2011-03-29
 
 #include <dolfin/common/NoDeleter.h>
-#include <dolfin/fem/BoundaryCondition.h>
+#include <dolfin/fem/DirichletBC.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/function/Function.h>
@@ -145,7 +145,7 @@ NonlinearDiscreteProblem::F(GenericVector& b, const GenericVector& x)
   // Get problem data
   dolfin_assert(_problem);
   boost::shared_ptr<const Form> F(_problem->residual_form());
-  std::vector<boost::shared_ptr<const BoundaryCondition> > bcs(_problem->bcs());
+  std::vector<boost::shared_ptr<const DirichletBC> > bcs(_problem->bcs());
 
   // Assemble right-hand side
   dolfin_assert(F);
@@ -171,7 +171,7 @@ void NonlinearVariationalSolver::NonlinearDiscreteProblem::J(GenericMatrix& A,
   // Get problem data
   dolfin_assert(_problem);
   boost::shared_ptr<const Form> J(_problem->jacobian_form());
-  std::vector<boost::shared_ptr<const BoundaryCondition> > bcs(_problem->bcs());
+  std::vector<boost::shared_ptr<const DirichletBC> > bcs(_problem->bcs());
 
   // Check if Jacobian matrix sparsity pattern should be reset
   dolfin_assert(_solver);

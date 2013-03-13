@@ -85,7 +85,7 @@ int main()
   DirichletBC bc2(W1, zero, sub_domains, 2);
 
   // Collect boundary conditions
-  std::vector<const BoundaryCondition*> bcs;
+  std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc0); bcs.push_back(&bc1); bcs.push_back(&bc2);
 
   // Define variational problem

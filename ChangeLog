@@ -1,3 +1,9 @@
+ - Remove base class BoundarCondition
+ - Set block size for PETScMatrix when available from TensorLayout
+ - Add support to get block compressed format from STLMatrix
+ - Add detection of block structures in the dofmap for vector equations
+ - Expose PETSc GAMG parameters
+ - Modify SystemAssembler to support separate assembly of A and b
  - Fixes bug where child/parent hierarchy in Python were destroyed
  - Add utility script dolfin-get-demos
  - MeshFunctions in python now support iterable protocol

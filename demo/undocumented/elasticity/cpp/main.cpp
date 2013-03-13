@@ -111,7 +111,7 @@ int main()
   DirichletBC bcr(V, r, right);
 
   // Collect boundary conditions
-  std::vector<const BoundaryCondition*> bcs;
+  std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bcl);
   bcs.push_back(&bcr);
 

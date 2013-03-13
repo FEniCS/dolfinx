@@ -76,11 +76,11 @@ PROBLEM_RENAMES(NonlinearVariational)
 %ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
                                                      const Form&,
                                                      Function&,
-                                                     const BoundaryCondition&);
+                                                     const DirichletBC&);
 %ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
                                        const Form&,
                                        Function&,
-                                       std::vector<const BoundaryCondition*>);
+                                       std::vector<const DirichletBC*>);
 
 %ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
                                                                      Function&);
@@ -89,17 +89,17 @@ PROBLEM_RENAMES(NonlinearVariational)
                                                                    const Form&);
 %ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
                                                      Function&,
-                                                     const BoundaryCondition&);
+                                                     const DirichletBC&);
 %ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
                                                      Function&,
-                                                     const BoundaryCondition&,
+                                                     const DirichletBC&,
                                                      const Form&);
 %ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
                                        Function&,
-                                       std::vector<const BoundaryCondition*>);
+                                       std::vector<const DirichletBC*>);
 %ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
                                          Function&,
-                                         std::vector<const BoundaryCondition*>,
+                                         std::vector<const DirichletBC*>,
                                          const Form&);
 
 %ignore dolfin::LinearVariationalSolver::LinearVariationalSolver(LinearVariationalProblem&);
@@ -117,12 +117,12 @@ PROBLEM_RENAMES(NonlinearVariational)
 %ignore dolfin::DirichletBC::operator=;
 
 //-----------------------------------------------------------------------------
-// Modifying the interface of BoundaryCondition
+// Modifying the interface of DirichletBC
 //-----------------------------------------------------------------------------
-%rename (_function_space) dolfin::BoundaryCondition::function_space;
+%rename (_function_space) dolfin::DirichletBC::function_space;
 
 //-----------------------------------------------------------------------------
-// Modifying the interface of BoundaryCondition
+// Modifying the interface of Form
 //-----------------------------------------------------------------------------
 %rename (_function_space) dolfin::Form::function_space;
 
