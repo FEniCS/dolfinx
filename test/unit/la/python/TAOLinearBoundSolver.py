@@ -38,7 +38,13 @@
 # Corrado Maurini 
 #
 from dolfin import *
+import unittest
 
+try:
+  parameters["linear_algebra_backend"] = "PETSc"
+except RuntimeError:
+  import sys; sys.exit(0)
+  
 # Create mesh and define function space
 b=10
 eps=0.1
@@ -88,8 +94,12 @@ solver.parameters["krylov_solver"]["absolute_tolerance"]=1e-8
 solver.parameters["krylov_solver"]["relative_tolerance"]=1e-8
 solver.solve(A,xsol,b,xl,xu)
 
-# Print solver parameters
-info(solver.parameters,True)
 
-# Plot solution
-plot(usol, interactive=True)
+if __name__ == "__main__":
+  # Turn off DOLFIN output
+  set_log_active(False)
+
+  print ""
+  print "Testing DOLFIN nls/PETScSNESSolver interface"
+  print "--------------------------------------------"
+  unittest.main()

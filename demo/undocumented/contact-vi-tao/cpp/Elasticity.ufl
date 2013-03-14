@@ -1,4 +1,4 @@
-# Copyright (C) 2005-2009 Anders Logg
+# Copyright (c) 2005 Johan Jansson
 #
 # This file is part of DOLFIN.
 #
@@ -15,20 +15,31 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Anders Logg 2006-2007
+# Modified by Garth N. Wells 2008
+#
 # First added:  2005
-# Last changed: 2011-03-08
+# Last changed: 2011-03-09
 #
-# The bilinear form a(u, v) and linear form L(v) for
-# Poisson's equation.
-#
-# Compile this form with FFC: ffc -l dolfin Poisson.ufl.
+# The bilinear form for classical linear elasticity (Navier).
+# Compile this form with FFC: ffc -l dolfin Elasticity.ufl
 
-element = FiniteElement("Lagrange", triangle, 1)
+cell = triangle
+element = VectorElement("Lagrange", cell, 1)
 
 u = TrialFunction(element)
 v = TestFunction(element)
 f = Coefficient(element)
-g = Coefficient(element)
 
-a = inner(grad(u), grad(v))*dx
-L = f*v*dx + g*v*ds
+mu    = Constant(cell)
+lmbda = Constant(cell)
+
+def epsilon(v):
+    return 0.5*(grad(v) + grad(v).T)
+
+def sigma(v):
+    return 2.0*mu*epsilon(v) + lmbda*tr(epsilon(v))*Identity(v.cell().d)
+
+a = inner(sigma(u), epsilon(v))*dx
+L = inner(f, v)*dx
+
