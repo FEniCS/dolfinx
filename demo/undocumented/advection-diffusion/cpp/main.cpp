@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-02-09
-// Last changed: 2012-07-05
+// Last changed: 2013-03-13
 //
 // This demo solves the time-dependent advection-diffusion equation
 // by a least-squares stabilized cG(1)cG(1) method. The velocity field
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     lu.solve(*u.vector(), b);
 
     // Save solution in VTK format
-    file << std::make_pair(&u, t);
+    file << std::make_pair<const Function*, double>(&u, t);
 
     // Move to next interval
     p = t / T;
