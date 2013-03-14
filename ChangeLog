@@ -7,6 +7,7 @@
  - Fixes bug where child/parent hierarchy in Python were destroyed
  - Add utility script dolfin-get-demos
  - MeshFunctions in python now support iterable protocol
+ - Add timed VTK output for Mesh and MeshFunction in addtion to Functions
  - Expose ufc::dofmap::tabulate_entity_dofs to GenericDofMap interface
  - Expose ufc::dofmap::num_entity_dofs to GenericDofMap interface
  - Allow setting of row dof coordinates in preconditioners (only works with PETSc backed for now)
