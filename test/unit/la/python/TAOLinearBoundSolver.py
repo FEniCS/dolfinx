@@ -88,7 +88,7 @@ xl = lowerbound.vector()
 # Take the PETScVector of the solution function
 xsol=usol.vector()  
 
-if has_linear_algebra_backend("PETSc"):
+if has_tao():
     class TAOLinearBoundSolverTester(unittest.TestCase):
 
         def test_tao_linear_bound_solver(self):
