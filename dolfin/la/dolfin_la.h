@@ -54,7 +54,6 @@
 #include <dolfin/la/EpetraFactory.h>
 #include <dolfin/la/STLFactory.h>
 #include <dolfin/la/SLEPcEigenSolver.h>
-#include <dolfin/la/TAOLinearBoundSolver.h>
 #include <dolfin/la/TrilinosPreconditioner.h>
 #include <dolfin/la/uBLASSparseMatrix.h>
 #include <dolfin/la/uBLASDenseMatrix.h>

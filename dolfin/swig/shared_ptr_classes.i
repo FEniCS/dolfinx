@@ -209,10 +209,6 @@
 %shared_ptr(dolfin::SLEPcEigenSolver)
 #endif
 
-#ifdef HAS_TAO
-%shared_ptr(dolfin::TAOLinearBoundSolver)
-#endif
-
 #ifdef HAS_TRILINOS
 %shared_ptr(dolfin::EpetraKrylovSolver)
 %shared_ptr(dolfin::EpetraLUSolver)
@@ -256,6 +252,9 @@
 // nls
 %shared_ptr(dolfin::NewtonSolver)
 %shared_ptr(dolfin::PETScSNESSolver)
+#ifdef HAS_TAO
+%shared_ptr(dolfin::TAOLinearBoundSolver)
+#endif
 
 // plot
 %shared_ptr(dolfin::VTKPlotter)

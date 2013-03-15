@@ -187,3 +187,86 @@ Here, x is passed in as a model vector from which we make our Vecs
 that tell PETSc the bounds.
 ";
 
+// Documentation extracted from: (module=nls, header=TAOLinearBoundSolver.h)
+%feature("docstring")  dolfin::TAOLinearBoundSolver "
+This class provides bound constrained solver for a linear system defined by PETSc matrices and vectors:
+
+  Ax =  b, with xl =< x <= xu
+
+It is a wrapper for the TAO bound constrained solver.
+
+Python example:
+
+ ----------------------------------------------------------------------
+ Begin of python example
+ ----------------------------------------------------------------------
+ # Assemble the linear system
+    A, b = assemble_system(a, L, bc)
+ # Define the constraints
+    constraint_u = Constant(1.)
+    constraint_l = Constant(0.)
+    u_min = interpolate(constraint_l, V)
+    u_max = interpolate(constraint_u, V)
+ # Define the function to store the solution
+    usol=Function(V)
+ # Create the TAOLinearBoundSolver
+   solver=TAOLinearBoundSolver(\"tao_gpcg\",\"gmres\")
+ # Set some parameters
+   solver.parameters[\"monitor_convergence\"]=True
+   solver.parameters[\"report\"]=True
+ # Solve the problem
+   solver.solve(A, usol.vector(), b , u_min.vector(), u_max.vector())
+ ----------------------------------------------------------------------
+ End of python example
+ ----------------------------------------------------------------------
+
+To get a list of available parameters:
+
+info(solver.parameters,True)
+
+";
+
+%feature("docstring")  dolfin::TAOLinearBoundSolver::TAOLinearBoundSolver "
+Create TAO bound constrained solver
+";
+
+%feature("docstring")  dolfin::TAOLinearBoundSolver::solve "
+**Overloaded versions**
+
+* solve\ (A, x, b, xl, xu)
+
+  Solve linear system Ax = b with xl =< x <= xu
+
+* solve\ (A, x, b, xl, xu)
+
+  Solve linear system Ax = b with xl =< x <= xu
+";
+
+%feature("docstring")  dolfin::TAOLinearBoundSolver::set_ksp "
+Set PETSC Krylov Solver (ksp) used by TAO
+";
+
+%feature("docstring")  dolfin::TAOLinearBoundSolver::methods "
+Return a list of available Tao solver methods
+";
+
+%feature("docstring")  dolfin::TAOLinearBoundSolver::krylov_solvers "
+Return a list of available krylov solvers
+";
+
+%feature("docstring")  dolfin::TAOLinearBoundSolver::preconditioners "
+Return a list of available preconditioners
+";
+
+%feature("docstring")  dolfin::TAOLinearBoundSolver::default_parameters "
+Default parameter values
+";
+
+%feature("docstring")  dolfin::TAOLinearBoundSolver::__TAOFormFunctionGradientQuadraticProblem "
+Computes the value of the objective function and its gradient.
+";
+
+%feature("docstring")  dolfin::TAOLinearBoundSolver::__TAOFormHessianQuadraticProblem "
+Computes the hessian of the quadratic objective function
+";
+
