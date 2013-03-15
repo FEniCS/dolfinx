@@ -1,12 +1,23 @@
+// Copyright (C) 2012 Corrado Maurini
 //
-// Created by Corrado Maurini, 2012.
+// This file is part of DOLFIN.
+//
+// DOLFIN is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// DOLFIN is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-12-03
-// Last changed: 
-//
-// For an example of the implementation in C++ classes of a PETSc non-linear solve (snes), 
-// see the libmesh interface : http://libmesh.sourceforge.net/doxygen/petsc__nonlinear__solver_8C_source.php
-//
+// Last changed: 2012-12-03
+
 
 #ifndef _TAOLinearBoundSolver_H
 #define _TAOLinearBoundSolver_H
@@ -184,8 +195,8 @@ namespace dolfin
     //-----------------------------------------------------------------------------
     //  Monitor the state of the solution at each iteration. The output printed to the screen is:
     //
-    //	iterate 	- the current iterate number (>=0)
-    //	f 	- the current function value
+    //	iterate - the current iterate number (>=0)
+    //	f 	    - the current function value
     //	gnorm 	- the square of the gradient norm, duality gap, or other measure indicating distance from optimality.
     //	cnorm 	- the infeasibility of the current solution with regard to the constraints.
     //	xdiff 	- the step length or trust region radius of the most recent iterate. 

@@ -1,12 +1,29 @@
+// Copyright (C) 2012 Corrado Maurini
 //
-// Created by Corrado Maurini 2012
+// This file is part of DOLFIN.
 //
-// First added:  2012-12-03
+// DOLFIN is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// DOLFIN is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
+//
+// First added : 2012-12-03
+// Last changed: 2012-12-03
+
 #ifdef HAS_PETSC
 #ifdef HAS_TAO
 
 #include <petsclog.h>
 
+#include <dolfin/common/Timer.h>
 #include <boost/assign/list_of.hpp>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/MPI.h>
@@ -186,6 +203,7 @@ std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1,
   }
   
   // Solve the bound constrained problem 
+  Timer timer("TAO solver");
   const char *tao_type;
   TaoGetType(*_tao, &tao_type);
   log(PROGRESS, "Tao solver %s starting to solve %i x %i system", tao_type,
