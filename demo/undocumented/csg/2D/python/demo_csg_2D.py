@@ -1,4 +1,4 @@
-# Copyright (C) 2012 Benjamin Kehlet
+# Copyright (C) 2012-2013 Benjamin Kehlet
 #
 # This file is part of DOLFIN.
 #
@@ -16,7 +16,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2012-11-12
-# Last changed: 2012-11-13
+# Last changed: 2013-03-15
 
 from dolfin import *
 
@@ -41,7 +41,7 @@ info(g2d, True);
 plot(g2d, "2D Geometry (boundary)");
 
 # Generate and plot mesh
-mesh2d = Mesh(g2d, 100);
+mesh2d = Mesh(g2d, 10);
 plot(mesh2d, "2D mesh");
 
 interactive();
