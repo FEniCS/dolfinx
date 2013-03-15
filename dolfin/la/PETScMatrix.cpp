@@ -153,7 +153,10 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
       MatSetType(*_A, MATSEQAIJCUSP);
     #endif
 
-    //MatSetBlockSize(*_A, 3);
+    // Set block size
+    if (tensor_layout.block_size > 1)
+      MatSetBlockSize(*_A, tensor_layout.block_size);
+
     // FIXME: Change to MatSeqAIJSetPreallicationCSR for improved performance?
 
     // Allocate space (using data from sparsity pattern)
@@ -207,7 +210,9 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     // Set matrix type
     MatSetType(*_A, MATMPIAIJ);
 
-    //MatSetBlockSize(*_A, 3);
+    // Set block size
+    if (tensor_layout.block_size > 1)
+      MatSetBlockSize(*_A, tensor_layout.block_size);
 
     // Allocate space (using data from sparsity pattern)
     const std::vector<PetscInt> _num_nonzeros_diagonal(num_nonzeros_diagonal.begin(),

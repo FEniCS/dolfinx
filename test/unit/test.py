@@ -43,7 +43,7 @@ tests = {
                        "XMLMeshValueCollection", "XMLVector", "XMLLocalMeshData",
                        "XDMF", "HDF5"],
     "jit":            ["test"],
-    "la":             ["test", "solve", "Matrix", "Scalar", "Vector", "KrylovSolver", "LinearOperator"],
+    "la":             ["test", "solve", "Matrix", "Scalar", "Vector", "KrylovSolver", "LinearOperator","TAOLinearBoundSolver"],
     "nls":            ["yamabe"],
     "math":           ["test"],
     "meshconvert":    ["test"],

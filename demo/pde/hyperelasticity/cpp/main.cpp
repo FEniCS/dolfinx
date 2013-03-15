@@ -110,7 +110,7 @@ int main()
   // Create Dirichlet boundary conditions
   DirichletBC bcl(V, c, left);
   DirichletBC bcr(V, r, right);
-  std::vector<const BoundaryCondition*> bcs;
+  std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bcl); bcs.push_back(&bcr);
 
   // Define source and boundary traction functions

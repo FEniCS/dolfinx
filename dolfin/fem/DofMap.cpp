@@ -199,7 +199,7 @@ std::size_t DofMap::cell_dimension(std::size_t cell_index) const
 std::size_t DofMap::max_cell_dimension() const
 {
   dolfin_assert(_ufc_dofmap);
-  return _ufc_dofmap->max_local_dimension();
+  return _ufc_dofmap->local_dimension();
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_entity_dofs(std::size_t dim) const
@@ -359,7 +359,7 @@ std::vector<dolfin::la_index> DofMap::dof_to_vertex_map(Mesh& mesh) const
   const std::size_t dofs_per_vertex = _ufc_dofmap->num_entity_dofs(0);
   const std::size_t vert_per_cell = mesh.topology()(top_dim, 0).size(0);
 
-  if (vert_per_cell*dofs_per_vertex != _ufc_dofmap->max_local_dimension())
+  if (vert_per_cell*dofs_per_vertex != _ufc_dofmap->local_dimension())
   {
     dolfin_error("DofMap.cpp",
                  "tabulating dof to vertex map",

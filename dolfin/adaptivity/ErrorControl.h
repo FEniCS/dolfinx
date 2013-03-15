@@ -32,7 +32,6 @@
 namespace dolfin
 {
 
-  class BoundaryCondition;
   class DirichletBC;
   class Form;
   class Function;
@@ -109,14 +108,14 @@ namespace dolfin
     ///     u (_Function_)
     ///        the primal approximation
     ///
-    ///     bcs (std::vector<_BoundaryCondition_>)
+    ///     bcs (std::vector<_DirichletBC_>)
     ///         the primal boundary conditions
     ///
     /// *Returns*
     ///     double
     ///         error estimate
     double estimate_error(const Function& u,
-           const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);
+           const std::vector<boost::shared_ptr<const DirichletBC> > bcs);
 
     /// Compute error indicators
     ///
@@ -180,10 +179,10 @@ namespace dolfin
     ///     z (_Function_)
     ///         the dual approximation (to be computed)
     ///
-    ///     bcs (std::vector<_BoundaryCondition_>)
+    ///     bcs (std::vector<_DirichletBC_>)
     ///         the primal boundary conditions
     void compute_dual(Function& z,
-         const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);
+         const std::vector<boost::shared_ptr<const DirichletBC> > bcs);
 
     /// Compute extrapolation with boundary conditions
     ///
@@ -191,10 +190,10 @@ namespace dolfin
     ///     z (_Function_)
     ///         the extrapolated function (to be computed)
     ///
-    ///     bcs (std::vector<_BoundaryCondition_>)
+    ///     bcs (std::vector<_DirichletBC_>)
     ///         the dual boundary conditions
     void compute_extrapolation(const Function& z,
-         const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);
+         const std::vector<boost::shared_ptr<const DirichletBC> > bcs);
 
     friend const ErrorControl& adapt(const ErrorControl& ec,
                                      boost::shared_ptr<const Mesh> adapted_mesh,
@@ -202,7 +201,7 @@ namespace dolfin
 
   private:
 
-    void apply_bcs_to_extrapolation(const std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);
+    void apply_bcs_to_extrapolation(const std::vector<boost::shared_ptr<const DirichletBC> > bcs);
 
     // Bilinear and linear form for dual problem
     boost::shared_ptr<Form> _a_star;

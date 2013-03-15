@@ -75,9 +75,10 @@ void DofMapBuilder::build(DofMap& dofmap, const Mesh& mesh,
   // Check if dofmap is distributed
   const bool distributed = MPI::num_processes() > 1;
 
-  // Determine dof block size
+  // Determine and set dof block size
   dolfin_assert(dofmap._ufc_dofmap);
   const std::size_t block_size = compute_blocksize(*dofmap._ufc_dofmap);
+  dofmap.block_size = block_size;
 
   // Re-order dofmap when distributed for process locality and set
   // local_range
@@ -508,6 +509,9 @@ void DofMapBuilder::build_ufc_dofmap(DofMap& dofmap,
   // Holder for UFC 64-bit dofmap integers
   std::vector<std::size_t> ufc_dofs;
 
+  // Get standard local element dimension
+  const std::size_t local_dim = dofmap._ufc_dofmap->local_dimension();
+
   // Build dofmap from ufc::dofmap
   UFCCell ufc_cell(mesh);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -530,9 +534,6 @@ void DofMapBuilder::build_ufc_dofmap(DofMap& dofmap,
     // FIXME: Check the below two for local vs global
     ufc_cell.entity_indices[D][0] = cell->index();
     ufc_cell.index = cell->index();
-
-    // Get standard local element dimension
-    const std::size_t local_dim = dofmap._ufc_dofmap->local_dimension(ufc_cell);
 
     // Get container for cell dofs
     std::vector<dolfin::la_index>& cell_dofs = dofmap._dofmap[cell->index()];

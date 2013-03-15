@@ -78,7 +78,7 @@ if has_linear_algebra_backend("PETSc"):
 if __name__ == "__main__":
 
     # Turn off DOLFIN output
-    set_log_active(False)
+    set_log_active(True)
 
     print ""
     print "Testing DOLFIN la/KrylovSolver interface"

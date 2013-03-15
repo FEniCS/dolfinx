@@ -57,10 +57,13 @@ void STLMatrix::init(const TensorLayout& tensor_layout)
                  "Primary storage dim of matrix and tensot layout must be the same");
   }
 
-  //primary_dim = sparsity_pattern.primary_dim();
+  // Set co-dimension
   std::size_t primary_codim = 1;
   if (_primary_dim == 1)
     primary_codim = 0;
+
+  // Set block size
+  _block_size = tensor_layout.block_size;
 
   _local_range = tensor_layout.local_range(_primary_dim);
   num_codim_entities = tensor_layout.size(primary_codim);
@@ -310,7 +313,9 @@ void STLMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
   dolfin_assert(row < _local_range.second && row >= _local_range.first);
   const std::size_t local_row = row - _local_range.first;
   dolfin_assert(local_row < _values.size());
+
   columns.resize(_values[local_row].size());
+
   values.resize(_values[local_row].size());
   for (std::size_t i = 0; i < _values.size(); ++i)
   {
@@ -391,7 +396,7 @@ std::string STLMatrix::str(bool verbose) const
       // Set precision
       std::stringstream line;
       line << std::setiosflags(std::ios::scientific);
-      line << std::setprecision(16);
+      line << std::setprecision(1);
 
       // Format matrix
       line << "|";

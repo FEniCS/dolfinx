@@ -257,6 +257,21 @@ if (DOLFIN_ENABLE_VTK AND VTK_FOUND)
     endif()
   endif()
 
+  # Check if the VTK-Exodus library is found.
+  # Normally, it should be included in libvtkParallel.so (check out the output
+  # of
+  #     $ nm -D /usr/lib/libvtkParallel.so | grep ExodusIIWriter
+  # but on some systems, this doesn't seem to be the case. Check if the
+  # appropriate header exists and store this information in HAS_VTK_EXODUS.
+  include(CheckIncludeFileCXX)
+  set(CMAKE_REQUIRED_INCLUDES "${VTK_INCLUDE_DIRS}")
+  CHECK_INCLUDE_FILE_CXX(vtkExodusIIWriter.h  HAS_VTK_EXODUS)
+  if(HAS_VTK_EXODUS)
+    list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_VTK_EXODUS")
+  else()
+    message(STATUS "vtkExodusIIWriter not found, disabling Exodus file writing")
+  endif()
+
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${DOLFIN_VTK_LIBRARIES})
 endif()
 
