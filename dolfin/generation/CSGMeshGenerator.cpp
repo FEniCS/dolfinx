@@ -18,7 +18,7 @@
 // Modified by Joachim B Haga 2012
 //
 // First added:  2012-01-01
-// Last changed: 2012-09-05
+// Last changed: 2013-03-15
 
 
 #include <dolfin/log/log.h>
@@ -40,6 +40,7 @@ void CSGMeshGenerator::generate(Mesh& mesh,
   if (geometry.dim() == 2)
   {
     CSGCGALMeshGenerator2D generator(geometry);
+    generator.parameters["mesh_resolution"] = static_cast<int>(resolution);
     generator.generate(mesh);
   }
   else if (geometry.dim() == 3)
