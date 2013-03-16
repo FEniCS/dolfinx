@@ -56,7 +56,7 @@ class HarmonicSmoothingTest(unittest.TestCase):
 
         # Check mesh quality
         magic_number = 0.35
-        self.assertGreater(mesh.radius_ratio_min(), magic_number)
+        self.assertTrue(mesh.radius_ratio_min()>magic_number)
 
 if MPI.num_processes() == 1:
 
@@ -101,7 +101,7 @@ if MPI.num_processes() == 1:
             # If test passes here then it is probably working
             # Check for cell quality for sure
             magic_number = 0.28
-            self.assertGreater(mesh.radius_ratio_min(), magic_number)
+            self.assertTrue(mesh.radius_ratio_min() > magic_number)
 
 
 if __name__ == "__main__":
