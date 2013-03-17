@@ -92,6 +92,7 @@
 %shared_ptr(dolfin::LinearVariationalSolver)
 %shared_ptr(dolfin::NonlinearVariationalSolver)
 %shared_ptr(dolfin::VariationalProblem)
+%shared_ptr(dolfin::PointIntegralSolver)
 
 %shared_ptr(dolfin::Hierarchical<dolfin::DirichletBC>)
 %shared_ptr(dolfin::DirichletBC)

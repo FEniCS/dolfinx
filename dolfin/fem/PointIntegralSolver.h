@@ -16,14 +16,16 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-03-05
+// Last changed: 2013-03-15
 
 #ifndef __POINTINTEGRALSOLVER_H
 #define __POINTINTEGRALSOLVER_H
 
 #include <vector>
+#include <armadillo>
 #include <boost/shared_ptr.hpp>
 
+#include <dolfin/common/Variable.h>
 #include <dolfin/function/FunctionAXPY.h>
 
 #include "Assembler.h"
@@ -40,7 +42,7 @@ namespace dolfin
   class ButcherScheme;
   class UFC;
 
-  class PointIntegralSolver
+  class PointIntegralSolver : public Variable
   {
   public:
 
@@ -75,6 +77,14 @@ namespace dolfin
 
     // Solution coefficient index in form
     std::vector<std::vector<int> > _coefficient_index;
+
+    // Flag for retabulation of J
+    bool _retabulate_J;
+    
+    // Jacobian and LU factorized jacobian matrices
+    arma::mat _J;
+    arma::mat _J_L;
+    arma::mat _J_U;
 
   };
 
