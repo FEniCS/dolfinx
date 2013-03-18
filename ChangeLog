@@ -1,3 +1,4 @@
+ - Add set_options_prefix to PETScKrylovSolver
  - Remove base class BoundarCondition
  - Set block size for PETScMatrix when available from TensorLayout
  - Add support to get block compressed format from STLMatrix
