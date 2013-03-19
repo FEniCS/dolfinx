@@ -49,6 +49,7 @@ NonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> proble
   // Set parameters
   parameters = default_parameters();
 }
+
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, bool>  NonlinearVariationalSolver::solve()
 {
@@ -108,7 +109,14 @@ std::pair<std::size_t, bool>  NonlinearVariationalSolver::solve()
     // Solve nonlinear problem using PETSc's SNES
     dolfin_assert(u->vector());
     dolfin_assert(nonlinear_problem);
+    if (_problem->has_lower_bound() && _problem->has_upper_bound())
+    {
+    ret = snes_solver->solve(*nonlinear_problem, *u->vector(), *_problem->lower_bound(), *_problem->upper_bound());
+    }
+    else
+    {
     ret = snes_solver->solve(*nonlinear_problem, *u->vector());
+    }
   }
 #endif
   else

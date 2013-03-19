@@ -32,6 +32,7 @@ namespace dolfin
   class Function;
   class FunctionSpace;
   class DirichletBC;
+  class GenericVector;
 
   /// This class represents a nonlinear variational problem:
   ///
@@ -103,6 +104,22 @@ namespace dolfin
                                 std::vector<boost::shared_ptr<const DirichletBC> > bcs,
                                 boost::shared_ptr<const Form> J);
 
+    /// Set the bounds for bound constrained solver
+    void set_bounds(boost::shared_ptr<const GenericVector> lb,
+                    boost::shared_ptr<const GenericVector> ub);
+    
+    /// Set the bounds for bound constrained solver
+    void set_bounds(const GenericVector& lb,
+                    const GenericVector& lu);
+    
+    /// Set the bounds for bound constrained solver
+    void set_bounds(boost::shared_ptr<const Function> lb_func,
+                    boost::shared_ptr<const Function> ub_func);
+    
+    /// Set the bounds for bound constrained solver
+    void set_bounds(const Function& lb_func,
+                    const Function& lu_func);
+    
     /// Return residual form
     boost::shared_ptr<const Form> residual_form() const;
 
@@ -123,9 +140,21 @@ namespace dolfin
 
     /// Return test space
     boost::shared_ptr<const FunctionSpace> test_space() const;
+    
+    /// Return lower bound 
+    boost::shared_ptr<const GenericVector> lower_bound() const;
 
+    /// Return upper bound 
+    boost::shared_ptr<const GenericVector> upper_bound() const;
+    
     /// Check whether Jacobian has been defined
     bool has_jacobian() const;
+    
+    /// Check whether lower bound has been defined
+    bool has_lower_bound() const; 
+    
+    /// Check whether upper bound have has defined
+    bool has_upper_bound() const;
 
   private:
 
@@ -144,6 +173,9 @@ namespace dolfin
     // The boundary conditions
     std::vector<boost::shared_ptr<const DirichletBC> > _bcs;
 
+    // The lower and upper bounds (pointers may be zero if not provided)
+    boost::shared_ptr<const GenericVector> _lb;
+    boost::shared_ptr<const GenericVector> _ub;
   };
 
 }

@@ -92,6 +92,51 @@ Read from file
 %feature("docstring")  dolfin::File::operator<< "
 **Overloaded versions**
 
+* operator<<\ (Mesh*, mesh)
+
+  Write Mesh to file with time
+  
+  *Example*
+      .. note::
+      
+          No example code available for this function.
+
+* operator<<\ (MeshFunction<int>*, f)
+
+  Write MeshFunction to file with time
+  
+  *Example*
+      .. note::
+      
+          No example code available for this function.
+
+* operator<<\ (f)
+
+  Write MeshFunction to file with time
+  
+  *Example*
+      .. note::
+      
+          No example code available for this function.
+
+* operator<<\ (MeshFunction<double>*, f)
+
+  Write MeshFunction to file with time
+  
+  *Example*
+      .. note::
+      
+          No example code available for this function.
+
+* operator<<\ (MeshFunction<bool>*, f)
+
+  Write MeshFunction to file with time
+  
+  *Example*
+      .. note::
+      
+          No example code available for this function.
+
 * operator<<\ (Function*, u)
 
   Write Function to file with time

@@ -57,6 +57,8 @@ struct snes_ctx_t
 {
   NonlinearProblem* nonlinear_problem;
   PETScVector* dx;
+  const PETScVector* xl;
+  const PETScVector* xu;
 };
 
 #if PETSC_VERSION_RELEASE
@@ -194,7 +196,7 @@ void PETScSNESSolver::init(const std::string& method)
 
   // Set some options
   SNESSetFromOptions(*_snes);
-
+  
   // Set solver type
   if (method != "default")
   {
@@ -203,7 +205,39 @@ void PETScSNESSolver::init(const std::string& method)
     dolfin_assert(it != _methods.end());
     SNESSetType(*_snes, it->second.second);
   }
+  
+  // Set to default to not having explicit bounds
+  has_explicit_bounds = false;
 }
+//-----------------------------------------------------------------------------
+std::pair<std::size_t, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
+                                                  GenericVector& x,
+                                                  const GenericVector&  lb,
+                                                  const GenericVector&  ub)
+{
+  std::string sign = parameters["sign"];
+  
+  if (sign != "default") 
+  {
+    dolfin_error("PETScSNESSolver.cpp",
+                 "Set variational inequality bounds",
+                 "Both the sign parameter and the explicit bounds are set. Use either the sign parameter OR the explicit bound settings");
+  }
+  
+  // Check size of the bound vectors
+  dolfin_assert(lb->size() == x->size());
+  dolfin_assert(ub->size() == x->size());
+  
+  // Set the bounds
+  boost::shared_ptr<const PETScVector> _ub(&ub.down_cast<PETScVector>(), NoDeleter());
+  boost::shared_ptr<const PETScVector> _lb(&lb.down_cast<PETScVector>(), NoDeleter());
+  this->lb = _lb;
+  this->ub = _ub;
+  has_explicit_bounds = true;
+  
+  solve(nonlinear_problem, x);
+}
+
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
                                                   GenericVector& x)
@@ -468,8 +502,8 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
   // PETSc the bounds.
 
   std::string sign = parameters["sign"];
-
-  if (sign != "default")
+  
+  if ((sign != "default") or (has_explicit_bounds == true))
   {
     std::string method = parameters["method"];
     if (method != std::string("virs") &&
@@ -480,35 +514,43 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
                    "set variational inequality bounds",
                    "Need to use virs or viss methods if bounds are set");
     }
-
-    Vec ub;
-    Vec lb;
-
-    PETScVector dx = x.down_cast<PETScVector>();
-    VecDuplicate(*dx.vec(), &ub);
-    VecDuplicate(*dx.vec(), &lb);
-
-    if (sign == "nonnegative")
-    {
-      VecSet(lb, 0.0);
-      VecSet(ub, SNES_VI_INF);
-    }
-    else if (sign == "nonpositive")
-    {
-      VecSet(ub, 0.0);
-      VecSet(lb, SNES_VI_NINF);
-    }
-    else
-    {
-      dolfin_error("PETScSNESSolver.cpp",
-                   "set PETSc SNES solver bounds",
-                   "Unknown bound type \"%s\"", sign.c_str());
-    }
-
-    SNESVISetVariableBounds(*_snes, lb, ub);
-
-    VecDestroy(&ub);
-    VecDestroy(&lb);
+   if (sign != "default") 
+   {
+     Vec ub;
+     Vec lb;
+  
+     PETScVector dx = x.down_cast<PETScVector>();
+     VecDuplicate(*dx.vec(), &ub);
+     VecDuplicate(*dx.vec(), &lb);
+  
+     if (sign == "nonnegative")
+     {
+       VecSet(lb, 0.0);
+       VecSet(ub, SNES_VI_INF);
+     }
+     else if (sign == "nonpositive")
+     {
+       VecSet(ub, 0.0);
+       VecSet(lb, SNES_VI_NINF);
+     }
+     else
+     {
+       dolfin_error("PETScSNESSolver.cpp",
+                    "set PETSc SNES solver bounds",
+                    "Unknown bound type \"%s\"", sign.c_str());
+     }
+     
+     SNESVISetVariableBounds(*_snes, lb, ub);
+  
+     VecDestroy(&ub);
+     VecDestroy(&lb);
+   }
+   else if (has_explicit_bounds == true)
+   {  
+     const PETScVector*        lb = this->lb.get();
+     const PETScVector*        ub = this->ub.get();
+     SNESVISetVariableBounds(*_snes, *(lb->vec()).get(), *(ub->vec()).get());
+   }
   }
 }
 //-----------------------------------------------------------------------------

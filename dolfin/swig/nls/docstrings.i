@@ -142,19 +142,43 @@ Create SNES solver for a particular method
 ";
 
 %feature("docstring")  dolfin::PETScSNESSolver::solve "
-Solve abstract nonlinear problem :math:`F(x) = 0` for given
-:math:`F` and Jacobian :math:`\dfrac{\partial F}{\partial x}`.
+**Overloaded versions**
 
-*Arguments*
-    nonlinear_function (:py:class:`NonlinearProblem`)
-        The nonlinear problem.
-    x (:py:class:`GenericVector`)
-        The vector.
+* solve\ (nonlinear_problem, x, lb, ub)
 
-*Returns*
-    std::pair<std::size_t, bool>
-        Pair of number of Newton iterations, and whether
-        iteration converged)
+  Solve abstract nonlinear problem :math:`F(x) = 0` under the
+  bound constraint :math:'xl \leq x \leq xu' for given
+  :math:`F` and Jacobian :math:`\dfrac{\partial F}{\partial x}`.
+  
+  *Arguments*
+      nonlinear_function (:py:class:`NonlinearProblem`)
+          The nonlinear problem.
+      x (:py:class:`GenericVector`)
+          The vector.
+      lb (:py:class:`GenericVector`)
+          The lower bound.
+      ub (:py:class:`GenericVector`)
+          The upper bound.
+  *Returns*
+      std::pair<std::size_t, bool>
+          Pair of number of Newton iterations, and whether
+          iteration converged)
+
+* solve\ (nonlinear_function, x)
+
+  Solve abstract nonlinear problem :math:`F(x) = 0` for given
+  :math:`F` and Jacobian :math:`\dfrac{\partial F}{\partial x}`.
+  
+  *Arguments*
+      nonlinear_function (:py:class:`NonlinearProblem`)
+          The nonlinear problem.
+      x (:py:class:`GenericVector`)
+          The vector.
+  
+  *Returns*
+      std::pair<std::size_t, bool>
+          Pair of number of Newton iterations, and whether
+          iteration converged)
 ";
 
 %feature("docstring")  dolfin::PETScSNESSolver::methods "

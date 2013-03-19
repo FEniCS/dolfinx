@@ -28,7 +28,10 @@ only one of these is of physical relevance -- the positive solution.
 This unit test demonstrates the capability of the SNES solver to accept bounds
 on the resulting solution. The plain Newton method converges to an unphysical
 negative solution, while the SNES solution with {sign: nonnegative} converges
-to the physical positive solution.
+to the physical positive solution. 
+
+An alternative interface to SNESVI allows the user to set explicitly more complex
+bounds as GenericVectors or Function. 
 """
 
 from dolfin import *
@@ -56,6 +59,11 @@ F = (8*inner(grad(u), grad(v))*dx +
      rho * inner(u**5, v)*dx +
      (-1.0/8.0)*inner(u, v)*dx)
 
+du = TrialFunction(V)
+J=derivative(F,u,du)
+lb=Function(interpolate(Constant(0.),V))
+ub=Function(interpolate(Constant(100.),V))
+
 newton_solver_parameters = {"nonlinear_solver": "newton",
                             "linear_solver": "lu",
                             "newton_solver": {"maximum_iterations": 100,
@@ -65,6 +73,12 @@ snes_solver_parameters = {"nonlinear_solver": "snes",
                           "linear_solver": "lu",
                           "snes_solver": {"maximum_iterations": 100,
                                           "sign": "nonnegative",
+                                          "report": False}}
+                                          
+snes_solver_parameters_bounds = {"nonlinear_solver": "snes",
+                          "linear_solver": "lu",
+                          "snes_solver": {"maximum_iterations": 100,
+                                          "sign": "default",
                                           "report": False}}
 
 class SNESSolverTester(unittest.TestCase):
@@ -76,6 +90,23 @@ class SNESSolverTester(unittest.TestCase):
   def test_newton_solver(self):
     solve(F == 0, u, bcs, solver_parameters=newton_solver_parameters)
     self.assertTrue(u.vector().min() < 0)
+  
+  def test_snes_solver_bound_functions(self):
+    problem = NonlinearVariationalProblem(F, u, bcs, J)
+    problem.set_bounds(lb,ub)
+    solver = NonlinearVariationalSolver(problem)
+    solver.parameters.update(snes_solver_parameters_bounds)
+    solver.solve()
+    self.assertTrue(u.vector().min() >= 0)
+
+  def test_snes_solver_bound_vectors(self):
+    problem = NonlinearVariationalProblem(F, u, bcs, J)
+    problem.set_bounds(lb.vector(),ub.vector())
+    solver = NonlinearVariationalSolver(problem)
+    solver.parameters.update(snes_solver_parameters_bounds)
+    solver.solve()
+    self.assertTrue(u.vector().min() >= 0)
+
 
 if __name__ == "__main__":
   # Turn off DOLFIN output
