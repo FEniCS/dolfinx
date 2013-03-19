@@ -26,8 +26,9 @@
 #include "Mesh.h"
 #include "BoundaryMesh.h"
 #include "Vertex.h"
-#include "Cell.h"
+#include "Edge.h"
 #include "Facet.h"
+#include "Cell.h"
 #include "MeshData.h"
 #include "SubDomain.h"
 #include "MeshSmoothing.h"
@@ -41,6 +42,9 @@ void MeshSmoothing::smooth(Mesh& mesh, std::size_t num_iterations)
 
   // Make sure we have cell-facet connectivity
   mesh.init(mesh.topology().dim(), mesh.topology().dim() - 1);
+
+  // Make sure we have vertex-edge connectivity
+  mesh.init(0, 1);
 
   // Make sure the mesh is ordered
   mesh.order();
@@ -74,15 +78,24 @@ void MeshSmoothing::smooth(Mesh& mesh, std::size_t num_iterations)
       // Compute center of mass of neighboring vertices
       for (std::size_t i = 0; i < d; i++) xx[i] = 0.0;
       std::size_t num_neighbors = 0;
-      for (VertexIterator vn(*v); !vn.end(); ++vn)
+      for (EdgeIterator e(*v); !e.end(); ++e)
       {
+        // Get the other vertex
+        dolfin_assert(e->num_entities(0) == 2);
+        std::size_t other_index = e->entities(0)[0];
+        if (other_index == v->index())
+          other_index = e->entities(0)[1];
+
+        // Create the vertex
+        Vertex vn(mesh, other_index);
+
         // Skip the vertex itself
-        if (v->index() == vn->index())
+        if (v->index() == vn.index())
           continue;
         num_neighbors += 1;
 
         // Compute center of mass
-        const double* xn = vn->x();
+        const double* xn = vn.x();
         for (std::size_t i = 0; i < d; i++)
           xx[i] += xn[i];
       }
