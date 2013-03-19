@@ -110,7 +110,7 @@ namespace dolfin
     
     /// Set the bounds for bound constrained solver
     void set_bounds(const GenericVector& lb,
-                    const GenericVector& lu);
+                    const GenericVector& ub);
     
     /// Set the bounds for bound constrained solver
     void set_bounds(boost::shared_ptr<const Function> lb_func,
@@ -118,7 +118,7 @@ namespace dolfin
     
     /// Set the bounds for bound constrained solver
     void set_bounds(const Function& lb_func,
-                    const Function& lu_func);
+                    const Function& ub_func);
     
     /// Return residual form
     boost::shared_ptr<const Form> residual_form() const;

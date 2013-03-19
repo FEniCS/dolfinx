@@ -208,6 +208,6 @@ The callback for PETSc to compute A, the Jacobian
 %feature("docstring")  dolfin::PETScSNESSolver::set_bounds "
 Set the bounds on the problem from the parameters, if desired
 Here, x is passed in as a model vector from which we make our Vecs
-that tell PETSc the bounds.
+that tell PETSc the bounds if the \"sign\" parameter is used.
 ";
 

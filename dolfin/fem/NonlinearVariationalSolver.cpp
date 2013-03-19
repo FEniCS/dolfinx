@@ -49,7 +49,34 @@ NonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> proble
   // Set parameters
   parameters = default_parameters();
 }
-
+//-----------------------------------------------------------------------------
+std::pair<std::size_t, bool> NonlinearVariationalSolver::solve(const GenericVector& lb,
+                                                               const GenericVector& ub)
+{
+this->_problem->set_bounds(lb,ub);
+solve();
+}   
+//-----------------------------------------------------------------------------
+std::pair<std::size_t, bool> NonlinearVariationalSolver::solve(boost::shared_ptr<const GenericVector> lb,
+                                       boost::shared_ptr<const GenericVector> ub)
+{
+this->_problem->set_bounds(lb,ub);
+solve();
+}         
+//-----------------------------------------------------------------------------
+std::pair<std::size_t, bool> NonlinearVariationalSolver::solve(const Function& lb,
+                                                               const Function& ub)
+{
+this->_problem->set_bounds(lb,ub);
+solve();
+}   
+//-----------------------------------------------------------------------------
+std::pair<std::size_t, bool> NonlinearVariationalSolver::solve(boost::shared_ptr<const Function> lb,
+                                       boost::shared_ptr<const Function> ub)
+{
+this->_problem->set_bounds(lb,ub);
+solve();
+}                                       
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, bool>  NonlinearVariationalSolver::solve()
 {

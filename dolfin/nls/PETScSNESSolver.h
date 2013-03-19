@@ -120,15 +120,18 @@ namespace dolfin
 
     /// Set the bounds on the problem from the parameters, if desired
     /// Here, x is passed in as a model vector from which we make our Vecs
-    /// that tell PETSc the bounds.
+    /// that tell PETSc the bounds if the "sign" parameter is used.
     void set_bounds(GenericVector& x);
+    
+    // Check if the problem is a variational inequality
+    bool is_vi();   
     
     // Upper and lower bounds for bound-constrained solvers
     boost::shared_ptr<const PETScVector> lb;
     boost::shared_ptr<const PETScVector> ub;   
     
     // Flag to indicate if explicit bounds are set 
-    bool has_explicit_bounds;   
+    bool has_explicit_bounds; 
 
   };
 
