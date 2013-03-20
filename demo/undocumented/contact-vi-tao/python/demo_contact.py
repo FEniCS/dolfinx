@@ -1,6 +1,6 @@
 """This demo program uses of the interface to TAO solver for variational inequalities 
  to solve a contact mechanics problems in FEnics. 
-The example considers a heavy elastic circle in a box of the same diameter"""
+The example considers a heavy elastic circle in a box of the same size"""
 # Copyright (C) 2012 Corrado Maurini
 #
 # This file is part of DOLFIN.
@@ -21,13 +21,9 @@ The example considers a heavy elastic circle in a box of the same diameter"""
 # Modified by Corrado Maurini 2013
 #
 # First added:  2012-09-03
-# Last changed: 2013-03-13
+# Last changed: 2013-03-20
 # 
 from dolfin import *
-
-if not has_cgal():
-    print "DOLFIN must be compiled with CGAL to run this demo."
-    exit(0) 
 
 # Create mesh
 mesh = UnitCircleMesh(30)
@@ -56,20 +52,14 @@ F = inner(sigma(eps(u)), eps(w))*dx - dot(f, w)*dx
 # Extract bilinear and linear forms from F
 a, L = lhs(F), rhs(F)
 
-# Boundary condition (null horizontal displacement of the center)
-tol=mesh.hmin()/4
-def center(x):
-    return x[0]**2+x[1]**2 < tol**2
-bc = DirichletBC(V.sub(0), 0., center,method="pointwise")
-
 # Assemble the linear system
-A, b = assemble_system(a, L, bc)
+A, b = assemble_system(a, L)
 
 # Define the constraints for the displacement 
 # The displacement u must be such that the current configuration x+u
 # does dot escape the xbox [xmin,xmax]x[umin,ymax]
-constraint_u = Expression( ("xmax-x[0]","ymax-x[1]"), xmax =  2., ymax =  2.)
-constraint_l = Expression( ("xmin-x[0]","ymin-x[1]"), xmin = -2., ymin = -1.)
+constraint_u = Expression( ("xmax-x[0]","ymax-x[1]"), xmax =  1., ymax =  1.)
+constraint_l = Expression( ("xmin-x[0]","ymin-x[1]"), xmin = -1., ymin = -1.)
 u_min = interpolate(constraint_l, V)
 u_max = interpolate(constraint_u, V)
 
