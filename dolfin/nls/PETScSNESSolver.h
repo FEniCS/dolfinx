@@ -15,9 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Corrado Maurini, 2013.
 //
 // First added:  2012-10-13
-// Last changed: 2012-12-05
+// Last changed: 2013-03-20
 
 #ifndef __PETSC_SNES_SOLVER_H
 #define __PETSC_SNES_SOLVER_H

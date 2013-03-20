@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Corrado Maurini, 2013.
+//
 // First added:  2011-06-22
-// Last changed: 2011-07-17
+// Last changed: 2013-03-20
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/Function.h>
@@ -166,7 +168,7 @@ void NonlinearVariationalProblem::set_bounds(boost::shared_ptr<const GenericVect
 {   
     this->_lb = lb;
     this->_ub = ub;
-    dolfin_assert(_lb); // TODO: Check the dimension here ! 
+    dolfin_assert(_lb); 
     dolfin_assert(_ub);
 }
 //-----------------------------------------------------------------------------

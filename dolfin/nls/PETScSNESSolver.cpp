@@ -15,9 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Corrado Maurini, 2013.
 //
 // First added:  2012-10-13
-// Last changed: 2012-12-05
+// Last changed: 2013-03-20
 
 #ifdef HAS_PETSC
 
@@ -226,7 +227,7 @@ std::pair<std::size_t, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear_
   {
     dolfin_error("PETScSNESSolver.cpp",
                  "assigning upper and lower bounds",
-                 "The size of the given upper and lower bounds is different from the size of the solution vector");
+                 "The size of the bounds is different from the size of the solution vector");
   }
   
   // Set the bounds
@@ -558,7 +559,7 @@ bool PETScSNESSolver::is_vi()
   {
     dolfin_error("PETScSNESSolver.cpp",
                  "Set variational inequality bounds",
-                 "Both the sign parameter and the explicit bounds are set.");
+                 "Both the sign parameter and the explicit bounds are set");
   }
   else if ((std::string(parameters["sign"]) != "default") or (this->has_explicit_bounds == true))
   {

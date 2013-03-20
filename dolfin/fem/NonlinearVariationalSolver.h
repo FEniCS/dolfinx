@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Marie E. Rognes, 2011.
+// Modified by Corrado Maurini, 2013.
 //
 // First added:  2011-01-14 (2008-12-26 as VariationalProblem.h)
-// Last changed: 2011-10-20
+// Last changed: 2013-03-20
 
 #ifndef __NONLINEAR_VARIATIONAL_SOLVER_H
 #define __NONLINEAR_VARIATIONAL_SOLVER_H

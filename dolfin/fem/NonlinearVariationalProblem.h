@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Corrado Maurini, 2013.
+//
 // First added:  2011-06-22
-// Last changed: 2012-08-17
+// Last changed: 2013-03-20
 
 #ifndef __NONLINEAR_VARIATIONAL_PROBLEM_H
 #define __NONLINEAR_VARIATIONAL_PROBLEM_H
