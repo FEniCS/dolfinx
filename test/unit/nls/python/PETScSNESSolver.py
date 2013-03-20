@@ -101,7 +101,7 @@ class SNESSolverTester(unittest.TestCase):
   def test_snes_solver_bound_vectors(self):
     problem = NonlinearVariationalProblem(F, u, bcs, J)
     solver  = NonlinearVariationalSolver(problem)
-    #solver.parameters.update(snes_solver_parameters_bounds)
+    solver.parameters.update(snes_solver_parameters_bounds)
     solver.solve(lb.vector(), ub.vector())
     self.assertTrue(u.vector().min() >= 0)
 

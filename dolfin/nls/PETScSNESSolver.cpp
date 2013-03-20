@@ -36,6 +36,10 @@
 #include <dolfin/la/PETScLUSolver.h>
 #include <dolfin/la/PETScPreconditioner.h>
 #include "NonlinearProblem.h"
+#include <dolfin/common/timing.h>
+#include <dolfin/common/Timer.h>
+
+
 
 using namespace dolfin;
 
@@ -242,7 +246,8 @@ std::pair<std::size_t, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear_
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
                                                   GenericVector& x)
-{
+{ 
+  Timer timer("SNES solver");
   PETScVector f;
   PETScMatrix A;
   PetscInt its;
