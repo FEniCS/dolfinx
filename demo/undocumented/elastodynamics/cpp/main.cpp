@@ -114,8 +114,8 @@ int main(int argc, char* argv[])
 {
   init(argc, argv);
 
-  // Create Mesh
-  Mesh mesh("dolfin-2.xml.gz");
+  // Create mesh
+  Mesh mesh("../dolfin-2.xml.gz");
 
   // Create function space
   ElastoDynamics::FunctionSpace V(mesh);

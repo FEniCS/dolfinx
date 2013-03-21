@@ -31,7 +31,7 @@
 from dolfin import *
 
 # Load mesh and subdomains
-mesh = Mesh("dolfin-2.xml.gz")
+mesh = Mesh("../dolfin-2.xml.gz")
 sub_domains = MeshFunction("size_t", mesh, "../subdomains.xml.gz");
 
 # Define function spaces
