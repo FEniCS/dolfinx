@@ -50,7 +50,7 @@ class Fish : public SubDomain
 int main()
 {
   // Read mesh from file
-  Mesh mesh("../mesh.xml.gz");
+  Mesh mesh("../dolfin-2.xml.gz");
 
   // Read velocity field from file
   Functionals::CoefficientSpace_p Vp(mesh);

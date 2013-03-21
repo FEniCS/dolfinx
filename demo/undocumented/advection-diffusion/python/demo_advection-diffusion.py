@@ -40,7 +40,7 @@ def boundary_value(n):
         return 1.0
 
 # Load mesh and subdomains
-mesh = Mesh("../mesh.xml.gz")
+mesh = Mesh("../dolfin-2.xml.gz")
 sub_domains = MeshFunction("size_t", mesh, "../subdomains.xml.gz");
 h = CellSize(mesh)
 

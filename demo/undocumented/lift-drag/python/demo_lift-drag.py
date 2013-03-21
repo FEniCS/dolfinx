@@ -35,7 +35,7 @@ forces).
 from dolfin import *
 
 # Read the mesh from file
-mesh =  Mesh("../mesh.xml.gz")
+mesh =  Mesh("../dolfin-2.xml.gz")
 
 # Create FunctionSpace for pressure field
 Vp = FunctionSpace(mesh, "CG", 1)

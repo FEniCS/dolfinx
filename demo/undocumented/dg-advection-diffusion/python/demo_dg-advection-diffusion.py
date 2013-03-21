@@ -31,7 +31,7 @@ class DirichletBoundary(SubDomain):
         return abs(x[0] - 1.0) < DOLFIN_EPS and on_boundary
 
 # Load mesh
-mesh = Mesh("../mesh.xml.gz")
+mesh = Mesh("../unitsquare_64_64.xml.gz")
 
 # Defining the function spaces
 V_dg = FunctionSpace(mesh, "DG", 1)
