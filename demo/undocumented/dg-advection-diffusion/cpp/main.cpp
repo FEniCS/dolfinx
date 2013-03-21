@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
   Velocity::FunctionSpace V_u(mesh);
 
   // Create velocity function
-  Function u(V_u, "../velocity.xml.gz");
+  Function u(V_u, "../unitsquare_64_64_velocity.xml.gz");
 
   // Diffusivity
   Constant c(0.0);

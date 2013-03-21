@@ -54,7 +54,7 @@ int main()
 
   // Read velocity field from file
   Functionals::CoefficientSpace_p Vp(mesh);
-  Function p(Vp, "../pressure.xml.gz");
+  Function p(Vp, "../dolfin-2-pressure.xml.gz");
 
   // Functionals for lift and drag
   Functionals::Form_lift L(mesh, p);

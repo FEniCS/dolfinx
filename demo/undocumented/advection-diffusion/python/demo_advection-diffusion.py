@@ -41,7 +41,7 @@ def boundary_value(n):
 
 # Load mesh and subdomains
 mesh = Mesh("../dolfin-2.xml.gz")
-sub_domains = MeshFunction("size_t", mesh, "../subdomains.xml.gz");
+sub_domains = MeshFunction("size_t", mesh, "../dolfin-2-subdomains.xml.gz");
 h = CellSize(mesh)
 
 # Create FunctionSpaces
@@ -50,7 +50,7 @@ V = VectorFunctionSpace(mesh, "CG", 2)
 
 # Create velocity Function from file
 velocity = Function(V);
-File("../velocity.xml.gz") >> velocity
+File("../dolfin-2-velocity.xml.gz") >> velocity
 
 # Initialise source function and previous solution function
 f  = Constant(0.0)

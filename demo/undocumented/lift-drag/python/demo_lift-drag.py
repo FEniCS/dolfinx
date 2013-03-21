@@ -39,7 +39,7 @@ mesh =  Mesh("../dolfin-2.xml.gz")
 
 # Create FunctionSpace for pressure field
 Vp = FunctionSpace(mesh, "CG", 1)
-p = Function(Vp, "../pressure.xml.gz")
+p = Function(Vp, "../dolfin-2-pressure.xml.gz")
 
 # Define sub domain for the dolphin
 class Fish(SubDomain):

@@ -41,11 +41,11 @@ int main(int argc, char *argv[])
 
   // Create velocity function
   Function velocity(V_u);
-  XMLFile file_u("../velocity.xml.gz");
+  XMLFile file_u("../dolfin-2-velocity.xml.gz");
   file_u >> velocity;
 
   // Read sub domain markers
-  MeshFunction<std::size_t> sub_domains(mesh, "../subdomains.xml.gz");
+  MeshFunction<std::size_t> sub_domains(mesh, "../dolfin-2-subdomains.xml.gz");
 
   // Create function space
   AdvectionDiffusion::FunctionSpace V(mesh);
