@@ -34,7 +34,7 @@ import numpy
 #mesh = BoundaryMesh(ball)
 #file = File("sphere16.xml")
 #file << mesh
-mesh = Mesh("sphere16.xml")
+mesh = Mesh("sphere16.xml.gz")
 
 # Define global normal
 global_normal = Expression(("x[0]", "x[1]", "x[2]"))

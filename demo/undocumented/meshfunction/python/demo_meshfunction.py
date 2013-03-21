@@ -28,12 +28,12 @@ from dolfin import *
 mesh = Mesh("../mesh2D.xml.gz")
 
 # Read mesh function from file
-file_in = File("../meshfunction.xml")
+file_in = File("../meshfunction.xml.gz")
 f = MeshFunction("double", mesh)
 file_in >> f
 
 # Write mesh function to file
-out = File("meshfunction_out.xml");
+out = File("meshfunction_out.xml.gz");
 out << f
 
 # Plot mesh function

@@ -43,7 +43,7 @@ parameters["allow_extrapolation"] = True
 nu = Constant(0.02)
 
 # Mesh
-mesh = Mesh("channel_with_flap.xml")
+mesh = Mesh("channel_with_flap.xml.gz")
 
 # Define function spaces (Taylor-Hood)
 V = VectorFunctionSpace(mesh, "CG", 2)

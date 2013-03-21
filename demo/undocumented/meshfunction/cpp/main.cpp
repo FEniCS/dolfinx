@@ -29,12 +29,12 @@ int main()
   Mesh mesh("../mesh2D.xml.gz");
 
   // Read mesh function from file (new style)
-  File in("../meshfunction.xml");
+  File in("../meshfunction.xml.gz");
   MeshFunction<double> f(mesh);
   in >> f;
 
   // Write mesh function to file (new style)
-  File out("meshfunction_out.xml");
+  File out("meshfunction_out.xml.gz");
   out << f;
 
   // Plot mesh function
