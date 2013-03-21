@@ -1,3 +1,4 @@
+ - Remove DOLFIN wrapper code (moved to FFC)
  - Add set_options_prefix to PETScKrylovSolver
  - Remove base class BoundarCondition
  - Set block size for PETScMatrix when available from TensorLayout
