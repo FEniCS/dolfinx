@@ -199,12 +199,14 @@ class AbstractBaseTest(object):
         self.assertAlmostEqual(A0_norm_0, A0_norm_1)
 
     def test_ident_zeros_AND_keep_diagonal(self):
+
         A, B = self.assemble_matrices()
-        if self.backend=="PETSc":
+        if self.backend[0:5] == "PETSc":
           # FIXME: how to supress catched PETSc error output?
           self.assertRaises(RuntimeError, A.ident_zeros)
         else:
           A.ident_zeros()
+
         A, B = self.assemble_matrices(keep_diagonal=True)
         A.ident_zeros()
 
