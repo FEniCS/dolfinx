@@ -5,11 +5,18 @@
 
 download_mesh()
 {
+    OS=$(uname -s)
+
     DEMO=$1
     MESH=$2
 
     echo "Downloading $MESH to $DEMO"
-    wget --quiet http://fenicsproject.org/pub/data/meshes/$MESH
+    if [ "$OS" == 'Darwin' ]; then
+        curl -O http://fenicsproject.org/pub/data/meshes/$MESH
+    else
+        wget --quiet http://fenicsproject.org/pub/data/meshes/$MESH
+    fi
+
     mv $MESH $DEMO
 }
 
