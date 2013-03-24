@@ -11,13 +11,18 @@ download_mesh()
     MESH=$2
 
     echo "Downloading $MESH to $DEMO"
-    if [ "$OS" == 'Darwin' ]; then
-        curl -O http://fenicsproject.org/pub/data/meshes/$MESH
-    else
-        wget --quiet http://fenicsproject.org/pub/data/meshes/$MESH
-    fi
 
-    mv $MESH $DEMO
+    # Use zsync if available, otherwise use curl/wget
+    if hash zsync 2>/dev/null; then
+            zsync -o $DEMO/$MESH http://fenicsproject.org/pub/data/meshes/$MESH.zsync
+    else
+        if [ "$OS" == 'Darwin' ]; then
+            curl -O http://fenicsproject.org/pub/data/meshes/$MESH
+        else
+            wget --quiet http://fenicsproject.org/pub/data/meshes/$MESH
+        fi
+        mv $MESH $DEMO
+    fi
 }
 
 download_mesh demo/la/eigenvalue                             box_with_dent.xml.gz
