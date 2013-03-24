@@ -1,3 +1,4 @@
+1.2.0 [2013-03-24]
  - Fixes bug where child/parent hierarchy in Python were destroyed
  - Add utility script dolfin-get-demos
  - MeshFunctions in python now support iterable protocol
