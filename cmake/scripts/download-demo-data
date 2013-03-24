@@ -14,7 +14,7 @@ download_mesh()
 
     # Use zsync if available, otherwise use curl/wget
     if hash zsync 2>/dev/null; then
-            zsync -o $DEMO/$MESH http://fenicsproject.org/pub/data/meshes/$MESH.zsync
+        zsync -o $DEMO/$MESH http://fenicsproject.org/pub/data/meshes/$MESH.zsync
     else
         if [ "$OS" == 'Darwin' ]; then
             curl -O http://fenicsproject.org/pub/data/meshes/$MESH
@@ -54,3 +54,5 @@ download_mesh demo/undocumented/plot                         dolfin_fine.xml.gz
 download_mesh demo/undocumented/dg-advection-diffusion       unitsquare_64_64.xml.gz
 download_mesh demo/undocumented/dg-advection-diffusion       unitsquare_64_64_velocity.xml.gz
 download_mesh demo/pde/navier-stokes                         lshape.xml.gz
+download_mesh test/unit/fem/python                           aneurysm.xml.gz
+download_mesh test/unit/io                                   snake.xml.gz
