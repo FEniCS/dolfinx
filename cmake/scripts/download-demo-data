@@ -45,7 +45,7 @@ download_mesh demo/undocumented/stokes-taylor-hood           dolfin_fine.xml.gz
 download_mesh demo/undocumented/meshintersection/2D          rotator.xml.gz
 download_mesh demo/undocumented/elastodynamics               dolfin_fine.xml.gz
 download_mesh demo/undocumented/auto-adaptive-navier-stokes  channel_with_flap.xml.gz
-download_mesh demo/undocumented/stokes-mini/python           dolfin_fine.xml.gz
+download_mesh demo/undocumented/stokes-mini                  dolfin_fine.xml.gz
 download_mesh demo/undocumented/stokes-mini                  dolfin_fine_subdomains.xml.gz
 download_mesh demo/undocumented/subdomains                   dolfin_fine.xml.gz
 download_mesh demo/undocumented/stokes-stabilized            dolfin_fine.xml.gz
@@ -53,6 +53,7 @@ download_mesh demo/undocumented/stokes-stabilized            dolfin_fine_subdoma
 download_mesh demo/undocumented/plot                         dolfin_fine.xml.gz
 download_mesh demo/undocumented/dg-advection-diffusion       unitsquare_64_64.xml.gz
 download_mesh demo/undocumented/dg-advection-diffusion       unitsquare_64_64_velocity.xml.gz
+download_mesh demo/undocumented/bcs                          aneurysm.xml.gz
 download_mesh demo/pde/navier-stokes                         lshape.xml.gz
 download_mesh test/unit/fem/python                           aneurysm.xml.gz
 download_mesh test/unit/io                                   snake.xml.gz
