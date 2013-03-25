@@ -25,8 +25,8 @@
 # Compile this form with FFC: ffc -l dolfin PressureUpdate.ufl.
 
 # Define function spaces (P2-P1)
-V = VectorElement("CG", triangle, 2)
-Q = FiniteElement("CG", triangle, 1)
+V = VectorElement("Lagrange", triangle, 2)
+Q = FiniteElement("Lagrange", triangle, 1)
 
 # Define trial and test functions
 p = TrialFunction(Q)

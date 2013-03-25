@@ -41,7 +41,7 @@ if not has_slepc():
 
 # Define mesh, function space
 mesh = Mesh("../box_with_dent.xml.gz")
-V = FunctionSpace(mesh, "CG", 1)
+V = FunctionSpace(mesh, "Lagrange", 1)
 
 # Define basis and bilinear form
 u = TrialFunction(V)

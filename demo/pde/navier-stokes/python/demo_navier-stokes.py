@@ -34,8 +34,8 @@ parameters["std_out_all_processes"] = False;
 mesh = Mesh("../lshape.xml.gz")
 
 # Define function spaces (P2-P1)
-V = VectorFunctionSpace(mesh, "CG", 2)
-Q = FunctionSpace(mesh, "CG", 1)
+V = VectorFunctionSpace(mesh, "Lagrange", 2)
+Q = FunctionSpace(mesh, "Lagrange", 1)
 
 # Define trial and test functions
 u = TrialFunction(V)
