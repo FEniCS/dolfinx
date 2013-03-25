@@ -374,7 +374,7 @@ is saved to a file, along with the time ``t``.
       newton_solver.solve(cahn_hilliard, *u.vector());
 
       // Save function to file
-      file << std::make_pair(&(u[0]), t);
+      file << std::pair<const Function*, double>(&(u[0]), t);
     }
 
 The final result is plotted to the screen and the program is finished.
