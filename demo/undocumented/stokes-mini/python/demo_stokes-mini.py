@@ -29,8 +29,8 @@ src/demo/mesh/subdomains."""
 from dolfin import *
 
 # Load mesh and subdomains
-mesh = Mesh("dolfin-2.xml.gz")
-sub_domains = MeshFunction("size_t", mesh, "../subdomains.xml.gz")
+mesh = Mesh("../dolfin_fine.xml.gz")
+sub_domains = MeshFunction("size_t", mesh, "../dolfin_fine_subdomains.xml.gz")
 
 # Define function spaces
 P1 = VectorFunctionSpace(mesh, "Lagrange", 1)

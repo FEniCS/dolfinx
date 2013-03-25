@@ -128,6 +128,9 @@ namespace dolfin
     /// Return a list of available preconditioners
     static std::vector<std::pair<std::string, std::string> > preconditioners();
 
+    /// Set options prefix
+    void set_options_prefix(std::string prefix);
+
     /// Default parameter values
     static Parameters default_parameters();
 

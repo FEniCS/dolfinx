@@ -33,7 +33,7 @@ int main()
   #ifdef HAS_SLEPC
 
   // Create mesh
-  Mesh mesh("box_with_dent.xml.gz");
+  Mesh mesh("../box_with_dent.xml.gz");
 
   // Build stiffness matrix
   PETScMatrix A;

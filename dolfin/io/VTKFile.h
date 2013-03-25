@@ -19,7 +19,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2005-07-05
-// Last changed: 2009-08-13
+// Last changed: 2013-03-11
 
 #ifndef __VTK_FILE_H
 #define __VTK_FILE_H
@@ -55,11 +55,18 @@ namespace dolfin
     void operator<< (const MeshFunction<int>& meshfunction);
     void operator<< (const MeshFunction<double>& meshfunction);
     void operator<< (const Function& u);
+    void operator<< (const std::pair<const Mesh*, double> mesh);
+    void operator<< (const std::pair<const MeshFunction<int>*, double> f);
+    void operator<< (const std::pair<const MeshFunction<std::size_t>*, double> f);
+    void operator<< (const std::pair<const MeshFunction<double>*, double> f);
+    void operator<< (const std::pair<const MeshFunction<bool>*, double> f);
     void operator<< (const std::pair<const Function*, double> u);
 
   protected:
 
     void write_function(const Function& u, double time);
+
+    void write_mesh(const Mesh& mesh, double time);
 
     std::string init(const Mesh& mesh, std::size_t dim) const;
 
@@ -91,7 +98,7 @@ namespace dolfin
     void clear_file(std::string file) const;
 
     template<typename T>
-    void mesh_function_write(T& meshfunction);
+    void mesh_function_write(T& meshfunction, double time);
 
     // Strip path from file
     std::string strip_path(std::string file) const;

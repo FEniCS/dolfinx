@@ -40,8 +40,8 @@ if not has_slepc():
     exit()
 
 # Define mesh, function space
-mesh = Mesh("box_with_dent.xml.gz")
-V = FunctionSpace(mesh, "CG", 1)
+mesh = Mesh("../box_with_dent.xml.gz")
+V = FunctionSpace(mesh, "Lagrange", 1)
 
 # Define basis and bilinear form
 u = TrialFunction(V)

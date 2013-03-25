@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-01-25
-// Last changed: 2011-01-25
+// Last changed: 2013-03-12
 
 //-----------------------------------------------------------------------------
 // User macro for defining in typmaps for std::pair of a pointer to some
@@ -28,13 +28,13 @@
 //-----------------------------------------------------------------------------
 // Make SWIG aware of the shared_ptr version of TYPE
 //-----------------------------------------------------------------------------
-%types(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE>*);
-
-//-----------------------------------------------------------------------------
-// Run the macros for the combination of const and no const of
-// {const} std::vector<{const} dolfin::TYPE *>
-//-----------------------------------------------------------------------------
-//IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,,)
+%types(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE >*);
+//
+////-----------------------------------------------------------------------------
+//// Run the macros for the combination of const and no const of
+//// {const} std::vector<{const} dolfin::TYPE *>
+////-----------------------------------------------------------------------------
+////IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,,)
 IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE,const,)
 IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE,,const)
 IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE,const,const)
@@ -53,14 +53,42 @@ IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE,const,const)
 //-----------------------------------------------------------------------------
 %typecheck(SWIG_TYPECHECK_POINTER) CONST_PAIR std::pair<CONST dolfin::TYPE *, double>
 {
-  $1 = PyTuple_Check($input) ? 1 : 0;
+
+  // TYPECHEK IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE, CONST, CONST_PAIR)
+  $1 = 0;
+  if (PyTuple_Check($input) && PyTuple_Size($input) == 2)
+  {
+    void* itemp = 0;
+    PyObject* py_first  = PyTuple_GetItem($input, 0);
+    int res = SWIG_ConvertPtr(py_first, &itemp, $descriptor(dolfin::TYPE *), 0);
+    if (!SWIG_IsOK(res))
+    {
+      // If failed with normal pointer conversion then
+      // try with shared_ptr conversion
+      int newmem = 0;
+      res = SWIG_ConvertPtrAndOwn(py_first, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
+      if (SWIG_IsOK(res))
+      {
+	$1 = 1;
+	if (newmem & SWIG_CAST_NEW_MEMORY)
+	{
+	  delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
+	}
+      }
+    }
+    else
+    {
+      $1 = 1;
+    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 // The typemap
 //-----------------------------------------------------------------------------
-%typemap(in) CONST_PAIR std::pair<CONST dolfin::TYPE*, double> (std::pair<CONST dolfin::TYPE*, double> tmp_pair, SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared, dolfin::TYPE * arg)
+%typemap(in) CONST_PAIR std::pair<CONST dolfin::TYPE*, double> (std::pair<CONST dolfin::TYPE*, double> tmp_pair, SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE > tempshared, dolfin::TYPE * arg)
 {
+  // TYPEMAP IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE, CONST, CONST_PAIR)
   int res = 0;
   void* itemp = 0;
   int newmem = 0;
@@ -94,7 +122,7 @@ IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE,const,const)
       // If we need to release memory
       if (newmem & SWIG_CAST_NEW_MEMORY)
       {
-        tempshared = *reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> * >(itemp);
+        tempshared = *reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE > * >(itemp);
         delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
         arg = const_cast< dolfin::TYPE * >(tempshared.get());
       }
@@ -119,6 +147,11 @@ IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE,const,const)
 // Run the different macros and instantiate the typemaps
 //-----------------------------------------------------------------------------
 IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(Function)
+IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(Mesh)
+IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunction<int>)
+IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunction<std::size_t> )
+IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunction<double> )
+IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunction<bool>)
 
 //-----------------------------------------------------------------------------
 // In typemap for std::pair<TYPE,TYPE>

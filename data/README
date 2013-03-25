@@ -1,0 +1,6 @@
+The data in this directory, including example meshes, have been moved
+to the FEniCS web server to decrease the size of this repository. For
+a selection of meshes, please visit
+
+  http://fenicsproject.org/download/data.html
+  http://fenicsproject.org/pub/data/meshes/
