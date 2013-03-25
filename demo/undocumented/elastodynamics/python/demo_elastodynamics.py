@@ -80,7 +80,7 @@ def right(x, on_boundary):
     return x[0] > 0.99 and on_boundary
 
 # Load mesh and define function space
-mesh = Mesh("dolfin-2.xml.gz")
+mesh = Mesh("../dolfin_fine.xml.gz")
 
 # Define function space
 V = VectorFunctionSpace(mesh, "CG", 1)

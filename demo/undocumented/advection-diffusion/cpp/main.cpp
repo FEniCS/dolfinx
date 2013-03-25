@@ -34,7 +34,7 @@ using namespace dolfin;
 int main(int argc, char *argv[])
 {
   // Read mesh
-  Mesh mesh("../dolfin-2.xml.gz");
+  Mesh mesh("../dolfin_fine.xml.gz");
 
   // Create velocity FunctionSpace
   Velocity::FunctionSpace V_u(mesh);
@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
   file_u >> velocity;
 
   // Read sub domain markers
-  MeshFunction<std::size_t> sub_domains(mesh, "../dolfin-2-subdomains.xml.gz");
+  MeshFunction<std::size_t> sub_domains(mesh, "../dolfin_fine_subdomains.xml.gz");
 
   // Create function space
   AdvectionDiffusion::FunctionSpace V(mesh);
