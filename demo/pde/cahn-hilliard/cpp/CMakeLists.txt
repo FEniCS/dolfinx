@@ -34,7 +34,7 @@ include_directories(${DOLFIN_INCLUDE_DIRS})
 include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
-add_executable(${PROJECT_NAME} CahnHilliard2D.cpp CahnHilliard3D.cpp main.cpp)
+add_executable(${PROJECT_NAME} CahnHilliard2D.cpp main.cpp CahnHilliard3D.cpp)
 
 # Target libraries
 target_link_libraries(${PROJECT_NAME} ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})

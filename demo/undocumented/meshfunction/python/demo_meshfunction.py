@@ -25,10 +25,10 @@ Original implementation: ../cpp/main.cpp by Ola Skavhaug."""
 from dolfin import *
 
 # Read mesh from file
-mesh = Mesh("../mesh2D.xml.gz")
+mesh = Mesh("../unitsquare_2_2.xml.gz")
 
 # Read mesh function from file
-file_in = File("../meshfunction.xml.gz")
+file_in = File("../unitsquare_2_2_subdomains.xml.gz")
 f = MeshFunction("double", mesh)
 file_in >> f
 

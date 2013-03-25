@@ -29,7 +29,7 @@ int main()
   Mesh mesh("../unitsquare_2_2.xml.gz");
 
   // Read mesh function from file (new style)
-  File in("../unitsquare_2_2_markers.xml.gz");
+  File in("../unitsquare_2_2_subdomains.xml.gz");
   MeshFunction<double> f(mesh);
   in >> f;
 

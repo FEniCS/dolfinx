@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 
   // Create velocity function
   Function velocity(V_u);
-  XMLFile file_u("../dolfin-2-velocity.xml.gz");
+  XMLFile file_u("../dolfin_fine_velocity.xml.gz");
   file_u >> velocity;
 
   // Read sub domain markers
