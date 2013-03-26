@@ -10,12 +10,14 @@
 # Number of processes to use during build
 : ${PROCS:=3}
 
-#cmake/scripts/generate-all
-
 CMAKE_EXTRA_ARGS=$@
 
 INSTALLDIR=$PWD/local
 BUILDDIR=$PWD/build
+
+if [ ! -d $INSTALLDIR ]; then
+  cmake/scripts/generate-all
+fi
 
 mkdir -p $BUILDDIR
 cd $BUILDDIR
