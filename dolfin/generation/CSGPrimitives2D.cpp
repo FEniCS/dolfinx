@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Johannes Ring, 2012
-// Modified by Benjamin Kehlet, 2012
+// Modified by Benjamin Kehlet, 2012-2013
 //
 // First added:  2012-04-12
-// Last changed: 2012-11-12
+// Last changed: 2013-03-13
 
 #include <sstream>
 #include <dolfin/math/basic.h>
@@ -141,7 +141,7 @@ std::string Rectangle::str(bool verbose) const
 // Polygon
 //-----------------------------------------------------------------------------
 Polygon::Polygon(const std::vector<Point>& vertices)
-  : _vertices(vertices)
+  : _vertices(vertices.begin(), vertices.end())
 {
   if (_vertices.size() < 3)
   {

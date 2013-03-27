@@ -75,7 +75,7 @@ namespace dolfin
                        const Form& a,
                        const Form& L,
                        const std::vector<const DirichletBC*> bcs,
-                       const GenericVector* x0);
+                       const GenericVector& x0);
 
   //--- Specialized version for scalars ---
 

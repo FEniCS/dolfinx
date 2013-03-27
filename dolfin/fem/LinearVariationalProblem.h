@@ -28,10 +28,10 @@ namespace dolfin
 {
 
   // Forward declarations
+  class DirichletBC;
   class Form;
   class Function;
   class FunctionSpace;
-  class BoundaryCondition;
 
   /// This class represents a linear variational problem:
   ///
@@ -54,20 +54,20 @@ namespace dolfin
     LinearVariationalProblem(const Form& a,
                              const Form& L,
                              Function& u,
-                             const BoundaryCondition& bc);
+                             const DirichletBC& bc);
 
     /// Create linear variational problem with a list of boundary conditions
     LinearVariationalProblem(const Form& a,
                              const Form& L,
                              Function& u,
-                             std::vector<const BoundaryCondition*> bcs);
+                             std::vector<const DirichletBC*> bcs);
 
     /// Create linear variational problem with a list of boundary conditions
     /// (shared pointer version)
     LinearVariationalProblem(boost::shared_ptr<const Form> a,
                              boost::shared_ptr<const Form> L,
                              boost::shared_ptr<Function> u,
-                             std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);
+                             std::vector<boost::shared_ptr<const DirichletBC> > bcs);
 
     /// Return bilinear form
     boost::shared_ptr<const Form> bilinear_form() const;
@@ -82,7 +82,7 @@ namespace dolfin
     boost::shared_ptr<const Function> solution() const;
 
     /// Return boundary conditions
-    std::vector<boost::shared_ptr<const BoundaryCondition> > bcs() const;
+    std::vector<boost::shared_ptr<const DirichletBC> > bcs() const;
 
     /// Return trial space
     boost::shared_ptr<const FunctionSpace> trial_space() const;
@@ -104,8 +104,8 @@ namespace dolfin
     // The solution
     boost::shared_ptr<Function> _u;
 
-    // The boundary conditions
-    std::vector<boost::shared_ptr<const BoundaryCondition> > _bcs;
+    // The Dirichlet boundary conditions
+    std::vector<boost::shared_ptr<const DirichletBC> > _bcs;
 
   };
 

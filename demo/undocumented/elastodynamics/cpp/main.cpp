@@ -114,8 +114,8 @@ int main(int argc, char* argv[])
 {
   init(argc, argv);
 
-  // Create Mesh
-  Mesh mesh("dolfin-2.xml.gz");
+  // Create mesh
+  Mesh mesh("../dolfin_fine.xml.gz");
 
   // Create function space
   ElastoDynamics::FunctionSpace V(mesh);
@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
   LeftBoundary left_boundary;
   Constant zero(0.0, 0.0);
   DirichletBC bc0(V, zero, left_boundary);
-  std::vector<const BoundaryCondition*> bc;
+  std::vector<const DirichletBC*> bc;
   bc.push_back(&bc0);
 
   // Define solution vectors

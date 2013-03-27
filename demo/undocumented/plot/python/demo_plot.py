@@ -25,14 +25,13 @@
 # Last changed: 2012-11-12
 
 from dolfin import *
-import os.path
 from math import sqrt
 import numpy
 
 import sys
 
 # Read mesh from file
-mesh = Mesh(os.path.join(os.path.pardir, "dolfin-2.xml.gz"))
+mesh = Mesh("../dolfin_fine.xml.gz")
 
 # Decide which demos to run
 demos = map(int, sys.argv[1:]) or [0, 1, 2]

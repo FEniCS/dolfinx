@@ -44,15 +44,16 @@ that we wish the form compiler to use when generating code.
 .. index:: VectorFunctionSpace
 
 First, we need a tetrahedral mesh of the domain and a function space
-on this mesh. Here, we choose to create a unit cube mesh with 17 ( =
-16 + 1) vertices in each direction. On this mesh, we define a function
-space of continuous piecewise linear vector polynomials (a Lagrange
-vector element space):
+on this mesh. Here, we choose to create a unit cube mesh with 25 ( =
+24 + 1) vertices in one direction and 17 ( = 16 + 1) vertices in the
+other two direction. On this mesh, we define a function space of
+continuous piecewise linear vector polynomials (a Lagrange vector
+element space):
 
 .. code-block:: python
 
     # Create mesh and define function space
-    mesh = UnitCubeMesh(16, 16, 16)
+    mesh = UnitCubeMesh(24, 16, 16)
     V = VectorFunctionSpace(mesh, "Lagrange", 1)
 
 Note that :py:class:`VectorFunctionSpace

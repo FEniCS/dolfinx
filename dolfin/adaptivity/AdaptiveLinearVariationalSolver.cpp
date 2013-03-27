@@ -101,7 +101,7 @@ AdaptiveLinearVariationalSolver::solve_primal()
   return current.solution();
 }
 // ----------------------------------------------------------------------------
-std::vector<boost::shared_ptr<const BoundaryCondition> >
+std::vector<boost::shared_ptr<const DirichletBC> >
 AdaptiveLinearVariationalSolver::extract_bcs() const
 {
   const LinearVariationalProblem& current = _problem->leaf_node();

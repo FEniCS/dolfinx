@@ -31,7 +31,7 @@ using namespace dolfin;
 int main()
 {
   // Create mesh and finite element
-  Mesh mesh("../../../../data/meshes/aneurysm.xml.gz");
+  Mesh mesh("../aneurysm.xml.gz");
 
   // Define variational problem
   Constant f(0.0);
@@ -51,7 +51,7 @@ int main()
   DirichletBC bc1(V, u1, 1);
   DirichletBC bc2(V, u2, 2);
   DirichletBC bc3(V, u3, 3);
-  std::vector<const BoundaryCondition*> bcs = boost::assign::list_of(&bc0)(&bc1)(&bc2)(&bc3);
+  std::vector<const DirichletBC*> bcs = boost::assign::list_of(&bc0)(&bc1)(&bc2)(&bc3);
 
   // Compute solution
   Function u(V);

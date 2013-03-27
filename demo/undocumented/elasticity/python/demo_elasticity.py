@@ -26,7 +26,7 @@ for a gear clamped at two of its ends and twisted 30 degrees."""
 from dolfin import *
 
 # Load mesh and define function space
-mesh = Mesh("gear.xml.gz")
+mesh = Mesh("../gear.xml.gz")
 mesh.order()
 V = VectorFunctionSpace(mesh, "CG", 1)
 

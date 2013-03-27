@@ -1,0 +1,59 @@
+#!/bin/sh
+#
+# This script downloads data (mostly meshes) needed run demos
+# Anders Logg, 2013-03-21
+
+download_mesh()
+{
+    OS=$(uname -s)
+
+    DEMO=$1
+    MESH=$2
+
+    echo "Downloading $MESH to $DEMO"
+
+    # Use zsync if available, otherwise use curl/wget
+    if hash zsync 2>/dev/null; then
+        zsync -q -o $DEMO/$MESH http://fenicsproject.org/pub/data/meshes/$MESH.zsync
+    else
+        if [ "$OS" = "Darwin" ]; then
+            curl -O http://fenicsproject.org/pub/data/meshes/$MESH
+        else
+            wget --quiet http://fenicsproject.org/pub/data/meshes/$MESH
+        fi
+        mv $MESH $DEMO
+    fi
+}
+
+download_mesh demo/la/eigenvalue                             box_with_dent.xml.gz
+download_mesh demo/undocumented/meshfunction                 unitsquare_2_2.xml.gz
+download_mesh demo/undocumented/meshfunction                 unitsquare_2_2_subdomains.xml.gz
+download_mesh demo/undocumented/mixed-poisson-sphere         sphere_16.xml.gz
+download_mesh demo/undocumented/advection-diffusion          dolfin_fine.xml.gz
+download_mesh demo/undocumented/advection-diffusion          dolfin_fine_velocity.xml.gz
+download_mesh demo/undocumented/advection-diffusion          dolfin_fine_subdomains.xml.gz
+download_mesh demo/undocumented/elasticity                   gear.xml.gz
+download_mesh demo/undocumented/lift-drag                    dolfin_fine.xml.gz
+download_mesh demo/undocumented/lift-drag                    dolfin_fine_pressure.xml.gz
+download_mesh demo/undocumented/tensor-weighted-poisson      unitsquare_32_32.xml.gz
+download_mesh demo/undocumented/tensor-weighted-poisson      unitsquare_32_32_c01.xml.gz
+download_mesh demo/undocumented/tensor-weighted-poisson      unitsquare_32_32_c00.xml.gz
+download_mesh demo/undocumented/tensor-weighted-poisson      unitsquare_32_32_c11.xml.gz
+download_mesh demo/undocumented/stokes-taylor-hood/          dolfin_fine.xml.gz
+download_mesh demo/undocumented/stokes-taylor-hood           dolfin_fine_subdomains.xml.gz
+download_mesh demo/undocumented/stokes-taylor-hood           dolfin_fine.xml.gz
+download_mesh demo/undocumented/meshintersection/2D          rotator.xml.gz
+download_mesh demo/undocumented/elastodynamics               dolfin_fine.xml.gz
+download_mesh demo/undocumented/auto-adaptive-navier-stokes  channel_with_flap.xml.gz
+download_mesh demo/undocumented/stokes-mini                  dolfin_fine.xml.gz
+download_mesh demo/undocumented/stokes-mini                  dolfin_fine_subdomains.xml.gz
+download_mesh demo/undocumented/subdomains                   dolfin_fine.xml.gz
+download_mesh demo/undocumented/stokes-stabilized            dolfin_fine.xml.gz
+download_mesh demo/undocumented/stokes-stabilized            dolfin_fine_subdomains.xml.gz
+download_mesh demo/undocumented/plot                         dolfin_fine.xml.gz
+download_mesh demo/undocumented/dg-advection-diffusion       unitsquare_64_64.xml.gz
+download_mesh demo/undocumented/dg-advection-diffusion       unitsquare_64_64_velocity.xml.gz
+download_mesh demo/undocumented/bcs                          aneurysm.xml.gz
+download_mesh demo/pde/navier-stokes                         lshape.xml.gz
+download_mesh test/unit/fem/python                           aneurysm.xml.gz
+download_mesh test/unit/io                                   snake.xml.gz

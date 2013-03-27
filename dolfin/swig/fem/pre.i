@@ -56,18 +56,15 @@ PROBLEM_RENAMES(NonlinearVariational)
 					 const GenericFunction&,
 					 const SubDomain&,
 					 std::string method="topological");
-
 %ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
 					 const GenericFunction&,
 					 const MeshFunction<std::size_t>&,
 					 std::size_t,
 					 std::string method="topological");
-
 %ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
 					 const GenericFunction&,
 					 std::size_t,
 					 std::string method="topological");
-
 %ignore dolfin::DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace>,
 					 boost::shared_ptr<const GenericFunction>,
 					 const std::vector<std::pair<std::size_t, std::size_t> >&,
@@ -76,45 +73,43 @@ PROBLEM_RENAMES(NonlinearVariational)
 %ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
                                                                    const Form&,
                                                                    Function&);
-
 %ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
                                                      const Form&,
                                                      Function&,
-                                                     const BoundaryCondition&);
-
+                                                     const DirichletBC&);
 %ignore dolfin::LinearVariationalProblem::LinearVariationalProblem(const Form&,
                                        const Form&,
                                        Function&,
-                                       std::vector<const BoundaryCondition*>);
+                                       std::vector<const DirichletBC*>);
 
 %ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
                                                                      Function&);
-
 %ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
                                                                    Function&,
                                                                    const Form&);
-
 %ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
                                                      Function&,
-                                                     const BoundaryCondition&);
-
+                                                     const DirichletBC&);
 %ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
                                                      Function&,
-                                                     const BoundaryCondition&,
+                                                     const DirichletBC&,
                                                      const Form&);
-
 %ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
                                        Function&,
-                                       std::vector<const BoundaryCondition*>);
-
+                                       std::vector<const DirichletBC*>);
 %ignore dolfin::NonlinearVariationalProblem::NonlinearVariationalProblem(const Form&,
                                          Function&,
-                                         std::vector<const BoundaryCondition*>,
+                                         std::vector<const DirichletBC*>,
                                          const Form&);
 
 %ignore dolfin::LinearVariationalSolver::LinearVariationalSolver(LinearVariationalProblem&);
 
 %ignore dolfin::NonlinearVariationalSolver::NonlinearVariationalSolver(NonlinearVariationalProblem&);
+
+%ignore dolfin::SystemAssembler(const Form& a, const Form&);
+%ignore dolfin::SystemAssembler(const Form& a, const Form&, const DirichletBC&);
+%ignore dolfin::SystemAssembler(const Form& a, const Form&,
+                                const std::vector<const DirichletBC*>);
 
 //-----------------------------------------------------------------------------
 // Ignore operator= for DirichletBC to avoid warning
@@ -122,12 +117,12 @@ PROBLEM_RENAMES(NonlinearVariational)
 %ignore dolfin::DirichletBC::operator=;
 
 //-----------------------------------------------------------------------------
-// Modifying the interface of BoundaryCondition
+// Modifying the interface of DirichletBC
 //-----------------------------------------------------------------------------
-%rename (_function_space) dolfin::BoundaryCondition::function_space;
+%rename (_function_space) dolfin::DirichletBC::function_space;
 
 //-----------------------------------------------------------------------------
-// Modifying the interface of BoundaryCondition
+// Modifying the interface of Form
 //-----------------------------------------------------------------------------
 %rename (_function_space) dolfin::Form::function_space;
 

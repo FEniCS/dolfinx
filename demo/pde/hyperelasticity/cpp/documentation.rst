@@ -207,14 +207,15 @@ Next:
 
 Inside the ``main`` function, we begin by defining a tetrahedral mesh
 of the domain and the function space on this mesh. Here, we choose to
-create a unit cube mesh with 17 ( = 16 + 1) vertices in each
-direction. With this mesh, we initialize the (finite element) function
-space defined by the generated code.
+create a unit cube mesh with 25 ( = 24 + 1) verices in one direction
+and 17 ( = 16 + 1) vertices in the other two directions. With this
+mesh, we initialize the (finite element) function space defined by the
+generated code.
 
 .. code-block:: c++
 
   // Create mesh and define function space
-  UnitCubeMesh mesh (16, 16, 16);
+  UnitCubeMesh mesh (24, 16, 16);
   HyperElasticity::FunctionSpace V(mesh);
 
 Now, the Dirichlet boundary conditions can be created using the class
@@ -237,7 +238,7 @@ and ``Rotation`` (for the value on the right boundary).
   // Create Dirichlet boundary conditions
   DirichletBC bcl(V, c, left);
   DirichletBC bcr(V, r, right);
-  std::vector<const BoundaryCondition*> bcs;
+  std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bcl); bcs.push_back(&bcr);
 
 The two boundary conditions are collected in the container ``bcs``.

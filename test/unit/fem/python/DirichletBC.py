@@ -74,7 +74,7 @@ class DirichletBCTest(unittest.TestCase):
         part of the mesh. This test is also a compatibility test for
         VMTK."""
 
-        mesh = Mesh("../../../../data/meshes/aneurysm.xml.gz")
+        mesh = Mesh("aneurysm.xml.gz")
         V = FunctionSpace(mesh, "CG", 1)
         v = TestFunction(V)
 

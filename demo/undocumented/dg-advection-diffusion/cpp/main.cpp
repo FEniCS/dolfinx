@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2007-06-29
-// Last changed: 2012-07-05
+// Last changed: 2013-03-21
 //
 // Steady state advection-diffusion equation, discontinuous
 // formulation using full upwinding.
@@ -56,13 +56,13 @@ int main(int argc, char *argv[])
   // mesh and a quadratic vector Lagrange element
 
   // Read mesh
-  Mesh mesh("../mesh.xml.gz");
+  Mesh mesh("../unitsquare_64_64.xml.gz");
 
   // Create velocity FunctionSpace
   Velocity::FunctionSpace V_u(mesh);
 
   // Create velocity function
-  Function u(V_u, "../velocity.xml.gz");
+  Function u(V_u, "../unitsquare_64_64_velocity.xml.gz");
 
   // Diffusivity
   Constant c(0.0);

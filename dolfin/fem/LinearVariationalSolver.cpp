@@ -69,7 +69,7 @@ void LinearVariationalSolver::solve()
   boost::shared_ptr<const Form> a(_problem->bilinear_form());
   boost::shared_ptr<const Form> L(_problem->linear_form());
   boost::shared_ptr<Function> u(_problem->solution());
-  std::vector<boost::shared_ptr<const BoundaryCondition> > bcs(_problem->bcs());
+  std::vector<boost::shared_ptr<const DirichletBC> > bcs(_problem->bcs());
 
   dolfin_assert(a);
   dolfin_assert(L);
@@ -107,8 +107,8 @@ void LinearVariationalSolver::solve()
     }
 
     // Assemble linear system and apply boundary conditions
-    SystemAssembler assembler;
-    assembler.assemble(*A, *b, *a, *L, _bcs);
+    SystemAssembler assembler(a, L, _bcs);
+    assembler.assemble(*A, *b);
   }
   else
   {

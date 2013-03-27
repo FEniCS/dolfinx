@@ -94,7 +94,7 @@ int main()
   };
 
   // Read mesh and create function space
-  Mesh mesh("gear.xml.gz");
+  Mesh mesh("../gear.xml.gz");
   Elasticity::Form_a::TestSpace V(mesh);
 
   // Create right-hand side
@@ -111,7 +111,7 @@ int main()
   DirichletBC bcr(V, r, right);
 
   // Collect boundary conditions
-  std::vector<const BoundaryCondition*> bcs;
+  std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bcl);
   bcs.push_back(&bcr);
 

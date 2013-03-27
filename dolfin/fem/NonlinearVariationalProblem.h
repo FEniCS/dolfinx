@@ -31,7 +31,7 @@ namespace dolfin
   class Form;
   class Function;
   class FunctionSpace;
-  class BoundaryCondition;
+  class DirichletBC;
 
   /// This class represents a nonlinear variational problem:
   ///
@@ -63,14 +63,14 @@ namespace dolfin
     /// nonlinear solver that does not rely on the Jacobian.
     NonlinearVariationalProblem(const Form& F,
                                 Function& u,
-                                const BoundaryCondition& bc);
+                                const DirichletBC& bc);
 
     /// Create nonlinear variational problem with a single boundary condition.
     /// The Jacobian form is specified which allows the use of a nonlinear
     /// solver that relies on the Jacobian (using Newton's method).
     NonlinearVariationalProblem(const Form& F,
                                 Function& u,
-                                const BoundaryCondition& bc,
+                                const DirichletBC& bc,
                                 const Form& J);
 
     /// Create nonlinear variational problem with a list of boundary conditions.
@@ -78,14 +78,14 @@ namespace dolfin
     /// nonlinear solver that does not rely on the Jacobian.
     NonlinearVariationalProblem(const Form& F,
                                 Function& u,
-                                std::vector<const BoundaryCondition*> bcs);
+                                std::vector<const DirichletBC*> bcs);
 
     /// Create nonlinear variational problem with a list of boundary conditions.
     /// The Jacobian form is specified which allows the use of a nonlinear
     /// solver that relies on the Jacobian (using Newton's method).
     NonlinearVariationalProblem(const Form& F,
                                 Function& u,
-                                std::vector<const BoundaryCondition*> bcs,
+                                std::vector<const DirichletBC*> bcs,
                                 const Form& J);
 
     /// Create nonlinear variational problem, shared pointer version.
@@ -93,14 +93,14 @@ namespace dolfin
     /// nonlinear solver that does not rely on the Jacobian.
     NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
                                 boost::shared_ptr<Function> u,
-                                std::vector<boost::shared_ptr<const BoundaryCondition> > bcs);
+                                std::vector<boost::shared_ptr<const DirichletBC> > bcs);
 
     /// Create nonlinear variational problem, shared pointer version.
     /// The Jacobian form is specified which allows the use of a nonlinear
     /// solver that relies on the Jacobian (using Newton's method).
     NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
                                 boost::shared_ptr<Function> u,
-                                std::vector<boost::shared_ptr<const BoundaryCondition> > bcs,
+                                std::vector<boost::shared_ptr<const DirichletBC> > bcs,
                                 boost::shared_ptr<const Form> J);
 
     /// Return residual form
@@ -116,7 +116,7 @@ namespace dolfin
     boost::shared_ptr<const Function> solution() const;
 
     /// Return boundary conditions
-    std::vector<boost::shared_ptr<const BoundaryCondition> > bcs() const;
+    std::vector<boost::shared_ptr<const DirichletBC> > bcs() const;
 
     /// Return trial space
     boost::shared_ptr<const FunctionSpace> trial_space() const;
@@ -142,7 +142,7 @@ namespace dolfin
     boost::shared_ptr<Function> _u;
 
     // The boundary conditions
-    std::vector<boost::shared_ptr<const BoundaryCondition> > _bcs;
+    std::vector<boost::shared_ptr<const DirichletBC> > _bcs;
 
   };
 

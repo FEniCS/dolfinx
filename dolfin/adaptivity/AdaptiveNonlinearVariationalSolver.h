@@ -25,13 +25,13 @@
 #define __ADAPTIVE_NONLINEAR_VARIATIONAL_SOLVER_H
 
 #include <boost/shared_ptr.hpp>
-#include <dolfin/fem/BoundaryCondition.h>
 
 #include "GenericAdaptiveVariationalSolver.h"
 
 namespace dolfin
 {
   // Forward declarations
+  class DirichletBC;
   class Function;
   class NonlinearVariationalProblem;
   class GoalFunctional;
@@ -113,9 +113,9 @@ namespace dolfin
     /// Extract the boundary conditions for the primal problem.
     ///
     /// *Returns*
-    ///     std::vector<_BoundaryCondition_>
+    ///     std::vector<_DirichletBC_>
     ///         The primal boundary conditions
-    virtual std::vector<boost::shared_ptr<const BoundaryCondition> >
+    virtual std::vector<boost::shared_ptr<const DirichletBC> >
       extract_bcs() const;
 
     /// Evaluate the goal functional.

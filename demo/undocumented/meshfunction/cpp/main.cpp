@@ -26,15 +26,15 @@ using namespace dolfin;
 
 int main()
 {
-  Mesh mesh("../mesh2D.xml.gz");
+  Mesh mesh("../unitsquare_2_2.xml.gz");
 
   // Read mesh function from file (new style)
-  File in("../meshfunction.xml");
+  File in("../unitsquare_2_2_subdomains.xml.gz");
   MeshFunction<double> f(mesh);
   in >> f;
 
   // Write mesh function to file (new style)
-  File out("meshfunction_out.xml");
+  File out("meshfunction_out.xml.gz");
   out << f;
 
   // Plot mesh function
