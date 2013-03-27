@@ -24,6 +24,7 @@ import unittest
 from dolfin import *
 
 parameters.form_compiler.optimize=True
+parameters.form_compiler.representation="uflacs"
 
 import numpy as np
 
@@ -61,6 +62,9 @@ class PointIntegralSolverTest(unittest.TestCase):
             scheme = Scheme(form, u)
             info(scheme)
             solver = PointIntegralSolver(scheme)
+            solver.parameters.newton_solver.report = False
+            solver.parameters.newton_solver.iterations_to_retabulate_jacobian = 5
+            solver.parameters.newton_solver.maximum_iterations = 12
             u_errors = []
             for dt in [0.05, 0.025, 0.0125]:
                 u.interpolate(Constant(1.0))
@@ -93,6 +97,9 @@ class PointIntegralSolverTest(unittest.TestCase):
             scheme = Scheme(form, u)
             info(scheme)
             solver = PointIntegralSolver(scheme)
+            solver.parameters.newton_solver.report = False
+            solver.parameters.newton_solver.iterations_to_retabulate_jacobian = 5
+            solver.parameters.newton_solver.maximum_iterations = 12
             u_errors = []
             for dt in [0.05, 0.025, 0.0125]:
                 u.interpolate(Constant((1.0, 0.0)))
