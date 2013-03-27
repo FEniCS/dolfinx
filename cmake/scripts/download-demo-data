@@ -14,7 +14,7 @@ download_mesh()
 
     # Use zsync if available, otherwise use curl/wget
     if hash zsync 2>/dev/null; then
-        zsync -o $DEMO/$MESH http://fenicsproject.org/pub/data/meshes/$MESH.zsync
+        zsync -q -o $DEMO/$MESH http://fenicsproject.org/pub/data/meshes/$MESH.zsync
     else
         if [ "$OS" = "Darwin" ]; then
             curl -O http://fenicsproject.org/pub/data/meshes/$MESH
