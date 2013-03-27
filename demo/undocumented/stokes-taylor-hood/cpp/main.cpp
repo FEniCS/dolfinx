@@ -62,8 +62,8 @@ int main()
   };
 
   // Read mesh and sub domain markers
-  Mesh mesh("../dolfin-2.xml.gz");
-  MeshFunction<std::size_t> sub_domains(mesh, "../subdomains.xml.gz");
+  Mesh mesh("../dolfin_fine.xml.gz");
+  MeshFunction<std::size_t> sub_domains(mesh, "../dolfin_fine_subdomains.xml.gz");
 
   // Create function space and subspaces
   Stokes::FunctionSpace W(mesh);
@@ -85,7 +85,7 @@ int main()
   DirichletBC bc2(W1, zero, sub_domains, 2);
 
   // Collect boundary conditions
-  std::vector<const BoundaryCondition*> bcs;
+  std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc0); bcs.push_back(&bc1); bcs.push_back(&bc2);
 
   // Define variational problem

@@ -101,7 +101,7 @@ AdaptiveNonlinearVariationalSolver::solve_primal()
   return current.solution();
 }
 // ----------------------------------------------------------------------------
-std::vector<boost::shared_ptr<const BoundaryCondition> >
+std::vector<boost::shared_ptr<const DirichletBC> >
 AdaptiveNonlinearVariationalSolver::extract_bcs() const
 {
   const NonlinearVariationalProblem& current = _problem->leaf_node();

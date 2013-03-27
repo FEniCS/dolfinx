@@ -38,6 +38,9 @@
 #include "dolfin/parameter/Parameter.h"
 #include "dolfin/parameter/Parameters.h"
 
+// #include types from la submodule of module la
+#include "dolfin/la/LinearAlgebraObject.h"
+
 // #include types from function submodule of module function
 #include "dolfin/function/GenericFunction.h"
 #include "dolfin/function/Expression.h"
@@ -134,6 +137,7 @@
 
 // #include types from ale submodule
 #include "dolfin/ale/ALE.h"
+#include "dolfin/ale/MeshDisplacement.h"
 
 // NumPy includes
 #define PY_ARRAY_UNIQUE_SYMBOL PyDOLFIN_MESH
@@ -158,6 +162,10 @@ import_array();
 %include "dolfin/swig/parameter/pre.i"
 %import(module="common") "dolfin/parameter/Parameter.h"
 %import(module="common") "dolfin/parameter/Parameters.h"
+
+// %import types from submodule la of SWIG module la
+%include "dolfin/swig/la/pre.i"
+%import(module="la") "dolfin/la/LinearAlgebraObject.h"
 
 // %import types from submodule function of SWIG module function
 %include "dolfin/swig/function/pre.i"
@@ -268,5 +276,7 @@ import_array();
 %include "dolfin/swig/graph/post.i"
 
 // %include types from submodule ale
+%include "dolfin/swig/ale/pre.i"
 %include "dolfin/ale/ALE.h"
+%include "dolfin/ale/MeshDisplacement.h"
 

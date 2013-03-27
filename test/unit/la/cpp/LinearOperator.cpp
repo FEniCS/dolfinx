@@ -48,7 +48,8 @@ public:
     public:
 
       MyLinearOperator(Form& a_action, Function& u)
-        : LinearOperator(), a_action(a_action), u(u)
+        : LinearOperator(*u.vector(), *u.vector()), 
+	  a_action(a_action), u(u)
       {
         // Do nothing
       }
@@ -77,6 +78,17 @@ public:
     // Iterate over backends supporting linear operators
     for (std::size_t i = 0; i < backends.size(); i++)
     {
+      // Check whether backend is available
+      if (!has_linear_algebra_backend(backends[i]))
+	continue;
+
+      // Skip testing uBLAS in parallel
+      if (MPI::num_processes() > 1 && backends[i] == "uBLAS")
+      {
+	info("Not running uBLAS test in parallel");
+	continue;
+      }
+
       // Set linear algebra backend
       parameters["linear_algebra_backend"] = backends[i];
 
@@ -84,13 +96,17 @@ public:
       UnitSquareMesh mesh(8, 8);
       ReactionDiffusion::FunctionSpace V(mesh);
       ReactionDiffusion::BilinearForm a(V, V);
+      ReactionDiffusion::LinearForm L(V);
+      Constant f(1.0);
+      L.f = f;
       Matrix A;
-      Vector x;
-      Vector b(V.dim());
-      b = 1.0;
+      Vector x, b;
       assemble(A, a);
+      assemble(b, L);
       solve(A, x, b, "gmres", "none");
       const double norm_ref = norm(x, "l2");
+
+      continue;
 
       // Solve using linear operator defined by form action
       ReactionDiffusionAction::LinearForm a_action(V);

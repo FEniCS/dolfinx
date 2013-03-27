@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2012-05-10
-// Last changed: 2012-05-14
+// Last changed: 2013-03-15
 
 #ifndef __CSG_CGAL_MESH_GENERATOR2D_H
 #define __CSG_CGAL_MESH_GENERATOR2D_H
@@ -49,6 +49,7 @@ namespace dolfin
     static Parameters default_parameters()
     {
       Parameters p("csg_cgal_meshgenerator");
+      p.add("mesh_resolution", 64);
       p.add("triangle_shape_bound", 0.125);
       p.add("cell_size", 0.25);
 

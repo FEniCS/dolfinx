@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2010-08-30
-// Last changed: 2012-07-05
+// Last changed: 2013-03-21
 //
 // This demo program solves the incompressible Navier-Stokes equations
 // on an L-shaped domain using Chorin's splitting method.
@@ -84,7 +84,7 @@ int main()
   parameters["std_out_all_processes"] = false;
 
   // Load mesh from file
-  Mesh mesh("lshape.xml.gz");
+  Mesh mesh("../lshape.xml.gz");
 
   // Create function spaces
   VelocityUpdate::FunctionSpace V(mesh);

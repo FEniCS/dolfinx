@@ -74,10 +74,10 @@ namespace dolfin
       p.add(LUSolver::default_parameters());
       p.add(KrylovSolver::default_parameters());
 
-#ifdef HAS_PETSC
+      #ifdef HAS_PETSC
       p.add(PETScSNESSolver::default_parameters());
       nonlinear_solvers.insert("snes");
-#endif
+      #endif
 
       p.add("nonlinear_solver", default_nonlinear_solver, nonlinear_solvers);
 
@@ -124,10 +124,10 @@ namespace dolfin
     // The Newton solver
     boost::shared_ptr<NewtonSolver> newton_solver;
 
-#ifdef HAS_PETSC
+    #ifdef HAS_PETSC
     // Or, alternatively, the SNES solver
     boost::shared_ptr<PETScSNESSolver> snes_solver;
-#endif
+    #endif
 
   };
 

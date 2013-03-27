@@ -43,8 +43,8 @@ void dolfin::assemble_system(GenericMatrix& A,
                              const Form& a,
                              const Form& L)
 {
-  SystemAssembler assembler;
-  assembler.assemble(A, b, a, L);
+  SystemAssembler assembler(a, L);
+  assembler.assemble(A, b);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble_system(GenericMatrix& A,
@@ -53,8 +53,8 @@ void dolfin::assemble_system(GenericMatrix& A,
                              const Form& L,
                              const DirichletBC& bc)
 {
-  SystemAssembler assembler;
-  assembler.assemble(A, b, a, L, bc);
+  SystemAssembler assembler(a, L, bc);
+  assembler.assemble(A, b);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble_system(GenericMatrix& A,
@@ -63,8 +63,8 @@ void dolfin::assemble_system(GenericMatrix& A,
                              const Form& L,
                              const std::vector<const DirichletBC*> bcs)
 {
-  SystemAssembler assembler;
-  assembler.assemble(A, b, a, L, bcs);
+  SystemAssembler assembler(a, L, bcs);
+  assembler.assemble(A, b);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble_system(GenericMatrix& A,
@@ -72,10 +72,10 @@ void dolfin::assemble_system(GenericMatrix& A,
                              const Form& a,
                              const Form& L,
                              const std::vector<const DirichletBC*> bcs,
-                             const GenericVector* x0)
+                             const GenericVector& x0)
 {
-  SystemAssembler assembler;
-  assembler.assemble(A, b, a, L, bcs, x0);
+  SystemAssembler assembler(a, L, bcs);
+  assembler.assemble(A, b, x0);
 }
 //-----------------------------------------------------------------------------
 double dolfin::assemble(const Form& a)

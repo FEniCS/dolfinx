@@ -21,7 +21,7 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2012-12-01
+// Last changed: 2013-03-11
 
 #include <fstream>
 #include <string>
@@ -33,6 +33,7 @@
 #include "BinaryFile.h"
 #include "RAWFile.h"
 #include "VTKFile.h"
+#include "ExodusFile.h"
 #include "XMLFile.h"
 #include "XYZFile.h"
 #include "XDMFFile.h"
@@ -73,6 +74,12 @@ File::File(const std::string filename, std::string encoding)
     file.reset(new XMLFile(filename));
   else if (extension == ".pvd")
     file.reset(new VTKFile(filename, encoding));
+#ifdef HAS_VTK
+#ifdef HAS_VTK_EXODUS
+  else if (extension == ".e")
+    file.reset(new ExodusFile(filename));
+#endif
+#endif
   else if (extension == ".raw")
     file.reset(new RAWFile(filename));
   else if (extension == ".xyz")
@@ -82,9 +89,9 @@ File::File(const std::string filename, std::string encoding)
 #ifdef HAS_HDF5
   else if (extension == ".xdmf")
     file.reset(new XDMFFile(filename));
+#endif
   else if (extension == ".svg")
     file.reset(new SVGFile(filename));
-#endif
   else
   {
     dolfin_error("File.cpp",
@@ -134,6 +141,36 @@ File::File(std::ostream& outstream)
 File::~File()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(const std::pair<const Mesh*, double> mesh)
+{
+  file->write();
+  *file << mesh;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(const std::pair<const MeshFunction<int>*, double> f)
+{
+  file->write();
+  *file << f;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(const std::pair<const MeshFunction<std::size_t>*, double> f)
+{
+  file->write();
+  *file << f;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(const std::pair<const MeshFunction<double>*, double> f)
+{
+  file->write();
+  *file << f;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(const std::pair<const MeshFunction<bool>*, double> f)
+{
+  file->write();
+  *file << f;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const std::pair<const Function*, double> u)

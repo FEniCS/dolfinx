@@ -1,4 +1,4 @@
-"""Unit tests for Dirichlet boundary conditions"""
+"""Unit tests for Periodoc conditions"""
 
 # Copyright (C) 2012 Garth N. Wells
 #
@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2012-08-18
-# Last changed:
+# Last changed: 2013-03-08
 
 import unittest
 import numpy
@@ -56,6 +56,32 @@ class PeriodicBCTest(unittest.TestCase):
         mesh = UnitSquareMesh(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1, constrained_domain=pbc)
         VV = V*V
+
+    def test_instantiation_mixed_element_real(self):
+        """ A rudimentary test for instantiation with mixed elements that include a real space"""
+
+        pbc = PeriodicBoundary2()
+        mesh = UnitSquareMesh(8, 8)
+        V = FunctionSpace(mesh, "Lagrange", 1, constrained_domain=pbc)
+        R = FunctionSpace(mesh, "Real", 0, constrained_domain=pbc)
+        VV = V*R
+        VV = R*V
+
+    def test_instantiation_no_vertex_element_2D(self):
+        """ A rudimentary test for instantiation for element that does
+        not require number of vertices (2D)"""
+
+        pbc = PeriodicBoundary2()
+        mesh = UnitSquareMesh(8, 8)
+        V = FunctionSpace(mesh, "BDM", 1, constrained_domain=pbc)
+
+    def test_instantiation_no_vertex_element_3D(self):
+        """ A rudimentary test for instantiation for element that does
+        not require number of vertices (3D)"""
+
+        pbc = PeriodicBoundary3()
+        mesh = UnitCubeMesh(8, 8, 9)
+        V = FunctionSpace(mesh, "BDM", 1, constrained_domain=pbc)
 
     def test_director_lifetime(self):
         """Test for problems with objects with directors going out

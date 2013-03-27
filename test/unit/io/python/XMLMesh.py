@@ -117,7 +117,7 @@ class XMLMesh(unittest.TestCase):
 class LocalMeshDataXML_IO(unittest.TestCase):
 
     def testRead(self):
-        file = File("../../../../data/meshes/snake.xml.gz")
+        file = File("../snake.xml.gz")
         localdata = cpp.LocalMeshData()
         file >> localdata
 

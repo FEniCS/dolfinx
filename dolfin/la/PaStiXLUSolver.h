@@ -51,7 +51,7 @@ namespace dolfin
     /// Destructor
     virtual ~PaStiXLUSolver();
 
-    /// Constructor
+    /// Solve Ax = b
     std::size_t solve(GenericVector& x, const GenericVector& b);
 
     /// Default parameter values

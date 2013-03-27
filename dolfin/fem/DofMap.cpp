@@ -21,9 +21,10 @@
 // Modified by Niclas Jansson, 2009
 // Modified by Joachim B Haga, 2012
 // Modified by Mikael Mortensen, 2012
+// Modified by Jan Blechta, 2013
 //
 // First added:  2007-03-01
-// Last changed: 2013-01-08
+// Last changed: 2013-03-04
 
 #include <boost/unordered_map.hpp>
 #include <dolfin/common/MPI.h>
@@ -198,7 +199,7 @@ std::size_t DofMap::cell_dimension(std::size_t cell_index) const
 std::size_t DofMap::max_cell_dimension() const
 {
   dolfin_assert(_ufc_dofmap);
-  return _ufc_dofmap->max_local_dimension();
+  return _ufc_dofmap->local_dimension();
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_entity_dofs(std::size_t dim) const
@@ -257,7 +258,7 @@ void DofMap::tabulate_entity_dofs(std::vector<std::size_t>& dofs,
   dolfin_assert(_ufc_dofmap);
   if (_ufc_dofmap->num_entity_dofs(dim)==0)
     return ;
-  
+
   dofs.resize(_ufc_dofmap->num_entity_dofs(dim));
   _ufc_dofmap->tabulate_entity_dofs(&dofs[0], dim, local_entity);
 }
@@ -345,7 +346,7 @@ std::vector<double> DofMap::tabulate_all_coordinates(const Mesh& mesh) const
   return x;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t> DofMap::vertex_to_dof_map(Mesh& mesh) const
+std::vector<dolfin::la_index> DofMap::dof_to_vertex_map(Mesh& mesh) const
 {
   // Check that we only have dofs living on vertices
   assert(_ufc_dofmap);
@@ -358,20 +359,21 @@ std::vector<std::size_t> DofMap::vertex_to_dof_map(Mesh& mesh) const
   const std::size_t dofs_per_vertex = _ufc_dofmap->num_entity_dofs(0);
   const std::size_t vert_per_cell = mesh.topology()(top_dim, 0).size(0);
 
-  if (vert_per_cell*dofs_per_vertex != _ufc_dofmap->max_local_dimension())
+  if (vert_per_cell*dofs_per_vertex != _ufc_dofmap->local_dimension())
   {
     dolfin_error("DofMap.cpp",
-                 "tabulating vertex to dof map",
+                 "tabulating dof to vertex map",
                  "Can only tabulate dofs on vertices");
   }
 
   // Allocate data for tabulating local to local map
   std::vector<std::size_t> local_to_local_map(dofs_per_vertex);
 
-  // Create return data structure
+  // Offset of local to global dof numbering
   const dolfin::la_index n0 = _ownership_range.first;
-  const dolfin::la_index n1 = _ownership_range.second;
-  std::vector<std::size_t> vertex_map(n1 - n0);
+
+  // Create return data structure
+  std::vector<dolfin::la_index> dof_map(dofs_per_vertex*mesh.num_entities(0));
 
   // Iterate over vertices
   std::size_t local_vertex_ind = 0;
@@ -401,11 +403,33 @@ std::vector<std::size_t> DofMap::vertex_to_dof_map(Mesh& mesh) const
     for (std::size_t local_dof = 0; local_dof < dofs_per_vertex; local_dof++)
     {
       global_dof = _cell_dofs[local_to_local_map[local_dof]];
-
-      // Of global dof is within ownership range add it to the map
-      if (global_dof >= n0 && global_dof < n1)
-        vertex_map[global_dof - n0] = dofs_per_vertex*vertex->index() + local_dof;
+      dof_map[dofs_per_vertex*vertex->index() + local_dof] = global_dof - n0;
     }
+  }
+
+  // Return the map
+  return dof_map;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::size_t> DofMap::vertex_to_dof_map(Mesh& mesh) const
+{
+  // Get dof to vertex map
+  const std::vector<dolfin::la_index> dof_map = dof_to_vertex_map(mesh);
+
+  // Create return data structure
+  const dolfin::la_index num_dofs = _ownership_range.second
+                                  - _ownership_range.first;
+  std::vector<std::size_t> vertex_map(num_dofs);
+
+  // Invert dof_map
+  dolfin::la_index dof;
+  for (std::size_t i = 0; i < dof_map.size(); i++)
+  {
+    dof = dof_map[i];
+
+    // Skip ghost dofs
+    if (dof >= 0 && dof < num_dofs)
+      vertex_map[dof] = i;
   }
 
   // Return the map

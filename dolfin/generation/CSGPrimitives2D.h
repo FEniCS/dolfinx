@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Johannes Ring, 2012
-// Modified by Benjamin Kehlet, 2012
+// Modified by Benjamin Kehlet, 2012-2013
 //
 // First added:  2012-04-11
-// Last changed: 2012-11-12
+// Last changed: 2013-03-13
 
 #ifndef __CSG_PRIMITIVES_2D_H
 #define __CSG_PRIMITIVES_2D_H
@@ -187,7 +187,7 @@ namespace dolfin
 
   private:
 
-    const std::vector<Point>& _vertices;
+    const std::vector<Point> _vertices;
 
   };
 }

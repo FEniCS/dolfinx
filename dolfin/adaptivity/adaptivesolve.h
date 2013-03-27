@@ -27,10 +27,10 @@ namespace dolfin
 {
 
   // Forward declarations
+  class DirichletBC;
   class Equation;
   class Form;
   class Function;
-  class BoundaryCondition;
   class GoalFunctional;
 
   //--- Adaptive solve of linear problems ---
@@ -46,7 +46,7 @@ namespace dolfin
   /// boundary condition
   void solve(const Equation& equation,
              Function& u,
-             const BoundaryCondition& bc,
+             const DirichletBC& bc,
              const double tol,
              GoalFunctional& M);
 
@@ -54,7 +54,7 @@ namespace dolfin
   /// boundary conditions
   void solve(const Equation& equation,
              Function& u,
-             std::vector<const BoundaryCondition*> bcs,
+             std::vector<const DirichletBC*> bcs,
              const double tol,
              GoalFunctional& M);
 
@@ -72,7 +72,7 @@ namespace dolfin
   /// boundary condition
   void solve(const Equation& equation,
              Function& u,
-             const BoundaryCondition& bc,
+             const DirichletBC& bc,
              const Form& J,
              const double tol,
              GoalFunctional& M);
@@ -81,7 +81,7 @@ namespace dolfin
   /// boundary conditions
   void solve(const Equation& equation,
              Function& u,
-             std::vector<const BoundaryCondition*> bcs,
+             std::vector<const DirichletBC*> bcs,
              const Form& J,
              const double tol,
              GoalFunctional& M);

@@ -22,7 +22,7 @@
 // Modified by Johannes Ring 2012
 //
 // First added:  2005-07-05
-// Last changed: 2012-09-14
+// Last changed: 2013-03-11
 
 #include <ostream>
 #include <sstream>
@@ -93,55 +93,63 @@ VTKFile::~VTKFile()
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const Mesh& mesh)
 {
-  Timer t("Write mesh to PVD/VTK file");
-
-  // Get vtu file name and intialise out files
-  std::string vtu_filename = init(mesh, mesh.topology().dim());
-
-  // Write local mesh to vtu file
-  VTKWriter::write_mesh(mesh, mesh.topology().dim(), vtu_filename, binary, compress);
-
-  // Parallel-specific files
-  if (MPI::num_processes() > 1 && MPI::process_number() == 0)
-  {
-    std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
-    pvtu_write_mesh(pvtu_filename);
-    pvd_file_write(counter, counter, pvtu_filename);
-  }
-  else if (MPI::num_processes() == 1)
-    pvd_file_write(counter, counter, vtu_filename);
-
-  // Finalise
-  finalize(vtu_filename, counter);
-
-  log(TRACE, "Saved mesh %s (%s) to file %s in VTK format.",
-      mesh.name().c_str(), mesh.label().c_str(), _filename.c_str());
+  write_mesh(mesh, counter);
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const MeshFunction<bool>& meshfunction)
 {
-  mesh_function_write(meshfunction);
+  mesh_function_write(meshfunction, counter);
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const MeshFunction<std::size_t>& meshfunction)
 {
-  mesh_function_write(meshfunction);
+  mesh_function_write(meshfunction, counter);
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const MeshFunction<int>& meshfunction)
 {
-  mesh_function_write(meshfunction);
+  mesh_function_write(meshfunction, counter);
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const MeshFunction<double>& meshfunction)
 {
-  mesh_function_write(meshfunction);
+  mesh_function_write(meshfunction, counter);
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const Function& u)
 {
   u.update();
   write_function(u, counter);
+}
+//----------------------------------------------------------------------------
+void VTKFile::operator<<(const std::pair<const Mesh*, double> mesh)
+{
+  dolfin_assert(mesh.first);
+  write_mesh(*(mesh.first), mesh.second);
+}
+//----------------------------------------------------------------------------
+void VTKFile::operator<<(const std::pair<const MeshFunction<int>*, double> f)
+{
+  dolfin_assert(f.first);
+  mesh_function_write(*(f.first), f.second);
+}
+//----------------------------------------------------------------------------
+void VTKFile::operator<<(const std::pair<const MeshFunction<std::size_t>*, double> f)
+{
+  dolfin_assert(f.first);
+  mesh_function_write(*(f.first), f.second);
+}
+//----------------------------------------------------------------------------
+void VTKFile::operator<<(const std::pair<const MeshFunction<double>*, double> f)
+{
+  dolfin_assert(f.first);
+  mesh_function_write(*(f.first), f.second);
+}
+//----------------------------------------------------------------------------
+void VTKFile::operator<<(const std::pair<const MeshFunction<bool>*, double> f)
+{
+  dolfin_assert(f.first);
+  mesh_function_write(*(f.first), f.second);
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const std::pair<const Function*, double> u)
@@ -181,6 +189,33 @@ void VTKFile::write_function(const Function& u, double time)
 
   log(TRACE, "Saved function %s (%s) to file %s in VTK format.",
       u.name().c_str(), u.label().c_str(), _filename.c_str());
+}
+//----------------------------------------------------------------------------
+void VTKFile::write_mesh(const Mesh& mesh, double time)
+{
+  Timer t("Write mesh to PVD/VTK file");
+
+  // Get vtu file name and intialise out files
+  std::string vtu_filename = init(mesh, mesh.topology().dim());
+
+  // Write local mesh to vtu file
+  VTKWriter::write_mesh(mesh, mesh.topology().dim(), vtu_filename, binary, compress);
+
+  // Parallel-specific files
+  if (MPI::num_processes() > 1 && MPI::process_number() == 0)
+  {
+    std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
+    pvtu_write_mesh(pvtu_filename);
+    pvd_file_write(counter, time, pvtu_filename);
+  }
+  else if (MPI::num_processes() == 1)
+    pvd_file_write(counter, time, vtu_filename);
+
+  // Finalise
+  finalize(vtu_filename, time);
+
+  log(TRACE, "Saved mesh %s (%s) to file %s in VTK format.",
+      mesh.name().c_str(), mesh.label().c_str(), _filename.c_str());
 }
 //----------------------------------------------------------------------------
 std::string VTKFile::init(const Mesh& mesh, std::size_t cell_dim) const
@@ -651,17 +686,17 @@ std::string VTKFile::vtu_name(const int process, const int num_processes,
 }
 //----------------------------------------------------------------------------
 template<typename T>
-void VTKFile::mesh_function_write(T& meshfunction)
+void VTKFile::mesh_function_write(T& meshfunction, double time)
 {
   const Mesh& mesh = meshfunction.mesh();
   const std::size_t cell_dim = meshfunction.dim();
 
-  if (cell_dim != mesh.topology().dim() && cell_dim != mesh.topology().dim() - 1 && cell_dim != 0)
-  {
-    dolfin_error("VTKFile.cpp",
-                 "write mesh function to VTK file",
-                 "VTK output of mesh functions is implemented for cell-, facet- and vertex-based functions only");
-  }
+  //if (cell_dim != mesh.topology().dim() && cell_dim != mesh.topology().dim() - 1 && cell_dim != 0)
+  //{
+  //  dolfin_error("VTKFile.cpp",
+  //               "write mesh function to VTK file",
+  //               "VTK output of mesh functions is implemented for cell-, facet- and vertex-based functions only");
+  //}
 
   // Update vtu file name and clear file
   std::string vtu_filename = init(mesh, cell_dim);
@@ -691,13 +726,13 @@ void VTKFile::mesh_function_write(T& meshfunction)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
     pvtu_write_function(1, 0, "cell", meshfunction.name(), pvtu_filename);
-    pvd_file_write(counter, counter, pvtu_filename);
+    pvd_file_write(counter, time, pvtu_filename);
   }
   else if (MPI::num_processes() == 1)
-    pvd_file_write(counter, counter, vtu_filename);
+    pvd_file_write(counter, time, vtu_filename);
 
   // Write pvd files
-  finalize(vtu_filename, counter);
+  finalize(vtu_filename, time);
 
   log(TRACE, "Saved mesh function %s (%s) to file %s in VTK format.",
       mesh.name().c_str(), mesh.label().c_str(), _filename.c_str());

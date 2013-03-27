@@ -31,6 +31,7 @@ from dolfin import has_mpi, has_parmetis, has_scotch, has_linear_algebra_backend
 
 # Tests to run
 tests = {
+    "ale":            ["HarmonicSmoothing"],
     "armadillo":      ["test"],
     "adaptivity":     ["errorcontrol", "TimeSeries"],
     "book":           ["chapter_1", "chapter_10"],
@@ -43,7 +44,7 @@ tests = {
                        "XMLMeshValueCollection", "XMLVector", "XMLLocalMeshData",
                        "XDMF", "HDF5"],
     "jit":            ["test"],
-    "la":             ["test", "solve", "Matrix", "Scalar", "Vector", "KrylovSolver"],
+    "la":             ["test", "solve", "Matrix", "Scalar", "Vector", "KrylovSolver", "LinearOperator"],
     "nls":            ["yamabe"],
     "math":           ["test"],
     "meshconvert":    ["test"],

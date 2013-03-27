@@ -33,12 +33,13 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <boost/multi_array.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Hierarchical.h>
-#include "BoundaryCondition.h"
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
@@ -97,7 +98,8 @@ namespace dolfin
   /// three possibilties are "topological", "geometric" and
   /// "pointwise".
 
-  class DirichletBC : public BoundaryCondition, public Hierarchical<DirichletBC>
+  //class DirichletBC : public BoundaryCondition, public Hierarchical<DirichletBC>
+  class DirichletBC : public Hierarchical<DirichletBC>, public Variable
   {
 
   public:
@@ -345,6 +347,14 @@ namespace dolfin
     ///         local facet numbers).
     const std::vector<std::pair<std::size_t, std::size_t> >& markers() const;
 
+    /// Return function space V
+    ///
+    /// *Returns*
+    ///     _FunctionSPace_
+    ///         The function space to which boundary conditions are applied.
+    boost::shared_ptr<const FunctionSpace> function_space() const
+    { return _function_space; }
+
     /// Return boundary value g
     ///
     /// *Returns*
@@ -407,8 +417,7 @@ namespace dolfin
 
   private:
 
-    // FIXME: Make this function pure virtual in BoundaryCondition and reuse code
-    // for different apply methods
+    class LocalData;
 
     // Apply boundary conditions, common method
     void apply(GenericMatrix* A, GenericVector* b, const GenericVector* x) const;
@@ -431,23 +440,31 @@ namespace dolfin
 
     // Compute dofs and values for application of boundary conditions using
     // given method
-    void compute_bc(Map& boundary_values,
-                    BoundaryCondition::LocalData& data, std::string method) const;
+    void compute_bc(Map& boundary_values, LocalData& data,
+                    std::string method) const;
 
     // Compute boundary values for facet (topological approach)
     void compute_bc_topological(Map& boundary_values,
-                                BoundaryCondition::LocalData& data) const;
+                                LocalData& data) const;
 
     // Compute boundary values for facet (geometrical approach)
     void compute_bc_geometric(Map& boundary_values,
-                              BoundaryCondition::LocalData& data) const;
+                              LocalData& data) const;
 
     // Compute boundary values for facet (pointwise approach)
     void compute_bc_pointwise(Map& boundary_values,
-                              BoundaryCondition::LocalData& data) const;
+                              LocalData& data) const;
 
     // Check if the point is in the same plane as the given facet
     bool on_facet(double* coordinates, Facet& facet) const;
+
+    // Check arguments
+    void check_arguments(GenericMatrix* A,
+                         GenericVector* b,
+                         const GenericVector* x) const;
+
+    // The function space (possibly a sub function space)
+    boost::shared_ptr<const FunctionSpace> _function_space;
 
     // The function
     boost::shared_ptr<const GenericFunction> _g;
@@ -459,8 +476,10 @@ namespace dolfin
     static const std::set<std::string> methods;
 
   public:
+
     // User defined sub domain
     boost::shared_ptr<const SubDomain> _user_sub_domain;
+
   private:
 
     // Boundary facets, stored as pairs (cell, local facet number)
@@ -471,6 +490,27 @@ namespace dolfin
 
     // User defined sub domain marker for mesh or mesh function
     std::size_t _user_sub_domain_marker;
+
+    // Local data for application of boundary conditions
+    class LocalData
+    {
+    public:
+
+      // Constructor
+      LocalData(const FunctionSpace& V);
+
+      // Coefficients
+      std::vector<double> w;
+
+      // Facet dofs
+      std::vector<std::size_t> facet_dofs;
+
+      // Coordinates for dofs
+      boost::multi_array<double, 2> coordinates;
+
+    };
+
+
   };
 
 }

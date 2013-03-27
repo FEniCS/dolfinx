@@ -36,7 +36,7 @@ ffc_options = {"optimize": True, \
                "precompute_ip_const": True}
 
 # Create mesh and define function space
-mesh = UnitCubeMesh(16, 16, 16)
+mesh = UnitCubeMesh(24, 16, 16)
 V = VectorFunctionSpace(mesh, "Lagrange", 1)
 
 # Mark boundary subdomians

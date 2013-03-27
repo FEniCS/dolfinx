@@ -129,6 +129,11 @@ class MeshIterator(unittest.TestCase):
 
         self.assertEqual(n, mesh.num_cells())
 
+        # Test non destruction of MeshEntities
+        cell_list = [c for c in cells(mesh)]
+        self.assertEqual(sum(c.volume() for c in cell_list), \
+                         sum(c.volume() for c in cells(mesh)))
+
     def test_mixed_iterators(self):
         "Iterate over vertices of cells"
 

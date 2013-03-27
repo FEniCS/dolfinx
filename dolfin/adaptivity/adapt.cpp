@@ -297,7 +297,7 @@ dolfin::adapt(const LinearVariationalProblem& problem,
   boost::shared_ptr<const Form> a = problem.bilinear_form();
   boost::shared_ptr<const Form> L = problem.linear_form();
   boost::shared_ptr<const Function> u = problem.solution();
-  std::vector<boost::shared_ptr<const BoundaryCondition> > bcs = problem.bcs();
+  std::vector<boost::shared_ptr<const DirichletBC> > bcs = problem.bcs();
 
   // Refine forms
   dolfin_assert(a);
@@ -310,20 +310,19 @@ dolfin::adapt(const LinearVariationalProblem& problem,
   // Refine solution variable
   dolfin_assert(u);
   adapt(*u, adapted_mesh);
-  boost::shared_ptr<Function> refined_u =
-    reference_to_no_delete_pointer(const_cast<Function&>(u->child()));
+  boost::shared_ptr<Function> refined_u
+    = reference_to_no_delete_pointer(const_cast<Function&>(u->child()));
 
   // Refine bcs
   boost::shared_ptr<const FunctionSpace> V(problem.trial_space());
-  std::vector<boost::shared_ptr<const BoundaryCondition> > refined_bcs;
+  std::vector<boost::shared_ptr<const DirichletBC> > refined_bcs;
   for (std::size_t i = 0; i < bcs.size(); i++)
   {
-    const DirichletBC* bc = dynamic_cast<const DirichletBC*>(bcs[i].get());
-    if (bc != 0)
+    if (bcs[i] != 0)
     {
       dolfin_assert(V);
-      adapt(*bc, adapted_mesh, *V);
-      refined_bcs.push_back(bc->child_shared_ptr());
+      adapt(*bcs[i], adapted_mesh, *V);
+      refined_bcs.push_back(bcs[i]->child_shared_ptr());
     }
     else
     {
@@ -364,7 +363,7 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
   boost::shared_ptr<const Form> F = problem.residual_form();
   boost::shared_ptr<const Form> J = problem.jacobian_form();
   boost::shared_ptr<const Function> u = problem.solution();
-  std::vector<boost::shared_ptr<const BoundaryCondition> > bcs = problem.bcs();
+  std::vector<boost::shared_ptr<const DirichletBC> > bcs = problem.bcs();
 
   // Refine forms
   dolfin_assert(F);
@@ -382,22 +381,13 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
 
   // Refine bcs
   boost::shared_ptr<const FunctionSpace> V(problem.trial_space());
-  std::vector<boost::shared_ptr<const BoundaryCondition> > refined_bcs;
+  std::vector<boost::shared_ptr<const DirichletBC> > refined_bcs;
   for (std::size_t i = 0; i < bcs.size(); i++)
   {
-    const DirichletBC* bc = dynamic_cast<const DirichletBC*>(bcs[i].get());
-    if (bc != 0)
-    {
-      dolfin_assert(V);
-      adapt(*bc, adapted_mesh, *V);
-      refined_bcs.push_back(bc->child_shared_ptr());
-    }
-    else
-    {
-      dolfin_error("adapt.cpp",
-                   "adapt nonlinear variational problem",
-                   "Only implemented for Dirichlet boundary conditions");
-    }
+    dolfin_assert(bcs[i] != 0);
+    dolfin_assert(V);
+    adapt(*bcs[i], adapted_mesh, *V);
+    refined_bcs.push_back(bcs[i]->child_shared_ptr());
   }
 
   // Create new problem
@@ -405,14 +395,18 @@ dolfin::adapt(const NonlinearVariationalProblem& problem,
   dolfin_assert(u);
   boost::shared_ptr<NonlinearVariationalProblem> refined_problem;
   if (J)
+  {
     refined_problem.reset(new NonlinearVariationalProblem(F->child_shared_ptr(),
                                                           refined_u,
                                                           refined_bcs,
                                                           J->child_shared_ptr()));
+  }
   else
+  {
     refined_problem.reset(new NonlinearVariationalProblem(F->child_shared_ptr(),
                                                           refined_u,
                                                           refined_bcs));
+  }
 
   // Set parent / child
   set_parent_child(problem, refined_problem);

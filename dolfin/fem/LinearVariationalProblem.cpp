@@ -26,24 +26,17 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LinearVariationalProblem::
-LinearVariationalProblem(const Form& a,
-                         const Form& L,
-                         Function& u)
-  : Hierarchical<LinearVariationalProblem>(*this),
-    _a(reference_to_no_delete_pointer(a)),
-    _L(reference_to_no_delete_pointer(L)),
-    _u(reference_to_no_delete_pointer(u))
+LinearVariationalProblem::LinearVariationalProblem(const Form& a,
+ const Form& L, Function& u) : Hierarchical<LinearVariationalProblem>(*this),
+  _a(reference_to_no_delete_pointer(a)), _L(reference_to_no_delete_pointer(L)),
+  _u(reference_to_no_delete_pointer(u))
 {
   // Check forms
   check_forms();
 }
 //-----------------------------------------------------------------------------
-LinearVariationalProblem::
-LinearVariationalProblem(const Form& a,
-                         const Form& L,
-                         Function& u,
-                         const BoundaryCondition& bc)
+LinearVariationalProblem::LinearVariationalProblem(const Form& a,
+  const Form& L, Function& u, const DirichletBC& bc)
   : Hierarchical<LinearVariationalProblem>(*this),
     _a(reference_to_no_delete_pointer(a)),
     _L(reference_to_no_delete_pointer(L)),
@@ -60,7 +53,7 @@ LinearVariationalProblem::
 LinearVariationalProblem(const Form& a,
                          const Form& L,
                          Function& u,
-                         std::vector<const BoundaryCondition*> bcs)
+                         std::vector<const DirichletBC*> bcs)
   : Hierarchical<LinearVariationalProblem>(*this),
     _a(reference_to_no_delete_pointer(a)),
     _L(reference_to_no_delete_pointer(L)),
@@ -78,7 +71,7 @@ LinearVariationalProblem::
 LinearVariationalProblem(boost::shared_ptr<const Form> a,
                          boost::shared_ptr<const Form> L,
                          boost::shared_ptr<Function> u,
-                         std::vector<boost::shared_ptr<const BoundaryCondition> > bcs)
+                         std::vector<boost::shared_ptr<const DirichletBC> > bcs)
   : Hierarchical<LinearVariationalProblem>(*this),
     _a(a), _L(L), _u(u)
 {
@@ -110,14 +103,14 @@ boost::shared_ptr<const Function> LinearVariationalProblem::solution() const
   return _u;
 }
 //-----------------------------------------------------------------------------
-std::vector<boost::shared_ptr<const BoundaryCondition> >
-LinearVariationalProblem::bcs() const
+std::vector<boost::shared_ptr<const DirichletBC> >
+  LinearVariationalProblem::bcs() const
 {
   return _bcs;
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const FunctionSpace>
-LinearVariationalProblem::trial_space() const
+  LinearVariationalProblem::trial_space() const
 {
   dolfin_assert(_u);
   return _u->function_space();

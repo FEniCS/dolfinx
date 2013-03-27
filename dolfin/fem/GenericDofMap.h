@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Joachim B Haga, 2012
+// Modified by Jan Blechta, 2013
 //
 // First added:  2010-05-26
-// Last changed: 2013-02-19
+// Last changed: 2013-03-04
 
 #ifndef __GENERIC_DOF_MAP_H
 #define __GENERIC_DOF_MAP_H
@@ -53,6 +54,9 @@ namespace dolfin
   class GenericDofMap : public Variable
   {
   public:
+
+    /// Constructor
+    GenericDofMap() : block_size(1) {}
 
     /// True if dof map is a view into another map (is a sub-dofmap)
     virtual bool is_view() const = 0;
@@ -103,6 +107,9 @@ namespace dolfin
 				      std::size_t dim, std::size_t local_entity) const = 0;
 
     /// Return a map between vertices and dofs
+    virtual std::vector<dolfin::la_index> dof_to_vertex_map(Mesh& mesh) const = 0;
+
+    /// Return a map between vertices and dofs
     virtual std::vector<std::size_t> vertex_to_dof_map(Mesh& mesh) const = 0;
 
     /// Tabulate the coordinates of all dofs on a cell (UFC cell version)
@@ -149,8 +156,11 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;
 
-    // Subdomain mapping constrained boundaries, e.g. periodic conditions
+    /// Subdomain mapping constrained boundaries, e.g. periodic conditions
     boost::shared_ptr<const SubDomain> constrained_domain;
+
+    /// Dofmap block size, e.g. 3 for 3D elasticity with a suitable ordered dofmao
+    std::size_t block_size;
 
   };
 
