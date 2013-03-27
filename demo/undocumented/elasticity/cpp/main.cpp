@@ -94,7 +94,7 @@ int main()
   };
 
   // Read mesh and create function space
-  Mesh mesh("gear.xml.gz");
+  Mesh mesh("../gear.xml.gz");
   Elasticity::Form_a::TestSpace V(mesh);
 
   // Create right-hand side

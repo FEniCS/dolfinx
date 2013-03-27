@@ -153,7 +153,7 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
     return self->operator--();
   }
 
-  dolfin::ENTITY& _dereference()
+  dolfin::ENTITY _dereference()
   {
     return *self->operator->();
   }

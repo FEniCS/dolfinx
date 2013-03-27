@@ -31,6 +31,7 @@
 #include <string>
 #include <algorithm>
 
+#include <CGAL/Cartesian_d.h>
 #include <CGAL/Polyhedron_incremental_builder_3.h>
 #include <CGAL/Min_sphere_of_spheres_d.h>
 #include <CGAL/Min_sphere_of_spheres_d_traits_3.h>
@@ -312,22 +313,26 @@ CGAL::Bbox_3 PolyhedronUtils::getBoundingBox(csg::Polyhedron_3& polyhedron)
 //-----------------------------------------------------------------------------
 double PolyhedronUtils::getBoundingSphereRadius(csg::Polyhedron_3& polyhedron)
 {
-  typedef CGAL::Min_sphere_of_spheres_d_traits_3<csg::Polyhedron_3::Traits, double> Traits;
-  typedef Traits::Sphere Sphere;
-  typedef CGAL::Min_sphere_of_spheres_d<Traits> Min_sphere;
+  typedef double FT;
+  typedef CGAL::Cartesian_d<FT> K;
+  typedef CGAL::Min_sphere_of_spheres_d_traits_d<K, FT, 3> MinSphereTraits;
+  typedef CGAL::Min_sphere_of_spheres_d<MinSphereTraits> Min_sphere;
+  typedef MinSphereTraits::Sphere Sphere;
+  typedef K::Point_d Point_d;
 
-  std::vector<Sphere> s(polyhedron.size_of_vertices());
+  std::vector<Sphere> S;
+  FT coord[3];
 
   for (csg::Polyhedron_3::Vertex_iterator it=polyhedron.vertices_begin();
        it != polyhedron.vertices_end(); ++it)
   {
-    const csg::Polyhedron_3::Point_3 p = it->point();
-    s.push_back(Sphere(p, 0.0));
+    coord[0] = it->point().x(); coord[1] = it->point().y(); coord[2] = it->point().z();
+    Point_d p(3, coord,coord+3);
+    S.push_back(Sphere(p, 0.0));
   }
 
-  Min_sphere ms(s.begin(),s.end());
-
-  dolfin_assert(ms.is_valid());
+  Min_sphere ms(S.begin(), S.end());
+  CGAL_assertion(ms.is_valid());
 
   return CGAL::to_double(ms.radius());
 }

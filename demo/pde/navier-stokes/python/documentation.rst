@@ -35,7 +35,7 @@ We then load the mesh for the L-shaped domain from file:
 .. code-block:: python
 
     # Load mesh from file
-    mesh = Mesh("lshape.xml.gz")
+    mesh = Mesh("../lshape.xml.gz")
 
 We next define a pair of function spaces :math:`V` and :math:`Q` for
 the velocity and pressure, and trial and test functions on these
@@ -44,8 +44,8 @@ spaces:
 .. code-block:: python
 
     # Define function spaces (P2-P1)
-    V = VectorFunctionSpace(mesh, "CG", 2)
-    Q = FunctionSpace(mesh, "CG", 1)
+    V = VectorFunctionSpace(mesh, "Lagrange", 2)
+    Q = FunctionSpace(mesh, "Lagrange", 1)
 
     # Define trial and test functions
     u = TrialFunction(V)

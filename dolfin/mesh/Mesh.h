@@ -774,11 +774,6 @@ namespace dolfin
     ///         A global normal direction to the mesh
     void init_cell_orientations(const Expression& global_normal);
 
-    // Temporary hack
-    //void set_periodic_pairs(std::size_t d, std::map<std::size_t, std::pair<std::size_t, std::size_t> >& pairs)
-    //{ periodic_index_map[d] = pairs; }
-    //std::map<std::size_t, std::map<std::size_t, std::pair<std::size_t, std::size_t> > > periodic_index_map;
-
   private:
 
     // Friends

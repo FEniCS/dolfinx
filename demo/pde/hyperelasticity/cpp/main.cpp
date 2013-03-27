@@ -96,7 +96,7 @@ public:
 int main()
 {
   // Create mesh and define function space
-  UnitCubeMesh mesh (16, 16, 16);
+  UnitCubeMesh mesh (24, 16, 16);
   HyperElasticity::FunctionSpace V(mesh);
 
   // Define Dirichlet boundaries

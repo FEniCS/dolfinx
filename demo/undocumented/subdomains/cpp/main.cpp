@@ -61,7 +61,7 @@ int main()
   };
 
   // Read mesh
-  Mesh mesh("dolfin-2.xml.gz");
+  Mesh mesh("../dolfin_fine.xml.gz");
 
   // Create mesh functions over the cell facets
   MeshFunction<std::size_t> sub_domains(mesh, mesh.topology().dim() - 1);

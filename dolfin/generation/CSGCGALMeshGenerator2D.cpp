@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Joachim B Haga 2012
-// Modified by Benjamin Kehlet 2012
+// Modified by Benjamin Kehlet 2012-2013
 //
 // First added:  2012-05-10
-// Last changed: 2012-11-14
+// Last changed: 2013-03-15
 
 #include <vector>
 #include <cmath>
@@ -54,6 +54,9 @@
 #include <CGAL/Delaunay_mesh_face_base_2.h>
 #include <CGAL/Delaunay_mesh_size_criteria_2.h>
 
+#include <CGAL/Min_circle_2.h>
+#include <CGAL/Min_circle_2_traits_2.h>
+
 typedef CGAL::Exact_predicates_exact_constructions_kernel Exact_Kernel;
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Inexact_Kernel;
 
@@ -66,12 +69,19 @@ typedef Nef_polyhedron_2::Point Nef_point_2;
 typedef Nef_polyhedron_2::Explorer Explorer;
 typedef Explorer::Face_const_iterator Face_const_iterator;
 typedef Explorer::Hole_const_iterator Hole_const_iterator;
+typedef Explorer::Vertex_const_iterator Vertex_const_iterator;
 typedef Explorer::Halfedge_around_face_const_circulator Halfedge_around_face_const_circulator;
 typedef Explorer::Vertex_const_handle Vertex_const_handle;
 typedef Explorer::Halfedge_const_handle Halfedge_const_handle;
 
 typedef CGAL::Triangulation_vertex_base_2<Inexact_Kernel>  Vertex_base;
 typedef CGAL::Constrained_triangulation_face_base_2<Inexact_Kernel> Face_base;
+
+// Min enclosing circle typedefs
+typedef CGAL::Min_circle_2_traits_2<Extended_kernel>  Min_Circle_Traits;
+typedef CGAL::Min_circle_2<Min_Circle_Traits>      Min_circle;
+typedef CGAL::Circle_2<Extended_kernel> CGAL_Circle;
+
 
 template <class Gt,
           class Fb >
@@ -400,9 +410,35 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   mesher.set_seeds(list_of_seeds.begin(), list_of_seeds.end(), true);
 
   // Set shape and size criteria
-  Mesh_criteria_2 criteria(parameters["triangle_shape_bound"],
+  const int mesh_resolution = parameters["mesh_resolution"];
+  if (mesh_resolution > 0)
+  {
+    cout << "Mesh resolution set" << endl;
+
+    std::vector<Nef_point_2> points;
+    for (Vertex_const_iterator it = explorer.vertices_begin();
+         it != explorer.vertices_end();
+         it++)
+      points.push_back(it->point());
+
+    Min_circle min_circle (points.begin(),
+                           points.end(),
+                           true); //randomize point order
+
+    const double cell_size = 2.0*sqrt(CGAL::to_double(min_circle.circle().squared_radius()))/mesh_resolution;
+
+
+    Mesh_criteria_2 criteria(parameters["triangle_shape_bound"],
+                             cell_size);
+    mesher.set_criteria(criteria);
+  } 
+  else
+  {
+    // Set shape and size criteria
+    Mesh_criteria_2 criteria(parameters["triangle_shape_bound"],
                            parameters["cell_size"]);
-  mesher.set_criteria(criteria);
+    mesher.set_criteria(criteria);
+  }
 
   // Refine CGAL mesh/triangulation
   mesher.refine_mesh();

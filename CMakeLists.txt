@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 2.8)
 
 project(DOLFIN)
 set(DOLFIN_VERSION_MAJOR "1")
-set(DOLFIN_VERSION_MINOR "1")
+set(DOLFIN_VERSION_MINOR "2")
 set(DOLFIN_VERSION_MICRO "0+")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 
@@ -246,10 +246,10 @@ endif()
 find_package(Boost COMPONENTS ${DOLFIN_BOOST_COMPONENTS} REQUIRED)
 
 # Check for required package UFC
-find_package(UFC 2.1.0 QUIET HINTS ${UFC_DIR})
+find_package(UFC 2.2.0 QUIET HINTS ${UFC_DIR})
 if (NOT UFC_FOUND)
   message(FATAL_ERROR "Could not find a configuration file for package UFC that is "
-    "compatible with requested version 2.1.0.\n"
+    "compatible with requested version 2.2.0.\n"
     "Set UFC_DIR to the directory containing a CMake configuration file for UFC.")
 else()
   message(STATUS "UFC version: ${UFC_VERSION_STRING}")
@@ -408,7 +408,7 @@ endif()
 
 # Check for CGAL
 if (DOLFIN_ENABLE_CGAL)
-  find_package(CGAL 3.8)
+  find_package(CGAL 4.1)
 endif()
 
 # Check for zlib

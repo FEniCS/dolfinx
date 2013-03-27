@@ -30,8 +30,8 @@ follows:
 .. code-block:: python
 
     # Define function spaces (P2-P1)
-    V = VectorElement("CG", triangle, 2)
-    Q = FiniteElement("CG", triangle, 1)
+    V = VectorElement("Lagrange", triangle, 2)
+    Q = FiniteElement("Lagrange", triangle, 1)
 
     # Define trial and test functions
     u = TrialFunction(V)
@@ -55,8 +55,8 @@ follows:
 .. code-block:: python
 
     # Define function spaces (P2-P1)
-    V = VectorElement("CG", triangle, 2)
-    Q = FiniteElement("CG", triangle, 1)
+    V = VectorElement("Lagrange", triangle, 2)
+    Q = FiniteElement("Lagrange", triangle, 1)
 
     # Define trial and test functions
     p = TrialFunction(Q)
@@ -76,8 +76,8 @@ follows:
 .. code-block:: python
 
     # Define function spaces (P2-P1)
-    V = VectorElement("CG", triangle, 2)
-    Q = FiniteElement("CG", triangle, 1)
+    V = VectorElement("Lagrange", triangle, 2)
+    Q = FiniteElement("Lagrange", triangle, 1)
 
     # Define trial and test functions
     u = TrialFunction(V)
@@ -210,7 +210,7 @@ We then load the mesh for the L-shaped domain from file:
 .. code-block:: c++
 
     // Load mesh from file
-    Mesh mesh("lshape.xml.gz");
+    Mesh mesh("../lshape.xml.gz");
 
 We next define a pair of function spaces :math:`V` and :math:`Q` for
 the velocity and pressure, and test and trial functions on these

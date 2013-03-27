@@ -28,13 +28,8 @@ manifolds."""
 from dolfin import *
 import numpy
 
-# Create mesh
-#n = 16
-#ball = Mesh(Sphere(Point(0.0, 0.0, 0.0), 1.0), n)
-#mesh = BoundaryMesh(ball)
-#file = File("sphere16.xml")
-#file << mesh
-mesh = Mesh("sphere16.xml")
+# Read mesh
+mesh = Mesh("../sphere_16.xml.gz")
 
 # Define global normal
 global_normal = Expression(("x[0]", "x[1]", "x[2]"))

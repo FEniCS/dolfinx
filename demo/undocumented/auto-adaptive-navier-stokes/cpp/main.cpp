@@ -58,7 +58,7 @@ int main()
   parameters["allow_extrapolation"] = true;
 
   // Create mesh and function space
-  Mesh mesh("channel_with_flap.xml");
+  Mesh mesh("../channel_with_flap.xml.gz");
   AdaptiveNavierStokes::BilinearForm::TrialSpace W(mesh);
 
   // Unknown
