@@ -36,7 +36,7 @@ namespace dolfin
 {
   /// Forward declarations
   class PETScVector;
-  
+
   /// This class implements methods for solving nonlinear systems
   /// via PETSc's SNES interface. It includes line search and trust
   /// region techniques for globalising the convergence of the
@@ -51,8 +51,8 @@ namespace dolfin
 
     /// Destructor
     virtual ~PETScSNESSolver();
-    
-    /// Solve abstract nonlinear problem :math:`F(x) = 0` under the 
+
+    /// Solve abstract nonlinear problem :math:`F(x) = 0` under the
     /// bound constraint :math:'xl \leq x \leq xu' for given
     /// :math:`F` and Jacobian :math:`\dfrac{\partial F}{\partial x}`.
     ///
@@ -73,7 +73,7 @@ namespace dolfin
                                                   GenericVector& x,
                                                   const GenericVector& lb,
                                                   const GenericVector& ub);
-                                                  
+
     /// Solve abstract nonlinear problem :math:`F(x) = 0` for given
     /// :math:`F` and Jacobian :math:`\dfrac{\partial F}{\partial x}`.
     ///
@@ -123,16 +123,16 @@ namespace dolfin
     /// Here, x is passed in as a model vector from which we make our Vecs
     /// that tell PETSc the bounds if the "sign" parameter is used.
     void set_bounds(GenericVector& x);
-    
+
     // Check if the problem is a variational inequality
-    bool is_vi();   
-    
+    bool is_vi() const;
+
     // Upper and lower bounds for bound-constrained solvers
     boost::shared_ptr<const PETScVector> lb;
-    boost::shared_ptr<const PETScVector> ub;   
-    
-    // Flag to indicate if explicit bounds are set 
-    bool has_explicit_bounds; 
+    boost::shared_ptr<const PETScVector> ub;
+
+    // Flag to indicate if explicit bounds are set
+    bool has_explicit_bounds;
 
   };
 

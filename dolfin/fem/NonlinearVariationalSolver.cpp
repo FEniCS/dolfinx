@@ -49,33 +49,33 @@ NonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> proble
 {
   // Set parameters
   parameters = default_parameters();
-}       
+}
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, bool> NonlinearVariationalSolver::solve(const Function& lb,
                                                                const Function& ub)
-{ 
-  solve(lb.vector(), ub.vector());
-}   
+{
+  return solve(lb.vector(), ub.vector());
+}
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, bool> NonlinearVariationalSolver::solve(boost::shared_ptr<const Function> lb,
                                        boost::shared_ptr<const Function> ub)
-{ 
-  solve(*lb,*ub);
-}                                       
+{
+  return solve(*lb,*ub);
+}
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, bool> NonlinearVariationalSolver::solve(const GenericVector& lb,
                                                                const GenericVector& ub)
 {
-  solve(reference_to_no_delete_pointer(lb),reference_to_no_delete_pointer(ub));
-}   
+  return solve(reference_to_no_delete_pointer(lb),reference_to_no_delete_pointer(ub));
+}
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, bool> NonlinearVariationalSolver::solve(boost::shared_ptr<const GenericVector> lb,
                                        boost::shared_ptr<const GenericVector> ub)
 {
   // Set bounds and solve
   this->_problem->set_bounds(lb,ub);
-  solve();
-}  
+  return solve();
+}
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, bool>  NonlinearVariationalSolver::solve()
 {
@@ -93,7 +93,7 @@ std::pair<std::size_t, bool>  NonlinearVariationalSolver::solve()
 #ifndef HAS_PETSC
   if (_problem->has_lower_bound() || _problem->has_upper_bound())
   {
-  dolfin_error("NonlinearVariationalSolver.cpp",
+    dolfin_error("NonlinearVariationalSolver.cpp",
                  "solve nonlinear variational problem",
                  "Needs PETSc to solve bound constrained problems");
   }
@@ -114,7 +114,7 @@ std::pair<std::size_t, bool>  NonlinearVariationalSolver::solve()
   std::pair<std::size_t, bool> ret;
 
   if (std::string(parameters["nonlinear_solver"]) == "newton")
-  { 
+  {
     if (_problem->has_lower_bound() && _problem->has_upper_bound())
     {
     dolfin_error("NonlinearVariationalSolver.cpp",
