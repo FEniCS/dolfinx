@@ -106,9 +106,9 @@ for demo in cppremoves:
 # Remove C++ coloring demo on Windows until #797640 is fixed
 if platform.system() == 'Windows':
     winremove = [os.path.join(demodir, 'undocumented', 'coloring', 'cpp')]
-    for demo in wrinremove:
+    for demo in winremove:
         if demo in cppdemos:
-            cppdemos.remove()
+            cppdemos.remove(demo)
 
 # List of demos that throw expected errors in parallel
 not_working_in_parallel = \
