@@ -23,16 +23,13 @@ from a common mesh."""
 
 from dolfin import *
 
-print "This demo is presently broken. See https://bugs.launchpad.net/dolfin/+bug/1047641"
-exit()
-
 # Structure sub domain
 class Structure(SubDomain):
     def inside(self, x, on_boundary):
         return x[0] > 1.4 - DOLFIN_EPS and x[0] < 1.6 + DOLFIN_EPS and x[1] < 0.6 + DOLFIN_EPS
 
 # Create mesh
-mesh = Rectangle(0.0, 0.0, 3.0, 1.0, 60, 20)
+mesh = RectangleMesh(0.0, 0.0, 3.0, 1.0, 60, 20)
 
 # Create sub domain markers and mark everaything as 0
 sub_domains = MeshFunction("size_t", mesh, mesh.topology().dim())

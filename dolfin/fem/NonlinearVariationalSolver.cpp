@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Marie E. Rognes, 2011.
+// Modified by Corrado Maurini, 2013.
 //
 // First added:  2011-01-14 (2008-12-26 as VariationalProblem.cpp)
-// Last changed: 2011-03-29
+// Last changed: 2013-03-20
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/DirichletBC.h>
@@ -50,6 +51,32 @@ NonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> proble
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
+std::pair<std::size_t, bool> NonlinearVariationalSolver::solve(const Function& lb,
+                                                               const Function& ub)
+{
+  return solve(lb.vector(), ub.vector());
+}
+//-----------------------------------------------------------------------------
+std::pair<std::size_t, bool> NonlinearVariationalSolver::solve(boost::shared_ptr<const Function> lb,
+                                       boost::shared_ptr<const Function> ub)
+{
+  return solve(*lb,*ub);
+}
+//-----------------------------------------------------------------------------
+std::pair<std::size_t, bool> NonlinearVariationalSolver::solve(const GenericVector& lb,
+                                                               const GenericVector& ub)
+{
+  return solve(reference_to_no_delete_pointer(lb),reference_to_no_delete_pointer(ub));
+}
+//-----------------------------------------------------------------------------
+std::pair<std::size_t, bool> NonlinearVariationalSolver::solve(boost::shared_ptr<const GenericVector> lb,
+                                       boost::shared_ptr<const GenericVector> ub)
+{
+  // Set bounds and solve
+  this->_problem->set_bounds(lb,ub);
+  return solve();
+}
+//-----------------------------------------------------------------------------
 std::pair<std::size_t, bool>  NonlinearVariationalSolver::solve()
 {
   begin("Solving nonlinear variational problem.");
@@ -57,10 +84,20 @@ std::pair<std::size_t, bool>  NonlinearVariationalSolver::solve()
   // Check that the Jacobian has been defined
   dolfin_assert(_problem);
   if (!_problem->has_jacobian())
+  {
     dolfin_error("NonlinearVariationalSolver.cpp",
                  "solve nonlinear variational problem",
                  "The Jacobian form has not been defined");
-
+  }
+  // Check that the dolfin is configured with petsc is bounds are set
+#ifndef HAS_PETSC
+  if (_problem->has_lower_bound() || _problem->has_upper_bound())
+  {
+    dolfin_error("NonlinearVariationalSolver.cpp",
+                 "solve nonlinear variational problem",
+                 "Needs PETSc to solve bound constrained problems");
+  }
+#endif
   // Get problem data
   dolfin_assert(_problem);
   boost::shared_ptr<Function> u(_problem->solution());
@@ -74,11 +111,16 @@ std::pair<std::size_t, bool>  NonlinearVariationalSolver::solve()
                                              reference_to_no_delete_pointer(*this)));
   }
 
-
   std::pair<std::size_t, bool> ret;
 
   if (std::string(parameters["nonlinear_solver"]) == "newton")
   {
+    if (_problem->has_lower_bound() && _problem->has_upper_bound())
+    {
+    dolfin_error("NonlinearVariationalSolver.cpp",
+                 "solve nonlinear variational problem",
+                 "Set the \"nonlinear_solver\" parameter to \"snes\" or remove bounds");
+    }
     // Create Newton solver and set parameters
     if (newton_solver || reset_jacobian)
     {
@@ -108,7 +150,14 @@ std::pair<std::size_t, bool>  NonlinearVariationalSolver::solve()
     // Solve nonlinear problem using PETSc's SNES
     dolfin_assert(u->vector());
     dolfin_assert(nonlinear_problem);
+    if (_problem->has_lower_bound() && _problem->has_upper_bound())
+    {
+    ret = snes_solver->solve(*nonlinear_problem, *u->vector(), *_problem->lower_bound(), *_problem->upper_bound());
+    }
+    else
+    {
     ret = snes_solver->solve(*nonlinear_problem, *u->vector());
+    }
   }
 #endif
   else

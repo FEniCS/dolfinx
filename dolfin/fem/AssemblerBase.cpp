@@ -21,7 +21,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2007-01-17
-// Last changed: 2012-03-02
+// Last changed: 2013-03-22
 
 #include <boost/scoped_ptr.hpp>
 #include <dolfin/common/Timer.h>
@@ -124,7 +124,8 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
       // Loop over rows and insert 0.0 on the diagonal
       const double block = 0.0;
       const std::pair<std::size_t, std::size_t> row_range = A.local_range(0);
-      for (std::size_t i = row_range.first; i < row_range.second; i++)
+      for (std::size_t i = row_range.first;
+           i < std::min(row_range.second, A.size(1)); i++)
       {
         dolfin::la_index _i = i;
         _A.set(&block, 1, &_i, 1, &_i);
