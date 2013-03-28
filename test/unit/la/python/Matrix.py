@@ -19,9 +19,10 @@
 #
 # Modified by Anders Logg 2011
 # Modified by Mikael Mortensen 2011
+# Modified by Jan Blechta 2013
 #
 # First added:  2011-03-03
-# Last changed: 2011-11-25
+# Last changed: 2013-03-22
 
 import unittest
 from dolfin import *
@@ -37,7 +38,7 @@ class AbstractBaseTest(object):
             print "\nRunning:",type(self).__name__
 
 
-    def assemble_matrices(self, use_backend=False):
+    def assemble_matrices(self, use_backend=False, keep_diagonal=False):
         " Assemble a pair of matrices, one (square) MxM and one MxN"
         mesh = UnitSquareMesh(21, 23)
 
@@ -49,7 +50,7 @@ class AbstractBaseTest(object):
         s = TrialFunction(W)
 
         # Forms
-        a = dot(grad(u), grad(v))*dx
+        a = dot(grad(u), grad(v))*ds
         b = v*s*dx
 
         if use_backend:
@@ -57,9 +58,11 @@ class AbstractBaseTest(object):
                 backend = globals()[self.backend + self.sub_backend + 'Factory'].instance()
             else:
                 backend = globals()[self.backend + 'Factory'].instance()
-            return assemble(a, backend=backend), assemble(b, backend=backend)
+            return assemble(a, backend=backend, keep_diagonal=keep_diagonal), \
+                   assemble(b, backend=backend, keep_diagonal=keep_diagonal)
         else:
-            return assemble(a), assemble(b)
+            return assemble(a, keep_diagonal=keep_diagonal), \
+                   assemble(b, keep_diagonal=keep_diagonal)
 
 
     def test_basic_la_operations(self, use_backend=False):
@@ -194,6 +197,18 @@ class AbstractBaseTest(object):
         A0.compress()
         A0_norm_1 = A0.norm('frobenius')
         self.assertAlmostEqual(A0_norm_0, A0_norm_1)
+
+    def test_ident_zeros_AND_keep_diagonal(self):
+
+        A, B = self.assemble_matrices()
+        if self.backend[0:5] == "PETSc":
+          # FIXME: how to supress catched PETSc error output?
+          self.assertRaises(RuntimeError, A.ident_zeros)
+        else:
+          A.ident_zeros()
+
+        A, B = self.assemble_matrices(keep_diagonal=True)
+        A.ident_zeros()
 
     #def test_create_from_sparsity_pattern(self):
 

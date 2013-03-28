@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Marie E. Rognes, 2011.
+// Modified by Corrado Maurini, 2013.
 //
 // First added:  2011-01-14 (2008-12-26 as VariationalProblem.h)
-// Last changed: 2011-10-20
+// Last changed: 2013-03-20
 
 #ifndef __NONLINEAR_VARIATIONAL_SOLVER_H
 #define __NONLINEAR_VARIATIONAL_SOLVER_H
@@ -44,7 +45,63 @@ namespace dolfin
 
     /// Create nonlinear variational solver for given problem (shared pointer version)
     NonlinearVariationalSolver(boost::shared_ptr<NonlinearVariationalProblem> problem);
-
+    
+    /// Solve variational problem with bound constraints defined by GenericVectors
+    ///    
+    /// *Arguments*
+    ///     lb (_GenericVector_)
+    ///         The linear solver.
+    ///     ub (_GenericVector_)
+    ///         The factory.
+    /// *Returns*
+    ///     std::pair<std::size_t, bool>
+    ///         Pair of number of Newton iterations, and whether
+    ///         iteration converged)
+    std::pair<std::size_t, bool> solve(const GenericVector& lb,
+                                       const GenericVector& ub);
+                                       
+    /// Solve variational problem with bound constraints defined by GenericVectors (shared pointer version)
+    ///    
+    /// *Arguments*
+    ///     lb (_boost::shared_ptr<const GenericVector>_)
+    ///         The linear solver.
+    ///     ub (_boost::shared_ptr<const GenericVector>_)
+    ///         The factory.
+    /// *Returns*
+    ///     std::pair<std::size_t, bool>
+    ///         Pair of number of Newton iterations, and whether
+    ///         iteration converged)
+    std::pair<std::size_t, bool> solve(boost::shared_ptr<const GenericVector> lb,
+                                       boost::shared_ptr<const GenericVector> ub);
+    
+    /// Solve variational problem with bound constraints defined by Functions
+    ///    
+    /// *Arguments*
+    ///     lb (_Function_)
+    ///         The linear solver.
+    ///     ub (_Function_)
+    ///         The factory.
+    /// *Returns*
+    ///     std::pair<std::size_t, bool>
+    ///         Pair of number of Newton iterations, and whether
+    ///         iteration converged)
+    std::pair<std::size_t, bool> solve(const Function& lb,
+                                       const Function& ub);
+                                       
+    /// Solve variational problem with bound constraints defined by Functions (shared pointer version)
+    ///    
+    /// *Arguments*
+    ///     lb (_boost::shared_ptr<const Function>_)
+    ///         The linear solver.
+    ///     ub (_boost::shared_ptr<const Function>_)
+    ///         The factory.
+    /// *Returns*
+    ///     std::pair<std::size_t, bool>
+    ///         Pair of number of Newton iterations, and whether
+    ///         iteration converged)
+    std::pair<std::size_t, bool> solve(boost::shared_ptr<const Function> lb,
+                                       boost::shared_ptr<const Function> ub);
+    
     /// Solve variational problem
     ///
     /// *Returns*
