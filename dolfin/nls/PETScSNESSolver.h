@@ -15,9 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Corrado Maurini, 2013.
 //
 // First added:  2012-10-13
-// Last changed: 2012-12-05
+// Last changed: 2013-03-20
 
 #ifndef __PETSC_SNES_SOLVER_H
 #define __PETSC_SNES_SOLVER_H
@@ -33,7 +34,9 @@
 
 namespace dolfin
 {
-
+  /// Forward declarations
+  class PETScVector;
+  
   /// This class implements methods for solving nonlinear systems
   /// via PETSc's SNES interface. It includes line search and trust
   /// region techniques for globalising the convergence of the
@@ -48,7 +51,29 @@ namespace dolfin
 
     /// Destructor
     virtual ~PETScSNESSolver();
-
+    
+    /// Solve abstract nonlinear problem :math:`F(x) = 0` under the 
+    /// bound constraint :math:'xl \leq x \leq xu' for given
+    /// :math:`F` and Jacobian :math:`\dfrac{\partial F}{\partial x}`.
+    ///
+    /// *Arguments*
+    ///     nonlinear_function (_NonlinearProblem_)
+    ///         The nonlinear problem.
+    ///     x (_GenericVector_)
+    ///         The vector.
+    ///     lb (_GenericVector_)
+    ///         The lower bound.
+    ///     ub (_GenericVector_)
+    ///         The upper bound.
+    /// *Returns*
+    ///     std::pair<std::size_t, bool>
+    ///         Pair of number of Newton iterations, and whether
+    ///         iteration converged)
+    std::pair<std::size_t, bool> solve(NonlinearProblem& nonlinear_problem,
+                                                  GenericVector& x,
+                                                  const GenericVector& lb,
+                                                  const GenericVector& ub);
+                                                  
     /// Solve abstract nonlinear problem :math:`F(x) = 0` for given
     /// :math:`F` and Jacobian :math:`\dfrac{\partial F}{\partial x}`.
     ///
@@ -96,8 +121,18 @@ namespace dolfin
 
     /// Set the bounds on the problem from the parameters, if desired
     /// Here, x is passed in as a model vector from which we make our Vecs
-    /// that tell PETSc the bounds.
+    /// that tell PETSc the bounds if the "sign" parameter is used.
     void set_bounds(GenericVector& x);
+    
+    // Check if the problem is a variational inequality
+    bool is_vi();   
+    
+    // Upper and lower bounds for bound-constrained solvers
+    boost::shared_ptr<const PETScVector> lb;
+    boost::shared_ptr<const PETScVector> ub;   
+    
+    // Flag to indicate if explicit bounds are set 
+    bool has_explicit_bounds; 
 
   };
 
