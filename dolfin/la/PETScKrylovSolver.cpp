@@ -20,7 +20,7 @@
 // Modified by Fredrik Valdmanis 2011
 //
 // First added:  2005-12-02
-// Last changed: 2012-08-20
+// Last changed: 2013-03-18
 
 #ifdef HAS_PETSC
 
@@ -105,6 +105,12 @@ std::vector<std::pair<std::string, std::string> >
 PETScKrylovSolver::preconditioners()
 {
   return PETScPreconditioner::preconditioners();
+}
+//-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_options_prefix(std::string prefix)
+{
+  dolfin_assert(_ksp);
+  KSPSetOptionsPrefix(*_ksp, prefix.c_str());
 }
 //-----------------------------------------------------------------------------
 Parameters PETScKrylovSolver::default_parameters()
@@ -406,11 +412,14 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     {
       dolfin_error("PETScKrylovSolver.cpp",
                    "solve linear system using PETSc Krylov solver",
-                   "Solution failed to converge in %i iterations (PETSc reason %s, norm %e)",
+                   "Solution failed to converge in %i iterations (PETSc reason %s, residual norm ||r|| = %e)",
                    static_cast<int>(num_iterations), reason_str, rnorm);
     }
     else
-      warning("Krylov solver did not converge in %i iterations (PETSc reason %s, norm %e).", num_iterations, reason_str, rnorm);
+    {
+      warning("Krylov solver did not converge in %i iterations (PETSc reason %s, residual norm ||r|| = %e).",
+              num_iterations, reason_str, rnorm);
+    }
   }
 
   // Report results

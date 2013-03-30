@@ -15,6 +15,10 @@ CMAKE_EXTRA_ARGS=$@
 INSTALLDIR=$PWD/local
 BUILDDIR=$PWD/build
 
+if [ ! -d $INSTALLDIR ]; then
+  cmake/scripts/generate-all
+fi
+
 mkdir -p $BUILDDIR
 cd $BUILDDIR
 

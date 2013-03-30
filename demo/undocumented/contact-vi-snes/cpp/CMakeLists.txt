@@ -5,7 +5,7 @@
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
-set(PROJECT_NAME demo_cahn-hilliard)
+set(PROJECT_NAME demo_contact-vi-snes)
 project(${PROJECT_NAME})
 
 # Set verbose output while testing CMake
@@ -34,7 +34,7 @@ include_directories(${DOLFIN_INCLUDE_DIRS})
 include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
-add_executable(${PROJECT_NAME} CahnHilliard2D.cpp CahnHilliard3D.cpp main.cpp)
+add_executable(${PROJECT_NAME} main.cpp)
 
 # Target libraries
 target_link_libraries(${PROJECT_NAME} ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})

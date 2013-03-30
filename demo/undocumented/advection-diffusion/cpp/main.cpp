@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2006-02-09
-// Last changed: 2013-03-13
+// Last changed: 2013-03-21
 //
 // This demo solves the time-dependent advection-diffusion equation
 // by a least-squares stabilized cG(1)cG(1) method. The velocity field
@@ -34,18 +34,18 @@ using namespace dolfin;
 int main(int argc, char *argv[])
 {
   // Read mesh
-  Mesh mesh("../mesh.xml.gz");
+  Mesh mesh("../dolfin_fine.xml.gz");
 
   // Create velocity FunctionSpace
   Velocity::FunctionSpace V_u(mesh);
 
   // Create velocity function
   Function velocity(V_u);
-  XMLFile file_u("../velocity.xml.gz");
+  XMLFile file_u("../dolfin_fine_velocity.xml.gz");
   file_u >> velocity;
 
   // Read sub domain markers
-  MeshFunction<std::size_t> sub_domains(mesh, "../subdomains.xml.gz");
+  MeshFunction<std::size_t> sub_domains(mesh, "../dolfin_fine_subdomains.xml.gz");
 
   // Create function space
   AdvectionDiffusion::FunctionSpace V(mesh);

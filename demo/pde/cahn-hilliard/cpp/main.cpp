@@ -178,7 +178,7 @@ int main(int argc, char* argv[])
     newton_solver.solve(cahn_hilliard, *u.vector());
 
     // Save function to file
-    file << std::make_pair<const Function*, double>(&(u[0]), t);
+    file << std::pair<const Function*, double>(&(u[0]), t);
   }
 
   // Plot solution

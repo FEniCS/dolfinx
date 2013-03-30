@@ -60,7 +60,7 @@ public:
 int main()
 {
   // Read mesh from file
-  Mesh mesh("../dolfin-2.xml.gz");
+  Mesh mesh("../dolfin_fine.xml.gz");
 
   // Have some fun with the mesh
   const double R = 0.15;
