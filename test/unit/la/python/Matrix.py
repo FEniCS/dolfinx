@@ -22,7 +22,7 @@
 # Modified by Jan Blechta 2013
 #
 # First added:  2011-03-03
-# Last changed: 2013-03-22
+# Last changed: 2013-03-30
 
 import unittest
 from dolfin import *
@@ -198,17 +198,43 @@ class AbstractBaseTest(object):
         A0_norm_1 = A0.norm('frobenius')
         self.assertAlmostEqual(A0_norm_0, A0_norm_1)
 
-    def test_ident_zeros_AND_keep_diagonal(self):
+    def test_ident_zeros(self, use_backend=False):
 
-        A, B = self.assemble_matrices()
+        # EpetraMatrix::ident() is not reliable
+        if self.backend == "Epetra":
+            return
+
+        # Check that PETScMatrix::ident_zeros() rethrows PETSc error
         if self.backend[0:5] == "PETSc":
-          # FIXME: how to supress catched PETSc error output?
-          self.assertRaises(RuntimeError, A.ident_zeros)
-        else:
-          A.ident_zeros()
+            A, B = self.assemble_matrices(use_backend=use_backend)
+            self.assertRaises(RuntimeError, A.ident_zeros)
 
-        A, B = self.assemble_matrices(keep_diagonal=True)
+        # Assemble matrix A with diagonal entries
+        A, B = self.assemble_matrices(use_backend=use_backend, keep_diagonal=True)
+
+        # Find zero rows
+        zero_rows = []
+        for i in range(A.local_range(0)[0], A.local_range(0)[1]):
+            row = A.getrow(i)[1]
+            if sum(abs(row)) < DOLFIN_EPS:
+                zero_rows.append(i)
+
+        # Set zero rows to (0,...,0, 1, 0,...,0)
         A.ident_zeros()
+
+        # Check it
+        for i in zero_rows:
+            cols = A.getrow(i)[0]
+            row  = A.getrow(i)[1]
+            for j in range(cols.size + 1):
+                if i == cols[j]:
+                    self.assertAlmostEqual(row[j], 1.0)
+                    break
+            self.assertLess(j, cols.size)
+            self.assertAlmostEqual(sum(abs(row)), 1.0)
+
+    def test_ident_zeros_with_backend(self):
+        self.test_ident_zeros(use_backend=True)
 
     #def test_create_from_sparsity_pattern(self):
 
@@ -278,10 +304,6 @@ if MPI.num_processes() == 1:
     class uBLASDenseTester(DataTester, AbstractBaseTest, unittest.TestCase):
         backend     = "uBLAS"
         sub_backend = "Dense"
-
-    if has_linear_algebra_backend("MTL4"):
-        class MTL4Tester(DataTester, AbstractBaseTest, unittest.TestCase):
-            backend    = "MTL4"
 
     if has_linear_algebra_backend("PETScCusp"):
         class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):
