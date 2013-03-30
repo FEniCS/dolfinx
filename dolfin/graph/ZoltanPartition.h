@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-02-18
+// Last changed: 2013-02-26
 
 #ifndef __DOLFIN_ZOLTAN_PARTITION_H
 #define __DOLFIN_ZOLTAN_PARTITION_H
@@ -43,8 +43,8 @@ namespace dolfin
     static void compute_partition_phg(std::vector<std::size_t>& cell_partition,
                                       const LocalMeshData& mesh_data);
 
-    /// Calculate partitioning using recursive block bisection (Zoltan
-    /// RCB - geometric partitioner)
+    /// Calculate partitioning using recursive block bisection 
+    /// (Zoltan RCB - geometric partitioner)
     static void compute_partition_rcb(std::vector<std::size_t>& cell_partition,
                                       const LocalMeshData& mesh_data);
 
