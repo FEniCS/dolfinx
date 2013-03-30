@@ -154,7 +154,7 @@ void AssemblerBase::check_parameters() const
   if (reset_sparsity && add_values)
   {
     dolfin_error("AssemblerBase.cpp",
-                 "assemble form",
+                 "check parameters",
                  "Can not add values when the sparsity pattern is reset");
   }
 
