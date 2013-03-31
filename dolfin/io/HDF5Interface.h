@@ -450,7 +450,7 @@ namespace dolfin
     const hid_t dataspace_id = H5Screate_simple(1, &dimsf, NULL);
     dolfin_assert(dataspace_id != HDF5_FAIL);
 
-    // Create an attribute of type uint in the dataspace
+    // Create an attribute of type size_t in the dataspace
     const hid_t attribute_id = H5Acreate2(dset_id, attribute_name.c_str(),
                                          h5type, dataspace_id,
                                          H5P_DEFAULT, H5P_DEFAULT);

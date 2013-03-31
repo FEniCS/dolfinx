@@ -32,7 +32,7 @@ edge (jump) terms and the size of the interpolation constant.
 # Modified by Anders Logg 2008-2011
 #
 # First added:  2008-04-03
-# Last changed: 2012-11-12
+# Last changed: 2013-01-23
 
 from dolfin import *
 from numpy import array, sqrt
@@ -83,12 +83,13 @@ for level in xrange(MAX_ITER):
 
     # Check convergence
     if E < TOL:
-        info("Success, solution converged after %d iterations", level)
+        info("Success, solution converged after %d iterations" % level)
         break
 
     # Mark cells for refinement
     cell_markers = MeshFunction("bool", mesh, mesh.topology().dim())
     gamma_0 = sorted(gamma, reverse=True)[int(len(gamma)*REFINE_RATIO)]
+    gamma_0 = MPI.max(gamma_0)
     for c in cells(mesh):
         cell_markers[c] = gamma[c.index()] > gamma_0
 

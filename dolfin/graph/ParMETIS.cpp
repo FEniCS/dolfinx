@@ -19,7 +19,7 @@
 // Modified by Chris Richardson 2013
 //
 // First added:  2010-02-10
-// Last changed: 2013-02-18
+// Last changed: 2013-02-26
 
 #include <dolfin/log/dolfin_log.h>
 
@@ -40,6 +40,18 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
                                  const LocalMeshData& mesh_data)
+{
+  const std::string approach = parameters["partitioning_approach"];
+  
+  if(approach == "PARTITION")
+    partition(cell_partition, mesh_data);
+  else
+    repartition(cell_partition, mesh_data);
+}
+
+
+void ParMETIS::partition(std::vector<std::size_t>& cell_partition,
+                         const LocalMeshData& mesh_data)
 {
   // This function prepares data for ParMETIS calls ParMETIS, and then
   // collects the results from ParMETIS.
@@ -154,8 +166,8 @@ void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
   cell_partition = std::vector<std::size_t>(part.begin(), part.end());
 }
 //-----------------------------------------------------------------------------
-void ParMETIS::recompute_partition(std::vector<std::size_t>& cell_partition,
-                                 const LocalMeshData& mesh_data)
+void ParMETIS::repartition(std::vector<std::size_t>& cell_partition,
+                           const LocalMeshData& mesh_data)
 {
   // Recompute partitioning based on existing
   // Useful when refining mesh etc.
