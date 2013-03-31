@@ -21,7 +21,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2007-01-17
-// Last changed: 2012-03-02
+// Last changed: 2013-03-30
 
 #include <boost/scoped_ptr.hpp>
 #include <dolfin/common/Timer.h>
@@ -51,13 +51,7 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
 {
   dolfin_assert(a.ufc_form());
 
-  // Check that we should not add values
-  if (reset_sparsity && add_values)
-  {
-    dolfin_error("AssemblerBase.cpp",
-                 "assemble form",
-                 "Can not add values when the sparsity pattern is reset");
-  }
+  check_parameters();
 
   // Get dof maps
   std::vector<const GenericDofMap*> dofmaps;
@@ -124,7 +118,8 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
       // Loop over rows and insert 0.0 on the diagonal
       const double block = 0.0;
       const std::pair<std::size_t, std::size_t> row_range = A.local_range(0);
-      for (std::size_t i = row_range.first; i < row_range.second; i++)
+      const std::size_t range = std::min(row_range.second, A.size(1));
+      for (std::size_t i = row_range.first; i < range; i++)
       {
         dolfin::la_index _i = i;
         _A.set(&block, 1, &_i, 1, &_i);
@@ -156,12 +151,11 @@ void AssemblerBase::init_global_tensor(GenericTensor& A, const Form& a)
 //-----------------------------------------------------------------------------
 void AssemblerBase::check_parameters() const
 {
-  if (finalize_tensor && keep_diagonal)
+  if (reset_sparsity && add_values)
   {
     dolfin_error("AssemblerBase.cpp",
                  "check parameters",
-                 "Finalizing the tensor and keeping diagonal entries are incompatible.\
-Finalizing tensor will remove any zeroes ");
+                 "Can not add values when the sparsity pattern is reset");
   }
 
   if (!reset_sparsity && keep_diagonal)
