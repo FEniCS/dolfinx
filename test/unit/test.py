@@ -45,7 +45,7 @@ tests = {
                        "XDMF", "HDF5"],
     "jit":            ["test"],
     "la":             ["test", "solve", "Matrix", "Scalar", "Vector", "KrylovSolver", "LinearOperator"],
-    "nls":            ["yamabe"],
+    "nls":            ["PETScSNESSolver","TAOLinearBoundSolver"],
     "math":           ["test"],
     "meshconvert":    ["test"],
     "mesh":           ["Edge", "Face", "MeshData", "MeshEditor",

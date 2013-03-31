@@ -6,5 +6,6 @@
 #include <dolfin/nls/NonlinearProblem.h>
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/nls/PETScSNESSolver.h>
+#include <dolfin/nls/TAOLinearBoundSolver.h>
 
 #endif
