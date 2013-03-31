@@ -33,39 +33,39 @@ int main()
 {
   #ifdef HAS_TAO
     
-    // Lower bound for displacement
-    class LowerBound : public Expression
+  // Lower bound for displacement
+  class LowerBound : public Expression
+  {
+  public:
+    
+    LowerBound() : Expression(2) {}
+    
+    void eval(Array<double>& values, const Array<double>& x) const
     {
-    public:
+      double xmin = -1.-DOLFIN_EPS;
+      double ymin = -1.;
+      values[0] = xmin-x[0];
+      values[1] = ymin-x[1];
+    }
     
-      LowerBound() : Expression(2) {}
+  };
     
-      void eval(Array<double>& values, const Array<double>& x) const
-      {
-        double xmin = -1.-DOLFIN_EPS;
-        double ymin = -1.;
-        values[0] = xmin-x[0];
-        values[1] = ymin-x[1];
-      }
+  // Upper bound for displacement
+  class UpperBound : public Expression
+  {
+  public:
     
-    };
-    
-    // Upper bound for displacement
-    class UpperBound : public Expression
-    {
-    public:
-    
-      UpperBound() : Expression(2) {}
+    UpperBound() : Expression(2) {}
 
-      void eval(Array<double>& values, const Array<double>& x) const
-      {
-        double xmax = 1.+DOLFIN_EPS;
-        double ymax = 1.;
-        values[0] = xmax-x[0];
-        values[1] = ymax-x[1];
-      }
+    void eval(Array<double>& values, const Array<double>& x) const
+    {
+      double xmax = 1.+DOLFIN_EPS;
+      double ymax = 1.;
+      values[0] = xmax-x[0];
+      values[1] = ymax-x[1];
+    }
     
-    };
+  };
 
   // Read mesh and create function space
   UnitCircleMesh mesh(30);
@@ -119,6 +119,11 @@ int main()
   
   // Make plot windows interactive
   interactive();
+
+  #else
+
+  cout << "This demo requires DOLFIN to be configured with TAO" << endl;
+
   #endif
   
  return 0;
