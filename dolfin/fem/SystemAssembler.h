@@ -41,9 +41,9 @@ namespace dolfin
   template<typename T> class MeshFunction;
   class UFC;
 
-  /// This class provides implements an assembler for systems of the
-  /// form Ax = b. It differs from the default DOLFIN assembler in that
-  /// it applies boundary conditions at the time of assembly, which
+  /// This class provides an assembler for systems of the form 
+  /// Ax = b. It differs from the default DOLFIN assembler in that it
+  /// applies boundary conditions at the time of assembly, which
   /// preserves any symmetries in A.
 
   class SystemAssembler : public AssemblerBase
