@@ -1,4 +1,4 @@
- 
+ - Added a demo using compiled_extension_module with separate source files
  - Fixes for NumPy 1.7
  - Remove DOLFIN wrapper code (moved to FFC)
  - Add set_options_prefix to PETScKrylovSolver
