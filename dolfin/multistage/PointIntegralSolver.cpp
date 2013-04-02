@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-03-20
+// Last changed: 2013-04-02
 
 #include <cmath>
 #include <boost/make_shared.hpp>
@@ -34,16 +34,15 @@
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/fem/UFC.h>
 
-#include "UFC.h"
-#include "ButcherScheme.h"
-
+#include "MultiStageScheme.h"
 #include "PointIntegralSolver.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PointIntegralSolver::PointIntegralSolver(boost::shared_ptr<ButcherScheme> scheme) : 
+PointIntegralSolver::PointIntegralSolver(boost::shared_ptr<MultiStageScheme> scheme) : 
   Variable("PointIntegralSolver", "unamed"), 
   _scheme(scheme), _vertex_map(), _ufcs(), _coefficient_index(), _retabulate_J(true), 
   _J(), _J_L(), _J_U()

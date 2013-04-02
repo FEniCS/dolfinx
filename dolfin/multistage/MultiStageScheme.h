@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-03-13
+// Last changed: 2013-04-02
 
 #ifndef __BUTCHERSCHEME_H
 #define __BUTCHERSCHEME_H
@@ -27,8 +27,7 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/function/FunctionAXPY.h>
 #include <dolfin/function/Function.h>
-
-#include "Form.h"
+#include <dolfin/fem/Form.h>
 
 namespace dolfin
 {
@@ -42,13 +41,13 @@ namespace dolfin
   class DirichletBC;
   class Constant;
 
-  class ButcherScheme : public Variable
+  class MultiStageScheme : public Variable
   {
   public:
 
     /// Constructor
     /// FIXME: This constructor is a MESS. Needs clean up...
-    ButcherScheme(std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
+    MultiStageScheme(std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
 		  const FunctionAXPY& last_stage, 
 		  std::vector<boost::shared_ptr<Function> > stage_solutions,
 		  boost::shared_ptr<Function> u, 
@@ -60,7 +59,7 @@ namespace dolfin
 		  const std::string human_form);
 
     /// Constructor with Boundary conditions
-    ButcherScheme(std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
+    MultiStageScheme(std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
 		  const FunctionAXPY& last_stage, 
 		  std::vector<boost::shared_ptr<Function> > stage_solutions,
 		  boost::shared_ptr<Function> u, 

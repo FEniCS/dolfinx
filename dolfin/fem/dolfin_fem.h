@@ -22,9 +22,6 @@
 #include <dolfin/fem/LinearVariationalSolver.h>
 #include <dolfin/fem/NonlinearVariationalProblem.h>
 #include <dolfin/fem/NonlinearVariationalSolver.h>
-#include <dolfin/fem/ButcherScheme.h>
-#include <dolfin/fem/RKSolver.h>
-#include <dolfin/fem/PointIntegralSolver.h>
 
 // Move up when ready or merge with Assembler.h
 #include <dolfin/fem/OpenMpAssembler.h>

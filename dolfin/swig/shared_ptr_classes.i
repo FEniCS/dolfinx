@@ -83,7 +83,7 @@
 %shared_ptr(dolfin::Form)
 %shared_ptr(dolfin::FiniteElement)
 %shared_ptr(dolfin::BasisFunction)
-%shared_ptr(dolfin::ButcherScheme)
+%shared_ptr(dolfin::MultiStageScheme)
 
 %shared_ptr(dolfin::Hierarchical<dolfin::LinearVariationalProblem>)
 %shared_ptr(dolfin::Hierarchical<dolfin::NonlinearVariationalProblem>)

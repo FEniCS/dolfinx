@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-02-28
+// Last changed: 2013-04-02
 
 #ifndef __RKSOLVER_H
 #define __RKSOLVER_H
@@ -25,8 +25,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <dolfin/function/FunctionAXPY.h>
-
-#include "Assembler.h"
+#include <dolfin/fem/Assembler.h>
 
 namespace dolfin
 {
@@ -34,7 +33,7 @@ namespace dolfin
   /// This class is a time integrator for general Runge Kutta problems
 
   // Forward declarations
-  class ButcherScheme;
+  class MultiStageScheme;
 
   class RKSolver
   {
@@ -42,7 +41,7 @@ namespace dolfin
 
     /// Constructor
     /// FIXME: Include version where one can pass a Solver and/or Parameters
-    RKSolver(boost::shared_ptr<ButcherScheme> scheme);
+    RKSolver(boost::shared_ptr<MultiStageScheme> scheme);
 
     /// Step solver with time step dt
     void step(double dt);
@@ -52,8 +51,8 @@ namespace dolfin
 
   private:
 
-    // The ButcherScheme
-    boost::shared_ptr<ButcherScheme> _scheme;
+    // The MultiStageScheme
+    boost::shared_ptr<MultiStageScheme> _scheme;
 
     // Assembler for explicit stages
     Assembler _assembler;

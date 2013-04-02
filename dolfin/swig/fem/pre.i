@@ -300,7 +300,3 @@ IN_TYPEMAP_STD_VECTOR_OF_STD_VECTOR_OF_SHARED_POINTERS(Form)
 //%template (HierarchicalDirichletBC) dolfin::Hierarchical<dolfin::DirichletBC>;
 //#endif
 
-//-----------------------------------------------------------------------------
-// Add director classes
-//-----------------------------------------------------------------------------
-//%feature("director") dolfin::ButcherScheme;

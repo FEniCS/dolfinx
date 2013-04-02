@@ -19,6 +19,7 @@
 #include <dolfin/quadrature/dolfin_quadrature.h>
 #include <dolfin/ale/dolfin_ale.h>
 #include <dolfin/fem/dolfin_fem.h>
+#include <dolfin/multistage/dolfin_multistage.h>
 #include <dolfin/adaptivity/dolfin_adaptivity.h>
 #include <dolfin/io/dolfin_io.h>
 

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-03-13
+// Last changed: 2013-04-02
 
 #include <cmath>
 
@@ -24,17 +24,17 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/Constant.h>
 #include <dolfin/la/GenericVector.h>
+#include <dolfin/fem/assemble.h>
+#include <dolfin/fem/solve.h>
+#include <dolfin/fem/DirichletBC.h>
 
-#include "assemble.h"
-#include "solve.h"
-#include "DirichletBC.h"
-#include "ButcherScheme.h"
+#include "MultiStageScheme.h"
 #include "RKSolver.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-RKSolver::RKSolver(boost::shared_ptr<ButcherScheme> scheme) : 
+RKSolver::RKSolver(boost::shared_ptr<MultiStageScheme> scheme) : 
   _scheme(scheme)
 {}
 //-----------------------------------------------------------------------------

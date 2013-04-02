@@ -94,11 +94,13 @@
 #include "dolfin/fem/LinearVariationalSolver.h"
 #include "dolfin/fem/NonlinearVariationalProblem.h"
 #include "dolfin/fem/NonlinearVariationalSolver.h"
-#include "dolfin/fem/ButcherScheme.h"
-#include "dolfin/fem/RKSolver.h"
-#include "dolfin/fem/PointIntegralSolver.h"
 #include "dolfin/fem/OpenMpAssembler.h"
 #include "dolfin/fem/VariationalProblem.h"
+
+// #include types from multistage submodule
+#include "dolfin/multistage/MultiStageScheme.h"
+#include "dolfin/multistage/RKSolver.h"
+#include "dolfin/multistage/PointIntegralSolver.h"
 
 // #include types from adaptivity submodule
 #include "dolfin/adaptivity/GenericAdaptiveVariationalSolver.h"
@@ -176,6 +178,7 @@ import_array();
 //%feature("autodoc", "1");
 %include "dolfin/swig/quadrature/docstrings.i"
 %include "dolfin/swig/fem/docstrings.i"
+%include "dolfin/swig/multistage/docstrings.i"
 %include "dolfin/swig/adaptivity/docstrings.i"
 
 // %include types from submodule quadrature
@@ -202,12 +205,14 @@ import_array();
 %include "dolfin/fem/LinearVariationalSolver.h"
 %include "dolfin/fem/NonlinearVariationalProblem.h"
 %include "dolfin/fem/NonlinearVariationalSolver.h"
-%include "dolfin/fem/ButcherScheme.h"
-%include "dolfin/fem/RKSolver.h"
-%include "dolfin/fem/PointIntegralSolver.h"
 %include "dolfin/fem/OpenMpAssembler.h"
 %include "dolfin/fem/VariationalProblem.h"
 %include "dolfin/swig/fem/post.i"
+
+// %include types from submodule multistage
+%include "dolfin/multistage/MultiStageScheme.h"
+%include "dolfin/multistage/RKSolver.h"
+%include "dolfin/multistage/PointIntegralSolver.h"
 
 // %include types from submodule adaptivity
 %include "dolfin/swig/adaptivity/pre.i"

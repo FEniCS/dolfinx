@@ -16,19 +16,19 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-03-13
+// Last changed: 2013-04-02
 
 #include <sstream>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/function/FunctionAXPY.h>
 #include <dolfin/log/log.h>
 
-#include "ButcherScheme.h"
+#include "MultiStageScheme.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ButcherScheme::ButcherScheme(std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
+MultiStageScheme::MultiStageScheme(std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
 			     const FunctionAXPY& last_stage, 
 			     std::vector<boost::shared_ptr<Function> > stage_solutions,
 			     boost::shared_ptr<Function> u, 
@@ -46,7 +46,7 @@ ButcherScheme::ButcherScheme(std::vector<std::vector<boost::shared_ptr<const For
   _check_arguments();
 }
 //-----------------------------------------------------------------------------
-ButcherScheme::ButcherScheme(std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
+MultiStageScheme::MultiStageScheme(std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
 			     const FunctionAXPY& last_stage, 
 			     std::vector<boost::shared_ptr<Function> > stage_solutions,
 			     boost::shared_ptr<Function> u, 
@@ -66,68 +66,68 @@ ButcherScheme::ButcherScheme(std::vector<std::vector<boost::shared_ptr<const For
   _check_arguments();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::vector<boost::shared_ptr<const Form> > >& ButcherScheme::stage_forms()
+std::vector<std::vector<boost::shared_ptr<const Form> > >& MultiStageScheme::stage_forms()
 {
   return _stage_forms;
 }
 //-----------------------------------------------------------------------------
-FunctionAXPY& ButcherScheme::last_stage()
+FunctionAXPY& MultiStageScheme::last_stage()
 {
   return _last_stage;
 }
 //-----------------------------------------------------------------------------
-std::vector<boost::shared_ptr<Function> >& ButcherScheme::stage_solutions()
+std::vector<boost::shared_ptr<Function> >& MultiStageScheme::stage_solutions()
 {
   return _stage_solutions;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<Function> ButcherScheme::solution()
+boost::shared_ptr<Function> MultiStageScheme::solution()
 {
   return _u;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const Function> ButcherScheme::solution() const
+boost::shared_ptr<const Function> MultiStageScheme::solution() const
 {
   return _u;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<Constant> ButcherScheme::t()
+boost::shared_ptr<Constant> MultiStageScheme::t()
 {
   return _t;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<Constant> ButcherScheme::dt()
+boost::shared_ptr<Constant> MultiStageScheme::dt()
 {
   return _dt;
 }
 //-----------------------------------------------------------------------------
-const std::vector<double>& ButcherScheme::dt_stage_offset() const
+const std::vector<double>& MultiStageScheme::dt_stage_offset() const
 {
   return _dt_stage_offset;
 }
 //-----------------------------------------------------------------------------
-unsigned int ButcherScheme::order() const
+unsigned int MultiStageScheme::order() const
 {
   return _order;
 }
 //-----------------------------------------------------------------------------
-std::vector<const DirichletBC* > ButcherScheme::bcs() const
+std::vector<const DirichletBC* > MultiStageScheme::bcs() const
 {
   return _bcs;
 }
 //-----------------------------------------------------------------------------
-bool ButcherScheme::implicit(unsigned int stage) const
+bool MultiStageScheme::implicit(unsigned int stage) const
 {
   dolfin_assert(stage < _stage_forms.size());
   return _stage_forms[stage].size() == 2;
 }
 //-----------------------------------------------------------------------------
-bool ButcherScheme::implicit() const
+bool MultiStageScheme::implicit() const
 {
   return _implicit;
 }
 //-----------------------------------------------------------------------------
-std::string ButcherScheme::str(bool verbose) const
+std::string MultiStageScheme::str(bool verbose) const
 {
   if (!verbose)
     return name();
@@ -137,13 +137,13 @@ std::string ButcherScheme::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void ButcherScheme::_check_arguments()
+void MultiStageScheme::_check_arguments()
 {
   // Check number of stage sollutions is same as number of stage forms
   if (_stage_solutions.size()!=_stage_forms.size())
   {
-    dolfin_error("ButcherScheme.cpp",
-		 "constructing ButcherScheme",
+    dolfin_error("MultiStageScheme.cpp",
+		 "constructing MultiStageScheme",
 		 "Expecting the number of stage solutions to be the sames as "\
 		 "number of stage forms");
   }
@@ -151,8 +151,8 @@ void ButcherScheme::_check_arguments()
   // Check solution is in the same space as the last stage solution
   if (!_u->in(*_stage_solutions[_stage_solutions.size()-1]->function_space()))
   {
-    dolfin_error("ButcherScheme.cpp",
-		 "constructing ButcherScheme",
+    dolfin_error("MultiStageScheme.cpp",
+		 "constructing MultiStageScheme",
 		 "Expecting all solutions to be in the same FunctionSpace");
   }
 
@@ -163,16 +163,16 @@ void ButcherScheme::_check_arguments()
     // Check solution is in the same space as the stage solution
     if (!_u->in(*_stage_solutions[i]->function_space()))
     {
-      dolfin_error("ButcherScheme.cpp",
-		   "constructing ButcherScheme",
+      dolfin_error("MultiStageScheme.cpp",
+		   "constructing MultiStageScheme",
 		   "Expecting all solutions to be in the same FunctionSpace");
     }
 
     // Check we have correct number of forms
     if (_stage_forms[i].size()==0 || _stage_forms[i].size()>2)
     {
-      dolfin_error("ButcherScheme.cpp",
-		   "constructing ButcherScheme",
+      dolfin_error("MultiStageScheme.cpp",
+		   "constructing MultiStageScheme",
 		   "Expecting stage_forms to only include vectors of size 1 or 2");
     }
     
@@ -184,8 +184,8 @@ void ButcherScheme::_check_arguments()
       // First form should be the linear (in testfunction) form
       if (_stage_forms[i][0]->rank() != 1)
       {
-	dolfin_error("ButcherScheme.cpp",
-		     "constructing ButcherScheme",
+	dolfin_error("MultiStageScheme.cpp",
+		     "constructing MultiStageScheme",
 		     "Expecting the right-hand side of stage form %d to be a "\
 		     "linear form (not rank %d)", i, _stage_forms[i][0]->rank());
       }
@@ -193,8 +193,8 @@ void ButcherScheme::_check_arguments()
       // Second form should be the bilinear form
       if (_stage_forms[i][1]->rank() != 2)
       {
-	dolfin_error("ButcherScheme.cpp",
-		     "constructing ButcherScheme",
+	dolfin_error("MultiStageScheme.cpp",
+		     "constructing MultiStageScheme",
 		     "Expecting the left-hand side of stage form %d to be a "\
 		     "linear form (not rank %d)", i, _stage_forms[i][1]->rank());
       }
@@ -202,8 +202,8 @@ void ButcherScheme::_check_arguments()
       // Check that function space of solution variable matches trial space
       if (!_stage_solutions[i]->in(*_stage_forms[i][1]->function_space(1)))
       {
-	dolfin_error("ButcherScheme.cpp",
-		     "constructing ButcherScheme",
+	dolfin_error("MultiStageScheme.cpp",
+		     "constructing MultiStageScheme",
 		     "Expecting the stage solution %d to be a member of the "
 		     "trial space of stage form %d", i, i);
       }
@@ -215,8 +215,8 @@ void ButcherScheme::_check_arguments()
       // Check explicit stage form 
       if (_stage_forms[i][0]->rank() != 1)
       {
-	dolfin_error("ButcherScheme.cpp",
-		     "constructing ButcherScheme",
+	dolfin_error("MultiStageScheme.cpp",
+		     "constructing MultiStageScheme",
 		     "Expecting stage form %d to be a linear form (not "\
 		     "rank %d)", i, _stage_forms[i][0]->rank());
       }
@@ -224,8 +224,8 @@ void ButcherScheme::_check_arguments()
       // Check that function space of solution variable matches trial space
       if (!_stage_solutions[i]->in(*_stage_forms[i][0]->function_space(0)))
       {
-	dolfin_error("ButcherScheme.cpp",
-		     "constructing ButcherScheme",
+	dolfin_error("MultiStageScheme.cpp",
+		     "constructing MultiStageScheme",
 		     "Expecting the stage solution %d to be a member of the "
 		     "test space of stage form %d", i, i);
       }

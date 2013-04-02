@@ -501,7 +501,7 @@ if __name__ == "__main__":
         ("mesh", ["mesh", "intersection", "refinement", \
                   "ale", "graph", "generation"]),
         ("function", ["function", "math"]),
-        ("fem", ["fem", "quadrature", "adaptivity"]),
+        ("fem", ["fem", "quadrature", "adaptivity", "multistage"]),
         ("io", ["io", "plot"])])
 
     # User defined list of headers to exclude (add more here)

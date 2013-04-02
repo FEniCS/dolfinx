@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-03-15
+// Last changed: 2013-04-02
 
 #ifndef __POINTINTEGRALSOLVER_H
 #define __POINTINTEGRALSOLVER_H
@@ -27,8 +27,7 @@
 
 #include <dolfin/common/Variable.h>
 #include <dolfin/function/FunctionAXPY.h>
-
-#include "Assembler.h"
+#include <dolfin/fem/Assembler.h>
 
 namespace dolfin
 {
@@ -39,7 +38,7 @@ namespace dolfin
   /// can therefore be solved locally.
 
   // Forward declarations
-  class ButcherScheme;
+  class MultiStageScheme;
   class UFC;
 
   class PointIntegralSolver : public Variable
@@ -48,7 +47,7 @@ namespace dolfin
 
     /// Constructor
     /// FIXME: Include version where one can pass a Solver and/or Parameters
-    PointIntegralSolver(boost::shared_ptr<ButcherScheme> scheme);
+    PointIntegralSolver(boost::shared_ptr<MultiStageScheme> scheme);
 
     /// Step solver with time step dt
     void step(double dt);
@@ -66,8 +65,8 @@ namespace dolfin
     // and initialize UFC data for each form
     void _init();
 
-    // The ButcherScheme
-    boost::shared_ptr<ButcherScheme> _scheme;
+    // The MultiStageScheme
+    boost::shared_ptr<MultiStageScheme> _scheme;
 
     // Vertex map between vertices, cells and corresponding local vertex
     std::vector<std::pair<std::size_t, unsigned int> > _vertex_map;
