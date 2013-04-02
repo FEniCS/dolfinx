@@ -1,3 +1,5 @@
+ 
+ - Fixes for NumPy 1.7
  - Remove DOLFIN wrapper code (moved to FFC)
  - Add set_options_prefix to PETScKrylovSolver
  - Remove base class BoundarCondition

@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-04-27
-// Last changed: 2009-09-13
+// Last changed: 2013-04-02
 
 class Indices
 {
@@ -203,20 +203,24 @@ public:
   IntArrayIndices(PyObject* op, std::size_t vector_size)
     :Indices(), _numpy_array(NULL), _vector_size(vector_size)
   {
-    if ( op == Py_None or !( PyArray_Check(op) and PyTypeNum_ISINTEGER(PyArray_TYPE(op)) ) )
+    if ( op == Py_None || !PyArray_Check(op))
+      throw std::runtime_error("expected numpy array of integers");
+    
+    PyArrayObject* array_op = reinterpret_cast<PyArrayObject*>(op);
+    if (!PyTypeNum_ISINTEGER(PyArray_TYPE(array_op)))
       throw std::runtime_error("expected numpy array of integers");
 
     // An initial check of the length of the array
-    if (PyArray_NDIM(op)!=1)
+    if (PyArray_NDIM(array_op)!=1)
       throw std::runtime_error("provide an 1D array");
-    _index_size = PyArray_DIM(op,0);
+    _index_size = PyArray_DIM(array_op, 0);
 
     if (_index_size > vector_size)
       throw std::runtime_error("index array too large");
 
     // Set members
+    _numpy_array = reinterpret_cast<PyObject*>(array_op);
     _vector_size = vector_size;
-    _numpy_array = op;
 
     // Increase reference to numpy array
     Py_INCREF(_numpy_array);
@@ -234,7 +238,8 @@ public:
       throw std::runtime_error("index out of range");
 
     // Return checked index
-    return check_index(*static_cast<int*>(PyArray_GETPTR1(_numpy_array,i)));
+    return check_index(*static_cast<int*>(PyArray_GETPTR1(\
+		      reinterpret_cast<PyArrayObject*>(_numpy_array), i)));
   }
 
   // Check bounds of index by calling static function in base class
@@ -260,22 +265,25 @@ public:
     PyArrayObject* npy_op;
     PyObject* sum_res;
 
-    if (op == Py_None or !( PyArray_Check(op) and PyArray_ISBOOL(op) ))
+    if (op == Py_None or !PyArray_Check(op))
       throw std::runtime_error("expected numpy array of boolean");
-    npy_op = (PyArrayObject*) op;
 
+    npy_op = reinterpret_cast<PyArrayObject*>(op);
+
+    if (!PyArray_ISBOOL(npy_op))
+      throw std::runtime_error("expected numpy array of boolean");
+      
     // An initial check of the length of the array
-    if (PyArray_NDIM(op)!=1)
+    if (PyArray_NDIM(npy_op)!=1)
       throw std::runtime_error("provide an 1D array");
 
-    if (static_cast<std::size_t>(PyArray_DIM(npy_op,0)) != vector_size)
+    if (static_cast<std::size_t>(PyArray_DIM(npy_op, 0)) != vector_size)
       throw std::runtime_error("non matching dimensions");
 
-    bool_data = (npy_bool *) PyArray_DATA(npy_op);
+    bool_data = static_cast<npy_bool *>(PyArray_DATA(npy_op));
 
     // Sum the array to get the numbers of indices
-
-    sum_res = PyArray_Sum(npy_op, 0, NPY_INT, (PyArrayObject*)Py_None);
+    sum_res = PyArray_Sum(npy_op, 0, NPY_INT, reinterpret_cast<PyArrayObject*>(Py_None));
     _index_size = PyInt_AsLong(sum_res);
     Py_DECREF(sum_res);
 
@@ -330,11 +338,11 @@ Indices* indice_chooser(PyObject* op, std::size_t vector_size)
     inds = new ListIndices( op, vector_size );
 
   // If the provided indices are in a Numpy array of boolean
-  else if (PyArray_Check(op) and PyArray_TYPE(op) == NPY_BOOL)
+  else if (PyArray_Check(op) and PyArray_TYPE(reinterpret_cast<PyArrayObject*>(op)) == NPY_BOOL)
     inds = new BoolArrayIndices( op, vector_size );
 
   // If the provided indices are in a Numpy array of integers
-  else if (PyArray_Check(op) and PyArray_ISINTEGER(op))
+  else if (PyArray_Check(op) and PyArray_ISINTEGER(reinterpret_cast<PyArrayObject*>(op)))
     inds = new IntArrayIndices( op, vector_size );
   else
     return 0;

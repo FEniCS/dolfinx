@@ -46,7 +46,11 @@ PyObject* _attach_base_to_numpy_array(PyObject* obj, PyObject* owner)
   Py_XINCREF(Py_None);
 
   // Assign the base
+#if NUMPY_VERSION_MINOR >= 7
+  PyArray_SetBaseObject(array, owner);
+#else
   PyArray_BASE(array) = owner;
+#endif
 
   return Py_None;
 }
@@ -74,7 +78,14 @@ SWIGINTERNINLINE PyObject* return_py_array(PyObject* obj, bool writable)
 
   // Set writable flag on numpy array
   if ( !writable )
+  {
+    // Get flag
+#if NUMPY_VERSION_MINOR >= 7
+    PyArray_CLEARFLAGS(array, NPY_ARRAY_WRITEABLE);
+#else
     array->flags &= ~NPY_WRITEABLE;
+#endif
+  }
   return reinterpret_cast<PyObject*>(array);
 }
 }
