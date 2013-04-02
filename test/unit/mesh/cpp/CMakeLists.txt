@@ -34,9 +34,9 @@ include_directories(${DOLFIN_INCLUDE_DIRS})
 include_directories(SYSTEM ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
-add_executable(test_Mesh Mesh.cpp)
 add_executable(test_MeshValueCollection MeshValueCollection.cpp)
+add_executable(test_Mesh Mesh.cpp)
 
 # Target libraries
-target_link_libraries(test_Mesh ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
 target_link_libraries(test_MeshValueCollection ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
+target_link_libraries(test_Mesh ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})

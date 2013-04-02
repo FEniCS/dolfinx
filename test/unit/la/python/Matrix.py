@@ -19,9 +19,10 @@
 #
 # Modified by Anders Logg 2011
 # Modified by Mikael Mortensen 2011
+# Modified by Jan Blechta 2013
 #
 # First added:  2011-03-03
-# Last changed: 2011-11-25
+# Last changed: 2013-03-30
 
 import unittest
 from dolfin import *
@@ -37,7 +38,7 @@ class AbstractBaseTest(object):
             print "\nRunning:",type(self).__name__
 
 
-    def assemble_matrices(self, use_backend=False):
+    def assemble_matrices(self, use_backend=False, keep_diagonal=False):
         " Assemble a pair of matrices, one (square) MxM and one MxN"
         mesh = UnitSquareMesh(21, 23)
 
@@ -49,7 +50,7 @@ class AbstractBaseTest(object):
         s = TrialFunction(W)
 
         # Forms
-        a = dot(grad(u), grad(v))*dx
+        a = dot(grad(u), grad(v))*ds
         b = v*s*dx
 
         if use_backend:
@@ -57,9 +58,11 @@ class AbstractBaseTest(object):
                 backend = globals()[self.backend + self.sub_backend + 'Factory'].instance()
             else:
                 backend = globals()[self.backend + 'Factory'].instance()
-            return assemble(a, backend=backend), assemble(b, backend=backend)
+            return assemble(a, backend=backend, keep_diagonal=keep_diagonal), \
+                   assemble(b, backend=backend, keep_diagonal=keep_diagonal)
         else:
-            return assemble(a), assemble(b)
+            return assemble(a, keep_diagonal=keep_diagonal), \
+                   assemble(b, keep_diagonal=keep_diagonal)
 
 
     def test_basic_la_operations(self, use_backend=False):
@@ -195,6 +198,44 @@ class AbstractBaseTest(object):
         A0_norm_1 = A0.norm('frobenius')
         self.assertAlmostEqual(A0_norm_0, A0_norm_1)
 
+    def test_ident_zeros(self, use_backend=False):
+
+        # EpetraMatrix::ident() is not reliable
+        if self.backend == "Epetra":
+            return
+
+        # Check that PETScMatrix::ident_zeros() rethrows PETSc error
+        if self.backend[0:5] == "PETSc":
+            A, B = self.assemble_matrices(use_backend=use_backend)
+            self.assertRaises(RuntimeError, A.ident_zeros)
+
+        # Assemble matrix A with diagonal entries
+        A, B = self.assemble_matrices(use_backend=use_backend, keep_diagonal=True)
+
+        # Find zero rows
+        zero_rows = []
+        for i in range(A.local_range(0)[0], A.local_range(0)[1]):
+            row = A.getrow(i)[1]
+            if sum(abs(row)) < DOLFIN_EPS:
+                zero_rows.append(i)
+
+        # Set zero rows to (0,...,0, 1, 0,...,0)
+        A.ident_zeros()
+
+        # Check it
+        for i in zero_rows:
+            cols = A.getrow(i)[0]
+            row  = A.getrow(i)[1]
+            for j in range(cols.size + 1):
+                if i == cols[j]:
+                    self.assertAlmostEqual(row[j], 1.0)
+                    break
+            self.assertLess(j, cols.size)
+            self.assertAlmostEqual(sum(abs(row)), 1.0)
+
+    def test_ident_zeros_with_backend(self):
+        self.test_ident_zeros(use_backend=True)
+
     #def test_create_from_sparsity_pattern(self):
 
     #def test_size(self):
@@ -263,10 +304,6 @@ if MPI.num_processes() == 1:
     class uBLASDenseTester(DataTester, AbstractBaseTest, unittest.TestCase):
         backend     = "uBLAS"
         sub_backend = "Dense"
-
-    if has_linear_algebra_backend("MTL4"):
-        class MTL4Tester(DataTester, AbstractBaseTest, unittest.TestCase):
-            backend    = "MTL4"
 
     if has_linear_algebra_backend("PETScCusp"):
         class PETScCuspTester(DataNotWorkingTester, AbstractBaseTest, unittest.TestCase):

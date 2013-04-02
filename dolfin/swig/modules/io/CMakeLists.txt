@@ -24,6 +24,7 @@ set(CMAKE_SWIG_FLAGS
   -nobuildnone
   -Iinclude/swig
   ${DOLFIN_CXX_DEFINITIONS}
+  ${DOLFIN_PYTHON_DEFINITIONS}
   )
 
 # Get all SWIG interface files

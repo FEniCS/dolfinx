@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-04-27
-// Last changed: 2010-03-09
+// Last changed: 2013-04-02
 
 // Enum for comparison functions
 enum DolfinCompareType {dolfin_gt, dolfin_ge, dolfin_lt, dolfin_le, dolfin_eq, dolfin_neq};
@@ -51,13 +51,13 @@ bool _contains(dolfin::GenericVector* self, double value)
 
 // A general compare function for Vector vs scalar comparison
 // The function returns a boolean numpy array
-PyObject* _compare_vector_with_value( dolfin::GenericVector* self, double value, DolfinCompareType cmp_type )
+PyObject* _compare_vector_with_value(dolfin::GenericVector* self, double value, DolfinCompareType cmp_type )
 {
   std::size_t i;
   npy_intp size = self->size();
 
   // Create the Numpy array
-  PyArrayObject* return_array = (PyArrayObject*)PyArray_SimpleNew(1, &size, PyArray_BOOL);
+  PyArrayObject* return_array = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, &size, NPY_BOOL));
 
   // Get the data array
   npy_bool* bool_data = (npy_bool *)PyArray_DATA(return_array);
@@ -110,7 +110,7 @@ PyObject* _compare_vector_with_vector( dolfin::GenericVector* self, dolfin::Gene
   npy_intp size = self->size();
 
   // Create the Numpy array
-  PyArrayObject* return_array = (PyArrayObject*)PyArray_SimpleNew(1, &size, PyArray_BOOL);
+  PyArrayObject* return_array = (PyArrayObject*)PyArray_SimpleNew(1, &size, NPY_BOOL);
 
   // Get the data array
   npy_bool* bool_data = (npy_bool *)PyArray_DATA(return_array);
@@ -160,14 +160,16 @@ double _get_vector_single_item( dolfin::GenericVector* self, int index )
 
   // Check that requested index is owned by this process
   if (i < self->local_range().first || i >= self->local_range().second)
-    throw std::runtime_error("index must belong to this process, cannot index off-process entries in a GenericVector");
+    throw std::runtime_error("index must belong to this process, cannot "\
+			     "index off-process entries in a GenericVector");
 
   self->get_local(&value, 1, &i);
   return value;
 }
 
 // Get item for slice, list, or numpy array object
-boost::shared_ptr<dolfin::GenericVector> _get_vector_sub_vector( const dolfin::GenericVector* self, PyObject* op )
+boost::shared_ptr<dolfin::GenericVector> _get_vector_sub_vector(
+			   const dolfin::GenericVector* self, PyObject* op )
 {
   Indices* inds;
   dolfin::la_index* range;
@@ -177,7 +179,8 @@ boost::shared_ptr<dolfin::GenericVector> _get_vector_sub_vector( const dolfin::G
 
   // Get the correct Indices
   if ( (inds = indice_chooser(op, self->size())) == 0 )
-    throw std::runtime_error("index must be either a slice, a list or a Numpy array of integer");
+    throw std::runtime_error("index must be either a slice, a list or a "\
+			     "Numpy array of integer");
 
   // Fill the return vector
   try
@@ -199,8 +202,7 @@ boost::shared_ptr<dolfin::GenericVector> _get_vector_sub_vector( const dolfin::G
 
   // Resize the vector to the size of the indices
   return_vec->resize(m);
-
-  range  = inds->range();
+  range = inds->range();
 
   std::vector<double> values(m);
 
@@ -210,10 +212,12 @@ boost::shared_ptr<dolfin::GenericVector> _get_vector_sub_vector( const dolfin::G
 
   delete inds;
   return return_vec;
+
 }
 
 // Set items using a GenericVector
-void _set_vector_items_vector( dolfin::GenericVector* self, PyObject* op, dolfin::GenericVector& other )
+void _set_vector_items_vector(dolfin::GenericVector* self, PyObject* op, 
+			      dolfin::GenericVector& other )
 {
   // Get the correct Indices
   Indices* inds;
@@ -256,7 +260,7 @@ void _set_vector_items_vector( dolfin::GenericVector* self, PyObject* op, dolfin
   delete inds;
 }
 
-// Set items using a GenericVector
+// Set items using an array of floats
 void _set_vector_items_array_of_float( dolfin::GenericVector* self, PyObject* op, PyObject* other )
 {
   Indices* inds;
@@ -266,28 +270,33 @@ void _set_vector_items_array_of_float( dolfin::GenericVector* self, PyObject* op
   bool casted = false;
 
   // Check type of values
-  if ( !(other != Py_None and PyArray_Check(other) and PyArray_ISNUMBER(other) and PyArray_NDIM(other) == 1 and PyArray_ISCONTIGUOUS(other)))
+  if (!(other != Py_None and PyArray_Check(other)))
     throw std::runtime_error("expected a contiguous 1D numpy array of numbers");
-  if (PyArray_TYPE(other)!=NPY_DOUBLE)
+  
+  PyArrayObject* array_other = reinterpret_cast<PyArrayObject*>(other);
+  if (!(PyArray_ISNUMBER(array_other) and PyArray_NDIM(array_other) == 1 and PyArray_ISCONTIGUOUS(array_other)))
+    throw std::runtime_error("expected a contiguous 1D numpy array of numbers");
+
+  if (PyArray_TYPE(array_other) != NPY_DOUBLE)
   {
     casted = true;
-    other = PyArray_Cast(reinterpret_cast<PyArrayObject*>(other), NPY_DOUBLE);
+    array_other = reinterpret_cast<PyArrayObject*>(PyArray_Cast(array_other, NPY_DOUBLE));
   }
-
 
   // Get the correct Indices
   if ( (inds = indice_chooser(op, self->size())) == 0 )
     throw std::runtime_error("index must be either a slice, a list or a Numpy array of integer");
 
   // Check for size of indices
-  if (inds->size() != static_cast<std::size_t>(PyArray_DIM(other,0)))
+  if (inds->size() != static_cast<std::size_t>(PyArray_DIM(array_other,0)))
   {
     delete inds;
     throw std::runtime_error("non matching dimensions on input");
   }
 
   // Fill the vector using the slice and the provided values
-  try {
+  try 
+  {
     indices = inds->indices();
   }
 
@@ -301,14 +310,14 @@ void _set_vector_items_array_of_float( dolfin::GenericVector* self, PyObject* op
   m = inds->size();
 
   // Get the contigous data from the numpy array
-  values = (double*) PyArray_DATA(other);
+  values = static_cast<double*>(PyArray_DATA(array_other));
   self->set(values, m, indices);
   self->apply("insert");
 
   // Clean casted array
   if (casted)
   {
-    Py_DECREF(other);
+    Py_DECREF(array_other);
   }
   delete inds;
 }

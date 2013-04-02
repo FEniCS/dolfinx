@@ -2,6 +2,10 @@
 # Find the native NumPy includes
 # This module defines
 #  NUMPY_INCLUDE_DIR, where to find numpy/arrayobject.h, etc.
+#  NUMPY_VERSION, The string version of the numpy version
+#  NUMPY_VERSION_MAJOR, The first number of the numpy version
+#  NUMPY_VERSION_MINOR, The second number of the numpy version
+#  NUMPY_VERSION_MICRO, The third number of the numpy version
 #  NUMPY_FOUND, If false, do not try to use NumPy headers.
 
 #=============================================================================
@@ -53,8 +57,18 @@ else(NUMPY_INCLUDE_DIR)
 endif(NUMPY_INCLUDE_DIR)
 
 if(NUMPY_FOUND)
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} -c "import numpy; print numpy.version.version"
+    OUTPUT_VARIABLE NUMPY_VERSION
+    RESULT_VARIABLE NUMPY_NOT_FOUND
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+  string(REPLACE "." ";" NUMPY_VERSION_LIST ${NUMPY_VERSION})
+  list(GET NUMPY_VERSION_LIST 0 NUMPY_VERSION_MAJOR)
+  list(GET NUMPY_VERSION_LIST 1 NUMPY_VERSION_MINOR)
+  list(GET NUMPY_VERSION_LIST 2 NUMPY_VERSION_MICRO)
   if(NOT NUMPY_FIND_QUIETLY)
-    message(STATUS "NumPy headers found")
+    message(STATUS "NumPy header version ${NUMPY_VERSION} found")
   endif(NOT NUMPY_FIND_QUIETLY)
 else(NUMPY_FOUND)
   if(NUMPY_FIND_REQUIRED)
@@ -62,4 +76,5 @@ else(NUMPY_FOUND)
   endif(NUMPY_FIND_REQUIRED)
 endif(NUMPY_FOUND)
 
-mark_as_advanced(NUMPY_INCLUDE_DIR)
+mark_as_advanced(NUMPY_INCLUDE_DIR, NUMPY_VERSION, NUMPY_VERSION_MAJOR, 
+  NUMPY_VERSION_MINOR, NUMPY_VERSION_MICRO)

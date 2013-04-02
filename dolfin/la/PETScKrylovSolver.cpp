@@ -412,11 +412,14 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     {
       dolfin_error("PETScKrylovSolver.cpp",
                    "solve linear system using PETSc Krylov solver",
-                   "Solution failed to converge in %i iterations (PETSc reason %s, norm %e)",
+                   "Solution failed to converge in %i iterations (PETSc reason %s, residual norm ||r|| = %e)",
                    static_cast<int>(num_iterations), reason_str, rnorm);
     }
     else
-      warning("Krylov solver did not converge in %i iterations (PETSc reason %s, norm %e).", num_iterations, reason_str, rnorm);
+    {
+      warning("Krylov solver did not converge in %i iterations (PETSc reason %s, residual norm ||r|| = %e).",
+              num_iterations, reason_str, rnorm);
+    }
   }
 
   // Report results

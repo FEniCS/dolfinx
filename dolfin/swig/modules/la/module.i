@@ -108,6 +108,7 @@
 #include "dolfin/nls/NonlinearProblem.h"
 #include "dolfin/nls/NewtonSolver.h"
 #include "dolfin/nls/PETScSNESSolver.h"
+#include "dolfin/nls/TAOLinearBoundSolver.h"
 
 // NumPy includes
 #define PY_ARRAY_UNIQUE_SYMBOL PyDOLFIN_LA
@@ -210,4 +211,5 @@ import_array();
 %include "dolfin/nls/NonlinearProblem.h"
 %include "dolfin/nls/NewtonSolver.h"
 %include "dolfin/nls/PETScSNESSolver.h"
+%include "dolfin/nls/TAOLinearBoundSolver.h"
 

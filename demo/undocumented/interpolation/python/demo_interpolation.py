@@ -26,7 +26,7 @@ extrapolated from there.
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2010-03-22
-# Last changed: 2010-03-24
+# Last changed: 2013-01-23
 
 from dolfin import *
 
@@ -49,7 +49,7 @@ v = interpolate(f, V)
 # FIXME: but that breaks in parallel
 
 # Refine mesh and create a new function space
-refined_mesh = UnitSquareMesh(32, 32)
+refined_mesh = refine(mesh)
 W = FunctionSpace(refined_mesh, "CG", 1)
 
 # Displace mesh slightly

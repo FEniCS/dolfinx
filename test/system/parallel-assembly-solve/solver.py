@@ -45,10 +45,8 @@ def solve(mesh, degree):
 
     # Compute solution
     print "Degree:", degree
-    problem = VariationalProblem(a, L)
-    #problem.parameters["linear_solver"] = "iterative"
-    #problem.parameters["krylov_solver"]["relative_tolerance"] = 1e-15
-    u = problem.solve()
+    w = Function(V)
+    solve(a == L, w)
 
     # Return norm of solution vector
     return u.vector().norm("l2")
@@ -107,7 +105,7 @@ meshes= [(UnitSquareMesh(16, 16), "16x16 unit square"),\
          (UnitCubeMesh(4, 4, 4),  "4x4x4 unit cube")]
 degrees = [1, 2, 3, 4]
 
-## Iterate over test cases and collect results
+# Iterate over test cases and collect results
 results = []
 for mesh in meshes:
     for degree in degrees:
