@@ -16,8 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-12-03
-// Last changed: 2012-12-03
-
+// Last changed: 2013-04-02
 
 #ifndef _TAOLinearBoundSolver_H
 #define _TAOLinearBoundSolver_H
@@ -36,9 +35,9 @@
 #include <taosolver.h>
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/la/KrylovSolver.h> 
+
 namespace dolfin
 {
-
 
   /// Forward declarations
   class GenericMatrix;
@@ -49,7 +48,8 @@ namespace dolfin
   class PETScKrylovSolver;
   class PETScKSPDeleter;
 
-  /// This class provides bound constrained solver for a linear system defined by PETSc matrices and vectors:
+  /// This class provides bound constrained solver for a linear system 
+  /// defined by PETSc matrices and vectors:
   ///
   ///   Ax =  b, with xl =< x <= xu 
   ///
@@ -84,30 +84,34 @@ namespace dolfin
   ///
   /// info(solver.parameters,True)
   ///
-   class TAOLinearBoundSolver : public Variable, public PETScObject
+  class TAOLinearBoundSolver : public Variable, public PETScObject
   {
   public:
+
     /// Create TAO bound constrained solver 
-    TAOLinearBoundSolver(const std::string method   = "default" ,
-                         const std::string ksp_type = "default" , 
-                         const std::string pc_type  = "default" );
+    TAOLinearBoundSolver(const std::string method = "default",
+                         const std::string ksp_type = "default", 
+                         const std::string pc_type = "default");
 
     /// Destructor
     ~TAOLinearBoundSolver();
 	     
     /// Solve linear system Ax = b with xl =< x <= xu 
-    std::size_t solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b, const GenericVector& xl, const GenericVector& xu);
+    std::size_t solve(const GenericMatrix& A, GenericVector& x, 
+		      const GenericVector& b, const GenericVector& xl, 
+		      const GenericVector& xu);
 
     /// Solve linear system Ax = b with xl =< x <= xu 
-    std::size_t solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b, const PETScVector& xl, const PETScVector& xu);
+    std::size_t solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b, 
+		      const PETScVector& xl, const PETScVector& xu);
         
     // Set the TAO solver type
-	void set_solver(const std::string&);
+    void set_solver(const std::string&);
 	
-   /// Set PETSC Krylov Solver (ksp) used by TAO
+    /// Set PETSC Krylov Solver (ksp) used by TAO
     void set_ksp( const std::string ksp_type = "default");     	
 	    	
-	// Return TAO solver pointer
+    // Return TAO solver pointer
     boost::shared_ptr<TaoSolver> tao() const;
     
     /// Return a list of available Tao solver methods
@@ -147,16 +151,15 @@ namespace dolfin
     // Return load vector shared pointer
     boost::shared_ptr<const PETScVector> get_vector() const;
 
-
   private:
     
     // Set operators with GenericMatrix and GenericVector
-	void set_operators(const boost::shared_ptr<const GenericMatrix> A,
-                                      const boost::shared_ptr<const GenericVector> b);
+    void set_operators(const boost::shared_ptr<const GenericMatrix> A,
+		       const boost::shared_ptr<const GenericVector> b);
 
-	// Set operators with shared pointer to PETSc objects
-	void set_operators(const boost::shared_ptr<const PETScMatrix> A,
-                                      const boost::shared_ptr<const PETScVector> b); 
+    // Set operators with shared pointer to PETSc objects
+    void set_operators(const boost::shared_ptr<const PETScMatrix> A,
+		       const boost::shared_ptr<const PETScVector> b); 
         
     // Callback for changes in parameter values
     void read_parameters();
@@ -186,17 +189,21 @@ namespace dolfin
     bool preconditioner_set;   
         
     /// Computes the value of the objective function and its gradient. 
-    static PetscErrorCode __TAOFormFunctionGradientQuadraticProblem(TaoSolver tao, Vec X, PetscReal *ener, Vec G, void *ptr);
+    static PetscErrorCode __TAOFormFunctionGradientQuadraticProblem(
+		   TaoSolver tao, Vec X, PetscReal *ener, Vec G, void *ptr);
     
     /// Computes the hessian of the quadratic objective function 
-    static PetscErrorCode __TAOFormHessianQuadraticProblem(TaoSolver tao,Vec X,Mat *H, Mat *Hpre, MatStructure *flg, void *ptr);
+    static PetscErrorCode __TAOFormHessianQuadraticProblem(
+                   TaoSolver tao,Vec X,Mat *H, Mat *Hpre, MatStructure *flg, void *ptr);
     
     //-----------------------------------------------------------------------------
-    //  Monitor the state of the solution at each iteration. The output printed to the screen is:
+    //  Monitor the state of the solution at each iteration. The output printed to
+    //  the screen is:
     //
     //	iterate - the current iterate number (>=0)
-    //	f 	    - the current function value
-    //	gnorm 	- the square of the gradient norm, duality gap, or other measure indicating distance from optimality.
+    //	f       - the current function value
+    //	gnorm 	- the square of the gradient norm, duality gap, or other measure 
+    //            indicating distance from optimality.
     //	cnorm 	- the infeasibility of the current solution with regard to the constraints.
     //	xdiff 	- the step length or trust region radius of the most recent iterate. 
     //-----------------------------------------------------------------------------
@@ -205,6 +212,7 @@ namespace dolfin
   };
 
 }
+
 #endif
 
 #endif
