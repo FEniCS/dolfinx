@@ -251,6 +251,11 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver)
         PetscOptionsSetValue("-pc_hypre_boomeramg_agg_nl",
                             boost::lexical_cast<std::string>(levels).c_str() );
       }
+      if (parameters("hypre")("BoomerAMG")["relax_type_coarse"].is_set())
+      {
+        const std::string type = parameters("hypre")("BoomerAMG")["relax_type_coarse"];
+        PetscOptionsSetValue("-pc_hypre_boomeramg_relax_type_coarse", type.c_str());
+      }
     }
     else if (_type == "hypre_parasails")
     {
