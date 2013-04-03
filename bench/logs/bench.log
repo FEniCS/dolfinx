@@ -149,7 +149,3 @@
 (2010, 6, 21, 1, 14, 44) mesh-iteration-cpp 35.36 "Iteration over entities of unit cube of size 128 x 128 x 128 (100 repetitions)"
 (2010, 6, 21, 1, 15, 6) function-evaluation-cpp 21.8412 "Evaluations of functions at arbitrary points."
 (2010, 6, 21, 1, 15, 6) function-evaluation-cpp 21.77 "Evaluations of functions at arbitrary points."
-(2012, 9, 3, 0, 47, 55) fem-jit-python 0.000333905 "JIT compilation (in memory cache)"
-(2012, 9, 3, 0, 48, 29) function-extrapolation-python 34.026 "Calling FFC just-in-time (JIT) compiler, this may take some time."
-(2012, 9, 3, 0, 48, 29) function-extrapolation-python 1.19862 "Calling FFC just-in-time (JIT) compiler, this may take some time."
-(2012, 9, 3, 0, 48, 30) la-cusp-python 0 "Solving the linear system for Poisson's equation using PETSc CUSP"
