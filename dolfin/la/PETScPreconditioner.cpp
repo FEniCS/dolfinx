@@ -167,6 +167,7 @@ Parameters PETScPreconditioner::default_parameters()
   p_boomeramg.add<double>("strong_threshold");
   p_boomeramg.add<double>("relaxation_weight");
   p_boomeramg.add<std::size_t>("agressive_coarsening_levels");
+  p_boomeramg.add<std::string>("relax_type_coarse");
 
   // Hypre package parameters
   Parameters p_hypre("hypre");
