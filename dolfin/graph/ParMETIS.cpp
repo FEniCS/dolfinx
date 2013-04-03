@@ -281,4 +281,5 @@ void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
                "compute mesh partitioning using ParMETIS",
                "DOLFIN has been configured without support for ParMETIS");
 }
+//-----------------------------------------------------------------------------
 #endif
