@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-27
-// Last changed: 2012-12-13
+// Last changed: 2013-04-04
 
 //=============================================================================
 // In this file we declare some typemaps for the std::set type
@@ -77,18 +77,44 @@ namespace std
 // TYPE       : The primitive type
 // NUMPY_TYPE : The type of the NumPy array that will be returned
 //-----------------------------------------------------------------------------
-%define OUT_TYPEMAP_BOOST_UNORDERED_SET_OF_PRIMITIVES(TYPE, NUMPY_TYPE)
+%define OUT_SET_TYPEMAP_OF_PRIMITIVES(TYPE, NUMPY_TYPE)
+SET_SPECIFIC_OUT_TYPEMAP_OF_PRIMITIVES(boost::unordered_map, TYPE, NUMPY_TYPE)
+SET_SPECIFIC_OUT_TYPEMAP_OF_PRIMITIVES(std::set, TYPE, NUMPY_TYPE)
+%enddef
+
+
 //-----------------------------------------------------------------------------
 // Argout typemap, returning a NumPy array for the boost::unordered_set<TYPE>
 //-----------------------------------------------------------------------------
-%typemap(out) boost::unordered_set<TYPE> 
+%define SET_SPECIFIC_OUT_TYPEMAP_OF_PRIMITIVES(SET_TYPE, TYPE, NUMPY_TYPE)
+
+// Value version
+%typemap(out) SET_TYPE<TYPE> 
 {
   npy_intp size = $1.size();
   PyArrayObject *ret = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, &size, NUMPY_TYPE));
   TYPE* data = static_cast<TYPE*>(PyArray_DATA(ret));
 
   int i = 0;
-  for (boost::unordered_set<TYPE>::const_iterator it = $1.begin(); it != $1.end(); ++it)
+  for (SET_TYPE<TYPE>::const_iterator it = $1.begin(); it != $1.end(); ++it)
+  {
+    data[i] = *it;
+    ++i;
+  }
+
+  // Append the output to $result
+  $result = PyArray_Return(ret);
+}
+
+// Reference version
+%typemap(out) const SET_TYPE<TYPE> &
+{
+  npy_intp size = $1->size();
+  PyArrayObject *ret = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNew(1, &size, NUMPY_TYPE));
+  TYPE* data = static_cast<TYPE*>(PyArray_DATA(ret));
+
+  int i = 0;
+  for (SET_TYPE<TYPE>::const_iterator it = $1->begin(); it != $1->end(); ++it)
   {
     data[i] = *it;
     ++i;
@@ -106,5 +132,4 @@ namespace std
 // NOTE: in typemaps
 ARGOUT_TYPEMAP_STD_SET_OF_PRIMITIVES(std::size_t, ids_result, NPY_UINTP)
 ARGOUT_TYPEMAP_STD_SET_OF_PRIMITIVES(std::size_t, cells, NPY_UINTP)
-
-OUT_TYPEMAP_BOOST_UNORDERED_SET_OF_PRIMITIVES(std::size_t, NPY_UINTP)
+OUT_SET_TYPEMAP_OF_PRIMITIVES(std::size_t, NPY_UINTP)

@@ -1,6 +1,8 @@
  - Feature: Add PointIntegralSolver, which uses the ButcherSchemes to solve local ODEs at Vertices
  - Feature: Add RKSolver and ButcherScheme for general time integral solvers
  - Feature: Add support for assigning a Function with linear combinations of Functions, which lives in the same FunctionSpace
+ - Added Python wrapper for SystemAssembler
+ - Added a demo using compiled_extension_module with separate source files
  - Fixes for NumPy 1.7
  - Remove DOLFIN wrapper code (moved to FFC)
  - Add set_options_prefix to PETScKrylovSolver

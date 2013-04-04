@@ -230,7 +230,7 @@ class AbstractBaseTest(object):
                 if i == cols[j]:
                     self.assertAlmostEqual(row[j], 1.0)
                     break
-            self.assertLess(j, cols.size)
+            self.assertTrue(j < cols.size)
             self.assertAlmostEqual(sum(abs(row)), 1.0)
 
     def test_ident_zeros_with_backend(self):
