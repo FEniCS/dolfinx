@@ -279,6 +279,21 @@ class DofMapTest(unittest.TestCase):
             dofs = V.dofmap().tabulate_entity_dofs(0, i)
             self.assertTrue(all(d==cd for d, cd in zip(dofs, cdofs)))
 
+    def test_mpi_dofmap_stats(self):
+        if MPI.num_processes() > 1:
+            
+            V = FunctionSpace(self.mesh, "CG", 1)
+            self.assertTrue(len(V.dofmap().shared_dofs())>0)
+            self.assertTrue(len(V.dofmap().off_process_owner())>0)
+            neighbours = V.dofmap().neighbours()
+            for processes in V.dofmap().shared_dofs().values():
+                for process in processes:
+                    self.assertTrue(process in neighbours)
+
+            for owner in V.dofmap().off_process_owner().values():
+                self.assertTrue(owner in neighbours)
+                
+        
 if __name__ == "__main__":
     print ""
     print "Testing PyDOLFIN DofMap operations"
