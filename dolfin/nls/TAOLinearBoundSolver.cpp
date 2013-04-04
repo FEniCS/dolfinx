@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added : 2012-12-03
-// Last changed: 2013-04-02
+// Last changed: 2013-04-04
 
 #ifdef HAS_PETSC
 #ifdef HAS_TAO
@@ -138,7 +138,7 @@ void TAOLinearBoundSolver::set_operators(const boost::shared_ptr<const GenericMa
 }
 //-----------------------------------------------------------------------------
 void TAOLinearBoundSolver::set_operators(const boost::shared_ptr<const PETScMatrix> A,
-                                      const boost::shared_ptr<const PETScVector> b)
+					 const boost::shared_ptr<const PETScVector> b)
 {
   this->A = A;
   this->b = b;
@@ -163,14 +163,14 @@ std::size_t TAOLinearBoundSolver::solve(const PETScMatrix& A1, PETScVector& x,
 {
  
   // Check symmetry
-  dolfin_assert(A->size(0) == A->size(1));
+  dolfin_assert(A1.size(0) == A1.size(1));
   
   // Set operators (A and b)
   boost::shared_ptr<const PETScMatrix> _A(&A1, NoDeleter());
   boost::shared_ptr<const PETScVector> _b(&b1, NoDeleter());
   set_operators(_A,_b);
   dolfin_assert(A->mat());
-  dolfin_assert(b->vec());
+  //dolfin_assert(b->vec());
      
   // Set initial vector  
   dolfin_assert(*_tao);

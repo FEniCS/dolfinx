@@ -17,7 +17,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  03/09/2012
-# Last changed: 03/15/2012
+# Last changed: 2013-04-04
 
 # Begin demo  
 # Corrado Maurini 
@@ -40,14 +40,14 @@ from dolfin import *
 import unittest
 
 try:
-  parameters["linear_algebra_backend"] = "PETSc"
+    parameters["linear_algebra_backend"] = "PETSc"
 except RuntimeError:
-  import sys; sys.exit(0)
+    import sys; sys.exit(0)
 
 # Create mesh and define function space
 Lx = 1; Ly = .1
 mesh = RectangleMesh(0,0,Lx,Ly,100,10)
-V    = FunctionSpace(mesh, "Lagrange", 1)
+V = FunctionSpace(mesh, "Lagrange", 1)
 
 # Define Dirichlet boundaries
 def left(x,on_boundary):
@@ -80,7 +80,7 @@ b=PETScVector()
 A, b = assemble_system(a, L, bc)
 
 # Define the upper and lower bounds
-upperbound = interpolate(Constant(1.), V) # 
+upperbound = interpolate(Constant(1.), V)
 lowerbound = interpolate(Constant(0.), V) 
 xu = upperbound.vector()
 xl = lowerbound.vector() 
@@ -89,12 +89,14 @@ xl = lowerbound.vector()
 xsol=usol.vector()  
 
 if has_tao():
+  
     class TAOLinearBoundSolverTester(unittest.TestCase):
 
         def test_tao_linear_bound_solver(self):
             "Test TAOLinearBoundSolver"
-            solver=TAOLinearBoundSolver("tao_tron","gmres")
+            solver = TAOLinearBoundSolver("tao_tron","gmres")
             solver.solve(A,xsol,b,xl,xu)
+            
             # Test that F(usol) = Ly
             self.assertAlmostEqual(assemble(F), Ly, 5)
     
