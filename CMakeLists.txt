@@ -757,6 +757,7 @@ if (DOLFIN_ENABLE_TESTING)
   file(COPY data demo test DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
     FILES_MATCHING
     PATTERN "*.py"
+    PATTERN "*.h"
     PATTERN "*.cpp"
     PATTERN "*.ufl"
     PATTERN "*.xml*"
