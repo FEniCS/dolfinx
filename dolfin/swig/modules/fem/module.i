@@ -63,8 +63,10 @@
 // #include types from function submodule of module function
 #include "dolfin/function/GenericFunction.h"
 #include "dolfin/function/Expression.h"
+#include "dolfin/function/FunctionAXPY.h"
 #include "dolfin/function/Function.h"
 #include "dolfin/function/FunctionSpace.h"
+#include "dolfin/function/Constant.h"
 #include "dolfin/function/SpecialFacetFunction.h"
 
 // Include types from present module fem
@@ -94,6 +96,11 @@
 #include "dolfin/fem/NonlinearVariationalSolver.h"
 #include "dolfin/fem/OpenMpAssembler.h"
 #include "dolfin/fem/VariationalProblem.h"
+
+// #include types from multistage submodule
+#include "dolfin/multistage/MultiStageScheme.h"
+#include "dolfin/multistage/RKSolver.h"
+#include "dolfin/multistage/PointIntegralSolver.h"
 
 // #include types from adaptivity submodule
 #include "dolfin/adaptivity/GenericAdaptiveVariationalSolver.h"
@@ -160,8 +167,10 @@ import_array();
 %include "dolfin/swig/function/pre.i"
 %import(module="function") "dolfin/function/GenericFunction.h"
 %import(module="function") "dolfin/function/Expression.h"
+%import(module="function") "dolfin/function/FunctionAXPY.h"
 %import(module="function") "dolfin/function/Function.h"
 %import(module="function") "dolfin/function/FunctionSpace.h"
+%import(module="function") "dolfin/function/Constant.h"
 %import(module="function") "dolfin/function/SpecialFacetFunction.h"
 
 // Turn on SWIG generated signature documentation and include doxygen
@@ -169,6 +178,7 @@ import_array();
 //%feature("autodoc", "1");
 %include "dolfin/swig/quadrature/docstrings.i"
 %include "dolfin/swig/fem/docstrings.i"
+%include "dolfin/swig/multistage/docstrings.i"
 %include "dolfin/swig/adaptivity/docstrings.i"
 
 // %include types from submodule quadrature
@@ -198,6 +208,11 @@ import_array();
 %include "dolfin/fem/OpenMpAssembler.h"
 %include "dolfin/fem/VariationalProblem.h"
 %include "dolfin/swig/fem/post.i"
+
+// %include types from submodule multistage
+%include "dolfin/multistage/MultiStageScheme.h"
+%include "dolfin/multistage/RKSolver.h"
+%include "dolfin/multistage/PointIntegralSolver.h"
 
 // %include types from submodule adaptivity
 %include "dolfin/swig/adaptivity/pre.i"

@@ -309,7 +309,7 @@ void PETScVector::add_local(const Array<double>& values)
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get_local(double* block, std::size_t m,
-                           const dolfin::la_index* rows) const
+			    const dolfin::la_index* rows) const
 {
   dolfin_assert(_x);
   PetscInt _m = m;

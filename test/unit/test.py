@@ -38,6 +38,7 @@ tests = {
     "fem":            ["solving", "Assembler", "DirichletBC", "DofMap",
                        "FiniteElement", "Form", "SystemAssembler",
                        "PeriodicBC", "manifolds"],
+    "multistage":     ["RKSolver", "PointIntegralSolver"],
     "function":       ["Constant", "Expression", "Function", "FunctionSpace",
                        "SpecialFunctions"],
     "io":             ["vtk", "XMLMeshFunction", "XMLMesh",

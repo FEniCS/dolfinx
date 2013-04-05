@@ -74,6 +74,10 @@ namespace dolfin
     const double* const * w() const
     { return &w_pointer[0]; }
 
+    /// Pointer to coefficient data. Used to support UFC interface. None const version
+    double* * w() 
+    { return &w_pointer[0]; }
+
     /// Pointer to macro element coefficient data. Used to support UFC interface.
     const double* const * macro_w() const
     { return &macro_w_pointer[0]; }
@@ -92,6 +96,9 @@ namespace dolfin
     // Interior facet integrals (access through get_interior_facet_integral to get proper fallback to default)
     std::vector<boost::shared_ptr<ufc::interior_facet_integral> > interior_facet_integrals;
 
+    // Point integrals (access through get_point_integral to get proper fallback to default)
+    std::vector<boost::shared_ptr<ufc::point_integral> > point_integrals;
+
   public:
 
     // Default cell integral
@@ -102,6 +109,9 @@ namespace dolfin
 
     // Default interior facet integral
     boost::shared_ptr<ufc::interior_facet_integral> default_interior_facet_integral;
+
+    // Default point integral
+    boost::shared_ptr<ufc::point_integral> default_point_integral;
 
     /// Get cell integral over a given domain, falling back to the default if necessary
     ufc::cell_integral * get_cell_integral(std::size_t domain)
@@ -115,7 +125,8 @@ namespace dolfin
       return default_cell_integral.get();
     }
 
-    /// Get exterior facet integral over a given domain, falling back to the default if necessary
+    /// Get exterior facet integral over a given domain, falling back to the 
+    /// default if necessary
     ufc::exterior_facet_integral * get_exterior_facet_integral(std::size_t domain)
     {
       if (domain < form.num_exterior_facet_domains())
@@ -127,7 +138,8 @@ namespace dolfin
       return default_exterior_facet_integral.get();
     }
 
-    /// Get interior facet integral over a given domain, falling back to the default if necessary
+    /// Get interior facet integral over a given domain, falling back to the 
+    /// default if necessary
     ufc::interior_facet_integral * get_interior_facet_integral(std::size_t domain)
     {
       if (domain < form.num_interior_facet_domains())
@@ -137,6 +149,19 @@ namespace dolfin
           return integral;
       }
       return default_interior_facet_integral.get();
+    }
+
+    /// Get point integral over a given domain, falling back to the 
+    /// default if necessary
+    ufc::point_integral * get_point_integral(std::size_t domain)
+    {
+      if (domain < form.num_point_domains())
+      {
+        ufc::point_integral * integral = point_integrals[domain].get();
+        if (integral)
+          return integral;
+      }
+      return default_point_integral.get();
     }
 
     // Form
