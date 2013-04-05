@@ -18,9 +18,10 @@
 # Modified by Anders Logg, 2008
 # Modified by Johan Hake, 2008
 # Modified by Garth N. Wells, 2009
+# Modified by Johan Hake, 2013
 #
 # First added:  2007-11-14
-# Last changed: 2009-10-06
+# Last changed: 2013-04-05
 #
 # This demo solves the time-dependent convection-diffusion equation by
 # a SUPG stabilized method. The velocity field used
@@ -30,12 +31,14 @@
 #
 # FIXME: Add shock capturing term and then revert back to the Stokes
 #        velocity
+# FIXME: This demo showcase experimental features of a RKSolver (time integrator)
+# FIXME: using a MultiStageScheme. It could be removed or changed anytime.
 
 from dolfin import *
 
 # Load mesh and subdomains
-mesh = Mesh("../mesh.xml.gz")
-sub_domains = MeshFunction("size_t", mesh, "../subdomains.xml.gz");
+mesh = Mesh("../dolfin_fine.xml.gz")
+sub_domains = MeshFunction("size_t", mesh, "../dolfin_fine_subdomains.xml.gz");
 h = CellSize(mesh)
 
 # Create FunctionSpaces
@@ -44,7 +47,7 @@ V = VectorFunctionSpace(mesh, "CG", 2)
 
 # Create velocity Function from file
 velocity = Function(V);
-File("../velocity.xml.gz") >> velocity
+File("../dolfin_fine_velocity.xml.gz") >> velocity
 
 # Initialise source function and previous solution function
 f  = Constant(0.0)

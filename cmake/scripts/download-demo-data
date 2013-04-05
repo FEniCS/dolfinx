@@ -32,6 +32,9 @@ download_mesh demo/undocumented/mixed-poisson-sphere         sphere_16.xml.gz
 download_mesh demo/undocumented/advection-diffusion          dolfin_fine.xml.gz
 download_mesh demo/undocumented/advection-diffusion          dolfin_fine_velocity.xml.gz
 download_mesh demo/undocumented/advection-diffusion          dolfin_fine_subdomains.xml.gz
+download_mesh demo/undocumented/multistage-solver            dolfin_fine.xml.gz
+download_mesh demo/undocumented/multistage-solver            dolfin_fine_velocity.xml.gz
+download_mesh demo/undocumented/multistage-solver            dolfin_fine_subdomains.xml.gz
 download_mesh demo/undocumented/elasticity                   gear.xml.gz
 download_mesh demo/undocumented/lift-drag                    dolfin_fine.xml.gz
 download_mesh demo/undocumented/lift-drag                    dolfin_fine_pressure.xml.gz
