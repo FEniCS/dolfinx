@@ -412,6 +412,8 @@ def generate_docstrings():
     
     print "Generating docstrings from intermediate representation module..."
     for module in documentation:
+        if not os.path.isdir(os.path.join(dolfin_dir, "dolfin", "swig", module)):
+            os.mkdir(os.path.join(dolfin_dir, "dolfin", "swig", module))
         output_file = open(os.path.join(dolfin_dir, "dolfin", "swig", \
                                         module, "docstrings.i"), "w")
         output_file.write(copyright_statement%(copyright_form_swig))
