@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First Added: 2012-09-21
-// Last Changed: 2012-12-04
+// Last Changed: 2013-04-06
 
 #include <boost/filesystem.hpp>
 
@@ -121,15 +121,38 @@ bool HDF5Interface::has_dataset(const hid_t hdf5_file_handle,
 void HDF5Interface::add_group(const hid_t hdf5_file_handle,
                               const std::string group_name)
 {
-  if (has_group(hdf5_file_handle, group_name))
-    return;
+  if(group_name.size() == 0)
+  {
+    dolfin_error("HDF5Interface.cpp",
+                 "add HDF5 group",
+                 "Invalid string");
+  }
 
-  hid_t group_id_vis = H5Gcreate2(hdf5_file_handle, group_name.c_str(),
-                                  H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  dolfin_assert(group_id_vis != HDF5_FAIL);
+  if(group_name[0] != '/')
+  {
+    dolfin_error("HDF5Interface.cpp",
+                 "add HDF5 group",
+                 "Invalid string");
+  }
 
-  herr_t status = H5Gclose(group_id_vis);
-  dolfin_assert(status != HDF5_FAIL);
+  // Starting from the root level, check and create groups if needed
+  std::size_t pos=0;
+  while(pos != std::string::npos)
+  {
+    pos++;
+    pos = group_name.find('/', pos);
+    const std::string parent_name(group_name, 0, pos);
+    
+    if(!has_group(hdf5_file_handle, parent_name))
+    {
+      hid_t group_id_vis = H5Gcreate2(hdf5_file_handle, parent_name.c_str(),
+                                      H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      dolfin_assert(group_id_vis != HDF5_FAIL);
+      
+      herr_t status = H5Gclose(group_id_vis);
+      dolfin_assert(status != HDF5_FAIL);
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 std::size_t HDF5Interface::dataset_rank(const hid_t hdf5_file_handle,

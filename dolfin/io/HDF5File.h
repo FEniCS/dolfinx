@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2013-03-04
+// Last changed: 2013-04-07
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -163,11 +163,10 @@ namespace dolfin
     dolfin_assert(hdf5_file_open);
 
     //FIXME: Get groups from dataset_name and recursively create groups
-    const std::string group_name(dataset_name, 0, dataset_name.rfind('/'));
-
+    //    const std::string group_name(dataset_name, 0, dataset_name.rfind('/'));
     // Check that group exists and create if required
-    if (!HDF5Interface::has_group(hdf5_file_id, group_name))
-      HDF5Interface::add_group(hdf5_file_id, group_name);
+    //    if (!HDF5Interface::has_group(hdf5_file_id, group_name))
+    //      HDF5Interface::add_group(hdf5_file_id, group_name);
 
     dolfin_assert(global_size.size() > 0);
 

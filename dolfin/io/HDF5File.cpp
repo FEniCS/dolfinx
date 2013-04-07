@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-03-04
+// Last changed: 2013-04-07
 
 #ifdef HAS_HDF5
 
@@ -88,8 +88,8 @@ void HDF5File::write(const GenericVector& x, const std::string name)
   dolfin_assert(hdf5_file_open);
 
   // Create Vector group in HDF5 file
-  if (!HDF5Interface::has_group(hdf5_file_id, "/Vector"))
-    HDF5Interface::add_group(hdf5_file_id, "/Vector");
+  //  if (!HDF5Interface::has_group(hdf5_file_id, "/Vector"))
+  //    HDF5Interface::add_group(hdf5_file_id, "/Vector");
 
   // Get all local data
   std::vector<double> local_data;
@@ -127,8 +127,8 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
   dolfin_assert(hdf5_file_open);
 
   // Create Mesh group in HDF5 file
-  if (!HDF5Interface::has_group(hdf5_file_id, "/Mesh"))
-    HDF5Interface::add_group(hdf5_file_id, "/Mesh");
+  //  if (!HDF5Interface::has_group(hdf5_file_id, "/Mesh"))
+  //    HDF5Interface::add_group(hdf5_file_id, "/Mesh");
 
   // ---------- Vertices (coordinates)
   {

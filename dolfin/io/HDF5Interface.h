@@ -238,6 +238,10 @@ namespace dolfin
     else
       chunking_properties = H5P_DEFAULT;
 
+    // Check that group exists and recursively create if required
+    const std::string group_name(dataset_name, 0, dataset_name.rfind('/'));
+    add_group(file_handle, group_name);
+    
     // Create global dataset (using dataset_name)
     const hid_t dset_id = H5Dcreate2(file_handle, dataset_name.c_str(), h5type,
                                      filespace0, H5P_DEFAULT,
