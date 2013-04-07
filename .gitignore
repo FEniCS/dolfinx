@@ -16,6 +16,36 @@
 *.dylib
 dolfin/libdolfin.so*
 
+# SWIG generated files
+#dolfin/swig/**/*.py
+#dolfin/swig/**/*.cc
+#dolfin/swig/**/*.h
+
+# Configuration files
+dolfin.conf
+dolfin-version
+local.*
+dolfin/dolfin-config.cmake
+
+# Demos and tests
+#build_demo.*
+#demo/**/*.(pvd|vtu|pvtu|xml|bin)
+#demo/**/demo_.*
+#test/**/cpp/test_.*
+#test/unit/mesh/(cpp|python)/*.(xml|m)
+#test/unit/parameter/(cpp|python)/*.(xml|xml.gz)
+
+
+#RE:test/unit/io/(cpp|python)/.*.(xml|xml.gz|vtu|pvtu|pvd)
+#RE:test/unit/adaptivity/(cpp|python)/.*.(bin|bin.gz)
+#RE:bench/.*/cpp/bench_.*
+#test/regression/demo.log
+#demo/pde/navier-stokes/python/results
+#demo/undocumented/advection-diffusion/python/results
+#RE:test/unit/book/python/.*.(bin|vtu|pvd)
+#RE:test/unit/book/python/(vector|parameters).xml
+
+
 # Temporaries
 *~
 
@@ -30,9 +60,16 @@ dolfin/libdolfin.so*
 *.h5
 *.xdmf
 
-# CMake files
+# CMake and Make files
 CMakeCache.txt
 CMakeFiles
+cmake_install.cmake
+cmake_uninstall.cmake
+Makefile
+install_manifest.txt
+
+# Local build files
+build/
 
 # OS X files
 .DS_Store
