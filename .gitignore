@@ -1,0 +1,39 @@
+# Compiled source
+*.o
+*.Plo
+*.Po
+*.lo
+*.la
+*.a
+*.os
+*.pyc
+*.so
+*.pc
+*.pyd
+*.def
+*.dll
+*.exe
+*.dylib
+dolfin/libdolfin.so*
+
+# Temporaries
+*~
+
+# Compressed files
+*.xz
+*.gz
+
+# Data files
+*.pvd
+*.pvtu
+*.vtu
+*.h5
+*.xdmf
+
+# CMake files
+CMakeCache.txt
+CMakeFiles
+
+# OS X files
+.DS_Store
+.DS_Store?
