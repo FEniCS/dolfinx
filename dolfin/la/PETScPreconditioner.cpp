@@ -188,7 +188,7 @@ PETScPreconditioner::PETScPreconditioner(std::string type) : _type(type), gdim(0
   {
     dolfin_error("PETScPreconditioner.cpp",
                  "create PETSc preconditioner",
-                 "Unknown norm type (\"%s\")", type.c_str());
+                 "Unknown preconditioner type (\"%s\")", type.c_str());
   }
 }
 //-----------------------------------------------------------------------------
