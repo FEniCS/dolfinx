@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2013-03-04
+// Last changed: 2013-04-08
 
 #ifdef HAS_HDF5
 
@@ -245,7 +245,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   // Write mesh to HDF5 file
   if (parameters["rewrite_function_mesh"] || counter == 0)
   {
-      current_mesh_name = boost::lexical_cast<std::string>(counter);
+      current_mesh_name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
       hdf5_file->write(mesh, current_mesh_name);
   }
 
@@ -343,7 +343,7 @@ void XDMFFile::operator>> (Mesh& mesh)
   dolfin_assert(geom_bits[4] == "coordinates");
 
   // Try to read the mesh from the associated HDF5 file
-  hdf5_file->read(mesh, geom_bits[3]);
+  hdf5_file->read(mesh, "/Mesh/" + geom_bits[3]);
 
 }
 //----------------------------------------------------------------------------
@@ -375,12 +375,13 @@ void XDMFFile::operator<< (const Mesh& mesh)
   // Write mesh to HDF5 file
   // The XML below will obliterate any existing XDMF file
 
-  hdf5_file->write(mesh, cell_dim, name);
+  const std::string group_name = "/Mesh/" + name;
+  hdf5_file->write(mesh, cell_dim, group_name);
 
   // FIXME: Names should be returned by HDF5::write_mesh
   // Mesh data set names
-  const std::string mesh_topology_name = "/Mesh/" + name + "/topology";
-  const std::string mesh_coords_name = "/Mesh/" + name + "/coordinates";
+  const std::string mesh_topology_name = group_name + "/topology";
+  const std::string mesh_coords_name = group_name + "/coordinates";
 
   // Write the XML meta description on process zero
   if (MPI::process_number() == 0)
@@ -465,11 +466,11 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   dolfin_assert(cell_dim <= mesh.topology().dim());
 
   // Use HDF5 function to output MeshFunction
-  current_mesh_name = boost::lexical_cast<std::string>(counter);
+  current_mesh_name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
   hdf5_file->write_mesh_function(meshfunction, current_mesh_name);
 
   // Saved MeshFunction values are in the /Mesh group
-  const std::string dataset_name = "/Mesh/" + current_mesh_name + "/values";
+  const std::string dataset_name =  current_mesh_name + "/values";
 
   // Write the XML meta description (see http://www.xdmf.org) on process zero
   if (MPI::process_number() == 0)
@@ -585,7 +586,7 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction)
   dolfin_assert(value_bits[4] == "values");
 
   // Try to read the meshfunction from the associated HDF5 file
-  hdf5_file->read(meshfunction, geom_bits[3]);
+  hdf5_file->read(meshfunction, "/Mesh/" + geom_bits[3]);
 }
 //----------------------------------------------------------------------------
 void XDMFFile::xml_mesh_topology(pugi::xml_node &xdmf_topology,
@@ -755,12 +756,12 @@ void XDMFFile::output_xml(const double time_step, const bool vertex_data,
   // Grid/Topology
   pugi::xml_node xdmf_topology = xdmf_grid.append_child("Topology");
   xml_mesh_topology(xdmf_topology, cell_dim, num_global_cells,
-                    "/Mesh/" + current_mesh_name + "/topology");
+                    current_mesh_name + "/topology");
 
   // Grid/Geometry
   pugi::xml_node xdmf_geometry = xdmf_grid.append_child("Geometry");
   xml_mesh_geometry(xdmf_geometry, num_total_vertices, gdim,
-                    "/Mesh/" + current_mesh_name + "/coordinates");
+                    current_mesh_name + "/coordinates");
 
   // Grid/Attribute (Function value data)
   pugi::xml_node xdmf_values = xdmf_grid.append_child("Attribute");
