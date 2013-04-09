@@ -2,6 +2,9 @@
 DOLFIN
 ======
 
+DOLFIN is the C++/Python interface of FEniCS, providing a consistent
+PSE (Problem Solving Environment) for ordinary and partial
+differential equations.
 
 Installation
 ============

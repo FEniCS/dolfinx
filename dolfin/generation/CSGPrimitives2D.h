@@ -174,8 +174,9 @@ namespace dolfin
     /// *Arguments*
     ///     vertices (std::vector<_Point_>)
     ///         A vector of _Point_ objects.
-    ///         The points must be given in clockwise order
-    ///         and the polygon can not self intersect.
+    ///         The points must be given in counter-clockwise order
+    ///         (without repeating the first/last vertex) and the polygon
+    //          must not self intersect.
     Polygon(const std::vector<Point>& vertices);
 
     /// Informal string representation
