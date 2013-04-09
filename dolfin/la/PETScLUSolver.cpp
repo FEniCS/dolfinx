@@ -404,11 +404,8 @@ void PETScLUSolver::configure_ksp(const MatSolverPackage solver_package)
   // Set preconditioner to LU factorization/Cholesky as appropriate
 
   const bool symmetric = parameters["symmetric_operator"];
-  std::cout << "PETScLUSolver: symmetric " << symmetric << std::endl;
-
   if (symmetric && solver_has_cholesky(solver_package))
   {
-    std::cout << "Setting PCCHOLESKY " << std::endl;
     PCSetType(pc, PCCHOLESKY);
   }
   else
