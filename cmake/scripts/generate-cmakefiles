@@ -19,6 +19,8 @@
 #
 # Generate CMakeLists.txt files in demo and test directories
 # This script should be run from the top level directory.
+#
+# Modified by Anders Logg 2013
 
 import os
 import subprocess
@@ -84,11 +86,11 @@ main_file_names = dict(test="test.cpp",
                        bench="main.cpp")
 
 # Projects that use custom CMakeLists.txt (shouldn't overwrite)
-exclude_projects = [os.path.join('demo', 'undocumented', 'plot-qt'), 
+exclude_projects = [os.path.join('demo', 'undocumented', 'plot-qt'),
                     os.path.join('demo', 'undocumented', 'csg'),
                     os.path.join('demo', 'undocumented', 'meshintersection')]
 
-def generate_cmake_files(subdirectory):
+def generate_cmake_files(subdirectory, generated_files):
     """Search for C++ code and write CMakeLists.txt files"""
     cwd = os.getcwd()
     executable_prefix = executable_prefixes[subdirectory]
@@ -157,7 +159,9 @@ def generate_cmake_files(subdirectory):
                 print "Warning: duplicate executable names found when generating CMakeLists.txt files."
 
             # Write file
-            with open(program_dir + "/CMakeLists.txt", 'w') as f:
+            filename = os.path.join(program_dir, "CMakeLists.txt")
+            generated_files.append(filename)
+            with open(filename, "w") as f:
                 print "Creating CMakeLists.txt file:", program_name, program_dir
                 f.write(cmakelists_str % name_forms)
 
@@ -165,6 +169,11 @@ def generate_cmake_files(subdirectory):
             # Add to version control
             #subprocess.call(["bzr", "add", program_dir + "/CMakeLists.txt"])
 
-# Generate CMakeLists.text files
+# Generate CMakeLists.txt files for all subdirectories
+generated_files = []
 for subdirectory in sub_directories:
-    generate_cmake_files(subdirectory)
+    generate_cmake_files(subdirectory, generated_files)
+
+# Print list of generated files
+print "The following files were generated:"
+print "\n".join(generated_files)
