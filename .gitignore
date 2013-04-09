@@ -16,35 +16,52 @@
 *.dylib
 dolfin/libdolfin.so*
 
-# SWIG generated files
-#dolfin/swig/**/*.py
-#dolfin/swig/**/*.cc
-#dolfin/swig/**/*.h
+# FFC generated code in library
+dolfin/ale/Poisson*D.h
+
+# Log files
+*.log
+
+# Install directory
+local/
+
+# SWIG generated file
+dolfin/swig/**/**/*.py
+dolfin/swig/**/**/*.h
+dolfin/swig/**/**/*.cc
+dolfin/swig/**/**/*.cxx
+swigimportinfo.py
+
+# Documentation
+docstrings.i
 
 # Configuration files
 dolfin.conf
 dolfin-version
-local.*
-dolfin/dolfin-config.cmake
+dolfin-config.cmake
+DOLFINConfig.cmake
+DOLFINConfigVersion.cmake
+UseDOLFIN.cmake
+dolfin-config-version.cmake
 
 # Demos and tests
-#build_demo.*
-#demo/**/*.(pvd|vtu|pvtu|xml|bin)
-#demo/**/demo_.*
-#test/**/cpp/test_.*
-#test/unit/mesh/(cpp|python)/*.(xml|m)
-#test/unit/parameter/(cpp|python)/*.(xml|xml.gz)
+demo_*
+test_*
+build_demo.*
+test/unit/mesh/{cpp,python}/*.{xml,m}
+test/unit/parameter/{cpp,python}/*.{xml,xml.gz}
+bench/**/**/cpp/forms/*.h
+bench/**/**/cpp/*.h
+test/unit/**/python/*.xml
+test/unit/**/cpp/*.xml
 
+# FFC generated demo files
+demo/**/**/cpp/*.h
+demo/pde/cahn-hilliard/cpp/CahnHilliard2D.cpp
+demo/pde/cahn-hilliard/cpp/CahnHilliard3D.cpp
 
-#RE:test/unit/io/(cpp|python)/.*.(xml|xml.gz|vtu|pvtu|pvd)
-#RE:test/unit/adaptivity/(cpp|python)/.*.(bin|bin.gz)
-#RE:bench/.*/cpp/bench_.*
-#test/regression/demo.log
-#demo/pde/navier-stokes/python/results
-#demo/undocumented/advection-diffusion/python/results
-#RE:test/unit/book/python/.*.(bin|vtu|pvd)
-#RE:test/unit/book/python/(vector|parameters).xml
-
+# QT generated code
+moc_*
 
 # Temporaries
 *~
@@ -52,6 +69,7 @@ dolfin/dolfin-config.cmake
 # Compressed files
 *.xz
 *.gz
+*.zs-old
 
 # Data files
 *.pvd
@@ -59,6 +77,7 @@ dolfin/dolfin-config.cmake
 *.vtu
 *.h5
 *.xdmf
+*.bin
 
 # CMake and Make files
 CMakeCache.txt
