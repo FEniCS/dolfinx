@@ -79,7 +79,17 @@ moc_*
 *.xdmf
 *.bin
 
-# CMake and Make files
+# CMake and Make file
+CMakeLists.txt
+!/CMakeLists.txt
+!dolfin/CMakeLists.txt
+!bench/CMakeLists.txt
+!dolfin/swig/CMakeLists.txt
+!doc/CMakeLists.txt
+!demo/CMakeLists.txt
+!test/CMakeLists.txt
+
+
 CMakeCache.txt
 CMakeFiles
 cmake_install.cmake
