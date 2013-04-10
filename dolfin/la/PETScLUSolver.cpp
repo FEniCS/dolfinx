@@ -86,7 +86,7 @@ const std::map<std::string, const MatSolverPackage> PETScLUSolver::_methods
                               ("petsc",        MAT_SOLVER_PETSC);
 //-----------------------------------------------------------------------------
 const std::map<const MatSolverPackage, const bool> PETScLUSolver::_methods_cholesky
-  = boost::assign::map_list_of(MAT_SOLVER_UMFPACK,      true)
+  = boost::assign::map_list_of(MAT_SOLVER_UMFPACK,      false)
                               (MAT_SOLVER_MUMPS,        true)
                               (MAT_SOLVER_PASTIX,       true)
                               (MAT_SOLVER_SPOOLES,      true)
