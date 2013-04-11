@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-09-27
-// Last changed: 2013-04-04
+// Last changed: 2013-04-11
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using
@@ -85,6 +85,22 @@ namespace boost
     //Py_XDECREF(item1);
     Py_XDECREF(item2);
     Py_XDECREF(item3);
+  }
+}
+
+%typemap(out) MAP_TYPE<KEY_TYPE, std::pair<VALUE_TYPE, VALUE_TYPE> >
+  (MAP_TYPE<KEY_TYPE, std::pair<VALUE_TYPE, VALUE_TYPE> >::const_iterator it,
+  PyObject* item0, PyObject* item1)
+{
+  // MAP_TYPE<KEY_TYPE, std::pair<VALUE_TYPE, VALUE_TYPE> > (out)
+  $result = PyDict_New();
+  for (it=$1.begin(); it!=$1.end(); ++it){
+    item0 = SWIG_From_dec(KEY_TYPE)(it->first);
+    item1 = Py_BuildValue("ii", it->second.first, it->second.second);
+    
+    PyDict_SetItem($result, item0, item1);
+    Py_XDECREF(item0);
+    Py_XDECREF(item1);
   }
 }
 
