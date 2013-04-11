@@ -513,7 +513,7 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2 
     if (dolfin::MPI::process_number() == 0)
     {
-        warning("Use of SNESVI solver with PETSc 3.2  may lead to convergence issues and is strongly discouraged.");
+        warning("Use of SNESVI solvers with PETSc 3.2 may lead to convergence issues and is strongly discouraged.");
     }
     if (method != std::string("vi") &&
         method != std::string("default"))
@@ -578,7 +578,7 @@ bool PETScSNESSolver::is_vi() const
   if ((std::string(parameters["sign"]) != "default") and (this->has_explicit_bounds == true))
   {
     dolfin_error("PETScSNESSolver.cpp",
-                 "Set variational inequality bounds",
+                 "set variational inequality bounds",
                  "Both the sign parameter and the explicit bounds are set");
     return false;
   }
