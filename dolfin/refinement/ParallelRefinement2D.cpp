@@ -49,7 +49,7 @@ bool ParallelRefinement2D::length_compare(std::pair<double, std::size_t> a,
 void ParallelRefinement2D::generate_reference_edges(const Mesh& mesh, 
                                                     std::vector<std::size_t>& ref_edge)
 {
-  uint D = mesh.topology().dim();
+  std::size_t D = mesh.topology().dim();
   
   ref_edge.resize(mesh.size(D));
   
@@ -82,7 +82,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh)
                  "Only works in parallel");
   }
 
-  const uint tdim = mesh.topology().dim();
+  const std::size_t tdim = mesh.topology().dim();
 
   if (tdim != 2)
   {
@@ -130,7 +130,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh)
 void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh, 
                                   const MeshFunction<bool>& refinement_marker)
 {
-  const uint tdim = mesh.topology().dim();
+  const std::size_t tdim = mesh.topology().dim();
 
   if (MPI::num_processes()==1)
   {
