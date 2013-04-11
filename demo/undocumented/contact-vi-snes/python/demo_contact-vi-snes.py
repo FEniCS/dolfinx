@@ -65,20 +65,19 @@ F = derivative(Pi, u, v)
 # Compute Jacobian of F
 J = derivative(F, u, du)
 
-# Symmetry condition (to avoid rotations)
+# Symmetry condition (to block rigid body rotations)
 tol=mesh.hmin()
 def symmetry_line(x):
     return abs(x[0]) < DOLFIN_EPS
 bc = DirichletBC(V.sub(0), 0., symmetry_line,method="pointwise")
 
-# The displacement u must be such that the current configuration x+u
-# does dot escape the xbox [xmin,xmax]x[umin,ymax]
+# The displacement u must be such that the current configuration x+u remains in the box [xmin,xmax]x[umin,ymax]
 constraint_u = Expression( ("xmax-x[0]","ymax-x[1]"), xmax =  1+DOLFIN_EPS, ymax =  1.)
 constraint_l = Expression( ("xmin-x[0]","ymin-x[1]"), xmin = -1-DOLFIN_EPS, ymin = -1.)
-u_min = interpolate(constraint_l, V)
-u_max = interpolate(constraint_u, V)
+umin = interpolate(constraint_l, V)
+umax = interpolate(constraint_u, V)
 
-# Take the PETScVector of the solution function
+# Define the solver parameters
 snes_solver_parameters = {"nonlinear_solver": "snes",
                           "linear_solver"   : "lu",
                           "snes_solver"     : { "maximum_iterations": 20,
@@ -86,15 +85,20 @@ snes_solver_parameters = {"nonlinear_solver": "snes",
                                                 "error_on_nonconvergence": False,
                                                }}
 
-problem = NonlinearVariationalProblem(F, u,bc,J=J)
+# Set up the non-linear problem
+problem = NonlinearVariationalProblem(F, u, bc, J=J)
+
+# Set up the non-linear solver
 solver  = NonlinearVariationalSolver(problem)
 solver.parameters.update(snes_solver_parameters)
 info(solver.parameters,True)
-(iter,converged)=solver.solve(u_min,u_max)
 
-# Check for convergence. Convergence is one modifies the loading and the mesh size. 
+# Solve the problem
+(iter,converged)=solver.solve(umin,umax)
+
+# Check for convergence 
 if not converged: 
-   warning("This demo is a complex nonlinear problem. Convergence is not garanteed if you modify some parameters or use PETSC 3.2.")
+   warning("This demo is a complex nonlinear problem. Convergence is not guaranteed when modifying some parameters or using PETSC 3.2.")
     
 # Save solution in VTK format
 file = File("displacement.pvd")

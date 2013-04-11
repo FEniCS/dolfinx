@@ -484,7 +484,7 @@ void PETScSNESSolver::set_linear_solver_parameters(Parameters ksp_parameters)
         #else
         dolfin_error("PETScSNESSolver.cpp",
                      "solve linear system using PETSc LU solver",
-                     "No suitable solver for parallel LU found consider configuring PETSc with MUMPS or SPOOLES");
+                     "No suitable solver for parallel LU found. Consider configuring PETSc with MUMPS or SPOOLES");
         #endif
       }
     }

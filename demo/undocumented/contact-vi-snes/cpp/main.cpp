@@ -120,7 +120,11 @@ int main()
   LowerBound umin_exp;
   Function umin(V);
   umin.interpolate(umin_exp);  
+  
+  // Set up the non-linear problem
   NonlinearVariationalProblem problem(F, u, bcs, J);
+  
+  // Set up the non-linear solver
   NonlinearVariationalSolver solver(problem);
   solver.parameters["nonlinear_solver"]="snes";
   solver.parameters["linear_solver"]="lu";
@@ -128,6 +132,8 @@ int main()
   solver.parameters("snes_solver")["report"]=true;
   solver.parameters("snes_solver")["error_on_nonconvergence"]=false;
   //info(solver.parameters,true);
+  
+  // Solve the problems
   std::pair<std::size_t, bool> out;
   out = solver.solve(umin,umax);
 
@@ -135,7 +141,7 @@ int main()
   cout << out.second;
   if (out.second != true)
   {
-    warning("This demo is a complex nonlinear problem. Convergence is not garanteed if you modify some parameters or use PETSc 3.2.");
+    warning("This demo is a complex nonlinear problem. Convergence is not guaranteed when modifying some parameters or using PETSC 3.2.");
   }
   // Save solution in VTK format
   File file("displacement.pvd");
