@@ -24,6 +24,7 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <dolfin/common/constants.h>
 #include <dolfin/mesh/MeshFunction.h>
 
 namespace dolfin
@@ -32,19 +33,20 @@ namespace dolfin
   class Mesh;
   class SubDomain;
 
-  /// This class computes map from slave facet to master facet
+  /// This class computes map from slave entity to master entity
 
   class PeriodicBoundaryComputation
   {
   public:
 
-    /// For entities of dimension dim, compute map from a slave entity on
-    /// this process (local index) to its master entity (owning process,
-    /// local index on owner). If a master entity is shared by processes,
-    /// only one of the owning processes is returned.
+    /// For entities of dimension dim, compute map from a slave entity
+    /// on this process (local index) to its master entity (owning
+    /// process, local index on owner). If a master entity is shared
+    /// by processes, only one of the owning processes is returned.
     static std::map<unsigned int, std::pair<unsigned int, unsigned int> >
       compute_periodic_pairs(const Mesh& mesh, const SubDomain& sub_domain,
-                             const std::size_t dim);
+                             const std::size_t dim,
+                             const double tol=DOLFIN_EPS);
 
     /// This function returns a MeshFunction which marks mesh entities
     /// of dimension dim according to:
@@ -57,8 +59,8 @@ namespace dolfin
     /// function that is used to apply periodic boundary conditions.
     static MeshFunction<std::size_t>
       masters_slaves(boost::shared_ptr<const Mesh> mesh,
-                     const SubDomain& sub_domain,
-                     const std::size_t dim);
+                     const SubDomain& sub_domain, const std::size_t dim,
+                     const double tol=DOLFIN_EPS);
 
   private:
 

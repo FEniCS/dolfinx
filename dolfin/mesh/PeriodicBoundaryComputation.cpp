@@ -39,6 +39,8 @@ using namespace dolfin;
 // coordinates are considered equal if equal to within round-off.
 struct lt_coordinate
 {
+  lt_coordinate(double tolerance) : TOL(tolerance) {}
+
   bool operator() (const std::vector<double>& x,
                    const std::vector<double>& y) const
   {
@@ -52,20 +54,24 @@ struct lt_coordinate
       if (i < y.size())
         yy = y[i];
 
-      if (xx < (yy - DOLFIN_EPS))
+      if (xx < (yy - TOL))
         return true;
-      else if (xx > (yy + DOLFIN_EPS))
+      else if (xx > (yy + TOL))
         return false;
     }
     return false;
   }
+
+  // Tolerance
+  const double TOL;
 };
 
 //-----------------------------------------------------------------------------
 std::map<unsigned int, std::pair<unsigned int, unsigned int> >
   PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
-                                                const SubDomain& sub_domain,
-                                                const std::size_t dim)
+                                                      const SubDomain& sub_domain,
+                                                      const std::size_t dim,
+                                                      const double tol)
 {
   // Get geometric and topological dimensions
   const std::size_t gdim = mesh.geometry().dim();
@@ -87,7 +93,8 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
   std::vector<double> x_min_max;
 
   // Map from master entity midpoint coordinate to local facet index
-  std::map<std::vector<double>, unsigned int, lt_coordinate> master_coord_to_entity_index;
+  std::map<std::vector<double>, unsigned int, lt_coordinate>
+    master_coord_to_entity_index((lt_coordinate(tol)));
 
   // Intialise facet-cell connectivity
   mesh.init(tdim - 1, tdim);
@@ -199,11 +206,11 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
 
       // Check is this process has a master entity that is paired with
       // a received slave entity
-      std::map<std::vector<double>, unsigned int, lt_coordinate>::const_iterator
+      std::map<std::vector<double>, unsigned int>::const_iterator
         it = master_coord_to_entity_index.find(coordinates);
 
       // If this process owns the master, insert master entity index,
-      // else insert std::numeric_limits<std::size_t>::max()
+      // else insert std::numeric_limits<unsigned int>::max()
       if (it !=  master_coord_to_entity_index.end())
         master_local_entity[p].push_back(it->second);
       else
@@ -242,16 +249,17 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
 MeshFunction<std::size_t>
   PeriodicBoundaryComputation::masters_slaves(boost::shared_ptr<const Mesh> mesh,
                                               const SubDomain& sub_domain,
-                                              const std::size_t dim)
+                                              const std::size_t dim,
+                                              const double tol)
 {
   dolfin_assert(mesh);
 
   // Create MeshFunction and initialse to zero
   MeshFunction<std::size_t> mf(*mesh, dim, 0);
 
-  // Compute markers
+  // Compute marker
   const std::map<unsigned int, std::pair<unsigned int, unsigned int> >
-    slaves = compute_periodic_pairs(*mesh, sub_domain, dim);
+    slaves = compute_periodic_pairs(*mesh, sub_domain, dim, tol);
 
   // Mark master and slaves, and pack off-process masters to send
   std::vector<std::vector<std::size_t> > master_dofs_send(MPI::num_processes());

@@ -96,7 +96,6 @@ class PeriodicBCTest(unittest.TestCase):
 
         # Create mesh and finite element
         mesh = UnitSquareMesh(8, 8)
-        #V = FunctionSpace(mesh, "Lagrange", 1)
         pbc = PeriodicBoundary2()
         V = FunctionSpace(mesh, "Lagrange", 1, constrained_domain=pbc)
 
