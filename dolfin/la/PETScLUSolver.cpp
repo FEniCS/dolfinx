@@ -85,6 +85,15 @@ const std::map<std::string, const MatSolverPackage> PETScLUSolver::_methods
                               #endif
                               ("petsc",        MAT_SOLVER_PETSC);
 //-----------------------------------------------------------------------------
+const std::map<const MatSolverPackage, const bool> PETScLUSolver::_methods_cholesky
+  = boost::assign::map_list_of(MAT_SOLVER_UMFPACK,      false)
+                              (MAT_SOLVER_MUMPS,        true)
+                              (MAT_SOLVER_PASTIX,       true)
+                              (MAT_SOLVER_SPOOLES,      true)
+                              (MAT_SOLVER_SUPERLU,      false)
+                              (MAT_SOLVER_SUPERLU_DIST, false)
+                              (MAT_SOLVER_PETSC,        true);
+//-----------------------------------------------------------------------------
 const std::vector<std::pair<std::string, std::string> > PETScLUSolver::_methods_descr
   = boost::assign::pair_list_of("default", "default LU solver")
                                #if PETSC_HAVE_UMFPACK
@@ -215,11 +224,11 @@ std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b, bool 
   // Get package used to solve sytem
   PC pc;
   KSPGetPC(*_ksp, &pc);
-  const MatSolverPackage solver_package;
-  PCFactorGetMatSolverPackage(pc, &solver_package);
+
+  configure_ksp(_solver_package);
 
   // Set number of threads if using PaStiX
-  if (strcmp(solver_package, MATSOLVERPASTIX) == 0)
+  if (strcmp(_solver_package, MATSOLVERPASTIX) == 0)
   {
     if (parameters["num_threads"].is_set())
     {
@@ -355,10 +364,15 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
   return _methods.find(method)->second;
 }
 //-----------------------------------------------------------------------------
+const bool PETScLUSolver::solver_has_cholesky(const MatSolverPackage package) const
+{
+  return _methods_cholesky.find(package)->second;
+}
+//-----------------------------------------------------------------------------
 void PETScLUSolver::init_solver(std::string& method)
 {
   // Select solver
-  const MatSolverPackage solver_package = select_solver(method);
+  _solver_package = select_solver(method);
 
   // Destroy old solver environment if necessary
   if (_ksp)
@@ -380,11 +394,24 @@ void PETScLUSolver::init_solver(std::string& method)
 
   // Make solver preconditioner only
   KSPSetType(*_ksp, KSPPREONLY);
-
-  // Set preconditioner to LU factorization
+}
+//-----------------------------------------------------------------------------
+void PETScLUSolver::configure_ksp(const MatSolverPackage solver_package)
+{
   PC pc;
   KSPGetPC(*_ksp, &pc);
-  PCSetType(pc, PCLU);
+
+  // Set preconditioner to LU factorization/Cholesky as appropriate
+
+  const bool symmetric = parameters["symmetric_operator"];
+  if (symmetric && solver_has_cholesky(solver_package))
+  {
+    PCSetType(pc, PCCHOLESKY);
+  }
+  else
+  {
+    PCSetType(pc, PCLU);
+  }
 
   // Set solver package
   PCFactorSetMatSolverPackage(pc, solver_package);

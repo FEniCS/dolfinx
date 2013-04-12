@@ -22,6 +22,7 @@
 #define __SUB_DOMAIN_H
 
 #include <cstddef>
+#include <dolfin/common/constants.h>
 
 namespace dolfin
 {
@@ -41,7 +42,12 @@ namespace dolfin
   public:
 
     /// Constructor
-    SubDomain();
+    ///
+    /// *Arguments*
+    ///     map_tol (double)
+    ///         The tolerance used when identifying mapped points using
+    ///         the function SubDomain::map.
+    SubDomain(const double map_tol=1.0e-10);
 
     /// Destructor
     virtual ~SubDomain();
@@ -241,6 +247,13 @@ namespace dolfin
     ///     std::size_t
     ///         The geometric dimension.
     std::size_t geometric_dimension() const;
+
+    /// Return tolerance uses to find matching point via mao function
+    ///
+    /// *Returns*
+    ///     double
+    ///         The tolerance.
+    const double map_tolerance;
 
   private:
 
