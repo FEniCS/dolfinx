@@ -60,67 +60,87 @@ void SubDomain::map(const Array<double>& x, Array<double>& y) const
                "Function map() not implemented by user. (Required for periodic boundary conditions)");
 }
 //-----------------------------------------------------------------------------
-void SubDomain::mark_cells(Mesh& mesh, std::size_t sub_domain) const
+void SubDomain::mark_cells(Mesh& mesh,
+                           std::size_t sub_domain,
+                           bool check_midpoint) const
 {
-  mark(mesh, mesh.topology().dim(), sub_domain);
+  mark(mesh, mesh.topology().dim(), sub_domain, check_midpoint);
 }
 //-----------------------------------------------------------------------------
-void SubDomain::mark_facets(Mesh& mesh, std::size_t sub_domain) const
+void SubDomain::mark_facets(Mesh& mesh,
+                            std::size_t sub_domain,
+                            bool check_midpoint) const
 {
-  mark(mesh, mesh.topology().dim() - 1, sub_domain);
+  mark(mesh, mesh.topology().dim() - 1, sub_domain, check_midpoint);
 }
 //-----------------------------------------------------------------------------
-void SubDomain::mark(Mesh& mesh, std::size_t dim, std::size_t sub_domain) const
+void SubDomain::mark(Mesh& mesh,
+                     std::size_t dim,
+                     std::size_t sub_domain,
+                     bool check_midpoint) const
 {
   dolfin_assert(mesh.domains().markers(dim));
-  mark(*(mesh.domains().markers(dim)), sub_domain, mesh);
+  mark(*(mesh.domains().markers(dim)), sub_domain, mesh, check_midpoint);
 }
 //-----------------------------------------------------------------------------
-void SubDomain::mark(MeshFunction<std::size_t>& sub_domains, std::size_t sub_domain) const
+void SubDomain::mark(MeshFunction<std::size_t>& sub_domains,
+                     std::size_t sub_domain,
+                     bool check_midpoint) const
 {
-  apply_markers(sub_domains, sub_domain, sub_domains.mesh());
+  apply_markers(sub_domains, sub_domain, sub_domains.mesh(), check_midpoint);
 }
 //-----------------------------------------------------------------------------
-void SubDomain::mark(MeshFunction<int>& sub_domains, int sub_domain) const
+void SubDomain::mark(MeshFunction<int>& sub_domains,
+                     int sub_domain,
+                     bool check_midpoint) const
 {
-  apply_markers(sub_domains, sub_domain, sub_domains.mesh());
+  apply_markers(sub_domains, sub_domain, sub_domains.mesh(), check_midpoint);
 }
 //-----------------------------------------------------------------------------
-void SubDomain::mark(MeshFunction<double>& sub_domains, double sub_domain) const
+void SubDomain::mark(MeshFunction<double>& sub_domains,
+                     double sub_domain,
+                     bool check_midpoint) const
 {
-  apply_markers(sub_domains, sub_domain, sub_domains.mesh());
+  apply_markers(sub_domains, sub_domain, sub_domains.mesh(), check_midpoint);
 }
 //-----------------------------------------------------------------------------
-void SubDomain::mark(MeshFunction<bool>& sub_domains, bool sub_domain) const
+void SubDomain::mark(MeshFunction<bool>& sub_domains,
+                     bool sub_domain,
+                     bool check_midpoint) const
 {
-  apply_markers(sub_domains, sub_domain, sub_domains.mesh());
+  apply_markers(sub_domains, sub_domain, sub_domains.mesh(), check_midpoint);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshValueCollection<std::size_t>& sub_domains,
-                     std::size_t sub_domain, const Mesh& mesh) const
+                     std::size_t sub_domain,
+                     const Mesh& mesh,
+                     bool check_midpoint) const
 {
-  apply_markers(sub_domains, sub_domain, mesh);
+  apply_markers(sub_domains, sub_domain, mesh, check_midpoint);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshValueCollection<int>& sub_domains,
                      int sub_domain,
-                     const Mesh& mesh) const
+                     const Mesh& mesh,
+                     bool check_midpoint) const
 {
-  apply_markers(sub_domains, sub_domain, mesh);
+  apply_markers(sub_domains, sub_domain, mesh, check_midpoint);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshValueCollection<double>& sub_domains,
                      double sub_domain,
-                     const Mesh& mesh) const
+                     const Mesh& mesh,
+                     bool check_midpoint) const
 {
-  apply_markers(sub_domains, sub_domain, mesh);
+  apply_markers(sub_domains, sub_domain, mesh, check_midpoint);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshValueCollection<bool>& sub_domains,
                      bool sub_domain,
-                     const Mesh& mesh) const
+                     const Mesh& mesh,
+                     bool check_midpoint) const
 {
-  apply_markers(sub_domains, sub_domain, mesh);
+  apply_markers(sub_domains, sub_domain, mesh, check_midpoint);
 }
 //-----------------------------------------------------------------------------
 std::size_t SubDomain::geometric_dimension() const
@@ -139,7 +159,8 @@ std::size_t SubDomain::geometric_dimension() const
 template<typename S, typename T>
 void SubDomain::apply_markers(S& sub_domains,
                               T sub_domain,
-                              const Mesh& mesh) const
+                              const Mesh& mesh,
+                              bool check_midpoint) const
 {
   log(TRACE, "Computing sub domain markers for sub domain %d.", sub_domain);
 
@@ -202,7 +223,7 @@ void SubDomain::apply_markers(S& sub_domains,
     }
 
     // Check midpoint (works also in the case when we have a single vertex)
-    if (all_points_inside)
+    if (all_points_inside && check_midpoint)
     {
       Array<double> x(_geometric_dimension,
                       const_cast<double*>(entity->midpoint().coordinates()));
