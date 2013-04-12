@@ -36,7 +36,8 @@
 using namespace dolfin;
 
 // Comparison operator for hashing coordinates. Note that two
-// coordinates are considered equal if equal to within round-off.
+// coordinates are considered equal if equal to within specified
+// tolerance.
 struct lt_coordinate
 {
   lt_coordinate(double tolerance) : TOL(tolerance) {}
@@ -44,6 +45,7 @@ struct lt_coordinate
   bool operator() (const std::vector<double>& x,
                    const std::vector<double>& y) const
   {
+    //std::cout << "Testing tolerance: " << TOL << std::endl;
     std::size_t n = std::max(x.size(), y.size());
     for (std::size_t i = 0; i < n; ++i)
     {
@@ -64,14 +66,14 @@ struct lt_coordinate
 
   // Tolerance
   const double TOL;
+
 };
 
 //-----------------------------------------------------------------------------
 std::map<unsigned int, std::pair<unsigned int, unsigned int> >
   PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
                                                       const SubDomain& sub_domain,
-                                                      const std::size_t dim,
-                                                      const double tol)
+                                                      const std::size_t dim)
 {
   // Get geometric and topological dimensions
   const std::size_t gdim = mesh.geometry().dim();
@@ -94,7 +96,7 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
 
   // Map from master entity midpoint coordinate to local facet index
   std::map<std::vector<double>, unsigned int, lt_coordinate>
-    master_coord_to_entity_index((lt_coordinate(tol)));
+    master_coord_to_entity_index((lt_coordinate(sub_domain.map_tolerance)));
 
   // Intialise facet-cell connectivity
   mesh.init(tdim - 1, tdim);
@@ -109,7 +111,6 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
     {
       for (MeshEntityIterator e(*f, dim); !e.end(); ++e)
       {
-
         // Avoid visiting entities more than once
         if (visited[e->index()])
           continue;
@@ -130,10 +131,11 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
             x_min_max = x;
             x_min_max.insert(x_min_max.end(), x.begin(), x.end());
           }
+
           for (std::size_t i = 0; i < gdim; ++i)
           {
-           x_min_max[i]        = std::min(x_min_max[i], x[i]);
-           x_min_max[i + gdim] = std::max(x_min_max[i + gdim], x[i]);
+            x_min_max[i]        = std::min(x_min_max[i], x[i]);
+            x_min_max[gdim + i] = std::max(x_min_max[gdim + i], x[i]);
           }
 
           // Insert (midpoint coordinates, local index) into map
@@ -163,8 +165,8 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
   // Number of MPI processes
   std::size_t num_processes = MPI::num_processes();
 
-  // Build send buffer of mapped slave midpoint coordinate to processes
-  // that may own the master entity
+  // Build send buffer of mapped slave midpoint coordinate to
+  // processes that may own the master entity
   std::vector<std::vector<double> > slave_mapped_coords_send(num_processes);
   std::vector<std::vector<unsigned int> > sent_slave_indices(num_processes);
   for (std::size_t i = 0; i < slave_entities.size(); ++i)
@@ -176,7 +178,7 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
 
       // Check if mapped slave falls within master entity bounding box
       // on process p
-      if (in_bounding_box(slave_mapped_coords[i], bounding_boxes[p]))
+      if (in_bounding_box(slave_mapped_coords[i], bounding_boxes[p], sub_domain.map_tolerance))
       {
         sent_slave_indices[p].push_back(slave_entities[i]);
         slave_mapped_coords_send_p.insert(slave_mapped_coords_send_p.end(),
@@ -186,7 +188,8 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
     }
   }
 
-  // Send slave midpoints to possible owners of correspoding master entity
+  // Send slave midpoints to possible owners of correspoding master
+  // entity
   std::vector<std::vector<double> > slave_mapped_coords_recv;
   MPI::all_to_all(slave_mapped_coords_send, slave_mapped_coords_recv);
   dolfin_assert(slave_mapped_coords_recv.size() == num_processes);
@@ -249,8 +252,7 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
 MeshFunction<std::size_t>
   PeriodicBoundaryComputation::masters_slaves(boost::shared_ptr<const Mesh> mesh,
                                               const SubDomain& sub_domain,
-                                              const std::size_t dim,
-                                              const double tol)
+                                              const std::size_t dim)
 {
   dolfin_assert(mesh);
 
@@ -259,7 +261,7 @@ MeshFunction<std::size_t>
 
   // Compute marker
   const std::map<unsigned int, std::pair<unsigned int, unsigned int> >
-    slaves = compute_periodic_pairs(*mesh, sub_domain, dim, tol);
+    slaves = compute_periodic_pairs(*mesh, sub_domain, dim);
 
   // Mark master and slaves, and pack off-process masters to send
   std::vector<std::vector<std::size_t> > master_dofs_send(MPI::num_processes());
@@ -326,7 +328,8 @@ MeshFunction<std::size_t>
 }
 //-----------------------------------------------------------------------------
 bool PeriodicBoundaryComputation::in_bounding_box(const std::vector<double>& point,
-                                     const std::vector<double>& bounding_box)
+                                                  const std::vector<double>& bounding_box,
+                                                  const double tol)
 {
   // Return false if bounding box is empty
   if (bounding_box.empty())
@@ -336,8 +339,8 @@ bool PeriodicBoundaryComputation::in_bounding_box(const std::vector<double>& poi
   dolfin_assert(bounding_box.size() == 2*gdim);
   for (std::size_t i = 0; i < gdim; ++i)
   {
-    if (!(point[i] >= (bounding_box[i] - DOLFIN_EPS)
-      && point[i] <= (bounding_box[gdim + i] + DOLFIN_EPS)))
+    if (!(point[i] >= (bounding_box[i] - tol)
+      && point[i] <= (bounding_box[gdim + i] + tol)))
     {
       return false;
     }

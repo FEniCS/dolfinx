@@ -35,7 +35,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SubDomain::SubDomain() : _geometric_dimension(0)
+SubDomain::SubDomain(const double map_tol) : map_tolerance(map_tol),
+                                             _geometric_dimension(0)
 {
   // Do nothing
 }

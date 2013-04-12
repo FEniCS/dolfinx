@@ -25,11 +25,15 @@ import numpy
 from dolfin import *
 
 class PeriodicBoundary2(SubDomain):
+    def __init__(self, tolerance=DOLFIN_EPS):
+        SubDomain.__init__(self, tolerance)
+        self.tol = tolerance
     def inside(self, x, on_boundary):
-        return bool(x[0] < DOLFIN_EPS and x[0] > -DOLFIN_EPS and on_boundary)
+        return bool(x[0] < self.tol and x[0] > -self.tol and on_boundary)
     def map(self, x, y):
         y[0] = x[0] - 1.0
         y[1] = x[1]
+
 
 class PeriodicBoundary3(SubDomain):
     def inside(self, x, on_boundary):
@@ -39,6 +43,7 @@ class PeriodicBoundary3(SubDomain):
         y[0] = x[0] - 1.0
         y[1] = x[1]
         y[2] = x[2]
+
 
 class PeriodicBCTest(unittest.TestCase):
 
@@ -67,7 +72,7 @@ class PeriodicBCTest(unittest.TestCase):
         VV = V*R
         VV = R*V
 
-    def test_instantiation_no_vertex_element_2D(self):
+    def xtest_instantiation_no_vertex_element_2D(self):
         """ A rudimentary test for instantiation for element that does
         not require number of vertices (2D)"""
 
@@ -89,6 +94,26 @@ class PeriodicBCTest(unittest.TestCase):
 
         mesh = UnitSquareMesh(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1, constrained_domain=PeriodicBoundary2())
+
+
+    def test_tolerance(self):
+        """Test tolerance for matching periodic mesh entities"""
+        mesh = UnitSquareMesh(2, 2)
+        pbc = PeriodicBoundary2()
+        periodic_pairs = PeriodicBoundaryComputation.compute_periodic_pairs(mesh, pbc, 1)
+        num_periodic_pairs0 =  len(periodic_pairs)
+
+        # Randomly perturb mesh vertex coordinates
+        import random
+        for x in mesh.coordinates():
+            x[0] += random.uniform(-0.0001, 0.0001)
+            x[1] += random.uniform(-0.0001, 0.0001)
+
+        pbc2 = PeriodicBoundary2(0.0001)
+        periodic_pairs = PeriodicBoundaryComputation.compute_periodic_pairs(mesh, pbc2, 1)
+        num_periodic_pairs1 = len(periodic_pairs)
+        self.assertEqual(num_periodic_pairs0, num_periodic_pairs1)
+
 
     def test_solution(self):
         """Test application Periodic boundary conditions by checking

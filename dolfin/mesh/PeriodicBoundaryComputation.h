@@ -45,8 +45,7 @@ namespace dolfin
     /// by processes, only one of the owning processes is returned.
     static std::map<unsigned int, std::pair<unsigned int, unsigned int> >
       compute_periodic_pairs(const Mesh& mesh, const SubDomain& sub_domain,
-                             const std::size_t dim,
-                             const double tol=DOLFIN_EPS);
+                             const std::size_t dim);
 
     /// This function returns a MeshFunction which marks mesh entities
     /// of dimension dim according to:
@@ -59,14 +58,14 @@ namespace dolfin
     /// function that is used to apply periodic boundary conditions.
     static MeshFunction<std::size_t>
       masters_slaves(boost::shared_ptr<const Mesh> mesh,
-                     const SubDomain& sub_domain, const std::size_t dim,
-                     const double tol=DOLFIN_EPS);
+                     const SubDomain& sub_domain, const std::size_t dim);
 
   private:
 
     // Return true is point lies within bounding box
     static bool in_bounding_box(const std::vector<double>& point,
-                                const std::vector<double>& bounding_box);
+                                const std::vector<double>& bounding_box,
+                                const double tol);
 
   };
 
