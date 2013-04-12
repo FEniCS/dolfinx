@@ -60,3 +60,5 @@ download_mesh demo/undocumented/bcs                          aneurysm.xml.gz
 download_mesh demo/pde/navier-stokes                         lshape.xml.gz
 download_mesh test/unit/fem/python                           aneurysm.xml.gz
 download_mesh test/unit/io                                   snake.xml.gz
+download_mesh test/unit/nls/python                           doughnut.xml.gz
+download_mesh test/unit/mesh                                 boxes.xml.gz
