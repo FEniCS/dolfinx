@@ -72,7 +72,7 @@ class PeriodicBCTest(unittest.TestCase):
         VV = V*R
         VV = R*V
 
-    def xtest_instantiation_no_vertex_element_2D(self):
+    def test_instantiation_no_vertex_element_2D(self):
         """ A rudimentary test for instantiation for element that does
         not require number of vertices (2D)"""
 
@@ -98,21 +98,26 @@ class PeriodicBCTest(unittest.TestCase):
 
     def test_tolerance(self):
         """Test tolerance for matching periodic mesh entities"""
-        mesh = UnitSquareMesh(2, 2)
-        pbc = PeriodicBoundary2()
-        periodic_pairs = PeriodicBoundaryComputation.compute_periodic_pairs(mesh, pbc, 1)
-        num_periodic_pairs0 =  len(periodic_pairs)
+        shift = 0.0001
+        mesh = UnitSquareMesh(8, 8)
 
         # Randomly perturb mesh vertex coordinates
+        mesh_perturb = Mesh(mesh)
         import random
-        for x in mesh.coordinates():
-            x[0] += random.uniform(-0.0001, 0.0001)
-            x[1] += random.uniform(-0.0001, 0.0001)
+        for x in mesh_perturb.coordinates():
+            x[0] += random.uniform(-shift, shift)
+            x[1] += random.uniform(-shift, shift)
 
-        pbc2 = PeriodicBoundary2(0.0001)
-        periodic_pairs = PeriodicBoundaryComputation.compute_periodic_pairs(mesh, pbc2, 1)
-        num_periodic_pairs1 = len(periodic_pairs)
-        self.assertEqual(num_periodic_pairs0, num_periodic_pairs1)
+        pbc = PeriodicBoundary2()
+        pbc_tol = PeriodicBoundary2(2*shift)
+
+        for dim in range(mesh.geometry().dim()):
+            periodic_pairs = PeriodicBoundaryComputation.compute_periodic_pairs(mesh, pbc, dim)
+            num_periodic_pairs0 =  len(periodic_pairs)
+
+            periodic_pairs = PeriodicBoundaryComputation.compute_periodic_pairs(mesh_perturb, pbc_tol, dim)
+            num_periodic_pairs1 = len(periodic_pairs)
+            self.assertEqual(num_periodic_pairs0, num_periodic_pairs1)
 
 
     def test_solution(self):

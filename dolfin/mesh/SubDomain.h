@@ -42,7 +42,12 @@ namespace dolfin
   public:
 
     /// Constructor
-    SubDomain(const double map_tol=DOLFIN_EPS);
+    ///
+    /// *Arguments*
+    ///     map_tol (double)
+    ///         The tolerance used when identifying mapped points using
+    ///         the function SubDomain::map.
+    SubDomain(const double map_tol=1.0e-10);
 
     /// Destructor
     virtual ~SubDomain();

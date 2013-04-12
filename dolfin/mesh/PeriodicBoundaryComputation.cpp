@@ -45,7 +45,6 @@ struct lt_coordinate
   bool operator() (const std::vector<double>& x,
                    const std::vector<double>& y) const
   {
-    //std::cout << "Testing tolerance: " << TOL << std::endl;
     std::size_t n = std::max(x.size(), y.size());
     for (std::size_t i = 0; i < n; ++i)
     {

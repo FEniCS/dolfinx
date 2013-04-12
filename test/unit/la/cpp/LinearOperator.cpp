@@ -48,7 +48,7 @@ public:
     public:
 
       MyLinearOperator(Form& a_action, Function& u)
-        : LinearOperator(*u.vector(), *u.vector()), 
+        : LinearOperator(*u.vector(), *u.vector()),
 	  a_action(a_action), u(u)
       {
         // Do nothing
@@ -83,7 +83,7 @@ public:
 	continue;
 
       // Skip testing uBLAS in parallel
-      if (MPI::num_processes() > 1 && backends[i] == "uBLAS")
+      if (dolfin::MPI::num_processes() > 1 && backends[i] == "uBLAS")
       {
 	info("Not running uBLAS test in parallel");
 	continue;
