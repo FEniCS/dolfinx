@@ -106,8 +106,13 @@ namespace dolfin
 
   private:
 
+    const MatSolverPackage _solver_package;
+
     // Available LU solvers
     static const std::map<std::string, const MatSolverPackage> _methods;
+
+    // Whether those solvers support Cholesky
+    static const std::map<const MatSolverPackage, const bool> _methods_cholesky;
 
     // Available LU solvers descriptions
     static const std::vector<std::pair<std::string, std::string> > _methods_descr;
@@ -115,8 +120,14 @@ namespace dolfin
     // Select LU solver type
     const MatSolverPackage select_solver(std::string& method) const;
 
+    // Does an LU solver support Cholesky?
+    const bool solver_has_cholesky(const MatSolverPackage package) const;
+
     // Initialise solver
     void init_solver(std::string& method);
+
+    // Configure PETSc options
+    void configure_ksp(const MatSolverPackage solver_package);
 
     // Set PETSc operators
     void set_petsc_operators();
