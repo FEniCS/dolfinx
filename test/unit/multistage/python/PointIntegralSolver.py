@@ -24,7 +24,6 @@ import unittest
 from dolfin import *
 
 parameters.form_compiler.optimize=True
-parameters.form_compiler.representation="uflacs"
 
 import numpy as np
 
@@ -36,13 +35,13 @@ def convergence_order(errors, base = 2):
             orders[i] = math.log(errors[i]/errors[i+1], base)
         except ZeroDivisionError:
             orders[i] = np.nan
-    
+
     return orders
 
 class PointIntegralSolverTest(unittest.TestCase):
 
     def test_butcher_schemes_scalar(self):
-        
+
         if cpp.MPI.num_processes() > 1:
             return
 
@@ -53,10 +52,10 @@ class PointIntegralSolverTest(unittest.TestCase):
         u = Function(V)
         v = TestFunction(V)
         form = u*v*dP
-        
+
         tstop = 1.0
-        u_true = Expression("exp(t)", t=tstop) 
-            
+        u_true = Expression("exp(t)", t=tstop)
+
         for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
                        BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
             scheme = Scheme(form, u)
@@ -70,13 +69,13 @@ class PointIntegralSolverTest(unittest.TestCase):
                 u.interpolate(Constant(1.0))
                 solver.step_interval(0., tstop, dt)
                 u_errors.append(errornorm(u_true, u))
-            
+
             self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)
 
         #cpp.set_log_level(LEVEL)
 
     def test_butcher_schemes_vector(self):
-        
+
         if cpp.MPI.num_processes() > 1:
             return
 
@@ -90,10 +89,10 @@ class PointIntegralSolverTest(unittest.TestCase):
 
         tstop = 1.0
         u_true = Expression(("cos(t)", "sin(t)"), t=tstop)
-            
+
         for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
                        BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
-          
+
             scheme = Scheme(form, u)
             info(scheme)
             solver = PointIntegralSolver(scheme)
@@ -105,7 +104,7 @@ class PointIntegralSolverTest(unittest.TestCase):
                 u.interpolate(Constant((1.0, 0.0)))
                 solver.step_interval(0., tstop, dt)
                 u_errors.append(errornorm(u_true, u))
-            
+
             self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)
 
         #cpp.set_log_level(LEVEL)

@@ -25,11 +25,15 @@ import numpy
 from dolfin import *
 
 class PeriodicBoundary2(SubDomain):
+    def __init__(self, tolerance=DOLFIN_EPS):
+        SubDomain.__init__(self, tolerance)
+        self.tol = tolerance
     def inside(self, x, on_boundary):
-        return bool(x[0] < DOLFIN_EPS and x[0] > -DOLFIN_EPS and on_boundary)
+        return bool(x[0] < self.tol and x[0] > -self.tol and on_boundary)
     def map(self, x, y):
         y[0] = x[0] - 1.0
         y[1] = x[1]
+
 
 class PeriodicBoundary3(SubDomain):
     def inside(self, x, on_boundary):
@@ -39,6 +43,7 @@ class PeriodicBoundary3(SubDomain):
         y[0] = x[0] - 1.0
         y[1] = x[1]
         y[2] = x[2]
+
 
 class PeriodicBCTest(unittest.TestCase):
 
@@ -90,13 +95,37 @@ class PeriodicBCTest(unittest.TestCase):
         mesh = UnitSquareMesh(8, 8)
         V = FunctionSpace(mesh, "Lagrange", 1, constrained_domain=PeriodicBoundary2())
 
+
+    def test_tolerance(self):
+        """Test tolerance for matching periodic mesh entities"""
+        shift = 0.0001
+        mesh = UnitSquareMesh(8, 8)
+
+        # Randomly perturb mesh vertex coordinates
+        mesh_perturb = Mesh(mesh)
+        import random
+        for x in mesh_perturb.coordinates():
+            x[0] += random.uniform(-shift, shift)
+            x[1] += random.uniform(-shift, shift)
+
+        pbc = PeriodicBoundary2()
+        pbc_tol = PeriodicBoundary2(2*shift)
+
+        for dim in range(mesh.geometry().dim()):
+            periodic_pairs = PeriodicBoundaryComputation.compute_periodic_pairs(mesh, pbc, dim)
+            num_periodic_pairs0 =  len(periodic_pairs)
+
+            periodic_pairs = PeriodicBoundaryComputation.compute_periodic_pairs(mesh_perturb, pbc_tol, dim)
+            num_periodic_pairs1 = len(periodic_pairs)
+            self.assertEqual(num_periodic_pairs0, num_periodic_pairs1)
+
+
     def test_solution(self):
         """Test application Periodic boundary conditions by checking
         solution to a PDE."""
 
         # Create mesh and finite element
         mesh = UnitSquareMesh(8, 8)
-        #V = FunctionSpace(mesh, "Lagrange", 1)
         pbc = PeriodicBoundary2()
         V = FunctionSpace(mesh, "Lagrange", 1, constrained_domain=pbc)
 

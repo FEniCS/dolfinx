@@ -62,12 +62,17 @@ const std::set<std::string> DirichletBC::methods
             = boost::assign::list_of("topological")("geometric")("pointwise");
 
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
-                         const SubDomain& sub_domain, std::string method)
+DirichletBC::DirichletBC(const FunctionSpace& V,
+                         const GenericFunction& g,
+                         const SubDomain& sub_domain,
+                         std::string method,
+                         bool check_midpoint)
   : Hierarchical<DirichletBC>(*this),
     _function_space(reference_to_no_delete_pointer(V)),
     _g(reference_to_no_delete_pointer(g)),
-    _method(method), _user_sub_domain(reference_to_no_delete_pointer(sub_domain))
+    _method(method),
+    _user_sub_domain(reference_to_no_delete_pointer(sub_domain)),
+    _check_midpoint(check_midpoint)
 {
   check();
   parameters = default_parameters();
@@ -76,9 +81,13 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
 DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          boost::shared_ptr<const GenericFunction> g,
                          boost::shared_ptr<const SubDomain> sub_domain,
-                         std::string method)
-  : Hierarchical<DirichletBC>(*this), _function_space(V),
-    _g(g), _method(method), _user_sub_domain(sub_domain)
+                         std::string method,
+                         bool check_midpoint)
+  : Hierarchical<DirichletBC>(*this),
+    _function_space(V),
+    _g(g), _method(method),
+    _user_sub_domain(sub_domain),
+    _check_midpoint(check_midpoint)
 {
   check();
   parameters = default_parameters();
@@ -92,7 +101,8 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
     _g(reference_to_no_delete_pointer(g)),
     _method(method),
     _user_mesh_function(reference_to_no_delete_pointer(sub_domains)),
-    _user_sub_domain_marker(sub_domain)
+    _user_sub_domain_marker(sub_domain),
+    _check_midpoint(true)
 {
   check();
   parameters = default_parameters();
@@ -105,7 +115,8 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          std::string method)
   : Hierarchical<DirichletBC>(*this), _function_space(V), _g(g),
     _method(method), _user_mesh_function(sub_domains),
-    _user_sub_domain_marker(sub_domain)
+    _user_sub_domain_marker(sub_domain),
+    _check_midpoint(true)
 {
   check();
   parameters = default_parameters();
@@ -116,7 +127,8 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
   : Hierarchical<DirichletBC>(*this),
     _function_space(reference_to_no_delete_pointer(V)),
     _g(reference_to_no_delete_pointer(g)), _method(method),
-    _user_sub_domain_marker(sub_domain)
+    _user_sub_domain_marker(sub_domain),
+    _check_midpoint(true)
 {
   check();
   parameters = default_parameters();
@@ -125,8 +137,12 @@ DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
 DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          boost::shared_ptr<const GenericFunction> g,
                          std::size_t sub_domain, std::string method)
-  : Hierarchical<DirichletBC>(*this), _function_space(V), _g(g),
-    _method(method), _user_sub_domain_marker(sub_domain)
+  : Hierarchical<DirichletBC>(*this),
+    _function_space(V),
+    _g(g),
+    _method(method),
+    _user_sub_domain_marker(sub_domain),
+    _check_midpoint(true)
 {
   check();
   parameters = default_parameters();
@@ -136,8 +152,12 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          boost::shared_ptr<const GenericFunction> g,
                          const std::vector<std::pair<std::size_t, std::size_t> >& markers,
                          std::string method)
-  : Hierarchical<DirichletBC>(*this), _function_space(V),
-    _g(g), _method(method), facets(markers)
+  : Hierarchical<DirichletBC>(*this),
+    _function_space(V),
+    _g(g),
+    _method(method),
+    facets(markers),
+    _check_midpoint(true)
 {
   check();
   parameters = default_parameters();
@@ -640,7 +660,7 @@ void DirichletBC::init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_do
   sub_domains = 1;
 
   // Mark the sub domain as sub domain 0
-  sub_domain->mark(sub_domains, 0);
+  sub_domain->mark(sub_domains, 0, _check_midpoint);
 
   // Initialize from mesh function
   init_from_mesh_function(sub_domains, 0);
@@ -758,6 +778,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   dolfin_assert(_function_space);
   dolfin_assert(_g);
 
+  // Extract the list of facets where the BC should be applied
   init_facets();
 
   // Special case
@@ -817,6 +838,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   dolfin_assert(_function_space->element());
   dolfin_assert(_g);
 
+  // Extract the list of facets where the BC *might* be applied
   init_facets();
 
   // Special case

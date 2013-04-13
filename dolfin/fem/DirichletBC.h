@@ -83,20 +83,33 @@ namespace dolfin
   /// mesh. This is handled automatically when exporting a mesh from
   /// for example VMTK.
   ///
-  /// The ``method`` variable may be used to specify the type of
-  /// method used to identify degrees of freedom on the
-  /// boundary. Available methods are: topological approach (default),
-  /// geometric approach, and pointwise approach. The topological
-  /// approach is faster, but will only identify degrees of freedom
-  /// that are located on a facet that is entirely on the boundary. In
-  /// particular, the topological approach will not identify degrees
-  /// of freedom for discontinuous elements (which are all internal to
-  /// the cell).  A remedy for this is to use the geometric
-  /// approach. To apply pointwise boundary conditions
-  /// e.g. pointloads, one will have to use the pointwise approach
-  /// which in turn is the slowest of the three possible methods.  The
-  /// three possibilties are "topological", "geometric" and
-  /// "pointwise".
+  /// The 'method' variable may be used to specify the type of method
+  /// used to identify degrees of freedom on the boundary. Available
+  /// methods are: topological approach (default), geometric approach,
+  /// and pointwise approach. The topological approach is faster, but
+  /// will only identify degrees of freedom that are located on a
+  /// facet that is entirely on the boundary. In particular, the
+  /// topological approach will not identify degrees of freedom for
+  /// discontinuous elements (which are all internal to the cell). A
+  /// remedy for this is to use the geometric approach. In the
+  /// geometric approach, each dof on each facet that matches the
+  /// boundary condition will be checked. To apply pointwise boundary
+  /// conditions e.g. pointloads, one will have to use the pointwise
+  /// approach which in turn is the slowest of the three possible
+  /// methods. The three possibilties are "topological", "geometric"
+  /// and "pointwise".
+  ///
+  /// The 'check_midpoint' variable can be used to decide whether or
+  /// not the midpoint of each facet should be checked when a
+  /// user-defined _SubDomain_ is used to define the domain of the
+  /// boundary condition. By default, midpoints are always checked.
+  /// Note that this variable may be of importance close to corners,
+  /// in which case it is sometimes important to check the midpoint to
+  /// avoid including facets "on the diagonal close" to a corner. This
+  /// variable is also of importance for curved boundaries (like on a
+  /// sphere or cylinder), in which case it is important *not* to
+  /// check the midpoint which will be located in the interior of a
+  /// domain defined relative to a radius.
 
   //class DirichletBC : public BoundaryCondition, public Hierarchical<DirichletBC>
   class DirichletBC : public Hierarchical<DirichletBC>, public Variable
@@ -121,7 +134,8 @@ namespace dolfin
     DirichletBC(const FunctionSpace& V,
                 const GenericFunction& g,
                 const SubDomain& sub_domain,
-                std::string method="topological");
+                std::string method="topological",
+                bool check_midpoint=true);
 
     /// Create boundary condition for subdomain
     ///
@@ -138,7 +152,8 @@ namespace dolfin
     DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                 boost::shared_ptr<const GenericFunction> g,
                 boost::shared_ptr<const SubDomain> sub_domain,
-                std::string method="topological");
+                std::string method="topological",
+                bool check_midpoint=true);
 
     /// Create boundary condition for subdomain specified by index
     ///
@@ -490,6 +505,9 @@ namespace dolfin
 
     // User defined sub domain marker for mesh or mesh function
     std::size_t _user_sub_domain_marker;
+
+    // Flag for whether midpoints should be checked
+    bool _check_midpoint;
 
     // Local data for application of boundary conditions
     class LocalData
