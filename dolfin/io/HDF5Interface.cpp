@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First Added: 2012-09-21
-// Last Changed: 2013-04-08
+// Last Changed: 2013-04-10
 
 #include <boost/filesystem.hpp>
 
@@ -95,6 +95,12 @@ hid_t HDF5Interface::open_file(const std::string filename, const std::string mod
   dolfin_assert(status != HDF5_FAIL);
 
   return file_id;
+}
+//-----------------------------------------------------------------------------
+void HDF5Interface::close_file(const hid_t hdf5_file_handle)
+{
+  herr_t status = H5Fclose(hdf5_file_handle);
+  dolfin_assert(status != HDF5_FAIL);  
 }
 //-----------------------------------------------------------------------------
 void HDF5Interface::flush_file(const hid_t hdf5_file_handle)

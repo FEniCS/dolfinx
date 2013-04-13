@@ -46,6 +46,9 @@ namespace dolfin
     static hid_t open_file(const std::string filename, const std::string mode,
                            const bool use_mpi_io);
 
+    /// Close HDF5 file
+    static void close_file(const hid_t hdf5_file_handle);
+
     /// Flush data to file to improve data integrity after interruption
     static void flush_file(const hid_t hdf5_file_handle);
 
@@ -400,16 +403,15 @@ namespace dolfin
                                            const T& attribute_value)
   {
 
-    // Open named dataset
-    hid_t dset_id = H5Dopen2(hdf5_file_handle, dataset_name.c_str(),
-                             H5P_DEFAULT);
+    // Open named dataset or group
+    hid_t dset_id = H5Oopen(hdf5_file_handle, dataset_name.c_str(), H5P_DEFAULT);
     dolfin_assert(dset_id != HDF5_FAIL);
 
     // Add attribute of appropriate type
     add_attribute_value(dset_id, attribute_name, attribute_value);
 
-    // Close dataset
-    herr_t status = H5Dclose(dset_id);
+    // Close dataset or group
+    herr_t status = H5Oclose(dset_id);
     dolfin_assert(status != HDF5_FAIL);
   }
   //---------------------------------------------------------------------------

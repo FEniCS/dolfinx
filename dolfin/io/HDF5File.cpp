@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-04-08
+// Last changed: 2013-04-10
 
 #ifdef HAS_HDF5
 
@@ -71,10 +71,7 @@ HDF5File::~HDF5File()
 {
   // Close HDF5 file
   if (hdf5_file_open)
-  {
-    herr_t status = H5Fclose(hdf5_file_id);
-    dolfin_assert(status != HDF5_FAIL);
-  }
+    HDF5Interface::close_file(hdf5_file_id);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::flush()
