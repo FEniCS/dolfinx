@@ -355,7 +355,8 @@ std::pair<std::size_t, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear_
   {
     dolfin_error("PETScSNESSolver.cpp",
                  "solve nonlinear system with PETScSNESSolver",
-                 "Solver did not converge. Bummer");
+                 "Solver did not converge",
+                 "Bummer");
   }
 
   return std::make_pair(its, reason > 0);
@@ -509,6 +510,19 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
   {
     std::string sign   = parameters["sign"];
     std::string method = parameters["method"];
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2 
+    if (dolfin::MPI::process_number() == 0)
+    {
+        warning("Use of SNESVI solvers with PETSc 3.2 may lead to convergence issues and is strongly discouraged.");
+    }
+    if (method != std::string("vi") &&
+        method != std::string("default"))
+    {
+      dolfin_error("PETScSNESSolver.cpp",
+                   "set variational inequality bounds",
+                   "With PETSc 3.2 need to use vi method if bounds are set");
+    }
+    #else 
     if (method != std::string("virs") &&
         method != std::string("viss") &&
         method != std::string("default"))
@@ -517,6 +531,7 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
                    "set variational inequality bounds",
                    "Need to use virs or viss methods if bounds are set");
     }
+    #endif
     if (sign != "default")
     {
       // Here, x is the model vector from which we make our Vecs that tell
@@ -563,7 +578,7 @@ bool PETScSNESSolver::is_vi() const
   if ((std::string(parameters["sign"]) != "default") and (this->has_explicit_bounds == true))
   {
     dolfin_error("PETScSNESSolver.cpp",
-                 "Set variational inequality bounds",
+                 "set variational inequality bounds",
                  "Both the sign parameter and the explicit bounds are set");
     return false;
   }
