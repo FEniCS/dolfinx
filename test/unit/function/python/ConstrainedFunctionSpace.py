@@ -1,4 +1,4 @@
-"""Unit tests for Periodoc conditions"""
+"""Unit tests for FunctionSpace with constrained domain"""
 
 # Copyright (C) 2012 Garth N. Wells
 #
@@ -17,8 +17,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Mikael Mortensen 2013
+#
 # First added:  2012-08-18
-# Last changed: 2013-03-08
+# Last changed: 2013-04-12
 
 import unittest
 import numpy
@@ -34,7 +36,6 @@ class PeriodicBoundary2(SubDomain):
         y[0] = x[0] - 1.0
         y[1] = x[1]
 
-
 class PeriodicBoundary3(SubDomain):
     def inside(self, x, on_boundary):
         return bool(x[0] < DOLFIN_EPS and x[0] > -DOLFIN_EPS and on_boundary)
@@ -44,12 +45,11 @@ class PeriodicBoundary3(SubDomain):
         y[1] = x[1]
         y[2] = x[2]
 
-
-class PeriodicBCTest(unittest.TestCase):
+class ConstrainedFunctionSpaceTest(unittest.TestCase):
 
     def test_instantiation(self):
         """ A rudimentary test for instantiation"""
-
+        
         sub_domain = PeriodicBoundary3()
         mesh = UnitCubeMesh(8, 8, 8)
         V = FunctionSpace(mesh, "CG", 1, constrained_domain=sub_domain)
@@ -121,10 +121,9 @@ class PeriodicBCTest(unittest.TestCase):
 
 
     def test_solution(self):
-        """Test application Periodic boundary conditions by checking
-        solution to a PDE."""
+        """Test periodic constrained domain by checking solution to a PDE."""
 
-        # Create mesh and finite element
+        # Create mesh and constrained FunctionSpace
         mesh = UnitSquareMesh(8, 8)
         pbc = PeriodicBoundary2()
         V = FunctionSpace(mesh, "Lagrange", 1, constrained_domain=pbc)
@@ -164,6 +163,6 @@ class PeriodicBCTest(unittest.TestCase):
 
 if __name__ == "__main__":
     print ""
-    print "Testing Dirichlet boundary conditions"
+    print "Testing constrained (periodic) FunctionSpace"
     print "------------------------------------------------"
     unittest.main()
