@@ -75,7 +75,12 @@ int main()
     };
 
   // Read mesh and create function space
-  UnitCircleMesh mesh(50);
+#ifdef HAS_CGAL:
+  Circle circle(0, 0, 1);
+  Mesh   mesh(circle,30);
+#else  else:
+  UnitCircleMesh mesh(30);
+#endif  
   HyperElasticity::FunctionSpace V(mesh);
 
   // Create Dirichlet boundary conditions
@@ -87,7 +92,7 @@ int main()
   bcs.push_back(&bc);
 
   // Define source and boundary traction functions
-  Constant B(0.0, -0.1);
+  Constant B(0.0, -0.05);
   
   // Define solution function
   Function u(V);
@@ -115,15 +120,29 @@ int main()
   LowerBound umin_exp;
   Function umin(V);
   umin.interpolate(umin_exp);  
-    
+  
+  // Set up the non-linear problem
   NonlinearVariationalProblem problem(F, u, bcs, J);
+  
+  // Set up the non-linear solver
   NonlinearVariationalSolver solver(problem);
   solver.parameters["nonlinear_solver"]="snes";
   solver.parameters["linear_solver"]="lu";
-  solver.parameters("snes_solver")["maximum_iterations"]=100;
-  solver.solve(umin,umax);
-  list_timings();
+  solver.parameters("snes_solver")["maximum_iterations"]=20;
+  solver.parameters("snes_solver")["report"]=true;
+  solver.parameters("snes_solver")["error_on_nonconvergence"]=false;
+  //info(solver.parameters,true);
+  
+  // Solve the problems
+  std::pair<std::size_t, bool> out;
+  out = solver.solve(umin,umax);
 
+  // Check for convergence. Convergence is one modifies the loading and the mesh size. 
+  cout << out.second;
+  if (out.second != true)
+  {
+    warning("This demo is a complex nonlinear problem. Convergence is not guaranteed when modifying some parameters or using PETSC 3.2.");
+  }
   // Save solution in VTK format
   File file("displacement.pvd");
   file << u;
