@@ -122,7 +122,7 @@ std::pair<std::size_t, bool>  NonlinearVariationalSolver::solve()
                  "Set the \"nonlinear_solver\" parameter to \"snes\" or remove bounds");
     }
     // Create Newton solver and set parameters
-    if (newton_solver || reset_jacobian)
+    if (!newton_solver || reset_jacobian)
     {
       // Create Newton solver and set parameters
       newton_solver = boost::shared_ptr<NewtonSolver>(new NewtonSolver(parameters["linear_solver"],
@@ -139,7 +139,7 @@ std::pair<std::size_t, bool>  NonlinearVariationalSolver::solve()
   else if (std::string(parameters["nonlinear_solver"]) == "snes")
   {
     // Create SNES solver and set parameters
-    if (snes_solver || reset_jacobian)
+    if (!snes_solver || reset_jacobian)
     {
       // Create Newton solver and set parameters
       snes_solver = boost::shared_ptr<PETScSNESSolver>(new PETScSNESSolver());
