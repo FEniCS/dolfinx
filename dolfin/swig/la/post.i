@@ -170,7 +170,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     def __contains__(self, value):
         from numpy import isscalar
         if not isscalar(value):
-            raise TypeError, "expected scalar"
+            raise TypeError("expected scalar")
         return _contains(self,value)
 
     def __gt__(self, value):
@@ -227,10 +227,10 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         return ret
 
     def __delitem__(self,i):
-        raise ValueError, "cannot delete Vector elements"
+        raise ValueError("cannot delete Vector elements")
 
     def __delslice__(self,i,j):
-        raise ValueError, "cannot delete Vector elements"
+        raise ValueError("cannot delete Vector elements")
 
     def __setslice__(self, i, j, values):
         if i == 0 and (j >= len(self) or j == -1): # slice == whole
@@ -254,7 +254,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         elif isinstance(indices, (SliceType, ndarray, list) ):
             return as_backend_type(_get_vector_sub_vector(self, indices))
         else:
-            raise TypeError, "expected an int, slice, list or numpy array of integers"
+            raise TypeError("expected an int, slice, list or numpy array of integers")
 
     def __setitem__(self, indices, values):
         from numpy import ndarray, integer, isscalar
@@ -263,7 +263,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             if isscalar(values):
                 return _set_vector_items_value(self, indices, values)
             else:
-                raise TypeError, "provide a scalar to set single item"
+                raise TypeError("provide a scalar to set single item")
         elif isinstance(indices, (SliceType, ndarray, list)):
             if isscalar(values):
                 _set_vector_items_value(self, indices, values)
@@ -272,9 +272,9 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             elif isinstance(values, ndarray):
                 _set_vector_items_array_of_float(self, indices, values)
             else:
-                raise TypeError, "provide a scalar, GenericVector or numpy array of float to set items in Vector"
+                raise TypeError("provide a scalar, GenericVector or numpy array of float to set items in Vector")
         else:
-            raise TypeError, "index must be an int, slice or a list or numpy array of integers"
+            raise TypeError("index must be an int, slice or a list or numpy array of integers")
 
     def __len__(self):
         return self.size()
@@ -589,7 +589,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             matrix_type = get_tensor_type(self)
             vector_type = get_tensor_type(other)
             if vector_type not in _matrix_vector_mul_map[matrix_type]:
-                raise TypeError, "Provide a Vector which can be as_backend_typeed to ''"%vector_type.__name__
+                raise TypeError("Provide a Vector which can be as_backend_typeed to ''"%vector_type.__name__)
             if type(other) == Vector:
                 ret = Vector()
             else:
@@ -598,10 +598,10 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             return ret
         elif isinstance(other, ndarray):
             if len(other.shape) != 1:
-                raise ValueError, "Provide an 1D NumPy array"
+                raise ValueError("Provide an 1D NumPy array")
             vec_size = other.shape[0]
             if vec_size != self.size(1):
-                raise ValueError, "Provide a NumPy array with length %d"%self.size(1)
+                raise ValueError("Provide a NumPy array with length %d"%self.size(1))
             vec_type = _matrix_vector_mul_map[get_tensor_type(self)][0]
             vec  = vec_type(vec_size)
             vec.set_local(other)

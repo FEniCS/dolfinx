@@ -133,16 +133,38 @@ def array(self):
     return data
 
 def __getitem__(self, index):
-    try:
-        return self._getitem(index)
-    except RuntimeError:
-        raise IndexError("Index out of bound")
+    if not isinstance(index, (int, MeshEntity)):
+        raise TypeError("expected an int or a MeshEntity as index argument")
 
+    if isinstance(index, MeshEntity):
+        entity = index
+        assert entity.mesh().id() == self.mesh().id(), "MeshEntity and MeshFunction do not share the same mesh"
+        assert entity.dim() == self.dim(), "MeshEntity and MeshFunction do not share the same topological dimensions"
+
+        index = entity.index()
+        
+    while index < 0:
+        index += self.size()
+    if index >= self.size():
+        raise IndexError("index out of range")
+    return self._getitem(index)
+    
 def __setitem__(self, index, value):
-    try:
-        self._setitem(index, value)
-    except RuntimeError:
-        raise IndexError("Index out of bound")
+    if not isinstance(index, (int, MeshEntity)):
+        raise TypeError("expected an int or a MeshEntity as index argument")
+    
+    if isinstance(index, MeshEntity):
+        entity = index
+        assert entity.mesh().id() == self.mesh().id(), "MeshEntity and MeshFunction do not share the same mesh"
+        assert entity.dim() == self.dim(), "MeshEntity and MeshFunction do not share the same topological dimensions"
+
+        index = entity.index()
+        
+    while index < 0:
+        index += self.size()
+    if index >= self.size():
+        raise IndexError("index out of range")
+    self._setitem(index, value)
 
 def __len__(self):
     return self.size()
