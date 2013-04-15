@@ -66,7 +66,7 @@ def extract_module_header_files(submodule, excludes):
     # Filter with excludes
     return [header for header in all_headers \
             if header.split("/")[-1] not in excludes]
-    
+
 def generate_submodule_info(module_to_submodules, excludes):
     """
     Check the passed module to submodule mapping and sort it
@@ -89,14 +89,14 @@ def generate_submodule_info(module_to_submodules, excludes):
     module_dirs = []
     for module_dir in glob.glob(os.path.join(swig_path, "modules","*")):
         module_dirs.append(module_dir.split(os.path.sep)[-1])
-    
+
     # Some sanity checks
     for module_dir in module_dirs:
         if module_dir not in module_to_submodules:
             raise RuntimeError("Found a subdirectory: '%s' under the 'modules' "\
                                "directory, which is not listed as a combined "\
                                "module." % module_dir)
-    
+
     for combined_module, modules in module_to_submodules.items():
         if combined_module not in module_dirs:
             raise RuntimeError("Found a combined module: '%s' which is not a "\
@@ -108,11 +108,11 @@ def generate_submodule_info(module_to_submodules, excludes):
                                    "combined module, which is not part of the "\
                                    "original DOLFIN modules." % \
                                    (module, combined_module))
-    
+
     # Create a map from original modules to the combined
     submodule_info = OrderedDict()
     not_included = []
-    
+
     for submodule in original_submodules:
         for module, submodules in module_to_submodules.items():
             if submodule in submodules:
@@ -126,11 +126,11 @@ def generate_submodule_info(module_to_submodules, excludes):
                 break
         else:
             not_included.append(submodule)
-    
+
     # Remove not used submodules
     for submodule in not_included:
         original_submodules.remove(submodule)
-        
+
     # Sort the submodules according to order in original_submodules
     for module, submodules in module_to_submodules.items():
         ordered_submodules = []
@@ -141,7 +141,7 @@ def generate_submodule_info(module_to_submodules, excludes):
 
     # Return ordered submodule info
     return submodule_info
-    
+
 def extract_swig_modules_dependencies(module_to_submodules, submodule_info):
     """
     Extracts the file dependencies of the SWIG modules
@@ -175,7 +175,7 @@ def extract_swig_modules_dependencies(module_to_submodules, submodule_info):
     # when first collected)
     derived_classes = {}
 
-    # Iterate over all SWIG modules 
+    # Iterate over all SWIG modules
     for module, submodules in module_to_submodules.items():
 
         print "Parsing headers for SWIG module:", module
@@ -202,7 +202,7 @@ def extract_swig_modules_dependencies(module_to_submodules, submodule_info):
 
                 # Store type info
                 for dolfin_type, bases in declared_types.items():
-                    
+
                     # Store type information
                     dolfin_type_def[dolfin_type] = dict(\
                         module=module,
@@ -212,7 +212,7 @@ def extract_swig_modules_dependencies(module_to_submodules, submodule_info):
 
                     # Register the class
                     module_info[module]["declared_types"].append(dolfin_type)
-                    
+
                     # Store derived classes
                     for base in bases:
                         # Check if base class has been regisred
@@ -223,7 +223,7 @@ def extract_swig_modules_dependencies(module_to_submodules, submodule_info):
                             if base not in derived_classes:
                                 derived_classes[base] = set()
                             derived_classes[base].add(dolfin_type)
-                            
+
                         else:
                             # Add derived class
                             dolfin_type_info["derived"].add(dolfin_type)
@@ -269,7 +269,7 @@ def extract_swig_modules_dependencies(module_to_submodules, submodule_info):
             new_derived = set()
             add_derived(dolfin_type_def[dolfin_type]["derived"], new_derived)
             dolfin_type_def[dolfin_type]["derived"] = list(new_derived)
-            
+
     # Collect used dolfin types in each module
     used_dolfin_types = dict((module, set()) for module in module_info)
 
@@ -283,7 +283,7 @@ def extract_swig_modules_dependencies(module_to_submodules, submodule_info):
         if isinstance(dolfin_type_def[dolfin_type]["derived"], set):
             dolfin_type_def[dolfin_type]["derived"] = \
                         list(dolfin_type_def[dolfin_type]["derived"])
-        
+
         for module in module_info:
             for used_type in module_info[module]["used_types"]:
                 if dolfin_type in used_type:
@@ -303,16 +303,16 @@ def extract_swig_modules_dependencies(module_to_submodules, submodule_info):
     # Check external module dependencies
     for present_module in module_info:
         for dependent_module in module_info:
-            
+
             # If same module no external dependencies
             if present_module == dependent_module:
                 continue
-    
+
             # Iterate over all dolfin types in dependent modules and check it they
             # are present in the present module
             for dolfin_type in module_info[dependent_module]["declared_types"]:
-                
-                # Check for dependency 
+
+                # Check for dependency
                 if dolfin_type in module_info[present_module]["used_types"]:
 
                     # Register the dependency
@@ -328,12 +328,12 @@ def extract_swig_modules_dependencies(module_to_submodules, submodule_info):
             for dolfin_type in ["FunctionSpace", "Function"]:
                 module_info[present_module]["dependencies"]["function"].add(\
                     dolfin_type_def[dolfin_type]["header"])
-                
+
         # Over write old submodules dependencies with sorted version
         module_info[present_module]["dependencies"] = \
             sort_submodule_dependencies(\
             module_info[present_module]["dependencies"], submodule_info)
-        
+
     # Return data structures
     return module_info, dolfin_type_def
 
@@ -355,7 +355,7 @@ def write_module_interface_file(module, dependencies, submodule_info):
     # Filter file dependencies
     file_dependencies = [f.replace("dolfin", "../../..") \
                          for f in file_dependencies]
-    
+
     # Add global SWIG interface files
     file_dependencies.append("module.i")
     file_dependencies.extend(f.replace("dolfin/swig", "../..") \
@@ -364,7 +364,7 @@ def write_module_interface_file(module, dependencies, submodule_info):
 
     include_lines = []
     docstring_lines = []
-    
+
     headers_includes.append("")
     headers_includes.append("// Include types from present module %s" % module)
 
@@ -378,7 +378,7 @@ def write_module_interface_file(module, dependencies, submodule_info):
 
         include_lines.append("")
         include_lines.append("// %%include types from submodule %s" % submodule)
-        
+
         # Add docstrings
         docstring_lines.append("%%include \"dolfin/swig/%s/docstrings.i\"" % submodule)
 
@@ -408,7 +408,7 @@ def write_module_interface_file(module, dependencies, submodule_info):
     module_form["includes"] =   "\n".join(include_lines)
     module_form["docstrings"] = "\n".join(docstring_lines)
     module_form["headers"] =    "\n".join(headers_includes)
-    
+
     # Open file
     module_file = open(os.path.join(swig_path, "modules", module, "module.i"), "w")
     module_file.write(copyright_statement%(copyright_form_swig))
@@ -435,7 +435,7 @@ def generate_runtime_config_file(dolfin_type_def, module_to_submodules,
         """
         return "OrderedDict([\\\n%s])" % "\n".join(\
             "('%s', %s)," % (key, item) for key, item in data.items())
-    
+
     #shared_ptr_classes = filter(lambda x: "NAME" not in x, shared_ptr_classes)
     runtime_file = '''"""
 This module contains compiletime information about the dolfin python
@@ -443,7 +443,7 @@ library, which can be utelized at runtime.
 
 The file is automatically generated by the generateswigcode.py script
 in the dolfin/swig directory."""
-    
+
 try:
     from collections import OrderedDict
 except ImportError:
@@ -462,7 +462,7 @@ module_to_submodules = %s
 submodule_info = %s
 ''' % (repr(shared_ptr_classes), repr_ordered_dict(dolfin_type_def),\
        repr_ordered_dict(module_to_submodules), repr_ordered_dict(submodule_info))
-    
+
     open(os.path.join("site-packages", "dolfin", \
                       "compilemodules", "swigimportinfo.py"), "w").write(\
         runtime_file)
@@ -472,9 +472,9 @@ def regenerate_swig_interface(module_to_submodules, excludes):
     """
     Regenerate the whole swig interface
     """
-    
+
     # Check the submodule order and create a submodule to module mapping
-    submodule_info = generate_submodule_info(module_to_submodules, excludes)    
+    submodule_info = generate_submodule_info(module_to_submodules, excludes)
 
     # Create dolfin type info and depdency structures to be used when
     # generating swig interface files
@@ -489,17 +489,17 @@ def regenerate_swig_interface(module_to_submodules, excludes):
     # Create a python module with generated type info to be used runtime
     generate_runtime_config_file(dolfin_type_def, module_to_submodules,
                                  submodule_info)
-    
+
 
 if __name__ == "__main__":
-    
+
     # User defined definition of SWIG modules.
     # NOTE: Order of modules are important, but not order of submodules
     module_to_submodules = OrderedDict([\
         ("common", ["common", "parameter", "log"]),
         ("la", ["la", "nls"]),
         ("mesh", ["mesh", "intersection", "refinement", \
-                  "ale", "graph", "generation"]),
+                  "ale", "graph", "geometry", "generation"]),
         ("function", ["function", "math"]),
         ("fem", ["fem", "quadrature", "adaptivity", "multistage"]),
         ("io", ["io", "plot"])])
@@ -509,4 +509,4 @@ if __name__ == "__main__":
 
     # Regnerate SWIG interface
     regenerate_swig_interface(module_to_submodules, excludes)
-    
+

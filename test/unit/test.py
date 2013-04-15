@@ -56,7 +56,8 @@ tests = {
     "python-extras":  ["test"],
     "quadrature":     ["BaryCenter"],
     "refinement":     ["test"],
-    "intersection":   ["IntersectionOperator"]
+    "intersection":   ["IntersectionOperator"],
+    "geometry":       ["BoundingBoxTree"]
     }
 
 # FIXME: Graph tests disabled for now since SCOTCH is now required

@@ -98,6 +98,9 @@
 #include "dolfin/mesh/BoundaryMesh.h"
 #include "dolfin/mesh/PeriodicBoundaryComputation.h"
 
+// #include types from geometry submodule
+#include "dolfin/geometry/BoundingBoxTree.h"
+
 // #include types from generation submodule
 #include "dolfin/generation/PolygonalMeshGenerator.h"
 #include "dolfin/generation/PolyhedralMeshGenerator.h"
@@ -187,6 +190,7 @@ import_array();
 //%feature("autodoc", "1");
 %include "dolfin/swig/intersection/docstrings.i"
 %include "dolfin/swig/mesh/docstrings.i"
+%include "dolfin/swig/geometry/docstrings.i"
 %include "dolfin/swig/generation/docstrings.i"
 %include "dolfin/swig/refinement/docstrings.i"
 %include "dolfin/swig/graph/docstrings.i"
@@ -235,6 +239,9 @@ import_array();
 %include "dolfin/mesh/BoundaryMesh.h"
 %include "dolfin/mesh/PeriodicBoundaryComputation.h"
 %include "dolfin/swig/mesh/post.i"
+
+// %include types from submodule geometry
+%include "dolfin/geometry/BoundingBoxTree.h"
 
 // %include types from submodule generation
 %include "dolfin/generation/PolygonalMeshGenerator.h"
