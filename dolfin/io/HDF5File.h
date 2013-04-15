@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2013-04-08
+// Last changed: 2013-04-14
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -105,6 +105,7 @@ namespace dolfin
 
     // Friend
     friend class XDMFFile;
+    friend class TimeSeriesHDF5;
 
     // Read a mesh and repartition (if running in parallel)
     void read_mesh_repartition(Mesh &input_mesh,

@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First Added: 2012-09-21
-// Last Changed: 2013-04-10
+// Last Changed: 2013-04-14
 
 #include <boost/filesystem.hpp>
 
@@ -107,6 +107,49 @@ void HDF5Interface::flush_file(const hid_t hdf5_file_handle)
 {
   herr_t status = H5Fflush(hdf5_file_handle, H5F_SCOPE_GLOBAL);
   dolfin_assert(status != HDF5_FAIL);
+}
+//-----------------------------------------------------------------------------
+void HDF5Interface::delete_attribute(const hid_t hdf5_file_handle,
+                                     const std::string dataset_name,
+                                     const std::string attribute_name)
+{
+  herr_t status;
+
+  // Open dataset or group by name
+  const hid_t dset_id = H5Oopen(hdf5_file_handle, dataset_name.c_str(),
+                                H5P_DEFAULT);
+  dolfin_assert(dset_id != HDF5_FAIL);
+
+  // Delete attribute by name
+  status = H5Adelete(dset_id, attribute_name.c_str());
+  dolfin_assert(status != HDF5_FAIL);
+
+  // Close dataset or group
+  status = H5Oclose(dset_id);
+  dolfin_assert(status != HDF5_FAIL);
+}
+//-----------------------------------------------------------------------------
+bool HDF5Interface::has_attribute(const hid_t hdf5_file_handle,
+                                  const std::string dataset_name,
+                                  const std::string attribute_name)
+{
+  herr_t status;
+  htri_t has_attr;
+
+  // Open dataset or group by name
+  const hid_t dset_id = H5Oopen(hdf5_file_handle, dataset_name.c_str(),
+                                H5P_DEFAULT);
+  dolfin_assert(dset_id != HDF5_FAIL);
+
+  // Delete attribute by name
+  has_attr = H5Aexists(dset_id, attribute_name.c_str());
+  dolfin_assert(has_attr != HDF5_FAIL);
+
+  // Close dataset or group
+  status = H5Oclose(dset_id);
+  dolfin_assert(status != HDF5_FAIL);
+
+  return (has_attr > 0);
 }
 //-----------------------------------------------------------------------------
 bool HDF5Interface::has_group(const hid_t hdf5_file_handle,
