@@ -18,10 +18,10 @@
 // Modified by Corrado Maurini 2013
 // 
 // First added:  2012-09-03
-// Last changed: 2013-03-13
+// Last changed: 2013-04-15
 //
 // This demo program uses of the interface to TAO solver for variational inequalities 
-// to solve a contact mechanics problems in FEnics. 
+// to solve a contact mechanics problem in FEnics. 
 // The example considers a heavy elastic circle in a box of the same diameter
 
 #include <dolfin.h>
@@ -68,11 +68,11 @@ int main()
   };
 
   // Read mesh and create function space
-  UnitCircleMesh mesh(30);
+  UnitCircleMesh mesh(50);
   Elasticity::FunctionSpace V(mesh);
 
   // Create right-hand side
-  Constant f(0.0, -0.4);
+  Constant f(0.0, -0.1);
 
   // Set elasticity parameters
   double E  = 10.0;
@@ -111,8 +111,16 @@ int main()
   PETScVector& xu = (*xu_f.vector()).down_cast<PETScVector>(); // Upper bound
 
   // Solve the problem with the TAO Solver 
-  TAOLinearBoundSolver TAOSolver("tao_tron","gmres");
+  TAOLinearBoundSolver TAOSolver("tao_tron","tfqmr");
+  
+  // Set some parameters
+  TAOSolver.parameters["monitor_convergence"]=true;
+  TAOSolver.parameters["report"]=true;
+  TAOSolver.parameters("krylov_solver")["monitor_convergence"]=false;
+  
+  // Solve the problem 
   TAOSolver.solve(A, x, b, xl, xu);
+  
   
   // Plot solution
   plot(usol, "Displacement", "displacement");
