@@ -416,6 +416,15 @@ namespace dolfin
     hid_t dset_id = H5Oopen(hdf5_file_handle, dataset_name.c_str(), H5P_DEFAULT);
     dolfin_assert(dset_id != HDF5_FAIL);
 
+    // Check if attribute already exists and delete if so
+    htri_t has_attr = H5Aexists(dset_id, attribute_name.c_str());
+    dolfin_assert(has_attr != HDF5_FAIL);
+    if(has_attr > 0)
+    {
+      herr_t status = H5Adelete(dset_id, attribute_name.c_str());
+      dolfin_assert(status != HDF5_FAIL);
+    }
+
     // Add attribute of appropriate type
     add_attribute_value(dset_id, attribute_name, attribute_value);
 

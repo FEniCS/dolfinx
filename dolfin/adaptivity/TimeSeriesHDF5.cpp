@@ -80,8 +80,6 @@ void TimeSeriesHDF5::store_object(const T& object, double t,
   times.push_back(t);
 
   // Store times
-  if(HDF5Interface::has_attribute(fid, group_name, "times"))
-    HDF5Interface::delete_attribute(fid, group_name, "times");
   HDF5Interface::add_attribute(fid, group_name, "times", times);
   
 }

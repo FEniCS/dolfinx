@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First Added: 2012-09-21
-// Last Changed: 2013-04-14
+// Last Changed: 2013-04-15
 
 #include <boost/filesystem.hpp>
 
@@ -141,7 +141,7 @@ bool HDF5Interface::has_attribute(const hid_t hdf5_file_handle,
                                 H5P_DEFAULT);
   dolfin_assert(dset_id != HDF5_FAIL);
 
-  // Delete attribute by name
+  // Check for attribute by name
   has_attr = H5Aexists(dset_id, attribute_name.c_str());
   dolfin_assert(has_attr != HDF5_FAIL);
 
