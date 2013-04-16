@@ -117,7 +117,7 @@ std::size_t PaStiXLUSolver::solve(GenericVector& x, const GenericVector& b)
   pastix_initParam(iparm, dparm);
 
   // Set LU or Cholesky depending on operator symmetry
-  const bool symmetric = parameters["symmetric_operator"];
+  const bool symmetric = parameters["symmetric"];
   if (symmetric)
   {
     iparm[IPARM_SYM] = API_SYM_YES;
