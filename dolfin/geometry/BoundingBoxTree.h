@@ -77,7 +77,6 @@ namespace dolfin
     // bounding box.
     std::vector<double> _coordinates;
 
-
   };
 
 }

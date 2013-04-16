@@ -26,6 +26,30 @@
 
 using namespace dolfin;
 
+// Comparison operator for sorting of bounding boxes
+struct ComparisonOperator
+{
+  std::vector<double>& bboxes;
+  std::size_t gdim;
+  std::size_t axis;
+
+  ComparisonOperator(std::vector<double>& bboxes,
+                     std::size_t gdim,
+                     std::size_t axis)
+    : bboxes(bboxes), gdim(gdim), axis(axis) {}
+
+  inline bool operator()(std::size_t i, std::size_t j)
+  {
+    // Compute midpoints
+    const double xi = 0.5*(bboxes[2*gdim*i + axis] + bboxes[2*gdim*i + axis + gdim]);
+    const double xj = 0.5*(bboxes[2*gdim*j + axis] + bboxes[2*gdim*j + axis + gdim]);
+
+    // Compare
+    return xi < xj;
+  }
+
+};
+
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(const Mesh& mesh)
   : _gdim(mesh.geometry().dim())
@@ -56,7 +80,8 @@ void BoundingBoxTree::build(const Mesh& mesh, std::size_t dimension)
   }
 
   // Storage for leaf bounding boxes
-  std::vector<double> bboxes(2*_gdim*mesh.num_entities(dimension));
+  const std::size_t num_entities = mesh.num_entities(dimension);
+  std::vector<double> bboxes(2*_gdim*num_entities);
 
   // Build leaf bounding boxes
   for (MeshEntityIterator it(mesh, dimension); !it.end(); ++it)
@@ -65,8 +90,17 @@ void BoundingBoxTree::build(const Mesh& mesh, std::size_t dimension)
   // Compute longest axis (could be done as part of above loop but
   // we want to keep it simple)
   const std::size_t longest_axis = compute_longest_axis(bboxes);
-
   cout << "Longest axis: " << longest_axis << endl;
+
+  std::vector<std::size_t> sorted_bboxes(num_entities);
+  for (std::size_t i = 0; i < num_entities; ++i)
+    sorted_bboxes[i] = i;
+  std::sort(sorted_bboxes.begin(), sorted_bboxes.end(),
+            ComparisonOperator(bboxes, _gdim, longest_axis));
+
+  for (std::size_t i = 0; i < num_entities; ++i)
+    cout << sorted_bboxes[i] << endl;
+
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::compute_bbox(double* bbox,
