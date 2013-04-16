@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-04-09
+// Last changed: 2013-04-16
 
 #ifndef __BOUNDING_BOX_TREE_H
 #define __BOUNDING_BOX_TREE_H
@@ -35,13 +35,34 @@ namespace dolfin
   {
   public:
 
-    /// Create bounding box tree from mesh
+    /// Create bounding box tree for cells of mesh.
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh for which to compute the bounding box tree.
     BoundingBoxTree(const Mesh& mesh);
+
+    /// Create bounding box tree for mesh entites of given dimension.
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh for which to compute the bounding box tree.
+    ///     dimension (std::size_t)
+    ///         The entity dimension (topological dimension) for which
+    ///         to compute the bounding box tree.
+    BoundingBoxTree(const Mesh& mesh, std::size_t dimension);
 
     /// Destructor
     ~BoundingBoxTree();
 
   private:
+
+    // Build bounding box tree
+    void build(const Mesh& mesh, std::size_t dimension);
+
+    // Compute bounding box of mesh entity
+    void compute_bbox(double* bbox,
+                      const MeshEntity& entity) const;
 
     // Geometric dimension
     std::size_t _gdim;
@@ -52,6 +73,7 @@ namespace dolfin
     // denotes j:th component of the second vertex of the i:th
     // bounding box.
     std::vector<double> _coordinates;
+
 
   };
 

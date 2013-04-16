@@ -30,20 +30,28 @@ class BoundingBoxTreeTest(unittest.TestCase):
     def test_unit_interval(self):
 
         mesh = UnitIntervalMesh(16)
-        tree = BoundingBoxTree(mesh)
+        for dim in range(2):
+            tree = BoundingBoxTree(mesh, dim)
 
     def test_unit_square(self):
 
         mesh = UnitSquareMesh(16, 16)
-        tree = BoundingBoxTree(mesh)
+        for dim in range(3):
+            tree = BoundingBoxTree(mesh, dim)
 
     def test_unit_cube(self):
 
         mesh = UnitCubeMesh(8, 8, 8)
-        tree = BoundingBoxTree(mesh)
+        for dim in range(4):
+            tree = BoundingBoxTree(mesh, dim)
 
 if __name__ == "__main__":
     print ""
     print "Testing BoudingBoxTree"
     print "------------------------------------------------"
-    unittest.main()
+
+    # FIXME: Temporary while testing
+    mesh = UnitCubeMesh(3, 3, 3)
+    tree = BoundingBoxTree(mesh)
+
+    #unittest.main()
