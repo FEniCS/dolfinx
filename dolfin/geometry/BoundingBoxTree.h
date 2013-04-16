@@ -47,28 +47,40 @@ namespace dolfin
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh for which to compute the bounding box tree.
-    ///     dimension (std::size_t)
+    ///     dimension (unsigned int)
     ///         The entity dimension (topological dimension) for which
     ///         to compute the bounding box tree.
-    BoundingBoxTree(const Mesh& mesh, std::size_t dimension);
+    BoundingBoxTree(const Mesh& mesh, unsigned int dimension);
 
     /// Destructor
     ~BoundingBoxTree();
 
   private:
 
-    // Build bounding box tree
-    void build(const Mesh& mesh, std::size_t dimension);
+    // Build bounding box tree of mesh
+    void build(const Mesh& mesh, unsigned int dimension);
+
+    // Build bounding box tree of list of bounding boxes (recursive)
+    void build(std::vector<double> bboxes,
+               std::vector<unsigned int> sorted_bboxes,
+               unsigned int begin,
+               unsigned int end) const;
 
     // Compute bounding box of mesh entity
     void compute_bbox(double* bbox,
                       const MeshEntity& entity) const;
 
+    // Compute bounding box of list of bounding boxes
+    void compute_bbox(double* bbox,
+                      const std::vector<double> bboxes,
+                      unsigned int begin,
+                      unsigned int end) const;
+
     // Compute longest axis of bounding boxes
-    std::size_t compute_longest_axis(std::vector<double> bboxes);
+    unsigned int compute_longest_axis(const double* bbox) const;
 
     // Geometric dimension
-    std::size_t _gdim;
+    unsigned int _gdim;
 
     // List coordinates stored as one contiguous array [x_i^j y_i^j]
     // row major on (i, j), where x_i^j denotes the j:th component of

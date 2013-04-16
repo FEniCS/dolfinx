@@ -30,15 +30,15 @@ using namespace dolfin;
 struct ComparisonOperator
 {
   std::vector<double>& bboxes;
-  std::size_t gdim;
-  std::size_t axis;
+  unsigned int gdim;
+  unsigned int axis;
 
   ComparisonOperator(std::vector<double>& bboxes,
-                     std::size_t gdim,
-                     std::size_t axis)
+                     unsigned int gdim,
+                     unsigned int axis)
     : bboxes(bboxes), gdim(gdim), axis(axis) {}
 
-  inline bool operator()(std::size_t i, std::size_t j)
+  inline bool operator()(unsigned int i, unsigned int j)
   {
     // Compute midpoints
     const double xi = 0.5*(bboxes[2*gdim*i + axis] + bboxes[2*gdim*i + axis + gdim]);
@@ -57,7 +57,7 @@ BoundingBoxTree::BoundingBoxTree(const Mesh& mesh)
   build(mesh, mesh.topology().dim());
 }
 //-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(const Mesh& mesh, std::size_t dimension)
+BoundingBoxTree::BoundingBoxTree(const Mesh& mesh, unsigned int dimension)
   : _gdim(mesh.geometry().dim())
 {
   build(mesh, dimension);
@@ -68,8 +68,10 @@ BoundingBoxTree::~BoundingBoxTree()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::build(const Mesh& mesh, std::size_t dimension)
+void BoundingBoxTree::build(const Mesh& mesh, unsigned int dimension)
 {
+  cout << "Building bounding box tree" << endl;
+
   // Check dimension
   if (dimension < 1 or dimension > mesh.topology().dim())
   {
@@ -80,27 +82,50 @@ void BoundingBoxTree::build(const Mesh& mesh, std::size_t dimension)
   }
 
   // Storage for leaf bounding boxes
-  const std::size_t num_entities = mesh.num_entities(dimension);
+  const unsigned int num_entities = mesh.num_entities(dimension);
   std::vector<double> bboxes(2*_gdim*num_entities);
 
   // Build leaf bounding boxes
   for (MeshEntityIterator it(mesh, dimension); !it.end(); ++it)
     compute_bbox(bboxes.data() + 2*_gdim*it->index(), *it);
 
-  // Compute longest axis (could be done as part of above loop but
-  // we want to keep it simple)
-  const std::size_t longest_axis = compute_longest_axis(bboxes);
-  cout << "Longest axis: " << longest_axis << endl;
 
-  std::vector<std::size_t> sorted_bboxes(num_entities);
-  for (std::size_t i = 0; i < num_entities; ++i)
+  // FIXME: binary tree stored as array, 2i + 1, 2i + 2
+  std::vector<unsigned int> sorted_bboxes(num_entities);
+  for (unsigned int i = 0; i < num_entities; ++i)
     sorted_bboxes[i] = i;
-  std::sort(sorted_bboxes.begin(), sorted_bboxes.end(),
+
+  build(bboxes, sorted_bboxes, 0, num_entities);
+}
+//-----------------------------------------------------------------------------
+void BoundingBoxTree::build(std::vector<double> bboxes,
+                            std::vector<unsigned int> sorted_bboxes,
+                            unsigned int begin,
+                            unsigned int end) const
+{
+  cout << "Creating bounding box for set of " << (end - begin) << " leaves" << endl;
+
+  if (end < begin + 2)
+  {
+    cout << "Reached leaf" << endl;
+    return;
+  }
+
+  // Compute bounding box
+  std::vector<double> bbox(2*_gdim);
+  compute_bbox(bbox.data(), bboxes, begin, end);
+
+  // Compute longest axis of bounding box
+  const unsigned int longest_axis = compute_longest_axis(bbox.data());
+
+  // Sort boxes along axis
+  std::sort(sorted_bboxes.begin() + begin, sorted_bboxes.begin() + end,
             ComparisonOperator(bboxes, _gdim, longest_axis));
 
-  for (std::size_t i = 0; i < num_entities; ++i)
-    cout << sorted_bboxes[i] << endl;
-
+  // Split boxes in two groups and call recursively
+  const unsigned int pivot = (begin + end) / 2;
+  build(bboxes, sorted_bboxes, begin, pivot);
+  build(bboxes, sorted_bboxes, pivot, end);
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::compute_bbox(double* bbox,
@@ -118,14 +143,14 @@ void BoundingBoxTree::compute_bbox(double* bbox,
 
   // Get coordinates for first vertex
   const double* x = geometry.x(vertices[0]);
-  for (std::size_t j = 0; j < _gdim; ++j)
+  for (unsigned int j = 0; j < _gdim; ++j)
     xmin[j] = xmax[j] = x[j];
 
   // Compute min and max over remaining vertices
-  for (std::size_t i = 1; i < num_vertices; ++i)
+  for (unsigned int i = 1; i < num_vertices; ++i)
   {
     const double* x = geometry.x(vertices[i]);
-    for (std::size_t j = 0; j < _gdim; ++j)
+    for (unsigned int j = 0; j < _gdim; ++j)
     {
       xmin[j] = std::min(x[j], xmin[j]);
       xmax[j] = std::max(x[j], xmax[j]);
@@ -133,41 +158,52 @@ void BoundingBoxTree::compute_bbox(double* bbox,
   }
 }
 //-----------------------------------------------------------------------------
-std::size_t BoundingBoxTree::compute_longest_axis(std::vector<double> bboxes)
+void BoundingBoxTree::compute_bbox(double* bbox,
+                                   const std::vector<double> bboxes,
+                                   unsigned int begin,
+                                   unsigned int end) const
 {
-  std::vector<double> xmin(_gdim);
-  std::vector<double> xmax(_gdim);
+  // Get bounding box data
+  double* xmin = bbox;
+  double* xmax = bbox + _gdim;
 
   // Get coordinates for first box
-  for (std::size_t j = 0; j < _gdim; ++j)
+  const double* x = bboxes.data() + 2*_gdim*begin;
+  for (unsigned int j = 0; j < _gdim; ++j)
   {
-    xmin[j] = bboxes[j];
-    xmax[j] = bboxes[j + _gdim];
+    xmin[j] = x[j];
+    xmax[j] = x[j + _gdim];
   }
 
   // Compute min and max over remaining boxes
-  const std::size_t num_bboxes = bboxes.size() / (2*_gdim);
-  for (std::size_t i = 1; i < num_bboxes; ++i)
+  for (unsigned int i = begin + 1; i < end; ++i)
   {
     const double* x = bboxes.data() + 2*_gdim*i;
-    for (std::size_t j = 0; j < _gdim; ++j)
+    for (unsigned int j = 0; j < _gdim; ++j)
     {
       xmin[j] = std::min(x[j], xmin[j]);
       xmax[j] = std::max(x[j + _gdim], xmax[j]);
     }
   }
+}
+//-----------------------------------------------------------------------------
+unsigned int BoundingBoxTree::compute_longest_axis(const double* bbox) const
+{
+  // Get bounding box data
+  const double* xmin = bbox;
+  const double* xmax = bbox + _gdim;
 
   // Check maximum axis
-  std::size_t longest_axis = 0;
+  unsigned int longest_axis = 0;
   double longest_axis_length = xmax[0] - xmin[0];
-  for (std::size_t j = 1; j < _gdim; ++j)
+  for (unsigned int j = 1; j < _gdim; ++j)
   {
     const double axis_length = xmax[j] - xmin[j];
     if (axis_length > longest_axis_length)
       longest_axis = j;
   }
 
-  cout << "Length of longest axis: " << longest_axis_length << endl;
+  cout << "Longest is axis " << longest_axis << ": " << longest_axis_length << endl;
 
   return longest_axis;
 }
