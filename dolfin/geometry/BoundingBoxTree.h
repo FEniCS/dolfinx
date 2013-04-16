@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-04-16
+// Last changed: 2013-04-17
 
 #ifndef __BOUNDING_BOX_TREE_H
 #define __BOUNDING_BOX_TREE_H
@@ -55,16 +55,40 @@ namespace dolfin
     /// Destructor
     ~BoundingBoxTree();
 
+    /// Get bounding box for given node in tree
+    ///
+    /// *Arguments*
+    ///     node (unsigned int)
+    ///         The number of the node (breadth-first numbering, see above).
+    inline double* get_bbox(unsigned int node)
+    {
+      dolfin_assert(2*_gdim*(node + 1) <= bbox_tree.size());
+      return bbox_tree.data() + 2*_gdim*node;
+    }
+
+    /// Get bounding box for given node in tree (const version)
+    ///
+    /// *Arguments*
+    ///     node (unsigned int)
+    ///         The number of the node (breadth-first numbering, see above).
+    inline const double* get_bbox(unsigned int node) const
+    {
+      dolfin_assert(2*_gdim*(node + 1) <= bbox_tree.size());
+      return bbox_tree.data() + 2*_gdim*node;
+    }
+
   private:
 
     // Build bounding box tree of mesh
     void build(const Mesh& mesh, unsigned int dimension);
 
     // Build bounding box tree of list of bounding boxes (recursive)
-    void build(std::vector<double> bboxes,
-               std::vector<unsigned int> sorted_bboxes,
+    void build(std::vector<double> bbox_tree,
+               std::vector<unsigned int> leaf_partition,
+               const std::vector<double> leaf_bboxes,
                unsigned int begin,
-               unsigned int end) const;
+               unsigned int end,
+               unsigned int position);
 
     // Compute bounding box of mesh entity
     void compute_bbox(double* bbox,
@@ -82,12 +106,12 @@ namespace dolfin
     // Geometric dimension
     unsigned int _gdim;
 
-    // List coordinates stored as one contiguous array [x_i^j y_i^j]
-    // row major on (i, j), where x_i^j denotes the j:th component of
-    // the first vertex of the i:th bounding box, and where y_i^j
-    // denotes j:th component of the second vertex of the i:th
-    // bounding box.
-    std::vector<double> _coordinates;
+    // The tree of bounding boxes, stored as a binary tree where the
+    // two children of node i are numbered 2i + 1 and 2i + 2. Each
+    // node takes up 2*_gdim doubles in the list. These numbers are
+    // first the _gdim minimum coordinate values and then the _gdim
+    // corresponding maximum coordinate values for each axis.
+    std::vector<double> bbox_tree;
 
   };
 

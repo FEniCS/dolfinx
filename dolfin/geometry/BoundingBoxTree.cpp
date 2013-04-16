@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-04-16
+// Last changed: 2013-04-17
 
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshGeometry.h>
@@ -29,11 +29,11 @@ using namespace dolfin;
 // Comparison operator for sorting of bounding boxes
 struct ComparisonOperator
 {
-  std::vector<double>& bboxes;
+  const std::vector<double>& bboxes;
   unsigned int gdim;
   unsigned int axis;
 
-  ComparisonOperator(std::vector<double>& bboxes,
+  ComparisonOperator(const std::vector<double>& bboxes,
                      unsigned int gdim,
                      unsigned int axis)
     : bboxes(bboxes), gdim(gdim), axis(axis) {}
@@ -81,29 +81,34 @@ void BoundingBoxTree::build(const Mesh& mesh, unsigned int dimension)
                  mesh.topology().dim());
   }
 
-  // Storage for leaf bounding boxes
-  const unsigned int num_entities = mesh.num_entities(dimension);
-  std::vector<double> bboxes(2*_gdim*num_entities);
+  // Allocate data for bounding box tree
+  const unsigned int num_leaves = mesh.num_entities(dimension);
+  bbox_tree.clear();
+  bbox_tree.resize(2*_gdim*2*num_leaves - 1); // should be precisely enough
 
-  // Build leaf bounding boxes
+  // Build bounding boxes for leaves
+  std::vector<double> leaf_bboxes(2*_gdim*num_leaves);
   for (MeshEntityIterator it(mesh, dimension); !it.end(); ++it)
-    compute_bbox(bboxes.data() + 2*_gdim*it->index(), *it);
+    compute_bbox(leaf_bboxes.data() + 2*_gdim*it->index(), *it);
 
+  // Initialize leaf partition (to be sorted)
+  std::vector<unsigned int> leaf_partition(num_leaves);
+  for (unsigned int i = 0; i < num_leaves; ++i)
+    leaf_partition[i] = i;
 
-  // FIXME: binary tree stored as array, 2i + 1, 2i + 2
-  std::vector<unsigned int> sorted_bboxes(num_entities);
-  for (unsigned int i = 0; i < num_entities; ++i)
-    sorted_bboxes[i] = i;
-
-  build(bboxes, sorted_bboxes, 0, num_entities);
+  // Recursively build the bounding box tree from the leaves
+  build(bbox_tree, leaf_partition, leaf_bboxes, 0, num_leaves, 0);
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::build(std::vector<double> bboxes,
-                            std::vector<unsigned int> sorted_bboxes,
+void BoundingBoxTree::build(const std::vector<double> bbox_tree,
+                            std::vector<unsigned int> leaf_partition,
+                            const std::vector<double> leaf_bboxes,
                             unsigned int begin,
-                            unsigned int end) const
+                            unsigned int end,
+                            unsigned int node)
 {
   cout << "Creating bounding box for set of " << (end - begin) << " leaves" << endl;
+  cout << "node = " << node << endl;
 
   if (end < begin + 2)
   {
@@ -112,20 +117,20 @@ void BoundingBoxTree::build(std::vector<double> bboxes,
   }
 
   // Compute bounding box
-  std::vector<double> bbox(2*_gdim);
-  compute_bbox(bbox.data(), bboxes, begin, end);
+  double* bbox = get_bbox(node);
+  compute_bbox(bbox, leaf_bboxes, begin, end);
 
   // Compute longest axis of bounding box
-  const unsigned int longest_axis = compute_longest_axis(bbox.data());
+  const unsigned int longest_axis = compute_longest_axis(bbox);
 
   // Sort boxes along axis
-  std::sort(sorted_bboxes.begin() + begin, sorted_bboxes.begin() + end,
-            ComparisonOperator(bboxes, _gdim, longest_axis));
+  std::sort(leaf_partition.begin() + begin, leaf_partition.begin() + end,
+            ComparisonOperator(leaf_bboxes, _gdim, longest_axis));
 
   // Split boxes in two groups and call recursively
   const unsigned int pivot = (begin + end) / 2;
-  build(bboxes, sorted_bboxes, begin, pivot);
-  build(bboxes, sorted_bboxes, pivot, end);
+  build(bbox_tree, leaf_partition, leaf_bboxes, begin, pivot, 2*node + 1);
+  build(bbox_tree, leaf_partition, leaf_bboxes, pivot, end,   2*node + 2);
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::compute_bbox(double* bbox,
