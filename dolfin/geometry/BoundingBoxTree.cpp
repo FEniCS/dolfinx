@@ -61,6 +61,12 @@ void BoundingBoxTree::build(const Mesh& mesh, std::size_t dimension)
   // Build leaf bounding boxes
   for (MeshEntityIterator it(mesh, dimension); !it.end(); ++it)
     compute_bbox(bboxes.data() + 2*_gdim*it->index(), *it);
+
+  // Compute longest axis (could be done as part of above loop but
+  // we want to keep it simple)
+  const std::size_t longest_axis = compute_longest_axis(bboxes);
+
+  cout << "Longest axis: " << longest_axis << endl;
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::compute_bbox(double* bbox,
@@ -81,7 +87,7 @@ void BoundingBoxTree::compute_bbox(double* bbox,
   for (std::size_t j = 0; j < _gdim; ++j)
     xmin[j] = xmax[j] = x[j];
 
-  // Compute min and max over all other vertices
+  // Compute min and max over remaining vertices
   for (std::size_t i = 1; i < num_vertices; ++i)
   {
     const double* x = geometry.x(vertices[i]);
@@ -91,5 +97,44 @@ void BoundingBoxTree::compute_bbox(double* bbox,
       xmax[j] = std::max(x[j], xmax[j]);
     }
   }
+}
+//-----------------------------------------------------------------------------
+std::size_t BoundingBoxTree::compute_longest_axis(std::vector<double> bboxes)
+{
+  std::vector<double> xmin(_gdim);
+  std::vector<double> xmax(_gdim);
+
+  // Get coordinates for first box
+  for (std::size_t j = 0; j < _gdim; ++j)
+  {
+    xmin[j] = bboxes[j];
+    xmax[j] = bboxes[j + _gdim];
+  }
+
+  // Compute min and max over remaining boxes
+  const std::size_t num_bboxes = bboxes.size() / (2*_gdim);
+  for (std::size_t i = 1; i < num_bboxes; ++i)
+  {
+    const double* x = bboxes.data() + 2*_gdim*i;
+    for (std::size_t j = 0; j < _gdim; ++j)
+    {
+      xmin[j] = std::min(x[j], xmin[j]);
+      xmax[j] = std::max(x[j + _gdim], xmax[j]);
+    }
+  }
+
+  // Check maximum axis
+  std::size_t longest_axis = 0;
+  double longest_axis_length = xmax[0] - xmin[0];
+  for (std::size_t j = 1; j < _gdim; ++j)
+  {
+    const double axis_length = xmax[j] - xmin[j];
+    if (axis_length > longest_axis_length)
+      longest_axis = j;
+  }
+
+  cout << "Length of longest axis: " << longest_axis_length << endl;
+
+  return longest_axis;
 }
 //-----------------------------------------------------------------------------

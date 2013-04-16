@@ -64,6 +64,9 @@ namespace dolfin
     void compute_bbox(double* bbox,
                       const MeshEntity& entity) const;
 
+    // Compute longest axis of bounding boxes
+    std::size_t compute_longest_axis(std::vector<double> bboxes);
+
     // Geometric dimension
     std::size_t _gdim;
 
