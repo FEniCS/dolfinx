@@ -21,19 +21,24 @@ The example considers a heavy hyperelastic circle in a box of the same size"""
 # Modified by Corrado Maurini 2013
 #
 # First added:  2012-09-03
-# Last changed: 2013-03-20
+# Last changed: 2013-04-11
 # 
 from dolfin import *
+    
+# Create mesh (use cgal if available)
+if has_cgal():
+    circle = Circle (0, 0, 1);
+    mesh = Mesh(circle,30)
+else:
+    mesh = UnitCircleMesh(30)
 
-# Create mesh
-mesh = UnitCircleMesh(50)
 V = VectorFunctionSpace(mesh, "Lagrange", 1)
 
 # Define functions
 du = TrialFunction(V)            # Incremental displacement
 v  = TestFunction(V)             # Test function
 u  = Function(V)                 # Displacement from previous iteration
-B  = Constant((0.0, -0.1))  # Body force per unit volume
+B  = Constant((0.0, -0.05))      # Body force per unit volume
 
 # Kinematics
 I = Identity(V.cell().d)    # Identity tensor
@@ -60,32 +65,41 @@ F = derivative(Pi, u, v)
 # Compute Jacobian of F
 J = derivative(F, u, du)
 
-# Symmetry condition (to avoid rotations)
+# Symmetry condition (to block rigid body rotations)
 tol=mesh.hmin()
 def symmetry_line(x):
     return abs(x[0]) < DOLFIN_EPS
 bc = DirichletBC(V.sub(0), 0., symmetry_line,method="pointwise")
 
-# The displacement u must be such that the current configuration x+u
-# does dot escape the xbox [xmin,xmax]x[umin,ymax]
-constraint_u = Expression( ("xmax-x[0]","ymax-x[1]"), xmax =  1+DOLFIN_EPS, ymax =  2.)
+# The displacement u must be such that the current configuration x+u remains in the box [xmin,xmax]x[umin,ymax]
+constraint_u = Expression( ("xmax-x[0]","ymax-x[1]"), xmax =  1+DOLFIN_EPS, ymax =  1.)
 constraint_l = Expression( ("xmin-x[0]","ymin-x[1]"), xmin = -1-DOLFIN_EPS, ymin = -1.)
-u_min = interpolate(constraint_l, V)
-u_max = interpolate(constraint_u, V)
+umin = interpolate(constraint_l, V)
+umax = interpolate(constraint_u, V)
 
-# Take the PETScVector of the solution function
+# Define the solver parameters
 snes_solver_parameters = {"nonlinear_solver": "snes",
-                          "linear_solver": "lu",
-                          "snes_solver": {"maximum_iterations": 100,
-                                          "sign": "default",
-                                          "report": True}}
+                          "linear_solver"   : "lu",
+                          "snes_solver"     : { "maximum_iterations": 20,
+                                                "report": True,
+                                                "error_on_nonconvergence": False,
+                                               }}
 
-problem = NonlinearVariationalProblem(F, u,bc,J=J)
+# Set up the non-linear problem
+problem = NonlinearVariationalProblem(F, u, bc, J=J)
+
+# Set up the non-linear solver
 solver  = NonlinearVariationalSolver(problem)
 solver.parameters.update(snes_solver_parameters)
-solver.solve(u_min,u_max)
-list_timings()
+info(solver.parameters,True)
 
+# Solve the problem
+(iter,converged)=solver.solve(umin,umax)
+
+# Check for convergence 
+if not converged: 
+   warning("This demo is a complex nonlinear problem. Convergence is not guaranteed when modifying some parameters or using PETSC 3.2.")
+    
 # Save solution in VTK format
 file = File("displacement.pvd")
 file << u

@@ -67,8 +67,8 @@
 %feature("docstring") dolfin::Array::array "Missing docstring";
 
 %extend dolfin::Array<TYPE> {
-  TYPE __getitem__(unsigned int i) const { return (*self)[i]; }
-  void __setitem__(unsigned int i, const TYPE& val) { (*self)[i] = val; }
+  TYPE _getitem(unsigned int i) const { return (*self)[i]; }
+  void _setitem(unsigned int i, const TYPE& val) { (*self)[i] = val; }
 
   PyObject * _array(){
     return %make_numpy_array(1, TYPE_NAME)(self->size(), self->data(), true);
@@ -82,8 +82,28 @@ def array(self):
     data = self._array()
     _attach_base_to_numpy_array(data, self)
     return data
-    %}
 
+def __getitem__(self, index):
+    if not isinstance(index, int):
+        raise TypeError("expected an int as index argument")
+    while index < 0:
+        index += self.size()
+    if index >= self.size():
+        raise IndexError("index out of range")
+    return self._getitem(index)
+    
+def __setitem__(self, index, value):
+    if not isinstance(index, int):
+        raise TypeError("expected an int as index argument")
+    while index < 0:
+        index += self.size()
+    if index >= self.size():
+        raise IndexError("index out of range")
+    self._setitem(index, value)
+
+def __len__(self):
+    return self.size()
+    %}
 }
 %enddef
 

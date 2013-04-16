@@ -1,27 +1,43 @@
 #!/bin/sh
-
+#
 # Configure for a local install. Build files will be generated in the
 # directory $toplevel/build and installation will go in the directory
 # $toplevel/local.
 #
 # This is useful to be able to run demos from within the source tree
 # without needing to specify an installation directory.
+#
+# This script is what most developers use to build and rebuild DOLFIN.
 
 # Number of processes to use during build
 : ${PROCS:=3}
 
+# Extract any extra argument
 CMAKE_EXTRA_ARGS=$@
 
-INSTALLDIR=$PWD/local
-BUILDDIR=$PWD/build
+# Get branch name
+BRANCH=`git branch | grep '*' | cut -d' ' -f2 | sed s:/:.:g`
 
-if [ ! -d $INSTALLDIR ]; then
-  cmake/scripts/generate-all
+# Set installation and build directory
+INSTALLDIR=$PWD/local.$BRANCH
+BUILDDIR=$PWD/build.$BRANCH
+echo "On branch '$BRANCH'. Build and install in build.$BRANCH, local.$BRANCH."
+echo
+
+# Make symlinks to master branch
+if [ "$BRANCH" = "master" ]; then
+    ln -sf $INSTALLDIR local
+    ln -sf $BUILDDIR build
 fi
 
+# Generate files that need generating before building
+if [ ! -d $INSTALLDIR ]; then
+    cmake/scripts/generate-all
+fi
+
+# Configure
 mkdir -p $BUILDDIR
 cd $BUILDDIR
-
 cmake -DCMAKE_INSTALL_PREFIX=$INSTALLDIR \
       -DDOLFIN_ENABLE_TESTING=true \
       -DDOLFIN_ENABLE_BENCHMARKS=true \
@@ -29,4 +45,5 @@ cmake -DCMAKE_INSTALL_PREFIX=$INSTALLDIR \
       $CMAKE_EXTRA_ARGS \
       ..
 
+# Build
 make -j$PROCS && make install -j$PROCS
