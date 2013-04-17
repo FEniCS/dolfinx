@@ -33,3 +33,9 @@ CSGGeometry::~CSGGeometry()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+std::size_t CSGGeometry::subdomain(boost::shared_ptr<CSGGeometry> s)
+{
+  dolfin_assert(dim() == s->dim());
+  subdomains.push_back(s);
+  return subdomains.size();
+}

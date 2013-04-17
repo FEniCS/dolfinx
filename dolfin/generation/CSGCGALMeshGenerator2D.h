@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First added:  2012-05-10
-// Last changed: 2013-03-15
+// Last changed: 2013-04-05
 
 #ifndef __CSG_CGAL_MESH_GENERATOR2D_H
 #define __CSG_CGAL_MESH_GENERATOR2D_H
@@ -40,6 +40,7 @@ namespace dolfin
   public :
 
     CSGCGALMeshGenerator2D(const CSGGeometry& geometry);
+    //CSGCGALMeshGenerator2D(const std::vector<boost::shared_ptr<const CSGGeometry> >& subdomains);
 
     ~CSGCGALMeshGenerator2D();
 
@@ -59,7 +60,8 @@ namespace dolfin
   private:
 
     #ifdef HAS_CGAL
-    const CSGGeometry& _geometry;
+    //std::vector<boost::shared_ptr<const CSGGeometry> > subdomains;
+    const CSGGeometry &geometry;
     #endif
 
   };
