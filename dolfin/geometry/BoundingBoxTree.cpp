@@ -91,8 +91,6 @@ BoundingBoxTree::~BoundingBoxTree()
 //-----------------------------------------------------------------------------
 std::vector<unsigned int> BoundingBoxTree::find(const Point& point) const
 {
-  cout << "Computing intersection with point: " << point << endl;
-
   // Call recursive find function
   std::vector<unsigned int> entities;
   find(point.coordinates(), 0, entities);
@@ -102,8 +100,6 @@ std::vector<unsigned int> BoundingBoxTree::find(const Point& point) const
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::build(const Mesh& mesh, unsigned int dimension)
 {
-  cout << "Building bounding box tree" << endl;
-
   // Check dimension
   if (dimension < 1 or dimension > mesh.topology().dim())
   {
@@ -151,6 +147,9 @@ void BoundingBoxTree::build(const Mesh& mesh, unsigned int dimension)
   // Recursively build the bounding box tree from the leaves
   unsigned int pos = 0;
   build(leaf_bboxes, leaf_partition, 0, num_leaves, 0, pos);
+
+  info("Computed bounding box tree with %d nodes for %d entities.",
+       pos / (2*_gdim), num_leaves);
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::build(const std::vector<double> leaf_bboxes,
@@ -162,27 +161,10 @@ void BoundingBoxTree::build(const std::vector<double> leaf_bboxes,
 {
   dolfin_assert(begin < end);
 
-  cout << endl;
-  cout << "Creating bounding box for set of " << (end - begin) << " leaves" << endl;
-  info("node = %.3d", node);
-  info("begin = %d", begin);
-  info("end = %d", end);
-  info("pos = %d", pos);
-
-  // FIXME: Debugging
-  //for (unsigned int i = begin; i < end; i++)
-  //{
-  //  const double* _bbox = _get_bbox(leaf_bboxes, leaf_partition[i], _gdim);
-  //  const double x = 0.5*(_bbox[0] + _bbox[3]);
-  //  const double y = 0.5*(_bbox[1] + _bbox[4]);
-  //  const double z = 0.5*(_bbox[2] + _bbox[5]);
-  //  cout << x << " " << y << " " << z << endl;
-  //}
-
   // Add bounding box to tree. The pos variable is used to step
   // through the preallocated list of bounding box coordinates.
   bbox_tree[node] = pos;
-  pos +=2*_gdim;
+  pos += 2*_gdim;
 
   // Compute bounding box
   double* bbox = get_bbox(node);
@@ -204,7 +186,6 @@ void BoundingBoxTree::build(const std::vector<double> leaf_bboxes,
 
   // Split boxes in two groups and call recursively
   const unsigned int pivot = (begin + end + 1) / 2;
-  info("pivot = %d", pivot);
   build(leaf_bboxes, leaf_partition, begin, pivot, 2*node + 1, pos);
   build(leaf_bboxes, leaf_partition, pivot, end,   2*node + 2, pos);
 }
@@ -278,19 +259,15 @@ unsigned int BoundingBoxTree::compute_longest_axis(const double* bbox) const
   // Check maximum axis
   unsigned int longest_axis = 0;
   double longest_axis_length = xmax[0] - xmin[0];
-  cout << "l = " << longest_axis_length << endl;
   for (unsigned int j = 1; j < _gdim; ++j)
   {
     const double axis_length = xmax[j] - xmin[j];
-    cout << "l = " << axis_length << endl;
     if (axis_length > longest_axis_length)
     {
       longest_axis = j;
       longest_axis_length = axis_length;
     }
   }
-
-  cout << "longest axis is " << longest_axis << ": " << longest_axis_length << endl;
 
   return longest_axis;
 }
