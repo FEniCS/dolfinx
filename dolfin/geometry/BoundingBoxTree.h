@@ -94,9 +94,12 @@ namespace dolfin
     void compute_bbox(double* bbox,
                       const MeshEntity& entity) const;
 
-    // Compute bounding box of list of bounding boxes
+    // Compute bounding box of list of bounding boxes. Only the boxes
+    // indexed by the given partition list in the range [begin, end)
+    // are considered.
     void compute_bbox(double* bbox,
                       const std::vector<double> bboxes,
+                      const std::vector<unsigned int> partition,
                       unsigned int begin,
                       unsigned int end) const;
 
