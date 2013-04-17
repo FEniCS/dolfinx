@@ -166,7 +166,7 @@ void LinearVariationalSolver::solve()
     // Solve linear system
     LUSolver solver(lu_method);
     solver.parameters.update(parameters("lu_solver"));
-    solver.parameters["symmetric_operator"] = (bool) parameters["symmetric"];
+    solver.parameters["symmetric"] = (bool) parameters["symmetric"];
     solver.solve(*A, *u->vector(), *b);
   }
   else
