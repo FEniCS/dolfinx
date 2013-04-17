@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-15
-# Last changed: 2013-04-15
+# Last changed: 2013-04-17
 
 import unittest
 
@@ -29,38 +29,49 @@ from dolfin import Point
 class BoundingBoxTreeTest(unittest.TestCase):
 
     def test_unit_interval(self):
+        "Test basic creation and point location for unit interval"
 
+        reference = {1: [4]}
+
+        p = Point(0.3)
         mesh = UnitIntervalMesh(16)
-        for dim in range(2):
+
+        for dim in range(1, 2):
             tree = BoundingBoxTree(mesh, dim)
+            entities = tree.find(p)
+            self.assertEqual(sorted(entities), reference[dim])
 
     def test_unit_square(self):
+        "Test basic creation and point location for unit square"
 
+        reference = {1: [226],
+                     2: [136, 137]}
+
+        p = Point(0.3, 0.3)
         mesh = UnitSquareMesh(16, 16)
-        for dim in range(3):
+
+        for dim in range(1, 3):
             tree = BoundingBoxTree(mesh, dim)
+            entities = tree.find(p)
+            self.assertEqual(sorted(entities), reference[dim])
 
     def test_unit_cube(self):
+        "Test basic creation and point location for unit cube"
 
+        reference = {1: [1364],
+                     2: [1967, 1968, 1970, 1972, 1974, 1976],
+                     3: [876, 877, 878, 879, 880, 881]}
+
+        p = Point(0.3, 0.3, 0.3)
         mesh = UnitCubeMesh(8, 8, 8)
-        for dim in range(4):
+
+        for dim in range(1, 4):
             tree = BoundingBoxTree(mesh, dim)
+            entities = tree.find(p)
+            self.assertEqual(sorted(entities), reference[dim])
 
 if __name__ == "__main__":
     print ""
     print "Testing BoudingBoxTree"
     print "------------------------------------------------"
-
-    # FIXME: Temporary while testing
-    mesh = UnitCubeMesh(3, 3, 3)
-    tree = BoundingBoxTree(mesh)
-
-    p = Point(0.5, 0.5, 0.5)
-    entities = tree.find(p)
-
-    p = Point(0.1, 0.1, 0.1)
-    entities = tree.find(p)
-
-    print entities
-
-    #unittest.main()
+    unittest.main()
