@@ -109,6 +109,9 @@ void BoundingBoxTree::build(const Mesh& mesh, unsigned int dimension)
                  mesh.topology().dim());
   }
 
+  // Initialize entities of given dimension if they don't exist
+  mesh.init(dimension);
+
   // Compute upper bound for size of bounding box tree
   const unsigned int num_leaves = mesh.num_entities(dimension);
   unsigned int n = 1;
