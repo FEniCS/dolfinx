@@ -22,13 +22,14 @@
 #include <dolfin/mesh/MeshGeometry.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/Point.h>
 #include "BoundingBoxTree.h"
 
 using namespace dolfin;
 
 // Helper function for getting bounding box
 inline double* _get_bbox(std::vector<double>& bboxes,
-                        unsigned int i, unsigned int gdim)
+                         unsigned int i, unsigned int gdim)
 {
   dolfin_assert(2*gdim*(i + 1) <= bboxes.size());
   return bboxes.data() + 2*gdim*i;
@@ -36,7 +37,7 @@ inline double* _get_bbox(std::vector<double>& bboxes,
 
 // Helper function for getting bounding box (const version)
 inline const double* _get_bbox(const std::vector<double>& bboxes,
-                              unsigned int i, unsigned int gdim)
+                               unsigned int i, unsigned int gdim)
 {
   dolfin_assert(2*gdim*(i + 1) <= bboxes.size());
   return bboxes.data() + 2*gdim*i;
@@ -88,6 +89,17 @@ BoundingBoxTree::~BoundingBoxTree()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+std::vector<unsigned int> BoundingBoxTree::find(const Point& point) const
+{
+  cout << "Computing intersection with point: " << point << endl;
+
+  // Call recursive find function
+  std::vector<unsigned int> entities;
+  find(point.coordinates(), 0, entities);
+
+  return entities;
+}
+//-----------------------------------------------------------------------------
 void BoundingBoxTree::build(const Mesh& mesh, unsigned int dimension)
 {
   cout << "Building bounding box tree" << endl;
@@ -109,13 +121,17 @@ void BoundingBoxTree::build(const Mesh& mesh, unsigned int dimension)
 
   // Clear any old data
   bbox_tree.clear();
+  bbox_entities.clear();
   bbox_coordinates.clear();
 
   // Allocate data for bounding box tree
   bbox_tree.resize(N);
+  bbox_entities.resize(N);
   bbox_coordinates.resize(2*_gdim*N);
   for (unsigned int i = 0; i < N; ++i)
     bbox_tree[i] = -1;
+  for (unsigned int i = 0; i < N; ++i)
+    bbox_entities[i] = -1;
   for (unsigned int i = 0; i < 2*_gdim*N; ++i)
     bbox_coordinates[i] = 0.0;
 
@@ -174,7 +190,10 @@ void BoundingBoxTree::build(const std::vector<double> leaf_bboxes,
 
   // Reached leaf
   if (begin + 1 == end)
+  {
+    bbox_entities[node] = leaf_partition[begin];
     return;
+  }
 
   // Compute longest axis of bounding box
   const unsigned int longest_axis = compute_longest_axis(bbox);
@@ -274,5 +293,20 @@ unsigned int BoundingBoxTree::compute_longest_axis(const double* bbox) const
   cout << "longest axis is " << longest_axis << ": " << longest_axis_length << endl;
 
   return longest_axis;
+}
+//-----------------------------------------------------------------------------
+void BoundingBoxTree::find(const double* x,
+                           unsigned int node,
+                           std::vector<unsigned int>& entities) const
+{
+  if (!contains(x, node))
+    return;
+  else if (is_leaf(node))
+    entities.push_back(bbox_entities[node]);
+  else
+  {
+    find(x, 2*node + 1, entities);
+    find(x, 2*node + 2, entities);
+  }
 }
 //-----------------------------------------------------------------------------

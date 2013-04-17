@@ -24,6 +24,7 @@ import unittest
 
 from dolfin import BoundingBoxTree
 from dolfin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh
+from dolfin import Point
 
 class BoundingBoxTreeTest(unittest.TestCase):
 
@@ -53,5 +54,13 @@ if __name__ == "__main__":
     # FIXME: Temporary while testing
     mesh = UnitCubeMesh(3, 3, 3)
     tree = BoundingBoxTree(mesh)
+
+    p = Point(0.5, 0.5, 0.5)
+    entities = tree.find(p)
+
+    p = Point(0.1, 0.1, 0.1)
+    entities = tree.find(p)
+
+    print entities
 
     #unittest.main()
