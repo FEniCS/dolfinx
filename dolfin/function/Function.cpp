@@ -304,18 +304,18 @@ void Function::operator=(const FunctionAXPY& axpy)
                  "assign function",
                  "FunctionAXPY is empty.");
   }
-  
+
   // Make an initial assign and scale
   *this = *(axpy.pairs()[0].second);
   if (axpy.pairs()[0].first != 1.0)
     *_vector *= axpy.pairs()[0].first;
 
-  // Start from item 2 and axpy 
+  // Start from item 2 and axpy
   for (std::vector<std::pair<double, const Function*> >::const_iterator \
 	 it=axpy.pairs().begin()+1;
        it!=axpy.pairs().end(); it++)
     _vector->axpy(it->first, *(it->second->vector()));
-  
+
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const FunctionSpace> Function::function_space() const
@@ -469,7 +469,8 @@ std::size_t Function::value_dimension(std::size_t i) const
   return _function_space->element()->value_dimension(i);
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Array<double>& values, const Array<double>& x,
+void Function::eval(Array<double>& values,
+                    const Array<double>& x,
                     const ufc::cell& ufc_cell) const
 {
   dolfin_assert(_function_space);

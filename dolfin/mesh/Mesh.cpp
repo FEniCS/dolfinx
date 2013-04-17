@@ -481,7 +481,7 @@ int Mesh::intersected_cell(const Point& point) const
 {
   // CGAL needs mesh with more than 1 cell
   if (num_cells() > 1)
-    return  _intersection_operator.any_intersected_entity(point);
+    return _intersection_operator.any_intersected_entity(point);
 
   // Num cells == 1
   const Cell cell(*this, 0);
