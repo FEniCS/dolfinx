@@ -62,8 +62,9 @@ namespace dolfin
     ///         The number of the node (breadth-first numbering, see above).
     inline double* get_bbox(unsigned int node)
     {
-      dolfin_assert(2*_gdim*(node + 1) <= bbox_tree.size());
-      return bbox_tree.data() + 2*_gdim*node;
+      dolfin_assert(node < bbox_tree.size());
+      dolfin_assert(bbox_tree[node] >= 0);
+      return bbox_coordinates.data() + bbox_tree[node];
     }
 
     /// Get bounding box for given node in tree (const version)
@@ -73,8 +74,9 @@ namespace dolfin
     ///         The number of the node (breadth-first numbering, see above).
     inline const double* get_bbox(unsigned int node) const
     {
-      dolfin_assert(2*_gdim*(node + 1) <= bbox_tree.size());
-      return bbox_tree.data() + 2*_gdim*node;
+      dolfin_assert(node < bbox_tree.size());
+      dolfin_assert(bbox_tree[node] >= 0);
+      return bbox_coordinates.data() + bbox_tree[node];
     }
 
   private:
@@ -83,12 +85,12 @@ namespace dolfin
     void build(const Mesh& mesh, unsigned int dimension);
 
     // Build bounding box tree of list of bounding boxes (recursive)
-    void build(std::vector<double> bbox_tree,
+    void build(const std::vector<double> leaf_bboxes,
                std::vector<unsigned int> leaf_partition,
-               const std::vector<double> leaf_bboxes,
                unsigned int begin,
                unsigned int end,
-               unsigned int position);
+               unsigned int position,
+               unsigned int& pos);
 
     // Compute bounding box of mesh entity
     void compute_bbox(double* bbox,
@@ -111,10 +113,15 @@ namespace dolfin
 
     // The tree of bounding boxes, stored as a binary tree where the
     // two children of node i are numbered 2i + 1 and 2i + 2. Each
-    // node takes up 2*_gdim doubles in the list. These numbers are
+    // node is either index into the array of bounding box coordinates
+    // or -1 for nonexisting nodes.
+    std::vector<int> bbox_tree;
+
+    // A list of coordinates for all bounding boxes. Each bounding box
+    // is stored as 2*_gdim doubles in the list. These numbers are
     // first the _gdim minimum coordinate values and then the _gdim
     // corresponding maximum coordinate values for each axis.
-    std::vector<double> bbox_tree;
+    std::vector<double> bbox_coordinates;
 
   };
 

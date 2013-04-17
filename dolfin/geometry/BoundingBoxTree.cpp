@@ -107,9 +107,17 @@ void BoundingBoxTree::build(const Mesh& mesh, unsigned int dimension)
   for (; n < num_leaves; n *= 2);
   const unsigned int N = 2*n; // could subtract 1 here...
 
-  // Allocate data for bounding box tree
+  // Clear any old data
   bbox_tree.clear();
-  bbox_tree.resize(2*_gdim*N);
+  bbox_coordinates.clear();
+
+  // Allocate data for bounding box tree
+  bbox_tree.resize(N);
+  bbox_coordinates.resize(2*_gdim*N);
+  for (unsigned int i = 0; i < N; ++i)
+    bbox_tree[i] = -1;
+  for (unsigned int i = 0; i < 2*_gdim*N; ++i)
+    bbox_coordinates[i] = 0.0;
 
   // Build bounding boxes for leaves
   std::vector<double> leaf_bboxes(2*_gdim*num_leaves);
@@ -125,15 +133,16 @@ void BoundingBoxTree::build(const Mesh& mesh, unsigned int dimension)
     leaf_partition[i] = i;
 
   // Recursively build the bounding box tree from the leaves
-  build(bbox_tree, leaf_partition, leaf_bboxes, 0, num_leaves, 0);
+  unsigned int pos = 0;
+  build(leaf_bboxes, leaf_partition, 0, num_leaves, 0, pos);
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::build(const std::vector<double> bbox_tree,
+void BoundingBoxTree::build(const std::vector<double> leaf_bboxes,
                             std::vector<unsigned int> leaf_partition,
-                            const std::vector<double> leaf_bboxes,
                             unsigned int begin,
                             unsigned int end,
-                            unsigned int node)
+                            unsigned int node,
+                            unsigned int& pos)
 {
   dolfin_assert(begin < end);
 
@@ -142,6 +151,7 @@ void BoundingBoxTree::build(const std::vector<double> bbox_tree,
   info("node = %.3d", node);
   info("begin = %d", begin);
   info("end = %d", end);
+  info("pos = %d", pos);
 
   // FIXME: Debugging
   //for (unsigned int i = begin; i < end; i++)
@@ -152,6 +162,11 @@ void BoundingBoxTree::build(const std::vector<double> bbox_tree,
   //  const double z = 0.5*(_bbox[2] + _bbox[5]);
   //  cout << x << " " << y << " " << z << endl;
   //}
+
+  // Add bounding box to tree. The pos variable is used to step
+  // through the preallocated list of bounding box coordinates.
+  bbox_tree[node] = pos;
+  pos +=2*_gdim;
 
   // Compute bounding box
   double* bbox = get_bbox(node);
@@ -171,8 +186,8 @@ void BoundingBoxTree::build(const std::vector<double> bbox_tree,
   // Split boxes in two groups and call recursively
   const unsigned int pivot = (begin + end + 1) / 2;
   info("pivot = %d", pivot);
-  build(bbox_tree, leaf_partition, leaf_bboxes, begin, pivot, 2*node + 1);
-  build(bbox_tree, leaf_partition, leaf_bboxes, pivot, end,   2*node + 2);
+  build(leaf_bboxes, leaf_partition, begin, pivot, 2*node + 1, pos);
+  build(leaf_bboxes, leaf_partition, pivot, end,   2*node + 2, pos);
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::compute_bbox(double* bbox,
