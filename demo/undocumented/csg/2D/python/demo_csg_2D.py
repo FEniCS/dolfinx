@@ -27,8 +27,8 @@ if not has_cgal():
 
 # Define 2D geometry
 domain = Rectangle(0., 0., 5., 5.) - Rectangle(2., 1.25, 3., 1.75) - Circle(1, 4, .25) - Circle(4, 4, .25)
-domain.subdomain(Rectangle(1., 1., 4., 3.))
-domain.subdomain(Rectangle(2., 2., 3., 4.))
+domain.set_subdomain(1, Rectangle(1., 1., 4., 3.))
+domain.set_subdomain(2, Rectangle(2., 2., 3., 4.))
 
 
 # Test printing

@@ -26,7 +26,7 @@
 
 #include <cstddef>
 #include <vector>
-#include <deque>
+#include <list>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 
@@ -52,14 +52,15 @@ namespace dolfin
     /// Informal string representation
     virtual std::string str(bool verbose) const = 0;
 
-    std::size_t subdomain(boost::shared_ptr<CSGGeometry> s);
+    void set_subdomain(std::size_t i, boost::shared_ptr<CSGGeometry> s);
+    void set_subdomain(std::size_t i, CSGGeometry& s);
 
     enum Type { Box, Sphere, Cone, Tetrahedron, Surface3D, Circle, Ellipse, Rectangle, Polygon, Union, Intersection, Difference };
     virtual Type getType() const = 0;
 
     virtual bool is_operator() const = 0;
 
-    std::deque<boost::shared_ptr<const CSGGeometry> > subdomains;
+    std::list<std::pair<std::size_t, boost::shared_ptr<const CSGGeometry> > > subdomains;
   };
 
   

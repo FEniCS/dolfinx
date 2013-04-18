@@ -31,23 +31,39 @@ using namespace dolfin;
 int main()
 {
   // Define 2D geometry
-  Rectangle r(0.5, 0.5, 1.5, 1.5);
-  Circle c(1, 1, 1);
-  boost::shared_ptr<CSGGeometry> g2d = c - r;
+  // Rectangle r(0.5, 0.5, 1.5, 1.5);
+  // Circle c(1, 1, 1);
+  // boost::shared_ptr<CSGGeometry> g2d = c - r;
+
+  // Define 2D geometry
+  Rectangle r1(0., 0., 5., 5.);
+  Rectangle r2 (2., 1.25, 3., 1.75);
+  Circle c1(1, 4, .25);
+  Circle c2(4, 4, .25);
+  boost::shared_ptr<CSGGeometry> domain =  r1 - r2 - c1 - c2;
+
+  Rectangle s1(1., 1., 4., 3.);
+  domain->set_subdomain(1, s1);
+
+  Rectangle s2(2., 2., 3., 4.);
+  domain->set_subdomain(2, s2);
+
 
   // Test printing
   info("\nCompact output of 2D geometry:");
-  info(*g2d);
+  info(*domain);
   info("");
   info("\nVerbose output of 2D geometry:");
-  info(*g2d, true);
+  info(*domain, true);
 
   // Plot geometry
-  plot(g2d, "2D Geometry (boundary)");
+  plot(domain, "2D Geometry (boundary)");
 
   // Generate and plot mesh
-  Mesh mesh2d(g2d, 100);
+  Mesh mesh2d(domain, 100);
   plot(mesh2d, "2D mesh");
+  plot(mesh2d.domains().cell_domains(), "Subdomains");
+
 
   interactive();
   return 0;

@@ -355,7 +355,7 @@ void explore_subdomain(CDT &ct,
 //-----------------------------------------------------------------------------
 void explore_subdomains(CDT& cdt, 
                         const Nef_polyhedron_2& total_domain,
-                        const std::vector<Nef_polyhedron_2> &subdomain_geometries)
+                        const std::vector<std::pair<std::size_t, Nef_polyhedron_2> > &subdomain_geometries)
 {
   // Set counter to -1 for all faces
   for (CDT::Finite_faces_iterator it = cdt.finite_faces_begin(); it != cdt.finite_faces_end(); ++it)
@@ -394,9 +394,9 @@ void explore_subdomains(CDT& cdt,
 
       for (int i = subdomain_geometries.size(); i > 0; --i)
       {
-        if (!(subdomain_geometries[i-1]*p_polyhedron).is_empty())
+        if (!(subdomain_geometries[i-1].second*p_polyhedron).is_empty())
         {
-          f->set_counter(i);
+          f->set_counter(subdomain_geometries[i-1].first);
           break;
         } 
       }
@@ -471,7 +471,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
 
   add_subdomain(cdt, total_domain);
 
-  std::vector<Nef_polyhedron_2> subdomain_geometries(geometry.subdomains.size());
+  std::vector<std::pair<std::size_t, Nef_polyhedron_2> > subdomain_geometries(geometry.subdomains.size());
 
   cout << "Faces after adding total domain: " << cdt.number_of_faces() << endl;
 
@@ -485,17 +485,24 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   // Insert this first and mark the holes
 
   // Add the subdomains to the CDT
-  for (std::size_t i = geometry.subdomains.size(); i > 0; --i)
+
+  std::list<std::pair<std::size_t, boost::shared_ptr<const CSGGeometry> > >::const_iterator it;
+  std::size_t i = geometry.subdomains.size()-1;
+  for (it = geometry.subdomains.begin(); 
+       it != geometry.subdomains.end(); it++)
   {
     cout << "Adding subdomain to triangulation" << endl;
 
-    boost::shared_ptr<const CSGGeometry> current_subdomain = geometry.subdomains[i-1];
-    subdomain_geometries[i-1] = convertSubTree(current_subdomain.get())*total_domain;
-    const Nef_polyhedron_2& cgal_geometry = subdomain_geometries[i-1];
+    const std::size_t current_index = it->first;
+    boost::shared_ptr<const CSGGeometry> current_subdomain = it->second;
+    subdomain_geometries[i] = std::make_pair(current_index, convertSubTree(current_subdomain.get())*total_domain);
+    const Nef_polyhedron_2& cgal_geometry = subdomain_geometries[i].second;
 
     add_subdomain(cdt, cgal_geometry-overlaying);
 
     overlaying += cgal_geometry;
+
+    i--;
   }
 
   cout << "Number of faces: " << cdt.number_of_faces() << endl;
