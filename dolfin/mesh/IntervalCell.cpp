@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2011 Anders Logg
+// Copyright (C) 2006-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Kristian Oelgaard, 2007.
-// Modified by Kristoffer Selim, 2008.
-// Modified by Marie E. Rognes, 2011.
+// Modified by Kristian Oelgaard 2007
+// Modified by Kristoffer Selim 2008
+// Modified by Marie E. Rognes 2011
 //
 // First added:  2006-06-05
 // Last changed: 2013-04-18

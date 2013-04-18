@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2011 Anders Logg
+// Copyright (C) 2006-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Johan Hoffman, 2006.
-// Modified by Garth N. Wells, 2006.
-// Modified by Kristian Oelgaard, 2006.
-// Modified by Kristoffer Selim, 2008.
+// Modified by Johan Hoffman 2006
+// Modified by Garth N. Wells 2006
+// Modified by Kristian Oelgaard 2006
+// Modified by Kristoffer Selim 2008
 //
 // First added:  2006-06-05
-// Last changed: 2011-11-21
+// Last changed: 2013-04-18
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -601,6 +601,62 @@ void TetrahedronCell::order(Cell& cell,
       }
     }
   }
+}
+//-----------------------------------------------------------------------------
+bool TetrahedronCell::contains(const Cell& cell, const Point& p) const
+{
+  // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
+  // See also "Real-Time Collision Detection" by Christer Ericson.
+  //
+  // We express AP as a linear combination of the vectors AB, AC and
+  // AD. Point is inside triangle iff AP is a convex combination.
+
+  // Get the vertices as points
+  const MeshGeometry& geometry = cell.mesh().geometry();
+  const unsigned int* vertices = cell.entities(0);
+  Point p0 = geometry.point(vertices[0]);
+  Point p1 = geometry.point(vertices[1]);
+  Point p2 = geometry.point(vertices[2]);
+  Point p3 = geometry.point(vertices[3]);
+
+  // Compute vectors
+  Point v1 = p1 - p0;
+  Point v2 = p2 - p0;
+  Point v3 = p3 - p0;
+  Point v = p - p0;
+
+  // Compute entries of linear system
+  const double a11 = v1.dot(v1);
+  const double a12 = v1.dot(v2);
+  const double a13 = v1.dot(v3);
+  const double a22 = v2.dot(v2);
+  const double a23 = v2.dot(v3);
+  const double a33 = v3.dot(v3);
+  const double b1 = v.dot(v1);
+  const double b2 = v.dot(v2);
+  const double b3 = v.dot(v3);
+
+  // Compute subdeterminants
+  const double d11 = a22*a33 - a23*a23;
+  const double d12 = a12*a33 - a23*a13;
+  const double d13 = a12*a23 - a22*a13;
+  const double d22 = a11*a33 - a13*a13;
+  const double d23 = a11*a23 - a12*a13;
+  const double d33 = a11*a22 - a12*a12;
+
+  // Compute inverse of determinant determinant
+  const double inv_det = 1.0 / (a11*d11 - a12*d12 + a13*d13);
+
+  // Solve linear system
+  const double x1 = inv_det*( d11*b1 - d12*b2 + d13*b3);
+  const double x2 = inv_det*(-d12*b1 + d22*b2 - d23*b3);
+  const double x3 = inv_det*( d13*b1 - d23*b2 + d33*b3);
+
+  // Check if point is inside cell
+  return (x1 > -DOLFIN_EPS &&
+          x2 > -DOLFIN_EPS &&
+          x3 > -DOLFIN_EPS &&
+          x1 + x2 + x3 < 1.0 + DOLFIN_EPS);
 }
 //-----------------------------------------------------------------------------
 std::string TetrahedronCell::description(bool plural) const

@@ -435,7 +435,7 @@ bool TriangleCell::contains(const Cell& cell, const Point& p) const
   const double x1 = inv_det*( a22*b1 - a12*b2);
   const double x2 = inv_det*(-a12*b1 + a11*b2);
 
-  // Check if point is in triangle
+  // Check if point is inside
   return (x1 > -DOLFIN_EPS &&
           x2 > -DOLFIN_EPS &&
           x1 + x2 < 1.0 + DOLFIN_EPS);
