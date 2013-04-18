@@ -19,7 +19,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2007-12-12
-// Last changed: 2010-01-15
+// Last changed: 2013-04-18
 
 #ifndef __POINT_CELL_H
 #define __POINT_CELL_H
@@ -81,6 +81,9 @@ namespace dolfin
 
     /// Order entities locally
     void order(Cell& cell) const;
+
+    /// Check whether given point is contained in cell
+    bool contains(const Cell& cell, const Point& p) const;
 
     /// Return description of cell type
     std::string description(bool plural) const;

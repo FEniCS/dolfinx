@@ -20,7 +20,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2013-02-20
+// Last changed: 2013-04-18
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
@@ -129,6 +129,9 @@ namespace dolfin
     /// Check if entities are ordered
     bool ordered(const Cell& cell,
                  const std::vector<std::size_t>& local_to_global_vertex_indices) const;
+
+    /// Check whether given point is contained in cell
+    virtual bool contains(const Cell& cell, const Point& p) const = 0;
 
     /// Return description of cell type
     virtual std::string description(bool plural) const = 0;
