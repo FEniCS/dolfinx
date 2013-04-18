@@ -26,6 +26,8 @@
 namespace dolfin
 {
 
+  class BoundingBoxTree;
+
   /// This class represents an intersection between a _Mesh_ and a
   /// _Point_. The resulting intersection is stored as a list of zero
   /// or more cells.
@@ -40,14 +42,25 @@ namespace dolfin
     /// Destructor
     ~MeshPointIntersection();
 
+    /// Update intersection for new point
+    void update(const Point& point);
+
     /// Return the list of (local) indices for intersected cells
     const std::vector<unsigned int>& intersected_cells() const
     { return _intersected_cells; }
 
   private:
 
-    /// The list of (local) indices for intersected cells
+    // The list of (local) indices for intersected cells
     std::vector<unsigned int> _intersected_cells;
+
+    // FIXME: Cache bbtree as part of the mesh class?
+
+    // The mesh
+    const Mesh& mesh;
+
+    // Bounding box tree
+    BoundingBoxTree bbtree;
 
     // Compute intersection
     void compute_intersection(const Mesh& mesh, const Point& point);

@@ -37,8 +37,8 @@ class BoundingBoxTreeTest(unittest.TestCase):
         mesh = UnitIntervalMesh(16)
 
         for dim in range(1, 2):
-            tree = BoundingBoxTree(mesh, dim)
-            entities = tree.find(p)
+            bbtree = BoundingBoxTree(mesh, dim)
+            entities = bbtree.find(p)
             self.assertEqual(sorted(entities), reference[dim])
 
     def test_unit_square(self):
@@ -51,8 +51,8 @@ class BoundingBoxTreeTest(unittest.TestCase):
         mesh = UnitSquareMesh(16, 16)
 
         for dim in range(1, 3):
-            tree = BoundingBoxTree(mesh, dim)
-            entities = tree.find(p)
+            bbtree = BoundingBoxTree(mesh, dim)
+            entities = bbtree.find(p)
             self.assertEqual(sorted(entities), reference[dim])
 
     def test_unit_cube(self):
@@ -66,8 +66,8 @@ class BoundingBoxTreeTest(unittest.TestCase):
         mesh = UnitCubeMesh(8, 8, 8)
 
         for dim in range(1, 4):
-            tree = BoundingBoxTree(mesh, dim)
-            entities = tree.find(p)
+            bbtree = BoundingBoxTree(mesh, dim)
+            entities = bbtree.find(p)
             self.assertEqual(sorted(entities), reference[dim])
 
 if __name__ == "__main__":

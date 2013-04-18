@@ -28,8 +28,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MeshPointIntersection::MeshPointIntersection(const Mesh& mesh,
                                              const Point& point)
+  : mesh(mesh), bbtree(mesh)
 {
-  compute_intersection(mesh, point);
+  compute_intersection(point);
 }
 //-----------------------------------------------------------------------------
 MeshPointIntersection::~MeshPointIntersection()
@@ -37,16 +38,18 @@ MeshPointIntersection::~MeshPointIntersection()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MeshPointIntersection::compute_intersection(const Mesh& mesh,
-                                                 const Point& point)
+void update(const Point& point)
+{
+  _intersected_cells.clear();
+  compute_intersection(point);
+}
+//-----------------------------------------------------------------------------
+void MeshPointIntersection::compute_intersection(const Point& point)
 {
   dolfin_assert(_intersected_cells.size() == 0);
 
-  // Compute bounding box tree for mesh
-  BoundingBoxTree tree(mesh);
-
   // Compute list of candidates for intersection
-  std::vector<unsigned int> cell_candidates = tree.find(point);
+  std::vector<unsigned int> cell_candidates = bbtree.find(point);
 
   // Extract subset of intersecting cells
   for (unsigned int i = 0; i < cell_candidates.size(); ++i)
