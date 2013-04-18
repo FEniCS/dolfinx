@@ -1,6 +1,7 @@
 """This demo program uses of the interface to TAO solver for variational inequalities 
- to solve a contact mechanics problems in FEnics. 
-The example considers a heavy elastic circle in a box of the same size"""
+ to solve a contact mechanics problem in FEnics. 
+ The example considers a heavy elastic circle in a box of the same size
+ """
 # Copyright (C) 2012 Corrado Maurini
 #
 # This file is part of DOLFIN.
@@ -21,12 +22,16 @@ The example considers a heavy elastic circle in a box of the same size"""
 # Modified by Corrado Maurini 2013
 #
 # First added:  2012-09-03
-# Last changed: 2013-03-20
+# Last changed: 2013-04-15
 # 
 from dolfin import *
 
-# Create mesh
-mesh = UnitCircleMesh(30)
+if not has_tao():
+    print "DOLFIN must be compiled with TAO to run this demo."
+    exit(0)
+     
+# Create mesh (use cgal if available)
+mesh = UnitCircleMesh(50)
 
 # Create function space
 V = VectorFunctionSpace(mesh, "Lagrange", 1)
@@ -37,7 +42,7 @@ u, w = TrialFunction(V), TestFunction(V)
 # Elasticity parameters
 E, nu = 10.0, 0.3
 mu, lmbda = Constant(E/(2.0*(1.0 + nu))), Constant(E*nu/((1.0 + nu)*(1.0 -2.0*nu)))
-f = Constant((0.,-.4))
+f = Constant((0.,-.1))
 
 # Stress and strains
 def eps(u):
@@ -67,15 +72,15 @@ u_max = interpolate(constraint_u, V)
 usol=Function(V)
 
 # Create the TAOLinearBoundSolver
-solver=TAOLinearBoundSolver("tao_tron","gmres")
+solver=TAOLinearBoundSolver("tao_tron","tfqmr")
 
 #Set some parameters
-solver.parameters["monitor_convergence"]=False
+solver.parameters["monitor_convergence"]=True
 solver.parameters["report"]=True
-solver.parameters["krylov_solver"]["absolute_tolerance"] = 1e-8
-solver.parameters["krylov_solver"]["relative_tolerance"] = 1e-8
+solver.parameters["krylov_solver"]["absolute_tolerance"] = 1e-7
+solver.parameters["krylov_solver"]["relative_tolerance"] = 1e-7
 solver.parameters["krylov_solver"]["monitor_convergence"]= False
-# info(solver.parameters,True) # Uncomment this line to see the available parameters
+info(solver.parameters,True) # Uncomment this line to see the available parameters
 
 # Solve the problem
 solver.solve(A, usol.vector(), b , u_min.vector(), u_max.vector())

@@ -94,7 +94,7 @@ std::size_t MUMPSLUSolver::solve(GenericVector& x, const GenericVector& b)
 
   // Matrix symmetry (0=non-symmetric, 2=symmetric postitve defn, 2=symmetric)
   data.sym = 0;
-  if (parameters["symmetric_operator"])
+  if (parameters["symmetric"])
     data.sym = 2;
 
   // Initialise MUMPS

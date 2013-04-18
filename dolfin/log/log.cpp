@@ -206,7 +206,7 @@ void dolfin::not_working_in_parallel(std::string what)
                  "perform operation in parallel",
                  "%s is not yet working in parallel.\n"
                  "***          Consider filing a bug report at %s",
-                 what.c_str(), "https://bugs.launchpad.net/dolfin");
+                 what.c_str(), "https://bitbucket.org/fenics-project/dolfin/issues");
   }
 }
 //-----------------------------------------------------------------------------
