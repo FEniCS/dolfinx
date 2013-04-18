@@ -83,6 +83,9 @@ namespace dolfin
     void order(Cell& cell,
                const std::vector<std::size_t>& local_to_global_vertex_indices) const;
 
+    /// Check whether given point is contained in cell
+    bool contains(const Cell& cell, const Point& p) const;
+
     /// Return description of cell type
     std::string description(bool plural) const;
 

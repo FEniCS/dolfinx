@@ -383,13 +383,6 @@ void TriangleCell::order(Cell& cell,
   }
 }
 //-----------------------------------------------------------------------------
-std::string TriangleCell::description(bool plural) const
-{
-  if (plural)
-    return "triangles";
-  return "triangle";
-}
-//-----------------------------------------------------------------------------
 std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const
 {
   // Get vertices and edges
@@ -418,16 +411,64 @@ double TriangleCell::radius_ratio(const Cell& triangle) const
 {
   // See Jonathan Richard Shewchuk: What Is a Good Linear Finite Element?,
   // online: http://www.cs.berkeley.edu/~jrs/papers/elemj.pdf
-  
+
   const double S = volume(triangle);
-  
+
   // Handle degenerate case
   if (S == 0.0) {return 0.0;}
-  
+
   const double a = facet_area(triangle, 0);
   const double b = facet_area(triangle, 1);
   const double c = facet_area(triangle, 2);
-  
+
   return 16.0*S*S/(a*b*c*(a+b+c));
+}
+//-----------------------------------------------------------------------------
+bool TriangleCell::contains(const Cell& cell, const Point& p) const
+{
+  // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
+  // See also "Real-Time Collision Detection" by Christer Ericson.
+  //
+  // We express AP as a linear combination of the vectors AB and
+  // AC. Point is inside triangle iff AP is a convex combination.
+  //
+  // Note: This function may be optimized to take into account that
+  // only 2D vectors and inner products need to be computed.
+
+  // Get the three vertices as points
+  const MeshGeometry& geometry = cell.mesh().geometry();
+  const unsigned int* vertices = cell.entities(0);
+  Point p0 = geometry.point(vertices[0]);
+  Point p1 = geometry.point(vertices[1]);
+  Point p2 = geometry.point(vertices[2]);
+
+  // Compute vectors
+  Point v1 = p1 - p0;
+  Point v2 = p2 - p0;
+  Point v = p - p0;
+
+  // Compute entries of linear system
+  const double a11 = v1.dot(v1);
+  const double a12 = v1.dot(v2);
+  const double a22 = v2.dot(v2);
+  const double b1 = v.dot(v1);
+  const double b2 = v.dot(v2);
+
+  // Solve linear system
+  const double inv_det = 1.0 / (a11*a22 - a12*a12);
+  const double x1 = inv_det*( a22*b1 - a12*b2);
+  const double x2 = inv_det*(-a12*b1 + a11*b2);
+
+  // Check if point is in triangle
+  return (x1 >= -DOLFIN_EPS &&
+          x2 >= -DOLFIN_EPS &&
+          x1 + x2 <= 1.0 + DOLFIN_EPS);
+}
+//-----------------------------------------------------------------------------
+std::string TriangleCell::description(bool plural) const
+{
+  if (plural)
+    return "triangles";
+  return "triangle";
 }
 //-----------------------------------------------------------------------------
