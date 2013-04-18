@@ -18,7 +18,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2010-01-15
+// Last changed: 2013-04-18
 
 #ifndef __INTERVAL_CELL_H
 #define __INTERVAL_CELL_H
@@ -84,6 +84,9 @@ namespace dolfin
     /// Order entities locally
     void order(Cell& cell,
                const std::vector<std::size_t>& local_to_global_vertex_indices) const;
+
+    /// Check whether given point is contained in cell
+    bool contains(const Cell& cell, const Point& p) const;
 
     /// Return description of cell type
     std::string description(bool plural) const;

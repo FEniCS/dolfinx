@@ -20,7 +20,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2006-06-05
-// Last changed: 2011-11-14
+// Last changed: 2013-04-18
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -227,6 +227,18 @@ void IntervalCell::order(Cell& cell,
     unsigned int* cell_vertices = const_cast<unsigned int*>(cell.entities(0));
     sort_entities(2, cell_vertices, local_to_global_vertex_indices);
   }
+}
+//-----------------------------------------------------------------------------
+bool IntervalCell::contains(const Cell& cell, const Point& p) const
+{
+  // Get the vertices as points
+  const MeshGeometry& geometry = cell.mesh().geometry();
+  const unsigned int* vertices = cell.entities(0);
+  Point p0 = geometry.point(vertices[0]);
+  Point p1 = geometry.point(vertices[1]);
+
+  return ((p.x() > p0.x() - DOLFIN_EPS && p.x() < p1.x() + DOLFIN_EPS) ||
+          (p.x() > p1.x() - DOLFIN_EPS && p.x() < p0.x() + DOLFIN_EPS));
 }
 //-----------------------------------------------------------------------------
 std::string IntervalCell::description(bool plural) const

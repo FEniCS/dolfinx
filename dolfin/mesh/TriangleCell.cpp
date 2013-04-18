@@ -22,7 +22,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2013-02-21
+// Last changed: 2013-04-18
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -383,30 +383,6 @@ void TriangleCell::order(Cell& cell,
   }
 }
 //-----------------------------------------------------------------------------
-std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const
-{
-  // Get vertices and edges
-  const unsigned int* v = cell.entities(0);
-  const unsigned int* e = cell.entities(1);
-  dolfin_assert(v);
-  dolfin_assert(e);
-
-  // Look for edge satisfying ordering convention
-  for (std::size_t j = 0; j < 3; j++)
-  {
-    const unsigned int* ev = cell.mesh().topology()(1, 0)(e[j]);
-    dolfin_assert(ev);
-    if (ev[0] != v[i] && ev[1] != v[i])
-      return j;
-  }
-
-  // We should not reach this
-  dolfin_error("TriangleCell.cpp",
-               "find specified edge in cell",
-               "Edge really not found");
-  return 0;
-}
-//-----------------------------------------------------------------------------
 double TriangleCell::radius_ratio(const Cell& triangle) const
 {
   // See Jonathan Richard Shewchuk: What Is a Good Linear Finite Element?,
@@ -421,7 +397,7 @@ double TriangleCell::radius_ratio(const Cell& triangle) const
   const double b = facet_area(triangle, 1);
   const double c = facet_area(triangle, 2);
 
-  return 16.0*S*S/(a*b*c*(a+b+c));
+  return 16.0*S*S / (a*b*c*(a+b+c));
 }
 //-----------------------------------------------------------------------------
 bool TriangleCell::contains(const Cell& cell, const Point& p) const
@@ -435,7 +411,7 @@ bool TriangleCell::contains(const Cell& cell, const Point& p) const
   // Note: This function may be optimized to take into account that
   // only 2D vectors and inner products need to be computed.
 
-  // Get the three vertices as points
+  // Get the vertices as points
   const MeshGeometry& geometry = cell.mesh().geometry();
   const unsigned int* vertices = cell.entities(0);
   Point p0 = geometry.point(vertices[0]);
@@ -460,9 +436,9 @@ bool TriangleCell::contains(const Cell& cell, const Point& p) const
   const double x2 = inv_det*(-a12*b1 + a11*b2);
 
   // Check if point is in triangle
-  return (x1 >= -DOLFIN_EPS &&
-          x2 >= -DOLFIN_EPS &&
-          x1 + x2 <= 1.0 + DOLFIN_EPS);
+  return (x1 > -DOLFIN_EPS &&
+          x2 > -DOLFIN_EPS &&
+          x1 + x2 < 1.0 + DOLFIN_EPS);
 }
 //-----------------------------------------------------------------------------
 std::string TriangleCell::description(bool plural) const
@@ -470,5 +446,29 @@ std::string TriangleCell::description(bool plural) const
   if (plural)
     return "triangles";
   return "triangle";
+}
+//-----------------------------------------------------------------------------
+std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const
+{
+  // Get vertices and edges
+  const unsigned int* v = cell.entities(0);
+  const unsigned int* e = cell.entities(1);
+  dolfin_assert(v);
+  dolfin_assert(e);
+
+  // Look for edge satisfying ordering convention
+  for (std::size_t j = 0; j < 3; j++)
+  {
+    const unsigned int* ev = cell.mesh().topology()(1, 0)(e[j]);
+    dolfin_assert(ev);
+    if (ev[0] != v[i] && ev[1] != v[i])
+      return j;
+  }
+
+  // We should not reach this
+  dolfin_error("TriangleCell.cpp",
+               "find specified edge in cell",
+               "Edge really not found");
+  return 0;
 }
 //-----------------------------------------------------------------------------
