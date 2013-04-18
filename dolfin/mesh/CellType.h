@@ -131,7 +131,7 @@ namespace dolfin
                  const std::vector<std::size_t>& local_to_global_vertex_indices) const;
 
     /// Check whether given point is contained in cell
-    virtual bool contains(const Cell& cell, const Point& p) const = 0;
+    virtual bool contains(const Cell& cell, const Point& point) const = 0;
 
     /// Return description of cell type
     virtual std::string description(bool plural) const = 0;

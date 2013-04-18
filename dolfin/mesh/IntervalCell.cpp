@@ -229,16 +229,17 @@ void IntervalCell::order(Cell& cell,
   }
 }
 //-----------------------------------------------------------------------------
-bool IntervalCell::contains(const Cell& cell, const Point& p) const
+bool IntervalCell::contains(const Cell& cell, const Point& point) const
 {
-  // Get the vertices as points
+  // Get coordinates
   const MeshGeometry& geometry = cell.mesh().geometry();
   const unsigned int* vertices = cell.entities(0);
-  Point p0 = geometry.point(vertices[0]);
-  Point p1 = geometry.point(vertices[1]);
+  const double x0 = geometry.point(vertices[0])[0];
+  const double x1 = geometry.point(vertices[1])[0];
+  const double x = point.x();
 
-  return ((p.x() > p0.x() - DOLFIN_EPS && p.x() < p1.x() + DOLFIN_EPS) ||
-          (p.x() > p1.x() - DOLFIN_EPS && p.x() < p0.x() + DOLFIN_EPS));
+  return ((x > x0 - DOLFIN_EPS && x < x1 + DOLFIN_EPS) ||
+          (x > x1 - DOLFIN_EPS && x < x0 + DOLFIN_EPS));
 }
 //-----------------------------------------------------------------------------
 std::string IntervalCell::description(bool plural) const

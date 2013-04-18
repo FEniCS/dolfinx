@@ -150,7 +150,7 @@ void PointCell::order(Cell& cell,
                "Ordering of a point cell is not defined");
 }
 //-----------------------------------------------------------------------------
-bool PointCell::contains(const Cell& cell, const Point& p) const
+bool PointCell::contains(const Cell& cell, const Point& point) const
 {
   dolfin_error("PointCell.cpp",
                "check whether point is contained in cell.",

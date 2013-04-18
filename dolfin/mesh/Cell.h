@@ -21,7 +21,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-01
-// Last changed: 2013-02-21
+// Last changed: 2013-04-18
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -140,7 +140,7 @@ namespace dolfin
     {
       // We would need facet areas
       _mesh->init(_mesh->type().dim() - 1);
-      
+
       return _mesh->type().inradius(*this);
     }
 
@@ -168,7 +168,7 @@ namespace dolfin
     {
       // We would need facet areas
       _mesh->init(_mesh->type().dim() - 1);
-      
+
       return _mesh->type().radius_ratio(*this);
     }
 
@@ -234,9 +234,21 @@ namespace dolfin
     ///
     /// *Returns*
     ///     bool
-    ///         True if ordered.
+    ///         True iff ordered.
     bool ordered(const std::vector<std::size_t>& local_to_global_vertex_indices) const
     { return _mesh->type().ordered(*this, local_to_global_vertex_indices); }
+
+    /// Check whether given point is contained in cell
+    ///
+    /// *Arguments*
+    ///     point (_Point_)
+    ///         The point to be checked.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True iff point is contained in cell.
+    bool contains(const Point& point) const
+    { return _mesh->type().contains(*this, point); }
 
   };
 

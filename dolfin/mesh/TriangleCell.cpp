@@ -400,7 +400,7 @@ double TriangleCell::radius_ratio(const Cell& triangle) const
   return 16.0*S*S / (a*b*c*(a+b+c));
 }
 //-----------------------------------------------------------------------------
-bool TriangleCell::contains(const Cell& cell, const Point& p) const
+bool TriangleCell::contains(const Cell& cell, const Point& point) const
 {
   // Algorithm from http://www.blackpawn.com/texts/pointinpoly/
   // See also "Real-Time Collision Detection" by Christer Ericson.
@@ -421,7 +421,7 @@ bool TriangleCell::contains(const Cell& cell, const Point& p) const
   // Compute vectors
   Point v1 = p1 - p0;
   Point v2 = p2 - p0;
-  Point v = p - p0;
+  Point v = point - p0;
 
   // Compute entries of linear system
   const double a11 = v1.dot(v1);
