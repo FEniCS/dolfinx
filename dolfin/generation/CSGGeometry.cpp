@@ -54,9 +54,7 @@ void CSGGeometry::set_subdomain(std::size_t i, boost::shared_ptr<CSGGeometry> s)
        warning("Double declaration of CSG subdomain with index %u.", i);
 
        // Remove existing declaration
-       std::list<std::pair<std::size_t, boost::shared_ptr<const CSGGeometry> > >::iterator tmp = it;
-       it++;
-       subdomains.erase(tmp);
+       it = subdomains.erase(it);
     }
     else
       ++it;
