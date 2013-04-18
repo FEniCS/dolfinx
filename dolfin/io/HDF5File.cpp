@@ -233,10 +233,6 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction, const std::stri
 {
   const Mesh& mesh = meshfunction.mesh();
 
-  // Initialise if called from MeshFunction constructor with filename argument
-  if(meshfunction.size() == 0)
-    meshfunction.init(meshfunction.dim());
-
   dolfin_assert(hdf5_file_open);
   
   const std::vector<std::string> _dataset_list =
@@ -282,6 +278,11 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction, const std::stri
   const std::size_t vert_per_cell = topology_dim[1];
   const std::size_t cell_dim = vert_per_cell - 1;
 
+  // Initialise if called from MeshFunction constructor with filename argument
+  if(meshfunction.size() == 0)
+    meshfunction.init(cell_dim);
+
+  // Otherwise, pre-existing MeshFunction must have correct dimension
   if(cell_dim != meshfunction.dim())
   {
     dolfin_error("HDF5File.cpp",
