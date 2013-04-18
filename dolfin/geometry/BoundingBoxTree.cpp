@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-04-17
+// Last changed: 2013-04-18
 
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshGeometry.h>
@@ -279,6 +279,10 @@ void BoundingBoxTree::find(const double* x,
                            unsigned int node,
                            std::vector<unsigned int>& entities) const
 {
+  // Three cases: either the point is not contained (so skip branch),
+  // or it's contained in a leaf (so add it) or it's contained in the
+  // bounding box (so search the two children).
+
   if (!contains(x, node))
     return;
   else if (is_leaf(node))
