@@ -38,7 +38,7 @@ MeshPointIntersection::~MeshPointIntersection()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void update(const Point& point)
+void MeshPointIntersection::update(const Point& point)
 {
   _intersected_cells.clear();
   compute_intersection(point);

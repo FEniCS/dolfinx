@@ -63,7 +63,7 @@ namespace dolfin
     BoundingBoxTree bbtree;
 
     // Compute intersection
-    void compute_intersection(const Mesh& mesh, const Point& point);
+    void compute_intersection(const Point& point);
 
   };
 
