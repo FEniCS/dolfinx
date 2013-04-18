@@ -21,7 +21,7 @@
 # Modified by Garth N. Wells 2009-2011
 #
 # First added:  2006-08-09
-# Last changed: 2012-09-25
+# Last changed: 2013-04-18
 
 import sys, os, re
 import platform
@@ -49,7 +49,7 @@ tests = {
     "nls":            ["PETScSNESSolver","TAOLinearBoundSolver"],
     "math":           ["test"],
     "meshconvert":    ["test"],
-    "mesh":           ["Edge", "Face", "MeshData", "MeshEditor",
+    "mesh":           ["Cell", "Edge", "Face", "MeshData", "MeshEditor",
                        "MeshFunction", "MeshIterator", "MeshMarkers",
                        "MeshValueCollection", "BoundaryMesh", "Mesh", "SubMesh"],
     "parameter":      ["Parameters"],
