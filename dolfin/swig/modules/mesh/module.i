@@ -100,6 +100,7 @@
 
 // #include types from geometry submodule
 #include "dolfin/geometry/BoundingBoxTree.h"
+#include "dolfin/geometry/MeshPointIntersection.h"
 
 // #include types from generation submodule
 #include "dolfin/generation/PolygonalMeshGenerator.h"
@@ -242,6 +243,7 @@ import_array();
 
 // %include types from submodule geometry
 %include "dolfin/geometry/BoundingBoxTree.h"
+%include "dolfin/geometry/MeshPointIntersection.h"
 
 // %include types from submodule generation
 %include "dolfin/generation/PolygonalMeshGenerator.h"

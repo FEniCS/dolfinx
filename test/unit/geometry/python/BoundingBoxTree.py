@@ -1,4 +1,4 @@
-"""Unit test for BoundingBoxTree"""
+"""Unit tests for BoundingBoxTree"""
 
 # Copyright (C) 2013 Anders Logg
 #
@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-15
-# Last changed: 2013-04-17
+# Last changed: 2013-04-18
 
 import unittest
 
