@@ -32,6 +32,11 @@ MeshPointIntersection::MeshPointIntersection(const Mesh& mesh,
   compute_intersection(mesh, point);
 }
 //-----------------------------------------------------------------------------
+MeshPointIntersection::~MeshPointIntersection()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 void MeshPointIntersection::compute_intersection(const Mesh& mesh,
                                                  const Point& point)
 {

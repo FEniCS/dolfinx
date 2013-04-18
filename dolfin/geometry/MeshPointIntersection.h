@@ -37,6 +37,9 @@ namespace dolfin
     /// Create (and compute) intersection between mesh and point
     MeshPointIntersection(const Mesh& mesh, const Point& point);
 
+    /// Destructor
+    ~MeshPointIntersection();
+
     /// Return the list of (local) indices for intersected cells
     const std::vector<unsigned int>& intersected_cells() const
     { return _intersected_cells; }

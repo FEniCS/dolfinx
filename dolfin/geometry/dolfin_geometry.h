@@ -5,5 +5,6 @@
 
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/MeshPointIntersection.h>
+#include <dolfin/geometry/intersect.h>
 
 #endif

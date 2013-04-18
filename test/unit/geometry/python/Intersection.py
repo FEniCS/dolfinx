@@ -22,7 +22,7 @@
 
 import unittest
 
-from dolfin import MeshPointIntersection
+from dolfin import intersect
 from dolfin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh
 from dolfin import Point
 
@@ -34,7 +34,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
         point = Point(0.1)
         mesh = UnitIntervalMesh(16)
 
-        intersection = MeshPointIntersection(mesh, point)
+        intersection = intersect(mesh, point)
 
         self.assertEqual(intersection.intersected_cells(), [1])
 
@@ -44,7 +44,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
         point = Point(0.1, 0.2)
         mesh = UnitSquareMesh(16, 16)
 
-        intersection = MeshPointIntersection(mesh, point)
+        intersection = intersect(mesh, point)
 
         self.assertEqual(intersection.intersected_cells(), [98])
 
@@ -54,7 +54,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
         point = Point(0.1, 0.2, 0.3)
         mesh = UnitCubeMesh(8, 8, 8)
 
-        intersection = MeshPointIntersection(mesh, point)
+        intersection = intersect(mesh, point)
 
         self.assertEqual(intersection.intersected_cells(), [816])
 
