@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First Added: 2012-09-21
-// Last Changed: 2013-04-15
+// Last Changed: 2013-04-18
 
 #include <boost/filesystem.hpp>
 
@@ -170,25 +170,25 @@ bool HDF5Interface::has_dataset(const hid_t hdf5_file_handle,
 void HDF5Interface::add_group(const hid_t hdf5_file_handle,
                               const std::string group_name)
 {
+  std::string _group_name(group_name);
 
   // Cannot create the root level group
-  if(group_name.size() == 0 || group_name == "/")
+  if(_group_name.size() == 0 || _group_name == "/")
     return;
 
   // Prepend a slash if missing
-  // FIXME: should this issue a warning?
-  if(group_name[0] != '/')
-    dolfin_error("HDF5Interface.cpp",
-                 "add group",
-                 "Group name '%s' should start with '/'", group_name.c_str());
+  if(_group_name[0] != '/')
+  {
+    _group_name = "/" + _group_name;
+  }
   
   // Starting from the root level, check and create groups if needed
   std::size_t pos=0;
   while(pos != std::string::npos)
   {
     pos++;
-    pos = group_name.find('/', pos);
-    const std::string parent_name(group_name, 0, pos);
+    pos = _group_name.find('/', pos);
+    const std::string parent_name(_group_name, 0, pos);
     
     if(!has_group(hdf5_file_handle, parent_name))
     {
