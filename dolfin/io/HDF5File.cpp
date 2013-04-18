@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-04-10
+// Last changed: 2013-04-18
 
 #ifdef HAS_HDF5
 
@@ -231,8 +231,11 @@ void HDF5File::read(MeshFunction<double>& meshfunction, const std::string name)
 template <typename T>
 void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction, const std::string mesh_name)
 {
-
   const Mesh& mesh = meshfunction.mesh();
+
+  // Initialise if called from MeshFunction constructor with filename argument
+  if(meshfunction.size() == 0)
+    meshfunction.init(meshfunction.dim());
 
   dolfin_assert(hdf5_file_open);
   
