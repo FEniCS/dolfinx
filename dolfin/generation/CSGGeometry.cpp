@@ -46,15 +46,20 @@ void CSGGeometry::set_subdomain(std::size_t i, boost::shared_ptr<CSGGeometry> s)
   }
 
   // Check if i already used
-  std::list<std::pair<std::size_t, boost::shared_ptr<const CSGGeometry> > >::iterator it;
-  for (it = subdomains.begin(); it != subdomains.end(); ++it)
+  std::list<std::pair<std::size_t, boost::shared_ptr<const CSGGeometry> > >::iterator it = subdomains.begin();
+  while (it != subdomains.end())
   {
     if (it->first == i)
     {
-      warning("Double declaration of CSG subdomain with index %u.", i);
-      // Remove old declaration
-      subdomains.erase(it);
+       warning("Double declaration of CSG subdomain with index %u.", i);
+
+       // Remove existing declaration
+       std::list<std::pair<std::size_t, boost::shared_ptr<const CSGGeometry> > >::iterator tmp = it;
+       it++;
+       subdomains.erase(tmp);
     }
+    else
+      ++it;
   }
 
   subdomains.push_back(std::make_pair(i, s));
