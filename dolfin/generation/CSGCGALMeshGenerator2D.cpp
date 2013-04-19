@@ -169,20 +169,6 @@ CSGCGALMeshGenerator2D::CSGCGALMeshGenerator2D(const CSGGeometry& geometry)
   //subdomains.push_back(reference_to_no_delete_pointer(geometry));
 }
 //-----------------------------------------------------------------------------
-// CSGCGALMeshGenerator2D::CSGCGALMeshGenerator2D(const std::vector<boost::shared_ptr<const CSGGeometry> >& subdomains)
-//   : subdomains(subdomains)
-// {
-//   parameters = default_parameters();
-// }
-
-void print_face(CDT::Face_handle f)
-{
-  std::cout << "Face: (" << f->vertex(0)->point() << "), (" 
-            << f->vertex(1)->point() << "), ("
-            << f->vertex(2)->point() << ")" << std::endl;
-}
-
-//-----------------------------------------------------------------------------
 CSGCGALMeshGenerator2D::~CSGCGALMeshGenerator2D() {}
 //-----------------------------------------------------------------------------
 Nef_polyhedron_2 make_circle(const Circle* c)
@@ -302,19 +288,6 @@ static Nef_polyhedron_2 convertSubTree(const CSGGeometry *geometry)
   return Nef_polyhedron_2();
 }
 //-----------------------------------------------------------------------------
-// bool point_inside_polyhedron(Point_2 p, Nef_polyhedron_2 &nef)
-// {
-//     // Construct a nef_polyhedron consisting of a single point
-//     // TODO: Is there a better way of querying if points are inside
-//     // nef polyhedrons?
-//     Nef_point_2 p(p[0], p[1]);
-//     Nef_polyhedron_2 p_nef(&p, (&p)+1);
-
-//     return !(nef*p_nef).is_empty();
-// }
-
-
-//-----------------------------------------------------------------------------
 void explore_subdomain(CDT &ct,
                         CDT::Face_handle start, 
                         std::list<CDT::Face_handle>& other_domains)
@@ -412,12 +385,9 @@ void add_subdomain(CDT& cdt, const Nef_polyhedron_2& cgal_geometry)
   Explorer explorer = cgal_geometry.explorer();
   for (Face_const_iterator fit = explorer.faces_begin() ; fit != explorer.faces_end(); fit++)
   {
-    cout << "Insert face into triangulation" << endl;
-
     // Skip face if it is not part of polygon
     if (!explorer.mark(fit))
     {
-      cout << "Skipping!" << endl;
       continue;
     }
 
@@ -431,7 +401,6 @@ void add_subdomain(CDT& cdt, const Nef_polyhedron_2& cgal_geometry)
           
       Point_2 pb(CGAL::to_double(hafc->next()->vertex()->point().x()),
                  CGAL::to_double(hafc->next()->vertex()->point().y()));
-      std::cout << "pa = (" << pa << "), pb = (" << pb << ")" << std::endl;
       Vertex_handle vb = cdt.insert(pb);
 
       cdt.insert_constraint(va, vb);
@@ -441,8 +410,6 @@ void add_subdomain(CDT& cdt, const Nef_polyhedron_2& cgal_geometry)
     Hole_const_iterator hit = explorer.holes_begin(fit);
     for (; hit != explorer.holes_end(fit); hit++)
     {
-      cout << "Inserting hole to triangulation" << endl;
-
       Halfedge_around_face_const_circulator hafc1(hit), done1(hit);
       do
       {
@@ -453,7 +420,6 @@ void add_subdomain(CDT& cdt, const Nef_polyhedron_2& cgal_geometry)
         Point_2 pb(CGAL::to_double(hafc1->next()->vertex()->point().x()),
                    CGAL::to_double(hafc1->next()->vertex()->point().y()));
         Vertex_handle vb = cdt.insert(pb);
-        std::cout << "pa = (" << pa << "), pb = (" << pb << ")" << std::endl;
         cdt.insert_constraint(va, vb);
         hafc1++;
       } while (hafc1 != done1);
@@ -473,14 +439,6 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
 
   std::vector<std::pair<std::size_t, Nef_polyhedron_2> > subdomain_geometries(geometry.subdomains.size());
 
-  cout << "Faces after adding total domain: " << cdt.number_of_faces() << endl;
-
-  for (CDT::All_faces_iterator it = cdt.all_faces_begin(); it != cdt.all_faces_end(); ++it)
-  {
-    if (!cdt.is_infinite(it))
-      print_face(it);
-  }
-
   // Assuming that the last in the vector contains the entire domain
   // Insert this first and mark the holes
 
@@ -491,8 +449,6 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   for (it = geometry.subdomains.begin(); 
        it != geometry.subdomains.end(); it++)
   {
-    cout << "Adding subdomain to triangulation" << endl;
-
     const std::size_t current_index = it->first;
     boost::shared_ptr<const CSGGeometry> current_subdomain = it->second;
     subdomain_geometries[i] = std::make_pair(current_index, convertSubTree(current_subdomain.get())*total_domain);
@@ -504,8 +460,6 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
 
     i--;
   }
-
-  cout << "Number of faces: " << cdt.number_of_faces() << endl;
 
   explore_subdomains(cdt, total_domain, subdomain_geometries);
 
@@ -636,8 +590,6 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
 
   // Close mesh editor
   mesh_editor.close();
-
-  cout << "Marking cell" << endl;
 
   MeshFunction<std::size_t> mf(mesh, 2);
 
