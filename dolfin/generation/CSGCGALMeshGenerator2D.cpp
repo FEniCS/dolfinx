@@ -444,10 +444,10 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
 
   // Add the subdomains to the CDT
 
-  std::list<std::pair<std::size_t, boost::shared_ptr<const CSGGeometry> > >::const_iterator it;
+  std::list<std::pair<std::size_t, boost::shared_ptr<const CSGGeometry> > >::const_reverse_iterator it;
   std::size_t i = geometry.subdomains.size()-1;
-  for (it = geometry.subdomains.begin(); 
-       it != geometry.subdomains.end(); it++)
+  for (it = geometry.subdomains.rbegin(); 
+       it != geometry.subdomains.rend(); it++)
   {
     const std::size_t current_index = it->first;
     boost::shared_ptr<const CSGGeometry> current_subdomain = it->second;
