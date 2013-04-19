@@ -16,7 +16,9 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-10
-// Last changed: 2013-04-15
+// Last changed: 2013-04-19
+
+#ifdef HAS_HDF5
 
 #include <algorithm>
 #include <iostream>
@@ -376,3 +378,4 @@ TimeSeriesHDF5::find_closest_pair(double t,
 }
 //-----------------------------------------------------------------------------
 
+#endif

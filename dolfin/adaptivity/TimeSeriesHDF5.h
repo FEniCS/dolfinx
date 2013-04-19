@@ -16,10 +16,12 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-11
-// Last changed: 2013-04-15
+// Last changed: 2013-04-19
 
 #ifndef __TIME_SERIES_HDF5_H
 #define __TIME_SERIES_HDF5_H
+
+#ifdef HAS_HDF5
 
 #include <string>
 #include <vector>
@@ -161,4 +163,5 @@ namespace dolfin
 
 }
 
+#endif 
 #endif
