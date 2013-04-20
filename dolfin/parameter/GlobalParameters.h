@@ -18,7 +18,7 @@
 // Modified by Fredrik Valdmanis, 2011
 //
 // First added:  2009-07-02
-// Last changed: 2013-02-26
+// Last changed: 2013-04-19
 
 #ifndef __GLOBAL_PARAMETERS_H
 #define __GLOBAL_PARAMETERS_H
@@ -74,6 +74,7 @@ namespace dolfin
       allowed_mesh_partitioners.insert("SCOTCH");
       allowed_mesh_partitioners.insert("Zoltan_RCB");
       allowed_mesh_partitioners.insert("Zoltan_PHG");
+      allowed_mesh_partitioners.insert("None");
 
       // Set default graph/mesh partitioner
       std::string default_mesh_partitioner = "SCOTCH";

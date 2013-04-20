@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-04-18
+// Last changed: 2013-04-19
 
 #ifdef HAS_HDF5
 
@@ -195,6 +195,14 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     // Add cell type attribute
     HDF5Interface::add_attribute(hdf5_file_id, topology_dataset,
                                  "celltype", cell_type(cell_dim, mesh));
+
+    // Add partitioning attribute to dataset
+    std::vector<std::size_t> partitions;
+    const std::size_t topology_offset = MPI::global_offset(topological_data.size()/(cell_dim + 1), true);
+    MPI::gather(topology_offset, partitions);
+    MPI::broadcast(partitions);
+    HDF5Interface::add_attribute(hdf5_file_id, topology_dataset, 
+                                 "partition", partitions);
   }
 }
 //-----------------------------------------------------------------------------
@@ -616,8 +624,24 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
   mesh_data.num_vertices_per_cell = num_vertices_per_cell;
   mesh_data.tdim = topology_dim[1] - 1;
 
-  // Divide up cells ~equally between processes
-  const std::pair<std::size_t,std::size_t> cell_range = MPI::local_range(num_global_cells);
+  // Get partition from file
+  std::vector<std::size_t> partitions;
+  HDF5Interface::get_attribute(hdf5_file_id, topology_name, "partition", partitions);
+
+  std::pair<std::size_t,std::size_t> cell_range;  
+  // Check whether number of MPI processes matches partitioning, and restore if possible
+  if(MPI::num_processes() == partitions.size())
+  {
+    partitions.push_back(num_global_cells);
+    const std::size_t proc = MPI::process_number();
+    cell_range = std::make_pair(partitions[proc], partitions[proc + 1]);
+  }
+  else
+  {
+    // Divide up cells ~equally between processes
+    cell_range = MPI::local_range(num_global_cells);
+  }
+  
   const std::size_t num_local_cells = cell_range.second - cell_range.first;
 
   // Read a block of cells
