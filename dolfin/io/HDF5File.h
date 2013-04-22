@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2013-03-04
+// Last changed: 2013-04-14
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -105,6 +105,7 @@ namespace dolfin
 
     // Friend
     friend class XDMFFile;
+    friend class TimeSeriesHDF5;
 
     // Read a mesh and repartition (if running in parallel)
     void read_mesh_repartition(Mesh &input_mesh,
@@ -161,13 +162,6 @@ namespace dolfin
                             const std::vector<std::size_t> global_size)
   {
     dolfin_assert(hdf5_file_open);
-
-    //FIXME: Get groups from dataset_name and recursively create groups
-    const std::string group_name(dataset_name, 0, dataset_name.rfind('/'));
-
-    // Check that group exists and create if required
-    if (!HDF5Interface::has_group(hdf5_file_id, group_name))
-      HDF5Interface::add_group(hdf5_file_id, group_name);
 
     dolfin_assert(global_size.size() > 0);
 

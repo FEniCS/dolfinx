@@ -31,20 +31,20 @@ if has_hdf5():
             x = Vector(305)
             x[:] = 1.0
             vector_file = HDF5File("x.h5", "w")
-            vector_file.write(x, "my_vector")
+            vector_file.write(x, "/my_vector")
 
         def test_save_and_read_vector(self):
             # Write to file
             x = Vector(305)
             x[:] = 1.2
             vector_file = HDF5File("vector.h5", "w")
-            vector_file.write(x, "my_vector")
+            vector_file.write(x, "/my_vector")
             del vector_file
 
             # Read from file
             y = Vector()
             vector_file = HDF5File("vector.h5", "r")
-            vector_file.read(y, "my_vector")
+            vector_file.read(y, "/my_vector")
             self.assertEqual(y.size(), x.size())
             self.assertEqual((x - y).norm("l1"), 0.0)
 
@@ -64,7 +64,7 @@ if has_hdf5():
                 for cell in entities(M, i):
                     mf[cell] = cell.midpoint()[0]
                 meshfuns.append(mf)
-                mf_file.write(mf, "meshfun%d"%i)
+                mf_file.write(mf, "/meshfunction/meshfun%d"%i)
             
             del mf_file
 
@@ -72,7 +72,7 @@ if has_hdf5():
             mf_file = HDF5File("meshfn-2d.h5", "r")
             for i in range(0,3):
                 mf2 = MeshFunction('double', M, i)
-                mf_file.read(mf2, "meshfun%d"%i)
+                mf_file.read(mf2, "/meshfunction/meshfun%d"%i)
                 for cell in entities(M, i):
                     self.assertEqual(meshfuns[i][cell], mf2[cell])
 
@@ -90,7 +90,7 @@ if has_hdf5():
                 for cell in entities(M, i):
                     mf[cell] = cell.midpoint()[0]
                 meshfuns.append(mf)
-                mf_file.write(mf, "meshfun%d"%i)
+                mf_file.write(mf, "/meshfunction/group/%d/meshfun"%i)
             
             del mf_file
 
@@ -98,7 +98,7 @@ if has_hdf5():
             mf_file = HDF5File("meshfn-3d.h5", "r")
             for i in range(0,4):
                 mf2 = MeshFunction('double', M, i)
-                mf_file.read(mf2, "meshfun%d"%i)
+                mf_file.read(mf2, "/meshfunction/group/%d/meshfun"%i)
                 for cell in entities(M, i):
                     self.assertEqual(meshfuns[i][cell], mf2[cell])
 
@@ -109,12 +109,12 @@ if has_hdf5():
             # Write to file
             M = UnitSquareMesh(20,20)
             mesh_file = HDF5File("mesh.h5", "w")
-            mesh_file.write(M, "my_mesh")
+            mesh_file.write(M, "/my_mesh")
             del mesh_file
 
             M2 = Mesh()
             mesh_file = HDF5File("mesh.h5", "r")
-            mesh_file.read(M2, "my_mesh")
+            mesh_file.read(M2, "/my_mesh")
 
             self.assertEqual(M.size_global(0), M2.size_global(0))
             dim = M.topology().dim()
@@ -124,12 +124,12 @@ if has_hdf5():
             # Write to file
             M = UnitCubeMesh(10,10,10)
             mesh_file = HDF5File("mesh.h5", "w")
-            mesh_file.write(M, "my_mesh")
+            mesh_file.write(M, "/my_mesh")
             del mesh_file
 
             M2 = Mesh()
             mesh_file = HDF5File("mesh.h5", "r")
-            mesh_file.read(M2, "my_mesh")
+            mesh_file.read(M2, "/my_mesh")
 
             self.assertEqual(M.size_global(0), M2.size_global(0))
             dim = M.topology().dim()
