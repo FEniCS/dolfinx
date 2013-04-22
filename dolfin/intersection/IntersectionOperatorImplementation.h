@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2009.
 //
 // First added:  2009-09-11
-// Last changed: 2012-10-09
+// Last changed: 2013-04-22
 
 #ifndef __INTERSECTIONOPERATORIMPLEMENTATION_H
 #define __INTERSECTIONOPERATORIMPLEMENTATION_H
@@ -253,20 +253,6 @@ namespace dolfin
   // Partial special for 3D since the nearest_point_3 which is internally used in CGAL can not yet handles tetrahedrons.
   // Have to supply myself :)
   template<class K, class Tree>
-  struct ClosestPoint<TetrahedronCell, K, Tree>
-  {
-    typedef typename K::Point_3 Point_3;
-
-    static Point_3 compute(const Tree& tree, const Point_3& point)
-    {
-      dolfin_not_implemented();
-      return Point_3();
-    }
-  };
-
-  // Partial special for 3D since the nearest_point_3 which is internally used in CGAL can not yet handles tetrahedrons.
-  // Have to supply myself :)
-  template<class K, class Tree>
   struct ClosestPoint<PointCell, K, Tree>
   {
     typedef typename K::Point_3 Point_3;
@@ -287,20 +273,6 @@ namespace dolfin
     {
        Point_and_primitive_id pp = tree.closest_point_and_primitive(point);
        return std::pair<Point,std::size_t>(Point(pp.first), pp.second);
-    }
-  };
-
-  // Partial special for 3D since the nearest_point_3 which is internally used in CGAL can not yet handles tetrahedrons.
-  // Have to supply myself :)
-  template<class K, class Tree>
-  struct ClosestPointAndPrimitive<TetrahedronCell, K, Tree>
-  {
-    typedef typename K::Point_3 Point_3;
-
-    static std::pair<Point, std::size_t> compute(const Tree& tree, const Point_3& point)
-    {
-      dolfin_not_implemented();
-      return std::pair<Point,std::size_t>(Point(), 0);
     }
   };
 
