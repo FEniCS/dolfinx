@@ -18,7 +18,7 @@
 // Modified by André Massing, 2011
 //
 // First added:  2011-10-04
-// Last changed: 2011-11-10
+// Last changed: 2013-04-23
 //
 // Unit test for the IntersectionOperator
 
@@ -111,6 +111,8 @@ class IntersectionOperator3D : public CppUnit::TestFixture
   CPPUNIT_TEST(testEdgeVertexIntersection);
   CPPUNIT_TEST(testVertexVertexIntersection);
 
+  CPPUNIT_TEST(testClosestPointQueries);
+
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -185,6 +187,52 @@ public:
     testEntityEntityIntersection<0, 0>(mesh);
   }
 
+  void testClosestPointQueries()
+  {
+    UnitCubeMesh mesh(2, 2, 1);
+
+    // Test distance queries for points outside mesh
+    Point p(0.25,-0.5,0.1);
+    CPPUNIT_ASSERT_EQUAL(mesh.closest_cell(p), size_t(1));
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(0.5, mesh.distance(p), DOLFIN_EPS);
+
+    p = Point(0.75,-0.5,0.1);
+    CPPUNIT_ASSERT_EQUAL(mesh.closest_cell(p), size_t(7));
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(0.5, mesh.distance(p), DOLFIN_EPS);
+
+    p = Point(1.5,0.25,0.1);
+    CPPUNIT_ASSERT_EQUAL(mesh.closest_cell(p), size_t(6));
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(0.5, mesh.distance(p), DOLFIN_EPS);
+
+    p = Point(1.5,0.75,0.1);
+    CPPUNIT_ASSERT_EQUAL(mesh.closest_cell(p), size_t(18));
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(0.5, mesh.distance(p), DOLFIN_EPS);
+
+    p = Point(0.75,1.5,0.1);
+    CPPUNIT_ASSERT_EQUAL(mesh.closest_cell(p), size_t(21));
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(0.5, mesh.distance(p), DOLFIN_EPS);
+
+    p = Point(0.25,1.5,0.1);
+    CPPUNIT_ASSERT_EQUAL(mesh.closest_cell(p), size_t(15));
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(0.5, mesh.distance(p), DOLFIN_EPS);
+
+    p = Point(-0.5,0.75,0.1);
+    CPPUNIT_ASSERT_EQUAL(mesh.closest_cell(p), size_t(17));
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(0.5, mesh.distance(p), DOLFIN_EPS);
+
+    p = Point(-0.5,0.25,0.1);
+    CPPUNIT_ASSERT_EQUAL(mesh.closest_cell(p), size_t(5));
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(0.5, mesh.distance(p), DOLFIN_EPS);
+
+    // Test distance queries for points inside mesh
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      Point p = cell->midpoint();
+      CPPUNIT_ASSERT_EQUAL(mesh.closest_cell(p) ,size_t(cell->index()));
+      CPPUNIT_ASSERT_DOUBLES_EQUAL(0.0, mesh.distance(p), DOLFIN_EPS);
+    }
+  }
+
 };
 
 class IntersectionOperator2D : public CppUnit::TestFixture
@@ -199,6 +247,8 @@ class IntersectionOperator2D : public CppUnit::TestFixture
   CPPUNIT_TEST(testEdgeVertexIntersection);
 
   CPPUNIT_TEST(testVertexVertexIntersection);
+
+  CPPUNIT_TEST(testClosestPointQueries);
 
   CPPUNIT_TEST_SUITE_END();
 
@@ -244,6 +294,53 @@ public:
     std::size_t N = 6;
     UnitSquareMesh mesh(N, N);
     testEntityEntityIntersection<0, 0>(mesh);
+  }
+
+  void testClosestPointQueries()
+  {
+    std::size_t N = 2;
+    UnitSquareMesh mesh(N, N);
+
+    // Test distance queries for points outside mesh
+    Point p(0.25,-0.5,0.0);
+    CPPUNIT_ASSERT_EQUAL(size_t(0), mesh.closest_cell(p));
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(0.5, mesh.distance(p), DOLFIN_EPS);
+
+    p = Point(0.75,-0.5,0.0);
+    CPPUNIT_ASSERT_EQUAL(size_t(2), mesh.closest_cell(p));
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(0.5, mesh.distance(p), DOLFIN_EPS);
+
+    p = Point(1.5,0.25,0.0);
+    CPPUNIT_ASSERT_EQUAL(size_t(2), mesh.closest_cell(p));
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(0.5, mesh.distance(p), DOLFIN_EPS);
+
+    p = Point(1.5,0.75,0.0);
+    CPPUNIT_ASSERT_EQUAL(size_t(6), mesh.closest_cell(p));
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(0.5, mesh.distance(p), DOLFIN_EPS);
+
+    p = Point(0.75,1.5,0.0);
+    CPPUNIT_ASSERT_EQUAL(size_t(7), mesh.closest_cell(p));
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(0.5, mesh.distance(p), DOLFIN_EPS);
+
+    p = Point(0.25,1.5,0.0);
+    CPPUNIT_ASSERT_EQUAL(size_t(5),mesh.closest_cell(p));
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(0.5, mesh.distance(p), DOLFIN_EPS);
+
+    p = Point(-0.5,0.75,0.0);
+    CPPUNIT_ASSERT_EQUAL(size_t(5), mesh.closest_cell(p));
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(0.5, mesh.distance(p), DOLFIN_EPS);
+
+    p = Point(-0.5,0.25,0.0);
+    CPPUNIT_ASSERT_EQUAL(size_t(1), mesh.closest_cell(p));
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(0.5, mesh.distance(p), DOLFIN_EPS);
+
+    // Test distance queries for points inside mesh
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      Point p = cell->midpoint();
+      CPPUNIT_ASSERT_EQUAL(size_t(cell->index()), mesh.closest_cell(p));
+      CPPUNIT_ASSERT_DOUBLES_EQUAL(0.0, mesh.distance(p), DOLFIN_EPS);
+    }
   }
 
 };

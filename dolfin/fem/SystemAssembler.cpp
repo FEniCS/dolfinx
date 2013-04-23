@@ -21,7 +21,7 @@
 // Modified by Martin Alnaes 2013
 //
 // First added:  2009-06-22
-// Last changed: 2013-03-12
+// Last changed: 2013-04-18
 
 #include <armadillo>
 #include <dolfin/common/Timer.h>
@@ -260,7 +260,7 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
     std::vector<double> x0_values(num_bc_dofs);
     x0->get_local(x0_values.data(), num_bc_dofs, bc_indices.data());
     for (std::size_t i = 0; i < num_bc_dofs; i++)
-      bc_values[i] = x0_values[i] - bc_values[i];
+      boundary_values[bc_indices[i]] = x0_values[i] - bc_values[i];
   }
 
   // Check whether we should do cell-wise or facet-wise assembly
