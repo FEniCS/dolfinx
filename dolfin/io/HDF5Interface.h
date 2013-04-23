@@ -46,6 +46,9 @@ namespace dolfin
     static hid_t open_file(const std::string filename, const std::string mode,
                            const bool use_mpi_io);
 
+    /// Close HDF5 file
+    static void close_file(const hid_t hdf5_file_handle);
+
     /// Flush data to file to improve data integrity after interruption
     static void flush_file(const hid_t hdf5_file_handle);
 
@@ -119,6 +122,15 @@ namespace dolfin
                               const std::string dataset_name,
                               const std::string attribute_name,
                               const T& attribute_value);
+
+    static void delete_attribute(const hid_t hdf5_file_handle,
+                          const std::string dataset_name,
+                          const std::string attribute_name);
+
+    static bool has_attribute(const hid_t hdf5_file_handle,
+                          const std::string dataset_name,
+                          const std::string attribute_name);
+    
 
   private:
 
@@ -238,6 +250,10 @@ namespace dolfin
     else
       chunking_properties = H5P_DEFAULT;
 
+    // Check that group exists and recursively create if required
+    const std::string group_name(dataset_name, 0, dataset_name.rfind('/'));
+    add_group(file_handle, group_name);
+    
     // Create global dataset (using dataset_name)
     const hid_t dset_id = H5Dcreate2(file_handle, dataset_name.c_str(), h5type,
                                      filespace0, H5P_DEFAULT,
@@ -362,8 +378,8 @@ namespace dolfin
   {
     herr_t status;
 
-    // Open dataset by name
-    const hid_t dset_id = H5Dopen2(hdf5_file_handle, dataset_name.c_str(),
+    // Open dataset or group by name
+    const hid_t dset_id = H5Oopen(hdf5_file_handle, dataset_name.c_str(),
                                    H5P_DEFAULT);
     dolfin_assert(dset_id != HDF5_FAIL);
 
@@ -384,8 +400,8 @@ namespace dolfin
     status = H5Aclose(attr_id);
     dolfin_assert(status != HDF5_FAIL);
 
-    // Close dataset
-    status = H5Dclose(dset_id);
+    // Close dataset or group
+    status = H5Oclose(dset_id);
     dolfin_assert(status != HDF5_FAIL);
   }
   //---------------------------------------------------------------------------
@@ -396,16 +412,24 @@ namespace dolfin
                                            const T& attribute_value)
   {
 
-    // Open named dataset
-    hid_t dset_id = H5Dopen2(hdf5_file_handle, dataset_name.c_str(),
-                             H5P_DEFAULT);
+    // Open named dataset or group
+    hid_t dset_id = H5Oopen(hdf5_file_handle, dataset_name.c_str(), H5P_DEFAULT);
     dolfin_assert(dset_id != HDF5_FAIL);
+
+    // Check if attribute already exists and delete if so
+    htri_t has_attr = H5Aexists(dset_id, attribute_name.c_str());
+    dolfin_assert(has_attr != HDF5_FAIL);
+    if(has_attr > 0)
+    {
+      herr_t status = H5Adelete(dset_id, attribute_name.c_str());
+      dolfin_assert(status != HDF5_FAIL);
+    }
 
     // Add attribute of appropriate type
     add_attribute_value(dset_id, attribute_name, attribute_value);
 
-    // Close dataset
-    herr_t status = H5Dclose(dset_id);
+    // Close dataset or group
+    herr_t status = H5Oclose(dset_id);
     dolfin_assert(status != HDF5_FAIL);
   }
   //---------------------------------------------------------------------------
@@ -451,6 +475,34 @@ namespace dolfin
     dolfin_assert(dataspace_id != HDF5_FAIL);
 
     // Create an attribute of type size_t in the dataspace
+    const hid_t attribute_id = H5Acreate2(dset_id, attribute_name.c_str(),
+                                         h5type, dataspace_id,
+                                         H5P_DEFAULT, H5P_DEFAULT);
+    dolfin_assert(attribute_id != HDF5_FAIL);
+
+    // Write attribute to dataset
+    herr_t status = H5Awrite(attribute_id, h5type, &attribute_value[0]);
+    dolfin_assert(status != HDF5_FAIL);
+
+    // Close attribute
+    status = H5Aclose(attribute_id);
+    dolfin_assert(status != HDF5_FAIL);
+  }
+  //-----------------------------------------------------------------------------
+  template<>
+  inline void HDF5Interface::add_attribute_value(const hid_t dset_id,
+                                        const std::string attribute_name,
+                                        const std::vector<double>& attribute_value)
+  {
+
+    const hid_t h5type = hdf5_type<double>();
+
+    // Create a vector dataspace
+    const hsize_t dimsf = attribute_value.size();
+    const hid_t dataspace_id = H5Screate_simple(1, &dimsf, NULL);
+    dolfin_assert(dataspace_id != HDF5_FAIL);
+
+    // Create an attribute of type double in the dataspace
     const hid_t attribute_id = H5Acreate2(dset_id, attribute_name.c_str(),
                                          h5type, dataspace_id,
                                          H5P_DEFAULT, H5P_DEFAULT);
@@ -543,6 +595,29 @@ namespace dolfin
 
     // FIXME: more complete check of type
     dolfin_assert(H5Tget_class(attr_type) == H5T_INTEGER);
+
+    // get dimensions of attribute array, check it is one-dimensional
+    const hid_t dataspace = H5Aget_space(attr_id);
+    dolfin_assert(dataspace != HDF5_FAIL);
+
+    hsize_t cur_size[10];
+    hsize_t max_size[10];
+    const int ndims = H5Sget_simple_extent_dims(dataspace, cur_size, max_size);
+    dolfin_assert(ndims == 1);
+
+    attribute_value.resize(cur_size[0]);
+
+    // Read value to vector
+    herr_t status = H5Aread(attr_id, h5type, attribute_value.data());
+    dolfin_assert(status != HDF5_FAIL);
+  }
+  //-----------------------------------------------------------------------------
+  template<>
+  inline void HDF5Interface::get_attribute_value(const hid_t attr_type,
+                                          const hid_t attr_id,
+                                          std::vector<double>& attribute_value)
+  {
+    const hid_t h5type = hdf5_type<double>();
 
     // get dimensions of attribute array, check it is one-dimensional
     const hid_t dataspace = H5Aget_space(attr_id);

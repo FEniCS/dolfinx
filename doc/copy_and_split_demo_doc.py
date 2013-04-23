@@ -112,30 +112,30 @@ def copy_split_demo_doc(input_dir, cpp_output_dir, python_output_dir):
 
     # Get list of files in demo directories
     try:
-        bzr_files = check_output(["bzr", "ls", "-R", "-V", input_dir])
-        if not bzr_files:
-            # Workaround for when we're not in a bzr repo
-            bzr_files = check_output(["find", input_dir])
-        bzr_files = [f for f in bzr_files.split("\n") if "demo/" in f]
-        for (i, f) in enumerate(bzr_files):
+        git_files = check_output(["git", "ls-files", input_dir])
+        if not git_files:
+            # Workaround for when we're not in a git repo
+            git_files = check_output(["find", input_dir])
+        git_files = [f for f in git_files.split("\n") if "demo/" in f]
+        for (i, f) in enumerate(git_files):
             if f[-1] == "/":
-                bzr_files[i] = f[:-1]
+                git_files[i] = f[:-1]
     except:
-        bzr_files = None
+        git_files = None
 
     def ignore_cpp(directory, contents):
         if directory[-3:] == "cpp":
             return contents
-        elif bzr_files is not None:
-            return [c for c in contents if not in_bzr(directory, c, bzr_files)]
+        elif git_files is not None:
+            return [c for c in contents if not in_git(directory, c, git_files)]
         else:
             return []
 
     def ignore_python(directory, contents):
         if directory[-6:] == "python":
             return contents
-        elif bzr_files is not None:
-            return [c for c in contents if not in_bzr(directory, c, bzr_files)]
+        elif git_files is not None:
+            return [c for c in contents if not in_git(directory, c, git_files)]
         else:
             return []
 
@@ -159,10 +159,10 @@ def copy_split_demo_doc(input_dir, cpp_output_dir, python_output_dir):
     # In addition, generate main index file for navigating demos
     generate_main_index_file(python_output_dir, "python")
 
-def in_bzr(directory, f, bzr_files):
+def in_git(directory, f, git_files):
     "Check whether file is version-controlled"
     f = os.path.join(directory, f)
-    return f in bzr_files
+    return f in git_files
 
 if __name__ == "__main__":
 

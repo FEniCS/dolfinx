@@ -1,28 +1,29 @@
 // Copyright (C) 2012 Corrado Maurini
-// 
+//
 // This file is part of DOLFIN.
-// 
+//
 // DOLFIN is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // DOLFIN is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-// 
-// Modified by Corrado Maurini 2013
-// 
-// First added:  2012-09-03
-// Last changed: 2013-03-13
 //
-// This demo program uses of the interface to TAO solver for variational inequalities 
-// to solve a contact mechanics problems in FEnics. 
-// The example considers a heavy elastic circle in a box of the same size
+// Modified by Corrado Maurini 2013
+// Modified by Johannes Ring 2013
+//
+// First added:  2012-09-03
+// Last changed: 2013-04-19
+//
+// This demo program uses of the interface to TAO solver for variational
+// inequalities to solve a contact mechanics problems in FEniCS.
+// The example considers a heavy elastic circle in a box of the same size.
 
 #include <dolfin.h>
 #include "HyperElasticity.h"
@@ -44,9 +45,9 @@ int main()
     class LowerBound : public Expression
     {
     public:
-    
+
       LowerBound() : Expression(2) {}
-    
+
       void eval(Array<double>& values, const Array<double>& x) const
       {
         double xmin = -1.-DOLFIN_EPS;
@@ -54,14 +55,14 @@ int main()
         values[0] = xmin-x[0];
         values[1] = ymin-x[1];
       }
-    
+
     };
-    
+
     // Upper bound for displacement
     class UpperBound : public Expression
     {
     public:
-    
+
       UpperBound() : Expression(2) {}
 
       void eval(Array<double>& values, const Array<double>& x) const
@@ -71,16 +72,16 @@ int main()
         values[0] = xmax-x[0];
         values[1] = ymax-x[1];
       }
-    
+
     };
 
   // Read mesh and create function space
-#ifdef HAS_CGAL:
+#ifdef HAS_CGAL
   Circle circle(0, 0, 1);
   Mesh   mesh(circle,30);
-#else  else:
+#else
   UnitCircleMesh mesh(30);
-#endif  
+#endif
   HyperElasticity::FunctionSpace V(mesh);
 
   // Create Dirichlet boundary conditions
@@ -93,7 +94,7 @@ int main()
 
   // Define source and boundary traction functions
   Constant B(0.0, -0.05);
-  
+
   // Define solution function
   Function u(V);
 
@@ -110,20 +111,20 @@ int main()
   // Create jacobian dF = F' (for use in nonlinear solver).
   HyperElasticity::JacobianForm J(V, V);
   J.mu = mu; J.lmbda = lambda; J.u = u;
-    
-  // Interpolate expression for Upper bound 
+
+  // Interpolate expression for Upper bound
   UpperBound umax_exp;
   Function umax(V);
   umax.interpolate(umax_exp);
- 
-  // Interpolate expression for Lower bound 
+
+  // Interpolate expression for Lower bound
   LowerBound umin_exp;
   Function umin(V);
-  umin.interpolate(umin_exp);  
-  
+  umin.interpolate(umin_exp);
+
   // Set up the non-linear problem
   NonlinearVariationalProblem problem(F, u, bcs, J);
-  
+
   // Set up the non-linear solver
   NonlinearVariationalSolver solver(problem);
   solver.parameters["nonlinear_solver"]="snes";
@@ -132,12 +133,12 @@ int main()
   solver.parameters("snes_solver")["report"]=true;
   solver.parameters("snes_solver")["error_on_nonconvergence"]=false;
   //info(solver.parameters,true);
-  
+
   // Solve the problems
   std::pair<std::size_t, bool> out;
   out = solver.solve(umin,umax);
 
-  // Check for convergence. Convergence is one modifies the loading and the mesh size. 
+  // Check for convergence. Convergence is one modifies the loading and the mesh size.
   cout << out.second;
   if (out.second != true)
   {
@@ -153,6 +154,6 @@ int main()
   // Make plot windows interactive
   interactive();
 #endif
-  
+
  return 0;
 }

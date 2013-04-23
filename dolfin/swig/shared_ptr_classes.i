@@ -69,6 +69,7 @@
 %shared_ptr(dolfin::GoalFunctional)
 %shared_ptr(dolfin::SpecialFacetFunction)
 %shared_ptr(dolfin::TimeSeries)
+%shared_ptr(dolfin::TimeSeriesHDF5)
 
 // ale
 %shared_ptr(dolfin::MeshDisplacement)
