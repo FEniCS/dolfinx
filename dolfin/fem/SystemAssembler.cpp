@@ -21,7 +21,7 @@
 // Modified by Martin Alnaes 2013
 //
 // First added:  2009-06-22
-// Last changed: 2013-03-12
+// Last changed: 2013-04-18
 
 #include <armadillo>
 #include <dolfin/common/Timer.h>
