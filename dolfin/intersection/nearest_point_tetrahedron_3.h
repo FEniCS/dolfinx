@@ -16,13 +16,15 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-22
-// Last changed: 2013-04-22
+// Last changed: 2013-04-23
 
 #ifndef NEAREST_POINT_TETRAHEDRON_3_H_
 #define NEAREST_POINT_TETRAHEDRON_3_H_
 
 #include <CGAL/kernel_basic.h>
 #include <CGAL/enum.h>
+
+#include <iostream>
 
 
 namespace CGAL {
@@ -53,7 +55,7 @@ nearest_point_3(const typename K::Point_3& origin,
   // If origin is not in tetrahedron, compute nearest point for
   // each triangle and return the closest one.
   Point_3 closest_pt = nearest_point_3(origin, Triangle_3(tetrahedron[0], tetrahedron[1], tetrahedron[2]), bound);
-  FT best_sq_dist = sq_distance(origin, bound);
+  FT best_sq_dist = sq_distance(origin, closest_pt);
 
   Point_3 p = nearest_point_3(origin, Triangle_3(tetrahedron[0], tetrahedron[1], tetrahedron[3]), bound);
   FT sq_dist = sq_distance(origin,p);
