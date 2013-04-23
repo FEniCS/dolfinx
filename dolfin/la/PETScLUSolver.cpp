@@ -74,9 +74,6 @@ const std::map<std::string, const MatSolverPackage> PETScLUSolver::_methods
                               #if PETSC_HAVE_PASTIX
                               ("pastix",       MAT_SOLVER_PASTIX)
                               #endif
-                              #if PETSC_HAVE_SPOOLES
-                              ("spooles",      MAT_SOLVER_SPOOLES)
-                              #endif
                               #if PETSC_HAVE_SUPERLU
                               ("superlu",      MAT_SOLVER_SUPERLU)
                               #endif
@@ -89,7 +86,6 @@ const std::map<const MatSolverPackage, const bool> PETScLUSolver::_methods_chole
   = boost::assign::map_list_of(MAT_SOLVER_UMFPACK,      false)
                               (MAT_SOLVER_MUMPS,        true)
                               (MAT_SOLVER_PASTIX,       true)
-                              (MAT_SOLVER_SPOOLES,      true)
                               (MAT_SOLVER_SUPERLU,      false)
                               (MAT_SOLVER_SUPERLU_DIST, false)
                               (MAT_SOLVER_PETSC,        true);
@@ -104,9 +100,6 @@ const std::vector<std::pair<std::string, std::string> > PETScLUSolver::_methods_
                                #endif
                                #if PETSC_HAVE_PASTIX
                                ("pastix", "PaStiX (Parallel Sparse matriX package)")
-                               #endif
-                               #if PETSC_HAVE_SPOOLES
-                               ("spooles", "SPOOLES (SParse Object Oriented Linear Equations Solver)")
                                #endif
                                #if PETSC_HAVE_SUPERLU
                                ("superlu", "SuperLU")
