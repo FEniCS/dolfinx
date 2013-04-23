@@ -18,7 +18,7 @@
 // Modified by Andre Massing 2009
 //
 // First added:  2006-05-09
-// Last changed: 2011-11-08
+// Last changed: 2013-04-23
 
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
@@ -132,7 +132,7 @@ namespace dolfin
     std::size_t pos() const
     { return _pos; }
 
-    /// Comparison operator.
+    /// Comparison operator
     bool operator==(const MeshEntityIterator& it) const
     {
       // Use const_cast to use operator* inside comparison, which automatically

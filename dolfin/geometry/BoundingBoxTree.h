@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-04-18
+// Last changed: 2013-04-23
 
 #ifndef __BOUNDING_BOX_TREE_H
 #define __BOUNDING_BOX_TREE_H
@@ -77,86 +77,57 @@ namespace dolfin
     ///         The point with which to compute the intersection.
     std::vector<unsigned int> find(const Point& point) const;
 
-    /// Get bounding box for given node in tree.
-    ///
-    /// *Returns*
-    ///     double*
-    ///         An array of length 2*gdim holding first the gdim minimum
-    ///         coordinate values and then the gdim maximum values.
-    ///
-    /// *Arguments*
-    ///     node (unsigned int)
-    ///         The number of the node (breadth-first numbering, see above).
-    inline double* get_bbox(unsigned int node)
-    {
-      dolfin_assert(node < bbox_tree.size());
-      dolfin_assert(bbox_tree[node] >= 0);
-      return bbox_coordinates.data() + bbox_tree[node];
-    }
-
-    /// Get bounding box for given node in tree (const version).
-    ///
-    /// *Returns*
-    ///     double*
-    ///         An array of length 2*gdim holding first the gdim minimum
-    ///         coordinate values and then the gdim maximum values.
-    ///
-    /// *Arguments*
-    ///     node (unsigned int)
-    ///         The number of the node (breadth-first numbering, see above).
-    inline const double* get_bbox(unsigned int node) const
-    {
-      dolfin_assert(node < bbox_tree.size());
-      dolfin_assert(bbox_tree[node] >= 0);
-      return bbox_coordinates.data() + bbox_tree[node];
-    }
-
-    /// Check whether bounding box contains point.
-    inline const bool contains(const double* x, unsigned int node) const
-    {
-      dolfin_assert(node < bbox_tree.size());
-      const double* bbox = get_bbox(node);
-      for (unsigned int j = 0; j < _gdim; ++j)
-        if (x[j] < bbox[j] - DOLFIN_EPS || x[j] > bbox[j + _gdim] + DOLFIN_EPS)
-          return false;
-      return true;
-    }
-
-    /// Check whether node is a leaf.
-    inline const bool is_leaf(unsigned int node) const
-    {
-      dolfin_assert(node < bbox_tree.size());
-      return bbox_entities[node] != -1;
-    }
-
   private:
+
+    // Bounding box data. The 'entity' field is only set for leaves
+    // and is otherwise undefined. A leaf is signified by both children
+    // being set to 0.
+    struct BBox
+    {
+      // Bounding box data
+      unsigned int entity;
+      unsigned int child_0;
+      unsigned int child_1;
+      short unsigned int axis;
+      double min;
+      double max;
+
+      // Check whether coordinate is contained in box
+      inline bool contains(const double* x) const
+      {
+        return x[axis] > min - DOLFIN_EPS && x[axis] < max + DOLFIN_EPS;
+      }
+
+      // Check whether box is a leaf
+      inline bool is_leaf() const
+      {
+        return child_0 == 0 && child_1 == 0;
+      }
+
+    };
 
     // Build bounding box tree of mesh
     void build(const Mesh& mesh, unsigned int dimension);
 
-    // Build bounding box tree of list of bounding boxes (recursive)
-    void build(const std::vector<double> leaf_bboxes,
-               std::vector<unsigned int> leaf_partition,
-               unsigned int begin,
-               unsigned int end,
-               unsigned int position,
-               unsigned int& pos);
+    // Build bounding box tree (recursive, 3d)
+    unsigned int build_3d(const std::vector<double>& leaf_bboxes,
+                          const std::vector<unsigned int>::iterator& begin,
+                          const std::vector<unsigned int>::iterator& end,
+                          short unsigned int parent_axis);
 
     // Compute bounding box of mesh entity
-    void compute_bbox(double* bbox,
-                      const MeshEntity& entity) const;
+    void compute_bbox_of_entity(double* bbox,
+                                const MeshEntity& entity) const;
 
-    // Compute bounding box of list of bounding boxes. Only the boxes
-    // indexed by the given partition list in the range [begin, end)
-    // are considered.
-    void compute_bbox(double* bbox,
-                      const std::vector<double> bboxes,
-                      const std::vector<unsigned int> partition,
-                      unsigned int begin,
-                      unsigned int end) const;
+    // Compute bounding box of bounding boxes (3d)
+    void
+    compute_bbox_of_bboxes_3d(double* bbox,
+                              const std::vector<double>& leaf_bboxes,
+                              const std::vector<unsigned int>::iterator& begin,
+                              const std::vector<unsigned int>::iterator& end);
 
-    // Compute longest axis of bounding boxes
-    unsigned int compute_longest_axis(const double* bbox) const;
+    // Compute longest axis of bounding box
+    short unsigned int compute_longest_axis_3d(const double* bbox) const;
 
     /// Find entities intersecting the given coordinate (recursive)
     void find(const double* x,
@@ -166,20 +137,10 @@ namespace dolfin
     // Geometric dimension
     unsigned int _gdim;
 
-    // The tree of bounding boxes, stored as a binary tree where the
-    // two children of node i are numbered 2i + 1 and 2i + 2. Each
-    // node is either index into the array of bounding box coordinates
-    // or -1 for nonexisting nodes.
-    std::vector<int> bbox_tree;
+    // List of bounding boxes
+    std::vector<BBox> bboxes;
 
-    // Mapping from bounding boxes to entity indices. The mapping is
-    // only valid for leaf nodes. Other nodes are mapped to -1.
-    std::vector<int> bbox_entities;
-
-    // A list of coordinates for all bounding boxes. Each bounding box
-    // is stored as 2*_gdim doubles in the list. These numbers are
-    // first the _gdim minimum coordinate values and then the _gdim
-    // corresponding maximum coordinate values for each axis.
+    // List of bounding box coordinates
     std::vector<double> bbox_coordinates;
 
   };
