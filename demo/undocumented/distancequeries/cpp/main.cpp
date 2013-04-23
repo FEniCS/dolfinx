@@ -44,43 +44,54 @@ typedef PointList::const_iterator PointListIter;
 
 int main()
 {
-
-  //Rectangle mesh stretching from (-1,-1,0) to (1,1,0) with 20 sample points each axis.
+  // 2d version
   RectangleMesh mesh(-1, -1, 1, 1, 20, 20);
+
+  // 3d version
+  size_t resolution = 16;
+  Point center(0,0,0);
+  Sphere ball(center, 1.0, resolution);
+  Mesh ball_mesh(ball, resolution);
 
   PointList point_list;
 
-  //First row along  y = -1.5
+  // First row along  y = -1.5
   point_list.push_back(Point(-1.5, -1.5, 0.0));
   point_list.push_back(Point(0.0,  -1.5, 0.0));
   point_list.push_back(Point(1.5,  -1.5, 0.0));
 
-  //Second row along  y = 0;
+  // Second row along  y = 0;
   point_list.push_back(Point(-1.5, 0.0, 0.0));
   point_list.push_back(Point(0.0,  0.0, 0.0));
   point_list.push_back(Point(1.5,  0.0, 0.0));
 
-  //Third row along  y = 1.5;
+  // Third row along  y = 1.5;
   point_list.push_back(Point(-1.5, 1.5, 0.0));
   point_list.push_back(Point(0.0,  1.5, 0.0));
   point_list.push_back(Point(1.5,  1.5, 0.0));
 
-  //Queries for nearest point and cell.
+  // Queries for nearest point and cell.
+
+  info("2d rectangle mesh");
+  info("=================");
   for (PointListIter i = point_list.begin(); i != point_list.end(); ++i)
   {
-    //Obtain nearest point
-    cout <<"Nearest point for Point "
-    << *i << " is Point " << mesh.closest_point(*i) << endl;
-    cout <<"Nearest cell for Point "
-    << *i << " is cell " << mesh.closest_cell(*i) << endl;
+    // Obtain nearest point in the rectangle mesh
+    cout << "Query: " << *i  << endl;
+    cout << "Nearest point: " << mesh.closest_point(*i) << endl;
+    cout << "Nearest cell: "  << mesh.closest_cell(*i) << endl <<endl;
+  }
 
-    //Repetion with closest_point_and_index
-    cout <<"Repetition obtaining both nearest point and cell at once:" <<endl;
-    std::pair<Point, std::size_t> pc(mesh.closest_point_and_cell(*i));
-    cout <<"Nearest point for Point "
-    << *i << " is Point " << pc.first << endl;
-    cout <<"Nearest cell for Point "
-    << *i << " is cell " << pc.second << endl <<endl;
+  info("\n3d sphere mesh");
+  info("==============");
+  for (PointListIter i = point_list.begin(); i != point_list.end(); ++i)
+  {
+    // Compute distance to sphere and find nearest point and cell pair.
+    std::pair<Point, std::size_t> pc(ball_mesh.closest_point_and_cell(*i));
+    cout << "Query: " << *i  << endl;
+    cout << "Distance to unit sphere: " << ball_mesh.distance(*i) << endl;
+    cout << "Nearest point: " << pc.first  << endl;
+    cout << "Nearest cell: "  << pc.second << endl << endl;
   }
 
 return 0;
