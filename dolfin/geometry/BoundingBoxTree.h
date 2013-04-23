@@ -16,12 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-04-23
+// Last changed: 2013-04-24
 
 #ifndef __BOUNDING_BOX_TREE_H
 #define __BOUNDING_BOX_TREE_H
 
-#include <vector>
+#include <boost/scoped_ptr.hpp>
+
 #include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
 
@@ -32,6 +33,7 @@ namespace dolfin
   class Mesh;
   class MeshEntity;
   class Point;
+  class GenericBoundingBoxTree;
 
   /// This class implements a (distributed) axis aligned bounding box
   /// tree (AABB tree). Bounding box trees can be created from meshes
@@ -79,69 +81,7 @@ namespace dolfin
 
   private:
 
-    // Bounding box data. The 'entity' field is only set for leaves
-    // and is otherwise undefined. A leaf is signified by both children
-    // being set to 0.
-    struct BBox
-    {
-      // Bounding box data
-      unsigned int entity;
-      unsigned int child_0;
-      unsigned int child_1;
-      short unsigned int axis;
-      double min;
-      double max;
-
-      // Check whether coordinate is contained in box
-      inline bool contains(const double* x) const
-      {
-        return x[axis] > min - DOLFIN_EPS && x[axis] < max + DOLFIN_EPS;
-      }
-
-      // Check whether box is a leaf
-      inline bool is_leaf() const
-      {
-        return child_0 == 0 && child_1 == 0;
-      }
-
-    };
-
-    // Build bounding box tree of mesh
-    void build(const Mesh& mesh, unsigned int dimension);
-
-    // Build bounding box tree (recursive, 3d)
-    unsigned int build_3d(const std::vector<double>& leaf_bboxes,
-                          const std::vector<unsigned int>::iterator& begin,
-                          const std::vector<unsigned int>::iterator& end,
-                          short unsigned int parent_axis);
-
-    // Compute bounding box of mesh entity
-    void compute_bbox_of_entity(double* bbox,
-                                const MeshEntity& entity) const;
-
-    // Compute bounding box of bounding boxes (3d)
-    void
-    compute_bbox_of_bboxes_3d(double* bbox,
-                              const std::vector<double>& leaf_bboxes,
-                              const std::vector<unsigned int>::iterator& begin,
-                              const std::vector<unsigned int>::iterator& end);
-
-    // Compute longest axis of bounding box
-    short unsigned int compute_longest_axis_3d(const double* bbox) const;
-
-    /// Find entities intersecting the given coordinate (recursive)
-    void find(const double* x,
-              unsigned int node,
-              std::vector<unsigned int>& entities) const;
-
-    // Geometric dimension
-    unsigned int _gdim;
-
-    // List of bounding boxes
-    std::vector<BBox> bboxes;
-
-    // List of bounding box coordinates
-    std::vector<double> bbox_coordinates;
+    boost::scoped_ptr<GenericBoundingBoxTree> _tree;
 
   };
 
