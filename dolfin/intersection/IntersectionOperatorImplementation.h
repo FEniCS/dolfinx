@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2009.
 //
 // First added:  2009-09-11
-// Last changed: 2013-04-22
+// Last changed: 2013-04-23
 
 #ifndef __INTERSECTIONOPERATORIMPLEMENTATION_H
 #define __INTERSECTIONOPERATORIMPLEMENTATION_H
@@ -313,20 +313,6 @@ namespace dolfin
     static double compute(const Tree& tree, const Point_3& point)
     {
       return std::sqrt(tree.squared_distance(point));
-    }
-  };
-
-  // Partial special for 3D since the nearest_point_3 which is internally used in CGAL can not yet handles tetrahedrons.
-  // Have to supply myself :)
-  template<class K, class Tree>
-  struct Distance<TetrahedronCell, K, Tree>
-  {
-    typedef typename K::Point_3 Point_3;
-
-    static double compute(const Tree& tree, const Point_3& point)
-    {
-      dolfin_not_implemented();
-      return 0;
     }
   };
 
