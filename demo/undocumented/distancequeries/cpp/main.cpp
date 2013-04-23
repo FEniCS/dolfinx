@@ -1,6 +1,4 @@
-// =====================================================================================
-//
-// Copyright (C) 2010 Andre Massing
+// Copyright (C) 2010-2013 Andre Massing
 //
 // This file is part of DOLFIN.
 //
@@ -17,19 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Andre Massing, 2010
-//
 // First added:  2010-03-03
-// Last changed: 2010-03-04
+// Last changed: 2013-04-23
 //
-//Author:  Andre Massing (am), massing@simula.no
-//Company:  Simula Research Laboratory, Fornebu, Norway
-//
-//Description:
-//This demo program demonstrates how to do point distance queries, i.e.
-//how to obtain the point in the mesh or the cell in the mesh or both which
-//are nearest to a given point.
-// =====================================================================================
+// This demo program demonstrates how to do point distance queries, i.e.
+// how to obtain the point in the mesh or the cell in the mesh or both which
+// are nearest to a given point.
 
 #include <dolfin.h>
 #include <vector>
