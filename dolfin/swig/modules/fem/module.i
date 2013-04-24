@@ -111,6 +111,7 @@
 #include "dolfin/adaptivity/Extrapolation.h"
 #include "dolfin/adaptivity/LocalAssembler.h"
 #include "dolfin/adaptivity/TimeSeries.h"
+#include "dolfin/adaptivity/TimeSeriesHDF5.h"
 #include "dolfin/adaptivity/adapt.h"
 #include "dolfin/adaptivity/marking.h"
 #include "dolfin/adaptivity/adaptivesolve.h"
@@ -210,6 +211,7 @@ import_array();
 %include "dolfin/swig/fem/post.i"
 
 // %include types from submodule multistage
+%include "dolfin/swig/multistage/pre.i"
 %include "dolfin/multistage/MultiStageScheme.h"
 %include "dolfin/multistage/RKSolver.h"
 %include "dolfin/multistage/PointIntegralSolver.h"
@@ -224,6 +226,7 @@ import_array();
 %include "dolfin/adaptivity/Extrapolation.h"
 %include "dolfin/adaptivity/LocalAssembler.h"
 %include "dolfin/adaptivity/TimeSeries.h"
+%include "dolfin/adaptivity/TimeSeriesHDF5.h"
 %include "dolfin/adaptivity/adapt.h"
 %include "dolfin/adaptivity/marking.h"
 %include "dolfin/adaptivity/adaptivesolve.h"
