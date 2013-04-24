@@ -1,3 +1,4 @@
+ - Feature: Add support for distance queries for 3-D meshes
  - Feature: Add PointIntegralSolver, which uses the MultiStageSchemes to solve local ODEs at Vertices
  - Feature: Add RKSolver and MultiStageScheme for general time integral solvers
  - Feature: Add support for assigning a Function with linear combinations of Functions, which lives in the same FunctionSpace

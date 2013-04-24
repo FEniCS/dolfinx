@@ -45,8 +45,6 @@ nearest_point_3(const typename K::Point_3& origin,
 
   typename K::Compute_squared_distance_3 sq_distance =
     k.compute_squared_distance_3_object();
-  typename K::Compare_squared_distance_3 compare_sq_distance =
-    k.compare_squared_distance_3_object();
   
   // Return origin if origin lies inside tetrahedron
   if (do_intersect(origin,tetrahedron,k))
