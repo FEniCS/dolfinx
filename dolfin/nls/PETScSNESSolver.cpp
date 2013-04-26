@@ -312,7 +312,13 @@ std::pair<std::size_t, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear_
   }
   #else
   SNESLineSearch linesearch;
+
+  #if PETSC_VERSION_RELEASE
   SNESGetSNESLineSearch(*_snes, &linesearch);
+  #else
+  SNESGetLineSearch(*_snes, &linesearch);
+  #endif
+
   if (parameters["report"])
     SNESLineSearchSetMonitor(linesearch, PETSC_TRUE);
   const std::string line_search_type = std::string(parameters["line_search"]);
