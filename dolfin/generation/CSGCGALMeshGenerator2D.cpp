@@ -306,7 +306,7 @@ void explore_subdomain(CDT &ct,
       if (ct.is_infinite(n))
         continue;
 
-      CDT::Edge e(face,i);
+      const CDT::Edge e(face,i);
 
       if (n->counter() == -1)
       {
@@ -427,6 +427,30 @@ void add_subdomain(CDT& cdt, const Nef_polyhedron_2& cgal_geometry)
   }
 }
 //-----------------------------------------------------------------------------
+double shortest_constrained_edge(const CDT &cdt)
+{
+  double min_length = 1000.0;
+  for (CDT::Finite_edges_iterator it = cdt.finite_edges_begin();
+       it != cdt.finite_edges_end();
+       it++)
+  {
+    if (!cdt.is_constrained(*it))
+    {
+      // An edge is an std::pair<Face_handle, int>
+      // see CGAL/Triangulation_data_structure_2.h
+      CDT::Face_handle f = it->first;
+      const int i = it->second;
+
+      CDT::Point p1 = f->vertex(i)->point();
+      CDT::Point p2 = f->vertex( (i+1)%3 )->point();
+
+      min_length = std::min(CGAL::to_double((p1-p2).squared_length()), min_length);
+    }
+  }
+
+  return min_length;
+}
+//-----------------------------------------------------------------------------
 void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
 {
   // Create empty CGAL triangulation
@@ -460,6 +484,8 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
 
     i--;
   }
+
+  cout << "Shortest edge: " << shortest_constrained_edge(cdt) << endl;
 
   explore_subdomains(cdt, total_domain, subdomain_geometries);
 
