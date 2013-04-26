@@ -18,11 +18,12 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2010-02-05
-// Last changed: 2010-02-10
+// Last changed: 2013-04-22
 
 #ifdef HAS_CGAL
 
 #include "added_intersection_3.h" //  Additional intersection functionality, *must* include before the AABB_tree!
+#include "nearest_point_tetrahedron_3.h"
 #include <CGAL/AABB_tree.h>       // *Must* be inserted before kernel!
 #include <CGAL/AABB_traits.h>
 #include <CGAL/Simple_cartesian.h>

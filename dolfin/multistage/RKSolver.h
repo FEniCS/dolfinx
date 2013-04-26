@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-04-02
+// Last changed: 2013-04-24
 
 #ifndef __RKSOLVER_H
 #define __RKSOLVER_H
@@ -48,6 +48,10 @@ namespace dolfin
 
     /// Step solver an interval using dt as time step
     void step_interval(double t0, double t1, double dt);
+
+    /// Return the MultiStageScheme
+    boost::shared_ptr<MultiStageScheme> scheme() const 
+    {return _scheme;}
 
   private:
 

@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2008-2011
 //
 // First added:  2009-06-22
-// Last changed: 2013-03-12
+// Last changed: 2013-04-23
 
 #ifndef __SYSTEM_ASSEMBLER_H
 #define __SYSTEM_ASSEMBLER_H
@@ -41,7 +41,7 @@ namespace dolfin
   template<typename T> class MeshFunction;
   class UFC;
 
-  /// This class provides an assembler for systems of the form 
+  /// This class provides an assembler for systems of the form
   /// Ax = b. It differs from the default DOLFIN assembler in that it
   /// applies boundary conditions at the time of assembly, which
   /// preserves any symmetries in A.
@@ -83,12 +83,14 @@ namespace dolfin
     /// Assemble vector b
     void assemble(GenericVector& b);
 
-    /// Assemble system (A, b) (suitable for use inside a (quasi-)
-    /// Newton solver)
+    /// Assemble system (A, b) for (negative) increment dx, where
+    /// x = x0 - dx is solution to system a == -L subject to bcs.
+    /// Suitable for use inside a (quasi-)Newton solver.
     void assemble(GenericMatrix& A, GenericVector& b, const GenericVector& x0);
 
-    /// Assemble vectpr b (suitable for use inside a (quasi-) Newton
-    /// solver)
+    /// Assemble rhs vector b for (negative) increment dx, where
+    /// x = x0 - dx is solution to system a == -L subject to bcs.
+    /// Suitable for use inside a (quasi-)Newton solver.
     void assemble(GenericVector& b, const GenericVector& x0);
 
   private:
