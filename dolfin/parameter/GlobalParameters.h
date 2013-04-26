@@ -18,7 +18,7 @@
 // Modified by Fredrik Valdmanis, 2011
 //
 // First added:  2009-07-02
-// Last changed: 2013-04-19
+// Last changed: 2013-04-26
 
 #ifndef __GLOBAL_PARAMETERS_H
 #define __GLOBAL_PARAMETERS_H
@@ -113,8 +113,8 @@ namespace dolfin
 
       // Graph coloring
       std::set<std::string> allowed_coloring_libraries;
-      allowed_mesh_partitioners.insert("Boost");
-      allowed_mesh_partitioners.insert("Zoltan");
+      allowed_coloring_libraries.insert("Boost");
+      allowed_coloring_libraries.insert("Zoltan");
       p.add("graph_coloring_library", "Boost", allowed_coloring_libraries);
 
       // Mesh refinement
