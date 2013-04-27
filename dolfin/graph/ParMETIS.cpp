@@ -19,7 +19,7 @@
 // Modified by Chris Richardson 2013
 //
 // First added:  2010-02-10
-// Last changed: 2013-02-26
+// Last changed: 2013-04-20
 
 #include <dolfin/log/dolfin_log.h>
 
@@ -208,12 +208,13 @@ void ParMETIS::repartition(std::vector<std::size_t>& cell_partition,
   std::vector<float> ubvec(ncon, 1.05);
   #endif
 
-  // Options for ParMETIS, use default
+  // Options for ParMETIS
   int options[4];
   options[0] = 1;
   options[1] = 0;
   options[2] = 15;
-  options[3] = PARMETIS_PSR_COUPLED;
+  // PARMETIS_PSR_COUPLED seems to suppress all migration
+  options[3] = PARMETIS_PSR_UNCOUPLED;
 
   std::vector<int> part(num_local_cells);
 
