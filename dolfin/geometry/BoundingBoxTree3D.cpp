@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-23
-// Last changed: 2013-04-23
+// Last changed: 2013-05-01
 
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshGeometry.h>
@@ -135,7 +135,7 @@ void BoundingBoxTree3D::build(const Mesh& mesh, unsigned int dimension)
     cout << "not implemented" << endl;
     break;
   case 3:
-    build_3d(leaf_bboxes, leaf_partition.begin(), leaf_partition.end(), 0);
+    build_3d(leaf_bboxes, leaf_partition.begin(), leaf_partition.end());
     break;
   default:
     cout << "not implemented" << endl;
@@ -146,9 +146,9 @@ void BoundingBoxTree3D::build(const Mesh& mesh, unsigned int dimension)
 }
 //-----------------------------------------------------------------------------
 unsigned int BoundingBoxTree3D::build_3d(const std::vector<double>& leaf_bboxes,
-                                       const std::vector<unsigned int>::iterator& begin,
-                                       const std::vector<unsigned int>::iterator& end,
-                                       short unsigned int parent_axis)
+                                         const std::vector<unsigned int>::iterator& begin,
+                                         const std::vector<unsigned int>::iterator& end)
+
 {
   dolfin_assert(begin < end);
 
@@ -166,9 +166,9 @@ unsigned int BoundingBoxTree3D::build_3d(const std::vector<double>& leaf_bboxes,
     bbox.entity = i;
     bbox.child_0 = 0;
     bbox.child_1 = 0;
-    bbox.axis = parent_axis;
-    bbox.min = b[parent_axis];
-    bbox.max = b[parent_axis + 3];
+    bbox.xmin = b[0]; bbox.xmax = b[3];
+    bbox.ymin = b[1]; bbox.ymax = b[4];
+    bbox.zmin = b[2]; bbox.zmax = b[5];
     bboxes.push_back(bbox);
 
     return bboxes.size() - 1;
@@ -177,15 +177,16 @@ unsigned int BoundingBoxTree3D::build_3d(const std::vector<double>& leaf_bboxes,
   // Compute bounding box of all bounding boxes
   double _bbox[6];
   compute_bbox_of_bboxes_3d(_bbox, leaf_bboxes, begin, end);
+  bbox.xmin = _bbox[0]; bbox.xmax = _bbox[3];
+  bbox.ymin = _bbox[1]; bbox.ymax = _bbox[4];
+  bbox.zmin = _bbox[2]; bbox.zmax = _bbox[5];
 
   // Compute longest axis of bounding box
-  bbox.axis = compute_longest_axis_3d(_bbox);
-  bbox.min = _bbox[bbox.axis];
-  bbox.max = _bbox[bbox.axis + 3];
+  const short unsigned int axis = compute_longest_axis_3d(_bbox);
 
   // Sort bounding boxes along longest axis
   std::vector<unsigned int>::iterator middle = begin + (end - begin) / 2;
-  switch (bbox.axis)
+  switch (axis)
   {
   case 0:
     std::nth_element(begin, middle, end, less_3d_x(leaf_bboxes));
@@ -198,8 +199,8 @@ unsigned int BoundingBoxTree3D::build_3d(const std::vector<double>& leaf_bboxes,
   }
 
   // Split boxes in two groups and call recursively
-  bbox.child_0 = build_3d(leaf_bboxes, begin, middle, bbox.axis);
-  bbox.child_1 = build_3d(leaf_bboxes, middle, end,   bbox.axis);
+  bbox.child_0 = build_3d(leaf_bboxes, begin, middle);
+  bbox.child_1 = build_3d(leaf_bboxes, middle, end);
 
   // Store bounding box data. Note that root box will be added last.
   bboxes.push_back(bbox);
@@ -210,7 +211,7 @@ unsigned int BoundingBoxTree3D::build_3d(const std::vector<double>& leaf_bboxes,
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree3D::compute_bbox_of_entity(double* bbox,
-                                             const MeshEntity& entity) const
+                                               const MeshEntity& entity) const
 {
   // Get bounding box coordinates
   double* xmin = bbox;
@@ -286,8 +287,8 @@ compute_longest_axis_3d(const double* bbox) const
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree3D::find(const double* x,
-                           unsigned int node,
-                           std::vector<unsigned int>& entities) const
+                             unsigned int node,
+                             std::vector<unsigned int>& entities) const
 {
   // Three cases: either the point is not contained (so skip branch),
   // or it's contained in a leaf (so add it) or it's contained in the

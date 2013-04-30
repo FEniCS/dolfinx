@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-15
-# Last changed: 2013-04-18
+# Last changed: 2013-04-23
 
 import unittest
 
@@ -72,6 +72,15 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
 if __name__ == "__main__":
     print ""
-    print "Testing BoudingBoxTree"
+    print "Testing BoundingBoxTree"
     print "------------------------------------------------"
-    unittest.main()
+    #unittest.main()
+
+    # FIXME: Testing
+
+    #Computed bounding box tree with 6143 nodes for 3072 entities.
+
+    p = Point(0.3, 0.3, 0.3)
+    mesh = UnitCubeMesh(8, 8, 8)
+    bbtree = BoundingBoxTree(mesh, 3)
+    print bbtree.find(p)

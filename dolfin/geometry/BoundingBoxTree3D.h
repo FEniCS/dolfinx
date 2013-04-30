@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-04-24
+// Last changed: 2013-05-01
 
 #ifndef __BOUNDING_BOX_TREE_3D_H
 #define __BOUNDING_BOX_TREE_3D_H
@@ -65,14 +65,17 @@ namespace dolfin
       unsigned int entity;
       unsigned int child_0;
       unsigned int child_1;
-      short unsigned int axis;
-      double min;
-      double max;
+
+      double xmin, xmax;
+      double ymin, ymax;
+      double zmin, zmax;
 
       // Check whether coordinate is contained in box
       inline bool contains(const double* x) const
       {
-        return x[axis] > min - DOLFIN_EPS && x[axis] < max + DOLFIN_EPS;
+        return (xmin - DOLFIN_EPS < x[0] && x[0] < xmax + DOLFIN_EPS &&
+                ymin - DOLFIN_EPS < x[1] && x[1] < ymax + DOLFIN_EPS &&
+                zmin - DOLFIN_EPS < x[2] && x[2] < zmax + DOLFIN_EPS);
       }
 
       // Check whether box is a leaf
@@ -89,8 +92,7 @@ namespace dolfin
     // Build bounding box tree (recursive, 3d)
     unsigned int build_3d(const std::vector<double>& leaf_bboxes,
                           const std::vector<unsigned int>::iterator& begin,
-                          const std::vector<unsigned int>::iterator& end,
-                          short unsigned int parent_axis);
+                          const std::vector<unsigned int>::iterator& end);
 
     // Compute bounding box of mesh entity
     void compute_bbox_of_entity(double* bbox,
