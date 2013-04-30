@@ -58,7 +58,6 @@ namespace dolfin
 #define MAT_SOLVER_MUMPS        MATSOLVERMUMPS
 #define MAT_SOLVER_PASTIX       MATSOLVERPASTIX
 #define MAT_SOLVER_PETSC        MATSOLVERPETSC
-#define MAT_SOLVER_SPOOLES      MATSOLVERSPOOLES
 #define MAT_SOLVER_SUPERLU_DIST MATSOLVERSUPERLU_DIST
 #define MAT_SOLVER_SUPERLU      MATSOLVERSUPERLU
 
@@ -329,8 +328,6 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
       method = "pastix";
       #elif PETSC_HAVE_SUPERLU
       method = "superlu";
-      #elif PETSC_HAVE_SPOOLES
-      method = "spooles";
       #else
       method = "petsc";
       warning("Using PETSc native LU solver. Consider configuring PETSc with an efficient LU solver (e.g. UMFPACK, MUMPS).");
@@ -342,14 +339,12 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
       method = "mumps";
       #elif PETSC_HAVE_PASTIX
       method = "pastix";
-      #elif PETSC_HAVE_SPOOLES
-      method = "spooles";
       #elif PETSC_HAVE_SUPERLU_DIST
       method = "superlu_dist";
       #else
       dolfin_error("PETScLUSolver.cpp",
                    "solve linear system using PETSc LU solver",
-                   "No suitable solver for parallel LU found. Consider configuring PETSc with MUMPS or SPOOLES");
+                   "No suitable solver for parallel LU found. Consider configuring PETSc with MUMPS or SuperLU_dist");
       #endif
     }
   }
