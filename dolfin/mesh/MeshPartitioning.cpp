@@ -21,7 +21,7 @@
 // Modified by Garth N. Wells 2011-2012
 //
 // First added:  2008-12-01
-// Last changed: 2013-02-26
+// Last changed: 2013-04-20
 
 #include <algorithm>
 #include <iterator>
@@ -112,6 +112,11 @@ void MeshPartitioning::partition(Mesh& mesh, const LocalMeshData& mesh_data)
     ZoltanPartition::compute_partition_rcb(cell_partition, mesh_data);
   else if (partitioner == "Zoltan_PHG")
     ZoltanPartition::compute_partition_phg(cell_partition, mesh_data);
+  else if (partitioner == "None")
+  {
+    // Just let the current partitioning be used
+    cell_partition.assign(mesh_data.cell_vertices.size(), MPI::process_number());
+  }
   else
   {
     dolfin_error("MeshPartitioning.cpp",
