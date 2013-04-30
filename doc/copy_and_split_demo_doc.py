@@ -21,15 +21,7 @@
 # directory trees. Ignores cmake files for python.
 
 import sys, os, shutil
-
-# Wrapper for check_output introduced in Python 2.7
-try:
-    from subprocess import check_output
-except:
-    from commands import getstatusoutput
-    def check_output(*args):
-        status, output = getstatusoutput(" ".join(args))
-        return output
+from instant import get_output
 
 index_template = """
 Collection of documented demos
@@ -112,10 +104,10 @@ def copy_split_demo_doc(input_dir, cpp_output_dir, python_output_dir):
 
     # Get list of files in demo directories
     try:
-        git_files = check_output(["git", "ls-files", input_dir])
+        git_files = get_output(["git", "ls-files", input_dir])
         if not git_files:
             # Workaround for when we're not in a git repo
-            git_files = check_output(["find", input_dir])
+            git_files = get_output(["find", input_dir])
         git_files = [f for f in git_files.split("\n") if "demo/" in f]
         for (i, f) in enumerate(git_files):
             if f[-1] == "/":

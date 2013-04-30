@@ -19,14 +19,14 @@
 # Last changed: 2011-05-22
 
 import sys
-from dolfin_utils.commands import getstatusoutput
+from instant import get_status_output
 
 tests = ["verify_demo_code_snippets.py"]
 
 failed = []
 for test in tests:
     command = "python %s" % test
-    fail, output = getstatusoutput(command)
+    fail, output = get_status_output(command)
 
     if fail:
         failed.append(fail)

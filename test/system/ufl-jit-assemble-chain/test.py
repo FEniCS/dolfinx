@@ -19,14 +19,17 @@
 # Last changed: 2013-03-04
 
 import sys
-from dolfin_utils.commands import getstatusoutput
+from instant import get_status_output
 
 tests = ["assembly_derivatives.py", "form_operations.py"]
 
 failed = []
 for test in tests:
     command = "python %s" % test
-    fail, output = getstatusoutput(command)
+    print
+    print "Running tests: %s" % test
+    print "----------------------------------------------------------------------"
+    fail, output = get_status_output(command)
 
     if fail:
         failed.append(fail)
