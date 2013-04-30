@@ -101,12 +101,10 @@ namespace dolfin
     // Compute bounding box of bounding boxes (3d)
     void
     compute_bbox_of_bboxes_3d(double* bbox,
+                              unsigned short int& axis,
                               const std::vector<double>& leaf_bboxes,
                               const std::vector<unsigned int>::iterator& begin,
                               const std::vector<unsigned int>::iterator& end);
-
-    // Compute longest axis of bounding box
-    short unsigned int compute_longest_axis_3d(const double* bbox) const;
 
     /// Find entities intersecting the given coordinate (recursive)
     void find(const double* x,
@@ -118,7 +116,6 @@ namespace dolfin
 
     // List of bounding boxes
     std::vector<BBox> bboxes;
-    std::vector<double> bbox_coordinates;
 
   };
 

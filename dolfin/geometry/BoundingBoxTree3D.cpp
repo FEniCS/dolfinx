@@ -155,6 +155,10 @@ unsigned int BoundingBoxTree3D::build_3d(const std::vector<double>& leaf_bboxes,
   // Create empty bounding box data
   BBox bbox;
 
+  // FIXME:
+  // GenericBBox& bbox = add_bbox();
+  // remove push back below
+
   // Reached leaf
   if (end - begin == 1)
   {
@@ -174,15 +178,15 @@ unsigned int BoundingBoxTree3D::build_3d(const std::vector<double>& leaf_bboxes,
     return bboxes.size() - 1;
   }
 
+  // FIXME: Reuse bbox data here
+
   // Compute bounding box of all bounding boxes
   double _bbox[6];
-  compute_bbox_of_bboxes_3d(_bbox, leaf_bboxes, begin, end);
+  short unsigned int axis;
+  compute_bbox_of_bboxes_3d(_bbox, axis, leaf_bboxes, begin, end);
   bbox.xmin = _bbox[0]; bbox.xmax = _bbox[3];
   bbox.ymin = _bbox[1]; bbox.ymax = _bbox[4];
   bbox.zmin = _bbox[2]; bbox.zmax = _bbox[5];
-
-  // Compute longest axis of bounding box
-  const short unsigned int axis = compute_longest_axis_3d(_bbox);
 
   // Sort bounding boxes along longest axis
   std::vector<unsigned int>::iterator middle = begin + (end - begin) / 2;
@@ -204,8 +208,6 @@ unsigned int BoundingBoxTree3D::build_3d(const std::vector<double>& leaf_bboxes,
 
   // Store bounding box data. Note that root box will be added last.
   bboxes.push_back(bbox);
-  for (unsigned int i = 0; i < 6; i++)
-    bbox_coordinates.push_back(_bbox[i]);
 
   return bboxes.size() - 1;
 }
@@ -242,6 +244,7 @@ void BoundingBoxTree3D::compute_bbox_of_entity(double* bbox,
 //-----------------------------------------------------------------------------
 void BoundingBoxTree3D::
 compute_bbox_of_bboxes_3d(double* bbox,
+                          unsigned short int& axis,
                           const std::vector<double>& leaf_bboxes,
                           const std::vector<unsigned int>::iterator& begin,
                           const std::vector<unsigned int>::iterator& end)
@@ -269,21 +272,18 @@ compute_bbox_of_bboxes_3d(double* bbox,
     if (b[4] > bbox[4]) bbox[4] = b[4];
     if (b[5] > bbox[5]) bbox[5] = b[5];
   }
-}
-//-----------------------------------------------------------------------------
-short unsigned int BoundingBoxTree3D::
-compute_longest_axis_3d(const double* bbox) const
-{
-  const double x = bbox[3] - bbox[0];
-  const double y = bbox[4] - bbox[1];
-  const double z = bbox[5] - bbox[2];
+
+  // Compute longest axis
+  const double x = b[3] - b[0];
+  const double y = b[4] - b[1];
+  const double z = b[5] - b[2];
 
   if (x > y && x > z)
-    return 0;
+    axis = 0;
   else if (y > z)
-    return 1;
+    axis = 1;
   else
-    return 2;
+    axis = 2;
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree3D::find(const double* x,
