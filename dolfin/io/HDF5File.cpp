@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-04-19
+// Last changed: 2013-04-29
 
 #ifdef HAS_HDF5
 
@@ -47,6 +47,7 @@
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Vertex.h>
 
 #include "HDF5File.h"
@@ -521,6 +522,41 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
 
   write_data(name + "/values", data_values, global_size);
 
+}
+//-----------------------------------------------------------------------------
+void HDF5File::write(const MeshValueCollection<std::size_t>& mesh_values, const std::string name)
+{
+  write_mesh_value_collection(mesh_values, name);
+}
+//-----------------------------------------------------------------------------
+template <typename T>
+void HDF5File::write_mesh_value_collection(const MeshValueCollection<T>& mesh_values, const std::string name)
+{
+  const std::map<std::pair<std::size_t, std::size_t>, T>& values = mesh_values.values();
+
+  const Mesh& mesh = mesh_values.mesh();
+  const std::vector<std::size_t>& global_cell_index
+    = mesh.topology().global_indices(mesh.topology().dim());
+
+  std::vector<T> data_values;
+  std::vector<std::size_t> entities;
+  std::vector<std::size_t> cells;
+
+  for(typename std::map<std::pair<std::size_t, std::size_t>, T>::const_iterator
+        p = values.begin(); p != values.end(); ++p)
+  {
+    cells.push_back(global_cell_index[p->first.first]);
+    entities.push_back(p->first.second);
+    data_values.push_back(p->second);
+  }
+
+  std::vector<std::size_t> global_size(1, MPI::sum(data_values.size()));
+  write_data(name + "/values", data_values, global_size);
+  write_data(name + "/entities", entities, global_size);
+  write_data(name + "/cells", cells, global_size);
+
+  HDF5Interface::add_attribute(hdf5_file_id, name, "dimension",
+                               mesh_values.dim());
 }
 //-----------------------------------------------------------------------------
 void HDF5File::read(GenericVector& x, const std::string dataset_name,

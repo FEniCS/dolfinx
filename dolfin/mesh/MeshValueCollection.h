@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// Modified by Chris Richardson, 2013.
+//
 // First added:  2006-08-30
-// Last changed: 2013-02-11
+// Last changed: 2013-05-14
 
 #ifndef __MESH_VALUE_COLLECTION_H
 #define __MESH_VALUE_COLLECTION_H
@@ -113,6 +115,13 @@ namespace dolfin
     ///     std::size_t
     ///         The dimension.
     std::size_t dim() const;
+
+    /// Return associated mesh
+    ///
+    /// *Returns*
+    ///     _Mesh_
+    ///         The mesh.
+    const Mesh& mesh() const;
 
     /// Return true if the subset is empty
     ///
@@ -212,6 +221,9 @@ namespace dolfin
     /// Topological dimension
     std::size_t _dim;
 
+    // Associated mesh
+    const Mesh* _mesh;
+
   };
 
   //---------------------------------------------------------------------------
@@ -219,24 +231,24 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template <typename T>
   MeshValueCollection<T>::MeshValueCollection()
-    : Variable("m", "unnamed MeshValueCollection"), _dim(0)
+    : Variable("m", "unnamed MeshValueCollection"), _dim(0), _mesh(0)
   {
     // Do nothing
   }
   //---------------------------------------------------------------------------
   template <typename T>
   MeshValueCollection<T>::MeshValueCollection(std::size_t dim)
-    : Variable("m", "unnamed MeshValueCollection"), _dim(dim)
+    : Variable("m", "unnamed MeshValueCollection"), _dim(dim), _mesh(0)
   {
     // Do nothing
   }
   //---------------------------------------------------------------------------
   template <typename T>
   MeshValueCollection<T>::MeshValueCollection(const MeshFunction<T>& mesh_function)
-    : Variable("m", "unnamed MeshValueCollection"), _dim(mesh_function.dim())
+    : Variable("m", "unnamed MeshValueCollection"), _dim(mesh_function.dim()), _mesh(&mesh_function.mesh())
   {
-    const Mesh& mesh = *mesh_function.mesh();
-    const std::size_t D = mesh.topology().dim();
+    dolfin_assert(mesh_function.mesh() == _mesh);
+    const std::size_t D = _mesh->topology().dim();
 
     // FIXME: Use iterators
 
@@ -252,19 +264,19 @@ namespace dolfin
     }
     else
     {
-      mesh.init(_dim, D);
-      const MeshConnectivity& connectivity = mesh.topology()(_dim, D);
+      _mesh->init(_dim, D);
+      const MeshConnectivity& connectivity = _mesh->topology()(_dim, D);
       dolfin_assert(!connectivity.empty());
       for (std::size_t entity_index = 0; entity_index < mesh_function.size();
            ++entity_index)
       {
         // Find the cell
         dolfin_assert(connectivity.size(entity_index) > 0);
-        const MeshEntity entity(mesh, _dim, entity_index);
+        const MeshEntity entity(*_mesh, _dim, entity_index);
         for (std::size_t i = 0; i < entity.num_entities(D) ; ++i)
         {
           // Create cell
-          const Cell cell(mesh, connectivity(entity_index)[i]);
+          const Cell cell(*_mesh, connectivity(entity_index)[i]);
 
           // Find the local entity index
           const std::size_t local_entity = cell.index(entity);
@@ -281,39 +293,45 @@ namespace dolfin
   template <typename T>
   MeshValueCollection<T>::MeshValueCollection(const Mesh& mesh,
     const std::string filename, std::size_t dim)
-  : Variable("m", "unnamed MeshValueCollection"), _dim(dim)
+    : Variable("m", "unnamed MeshValueCollection"), _dim(dim), _mesh(&mesh)
   {
-    if (MPI::num_processes() == 1)
-    {
-      File file(filename);
-      file >> *this;
-    }
-    else
-    {
-      // Read file on process 0
-      MeshValueCollection<T> tmp_collection(dim);
-      if (MPI::process_number() == 0)
-      {
-        File file(filename);
-        file >> tmp_collection;
-      }
+    File file(filename);
+    file >> *this;
+    
+    // FIXME: this will probably break XML read
+    // This code belongs in XML reader...
+    // if (MPI::num_processes() == 1)
+    // {
+    //   File file(filename);
+    //   file >> *this;
+    // }
+    // else
+    // {
+    //   // Read file on process 0
+    //   MeshValueCollection<T> tmp_collection(dim);
+    //   if (MPI::process_number() == 0)
+    //   {
+    //     File file(filename);
+    //     file >> tmp_collection;
+    //   }
 
-      // Create local data and build value collection
-      LocalMeshValueCollection<T> local_data(tmp_collection, dim);
+    //   // Create local data and build value collection
+    //   LocalMeshValueCollection<T> local_data(tmp_collection, dim);
 
-      // Build mesh value collection
-      MeshPartitioning::build_distributed_value_collection(*this, local_data,
-                                                           mesh);
-    }
+    //   // Build mesh value collection
+    //   MeshPartitioning::build_distributed_value_collection(*this, local_data,
+    //                                                        mesh);
+    // }
   }
   //---------------------------------------------------------------------------
   template <typename T>
   MeshValueCollection<T>& MeshValueCollection<T>::operator=(const MeshFunction<T>& mesh_function)
   {
     _dim = mesh_function.dim();
+    _mesh = &mesh_function.mesh();
 
-    const Mesh& mesh = *mesh_function.mesh();
-    const std::size_t D = mesh.topology().dim();
+    dolfin_assert(mesh_function.mesh() == _mesh);
+    const std::size_t D = _mesh->topology().dim();
 
     // FIXME: Use iterators
 
@@ -329,19 +347,19 @@ namespace dolfin
     }
     else
     {
-      mesh.init(_dim, D);
-      const MeshConnectivity& connectivity = mesh.topology()(_dim, D);
+      _mesh->init(_dim, D);
+      const MeshConnectivity& connectivity = _mesh->topology()(_dim, D);
       dolfin_assert(!connectivity.empty());
       for (std::size_t entity_index = 0; entity_index < mesh_function.size();
            ++entity_index)
       {
         // Find the cell
         dolfin_assert(connectivity.size(entity_index) > 0);
-        const MeshEntity entity(mesh, _dim, entity_index);
+        const MeshEntity entity(*_mesh, _dim, entity_index);
         for (std::size_t i = 0; i < entity.num_entities(D) ; ++i)
         {
           // Create cell
-          const Cell cell(mesh, connectivity(entity_index)[i]);
+          const Cell cell(*_mesh, connectivity(entity_index)[i]);
 
           // Find the local entity index
           const std::size_t local_entity = cell.index(entity);
@@ -362,6 +380,7 @@ namespace dolfin
   {
     _dim = mesh_value_collection.dim();
     _values = mesh_value_collection.values();
+    _mesh = mesh_value_collection._mesh;
 
     return *this;
   }
@@ -391,6 +410,13 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
+  const Mesh& MeshValueCollection<T>::mesh() const
+  {
+    dolfin_assert(_mesh);
+    return *_mesh;
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
   bool MeshValueCollection<T>::set_value(std::size_t cell_index,
                                          std::size_t local_entity,
                                          const T& value)
@@ -412,8 +438,15 @@ namespace dolfin
                                          const T& value,
                                          const Mesh& mesh)
   {
+    // Check mesh is the same as already associated
+    // If not, associate now.
+    if(_mesh != 0)
+      dolfin_assert(_mesh == &mesh);
+    else
+      _mesh = &mesh;
+    
     // Special case when d = D
-    const std::size_t D = mesh.topology().dim();
+    const std::size_t D = _mesh->topology().dim();
     if (_dim == D)
     {
       // Set local entity index to zero when we mark a cell
@@ -430,14 +463,14 @@ namespace dolfin
     }
 
     // Get mesh connectivity d --> D
-    mesh.init(_dim, D);
-    const MeshConnectivity& connectivity = mesh.topology()(_dim, D);
+    _mesh->init(_dim, D);
+    const MeshConnectivity& connectivity = _mesh->topology()(_dim, D);
 
     // Find the cell
     dolfin_assert(!connectivity.empty());
     dolfin_assert(connectivity.size(entity_index) > 0);
-    const MeshEntity entity(mesh, _dim, entity_index);
-    const Cell cell(mesh, connectivity(entity_index)[0]); // choose first
+    const MeshEntity entity(*_mesh, _dim, entity_index);
+    const Cell cell(*_mesh, connectivity(entity_index)[0]); // choose first
 
     // Find the local entity index
     const std::size_t local_entity = cell.index(entity);
