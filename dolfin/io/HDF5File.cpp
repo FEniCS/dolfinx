@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-04-29
+// Last changed: 2013-04-30
 
 #ifdef HAS_HDF5
 
@@ -529,6 +529,11 @@ void HDF5File::write(const MeshValueCollection<std::size_t>& mesh_values, const 
   write_mesh_value_collection(mesh_values, name);
 }
 //-----------------------------------------------------------------------------
+void HDF5File::read(MeshValueCollection<std::size_t>& mesh_values, const std::string name)
+{
+  read_mesh_value_collection(mesh_values, name);
+}
+//-----------------------------------------------------------------------------
 template <typename T>
 void HDF5File::write_mesh_value_collection(const MeshValueCollection<T>& mesh_values, const std::string name)
 {
@@ -557,6 +562,99 @@ void HDF5File::write_mesh_value_collection(const MeshValueCollection<T>& mesh_va
 
   HDF5Interface::add_attribute(hdf5_file_id, name, "dimension",
                                mesh_values.dim());
+}
+//-----------------------------------------------------------------------------
+template <typename T>
+void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_values, const std::string name)
+{
+  dolfin_assert(hdf5_file_open);
+  
+  const Mesh& mesh = mesh_values.mesh();
+
+  if(!HDF5Interface::has_group(hdf5_file_id, name))
+  {
+    dolfin_error("HDF5File.cpp",
+                 "open MeshValueCollection dataset",
+                 "Group \"%s\" not found in file", name);
+  }
+  
+  std::size_t dim = 0;
+  HDF5Interface::get_attribute(hdf5_file_id, name, "dimension", dim);
+
+  const std::string values_name = name + "/values";
+  const std::string entities_name = name + "/entities";
+  const std::string cells_name = name + "/cells";
+
+  if(!has_dataset(hdf5_file_id, values_name))
+  {
+    dolfin_error("HDF5File.cpp",
+                 "open MeshValueCollection dataset",
+                 "Dataset \"%s\" not found in file", values_name);
+  }
+  if(!has_dataset(hdf5_file_id, entities_name))
+  {
+    dolfin_error("HDF5File.cpp",
+                 "open MeshValueCollection dataset",
+                 "Dataset \"%s\" not found in file", entities_name);
+  }
+  if(!has_dataset(hdf5_file_id, cells_name))
+  {
+    dolfin_error("HDF5File.cpp",
+                 "open MeshValueCollection dataset",
+                 "Dataset \"%s\" not found in file", cells_name);
+  }
+  
+  // Check all datasets have the same size
+  const std::vector<std::size_t> values_dim
+      = HDF5Interface::get_dataset_size(hdf5_file_id, values_name);  
+  const std::vector<std::size_t> entities_dim
+      = HDF5Interface::get_dataset_size(hdf5_file_id, entities_name);  
+  const std::vector<std::size_t> cells_dim
+      = HDF5Interface::get_dataset_size(hdf5_file_id, cells_name);  
+  dolfin_assert(values_dim[0] == entities_dim[0]);
+  dolfin_assert(values_dim[0] == cells_dim[0]);
+
+  // Divide range between processes
+  const std::pair<std::size_t, std::size_t> range =
+    MPI::local_range(values_dim[0]);
+  const std::size_t local_size = range.second - range.first;
+
+  // Read local range of values, entities and cells
+  std::vector<T> values_data;
+  values_data.reserve(local_size);
+  HDF5Interface::read_dataset(hdf5_file_id, values_name, range, values_data);  
+  std::vector<std::size_t> entities_data;
+  entities_data.reserve(local_size);
+  HDF5Interface::read_dataset(hdf5_file_id, entities_name, range, entities_data);  
+  std::vector<std::size_t> cells_data;
+  cells_data.reserve(local_size);
+  HDF5Interface::read_dataset(hdf5_file_id, cells_name, range, cells_data);  
+
+  // Redistribute to processes owning cells
+
+  std::vector<std::vector<std::size_t> > send_buffer;
+  std::vector<std::vector<std::size_t> > recv_buffer;
+  send_buffer.resize(MPI::num_processes());
+
+  const std::vector<std::size_t>& global_cell_index
+    = mesh.topology().global_indices(mesh.topology().dim());
+  const std::size_t gidx_max = mesh.size_global(mesh.topology().dim());
+
+  for(std::vector<std::size_t>::iterator gidx = global_cell_index.begin();
+      gidx != global_cell_index.end(); ++gidx)
+  {
+    // Send local index to "Post Office" with global index range giving destination
+    send_buffer[MPI::index_owner(*gidx, gidx_max)] = gidx - global_cell_index.begin();
+  }
+
+  MPI::all_to_all(send_buffer, recv_buffer);
+  
+  // cells_data
+  // FIXME: complete redistribution function...
+  // Need to send entities and values to correct global cells
+  // May need a few rounds of MPI to complete
+
+
 }
 //-----------------------------------------------------------------------------
 void HDF5File::read(GenericVector& x, const std::string dataset_name,

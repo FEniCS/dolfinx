@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2013-04-29
+// Last changed: 2013-04-30
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -96,6 +96,9 @@ namespace dolfin
     /// Read MeshFunction from file
     void read(MeshFunction<std::size_t>& meshfunction, const std::string name);
 
+    /// Read MeshValueCollection from file
+    void read(MeshValueCollection<std::size_t>& mesh_values, const std::string name);
+
     /// Read MeshFunction from file
     void read(MeshFunction<int>& meshfunction, const std::string name);
 
@@ -138,6 +141,10 @@ namespace dolfin
     // Write a MeshValueCollection to file
     template <typename T>
     void write_mesh_value_collection(const MeshValueCollection<T>& mesh_values, const std::string name);
+
+    // Read a MeshValueCollection from file
+    template <typename T>
+    void read_mesh_value_collection(MeshValueCollection<T>& mesh_values, const std::string name);
 
     // Write contiguous data to HDF5 data set. Data is flattened into
     // a 1D array, e.g. [x0, y0, z0, x1, y1, z1] for a vector in 3D
