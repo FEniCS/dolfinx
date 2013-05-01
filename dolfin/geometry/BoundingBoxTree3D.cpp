@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-23
-// Last changed: 2013-05-01
+// Last changed: 2013-05-02
 
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshGeometry.h>
@@ -87,15 +87,6 @@ BoundingBoxTree3D::~BoundingBoxTree3D()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::vector<unsigned int> BoundingBoxTree3D::find(const Point& point) const
-{
-  // Call recursive find function
-  std::vector<unsigned int> entities;
-  find(point.coordinates(), bboxes.size() - 1, entities);
-
-  return entities;
-}
-//-----------------------------------------------------------------------------
 void BoundingBoxTree3D::build(const Mesh& mesh, unsigned int dimension)
 {
   // Check dimension
@@ -154,10 +145,6 @@ unsigned int BoundingBoxTree3D::build_3d(const std::vector<double>& leaf_bboxes,
 
   // Create empty bounding box data
   BBox bbox;
-
-  // FIXME:
-  // GenericBBox& bbox = add_bbox();
-  // remove push back below
 
   // Reached leaf
   if (end - begin == 1)
@@ -284,26 +271,5 @@ compute_bbox_of_bboxes_3d(double* bbox,
     axis = 1;
   else
     axis = 2;
-}
-//-----------------------------------------------------------------------------
-void BoundingBoxTree3D::find(const double* x,
-                             unsigned int node,
-                             std::vector<unsigned int>& entities) const
-{
-  // Three cases: either the point is not contained (so skip branch),
-  // or it's contained in a leaf (so add it) or it's contained in the
-  // bounding box (so search the two children).
-
-  const BBox& bbox = bboxes[node];
-
-  if (!bbox.contains(x))
-    return;
-  else if (bbox.is_leaf())
-    entities.push_back(bbox.entity);
-  else
-  {
-    find(x, bbox.child_0, entities);
-    find(x, bbox.child_1, entities);
-  }
 }
 //-----------------------------------------------------------------------------

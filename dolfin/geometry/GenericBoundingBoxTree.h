@@ -16,13 +16,18 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-23
-// Last changed: 2013-05-01
+// Last changed: 2013-05-02
 
 #ifndef __GENERIC_BOUNDING_BOX_TREE_H
 #define __GENERIC_BOUNDING_BOX_TREE_H
 
+#include <vector>
+#include <dolfin/common/constants.h>
+
 namespace dolfin
 {
+
+  class Point;
 
   /// Base class for bounding box implementations
 
@@ -34,7 +39,49 @@ namespace dolfin
     virtual ~GenericBoundingBoxTree() {}
 
     /// Find entities intersecting the given _Point_
-    virtual std::vector<unsigned int> find(const Point& point) const = 0;
+    std::vector<unsigned int> find(const Point& point) const;
+
+  protected:
+
+    // Bounding box data. The 'entity' field is only set for leaves
+    // and is otherwise undefined. A leaf is signified by both children
+    // being set to 0.
+    struct BBox
+    {
+      // Bounding box data
+      unsigned int entity;
+      unsigned int child_0;
+      unsigned int child_1;
+
+      double xmin, xmax;
+      double ymin, ymax;
+      double zmin, zmax;
+
+      // Check whether coordinate is contained in box
+      inline bool contains(const double* x) const
+      {
+        return (xmin - DOLFIN_EPS < x[0] && x[0] < xmax + DOLFIN_EPS &&
+                ymin - DOLFIN_EPS < x[1] && x[1] < ymax + DOLFIN_EPS &&
+                zmin - DOLFIN_EPS < x[2] && x[2] < zmax + DOLFIN_EPS);
+      }
+
+      // Check whether box is a leaf
+      inline bool is_leaf() const
+      {
+        return child_0 == 0 && child_1 == 0;
+      }
+
+    };
+
+    // List of bounding boxes
+    std::vector<BBox> bboxes;
+
+  private:
+
+    /// Find entities intersecting the given coordinate (recursive)
+    void find(const double* x,
+              unsigned int node,
+              std::vector<unsigned int>& entities) const;
 
   };
 
