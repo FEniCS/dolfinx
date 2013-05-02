@@ -30,8 +30,11 @@ MeshPointIntersection::MeshPointIntersection(const Mesh& mesh,
                                              const Point& point)
   : mesh(mesh)
 {
-  compute_intersection(point);
+  // Build bounding box tree
   bbtree.build(mesh);
+
+  // Compute intersection
+  compute_intersection(point);
 }
 //-----------------------------------------------------------------------------
 MeshPointIntersection::~MeshPointIntersection()
