@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-04-24
+// Last changed: 2013-05-02
 
 #ifndef __BOUNDING_BOX_TREE_H
 #define __BOUNDING_BOX_TREE_H
@@ -43,14 +43,20 @@ namespace dolfin
   {
   public:
 
-    /// Create bounding box tree for cells of mesh.
+    /// Create empty bounding box tree.
+    BoundingBoxTree();
+
+    /// Destructor
+    ~BoundingBoxTree();
+
+    /// Build bounding box tree for cells of mesh.
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh for which to compute the bounding box tree.
-    BoundingBoxTree(const Mesh& mesh);
+    void build(const Mesh& mesh);
 
-    /// Create bounding box tree for mesh entites of given dimension.
+    /// Build bounding box tree for mesh entites of given dimension.
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
@@ -58,10 +64,7 @@ namespace dolfin
     ///     dimension (unsigned int)
     ///         The entity dimension (topological dimension) for which
     ///         to compute the bounding box tree.
-    BoundingBoxTree(const Mesh& mesh, unsigned int dimension);
-
-    /// Destructor
-    ~BoundingBoxTree();
+    void build(const Mesh& mesh, unsigned int dimension);
 
     /// Find entities intersecting the given _Point_.
     ///

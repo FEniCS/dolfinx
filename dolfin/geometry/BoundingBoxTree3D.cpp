@@ -18,11 +18,7 @@
 // First added:  2013-04-23
 // Last changed: 2013-05-02
 
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshGeometry.h>
-#include <dolfin/mesh/MeshEntityIterator.h>
-#include <dolfin/mesh/Vertex.h>
-#include <dolfin/mesh/Point.h>
+#include <algorithm>
 #include "BoundingBoxTree3D.h"
 
 using namespace dolfin;
@@ -70,16 +66,9 @@ struct less_3d_z
 };
 
 //-----------------------------------------------------------------------------
-BoundingBoxTree3D::BoundingBoxTree3D(const Mesh& mesh)
-  : _gdim(mesh.geometry().dim())
+BoundingBoxTree3D::BoundingBoxTree3D()
 {
-  build(mesh, mesh.topology().dim());
-}
-//-----------------------------------------------------------------------------
-BoundingBoxTree3D::BoundingBoxTree3D(const Mesh& mesh, unsigned int dimension)
-  : _gdim(mesh.geometry().dim())
-{
-  build(mesh, dimension);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 BoundingBoxTree3D::~BoundingBoxTree3D()
@@ -87,58 +76,9 @@ BoundingBoxTree3D::~BoundingBoxTree3D()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree3D::build(const Mesh& mesh, unsigned int dimension)
-{
-  // Check dimension
-  if (dimension < 1 or dimension > mesh.topology().dim())
-  {
-    dolfin_error("BoundingBoxTree3D.cpp",
-                 "compute bounding box tree",
-                 "dimension must be a number between 1 and %d",
-                 mesh.topology().dim());
-  }
-
-  // Initialize entities of given dimension if they don't exist
-  mesh.init(dimension);
-
-  // Clear existing data if any
-  bboxes.clear();
-
-  // Initialize bounding boxes for leaves
-  const unsigned int num_leaves = mesh.num_entities(dimension);
-  std::vector<double> leaf_bboxes(2*_gdim*num_leaves);
-  for (MeshEntityIterator it(mesh, dimension); !it.end(); ++it)
-    compute_bbox_of_entity(leaf_bboxes.data() + 2*_gdim*it->index(), *it);
-
-  // Initialize leaf partition (to be sorted)
-  std::vector<unsigned int> leaf_partition(num_leaves);
-  for (unsigned int i = 0; i < num_leaves; ++i)
-    leaf_partition[i] = i;
-
-  // Recursively build the bounding box tree from the leaves. We switch
-  // on dimension at the highest possible level to maximize performance.
-  switch (_gdim)
-  {
-  case 1:
-    cout << "not implemented" << endl;
-    break;
-  case 2:
-    cout << "not implemented" << endl;
-    break;
-  case 3:
-    build_3d(leaf_bboxes, leaf_partition.begin(), leaf_partition.end());
-    break;
-  default:
-    cout << "not implemented" << endl;
-  }
-
-  info("Computed bounding box tree with %d nodes for %d entities.",
-       bboxes.size(), num_leaves);
-}
-//-----------------------------------------------------------------------------
-unsigned int BoundingBoxTree3D::build_3d(const std::vector<double>& leaf_bboxes,
-                                         const std::vector<unsigned int>::iterator& begin,
-                                         const std::vector<unsigned int>::iterator& end)
+unsigned int BoundingBoxTree3D::build(const std::vector<double>& leaf_bboxes,
+                                      const std::vector<unsigned int>::iterator& begin,
+                                      const std::vector<unsigned int>::iterator& end)
 
 {
   dolfin_assert(begin < end);
@@ -170,7 +110,7 @@ unsigned int BoundingBoxTree3D::build_3d(const std::vector<double>& leaf_bboxes,
   // Compute bounding box of all bounding boxes
   double _bbox[6];
   short unsigned int axis;
-  compute_bbox_of_bboxes_3d(_bbox, axis, leaf_bboxes, begin, end);
+  compute_bbox_of_bboxes(_bbox, axis, leaf_bboxes, begin, end);
   bbox.xmin = _bbox[0]; bbox.xmax = _bbox[3];
   bbox.ymin = _bbox[1]; bbox.ymax = _bbox[4];
   bbox.zmin = _bbox[2]; bbox.zmax = _bbox[5];
@@ -189,9 +129,11 @@ unsigned int BoundingBoxTree3D::build_3d(const std::vector<double>& leaf_bboxes,
     std::nth_element(begin, middle, end, less_3d_z(leaf_bboxes));
   }
 
+
+
   // Split boxes in two groups and call recursively
-  bbox.child_0 = build_3d(leaf_bboxes, begin, middle);
-  bbox.child_1 = build_3d(leaf_bboxes, middle, end);
+  bbox.child_0 = build(leaf_bboxes, begin, middle);
+  bbox.child_1 = build(leaf_bboxes, middle, end);
 
   // Store bounding box data. Note that root box will be added last.
   bboxes.push_back(bbox);
@@ -199,42 +141,12 @@ unsigned int BoundingBoxTree3D::build_3d(const std::vector<double>& leaf_bboxes,
   return bboxes.size() - 1;
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree3D::compute_bbox_of_entity(double* bbox,
-                                               const MeshEntity& entity) const
-{
-  // Get bounding box coordinates
-  double* xmin = bbox;
-  double* xmax = bbox + _gdim;
-
-  // Get mesh entity data
-  const MeshGeometry& geometry = entity.mesh().geometry();
-  const size_t num_vertices = entity.num_entities(0);
-  const unsigned int* vertices = entity.entities(0);
-  dolfin_assert(num_vertices >= 2);
-
-  // Get coordinates for first vertex
-  const double* x = geometry.x(vertices[0]);
-  for (unsigned int j = 0; j < _gdim; ++j)
-    xmin[j] = xmax[j] = x[j];
-
-  // Compute min and max over remaining vertices
-  for (unsigned int i = 1; i < num_vertices; ++i)
-  {
-    const double* x = geometry.x(vertices[i]);
-    for (unsigned int j = 0; j < _gdim; ++j)
-    {
-      xmin[j] = std::min(xmin[j], x[j]);
-      xmax[j] = std::max(xmax[j], x[j]);
-    }
-  }
-}
-//-----------------------------------------------------------------------------
 void BoundingBoxTree3D::
-compute_bbox_of_bboxes_3d(double* bbox,
-                          unsigned short int& axis,
-                          const std::vector<double>& leaf_bboxes,
-                          const std::vector<unsigned int>::iterator& begin,
-                          const std::vector<unsigned int>::iterator& end)
+compute_bbox_of_bboxes(double* bbox,
+                       unsigned short int& axis,
+                       const std::vector<double>& leaf_bboxes,
+                       const std::vector<unsigned int>::iterator& begin,
+                       const std::vector<unsigned int>::iterator& end)
 {
   typedef std::vector<unsigned int>::const_iterator iterator;
 

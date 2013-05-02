@@ -31,7 +31,6 @@ namespace dolfin
 
   // Forward declarations
   class Mesh;
-  class MeshEntity;
   class Point;
 
   /// This class implements a (distributed) axis aligned bounding box
@@ -42,39 +41,28 @@ namespace dolfin
   {
   public:
 
-    /// Create bounding box tree for cells of mesh
-    BoundingBoxTree3D(const Mesh& mesh);
-
-    /// Create bounding box tree for mesh entites of given dimension
-    BoundingBoxTree3D(const Mesh& mesh, unsigned int dimension);
+    /// Create empty bounding box tree
+    BoundingBoxTree3D();
 
     /// Destructor
     ~BoundingBoxTree3D();
 
-  private:
-
-    // Build bounding box tree of mesh
-    void build(const Mesh& mesh, unsigned int dimension);
+  protected:
 
     // Build bounding box tree (recursive, 3d)
-    unsigned int build_3d(const std::vector<double>& leaf_bboxes,
-                          const std::vector<unsigned int>::iterator& begin,
-                          const std::vector<unsigned int>::iterator& end);
+    unsigned int build(const std::vector<double>& leaf_bboxes,
+                       const std::vector<unsigned int>::iterator& begin,
+                       const std::vector<unsigned int>::iterator& end);
 
-    // Compute bounding box of mesh entity
-    void compute_bbox_of_entity(double* bbox,
-                                const MeshEntity& entity) const;
+  private:
 
     // Compute bounding box of bounding boxes (3d)
     void
-    compute_bbox_of_bboxes_3d(double* bbox,
-                              unsigned short int& axis,
-                              const std::vector<double>& leaf_bboxes,
-                              const std::vector<unsigned int>::iterator& begin,
-                              const std::vector<unsigned int>::iterator& end);
-
-    // Geometric dimension
-    unsigned int _gdim;
+    compute_bbox_of_bboxes(double* bbox,
+                           unsigned short int& axis,
+                           const std::vector<double>& leaf_bboxes,
+                           const std::vector<unsigned int>::iterator& begin,
+                           const std::vector<unsigned int>::iterator& end);
 
   };
 

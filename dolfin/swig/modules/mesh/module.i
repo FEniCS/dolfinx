@@ -100,6 +100,8 @@
 
 // #include types from geometry submodule
 #include "dolfin/geometry/BoundingBoxTree.h"
+#include "dolfin/geometry/GenericBoundingBoxTree.h"
+#include "dolfin/geometry/BoundingBoxTree3D.h"
 #include "dolfin/geometry/MeshPointIntersection.h"
 #include "dolfin/geometry/intersect.h"
 
@@ -244,6 +246,8 @@ import_array();
 
 // %include types from submodule geometry
 %include "dolfin/geometry/BoundingBoxTree.h"
+%include "dolfin/geometry/GenericBoundingBoxTree.h"
+%include "dolfin/geometry/BoundingBoxTree3D.h"
 %include "dolfin/geometry/MeshPointIntersection.h"
 %include "dolfin/geometry/intersect.h"
 

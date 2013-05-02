@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-04-24
+// Last changed: 2013-05-02
 
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshGeometry.h>
@@ -29,19 +29,35 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(const Mesh& mesh)
+BoundingBoxTree::BoundingBoxTree()
 {
-  _tree.reset(new BoundingBoxTree3D(mesh));
-}
-//-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(const Mesh& mesh, unsigned int dimension)
-{
-  _tree.reset(new BoundingBoxTree3D(mesh, dimension));
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 BoundingBoxTree::~BoundingBoxTree()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+void BoundingBoxTree::build(const Mesh& mesh)
+{
+  // FIXME: Select implementation here
+  if (!_tree)
+    _tree.reset(new BoundingBoxTree3D());
+
+  // Build tree
+  dolfin_assert(_tree);
+  _tree->build(mesh);
+}
+//-----------------------------------------------------------------------------
+void BoundingBoxTree::build(const Mesh& mesh, unsigned int dimension)
+{
+  // FIXME: Select implementation here
+  _tree.reset(new BoundingBoxTree3D());
+
+  // Build tree
+  dolfin_assert(_tree);
+  _tree->build(mesh, dimension);
 }
 //-----------------------------------------------------------------------------
 std::vector<unsigned int> BoundingBoxTree::find(const Point& point) const

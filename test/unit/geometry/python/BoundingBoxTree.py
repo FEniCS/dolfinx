@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-15
-# Last changed: 2013-04-23
+# Last changed: 2013-05-02
 
 import unittest
 
@@ -82,5 +82,6 @@ if __name__ == "__main__":
 
     p = Point(0.3, 0.3, 0.3)
     mesh = UnitCubeMesh(8, 8, 8)
-    bbtree = BoundingBoxTree(mesh, 3)
+    bbtree = BoundingBoxTree()
+    bbtree.build(mesh)
     print bbtree.find(p)

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-18
-// Last changed: 2013-04-18
+// Last changed: 2013-05-02
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/Cell.h>
@@ -28,9 +28,10 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MeshPointIntersection::MeshPointIntersection(const Mesh& mesh,
                                              const Point& point)
-  : mesh(mesh), bbtree(mesh)
+  : mesh(mesh)
 {
   compute_intersection(point);
+  bbtree.build(mesh);
 }
 //-----------------------------------------------------------------------------
 MeshPointIntersection::~MeshPointIntersection()

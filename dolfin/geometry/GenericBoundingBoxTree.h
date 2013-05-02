@@ -27,6 +27,8 @@
 namespace dolfin
 {
 
+  class Mesh;
+  class MeshEntity;
   class Point;
 
   /// Base class for bounding box implementations
@@ -34,6 +36,15 @@ namespace dolfin
   class GenericBoundingBoxTree
   {
   public:
+
+    /// Constructor
+    GenericBoundingBoxTree();
+
+    /// Build bounding box tree for cells of mesh
+    void build(const Mesh& mesh);
+
+    /// Build bounding box tree for mesh entites of given dimension
+    void build(const Mesh& mesh, unsigned int dimension);
 
     /// Destructor
     virtual ~GenericBoundingBoxTree() {}
@@ -76,12 +87,22 @@ namespace dolfin
     // List of bounding boxes
     std::vector<BBox> bboxes;
 
+    // Build bounding box tree (recursive, 3d)
+    virtual unsigned int build(const std::vector<double>& leaf_bboxes,
+                               const std::vector<unsigned int>::iterator& begin,
+                               const std::vector<unsigned int>::iterator& end) = 0;
+
   private:
 
     /// Find entities intersecting the given coordinate (recursive)
     void find(const double* x,
               unsigned int node,
               std::vector<unsigned int>& entities) const;
+
+    // Compute bounding box of mesh entity
+    void compute_bbox_of_entity(double* b,
+                                const MeshEntity& entity,
+                                unsigned int gdim) const;
 
   };
 
