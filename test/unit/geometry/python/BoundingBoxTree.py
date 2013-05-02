@@ -37,7 +37,8 @@ class BoundingBoxTreeTest(unittest.TestCase):
         mesh = UnitIntervalMesh(16)
 
         for dim in range(1, 2):
-            bbtree = BoundingBoxTree(mesh, dim)
+            bbtree = BoundingBoxTree()
+            bbtree.build(mesh, dim)
             entities = bbtree.find(p)
             self.assertEqual(sorted(entities), reference[dim])
 
@@ -51,7 +52,8 @@ class BoundingBoxTreeTest(unittest.TestCase):
         mesh = UnitSquareMesh(16, 16)
 
         for dim in range(1, 3):
-            bbtree = BoundingBoxTree(mesh, dim)
+            bbtree = BoundingBoxTree()
+            bbtree.build(mesh, dim)
             entities = bbtree.find(p)
             self.assertEqual(sorted(entities), reference[dim])
 
@@ -66,7 +68,8 @@ class BoundingBoxTreeTest(unittest.TestCase):
         mesh = UnitCubeMesh(8, 8, 8)
 
         for dim in range(1, 4):
-            bbtree = BoundingBoxTree(mesh, dim)
+            bbtree = BoundingBoxTree()
+            bbtree.build(mesh, dim)
             entities = bbtree.find(p)
             self.assertEqual(sorted(entities), reference[dim])
 
@@ -74,14 +77,4 @@ if __name__ == "__main__":
     print ""
     print "Testing BoundingBoxTree"
     print "------------------------------------------------"
-    #unittest.main()
-
-    # FIXME: Testing
-
-    #Computed bounding box tree with 6143 nodes for 3072 entities.
-
-    p = Point(0.3, 0.3, 0.3)
-    mesh = UnitCubeMesh(8, 8, 8)
-    bbtree = BoundingBoxTree()
-    bbtree.build(mesh)
-    print bbtree.find(p)
+    unittest.main()
