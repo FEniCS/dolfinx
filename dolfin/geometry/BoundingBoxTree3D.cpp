@@ -95,7 +95,7 @@ unsigned int BoundingBoxTree3D::build(const std::vector<double>& leaf_bboxes,
 
     // Store bounding box data
     bbox.entity = i;
-    bbox.child_0 = 0;
+    bbox.child_0 = bboxes.size(); // FIXME: Obscure
     bbox.child_1 = 0;
     bbox.xmin = b[0]; bbox.xmax = b[3];
     bbox.ymin = b[1]; bbox.ymax = b[4];

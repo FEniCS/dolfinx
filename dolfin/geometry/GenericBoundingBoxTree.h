@@ -77,9 +77,10 @@ namespace dolfin
       }
 
       // Check whether box is a leaf
-      inline bool is_leaf() const
+      inline bool is_leaf(unsigned int node) const
       {
-        return child_0 == 0 && child_1 == 0;
+        //return child_0 == 0 && child_1 == 0;
+        return child_0 == node;
       }
 
     };
