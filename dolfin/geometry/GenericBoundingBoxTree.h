@@ -43,9 +43,6 @@ namespace dolfin
     /// Destructor
     virtual ~GenericBoundingBoxTree() {}
 
-    /// Build bounding box tree for cells of mesh
-    void build(const Mesh& mesh);
-
     /// Build bounding box tree for mesh entites of given dimension
     void build(const Mesh& mesh, unsigned int dimension);
 

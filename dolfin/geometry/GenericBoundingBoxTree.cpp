@@ -37,11 +37,6 @@ GenericBoundingBoxTree::GenericBoundingBoxTree()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void GenericBoundingBoxTree::build(const Mesh& mesh)
-{
-  build(mesh, mesh.topology().dim());
-}
-//-----------------------------------------------------------------------------
 void GenericBoundingBoxTree::build(const Mesh& mesh, unsigned int dimension)
 {
   // Check dimension

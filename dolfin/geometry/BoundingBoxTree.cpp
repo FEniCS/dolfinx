@@ -19,6 +19,9 @@
 // Last changed: 2013-05-02
 
 #include <dolfin/log/log.h>
+#include <dolfin/mesh/Mesh.h>
+#include "BoundingBoxTree1D.h"
+#include "BoundingBoxTree2D.h"
 #include "BoundingBoxTree3D.h"
 #include "BoundingBoxTree.h"
 
@@ -37,21 +40,29 @@ BoundingBoxTree::~BoundingBoxTree()
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::build(const Mesh& mesh)
 {
-  // FIXME: Add 1D, 2D
-
-  // Select implementation
-  if (!_tree)
-    _tree.reset(new BoundingBoxTree3D());
-
-  // Build tree
-  dolfin_assert(_tree);
-  _tree->build(mesh);
+  build(mesh, mesh.topology().dim());
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::build(const Mesh& mesh, unsigned int dimension)
 {
   // Select implementation
-  _tree.reset(new BoundingBoxTree3D());
+  switch (mesh.geometry().dim())
+  {
+  case 1:
+    _tree.reset(new BoundingBoxTree1D());
+    break;
+  case 2:
+    _tree.reset(new BoundingBoxTree2D());
+    break;
+  case 3:
+    _tree.reset(new BoundingBoxTree3D());
+    break;
+  default:
+    dolfin_error("BoundingBoxTree.cpp",
+                 "build bounding box tree",
+                 "Not implemented for geometric dimension %d",
+                 mesh.geometry().dim());
+  }
 
   // Build tree
   dolfin_assert(_tree);

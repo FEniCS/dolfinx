@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2013-04-09
+// First added:  2013-05-02
 // Last changed: 2013-05-02
 
-#ifndef __BOUNDING_BOX_TREE_3D_H
-#define __BOUNDING_BOX_TREE_3D_H
+#ifndef __BOUNDING_BOX_TREE_2D_H
+#define __BOUNDING_BOX_TREE_2D_H
 
 #include <algorithm>
 #include <vector>
@@ -29,9 +29,9 @@
 namespace dolfin
 {
 
-  // Specialization of bounding box implementation to 3D
+  // Specialization of bounding box implementation to 2D
 
-  class BoundingBoxTree3D : public GenericBoundingBoxTree
+  class BoundingBoxTree2D : public GenericBoundingBoxTree
   {
   protected:
 
@@ -45,9 +45,9 @@ namespace dolfin
 
       inline bool operator()(unsigned int i, unsigned int j)
       {
-        const double* bi = bboxes.data() + 6*i;
-        const double* bj = bboxes.data() + 6*j;
-        return (bi[0] + bi[3]) < (bj[0] + bj[3]);
+        const double* bi = bboxes.data() + 4*i;
+        const double* bj = bboxes.data() + 4*j;
+        return (bi[0] + bi[2]) < (bj[0] + bj[2]);
       }
     };
 
@@ -58,32 +58,18 @@ namespace dolfin
 
       inline bool operator()(unsigned int i, unsigned int j)
       {
-        const double* bi = bboxes.data() + 6*i;
-        const double* bj = bboxes.data() + 6*j;
-        return (bi[1] + bi[4]) < (bj[1] + bj[4]);
-      }
-    };
-
-    struct less_z
-    {
-      const std::vector<double>& bboxes;
-      less_z(const std::vector<double>& bboxes): bboxes(bboxes) {}
-
-      inline bool operator()(unsigned int i, unsigned int j)
-      {
-        const double* bi = bboxes.data() + 6*i;
-        const double* bj = bboxes.data() + 6*j;
-        return (bi[2] + bi[5]) < (bj[2] + bj[5]);
+        const double* bi = bboxes.data() + 4*i;
+        const double* bj = bboxes.data() + 4*j;
+        return (bi[1] + bi[3]) < (bj[1] + bj[3]);
       }
     };
 
     // Check whether point is in bounding box
     bool point_in_bbox(const double* x, unsigned int node) const
     {
-      const double* _x = bbox_coordinates.data() + 6*node;
-      return (_x[0] - DOLFIN_EPS < x[0] && x[0] < _x[3] + DOLFIN_EPS &&
-              _x[1] - DOLFIN_EPS < x[1] && x[1] < _x[4] + DOLFIN_EPS &&
-              _x[2] - DOLFIN_EPS < x[2] && x[2] < _x[5] + DOLFIN_EPS);
+      const double* _x = bbox_coordinates.data() + 4*node;
+      return (_x[0] - DOLFIN_EPS < x[0] && x[0] < _x[2] + DOLFIN_EPS &&
+              _x[1] - DOLFIN_EPS < x[1] && x[1] < _x[3] + DOLFIN_EPS);
     }
 
     // Compute bounding box of bounding boxes
@@ -97,37 +83,30 @@ namespace dolfin
 
       // Get coordinates for first box
       iterator it = begin;
-      const double* b = leaf_bboxes.data() + 6*(*it);
+      const double* b = leaf_bboxes.data() + 4*(*it);
       bbox[0] = b[0];
       bbox[1] = b[1];
       bbox[2] = b[2];
       bbox[3] = b[3];
-      bbox[4] = b[4];
-      bbox[5] = b[5];
 
       // Compute min and max over remaining boxes
       for (; it != end; ++it)
       {
-        const double* b = leaf_bboxes.data() + 6*(*it);
+        const double* b = leaf_bboxes.data() + 4*(*it);
         if (b[0] < bbox[0]) bbox[0] = b[0];
         if (b[1] < bbox[1]) bbox[1] = b[1];
-        if (b[2] < bbox[2]) bbox[2] = b[2];
+        if (b[2] > bbox[2]) bbox[2] = b[2];
         if (b[3] > bbox[3]) bbox[3] = b[3];
-        if (b[4] > bbox[4]) bbox[4] = b[4];
-        if (b[5] > bbox[5]) bbox[5] = b[5];
       }
 
       // Compute longest axis
-      const double x = b[3] - b[0];
-      const double y = b[4] - b[1];
-      const double z = b[5] - b[2];
+      const double x = b[2] - b[0];
+      const double y = b[3] - b[1];
 
-      if (x > y && x > z)
+      if (x > y)
         axis = 0;
-      else if (y > z)
-        axis = 1;
       else
-        axis = 2;
+        axis = 1;
     }
 
     // Sort leaf bounding boxes along given axis
@@ -137,17 +116,10 @@ namespace dolfin
                      const std::vector<unsigned int>::iterator& middle,
                      const std::vector<unsigned int>::iterator& end)
     {
-      switch (axis)
-      {
-      case 0:
+      if (axis == 0)
         std::nth_element(begin, middle, end, less_x(leaf_bboxes));
-        break;
-      case 1:
+      else
         std::nth_element(begin, middle, end, less_y(leaf_bboxes));
-        break;
-      default:
-        std::nth_element(begin, middle, end, less_z(leaf_bboxes));
-      }
     }
 
   };
