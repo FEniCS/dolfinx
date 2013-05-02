@@ -60,7 +60,6 @@ namespace dolfin
     struct BBox
     {
       // Bounding box data
-      unsigned int entity;
       unsigned int child_0;
       unsigned int child_1;
 

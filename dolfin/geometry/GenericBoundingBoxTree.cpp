@@ -95,7 +95,7 @@ void GenericBoundingBoxTree::find(const double* x,
   if (!bbox.contains(x))
     return;
   else if (bbox.is_leaf(node))
-    entities.push_back(bbox.entity);
+    entities.push_back(bbox.child_1);
   else
   {
     find(x, bbox.child_0, entities);
