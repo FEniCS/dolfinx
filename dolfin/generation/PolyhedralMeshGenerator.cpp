@@ -358,24 +358,7 @@ void PolyhedralMeshGenerator::cgal_generate_surface_mesh(Mesh& mesh, T& p,
   C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria);
 
   // Build DOLFIN mesh from CGAL mesh/triangulation
-  //CGALMeshBuilder::build_surface_mesh_c3t3(mesh, c3t3);
-
-  /*
-  Tr_surface tr;
-  C2t3 c2t3(tr);
-
-  // Implicit sphere
-  Surface_3 surface(sphere_function, Sphere_3(CGAL::ORIGIN, 2.0));
-
-  // Meshing criteria
-  CGAL::Surface_mesh_default_criteria_3<Tr_surface> criteria(30.0, 0.1, 0.1);
-
-  // Build CGAL mesh
-  CGAL::make_surface_mesh(c2t3, surface, criteria, CGAL::Non_manifold_tag());
-
-  // Build DOLFIN mesh from CGAL mesh/triangulation
-  CGALMeshBuilder::build_surface_mesh_c2t3(mesh, c2t3);
-  */
+  CGALMeshBuilder::build_surface_mesh_c3t3(mesh, c3t3);
 }
 //-----------------------------------------------------------------------------
 

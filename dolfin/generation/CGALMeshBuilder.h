@@ -108,7 +108,8 @@ namespace dolfin
     {
       std::size_t cell_index = 0;
       typename CGAL::Triangulation_2<X, Y>::Finite_faces_iterator cgal_cell;
-      for (cgal_cell = t.finite_faces_begin(); cgal_cell != t.finite_faces_end(); ++cgal_cell)
+      for (cgal_cell = t.finite_faces_begin();
+           cgal_cell != t.finite_faces_end(); ++cgal_cell)
       {
         std::vector<std::size_t> cell_data(3);
         for (std::size_t i = 0; i < 3; ++i)
@@ -144,7 +145,8 @@ namespace dolfin
     {
       std::size_t cell_index = 0;
       typename CGAL::Triangulation_3<X, Y>::Finite_cells_iterator cgal_cell;
-      for (cgal_cell = t.finite_cells_begin(); cgal_cell != t.finite_cells_end(); ++cgal_cell)
+      for (cgal_cell = t.finite_cells_begin();
+           cgal_cell != t.finite_cells_end(); ++cgal_cell)
       {
         std::vector<std::size_t> cell_data(4);
         for (std::size_t i = 0; i < 4; ++i)
@@ -163,7 +165,8 @@ namespace dolfin
     mesh.clear();
 
     // Get various dimensions
-    const std::size_t gdim = triangulation.finite_vertices_begin()->point().dimension();
+    const std::size_t gdim
+      = triangulation.finite_vertices_begin()->point().dimension();
     const std::size_t tdim = triangulation.dimension();
     const std::size_t num_vertices = triangulation.number_of_vertices();
     const std::size_t num_cells = _num_cells(triangulation);
@@ -178,7 +181,7 @@ namespace dolfin
     std::size_t vertex_index = 0;
     typename T::Finite_vertices_iterator cgal_vertex;
     for (cgal_vertex = triangulation.finite_vertices_begin();
-            cgal_vertex != triangulation.finite_vertices_end(); ++cgal_vertex)
+         cgal_vertex != triangulation.finite_vertices_end(); ++cgal_vertex)
     {
       // Get vertex coordinates and add vertex to the mesh
       Point p;
@@ -194,8 +197,8 @@ namespace dolfin
       cgal_vertex->info() = vertex_index++;
     }
 
-    // Add cells to mesh (calls specialized function because CGAL function
-    // named differ in 2D and 3D)
+    // Add cells to mesh (calls specialized function because CGAL
+    // function names differ in 2D and 3D)
     add_cells(mesh_editor, triangulation);
 
     // Close mesh editor
@@ -289,7 +292,8 @@ namespace dolfin
 
     // Set all vertex indices to -1
     typename T::Facets_in_complex_iterator c;
-    for (c = cgal_mesh.facets_in_complex_begin(); c != cgal_mesh.facets_in_complex_end(); ++c)
+    for (c = cgal_mesh.facets_in_complex_begin();
+         c != cgal_mesh.facets_in_complex_end(); ++c)
     {
       c->first->vertex( (c->second + 1)%4 )->info() = -1;
       c->first->vertex( (c->second + 2)%4 )->info() = -1;
@@ -298,17 +302,16 @@ namespace dolfin
 
     std::size_t cell_index = 0;
     std::size_t vertex_index = 0;
-    for (c = cgal_mesh.facets_in_complex_begin(); c != cgal_mesh.facets_in_complex_end(); ++c)
+    for (c = cgal_mesh.facets_in_complex_begin();
+         c != cgal_mesh.facets_in_complex_end(); ++c)
     {
       // Add vertex if not already added and increment index
       for (std::size_t i = 1; i < 4; ++i)
       {
         const int v_index = c->first->vertex( (c->second + i)%4 )->info();
-        cout << "Testing indices: " << v_index << endl;
         if (v_index < 0)
         {
-          c->first->vertex( (c->second + i)%4 )->info() = vertex_index;
-          cout << "Testing indices (new): " << v_index << endl;
+          c->first->vertex((c->second + i)%4)->info() = vertex_index;
 
           // Get vertex coordinates and add vertex to the mesh
           Point p;

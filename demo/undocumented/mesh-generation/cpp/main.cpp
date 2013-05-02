@@ -78,8 +78,12 @@ int main()
   PolyhedralMeshGenerator::generate(mesh, face_vertices, faces, 0.04);
   plot(mesh);
 
-  // Generate 3D mesh from OFF file input (cube)
+  // Generate 3D mesh from OFF file input (a cube) and plot
   PolyhedralMeshGenerator::generate(mesh, "../cube.off", 0.05);
+  plot(mesh);
+
+  // Generate surface in 3D mesh from OFF file input (a cube) and plot
+  PolyhedralMeshGenerator::generate_surface_mesh(mesh, "../cube.off", 0.05);
   plot(mesh);
 
   interactive();
