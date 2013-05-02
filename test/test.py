@@ -21,11 +21,13 @@
 # Last changed: 2011-11-14
 
 import re, sys, os
+from instant import get_status_output
 
 pwd = os.path.dirname(os.path.abspath(__file__))
 
 # Tests to run
 tests = ["unit", "regression", "system", "documentation", "codingstyle"]
+tests = ["regression"]
 
 # Check if we should enable memory testing
 if len(sys.argv) == 2 and sys.argv[1] == "--enable-memory-test":
@@ -41,9 +43,10 @@ for test in tests:
     print "Running tests: %s" % test
     print "----------------------------------------------------------------------"
     os.chdir(os.path.join(pwd, test))
-    fail = os.system(command)
-    if fail:
-        failed.append(fail)
+    status, output = get_status_output(command)
+    if status:
+        print output
+        failed.append(status)
     print ""
 
 sys.exit(len(failed))

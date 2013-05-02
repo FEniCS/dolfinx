@@ -25,8 +25,7 @@
 
 import sys, os, re
 import platform
-import instant
-from dolfin_utils.commands import getstatusoutput
+from instant import get_status_output
 from dolfin import has_mpi, has_parmetis, has_scotch, has_linear_algebra_backend
 
 # Tests to run
@@ -100,7 +99,7 @@ for prefix in prefixes:
             elif not  os.path.isfile(os.path.join(test, "cpp", cpptest_executable)):
                 print "This test set does not have a C++ version"
             else:
-                status, output = getstatusoutput("cd %s%scpp && %s .%s%s" % \
+                status, output = get_status_output("cd %s%scpp && %s .%s%s" % \
                                    (test, os.path.sep, prefix, os.path.sep, cpptest_executable))
                 if status == 0 and "OK" in output:
                     print "OK",
@@ -115,7 +114,7 @@ for prefix in prefixes:
 
             print "Python:",
             if os.path.isfile(os.path.join(test, "python", subtest + ".py")):
-                status, output = getstatusoutput("cd %s%spython && %s python .%s%s.py" % \
+                status, output = get_status_output("cd %s%spython && %s python .%s%s.py" % \
                                    (test, os.path.sep, prefix, os.path.sep, subtest))
                 if status == 0 and "OK" in output:
                     print "OK",
