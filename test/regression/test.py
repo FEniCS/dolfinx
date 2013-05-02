@@ -29,7 +29,7 @@ import sys, os, re
 import platform
 import instant
 from time import time
-from dolfin_utils.commands import getstatusoutput
+from instant import get_status_output
 from dolfin import has_mpi, has_parmetis, has_scotch
 
 
@@ -50,6 +50,7 @@ def get_executable_name(demo, lang) :
 
 # Location of all demos
 demodir = os.path.join(os.curdir, "..", "..", "demo")
+rootdir = os.path.abspath(os.curdir)
 
 # Demos to run
 cppdemos = []
@@ -210,8 +211,10 @@ for prefix in prefixes:
             cppdemo_executable += '.exe'
         if os.path.isfile(os.path.join(demo, cppdemo_executable)):
             t1 = time()
-            output = getstatusoutput("cd %s && %s .%s%s" % \
-                                     (demo, prefix, os.path.sep, cppdemo_executable))
+            os.chdir(demo)
+            output = get_status_output("%s .%s%s" % \
+                                       (prefix, os.path.sep, cppdemo_executable))
+            os.chdir(rootdir)
             t2 = time()
             timing += [(t2 - t1, demo)]
             if output[0] == 0:
@@ -233,7 +236,9 @@ for prefix in prefixes:
         demofile = get_executable_name(demo, "python") + '.py'
         if os.path.isfile(os.path.join(demo, demofile)):
             t1 = time()
-            status, output = getstatusoutput("cd %s && %s python %s" % (demo, prefix, demofile))
+            os.chdir(demo)
+            status, output = get_status_output("%s python %s" % (prefix, demofile))
+            os.chdir(rootdir)
             t2 = time()
             timing += [(t2 - t1, demo)]
             if status == 0:
