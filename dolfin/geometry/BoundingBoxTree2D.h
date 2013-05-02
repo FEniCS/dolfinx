@@ -47,7 +47,7 @@ namespace dolfin
       {
         const double* bi = bboxes.data() + 4*i;
         const double* bj = bboxes.data() + 4*j;
-        return (bi[0] + bi[2]) < (bj[0] + bj[2]);
+        return bi[0] + bi[2] < bj[0] + bj[2];
       }
     };
 
@@ -60,16 +60,16 @@ namespace dolfin
       {
         const double* bi = bboxes.data() + 4*i;
         const double* bj = bboxes.data() + 4*j;
-        return (bi[1] + bi[3]) < (bj[1] + bj[3]);
+        return bi[1] + bi[3] < bj[1] + bj[3];
       }
     };
 
     // Check whether point is in bounding box
     bool point_in_bbox(const double* x, unsigned int node) const
     {
-      const double* _x = bbox_coordinates.data() + 4*node;
-      return (_x[0] - DOLFIN_EPS < x[0] && x[0] < _x[2] + DOLFIN_EPS &&
-              _x[1] - DOLFIN_EPS < x[1] && x[1] < _x[3] + DOLFIN_EPS);
+      const double* b = bbox_coordinates.data() + 4*node;
+      return (b[0] - DOLFIN_EPS < x[0] && x[0] < b[2] + DOLFIN_EPS &&
+              b[1] - DOLFIN_EPS < x[1] && x[1] < b[3] + DOLFIN_EPS);
     }
 
     // Compute bounding box of bounding boxes

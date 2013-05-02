@@ -89,7 +89,7 @@ GenericBoundingBoxTree::build(std::vector<double>& leaf_bboxes,
   {
     // Get bounding box coordinates for leaf
     const unsigned int entity_index = *begin;
-    const double* b = leaf_bboxes.data() + 6*entity_index;
+    const double* b = leaf_bboxes.data() + 2*gdim*entity_index;
 
     // Store bounding box data
     bbox.child_0 = bboxes.size(); // child_0 == node denotes a leaf
