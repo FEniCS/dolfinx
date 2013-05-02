@@ -79,7 +79,8 @@ namespace dolfin
     {
       std::size_t num_cells = 0;
       typename CGAL::Constrained_Delaunay_triangulation_2<X, Y>::Finite_faces_iterator cgal_cell;
-      for (cgal_cell = t.finite_faces_begin(); cgal_cell != t.finite_faces_end(); ++cgal_cell)
+      for (cgal_cell = t.finite_faces_begin();
+           cgal_cell != t.finite_faces_end(); ++cgal_cell)
       {
         if(cgal_cell->is_in_domain())
           ++num_cells;
@@ -125,7 +126,8 @@ namespace dolfin
     {
       std::size_t cell_index = 0;
       typename CGAL::Constrained_Delaunay_triangulation_2<X, Y>::Finite_faces_iterator cgal_cell;
-      for (cgal_cell = t.finite_faces_begin(); cgal_cell != t.finite_faces_end(); ++cgal_cell)
+      for (cgal_cell = t.finite_faces_begin();
+           cgal_cell != t.finite_faces_end(); ++cgal_cell)
       {
         // Add cell if it is in the domain
         if(cgal_cell->is_in_domain())
@@ -348,11 +350,6 @@ namespace dolfin
     const std::size_t num_vertices = t.number_of_vertices();
     const std::size_t num_cells = cgal_mesh.number_of_facets();
 
-    cout << "gdim: " << gdim << endl;
-    cout << "tdim: " << tdim << endl;
-    cout << "num_vert: " << num_vertices << endl;
-    cout << "num_cells: " << num_cells << endl;
-
     // Create a MeshEditor and open
     dolfin::MeshEditor mesh_editor;
     mesh_editor.open(mesh, tdim, gdim);
@@ -447,7 +444,8 @@ namespace dolfin
            c = poly.facets_begin(); c != poly.facets_end(); c++)
     {
       std::vector<std::size_t> vertex_indices;
-      typename T::Facet::Halfedge_around_facet_circulator halfedge(c->facet_begin());
+      typename T::Facet::Halfedge_around_facet_circulator
+        halfedge(c->facet_begin());
       do
       {
         vertex_indices.push_back(point_map[halfedge->vertex()->point()]);
