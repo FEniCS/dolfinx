@@ -22,7 +22,6 @@
 #define __GENERIC_BOUNDING_BOX_TREE_H
 
 #include <vector>
-#include <dolfin/common/constants.h>
 
 namespace dolfin
 {
@@ -31,7 +30,8 @@ namespace dolfin
   class MeshEntity;
   class Point;
 
-  /// Base class for bounding box implementations
+  /// Base class for bounding box implementations (envelope-letter
+  /// design)
 
   class GenericBoundingBoxTree
   {
@@ -40,26 +40,25 @@ namespace dolfin
     /// Constructor
     GenericBoundingBoxTree();
 
+    /// Destructor
+    virtual ~GenericBoundingBoxTree() {}
+
     /// Build bounding box tree for cells of mesh
     void build(const Mesh& mesh);
 
     /// Build bounding box tree for mesh entites of given dimension
     void build(const Mesh& mesh, unsigned int dimension);
 
-    /// Destructor
-    virtual ~GenericBoundingBoxTree() {}
-
     /// Find entities intersecting the given _Point_
     std::vector<unsigned int> find(const Point& point) const;
 
   protected:
 
-    // Bounding box data. The 'entity' field is only set for leaves
-    // and is otherwise undefined. A leaf is signified by both children
-    // being set to 0.
+    // Bounding box data. Leaf nodes are indicated by setting child_0
+    // equal to the node itself. For leaf nodes, child_1 is set to the
+    // index of the entity contained in the leaf bounding box.
     struct BBox
     {
-      // Bounding box data
       unsigned int child_0;
       unsigned int child_1;
     };
@@ -69,45 +68,6 @@ namespace dolfin
 
     // List of bounding box coordinates
     std::vector<double> bbox_coordinates;
-
-    // Add bounding box and coordinates
-    inline void add_bbox(const BBox& bbox, const double* b, unsigned int gdim)
-    {
-      // Add bounding box
-      bboxes.push_back(bbox);
-
-      // Add bounding box coordinates
-      for (unsigned int i = 0; i < 2*gdim; ++i)
-        bbox_coordinates.push_back(b[i]);
-    }
-
-    // Check whether bounding box is a leaf node
-    bool is_leaf(const BBox& bbox, unsigned int node) const
-    {
-      // FIXME: Explain
-      return bbox.child_0 == node;
-    }
-
-    // Check whether point is in bounding box
-    virtual bool point_in_bbox(const double* x, unsigned int node) const = 0;
-
-    // Compute bounding box of bounding boxes (3d)
-    virtual void
-    compute_bbox_of_bboxes(double* bbox,
-                           unsigned short int& axis,
-                           const std::vector<double>& leaf_bboxes,
-                           const std::vector<unsigned int>::iterator& begin,
-                           const std::vector<unsigned int>::iterator& end) = 0;
-
-
-    virtual void sort_bboxes(unsigned short int axis,
-                             const std::vector<double>& leaf_bboxes,
-                             const std::vector<unsigned int>::iterator& begin,
-                             const std::vector<unsigned int>::iterator& middle,
-                             const std::vector<unsigned int>::iterator& end) = 0;
-
-
-  private:
 
     // Build bounding box tree (recursive, 3d)
     unsigned int build(std::vector<double>& leaf_bboxes,
@@ -124,6 +84,50 @@ namespace dolfin
     void compute_bbox_of_entity(double* b,
                                 const MeshEntity& entity,
                                 unsigned int gdim) const;
+
+    // Add bounding box and coordinates
+    inline unsigned int add_bbox(const BBox& bbox,
+                                 const double* b,
+                                 unsigned int gdim)
+    {
+      // Add bounding box
+      bboxes.push_back(bbox);
+
+      // Add bounding box coordinates
+      for (unsigned int i = 0; i < 2*gdim; ++i)
+        bbox_coordinates.push_back(b[i]);
+
+      return bboxes.size() - 1;
+    }
+
+    // Check whether bounding box is a leaf node
+    bool is_leaf(const BBox& bbox, unsigned int node) const
+    {
+      // Leaf nodes are marked by setting child_0 equal to the node itself
+      return bbox.child_0 == node;
+    }
+
+    //--- Dimension-dependent functions to be implemented by subclass ---
+
+    // Check whether point is in bounding box
+    virtual bool
+    point_in_bbox(const double* x, unsigned int node) const = 0;
+
+    // Compute bounding box of bounding boxes
+    virtual void
+    compute_bbox_of_bboxes(double* bbox,
+                           unsigned short int& axis,
+                           const std::vector<double>& leaf_bboxes,
+                           const std::vector<unsigned int>::iterator& begin,
+                           const std::vector<unsigned int>::iterator& end) = 0;
+
+    // Sort leaf bounding boxes along given axis
+    virtual void
+    sort_bboxes(unsigned short int axis,
+                const std::vector<double>& leaf_bboxes,
+                const std::vector<unsigned int>::iterator& begin,
+                const std::vector<unsigned int>::iterator& middle,
+                const std::vector<unsigned int>::iterator& end) = 0;
 
   };
 

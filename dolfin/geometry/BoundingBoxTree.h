@@ -23,15 +23,11 @@
 
 #include <boost/scoped_ptr.hpp>
 
-#include <dolfin/common/constants.h>
-#include <dolfin/log/log.h>
-
 namespace dolfin
 {
 
   // Forward declarations
   class Mesh;
-  class MeshEntity;
   class Point;
   class GenericBoundingBoxTree;
 
@@ -43,7 +39,7 @@ namespace dolfin
   {
   public:
 
-    /// Create empty bounding box tree.
+    /// Create empty bounding box tree
     BoundingBoxTree();
 
     /// Destructor
@@ -84,6 +80,7 @@ namespace dolfin
 
   private:
 
+    // Dimension-dependent implementation
     boost::scoped_ptr<GenericBoundingBoxTree> _tree;
 
   };

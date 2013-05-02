@@ -18,11 +18,7 @@
 // First added:  2013-04-09
 // Last changed: 2013-05-02
 
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshGeometry.h>
-#include <dolfin/mesh/MeshEntityIterator.h>
-#include <dolfin/mesh/Vertex.h>
-#include <dolfin/mesh/Point.h>
+#include <dolfin/log/log.h>
 #include "BoundingBoxTree3D.h"
 #include "BoundingBoxTree.h"
 
@@ -41,7 +37,9 @@ BoundingBoxTree::~BoundingBoxTree()
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::build(const Mesh& mesh)
 {
-  // FIXME: Select implementation here
+  // FIXME: Add 1D, 2D
+
+  // Select implementation
   if (!_tree)
     _tree.reset(new BoundingBoxTree3D());
 
@@ -52,7 +50,7 @@ void BoundingBoxTree::build(const Mesh& mesh)
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::build(const Mesh& mesh, unsigned int dimension)
 {
-  // FIXME: Select implementation here
+  // Select implementation
   _tree.reset(new BoundingBoxTree3D());
 
   // Build tree

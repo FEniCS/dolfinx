@@ -20,7 +20,7 @@
 
 // Define a maximum dimension used for a local array in the recursive
 // build function. Speeds things up compared to allocating it in each
-// recursion, and is more convenient than sending it around.
+// recursion and is more convenient than sending it around.
 #define MAX_DIM 6
 
 #include <dolfin/mesh/Mesh.h>
@@ -49,7 +49,7 @@ void GenericBoundingBoxTree::build(const Mesh& mesh, unsigned int dimension)
   {
     dolfin_error("GenericBoundingBoxTree.cpp",
                  "compute bounding box tree",
-                 "dimension must be a number between 1 and %d",
+                 "Dimension must be a number between 1 and %d",
                  mesh.topology().dim());
   }
 
@@ -59,14 +59,14 @@ void GenericBoundingBoxTree::build(const Mesh& mesh, unsigned int dimension)
   // Clear existing data if any
   bboxes.clear();
 
-  // Initialize bounding boxes for leaves
+  // Create bounding boxes for all entities (leaves)
   const unsigned int gdim = mesh.geometry().dim();
   const unsigned int num_leaves = mesh.num_entities(dimension);
   std::vector<double> leaf_bboxes(2*gdim*num_leaves);
   for (MeshEntityIterator it(mesh, dimension); !it.end(); ++it)
     compute_bbox_of_entity(leaf_bboxes.data() + 2*gdim*it->index(), *it, gdim);
 
-  // Initialize leaf partition (to be sorted)
+  // Create leaf partition (to be sorted)
   std::vector<unsigned int> leaf_partition(num_leaves);
   for (unsigned int i = 0; i < num_leaves; ++i)
     leaf_partition[i] = i;
@@ -93,15 +93,13 @@ GenericBoundingBoxTree::build(std::vector<double>& leaf_bboxes,
   if (end - begin == 1)
   {
     // Get bounding box coordinates for leaf
-    const unsigned int i = *begin;
-    const double* b = leaf_bboxes.data() + 6*i;
+    const unsigned int entity_index = *begin;
+    const double* b = leaf_bboxes.data() + 6*entity_index;
 
     // Store bounding box data
-    bbox.child_0 = bboxes.size(); // FIXME: Obscure
-    bbox.child_1 = i; // the entity
-    add_bbox(bbox, b, gdim);
-
-    return bboxes.size() - 1;
+    bbox.child_0 = bboxes.size(); // child_0 == node denotes a leaf
+    bbox.child_1 = entity_index;  // index of entity contained in leaf
+    return add_bbox(bbox, b, gdim);
   }
 
   // Compute bounding box of all bounding boxes
@@ -113,14 +111,12 @@ GenericBoundingBoxTree::build(std::vector<double>& leaf_bboxes,
   std::vector<unsigned int>::iterator middle = begin + (end - begin) / 2;
   sort_bboxes(axis, leaf_bboxes, begin, middle, end);
 
-  // Split boxes in two groups and call recursively
+  // Split bounding boxes into two groups and call recursively
   bbox.child_0 = build(leaf_bboxes, begin, middle, gdim);
   bbox.child_1 = build(leaf_bboxes, middle, end, gdim);
 
   // Store bounding box data. Note that root box will be added last.
-  add_bbox(bbox, b, gdim);
-
-  return bboxes.size() - 1;
+  return add_bbox(bbox, b, gdim);
 }
 //-----------------------------------------------------------------------------
 std::vector<unsigned int> GenericBoundingBoxTree::find(const Point& point) const
@@ -145,7 +141,7 @@ void GenericBoundingBoxTree::find(const double* x,
   if (!point_in_bbox(x, node))
     return;
   else if (is_leaf(bbox, node))
-    entities.push_back(bbox.child_1);
+    entities.push_back(bbox.child_1); // child_1 denotes entity for leaves
   else
   {
     find(x, bbox.child_0, entities);
