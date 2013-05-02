@@ -267,9 +267,9 @@ void PolyhedralMeshGenerator::cgal_generate(Mesh& mesh, T& p,
                                             double cell_size,
                                             bool detect_sharp_features)
 {
-  // Check if any facets are not triangular and triangulate if necessary.
-  // The CGAL mesh generation only supports polyhedra with triangular surface
-  // facets.
+  // Check if any facets are not triangular and triangulate if
+  // necessary.  The CGAL mesh generation only supports polyhedra with
+  // triangular surface facets.
 
   typename Polyhedron::Facet_iterator facet;
   for (facet = p.facets_begin(); facet != p.facets_end(); ++facet)
@@ -326,9 +326,9 @@ void PolyhedralMeshGenerator::cgal_generate_surface_mesh(Mesh& mesh, T& p,
                                                     double cell_size,
                                                     bool detect_sharp_features)
 {
-  // Check if any facets are not triangular and triangulate if necessary.
-  // The CGAL mesh generation only supports polyhedra with triangular surface
-  // facets.
+  // Check if any facets are not triangular and triangulate if
+  // necessary.  The CGAL mesh generation only supports polyhedra with
+  // triangular surface facets.
   typename Polyhedron::Facet_iterator facet;
   for (facet = p.facets_begin(); facet != p.facets_end(); ++facet)
   {
@@ -357,11 +357,8 @@ void PolyhedralMeshGenerator::cgal_generate_surface_mesh(Mesh& mesh, T& p,
   // Generate CGAL mesh
   C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria);
 
-  // Build DOLFIN mesh from CGAL mesh/triangulation
-  CGALMeshBuilder::build_from_mesh(mesh, c3t3);
-
-  // Build DOLFIN mesh from CGAL mesh/triangulation
-  //CGALMeshBuilder::build_surface_mesh_c3t3(mesh, c3t3);
+  // Build surface DOLFIN mesh from CGAL 3D mesh/triangulation
+  CGALMeshBuilder::build_surface_mesh_c3t3(mesh, c3t3);
 }
 //-----------------------------------------------------------------------------
 
