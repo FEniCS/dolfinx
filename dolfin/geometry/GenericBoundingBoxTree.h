@@ -62,26 +62,6 @@ namespace dolfin
       // Bounding box data
       unsigned int child_0;
       unsigned int child_1;
-
-      double xmin, xmax;
-      double ymin, ymax;
-      double zmin, zmax;
-
-      // Check whether coordinate is contained in box
-      inline bool contains(const double* x) const
-      {
-        return (xmin - DOLFIN_EPS < x[0] && x[0] < xmax + DOLFIN_EPS &&
-                ymin - DOLFIN_EPS < x[1] && x[1] < ymax + DOLFIN_EPS &&
-                zmin - DOLFIN_EPS < x[2] && x[2] < zmax + DOLFIN_EPS);
-      }
-
-      // Check whether box is a leaf
-      inline bool is_leaf(unsigned int node) const
-      {
-        // FIXME: Explain
-        return child_0 == node;
-      }
-
     };
 
     // List of bounding boxes (parent-child-entity relations)

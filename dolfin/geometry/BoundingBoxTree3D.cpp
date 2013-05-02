@@ -97,24 +97,15 @@ unsigned int BoundingBoxTree3D::build(const std::vector<double>& leaf_bboxes,
     // Store bounding box data
     bbox.child_0 = bboxes.size(); // FIXME: Obscure
     bbox.child_1 = i; // the entity
-    bbox.xmin = b[0]; bbox.xmax = b[3];
-    bbox.ymin = b[1]; bbox.ymax = b[4];
-    bbox.zmin = b[2]; bbox.zmax = b[5];
-    //bboxes.push_back(bbox);
     add_bbox(bbox, b, gdim);
 
     return bboxes.size() - 1;
   }
 
-  // FIXME: Reuse bbox data here
-
   // Compute bounding box of all bounding boxes
-  double _bbox[6]; // FIXME: Change name to b
+  double b[6];
   short unsigned int axis;
-  compute_bbox_of_bboxes(_bbox, axis, leaf_bboxes, begin, end);
-  bbox.xmin = _bbox[0]; bbox.xmax = _bbox[3];
-  bbox.ymin = _bbox[1]; bbox.ymax = _bbox[4];
-  bbox.zmin = _bbox[2]; bbox.zmax = _bbox[5];
+  compute_bbox_of_bboxes(b, axis, leaf_bboxes, begin, end);
 
   // Sort bounding boxes along longest axis
   std::vector<unsigned int>::iterator middle = begin + (end - begin) / 2;
@@ -135,8 +126,7 @@ unsigned int BoundingBoxTree3D::build(const std::vector<double>& leaf_bboxes,
   bbox.child_1 = build(leaf_bboxes, middle, end, gdim);
 
   // Store bounding box data. Note that root box will be added last.
-  add_bbox(bbox, _bbox, gdim);
-  //bboxes.push_back(bbox);
+  add_bbox(bbox, b, gdim);
 
   return bboxes.size() - 1;
 }
