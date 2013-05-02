@@ -91,13 +91,29 @@ namespace dolfin
     // Check whether point is in bounding box
     virtual bool point_in_bbox(const double* x, unsigned int node) const = 0;
 
-    // Build bounding box tree (recursive, 3d)
-    virtual unsigned int build(std::vector<double>& leaf_bboxes,
-                               const std::vector<unsigned int>::iterator& begin,
-                               const std::vector<unsigned int>::iterator& end,
-                               unsigned int gdim) = 0;
+    // Compute bounding box of bounding boxes (3d)
+    virtual void
+    compute_bbox_of_bboxes(double* bbox,
+                           unsigned short int& axis,
+                           const std::vector<double>& leaf_bboxes,
+                           const std::vector<unsigned int>::iterator& begin,
+                           const std::vector<unsigned int>::iterator& end) = 0;
+
+
+    virtual void sort_bboxes(unsigned short int axis,
+                             const std::vector<double>& leaf_bboxes,
+                             const std::vector<unsigned int>::iterator& begin,
+                             const std::vector<unsigned int>::iterator& middle,
+                             const std::vector<unsigned int>::iterator& end) = 0;
+
 
   private:
+
+    // Build bounding box tree (recursive, 3d)
+    unsigned int build(std::vector<double>& leaf_bboxes,
+                       const std::vector<unsigned int>::iterator& begin,
+                       const std::vector<unsigned int>::iterator& end,
+                       unsigned int gdim);
 
     /// Find entities intersecting the given coordinate (recursive)
     void find(const double* x,

@@ -54,12 +54,6 @@ namespace dolfin
 
   protected:
 
-    // Build bounding box tree (recursive, 3d)
-    unsigned int build(std::vector<double>& leaf_bboxes,
-                       const std::vector<unsigned int>::iterator& begin,
-                       const std::vector<unsigned int>::iterator& end,
-                       unsigned int gdim);
-
     // Check whether point is in bounding box
     bool point_in_bbox(const double* x, unsigned int node) const
     {
@@ -74,8 +68,6 @@ namespace dolfin
                      const std::vector<unsigned int>::iterator& begin,
                      const std::vector<unsigned int>::iterator& middle,
                      const std::vector<unsigned int>::iterator& end);
-
-  private:
 
     // Compute bounding box of bounding boxes (3d)
     void

@@ -18,9 +18,6 @@
 // First added:  2013-04-23
 // Last changed: 2013-05-02
 
-// FIXME: Testing
-#include <iostream>
-
 #include <algorithm>
 #include "BoundingBoxTree3D.h"
 
@@ -77,51 +74,6 @@ BoundingBoxTree3D::BoundingBoxTree3D()
 BoundingBoxTree3D::~BoundingBoxTree3D()
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-unsigned int BoundingBoxTree3D::build(std::vector<double>& leaf_bboxes,
-                                      const std::vector<unsigned int>::iterator& begin,
-                                      const std::vector<unsigned int>::iterator& end,
-                                      unsigned int gdim)
-
-{
-  dolfin_assert(begin < end);
-
-  // Create empty bounding box data
-  BBox bbox;
-
-  // Reached leaf
-  if (end - begin == 1)
-  {
-    // Get bounding box coordinates for leaf
-    const unsigned int i = *begin;
-    const double* b = leaf_bboxes.data() + 6*i;
-
-    // Store bounding box data
-    bbox.child_0 = bboxes.size(); // FIXME: Obscure
-    bbox.child_1 = i; // the entity
-    add_bbox(bbox, b, gdim);
-
-    return bboxes.size() - 1;
-  }
-
-  // Compute bounding box of all bounding boxes
-  double b[6];
-  short unsigned int axis;
-  compute_bbox_of_bboxes(b, axis, leaf_bboxes, begin, end);
-
-  // Sort bounding boxes along longest axis
-  std::vector<unsigned int>::iterator middle = begin + (end - begin) / 2;
-  sort_bboxes(axis, leaf_bboxes, begin, middle, end);
-
-  // Split boxes in two groups and call recursively
-  bbox.child_0 = build(leaf_bboxes, begin, middle, gdim);
-  bbox.child_1 = build(leaf_bboxes, middle, end, gdim);
-
-  // Store bounding box data. Note that root box will be added last.
-  add_bbox(bbox, b, gdim);
-
-  return bboxes.size() - 1;
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree3D::
