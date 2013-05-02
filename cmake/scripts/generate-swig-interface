@@ -29,8 +29,9 @@ import glob
 import time
 import sys
 
-# Add local site-packages to path
-sys.path.append(os.path.abspath("site-packages"))
+# Add local site-packages to path,
+# NOTE: We need to prepend it so systemwide installed dolfin is not picked up
+sys.path.insert(0, os.path.abspath("site-packages"))
 
 from dolfin_utils.cppparser import *
 
