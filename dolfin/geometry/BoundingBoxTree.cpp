@@ -71,6 +71,15 @@ void BoundingBoxTree::build(const Mesh& mesh, unsigned int dimension)
 //-----------------------------------------------------------------------------
 std::vector<unsigned int> BoundingBoxTree::find(const Point& point) const
 {
+  // Check that tree has been built
+  if (!_tree)
+  {
+    dolfin_error("BoundingBoxTree.cpp",
+                 "find point in bounding box tree",
+                 "Bounding box tree has not been build. You need to call tree.build()");
+  }
+
+  // Call find function
   dolfin_assert(_tree);
   return _tree->find(point);
 }
