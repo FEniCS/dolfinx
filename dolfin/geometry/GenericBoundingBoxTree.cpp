@@ -67,7 +67,7 @@ void GenericBoundingBoxTree::build(const Mesh& mesh, unsigned int dimension)
     leaf_partition[i] = i;
 
   // Recursively build the bounding box tree from the leaves
-  build(leaf_bboxes, leaf_partition.begin(), leaf_partition.end());
+  build(leaf_bboxes, leaf_partition.begin(), leaf_partition.end(), gdim);
 
   info("Computed bounding box tree with %d nodes for %d entities.",
        bboxes.size(), num_leaves);
@@ -92,9 +92,9 @@ void GenericBoundingBoxTree::find(const double* x,
 
   const BBox& bbox = bboxes[node];
 
-  if (!bbox.contains(x))
+  if (!point_in_bbox(x, node))
     return;
-  else if (bbox.is_leaf(node))
+  else if (is_leaf(bbox, node))
     entities.push_back(bbox.child_1);
   else
   {

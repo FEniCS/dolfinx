@@ -78,7 +78,8 @@ BoundingBoxTree3D::~BoundingBoxTree3D()
 //-----------------------------------------------------------------------------
 unsigned int BoundingBoxTree3D::build(const std::vector<double>& leaf_bboxes,
                                       const std::vector<unsigned int>::iterator& begin,
-                                      const std::vector<unsigned int>::iterator& end)
+                                      const std::vector<unsigned int>::iterator& end,
+                                      unsigned int gdim)
 
 {
   dolfin_assert(begin < end);
@@ -99,7 +100,8 @@ unsigned int BoundingBoxTree3D::build(const std::vector<double>& leaf_bboxes,
     bbox.xmin = b[0]; bbox.xmax = b[3];
     bbox.ymin = b[1]; bbox.ymax = b[4];
     bbox.zmin = b[2]; bbox.zmax = b[5];
-    bboxes.push_back(bbox);
+    //bboxes.push_back(bbox);
+    add_bbox(bbox, b, gdim);
 
     return bboxes.size() - 1;
   }
@@ -107,7 +109,7 @@ unsigned int BoundingBoxTree3D::build(const std::vector<double>& leaf_bboxes,
   // FIXME: Reuse bbox data here
 
   // Compute bounding box of all bounding boxes
-  double _bbox[6];
+  double _bbox[6]; // FIXME: Change name to b
   short unsigned int axis;
   compute_bbox_of_bboxes(_bbox, axis, leaf_bboxes, begin, end);
   bbox.xmin = _bbox[0]; bbox.xmax = _bbox[3];
@@ -128,14 +130,13 @@ unsigned int BoundingBoxTree3D::build(const std::vector<double>& leaf_bboxes,
     std::nth_element(begin, middle, end, less_3d_z(leaf_bboxes));
   }
 
-
-
   // Split boxes in two groups and call recursively
-  bbox.child_0 = build(leaf_bboxes, begin, middle);
-  bbox.child_1 = build(leaf_bboxes, middle, end);
+  bbox.child_0 = build(leaf_bboxes, begin, middle, gdim);
+  bbox.child_1 = build(leaf_bboxes, middle, end, gdim);
 
   // Store bounding box data. Note that root box will be added last.
-  bboxes.push_back(bbox);
+  add_bbox(bbox, _bbox, gdim);
+  //bboxes.push_back(bbox);
 
   return bboxes.size() - 1;
 }

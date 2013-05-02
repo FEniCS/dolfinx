@@ -78,19 +78,44 @@ namespace dolfin
       // Check whether box is a leaf
       inline bool is_leaf(unsigned int node) const
       {
-        //return child_0 == 0 && child_1 == 0;
+        // FIXME: Explain
         return child_0 == node;
       }
 
     };
 
-    // List of bounding boxes
+    // List of bounding boxes (parent-child-entity relations)
     std::vector<BBox> bboxes;
+
+    // List of bounding box coordinates
+    std::vector<double> bbox_coordinates;
+
+    // Add bounding box and coordinates
+    inline void add_bbox(const BBox& bbox, const double* b, unsigned int gdim)
+    {
+      // Add bounding box
+      bboxes.push_back(bbox);
+
+      // Add bounding box coordinates
+      for (unsigned int i = 0; i < 2*gdim; ++i)
+        bbox_coordinates.push_back(b[i]);
+    }
+
+    // Check whether bounding box is a leaf node
+    bool is_leaf(const BBox& bbox, unsigned int node) const
+    {
+      // FIXME: Explain
+      return bbox.child_0 == node;
+    }
+
+    // Check whether point is in bounding box
+    virtual bool point_in_bbox(const double* x, unsigned int node) const = 0;
 
     // Build bounding box tree (recursive, 3d)
     virtual unsigned int build(const std::vector<double>& leaf_bboxes,
                                const std::vector<unsigned int>::iterator& begin,
-                               const std::vector<unsigned int>::iterator& end) = 0;
+                               const std::vector<unsigned int>::iterator& end,
+                               unsigned int gdim) = 0;
 
   private:
 
