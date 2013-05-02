@@ -55,7 +55,7 @@ namespace dolfin
   protected:
 
     // Build bounding box tree (recursive, 3d)
-    unsigned int build(const std::vector<double>& leaf_bboxes,
+    unsigned int build(std::vector<double>& leaf_bboxes,
                        const std::vector<unsigned int>::iterator& begin,
                        const std::vector<unsigned int>::iterator& end,
                        unsigned int gdim);
@@ -68,6 +68,12 @@ namespace dolfin
               _x[1] - DOLFIN_EPS < x[1] && x[1] < _x[4] + DOLFIN_EPS &&
               _x[2] - DOLFIN_EPS < x[2] && x[2] < _x[5] + DOLFIN_EPS);
     }
+
+    void sort_bboxes(unsigned short int axis,
+                     const std::vector<double>& leaf_bboxes,
+                     const std::vector<unsigned int>::iterator& begin,
+                     const std::vector<unsigned int>::iterator& middle,
+                     const std::vector<unsigned int>::iterator& end);
 
   private:
 

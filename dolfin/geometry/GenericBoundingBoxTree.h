@@ -92,7 +92,7 @@ namespace dolfin
     virtual bool point_in_bbox(const double* x, unsigned int node) const = 0;
 
     // Build bounding box tree (recursive, 3d)
-    virtual unsigned int build(const std::vector<double>& leaf_bboxes,
+    virtual unsigned int build(std::vector<double>& leaf_bboxes,
                                const std::vector<unsigned int>::iterator& begin,
                                const std::vector<unsigned int>::iterator& end,
                                unsigned int gdim) = 0;

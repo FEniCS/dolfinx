@@ -18,6 +18,9 @@
 // First added:  2013-04-23
 // Last changed: 2013-05-02
 
+// FIXME: Testing
+#include <iostream>
+
 #include <algorithm>
 #include "BoundingBoxTree3D.h"
 
@@ -76,7 +79,7 @@ BoundingBoxTree3D::~BoundingBoxTree3D()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-unsigned int BoundingBoxTree3D::build(const std::vector<double>& leaf_bboxes,
+unsigned int BoundingBoxTree3D::build(std::vector<double>& leaf_bboxes,
                                       const std::vector<unsigned int>::iterator& begin,
                                       const std::vector<unsigned int>::iterator& end,
                                       unsigned int gdim)
@@ -109,17 +112,7 @@ unsigned int BoundingBoxTree3D::build(const std::vector<double>& leaf_bboxes,
 
   // Sort bounding boxes along longest axis
   std::vector<unsigned int>::iterator middle = begin + (end - begin) / 2;
-  switch (axis)
-  {
-  case 0:
-    std::nth_element(begin, middle, end, less_3d_x(leaf_bboxes));
-    break;
-  case 1:
-    std::nth_element(begin, middle, end, less_3d_y(leaf_bboxes));
-    break;
-  default:
-    std::nth_element(begin, middle, end, less_3d_z(leaf_bboxes));
-  }
+  sort_bboxes(axis, leaf_bboxes, begin, middle, end);
 
   // Split boxes in two groups and call recursively
   bbox.child_0 = build(leaf_bboxes, begin, middle, gdim);
@@ -173,5 +166,26 @@ compute_bbox_of_bboxes(double* bbox,
     axis = 1;
   else
     axis = 2;
+}
+//-----------------------------------------------------------------------------
+void BoundingBoxTree3D::sort_bboxes(unsigned short int axis,
+                                    const std::vector<double>& leaf_bboxes,
+                                    const std::vector<unsigned int>::iterator& begin,
+                                    const std::vector<unsigned int>::iterator& middle,
+                                    const std::vector<unsigned int>::iterator& end)
+{
+  // Sort bounding boxes along longest axis
+
+  switch (axis)
+  {
+  case 0:
+    std::nth_element(begin, middle, end, less_3d_x(leaf_bboxes));
+    break;
+  case 1:
+    std::nth_element(begin, middle, end, less_3d_y(leaf_bboxes));
+    break;
+  default:
+    std::nth_element(begin, middle, end, less_3d_z(leaf_bboxes));
+  }
 }
 //-----------------------------------------------------------------------------
