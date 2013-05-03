@@ -38,12 +38,17 @@ class Eval(unittest.TestCase):
                def eval(self, values, x):
                     values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
 
-          f0 = F0()
+          f0 = F0(name="f0", label="My expression")
           f1 = Expression("a*sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", \
-                          degree=2, a=1.)
+                          degree=2, a=1., name="f1")
           x = array([0.31, 0.32, 0.33])
           u00 = zeros(1); u01 = zeros(1)
           u10 = zeros(1); u20 = zeros(1)
+
+          self.assertEqual(f0.name(), "f0")
+          self.assertEqual(f0.label(), "My expression")
+          self.assertEqual(f1.name(), "f1")
+          self.assertEqual(f1.label(), "User defined expression")
 
           # Test original and vs short evaluation
           f0.eval(u00, x)
