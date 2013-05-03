@@ -500,7 +500,8 @@ void XMLLocalMeshSAX::read_mesh_value_collection(const xmlChar* name,
                  "XMLLocalMeshSAX can only read unsigned integer domain values");
   }
 
-  _mesh_data.domain_data.insert(std::make_pair(dim, 0));
+  std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::size_t> > tmp;
+  _mesh_data.domain_data.insert(std::make_pair(dim, tmp));
 
   // Reset counter
   domain_value_counter = 0;
