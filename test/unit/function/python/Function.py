@@ -30,6 +30,12 @@ V = FunctionSpace(mesh, 'CG', 1)
 W = VectorFunctionSpace(mesh, 'CG', 1)
 
 class Interface(unittest.TestCase):
+    def test_name_argument(self):
+        u = Function(W)
+        v = Function(W, name="v")
+        self.assertEqual(u.name(), "u") # This is the default, may want to change?
+        self.assertEqual(v.name(), "v")
+
     def test_in_function_space(self):
         u = Function(W)
         v = Function(W)

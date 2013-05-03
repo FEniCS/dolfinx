@@ -31,6 +31,12 @@ W = VectorFunctionSpace(mesh, 'CG', 1)
 
 class Constants(unittest.TestCase):
 
+     def test_name_argument(self):
+          u = Constant(1.0)
+          v = Constant(1.0, name="v")
+          self.assertEqual(u.name(), "u") # This is the default, may want to change?
+          self.assertEqual(v.name(), "v")
+
      def testConstantInit(self):
           c0 = Constant(1.)
           c1 = Constant([2,3], interval)
