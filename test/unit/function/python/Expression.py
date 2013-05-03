@@ -45,10 +45,15 @@ class Eval(unittest.TestCase):
           u00 = zeros(1); u01 = zeros(1)
           u10 = zeros(1); u20 = zeros(1)
 
+          # Check usergeneration of name and label
           self.assertEqual(f0.name(), "f0")
           self.assertEqual(f0.label(), "My expression")
           self.assertEqual(f1.name(), "f1")
           self.assertEqual(f1.label(), "User defined expression")
+
+          # Check outgeneration of name
+          count = int(F0().name()[2:])
+          self.assertEqual(F0().count(), count+1)
 
           # Test original and vs short evaluation
           f0.eval(u00, x)
