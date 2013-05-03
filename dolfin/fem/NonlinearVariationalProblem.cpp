@@ -150,25 +150,25 @@ NonlinearVariationalProblem(boost::shared_ptr<const Form> F,
 }
 //-----------------------------------------------------------------------------
 void NonlinearVariationalProblem::set_bounds(boost::shared_ptr<const Function> lb_func, boost::shared_ptr<const Function> ub_func)
-{   
+{
     set_bounds(*lb_func,*ub_func);
-}  
+}
 //-----------------------------------------------------------------------------
 void NonlinearVariationalProblem::set_bounds(const Function& lb_func, const Function& ub_func)
-{   
+{
     set_bounds(lb_func.vector(),ub_func.vector());
-}  
+}
 //-----------------------------------------------------------------------------
 void NonlinearVariationalProblem::set_bounds(const GenericVector& lb, const GenericVector& ub)
-{   
+{
     set_bounds(reference_to_no_delete_pointer(lb),reference_to_no_delete_pointer(ub));
 }
 //-----------------------------------------------------------------------------
 void NonlinearVariationalProblem::set_bounds(boost::shared_ptr<const GenericVector> lb, boost::shared_ptr<const GenericVector> ub)
-{   
+{
     this->_lb = lb;
     this->_ub = ub;
-    dolfin_assert(_lb); 
+    dolfin_assert(_lb);
     dolfin_assert(_ub);
 }
 //-----------------------------------------------------------------------------
@@ -226,17 +226,20 @@ boost::shared_ptr<const GenericVector> NonlinearVariationalProblem::upper_bound(
 //-----------------------------------------------------------------------------
 bool NonlinearVariationalProblem::has_jacobian() const
 {
-  return _J; // cast to bool
+  return _J ?  true : false;
+  //return _J; // cast to bool
 }
 //-----------------------------------------------------------------------------
 bool NonlinearVariationalProblem::has_lower_bound() const
 {
-  return _lb; // cast to bool
+  return _lb ?  true : false;
+  //return _lb; // cast to bool
 }
 //-----------------------------------------------------------------------------
 bool NonlinearVariationalProblem::has_upper_bound() const
 {
-  return _ub; // cast to bool
+  return _ub ?  true : false;
+  //return _ub; // cast to bool
 }
 //-----------------------------------------------------------------------------
 void NonlinearVariationalProblem::check_forms() const
