@@ -4,6 +4,6 @@
 // DOLFIN geometry interface
 
 #include <dolfin/geometry/ImplicitSurface.h>
-#include <dolfin/mesh/Point.h>
+#include <dolfin/geometry/Point.h>
 
 #endif
