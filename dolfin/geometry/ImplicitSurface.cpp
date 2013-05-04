@@ -19,17 +19,26 @@
 // Last changed:
 
 #include <dolfin/generation/CSGPrimitives3D.h>
-#include "IsoSurface.h"
+#include <dolfin/log/log.h>
+#include "ImplicitSurface.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-IsoSurface::IsoSurface(Sphere s, std::string type) : sphere(s), _type(type)
+ImplicitSurface::ImplicitSurface(Sphere s, std::string type)
+  : sphere(s), type(type)
 {
   // Checck type
+  if (type != "manifold" && type != "manifold_with_boundary"
+      && type != "non_manifold")
+  {
+    dolfin_error("ImplicitSurface.cpp",
+                 "create implicit surface",
+                 "Unknown surface type \"%s\"", type.c_str());
+  }
 }
 //-----------------------------------------------------------------------------
-IsoSurface::~IsoSurface()
+ImplicitSurface::~ImplicitSurface()
 {
   // Do nothing
 }

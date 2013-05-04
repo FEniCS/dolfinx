@@ -18,8 +18,8 @@
 // First added:  2013-05-04
 // Last changed:
 
-#ifndef __ISOSURFACE_H
-#define __ISOSURFACE_H
+#ifndef __IMPLICITSURFACE_H
+#define __IMPLICITSURFACE_H
 
 #include <string>
 #include <dolfin/generation/CSGPrimitives3D.h>
@@ -30,11 +30,10 @@ namespace dolfin
   // Forward declaration
   class Point;
 
-  /// This class is used to define an isosurface f(x) -> R, where for
-  /// a point y on the surface f(y) = 0. It typically used for the
-  /// implicit representation of a surface.
+  /// This class is used to define a surface via a function f(x) -> R,
+  /// where for a point y on the surface f(y) = 0.
 
-  class IsoSurface
+  class ImplicitSurface
   {
   public:
 
@@ -45,18 +44,18 @@ namespace dolfin
     ///         Bounding sphere for surface.
     ///
     ///     type (std::string)
-    ///         Isosurface type. One of "manifold", "manifold_with_edges"
+    ///         Isosurface type. One of "manifold", "manifold_with_boundary"
     ///         or "non_manifold".
     ///
     /// *Example*
     ///     .. code-block:: c++
     ///
-    ///         IsoSurface isosurface("manifold_with_edges");
+    ///         IsoSurface isosurface(Sphere(Point(0.0, 0.2, 0.4), 1.0), "manifold_with_boundary");
     ///
-    IsoSurface(Sphere s, std::string type);
+    ImplicitSurface(Sphere s, std::string type);
 
     /// Destructor
-    virtual ~IsoSurface();
+    virtual ~ImplicitSurface();
 
     /// Return value of isosurfacce function. This function is
     /// overloaed by the user.
@@ -75,10 +74,8 @@ namespace dolfin
     /// Bounding sphere
     const Sphere sphere;
 
-  private:
-
-    // Isosurface type
-    const std::string _type;
+    // surface type
+    const std::string type;
 
   };
 

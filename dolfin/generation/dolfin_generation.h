@@ -5,6 +5,7 @@
 
 #include <dolfin/generation/PolygonalMeshGenerator.h>
 #include <dolfin/generation/PolyhedralMeshGenerator.h>
+#include <dolfin/generation/SurfaceMeshGenerator.h>
 #include <dolfin/generation/Triangulate.h>
 #include <dolfin/generation/BoxMesh.h>
 #include <dolfin/generation/IntervalMesh.h>
