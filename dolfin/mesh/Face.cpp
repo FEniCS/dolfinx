@@ -20,8 +20,8 @@
 // First added:  2006-06-02
 // Last changed: 2011-02-26
 
+#include <dolfin/geometry/Point.h>
 #include "Cell.h"
-#include "Point.h"
 #include "Face.h"
 
 using namespace dolfin;

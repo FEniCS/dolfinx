@@ -31,10 +31,10 @@
 #include <CGAL/Triangulation_2.h>
 #include <CGAL/Triangulation_3.h>
 
+#include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEditor.h>
-#include <dolfin/mesh/Point.h>
 
 namespace dolfin
 {

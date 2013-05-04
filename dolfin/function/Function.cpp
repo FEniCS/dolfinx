@@ -36,6 +36,7 @@
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/UFC.h>
+#include <dolfin/geometry/Point.h>
 #include <dolfin/io/File.h>
 #include <dolfin/io/XMLFile.h>
 #include <dolfin/la/GenericVector.h>
@@ -43,7 +44,6 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/mesh/Point.h>
 #include <dolfin/mesh/Restriction.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include "Expression.h"
@@ -304,18 +304,18 @@ void Function::operator=(const FunctionAXPY& axpy)
                  "assign function",
                  "FunctionAXPY is empty.");
   }
-  
+
   // Make an initial assign and scale
   *this = *(axpy.pairs()[0].second);
   if (axpy.pairs()[0].first != 1.0)
     *_vector *= axpy.pairs()[0].first;
 
-  // Start from item 2 and axpy 
+  // Start from item 2 and axpy
   for (std::vector<std::pair<double, const Function*> >::const_iterator \
 	 it=axpy.pairs().begin()+1;
        it!=axpy.pairs().end(); it++)
     _vector->axpy(it->first, *(it->second->vector()));
-  
+
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const FunctionSpace> Function::function_space() const

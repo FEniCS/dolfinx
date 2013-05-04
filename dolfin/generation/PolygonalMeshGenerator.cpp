@@ -31,11 +31,11 @@
 #include <CGAL/Polygon_2.h>
 
 #include <dolfin/common/MPI.h>
+#include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/MeshPartitioning.h>
-#include <dolfin/mesh/Point.h>
 #include "CGALMeshBuilder.h"
 #include "PolygonalMeshGenerator.h"
 

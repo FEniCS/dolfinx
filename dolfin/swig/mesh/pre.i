@@ -91,8 +91,6 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
 // Misc ignores
 //-----------------------------------------------------------------------------
 %ignore dolfin::MeshEditor::open(Mesh&, CellType::Type, std::size_t, std::size_t);
-%ignore dolfin::Point::operator=;
-%ignore dolfin::Point::operator[];
 %ignore dolfin::Mesh::operator=;
 %ignore dolfin::MeshData::operator=;
 %ignore dolfin::MeshFunction::operator=;

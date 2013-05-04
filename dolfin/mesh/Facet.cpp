@@ -20,9 +20,9 @@
 // First added:  2006-06-02
 // Last changed: 2011-11-14
 
+#include <dolfin/geometry/Point.h>
 #include "Cell.h"
 #include "MeshTopology.h"
-#include "Point.h"
 #include "Facet.h"
 
 using namespace dolfin;

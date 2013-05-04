@@ -28,7 +28,7 @@
 #include <vector>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Nef_polyhedron_3.h>
-#include <dolfin/mesh/Point.h>
+#include <dolfin/geometry/Point.h>
 
 namespace dolfin
 {

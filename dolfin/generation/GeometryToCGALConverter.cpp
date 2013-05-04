@@ -30,7 +30,7 @@
 #include "CSGOperators.h"
 #include "PolyhedronUtils.h"
 #include "CSGPrimitives3D.h"
-#include <dolfin/mesh/Point.h>
+#include <dolfin/geometry/Point.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/math/basic.h>
 

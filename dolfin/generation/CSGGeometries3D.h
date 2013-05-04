@@ -24,8 +24,8 @@
 #define __CSG_GEOMETRIES_H
 
 #include <boost/shared_ptr.hpp>
-#include <dolfin/mesh/Point.h>
-#include <dolfin/generation/CSGGeometry.h>
+#include <dolfin/geometry/Point.h>
+#include "CSGGeometry.h"
 
 namespace dolfin
 {

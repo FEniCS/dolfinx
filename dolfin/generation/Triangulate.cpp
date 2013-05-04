@@ -31,9 +31,9 @@
 #include <CGAL/Triangulation_vertex_base_with_info_3.h>
 
 #include <dolfin/common/MPI.h>
+#include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/Point.h>
 #include "CGALMeshBuilder.h"
 #include "Triangulate.h"
 

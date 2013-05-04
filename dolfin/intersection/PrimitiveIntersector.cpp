@@ -18,9 +18,9 @@
 // First added:  2010-02-09
 // Last changed: 2011-11-15
 
+#include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
-#include <dolfin/mesh/Point.h>
 #include "PrimitiveIntersector.h"
 
 using namespace dolfin;

@@ -31,8 +31,8 @@
 #endif
 
 #include <dolfin/intersection/PrimitiveIntersector.h>
+#include <dolfin/geometry/Point.h>
 #include "Mesh.h"
-#include "Point.h"
 
 namespace dolfin
 {

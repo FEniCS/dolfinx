@@ -33,6 +33,7 @@
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/geometry/Point.h>
 #include <dolfin/graph/ParMETIS.h>
 #include <dolfin/graph/SCOTCH.h>
 #include <dolfin/graph/ZoltanPartition.h>
@@ -47,7 +48,6 @@
 #include "MeshFunction.h"
 #include "MeshTopology.h"
 #include "MeshValueCollection.h"
-#include "Point.h"
 #include "Vertex.h"
 #include "MeshPartitioning.h"
 

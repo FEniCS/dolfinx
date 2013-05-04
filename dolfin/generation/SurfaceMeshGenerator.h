@@ -30,8 +30,8 @@ namespace dolfin
   class ImplicitSurface;
   class Mesh;
 
-  /// This class generated DOLFIN meshes of surfaces. It uses CGAL for
-  /// the mesh generation.
+  /// This class generated DOLFIN meshes of closed in 3D surfaces. It
+  /// uses CGAL for the mesh generation.
 
   class SurfaceMeshGenerator
   {

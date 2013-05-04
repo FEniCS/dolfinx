@@ -21,8 +21,6 @@
 #ifdef HAS_CGAL
 
 #include <vector>
-
-//#include <bind>
 #include <functional>
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -48,11 +46,11 @@
 #include "compute_normal.h"
 
 #include <dolfin/common/MPI.h>
+#include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/MeshPartitioning.h>
-#include <dolfin/mesh/Point.h>
 #include "PolyhedralMeshGenerator.h"
 
 #include "CGALMeshBuilder.h"

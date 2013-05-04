@@ -21,10 +21,10 @@
 // Last changed: 2012-10-30
 
 #include <dolfin/log/log.h>
+#include <dolfin/geometry/Point.h>
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"
-#include "Point.h"
 #include "MeshEditor.h"
 
 using namespace dolfin;

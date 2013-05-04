@@ -36,11 +36,11 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/geometry/ImplicitSurface.h>
+#include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/MeshPartitioning.h>
-#include <dolfin/mesh/Point.h>
 
 #include "CGALMeshBuilder.h"
 #include "SurfaceMeshGenerator.h"
@@ -78,6 +78,7 @@ typedef GT::FT FT;
 
 // Call-back function
 typedef boost::function<FT (Point_3)> Function;
+
 typedef CGAL::Implicit_surface_3<GT, Function> Surface_3;
 
 
