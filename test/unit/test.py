@@ -99,8 +99,10 @@ for prefix in prefixes:
             elif not  os.path.isfile(os.path.join(test, "cpp", cpptest_executable)):
                 print "This test set does not have a C++ version"
             else:
-                status, output = get_status_output("cd %s%scpp && %s .%s%s" % \
-                                   (test, os.path.sep, prefix, os.path.sep, cpptest_executable))
+                os.chdir(os.path.join(test, "cpp"))
+                status, output = get_status_output("%s.%s%s" % \
+                                   (prefix, os.path.sep, cpptest_executable))
+                os.chdir(os.path.join(os.pardir, os.pardir))
                 if status == 0 and "OK" in output:
                     print "OK",
                     match = re.search("OK \((\d+)\)", output)
@@ -114,8 +116,10 @@ for prefix in prefixes:
 
             print "Python:",
             if os.path.isfile(os.path.join(test, "python", subtest + ".py")):
-                status, output = get_status_output("cd %s%spython && %s python .%s%s.py" % \
-                                   (test, os.path.sep, prefix, os.path.sep, subtest))
+                os.chdir(os.path.join(test,"python"))
+                status, output = get_status_output("%spython .%s%s.py" % \
+                                   (prefix, os.path.sep, subtest))
+                os.chdir(os.path.join(os.pardir, os.pardir))
                 if status == 0 and "OK" in output:
                     print "OK",
                     match = re.search("Ran (\d+) test", output)

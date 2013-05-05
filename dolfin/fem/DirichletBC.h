@@ -110,8 +110,6 @@ namespace dolfin
   /// sphere or cylinder), in which case it is important *not* to
   /// check the midpoint which will be located in the interior of a
   /// domain defined relative to a radius.
-
-  //class DirichletBC : public BoundaryCondition, public Hierarchical<DirichletBC>
   class DirichletBC : public Hierarchical<DirichletBC>, public Variable
   {
 
