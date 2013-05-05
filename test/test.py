@@ -20,14 +20,13 @@
 # First added:  2007-06-09
 # Last changed: 2011-11-14
 
-import re, sys, os
+import re, sys, os, subprocess
 from instant import get_status_output
 
 pwd = os.path.dirname(os.path.abspath(__file__))
 
 # Tests to run
 tests = ["unit", "regression", "system", "documentation", "codingstyle"]
-tests = ["regression"]
 
 # Check if we should enable memory testing
 if len(sys.argv) == 2 and sys.argv[1] == "--enable-memory-test":
@@ -36,17 +35,15 @@ if len(sys.argv) == 2 and sys.argv[1] == "--enable-memory-test":
 failed = []
 
 # Command to run
-command = "python test.py" + " " + " ".join(sys.argv[1:])
+command = ["python", "test.py"] + sys.argv[1:]
 
 # Run tests
 for test in tests:
     print "Running tests: %s" % test
     print "----------------------------------------------------------------------"
     os.chdir(os.path.join(pwd, test))
-    status, output = get_status_output(command)
+    status = subprocess.Popen(command, shell=False).wait()
     if status:
-        print output
         failed.append(status)
-    print ""
 
 sys.exit(len(failed))
