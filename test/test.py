@@ -27,7 +27,6 @@ pwd = os.path.dirname(os.path.abspath(__file__))
 
 # Tests to run
 tests = ["unit", "regression", "system", "documentation", "codingstyle"]
-tests = ["regression"]
 
 # Check if we should enable memory testing
 if len(sys.argv) == 2 and sys.argv[1] == "--enable-memory-test":
