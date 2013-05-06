@@ -1,0 +1,34 @@
+# Mapping of commit names to canonical names. This is useful for
+# listing contributions from users who have either changed email
+# addresses or did not configure their user names correctly at
+# time of a commit.
+#
+# See 'git help shortlog' for details.
+
+Benjamin Kehlet <benjamik@simula.no>
+Benjamin Kehlet <benjamik@simula.no>    Benjamin Kehlet <benjamik@ifi.uio.no>
+Benjamin Kehlet <benjamik@simula.no>    Benjamin Kehlet <benjamik@login.ifi.uio.no>
+
+Anders Logg <logg@simula.no>
+Anders Logg <logg@simula.no>            logg
+Anders Logg <logg@simula.no>            Anders Logg <logg@glaurung>
+Anders Logg <logg@simula.no>            Anders Logg <logg@olorin>
+Anders Logg <logg@simula.no>            Anders Logg <logg@tti-c.org>
+Anders Logg <logg@simula.no>            logg <devnull@localhost>
+Anders Logg <logg@simula.no>            logg <logg@bigblue.simula.no>
+Anders Logg <logg@simula.no>            logg <logg@bunjil.simula.no>
+Anders Logg <logg@simula.no>            logg <logg@olorin>
+
+Garth N. Wells <gnw20@cam.ac.uk>
+Garth N. Wells <gnw20@cam.ac.uk>        Garth N. Wells <g.n.wells@tudelft.nl>
+Garth N. Wells <gnw20@cam.ac.uk>        Garth N. Wells <garth@garth-laptop>
+Garth N. Wells <gnw20@cam.ac.uk>        Garth N. Wells <garth@gnw20pc>
+Garth N. Wells <gnw20@cam.ac.uk>        Garth N. Wells <gnw20@cam.ac.uk>
+Garth N. Wells <gnw20@cam.ac.uk>        Garth Wells <gnw20@cam.ac.uk>
+Garth N. Wells <gnw20@cam.ac.uk>        garth <garth@debian.eng.cam.ac.uk>
+Garth N. Wells <gnw20@cam.ac.uk>        garth <garth@fedora32-virtual>
+Garth N. Wells <gnw20@cam.ac.uk>        garth <garth@gnw20pc>
+Garth N. Wells <gnw20@cam.ac.uk>        garth <garth@home-laptop>
+Garth N. Wells <gnw20@cam.ac.uk>        garth <garth@localhost.localdomain>
+Garth N. Wells <gnw20@cam.ac.uk>        garth <garth@ubuntu.eng.cam.ac.uk>
+Garth N. Wells <gnw20@cam.ac.uk>        garth <garth@ubuntu32-virtual>
