@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2013-04-30
+// Last changed: 2013-05-07
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -157,6 +157,10 @@ namespace dolfin
     static std::string search_list(const std::vector<std::string>& list,
                                    const std::string& search_term);
 
+    // Get mapping of cells in the assigned global range of the current process, to remote process
+    // and remote local index.
+    void compute_global_mapping(std::vector<std::size_t>& global_owner_mapping, const Mesh& mesh);
+    
     // Reorder vertices into global index order, so they can be saved
     // correctly for HDF5 mesh output
     std::vector<double>

@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-05-01
+// Last changed: 2013-05-07
 
 #ifdef HAS_HDF5
 
@@ -641,7 +641,7 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc, const
       = mesh.topology().global_indices(mesh.topology().dim());
 
     // Reference to actual map of MeshValueCollection
-    std::map<std::pair<std::size_t, std::size_t>, T>& map = mesh_vc.values();
+    std::map<std::pair<std::size_t, std::size_t>, T>& mvc_map = mesh_vc.values();
 
     // Find cells which are on this process
     for(std::size_t i = 0; i < cells_data.size(); ++i)
@@ -652,7 +652,7 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc, const
       if(lidx != global_cell_index.end())
       {
         const std::size_t local_index = lidx - global_cell_index.begin();
-        map[std::make_pair(local_index, entities_data[i])] = values_data[i];
+        mvc_map[std::make_pair(local_index, entities_data[i])] = values_data[i];
       }
     }
 
@@ -663,31 +663,147 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc, const
                  "read MeshValueCollection",
                  "Dataset too large. Distributed read not yet implemented");
 
+    // Get global mapping to restore values
+    const Mesh& mesh = mesh_vc.mesh();
+
     // Divide range between processes
-    const std::pair<std::size_t, std::size_t> range =
-      MPI::local_range(values_dim[0]);
-    const std::size_t local_size = range.second - range.first;
+    const std::pair<std::size_t, std::size_t> data_range = MPI::local_range(values_dim[0]);
+    const std::size_t local_size = data_range.second - data_range.first;
     
     // Read local range of values, entities and cells
     std::vector<T> values_data;
     values_data.reserve(local_size);
-    HDF5Interface::read_dataset(hdf5_file_id, values_name, range, values_data);  
+    HDF5Interface::read_dataset(hdf5_file_id, values_name, data_range, values_data);  
     std::vector<std::size_t> entities_data;
     entities_data.reserve(local_size);
-    HDF5Interface::read_dataset(hdf5_file_id, entities_name, range, entities_data);  
+    HDF5Interface::read_dataset(hdf5_file_id, entities_name, data_range, entities_data);  
     std::vector<std::size_t> cells_data;
     cells_data.reserve(local_size);
-    HDF5Interface::read_dataset(hdf5_file_id, cells_name, range, cells_data);  
+    HDF5Interface::read_dataset(hdf5_file_id, cells_name, data_range, cells_data);  
     
-    // Redistribute to processes owning cells
+    // Send entities and values to correct global cells
+
+    const std::size_t n_global_cells = mesh.size_global(mesh.topology().dim());
+    const std::size_t num_processes = MPI::num_processes();
+    const std::pair<std::size_t, std::size_t> range = MPI::local_range(n_global_cells);
+
+    // Divide all cells into ranges, and find which processes own which cells in the
+    // range division assigned to this process.
+    std::vector<std::size_t> global_owner;
+    compute_global_mapping(global_owner, mesh);
+    boost::multi_array_ref<std::size_t, 2> 
+      global_owner_mapping(global_owner.data(), boost::extents[range.second - range.first][2]);
+
+    // Send data cell indices owned by data owner to "clearing" process
+    std::vector<std::vector<std::size_t> > send_indices(num_processes);
+    std::vector<std::vector<std::size_t> > recv_indices(num_processes);
+
+    for(std::size_t i = 0; i != cells_data.size(); ++i)
+    {
+      const std::size_t proc = MPI::index_owner(cells_data[i], n_global_cells);
+      send_indices[proc].push_back(cells_data[i]);
+    }
+    MPI::all_to_all(send_indices, recv_indices);
+
+    // Send back (proc, remote local_idx) pair to data owner
+    std::vector<std::vector<std::pair<std::size_t, std::size_t> > > send_remote_idx(num_processes);
+    std::vector<std::vector<std::pair<std::size_t, std::size_t> > > recv_remote_idx(num_processes);
+    for(std::vector<std::vector<std::size_t> >::iterator p = recv_indices.begin(); p != recv_indices.end(); ++p)
+      for(std::vector<std::size_t>::iterator q = p->begin(); q != p->end(); ++q)
+      {
+        dolfin_assert(*q >= range.first && *q < range.second);
+        const std::size_t proc = p - recv_indices.begin();
+        const std::size_t qidx = *q - range.first;
+        send_remote_idx[proc].push_back(std::make_pair(global_owner_mapping[qidx][0],
+                                                       global_owner_mapping[qidx][1]));
+      }
     
-    // FIXME: redistribution function...
-    // Need to send entities and values to correct global cells
-    // May need a few rounds of MPI to complete
+    MPI::all_to_all(send_remote_idx, recv_remote_idx);
+
+    // Go back through the received indices and prepare actual value 
+    // data to be sent to final destination
+    std::vector<std::size_t> pos(num_processes, 0);
+    std::vector<std::vector<std::size_t> > send_entities(num_processes);
+    std::vector<std::vector<std::size_t> > send_local(num_processes);
+    std::vector<std::vector<T> > send_values(num_processes);
+    std::vector<std::vector<std::size_t> > recv_entities(num_processes);
+    std::vector<std::vector<std::size_t> > recv_local(num_processes);
+    std::vector<std::vector<T> > recv_values(num_processes);
+  
+    for(std::size_t i = 0; i != cells_data.size(); ++i)
+    {
+      // Find which process information about this cell will have come from
+      const std::size_t proc = MPI::index_owner(cells_data[i], n_global_cells);
+      // Retrieve the remote process and local index
+      const std::vector<std::pair<std::size_t, std::size_t> >& rproc = recv_remote_idx[proc];
+      dolfin_assert(pos[proc] < rproc.size());
+      const std::size_t remote_proc = rproc[pos[proc]].first;
+      const std::size_t remote_index = rproc[pos[proc]].second;
+      pos[proc]++;
+ 
+      send_entities[remote_proc].push_back(entities_data[i]);
+      send_local[remote_proc].push_back(remote_index);
+      send_values[remote_proc].push_back(values_data[i]);
+   }
+
+    MPI::all_to_all(send_entities, recv_entities);
+    MPI::all_to_all(send_local, recv_local);
+    MPI::all_to_all(send_values, recv_values);
+
+    // Reference to actual map of MeshValueCollection
+    std::map<std::pair<std::size_t, std::size_t>, T>& mvc_map = mesh_vc.values();    
+
+    for(std::size_t i = 0; i < num_processes; ++i)
+      for(std::size_t j = 0; j < recv_local.size(); ++j)
+      {
+        const std::size_t local_index = recv_local[i][j];
+        mvc_map[std::make_pair(local_index, recv_entities[i][j])] = recv_values[i][j];        
+      }
+    
   }
   
-
 }
+//-----------------------------------------------------------------------------
+void HDF5File::compute_global_mapping(std::vector<std::size_t>& global_owner, const Mesh& mesh)
+{
+  const std::size_t n_global_cells = mesh.size_global(mesh.topology().dim());
+  const std::size_t num_processes = MPI::num_processes();
+
+  // Communicate global ownership of cells to matching process
+  const std::pair<std::size_t, std::size_t> range = MPI::local_range(n_global_cells);
+  global_owner.resize((range.second - range.first)*2);
+  boost::multi_array_ref<std::size_t, 2> 
+    global_owner_mapping(global_owner.data(), boost::extents[range.second - range.first][2]);
+
+  std::vector<std::vector<std::size_t> > send_owned_global(num_processes);
+  std::vector<std::vector<std::size_t> > owned_global(num_processes);
+  for(CellIterator mesh_cell(mesh); !mesh_cell.end(); ++mesh_cell)
+  {
+    const std::size_t global_i = mesh_cell->global_index();
+    const std::size_t local_i = mesh_cell->index();
+    const std::size_t po_proc = MPI::index_owner(global_i, n_global_cells);
+    send_owned_global[po_proc].push_back(global_i);
+    send_owned_global[po_proc].push_back(local_i);
+  }
+  MPI::all_to_all(send_owned_global, owned_global);
+
+  std::size_t count = 0;
+  // Construct mapping from global_index(partial range held) to owning process and remote local_index
+  for(std::vector<std::vector<std::size_t> >::iterator owner = owned_global.begin();
+      owner != owned_global.end(); ++owner)
+    for(std::vector<std::size_t>::iterator r = owner->begin(); r != owner->end(); r += 2)
+    {
+      const std::size_t proc = owner - owned_global.begin();
+      const std::size_t idx = *r - range.first;
+      global_owner_mapping[idx][0] = proc;   // owning process
+      global_owner_mapping[idx][1] = *(r+1); // local index on owning process
+      count++;
+    }
+  // All cells in range should be accounted for
+  dolfin_assert(count == range.second - range.first);
+}
+
+
 //-----------------------------------------------------------------------------
 void HDF5File::read(GenericVector& x, const std::string dataset_name,
                     const bool use_partition_from_file)
