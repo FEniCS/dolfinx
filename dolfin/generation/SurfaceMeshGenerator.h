@@ -37,10 +37,15 @@ namespace dolfin
   {
   public:
 
-    /// Create mesh from an ImplicitSurface
-    static void generate(Mesh& mesh, const ImplicitSurface& surface,
-                         double min_angle, double max_radius,
-                         double max_distance, std::size_t num_initial_points);
+    /// Create volume mesh from an ImplicitSurface
+    //static void generate(Mesh& mesh, const ImplicitSurface& surface,
+    //                     double min_angle, double max_radius,
+    //                     double max_distance, std::size_t num_initial_points);
+
+    /// Create surface mesh from an ImplicitSurface
+    static void generate_surface(Mesh& mesh, const ImplicitSurface& surface,
+                                 double min_angle, double max_radius,
+                                 double max_distance, std::size_t num_initial_points);
 
   };
 

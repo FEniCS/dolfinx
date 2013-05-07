@@ -28,6 +28,20 @@ using namespace dolfin;
 
 #ifdef HAS_CGAL
 
+// Class that implicitly defines a sphere
+class Surface : public ImplicitSurface
+{
+public:
+
+  Surface() : ImplicitSurface(Sphere(Point(0.0, 0.0, 0.0), 2.0), "manifold") {}
+
+  double operator()(const Point& p) const
+  { return p[0]*p[0] + p[1]*p[1] + p[2]*p[2] - 1.0; }
+  //{ return p[0]*[0] +  p[1]*[1] +  p[2]*[2]  - 1.0; }
+
+};
+
+
 int main()
 {
   // Create empty mesh
@@ -74,21 +88,41 @@ int main()
   faces[3][1] = 1;
   faces[3][2] = 2;
 
-  // Generate 3D mesh and plot
+  // Generate volume mesh (tetrahedral cells)
   //PolyhedralMeshGenerator::generate(mesh, face_vertices, faces, 0.04);
+  //cout << "Dim: " << mesh.topology().dim() << endl;
   //plot(mesh);
+  //interactive();
 
-  // Generate 3D mesh from OFF file input (a cube) and plot
+  // Generate surface mesh (triangular cells)
+  //PolyhedralMeshGenerator::generate_surface_mesh(mesh, face_vertices, faces, 0.04);
+  //cout << "Dim: " << mesh.topology().dim() << endl;
+  //plot(mesh);
+  //interactive();
+
+  // Generate volume mesh from OFF file input (a cube) and plot
   //PolyhedralMeshGenerator::generate(mesh, "../cube.off", 0.05);
   //plot(mesh);
+  //interactive();
+
+  // Generate surface mesh from OFF file input (a cube) and plot
+  //PolyhedralMeshGenerator::generate_surface_mesh(mesh, "../cube.off", 0.05);
+  //plot(mesh);
+  //interactive();
 
   // Generate surface in 3D mesh from OFF file input (a cube) and plot
-  PolyhedralMeshGenerator::generate_surface_mesh(mesh, "../cube.off", 0.05);
-  File file("mesh.pvd");
-  file << mesh;
-  plot(mesh);
+  //PolyhedralMeshGenerator::generate_surface_mesh(mesh, "../cube.off", 0.05);em
+  //File file("mesh.pvd");
+  //file << mesh;
+  //plot(mesh);
+  //interactive();
 
+  Surface surface;
+  //PolyhedralMeshGenerator::generate(mesh, surface , 0.05);
+  SurfaceMeshGenerator::generate_surface(mesh, surface, 30.0, 0.1, 0.1, 5);
+  plot(mesh);
   interactive();
+
 }
 
 #else

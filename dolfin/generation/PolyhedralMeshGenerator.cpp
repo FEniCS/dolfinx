@@ -21,7 +21,7 @@
 #ifdef HAS_CGAL
 
 #include <vector>
-#include <functional>
+#include <boost/function.hpp>
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Mesh_triangulation_3.h>
@@ -40,20 +40,23 @@
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Surface_mesh_cell_base_3.h>
 
+#include <CGAL/Implicit_mesh_domain_3.h>
+
 // The below two files are from the CGAL demos. Path can be changed
 // once they are included with the CGAL code.
 #include "triangulate_polyhedron.h"
 #include "compute_normal.h"
 
 #include <dolfin/common/MPI.h>
+#include <dolfin/geometry/ImplicitSurface.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/MeshPartitioning.h>
+#include "CGALMeshBuilder.h"
 #include "PolyhedralMeshGenerator.h"
 
-#include "CGALMeshBuilder.h"
 
 // CGAL kernel typedefs
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
@@ -90,84 +93,70 @@ typedef Polyhedron::Facet_iterator Facet_iterator;
 typedef Polyhedron::Halfedge_around_facet_circulator Halfedge_facet_circulator;
 typedef Polyhedron::HalfedgeDS HalfedgeDS;
 
-// Surface meshes
-// default triangulation for Surface_mesher
-//typedef CGAL::Triangulation_vertex_base_3<K> Vbase;
-//typedef CGAL::Triangulation_vertex_base_with_info_3<std::size_t, K, Vbase> Vb;
-//typedef CGAL::Triangulation_face_base_3<K> Fb;
-//typedef CGAL::Triangulation_data_structure_2<Vb, Fb> Tds;
 
-//typedef CGAL::Surface_mesh_vertex_base_3<Geom_traits> Vb_surface;
+// ---- implicit test
+
+// Domain
+typedef CGAL::Exact_predicates_inexact_constructions_kernel K_test;
+typedef K::FT FT_test;
+typedef K::Point_3 Point_test;
+typedef FT_test (Function_test)(const Point_test&);
+
+//typedef CGAL::Implicit_mesh_domain_3<Function_test, K_test> Mesh_domain_test;
+typedef CGAL::Mesh_domain_with_polyline_features_3<
+  CGAL::Implicit_mesh_domain_3<Function_test, K_test> > Mesh_domain_test;
 
 
-// --------------------------------
 
-typedef CGAL::Complex_2_in_triangulation_vertex_base_3<Geom_traits, Tvb3test> Vb_surface;
+typedef CGAL::Robust_weighted_circumcenter_filtered_traits_3<K_test> Geom_traits_test;
 
-typedef CGAL::Surface_mesh_cell_base_3<Geom_traits> Cb_surface;
-typedef CGAL::Triangulation_cell_base_with_circumcenter_3<Geom_traits, Cb_surface> Cb_with_circumcenter;
-typedef CGAL::Triangulation_data_structure_3<Vb_surface, Cb_with_circumcenter> Tds_surface;
-typedef CGAL::Delaunay_triangulation_3<Geom_traits, Tds_surface> Tr_surface;
+// CGAL 3D triangulation vertex typedefs
+typedef CGAL::Triangulation_vertex_base_3<Geom_traits_test> Tvb3test_base_test;
+typedef CGAL::Triangulation_vertex_base_with_info_3<int, Geom_traits_test, Tvb3test_base_test> Tvb3test_test;
+typedef CGAL::Mesh_vertex_base_3<Geom_traits_test, Mesh_domain_test, Tvb3test_test> Vertex_base_test;
 
-// c2t3
-//typedef CGAL::Complex_2_in_triangulation_3<Tr_surface> C2t3;
-typedef CGAL::Surface_mesh_complex_2_in_triangulation_3<Tr_surface> C2t3;
+// CGAL 3D triangulation cell typedefs
+typedef CGAL::Triangulation_cell_base_3<Geom_traits_test> Tcb3test_base_test;
+typedef CGAL::Triangulation_cell_base_with_info_3<int, Geom_traits_test, Tcb3test_base_test> Tcb3test_test;
+typedef CGAL::Mesh_cell_base_3<Geom_traits_test, Mesh_domain_test, Tcb3test_test> Cell_base_test;
 
-typedef Tr_surface::Geom_traits GT;
-typedef GT::Sphere_3 Sphere_3;
-typedef GT::Point_3 Point_3;
-typedef GT::FT FT;
+// CGAL 3D triangulation typedefs
+typedef CGAL::Triangulation_data_structure_3<Vertex_base_test, Cell_base_test> Tds_mesh_test;
+typedef CGAL::Regular_triangulation_3<Geom_traits_test, Tds_mesh_test>             Tr_test;
 
-//typedef FT (*Function)(Point_3);
-//typedef FT std::function<FT (Point_3)>;
-//typedef std::function<FT (Point_3)> Function;
+// Triangulation
+//typedef CGAL::Mesh_triangulation_3<Mesh_domain_test>::type Tr_test;
 
-//typedef CGAL::Implicit_surface_3<GT, Function> Surface_3;
+//typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr_test> C3t3_test;
+typedef CGAL::Mesh_complex_3_in_triangulation_3<
+  Tr_test, Mesh_domain::Corner_index, Mesh_domain::Curve_segment_index> C3t3_test;
 
-FT sphere_function(Point_3 p)
+// Criteria
+typedef CGAL::Mesh_criteria_3<Tr_test> Mesh_criteria_test;
+
+// To avoid verbose function and named parameters call
+//using namespace CGAL::parameters;
+
+// Function
+FT_test sphere_function_test(const Point_test& p)
 {
-  //const FT x2 = p.x()*p.x() y2 = p.y()*p.y(), z2 = p.z()*p.z();
-  //return x2 + y2 + z2 - 1;
-  const FT x = p.x();
-  //const FT y = p.y();
-  //const FT z = p.z();
-  return x - 0.1;
+  double tmp = CGAL::squared_distance(p, Point_test(CGAL::ORIGIN))-1;
+  if (tmp < 1.0)
+  {
+    double val = p.y() + 0.05*sin(2*DOLFIN_PI*p.x()) - 0.5;
+    if (val < 0.0 && val > 0.0)
+      return -1.0;
+    else
+      return 1.0;
+  }
+  else
+    return 1.0;
 }
+//{ return CGAL::squared_distance(p, Point_tes (p.y() < 0.5 && p.y() > -0.5)t(CGAL::ORIGIN))-1; }
 
-// --------------------------------
+// ------------
 
 using namespace dolfin;
-
-class GenericImplicitSurface
-{
-public:
-  GenericImplicitSurface() {}
-  virtual ~GenericImplicitSurface() {}
-
-  virtual FT sphere_function1(Point_3 p) = 0;
-
-};
-
-class TestImplicitSurface : public GenericImplicitSurface
-{
-public:
-  TestImplicitSurface(int s) : _switch(s) {}
-  ~TestImplicitSurface() {}
-
-  FT sphere_function1(Point_3 p)
-  {
-    const FT x = p.x();
-    const FT y = p.y();
-    if (_switch == 0)
-      return x - 0.1;
-    else
-      return y - 0.1;
-  }
-
-private:
-  const int _switch;
-};
-
 
 //-----------------------------------------------------------------------------
 template <class HDS>
@@ -274,33 +263,94 @@ void PolyhedralMeshGenerator::generate(Mesh& mesh,
   MeshPartitioning::build_distributed_mesh(mesh);
 }
 //-----------------------------------------------------------------------------
+void PolyhedralMeshGenerator::generate(Mesh& mesh,
+                                       const ImplicitSurface& surface,
+                                       double cell_size,
+                                       bool detect_sharp_features)
+{
+  cout << "Implicit surface generation" << endl;
+  if (MPI::process_number() == 0)
+  {
+    // Domain (Warning: Sphere_3 constructor uses squared radius !)
+    //Implicit_mesh_domain domain(sphere_function, K::Sphere_3(CGAL::ORIGIN, 2.));
+
+    cout << "Implicit surface generation (1)" << endl;
+    Mesh_domain_test domain(sphere_function_test, K::Sphere_3(CGAL::ORIGIN, 2.));
+
+    // Mesh criteria
+    Mesh_criteria_test criteria(CGAL::parameters::facet_angle=30,
+                                CGAL::parameters::facet_size=0.1,
+                                CGAL::parameters::facet_distance=0.025,
+                                CGAL::parameters::cell_radius_edge_ratio=2,
+                                CGAL::parameters::cell_size=0.1);
+
+    //Mesh_criteria_test criteria(CGAL::parameters::facet_angle=30,
+    //                            CGAL::parameters::facet_size=0.1,
+    //                            CGAL::parameters::facet_distance=0.025,
+    //                            CGAL::parameters::cell_size=0.02);
+
+    // Mesh generation
+    cout << "Build CGAL mesh" << endl;
+    C3t3_test c3t3 = CGAL::make_mesh_3<C3t3_test>(domain, criteria);
+    cout << "End build CGAL mesh" << endl;
+
+    // Build surface DOLFIN mesh from CGAL 3D mesh/triangulation
+    //CGALMeshBuilder::build_surface_mesh_c3t3(mesh, c3t3);
+  }
+
+  // Build distributed mesh
+  MeshPartitioning::build_distributed_mesh(mesh);
+}
+//-----------------------------------------------------------------------------
+void PolyhedralMeshGenerator::generate_surface_mesh(Mesh& mesh,
+                         const std::vector<Point>& vertices,
+                         const std::vector<std::vector<std::size_t> >& facets,
+                         double cell_size, bool detect_sharp_features)
+{
+  // Generate CGAL mesh on root process
+  if (MPI::process_number() == 0)
+  {
+    // Create empty CGAL polyhedron
+    Polyhedron p;
+
+    // Build CGAL polyhedron
+    BuildSurface<HalfedgeDS> poly_builder(vertices, facets);
+    p.delegate(poly_builder);
+
+    // Generate surface mesh
+    cgal_generate_surface_mesh(mesh, p, cell_size, detect_sharp_features);
+  }
+
+  // Build distributed mesh
+  MeshPartitioning::build_distributed_mesh(mesh);
+}
+//-----------------------------------------------------------------------------
 void PolyhedralMeshGenerator::generate_surface_mesh(Mesh& mesh,
                                                     const std::string off_file,
                                                     double cell_size,
                                                     bool detect_sharp_features)
 {
-  if (MPI::num_processes() > 1)
+  if (MPI::num_processes() == 0)
   {
-    dolfin_error("PolyhedralMeshGenerator.cpp",
-                 "generate surface mesh",
-                 "Cannot build surface meshes in parallel");
+    // Create empty CGAL polyhedron
+    Polyhedron p;
+
+    // Read polyhedron from file
+    std::ifstream p_file(off_file.c_str());
+    if (!p_file)
+    {
+      dolfin_error("PolyhedralMeshGenerator.cpp",
+                   "open .off file to read 3D geometry",
+                   "Failed to open file");
+    }
+    p_file >> p;
+
+    // Generate mesh
+    cgal_generate_surface_mesh(mesh, p, cell_size, detect_sharp_features);
   }
 
-  // Create empty CGAL polyhedron
-  Polyhedron p;
-
-  // Read polyhedron from file
-  std::ifstream p_file(off_file.c_str());
-  if (!p_file)
-  {
-    dolfin_error("PolyhedralMeshGenerator.cpp",
-                 "open .off file to read 3D geometry",
-                 "Failed to open file");
-  }
-  p_file >> p;
-
-  // Generate mesh
-  cgal_generate_surface_mesh(mesh, p, cell_size, detect_sharp_features);
+  // Build distributed mesh
+  MeshPartitioning::build_distributed_mesh(mesh);
 }
 //-----------------------------------------------------------------------------
 template<typename T>
@@ -364,14 +414,12 @@ void PolyhedralMeshGenerator::cgal_generate(Mesh& mesh, T& p,
 //-----------------------------------------------------------------------------
 template<typename T>
 void PolyhedralMeshGenerator::cgal_generate_surface_mesh(Mesh& mesh, T& p,
-                                                    double cell_size,
-                                                    bool detect_sharp_features)
+                                                         double cell_size,
+                                                         bool detect_sharp_features)
 {
   // Check if any facets are not triangular and triangulate if
   // necessary.  The CGAL mesh generation only supports polyhedra with
   // triangular surface facets.
-
-  /*
   typename Polyhedron::Facet_iterator facet;
   for (facet = p.facets_begin(); facet != p.facets_end(); ++facet)
   {
@@ -382,9 +430,7 @@ void PolyhedralMeshGenerator::cgal_generate_surface_mesh(Mesh& mesh, T& p,
       continue;
     }
   }
-  */
 
-  /*
   // Create domain from polyhedron
   Mesh_domain domain(p);
 
@@ -394,7 +440,7 @@ void PolyhedralMeshGenerator::cgal_generate_surface_mesh(Mesh& mesh, T& p,
 
   // Mesh criteria (produces no interior vertices)
   const Mesh_criteria criteria(CGAL::parameters::facet_angle = 25,
-                               CGAL::parameters::facet_size = 0.1,
+                               CGAL::parameters::facet_size = cell_size,
                                CGAL::parameters::cell_radius_edge = 0,
                                CGAL::parameters::edge_size=0.1,
                                CGAL::parameters::cell_size=0);
@@ -404,47 +450,6 @@ void PolyhedralMeshGenerator::cgal_generate_surface_mesh(Mesh& mesh, T& p,
 
   // Build surface DOLFIN mesh from CGAL 3D mesh/triangulation
   CGALMeshBuilder::build_surface_mesh_c3t3(mesh, c3t3);
-  */
-
-  /*
-  Tr_surface tr;
-  C2t3 c2t3(tr);
-
-  // Implicit sphere
-  //Surface_3 surface(sphere_function, Sphere_3(CGAL::ORIGIN, 2.0));
-
-  // C++11 version (works)
-  //TestImplicitSurface* sh = new TestImplicitSurface(0);
-  //auto fxn = [=] (Point_3 p) { return sh->sphere_function1(p); };
-  //Surface_3 surface(fxn, Sphere_3(CGAL::ORIGIN, 2.0));
-
-  GenericImplicitSurface* sh = new TestImplicitSurface(1);
-  std::function<FT (Point_3)> test(std::bind(&GenericImplicitSurface::sphere_function1, sh,
-                                             std::placeholders::_1));
-
-  //TestImplicitSurface sh(1);
-  //std::function<FT (Point_3)> test(std::bind(&TestImplicitSurface::sphere_function1, &sh,
-  //                                           std::placeholders::_1));
-  Point_3 point(0.0, 0.0, 0.0);
-  cout << "Testing: " << test(point) << endl;
-
-  Surface_3 surface(test, Sphere_3(CGAL::ORIGIN, 2.0));
-
-  //Surface_3 surface(&TestImplicitSurface::sphere_function0, Sphere_3(CGAL::ORIGIN, 2.0));
-
-  // Via static member function (works)
-  //Surface_3 surface(TestImplicitSurface::sphere_function0, Sphere_3(CGAL::ORIGIN, 2.0));
-
-  // Meshing criteria
-  CGAL::Surface_mesh_default_criteria_3<Tr_surface> criteria(30.0, 0.1, 0.1);
-
-  // Build CGAL mesh
-  //CGAL::make_surface_mesh(c2t3, p, criteria, CGAL::Non_manifold_tag());
-  CGAL::make_surface_mesh(c2t3, surface, criteria, CGAL::Non_manifold_tag());
-
-  // Build DOLFIN mesh from CGAL mesh/triangulation
-  CGALMeshBuilder::build_surface_mesh_c2t3(mesh, c2t3);
-  */
 }
 //-----------------------------------------------------------------------------
 

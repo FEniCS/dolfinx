@@ -103,7 +103,69 @@ private:
 };
 
 //-----------------------------------------------------------------------------
+/*
 void SurfaceMeshGenerator::generate(Mesh& mesh, const ImplicitSurface& surface,
+                                    double min_angle, double max_radius,
+                                    double max_distance,
+                                    std::size_t num_initial_points)
+{
+  cout << "Inside  SurfaceMeshGenerator::generat (0)" << endl;
+
+  // Bind implicit surface value member function
+  ImplicitSurfaceWrapper surface_wrapper(surface);
+  boost::function<FT (Point_3)> f(boost::bind(&ImplicitSurfaceWrapper::f,
+                                             &surface_wrapper, _1));
+
+  // Create CGAL bounding sphere
+  const Point c = surface.sphere.c;
+  Sphere_3 bounding_sphere(Point_3(c[0], c[1], c[2]), surface.sphere.r );
+
+  // Create CGAL implicit surface
+  Surface_3 cgal_implicit_surface(f, bounding_sphere);
+
+  // Meshing criteria
+  CGAL::Surface_mesh_default_criteria_3<Tr_surface>
+    criteria(min_angle, max_radius, max_distance);
+
+
+  cout << "Inside  SurfaceMeshGenerator::generat (1)" << endl;
+
+  // Build CGAL mesh
+  Tr_surface tr;
+  C2t3 c2t3(tr);
+  if (surface.type == "manifold")
+  {
+    CGAL::make_surface_mesh(c2t3, cgal_implicit_surface, criteria,
+                            CGAL::Manifold_tag(), num_initial_points);
+  }
+  else if (surface.type == "manifold_with_boundary")
+  {
+    CGAL::make_surface_mesh(c2t3, cgal_implicit_surface, criteria,
+                            CGAL::Manifold_with_boundary_tag(),
+                            num_initial_points);
+
+  }
+  else if (surface.type == "non_manifold")
+  {
+    CGAL::make_surface_mesh(c2t3, cgal_implicit_surface, criteria,
+                            CGAL::Non_manifold_tag(),
+                            num_initial_points);
+  }
+  else
+  {
+   dolfin_error("SurfaceMeshGenerator.cpp",
+                 "generate surface mesh",
+                 "Unknown surface type \"%s\"", surface.type.c_str());
+  }
+
+  cout << "Inside  SurfaceMeshGenerator::generat (2)" << endl;
+
+  // Build DOLFIN mesh from CGAL mesh/triangulation
+  CGALMeshBuilder::build_mesh_c2t3(mesh, c2t3);
+}
+*/
+//-----------------------------------------------------------------------------
+void SurfaceMeshGenerator::generate_surface(Mesh& mesh, const ImplicitSurface& surface,
                                     double min_angle, double max_radius,
                                     double max_distance,
                                     std::size_t num_initial_points)
@@ -156,5 +218,4 @@ void SurfaceMeshGenerator::generate(Mesh& mesh, const ImplicitSurface& surface,
   CGALMeshBuilder::build_surface_mesh_c2t3(mesh, c2t3);
 }
 //-----------------------------------------------------------------------------
-
 #endif
