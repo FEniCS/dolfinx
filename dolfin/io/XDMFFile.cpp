@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2013-05-01
+// Last changed: 2013-05-07
 
 #ifdef HAS_HDF5
 
@@ -315,8 +315,8 @@ void XDMFFile::operator>> (Mesh& mesh)
                  "XML parsing error. XDMF file should contain only one mesh/dataset");
   }
   
-  const std::string topo_fmt(xdmf_topology.attribute("Format").value());
-  if(topo_fmt != "HDF")
+  const std::string topological_data_format(xdmf_topology.attribute("Format").value());
+  if(topological_data_format != "HDF")
   {
     dolfin_error("XDMFFile.cpp",
                  "read mesh from XDMF/H5 files",
