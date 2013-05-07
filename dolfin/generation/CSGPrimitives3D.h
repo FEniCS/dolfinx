@@ -126,7 +126,8 @@ namespace dolfin
     ///     slices (std::size_t)
     ///         number of faces on the side when generating a
     ///         polyhedral approximation.
-    Cone(Point top, Point bottom, double top_radius, double bottom_radius, std::size_t slices=32);
+    Cone(Point top, Point bottom, double top_radius, double bottom_radius,
+         std::size_t slices=32);
 
     /// Informal string representation
     std::string str(bool verbose) const;
@@ -159,7 +160,8 @@ namespace dolfin
     ///     slices (std::size_t)
     ///         number of faces on the side when generating a
     ///         polyhedral approximation.
-    Cylinder(Point top, Point bottom, double r, std::size_t slices=32) : Cone(top, bottom, r, r, slices) {}
+    Cylinder(Point top, Point bottom, double r, std::size_t slices=32)
+      : Cone(top, bottom, r, r, slices) {}
   };
 
   /// This class describes a Tetrahedron which can be used to build

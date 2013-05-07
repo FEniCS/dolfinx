@@ -28,19 +28,39 @@ using namespace dolfin;
 
 #ifdef HAS_CGAL
 
-// Class that implicitly defines a sphere
-class Surface : public ImplicitSurface
+// Class that implicitly defines a warped sphere
+class WarpedSphere : public ImplicitSurface
 {
 public:
 
-  Surface() : ImplicitSurface(Sphere(Point(0.0, 0.0, 0.0), 2.0), "manifold") {}
+  WarpedSphere() : ImplicitSurface(Sphere(Point(0.0, 0.0, 0.0), 2.1), "manifold") {}
 
   double operator()(const Point& p) const
-  { return p[0]*p[0] + p[1]*p[1] + p[2]*p[2] - 1.0; }
-  //{ return p[0]*[0] +  p[1]*[1] +  p[2]*[2]  - 1.0; }
+  {
+    const double R = sqrt( p[0]*p[0] + p[1]*p[1] + p[2]*p[2]);
+    const double theta = asin(p[0]/R);
+    return R + 0.05*sin(10.0*theta) - 2.0;
+  }
 
 };
 
+/*
+// Class that implicitly defines a cube
+class BubbleCube : public ImplicitSurface
+{
+public:
+
+  BubbleCube() : ImplicitSurface(Sphere(Point(0.0, 0.0, 0.0), 2.1), "manifold") {}
+
+  double operator()(const Point& p) const
+  {
+    const double R = sqrt( p[0]*p[0] + p[1]*p[1] + p[2]*p[2]);
+    const double theta = asin(p[0]/R);
+    return R + 0.05*sin(10.0*theta) - 2.0;
+  }
+
+};
+*/
 
 int main()
 {
@@ -117,9 +137,17 @@ int main()
   //plot(mesh);
   //interactive();
 
-  Surface surface;
-  //PolyhedralMeshGenerator::generate(mesh, surface , 0.05);
-  SurfaceMeshGenerator::generate_surface(mesh, surface, 30.0, 0.1, 0.1, 5);
+  WarpedSphere surface;
+  //SurfaceMeshGenerator::generate(mesh, surface, 30.0, 0.1, 0.1, 10);
+  //plot(mesh);
+  //interactive();
+
+  //ImplicitDomainMeshGenerator::generate(mesh, surface, 0.05);
+  ImplicitDomainMeshGenerator::generate_surface(mesh, surface, 0.05);
+  cout << "T-dim: " << mesh.topology().dim() << endl;
+  cout << "Num cells: " << mesh.num_cells() << endl;
+  File file("mesh.pvd");
+  file << mesh;
   plot(mesh);
   interactive();
 

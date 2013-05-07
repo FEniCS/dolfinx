@@ -33,15 +33,6 @@
 #include <CGAL/Triangulation_cell_base_with_info_3.h>
 #include <CGAL/make_mesh_3.h>
 
-#include <CGAL/Surface_mesh_default_triangulation_3.h>
-#include <CGAL/Complex_2_in_triangulation_3.h>
-#include <CGAL/make_surface_mesh.h>
-#include <CGAL/Implicit_surface_3.h>
-#include <CGAL/Delaunay_triangulation_3.h>
-#include <CGAL/Surface_mesh_cell_base_3.h>
-
-#include <CGAL/Implicit_mesh_domain_3.h>
-
 // The below two files are from the CGAL demos. Path can be changed
 // once they are included with the CGAL code.
 #include "triangulate_polyhedron.h"
@@ -92,69 +83,6 @@ typedef CGAL::Mesh_polyhedron_3<K>::Type Polyhedron;
 typedef Polyhedron::Facet_iterator Facet_iterator;
 typedef Polyhedron::Halfedge_around_facet_circulator Halfedge_facet_circulator;
 typedef Polyhedron::HalfedgeDS HalfedgeDS;
-
-
-// ---- implicit test
-
-// Domain
-typedef CGAL::Exact_predicates_inexact_constructions_kernel K_test;
-typedef K::FT FT_test;
-typedef K::Point_3 Point_test;
-typedef FT_test (Function_test)(const Point_test&);
-
-//typedef CGAL::Implicit_mesh_domain_3<Function_test, K_test> Mesh_domain_test;
-typedef CGAL::Mesh_domain_with_polyline_features_3<
-  CGAL::Implicit_mesh_domain_3<Function_test, K_test> > Mesh_domain_test;
-
-
-
-typedef CGAL::Robust_weighted_circumcenter_filtered_traits_3<K_test> Geom_traits_test;
-
-// CGAL 3D triangulation vertex typedefs
-typedef CGAL::Triangulation_vertex_base_3<Geom_traits_test> Tvb3test_base_test;
-typedef CGAL::Triangulation_vertex_base_with_info_3<int, Geom_traits_test, Tvb3test_base_test> Tvb3test_test;
-typedef CGAL::Mesh_vertex_base_3<Geom_traits_test, Mesh_domain_test, Tvb3test_test> Vertex_base_test;
-
-// CGAL 3D triangulation cell typedefs
-typedef CGAL::Triangulation_cell_base_3<Geom_traits_test> Tcb3test_base_test;
-typedef CGAL::Triangulation_cell_base_with_info_3<int, Geom_traits_test, Tcb3test_base_test> Tcb3test_test;
-typedef CGAL::Mesh_cell_base_3<Geom_traits_test, Mesh_domain_test, Tcb3test_test> Cell_base_test;
-
-// CGAL 3D triangulation typedefs
-typedef CGAL::Triangulation_data_structure_3<Vertex_base_test, Cell_base_test> Tds_mesh_test;
-typedef CGAL::Regular_triangulation_3<Geom_traits_test, Tds_mesh_test>             Tr_test;
-
-// Triangulation
-//typedef CGAL::Mesh_triangulation_3<Mesh_domain_test>::type Tr_test;
-
-//typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr_test> C3t3_test;
-typedef CGAL::Mesh_complex_3_in_triangulation_3<
-  Tr_test, Mesh_domain::Corner_index, Mesh_domain::Curve_segment_index> C3t3_test;
-
-// Criteria
-typedef CGAL::Mesh_criteria_3<Tr_test> Mesh_criteria_test;
-
-// To avoid verbose function and named parameters call
-//using namespace CGAL::parameters;
-
-// Function
-FT_test sphere_function_test(const Point_test& p)
-{
-  double tmp = CGAL::squared_distance(p, Point_test(CGAL::ORIGIN))-1;
-  if (tmp < 1.0)
-  {
-    double val = p.y() + 0.05*sin(2*DOLFIN_PI*p.x()) - 0.5;
-    if (val < 0.0 && val > 0.0)
-      return -1.0;
-    else
-      return 1.0;
-  }
-  else
-    return 1.0;
-}
-//{ return CGAL::squared_distance(p, Point_tes (p.y() < 0.5 && p.y() > -0.5)t(CGAL::ORIGIN))-1; }
-
-// ------------
 
 using namespace dolfin;
 
@@ -263,45 +191,6 @@ void PolyhedralMeshGenerator::generate(Mesh& mesh,
   MeshPartitioning::build_distributed_mesh(mesh);
 }
 //-----------------------------------------------------------------------------
-void PolyhedralMeshGenerator::generate(Mesh& mesh,
-                                       const ImplicitSurface& surface,
-                                       double cell_size,
-                                       bool detect_sharp_features)
-{
-  cout << "Implicit surface generation" << endl;
-  if (MPI::process_number() == 0)
-  {
-    // Domain (Warning: Sphere_3 constructor uses squared radius !)
-    //Implicit_mesh_domain domain(sphere_function, K::Sphere_3(CGAL::ORIGIN, 2.));
-
-    cout << "Implicit surface generation (1)" << endl;
-    Mesh_domain_test domain(sphere_function_test, K::Sphere_3(CGAL::ORIGIN, 2.));
-
-    // Mesh criteria
-    Mesh_criteria_test criteria(CGAL::parameters::facet_angle=30,
-                                CGAL::parameters::facet_size=0.1,
-                                CGAL::parameters::facet_distance=0.025,
-                                CGAL::parameters::cell_radius_edge_ratio=2,
-                                CGAL::parameters::cell_size=0.1);
-
-    //Mesh_criteria_test criteria(CGAL::parameters::facet_angle=30,
-    //                            CGAL::parameters::facet_size=0.1,
-    //                            CGAL::parameters::facet_distance=0.025,
-    //                            CGAL::parameters::cell_size=0.02);
-
-    // Mesh generation
-    cout << "Build CGAL mesh" << endl;
-    C3t3_test c3t3 = CGAL::make_mesh_3<C3t3_test>(domain, criteria);
-    cout << "End build CGAL mesh" << endl;
-
-    // Build surface DOLFIN mesh from CGAL 3D mesh/triangulation
-    //CGALMeshBuilder::build_surface_mesh_c3t3(mesh, c3t3);
-  }
-
-  // Build distributed mesh
-  MeshPartitioning::build_distributed_mesh(mesh);
-}
-//-----------------------------------------------------------------------------
 void PolyhedralMeshGenerator::generate_surface_mesh(Mesh& mesh,
                          const std::vector<Point>& vertices,
                          const std::vector<std::vector<std::size_t> >& facets,
@@ -379,26 +268,6 @@ void PolyhedralMeshGenerator::cgal_generate(Mesh& mesh, T& p,
   // Get sharp features
   if (detect_sharp_features)
     domain.detect_features();
-
-  // Mesh criteria
-  /*
-  Mesh_criteria criteria(edge_size = 0.125,
-                         facet_angle = 25, facet_size = 0.15,
-                         facet_distance = 0.05,
-                         cell_radius_edge_ratio = 3, cell_size = 0.05);
-  */
-
-  /*
-  Mesh_criteria criteria(CGAL::parameters::edge_size = 0.0025,
-                         CGAL::parameters::facet_angle = 25,
-                         CGAL::parameters::facet_size = 0.005,
-                         CGAL::parameters::facet_distance = 0.0005,
-                         CGAL::parameters::cell_radius_edge_ratio = 3,
-                         CGAL::parameters::cell_size = 0.005);
-  */
-
-  //const Mesh_criteria criteria(CGAL::parameters::edge_size=cell_size,
-  //                             CGAL::parameters::cell_size=cell_size);
 
   const Mesh_criteria criteria(CGAL::parameters::facet_angle = 25,
                                CGAL::parameters::facet_size = cell_size,

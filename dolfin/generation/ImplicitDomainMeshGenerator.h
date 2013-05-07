@@ -15,13 +15,16 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2013-05-05
+// First added:  2013-07-07
 // Last changed:
 
-#ifndef __DOLFIN_SURFACEMESHGENERATOR_H
-#define __DOLFIN_SURFACEMESHGENERATOR_H
+#ifndef __DOLFIN_IMPLICITDOMAINMESHGENERATOR_H
+#define __DOLFIN_IMPLICITDOMAINMESHGENERATOR_H
 
 #ifdef HAS_CGAL
+
+#include <string>
+#include <vector>
 
 namespace dolfin
 {
@@ -30,19 +33,24 @@ namespace dolfin
   class ImplicitSurface;
   class Mesh;
 
-  /// This class generates DOLFIN meshes of surfaces 3D. It
-  /// uses the CGAL surface mesher to generated the mesh
-  /// generation. It it not well suited to meshes with sharp features
-  /// or open surfaces.
+  /// Polyhedral mesh generator that uses CGAL. Volume and surfaces of
+  /// polyhedra (closed surface) can be generated from polyhedra
+  /// defined via polygonal facets.
 
-  class SurfaceMeshGenerator
+  class ImplicitDomainMeshGenerator
   {
   public:
 
-    /// Create surface mesh from an ImplicitSurface
+    /// Create volume mesh from implicit surface representation
     static void generate(Mesh& mesh, const ImplicitSurface& surface,
-                         double min_angle, double max_radius,
-                         double max_distance, std::size_t num_initial_points);
+                         double cell_size);
+
+    /// Create surface mesh from implicit surface representation. This
+    /// function uses the CGAL 3D mesh genrator
+    static void generate_surface(Mesh& mesh, const ImplicitSurface& surface,
+                                 double cell_size);
+
+  private:
 
   };
 

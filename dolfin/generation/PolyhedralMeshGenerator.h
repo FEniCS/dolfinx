@@ -30,7 +30,6 @@ namespace dolfin
 {
 
   // Forward declarations
-  class ImplicitSurface;
   class Mesh;
 
   /// Polyhedral mesh generator that uses CGAL. Volume and surfaces of
@@ -48,10 +47,6 @@ namespace dolfin
     /// Create volume mesh from a collection of facets
     static void generate(Mesh& mesh, const std::vector<Point>& vertices,
                          const std::vector<std::vector<std::size_t> >& facets,
-                         double cell_size, bool detect_sharp_features=true);
-
-    /// Create volume  mesh from implicit surface representation
-    static void generate(Mesh& mesh, const ImplicitSurface& surface,
                          double cell_size, bool detect_sharp_features=true);
 
     /// Create surface mesh from a collection of facets

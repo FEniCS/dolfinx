@@ -24,6 +24,7 @@
 #ifdef HAS_CGAL
 
 #include <limits>
+#include <CGAL/Polyhedron_incremental_builder_3.h>
 
 #include "GeometryToCGALConverter.h"
 #include "CSGGeometry.h"
@@ -33,11 +34,7 @@
 #include <dolfin/geometry/Point.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/math/basic.h>
-
 #include "cgal_csg3d.h"
-
-#include <CGAL/Polyhedron_incremental_builder_3.h>
-
 
 using namespace dolfin;
 
@@ -65,8 +62,8 @@ struct Copy_polyhedron_to
     typedef typename Polyhedron_input::Halfedge_around_facet_const_circulator HFCC;
 
     builder.begin_surface(_in_poly.size_of_vertices(),
-      _in_poly.size_of_facets(),
-      _in_poly.size_of_halfedges());
+                          _in_poly.size_of_facets(),
+                          _in_poly.size_of_halfedges());
 
     for(Vertex_const_iterator
       vi = _in_poly.vertices_begin(), end = _in_poly.vertices_end();
@@ -87,8 +84,6 @@ struct Copy_polyhedron_to
     {
       HFCC hc = fi->facet_begin();
       HFCC hc_end = hc;
-      //     std::size_t n = circulator_size( hc);
-      //     CGAL_assertion( n >= 3);
       builder.begin_facet ();
       do
       {
@@ -110,38 +105,6 @@ void copy_to(const Poly_A& poly_a, Poly_B& poly_b)
   poly_b.delegate(modifier);
   CGAL_assertion(poly_b.is_valid());
 }
-//-----------------------------------------------------------------------------
-// template <typename Polyhedron>
-// static void print_facet(typename Polyhedron::Facet_handle facet)
-// {
-//   typename Polyhedron::Facet::Halfedge_around_facet_circulator half_edge = facet->facet_begin();
-//   std::cout << "Facet: ( ";
-
-//   double min_edge = std::numeric_limits<double>::max();
-
-//   for (std::size_t i = 0; i < facet->facet_degree(); i++)
-//   {
-//     std::cout << "<" << half_edge->vertex()->point() << "> ";
-//     min_edge = std::min(min_edge, get_edge_length<Polyhedron>(half_edge));
-//     half_edge++;
-//   }
-
-//   std::cout << ", min edge: " << min_edge;
-
-//   if (facet->is_triangle())
-//   {
-//     std::cout << ", triangle area: " << get_triangle_area<Polyhedron>(facet);
-//   }
-
-//     std::cout << " )" << std::endl;
-// }
-// //-----------------------------------------------------------------------------
-// template <typename Polyhedron>
-// static void print_halfedge(typename Polyhedron::Halfedge::Halfedge_handle halfedge)
-// {
-//   const double squared_length = CGAL::to_double((halfedge->vertex()->point() - halfedge->opposite()->vertex()->point()).squared_length());
-//   std::cout << "Halfedge: (<" << halfedge->vertex()->point() << ">, <" << halfedge->opposite()->vertex()->point() << ">, squared length: " << squared_length << ")" << std::endl;
-// }
 //-----------------------------------------------------------------------------
 // Convenience routine to make debugging easier. Remove before releasing.
 static void add_facet(CGAL::Polyhedron_incremental_builder_3<csg::Exact_HalfedgeDS>& builder,
@@ -188,27 +151,6 @@ static void add_vertex(CGAL::Polyhedron_incremental_builder_3<csg::Exact_Halfedg
   builder.add_vertex(point);
   vertex_no++;
 }
-//-----------------------------------------------------------------------------
-// static void printStat(const csg::Exact_Polyhedron_3& P, std::string title)
-// {
-//   cout << title << endl;
-//   cout << "Number of vertices:  " << P.size_of_vertices() << endl;
-//   cout << "Number of halfedges: " << P.size_of_halfedges() << endl;
-//   cout << "Number of facets in:    " << P.size_of_facets() << endl;
-
-//   bool triangles_only = true;
-//   for (csg::Exact_Polyhedron_3::Facet_const_iterator facet = P.facets_begin(); facet != P.facets_end(); ++facet)
-//   {
-//     // Check if there is a non-triangular facet
-//     if (!facet->is_triangle())
-//     {
-//       cout << "Trouble: Facet is not triangle" << endl;
-//       triangles_only = false;
-//     }
-//   }
-//   if (triangles_only) cout << "Only trangles!" << endl;
-//   cout << endl;
-// }
 //-----------------------------------------------------------------------------
 // Sphere
 //-----------------------------------------------------------------------------
@@ -278,7 +220,6 @@ class Build_sphere : public CGAL::Modifier_base<csg::Exact_HalfedgeDS>
 
     // Add the top and bottom facets
     const std::size_t top_offset = num_sectors*(num_slices-1);
-
     for (std::size_t i = 0; i < num_sectors; i++)
     {
       {
@@ -624,26 +565,10 @@ static void make_surface3D(const Surface3D* s, csg::Exact_Polyhedron_3& P)
 {
   dolfin_assert(s);
   PolyhedronUtils::readSurfaceFile(s->_filename, P);
-
-  // if (P.is_valid())
-  //   dolfin_error("GeometryToCGALConverter.cpp",
-  //       	 "parsing polyhedron from file",
-  //       	 "Polyhedron is not valid");
-
-  // if (P.is_closed())
-  //   dolfin_error("GeometryToCGALConverter.cpp",
-  //       	 "parsing polyhedron from file",
-  //       	 "Polyhedron is not closed");
-
-
-
-  // if (PolyhedronUtils::has_self_intersections(P))
-  //   dolfin_error("GeometryToCGALConverter.cpp",
-  //       	 "parsing polyhedron from file",
-  //       	 "Polyhedron is self intersecting");
 }
 //-----------------------------------------------------------------------------
-static boost::shared_ptr<csg::Nef_polyhedron_3> convertSubTree(const CSGGeometry *geometry)
+static boost::shared_ptr<csg::Nef_polyhedron_3>
+convertSubTree(const CSGGeometry *geometry)
 {
   switch (geometry->getType())
   {
@@ -734,31 +659,14 @@ static boost::shared_ptr<csg::Nef_polyhedron_3> convertSubTree(const CSGGeometry
   return boost::shared_ptr<csg::Nef_polyhedron_3>(new csg::Nef_polyhedron_3);
 }
 //-----------------------------------------------------------------------------
-// static void triangulate_polyhedron(csg::Polyhedron_3& p)
-// {
-//   while (!p.is_pure_triangle())
-//   {
-//     for (csg::Polyhedron_3::Facet_iterator facet = p.facets_begin();
-// 	 facet != p.facets_end(); facet++)
-//     {
-//       if (!facet->is_triangle())
-//       {
-// 	cout << "Triangulating facet" << endl;
-// 	p.create_center_vertex(facet->halfedge());
-
-// 	// FIXME: Is it safe to do this without breaking the inner loop?
-// 	break;
-//       }
-//     }
-//   }
-// }
-//-----------------------------------------------------------------------------
-void GeometryToCGALConverter::convert(const CSGGeometry& geometry, csg::Polyhedron_3 &p, bool remove_degenerated)
+void GeometryToCGALConverter::convert(const CSGGeometry& geometry,
+                                      csg::Polyhedron_3 &p,
+                                      bool remove_degenerated)
 {
-
   csg::Exact_Polyhedron_3 P;
 
-  // If the tree has only one node, we don't have to convert to Nef polyhedrons for csg manipulations
+  // If the tree has only one node, we don't have to convert to Nef
+  // polyhedrons for csg manipulations
   if (!geometry.is_operator())
   {
     switch (geometry.getType())
@@ -809,7 +717,8 @@ void GeometryToCGALConverter::convert(const CSGGeometry& geometry, csg::Polyhedr
   else
   {
     cout << "Convert to nef polyhedron" << endl;
-    boost::shared_ptr<csg::Nef_polyhedron_3> cgal_geometry = convertSubTree(&geometry);
+    boost::shared_ptr<csg::Nef_polyhedron_3> cgal_geometry
+      = convertSubTree(&geometry);
     dolfin_assert(cgal_geometry->is_valid());
     dolfin_assert(cgal_geometry->is_simple());
     cgal_geometry->convert_to_polyhedron(P);
@@ -823,12 +732,8 @@ void GeometryToCGALConverter::convert(const CSGGeometry& geometry, csg::Polyhedr
 
   copy_to(P, p);
 
-  // dolfin_assert(p.is_valid());
-  // dolfin_assert(p.is_closed());
-  //dolfin_assert(p.is_pure_triangle());
-  //dolfin_assert(!has_degenerate_facets<csg::Polyhedron_3>(p));
-
   cout << "Number of vertices: " << p.size_of_vertices() << endl;
   cout << "Number of facets:   " << p.size_of_facets() << endl;
 }
+//-----------------------------------------------------------------------------
 #endif

@@ -59,7 +59,8 @@ static inline double strToDouble(const std::string& s, bool print=false)
 }
 
 dolfin::LogStream& operator << (dolfin::LogStream& stream,
-                                const boost::tuple<double, double, double>& obj)
+                                const boost::tuple<double,
+                                double, double>& obj)
 {
   stream << obj.get<0>() << " " << obj.get<1>() << " " << obj.get<2>();
   return stream;
