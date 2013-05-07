@@ -23,6 +23,7 @@
 
 #include <string>
 #include <dolfin/generation/CSGPrimitives3D.h>
+#include <dolfin/log/log.h>
 
 namespace dolfin
 {
@@ -71,10 +72,19 @@ namespace dolfin
     //virtual double value(const Point& point) const = 0;
     virtual double operator()(const Point& point) const = 0;
 
+
+    virtual bool on_surface(const Point& point) const
+    {
+      dolfin_error("ImplicitSurface.h",
+                   "Determine if point is on surface",
+                   "Function ImplicitSurface::on_surface has not been provided");
+      return false;
+    }
+
     /// Bounding sphere
     const Sphere sphere;
 
-    // surface type
+    /// Surface type
     const std::string type;
 
   };

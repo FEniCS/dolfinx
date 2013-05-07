@@ -33,13 +33,25 @@ class WarpedSphere : public ImplicitSurface
 {
 public:
 
-  WarpedSphere() : ImplicitSurface(Sphere(Point(0.0, 0.0, 0.0), 2.1), "manifold") {}
+  //WarpedSphere() : ImplicitSurface(Sphere(Point(0.0, 0.0, 0.0), 2.1), "manifold") {}
+  WarpedSphere() : ImplicitSurface(Sphere(Point(0.5, 0.5, 0.5), 2.1), "manifold_with_boundary") {}
 
   double operator()(const Point& p) const
   {
+    /*
     const double R = sqrt( p[0]*p[0] + p[1]*p[1] + p[2]*p[2]);
     const double theta = asin(p[0]/R);
-    return R + 0.05*sin(10.0*theta) - 2.0;
+    if ( R + 0.05*sin(10.0*theta) < 2.0)
+      return -1.0;
+    else
+      return 1.0;
+    //return R + 0.05*sin(10.0*theta) - 2.0;
+    */
+    //if ((p[0] > 0.0 && p[0] < 1.0) && (p[1] > 0.0 && p[1] < 0.01) && (p[2] > 0.0 && p[2] < 1.0))
+    if ((p[0] > 0.0 && p[0] < 1.0) && (p[1] > 0.0 && p[1] < 0.01) && (p[2] > 0.0 && p[2] < 1.0))
+      return -1.0;
+    else
+      return 1.0;
   }
 
 };
@@ -138,10 +150,11 @@ int main()
   //interactive();
 
   WarpedSphere surface;
-  //SurfaceMeshGenerator::generate(mesh, surface, 30.0, 0.1, 0.1, 10);
-  //plot(mesh);
-  //interactive();
+  SurfaceMeshGenerator::generate(mesh, surface, 30.0, 0.01, 0.01, 10);
+  plot(mesh);
+  interactive();
 
+  /*
   //ImplicitDomainMeshGenerator::generate(mesh, surface, 0.05);
   ImplicitDomainMeshGenerator::generate_surface(mesh, surface, 0.05);
   cout << "T-dim: " << mesh.topology().dim() << endl;
@@ -150,6 +163,7 @@ int main()
   file << mesh;
   plot(mesh);
   interactive();
+  */
 
 }
 

@@ -50,18 +50,17 @@
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 
 // Domain
-typedef CGAL::Exact_predicates_inexact_constructions_kernel K_test;
 typedef K::Point_3 Point_3;
 
 // Call-back function
 typedef boost::function<double (Point_3)> Function;
 
 
-typedef CGAL::Implicit_mesh_domain_3<Function, K_test> Mesh_domain_test;
+typedef CGAL::Implicit_mesh_domain_3<Function, K> Mesh_domain_test;
 //typedef CGAL::Mesh_domain_with_polyline_features_3<
 //  CGAL::Implicit_mesh_domain_3<Function_test, K_test> > Mesh_domain_test;
 
-typedef CGAL::Robust_weighted_circumcenter_filtered_traits_3<K_test> Geom_traits_test;
+typedef CGAL::Robust_weighted_circumcenter_filtered_traits_3<K> Geom_traits_test;
 
 // CGAL 3D triangulation vertex typedefs
 typedef CGAL::Triangulation_vertex_base_3<Geom_traits_test> Tvb3test_base_test;
@@ -86,15 +85,6 @@ typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr_test> C3t3_test;
 
 // Criteria
 typedef CGAL::Mesh_criteria_3<Tr_test> Mesh_criteria_test;
-
-// To avoid verbose function and named parameters call
-//using namespace CGAL::parameters;
-
-// Function
-//FT_test sphere_function_test(const Point_test& p)
-//{
-//  return CGAL::squared_distance(p, Point_test(CGAL::ORIGIN))-1;
-//}
 
 
 using namespace dolfin;
