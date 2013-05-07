@@ -617,7 +617,7 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc, const
   // Check size of dataset. If small enough, just read on all processes...
 
   // FIXME: optimise value
-  const std::size_t max_data_one = 1;
+  const std::size_t max_data_one = 1048576; // arbtirary 1M
 
   if(values_dim[0] < max_data_one)
   {
@@ -659,11 +659,6 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc, const
   }
   else
   {
-    //    dolfin_error("HDF5File.cpp",
-    //          "read MeshValueCollection",
-    //          "Dataset too large. Distributed read not yet implemented");
-
-    // Get global mapping to restore values
     const Mesh& mesh = mesh_vc.mesh();
 
     // Divide range between processes
@@ -682,42 +677,42 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc, const
     HDF5Interface::read_dataset(hdf5_file_id, cells_name, data_range, cells_data);  
     
     // Send entities and values to correct global cells
-
     const std::size_t n_global_cells = mesh.size_global(mesh.topology().dim());
     const std::size_t num_processes = MPI::num_processes();
     const std::pair<std::size_t, std::size_t> range = MPI::local_range(n_global_cells);
 
-    // Divide all cells into ranges, and find which processes own which cells in the
-    // range division assigned to this process.
+    // Divide all cells into ranges, and find which processes 
+    // own which cells in the range division assigned to this process.
     std::vector<std::pair<std::size_t, std::size_t> > global_owner;
     compute_global_mapping(global_owner, mesh);
 
     // Send data cell indices owned by data owner to "clearing" process
-    std::vector<std::vector<std::size_t> > send_indices(num_processes);
     std::vector<std::vector<std::size_t> > recv_indices(num_processes);
-
-    for(std::size_t i = 0; i != cells_data.size(); ++i)
     {
-      const std::size_t proc = MPI::index_owner(cells_data[i], n_global_cells);
-      send_indices[proc].push_back(cells_data[i]);
-    }
-    MPI::all_to_all(send_indices, recv_indices);
-
-    // Send back (proc, remote local_idx) pair to data owner
-    std::vector<std::vector<std::pair<std::size_t, std::size_t> > > send_remote_idx(num_processes);
-    std::vector<std::vector<std::pair<std::size_t, std::size_t> > > recv_remote_idx(num_processes);
-    for(std::vector<std::vector<std::size_t> >::iterator p = recv_indices.begin(); p != recv_indices.end(); ++p)
-      for(std::vector<std::size_t>::iterator q = p->begin(); q != p->end(); ++q)
+      std::vector<std::vector<std::size_t> > send_indices(num_processes);
+      for(std::size_t i = 0; i != cells_data.size(); ++i)
       {
-        dolfin_assert(*q >= range.first && *q < range.second);
-        const std::size_t proc = p - recv_indices.begin();
-        const std::size_t qidx = *q - range.first;
-        send_remote_idx[proc].push_back(global_owner[qidx]);
+        const std::size_t proc = MPI::index_owner(cells_data[i], n_global_cells);
+        send_indices[proc].push_back(cells_data[i]);
       }
+      MPI::all_to_all(send_indices, recv_indices);
+    }
     
-    MPI::all_to_all(send_remote_idx, recv_remote_idx);
-
-
+    // Send back (proc, remote local_idx) pair to data owner
+    std::vector<std::vector<std::pair<std::size_t, std::size_t> > > recv_remote_idx(num_processes);
+    {
+      std::vector<std::vector<std::pair<std::size_t, std::size_t> > > send_remote_idx(num_processes);
+      for(std::vector<std::vector<std::size_t> >::iterator p = recv_indices.begin(); p != recv_indices.end(); ++p)
+        for(std::vector<std::size_t>::iterator q = p->begin(); q != p->end(); ++q)
+        {
+          dolfin_assert(*q >= range.first && *q < range.second);
+          const std::size_t proc = p - recv_indices.begin();
+          const std::size_t qidx = *q - range.first;
+          send_remote_idx[proc].push_back(global_owner[qidx]);
+        }
+      MPI::all_to_all(send_remote_idx, recv_remote_idx);
+    }
+    
     // Go back through the received indices and prepare actual value 
     // data to be sent to final destination
     std::vector<std::size_t> pos(num_processes, 0);
@@ -740,11 +735,6 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc, const
       const std::size_t remote_index = rproc[pos[proc]].second;
       pos[proc]++;
 
-      std::cout << MPI::process_number() << "] "
-                << "global(" << cells_data[i] 
-                << ") -> {" << remote_proc << "," << remote_index << "}"
-                << std::endl;
- 
       send_entities[remote_proc].push_back(entities_data[i]);
       send_local[remote_proc].push_back(remote_index);
       send_values[remote_proc].push_back(values_data[i]);
