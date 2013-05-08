@@ -38,12 +38,22 @@ class Eval(unittest.TestCase):
                def eval(self, values, x):
                     values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
 
-          f0 = F0()
+          f0 = F0(name="f0", label="My expression")
           f1 = Expression("a*sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", \
-                          degree=2, a=1.)
+                          degree=2, a=1., name="f1")
           x = array([0.31, 0.32, 0.33])
           u00 = zeros(1); u01 = zeros(1)
           u10 = zeros(1); u20 = zeros(1)
+
+          # Check usergeneration of name and label
+          self.assertEqual(f0.name(), "f0")
+          self.assertEqual(f0.label(), "My expression")
+          self.assertEqual(f1.name(), "f1")
+          self.assertEqual(f1.label(), "User defined expression")
+
+          # Check outgeneration of name
+          count = int(F0().name()[2:])
+          self.assertEqual(F0().count(), count+1)
 
           # Test original and vs short evaluation
           f0.eval(u00, x)
@@ -308,29 +318,63 @@ class Instantiation(unittest.TestCase):
           self.assertAlmostEqual(assemble(e0*dx, mesh=mesh), \
                                  assemble(e1*dx, mesh=mesh))
      
-     def test_constant_attributes(self):
-          t = Constant(1.0)
-          e0 = Expression(["2*t", "-t"], t=t)
+     def test_generic_function_attributes(self):
+          tc = Constant(2.0)
+          te = Expression("value", value=tc)
+
+          self.assertAlmostEqual(tc(0), te(0))
+          tc.assign(1.0)
+          self.assertAlmostEqual(tc(0), te(0))
+
+          tf = Function(V)
+          tf.vector()[:] = 1.0
+
+          # PETSc 3.2 fails if update_ghost_values are called in serial
+          if MPI.num_processes() > 1:
+               tf.vector().update_ghost_values()
+
+          e0 = Expression(["2*t", "-t"], t=tc)
           e1 = Expression(["2*t", "-t"], t=1.0)
-          e2 = Expression("t", t=t)
+          e2 = Expression("t", t=te)
+          e3 = Expression("t", t=tf)
           
           self.assertAlmostEqual(assemble(inner(e0,e0)*dx, mesh=mesh), \
                                  assemble(inner(e1,e1)*dx, mesh=mesh))
 
-          t.assign(3.0)
-          e1.t = float(t)
+          self.assertAlmostEqual(assemble(inner(e2,e2)*dx, mesh=mesh), \
+                                 assemble(inner(e3,e3)*dx, mesh=mesh))
+
+          tc.assign(3.0)
+          e1.t = float(tc)
 
           self.assertAlmostEqual(assemble(inner(e0,e0)*dx, mesh=mesh), \
                                  assemble(inner(e1,e1)*dx, mesh=mesh))
-          t.assign(5.0)
-          self.assertNotEqual(assemble(inner(e0,e0)*dx, mesh=mesh), \
-                              assemble(inner(e1,e1)*dx, mesh=mesh))
+          tc.assign(5.0)
+          
+          self.assertNotEqual(assemble(inner(e2,e2)*dx, mesh=mesh), \
+                              assemble(inner(e3,e3)*dx, mesh=mesh))
 
           self.assertAlmostEqual(assemble(e0[0]*dx, mesh=mesh), \
                                  assemble(2*e2*dx, mesh=mesh))
           
+          e2.t = e3.t
+
+          self.assertEqual(assemble(inner(e2,e2)*dx, mesh=mesh), \
+                           assemble(inner(e3,e3)*dx, mesh=mesh))
+
+          # Test wrong kwargs
           self.assertRaises(TypeError, lambda : Expression("t", t=Constant((1,0))))
-          self.assertRaises(TypeError, lambda : Expression("t", t=Function(V)))
+          self.assertRaises(TypeError, lambda : Expression("t", t=Function(V*V)))
+
+          # Test non-scalar GenericFunction
+          f2 = Function(V*V)
+          e2.t = f2
+          
+          self.assertRaises(RuntimeError, lambda : e2(0, 0))
+
+          # Test self assignment
+          e2.t = e2
+          self.assertRaises(RuntimeError, lambda : e2(0, 0))
           
 if __name__ == "__main__":
     unittest.main()

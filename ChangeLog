@@ -1,3 +1,5 @@
+ - Feature: Add support for setting name and label to an Expression when constructed
+ - Feature: Add support for passing a scalar GenericFunction as default value to a CompiledExpression
  - Feature: Add support for distance queries for 3-D meshes
  - Feature: Add PointIntegralSolver, which uses the MultiStageSchemes to solve local ODEs at Vertices
  - Feature: Add RKSolver and MultiStageScheme for general time integral solvers
