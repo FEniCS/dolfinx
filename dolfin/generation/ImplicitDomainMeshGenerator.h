@@ -50,8 +50,6 @@ namespace dolfin
     static void generate_surface(Mesh& mesh, const ImplicitSurface& surface,
                                  double cell_size);
 
-  private:
-
   };
 
 }

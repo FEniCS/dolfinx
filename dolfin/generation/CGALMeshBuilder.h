@@ -41,7 +41,7 @@ namespace dolfin
 {
 
   /// This class provides a function to build a DOLFIN Mesh from a
-  /// CGAL triangulation
+  /// CGAL mesh or triangulation
 
   class CGALMeshBuilder
   {
@@ -391,23 +391,10 @@ namespace dolfin
     mesh_editor.init_vertices(num_vertices);
     mesh_editor.init_cells(num_cells);
 
-    // Add vertices to mesh
     std::size_t vertex_index = 0;
     typename T::Vertex_iterator v;
     for (v = cgal_mesh.vertices_begin(); v != cgal_mesh.vertices_end(); ++v)
-    {
-      // Get vertex coordinates add vertex to the mesh
-      Point p;
-      p[0] = v->point()[0];
-      p[1] = v->point()[1];
-      p[2] = v->point()[2];
-
-      // Add mesh vertex
-      mesh_editor.add_vertex(vertex_index, p);
-
-      // Attach index to vertex and increment
-      v->info() = vertex_index++;
-    }
+      v->info() = -1;
 
     std::size_t cell_index = 0;
     typename T::Facet_iterator c;
@@ -416,11 +403,49 @@ namespace dolfin
       // Add cell if in CGAL mesh, and increment index
       if (cgal_mesh.is_in_complex(*c))
       {
-        std::vector<std::size_t> vertex_indices(3);
-        vertex_indices[0] = c->first->vertex( (c->second + 1)%4 )->info();
-        vertex_indices[1] = c->first->vertex( (c->second + 2)%4 )->info();
-        vertex_indices[2] = c->first->vertex( (c->second + 3)%4 )->info();
+        // Check that cell is on surface
+        typedef typename T::Triangulation::Point Point_3;
+        if (surface)
+        {
+          // Compute centroid of facet
+          Point p;
+          for (std::size_t i = 1; i < 4; ++i)
+          {
+            // Get the vertex point
+            const Point_3& _p = c->first->vertex((c->second + i)%4)->point();
+            p[0] += _p.x(); p[1] += _p.y(); p[2] += _p.z();
+          }
+          p[0] /= 3.0; p[1] /= 3.0; p[2] /= 3.0;
 
+          // Check if facet should be added. If not, continue
+          if (!surface->on_surface(p))
+          continue;
+        }
+
+        // Add vertex if not already added and increment index
+        for (std::size_t i = 1; i < 4; ++i)
+        {
+          // Get the ((c->second + i)%4) cell vertex info
+          const int v_index = c->first->vertex( (c->second + i)%4 )->info();
+
+          // In vertex index has not been set, set now and add to mesh
+          if (v_index < 0)
+          {
+            c->first->vertex((c->second + i)%4)->info() = vertex_index;
+
+            // Get vertex coordinates and add vertex to the mesh
+            Point p;
+            for (std::size_t j = 0; j < 3; ++j)
+              p[j] = c->first->vertex((c->second + i) % 4)->point()[j];
+            mesh_editor.add_vertex(vertex_index, p);
+            ++vertex_index;
+          }
+        }
+
+        // Get cell vertices and add to Mesh
+        std::vector<std::size_t> vertex_indices(3);
+        for (std::size_t i = 0; i < 3; ++i)
+          vertex_indices[i] = c->first->vertex( (c->second + i + 1)%4 )->info();
         mesh_editor.add_cell(cell_index++, vertex_indices);
       }
     }
@@ -441,11 +466,6 @@ namespace dolfin
     const std::size_t num_vertices = poly.size_of_vertices();
     const std::size_t num_cells = poly.size_of_facets();
 
-    cout << "gdim: " << gdim << endl;
-    cout << "tdim: " << tdim << endl;
-    cout << "num_vert: " << num_vertices << endl;
-    cout << "num_cells: " << num_cells << endl;
-
     // The vertices have no info(), so make a separate point map (vertices
     // aren't ordered)
     std::map<typename T::Point_3, std::size_t> point_map;
@@ -458,8 +478,8 @@ namespace dolfin
 
     // Add vertices to mesh
     std::size_t vertex_index = 0;
-    for (typename T::Vertex_iterator
-           v = poly.vertices_begin(); v != poly.vertices_end(); ++v)
+    for (typename T::Vertex_iterator v = poly.vertices_begin();
+         v != poly.vertices_end(); ++v)
     {
       // Get vertex coordinates add vertex to the mesh
       Point p;
@@ -475,8 +495,8 @@ namespace dolfin
     }
 
     std::size_t cell_index = 0;
-    for (typename T::Facet_iterator
-           c = poly.facets_begin(); c != poly.facets_end(); c++)
+    for (typename T::Facet_iterator c = poly.facets_begin();
+         c != poly.facets_end(); c++)
     {
       std::vector<std::size_t> vertex_indices;
       typename T::Facet::Halfedge_around_facet_circulator
