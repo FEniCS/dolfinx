@@ -176,7 +176,7 @@ void ImplicitDomainMeshGenerator::generate_surface(Mesh& mesh,
     C3t3_test c3t3 = CGAL::make_mesh_3<C3t3_test>(domain, criteria);
 
     // Build surface DOLFIN mesh from CGAL 3D mesh/triangulation
-    CGALMeshBuilder::build_surface_mesh_c3t3(mesh, c3t3);
+    CGALMeshBuilder::build_surface_mesh_c3t3(mesh, c3t3, &surface);
   }
 
   // Build distributed mesh

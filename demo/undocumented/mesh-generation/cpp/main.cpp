@@ -33,25 +33,35 @@ class WarpedSphere : public ImplicitSurface
 {
 public:
 
-  //WarpedSphere() : ImplicitSurface(Sphere(Point(0.0, 0.0, 0.0), 2.1), "manifold") {}
-  WarpedSphere() : ImplicitSurface(Sphere(Point(0.5, 0.5, 0.5), 2.1), "manifold_with_boundary") {}
+  WarpedSphere() : ImplicitSurface(Sphere(Point(0.0, 0.0, 0.0), 2.1), "manifold") {}
+  //WarpedSphere() : ImplicitSurface(Sphere(Point(0.5, 0.5, 0.5), 2.1), "manifold_with_boundary") {}
+  //WarpedSphere() : ImplicitSurface(Sphere(Point(0.5, 0.5, 0.5), 3.1), "manifold") {}
 
   double operator()(const Point& p) const
   {
-    /*
     const double R = sqrt( p[0]*p[0] + p[1]*p[1] + p[2]*p[2]);
     const double theta = asin(p[0]/R);
-    if ( R + 0.05*sin(10.0*theta) < 2.0)
-      return -1.0;
-    else
-      return 1.0;
-    //return R + 0.05*sin(10.0*theta) - 2.0;
-    */
+    //if ( R + 0.05*sin(10.0*theta) < 2.0)
+    //  return -1.0;
+    //else
+    //  return 1.0;
+    return R + 0.05*sin(10.0*theta) - 2.0;
+
+    /*
     //if ((p[0] > 0.0 && p[0] < 1.0) && (p[1] > 0.0 && p[1] < 0.01) && (p[2] > 0.0 && p[2] < 1.0))
     if ((p[0] > 0.0 && p[0] < 1.0) && (p[1] > 0.0 && p[1] < 0.01) && (p[2] > 0.0 && p[2] < 1.0))
       return -1.0;
     else
       return 1.0;
+    */
+  }
+
+  bool on_surface(const Point& point) const
+  {
+    if (point[1] > 0.0)
+      return true;
+    else
+      return false;
   }
 
 };
@@ -150,20 +160,18 @@ int main()
   //interactive();
 
   WarpedSphere surface;
-  SurfaceMeshGenerator::generate(mesh, surface, 30.0, 0.01, 0.01, 10);
-  plot(mesh);
-  interactive();
+  //SurfaceMeshGenerator::generate(mesh, surface, 30.0, 0.01, 0.01, 10);
+  //plot(mesh);
+  //interactive();
 
-  /*
   //ImplicitDomainMeshGenerator::generate(mesh, surface, 0.05);
-  ImplicitDomainMeshGenerator::generate_surface(mesh, surface, 0.05);
+  ImplicitDomainMeshGenerator::generate_surface(mesh, surface, 0.1);
   cout << "T-dim: " << mesh.topology().dim() << endl;
   cout << "Num cells: " << mesh.num_cells() << endl;
   File file("mesh.pvd");
   file << mesh;
   plot(mesh);
   interactive();
-  */
 
 }
 

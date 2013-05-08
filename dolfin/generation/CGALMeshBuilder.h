@@ -31,6 +31,7 @@
 #include <CGAL/Triangulation_2.h>
 #include <CGAL/Triangulation_3.h>
 
+#include <dolfin/geometry/ImplicitSurface.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -56,11 +57,13 @@ namespace dolfin
 
     /// Build DOLFIN Mesh from a CGAL surface mesh (C2t3)
     template<typename T>
-    static void build_surface_mesh_c3t3(Mesh& mesh, T& cgal_mesh);
+      static void build_surface_mesh_c3t3(Mesh& mesh, T& cgal_mesh,
+                                          const ImplicitSurface* surface=NULL);
 
     /// Build DOLFIN Mesh from a CGAL surface mesh (C2t3)
     template<typename T>
-    static void build_surface_mesh_c2t3(Mesh& mesh, T& cgal_mesh);
+      static void build_surface_mesh_c2t3(Mesh& mesh, T& cgal_mesh,
+                                          const ImplicitSurface* surface=NULL);
 
     /// Build DOLFIN surface mesh from a CGAL polyhedron_3
     template<typename T>
@@ -272,7 +275,8 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template<typename T>
-  void CGALMeshBuilder::build_surface_mesh_c3t3(Mesh& mesh, T& cgal_mesh)
+    void CGALMeshBuilder::build_surface_mesh_c3t3(Mesh& mesh, T& cgal_mesh,
+                                                  const ImplicitSurface* surface )
   {
     // Clear mesh
     mesh.clear();
@@ -302,15 +306,42 @@ namespace dolfin
       c->first->vertex( (c->second + 3)%4 )->info() = -1;
     }
 
+    // Iterate over facets
     std::size_t cell_index = 0;
     std::size_t vertex_index = 0;
     for (c = cgal_mesh.facets_in_complex_begin();
          c != cgal_mesh.facets_in_complex_end(); ++c)
     {
+      // Notes:
+      // - c->first is the volume cell
+      // - c->second is the local facet index. Facet local index is same
+      //   loocal index of opposite vertex
+
+      typedef typename T::Triangulation::Point Point_3;
+      if (surface)
+      {
+        // Compute centroid of facet
+        Point p;
+        for (std::size_t i = 1; i < 4; ++i)
+        {
+          // Get the vertex point
+          const Point_3& _p = c->first->vertex((c->second + i)%4)->point();
+          p[0] += _p.x(); p[1] += _p.y(); p[2] += _p.z();
+        }
+        p[0] /= 3.0; p[1] /= 3.0; p[2] /= 3.0;
+
+        // Check if facet should be added. If not, continue
+        if (!surface->on_surface(p))
+          continue;
+      }
+
       // Add vertex if not already added and increment index
       for (std::size_t i = 1; i < 4; ++i)
       {
+        // Get the ((c->second + i)%4) cell vertex info
         const int v_index = c->first->vertex( (c->second + i)%4 )->info();
+
+        // In vertex index has not been set, set now and add to mesh
         if (v_index < 0)
         {
           c->first->vertex((c->second + i)%4)->info() = vertex_index;
@@ -336,8 +367,12 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template<typename T>
-  void CGALMeshBuilder::build_surface_mesh_c2t3(Mesh& mesh, T& cgal_mesh)
+    void CGALMeshBuilder::build_surface_mesh_c2t3(Mesh& mesh, T& cgal_mesh,
+                                                  const ImplicitSurface* surface)
   {
+    if (surface)
+      error("CGALMeshBuilder::build_surface_mesh_c2t3 does not yet support implicit surfaces");
+
     // Clear mesh
     mesh.clear();
 

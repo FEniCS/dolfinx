@@ -59,7 +59,8 @@ namespace dolfin
     virtual ~ImplicitSurface();
 
     /// Return value of isosurfacce function. This function is
-    /// overloaed by the user.
+    /// overloaed by the user. For closed volumes, the function should
+    /// evaluate to < 0 on the interior.
     ///
     /// *Arguments*
     ///     point (Point)
@@ -73,13 +74,11 @@ namespace dolfin
     virtual double operator()(const Point& point) const = 0;
 
 
+    /// Test whether a point for which f \approx 0 is on the
+    /// surface. Used for creating open surfaces by discarding with
+    /// any artificial closure.
     virtual bool on_surface(const Point& point) const
-    {
-      dolfin_error("ImplicitSurface.h",
-                   "Determine if point is on surface",
-                   "Function ImplicitSurface::on_surface has not been provided");
-      return false;
-    }
+    { return true; }
 
     /// Bounding sphere
     const Sphere sphere;
