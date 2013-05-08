@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-04-02
+// Last changed: 2013-05-07
 
 #include <cmath>
 #include <boost/make_shared.hpp>
@@ -84,12 +84,25 @@ void PointIntegralSolver::step(double dt)
   arma::vec u0;
   u0.set_size(N);
 
-  // Local stage solutions
+  // Local stage solutions 
   std::vector<arma::vec> local_stage_solutions(_scheme->stage_solutions().size());
   for (unsigned int stage=0; stage<num_stages; stage++)
     local_stage_solutions[stage].set_size(N);
 
-  /// Local to local dofs to be used in tabulate entity dofs
+  // Update off-process coefficients
+  for (unsigned int i=0; i < num_stages; i++)
+  {
+    for (unsigned int j=0; j < _scheme->stage_forms()[i].size(); j++)
+    {
+      const std::vector<boost::shared_ptr<const GenericFunction> >
+	coefficients = _scheme->stage_forms()[i][j]->coefficients();
+      
+      for (unsigned int k = 0; k < coefficients.size(); ++k)
+	coefficients[k]->update();
+    }
+  }
+  
+  // Local to local dofs to be used in tabulate entity dofs
   std::vector<std::size_t> local_to_local_dofs(N);
 
   // Local to global dofs used when solution is fanned out to global vector
