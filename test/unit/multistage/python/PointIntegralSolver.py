@@ -42,22 +42,18 @@ class PointIntegralSolverTest(unittest.TestCase):
 
     def test_butcher_schemes_scalar(self):
 
-        #if cpp.MPI.num_processes() > 1:
-        #    return
-
-        #LEVEL = cpp.get_log_level()
-        #cpp.set_log_level(cpp.WARNING)
-        mesh = UnitSquareMesh(10, 10)
-        V = FunctionSpace(mesh, "CG", 1)
-        u = Function(V)
-        v = TestFunction(V)
-        form = u*v*dP
-
-        tstop = 1.0
-        u_true = Expression("exp(t)", t=tstop)
-
         for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
                        BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
+            
+            mesh = UnitSquareMesh(10, 10)
+            V = FunctionSpace(mesh, "CG", 1)
+            u = Function(V)
+            v = TestFunction(V)
+            form = u*v*dP
+
+            tstop = 1.0
+            u_true = Expression("exp(t)", t=tstop)
+
             scheme = Scheme(form, u)
             info(scheme)
             solver = PointIntegralSolver(scheme)
@@ -72,26 +68,19 @@ class PointIntegralSolverTest(unittest.TestCase):
 
             self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)
 
-        #cpp.set_log_level(LEVEL)
-
     def test_butcher_schemes_vector(self):
-
-        #if cpp.MPI.num_processes() > 1:
-        #    return
-
-        #LEVEL = cpp.get_log_level()
-        #cpp.set_log_level(cpp.WARNING)
-        mesh = UnitSquareMesh(10, 10)
-        V = VectorFunctionSpace(mesh, "CG", 1, dim=2)
-        u = Function(V)
-        v = TestFunction(V)
-        form = inner(as_vector((-u[1], u[0])), v)*dP
-
-        tstop = 1.0
-        u_true = Expression(("cos(t)", "sin(t)"), t=tstop)
 
         for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
                        BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
+
+            mesh = UnitSquareMesh(10, 10)
+            V = VectorFunctionSpace(mesh, "CG", 1, dim=2)
+            u = Function(V)
+            v = TestFunction(V)
+            form = inner(as_vector((-u[1], u[0])), v)*dP
+
+            tstop = 1.0
+            u_true = Expression(("cos(t)", "sin(t)"), t=tstop)
 
             scheme = Scheme(form, u)
             info(scheme)
@@ -102,12 +91,18 @@ class PointIntegralSolverTest(unittest.TestCase):
             u_errors = []
             for dt in [0.05, 0.025, 0.0125]:
                 u.interpolate(Constant((1.0, 0.0)))
-                solver.step_interval(0., tstop, dt)
+                scheme.t().assign(0.0)
+                next_dt = dt
+                while float(scheme.t()) + next_dt <= tstop:
+                    if next_dt < 1000*DOLFIN_EPS:
+                        break
+
+                    solver.step(next_dt)
+                    next_dt = min(tstop-float(scheme.t()), dt)
+                    
                 u_errors.append(errornorm(u_true, u))
 
             self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)
-
-        #cpp.set_log_level(LEVEL)
 
 if __name__ == "__main__":
     print ""
