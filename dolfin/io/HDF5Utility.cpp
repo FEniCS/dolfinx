@@ -22,31 +22,17 @@
 
 #ifdef HAS_HDF5
 
-#include <cstdio>
-#include <fstream>
 #include <iostream>
-#include <iomanip>
-#include <boost/filesystem.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/assign.hpp>
 #include <boost/multi_array.hpp>
-#include <boost/unordered_map.hpp>
 
-#include <dolfin/common/constants.h>
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/function/Function.h>
-#include <dolfin/la/GenericVector.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEditor.h>
-#include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
-#include <dolfin/mesh/MeshFunction.h>
-#include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Vertex.h>
 
 #include "HDF5Utility.h"

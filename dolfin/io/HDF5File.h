@@ -59,6 +59,11 @@ namespace dolfin
     /// Write Vector to file in a format suitable for re-reading
     void write(const GenericVector& x, const std::string name);
 
+    /// Read vector from file
+    void read(GenericVector& x, const std::string dataset_name,
+              const bool use_partition_from_file=true);
+
+
     /// Write Mesh to file in a format suitable for re-reading
     void write(const Mesh& mesh, const std::string name);
 
@@ -67,41 +72,52 @@ namespace dolfin
     void write(const Mesh& mesh, const std::size_t cell_dim,
                const std::string name);
 
-    /// Write MeshFunction to file
-    /// in a format suitable for re-reading
-    void write(const MeshFunction<std::size_t>& meshfunction,
-               const std::string name);
-
-    /// Write MeshValueCollection to file 
-    void write(const MeshValueCollection<std::size_t>& mesh_values, const std::string name);
-
-    /// Write MeshFunction to file
-    /// in a format suitable for re-reading
-    void write(const MeshFunction<int>& meshfunction, const std::string name);
-
-    /// Write MeshFunction to file
-    /// in a format suitable for re-reading
-    void write(const MeshFunction<double>& meshfunction,
-               const std::string name);
-
-    /// Read vector from file
-    void read(GenericVector& x, const std::string dataset_name,
-              const bool use_partition_from_file=true);
-
     /// Read Mesh from file
     void read(Mesh& mesh, const std::string name);
 
+    /// Write MeshFunction to file in a format suitable for re-reading
+    void write(const MeshFunction<std::size_t>& meshfunction, const std::string name);
+
+    /// Write MeshFunction to file in a format suitable for re-reading
+    void write(const MeshFunction<int>& meshfunction, const std::string name);
+
+    /// Write MeshFunction to file in a format suitable for re-reading
+    void write(const MeshFunction<double>& meshfunction, const std::string name);
+
+    /// Write MeshFunction to file in a format suitable for re-reading
+    void write(const MeshFunction<bool>& meshfunction, const std::string name);
+
     /// Read MeshFunction from file
     void read(MeshFunction<std::size_t>& meshfunction, const std::string name);
-
-    /// Read MeshValueCollection from file
-    void read(MeshValueCollection<std::size_t>& mesh_values, const std::string name);
 
     /// Read MeshFunction from file
     void read(MeshFunction<int>& meshfunction, const std::string name);
 
     /// Read MeshFunction from file
     void read(MeshFunction<double>& meshfunction, const std::string name);
+
+    /// Read MeshFunction from file
+    void read(MeshFunction<bool>& meshfunction, const std::string name);
+
+
+    /// Write MeshValueCollection to file 
+    void write(const MeshValueCollection<std::size_t>& mesh_values, const std::string name);
+
+    /// Write MeshValueCollection to file 
+    void write(const MeshValueCollection<double>& mesh_values, const std::string name);
+
+    /// Write MeshValueCollection to file 
+    void write(const MeshValueCollection<bool>& mesh_values, const std::string name);
+
+    /// Read MeshValueCollection from file
+    void read(MeshValueCollection<std::size_t>& mesh_values, const std::string name);
+
+    /// Read MeshValueCollection from file
+    void read(MeshValueCollection<double>& mesh_values, const std::string name);
+
+    /// Read MeshValueCollection from file
+    void read(MeshValueCollection<bool>& mesh_values, const std::string name);
+
 
     /// Check if dataset exists in HDF5 file
     bool has_dataset(const std::string dataset_name) const;

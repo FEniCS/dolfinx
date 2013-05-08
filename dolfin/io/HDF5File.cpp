@@ -245,6 +245,33 @@ void HDF5File::read(MeshFunction<double>& meshfunction, const std::string name)
   read_mesh_function(meshfunction, name);
 }
 //-----------------------------------------------------------------------------
+void HDF5File::write(const MeshFunction<bool>& meshfunction, const std::string name)
+{
+  const Mesh& mesh = meshfunction.mesh();
+  const std::size_t cell_dim = meshfunction.dim();
+
+  // HDF5 does not support a boolean type,
+  // so copy to int with values 1 and 0
+  MeshFunction<int> mf(mesh, cell_dim);
+  for (MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
+    mf[cell->index()] = (meshfunction[cell->index()] ? 1 : 0);
+
+  write_mesh_function(mf, name);
+}
+//-----------------------------------------------------------------------------
+void HDF5File::read(MeshFunction<bool>& meshfunction, const std::string name)
+{
+  const Mesh& mesh = meshfunction.mesh();
+  const std::size_t cell_dim = meshfunction.dim();
+
+  // HDF5 does not support bool, so use int instead
+  MeshFunction<int> mf(mesh, cell_dim);
+  read_mesh_function(mf, name);
+
+  for (MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
+    meshfunction[cell->index()] = (mf[cell->index()] != 0);
+}
+//-----------------------------------------------------------------------------
 template <typename T>
 void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
                                   const std::string mesh_name)
@@ -346,10 +373,7 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
 
   for(std::size_t i = 0; i < num_read_cells ; ++i)
   {
-    std::vector<std::size_t> cell_topology(vert_per_cell);
-    for(std::size_t j = 0; j < vert_per_cell; ++j)
-      cell_topology[j] = topology_array[i][j];
-
+    std::vector<std::size_t> cell_topology(topology_array[i].begin(), topology_array[i].end());
     std::sort(cell_topology.begin(), cell_topology.end());
 
     // Use first vertex to decide where to send this data
@@ -527,6 +551,60 @@ void HDF5File::write(const MeshValueCollection<std::size_t>& mesh_values, const 
 void HDF5File::read(MeshValueCollection<std::size_t>& mesh_values, const std::string name)
 {
   read_mesh_value_collection(mesh_values, name);
+}
+//-----------------------------------------------------------------------------
+void HDF5File::write(const MeshValueCollection<double>& mesh_values, const std::string name)
+{
+  write_mesh_value_collection(mesh_values, name);
+}
+//-----------------------------------------------------------------------------
+void HDF5File::read(MeshValueCollection<double>& mesh_values, const std::string name)
+{
+  read_mesh_value_collection(mesh_values, name);
+}
+//-----------------------------------------------------------------------------
+void HDF5File::write(const MeshValueCollection<bool>& mesh_values, const std::string name)
+{
+  dolfin_error("HDF5File.cpp",
+               "write bool MeshValueCollection",
+               "Not implemented yet");
+
+  // HDF5 does not implement bool, use int and copy
+ 
+  MeshValueCollection<int> mvc_int(mesh_values.dim());
+  const std::map<std::pair<std::size_t, std::size_t>, bool>& values = mesh_values.values();
+  for(std::map<std::pair<std::size_t, std::size_t>, bool>::const_iterator mesh_value_it = values.begin();
+      mesh_value_it != values.end(); ++mesh_value_it)
+  {
+    mvc_int.set_value(mesh_value_it->first.first, mesh_value_it->first.second, 
+                      mesh_value_it->second ? 1 : 0);
+  }
+
+  // FIXME - need to copy mesh reference over
+  
+  write_mesh_value_collection(mvc_int, name);
+}
+//-----------------------------------------------------------------------------
+void HDF5File::read(MeshValueCollection<bool>& mesh_values, const std::string name)
+{
+  dolfin_error("HDF5File.cpp",
+               "read bool MeshValueCollection",
+               "Not implemented yet");
+
+  // HDF5 does not implement bool, use int and copy
+  // FIXME - need to copy mesh reference over
+
+  MeshValueCollection<int> mvc_int(mesh_values.dim());
+  read_mesh_value_collection(mvc_int, name);
+
+  const std::map<std::pair<std::size_t, std::size_t>, int>& values = mvc_int.values();
+  for(std::map<std::pair<std::size_t, std::size_t>, int>::const_iterator mesh_value_it = values.begin();
+      mesh_value_it != values.end(); ++mesh_value_it)
+  {
+    mesh_values.set_value(mesh_value_it->first.first, mesh_value_it->first.second, 
+                          (mesh_value_it->second != 0));
+  }
+  
 }
 //-----------------------------------------------------------------------------
 template <typename T>

@@ -18,7 +18,8 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2013-05-07
+//
+// Last changed: 2013-05-14
 
 #ifdef HAS_HDF5
 
@@ -429,16 +430,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const MeshFunction<bool>& meshfunction)
 {
-  const Mesh& mesh = *meshfunction.mesh();
-  const std::size_t cell_dim = meshfunction.dim();
-
-  // HDF5 does not support a boolean type,
-  // so copy to a std::size_t with values 1 and 0
-  MeshFunction<std::size_t> mf(mesh, cell_dim);
-  for (MeshEntityIterator cell(mesh, cell_dim); !cell.end(); ++cell)
-    mf[cell->index()] = (meshfunction[cell->index()] ? 1 : 0);
-
-  write_mesh_function(mf);
+  write_mesh_function(meshfunction);
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const MeshFunction<int>& meshfunction)
