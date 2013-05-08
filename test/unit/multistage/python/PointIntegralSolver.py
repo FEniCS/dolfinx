@@ -42,8 +42,8 @@ class PointIntegralSolverTest(unittest.TestCase):
 
     def test_butcher_schemes_scalar(self):
 
-        if cpp.MPI.num_processes() > 1:
-            return
+        #if cpp.MPI.num_processes() > 1:
+        #    return
 
         #LEVEL = cpp.get_log_level()
         #cpp.set_log_level(cpp.WARNING)
@@ -76,8 +76,8 @@ class PointIntegralSolverTest(unittest.TestCase):
 
     def test_butcher_schemes_vector(self):
 
-        if cpp.MPI.num_processes() > 1:
-            return
+        #if cpp.MPI.num_processes() > 1:
+        #    return
 
         #LEVEL = cpp.get_log_level()
         #cpp.set_log_level(cpp.WARNING)
