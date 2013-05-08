@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2013-04-08
+// Last changed: 2013-05-07
 
 #ifdef HAS_HDF5
 
@@ -303,15 +303,25 @@ void XDMFFile::operator>> (Mesh& mesh)
   {
     dolfin_error("XDMFFile.cpp",
                  "read mesh from XDMF/H5 files",
-                 "XML parsing error when reading from file");
+                 "XML parsing error. XDMF file should contain only one mesh/dataset");
   }
 
   // Topology - check format and get dataset name
   pugi::xml_node xdmf_topology = xml_doc.child("Xdmf").child("Domain").child("Grid").child("Topology").child("DataItem");
-  dolfin_assert(xdmf_topology);
-
-  const std::string topo_fmt(xdmf_topology.attribute("Format").value());
-  dolfin_assert(topo_fmt == "HDF");
+  if(!xdmf_topology)
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "read mesh from XDMF/H5 files",
+                 "XML parsing error. XDMF file should contain only one mesh/dataset");
+  }
+  
+  const std::string topological_data_format(xdmf_topology.attribute("Format").value());
+  if(topological_data_format != "HDF")
+  {
+    dolfin_error("XDMFFile.cpp",
+                 "read mesh from XDMF/H5 files",
+                 "XML parsing error. Wrong dataset format (not HDF5)");
+  } 
 
   const std::string topo_ref(xdmf_topology.first_child().value());
   std::vector<std::string> topo_bits;
