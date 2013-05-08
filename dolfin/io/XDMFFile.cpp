@@ -473,7 +473,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 
   // Use HDF5 function to output MeshFunction
   current_mesh_name = "/Mesh/" + boost::lexical_cast<std::string>(counter);
-  hdf5_file->write_mesh_function(meshfunction, current_mesh_name);
+  hdf5_file->write(meshfunction, current_mesh_name);
 
   // Saved MeshFunction values are in the /Mesh group
   const std::string dataset_name =  current_mesh_name + "/values";
