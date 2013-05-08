@@ -20,7 +20,7 @@
 // Modified by Andre Massing 2009
 //
 // First added:  2003-11-28
-// Last changed: 2012-10-25
+// Last changed: 2013-05-08
 
 #include <algorithm>
 #include <map>
@@ -503,6 +503,7 @@ void Function::non_matching_eval(Array<double>& values,
   // Alternative 1: Find cell that point (x) intersects
   int id = mesh.intersected_cell(point);
 
+  // Check whether we are allowed to extrapolate to evaluate
   if (id == -1 && !allow_extrapolation)
   {
     dolfin_error("Function.cpp",
