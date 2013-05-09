@@ -65,15 +65,6 @@ PyObject* _array()
 %enddef
 
 //-----------------------------------------------------------------------------
-// Ignore MeshFunction constructors that take a Mesh reference
-//-----------------------------------------------------------------------------
-%ignore dolfin::MeshFunction::MeshFunction(const Mesh&);
-%ignore dolfin::MeshFunction::MeshFunction(const Mesh&, std::size_t);
-%ignore dolfin::MeshFunction::MeshFunction(const Mesh&, std::size_t, const T&);
-%ignore dolfin::MeshFunction::MeshFunction(const Mesh&, const std::string);
-%ignore dolfin::MeshFunction::MeshFunction(const Mesh&, const MeshValueCollection<T>&);
-
-//-----------------------------------------------------------------------------
 // Run the macros
 //-----------------------------------------------------------------------------
 ALL_VALUES(dolfin::MeshFunction<double>, double)
@@ -251,6 +242,16 @@ MESHENTITYITERATORBASE(Vertex, vertices)
 
 // Include shared_ptr declaration of MeshValueCollection
 %shared_ptr(dolfin::MeshValueCollection<TYPE>)
+
+//-----------------------------------------------------------------------------
+// Ignore MeshFunction constructors that take a Mesh reference
+//-----------------------------------------------------------------------------
+%ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&);
+%ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, std::size_t);
+%ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, std::size_t, const T&);
+%ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, const std::string);
+%ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, const MeshValueCollection<T>&);
+
 %enddef
 
 FORWARD_DECLARE_MESHFUNCTIONS(unsigned int, UInt)
