@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-05-02
+// Last changed: 2013-05-10
 
 #ifndef __BOUNDING_BOX_TREE_H
 #define __BOUNDING_BOX_TREE_H
@@ -77,6 +77,21 @@ namespace dolfin
     ///     point (_Point_)
     ///         The point with which to compute the intersection.
     std::vector<unsigned int> find(const Point& point) const;
+
+    // FIXME:
+    //
+    // [ ] Store mesh as shared pointer
+    // [ ] Access primitives directly from here, needed for closest point
+    // [ ] Rename and change functions:
+    //
+    // compute_collisions()
+    // Compute all collisions with given _Point_.
+    //
+    // compute_first_collision()
+    // Compute first collision with given _Point_.
+    //
+    // compute_closest()
+    // Compute closest entity to given _Point_.
 
   private:
 
