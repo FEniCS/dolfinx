@@ -65,13 +65,21 @@ PyObject* _array()
 %enddef
 
 //-----------------------------------------------------------------------------
+// Ignore MeshFunction constructors that take a Mesh reference
+//-----------------------------------------------------------------------------
+%ignore dolfin::MeshFunction::MeshFunction(const Mesh&);
+%ignore dolfin::MeshFunction::MeshFunction(const Mesh&, std::size_t);
+%ignore dolfin::MeshFunction::MeshFunction(const Mesh&, std::size_t, const T&);
+%ignore dolfin::MeshFunction::MeshFunction(const Mesh&, const std::string);
+%ignore dolfin::MeshFunction::MeshFunction(const Mesh&, const MeshValueCollection<T>&);
+
+//-----------------------------------------------------------------------------
 // Run the macros
 //-----------------------------------------------------------------------------
 ALL_VALUES(dolfin::MeshFunction<double>, double)
 ALL_VALUES(dolfin::MeshFunction<int>, int)
 ALL_VALUES(dolfin::MeshFunction<bool>, bool)
 ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
-
 
 //-----------------------------------------------------------------------------
 // Ignore methods that is superseded by extended versions
