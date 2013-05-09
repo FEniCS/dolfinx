@@ -279,7 +279,7 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
   const Mesh& mesh = *meshfunction.mesh();
 
   dolfin_assert(hdf5_file_open);
-  
+
   const std::string topology_name = mesh_name + "/topology";
   if(!HDF5Interface::has_dataset(hdf5_file_id, topology_name))
 
@@ -360,6 +360,7 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
   value_data.reserve(num_read_cells);
   HDF5Interface::read_dataset(hdf5_file_id, values_name, cell_range,
                               value_data);
+
 
   // Now send the read data to each process on the basis of the first
   // vertex of the entity, since we do not know the global_index
@@ -570,18 +571,18 @@ void HDF5File::write(const MeshValueCollection<bool>& mesh_values, const std::st
                "Not implemented yet");
 
   // HDF5 does not implement bool, use int and copy
- 
+
   MeshValueCollection<int> mvc_int(mesh_values.dim());
   const std::map<std::pair<std::size_t, std::size_t>, bool>& values = mesh_values.values();
   for(std::map<std::pair<std::size_t, std::size_t>, bool>::const_iterator mesh_value_it = values.begin();
       mesh_value_it != values.end(); ++mesh_value_it)
   {
-    mvc_int.set_value(mesh_value_it->first.first, mesh_value_it->first.second, 
+    mvc_int.set_value(mesh_value_it->first.first, mesh_value_it->first.second,
                       mesh_value_it->second ? 1 : 0);
   }
 
   // FIXME - need to copy mesh reference over
-  
+
   write_mesh_value_collection(mvc_int, name);
 }
 //-----------------------------------------------------------------------------
@@ -601,10 +602,10 @@ void HDF5File::read(MeshValueCollection<bool>& mesh_values, const std::string na
   for(std::map<std::pair<std::size_t, std::size_t>, int>::const_iterator mesh_value_it = values.begin();
       mesh_value_it != values.end(); ++mesh_value_it)
   {
-    mesh_values.set_value(mesh_value_it->first.first, mesh_value_it->first.second, 
+    mesh_values.set_value(mesh_value_it->first.first, mesh_value_it->first.second,
                           (mesh_value_it->second != 0));
   }
-  
+
 }
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -650,7 +651,7 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc, const
                  "open MeshValueCollection dataset",
                  "Group \"%s\" not found in file", name.c_str());
   }
-  
+
   std::size_t dim = 0;
   HDF5Interface::get_attribute(hdf5_file_id, name, "dimension", dim);
 
@@ -676,14 +677,14 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc, const
                  "open MeshValueCollection dataset",
                  "Dataset \"%s\" not found in file", cells_name.c_str());
   }
-  
+
   // Check all datasets have the same size
   const std::vector<std::size_t> values_dim
-      = HDF5Interface::get_dataset_size(hdf5_file_id, values_name);  
+      = HDF5Interface::get_dataset_size(hdf5_file_id, values_name);
   const std::vector<std::size_t> entities_dim
-      = HDF5Interface::get_dataset_size(hdf5_file_id, entities_name);  
+      = HDF5Interface::get_dataset_size(hdf5_file_id, entities_name);
   const std::vector<std::size_t> cells_dim
-      = HDF5Interface::get_dataset_size(hdf5_file_id, cells_name);  
+      = HDF5Interface::get_dataset_size(hdf5_file_id, cells_name);
   dolfin_assert(values_dim[0] == entities_dim[0]);
   dolfin_assert(values_dim[0] == cells_dim[0]);
 
@@ -700,13 +701,13 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc, const
 
     std::vector<T> values_data;
     values_data.reserve(local_size);
-    HDF5Interface::read_dataset(hdf5_file_id, values_name, range, values_data);  
+    HDF5Interface::read_dataset(hdf5_file_id, values_name, range, values_data);
     std::vector<std::size_t> entities_data;
     entities_data.reserve(local_size);
-    HDF5Interface::read_dataset(hdf5_file_id, entities_name, range, entities_data);  
+    HDF5Interface::read_dataset(hdf5_file_id, entities_name, range, entities_data);
     std::vector<std::size_t> cells_data;
     cells_data.reserve(local_size);
-    HDF5Interface::read_dataset(hdf5_file_id, cells_name, range, cells_data);  
+    HDF5Interface::read_dataset(hdf5_file_id, cells_name, range, cells_data);
 
     // Get global mapping to restore values
     const Mesh& mesh = mesh_vc.mesh();
@@ -719,7 +720,7 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc, const
     // Find cells which are on this process
     for(std::size_t i = 0; i < cells_data.size(); ++i)
     {
-      const std::vector<std::size_t>::const_iterator lidx = std::find(global_cell_index.begin(), 
+      const std::vector<std::size_t>::const_iterator lidx = std::find(global_cell_index.begin(),
                                                                       global_cell_index.end(),
                                                                       cells_data[i]);
       if(lidx != global_cell_index.end())
@@ -737,24 +738,24 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc, const
     // Divide range between processes
     const std::pair<std::size_t, std::size_t> data_range = MPI::local_range(values_dim[0]);
     const std::size_t local_size = data_range.second - data_range.first;
-    
+
     // Read local range of values, entities and cells
     std::vector<T> values_data;
     values_data.reserve(local_size);
-    HDF5Interface::read_dataset(hdf5_file_id, values_name, data_range, values_data);  
+    HDF5Interface::read_dataset(hdf5_file_id, values_name, data_range, values_data);
     std::vector<std::size_t> entities_data;
     entities_data.reserve(local_size);
-    HDF5Interface::read_dataset(hdf5_file_id, entities_name, data_range, entities_data);  
+    HDF5Interface::read_dataset(hdf5_file_id, entities_name, data_range, entities_data);
     std::vector<std::size_t> cells_data;
     cells_data.reserve(local_size);
-    HDF5Interface::read_dataset(hdf5_file_id, cells_name, data_range, cells_data);  
-    
+    HDF5Interface::read_dataset(hdf5_file_id, cells_name, data_range, cells_data);
+
     // Send entities and values to correct global cells
     const std::size_t n_global_cells = mesh.size_global(mesh.topology().dim());
     const std::size_t num_processes = MPI::num_processes();
     const std::pair<std::size_t, std::size_t> range = MPI::local_range(n_global_cells);
 
-    // Divide all cells into ranges, and find which processes 
+    // Divide all cells into ranges, and find which processes
     // own which cells in the range division assigned to this process.
     std::vector<std::pair<std::size_t, std::size_t> > global_owner;
     HDF5Utility::compute_global_mapping(global_owner, mesh);
@@ -770,7 +771,7 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc, const
       }
       MPI::all_to_all(send_indices, recv_indices);
     }
-    
+
     // Send back (proc, remote local_idx) pair to data owner
     std::vector<std::vector<std::pair<std::size_t, std::size_t> > > recv_remote_idx(num_processes);
     {
@@ -785,8 +786,8 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc, const
         }
       MPI::all_to_all(send_remote_idx, recv_remote_idx);
     }
-    
-    // Go back through the received indices and prepare actual value 
+
+    // Go back through the received indices and prepare actual value
     // data to be sent to final destination
     std::vector<std::size_t> pos(num_processes, 0);
     std::vector<std::vector<std::size_t> > send_entities(num_processes);
@@ -795,7 +796,7 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc, const
     std::vector<std::vector<std::size_t> > recv_entities(num_processes);
     std::vector<std::vector<std::size_t> > recv_local(num_processes);
     std::vector<std::vector<T> > recv_values(num_processes);
-  
+
     for(std::size_t i = 0; i != cells_data.size(); ++i)
     {
       // Find which process information about this cell will have come from
@@ -819,19 +820,19 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc, const
 
     // Reference to actual map of MeshValueCollection
     std::map<std::pair<std::size_t, std::size_t>, T>& mvc_map
-      = mesh_vc.values();    
+      = mesh_vc.values();
 
     for(std::size_t i = 0; i < num_processes; ++i)
     {
       for(std::size_t j = 0; j < recv_local[i].size(); ++j)
       {
         const std::size_t local_index = recv_local[i][j];
-        mvc_map[std::make_pair(local_index, recv_entities[i][j])] = recv_values[i][j];        
+        mvc_map[std::make_pair(local_index, recv_entities[i][j])] = recv_values[i][j];
       }
     }
-    
+
   }
-  
+
 }
 //-----------------------------------------------------------------------------
 void HDF5File::read(GenericVector& x, const std::string dataset_name,
@@ -959,6 +960,7 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
                                partitions);
 
   std::pair<std::size_t,std::size_t> cell_range;
+
   // Check whether number of MPI processes matches partitioning, and
   // restore if possible
   if(MPI::num_processes() == partitions.size())
@@ -1035,7 +1037,7 @@ bool HDF5File::has_dataset(const std::string dataset_name) const
   return HDF5Interface::has_dataset(hdf5_file_id, dataset_name);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::reorder_values_by_global_indices(const Mesh& mesh, std::vector<double>& data, 
+void HDF5File::reorder_values_by_global_indices(const Mesh& mesh, std::vector<double>& data,
                                                 std::vector<std::size_t>& global_size) const
 {
   HDF5Utility::reorder_values_by_global_indices(mesh, data, global_size);
