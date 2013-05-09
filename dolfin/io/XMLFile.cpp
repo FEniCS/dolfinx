@@ -267,7 +267,8 @@ template<typename T> void XMLFile::read_mesh_function(MeshFunction<T>& t,
     LocalMeshValueCollection<T> local_data(mvc, dim);
 
     // Distribute MeshValueCollection
-    MeshPartitioning::build_distributed_value_collection<T>(mvc, local_data, t.mesh());
+    MeshPartitioning::build_distributed_value_collection<T>(mvc, local_data,
+                                                            *t.mesh());
 
     // Assign collection to mesh function (this is a local operation)
     t = mvc;

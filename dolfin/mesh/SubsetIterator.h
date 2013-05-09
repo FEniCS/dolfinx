@@ -47,13 +47,13 @@ namespace dolfin
     /// Create iterator for given mesh function. The iterator visits
     /// all entities that match the given label.
     SubsetIterator(const MeshFunction<std::size_t>& labels, std::size_t label)
-      : _entity(labels.mesh(), labels.dim(), 0),
-        _subset(new std::vector<std::size_t>()),
-        subset(*_subset)
+      : _entity(*labels.mesh(), labels.dim(), 0),
+        _subset(new std::vector<std::size_t>()), subset(*_subset)
     {
       // Extract subset
       subset.clear();
-      for (MeshEntityIterator entity(labels.mesh(), labels.dim()); !entity.end(); ++entity)
+      for (MeshEntityIterator entity(*labels.mesh(), labels.dim());
+           !entity.end(); ++entity)
       {
         if (labels[*entity] == label)
           subset.push_back(entity->index());

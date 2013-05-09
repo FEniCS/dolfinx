@@ -688,7 +688,7 @@ std::string VTKFile::vtu_name(const int process, const int num_processes,
 template<typename T>
 void VTKFile::mesh_function_write(T& meshfunction, double time)
 {
-  const Mesh& mesh = meshfunction.mesh();
+  const Mesh& mesh = *meshfunction.mesh();
   const std::size_t cell_dim = meshfunction.dim();
 
   //if (cell_dim != mesh.topology().dim() && cell_dim != mesh.topology().dim() - 1 && cell_dim != 0)
