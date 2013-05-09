@@ -16,10 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // Modified by Johan Hoffman, 2007.
-// Modified by Garth N. Wells, 2010.
+// Modified by Garth N. Wells, 2010-2013
 //
 // First added:  2006-05-22
-// Last changed: 2011-03-12
+// Last changed: 2013-05-10
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
@@ -187,7 +187,7 @@ namespace dolfin
     /// *Returns*
     ///     _Mesh_
     ///         The mesh.
-    const Mesh& mesh() const;
+    boost::shared_ptr<const Mesh> mesh() const;
 
     /// Return topological dimension
     ///
@@ -297,6 +297,16 @@ namespace dolfin
     ///         The dimension.
     void init(const Mesh& mesh, std::size_t dim);
 
+    /// Initialize mesh function for given topological dimension
+    /// (shared_ptr version)
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh.
+    ///     dim (std::size_t)
+    ///         The dimension.
+    void init(boost::shared_ptr<const Mesh> mesh, std::size_t dim);
+
     /// Initialize mesh function for given topological dimension of
     /// given size
     ///
@@ -308,6 +318,19 @@ namespace dolfin
     ///     size (std::size_t)
     ///         The size.
     void init(const Mesh& mesh, std::size_t dim, std::size_t size);
+
+    /// Initialize mesh function for given topological dimension of
+    /// given size (shared_ptr version)
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh.
+    ///     dim (std::size_t)
+    ///         The dimension.
+    ///     size (std::size_t)
+    ///         The size.
+    void init(boost::shared_ptr<const Mesh> mesh, std::size_t dim,
+              std::size_t size);
 
     /// Set value at given index
     ///
@@ -408,6 +431,7 @@ namespace dolfin
     Variable("f", "unnamed MeshFunction"),
       Hierarchical<MeshFunction<T> >(*this), _mesh(mesh), _dim(0), _size(0)
   {
+    std::cout << "In shared constructor B" << std::endl;
     init(dim);
   }
   //---------------------------------------------------------------------------
@@ -516,7 +540,8 @@ namespace dolfin
     // Iterate over all values
     boost::unordered_set<std::size_t> entities_values_set;
     typename std::map<std::pair<std::size_t, std::size_t>, T>::const_iterator it;
-    const std::map<std::pair<std::size_t, std::size_t>, T>& values = mesh_value_collection.values();
+    const std::map<std::pair<std::size_t, std::size_t>, T>& values
+      = mesh_value_collection.values();
     for (it = values.begin(); it != values.end(); ++it)
     {
       // Get value collection entry data
@@ -557,10 +582,10 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  const Mesh& MeshFunction<T>::mesh() const
+    boost::shared_ptr<const Mesh> MeshFunction<T>::mesh() const
   {
     dolfin_assert(_mesh);
-    return *_mesh;
+    return _mesh;
   }
   //---------------------------------------------------------------------------
   template <typename T>
@@ -648,7 +673,7 @@ namespace dolfin
 
     }
     _mesh->init(dim);
-    init(*_mesh, dim, _mesh->size(dim));
+    init(_mesh, dim, _mesh->size(dim));
   }
   //---------------------------------------------------------------------------
   template <typename T>
@@ -661,7 +686,7 @@ namespace dolfin
                    "Mesh has not been specified for mesh function");
     }
     _mesh->init(dim);
-    init(*_mesh, dim, size);
+    init(_mesh, dim, size);
   }
   //---------------------------------------------------------------------------
   template <typename T>
@@ -669,6 +694,15 @@ namespace dolfin
   {
     mesh.init(dim);
     init(mesh, dim, mesh.size(dim));
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
+    void MeshFunction<T>::init(boost::shared_ptr<const Mesh> mesh,
+                               std::size_t dim)
+  {
+    dolfin_assert(mesh);
+    mesh->init(dim);
+    init(mesh, dim, mesh->size(dim));
   }
   //---------------------------------------------------------------------------
   template <typename T>
@@ -682,6 +716,24 @@ namespace dolfin
     if (_size != size)
       _values.reset(new T[size]);
     _mesh = reference_to_no_delete_pointer(mesh);
+    _dim = dim;
+    _size = size;
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
+    void MeshFunction<T>::init(boost::shared_ptr<const Mesh> mesh,
+                               std::size_t dim, std::size_t size)
+  {
+    dolfin_assert(mesh);
+
+    // Initialize mesh for entities of given dimension
+    mesh->init(dim);
+    dolfin_assert(mesh->size(dim) == size);
+
+    // Initialize data
+    if (_size != size)
+      _values.reset(new T[size]);
+    _mesh = mesh;
     _dim = dim;
     _size = size;
   }

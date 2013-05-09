@@ -214,7 +214,7 @@ void ErrorControl::compute_indicators(MeshFunction<double>& indicators,
   _eta_T->set_coefficient(3, _Pi_E_z_h);
 
   // Assemble error indicator form
-  Vector x(indicators.mesh().num_cells());
+  Vector x(indicators.mesh()->num_cells());
   assemble(x, *_eta_T);
 
   // Take absolute value of indicators
@@ -224,7 +224,7 @@ void ErrorControl::compute_indicators(MeshFunction<double>& indicators,
   dolfin_assert(_eta_T->function_space(0));
   dolfin_assert(_eta_T->function_space(0)->dofmap());
   const GenericDofMap& dofmap(*_eta_T->function_space(0)->dofmap());
-  const Mesh& mesh(indicators.mesh());
+  const Mesh& mesh= *indicators.mesh();
 
   // Convert DG_0 vector to mesh function over cells
   for (CellIterator cell(mesh); !cell.end(); ++cell)

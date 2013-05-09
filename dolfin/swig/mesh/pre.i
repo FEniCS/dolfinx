@@ -248,9 +248,12 @@ MESHENTITYITERATORBASE(Vertex, vertices)
 //-----------------------------------------------------------------------------
 %ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&);
 %ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, std::size_t);
-%ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, std::size_t, const T&);
+%ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, std::size_t, const TYPE&);
 %ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, const std::string);
 %ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, const MeshValueCollection<T>&);
+
+%ignore dolfin::MeshFunction<TYPE>::init(const Mesh&, std::size_t);
+%ignore dolfin::MeshFunction<TYPE>::init(const Mesh&, std::size_t, const T&);
 
 %enddef
 
