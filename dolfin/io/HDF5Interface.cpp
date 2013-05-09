@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First Added: 2012-09-21
-// Last Changed: 2013-04-18
+// Last Changed: 2013-05-09
 
 #include <boost/filesystem.hpp>
 
@@ -100,7 +100,7 @@ hid_t HDF5Interface::open_file(const std::string filename, const std::string mod
 void HDF5Interface::close_file(const hid_t hdf5_file_handle)
 {
   herr_t status = H5Fclose(hdf5_file_handle);
-  dolfin_assert(status != HDF5_FAIL);  
+  dolfin_assert(status != HDF5_FAIL);
 }
 //-----------------------------------------------------------------------------
 void HDF5Interface::flush_file(const hid_t hdf5_file_handle)
@@ -181,7 +181,7 @@ void HDF5Interface::add_group(const hid_t hdf5_file_handle,
   {
     _group_name = "/" + _group_name;
   }
-  
+
   // Starting from the root level, check and create groups if needed
   std::size_t pos=0;
   while(pos != std::string::npos)
@@ -189,13 +189,13 @@ void HDF5Interface::add_group(const hid_t hdf5_file_handle,
     pos++;
     pos = _group_name.find('/', pos);
     const std::string parent_name(_group_name, 0, pos);
-    
+
     if(!has_group(hdf5_file_handle, parent_name))
     {
       hid_t group_id_vis = H5Gcreate2(hdf5_file_handle, parent_name.c_str(),
                                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       dolfin_assert(group_id_vis != HDF5_FAIL);
-      
+
       herr_t status = H5Gclose(group_id_vis);
       dolfin_assert(status != HDF5_FAIL);
     }

@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2013-05-08
-// Last changed: 2013-05-08
+// Last changed: 2013-05-09
 
 #ifdef HAS_HDF5
 
@@ -123,11 +123,11 @@ std::vector<double> HDF5Utility::reorder_vertices_by_global_indices(const Mesh& 
   return ordered_coordinates;
 }
 //---------------------------------------------------------------------------
-void HDF5Utility::reorder_values_by_global_indices(const Mesh& mesh, std::vector<double>& data, 
+void HDF5Utility::reorder_values_by_global_indices(const Mesh& mesh, std::vector<double>& data,
                                                    std::vector<std::size_t>& global_size)
   {
     Timer t("HDF5: reorder vertex values");
-    
+
     dolfin_assert(global_size.size() == 2);
     dolfin_assert(mesh.num_vertices()*global_size[1] == data.size());
     dolfin_assert(MPI::sum(mesh.num_vertices()) == global_size[0]);

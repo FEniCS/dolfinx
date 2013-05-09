@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-10
-// Last changed: 2013-04-19
+// Last changed: 2013-05-09
 
 #ifdef HAS_HDF5
 
@@ -49,10 +49,10 @@ void TimeSeriesHDF5::store_object(const T& object, double t,
 
   // Check for pre-existing file to append to
   std::string mode = "w";
-  if(File::exists(series_name) && 
+  if(File::exists(series_name) &&
      (_vector_times.size() > 0 || _mesh_times.size() > 0))
     mode = "a";
-    
+
   // Get file handle for low level operations
   HDF5File hdf5_file(series_name, mode);
   const hid_t fid = hdf5_file.hdf5_file_id;
@@ -83,7 +83,7 @@ void TimeSeriesHDF5::store_object(const T& object, double t,
 
   // Store times
   HDF5Interface::add_attribute(fid, group_name, "times", times);
-  
+
 }
 
 //-----------------------------------------------------------------------------
@@ -97,11 +97,11 @@ TimeSeriesHDF5::TimeSeriesHDF5(std::string name) : _name(name + ".h5"), _cleared
     // Read from file
     const hid_t hdf5_file_id = HDF5Interface::open_file(_name, "r", true);
 
-    if(HDF5Interface::has_group(hdf5_file_id, "/Vector") && 
+    if(HDF5Interface::has_group(hdf5_file_id, "/Vector") &&
        HDF5Interface::has_attribute(hdf5_file_id, "/Vector", "times"))
       {
         HDF5Interface::get_attribute(hdf5_file_id, "/Vector", "times", _vector_times);
-        log(PROGRESS, "Found %d vector sample(s) in time series.", _vector_times.size());    
+        log(PROGRESS, "Found %d vector sample(s) in time series.", _vector_times.size());
         if (!monotone(_vector_times))
         {
           dolfin_error("TimeSeriesHDF5.cpp",
@@ -110,7 +110,7 @@ TimeSeriesHDF5::TimeSeriesHDF5(std::string name) : _name(name + ".h5"), _cleared
                        name.c_str());
         }
       }
-    
+
     if(HDF5Interface::has_group(hdf5_file_id, "/Mesh") &&
        HDF5Interface::has_attribute(hdf5_file_id, "/Mesh", "times"))
     {
@@ -124,7 +124,7 @@ TimeSeriesHDF5::TimeSeriesHDF5(std::string name) : _name(name + ".h5"), _cleared
                      name.c_str());
       }
     }
-    
+
     HDF5Interface::close_file(hdf5_file_id);
   }
   else
@@ -158,7 +158,7 @@ void TimeSeriesHDF5::store(const Mesh& mesh, double t)
 
   // Store object
   store_object(mesh, t, _mesh_times, _name, "/Mesh");
-  
+
 }
 //-----------------------------------------------------------------------------
 void TimeSeriesHDF5::retrieve(GenericVector& vector, double t, bool interpolate) const

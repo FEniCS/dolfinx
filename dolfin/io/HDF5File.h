@@ -100,13 +100,13 @@ namespace dolfin
     void read(MeshFunction<bool>& meshfunction, const std::string name);
 
 
-    /// Write MeshValueCollection to file 
+    /// Write MeshValueCollection to file
     void write(const MeshValueCollection<std::size_t>& mesh_values, const std::string name);
 
-    /// Write MeshValueCollection to file 
+    /// Write MeshValueCollection to file
     void write(const MeshValueCollection<double>& mesh_values, const std::string name);
 
-    /// Write MeshValueCollection to file 
+    /// Write MeshValueCollection to file
     void write(const MeshValueCollection<bool>& mesh_values, const std::string name);
 
     /// Read MeshValueCollection from file
@@ -162,7 +162,7 @@ namespace dolfin
                     const std::vector<std::size_t> global_size);
 
     // Reorder values into global order (used by XDMFFile when saving vertex data)
-    void reorder_values_by_global_indices(const Mesh& mesh, std::vector<double>& data, 
+    void reorder_values_by_global_indices(const Mesh& mesh, std::vector<double>& data,
                                           std::vector<std::size_t>& global_size) const;
 
     // HDF5 file descriptor/handle

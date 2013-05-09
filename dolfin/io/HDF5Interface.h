@@ -58,7 +58,7 @@ namespace dolfin
     /// range: the local range on this processor
     /// global_size: the global multidimensional shape of the array
     /// use_mpio: whether using MPI or not
-    /// use_chunking: whether using chunking or not 
+    /// use_chunking: whether using chunking or not
     template <typename T>
     static void write_dataset(const hid_t file_handle,
                               const std::string dataset_name,
@@ -67,7 +67,7 @@ namespace dolfin
                               const std::vector<std::size_t> global_size,
                               bool use_mpio, bool use_chunking);
 
-    /// Read data from a HDF5 dataset "dataset_name" 
+    /// Read data from a HDF5 dataset "dataset_name"
     /// as defined by range blocks on each process
     /// range: the local range on this processor
     /// data: a flattened 1D array of values
@@ -130,7 +130,7 @@ namespace dolfin
     static bool has_attribute(const hid_t hdf5_file_handle,
                           const std::string dataset_name,
                           const std::string attribute_name);
-    
+
 
   private:
 
@@ -177,9 +177,9 @@ namespace dolfin
   //-----------------------------------------------------------------------------
   template <>
   inline hid_t HDF5Interface::hdf5_type<std::size_t>()
-  { 
+  {
     if(sizeof(std::size_t) == sizeof(unsigned long))
-      return H5T_NATIVE_ULONG; 
+      return H5T_NATIVE_ULONG;
     else if(sizeof(std::size_t) == sizeof(unsigned int))
       return H5T_NATIVE_UINT;
     else
@@ -253,7 +253,7 @@ namespace dolfin
     // Check that group exists and recursively create if required
     const std::string group_name(dataset_name, 0, dataset_name.rfind('/'));
     add_group(file_handle, group_name);
-    
+
     // Create global dataset (using dataset_name)
     const hid_t dset_id = H5Dcreate2(file_handle, dataset_name.c_str(), h5type,
                                      filespace0, H5P_DEFAULT,
