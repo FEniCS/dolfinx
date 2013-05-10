@@ -142,9 +142,9 @@ namespace dolfin
   ///
   /// The default visualization mode for the different plot types are as follows:
   ///
-  /// =========================  ============================ ====================
+  /// =========================  ============================ =====================
   ///  Plot type                  Default visualization mode   Alternatives
-  /// =========================  ============================ ====================
+  /// =========================  ============================ =====================
   ///  Meshes                     Wireframe rendering          None
   ///  2D scalar functions        Scalar warping               Color mapping
   ///  3D scalar functions        Color mapping                None
