@@ -245,6 +245,7 @@ import_array();
 %include "dolfin/swig/mesh/post.i"
 
 // %include types from submodule geometry
+%include "dolfin/swig/geometry/pre.i"
 %include "dolfin/geometry/BoundingBoxTree.h"
 %include "dolfin/geometry/GenericBoundingBoxTree.h"
 %include "dolfin/geometry/BoundingBoxTree3D.h"
