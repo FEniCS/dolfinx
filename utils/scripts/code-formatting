@@ -21,7 +21,7 @@
 #
 # Modified by Chris Richardson, 2013
 #
-# Last changed: 2013-05-09
+# Last changed: 2013-05-10
 #
 
 import os, sys, re, getopt
@@ -35,6 +35,7 @@ camelcaps_exceptions = ["cGq", "dGq",                                           
                         "fatalError", "xmlChar", "xmlNode", "xmlStrcasecmp",                  # libxml2
                         "startDocument", "endDocument", "startElement", "endElement"]         # libxml2
 
+
 def camelcaps2underscore(word):
     "Convert fooBar to foo_bar."
     new_word = ""
@@ -46,8 +47,7 @@ def camelcaps2underscore(word):
     return new_word
 
 def check_camelcaps(code):
-    "Replace fooBar by foo_bar."
-
+    "Check for fooBar (should be foo_bar)"
     problems=[]
     for i,line in enumerate(code.split("\n")):
         if(re.search(r"//",line)):
@@ -55,6 +55,8 @@ def check_camelcaps(code):
         words = re.findall(r"\b([a-z]+[A-Z][a-z]+)\b", line)
         for word in words:
             if word in camelcaps_exceptions:
+                continue
+            if re.match("vtk",word):
                 continue
             problems.append("[camelCaps          ] Line %d: %s"%(i+1,line))
     return code, problems
@@ -74,7 +76,7 @@ def check_trailing_whitespace(code):
         new_code += "\n"
     return new_code, problems
 
-def check_tabs(code, replace=False):
+def check_tabs(code):
     "Check for TAB character"
     problems = []
     lines =[]
@@ -90,7 +92,7 @@ def check_tabs(code, replace=False):
         new_code += "\n"
     return new_code, problems
 
-def check_symbol_spacing(code, replace=False):
+def check_symbol_spacing(code):
     "Add spaces around +,-,= etc."
     problems = []
     for i,line in enumerate(code.split("\n")):
@@ -112,7 +114,13 @@ def part_of_dolfin(code):
         return False
 
 def detect_bad_formatting(filename, opts):
-    "Detect where code formatting appears to be wrong"
+    """Detect where code formatting appears to be wrong.
+    opts Flags:
+    -c for checking camelCaps
+    -w for checking whitespace
+    -s for checking symbol spacing, i.e. =, +, - etc.
+    -wf to fix whitespace errors
+    """
 
     # Open file
     f = open(filename, "r")
@@ -151,13 +159,14 @@ def detect_bad_formatting(filename, opts):
 
 
 def usage(name):
+    print
     print name," [-c|-w|-s|-f] path"
-    print "Check formatting of code in the folders and subfolders of path"
+    print "\n Check formatting of code in the folders and subfolders of path\n"
     print " -c check camelCaps"
     print " -w check white space and tabs"
     print " -s check symbol spacing"
-    print " -f fix whitespace errors"
-    print "default: check all"
+    print " -wf fix whitespace errors"
+    print " default: check all"
 
 if __name__ == "__main__":
     try:
