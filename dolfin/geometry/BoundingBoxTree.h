@@ -21,6 +21,7 @@
 #ifndef __BOUNDING_BOX_TREE_H
 #define __BOUNDING_BOX_TREE_H
 
+#include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 
 namespace dolfin
@@ -39,20 +40,22 @@ namespace dolfin
   {
   public:
 
-    /// Create empty bounding box tree
-    BoundingBoxTree();
-
-    /// Destructor
-    ~BoundingBoxTree();
-
-    /// Build bounding box tree for cells of mesh.
+    /// Create empty bounding box tree for cells of mesh.
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
     ///         The mesh for which to compute the bounding box tree.
-    void build(const Mesh& mesh);
+    BoundingBoxTree(const Mesh& mesh);
 
-    /// Build bounding box tree for mesh entites of given dimension.
+    /// Create empty bounding box tree for cells of mesh (shared_ptr version).
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh for which to compute the bounding box tree.
+    BoundingBoxTree(boost::shared_ptr<const Mesh> mesh);
+
+    /// Create empty bounding box tree for mesh entities of given
+    /// dimension.
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
@@ -60,7 +63,24 @@ namespace dolfin
     ///     dimension (unsigned int)
     ///         The entity dimension (topological dimension) for which
     ///         to compute the bounding box tree.
-    void build(const Mesh& mesh, unsigned int dimension);
+    BoundingBoxTree(const Mesh& mesh, unsigned int dim);
+
+    /// Create empty bounding box tree for mesh entities of given
+    /// dimension (shared_ptr version).
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh for which to compute the bounding box tree.
+    ///     dimension (unsigned int)
+    ///         The entity dimension (topological dimension) for which
+    ///         to compute the bounding box tree.
+    BoundingBoxTree(boost::shared_ptr<const Mesh> mesh, unsigned int dim);
+
+    /// Destructor
+    ~BoundingBoxTree();
+
+    /// Build bounding box tree
+    void build();
 
     /// Find entities intersecting the given _Point_.
     ///
@@ -83,6 +103,8 @@ namespace dolfin
     // [ ] Store mesh as shared pointer
     // [ ] Access primitives directly from here, needed for closest point
     // [ ] Rename and change functions:
+    // [ ] Check use of unsigned int vs size_t
+    // [ ] Ignore reference version of constructors in Python interface
     //
     // compute_collisions()
     // Compute all collisions with given _Point_.
@@ -94,6 +116,15 @@ namespace dolfin
     // Compute closest entity to given _Point_.
 
   private:
+
+    // FIXME: Remove
+    friend class MeshPointIntersection;
+
+    // The mesh
+    boost::shared_ptr<const Mesh> _mesh;
+
+    // Topological dimension of leaf entities
+    unsigned int _tdim;
 
     // Dimension-dependent implementation
     boost::scoped_ptr<GenericBoundingBoxTree> _tree;

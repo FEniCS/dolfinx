@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-18
-// Last changed: 2013-05-02
+// Last changed: 2013-05-10
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/Cell.h>
@@ -28,10 +28,21 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MeshPointIntersection::MeshPointIntersection(const Mesh& mesh,
                                              const Point& point)
-  : mesh(mesh)
+  : _tree(mesh)
 {
   // Build bounding box tree
-  bbtree.build(mesh);
+  _tree.build();
+
+  // Compute intersection
+  compute_intersection(point);
+}
+//-----------------------------------------------------------------------------
+MeshPointIntersection::MeshPointIntersection(boost::shared_ptr<const Mesh> mesh,
+                                             const Point& point)
+  : _tree(mesh)
+{
+  // Build bounding box tree
+  _tree.build();
 
   // Compute intersection
   compute_intersection(point);
@@ -53,13 +64,15 @@ void MeshPointIntersection::compute_intersection(const Point& point)
   dolfin_assert(_intersected_cells.size() == 0);
 
   // Compute list of candidates for intersection
-  std::vector<unsigned int> cell_candidates = bbtree.find(point);
+  std::vector<unsigned int> cell_candidates = _tree.find(point);
+
+  // FIXME: This should be moved to the BoundingBoxTree class
 
   // Extract subset of intersecting cells
   for (unsigned int i = 0; i < cell_candidates.size(); ++i)
   {
     const unsigned int cell_index = cell_candidates[i];
-    Cell cell(mesh, cell_index);
+    Cell cell(*_tree._mesh, cell_index);
     if (cell.contains(point))
       _intersected_cells.push_back(cell_index);
   }

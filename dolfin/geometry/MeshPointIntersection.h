@@ -16,12 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-18
-// Last changed: 2013-04-18
+// Last changed: 2013-05-10
 
 #ifndef __MESH_POINT_INTERSECTION_H
 #define __MESH_POINT_INTERSECTION_H
 
 #include <vector>
+#include <boost/shared_ptr.hpp>
 
 namespace dolfin
 {
@@ -36,8 +37,13 @@ namespace dolfin
   {
   public:
 
-    /// Create (and compute) intersection between mesh and point
-    MeshPointIntersection(const Mesh& mesh, const Point& point);
+    /// Compute intersection between mesh and point
+    MeshPointIntersection(const Mesh& mesh,
+                          const Point& point);
+
+    /// Compute intersection between mesh and point (shared_ptr version)
+    MeshPointIntersection(boost::shared_ptr<const Mesh> mesh,
+                          const Point& point);
 
     /// Destructor
     ~MeshPointIntersection();
@@ -51,16 +57,13 @@ namespace dolfin
 
   private:
 
-    // The list of (local) indices for intersected cells
-    std::vector<unsigned int> _intersected_cells;
-
     // FIXME: Cache bbtree as part of the mesh class?
 
-    // The mesh
-    const Mesh& mesh;
-
     // Bounding box tree
-    BoundingBoxTree bbtree;
+    BoundingBoxTree _tree;
+
+    // The list of (local) indices for intersected cells
+    std::vector<unsigned int> _intersected_cells;
 
     // Compute intersection
     void compute_intersection(const Point& point);

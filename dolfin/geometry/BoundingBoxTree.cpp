@@ -16,9 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-05-02
+// Last changed: 2013-05-10
 
 #include <dolfin/log/log.h>
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/mesh/Mesh.h>
 #include "BoundingBoxTree1D.h"
 #include "BoundingBoxTree2D.h"
@@ -28,7 +29,32 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree()
+BoundingBoxTree::BoundingBoxTree(const Mesh& mesh)
+  : _mesh(reference_to_no_delete_pointer(mesh)),
+    _tdim(mesh.topology().dim())
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+BoundingBoxTree::BoundingBoxTree(boost::shared_ptr<const Mesh> mesh)
+  : _mesh(mesh),
+    _tdim(mesh->topology().dim())
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+BoundingBoxTree::BoundingBoxTree(const Mesh& mesh,
+                                 unsigned int dim)
+  : _mesh(reference_to_no_delete_pointer(mesh)),
+    _tdim(dim)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+BoundingBoxTree::BoundingBoxTree(boost::shared_ptr<const Mesh> mesh,
+                                 unsigned int dim)
+  : _mesh(mesh),
+    _tdim(dim)
 {
   // Do nothing
 }
@@ -38,15 +64,12 @@ BoundingBoxTree::~BoundingBoxTree()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::build(const Mesh& mesh)
+void BoundingBoxTree::build()
 {
-  build(mesh, mesh.topology().dim());
-}
-//-----------------------------------------------------------------------------
-void BoundingBoxTree::build(const Mesh& mesh, unsigned int dimension)
-{
+  dolfin_assert(_mesh);
+
   // Select implementation
-  switch (mesh.geometry().dim())
+  switch (_mesh->geometry().dim())
   {
   case 1:
     _tree.reset(new BoundingBoxTree1D());
@@ -61,12 +84,12 @@ void BoundingBoxTree::build(const Mesh& mesh, unsigned int dimension)
     dolfin_error("BoundingBoxTree.cpp",
                  "build bounding box tree",
                  "Not implemented for geometric dimension %d",
-                 mesh.geometry().dim());
+                 _mesh->geometry().dim());
   }
 
   // Build tree
   dolfin_assert(_tree);
-  _tree->build(mesh, dimension);
+  _tree->build(*_mesh, _tdim);
 }
 //-----------------------------------------------------------------------------
 std::vector<unsigned int> BoundingBoxTree::find(const Point& point) const
