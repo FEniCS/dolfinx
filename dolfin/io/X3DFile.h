@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-03-05
-// Last changed: 2013-03-11
+// Last changed: 2013-05-10
 
 #ifndef __X3D_FILE_H
 #define __X3D_FILE_H
@@ -32,10 +32,12 @@ namespace dolfin
 {
 
   /// This class implements output of meshes to X3D (successor to VRML)
-  /// graphics format (also see www.x3dom.org).
+  /// graphics format.
   /// It is suitable for output of small to medium size meshes
   /// for 3D visualisation, and can also do basic Function and MeshFunction
   /// output (on the surface)
+  /// X3D files can be included on web pages with WebGL functionality
+  /// (see www.x3dom.org).
 
   class X3DFile : public GenericFile
   {
