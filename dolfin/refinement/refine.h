@@ -38,6 +38,9 @@ namespace dolfin
   /// *Arguments*
   ///     mesh (_Mesh_)
   ///         The mesh to refine.
+  ///     redistribute (_bool_)
+  ///         Optional argument to redistribiute the refined mesh if mesh is a
+  ///         distributed mesh.
   ///
   /// *Returns*
   ///     _Mesh_
@@ -48,7 +51,7 @@ namespace dolfin
   ///
   ///         mesh = refine(mesh);
   ///
-  Mesh refine(const Mesh& mesh);
+  Mesh refine(const Mesh& mesh, bool redistribute=true);
 
   /// Create uniformly refined mesh
   ///
@@ -57,8 +60,11 @@ namespace dolfin
   ///         The mesh that will be the refined mesh.
   ///     mesh (_Mesh_)
   ///         The original mesh.
-  void refine(Mesh& refined_mesh,
-              const Mesh& mesh);
+  ///     redistribute (_bool_)
+  ///         Optional argument to redistribiute the refined mesh if mesh is a
+  ///         distributed mesh.
+  void refine(Mesh& refined_mesh, const Mesh& mesh,
+              bool redistribute=true);
 
   /// Create locally refined mesh
   ///
@@ -68,6 +74,9 @@ namespace dolfin
   ///     cell_markers (_MeshFunction_ <bool>)
   ///         A mesh function over booleans specifying which cells
   ///         that should be refined (and which should not).
+  ///     redistribute (_bool_)
+  ///         Optional argument to redistribiute the refined mesh if mesh is a
+  ///         distributed mesh.
   ///
   /// *Returns*
   ///     _Mesh_
@@ -87,8 +96,8 @@ namespace dolfin
   ///         }
   ///         mesh = refine(mesh, cell_markers);
   ///
-  Mesh refine(const Mesh& mesh,
-              const MeshFunction<bool>& cell_markers);
+  Mesh refine(const Mesh& mesh, const MeshFunction<bool>& cell_markers,
+              bool redistribute=true);
 
   /// Create locally refined mesh
   ///
@@ -100,9 +109,11 @@ namespace dolfin
   ///     cell_markers (_MeshFunction_ <bool>)
   ///         A mesh function over booleans specifying which cells
   ///         that should be refined (and which should not).
-  void refine(Mesh& refined_mesh,
-              const Mesh& mesh,
-              const MeshFunction<bool>& cell_markers);
+  ///     redistribute (_bool_)
+  ///         Optional argument to redistribiute the refined mesh if mesh is a
+  ///         distributed mesh.
+  void refine(Mesh& refined_mesh, const Mesh& mesh,
+              const MeshFunction<bool>& cell_markers, bool redistribute=true);
 
 }
 
