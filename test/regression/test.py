@@ -139,8 +139,6 @@ not_working_in_parallel = \
    os.path.join(demodir, 'undocumented', 'nonmatching-interpolation',   'python'), \
    os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'cpp'),    \
    os.path.join(demodir, 'undocumented', 'nonmatching-projection',      'python'), \
-   os.path.join(demodir, 'undocumented', 'refinement',                  'cpp'),    \
-   os.path.join(demodir, 'undocumented', 'refinement',                  'python'), \
    os.path.join(demodir, 'undocumented', 'simple',                      'cpp'),    \
    os.path.join(demodir, 'undocumented', 'simple',                      'python'), \
    os.path.join(demodir, 'undocumented', 'smoothing',                   'cpp'),    \

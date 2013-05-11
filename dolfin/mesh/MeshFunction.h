@@ -431,7 +431,6 @@ namespace dolfin
     Variable("f", "unnamed MeshFunction"),
       Hierarchical<MeshFunction<T> >(*this), _mesh(mesh), _dim(0), _size(0)
   {
-    std::cout << "In shared constructor B" << std::endl;
     init(dim);
   }
   //---------------------------------------------------------------------------

@@ -35,8 +35,7 @@ int main()
   file << processes0;
 
   // Mark all cells on process 0 for refinement
-  const MeshFunction<bool> marker(mesh, mesh.topology().dim(),
-                                  (MPI::process_number() == 0));
+  const CellFunction<bool> marker(mesh, (MPI::process_number() == 0));
 
   // Refine mesh, but keep all new cells on parent process
   Mesh mesh0 = refine(mesh, marker, false);
@@ -56,6 +55,8 @@ int main()
 
   // Refine mesh, but this time repartition the mesh after refinement
   Mesh mesh1 = refine(mesh, marker, true);
+
+  // Create MeshFunction to hold cell process rank
   CellFunction<std::size_t> processes2(mesh1, MPI::process_number());
   file << processes2;
 
