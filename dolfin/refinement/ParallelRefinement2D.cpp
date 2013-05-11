@@ -68,7 +68,7 @@ void ParallelRefinement2D::generate_reference_edges(const Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
-                                  bool redistributed)
+                                  bool redistribute)
 {
   if (MPI::num_processes()==1)
   {
@@ -118,10 +118,8 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
     p.new_cell(e0, e1, e2);
   }
 
-  p.partition(new_mesh);
-
+  p.partition(new_mesh, redistribute);
 }
-
 //-----------------------------------------------------------------------------
 void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
                                   const MeshFunction<bool>& refinement_marker,
@@ -247,6 +245,6 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   }
 
   // Call partitioning from within ParallelRefinement class
-  p.partition(new_mesh);
+  p.partition(new_mesh, redistribute);
 }
 //-----------------------------------------------------------------------------

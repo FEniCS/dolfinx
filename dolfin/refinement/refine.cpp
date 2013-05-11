@@ -47,9 +47,11 @@ void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh, bool redistribute)
   else if(mesh.topology().dim() == 3)
     ParallelRefinement3D::refine(refined_mesh, mesh, redistribute);
   else
+  {
     dolfin_error("refine.cpp",
                  "refine mesh",
                  "Unknown dimension in parallel");
+  }
 }
 //-----------------------------------------------------------------------------
 dolfin::Mesh dolfin::refine(const Mesh& mesh,

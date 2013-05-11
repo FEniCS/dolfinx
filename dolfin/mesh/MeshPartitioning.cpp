@@ -104,9 +104,17 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
 void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
                                               const LocalMeshData& local_data)
 {
-  // Compute cell partitioning
-  const std::vector<std::size_t> cell_partition = partition_cells(mesh,
-                                                                  local_data);
+  // Compute cell partitioning or use partitioning provides in local_data
+  std::vector<std::size_t> cell_partition;
+  if (local_data.cell_partition.empty())
+    cell_partition = partition_cells(mesh, local_data);
+  else
+  {
+    cell_partition = local_data.cell_partition;
+    dolfin_assert(cell_partition.size() == local_data.global_cell_indices.size());
+    dolfin_assert(*std::max_element(cell_partition.begin(),
+                                    cell_partition.end()) < MPI::num_processes());
+  }
 
   // Build mesh from local mesh data and provided cell partition
   build(mesh, local_data, cell_partition);

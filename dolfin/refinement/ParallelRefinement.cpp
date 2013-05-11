@@ -87,7 +87,8 @@ void ParallelRefinement::mark(MeshEntity& cell)
 //-----------------------------------------------------------------------------
 void ParallelRefinement::mark(MeshFunction<bool> refinement_marker)
 {
-  for (MeshEntityIterator cell(_mesh, refinement_marker.dim()); !cell.end(); ++cell)
+  for (MeshEntityIterator cell(_mesh, refinement_marker.dim()); !cell.end();
+       ++cell)
   {
     if (refinement_marker[*cell])
     {
@@ -253,9 +254,8 @@ void ParallelRefinement::create_new_vertices()
   for (std::size_t i = 0; i < num_new_vertices; i++)
     global_indices.push_back(i+global_offset);
 
-  reorder_vertices_by_global_indices(new_vertex_coordinates, _mesh.geometry().dim(), global_indices);
-
-  //   std::cout << "vertices = " << new_vertex_coordinates.size() << std::endl;
+  reorder_vertices_by_global_indices(new_vertex_coordinates,
+                                     _mesh.geometry().dim(), global_indices);
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::reorder_vertices_by_global_indices(std::vector<double>& vertex_coords,
@@ -308,7 +308,8 @@ void ParallelRefinement::reorder_vertices_by_global_indices(std::vector<double>&
 
   for (std::size_t i = 0; i < received_values.size(); ++i)
   {
-    const std::vector<std::pair<std::size_t, std::vector<double> > >& received_global_data = received_values[i];
+    const std::vector<std::pair<std::size_t, std::vector<double> > >& received_global_data
+      = received_values[i];
     for (std::size_t j = 0; j < received_global_data.size(); ++j)
     {
       const std::size_t global_i = received_global_data[j].first;
@@ -320,7 +321,7 @@ void ParallelRefinement::reorder_vertices_by_global_indices(std::vector<double>&
   }
 }
 //-----------------------------------------------------------------------------
-void ParallelRefinement::partition(Mesh& new_mesh)
+void ParallelRefinement::partition(Mesh& new_mesh, bool redistribute)
 {
   LocalMeshData mesh_data;
   mesh_data.tdim = _mesh.topology().dim();
@@ -349,6 +350,13 @@ void ParallelRefinement::partition(Mesh& new_mesh)
   const std::size_t vertex_global_offset = MPI::global_offset(num_local_vertices, true);
   for (std::size_t i = 0; i < num_local_vertices ; i++)
     mesh_data.vertex_indices[i] = vertex_global_offset + i;
+
+  if (!redistribute)
+  {
+    // Set owning process rank to this process rank
+    mesh_data.cell_partition.assign(mesh_data.global_cell_indices.size(),
+                                    MPI::process_number());
+  }
 
   MeshPartitioning::build_distributed_mesh(new_mesh, mesh_data);
 }

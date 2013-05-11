@@ -87,7 +87,7 @@ namespace dolfin
     std::vector<std::size_t>& cell_topology();
 
     /// Use vertex and topology data to partition new mesh
-    void partition(Mesh& new_mesh);
+    void partition(Mesh& new_mesh, bool redistribute);
 
   private:
 

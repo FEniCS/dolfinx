@@ -80,7 +80,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
     eightfold_division(*cell, p);
 
   t0.stop();
-  p.partition(new_mesh);
+  p.partition(new_mesh, redistribute);
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
@@ -284,7 +284,7 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
       eightfold_division(*cell, p);
   }
 
-  p.partition(new_mesh);
+  p.partition(new_mesh, redistribute);
 
   // Save some data about partial refinements to assist with future subdivision
   //  boost::shared_ptr<std::vector<std::size_t> > mesh_out_array =
