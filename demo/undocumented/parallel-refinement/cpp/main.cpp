@@ -24,40 +24,32 @@ using namespace dolfin;
 
 int main()
 {
-  UnitSquareMesh mesh(20,20);
-  // Output cell distribution amongst processes
+  // Create mesh
+  UnitSquareMesh mesh(20, 20);
+
+  // Create MeshFunction to hold cell process rank
+  CellFunction<std::size_t> processes0(mesh, MPI::process_number());
+
+  // Output cell distribution to VTK file
   File file("processes.pvd");
+  file << processes0;
 
-  MeshFunction<std::size_t> processes(mesh, mesh.topology().dim(), MPI::process_number());
-  file << processes;
-  
   // Mark all cells on process 0 for refinement
-  MeshFunction<bool> marker(mesh, mesh.topology().dim(), (MPI::process_number() == 0));
-  
-  // Do refinement, but keep all new cells on parent process
-  parameters["mesh_partitioner"] = "None";
-  Mesh mesh2;
-  mesh2 = refine(mesh, marker);
-  
-  processes = MeshFunction<std::size_t>(mesh2, mesh2.topology().dim(), MPI::process_number());
-  file << processes;
+  const CellFunction<bool> marker(mesh, (MPI::process_number() == 0));
 
-  // try to find a repartitioning partitioner, and do the previous refinement again
-  parameters["partitioning_approach"] = "REPARTITION";
-  if(has_parmetis())
-  {
-    parameters["mesh_partitioner"] = "ParMETIS";
-  }
-  else if(has_trilinos())
-  {
-    parameters["mesh_partitioner"] = "Zoltan_PHG";
-  }
-  else
-    parameters["mesh_partitioner"] = "SCOTCH";
-    
-  mesh2 = refine(mesh, marker);
-  processes = MeshFunction<std::size_t>(mesh2, mesh2.topology().dim(), MPI::process_number());
-  file << processes;
-  
+  // Refine mesh, but keep all new cells on parent process
+  Mesh mesh0 = refine(mesh, marker, false);
+
+  // Create MeshFunction to hold cell process rank
+  const CellFunction<std::size_t> processes1(mesh0, MPI::process_number());
+  file << processes1;
+
+  // Refine mesh, but this time repartition the mesh after refinement
+  Mesh mesh1 = refine(mesh, marker, true);
+
+  // Create MeshFunction to hold cell process rank
+  CellFunction<std::size_t> processes2(mesh1, MPI::process_number());
+  file << processes2;
+
   return 0;
 }
