@@ -38,10 +38,13 @@ namespace dolfin
   {
   public:
 
-    /// Compute cell partition using ParMETIS -
-    /// choose method based on parameter "partitioning_algorithm" which can be PARTITION or REPARTITION
+    /// Compute cell partition using ParMETIS. For meshes that have
+    /// already been partitioned or are already well partitioned,
+    /// setting repartition=true attempts to balance the
+    /// quality
     static void compute_partition(std::vector<std::size_t>& cell_partition,
-                                  const LocalMeshData& mesh_data);
+                                  const LocalMeshData& mesh_data,
+                                  bool repartition=false);
 
   };
 

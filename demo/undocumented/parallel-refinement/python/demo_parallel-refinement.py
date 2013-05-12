@@ -40,15 +40,6 @@ mesh0 = refine(mesh, marker, False)
 processes1 = CellFunction('size_t', mesh0, MPI.process_number())
 file << processes1
 
-# Try to find a repartitioning partitioner
-parameters['partitioning_approach'] = 'REPARTITION'
-if has_parmetis():
-    parameters['mesh_partitioner'] = 'ParMETIS'
-elif has_trilinos():
-    parameters['mesh_partitioner'] = 'Zoltan_PHG'
-else:
-    parameters['mesh_partitioner'] = 'SCOTCH'
-
 # Refine mesh, but this time repartition the mesh after refinement
 mesh1 = refine(mesh, marker, True)
 

@@ -44,15 +44,6 @@ int main()
   const CellFunction<std::size_t> processes1(mesh0, MPI::process_number());
   file << processes1;
 
-  // Try to find a repartitioning partitioner,
-  parameters["partitioning_approach"] = "REPARTITION";
-  if (has_parmetis())
-    parameters["mesh_partitioner"] = "ParMETIS";
-  else if (has_trilinos())
-    parameters["mesh_partitioner"] = "Zoltan_PHG";
-  else
-    parameters["mesh_partitioner"] = "SCOTCH";
-
   // Refine mesh, but this time repartition the mesh after refinement
   Mesh mesh1 = refine(mesh, marker, true);
 
