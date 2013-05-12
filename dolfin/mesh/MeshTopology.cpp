@@ -53,11 +53,16 @@ const MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
   clear();
 
   // Copy data
+
+  // Public data
+  coloring = topology.coloring;
+
+  // Private data
   num_entities = topology.num_entities;
   global_num_entities = topology.global_num_entities;
-  connectivity = topology.connectivity;
   _global_indices = topology._global_indices;
-  coloring = topology.coloring;
+  _shared_entities = topology._shared_entities;
+  connectivity = topology.connectivity;
 
   return *this;
 }
