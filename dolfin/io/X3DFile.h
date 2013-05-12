@@ -31,11 +31,10 @@ namespace pugi
 namespace dolfin
 {
 
-  /// This class implements output of meshes to X3D (successor to VRML)
-  /// graphics format.
-  /// It is suitable for output of small to medium size meshes
-  /// for 3D visualisation, and can also do basic Function and MeshFunction
-  /// output (on the surface)
+  /// This class implements output of meshes to X3D (successor to
+  /// VRML) graphics format. It is suitable for output of small to
+  /// medium size meshes for 3D visualisation via browsers, and can
+  /// also do basic Function and MeshFunction output (on the surface)
   /// X3D files can be included on web pages with WebGL functionality
   /// (see www.x3dom.org).
 
@@ -44,37 +43,43 @@ namespace dolfin
   public:
 
     /// Constructor
-    X3DFile(const std::string filename);
+    explicit X3DFile(const std::string filename);
 
     /// Destructor
     ~X3DFile();
 
-    /// Output Mesh to X3D format - for a 3D mesh, only producing surface facets
+    /// Output Mesh to X3D format - for a 3D mesh, only producing
+    /// surface facets
     void operator<< (const Mesh& mesh);
 
-    /// Output MeshFunction to X3D format - for a 3D mesh, only producing surface facets
+    /// Output MeshFunction to X3D format - for a 3D mesh, only
+    /// producing surface facets
     void operator<< (const MeshFunction<std::size_t>& meshfunction);
 
-    /// Output Function to X3D format - for a 3D mesh, only producing surface facets
+    /// Output Function to X3D format - for a 3D mesh, only producing
+    /// surface facets
     void operator<< (const Function& function);
 
   private:
 
     // Get mesh dimensions and viewpoint distance
-    std::vector<double> mesh_min_max(const Mesh& mesh);
+    std::vector<double> mesh_min_max(const Mesh& mesh) const;
 
     // Get list of vertex indices which are on surface
-    const std::vector<std::size_t> vertex_index(const Mesh& mesh);
+    std::vector<std::size_t> vertex_index(const Mesh& mesh) const;
 
     // Output mesh vertices to XML
-    void write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh, const std::vector<std::size_t> vecindex);
+    void write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
+                        const std::vector<std::size_t> vecindex);
 
     // Output values to XML using a colour palette
-    void write_values(pugi::xml_document& xml_doc, const Mesh& mesh, const std::vector<std::size_t> vecindex,
-                               const std::vector<double> data_values);
+    void write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
+                      const std::vector<std::size_t> vecindex,
+                      const std::vector<double> data_values);
 
     // XML header output
-    void output_xml_header(pugi::xml_document& xml_doc, const std::vector<double>& xpos);
+    void output_xml_header(pugi::xml_document& xml_doc,
+                           const std::vector<double>& xpos);
 
     // Write out surface mesh to file
     void write_mesh(const Mesh& mesh);
@@ -86,10 +91,11 @@ namespace dolfin
     void write_meshfunction(const MeshFunction<std::size_t>& meshfunction);
 
     // Get a string representing a color palette
-    const std::string color_palette(const int pal);
+    std::string color_palette(const int pal) const;
 
-    // Whether in Face or Edge mode - should either be "IndexedFaceSet" or "IndexedLineSet"
-    std::string facet_type;
+    // Whether in Face or Edge mode - should either be
+    // "IndexedFaceSet" or "IndexedLineSet"
+    const std::string facet_type;
 
   };
 
