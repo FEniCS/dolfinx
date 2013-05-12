@@ -88,28 +88,28 @@ void SubDomain::mark(MeshFunction<std::size_t>& sub_domains,
                      std::size_t sub_domain,
                      bool check_midpoint) const
 {
-  apply_markers(sub_domains, sub_domain, sub_domains.mesh(), check_midpoint);
+  apply_markers(sub_domains, sub_domain, *sub_domains.mesh(), check_midpoint);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<int>& sub_domains,
                      int sub_domain,
                      bool check_midpoint) const
 {
-  apply_markers(sub_domains, sub_domain, sub_domains.mesh(), check_midpoint);
+  apply_markers(sub_domains, sub_domain, *sub_domains.mesh(), check_midpoint);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<double>& sub_domains,
                      double sub_domain,
                      bool check_midpoint) const
 {
-  apply_markers(sub_domains, sub_domain, sub_domains.mesh(), check_midpoint);
+  apply_markers(sub_domains, sub_domain, *sub_domains.mesh(), check_midpoint);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<bool>& sub_domains,
                      bool sub_domain,
                      bool check_midpoint) const
 {
-  apply_markers(sub_domains, sub_domain, sub_domains.mesh(), check_midpoint);
+  apply_markers(sub_domains, sub_domain, *sub_domains.mesh(), check_midpoint);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshValueCollection<std::size_t>& sub_domains,

@@ -205,7 +205,7 @@ void RAWFile::MeshFunctionWrite(T& meshfunction)
   // Update raw file name and clear file
   rawNameUpdate(counter);
 
-  const Mesh& mesh = meshfunction.mesh();
+  const Mesh& mesh = *meshfunction.mesh();
 
   if (meshfunction.dim() != mesh.topology().dim())
   {

@@ -307,21 +307,23 @@ void XDMFFile::operator>> (Mesh& mesh)
   }
 
   // Topology - check format and get dataset name
-  pugi::xml_node xdmf_topology = xml_doc.child("Xdmf").child("Domain").child("Grid").child("Topology").child("DataItem");
+  pugi::xml_node xdmf_topology
+    = xml_doc.child("Xdmf").child("Domain").child("Grid").child("Topology").child("DataItem");
   if(!xdmf_topology)
   {
     dolfin_error("XDMFFile.cpp",
                  "read mesh from XDMF/H5 files",
                  "XML parsing error. XDMF file should contain only one mesh/dataset");
   }
-  
-  const std::string topological_data_format(xdmf_topology.attribute("Format").value());
+
+  const std::string
+    topological_data_format(xdmf_topology.attribute("Format").value());
   if(topological_data_format != "HDF")
   {
     dolfin_error("XDMFFile.cpp",
                  "read mesh from XDMF/H5 files",
                  "XML parsing error. Wrong dataset format (not HDF5)");
-  } 
+  }
 
   const std::string topo_ref(xdmf_topology.first_child().value());
   std::vector<std::string> topo_bits;
@@ -335,7 +337,8 @@ void XDMFFile::operator>> (Mesh& mesh)
   dolfin_assert(topo_bits[4] == "topology");
 
   // Geometry - check format and get dataset name
-  pugi::xml_node xdmf_geometry = xml_doc.child("Xdmf").child("Domain").child("Grid").child("Geometry").child("DataItem");
+  pugi::xml_node xdmf_geometry
+    = xml_doc.child("Xdmf").child("Domain").child("Grid").child("Geometry").child("DataItem");
   dolfin_assert(xdmf_geometry);
 
   const std::string geom_fmt(xdmf_geometry.attribute("Format").value());
@@ -354,7 +357,6 @@ void XDMFFile::operator>> (Mesh& mesh)
 
   // Try to read the mesh from the associated HDF5 file
   hdf5_file->read(mesh, "/Mesh/" + geom_bits[3]);
-
 }
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const Mesh& mesh)
@@ -425,7 +427,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
 //----------------------------------------------------------------------------
 void XDMFFile::operator<< (const MeshFunction<bool>& meshfunction)
 {
-  const Mesh& mesh = meshfunction.mesh();
+  const Mesh& mesh = *meshfunction.mesh();
   const std::size_t cell_dim = meshfunction.dim();
 
   // HDF5 does not support a boolean type,
@@ -470,7 +472,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   }
 
   // Get mesh
-  const Mesh& mesh = meshfunction.mesh();
+  const Mesh& mesh = *meshfunction.mesh();
 
   const std::size_t cell_dim = meshfunction.dim();
   dolfin_assert(cell_dim <= mesh.topology().dim());
@@ -496,7 +498,7 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 //----------------------------------------------------------------------------
 void XDMFFile::operator>> (MeshFunction<bool>& meshfunction)
 {
-  const Mesh& mesh = meshfunction.mesh();
+  const Mesh& mesh = *meshfunction.mesh();
   const std::size_t cell_dim = meshfunction.dim();
 
   MeshFunction<std::size_t> mf(mesh, cell_dim);

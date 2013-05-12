@@ -428,7 +428,7 @@ endif()
 
 # Check for Sphinx
 if (DOLFIN_ENABLE_DOCS AND PYTHON_FOUND)
-  find_package(Sphinx 1.0.7)
+  find_package(Sphinx 1.1.0)
 endif()
 
 # Check for Qt4
