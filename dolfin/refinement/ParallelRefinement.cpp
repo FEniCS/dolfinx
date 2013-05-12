@@ -17,7 +17,7 @@
 //
 //
 // First Added: 2013-01-02
-// Last Changed: 2013-01-23
+// Last Changed: 2013-05-12
 
 #include <vector>
 #include <map>
@@ -96,7 +96,7 @@ void ParallelRefinement::mark(const MeshFunction<bool>& refinement_marker)
 //-----------------------------------------------------------------------------
 std::size_t ParallelRefinement::marked_edge_count(const MeshEntity& cell) const
 {
-  std::size_t n_marked=0;
+  std::size_t n_marked = 0;
   for (EdgeIterator edge(cell); !edge.end(); ++edge)
   {
     if (marked_edges[edge->index()])
@@ -219,7 +219,7 @@ void ParallelRefinement::create_new_vertices()
     if (shared_edges.count(local_i) != 0)
     {
       std::vector<std::pair<unsigned int, unsigned int> >::iterator
-        remote_process_edgel
+        remote_process_edge;
       for (remote_process_edge = shared_edges[local_i].begin();
           remote_process_edge != shared_edges[local_i].end();
           ++remote_process_edge)
@@ -263,7 +263,7 @@ void ParallelRefinement::create_new_vertices()
 
   std::vector<std::size_t> global_indices(_mesh.topology().global_indices(0));
   for (std::size_t i = 0; i < num_new_vertices; i++)
-    global_indices.push_back(i+global_offset);
+    global_indices.push_back(i + global_offset);
 
   reorder_vertices_by_global_indices(new_vertex_coordinates,
                                      _mesh.geometry().dim(), global_indices);
@@ -311,7 +311,7 @@ void ParallelRefinement::reorder_vertices_by_global_indices(std::vector<double>&
   // Redistribute the values to the appropriate process - including
   // self All values are "in the air" at this point, so local vector
   // can be cleared
-  std::vector<std::vector<std::pair<std::size_t,std::vector<double> > > >
+  std::vector<std::vector<std::pair<std::size_t, std::vector<double> > > >
     received_values;
   MPI::all_to_all(values_to_send, received_values);
 
@@ -356,8 +356,7 @@ void ParallelRefinement::partition(Mesh& new_mesh, bool redistribute) const
   for (std::size_t i = 0; i < num_local_cells ; i++)
     mesh_data.global_cell_indices[i] = idx_global_offset + i;
 
-  const boost::extents[num_local_cells][mesh_data.num_vertices_per_cell] _size;
-  mesh_data.cell_vertices.resize(_size);
+  mesh_data.cell_vertices.resize(boost::extents[num_local_cells][mesh_data.num_vertices_per_cell]);
   std::copy(new_cell_topology.begin(), new_cell_topology.end(),
             mesh_data.cell_vertices.data());
 
