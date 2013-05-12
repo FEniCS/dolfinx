@@ -58,14 +58,13 @@ XDMFFile::XDMFFile(const std::string filename) : GenericFile(filename, "XDMF")
   // File mode will be set when reading or writing
   hdf5_filemode = "";
 
-  // Rewrite the mesh at every time step in a time series
-  // Should be turned off if the mesh remains constant
+  // Rewrite the mesh at every time step in a time series. Should be
+  // turned off if the mesh remains constant.
   parameters.add("rewrite_function_mesh", true);
 
-  // Flush datasets to disk at each timestep
-  // Allows inspection of the HDF5 file whilst running, at some performance cost
+  // Flush datasets to disk at each timestep. Allows inspection of the
+  // HDF5 file whilst running, at some performance cost.
   parameters.add("flush_output", false);
-
 }
 //----------------------------------------------------------------------------
 XDMFFile::~XDMFFile()
@@ -148,7 +147,8 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
       if (value_size == 4)
         padded_value_size = 9;
 
-      std::vector<double> _data_values(padded_value_size*num_local_entities, 0.0);
+      std::vector<double> _data_values(padded_value_size*num_local_entities,
+                                       0.0);
       for(std::size_t i = 0; i < num_local_entities; i++)
       {
         for (std::size_t j = 0; j < value_size; j++)
@@ -178,12 +178,14 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       // Tabulate dofs
-      const std::vector<dolfin::la_index>& dofs = dofmap.cell_dofs(cell->index());
+      const std::vector<dolfin::la_index>& dofs
+        = dofmap.cell_dofs(cell->index());
       for(std::size_t i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
         dof_set.push_back(dofs[i]);
 
       // Add local dimension to cell offset and increment
-      *(cell_offset + 1) = *(cell_offset) + dofmap.cell_dimension(cell->index());
+      *(cell_offset + 1) = *(cell_offset)
+        + dofmap.cell_dimension(cell->index());
       ++cell_offset;
     }
 
@@ -217,8 +219,6 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
       {
         for(std::size_t i = 0; i < 2; i++)
         {
-          //          cout << "test: " << *cell_offset + 2*i << ", " << *cell_offset + 2*i + 1
-          //   << ", " << data_values[*cell_offset + 2*i] << ", " << data_values[*cell_offset + 2*i + 1] << endl;
           _data_values[count++] = data_values[*cell_offset + 2*i];
           _data_values[count++] = data_values[*cell_offset + 2*i + 1];
           count++;
@@ -249,8 +249,9 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
       hdf5_file->write(mesh, current_mesh_name);
   }
 
-  // Vertex/cell values are saved in the hdf5 group /VisualisationVector
-  // as distinct from /Vector which is used for solution vectors.
+  // Vertex/cell values are saved in the hdf5 group
+  // /VisualisationVector as distinct from /Vector which is used for
+  // solution vectors.
 
   // Save data values to HDF5 file
 
@@ -269,17 +270,17 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   hdf5_file->write_data(dataset_name, data_values, global_size);
 
-  // Flush file. Improves chances of recovering data if interrupted. Also
-  // makes file somewhat readable between writes.
+  // Flush file. Improves chances of recovering data if
+  // interrupted. Also makes file somewhat readable between writes.
   if(parameters["flush_output"])
     hdf5_file->flush();
 
-  // Write the XML meta description (see http://www.xdmf.org) on process zero
+  // Write the XML meta description (see http://www.xdmf.org) on
+  // process zero
   if (MPI::process_number() == 0)
   {
-    output_xml(time_step, vertex_data,
-               cell_dim, num_global_cells, gdim, num_total_vertices,
-               value_rank, padded_value_size,
+    output_xml(time_step, vertex_data, cell_dim, num_global_cells, gdim,
+               num_total_vertices, value_rank, padded_value_size,
                u.name(), dataset_name);
   }
 
@@ -348,7 +349,8 @@ void XDMFFile::operator>> (Mesh& mesh)
   std::vector<std::string> geom_bits;
   boost::split(geom_bits, geom_ref, boost::is_any_of(":/"));
 
-  // Should have 5 elements "filename.h5", "", "Mesh", "meshname", "coordinates"
+  // Should have 5 elements "filename.h5", "", "Mesh", "meshname",
+  // "coordinates"
   dolfin_assert(geom_bits.size() == 5);
   //  dolfin_assert(geom_bits[0] == hdf5_filename);
   dolfin_assert(geom_bits[2] == "Mesh");
@@ -484,7 +486,8 @@ void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
   // Saved MeshFunction values are in the /Mesh group
   const std::string dataset_name =  current_mesh_name + "/values";
 
-  // Write the XML meta description (see http://www.xdmf.org) on process zero
+  // Write the XML meta description (see http://www.xdmf.org) on
+  // process zero
   if (MPI::process_number() == 0)
   {
     output_xml((double)counter, false,
@@ -573,7 +576,8 @@ void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction)
   std::vector<std::string> geom_bits;
   boost::split(geom_bits, geom_ref, boost::is_any_of(":/"));
 
-  // Should have 5 elements "filename.h5", "", "Mesh", "meshname", "coordinates"
+  // Should have 5 elements "filename.h5", "", "Mesh", "meshname",
+  // "coordinates"
   dolfin_assert(geom_bits.size() == 5);
   //  dolfin_assert(geom_bits[0] == hdf5_filename);
   dolfin_assert(geom_bits[2] == "Mesh");
@@ -606,7 +610,8 @@ void XDMFFile::xml_mesh_topology(pugi::xml_node &xdmf_topology,
                                  const std::size_t num_global_cells,
                                  const std::string topology_dataset_name) const
 {
-  xdmf_topology.append_attribute("NumberOfElements") = (unsigned int) num_global_cells;
+  xdmf_topology.append_attribute("NumberOfElements")
+    = (unsigned int) num_global_cells;
 
   // Cell type
   if (cell_dim == 0)
@@ -627,7 +632,8 @@ void XDMFFile::xml_mesh_topology(pugi::xml_node &xdmf_topology,
   // Refer to all cells and dimensions
   pugi::xml_node xdmf_topology_data = xdmf_topology.append_child("DataItem");
   xdmf_topology_data.append_attribute("Format") = "HDF";
-  const std::string cell_dims = boost::lexical_cast<std::string>(num_global_cells)
+  const std::string cell_dims
+    = boost::lexical_cast<std::string>(num_global_cells)
     + " " + boost::lexical_cast<std::string>(cell_dim + 1);
   xdmf_topology_data.append_attribute("Dimensions") = cell_dims.c_str();
 
@@ -635,7 +641,8 @@ void XDMFFile::xml_mesh_topology(pugi::xml_node &xdmf_topology,
   // filenames such as "results/data.xdmf" correctly index h5 files in
   // the same directory
   boost::filesystem::path p(hdf5_filename);
-  std::string topology_reference = p.filename().string() + ":" + topology_dataset_name;
+  std::string topology_reference = p.filename().string() + ":"
+    + topology_dataset_name;
   xdmf_topology_data.append_child(pugi::node_pcdata).set_value(topology_reference.c_str());
 }
 //----------------------------------------------------------------------------
@@ -667,11 +674,15 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
   if(gdim == 1)
   {
     // FIXME: improve this workaround
-    // When gdim==1, XDMF does not support a 1D geometry "X",
-    // so need to provide some dummy Y and Z values.
-    // Using the "X_Y_Z" geometry the Y and Z values can be supplied
-    // as separate datasets, here in plain text (though it could be done in HDF5 too).
-    // Cannot write HDF5 here, as we are only running on rank 0, and will deadlock.
+
+    // When gdim==1, XDMF does not support a 1D geometry "X", so need
+    // to provide some dummy Y and Z values.  Using the "X_Y_Z"
+    // geometry the Y and Z values can be supplied as separate
+    // datasets, here in plain text (though it could be done in HDF5
+    // too).
+
+    // Cannot write HDF5 here, as we are only running on rank 0, and
+    // will deadlock.
 
     std::string dummy_zeros;
     dummy_zeros.reserve(2*num_total_vertices);
@@ -698,10 +709,14 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
 }
 //----------------------------------------------------------------------------
 void XDMFFile::output_xml(const double time_step, const bool vertex_data,
-                          const std::size_t cell_dim, const std::size_t num_global_cells,
-                          const std::size_t gdim, const std::size_t num_total_vertices,
-                          const std::size_t value_rank, const std::size_t padded_value_size,
-                          const std::string name, const std::string dataset_name) const
+                          const std::size_t cell_dim,
+                          const std::size_t num_global_cells,
+                          const std::size_t gdim,
+                          const std::size_t num_total_vertices,
+                          const std::size_t value_rank,
+                          const std::size_t padded_value_size,
+                          const std::string name,
+                          const std::string dataset_name) const
 {
   // Working data structure for formatting XML file
   std::string s;

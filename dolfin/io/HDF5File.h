@@ -62,14 +62,15 @@ namespace dolfin
     /// Write Mesh to file in a format suitable for re-reading
     void write(const Mesh& mesh, const std::string name);
 
-    /// Write Mesh of given cell dimension to file 
+    /// Write Mesh of given cell dimension to file
     /// in a format suitable for re-reading
     void write(const Mesh& mesh, const std::size_t cell_dim,
                const std::string name);
 
     /// Write MeshFunction to file
     /// in a format suitable for re-reading
-    void write(const MeshFunction<std::size_t>& meshfunction, const std::string name);
+    void write(const MeshFunction<std::size_t>& meshfunction,
+               const std::string name);
 
     /// Write MeshFunction to file
     /// in a format suitable for re-reading
@@ -77,7 +78,8 @@ namespace dolfin
 
     /// Write MeshFunction to file
     /// in a format suitable for re-reading
-    void write(const MeshFunction<double>& meshfunction, const std::string name);
+    void write(const MeshFunction<double>& meshfunction,
+               const std::string name);
 
     /// Read vector from file
     void read(GenericVector& x, const std::string dataset_name,
@@ -120,11 +122,13 @@ namespace dolfin
 
     // Write a MeshFunction to file
     template <typename T>
-    void write_mesh_function(const MeshFunction<T>& meshfunction, const std::string name);
+    void write_mesh_function(const MeshFunction<T>& meshfunction,
+                             const std::string name);
 
     // Read a MeshFunction from file
     template <typename T>
-    void read_mesh_function(MeshFunction<T>& meshfunction, const std::string name);
+    void read_mesh_function(MeshFunction<T>& meshfunction,
+                            const std::string name);
 
     // Write contiguous data to HDF5 data set. Data is flattened into
     // a 1D array, e.g. [x0, y0, z0, x1, y1, z1] for a vector in 3D
@@ -139,13 +143,14 @@ namespace dolfin
 
     // Reorder vertices into global index order, so they can be saved
     // correctly for HDF5 mesh output
-    std::vector<double> 
+    std::vector<double>
       reorder_vertices_by_global_indices(const Mesh& mesh) const;
 
     // Reorder data values of type double into global index order
     // Shape of 2D array is given in global_size
-    void reorder_values_by_global_indices(const Mesh& mesh, std::vector<double>& data, 
-                                          std::vector<std::size_t>& global_size) const;
+    void reorder_values_by_global_indices(const Mesh& mesh,
+                               std::vector<double>& data,
+                               std::vector<std::size_t>& global_size) const;
 
     // HDF5 file descriptor/handle
     bool hdf5_file_open;

@@ -32,11 +32,11 @@ namespace dolfin
 {
 
   /// This class implements output of meshes to X3D (successor to
-  /// VRML) graphics format. It is suitable for output of small to
-  /// medium size meshes for 3D visualisation via browsers, and can
-  /// also do basic Function and MeshFunction output (on the surface)
-  /// X3D files can be included on web pages with WebGL functionality
-  /// (see www.x3dom.org).
+  /// VRML) graphics format (http://www.web3d.org/x3d/). It is
+  /// suitable for output of small to medium size meshes for 3D
+  /// visualisation via browsers, and can also do basic Function and
+  /// MeshFunction output (on the surface) X3D files can be included
+  /// on web pages with WebGL functionality (see www.x3dom.org).
 
   class X3DFile : public GenericFile
   {

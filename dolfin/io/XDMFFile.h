@@ -60,7 +60,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    XDMFFile(const std::string filename);
+    explicit XDMFFile(const std::string filename);
 
     /// Destructor
     ~XDMFFile();
@@ -97,7 +97,7 @@ namespace dolfin
 
     // HDF5 filename
     std::string hdf5_filename;
-    
+
     // HDF5 file mode (r/w)
     std::string hdf5_filemode;
 
@@ -112,10 +112,14 @@ namespace dolfin
     // Write XML description for Function and MeshFunction output
     // updating time-series if need be
     void output_xml(const double time_step, const bool vertex_data,
-                    const std::size_t cell_dim, const std::size_t num_global_cells,
-                    const std::size_t gdim, const std::size_t num_total_vertices,
-                    const std::size_t value_rank, const std::size_t padded_value_size,
-                    const std::string name, const std::string dataset_name) const;
+                    const std::size_t cell_dim,
+                    const std::size_t num_global_cells,
+                    const std::size_t gdim,
+                    const std::size_t num_total_vertices,
+                    const std::size_t value_rank,
+                    const std::size_t padded_value_size,
+                    const std::string name,
+                    const std::string dataset_name) const;
 
     // Helper function to add topology reference to XDMF XML file
     void xml_mesh_topology(pugi::xml_node& xdmf_topology,
