@@ -54,9 +54,8 @@ int main()
 
     file << mesh;
     plot(mesh);
+    interactive();
   }
-
-  interactive();
 
   return 0;
 }

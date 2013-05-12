@@ -39,9 +39,9 @@ using namespace dolfin;
 #ifdef HAS_PARMETIS
 //-----------------------------------------------------------------------------
 void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
-                                 const LocalMeshData& mesh_data)
+                                 const LocalMeshData& mesh_data,
+                                 bool repartition)
 {
-  
   // This function prepares data for ParMETIS calls ParMETIS, and then
   // collects the results from ParMETIS.
 
@@ -89,7 +89,7 @@ void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
       eind[eptr[i] + j] = mesh_data.cell_vertices[i][j];
   }
   eptr[num_local_cells] = num_local_cells*num_cell_vertices;
-    
+
   // Number of nodes shared for dual graph (partition along facets)
   int ncommonnodes = num_cell_vertices - 1;
   int numflag = 0;
@@ -104,11 +104,11 @@ void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
                                   &numflag, &ncommonnodes,
                                   &xadj, &adjncy,
                                   &(*comm));
-  dolfin_assert(err == METIS_OK); 
+  dolfin_assert(err == METIS_OK);
 
   // Length of xadj = num_local_cells + 1
   // Length of adjncy = xadj[-1]
-    
+
   timer0.stop();
 
   Timer timer1("PARALLEL 1b: Compute graph partition (calling ParMETIS)");
@@ -127,7 +127,7 @@ void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
   options[1] = 0;
   options[2] = 15;
   options[3] = PARMETIS_PSR_UNCOUPLED;
-  // For repartition, PARMETIS_PSR_COUPLED seems to suppress all migration if already balanced. 
+  // For repartition, PARMETIS_PSR_COUPLED seems to suppress all migration if already balanced.
   // Try PARMETIS_PSR_UNCOUPLED for better edge cut.
 
   // Partitioning array to be computed by ParMETIS
@@ -144,29 +144,29 @@ void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
   dolfin_assert(!ubvec.empty());
   dolfin_assert(!part.empty());
 
-  const std::string approach = parameters["partitioning_approach"];
-
-  if(approach == "PARTITION")
+  if (!repartition)
   {
     err = ParMETIS_V3_PartKway(elmdist.data(), xadj, adjncy, elmwgt,
                                NULL, &wgtflag, &numflag, &ncon, &nparts,
                                tpwgts.data(), ubvec.data(), options,
                                &edgecut, part.data(), &(*comm));
   }
-  else if(approach == "REPARTITION")
+  else
   {
     const double itr = parameters["ParMETIS_repartitioning_weight"];
     real_t _itr = itr;
     std::vector<idx_t> vsize(num_local_cells, 1);
     err = ParMETIS_V3_AdaptiveRepart(elmdist.data(), xadj, adjncy, elmwgt,
-                                     NULL, vsize.data(), &wgtflag, &numflag, &ncon, &nparts,
-                                     tpwgts.data(), ubvec.data(), &_itr, options,
-                                     &edgecut, part.data(), &(*comm));
+                                     NULL, vsize.data(), &wgtflag, &numflag,
+                                     &ncon, &nparts, tpwgts.data(),
+                                     ubvec.data(), &_itr, options, &edgecut,
+                                     part.data(), &(*comm));
   }
+/*
   else if(approach == "REFINE")
   {
     err = ParMETIS_V3_RefineKway(elmdist.data(), xadj, adjncy, elmwgt,
-                                 NULL, &wgtflag, &numflag, &ncon, &nparts, 
+                                 NULL, &wgtflag, &numflag, &ncon, &nparts,
                                  tpwgts.data(), ubvec.data(), options,
                                  &edgecut, part.data(), &(*comm));
   }
@@ -176,7 +176,8 @@ void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
                  "partition graph",
                  "Bad partitioning approach");
   }
-  
+*/
+
   dolfin_assert(err == METIS_OK);
 
   METIS_Free(xadj);

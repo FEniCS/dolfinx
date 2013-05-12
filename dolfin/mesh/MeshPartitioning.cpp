@@ -56,17 +56,21 @@ using namespace dolfin;
 // Explicitly instantiate some templated functions to help the Python
 // wrappers
 template void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
-   const std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::size_t> >& local_value_data,
+   const std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::size_t> >&
+                                                            local_value_data,
    MeshValueCollection<std::size_t>& mesh_values);
 template void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
-   const std::vector<std::pair<std::pair<std::size_t, std::size_t>, int> >& local_value_data,
+   const std::vector<std::pair<std::pair<std::size_t, std::size_t>, int> >&
+                                                            local_value_data,
    MeshValueCollection<int>& mesh_values);
 template void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
-   const std::vector<std::pair<std::pair<std::size_t, std::size_t>, double> >& local_value_data,
+   const std::vector<std::pair<std::pair<std::size_t, std::size_t>, double> >&
+                                                            local_value_data,
    MeshValueCollection<double>& mesh_values);
 template void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
-   const std::vector<std::pair<std::pair<std::size_t, std::size_t>, bool> >& local_value_data,
-   MeshValueCollection<bool>& mesh_values);
+   const std::vector<std::pair<std::pair<std::size_t, std::size_t>, bool> >&
+                                                            local_value_data,
+                                     MeshValueCollection<bool>& mesh_values);
 
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
@@ -82,10 +86,38 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
+                            const std::vector<std::size_t>& cell_destinations)
+{
+  if (MPI::num_processes() > 1)
+  {
+    // Create and distribute local mesh data
+    LocalMeshData local_mesh_data(mesh);
+
+    // Attach cell destinations
+    local_mesh_data.cell_partition = cell_destinations;
+
+    // Build distributed mesh
+    build_distributed_mesh(mesh, local_mesh_data);
+  }
+}
+//-----------------------------------------------------------------------------
+void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
                                               const LocalMeshData& local_data)
 {
-  // Partition mesh
-  partition(mesh, local_data);
+  // Compute cell partitioning or use partitioning provides in local_data
+  std::vector<std::size_t> cell_partition;
+  if (local_data.cell_partition.empty())
+    cell_partition = partition_cells(mesh, local_data);
+  else
+  {
+    cell_partition = local_data.cell_partition;
+    dolfin_assert(cell_partition.size() == local_data.global_cell_indices.size());
+    dolfin_assert(*std::max_element(cell_partition.begin(),
+                                    cell_partition.end()) < MPI::num_processes());
+  }
+
+  // Build mesh from local mesh data and provided cell partition
+  build(mesh, local_data, cell_partition);
 
   // Create MeshDomains from local_data
   build_mesh_domains(mesh, local_data);
@@ -97,7 +129,8 @@ void MeshPartitioning::build_distributed_mesh(Mesh& mesh,
   DistributedMeshTools::init_facet_cell_connections(mesh);
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::partition(Mesh& mesh, const LocalMeshData& mesh_data)
+std::vector<std::size_t> MeshPartitioning::partition_cells(Mesh& mesh,
+                                                const LocalMeshData& mesh_data)
 {
   // Data structure to hold cell partitions
   std::vector<std::size_t> cell_partition;
@@ -112,23 +145,25 @@ void MeshPartitioning::partition(Mesh& mesh, const LocalMeshData& mesh_data)
     ZoltanPartition::compute_partition_rcb(cell_partition, mesh_data);
   else if (partitioner == "Zoltan_PHG")
     ZoltanPartition::compute_partition_phg(cell_partition, mesh_data);
-  else if (partitioner == "None")
-  {
-    // Just let the current partitioning be used
-    cell_partition.assign(mesh_data.cell_vertices.size(), MPI::process_number());
-  }
   else
   {
     dolfin_error("MeshPartitioning.cpp",
-                 "partition mesh",
-                 "Mesh partitioner '%s' is not known.", partitioner.c_str());
+                 "compute cell partition",
+                 "Mesh partitioner '%s' is unknown.", partitioner.c_str());
   }
 
+  return cell_partition;
+}
+//-----------------------------------------------------------------------------
+void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
+                             const std::vector<std::size_t>& cell_partition)
+{
   // Distribute cells
   Timer timer("PARALLEL 2: Distribute mesh (cells and vertices)");
   std::vector<std::size_t> global_cell_indices;
   boost::multi_array<std::size_t, 2> cell_vertices;
-  distribute_cells(mesh_data, cell_partition, global_cell_indices, cell_vertices);
+  distribute_cells(mesh_data, cell_partition, global_cell_indices,
+                   cell_vertices);
 
   // Distribute vertices
   std::vector<std::size_t> vertex_indices;
@@ -169,7 +204,8 @@ void MeshPartitioning::distribute_cells(const LocalMeshData& mesh_data,
       dolfin_error("MeshPartitioning.cpp",
                    "distribute cells",
                    "Mismatch in number of cell vertices (%d != %d) on process %d",
-                   mesh_data.cell_vertices[0].size(), num_cell_vertices, MPI::process_number());
+                   mesh_data.cell_vertices[0].size(), num_cell_vertices,
+                   MPI::process_number());
     }
   }
 
@@ -201,7 +237,8 @@ void MeshPartitioning::distribute_cells(const LocalMeshData& mesh_data,
   std::size_t c = 0;
   for (std::size_t p = 0; p < num_processes; ++p)
   {
-    for (std::size_t i = 0; i < received_cell_vertices[p].size(); i += (num_cell_vertices + 1))
+    for (std::size_t i = 0; i < received_cell_vertices[p].size();
+         i += (num_cell_vertices + 1))
     {
       global_cell_indices[c] = received_cell_vertices[p][i];
       for (std::size_t j = 0; j < num_cell_vertices; ++j)
@@ -235,15 +272,18 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
   // Compute which vertices we need
   std::set<std::size_t> needed_vertex_indices;
   boost::multi_array<std::size_t, 2>::const_iterator vertices;
-  for (vertices = cell_vertices.begin(); vertices != cell_vertices.end(); ++vertices)
+  for (vertices = cell_vertices.begin(); vertices != cell_vertices.end();
+       ++vertices)
+  {
     needed_vertex_indices.insert(vertices->begin(), vertices->end());
+  }
 
   // Compute where (process number) the vertices we need are located
   std::vector<std::vector<std::size_t> > send_vertex_indices(num_processes);
   std::vector<std::vector<std::size_t> > vertex_location(num_processes);
   std::set<std::size_t>::const_iterator required_vertex;
   for (required_vertex = needed_vertex_indices.begin();
-        required_vertex != needed_vertex_indices.end(); ++required_vertex)
+       required_vertex != needed_vertex_indices.end(); ++required_vertex)
   {
     // Get process that has required vertex
     const std::size_t location
@@ -260,15 +300,16 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
   // Distribute vertex coordinates
   std::vector<std::vector<double> > send_vertex_coordinates(num_processes);
   const std::pair<std::size_t, std::size_t> local_vertex_range
-      = MPI::local_range(mesh_data.num_global_vertices);
+    = MPI::local_range(mesh_data.num_global_vertices);
   for (std::size_t p = 0; p < num_processes; ++p)
   {
     send_vertex_coordinates[p].reserve(received_vertex_indices[p].size()*gdim);
     for (std::size_t i = 0; i < received_vertex_indices[p].size(); ++i)
     {
       dolfin_assert(received_vertex_indices[p][i] >= local_vertex_range.first
-                        && received_vertex_indices[p][i] < local_vertex_range.second);
-      const std::size_t location = received_vertex_indices[p][i] - local_vertex_range.first;
+                    && received_vertex_indices[p][i] < local_vertex_range.second);
+      const std::size_t location
+        = received_vertex_indices[p][i] - local_vertex_range.first;
       for (std::size_t j = 0; j < gdim; ++j)
         send_vertex_coordinates[p].push_back(mesh_data.vertex_coordinates[location][j]);
     }
@@ -299,7 +340,8 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
       for (std::size_t j = 0; j < gdim; ++j)
         vertex_coordinates[v][j] = received_vertex_coordinates[p][i + j];
 
-      const std::size_t global_vertex_index = vertex_location[p][index_counters[p]++];
+      const std::size_t global_vertex_index
+        = vertex_location[p][index_counters[p]++];
       vertex_global_to_local[global_vertex_index] = v;
       vertex_indices[v] = global_vertex_index;
 
@@ -411,7 +453,8 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
     // Fill shared vertices information
     std::vector<std::size_t>::const_iterator global_index;
-    for (global_index = intersection.begin(); global_index != intersection_end; ++global_index)
+    for (global_index = intersection.begin(); global_index != intersection_end;
+         ++global_index)
     {
       // Get local index
       std::map<std::size_t, std::size_t>::const_iterator local_index;
@@ -428,8 +471,10 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
                                           const LocalMeshData& local_data)
 {
   // Local domain data
-  const std::map<std::size_t, std::vector< std::pair<std::pair<std::size_t, std::size_t>, std::size_t> > >
+  const std::map<std::size_t, std::vector< std::pair<std::pair<std::size_t, std::size_t>,
+                                                     std::size_t> > >
     domain_data = local_data.domain_data;
+
   if (domain_data.empty())
     return;
 
@@ -437,7 +482,8 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
   const std::size_t D = mesh.topology().dim();
   mesh.domains().init(D);
 
-  std::map<std::size_t, std::vector< std::pair<std::pair<std::size_t, std::size_t>, std::size_t> > >::const_iterator dim_data;
+  std::map<std::size_t, std::vector< std::pair<std::pair<std::size_t, std::size_t>,
+                                               std::size_t> > >::const_iterator dim_data;
   for (dim_data = domain_data.begin(); dim_data != domain_data.end(); ++dim_data)
   {
     // Get mesh value collection used for marking
