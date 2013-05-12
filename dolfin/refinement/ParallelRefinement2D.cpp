@@ -78,7 +78,6 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   }
 
   const std::size_t tdim = mesh.topology().dim();
-
   if (tdim != 2)
   {
     dolfin_error("ParallelRefinement2D.cpp",
@@ -89,17 +88,19 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   // Ensure connectivity is there
   mesh.init(tdim - 1, tdim);
 
-  // Create a class to hold most of the refinement information
+  // Create an object to hold most of the refinement information
   ParallelRefinement p(mesh);
 
   // Mark all edges, and create new vertices
   p.mark_all();
   p.create_new_vertices();
-  std::map<std::size_t, std::size_t>& edge_to_new_vertex
+  const std::map<std::size_t, std::size_t>& edge_to_new_vertex
     = p.edge_to_new_vertex();
 
-  // Generate new topology
+  // Convenienence iterator
+  std::map<std::size_t, std::size_t>::const_iterator it;
 
+  // Generate new topology
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     EdgeIterator e(*cell);
@@ -108,9 +109,22 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
     const std::size_t v0 = v[0].global_index();
     const std::size_t v1 = v[1].global_index();
     const std::size_t v2 = v[2].global_index();
-    const std::size_t e0 = edge_to_new_vertex[e[0].index()];
-    const std::size_t e1 = edge_to_new_vertex[e[1].index()];
-    const std::size_t e2 = edge_to_new_vertex[e[2].index()];
+
+    it = edge_to_new_vertex.find(e[0].index());
+    dolfin_assert(it != edge_to_new_vertex.end());
+    const std::size_t e0 = it->second;
+
+    it = edge_to_new_vertex.find(e[1].index());
+    dolfin_assert(it != edge_to_new_vertex.end());
+    const std::size_t e1 = it->second;
+
+    it = edge_to_new_vertex.find(e[2].index());
+    dolfin_assert(it != edge_to_new_vertex.end());
+    const std::size_t e2 = it->second;
+
+    //const std::size_t e0 = edge_to_new_vertex[e[0].index()];
+    //const std::size_t e1 = edge_to_new_vertex[e[1].index()];
+    //const std::size_t e2 = edge_to_new_vertex[e[2].index()];
 
     p.new_cell(v0, e2, e1);
     p.new_cell(e2, v1, e0);
@@ -125,8 +139,6 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
                                   const MeshFunction<bool>& refinement_marker,
                                   bool redistribute)
 {
-  const std::size_t tdim = mesh.topology().dim();
-
   if (MPI::num_processes()==1)
   {
     dolfin_error("ParallelRefinement2D.cpp",
@@ -134,6 +146,7 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
                  "Only works in parallel");
   }
 
+  const std::size_t tdim = mesh.topology().dim();
   if (tdim != 2)
   {
     // Note: gdim may be 3
@@ -189,8 +202,11 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
   // Generate new vertices from marked edges, and assign global vertex
   // index map.
   p.create_new_vertices();
-  std::map<std::size_t, std::size_t>& edge_to_new_vertex
+  const std::map<std::size_t, std::size_t>& edge_to_new_vertex
     = p.edge_to_new_vertex();
+
+  // Convenienence iterator
+  std::map<std::size_t, std::size_t>::const_iterator it;
 
   // Stage 4 - do refinement
   // FIXME - keep reference edges somehow?...
@@ -207,9 +223,22 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
     const std::size_t v0 = v[i0].global_index();
     const std::size_t v1 = v[i1].global_index();
     const std::size_t v2 = v[i2].global_index();
-    const std::size_t e0 = edge_to_new_vertex[e[i0].index()];
-    const std::size_t e1 = edge_to_new_vertex[e[i1].index()];
-    const std::size_t e2 = edge_to_new_vertex[e[i2].index()];
+
+    it = edge_to_new_vertex.find(e[i0].index());
+    dolfin_assert(it != edge_to_new_vertex.end());
+    const std::size_t e0 = it->second;
+
+    it = edge_to_new_vertex.find(e[i1].index());
+    dolfin_assert(it != edge_to_new_vertex.end());
+    const std::size_t e1 = it->second;
+
+    it = edge_to_new_vertex.find(e[i2].index());
+    dolfin_assert(it != edge_to_new_vertex.end());
+    const std::size_t e2 = it->second;
+
+    //const std::size_t e0 = edge_to_new_vertex[e[i0].index()];
+    //const std::size_t e1 = edge_to_new_vertex[e[i1].index()];
+    //const std::size_t e2 = edge_to_new_vertex[e[i2].index()];
 
     if (rgb_count == 0) //straight copy of cell (1->1)
       p.new_cell(*cell);

@@ -162,8 +162,11 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
 
   // Create new vertices
   p.create_new_vertices();
-  std::map<std::size_t, std::size_t>& edge_to_new_vertex
+  const std::map<std::size_t, std::size_t>& edge_to_new_vertex
     = p.edge_to_new_vertex();
+
+  // Convenience iterator
+  std::map<std::size_t, std::size_t>::const_iterator it;
 
   // Create new topology
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -183,7 +186,11 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
     else if (marked_edges.size() == 1) // "green" refinement (bisection)
     {
       const std::size_t new_edge = marked_edges[0];
-      const std::size_t v_new = edge_to_new_vertex[e[new_edge].index()];
+
+      it = edge_to_new_vertex.find(e[new_edge].index());
+      dolfin_assert(it !=  edge_to_new_vertex.end());
+      const std::size_t v_new = it->second;
+
       VertexIterator vn(e[new_edge]);
       const std::size_t v_near_0 = vn[0].global_index();
       const std::size_t v_near_1 = vn[1].global_index();
@@ -201,8 +208,14 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
     {
       const std::size_t new_edge_0 = marked_edges[0];
       const std::size_t new_edge_1 = marked_edges[1];
-      const std::size_t e0 = edge_to_new_vertex[e[new_edge_0].index()];
-      const std::size_t e1 = edge_to_new_vertex[e[new_edge_1].index()];
+
+      it = edge_to_new_vertex.find(e[new_edge_0].index());
+      dolfin_assert(it !=  edge_to_new_vertex.end());
+      const std::size_t e0 = it->second;
+
+      it = edge_to_new_vertex.find(e[new_edge_1].index());
+      dolfin_assert(it !=  edge_to_new_vertex.end());
+      const std::size_t e1 = it->second;
 
       // Opposite edges add up to 5
       // This is effectively a double bisection
@@ -262,9 +275,17 @@ void ParallelRefinement3D::refine(Mesh& new_mesh, const Mesh& mesh,
     {
       // Assumes edges are on one face - will break otherwise
 
-      const std::size_t e0 = edge_to_new_vertex[e[marked_edges[0]].index()];
-      const std::size_t e1 = edge_to_new_vertex[e[marked_edges[1]].index()];
-      const std::size_t e2 = edge_to_new_vertex[e[marked_edges[2]].index()];
+      it = edge_to_new_vertex.find(e[marked_edges[0]].index());
+      dolfin_assert(it !=  edge_to_new_vertex.end());
+      const std::size_t e0 = it->second;
+
+      it = edge_to_new_vertex.find(e[marked_edges[1]].index());
+      dolfin_assert(it !=  edge_to_new_vertex.end());
+      const std::size_t e1 = it->second;
+
+      it = edge_to_new_vertex.find(e[marked_edges[2]].index());
+      dolfin_assert(it !=  edge_to_new_vertex.end());
+      const std::size_t e2 = it->second;
 
       const std::vector<std::size_t> com_v
         = common_vertices(*cell, marked_edges[0], marked_edges[1]);
@@ -336,14 +357,35 @@ void ParallelRefinement3D::eightfold_division(const Cell& cell,
   const std::size_t v2 = v[2].global_index();
   const std::size_t v3 = v[3].global_index();
 
-  std::map<std::size_t, std::size_t>& edge_to_new_vertex = p.edge_to_new_vertex();
+  const std::map<std::size_t, std::size_t>& edge_to_new_vertex
+    = p.edge_to_new_vertex();
 
-  const std::size_t e0 = edge_to_new_vertex[e[0].index()];
-  const std::size_t e1 = edge_to_new_vertex[e[1].index()];
-  const std::size_t e2 = edge_to_new_vertex[e[2].index()];
-  const std::size_t e3 = edge_to_new_vertex[e[3].index()];
-  const std::size_t e4 = edge_to_new_vertex[e[4].index()];
-  const std::size_t e5 = edge_to_new_vertex[e[5].index()];
+  // Convenience iterator
+  std::map<std::size_t, std::size_t>::const_iterator it;
+
+  it = edge_to_new_vertex.find(e[0].index());
+  dolfin_assert(it !=  edge_to_new_vertex.end());
+  const std::size_t e0 = it->second;
+
+  it = edge_to_new_vertex.find(e[1].index());
+  dolfin_assert(it !=  edge_to_new_vertex.end());
+  const std::size_t e1 = it->second;
+
+  it = edge_to_new_vertex.find(e[2].index());
+  dolfin_assert(it !=  edge_to_new_vertex.end());
+  const std::size_t e2 = it->second;
+
+  it = edge_to_new_vertex.find(e[3].index());
+  dolfin_assert(it !=  edge_to_new_vertex.end());
+  const std::size_t e3 = it->second;
+
+  it = edge_to_new_vertex.find(e[4].index());
+  dolfin_assert(it !=  edge_to_new_vertex.end());
+  const std::size_t e4 = it->second;
+
+  it = edge_to_new_vertex.find(e[5].index());
+  dolfin_assert(it !=  edge_to_new_vertex.end());
+  const std::size_t e5 = it->second;
 
   p.new_cell(v0, e3, e4, e5);
   p.new_cell(v1, e1, e2, e5);
