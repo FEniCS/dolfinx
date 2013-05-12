@@ -65,69 +65,101 @@ void X3DFile::operator<< (const Function& u)
   write_function(u);
 }
 //-----------------------------------------------------------------------------
-std::string X3DFile::color_palette(const int pal) const
+std::string X3DFile::color_palette(const int palette) const
 {
   // Make a basic palette of 256 colours
-  std::stringstream col;
-  switch (pal)
+  std::stringstream colour;
+  switch (palette)
   {
   case 1:
     for (int i = 0; i < 256; ++i)
     {
-      double x = (double)i/255.0;
-      double y = 1.0 - x;
-      double r = 4*pow(x, 3) - 3*pow(x, 4);
-      double g = 4*pow(x, 2)*(1.0 - pow(x, 2));
-      double b = 4*pow(y, 3) - 3*pow(y, 4);
-      col << r << " " << g << " " << b << " ";
+      const double x = (double)i/255.0;
+      const double y = 1.0 - x;
+      const double r = 4*pow(x, 3) - 3*pow(x, 4);
+      const double g = 4*pow(x, 2)*(1.0 - pow(x, 2));
+      const double b = 4*pow(y, 3) - 3*pow(y, 4);
+      colour << r << " " << g << " " << b << " ";
     }
     break;
 
   case 2:
     for (int i = 0; i < 256; ++i)
     {
-      double lm = 425.0 + 250.0*(double)i/255.0;
-      double b = 1.8*exp(-pow((lm - 450.0)/((lm>450.0) ? 40.0 : 20.0), 2.0));
-      double g = 0.9*exp(-pow((lm - 550.0)/((lm>550.0) ? 60 : 40.0), 2.0));
+      const double lm = 425.0 + 250.0*(double)i/255.0;
+      const double b = 1.8*exp(-pow((lm - 450.0)/((lm>450.0) ? 40.0 : 20.0), 2.0));
+      const double g = 0.9*exp(-pow((lm - 550.0)/((lm>550.0) ? 60 : 40.0), 2.0));
       double r = 1.0*exp(-pow((lm - 600.0)/((lm>600.0) ? 40.0 : 50.0), 2.0));
       r += 0.3*exp(-pow((lm - 450.0)/((lm>450.0) ? 20.0 : 30.0), 2.0));
-      double tot = (r + g + b);
+      const double tot = (r + g + b);
 
-      col << r/tot << " " << g/tot << " " << b/tot << " ";
+      colour << r/tot << " " << g/tot << " " << b/tot << " ";
     }
     break;
 
   default:
     for (int i = 0; i < 256 ; ++i)
     {
-      double r = (double)i/255.0;
-      double g = (double)(i*(255 - i))/(128.0*127.0);
-      double b = (double)(255 - i)/255.0;
-      col << r << " " << g << " " << b << " ";
+      const double r = (double)i/255.0;
+      const double g = (double)(i*(255 - i))/(128.0*127.0);
+      const double b = (double)(255 - i)/255.0;
+      colour << r << " " << g << " " << b << " ";
     }
     break;
   }
 
-  return col.str();
+  return colour.str();
 }
 //-----------------------------------------------------------------------------
 void X3DFile::write_meshfunction(const MeshFunction<std::size_t>& meshfunction)
 {
   // Palette choice
-  const int pal = 2;
+  const int palette = 2;
 
   // Get mesh
-  const Mesh& mesh = meshfunction.mesh();
+  dolfin_assert( meshfunction.mesh());
+  const Mesh& mesh = *meshfunction.mesh();
 
-  // For serial - ensure connectivity
+  // Ensure connectivity has been computed
   mesh.init(mesh.topology().dim() - 1 , mesh.topology().dim());
 
+  // Mesh geometric dimension
   const std::size_t gdim = mesh.geometry().dim();
+
+  // Mesh topological dimension
   const std::size_t tdim = mesh.topology().dim();
 
+  // MeshFunction dimension
   const std::size_t cell_dim = meshfunction.dim();
+
+  // Check that MeshFunction dimension is handled
+  if (cell_dim != tdim)
+  {
+    dolfin_error("X3DFile.cpp",
+                 "output meshfunction",
+                 "Can only output CellFunction at present");
+  }
+
+  // Check that X3D type is appropriate
+  if (cell_dim == tdim && facet_type == "IndexedLineSet")
+  {
+    dolfin_error("X3DFile.cpp",
+                 "output meshfunction",
+                 "Cannot output CellFunction with Edge mesh");
+  }
+
+  // Check that mesh is in 2D or 3D
+  if (gdim !=2 && gdim !=3)
+  {
+    dolfin_error("X3DFile.cpp",
+                 "output mesh",
+                 "X3D will only output 2D or 3D meshes");
+  }
+
+  // Pointer to MeshFunction data
   const std::size_t* values = meshfunction.values();
 
+  // Get min/max values of MeshFunction
   std::size_t minval = *std::min_element(values, values + meshfunction.size());
   minval = MPI::min(minval);
   std::size_t maxval = *std::max_element(values, values + meshfunction.size());
@@ -138,60 +170,49 @@ void X3DFile::write_meshfunction(const MeshFunction<std::size_t>& meshfunction)
   else
     dval = 255.0/(double)(maxval - minval);
 
-  if (cell_dim != tdim)
-  {
-    dolfin_error("X3DFile.cpp",
-                 "output meshfunction",
-                 "Can only output CellFunction at present");
-  }
-
-  if (facet_type == "IndexedLineSet")
-  {
-    dolfin_error("X3DFile.cpp",
-                 "output meshfunction",
-                 "Cannot output CellFunction with Edge mesh");
-  }
-
-  if (gdim !=2 && gdim !=3)
-  {
-    dolfin_error("X3DFile.cpp",
-                 "output mesh",
-                 "X3D will only output 2D or 3D meshes");
-  }
-
-  // Get mesh max and min dimensions and viewpoint
+  // Get mesh min/max  dimensions and viewpoint
   const std::vector<double> xpos = mesh_min_max(mesh);
 
+  // Get MPI details
   const std::size_t num_processes = MPI::num_processes();
   const std::size_t process_number = MPI::process_number();
 
+  // Create pugi xml document
   pugi::xml_document xml_doc;
 
+  // Write XML header
   output_xml_header(xml_doc, xpos);
 
-  // Make a set of the indices we wish to use
-  // In 3D, we are ignoring all interior facets,
-  // so reducing the number of vertices substantially
-
+  // Make a set of the indices we wish to use. In 3D, we are ignoring
+  // all interior facets, so reducing the number of vertices
+  // substantially
   const std::vector<std::size_t> vecindex = vertex_index(mesh);
 
+  // Write vertices
   write_vertices(xml_doc, mesh, vecindex);
 
+  // Iterate over mesh facets
   std::stringstream local_output;
   for (FaceIterator f(mesh); !f.end(); ++f)
   {
-    if (tdim == 2 || f->num_global_entities(mesh.topology().dim()) == 1)
+    // Check if topolgical dimension is 2, or if we have a boundary
+    // facet in 3D
+    if (tdim == 2 || f->num_global_entities(tdim) == 1)
     {
+      // Get cell connected to facet
       CellIterator cell(*f);
+
+      // Write mesh function value to string stream
       local_output << (int)((meshfunction[*cell] - minval)*dval) << " " ;
     }
   }
 
-  // Gather up on zero
+  // Gather up data on zero
   std::vector<std::string> gathered_output;
   MPI::gather(local_output.str(), gathered_output);
 
-  if(process_number == 0)
+  // Write XML on root process
+  if (process_number == 0)
   {
     pugi::xml_node indexed_face_set = xml_doc.child("X3D")
       .child("Scene").child("Shape").child(facet_type.c_str());
@@ -204,8 +225,9 @@ void X3DFile::write_meshfunction(const MeshFunction<std::size_t>& meshfunction)
 
     // Output palette
     pugi::xml_node color = indexed_face_set.append_child("Color");
-    color.append_attribute("color") = color_palette(pal).c_str();
+    color.append_attribute("color") = color_palette(palette).c_str();
 
+    // Save XML file
     xml_doc.save_file(_filename.c_str(), "  ");
   }
 }
@@ -215,8 +237,19 @@ void X3DFile::write_function(const Function& u)
   dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
 
-  // For serial - ensure connectivity
-  mesh.init(mesh.topology().dim() - 1 , mesh.topology().dim());
+  // Mesh geometric and tological dimensions
+  const std::size_t gdim = mesh.geometry().dim();
+  const std::size_t tdim = mesh.topology().dim();
+
+  if (gdim !=2 && gdim !=3)
+  {
+    dolfin_error("X3DFile.cpp",
+                 "output mesh",
+                 "X3D will only output 2D or 3D meshes");
+  }
+
+  // Build mesh connectivity
+  mesh.init(tdim - 1 , tdim);
 
   dolfin_assert(u.function_space()->dofmap());
   const GenericDofMap& dofmap = *u.function_space()->dofmap();
@@ -229,7 +262,7 @@ void X3DFile::write_function(const Function& u)
                  "Can only handle scalar and vector Functions");
   }
 
-  if(u.value_rank() == 1)
+  if (u.value_rank() == 1)
     warning("X3DFile outputs scalar magnitude of vector field");
 
   // Only allow vertex centered data
@@ -238,30 +271,23 @@ void X3DFile::write_function(const Function& u)
   {
     dolfin_error("X3DFile.cpp",
                  "write X3D",
-                 "Can only handle vertex based Function at present");
+                 "Can only handle vertex-based Function at present");
   }
 
-  const std::size_t gdim = mesh.geometry().dim();
-  if (gdim !=2 && gdim !=3)
-  {
-    dolfin_error("X3DFile.cpp",
-                 "output mesh",
-                 "X3D will only output 2D or 3D meshes");
-  }
-
-  // Get data values and normalise
+  // Compute vertex data values
   std::vector<double> data_values;
   u.compute_vertex_values(data_values, mesh);
 
+  // Normalise data values
   if (u.value_rank() == 1)
   {
     std::vector<double> magnitude;
-    std::size_t nv = mesh.num_vertices();
-    for(std::size_t i = 0; i < nv ; ++i)
+    const std::size_t num_vertices = mesh.num_vertices();
+    for (std::size_t i = 0; i < num_vertices ; ++i)
     {
       double val = 0.0;
       for(std::size_t j = 0; j < u.value_size() ; j++)
-        val += pow(data_values[i + j*nv], 2.0);
+        val += pow(data_values[i + j*num_vertices], 2.0);
       val = sqrt(val);
       magnitude.push_back(val);
     }
@@ -269,16 +295,21 @@ void X3DFile::write_function(const Function& u)
     std::copy(magnitude.begin(), magnitude.end(), data_values.begin());
   }
 
+  // Create pugi document
   pugi::xml_document xml_doc;
 
+  // Get mesh mix/max dimensions and wriet XML header
   const std::vector<double> xpos = mesh_min_max(mesh);
   output_xml_header(xml_doc, xpos);
 
-  const std::vector<std::size_t> vecindex = vertex_index(mesh);
+  // Get indices of vertices on mesh surface
+  const std::vector<std::size_t> surface_vertices = vertex_index(mesh);
 
-  write_vertices(xml_doc, mesh, vecindex);
-  write_values(xml_doc, mesh, vecindex, data_values);
+  // Write vertices and vertex data to XML file
+  write_vertices(xml_doc, mesh, surface_vertices);
+  write_values(xml_doc, mesh, surface_vertices, data_values);
 
+  // Save XML file
   if (MPI::process_number() == 0)
     xml_doc.save_file(_filename.c_str(), "  ");
 }
@@ -390,9 +421,9 @@ void X3DFile::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
     indexed_face_set.append_attribute("colorIndex") = str_output.str().c_str();
 
     // Output colour palette
-    const int pal = 2;
+    const int palette = 2;
     pugi::xml_node color = indexed_face_set.append_child("Color");
-    color.append_attribute("color") = color_palette(pal).c_str();
+    color.append_attribute("color") = color_palette(palette).c_str();
   }
 }
 //-----------------------------------------------------------------------------
