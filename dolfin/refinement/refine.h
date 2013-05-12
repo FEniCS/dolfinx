@@ -18,7 +18,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2010-02-10
-// Last changed: 2011-10-31
+// Last changed: 2013-05-12
 //
 // This file defines free functions for mesh refinement.
 //
@@ -51,7 +51,7 @@ namespace dolfin
   ///
   ///         mesh = refine(mesh);
   ///
-  Mesh refine(const Mesh& mesh, bool redistribute=true);
+  Mesh refine(const Mesh& mesh, bool redistribute = true);
 
   /// Create uniformly refined mesh
   ///
@@ -64,7 +64,7 @@ namespace dolfin
   ///         Optional argument to redistribiute the refined mesh if mesh is a
   ///         distributed mesh.
   void refine(Mesh& refined_mesh, const Mesh& mesh,
-              bool redistribute=true);
+              bool redistribute = true);
 
   /// Create locally refined mesh
   ///
@@ -97,7 +97,7 @@ namespace dolfin
   ///         mesh = refine(mesh, cell_markers);
   ///
   Mesh refine(const Mesh& mesh, const MeshFunction<bool>& cell_markers,
-              bool redistribute=true);
+              bool redistribute = true);
 
   /// Create locally refined mesh
   ///
@@ -113,7 +113,7 @@ namespace dolfin
   ///         Optional argument to redistribiute the refined mesh if mesh is a
   ///         distributed mesh.
   void refine(Mesh& refined_mesh, const Mesh& mesh,
-              const MeshFunction<bool>& cell_markers, bool redistribute=true);
+              const MeshFunction<bool>& cell_markers, bool redistribute = true);
 
 }
 

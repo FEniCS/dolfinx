@@ -17,7 +17,7 @@
 //
 //
 // First Added: 2012-12-19
-// Last Changed: 2013-01-17
+// Last Changed: 2013-05-12
 
 #include <vector>
 #include <map>
@@ -53,7 +53,7 @@ void ParallelRefinement2D::generate_reference_edges(const Mesh& mesh,
   {
     std::size_t cell_index = cell->index();
 
-    std::vector<std::pair<double,std::size_t> > lengths;
+    std::vector<std::pair<double, std::size_t> > lengths;
     EdgeIterator celledge(*cell);
     for (std::size_t i = 0; i < 3; i++)
       lengths.push_back(std::make_pair(celledge[i].length(), i));
@@ -224,18 +224,6 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
     const std::size_t v1 = v[i1].global_index();
     const std::size_t v2 = v[i2].global_index();
 
-    it = edge_to_new_vertex.find(e[i0].index());
-    dolfin_assert(it != edge_to_new_vertex.end());
-    const std::size_t e0 = it->second;
-
-    it = edge_to_new_vertex.find(e[i1].index());
-    dolfin_assert(it != edge_to_new_vertex.end());
-    const std::size_t e1 = it->second;
-
-    it = edge_to_new_vertex.find(e[i2].index());
-    dolfin_assert(it != edge_to_new_vertex.end());
-    const std::size_t e2 = it->second;
-
     //const std::size_t e0 = edge_to_new_vertex[e[i0].index()];
     //const std::size_t e1 = edge_to_new_vertex[e[i1].index()];
     //const std::size_t e2 = edge_to_new_vertex[e[i2].index()];
@@ -244,7 +232,11 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
       p.new_cell(*cell);
     else if (rgb_count == 1) // "green" refinement (1->2)
     {
-      // Always splitting the reference edge...
+      // Always splitting the reference edge (only)
+      it = edge_to_new_vertex.find(e[i0].index());
+      dolfin_assert(it != edge_to_new_vertex.end());
+      const std::size_t e0 = it->second;
+
       p.new_cell(e0, v0, v1);
       p.new_cell(e0, v2, v0);
     }
@@ -253,12 +245,28 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
       // FIXME: more possibilities here - need to do more tests
       if (p.is_marked(e[i2].index()))
       {
+        it = edge_to_new_vertex.find(e[i0].index());
+        dolfin_assert(it != edge_to_new_vertex.end());
+        const std::size_t e0 = it->second;
+
+        it = edge_to_new_vertex.find(e[i2].index());
+        dolfin_assert(it != edge_to_new_vertex.end());
+        const std::size_t e2 = it->second;
+
         p.new_cell(e2, v1, e0);
         p.new_cell(e2, e0, v0);
         p.new_cell(e0, v2, v0);
       }
       else if (p.is_marked(e[i1].index()))
       {
+        it = edge_to_new_vertex.find(e[i0].index());
+        dolfin_assert(it != edge_to_new_vertex.end());
+        const std::size_t e0 = it->second;
+
+        it = edge_to_new_vertex.find(e[i1].index());
+        dolfin_assert(it != edge_to_new_vertex.end());
+        const std::size_t e1 = it->second;
+
         p.new_cell(e0, v0, v1);
         p.new_cell(e1, e0, v2);
         p.new_cell(e1, v0, e0);
@@ -266,6 +274,18 @@ void ParallelRefinement2D::refine(Mesh& new_mesh, const Mesh& mesh,
     }
     else if (rgb_count == 3) // "red" refinement - all split (1->4) cells
     {
+      it = edge_to_new_vertex.find(e[i0].index());
+      dolfin_assert(it != edge_to_new_vertex.end());
+      const std::size_t e0 = it->second;
+
+      it = edge_to_new_vertex.find(e[i1].index());
+      dolfin_assert(it != edge_to_new_vertex.end());
+      const std::size_t e1 = it->second;
+
+      it = edge_to_new_vertex.find(e[i2].index());
+      dolfin_assert(it != edge_to_new_vertex.end());
+      const std::size_t e2 = it->second;
+
       p.new_cell(v0, e2, e1);
       p.new_cell(e2, v1, e0);
       p.new_cell(e1, e0, v2);
