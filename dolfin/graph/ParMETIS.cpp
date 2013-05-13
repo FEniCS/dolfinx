@@ -189,7 +189,8 @@ void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
 //-----------------------------------------------------------------------------
 #else
 void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
-                                    const LocalMeshData& data)
+                                 const LocalMeshData& data,
+                                 bool repartition)
 {
   dolfin_error("ParMETIS.cpp",
                "compute mesh partitioning using ParMETIS",
