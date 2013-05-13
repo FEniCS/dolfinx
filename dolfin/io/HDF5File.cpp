@@ -824,10 +824,15 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc, const
 
     for (std::size_t i = 0; i < num_processes; ++i)
     {
-      for (std::size_t j = 0; j < recv_local[i].size(); ++j)
+      const std::vector<std::size_t>& local_index = recv_local[i];
+      const std::vector<std::size_t>& local_entities = recv_entities[i];
+      const std::vector<T>& local_values = recv_values[i];
+      dolfin_assert(local_index.size() == local_entities.size());
+      dolfin_assert(local_index.size() == local_values.size());
+
+      for (std::size_t j = 0; j < local_index.size(); ++j)
       {
-        const std::size_t local_index = recv_local[i][j];
-        mvc_map[std::make_pair(local_index, recv_entities[i][j])] = recv_values[i][j];
+        mvc_map[std::make_pair(local_index[j], local_entities[j])] = local_values[j];
       }
     }
 
