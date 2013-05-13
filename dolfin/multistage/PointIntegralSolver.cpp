@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-05-07
+// Last changed: 2013-05-13
 
 #include <cmath>
 #include <boost/make_shared.hpp>
@@ -47,10 +47,8 @@ PointIntegralSolver::PointIntegralSolver(boost::shared_ptr<MultiStageScheme> sch
   _scheme(scheme), _vertex_map(), _ufcs(), _coefficient_index(), _retabulate_J(true), 
   _J(), _J_L(), _J_U()
 {
-  // Set default parameters from NewtonSolver
-  parameters.add(NewtonSolver::default_parameters());
-  parameters("newton_solver").add("reuse_jacobian", true);
-  parameters("newton_solver").add("iterations_to_retabulate_jacobian", 4);
+  // Set parameters
+  parameters = default_parameters();
 
   _check_forms();
   _init();
