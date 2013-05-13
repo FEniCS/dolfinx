@@ -131,7 +131,8 @@ Mesh::Mesh(const CSGGeometry& geometry, std::size_t resolution)
     MeshPartitioning::build_distributed_mesh(*this);
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry, std::size_t resolution)
+Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry,
+           std::size_t resolution)
   : Variable("mesh", "DOLFIN mesh"),
     Hierarchical<Mesh>(*this),
     _domains(*this),
@@ -192,10 +193,11 @@ const MeshData& Mesh::data() const
 //-----------------------------------------------------------------------------
 std::size_t Mesh::init(std::size_t dim) const
 {
-  // This function is obviously not const since it may potentially compute
-  // new connectivity. However, in a sense all connectivity of a mesh always
-  // exists, it just hasn't been computed yet. The const_cast is also needed
-  // to allow iterators over a const Mesh to create new connectivity.
+  // This function is obviously not const since it may potentially
+  // compute new connectivity. However, in a sense all connectivity of
+  // a mesh always exists, it just hasn't been computed yet. The
+  // const_cast is also needed to allow iterators over a const Mesh to
+  // create new connectivity.
 
   // Skip if mesh is empty
   if (num_cells() == 0)
@@ -233,10 +235,11 @@ std::size_t Mesh::init(std::size_t dim) const
 //-----------------------------------------------------------------------------
 void Mesh::init(std::size_t d0, std::size_t d1) const
 {
-  // This function is obviously not const since it may potentially compute
-  // new connectivity. However, in a sense all connectivity of a mesh always
-  // exists, it just hasn't been computed yet. The const_cast is also needed
-  // to allow iterators over a const Mesh to create new connectivity.
+  // This function is obviously not const since it may potentially
+  // compute new connectivity. However, in a sense all connectivity of
+  // a mesh always exists, it just hasn't been computed yet. The
+  // const_cast is also needed to allow iterators over a const Mesh to
+  // create new connectivity.
 
   // Skip if mesh is empty
   if (num_cells() == 0)
@@ -329,7 +332,9 @@ dolfin::Mesh Mesh::renumber_by_color() const
 {
   std::vector<std::size_t> coloring_type;
   const std::size_t D = topology().dim();
-  coloring_type.push_back(D); coloring_type.push_back(0); coloring_type.push_back(D);
+  coloring_type.push_back(D);
+  coloring_type.push_back(0);
+  coloring_type.push_back(D);
   return MeshRenumbering::renumber_by_color(*this, coloring_type);
 }
 //-----------------------------------------------------------------------------
@@ -385,12 +390,13 @@ const std::vector<std::size_t>& Mesh::color(std::string coloring_type) const
   return color(_coloring_type);
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::size_t>& Mesh::color(std::vector<std::size_t> coloring_type) const
+const std::vector<std::size_t>&
+Mesh::color(std::vector<std::size_t> coloring_type) const
 {
   // Find color data
   std::map<const std::vector<std::size_t>, std::pair<std::vector<std::size_t>,
-           std::vector<std::vector<std::size_t> > > >::const_iterator coloring_data;
-  coloring_data = this->topology().coloring.find(coloring_type);
+           std::vector<std::vector<std::size_t> > > >::const_iterator
+    coloring_data = this->topology().coloring.find(coloring_type);
 
   if (coloring_data != this->topology().coloring.end())
   {
@@ -405,7 +411,8 @@ const std::vector<std::size_t>& Mesh::color(std::vector<std::size_t> coloring_ty
   return MeshColoring::color(*_mesh, coloring_type);
 }
 //-----------------------------------------------------------------------------
-void Mesh::intersected_cells(const Point& point, std::set<std::size_t>& cells) const
+void Mesh::intersected_cells(const Point& point,
+                             std::set<std::size_t>& cells) const
 {
   // CGAL needs mesh with more than 1 cell
   if (num_cells() > 1)
@@ -429,7 +436,8 @@ void Mesh::intersected_cells(const std::vector<Point>& points,
   {
     // Num cells == 1
     const Cell cell(*this, 0);
-    for (std::vector<Point>::const_iterator p = points.begin(); p != points.end(); ++p)
+    for (std::vector<Point>::const_iterator p = points.begin();
+         p != points.end(); ++p)
     {
       if (cell.intersects(*p))
         cells.insert(0);
@@ -596,7 +604,6 @@ std::size_t Mesh::hash() const
 std::string Mesh::str(bool verbose) const
 {
   std::stringstream s;
-
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
