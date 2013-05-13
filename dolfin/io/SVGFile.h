@@ -34,7 +34,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    SVGFile(const std::string filename);
+    explicit SVGFile(const std::string filename);
 
     /// Destructor
     ~SVGFile();

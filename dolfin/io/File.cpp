@@ -31,13 +31,15 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/log/dolfin_log.h>
 #include "BinaryFile.h"
-#include "RAWFile.h"
-#include "VTKFile.h"
 #include "ExodusFile.h"
-#include "XMLFile.h"
-#include "XYZFile.h"
-#include "XDMFFile.h"
+#include "RAWFile.h"
 #include "SVGFile.h"
+#include "VTKFile.h"
+#include "X3DFile.h"
+#include "XMLFile.h"
+#include "XDMFFile.h"
+#include "XYZFile.h"
+
 #include "File.h"
 
 using namespace dolfin;
@@ -70,6 +72,8 @@ File::File(const std::string filename, std::string encoding)
                    ext.c_str(), filename.c_str());
     }
   }
+  else if (extension == ".x3d")
+    file.reset(new X3DFile(filename));
   else if (extension == ".xml")
     file.reset(new XMLFile(filename));
   else if (extension == ".pvd")
@@ -105,6 +109,9 @@ File::File(const std::string filename, Type type, std::string encoding)
 {
   switch (type)
   {
+  case x3d:
+    file.reset(new X3DFile(filename));
+    break;
   case xdmf:
 #ifdef HAS_HDF5
     file.reset(new XDMFFile(filename));
@@ -155,7 +162,8 @@ void File::operator<<(const std::pair<const MeshFunction<int>*, double> f)
   *file << f;
 }
 //-----------------------------------------------------------------------------
-void File::operator<<(const std::pair<const MeshFunction<std::size_t>*, double> f)
+void
+File::operator<<(const std::pair<const MeshFunction<std::size_t>*, double> f)
 {
   file->write();
   *file << f;
@@ -195,8 +203,8 @@ bool File::exists(std::string filename)
 void File::create_parent_path(std::string filename)
 {
   const boost::filesystem::path path(filename);
-
-  if (path.has_parent_path() && !boost::filesystem::is_directory(path.parent_path()))
+  if (path.has_parent_path()
+      && !boost::filesystem::is_directory(path.parent_path()))
   {
     boost::filesystem::create_directories(path.parent_path());
     if (!boost::filesystem::is_directory(path.parent_path()))
