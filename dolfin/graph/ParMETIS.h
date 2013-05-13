@@ -32,6 +32,8 @@ namespace dolfin
   // Forward declarations
   class LocalMeshData;
 
+  class ParMETISDualGraph;
+
   /// This class proivdes an interface to ParMETIS
 
   class ParMETIS
@@ -45,6 +47,20 @@ namespace dolfin
     static void compute_partition(std::vector<std::size_t>& cell_partition,
                                   const LocalMeshData& mesh_data,
                                   bool repartition=false);
+
+  private:
+
+    // Standard ParMETIS partition
+    static void partition(std::vector<std::size_t>& cell_partition,
+                          ParMETISDualGraph& g);
+
+    // ParMETIS adaptive repartition
+    static void adaptive_repartition(std::vector<std::size_t>& cell_partition,
+                                     ParMETISDualGraph& g);
+
+    // ParMETIS refine repartition
+    static void refine(std::vector<std::size_t>& cell_partition,
+                       ParMETISDualGraph& g);
 
   };
 
