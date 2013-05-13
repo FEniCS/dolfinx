@@ -40,13 +40,15 @@ namespace dolfin
   {
   public:
 
-    /// Compute cell partition using ParMETIS. For meshes that have
-    /// already been partitioned or are already well partitioned,
-    /// setting repartition=true attempts to balance the
-    /// quality
+    /// Compute cell partition using ParMETIS. The mode argument
+    /// determines which ParMETIS function is called. It can be one of
+    /// "partition", "adaptive_repartition" or "refine". For meshes
+    /// that have already been partitioned or are already well
+    /// partitioned, it can be advantageous to use
+    /// "adaptive_repartition" or "refine".
     static void compute_partition(std::vector<std::size_t>& cell_partition,
                                   const LocalMeshData& mesh_data,
-                                  bool repartition=false);
+                                  std::string mode="partition");
 
   private:
 

@@ -411,9 +411,9 @@ class MeshOrientations(unittest.TestCase):
             for i in range(mesh.num_cells()):
                 self.assertEqual(mesh.cell_orientations()[i], reference[i])
 
-                mesh = BoundaryMesh(UnitSquareMesh(2, 2), "exterior")
-                mesh.init_cell_orientations(Expression(("x[0]", "x[1]", "x[2]")))
-                print mesh.cell_orientations()
+            mesh = BoundaryMesh(UnitSquareMesh(2, 2), "exterior")
+            mesh.init_cell_orientations(Expression(("x[0]", "x[1]", "x[2]")))
+            print mesh.cell_orientations()
 
 if __name__ == "__main__":
     unittest.main()

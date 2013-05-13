@@ -59,12 +59,26 @@ namespace dolfin
     int numflag;
     idx_t* xadj;
     idx_t* adjncy;
+
+    // Number of partitions (one for each process)
+    int nparts;
+
+    // Strange weight arrays needed by ParMETIS
+    int ncon;
+    std::vector<real_t> tpwgts;
+    std::vector<real_t> ubvec;
+
+    // Prepare remaining arguments for ParMETIS
+    int* elmwgt;
+    int wgtflag;
+    int edgecut;
+
   };
 }
 //-----------------------------------------------------------------------------
 void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
                                  const LocalMeshData& mesh_data,
-                                 bool repartition)
+                                 std::string mode)
 {
   // Build dual graph
   ParMETISDualGraph g(mesh_data);
@@ -72,7 +86,18 @@ void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
   dolfin_assert(g.eptr.size() - 1 == mesh_data.cell_vertices.size());
 
   // Partition graph
-  partition(cell_partition, g);
+  if (mode == "partition")
+    partition(cell_partition, g);
+  else if (mode == "adaptive_repartition")
+    adaptive_repartition(cell_partition, g);
+  else if (mode == "refine")
+   refine(cell_partition, g);
+  else
+  {
+    dolfin_error("ParMETIS.cpp",
+                 "compute mesh partitioning using ParMETIS",
+                 "partition model %s is unknown. Must be \"partition\", \"adactive_partition\" or \"refine\"", mode.c_str());
+  }
 }
 //-----------------------------------------------------------------------------
 void ParMETIS::partition(std::vector<std::size_t>& cell_partition,
@@ -80,51 +105,27 @@ void ParMETIS::partition(std::vector<std::size_t>& cell_partition,
 {
   Timer timer1("PARALLEL 1b: Compute graph partition (calling ParMETIS)");
 
-  // Get some MPI data
-  const std::size_t process_number = MPI::process_number();
-  const std::size_t num_processes = MPI::num_processes();
-
-  // Number of partitions (one for each process)
-  int nparts = num_processes;
-
-  // Strange weight arrays needed by ParMETIS
-  int ncon = 1;
-  std::vector<real_t> tpwgts(ncon*nparts, 1.0/static_cast<real_t>(nparts));
-  std::vector<real_t> ubvec(ncon, 1.05);
-
   // Options for ParMETIS
-  int options[4];
+  int options[3];
   options[0] = 1;
   options[1] = 0;
   options[2] = 15;
-  //options[3] = PARMETIS_PSR_UNCOUPLED;
-  // For repartition, PARMETIS_PSR_COUPLED seems to suppress all migration if already balanced.
-  // Try PARMETIS_PSR_UNCOUPLED for better edge cut.
-
-  // Partitioning array to be computed by ParMETIS. Prefill with
-  // process_number for REFINE approach
-  //const std::size_t num_local_cells = mesh_data.cell_vertices.size();
-  const std::size_t num_local_cells = g.eptr.size() - 1;
-  std::vector<int> part(num_local_cells, process_number);
-
-  // Prepare remaining arguments for ParMETIS
-  int* elmwgt = 0;
-  int wgtflag = 0;
-  int edgecut = 0;
 
   // Check that data arrays are not empty
-  dolfin_assert(!tpwgts.empty());
-  dolfin_assert(!ubvec.empty());
-  dolfin_assert(!part.empty());
+  dolfin_assert(!g.tpwgts.empty());
+  dolfin_assert(!g.ubvec.empty());
 
   // Construct communicator (copy of MPI_COMM_WORLD)
   MPICommunicator comm;
 
   // Call ParMETIS to partition graph
-  int err = ParMETIS_V3_PartKway(g.elmdist.data(), g.xadj, g.adjncy, elmwgt,
-                                 NULL, &wgtflag, &g.numflag, &ncon, &nparts,
-                                 tpwgts.data(), ubvec.data(), options,
-                                 &edgecut, part.data(), &(*comm));
+  const std::size_t num_local_cells = g.eptr.size() - 1;
+  std::vector<int> part(num_local_cells);
+  dolfin_assert(!part.empty());
+  int err = ParMETIS_V3_PartKway(g.elmdist.data(), g.xadj, g.adjncy, g.elmwgt,
+                                 NULL, &g.wgtflag, &g.numflag, &g.ncon, &g.nparts,
+                                 g.tpwgts.data(), g.ubvec.data(), options,
+                                 &g.edgecut, part.data(), &(*comm));
   dolfin_assert(err == METIS_OK);
 
   // Copy cell partition data
@@ -136,18 +137,6 @@ void ParMETIS::adaptive_repartition(std::vector<std::size_t>& cell_partition,
 {
   Timer timer1("PARALLEL 1b: Compute graph partition (calling ParMETIS Adaptive Repartition)");
 
-  // Get some MPI data
-  const std::size_t process_number = MPI::process_number();
-  const std::size_t num_processes = MPI::num_processes();
-
-  // Number of partitions (one for each process)
-  int nparts = num_processes;
-
-  // Strange weight arrays needed by ParMETIS
-  int ncon = 1;
-  std::vector<real_t> tpwgts(ncon*nparts, 1.0/static_cast<real_t>(nparts));
-  std::vector<real_t> ubvec(ncon, 1.05);
-
   // Options for ParMETIS
   int options[4];
   options[0] = 1;
@@ -157,19 +146,9 @@ void ParMETIS::adaptive_repartition(std::vector<std::size_t>& cell_partition,
   // For repartition, PARMETIS_PSR_COUPLED seems to suppress all migration if already balanced.
   // Try PARMETIS_PSR_UNCOUPLED for better edge cut.
 
-  // Partitioning array to be computed by ParMETIS. Prefill with
-  // process_number for REFINE approach
-  std::vector<int> part( g.eptr.size() - 1, process_number);
-
-  // Prepare remaining arguments for ParMETIS
-  int* elmwgt = 0;
-  int wgtflag = 0;
-  int edgecut = 0;
-
   // Check that data arrays are not empty
-  dolfin_assert(!tpwgts.empty());
-  dolfin_assert(!ubvec.empty());
-  dolfin_assert(!part.empty());
+  dolfin_assert(!g.tpwgts.empty());
+  dolfin_assert(!g.ubvec.empty());
 
   // Construct communicator (copy of MPI_COMM_WORLD)
   MPICommunicator comm;
@@ -177,12 +156,14 @@ void ParMETIS::adaptive_repartition(std::vector<std::size_t>& cell_partition,
   // Call ParMETIS to partition graph
   const double itr = parameters["ParMETIS_repartitioning_weight"];
   real_t _itr = itr;
+  std::vector<int> part(g.eptr.size() - 1);
   std::vector<idx_t> vsize(part.size(), 1);
+  dolfin_assert(!part.empty());
   int err = ParMETIS_V3_AdaptiveRepart(g.elmdist.data(), g.xadj, g.adjncy,
-                                       elmwgt, NULL, vsize.data(), &wgtflag,
-                                       &g.numflag, &ncon, &nparts,
-                                       tpwgts.data(), ubvec.data(), &_itr,
-                                       options, &edgecut, part.data(),
+                                       g.elmwgt, NULL, vsize.data(), &g.wgtflag,
+                                       &g.numflag, &g.ncon, &g.nparts,
+                                       g.tpwgts.data(), g.ubvec.data(), &_itr,
+                                       options, &g.edgecut, part.data(),
                                        &(*comm));
   dolfin_assert(err == METIS_OK);
 
@@ -197,15 +178,6 @@ void ParMETIS::refine(std::vector<std::size_t>& cell_partition,
 
   // Get some MPI data
   const std::size_t process_number = MPI::process_number();
-  const std::size_t num_processes = MPI::num_processes();
-
-  // Number of partitions (one for each process)
-  int nparts = num_processes;
-
-  // Strange weight arrays needed by ParMETIS
-  int ncon = 1;
-  std::vector<real_t> tpwgts(ncon*nparts, 1.0/static_cast<real_t>(nparts));
-  std::vector<real_t> ubvec(ncon, 1.05);
 
   // Options for ParMETIS
   int options[4];
@@ -216,30 +188,24 @@ void ParMETIS::refine(std::vector<std::size_t>& cell_partition,
   // For repartition, PARMETIS_PSR_COUPLED seems to suppress all migration if already balanced.
   // Try PARMETIS_PSR_UNCOUPLED for better edge cut.
 
-  // Partitioning array to be computed by ParMETIS. Prefill with
-  // process_number for REFINE approach
-  //const std::size_t num_local_cells = mesh_data.cell_vertices.size();
-  const std::size_t num_local_cells = g.eptr.size() - 1;
-  std::vector<int> part(num_local_cells, process_number);
-
-  // Prepare remaining arguments for ParMETIS
-  int* elmwgt = 0;
-  int wgtflag = 0;
-  int edgecut = 0;
-
   // Check that data arrays are not empty
-  dolfin_assert(!tpwgts.empty());
-  dolfin_assert(!ubvec.empty());
-  dolfin_assert(!part.empty());
+  dolfin_assert(!g.tpwgts.empty());
+  dolfin_assert(!g.ubvec.empty());
 
   // Construct communicator (copy of MPI_COMM_WORLD)
   MPICommunicator comm;
 
+  // Partitioning array to be computed by ParMETIS. Prefill with
+  // process_number.
+  const std::size_t num_local_cells = g.eptr.size() - 1;
+  std::vector<int> part(num_local_cells, process_number);
+  dolfin_assert(!part.empty());
+
   // Call ParMETIS to partition graph
-  int err = ParMETIS_V3_RefineKway(g.elmdist.data(), g.xadj, g.adjncy, elmwgt,
-                                   NULL, &wgtflag, &g.numflag, &ncon, &nparts,
-                                   tpwgts.data(), ubvec.data(), options,
-                                   &edgecut, part.data(), &(*comm));
+  int err = ParMETIS_V3_RefineKway(g.elmdist.data(), g.xadj, g.adjncy, g.elmwgt,
+                                   NULL, &g.wgtflag, &g.numflag, &g.ncon, &g.nparts,
+                                   g.tpwgts.data(), g.ubvec.data(), options,
+                                   &g.edgecut, part.data(), &(*comm));
   dolfin_assert(err == METIS_OK);
 
   // Copy cell partition data
@@ -304,6 +270,20 @@ ParMETISDualGraph::ParMETISDualGraph(const LocalMeshData& mesh_data)
                                   &xadj, &adjncy,
                                   &(*comm));
   dolfin_assert(err == METIS_OK);
+
+
+  // Number of partitions (one for each process)
+  nparts = num_processes;
+
+  // Strange weight arrays needed by ParMETIS
+  ncon = 1;
+  tpwgts.assign(ncon*nparts, 1.0/static_cast<real_t>(nparts));
+  ubvec.assign(ncon, 1.05);
+
+  // Prepare remaining arguments for ParMETIS
+  elmwgt = NULL;
+  wgtflag = 0;
+  edgecut = 0;
 }
 //-----------------------------------------------------------------------------
 ParMETISDualGraph::~ParMETISDualGraph()
