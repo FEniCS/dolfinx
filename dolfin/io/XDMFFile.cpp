@@ -18,8 +18,8 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-//
 // Last changed: 2013-05-14
+
 
 #ifdef HAS_HDF5
 
@@ -82,7 +82,7 @@ void XDMFFile::operator<< (const Function& u)
 void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 {
 
-  if(hdf5_filemode != "w")
+  if (hdf5_filemode != "w")
   {
     // Create HDF5 file (truncate)
     hdf5_file.reset(new HDF5File(hdf5_filename, "w"));
@@ -218,7 +218,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
       // Pad with 0.0 to 2D tensors to make them 3D
       for (CellIterator cell(mesh); !cell.end(); ++cell)
       {
-        for(std::size_t i = 0; i < 2; i++)
+        for (std::size_t i = 0; i < 2; i++)
         {
           _data_values[count++] = data_values[*cell_offset + 2*i];
           _data_values[count++] = data_values[*cell_offset + 2*i + 1];
@@ -260,7 +260,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
   global_size[0] = num_total_entities;
   global_size[1] = padded_value_size;
 
-  if(vertex_data)
+  if (vertex_data)
   {
     hdf5_file->reorder_values_by_global_indices(mesh, data_values, global_size);
     num_total_vertices = global_size[0];
@@ -291,7 +291,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 //----------------------------------------------------------------------------
 void XDMFFile::operator>> (Mesh& mesh)
 {
-  if(hdf5_filemode != "r")
+  if (hdf5_filemode != "r")
   {
     hdf5_file.reset(new HDF5File(hdf5_filename, "r"));
     hdf5_filemode = "r";
@@ -339,8 +339,8 @@ void XDMFFile::operator>> (Mesh& mesh)
   dolfin_assert(topo_bits[4] == "topology");
 
   // Geometry - check format and get dataset name
-  pugi::xml_node xdmf_geometry
-    = xml_doc.child("Xdmf").child("Domain").child("Grid").child("Geometry").child("DataItem");
+  pugi::xml_node xdmf_geometry =
+    xml_doc.child("Xdmf").child("Domain").child("Grid").child("Geometry").child("DataItem");
   dolfin_assert(xdmf_geometry);
 
   const std::string geom_fmt(xdmf_geometry.attribute("Format").value());
@@ -366,7 +366,7 @@ void XDMFFile::operator<< (const Mesh& mesh)
 {
   // Write Mesh to HDF5 file
 
-  if(hdf5_filemode != "w")
+  if (hdf5_filemode != "w")
   {
     // Create HDF5 file (truncate)
     hdf5_file.reset(new HDF5File(hdf5_filename, "w"));
@@ -451,7 +451,7 @@ void XDMFFile::operator<< (const MeshFunction<double>& meshfunction)
 template<typename T>
 void XDMFFile::write_mesh_function(const MeshFunction<T>& meshfunction)
 {
-  if(hdf5_filemode != "w")
+  if (hdf5_filemode != "w")
   {
     // Create HDF5 file (truncate)
     hdf5_file.reset(new HDF5File(hdf5_filename, "w"));
@@ -521,7 +521,7 @@ void XDMFFile::operator>> (MeshFunction<double>& meshfunction)
 template<typename T>
 void XDMFFile::read_mesh_function(MeshFunction<T>& meshfunction)
 {
-  if(hdf5_filemode != "r")
+  if (hdf5_filemode != "r")
   {
     hdf5_file.reset(new HDF5File(hdf5_filename, "r"));
     hdf5_filemode = "r";
@@ -663,7 +663,7 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
     + " " + boost::lexical_cast<std::string>(gdim);
   xdmf_geom_data.append_attribute("Dimensions") = geom_dim.c_str();
 
-  if(gdim == 1)
+  if (gdim == 1)
   {
     // FIXME: improve this workaround
 
@@ -678,7 +678,7 @@ void XDMFFile::xml_mesh_geometry(pugi::xml_node& xdmf_geometry,
 
     std::string dummy_zeros;
     dummy_zeros.reserve(2*num_total_vertices);
-    for(std::size_t i = 0; i < num_total_vertices; ++i)
+    for (std::size_t i = 0; i < num_total_vertices; ++i)
       dummy_zeros += "0 ";
 
     pugi::xml_node xdmf_geom_1 = xdmf_geometry.append_child("DataItem");

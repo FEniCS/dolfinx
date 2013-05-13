@@ -178,9 +178,9 @@ namespace dolfin
   template <>
   inline hid_t HDF5Interface::hdf5_type<std::size_t>()
   {
-    if(sizeof(std::size_t) == sizeof(unsigned long))
+    if (sizeof(std::size_t) == sizeof(unsigned long))
       return H5T_NATIVE_ULONG;
-    else if(sizeof(std::size_t) == sizeof(unsigned int))
+    else if (sizeof(std::size_t) == sizeof(unsigned int))
       return H5T_NATIVE_UINT;
     else
       dolfin_error("HDF5Interface.h",
@@ -419,7 +419,7 @@ namespace dolfin
     // Check if attribute already exists and delete if so
     htri_t has_attr = H5Aexists(dset_id, attribute_name.c_str());
     dolfin_assert(has_attr != HDF5_FAIL);
-    if(has_attr > 0)
+    if (has_attr > 0)
     {
       herr_t status = H5Adelete(dset_id, attribute_name.c_str());
       dolfin_assert(status != HDF5_FAIL);
@@ -572,7 +572,7 @@ namespace dolfin
     // Copy string type from HDF5 types and set length accordingly
     const hid_t memtype = H5Tcopy(H5T_C_S1);
     const int string_length = H5Tget_size(attr_type) + 1;
-    herr_t status = H5Tset_size(memtype,string_length);
+    herr_t status = H5Tset_size(memtype, string_length);
     dolfin_assert(status != HDF5_FAIL);
 
     // FIXME: messy

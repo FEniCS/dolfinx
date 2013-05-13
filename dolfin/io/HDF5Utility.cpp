@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2013-05-08
-// Last changed: 2013-05-09
+// Last changed: 2013-05-13
 
 #ifdef HAS_HDF5
 
@@ -51,7 +51,7 @@ void HDF5Utility::compute_global_mapping(std::vector<std::pair<std::size_t, std:
 
   std::vector<std::vector<std::size_t> > send_owned_global(num_processes);
   std::vector<std::vector<std::size_t> > owned_global(num_processes);
-  for(CellIterator mesh_cell(mesh); !mesh_cell.end(); ++mesh_cell)
+  for (CellIterator mesh_cell(mesh); !mesh_cell.end(); ++mesh_cell)
   {
     const std::size_t global_i = mesh_cell->global_index();
     const std::size_t local_i = mesh_cell->index();
@@ -63,9 +63,9 @@ void HDF5Utility::compute_global_mapping(std::vector<std::pair<std::size_t, std:
 
   std::size_t count = 0;
   // Construct mapping from global_index(partial range held) to owning process and remote local_index
-  for(std::vector<std::vector<std::size_t> >::iterator owner = owned_global.begin();
+  for (std::vector<std::vector<std::size_t> >::iterator owner = owned_global.begin();
       owner != owned_global.end(); ++owner)
-    for(std::vector<std::size_t>::iterator r = owner->begin(); r != owner->end(); r += 2)
+    for (std::vector<std::size_t>::iterator r = owner->begin(); r != owner->end(); r += 2)
     {
       const std::size_t proc = owner - owned_global.begin();
       const std::size_t idx = *r - range.first;

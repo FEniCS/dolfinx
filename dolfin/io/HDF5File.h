@@ -51,7 +51,7 @@ namespace dolfin
     /// Constructor. file_mode should "a" (append), "w" (write) ot "r"
     /// (read).
     HDF5File(const std::string filename, const std::string file_mode,
-             bool use_mpiio=true);
+             bool use_mpiio = true);
 
     /// Destructor
     ~HDF5File();
@@ -61,7 +61,7 @@ namespace dolfin
 
     /// Read vector from file
     void read(GenericVector& x, const std::string dataset_name,
-              const bool use_partition_from_file=true);
+              const bool use_partition_from_file = true);
 
 
     /// Write Mesh to file in a format suitable for re-reading
