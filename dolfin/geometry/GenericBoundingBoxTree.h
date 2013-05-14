@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-23
-// Last changed: 2013-05-02
+// Last changed: 2013-05-15
 
 #ifndef __GENERIC_BOUNDING_BOX_TREE_H
 #define __GENERIC_BOUNDING_BOX_TREE_H
@@ -46,8 +46,21 @@ namespace dolfin
     /// Build bounding box tree for mesh entites of given dimension
     void build(const Mesh& mesh, unsigned int dimension);
 
-    /// Find entities intersecting the given _Point_
-    std::vector<unsigned int> find(const Point& point) const;
+    /// Compute all collisions between bounding boxes and given _Point_
+    std::vector<unsigned int>
+    compute_collisions(const Point& point) const;
+
+    /// Compute all collisions between entities and given _Point_
+    std::vector<unsigned int>
+    compute_entity_collisions(const Point& point) const;
+
+    /// Compute first collision between bounding boxes and given _Point_
+    unsigned int
+    compute_first_collision(const Point& point) const;
+
+    /// Compute first collision between entities and given _Point_
+    unsigned int
+    compute_first_entity_collision(const Point& point) const;
 
   protected:
 
@@ -72,10 +85,10 @@ namespace dolfin
                        const std::vector<unsigned int>::iterator& end,
                        unsigned int gdim);
 
-    /// Find entities intersecting the given coordinate (recursive)
-    void find(const double* x,
-              unsigned int node,
-              std::vector<unsigned int>& entities) const;
+    /// Compute collisions with given coordinate (recursive)
+    void compute_collisions(const double* x,
+                            unsigned int node,
+                            std::vector<unsigned int>& entities) const;
 
     // Compute bounding box of mesh entity
     void compute_bbox_of_entity(double* b,

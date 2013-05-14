@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-15
-# Last changed: 2013-05-10
+# Last changed: 2013-05-15
 
 import unittest
 
@@ -39,7 +39,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
         for dim in range(1, 2):
             tree = BoundingBoxTree(mesh, dim)
             tree.build()
-            entities = tree.find(p)
+            entities = tree.compute_collisions(p)
             self.assertEqual(sorted(entities), reference[dim])
 
     def test_unit_square(self):
@@ -54,7 +54,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
         for dim in range(1, 3):
             tree = BoundingBoxTree(mesh, dim)
             tree.build()
-            entities = tree.find(p)
+            entities = tree.compute_collisions(p)
             self.assertEqual(sorted(entities), reference[dim])
 
     def test_unit_cube(self):
@@ -70,7 +70,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
         for dim in range(1, 4):
             tree = BoundingBoxTree(mesh, dim)
             tree.build()
-            entities = tree.find(p)
+            entities = tree.compute_collisions(p)
             self.assertEqual(sorted(entities), reference[dim])
 
 if __name__ == "__main__":

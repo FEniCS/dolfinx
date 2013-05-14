@@ -16,13 +16,14 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-05-10
+// Last changed: 2013-05-15
 
 #ifndef __BOUNDING_BOX_TREE_H
 #define __BOUNDING_BOX_TREE_H
 
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <limits>
 
 namespace dolfin
 {
@@ -82,25 +83,64 @@ namespace dolfin
     /// Build bounding box tree
     void build();
 
-    /// Find entities intersecting the given _Point_.
-    ///
-    /// Note that the bounding box tree only computes a list of
-    /// possible candidates since the bounding box of an object may
-    /// intersect even if the object itself does not.
+    /// Compute all collisions between bounding boxes and given _Point_.
     ///
     /// *Returns*
     ///     std::vector<unsigned int>
-    ///         A list of local indices for entities that might possibly
-    ///         intersect with the given object (if any).
+    ///         A list of local indices for entities contained in
+    ///         (leaf) bounding boxes that intersect the given point.
     ///
     /// *Arguments*
     ///     point (_Point_)
     ///         The point with which to compute the intersection.
-    std::vector<unsigned int> find(const Point& point) const;
+    std::vector<unsigned int>
+    compute_collisions(const Point& point) const;
+
+    /// Compute all collisions between entities and given _Point_.
+    ///
+    /// *Returns*
+    ///     std::vector<unsigned int>
+    ///         A list of local indices for entities that intersect the
+    ///         given point.
+    ///
+    /// *Arguments*
+    ///     point (_Point_)
+    ///         The point with which to compute the intersection.
+    std::vector<unsigned int>
+    compute_entity_collisions(const Point& point) const;
+
+    /// Compute first collision between bounding boxes and given _Point_.
+    ///
+    /// *Returns*
+    ///     unsigned int
+    ///         The local index for the first found entity contained in
+    ///         a (leaf) bounding box that intersects the given point.
+    ///         If not found, std::numeric_limits<unsigned int>::max()
+    ///         is returned.
+    ///
+    /// *Arguments*
+    ///     point (_Point_)
+    ///         The point with which to compute the intersection.
+    unsigned int
+    compute_first_collision(const Point& point) const;
+
+    /// Compute first collision between entities and given _Point_.
+    ///
+    /// *Returns*
+    ///     unsigned int
+    ///         The local index for the first found entity that
+    ///         intersects the given point. If not found,
+    ///         std::numeric_limits<unsigned int>::max() is returned.
+    ///
+    /// *Arguments*
+    ///     point (_Point_)
+    ///         The point with which to compute the intersection.
+    unsigned int
+    compute_first_entity_collision(const Point& point) const;
 
     // FIXME:
     //
-    // [ ] Store mesh as shared pointer
+    // [x] Store mesh as shared pointer
     // [ ] Access primitives directly from here, needed for closest point
     // [ ] Rename and change functions:
     // [ ] Check use of unsigned int vs size_t

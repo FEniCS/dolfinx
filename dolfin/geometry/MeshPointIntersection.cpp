@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-18
-// Last changed: 2013-05-10
+// Last changed: 2013-05-15
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/Cell.h>
@@ -64,7 +64,7 @@ void MeshPointIntersection::compute_intersection(const Point& point)
   dolfin_assert(_intersected_cells.size() == 0);
 
   // Compute list of candidates for intersection
-  std::vector<unsigned int> cell_candidates = _tree.find(point);
+  std::vector<unsigned int> cell_candidates = _tree.compute_collisions(point);
 
   // FIXME: This should be moved to the BoundingBoxTree class
 

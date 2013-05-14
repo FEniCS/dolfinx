@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-05-02
+// Last changed: 2013-05-15
 
 // Define a maximum dimension used for a local array in the recursive
 // build function. Speeds things up compared to allocating it in each
@@ -114,18 +114,20 @@ GenericBoundingBoxTree::build(std::vector<double>& leaf_bboxes,
   return add_bbox(bbox, b, gdim);
 }
 //-----------------------------------------------------------------------------
-std::vector<unsigned int> GenericBoundingBoxTree::find(const Point& point) const
+std::vector<unsigned int>
+GenericBoundingBoxTree::compute_collisions(const Point& point) const
 {
   // Call recursive find function
   std::vector<unsigned int> entities;
-  find(point.coordinates(), bboxes.size() - 1, entities);
+  compute_collisions(point.coordinates(), bboxes.size() - 1, entities);
 
   return entities;
 }
 //-----------------------------------------------------------------------------
-void GenericBoundingBoxTree::find(const double* x,
-                                  unsigned int node,
-                                  std::vector<unsigned int>& entities) const
+void
+GenericBoundingBoxTree::compute_collisions(const double* x,
+                                           unsigned int node,
+                                           std::vector<unsigned int>& entities) const
 {
   // Three cases: either the point is not contained (so skip branch),
   // or it's contained in a leaf (so add it) or it's contained in the
@@ -139,9 +141,31 @@ void GenericBoundingBoxTree::find(const double* x,
     entities.push_back(bbox.child_1); // child_1 denotes entity for leaves
   else
   {
-    find(x, bbox.child_0, entities);
-    find(x, bbox.child_1, entities);
+    compute_collisions(x, bbox.child_0, entities);
+    compute_collisions(x, bbox.child_1, entities);
   }
+}
+//-----------------------------------------------------------------------------
+std::vector<unsigned int>
+GenericBoundingBoxTree::compute_entity_collisions(const Point& point) const
+{
+  dolfin_not_implemented();
+  std::vector<unsigned int> entities;
+  return entities;
+}
+//-----------------------------------------------------------------------------
+unsigned int
+GenericBoundingBoxTree::compute_first_collision(const Point& point) const
+{
+  dolfin_not_implemented();
+  return 0;
+}
+//-----------------------------------------------------------------------------
+unsigned int
+GenericBoundingBoxTree::compute_first_entity_collision(const Point& point) const
+{
+  dolfin_not_implemented();
+  return 0;
 }
 //-----------------------------------------------------------------------------
 void GenericBoundingBoxTree::compute_bbox_of_entity(double* b,
