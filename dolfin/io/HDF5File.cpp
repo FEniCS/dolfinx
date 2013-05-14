@@ -247,7 +247,7 @@ void HDF5File::read(MeshFunction<double>& meshfunction, const std::string name)
 //-----------------------------------------------------------------------------
 void HDF5File::write(const MeshFunction<bool>& meshfunction, const std::string name)
 {
-  const Mesh& mesh = meshfunction.mesh();
+  const Mesh& mesh = *meshfunction.mesh();
   const std::size_t cell_dim = meshfunction.dim();
 
   // HDF5 does not support a boolean type,
@@ -261,7 +261,7 @@ void HDF5File::write(const MeshFunction<bool>& meshfunction, const std::string n
 //-----------------------------------------------------------------------------
 void HDF5File::read(MeshFunction<bool>& meshfunction, const std::string name)
 {
-  const Mesh& mesh = meshfunction.mesh();
+  const Mesh& mesh = *meshfunction.mesh();
   const std::size_t cell_dim = meshfunction.dim();
 
   // HDF5 does not support bool, so use int instead

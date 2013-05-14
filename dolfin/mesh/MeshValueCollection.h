@@ -28,6 +28,7 @@
 #include <utility>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
 #include "Cell.h"
@@ -222,7 +223,7 @@ namespace dolfin
     std::size_t _dim;
 
     // Associated mesh
-    const Mesh* _mesh;
+    boost::shared_ptr<const Mesh> _mesh;
 
   };
 
@@ -231,21 +232,22 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template <typename T>
   MeshValueCollection<T>::MeshValueCollection()
-    : Variable("m", "unnamed MeshValueCollection"), _dim(0), _mesh(0)
+    : Variable("m", "unnamed MeshValueCollection"), _dim(0)
   {
     // Do nothing
   }
   //---------------------------------------------------------------------------
   template <typename T>
   MeshValueCollection<T>::MeshValueCollection(std::size_t dim)
-    : Variable("m", "unnamed MeshValueCollection"), _dim(dim), _mesh(0)
+    : Variable("m", "unnamed MeshValueCollection"), _dim(dim)
   {
     // Do nothing
   }
   //---------------------------------------------------------------------------
   template <typename T>
   MeshValueCollection<T>::MeshValueCollection(const MeshFunction<T>& mesh_function)
-    : Variable("m", "unnamed MeshValueCollection"), _dim(mesh_function.dim()), _mesh(&mesh_function.mesh())
+    : Variable("m", "unnamed MeshValueCollection"), _dim(mesh_function.dim()), 
+    _mesh(mesh_function.mesh())
   {
     dolfin_assert(mesh_function.mesh() == _mesh);
     const std::size_t D = _mesh->topology().dim();
@@ -293,13 +295,14 @@ namespace dolfin
   template <typename T>
   MeshValueCollection<T>::MeshValueCollection(const Mesh& mesh,
     const std::string filename, std::size_t dim)
-    : Variable("m", "unnamed MeshValueCollection"), _dim(dim), _mesh(&mesh)
+    : Variable("m", "unnamed MeshValueCollection"), _dim(dim), _mesh(reference_to_no_delete_pointer(mesh))
   {
     File file(filename);
     file >> *this;
     
-    // FIXME: this will probably break XML read
-    // This code belongs in XML reader...
+    // FIXME: this code is specific for XML, and does not work for HDF5
+    // Can it be moved into XMLMeshValueCollection.h?
+
     // if (MPI::num_processes() == 1)
     // {
     //   File file(filename);
@@ -328,9 +331,8 @@ namespace dolfin
   MeshValueCollection<T>& MeshValueCollection<T>::operator=(const MeshFunction<T>& mesh_function)
   {
     _dim = mesh_function.dim();
-    _mesh = &mesh_function.mesh();
+    _mesh = mesh_function.mesh();
 
-    dolfin_assert(mesh_function.mesh() == _mesh);
     const std::size_t D = _mesh->topology().dim();
 
     // FIXME: Use iterators
@@ -438,12 +440,9 @@ namespace dolfin
                                          const T& value,
                                          const Mesh& mesh)
   {
-    // Check mesh is the same as already associated
-    // If not, associate now.
-    if(_mesh != 0)
-      dolfin_assert(_mesh == &mesh);
-    else
-      _mesh = &mesh;
+    // FIXME: Check mesh is the same as already associated
+    // If no mesh associated, associate now
+    dolfin_assert(_mesh);
     
     // Special case when d = D
     const std::size_t D = _mesh->topology().dim();
