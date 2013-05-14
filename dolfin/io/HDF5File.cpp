@@ -342,7 +342,7 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
   }
 
   // Divide up cells ~equally between processes
-  const std::pair<std::size_t,std::size_t> cell_range
+  const std::pair<std::size_t, std::size_t> cell_range
     = MPI::local_range(num_global_cells);
   const std::size_t num_read_cells = cell_range.second - cell_range.first;
 
@@ -613,7 +613,7 @@ void HDF5File::write_mesh_value_collection(const MeshValueCollection<T>& mesh_va
 {
   const std::map<std::pair<std::size_t, std::size_t>, T>& values = mesh_values.values();
 
-  const Mesh& mesh = mesh_values.mesh();
+  const Mesh& mesh = *mesh_values.mesh();
   const std::vector<std::size_t>& global_cell_index
     = mesh.topology().global_indices(mesh.topology().dim());
 
@@ -710,7 +710,7 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc, const
     HDF5Interface::read_dataset(hdf5_file_id, cells_name, range, cells_data);
 
     // Get global mapping to restore values
-    const Mesh& mesh = mesh_vc.mesh();
+    const Mesh& mesh = *mesh_vc.mesh();
     const std::vector<std::size_t>& global_cell_index
       = mesh.topology().global_indices(mesh.topology().dim());
 
@@ -733,7 +733,7 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc, const
   }
   else
   {
-    const Mesh& mesh = mesh_vc.mesh();
+    const Mesh& mesh = *mesh_vc.mesh();
 
     // Divide range between processes
     const std::pair<std::size_t, std::size_t> data_range = MPI::local_range(values_dim[0]);
@@ -964,7 +964,7 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
   HDF5Interface::get_attribute(hdf5_file_id, topology_name, "partition",
                                partitions);
 
-  std::pair<std::size_t,std::size_t> cell_range;
+  std::pair<std::size_t, std::size_t> cell_range;
 
   // Check whether number of MPI processes matches partitioning, and
   // restore if possible

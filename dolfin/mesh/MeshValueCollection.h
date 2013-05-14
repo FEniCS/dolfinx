@@ -122,7 +122,7 @@ namespace dolfin
     /// *Returns*
     ///     _Mesh_
     ///         The mesh.
-    const Mesh& mesh() const;
+    boost::shared_ptr<const Mesh> mesh() const;
 
     /// Return true if the subset is empty
     ///
@@ -412,10 +412,10 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  const Mesh& MeshValueCollection<T>::mesh() const
+    boost::shared_ptr<const Mesh> MeshValueCollection<T>::mesh() const
   {
     dolfin_assert(_mesh);
-    return *_mesh;
+    return _mesh;
   }
   //---------------------------------------------------------------------------
   template <typename T>
