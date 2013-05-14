@@ -150,7 +150,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
       std::vector<double> _data_values(padded_value_size*num_local_entities,
                                        0.0);
-      for(std::size_t i = 0; i < num_local_entities; i++)
+      for (std::size_t i = 0; i < num_local_entities; i++)
       {
         for (std::size_t j = 0; j < value_size; j++)
         {
@@ -181,7 +181,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
       // Tabulate dofs
       const std::vector<dolfin::la_index>& dofs
         = dofmap.cell_dofs(cell->index());
-      for(std::size_t i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
+      for (std::size_t i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
         dof_set.push_back(dofs[i]);
 
       // Add local dimension to cell offset and increment
@@ -273,7 +273,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   // Flush file. Improves chances of recovering data if
   // interrupted. Also makes file somewhat readable between writes.
-  if(parameters["flush_output"])
+  if (parameters["flush_output"])
     hdf5_file->flush();
 
   // Write the XML meta description (see http://www.xdmf.org) on
@@ -311,7 +311,7 @@ void XDMFFile::operator>> (Mesh& mesh)
   // Topology - check format and get dataset name
   pugi::xml_node xdmf_topology
     = xml_doc.child("Xdmf").child("Domain").child("Grid").child("Topology").child("DataItem");
-  if(!xdmf_topology)
+  if (!xdmf_topology)
   {
     dolfin_error("XDMFFile.cpp",
                  "read mesh from XDMF/H5 files",
@@ -320,7 +320,7 @@ void XDMFFile::operator>> (Mesh& mesh)
 
   const std::string
     topological_data_format(xdmf_topology.attribute("Format").value());
-  if(topological_data_format != "HDF")
+  if (topological_data_format != "HDF")
   {
     dolfin_error("XDMFFile.cpp",
                  "read mesh from XDMF/H5 files",

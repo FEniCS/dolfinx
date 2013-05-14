@@ -440,9 +440,12 @@ namespace dolfin
                                          const T& value,
                                          const Mesh& mesh)
   {
-    // FIXME: Check mesh is the same as already associated
     // If no mesh associated, associate now
-    dolfin_assert(_mesh);
+    if(!_mesh)
+      _mesh = reference_to_no_delete_pointer(mesh);
+
+    // Check mesh is the same as already associated      
+    dolfin_assert(&mesh == _mesh.get());
     
     // Special case when d = D
     const std::size_t D = _mesh->topology().dim();
