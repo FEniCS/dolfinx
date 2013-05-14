@@ -43,8 +43,11 @@ using namespace dolfin;
 
 //----------------------------------------------------------------------------
 ExodusFile::ExodusFile(const std::string filename)
-  : GenericFile(filename, "Exodus")
+  : GenericFile(filename, "Exodus"),
+    _writer(vtkSmartPointer<vtkExodusIIWriter>::New())
 {
+  // Set filename.
+  _writer->SetFileName(filename.c_str());
 }
 //----------------------------------------------------------------------------
 ExodusFile::~ExodusFile()
@@ -354,14 +357,9 @@ vtkSmartPointer<vtkUnstructuredGrid> ExodusFile::create_vtk_mesh(const Mesh& mes
 //----------------------------------------------------------------------------
 void ExodusFile::perform_write(const vtkSmartPointer<vtkUnstructuredGrid> & vtk_mesh) const
 {
-  // Instantiate writer.
-  vtkSmartPointer<vtkExodusIIWriter> writer =
-    vtkSmartPointer<vtkExodusIIWriter>::New();
-
   // Write out to file.
-  writer->SetFileName(_filename.c_str());
-  writer->SetInput(vtk_mesh);
-  writer->Write();
+  _writer->SetInput(vtk_mesh);
+  _writer->Write();
 
   return;
 }
