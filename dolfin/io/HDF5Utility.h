@@ -31,33 +31,38 @@ namespace dolfin
 {
   class Mesh;
 
-  /// This class contains some algorithms which do not explicitly depend on the HDF5 file
-  /// format, mostly to do with reorganising Mesh entities with MPI
+  /// This class contains some algorithms which do not explicitly
+  /// depend on the HDF5 file format, mostly to do with reorganising
+  /// Mesh entities with MPI
 
   class HDF5Utility
   {
   public:
 
-    /// Get mapping of cells in the assigned global range of the current process
-    /// to remote process and remote local index.
-    static void compute_global_mapping(std::vector<std::pair<std::size_t, std::size_t> >& global_owner,
+    /// Get mapping of cells in the assigned global range of the
+    /// current process to remote process and remote local index.
+    static void compute_global_mapping(std::vector<std::pair<std::size_t,
+                                       std::size_t> >& global_owner,
                                        const Mesh& mesh);
 
-    /// Convert LocalMeshData structure to a Mesh, used when running in serial
-    static void build_local_mesh(Mesh &mesh, const LocalMeshData& mesh_data);
+    /// Convert LocalMeshData structure to a Mesh, used when running
+    /// in serial
+    static void build_local_mesh(Mesh& mesh, const LocalMeshData& mesh_data);
 
     /// Reorder vertices into global index order, so they can be saved
     /// correctly for HDF5 mesh output
-    static std::vector<double> reorder_vertices_by_global_indices(const Mesh& mesh);
+    static std::vector<double>
+      reorder_vertices_by_global_indices(const Mesh& mesh);
 
     /// Reorder data values of type double into global index order
     /// Shape of 2D array is given in global_size
-    static void reorder_values_by_global_indices(const Mesh& mesh, std::vector<double>& data,
-                                                 std::vector<std::size_t>& global_size);
+    static void reorder_values_by_global_indices(const Mesh& mesh,
+                               std::vector<double>& data,
+                               std::vector<std::size_t>& global_size);
 
   };
-}
 
+}
 
 #endif
 #endif
