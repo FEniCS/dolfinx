@@ -48,10 +48,9 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Vertex.h>
-
-#include "HDF5File.h"
 #include "HDF5Interface.h"
 #include "HDF5Utility.h"
+#include "HDF5File.h"
 
 using namespace dolfin;
 

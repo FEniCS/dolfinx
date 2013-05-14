@@ -29,12 +29,8 @@
 #include <utility>
 #include <vector>
 
-#include <boost/multi_array.hpp>
-
-#include "dolfin/common/Timer.h"
+#include "dolfin/common/MPI.h"
 #include "dolfin/common/Variable.h"
-#include "dolfin/mesh/Mesh.h"
-
 #include "HDF5Interface.h"
 
 namespace dolfin
@@ -43,6 +39,9 @@ namespace dolfin
   class Function;
   class GenericVector;
   class LocalMeshData;
+  class Mesh;
+  template<typename T> class MeshFunction;
+  template<typename T> class MeshValueCollection;
 
   class HDF5File : public Variable
   {
@@ -67,8 +66,8 @@ namespace dolfin
     /// Write Mesh to file in a format suitable for re-reading
     void write(const Mesh& mesh, const std::string name);
 
-    /// Write Mesh of given cell dimension to file
-    /// in a format suitable for re-reading
+    /// Write Mesh of given cell dimension to file in a format
+    /// suitable for re-reading
     void write(const Mesh& mesh, const std::size_t cell_dim,
                const std::string name);
 
