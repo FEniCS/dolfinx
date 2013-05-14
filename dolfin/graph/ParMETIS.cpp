@@ -296,7 +296,7 @@ ParMETISDualGraph::~ParMETISDualGraph()
 #else
 void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
                                  const LocalMeshData& data,
-                                 bool repartition)
+                                 std::string mode)
 {
   dolfin_error("ParMETIS.cpp",
                "compute mesh partitioning using ParMETIS",

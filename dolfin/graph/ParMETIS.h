@@ -52,6 +52,7 @@ namespace dolfin
 
   private:
 
+#ifdef HAS_PARMETIS
     // Standard ParMETIS partition
     static void partition(std::vector<std::size_t>& cell_partition,
                           ParMETISDualGraph& g);
@@ -63,6 +64,8 @@ namespace dolfin
     // ParMETIS refine repartition
     static void refine(std::vector<std::size_t>& cell_partition,
                        ParMETISDualGraph& g);
+#endif
+
 
   };
 
