@@ -291,32 +291,63 @@ vtkSmartPointer<vtkUnstructuredGrid> ExodusFile::create_vtk_mesh(const Mesh& mes
   vtkSmartPointer<vtkUnstructuredGrid> unstructuredGrid =
     vtkSmartPointer<vtkUnstructuredGrid>::New();
 
+  const int d = mesh.topology().dim();
+
   // Set the points
   const int numPoints = mesh.num_vertices();
-  vtkSmartPointer<vtkDoubleArray> pointData =
-    vtkSmartPointer<vtkDoubleArray>::New();
-  pointData->SetNumberOfComponents(3);
-  pointData->SetArray(const_cast<double*>(&mesh.coordinates()[0]), 3*numPoints, 1);
   vtkSmartPointer<vtkPoints> points =
     vtkSmartPointer<vtkPoints>::New();
-  points->SetData(pointData);
+  if (d==2)
+  {
+    // In VTK, all mesh topologies have nodes with coordinates X, Y, Z.
+    // Hence, copy over the X, Y coordinate from the Dolfin mesh and add 0.0
+    // for Z
+    points->SetNumberOfPoints(numPoints);
+    const std::vector<double> & coords = mesh.coordinates();
+    for (vtkIdType k=0; k<numPoints; k++)
+      points->SetPoint(k, coords[2*k], coords[2*k+1], 0.0);
+  }
+  else if (d==3)
+  {
+    // For 3D topologies, we can just move some pointers around to give VTK
+    // access to the node coordinates
+    vtkSmartPointer<vtkDoubleArray> pointData =
+      vtkSmartPointer<vtkDoubleArray>::New();
+    pointData->SetNumberOfComponents(3);
+    pointData->SetArray(const_cast<double*>(&mesh.coordinates()[0]), 3*numPoints, 1);
+    points->SetData(pointData);
+  }
+  else
+    dolfin_error("ExodusFile.cpp",
+                 "extract node coordinates",
+                 "Illegal topological dimension");
   unstructuredGrid->SetPoints(points);
 
   // Set cells. Those need to be copied over since the default Dolfin
   // node ID data type is std::size_t and the node ID of Exodus is
   // vtkIdType (typically long long int).
+  const int n = d+1;
   const int numCells = mesh.num_cells();
   const std::vector<unsigned int> cells = mesh.cells();
   vtkSmartPointer<vtkCellArray> cellData =
     vtkSmartPointer<vtkCellArray>::New();
-  vtkIdType tmp[4];
+  vtkIdType tmp[n];
   for (int k=0; k<numCells; k++)
   {
-    for (int i=0; i<4; i++)
-      tmp[i] = cells[4*k+i];
-    cellData->InsertNextCell(4, tmp);
+    for (int i=0; i<n; i++)
+      tmp[i] = cells[n*k+i];
+    cellData->InsertNextCell(n, tmp);
   }
-  unstructuredGrid->SetCells(VTK_TETRA, cellData);
+
+  if (n == 3)
+    unstructuredGrid->SetCells(VTK_TRIANGLE, cellData);
+  else if (n == 4)
+    unstructuredGrid->SetCells(VTK_TETRA, cellData);
+  else
+    dolfin_error("ExodusFile.cpp",
+                 "construct VTK mesh",
+                 "Illegal topological dimension");
+
 
   return unstructuredGrid;
 }
