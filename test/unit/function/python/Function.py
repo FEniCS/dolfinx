@@ -35,6 +35,7 @@ class Interface(unittest.TestCase):
         v = Function(W, name="v")
         self.assertEqual(u.name(), "f_%d" % u.count())
         self.assertEqual(v.name(), "v")
+        self.assertEqual(str(v), "v")
 
     def test_in_function_space(self):
         u = Function(W)
