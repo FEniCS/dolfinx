@@ -77,7 +77,8 @@ namespace dolfin
                            pugi::xml_node mesh_node);
 
     // Write mesh markers
-    static void write_domains(const MeshDomains& domains,
+    static void write_domains(const Mesh& mesh,
+                              const MeshDomains& domains,
                               pugi::xml_node mesh_node);
 
   };

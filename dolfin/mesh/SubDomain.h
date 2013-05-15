@@ -22,6 +22,7 @@
 #define __SUB_DOMAIN_H
 
 #include <cstddef>
+#include <map>
 #include <dolfin/common/constants.h>
 
 namespace dolfin
@@ -264,6 +265,13 @@ namespace dolfin
                        T sub_domain,
                        const Mesh& mesh,
                        bool check_midpoint) const;
+
+    template<typename T>
+      void apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
+                         std::size_t dim,
+                         T sub_domain,
+                         const Mesh& mesh,
+                         bool check_midpoint) const;
 
     // Friends
     friend class DirichletBC;
