@@ -23,6 +23,7 @@
 #ifndef __MESH_DOMAINS_H
 #define __MESH_DOMAINS_H
 
+#include <map>
 #include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
@@ -68,11 +69,11 @@ namespace dolfin
     bool is_empty() const;
 
     /// Get subdomain markers for given dimension (shared pointer version)
-    boost::shared_ptr<MeshValueCollection<std::size_t> > markers(std::size_t dim);
+    std::map<std::size_t, std::size_t>& markers(std::size_t dim);
 
-    /// Get subdomain markers for given dimension (const shared pointer version)
-    boost::shared_ptr<const MeshValueCollection<std::size_t> >
-      markers(std::size_t dim) const;
+    /// Get subdomain markers for given dimension (const shared
+    /// pointer version)
+    const std::map<std::size_t, std::size_t>& markers(std::size_t dim) const;
 
     /// Return names of markers of a given dimension
     std::vector<std::string> marker_names(std::size_t dim) const;
@@ -111,7 +112,9 @@ namespace dolfin
     Mesh& _mesh;
 
     // Subdomain markers for each geometric dim
-    std::vector<boost::shared_ptr<MeshValueCollection<std::size_t> > > _markers;
+    //std::vector<boost::shared_ptr<MeshValueCollection<std::size_t> > > _markers;
+    //std::vector<std::vector<std::pair<std::size_t, std::size_t> > > _markers;
+    std::vector<std::map<std::size_t, std::size_t> > _markers;
 
     // Named subdomain markers for each geometric dim
     std::vector<boost::unordered_map<std::string, boost::shared_ptr<MeshValueCollection<std::size_t> > > > _named_markers;

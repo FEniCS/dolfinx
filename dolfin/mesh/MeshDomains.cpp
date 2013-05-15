@@ -29,7 +29,8 @@
 
 using namespace dolfin;
 
-const std::size_t MeshDomains::default_unset_value = std::numeric_limits<std::size_t>::max();
+const std::size_t MeshDomains::default_unset_value
+    = std::numeric_limits<std::size_t>::max();
 
 //-----------------------------------------------------------------------------
 MeshDomains::MeshDomains(Mesh& mesh) : _mesh(mesh)
@@ -53,30 +54,25 @@ std::size_t MeshDomains::max_dim() const
 std::size_t MeshDomains::num_marked(std::size_t dim) const
 {
   dolfin_assert(dim < _markers.size());
-  dolfin_assert(_markers[dim]);
-  return _markers[dim]->size();
+  return _markers[dim].size();
 }
 //-----------------------------------------------------------------------------
 bool MeshDomains::is_empty() const
 {
   std::size_t size = 0;
   for (std::size_t i = 0; i < _markers.size(); i++)
-  {
-    dolfin_assert(_markers[i]);
-    size += _markers[i]->size();
-  }
+    size += _markers[i].size();
   return size == 0;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<MeshValueCollection<std::size_t> >
-  MeshDomains::markers(std::size_t dim)
+std::map<std::size_t, std::size_t>& MeshDomains::markers(std::size_t dim)
 {
   dolfin_assert(dim < _markers.size());
   return _markers[dim];
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const MeshValueCollection<std::size_t> >
-  MeshDomains::markers(std::size_t dim) const
+const std::map<std::size_t, std::size_t>&
+MeshDomains::markers(std::size_t dim) const
 {
   dolfin_assert(dim < _markers.size());
   return _markers[dim];
@@ -100,10 +96,11 @@ boost::shared_ptr<const MeshFunction<std::size_t> >
   dolfin_assert(D < _markers.size());
 
   // Create markers if mesh collection present
-  if (!_markers[D]->empty() and !_cell_domains)
+  if (!_markers[D].empty() and !_cell_domains)
   {
-    const MeshValueCollection<std::size_t> domain = *(_markers[D]);
-    _cell_domains = mesh_function(domain, unset_value);
+    error("Not yet updated");
+    //const MeshValueCollection<std::size_t> domain = *(_markers[D]);
+    //_cell_domains = mesh_function(domain, unset_value);
   }
 
   return _cell_domains;
@@ -117,10 +114,11 @@ boost::shared_ptr<const MeshFunction<std::size_t> >
   dolfin_assert((D - 1) < _markers.size());
 
   // Create markers if mesh collection present
-  if (!_markers[D - 1]->empty() and !_facet_domains)
+  if (!_markers[D - 1].empty() and !_facet_domains)
   {
-    const MeshValueCollection<std::size_t> domain = *(_markers[D - 1]);
-    _facet_domains = mesh_function(domain, unset_value);
+    error("Not yet updated");
+    //const MeshValueCollection<std::size_t> domain = *(_markers[D - 1]);
+    //_facet_domains = mesh_function(domain, unset_value);
   }
 
   return _facet_domains;
@@ -176,14 +174,18 @@ const MeshDomains& MeshDomains::operator= (const MeshDomains& domains)
 {
   // Clear all data
   clear();
-  
+
   // Copy MeshValueCollections
-  for (std::size_t dim_t=0; dim_t<domains.max_dim()+1; dim_t++)
+  _markers = domains._markers;
+  /*
+  for (std::size_t dim_t = 0; dim_t < domains.max_dim() + 1; dim_t++)
   {
-    boost::shared_ptr<MeshValueCollection<std::size_t> > marker(new MeshValueCollection<std::size_t>(*domains.markers(dim_t)));
+    boost::shared_ptr<MeshValueCollection<std::size_t> >
+      marker(new MeshValueCollection<std::size_t>(*domains.markers(dim_t)));
     _markers.push_back(marker);
   }
-  
+  */
+
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -193,12 +195,16 @@ void MeshDomains::init(std::size_t dim)
   clear();
 
   // Add markers for each topological dimension
+  _markers.resize(dim +1);
+
+  /*
   for (std::size_t d = 0; d <= dim; d++)
   {
     boost::shared_ptr<MeshValueCollection<std::size_t> >
         m(new MeshValueCollection<std::size_t>(d));
     _markers.push_back(m);
   }
+  */
 }
 //-----------------------------------------------------------------------------
 void MeshDomains::clear()

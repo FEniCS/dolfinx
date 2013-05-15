@@ -80,8 +80,9 @@ void SubDomain::mark(Mesh& mesh,
                      std::size_t sub_domain,
                      bool check_midpoint) const
 {
-  dolfin_assert(mesh.domains().markers(dim));
-  mark(*(mesh.domains().markers(dim)), sub_domain, mesh, check_midpoint);
+  //dolfin_assert(mesh.domains().markers(dim));
+  error("Not yet updates");
+  //mark(*(mesh.domains().markers(dim)), sub_domain, mesh, check_midpoint);
 }
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<std::size_t>& sub_domains,

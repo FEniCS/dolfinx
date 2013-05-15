@@ -67,7 +67,7 @@ void XMLMesh::read(Mesh& mesh, const pugi::xml_node xml_dolfin)
   read_data(mesh.data(), mesh_node);
 
   // Read mesh domains (if any)
-  read_domains(mesh.domains(), mesh_node);
+  read_domains(mesh.domains(), mesh, mesh_node);
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::write(const Mesh& mesh, pugi::xml_node xml_node)
@@ -233,7 +233,7 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::read_domains(MeshDomains& domains,
+void XMLMesh::read_domains(MeshDomains& domains, const Mesh& mesh,
                            const pugi::xml_node mesh_node)
 {
   // Check if we have any domains
@@ -269,8 +269,24 @@ void XMLMesh::read_domains(MeshDomains& domains,
     }
 
     // Read MeshValueCollection
-    dolfin_assert(domains.markers(dim));
-    XMLMeshValueCollection::read(*(domains.markers(dim)), type, *it);
+    //dolfin_assert(domains.markers(dim));
+    MeshValueCollection<std::size_t> mvc(dim);
+    XMLMeshValueCollection::read(mvc, type, *it);
+    //XMLMeshValueCollection::read(*(domains.markers(dim)), type, *it);
+
+    std::map<std::size_t, std::size_t>& markers
+      = domains.markers(dim);
+    const std::map<std::pair<std::size_t, std::size_t>, std::size_t>&
+      values = mvc.values();
+
+    std::map<std::pair<std::size_t, std::size_t>,
+             std::size_t>::const_iterator entry;
+    for (entry = values.begin(); entry != values.end(); ++entry)
+    {
+      const Cell cell(mesh, entry->first.first);
+      const std::size_t entity_index = cell.entities(dim)[entry->first.second];
+      markers[entity_index] = entry->second;
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -463,14 +479,15 @@ void XMLMesh::write_domains(const MeshDomains& domains,
     return;
 
   // Add mesh domains node
-  pugi::xml_node domains_node = mesh_node.append_child("domains");
+  //pugi::xml_node domains_node = mesh_node.append_child("domains");
 
   // Write mesh markers
   for (std::size_t d = 0; d <= domains.max_dim(); d++)
   {
-    dolfin_assert(domains.markers(d));
-    if (!domains.markers(d)->empty())
-      XMLMeshValueCollection::write(*(domains.markers(d)), "uint", domains_node);
+    //dolfin_assert(domains.markers(d));
+    error("Not supported");
+    //if (!domains.markers(d)->empty())
+    //  XMLMeshValueCollection::write(*(domains.markers(d)), "uint", domains_node);
   }
 }
 //-----------------------------------------------------------------------------

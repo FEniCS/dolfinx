@@ -150,13 +150,13 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          boost::shared_ptr<const GenericFunction> g,
-                         const std::vector<std::pair<std::size_t, std::size_t> >& markers,
+                         const std::vector<std::size_t>& markers,
                          std::string method)
   : Hierarchical<DirichletBC>(*this),
     _function_space(V),
     _g(g),
     _method(method),
-    facets(markers),
+    _facets(markers),
     _check_midpoint(true)
 {
   check();
@@ -183,7 +183,7 @@ const DirichletBC& DirichletBC::operator= (const DirichletBC& bc)
   _g = bc._g;
   _method = bc._method;
   _user_sub_domain = bc._user_sub_domain;
-  facets = bc.facets;
+  _facets = bc._facets;
 
   // Call assignment operator for base class
   Hierarchical<DirichletBC>::operator=(bc);
@@ -236,14 +236,21 @@ void DirichletBC::gather(Map& boundary_values) const
   // Create list of boundary values to send to each processor
 
   map_type proc_map;
-  for (Map::const_iterator bv = boundary_values.begin(); bv != boundary_values.end(); ++bv)
+  for (Map::const_iterator bv = boundary_values.begin();
+       bv != boundary_values.end(); ++bv)
   {
-    // If the boundary value is attached to a shared dof, add it to the list of
-    // boundary values for each of the processors that share it
+    // If the boundary value is attached to a shared dof, add it to
+    // the list of boundary values for each of the processors that
+    // share it
     shared_dof_iterator shared_dof = shared_dofs.find(bv->first);
     if (shared_dof != shared_dofs.end())
-      for (proc_iterator proc = shared_dof->second.begin(); proc != shared_dof->second.end(); ++proc)
+    {
+      for (proc_iterator proc = shared_dof->second.begin();
+           proc != shared_dof->second.end(); ++proc)
+      {
         proc_map[*proc].push_back(*bv);
+      }
+    }
   }
 
   // Distribute the lists between neighbours
@@ -313,8 +320,9 @@ void DirichletBC::zero_columns(GenericMatrix& A,
     bc_dof_val[bv->first] = bv->second;
   }
 
-  // Scan through all columns of all rows, setting to zero if is_bc_dof[column]
-  // At the same time, we collect corrections to the RHS
+  // Scan through all columns of all rows, setting to zero if
+  // is_bc_dof[column]. At the same time, we collect corrections to
+  // the RHS
 
   std::vector<std::size_t> cols;
   std::vector<double> vals;
@@ -323,8 +331,8 @@ void DirichletBC::zero_columns(GenericMatrix& A,
 
   for (std::size_t row = rows.first; row < rows.second; row++)
   {
-    // If diag_val is nonzero, the matrix is a diagonal block (nrows==ncols),
-    // and we can set the whole BC row
+    // If diag_val is nonzero, the matrix is a diagonal block
+    // (nrows==ncols), and we can set the whole BC row
     if (diag_val != 0.0 && is_bc_dof[row])
     {
       A.getrow(row, cols, vals);
@@ -369,9 +377,9 @@ void DirichletBC::zero_columns(GenericMatrix& A,
   b.apply("add");
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::pair<std::size_t, std::size_t> >& DirichletBC::markers() const
+const std::vector<std::size_t>& DirichletBC::markers() const
 {
-  return facets;
+  return _facets;
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const GenericFunction> DirichletBC::value() const
@@ -465,13 +473,15 @@ void DirichletBC::homogenize()
   {
     boost::shared_ptr<Constant> zero(new Constant(0.0));
     set_value(zero);
-  } else if (value_rank == 1)
+  }
+  else if (value_rank == 1)
   {
     const std::size_t value_dim = _g->value_dimension(0);
     std::vector<double> values(value_dim, 0.0);
     boost::shared_ptr<Constant> zero(new Constant(values));
     set_value(zero);
-  } else
+  }
+  else
   {
     std::vector<std::size_t> value_shape;
     for (std::size_t i = 0; i < value_rank; i++)
@@ -625,7 +635,7 @@ void DirichletBC::init_facets() const
 {
   Timer timer("DirichletBC init facets");
 
-  if (facets.size() > 0)
+  if (_facets.size() > 0)
     return;
 
   if (_user_sub_domain)
@@ -636,9 +646,10 @@ void DirichletBC::init_facets() const
     init_from_mesh(_user_sub_domain_marker);
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_domain) const
+void DirichletBC::init_from_sub_domain(boost::shared_ptr<const SubDomain>
+                                       sub_domain) const
 {
-  dolfin_assert(facets.size() == 0);
+  dolfin_assert(_facets.size() == 0);
 
   // FIXME: This can be made more efficient, we should be able to
   // FIXME: extract the facets without first creating a MeshFunction on
@@ -669,7 +680,7 @@ void DirichletBC::init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_do
 void DirichletBC::init_from_mesh_function(const MeshFunction<std::size_t>& sub_domains,
                                           std::size_t sub_domain) const
 {
-  dolfin_assert(facets.size() == 0);
+  dolfin_assert(_facets.size() == 0);
   dolfin_assert(_function_space->mesh());
 
   // Get mesh
@@ -689,7 +700,7 @@ void DirichletBC::init_from_mesh_function(const MeshFunction<std::size_t>& sub_d
     // Skip facets not on this boundary
     if (sub_domains[*facet] != sub_domain)
       continue;
-
+    /*
     // Get cell to which facet belongs. If mesh is restricted, make
     // sure we pick the right cell in case there are two.
     dolfin_assert(facet->num_entities(D) > 0);
@@ -716,15 +727,16 @@ void DirichletBC::init_from_mesh_function(const MeshFunction<std::size_t>& sub_d
 
     // Get local index of facet with respect to the cell
     const size_t facet_number = cell.index(*facet);
+    */
 
     // Copy data
-    facets.push_back(std::pair<std::size_t, std::size_t>(cell.index(), facet_number));
+    _facets.push_back(facet->index());
   }
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::init_from_mesh(std::size_t sub_domain) const
 {
-  dolfin_assert(facets.size() == 0);
+  dolfin_assert(_facets.size() == 0);
 
   // For this to work, the mesh *needs* to be ordered according to
   // the UFC ordering before it gets here. So reordering the mesh
@@ -737,14 +749,14 @@ void DirichletBC::init_from_mesh(std::size_t sub_domain) const
 
   // Assign domain numbers for each facet
   const std::size_t D = mesh.topology().dim();
-  dolfin_assert(mesh.domains().markers(D - 1));
-  const std::map<std::pair<std::size_t, std::size_t>, std::size_t>&
-    markers = mesh.domains().markers(D - 1)->values();
-  std::map<std::pair<std::size_t, std::size_t>, std::size_t>::const_iterator mark;
+  const std::map<std::size_t, std::size_t>& markers
+    = mesh.domains().markers(D - 1);
+
+  std::map<std::size_t, std::size_t>::const_iterator mark;
   for (mark = markers.begin(); mark != markers.end(); ++mark)
   {
     if (mark->second == sub_domain)
-      facets.push_back(mark->first);
+      _facets.push_back(mark->first);
   }
 }
 //-----------------------------------------------------------------------------
@@ -782,7 +794,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   init_facets();
 
   // Special case
-  if (facets.size() == 0)
+  if (_facets.empty())
   {
     if (MPI::num_processes() == 1)
       warning("Found no facets matching domain for boundary condition.");
@@ -798,18 +810,25 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   // Create UFC cell object
   UFCCell ufc_cell(mesh);
 
+  // Topological dimension
+  const std::size_t D = mesh.topology().dim();
+
   // Iterate over facets
   dolfin_assert(_function_space->element());
-  Progress p("Computing Dirichlet boundary values, topological search", facets.size());
-  for (std::size_t f = 0; f < facets.size(); ++f)
+  Progress p("Computing Dirichlet boundary values, topological search", _facets.size());
+  for (std::size_t f = 0; f < _facets.size(); ++f)
   {
-    // Get cell number and local facet number
-    const std::size_t cell_number  = facets[f].first;
-    const std::size_t facet_number = facets[f].second;
+    // Create facet
+    const Facet facet(mesh, _facets[f]);
 
-    // Create cell
-    Cell cell(mesh, cell_number);
-    ufc_cell.update(cell, facet_number);
+    // Create cell (get first attached cell)
+    const Cell cell(mesh, facet.entities(D)[0]);
+
+    // Get local index of facet with respect to the cell
+    const std::size_t local_facet = cell.index(facet);
+
+    // Update UFC cell
+    ufc_cell.update(cell, local_facet);
 
     // Restrict coefficient to cell
     _g->restrict(&data.w[0], *_function_space->element(), cell, ufc_cell);
@@ -818,7 +837,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     const std::vector<dolfin::la_index>& cell_dofs = dofmap.cell_dofs(cell.index());
 
     // Tabulate which dofs are on the facet
-    dofmap.tabulate_facet_dofs(data.facet_dofs, facet_number);
+    dofmap.tabulate_facet_dofs(data.facet_dofs, local_facet);
 
     // Pick values for facet
     for (std::size_t i = 0; i < dofmap.num_facet_dofs(); i++)
@@ -842,7 +861,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   init_facets();
 
   // Special case
-  if (facets.size() == 0)
+  if (_facets.empty())
   {
     if (MPI::num_processes() == 1)
       warning("Found no facets matching domain for boundary condition.");
@@ -864,17 +883,20 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
                                  ? std::pair<std::size_t, std::size_t>(0, 0)
                                  : dofmap.ownership_range());
 
-  // Iterate over facets
-  Progress p("Computing Dirichlet boundary values, geometric search", facets.size());
-  for (std::size_t f = 0; f < facets.size(); ++f)
-  {
-    // Get cell number and local facet number
-    const std::size_t cell_number = facets[f].first;
-    const std::size_t facet_number = facets[f].second;
+  const std::size_t D = mesh.topology().dim();
 
+  // Iterate over facets
+  Progress p("Computing Dirichlet boundary values, geometric search", _facets.size());
+  for (std::size_t f = 0; f < _facets.size(); ++f)
+  {
     // Create facet
-    Cell cell(mesh, cell_number);
-    Facet facet(mesh, cell.entities(mesh.topology().dim() - 1)[facet_number]);
+    const Facet facet(mesh, _facets[f]);
+
+    // Create cell (get first attached cell)
+    const Cell cell(mesh, facet.entities(D)[0]);
+
+    // Get local index of facet with respect to the cell
+    const std::size_t local_facet = cell.index(facet);
 
     // Create UFC cell object
     UFCCell ufc_cell(mesh);
@@ -885,13 +907,14 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
       // Loop the cells associated with the vertex
       for (CellIterator c(*vertex); !c.end(); ++c)
       {
-        ufc_cell.update(*c, facet_number);
+        ufc_cell.update(*c, local_facet);
 
         bool tabulated = false;
         bool interpolated = false;
 
         // Tabulate dofs on cell
-        const std::vector<dolfin::la_index>& cell_dofs = dofmap.cell_dofs(c->index());
+        const std::vector<dolfin::la_index>& cell_dofs
+          = dofmap.cell_dofs(c->index());
 
         // Loop over all dofs on cell
         for (std::size_t i = 0; i < cell_dofs.size(); ++i)
@@ -937,9 +960,11 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   dolfin_assert(_g);
 
   if (!_user_sub_domain)
+  {
     dolfin_error("DirichletBC.cpp",
                  "computing Dirichlet boundary values, pointwise search",
                  "A SubDomain is required for pointwise search");
+  }
 
   // Get mesh and dofmap
   dolfin_assert(_function_space->mesh());
@@ -1005,7 +1030,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   }
 }
 //-----------------------------------------------------------------------------
-bool DirichletBC::on_facet(double* coordinates, Facet& facet) const
+bool DirichletBC::on_facet(const double* coordinates, const Facet& facet) const
 {
   // Check if the coordinates are on the same line as the line segment
   if (facet.dim() == 1)
