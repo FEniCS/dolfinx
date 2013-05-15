@@ -29,6 +29,7 @@
 
 // forward declarations
 class vtkUnstructuredGrid;
+class vtkExodusIIWriter;
 
 namespace dolfin
 {
@@ -59,12 +60,8 @@ private:
 
     void perform_write(const vtkSmartPointer<vtkUnstructuredGrid> & vtk_mesh) const;
 
-    // File encoding
-    const std::string encoding;
-    std::string encode_string;
-
-    bool binary;
-    bool compress;
+    //
+    const vtkSmartPointer<vtkExodusIIWriter> _writer;
 
   };
 
