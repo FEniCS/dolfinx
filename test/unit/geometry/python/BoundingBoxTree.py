@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-15
-# Last changed: 2013-05-15
+# Last changed: 2013-05-17
 
 import unittest
 
@@ -37,10 +37,15 @@ class BoundingBoxTreeTest(unittest.TestCase):
         mesh = UnitIntervalMesh(16)
 
         for dim in range(1, 2):
+
             tree = BoundingBoxTree(mesh, dim)
             tree.build()
+
             entities = tree.compute_collisions(p)
+            first = tree.compute_first_collision(p)
+
             self.assertEqual(sorted(entities), reference[dim])
+            self.assertEqual(first, entities[0])
 
     def test_unit_square(self):
         "Test basic creation and point location for unit square"
@@ -52,10 +57,15 @@ class BoundingBoxTreeTest(unittest.TestCase):
         mesh = UnitSquareMesh(16, 16)
 
         for dim in range(1, 3):
+
             tree = BoundingBoxTree(mesh, dim)
             tree.build()
+
             entities = tree.compute_collisions(p)
+            first = tree.compute_first_collision(p)
+
             self.assertEqual(sorted(entities), reference[dim])
+            self.assertEqual(first, entities[0])
 
     def test_unit_cube(self):
         "Test basic creation and point location for unit cube"
@@ -68,10 +78,15 @@ class BoundingBoxTreeTest(unittest.TestCase):
         mesh = UnitCubeMesh(8, 8, 8)
 
         for dim in range(1, 4):
+
             tree = BoundingBoxTree(mesh, dim)
             tree.build()
+
             entities = tree.compute_collisions(p)
+            first = tree.compute_first_collision(p)
+
             self.assertEqual(sorted(entities), reference[dim])
+            self.assertEqual(first, entities[0])
 
 if __name__ == "__main__":
     print ""

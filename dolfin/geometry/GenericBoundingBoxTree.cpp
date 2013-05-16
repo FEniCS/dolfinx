@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-05-15
+// Last changed: 2013-05-17
 
 // Define a maximum dimension used for a local array in the recursive
 // build function. Speeds things up compared to allocating it in each
@@ -124,41 +124,20 @@ GenericBoundingBoxTree::compute_collisions(const Point& point) const
   return entities;
 }
 //-----------------------------------------------------------------------------
-void
-GenericBoundingBoxTree::compute_collisions(const double* x,
-                                           unsigned int node,
-                                           std::vector<unsigned int>& entities) const
-{
-  // Three cases: either the point is not contained (so skip branch),
-  // or it's contained in a leaf (so add it) or it's contained in the
-  // bounding box (so search the two children).
-
-  const BBox& bbox = bboxes[node];
-
-  if (!point_in_bbox(x, node))
-    return;
-  else if (is_leaf(bbox, node))
-    entities.push_back(bbox.child_1); // child_1 denotes entity for leaves
-  else
-  {
-    compute_collisions(x, bbox.child_0, entities);
-    compute_collisions(x, bbox.child_1, entities);
-  }
-}
-//-----------------------------------------------------------------------------
 std::vector<unsigned int>
 GenericBoundingBoxTree::compute_entity_collisions(const Point& point) const
 {
   dolfin_not_implemented();
   std::vector<unsigned int> entities;
+
   return entities;
 }
 //-----------------------------------------------------------------------------
 unsigned int
 GenericBoundingBoxTree::compute_first_collision(const Point& point) const
 {
-  dolfin_not_implemented();
-  return 0;
+  // Call recursive find function
+  return compute_first_collision(point.coordinates(), bboxes.size() - 1);
 }
 //-----------------------------------------------------------------------------
 unsigned int
@@ -166,6 +145,72 @@ GenericBoundingBoxTree::compute_first_entity_collision(const Point& point) const
 {
   dolfin_not_implemented();
   return 0;
+}
+//-----------------------------------------------------------------------------
+void
+GenericBoundingBoxTree::compute_collisions(const double* x,
+                                           unsigned int node,
+                                           std::vector<unsigned int>& entities) const
+{
+  // Get bounding box for current node
+  const BBox& bbox = bboxes[node];
+
+  // Recursively search bounding boxes
+  if (!point_in_bbox(x, node))
+  {
+    // Not in this bounding box so don't search further
+    return;
+  }
+  else if (is_leaf(bbox, node))
+  {
+    // Point found in leaf
+    entities.push_back(bbox.child_1); // child_1 denotes entity for leaves
+  }
+  else
+  {
+    // Check both children
+    compute_collisions(x, bbox.child_0, entities);
+    compute_collisions(x, bbox.child_1, entities);
+  }
+}
+
+//-----------------------------------------------------------------------------
+unsigned int
+GenericBoundingBoxTree::compute_first_collision(const double* x,
+                                                unsigned int node) const
+{
+  // Get max integer to signify not found
+  unsigned int not_found = std::numeric_limits<unsigned int>::max();
+
+  // Get bounding box for current node
+  const BBox& bbox = bboxes[node];
+
+  // Recursively search bounding boxes
+  if (!point_in_bbox(x, node))
+  {
+    // Not in this bounding box so don't search further
+    return not_found;
+  }
+  else if (is_leaf(bbox, node))
+  {
+    // Point found in leaf
+    return bbox.child_1; // child_1 denotes entity for leaves
+  }
+  else
+  {
+    // Check first child
+    unsigned int c0 = compute_first_collision(x, bbox.child_0);
+    if (c0 != not_found)
+      return c0;
+
+    // Check second child
+    unsigned int c1 = compute_first_collision(x, bbox.child_1);
+    if (c1 != not_found)
+      return c1;
+  }
+
+  // Point not found
+  return not_found;
 }
 //-----------------------------------------------------------------------------
 void GenericBoundingBoxTree::compute_bbox_of_entity(double* b,
