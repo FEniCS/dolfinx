@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-05-13
+// Last changed: 2013-05-16
 
 #include <cmath>
 #include <boost/make_shared.hpp>
@@ -43,8 +43,14 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 PointIntegralSolver::PointIntegralSolver(boost::shared_ptr<MultiStageScheme> scheme) : 
-  Variable("PointIntegralSolver", "unamed"), 
-  _scheme(scheme), _vertex_map(), _ufcs(), _coefficient_index(), _retabulate_J(true), 
+  Variable("PointIntegralSolver", "unnamed"), _scheme(scheme), 
+  _mesh(_scheme->stage_forms()[0][0]->mesh()),
+  _dofmap(*_scheme->stage_forms()[0][0]->function_space(0)->dofmap()), 
+  _system_size(_dofmap.num_entity_dofs(0)), _dof_offset(_mesh.type().num_entities(0)), 
+  _num_stages(_scheme->stage_forms().size()), _local_to_local_dofs(_system_size),
+  _vertex_map(), _local_to_global_dofs(_system_size), 
+  _local_stage_solutions(_scheme->stage_solutions().size()), _ufcs(), 
+  _coefficient_index(), _retabulate_J(true), 
   _J(), _J_L(), _J_U()
 {
   // Set parameters
@@ -56,8 +62,6 @@ PointIntegralSolver::PointIntegralSolver(boost::shared_ptr<MultiStageScheme> sch
 //-----------------------------------------------------------------------------
 void PointIntegralSolver::step(double dt)
 {
-  Timer t_step_stage("Step: set the stage");
-
   dolfin_assert(dt > 0.0);
 
   // Update time constant of scheme
@@ -66,318 +70,64 @@ void PointIntegralSolver::step(double dt)
   // Time at start of timestep
   const double t0 = *_scheme->t();
 
-  // Extract mesh
-  const Mesh& mesh = _scheme->stage_forms()[0][0]->mesh();
-
-  // Collect ref to dof map only need one as we require same trial and test 
-  // space for all forms
-  const GenericDofMap& dofmap = *_scheme->stage_forms()[0][0]->function_space(0)->dofmap();
-  
-  // Get size of system (num dofs per vertex)
-  const unsigned int N = dofmap.num_entity_dofs(0);
-  const unsigned int dof_offset = mesh.type().num_entities(0);
-  const unsigned int num_stages = _scheme->stage_forms().size();
-
   // Local solution vector at start of time step
   arma::vec u0;
-  u0.set_size(N);
+  u0.set_size(_system_size);
 
-  // Local stage solutions 
-  std::vector<arma::vec> local_stage_solutions(_scheme->stage_solutions().size());
-  for (unsigned int stage=0; stage<num_stages; stage++)
-    local_stage_solutions[stage].set_size(N);
+  // Update ghost values
+  _update_ghost_values();
 
-  // Update off-process coefficients
-  for (unsigned int i=0; i < num_stages; i++)
-  {
-    for (unsigned int j=0; j < _scheme->stage_forms()[i].size(); j++)
-    {
-      const std::vector<boost::shared_ptr<const GenericFunction> >
-	coefficients = _scheme->stage_forms()[i][j]->coefficients();
-      
-      for (unsigned int k = 0; k < coefficients.size(); ++k)
-	coefficients[k]->update();
-    }
-  }
-  
-  // Local to local dofs to be used in tabulate entity dofs
-  std::vector<std::size_t> local_to_local_dofs(N);
-
-  // Local to global dofs used when solution is fanned out to global vector
-  std::vector<dolfin::la_index> local_to_global_dofs(N);
-  
   //const std::size_t num_threads = dolfin::parameters["num_threads"];
 
   // Iterate over vertices
-  //Progress p("Solving local point integral problems", mesh.num_vertices());
+  //Progress p("Solving local point integral problems", _mesh.num_vertices());
   
-  t_step_stage.stop();
-
-  //#pragma omp parallel for schedule(guided, 20) private(_J_L, _J_U, _J, local_to_global_dofs, local_to_local_dofs, _ufcs)
-  for (std::size_t vert_ind=0; vert_ind< mesh.num_vertices(); ++vert_ind)
+  //#pragma omp parallel for schedule(guided, 20) private(_J_L, _J_U, _J, _local_to_global_dofs, _local_to_local_dofs, _ufcs)
+  for (std::size_t vert_ind=0; vert_ind< _mesh.num_vertices(); ++vert_ind)
   {
 
     Timer t_vert("Step: update vert");
 
     // Cell containing vertex
-    const Cell cell(mesh, _vertex_map[vert_ind].first);
+    const Cell cell(_mesh, _vertex_map[vert_ind].first);
 
     // Get all dofs for cell
     // FIXME: Shold we include logics about empty dofmaps?
-    const std::vector<dolfin::la_index>& cell_dofs = dofmap.cell_dofs(cell.index());
-
-    // Local vertex ind
-    const unsigned int local_vert = _vertex_map[vert_ind].second;
+    const std::vector<dolfin::la_index>& cell_dofs = _dofmap.cell_dofs(cell.index());
 
     // Tabulate local-local dofmap
-    dofmap.tabulate_entity_dofs(local_to_local_dofs, 0, local_vert);
+    _dofmap.tabulate_entity_dofs(_local_to_local_dofs, 0, _vertex_map[vert_ind].second);
     
     // Fill local to global dof map
-    for (unsigned int row=0; row<N; row++)
+    for (unsigned int row=0; row<_system_size; row++)
     {
-      local_to_global_dofs[row] = cell_dofs[local_to_local_dofs[row]];
+      _local_to_global_dofs[row] = cell_dofs[_local_to_local_dofs[row]];
     }
 
     t_vert.stop();
 
     // Iterate over stage forms
-    for (unsigned int stage=0; stage<num_stages; stage++)
+    for (unsigned int stage=0; stage<_num_stages; stage++)
     {
 
       // Update time
       *_scheme->t() = t0 + dt*_scheme->dt_stage_offset()[stage];
 
+      Timer t_impl_update("Update_cell");
+      for (unsigned int i=0; i < _ufcs[stage].size(); i++)
+	_ufcs[stage][i]->update(cell);
+      t_impl_update.stop();
+
       // Check if we have an explicit stage (only 1 form)
       if (_ufcs[stage].size()==1)
       {
-
-	Timer t_expl("Explicit stage");
-
-	// Point integral
-	const ufc::point_integral& integral = *_ufcs[stage][0]->default_point_integral;
-
-	// Update to current cell
-	Timer t_expl_update("Explicit stage: update_cell");
-	_ufcs[stage][0]->update(cell);
-	t_expl_update.stop();
-
-	// Tabulate cell tensor
-	Timer t_expl_tt("Explicit stage: tabulate_tensor");
-	integral.tabulate_tensor(&_ufcs[stage][0]->A[0], _ufcs[stage][0]->w(), 
-				 &_ufcs[stage][0]->cell.vertex_coordinates[0], 
-				 local_vert);
-	t_expl_tt.stop();
-
-	// Extract vertex dofs from tabulated tensor and put them into the local 
-	// stage solution vector
-	// Extract vertex dofs from tabulated tensor
-	for (unsigned int row=0; row < N; row++)
-	  local_stage_solutions[stage](row) = _ufcs[stage][0]->A[local_to_local_dofs[row]];
-
-	// Put solution back into global stage solution vector
-	Timer t_expl_set("Explicit stage: set");
-	_scheme->stage_solutions()[stage]->vector()->set(
-			    local_stage_solutions[stage].memptr(), N, 
-			    &local_to_global_dofs[0]);
+	_solve_explicit_stage(vert_ind, stage);
       }
     
       // or an implicit stage (2 forms)
       else
       {
-	
-	Timer t_impl("Implicit stage");
-	
-	const Parameters& newton_parameters = parameters("newton_solver");
-	
-	// Local solution
-	arma::vec& u = local_stage_solutions[stage];
-	
-	unsigned int newton_iteration = 0;
-	bool newton_converged = false;
-	bool jacobian_retabulated = false;
-	const std::size_t maxiter = newton_parameters["maximum_iterations"];
-	const bool reuse_jacobian = newton_parameters["reuse_jacobian"];
-	const std::size_t iterations_to_retabulate_jacobian = \
-	  newton_parameters["iterations_to_retabulate_jacobian"];
-	const double relaxation = newton_parameters["relaxation_parameter"];
-	const std::string convergence_criterion = newton_parameters["convergence_criterion"];
-	const double rtol = newton_parameters["relative_tolerance"];
-	const double atol = newton_parameters["absolute_tolerance"];
-	const bool report = newton_parameters["report"];
-	//const int num_threads = 0;
-
-	/// Most recent residual and intitial residual
-	double residual = 1.0;
-	double residual0 = 1.0;
-	double relative_residual = 1.0;
-      
-	//const double relaxation = 1.0;
-      
-	// Initialize la structures
-	arma::vec F;
-	arma::vec y;
-	arma::vec dx;
-	F.set_size(N);
-	y.set_size(N);
-	dx.set_size(N);
-      
-	// Get point integrals
-	const ufc::point_integral& F_integral = *_ufcs[stage][0]->default_point_integral;
-	const ufc::point_integral& J_integral = *_ufcs[stage][1]->default_point_integral;
-      
-	// Update to current cell. This only need to be done once for each stage and 
-	// vertex
-
-	Timer t_impl_update("Implicit stage: update_cell");
-	_ufcs[stage][0]->update(cell);
-	_ufcs[stage][1]->update(cell);
-	t_impl_update.stop();
-
-	// Tabulate an initial residual solution
-	Timer t_impl_tt_F("Implicit stage: tabulate_tensor (F)");
-	F_integral.tabulate_tensor(&_ufcs[stage][0]->A[0], _ufcs[stage][0]->w(), 
-				   &_ufcs[stage][0]->cell.vertex_coordinates[0], 
-				   local_vert);
-	t_impl_tt_F.stop();
-
-	// Extract vertex dofs from tabulated tensor, together with the old stage 
-	// solution
-	Timer t_impl_update_F("Implicit stage: update_F");
-	for (unsigned int row=0; row < N; row++)
-	{
-	  F(row) = _ufcs[stage][0]->A[local_to_local_dofs[row]];
-
-	  // Grab old value of stage solution as an initial start value. This 
-	  // value was also used to tabulate the initial value of the F_integral above 
-	  // and we therefore just grab it from the restricted coeffcients
-	  u(row) = _ufcs[stage][0]->w()[_coefficient_index[stage][0]][local_to_local_dofs[row]];
-	}
-	t_impl_update_F.stop();
-
-	// Start iterations
-	while (!newton_converged && newton_iteration < maxiter)
-	{
-        
-	  if (_retabulate_J || !reuse_jacobian)
-	  {
-	    // Tabulate Jacobian
-	    Timer t_impl_tt_J("Implicit stage: tabulate_tensor (J)");
-	    J_integral.tabulate_tensor(&_ufcs[stage][1]->A[0], _ufcs[stage][1]->w(), 
-				       &_ufcs[stage][1]->cell.vertex_coordinates[0], 
-				       local_vert);
-	    t_impl_tt_J.stop();
-
-	    // Extract vertex dofs from tabulated tensor
-	    Timer t_impl_update_J("Implicit stage: update_J");
-	    for (unsigned int row=0; row < N; row++)
-	      for (unsigned int col=0; col < N; col++)
-		_J(row, col) = _ufcs[stage][1]->A[local_to_local_dofs[row]*dof_offset*N+
-						  local_to_local_dofs[col]];
-	    t_impl_update_J.stop();
-
-	    // LU factorize Jacobian
-	    Timer lu_factorize("Implicit stage: LU factorize");
-	    arma::lu(_J_L, _J_U, _J);
-	    _retabulate_J = false;
-
-	  }
-
-	  // Perform linear solve By forward backward substitution
-	  Timer forward_backward_substitution("Implicit stage: fb substituion");
-	  arma::solve(y, _J_L, F);
-	  arma::solve(dx, _J_U, y);
-	  forward_backward_substitution.stop();
-
-	  // Compute resdiual
-	  if (convergence_criterion == "residual")
-	    residual = arma::norm(F, 2);
-	  else if (convergence_criterion == "incremental")
-	    residual = arma::norm(dx, 2);
-	  else
-	    error("Unknown Newton convergence criterion");
-
-          // If initial residual
-          if (newton_iteration == 0)
-	    residual0 = residual;
-	  
-	  // Relative residual
-	  relative_residual = residual / residual0;
-	  
-	  // Update solution
-          if (std::abs(1.0 - relaxation) < DOLFIN_EPS)
-            u -= dx;
-          else
-            u -= relaxation*dx;
-        
-	  // Update number of iterations
-	  ++newton_iteration;
-	  
-	  // Put solution back into restricted coefficients before tabulate new residual
-	  for (unsigned int row=0; row < N; row++)
-	    _ufcs[stage][0]->w()[_coefficient_index[stage][0]][local_to_local_dofs[row]] = u(row);
-
-	  // Tabulate new residual 
-	  t_impl_tt_F.start();
-	  F_integral.tabulate_tensor(&_ufcs[stage][0]->A[0], _ufcs[stage][0]->w(), 
-				     &_ufcs[stage][0]->cell.vertex_coordinates[0], 
-				     local_vert);
-	  t_impl_tt_F.stop();
-
-	  t_impl_update_F.start();
-	  // Extract vertex dofs from tabulated tensor
-	  for (unsigned int row=0; row < N; row++)
-	    F(row) = _ufcs[stage][0]->A[local_to_local_dofs[row]];
-	  t_impl_update_F.stop();
-
-	  // Output iteration number and residual (only first vertex)
-	  if (report && (newton_iteration > 0) && (vert_ind == 0))
-	  {
-	    info("Point solver newton iteration %d: r (abs) = %.3e (tol = %.3e) "\
-		 "r (rel) = %.3e (tol = %.3e)", newton_iteration, residual, atol, 
-		 relative_residual, rtol);
-	  }
-	  
-	  // Check for retabulation of Jacobian
-	  if (reuse_jacobian && newton_iteration > iterations_to_retabulate_jacobian && \
-	      !jacobian_retabulated)
-	  {
-	    jacobian_retabulated = true;
-	    _retabulate_J = true;
-
-	    if (vert_ind == 0)
-	      info("Retabulating Jacobian.");
-
-	    // If there is a solution coefficient in the jacobian form
-	    if (_coefficient_index[stage].size()==2)
-	    {
-	      // Put solution back into restricted coefficients before tabulate new jacobian
-	      for (unsigned int row=0; row < N; row++)
-		_ufcs[stage][1]->w()[_coefficient_index[stage][1]][local_to_local_dofs[row]] = u(row);
-	    }
-
-	  }
-
-	  // Return true if convergence criterion is met
-	  if (relative_residual < rtol || residual < atol)
-	    newton_converged = true;
-
-	}
-      
-        if (newton_converged)
-        {
-	  Timer t_impl_set("Implicit stage: set");
-          // Put solution back into global stage solution vector
-          _scheme->stage_solutions()[stage]->vector()->set(u.memptr(), u.size(), 
-							   &local_to_global_dofs[0]);
-	}
-        else
-        {
-          info("Last iteration before error %d: r (abs) = %.3e (tol = %.3e) "
-	       "r (rel) = %.3e (tol = %.3e)", newton_iteration, residual, atol, 
-	       relative_residual, rtol);
-	  error("Newton solver in PointIntegralSolver did not converge.");
-        }
-	
+	_solve_implict_stage(vert_ind, stage);
       }
 
     }
@@ -386,24 +136,257 @@ void PointIntegralSolver::step(double dt)
 
     // Get local u0 solution and add the stage derivatives
     _scheme->solution()->vector()->get_local(&u0[0], u0.size(), 
-					     &local_to_global_dofs[0]);
+					     &_local_to_global_dofs[0]);
     
     // Do the last stage and put back into solution vector
     FunctionAXPY last_stage = _scheme->last_stage()*dt;
   
     // Axpy local solution vectors
-    for (unsigned int stage=0; stage < num_stages; stage++)
-      u0 += last_stage.pairs()[stage].first*local_stage_solutions[stage] ;
+    for (unsigned int stage=0; stage < _num_stages; stage++)
+      u0 += last_stage.pairs()[stage].first*_local_stage_solutions[stage] ;
     
     // Update global solution with last stage
-    _scheme->solution()->vector()->set(u0.memptr(), local_to_global_dofs.size(), 
-				       &local_to_global_dofs[0]);
+    _scheme->solution()->vector()->set(u0.memptr(), _local_to_global_dofs.size(), 
+				       &_local_to_global_dofs[0]);
     
     //p++;
   }
 
   // Update time
   *_scheme->t() = t0 + dt;
+  
+}
+//-----------------------------------------------------------------------------
+void PointIntegralSolver::_solve_explicit_stage(std::size_t vert_ind, 
+						unsigned int stage)
+{
+  Timer t_expl("Explicit stage");
+
+  // Local vertex ind
+  const unsigned int local_vert = _vertex_map[vert_ind].second;
+
+  // Point integral
+  const ufc::point_integral& integral = *_ufcs[stage][0]->default_point_integral;
+
+  // Update to current cell
+  Timer t_expl_update("Explicit stage: update_cell");
+  t_expl_update.stop();
+
+  // Tabulate cell tensor
+  Timer t_expl_tt("Explicit stage: tabulate_tensor");
+  integral.tabulate_tensor(&_ufcs[stage][0]->A[0], _ufcs[stage][0]->w(), 
+			   &_ufcs[stage][0]->cell.vertex_coordinates[0], 
+			   local_vert);
+  t_expl_tt.stop();
+
+  // Extract vertex dofs from tabulated tensor and put them into the local 
+  // stage solution vector
+  // Extract vertex dofs from tabulated tensor
+  for (unsigned int row=0; row < _system_size; row++)
+    _local_stage_solutions[stage](row) = _ufcs[stage][0]->A[_local_to_local_dofs[row]];
+
+  // Put solution back into global stage solution vector
+  Timer t_expl_set("Explicit stage: set");
+  _scheme->stage_solutions()[stage]->vector()->set(
+		 _local_stage_solutions[stage].memptr(), _system_size, 
+		 &_local_to_global_dofs[0]);
+
+}
+//-----------------------------------------------------------------------------
+void PointIntegralSolver::_solve_implict_stage(std::size_t vert_ind,
+					       unsigned int stage)
+{
+	
+  Timer t_impl("Implicit stage");
+	
+  // Local vertex ind
+  const unsigned int local_vert = _vertex_map[vert_ind].second;
+
+  const Parameters& newton_parameters = parameters("newton_solver");
+	
+  // Local solution
+  arma::vec& u = _local_stage_solutions[stage];
+	
+  unsigned int newton_iteration = 0;
+  bool newton_converged = false;
+  bool jacobian_retabulated = false;
+  const std::size_t maxiter = newton_parameters["maximum_iterations"];
+  const bool reuse_jacobian = newton_parameters["reuse_jacobian"];
+  const std::size_t iterations_to_retabulate_jacobian = \
+    newton_parameters["iterations_to_retabulate_jacobian"];
+  const double relaxation = newton_parameters["relaxation_parameter"];
+  const std::string convergence_criterion = newton_parameters["convergence_criterion"];
+  const double rtol = newton_parameters["relative_tolerance"];
+  const double atol = newton_parameters["absolute_tolerance"];
+  const bool report = newton_parameters["report"];
+  //const int num_threads = 0;
+
+  /// Most recent residual and intitial residual
+  double residual = 1.0;
+  double residual0 = 1.0;
+  double relative_residual = 1.0;
+      
+  //const double relaxation = 1.0;
+      
+  // Initialize la structures
+  arma::vec F;
+  arma::vec y;
+  arma::vec dx;
+  F.set_size(_system_size);
+  y.set_size(_system_size);
+  dx.set_size(_system_size);
+      
+  // Get point integrals
+  const ufc::point_integral& F_integral = *_ufcs[stage][0]->default_point_integral;
+  const ufc::point_integral& J_integral = *_ufcs[stage][1]->default_point_integral;
+      
+  // Update to current cell. This only need to be done once for each stage and 
+  // vertex
+
+  // Tabulate an initial residual solution
+  Timer t_impl_tt_F("Implicit stage: tabulate_tensor (F)");
+  F_integral.tabulate_tensor(&_ufcs[stage][0]->A[0], _ufcs[stage][0]->w(), 
+			     &_ufcs[stage][0]->cell.vertex_coordinates[0], 
+			     local_vert);
+  t_impl_tt_F.stop();
+
+  // Extract vertex dofs from tabulated tensor, together with the old stage 
+  // solution
+  Timer t_impl_update_F("Implicit stage: update_F");
+  for (unsigned int row=0; row < _system_size; row++)
+  {
+    F(row) = _ufcs[stage][0]->A[_local_to_local_dofs[row]];
+
+    // Grab old value of stage solution as an initial start value. This 
+    // value was also used to tabulate the initial value of the F_integral above 
+    // and we therefore just grab it from the restricted coeffcients
+    u(row) = _ufcs[stage][0]->w()[_coefficient_index[stage][0]][_local_to_local_dofs[row]];
+  }
+  t_impl_update_F.stop();
+
+  // Start iterations
+  while (!newton_converged && newton_iteration < maxiter)
+  {
+        
+    if (_retabulate_J || !reuse_jacobian)
+    {
+      // Tabulate Jacobian
+      Timer t_impl_tt_J("Implicit stage: tabulate_tensor (J)");
+      J_integral.tabulate_tensor(&_ufcs[stage][1]->A[0], _ufcs[stage][1]->w(), 
+				 &_ufcs[stage][1]->cell.vertex_coordinates[0], 
+				 local_vert);
+      t_impl_tt_J.stop();
+
+      // Extract vertex dofs from tabulated tensor
+      Timer t_impl_update_J("Implicit stage: update_J");
+      for (unsigned int row=0; row < _system_size; row++)
+	for (unsigned int col=0; col < _system_size; col++)
+	  _J(row, col) = _ufcs[stage][1]->A[_local_to_local_dofs[row]*_dof_offset*_system_size+
+					    _local_to_local_dofs[col]];
+      t_impl_update_J.stop();
+
+      // LU factorize Jacobian
+      Timer lu_factorize("Implicit stage: LU factorize");
+      arma::lu(_J_L, _J_U, _J);
+      _retabulate_J = false;
+
+    }
+
+    // Perform linear solve By forward backward substitution
+    Timer forward_backward_substitution("Implicit stage: fb substituion");
+    arma::solve(y, _J_L, F);
+    arma::solve(dx, _J_U, y);
+    forward_backward_substitution.stop();
+
+    // Compute resdiual
+    if (convergence_criterion == "residual")
+      residual = arma::norm(F, 2);
+    else if (convergence_criterion == "incremental")
+      residual = arma::norm(dx, 2);
+    else
+      error("Unknown Newton convergence criterion");
+
+    // If initial residual
+    if (newton_iteration == 0)
+      residual0 = residual;
+	  
+    // Relative residual
+    relative_residual = residual / residual0;
+	  
+    // Update solution
+    if (std::abs(1.0 - relaxation) < DOLFIN_EPS)
+      u -= dx;
+    else
+      u -= relaxation*dx;
+        
+    // Update number of iterations
+    ++newton_iteration;
+	  
+    // Put solution back into restricted coefficients before tabulate new residual
+    for (unsigned int row=0; row < _system_size; row++)
+      _ufcs[stage][0]->w()[_coefficient_index[stage][0]][_local_to_local_dofs[row]] = u(row);
+
+    // Tabulate new residual 
+    t_impl_tt_F.start();
+    F_integral.tabulate_tensor(&_ufcs[stage][0]->A[0], _ufcs[stage][0]->w(), 
+			       &_ufcs[stage][0]->cell.vertex_coordinates[0], 
+			       local_vert);
+    t_impl_tt_F.stop();
+
+    t_impl_update_F.start();
+    // Extract vertex dofs from tabulated tensor
+    for (unsigned int row=0; row < _system_size; row++)
+      F(row) = _ufcs[stage][0]->A[_local_to_local_dofs[row]];
+    t_impl_update_F.stop();
+
+    // Output iteration number and residual (only first vertex)
+    if (report && (newton_iteration > 0) && (vert_ind == 0))
+    {
+      info("Point solver newton iteration %d: r (abs) = %.3e (tol = %.3e) "\
+	   "r (rel) = %.3e (tol = %.3e)", newton_iteration, residual, atol, 
+	   relative_residual, rtol);
+    }
+	  
+    // Check for retabulation of Jacobian
+    if (reuse_jacobian && newton_iteration > iterations_to_retabulate_jacobian && \
+	!jacobian_retabulated)
+    {
+      jacobian_retabulated = true;
+      _retabulate_J = true;
+
+      if (vert_ind == 0)
+	info("Retabulating Jacobian.");
+
+      // If there is a solution coefficient in the jacobian form
+      if (_coefficient_index[stage].size()==2)
+      {
+	// Put solution back into restricted coefficients before tabulate new jacobian
+	for (unsigned int row=0; row < _system_size; row++)
+	  _ufcs[stage][1]->w()[_coefficient_index[stage][1]][_local_to_local_dofs[row]] = u(row);
+      }
+
+    }
+
+    // Return true if convergence criterion is met
+    if (relative_residual < rtol || residual < atol)
+      newton_converged = true;
+
+  }
+      
+  if (newton_converged)
+  {
+    Timer t_impl_set("Implicit stage: set");
+    // Put solution back into global stage solution vector
+    _scheme->stage_solutions()[stage]->vector()->set(u.memptr(), u.size(), 
+						     &_local_to_global_dofs[0]);
+  }
+  else
+  {
+    info("Last iteration before error %d: r (abs) = %.3e (tol = %.3e) "
+	 "r (rel) = %.3e (tol = %.3e)", newton_iteration, residual, atol, 
+	 relative_residual, rtol);
+    error("Newton solver in PointIntegralSolver did not converge.");
+  }
   
 }
 //-----------------------------------------------------------------------------
@@ -439,6 +422,22 @@ void PointIntegralSolver::step_interval(double t0, double t1, double dt)
   }
 }
 //-----------------------------------------------------------------------------
+void PointIntegralSolver::_update_ghost_values()
+{
+  // Update off-process coefficients
+  for (unsigned int i=0; i < _num_stages; i++)
+  {
+    for (unsigned int j=0; j < _scheme->stage_forms()[i].size(); j++)
+    {
+      const std::vector<boost::shared_ptr<const GenericFunction> >
+	coefficients = _scheme->stage_forms()[i][j]->coefficients();
+      
+      for (unsigned int k = 0; k < coefficients.size(); ++k)
+	coefficients[k]->update();
+    }
+  }
+}
+//-----------------------------------------------------------------------------
 void PointIntegralSolver::_check_forms()
 {
   // Iterate over stage forms and check they include point integrals
@@ -458,10 +457,9 @@ void PointIntegralSolver::_check_forms()
       }
 
       // Num dofs per vertex
-      const Mesh& mesh = *stage_forms[i][j]->function_space(0)->mesh();
       const GenericDofMap& dofmap = *stage_forms[i][j]->function_space(0)->dofmap();
       const unsigned int dofs_per_vertex = dofmap.num_entity_dofs(0);
-      const unsigned int vert_per_cell = mesh.topology()(mesh.topology().dim(), 0).size(0);
+      const unsigned int vert_per_cell = _mesh.topology()(_mesh.topology().dim(), 0).size(0);
       
       if (vert_per_cell*dofs_per_vertex != dofmap.max_cell_dimension())
       {
@@ -480,6 +478,10 @@ void PointIntegralSolver::_init()
   std::vector<std::vector<boost::shared_ptr<const Form> > >& stage_forms = 
     _scheme->stage_forms();
 
+  // Init local stage solutions
+  for (unsigned int stage=0; stage < _num_stages; stage++)
+    _local_stage_solutions[stage].set_size(_system_size);
+
   // Init coefficient index and ufcs
   _coefficient_index.resize(stage_forms.size());
   _ufcs.resize(stage_forms.size());
@@ -487,10 +489,9 @@ void PointIntegralSolver::_init()
   // Initiate jacobian matrices
   if (_scheme->implicit())
   {
-    const unsigned int N = stage_forms[0][0]->function_space(0)->dofmap()->num_entity_dofs(0);
-    _J.set_size(N, N);
-    _J_U.set_size(N, N);
-    _J_L.set_size(N, N);
+    _J.set_size(_system_size, _system_size);
+    _J_U.set_size(_system_size, _system_size);
+    _J_L.set_size(_system_size, _system_size);
   }
 
   // Iterate over stages and collect information
@@ -525,16 +526,15 @@ void PointIntegralSolver::_init()
     }
   }
   
-  // Extract mesh
-  const Mesh& mesh = stage_forms[0][0]->mesh();
-  _vertex_map.resize(mesh.num_vertices());
+  // Build vertex map
+  _vertex_map.resize(_mesh.num_vertices());
   
   // Init mesh connections
-  mesh.init(0);
-  const unsigned int dim_t = mesh.topology().dim();
+  _mesh.init(0);
+  const unsigned int dim_t = _mesh.topology().dim();
 
   // Iterate over vertices and collect cell and local vertex information
-  for (VertexIterator vert(mesh); !vert.end(); ++vert)
+  for (VertexIterator vert(_mesh); !vert.end(); ++vert)
   {
     // First look for cell where the vert is local vert 0
     bool local_vert_found = false;
@@ -555,7 +555,7 @@ void PointIntegralSolver::_init()
     // local cell 0 and find what local vert the global vert corresponds to
     if (!local_vert_found)
     {
-      const Cell cell0(mesh, vert->entities(dim_t)[0]);
+      const Cell cell0(_mesh, vert->entities(dim_t)[0]);
       _vertex_map[vert->index()].first = cell0.index();
       
       unsigned int local_vert_index = 0;
