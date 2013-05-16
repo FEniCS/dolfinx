@@ -50,7 +50,6 @@ class MeshConstruction(unittest.TestCase):
         self.assertEqual(ufl.tetrahedron, self.cube.ufl_cell())
         self.assertEqual(ufl.tetrahedron, self.box.ufl_cell())
 
-# FIXME: The following test breaks in parallel
 if MPI.num_processes() == 1:
     class SimpleShapes(unittest.TestCase):
 
@@ -66,22 +65,25 @@ if MPI.num_processes() == 1:
             self.assertEqual(mesh.num_vertices(), 480)
             self.assertEqual(mesh.num_cells(), 1890)
 
-    class MeshRefinement(unittest.TestCase):
+class MeshRefinement(unittest.TestCase):
 
-        def testRefineUnitSquareMesh(self):
-            """Refine mesh of unit square."""
-            mesh = UnitSquareMesh(5, 7)
-            mesh = refine(mesh)
-            self.assertEqual(mesh.num_vertices(), 165)
-            self.assertEqual(mesh.num_cells(), 280)
+    def testRefineUnitSquareMesh(self):
+        """Refine mesh of unit square."""
+        mesh = UnitSquareMesh(5, 7)
+        mesh = refine(mesh)
+        self.assertEqual(mesh.size_global(0), 165)
+        self.assertEqual(mesh.size_global(2), 280)
 
-        def testRefineUnitCubeMesh(self):
-            """Refine mesh of unit cube."""
-            mesh = UnitCubeMesh(5, 7, 9)
-            mesh = refine(mesh)
-            self.assertEqual(mesh.num_vertices(), 3135)
-            self.assertEqual(mesh.num_cells(), 15120)
+    def testRefineUnitCubeMesh(self):
+        """Refine mesh of unit cube."""
+        mesh = UnitCubeMesh(5, 7, 9)
+        mesh = refine(mesh)
+        self.assertEqual(mesh.size_global(0), 3135)
+        self.assertEqual(mesh.size_global(3), 15120)
 
+# This test does not work in parallel because BoundaryMesh does not
+# compute distributed mesh data
+if MPI.num_processes() == 1:
     class BoundaryExtraction(unittest.TestCase):
 
         def testBoundaryComputation(self):
@@ -91,14 +93,15 @@ if MPI.num_processes() == 1:
             self.assertEqual(boundary.num_vertices(), 26)
             self.assertEqual(boundary.num_cells(), 48)
 
-        def testBoundaryBoundary(self):
-            """Compute boundary of boundary."""
-            mesh = UnitCubeMesh(2, 2, 2)
-            b0 = BoundaryMesh(mesh, "exterior")
-            b1 = BoundaryMesh(b0, "exterior")
-            self.assertEqual(b1.num_vertices(), 0)
-            self.assertEqual(b1.num_cells(), 0)
+            def testBoundaryBoundary(self):
+                """Compute boundary of boundary."""
+                mesh = UnitCubeMesh(2, 2, 2)
+                b0 = BoundaryMesh(mesh, "exterior")
+                b1 = BoundaryMesh(b0, "exterior")
+                self.assertEqual(b1.num_vertices(), 0)
+                self.assertEqual(b1.num_cells(), 0)
 
+if MPI.num_processes() == 1:
     class MeshFunctions(unittest.TestCase):
 
         def setUp(self):
@@ -154,6 +157,8 @@ if MPI.num_processes() == 1:
                 self.assertEqual(num, 6)
 
 
+# FIXME: Mesh IO tests should be in io test directory
+if MPI.num_processes() == 1:
     class InputOutput(unittest.TestCase):
 
         def testMeshXML2D(self):
@@ -188,14 +193,14 @@ if MPI.num_processes() == 1:
             file >> g
             for v in vertices(mesh):
                 self.assertEqual(f[v], g[v])
+class PyCCInterface(unittest.TestCase):
 
-    class PyCCInterface(unittest.TestCase):
+    def testGetGeometricalDimension(self):
+        """Get geometrical dimension of mesh"""
+        mesh = UnitSquareMesh(5, 5)
+        self.assertEqual(mesh.geometry().dim(), 2)
 
-        def testGetGeometricalDimension(self):
-            """Get geometrical dimension of mesh"""
-            mesh = UnitSquareMesh(5, 5)
-            self.assertEqual(mesh.geometry().dim(), 2)
-
+    if MPI.num_processes() == 1:
         def testGetCoordinates(self):
             """Get coordinates of vertices"""
             mesh = UnitSquareMesh(5, 5)
@@ -204,8 +209,10 @@ if MPI.num_processes() == 1:
         def testGetCells(self):
             """Get cells of mesh"""
             mesh = UnitSquareMesh(5, 5)
-            self.assertEqual(len(mesh.cells()), 50)
+            self.assertEqual(MPI.sum(len(mesh.cells())), 50)
 
+
+if MPI.num_processes() == 1:
     class IntersectionOperator(unittest.TestCase):
         def testIntersectPoint(self):
             from numpy import linspace
@@ -304,6 +311,7 @@ if MPI.num_processes() == 1:
             self.assertEqual(id, 0)
 
 
+if MPI.num_processes() == 1:
     class CellRadii(unittest.TestCase):
 
         def setUp(self):
@@ -394,18 +402,18 @@ class MeshOrientations(unittest.TestCase):
         for i in range(mesh.num_cells()):
             self.assertEqual(mesh.cell_orientations()[i], 0)
 
-        mesh = UnitSquareMesh(2, 2)
-        mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
-        reference = numpy.array((0, 1, 0, 1, 0, 1, 0, 1))
-        # Only compare against reference in serial (don't know how to
-        # compare in parallel)
         if MPI.num_processes() == 1:
+            mesh = UnitSquareMesh(2, 2)
+            mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
+            reference = numpy.array((0, 1, 0, 1, 0, 1, 0, 1))
+            # Only compare against reference in serial (don't know how to
+            # compare in parallel)
             for i in range(mesh.num_cells()):
                 self.assertEqual(mesh.cell_orientations()[i], reference[i])
 
-        mesh = BoundaryMesh(UnitSquareMesh(2, 2), "exterior")
-        mesh.init_cell_orientations(Expression(("x[0]", "x[1]", "x[2]")))
-        print mesh.cell_orientations()
+            mesh = BoundaryMesh(UnitSquareMesh(2, 2), "exterior")
+            mesh.init_cell_orientations(Expression(("x[0]", "x[1]", "x[2]")))
+            print mesh.cell_orientations()
 
 if __name__ == "__main__":
     unittest.main()

@@ -531,7 +531,7 @@ const dolfin::MeshFunction<std::size_t>&
     return mesh_function.child();
   }
 
-  const Mesh& mesh = mesh_function.mesh();
+  const Mesh& mesh = *mesh_function.mesh();
   const std::size_t dim = mesh.topology().dim();
 
   // Extract parent map from data of refined mesh

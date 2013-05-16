@@ -62,7 +62,8 @@ void ExodusFile::operator<<(const Mesh& mesh)
 //----------------------------------------------------------------------------
 void ExodusFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
 {
-  const Mesh& mesh = meshfunction.mesh();
+  dolfin_assert(meshfunction.mesh());
+  const Mesh& mesh = *meshfunction.mesh();
   const std::size_t cell_dim = meshfunction.dim();
 
   // Throw error for MeshFunctions on vertices for interval elements
@@ -102,7 +103,8 @@ void ExodusFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
 //----------------------------------------------------------------------------
 void ExodusFile::operator<<(const MeshFunction<int>& meshfunction)
 {
-  const Mesh& mesh = meshfunction.mesh();
+  dolfin_assert(meshfunction.mesh());
+  const Mesh& mesh = *meshfunction.mesh();
   const std::size_t cell_dim = meshfunction.dim();
 
   // Throw error for MeshFunctions on vertices for interval elements
@@ -142,7 +144,8 @@ void ExodusFile::operator<<(const MeshFunction<int>& meshfunction)
 //----------------------------------------------------------------------------
 void ExodusFile::operator<<(const MeshFunction<double>& meshfunction)
 {
-  const Mesh& mesh = meshfunction.mesh();
+  dolfin_assert(meshfunction.mesh());
+  const Mesh& mesh = *meshfunction.mesh();
   const std::size_t cell_dim = meshfunction.dim();
 
   // Throw error for MeshFunctions on vertices for interval elements

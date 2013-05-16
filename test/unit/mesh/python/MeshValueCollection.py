@@ -115,16 +115,22 @@ class MeshValueCollections(unittest.TestCase):
       mesh = UnitSquareMesh(3, 3)
       mesh.init(1)
       f = FacetFunction("int", mesh, 25)
+      for cell in cells(mesh):
+          for i, facet in enumerate(facets(cell)):
+              self.assertEqual(25, f[facet])
+
       g = MeshValueCollection("int", 1)
       g.assign(f)
       self.assertEqual(mesh.num_facets(), f.size())
       self.assertEqual(mesh.num_cells()*3, g.size())
+      for cell in cells(mesh):
+          for i, facet in enumerate(facets(cell)):
+              self.assertEqual(25, g.get_value(cell.index(), i))
 
       f2 = MeshFunction("int", mesh, g)
 
       for cell in cells(mesh):
           for i, facet in enumerate(facets(cell)):
-              self.assertEqual(25, g.get_value(cell.index(), i))
               self.assertEqual(f2[facet], g.get_value(cell.index(), i))
 
   def testMeshFunctionAssign2DVertices(self):

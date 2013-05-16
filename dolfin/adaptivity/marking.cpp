@@ -60,7 +60,7 @@ void dolfin::dorfler_mark(dolfin::MeshFunction<bool>& markers,
                           const double fraction)
 {
   // Extract mesh
-  const dolfin::Mesh& mesh(markers.mesh());
+  const dolfin::Mesh& mesh = *markers.mesh();
 
   // Initialize marker mesh function
   markers.set_all(false);

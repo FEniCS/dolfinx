@@ -47,8 +47,10 @@ class Eval(unittest.TestCase):
 
           # Check usergeneration of name and label
           self.assertEqual(f0.name(), "f0")
+          self.assertEqual(str(f0), "f0")
           self.assertEqual(f0.label(), "My expression")
           self.assertEqual(f1.name(), "f1")
+          self.assertEqual(str(f1), "f1")
           self.assertEqual(f1.label(), "User defined expression")
 
           # Check outgeneration of name
