@@ -268,17 +268,20 @@ void XMLMesh::read_domains(MeshDomains& domains, const Mesh& mesh,
                    type.c_str());
     }
 
-    // Read MeshValueCollection
-    //dolfin_assert(domains.markers(dim));
+    // Initialise mesh entities
+    mesh.init(dim);
+
+    // Read data into a mesh value collection
     MeshValueCollection<std::size_t> mvc(dim);
     XMLMeshValueCollection::read(mvc, type, *it);
-    //XMLMeshValueCollection::read(*(domains.markers(dim)), type, *it);
 
-    std::map<std::size_t, std::size_t>& markers
-      = domains.markers(dim);
+    // Get mesh value collection data
     const std::map<std::pair<std::size_t, std::size_t>, std::size_t>&
       values = mvc.values();
 
+    // Get mesh domain data and fill
+    std::map<std::size_t, std::size_t>& markers
+      = domains.markers(dim);
     std::map<std::pair<std::size_t, std::size_t>,
              std::size_t>::const_iterator entry;
     for (entry = values.begin(); entry != values.end(); ++entry)
