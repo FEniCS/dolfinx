@@ -200,16 +200,16 @@ class PyCCInterface(unittest.TestCase):
         mesh = UnitSquareMesh(5, 5)
         self.assertEqual(mesh.geometry().dim(), 2)
 
-    if MPI.num_processes() > 0 :
-        def xtestGetCoordinates(self):
+    if MPI.num_processes() == 1:
+        def testGetCoordinates(self):
             """Get coordinates of vertices"""
             mesh = UnitSquareMesh(5, 5)
             self.assertEqual(len(mesh.coordinates()), 36)
 
-    def testGetCells(self):
-        """Get cells of mesh"""
-        mesh = UnitSquareMesh(5, 5)
-        self.assertEqual(MPI.sum(len(mesh.cells())), 50)
+        def testGetCells(self):
+            """Get cells of mesh"""
+            mesh = UnitSquareMesh(5, 5)
+            self.assertEqual(MPI.sum(len(mesh.cells())), 50)
 
 
 if MPI.num_processes() == 1:
@@ -402,18 +402,18 @@ class MeshOrientations(unittest.TestCase):
         for i in range(mesh.num_cells()):
             self.assertEqual(mesh.cell_orientations()[i], 0)
 
-        mesh = UnitSquareMesh(2, 2)
-        mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
-        reference = numpy.array((0, 1, 0, 1, 0, 1, 0, 1))
-        # Only compare against reference in serial (don't know how to
-        # compare in parallel)
         if MPI.num_processes() == 1:
+            mesh = UnitSquareMesh(2, 2)
+            mesh.init_cell_orientations(Expression(("0.0", "0.0", "1.0")))
+            reference = numpy.array((0, 1, 0, 1, 0, 1, 0, 1))
+            # Only compare against reference in serial (don't know how to
+            # compare in parallel)
             for i in range(mesh.num_cells()):
                 self.assertEqual(mesh.cell_orientations()[i], reference[i])
 
-        mesh = BoundaryMesh(UnitSquareMesh(2, 2), "exterior")
-        mesh.init_cell_orientations(Expression(("x[0]", "x[1]", "x[2]")))
-        print mesh.cell_orientations()
+            mesh = BoundaryMesh(UnitSquareMesh(2, 2), "exterior")
+            mesh.init_cell_orientations(Expression(("x[0]", "x[1]", "x[2]")))
+            print mesh.cell_orientations()
 
 if __name__ == "__main__":
     unittest.main()
