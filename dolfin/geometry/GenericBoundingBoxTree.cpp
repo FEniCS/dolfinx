@@ -125,10 +125,12 @@ GenericBoundingBoxTree::compute_collisions(const Point& point) const
 }
 //-----------------------------------------------------------------------------
 std::vector<unsigned int>
-GenericBoundingBoxTree::compute_entity_collisions(const Point& point) const
+GenericBoundingBoxTree::compute_entity_collisions(const Point& point,
+                                                  const Mesh& mesh) const
 {
-  dolfin_not_implemented();
+  // Call recursive find function
   std::vector<unsigned int> entities;
+  compute_entity_collisions(point.coordinates(), bboxes.size() - 1, entities);
 
   return entities;
 }
@@ -141,10 +143,11 @@ GenericBoundingBoxTree::compute_first_collision(const Point& point) const
 }
 //-----------------------------------------------------------------------------
 unsigned int
-GenericBoundingBoxTree::compute_first_entity_collision(const Point& point) const
+GenericBoundingBoxTree::compute_first_entity_collision(const Point& point,
+                                                       const Mesh& mesh) const
 {
-  dolfin_not_implemented();
-  return 0;
+  // Call recursive find function
+  return compute_first_entity_collision(point, mesh);
 }
 //-----------------------------------------------------------------------------
 void
@@ -173,7 +176,14 @@ GenericBoundingBoxTree::compute_collisions(const double* x,
     compute_collisions(x, bbox.child_1, entities);
   }
 }
-
+//-----------------------------------------------------------------------------
+void
+GenericBoundingBoxTree::compute_entity_collisions(const double* x,
+                                                  unsigned int node,
+                                                  std::vector<unsigned int>& entities) const
+{
+  // Not implemented
+}
 //-----------------------------------------------------------------------------
 unsigned int
 GenericBoundingBoxTree::compute_first_collision(const double* x,
@@ -211,6 +221,14 @@ GenericBoundingBoxTree::compute_first_collision(const double* x,
 
   // Point not found
   return not_found;
+}
+//-----------------------------------------------------------------------------
+unsigned int
+GenericBoundingBoxTree::compute_first_entity_collision(const double* x,
+                                                       unsigned int node) const
+{
+  // Not implemented
+  return 0;
 }
 //-----------------------------------------------------------------------------
 void GenericBoundingBoxTree::compute_bbox_of_entity(double* b,

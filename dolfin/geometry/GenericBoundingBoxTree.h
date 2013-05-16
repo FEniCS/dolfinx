@@ -52,7 +52,8 @@ namespace dolfin
 
     /// Compute all collisions between entities and given _Point_
     std::vector<unsigned int>
-    compute_entity_collisions(const Point& point) const;
+    compute_entity_collisions(const Point& point,
+                              const Mesh& mesh) const;
 
     /// Compute first collision between bounding boxes and given _Point_
     unsigned int
@@ -60,7 +61,8 @@ namespace dolfin
 
     /// Compute first collision between entities and given _Point_
     unsigned int
-    compute_first_entity_collision(const Point& point) const;
+    compute_first_entity_collision(const Point& point,
+                                   const Mesh& mesh) const;
 
   protected:
 
@@ -90,9 +92,18 @@ namespace dolfin
                             unsigned int node,
                             std::vector<unsigned int>& entities) const;
 
+    /// Compute entity collisions with given coordinate (recursive)
+    void compute_entity_collisions(const double* x,
+                                   unsigned int node,
+                                   std::vector<unsigned int>& entities) const;
+
     /// Compute first collision with given coordinate (recursive)
     unsigned int compute_first_collision(const double* x,
                                          unsigned int node) const;
+
+    /// Compute first entity collision with given coordinate (recursive)
+    unsigned int compute_first_entity_collision(const double* x,
+                                                unsigned int node) const;
 
     // Compute bounding box of mesh entity
     void compute_bbox_of_entity(double* b,
