@@ -813,9 +813,9 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   // Topological dimension
   const std::size_t D = mesh.topology().dim();
 
-  // Initialise mesh
+  // Initialise facet-cell connectivity
   mesh.init(D);
-  mesh.init(D - 1);
+  mesh.init(D - 1, D);
 
   // Iterate over facets
   dolfin_assert(_function_space->element());
