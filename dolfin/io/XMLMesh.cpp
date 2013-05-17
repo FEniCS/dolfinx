@@ -284,11 +284,20 @@ void XMLMesh::read_domains(MeshDomains& domains, const Mesh& mesh,
       = domains.markers(dim);
     std::map<std::pair<std::size_t, std::size_t>,
              std::size_t>::const_iterator entry;
-    for (entry = values.begin(); entry != values.end(); ++entry)
+    if (dim != mesh.topology().dim())
     {
-      const Cell cell(mesh, entry->first.first);
-      const std::size_t entity_index = cell.entities(dim)[entry->first.second];
-      markers[entity_index] = entry->second;
+      for (entry = values.begin(); entry != values.end(); ++entry)
+      {
+        const Cell cell(mesh, entry->first.first);
+        const std::size_t entity_index = cell.entities(dim)[entry->first.second];
+        markers[entity_index] = entry->second;
+      }
+    }
+    else
+    {
+      // Special case for cells
+      for (entry = values.begin(); entry != values.end(); ++entry)
+        markers[entry->first.first] = entry->second;
     }
   }
 }
