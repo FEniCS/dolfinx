@@ -89,13 +89,13 @@ void ExodusFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
 
   // Add cell data
   const std::size_t dim = meshfunction.dim();
-  const std::size_t numCells = mesh.num_cells();
-  vtkSmartPointer<vtkUnsignedIntArray> cellData =
+  const std::size_t num_cells = mesh.num_cells();
+  vtkSmartPointer<vtkUnsignedIntArray> cell_data =
     vtkSmartPointer<vtkUnsignedIntArray>::New();
-  cellData->SetNumberOfComponents(dim);
-  cellData->SetArray(const_cast<unsigned int*>(meshfunction.values()), dim*numCells, 1);
-  cellData->SetName(meshfunction.name().c_str());
-  vtk_mesh->GetCellData()->AddArray(cellData);
+  cell_data->SetNumberOfComponents(dim);
+  cell_data->SetArray(const_cast<unsigned int*>(meshfunction.values()), dim*num_cells, 1);
+  cell_data->SetName(meshfunction.name().c_str());
+  vtk_mesh->GetCellData()->AddArray(cell_data);
 
   // Write out.
   perform_write(vtk_mesh);
@@ -130,13 +130,13 @@ void ExodusFile::operator<<(const MeshFunction<int>& meshfunction)
 
   // Add cell data
   const std::size_t dim = meshfunction.dim();
-  const std::size_t numCells = mesh.num_cells();
-  vtkSmartPointer<vtkIntArray> cellData =
+  const std::size_t num_cells = mesh.num_cells();
+  vtkSmartPointer<vtkIntArray> cell_data =
     vtkSmartPointer<vtkIntArray>::New();
-  cellData->SetNumberOfComponents(dim);
-  cellData->SetArray(const_cast<int*>(meshfunction.values()), dim*numCells, 1);
-  cellData->SetName(meshfunction.name().c_str());
-  vtk_mesh->GetCellData()->AddArray(cellData);
+  cell_data->SetNumberOfComponents(dim);
+  cell_data->SetArray(const_cast<int*>(meshfunction.values()), dim*num_cells, 1);
+  cell_data->SetName(meshfunction.name().c_str());
+  vtk_mesh->GetCellData()->AddArray(cell_data);
 
   // Write out
   perform_write(vtk_mesh);
@@ -171,13 +171,13 @@ void ExodusFile::operator<<(const MeshFunction<double>& meshfunction)
 
   // Add cell data
   const std::size_t dim = meshfunction.dim();
-  const std::size_t numCells = mesh.num_cells();
-  vtkSmartPointer<vtkDoubleArray> cellData =
+  const std::size_t num_cells = mesh.num_cells();
+  vtkSmartPointer<vtkDoubleArray> cell_data =
     vtkSmartPointer<vtkDoubleArray>::New();
-  cellData->SetNumberOfComponents(dim);
-  cellData->SetArray(const_cast<double*>(meshfunction.values()), dim*numCells, 1);
-  cellData->SetName(meshfunction.name().c_str());
-  vtk_mesh->GetCellData()->AddArray(cellData);
+  cell_data->SetNumberOfComponents(dim);
+  cell_data->SetArray(const_cast<double*>(meshfunction.values()), dim*num_cells, 1);
+  cell_data->SetName(meshfunction.name().c_str());
+  vtk_mesh->GetCellData()->AddArray(cell_data);
 
   // Write out
   perform_write(vtk_mesh);
@@ -257,12 +257,12 @@ void ExodusFile::write_function(const Function& u, double time) const
     u.vector()->get_local(&values[0], dof_set.size(), &dof_set[0]);
 
     // Set the cell array
-    vtkSmartPointer<vtkDoubleArray> cellData =
+    vtkSmartPointer<vtkDoubleArray> cell_data =
       vtkSmartPointer<vtkDoubleArray>::New();
-    cellData->SetNumberOfComponents(dim);
-    cellData->SetArray(&values[0], dof_set.size(), 1);
-    cellData->SetName(u.name().c_str());
-    vtk_mesh->GetCellData()->AddArray(cellData);
+    cell_data->SetNumberOfComponents(dim);
+    cell_data->SetArray(&values[0], dof_set.size(), 1);
+    cell_data->SetName(u.name().c_str());
+    vtk_mesh->GetCellData()->AddArray(cell_data);
   }
   else
   {
@@ -273,12 +273,12 @@ void ExodusFile::write_function(const Function& u, double time) const
     u.compute_vertex_values(values, mesh);
 
     // Set the point array
-    vtkSmartPointer<vtkDoubleArray> pointData =
+    vtkSmartPointer<vtkDoubleArray> point_data =
       vtkSmartPointer<vtkDoubleArray>::New();
-    pointData->SetNumberOfComponents(dim);
-    pointData->SetArray(&values[0], size, 1);
-    pointData->SetName(u.name().c_str());
-    vtk_mesh->GetPointData()->AddArray(pointData);
+    point_data->SetNumberOfComponents(dim);
+    point_data->SetArray(&values[0], size, 1);
+    point_data->SetName(u.name().c_str());
+    vtk_mesh->GetPointData()->AddArray(point_data);
   }
 
   // Actually write out the data
@@ -291,77 +291,77 @@ void ExodusFile::write_function(const Function& u, double time) const
 vtkSmartPointer<vtkUnstructuredGrid> ExodusFile::create_vtk_mesh(const Mesh& mesh) const
 {
   // Build Exodus unstructured grid object
-  vtkSmartPointer<vtkUnstructuredGrid> unstructuredGrid =
+  vtkSmartPointer<vtkUnstructuredGrid> unstructured_grid =
     vtkSmartPointer<vtkUnstructuredGrid>::New();
 
   const std::size_t d = mesh.topology().dim();
 
   // Set the points
-  const std::size_t numPoints = mesh.num_vertices();
+  const std::size_t num_points = mesh.num_vertices();
   vtkSmartPointer<vtkPoints> points =
     vtkSmartPointer<vtkPoints>::New();
   // In VTK, all mesh topologies have nodes with coordinates X, Y, Z.
   // Hence, for 1D and 2D, fill the remaining coordinates with 0
   if (d==1)
   {
-    points->SetNumberOfPoints(numPoints);
+    points->SetNumberOfPoints(num_points);
     const std::vector<double> & coords = mesh.coordinates();
-    for (std::size_t k=0; k<numPoints; k++)
+    for (std::size_t k=0; k<num_points; k++)
       points->SetPoint(k, coords[k], 0.0, 0.0);
   }
   else if (d==2)
   {
-    points->SetNumberOfPoints(numPoints);
+    points->SetNumberOfPoints(num_points);
     const std::vector<double> & coords = mesh.coordinates();
-    for (std::size_t k=0; k<numPoints; k++)
+    for (std::size_t k=0; k<num_points; k++)
       points->SetPoint(k, coords[2*k], coords[2*k+1], 0.0);
   }
   else if (d==3)
   {
     // For 3D topologies, we can just move some pointers around to give VTK
     // access to the node coordinates
-    vtkSmartPointer<vtkDoubleArray> pointData =
+    vtkSmartPointer<vtkDoubleArray> point_data =
       vtkSmartPointer<vtkDoubleArray>::New();
-    pointData->SetNumberOfComponents(3);
-    pointData->SetArray(const_cast<double*>(&mesh.coordinates()[0]), 3*numPoints, 1);
-    points->SetData(pointData);
+    point_data->SetNumberOfComponents(3);
+    point_data->SetArray(const_cast<double*>(&mesh.coordinates()[0]), 3*num_points, 1);
+    points->SetData(point_data);
   }
   else
     dolfin_error("ExodusFile.cpp",
                  "extract node coordinates",
                  "Illegal topological dimension");
-  unstructuredGrid->SetPoints(points);
+  unstructured_grid->SetPoints(points);
 
   // Set cells. Those need to be copied over since the default Dolfin
   // node ID data type is std::size_t and the node ID of Exodus is
   // vtkIdType (typically long long int).
   const std::size_t n = d+1;
-  const std::size_t numCells = mesh.num_cells();
+  const std::size_t num_cells = mesh.num_cells();
   const std::vector<unsigned int> cells = mesh.cells();
-  vtkSmartPointer<vtkCellArray> cellData =
+  vtkSmartPointer<vtkCellArray> cell_data =
     vtkSmartPointer<vtkCellArray>::New();
   // Allocate 4 entries, we may use less though
   vtkIdType tmp[4];
-  for (std::size_t k=0; k<numCells; k++)
+  for (std::size_t k=0; k<num_cells; k++)
   {
     for (std::size_t i=0; i<n; i++)
       tmp[i] = cells[n*k+i];
-    cellData->InsertNextCell(n, tmp);
+    cell_data->InsertNextCell(n, tmp);
   }
 
   if (n == 2)
-    unstructuredGrid->SetCells(VTK_LINE, cellData);
+    unstructured_grid->SetCells(VTK_LINE, cell_data);
   else if (n == 3)
-    unstructuredGrid->SetCells(VTK_TRIANGLE, cellData);
+    unstructured_grid->SetCells(VTK_TRIANGLE, cell_data);
   else if (n == 4)
-    unstructuredGrid->SetCells(VTK_TETRA, cellData);
+    unstructured_grid->SetCells(VTK_TETRA, cell_data);
   else
     dolfin_error("ExodusFile.cpp",
                  "construct VTK mesh",
                  "Illegal element node number");
 
 
-  return unstructuredGrid;
+  return unstructured_grid;
 }
 //----------------------------------------------------------------------------
 void ExodusFile::perform_write(const vtkSmartPointer<vtkUnstructuredGrid> & vtk_mesh) const
