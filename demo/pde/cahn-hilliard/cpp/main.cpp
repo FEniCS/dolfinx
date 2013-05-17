@@ -66,9 +66,15 @@ class CahnHilliardEquation : public NonlinearProblem
       // Initialize class (depending on geometric dimension of the mesh).
       // Unfortunately C++ does not allow namespaces as template arguments
       if (mesh.geometry().dim() == 2)
-        init<CahnHilliard2D::FunctionSpace, CahnHilliard2D::JacobianForm, CahnHilliard2D::ResidualForm>(mesh, dt, theta, lambda);
+      {
+        init<CahnHilliard2D::FunctionSpace, CahnHilliard2D::JacobianForm,
+             CahnHilliard2D::ResidualForm>(mesh, dt, theta, lambda);
+      }
       else if (mesh.geometry().dim() == 3)
-        init<CahnHilliard3D::FunctionSpace, CahnHilliard3D::JacobianForm, CahnHilliard3D::ResidualForm>(mesh, dt, theta, lambda);
+      {
+        init<CahnHilliard3D::FunctionSpace, CahnHilliard3D::JacobianForm,
+             CahnHilliard3D::ResidualForm>(mesh, dt, theta, lambda);
+      }
       else
         error("Cahn-Hilliard model is programmed for 2D and 3D only.");
     }

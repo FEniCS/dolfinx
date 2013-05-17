@@ -36,6 +36,7 @@ class Constants(unittest.TestCase):
           v = Constant(1.0, name="v")
           self.assertEqual(u.name(), "f_%d" % u.count())
           self.assertEqual(v.name(), "v")
+          self.assertEqual(str(v), "v")
 
      def testConstantInit(self):
           c0 = Constant(1.)
