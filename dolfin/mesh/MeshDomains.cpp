@@ -82,7 +82,8 @@ std::vector<std::string> MeshDomains::marker_names(std::size_t dim) const
 {
   dolfin_assert(dim < _named_markers.size());
   std::vector<std::string> names;
-  boost::unordered_map<std::string, boost::shared_ptr<MeshValueCollection<std::size_t> > >::const_iterator m;
+  boost::unordered_map<std::string,
+    boost::shared_ptr<MeshValueCollection<std::size_t> > >::const_iterator m;
   for (m = _named_markers[dim].begin(); m != _named_markers[dim].end(); ++m)
     names.push_back(m->first);
   return names;
@@ -175,23 +176,16 @@ MeshDomains::mesh_function(const std::map<std::size_t, std::size_t>& values,
 //-----------------------------------------------------------------------------
 const MeshDomains& MeshDomains::operator= (const MeshDomains& domains)
 {
-  error("MeshDomains assignment operator needs to fixed.");
-
   // Clear all data
   clear();
 
-  // Copy MeshValueCollections
+  // Copy data
   _markers = domains._markers;
+  _named_markers = domains._named_markers;
 
-
-  /*
-  for (std::size_t dim_t = 0; dim_t < domains.max_dim() + 1; dim_t++)
-  {
-    boost::shared_ptr<MeshValueCollection<std::size_t> >
-      marker(new MeshValueCollection<std::size_t>(*domains.markers(dim_t)));
-    _markers.push_back(marker);
-  }
-  */
+  // Reset MeshFunctions
+  _cell_domains.reset();
+  _facet_domains.reset();
 
   return *this;
 }
