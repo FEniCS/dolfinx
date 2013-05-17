@@ -88,8 +88,8 @@ void ExodusFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
   vtkSmartPointer<vtkUnstructuredGrid> vtk_mesh = create_vtk_mesh(mesh);
 
   // Add cell data
-  const int dim = meshfunction.dim();
-  const int numCells = mesh.num_cells();
+  const std::size_t dim = meshfunction.dim();
+  const std::size_t numCells = mesh.num_cells();
   vtkSmartPointer<vtkUnsignedIntArray> cellData =
     vtkSmartPointer<vtkUnsignedIntArray>::New();
   cellData->SetNumberOfComponents(dim);
@@ -129,8 +129,8 @@ void ExodusFile::operator<<(const MeshFunction<int>& meshfunction)
   vtkSmartPointer<vtkUnstructuredGrid> vtk_mesh = create_vtk_mesh(mesh);
 
   // Add cell data
-  const int dim = meshfunction.dim();
-  const int numCells = mesh.num_cells();
+  const std::size_t dim = meshfunction.dim();
+  const std::size_t numCells = mesh.num_cells();
   vtkSmartPointer<vtkIntArray> cellData =
     vtkSmartPointer<vtkIntArray>::New();
   cellData->SetNumberOfComponents(dim);
@@ -170,8 +170,8 @@ void ExodusFile::operator<<(const MeshFunction<double>& meshfunction)
   vtkSmartPointer<vtkUnstructuredGrid> vtk_mesh = create_vtk_mesh(mesh);
 
   // Add cell data
-  const int dim = meshfunction.dim();
-  const int numCells = mesh.num_cells();
+  const std::size_t dim = meshfunction.dim();
+  const std::size_t numCells = mesh.num_cells();
   vtkSmartPointer<vtkDoubleArray> cellData =
     vtkSmartPointer<vtkDoubleArray>::New();
   cellData->SetNumberOfComponents(dim);
@@ -251,7 +251,7 @@ void ExodusFile::write_function(const Function& u, double time) const
       for(std::size_t i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
         dof_set.push_back(dofs[i]);
     }
-    // Get  values
+    // Get values
     values.resize(dof_set.size());
     dolfin_assert(u.vector());
     u.vector()->get_local(&values[0], dof_set.size(), &dof_set[0]);
@@ -294,10 +294,10 @@ vtkSmartPointer<vtkUnstructuredGrid> ExodusFile::create_vtk_mesh(const Mesh& mes
   vtkSmartPointer<vtkUnstructuredGrid> unstructuredGrid =
     vtkSmartPointer<vtkUnstructuredGrid>::New();
 
-  const int d = mesh.topology().dim();
+  const std::size_t d = mesh.topology().dim();
 
   // Set the points
-  const int numPoints = mesh.num_vertices();
+  const std::size_t numPoints = mesh.num_vertices();
   vtkSmartPointer<vtkPoints> points =
     vtkSmartPointer<vtkPoints>::New();
   // In VTK, all mesh topologies have nodes with coordinates X, Y, Z.
@@ -306,14 +306,14 @@ vtkSmartPointer<vtkUnstructuredGrid> ExodusFile::create_vtk_mesh(const Mesh& mes
   {
     points->SetNumberOfPoints(numPoints);
     const std::vector<double> & coords = mesh.coordinates();
-    for (vtkIdType k=0; k<numPoints; k++)
+    for (std::size_t k=0; k<numPoints; k++)
       points->SetPoint(k, coords[k], 0.0, 0.0);
   }
   else if (d==2)
   {
     points->SetNumberOfPoints(numPoints);
     const std::vector<double> & coords = mesh.coordinates();
-    for (vtkIdType k=0; k<numPoints; k++)
+    for (std::size_t k=0; k<numPoints; k++)
       points->SetPoint(k, coords[2*k], coords[2*k+1], 0.0);
   }
   else if (d==3)
@@ -335,16 +335,16 @@ vtkSmartPointer<vtkUnstructuredGrid> ExodusFile::create_vtk_mesh(const Mesh& mes
   // Set cells. Those need to be copied over since the default Dolfin
   // node ID data type is std::size_t and the node ID of Exodus is
   // vtkIdType (typically long long int).
-  const int n = d+1;
-  const int numCells = mesh.num_cells();
+  const std::size_t n = d+1;
+  const std::size_t numCells = mesh.num_cells();
   const std::vector<unsigned int> cells = mesh.cells();
   vtkSmartPointer<vtkCellArray> cellData =
     vtkSmartPointer<vtkCellArray>::New();
   // Allocate 4 entries, we may use less though
   vtkIdType tmp[4];
-  for (int k=0; k<numCells; k++)
+  for (std::size_t k=0; k<numCells; k++)
   {
-    for (int i=0; i<n; i++)
+    for (std::size_t i=0; i<n; i++)
       tmp[i] = cells[n*k+i];
     cellData->InsertNextCell(n, tmp);
   }
