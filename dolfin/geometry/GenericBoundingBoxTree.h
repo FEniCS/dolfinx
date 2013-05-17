@@ -44,7 +44,7 @@ namespace dolfin
     virtual ~GenericBoundingBoxTree() {}
 
     /// Build bounding box tree for mesh entites of given dimension
-    void build(const Mesh& mesh, unsigned int dimension);
+    void build(const Mesh& mesh, unsigned int tdim);
 
     /// Compute all collisions between bounding boxes and given _Point_
     std::vector<unsigned int>
@@ -75,35 +75,40 @@ namespace dolfin
       unsigned int child_1;
     };
 
+    // Topological dimension of leaf entities
+    unsigned int _tdim;
+
     // List of bounding boxes (parent-child-entity relations)
-    std::vector<BBox> bboxes;
+    std::vector<BBox> _bboxes;
 
     // List of bounding box coordinates
-    std::vector<double> bbox_coordinates;
+    std::vector<double> _bbox_coordinates;
 
-    // Build bounding box tree (recursive, 3d)
+    // Build bounding box tree (recursive)
     unsigned int build(std::vector<double>& leaf_bboxes,
                        const std::vector<unsigned int>::iterator& begin,
                        const std::vector<unsigned int>::iterator& end,
                        unsigned int gdim);
 
     /// Compute collisions with given coordinate (recursive)
-    void compute_collisions(const double* x,
+    void compute_collisions(const Point& point,
                             unsigned int node,
                             std::vector<unsigned int>& entities) const;
 
     /// Compute entity collisions with given coordinate (recursive)
-    void compute_entity_collisions(const double* x,
+    void compute_entity_collisions(const Point& point,
                                    unsigned int node,
-                                   std::vector<unsigned int>& entities) const;
+                                   std::vector<unsigned int>& entities,
+                                   const Mesh& mesh) const;
 
     /// Compute first collision with given coordinate (recursive)
-    unsigned int compute_first_collision(const double* x,
+    unsigned int compute_first_collision(const Point& point,
                                          unsigned int node) const;
 
     /// Compute first entity collision with given coordinate (recursive)
-    unsigned int compute_first_entity_collision(const double* x,
-                                                unsigned int node) const;
+    unsigned int compute_first_entity_collision(const Point& point,
+                                                unsigned int node,
+                                                const Mesh& mesh) const;
 
     // Compute bounding box of mesh entity
     void compute_bbox_of_entity(double* b,
@@ -116,13 +121,13 @@ namespace dolfin
                                  unsigned int gdim)
     {
       // Add bounding box
-      bboxes.push_back(bbox);
+      _bboxes.push_back(bbox);
 
       // Add bounding box coordinates
       for (unsigned int i = 0; i < 2*gdim; ++i)
-        bbox_coordinates.push_back(b[i]);
+        _bbox_coordinates.push_back(b[i]);
 
-      return bboxes.size() - 1;
+      return _bboxes.size() - 1;
     }
 
     // Check whether bounding box is a leaf node

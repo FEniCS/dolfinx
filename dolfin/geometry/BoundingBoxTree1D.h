@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-05-02
+// Last changed: 2013-05-17
 
 #ifndef __BOUNDING_BOX_TREE_1D_H
 #define __BOUNDING_BOX_TREE_1D_H
@@ -54,7 +54,7 @@ namespace dolfin
     // Check whether point is in bounding box
     bool point_in_bbox(const double* x, unsigned int node) const
     {
-      const double* b = bbox_coordinates.data() + 2*node;
+      const double* b = _bbox_coordinates.data() + 2*node;
       return b[0] - DOLFIN_EPS < x[0] && x[0] < b[1] + DOLFIN_EPS;
     }
 

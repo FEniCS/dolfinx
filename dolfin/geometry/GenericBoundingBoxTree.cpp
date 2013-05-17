@@ -24,6 +24,7 @@
 #define MAX_DIM 6
 
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Point.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
@@ -32,15 +33,15 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GenericBoundingBoxTree::GenericBoundingBoxTree()
+GenericBoundingBoxTree::GenericBoundingBoxTree() : _tdim(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void GenericBoundingBoxTree::build(const Mesh& mesh, unsigned int dimension)
+void GenericBoundingBoxTree::build(const Mesh& mesh, unsigned int tdim)
 {
   // Check dimension
-  if (dimension < 1 or dimension > mesh.topology().dim())
+  if (tdim < 1 or tdim > mesh.topology().dim())
   {
     dolfin_error("GenericBoundingBoxTree.cpp",
                  "compute bounding box tree",
@@ -48,17 +49,20 @@ void GenericBoundingBoxTree::build(const Mesh& mesh, unsigned int dimension)
                  mesh.topology().dim());
   }
 
+  // Store topological dimension
+  _tdim = tdim;
+
   // Initialize entities of given dimension if they don't exist
-  mesh.init(dimension);
+  mesh.init(tdim);
 
   // Clear existing data if any
-  bboxes.clear();
+  _bboxes.clear();
 
   // Create bounding boxes for all entities (leaves)
   const unsigned int gdim = mesh.geometry().dim();
-  const unsigned int num_leaves = mesh.num_entities(dimension);
+  const unsigned int num_leaves = mesh.num_entities(tdim);
   std::vector<double> leaf_bboxes(2*gdim*num_leaves);
-  for (MeshEntityIterator it(mesh, dimension); !it.end(); ++it)
+  for (MeshEntityIterator it(mesh, tdim); !it.end(); ++it)
     compute_bbox_of_entity(leaf_bboxes.data() + 2*gdim*it->index(), *it, gdim);
 
   // Create leaf partition (to be sorted)
@@ -70,7 +74,7 @@ void GenericBoundingBoxTree::build(const Mesh& mesh, unsigned int dimension)
   build(leaf_bboxes, leaf_partition.begin(), leaf_partition.end(), gdim);
 
   info("Computed bounding box tree with %d nodes for %d entities.",
-       bboxes.size(), num_leaves);
+       _bboxes.size(), num_leaves);
 }
 //-----------------------------------------------------------------------------
 unsigned int
@@ -92,7 +96,7 @@ GenericBoundingBoxTree::build(std::vector<double>& leaf_bboxes,
     const double* b = leaf_bboxes.data() + 2*gdim*entity_index;
 
     // Store bounding box data
-    bbox.child_0 = bboxes.size(); // child_0 == node denotes a leaf
+    bbox.child_0 = _bboxes.size(); // child_0 == node denotes a leaf
     bbox.child_1 = entity_index;  // index of entity contained in leaf
     return add_bbox(bbox, b, gdim);
   }
@@ -119,7 +123,7 @@ GenericBoundingBoxTree::compute_collisions(const Point& point) const
 {
   // Call recursive find function
   std::vector<unsigned int> entities;
-  compute_collisions(point.coordinates(), bboxes.size() - 1, entities);
+  compute_collisions(point, _bboxes.size() - 1, entities);
 
   return entities;
 }
@@ -128,9 +132,17 @@ std::vector<unsigned int>
 GenericBoundingBoxTree::compute_entity_collisions(const Point& point,
                                                   const Mesh& mesh) const
 {
+  // Point in entity only implemented for cells. Consider extending this.
+  if (_tdim != mesh.topology().dim())
+  {
+    dolfin_error("GenericBoundingBoxTree.cpp",
+                 "compute collision between point and mesh entities",
+                 "Point-in-entity is only implemented for cells");
+  }
+
   // Call recursive find function
   std::vector<unsigned int> entities;
-  compute_entity_collisions(point.coordinates(), bboxes.size() - 1, entities);
+  compute_entity_collisions(point, _bboxes.size() - 1, entities, mesh);
 
   return entities;
 }
@@ -139,64 +151,96 @@ unsigned int
 GenericBoundingBoxTree::compute_first_collision(const Point& point) const
 {
   // Call recursive find function
-  return compute_first_collision(point.coordinates(), bboxes.size() - 1);
+  return compute_first_collision(point, _bboxes.size() - 1);
 }
 //-----------------------------------------------------------------------------
 unsigned int
 GenericBoundingBoxTree::compute_first_entity_collision(const Point& point,
                                                        const Mesh& mesh) const
 {
+  // Point in entity only implemented for cells. Consider extending this.
+  if (_tdim != mesh.topology().dim())
+  {
+    dolfin_error("GenericBoundingBoxTree.cpp",
+                 "compute collision between point and mesh entities",
+                 "Point-in-entity is only implemented for cells");
+  }
+
   // Call recursive find function
-  return compute_first_entity_collision(point, mesh);
+  return compute_first_entity_collision(point, _bboxes.size() - 1, mesh);
 }
 //-----------------------------------------------------------------------------
 void
-GenericBoundingBoxTree::compute_collisions(const double* x,
+GenericBoundingBoxTree::compute_collisions(const Point& point,
                                            unsigned int node,
                                            std::vector<unsigned int>& entities) const
 {
   // Get bounding box for current node
-  const BBox& bbox = bboxes[node];
+  const BBox& bbox = _bboxes[node];
 
   // Recursively search bounding boxes
-  if (!point_in_bbox(x, node))
+  if (!point_in_bbox(point.coordinates(), node))
   {
     // Not in this bounding box so don't search further
     return;
   }
   else if (is_leaf(bbox, node))
   {
-    // Point found in leaf
+    // Point found in leaf bounding box
     entities.push_back(bbox.child_1); // child_1 denotes entity for leaves
   }
   else
   {
     // Check both children
-    compute_collisions(x, bbox.child_0, entities);
-    compute_collisions(x, bbox.child_1, entities);
+    compute_collisions(point, bbox.child_0, entities);
+    compute_collisions(point, bbox.child_1, entities);
   }
 }
 //-----------------------------------------------------------------------------
 void
-GenericBoundingBoxTree::compute_entity_collisions(const double* x,
+GenericBoundingBoxTree::compute_entity_collisions(const Point& point,
                                                   unsigned int node,
-                                                  std::vector<unsigned int>& entities) const
+                                                  std::vector<unsigned int>& entities,
+                                                  const Mesh& mesh) const
 {
-  // Not implemented
+  // Get bounding box for current node
+  const BBox& bbox = _bboxes[node];
+
+  // Recursively search bounding boxes
+  if (!point_in_bbox(point.coordinates(), node))
+  {
+    // Not in this bounding box so don't search further
+    return;
+  }
+  else if (is_leaf(bbox, node))
+  {
+    // Point found in leaf bounding box, check entity
+    dolfin_assert(_tdim == mesh.topology().dim());
+    const unsigned int entity_index = bbox.child_1;
+    Cell cell(mesh, entity_index);
+    if (cell.contains(point))
+      entities.push_back(entity_index);
+  }
+  else
+  {
+    // Check both children
+    compute_collisions(point, bbox.child_0, entities);
+    compute_collisions(point, bbox.child_1, entities);
+  }
 }
 //-----------------------------------------------------------------------------
 unsigned int
-GenericBoundingBoxTree::compute_first_collision(const double* x,
+GenericBoundingBoxTree::compute_first_collision(const Point& point,
                                                 unsigned int node) const
 {
   // Get max integer to signify not found
   unsigned int not_found = std::numeric_limits<unsigned int>::max();
 
   // Get bounding box for current node
-  const BBox& bbox = bboxes[node];
+  const BBox& bbox = _bboxes[node];
 
   // Recursively search bounding boxes
-  if (!point_in_bbox(x, node))
+  if (!point_in_bbox(point.coordinates(), node))
   {
     // Not in this bounding box so don't search further
     return not_found;
@@ -209,12 +253,12 @@ GenericBoundingBoxTree::compute_first_collision(const double* x,
   else
   {
     // Check first child
-    unsigned int c0 = compute_first_collision(x, bbox.child_0);
+    unsigned int c0 = compute_first_collision(point, bbox.child_0);
     if (c0 != not_found)
       return c0;
 
     // Check second child
-    unsigned int c1 = compute_first_collision(x, bbox.child_1);
+    unsigned int c1 = compute_first_collision(point, bbox.child_1);
     if (c1 != not_found)
       return c1;
   }
@@ -224,8 +268,9 @@ GenericBoundingBoxTree::compute_first_collision(const double* x,
 }
 //-----------------------------------------------------------------------------
 unsigned int
-GenericBoundingBoxTree::compute_first_entity_collision(const double* x,
-                                                       unsigned int node) const
+GenericBoundingBoxTree::compute_first_entity_collision(const Point& point,
+                                                       unsigned int node,
+                                                       const Mesh& mesh) const
 {
   // Not implemented
   return 0;

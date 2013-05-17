@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-18
-// Last changed: 2013-05-15
+// Last changed: 2013-05-17
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/Cell.h>
