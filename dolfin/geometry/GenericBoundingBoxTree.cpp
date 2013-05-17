@@ -272,8 +272,42 @@ GenericBoundingBoxTree::compute_first_entity_collision(const Point& point,
                                                        unsigned int node,
                                                        const Mesh& mesh) const
 {
-  // Not implemented
-  return 0;
+  // Get max integer to signify not found
+  unsigned int not_found = std::numeric_limits<unsigned int>::max();
+
+  // Get bounding box for current node
+  const BBox& bbox = _bboxes[node];
+
+  // Recursively search bounding boxes
+  if (!point_in_bbox(point.coordinates(), node))
+  {
+    // Not in this bounding box so don't search further
+    return not_found;
+  }
+  else if (is_leaf(bbox, node))
+  {
+    // Point found in leaf bounding box, check entity
+    dolfin_assert(_tdim == mesh.topology().dim());
+    const unsigned int entity_index = bbox.child_1;
+    Cell cell(mesh, entity_index);
+    if (cell.contains(point))
+      return entity_index;
+  }
+  else
+  {
+    // Check first child
+    unsigned int c0 = compute_first_collision(point, bbox.child_0);
+    if (c0 != not_found)
+      return c0;
+
+    // Check second child
+    unsigned int c1 = compute_first_collision(point, bbox.child_1);
+    if (c1 != not_found)
+      return c1;
+  }
+
+  // Point not found
+  return not_found;
 }
 //-----------------------------------------------------------------------------
 void GenericBoundingBoxTree::compute_bbox_of_entity(double* b,
