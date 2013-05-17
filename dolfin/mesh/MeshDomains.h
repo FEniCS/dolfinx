@@ -78,6 +78,15 @@ namespace dolfin
     /// Return names of markers of a given dimension
     std::vector<std::string> marker_names(std::size_t dim) const;
 
+    /// Set marker (entity index, marker value) of a given dimension
+    /// d. Returns true if a new key is inserted, false otherwise.
+    bool set_marker(std::pair<std::size_t, std::size_t> marker,
+                    std::size_t dim);
+
+    /// Get marker (entity index, marker value) of a given dimension
+    /// d. Throws an error if marker does not exist.
+    std::size_t get_marker(std::size_t entity_index, std::size_t dim) const;
+
     /// Get cell domains. This function computes the mesh function
     /// corresponding to markers of dimension D. The mesh function is
     /// cached for later access and will be computed on the first call
@@ -94,7 +103,8 @@ namespace dolfin
 
     /// Create a mesh function corresponding to the MeshCollection 'collection'
     boost::shared_ptr<MeshFunction<std::size_t> >
-      mesh_function(const MeshValueCollection<std::size_t>& collection,
+      mesh_function(const std::map<std::size_t, std::size_t>& values,
+                    std::size_t dim,
 		    std::size_t unset_value=MeshDomains::default_unset_value) const;
 
     /// Assignment operator
@@ -117,7 +127,8 @@ namespace dolfin
     std::vector<std::map<std::size_t, std::size_t> > _markers;
 
     // Named subdomain markers for each geometric dim
-    std::vector<boost::unordered_map<std::string, boost::shared_ptr<MeshValueCollection<std::size_t> > > > _named_markers;
+    std::vector<boost::unordered_map<std::string,
+      boost::shared_ptr<MeshValueCollection<std::size_t> > > > _named_markers;
 
     // Mesh function for cell domains
     mutable boost::shared_ptr<MeshFunction<std::size_t> > _cell_domains;

@@ -88,6 +88,29 @@ std::vector<std::string> MeshDomains::marker_names(std::size_t dim) const
   return names;
 }
 //-----------------------------------------------------------------------------
+bool MeshDomains::set_marker(std::pair<std::size_t, std::size_t> marker,
+                             std::size_t dim)
+{
+  dolfin_assert(dim < _markers.size());
+  return _markers[dim].insert(marker).second;
+}
+//-----------------------------------------------------------------------------
+std::size_t MeshDomains::get_marker(std::size_t entity_index,
+                                    std::size_t dim) const
+{
+  dolfin_assert(dim < _markers.size());
+  std::map<std::size_t, std::size_t>::const_iterator it
+    = _markers[dim].find(entity_index);
+  if (it == _markers[dim].end())
+  {
+    dolfin_error("MeshDomains.cpp",
+                 "get marker",
+                 "Marked entity index does not exist in marked set");
+  }
+
+  return it->second;
+}
+//-----------------------------------------------------------------------------
 boost::shared_ptr<const MeshFunction<std::size_t> >
   MeshDomains::cell_domains(std::size_t unset_value) const
 {
@@ -97,11 +120,8 @@ boost::shared_ptr<const MeshFunction<std::size_t> >
 
   // Create markers if mesh collection present
   if (!_markers[D].empty() and !_cell_domains)
-  {
-    error("Not yet updated");
-    //const MeshValueCollection<std::size_t> domain = *(_markers[D]);
-    //_cell_domains = mesh_function(domain, unset_value);
-  }
+    _cell_domains = mesh_function(_markers[D], D, unset_value);
+
 
   return _cell_domains;
 }
@@ -115,21 +135,16 @@ boost::shared_ptr<const MeshFunction<std::size_t> >
 
   // Create markers if mesh collection present
   if (!_markers[D - 1].empty() and !_facet_domains)
-  {
-    error("Not yet updated");
-    //const MeshValueCollection<std::size_t> domain = *(_markers[D - 1]);
-    //_facet_domains = mesh_function(domain, unset_value);
-  }
+    _facet_domains = mesh_function(_markers[D - 1], D - 1, unset_value);
 
   return _facet_domains;
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<MeshFunction<std::size_t> >
-MeshDomains::mesh_function(const MeshValueCollection<std::size_t>& collection,
-                           std::size_t unset_value) const
+MeshDomains::mesh_function(const std::map<std::size_t, std::size_t>& values,
+                           std::size_t d, std::size_t unset_value) const
 {
   // Get dimensions
-  const std::size_t d = collection.dim();
   const std::size_t D = _mesh.topology().dim();
 
   // Create MeshFunction
@@ -138,26 +153,14 @@ MeshDomains::mesh_function(const MeshValueCollection<std::size_t>& collection,
 
   // Get mesh connectivity D --> d
   dolfin_assert(d <= D);
-  const MeshConnectivity& connectivity = _mesh.topology()(D, d);
-  dolfin_assert(D == d || !connectivity.empty());
 
   // Iterate over all values
-  const std::map<std::pair<std::size_t, std::size_t>, std::size_t>& values = collection.values();
-  std::map<std::pair<std::size_t, std::size_t>, std::size_t>::const_iterator it;
+  std::map<std::size_t, std::size_t>::const_iterator it;
   for (it = values.begin(); it != values.end(); ++it)
   {
     // Get marker data
-    const std::size_t cell_index = it->first.first;
-    const std::size_t local_entity = it->first.second;
+    const std::size_t entity_index = it->first;
     const std::size_t value = it->second;
-
-    // Get global entity index. Note that we ignore the local entity
-    // index when the function is defined over cells.
-    std::size_t entity_index = 0;
-    if (d == D)
-      entity_index = cell_index;
-    else
-      entity_index = connectivity(cell_index)[local_entity];
 
     // Check that value is not equal to the 'unset' value
     if (value == unset_value)
@@ -172,11 +175,15 @@ MeshDomains::mesh_function(const MeshValueCollection<std::size_t>& collection,
 //-----------------------------------------------------------------------------
 const MeshDomains& MeshDomains::operator= (const MeshDomains& domains)
 {
+  error("MeshDomains assignment operator needs to fixed.");
+
   // Clear all data
   clear();
 
   // Copy MeshValueCollections
   _markers = domains._markers;
+
+
   /*
   for (std::size_t dim_t = 0; dim_t < domains.max_dim() + 1; dim_t++)
   {
