@@ -300,11 +300,17 @@ vtkSmartPointer<vtkUnstructuredGrid> ExodusFile::create_vtk_mesh(const Mesh& mes
   const int numPoints = mesh.num_vertices();
   vtkSmartPointer<vtkPoints> points =
     vtkSmartPointer<vtkPoints>::New();
-  if (d==2)
+  // In VTK, all mesh topologies have nodes with coordinates X, Y, Z.
+  // Hence, for 1D and 2D, fill the remaining coordinates with 0
+  if (d==1)
   {
-    // In VTK, all mesh topologies have nodes with coordinates X, Y, Z.
-    // Hence, copy over the X, Y coordinate from the Dolfin mesh and add 0.0
-    // for Z
+    points->SetNumberOfPoints(numPoints);
+    const std::vector<double> & coords = mesh.coordinates();
+    for (vtkIdType k=0; k<numPoints; k++)
+      points->SetPoint(k, coords[k], 0.0, 0.0);
+  }
+  else if (d==2)
+  {
     points->SetNumberOfPoints(numPoints);
     const std::vector<double> & coords = mesh.coordinates();
     for (vtkIdType k=0; k<numPoints; k++)
@@ -334,7 +340,8 @@ vtkSmartPointer<vtkUnstructuredGrid> ExodusFile::create_vtk_mesh(const Mesh& mes
   const std::vector<unsigned int> cells = mesh.cells();
   vtkSmartPointer<vtkCellArray> cellData =
     vtkSmartPointer<vtkCellArray>::New();
-  vtkIdType tmp[n];
+  // Allocate 4 entries, we may use less though
+  vtkIdType tmp[4];
   for (int k=0; k<numCells; k++)
   {
     for (int i=0; i<n; i++)
@@ -342,14 +349,16 @@ vtkSmartPointer<vtkUnstructuredGrid> ExodusFile::create_vtk_mesh(const Mesh& mes
     cellData->InsertNextCell(n, tmp);
   }
 
-  if (n == 3)
+  if (n == 2)
+    unstructuredGrid->SetCells(VTK_LINE, cellData);
+  else if (n == 3)
     unstructuredGrid->SetCells(VTK_TRIANGLE, cellData);
   else if (n == 4)
     unstructuredGrid->SetCells(VTK_TETRA, cellData);
   else
     dolfin_error("ExodusFile.cpp",
                  "construct VTK mesh",
-                 "Illegal topological dimension");
+                 "Illegal element node number");
 
 
   return unstructuredGrid;
