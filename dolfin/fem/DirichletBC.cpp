@@ -26,33 +26,32 @@
 #include <map>
 #include <utility>
 #include <boost/assign/list_of.hpp>
-#include <boost/serialization/utility.hpp>
 
-#include <dolfin/common/Timer.h>
-#include <dolfin/common/constants.h>
 #include <dolfin/common/Array.h>
+#include <dolfin/common/constants.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/RangedIndexSet.h>
-#include <dolfin/function/GenericFunction.h>
-#include <dolfin/function/FunctionSpace.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/function/Constant.h>
+#include <dolfin/function/FunctionSpace.h>
+#include <dolfin/function/GenericFunction.h>
 #include <dolfin/log/log.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshData.h>
 #include <dolfin/mesh/MeshDomains.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshValueCollection.h>
-#include <dolfin/mesh/Restriction.h>
-#include <dolfin/mesh/Vertex.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Point.h>
+#include <dolfin/mesh/Restriction.h>
 #include <dolfin/mesh/SubDomain.h>
+#include <dolfin/mesh/Vertex.h>
+#include <dolfin/la/GenericLinearAlgebraFactory.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/la/GenericLinearAlgebraFactory.h>
-#include "GenericDofMap.h"
 #include "FiniteElement.h"
+#include "GenericDofMap.h"
 #include "UFCCell.h"
 #include "DirichletBC.h"
 
@@ -685,10 +684,6 @@ void DirichletBC::init_from_mesh_function(const MeshFunction<std::size_t>& sub_d
 
   // Get mesh
   const Mesh& mesh = *_function_space->mesh();
-
-  // Get restriction if any
-  boost::shared_ptr<const Restriction> restriction
-    = _function_space->dofmap()->restriction();
 
   // Make sure we have the facet - cell connectivity
   const std::size_t D = mesh.topology().dim();
