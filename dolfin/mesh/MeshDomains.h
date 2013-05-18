@@ -75,9 +75,6 @@ namespace dolfin
     /// pointer version)
     const std::map<std::size_t, std::size_t>& markers(std::size_t dim) const;
 
-    /// Return names of markers of a given dimension
-    std::vector<std::string> marker_names(std::size_t dim) const;
-
     /// Set marker (entity index, marker value) of a given dimension
     /// d. Returns true if a new key is inserted, false otherwise.
     bool set_marker(std::pair<std::size_t, std::size_t> marker,
@@ -122,13 +119,7 @@ namespace dolfin
     Mesh& _mesh;
 
     // Subdomain markers for each geometric dim
-    //std::vector<boost::shared_ptr<MeshValueCollection<std::size_t> > > _markers;
-    //std::vector<std::vector<std::pair<std::size_t, std::size_t> > > _markers;
     std::vector<std::map<std::size_t, std::size_t> > _markers;
-
-    // Named subdomain markers for each geometric dim
-    std::vector<boost::unordered_map<std::string,
-      boost::shared_ptr<MeshValueCollection<std::size_t> > > > _named_markers;
 
     // Mesh function for cell domains
     mutable boost::shared_ptr<MeshFunction<std::size_t> > _cell_domains;
