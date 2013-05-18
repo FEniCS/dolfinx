@@ -142,8 +142,8 @@ void ExodusFile::operator<<(const MeshFunction<int>& meshfunction)
     = vtkSmartPointer<vtkIntArray>::New();
   cell_data->SetNumberOfComponents(dim);
 
-  std::vector<unsigned int> tmp(meshfunction.values(),
-                                meshfunction.values() + meshfunction.size());
+  std::vector<int> tmp(meshfunction.values(),
+                       meshfunction.values() + meshfunction.size());
   dolfin_assert(tmp.size() ==  dim*num_cells);
   cell_data->SetArray(tmp.data(), dim*num_cells, 1);
   cell_data->SetName(meshfunction.name().c_str());
@@ -189,8 +189,8 @@ void ExodusFile::operator<<(const MeshFunction<double>& meshfunction)
     vtkSmartPointer<vtkDoubleArray>::New();
   cell_data->SetNumberOfComponents(dim);
 
-  std::vector<unsigned int> tmp(meshfunction.values(),
-                                meshfunction.values() + meshfunction.size());
+  std::vector<double> tmp(meshfunction.values(),
+                       meshfunction.values() + meshfunction.size());
   cell_data->SetArray(tmp.data(), dim*num_cells, 1);
   cell_data->SetName(meshfunction.name().c_str());
   vtk_mesh->GetCellData()->AddArray(cell_data);
@@ -339,8 +339,11 @@ ExodusFile::create_vtk_mesh(const Mesh& mesh) const
     vtkSmartPointer<vtkDoubleArray> point_data
       = vtkSmartPointer<vtkDoubleArray>::New();
     point_data->SetNumberOfComponents(3);
-    dolfin_assert((mesh.coordinates().size() ==  3*num_points);
-    point_data->SetArray(mesh.coordinates().data(), 3*num_points, 1);
+    dolfin_assert(mesh.coordinates().size() ==  3*num_points);
+    std::vector<double> tmp(mesh.coordinates().begin(),
+                            mesh.coordinates().end());
+    dolfin_assert(mesh.coordinates().size() == 3*num_points);
+    point_data->SetArray(tmp.data(), 3*num_points, 1);
     points->SetData(point_data);
   }
   else
