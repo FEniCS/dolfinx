@@ -72,10 +72,11 @@ const MeshData& MeshData::operator= (const MeshData& data)
   }
 
   // Copy arrays
-  for (a_const_iterator it = data.arrays.begin(); it != data.arrays.end(); ++it)
+  for (a_const_iterator it = data.arrays.begin();
+       it != data.arrays.end(); ++it)
   {
-    boost::shared_ptr<std::vector<std::size_t> >
-      a = create_array( it->first, static_cast<std::size_t>(it->second->size()) );
+    boost::shared_ptr<std::vector<std::size_t> > a
+      = create_array(it->first, static_cast<std::size_t>(it->second->size()));
     *a = *it->second;
   }
 
@@ -103,7 +104,8 @@ boost::shared_ptr<MeshFunction<std::size_t> >
   check_deprecated(name);
 
   // Create new data
-  boost::shared_ptr<MeshFunction<std::size_t> > f(new MeshFunction<std::size_t>(_mesh));
+  boost::shared_ptr<MeshFunction<std::size_t> >
+    f(new MeshFunction<std::size_t>(_mesh));
   dolfin_assert(f);
 
   // Add to map
@@ -142,7 +144,8 @@ MeshData::create_array(std::string name, std::size_t size)
   check_deprecated(name);
 
   // Create new data
-  boost::shared_ptr<std::vector<std::size_t> > a(new std::vector<std::size_t>(size));
+  boost::shared_ptr<std::vector<std::size_t> >
+    a(new std::vector<std::size_t>(size));
   std::fill(a->begin(), a->end(), 0);
 
   // Add to map
@@ -202,15 +205,22 @@ std::string MeshData::str(bool verbose) const
     // Mesh functions
     s << "  MeshFunction<std::size_t>" << std::endl;
     s << "  ------------------" << std::endl;
-    for (mf_const_iterator it = mesh_functions.begin(); it != mesh_functions.end(); ++it)
-      s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
+    for (mf_const_iterator it = mesh_functions.begin(); it
+           != mesh_functions.end(); ++it)
+    {
+      s << "  " << it->first << " (size = " << it->second->size() << ")"
+        << std::endl;
+    }
     s << std::endl;
 
     // Arrays
     s << "  std::vector<std::size_t>" << std::endl;
     s << "  -----------------" << std::endl;
     for (a_const_iterator it = arrays.begin(); it != arrays.end(); ++it)
-      s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
+    {
+      s << "  " << it->first << " (size = " << it->second->size() << ")"
+        << std::endl;
+    }
     s << std::endl;
   }
   else

@@ -116,7 +116,8 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<std::size_t>
     ///         The array.
-    boost::shared_ptr<std::vector<std::size_t> > create_array(std::string name);
+    boost::shared_ptr<std::vector<std::size_t> >
+      create_array(std::string name);
 
     /// Create array (vector) with given name and size
     ///
@@ -129,7 +130,8 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<std::size_t>
     ///         The array.
-    boost::shared_ptr<std::vector<std::size_t> > create_array(std::string name, std::size_t size);
+    boost::shared_ptr<std::vector<std::size_t> >
+      create_array(std::string name, std::size_t size);
 
     //--- Retrieval of data ---
 
@@ -143,7 +145,8 @@ namespace dolfin
     /// *Returns*
     ///     _MeshFunction_ <std::size_t>
     ///         The mesh function with given name
-    boost::shared_ptr<MeshFunction<std::size_t> > mesh_function(const std::string name) const;
+    boost::shared_ptr<MeshFunction<std::size_t> >
+      mesh_function(const std::string name) const;
 
     /// Return array with given name (returning zero if data is not
     /// available)
@@ -155,7 +158,8 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<std::size_t>
     ///         The array.
-    boost::shared_ptr<std::vector<std::size_t> > array(const std::string name) const;
+    boost::shared_ptr<std::vector<std::size_t> >
+      array(const std::string name) const;
 
     //--- Removal of data ---
 
@@ -188,7 +192,6 @@ namespace dolfin
 
     /// Friends
     friend class XMLMesh;
-    friend class MeshPartitioning;
 
   private:
 
@@ -199,7 +202,8 @@ namespace dolfin
     Mesh& _mesh;
 
     // A map from named mesh data to MeshFunctions
-    std::map<std::string, boost::shared_ptr<MeshFunction<std::size_t> > > mesh_functions;
+    std::map<std::string, boost::shared_ptr<MeshFunction<std::size_t> > >
+      mesh_functions;
 
     // A map from named mesh data to vector
     std::map<std::string, boost::shared_ptr<std::vector<std::size_t> > > arrays;
