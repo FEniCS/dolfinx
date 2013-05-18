@@ -410,12 +410,18 @@ class TriangleTester(_TestCase):
         self.assertAlmostEqual(area0+area1, total_area)
 
         # Measure the edge length of the two edge domains
-        edge_markers = mesh.domains().facet_domains()
+        #edge_markers = mesh.domains().facet_domains()
+        edge_markers = mesh.domains().markers(mesh.topology().dim()-1)
         self.assertTrue(edge_markers is not None)
-        length0 = reduce(add, (Edge(mesh, e.index()).length() \
-                            for e in SubsetIterator(edge_markers, 0)), 0.0)
-        length1 = reduce(add, (Edge(mesh, e.index()).length() \
-                            for e in SubsetIterator(edge_markers, 1)), 0.0)
+        #length0 = reduce(add, (Edge(mesh, e.index()).length() \
+        #                    for e in SubsetIterator(edge_markers, 0)), 0.0)
+        length0, length1 = 0.0, 0.0
+        for item in edge_markers.items():
+            if item[1] == 0:
+                e = Edge(mesh, int(item[0]))
+                length0 +=  Edge(mesh, int(item[0])).length()
+            elif item [1] == 1:
+                length1 +=  Edge(mesh, int(item[0])).length()
 
         # Total length of all edges and total length of boundary edges
         total_length = reduce(add, (e.length() for e in edges(mesh)), 0.0)
@@ -423,7 +429,7 @@ class TriangleTester(_TestCase):
                           for f in facets(mesh) if f.exterior()), 0.0)
 
         # Check that the edges add up
-        self.assertAlmostEqual(length0+length1, total_length)
+        self.assertAlmostEqual(length0 + length1, total_length)
         self.assertAlmostEqual(length1, boundary_length)
 
         # Clean up

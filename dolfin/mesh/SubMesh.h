@@ -57,7 +57,7 @@ namespace dolfin
   private:
 
     /// Create sub mesh
-    void init(const Mesh& mesh, const MeshFunction<std::size_t>& sub_domains,
+    void init(const Mesh& mesh, const std::vector<std::size_t>& sub_domains,
               std::size_t sub_domain);
 
   };

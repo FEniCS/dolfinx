@@ -18,6 +18,7 @@
 // First added:  2009-02-11
 // Last changed: 2013-02-11
 
+#include <limits>
 #include <map>
 #include <vector>
 
@@ -41,34 +42,51 @@ SubMesh::SubMesh(const Mesh& mesh, const SubDomain& sub_domain)
   sub_domains = 0;
   sub_domain.mark(sub_domains, 1);
 
+  // Copy data into std::vector
+  const std::vector<std::size_t> _sub_domains(sub_domains.values(),
+                                sub_domains.values() + sub_domains.size());
+
   // Create sub mesh
-  init(mesh, sub_domains, 1);
+  init(mesh, _sub_domains, 1);
 }
 //-----------------------------------------------------------------------------
 SubMesh::SubMesh(const Mesh& mesh,
-                 const MeshFunction<std::size_t>& sub_domains, std::size_t sub_domain)
+                 const MeshFunction<std::size_t>& sub_domains,
+                 std::size_t sub_domain)
 {
+  // Copy data into std::vector
+  const std::vector<std::size_t> _sub_domains(sub_domains.values(),
+                                sub_domains.values() + sub_domains.size());
+
   // Create sub mesh
-  init(mesh, sub_domains, sub_domain);
+  init(mesh, _sub_domains, sub_domain);
 }
 //----------------------------------------------------------------------------
 SubMesh::SubMesh(const Mesh& mesh, std::size_t sub_domain)
 {
-  if (mesh.domains().num_marked(mesh.topology().dim()) == 0)
+  // Topological dimension
+  const std::size_t D = mesh.topology().dim();
+
+  if (mesh.domains().num_marked(D) == 0)
   {
     dolfin_error("SubMesh.cpp",
                  "construct SubMesh",
                  "Mesh does not include a MeshValueCollection the cell dimension of the mesh");
   }
 
-  // Get MeshFunction from MeshValueCollection
-  boost::shared_ptr<const MeshFunction<std::size_t> > sub_domains
-    = mesh.domains().cell_domains();
+  // Get cell markers
+  const std::map<std::size_t, std::size_t>& cell_markers
+    = mesh.domains().markers(D);
+
+  // Build vector for all cells to hold markers
+  std::vector<std::size_t> sub_domains(mesh.num_cells(),
+                                std::numeric_limits<std::size_t>::max());
+  std::map<std::size_t, std::size_t>::const_iterator it;
+  for (it = cell_markers.begin(); it != cell_markers.end(); ++it)
+    sub_domains[it->first] = it->second;
 
   // Create sub mesh
-  cout << "Create sub mesh" << endl;
-  init(mesh, *sub_domains, sub_domain);
-  cout << "End create sub mesh" << endl;
+  init(mesh, sub_domains, sub_domain);
 }
 //-----------------------------------------------------------------------------
 SubMesh::~SubMesh()
@@ -77,7 +95,7 @@ SubMesh::~SubMesh()
 }
 //-----------------------------------------------------------------------------
 void SubMesh::init(const Mesh& mesh,
-                   const MeshFunction<std::size_t>& sub_domains,
+                   const std::vector<std::size_t>& sub_domains,
                    std::size_t sub_domain)
 {
   // Open mesh for editing
@@ -90,7 +108,7 @@ void SubMesh::init(const Mesh& mesh,
   std::set<std::size_t> submesh_cells;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    if (sub_domains[*cell] == sub_domain)
+    if (sub_domains[cell->index()] == sub_domain)
       submesh_cells.insert(cell->index());
   }
 

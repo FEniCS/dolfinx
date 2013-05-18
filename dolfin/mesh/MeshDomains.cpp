@@ -21,19 +21,13 @@
 // Last changed: 2011-04-03
 
 #include <limits>
-#include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
-#include "MeshFunction.h"
-#include "MeshValueCollection.h"
 #include "MeshDomains.h"
 
 using namespace dolfin;
 
-const std::size_t MeshDomains::default_unset_value
-    = std::numeric_limits<std::size_t>::max();
-
 //-----------------------------------------------------------------------------
-MeshDomains::MeshDomains(Mesh& mesh) : _mesh(mesh)
+MeshDomains::MeshDomains()
 {
   // Do nothing
 }
@@ -101,79 +95,10 @@ std::size_t MeshDomains::get_marker(std::size_t entity_index,
   return it->second;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const MeshFunction<std::size_t> >
-  MeshDomains::cell_domains(std::size_t unset_value) const
-{
-  // Check if any markers have been set
-  const std::size_t D = _mesh.topology().dim();
-  dolfin_assert(D < _markers.size());
-
-  // Create markers if mesh collection present
-  if (!_markers[D].empty() and !_cell_domains)
-    _cell_domains = mesh_function(_markers[D], D, unset_value);
-
-
-  return _cell_domains;
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<const MeshFunction<std::size_t> >
-  MeshDomains::facet_domains(std::size_t unset_value) const
-{
-  // Check if any markers have been set
-  const std::size_t D = _mesh.topology().dim();
-  dolfin_assert((D - 1) < _markers.size());
-
-  // Create markers if mesh collection present
-  if (!_markers[D - 1].empty() and !_facet_domains)
-    _facet_domains = mesh_function(_markers[D - 1], D - 1, unset_value);
-
-  return _facet_domains;
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<MeshFunction<std::size_t> >
-MeshDomains::mesh_function(const std::map<std::size_t, std::size_t>& values,
-                           std::size_t d, std::size_t unset_value) const
-{
-  // Get dimensions
-  const std::size_t D = _mesh.topology().dim();
-
-  // Create MeshFunction
-  boost::shared_ptr<MeshFunction<std::size_t> >
-    mesh_function(new MeshFunction<std::size_t>(_mesh, d, unset_value));
-
-  // Get mesh connectivity D --> d
-  dolfin_assert(d <= D);
-
-  // Iterate over all values
-  std::map<std::size_t, std::size_t>::const_iterator it;
-  for (it = values.begin(); it != values.end(); ++it)
-  {
-    // Get marker data
-    const std::size_t entity_index = it->first;
-    const std::size_t value = it->second;
-
-    // Check that value is not equal to the 'unset' value
-    if (value == unset_value)
-      warning("MeshValueCollection value entry is equal to %d, which is used to indicate an \"unset\" value.", value);
-
-    // Set value for entity
-    (*mesh_function)[entity_index] = value;
-  }
-
-  return mesh_function;
-}
-//-----------------------------------------------------------------------------
 const MeshDomains& MeshDomains::operator= (const MeshDomains& domains)
 {
-  // Clear all data
-  clear();
-
   // Copy data
   _markers = domains._markers;
-
-  // Reset MeshFunctions
-  _cell_domains.reset();
-  _facet_domains.reset();
 
   return *this;
 }
@@ -184,22 +109,11 @@ void MeshDomains::init(std::size_t dim)
   clear();
 
   // Add markers for each topological dimension
-  _markers.resize(dim +1);
-
-  /*
-  for (std::size_t d = 0; d <= dim; d++)
-  {
-    boost::shared_ptr<MeshValueCollection<std::size_t> >
-        m(new MeshValueCollection<std::size_t>(d));
-    _markers.push_back(m);
-  }
-  */
+  _markers.resize(dim + 1);
 }
 //-----------------------------------------------------------------------------
 void MeshDomains::clear()
 {
   _markers.clear();
-  _cell_domains.reset();
-  _facet_domains.reset();
 }
 //-----------------------------------------------------------------------------

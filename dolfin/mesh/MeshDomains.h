@@ -24,18 +24,10 @@
 #define __MESH_DOMAINS_H
 
 #include <map>
-#include <string>
 #include <vector>
-#include <boost/shared_ptr.hpp>
-#include <boost/unordered_map.hpp>
 
 namespace dolfin
 {
-
-  // Forward declarations
-  class Mesh;
-  template <typename T> class MeshFunction;
-  template <typename T> class MeshValueCollection;
 
   /// The class _MeshDomains_ stores the division of a _Mesh_ into
   /// subdomains. For each topological dimension 0 <= d <= D, where D
@@ -51,13 +43,10 @@ namespace dolfin
   public:
 
     /// Create empty mesh domains
-    MeshDomains(Mesh& mesh);
+    MeshDomains();
 
     /// Destructor
     ~MeshDomains();
-
-    /// Value used for unset entities by default when converting to MeshFunctions
-    static const std::size_t default_unset_value;
 
     /// Return maximum topological dimension of stored markers
     std::size_t max_dim() const;
@@ -68,7 +57,8 @@ namespace dolfin
     /// Check whether domain data is empty
     bool is_empty() const;
 
-    /// Get subdomain markers for given dimension (shared pointer version)
+    /// Get subdomain markers for given dimension (shared pointer
+    /// version)
     std::map<std::size_t, std::size_t>& markers(std::size_t dim);
 
     /// Get subdomain markers for given dimension (const shared
@@ -84,26 +74,6 @@ namespace dolfin
     /// d. Throws an error if marker does not exist.
     std::size_t get_marker(std::size_t entity_index, std::size_t dim) const;
 
-    /// Get cell domains. This function computes the mesh function
-    /// corresponding to markers of dimension D. The mesh function is
-    /// cached for later access and will be computed on the first call
-    /// to this function.
-    boost::shared_ptr<const MeshFunction<std::size_t> >
-      cell_domains(std::size_t unset_value=MeshDomains::default_unset_value) const;
-
-    /// Get facet domains. This function computes the mesh function
-    /// corresponding to markers of dimension D-1. The mesh function
-    /// is cached for later access and will be computed on the first
-    /// call to this function.
-    boost::shared_ptr<const MeshFunction<std::size_t> >
-      facet_domains(std::size_t unset_value=MeshDomains::default_unset_value) const;
-
-    /// Create a mesh function corresponding to the MeshCollection 'collection'
-    boost::shared_ptr<MeshFunction<std::size_t> >
-      mesh_function(const std::map<std::size_t, std::size_t>& values,
-                    std::size_t dim,
-		    std::size_t unset_value=MeshDomains::default_unset_value) const;
-
     /// Assignment operator
     const MeshDomains& operator= (const MeshDomains& domains);
 
@@ -115,17 +85,8 @@ namespace dolfin
 
   private:
 
-    // The mesh
-    Mesh& _mesh;
-
-    // Subdomain markers for each geometric dim
+    // Subdomain markers for each geometric dimension
     std::vector<std::map<std::size_t, std::size_t> > _markers;
-
-    // Mesh function for cell domains
-    mutable boost::shared_ptr<MeshFunction<std::size_t> > _cell_domains;
-
-    // Mesh function for facet domains (exterior or interior)
-    mutable boost::shared_ptr<MeshFunction<std::size_t> > _facet_domains;
 
   };
 
