@@ -88,8 +88,8 @@ void RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
   IndexSet marked_cells(mesh.num_cells());
 
   // Get bisection data
-  boost::shared_ptr<MeshFunction<std::size_t> > bisection_twins
-      = mesh.data().mesh_function("bisection_twins");
+  boost::shared_ptr<std::vector<std::size_t> > bisection_twins
+      = mesh.data().array("bisection_twins");
 
   // Iterate until no more cells are marked
   cells.fill();
@@ -272,12 +272,15 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   }
 
   // Get bisection data for old mesh
-  boost::shared_ptr<const MeshFunction<std::size_t> > bisection_twins
-        = mesh.data().mesh_function("bisection_twins");
+  boost::shared_ptr<const std::vector<std::size_t> > bisection_twins
+        = mesh.data().array("bisection_twins");
 
   // Markers for bisected cells pointing to their bisection twins in
   // refined mesh
-  std::vector<std::size_t> refined_bisection_twins(num_cells);
+  boost::shared_ptr<std::vector<std::size_t> > _refined_bisection_twins
+    = refined_mesh.data().create_array("bisection_twins", num_cells);
+  dolfin_assert(_refined_bisection_twins);
+  std::vector<std::size_t>& refined_bisection_twins = *_refined_bisection_twins;
   for (std::size_t i = 0; i < num_cells; i++)
     refined_bisection_twins[i] = i;
 
@@ -324,7 +327,6 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
     else if (marker == regular_refinement)
     {
       // Regular refinement: divide into subsimplicies
-
       dolfin_assert(unrefined_cells[cell->index()] == -1);
 
       // Get vertices and edges
@@ -357,9 +359,7 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
     }
     else if (marker == backtrack_bisection || marker == backtrack_bisection_refine)
     {
-
       // Special case: backtrack bisected cells
-
       dolfin_assert(unrefined_cells[cell->index()] == -1);
 
       // Get index for bisection twin
@@ -514,13 +514,6 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   // Close mesh editor
   dolfin_assert(num_cells == current_cell);
   editor.close();
-
-  // Attach data for bisection twins
-  boost::shared_ptr<MeshFunction<std::size_t> > _refined_bisection_twins
-      = refined_mesh.data().create_mesh_function("bisection_twins");
-  dolfin_assert(_refined_bisection_twins);
-  _refined_bisection_twins->init(refined_mesh.topology().dim());
-  _refined_bisection_twins->set_values(refined_bisection_twins);
 }
 //-----------------------------------------------------------------------------
 std::size_t RegularCutRefinement::count_markers(const std::vector<bool>& markers)
