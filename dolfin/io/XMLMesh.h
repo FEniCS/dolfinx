@@ -57,6 +57,7 @@ namespace dolfin
 
     // Read mesh data
     static void read_data(MeshData& data,
+                          const Mesh& mesh,
                           const pugi::xml_node mesh_node);
 
     // Read mesh domains

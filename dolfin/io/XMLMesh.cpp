@@ -64,7 +64,7 @@ void XMLMesh::read(Mesh& mesh, const pugi::xml_node xml_dolfin)
   read_mesh(mesh, mesh_node);
 
   // Read mesh data (if any)
-  read_data(mesh.data(), mesh_node);
+  read_data(mesh.data(), mesh, mesh_node);
 
   // Read mesh domains (if any)
   read_domains(mesh.domains(), mesh, mesh_node);
@@ -148,7 +148,8 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
   editor.close();
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
+void XMLMesh::read_data(MeshData& data, const Mesh& mesh,
+                        const pugi::xml_node mesh_node)
 {
   // Check if we have any mesh data
   const pugi::xml_node xml_data = mesh_node.child("data");
@@ -156,7 +157,8 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
     return;
 
   // Iterate over data
-  for (pugi::xml_node_iterator it = xml_data.begin(); it != xml_data.end(); ++it)
+  for (pugi::xml_node_iterator it = xml_data.begin();
+       it != xml_data.end(); ++it)
   {
     // Check that node is <data_entry>
     const std::string node_name = it->name();
@@ -208,22 +210,27 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
     }
     else if (data_set_type == "mesh_function")
     {
-      dolfin_error("XMLMesh.cpp",
-                   "read mesh function from mesh data in XML file",
-                   "Mesh domain data can now only hold arrays and not MeshFunctions");
+      // This code block is for legacy purposes. Mesh data is now
+      // stored as plain arrays.
 
-      /*
-      // Get MeshFunction from MeshData
-      const std::string data_type = data_set.attribute("type").value();
-      boost::shared_ptr<MeshFunction<std::size_t> >
-        mf = data.mesh_function(data_set_name);
-      if (!mf)
-        mf = data.create_mesh_function(data_set_name);
-      dolfin_assert(mf);
+      warning("Mesh XML files contains mesh data stored as a MeshFunction. This is \
+deprecated. Mesh data is now stored a arrays. To convert your file to the new format, \
+save your Mesh from DOLFIN.");
+
+      // Create MeshFunction
+      MeshFunction<std::size_t> mf(mesh);
 
       // Read  MeshFunction
-      XMLMeshFunction::read(*mf, data_type, *it);
-      */
+      const std::string data_type = data_set.attribute("type").value();
+      XMLMeshFunction::read(mf, data_type, *it);
+
+      // Create mesh domain array
+      std::vector<std::size_t>& _data = data.create_array(data_set_name, mf.size());
+      dolfin_assert(_data.size() == mf.size());
+
+      // Copy MeshFunction into MeshDomain array
+      for (std::size_t i = 0; i < _data.size(); ++i)
+        _data[i] = mf[i];
     }
     else if (data_set_type == "meshfunction")
     {
