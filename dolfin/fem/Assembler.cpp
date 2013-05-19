@@ -321,8 +321,10 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
   dolfin_assert(mesh.ordered());
 
   // Get interior facet directions (if any)
-  boost::shared_ptr<std::vector<std::size_t> >
-    facet_orientation = mesh.data().array("facet_orientation");
+  const std::vector<std::size_t>* facet_orientation = NULL;
+  if (mesh.data().exists("facet_orientation"))
+    facet_orientation = &(mesh.data().array("facet_orientation"));
+
   if (facet_orientation && facet_orientation->size() != mesh.num_facets())
   {
     dolfin_error("Assembler.cpp",
@@ -352,7 +354,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
 
     // Get cells incident with facet
     std::pair<const Cell, const Cell>
-      cells = facet->adjacent_cells(facet_orientation.get());
+      cells = facet->adjacent_cells(facet_orientation);
     const Cell& cell0 = cells.first;
     const Cell& cell1 = cells.second;
 
@@ -367,8 +369,10 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
     for (std::size_t i = 0; i < form_rank; i++)
     {
       // Get dofs for each cell
-      const std::vector<dolfin::la_index>& cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
-      const std::vector<dolfin::la_index>& cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
+      const std::vector<dolfin::la_index>& cell_dofs0
+        = dofmaps[i]->cell_dofs(cell0.index());
+      const std::vector<dolfin::la_index>& cell_dofs1
+        = dofmaps[i]->cell_dofs(cell1.index());
 
       // Create space in macro dof vector
       macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());

@@ -531,20 +531,27 @@ const dolfin::MeshFunction<std::size_t>&
     return mesh_function.child();
   }
 
+  dolfin_assert(mesh_function.mesh());
   const Mesh& mesh = *mesh_function.mesh();
   const std::size_t dim = mesh.topology().dim();
 
   // Extract parent map from data of refined mesh
-  boost::shared_ptr<std::vector<std::size_t> > parent;
+  const std::vector<std::size_t>* parent = NULL;
   if (mesh_function.dim() == dim)
-    parent = adapted_mesh->data().array("parent_cell");
+  {
+    if (adapted_mesh->data().exists("parent_cell"))
+      parent = &(adapted_mesh->data().array("parent_cell"));
+  }
   else if (mesh_function.dim() == (dim - 1))
-    parent = adapted_mesh->data().array("parent_facet");
+  {
+    if (adapted_mesh->data().exists("parent_facet"))
+      parent = &(adapted_mesh->data().array("parent_facet"));
+  }
   else
     dolfin_not_implemented();
 
   // Check that parent map exists
-  if (!parent.get())
+  if (!parent)
   {
     dolfin_error("adapt.cpp",
                  "adapt mesh function",
@@ -579,20 +586,17 @@ void dolfin::adapt_markers(std::vector<std::size_t>& refined_markers,
                            const std::vector<std::size_t>& markers,
                            const Mesh& mesh)
 {
-
-  // Extract parent map from data of refined mesh
-  boost::shared_ptr<std::vector<std::size_t> > parent_cells
-    = adapted_mesh.data().array("parent_cell");
-  boost::shared_ptr<std::vector<std::size_t> > parent_facets
-    = adapted_mesh.data().array("parent_facet");
-
   // Check that parent maps exist
-  if (!parent_cells || !parent_facets)
+  if (!adapted_mesh.data().exists("parent_facet"))
   {
     dolfin_error("adapt.cpp",
                  "adapt markers",
                  "Unable to extract information about parent mesh entites");
   }
+
+  // Extract parent map from data of refined mesh
+  const std::vector<std::size_t>& parent_facets
+    = adapted_mesh.data().array("parent_facet");
 
   // Create map (parent_cell, parent_local_facet) -> [(child_cell,
   // child_local_facet), ...] for boundary facets
@@ -606,7 +610,7 @@ void dolfin::adapt_markers(std::vector<std::size_t>& refined_markers,
       continue;
 
     // Extract index of parent facet
-    const std::size_t parent_facet_index = (*parent_facets)[facet->index()];
+    const std::size_t parent_facet_index = parent_facets[facet->index()];
 
     children[parent_facet_index].push_back(facet->index());
   }

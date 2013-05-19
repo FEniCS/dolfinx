@@ -48,20 +48,21 @@ boost::shared_ptr<MeshDisplacement> ALE::move(Mesh& mesh0, const Mesh& mesh1)
   BoundaryMesh boundary1(mesh1, "exterior");
 
   // Get vertex mappings
-  boost::shared_ptr<std::vector<std::size_t> > local_to_global_0
+  dolfin_assert(mesh0.data().exists("parent_vertex_indices"));
+  const std::vector<std::size_t>& local_to_global_0
     = mesh0.data().array("parent_vertex_indices");
-  boost::shared_ptr<std::vector<std::size_t> > local_to_global_1
+
+  dolfin_assert(mesh1.data().exists("parent_vertex_indices"));
+  const std::vector<std::size_t>& local_to_global_1
     = mesh1.data().array("parent_vertex_indices");
-  dolfin_assert(local_to_global_0);
-  dolfin_assert(local_to_global_1);
 
   const MeshFunction<std::size_t>& boundary_to_mesh_0 = boundary0.entity_map(0);
   const MeshFunction<std::size_t>& boundary_to_mesh_1 = boundary1.entity_map(0);
 
   // Build global-to-local vertex mapping for mesh
   std::map<std::size_t, std::size_t> global_to_local_0;
-  for (std::size_t i = 0; i < local_to_global_0->size(); i++)
-    global_to_local_0[(*local_to_global_0)[i]] = i;
+  for (std::size_t i = 0; i < local_to_global_0.size(); i++)
+    global_to_local_0[local_to_global_0[i]] = i;
 
   // Build mapping from mesh vertices to boundary vertices
   std::map<std::size_t, std::size_t> mesh_to_boundary_0;
@@ -74,7 +75,7 @@ boost::shared_ptr<MeshDisplacement> ALE::move(Mesh& mesh0, const Mesh& mesh1)
   {
     // Get global vertex index (steps 1 and 2)
     const std::size_t global_vertex_index
-      = (*local_to_global_1)[boundary_to_mesh_1[v->index()]];
+      = local_to_global_1[boundary_to_mesh_1[v->index()]];
 
     // Get local vertex index for mesh0 if possible (step 3)
     std::map<std::size_t, std::size_t>::const_iterator it;

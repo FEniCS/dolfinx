@@ -189,10 +189,11 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
       if (data_type == "uint")
       {
         // Get vector from MeshData
-        boost::shared_ptr<std::vector<std::size_t> >
-          array = data.array(data_set_name);
-        if (!array)
-          array = data.create_array(data_set_name);
+        std::vector<std::size_t>* array = NULL;
+        if (data.exists(data_set_name))
+          array = &(data.array(data_set_name));
+        else
+          array = &(data.create_array(data_set_name));
         dolfin_assert(array);
 
         // Read vector
@@ -468,13 +469,11 @@ void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
 
   // Write arrays
   typedef std::map<std::string,
-                   boost::shared_ptr<std::vector<std::size_t> > >
-    ::const_iterator array_iterator;
+                   std::vector<std::size_t> >::const_iterator array_iterator;
   for (array_iterator it = data.arrays.begin(); it != data.arrays.end(); ++it)
   {
     std::string name = it->first;
-    boost::shared_ptr<std::vector<std::size_t> > array = it->second;
-    dolfin_assert(array);
+    const std::vector<std::size_t>& array = it->second;
 
     pugi::xml_node data_entry_node = mesh_data_node.append_child("data_entry");
     data_entry_node.append_attribute("name") = name.c_str();
@@ -482,13 +481,13 @@ void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
     pugi::xml_node array_node = data_entry_node.append_child("array");
     array_node.append_attribute("type") = "uint";
     array_node.append_attribute("size")
-      = static_cast<unsigned int>(array->size());
+      = static_cast<unsigned int>(array.size());
 
-    for (std::size_t i = 0; i < array->size(); i++)
+    for (std::size_t i = 0; i < array.size(); i++)
     {
       pugi::xml_node element_node = array_node.append_child("element");
       element_node.append_attribute("index") = (unsigned int) i;
-      element_node.append_attribute("value") = (unsigned int) (*array)[i];
+      element_node.append_attribute("value") = (unsigned int) array[i];
     }
   }
 }

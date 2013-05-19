@@ -51,7 +51,7 @@ namespace dolfin
   ///
   /// Facet orientation (used for assembly over interior facets)
   ///
-  ///   * "facet_orientation"     - _MeshFunction_ <std::size_t> of dimension D - 1
+  ///   * "facet_orientation"  - _MeshFunction_ <std::size_t> of dimension D - 1
   ///
   /// Sub meshes (used by the class SubMesh)
   ///
@@ -78,6 +78,19 @@ namespace dolfin
 
     /// Clear all data
     void clear();
+
+    //--- Query of data ---
+
+    /// Check is array exists
+    ///
+    /// *Arguments*
+    ///     name (std::string)
+    ///         The name of the array.
+    ///
+    /// *Returns*
+    ///     bool
+    ///         True is array exists, false otherwise.
+    bool exists(std::string name) const;
 
     //--- Creation of data ---
 
@@ -116,8 +129,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<std::size_t>
     ///         The array.
-    boost::shared_ptr<std::vector<std::size_t> >
-      create_array(std::string name);
+    std::vector<std::size_t>& create_array(std::string name);
 
     /// Create array (vector) with given name and size
     ///
@@ -130,8 +142,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<std::size_t>
     ///         The array.
-    boost::shared_ptr<std::vector<std::size_t> >
-      create_array(std::string name, std::size_t size);
+    std::vector<std::size_t>& create_array(std::string name, std::size_t size);
 
     //--- Retrieval of data ---
 
@@ -158,8 +169,19 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<std::size_t>
     ///         The array.
-    boost::shared_ptr<std::vector<std::size_t> >
-      array(const std::string name) const;
+    std::vector<std::size_t>& array(std::string name);
+
+    /// Return array with given name (returning zero if data is not
+    /// available)
+    ///
+    /// *Arguments*
+    ///     name (std::string)
+    ///         The name of the array.
+    ///
+    /// *Returns*
+    ///     std::vector<std::size_t>
+    ///         The array.
+    const std::vector<std::size_t>& array(std::string name) const;
 
     //--- Removal of data ---
 
@@ -168,7 +190,7 @@ namespace dolfin
     /// *Arguments*
     ///     name (std::string)
     ///         The name of the mesh function
-    void erase_mesh_function(const std::string name);
+    //void erase_mesh_function(const std::string name);
 
     /// Erase array with given name
     ///
@@ -206,7 +228,7 @@ namespace dolfin
       mesh_functions;
 
     // A map from named mesh data to vector
-    std::map<std::string, boost::shared_ptr<std::vector<std::size_t> > > arrays;
+    std::map<std::string, std::vector<std::size_t> > arrays;
 
     // List of depcrecated named data
     std::vector<std::string> _deprecated_names;

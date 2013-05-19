@@ -195,25 +195,25 @@ void SubMesh::init(const Mesh& mesh,
   editor.close();
 
   // Build submesh-to-parent map for vertices
-  boost::shared_ptr<std::vector<std::size_t> > parent_vertex_indices_mf
+  std::vector<std::size_t>& parent_vertex_indices_mf
     = data().create_array("parent_vertex_indices", num_vertices());
   for (std::map<std::size_t, std::size_t>::iterator it
          = parent_to_submesh_vertex_indices.begin();
        it != parent_to_submesh_vertex_indices.end(); ++it)
   {
-    (*parent_vertex_indices_mf)[it->second] = it->first;
+    parent_vertex_indices_mf[it->second] = it->first;
   }
 
 
   // Build submesh-to-parent map for cells
-  boost::shared_ptr<std::vector<std::size_t> > parent_cell_indices
+  std::vector<std::size_t>& parent_cell_indices
     = data().create_array("parent_cell_indices", num_cells());
   current_cell = 0;
   for (std::vector<std::size_t>::iterator it
          = submesh_cell_parent_indices.begin();
        it != submesh_cell_parent_indices.end(); ++it)
   {
-    (*parent_cell_indices)[current_cell++] = *it;
+    parent_cell_indices[current_cell++] = *it;
   }
 
   // Init present MeshDomain
@@ -286,8 +286,8 @@ void SubMesh::init(const Mesh& mesh,
           std::sort(parent_vertex_list.begin(), parent_vertex_list.end());
 
           // Get submesh entity index
-          std::map<std::vector<std::size_t>, std::size_t>::const_iterator submesh_it;
-          submesh_it = entity_map.find(parent_vertex_list);
+          std::map<std::vector<std::size_t>, std::size_t>::const_iterator
+            submesh_it = entity_map.find(parent_vertex_list);
           dolfin_assert(submesh_it != entity_map.end());
 
           submesh_markers[submesh_it->second] = itt->second;
