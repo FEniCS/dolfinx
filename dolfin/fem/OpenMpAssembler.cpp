@@ -456,7 +456,8 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
   std::vector<std::vector<dolfin::la_index> > macro_dofs(form_rank);
 
   // Interior facet integral
-  const ufc::interior_facet_integral* integral = ufc.default_interior_facet_integral.get();
+  const ufc::interior_facet_integral* integral
+    = ufc.default_interior_facet_integral.get();
 
   // Compute facets and facet - cell connectivity if not already computed
   mesh.init(mesh.topology().dim() - 1);
@@ -464,18 +465,20 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
   dolfin_assert(mesh.ordered());
 
   // Get interior facet directions (if any)
-  boost::shared_ptr<MeshFunction<std::size_t> > facet_orientation = mesh.data().mesh_function("facet_orientation");
-  if (facet_orientation && facet_orientation->dim() != mesh.topology().dim() - 1)
+  boost::shared_ptr<std::vector<std::size_t> > facet_orientation
+    = mesh.data().array("facet_orientation");
+  if (facet_orientation && facet_orientation->size() != mesh.num_facets())
   {
     dolfin_error("OpenMPAssembler.cpp",
                  "perform multithreaded assembly using OpenMP assembler",
-                 "Expecting facet orientation to be defined on facets (not dimension %d)",
-                 facet_orientation->dim());
+                 "Expecting facet orientation to be defined on facets)");
   }
 
   // Get coloring data
   std::map<const std::vector<std::size_t>,
-           std::pair<std::vector<std::size_t>, std::vector<std::vector<std::size_t> > > >::const_iterator mesh_coloring;
+           std::pair<std::vector<std::size_t>,
+                     std::vector<std::vector<std::size_t> > > >::const_iterator
+    mesh_coloring;
   mesh_coloring = mesh.topology().coloring.find(coloring_type);
 
   // Check that requested coloring has been computed
@@ -487,7 +490,8 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
   }
 
   // Get coloring data
-  const std::vector<std::vector<std::size_t> >& entities_of_color = mesh_coloring->second.second;
+  const std::vector<std::vector<std::size_t> >& entities_of_color
+    = mesh_coloring->second.second;
 
   // Assemble over interior facets (loop over colours, then cells of same color)
   const std::size_t num_colors = entities_of_color.size();
@@ -500,7 +504,8 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
     const int num_facets = colored_facets.size();
 
     // OpenMP test loop over cells of the same color
-    Progress p(AssemblerBase::progress_message(A.rank(), "interior facets"), mesh.num_facets());
+    Progress p(AssemblerBase::progress_message(A.rank(), "interior facets"),
+               mesh.num_facets());
     #pragma omp parallel for schedule(guided, 20) firstprivate(ufc, macro_dofs, integral)
     for (int facet_index = 0; facet_index < num_facets; ++facet_index)
     {

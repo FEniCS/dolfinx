@@ -135,7 +135,8 @@ void XMLMesh::read_mesh(Mesh& mesh, const pugi::xml_node mesh_node)
 
   // Iterate over cells and add to mesh
   std::vector<std::size_t> v(num_vertices_per_cell);
-  for (pugi::xml_node_iterator it = xml_cells.begin(); it != xml_cells.end(); ++it)
+  for (pugi::xml_node_iterator it = xml_cells.begin(); it != xml_cells.end();
+       ++it)
   {
     const std::size_t index = it->attribute("index").as_uint();
     for (unsigned int i = 0; i < num_vertices_per_cell; ++i)
@@ -206,6 +207,11 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
     }
     else if (data_set_type == "mesh_function")
     {
+      dolfin_error("XMLMesh.cpp",
+                   "read mesh function from mesh data in XML file",
+                   "Mesh domain data can now only hold arrays and not MeshFunctions");
+
+      /*
       // Get MeshFunction from MeshData
       const std::string data_type = data_set.attribute("type").value();
       boost::shared_ptr<MeshFunction<std::size_t> >
@@ -216,6 +222,7 @@ void XMLMesh::read_data(MeshData& data, const pugi::xml_node mesh_node)
 
       // Read  MeshFunction
       XMLMeshFunction::read(*mf, data_type, *it);
+      */
     }
     else if (data_set_type == "meshfunction")
     {
@@ -289,7 +296,8 @@ void XMLMesh::read_domains(MeshDomains& domains, const Mesh& mesh,
       for (entry = values.begin(); entry != values.end(); ++entry)
       {
         const Cell cell(mesh, entry->first.first);
-        const std::size_t entity_index = cell.entities(dim)[entry->first.second];
+        const std::size_t entity_index
+          = cell.entities(dim)[entry->first.second];
         markers[entity_index] = entry->second;
       }
     }
@@ -328,7 +336,8 @@ void XMLMesh::read_array_uint(std::vector<std::size_t>& array,
   array.resize(size);
 
   // Iterate over array entries
-  for (pugi::xml_node_iterator it = xml_array.begin(); it !=xml_array.end(); ++it)
+  for (pugi::xml_node_iterator it = xml_array.begin(); it !=xml_array.end();
+       ++it)
   {
     const std::size_t index = it->attribute("index").as_uint();
     const double value = it->attribute("value").as_uint();
@@ -472,7 +481,8 @@ void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
 
     pugi::xml_node array_node = data_entry_node.append_child("array");
     array_node.append_attribute("type") = "uint";
-    array_node.append_attribute("size") = static_cast<unsigned int>(array->size());
+    array_node.append_attribute("size")
+      = static_cast<unsigned int>(array->size());
 
     for (std::size_t i = 0; i < array->size(); i++)
     {

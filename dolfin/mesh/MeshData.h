@@ -90,8 +90,8 @@ namespace dolfin
     /// *Returns*
     ///     _MeshFunction_ <std::size_t>
     ///         The mesh function.
-    boost::shared_ptr<MeshFunction<std::size_t> >
-      create_mesh_function(std::string name);
+    //boost::shared_ptr<MeshFunction<std::size_t> >
+    //  create_mesh_function(std::string name);
 
     /// Create MeshFunction with given name and dimension
     ///
@@ -104,8 +104,8 @@ namespace dolfin
     /// *Returns*
     ///     _MeshFunction_ <std::size_t>
     ///         The mesh function.
-    boost::shared_ptr<MeshFunction<std::size_t> >
-    create_mesh_function(std::string name, std::size_t dim);
+    //boost::shared_ptr<MeshFunction<std::size_t> >
+    //create_mesh_function(std::string name, std::size_t dim);
 
     /// Create empty array (vector) with given name
     ///
@@ -145,8 +145,8 @@ namespace dolfin
     /// *Returns*
     ///     _MeshFunction_ <std::size_t>
     ///         The mesh function with given name
-    boost::shared_ptr<MeshFunction<std::size_t> >
-      mesh_function(const std::string name) const;
+    //boost::shared_ptr<MeshFunction<std::size_t> >
+    //  mesh_function(const std::string name) const;
 
     /// Return array with given name (returning zero if data is not
     /// available)

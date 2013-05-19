@@ -63,6 +63,7 @@ const MeshData& MeshData::operator= (const MeshData& data)
   clear();
 
   // Copy mesh functions
+/*
   for (mf_const_iterator it = data.mesh_functions.begin();
        it != data.mesh_functions.end(); ++it)
   {
@@ -70,6 +71,7 @@ const MeshData& MeshData::operator= (const MeshData& data)
       f = create_mesh_function(it->first, it->second->dim());
     *f = *it->second;
   }
+*/
 
   // Copy arrays
   for (a_const_iterator it = data.arrays.begin();
@@ -89,6 +91,7 @@ void MeshData::clear()
   arrays.clear();
 }
 //-----------------------------------------------------------------------------
+/*
 boost::shared_ptr<MeshFunction<std::size_t> >
   MeshData::create_mesh_function(std::string name)
 {
@@ -113,7 +116,9 @@ boost::shared_ptr<MeshFunction<std::size_t> >
 
   return f;
 }
+*/
 //-----------------------------------------------------------------------------
+ /*
 boost::shared_ptr<MeshFunction<std::size_t> >
 MeshData::create_mesh_function(std::string name, std::size_t dim)
 {
@@ -122,6 +127,7 @@ MeshData::create_mesh_function(std::string name, std::size_t dim)
 
   return f;
 }
+ */
 //-----------------------------------------------------------------------------
 boost::shared_ptr<std::vector<std::size_t> >
 MeshData::create_array(std::string name)
@@ -154,6 +160,7 @@ MeshData::create_array(std::string name, std::size_t size)
   return a;
 }
 //-----------------------------------------------------------------------------
+/*
 boost::shared_ptr<MeshFunction<std::size_t> >
 MeshData::mesh_function(const std::string name) const
 {
@@ -164,6 +171,7 @@ MeshData::mesh_function(const std::string name) const
 
   return it->second;
 }
+*/
 //-----------------------------------------------------------------------------
 boost::shared_ptr<std::vector<std::size_t> >
 MeshData::array(const std::string name) const

@@ -659,7 +659,7 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix* A, GenericVector* b
                                               const DirichletBC::Map& boundary_values)
 {
   // Facet orientation not supported
-  if (cell0.mesh().data().mesh_function("facet_orientation"))
+  if (cell0.mesh().data().array("facet_orientation"))
   {
     dolfin_error("SystemAssembler.cpp",
                  "assemble system",

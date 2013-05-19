@@ -195,8 +195,8 @@ void SubMesh::init(const Mesh& mesh,
   editor.close();
 
   // Build submesh-to-parent map for vertices
-  boost::shared_ptr<MeshFunction<std::size_t> > parent_vertex_indices_mf
-    = data().create_mesh_function("parent_vertex_indices", 0);
+  boost::shared_ptr<std::vector<std::size_t> > parent_vertex_indices_mf
+    = data().create_array("parent_vertex_indices", num_vertices());
   for (std::map<std::size_t, std::size_t>::iterator it
          = parent_to_submesh_vertex_indices.begin();
        it != parent_to_submesh_vertex_indices.end(); ++it)
@@ -206,10 +206,11 @@ void SubMesh::init(const Mesh& mesh,
 
 
   // Build submesh-to-parent map for cells
-  boost::shared_ptr<MeshFunction<std::size_t> > parent_cell_indices
-    = data().create_mesh_function("parent_cell_indices", cell_dim_t);
+  boost::shared_ptr<std::vector<std::size_t> > parent_cell_indices
+    = data().create_array("parent_cell_indices", num_cells());
   current_cell = 0;
-  for (std::vector<std::size_t>::iterator it = submesh_cell_parent_indices.begin();
+  for (std::vector<std::size_t>::iterator it
+         = submesh_cell_parent_indices.begin();
        it != submesh_cell_parent_indices.end(); ++it)
   {
     (*parent_cell_indices)[current_cell++] = *it;
