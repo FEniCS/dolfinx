@@ -63,6 +63,8 @@ A, b = assemble_system(a, L)
 # Define the constraints for the displacement 
 # The displacement u must be such that the current configuration x+u
 # does dot escape the xbox [xmin,xmax]x[umin,ymax]
+# This formulation is imprecise because it assumes
+# large displacements while the energy assumes linearization 
 constraint_u = Expression( ("xmax-x[0]","ymax-x[1]"), xmax =  1., ymax =  1.)
 constraint_l = Expression( ("xmin-x[0]","ymin-x[1]"), xmin = -1., ymin = -1.)
 u_min = interpolate(constraint_l, V)

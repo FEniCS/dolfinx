@@ -1,3 +1,4 @@
+
 // Copyright (C) 2012 Patrick E. Farrell
 //
 // This file is part of DOLFIN.
@@ -52,10 +53,8 @@ namespace dolfin
     /// Destructor
     virtual ~PETScSNESSolver();
 
-    /// Solve abstract nonlinear problem :math:`F(x) = 0` under the
-    /// bound constraint :math:'xl \leq x \leq xu' for given
-    /// :math:`F` and Jacobian :math:`\dfrac{\partial F}{\partial x}`.
-    ///
+    /// Solve a nonlinear variational inequality with bound constraints
+    /// 
     /// *Arguments*
     ///     nonlinear_function (_NonlinearProblem_)
     ///         The nonlinear problem.
@@ -65,6 +64,7 @@ namespace dolfin
     ///         The lower bound.
     ///     ub (_GenericVector_)
     ///         The upper bound.
+    ///
     /// *Returns*
     ///     std::pair<std::size_t, bool>
     ///         Pair of number of Newton iterations, and whether

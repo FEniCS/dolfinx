@@ -48,41 +48,35 @@ namespace dolfin
   class PETScKrylovSolver;
   class PETScKSPDeleter;
 
-  /// This class provides bound constrained solver for a linear system 
-  /// defined by PETSc matrices and vectors:
+  /// This class provides a bound constrained solver for a 
+  /// linear variational inequality defined by a matrix A and a vector b.
+  /// It solves the problem:
   ///
-  ///   Ax =  b, with xl =< x <= xu 
+  /// Find :math:`x_l\leq x\leq x_u` such that 
+  /// :math:`(Ax-b)\cdot (y-x)\geq 0,\; \forall x_l\leq y\leq x_u`
   ///
   /// It is a wrapper for the TAO bound constrained solver.
-  ///
-  /// Python example:
+  ///     
+  /// *Example*
+  ///    .. code-block:: python
   /// 
-  ///  ----------------------------------------------------------------------
-  ///  Begin of python example
-  ///  ----------------------------------------------------------------------
-  ///  # Assemble the linear system
-  ///     A, b = assemble_system(a, L, bc)
-  ///  # Define the constraints
-  ///     constraint_u = Constant(1.)
-  ///     constraint_l = Constant(0.)
-  ///     u_min = interpolate(constraint_l, V)
-  ///     u_max = interpolate(constraint_u, V)
-  ///  # Define the function to store the solution 
-  ///     usol=Function(V)
-  ///  # Create the TAOLinearBoundSolver
-  ///    solver=TAOLinearBoundSolver("tao_gpcg","gmres")
-  ///  # Set some parameters
-  ///    solver.parameters["monitor_convergence"]=True
-  ///    solver.parameters["report"]=True
-  ///  # Solve the problem
-  ///    solver.solve(A, usol.vector(), b , u_min.vector(), u_max.vector())
-  ///  ----------------------------------------------------------------------
-  ///  End of python example
-  ///  ----------------------------------------------------------------------
-  ///
-  /// To get a list of available parameters: 
-  ///
-  /// info(solver.parameters,True)
+  ///       # Assemble the linear system
+  ///       A, b = assemble_system(a, L, bc)
+  ///       # Define the constraints
+  ///       constraint_u = Constant(1.)
+  ///       constraint_l = Constant(0.)
+  ///       u_min = interpolate(constraint_l, V)
+  ///       u_max = interpolate(constraint_u, V)
+  ///       # Define the function to store the solution 
+  ///       usol=Function(V)
+  ///       # Create the TAOLinearBoundSolver
+  ///       solver=TAOLinearBoundSolver("tao_gpcg","gmres")
+  ///       # Set some parameters
+  ///       solver.parameters["monitor_convergence"]=True
+  ///       solver.parameters["report"]=True
+  ///       # Solve the problem
+  ///       solver.solve(A, usol.vector(), b , u_min.vector(), u_max.vector())
+  ///       info(solver.parameters,True)
   ///
   class TAOLinearBoundSolver : public Variable, public PETScObject
   {
@@ -96,12 +90,12 @@ namespace dolfin
     /// Destructor
     ~TAOLinearBoundSolver();
 	     
-    /// Solve linear system Ax = b with xl =< x <= xu 
+    /// Solve the linear variational inequality defined by A and b with xl =< x <= xu 
     std::size_t solve(const GenericMatrix& A, GenericVector& x, 
 		      const GenericVector& b, const GenericVector& xl, 
 		      const GenericVector& xu);
 
-    /// Solve linear system Ax = b with xl =< x <= xu 
+    /// Solve the linear variational inequality defined by A and b with xl =< x <= xu  
     std::size_t solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b, 
 		      const PETScVector& xl, const PETScVector& xu);
         
