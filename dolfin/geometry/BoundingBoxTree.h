@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-05-17
+// Last changed: 2013-05-20
 
 #ifndef __BOUNDING_BOX_TREE_H
 #define __BOUNDING_BOX_TREE_H
@@ -88,11 +88,12 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<unsigned int>
     ///         A list of local indices for entities contained in
-    ///         (leaf) bounding boxes that intersect the given point.
+    ///         (leaf) bounding boxes that collide with (intersect)
+    ///         the given point.
     ///
     /// *Arguments*
     ///     point (_Point_)
-    ///         The point with which to compute the intersection.
+    ///         The point.
     std::vector<unsigned int>
     compute_collisions(const Point& point) const;
 
@@ -100,12 +101,12 @@ namespace dolfin
     ///
     /// *Returns*
     ///     std::vector<unsigned int>
-    ///         A list of local indices for entities that intersect the
-    ///         given point.
+    ///         A list of local indices for entities that collide with
+    ///         (intersect) the given point.
     ///
     /// *Arguments*
     ///     point (_Point_)
-    ///         The point with which to compute the intersection.
+    ///         The point.
     std::vector<unsigned int>
     compute_entity_collisions(const Point& point) const;
 
@@ -113,14 +114,14 @@ namespace dolfin
     ///
     /// *Returns*
     ///     unsigned int
-    ///         The local index for the first found entity contained in
-    ///         a (leaf) bounding box that intersects the given point.
-    ///         If not found, std::numeric_limits<unsigned int>::max()
-    ///         is returned.
+    ///         The local index for the first found entity contained
+    ///         in a (leaf) bounding box that collides with
+    ///         (intersects) the given point. If not found,
+    ///         std::numeric_limits<unsigned int>::max() is returned.
     ///
     /// *Arguments*
     ///     point (_Point_)
-    ///         The point with which to compute the intersection.
+    ///         The point.
     unsigned int
     compute_first_collision(const Point& point) const;
 
@@ -129,33 +130,37 @@ namespace dolfin
     /// *Returns*
     ///     unsigned int
     ///         The local index for the first found entity that
-    ///         intersects the given point. If not found,
-    ///         std::numeric_limits<unsigned int>::max() is returned.
+    ///         collides with (intersects) the given point. If not
+    ///         found, std::numeric_limits<unsigned int>::max() is
+    ///         returned.
     ///
     /// *Arguments*
     ///     point (_Point_)
-    ///         The point with which to compute the intersection.
+    ///         The point.
     unsigned int
     compute_first_entity_collision(const Point& point) const;
 
-    // FIXME:
-    //
-    // [x] Store mesh as shared pointer
-    // [ ] Access primitives directly from here, needed for closest point
-    // [ ] Rename and change functions:
-    // [ ] Check use of unsigned int vs size_t
-    // [ ] Ignore reference version of constructors in Python interface
-    //
-    // compute_collisions()
-    // Compute all collisions with given _Point_.
-    //
-    // compute_first_collision()
-    // Compute first collision with given _Point_.
-    //
-    // compute_closest()
-    // Compute closest entity to given _Point_.
+    /// Compute closest entity to given _Point_.
+    ///
+    /// *Returns*
+    ///     unsigned int
+    ///         The local index for the entity that is closest to the
+    ///         point. If more than one entity is at the same distance
+    ///         (or point contained in entity), then the first entity
+    ///         is returned.
+    ///
+    /// *Arguments*
+    ///     point (_Point_)
+    ///         The point.
+    unsigned int
+    compute_closest_entity(const Point& point) const;
+
+    // FIXME: Check use of unsigned int vs size_t
 
   private:
+
+    // Check that tree has been built
+    void check_built() const;
 
     // FIXME: Remove
     friend class MeshPointIntersection;

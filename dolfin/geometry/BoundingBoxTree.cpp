@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-05-17
+// Last changed: 2013-05-20
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -96,12 +96,7 @@ std::vector<unsigned int>
 BoundingBoxTree::compute_collisions(const Point& point) const
 {
   // Check that tree has been built
-  if (!_tree)
-  {
-    dolfin_error("BoundingBoxTree.cpp",
-                 "compute collisions with bounding box tree",
-                 "Bounding box tree has not been build. You need to call tree.build()");
-  }
+  check_built();
 
   // Delegate call to implementation
   dolfin_assert(_tree);
@@ -112,12 +107,7 @@ std::vector<unsigned int>
 BoundingBoxTree::compute_entity_collisions(const Point& point) const
 {
   // Check that tree has been built
-  if (!_tree)
-  {
-    dolfin_error("BoundingBoxTree.cpp",
-                 "compute collisions with bounding box tree",
-                 "Bounding box tree has not been build. You need to call tree.build()");
-  }
+  check_built();
 
   // Delegate call to implementation
   dolfin_assert(_tree);
@@ -129,12 +119,7 @@ unsigned int
 BoundingBoxTree::compute_first_collision(const Point& point) const
 {
   // Check that tree has been built
-  if (!_tree)
-  {
-    dolfin_error("BoundingBoxTree.cpp",
-                 "compute collisions with bounding box tree",
-                 "Bounding box tree has not been build. You need to call tree.build()");
-  }
+  check_built();
 
   // Delegate call to implementation
   dolfin_assert(_tree);
@@ -145,16 +130,33 @@ unsigned int
 BoundingBoxTree::compute_first_entity_collision(const Point& point) const
 {
   // Check that tree has been built
+  check_built();
+
+  // Delegate call to implementation
+  dolfin_assert(_tree);
+  dolfin_assert(_mesh);
+  return _tree->compute_first_entity_collision(point, *_mesh);
+}
+//-----------------------------------------------------------------------------
+unsigned int
+BoundingBoxTree::compute_closest_entity(const Point& point) const
+{
+  // Check that tree has been built
+  check_built();
+
+  // Delegate call to implementation
+  dolfin_assert(_tree);
+  dolfin_assert(_mesh);
+  return _tree->compute_closest_entity(point, *_mesh);
+}
+//-----------------------------------------------------------------------------
+void BoundingBoxTree::check_built() const
+{
   if (!_tree)
   {
     dolfin_error("BoundingBoxTree.cpp",
                  "compute collisions with bounding box tree",
                  "Bounding box tree has not been build. You need to call tree.build()");
   }
-
-  // Delegate call to implementation
-  dolfin_assert(_tree);
-  dolfin_assert(_mesh);
-  return _tree->compute_first_entity_collision(point, *_mesh);
 }
 //-----------------------------------------------------------------------------

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-05-17
+// Last changed: 2013-05-20
 
 // Define a maximum dimension used for a local array in the recursive
 // build function. Speeds things up compared to allocating it in each
@@ -170,6 +170,14 @@ GenericBoundingBoxTree::compute_first_entity_collision(const Point& point,
   return compute_first_entity_collision(point, _bboxes.size() - 1, mesh);
 }
 //-----------------------------------------------------------------------------
+unsigned int
+GenericBoundingBoxTree::compute_closest_entity(const Point& point,
+                                               const Mesh& mesh) const
+{
+  // Call recursive find function
+  return compute_closest_entity(point, _bboxes.size() - 1, mesh);
+}
+//-----------------------------------------------------------------------------
 void
 GenericBoundingBoxTree::compute_collisions(const Point& point,
                                            unsigned int node,
@@ -308,6 +316,15 @@ GenericBoundingBoxTree::compute_first_entity_collision(const Point& point,
 
   // Point not found
   return not_found;
+}
+//-----------------------------------------------------------------------------
+unsigned int
+GenericBoundingBoxTree::compute_closest_entity(const Point& point,
+                                               unsigned int node,
+                                               const Mesh& mesh) const
+{
+  dolfin_not_implemented();
+  return 0;
 }
 //-----------------------------------------------------------------------------
 void GenericBoundingBoxTree::compute_bbox_of_entity(double* b,

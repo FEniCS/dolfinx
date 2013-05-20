@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-23
-// Last changed: 2013-05-17
+// Last changed: 2013-05-20
 
 #ifndef __GENERIC_BOUNDING_BOX_TREE_H
 #define __GENERIC_BOUNDING_BOX_TREE_H
@@ -47,22 +47,22 @@ namespace dolfin
     void build(const Mesh& mesh, unsigned int tdim);
 
     /// Compute all collisions between bounding boxes and given _Point_
-    std::vector<unsigned int>
-    compute_collisions(const Point& point) const;
+    std::vector<unsigned int> compute_collisions(const Point& point) const;
 
     /// Compute all collisions between entities and given _Point_
-    std::vector<unsigned int>
-    compute_entity_collisions(const Point& point,
-                              const Mesh& mesh) const;
+    std::vector<unsigned int> compute_entity_collisions(const Point& point,
+                                                        const Mesh& mesh) const;
 
     /// Compute first collision between bounding boxes and given _Point_
-    unsigned int
-    compute_first_collision(const Point& point) const;
+    unsigned int compute_first_collision(const Point& point) const;
 
     /// Compute first collision between entities and given _Point_
-    unsigned int
-    compute_first_entity_collision(const Point& point,
-                                   const Mesh& mesh) const;
+    unsigned int compute_first_entity_collision(const Point& point,
+                                                const Mesh& mesh) const;
+
+    /// Compute closest entity to given _Point_
+    unsigned int compute_closest_entity(const Point& point,
+                                        const Mesh& mesh) const;
 
   protected:
 
@@ -90,25 +90,30 @@ namespace dolfin
                        const std::vector<unsigned int>::iterator& end,
                        unsigned int gdim);
 
-    /// Compute collisions with given coordinate (recursive)
+    /// Compute collisions (recursive)
     void compute_collisions(const Point& point,
                             unsigned int node,
                             std::vector<unsigned int>& entities) const;
 
-    /// Compute entity collisions with given coordinate (recursive)
+    /// Compute entity collisions (recursive)
     void compute_entity_collisions(const Point& point,
                                    unsigned int node,
                                    std::vector<unsigned int>& entities,
                                    const Mesh& mesh) const;
 
-    /// Compute first collision with given coordinate (recursive)
+    /// Compute first collision (recursive)
     unsigned int compute_first_collision(const Point& point,
                                          unsigned int node) const;
 
-    /// Compute first entity collision with given coordinate (recursive)
+    /// Compute first entity collision (recursive)
     unsigned int compute_first_entity_collision(const Point& point,
                                                 unsigned int node,
                                                 const Mesh& mesh) const;
+
+    /// Compute closest entity (recursive)
+    unsigned int compute_closest_entity(const Point& point,
+                                        unsigned int node,
+                                        const Mesh& mesh) const;
 
     // Compute bounding box of mesh entity
     void compute_bbox_of_entity(double* b,
