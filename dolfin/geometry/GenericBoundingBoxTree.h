@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-23
-// Last changed: 2013-05-20
+// Last changed: 2013-05-21
 
 #ifndef __GENERIC_BOUNDING_BOX_TREE_H
 #define __GENERIC_BOUNDING_BOX_TREE_H
@@ -147,6 +147,10 @@ namespace dolfin
     // Check whether point is in bounding box
     virtual bool
     point_in_bbox(const double* x, unsigned int node) const = 0;
+
+    // Compute squared distance between point and bounding box
+    virtual double
+    compute_squared_distance(const double* x, unsigned int node) const = 0;
 
     // Compute bounding box of bounding boxes
     virtual void

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-05-17
+// Last changed: 2013-05-21
 
 #ifndef __BOUNDING_BOX_TREE_1D_H
 #define __BOUNDING_BOX_TREE_1D_H
@@ -56,6 +56,23 @@ namespace dolfin
     {
       const double* b = _bbox_coordinates.data() + 2*node;
       return b[0] - DOLFIN_EPS < x[0] && x[0] < b[1] + DOLFIN_EPS;
+    }
+
+    // Compute squared distance between point and bounding box
+    double compute_squared_distance(const double* x, unsigned int node) const
+    {
+      // Note: Some else-if might be in order here but I assume the
+      // compiler can do a better job at optimizing/parallelizing this
+      // version. This is also the way the algorithm is presented in
+      // Ericsson.
+
+      const double* b = _bbox_coordinates.data() + 2*node;
+      double r2 = 0.0;
+
+      if (x[0] < b[0]) r2 += (x[0] - b[0])*(x[0] - b[0]);
+      if (x[0] > b[3]) r2 += (x[0] - b[3])*(x[0] - b[3]);
+
+      return r2;
     }
 
     // Compute bounding box of bounding boxes
