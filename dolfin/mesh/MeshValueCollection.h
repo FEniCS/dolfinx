@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2013.
 //
 // First added:  2006-08-30
-// Last changed: 2013-05-20
+// Last changed: 2013-05-21
 
 #ifndef __MESH_VALUE_COLLECTION_H
 #define __MESH_VALUE_COLLECTION_H
@@ -333,32 +333,6 @@ namespace dolfin
   {
     File file(filename);
     file >> *this;
-    
-    // FIXME: this code is specific for XML, and does not work for HDF5
-    // Can it be moved into XMLMeshValueCollection.h?
-
-    // if (MPI::num_processes() == 1)
-    // {
-    //   File file(filename);
-    //   file >> *this;
-    // }
-    // else
-    // {
-    //   // Read file on process 0
-    //   MeshValueCollection<T> tmp_collection(dim);
-    //   if (MPI::process_number() == 0)
-    //   {
-    //     File file(filename);
-    //     file >> tmp_collection;
-    //   }
-
-    //   // Create local data and build value collection
-    //   LocalMeshValueCollection<T> local_data(tmp_collection, dim);
-
-    //   // Build mesh value collection
-    //   MeshPartitioning::build_distributed_value_collection(*this, local_data,
-    //                                                        mesh);
-    // }
   }
   //---------------------------------------------------------------------------
   template <typename T>
