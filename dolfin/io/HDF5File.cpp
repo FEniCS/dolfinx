@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-05-14
+// Last changed: 2013-05-20
 
 #ifdef HAS_HDF5
 
@@ -572,13 +572,13 @@ void HDF5File::read(MeshValueCollection<double>& mesh_values,
 void HDF5File::write(const MeshValueCollection<bool>& mesh_values,
                      const std::string name)
 {
-  dolfin_error("HDF5File.cpp",
-               "write bool MeshValueCollection",
-               "Not implemented yet");
+  //  dolfin_error("HDF5File.cpp",
+  //               "write bool MeshValueCollection",
+  //               "Not implemented yet");
 
   // HDF5 does not implement bool, use int and copy
 
-  MeshValueCollection<int> mvc_int(mesh_values.dim());
+  MeshValueCollection<int> mvc_int(mesh_values.mesh(), mesh_values.dim());
   const std::map<std::pair<std::size_t, std::size_t>, bool>& values
     = mesh_values.values();
   for (std::map<std::pair<std::size_t, std::size_t>,
@@ -589,21 +589,19 @@ void HDF5File::write(const MeshValueCollection<bool>& mesh_values,
                       mesh_value_it->second ? 1 : 0);
   }
 
-  // FIXME - need to copy mesh reference over
   write_mesh_value_collection(mvc_int, name);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::read(MeshValueCollection<bool>& mesh_values,
                     const std::string name)
 {
-  dolfin_error("HDF5File.cpp",
-               "read bool MeshValueCollection",
-               "Not implemented yet");
+  //  dolfin_error("HDF5File.cpp",
+  //               "read bool MeshValueCollection",
+  //               "Not implemented yet");
 
   // HDF5 does not implement bool, use int and copy
-  // FIXME - need to copy mesh reference over
 
-  MeshValueCollection<int> mvc_int(mesh_values.dim());
+  MeshValueCollection<int> mvc_int(mesh_values.mesh(), mesh_values.dim());
   read_mesh_value_collection(mvc_int, name);
 
   const std::map<std::pair<std::size_t, std::size_t>, int>& values

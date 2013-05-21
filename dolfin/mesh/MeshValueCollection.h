@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2013.
 //
 // First added:  2006-08-30
-// Last changed: 2013-05-14
+// Last changed: 2013-05-20
 
 #ifndef __MESH_VALUE_COLLECTION_H
 #define __MESH_VALUE_COLLECTION_H
@@ -72,6 +72,26 @@ namespace dolfin
     ///     mesh_function (_MeshFunction_ <T>)
     ///         The mesh function for creating a MeshValueCollection.
     explicit MeshValueCollection(const MeshFunction<T>& mesh_function);
+
+    /// Create a mesh value collection of entities of given dimension
+    /// on a given mesh
+    ///
+    /// *Arguments*
+    ///     mesh (Mesh)
+    ///         The mesh associated with the collection. 
+    ///     dim (std::size_t)
+    ///         The mesh entity dimension for the mesh value collection.
+    MeshValueCollection(const Mesh& mesh, std::size_t dim);
+
+    /// Create a mesh value collection of entities of given dimension
+    /// on a given mesh (shared_ptr version)
+    ///
+    /// *Arguments*
+    ///     mesh (Mesh)
+    ///         The mesh associated with the collection. 
+    ///     dim (std::size_t)
+    ///         The mesh entity dimension for the mesh value collection.
+    MeshValueCollection(boost::shared_ptr<const Mesh> mesh, std::size_t dim);
 
     /// Create a mesh value collection from a file.
     ///
@@ -243,6 +263,20 @@ namespace dolfin
   {
     // Do nothing
   }
+  //---------------------------------------------------------------------------
+  template <typename T>
+  MeshValueCollection<T>::MeshValueCollection(const Mesh& mesh, std::size_t dim)
+    : Variable("m", "unnamed MeshValueCollection"), _mesh(reference_to_no_delete_pointer(mesh)), _dim(dim)
+  {
+    // Do nothing
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
+  MeshValueCollection<T>::MeshValueCollection(boost::shared_ptr<const Mesh> mesh, std::size_t dim)
+    : Variable("m", "unnamed MeshValueCollection"), _dim(dim), _mesh(mesh)
+  {
+    // Do nothing
+  } 
   //---------------------------------------------------------------------------
   template <typename T>
   MeshValueCollection<T>::MeshValueCollection(const MeshFunction<T>& mesh_function)
