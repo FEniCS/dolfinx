@@ -312,7 +312,7 @@ void XMLFile::read_mesh_value_collection(MeshValueCollection<T>& t,
 
     // Create local data and build value collection
     LocalMeshValueCollection<T> local_data(tmp_collection, tmp_collection.dim());
-      
+
     dolfin_assert(t.mesh());
     // Build mesh value collection
     MeshPartitioning::build_distributed_value_collection(t, local_data,

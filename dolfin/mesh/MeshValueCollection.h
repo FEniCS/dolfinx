@@ -78,7 +78,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     mesh (Mesh)
-    ///         The mesh associated with the collection. 
+    ///         The mesh associated with the collection.
     ///     dim (std::size_t)
     ///         The mesh entity dimension for the mesh value collection.
     MeshValueCollection(const Mesh& mesh, std::size_t dim);
@@ -88,7 +88,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     mesh (Mesh)
-    ///         The mesh associated with the collection. 
+    ///         The mesh associated with the collection.
     ///     dim (std::size_t)
     ///         The mesh entity dimension for the mesh value collection.
     MeshValueCollection(boost::shared_ptr<const Mesh> mesh, std::size_t dim);
@@ -276,11 +276,11 @@ namespace dolfin
     : Variable("m", "unnamed MeshValueCollection"), _dim(dim), _mesh(mesh)
   {
     // Do nothing
-  } 
+  }
   //---------------------------------------------------------------------------
   template <typename T>
   MeshValueCollection<T>::MeshValueCollection(const MeshFunction<T>& mesh_function)
-    : Variable("m", "unnamed MeshValueCollection"), _dim(mesh_function.dim()), 
+    : Variable("m", "unnamed MeshValueCollection"), _dim(mesh_function.dim()),
     _mesh(mesh_function.mesh())
   {
     dolfin_assert(mesh_function.mesh() == _mesh);
@@ -452,9 +452,9 @@ namespace dolfin
     if(!_mesh)
       _mesh = reference_to_no_delete_pointer(mesh);
 
-    // Check mesh is the same as already associated      
+    // Check mesh is the same as already associated
     dolfin_assert(&mesh == _mesh.get());
-    
+
     // Special case when d = D
     const std::size_t D = _mesh->topology().dim();
     if (_dim == D)
