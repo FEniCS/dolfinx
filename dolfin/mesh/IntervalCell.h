@@ -18,7 +18,7 @@
 // Modified by Kristoffer Selim 2008
 //
 // First added:  2006-06-05
-// Last changed: 2013-04-18
+// Last changed: 2013-05-22
 
 #ifndef __INTERVAL_CELL_H
 #define __INTERVAL_CELL_H
@@ -68,6 +68,9 @@ namespace dolfin
 
     /// Compute diameter of interval
     double diameter(const MeshEntity& interval) const;
+
+    /// Compute squared distance to given point
+    double squared_distance(const Cell& cell, const Point& point) const;
 
     /// Compute component i of normal of given facet with respect to the cell
     double normal(const Cell& cell, std::size_t facet, std::size_t i) const;

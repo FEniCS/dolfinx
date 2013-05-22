@@ -174,6 +174,14 @@ std::pair<unsigned int, double>
 GenericBoundingBoxTree::compute_closest_entity(const Point& point,
                                                const Mesh& mesh) const
 {
+  // Closest entity only implemented for cells. Consider extending this.
+  if (_tdim != mesh.topology().dim())
+  {
+    dolfin_error("GenericBoundingBoxTree.cpp",
+                 "compute collision between point and mesh entities",
+                 "Closest-entity is only implemented for cells");
+  }
+
   // FIXME: Choose starting guess for R2
   double R2 = 1.0;
 
@@ -346,11 +354,12 @@ GenericBoundingBoxTree::compute_closest_entity(const Point& point,
   else if (is_leaf(bbox, node))
   {
     // Get entity (child_1 denotes entity index for leaves)
+    dolfin_assert(_tdim == mesh.topology().dim());
     const unsigned int entity_index = bbox.child_1;
-    MeshEntity entity(mesh, _tdim, entity_index);
+    Cell cell(mesh, entity_index);
 
     // If entity is closer than best result so far, then return it
-    const double r2 = entity.squared_distance(point);
+    const double r2 = cell.squared_distance(point);
     if (r2 < R2)
     {
       closest_entity = entity_index;

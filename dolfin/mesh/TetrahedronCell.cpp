@@ -21,7 +21,7 @@
 // Modified by Kristoffer Selim 2008
 //
 // First added:  2006-06-05
-// Last changed: 2013-04-18
+// Last changed: 2013-05-22
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -352,6 +352,12 @@ double TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
 
   // Formula for diameter (2*circumradius) from http://mathworld.wolfram.com
   return area/(3.0*volume(tetrahedron));
+}
+//-----------------------------------------------------------------------------
+double TetrahedronCell::squared_distance(const Cell& cell, const Point& point) const
+{
+  dolfin_not_implemented();
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
 double TetrahedronCell::normal(const Cell& cell, std::size_t facet, std::size_t i) const

@@ -20,7 +20,7 @@
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2006-06-05
-// Last changed: 2013-04-18
+// Last changed: 2013-05-22
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -153,6 +153,12 @@ double IntervalCell::diameter(const MeshEntity& interval) const
 
   // Diameter is same as volume for interval (line segment)
   return volume(interval);
+}
+//-----------------------------------------------------------------------------
+double IntervalCell::squared_distance(const Cell& cell, const Point& point) const
+{
+  dolfin_not_implemented();
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
 double IntervalCell::normal(const Cell& cell, std::size_t facet, std::size_t i) const

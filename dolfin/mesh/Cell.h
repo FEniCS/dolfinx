@@ -21,7 +21,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-01
-// Last changed: 2013-04-18
+// Last changed: 2013-05-22
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -170,6 +170,30 @@ namespace dolfin
       _mesh->init(_mesh->type().dim() - 1);
 
       return _mesh->type().radius_ratio(*this);
+    }
+
+    /// Compute squared distance to given point.
+    ///
+    /// *Arguments*
+    ///     point (_Point_)
+    ///         The point.
+    /// *Returns*
+    ///     double
+    ///         The squared distance to the point.
+    double squared_distance(const Point& point)
+    { return _mesh->type().squared_distance(*this, point); }
+
+    /// Compute distance to given point.
+    ///
+    /// *Arguments*
+    ///     point (_Point_)
+    ///         The point.
+    /// *Returns*
+    ///     double
+    ///         The distance to the point.
+    inline double distance(const Point& point)
+    {
+      return sqrt(squared_distance(point));
     }
 
     /// Compute component i of normal of given facet with respect to the cell

@@ -259,33 +259,6 @@ namespace dolfin
     ///         The midpoint of the cell.
     Point midpoint() const;
 
-    /// Compute squared distance to given point.
-    ///
-    /// *Arguments*
-    ///     point (_Point_)
-    ///         The point.
-    /// *Returns*
-    ///     double
-    ///         The squared distance to the point.
-    double squared_distance(const Point& point)
-    {
-      // FIXME: Not implemented
-      return 0.0;
-    }
-
-    /// Compute distance to given point.
-    ///
-    /// *Arguments*
-    ///     point (_Point_)
-    ///         The point.
-    /// *Returns*
-    ///     double
-    ///         The distance to the point.
-    inline double distance(const Point& point)
-    {
-      return sqrt(squared_distance(point));
-    }
-
     #ifdef HAS_CGAL
     /// Returns a 3D bounding box of the mesh entity. For lower
     /// dimension it may be a degenerated box.

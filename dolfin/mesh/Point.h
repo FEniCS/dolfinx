@@ -19,7 +19,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-06-12
-// Last changed: 2011-04-13
+// Last changed: 2013-05-22
 
 #ifndef __POINT_H
 #define __POINT_H
@@ -194,6 +194,28 @@ namespace dolfin
     { return CGAL::Point_3<Kernel>(*this).bbox(); }
     #endif
 
+    /// Compute squared distance to given point
+    ///
+    /// *Arguments*
+    ///     p (_Point_)
+    ///         The point to compute distance to.
+    ///
+    /// *Returns*
+    ///     double
+    ///         The squared distance.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         Point p1(0, 4, 0);
+    ///         Point p2(2, 0, 4);
+    ///         info("%g", p1.squared_distance(p2));
+    ///
+    ///     output::
+    ///
+    ///         6
+    double squared_distance(const Point& p) const;
+
     /// Compute distance to given point
     ///
     /// *Arguments*
@@ -214,7 +236,8 @@ namespace dolfin
     ///     output::
     ///
     ///         6
-    double distance(const Point& p) const;
+    inline double distance(const Point& p) const
+    { return sqrt(squared_distance(p)); }
 
     /// Compute norm of point representing a vector from the origin
     ///

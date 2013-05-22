@@ -22,7 +22,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2013-04-18
+// Last changed: 2013-05-22
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -217,6 +217,75 @@ double TriangleCell::diameter(const MeshEntity& triangle) const
   return 0.5*a*b*c/volume(triangle);
 }
 //-----------------------------------------------------------------------------
+double TriangleCell::squared_distance(const Cell& cell, const Point& point) const
+{
+  // Algorithm from Real-time collision detection by Christer Ericson:
+  // ClosestPtPointTriangle on page 141, Section 5.1.
+  //
+  // Note: This algorithm actually computes the closest point but we
+  // only return the distance to that point.
+  //
+  // Note: This function may be optimized to take into account that
+  // only 2D vectors and inner products need to be computed.
+
+  // Get the vertices as points
+  const MeshGeometry& geometry = cell.mesh().geometry();
+  const unsigned int* vertices = cell.entities(0);
+  const Point a = geometry.point(vertices[0]);
+  const Point b = geometry.point(vertices[1]);
+  const Point c = geometry.point(vertices[2]);
+
+  // Check if point is in vertex region outside A
+  const Point ab = b - a;
+  const Point ac = c - a;
+  const Point ap = point - a;
+  const double d1 = ab.dot(ap);
+  const double d2 = ac.dot(ap);
+  if (d1 <= 0.0 && d2 <= 0.0)
+    return point.squared_distance(a);
+
+  // Check if point is in vertex region outside B
+  const Point bp = point - b;
+  const double d3 = ab.dot(bp);
+  const double d4 = ac.dot(bp);
+  if (d3 >= 0.0 && d4 <= d3)
+    return point.squared_distance(b);
+
+  // Check if point is in edge region of AB and if so compute projection
+  const double vc = d1*d4 - d3*d2;
+  if (vc <= 0.0 && d1 >= 0.0 && d3 <= 0.0)
+  {
+    const double v = d1 / (d1 - d3);
+    return point.squared_distance(a + v*ab);
+  }
+
+  // Check if point is in vertex region outside C
+  const Point cp = point - c;
+  const double d5 = ab.dot(cp);
+  const double d6 = ac.dot(cp);
+  if (d6 >= 0.0 && d5 <= d6)
+    return point.squared_distance(c);
+
+  // Check if point is in edge region of AC and if so compute projection
+  const double vb = d5*d2 - d1*d6;
+  if (vb <= 0.0 && d2 >= 0.0 && d6 <= 0.0)
+  {
+    const double w = d2 / (d2 - d6);
+    return point.squared_distance(a + w*ac);
+  }
+
+  // Check if point is in edge region of BC and if so compute projection
+  const double va = d3*d6 - d5*d4;
+  if (va <= 0.0 && (d4 - d3) >= 0.0 && (d5 - d6) >= 0.0)
+  {
+    const double w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+    return point.squared_distance(b + w*(c - b));
+  }
+
+  // Point is inside triangle so distance is zero
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
 double TriangleCell::normal(const Cell& cell, std::size_t facet, std::size_t i) const
 {
   return normal(cell, facet)[i];
@@ -279,13 +348,13 @@ Point TriangleCell::cell_normal(const Cell& cell) const
 
   // Get the three vertices as points
   const unsigned int* vertices = cell.entities(0);
-  Point p0 = geometry.point(vertices[0]);
-  Point p1 = geometry.point(vertices[1]);
-  Point p2 = geometry.point(vertices[2]);
+  const Point p0 = geometry.point(vertices[0]);
+  const Point p1 = geometry.point(vertices[1]);
+  const Point p2 = geometry.point(vertices[2]);
 
   // Defined cell normal via cross product of first two edges:
-  Point v01 = p1 - p0;
-  Point v02 = p2 - p0;
+  const Point v01 = p1 - p0;
+  const Point v02 = p2 - p0;
   Point n = v01.cross(v02);
 
   // Normalize
@@ -414,14 +483,14 @@ bool TriangleCell::contains(const Cell& cell, const Point& point) const
   // Get the vertices as points
   const MeshGeometry& geometry = cell.mesh().geometry();
   const unsigned int* vertices = cell.entities(0);
-  Point p0 = geometry.point(vertices[0]);
-  Point p1 = geometry.point(vertices[1]);
-  Point p2 = geometry.point(vertices[2]);
+  const Point p0 = geometry.point(vertices[0]);
+  const Point p1 = geometry.point(vertices[1]);
+  const Point p2 = geometry.point(vertices[2]);
 
   // Compute vectors
-  Point v1 = p1 - p0;
-  Point v2 = p2 - p0;
-  Point v = point - p0;
+  const Point v1 = p1 - p0;
+  const Point v2 = p2 - p0;
+  const Point v = point - p0;
 
   // Compute entries of linear system
   const double a11 = v1.dot(v1);

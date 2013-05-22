@@ -20,7 +20,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2013-04-18
+// Last changed: 2013-05-22
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
@@ -106,6 +106,9 @@ namespace dolfin
 
     /// Compute dim*inradius/circumradius for given cell
     virtual double radius_ratio(const Cell& cell) const;
+
+    /// Compute squared distance to given point
+    virtual double squared_distance(const Cell& cell, const Point& point) const = 0;
 
     /// Compute component i of normal of given facet with respect to the cell
     virtual double normal(const Cell& cell, std::size_t facet, std::size_t i) const = 0;

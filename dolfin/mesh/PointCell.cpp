@@ -19,7 +19,7 @@
 // Modified by Kristoffer Sleim, 2008.
 //
 // First added:  2007-12-12
-// Last changed: 2013-04-18
+// Last changed: 2013-05-22
 
 #include <dolfin/log/log.h>
 #include "Cell.h"
@@ -105,6 +105,12 @@ double PointCell::diameter(const MeshEntity& triangle) const
   dolfin_error("PointCell.cpp",
                "find diameter of cell",
                "Diameter of a point cell is not defined");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+double PointCell::squared_distance(const Cell& cell, const Point& point) const
+{
+  dolfin_not_implemented();
   return 0.0;
 }
 //-----------------------------------------------------------------------------
