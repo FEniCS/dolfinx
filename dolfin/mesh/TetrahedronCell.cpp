@@ -30,6 +30,7 @@
 #include "MeshEditor.h"
 #include "MeshGeometry.h"
 #include "Vertex.h"
+#include "TriangleCell.h"
 #include "TetrahedronCell.h"
 
 using namespace dolfin;
@@ -357,13 +358,10 @@ double TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
 double TetrahedronCell::squared_distance(const Cell& cell, const Point& point) const
 {
   // Algorithm from Real-time collision detection by Christer Ericson:
-  // ClosestPtPointTriangle on page 141, Section 5.1.
+  // ClosestPtPointTetrahedron on page 143, Section 5.1.6.
   //
   // Note: This algorithm actually computes the closest point but we
   // only return the distance to that point.
-  //
-  // Note: This function may be optimized to take into account that
-  // only 2D vectors and inner products need to be computed.
 
   // Get the vertices as points
   const MeshGeometry& geometry = cell.mesh().geometry();
@@ -371,9 +369,32 @@ double TetrahedronCell::squared_distance(const Cell& cell, const Point& point) c
   const Point a = geometry.point(vertices[0]);
   const Point b = geometry.point(vertices[1]);
   const Point c = geometry.point(vertices[2]);
+  const Point d = geometry.point(vertices[3]);
 
-  dolfin_not_implemented();
-  return 0.0;
+  // Initialize squared distance
+  double r2 = std::numeric_limits<double>::max();
+
+  // Check face ABC
+  if (point_outside_of_plane(point, a, b, c, d))
+    r2 = std::min(r2, TriangleCell::squared_distance(point, a, b, c));
+
+  // Check face ACD
+  if (point_outside_of_plane(point, a, c, d, b))
+    r2 = std::min(r2, TriangleCell::squared_distance(point, a, c, d));
+
+  // Check face ADB
+  if (point_outside_of_plane(point, a, d, b, c))
+    r2 = std::min(r2, TriangleCell::squared_distance(point, a, d, b));
+
+  // Check facet BDC
+  if (point_outside_of_plane(point, b, d, c, a))
+    r2 = std::min(r2, TriangleCell::squared_distance(point, b, d, c));
+
+  // Point is inside tetrahedron so distance is zero
+  if (r2 == std::numeric_limits<double>::max())
+    r2 = 0.0;
+
+  return r2;
 }
 //-----------------------------------------------------------------------------
 double TetrahedronCell::normal(const Cell& cell, std::size_t facet, std::size_t i) const
@@ -715,5 +736,21 @@ std::size_t TetrahedronCell::find_edge(std::size_t i, const Cell& cell) const
                "find specified edge in cell",
                "Edge really not found");
   return 0;
+}
+//-----------------------------------------------------------------------------
+bool TetrahedronCell::point_outside_of_plane(const Point& point,
+                                             const Point& a,
+                                             const Point& b,
+                                             const Point& c,
+                                             const Point& d) const
+{
+  // Algorithm from Real-time collision detection by Christer Ericson:
+  // PointOutsideOfPlane on page 144, Section 5.1.6.
+
+  const Point v = (b - a).cross(c - a);
+  const double signp = v.dot(point - a);
+  const double signd = v.dot(d - a);
+
+  return signp * signd < 0.0;
 }
 //-----------------------------------------------------------------------------

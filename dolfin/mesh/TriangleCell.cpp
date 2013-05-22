@@ -227,16 +227,16 @@ double TriangleCell::squared_distance(const Cell& cell, const Point& point) cons
   const Point c = geometry.point(vertices[2]);
 
   // Call function to compute squared distance
-  return squared_distance(a, b, c, point);
+  return squared_distance(point, a, b, c);
 }
 //-----------------------------------------------------------------------------
-double TriangleCell::squared_distance(const Point& a,
+double TriangleCell::squared_distance(const Point& point,
+                                      const Point& a,
                                       const Point& b,
-                                      const Point& c,
-                                      const Point& point) const
+                                      const Point& c)
 {
 // Algorithm from Real-time collision detection by Christer Ericson:
-  // ClosestPtPointTriangle on page 141, Section 5.1.
+  // ClosestPtPointTriangle on page 141, Section 5.1.5.
   //
   // Note: This algorithm actually computes the closest point but we
   // only return the distance to that point.
