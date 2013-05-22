@@ -8,6 +8,9 @@
 #  PETSC_ARCH         - architecture for which PETSc is built
 #  PETSC_CUSP_FOUND   - PETSc has Cusp support
 #  PETSC_VERSION      - version for PETSc
+#  PETSC_VERSION_MAJOR - First number in PETSC_VERSION
+#  PETSC_VERSION_MINOR - Second number in PETSC_VERSION
+#  PETSC_VERSION_SUBMINOR - Third number in PETSC_VERSION
 #
 # This config script is (very loosley) based on a PETSc CMake script by Jed Brown.
 
@@ -238,7 +241,12 @@ int main() {
 
   if (PETSC_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
     set(PETSC_VERSION ${OUTPUT} CACHE TYPE STRING)
+    string(REPLACE "." ";" PETSC_VERSION_LIST ${PETSC_VERSION})
+    list(GET PETSC_VERSION_LIST 0 PETSC_VERSION_MAJOR)
+    list(GET PETSC_VERSION_LIST 1 PETSC_VERSION_MINOR)
+    list(GET PETSC_VERSION_LIST 2 PETSC_VERSION_SUBMINOR)
     mark_as_advanced(PETSC_VERSION)
+    mark_as_advanced(PETSC_VERSION_MAJOR, PETSC_VERSION_MINOR, PETSC_VERSION_SUBMINOR)
   endif()
 
   if (PETSc_FIND_VERSION)
