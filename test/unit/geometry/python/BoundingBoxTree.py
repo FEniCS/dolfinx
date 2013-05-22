@@ -126,7 +126,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
             first = tree.compute_first_collision(p)
             self.assertEqual(first, reference[dim])
 
-    def test_compute_collisions_2d(self):
+    def test_compute_first_collision_2d(self):
 
         reference = {1: 226,
                      2: 137}
@@ -139,7 +139,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
             first = tree.compute_first_collision(p)
             self.assertEqual(first, reference[dim])
 
-    def test_compute_collisions_3d(self):
+    def test_compute_first_collision_3d(self):
         "Test basic creation and point location for unit cube"
 
         reference = {1: 1364,
@@ -153,6 +153,42 @@ class BoundingBoxTreeTest(unittest.TestCase):
             tree.build()
             first = tree.compute_first_collision(p)
             self.assertEqual(first, reference[dim])
+
+    #--- compute_first_entity_collision ---
+
+    def test_compute_first_entity_collision_1d(self):
+
+        reference = 4
+
+        p = Point(0.3)
+        mesh = UnitIntervalMesh(16)
+        tree = BoundingBoxTree(mesh, 1)
+        tree.build()
+        first = tree.compute_first_entity_collision(p)
+        self.assertEqual(first, reference)
+
+    def test_compute_first_entity_collision_2d(self):
+
+        reference = 137
+
+        p = Point(0.3, 0.3)
+        mesh = UnitSquareMesh(16, 16)
+        tree = BoundingBoxTree(mesh, 2)
+        tree.build()
+        first = tree.compute_first_collision(p)
+        self.assertEqual(first, reference)
+
+    def test_compute_first_entity_collision_3d(self):
+        "Test basic creation and point location for unit cube"
+
+        reference = 879
+
+        p = Point(0.3, 0.3, 0.3)
+        mesh = UnitCubeMesh(8, 8, 8)
+        tree = BoundingBoxTree(mesh, 3)
+        tree.build()
+        first = tree.compute_first_collision(p)
+        self.assertEqual(first, reference)
 
 if __name__ == "__main__":
     print ""
