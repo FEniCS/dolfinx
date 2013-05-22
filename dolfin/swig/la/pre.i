@@ -223,7 +223,7 @@
 %ignore dolfin::PETScBaseMatrix::mat;
 %ignore dolfin::PETScKrylovSolver::ksp;
 %ignore dolfin::PETScLUSolver::ksp;
-%ignore dolfin::PETScSNESSolver:snes;
+%ignore dolfin::PETScSNESSolver::snes;
 #endif
 #endif
 

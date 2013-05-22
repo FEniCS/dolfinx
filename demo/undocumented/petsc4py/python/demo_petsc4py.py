@@ -97,7 +97,7 @@ ksp.solve(b_petsc, x_petsc)
 plot(u, interactive=True)
 # Save solution to file
 file = File("poisson.pvd")
-file << U
+file << u
 
 
 
