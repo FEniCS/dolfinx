@@ -214,12 +214,28 @@ double TriangleCell::diameter(const MeshEntity& triangle) const
   const double c  = p0.distance(p1);
 
   // Formula for diameter (2*circumradius) from http://mathworld.wolfram.com
-  return 0.5*a*b*c/volume(triangle);
+  return 0.5*a*b*c / volume(triangle);
 }
 //-----------------------------------------------------------------------------
 double TriangleCell::squared_distance(const Cell& cell, const Point& point) const
 {
-  // Algorithm from Real-time collision detection by Christer Ericson:
+  // Get the vertices as points
+  const MeshGeometry& geometry = cell.mesh().geometry();
+  const unsigned int* vertices = cell.entities(0);
+  const Point a = geometry.point(vertices[0]);
+  const Point b = geometry.point(vertices[1]);
+  const Point c = geometry.point(vertices[2]);
+
+  // Call function to compute squared distance
+  return squared_distance(a, b, c, point);
+}
+//-----------------------------------------------------------------------------
+double TriangleCell::squared_distance(const Point& a,
+                                      const Point& b,
+                                      const Point& c,
+                                      const Point& point) const
+{
+// Algorithm from Real-time collision detection by Christer Ericson:
   // ClosestPtPointTriangle on page 141, Section 5.1.
   //
   // Note: This algorithm actually computes the closest point but we
@@ -227,13 +243,6 @@ double TriangleCell::squared_distance(const Cell& cell, const Point& point) cons
   //
   // Note: This function may be optimized to take into account that
   // only 2D vectors and inner products need to be computed.
-
-  // Get the vertices as points
-  const MeshGeometry& geometry = cell.mesh().geometry();
-  const unsigned int* vertices = cell.entities(0);
-  const Point a = geometry.point(vertices[0]);
-  const Point b = geometry.point(vertices[1]);
-  const Point c = geometry.point(vertices[2]);
 
   // Check if point is in vertex region outside A
   const Point ab = b - a;

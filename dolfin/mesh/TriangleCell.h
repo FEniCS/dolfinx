@@ -70,6 +70,15 @@ namespace dolfin
     /// Compute squared distance to given point
     double squared_distance(const Cell& cell, const Point& point) const;
 
+    /// Compute squared distance to given point. This version takes
+    /// the three vertex coordinates as 3D points. This makes it
+    /// possible to reuse this function for computing the (squared)
+    /// distance to a tetrahedron.
+    double squared_distance(const Point& a,
+                            const Point& b,
+                            const Point& c,
+                            const Point& point) const;
+
     /// Compute component i of normal of given facet with respect to the cell
     double normal(const Cell& cell, std::size_t facet, std::size_t i) const;
 

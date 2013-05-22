@@ -356,6 +356,22 @@ double TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
 //-----------------------------------------------------------------------------
 double TetrahedronCell::squared_distance(const Cell& cell, const Point& point) const
 {
+  // Algorithm from Real-time collision detection by Christer Ericson:
+  // ClosestPtPointTriangle on page 141, Section 5.1.
+  //
+  // Note: This algorithm actually computes the closest point but we
+  // only return the distance to that point.
+  //
+  // Note: This function may be optimized to take into account that
+  // only 2D vectors and inner products need to be computed.
+
+  // Get the vertices as points
+  const MeshGeometry& geometry = cell.mesh().geometry();
+  const unsigned int* vertices = cell.entities(0);
+  const Point a = geometry.point(vertices[0]);
+  const Point b = geometry.point(vertices[1]);
+  const Point c = geometry.point(vertices[2]);
+
   dolfin_not_implemented();
   return 0.0;
 }
