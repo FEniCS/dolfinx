@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-23
-// Last changed: 2013-05-21
+// Last changed: 2013-05-22
 
 #ifndef __GENERIC_BOUNDING_BOX_TREE_H
 #define __GENERIC_BOUNDING_BOX_TREE_H
@@ -60,9 +60,9 @@ namespace dolfin
     unsigned int compute_first_entity_collision(const Point& point,
                                                 const Mesh& mesh) const;
 
-    /// Compute closest entity to given _Point_
-    unsigned int compute_closest_entity(const Point& point,
-                                        const Mesh& mesh) const;
+    /// Compute closest entity and distance to given _Point_
+    std::pair<unsigned int, double> compute_closest_entity(const Point& point,
+                                                           const Mesh& mesh) const;
 
   protected:
 
@@ -111,9 +111,11 @@ namespace dolfin
                                                 const Mesh& mesh) const;
 
     /// Compute closest entity (recursive)
-    unsigned int compute_closest_entity(const Point& point,
-                                        unsigned int node,
-                                        const Mesh& mesh) const;
+    void compute_closest_entity(const Point& point,
+                                unsigned int node,
+                                const Mesh& mesh,
+                                unsigned int& closest_entity,
+                                double& R2) const;
 
     // Compute bounding box of mesh entity
     void compute_bbox_of_entity(double* b,

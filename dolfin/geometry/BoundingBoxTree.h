@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-05-20
+// Last changed: 2013-05-22
 
 #ifndef __BOUNDING_BOX_TREE_H
 #define __BOUNDING_BOX_TREE_H
@@ -152,7 +152,7 @@ namespace dolfin
     /// *Arguments*
     ///     point (_Point_)
     ///         The point.
-    unsigned int
+    std::pair<unsigned int, double>
     compute_closest_entity(const Point& point) const;
 
     // FIXME: Check use of unsigned int vs size_t

@@ -19,11 +19,12 @@
 // Modified by Garth N. Wells, 2012.
 //
 // First added:  2006-05-11
-// Last changed: 2012-06-12
+// Last changed: 2013-05-22
 
 #ifndef __MESH_ENTITY_H
 #define __MESH_ENTITY_H
 
+#include <cmath>
 #include <iostream>
 
 #ifdef HAS_CGAL
@@ -257,6 +258,33 @@ namespace dolfin
     ///     _Point_
     ///         The midpoint of the cell.
     Point midpoint() const;
+
+    /// Compute squared distance to given point.
+    ///
+    /// *Arguments*
+    ///     point (_Point_)
+    ///         The point.
+    /// *Returns*
+    ///     double
+    ///         The squared distance to the point.
+    double squared_distance(const Point& point)
+    {
+      // FIXME: Not implemented
+      return 0.0;
+    }
+
+    /// Compute distance to given point.
+    ///
+    /// *Arguments*
+    ///     point (_Point_)
+    ///         The point.
+    /// *Returns*
+    ///     double
+    ///         The distance to the point.
+    inline double distance(const Point& point)
+    {
+      return sqrt(squared_distance(point));
+    }
 
     #ifdef HAS_CGAL
     /// Returns a 3D bounding box of the mesh entity. For lower

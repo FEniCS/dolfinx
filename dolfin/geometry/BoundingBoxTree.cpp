@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-05-20
+// Last changed: 2013-05-22
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -138,7 +138,7 @@ BoundingBoxTree::compute_first_entity_collision(const Point& point) const
   return _tree->compute_first_entity_collision(point, *_mesh);
 }
 //-----------------------------------------------------------------------------
-unsigned int
+std::pair<unsigned int, double>
 BoundingBoxTree::compute_closest_entity(const Point& point) const
 {
   // Check that tree has been built
