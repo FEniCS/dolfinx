@@ -157,7 +157,35 @@ double IntervalCell::diameter(const MeshEntity& interval) const
 //-----------------------------------------------------------------------------
 double IntervalCell::squared_distance(const Cell& cell, const Point& point) const
 {
-  dolfin_not_implemented();
+  // Note: assume that interval is embedded in 1D (only checking x-coordinate)
+  //
+  // Note: slightly inefficient since we compute the square distance and then
+  // take the square root (in Cell::distance), but this is done to match the
+  // implementation for triangles and tetrahedra, and speed is often not a
+  // big issue in 1D.
+
+  // Get the vertices as points
+  const MeshGeometry& geometry = cell.mesh().geometry();
+  const unsigned int* vertices = cell.entities(0);
+  const Point p0 = geometry.point(vertices[0]);
+  const Point p1 = geometry.point(vertices[1]);
+
+  // Get x-coordinates of point
+  const double x = point.x();
+  const double x0 = p0.x();
+  const double x1 = p1.x();
+
+  // Compute min and max
+  const double a = std::min(x0, x1);
+  const double b = std::max(x0, x1);
+
+  // Check if point is left of a
+  if (x < a) return (x - a)*(x - a);
+
+  // Check if point is right of b
+  if (x > b) return (x - b)*(x - b);
+
+  // Point is inside interval so distance is zero
   return 0.0;
 }
 //-----------------------------------------------------------------------------
