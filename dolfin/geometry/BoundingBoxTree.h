@@ -148,6 +148,8 @@ namespace dolfin
     ///         point. If more than one entity is at the same distance
     ///         (or point contained in entity), then the first entity
     ///         is returned.
+    ///     double
+    ///         The distance to the closest entity.
     ///
     /// *Arguments*
     ///     point (_Point_)

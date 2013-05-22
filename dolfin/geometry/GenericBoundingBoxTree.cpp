@@ -200,7 +200,7 @@ GenericBoundingBoxTree::compute_closest_entity(const Point& point,
   // Sanity check
   dolfin_assert(closest_entity < std::numeric_limits<unsigned int>::max());
 
-  std::pair<unsigned int, double> ret(closest_entity, R2);
+  std::pair<unsigned int, double> ret(closest_entity, sqrt(R2));
   return ret;
 }
 //-----------------------------------------------------------------------------
