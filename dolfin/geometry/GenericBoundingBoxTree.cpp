@@ -182,11 +182,17 @@ GenericBoundingBoxTree::compute_closest_entity(const Point& point,
                  "Closest-entity is only implemented for cells");
   }
 
-  // FIXME: Choose starting guess for R2
-  double R2 = 1.0;
+  // Note: This algorithm may be optimized by finding a better
+  // starting guess for R2. One option would be to store a small
+  // number of bounding boxes (all boxes at a certain depth) and do a
+  // linear search among those boxes to find a suitable value of R2
+  // which partitions the boxes in two groups of equal size. One might
+  // also consider building an additional search tree like in CGAL
+  // when the function accelerate_distance_queries is called.
 
-  // Initialize index of closest entity
+  // Initialize index and distance to closest entity
   unsigned int closest_entity = std::numeric_limits<unsigned int>::max();
+  double R2 = std::numeric_limits<double>::max();
 
   // Call recursive find function
   compute_closest_entity(point, _bboxes.size() - 1, mesh, closest_entity, R2);
