@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-15
-# Last changed: 2013-05-17
+# Last changed: 2013-05-22
 
 import unittest
 
@@ -28,8 +28,15 @@ from dolfin import Point
 
 class BoundingBoxTreeTest(unittest.TestCase):
 
-    def test_unit_interval(self):
-        "Test basic creation and point location for unit interval"
+    #compute_collisions(const Point& point) const;
+    #compute_entity_collisions(const Point& point) const;
+    #compute_first_collision(const Point& point) const;
+    #compute_first_entity_collision(const Point& point) const;
+    #compute_closest_entity(const Point& point) const;
+
+    #--- compute_collisions ---
+
+    def test_compute_collisions_1d(self):
 
         reference = {1: [4]}
 
@@ -42,13 +49,10 @@ class BoundingBoxTreeTest(unittest.TestCase):
             tree.build()
 
             entities = tree.compute_collisions(p)
-            first = tree.compute_first_collision(p)
 
             self.assertEqual(sorted(entities), reference[dim])
-            self.assertEqual(first, entities[0])
 
-    def test_unit_square(self):
-        "Test basic creation and point location for unit square"
+    def test_compute_collisions_2d(self):
 
         reference = {1: [226],
                      2: [136, 137]}
@@ -62,12 +66,10 @@ class BoundingBoxTreeTest(unittest.TestCase):
             tree.build()
 
             entities = tree.compute_collisions(p)
-            first = tree.compute_first_collision(p)
 
             self.assertEqual(sorted(entities), reference[dim])
-            self.assertEqual(first, entities[0])
 
-    def test_unit_cube(self):
+    def test_compute_collisions_3d(self):
         "Test basic creation and point location for unit cube"
 
         reference = {1: [1364],
@@ -83,10 +85,62 @@ class BoundingBoxTreeTest(unittest.TestCase):
             tree.build()
 
             entities = tree.compute_collisions(p)
-            first = tree.compute_first_collision(p)
 
             self.assertEqual(sorted(entities), reference[dim])
-            self.assertEqual(first, entities[0])
+
+    #--- compute_first_collision ---
+
+    def test_compute_first_collision_1d(self):
+
+        reference = {1: 4}
+
+        p = Point(0.3)
+        mesh = UnitIntervalMesh(16)
+
+        for dim in range(1, 2):
+
+            tree = BoundingBoxTree(mesh, dim)
+            tree.build()
+
+            first = tree.compute_first_collision(p)
+
+            self.assertEqual(first, reference[dim])
+
+    def test_compute_collisions_2d(self):
+
+        reference = {1: 226,
+                     2: 137}
+
+        p = Point(0.3, 0.3)
+        mesh = UnitSquareMesh(16, 16)
+
+        for dim in range(1, 3):
+
+            tree = BoundingBoxTree(mesh, dim)
+            tree.build()
+
+            first = tree.compute_first_collision(p)
+
+            self.assertEqual(first, reference[dim])
+
+    def test_compute_collisions_3d(self):
+        "Test basic creation and point location for unit cube"
+
+        reference = {1: 1364,
+                     2: 1974,
+                     3: 879}
+
+        p = Point(0.3, 0.3, 0.3)
+        mesh = UnitCubeMesh(8, 8, 8)
+
+        for dim in range(1, 4):
+
+            tree = BoundingBoxTree(mesh, dim)
+            tree.build()
+
+            first = tree.compute_first_collision(p)
+
+            self.assertEqual(first, reference[dim])
 
 if __name__ == "__main__":
     print ""
