@@ -21,18 +21,13 @@
 # Last changed: 2013-05-22
 
 import unittest
+import numpy
 
 from dolfin import BoundingBoxTree
 from dolfin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh
 from dolfin import Point
 
 class BoundingBoxTreeTest(unittest.TestCase):
-
-    #compute_collisions(const Point& point) const;
-    #compute_entity_collisions(const Point& point) const;
-    #compute_first_collision(const Point& point) const;
-    #compute_first_entity_collision(const Point& point) const;
-    #compute_closest_entity(const Point& point) const;
 
     #--- compute_collisions ---
 
@@ -62,7 +57,6 @@ class BoundingBoxTreeTest(unittest.TestCase):
             self.assertEqual(sorted(entities), reference[dim])
 
     def test_compute_collisions_3d(self):
-        "Test basic creation and point location for unit cube"
 
         reference = {1: [1364],
                      2: [1967, 1968, 1970, 1972, 1974, 1976],
@@ -189,6 +183,62 @@ class BoundingBoxTreeTest(unittest.TestCase):
         tree.build()
         first = tree.compute_first_collision(p)
         self.assertEqual(first, reference)
+
+    #--- compute_closest_entity ---
+
+    def test_compute_closest_entity_1d(self):
+
+        reference = (0, 1.0)
+
+        p = Point(-1.0)
+        mesh = UnitIntervalMesh(16)
+        tree = BoundingBoxTree(mesh, 1)
+        tree.build()
+        entity, distance = tree.compute_closest_entity(p)
+
+        self.assertEqual(entity, reference[0])
+        self.assertAlmostEqual(distance, reference[1])
+
+    def test_compute_closest_entity_2d(self):
+
+        reference = (1, numpy.sqrt(2.0))
+
+        p = Point(-1.0, -1.0)
+        mesh = UnitSquareMesh(16, 16)
+        tree = BoundingBoxTree(mesh, 2)
+        tree.build()
+        entity, distance = tree.compute_closest_entity(p)
+
+        self.assertEqual(entity, reference[0])
+        self.assertAlmostEqual(distance, reference[1])
+
+    def test_compute_closest_entity_2d_in_3d(self):
+
+        # This function actually works for triangles embedded in 3D
+
+        reference = (1, numpy.sqrt(3.0))
+
+        p = Point(-1.0, -1.0, -1.0)
+        mesh = UnitSquareMesh(16, 16)
+        tree = BoundingBoxTree(mesh, 2)
+        tree.build()
+        entity, distance = tree.compute_closest_entity(p)
+
+        self.assertEqual(entity, reference[0])
+        self.assertAlmostEqual(distance, reference[1])
+
+    def test_compute_closest_entity_3d(self):
+
+        reference = (5, numpy.sqrt(3.0))
+
+        p = Point(-1.0, -1.0, -1.0)
+        mesh = UnitCubeMesh(8, 8, 8)
+        tree = BoundingBoxTree(mesh, 3)
+        tree.build()
+        entity, distance = tree.compute_closest_entity(p)
+
+        self.assertEqual(entity, reference[0])
+        self.assertAlmostEqual(distance, reference[1])
 
 if __name__ == "__main__":
     print ""
