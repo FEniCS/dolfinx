@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-05-16
+// Last changed: 2013-05-23
 
 #include <cmath>
 #include <boost/make_shared.hpp>
@@ -149,6 +149,10 @@ void PointIntegralSolver::step(double dt)
     _scheme->solution()->vector()->set(u0.memptr(), _local_to_global_dofs.size(), 
 				       &_local_to_global_dofs[0]);
     
+    if (vert_ind == 0)
+    {
+      
+    }
     //p++;
   }
 
@@ -183,7 +187,9 @@ void PointIntegralSolver::_solve_explicit_stage(std::size_t vert_ind,
   // stage solution vector
   // Extract vertex dofs from tabulated tensor
   for (unsigned int row=0; row < _system_size; row++)
+  {
     _local_stage_solutions[stage](row) = _ufcs[stage][0]->A[_local_to_local_dofs[row]];
+  }
 
   // Put solution back into global stage solution vector
   Timer t_expl_set("Explicit stage: set");
