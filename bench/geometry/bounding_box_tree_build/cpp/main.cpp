@@ -15,17 +15,19 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
+// This benchmark measures the performance of building a BoundingBoxTree (and
+// one call to compute_entities, which is dominated by building). The call to
+// compute_entities is included so that we may compare the timing to CGAL.
+//
 // First added:  2013-04-18
-// Last changed: 2013-05-02
+// Last changed: 2013-05-23
 
-#include <dolfin.h>
-
-// FIXME: Testing
 #include <vector>
+#include <dolfin.h>
 
 using namespace dolfin;
 
-#define NUM_REPS 1
+#define NUM_REPS 5
 #define SIZE 64
 
 int bench_cgal(const Mesh& mesh, const Point& point)
@@ -35,12 +37,6 @@ int bench_cgal(const Mesh& mesh, const Point& point)
   // Compute intersection
   std::set<std::size_t> cells;
   mesh.intersected_cells(point, cells);
-
-  // Print intersected cells
-  //cout << "Intersected cells:";
-  //for (std::set<std::size_t>::iterator it = cells.begin(); it != cells.end(); ++it)
-  //  cout << " " << *it;
-  //cout << endl;
 }
 
 int bench_dolfin(const Mesh& mesh, const Point& point)
@@ -50,12 +46,6 @@ int bench_dolfin(const Mesh& mesh, const Point& point)
   // Compute intersection
   MeshPointIntersection intersection(mesh, point);
   std::vector<unsigned int> cells = intersection.intersected_cells();
-
-  // Print intersected cells
-  //cout << "Intersected cells:";
-  //for (std::vector<unsigned int>::iterator it = cells.begin(); it != cells.end(); ++it)
-  //  cout << " " << *it;
-  //cout << endl;
 }
 
 int main(int argc, char* argv[])
