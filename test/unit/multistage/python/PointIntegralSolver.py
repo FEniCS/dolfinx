@@ -40,6 +40,36 @@ def convergence_order(errors, base = 2):
 
 class PointIntegralSolverTest(unittest.TestCase):
 
+    def test_butcher_schemes_scalar_time(self):
+
+        for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
+                       BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
+            
+            mesh = UnitSquareMesh(10, 10)
+            V = FunctionSpace(mesh, "CG", 1)
+            u = Function(V)
+            v = TestFunction(V)
+            time = Constant(0.0)
+            form = time**2*v*dP
+
+            tstop = 1.0
+            u_true = Expression("pow(t, 3)/3.", t=tstop)
+
+            scheme = Scheme(form, u, time)
+            info(scheme)
+            solver = PointIntegralSolver(scheme)
+            solver.parameters.newton_solver.report = False
+            solver.parameters.newton_solver.iterations_to_retabulate_jacobian = 5
+            solver.parameters.newton_solver.maximum_iterations = 12
+            u_errors = []
+            for dt in [0.05, 0.025, 0.0125]:
+                u.interpolate(Constant(1.0))
+                solver.step_interval(0., tstop, dt)
+                u_errors.append(errornorm(u_true, u))
+            print u_errors
+            print min(convergence_order(u_errors))
+            #self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)
+
     def test_butcher_schemes_scalar(self):
 
         for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
