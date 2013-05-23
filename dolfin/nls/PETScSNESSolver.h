@@ -101,6 +101,10 @@ namespace dolfin
 
     Parameters parameters;
 
+    /// Return PETSc SNES pointer
+    boost::shared_ptr<SNES> snes() const
+    { return _snes; }
+
   private:
 
     /// PETSc solver pointer
