@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-05-22
+// Last changed: 2013-05-23
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -156,7 +156,7 @@ void BoundingBoxTree::check_built() const
   {
     dolfin_error("BoundingBoxTree.cpp",
                  "compute collisions with bounding box tree",
-                 "Bounding box tree has not been build. You need to call tree.build()");
+                 "Bounding box tree has not been built. You need to call tree.build()");
   }
 }
 //-----------------------------------------------------------------------------
