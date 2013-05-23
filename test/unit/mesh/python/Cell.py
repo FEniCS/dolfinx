@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-18
-# Last changed: 2013-05-23
+# Last changed: 2013-05-24
 
 import unittest
 import numpy
@@ -59,7 +59,7 @@ class TriangleTest(unittest.TestCase):
         cell = Cell(mesh, 1)
 
         self.assertAlmostEqual(cell.distance(Point(-1.0, -1.0)), numpy.sqrt(2))
-        #self.assertAlmostEqual(cell.distance(Point(-1.0, 0.5)), 1)
+        self.assertAlmostEqual(cell.distance(Point(-1.0, 0.5)), 1)
         self.assertAlmostEqual(cell.distance(Point(0.5, 0.5)), 0.0)
 
 class TetrahedronTest(unittest.TestCase):

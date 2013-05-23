@@ -22,7 +22,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2013-05-22
+// Last changed: 2013-05-24
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -235,7 +235,7 @@ double TriangleCell::squared_distance(const Point& point,
                                       const Point& b,
                                       const Point& c)
 {
-// Algorithm from Real-time collision detection by Christer Ericson:
+  // Algorithm from Real-time collision detection by Christer Ericson:
   // ClosestPtPointTriangle on page 141, Section 5.1.5.
   //
   // Note: This algorithm actually computes the closest point but we
