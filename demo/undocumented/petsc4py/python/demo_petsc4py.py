@@ -76,25 +76,26 @@ L = f*v*dx + g*v*ds
 u = Function(V)
 
 A, b = assemble_system(a, L, bc)
+
+# Fetch underlying PETSc objects
 A_petsc = as_backend_type(A).mat()
 b_petsc = as_backend_type(b).vec()
 x_petsc = as_backend_type(u.vector()).vec()
 
+# Create solver, apply preconditioner and solve system
 ksp = PETSc.KSP().create()
-
 ksp.setOperators(A_petsc)
 
 pc = PETSc.PC().create()
-
 pc.setOperators(A_petsc)
 pc.setType(pc.Type.JACOBI)
-
 ksp.setPC(pc)
 
 ksp.solve(b_petsc, x_petsc)
 
 # Plot solution
 plot(u, interactive=True)
+
 # Save solution to file
 file = File("poisson.pvd")
 file << u
