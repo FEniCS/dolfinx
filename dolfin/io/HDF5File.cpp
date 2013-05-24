@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-04-19
+// Last changed: 2013-05-24
 
 #ifdef HAS_HDF5
 
@@ -37,7 +37,9 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -520,6 +522,34 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
   std::vector<std::size_t> global_size(1, MPI::sum(data_values.size()));
 
   write_data(name + "/values", data_values, global_size);
+
+}
+//-----------------------------------------------------------------------------
+void HDF5File::write(const Function& u, const std::string name)
+{
+  // Get mesh and dofmap
+  dolfin_assert(u.function_space()->mesh());
+  const Mesh& mesh = *u.function_space()->mesh();
+
+  dolfin_assert(u.function_space()->dofmap());
+  const GenericDofMap& dofmap = *u.function_space()->dofmap();
+
+  // const GenericVector& v = *u.vector();
+
+  std::vector<std::size_t> global_size(2);
+  global_size[0] = MPI::sum(mesh.num_cells());
+  global_size[1] = dofmap.cell_dofs(0).size(); // FIXME
+
+  std::vector<dolfin::la_index> cell_dofs;
+  cell_dofs.reserve(global_size[0]*global_size[1]);
+  
+  for(std::size_t i = 0; i != mesh.num_cells(); ++i)
+  {
+    const std::vector<dolfin::la_index>& cell_dofs_i = dofmap.cell_dofs(i);
+    cell_dofs.insert(cell_dofs.end(), cell_dofs_i.begin(), cell_dofs_i.end());
+  }
+  
+  write_data(name + "/cell_dofs", cell_dofs, global_size);
 
 }
 //-----------------------------------------------------------------------------
