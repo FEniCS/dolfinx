@@ -92,17 +92,29 @@ std::pair<std::size_t, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pro
   dolfin_assert(_dx);
   dolfin_assert(_solver);
 
+  const std::string convergence_criterion = parameters["convergence_criterion"];
   const std::size_t maxiter = parameters["maximum_iterations"];
 
   std::size_t krylov_iterations = 0;
   newton_iteration = 0;
-  bool newton_converged = false;
 
   // Compute F(u)
-  nonlinear_problem.form(*_A, *_b, x);
   nonlinear_problem.F(*_b, x);
 
-  _solver->set_operator(_A);
+  // Check convergence
+  bool newton_converged;
+  if (convergence_criterion == "residual")
+    newton_converged = converged(*_b, nonlinear_problem);
+  else if (convergence_criterion == "incremental")
+    // We need to do at least one Newton step
+    // with the ||dx||-stopping criterion.
+    newton_converged = false;
+  else
+    dolfin_error("NewtonSolver.cpp",
+                 "check for convergence",
+                 "The convergence criterion %s is unknown, known criteria are 'residual' or 'incremental'", convergence_criterion.c_str());
+
+  nonlinear_problem.form(*_A, *_b, x);
 
   // Start iterations
   while (!newton_converged && newton_iteration < maxiter)
@@ -118,10 +130,6 @@ std::pair<std::size_t, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pro
       _dx->zero();
     krylov_iterations += _solver->solve(*_dx, *_b);
 
-    // Compute initial residual
-    if (newton_iteration == 0)
-      newton_converged = converged(*_b, *_dx, nonlinear_problem);
-
     // Update solution
     const double relaxation = parameters["relaxation_parameter"];
     if (std::abs(1.0 - relaxation) < DOLFIN_EPS)
@@ -129,16 +137,28 @@ std::pair<std::size_t, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pro
     else
       x.axpy(-relaxation, *_dx);
 
-    // Update number of iterations
-    ++newton_iteration;
-
     //FIXME: this step is not needed if residual is based on dx and this has converged.
     // Compute F
     nonlinear_problem.form(*_A, *_b, x);
     nonlinear_problem.F(*_b, x);
 
     // Test for convergence
-    newton_converged = converged(*_b, *_dx, nonlinear_problem);
+    if (convergence_criterion == "residual")
+    {
+      ++newton_iteration;
+      newton_converged = converged(*_b, nonlinear_problem);
+    }
+    else if (convergence_criterion == "incremental")
+    {
+      // Increment the number of iterations *after* converged(). This makes
+      // sure that the initial residual0 is properly set.
+      newton_converged = converged(*_dx, nonlinear_problem);
+      ++newton_iteration;
+    }
+    else
+      dolfin_error("NewtonSolver.cpp",
+                   "check for convergence",
+                   "The convergence criterion %s is unknown, known criteria are 'residual' or 'incremental'", convergence_criterion.c_str());
   }
 
   if (newton_converged)
@@ -184,23 +204,14 @@ GenericLinearSolver& NewtonSolver::linear_solver() const
   return *_solver;
 }
 //-----------------------------------------------------------------------------
-bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx,
+bool NewtonSolver::converged(const GenericVector& r,
                              const NonlinearProblem& nonlinear_problem)
 {
-  const std::string convergence_criterion = parameters["convergence_criterion"];
   const double rtol = parameters["relative_tolerance"];
   const double atol = parameters["absolute_tolerance"];
   const bool report = parameters["report"];
 
-  // Compute resdiual
-  if (convergence_criterion == "residual")
-    _residual = b.norm("l2");
-  else if (convergence_criterion == "incremental")
-    _residual = dx.norm("l2");
-  else
-    dolfin_error("NewtonSolver.cpp",
-                 "check for convergence",
-                 "The convergence criterion %s is unknown, known criteria are 'residual' or 'incremental'", convergence_criterion.c_str());
+  _residual = r.norm("l2");
 
   // If this is the first iteration step, set initial residual
   if (newton_iteration == 0)
@@ -210,7 +221,7 @@ bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx,
   const double relative_residual = _residual / residual0;
 
   // Output iteration number and residual
-  if (report && newton_iteration > 0 && dolfin::MPI::process_number() == 0)
+  if (report && dolfin::MPI::process_number() == 0)
   {
     info("Newton iteration %d: r (abs) = %.3e (tol = %.3e) r (rel) = %.3e (tol = %.3e)",
          newton_iteration, _residual, atol, relative_residual, rtol);

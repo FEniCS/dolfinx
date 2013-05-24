@@ -118,7 +118,7 @@ namespace dolfin
   private:
 
     /// Convergence test
-    virtual bool converged(const GenericVector& b, const GenericVector& dx,
+    virtual bool converged(const GenericVector& r,
                            const NonlinearProblem& nonlinear_problem);
 
     /// Current number of Newton iterations
