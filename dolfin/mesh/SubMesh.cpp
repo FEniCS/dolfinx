@@ -100,8 +100,8 @@ void SubMesh::init(const Mesh& mesh,
 {
   // Open mesh for editing
   MeshEditor editor;
-  const std::size_t cell_dim_t = mesh.topology().dim();
-  editor.open(*this, mesh.type().cell_type(), cell_dim_t,
+  const std::size_t D = mesh.topology().dim();
+  editor.open(*this, mesh.type().cell_type(), D,
               mesh.geometry().dim());
 
   // Build set of cells that are in sub-mesh
@@ -196,7 +196,8 @@ void SubMesh::init(const Mesh& mesh,
 
   // Build submesh-to-parent map for vertices
   std::vector<std::size_t>& parent_vertex_indices_mf
-    = data().create_array("parent_vertex_indices", num_vertices());
+    = data().create_array("parent_vertex_indices", 0);
+  parent_vertex_indices_mf.resize(num_vertices());
   for (std::map<std::size_t, std::size_t>::iterator it
          = parent_to_submesh_vertex_indices.begin();
        it != parent_to_submesh_vertex_indices.end(); ++it)
@@ -207,7 +208,8 @@ void SubMesh::init(const Mesh& mesh,
 
   // Build submesh-to-parent map for cells
   std::vector<std::size_t>& parent_cell_indices
-    = data().create_array("parent_cell_indices", num_cells());
+    = data().create_array("parent_cell_indices", D);
+  parent_cell_indices.resize(num_cells());
   current_cell = 0;
   for (std::vector<std::size_t>::iterator it
          = submesh_cell_parent_indices.begin();
@@ -260,12 +262,12 @@ void SubMesh::init(const Mesh& mesh,
       // FIXME: Need to check all attached cells
 
       std::size_t parent_cell_index;
-      if (dim_t == cell_dim_t)
+      if (dim_t == D)
         parent_cell_index = itt->first;
       else
       {
         // Get first parent cell index attached to parent entity
-        parent_cell_index = parent_entity.entities(cell_dim_t)[0];
+        parent_cell_index = parent_entity.entities(D)[0];
       }
 
       // Get submesh cell index
@@ -276,7 +278,7 @@ void SubMesh::init(const Mesh& mesh,
       if (sub_domains[parent_cell_index] == sub_domain)
       {
         // Map markers from parent mesh to submesh
-	if (dim_t == cell_dim_t)
+	if (dim_t == D)
 	  submesh_markers[submesh_cell_index] = itt->second;
 	else
 	{

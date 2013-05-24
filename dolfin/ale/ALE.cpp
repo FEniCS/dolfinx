@@ -43,18 +43,21 @@ boost::shared_ptr<MeshDisplacement> ALE::move(Mesh& mesh0, const Mesh& mesh1)
   not_working_in_parallel("Move coordinates of mesh0 according "
                           "to mesh1 with common global vertices");
 
+  // Topological dimension
+  //const std::size_t D = mesh1.topology().dim();
+
   // Extract boundary meshes
   BoundaryMesh boundary0(mesh0, "exterior");
   BoundaryMesh boundary1(mesh1, "exterior");
 
   // Get vertex mappings
-  dolfin_assert(mesh0.data().exists("parent_vertex_indices"));
+  dolfin_assert(mesh0.data().exists("parent_vertex_indices", 0));
   const std::vector<std::size_t>& local_to_global_0
-    = mesh0.data().array("parent_vertex_indices");
+    = mesh0.data().array("parent_vertex_indices", 0);
 
-  dolfin_assert(mesh1.data().exists("parent_vertex_indices"));
+  dolfin_assert(mesh1.data().exists("parent_vertex_indices", 0));
   const std::vector<std::size_t>& local_to_global_1
-    = mesh1.data().array("parent_vertex_indices");
+    = mesh1.data().array("parent_vertex_indices", 0);
 
   const MeshFunction<std::size_t>& boundary_to_mesh_0 = boundary0.entity_map(0);
   const MeshFunction<std::size_t>& boundary_to_mesh_1 = boundary1.entity_map(0);

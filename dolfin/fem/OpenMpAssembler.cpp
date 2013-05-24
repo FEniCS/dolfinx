@@ -418,6 +418,12 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
 {
   warning("OpenMpAssembler::assemble_interior_facets is untested.");
 
+  // Extract mesh
+  const Mesh& mesh = a.mesh();
+
+  // Topological dimension
+  const std::size_t D = mesh.topology().dim();
+
   dolfin_assert(!values);
 
   // Skip assembly if there are no interior facet integrals
@@ -439,11 +445,8 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
                  "Subdomains are not yet handled");
   }
 
-  // Extract mesh
-  const Mesh& mesh = a.mesh();
-
   // Color mesh
-  std::vector<std::size_t> coloring_type = a.coloring(mesh.topology().dim()-1);
+  std::vector<std::size_t> coloring_type = a.coloring(D - 1);
   mesh.color(coloring_type);
 
   // Dummy UFC object since each thread needs to created its own UFC object
@@ -465,15 +468,15 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A, const Form& a,
     = ufc.default_interior_facet_integral.get();
 
   // Compute facets and facet - cell connectivity if not already computed
-  mesh.init(mesh.topology().dim() - 1);
-  mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
+  mesh.init(D - 1);
+  mesh.init(D - 1, D);
   dolfin_assert(mesh.ordered());
 
   // Get interior facet directions (if any)
   const std::vector<std::size_t>* facet_orientation = NULL;
-  if (mesh.data().exists("facet_orientation"))
+  if (mesh.data().exists("facet_orientation", D - 1))
   {
-    facet_orientation = &(mesh.data().array("facet_orientation"));
+    facet_orientation = &(mesh.data().array("facet_orientation", D - 1));
     if (facet_orientation->size() != mesh.num_facets())
     {
       dolfin_error("OpenMPAssembler.cpp",

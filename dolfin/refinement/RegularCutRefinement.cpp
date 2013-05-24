@@ -68,13 +68,17 @@ void RegularCutRefinement::refine(Mesh& refined_mesh,
   refine_marked(refined_mesh, mesh, refinement_markers, marked_edges);
 }
 //-----------------------------------------------------------------------------
-void RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
-                                           IndexSet& marked_edges,
-                                           const Mesh& mesh,
-                                           const MeshFunction<bool>& cell_markers)
+void
+RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
+                                      IndexSet& marked_edges,
+                                      const Mesh& mesh,
+                                      const MeshFunction<bool>& cell_markers)
 {
+  // Topological dimension
+  const std::size_t D = mesh.topology().dim();
+
   // Create edge markers and initialize to false
-  const std::size_t edges_per_cell = mesh.topology().dim() + 1;
+  const std::size_t edges_per_cell = D + 1;
   std::vector<std::vector<bool> > edge_markers(mesh.num_cells());
   for (std::size_t i = 0; i < mesh.num_cells(); i++)
   {
@@ -89,8 +93,8 @@ void RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
 
   // Get bisection data
   const std::vector<std::size_t>* bisection_twins = NULL;
-  if (mesh.data().exists("bisection_twins"))
-    bisection_twins = &(mesh.data().array("bisection_twins"));
+  if (mesh.data().exists("bisection_twins", D))
+    bisection_twins = &(mesh.data().array("bisection_twins", D));
 
   // Iterate until no more cells are marked
   cells.fill();
@@ -219,9 +223,9 @@ void RegularCutRefinement::compute_markers(std::vector<int>& refinement_markers,
 }
 //-----------------------------------------------------------------------------
 void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
-                                         const Mesh& mesh,
-                                         const std::vector<int>& refinement_markers,
-                                         const IndexSet& marked_edges)
+                                  const Mesh& mesh,
+                                  const std::vector<int>& refinement_markers,
+                                  const IndexSet& marked_edges)
 {
   // Count the number of cells in refined mesh
   std::size_t num_cells = 0;
@@ -273,14 +277,16 @@ void RegularCutRefinement::refine_marked(Mesh& refined_mesh,
   }
 
   // Get bisection data for old mesh
+  const std::size_t D = mesh.topology().dim();
   const std::vector<std::size_t>*  bisection_twins = NULL;
-  if (mesh.data().exists("bisection_twins"))
-    bisection_twins = &(mesh.data().array("bisection_twins"));
+  if (mesh.data().exists("bisection_twins", D))
+    bisection_twins = &(mesh.data().array("bisection_twins", D));
 
   // Markers for bisected cells pointing to their bisection twins in
   // refined mesh
   std::vector<std::size_t>& refined_bisection_twins
-    = refined_mesh.data().create_array("bisection_twins", num_cells);
+    = refined_mesh.data().create_array("bisection_twins", D);
+  refined_bisection_twins.resize(num_cells);
   for (std::size_t i = 0; i < num_cells; i++)
     refined_bisection_twins[i] = i;
 

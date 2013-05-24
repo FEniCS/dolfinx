@@ -322,8 +322,8 @@ void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
 
   // Get interior facet directions (if any)
   const std::vector<std::size_t>* facet_orientation = NULL;
-  if (mesh.data().exists("facet_orientation"))
-    facet_orientation = &(mesh.data().array("facet_orientation"));
+  if (mesh.data().exists("facet_orientation", D - 1))
+    facet_orientation = &(mesh.data().array("facet_orientation", D - 1));
 
   if (facet_orientation && facet_orientation->size() != mesh.num_facets())
   {

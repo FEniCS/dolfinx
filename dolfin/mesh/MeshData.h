@@ -88,7 +88,7 @@ namespace dolfin
     /// *Returns*
     ///     bool
     ///         True is array exists, false otherwise.
-    bool exists(std::string name) const;
+    bool exists(std::string name, std::size_t dim) const;
 
     //--- Creation of data ---
 
@@ -113,7 +113,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<std::size_t>
     ///         The array.
-    std::vector<std::size_t>& create_array(std::string name);
+    //std::vector<std::size_t>& create_array(std::string name);
 
     /// Create array (vector) with given name and size
     ///
@@ -126,8 +126,10 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<std::size_t>
     ///         The array.
-    std::vector<std::size_t>& create_array(std::string name, std::size_t size);
+    //private:
+    std::vector<std::size_t>& create_array(std::string name, std::size_t dim);
 
+    //public:
     //--- Retrieval of data ---
 
     /// This function is no longer supported. It is retained to print
@@ -146,7 +148,7 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<std::size_t>
     ///         The array.
-    std::vector<std::size_t>& array(std::string name);
+    std::vector<std::size_t>& array(std::string name, std::size_t dim);
 
     /// Return array with given name (returning zero if data is not
     /// available)
@@ -158,7 +160,8 @@ namespace dolfin
     /// *Returns*
     ///     std::vector<std::size_t>
     ///         The array.
-    const std::vector<std::size_t>& array(std::string name) const;
+    const std::vector<std::size_t>& array(std::string name,
+                                          std::size_t dim) const;
 
     //--- Removal of data ---
 
@@ -167,7 +170,7 @@ namespace dolfin
     /// *Arguments*
     ///     name (std::string)
     ///         The name of the array.
-    void erase_array(const std::string name);
+    void erase_array(const std::string name, std::size_t dim);
 
     //--- Misc ---
 
@@ -190,8 +193,8 @@ namespace dolfin
     // Check if name is deprecated
     void check_deprecated(std::string name) const;
 
-    // A map from named mesh data to vector
-    std::map<std::string, std::vector<std::size_t> > _arrays;
+    // A map from named mesh array data to vector for dim
+    std::vector<std::map<std::string, std::vector<std::size_t> > > _arrays;
 
     // List of depcrecated named data
     std::vector<std::string> _deprecated_names;

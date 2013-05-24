@@ -50,18 +50,16 @@ void BisectionRefinement::refine_by_recursive_bisection(Mesh& refined_mesh,
   // Store child->parent cell and facet information as mesh data
   const std::size_t D = refined_mesh.topology().dim();
   std::vector<std::size_t>& cf
-    = refined_mesh.data().create_array("parent_cell", refined_mesh.num_cells());
-  dolfin_assert(cf.size() == refined_mesh.num_cells());
+    = refined_mesh.data().create_array("parent_cell", D);
+  cf.resize(refined_mesh.num_cells());
   for(std::size_t i = 0; i < refined_mesh.num_cells(); i++)
     cf[i] = cell_map[i];
 
   // Create mesh function in refined mesh encoding parent facet maps
-  //boost::shared_ptr<MeshFunction<std::size_t> > ff
-  //  = refined_mesh.data().create_mesh_function("parent_facet", D - 1);
   refined_mesh.init(D - 1);
   std::vector<std::size_t>& ff
-    = refined_mesh.data().create_array("parent_facet",
-                                       refined_mesh.num_facets());
+    = refined_mesh.data().create_array("parent_facet", D - 1);
+  ff.resize(refined_mesh.num_facets());
 
   // Fill ff from facet_map
   mesh.init(D, D - 1);

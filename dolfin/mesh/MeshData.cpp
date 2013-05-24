@@ -61,13 +61,17 @@ const MeshData& MeshData::operator= (const MeshData& data)
   return *this;
 }
 //-----------------------------------------------------------------------------
-bool MeshData::exists(std::string name) const
+bool MeshData::exists(std::string name, std::size_t dim) const
 {
-  // Check is named array has been created
-  if (_arrays.find(name) != _arrays.end())
-    return true;
-  else
+  if (_arrays.size() < dim)
     return false;
+
+  // Check is named array has been created
+  if (dim < _arrays.size())
+    if (_arrays[dim].find(name) != _arrays[dim].end())
+      return true;
+
+  return false;
 }
 //-----------------------------------------------------------------------------
 void MeshData::clear()
@@ -95,17 +99,24 @@ MeshData::create_mesh_function(std::string name, std::size_t dim)
   return boost::shared_ptr<MeshFunction<std::size_t> >();
 }
 //-----------------------------------------------------------------------------
+/*
 std::vector<std::size_t>& MeshData::create_array(std::string name)
 {
   return create_array(name, 0);
 }
+*/
 //-----------------------------------------------------------------------------
 std::vector<std::size_t>& MeshData::create_array(std::string name,
-                                                 std::size_t size)
+                                                 std::size_t dim)
 {
+  // Check if array needs to be re-sized
+  if (_arrays.size() < dim + 1)
+    _arrays.resize(dim + 1);
+
   // Check if data already exists
-  a_iterator it = _arrays.find(name);
-  if (it != _arrays.end())
+  dolfin_assert(dim < _arrays.size());
+  a_iterator it = _arrays[dim].find(name);
+  if (it != _arrays[dim].end())
   {
     warning("Mesh data named \"%s\" already exists.", name.c_str());
     return it->second;
@@ -115,9 +126,9 @@ std::vector<std::size_t>& MeshData::create_array(std::string name,
   check_deprecated(name);
 
   // Add to map
-  _arrays[name] = std::vector<std::size_t>(size, 0);
+  _arrays[dim][name] = std::vector<std::size_t>();
 
-  return _arrays[name];
+  return _arrays[dim][name];
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<MeshFunction<std::size_t> >
@@ -130,11 +141,13 @@ MeshData::mesh_function(const std::string name) const
   return boost::shared_ptr<MeshFunction<std::size_t> >();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t>& MeshData::array(std::string name)
+std::vector<std::size_t>& MeshData::array(std::string name, std::size_t dim)
 {
+  dolfin_assert(dim < _arrays.size());
+
   // Check if data exists
-  a_iterator it = _arrays.find(name);
-  if (it == _arrays.end())
+  a_iterator it = _arrays[dim].find(name);
+  if (it == _arrays[dim].end())
   {
     dolfin_error("MeshData.cpp",
                  "access mesh data",
@@ -144,11 +157,14 @@ std::vector<std::size_t>& MeshData::array(std::string name)
   return it->second;
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::size_t>& MeshData::array(std::string name) const
+const std::vector<std::size_t>& MeshData::array(std::string name,
+                                                std::size_t dim) const
 {
+  dolfin_assert(dim < _arrays.size());
+
   // Check if data exists
-  a_const_iterator it = _arrays.find(name);
-  if (it == _arrays.end())
+  a_const_iterator it = _arrays[dim].find(name);
+  if (it == _arrays[dim].end())
   {
     dolfin_error("MeshData.cpp",
                  "access mesh data",
@@ -158,19 +174,22 @@ const std::vector<std::size_t>& MeshData::array(std::string name) const
   return it->second;
 }
 //-----------------------------------------------------------------------------
-void MeshData::erase_array(const std::string name)
+void MeshData::erase_array(const std::string name, std::size_t dim)
 {
-  a_iterator it = _arrays.find(name);
-  if (it != _arrays.end())
-    _arrays.erase(it);
+  dolfin_assert(dim < _arrays.size());
+  a_iterator it = _arrays[dim].find(name);
+  if (it != _arrays[dim].end())
+    _arrays[dim].erase(it);
   else
     warning("Mesh data named \"%s\" does not exist.", name.c_str());
 }
 //-----------------------------------------------------------------------------
 std::string MeshData::str(bool verbose) const
 {
+
   std::stringstream s;
 
+/*
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
@@ -187,7 +206,7 @@ std::string MeshData::str(bool verbose) const
   {
     s << "<MeshData containing " << _arrays.size() << " objects>";
   }
-
+*/
   return s.str();
 }
 //-----------------------------------------------------------------------------

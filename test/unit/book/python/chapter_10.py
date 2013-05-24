@@ -340,8 +340,8 @@ class TestPage17(unittest.TestCase):
         #       the suggestion to use arrays.
         #sub_domains = mesh.data().create_mesh_function("sub_domains")
         #sub_domains = mesh.data().mesh_function("sub_domains")
-        sub_domains = mesh.data().create_array("sub_domains")
-        sub_domains = mesh.data().array("sub_domains")
+        sub_domains = mesh.data().create_array("sub_domains", 2)
+        sub_domains = mesh.data().array("sub_domains", 2)
 
     def test_box_2(self):
         if skip_in_parallel(): return

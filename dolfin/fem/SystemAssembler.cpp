@@ -651,15 +651,20 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
   }
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble_interior_facet(GenericMatrix* A, GenericVector* b,
+void SystemAssembler::assemble_interior_facet(GenericMatrix* A,
+                                              GenericVector* b,
                                               UFC& A_ufc, UFC& b_ufc,
                                               const Form& a, const Form& L,
-                                              const Cell& cell0, const Cell& cell1,
-                                              const Facet& facet, Scratch& data,
-                                              const DirichletBC::Map& boundary_values)
+                                              const Cell& cell0,
+                                              const Cell& cell1,
+                                              const Facet& facet,
+                                              Scratch& data,
+                                        const DirichletBC::Map& boundary_values)
 {
+  const std::size_t D = cell0.mesh().topology().dim();
+
   // Facet orientation not supported
-  if (cell0.mesh().data().exists("facet_orientation"))
+  if (cell0.mesh().data().exists("facet_orientation", D - 1))
   {
     dolfin_error("SystemAssembler.cpp",
                  "assemble system",

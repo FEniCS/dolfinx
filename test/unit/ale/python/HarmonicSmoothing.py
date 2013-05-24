@@ -90,9 +90,9 @@ if MPI.num_processes() == 1:
 
             # Move mesh accordingly
             parent_vertex_indices_0 = \
-                     submesh0.data().array('parent_vertex_indices')
+                     submesh0.data().array('parent_vertex_indices', 0)
             parent_vertex_indices_1 = \
-                     submesh1.data().array('parent_vertex_indices')
+                     submesh1.data().array('parent_vertex_indices', 0)
             mesh.coordinates()[parent_vertex_indices_0[:]] = \
                      submesh0.coordinates()[:]
             mesh.coordinates()[parent_vertex_indices_1[:]] = \

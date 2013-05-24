@@ -539,13 +539,13 @@ const dolfin::MeshFunction<std::size_t>&
   const std::vector<std::size_t>* parent = NULL;
   if (mesh_function.dim() == dim)
   {
-    if (adapted_mesh->data().exists("parent_cell"))
-      parent = &(adapted_mesh->data().array("parent_cell"));
+    if (adapted_mesh->data().exists("parent_cell", dim))
+      parent = &(adapted_mesh->data().array("parent_cell", dim));
   }
   else if (mesh_function.dim() == (dim - 1))
   {
-    if (adapted_mesh->data().exists("parent_facet"))
-      parent = &(adapted_mesh->data().array("parent_facet"));
+    if (adapted_mesh->data().exists("parent_facet", dim - 1))
+      parent = &(adapted_mesh->data().array("parent_facet", dim - 1));
   }
   else
     dolfin_not_implemented();
@@ -586,8 +586,11 @@ void dolfin::adapt_markers(std::vector<std::size_t>& refined_markers,
                            const std::vector<std::size_t>& markers,
                            const Mesh& mesh)
 {
+  // Topological dimension
+  const std::size_t D = mesh.topology().dim();
+
   // Check that parent maps exist
-  if (!adapted_mesh.data().exists("parent_facet"))
+  if (!adapted_mesh.data().exists("parent_facet", D))
   {
     dolfin_error("adapt.cpp",
                  "adapt markers",
@@ -596,13 +599,12 @@ void dolfin::adapt_markers(std::vector<std::size_t>& refined_markers,
 
   // Extract parent map from data of refined mesh
   const std::vector<std::size_t>& parent_facets
-    = adapted_mesh.data().array("parent_facet");
+    = adapted_mesh.data().array("parent_facet", D);
 
   // Create map (parent_cell, parent_local_facet) -> [(child_cell,
   // child_local_facet), ...] for boundary facets
 
   std::map<std::size_t, std::vector<std::size_t> > children;
-  const std::size_t D = mesh.topology().dim();
   for (FacetIterator facet(adapted_mesh); !facet.end(); ++facet)
   {
     // Ignore interior facets
