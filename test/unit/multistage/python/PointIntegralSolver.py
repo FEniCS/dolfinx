@@ -68,6 +68,7 @@ class PointIntegralSolverTest(unittest.TestCase):
                 u.interpolate(Constant(u0))
                 solver.step_interval(0., tstop, dt)
                 u_errors.append(errornorm(u_true, u))
+                
             self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)
 
     def test_butcher_schemes_scalar(self):
@@ -95,7 +96,6 @@ class PointIntegralSolverTest(unittest.TestCase):
                 u.interpolate(Constant(1.0))
                 solver.step_interval(0., tstop, dt)
                 u_errors.append(errornorm(u_true, u))
-
             self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)
 
     def test_butcher_schemes_vector(self):

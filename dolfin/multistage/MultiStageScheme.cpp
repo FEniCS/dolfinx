@@ -16,11 +16,10 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-04-02
+// Last changed: 2013-05-24
 
 #include <sstream>
 #include <boost/shared_ptr.hpp>
-#include <dolfin/function/FunctionAXPY.h>
 #include <dolfin/log/log.h>
 
 #include "MultiStageScheme.h"
@@ -28,16 +27,17 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MultiStageScheme::MultiStageScheme(std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
-			     const FunctionAXPY& last_stage, 
-			     std::vector<boost::shared_ptr<Function> > stage_solutions,
-			     boost::shared_ptr<Function> u, 
-			     boost::shared_ptr<Constant> t, 
-			     boost::shared_ptr<Constant> dt,
-			     std::vector<double> dt_stage_offset, 
-			     unsigned int order,
-			     const std::string name,
-			     const std::string human_form) : 
+MultiStageScheme::MultiStageScheme(
+    std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
+    boost::shared_ptr<const Form> last_stage, 
+    std::vector<boost::shared_ptr<Function> > stage_solutions,
+    boost::shared_ptr<Function> u, 
+    boost::shared_ptr<Constant> t, 
+    boost::shared_ptr<Constant> dt,
+    std::vector<double> dt_stage_offset, 
+    unsigned int order,
+    const std::string name,
+    const std::string human_form) : 
   Variable(name, ""), _stage_forms(stage_forms), _last_stage(last_stage), 
   _stage_solutions(stage_solutions), _u(u), _t(t), _dt(dt), 
   _dt_stage_offset(dt_stage_offset), _order(order), _implicit(false), 
@@ -46,17 +46,18 @@ MultiStageScheme::MultiStageScheme(std::vector<std::vector<boost::shared_ptr<con
   _check_arguments();
 }
 //-----------------------------------------------------------------------------
-MultiStageScheme::MultiStageScheme(std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
-			     const FunctionAXPY& last_stage, 
-			     std::vector<boost::shared_ptr<Function> > stage_solutions,
-			     boost::shared_ptr<Function> u, 
-			     boost::shared_ptr<Constant> t, 
-			     boost::shared_ptr<Constant> dt,
-			     std::vector<double> dt_stage_offset, 
-			     unsigned int order,
-			     const std::string name,
-			     const std::string human_form,
-			     std::vector<const DirichletBC* > bcs) :
+MultiStageScheme::MultiStageScheme(
+    std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
+    boost::shared_ptr<const Form> last_stage, 
+    std::vector<boost::shared_ptr<Function> > stage_solutions,
+    boost::shared_ptr<Function> u, 
+    boost::shared_ptr<Constant> t, 
+    boost::shared_ptr<Constant> dt,
+    std::vector<double> dt_stage_offset, 
+    unsigned int order,
+    const std::string name,
+    const std::string human_form,
+    std::vector<const DirichletBC* > bcs) :
   Variable(name, ""), _stage_forms(stage_forms), _last_stage(last_stage), 
   _stage_solutions(stage_solutions), _u(u), _t(t), _dt(dt), 
   _dt_stage_offset(dt_stage_offset), _order(order), _implicit(false), 
@@ -71,7 +72,7 @@ std::vector<std::vector<boost::shared_ptr<const Form> > >& MultiStageScheme::sta
   return _stage_forms;
 }
 //-----------------------------------------------------------------------------
-FunctionAXPY& MultiStageScheme::last_stage()
+boost::shared_ptr<const Form> MultiStageScheme::last_stage()
 {
   return _last_stage;
 }
@@ -143,16 +144,26 @@ void MultiStageScheme::_check_arguments()
   if (_stage_solutions.size()!=_stage_forms.size())
   {
     dolfin_error("MultiStageScheme.cpp",
-		 "constructing MultiStageScheme",
+		 "construct MultiStageScheme",
 		 "Expecting the number of stage solutions to be the sames as "\
 		 "number of stage forms");
   }
 
+  // Check that the number of coefficients in last form is the same as 
+  // number of stages 
+  /*
+    if (_last_stage->num_coefficients() != _stage_forms.size())
+    dolfin_error("MultiStageScheme.cpp",
+  		 "construct MultiStageScheme",
+  		 "Expecting the number of stage solutions to be the sames as " \
+  		 "number of coefficients in the last form");
+  */
+  
   // Check solution is in the same space as the last stage solution
   if (!_u->in(*_stage_solutions[_stage_solutions.size()-1]->function_space()))
   {
     dolfin_error("MultiStageScheme.cpp",
-		 "constructing MultiStageScheme",
+		 "construct MultiStageScheme",
 		 "Expecting all solutions to be in the same FunctionSpace");
   }
 
@@ -164,7 +175,7 @@ void MultiStageScheme::_check_arguments()
     if (!_u->in(*_stage_solutions[i]->function_space()))
     {
       dolfin_error("MultiStageScheme.cpp",
-		   "constructing MultiStageScheme",
+		   "construct MultiStageScheme",
 		   "Expecting all solutions to be in the same FunctionSpace");
     }
 
@@ -172,7 +183,7 @@ void MultiStageScheme::_check_arguments()
     if (_stage_forms[i].size()==0 || _stage_forms[i].size()>2)
     {
       dolfin_error("MultiStageScheme.cpp",
-		   "constructing MultiStageScheme",
+		   "construct MultiStageScheme",
 		   "Expecting stage_forms to only include vectors of size 1 or 2");
     }
     
@@ -185,7 +196,7 @@ void MultiStageScheme::_check_arguments()
       if (_stage_forms[i][0]->rank() != 1)
       {
 	dolfin_error("MultiStageScheme.cpp",
-		     "constructing MultiStageScheme",
+		     "construct MultiStageScheme",
 		     "Expecting the right-hand side of stage form %d to be a "\
 		     "linear form (not rank %d)", i, _stage_forms[i][0]->rank());
       }
@@ -194,7 +205,7 @@ void MultiStageScheme::_check_arguments()
       if (_stage_forms[i][1]->rank() != 2)
       {
 	dolfin_error("MultiStageScheme.cpp",
-		     "constructing MultiStageScheme",
+		     "construct MultiStageScheme",
 		     "Expecting the left-hand side of stage form %d to be a "\
 		     "linear form (not rank %d)", i, _stage_forms[i][1]->rank());
       }
@@ -203,7 +214,7 @@ void MultiStageScheme::_check_arguments()
       if (!_stage_solutions[i]->in(*_stage_forms[i][1]->function_space(1)))
       {
 	dolfin_error("MultiStageScheme.cpp",
-		     "constructing MultiStageScheme",
+		     "construct MultiStageScheme",
 		     "Expecting the stage solution %d to be a member of the "
 		     "trial space of stage form %d", i, i);
       }
@@ -216,7 +227,7 @@ void MultiStageScheme::_check_arguments()
       if (_stage_forms[i][0]->rank() != 1)
       {
 	dolfin_error("MultiStageScheme.cpp",
-		     "constructing MultiStageScheme",
+		     "construct MultiStageScheme",
 		     "Expecting stage form %d to be a linear form (not "\
 		     "rank %d)", i, _stage_forms[i][0]->rank());
       }
@@ -225,13 +236,11 @@ void MultiStageScheme::_check_arguments()
       if (!_stage_solutions[i]->in(*_stage_forms[i][0]->function_space(0)))
       {
 	dolfin_error("MultiStageScheme.cpp",
-		     "constructing MultiStageScheme",
+		     "construct MultiStageScheme",
 		     "Expecting the stage solution %d to be a member of the "
 		     "test space of stage form %d", i, i);
       }
-      
     }
-
   }
 }
 //-----------------------------------------------------------------------------

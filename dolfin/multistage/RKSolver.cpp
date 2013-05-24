@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-04-02
+// Last changed: 2013-05-24
 
 #include <cmath>
 
@@ -89,20 +89,15 @@ void RKSolver::step(double dt)
     }
   }
 
-  // Do the last stage
-  FunctionAXPY last_stage = _scheme->last_stage()*dt;
-  
   // Update solution with last stage
   GenericVector& solution_vector = *_scheme->solution()->vector();
   
-  // Update with stage solutions
-  for (std::vector<std::pair<double, const Function*> >::const_iterator \
-	 it=last_stage.pairs().begin();
-       it!=last_stage.pairs().end(); it++)
-  {
-    solution_vector.axpy(it->first, *(it->second->vector()));
-  }
+  // Do the last stage (just an assemble)
+  // FIXME: Does not work! We need a temporary variable to assemble into 
+  _assembler.assemble(solution_vector, *_scheme->last_stage());
 
+  //FunctionAXPY last_stage = _scheme->last_stage()*dt;
+  
   // Update time
   *_scheme->t() = t0 + dt;
   

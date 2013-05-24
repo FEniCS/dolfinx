@@ -25,7 +25,6 @@
 #include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/Variable.h>
-#include <dolfin/function/FunctionAXPY.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/fem/Form.h>
 
@@ -48,7 +47,7 @@ namespace dolfin
     /// Constructor
     /// FIXME: This constructor is a MESS. Needs clean up...
     MultiStageScheme(std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
-		  const FunctionAXPY& last_stage, 
+		  boost::shared_ptr<const Form> last_stage, 
 		  std::vector<boost::shared_ptr<Function> > stage_solutions,
 		  boost::shared_ptr<Function> u, 
 		  boost::shared_ptr<Constant> t, 
@@ -60,7 +59,7 @@ namespace dolfin
 
     /// Constructor with Boundary conditions
     MultiStageScheme(std::vector<std::vector<boost::shared_ptr<const Form> > > stage_forms, 
-		  const FunctionAXPY& last_stage, 
+		  boost::shared_ptr<const Form> last_stage, 
 		  std::vector<boost::shared_ptr<Function> > stage_solutions,
 		  boost::shared_ptr<Function> u, 
 		  boost::shared_ptr<Constant> t, 
@@ -75,7 +74,7 @@ namespace dolfin
     std::vector<std::vector<boost::shared_ptr<const Form> > >& stage_forms();
 
     /// Return the last stage
-    FunctionAXPY& last_stage();
+    boost::shared_ptr<const Form> last_stage();
 
     /// Return stage solutions
     std::vector<boost::shared_ptr<Function> >& stage_solutions();
@@ -119,7 +118,7 @@ namespace dolfin
     std::vector<std::vector<boost::shared_ptr<const Form> > > _stage_forms;
 
     // A linear combination of solutions for the last stage
-    FunctionAXPY _last_stage;
+    boost::shared_ptr<const Form> _last_stage;
     
     // Solutions for the different stages
     std::vector<boost::shared_ptr<Function> > _stage_solutions;

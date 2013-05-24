@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-05-23
+// Last changed: 2013-05-24
 
 #include <cmath>
 #include <boost/make_shared.hpp>
@@ -110,9 +110,7 @@ void PointIntegralSolver::step(double dt)
     for (unsigned int stage=0; stage<_num_stages; stage++)
     {
 
-      // Update time
-      *_scheme->t() = t0 + dt*_scheme->dt_stage_offset()[stage];
-
+      // Update cell
       Timer t_impl_update("Update_cell");
       for (unsigned int i=0; i < _ufcs[stage].size(); i++)
 	_ufcs[stage][i]->update(cell);
@@ -130,29 +128,44 @@ void PointIntegralSolver::step(double dt)
 	_solve_implict_stage(vert_ind, stage);
       }
 
+      // Update last stage form with local stage solutions if 
+      // the local stage solution is present in last form
+      if (_last_stage_coefficient_index[stage] != -1)
+      {
+	//if (vert_ind == 0)
+	//  info("updating last stage coefficients: stage %d", stage);
+	for (unsigned int row=0; row < _system_size; row++)
+	{
+	  _last_stage_ufc->w()[_last_stage_coefficient_index[stage]]	\
+	    [_local_to_local_dofs[row]] = _local_stage_solutions[stage](row);
+	}
+      }
+      
     }
-
-    Timer t_vert_axpy("Step: AXPY solution");
 
     // Get local u0 solution and add the stage derivatives
     _scheme->solution()->vector()->get_local(&u0[0], u0.size(), 
 					     &_local_to_global_dofs[0]);
     
-    // Do the last stage and put back into solution vector
-    FunctionAXPY last_stage = _scheme->last_stage()*dt;
-  
-    // Axpy local solution vectors
-    for (unsigned int stage=0; stage < _num_stages; stage++)
-      u0 += last_stage.pairs()[stage].first*_local_stage_solutions[stage] ;
-    
+    Timer t_last_stage("Last stage: tabulate_tensor");
+
+    // Last stage point integral
+    const ufc::point_integral& integral = *_last_stage_ufc->default_point_integral;
+
+    // Tabulate cell tensor
+    integral.tabulate_tensor(&_last_stage_ufc->A[0], _last_stage_ufc->w(), 
+			     &_last_stage_ufc->cell.vertex_coordinates[0], 
+			     _vertex_map[vert_ind].second);
+    t_last_stage.stop();
+
+    // Update solution with a tabulation of the last stage
+    for (unsigned int row=0; row < _system_size; row++)
+      u0[row] += dt*_last_stage_ufc->A[_local_to_local_dofs[row]];
+
     // Update global solution with last stage
     _scheme->solution()->vector()->set(u0.memptr(), _local_to_global_dofs.size(), 
 				       &_local_to_global_dofs[0]);
     
-    if (vert_ind == 0)
-    {
-      
-    }
     //p++;
   }
 
@@ -192,7 +205,7 @@ void PointIntegralSolver::_solve_explicit_stage(std::size_t vert_ind,
   }
 
   // Put solution back into global stage solution vector
-  Timer t_expl_set("Explicit stage: set");
+  // NOTE: This so an update (coefficient restriction) would just work
   _scheme->stage_solutions()[stage]->vector()->set(
 		 _local_stage_solutions[stage].memptr(), _system_size, 
 		 &_local_to_global_dofs[0]);
@@ -287,7 +300,8 @@ void PointIntegralSolver::_solve_implict_stage(std::size_t vert_ind,
       Timer t_impl_update_J("Implicit stage: update_J");
       for (unsigned int row=0; row < _system_size; row++)
 	for (unsigned int col=0; col < _system_size; col++)
-	  _J(row, col) = _ufcs[stage][1]->A[_local_to_local_dofs[row]*_dof_offset*_system_size+
+	  _J(row, col) = _ufcs[stage][1]->A[_local_to_local_dofs[row]*
+					    _dof_offset*_system_size +
 					    _local_to_local_dofs[col]];
       t_impl_update_J.stop();
 
@@ -500,6 +514,10 @@ void PointIntegralSolver::_init()
     _J_L.set_size(_system_size, _system_size);
   }
 
+  // Create last stage UFC form
+  _last_stage_ufc = boost::make_shared<UFC>(*_scheme->last_stage());
+  _last_stage_coefficient_index.resize(_num_stages, -1);
+
   // Iterate over stages and collect information
   for (unsigned int stage=0; stage < stage_forms.size(); stage++)
   {
@@ -530,6 +548,21 @@ void PointIntegralSolver::_init()
 	}
       }
     }
+
+    // Collect what coefficient index in the last stage correponds to the 
+    // different stage solutions
+    for (unsigned int j=0; j < _scheme->last_stage()->num_coefficients(); j++)
+    {
+     
+      if (_scheme->last_stage()->coefficients()[j]->id() == 
+	  _scheme->stage_solutions()[stage]->id())
+      {
+	_last_stage_coefficient_index[stage] = j;
+	break;
+      }
+
+    }
+    
   }
   
   // Build vertex map

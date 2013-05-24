@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-05-16
+// Last changed: 2013-05-23
 
 #ifndef __POINTINTEGRALSOLVER_H
 #define __POINTINTEGRALSOLVER_H
@@ -26,7 +26,6 @@
 #include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/Variable.h>
-#include <dolfin/function/FunctionAXPY.h>
 #include <dolfin/fem/Assembler.h>
 
 namespace dolfin
@@ -128,8 +127,14 @@ namespace dolfin
     // UFC objects, one for each form
     std::vector<std::vector<boost::shared_ptr<UFC> > > _ufcs;
 
+    // UFC objects for the last form
+    boost::shared_ptr<UFC> _last_stage_ufc;
+
     // Solution coefficient index in form
     std::vector<std::vector<int> > _coefficient_index;
+
+    // Solution coefficient index in last stage form
+    std::vector<int> _last_stage_coefficient_index;
 
     // Flag for retabulation of J
     bool _retabulate_J;
