@@ -26,7 +26,6 @@
 
 #include <map>
 #include <string>
-#include <utility>
 #include <vector>
 #include <boost/shared_ptr.hpp>
 
@@ -39,10 +38,9 @@ namespace dolfin
   template <typename T> class MeshFunction;
 
   /// The class MeshData is a container for auxiliary mesh data,
-  /// represented either as _MeshFunction_ over topological mesh
-  /// entities, arrays or maps. Each dataset is identified by a unique
-  /// user-specified string. Only std::size_t-valued data are currently
-  /// supported.
+  /// represented either as arrays or maps. Each dataset is identified
+  /// by a unique user-specified string. Only std::size_t-valued data
+  /// are currently supported.
   ///
   /// Auxiliary mesh data may be attached to a mesh by users as a
   /// convenient way to store data associated with a mesh. It is also
@@ -51,11 +49,11 @@ namespace dolfin
   ///
   /// Facet orientation (used for assembly over interior facets)
   ///
-  ///   * "facet_orientation"  - _MeshFunction_ <std::size_t> of dimension D - 1
+  ///   * "facet_orientation"  - _std:vector_ <std::size_t> of dimension D - 1
   ///
   /// Sub meshes (used by the class SubMesh)
   ///
-  ///   * "parent_vertex_indices" - _MeshFunction_ <std::size_t> of dimension 0
+  ///   * "parent_vertex_indices" - _std::vector_ <std::size_t> of dimension 0
   ///
   /// Note to developers: use underscore in names in place of spaces.
 
@@ -64,7 +62,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    MeshData(Mesh& mesh);
+    MeshData();
 
     /// Destructor
     ~MeshData();
@@ -94,31 +92,17 @@ namespace dolfin
 
     //--- Creation of data ---
 
-    /// Create MeshFunction with given name (uninitialized)
-    ///
-    /// *Arguments*
-    ///     name (std::string)
-    ///         The name of the mesh function.
-    ///
-    /// *Returns*
-    ///     _MeshFunction_ <std::size_t>
-    ///         The mesh function.
-    //boost::shared_ptr<MeshFunction<std::size_t> >
-    //  create_mesh_function(std::string name);
+    /// This function is no longer supported. It is retained to print
+    /// an informative error message. It will be removed in the
+    /// future.
+    boost::shared_ptr<MeshFunction<std::size_t> >
+      create_mesh_function(std::string name);
 
-    /// Create MeshFunction with given name and dimension
-    ///
-    /// *Arguments*
-    ///     name (std::string)
-    ///         The name of the mesh function.
-    ///     dim (std::size_t)
-    ///         The dimension of the mesh function.
-    ///
-    /// *Returns*
-    ///     _MeshFunction_ <std::size_t>
-    ///         The mesh function.
-    //boost::shared_ptr<MeshFunction<std::size_t> >
-    //create_mesh_function(std::string name, std::size_t dim);
+    /// This function is no longer supported. It is retained to print
+    /// an informative error message. It will be removed in the
+    /// future.
+    boost::shared_ptr<MeshFunction<std::size_t> >
+      create_mesh_function(std::string name, std::size_t dim);
 
     /// Create empty array (vector) with given name
     ///
@@ -146,18 +130,11 @@ namespace dolfin
 
     //--- Retrieval of data ---
 
-    /// Return MeshFunction with given name (returning zero if data is
-    /// not available)
-    ///
-    /// *Arguments*
-    ///     name (std::string)
-    ///         The name of the MeshFunction.
-    ///
-    /// *Returns*
-    ///     _MeshFunction_ <std::size_t>
-    ///         The mesh function with given name
-    //boost::shared_ptr<MeshFunction<std::size_t> >
-    //  mesh_function(const std::string name) const;
+    /// This function is no longer supported. It is retained to print
+    /// an informative error message. It will be removed in the
+    /// future.
+    boost::shared_ptr<MeshFunction<std::size_t> >
+      mesh_function(const std::string name) const;
 
     /// Return array with given name (returning zero if data is not
     /// available)
@@ -184,13 +161,6 @@ namespace dolfin
     const std::vector<std::size_t>& array(std::string name) const;
 
     //--- Removal of data ---
-
-    /// Erase MeshFunction with given name
-    ///
-    /// *Arguments*
-    ///     name (std::string)
-    ///         The name of the mesh function
-    //void erase_mesh_function(const std::string name);
 
     /// Erase array with given name
     ///
@@ -220,15 +190,8 @@ namespace dolfin
     // Check if name is deprecated
     void check_deprecated(std::string name) const;
 
-    // The mesh
-    Mesh& _mesh;
-
-    // A map from named mesh data to MeshFunctions
-    std::map<std::string, boost::shared_ptr<MeshFunction<std::size_t> > >
-      mesh_functions;
-
     // A map from named mesh data to vector
-    std::map<std::string, std::vector<std::size_t> > arrays;
+    std::map<std::string, std::vector<std::size_t> > _arrays;
 
     // List of depcrecated named data
     std::vector<std::string> _deprecated_names;

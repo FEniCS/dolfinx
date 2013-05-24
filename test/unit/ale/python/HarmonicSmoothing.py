@@ -90,12 +90,12 @@ if MPI.num_processes() == 1:
 
             # Move mesh accordingly
             parent_vertex_indices_0 = \
-                     submesh0.data().mesh_function('parent_vertex_indices')
+                     submesh0.data().array('parent_vertex_indices')
             parent_vertex_indices_1 = \
-                     submesh1.data().mesh_function('parent_vertex_indices')
-            mesh.coordinates()[parent_vertex_indices_0.array()[:]] = \
+                     submesh1.data().array('parent_vertex_indices')
+            mesh.coordinates()[parent_vertex_indices_0[:]] = \
                      submesh0.coordinates()[:]
-            mesh.coordinates()[parent_vertex_indices_1.array()[:]] = \
+            mesh.coordinates()[parent_vertex_indices_1[:]] = \
                      submesh1.coordinates()[:]
 
             # If test passes here then it is probably working

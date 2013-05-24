@@ -441,13 +441,14 @@ void XMLMesh::write_mesh(const Mesh& mesh, pugi::xml_node mesh_node)
 void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
 {
   // Check if there is any data to write
-  if (data.mesh_functions.size() + data.arrays.empty())
+  if (data._arrays.empty())
     return;
 
   // Add mesh data node
   pugi::xml_node mesh_data_node = mesh_node.append_child("data");
 
   // Write mesh functions
+/*
   typedef std::map<std::string,
                    boost::shared_ptr<MeshFunction<std::size_t> > >
     ::const_iterator mf_iterator;
@@ -473,11 +474,11 @@ void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
       entity_node.append_attribute("value") = (unsigned int) (*mf)[i];
     }
   }
-
+*/
   // Write arrays
   typedef std::map<std::string,
                    std::vector<std::size_t> >::const_iterator array_iterator;
-  for (array_iterator it = data.arrays.begin(); it != data.arrays.end(); ++it)
+  for (array_iterator it = data._arrays.begin(); it != data._arrays.end(); ++it)
   {
     std::string name = it->first;
     const std::vector<std::size_t>& array = it->second;
