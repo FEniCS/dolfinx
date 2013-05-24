@@ -1,4 +1,4 @@
-"""Unit tests for the XDMF io library"""
+"""Unit tests for the HDF5 io library"""
 
 # Copyright (C) 2012 Garth N. Wells
 #
@@ -17,8 +17,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Chris Richardson 2013
+#
 # First added:  2012-09-14
-# Last changed: 2013-03-05
+# Last changed: 2013-05-24
 
 import unittest
 from dolfin import *
@@ -102,6 +104,22 @@ if has_hdf5():
                 for cell in entities(M, i):
                     self.assertEqual(meshfuns[i][cell], mf2[cell])
 
+    class HDF5_MeshValueCollection(unittest.TestCase):
+
+        def test_save_and_read_mesh_value_collection(self):
+            M = UnitCubeMesh(5, 5, 5)
+            HDF = HDF5File("mesh_value_collection.h5", "w")
+            for dim in range(M.topology().dim()):
+                MVC = MeshValueCollection("size_t", dim)
+                for i, cell in enumerate(entities(M, dim)):
+                    MVC.set_value(cell.index(), i, M)
+                HDF.write(MVC, "/mesh_value_collection_%d"%dim)
+            del HDF
+            HDF = HDF5File("mesh_value_collection.h5", "r")
+            for dim in range(M.topology().dim()):
+                MVC = MeshValueCollection("size_t", M, dim)
+                HDF.read(MVC, "/mesh_value_collection_%d"%dim)
+                
 
     class HDF5_Mesh(unittest.TestCase):
 

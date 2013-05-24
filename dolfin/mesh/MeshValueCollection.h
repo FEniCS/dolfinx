@@ -18,7 +18,7 @@
 // Modified by Chris Richardson, 2013.
 //
 // First added:  2006-08-30
-// Last changed: 2013-05-21
+// Last changed: 2013-05-22
 
 #ifndef __MESH_VALUE_COLLECTION_H
 #define __MESH_VALUE_COLLECTION_H
@@ -77,7 +77,7 @@ namespace dolfin
     /// on a given mesh
     ///
     /// *Arguments*
-    ///     mesh (Mesh)
+    ///     mesh (_Mesh_)
     ///         The mesh associated with the collection.
     ///     dim (std::size_t)
     ///         The mesh entity dimension for the mesh value collection.
@@ -87,7 +87,7 @@ namespace dolfin
     /// on a given mesh (shared_ptr version)
     ///
     /// *Arguments*
-    ///     mesh (Mesh)
+    ///     mesh (_Mesh_)
     ///         The mesh associated with the collection.
     ///     dim (std::size_t)
     ///         The mesh entity dimension for the mesh value collection.
