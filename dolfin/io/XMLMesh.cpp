@@ -225,8 +225,9 @@ save your Mesh from DOLFIN.");
       XMLMeshFunction::read(mf, data_type, *it);
 
       // Create mesh domain array
-      std::vector<std::size_t>& _data = data.create_array(data_set_name, mf.size());
-      dolfin_assert(_data.size() == mf.size());
+      std::vector<std::size_t>& _data
+        = data.create_array(data_set_name, mf.dim());
+      _data.resize(mf.size());
 
       // Copy MeshFunction into MeshDomain array
       for (std::size_t i = 0; i < _data.size(); ++i)
