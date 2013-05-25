@@ -56,7 +56,6 @@ namespace dolfin
   class Expression;
   class LocalMeshData;
   class MeshEntity;
-  template <typename T> class MeshFunction;
   class SubDomain;
   class CSGGeometry;
 
@@ -517,7 +516,7 @@ namespace dolfin
     ///         "facet".
     ///
     /// *Returns*
-    ///     MeshFunction<std::size_t>
+    ///     std::vector<std::size_t>
     ///         The colors as a mesh function over the cells of the mesh.
     const std::vector<std::size_t>& color(std::string coloring_type) const;
 
@@ -532,10 +531,10 @@ namespace dolfin
     ///         specifying what relation makes two mesh entinties neighbors.
     ///
     /// *Returns*
-    ///     MeshFunction<std::size_t>
+    ///     std::vector<std::size_t>
     ///         The colors as a mesh function over entities of the mesh.
-    const std::vector<std::size_t>& color(std::vector<std::size_t>
-                                          coloring_type) const;
+    const std::vector<std::size_t>&
+      color(std::vector<std::size_t> coloring_type) const;
 
     /// Compute all cells which are intersected by the given point.
     ///

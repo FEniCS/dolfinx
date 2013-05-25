@@ -74,7 +74,7 @@ namespace dolfin
                            pugi::xml_node mesh_node);
 
     // Write mesh data
-    static void write_data(const MeshData& data,
+    static void write_data(const Mesh& mesh, const MeshData& data,
                            pugi::xml_node mesh_node);
 
     // Write mesh markers

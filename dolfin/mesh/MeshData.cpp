@@ -33,7 +33,7 @@ typedef std::map<std::string, std::vector<std::size_t> >::const_iterator
 a_const_iterator;
 
 //-----------------------------------------------------------------------------
-MeshData::MeshData()
+MeshData::MeshData() : _arrays(5)
 {
   // Add list of deprecated names
   _deprecated_names.push_back("boundary_facet_cells");
@@ -125,10 +125,12 @@ std::vector<std::size_t>& MeshData::create_array(std::string name,
   // Check if name is deprecated
   check_deprecated(name);
 
-  // Add to map
-  _arrays[dim][name] = std::vector<std::size_t>();
+  // Add empty vector to map
+  std::pair<a_iterator, bool> ins
+    = _arrays[dim].insert(std::make_pair(name, std::vector<std::size_t>(0)));
 
-  return _arrays[dim][name];
+  // Return vector
+  return ins.first->second;
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<MeshFunction<std::size_t> >
@@ -186,27 +188,31 @@ void MeshData::erase_array(const std::string name, std::size_t dim)
 //-----------------------------------------------------------------------------
 std::string MeshData::str(bool verbose) const
 {
-
   std::stringstream s;
-
-/*
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
     s << "  std::vector<std::size_t>" << std::endl;
     s << "  -----------------" << std::endl;
-    for (a_const_iterator it = _arrays.begin(); it != _arrays.end(); ++it)
+    for (std::size_t d = 0; d < _arrays.size(); ++d)
     {
-      s << "  " << it->first << " (size = " << it->second.size() << ")"
-        << std::endl;
+      for (a_const_iterator it = _arrays[d].begin(); it
+             != _arrays[d].end(); ++it)
+      {
+        s << "  " << it->first << " ( dim = " << d
+          << ", size = " << it->second.size() << ")" << std::endl;
+      }
     }
     s << std::endl;
   }
   else
   {
-    s << "<MeshData containing " << _arrays.size() << " objects>";
+    std::size_t size = 0;
+    for (std::size_t d = 0; d < _arrays.size(); ++d)
+      size += _arrays[d].size();
+    s << "<MeshData containing " << size << " objects>";
   }
-*/
+
   return s.str();
 }
 //-----------------------------------------------------------------------------

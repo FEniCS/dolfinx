@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Garth N. Wells
+// Copyright (C) 2011-2013 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2002-12-06
-// Last changed: 2011-11-14
+// Last changed: 2013-05-25
 
 #include <map>
 #include <iomanip>
@@ -79,7 +79,7 @@ void XMLMesh::write(const Mesh& mesh, pugi::xml_node xml_node)
   write_mesh(mesh, mesh_node);
 
   // Write mesh data (if any)
-  write_data(mesh.data(), mesh_node);
+  write_data(mesh, mesh.data(), mesh_node);
 
   // Write mesh markers (if any)
   write_domains(mesh, mesh.domains(), mesh_node);
@@ -160,91 +160,88 @@ void XMLMesh::read_data(MeshData& data, const Mesh& mesh,
   for (pugi::xml_node_iterator it = xml_data.begin();
        it != xml_data.end(); ++it)
   {
-    // Check that node is <data_entry>
+    // Get node name
     const std::string node_name = it->name();
-    if (node_name != "data_entry")
+
+    // Read data stored as a MeshFunction (new style)
+    if (node_name == "mesh_function")
     {
-      dolfin_error("XMLMesh.cpp",
-                   "read mesh data from XML file",
-                   "Expecting XML node <data_entry> but got <%s>",
-                   node_name.c_str());
-    }
-
-    // Get name of data set
-    const std::string data_set_name = it->attribute("name").value();
-
-    // Check that there is only one data set
-    if (it->first_child().next_sibling())
-    {
-      dolfin_error("XMLMesh.cpp",
-                   "read mesh data from XML file",
-                   "XML file contains too many data sets");
-    }
-
-    // Get type of data set
-    pugi::xml_node data_set = it->first_child();
-    const std::string data_set_type = data_set.name();
-    if (data_set_type == "array")
-    {
-      // Get type
-      const std::string data_type = data_set.attribute("type").value();
-      if (data_type == "uint")
-      {
-        // Get vector from MeshData
-        std::vector<std::size_t>* array = NULL;
-        if (data.exists(data_set_name, 0))
-          array = &(data.array(data_set_name, 0));
-        else
-          array = &(data.create_array(data_set_name, 0));
-        dolfin_assert(array);
-
-        // Read vector
-        read_array_uint(*array, data_set);
-      }
-      else
-      {
-        dolfin_error("XMLMesh.cpp",
-                     "read mesh data from XML file",
-                     "Only reading of MeshData uint arrays are supported at present");
-      }
-    }
-    else if (data_set_type == "mesh_function")
-    {
-      // This code block is for legacy purposes. Mesh data is now
-      // stored as plain arrays.
-
-      warning("Mesh XML files contains mesh data stored as a MeshFunction. This is \
-deprecated. Mesh data is now stored a arrays. To convert your file to the new format, \
-save your Mesh from DOLFIN.");
-
-      // Create MeshFunction
+      // Create MeshFunction to read data into
       MeshFunction<std::size_t> mf(mesh);
 
       // Read  MeshFunction
-      const std::string data_type = data_set.attribute("type").value();
-      XMLMeshFunction::read(mf, data_type, *it);
+      //const std::string data_type = it->attribute("type").value();
+      XMLMeshFunction::read(mf, "uint", *it);
 
       // Create mesh domain array
       std::vector<std::size_t>& _data
-        = data.create_array(data_set_name, mf.dim());
+        = data.create_array(mf.name(), mf.dim());
       _data.resize(mf.size());
 
       // Copy MeshFunction into MeshDomain array
       for (std::size_t i = 0; i < _data.size(); ++i)
         _data[i] = mf[i];
     }
-    else if (data_set_type == "meshfunction")
+    else if (node_name != "data_entry")
     {
       dolfin_error("XMLMesh.cpp",
                    "read mesh data from XML file",
-                   "The XML tag <meshfunction> has been changed to <mesh_function>");
+                   "Expecting XML node <data_entry> but got <%s>",
+                   node_name.c_str());
     }
-    else
+    else // Old-style storage
     {
-      dolfin_error("XMLMesh.cpp",
-                   "read mesh data from XML file",
-                   "Reading of MeshData \"%s\" is not yet supported",
-                   data_set_type.c_str());
+      // Get name of data set
+      const std::string data_set_name = it->attribute("name").value();
+
+      // Check that there is only one data set
+      if (it->first_child().next_sibling())
+      {
+        dolfin_error("XMLMesh.cpp",
+                     "read mesh data from XML file",
+                     "XML file contains too many data sets");
+      }
+
+      // Get type of data set
+      pugi::xml_node data_set = it->first_child();
+      const std::string data_set_type = data_set.name();
+      if (data_set_type == "array")
+      {
+        dolfin_error("XMLMesh.cpp",
+                     "read mesh data from XML file",
+                     "Only MeshFunction data can be read");
+      }
+      else if (data_set_type == "mesh_function")
+      {
+        // Create MeshFunction to read data into
+        MeshFunction<std::size_t> mf(mesh);
+
+        // Read  MeshFunction
+        const std::string data_type = data_set.attribute("type").value();
+        XMLMeshFunction::read(mf, data_type, *it);
+
+        // Create mesh domain array
+        std::vector<std::size_t>& _data
+          = data.create_array(data_set_name, mf.dim());
+        _data.resize(mf.size());
+
+        // Copy MeshFunction into MeshDomain array
+        for (std::size_t i = 0; i < _data.size(); ++i)
+          _data[i] = mf[i];
+      }
+      else if (data_set_type == "meshfunction")
+      {
+        dolfin_error("XMLMesh.cpp",
+                     "read mesh data from XML file",
+                     "The XML tag <meshfunction> has been changed to <mesh_function>");
+      }
+      else
+      {
+        dolfin_error("XMLMesh.cpp",
+                     "read mesh data from XML file",
+                     "Reading of MeshData \"%s\" is not yet supported",
+                     data_set_type.c_str());
+      }
     }
   }
 }
@@ -439,7 +436,8 @@ void XMLMesh::write_mesh(const Mesh& mesh, pugi::xml_node mesh_node)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
+void XMLMesh::write_data(const Mesh& mesh, const MeshData& data,
+                         pugi::xml_node mesh_node)
 {
   // Check if there is any data to write
   if (data._arrays.empty())
@@ -448,34 +446,6 @@ void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
   // Add mesh data node
   pugi::xml_node mesh_data_node = mesh_node.append_child("data");
 
-  // Write mesh functions
-/*
-  typedef std::map<std::string,
-                   boost::shared_ptr<MeshFunction<std::size_t> > >
-    ::const_iterator mf_iterator;
-  for (mf_iterator it = data.mesh_functions.begin();
-       it != data.mesh_functions.end(); ++it)
-  {
-    std::string name = it->first;
-    boost::shared_ptr<MeshFunction<std::size_t> > mf = it->second;
-    dolfin_assert(mf);
-
-    pugi::xml_node data_entry_node = mesh_data_node.append_child("data_entry");
-    data_entry_node.append_attribute("name") = name.c_str();
-
-    pugi::xml_node mf_node = data_entry_node.append_child("mesh_function");
-    mf_node.append_attribute("type") = "uint";
-    mf_node.append_attribute("dim") = (unsigned int) mf->dim();
-    mf_node.append_attribute("size") = (unsigned int) mf->size();
-
-    for (std::size_t i = 0; i < mf->size(); i++)
-    {
-      pugi::xml_node entity_node = mf_node.append_child("entity");
-      entity_node.append_attribute("index") = (unsigned int) i;
-      entity_node.append_attribute("value") = (unsigned int) (*mf)[i];
-    }
-  }
-*/
   // Write arrays
   typedef std::vector<std::map<std::string,
                                std::vector<std::size_t> > >::const_iterator array_iterator_d;
@@ -483,25 +453,29 @@ void XMLMesh::write_data(const MeshData& data, pugi::xml_node mesh_node)
                    std::vector<std::size_t> >::const_iterator array_iterator;
   for (array_iterator_d it_d = data._arrays.begin(); it_d != data._arrays.end(); ++it_d)
   {
+    const std::size_t dim =  it_d - data._arrays.begin();
     for (array_iterator it = it_d->begin(); it != it_d->end(); ++it)
     {
+      // Data set name and array
       std::string name = it->first;
       const std::vector<std::size_t>& array = it->second;
 
-      pugi::xml_node data_entry_node = mesh_data_node.append_child("data_entry");
-      data_entry_node.append_attribute("name") = name.c_str();
-
-      pugi::xml_node array_node = data_entry_node.append_child("array");
-      array_node.append_attribute("type") = "uint";
-      array_node.append_attribute("size")
-        = static_cast<unsigned int>(array.size());
-
-      for (std::size_t i = 0; i < array.size(); i++)
+      // Check data lenght
+      if (array.size() != mesh.num_entities(dim))
       {
-        pugi::xml_node element_node = array_node.append_child("element");
-        element_node.append_attribute("index") = (unsigned int) i;
-        element_node.append_attribute("value") = (unsigned int) array[i];
+        dolfin_error("XMLMesh.cpp",
+                     "write mesh data to XML file",
+                     "Data array length does not match number of mesh entities");
       }
+
+      // Copy data into MeshFunction
+      MeshFunction<std::size_t> mf(mesh, dim);
+      mf.rename(name, name);
+      for (std::size_t i = 0; i < mf.size(); ++i)
+        mf[i] = array[i];
+
+      // Write MeshFunction
+      XMLMeshFunction::write(mf, "uint", mesh_data_node, false);
     }
   }
 }
@@ -519,8 +493,6 @@ void XMLMesh::write_domains(const Mesh& mesh, const MeshDomains& domains,
   // Write mesh markers
   for (std::size_t d = 0; d <= domains.max_dim(); d++)
   {
-    //dolfin_assert(domains.markers(d));
-    //error("Not supported");
     if (!domains.markers(d).empty())
     {
       const std::map<std::size_t, std::size_t>& domain = domains.markers(d);
