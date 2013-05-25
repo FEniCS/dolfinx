@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-05-24
+// Last changed: 2013-05-25
 
 #ifdef HAS_HDF5
 
@@ -190,7 +190,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     }
 
     // Write topology data
-    const std::string topology_dataset =  name + "/topology";
+   const std::string topology_dataset =  name + "/topology";
     std::vector<std::size_t> global_size(2);
     global_size[0] = MPI::sum(topological_data.size()/(cell_dim + 1));
     global_size[1] = cell_dim + 1;
@@ -549,8 +549,16 @@ void HDF5File::write(const Function& u, const std::string name)
     cell_dofs.insert(cell_dofs.end(), cell_dofs_i.begin(), cell_dofs_i.end());
   }
   
+  // Save DOFs on each cell
   write_data(name + "/cell_dofs", cell_dofs, global_size);
 
+  // Reduce to 1D array
+  global_size.pop_back();
+  write_data(name + "/cells", cells, global_size);
+
+  // Save vector
+  write(*u.vector(), name + "/vector");
+  
 }
 //-----------------------------------------------------------------------------
 void HDF5File::read(GenericVector& x, const std::string dataset_name,
