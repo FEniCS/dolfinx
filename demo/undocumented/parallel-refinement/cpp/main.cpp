@@ -28,27 +28,27 @@ int main()
   UnitSquareMesh mesh(20, 20);
 
   // Create MeshFunction to hold cell process rank
-  CellFunction<std::size_t> processes0(mesh, MPI::process_number());
+  CellFunction<std::size_t> processes0(mesh, dolfin::MPI::process_number());
 
   // Output cell distribution to VTK file
   File file("processes.pvd");
   file << processes0;
 
   // Mark all cells on process 0 for refinement
-  const CellFunction<bool> marker(mesh, (MPI::process_number() == 0));
+  const CellFunction<bool> marker(mesh, (dolfin::MPI::process_number() == 0));
 
   // Refine mesh, but keep all new cells on parent process
   Mesh mesh0 = refine(mesh, marker, false);
 
   // Create MeshFunction to hold cell process rank
-  const CellFunction<std::size_t> processes1(mesh0, MPI::process_number());
+  const CellFunction<std::size_t> processes1(mesh0, dolfin::MPI::process_number());
   file << processes1;
 
   // Refine mesh, but this time repartition the mesh after refinement
   Mesh mesh1 = refine(mesh, marker, true);
 
   // Create MeshFunction to hold cell process rank
-  CellFunction<std::size_t> processes2(mesh1, MPI::process_number());
+  CellFunction<std::size_t> processes2(mesh1, dolfin::MPI::process_number());
   file << processes2;
 
   return 0;
