@@ -20,14 +20,6 @@
 #ifdef HAS_VTK
 #ifdef HAS_VTK_EXODUS
 
-#include <dolfin/fem/GenericDofMap.h>
-#include <dolfin/function/Function.h>
-#include <dolfin/function/FunctionSpace.h>
-#include <dolfin/la/GenericVector.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshFunction.h>
-#include "ExodusFile.h"
-
 #include <vtkUnsignedIntArray.h>
 #include <vtkIntArray.h>
 #include <vtkDoubleArray.h>
@@ -39,12 +31,23 @@
 #include <vtkUnstructuredGrid.h>
 #include <vtkExodusIIWriter.h>
 
+#include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
+#include <dolfin/la/GenericVector.h>
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshFunction.h>
+#include "ExodusFile.h"
+
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
 ExodusFile::ExodusFile(const std::string filename)
-  : GenericFile(filename, "Exodus")
+  : GenericFile(filename, "Exodus"),
+    _writer(vtkSmartPointer<vtkExodusIIWriter>::New())
 {
+  // Set filename.
+  _writer->SetFileName(filename.c_str());
 }
 //----------------------------------------------------------------------------
 ExodusFile::~ExodusFile()
@@ -60,7 +63,7 @@ void ExodusFile::operator<<(const Mesh& mesh)
   return;
 }
 //----------------------------------------------------------------------------
-void ExodusFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
+void ExodusFile::operator<<(const MeshFunction<std::size_t>& meshfunction)
 {
   dolfin_assert(meshfunction.mesh());
   const Mesh& mesh = *meshfunction.mesh();
@@ -74,7 +77,8 @@ void ExodusFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
                  "Exodus output of mesh functions on interval facets is not supported");
   }
 
-  if (cell_dim != mesh.topology().dim() && cell_dim != mesh.topology().dim() - 1)
+  if (cell_dim != mesh.topology().dim()
+      && cell_dim != mesh.topology().dim() - 1)
   {
     dolfin_error("ExodusFile.cpp",
                  "write mesh function to Exodus file",
@@ -85,14 +89,19 @@ void ExodusFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
   vtkSmartPointer<vtkUnstructuredGrid> vtk_mesh = create_vtk_mesh(mesh);
 
   // Add cell data
-  const int dim = meshfunction.dim();
-  const int numCells = mesh.num_cells();
-  vtkSmartPointer<vtkUnsignedIntArray> cellData =
-    vtkSmartPointer<vtkUnsignedIntArray>::New();
-  cellData->SetNumberOfComponents(dim);
-  cellData->SetArray(const_cast<unsigned int*>(meshfunction.values()), dim*numCells, 1);
-  cellData->SetName(meshfunction.name().c_str());
-  vtk_mesh->GetCellData()->AddArray(cellData);
+  const std::size_t dim = meshfunction.dim();
+  const std::size_t num_cells = mesh.num_cells();
+  vtkSmartPointer<vtkUnsignedIntArray> cell_data
+    = vtkSmartPointer<vtkUnsignedIntArray>::New();
+  cell_data->SetNumberOfComponents(dim);
+
+  // Copy data to change type and avoid const cast
+  std::vector<unsigned int> tmp(meshfunction.values(),
+                                meshfunction.values() + meshfunction.size());
+  dolfin_assert(tmp.size() ==  dim*num_cells);
+  cell_data->SetArray(tmp.data(), dim*num_cells, 1);
+  cell_data->SetName(meshfunction.name().c_str());
+  vtk_mesh->GetCellData()->AddArray(cell_data);
 
   // Write out.
   perform_write(vtk_mesh);
@@ -115,7 +124,8 @@ void ExodusFile::operator<<(const MeshFunction<int>& meshfunction)
                  "Exodus output of mesh functions on interval facets is not supported");
   }
 
-  if (cell_dim != mesh.topology().dim() && cell_dim != mesh.topology().dim() - 1)
+  if (cell_dim != mesh.topology().dim()
+      && cell_dim != mesh.topology().dim() - 1)
   {
     dolfin_error("ExodusFile.cpp",
                  "write mesh function to Exodus file",
@@ -126,14 +136,18 @@ void ExodusFile::operator<<(const MeshFunction<int>& meshfunction)
   vtkSmartPointer<vtkUnstructuredGrid> vtk_mesh = create_vtk_mesh(mesh);
 
   // Add cell data
-  const int dim = meshfunction.dim();
-  const int numCells = mesh.num_cells();
-  vtkSmartPointer<vtkIntArray> cellData =
-    vtkSmartPointer<vtkIntArray>::New();
-  cellData->SetNumberOfComponents(dim);
-  cellData->SetArray(const_cast<int*>(meshfunction.values()), dim*numCells, 1);
-  cellData->SetName(meshfunction.name().c_str());
-  vtk_mesh->GetCellData()->AddArray(cellData);
+  const std::size_t dim = meshfunction.dim();
+  const std::size_t num_cells = mesh.num_cells();
+  vtkSmartPointer<vtkIntArray> cell_data
+    = vtkSmartPointer<vtkIntArray>::New();
+  cell_data->SetNumberOfComponents(dim);
+
+  std::vector<int> tmp(meshfunction.values(),
+                       meshfunction.values() + meshfunction.size());
+  dolfin_assert(tmp.size() ==  dim*num_cells);
+  cell_data->SetArray(tmp.data(), dim*num_cells, 1);
+  cell_data->SetName(meshfunction.name().c_str());
+  vtk_mesh->GetCellData()->AddArray(cell_data);
 
   // Write out
   perform_write(vtk_mesh);
@@ -148,15 +162,17 @@ void ExodusFile::operator<<(const MeshFunction<double>& meshfunction)
   const Mesh& mesh = *meshfunction.mesh();
   const std::size_t cell_dim = meshfunction.dim();
 
+  const std::size_t D = mesh.topology().dim();
+
   // Throw error for MeshFunctions on vertices for interval elements
-  if (mesh.topology().dim() == 1 && cell_dim == 0)
+  if (D == 1 && cell_dim == 0)
   {
     dolfin_error("ExodusFile.cpp",
                  "write mesh function to Exodus file",
                  "Exodus output of mesh functions on interval facets is not supported");
   }
 
-  if (cell_dim != mesh.topology().dim() && cell_dim != mesh.topology().dim() - 1)
+  if (D && cell_dim != D - 1)
   {
     dolfin_error("ExodusFile.cpp",
                  "write mesh function to Exodus file",
@@ -167,14 +183,17 @@ void ExodusFile::operator<<(const MeshFunction<double>& meshfunction)
   vtkSmartPointer<vtkUnstructuredGrid> vtk_mesh = create_vtk_mesh(mesh);
 
   // Add cell data
-  const int dim = meshfunction.dim();
-  const int numCells = mesh.num_cells();
-  vtkSmartPointer<vtkDoubleArray> cellData =
+  const std::size_t dim = meshfunction.dim();
+  const std::size_t num_cells = mesh.num_cells();
+  vtkSmartPointer<vtkDoubleArray> cell_data =
     vtkSmartPointer<vtkDoubleArray>::New();
-  cellData->SetNumberOfComponents(dim);
-  cellData->SetArray(const_cast<double*>(meshfunction.values()), dim*numCells, 1);
-  cellData->SetName(meshfunction.name().c_str());
-  vtk_mesh->GetCellData()->AddArray(cellData);
+  cell_data->SetNumberOfComponents(dim);
+
+  std::vector<double> tmp(meshfunction.values(),
+                       meshfunction.values() + meshfunction.size());
+  cell_data->SetArray(tmp.data(), dim*num_cells, 1);
+  cell_data->SetName(meshfunction.name().c_str());
+  vtk_mesh->GetCellData()->AddArray(cell_data);
 
   // Write out
   perform_write(vtk_mesh);
@@ -198,7 +217,6 @@ void ExodusFile::operator<<(const std::pair<const Function*, double> u)
 //----------------------------------------------------------------------------
 void ExodusFile::write_function(const Function& u, double time) const
 {
-  // Write results
   // Get rank of Function
   const std::size_t rank = u.value_rank();
   if (rank > 2)
@@ -248,18 +266,18 @@ void ExodusFile::write_function(const Function& u, double time) const
       for(std::size_t i = 0; i < dofmap.cell_dimension(cell->index()); ++i)
         dof_set.push_back(dofs[i]);
     }
-    // Get  values
+    // Get values
     values.resize(dof_set.size());
     dolfin_assert(u.vector());
     u.vector()->get_local(&values[0], dof_set.size(), &dof_set[0]);
 
     // Set the cell array
-    vtkSmartPointer<vtkDoubleArray> cellData =
-      vtkSmartPointer<vtkDoubleArray>::New();
-    cellData->SetNumberOfComponents(dim);
-    cellData->SetArray(&values[0], dof_set.size(), 1);
-    cellData->SetName(u.name().c_str());
-    vtk_mesh->GetCellData()->AddArray(cellData);
+    vtkSmartPointer<vtkDoubleArray> cell_data
+      = vtkSmartPointer<vtkDoubleArray>::New();
+    cell_data->SetNumberOfComponents(dim);
+    cell_data->SetArray(&values[0], dof_set.size(), 1);
+    cell_data->SetName(u.name().c_str());
+    vtk_mesh->GetCellData()->AddArray(cell_data);
   }
   else
   {
@@ -270,12 +288,12 @@ void ExodusFile::write_function(const Function& u, double time) const
     u.compute_vertex_values(values, mesh);
 
     // Set the point array
-    vtkSmartPointer<vtkDoubleArray> pointData =
-      vtkSmartPointer<vtkDoubleArray>::New();
-    pointData->SetNumberOfComponents(dim);
-    pointData->SetArray(&values[0], size, 1);
-    pointData->SetName(u.name().c_str());
-    vtk_mesh->GetPointData()->AddArray(pointData);
+    vtkSmartPointer<vtkDoubleArray> point_data
+      = vtkSmartPointer<vtkDoubleArray>::New();
+    point_data->SetNumberOfComponents(dim);
+    point_data->SetArray(&values[0], size, 1);
+    point_data->SetName(u.name().c_str());
+    vtk_mesh->GetPointData()->AddArray(point_data);
   }
 
   // Actually write out the data
@@ -285,56 +303,100 @@ void ExodusFile::write_function(const Function& u, double time) const
       u.name().c_str(), u.label().c_str(), _filename.c_str());
 }
 //----------------------------------------------------------------------------
-vtkSmartPointer<vtkUnstructuredGrid> ExodusFile::create_vtk_mesh(const Mesh& mesh) const
+vtkSmartPointer<vtkUnstructuredGrid>
+ExodusFile::create_vtk_mesh(const Mesh& mesh) const
 {
   // Build Exodus unstructured grid object
-  vtkSmartPointer<vtkUnstructuredGrid> unstructuredGrid =
+  vtkSmartPointer<vtkUnstructuredGrid> unstructured_grid =
     vtkSmartPointer<vtkUnstructuredGrid>::New();
 
-  // Set the points
-  const int numPoints = mesh.num_vertices();
-  vtkSmartPointer<vtkDoubleArray> pointData =
-    vtkSmartPointer<vtkDoubleArray>::New();
-  pointData->SetNumberOfComponents(3);
-  pointData->SetArray(const_cast<double*>(&mesh.coordinates()[0]), 3*numPoints, 1);
-  vtkSmartPointer<vtkPoints> points =
-    vtkSmartPointer<vtkPoints>::New();
-  points->SetData(pointData);
-  unstructuredGrid->SetPoints(points);
+  // Toplogical dimension of mesh
+  const std::size_t D = mesh.topology().dim();
 
-  // Set cells. Those need to be copied over since the default Dolfin
+  // Set the points
+  const std::size_t num_points = mesh.num_vertices();
+  vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+  // In VTK, all mesh topologies have nodes with coordinates X, Y, Z.
+  // Hence, for 1D and 2D, fill the remaining coordinates with 0
+  if (D == 1)
+  {
+    points->SetNumberOfPoints(num_points);
+    const std::vector<double> & coords = mesh.coordinates();
+    for (std::size_t k = 0; k < num_points; k++)
+      points->SetPoint(k, coords[k], 0.0, 0.0);
+  }
+  else if (D == 2)
+  {
+    points->SetNumberOfPoints(num_points);
+    const std::vector<double>& coords = mesh.coordinates();
+    for (std::size_t k = 0; k < num_points; k++)
+      points->SetPoint(k, coords[2*k], coords[2*k + 1], 0.0);
+  }
+  else if (D == 3)
+  {
+    // For 3D topologies, we can just move some pointers around to
+    // give VTK access to the node coordinates
+    vtkSmartPointer<vtkDoubleArray> point_data
+      = vtkSmartPointer<vtkDoubleArray>::New();
+    point_data->SetNumberOfComponents(3);
+    dolfin_assert(mesh.coordinates().size() ==  3*num_points);
+    std::vector<double> tmp(mesh.coordinates().begin(),
+                            mesh.coordinates().end());
+    dolfin_assert(mesh.coordinates().size() == 3*num_points);
+    point_data->SetArray(tmp.data(), 3*num_points, 1);
+    points->SetData(point_data);
+  }
+  else
+  {
+    dolfin_error("ExodusFile.cpp",
+                 "extract node coordinates",
+                 "Illegal topological dimension");
+  }
+  unstructured_grid->SetPoints(points);
+
+  // Set cells. Those need to be copied over since the default DOLFIN
   // node ID data type is std::size_t and the node ID of Exodus is
   // vtkIdType (typically long long int).
-  const int numCells = mesh.num_cells();
+  const std::size_t n = D + 1;
+  const std::size_t num_cells = mesh.num_cells();
   const std::vector<unsigned int> cells = mesh.cells();
-  vtkSmartPointer<vtkCellArray> cellData =
-    vtkSmartPointer<vtkCellArray>::New();
-  vtkIdType tmp[4];
-  for (int k=0; k<numCells; k++)
-  {
-    for (int i=0; i<4; i++)
-      tmp[i] = cells[4*k+i];
-    cellData->InsertNextCell(4, tmp);
-  }
-  unstructuredGrid->SetCells(VTK_TETRA, cellData);
+  vtkSmartPointer<vtkCellArray> cell_data
+    = vtkSmartPointer<vtkCellArray>::New();
 
-  return unstructuredGrid;
+  // Allocate 4 entries, we may use less though
+  std::vector<vtkIdType> tmp(4);
+  for (std::size_t k = 0; k < num_cells; k++)
+  {
+    for (std::size_t i = 0; i < n; i++)
+      tmp[i] = cells[n*k + i];
+    cell_data->InsertNextCell(n, tmp.data());
+  }
+
+  if (n == 2)
+    unstructured_grid->SetCells(VTK_LINE, cell_data);
+  else if (n == 3)
+    unstructured_grid->SetCells(VTK_TRIANGLE, cell_data);
+  else if (n == 4)
+    unstructured_grid->SetCells(VTK_TETRA, cell_data);
+  else
+  {
+    dolfin_error("ExodusFile.cpp",
+                 "construct VTK mesh",
+                 "Illegal element node number");
+  }
+
+  return unstructured_grid;
 }
 //----------------------------------------------------------------------------
-void ExodusFile::perform_write(const vtkSmartPointer<vtkUnstructuredGrid> & vtk_mesh) const
+void ExodusFile::perform_write(const vtkSmartPointer<vtkUnstructuredGrid>& vtk_mesh) const
 {
-  // Instantiate writer.
-  vtkSmartPointer<vtkExodusIIWriter> writer =
-    vtkSmartPointer<vtkExodusIIWriter>::New();
-
   // Write out to file.
-  writer->SetFileName(_filename.c_str());
-  writer->SetInput(vtk_mesh);
-  writer->Write();
+  _writer->SetInput(vtk_mesh);
+  _writer->Write();
 
   return;
 }
 //----------------------------------------------------------------------------
 
-#endif // HAS_VTK_EXODUS
-#endif // HAS_VTK
+#endif
+#endif

@@ -1,6 +1,7 @@
-"""This demo program uses of the interface to TAO solver for variational inequalities 
- to solve a contact mechanics problem in FEnics. 
- The example considers a heavy elastic circle in a box of the same size
+"""This demo program uses of the interface to TAO solver for
+ variational inequalities to solve a contact mechanics problem in
+ FEnics.  The example considers a heavy elastic circle in a box of the
+ same size.
  """
 # Copyright (C) 2012 Corrado Maurini
 #
@@ -23,13 +24,13 @@
 #
 # First added:  2012-09-03
 # Last changed: 2013-04-15
-# 
+#
 from dolfin import *
 
 if not has_tao():
     print "DOLFIN must be compiled with TAO to run this demo."
     exit(0)
-     
+
 # Create mesh (use cgal if available)
 mesh = UnitCircleMesh(50)
 
@@ -41,8 +42,9 @@ u, w = TrialFunction(V), TestFunction(V)
 
 # Elasticity parameters
 E, nu = 10.0, 0.3
-mu, lmbda = Constant(E/(2.0*(1.0 + nu))), Constant(E*nu/((1.0 + nu)*(1.0 -2.0*nu)))
-f = Constant((0.,-.1))
+mu = Constant(E/(2.0*(1.0 + nu)))
+lmbda = Constant(E*nu/((1.0 + nu)*(1.0 -2.0*nu)))
+f = Constant((0.0, -0.1))
 
 # Stress and strains
 def eps(u):
@@ -60,27 +62,31 @@ a, L = lhs(F), rhs(F)
 # Assemble the linear system
 A, b = assemble_system(a, L)
 
-# Define the constraints for the displacement 
+# Define the constraints for the displacement
 # The displacement u must be such that the current configuration x+u
 # does dot escape the xbox [xmin,xmax]x[umin,ymax]
-constraint_u = Expression( ("xmax-x[0]","ymax-x[1]"), xmax =  1., ymax =  1.)
-constraint_l = Expression( ("xmin-x[0]","ymin-x[1]"), xmin = -1., ymin = -1.)
+# This formulation is imprecise because it assumes
+# large displacements while the energy assumes linearization
+constraint_u = Expression( ("xmax-x[0]","ymax-x[1]"), xmax =  1.0, ymax =  1.0)
+constraint_l = Expression( ("xmin-x[0]","ymin-x[1]"), xmin = -1.0, ymin = -1.0)
 u_min = interpolate(constraint_l, V)
 u_max = interpolate(constraint_u, V)
 
-# Define the function to store the solution 
+# Define the function to store the solution
 usol=Function(V)
 
 # Create the TAOLinearBoundSolver
 solver=TAOLinearBoundSolver("tao_tron","tfqmr")
 
-#Set some parameters
+# Set some parameters
 solver.parameters["monitor_convergence"]=True
 solver.parameters["report"]=True
 solver.parameters["krylov_solver"]["absolute_tolerance"] = 1e-7
 solver.parameters["krylov_solver"]["relative_tolerance"] = 1e-7
-solver.parameters["krylov_solver"]["monitor_convergence"]= False
-info(solver.parameters,True) # Uncomment this line to see the available parameters
+solver.parameters["krylov_solver"]["monitor_convergence"] = False
+
+# Uncomment this line to see the available parameters
+info(solver.parameters, True)
 
 # Solve the problem
 solver.solve(A, usol.vector(), b , u_min.vector(), u_max.vector())
@@ -90,8 +96,8 @@ file = File("displacement.pvd")
 file << usol
 
 # plot the stress
-stress=sigma(eps(usol))
-plot(tr(stress),title="Trace of the stress tensor",mode = "color")
+stress = sigma(eps(usol))
+plot(tr(stress),title = "Trace of the stress tensor" ,mode = "color")
 
 # plot the current configuration
 plot(usol, mode = "displacement",wireframe=True, title="Displacement field")

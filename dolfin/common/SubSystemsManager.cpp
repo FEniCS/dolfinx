@@ -256,7 +256,10 @@ void SubSystemsManager::finalize_petsc()
   #ifdef HAS_PETSC
   if (singleton().petsc_initialized)
   {
-    PetscFinalize();
+    if (!PetscFinalizeCalled)
+    {
+      PetscFinalize();
+    }
     singleton().petsc_initialized = false;
 
     #ifdef HAS_SLEPC

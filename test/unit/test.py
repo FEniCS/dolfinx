@@ -34,23 +34,26 @@ tests = {
     "armadillo":      ["test"],
     "adaptivity":     ["errorcontrol", "TimeSeries"],
     "book":           ["chapter_1", "chapter_10"],
-    "fem":            ["solving", "Assembler", "DirichletBC", "DofMap",
-                       "FiniteElement", "Form", "SystemAssembler",
+    "fem":            ["solving", "Assembler", "DirichletBC", "DofMap", \
+                           "FiniteElement", "Form", "SystemAssembler",
                        "PeriodicBC", "manifolds"],
     "multistage":     ["RKSolver", "PointIntegralSolver"],
-    "function":       ["Constant", "Expression", "Function", "FunctionSpace",
-                       "SpecialFunctions"],
-    "io":             ["vtk", "XMLMeshFunction", "XMLMesh",
-                       "XMLMeshValueCollection", "XMLVector", "XMLLocalMeshData",
-                       "XDMF", "HDF5"],
+    "function":       ["Constant", "Expression", "Function", "FunctionSpace", \
+                           "SpecialFunctions"],
+    "io":             ["vtk", "XMLMeshFunction", "XMLMesh", \
+                           "XMLMeshValueCollection", "XMLVector", \
+                           "XMLLocalMeshData", \
+                           "XDMF", "HDF5", "Exodus"],
     "jit":            ["test"],
-    "la":             ["test", "solve", "Matrix", "Scalar", "Vector", "KrylovSolver", "LinearOperator"],
+    "la":             ["test", "solve", "Matrix", "Scalar", "Vector", \
+                           "KrylovSolver", "LinearOperator"],
     "nls":            ["PETScSNESSolver","TAOLinearBoundSolver"],
     "math":           ["test"],
     "meshconvert":    ["test"],
-    "mesh":           ["Edge", "Face", "MeshData", "MeshEditor",
-                       "MeshFunction", "MeshIterator", "MeshMarkers",
-                       "MeshValueCollection", "BoundaryMesh", "Mesh", "SubMesh"],
+    "mesh":           ["Edge", "Face", "MeshData", "MeshEditor", \
+                           "MeshFunction", "MeshIterator", "MeshMarkers", \
+                           "MeshValueCollection", "BoundaryMesh", "Mesh", \
+                           "SubMesh"],
     "parameter":      ["Parameters"],
     "python-extras":  ["test"],
     "quadrature":     ["BaryCenter"],

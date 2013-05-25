@@ -68,7 +68,8 @@ struct snes_ctx_t
 #if PETSC_VERSION_RELEASE
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2 // PETSc 3.2
   // Mapping from method string to PETSc
-  const std::map<std::string, std::pair<std::string, const SNESType> > PETScSNESSolver::_methods
+  const std::map<std::string, std::pair<std::string, const SNESType> >
+  PETScSNESSolver::_methods
     = boost::assign::map_list_of
         ("default", std::make_pair("default SNES method", ""))
         ("ls",      std::make_pair("Line search method",  SNESLS))
@@ -77,7 +78,8 @@ struct snes_ctx_t
         ("test",    std::make_pair("Tool to verify Jacobian approximation", SNESTEST));
   #elif PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3 // PETSc 3.3
   // Mapping from method string to PETSc
-  const std::map<std::string, std::pair<std::string, const SNESType> > PETScSNESSolver::_methods
+  const std::map<std::string, std::pair<std::string, const SNESType> >
+  PETScSNESSolver::_methods
     = boost::assign::map_list_of
         ("default",     std::make_pair("default SNES method", ""))
         ("ls",          std::make_pair("Line search method", SNESLS))
@@ -94,7 +96,8 @@ struct snes_ctx_t
   #endif
 #else // Development version
   // Mapping from method string to PETSc
-  const std::map<std::string, std::pair<std::string, const SNESType> > PETScSNESSolver::_methods
+  const std::map<std::string, std::pair<std::string, const SNESType> >
+  PETScSNESSolver::_methods
    = boost::assign::map_list_of
       ("default",      std::make_pair("default SNES method", ""))
       ("newtonls",     std::make_pair("Line search method", SNESNEWTONLS))
@@ -114,7 +117,8 @@ struct snes_ctx_t
 std::vector<std::pair<std::string, std::string> > PETScSNESSolver::methods()
 {
   std::vector<std::pair<std::string, std::string> > available_methods;
-  std::map<std::string, std::pair<std::string, const SNESType> >::const_iterator it;
+  std::map<std::string, std::pair<std::string,
+                                  const SNESType> >::const_iterator it;
   for (it = _methods.begin(); it != _methods.end(); ++it)
     available_methods.push_back(std::make_pair(it->first, it->second.first));
   return available_methods;
@@ -198,7 +202,8 @@ void PETScSNESSolver::init(const std::string& method)
   // Set solver type
   if (method != "default")
   {
-    std::map<std::string, std::pair<std::string, const SNESType> >::const_iterator it;
+    std::map<std::string, std::pair<std::string,
+                                    const SNESType> >::const_iterator it;
     it = _methods.find(method);
     dolfin_assert(it != _methods.end());
     SNESSetType(*_snes, it->second.second);
@@ -208,10 +213,11 @@ void PETScSNESSolver::init(const std::string& method)
   has_explicit_bounds = false;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
-                                                    GenericVector& x,
-                                                    const GenericVector&  lb,
-                                                    const GenericVector&  ub)
+std::pair<std::size_t, bool>
+PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
+                       GenericVector& x,
+                       const GenericVector&  lb,
+                       const GenericVector&  ub)
 {
   // Check size of the bound vectors
   if (lb.size() != ub.size())
@@ -228,8 +234,10 @@ std::pair<std::size_t, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear_
   }
 
   // Set the bounds
-  boost::shared_ptr<const PETScVector> _ub(&ub.down_cast<PETScVector>(), NoDeleter());
-  boost::shared_ptr<const PETScVector> _lb(&lb.down_cast<PETScVector>(), NoDeleter());
+  boost::shared_ptr<const PETScVector>
+    _ub(&ub.down_cast<PETScVector>(), NoDeleter());
+  boost::shared_ptr<const PETScVector>
+    _lb(&lb.down_cast<PETScVector>(), NoDeleter());
   this->lb = _lb;
   this->ub = _ub;
   has_explicit_bounds = true;
@@ -237,8 +245,9 @@ std::pair<std::size_t, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear_
   return solve(nonlinear_problem, x);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
-                                                    GenericVector& x)
+std::pair<std::size_t, bool>
+PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
+                       GenericVector& x)
 {
   Timer timer("SNES solver");
   PETScVector f;
@@ -256,7 +265,8 @@ std::pair<std::size_t, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear_
   snes_ctx.dx = &x.down_cast<PETScVector>();
 
   SNESSetFunction(*_snes, *f.vec(), PETScSNESSolver::FormFunction, &snes_ctx);
-  SNESSetJacobian(*_snes, *A.mat(), *A.mat(), PETScSNESSolver::FormJacobian, &snes_ctx);
+  SNESSetJacobian(*_snes, *A.mat(), *A.mat(), PETScSNESSolver::FormJacobian,
+                  &snes_ctx);
 
   // Set some options from the parameters
   if (parameters["report"])
@@ -268,7 +278,8 @@ std::pair<std::size_t, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear_
   // Set the method
   if (std::string(parameters["method"]) != "default")
   {
-    std::map<std::string, std::pair<std::string, const SNESType> >::const_iterator it;
+    std::map<std::string, std::pair<std::string,
+                                    const SNESType> >::const_iterator it;
     it = _methods.find(std::string(parameters["method"]));
     dolfin_assert(it != _methods.end());
     SNESSetType(*_snes, it->second.second);
@@ -280,7 +291,8 @@ std::pair<std::size_t, bool> PETScSNESSolver::solve(NonlinearProblem& nonlinear_
   }
   else if (std::string(parameters["method"]) == "default" && is_vi())
   {
-    std::map<std::string, std::pair<std::string, const SNESType> >::const_iterator it;
+    std::map<std::string, std::pair<std::string,
+                                    const SNESType> >::const_iterator it;
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 2
     it = _methods.find("vi");
     #elif PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 3 && PETSC_VERSION_RELEASE
@@ -381,7 +393,8 @@ PetscErrorCode PETScSNESSolver::FormFunction(SNES snes, Vec x, Vec f, void* ctx)
   return 0;
 }
 //-----------------------------------------------------------------------------
-PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* B, MatStructure* flag, void* ctx)
+PetscErrorCode PETScSNESSolver::FormJacobian(SNES snes, Vec x, Mat* A, Mat* B,
+                                             MatStructure* flag, void* ctx)
 {
   struct snes_ctx_t snes_ctx = *(struct snes_ctx_t*) ctx;
   NonlinearProblem* nonlinear_problem = snes_ctx.nonlinear_problem;
@@ -420,8 +433,8 @@ void PETScSNESSolver::set_linear_solver_parameters(Parameters ksp_parameters)
   if (parameters["report"])
     KSPMonitorSet(ksp, KSPMonitorDefault, PETSC_NULL, PETSC_NULL);
 
-  const std::string linear_solver  = std::string(ksp_parameters["linear_solver"]);
-  const std::string preconditioner = std::string(ksp_parameters["preconditioner"]);
+  const std::string linear_solver  = ksp_parameters["linear_solver"];
+  const std::string preconditioner = ksp_parameters["preconditioner"];
 
   if (linear_solver == "default")
   {
@@ -433,7 +446,8 @@ void PETScSNESSolver::set_linear_solver_parameters(Parameters ksp_parameters)
       solver_pair = PETScKrylovSolver::_methods.find(linear_solver);
     dolfin_assert(solver_pair != PETScKrylovSolver::_methods.end());
     KSPSetType(ksp, solver_pair->second);
-    if (preconditioner != "default" && PETScPreconditioner::_methods.count(preconditioner) != 0)
+    if (preconditioner != "default"
+        && PETScPreconditioner::_methods.count(preconditioner) != 0)
     {
       std::map<std::string, const PCType>::const_iterator it
         = PETScPreconditioner::_methods.find(preconditioner);
@@ -441,11 +455,15 @@ void PETScSNESSolver::set_linear_solver_parameters(Parameters ksp_parameters)
       PCSetType(pc, it->second);
     }
   }
-  else if (linear_solver == "lu" || PETScLUSolver::_methods.count(linear_solver) != 0)
+  else if (linear_solver == "lu"
+           || PETScLUSolver::_methods.count(linear_solver) != 0)
   {
     std::string lu_method;
-    if (PETScLUSolver::_methods.find(linear_solver) != PETScLUSolver::_methods.end())
+    if (PETScLUSolver::_methods.find(linear_solver)
+        != PETScLUSolver::_methods.end())
+    {
       lu_method = linear_solver;
+    }
     else
     {
       if (MPI::num_processes() == 1)
@@ -561,17 +579,22 @@ void PETScSNESSolver::set_bounds(GenericVector& x)
 //-----------------------------------------------------------------------------
 bool PETScSNESSolver::is_vi() const
 {
-  if (std::string(parameters["sign"]) != "default" && this->has_explicit_bounds == true)
+  if (std::string(parameters["sign"]) != "default"
+      && this->has_explicit_bounds == true)
   {
     dolfin_error("PETScSNESSolver.cpp",
                  "set variational inequality bounds",
                  "Both the sign parameter and the explicit bounds are set");
     return false;
   }
-  else if (std::string(parameters["sign"]) != "default" || this->has_explicit_bounds == true)
+  else if (std::string(parameters["sign"]) != "default"
+           || this->has_explicit_bounds == true)
+  {
     return true;
+  }
   else
     return false;
 }
 //-----------------------------------------------------------------------------
+
 #endif
