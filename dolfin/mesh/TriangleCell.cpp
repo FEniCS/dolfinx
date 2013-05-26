@@ -22,7 +22,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2013-05-24
+// Last changed: 2013-05-26
 
 #include <algorithm>
 #include <dolfin/log/log.h>

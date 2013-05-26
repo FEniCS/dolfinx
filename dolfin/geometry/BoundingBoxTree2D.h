@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-05-21
+// Last changed: 2013-05-26
 
 #ifndef __BOUNDING_BOX_TREE_2D_H
 #define __BOUNDING_BOX_TREE_2D_H
@@ -84,9 +84,9 @@ namespace dolfin
       double r2 = 0.0;
 
       if (x[0] < b[0]) r2 += (x[0] - b[0])*(x[0] - b[0]);
-      if (x[0] > b[3]) r2 += (x[0] - b[3])*(x[0] - b[3]);
+      if (x[0] > b[2]) r2 += (x[0] - b[2])*(x[0] - b[2]);
       if (x[1] < b[1]) r2 += (x[1] - b[1])*(x[1] - b[1]);
-      if (x[1] > b[4]) r2 += (x[1] - b[4])*(x[1] - b[4]);
+      if (x[1] > b[3]) r2 += (x[1] - b[3])*(x[1] - b[3]);
 
       return r2;
     }

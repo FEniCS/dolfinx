@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-05-23
+// Last changed: 2013-05-26
 
 // Define a maximum dimension used for a local array in the recursive
 // build function. Speeds things up compared to allocating it in each
@@ -363,6 +363,7 @@ GenericBoundingBoxTree::compute_closest_entity(const Point& point,
     dolfin_assert(_tdim == mesh.topology().dim());
     const unsigned int entity_index = bbox.child_1;
     Cell cell(mesh, entity_index);
+
 
     // If entity is closer than best result so far, then return it
     const double r2 = cell.squared_distance(point);
