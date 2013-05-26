@@ -28,25 +28,20 @@
 // First added:  2006-05-09
 // Last changed: 2013-03-06
 
-#include <boost/serialization/map.hpp>
-#include <dolfin/common/Array.h>
-#include <dolfin/mesh/Facet.h>
 #include <dolfin/ale/ALE.h>
+#include <dolfin/common/Array.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
-#include <dolfin/common/Array.h>
+#include <dolfin/function/Expression.h>
 #include <dolfin/generation/CSGMeshGenerator.h>
 #include <dolfin/io/File.h>
 #include <dolfin/log/log.h>
-#include <dolfin/function/Expression.h>
 #include "BoundaryMesh.h"
 #include "Cell.h"
+#include "Facet.h"
 #include "LocalMeshData.h"
 #include "MeshColoring.h"
-#include "MeshData.h"
-#include "MeshFunction.h"
-#include "MeshValueCollection.h"
 #include "MeshOrdering.h"
 #include "MeshPartitioning.h"
 #include "MeshRenumbering.h"
@@ -88,7 +83,6 @@ Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
 {
   File file(filename);
   file >> *this;
-
   _cell_orientations.resize(this->num_cells(), -1);
 }
 //-----------------------------------------------------------------------------
@@ -606,7 +600,7 @@ std::string Mesh::str(bool verbose) const
     if (_cell_type)
       cell_type = _cell_type->description(true);
 
-   s << "<Mesh of topological dimension "
+    s << "<Mesh of topological dimension "
       << topology().dim() << " ("
       << cell_type << ") with "
       << num_vertices() << " vertices and "

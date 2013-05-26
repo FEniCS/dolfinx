@@ -99,13 +99,6 @@ MeshData::create_mesh_function(std::string name, std::size_t dim)
   return boost::shared_ptr<MeshFunction<std::size_t> >();
 }
 //-----------------------------------------------------------------------------
-/*
-std::vector<std::size_t>& MeshData::create_array(std::string name)
-{
-  return create_array(name, 0);
-}
-*/
-//-----------------------------------------------------------------------------
 std::vector<std::size_t>& MeshData::create_array(std::string name,
                                                  std::size_t dim)
 {
