@@ -22,7 +22,6 @@
 #define __XML_UTILS_H
 
 #include <string>
-#include <boost/shared_ptr.hpp>
 #include "pugixml.hpp"
 
 
@@ -34,8 +33,8 @@ namespace dolfin
 
   /// Get XML node with given name, either the given node itself or a
   /// child node. An error message is thrown if node is not found.
-  boost::shared_ptr<const pugi::xml_node> get_node(const pugi::xml_node& xml_node,
-                                                   std::string node_name);
+  const pugi::xml_node get_node(const pugi::xml_node& xml_node,
+                                std::string node_name);
 
 }
 
