@@ -42,7 +42,7 @@ tests = {
                            "SpecialFunctions"],
     "io":             ["vtk", "XMLMeshFunction", "XMLMesh", \
                            "XMLMeshValueCollection", "XMLVector", \
-                           "XMLLocalMeshData", \
+                           "XMLMeshData", "XMLLocalMeshData", \
                            "XDMF", "HDF5", "Exodus"],
     "jit":            ["test"],
     "la":             ["test", "solve", "Matrix", "Scalar", "Vector", \

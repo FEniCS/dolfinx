@@ -98,7 +98,12 @@ void XMLFile::operator>> (Mesh& input_mesh)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const Mesh& output_mesh)
 {
-  not_working_in_parallel("Mesh XML output");
+  if (MPI::num_processes() > 1)
+  {
+    dolfin_error("XMLFile.cpp",
+                 "write mesh to XML file in parallel",
+                 "Parallel XML mesh output is not supported. Use HDF5 format instead");
+  }
 
   pugi::xml_document doc;
   pugi::xml_node node = write_dolfin(doc);
