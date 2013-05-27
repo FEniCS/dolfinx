@@ -48,7 +48,7 @@ namespace dolfin
     void update(const Point& point, const Mesh& mesh);
 
     /// Return the list of (local) indices for intersected cells
-    const std::vector<unsigned int>& intersected_cells() const
+    const std::vector<mesh_index>& intersected_cells() const
     { return _intersected_cells; }
 
   private:
@@ -59,7 +59,7 @@ namespace dolfin
     BoundingBoxTree _tree;
 
     // The list of (local) indices for intersected cells
-    std::vector<unsigned int> _intersected_cells;
+    std::vector<mesh_index> _intersected_cells;
 
     // Compute intersection
     void compute_intersection(const Point& point, const Mesh& mesh);

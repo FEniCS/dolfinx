@@ -43,7 +43,7 @@ namespace dolfin
       const std::vector<double>& bboxes;
       less_x(const std::vector<double>& bboxes): bboxes(bboxes) {}
 
-      inline bool operator()(unsigned int i, unsigned int j)
+      inline bool operator()(mesh_index i, mesh_index j)
       {
         const double* bi = bboxes.data() + 4*i;
         const double* bj = bboxes.data() + 4*j;
@@ -56,7 +56,7 @@ namespace dolfin
       const std::vector<double>& bboxes;
       less_y(const std::vector<double>& bboxes): bboxes(bboxes) {}
 
-      inline bool operator()(unsigned int i, unsigned int j)
+      inline bool operator()(mesh_index i, mesh_index j)
       {
         const double* bi = bboxes.data() + 4*i;
         const double* bj = bboxes.data() + 4*j;
@@ -65,10 +65,10 @@ namespace dolfin
     };
 
     // Return geometric dimension
-    unsigned int gdim() const { return 2; }
+    std::size_t gdim() const { return 2; }
 
     // Check whether point is in bounding box
-    bool point_in_bbox(const double* x, unsigned int node) const
+    bool point_in_bbox(const double* x, mesh_index node) const
     {
       const double* b = _bbox_coordinates.data() + 4*node;
       return (b[0] - DOLFIN_EPS < x[0] && x[0] < b[2] + DOLFIN_EPS &&
@@ -77,7 +77,7 @@ namespace dolfin
 
     // Compute squared distance between point and bounding box
     double compute_squared_distance_bbox(const double* x,
-                                         unsigned int node) const
+                                         mesh_index node) const
     {
       // Note: Some else-if might be in order here but I assume the
       // compiler can do a better job at optimizing/parallelizing this
@@ -97,7 +97,7 @@ namespace dolfin
 
     // Compute squared distance between point and point
     double compute_squared_distance_point(const double* x,
-                                          unsigned int node) const
+                                          mesh_index node) const
     {
       const double* p = _bbox_coordinates.data() + 4*node;
       return (x[0] - p[0])*(x[0] - p[0]) + (x[1] - p[1])*(x[1] - p[1]);
@@ -105,12 +105,12 @@ namespace dolfin
 
     // Compute bounding box of bounding boxes
     void compute_bbox_of_bboxes(double* bbox,
-                                unsigned short int& axis,
+                                std::size_t& axis,
                                 const std::vector<double>& leaf_bboxes,
-                                const std::vector<unsigned int>::iterator& begin,
-                                const std::vector<unsigned int>::iterator& end)
+                                const std::vector<mesh_index>::iterator& begin,
+                                const std::vector<mesh_index>::iterator& end)
     {
-      typedef std::vector<unsigned int>::const_iterator iterator;
+      typedef std::vector<mesh_index>::const_iterator iterator;
 
       // Get coordinates for first box
       iterator it = begin;
@@ -142,12 +142,12 @@ namespace dolfin
 
     // Compute bounding box of points
     void compute_bbox_of_points(double* bbox,
-                                unsigned short int& axis,
+                                std::size_t& axis,
                                 const std::vector<Point>& points,
-                                const std::vector<unsigned int>::iterator& begin,
-                                const std::vector<unsigned int>::iterator& end)
+                                const std::vector<mesh_index>::iterator& begin,
+                                const std::vector<mesh_index>::iterator& end)
     {
-      typedef std::vector<unsigned int>::const_iterator iterator;
+      typedef std::vector<mesh_index>::const_iterator iterator;
 
       // Get coordinates for first point
       iterator it = begin;
@@ -178,11 +178,11 @@ namespace dolfin
     }
 
     // Sort leaf bounding boxes along given axis
-    void sort_bboxes(unsigned short int axis,
+    void sort_bboxes(std::size_t axis,
                      const std::vector<double>& leaf_bboxes,
-                     const std::vector<unsigned int>::iterator& begin,
-                     const std::vector<unsigned int>::iterator& middle,
-                     const std::vector<unsigned int>::iterator& end)
+                     const std::vector<mesh_index>::iterator& begin,
+                     const std::vector<mesh_index>::iterator& middle,
+                     const std::vector<mesh_index>::iterator& end)
     {
       if (axis == 0)
         std::nth_element(begin, middle, end, less_x(leaf_bboxes));

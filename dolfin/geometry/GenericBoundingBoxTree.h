@@ -16,11 +16,12 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-23
-// Last changed: 2013-05-27
+// Last changed: 2013-05-28
 
 #ifndef __GENERIC_BOUNDING_BOX_TREE_H
 #define __GENERIC_BOUNDING_BOX_TREE_H
 
+#include <dolfin/common/types.h>
 #include <vector>
 
 namespace dolfin
@@ -44,31 +45,31 @@ namespace dolfin
     virtual ~GenericBoundingBoxTree() {}
 
     /// Build bounding box tree for mesh entites of given dimension
-    void build(const Mesh& mesh, unsigned int tdim);
+    void build(const Mesh& mesh, std::size_t tdim);
 
     /// Build bounding box tree for point cloud
     void build(const std::vector<Point>& points);
 
     /// Compute all collisions between bounding boxes and given _Point_
-    std::vector<unsigned int> compute_collisions(const Point& point) const;
+    std::vector<mesh_index> compute_collisions(const Point& point) const;
 
     /// Compute all collisions between entities and given _Point_
-    std::vector<unsigned int> compute_entity_collisions(const Point& point,
-                                                        const Mesh& mesh) const;
+    std::vector<mesh_index> compute_entity_collisions(const Point& point,
+                                                      const Mesh& mesh) const;
 
     /// Compute first collision between bounding boxes and given _Point_
-    unsigned int compute_first_collision(const Point& point) const;
+    mesh_index compute_first_collision(const Point& point) const;
 
     /// Compute first collision between entities and given _Point_
-    unsigned int compute_first_entity_collision(const Point& point,
-                                                const Mesh& mesh) const;
+    mesh_index compute_first_entity_collision(const Point& point,
+                                              const Mesh& mesh) const;
 
     /// Compute closest entity and distance to given _Point_
-    std::pair<unsigned int, double> compute_closest_entity(const Point& point,
-                                                           const Mesh& mesh) const;
+    std::pair<mesh_index, double> compute_closest_entity(const Point& point,
+                                                         const Mesh& mesh) const;
 
     /// Compute closest point and distance to given _Point_
-    std::pair<unsigned int, double> compute_closest_point(const Point& point) const;
+    std::pair<mesh_index, double> compute_closest_point(const Point& point) const;
 
   protected:
 
@@ -77,12 +78,12 @@ namespace dolfin
     // index of the entity contained in the leaf bounding box.
     struct BBox
     {
-      unsigned int child_0;
-      unsigned int child_1;
+      mesh_index child_0;
+      mesh_index child_1;
     };
 
     // Topological dimension of leaf entities
-    unsigned int _tdim;
+    std::size_t _tdim;
 
     // List of bounding boxes (parent-child-entity relations)
     std::vector<BBox> _bboxes;
@@ -97,100 +98,100 @@ namespace dolfin
     void clear();
 
     // Build bounding box tree for entities (recursive)
-    unsigned int build(const std::vector<double>& leaf_bboxes,
-                       const std::vector<unsigned int>::iterator& begin,
-                       const std::vector<unsigned int>::iterator& end,
-                       unsigned int gdim);
+    mesh_index build(const std::vector<double>& leaf_bboxes,
+                     const std::vector<mesh_index>::iterator& begin,
+                     const std::vector<mesh_index>::iterator& end,
+                     std::size_t gdim);
 
     // Build bounding box tree for points (recursive)
-    unsigned int build(const std::vector<Point>& points,
-                       const std::vector<unsigned int>::iterator& begin,
-                       const std::vector<unsigned int>::iterator& end,
-                       unsigned int gdim);
+    mesh_index build(const std::vector<Point>& points,
+                     const std::vector<mesh_index>::iterator& begin,
+                     const std::vector<mesh_index>::iterator& end,
+                     std::size_t gdim);
 
     // Compute point search tree if not already done
     void build_point_search_tree(const Mesh& mesh) const;
 
     /// Compute collisions (recursive)
     void compute_collisions(const Point& point,
-                            unsigned int node,
-                            std::vector<unsigned int>& entities) const;
+                            mesh_index node,
+                            std::vector<mesh_index>& entities) const;
 
     /// Compute entity collisions (recursive)
     void compute_entity_collisions(const Point& point,
-                                   unsigned int node,
-                                   std::vector<unsigned int>& entities,
+                                   mesh_index node,
+                                   std::vector<mesh_index>& entities,
                                    const Mesh& mesh) const;
 
     /// Compute first collision (recursive)
-    unsigned int compute_first_collision(const Point& point,
-                                         unsigned int node) const;
+    mesh_index compute_first_collision(const Point& point,
+                                       mesh_index node) const;
 
     /// Compute first entity collision (recursive)
-    unsigned int compute_first_entity_collision(const Point& point,
-                                                unsigned int node,
-                                                const Mesh& mesh) const;
+    mesh_index compute_first_entity_collision(const Point& point,
+                                              mesh_index node,
+                                              const Mesh& mesh) const;
 
     /// Compute closest entity (recursive)
     void compute_closest_entity(const Point& point,
-                                unsigned int node,
+                                mesh_index node,
                                 const Mesh& mesh,
-                                unsigned int& closest_entity,
+                                mesh_index& closest_entity,
                                 double& R2) const;
 
     /// Compute closest point (recursive)
     void compute_closest_point(const Point& point,
-                               unsigned int node,
-                               unsigned int& closest_point,
+                               mesh_index node,
+                               mesh_index& closest_point,
                                double& R2) const;
 
     // Compute bounding box of mesh entity
     void compute_bbox_of_entity(double* b,
                                 const MeshEntity& entity,
-                                unsigned int gdim) const;
+                                std::size_t gdim) const;
 
     // Sort points along given axis
-    void sort_points(unsigned short int axis,
+    void sort_points(std::size_t axis,
                      const std::vector<Point>& points,
-                     const std::vector<unsigned int>::iterator& begin,
-                     const std::vector<unsigned int>::iterator& middle,
-                     const std::vector<unsigned int>::iterator& end);
+                     const std::vector<mesh_index>::iterator& begin,
+                     const std::vector<mesh_index>::iterator& middle,
+                     const std::vector<mesh_index>::iterator& end);
 
     // Add bounding box and coordinates
-    inline unsigned int add_bbox(const BBox& bbox,
-                                 const double* b,
-                                 unsigned int gdim)
+    inline mesh_index add_bbox(const BBox& bbox,
+                               const double* b,
+                               std::size_t gdim)
     {
       // Add bounding box
       _bboxes.push_back(bbox);
 
       // Add bounding box coordinates
-      for (unsigned int i = 0; i < 2*gdim; ++i)
+      for (std::size_t i = 0; i < 2*gdim; ++i)
         _bbox_coordinates.push_back(b[i]);
 
       return _bboxes.size() - 1;
     }
 
     // Add bounding box and point coordinates
-    inline unsigned int add_point(const BBox& bbox,
-                                  const Point& point,
-                                  unsigned int gdim)
+    inline mesh_index add_point(const BBox& bbox,
+                                const Point& point,
+                                std::size_t gdim)
     {
       // Add bounding box
       _bboxes.push_back(bbox);
 
       // Add point coordinates (twice)
       const double* x = point.coordinates();
-      for (unsigned int i = 0; i < gdim; ++i)
+      for (std::size_t i = 0; i < gdim; ++i)
         _bbox_coordinates.push_back(x[i]);
-      for (unsigned int i = 0; i < gdim; ++i)
+      for (std::size_t i = 0; i < gdim; ++i)
         _bbox_coordinates.push_back(x[i]);
 
       return _bboxes.size() - 1;
     }
 
     // Check whether bounding box is a leaf node
-    bool is_leaf(const BBox& bbox, unsigned int node) const
+    bool is_leaf(const BBox& bbox, mesh_index node) const
     {
       // Leaf nodes are marked by setting child_0 equal to the node itself
       return bbox.child_0 == node;
@@ -205,7 +206,7 @@ namespace dolfin
       const std::vector<Point>& points;
       less_x_point(const std::vector<Point>& points): points(points) {}
 
-      inline bool operator()(unsigned int i, unsigned int j)
+      inline bool operator()(mesh_index i, mesh_index j)
       {
         const double* pi = points[i].coordinates();
         const double* pj = points[j].coordinates();
@@ -218,7 +219,7 @@ namespace dolfin
       const std::vector<Point>& points;
       less_y_point(const std::vector<Point>& points): points(points) {}
 
-      inline bool operator()(unsigned int i, unsigned int j)
+      inline bool operator()(mesh_index i, mesh_index j)
       {
         const double* pi = points[i].coordinates();
         const double* pj = points[j].coordinates();
@@ -231,7 +232,7 @@ namespace dolfin
       const std::vector<Point>& points;
       less_z_point(const std::vector<Point>& points): points(points) {}
 
-      inline bool operator()(unsigned int i, unsigned int j)
+      inline bool operator()(mesh_index i, mesh_index j)
       {
         const double* pi = points[i].coordinates();
         const double* pj = points[j].coordinates();
@@ -242,43 +243,43 @@ namespace dolfin
     //--- Dimension-dependent functions to be implemented by subclass ---
 
     // Return geometric dimension
-    virtual unsigned int gdim() const = 0;
+    virtual std::size_t gdim() const = 0;
 
     // Check whether point is in bounding box
     virtual bool
-    point_in_bbox(const double* x, unsigned int node) const = 0;
+    point_in_bbox(const double* x, mesh_index node) const = 0;
 
     // Compute squared distance between point and bounding box
     virtual double
-    compute_squared_distance_bbox(const double* x, unsigned int node) const = 0;
+    compute_squared_distance_bbox(const double* x, mesh_index node) const = 0;
 
     // Compute squared distance between point and point
     virtual double
-    compute_squared_distance_point(const double* x, unsigned int node) const = 0;
+    compute_squared_distance_point(const double* x, mesh_index node) const = 0;
 
     // Compute bounding box of bounding boxes
     virtual void
     compute_bbox_of_bboxes(double* bbox,
-                           unsigned short int& axis,
+                           std::size_t& axis,
                            const std::vector<double>& leaf_bboxes,
-                           const std::vector<unsigned int>::iterator& begin,
-                           const std::vector<unsigned int>::iterator& end) = 0;
+                           const std::vector<mesh_index>::iterator& begin,
+                           const std::vector<mesh_index>::iterator& end) = 0;
 
     // Compute bounding box of points
     virtual void
     compute_bbox_of_points(double* bbox,
-                           unsigned short int& axis,
+                           std::size_t& axis,
                            const std::vector<Point>& points,
-                           const std::vector<unsigned int>::iterator& begin,
-                           const std::vector<unsigned int>::iterator& end) = 0;
+                           const std::vector<mesh_index>::iterator& begin,
+                           const std::vector<mesh_index>::iterator& end) = 0;
 
     // Sort leaf bounding boxes along given axis
     virtual void
-    sort_bboxes(unsigned short int axis,
+    sort_bboxes(std::size_t axis,
                 const std::vector<double>& leaf_bboxes,
-                const std::vector<unsigned int>::iterator& begin,
-                const std::vector<unsigned int>::iterator& middle,
-                const std::vector<unsigned int>::iterator& end) = 0;
+                const std::vector<mesh_index>::iterator& begin,
+                const std::vector<mesh_index>::iterator& middle,
+                const std::vector<mesh_index>::iterator& end) = 0;
 
   };
 

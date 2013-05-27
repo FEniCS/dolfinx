@@ -53,14 +53,14 @@ void MeshPointIntersection::compute_intersection(const Point& point,
   dolfin_assert(_intersected_cells.size() == 0);
 
   // Compute list of candidates for intersection
-  std::vector<unsigned int> cell_candidates = _tree.compute_collisions(point);
+  std::vector<mesh_index> cell_candidates = _tree.compute_collisions(point);
 
   // FIXME: This should be moved to the BoundingBoxTree class
 
   // Extract subset of intersecting cells
-  for (unsigned int i = 0; i < cell_candidates.size(); ++i)
+  for (mesh_index i = 0; i < cell_candidates.size(); ++i)
   {
-    const unsigned int cell_index = cell_candidates[i];
+    const mesh_index cell_index = cell_candidates[i];
     Cell cell(mesh, cell_index);
     if (cell.contains(point))
       _intersected_cells.push_back(cell_index);
