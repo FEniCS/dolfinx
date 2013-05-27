@@ -121,11 +121,9 @@ namespace dolfin
         if (b[3] > bbox[3]) bbox[3] = b[3];
       }
 
-      // FIXME: Nasty bug here!
-
       // Compute longest axis
-      const double x = b[2] - b[0];
-      const double y = b[3] - b[1];
+      const double x = bbox[2] - bbox[0];
+      const double y = bbox[3] - bbox[1];
 
       if (x > y)
         axis = 0;
