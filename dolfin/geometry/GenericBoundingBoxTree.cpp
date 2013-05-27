@@ -389,8 +389,8 @@ GenericBoundingBoxTree::compute_entity_collisions(const Point& point,
   // Check both children
   else
   {
-    compute_collisions(point, bbox.child_0, entities);
-    compute_collisions(point, bbox.child_1, entities);
+    compute_entity_collisions(point, bbox.child_0, entities, mesh);
+    compute_entity_collisions(point, bbox.child_1, entities, mesh);
   }
 }
 //-----------------------------------------------------------------------------
@@ -460,11 +460,11 @@ GenericBoundingBoxTree::compute_first_entity_collision(const Point& point,
   // Check both children
   else
   {
-    mesh_index c0 = compute_first_collision(point, bbox.child_0);
+    mesh_index c0 = compute_first_entity_collision(point, bbox.child_0, mesh);
     if (c0 != not_found)
       return c0;
 
-    mesh_index c1 = compute_first_collision(point, bbox.child_1);
+    mesh_index c1 = compute_first_entity_collision(point, bbox.child_1, mesh);
     if (c1 != not_found)
       return c1;
   }

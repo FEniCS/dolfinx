@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-18
-// Last changed: 2013-05-27
+// Last changed: 2013-05-28
 
 #ifndef __MESH_POINT_INTERSECTION_H
 #define __MESH_POINT_INTERSECTION_H
@@ -26,8 +26,6 @@
 
 namespace dolfin
 {
-
-  class BoundingBoxTree;
 
   /// This class represents an intersection between a _Mesh_ and a
   /// _Point_. The resulting intersection is stored as a list of zero
@@ -44,25 +42,14 @@ namespace dolfin
     /// Destructor
     ~MeshPointIntersection();
 
-    /// Update intersection for new point
-    void update(const Point& point, const Mesh& mesh);
-
     /// Return the list of (local) indices for intersected cells
     const std::vector<mesh_index>& intersected_cells() const
     { return _intersected_cells; }
 
   private:
 
-    // FIXME: Cache bbtree as part of the mesh class?
-
-    // Bounding box tree
-    BoundingBoxTree _tree;
-
     // The list of (local) indices for intersected cells
     std::vector<mesh_index> _intersected_cells;
-
-    // Compute intersection
-    void compute_intersection(const Point& point, const Mesh& mesh);
 
   };
 
