@@ -21,6 +21,7 @@
 #ifndef __SUB_MESH_H
 #define __SUB_MESH_H
 
+#include <map>
 #include "Mesh.h"
 
 namespace dolfin
@@ -56,7 +57,8 @@ namespace dolfin
   private:
 
     /// Create sub mesh
-    void init(const Mesh& mesh, const MeshFunction<std::size_t>& sub_domains, std::size_t sub_domain);
+    void init(const Mesh& mesh, const std::vector<std::size_t>& sub_domains,
+              std::size_t sub_domain);
 
   };
 

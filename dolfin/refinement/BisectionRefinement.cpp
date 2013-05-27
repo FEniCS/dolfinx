@@ -44,18 +44,22 @@ void BisectionRefinement::refine_by_recursive_bisection(Mesh& refined_mesh,
   std::vector<int> facet_map;
 
   // Call Rivara refinement
-  RivaraRefinement::refine(refined_mesh, mesh, cell_marker, cell_map, facet_map);
+  RivaraRefinement::refine(refined_mesh, mesh, cell_marker, cell_map,
+                           facet_map);
 
   // Store child->parent cell and facet information as mesh data
   const std::size_t D = refined_mesh.topology().dim();
-  boost::shared_ptr<MeshFunction<std::size_t> > cf
-    =  refined_mesh.data().create_mesh_function("parent_cell", D);
+  std::vector<std::size_t>& cf
+    = refined_mesh.data().create_array("parent_cell", D);
+  cf.resize(refined_mesh.num_cells());
   for(std::size_t i = 0; i < refined_mesh.num_cells(); i++)
-    (*cf)[i] = cell_map[i];
+    cf[i] = cell_map[i];
 
   // Create mesh function in refined mesh encoding parent facet maps
-  boost::shared_ptr<MeshFunction<std::size_t> > ff
-    = refined_mesh.data().create_mesh_function("parent_facet", D - 1);
+  refined_mesh.init(D - 1);
+  std::vector<std::size_t>& ff
+    = refined_mesh.data().create_array("parent_facet", D - 1);
+  ff.resize(refined_mesh.num_facets());
 
   // Fill ff from facet_map
   mesh.init(D, D - 1);
@@ -76,19 +80,19 @@ void BisectionRefinement::refine_by_recursive_bisection(Mesh& refined_mesh,
     // Ignore if orphaned facet
     if (parent_local_facet_index == -1)
     {
-      (*ff)[*facet] = orphan;
+      ff[facet->index()] = orphan;
       continue;
     }
 
     // Get parent cell
-    Cell parent_cell(mesh, (*cf)[cell]);
+    Cell parent_cell(mesh, cf[cell.index()]);
 
     // Figure out global facet number of local facet number of parent
-    const std::size_t parent_facet_index = \
-      parent_cell.entities(D - 1)[parent_local_facet_index];
+    const std::size_t parent_facet_index
+      = parent_cell.entities(D - 1)[parent_local_facet_index];
 
     // Assign parent facet index to this facet
-    (*ff)[*facet] = parent_facet_index;
+    ff[facet->index()] = parent_facet_index;
   }
 }
 /*

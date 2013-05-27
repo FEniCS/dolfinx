@@ -17,7 +17,7 @@
 //
 // Modified by Johan Hoffman 2007
 // Modified by Magnus Vikstrøm 2007
-// Modified by Garth N. Wells 2007-2011
+// Modified by Garth N. Wells 2007-2013
 // Modified by Niclas Jansson 2008
 // Modified by Kristoffer Selim 2008
 // Modified by Andre Massing 2009-2010
@@ -33,32 +33,30 @@
 
 #include <string>
 #include <utility>
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/intersection/IntersectionOperator.h>
-#include <dolfin/log/log.h>
 #include <dolfin/ale/MeshDisplacement.h>
 #include "MeshData.h"
+#include "MeshDomains.h"
 #include "MeshGeometry.h"
 #include "MeshConnectivity.h"
 #include "MeshTopology.h"
-#include "MeshDomains.h"
-#include "SubDomain.h"
 
 namespace dolfin
 {
-  class CellType;
   class BoundaryMesh;
-  class GenericFunction;
+  class CellType;
+  class CSGGeometry;
   class Expression;
+  class GenericFunction;
   class LocalMeshData;
   class MeshEntity;
-  template <typename T> class MeshFunction;
+  class Point;
   class SubDomain;
-  class CSGGeometry;
+
 
   /// A _Mesh_ consists of a set of connected and numbered mesh entities.
   ///
@@ -517,7 +515,7 @@ namespace dolfin
     ///         "facet".
     ///
     /// *Returns*
-    ///     MeshFunction<std::size_t>
+    ///     std::vector<std::size_t>
     ///         The colors as a mesh function over the cells of the mesh.
     const std::vector<std::size_t>& color(std::string coloring_type) const;
 
@@ -532,10 +530,10 @@ namespace dolfin
     ///         specifying what relation makes two mesh entinties neighbors.
     ///
     /// *Returns*
-    ///     MeshFunction<std::size_t>
+    ///     std::vector<std::size_t>
     ///         The colors as a mesh function over entities of the mesh.
-    const std::vector<std::size_t>& color(std::vector<std::size_t>
-                                          coloring_type) const;
+    const std::vector<std::size_t>&
+      color(std::vector<std::size_t> coloring_type) const;
 
     /// Compute all cells which are intersected by the given point.
     ///
