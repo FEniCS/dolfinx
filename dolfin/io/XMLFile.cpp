@@ -261,7 +261,7 @@ void XMLFile::read_mesh_function(MeshFunction<T>& t,
     // Read a MeshValueCollection on processs 0, then communicate to
     // other procs
     std::size_t dim = 0;
-    MeshValueCollection<T> mvc;
+    MeshValueCollection<T> mvc(t.mesh());
     if (MPI::process_number() == 0)
     {
       pugi::xml_document xml_doc;
@@ -269,11 +269,17 @@ void XMLFile::read_mesh_function(MeshFunction<T>& t,
       pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
       XMLMeshFunction::read(mvc, type, dolfin_node);
       dim = mvc.dim();
+      MPI::broadcast(dim);
+    }
+    else
+    {
+      MPI::broadcast(dim);
+      mvc.init(dim);
     }
 
     // Broadcast and set dimension
-    MPI::broadcast(dim);
-    mvc.init(t.mesh(), dim);
+
+
 
     // Build local data
     LocalMeshValueCollection<T> local_data(mvc, dim);
