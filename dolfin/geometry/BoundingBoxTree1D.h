@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-05-21
+// Last changed: 2013-05-27
 
 #ifndef __BOUNDING_BOX_TREE_1D_H
 #define __BOUNDING_BOX_TREE_1D_H
@@ -50,6 +50,9 @@ namespace dolfin
         return bi[0] + bi[1] < bj[0] + bj[1];
       }
     };
+
+    // Return geometric dimension
+    unsigned int gdim() const { return 1; }
 
     // Check whether point is in bounding box
     bool point_in_bbox(const double* x, unsigned int node) const
@@ -96,6 +99,33 @@ namespace dolfin
         const double* b = leaf_bboxes.data() + 2*(*it);
         if (b[0] < bbox[0]) bbox[0] = b[0];
         if (b[1] > bbox[1]) bbox[1] = b[1];
+      }
+
+      // Compute longest axis
+      axis = 0;
+    }
+
+    // Compute bounding box of points
+    void compute_bbox_of_points(double* bbox,
+                                unsigned short int& axis,
+                                const std::vector<Point>& points,
+                                const std::vector<unsigned int>::iterator& begin,
+                                const std::vector<unsigned int>::iterator& end)
+    {
+      typedef std::vector<unsigned int>::const_iterator iterator;
+
+      // Get coordinates for first point
+      iterator it = begin;
+      const double* p = points[*it].coordinates();
+      bbox[0] = p[0];
+      bbox[1] = p[1];
+
+      // Compute min and max over remaining boxes
+      for (; it != end; ++it)
+      {
+        const double* p = points[*it].coordinates();
+        if (p[0] < bbox[0]) bbox[0] = p[0];
+        if (p[0] > bbox[1]) bbox[1] = p[0];
       }
 
       // Compute longest axis

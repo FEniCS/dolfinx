@@ -23,6 +23,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <vector>
 #include <limits>
 
 namespace dolfin
@@ -63,6 +64,15 @@ namespace dolfin
     ///         The entity dimension (topological dimension) for which
     ///         to compute the bounding box tree.
     void build(const Mesh& mesh, unsigned int tdim);
+
+    /// Build bounding box tree for point cloud.
+    ///
+    /// *Arguments*
+    ///     points (std::vector<_Point_>)
+    ///         The list of points.
+    ///     gdim (unsigned int)
+    ///         The geometric dimension.
+    void build(const std::vector<Point>& points, unsigned int gdim);
 
     /// Compute all collisions between bounding boxes and given _Point_.
     ///

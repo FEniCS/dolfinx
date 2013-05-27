@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-05-26
+// Last changed: 2013-05-27
 
 // Define a maximum dimension used for a local array in the recursive
 // build function. Speeds things up compared to allocating it in each
@@ -49,7 +49,8 @@ void GenericBoundingBoxTree::build(const Mesh& mesh, unsigned int tdim)
                  mesh.topology().dim());
   }
 
-  // Store topological dimension
+  // Store topological dimension (only used for checking that entity
+  // collisions can only be computed with cells)
   _tdim = tdim;
 
   // Initialize entities of given dimension if they don't exist
@@ -59,11 +60,11 @@ void GenericBoundingBoxTree::build(const Mesh& mesh, unsigned int tdim)
   _bboxes.clear();
 
   // Create bounding boxes for all entities (leaves)
-  const unsigned int gdim = mesh.geometry().dim();
+  const unsigned int _gdim = gdim();
   const unsigned int num_leaves = mesh.num_entities(tdim);
-  std::vector<double> leaf_bboxes(2*gdim*num_leaves);
+  std::vector<double> leaf_bboxes(2*_gdim*num_leaves);
   for (MeshEntityIterator it(mesh, tdim); !it.end(); ++it)
-    compute_bbox_of_entity(leaf_bboxes.data() + 2*gdim*it->index(), *it, gdim);
+    compute_bbox_of_entity(leaf_bboxes.data() + 2*_gdim*it->index(), *it, _gdim);
 
   // Create leaf partition (to be sorted)
   std::vector<unsigned int> leaf_partition(num_leaves);
@@ -71,51 +72,28 @@ void GenericBoundingBoxTree::build(const Mesh& mesh, unsigned int tdim)
     leaf_partition[i] = i;
 
   // Recursively build the bounding box tree from the leaves
-  build(leaf_bboxes, leaf_partition.begin(), leaf_partition.end(), gdim);
+  build(leaf_bboxes, leaf_partition.begin(), leaf_partition.end(), _gdim);
 
   info("Computed bounding box tree with %d nodes for %d entities.",
        _bboxes.size(), num_leaves);
 }
 //-----------------------------------------------------------------------------
-unsigned int
-GenericBoundingBoxTree::build(std::vector<double>& leaf_bboxes,
-                              const std::vector<unsigned int>::iterator& begin,
-                              const std::vector<unsigned int>::iterator& end,
-                              unsigned int gdim)
+void GenericBoundingBoxTree::build(const std::vector<Point>& points)
 {
-  dolfin_assert(begin < end);
+  // Clear existing data if any
+  _bboxes.clear();
 
-  // Create empty bounding box data
-  BBox bbox;
+  // Create leaf partition (to be sorted)
+  const unsigned int num_leaves = points.size();
+  std::vector<unsigned int> leaf_partition(num_leaves);
+  for (unsigned int i = 0; i < num_leaves; ++i)
+    leaf_partition[i] = i;
 
-  // Reached leaf
-  if (end - begin == 1)
-  {
-    // Get bounding box coordinates for leaf
-    const unsigned int entity_index = *begin;
-    const double* b = leaf_bboxes.data() + 2*gdim*entity_index;
+  // Recursively build the bounding box tree from the leaves
+  build(points, leaf_partition.begin(), leaf_partition.end(), gdim());
 
-    // Store bounding box data
-    bbox.child_0 = _bboxes.size(); // child_0 == node denotes a leaf
-    bbox.child_1 = entity_index;   // index of entity contained in leaf
-    return add_bbox(bbox, b, gdim);
-  }
-
-  // Compute bounding box of all bounding boxes
-  double b[MAX_DIM];
-  short unsigned int axis;
-  compute_bbox_of_bboxes(b, axis, leaf_bboxes, begin, end);
-
-  // Sort bounding boxes along longest axis
-  std::vector<unsigned int>::iterator middle = begin + (end - begin) / 2;
-  sort_bboxes(axis, leaf_bboxes, begin, middle, end);
-
-  // Split bounding boxes into two groups and call recursively
-  bbox.child_0 = build(leaf_bboxes, begin, middle, gdim);
-  bbox.child_1 = build(leaf_bboxes, middle, end, gdim);
-
-  // Store bounding box data. Note that root box will be added last.
-  return add_bbox(bbox, b, gdim);
+  info("Computed bounding box tree with %d nodes for %d points.",
+       _bboxes.size(), num_leaves);
 }
 //-----------------------------------------------------------------------------
 std::vector<unsigned int>
@@ -202,6 +180,87 @@ GenericBoundingBoxTree::compute_closest_entity(const Point& point,
 
   std::pair<unsigned int, double> ret(closest_entity, sqrt(R2));
   return ret;
+}
+//-----------------------------------------------------------------------------
+// Implementation of private (recursive) functions
+//-----------------------------------------------------------------------------
+unsigned int
+GenericBoundingBoxTree::build(const std::vector<double>& leaf_bboxes,
+                              const std::vector<unsigned int>::iterator& begin,
+                              const std::vector<unsigned int>::iterator& end,
+                              unsigned int gdim)
+{
+  dolfin_assert(begin < end);
+
+  // Create empty bounding box data
+  BBox bbox;
+
+  // Reached leaf
+  if (end - begin == 1)
+  {
+    // Get bounding box coordinates for leaf
+    const unsigned int entity_index = *begin;
+    const double* b = leaf_bboxes.data() + 2*gdim*entity_index;
+
+    // Store bounding box data
+    bbox.child_0 = _bboxes.size(); // child_0 == node denotes a leaf
+    bbox.child_1 = entity_index;   // index of entity contained in leaf
+    return add_bbox(bbox, b, gdim);
+  }
+
+  // Compute bounding box of all bounding boxes
+  double b[MAX_DIM];
+  short unsigned int axis;
+  compute_bbox_of_bboxes(b, axis, leaf_bboxes, begin, end);
+
+  // Sort bounding boxes along longest axis
+  std::vector<unsigned int>::iterator middle = begin + (end - begin) / 2;
+  sort_bboxes(axis, leaf_bboxes, begin, middle, end);
+
+  // Split bounding boxes into two groups and call recursively
+  bbox.child_0 = build(leaf_bboxes, begin, middle, gdim);
+  bbox.child_1 = build(leaf_bboxes, middle, end, gdim);
+
+  // Store bounding box data. Note that root box will be added last.
+  return add_bbox(bbox, b, gdim);
+}
+//-----------------------------------------------------------------------------
+unsigned int
+GenericBoundingBoxTree::build(const std::vector<Point>& points,
+                              const std::vector<unsigned int>::iterator& begin,
+                              const std::vector<unsigned int>::iterator& end,
+                              unsigned int gdim)
+{
+  dolfin_assert(begin < end);
+
+  // Create empty bounding box data
+  BBox bbox;
+
+  // Reached leaf
+  if (end - begin == 1)
+  {
+    // Store bounding box data
+    const unsigned int point_index = *begin;
+    bbox.child_0 = _bboxes.size(); // child_0 == node denotes a leaf
+    bbox.child_1 = point_index;    // index of entity contained in leaf
+    return add_point(bbox, points[point_index], gdim);
+  }
+
+  // Compute bounding box of all points
+  double b[MAX_DIM];
+  short unsigned int axis;
+  compute_bbox_of_points(b, axis, points, begin, end);
+
+  // Sort bounding boxes along longest axis
+  std::vector<unsigned int>::iterator middle = begin + (end - begin) / 2;
+  sort_points(axis, points, begin, middle, end);
+
+  // Split bounding boxes into two groups and call recursively
+  bbox.child_0 = build(points, begin, middle, gdim);
+  bbox.child_1 = build(points, middle, end, gdim);
+
+  // Store bounding box data. Note that root box will be added last.
+  return add_bbox(bbox, b, gdim);
 }
 //-----------------------------------------------------------------------------
 void
@@ -410,6 +469,26 @@ void GenericBoundingBoxTree::compute_bbox_of_entity(double* b,
       xmin[j] = std::min(xmin[j], x[j]);
       xmax[j] = std::max(xmax[j], x[j]);
     }
+  }
+}
+//-----------------------------------------------------------------------------
+void
+GenericBoundingBoxTree::sort_points(unsigned short int axis,
+                                    const std::vector<Point>& points,
+                                    const std::vector<unsigned int>::iterator& begin,
+                                    const std::vector<unsigned int>::iterator& middle,
+                                    const std::vector<unsigned int>::iterator& end)
+{
+  switch (axis)
+  {
+  case 0:
+    std::nth_element(begin, middle, end, less_x_point(points));
+    break;
+  case 1:
+    std::nth_element(begin, middle, end, less_y_point(points));
+    break;
+  default:
+    std::nth_element(begin, middle, end, less_z_point(points));
   }
 }
 //-----------------------------------------------------------------------------

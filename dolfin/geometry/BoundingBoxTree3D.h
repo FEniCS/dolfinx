@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-05-21
+// Last changed: 2013-05-27
 
 #ifndef __BOUNDING_BOX_TREE_3D_H
 #define __BOUNDING_BOX_TREE_3D_H
@@ -38,10 +38,10 @@ namespace dolfin
     // Comparison operators for sorting of bounding boxes. Boxes are
     // sorted by their midpoints along the longest axis.
 
-    struct less_x
+    struct less_x_bbox
     {
       const std::vector<double>& bboxes;
-      less_x(const std::vector<double>& bboxes): bboxes(bboxes) {}
+      less_x_bbox(const std::vector<double>& bboxes): bboxes(bboxes) {}
 
       inline bool operator()(unsigned int i, unsigned int j)
       {
@@ -51,10 +51,10 @@ namespace dolfin
       }
     };
 
-    struct less_y
+    struct less_y_bbox
     {
       const std::vector<double>& bboxes;
-      less_y(const std::vector<double>& bboxes): bboxes(bboxes) {}
+      less_y_bbox(const std::vector<double>& bboxes): bboxes(bboxes) {}
 
       inline bool operator()(unsigned int i, unsigned int j)
       {
@@ -64,10 +64,10 @@ namespace dolfin
       }
     };
 
-    struct less_z
+    struct less_z_bbox
     {
       const std::vector<double>& bboxes;
-      less_z(const std::vector<double>& bboxes): bboxes(bboxes) {}
+      less_z_bbox(const std::vector<double>& bboxes): bboxes(bboxes) {}
 
       inline bool operator()(unsigned int i, unsigned int j)
       {
@@ -76,6 +76,9 @@ namespace dolfin
         return bi[2] + bi[5] < bj[2] + bj[5];
       }
     };
+
+    // Return geometric dimension
+    unsigned int gdim() const { return 3; }
 
     // Check whether point is in bounding box
     bool point_in_bbox(const double* x, unsigned int node) const
@@ -138,10 +141,56 @@ namespace dolfin
         if (b[5] > bbox[5]) bbox[5] = b[5];
       }
 
+      // FIXME: Nasty bug here!
+
       // Compute longest axis
       const double x = b[3] - b[0];
       const double y = b[4] - b[1];
       const double z = b[5] - b[2];
+
+      if (x > y && x > z)
+        axis = 0;
+      else if (y > z)
+        axis = 1;
+      else
+        axis = 2;
+    }
+
+    // Compute bounding box of points
+    void compute_bbox_of_points(double* bbox,
+                                unsigned short int& axis,
+                                const std::vector<Point>& points,
+                                const std::vector<unsigned int>::iterator& begin,
+                                const std::vector<unsigned int>::iterator& end)
+    {
+      typedef std::vector<unsigned int>::const_iterator iterator;
+
+      // Get coordinates for first point
+      iterator it = begin;
+      const double* p = points[*it].coordinates();
+      bbox[0] = p[0];
+      bbox[1] = p[1];
+      bbox[2] = p[2];
+      bbox[3] = p[0];
+      bbox[4] = p[1];
+      bbox[5] = p[2];
+
+      // Compute min and max over remaining points
+      for (; it != end; ++it)
+      {
+        const double* p = points[*it].coordinates();
+        if (p[0] < bbox[0]) bbox[0] = p[0];
+        if (p[1] < bbox[1]) bbox[1] = p[1];
+        if (p[2] < bbox[2]) bbox[2] = p[2];
+        if (p[0] > bbox[3]) bbox[3] = p[0];
+        if (p[1] > bbox[4]) bbox[4] = p[1];
+        if (p[2] > bbox[5]) bbox[5] = p[2];
+      }
+
+      // Compute longest axis
+      const double x = bbox[3] - bbox[0];
+      const double y = bbox[4] - bbox[1];
+      const double z = bbox[5] - bbox[2];
 
       if (x > y && x > z)
         axis = 0;
@@ -161,13 +210,13 @@ namespace dolfin
       switch (axis)
       {
       case 0:
-        std::nth_element(begin, middle, end, less_x(leaf_bboxes));
+        std::nth_element(begin, middle, end, less_x_bbox(leaf_bboxes));
         break;
       case 1:
-        std::nth_element(begin, middle, end, less_y(leaf_bboxes));
+        std::nth_element(begin, middle, end, less_y_bbox(leaf_bboxes));
         break;
       default:
-        std::nth_element(begin, middle, end, less_z(leaf_bboxes));
+        std::nth_element(begin, middle, end, less_z_bbox(leaf_bboxes));
       }
     }
 

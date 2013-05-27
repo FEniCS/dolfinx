@@ -46,6 +46,9 @@ namespace dolfin
     /// Build bounding box tree for mesh entites of given dimension
     void build(const Mesh& mesh, unsigned int tdim);
 
+    /// Build bounding box tree for point cloud
+    void build(const std::vector<Point>& points);
+
     /// Compute all collisions between bounding boxes and given _Point_
     std::vector<unsigned int> compute_collisions(const Point& point) const;
 
@@ -84,8 +87,14 @@ namespace dolfin
     // List of bounding box coordinates
     std::vector<double> _bbox_coordinates;
 
-    // Build bounding box tree (recursive)
-    unsigned int build(std::vector<double>& leaf_bboxes,
+    // Build bounding box tree for entities (recursive)
+    unsigned int build(const std::vector<double>& leaf_bboxes,
+                       const std::vector<unsigned int>::iterator& begin,
+                       const std::vector<unsigned int>::iterator& end,
+                       unsigned int gdim);
+
+    // Build bounding box tree for points (recursive)
+    unsigned int build(const std::vector<Point>& points,
                        const std::vector<unsigned int>::iterator& begin,
                        const std::vector<unsigned int>::iterator& end,
                        unsigned int gdim);
@@ -122,6 +131,13 @@ namespace dolfin
                                 const MeshEntity& entity,
                                 unsigned int gdim) const;
 
+    // Sort points along given axis
+    void sort_points(unsigned short int axis,
+                     const std::vector<Point>& points,
+                     const std::vector<unsigned int>::iterator& begin,
+                     const std::vector<unsigned int>::iterator& middle,
+                     const std::vector<unsigned int>::iterator& end);
+
     // Add bounding box and coordinates
     inline unsigned int add_bbox(const BBox& bbox,
                                  const double* b,
@@ -137,6 +153,24 @@ namespace dolfin
       return _bboxes.size() - 1;
     }
 
+    // Add bounding box and point coordinates
+    inline unsigned int add_point(const BBox& bbox,
+                                  const Point& point,
+                                  unsigned int gdim)
+    {
+      // Add bounding box
+      _bboxes.push_back(bbox);
+
+      // Add point coordinates (twice)
+      const double* x = point.coordinates();
+      for (unsigned int i = 0; i < gdim; ++i)
+        _bbox_coordinates.push_back(x[i]);
+      for (unsigned int i = 0; i < gdim; ++i)
+        _bbox_coordinates.push_back(x[i]);
+
+      return _bboxes.size() - 1;
+    }
+
     // Check whether bounding box is a leaf node
     bool is_leaf(const BBox& bbox, unsigned int node) const
     {
@@ -144,7 +178,53 @@ namespace dolfin
       return bbox.child_0 == node;
     }
 
+    // Comparison operators for sorting of points. The corresponding
+    // comparison operators for bounding boxes are dimension-dependent
+    // and are therefore implemented in the subclasses.
+
+    struct less_x_point
+    {
+      const std::vector<Point>& points;
+      less_x_point(const std::vector<Point>& points): points(points) {}
+
+      inline bool operator()(unsigned int i, unsigned int j)
+      {
+        const double* pi = points[i].coordinates();
+        const double* pj = points[j].coordinates();
+        return pi[0] < pj[0];
+      }
+    };
+
+    struct less_y_point
+    {
+      const std::vector<Point>& points;
+      less_y_point(const std::vector<Point>& points): points(points) {}
+
+      inline bool operator()(unsigned int i, unsigned int j)
+      {
+        const double* pi = points[i].coordinates();
+        const double* pj = points[j].coordinates();
+        return pi[1] < pj[1];
+      }
+    };
+
+    struct less_z_point
+    {
+      const std::vector<Point>& points;
+      less_z_point(const std::vector<Point>& points): points(points) {}
+
+      inline bool operator()(unsigned int i, unsigned int j)
+      {
+        const double* pi = points[i].coordinates();
+        const double* pj = points[j].coordinates();
+        return pi[2] < pj[2];
+      }
+    };
+
     //--- Dimension-dependent functions to be implemented by subclass ---
+
+    // Return geometric dimension
+    virtual unsigned int gdim() const = 0;
 
     // Check whether point is in bounding box
     virtual bool
@@ -159,6 +239,14 @@ namespace dolfin
     compute_bbox_of_bboxes(double* bbox,
                            unsigned short int& axis,
                            const std::vector<double>& leaf_bboxes,
+                           const std::vector<unsigned int>::iterator& begin,
+                           const std::vector<unsigned int>::iterator& end) = 0;
+
+    // Compute bounding box of points
+    virtual void
+    compute_bbox_of_points(double* bbox,
+                           unsigned short int& axis,
+                           const std::vector<Point>& points,
                            const std::vector<unsigned int>::iterator& begin,
                            const std::vector<unsigned int>::iterator& end) = 0;
 

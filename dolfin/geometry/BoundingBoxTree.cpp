@@ -70,6 +70,32 @@ void BoundingBoxTree::build(const Mesh& mesh, unsigned int tdim)
   _tree->build(mesh, tdim);
 }
 //-----------------------------------------------------------------------------
+void BoundingBoxTree::build(const std::vector<Point>& points, unsigned int gdim)
+{
+    // Select implementation
+  switch (gdim)
+  {
+  case 1:
+    _tree.reset(new BoundingBoxTree1D());
+    break;
+  case 2:
+    _tree.reset(new BoundingBoxTree2D());
+    break;
+  case 3:
+    _tree.reset(new BoundingBoxTree3D());
+    break;
+  default:
+    dolfin_error("BoundingBoxTree.cpp",
+                 "build bounding box tree",
+                 "Not implemented for geometric dimension %d",
+                 gdim);
+  }
+
+  // Build tree
+  dolfin_assert(_tree);
+  _tree->build(points);
+}
+//-----------------------------------------------------------------------------
 std::vector<unsigned int>
 BoundingBoxTree::compute_collisions(const Point& point) const
 {
