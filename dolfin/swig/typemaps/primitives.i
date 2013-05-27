@@ -46,10 +46,10 @@
   }
 }
 
-// Make sure Python int from dolfin::entity_index can be constructed
-%fragment("SWIG_From_dolfin_entity_index", "header")
+// Make sure Python int from dolfin::mesh_index can be constructed
+%fragment("SWIG_From_dolfin_mesh_index", "header")
 {
-  SWIGINTERNINLINE PyObject * SWIG_From_dolfin_entity_index(dolfin::entity_index value)
+  SWIGINTERNINLINE PyObject * SWIG_From_dolfin_mesh_index(dolfin::mesh_index value)
   {
     return SWIG_From_unsigned_SS_long (static_cast< unsigned long >(value));
   }
@@ -202,4 +202,4 @@
 %fragment(SWIG_From_frag(int));
 %fragment(SWIG_From_frag(std::size_t));
 %fragment(SWIG_From_frag(dolfin::la_index));
-%fragment(SWIG_From_frag(dolfin::entity_index));
+%fragment(SWIG_From_frag(dolfin::mesh_index));

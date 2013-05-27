@@ -44,7 +44,7 @@ void BoundingBoxTree::build(const Mesh& mesh)
   build(mesh, mesh.topology().dim());
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::build(const Mesh& mesh, unsigned int tdim)
+void BoundingBoxTree::build(const Mesh& mesh, std::size_t tdim)
 {
   // Select implementation
   switch (mesh.geometry().dim())
@@ -70,7 +70,7 @@ void BoundingBoxTree::build(const Mesh& mesh, unsigned int tdim)
   _tree->build(mesh, tdim);
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::build(const std::vector<Point>& points, unsigned int gdim)
+void BoundingBoxTree::build(const std::vector<Point>& points, std::size_t gdim)
 {
   // Select implementation
   switch (gdim)
@@ -96,7 +96,7 @@ void BoundingBoxTree::build(const std::vector<Point>& points, unsigned int gdim)
   _tree->build(points);
 }
 //-----------------------------------------------------------------------------
-std::vector<unsigned int>
+std::vector<mesh_index>
 BoundingBoxTree::compute_collisions(const Point& point) const
 {
   // Check that tree has been built
@@ -107,7 +107,7 @@ BoundingBoxTree::compute_collisions(const Point& point) const
   return _tree->compute_collisions(point);
 }
 //-----------------------------------------------------------------------------
-std::vector<unsigned int>
+std::vector<mesh_index>
 BoundingBoxTree::compute_entity_collisions(const Point& point,
                                            const Mesh& mesh) const
 {
@@ -119,7 +119,7 @@ BoundingBoxTree::compute_entity_collisions(const Point& point,
   return _tree->compute_entity_collisions(point, mesh);
 }
 //-----------------------------------------------------------------------------
-unsigned int
+mesh_index
 BoundingBoxTree::compute_first_collision(const Point& point) const
 {
   // Check that tree has been built
@@ -130,7 +130,7 @@ BoundingBoxTree::compute_first_collision(const Point& point) const
   return _tree->compute_first_collision(point);
 }
 //-----------------------------------------------------------------------------
-unsigned int
+mesh_index
 BoundingBoxTree::compute_first_entity_collision(const Point& point,
                                                 const Mesh& mesh) const
 {
@@ -142,7 +142,7 @@ BoundingBoxTree::compute_first_entity_collision(const Point& point,
   return _tree->compute_first_entity_collision(point, mesh);
 }
 //-----------------------------------------------------------------------------
-std::pair<unsigned int, double>
+std::pair<mesh_index, double>
 BoundingBoxTree::compute_closest_entity(const Point& point,
                                         const Mesh& mesh) const
 {
@@ -154,7 +154,7 @@ BoundingBoxTree::compute_closest_entity(const Point& point,
   return _tree->compute_closest_entity(point, mesh);
 }
 //-----------------------------------------------------------------------------
-std::pair<unsigned int, double>
+std::pair<mesh_index, double>
 BoundingBoxTree::compute_closest_point(const Point& point) const
 {
   // Check that tree has been built

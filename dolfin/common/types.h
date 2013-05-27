@@ -39,10 +39,10 @@ namespace dolfin
   typedef int la_index;
   #endif
 
-  /// Index type for entity indices. For efficiency, unsigned int is
-  /// used rather than std::size_t for storing indices to local mesh
-  /// entities.
-  typedef unsigned int entity_index;
+  /// Index type for mesh entity indices. For efficiency, unsigned int
+  /// is used rather than std::size_t for storing indices to local
+  /// mesh entities.
+  typedef unsigned int mesh_index;
 
 }
 
