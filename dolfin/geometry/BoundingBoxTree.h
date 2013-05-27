@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-05-22
+// Last changed: 2013-05-27
 
 #ifndef __BOUNDING_BOX_TREE_H
 #define __BOUNDING_BOX_TREE_H
@@ -41,47 +41,28 @@ namespace dolfin
   {
   public:
 
-    /// Create empty bounding box tree for cells of mesh.
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh for which to compute the bounding box tree.
-    BoundingBoxTree(const Mesh& mesh);
-
-    /// Create empty bounding box tree for cells of mesh (shared_ptr version).
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh for which to compute the bounding box tree.
-    BoundingBoxTree(boost::shared_ptr<const Mesh> mesh);
-
-    /// Create empty bounding box tree for mesh entities of given
-    /// dimension.
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh for which to compute the bounding box tree.
-    ///     dimension (unsigned int)
-    ///         The entity dimension (topological dimension) for which
-    ///         to compute the bounding box tree.
-    BoundingBoxTree(const Mesh& mesh, unsigned int dim);
-
-    /// Create empty bounding box tree for mesh entities of given
-    /// dimension (shared_ptr version).
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         The mesh for which to compute the bounding box tree.
-    ///     dimension (unsigned int)
-    ///         The entity dimension (topological dimension) for which
-    ///         to compute the bounding box tree.
-    BoundingBoxTree(boost::shared_ptr<const Mesh> mesh, unsigned int dim);
+    /// Create empty bounding box tree
+    BoundingBoxTree();
 
     /// Destructor
     ~BoundingBoxTree();
 
-    /// Build bounding box tree
-    void build();
+    /// Build bounding box tree for cells of mesh.
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh for which to compute the bounding box tree.
+    void build(const Mesh& mesh);
+
+    /// Build bounding box tree for mesh entities of given dimension.
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh for which to compute the bounding box tree.
+    ///     dimension (unsigned int)
+    ///         The entity dimension (topological dimension) for which
+    ///         to compute the bounding box tree.
+    void build(const Mesh& mesh, unsigned int tdim);
 
     /// Compute all collisions between bounding boxes and given _Point_.
     ///
@@ -107,8 +88,10 @@ namespace dolfin
     /// *Arguments*
     ///     point (_Point_)
     ///         The point.
+    ///     mesh (_Mesh_)
+    ///         The mesh.
     std::vector<unsigned int>
-    compute_entity_collisions(const Point& point) const;
+    compute_entity_collisions(const Point& point, const Mesh& mesh) const;
 
     /// Compute first collision between bounding boxes and given _Point_.
     ///
@@ -137,8 +120,10 @@ namespace dolfin
     /// *Arguments*
     ///     point (_Point_)
     ///         The point.
+    ///     mesh (_Mesh_)
+    ///         The mesh.
     unsigned int
-    compute_first_entity_collision(const Point& point) const;
+    compute_first_entity_collision(const Point& point, const Mesh& mesh) const;
 
     /// Compute closest entity to given _Point_.
     ///
@@ -154,8 +139,10 @@ namespace dolfin
     /// *Arguments*
     ///     point (_Point_)
     ///         The point.
+    ///     mesh (_Mesh_)
+    ///         The mesh.
     std::pair<unsigned int, double>
-    compute_closest_entity(const Point& point) const;
+    compute_closest_entity(const Point& point, const Mesh& mesh) const;
 
     // FIXME: Check use of unsigned int vs size_t
 
@@ -163,15 +150,6 @@ namespace dolfin
 
     // Check that tree has been built
     void check_built() const;
-
-    // FIXME: Remove
-    friend class MeshPointIntersection;
-
-    // The mesh
-    boost::shared_ptr<const Mesh> _mesh;
-
-    // Topological dimension of leaf entities
-    unsigned int _tdim;
 
     // Dimension-dependent implementation
     boost::scoped_ptr<GenericBoundingBoxTree> _tree;

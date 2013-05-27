@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-18
-// Last changed: 2013-05-10
+// Last changed: 2013-05-27
 
 #ifndef __MESH_POINT_INTERSECTION_H
 #define __MESH_POINT_INTERSECTION_H
@@ -41,15 +41,11 @@ namespace dolfin
     MeshPointIntersection(const Mesh& mesh,
                           const Point& point);
 
-    /// Compute intersection between mesh and point (shared_ptr version)
-    MeshPointIntersection(boost::shared_ptr<const Mesh> mesh,
-                          const Point& point);
-
     /// Destructor
     ~MeshPointIntersection();
 
     /// Update intersection for new point
-    void update(const Point& point);
+    void update(const Point& point, const Mesh& mesh);
 
     /// Return the list of (local) indices for intersected cells
     const std::vector<unsigned int>& intersected_cells() const
@@ -66,7 +62,7 @@ namespace dolfin
     std::vector<unsigned int> _intersected_cells;
 
     // Compute intersection
-    void compute_intersection(const Point& point);
+    void compute_intersection(const Point& point, const Mesh& mesh);
 
   };
 

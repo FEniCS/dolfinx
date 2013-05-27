@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-15
-# Last changed: 2013-05-22
+# Last changed: 2013-05-27
 
 import unittest
 import numpy
@@ -38,8 +38,8 @@ class BoundingBoxTreeTest(unittest.TestCase):
         p = Point(0.3)
         mesh = UnitIntervalMesh(16)
         for dim in range(1, 2):
-            tree = BoundingBoxTree(mesh, dim)
-            tree.build()
+            tree = BoundingBoxTree()
+            tree.build(mesh, dim)
             entities = tree.compute_collisions(p)
             self.assertEqual(sorted(entities), reference[dim])
 
@@ -51,8 +51,8 @@ class BoundingBoxTreeTest(unittest.TestCase):
         p = Point(0.3, 0.3)
         mesh = UnitSquareMesh(16, 16)
         for dim in range(1, 3):
-            tree = BoundingBoxTree(mesh, dim)
-            tree.build()
+            tree = BoundingBoxTree()
+            tree.build(mesh, dim)
             entities = tree.compute_collisions(p)
             self.assertEqual(sorted(entities), reference[dim])
 
@@ -65,8 +65,8 @@ class BoundingBoxTreeTest(unittest.TestCase):
         p = Point(0.3, 0.3, 0.3)
         mesh = UnitCubeMesh(8, 8, 8)
         for dim in range(1, 4):
-            tree = BoundingBoxTree(mesh, dim)
-            tree.build()
+            tree = BoundingBoxTree()
+            tree.build(mesh, dim)
             entities = tree.compute_collisions(p)
             self.assertEqual(sorted(entities), reference[dim])
 
@@ -78,9 +78,9 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
         p = Point(0.3)
         mesh = UnitIntervalMesh(16)
-        tree = BoundingBoxTree(mesh, 1)
-        tree.build()
-        entities = tree.compute_entity_collisions(p)
+        tree = BoundingBoxTree()
+        tree.build(mesh)
+        entities = tree.compute_entity_collisions(p, mesh)
         self.assertEqual(sorted(entities), reference)
 
     def test_compute_entity_collisions_2d(self):
@@ -89,9 +89,9 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
         p = Point(0.3, 0.3)
         mesh = UnitSquareMesh(16, 16)
-        tree = BoundingBoxTree(mesh, 2)
-        tree.build()
-        entities = tree.compute_entity_collisions(p)
+        tree = BoundingBoxTree()
+        tree.build(mesh)
+        entities = tree.compute_entity_collisions(p, mesh)
         self.assertEqual(sorted(entities), reference)
 
     def test_compute_entity_collisions_3d(self):
@@ -101,9 +101,9 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
         p = Point(0.3, 0.3, 0.3)
         mesh = UnitCubeMesh(8, 8, 8)
-        tree = BoundingBoxTree(mesh, 3)
-        tree.build()
-        entities = tree.compute_collisions(p)
+        tree = BoundingBoxTree()
+        tree.build(mesh)
+        entities = tree.compute_entity_collisions(p, mesh)
         self.assertEqual(sorted(entities), reference)
 
     #--- compute_first_collision ---
@@ -115,8 +115,8 @@ class BoundingBoxTreeTest(unittest.TestCase):
         p = Point(0.3)
         mesh = UnitIntervalMesh(16)
         for dim in range(1, 2):
-            tree = BoundingBoxTree(mesh, dim)
-            tree.build()
+            tree = BoundingBoxTree()
+            tree.build(mesh, dim)
             first = tree.compute_first_collision(p)
             self.assertEqual(first, reference[dim])
 
@@ -128,8 +128,8 @@ class BoundingBoxTreeTest(unittest.TestCase):
         p = Point(0.3, 0.3)
         mesh = UnitSquareMesh(16, 16)
         for dim in range(1, 3):
-            tree = BoundingBoxTree(mesh, dim)
-            tree.build()
+            tree = BoundingBoxTree()
+            tree.build(mesh, dim)
             first = tree.compute_first_collision(p)
             self.assertEqual(first, reference[dim])
 
@@ -143,8 +143,8 @@ class BoundingBoxTreeTest(unittest.TestCase):
         p = Point(0.3, 0.3, 0.3)
         mesh = UnitCubeMesh(8, 8, 8)
         for dim in range(1, 4):
-            tree = BoundingBoxTree(mesh, dim)
-            tree.build()
+            tree = BoundingBoxTree()
+            tree.build(mesh, dim)
             first = tree.compute_first_collision(p)
             self.assertEqual(first, reference[dim])
 
@@ -156,9 +156,9 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
         p = Point(0.3)
         mesh = UnitIntervalMesh(16)
-        tree = BoundingBoxTree(mesh, 1)
-        tree.build()
-        first = tree.compute_first_entity_collision(p)
+        tree = BoundingBoxTree()
+        tree.build(mesh)
+        first = tree.compute_first_entity_collision(p, mesh)
         self.assertEqual(first, reference)
 
     def test_compute_first_entity_collision_2d(self):
@@ -167,9 +167,9 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
         p = Point(0.3, 0.3)
         mesh = UnitSquareMesh(16, 16)
-        tree = BoundingBoxTree(mesh, 2)
-        tree.build()
-        first = tree.compute_first_collision(p)
+        tree = BoundingBoxTree()
+        tree.build(mesh)
+        first = tree.compute_first_entity_collision(p, mesh)
         self.assertEqual(first, reference)
 
     def test_compute_first_entity_collision_3d(self):
@@ -179,9 +179,9 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
         p = Point(0.3, 0.3, 0.3)
         mesh = UnitCubeMesh(8, 8, 8)
-        tree = BoundingBoxTree(mesh, 3)
-        tree.build()
-        first = tree.compute_first_collision(p)
+        tree = BoundingBoxTree()
+        tree.build(mesh)
+        first = tree.compute_first_entity_collision(p, mesh)
         self.assertEqual(first, reference)
 
     #--- compute_closest_entity ---
@@ -192,9 +192,9 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
         p = Point(-1.0)
         mesh = UnitIntervalMesh(16)
-        tree = BoundingBoxTree(mesh, 1)
-        tree.build()
-        entity, distance = tree.compute_closest_entity(p)
+        tree = BoundingBoxTree()
+        tree.build(mesh)
+        entity, distance = tree.compute_closest_entity(p, mesh)
 
         self.assertEqual(entity, reference[0])
         self.assertAlmostEqual(distance, reference[1])
@@ -205,9 +205,9 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
         p = Point(-1.0, -1.0)
         mesh = UnitSquareMesh(16, 16)
-        tree = BoundingBoxTree(mesh, 2)
-        tree.build()
-        entity, distance = tree.compute_closest_entity(p)
+        tree = BoundingBoxTree()
+        tree.build(mesh)
+        entity, distance = tree.compute_closest_entity(p, mesh)
 
         self.assertEqual(entity, reference[0])
         self.assertAlmostEqual(distance, reference[1])
@@ -220,9 +220,9 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
         p = Point(-1.0, -1.0, -1.0)
         mesh = UnitSquareMesh(16, 16)
-        tree = BoundingBoxTree(mesh, 2)
-        tree.build()
-        entity, distance = tree.compute_closest_entity(p)
+        tree = BoundingBoxTree()
+        tree.build(mesh)
+        entity, distance = tree.compute_closest_entity(p, mesh)
 
         self.assertEqual(entity, reference[0])
         self.assertAlmostEqual(distance, reference[1])
@@ -233,9 +233,9 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
         p = Point(-1.0, -1.0, -1.0)
         mesh = UnitCubeMesh(8, 8, 8)
-        tree = BoundingBoxTree(mesh, 3)
-        tree.build()
-        entity, distance = tree.compute_closest_entity(p)
+        tree = BoundingBoxTree()
+        tree.build(mesh)
+        entity, distance = tree.compute_closest_entity(p, mesh)
 
         self.assertEqual(entity, reference[0])
         self.assertAlmostEqual(distance, reference[1])

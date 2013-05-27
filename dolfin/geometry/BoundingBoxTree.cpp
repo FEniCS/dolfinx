@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-05-23
+// Last changed: 2013-05-27
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -29,32 +29,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(const Mesh& mesh)
-  : _mesh(reference_to_no_delete_pointer(mesh)),
-    _tdim(mesh.topology().dim())
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(boost::shared_ptr<const Mesh> mesh)
-  : _mesh(mesh),
-    _tdim(mesh->topology().dim())
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(const Mesh& mesh,
-                                 unsigned int dim)
-  : _mesh(reference_to_no_delete_pointer(mesh)),
-    _tdim(dim)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(boost::shared_ptr<const Mesh> mesh,
-                                 unsigned int dim)
-  : _mesh(mesh),
-    _tdim(dim)
+BoundingBoxTree::BoundingBoxTree()
 {
   // Do nothing
 }
@@ -64,12 +39,15 @@ BoundingBoxTree::~BoundingBoxTree()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::build()
+void BoundingBoxTree::build(const Mesh& mesh)
 {
-  dolfin_assert(_mesh);
-
+  build(mesh, mesh.topology().dim());
+}
+//-----------------------------------------------------------------------------
+void BoundingBoxTree::build(const Mesh& mesh, unsigned int tdim)
+{
   // Select implementation
-  switch (_mesh->geometry().dim())
+  switch (mesh.geometry().dim())
   {
   case 1:
     _tree.reset(new BoundingBoxTree1D());
@@ -84,12 +62,12 @@ void BoundingBoxTree::build()
     dolfin_error("BoundingBoxTree.cpp",
                  "build bounding box tree",
                  "Not implemented for geometric dimension %d",
-                 _mesh->geometry().dim());
+                 mesh.geometry().dim());
   }
 
   // Build tree
   dolfin_assert(_tree);
-  _tree->build(*_mesh, _tdim);
+  _tree->build(mesh, tdim);
 }
 //-----------------------------------------------------------------------------
 std::vector<unsigned int>
@@ -104,15 +82,15 @@ BoundingBoxTree::compute_collisions(const Point& point) const
 }
 //-----------------------------------------------------------------------------
 std::vector<unsigned int>
-BoundingBoxTree::compute_entity_collisions(const Point& point) const
+BoundingBoxTree::compute_entity_collisions(const Point& point,
+                                           const Mesh& mesh) const
 {
   // Check that tree has been built
   check_built();
 
   // Delegate call to implementation
   dolfin_assert(_tree);
-  dolfin_assert(_mesh);
-  return _tree->compute_entity_collisions(point, *_mesh);
+  return _tree->compute_entity_collisions(point, mesh);
 }
 //-----------------------------------------------------------------------------
 unsigned int
@@ -127,27 +105,27 @@ BoundingBoxTree::compute_first_collision(const Point& point) const
 }
 //-----------------------------------------------------------------------------
 unsigned int
-BoundingBoxTree::compute_first_entity_collision(const Point& point) const
+BoundingBoxTree::compute_first_entity_collision(const Point& point,
+                                                const Mesh& mesh) const
 {
   // Check that tree has been built
   check_built();
 
   // Delegate call to implementation
   dolfin_assert(_tree);
-  dolfin_assert(_mesh);
-  return _tree->compute_first_entity_collision(point, *_mesh);
+  return _tree->compute_first_entity_collision(point, mesh);
 }
 //-----------------------------------------------------------------------------
 std::pair<unsigned int, double>
-BoundingBoxTree::compute_closest_entity(const Point& point) const
+BoundingBoxTree::compute_closest_entity(const Point& point,
+                                        const Mesh& mesh) const
 {
   // Check that tree has been built
   check_built();
 
   // Delegate call to implementation
   dolfin_assert(_tree);
-  dolfin_assert(_mesh);
-  return _tree->compute_closest_entity(point, *_mesh);
+  return _tree->compute_closest_entity(point, mesh);
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::check_built() const

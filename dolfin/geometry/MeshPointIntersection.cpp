@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-18
-// Last changed: 2013-05-17
+// Last changed: 2013-05-27
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/mesh/Cell.h>
@@ -28,24 +28,12 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MeshPointIntersection::MeshPointIntersection(const Mesh& mesh,
                                              const Point& point)
-  : _tree(mesh)
 {
   // Build bounding box tree
-  _tree.build();
+  _tree.build(mesh);
 
   // Compute intersection
-  compute_intersection(point);
-}
-//-----------------------------------------------------------------------------
-MeshPointIntersection::MeshPointIntersection(boost::shared_ptr<const Mesh> mesh,
-                                             const Point& point)
-  : _tree(mesh)
-{
-  // Build bounding box tree
-  _tree.build();
-
-  // Compute intersection
-  compute_intersection(point);
+  compute_intersection(point, mesh);
 }
 //-----------------------------------------------------------------------------
 MeshPointIntersection::~MeshPointIntersection()
@@ -53,13 +41,14 @@ MeshPointIntersection::~MeshPointIntersection()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MeshPointIntersection::update(const Point& point)
+void MeshPointIntersection::update(const Point& point, const Mesh& mesh)
 {
   _intersected_cells.clear();
-  compute_intersection(point);
+  compute_intersection(point, mesh);
 }
 //-----------------------------------------------------------------------------
-void MeshPointIntersection::compute_intersection(const Point& point)
+void MeshPointIntersection::compute_intersection(const Point& point,
+                                                 const Mesh& mesh)
 {
   dolfin_assert(_intersected_cells.size() == 0);
 
@@ -72,7 +61,7 @@ void MeshPointIntersection::compute_intersection(const Point& point)
   for (unsigned int i = 0; i < cell_candidates.size(); ++i)
   {
     const unsigned int cell_index = cell_candidates[i];
-    Cell cell(*_tree._mesh, cell_index);
+    Cell cell(mesh, cell_index);
     if (cell.contains(point))
       _intersected_cells.push_back(cell_index);
   }
