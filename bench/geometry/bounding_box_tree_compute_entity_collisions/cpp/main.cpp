@@ -18,7 +18,7 @@
 // This benchmark measures the performance of compute_entity_collisions.
 //
 // First added:  2013-05-23
-// Last changed: 2013-05-23
+// Last changed: 2013-05-27
 
 #include <vector>
 #include <dolfin.h>
@@ -60,10 +60,10 @@ double bench_dolfin(const Mesh& mesh)
   cout << "Running DOLFIN bench" << endl;
 
   // First call
-  BoundingBoxTree tree(mesh);
-  tree.build();
+  BoundingBoxTree tree;
+  tree.build(mesh);
   Point point(0.0, 0.0, 0.0);
-  tree.compute_entity_collisions(point);
+  tree.compute_entity_collisions(point, mesh);
 
   // Call repeatedly
   tic();
@@ -72,7 +72,7 @@ double bench_dolfin(const Mesh& mesh)
     point.coordinates()[0] += 1.0 / static_cast<double>(NUM_REPS);
     point.coordinates()[1] += 1.0 / static_cast<double>(NUM_REPS);
     point.coordinates()[2] += 1.0 / static_cast<double>(NUM_REPS);
-    std::vector<unsigned int> entities = tree.compute_entity_collisions(point);
+    std::vector<unsigned int> entities = tree.compute_entity_collisions(point, mesh);
 
     //for (unsigned int j = 0; j < entities.size(); j++)
     //  std::cout << " " << entities[j];
