@@ -45,12 +45,12 @@ class XMLMeshValueCollection(unittest.TestCase):
             output_values.rename(name, "a MeshValueCollection")
 
             # Write to file
-            output_file = File("XMLMeshValueCollection_test_io.xml")
+            output_file = File("xml_mesh_value_collection_test_io.xml")
             output_file << output_values
 
             # Read from file
-            input_file = File("XMLMeshValueCollection_test_io.xml")
-            input_values = MeshValueCollection("size_t")
+            input_file = File("xml_mesh_value_collection_test_io.xml")
+            input_values = MeshValueCollection("size_t", mesh)
             input_file >> input_values
 
             # Get some data and check that it matches
@@ -65,7 +65,7 @@ class XMLMeshValueCollection(unittest.TestCase):
         mesh = UnitCubeMesh(5, 5, 5)
 
         # Read from file
-        input_values = MeshValueCollection("size_t", mesh, "xml_value_collection_ref.xml", 2)
+        input_values = MeshValueCollection("size_t", mesh, "xml_value_collection_ref.xml")
 
         # Check that size is correct
         self.assertEqual(MPI.sum(input_values.size()), 6)

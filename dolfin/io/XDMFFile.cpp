@@ -20,7 +20,6 @@
 // First added:  2012-05-28
 // Last changed: 2013-05-14
 
-
 #ifdef HAS_HDF5
 
 #include <ostream>
@@ -39,6 +38,7 @@
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>

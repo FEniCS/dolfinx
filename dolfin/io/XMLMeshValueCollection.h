@@ -68,7 +68,7 @@ namespace dolfin
     mesh_value_collection.rename(name, "a mesh value collection");
 
     // Set dimension
-    mesh_value_collection.set_dim(dim);
+    mesh_value_collection.init(dim);
 
     // Check that types match
     if (type != type_file)

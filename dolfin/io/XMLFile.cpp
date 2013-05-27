@@ -313,26 +313,33 @@ void XMLFile::read_mesh_value_collection(MeshValueCollection<T>& t,
   else
   {
     // Read file on process 0
-    MeshValueCollection<T> tmp_collection;
+    MeshValueCollection<T> tmp_collection(t.mesh());
     if (MPI::process_number() == 0)
-      {
-        pugi::xml_document xml_doc;
-        load_xml_doc(xml_doc);
-        const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
-        XMLMeshValueCollection::read(tmp_collection, type, dolfin_node);
-      }
+    {
+      pugi::xml_document xml_doc;
+      load_xml_doc(xml_doc);
+      const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
+      XMLMeshValueCollection::read(tmp_collection, type, dolfin_node);
+      std::size_t dim = (tmp_collection.dim());
+      MPI::broadcast(dim);
+    }
+    else
+    {
+      std::size_t dim = 0;
+      MPI::broadcast(dim);
+      tmp_collection.init(dim);
+    }
 
-    // Create local data and build value collection
+    // Create local data and build value collectio
     LocalMeshValueCollection<T> local_data(tmp_collection,
                                            tmp_collection.dim());
 
-    dolfin_assert(t.mesh());
     // Build mesh value collection
+    dolfin_assert(t.mesh());
+    t.init(tmp_collection.dim());
     MeshPartitioning::build_distributed_value_collection(t, local_data,
                                                          *t.mesh());
   }
-
-
 }
 //-----------------------------------------------------------------------------
 template<typename T>

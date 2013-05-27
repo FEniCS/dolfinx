@@ -55,6 +55,13 @@ namespace dolfin
     ///
     MeshValueCollection();
 
+    /// Create an empty mesh value collection on a given mesh
+    ///
+    /// *Arguments*
+    ///     mesh (_Mesh_)
+    ///         The mesh.
+    explicit MeshValueCollection(boost::shared_ptr<const Mesh> mesh);
+
     /// Create a mesh value collection from a MeshFunction
     ///
     /// *Arguments*
@@ -92,8 +99,7 @@ namespace dolfin
     ///         The XML file name.
     ///     dim (std::size_t)
     ///         The mesh entity dimension for the mesh value collection.
-    MeshValueCollection(const Mesh& mesh, const std::string filename,
-                        std::size_t dim);
+    MeshValueCollection(const Mesh& mesh, const std::string filename);
 
     /// Destructor
     ~MeshValueCollection() {}
@@ -141,7 +147,7 @@ namespace dolfin
     /// *Arguments*
     ///     dim (std::size_t)
     ///         The mesh entity dimension for the mesh value collection.
-    void set_dim(std::size_t dim);
+    void init(std::size_t dim);
 
     /// Return topological dimension
     ///
@@ -271,7 +277,15 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  MeshValueCollection<T>::MeshValueCollection(const Mesh& mesh, std::size_t dim)
+    MeshValueCollection<T>::MeshValueCollection(boost::shared_ptr<const Mesh>
+                                                mesh) : _mesh(mesh), _dim(-1)
+  {
+    // Do nothing
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
+    MeshValueCollection<T>::MeshValueCollection(const Mesh& mesh,
+                                                std::size_t dim)
     : Variable("m", "unnamed MeshValueCollection"),
     _mesh(reference_to_no_delete_pointer(mesh)), _dim(dim)
   {
@@ -279,14 +293,16 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  MeshValueCollection<T>::MeshValueCollection(boost::shared_ptr<const Mesh> mesh, std::size_t dim)
+    MeshValueCollection<T>::MeshValueCollection(boost::shared_ptr<const Mesh>
+                                                mesh, std::size_t dim)
     : Variable("m", "unnamed MeshValueCollection"), _mesh(mesh), _dim(dim)
   {
     // Do nothing
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  MeshValueCollection<T>::MeshValueCollection(const MeshFunction<T>& mesh_function)
+    MeshValueCollection<T>::MeshValueCollection(const MeshFunction<T>&
+                                                mesh_function)
     : Variable("m", "unnamed MeshValueCollection"), _mesh(mesh_function.mesh()),
     _dim(mesh_function.dim())
   {
@@ -332,17 +348,18 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  MeshValueCollection<T>::MeshValueCollection(const Mesh& mesh,
-    const std::string filename, std::size_t dim)
+    MeshValueCollection<T>::MeshValueCollection(const Mesh& mesh,
+                                                const std::string filename)
     : Variable("m", "unnamed MeshValueCollection"),
-    _mesh(reference_to_no_delete_pointer(mesh)), _dim(dim)
+    _mesh(reference_to_no_delete_pointer(mesh)), _dim(-1)
   {
     File file(filename);
     file >> *this;
+    dolfin_assert(_dim > -1);
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  MeshValueCollection<T>&
+    MeshValueCollection<T>&
     MeshValueCollection<T>::operator=(const MeshFunction<T>& mesh_function)
   {
     _mesh = mesh_function.mesh();
@@ -395,7 +412,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  MeshValueCollection<T>&
+    MeshValueCollection<T>&
     MeshValueCollection<T>::operator=(const MeshValueCollection<T>&
                                       mesh_value_collection)
   {
@@ -426,15 +443,15 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-    void MeshValueCollection<T>::set_dim(std::size_t dim)
+    void MeshValueCollection<T>::init(std::size_t dim)
   {
     dolfin_assert(_mesh);
-    dolfin_assert(dim < 0 || (int) dim == _dim);
+    dolfin_assert(_dim < 0);
     _dim = dim;
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  std::size_t MeshValueCollection<T>::dim() const
+    std::size_t MeshValueCollection<T>::dim() const
   {
     dolfin_assert(_dim >= 0);
     return _dim;
@@ -465,6 +482,12 @@ namespace dolfin
                                          const T& value)
   {
     dolfin_assert(_dim >= 0);
+    if (!_mesh)
+    {
+      dolfin_error("MeshValueCollection.h",
+                   "set value",
+                   "A mesh has not been associcated with this MeshValueCollection");
+    }
 
     const std::pair<std::size_t, std::size_t> pos(cell_index, local_entity);
     std::pair<typename std::map<std::pair<std::size_t,

@@ -31,8 +31,8 @@
 
 #include "pugixml.hpp"
 
-#include "dolfin/common/Array.h"
 #include "dolfin/common/MPI.h"
+#include "dolfin/common/NoDeleter.h"
 #include "dolfin/la/GenericVector.h"
 #include "dolfin/mesh/Cell.h"
 #include "dolfin/mesh/CellType.h"
@@ -285,7 +285,8 @@ void XMLMesh::read_domains(MeshDomains& domains, const Mesh& mesh,
     mesh.init(dim);
 
     // Read data into a mesh value collection
-    MeshValueCollection<std::size_t> mvc(mesh, dim);
+    boost::shared_ptr<const Mesh> _mesh = reference_to_no_delete_pointer(mesh);
+    MeshValueCollection<std::size_t> mvc(_mesh);
     XMLMeshValueCollection::read(mvc, type, *it);
 
     // Get mesh value collection data
