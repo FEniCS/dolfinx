@@ -279,8 +279,6 @@ void XMLFile::read_mesh_function(MeshFunction<T>& t,
 
     // Broadcast and set dimension
 
-
-
     // Build local data
     LocalMeshValueCollection<T> local_data(mvc, dim);
 
