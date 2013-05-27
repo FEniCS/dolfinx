@@ -273,7 +273,7 @@ void XMLFile::read_mesh_function(MeshFunction<T>& t,
 
     // Broadcast and set dimension
     MPI::broadcast(dim);
-    mvc.set_dim(dim);
+    mvc.init(t.mesh(), dim);
 
     // Build local data
     LocalMeshValueCollection<T> local_data(mvc, dim);

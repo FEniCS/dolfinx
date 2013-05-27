@@ -108,18 +108,21 @@ if has_hdf5():
 
         def test_save_and_read_mesh_value_collection(self):
             mesh = UnitCubeMesh(5, 5, 5)
-            HDF = HDF5File("mesh_value_collection.h5", "w")
-            for dim in range(mesh.topology().dim()):
-                MVC = MeshValueCollection("size_t", mesh, dim)
-                for i, cell in enumerate(entities(mesh, dim)):
-                    MVC.set_value(cell.index(), i)
-                HDF.write(MVC, "/mesh_value_collection_%d"%dim)
-            del HDF
 
-            HDF = HDF5File("mesh_value_collection.h5", "r")
+            # Writ to file
+            hdf5_file = HDF5File("mesh_value_collection.h5", "w")
             for dim in range(mesh.topology().dim()):
-                MVC = MeshValueCollection("size_t", mesh, dim)
-                HDF.read(MVC, "/mesh_value_collection_%d"%dim)
+                mvc = MeshValueCollection("size_t", mesh, dim)
+                for i, cell in enumerate(entities(mesh, dim)):
+                    mvc.set_value(cell.index(), i)
+                hdf5_file.write(mvc, "/mesh_value_collection_%d"%dim)
+            del hdf5_file
+
+            # Read from file
+            hdf5_file = HDF5File("mesh_value_collection.h5", "r")
+            for dim in range(mesh.topology().dim()):
+                mvc = MeshValueCollection("size_t", mesh, dim)
+                hdf5_file.read(mvc, "/mesh_value_collection_%d"%dim)
 
 
     class HDF5_Mesh(unittest.TestCase):
@@ -131,6 +134,7 @@ if has_hdf5():
             mesh_file.write(mesh0, "/my_mesh")
             del mesh_file
 
+            # Read from file
             mesh1 = Mesh()
             mesh_file = HDF5File("mesh.h5", "r")
             mesh_file.read(mesh1, "/my_mesh")
@@ -146,6 +150,7 @@ if has_hdf5():
             mesh_file.write(mesh0, "/my_mesh")
             del mesh_file
 
+            # Read from file
             mesh1 = Mesh()
             mesh_file = HDF5File("mesh.h5", "r")
             mesh_file.read(mesh1, "/my_mesh")

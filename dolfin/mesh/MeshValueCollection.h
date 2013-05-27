@@ -115,7 +115,28 @@ namespace dolfin
     MeshValueCollection<T>&
       operator=(const MeshValueCollection<T>& mesh_value_collection);
 
-    /// Set the topological dimension
+    /// Initialise MeshValueCollection wirth mesh and dimension
+    ///
+    /// *Arguments*
+    ///     mesh (_mesh))
+    ///         The mesh on which the value collection is defined
+    ///     dim (std::size_t)
+    ///         The mesh entity dimension for the mesh value collection.
+    void init(const Mesh& mesh, std::size_t dim);
+
+    /// Initialise MeshValueCollection wirth mesh and dimension
+    /// (shared_ptr version)
+    ///
+    /// *Arguments*
+    ///     mesh (_mesh))
+    ///         The mesh on which the value collection is defined
+    ///     dim (std::size_t)
+    ///         The mesh entity dimension for the mesh value collection.
+    void init(boost::shared_ptr<const Mesh> mesh, std::size_t dim);
+
+    /// Set dimension. This function should not generally be used. It is
+    /// for reading MeshValueCollections as the dimension is not
+    /// generally known at construction.
     ///
     /// *Arguments*
     ///     dim (std::size_t)
@@ -232,7 +253,7 @@ namespace dolfin
     boost::shared_ptr<const Mesh> _mesh;
 
     // Topological dimension
-    std::size_t _dim;
+    int _dim;
 
     // The values
     std::map<std::pair<std::size_t, std::size_t>, T> _values;
@@ -244,7 +265,7 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template <typename T>
   MeshValueCollection<T>::MeshValueCollection()
-    : Variable("m", "unnamed MeshValueCollection"), _dim(0)
+    : Variable("m", "unnamed MeshValueCollection"), _dim(-1)
   {
     // Do nothing
   }
@@ -273,7 +294,7 @@ namespace dolfin
     const std::size_t D = _mesh->topology().dim();
 
     // Handle cells as a special case
-    if (D == _dim)
+    if ((int) D == _dim)
     {
       for (std::size_t cell_index = 0; cell_index < mesh_function.size();
            ++cell_index)
@@ -334,7 +355,7 @@ namespace dolfin
     // FIXME: Use iterators
 
     // Handle cells as a special case
-    if (D == _dim)
+    if ((int) D == _dim)
     {
       for (std::size_t cell_index = 0; cell_index < mesh_function.size();
            ++cell_index)
@@ -386,14 +407,36 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <typename T>
-  void MeshValueCollection<T>::set_dim(std::size_t dim)
+    void MeshValueCollection<T>::init(const Mesh& mesh, std::size_t dim)
   {
+    mesh.init(dim);
+    _mesh = reference_to_no_delete_pointer(mesh);
+    _dim = dim;
+    _values.clear();
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
+    void MeshValueCollection<T>::init(boost::shared_ptr<const Mesh> mesh,
+                                      std::size_t dim)
+  {
+    mesh->init(dim);
+    _mesh = mesh;
+    _dim = dim;
+    _values.clear();
+  }
+  //---------------------------------------------------------------------------
+  template <typename T>
+    void MeshValueCollection<T>::set_dim(std::size_t dim)
+  {
+    dolfin_assert(_mesh);
+    dolfin_assert(dim < 0 || (int) dim == _dim);
     _dim = dim;
   }
   //---------------------------------------------------------------------------
   template <typename T>
   std::size_t MeshValueCollection<T>::dim() const
   {
+    dolfin_assert(_dim >= 0);
     return _dim;
   }
   //---------------------------------------------------------------------------
@@ -421,6 +464,8 @@ namespace dolfin
                                          std::size_t local_entity,
                                          const T& value)
   {
+    dolfin_assert(_dim >= 0);
+
     const std::pair<std::size_t, std::size_t> pos(cell_index, local_entity);
     std::pair<typename std::map<std::pair<std::size_t,
       std::size_t>, T>::iterator, bool> it;
@@ -445,9 +490,11 @@ namespace dolfin
                    "A mesh has not been associcated with this MeshValueCollection");
     }
 
+    dolfin_assert(_dim >= 0);
+
     // Special case when d = D
     const std::size_t D = _mesh->topology().dim();
-    if (_dim == D)
+    if (_dim == (int) D)
     {
       // Set local entity index to zero when we mark a cell
       const std::pair<std::size_t, std::size_t> pos(entity_index, 0);
@@ -494,6 +541,8 @@ namespace dolfin
   T MeshValueCollection<T>::get_value(std::size_t cell_index,
 				      std::size_t local_entity)
   {
+    dolfin_assert(_dim >= 0);
+
     const std::pair<std::size_t, std::size_t> pos(cell_index, local_entity);
     const typename std::map<std::pair<std::size_t,
       std::size_t>, T>::const_iterator

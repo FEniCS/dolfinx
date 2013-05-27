@@ -98,7 +98,7 @@ public:
   void testAssign2DVertices()
   {
     UnitSquareMesh mesh(3, 3);
-    mesh.init(2,0);
+    mesh.init(2, 0);
     const std::size_t ncells = mesh.num_cells();
     MeshValueCollection<int> f(mesh, 0);
     bool all_new = true;
@@ -133,9 +133,7 @@ public:
     const std::size_t ncells = mesh.num_cells();
     MeshFunction<int> f(mesh, 2, 0);
     for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
       f[cell->index()] = ncells - cell->index();
-    }
     MeshValueCollection<int> g(mesh, 2);
     g = f;
     CPPUNIT_ASSERT_EQUAL(ncells, f.size());
@@ -159,9 +157,7 @@ public:
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       for (std::size_t i = 0; i < cell->num_entities(1); ++i)
-      {
         CPPUNIT_ASSERT_EQUAL(25, g.get_value(cell->index(), i));
-      }
     }
   }
 
@@ -177,9 +173,7 @@ public:
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       for (std::size_t i = 0; i < cell->num_entities(0); ++i)
-      {
         CPPUNIT_ASSERT_EQUAL(25, g.get_value(cell->index(), i));
-      }
     }
   }
 

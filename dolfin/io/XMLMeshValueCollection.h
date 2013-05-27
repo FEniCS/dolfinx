@@ -67,7 +67,7 @@ namespace dolfin
     // Attach name to mesh value collection object
     mesh_value_collection.rename(name, "a mesh value collection");
 
-    // Set dim
+    // Set dimension
     mesh_value_collection.set_dim(dim);
 
     // Check that types match
@@ -77,15 +77,6 @@ namespace dolfin
                    "read mesh value collection from XML file",
                    "Type mismatch, found \"%s\" but expecting \"%s\"",
                    type_file.c_str(), type.c_str());
-    }
-
-    // Check that dimension matches
-    if (mesh_value_collection.dim() != dim)
-    {
-      dolfin_error("XMLMeshValueCollection.h",
-                   "read mesh value collection from XML file",
-                   "Dimension mismatch, found %d but expecting %d",
-                   dim, mesh_value_collection.dim());
     }
 
     // Clear old values
@@ -98,7 +89,8 @@ namespace dolfin
       for (it = mvc_node->begin(); it != mvc_node->end(); ++it)
       {
         const std::size_t cell_index = it->attribute("cell_index").as_uint();
-        const std::size_t local_entity = it->attribute("local_entity").as_uint();
+        const std::size_t local_entity
+          = it->attribute("local_entity").as_uint();
         const std::size_t value = it->attribute("value").as_uint();
         mesh_value_collection.set_value(cell_index, local_entity, value);
       }
@@ -109,7 +101,8 @@ namespace dolfin
       for (it = mvc_node->begin(); it != mvc_node->end(); ++it)
       {
         const std::size_t cell_index = it->attribute("cell_index").as_uint();
-        const std::size_t local_entity = it->attribute("local_entity").as_uint();
+        const std::size_t local_entity
+          = it->attribute("local_entity").as_uint();
         const int value = it->attribute("value").as_int();
         mesh_value_collection.set_value(cell_index, local_entity, value);
       }
@@ -120,7 +113,8 @@ namespace dolfin
       for (it = mvc_node->begin(); it != mvc_node->end(); ++it)
       {
         const std::size_t cell_index = it->attribute("cell_index").as_uint();
-        const std::size_t local_entity = it->attribute("local_entity").as_uint();
+        const std::size_t local_entity
+          = it->attribute("local_entity").as_uint();
         const double value = it->attribute("value").as_double();
         mesh_value_collection.set_value(cell_index, local_entity, value);
       }
@@ -131,7 +125,8 @@ namespace dolfin
       for (it = mvc_node->begin(); it != mvc_node->end(); ++it)
       {
         const std::size_t cell_index = it->attribute("cell_index").as_uint();
-        const std::size_t local_entity = it->attribute("local_entity").as_uint();
+        const std::size_t local_entity
+          = it->attribute("local_entity").as_uint();
         const bool value = it->attribute("value").as_bool();
         mesh_value_collection.set_value(cell_index, local_entity, value);
       }
@@ -163,7 +158,8 @@ namespace dolfin
     // Add data
     const std::map<std::pair<std::size_t, std::size_t>, T>&
       values = mesh_value_collection.values();
-    typename std::map<std::pair<std::size_t, std::size_t>, T>::const_iterator it;
+    typename std::map<std::pair<std::size_t,
+      std::size_t>, T>::const_iterator it;
     for (it = values.begin(); it != values.end(); ++it)
     {
       pugi::xml_node entity_node = mf_node.append_child("value");
