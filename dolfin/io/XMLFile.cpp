@@ -144,7 +144,10 @@ void XMLFile::operator>> (GenericVector& input)
   const std::size_t input_vector_size = input.size();
   const std::size_t num_proc = MPI::num_processes();
   if (num_proc > 1 && input_vector_size != size)
-    warning("Resizing parallel vector. Default partitioning will be used. To control distribution, initialize vector size before reading from file.");
+  {
+    warning("Resizing parallel vector. Default partitioning will be used. \
+To control distribution, initialize vector size before reading from file.");
+  }
   if (input.size() != size)
     input.resize(size);
 
@@ -320,7 +323,8 @@ void XMLFile::read_mesh_value_collection(MeshValueCollection<T>& t,
       }
 
     // Create local data and build value collection
-    LocalMeshValueCollection<T> local_data(tmp_collection, tmp_collection.dim());
+    LocalMeshValueCollection<T> local_data(tmp_collection,
+                                           tmp_collection.dim());
 
     dolfin_assert(t.mesh());
     // Build mesh value collection

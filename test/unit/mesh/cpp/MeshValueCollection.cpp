@@ -42,16 +42,16 @@ public:
   {
     UnitSquareMesh mesh(3, 3);
     const std::size_t ncells = mesh.num_cells();
-    MeshValueCollection<int> f(2);
+    MeshValueCollection<int> f(mesh, 2);
     bool all_new = true;
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       bool this_new;
       const int value = ncells - cell->index();
-      this_new = f.set_value(cell->index(), value, mesh);
+      this_new = f.set_value(cell->index(), value);
       all_new = all_new && this_new;
     }
-    MeshValueCollection<int> g(2);
+    MeshValueCollection<int> g(mesh, 2);
     g = f;
     CPPUNIT_ASSERT_EQUAL(ncells, f.size());
     CPPUNIT_ASSERT_EQUAL(ncells, g.size());
@@ -68,7 +68,7 @@ public:
     UnitSquareMesh mesh(3, 3);
     mesh.init(2,1);
     const std::size_t ncells = mesh.num_cells();
-    MeshValueCollection<int> f(1);
+    MeshValueCollection<int> f(mesh, 1);
     bool all_new = true;
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
@@ -76,11 +76,11 @@ public:
       for (std::size_t i = 0; i < cell->num_entities(1); ++i)
       {
         bool this_new;
-        this_new = f.set_value(cell->index(), i, value+i);
+        this_new = f.set_value(cell->index(), i, value + i);
         all_new = all_new && this_new;
       }
     }
-    MeshValueCollection<int> g(1);
+    MeshValueCollection<int> g(mesh, 1);
     g = f;
     CPPUNIT_ASSERT_EQUAL(ncells*3, f.size());
     CPPUNIT_ASSERT_EQUAL(ncells*3, g.size());
@@ -100,7 +100,7 @@ public:
     UnitSquareMesh mesh(3, 3);
     mesh.init(2,0);
     const std::size_t ncells = mesh.num_cells();
-    MeshValueCollection<int> f(0);
+    MeshValueCollection<int> f(mesh, 0);
     bool all_new = true;
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
@@ -112,7 +112,7 @@ public:
         all_new = all_new && this_new;
       }
     }
-    MeshValueCollection<int> g(0);
+    MeshValueCollection<int> g(mesh, 0);
     g = f;
     CPPUNIT_ASSERT_EQUAL(ncells*3, f.size());
     CPPUNIT_ASSERT_EQUAL(ncells*3, g.size());
@@ -136,7 +136,7 @@ public:
     {
       f[cell->index()] = ncells - cell->index();
     }
-    MeshValueCollection<int> g(2);
+    MeshValueCollection<int> g(mesh, 2);
     g = f;
     CPPUNIT_ASSERT_EQUAL(ncells, f.size());
     CPPUNIT_ASSERT_EQUAL(ncells, g.size());
@@ -152,7 +152,7 @@ public:
     UnitSquareMesh mesh(3, 3);
     mesh.init(1);
     MeshFunction<int> f(mesh, 1, 25);
-    MeshValueCollection<int> g(1);
+    MeshValueCollection<int> g(mesh, 1);
     g = f;
     CPPUNIT_ASSERT_EQUAL(mesh.num_facets(), f.size());
     CPPUNIT_ASSERT_EQUAL(mesh.num_cells()*3, g.size());
@@ -170,7 +170,7 @@ public:
     UnitSquareMesh mesh(3, 3);
     mesh.init(0);
     MeshFunction<int> f(mesh, 0, 25);
-    MeshValueCollection<int> g(0);
+    MeshValueCollection<int> g(mesh, 0);
     g = f;
     CPPUNIT_ASSERT_EQUAL(mesh.num_vertices(), f.size());
     CPPUNIT_ASSERT_EQUAL(mesh.num_cells()*3, g.size());

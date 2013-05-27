@@ -285,7 +285,7 @@ void XMLMesh::read_domains(MeshDomains& domains, const Mesh& mesh,
     mesh.init(dim);
 
     // Read data into a mesh value collection
-    MeshValueCollection<std::size_t> mvc(dim);
+    MeshValueCollection<std::size_t> mvc(mesh, dim);
     XMLMeshValueCollection::read(mvc, type, *it);
 
     // Get mesh value collection data
@@ -497,10 +497,10 @@ void XMLMesh::write_domains(const Mesh& mesh, const MeshDomains& domains,
     {
       const std::map<std::size_t, std::size_t>& domain = domains.markers(d);
 
-      MeshValueCollection<std::size_t> collection(d);
+      MeshValueCollection<std::size_t> collection(mesh, d);
       std::map<std::size_t, std::size_t>::const_iterator it;
       for (it = domain.begin(); it != domain.end(); ++it)
-        collection.set_value(it->first, it->second, mesh);
+        collection.set_value(it->first, it->second);
       XMLMeshValueCollection::write(collection, "uint", domains_node);
     }
   }
