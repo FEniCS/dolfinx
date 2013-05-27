@@ -95,7 +95,6 @@ class BoundingBoxTreeTest(unittest.TestCase):
         self.assertEqual(sorted(entities), reference)
 
     def test_compute_entity_collisions_3d(self):
-        "Test basic creation and point location for unit cube"
 
         reference = [876, 877, 878, 879, 880, 881]
 
@@ -134,11 +133,10 @@ class BoundingBoxTreeTest(unittest.TestCase):
             self.assertEqual(first, reference[dim])
 
     def test_compute_first_collision_3d(self):
-        "Test basic creation and point location for unit cube"
 
         reference = {1: 1364,
-                     2: 1974,
-                     3: 879}
+                     2: 1968,
+                     3: 880}
 
         p = Point(0.3, 0.3, 0.3)
         mesh = UnitCubeMesh(8, 8, 8)
@@ -173,9 +171,8 @@ class BoundingBoxTreeTest(unittest.TestCase):
         self.assertEqual(first, reference)
 
     def test_compute_first_entity_collision_3d(self):
-        "Test basic creation and point location for unit cube"
 
-        reference = 879
+        reference = 880
 
         p = Point(0.3, 0.3, 0.3)
         mesh = UnitCubeMesh(8, 8, 8)
@@ -201,7 +198,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
     def test_compute_closest_entity_2d(self):
 
-        reference = (1, numpy.sqrt(2.0))
+        reference = (0, numpy.sqrt(2.0))
 
         p = Point(-1.0, -1.0)
         mesh = UnitSquareMesh(16, 16)
@@ -212,24 +209,9 @@ class BoundingBoxTreeTest(unittest.TestCase):
         self.assertEqual(entity, reference[0])
         self.assertAlmostEqual(distance, reference[1])
 
-    def test_compute_closest_entity_2d_in_3d(self):
-
-        # This function actually works for triangles embedded in 3D
-
-        reference = (1, numpy.sqrt(3.0))
-
-        p = Point(-1.0, -1.0, -1.0)
-        mesh = UnitSquareMesh(16, 16)
-        tree = BoundingBoxTree()
-        tree.build(mesh)
-        entity, distance = tree.compute_closest_entity(p, mesh)
-
-        self.assertEqual(entity, reference[0])
-        self.assertAlmostEqual(distance, reference[1])
-
     def test_compute_closest_entity_3d(self):
 
-        reference = (5, numpy.sqrt(3.0))
+        reference = (2, numpy.sqrt(3.0))
 
         p = Point(-1.0, -1.0, -1.0)
         mesh = UnitCubeMesh(8, 8, 8)

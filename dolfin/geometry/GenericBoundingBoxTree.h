@@ -67,6 +67,9 @@ namespace dolfin
     std::pair<unsigned int, double> compute_closest_entity(const Point& point,
                                                            const Mesh& mesh) const;
 
+    /// Compute closest point and distance to given _Point_
+    std::pair<unsigned int, double> compute_closest_point(const Point& point) const;
+
   protected:
 
     // Bounding box data. Leaf nodes are indicated by setting child_0
@@ -87,6 +90,12 @@ namespace dolfin
     // List of bounding box coordinates
     std::vector<double> _bbox_coordinates;
 
+    // Point search tree used to accelerate distance queries
+    mutable boost::scoped_ptr<GenericBoundingBoxTree> _point_search_tree;
+
+    // Clear existing data if any
+    void clear();
+
     // Build bounding box tree for entities (recursive)
     unsigned int build(const std::vector<double>& leaf_bboxes,
                        const std::vector<unsigned int>::iterator& begin,
@@ -98,6 +107,9 @@ namespace dolfin
                        const std::vector<unsigned int>::iterator& begin,
                        const std::vector<unsigned int>::iterator& end,
                        unsigned int gdim);
+
+    // Compute point search tree if not already done
+    void build_point_search_tree(const Mesh& mesh) const;
 
     /// Compute collisions (recursive)
     void compute_collisions(const Point& point,
@@ -125,6 +137,12 @@ namespace dolfin
                                 const Mesh& mesh,
                                 unsigned int& closest_entity,
                                 double& R2) const;
+
+    /// Compute closest point (recursive)
+    void compute_closest_point(const Point& point,
+                               unsigned int node,
+                               unsigned int& closest_point,
+                               double& R2) const;
 
     // Compute bounding box of mesh entity
     void compute_bbox_of_entity(double* b,
@@ -232,7 +250,11 @@ namespace dolfin
 
     // Compute squared distance between point and bounding box
     virtual double
-    compute_squared_distance(const double* x, unsigned int node) const = 0;
+    compute_squared_distance_bbox(const double* x, unsigned int node) const = 0;
+
+    // Compute squared distance between point and point
+    virtual double
+    compute_squared_distance_point(const double* x, unsigned int node) const = 0;
 
     // Compute bounding box of bounding boxes
     virtual void

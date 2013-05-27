@@ -72,7 +72,7 @@ void BoundingBoxTree::build(const Mesh& mesh, unsigned int tdim)
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::build(const std::vector<Point>& points, unsigned int gdim)
 {
-    // Select implementation
+  // Select implementation
   switch (gdim)
   {
   case 1:
@@ -152,6 +152,17 @@ BoundingBoxTree::compute_closest_entity(const Point& point,
   // Delegate call to implementation
   dolfin_assert(_tree);
   return _tree->compute_closest_entity(point, mesh);
+}
+//-----------------------------------------------------------------------------
+std::pair<unsigned int, double>
+BoundingBoxTree::compute_closest_point(const Point& point) const
+{
+  // Check that tree has been built
+  check_built();
+
+  // Delegate call to implementation
+  dolfin_assert(_tree);
+  return _tree->compute_closest_point(point);
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::check_built() const

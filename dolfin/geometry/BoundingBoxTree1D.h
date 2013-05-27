@@ -62,7 +62,8 @@ namespace dolfin
     }
 
     // Compute squared distance between point and bounding box
-    double compute_squared_distance(const double* x, unsigned int node) const
+    double compute_squared_distance_bbox(const double* x,
+                                         unsigned int node) const
     {
       // Note: Some else-if might be in order here but I assume the
       // compiler can do a better job at optimizing/parallelizing this
@@ -76,6 +77,14 @@ namespace dolfin
       if (x[0] > b[3]) r2 += (x[0] - b[3])*(x[0] - b[3]);
 
       return r2;
+    }
+
+    // Compute squared distance between point and point
+    double compute_squared_distance_point(const double* x,
+                                          unsigned int node) const
+    {
+      const double* p = _bbox_coordinates.data() + 2*node;
+      return (x[0] - p[0])*(x[0] - p[0]);
     }
 
     // Compute bounding box of bounding boxes

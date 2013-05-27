@@ -28,6 +28,9 @@
 #include <dolfin/mesh/Point.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
+#include "BoundingBoxTree1D.h" // used for internal point search tree
+#include "BoundingBoxTree2D.h" // used for internal point search tree
+#include "BoundingBoxTree3D.h" // used for internal point search tree
 #include "GenericBoundingBoxTree.h"
 
 using namespace dolfin;
@@ -49,15 +52,15 @@ void GenericBoundingBoxTree::build(const Mesh& mesh, unsigned int tdim)
                  mesh.topology().dim());
   }
 
+  // Clear existing data if any
+  clear();
+
   // Store topological dimension (only used for checking that entity
   // collisions can only be computed with cells)
   _tdim = tdim;
 
   // Initialize entities of given dimension if they don't exist
   mesh.init(tdim);
-
-  // Clear existing data if any
-  _bboxes.clear();
 
   // Create bounding boxes for all entities (leaves)
   const unsigned int _gdim = gdim();
@@ -81,7 +84,7 @@ void GenericBoundingBoxTree::build(const Mesh& mesh, unsigned int tdim)
 void GenericBoundingBoxTree::build(const std::vector<Point>& points)
 {
   // Clear existing data if any
-  _bboxes.clear();
+  clear();
 
   // Create leaf partition (to be sorted)
   const unsigned int num_leaves = points.size();
@@ -156,21 +159,20 @@ GenericBoundingBoxTree::compute_closest_entity(const Point& point,
   if (_tdim != mesh.topology().dim())
   {
     dolfin_error("GenericBoundingBoxTree.cpp",
-                 "compute collision between point and mesh entities",
+                 "compute closest entity of point",
                  "Closest-entity is only implemented for cells");
   }
 
-  // Note: This algorithm may be optimized by finding a better
-  // starting guess for R2. One option would be to store a small
-  // number of bounding boxes (all boxes at a certain depth) and do a
-  // linear search among those boxes to find a suitable value of R2
-  // which partitions the boxes in two groups of equal size. One might
-  // also consider building an additional search tree like in CGAL
-  // when the function accelerate_distance_queries is called.
+  // Compute point search tree if not already done
+  build_point_search_tree(mesh);
+
+  // Search point cloud to get a good starting guess
+  dolfin_assert(_point_search_tree);
+  double r = _point_search_tree->compute_closest_point(point).second;
 
   // Initialize index and distance to closest entity
   unsigned int closest_entity = std::numeric_limits<unsigned int>::max();
-  double R2 = std::numeric_limits<double>::max();
+  double R2 = r*r;
 
   // Call recursive find function
   compute_closest_entity(point, _bboxes.size() - 1, mesh, closest_entity, R2);
@@ -182,7 +184,41 @@ GenericBoundingBoxTree::compute_closest_entity(const Point& point,
   return ret;
 }
 //-----------------------------------------------------------------------------
-// Implementation of private (recursive) functions
+std::pair<unsigned int, double>
+GenericBoundingBoxTree::compute_closest_point(const Point& point) const
+{
+  // Closest point only implemented for point cloud
+  if (_tdim != 0)
+  {
+    dolfin_error("GenericBoundingBoxTree.cpp",
+                 "compute closest point",
+                 "Search tree has not been built for point cloud");
+  }
+
+  // Note that we don't compute a point search tree here... That would
+  // be weird.
+
+  // Get initial guess by picking the distance to a "random" point
+  unsigned int closest_point = 0;
+  double R2 = compute_squared_distance_point(point.coordinates(),
+                                             closest_point);
+
+  // Call recursive find function
+  compute_closest_point(point, _bboxes.size() - 1, closest_point, R2);
+
+  std::pair<unsigned int, double> ret(closest_point, sqrt(R2));
+  return ret;
+}
+//-----------------------------------------------------------------------------
+// Implementation of protected functions
+//-----------------------------------------------------------------------------
+void GenericBoundingBoxTree::clear()
+{
+  _tdim = 0;
+  _bboxes.clear();
+  _bbox_coordinates.clear();
+  _point_search_tree.reset();
+}
 //-----------------------------------------------------------------------------
 unsigned int
 GenericBoundingBoxTree::build(const std::vector<double>& leaf_bboxes,
@@ -261,6 +297,43 @@ GenericBoundingBoxTree::build(const std::vector<Point>& points,
 
   // Store bounding box data. Note that root box will be added last.
   return add_bbox(bbox, b, gdim);
+}
+//-----------------------------------------------------------------------------
+void GenericBoundingBoxTree::build_point_search_tree(const Mesh& mesh) const
+{
+  // Don't build search tree if it already exists
+  if (_point_search_tree)
+    return;
+  info("Building point search tree to accelerate distance queries.");
+
+  // Create list of midpoints for all cells
+  std::vector<Point> points;
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+    points.push_back(cell->midpoint());
+
+  // Select implementation
+  const unsigned int gdim = mesh.geometry().dim();
+  switch (gdim)
+  {
+  case 1:
+    _point_search_tree.reset(new BoundingBoxTree1D());
+    break;
+  case 2:
+    _point_search_tree.reset(new BoundingBoxTree2D());
+    break;
+  case 3:
+    _point_search_tree.reset(new BoundingBoxTree3D());
+    break;
+  default:
+    dolfin_error("BoundingBoxTree.cpp",
+                 "build bounding box tree",
+                 "Not implemented for geometric dimension %d",
+                 gdim);
+  }
+
+  // Build tree
+  dolfin_assert(_point_search_tree);
+  _point_search_tree->build(points);
 }
 //-----------------------------------------------------------------------------
 void
@@ -411,18 +484,17 @@ GenericBoundingBoxTree::compute_closest_entity(const Point& point,
   const BBox& bbox = _bboxes[node];
 
   // If bounding box is outside radius, then don't search further
-  const double r2 = compute_squared_distance(point.coordinates(), node);
+  const double r2 = compute_squared_distance_bbox(point.coordinates(), node);
   if (r2 > R2)
     return;
 
-  // If box is a leaf (which we know is inside the radius), then check entity
+  // If box is leaf (which we know is inside radius), then shrink radius
   else if (is_leaf(bbox, node))
   {
     // Get entity (child_1 denotes entity index for leaves)
     dolfin_assert(_tdim == mesh.topology().dim());
     const unsigned int entity_index = bbox.child_1;
     Cell cell(mesh, entity_index);
-
 
     // If entity is closer than best result so far, then return it
     const double r2 = cell.squared_distance(point);
@@ -438,6 +510,38 @@ GenericBoundingBoxTree::compute_closest_entity(const Point& point,
   {
     compute_closest_entity(point, bbox.child_0, mesh, closest_entity, R2);
     compute_closest_entity(point, bbox.child_1, mesh, closest_entity, R2);
+  }
+}
+//-----------------------------------------------------------------------------
+void
+GenericBoundingBoxTree::compute_closest_point(const Point& point,
+                                              unsigned int node,
+                                              unsigned int& closest_point,
+                                              double& R2) const
+{
+  // Get bounding box for current node
+  const BBox& bbox = _bboxes[node];
+
+  // If box is leaf, then compute distance and shrink radius
+  if (is_leaf(bbox, node))
+  {
+    const double r2 = compute_squared_distance_point(point.coordinates(), node);
+    if (r2 < R2)
+    {
+      closest_point = bbox.child_1;
+      R2 = r2;
+    }
+  }
+  else
+  {
+    // If bounding box is outside radius, then don't search further
+    const double r2 = compute_squared_distance_bbox(point.coordinates(), node);
+    if (r2 > R2)
+      return;
+
+    // Check both children
+    compute_closest_point(point, bbox.child_0, closest_point, R2);
+    compute_closest_point(point, bbox.child_1, closest_point, R2);
   }
 }
 //-----------------------------------------------------------------------------

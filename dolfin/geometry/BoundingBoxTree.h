@@ -154,6 +154,31 @@ namespace dolfin
     std::pair<unsigned int, double>
     compute_closest_entity(const Point& point, const Mesh& mesh) const;
 
+    /// Compute closest point to given _Point_. This function assumes
+    /// that the tree has been built for a point cloud.
+    ///
+    /// Developer note: This function should not be confused with
+    /// computing the closest point in all entities of a mesh. That
+    /// function could be added with relative ease since we actually
+    /// compute the closest points to get the distance in the above
+    /// function (compute_closest_entity) inside the specialized
+    /// implementations in TetrahedronCell.cpp etc.
+    ///
+    /// *Returns*
+    ///     unsigned int
+    ///         The local index for the point that is closest to the
+    ///         point. If more than one point is at the same distance
+    ///         (or point contained in entity), then the first point
+    ///         is returned.
+    ///     double
+    ///         The distance to the closest point.
+    ///
+    /// *Arguments*
+    ///     point (_Point_)
+    ///         The point.
+    std::pair<unsigned int, double>
+    compute_closest_point(const Point& point) const;
+
     // FIXME: Check use of unsigned int vs size_t
 
   private:
