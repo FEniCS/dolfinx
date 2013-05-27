@@ -20,7 +20,7 @@
 // compute_entities is included so that we may compare the timing to CGAL.
 //
 // First added:  2013-04-18
-// Last changed: 2013-05-23
+// Last changed: 2013-05-27
 
 #include <vector>
 #include <dolfin.h>
@@ -30,18 +30,26 @@ using namespace dolfin;
 #define NUM_REPS 5
 #define SIZE 64
 
-int bench_cgal(const Mesh& mesh, const Point& point)
+int bench_cgal()
 {
   cout << "Running CGAL bench" << endl;
+
+  // Create mesh and point to search
+  UnitCubeMesh mesh(SIZE, SIZE, SIZE);
+  Point point(0.5, 0.5, 0.5);
 
   // Compute intersection
   std::set<std::size_t> cells;
   mesh.intersected_cells(point, cells);
 }
 
-int bench_dolfin(const Mesh& mesh, const Point& point)
+int bench_dolfin()
 {
   cout << "Running DOLFIN bench" << endl;
+
+  // Create mesh and point to search
+  UnitCubeMesh mesh(SIZE, SIZE, SIZE);
+  Point point(0.5, 0.5, 0.5);
 
   // Compute intersection
   MeshPointIntersection intersection(mesh, point);
@@ -50,10 +58,6 @@ int bench_dolfin(const Mesh& mesh, const Point& point)
 
 int main(int argc, char* argv[])
 {
-  // Create mesh and point to search
-  UnitCubeMesh mesh(SIZE, SIZE, SIZE);
-  Point point(0.5, 0.5, 0.5);
-
   // Select which benchmark to run
   bool run_cgal = argc > 1 && strcasecmp(argv[1], "cgal") == 0;
 
@@ -62,9 +66,9 @@ int main(int argc, char* argv[])
   for (int i = 0; i < NUM_REPS; i++)
   {
     if (run_cgal)
-      bench_cgal(mesh, point);
+      bench_cgal();
     else
-      bench_dolfin(mesh, point);
+      bench_dolfin();
   }
   info("BENCH %g", toc());
 
