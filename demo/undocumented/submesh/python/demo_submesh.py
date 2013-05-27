@@ -26,7 +26,8 @@ from dolfin import *
 # Structure sub domain
 class Structure(SubDomain):
     def inside(self, x, on_boundary):
-        return x[0] > 1.4 - DOLFIN_EPS and x[0] < 1.6 + DOLFIN_EPS and x[1] < 0.6 + DOLFIN_EPS
+        return x[0] > 1.4 - DOLFIN_EPS and x[0] < 1.6 \
+            + DOLFIN_EPS and x[1] < 0.6 + DOLFIN_EPS
 
 # Create mesh
 mesh = RectangleMesh(0.0, 0.0, 3.0, 1.0, 60, 20)

@@ -40,6 +40,9 @@ namespace dolfin
   // Return true if DOLFIN is compiled with TAO
   bool has_tao();
 
+  // Return true if DOLFIN is compiled with petsc4py
+  bool has_petsc4py();
+
   // Return true if DOLFIN is compiled with Trilinos
   bool has_trilinos();
 

@@ -274,11 +274,10 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble_interior_facets(GenericTensor& A,
-                                         const Form& a,
-                                         UFC& ufc,
-                                         const MeshFunction<std::size_t>* domains,
-                                         std::vector<double>* values)
+void Assembler::assemble_interior_facets(GenericTensor& A, const Form& a,
+                                      UFC& ufc,
+                                      const MeshFunction<std::size_t>* domains,
+                                      std::vector<double>* values)
 {
   // Skip assembly if there are no interior facet integrals
   if (!ufc.form.has_interior_facet_integrals())
@@ -309,7 +308,8 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   }
 
   // Interior facet integral
-  const ufc::interior_facet_integral* integral = ufc.default_interior_facet_integral.get();
+  const ufc::interior_facet_integral* integral
+    = ufc.default_interior_facet_integral.get();
 
   // Check whether integral is domain-dependent
   bool use_domains = domains && !domains->empty();
@@ -321,14 +321,15 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   dolfin_assert(mesh.ordered());
 
   // Get interior facet directions (if any)
-  boost::shared_ptr<MeshFunction<std::size_t> >
-    facet_orientation = mesh.data().mesh_function("facet_orientation");
-  if (facet_orientation && facet_orientation->dim() != D - 1)
+  const std::vector<std::size_t>* facet_orientation = NULL;
+  if (mesh.data().exists("facet_orientation", D - 1))
+    facet_orientation = &(mesh.data().array("facet_orientation", D - 1));
+
+  if (facet_orientation && facet_orientation->size() != mesh.num_facets())
   {
     dolfin_error("Assembler.cpp",
                  "assemble form over interior facets",
-                 "Expecting facet orientation to be defined on facets (not dimension %d)",
-                 facet_orientation->dim());
+                 "Expecting facet orientation to be defined on facets");
   }
 
   // Assemble over interior facets (the facets of the mesh)
@@ -353,7 +354,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
 
     // Get cells incident with facet
     std::pair<const Cell, const Cell>
-      cells = facet->adjacent_cells(facet_orientation.get());
+      cells = facet->adjacent_cells(facet_orientation);
     const Cell& cell0 = cells.first;
     const Cell& cell1 = cells.second;
 
@@ -368,8 +369,10 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     for (std::size_t i = 0; i < form_rank; i++)
     {
       // Get dofs for each cell
-      const std::vector<dolfin::la_index>& cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
-      const std::vector<dolfin::la_index>& cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
+      const std::vector<dolfin::la_index>& cell_dofs0
+        = dofmaps[i]->cell_dofs(cell0.index());
+      const std::vector<dolfin::la_index>& cell_dofs1
+        = dofmaps[i]->cell_dofs(cell1.index());
 
       // Create space in macro dof vector
       macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());

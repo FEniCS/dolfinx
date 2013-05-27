@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-08-31
-// Last changed: 2013-03-11
+// Last changed: 2013-05-20
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -391,24 +391,32 @@ const std::vector<TYPE>&  ARG_NAME
   $result = PyArray_SimpleNew(1, &adims, NUMPY_TYPE);
   TYPE* data = static_cast<TYPE*>(PyArray_DATA(reinterpret_cast<PyArrayObject*>($result)));
   std::copy($1.begin(), $1.end(), data);
+
 }
 
 %enddef
 
 //-----------------------------------------------------------------------------
-// Macro for out typemaps of primitives of std::vector<TYPE> It returns a copied
-// NumPy array
+// Macro for out typemaps of primitives of std::vector<TYPE> It returns a 
+// NumPy array vith a view. This is writable for const vectors and writable for 
+// non-const ones.
 //
 // TYPE      : The primitive type
 // TYPE_NAME : The name of the pointer type, 'double' for 'double', 'uint' for
 //             'dolfin::uint'
 //-----------------------------------------------------------------------------
-%define READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_NAME)
+%define OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(TYPE, TYPE_NAME)
 
 %typemap(out, fragment=make_numpy_array_frag(1, TYPE_NAME)) const std::vector<TYPE>&
 {
-  // READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, TYPE_NAME)
+  // OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(TYPE, TYPE_NAME) const version
   $result = %make_numpy_array(1, TYPE_NAME)($1->size(), &($1->operator[](0)), false);
+}
+
+%typemap(out, fragment=make_numpy_array_frag(1, TYPE_NAME)) std::vector<TYPE>&
+{
+  // OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(TYPE, TYPE_NAME) 
+  $result = %make_numpy_array(1, TYPE_NAME)($1->size(), &($1->operator[](0)), true);
 }
 
 %enddef
@@ -594,13 +602,13 @@ OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, NPY_UINT)
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, NPY_UINTP)
 OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::la_index, NPY_INT)
 
-READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, double)
-READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(int, int)
-READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(unsigned int, uint)
-READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(std::size_t, size_t)
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(double, double)
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(int, int)
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(unsigned int, uint)
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(std::size_t, size_t)
 
 // This typemap handles PETSc index typemap. Untested for 64-bit integers
-READONLY_OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(PetscInt, dolfin_index)
+OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(PetscInt, dolfin_index)
 
 IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(Point)
 IN_TYPEMAP_STD_VECTOR_OF_SMALL_DOLFIN_TYPES(MeshEntity)

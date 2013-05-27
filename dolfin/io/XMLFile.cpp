@@ -99,7 +99,12 @@ void XMLFile::operator>> (Mesh& input_mesh)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const Mesh& output_mesh)
 {
-  not_working_in_parallel("Mesh XML output");
+  if (MPI::num_processes() > 1)
+  {
+    dolfin_error("XMLFile.cpp",
+                 "write mesh to XML file in parallel",
+                 "Parallel XML mesh output is not supported. Use HDF5 format instead");
+  }
 
   pugi::xml_document doc;
   pugi::xml_node node = write_dolfin(doc);
@@ -154,7 +159,8 @@ void XMLFile::operator>> (GenericVector& input)
   input.apply("insert");
 }
 //-----------------------------------------------------------------------------
-void XMLFile::read_vector(std::vector<double>& input, std::vector<dolfin::la_index>& indices)
+void XMLFile::read_vector(std::vector<double>& input,
+                          std::vector<dolfin::la_index>& indices)
 {
   // Create XML doc and get DOLFIN node
   pugi::xml_document xml_doc;
@@ -236,8 +242,9 @@ void XMLFile::operator<< (const Function& output)
   }
 }
 //-----------------------------------------------------------------------------
-template<typename T> void XMLFile::read_mesh_function(MeshFunction<T>& t,
-                                                  const std::string type) const
+template<typename T>
+void XMLFile::read_mesh_function(MeshFunction<T>& t,
+                                 const std::string type) const
 {
   if (MPI::num_processes() == 1)
   {
@@ -248,7 +255,8 @@ template<typename T> void XMLFile::read_mesh_function(MeshFunction<T>& t,
   }
   else
   {
-    // Read a MeshValueCollection on processs 0, then communicate to other procs
+    // Read a MeshValueCollection on processs 0, then communicate to
+    // other procs
     std::size_t dim = 0;
     MeshValueCollection<T> mvc;
     if (MPI::process_number() == 0)
@@ -276,8 +284,9 @@ template<typename T> void XMLFile::read_mesh_function(MeshFunction<T>& t,
   }
 }
 //-----------------------------------------------------------------------------
-template<typename T> void XMLFile::write_mesh_function(const MeshFunction<T>& t,
-                                                       const std::string type)
+template<typename T>
+void XMLFile::write_mesh_function(const MeshFunction<T>& t,
+                                  const std::string type)
 {
   not_working_in_parallel("MeshFunction XML output in parallel not yet supported.");
 
@@ -355,7 +364,8 @@ void XMLFile::load_xml_doc(pugi::xml_document& xml_doc) const
   if (extension == ".gz")
   {
     // Decompress file
-    std::ifstream file(_filename.c_str(), std::ios_base::in|std::ios_base::binary);
+    std::ifstream
+      file(_filename.c_str(), std::ios_base::in|std::ios_base::binary);
     boost::iostreams::filtering_streambuf<boost::iostreams::input> in;
     in.push(boost::iostreams::gzip_decompressor());
     in.push(file);
@@ -393,7 +403,8 @@ void XMLFile::save_xml_doc(const pugi::xml_document& xml_doc) const
       std::stringstream xml_stream;
       xml_doc.save(xml_stream, "  ");
 
-      std::ofstream file(_filename.c_str(), std::ios_base::out | std::ios_base::binary);
+      std::ofstream
+        file(_filename.c_str(), std::ios_base::out | std::ios_base::binary);
       boost::iostreams::filtering_streambuf<boost::iostreams::output> out;
       out.push(boost::iostreams::gzip_compressor());
       out.push(file);
@@ -404,7 +415,8 @@ void XMLFile::save_xml_doc(const pugi::xml_document& xml_doc) const
   }
 }
 //-----------------------------------------------------------------------------
-const pugi::xml_node XMLFile::get_dolfin_xml_node(pugi::xml_document& xml_doc) const
+const pugi::xml_node
+XMLFile::get_dolfin_xml_node(pugi::xml_document& xml_doc) const
 {
   // Check that we have a DOLFIN XML file
   const pugi::xml_node dolfin_node = xml_doc.child("dolfin");

@@ -58,12 +58,12 @@ void Variable::rename(const std::string name, const std::string label)
   _label = label;
 }
 //-----------------------------------------------------------------------------
-const std::string& Variable::name() const
+std::string Variable::name() const
 {
   return _name;
 }
 //-----------------------------------------------------------------------------
-const std::string& Variable::label() const
+std::string Variable::label() const
 {
   return _label;
 }

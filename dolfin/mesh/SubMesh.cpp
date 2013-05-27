@@ -18,12 +18,14 @@
 // First added:  2009-02-11
 // Last changed: 2013-02-11
 
+#include <limits>
 #include <map>
 #include <vector>
 
 #include "Cell.h"
 #include "Mesh.h"
 #include "MeshEditor.h"
+#include "MeshEntityIterator.h"
 #include "MeshFunction.h"
 #include "SubDomain.h"
 #include "SubMesh.h"
@@ -40,33 +42,51 @@ SubMesh::SubMesh(const Mesh& mesh, const SubDomain& sub_domain)
   sub_domains = 0;
   sub_domain.mark(sub_domains, 1);
 
+  // Copy data into std::vector
+  const std::vector<std::size_t> _sub_domains(sub_domains.values(),
+                                sub_domains.values() + sub_domains.size());
+
   // Create sub mesh
-  init(mesh, sub_domains, 1);
+  init(mesh, _sub_domains, 1);
 }
 //-----------------------------------------------------------------------------
 SubMesh::SubMesh(const Mesh& mesh,
-                 const MeshFunction<std::size_t>& sub_domains, std::size_t sub_domain)
+                 const MeshFunction<std::size_t>& sub_domains,
+                 std::size_t sub_domain)
 {
+  // Copy data into std::vector
+  const std::vector<std::size_t> _sub_domains(sub_domains.values(),
+                                sub_domains.values() + sub_domains.size());
+
   // Create sub mesh
-  init(mesh, sub_domains, sub_domain);
+  init(mesh, _sub_domains, sub_domain);
 }
-//-----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 SubMesh::SubMesh(const Mesh& mesh, std::size_t sub_domain)
 {
-  
-  if (mesh.domains().num_marked(mesh.topology().dim())==0)
+  // Topological dimension
+  const std::size_t D = mesh.topology().dim();
+
+  if (mesh.domains().num_marked(D) == 0)
   {
     dolfin_error("SubMesh.cpp",
                  "construct SubMesh",
                  "Mesh does not include a MeshValueCollection the cell dimension of the mesh");
-  } 
-  
-  // Get MeshFunction from MeshValueCollection
-  boost::shared_ptr<const MeshFunction<std::size_t> > sub_domains = \
-    mesh.domains().cell_domains();
-  
+  }
+
+  // Get cell markers
+  const std::map<std::size_t, std::size_t>& cell_markers
+    = mesh.domains().markers(D);
+
+  // Build vector for all cells to hold markers
+  std::vector<std::size_t> sub_domains(mesh.num_cells(),
+                                std::numeric_limits<std::size_t>::max());
+  std::map<std::size_t, std::size_t>::const_iterator it;
+  for (it = cell_markers.begin(); it != cell_markers.end(); ++it)
+    sub_domains[it->first] = it->second;
+
   // Create sub mesh
-  init(mesh, *sub_domains, sub_domain);
+  init(mesh, sub_domains, sub_domain);
 }
 //-----------------------------------------------------------------------------
 SubMesh::~SubMesh()
@@ -75,61 +95,92 @@ SubMesh::~SubMesh()
 }
 //-----------------------------------------------------------------------------
 void SubMesh::init(const Mesh& mesh,
-                   const MeshFunction<std::size_t>& sub_domains, std::size_t sub_domain)
+                   const std::vector<std::size_t>& sub_domains,
+                   std::size_t sub_domain)
 {
   // Open mesh for editing
   MeshEditor editor;
-  const std::size_t cell_dim_t = mesh.topology().dim();
-  editor.open(*this, mesh.type().cell_type(),
-              cell_dim_t, mesh.geometry().dim());
+  const std::size_t D = mesh.topology().dim();
+  editor.open(*this, mesh.type().cell_type(), D,
+              mesh.geometry().dim());
 
-  // Extract cells
-  std::set<std::size_t> cells;
+  // Build set of cells that are in sub-mesh
+  std::set<std::size_t> submesh_cells;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    if (sub_domains[*cell] == sub_domain)
-      cells.insert(cell->index());
+    if (sub_domains[cell->index()] == sub_domain)
+      submesh_cells.insert(cell->index());
   }
 
-  // Map to keep track of new local indices for vertices and cells
-  std::map<std::size_t, std::size_t> local_vertex_indices;
-  std::vector<std::size_t> local_cell_indices;
-  local_cell_indices.reserve(cells.size());
-  MeshFunction<std::size_t> parent_to_local_cell_indices(mesh, cell_dim_t);
+  // Map from parent vertex index to submesh vertex index
+  std::map<std::size_t, std::size_t> parent_to_submesh_vertex_indices;
 
-  // Add cells
-  editor.init_cells(cells.size());
+  // Map from submesh cell to parent cell
+  std::vector<std::size_t> submesh_cell_parent_indices;
+  submesh_cell_parent_indices.reserve(submesh_cells.size());
+
+  // Vector from parent cell index to submesh cell index
+  std::vector<std::size_t> parent_to_submesh_cell_indices(mesh.num_cells(), 0);
+
+  // Add sub-mesh cells
+  editor.init_cells(submesh_cells.size());
   std::size_t current_cell = 0;
   std::size_t current_vertex = 0;
-  for (std::set<std::size_t>::iterator cell_it = cells.begin();
-       cell_it != cells.end(); ++cell_it)
+  for (std::set<std::size_t>::iterator cell_it = submesh_cells.begin();
+       cell_it != submesh_cells.end(); ++cell_it)
   {
+    // Data structure to hold new vertex indices for cell
     std::vector<std::size_t> cell_vertices;
+
+    // Create cell
     Cell cell(mesh, *cell_it);
+
+    // Iterate over cell vertices
     for (VertexIterator vertex(cell); !vertex.end(); ++vertex)
     {
       const std::size_t parent_vertex_index = vertex->index();
-      std::size_t local_vertex_index = 0;
+
+      // Look for parent vertex in map
       std::map<std::size_t, std::size_t>::iterator vertex_it
-        = local_vertex_indices.find(parent_vertex_index);
-      if (vertex_it != local_vertex_indices.end())
-        local_vertex_index = vertex_it->second;
+        = parent_to_submesh_vertex_indices.find(parent_vertex_index);
+
+      // If vertex has been inserted, get new index, otherwise
+      // increment and insert
+      std::size_t submesh_vertex_index = 0;
+      if (vertex_it != parent_to_submesh_vertex_indices.end())
+        submesh_vertex_index = vertex_it->second;
       else
       {
-        local_vertex_index = current_vertex++;
-        local_vertex_indices[parent_vertex_index] = local_vertex_index;
+        submesh_vertex_index = current_vertex++;
+        parent_to_submesh_vertex_indices[parent_vertex_index]
+          = submesh_vertex_index;
       }
-      cell_vertices.push_back(local_vertex_index);
+
+      // Add vertex to list of cell vertices (new indexing)
+      cell_vertices.push_back(submesh_vertex_index);
     }
-    local_cell_indices.push_back(cell.index());
-    parent_to_local_cell_indices[*cell_it] = current_cell;
+
+    // Add parent cell index to list
+    submesh_cell_parent_indices.push_back(cell.index());
+
+    // Store parent cell -> submesh cell indices
+    parent_to_submesh_cell_indices[cell.index()] = current_cell;
+
+    // Add cell to mesh
     editor.add_cell(current_cell++, cell_vertices);
   }
 
+  // Vector to hold submesh vertex -> parent vertex
+  std::vector<std::size_t> parent_vertex_indices;
+  parent_vertex_indices.reserve((parent_to_submesh_vertex_indices.size()));
+
+  // Initialise mesh editor
+  editor.init_vertices(parent_to_submesh_vertex_indices.size());
+
   // Add vertices
-  editor.init_vertices(local_vertex_indices.size());
-  for (std::map<std::size_t, std::size_t>::iterator it = local_vertex_indices.begin();
-       it != local_vertex_indices.end(); ++it)
+  for (std::map<std::size_t, std::size_t>::iterator it
+         = parent_to_submesh_vertex_indices.begin();
+       it != parent_to_submesh_vertex_indices.end(); ++it)
   {
     Vertex vertex(mesh, it->first);
     if (MPI::num_processes() > 1)
@@ -137,106 +188,115 @@ void SubMesh::init(const Mesh& mesh,
 
     // FIXME: Get global vertex index
     editor.add_vertex(it->second, vertex.point());
+    parent_vertex_indices.push_back(it->second);
   }
 
   // Close editor
   editor.close();
 
-  // Build local-to-parent mapping for vertices
-  boost::shared_ptr<MeshFunction<std::size_t> > parent_vertex_indices
-    = data().create_mesh_function("parent_vertex_indices", 0);
-  for (std::map<std::size_t, std::size_t>::iterator it = local_vertex_indices.begin();
-       it != local_vertex_indices.end(); ++it)
+  // Build submesh-to-parent map for vertices
+  std::vector<std::size_t>& parent_vertex_indices_mf
+    = data().create_array("parent_vertex_indices", 0);
+  parent_vertex_indices_mf.resize(num_vertices());
+  for (std::map<std::size_t, std::size_t>::iterator it
+         = parent_to_submesh_vertex_indices.begin();
+       it != parent_to_submesh_vertex_indices.end(); ++it)
   {
-    (*parent_vertex_indices)[it->second] = it->first;
+    parent_vertex_indices_mf[it->second] = it->first;
   }
 
-  // Build local-to-parent mapping for cells
+
+  // Build submesh-to-parent map for cells
+  std::vector<std::size_t>& parent_cell_indices
+    = data().create_array("parent_cell_indices", D);
+  parent_cell_indices.resize(num_cells());
   current_cell = 0;
-  boost::shared_ptr<MeshFunction<std::size_t> > parent_cell_indices
-    = data().create_mesh_function("parent_cell_indices", cell_dim_t);
-  for (std::vector<std::size_t>::iterator it = local_cell_indices.begin();
-       it != local_cell_indices.end(); ++it)
+  for (std::vector<std::size_t>::iterator it
+         = submesh_cell_parent_indices.begin();
+       it != submesh_cell_parent_indices.end(); ++it)
   {
-    (*parent_cell_indices)[current_cell++] = *it;
+    parent_cell_indices[current_cell++] = *it;
   }
-  
-  // Init present MeshValueCollection
+
+  // Init present MeshDomain
   const MeshDomains& parent_domains = mesh.domains();
   this->domains().init(parent_domains.max_dim());
 
   // Collect MeshValueCollections from parent mesh
-  for (std::size_t dim_t=0; dim_t <= parent_domains.max_dim(); dim_t++)
+  for (std::size_t dim_t = 0; dim_t <= parent_domains.max_dim(); dim_t++)
   {
-    
-    // If parent mesh does not has a MeshValueCollection for dim_t
-    if (parent_domains.num_marked(dim_t)==0)
-      continue;
-    
-    // Special case when local entity does not map to vertex number
-    if (cell_dim_t==3 && dim_t==1)
+    // If parent mesh does not has a data for dim_t
+    if (parent_domains.num_marked(dim_t) == 0)
       continue;
 
-    // Get local markers
-    boost::shared_ptr<MeshValueCollection<std::size_t> > local_markers = \
-    	this->domains().markers(dim_t);
-    
-    // Get values map from parent MeshValueCollection
-    const std::map<std::pair<std::size_t, std::size_t>, std::size_t>& values = \
-    	parent_domains.markers(dim_t)->values();
+    // FIXME: Cam avoid building this map for cell and vertices
 
-    // Parent connectivity to map local entity to vertex value
-    const MeshConnectivity& parent_conn = mesh.topology()(cell_dim_t, 0);
-
-    // Iterate over all values in parent MeshValueCollection
-    std::map<std::pair<std::size_t, std::size_t>, std::size_t>::const_iterator itt;
-    for (itt = values.begin(); itt != values.end(); itt++)
+    // Build map from submesh entity (gloabl vertex list) -> (submesh index)
+    std::map<std::vector<std::size_t>, std::size_t> entity_map;
+    for (MeshEntityIterator e(mesh, dim_t); !e.end(); ++e)
     {
-    	
-      // Check if the cell is included in the submesh
-      if (sub_domains[itt->first.first] == sub_domain)
-      {
+      // Build list of entity vertex indices and sort
+      std::vector<std::size_t> vertex_list;
+      for (VertexIterator v(*e); !v.end(); ++v)
+        vertex_list.push_back(parent_vertex_indices[v->index()]);
+      std::sort(vertex_list.begin(), vertex_list.end());
 
-	// If Cell MeshValueCollection
-	if (dim_t == cell_dim_t)
-	{
-	  // Set new value based on local cell
-	  local_markers->set_value(parent_to_local_cell_indices[itt->first.first], 
-				   0, itt->second);
-	}
-
-	// Facet or Vertex MeshValueCollection
-	else
-	{
-	  
-	  // Local Cell
-	  const Cell local_cell(*this, parent_to_local_cell_indices[itt->first.first]);
-
-	  // Find what parent vertex the local entity of the MeshValueCollection map to
-	  // and the equivalent local vertex index
-	  const std::size_t parent_vertex_index = parent_conn(itt->first.first) \
-	    [itt->first.second];
-	  std::map<std::size_t, std::size_t>::iterator vertex_it \
-	    = local_vertex_indices.find(parent_vertex_index);
-	  const std::size_t local_vertex_index = vertex_it->second;
-    	    
-	  // Find what new local entity index the local vertex maps to
-	  std::size_t local_entity_index;
-	  for (local_entity_index=0; local_entity_index<local_cell.num_entities(0); 
-	       local_entity_index++)
-	    if (local_cell.entities(0)[local_entity_index] == local_vertex_index)
-	      break;
-
-	  // Set new value based on local cell and new local entity index
-	  local_markers->set_value(local_cell.index(), local_entity_index, itt->second);
-
-	}
-	
-      }
-    
+      entity_map[vertex_list] = e->index();
     }
 
+    // Get submesh marker map
+    std::map<std::size_t, std::size_t>& submesh_markers
+      = this->domains().markers(dim_t);
+
+    // Get values map from parent MeshValueCollection
+    const std::map<std::size_t, std::size_t>& parent_markers
+      = parent_domains.markers(dim_t);
+
+    // Iterate over all parents marker values
+    std::map<std::size_t, std::size_t>::const_iterator itt;
+    for (itt = parent_markers.begin(); itt != parent_markers.end(); itt++)
+    {
+      // Create parent entity
+      MeshEntity parent_entity(mesh, dim_t, itt->first);
+
+      // FIXME: Need to check all attached cells
+
+      std::size_t parent_cell_index;
+      if (dim_t == D)
+        parent_cell_index = itt->first;
+      else
+      {
+        // Get first parent cell index attached to parent entity
+        parent_cell_index = parent_entity.entities(D)[0];
+      }
+
+      // Get submesh cell index
+      const std::size_t submesh_cell_index
+        = parent_to_submesh_cell_indices[parent_cell_index];
+
+      // Check if the cell is included in the submesh
+      if (sub_domains[parent_cell_index] == sub_domain)
+      {
+        // Map markers from parent mesh to submesh
+	if (dim_t == D)
+	  submesh_markers[submesh_cell_index] = itt->second;
+	else
+	{
+          std::vector<std::size_t> parent_vertex_list;
+          for (VertexIterator v(parent_entity); !v.end(); ++v)
+            parent_vertex_list.push_back(v->index());
+          std::sort(parent_vertex_list.begin(), parent_vertex_list.end());
+
+          // Get submesh entity index
+          std::map<std::vector<std::size_t>, std::size_t>::const_iterator
+            submesh_it = entity_map.find(parent_vertex_list);
+          dolfin_assert(submesh_it != entity_map.end());
+
+          submesh_markers[submesh_it->second] = itt->second;
+	}
+      }
+    }
   }
-  
+
 }
 //-----------------------------------------------------------------------------
