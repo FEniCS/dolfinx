@@ -155,8 +155,10 @@ namespace dolfin
     pugi::xml_node mf_node = xml_node.append_child("mesh_value_collection");
     mf_node.append_attribute("name") = mesh_value_collection.name().c_str();
     mf_node.append_attribute("type") = type.c_str();
-    mf_node.append_attribute("dim")  = (unsigned int)mesh_value_collection.dim();
-    mf_node.append_attribute("size") = (unsigned int) mesh_value_collection.size();
+    mf_node.append_attribute("dim")
+      = (unsigned int)mesh_value_collection.dim();
+    mf_node.append_attribute("size")
+      = (unsigned int) mesh_value_collection.size();
 
     // Add data
     const std::map<std::pair<std::size_t, std::size_t>, T>&
@@ -165,9 +167,12 @@ namespace dolfin
     for (it = values.begin(); it != values.end(); ++it)
     {
       pugi::xml_node entity_node = mf_node.append_child("value");
-      entity_node.append_attribute("cell_index") = (unsigned int) it->first.first;
-      entity_node.append_attribute("local_entity") = (unsigned int) it->first.second;
-      entity_node.append_attribute("value") = boost::lexical_cast<std::string>(it->second).c_str();
+      entity_node.append_attribute("cell_index")
+        = (unsigned int) it->first.first;
+      entity_node.append_attribute("local_entity")
+        = (unsigned int) it->first.second;
+      entity_node.append_attribute("value")
+        = boost::lexical_cast<std::string>(it->second).c_str();
     }
   }
   //---------------------------------------------------------------------------

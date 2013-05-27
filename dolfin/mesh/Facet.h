@@ -24,6 +24,7 @@
 #define __FACET_H
 
 #include <utility>
+#include <vector>
 #include "Cell.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
@@ -65,7 +66,7 @@ namespace dolfin
     /// will depend on the (arbitrary) ordering of the mesh
     /// connectivity.
     std::pair<const Cell, const Cell>
-    adjacent_cells(const MeshFunction<std::size_t>* facet_orientation) const;
+      adjacent_cells(const std::vector<std::size_t>* facet_orientation) const;
 
   };
 

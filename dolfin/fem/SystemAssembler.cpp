@@ -651,15 +651,20 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
   }
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble_interior_facet(GenericMatrix* A, GenericVector* b,
+void SystemAssembler::assemble_interior_facet(GenericMatrix* A,
+                                              GenericVector* b,
                                               UFC& A_ufc, UFC& b_ufc,
                                               const Form& a, const Form& L,
-                                              const Cell& cell0, const Cell& cell1,
-                                              const Facet& facet, Scratch& data,
-                                              const DirichletBC::Map& boundary_values)
+                                              const Cell& cell0,
+                                              const Cell& cell1,
+                                              const Facet& facet,
+                                              Scratch& data,
+                                        const DirichletBC::Map& boundary_values)
 {
+  const std::size_t D = cell0.mesh().topology().dim();
+
   // Facet orientation not supported
-  if (cell0.mesh().data().mesh_function("facet_orientation"))
+  if (cell0.mesh().data().exists("facet_orientation", D - 1))
   {
     dolfin_error("SystemAssembler.cpp",
                  "assemble system",
@@ -670,13 +675,19 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix* A, GenericVector* b
   const std::size_t cell1_index = cell1.index();
 
   // Tabulate dofs
-  const std::vector<dolfin::la_index>& a0_dofs0 = a.function_space(0)->dofmap()->cell_dofs(cell0_index);
-  const std::vector<dolfin::la_index>& a1_dofs0 = a.function_space(1)->dofmap()->cell_dofs(cell0_index);
-  const std::vector<dolfin::la_index>& L_dofs0  = L.function_space(0)->dofmap()->cell_dofs(cell0_index);
+  const std::vector<dolfin::la_index>& a0_dofs0
+    = a.function_space(0)->dofmap()->cell_dofs(cell0_index);
+  const std::vector<dolfin::la_index>& a1_dofs0
+    = a.function_space(1)->dofmap()->cell_dofs(cell0_index);
+  const std::vector<dolfin::la_index>& L_dofs0
+    = L.function_space(0)->dofmap()->cell_dofs(cell0_index);
 
-  const std::vector<dolfin::la_index>& a0_dofs1 = a.function_space(0)->dofmap()->cell_dofs(cell1_index);
-  const std::vector<dolfin::la_index>& a1_dofs1 = a.function_space(1)->dofmap()->cell_dofs(cell1_index);
-  const std::vector<dolfin::la_index>& L_dofs1  = L.function_space(0)->dofmap()->cell_dofs(cell1_index);
+  const std::vector<dolfin::la_index>& a0_dofs1
+    = a.function_space(0)->dofmap()->cell_dofs(cell1_index);
+  const std::vector<dolfin::la_index>& a1_dofs1
+    = a.function_space(1)->dofmap()->cell_dofs(cell1_index);
+  const std::vector<dolfin::la_index>& L_dofs1
+    = L.function_space(0)->dofmap()->cell_dofs(cell1_index);
 
   // Cell integrals
   const ufc::cell_integral* A_cell_integral = A_ufc.default_cell_integral.get();
@@ -783,7 +794,8 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix* A, GenericVector* b
   _a_macro_dofs[0] = &a_macro_dofs[0];
   _a_macro_dofs[1] = &a_macro_dofs[1];
 
-  apply_bc(A_ufc.macro_A.data(), b_ufc.macro_A.data(), boundary_values, _a_macro_dofs);
+  apply_bc(A_ufc.macro_A.data(), b_ufc.macro_A.data(), boundary_values,
+           _a_macro_dofs);
 
   // Add entries to global tensor
   if (A)
@@ -803,7 +815,8 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix* A,
 {
   const std::size_t local_facet = cell.index(facet);
 
-  ufc::exterior_facet_integral* A_facet_integral = A_ufc.default_exterior_facet_integral.get();
+  ufc::exterior_facet_integral* A_facet_integral
+    = A_ufc.default_exterior_facet_integral.get();
   if (A_facet_integral)
   {
     A_ufc.update(cell, local_facet);
@@ -831,7 +844,8 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix* A,
   // If we have local facet 0, assemble cell integral
   if (local_facet == 0)
   {
-    const ufc::cell_integral* A_cell_integral = A_ufc.default_cell_integral.get();
+    const ufc::cell_integral* A_cell_integral
+      = A_ufc.default_cell_integral.get();
     if (A_cell_integral)
     {
       A_ufc.update(cell);
@@ -843,7 +857,8 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix* A,
         data.Ae[i] += A_ufc.A[i];
     }
 
-    const ufc::cell_integral* b_cell_integral = b_ufc.default_cell_integral.get();
+    const ufc::cell_integral* b_cell_integral
+      = b_ufc.default_cell_integral.get();
     if (b_cell_integral)
     {
       b_ufc.update(cell);
@@ -876,7 +891,8 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix* A,
 //-----------------------------------------------------------------------------
 SystemAssembler::Scratch::Scratch(const Form& a, const Form& L)
 {
-  std::size_t A_num_entries = a.function_space(0)->dofmap()->max_cell_dimension();
+  std::size_t A_num_entries
+    = a.function_space(0)->dofmap()->max_cell_dimension();
   A_num_entries *= a.function_space(1)->dofmap()->max_cell_dimension();
   Ae.resize(A_num_entries);
 

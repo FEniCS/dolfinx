@@ -43,6 +43,7 @@
 #include "LocalMeshData.h"
 #include "Mesh.h"
 #include "MeshEditor.h"
+#include "MeshEntity.h"
 #include "MeshEntityIterator.h"
 #include "MeshFunction.h"
 #include "MeshTopology.h"
@@ -59,14 +60,17 @@ template void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
    const std::vector<std::pair<std::pair<std::size_t, std::size_t>, std::size_t> >&
                                                             local_value_data,
    MeshValueCollection<std::size_t>& mesh_values);
+
 template void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
    const std::vector<std::pair<std::pair<std::size_t, std::size_t>, int> >&
                                                             local_value_data,
    MeshValueCollection<int>& mesh_values);
+
 template void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
    const std::vector<std::pair<std::pair<std::size_t, std::size_t>, double> >&
                                                             local_value_data,
    MeshValueCollection<double>& mesh_values);
+
 template void MeshPartitioning::build_mesh_value_collection(const Mesh& mesh,
    const std::vector<std::pair<std::pair<std::size_t, std::size_t>, bool> >&
                                                             local_value_data,
@@ -472,7 +476,7 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
 {
   // Local domain data
   const std::map<std::size_t, std::vector< std::pair<std::pair<std::size_t, std::size_t>,
-                                                     std::size_t> > >
+                                                     std::size_t> > >&
     domain_data = local_data.domain_data;
 
   if (domain_data.empty())
@@ -488,12 +492,38 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
   {
     // Get mesh value collection used for marking
     const std::size_t dim = dim_data->first;
-    dolfin_assert(mesh.domains().markers(dim));
-    MeshValueCollection<std::size_t>& markers = *(mesh.domains().markers(dim));
 
-    const std::vector< std::pair<std::pair<std::size_t, std::size_t>, std::size_t> >&
-        local_value_data = dim_data->second;
-    build_mesh_value_collection(mesh, local_value_data, markers);
+    // Initialise mesh
+    mesh.init(dim);
+
+    // Create empty MeshValueCollection
+    MeshValueCollection<std::size_t> mvc(dim);
+
+    // Get domain data
+    const std::vector<std::pair<std::pair<std::size_t, std::size_t>,
+                                std::size_t> >& local_value_data = dim_data->second;
+
+    // Build mesh value vollection
+    build_mesh_value_collection(mesh, local_value_data, mvc);
+
+    // Get data from mesh value collection
+    const std::map<std::pair<std::size_t, std::size_t>, std::size_t>& values
+      = mvc.values();
+
+    // Get map from mes domains
+    std::map<std::size_t, std::size_t>& markers = mesh.domains().markers(dim);
+
+    std::map<std::pair<std::size_t, std::size_t>, std::size_t>::const_iterator it;
+    for (it = values.begin(); it != values.end(); ++it)
+    {
+      const std::size_t cell_index = it->first.first;
+      const std::size_t local_entity_index = it->first.second;
+
+      const Cell cell(mesh, cell_index);
+      const MeshEntity e(mesh, dim, cell.entities(dim)[local_entity_index]);
+      markers[e.index()] = it->second;
+    }
+
   }
 }
 //-----------------------------------------------------------------------------
