@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-05-27
+// Last changed: 2013-05-28
 
 #ifndef __BOUNDING_BOX_TREE_H
 #define __BOUNDING_BOX_TREE_H
@@ -25,7 +25,6 @@
 #include <boost/scoped_ptr.hpp>
 #include <vector>
 #include <limits>
-#include <dolfin/common/types.h>
 
 namespace dolfin
 {
@@ -78,7 +77,7 @@ namespace dolfin
     /// Compute all collisions between bounding boxes and given _Point_.
     ///
     /// *Returns*
-    ///     std::vector<mesh_index>
+    ///     std::vector<unsigned int>
     ///         A list of local indices for entities contained in
     ///         (leaf) bounding boxes that collide with (intersect)
     ///         the given point.
@@ -86,13 +85,13 @@ namespace dolfin
     /// *Arguments*
     ///     point (_Point_)
     ///         The point.
-    std::vector<mesh_index>
+    std::vector<unsigned int>
     compute_collisions(const Point& point) const;
 
     /// Compute all collisions between entities and given _Point_.
     ///
     /// *Returns*
-    ///     std::vector<mesh_index>
+    ///     std::vector<unsigned int>
     ///         A list of local indices for entities that collide with
     ///         (intersect) the given point.
     ///
@@ -101,31 +100,31 @@ namespace dolfin
     ///         The point.
     ///     mesh (_Mesh_)
     ///         The mesh.
-    std::vector<mesh_index>
+    std::vector<unsigned int>
     compute_entity_collisions(const Point& point, const Mesh& mesh) const;
 
     /// Compute first collision between bounding boxes and given _Point_.
     ///
     /// *Returns*
-    ///     mesh_index
+    ///     unsigned int
     ///         The local index for the first found entity contained
     ///         in a (leaf) bounding box that collides with
     ///         (intersects) the given point. If not found,
-    ///         std::numeric_limits<mesh_index>::max() is returned.
+    ///         std::numeric_limits<unsigned int>::max() is returned.
     ///
     /// *Arguments*
     ///     point (_Point_)
     ///         The point.
-    mesh_index
+    unsigned int
     compute_first_collision(const Point& point) const;
 
     /// Compute first collision between entities and given _Point_.
     ///
     /// *Returns*
-    ///     mesh_index
+    ///     unsigned int
     ///         The local index for the first found entity that
     ///         collides with (intersects) the given point. If not
-    ///         found, std::numeric_limits<mesh_index>::max() is
+    ///         found, std::numeric_limits<unsigned int>::max() is
     ///         returned.
     ///
     /// *Arguments*
@@ -133,13 +132,13 @@ namespace dolfin
     ///         The point.
     ///     mesh (_Mesh_)
     ///         The mesh.
-    mesh_index
+    unsigned int
     compute_first_entity_collision(const Point& point, const Mesh& mesh) const;
 
     /// Compute closest entity to given _Point_.
     ///
     /// *Returns*
-    ///     mesh_index
+    ///     unsigned int
     ///         The local index for the entity that is closest to the
     ///         point. If more than one entity is at the same distance
     ///         (or point contained in entity), then the first entity
@@ -152,7 +151,7 @@ namespace dolfin
     ///         The point.
     ///     mesh (_Mesh_)
     ///         The mesh.
-    std::pair<mesh_index, double>
+    std::pair<unsigned int, double>
     compute_closest_entity(const Point& point, const Mesh& mesh) const;
 
     /// Compute closest point to given _Point_. This function assumes
@@ -166,7 +165,7 @@ namespace dolfin
     /// implementations in TetrahedronCell.cpp etc.
     ///
     /// *Returns*
-    ///     mesh_index
+    ///     unsigned int
     ///         The local index for the point that is closest to the
     ///         point. If more than one point is at the same distance
     ///         (or point contained in entity), then the first point
@@ -177,7 +176,7 @@ namespace dolfin
     /// *Arguments*
     ///     point (_Point_)
     ///         The point.
-    std::pair<mesh_index, double>
+    std::pair<unsigned int, double>
     compute_closest_point(const Point& point) const;
 
   private:

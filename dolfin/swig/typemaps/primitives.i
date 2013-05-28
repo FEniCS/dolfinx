@@ -21,7 +21,7 @@
 // Modified by Johan Hake, 2008-2011.
 //
 // First added:  2006-04-16
-// Last changed: 2013-05-27
+// Last changed: 2013-05-28
 
 //=============================================================================
 // General typemaps for PyDOLFIN
@@ -41,15 +41,6 @@
 %fragment("SWIG_From_dolfin_la_index", "header")
 {
   SWIGINTERNINLINE PyObject * SWIG_From_dolfin_la_index(dolfin::la_index value)
-  {
-    return SWIG_From_unsigned_SS_long (static_cast< unsigned long >(value));
-  }
-}
-
-// Make sure Python int from dolfin::mesh_index can be constructed
-%fragment("SWIG_From_dolfin_mesh_index", "header")
-{
-  SWIGINTERNINLINE PyObject * SWIG_From_dolfin_mesh_index(dolfin::mesh_index value)
   {
     return SWIG_From_unsigned_SS_long (static_cast< unsigned long >(value));
   }
@@ -202,4 +193,3 @@
 %fragment(SWIG_From_frag(int));
 %fragment(SWIG_From_frag(std::size_t));
 %fragment(SWIG_From_frag(dolfin::la_index));
-%fragment(SWIG_From_frag(dolfin::mesh_index));

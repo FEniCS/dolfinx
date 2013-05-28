@@ -43,13 +43,13 @@ namespace dolfin
     ~MeshPointIntersection();
 
     /// Return the list of (local) indices for intersected cells
-    const std::vector<mesh_index>& intersected_cells() const
+    const std::vector<unsigned int>& intersected_cells() const
     { return _intersected_cells; }
 
   private:
 
     // The list of (local) indices for intersected cells
-    std::vector<mesh_index> _intersected_cells;
+    std::vector<unsigned int> _intersected_cells;
 
   };
 

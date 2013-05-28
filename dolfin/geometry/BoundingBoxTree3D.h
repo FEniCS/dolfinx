@@ -43,7 +43,7 @@ namespace dolfin
       const std::vector<double>& bboxes;
       less_x_bbox(const std::vector<double>& bboxes): bboxes(bboxes) {}
 
-      inline bool operator()(mesh_index i, mesh_index j)
+      inline bool operator()(unsigned int i, unsigned int j)
       {
         const double* bi = bboxes.data() + 6*i;
         const double* bj = bboxes.data() + 6*j;
@@ -56,7 +56,7 @@ namespace dolfin
       const std::vector<double>& bboxes;
       less_y_bbox(const std::vector<double>& bboxes): bboxes(bboxes) {}
 
-      inline bool operator()(mesh_index i, mesh_index j)
+      inline bool operator()(unsigned int i, unsigned int j)
       {
         const double* bi = bboxes.data() + 6*i;
         const double* bj = bboxes.data() + 6*j;
@@ -69,7 +69,7 @@ namespace dolfin
       const std::vector<double>& bboxes;
       less_z_bbox(const std::vector<double>& bboxes): bboxes(bboxes) {}
 
-      inline bool operator()(mesh_index i, mesh_index j)
+      inline bool operator()(unsigned int i, unsigned int j)
       {
         const double* bi = bboxes.data() + 6*i;
         const double* bj = bboxes.data() + 6*j;
@@ -81,7 +81,7 @@ namespace dolfin
     std::size_t gdim() const { return 3; }
 
     // Check whether point is in bounding box
-    bool point_in_bbox(const double* x, mesh_index node) const
+    bool point_in_bbox(const double* x, unsigned int node) const
     {
       const double* b = _bbox_coordinates.data() + 6*node;
       return (b[0] - DOLFIN_EPS < x[0] && x[0] < b[3] + DOLFIN_EPS &&
@@ -91,7 +91,7 @@ namespace dolfin
 
     // Compute squared distance between point and bounding box
     double compute_squared_distance_bbox(const double* x,
-                                         mesh_index node) const
+                                         unsigned int node) const
     {
       // Note: Some else-if might be in order here but I assume the
       // compiler can do a better job at optimizing/parallelizing this
@@ -113,7 +113,7 @@ namespace dolfin
 
     // Compute squared distance between point and point
     double compute_squared_distance_point(const double* x,
-                                          mesh_index node) const
+                                          unsigned int node) const
     {
       const double* p = _bbox_coordinates.data() + 6*node;
       return ((x[0] - p[0])*(x[0] - p[0]) +
@@ -125,10 +125,10 @@ namespace dolfin
     void compute_bbox_of_bboxes(double* bbox,
                                 std::size_t& axis,
                                 const std::vector<double>& leaf_bboxes,
-                                const std::vector<mesh_index>::iterator& begin,
-                                const std::vector<mesh_index>::iterator& end)
+                                const std::vector<unsigned int>::iterator& begin,
+                                const std::vector<unsigned int>::iterator& end)
     {
-      typedef std::vector<mesh_index>::const_iterator iterator;
+      typedef std::vector<unsigned int>::const_iterator iterator;
 
       // Get coordinates for first box
       iterator it = begin;
@@ -169,10 +169,10 @@ namespace dolfin
     void compute_bbox_of_points(double* bbox,
                                 std::size_t& axis,
                                 const std::vector<Point>& points,
-                                const std::vector<mesh_index>::iterator& begin,
-                                const std::vector<mesh_index>::iterator& end)
+                                const std::vector<unsigned int>::iterator& begin,
+                                const std::vector<unsigned int>::iterator& end)
     {
-      typedef std::vector<mesh_index>::const_iterator iterator;
+      typedef std::vector<unsigned int>::const_iterator iterator;
 
       // Get coordinates for first point
       iterator it = begin;
@@ -212,9 +212,9 @@ namespace dolfin
     // Sort leaf bounding boxes along given axis
     void sort_bboxes(std::size_t axis,
                      const std::vector<double>& leaf_bboxes,
-                     const std::vector<mesh_index>::iterator& begin,
-                     const std::vector<mesh_index>::iterator& middle,
-                     const std::vector<mesh_index>::iterator& end)
+                     const std::vector<unsigned int>::iterator& begin,
+                     const std::vector<unsigned int>::iterator& middle,
+                     const std::vector<unsigned int>::iterator& end)
     {
       switch (axis)
       {

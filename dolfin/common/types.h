@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2008-04-22
-// Last changed: 2013-05-27
+// Last changed: 2013-05-28
 //
 // This file provides DOLFIN typedefs for basic types.
 
@@ -38,11 +38,6 @@ namespace dolfin
   #else
   typedef int la_index;
   #endif
-
-  /// Index type for mesh entity indices. For efficiency, unsigned int
-  /// is used rather than std::size_t for storing indices to local
-  /// mesh entities.
-  typedef unsigned int mesh_index;
 
 }
 
