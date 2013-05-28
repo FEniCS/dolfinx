@@ -29,6 +29,8 @@ class IntervalTest(unittest.TestCase):
 
     def test_contains(self):
 
+        if MPI.num_processes() > 1: return
+
         mesh = UnitIntervalMesh(1)
         cell = Cell(mesh, 0)
 
@@ -36,6 +38,8 @@ class IntervalTest(unittest.TestCase):
         self.assertEqual(cell.contains(Point(1.5)), False)
 
     def test_distance(self):
+
+        if MPI.num_processes() > 1: return
 
         mesh = UnitIntervalMesh(1)
         cell = Cell(mesh, 0)
@@ -47,6 +51,8 @@ class TriangleTest(unittest.TestCase):
 
     def test_contains(self):
 
+        if MPI.num_processes() > 1: return
+
         mesh = UnitSquareMesh(1, 1)
         cell = Cell(mesh, 0)
 
@@ -54,6 +60,8 @@ class TriangleTest(unittest.TestCase):
         self.assertEqual(cell.contains(Point(1.5)), False)
 
     def test_distance(self):
+
+        if MPI.num_processes() > 1: return
 
         mesh = UnitSquareMesh(1, 1)
         cell = Cell(mesh, 1)
@@ -66,6 +74,8 @@ class TetrahedronTest(unittest.TestCase):
 
     def test_contains(self):
 
+        if MPI.num_processes() > 1: return
+
         mesh = UnitCubeMesh(1, 1, 1)
         cell = Cell(mesh, 0)
 
@@ -73,6 +83,8 @@ class TetrahedronTest(unittest.TestCase):
         self.assertEqual(cell.contains(Point(1.5)), False)
 
     def test_distance(self):
+
+        if MPI.num_processes() > 1: return
 
         mesh = UnitCubeMesh(1, 1, 1)
         cell = Cell(mesh, 5)
@@ -82,5 +94,4 @@ class TetrahedronTest(unittest.TestCase):
         self.assertAlmostEqual(cell.distance(Point(0.5, 0.5, 0.5)), 0.0)
 
 if __name__ == "__main__":
-    if MPI.num_processes() == 1:
         unittest.main()
