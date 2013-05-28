@@ -25,6 +25,7 @@ import unittest
 from dolfin import intersect
 from dolfin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh
 from dolfin import Point
+from dolfin import MPI
 
 class BoundingBoxTreeTest(unittest.TestCase):
 
@@ -36,7 +37,8 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
         intersection = intersect(mesh, point)
 
-        self.assertEqual(intersection.intersected_cells(), [1])
+        if MPI.num_processes() == 1:
+            self.assertEqual(intersection.intersected_cells(), [1])
 
     def test_mesh_point_2d(self):
         "Test mesh-point intersection in 2D"
@@ -46,7 +48,8 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
         intersection = intersect(mesh, point)
 
-        self.assertEqual(intersection.intersected_cells(), [98])
+        if MPI.num_processes() == 1:
+            self.assertEqual(intersection.intersected_cells(), [98])
 
     def test_mesh_point_3d(self):
         "Test mesh-point intersection in 3D"
@@ -56,7 +59,8 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
         intersection = intersect(mesh, point)
 
-        self.assertEqual(intersection.intersected_cells(), [816])
+        if MPI.num_processes() == 1:
+            self.assertEqual(intersection.intersected_cells(), [816])
 
 if __name__ == "__main__":
     print ""
