@@ -216,9 +216,6 @@ void PETScSNESSolver::init(const std::string& method)
   else
     SNESCreate(PETSC_COMM_SELF, _snes.get());
 
-  // Set some options
-  SNESSetFromOptions(*_snes);
-
   // Set solver type
   if (method != "default")
   {
@@ -228,6 +225,9 @@ void PETScSNESSolver::init(const std::string& method)
     dolfin_assert(it != _methods.end());
     SNESSetType(*_snes, it->second.second);
   }
+
+  // Set some options
+  SNESSetFromOptions(*_snes);
 
   // Set to default to not having explicit bounds
   has_explicit_bounds = false;
