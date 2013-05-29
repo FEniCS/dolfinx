@@ -537,8 +537,13 @@ void PETScKrylovSolver::write_report(int num_iterations,
 {
   // Get name of solver and preconditioner
   PC pc;
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR < 4
+  const KSPType ksp_type;
+  const PCType pc_type;
+  #else
   KSPType ksp_type;
   PCType pc_type;
+  #endif
   KSPGetType(*_ksp, &ksp_type);
   KSPGetPC(*_ksp, &pc);
   PCGetType(pc, &pc_type);
@@ -546,8 +551,13 @@ void PETScKrylovSolver::write_report(int num_iterations,
   // If using additive Schwarz or block Jacobi, get 'sub' method which is
   // applied to each block
   const std::string pc_type_str = pc_type;
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR < 4
+  const KSPType sub_ksp_type;
+  const PCType sub_pc_type;
+  #else
   KSPType sub_ksp_type;
   PCType sub_pc_type;
+  #endif
   PC sub_pc;
   KSP* sub_ksp = NULL;
   if (pc_type_str == PCASM || pc_type_str == PCBJACOBI)
