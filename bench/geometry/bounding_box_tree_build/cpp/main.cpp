@@ -20,7 +20,7 @@
 // compute_entities is included so that we may compare the timing to CGAL.
 //
 // First added:  2013-04-18
-// Last changed: 2013-05-27
+// Last changed: 2013-05-29
 
 #include <vector>
 #include <dolfin.h>
@@ -30,7 +30,7 @@ using namespace dolfin;
 #define NUM_REPS 5
 #define SIZE 64
 
-int bench_cgal()
+void bench_cgal()
 {
   cout << "Running CGAL bench" << endl;
 
@@ -43,7 +43,7 @@ int bench_cgal()
   mesh.intersected_cells(point, cells);
 }
 
-int bench_dolfin()
+void bench_dolfin()
 {
   cout << "Running DOLFIN bench" << endl;
 
