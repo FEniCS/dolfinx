@@ -37,3 +37,19 @@ VectorSpaceBasis::VectorSpaceBasis(const std::vector<const GenericVector*> basis
   }
 }
 //-----------------------------------------------------------------------------
+bool VectorSpaceBasis::check_orthonormality() const
+{
+}
+//-----------------------------------------------------------------------------
+void VectorSpaceBasis::orthogonalize(GenericVector& x)
+{
+}
+//-----------------------------------------------------------------------------
+const std::size_t VectorSpaceBasis::size() const
+{
+}
+//-----------------------------------------------------------------------------
+const GenericVector* VectorSpaceBasis::operator[] (int i) const
+{
+}
+//-----------------------------------------------------------------------------
