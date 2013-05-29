@@ -42,20 +42,19 @@ class PointIntegralSolverTest(unittest.TestCase):
 
     def test_butcher_schemes_scalar_time(self):
 
-        # NOTE: Higher order scheme all give the correct solution after 
-        for Scheme in [ForwardEuler, ExplicitMidPoint, 
-                       BackwardEuler, CN2]:
+        for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
+                       BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
             
             mesh = UnitSquareMesh(10, 10)
             V = FunctionSpace(mesh, "CG", 1)
             u = Function(V)
             v = TestFunction(V)
             time = Constant(0.0)
-            form = (2+time+time**2)*v*dP
+            form = (2+time+time**2-time**4)*v*dP
 
             u0=10.0
             tstop = 1.0
-            u_true = Expression("u0 + 2*t + pow(t, 2)/2. + pow(t, 3)/3.", t=tstop, u0=u0)
+            u_true = Expression("u0 + 2*t + pow(t, 2)/2. + pow(t, 3)/3. - pow(t, 5)/5.", t=tstop, u0=u0)
 
             scheme = Scheme(form, u, time)
             info(scheme)
