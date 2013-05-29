@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-05-28
+// Last changed: 2013-05-29
 
 #ifdef HAS_HDF5
 
@@ -669,6 +669,8 @@ void HDF5File::read(Function& u, const std::string name)
     dolfin_assert(dofs_per_cell*rcell.size() == rdofs.size());
     for(std::size_t j = 0; j < rcell.size(); ++j)
     {
+      dolfin_assert(rcell[j] >= cell_range.first);
+      dolfin_assert(rcell[j] < cell_range.second);
       const std::size_t local_i = rcell[j] - cell_range.first;
       cell_to_dof[local_i].assign(rdofs.begin() + j*dofs_per_cell,
                                   rdofs.begin() + (j + 1)*dofs_per_cell);
@@ -682,11 +684,14 @@ void HDF5File::read(Function& u, const std::string name)
     dolfin_assert(dofs_per_cell*rcell.size() == rdofs.size());
     for(std::size_t j = 0; j < rcell.size(); ++j)
     {
+      dolfin_assert(rcell[j] >= cell_range.first);
+      dolfin_assert(rcell[j] < cell_range.second);
       const std::size_t local_i = rcell[j] - cell_range.first;
       const std::vector<dolfin::la_index>& dof = cell_to_dof[local_i];
       for(std::size_t k = 0; k < dof.size(); ++k)
-        data_to_global_index[rdofs[j*dofs_per_cell + k]] = dof[k];
-            
+      {
+        data_to_global_index.insert(std::make_pair(rdofs[j*dofs_per_cell + k], dof[k]));
+      }
     }
   }
   
@@ -715,8 +720,6 @@ void HDF5File::read(Function& u, const std::string name)
                                               all_vec_range.end(), 
                                               p->first) 
                                             - all_vec_range.begin();
-    
-    std::cout << "dest = " << dest << std::endl;
     send_map[dest].push_back(p->first);
     send_map[dest].push_back(p->second);
   }
@@ -737,12 +740,13 @@ void HDF5File::read(Function& u, const std::string name)
     for(std::size_t j = 0; j < p->size(); j += 2)
     {
       const std::vector<dolfin::la_index>& rmap = *p;
+      dolfin_assert(rmap[j] >= vector_range.first);
+      dolfin_assert(rmap[j] < vector_range.second);
       const std::size_t local_vector_index = rmap[j] - vector_range.first;
       const std::size_t dest = std::upper_bound(all_vec_range.begin(),
                                                 all_vec_range.end(), 
                                                 rmap[j + 1]) 
                                               - all_vec_range.begin();
-      std::cout << "dest = " << dest << std::endl;
       send_index[dest].push_back(rmap[j + 1]);
       send_value[dest].push_back(input_vector[local_vector_index]);
     }
@@ -761,6 +765,8 @@ void HDF5File::read(Function& u, const std::string name)
     const std::vector<double>& rvalue = receive_value[i];
     for(std::size_t j = 0; j < rindex.size(); ++j)
     {
+      dolfin_assert(rindex[j] >= vector_range.first);
+      dolfin_assert(rindex[j] < vector_range.second);
       value_data[rindex[j] - vector_range.first] = rvalue[j];
     }
   }
