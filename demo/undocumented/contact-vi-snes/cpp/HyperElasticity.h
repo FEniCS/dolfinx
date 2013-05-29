@@ -23,6 +23,7 @@
 //   quadrature_degree:              'auto'
 //   quadrature_rule:                'auto'
 //   representation:                 'auto'
+//   restrict_keyword:               ''
 //   split:                          False
 //   swig_binary:                    'swig'
 //   swig_path:                      ''
@@ -3536,9 +3537,9 @@ public:
   }
 
   /// Tabulate the tensor for the contribution from a local cell
-  virtual void tabulate_tensor(double* A,
-                               const double * const * w,
-                               const double* vertex_coordinates,
+  virtual void tabulate_tensor(double*      A,
+                               const double * const *      w,
+                               const double*      vertex_coordinates,
                                int cell_orientation) const
   {
     // Compute Jacobian
@@ -3660,9 +3661,9 @@ public:
   }
 
   /// Tabulate the tensor for the contribution from a local cell
-  virtual void tabulate_tensor(double* A,
-                               const double * const * w,
-                               const double* vertex_coordinates,
+  virtual void tabulate_tensor(double*      A,
+                               const double * const *      w,
+                               const double*      vertex_coordinates,
                                int cell_orientation) const
   {
     // Compute Jacobian

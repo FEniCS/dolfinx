@@ -18,7 +18,7 @@
 // This benchmark measures the performance of compute_entity_collisions.
 //
 // First added:  2013-05-23
-// Last changed: 2013-05-27
+// Last changed: 2013-05-30
 
 #include <vector>
 #include <dolfin.h>
@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
     t = bench_dolfin(mesh);
 
   // Report result
-  info("BENCH %g", toc());
+  info("BENCH %g", t);
 
   return 0;
 }
