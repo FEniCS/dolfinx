@@ -109,6 +109,9 @@ struct snes_ctx_t
       ("qn",           std::make_pair("Limited memory quasi-Newton", SNESQN))
       ("ncg",          std::make_pair("Nonlinear conjugate gradient method", SNESNCG))
       ("fas",          std::make_pair("Full Approximation Scheme nonlinear multigrid method", SNESFAS))
+      ("nasm",         std::make_pair("Nonlinear Additive Schwartz", SNESNASM))
+      ("anderson",     std::make_pair("Anderson mixing method", SNESANDERSON))
+      ("aspin",        std::make_pair("Additive-Schwarz Preconditioned Inexact Newton", SNESASPIN))
       ("ms",           std::make_pair("Multistage smoothers", SNESMS));
   #endif
 #else // Development version
