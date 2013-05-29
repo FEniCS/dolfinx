@@ -19,11 +19,12 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-06-12
-// Last changed: 2013-05-22
+// Last changed: 2013-05-29
 
 #ifndef __POINT_H
 #define __POINT_H
 
+#include <cmath>
 #include <iostream>
 #include <dolfin/log/log.h>
 
