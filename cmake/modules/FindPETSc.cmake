@@ -157,9 +157,6 @@ show :
   # Call macro to get the PETSc 3rd-party libraries
   petsc_get_variable(PETSC_EXTERNAL_LIB_BASIC PETSC_EXTERNAL_LIB_BASIC)
 
-  # Remove temporary Makefile
-  file(REMOVE ${petsc_config_makefile})
-
   # Extract include paths and libraries from compile command line
   include(ResolveCompilerPaths)
   resolve_includes(PETSC_INCLUDE_DIRS "${PETSC_INCLUDE}")
@@ -170,7 +167,7 @@ show :
   if (APPLE)
 
     # CMake will have troubel finding the gfortan libraries if compiling
-    # with clang (the libs may be required by 3rd party Fortran libraries) 
+    # with clang (the libs may be required by 3rd party Fortran libraries)
     find_program(GFORTRAN_EXECUTABLE gfortran)
     if (GFORTRAN_EXECUTABLE)
       execute_process(COMMAND ${GFORTRAN_EXECUTABLE} -print-file-name=libgfortran.dylib
@@ -186,7 +183,14 @@ show :
     list(APPEND PETSC_INCLUDE_DIRS ${X11_X11_INCLUDE_PATH})
     list(APPEND PETSC_EXTERNAL_LIBRARIES ${X11_LIBRARIES})
 
+    # ResolveCompilerPaths strips OSX frameworks, so add BLAS here for OSX
+    petsc_get_variable(PETSC_BLASLAPACK_LIB BLASLAPACK_LIB)
+    list(APPEND PETSC_EXTERNAL_LIBRARIES ${PETSC_BLASLAPACK_LIB})
+
   endif()
+
+  # Remove temporary Makefile
+  file(REMOVE ${petsc_config_makefile})
 
   # Add variables to CMake cache and mark as advanced
   set(PETSC_INCLUDE_DIRS ${PETSC_INCLUDE_DIRS} CACHE STRING "PETSc include paths." FORCE)
