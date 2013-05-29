@@ -303,6 +303,7 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
     it = _methods.find(std::string(parameters["method"]));
     dolfin_assert(it != _methods.end());
     SNESSetType(*_snes, it->second.second);
+    SNESSetFromOptions(*_snes);
   // If
   //      a) the user has set bounds (is_vi())
   // AND  b) the user has not set a solver (method == default)
@@ -322,6 +323,7 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
     #endif
     dolfin_assert(it != _methods.end());
     SNESSetType(*_snes, it->second.second);
+    SNESSetFromOptions(*_snes);
   }
 
   // The line search business changed completely from PETSc 3.2 to 3.3.
