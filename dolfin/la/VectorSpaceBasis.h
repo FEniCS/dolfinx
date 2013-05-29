@@ -49,7 +49,7 @@ namespace dolfin
     void orthogonalize(GenericVector& x);
 
     /// Size
-    const size_t size() const;
+    const std::size_t size() const;
 
     /// Get a particular vector out
     const GenericVector* operator[] (int i) const;
@@ -57,7 +57,7 @@ namespace dolfin
   private:
 
     /// Data
-    boost::shared_ptr<std::vector<GenericVector*> > _basis;
+    boost::shared_ptr<const std::vector<const GenericVector*> > _basis;
 
   };
 }
