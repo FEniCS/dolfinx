@@ -18,7 +18,7 @@
 // This benchmark measures the performance of compute_entity_collisions.
 //
 // First added:  2013-05-23
-// Last changed: 2013-05-27
+// Last changed: 2013-05-29
 
 #include <vector>
 #include <dolfin.h>
@@ -43,8 +43,9 @@ double bench_cgal(const Mesh& mesh)
   tic();
   for (int i = 0; i < NUM_REPS; i++)
   {
-    unsigned int closest_entity = mesh.closest_cell(point);
+    //unsigned int closest_entity = mesh.closest_cell(point);
     //cout << closest_entity << " " << mesh.distance(point) << endl;
+    mesh.closest_cell(point);
     point.coordinates()[1] += 2.0 / static_cast<double>(NUM_REPS);
  }
 
@@ -67,8 +68,9 @@ double bench_dolfin(const Mesh& mesh)
   tic();
   for (int i = 0; i < NUM_REPS; i++)
   {
-    std::pair<unsigned int, double> ret = tree.compute_closest_entity(point, mesh);
+    //std::pair<unsigned int, double> ret = tree.compute_closest_entity(point, mesh);
     //cout << ret.first << " " << ret.second << endl;
+    tree.compute_closest_entity(point, mesh);
     point.coordinates()[1] += 2.0 / static_cast<double>(NUM_REPS);
   }
 
