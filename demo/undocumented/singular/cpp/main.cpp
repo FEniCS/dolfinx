@@ -113,6 +113,13 @@ int main()
   // Solve
   solver.solve(*u.vector(), b);
 
+  // Check norm of residual, that Au really equals b
+  // Note that this will NOT hold unless b is orthogonalised above
+  Vector residual(*u.vector());
+  A->mult(*u.vector(), residual);
+  residual.axpy(-1.0, b);
+  printf("Norm of residual: %lf\n", residual.norm("l2"));
+
   // Plot solution
   plot(u);
   interactive();
