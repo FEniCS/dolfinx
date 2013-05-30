@@ -93,13 +93,15 @@ int main()
   KrylovSolver solver(A, "gmres");
 
   // Create null space basis and attach to Krylov solver
-  Vector null_space0(*u.vector());
-  V.dofmap()->set(null_space0, 1.0);
-  null_space0 *= 1.0/null_space0.norm("l2");
-  boost::shared_ptr<std::vector<const GenericVector*> > null_space_ptr(new std::vector<const GenericVector*>);
-  null_space_ptr->push_back(&null_space0);
+  Vector tmp(*u.vector());
+  V.dofmap()->set(tmp, 1.0);
+  tmp *= 1.0/tmp.norm("l2");
 
-  VectorSpaceBasis null_space(null_space_ptr);
+  boost::shared_ptr<const GenericVector> null_space_ptr(new Vector(tmp));
+  std::vector<boost::shared_ptr<const GenericVector> > null_space_basis;
+  null_space_basis.push_back(null_space_ptr);
+
+  VectorSpaceBasis null_space(null_space_basis);
   solver.set_nullspace(null_space);
 
   // In this case, the system is symmetric, so the transpose nullspace is the same
