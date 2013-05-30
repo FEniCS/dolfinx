@@ -49,8 +49,8 @@ PointIntegralSolver::PointIntegralSolver(boost::shared_ptr<MultiStageScheme> sch
   _system_size(_dofmap.num_entity_dofs(0)), _dof_offset(_mesh.type().num_entities(0)), 
   _num_stages(_scheme->stage_forms().size()), _local_to_local_dofs(_system_size),
   _vertex_map(), _local_to_global_dofs(_system_size), 
-  _local_stage_solutions(_scheme->stage_solutions().size()), _ufcs(), 
-  _coefficient_index(), _retabulate_J(true), 
+  _local_stage_solutions(_scheme->stage_solutions().size()), _u0(_system_size), 
+  _ufcs(), _coefficient_index(), _retabulate_J(true), 
   _J()//, _J_L(), _J_U()
 {
   // Set parameters
@@ -62,6 +62,8 @@ PointIntegralSolver::PointIntegralSolver(boost::shared_ptr<MultiStageScheme> sch
 //-----------------------------------------------------------------------------
 void PointIntegralSolver::step(double dt)
 {
+  Timer t_step("PointIntegralSolver::step");
+  
   dolfin_assert(dt > 0.0);
 
   // Update time constant of scheme
@@ -69,12 +71,6 @@ void PointIntegralSolver::step(double dt)
 
   // Time at start of timestep
   const double t0 = *_scheme->t();
-
-  // Local solution vector at start of time step
-  //arma::vec u0;
-  //u0.set_size(_system_size);
-  std::vector<double> u0;
-  u0.resize(_system_size);
 
   // Update ghost values
   _update_ghost_values();
@@ -164,10 +160,10 @@ void PointIntegralSolver::step(double dt)
     
     // Update solution with a tabulation of the last stage
     for (unsigned int row=0; row < _system_size; row++)
-      u0[row] = _last_stage_ufc->A[_local_to_local_dofs[row]];
+      _u0[row] = _last_stage_ufc->A[_local_to_local_dofs[row]];
 
     // Update global solution with last stage
-    _scheme->solution()->vector()->set(&u0[0], _local_to_global_dofs.size(), 
+    _scheme->solution()->vector()->set(&_u0[0], _local_to_global_dofs.size(), 
 				       &_local_to_global_dofs[0]);
     t_last_stage.stop();
     

@@ -136,6 +136,9 @@ namespace dolfin
     // Local stage solutions 
     std::vector<std::vector<double> > _local_stage_solutions;
 
+    // Local solution 
+    std::vector<double> _u0;
+
     // UFC objects, one for each form
     std::vector<std::vector<boost::shared_ptr<UFC> > > _ufcs;
 
@@ -152,9 +155,6 @@ namespace dolfin
     bool _retabulate_J;
     
     // Jacobian and LU factorized jacobian matrices
-    //arma::mat _J;
-    //arma::mat _J_L;
-    //arma::mat _J_U;
     std::vector<double> _J;
     
   };
