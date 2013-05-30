@@ -19,6 +19,7 @@
 // Last changed: 2013-05-29
 
 #include "VectorSpaceBasis.h"
+#include <dolfin/common/constants.h>
 
 using namespace dolfin;
 
@@ -39,6 +40,14 @@ VectorSpaceBasis::VectorSpaceBasis(const std::vector<const GenericVector*> basis
 //-----------------------------------------------------------------------------
 bool VectorSpaceBasis::check_orthonormality() const
 {
+  for (std::size_t i = 0; i < _basis->size(); i++)
+    for (std::size_t j = i; j < _basis->size(); j++)
+    {
+      double delta_ij = (i == j) ? 1.0 : 0.0;
+      double dot_ij = (*_basis)[i]->inner(*(*_basis)[j]);
+      if (abs(delta_ij - dot_ij) > DOLFIN_EPS) return false;
+    }
+
   return true;
 }
 //-----------------------------------------------------------------------------
