@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-18
-// Last changed: 2013-05-28
+// Last changed: 2013-05-30
 
 #ifndef __MESH_POINT_INTERSECTION_H
 #define __MESH_POINT_INTERSECTION_H
@@ -26,6 +26,10 @@
 
 namespace dolfin
 {
+
+  // Forward declarations
+  class Mesh;
+  class Point;
 
   /// This class represents an intersection between a _Mesh_ and a
   /// _Point_. The resulting intersection is stored as a list of zero
