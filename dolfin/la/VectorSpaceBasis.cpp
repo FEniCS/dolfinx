@@ -29,7 +29,7 @@ VectorSpaceBasis::VectorSpaceBasis(std::vector<boost::shared_ptr<const GenericVe
 {
   if (check)
   {
-    if (!check_orthonormality())
+    if (!is_orthonormal())
     {
     dolfin_error("VectorSpaceBasis.cpp",
                  "verify orthonormality",
@@ -38,7 +38,7 @@ VectorSpaceBasis::VectorSpaceBasis(std::vector<boost::shared_ptr<const GenericVe
   }
 }
 //-----------------------------------------------------------------------------
-bool VectorSpaceBasis::check_orthonormality() const
+bool VectorSpaceBasis::is_orthonormal() const
 {
   for (std::size_t i = 0; i < _basis.size(); i++)
   {

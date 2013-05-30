@@ -43,7 +43,7 @@ namespace dolfin
     VectorSpaceBasis(std::vector<boost::shared_ptr<const GenericVector> > basis, const bool check=true);
 
     /// Check for orthonormality
-    bool check_orthonormality() const;
+    bool is_orthonormal() const;
 
     /// Orthogonalize
     void orthogonalize(GenericVector& x);
