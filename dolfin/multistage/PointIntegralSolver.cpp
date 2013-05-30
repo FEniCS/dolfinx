@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-05-24
+// Last changed: 2013-05-30
 
 #include <cmath>
 #include <boost/make_shared.hpp>
@@ -130,24 +130,27 @@ void PointIntegralSolver::step(double dt)
 
       // Update last stage form with local stage solutions if 
       // the local stage solution is present in last form
-      if (_last_stage_coefficient_index[stage] != -1)
+      /*if (_last_stage_coefficient_index[stage] != -1)
       {
-	//if (vert_ind == 0)
-	//  info("updating last stage coefficients: stage %d", stage);
-	for (unsigned int row=0; row < _system_size; row++)
-	{
-	  _last_stage_ufc->w()[_last_stage_coefficient_index[stage]]	\
-	    [_local_to_local_dofs[row]] = _local_stage_solutions[stage](row);
-	}
-      }
+      	//if (vert_ind == 0)
+      	//  info("updating last stage coefficients: stage %d", stage);
+      	for (unsigned int row=0; row < _system_size; row++)
+      	{
+      	  _last_stage_ufc->w()[_last_stage_coefficient_index[stage]]	\
+      	    [_local_to_local_dofs[row]] = _local_stage_solutions[stage](row);
+      	}
+       }*/
       
     }
 
     // Get local u0 solution and add the stage derivatives
-    _scheme->solution()->vector()->get_local(&u0[0], u0.size(), 
-					     &_local_to_global_dofs[0]);
+    //_scheme->solution()->vector()->get_local(&u0[0], u0.size(), 
+    // 				     &_local_to_global_dofs[0]);
     
     Timer t_last_stage("Last stage: tabulate_tensor");
+
+    // Update coeffcients for last stage
+    _last_stage_ufc->update(cell);
 
     // Last stage point integral
     const ufc::point_integral& integral = *_last_stage_ufc->default_point_integral;
@@ -156,15 +159,15 @@ void PointIntegralSolver::step(double dt)
     integral.tabulate_tensor(&_last_stage_ufc->A[0], _last_stage_ufc->w(), 
 			     &_last_stage_ufc->cell.vertex_coordinates[0], 
 			     _vertex_map[vert_ind].second);
-    t_last_stage.stop();
-
+    
     // Update solution with a tabulation of the last stage
     for (unsigned int row=0; row < _system_size; row++)
-      u0[row] += dt*_last_stage_ufc->A[_local_to_local_dofs[row]];
+      u0[row] = _last_stage_ufc->A[_local_to_local_dofs[row]];
 
     // Update global solution with last stage
     _scheme->solution()->vector()->set(u0.memptr(), _local_to_global_dofs.size(), 
 				       &_local_to_global_dofs[0]);
+    t_last_stage.stop();
     
     //p++;
   }
@@ -516,7 +519,7 @@ void PointIntegralSolver::_init()
 
   // Create last stage UFC form
   _last_stage_ufc = boost::make_shared<UFC>(*_scheme->last_stage());
-  _last_stage_coefficient_index.resize(_num_stages, -1);
+  //_last_stage_coefficient_index.resize(_num_stages, -1);
 
   // Iterate over stages and collect information
   for (unsigned int stage=0; stage < stage_forms.size(); stage++)
@@ -551,7 +554,7 @@ void PointIntegralSolver::_init()
 
     // Collect what coefficient index in the last stage correponds to the 
     // different stage solutions
-    for (unsigned int j=0; j < _scheme->last_stage()->num_coefficients(); j++)
+    /*for (unsigned int j=0; j < _scheme->last_stage()->num_coefficients(); j++)
     {
      
       if (_scheme->last_stage()->coefficients()[j]->id() == 
@@ -561,7 +564,7 @@ void PointIntegralSolver::_init()
 	break;
       }
 
-    }
+    }*/
     
   }
   

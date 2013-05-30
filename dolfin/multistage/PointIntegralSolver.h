@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-05-23
+// Last changed: 2013-05-30
 
 #ifndef __POINTINTEGRALSOLVER_H
 #define __POINTINTEGRALSOLVER_H
@@ -134,7 +134,7 @@ namespace dolfin
     std::vector<std::vector<int> > _coefficient_index;
 
     // Solution coefficient index in last stage form
-    std::vector<int> _last_stage_coefficient_index;
+    //std::vector<int> _last_stage_coefficient_index;
 
     // Flag for retabulation of J
     bool _retabulate_J;

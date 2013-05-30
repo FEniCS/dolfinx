@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-05-24
+// Last changed: 2013-05-30
 
 #include <cmath>
 
@@ -35,8 +35,11 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 RKSolver::RKSolver(boost::shared_ptr<MultiStageScheme> scheme) : 
-  _scheme(scheme)
-{}
+  _scheme(scheme), _tmp(scheme->solution()->vector()->copy())
+{
+  // Set default values for assembler
+  _assembler.reset_sparsity = false;
+}
 //-----------------------------------------------------------------------------
 void RKSolver::step(double dt)
 {
@@ -59,7 +62,7 @@ void RKSolver::step(double dt)
   {
 
     // Update time
-    *_scheme->t() = t0 + dt*_scheme->dt_stage_offset()[stage];
+    //*_scheme->t() = t0 + dt*_scheme->dt_stage_offset()[stage];
 
     // Check if we have an explicit stage (only 1 form)
     if (stage_forms[stage].size()==1)
@@ -87,17 +90,16 @@ void RKSolver::step(double dt)
       // Do a nonlinear solve
       solve(*stage_forms[stage][0] == 0, *stage_solutions[stage], bcs, *stage_forms[stage][1]);
     }
+
   }
 
   // Update solution with last stage
   GenericVector& solution_vector = *_scheme->solution()->vector();
   
   // Do the last stage (just an assemble)
-  // FIXME: Does not work! We need a temporary variable to assemble into 
-  _assembler.assemble(solution_vector, *_scheme->last_stage());
+  _assembler.assemble(*_tmp, *_scheme->last_stage());
+  solution_vector = *_tmp;
 
-  //FunctionAXPY last_stage = _scheme->last_stage()*dt;
-  
   // Update time
   *_scheme->t() = t0 + dt;
   

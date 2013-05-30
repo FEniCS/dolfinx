@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-04-24
+// Last changed: 2013-05-30
 
 #ifndef __RKSOLVER_H
 #define __RKSOLVER_H
@@ -26,6 +26,7 @@
 
 #include <dolfin/function/FunctionAXPY.h>
 #include <dolfin/fem/Assembler.h>
+#include <dolfin/la/GenericVector.h>
 
 namespace dolfin
 {
@@ -57,6 +58,10 @@ namespace dolfin
 
     // The MultiStageScheme
     boost::shared_ptr<MultiStageScheme> _scheme;
+
+    // Temp vector for final stage
+    // FIXME: Add this as a Function called previous step or something
+    boost::shared_ptr<GenericVector> _tmp;
 
     // Assembler for explicit stages
     Assembler _assembler;
