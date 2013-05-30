@@ -95,9 +95,20 @@ int main()
   // Create null space basis and attach to Krylov solver
   Vector null_space0(*u.vector());
   V.dofmap()->set(null_space0, 1.0);
-  std::vector<const GenericVector*> null_space;
-  null_space.push_back(&null_space0);
+  null_space0 *= 1.0/null_space0.norm("l2");
+  boost::shared_ptr<std::vector<const GenericVector*> > null_space_ptr(new std::vector<const GenericVector*>);
+  null_space_ptr->push_back(&null_space0);
+
+  VectorSpaceBasis null_space(null_space_ptr);
   solver.set_nullspace(null_space);
+
+  // In this case, the system is symmetric, so the transpose nullspace is the same
+  solver.set_transpose_nullspace(null_space);
+  // When solving singular systems, you have to ensure that the RHS b is in the range
+  // of the singular matrix. Since the range is the orthogonal complement of the
+  // transpose nullspace, you have to call the orthogonalize method of the transpose
+  // nullspace object on the RHS:
+  null_space.orthogonalize(b);
 
   // Solve
   solver.solve(*u.vector(), b);
