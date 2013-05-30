@@ -24,15 +24,15 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-VectorSpaceBasis::VectorSpaceBasis(const std::vector<const GenericVector*> basis, const bool check):
-  _basis(&basis)
+VectorSpaceBasis::VectorSpaceBasis(boost::shared_ptr<const std::vector<const GenericVector*> > basis, const bool check):
+  _basis(basis)
 {
   if (check)
   {
     if (!check_orthonormality())
     {
     dolfin_error("VectorSpaceBasis.cpp",
-                 "orthonormality check",
+                 "verify orthonormality",
                  "Input vector space basis is not orthonormal");
     }
   }
@@ -41,12 +41,14 @@ VectorSpaceBasis::VectorSpaceBasis(const std::vector<const GenericVector*> basis
 bool VectorSpaceBasis::check_orthonormality() const
 {
   for (std::size_t i = 0; i < _basis->size(); i++)
+  {
     for (std::size_t j = i; j < _basis->size(); j++)
     {
       double delta_ij = (i == j) ? 1.0 : 0.0;
       double dot_ij = (*_basis)[i]->inner(*(*_basis)[j]);
       if (abs(delta_ij - dot_ij) > DOLFIN_EPS) return false;
     }
+  }
 
   return true;
 }
@@ -68,6 +70,8 @@ const std::size_t VectorSpaceBasis::size() const
 //-----------------------------------------------------------------------------
 const GenericVector* VectorSpaceBasis::operator[] (int i) const
 {
-  return (*_basis)[i];
+  const GenericVector* vec;
+  vec = (*_basis)[i];
+  return vec;
 }
 //-----------------------------------------------------------------------------
