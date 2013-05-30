@@ -27,7 +27,7 @@ from dolfin import *
 if MPI.num_processes() == 1:
     class SubMeshTester(unittest.TestCase):
 
-        def xtest_creation(self):
+        def test_creation(self):
             """Create SubMesh."""
             for MeshClass, args in [(UnitIntervalMesh, (10,)),
                                     (UnitSquareMesh, (10, 10)),
