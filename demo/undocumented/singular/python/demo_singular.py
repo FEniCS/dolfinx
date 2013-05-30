@@ -39,7 +39,7 @@ that removes the component in the null space from the solution vector.
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2012-10-31
-# Last changed: 2012-11-12
+# Last changed: 2013-05-30
 
 from dolfin import *
 
