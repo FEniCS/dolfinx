@@ -40,7 +40,7 @@ namespace dolfin
     ~VectorSpaceBasis() {}
 
     /// Constructor
-    VectorSpaceBasis(boost::shared_ptr<const std::vector<const GenericVector*> > basis, const bool check=true);
+    VectorSpaceBasis(std::vector<boost::shared_ptr<const GenericVector*> > basis, const bool check=true);
 
     /// Check for orthonormality
     bool check_orthonormality() const;
@@ -57,7 +57,7 @@ namespace dolfin
   private:
 
     /// Data
-    boost::shared_ptr<const std::vector<const GenericVector*> > _basis;
+    std::vector<boost::shared_ptr<const GenericVector*> > _basis;
 
   };
 }

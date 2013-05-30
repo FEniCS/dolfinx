@@ -24,7 +24,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-VectorSpaceBasis::VectorSpaceBasis(boost::shared_ptr<const std::vector<const GenericVector*> > basis, const bool check):
+VectorSpaceBasis::VectorSpaceBasis(std::vector<boost::shared_ptr<const GenericVector*> > basis, const bool check):
   _basis(basis)
 {
   if (check)
@@ -40,12 +40,14 @@ VectorSpaceBasis::VectorSpaceBasis(boost::shared_ptr<const std::vector<const Gen
 //-----------------------------------------------------------------------------
 bool VectorSpaceBasis::check_orthonormality() const
 {
-  for (std::size_t i = 0; i < _basis->size(); i++)
+  for (std::size_t i = 0; i < _basis.size(); i++)
   {
-    for (std::size_t j = i; j < _basis->size(); j++)
+    const GenericVector* vec_i = *_basis[i];
+    for (std::size_t j = i; j < _basis.size(); j++)
     {
       double delta_ij = (i == j) ? 1.0 : 0.0;
-      double dot_ij = (*_basis)[i]->inner(*(*_basis)[j]);
+      const GenericVector* vec_j = *_basis[j];
+      double dot_ij = vec_i->inner(*vec_j);
       if (abs(delta_ij - dot_ij) > DOLFIN_EPS) return false;
     }
   }
@@ -55,23 +57,22 @@ bool VectorSpaceBasis::check_orthonormality() const
 //-----------------------------------------------------------------------------
 void VectorSpaceBasis::orthogonalize(GenericVector& x)
 {
-  for (std::size_t i = 0; i < _basis->size(); i++)
+  for (std::size_t i = 0; i < _basis.size(); i++)
   {
-    double dot = (*_basis)[i]->inner(x);
-    const GenericVector* vec = (*_basis)[i];
-    x.axpy(-dot, *vec);
+    const GenericVector* vec_i = *_basis[i];
+    double dot = vec_i->inner(x);
+    x.axpy(-dot, *vec_i);
   }
 }
 //-----------------------------------------------------------------------------
 const std::size_t VectorSpaceBasis::size() const
 {
-  return _basis->size();
+  return _basis.size();
 }
 //-----------------------------------------------------------------------------
 const GenericVector* VectorSpaceBasis::operator[] (int i) const
 {
-  const GenericVector* vec;
-  vec = (*_basis)[i];
+  const GenericVector* vec = *_basis[i];
   return vec;
 }
 //-----------------------------------------------------------------------------
