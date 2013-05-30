@@ -102,17 +102,21 @@ std::pair<std::size_t, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pro
   nonlinear_problem.F(*_b, x);
 
   // Check convergence
-  bool newton_converged;
+  bool newton_converged = false;
   if (convergence_criterion == "residual")
     newton_converged = converged(*_b, nonlinear_problem);
   else if (convergence_criterion == "incremental")
+  {
     // We need to do at least one Newton step
     // with the ||dx||-stopping criterion.
     newton_converged = false;
+  }
   else
+  {
     dolfin_error("NewtonSolver.cpp",
                  "check for convergence",
                  "The convergence criterion %s is unknown, known criteria are 'residual' or 'incremental'", convergence_criterion.c_str());
+  }
 
   nonlinear_problem.form(*_A, *_b, x);
 
@@ -137,7 +141,8 @@ std::pair<std::size_t, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pro
     else
       x.axpy(-relaxation, *_dx);
 
-    //FIXME: this step is not needed if residual is based on dx and this has converged.
+    // FIXME: this step is not needed if residual is based on dx and
+    //        this has converged.
     // Compute F
     nonlinear_problem.form(*_A, *_b, x);
     nonlinear_problem.F(*_b, x);
@@ -150,8 +155,8 @@ std::pair<std::size_t, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pro
     }
     else if (convergence_criterion == "incremental")
     {
-      // Increment the number of iterations *after* converged(). This makes
-      // sure that the initial residual0 is properly set.
+      // Increment the number of iterations *after* converged(). This
+      // makes sure that the initial residual0 is properly set.
       newton_converged = converged(*_dx, nonlinear_problem);
       ++newton_iteration;
     }
@@ -173,9 +178,11 @@ std::pair<std::size_t, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pro
   {
     const bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
     if (error_on_nonconvergence)
+    {
       dolfin_error("NewtonSolver.cpp",
                    "solve nonlinear system with NewtonSolver",
                    "Newton solver did not converge. Bummer");
+    }
     else
       warning("Newton solver did not converge.");
   }
