@@ -18,22 +18,25 @@
 // First added:  2013-05-29
 // Last changed: 2013-05-29
 
-#include "VectorSpaceBasis.h"
 #include <dolfin/common/constants.h>
+#include "VectorSpaceBasis.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-VectorSpaceBasis::VectorSpaceBasis(std::vector<boost::shared_ptr<const GenericVector> > basis, const bool check):
-  _basis(basis)
+VectorSpaceBasis::VectorSpaceBasis(std::vector<boost::shared_ptr<
+                                     const GenericVector> > basis,
+                                   const bool check)
+  : _basis(basis)
 {
+  // Check that basis vectors are orthonormal
   if (check)
   {
     if (!is_orthonormal())
     {
-    dolfin_error("VectorSpaceBasis.cpp",
-                 "verify orthonormality",
-                 "Input vector space basis is not orthonormal");
+      dolfin_error("VectorSpaceBasis.cpp",
+                   "verify orthonormality",
+                   "Input vector space basis is not orthonormal");
     }
   }
 }
@@ -44,20 +47,24 @@ bool VectorSpaceBasis::is_orthonormal() const
   {
     for (std::size_t j = i; j < _basis.size(); j++)
     {
-      double delta_ij = (i == j) ? 1.0 : 0.0;
-      double dot_ij = _basis[i]->inner(*_basis[j]);
-      if (abs(delta_ij - dot_ij) > DOLFIN_EPS) return false;
+      dolfin_assert(_basis[i]);
+      dolfin_assert(_basis[j]);
+      const double delta_ij = (i == j) ? 1.0 : 0.0;
+      const double dot_ij = _basis[i]->inner(*_basis[j]);
+      if (abs(delta_ij - dot_ij) > DOLFIN_EPS)
+        return false;
     }
   }
 
   return true;
 }
 //-----------------------------------------------------------------------------
-void VectorSpaceBasis::orthogonalize(GenericVector& x)
+void VectorSpaceBasis::orthogonalize(GenericVector& x) const
 {
   for (std::size_t i = 0; i < _basis.size(); i++)
   {
-    double dot = _basis[i]->inner(x);
+    dolfin_assert(_basis[i]);
+    const double dot = _basis[i]->inner(x);
     x.axpy(-dot, *_basis[i]);
   }
 }
@@ -67,8 +74,10 @@ const std::size_t VectorSpaceBasis::size() const
   return _basis.size();
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const GenericVector> VectorSpaceBasis::operator[] (int i) const
+boost::shared_ptr<const GenericVector>
+VectorSpaceBasis::operator[] (std::size_t i) const
 {
+  dolfin_assert(i < _basis.size());
   return _basis[i];
 }
 //-----------------------------------------------------------------------------
