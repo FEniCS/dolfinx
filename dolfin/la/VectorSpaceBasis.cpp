@@ -53,6 +53,12 @@ bool VectorSpaceBasis::check_orthonormality() const
 //-----------------------------------------------------------------------------
 void VectorSpaceBasis::orthogonalize(GenericVector& x)
 {
+  for (std::size_t i = 0; i < _basis->size(); i++)
+  {
+    double dot = (*_basis)[i]->inner(x);
+    const GenericVector* vec = (*_basis)[i];
+    x.axpy(-dot, *vec);
+  }
 }
 //-----------------------------------------------------------------------------
 const std::size_t VectorSpaceBasis::size() const
