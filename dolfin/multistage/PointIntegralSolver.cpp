@@ -51,7 +51,7 @@ PointIntegralSolver::PointIntegralSolver(boost::shared_ptr<MultiStageScheme> sch
   _vertex_map(), _local_to_global_dofs(_system_size), 
   _local_stage_solutions(_scheme->stage_solutions().size()), _ufcs(), 
   _coefficient_index(), _retabulate_J(true), 
-  _J(), _J_L(), _J_U()
+  _J()//, _J_L(), _J_U()
 {
   // Set parameters
   parameters = default_parameters();
@@ -71,8 +71,10 @@ void PointIntegralSolver::step(double dt)
   const double t0 = *_scheme->t();
 
   // Local solution vector at start of time step
-  arma::vec u0;
-  u0.set_size(_system_size);
+  //arma::vec u0;
+  //u0.set_size(_system_size);
+  std::vector<double> u0;
+  u0.resize(_system_size);
 
   // Update ghost values
   _update_ghost_values();
@@ -165,7 +167,7 @@ void PointIntegralSolver::step(double dt)
       u0[row] = _last_stage_ufc->A[_local_to_local_dofs[row]];
 
     // Update global solution with last stage
-    _scheme->solution()->vector()->set(u0.memptr(), _local_to_global_dofs.size(), 
+    _scheme->solution()->vector()->set(&u0[0], _local_to_global_dofs.size(), 
 				       &_local_to_global_dofs[0]);
     t_last_stage.stop();
     
@@ -204,13 +206,13 @@ void PointIntegralSolver::_solve_explicit_stage(std::size_t vert_ind,
   // Extract vertex dofs from tabulated tensor
   for (unsigned int row=0; row < _system_size; row++)
   {
-    _local_stage_solutions[stage](row) = _ufcs[stage][0]->A[_local_to_local_dofs[row]];
+    _local_stage_solutions[stage][row] = _ufcs[stage][0]->A[_local_to_local_dofs[row]];
   }
 
   // Put solution back into global stage solution vector
   // NOTE: This so an update (coefficient restriction) would just work
   _scheme->stage_solutions()[stage]->vector()->set(
-		 _local_stage_solutions[stage].memptr(), _system_size, 
+		 &_local_stage_solutions[stage][0], _system_size, 
 		 &_local_to_global_dofs[0]);
 
 }
@@ -227,7 +229,8 @@ void PointIntegralSolver::_solve_implict_stage(std::size_t vert_ind,
   const Parameters& newton_parameters = parameters("newton_solver");
 	
   // Local solution
-  arma::vec& u = _local_stage_solutions[stage];
+  //arma::vec& u = _local_stage_solutions[stage];
+  std::vector<double>& u = _local_stage_solutions[stage];
 	
   unsigned int newton_iteration = 0;
   bool newton_converged = false;
@@ -251,12 +254,15 @@ void PointIntegralSolver::_solve_implict_stage(std::size_t vert_ind,
   //const double relaxation = 1.0;
       
   // Initialize la structures
-  arma::vec F;
-  arma::vec y;
-  arma::vec dx;
-  F.set_size(_system_size);
-  y.set_size(_system_size);
-  dx.set_size(_system_size);
+  //arma::vec F;
+  //arma::vec y;
+  //arma::vec dx;
+  //F.set_size(_system_size);
+  //y.set_size(_system_size);
+  //dx.set_size(_system_size);
+  std::vector<double> F(_system_size);
+  std::vector<double> y(_system_size);
+  std::vector<double> dx(_system_size);
       
   // Get point integrals
   const ufc::point_integral& F_integral = *_ufcs[stage][0]->default_point_integral;
@@ -277,12 +283,12 @@ void PointIntegralSolver::_solve_implict_stage(std::size_t vert_ind,
   Timer t_impl_update_F("Implicit stage: update_F");
   for (unsigned int row=0; row < _system_size; row++)
   {
-    F(row) = _ufcs[stage][0]->A[_local_to_local_dofs[row]];
+    F[row] = _ufcs[stage][0]->A[_local_to_local_dofs[row]];
 
     // Grab old value of stage solution as an initial start value. This 
     // value was also used to tabulate the initial value of the F_integral above 
     // and we therefore just grab it from the restricted coeffcients
-    u(row) = _ufcs[stage][0]->w()[_coefficient_index[stage][0]][_local_to_local_dofs[row]];
+    u[row] = _ufcs[stage][0]->w()[_coefficient_index[stage][0]][_local_to_local_dofs[row]];
   }
   t_impl_update_F.stop();
 
@@ -303,29 +309,35 @@ void PointIntegralSolver::_solve_implict_stage(std::size_t vert_ind,
       Timer t_impl_update_J("Implicit stage: update_J");
       for (unsigned int row=0; row < _system_size; row++)
 	for (unsigned int col=0; col < _system_size; col++)
-	  _J(row, col) = _ufcs[stage][1]->A[_local_to_local_dofs[row]*
-					    _dof_offset*_system_size +
-					    _local_to_local_dofs[col]];
+	  _J[row*_system_size + col] = _ufcs[stage][1]->A[_local_to_local_dofs[row]*
+							  _dof_offset*_system_size +
+							  _local_to_local_dofs[col]];
+	  //_J(row, col) = _ufcs[stage][1]->A[_local_to_local_dofs[row]*
+	  //				    _dof_offset*_system_size +
+	  //    			    _local_to_local_dofs[col]];
       t_impl_update_J.stop();
 
       // LU factorize Jacobian
       Timer lu_factorize("Implicit stage: LU factorize");
-      arma::lu(_J_L, _J_U, _J);
+      //arma::lu(_J_L, _J_U, _J);
+      _lu_factorize(_J);
       _retabulate_J = false;
 
     }
 
     // Perform linear solve By forward backward substitution
     Timer forward_backward_substitution("Implicit stage: fb substituion");
-    arma::solve(y, _J_L, F);
-    arma::solve(dx, _J_U, y);
+    _forward_backward_subst(_J, F, dx);
+    //arma::solve(y, _J_L, F);
+    //arma::solve(dx, _J_U, y);
+    
     forward_backward_substitution.stop();
 
     // Compute resdiual
     if (convergence_criterion == "residual")
-      residual = arma::norm(F, 2);
+      residual = _l2_norm(F);
     else if (convergence_criterion == "incremental")
-      residual = arma::norm(dx, 2);
+      residual = _l2_norm(dx);
     else
       error("Unknown Newton convergence criterion");
 
@@ -338,16 +350,18 @@ void PointIntegralSolver::_solve_implict_stage(std::size_t vert_ind,
 	  
     // Update solution
     if (std::abs(1.0 - relaxation) < DOLFIN_EPS)
-      u -= dx;
+      for (unsigned int i=0; i < u.size(); i++)
+	u[i] -= dx[i];
     else
-      u -= relaxation*dx;
+      for (unsigned int i=0; i < u.size(); i++)
+	u[i] -= relaxation*dx[i];
         
     // Update number of iterations
     ++newton_iteration;
 	  
     // Put solution back into restricted coefficients before tabulate new residual
     for (unsigned int row=0; row < _system_size; row++)
-      _ufcs[stage][0]->w()[_coefficient_index[stage][0]][_local_to_local_dofs[row]] = u(row);
+      _ufcs[stage][0]->w()[_coefficient_index[stage][0]][_local_to_local_dofs[row]] = u[row];
 
     // Tabulate new residual 
     t_impl_tt_F.start();
@@ -359,7 +373,7 @@ void PointIntegralSolver::_solve_implict_stage(std::size_t vert_ind,
     t_impl_update_F.start();
     // Extract vertex dofs from tabulated tensor
     for (unsigned int row=0; row < _system_size; row++)
-      F(row) = _ufcs[stage][0]->A[_local_to_local_dofs[row]];
+      F[row] = _ufcs[stage][0]->A[_local_to_local_dofs[row]];
     t_impl_update_F.stop();
 
     // Output iteration number and residual (only first vertex)
@@ -385,7 +399,7 @@ void PointIntegralSolver::_solve_implict_stage(std::size_t vert_ind,
       {
 	// Put solution back into restricted coefficients before tabulate new jacobian
 	for (unsigned int row=0; row < _system_size; row++)
-	  _ufcs[stage][1]->w()[_coefficient_index[stage][1]][_local_to_local_dofs[row]] = u(row);
+	  _ufcs[stage][1]->w()[_coefficient_index[stage][1]][_local_to_local_dofs[row]] = u[row];
       }
 
     }
@@ -400,7 +414,7 @@ void PointIntegralSolver::_solve_implict_stage(std::size_t vert_ind,
   {
     Timer t_impl_set("Implicit stage: set");
     // Put solution back into global stage solution vector
-    _scheme->stage_solutions()[stage]->vector()->set(u.memptr(), u.size(), 
+    _scheme->stage_solutions()[stage]->vector()->set(&u[0], u.size(), 
 						     &_local_to_global_dofs[0]);
   }
   else
@@ -443,6 +457,91 @@ void PointIntegralSolver::step_interval(double t0, double t1, double dt)
     t = *_scheme->t();
     next_dt = std::min(t1-t, dt);
   }
+}
+//-----------------------------------------------------------------------------
+void PointIntegralSolver::_lu_factorize(std::vector<double>& mat)
+{
+
+  // Local variables
+  double sum;
+  int i, k, r;
+
+  // Need an int version of system size
+  int lsystem_size = _system_size;
+
+  for (k = 1; k < lsystem_size; k++)
+  {
+
+    for (i = 0; i <= k-1; ++i)
+    {
+      sum = 0.0;
+      for (r = 0; r <= i-1; r++)
+        sum += mat[i*lsystem_size+r]*mat[r*lsystem_size+k];
+
+      mat[i*lsystem_size+k] -=sum;
+      sum = 0.0;
+
+      for (r = 0; r <= i-1; r++)
+        sum += mat[k*lsystem_size+r]*mat[r*lsystem_size+i];
+    
+      mat[k*lsystem_size+i] = (mat[k*lsystem_size+i]-sum)/mat[i*lsystem_size+i];
+
+    }
+
+    sum = 0.0;
+    for (r = 0; r <= k-1; r++)
+      sum += mat[k*lsystem_size+r]*mat[r*lsystem_size+k];
+
+    mat[k*lsystem_size+k] -= sum;
+
+  }
+}
+//-----------------------------------------------------------------------------
+void PointIntegralSolver::_forward_backward_subst(const std::vector<double>& mat, 
+						  const std::vector<double>& b, 
+						  std::vector<double>& dx) const
+{
+  // solves Ax = b with forward backward substitution, provided that 
+  // A is already LU factorized
+
+  double sum;
+
+  dx[0] = b[0];
+
+  // Forward
+  for (uint i = 1; i < _system_size; ++i)
+  {
+    sum = 0.0;
+    for (uint j = 0; j <= i-1; ++j)
+      sum = sum + mat[i*_system_size+j]*dx[j];
+
+    dx[i] = b[i] -sum;
+  }
+
+  const uint _system_size_m_1 = _system_size-1;
+  dx[_system_size_m_1] = dx[_system_size_m_1]/\
+    mat[_system_size_m_1*_system_size+_system_size_m_1];
+
+  // Backward
+  for (int i = _system_size - 2; i >= 0; i--)
+  {
+    sum = 0;
+    for (uint j = i + 1; j < _system_size; ++j)
+      sum = sum +mat[i*_system_size+j]*dx[j];
+  
+    dx[i] = (dx[i]-sum)/mat[i*_system_size+i];
+  }
+}
+//-----------------------------------------------------------------------------
+double PointIntegralSolver::_l2_norm(const std::vector<double>& vec) const
+{
+  double l2_norm = 0;
+
+  for (unsigned int i = 0; i < vec.size(); ++i)
+    l2_norm += vec[i]*vec[i];
+
+  l2_norm = std::sqrt(l2_norm);
+  return l2_norm;
 }
 //-----------------------------------------------------------------------------
 void PointIntegralSolver::_update_ghost_values()
@@ -503,7 +602,7 @@ void PointIntegralSolver::_init()
 
   // Init local stage solutions
   for (unsigned int stage=0; stage < _num_stages; stage++)
-    _local_stage_solutions[stage].set_size(_system_size);
+    _local_stage_solutions[stage].resize(_system_size);
 
   // Init coefficient index and ufcs
   _coefficient_index.resize(stage_forms.size());
@@ -512,9 +611,10 @@ void PointIntegralSolver::_init()
   // Initiate jacobian matrices
   if (_scheme->implicit())
   {
-    _J.set_size(_system_size, _system_size);
-    _J_U.set_size(_system_size, _system_size);
-    _J_L.set_size(_system_size, _system_size);
+    //_J.set_size(_system_size, _system_size);
+    //_J_U.set_size(_system_size, _system_size);
+    //_J_L.set_size(_system_size, _system_size);
+    _J.resize(_system_size*_system_size);
   }
 
   // Create last stage UFC form

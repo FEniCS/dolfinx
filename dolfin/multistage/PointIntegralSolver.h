@@ -22,7 +22,7 @@
 #define __POINTINTEGRALSOLVER_H
 
 #include <vector>
-#include <armadillo>
+//#include <armadillo>
 #include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/Variable.h>
@@ -74,6 +74,18 @@ namespace dolfin
 
   private:
 
+    // In-place LU factorization of jacobian matrix
+    void _lu_factorize(std::vector<double>& mat);
+
+    // Forward backward substitution, assume that mat is already
+    // inplace LU factorized
+    void _forward_backward_subst(const std::vector<double>& mat, 
+				 const std::vector<double>& b, 
+				 std::vector<double>& dx) const;
+    
+    // Compute the l2 norm of a vector
+    double _l2_norm(const std::vector<double>& vec) const;
+
     // Update ghost values
     void _update_ghost_values();
 
@@ -122,7 +134,7 @@ namespace dolfin
     std::vector<dolfin::la_index> _local_to_global_dofs;
   
     // Local stage solutions 
-    std::vector<arma::vec> _local_stage_solutions;
+    std::vector<std::vector<double> > _local_stage_solutions;
 
     // UFC objects, one for each form
     std::vector<std::vector<boost::shared_ptr<UFC> > > _ufcs;
@@ -140,10 +152,11 @@ namespace dolfin
     bool _retabulate_J;
     
     // Jacobian and LU factorized jacobian matrices
-    arma::mat _J;
-    arma::mat _J_L;
-    arma::mat _J_U;
-
+    //arma::mat _J;
+    //arma::mat _J_L;
+    //arma::mat _J_U;
+    std::vector<double> _J;
+    
   };
 
 }
