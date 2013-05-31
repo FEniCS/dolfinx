@@ -98,12 +98,11 @@ namespace dolfin
     void _init();
 
     // Solve an explicit stage
-    void _solve_explicit_stage(std::size_t vert_ind,
-			       unsigned int stage);
+    void _solve_explicit_stage(std::size_t vert_ind, unsigned int stage);
 
     // Solve an implicit stage
-    void _solve_implict_stage(std::size_t vert_ind,
-			      unsigned int stage);
+    void _solve_implicit_stage(std::size_t vert_ind, unsigned int stage,
+			       const Cell& cell);
 
     // The MultiStageScheme
     boost::shared_ptr<MultiStageScheme> _scheme;

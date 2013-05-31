@@ -110,8 +110,8 @@ void PointIntegralSolver::step(double dt)
 
       // Update cell
       Timer t_impl_update("Update_cell");
-      for (unsigned int i=0; i < _ufcs[stage].size(); i++)
-	_ufcs[stage][i]->update(cell);
+      //for (unsigned int i=0; i < _ufcs[stage].size(); i++)
+      _ufcs[stage][0]->update(cell);
       t_impl_update.stop();
 
       // Check if we have an explicit stage (only 1 form)
@@ -123,7 +123,7 @@ void PointIntegralSolver::step(double dt)
       // or an implicit stage (2 forms)
       else
       {
-	_solve_implict_stage(vert_ind, stage);
+	_solve_implicit_stage(vert_ind, stage, cell);
       }
 
       
@@ -197,8 +197,9 @@ void PointIntegralSolver::_solve_explicit_stage(std::size_t vert_ind,
 
 }
 //-----------------------------------------------------------------------------
-void PointIntegralSolver::_solve_implict_stage(std::size_t vert_ind,
-					       unsigned int stage)
+void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
+						unsigned int stage,
+						const Cell& cell)
 {
 	
   Timer t_impl("Implicit stage");
@@ -234,12 +235,6 @@ void PointIntegralSolver::_solve_implict_stage(std::size_t vert_ind,
   //const double relaxation = 1.0;
       
   // Initialize la structures
-  //arma::vec F;
-  //arma::vec y;
-  //arma::vec dx;
-  //F.set_size(_system_size);
-  //y.set_size(_system_size);
-  //dx.set_size(_system_size);
   std::vector<double> F(_system_size);
   std::vector<double> y(_system_size);
   std::vector<double> dx(_system_size);
@@ -278,6 +273,18 @@ void PointIntegralSolver::_solve_implict_stage(std::size_t vert_ind,
         
     if (_recompute_jac || !reuse_jacobian)
     {
+      Timer t_impl_update("Update_cell");
+      _ufcs[stage][1]->update(cell);
+      t_impl_update.stop();
+
+      // If there is a solution coefficient in the jacobian form
+      if (_coefficient_index[stage].size()==2)
+      {
+	// Put solution back into restricted coefficients before tabulate new jacobian
+	for (unsigned int row=0; row < _system_size; row++)
+	  _ufcs[stage][1]->w()[_coefficient_index[stage][1]][_local_to_local_dofs[row]] = u[row];
+      }
+
       // Tabulate Jacobian
       Timer t_impl_tt_jac("Implicit stage: tabulate_tensor (J)");
       J_integral.tabulate_tensor(&_ufcs[stage][1]->A[0], _ufcs[stage][1]->w(), 
@@ -370,14 +377,6 @@ void PointIntegralSolver::_solve_implict_stage(std::size_t vert_ind,
 
       if (vert_ind == 0)
 	info("Retabulating Jacobian.");
-
-      // If there is a solution coefficient in the jacobian form
-      if (_coefficient_index[stage].size()==2)
-      {
-	// Put solution back into restricted coefficients before tabulate new jacobian
-	for (unsigned int row=0; row < _system_size; row++)
-	  _ufcs[stage][1]->w()[_coefficient_index[stage][1]][_local_to_local_dofs[row]] = u[row];
-      }
 
     }
 
