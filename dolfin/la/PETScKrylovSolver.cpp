@@ -233,7 +233,7 @@ void PETScKrylovSolver::set_operators(const boost::shared_ptr<const PETScBaseMat
   dolfin_assert(_P);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_nullspace(const std::vector<const GenericVector*> nullspace)
+void PETScKrylovSolver::set_nullspace(const VectorSpaceBasis& nullspace)
 {
   // Copy vectors
   for (std::size_t i = 0; i < nullspace.size(); ++i)
@@ -262,6 +262,11 @@ void PETScKrylovSolver::set_nullspace(const std::vector<const GenericVector*> nu
   // Set null space
   dolfin_assert(_ksp);
   KSPSetNullSpace(*_ksp, *petsc_nullspace);
+}
+//-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_transpose_nullspace(const VectorSpaceBasis& transpose_nullspace)
+{
+  return; // PETSc doesn't need the transpose nullspace; we've orthogonalised the RHS separately
 }
 //-----------------------------------------------------------------------------
 const PETScBaseMatrix& PETScKrylovSolver::get_operator() const

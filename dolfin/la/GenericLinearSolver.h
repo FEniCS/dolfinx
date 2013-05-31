@@ -29,6 +29,7 @@
 #include <dolfin/log/log.h>
 #include "GenericLinearOperator.h"
 #include "GenericMatrix.h"
+#include "VectorSpaceBasis.h"
 
 namespace dolfin
 {
@@ -56,10 +57,19 @@ namespace dolfin
 
     /// Set null space of the operator (matrix). This is used to solve
     /// singular systems
-    virtual void set_nullspace(const std::vector<const GenericVector*> nullspace)
+    virtual void set_nullspace(const VectorSpaceBasis& nullspace)
     {
       dolfin_error("GenericLinearSolver.h",
                    "set nullspace for operator",
+                   "Not supported by current linear algebra solver backend");
+    }
+
+    /// Set transpose null space of the operator (matrix). This is used to solve
+    /// singular systems
+    virtual void set_transpose_nullspace(const VectorSpaceBasis& transpose_nullspace)
+    {
+      dolfin_error("GenericLinearSolver.h",
+                   "set transpose nullspace for operator",
                    "Not supported by current linear algebra solver backend");
     }
 
