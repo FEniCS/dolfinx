@@ -83,6 +83,11 @@ namespace dolfin
 				 const std::vector<double>& b, 
 				 std::vector<double>& x) const;
     
+    // Compute jacobian using passed UFC form
+    void _compute_jacobian(std::vector<double>& jac, const std::vector<double>& u, 
+			   unsigned int local_vert, UFC& loc_ufc, 
+			   const Cell& cell, int coefficient_index);
+    
     // Compute the l2 norm of a vector
     double _l2_norm(const std::vector<double>& vec) const;
 

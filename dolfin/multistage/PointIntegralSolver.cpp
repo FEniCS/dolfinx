@@ -241,7 +241,6 @@ void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
       
   // Get point integrals
   const ufc::point_integral& F_integral = *_ufcs[stage][0]->default_point_integral;
-  const ufc::point_integral& J_integral = *_ufcs[stage][1]->default_point_integral;
       
   // Update to current cell. This only need to be done once for each stage and 
   // vertex
@@ -273,42 +272,10 @@ void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
         
     if (_recompute_jac || !reuse_jacobian)
     {
-      Timer t_impl_update("Update_cell");
-      _ufcs[stage][1]->update(cell);
-      t_impl_update.stop();
-
-      // If there is a solution coefficient in the jacobian form
-      if (_coefficient_index[stage].size()==2)
-      {
-	// Put solution back into restricted coefficients before tabulate new jacobian
-	for (unsigned int row=0; row < _system_size; row++)
-	  _ufcs[stage][1]->w()[_coefficient_index[stage][1]][_local_to_local_dofs[row]] = u[row];
-      }
-
-      // Tabulate Jacobian
-      Timer t_impl_tt_jac("Implicit stage: tabulate_tensor (J)");
-      J_integral.tabulate_tensor(&_ufcs[stage][1]->A[0], _ufcs[stage][1]->w(), 
-				 &_ufcs[stage][1]->cell.vertex_coordinates[0], 
-				 local_vert);
-      t_impl_tt_jac.stop();
-
-      // Extract vertex dofs from tabulated tensor
-      Timer t_impl_update_jac("Implicit stage: update_jac");
-      for (unsigned int row=0; row < _system_size; row++)
-	for (unsigned int col=0; col < _system_size; col++)
-	  _jac[row*_system_size + col] = _ufcs[stage][1]->A[_local_to_local_dofs[row]*
-							  _dof_offset*_system_size +
-							  _local_to_local_dofs[col]];
-	  //_jac(row, col) = _ufcs[stage][1]->A[_local_to_local_dofs[row]*
-	  //				    _dof_offset*_system_size +
-	  //    			    _local_to_local_dofs[col]];
-      t_impl_update_jac.stop();
-
-      // LU factorize Jacobian
-      Timer lu_factorize("Implicit stage: LU factorize");
-      _lu_factorize(_jac);
-      _recompute_jac = false;
-
+      // Compute jacobian
+      _compute_jacobian(_jac, u, local_vert, *_ufcs[stage][1], cell, 
+			_coefficient_index[stage].size()==2 ? \
+			_coefficient_index[stage][1] : -1);
     }
 
     // Perform linear solve By forward backward substitution
@@ -433,6 +400,50 @@ void PointIntegralSolver::step_interval(double t0, double t1, double dt)
     t = *_scheme->t();
     next_dt = std::min(t1-t, dt);
   }
+}
+//-----------------------------------------------------------------------------
+void PointIntegralSolver::_compute_jacobian(std::vector<double>& jac, 
+					    const std::vector<double>& u, 
+					    unsigned int local_vert,
+					    UFC& loc_ufc, 
+					    const Cell& cell, int coefficient_index)
+{
+  Timer t_impl_update("Update_cell");
+  loc_ufc.update(cell);
+  t_impl_update.stop();
+
+  const ufc::point_integral& J_integral = *loc_ufc.default_point_integral;
+
+  // If there is a solution coefficient in the jacobian form
+  if (coefficient_index>0)
+  {
+    // Put solution back into restricted coefficients before tabulate new jacobian
+    for (unsigned int row=0; row < _system_size; row++)
+    {
+      loc_ufc.w()[coefficient_index][_local_to_local_dofs[row]] = u[row];
+    }
+  }
+
+  // Tabulate Jacobian
+  Timer t_impl_tt_jac("Implicit stage: tabulate_tensor (J)");
+  J_integral.tabulate_tensor(&loc_ufc.A[0], loc_ufc.w(), 
+			     &loc_ufc.cell.vertex_coordinates[0], 
+			     local_vert);
+  t_impl_tt_jac.stop();
+
+  // Extract vertex dofs from tabulated tensor
+  Timer t_impl_update_jac("Implicit stage: update_jac");
+  for (unsigned int row=0; row < _system_size; row++)
+    for (unsigned int col=0; col < _system_size; col++)
+      jac[row*_system_size + col] = loc_ufc.A[_local_to_local_dofs[row]*
+					      _dof_offset*_system_size +
+					      _local_to_local_dofs[col]];
+  t_impl_update_jac.stop();
+
+  // LU factorize Jacobian
+  Timer lu_factorize("Implicit stage: LU factorize");
+  _lu_factorize(jac);
+  _recompute_jac = false;
 }
 //-----------------------------------------------------------------------------
 void PointIntegralSolver::_lu_factorize(std::vector<double>& A)
@@ -618,7 +629,7 @@ void PointIntegralSolver::_init()
       _ufcs[stage].push_back(boost::make_shared<UFC>(*stage_forms[stage][1]));
       
       // Find coefficient index for each of the two implicit forms
-      for (unsigned int i=0; i<2; i++)
+      for (unsigned int i=0; i < 2; i++)
       {
 	for (unsigned int j=0; j<stage_forms[stage][i]->num_coefficients(); j++)
 	{
