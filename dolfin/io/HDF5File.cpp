@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-05-29
+// Last changed: 2013-05-31
 
 #ifdef HAS_HDF5
 
@@ -533,32 +533,39 @@ void HDF5File::write(const Function& u, const std::string name)
   dolfin_assert(u.function_space()->dofmap());
   const GenericDofMap& dofmap = *u.function_space()->dofmap();
 
-  // const GenericVector& v = *u.vector();
+  // FIXME:
+  // Possibly sort cell_dofs into global cell order before writing?
 
-  std::vector<std::size_t> global_size(2);
-  global_size[0] = MPI::sum(mesh.num_cells());
-  global_size[1] = dofmap.cell_dofs(0).size(); // FIXME
+  // Save data in compressed format with an index to mark out
+  // the start of each row
 
   std::vector<dolfin::la_index> cell_dofs;
-  cell_dofs.reserve(global_size[0]*global_size[1]);
+  std::vector<std::size_t> x_cell_dofs;
+  x_cell_dofs.reserve(mesh.num_cells());
   
   for(std::size_t i = 0; i != mesh.num_cells(); ++i)
   {
+    x_cell_dofs.push_back(cell_dofs.size());
     const std::vector<dolfin::la_index>& cell_dofs_i = dofmap.cell_dofs(i);
     cell_dofs.insert(cell_dofs.end(), cell_dofs_i.begin(), cell_dofs_i.end());
   }
+
+  // Add offset to CSR index to be seamless in parallel
+  std::size_t offset = MPI::global_offset(cell_dofs.size(), true);
+  std::transform(x_cell_dofs.begin(),
+                 x_cell_dofs.end(),
+                 x_cell_dofs.begin(),
+                 std::bind2nd(std::plus<std::size_t>(), offset));
   
   // Save DOFs on each cell
+  std::vector<std::size_t> global_size(1,MPI::sum(cell_dofs.size()));
   write_data(name + "/cell_dofs", cell_dofs, global_size);
-
+  global_size[0] = mesh.size_global(mesh.topology().dim());
+  write_data(name + "/x_cell_dofs", x_cell_dofs, global_size);
+  
+  // Save cell ordering
   const std::vector<std::size_t>& cells = 
     mesh.topology().global_indices(mesh.topology().dim());
-
-  // Reduce to 1D array
-  global_size.pop_back();
-  dolfin_assert(MPI::sum(cells.size()) == global_size[0]);
-
-  // Save cell ordering
   write_data(name + "/cells", cells, global_size);
 
   // Save vector
@@ -577,29 +584,64 @@ void HDF5File::read(Function& u, const std::string name)
     error("Dataset with name \"%s/cells\" does not exist", name.c_str());
   if (!HDF5Interface::has_dataset(hdf5_file_id, name + "/cell_dofs"))
     error("Dataset with name \"%s/cell_dofs\" does not exist", name.c_str());
+  if (!HDF5Interface::has_dataset(hdf5_file_id, name + "/x_cell_dofs"))
+    error("Dataset with name \"%s/x_cell_dofs\" does not exist", name.c_str());
   if (!HDF5Interface::has_dataset(hdf5_file_id, name + "/vector"))
     error("Dataset with name \"%s/vector\" does not exist", name.c_str());
 
-  // Get mesh and dofmap
+  // Get existing mesh and dofmap - these should be pre-existing
+  // and set up by user when defining the Function
   dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
   dolfin_assert(u.function_space()->dofmap());
   const GenericDofMap& dofmap = *u.function_space()->dofmap();
 
   // Get dimension of dataset
-  const std::vector<std::size_t> dof_size = 
-    HDF5Interface::get_dataset_size(hdf5_file_id, name + "/cell_dofs");  
-  const std::size_t num_global_cells = dof_size[0];
-  const std::size_t dofs_per_cell = dof_size[1];
-  dolfin_assert(mesh.size_global(mesh.topology().dim())
-                == num_global_cells);
-
-  // Cell DOFs in HDF5 file
-  std::vector<dolfin::la_index> inp_cell_dofs;
+  const std::vector<std::size_t> dataset_size = 
+    HDF5Interface::get_dataset_size(hdf5_file_id, name + "/cells");  
+  const std::size_t num_global_cells = dataset_size[0];
+  if(mesh.size_global(mesh.topology().dim())
+     != num_global_cells)
+  {
+    dolfin_error("HDF5File.cpp",
+                 "read Function from file",
+                 "Number of global cells does not match");
+  }
+  
+  // Cell DOF indices in HDF5 file
+  // Divide equally between processes
+  const std::size_t process_number = MPI::process_number();
+  const std::size_t num_processes = MPI::num_processes();
+  std::vector<std::size_t> x_cell_dofs;
   const std::pair<std::size_t, std::size_t> cell_range = 
     MPI::local_range(num_global_cells);
+  
+  // Overlap reads of indices, except on last process
+  std::pair<std::size_t, std::size_t> x_cell_range = cell_range;
+  if(process_number != num_processes)
+    x_cell_range.second += 1;
+  HDF5Interface::read_dataset(hdf5_file_id, name + "/x_cell_dofs", 
+                              x_cell_range, x_cell_dofs);
+  if(process_number == num_processes)
+  {
+    const std::vector<std::size_t> celldofs_size = 
+      HDF5Interface::get_dataset_size(hdf5_file_id, name + "/cell_dofs");
+    x_cell_dofs.push_back(celldofs_size[0]);
+  }
+
+  const std::pair<std::size_t, std::size_t> dof_range(x_cell_dofs.front(),
+                                                      x_cell_dofs.back());
+  std::vector<std::size_t> input_dofs;
   HDF5Interface::read_dataset(hdf5_file_id, name + "/cell_dofs", 
-                              cell_range, inp_cell_dofs);
+                              dof_range, input_dofs);
+
+  // TODO: subtract offset from x_cell_dofs
+
+  // Below here not working
+
+  dolfin_error("HDF5File.cpp",
+               "not implemented",
+               "Not implemented");
 
   // Cell layout in memory
   const std::vector<std::size_t>& cells = 
@@ -615,7 +657,6 @@ void HDF5File::read(Function& u, const std::string name)
   // from file_dof -> memory_dof
   // and use to redistribute the data
   
-  const std::size_t num_processes = MPI::num_processes();
   std::vector<std::vector<std::size_t> > send_inp_cells(num_processes);
   std::vector<std::vector<std::size_t> > receive_inp_cells(num_processes);
   std::vector<std::vector<dolfin::la_index> > 
