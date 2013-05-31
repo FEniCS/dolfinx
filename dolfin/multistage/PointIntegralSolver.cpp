@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-05-30
+// Last changed: 2013-05-31
 
 #include <cmath>
 #include <boost/make_shared.hpp>
@@ -50,8 +50,8 @@ PointIntegralSolver::PointIntegralSolver(boost::shared_ptr<MultiStageScheme> sch
   _num_stages(_scheme->stage_forms().size()), _local_to_local_dofs(_system_size),
   _vertex_map(), _local_to_global_dofs(_system_size), 
   _local_stage_solutions(_scheme->stage_solutions().size()), _u0(_system_size), 
-  _ufcs(), _coefficient_index(), _retabulate_J(true), 
-  _J()//, _J_L(), _J_U()
+  _ufcs(), _coefficient_index(), _recompute_jac(true), 
+  _jac()
 {
   // Set parameters
   parameters = default_parameters();
@@ -80,7 +80,7 @@ void PointIntegralSolver::step(double dt)
   // Iterate over vertices
   //Progress p("Solving local point integral problems", _mesh.num_vertices());
   
-  //#pragma omp parallel for schedule(guided, 20) private(_J_L, _J_U, _J, _local_to_global_dofs, _local_to_local_dofs, _ufcs)
+  //#pragma omp parallel for schedule(guided, 20) private(_jac_L, _jac_U, _jac, _local_to_global_dofs, _local_to_local_dofs, _ufcs)
   for (std::size_t vert_ind=0; vert_ind< _mesh.num_vertices(); ++vert_ind)
   {
 
@@ -126,25 +126,9 @@ void PointIntegralSolver::step(double dt)
 	_solve_implict_stage(vert_ind, stage);
       }
 
-      // Update last stage form with local stage solutions if 
-      // the local stage solution is present in last form
-      /*if (_last_stage_coefficient_index[stage] != -1)
-      {
-      	//if (vert_ind == 0)
-      	//  info("updating last stage coefficients: stage %d", stage);
-      	for (unsigned int row=0; row < _system_size; row++)
-      	{
-      	  _last_stage_ufc->w()[_last_stage_coefficient_index[stage]]	\
-      	    [_local_to_local_dofs[row]] = _local_stage_solutions[stage](row);
-      	}
-       }*/
       
     }
 
-    // Get local u0 solution and add the stage derivatives
-    //_scheme->solution()->vector()->get_local(&u0[0], u0.size(), 
-    // 				     &_local_to_global_dofs[0]);
-    
     Timer t_last_stage("Last stage: tabulate_tensor");
 
     // Update coeffcients for last stage
@@ -233,8 +217,8 @@ void PointIntegralSolver::_solve_implict_stage(std::size_t vert_ind,
   bool jacobian_retabulated = false;
   const std::size_t maxiter = newton_parameters["maximum_iterations"];
   const bool reuse_jacobian = newton_parameters["reuse_jacobian"];
-  const std::size_t iterations_to_retabulate_jacobian = \
-    newton_parameters["iterations_to_retabulate_jacobian"];
+  const std::size_t iterations_to_recompute_jacobian = \
+    newton_parameters["iterations_to_recompute_jacobian"];
   const double relaxation = newton_parameters["relaxation_parameter"];
   const std::string convergence_criterion = newton_parameters["convergence_criterion"];
   const double rtol = newton_parameters["relative_tolerance"];
@@ -292,40 +276,37 @@ void PointIntegralSolver::_solve_implict_stage(std::size_t vert_ind,
   while (!newton_converged && newton_iteration < maxiter)
   {
         
-    if (_retabulate_J || !reuse_jacobian)
+    if (_recompute_jac || !reuse_jacobian)
     {
       // Tabulate Jacobian
-      Timer t_impl_tt_J("Implicit stage: tabulate_tensor (J)");
+      Timer t_impl_tt_jac("Implicit stage: tabulate_tensor (J)");
       J_integral.tabulate_tensor(&_ufcs[stage][1]->A[0], _ufcs[stage][1]->w(), 
 				 &_ufcs[stage][1]->cell.vertex_coordinates[0], 
 				 local_vert);
-      t_impl_tt_J.stop();
+      t_impl_tt_jac.stop();
 
       // Extract vertex dofs from tabulated tensor
-      Timer t_impl_update_J("Implicit stage: update_J");
+      Timer t_impl_update_jac("Implicit stage: update_jac");
       for (unsigned int row=0; row < _system_size; row++)
 	for (unsigned int col=0; col < _system_size; col++)
-	  _J[row*_system_size + col] = _ufcs[stage][1]->A[_local_to_local_dofs[row]*
+	  _jac[row*_system_size + col] = _ufcs[stage][1]->A[_local_to_local_dofs[row]*
 							  _dof_offset*_system_size +
 							  _local_to_local_dofs[col]];
-	  //_J(row, col) = _ufcs[stage][1]->A[_local_to_local_dofs[row]*
+	  //_jac(row, col) = _ufcs[stage][1]->A[_local_to_local_dofs[row]*
 	  //				    _dof_offset*_system_size +
 	  //    			    _local_to_local_dofs[col]];
-      t_impl_update_J.stop();
+      t_impl_update_jac.stop();
 
       // LU factorize Jacobian
       Timer lu_factorize("Implicit stage: LU factorize");
-      //arma::lu(_J_L, _J_U, _J);
-      _lu_factorize(_J);
-      _retabulate_J = false;
+      _lu_factorize(_jac);
+      _recompute_jac = false;
 
     }
 
     // Perform linear solve By forward backward substitution
     Timer forward_backward_substitution("Implicit stage: fb substituion");
-    _forward_backward_subst(_J, F, dx);
-    //arma::solve(y, _J_L, F);
-    //arma::solve(dx, _J_U, y);
+    _forward_backward_subst(_jac, F, dx);
     
     forward_backward_substitution.stop();
 
@@ -381,11 +362,11 @@ void PointIntegralSolver::_solve_implict_stage(std::size_t vert_ind,
     }
 	  
     // Check for retabulation of Jacobian
-    if (reuse_jacobian && newton_iteration > iterations_to_retabulate_jacobian && \
+    if (reuse_jacobian && newton_iteration > iterations_to_recompute_jacobian && \
 	!jacobian_retabulated)
     {
       jacobian_retabulated = true;
-      _retabulate_J = true;
+      _recompute_jac = true;
 
       if (vert_ind == 0)
 	info("Retabulating Jacobian.");
@@ -455,77 +436,85 @@ void PointIntegralSolver::step_interval(double t0, double t1, double dt)
   }
 }
 //-----------------------------------------------------------------------------
-void PointIntegralSolver::_lu_factorize(std::vector<double>& mat)
+void PointIntegralSolver::_lu_factorize(std::vector<double>& A)
 {
 
   // Local variables
   double sum;
-  int i, k, r;
+  const int system_size = _system_size;
 
-  // Need an int version of system size
-  int lsystem_size = _system_size;
-
-  for (k = 1; k < lsystem_size; k++)
+  for (int k = 1; k < system_size; k++)
   {
 
-    for (i = 0; i <= k-1; ++i)
+    for (int i = 0; i <= k-1; ++i)
     {
+      
       sum = 0.0;
-      for (r = 0; r <= i-1; r++)
-        sum += mat[i*lsystem_size+r]*mat[r*lsystem_size+k];
+      for (int r = 0; r <= i-1; r++)
+      {
+        sum += A[i*_system_size+r]*A[r*_system_size+k];
+      }
 
-      mat[i*lsystem_size+k] -=sum;
+      A[i*_system_size+k] -=sum;
+      
       sum = 0.0;
-
-      for (r = 0; r <= i-1; r++)
-        sum += mat[k*lsystem_size+r]*mat[r*lsystem_size+i];
+      for (int r = 0; r <= i-1; r++)
+      {
+        sum += A[k*_system_size+r]*A[r*_system_size+i];
+      }
     
-      mat[k*lsystem_size+i] = (mat[k*lsystem_size+i]-sum)/mat[i*lsystem_size+i];
+      A[k*_system_size+i] = (A[k*_system_size+i]-sum)/A[i*_system_size+i];
 
     }
 
     sum = 0.0;
-    for (r = 0; r <= k-1; r++)
-      sum += mat[k*lsystem_size+r]*mat[r*lsystem_size+k];
+    for (int r = 0; r <= k-1; r++)
+    {
+      sum += A[k*_system_size+r]*A[r*_system_size+k];
+    }
 
-    mat[k*lsystem_size+k] -= sum;
+    A[k*_system_size+k] -= sum;
 
   }
 }
 //-----------------------------------------------------------------------------
-void PointIntegralSolver::_forward_backward_subst(const std::vector<double>& mat, 
+void PointIntegralSolver::_forward_backward_subst(const std::vector<double>& A, 
 						  const std::vector<double>& b, 
-						  std::vector<double>& dx) const
+						  std::vector<double>& x) const
 {
   // solves Ax = b with forward backward substitution, provided that 
   // A is already LU factorized
 
   double sum;
 
-  dx[0] = b[0];
+  x[0] = b[0];
 
   // Forward
-  for (uint i = 1; i < _system_size; ++i)
+  for (unsigned int i=1; i < _system_size; ++i)
   {
     sum = 0.0;
-    for (uint j = 0; j <= i-1; ++j)
-      sum = sum + mat[i*_system_size+j]*dx[j];
+    for (unsigned int j=0; j <= i-1; ++j)
+    {
+      sum = sum + A[i*_system_size+j]*x[j];
+    }
 
-    dx[i] = b[i] -sum;
+    x[i] = b[i] -sum;
   }
 
-  const uint _system_size_m_1 = _system_size-1;
-  dx[_system_size_m_1] = dx[_system_size_m_1]/\
-    mat[_system_size_m_1*_system_size+_system_size_m_1];
+  const unsigned int _system_size_m_1 = _system_size-1;
+  x[_system_size_m_1] = x[_system_size_m_1]/\
+    A[_system_size_m_1*_system_size+_system_size_m_1];
 
   // Backward
-  for (int i = _system_size - 2; i >= 0; i--)
+  for (int i = _system_size-2; i >= 0; i--)
   {
     sum = 0;
-    for (uint j = i + 1; j < _system_size; ++j)
-      sum = sum +mat[i*_system_size+j]*dx[j];
+    for (unsigned int j=i+1; j < _system_size; ++j)
+    {
+      sum = sum +A[i*_system_size+j]*x[j];
+    }
   
-    dx[i] = (dx[i]-sum)/mat[i*_system_size+i];
+    x[i] = (x[i]-sum)/A[i*_system_size+i];
   }
 }
 //-----------------------------------------------------------------------------
@@ -551,7 +540,9 @@ void PointIntegralSolver::_update_ghost_values()
 	coefficients = _scheme->stage_forms()[i][j]->coefficients();
       
       for (unsigned int k = 0; k < coefficients.size(); ++k)
+      {
 	coefficients[k]->update();
+      }
     }
   }
 }
@@ -607,15 +598,11 @@ void PointIntegralSolver::_init()
   // Initiate jacobian matrices
   if (_scheme->implicit())
   {
-    //_J.set_size(_system_size, _system_size);
-    //_J_U.set_size(_system_size, _system_size);
-    //_J_L.set_size(_system_size, _system_size);
-    _J.resize(_system_size*_system_size);
+    _jac.resize(_system_size*_system_size);
   }
 
   // Create last stage UFC form
   _last_stage_ufc = boost::make_shared<UFC>(*_scheme->last_stage());
-  //_last_stage_coefficient_index.resize(_num_stages, -1);
 
   // Iterate over stages and collect information
   for (unsigned int stage=0; stage < stage_forms.size(); stage++)
@@ -647,21 +634,6 @@ void PointIntegralSolver::_init()
 	}
       }
     }
-
-    // Collect what coefficient index in the last stage correponds to the 
-    // different stage solutions
-    /*for (unsigned int j=0; j < _scheme->last_stage()->num_coefficients(); j++)
-    {
-     
-      if (_scheme->last_stage()->coefficients()[j]->id() == 
-	  _scheme->stage_solutions()[stage]->id())
-      {
-	_last_stage_coefficient_index[stage] = j;
-	break;
-      }
-
-    }*/
-    
   }
   
   // Build vertex map

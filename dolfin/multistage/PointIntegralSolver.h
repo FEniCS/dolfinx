@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-05-30
+// Last changed: 2013-05-31
 
 #ifndef __POINTINTEGRALSOLVER_H
 #define __POINTINTEGRALSOLVER_H
@@ -67,7 +67,7 @@ namespace dolfin
       // Get default parameters from NewtonSolver
       p.add(NewtonSolver::default_parameters());
       p("newton_solver").add("reuse_jacobian", true);
-      p("newton_solver").add("iterations_to_retabulate_jacobian", 4);
+      p("newton_solver").add("iterations_to_recompute_jacobian", 4);
       
       return p;
     }
@@ -75,13 +75,13 @@ namespace dolfin
   private:
 
     // In-place LU factorization of jacobian matrix
-    void _lu_factorize(std::vector<double>& mat);
+    void _lu_factorize(std::vector<double>& A);
 
     // Forward backward substitution, assume that mat is already
     // inplace LU factorized
-    void _forward_backward_subst(const std::vector<double>& mat, 
+    void _forward_backward_subst(const std::vector<double>& A, 
 				 const std::vector<double>& b, 
-				 std::vector<double>& dx) const;
+				 std::vector<double>& x) const;
     
     // Compute the l2 norm of a vector
     double _l2_norm(const std::vector<double>& vec) const;
@@ -152,10 +152,10 @@ namespace dolfin
     //std::vector<int> _last_stage_coefficient_index;
 
     // Flag for retabulation of J
-    bool _retabulate_J;
+    bool _recompute_jac;
     
     // Jacobian and LU factorized jacobian matrices
-    std::vector<double> _J;
+    std::vector<double> _jac;
     
   };
 

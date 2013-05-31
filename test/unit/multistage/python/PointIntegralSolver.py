@@ -60,7 +60,7 @@ class PointIntegralSolverTest(unittest.TestCase):
             info(scheme)
             solver = PointIntegralSolver(scheme)
             solver.parameters.newton_solver.report = False
-            solver.parameters.newton_solver.iterations_to_retabulate_jacobian = 5
+            solver.parameters.newton_solver.iterations_to_recompute_jacobian = 5
             solver.parameters.newton_solver.maximum_iterations = 12
             u_errors = []
             for dt in [0.05, 0.025, 0.0125]:
@@ -88,7 +88,7 @@ class PointIntegralSolverTest(unittest.TestCase):
             info(scheme)
             solver = PointIntegralSolver(scheme)
             solver.parameters.newton_solver.report = False
-            solver.parameters.newton_solver.iterations_to_retabulate_jacobian = 5
+            solver.parameters.newton_solver.iterations_to_recompute_jacobian = 5
             solver.parameters.newton_solver.maximum_iterations = 12
             u_errors = []
             for dt in [0.05, 0.025, 0.0125]:
@@ -115,7 +115,7 @@ class PointIntegralSolverTest(unittest.TestCase):
             info(scheme)
             solver = PointIntegralSolver(scheme)
             solver.parameters.newton_solver.report = False
-            solver.parameters.newton_solver.iterations_to_retabulate_jacobian = 5
+            solver.parameters.newton_solver.iterations_to_recompute_jacobian = 5
             solver.parameters.newton_solver.maximum_iterations = 12
             u_errors = []
             for dt in [0.05, 0.025, 0.0125]:
