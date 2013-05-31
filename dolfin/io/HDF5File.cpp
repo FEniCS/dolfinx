@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-04-19
+// Last changed: 2013-05-31
 
 #ifdef HAS_HDF5
 
@@ -194,6 +194,16 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     global_size[1] = cell_dim + 1;
     dolfin_assert(global_size[0] == mesh.size_global(cell_dim));
     write_data(topology_dataset, topological_data, global_size);
+
+    // For cells, write the global cell index
+    if(cell_dim == mesh.topology().dim())
+    {
+      const std::string cell_index_dataset = name + "/cell_indices";
+      global_size.pop_back();
+      const std::vector<std::size_t>& cells = 
+        mesh.topology().global_indices(mesh.topology().dim());
+      write_data(cell_index_dataset, cells, global_size);
+    }
 
     // Add cell type attribute
     HDF5Interface::add_attribute(hdf5_file_id, topology_dataset,
