@@ -109,6 +109,13 @@ namespace dolfin
     void _solve_implicit_stage(std::size_t vert_ind, unsigned int stage,
 			       const Cell& cell);
 
+    // Solve an implicit stage new impl
+    void _solve_implicit_stage2(std::size_t vert_ind, unsigned int stage,
+				const Cell& cell);
+
+    bool _simplified_newton_solve(std::size_t vert_ind, unsigned int stage,
+				  const Cell& cell);
+
     // The MultiStageScheme
     boost::shared_ptr<MultiStageScheme> _scheme;
 
@@ -163,6 +170,10 @@ namespace dolfin
     // Jacobian and LU factorized jacobian matrices
     std::vector<double> _jac;
     
+    // Variable used in the estimation of the error of the newton 
+    // iteration for the first iteration (Important for linear problems!)
+    double _eta;
+
   };
 
 }
