@@ -140,9 +140,11 @@ namespace dolfin
     // Local stage solutions 
     std::vector<std::vector<double> > _local_stage_solutions;
 
-    // Local solution 
-    std::vector<double> _u0;
-
+    // Local solutions
+    std::vector<double> _F;
+    std::vector<double> _y;
+    std::vector<double> _dx;
+      
     // UFC objects, one for each form
     std::vector<std::vector<boost::shared_ptr<UFC> > > _ufcs;
 

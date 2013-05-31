@@ -49,7 +49,8 @@ PointIntegralSolver::PointIntegralSolver(boost::shared_ptr<MultiStageScheme> sch
   _system_size(_dofmap.num_entity_dofs(0)), _dof_offset(_mesh.type().num_entities(0)), 
   _num_stages(_scheme->stage_forms().size()), _local_to_local_dofs(_system_size),
   _vertex_map(), _local_to_global_dofs(_system_size), 
-  _local_stage_solutions(_scheme->stage_solutions().size()), _u0(_system_size), 
+  _local_stage_solutions(_scheme->stage_solutions().size()), 
+  _F(_system_size), _y(_system_size), _dx(_system_size), 
   _ufcs(), _coefficient_index(), _recompute_jac(true), 
   _jac()
 {
@@ -125,7 +126,6 @@ void PointIntegralSolver::step(double dt)
       {
 	_solve_implicit_stage(vert_ind, stage, cell);
       }
-
       
     }
 
@@ -144,10 +144,10 @@ void PointIntegralSolver::step(double dt)
     
     // Update solution with a tabulation of the last stage
     for (unsigned int row=0; row < _system_size; row++)
-      _u0[row] = _last_stage_ufc->A[_local_to_local_dofs[row]];
+      _y[row] = _last_stage_ufc->A[_local_to_local_dofs[row]];
 
     // Update global solution with last stage
-    _scheme->solution()->vector()->set(&_u0[0], _local_to_global_dofs.size(), 
+    _scheme->solution()->vector()->set(&_y[0], _local_to_global_dofs.size(), 
 				       &_local_to_global_dofs[0]);
     t_last_stage.stop();
     
@@ -234,11 +234,6 @@ void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
       
   //const double relaxation = 1.0;
       
-  // Initialize la structures
-  std::vector<double> F(_system_size);
-  std::vector<double> y(_system_size);
-  std::vector<double> dx(_system_size);
-      
   // Get point integrals
   const ufc::point_integral& F_integral = *_ufcs[stage][0]->default_point_integral;
       
@@ -257,12 +252,13 @@ void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
   Timer t_impl_update_F("Implicit stage: update_F");
   for (unsigned int row=0; row < _system_size; row++)
   {
-    F[row] = _ufcs[stage][0]->A[_local_to_local_dofs[row]];
+    _F[row] = _ufcs[stage][0]->A[_local_to_local_dofs[row]];
 
     // Grab old value of stage solution as an initial start value. This 
     // value was also used to tabulate the initial value of the F_integral above 
     // and we therefore just grab it from the restricted coeffcients
     u[row] = _ufcs[stage][0]->w()[_coefficient_index[stage][0]][_local_to_local_dofs[row]];
+
   }
   t_impl_update_F.stop();
 
@@ -280,15 +276,15 @@ void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
 
     // Perform linear solve By forward backward substitution
     Timer forward_backward_substitution("Implicit stage: fb substituion");
-    _forward_backward_subst(_jac, F, dx);
+    _forward_backward_subst(_jac, _F, _dx);
     
     forward_backward_substitution.stop();
 
     // Compute resdiual
     if (convergence_criterion == "residual")
-      residual = _l2_norm(F);
+      residual = _l2_norm(_F);
     else if (convergence_criterion == "incremental")
-      residual = _l2_norm(dx);
+      residual = _l2_norm(_dx);
     else
       error("Unknown Newton convergence criterion");
 
@@ -302,10 +298,10 @@ void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
     // Update solution
     if (std::abs(1.0 - relaxation) < DOLFIN_EPS)
       for (unsigned int i=0; i < u.size(); i++)
-	u[i] -= dx[i];
+	u[i] -= _dx[i];
     else
       for (unsigned int i=0; i < u.size(); i++)
-	u[i] -= relaxation*dx[i];
+	u[i] -= relaxation*_dx[i];
         
     // Update number of iterations
     ++newton_iteration;
@@ -320,11 +316,11 @@ void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
 			       &_ufcs[stage][0]->cell.vertex_coordinates[0], 
 			       local_vert);
     t_impl_tt_F.stop();
-
     t_impl_update_F.start();
+
     // Extract vertex dofs from tabulated tensor
     for (unsigned int row=0; row < _system_size; row++)
-      F[row] = _ufcs[stage][0]->A[_local_to_local_dofs[row]];
+      _F[row] = _ufcs[stage][0]->A[_local_to_local_dofs[row]];
     t_impl_update_F.stop();
 
     // Output iteration number and residual (only first vertex)
