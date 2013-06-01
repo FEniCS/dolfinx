@@ -198,7 +198,7 @@ boost::shared_ptr<dolfin::GenericVector> _get_vector_sub_vector(
   m = inds->size();
 
   // Create a default Vector
-  return_vec = self->factory().create_vector();
+  return_vec = self->factory().create_local_vector();
 
   // Resize the vector to the size of the indices
   return_vec->resize(m);
