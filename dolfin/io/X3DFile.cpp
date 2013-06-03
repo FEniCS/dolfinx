@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-03-05
-// Last changed: 2013-05-10
+// Last changed: 2013-05-21
 
 #include <iostream>
 #include <fstream>
@@ -219,7 +219,7 @@ void X3DFile::write_meshfunction(const MeshFunction<std::size_t>& meshfunction)
     indexed_face_set.append_attribute("colorPerVertex") = "false";
 
     std::stringstream str_output;
-    for(std::size_t i = 0; i < num_processes; ++i)
+    for (std::size_t i = 0; i < num_processes; ++i)
       str_output << gathered_output[i];
     indexed_face_set.append_attribute("colorIndex") = str_output.str().c_str();
 
@@ -286,7 +286,7 @@ void X3DFile::write_function(const Function& u)
     for (std::size_t i = 0; i < num_vertices ; ++i)
     {
       double val = 0.0;
-      for(std::size_t j = 0; j < u.value_size() ; j++)
+      for (std::size_t j = 0; j < u.value_size() ; j++)
         val += pow(data_values[i + j*num_vertices], 2.0);
       val = sqrt(val);
       magnitude.push_back(val);
@@ -370,7 +370,7 @@ void X3DFile::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
       // output the edge
       if (!allow_edge)
       {
-        for(FaceIterator f(*e); !f.end(); ++f)
+        for (FaceIterator f(*e); !f.end(); ++f)
         {
           if (f->num_global_entities(tdim) == 1)
             allow_edge = true;
@@ -415,7 +415,7 @@ void X3DFile::write_values(pugi::xml_document& xml_doc, const Mesh& mesh,
     indexed_face_set.append_attribute("colorPerVertex") = "true";
 
     std::stringstream str_output;
-    for(std::size_t i = 0; i < MPI::num_processes(); ++i)
+    for (std::size_t i = 0; i < MPI::num_processes(); ++i)
       str_output << gathered_output[i];
 
     indexed_face_set.append_attribute("colorIndex") = str_output.str().c_str();
@@ -448,7 +448,7 @@ void X3DFile::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
       // output the edge
       if (!allow_edge)
       {
-        for(FaceIterator f(*e); !f.end(); ++f)
+        for (FaceIterator f(*e); !f.end(); ++f)
         {
           if (f->num_global_entities(tdim) == 1)
             allow_edge = true;
@@ -457,7 +457,7 @@ void X3DFile::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
 
       if (allow_edge)
       {
-        for(VertexIterator v(*e); !v.end(); ++v)
+        for (VertexIterator v(*e); !v.end(); ++v)
         {
           std::size_t index_it  = std::find(vecindex.begin(),
                                             vecindex.end(),
@@ -510,7 +510,7 @@ void X3DFile::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
   {
     Vertex v(mesh, *index);
     local_output << v.x(0) << " " << v.x(1) << " ";
-    if (gdim==2)
+    if (gdim == 2)
       local_output << "0 ";
     else
       local_output << v.x(2) << " ";
@@ -527,7 +527,7 @@ void X3DFile::write_vertices(pugi::xml_document& xml_doc, const Mesh& mesh,
     pugi::xml_node coordinate = indexed_face_set.append_child("Coordinate");
 
     std::stringstream str_output;
-    for(std::size_t i = 0; i < num_processes; ++i)
+    for (std::size_t i = 0; i < num_processes; ++i)
       str_output << gathered_output[i];
 
     coordinate.append_attribute("point") = str_output.str().c_str();
@@ -642,7 +642,7 @@ std::vector<std::size_t> X3DFile::vertex_index(const Mesh& mesh) const
     // FIXME: num_global_entities not working in serial
     if (tdim == 2 || f->num_global_entities(tdim) == 1)
     {
-      for(VertexIterator v(*f); !v.end(); ++v)
+      for (VertexIterator v(*f); !v.end(); ++v)
         vindex.insert(v->index());
     }
   }

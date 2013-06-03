@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011
 //
 // First added:  2009-03-03
-// Last changed: 2012-11-27
+// Last changed: 2013-05-21
 
 #include <iostream>
 #include <fstream>
@@ -39,6 +39,7 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/LocalMeshData.h>
+#include <dolfin/mesh/LocalMeshValueCollection.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/common/Timer.h>
@@ -143,7 +144,10 @@ void XMLFile::operator>> (GenericVector& input)
   const std::size_t input_vector_size = input.size();
   const std::size_t num_proc = MPI::num_processes();
   if (num_proc > 1 && input_vector_size != size)
-    warning("Resizing parallel vector. Default partitioning will be used. To control distribution, initialize vector size before reading from file.");
+  {
+    warning("Resizing parallel vector. Default partitioning will be used. \
+To control distribution, initialize vector size before reading from file.");
+  }
   if (input.size() != size)
     input.resize(size);
 
@@ -257,7 +261,7 @@ void XMLFile::read_mesh_function(MeshFunction<T>& t,
     // Read a MeshValueCollection on processs 0, then communicate to
     // other procs
     std::size_t dim = 0;
-    MeshValueCollection<T> mvc;
+    MeshValueCollection<T> mvc(t.mesh());
     if (MPI::process_number() == 0)
     {
       pugi::xml_document xml_doc;
@@ -265,11 +269,15 @@ void XMLFile::read_mesh_function(MeshFunction<T>& t,
       pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
       XMLMeshFunction::read(mvc, type, dolfin_node);
       dim = mvc.dim();
+      MPI::broadcast(dim);
+    }
+    else
+    {
+      MPI::broadcast(dim);
+      mvc.init(dim);
     }
 
     // Broadcast and set dimension
-    MPI::broadcast(dim);
-    mvc.set_dim(dim);
 
     // Build local data
     LocalMeshValueCollection<T> local_data(mvc, dim);
@@ -299,10 +307,43 @@ template<typename T>
 void XMLFile::read_mesh_value_collection(MeshValueCollection<T>& t,
                                          const std::string type) const
 {
-  pugi::xml_document xml_doc;
-  load_xml_doc(xml_doc);
-  const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
-  XMLMeshValueCollection::read(t, type, dolfin_node);
+  if (MPI::num_processes() == 1)
+  {
+    pugi::xml_document xml_doc;
+    load_xml_doc(xml_doc);
+    const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
+    XMLMeshValueCollection::read(t, type, dolfin_node);
+  }
+  else
+  {
+    // Read file on process 0
+    MeshValueCollection<T> tmp_collection(t.mesh());
+    if (MPI::process_number() == 0)
+    {
+      pugi::xml_document xml_doc;
+      load_xml_doc(xml_doc);
+      const pugi::xml_node dolfin_node = get_dolfin_xml_node(xml_doc);
+      XMLMeshValueCollection::read(tmp_collection, type, dolfin_node);
+      std::size_t dim = (tmp_collection.dim());
+      MPI::broadcast(dim);
+    }
+    else
+    {
+      std::size_t dim = 0;
+      MPI::broadcast(dim);
+      tmp_collection.init(dim);
+    }
+
+    // Create local data and build value collectio
+    LocalMeshValueCollection<T> local_data(tmp_collection,
+                                           tmp_collection.dim());
+
+    // Build mesh value collection
+    dolfin_assert(t.mesh());
+    t.init(tmp_collection.dim());
+    MeshPartitioning::build_distributed_value_collection(t, local_data,
+                                                         *t.mesh());
+  }
 }
 //-----------------------------------------------------------------------------
 template<typename T>

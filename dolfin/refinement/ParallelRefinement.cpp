@@ -19,20 +19,20 @@
 // First Added: 2013-01-02
 // Last Changed: 2013-05-12
 
-#include <vector>
 #include <map>
-#include <boost/unordered_map.hpp>
+#include <vector>
 #include <boost/multi_array.hpp>
-
-#include <dolfin/common/types.h>
+#include <boost/unordered_map.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/types.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/Vertex.h>
 
 #include "ParallelRefinement.h"

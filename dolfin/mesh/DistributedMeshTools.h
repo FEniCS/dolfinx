@@ -22,6 +22,7 @@
 #define __MESH_DISTRIBUTED_TOOLS_H
 
 #include <map>
+#include <numeric>
 #include <set>
 #include <utility>
 #include <vector>
