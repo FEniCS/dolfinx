@@ -43,6 +43,7 @@ namespace dolfin
   class Function;
   class GenericVector;
   class LocalMeshData;
+  class GenericDofMap;
 
   class HDF5File : public Variable
   {
@@ -114,10 +115,17 @@ namespace dolfin
     friend class XDMFFile;
     friend class TimeSeriesHDF5;
 
-    // Get cell owners
+    // Get cell owners for a set of cells. 
+    // Returns (process, local index) pairs
     std::vector<std::pair<std::size_t, std::size_t> >
       cell_owners(const Mesh&mesh, const std::vector<std::size_t> cells);
  
+    // Generate two vectors, in the range of "vector_range" of the global DOFs.
+    // global_cells is a list of cells which point to the DOF (non-unique)
+    // and remote_local_dofi is the pertinent local_dof of the cell.
+    // input_cells is a list of cells held on this process, and
+    // input_cell_dofs/x_cell_dofs list their local_dofs.
+    
     void map_gdof_to_cell(const std::vector<std::size_t>& input_cells, 
                           const std::vector<dolfin::la_index>& input_cell_dofs,
                           const std::vector<std::size_t>& x_cell_dofs,
@@ -125,6 +133,17 @@ namespace dolfin
                           vector_range,
                           std::vector<std::size_t>& global_cells,
                           std::vector<std::size_t>& remote_local_dofi);
+
+    // Given the cell dof index specified 
+    // as (process, local_cell_index, local_cell_dof_index)
+    // get the global_dof index from that location, and return it for all 
+    // DOFs in the range of "vector_range"
+    void get_global_dof(
+         const std::vector<std::pair<std::size_t, std::size_t> >& cell_ownership, 
+         const std::vector<std::size_t>& remote_local_dofi,
+         const std::pair<std::size_t, std::size_t> vector_range,
+         const GenericDofMap& dofmap,
+         std::vector<dolfin::la_index>& global_dof);
 
     // Read a mesh and repartition (if running in parallel)
     void read_mesh_repartition(Mesh &input_mesh,
