@@ -172,17 +172,26 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
   // Get cell domains
   const MeshFunction<std::size_t>* cell_domains = _a->cell_domains().get();
   if (cell_domains != _L->cell_domains().get())
-    warning("Bilinear and linear forms do not have same cell facet subdomains in SystemAssembler. Taking subdomains from bilinear form");
+  {
+    warning("Bilinear and linear forms do not have same cell facet subdomains in SystemAssembler. \
+Taking subdomains from bilinear form");
+  }
 
   // Get exterior facet domains
   const MeshFunction<std::size_t>* exterior_facet_domains = _a->exterior_facet_domains().get();
   if (exterior_facet_domains != _L->exterior_facet_domains().get())
-    warning("Bilinear and linear forms do not have same exterior facet subdomains in SystemAssembler. Taking subdomains from bilinear form");
+  {
+    warning("Bilinear and linear forms do not have same exterior facet subdomains in SystemAssembler. \
+Taking subdomains from bilinear form");
+  }
 
   // Get interior facet domains
   const MeshFunction<std::size_t>* interior_facet_domains = _a->interior_facet_domains().get();
   if (interior_facet_domains != _L->interior_facet_domains().get())
-    warning("Bilinear and linear forms do not have same interior facet subdomains in SystemAssembler. Taking subdomains from bilinear form");
+  {
+    warning("Bilinear and linear forms do not have same interior facet subdomains in SystemAssembler. \
+Taking subdomains from bilinear form");
+  }
 
   // Check forms
   AssemblerBase::check(*_a);
