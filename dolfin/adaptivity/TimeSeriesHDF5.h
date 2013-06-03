@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-11
-// Last changed: 2013-04-19
+// Last changed: 2013-05-09
 
 #ifndef __TIME_SERIES_HDF5_H
 #define __TIME_SERIES_HDF5_H
@@ -87,7 +87,8 @@ namespace dolfin
     ///     interpolate (bool)
     ///         Optional argument: If true (default), interpolate
     ///         time samples closest to t if t is not present.
-    void retrieve(GenericVector& vector, double t, bool interpolate=true) const;
+    void retrieve(GenericVector& vector, double t,
+                  bool interpolate=true) const;
 
     /// Retrieve mesh at given time
     ///
@@ -144,10 +145,9 @@ namespace dolfin
                                    std::string type_name);
 
     // Find index pair closest to given time
-    static std::pair<std::size_t, std::size_t> find_closest_pair(double t,
-                                                   const std::vector<double>& times,
-                                                   std::string series_name,
-                                                   std::string type_name);
+    static std::pair<std::size_t, std::size_t>
+      find_closest_pair(double t, const std::vector<double>& times,
+                        std::string series_name, std::string type_name);
 
     // Name of series
     std::string _name;
@@ -163,5 +163,5 @@ namespace dolfin
 
 }
 
-#endif 
+#endif
 #endif

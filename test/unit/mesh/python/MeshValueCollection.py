@@ -29,12 +29,12 @@ class MeshValueCollections(unittest.TestCase):
   def testAssign2DCells(self):
       mesh = UnitSquareMesh(3, 3)
       ncells = mesh.num_cells()
-      f = MeshValueCollection("int", 2)
+      f = MeshValueCollection("int", mesh, 2)
       all_new = True
       for cell in cells(mesh):
           value = ncells - cell.index()
-          all_new = all_new and f.set_value(cell.index(), value, mesh)
-      g = MeshValueCollection("int", 2)
+          all_new = all_new and f.set_value(cell.index(), value)
+      g = MeshValueCollection("int", mesh, 2)
       g.assign(f)
       self.assertEqual(ncells, f.size())
       self.assertEqual(ncells, g.size())
@@ -52,14 +52,14 @@ class MeshValueCollections(unittest.TestCase):
       mesh = UnitSquareMesh(3, 3)
       mesh.init(2,1)
       ncells = mesh.num_cells()
-      f = MeshValueCollection("int", 1)
+      f = MeshValueCollection("int", mesh, 1)
       all_new = True
       for cell in cells(mesh):
           value = ncells - cell.index()
           for i, facet in enumerate(facets(cell)):
-              all_new = all_new and f.set_value(cell.index(), i, value+i)
+              all_new = all_new and f.set_value(cell.index(), i, value + i)
 
-      g = MeshValueCollection("int", 1)
+      g = MeshValueCollection("int", mesh, 1)
       g.assign(f)
       self.assertEqual(ncells*3, f.size())
       self.assertEqual(ncells*3, g.size())
@@ -74,14 +74,14 @@ class MeshValueCollections(unittest.TestCase):
       mesh = UnitSquareMesh(3, 3)
       mesh.init(2,0)
       ncells = mesh.num_cells()
-      f = MeshValueCollection("int", 0)
+      f = MeshValueCollection("int", mesh, 0)
       all_new = True
       for cell in cells(mesh):
           value = ncells - cell.index()
           for i, vert in enumerate(vertices(cell)):
               all_new = all_new and f.set_value(cell.index(), i, value+i)
 
-      g = MeshValueCollection("int", 0)
+      g = MeshValueCollection("int", mesh, 0)
       g.assign(f)
       self.assertEqual(ncells*3, f.size())
       self.assertEqual(ncells*3, g.size())
@@ -99,7 +99,7 @@ class MeshValueCollections(unittest.TestCase):
       for cell in cells(mesh):
           f[cell] = ncells - cell.index()
 
-      g = MeshValueCollection("int", 2)
+      g = MeshValueCollection("int", mesh, 2)
       g.assign(f)
       self.assertEqual(ncells, f.size())
       self.assertEqual(ncells, g.size())
@@ -119,7 +119,7 @@ class MeshValueCollections(unittest.TestCase):
           for i, facet in enumerate(facets(cell)):
               self.assertEqual(25, f[facet])
 
-      g = MeshValueCollection("int", 1)
+      g = MeshValueCollection("int", mesh, 1)
       g.assign(f)
       self.assertEqual(mesh.num_facets(), f.size())
       self.assertEqual(mesh.num_cells()*3, g.size())
@@ -137,7 +137,7 @@ class MeshValueCollections(unittest.TestCase):
       mesh = UnitSquareMesh(3, 3)
       mesh.init(0)
       f = VertexFunction("int", mesh, 25)
-      g = MeshValueCollection("int", 0)
+      g = MeshValueCollection("int", mesh, 0)
       g.assign(f)
       self.assertEqual(mesh.num_vertices(), f.size())
       self.assertEqual(mesh.num_cells()*3, g.size())
