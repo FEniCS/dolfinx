@@ -190,7 +190,7 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     }
 
     // Write topology data
-   const std::string topology_dataset =  name + "/topology";
+    const std::string topology_dataset =  name + "/topology";
     std::vector<std::size_t> global_size(2);
     global_size[0] = MPI::sum(topological_data.size()/(cell_dim + 1));
     global_size[1] = cell_dim + 1;
@@ -1320,7 +1320,6 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
 
   }
 }
-
 //-----------------------------------------------------------------------------
 void HDF5File::read(GenericVector& x, const std::string dataset_name,
                     const bool use_partition_from_file)
