@@ -50,8 +50,8 @@ namespace dolfin
     NewtonSolver(std::string solver_type="lu",
                  std::string pc_type="default");
 
-    /// Create nonlinear solver using provided linear solver and linear algebra
-    /// backend determined by factory
+    /// Create nonlinear solver using provided linear solver and linear
+    /// algebra backend determined by factory
     ///
     /// *Arguments*
     ///     solver (_GenericLinearSolver_)
@@ -78,7 +78,7 @@ namespace dolfin
     ///         Pair of number of Newton iterations, and whether
     ///         iteration converged)
     std::pair<std::size_t, bool> solve(NonlinearProblem& nonlinear_function,
-                                GenericVector& x);
+                                       GenericVector& x);
 
     /// Return Newton iteration number
     ///
@@ -118,7 +118,7 @@ namespace dolfin
   private:
 
     /// Convergence test
-    virtual bool converged(const GenericVector& b, const GenericVector& dx,
+    virtual bool converged(const GenericVector& r,
                            const NonlinearProblem& nonlinear_problem);
 
     /// Current number of Newton iterations
