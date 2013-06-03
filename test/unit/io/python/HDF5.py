@@ -20,7 +20,7 @@
 # Modified by Chris Richardson 2013
 #
 # First added:  2012-09-14
-# Last changed: 2013-05-24
+# Last changed: 2013-06-03
 
 import unittest
 from dolfin import *
@@ -124,6 +124,27 @@ if has_hdf5():
                 mvc = MeshValueCollection("size_t", mesh, dim)
                 hdf5_file.read(mvc, "/mesh_value_collection_%d"%dim)
 
+
+    class HDF5_Function(unittest.TestCase):
+        
+        def test_save_and_read_function(self):
+            mesh = UnitSquareMesh(10,10)
+            Q = FunctionSpace(mesh, "CG", 3)
+            F0 = Function(Q)
+            F1 = Function(Q)
+            E = Expression("x[0]")
+            F0.interpolate(E)
+
+            # Save to HDF5 File
+            hdf5_file = HDF5File("function.h5", "w")
+            hdf5_file.write(F0, "function")
+            del hdf5_file
+
+            #Read back from file
+            hdf5_file = HDF5File("function.h5", "r")
+            hdf5_file.read(F1, "function")
+            result = F0.vector() - F1.vector()
+            self.assertTrue(result.array().all() == 0)
 
     class HDF5_Mesh(unittest.TestCase):
 
