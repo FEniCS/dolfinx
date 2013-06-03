@@ -93,6 +93,26 @@ struct snes_ctx_t
         ("ncg",         std::make_pair("Nonlinear conjugate gradient method", SNESNCG))
         ("fas",         std::make_pair("Full Approximation Scheme nonlinear multigrid method", SNESFAS))
         ("ms",          std::make_pair("Multistage smoothers", SNESMS));
+  #elif PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 4 // PETSc 3.4
+  // Mapping from method string to PETSc
+  const std::map<std::string, std::pair<std::string, const SNESType> >
+  PETScSNESSolver::_methods
+   = boost::assign::map_list_of
+      ("default",      std::make_pair("default SNES method", ""))
+      ("newtonls",     std::make_pair("Line search method", SNESNEWTONLS))
+      ("newtontr",     std::make_pair("Trust region method", SNESNEWTONTR))
+      ("test",         std::make_pair("Tool to verify Jacobian approximation", SNESTEST))
+      ("ngmres",       std::make_pair("Nonlinear generalised minimum residual method", SNESNGMRES))
+      ("nrichardson",  std::make_pair("Richardson nonlinear method (Picard iteration)", SNESNRICHARDSON))
+      ("vinewtonrsls", std::make_pair("Reduced space active set solver method (for bounds)", SNESVINEWTONRSLS))
+      ("vinewtonssls", std::make_pair("Reduced space active set solver method (for bounds)", SNESVINEWTONSSLS))
+      ("qn",           std::make_pair("Limited memory quasi-Newton", SNESQN))
+      ("ncg",          std::make_pair("Nonlinear conjugate gradient method", SNESNCG))
+      ("fas",          std::make_pair("Full Approximation Scheme nonlinear multigrid method", SNESFAS))
+      ("nasm",         std::make_pair("Nonlinear Additive Schwartz", SNESNASM))
+      ("anderson",     std::make_pair("Anderson mixing method", SNESANDERSON))
+      ("aspin",        std::make_pair("Additive-Schwarz Preconditioned Inexact Newton", SNESASPIN))
+      ("ms",           std::make_pair("Multistage smoothers", SNESMS));
   #endif
 #else // Development version
   // Mapping from method string to PETSc
@@ -196,9 +216,6 @@ void PETScSNESSolver::init(const std::string& method)
   else
     SNESCreate(PETSC_COMM_SELF, _snes.get());
 
-  // Set some options
-  SNESSetFromOptions(*_snes);
-
   // Set solver type
   if (method != "default")
   {
@@ -208,6 +225,9 @@ void PETScSNESSolver::init(const std::string& method)
     dolfin_assert(it != _methods.end());
     SNESSetType(*_snes, it->second.second);
   }
+
+  // Set some options
+  SNESSetFromOptions(*_snes);
 
   // Set to default to not having explicit bounds
   has_explicit_bounds = false;
@@ -283,6 +303,7 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
     it = _methods.find(std::string(parameters["method"]));
     dolfin_assert(it != _methods.end());
     SNESSetType(*_snes, it->second.second);
+    SNESSetFromOptions(*_snes);
   // If
   //      a) the user has set bounds (is_vi())
   // AND  b) the user has not set a solver (method == default)
@@ -302,6 +323,7 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
     #endif
     dolfin_assert(it != _methods.end());
     SNESSetType(*_snes, it->second.second);
+    SNESSetFromOptions(*_snes);
   }
 
   // The line search business changed completely from PETSc 3.2 to 3.3.
@@ -325,7 +347,7 @@ PETScSNESSolver::solve(NonlinearProblem& nonlinear_problem,
   #else
   SNESLineSearch linesearch;
 
-  #if PETSC_VERSION_RELEASE
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR < 4
   SNESGetSNESLineSearch(*_snes, &linesearch);
   #else
   SNESGetLineSearch(*_snes, &linesearch);
