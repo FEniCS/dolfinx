@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-05-31
+// Last changed: 2013-06-03
 
 #ifdef HAS_HDF5
 
@@ -560,12 +560,15 @@ void HDF5File::write(const Function& u, const std::string name)
   // Save DOFs on each cell
   std::vector<std::size_t> global_size(1,MPI::sum(cell_dofs.size()));
   write_data(name + "/cell_dofs", cell_dofs, global_size);
-  global_size[0] = mesh.size_global(mesh.topology().dim());
+  if(MPI::process_number() == MPI::num_processes() - 1)
+    x_cell_dofs.push_back(global_size[0]);
+  global_size[0] = mesh.size_global(mesh.topology().dim()) + 1;
   write_data(name + "/x_cell_dofs", x_cell_dofs, global_size);
   
   // Save cell ordering
   const std::vector<std::size_t>& cells = 
     mesh.topology().global_indices(mesh.topology().dim());
+  global_size[0] = mesh.size_global(mesh.topology().dim());
   write_data(name + "/cells", cells, global_size);
 
   // Save vector
@@ -573,9 +576,195 @@ void HDF5File::write(const Function& u, const std::string name)
   
 }
 //-----------------------------------------------------------------------------
+std::vector<std::pair<std::size_t, std::size_t> >
+HDF5File::cell_owners(const Mesh&mesh, const std::vector<std::size_t> cells)
+{
+  const std::size_t num_processes = MPI::num_processes();
+  const std::size_t num_global_cells 
+    = mesh.size_global(mesh.topology().dim());
+  const std::pair<std::size_t, std::size_t> cell_range 
+    = MPI::local_range(num_global_cells);
+
+  std::vector<std::pair<std::size_t, std::size_t> >
+    cell_locations(cell_range.second - cell_range.first);
+  // In the following scope, build cell_locations
+  // by receiving all cells in our cell range
+  {
+    std::vector<std::vector<std::pair<std::size_t, size_t> > > 
+      send_cells(num_processes);
+    std::vector<std::vector<std::pair<std::size_t, size_t> > > 
+      receive_cells(num_processes);
+
+    const std::vector<std::size_t>& local_cells = 
+      mesh.topology().global_indices(mesh.topology().dim());
+
+    for (std::vector<std::size_t>::const_iterator c = local_cells.begin();
+         c != local_cells.end(); ++c)
+    {
+      const std::size_t dest = MPI::index_owner(*c, num_global_cells);
+      send_cells[dest].push_back(
+                std::make_pair(*c, c - local_cells.begin()));
+    }
+    
+    MPI::all_to_all(send_cells, receive_cells);
+    
+    for(std::size_t i = 0; i != num_processes; ++i)
+    {
+      const std::vector<std::pair<std::size_t, std::size_t> >& 
+        rcells = receive_cells[i];
+      for(std::size_t j = 0; j != rcells.size(); ++j)
+      {
+        dolfin_assert(rcells[j].first >= cell_range.first);
+        dolfin_assert(rcells[j].first < cell_range.second);
+        cell_locations[rcells[j].first - cell_range.first] 
+          = std::make_pair(i, rcells[j].second);
+      }
+    }
+  }
+  
+  // Wanted cells - send to matching process
+  std::vector<std::vector<std::size_t> > receive_input_cells(num_processes);
+  {
+    std::vector<std::vector<std::size_t> > send_input_cells(num_processes);
+    for (std::vector<std::size_t>::const_iterator c = cells.begin();
+         c != cells.end(); ++c)
+    {
+      const std::size_t dest = MPI::index_owner(*c, num_global_cells);
+      send_input_cells[dest].push_back(*c);
+    }
+    
+    MPI::all_to_all(send_input_cells, receive_input_cells);
+  }
+  
+  // Reflect back to sending process with cell owner and local index
+
+  std::vector<std::vector<std::pair<std::size_t, size_t> > > 
+    send_cells(num_processes);
+  std::vector<std::vector<std::pair<std::size_t, size_t> > > 
+    receive_cells(num_processes);
+
+  for (std::size_t i = 0; i != num_processes; ++i)
+  {
+    const std::vector<std::size_t>& rcells = receive_input_cells[i];
+    for (std::size_t j = 0; j != rcells.size(); ++j)
+    {
+      dolfin_assert(rcells[j] >= cell_range.first);
+      dolfin_assert(rcells[j] < cell_range.second);
+      std::pair<std::size_t, std::size_t>& loc 
+        = cell_locations[rcells[j] - cell_range.first];
+      send_cells[i].push_back(loc);
+    }
+  }
+
+  MPI::all_to_all(send_cells, receive_cells);
+
+  std::vector<std::pair<std::size_t, std::size_t> > 
+    output_cell_locations(cells.size());
+
+  // Index to walk through data reflected back 
+  std::vector<std::size_t> pos(num_processes, 0);
+  
+  for(std::size_t i = 0; i != cells.size(); ++i)
+  {
+    const std::size_t src = MPI::index_owner(cells[i], num_global_cells);
+    const std::vector<std::pair<std::size_t, std::size_t> >&
+      rcell = receive_cells[src];
+    dolfin_assert(pos[src] < rcell.size());
+    output_cell_locations[i] = rcell[pos[src]];
+    pos[src]++;
+  }
+  
+  return output_cell_locations;
+}
+  
+//-----------------------------------------------------------------------------
+void HDF5File::map_gdof_to_cell(const std::vector<std::size_t>& input_cells, 
+                                const std::vector<dolfin::la_index>& input_cell_dofs,
+                                const std::vector<std::size_t>& x_cell_dofs,
+                                const std::pair<dolfin::la_index, dolfin::la_index> 
+                                vector_range,
+                                std::vector<std::size_t>& global_cells,
+                                std::vector<std::size_t>& remote_local_dofi)
+{
+  // Go through all locally held cells (as read from file)
+  // and make mapping from global DOF index back to the cell and local index.
+  // Some overwriting will occur if multiple cells refer to the same DOF
+
+  const std::size_t num_processes = MPI::num_processes();
+  std::vector<dolfin::la_index> all_vec_range;
+  MPI::gather(vector_range.second, all_vec_range);
+  MPI::broadcast(all_vec_range);
+
+  std::map<dolfin::la_index, 
+           std::pair<std::size_t, std::size_t> > dof_to_cell;
+  const std::size_t offset = x_cell_dofs[0];
+  for(std::size_t i = 0; i < x_cell_dofs.size() - 1; ++i)
+  {
+    for(std::size_t j = x_cell_dofs[i] ; j != x_cell_dofs[i+1]; ++j)
+    {
+      const unsigned char local_dof_i = j - x_cell_dofs[i];
+      const dolfin::la_index global_dof = input_cell_dofs[j - offset];
+      dof_to_cell[global_dof] = std::make_pair(input_cells[i], local_dof_i);
+    }
+  }
+    
+  // Transfer dof_to_cell map to processes which hold the
+  // vector data for that DOF
+    
+  std::vector<std::vector<dolfin::la_index> > send_dofs(num_processes);
+  std::vector<std::vector<dolfin::la_index> > receive_dofs(num_processes);
+  std::vector<std::vector<std::pair<std::size_t, std::size_t> > >
+    send_cell_dofs(num_processes);
+  std::vector<std::vector<std::pair<std::size_t, std::size_t> > >
+    receive_cell_dofs(num_processes);
+    
+  for(std::map<dolfin::la_index,
+        std::pair<std::size_t, std::size_t> >::const_iterator 
+        p = dof_to_cell.begin(); p != dof_to_cell.end(); ++p)
+  {
+    const std::size_t dest = std::upper_bound(all_vec_range.begin(),
+                                              all_vec_range.end(), 
+                                              p->first) 
+      - all_vec_range.begin();
+    send_dofs[dest].push_back(p->first);
+    send_cell_dofs[dest].push_back(p->second);
+  }
+    
+  MPI::all_to_all(send_dofs, receive_dofs);
+  MPI::all_to_all(send_cell_dofs, receive_cell_dofs);
+    
+  // Unpack associated cell and local_dofs into vector
+  // There may be some overwriting due to receiving an
+  // index for the same DOF from multiple cells on different processes
+    
+  for(std::size_t i = 0; i != num_processes; ++i)
+  {
+    std::vector<dolfin::la_index>& rdofs = receive_dofs[i];
+    std::vector<std::pair<std::size_t, std::size_t> >& rcelldofs = receive_cell_dofs[i];
+    dolfin_assert(rcelldofs.size() == rdofs.size());
+    for(std::size_t j = 0; j != rdofs.size(); ++j) 
+    {
+      dolfin_assert(rdofs[j] >= vector_range.first);
+      dolfin_assert(rdofs[j] < vector_range.second);
+      global_cells[rdofs[j] - vector_range.first] 
+        = rcelldofs[j].first; 
+      remote_local_dofi[rdofs[j] - vector_range.first] 
+        = rcelldofs[j].second;
+    }
+  }
+}
+//-----------------------------------------------------------------------------
 void HDF5File::read(Function& u, const std::string name)
 {
   dolfin_assert(hdf5_file_open);
+
+  // FIXME: This routine is long and inefficient,
+  // but it should work for the general case
+  // of reading a function that was written from
+  // a different number of processes.
+  // Memory efficiency could be improved by
+  // limiting the scope of some of the temporary
+  // variables
 
   // Check datasets exist
   if (!HDF5Interface::has_dataset(hdf5_file_id, name))
@@ -608,211 +797,173 @@ void HDF5File::read(Function& u, const std::string name)
                  "Number of global cells does not match");
   }
   
-  // Cell DOF indices in HDF5 file
-  // Divide equally between processes
-  const std::size_t process_number = MPI::process_number();
-  const std::size_t num_processes = MPI::num_processes();
-  std::vector<std::size_t> x_cell_dofs;
+  // Divide cells equally between processes
   const std::pair<std::size_t, std::size_t> cell_range = 
     MPI::local_range(num_global_cells);
-  
-  // Overlap reads of indices, except on last process
-  std::pair<std::size_t, std::size_t> x_cell_range = cell_range;
-  if(process_number != num_processes)
-    x_cell_range.second += 1;
-  HDF5Interface::read_dataset(hdf5_file_id, name + "/x_cell_dofs", 
-                              x_cell_range, x_cell_dofs);
-  if(process_number == num_processes)
-  {
-    const std::vector<std::size_t> celldofs_size = 
-      HDF5Interface::get_dataset_size(hdf5_file_id, name + "/cell_dofs");
-    x_cell_dofs.push_back(celldofs_size[0]);
-  }
 
-  const std::pair<std::size_t, std::size_t> dof_range(x_cell_dofs.front(),
-                                                      x_cell_dofs.back());
-  std::vector<std::size_t> input_dofs;
-  HDF5Interface::read_dataset(hdf5_file_id, name + "/cell_dofs", 
-                              dof_range, input_dofs);
-
-  // TODO: subtract offset from x_cell_dofs
-
-  // Below here not working
-
-  dolfin_error("HDF5File.cpp",
-               "not implemented",
-               "Not implemented");
-
-  // Cell layout in memory
-  const std::vector<std::size_t>& cells = 
-    mesh.topology().global_indices(mesh.topology().dim());
-
-  // Cell layout in HDF5 file
+  // Read cells
   std::vector<std::size_t> input_cells;
   HDF5Interface::read_dataset(hdf5_file_id, name + "/cells", 
                               cell_range, input_cells);
-
-  // Use cells and input_cells to join DOFmaps from 
-  // file and memory on a common process, to create a mapping
-  // from file_dof -> memory_dof
-  // and use to redistribute the data
   
-  std::vector<std::vector<std::size_t> > send_inp_cells(num_processes);
-  std::vector<std::vector<std::size_t> > receive_inp_cells(num_processes);
-  std::vector<std::vector<dolfin::la_index> > 
-    send_inp_cell_dofs(num_processes);
-  std::vector<std::vector<dolfin::la_index> > 
-    receive_inp_cell_dofs(num_processes);
+  // Overlap reads of DOF indices, to get full range on each process
+  std::vector<std::size_t> x_cell_dofs;
+  HDF5Interface::read_dataset(hdf5_file_id, name + "/x_cell_dofs", 
+                              std::make_pair(cell_range.first,
+                                             cell_range.second + 1),
+                              x_cell_dofs);
 
-  for(std::size_t i = 0; i < input_cells.size(); ++i)
-  {
-    const std::size_t dest = MPI::index_owner(input_cells[i], 
-                                              num_global_cells);
-    send_inp_cells[dest].push_back(input_cells[i]);
-    send_inp_cell_dofs[dest].insert(send_inp_cell_dofs[dest].end(),
-                                    inp_cell_dofs.begin() + i*dofs_per_cell,
-                                    inp_cell_dofs.begin() + (i+1)*dofs_per_cell);
-  }
+  // Read cell-DOF maps
+  std::vector<dolfin::la_index> input_cell_dofs;
+  HDF5Interface::read_dataset(hdf5_file_id, name + "/cell_dofs", 
+                              std::make_pair(x_cell_dofs.front(),
+                                             x_cell_dofs.back()),
+                              input_cell_dofs);
 
-  MPI::all_to_all(send_inp_cells, receive_inp_cells);
-  MPI::all_to_all(send_inp_cell_dofs, receive_inp_cell_dofs);
-
-  std::vector<std::vector<std::size_t> > send_cells(num_processes);
-  std::vector<std::vector<std::size_t> > receive_cells(num_processes);
-  std::vector<std::vector<dolfin::la_index> > send_cell_dofs(num_processes);
-  std::vector<std::vector<dolfin::la_index> > receive_cell_dofs(num_processes);
-
-  for(std::size_t i = 0; i < mesh.num_cells() ; ++i)
-  {
-    const std::size_t dest = MPI::index_owner(cells[i], 
-                                              num_global_cells);
-    send_cells[dest].push_back(cells[i]);
-    const std::vector<dolfin::la_index>& cell_dofs_i = dofmap.cell_dofs(i);
-    send_cell_dofs[dest].insert(send_cell_dofs[dest].end(),
-                                cell_dofs_i.begin(),
-                                cell_dofs_i.end());
-  }
-
-  MPI::all_to_all(send_cells, receive_cells);
-  MPI::all_to_all(send_cell_dofs, receive_cell_dofs);
-  
-  // Now should have cell_dofs and inp_cell_dofs for
-  // all cells in MPI::local_range
-  std::map<dolfin::la_index, dolfin::la_index> data_to_global_index;
-
-  std::vector<std::vector<dolfin::la_index> > 
-    cell_to_dof(cell_range.second - cell_range.first);
-  
-  for(std::size_t i = 0; i < num_processes; i++)
-  {
-    const std::vector<std::size_t>& rcell = receive_cells[i];
-    const std::vector<dolfin::la_index>& rdofs = receive_cell_dofs[i];
-    dolfin_assert(dofs_per_cell*rcell.size() == rdofs.size());
-    for(std::size_t j = 0; j < rcell.size(); ++j)
-    {
-      dolfin_assert(rcell[j] >= cell_range.first);
-      dolfin_assert(rcell[j] < cell_range.second);
-      const std::size_t local_i = rcell[j] - cell_range.first;
-      cell_to_dof[local_i].assign(rdofs.begin() + j*dofs_per_cell,
-                                  rdofs.begin() + (j + 1)*dofs_per_cell);
-    }
-  }
-
-  for(std::size_t i = 0; i < num_processes; i++)
-  {
-    const std::vector<std::size_t>& rcell = receive_inp_cells[i];
-    const std::vector<dolfin::la_index>& rdofs = receive_inp_cell_dofs[i];
-    dolfin_assert(dofs_per_cell*rcell.size() == rdofs.size());
-    for(std::size_t j = 0; j < rcell.size(); ++j)
-    {
-      dolfin_assert(rcell[j] >= cell_range.first);
-      dolfin_assert(rcell[j] < cell_range.second);
-      const std::size_t local_i = rcell[j] - cell_range.first;
-      const std::vector<dolfin::la_index>& dof = cell_to_dof[local_i];
-      for(std::size_t k = 0; k < dof.size(); ++k)
-      {
-        data_to_global_index.insert(std::make_pair(rdofs[j*dofs_per_cell + k], dof[k]));
-      }
-    }
-  }
-  
-  // Read vector
-  const std::vector<std::size_t> vector_size = 
-    HDF5Interface::get_dataset_size(hdf5_file_id, name + "/vector");
+  // Read vector data with same partitioning as existing vector.
+  // This could be different, but it makes it easier to think about
+  // by keeping the same
   GenericVector& x = *u.vector();
-  const std::pair<dolfin::la_index, dolfin::la_index> vector_range = x.local_range();
+  const std::pair<dolfin::la_index, dolfin::la_index> 
+    vector_range = x.local_range();
+  const std::size_t 
+    n_vector_vals = vector_range.second - vector_range.first;
   std::vector<dolfin::la_index> all_vec_range;
   MPI::gather(vector_range.second, all_vec_range);
   MPI::broadcast(all_vec_range);
-
-  std::vector<double> input_vector;
-  HDF5Interface::read_dataset(hdf5_file_id, name + "/vector",
-                              vector_range, input_vector);
-
-  std::vector<std::vector<dolfin::la_index> > send_map(num_processes);
-  std::vector<std::vector<dolfin::la_index> > receive_map(num_processes);
   
-  // Send map to data owner
-  for (std::map<dolfin::la_index, dolfin::la_index>::iterator p = 
-         data_to_global_index.begin();
-       p != data_to_global_index.end(); ++p)
+  std::vector<double> input_values;
+  HDF5Interface::read_dataset(hdf5_file_id, name + "/vector", 
+                              vector_range,
+                              input_values);
+
+  // Calculate one (global cell, local_dof_index) to associate
+  // with each item in the vector on this process
+
+  std::vector<std::size_t> global_cells(n_vector_vals);
+  std::vector<std::size_t> remote_local_dofi(n_vector_vals);
+  
+  map_gdof_to_cell(input_cells, input_cell_dofs,
+                   x_cell_dofs, vector_range, 
+                   global_cells, remote_local_dofi);
+
+  // At this point, each process has a set of data, and for
+  // each value, a global_cell and local_dof to send it to.
+  // However, it is not known which processes the cells
+  // are actually on.
+
+  // Find where the needed cells are
+  std::vector<std::pair<std::size_t, std::size_t > >   
+    cell_ownership = cell_owners(mesh, global_cells);
+
+  // for(std::size_t n = 0; n != num_processes; ++n)
+  // {
+  //   if(MPI::process_number() == n)
+  //     for(std::size_t i = 0; i != cell_ownership.size(); ++i)
+  //     {
+  //       std::cout << "[" << n << "] ";
+  //       std::cout << i << " cell[" << global_cells[i] <<  "] @ (" 
+  //                 << cell_ownership[i].first << ", " 
+  //                 << cell_ownership[i].second
+  //                 << ", ldof: " << remote_local_dofi[i] << ")" << std::endl;
+  //     }
+  //   MPI::barrier();
+  // }
+  
+  // Having found the cell location, the actual global_dof index
+  // held by that (cell, local_dof) is needed on the process
+  // which holds the data values
+
+  const std::size_t num_processes = MPI::num_processes();
+  std::vector<std::vector<std::pair<std::size_t, std::size_t> > >
+              send_cell_dofs(num_processes);
+  std::vector<std::vector<std::pair<std::size_t, std::size_t> > >
+              receive_cell_dofs(num_processes);
+
+  for (std::size_t i = 0; 
+       i != n_vector_vals; ++i)
   {
-    const std::size_t dest = std::upper_bound(all_vec_range.begin(),
-                                              all_vec_range.end(), 
-                                              p->first) 
-                                            - all_vec_range.begin();
-    send_map[dest].push_back(p->first);
-    send_map[dest].push_back(p->second);
+    const std::size_t dest = cell_ownership[i].first;
+    // Send local index (on remote) and cell local_dof index
+    send_cell_dofs[dest].push_back(std::make_pair(cell_ownership[i].second,
+                                                 remote_local_dofi[i]));
   }
 
-  MPI::all_to_all(send_map, receive_map);
+  MPI::all_to_all(send_cell_dofs, receive_cell_dofs);
+  
 
-  // Send data back to correct location
+  // Return back the global dof to the process the request came from
+  std::vector<std::vector<dolfin::la_index> > 
+    send_global_dof_back(num_processes);
+  std::vector<std::vector<dolfin::la_index> > 
+    receive_global_dof_back(num_processes);
 
-  std::vector<std::vector<dolfin::la_index> > send_index(num_processes);
-  std::vector<std::vector<dolfin::la_index> > receive_index(num_processes);
-  std::vector<std::vector<double> > send_value(num_processes);
-  std::vector<std::vector<double> > receive_value(num_processes);
-
-  for (std::vector<std::vector<dolfin::la_index> >::iterator
-       p = receive_map.begin(); 
-       p != receive_map.end(); ++p)
+  for(std::size_t i = 0; i != num_processes; ++i)
   {
-    for(std::size_t j = 0; j < p->size(); j += 2)
+    const std::vector<std::pair<std::size_t, std::size_t> >& 
+      rdof = receive_cell_dofs[i];
+    for(std::size_t j = 0; j < rdof.size(); ++j)
     {
-      const std::vector<dolfin::la_index>& rmap = *p;
-      dolfin_assert(rmap[j] >= vector_range.first);
-      dolfin_assert(rmap[j] < vector_range.second);
-      const std::size_t local_vector_index = rmap[j] - vector_range.first;
-      const std::size_t dest = std::upper_bound(all_vec_range.begin(),
-                                                all_vec_range.end(), 
-                                                rmap[j + 1]) 
-                                              - all_vec_range.begin();
-      send_index[dest].push_back(rmap[j + 1]);
-      send_value[dest].push_back(input_vector[local_vector_index]);
+      dolfin_assert(rdof[j].first < mesh.num_cells());
+      const std::vector<dolfin::la_index>& dmap 
+        = dofmap.cell_dofs(rdof[j].first);
+      dolfin_assert(rdof[j].second < dmap.size());
+      send_global_dof_back[i].push_back(dmap[rdof[j].second]);
     }
   }
   
-  MPI::all_to_all(send_index, receive_index);
-  MPI::all_to_all(send_value, receive_value);
-  
-  // Assign received data
-  std::vector<double> 
-    value_data(vector_range.second - vector_range.first);
+  MPI::all_to_all(send_global_dof_back, receive_global_dof_back);
 
-  for(std::size_t i = 0; i < num_processes; ++i)
+  // Go through the received data in the same order as when it was
+  // sent out as a request, pulling out the global_dof and working
+  // out the correct final destination of the data from the vector
+  // partitioning
+
+  std::vector<std::size_t> pos(num_processes, 0);
+  std::vector<std::vector<double> > send_values(num_processes);
+  std::vector<std::vector<double> > receive_values(num_processes);
+  std::vector<std::vector<dolfin::la_index> > send_indices(num_processes);
+  std::vector<std::vector<dolfin::la_index> > receive_indices(num_processes);
+
+  for (std::size_t i = 0; 
+       i != n_vector_vals; ++i)
   {
-    const std::vector<dolfin::la_index>& rindex = receive_index[i];
-    const std::vector<double>& rvalue = receive_value[i];
-    for(std::size_t j = 0; j < rindex.size(); ++j)
+    const std::size_t src = cell_ownership[i].first;
+    dolfin_assert(src < num_processes);
+    const std::vector<dolfin::la_index>& rgdof = receive_global_dof_back[src];
+    dolfin_assert(pos[src] < rgdof.size());
+    const dolfin::la_index gdof = rgdof[pos[src]];
+    const std::size_t dest = std::upper_bound(all_vec_range.begin(),
+                                              all_vec_range.end(), 
+                                              gdof) 
+                                            - all_vec_range.begin();
+    dolfin_assert(i < input_values.size());
+    send_indices[dest].push_back(gdof);
+    send_values[dest].push_back(input_values[i]);
+    pos[src]++;
+  }
+
+  MPI::all_to_all(send_values, receive_values);
+  MPI::all_to_all(send_indices, receive_indices);
+  
+  std::vector<double> 
+    vector_values(n_vector_vals);
+
+  for(std::size_t i = 0; i != num_processes; ++i)
+  {
+    const std::vector<double>& rval = receive_values[i];
+    const std::vector<dolfin::la_index>& rindex = receive_indices[i];
+    dolfin_assert(rval.size() == rindex.size());
+    for(std::size_t j = 0; j != rindex.size(); ++j)
     {
       dolfin_assert(rindex[j] >= vector_range.first);
       dolfin_assert(rindex[j] < vector_range.second);
-      value_data[rindex[j] - vector_range.first] = rvalue[j];
+      vector_values[rindex[j] - vector_range.first]
+        = rval[j];
     }
   }
-  
-  x.set_local(value_data);
+
+  x.set_local(vector_values);
 
 }
 //-----------------------------------------------------------------------------

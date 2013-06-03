@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-22
-// Last changed: 2013-05-25
+// Last changed: 2013-06-03
 
 #ifndef __DOLFIN_HDF5FILE_H
 #define __DOLFIN_HDF5FILE_H
@@ -113,6 +113,18 @@ namespace dolfin
     // Friend
     friend class XDMFFile;
     friend class TimeSeriesHDF5;
+
+    // Get cell owners
+    std::vector<std::pair<std::size_t, std::size_t> >
+      cell_owners(const Mesh&mesh, const std::vector<std::size_t> cells);
+ 
+    void map_gdof_to_cell(const std::vector<std::size_t>& input_cells, 
+                          const std::vector<dolfin::la_index>& input_cell_dofs,
+                          const std::vector<std::size_t>& x_cell_dofs,
+                          const std::pair<dolfin::la_index, dolfin::la_index> 
+                          vector_range,
+                          std::vector<std::size_t>& global_cells,
+                          std::vector<std::size_t>& remote_local_dofi);
 
     // Read a mesh and repartition (if running in parallel)
     void read_mesh_repartition(Mesh &input_mesh,
