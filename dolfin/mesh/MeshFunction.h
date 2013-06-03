@@ -41,7 +41,6 @@
 #include "MeshEntity.h"
 #include "Mesh.h"
 #include "MeshConnectivity.h"
-#include "MeshPartitioning.h"
 
 namespace dolfin
 {

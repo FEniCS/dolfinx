@@ -68,8 +68,8 @@ namespace dolfin
     // Attach name to mesh value collection object
     mesh_value_collection.rename(name, "a mesh value collection");
 
-    // Set dim
-    mesh_value_collection.set_dim(dim);
+    // Set dimension
+    mesh_value_collection.init(dim);
 
     // Check that types match
     if (type != type_file)
@@ -78,15 +78,6 @@ namespace dolfin
                    "read mesh value collection from XML file",
                    "Type mismatch, found \"%s\" but expecting \"%s\"",
                    type_file.c_str(), type.c_str());
-    }
-
-    // Check that dimension matches
-    if (mesh_value_collection.dim() != dim)
-    {
-      dolfin_error("XMLMeshValueCollection.h",
-                   "read mesh value collection from XML file",
-                   "Dimension mismatch, found %d but expecting %d",
-                   dim, mesh_value_collection.dim());
     }
 
     // Clear old values
