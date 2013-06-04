@@ -363,7 +363,6 @@ void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
   HDF5Interface::read_dataset(hdf5_file_id, values_name, cell_range,
                               value_data);
 
-
   // Now send the read data to each process on the basis of the first
   // vertex of the entity, since we do not know the global_index
   const std::size_t num_processes = MPI::num_processes();
@@ -665,21 +664,18 @@ void HDF5File::read(Function& u, const std::string name)
                                              x_cell_dofs.back()),
                               input_cell_dofs);
 
-  // Read vector data with same partitioning as existing vector.
-  // This could be different, but it makes it easier to think about
-  // by keeping the same
   GenericVector& x = *u.vector();
+
+  const std::vector<std::size_t> vector_size =
+    HDF5Interface::get_dataset_size(hdf5_file_id, name + "/vector");
+  const std::size_t num_global_dofs = vector_size[0];
+  dolfin_assert(num_global_dofs == x.size(0));
   const std::pair<dolfin::la_index, dolfin::la_index>
-    vector_range = x.local_range();
-  const std::size_t
-    n_vector_vals = vector_range.second - vector_range.first;
-  std::vector<dolfin::la_index> all_vec_range;
-  MPI::gather(vector_range.second, all_vec_range);
-  MPI::broadcast(all_vec_range);
+    input_vector_range = MPI::local_range(vector_size[0]);  
 
   std::vector<double> input_values;
   HDF5Interface::read_dataset(hdf5_file_id, name + "/vector",
-                              vector_range,
+                              input_vector_range,
                               input_values);
 
   // Calculate one (global cell, local_dof_index) to associate
@@ -689,7 +685,7 @@ void HDF5File::read(Function& u, const std::string name)
   std::vector<std::size_t> remote_local_dofi;
 
   HDF5Utility::map_gdof_to_cell(input_cells, input_cell_dofs,
-                                x_cell_dofs, vector_range,
+                                x_cell_dofs, input_vector_range,
                                 global_cells, remote_local_dofi);
 
   // At this point, each process has a set of data, and for
@@ -707,14 +703,25 @@ void HDF5File::read(Function& u, const std::string name)
 
   std::vector<dolfin::la_index> global_dof;
   HDF5Utility::get_global_dof(cell_ownership, remote_local_dofi,
-                              vector_range, dofmap, global_dof);
+                              input_vector_range, dofmap, global_dof);
+
 
   const std::size_t num_processes = MPI::num_processes();
+
+  // Shift to dividing things into the vector range of Function Vector
+  const std::pair<dolfin::la_index, dolfin::la_index>
+    vector_range = x.local_range();
+
   std::vector<std::vector<double> > receive_values(num_processes);
   std::vector<std::vector<dolfin::la_index> > receive_indices(num_processes);
   {
     std::vector<std::vector<double> > send_values(num_processes);
     std::vector<std::vector<dolfin::la_index> > send_indices(num_processes);
+    const std::size_t
+      n_vector_vals = input_vector_range.second - input_vector_range.first;
+    std::vector<dolfin::la_index> all_vec_range;
+    MPI::gather(vector_range.second, all_vec_range);
+    MPI::broadcast(all_vec_range);
 
     for (std::size_t i = 0; i != n_vector_vals; ++i)
     {
@@ -733,7 +740,7 @@ void HDF5File::read(Function& u, const std::string name)
   }
 
   std::vector<double>
-    vector_values(n_vector_vals);
+    vector_values(vector_range.second - vector_range.first);
 
   for (std::size_t i = 0; i != num_processes; ++i)
   {
