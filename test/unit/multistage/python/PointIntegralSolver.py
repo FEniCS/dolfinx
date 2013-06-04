@@ -42,28 +42,27 @@ class PointIntegralSolverTest(unittest.TestCase):
 
     def test_butcher_schemes_scalar_time(self):
 
+        mesh = UnitSquareMesh(10, 10)
+        V = FunctionSpace(mesh, "CG", 1)
+        u = Function(V)
+        v = TestFunction(V)
+        time = Constant(0.0)
+        form = (2+time+time**2-time**4)*v*dP
+
+        u0=10.0
+        tstop = 1.0
+        u_true = Expression("u0 + 2*t + pow(t, 2)/2. + pow(t, 3)/3. - "\
+                            "pow(t, 5)/5.", t=tstop, u0=u0)
+
         for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
                        BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
             
-            mesh = UnitSquareMesh(10, 10)
-            V = FunctionSpace(mesh, "CG", 1)
-            u = Function(V)
-            v = TestFunction(V)
-            time = Constant(0.0)
-            form = (2+time+time**2-time**4)*v*dP
-
-            u0=10.0
-            tstop = 1.0
-            u_true = Expression("u0 + 2*t + pow(t, 2)/2. + pow(t, 3)/3. - "\
-                                "pow(t, 5)/5.", t=tstop, u0=u0)
-
             scheme = Scheme(form, u, time)
             info(scheme)
             solver = PointIntegralSolver(scheme)
             solver.parameters.newton_solver.report = False
-            solver.parameters.newton_solver.relative_tolerance = 1e-5
-            solver.parameters.newton_solver.absolute_tolerance = 1e-5
-            solver.parameters.newton_solver.iterations_to_recompute_jacobian = 5
+            solver.parameters.newton_solver.absolute_tolerance = 1e-10
+            solver.parameters.newton_solver.newton_tolerance = 1e-5
             solver.parameters.newton_solver.maximum_iterations = 12
             u_errors = []
             for dt in [0.05, 0.025, 0.0125]:
@@ -76,26 +75,26 @@ class PointIntegralSolverTest(unittest.TestCase):
 
     def test_butcher_schemes_scalar(self):
 
+        mesh = UnitSquareMesh(10, 10)
+        V = FunctionSpace(mesh, "CG", 1)
+        u = Function(V)
+        v = TestFunction(V)
+        form = u*v*dP
+
+        tstop = 1.0
+        u_true = Expression("exp(t)", t=tstop)
+
         for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
                        BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
             
-            mesh = UnitSquareMesh(10, 10)
-            V = FunctionSpace(mesh, "CG", 1)
-            u = Function(V)
-            v = TestFunction(V)
-            form = u*v*dP
-
-            tstop = 1.0
-            u_true = Expression("exp(t)", t=tstop)
-
             scheme = Scheme(form, u)
             info(scheme)
             u_errors = []
             solver = PointIntegralSolver(scheme)
             solver.parameters.newton_solver.report = False
-            solver.parameters.newton_solver.relative_tolerance = 1e-5
-            solver.parameters.newton_solver.absolute_tolerance = 1e-5
-            solver.parameters.newton_solver.iterations_to_recompute_jacobian = 5
+            solver.parameters.newton_solver.absolute_tolerance = 1e-10
+            solver.parameters.newton_solver.newton_tolerance = 1e-5
+            solver.parameters.newton_solver.max_relative_residual = 6e-3
             solver.parameters.newton_solver.maximum_iterations = 12
             for dt in [0.05, 0.025, 0.0125]:
                 solver.reset()
@@ -104,7 +103,7 @@ class PointIntegralSolverTest(unittest.TestCase):
                 u_errors.append(errornorm(u_true, u))
             self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)
 
-    def test_butcher_schemes_vector(self):
+    def xtest_butcher_schemes_vector(self):
 
         for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
                        BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
@@ -122,9 +121,8 @@ class PointIntegralSolverTest(unittest.TestCase):
             info(scheme)
             solver = PointIntegralSolver(scheme)
             solver.parameters.newton_solver.report = False
-            solver.parameters.newton_solver.relative_tolerance = 1e-5
-            solver.parameters.newton_solver.absolute_tolerance = 1e-5
-            solver.parameters.newton_solver.iterations_to_recompute_jacobian = 5
+            solver.parameters.newton_solver.absolute_tolerance = 1e-10
+            solver.parameters.newton_solver.newton_tolerance = 1e-5
             solver.parameters.newton_solver.maximum_iterations = 12
             u_errors = []
             for dt in [0.05, 0.025, 0.0125]:

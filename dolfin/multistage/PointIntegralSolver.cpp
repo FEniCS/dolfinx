@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-06-03
+// Last changed: 2013-06-04
 
 #include <cmath>
 #include <boost/make_shared.hpp>
@@ -64,7 +64,7 @@ PointIntegralSolver::PointIntegralSolver(boost::shared_ptr<MultiStageScheme> sch
 void PointIntegralSolver::reset()
 {
   _num_jacobian_computations = 0;
-  _eta = 1e-10;
+  _eta = parameters("newton_solver")["eta_0"];
   _jacobian_not_computed = true;
 }
 //-----------------------------------------------------------------------------
@@ -264,7 +264,8 @@ void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
     }
     
     // Do a simplified newton solve
-    convergence = _simplified_newton_solve(u, local_vert, stage, cell);
+    convergence = _simplified_newton_solve(u, local_vert, *_ufcs[stage][0], 
+					   _coefficient_index[stage][0], cell);
     
     // If no convergence we
     if (convergence == diverge)
@@ -622,54 +623,58 @@ void PointIntegralSolver::_init()
 PointIntegralSolver::convergence_criteria_t \
 PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u, 
 					      std::size_t local_vert, 
-					      unsigned int stage, 
+					      UFC& loc_ufc,
+					      unsigned int coefficient_index, 
 					      const Cell& cell)
 {
   
-  const double kappa = 0.1;
-  const double rtol = parameters("newton_solver")["relative_tolerance"];
-  const double newton_tol = parameters("newton_solver")["absolute_tolerance"];
-  unsigned int newtonits = 0;
-  const unsigned int maxits = 10;
-  double Ntheta = 1.0, z_norm, prev_norm = 1.0;
-  const double relaxation = 1.0;
+  const Parameters& newton_solver_params = parameters("newton_solver");
+  const std::string convergence_criterion = newton_solver_params["convergence_criterion"];
+  const double kappa = newton_solver_params["kappa"];
+  const double newton_tolerance = newton_solver_params["newton_tolerance"];
+  const double atol = newton_solver_params["absolute_tolerance"];
+  const std::size_t max_iterations = newton_solver_params["maximum_iterations"];
+  const double max_relative_residual = newton_solver_params["max_relative_residual"];
+  const double relaxation = newton_solver_params["relaxation_parameter"];
+
+  unsigned int newton_iterations = 0;
+  double relative_residual = 1.0, residual, prev_residual = 1.0;
 
   // Get point integrals
-  const ufc::point_integral& F_integral = *_ufcs[stage][0]->default_point_integral;
+  const ufc::point_integral& F_integral = *loc_ufc.default_point_integral;
         
   do
   {
 
     // Tabulate residual solution
     Timer t_impl_tt_F("Implicit stage: tabulate_tensor (F)");
-    F_integral.tabulate_tensor(&_ufcs[stage][0]->A[0], _ufcs[stage][0]->w(), 
-			       &_ufcs[stage][0]->cell.vertex_coordinates[0], 
+    F_integral.tabulate_tensor(&loc_ufc.A[0], loc_ufc.w(), 
+			       &loc_ufc.cell.vertex_coordinates[0], 
 			       local_vert);
     t_impl_tt_F.stop();
   
     // Extract vertex dofs from tabulated tensor, together with the old stage 
     // solution
     for (unsigned int row=0; row < _system_size; row++)
-    {
-      _F[row] = _ufcs[stage][0]->A[_local_to_local_dofs[row]];
-    }
+      _F[row] = loc_ufc.A[_local_to_local_dofs[row]];
 
     // Perform linear solve By forward backward substitution
     Timer forward_backward_substitution("Implicit stage: fb substituion");
     _forward_backward_subst(_jac, _F, _dx);
     forward_backward_substitution.stop();
 
-    // Residual
-    z_norm = _norm(_dx);
+    // Residual (residual or incremental)
+    if (convergence_criterion == "residual")
+      residual = _norm(_F);
+    else 
+      residual = _norm(_dx);
 
     // Check for residual convergence
-    if (z_norm < rtol)
-    {
+    if (residual < atol)
       return converged;
-    }
 
-    // Newtonits == 0
-    if (newtonits == 0) 
+    // Newton_Iterations == 0
+    if (newton_iterations == 0) 
     {
       _eta = _eta > DOLFIN_EPS ? _eta : DOLFIN_EPS;
       _eta = std::pow(_eta, 0.8);
@@ -679,33 +684,37 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
     else
     {
       // How fast are we converging?
-      Ntheta = z_norm/prev_norm;
+      relative_residual = residual/prev_residual;
 
       // If not fast enough recompute jacobian
       // We converge too slow
-      if (Ntheta >= 1e-3 || z_norm > \
-	  (kappa*newton_tol*(1 - Ntheta)/std::pow(Ntheta, maxits - newtonits)))
+      if (relative_residual >= max_relative_residual ||			\
+	  // FIXME: What does this measure?!
+	  residual > (kappa*newton_tolerance*(1 - relative_residual)\
+		      /std::pow(relative_residual, max_iterations - newton_iterations)))
       {
 	
-	dolfin_debug4("Newton solver converges to slow with Ntheta: %.3e at "\
-		      "iteration %d, norm: %.2e, prev_norm: %.2e, ", Ntheta, newtonits, z_norm, prev_norm);
+	info("Newton solver converges to slow with relative_residual: %.3e at " \
+	     "iteration %d, residual: %.2e, ", relative_residual, 
+	     newton_iterations, residual);
 	return too_slow;
       }
       
       // If we diverge
-      if (Ntheta > 1)
+      if (relative_residual > 1)
       {
-	dolfin_debug1("Newton solver diverges with Ntheta: %f.", Ntheta);
+	info("Newton solver diverges with relative_residual: %f.", relative_residual);
         return diverge;
       }
       
-      _eta = Ntheta/(1.0 - Ntheta);
+      // Update eta 
+      _eta = relative_residual/(1.0 - relative_residual);
     }
     
     // No convergence
-    if (newtonits > maxits)
+    if (newton_iterations > max_iterations)
     {
-      dolfin_debug1("Newton solver did not converged in %d iterations.", maxits);
+      info("Newton solver did not converged in %d iterations.", max_iterations);
       return exceeds_max_iter;
     }
     
@@ -719,12 +728,12 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
      
     // Put solution back into restricted coefficients before tabulate new residual
     for (unsigned int row=0; row < _system_size; row++)
-      _ufcs[stage][0]->w()[_coefficient_index[stage][0]][_local_to_local_dofs[row]] = u[row];
+      loc_ufc.w()[coefficient_index][_local_to_local_dofs[row]] = u[row];
 
-    prev_norm = z_norm;
-    newtonits++;
+    prev_residual = residual;
+    newton_iterations++;
     
-  } while(_eta*z_norm <= kappa*newton_tol);
+  } while(_eta*residual <= kappa*newton_tolerance);
   
   return converged;
 }

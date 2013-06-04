@@ -16,13 +16,13 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-06-03
+// Last changed: 2013-06-04
 
 #ifndef __POINTINTEGRALSOLVER_H
 #define __POINTINTEGRALSOLVER_H
 
 #include <vector>
-//#include <armadillo>
+#include <set>
 #include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/Variable.h>
@@ -64,11 +64,24 @@ namespace dolfin
       
       Parameters p("point_integral_solver");
 
+      std::set<std::string> allowed_convergence_criterion;
+      allowed_convergence_criterion.insert("residual");
+      allowed_convergence_criterion.insert("incremental");
+
       // Get default parameters from NewtonSolver
       p.add(NewtonSolver::default_parameters());
-      p("newton_solver").add("reuse_jacobian", true);
-      p("newton_solver").add("iterations_to_recompute_jacobian", 4);
-      
+      p("newton_solver")["convergence_criterion"].set_range(\
+				allowed_convergence_criterion);
+      p("newton_solver")["relaxation_parameter"].set_range(0.,1.);
+      p("newton_solver").remove("relative_tolerance");
+
+      p("newton_solver").add("kappa", 0.1, 0.05, .75);
+      p("newton_solver").add("eta_0", 1e-10, 1e-15, 1e-5);
+      p("newton_solver").add("max_relative_residual", 1e-3, 1e-5, 1e-1);
+
+      // FIXME: Need a better name
+      p("newton_solver").add("newton_tolerance", 1e-5, 1e-15, 1e-2);
+
       return p;
     }
 
@@ -131,7 +144,8 @@ namespace dolfin
 
     convergence_criteria_t _simplified_newton_solve(std::vector<double>& u, 
 						    std::size_t vert_ind, 
-						    unsigned int stage, 
+						    UFC& loc_ufc, 
+						    unsigned int coefficient_index, 
 						    const Cell& cell);
 
     // The MultiStageScheme
