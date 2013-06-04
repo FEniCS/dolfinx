@@ -63,7 +63,6 @@ namespace dolfin
     {
       
       Parameters p("point_integral_solver");
-      p.add("use_simplified_newton_solver", false);
 
       // Get default parameters from NewtonSolver
       p.add(NewtonSolver::default_parameters());
@@ -90,7 +89,7 @@ namespace dolfin
       
       converged,
       too_slow,
-      max_iter,
+      exceeds_max_iter,
       diverge
 
     };
@@ -130,21 +129,10 @@ namespace dolfin
     void _solve_implicit_stage(std::size_t vert_ind, unsigned int stage,
 			       const Cell& cell);
 
-    // Solve an implicit stage new impl
-    void _solve_implicit_stage3(std::size_t vert_ind, unsigned int stage,
-				const Cell& cell);
-
-    // Solve an implicit stage new impl
-    void _solve_implicit_stage2(std::size_t vert_ind, unsigned int stage,
-				const Cell& cell);
-
-    bool _simplified_newton_solve(std::size_t vert_ind, unsigned int stage,
-				  const Cell& cell);
-
-    convergence_criteria_t _simplified_newton_solve2(std::vector<double>& u, 
-						     std::size_t vert_ind, 
-						     unsigned int stage, 
-						     const Cell& cell);
+    convergence_criteria_t _simplified_newton_solve(std::vector<double>& u, 
+						    std::size_t vert_ind, 
+						    unsigned int stage, 
+						    const Cell& cell);
 
     // The MultiStageScheme
     boost::shared_ptr<MultiStageScheme> _scheme;

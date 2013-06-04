@@ -85,8 +85,6 @@ void PointIntegralSolver::step(double dt)
 
   //const std::size_t num_threads = dolfin::parameters["num_threads"];
 
-  bool use_simplified_newton_solver = parameters["use_simplified_newton_solver"];
-
   // Iterate over vertices
   //Progress p("Solving local point integral problems", _mesh.num_vertices());
   
@@ -133,10 +131,7 @@ void PointIntegralSolver::step(double dt)
       // or an implicit stage (2 forms)
       else
       {
-	if (use_simplified_newton_solver)
-	  _solve_implicit_stage3(vert_ind, stage, cell);
-	else
-	  _solve_implicit_stage(vert_ind, stage, cell);
+	_solve_implicit_stage(vert_ind, stage, cell);
       }
       
     }
@@ -219,173 +214,6 @@ void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
   // Local vertex ind
   const unsigned int local_vert = _vertex_map[vert_ind].second;
 
-  const Parameters& newton_parameters = parameters("newton_solver");
-	
-  // Local solution
-  std::vector<double>& u = _local_stage_solutions[stage];
-	
-  unsigned int newton_iteration = 0;
-  bool newton_converged = false;
-  bool jacobian_retabulated = false;
-  const std::size_t maxiter = newton_parameters["maximum_iterations"];
-  const bool reuse_jacobian = newton_parameters["reuse_jacobian"];
-  const std::size_t iterations_to_recompute_jac = \
-    newton_parameters["iterations_to_recompute_jacobian"];
-  const double relaxation = newton_parameters["relaxation_parameter"];
-  const std::string convergence_criterion = newton_parameters["convergence_criterion"];
-  const double rtol = newton_parameters["relative_tolerance"];
-  const double atol = newton_parameters["absolute_tolerance"];
-  const bool report = newton_parameters["report"];
-
-  /// Most recent residual and intitial residual
-  double residual = 1.0;
-  double residual0 = 1.0;
-  double relative_residual = 1.0;
-      
-  //const double relaxation = 1.0;
-      
-  // Get point integrals
-  const ufc::point_integral& F_integral = *_ufcs[stage][0]->default_point_integral;
-      
-  // Update to current cell. This only need to be done once for each stage and 
-  // vertex
-
-  // Tabulate an initial residual solution
-  Timer t_impl_tt_F("Implicit stage: tabulate_tensor (F)");
-  F_integral.tabulate_tensor(&_ufcs[stage][0]->A[0], _ufcs[stage][0]->w(), 
-			     &_ufcs[stage][0]->cell.vertex_coordinates[0], 
-			     local_vert);
-  t_impl_tt_F.stop();
-
-  // Extract vertex dofs from tabulated tensor, together with the old stage 
-  // solution
-  Timer t_impl_update_F("Implicit stage: update_F");
-  for (unsigned int row=0; row < _system_size; row++)
-  {
-    _F[row] = _ufcs[stage][0]->A[_local_to_local_dofs[row]];
-
-    // Grab old value of stage solution as an initial start value. This 
-    // value was also used to tabulate the initial value of the F_integral above 
-    // and we therefore just grab it from the restricted coeffcients
-    u[row] = _ufcs[stage][0]->w()[_coefficient_index[stage][0]][_local_to_local_dofs[row]];
-
-  }
-  t_impl_update_F.stop();
-
-  // Start iterations
-  while (!newton_converged && newton_iteration < maxiter)
-  {
-        
-    if (_recompute_jac || !reuse_jacobian)
-    {
-      // Compute jacobian
-      _compute_jacobian(_jac, u, local_vert, *_ufcs[stage][1], cell, 
-			_coefficient_index[stage].size()==2 ? \
-			_coefficient_index[stage][1] : -1);
-    }
-
-    // Perform linear solve By forward backward substitution
-    Timer forward_backward_substitution("Implicit stage: fb substituion");
-    _forward_backward_subst(_jac, _F, _dx);
-    
-    forward_backward_substitution.stop();
-
-    // Compute resdiual
-    if (convergence_criterion == "residual")
-      residual = _norm(_F);
-    else if (convergence_criterion == "incremental")
-      residual = _norm(_dx);
-    else
-      error("Unknown Newton convergence criterion");
-
-    // If initial residual
-    if (newton_iteration == 0)
-      residual0 = residual;
-	  
-    // Relative residual
-    relative_residual = residual / residual0;
-	  
-    // Update solution
-    if (std::abs(1.0 - relaxation) < DOLFIN_EPS)
-      for (unsigned int i=0; i < u.size(); i++)
-	u[i] -= _dx[i];
-    else
-      for (unsigned int i=0; i < u.size(); i++)
-	u[i] -= relaxation*_dx[i];
-        
-    // Update number of iterations
-    ++newton_iteration;
-	  
-    // Put solution back into restricted coefficients before tabulate new residual
-    for (unsigned int row=0; row < _system_size; row++)
-      _ufcs[stage][0]->w()[_coefficient_index[stage][0]][_local_to_local_dofs[row]] = u[row];
-
-    // Tabulate new residual 
-    t_impl_tt_F.start();
-    F_integral.tabulate_tensor(&_ufcs[stage][0]->A[0], _ufcs[stage][0]->w(), 
-			       &_ufcs[stage][0]->cell.vertex_coordinates[0], 
-			       local_vert);
-    t_impl_tt_F.stop();
-    t_impl_update_F.start();
-
-    // Extract vertex dofs from tabulated tensor
-    for (unsigned int row=0; row < _system_size; row++)
-      _F[row] = _ufcs[stage][0]->A[_local_to_local_dofs[row]];
-    t_impl_update_F.stop();
-
-    // Output iteration number and residual (only first vertex)
-    if (report && (newton_iteration > 0) && (vert_ind == 0))
-    {
-      info("Point solver newton iteration %d: r (abs) = %.3e (tol = %.3e) "\
-	   "r (rel) = %.3e (tol = %.3e)", newton_iteration, residual, atol, 
-	   relative_residual, rtol);
-    }
-	  
-    // Check for retabulation of Jacobian
-    if (reuse_jacobian && newton_iteration > iterations_to_recompute_jac && \
-	!jacobian_retabulated)
-    {
-      jacobian_retabulated = true;
-      _recompute_jac = true;
-
-      if (vert_ind == 0)
-	info("Retabulating Jacobian.");
-
-    }
-
-    // Return true if convergence criterion is met
-    if (relative_residual < rtol || residual < atol)
-      newton_converged = true;
-
-  }
-      
-  if (newton_converged)
-  {
-    Timer t_impl_set("Implicit stage: set");
-    // Put solution back into global stage solution vector
-    _scheme->stage_solutions()[stage]->vector()->set(&u[0], u.size(), 
-						     &_local_to_global_dofs[0]);
-  }
-  else
-  {
-    info("Last iteration before error %d: r (abs) = %.3e (tol = %.3e) "
-	 "r (rel) = %.3e (tol = %.3e)", newton_iteration, residual, atol, 
-	 relative_residual, rtol);
-    error("Newton solver in PointIntegralSolver did not converge.");
-  }
-  
-}
-//-----------------------------------------------------------------------------
-void PointIntegralSolver::_solve_implicit_stage3(std::size_t vert_ind,
-						 unsigned int stage,
-						 const Cell& cell)
-{
-	
-  Timer t_impl("Implicit stage");
-	
-  // Local vertex ind
-  const unsigned int local_vert = _vertex_map[vert_ind].second;
-
   // Set initial convergence
   convergence_criteria_t convergence = diverge;
 
@@ -436,7 +264,7 @@ void PointIntegralSolver::_solve_implicit_stage3(std::size_t vert_ind,
     }
     
     // Do a simplified newton solve
-    convergence = _simplified_newton_solve2(u, local_vert, stage, cell);
+    convergence = _simplified_newton_solve(u, local_vert, stage, cell);
     
     // If no convergence we
     if (convergence == diverge)
@@ -445,7 +273,7 @@ void PointIntegralSolver::_solve_implicit_stage3(std::size_t vert_ind,
     }
 
     // If no convergence we
-    if (convergence == max_iter)
+    if (convergence == exceeds_max_iter)
     {
       error("Newton solver in PointIntegralSolver exeeded maximal iterations.");
     }
@@ -791,204 +619,11 @@ void PointIntegralSolver::_init()
   }  
 }
 //-----------------------------------------------------------------------------
-/*void PointIntegralSolver::_solve_implicit_stage2(std::size_t vert_ind,
-						 unsigned int stage,
-						 const Cell& cell)
-{
-
-  Timer t_impl("Implicit stage");
-	
-  // Local vertex ind
-  const unsigned int local_vert = _vertex_map[vert_ind].second;
-
-  const Parameters& newton_parameters = parameters("newton_solver");
-	
-  // Local solution
-  std::vector<double>& u = _local_stage_solutions[stage];
-	
-  unsigned int newton_iteration = 0;
-  bool newton_converged = false;
-  bool jacobian_retabulated = false;
-  const std::size_t maxiter = newton_parameters["maximum_iterations"];
-  const bool reuse_jacobian = newton_parameters["reuse_jacobian"];
-  const std::size_t iterations_to_recompute_jac = \
-    newton_parameters["iterations_to_recompute_jac"];
-  const double relaxation = newton_parameters["relaxation_parameter"];
-  const std::string convergence_criterion = newton_parameters["convergence_criterion"];
-  const double rtol = newton_parameters["relative_tolerance"];
-  const double atol = newton_parameters["absolute_tolerance"];
-  const bool report = newton_parameters["report"];
-
-  /// Most recent residual and intitial residual
-  double residual = 1.0;
-  double prev_residual = 1.0;
-  double relative_residual = 1.0;
-      
-  //const double relaxation = 1.0;
-      
-  // Get point integrals
-  const ufc::point_integral& F_integral = *_ufcs[stage][0]->default_point_integral;
-      
-  // Update to current cell. This only need to be done once for each stage and 
-  // vertex
-
-  // Tabulate an initial residual solution
-  Timer t_impl_tt_F("Implicit stage: tabulate_tensor (F)");
-  F_integral.tabulate_tensor(&_ufcs[stage][0]->A[0], _ufcs[stage][0]->w(), 
-			     &_ufcs[stage][0]->cell.vertex_coordinates[0], 
-			     local_vert);
-  t_impl_tt_F.stop();
-
-  // Extract vertex dofs from tabulated tensor, together with the old stage 
-  // solution
-  Timer t_impl_update_F("Implicit stage: update_F");
-  for (unsigned int row=0; row < _system_size; row++)
-  {
-    _F[row] = _ufcs[stage][0]->A[_local_to_local_dofs[row]];
-
-    // Grab old value of stage solution as an initial start value. This 
-    // value was also used to tabulate the initial value of the F_integral above 
-    // and we therefore just grab it from the restricted coeffcients
-    u[row] = _ufcs[stage][0]->w()[_coefficient_index[stage][0]][_local_to_local_dofs[row]];
-
-  }
-  t_impl_update_F.stop();
-
-  // Update eta
-  _eta = _eta > DOLFIN_EPS ? _eta : DOLFIN_EPS;
-  _eta = std::pow(_eta, 0.8);
-
-  // Start iterations
-  while (!newton_converged && newton_iteration < maxiter)
-  {
-        
-    if (_recompute_jac || !reuse_jacobian)
-    {
-      // Compute jacobian
-      _compute_jacobian(_jac, u, local_vert, *_ufcs[stage][1], cell, 
-			_coefficient_index[stage].size()==2 ? \
-			_coefficient_index[stage][1] : -1);
-    }
-
-    // Perform linear solve By forward backward substitution
-    Timer forward_backward_substitution("Implicit stage: fb substituion");
-    _forward_backward_subst(_jac, _F, _dx);
-    
-    forward_backward_substitution.stop();
-
-    // Compute resdiual
-    residual = _norm(_dx);
-
-    // 2nd time around
-    if (newtonits > 0) 
-    {
-
-      // How fast are we converging?
-      Ntheta = residual/prev_residual;
-
-      // If not fast enough recompute jacobian
-      _recompute_jac = Ntheta >= 1e-3
-    
-      // If we diverge
-      if (Ntheta > 1)
-      {
-	dolfin_debug1("Newton solver diverges with Ntheta: %f.", Ntheta);
-        //rejects ++;
-        step_ok = false;
-	_recompute_jac = true;
-        break;
-      }
-      
-      // We converge too slow
-      if (prev_residual > (kappa*newton_tol*(1 - Ntheta)/std::pow(Ntheta, maxits - newtonits)))
-      {
-	dolfin_debug2("Newton solver converges to slow with Ntheta: %f at "\
-		      "iteration %d. Reducing time step.", Ntheta, newtonits);
-        //rejects ++;
-        step_ok = false;
-        _recompute_jac = true;
-        continue;
-      }
-      
-      _eta = Ntheta/(1.0 - Ntheta);
-    }
-
-    // Update solution
-    if (std::abs(1.0 - relaxation) < DOLFIN_EPS)
-      for (unsigned int i=0; i < u.size(); i++)
-	u[i] -= _dx[i];
-    else
-      for (unsigned int i=0; i < u.size(); i++)
-	u[i] -= relaxation*_dx[i];
-        
-    // Update number of iterations
-    ++newton_iteration;
-	  
-    // Put solution back into restricted coefficients before tabulate new residual
-    for (unsigned int row=0; row < _system_size; row++)
-      _ufcs[stage][0]->w()[_coefficient_index[stage][0]][_local_to_local_dofs[row]] = u[row];
-
-    // Tabulate new residual 
-    t_impl_tt_F.start();
-    F_integral.tabulate_tensor(&_ufcs[stage][0]->A[0], _ufcs[stage][0]->w(), 
-			       &_ufcs[stage][0]->cell.vertex_coordinates[0], 
-			       local_vert);
-    t_impl_tt_F.stop();
-    t_impl_update_F.start();
-
-    // Extract vertex dofs from tabulated tensor
-    for (unsigned int row=0; row < _system_size; row++)
-      _F[row] = _ufcs[stage][0]->A[_local_to_local_dofs[row]];
-    t_impl_update_F.stop();
-
-    // Output iteration number and residual (only first vertex)
-    if (report && (newton_iteration > 0) && (vert_ind == 0))
-    {
-      info("Point solver newton iteration %d: r (abs) = %.3e (tol = %.3e) "\
-	   "r (rel) = %.3e (tol = %.3e)", newton_iteration, residual, atol, 
-	   relative_residual, rtol);
-    }
-	  
-    // Check for retabulation of Jacobian
-    if (reuse_jacobian && newton_iteration > iterations_to_recompute_jac && \
-	!jacobian_retabulated)
-    {
-      jacobian_retabulated = true;
-      _recompute_jac = true;
-
-      if (vert_ind == 0)
-	info("Retabulating Jacobian.");
-
-    }
-
-    // Return true if convergence criterion is met
-    if (relative_residual < rtol || residual < atol)
-      newton_converged = true;
-
-  }
-      
-  if (newton_converged)
-  {
-    Timer t_impl_set("Implicit stage: set");
-    // Put solution back into global stage solution vector
-    _scheme->stage_solutions()[stage]->vector()->set(&u[0], u.size(), 
-						     &_local_to_global_dofs[0]);
-  }
-  else
-  {
-    info("Last iteration before error %d: r (abs) = %.3e (tol = %.3e) "
-	 "r (rel) = %.3e (tol = %.3e)", newton_iteration, residual, atol, 
-	 relative_residual, rtol);
-    error("Newton solver in PointIntegralSolver did not converge.");
-  }
-  
-}*/
-//-----------------------------------------------------------------------------
 PointIntegralSolver::convergence_criteria_t \
-PointIntegralSolver::_simplified_newton_solve2(std::vector<double>& u, 
-					       std::size_t local_vert, 
-					       unsigned int stage, 
-					       const Cell& cell)
+PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u, 
+					      std::size_t local_vert, 
+					      unsigned int stage, 
+					      const Cell& cell)
 {
   
   const double kappa = 0.1;
@@ -1070,9 +705,8 @@ PointIntegralSolver::_simplified_newton_solve2(std::vector<double>& u,
     // No convergence
     if (newtonits > maxits)
     {
-      dolfin_debug1("Newton solver did not converged in %d iterations. Reducing " \
-		    "time step.", maxits);
-      return max_iter;
+      dolfin_debug1("Newton solver did not converged in %d iterations.", maxits);
+      return exceeds_max_iter;
     }
     
     // Update solution

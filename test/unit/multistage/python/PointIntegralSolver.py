@@ -61,7 +61,6 @@ class PointIntegralSolverTest(unittest.TestCase):
             info(scheme)
             solver = PointIntegralSolver(scheme)
             solver.parameters.newton_solver.report = False
-            solver.parameters.use_simplified_newton_solver = True
             solver.parameters.newton_solver.relative_tolerance = 1e-5
             solver.parameters.newton_solver.absolute_tolerance = 1e-5
             solver.parameters.newton_solver.iterations_to_recompute_jacobian = 5
@@ -94,7 +93,6 @@ class PointIntegralSolverTest(unittest.TestCase):
             u_errors = []
             solver = PointIntegralSolver(scheme)
             solver.parameters.newton_solver.report = False
-            solver.parameters.use_simplified_newton_solver = True
             solver.parameters.newton_solver.relative_tolerance = 1e-5
             solver.parameters.newton_solver.absolute_tolerance = 1e-5
             solver.parameters.newton_solver.iterations_to_recompute_jacobian = 5
@@ -124,7 +122,6 @@ class PointIntegralSolverTest(unittest.TestCase):
             info(scheme)
             solver = PointIntegralSolver(scheme)
             solver.parameters.newton_solver.report = False
-            solver.parameters.use_simplified_newton_solver = True
             solver.parameters.newton_solver.relative_tolerance = 1e-5
             solver.parameters.newton_solver.absolute_tolerance = 1e-5
             solver.parameters.newton_solver.iterations_to_recompute_jacobian = 5
