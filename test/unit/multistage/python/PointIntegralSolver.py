@@ -54,20 +54,25 @@ class PointIntegralSolverTest(unittest.TestCase):
 
             u0=10.0
             tstop = 1.0
-            u_true = Expression("u0 + 2*t + pow(t, 2)/2. + pow(t, 3)/3. - pow(t, 5)/5.", t=tstop, u0=u0)
+            u_true = Expression("u0 + 2*t + pow(t, 2)/2. + pow(t, 3)/3. - "\
+                                "pow(t, 5)/5.", t=tstop, u0=u0)
 
             scheme = Scheme(form, u, time)
             info(scheme)
             solver = PointIntegralSolver(scheme)
             solver.parameters.newton_solver.report = False
+            solver.parameters.use_simplified_newton_solver = True
+            solver.parameters.newton_solver.relative_tolerance = 1e-5
+            solver.parameters.newton_solver.absolute_tolerance = 1e-5
             solver.parameters.newton_solver.iterations_to_recompute_jacobian = 5
             solver.parameters.newton_solver.maximum_iterations = 12
             u_errors = []
             for dt in [0.05, 0.025, 0.0125]:
+                solver.reset()
                 u.interpolate(Constant(u0))
                 solver.step_interval(0., tstop, dt)
                 u_errors.append(errornorm(u_true, u))
-                
+
             self.assertTrue(scheme.order()-min(convergence_order(u_errors))<0.1)
 
     def test_butcher_schemes_scalar(self):
@@ -86,12 +91,16 @@ class PointIntegralSolverTest(unittest.TestCase):
 
             scheme = Scheme(form, u)
             info(scheme)
+            u_errors = []
             solver = PointIntegralSolver(scheme)
             solver.parameters.newton_solver.report = False
+            solver.parameters.use_simplified_newton_solver = True
+            solver.parameters.newton_solver.relative_tolerance = 1e-5
+            solver.parameters.newton_solver.absolute_tolerance = 1e-5
             solver.parameters.newton_solver.iterations_to_recompute_jacobian = 5
             solver.parameters.newton_solver.maximum_iterations = 12
-            u_errors = []
             for dt in [0.05, 0.025, 0.0125]:
+                solver.reset()
                 u.interpolate(Constant(1.0))
                 solver.step_interval(0., tstop, dt)
                 u_errors.append(errornorm(u_true, u))
@@ -115,10 +124,14 @@ class PointIntegralSolverTest(unittest.TestCase):
             info(scheme)
             solver = PointIntegralSolver(scheme)
             solver.parameters.newton_solver.report = False
+            solver.parameters.use_simplified_newton_solver = True
+            solver.parameters.newton_solver.relative_tolerance = 1e-5
+            solver.parameters.newton_solver.absolute_tolerance = 1e-5
             solver.parameters.newton_solver.iterations_to_recompute_jacobian = 5
             solver.parameters.newton_solver.maximum_iterations = 12
             u_errors = []
             for dt in [0.05, 0.025, 0.0125]:
+                solver.reset()
                 u.interpolate(Constant((1.0, 0.0)))
                 scheme.t().assign(0.0)
                 next_dt = dt
