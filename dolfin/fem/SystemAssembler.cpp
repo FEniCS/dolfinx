@@ -284,20 +284,6 @@ Taking subdomains from bilinear form");
     // Facet-wise assembly is not working in parallel
     not_working_in_parallel("System assembly over interior facets");
 
-    // Facet-wise assembly does not support subdomains
-    if (A_ufc.form.num_cell_domains() > 0 ||
-        b_ufc.form.num_cell_domains() > 0 ||
-        A_ufc.form.num_exterior_facet_domains() > 0 ||
-        b_ufc.form.num_exterior_facet_domains() > 0 ||
-        A_ufc.form.num_interior_facet_domains() > 0 ||
-        b_ufc.form.num_interior_facet_domains() > 0)
-    {
-      dolfin_error("SystemAssembler.cpp",
-                   "assemble system",
-                   "System assembler does not support forms containing "
-                   "integrals over subdomains");
-    }
-
     // Assemble facet-wise (including cell assembly)
     facet_wise_assembly(A, b, *_a, *_L, A_ufc, b_ufc, data, boundary_values,
                         cell_domains, exterior_facet_domains,
@@ -549,7 +535,8 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix* A, GenericVector* b,
 
       // Assemble interior facet and neighbouring cells if needed
       assemble_interior_facet(A, b, A_ufc, b_ufc, a, L, cell0, cell1, *facet,
-                              data, boundary_values, rescale);
+                              data, boundary_values, cell_domains, 
+                              interior_facet_domains, rescale);
     }
     else // Exterior facet
     {
@@ -572,7 +559,8 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix* A, GenericVector* b,
 
       // Assemble exterior facet and attached cells if needed
       assemble_exterior_facet(A, b, A_ufc, b_ufc, a, L, cell, *facet, data,
-                              boundary_values, rescale);
+                              boundary_values, cell_domains, 
+                              exterior_facet_domains, rescale);
     }
     p++;
   }
@@ -668,6 +656,8 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix* A,
                                               const Facet& facet,
                                               Scratch& data,
                                               const DirichletBC::Map& boundary_values,
+                                              const MeshFunction<std::size_t>* cell_domains,
+                                              const MeshFunction<std::size_t>* interior_facet_domains,
                                               const bool rescale)
 {
   const std::size_t D = cell0.mesh().topology().dim();
@@ -702,13 +692,16 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix* A,
   const ufc::cell_integral* A_cell_integral = A_ufc.default_cell_integral.get();
   const ufc::cell_integral* b_cell_integral = b_ufc.default_cell_integral.get();
 
+  // Check whether integrals are domain-dependent
+  bool use_cell_domains = cell_domains && !cell_domains->empty();
+
   // Compute facet contribution to A
   if (A_ufc.form.has_interior_facet_integrals())
-    compute_tensor_on_one_interior_facet(a, A_ufc, cell0, cell1, facet, 0);
+    compute_tensor_on_one_interior_facet(a, A_ufc, cell0, cell1, facet, interior_facet_domains);
 
   // Compute facet contribution to
   if (b_ufc.form.has_interior_facet_integrals())
-    compute_tensor_on_one_interior_facet(L, b_ufc, cell0, cell1, facet, 0);
+    compute_tensor_on_one_interior_facet(L, b_ufc, cell0, cell1, facet, interior_facet_domains);
 
   // Get local facet index
   const std::size_t facet0 = cell0.index(facet);
@@ -717,6 +710,14 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix* A,
   // If we have local facet 0, compute cell contribution
   if (facet0 == 0)
   {
+    // Get integral for sub domain (if any)
+    if (use_cell_domains)
+    {
+      const std::size_t domain = (*cell_domains)[cell0];
+      A_cell_integral = A_ufc.get_cell_integral(domain);
+      b_cell_integral = b_ufc.get_cell_integral(domain);
+    }
+
     if (A_cell_integral)
     {
       A_ufc.update(cell0);
@@ -745,6 +746,14 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix* A,
   // If we have local facet 0, compute and add cell contribution
   if (facet1 == 0)
   {
+    // Get integral for sub domain (if any)
+    if (use_cell_domains)
+    {
+      const std::size_t domain = (*cell_domains)[cell1];
+      A_cell_integral = A_ufc.get_cell_integral(domain);
+      b_cell_integral = b_ufc.get_cell_integral(domain);
+    }
+
     if (A_cell_integral)
     {
       A_ufc.update(cell1);
@@ -814,12 +823,25 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix* A,
                                               const Facet& facet,
                                               Scratch& data,
                                               const DirichletBC::Map& boundary_values,
+                                              const MeshFunction<std::size_t>* cell_domains,
+                                              const MeshFunction<std::size_t>* exterior_facet_domains,
                                               const bool rescale)
 {
   const std::size_t local_facet = cell.index(facet);
 
   ufc::exterior_facet_integral* A_facet_integral
     = A_ufc.default_exterior_facet_integral.get();
+  const ufc::exterior_facet_integral* b_facet_integral
+    = b_ufc.default_exterior_facet_integral.get();
+
+  // Get integral for sub domain (if any)
+  if (exterior_facet_domains && !exterior_facet_domains->empty())
+  {
+    const std::size_t domain = (*exterior_facet_domains)[facet];
+    A_facet_integral = A_ufc.get_exterior_facet_integral(domain);
+    b_facet_integral = b_ufc.get_exterior_facet_integral(domain);
+  }
+
   if (A_facet_integral)
   {
     A_ufc.update(cell, local_facet);
@@ -830,8 +852,6 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix* A,
       data.Ae[i] += A_ufc.A[i];
   }
 
-  const ufc::exterior_facet_integral* b_facet_integral
-    = b_ufc.default_exterior_facet_integral.get();
   if (b_facet_integral)
   {
     b_ufc.update(cell, local_facet);
@@ -847,6 +867,17 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix* A,
   {
     const ufc::cell_integral* A_cell_integral
       = A_ufc.default_cell_integral.get();
+    const ufc::cell_integral* b_cell_integral
+      = b_ufc.default_cell_integral.get();
+
+    // Get integral for sub domain (if any)
+    if (cell_domains && !cell_domains->empty())
+    {
+      const std::size_t domain = (*cell_domains)[cell];
+      A_cell_integral = A_ufc.get_cell_integral(domain);
+      b_cell_integral = b_ufc.get_cell_integral(domain);
+    }
+
     if (A_cell_integral)
     {
       A_ufc.update(cell);
@@ -857,8 +888,6 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix* A,
         data.Ae[i] += A_ufc.A[i];
     }
 
-    const ufc::cell_integral* b_cell_integral
-      = b_ufc.default_cell_integral.get();
     if (b_cell_integral)
     {
       b_ufc.update(cell);

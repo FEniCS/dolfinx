@@ -121,7 +121,7 @@ namespace dolfin
                                                      const Cell& cell1,
                                                      const Cell& cell2,
                                                      const Facet& facet,
-                                         const MeshFunction<std::size_t>* exterior_facet_domains);
+                                                     const MeshFunction<std::size_t>* interior_facet_domains);
 
     static void cell_wise_assembly(GenericMatrix* A, GenericVector* b,
                                    const Form& a, const Form& L,
@@ -147,6 +147,8 @@ namespace dolfin
                                         const Facet& facet,
                                         Scratch& data,
                                         const DirichletBC::Map& boundary_values,
+                                        const MeshFunction<std::size_t>* cell_domains,
+                                        const MeshFunction<std::size_t>* interior_facet_domains,
                                         const bool rescale);
 
     static void assemble_exterior_facet(GenericMatrix* A, GenericVector* b,
@@ -156,6 +158,8 @@ namespace dolfin
                                         const Cell& cell, const Facet& facet,
                                         Scratch& data,
                                         const DirichletBC::Map& boundary_values,
+                                        const MeshFunction<std::size_t>* cell_domains,
+                                        const MeshFunction<std::size_t>* exterior_facet_domains,
                                         const bool rescale);
 
     static void apply_bc(double* A, double* b,
