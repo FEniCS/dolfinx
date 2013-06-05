@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-06-04
+// Last changed: 2013-06-05
 
 #include <cmath>
 #include <boost/make_shared.hpp>
@@ -51,8 +51,8 @@ PointIntegralSolver::PointIntegralSolver(boost::shared_ptr<MultiStageScheme> sch
   _vertex_map(), _local_to_global_dofs(_system_size), 
   _local_stage_solutions(_scheme->stage_solutions().size()), 
   _u0(_system_size), _F(_system_size), _y(_system_size), _dx(_system_size), 
-  _ufcs(), _coefficient_index(), _recompute_jac(true), 
-  _jacobian_not_computed(true), _jac(), _eta(1e-10), _num_jacobian_computations(0)
+  _ufcs(), _coefficient_index(), _recompute_jacobian(true), 
+  _jac(), _eta(1e-10), _num_jacobian_computations(0)
 {
   // Set parameters
   parameters = default_parameters();
@@ -65,7 +65,7 @@ void PointIntegralSolver::reset()
 {
   _num_jacobian_computations = 0;
   _eta = parameters("newton_solver")["eta_0"];
-  _jacobian_not_computed = true;
+  _recompute_jacobian = true;
 }
 //-----------------------------------------------------------------------------
 void PointIntegralSolver::step(double dt)
@@ -240,7 +240,7 @@ void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
   {
     
     // Recompute jacobian if convergence is too slow
-    if (convergence == too_slow || _jacobian_not_computed)
+    if (_recompute_jacobian || convergence == too_slow)
     {
       
       if (jacobian_calculations>1)
@@ -363,8 +363,7 @@ void PointIntegralSolver::_compute_jacobian(std::vector<double>& jac,
   // LU factorize Jacobian
   Timer lu_factorize("Implicit stage: LU factorize");
   _lu_factorize(jac);
-  _recompute_jac = false;
-  _jacobian_not_computed = false;
+  _recompute_jacobian = false;
   _num_jacobian_computations += 1;
 }
 //-----------------------------------------------------------------------------
@@ -686,11 +685,11 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
       // How fast are we converging?
       relative_residual = residual/prev_residual;
 
-      // If not fast enough recompute jacobian
+      // If we are not converging fast enough we flag the jacobian to be recomputed
+      _recompute_jacobian = relative_residual >= max_relative_residual;
+      
       // We converge too slow
-      if (relative_residual >= max_relative_residual ||			\
-	  // FIXME: What does this measure?!
-	  residual > (kappa*newton_tolerance*(1 - relative_residual)\
+      if (residual > (kappa*newton_tolerance*(1 - relative_residual)	\
 		      /std::pow(relative_residual, max_iterations - newton_iterations)))
       {
 	

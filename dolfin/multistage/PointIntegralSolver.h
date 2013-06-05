@@ -195,10 +195,7 @@ namespace dolfin
     std::vector<std::vector<int> > _coefficient_index;
 
     // Flag which is set to false once the jacobian has been computed
-    bool _recompute_jac;
-    
-    // Flag which is set to false once the jacobian has been computed
-    bool _jacobian_not_computed;
+    bool _recompute_jacobian;
     
     // Jacobian and LU factorized jacobian matrices
     std::vector<double> _jac;
