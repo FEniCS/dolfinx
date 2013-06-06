@@ -18,7 +18,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2013-04-15
-# Last changed: 2013-05-28
+# Last changed: 2013-06-06
 
 import unittest
 import numpy
@@ -116,7 +116,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
 
     def test_compute_first_collision_1d(self):
 
-        reference = {1: 4}
+        reference = {1: [4]}
 
         p = Point(0.3)
         mesh = UnitIntervalMesh(16)
@@ -125,12 +125,12 @@ class BoundingBoxTreeTest(unittest.TestCase):
             tree.build(mesh, dim)
             first = tree.compute_first_collision(p)
             if MPI.num_processes() == 1:
-                self.assertEqual(first, reference[dim])
+                self.assertIn(first, reference[dim])
 
     def test_compute_first_collision_2d(self):
 
-        reference = {1: 226,
-                     2: 137}
+        reference = {1: [226],
+                     2: [136, 137]}
 
         p = Point(0.3, 0.3)
         mesh = UnitSquareMesh(16, 16)
@@ -139,13 +139,13 @@ class BoundingBoxTreeTest(unittest.TestCase):
             tree.build(mesh, dim)
             first = tree.compute_first_collision(p)
             if MPI.num_processes() == 1:
-                self.assertEqual(first, reference[dim])
+                self.assertIn(first, reference[dim])
 
     def test_compute_first_collision_3d(self):
 
-        reference = {1: 1364,
-                     2: 1968,
-                     3: 880}
+        reference = {1: [1364],
+                     2: [1967, 1968, 1970, 1972, 1974, 1976],
+                     3: [876, 877, 878, 879, 880, 881]}
 
         p = Point(0.3, 0.3, 0.3)
         mesh = UnitCubeMesh(8, 8, 8)
@@ -154,13 +154,13 @@ class BoundingBoxTreeTest(unittest.TestCase):
             tree.build(mesh, dim)
             first = tree.compute_first_collision(p)
             if MPI.num_processes() == 1:
-                self.assertEqual(first, reference[dim])
+                self.assertIn(first, reference[dim])
 
     #--- compute_first_entity_collision ---
 
     def test_compute_first_entity_collision_1d(self):
 
-        reference = 4
+        reference = [4]
 
         p = Point(0.3)
         mesh = UnitIntervalMesh(16)
@@ -168,11 +168,11 @@ class BoundingBoxTreeTest(unittest.TestCase):
         tree.build(mesh)
         first = tree.compute_first_entity_collision(p, mesh)
         if MPI.num_processes() == 1:
-            self.assertEqual(first, reference)
+            self.assertIn(first, reference)
 
     def test_compute_first_entity_collision_2d(self):
 
-        reference = 137
+        reference = [136, 137]
 
         p = Point(0.3, 0.3)
         mesh = UnitSquareMesh(16, 16)
@@ -180,11 +180,11 @@ class BoundingBoxTreeTest(unittest.TestCase):
         tree.build(mesh)
         first = tree.compute_first_entity_collision(p, mesh)
         if MPI.num_processes() == 1:
-            self.assertEqual(first, reference)
+            self.assertIn(first, reference)
 
     def test_compute_first_entity_collision_3d(self):
 
-        reference = 880
+        reference = [876, 877, 878, 879, 880, 881]
 
         p = Point(0.3, 0.3, 0.3)
         mesh = UnitCubeMesh(8, 8, 8)
@@ -192,7 +192,7 @@ class BoundingBoxTreeTest(unittest.TestCase):
         tree.build(mesh)
         first = tree.compute_first_entity_collision(p, mesh)
         if MPI.num_processes() == 1:
-            self.assertEqual(first, reference)
+            self.assertIn(first, reference)
 
     #--- compute_closest_entity ---
 
