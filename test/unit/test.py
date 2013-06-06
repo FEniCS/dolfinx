@@ -21,7 +21,7 @@
 # Modified by Garth N. Wells 2009-2011
 #
 # First added:  2006-08-09
-# Last changed: 2012-09-25
+# Last changed: 2013-06-06
 
 import sys, os, re
 import platform
@@ -50,15 +50,15 @@ tests = {
     "nls":            ["PETScSNESSolver","TAOLinearBoundSolver"],
     "math":           ["test"],
     "meshconvert":    ["test"],
-    "mesh":           ["Edge", "Face", "MeshData", "MeshEditor", \
-                           "MeshFunction", "MeshIterator", "MeshMarkers", \
-                           "MeshValueCollection", "BoundaryMesh", "Mesh", \
-                           "SubMesh"],
+    "mesh":           ["Cell", "Edge", "Face", "MeshData", "MeshEditor",
+                       "MeshFunction", "MeshIterator", "MeshMarkers",
+                       "MeshValueCollection", "BoundaryMesh", "Mesh", "SubMesh"],
     "parameter":      ["Parameters"],
     "python-extras":  ["test"],
     "quadrature":     ["BaryCenter"],
     "refinement":     ["test"],
-    "intersection":   ["IntersectionOperator"]
+    "intersection":   ["IntersectionOperator"],
+    "geometry":       ["BoundingBoxTree"]
     }
 
 # FIXME: Graph tests disabled for now since SCOTCH is now required
