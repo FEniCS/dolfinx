@@ -26,7 +26,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-08
-// Last changed: 2013-03-06
+// Last changed: 2013-05-23
 
 #ifndef __MESH_H
 #define __MESH_H
