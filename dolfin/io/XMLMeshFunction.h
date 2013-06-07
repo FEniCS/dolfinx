@@ -108,7 +108,7 @@ namespace dolfin
     if (new_format)
     {
       // Read new-style MeshFunction
-      MeshValueCollection<T> mesh_value_collection;
+      MeshValueCollection<T> mesh_value_collection(mesh_function.mesh());
       XMLMeshValueCollection::read<T>(mesh_value_collection, type,
                                       xml_meshfunction);
 

@@ -35,6 +35,7 @@
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
 #include "PETScObject.h"
+#include "VectorSpaceBasis.h"
 
 namespace dolfin
 {
@@ -99,7 +100,11 @@ namespace dolfin
 
     /// Set null space of the operator (matrix). This is used to solve
     /// singular systems
-    void set_nullspace(const std::vector<const GenericVector*> nullspace);
+    void set_nullspace(const VectorSpaceBasis& nullspace);
+
+    /// Set transpose null space of the operator (matrix). This is used to make sure
+    /// the right hand side is in the range of singular systems
+    void set_transpose_nullspace(const VectorSpaceBasis& transpose_nullspace);
 
     /// Get operator (matrix)
     const PETScBaseMatrix& get_operator() const;

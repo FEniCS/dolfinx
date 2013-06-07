@@ -77,6 +77,11 @@
 %}
 
 //-----------------------------------------------------------------------------
+// Modify VectorSpaceBasis::operator[]
+//-----------------------------------------------------------------------------
+%rename(_sub) dolfin::VectorSpaceBasis::operator[];
+
+//-----------------------------------------------------------------------------
 // Ignore some operator=
 //-----------------------------------------------------------------------------
 %ignore dolfin::GenericTensor::operator=;
@@ -252,7 +257,8 @@
   {
     Teuchos::RCP<Type> *rcp_ptr;
     int newmem = 0;
-    res = SWIG_ConvertPtrAndOwn($input, (void**)&rcp_ptr, $descriptor(Teuchos::RCP<Type>*), 0, &newmem);
+    res = SWIG_ConvertPtrAndOwn($input, (void**)&rcp_ptr,
+                                $descriptor(Teuchos::RCP<Type>*), 0, &newmem);
     if (!SWIG_IsOK(res))
       SWIG_exception_fail(SWIG_ArgError(res), "in method '$symname', argument $argnum of type '$type'");
     if (rcp_ptr)
@@ -278,7 +284,8 @@
   {
     Teuchos::RCP<Type> *rcp_ptr;
     int newmem = 0;
-    res = SWIG_ConvertPtrAndOwn($input, (void**)&rcp_ptr, $descriptor(Teuchos::RCP<Type>*), 0, &newmem);
+    res = SWIG_ConvertPtrAndOwn($input, (void**)&rcp_ptr,
+                                $descriptor(Teuchos::RCP<Type>*), 0, &newmem);
     if (rcp_ptr && (newmem & SWIG_CAST_NEW_MEMORY))
       delete rcp_ptr;
   }
