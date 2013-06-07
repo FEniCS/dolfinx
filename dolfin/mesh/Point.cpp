@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2006-06-12
-// Last changed: 2010-02-28
+// Last changed: 2013-05-22
 
 #include <cmath>
 #include <dolfin/common/constants.h>
@@ -30,13 +30,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-double Point::distance(const Point& p) const
+double Point::squared_distance(const Point& p) const
 {
   const double dx = p._x[0] - _x[0];
   const double dy = p._x[1] - _x[1];
   const double dz = p._x[2] - _x[2];
 
-  return std::sqrt(dx*dx + dy*dy + dz*dz);
+  return dx*dx + dy*dy + dz*dz;
 }
 //-----------------------------------------------------------------------------
 double Point::norm() const

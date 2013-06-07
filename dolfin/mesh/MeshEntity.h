@@ -19,11 +19,12 @@
 // Modified by Garth N. Wells, 2012.
 //
 // First added:  2006-05-11
-// Last changed: 2012-06-12
+// Last changed: 2013-05-22
 
 #ifndef __MESH_ENTITY_H
 #define __MESH_ENTITY_H
 
+#include <cmath>
 #include <iostream>
 
 #ifdef HAS_CGAL

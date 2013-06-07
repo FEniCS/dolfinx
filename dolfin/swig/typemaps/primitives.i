@@ -21,7 +21,7 @@
 // Modified by Johan Hake, 2008-2011.
 //
 // First added:  2006-04-16
-// Last changed: 2011-05-02
+// Last changed: 2013-05-28
 
 //=============================================================================
 // General typemaps for PyDOLFIN

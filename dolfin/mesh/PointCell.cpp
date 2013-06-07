@@ -19,7 +19,7 @@
 // Modified by Kristoffer Sleim, 2008.
 //
 // First added:  2007-12-12
-// Last changed: 2010-01-19
+// Last changed: 2013-05-22
 
 #include <dolfin/log/log.h>
 #include "Cell.h"
@@ -108,6 +108,12 @@ double PointCell::diameter(const MeshEntity& triangle) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
+double PointCell::squared_distance(const Cell& cell, const Point& point) const
+{
+  dolfin_not_implemented();
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
 double PointCell::normal(const Cell& cell, std::size_t facet, std::size_t i) const
 {
   dolfin_error("PointCell.cpp",
@@ -148,6 +154,15 @@ void PointCell::order(Cell& cell,
   dolfin_error("PointCell.cpp",
                "order cell",
                "Ordering of a point cell is not defined");
+}
+//-----------------------------------------------------------------------------
+bool PointCell::contains(const Cell& cell, const Point& point) const
+{
+  dolfin_error("PointCell.cpp",
+               "check whether point is contained in cell.",
+               "Not defined for point cells");
+
+  return false;
 }
 //-----------------------------------------------------------------------------
 std::string PointCell::description(bool plural) const
