@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2011.
 //
 // First added:  2003-03-13
-// Last changed: 2011-11-15
+// Last changed: 2013-04-18
 
 #include <unistd.h>
 #include <iomanip>
@@ -373,7 +373,7 @@ void Logger::_report_memory_usage(size_t num_mb)
 //-----------------------------------------------------------------------------
 void Logger::__debug(std::string msg) const
 {
-  std::string s = std::string("Debug: ") + msg;
+  std::string s = std::string("DEBUG: ") + msg;
   write(DBG, s);
 }
 //-----------------------------------------------------------------------------

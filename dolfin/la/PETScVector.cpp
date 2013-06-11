@@ -158,7 +158,7 @@ bool PETScVector::distributed() const
   dolfin_assert(_x);
 
   // Get type
-  #if PETSC_VERSION_RELEASE
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 3
   const VecType petsc_type;
   #else
   VecType petsc_type;
@@ -680,7 +680,7 @@ std::string PETScVector::str(bool verbose) const
   if (verbose)
   {
     // Get vector type
-    #if PETSC_VERSION_RELEASE
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 3
     const VecType petsc_type;
     #else
     VecType petsc_type;
@@ -714,7 +714,7 @@ void PETScVector::gather(GenericVector& y, const std::vector<dolfin::la_index>& 
   PETScVector& _y = as_type<PETScVector>(y);
 
   // Check that y is a local vector
-  #if PETSC_VERSION_RELEASE
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 3
   const VecType petsc_type;
   #else
   VecType petsc_type;

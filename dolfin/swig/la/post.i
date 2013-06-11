@@ -796,7 +796,105 @@ AS_BACKEND_TYPE_MACRO(PETScMatrix)
 %pythoncode %{
 _matrix_vector_mul_map[PETScMatrix] = [PETScVector]
 %}
-#endif
+
+#ifdef HAS_PETSC4PY
+// Override default .mat() and .vec() calls.
+// These are wrapped up by petsc4py typemaps so that
+// we see a petsc4py object on the python side.
+
+%feature("docstring") dolfin::PETScBaseMatrix::mat "Return petsc4py representation of PETSc Mat";
+%extend dolfin::PETScBaseMatrix {
+    void mat(Mat &A) {
+        Mat *p = self->mat().get();
+        A = *p;
+    }
+}
+
+%feature("docstring") dolfin::PETScVector::vec "Return petsc4py representation of PETSc Vec";
+%extend dolfin::PETScVector {
+    void vec(Vec &v) {
+        Vec *p = self->vec().get();
+        v = *p;
+    }
+}
+
+%feature("docstring") dolfin::PETScKrylovSolver::ksp "Return petsc4py representation of PETSc KSP solver";
+%extend dolfin::PETScKrylovSolver {
+    void ksp(KSP &ksp) {
+        KSP *p = self->ksp().get();
+        ksp = *p;
+    }
+}
+
+%feature("docstring") dolfin::PETScLUSolver::ksp "Return petsc4py representation of PETSc LU solver";
+%extend dolfin::PETScLUSolver {
+    void ksp(KSP &ksp) {
+        KSP *p = self->ksp().get();
+        ksp = *p;
+    }
+}
+
+%feature("docstring") dolfin::PETScSNESSolver::snes "Return petsc4py representation of PETSc SNES solver";
+%extend dolfin::PETScSNESSolver {
+    void snes(SNES &snes) {
+        SNES *p = self->snes().get();
+        snes = *p;
+    }
+}
+
+#else
+%extend dolfin::PETScBaseMatrix {
+    %pythoncode %{
+        def mat(self):
+            common.dolfin_error("dolfin/swig/la/post.i",
+                                "access PETScMatrix objects in python",
+                                "dolfin must be configured with petsc4py enabled")
+            return None
+    %}
+}
+
+%extend dolfin::PETScVector {
+    %pythoncode %{
+        def vec(self):
+            common.dolfin_error("dolfin/swig/la/post.i",
+                                "access PETScVector objects in python",
+                                "dolfin must be configured with petsc4py enabled")
+            return None
+    %}
+}
+
+%extend dolfin::PETScKrylovSolver {
+    %pythoncode %{
+        def ksp(self):
+            common.dolfin_error("dolfin/swig/la/post.i",
+                                "access PETScKrylovSolver objects in python",
+                                "dolfin must be configured with petsc4py enabled")
+            return None
+    %}
+}
+
+%extend dolfin::PETScLUSolver {
+    %pythoncode %{
+        def ksp(self):
+            common.dolfin_error("dolfin/swig/la/post.i",
+                                "access PETScLUSolver objects in python",
+                                "dolfin must be configured with petsc4py enabled")
+            return None
+    %}
+}
+
+%extend dolfin::PETScSNESSolver {
+    %pythoncode %{
+        def snes(self):
+            common.dolfin_error("dolfin/swig/la/post.i",
+                                "access PETScSNESSolver objects in python",
+                                "dolfin must be configured with petsc4py enabled")
+            return None
+    %}
+}
+
+#endif  // HAS_PETSC4PY
+#endif  // HAS_PETSC
 
 #ifdef HAS_TRILINOS
 

@@ -73,8 +73,11 @@ int main()
 
       // Copy values to mesh function for plotting
       *intersection1 = 0;
-      for (std::set<std::size_t>::const_iterator i = cells.begin(); i != cells.end(); i++)
+      for (std::set<std::size_t>::const_iterator i = cells.begin();
+           i != cells.end(); i++)
+      {
         (*intersection1)[*i] = 1;
+      }
 
       // Plot intersection
       p.plot();
@@ -98,12 +101,12 @@ int main()
   // Repeat the same with the rotator in the cavity example.
   RectangleMesh background_mesh(-2.0, -2.0, 2.0, 2.0, 30, 30);
   boost::shared_ptr<dolfin::MeshFunction<std::size_t> >
-      intersection2(new dolfin::MeshFunction<std::size_t>(background_mesh, background_mesh.topology().dim()));
+      intersection2(new dolfin::MeshFunction<std::size_t>(background_mesh,
+                                           background_mesh.topology().dim()));
 
   VTKPlotter p2(intersection2);
   p2.parameters["rescale"] = true;
   p2.parameters["wireframe"] = true;
-  // p.parameters["axes"] = true;
   p2.parameters["scalarbar"] = false;
 
   {
@@ -124,9 +127,11 @@ int main()
       *intersection2 = 0;
 
       // Copy values to mesh function for plotting
-      for (std::set<std::size_t>::const_iterator i = cells.begin(); i != cells.end(); i++)
+      for (std::set<std::size_t>::const_iterator i = cells.begin();
+           i != cells.end(); i++)
+      {
         (*intersection2)[*i] = 1;
-
+      }
       p2.plot();
 
       // Rotate rotator

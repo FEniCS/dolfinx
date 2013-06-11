@@ -10,6 +10,7 @@
 #include <dolfin/nls/dolfin_nls.h>
 #include <dolfin/intersection/dolfin_intersection.h>
 #include <dolfin/mesh/dolfin_mesh.h>
+#include <dolfin/geometry/dolfin_geometry.h>
 #include <dolfin/generation/dolfin_generation.h>
 #include <dolfin/refinement/dolfin_refinement.h>
 #include <dolfin/function/dolfin_function.h>

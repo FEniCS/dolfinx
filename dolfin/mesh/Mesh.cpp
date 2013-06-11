@@ -26,27 +26,22 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-09
-// Last changed: 2013-03-06
+// Last changed: 2013-04-18
 
-#include <boost/serialization/map.hpp>
-#include <dolfin/common/Array.h>
-#include <dolfin/mesh/Facet.h>
 #include <dolfin/ale/ALE.h>
+#include <dolfin/common/Array.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
-#include <dolfin/common/Array.h>
+#include <dolfin/function/Expression.h>
 #include <dolfin/generation/CSGMeshGenerator.h>
 #include <dolfin/io/File.h>
 #include <dolfin/log/log.h>
-#include <dolfin/function/Expression.h>
 #include "BoundaryMesh.h"
 #include "Cell.h"
+#include "Facet.h"
 #include "LocalMeshData.h"
 #include "MeshColoring.h"
-#include "MeshData.h"
-#include "MeshFunction.h"
-#include "MeshValueCollection.h"
 #include "MeshOrdering.h"
 #include "MeshPartitioning.h"
 #include "MeshRenumbering.h"
@@ -61,8 +56,6 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
                Hierarchical<Mesh>(*this),
-               _domains(*this),
-               _data(*this),
                _cell_type(0),
                _intersection_operator(*this),
                _ordered(false),
@@ -73,8 +66,6 @@ Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
                                Hierarchical<Mesh>(*this),
-			       _domains(*this),
-                               _data(*this),
                                _cell_type(0),
                                _intersection_operator(*this),
                                _ordered(false),
@@ -85,8 +76,6 @@ Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
 //-----------------------------------------------------------------------------
 Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
                                    Hierarchical<Mesh>(*this),
-				   _domains(*this),
-                                   _data(*this),
                                    _cell_type(0),
                                    _intersection_operator(*this),
                                    _ordered(false),
@@ -94,15 +83,12 @@ Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
 {
   File file(filename);
   file >> *this;
-
   _cell_orientations.resize(this->num_cells(), -1);
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(LocalMeshData& local_mesh_data)
                                  : Variable("mesh", "DOLFIN mesh"),
                                    Hierarchical<Mesh>(*this),
-				   _domains(*this),
-                                   _data(*this),
                                    _cell_type(0),
                                    _intersection_operator(*this),
                                    _ordered(false),
@@ -114,8 +100,6 @@ Mesh::Mesh(LocalMeshData& local_mesh_data)
 Mesh::Mesh(const CSGGeometry& geometry, std::size_t resolution)
   : Variable("mesh", "DOLFIN mesh"),
     Hierarchical<Mesh>(*this),
-    _domains(*this),
-    _data(*this),
     _cell_type(0),
     _intersection_operator(*this),
     _ordered(false),
@@ -135,8 +119,6 @@ Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry,
            std::size_t resolution)
   : Variable("mesh", "DOLFIN mesh"),
     Hierarchical<Mesh>(*this),
-    _domains(*this),
-    _data(*this),
     _cell_type(0),
     _intersection_operator(*this),
     _ordered(false),
@@ -489,7 +471,7 @@ int Mesh::intersected_cell(const Point& point) const
 {
   // CGAL needs mesh with more than 1 cell
   if (num_cells() > 1)
-    return  _intersection_operator.any_intersected_entity(point);
+    return _intersection_operator.any_intersected_entity(point);
 
   // Num cells == 1
   const Cell cell(*this, 0);
@@ -618,7 +600,7 @@ std::string Mesh::str(bool verbose) const
     if (_cell_type)
       cell_type = _cell_type->description(true);
 
-   s << "<Mesh of topological dimension "
+    s << "<Mesh of topological dimension "
       << topology().dim() << " ("
       << cell_type << ") with "
       << num_vertices() << " vertices and "

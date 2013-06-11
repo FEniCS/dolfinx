@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-01-25
-// Last changed: 2013-03-12
+// Last changed: 2013-05-22
 
 //-----------------------------------------------------------------------------
 // User macro for defining in typmaps for std::pair of a pointer to some
@@ -242,4 +242,8 @@ IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(MeshFunction<bool>)
 %typemap(out) std::pair<double, double>
 {
   $result = Py_BuildValue("dd", $1.first, $1.second);
+}
+%typemap(out) std::pair<unsigned int, double>
+{
+  $result = Py_BuildValue("id", $1.first, $1.second);
 }

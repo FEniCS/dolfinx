@@ -23,8 +23,9 @@
 // Last changed: 2012-11-14
 //
 // FIXME: This class needs some cleanup, in particular collecting
-// FIXME: all data from different representations into a common
-// FIXME: data structure (perhaps an std::vector<std::size_t> with facet indices).
+//        all data from different representations into a common
+//        data structure (perhaps an std::vector<std::size_t> with
+//        facet indices).
 
 #ifndef __DIRICHLET_BC_H
 #define __DIRICHLET_BC_H
@@ -242,7 +243,8 @@ namespace dolfin
     ///         method to identify dofs.
     DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                 boost::shared_ptr<const GenericFunction> g,
-                const std::vector<std::pair<std::size_t, std::size_t> >& markers,
+                const std::vector<std::size_t>&
+                markers,
                 std::string method="topological");
 
     /// Copy constructor
@@ -350,7 +352,8 @@ namespace dolfin
     ///         The vector
     ///     diag_val (double)
     ///         This parameter would normally be -1, 0 or 1.
-    void zero_columns(GenericMatrix& A, GenericVector& b, double diag_val=0) const;
+    void zero_columns(GenericMatrix& A, GenericVector& b,
+                      double diag_val=0) const;
 
     /// Return boundary markers
     ///
@@ -358,7 +361,7 @@ namespace dolfin
     ///     std::vector<std::pair<std::size_t, std::size_t> >
     ///         Boundary markers (facets stored as pairs of cells and
     ///         local facet numbers).
-    const std::vector<std::pair<std::size_t, std::size_t> >& markers() const;
+    const std::vector<std::size_t>& markers() const;
 
     /// Return function space V
     ///
@@ -433,7 +436,8 @@ namespace dolfin
     class LocalData;
 
     // Apply boundary conditions, common method
-    void apply(GenericMatrix* A, GenericVector* b, const GenericVector* x) const;
+    void apply(GenericMatrix* A, GenericVector* b,
+               const GenericVector* x) const;
 
     // Check input data to constructor
     void check() const;
@@ -442,7 +446,8 @@ namespace dolfin
     void init_facets() const;
 
     // Initialize sub domain markers from sub domain
-    void init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_domain) const;
+    void
+      init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_domain) const;
 
     // Initialize sub domain markers from MeshFunction
     void init_from_mesh_function(const MeshFunction<std::size_t>& sub_domains,
@@ -469,7 +474,7 @@ namespace dolfin
                               LocalData& data) const;
 
     // Check if the point is in the same plane as the given facet
-    bool on_facet(double* coordinates, Facet& facet) const;
+    bool on_facet(const double* coordinates, const Facet& facet) const;
 
     // Check arguments
     void check_arguments(GenericMatrix* A,
@@ -495,8 +500,8 @@ namespace dolfin
 
   private:
 
-    // Boundary facets, stored as pairs (cell, local facet number)
-    mutable std::vector<std::pair<std::size_t, std::size_t> > facets;
+    // Boundary facets, stored by facet index (local to process)
+    mutable std::vector<std::size_t> _facets;
 
     // User defined mesh function
     boost::shared_ptr<const MeshFunction<std::size_t> > _user_mesh_function;

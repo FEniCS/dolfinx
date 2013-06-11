@@ -39,7 +39,7 @@ that removes the component in the null space from the solution vector.
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2012-10-31
-# Last changed: 2012-11-12
+# Last changed: 2013-05-30
 
 from dolfin import *
 
@@ -73,9 +73,19 @@ u = Function(V)
 solver = KrylovSolver(A, "gmres")
 
 # Create null space basis and attach to Krylov solver
-null_space = Vector(u.vector())
-V.dofmap().set(null_space, 1.0)
-solver.set_nullspace([null_space])
+null_vec = Vector(u.vector())
+V.dofmap().set(null_vec, 1.0)
+null_vec *= 1.0/null_vec.norm("l2")
+null_space = VectorSpaceBasis([null_vec])
+solver.set_nullspace(null_space)
+
+# In this case, the system is symmetric, so the transpose nullspace is the same
+solver.set_transpose_nullspace(null_space);
+# When solving singular systems, you have to ensure that the RHS b is in the range
+# of the singular matrix. Since the range is the orthogonal complement of the
+# transpose nullspace, you have to call the orthogonalize method of the transpose
+# nullspace object on the RHS:
+null_space.orthogonalize(b);
 
 # Solve
 solver.solve(u.vector(), b)

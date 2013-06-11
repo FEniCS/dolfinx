@@ -334,8 +334,14 @@ class TestPage17(unittest.TestCase):
     def test_box_1(self):
         if skip_in_parallel(): return
         mesh = UnitSquare(2, 2)
-        sub_domains = mesh.data().create_mesh_function("sub_domains")
-        sub_domains = mesh.data().mesh_function("sub_domains")
+        # Note: MeshData no longer returns MeshFunctions. This was
+        #       necessary to remove a circular code dependency.
+        #       Accessing a MeshFunction will now throw an error with
+        #       the suggestion to use arrays.
+        #sub_domains = mesh.data().create_mesh_function("sub_domains")
+        #sub_domains = mesh.data().mesh_function("sub_domains")
+        sub_domains = mesh.data().create_array("sub_domains", 2)
+        sub_domains = mesh.data().array("sub_domains", 2)
 
     def test_box_2(self):
         if skip_in_parallel(): return
