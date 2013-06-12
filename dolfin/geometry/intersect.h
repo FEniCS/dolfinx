@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Anders Logg
+// Copyright (C) 2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -15,29 +15,35 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// Modified by Garth N. Wells, 2012
-//
-// First added:  2008-04-22
-// Last changed: 2013-05-28
-//
-// This file provides DOLFIN typedefs for basic types.
+// First added:  2013-04-18
+// Last changed: 2013-05-30
 
-#ifndef __DOLFIN_TYPES_H
-#define __DOLFIN_TYPES_H
+#ifndef __INTERSECT_H
+#define __INTERSECT_H
 
-#ifdef HAS_PETSC
-#include <petscsys.h>
-#endif
+#include <boost/shared_ptr.hpp>
 
 namespace dolfin
 {
 
-  /// Index type for compatibility with linear algebra backend(s)
-  #ifdef HAS_PETSC
-  typedef PetscInt la_index;
-  #else
-  typedef int la_index;
-  #endif
+  // Forward declarations
+  class Mesh;
+  class Point;
+  class MeshPointIntersection;
+
+  /// Compute and return intersection between _Mesh_ and _Point_.
+  ///
+  /// *Arguments*
+  ///     mesh (_Mesh_)
+  ///         The mesh to be intersected.
+  ///     point (_Point_)
+  ///         The point to be intersected.
+  ///
+  /// *Returns*
+  ///     _MeshPointIntersection_
+  ///         The intersection data.
+  boost::shared_ptr<const MeshPointIntersection>
+  intersect(const Mesh& mesh, const Point& point);
 
 }
 

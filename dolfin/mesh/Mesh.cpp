@@ -26,7 +26,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-09
-// Last changed: 2013-03-06
+// Last changed: 2013-04-18
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Array.h>
@@ -471,7 +471,7 @@ int Mesh::intersected_cell(const Point& point) const
 {
   // CGAL needs mesh with more than 1 cell
   if (num_cells() > 1)
-    return  _intersection_operator.any_intersected_entity(point);
+    return _intersection_operator.any_intersected_entity(point);
 
   // Num cells == 1
   const Cell cell(*this, 0);

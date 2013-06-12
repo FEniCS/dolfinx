@@ -21,7 +21,7 @@
 // Modified by Garth N. Wells 2009
 //
 // First added:  2003-03-13
-// Last changed: 2013-01-07
+// Last changed: 2013-04-18
 
 #include <cstdarg>
 #include <cstdlib>
@@ -215,8 +215,9 @@ void dolfin::__debug(std::string file, unsigned long line,
 {
   read(buffer.get(), format);
   std::ostringstream ost;
-  ost << file << ":" << line << " in " << function << "()";
-  std::string msg = std::string(buffer.get()) + " [at " + ost.str() + "]";
+  ost << "[at " << file << ":" << line << " in " << function << "()]";
+  LogManager::logger.__debug(ost.str());
+  std::string msg = std::string(buffer.get());
   LogManager::logger.__debug(msg);
 }
 //-----------------------------------------------------------------------------
