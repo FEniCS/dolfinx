@@ -51,12 +51,13 @@ class PointIntegralSolverTest(unittest.TestCase):
         u_true = Expression("u0 + 2*t + pow(t, 2)/2. + pow(t, 3)/3. - "\
                             "pow(t, 5)/5.", t=tstop, u0=u0)
 
-
         for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
                        BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
             
             u = Function(V)
-            form = (2+time+time**2-time**4)*v*dP
+            compound_time_expr = Expression("time*time", \
+                                            element=time.element(), time=time)
+            form = (2+time+compound_time_expr-time**4)*v*dP
             
             scheme = Scheme(form, u, time)
             info(scheme)
