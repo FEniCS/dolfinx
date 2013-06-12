@@ -521,10 +521,6 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix* A, GenericVector* b,
   for (std::size_t i = 0; i < L_rank; ++i)
     L_dofmaps.push_back(L.function_space(i)->dofmap().get());
 
-  // Vector to hold dof map for a cell
-  std::vector<const std::vector<dolfin::la_index>* > a_dofs(a_rank);
-  std::vector<const std::vector<dolfin::la_index>* > L_dofs(L_rank);
-
   // Iterate over facets
   Progress p("Assembling system (facet-wise)", mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
@@ -724,11 +720,14 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix* A,
       A_cell_integral->tabulate_tensor(A_ufc.A.data(), A_ufc.w(),
                                        A_ufc.cell.vertex_coordinates.data(),
                                        A_ufc.cell.orientation);
-      const std::size_t nn = a0_dofs0.size();
-      const std::size_t mm = a1_dofs0.size();
-      for (std::size_t i = 0; i < mm; i++)
-        for (std::size_t j = 0; j < nn; j++)
-          A_ufc.macro_A[2*i*nn+j] += A_ufc.A[i*nn+j];
+      if (A_ufc.form.has_interior_facet_integrals())
+      {
+        const std::size_t nn = a0_dofs0.size();
+        const std::size_t mm = a1_dofs0.size();
+        for (std::size_t i = 0; i < mm; i++)
+          for (std::size_t j = 0; j < nn; j++)
+            A_ufc.macro_A[2*i*nn+j] += A_ufc.A[i*nn+j];
+      }
     }
 
     if (b_cell_integral)
@@ -737,8 +736,35 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix* A,
       b_cell_integral->tabulate_tensor(b_ufc.A.data(), b_ufc.w(),
                                        b_ufc.cell.vertex_coordinates.data(),
                                        b_ufc.cell.orientation);
-      for (std::size_t i = 0; i < L_dofs0.size(); i++)
-        b_ufc.macro_A[i] += b_ufc.A[i];
+      if (A_ufc.form.has_interior_facet_integrals())
+      {
+        for (std::size_t i = 0; i < L_dofs0.size(); i++)
+          b_ufc.macro_A[i] += b_ufc.A[i];
+      }
+    }
+
+    if ((A_cell_integral || b_cell_integral) && !A_ufc.form.has_interior_facet_integrals())
+    {
+      if (!A_cell_integral)
+        std::fill(A_ufc.A.begin(), A_ufc.A.end(), 0.0);
+      if (!b_cell_integral)
+        std::fill(b_ufc.A.begin(), b_ufc.A.end(), 0.0);
+
+      // Modify local matrix/element for Dirichlet boundary conditions
+      std::vector<const std::vector<dolfin::la_index>* > a_dofs(2);
+      a_dofs[0] = &a0_dofs0;
+      a_dofs[1] = &a1_dofs0;
+      std::vector<const std::vector<dolfin::la_index>* > L_dofs(1);
+      L_dofs[0] = &L_dofs0;
+
+      apply_bc(A_ufc.A.data(), b_ufc.A.data(), boundary_values,
+               a_dofs, rescale);
+      
+      // Add entries to global tensor
+      if (A)
+        A->add(A_ufc.A.data(), a_dofs);
+      if (b)
+        b->add(b_ufc.A.data(), L_dofs);
     }
   }
 
@@ -751,11 +777,14 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix* A,
       A_cell_integral->tabulate_tensor(A_ufc.A.data(), A_ufc.w(),
                                        A_ufc.cell.vertex_coordinates.data(),
                                        A_ufc.cell.orientation);
-      const std::size_t nn = a0_dofs1.size();
-      const std::size_t mm = a1_dofs1.size();
-      for (std::size_t i = 0; i < mm; i++)
-        for (std::size_t j = 0; j < nn; j++)
-          A_ufc.macro_A[2*nn*mm + 2*i*nn + nn + j] += A_ufc.A[i*nn+j];
+      if (A_ufc.form.has_interior_facet_integrals())
+      {
+        const std::size_t nn = a0_dofs1.size();
+        const std::size_t mm = a1_dofs1.size();
+        for (std::size_t i = 0; i < mm; i++)
+          for (std::size_t j = 0; j < nn; j++)
+            A_ufc.macro_A[2*nn*mm + 2*i*nn + nn + j] += A_ufc.A[i*nn+j];
+      }
     }
 
     if (b_cell_integral)
@@ -764,8 +793,35 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix* A,
       b_cell_integral->tabulate_tensor(b_ufc.A.data(), b_ufc.w(),
                                        b_ufc.cell.vertex_coordinates.data(),
                                        b_ufc.cell.orientation);
-      for (std::size_t i = 0; i < L_dofs0.size(); i++)
-        b_ufc.macro_A[L_dofs0.size() + i] += b_ufc.A[i];
+      if (A_ufc.form.has_interior_facet_integrals())
+      {
+        for (std::size_t i = 0; i < L_dofs0.size(); i++)
+          b_ufc.macro_A[L_dofs0.size() + i] += b_ufc.A[i];
+      }
+    }
+
+    if ((A_cell_integral || b_cell_integral) && !A_ufc.form.has_interior_facet_integrals())
+    {
+      if (!A_cell_integral)
+        std::fill(A_ufc.A.begin(), A_ufc.A.end(), 0.0);
+      if (!b_cell_integral)
+        std::fill(b_ufc.A.begin(), b_ufc.A.end(), 0.0);
+
+      // Modify local matrix/element for Dirichlet boundary conditions
+      std::vector<const std::vector<dolfin::la_index>* > a_dofs(2);
+      a_dofs[0] = &a0_dofs1;
+      a_dofs[1] = &a1_dofs1;
+      std::vector<const std::vector<dolfin::la_index>* > L_dofs(1);
+      L_dofs[0] = &L_dofs1;
+
+      apply_bc(A_ufc.A.data(), b_ufc.A.data(), boundary_values,
+               a_dofs, rescale);
+      
+      // Add entries to global tensor
+      if (A)
+        A->add(A_ufc.A.data(), a_dofs);
+      if (b)
+        b->add(b_ufc.A.data(), L_dofs);
     }
   }
 
@@ -800,7 +856,7 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix* A,
            _a_macro_dofs, rescale);
 
   // Add entries to global tensor
-  if (A)
+  if (A && A_ufc.form.has_interior_facet_integrals())
     A->add(A_ufc.macro_A.data(), a_macro_dofs);
   if (b)
     b->add(b_ufc.macro_A.data(), L_macro_dofs);
