@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-08-31
-// Last changed: 2013-05-20
+// Last changed: 2013-06-06
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -147,7 +147,7 @@ SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared)
   {
     SWIG_exception(SWIG_TypeError, "list of TYPE expected");
   }
-  
+
   int size = PyList_Size($input);
   int res = 0;
   PyObject * py_item = 0;
@@ -159,7 +159,7 @@ SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared)
     newmem = 0;
     py_item = PyList_GetItem($input, i);
     res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
-    if (!SWIG_IsOK(res)) 
+    if (!SWIG_IsOK(res))
     {
       SWIG_exception(SWIG_TypeError, "expected a list of shared_ptr<TYPE> (Bad conversion)");
     }
@@ -252,7 +252,7 @@ const std::vector<TYPE>&  ARG_NAME
       SWIG_exception(SWIG_TypeError, "(2) numpy array of 'TYPE_NAME' expected. "\
 		     "Make sure that the numpy array use dtype=DESCR.");
     }
-    
+
     PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
     if ( PyArray_TYPE(xa) != NUMPY_TYPE )
     {
@@ -348,7 +348,7 @@ const std::vector<TYPE>&  ARG_NAME
   {
     SWIG_exception(SWIG_TypeError, "expected a sequence for argument $argnum");
   }
-  
+
   // Get sequence length
   Py_ssize_t pyseq_length = PySequence_Size($input);
   if (SEQ_LENGTH >= 0 && pyseq_length > SEQ_LENGTH)
@@ -394,11 +394,21 @@ const std::vector<TYPE>&  ARG_NAME
 
 }
 
+%typemap(out) const std::vector<TYPE> &
+{
+  // OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(TYPE, NUMPY_TYPE) const std::vector<TYPE> &
+  npy_intp adims = $1->size();
+
+  $result = PyArray_SimpleNew(1, &adims, NUMPY_TYPE);
+  TYPE* data = static_cast<TYPE*>(PyArray_DATA(reinterpret_cast<PyArrayObject*>($result)));
+  std::copy($1->begin(), $1->end(), data);
+}
+
 %enddef
 
 //-----------------------------------------------------------------------------
-// Macro for out typemaps of primitives of std::vector<TYPE> It returns a 
-// NumPy array vith a view. This is writable for const vectors and writable for 
+// Macro for out typemaps of primitives of std::vector<TYPE> It returns a
+// NumPy array vith a view. This is writable for const vectors and writable for
 // non-const ones.
 //
 // TYPE      : The primitive type
@@ -415,7 +425,7 @@ const std::vector<TYPE>&  ARG_NAME
 
 %typemap(out, fragment=make_numpy_array_frag(1, TYPE_NAME)) std::vector<TYPE>&
 {
-  // OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(TYPE, TYPE_NAME) 
+  // OUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES_REFERENCE(TYPE, TYPE_NAME)
   $result = %make_numpy_array(1, TYPE_NAME)($1->size(), &($1->operator[](0)), true);
 }
 
@@ -439,7 +449,7 @@ const std::vector<TYPE>&  ARG_NAME
   {
     SWIG_exception(SWIG_TypeError, "expected a list of TYPE for argument $argnum");
   }
-  
+
   int size = PyList_Size($input);
   int res = 0;
   PyObject * py_item = 0;
@@ -491,7 +501,7 @@ const std::vector<TYPE>&  ARG_NAME
   {
     SWIG_exception(SWIG_TypeError, "expected a sequence for argument $argnum");
   }
-  
+
   // Get outer sequence length
   Py_ssize_t pyseq_length_0 = PySequence_Size($input);
 
