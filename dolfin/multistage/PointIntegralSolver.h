@@ -78,8 +78,6 @@ namespace dolfin
       p("newton_solver").add("kappa", 0.1, 0.05, .75);
       p("newton_solver").add("eta_0", 1e-10, 1e-15, 1e-5);
       p("newton_solver").add("max_relative_residual", 1e-3, 1e-5, 1e-1);
-
-      // FIXME: Need a better name
       p("newton_solver")["absolute_tolerance"].set_range(1e-20,1e-1);
 
       return p;
