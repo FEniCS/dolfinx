@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-06-05
+// Last changed: 2013-06-13
 
 #include <cmath>
 #include <boost/make_shared.hpp>
@@ -630,7 +630,6 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
   const Parameters& newton_solver_params = parameters("newton_solver");
   const std::string convergence_criterion = newton_solver_params["convergence_criterion"];
   const double kappa = newton_solver_params["kappa"];
-  const double newton_tolerance = newton_solver_params["newton_tolerance"];
   const double atol = newton_solver_params["absolute_tolerance"];
   const std::size_t max_iterations = newton_solver_params["maximum_iterations"];
   const double max_relative_residual = newton_solver_params["max_relative_residual"];
@@ -689,11 +688,11 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
       _recompute_jacobian = relative_residual >= max_relative_residual;
       
       // We converge too slow
-      if (residual > (kappa*newton_tolerance*(1 - relative_residual)	\
+      if (residual > (kappa*atol*(1 - relative_residual)	\
 		      /std::pow(relative_residual, max_iterations - newton_iterations)))
       {
 	
-	info("Newton solver converges to slow with relative_residual: %.3e at " \
+	info("Newton solver converges too slow with relative_residual: %.3e at " \
 	     "iteration %d, residual: %.2e, ", relative_residual, 
 	     newton_iterations, residual);
 	return too_slow;
@@ -732,7 +731,7 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
     prev_residual = residual;
     newton_iterations++;
     
-  } while(_eta*residual <= kappa*newton_tolerance);
+  } while(_eta*residual <= kappa*atol);
   
   return converged;
 }
