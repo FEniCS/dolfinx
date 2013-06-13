@@ -48,14 +48,15 @@ class PointIntegralSolverTest(unittest.TestCase):
         time = Constant(0.0)
         u0=10.0
         tstop = 1.0
-        u_true = Expression("u0 + 2*t + pow(t, 2)/2. + pow(t, 3)/3. - "\
-                            "pow(t, 5)/5.", t=tstop, u0=u0)
+        weight = Constant(2)
+        u_true = Expression("u0 + 2*t + pow(t, 2)/2. + weight*pow(t, 3)/3. - "\
+                            "pow(t, 5)/5.", t=tstop, u0=u0, weight=weight)
 
         for Scheme in [ForwardEuler, ExplicitMidPoint, RK4,
                        BackwardEuler, CN2, ESDIRK3, ESDIRK4]:
             
             u = Function(V)
-            compound_time_expr = Expression("time*time", \
+            compound_time_expr = Expression("weight*time*time", weight=weight, \
                                             element=time.element(), time=time)
             form = (2+time+compound_time_expr-time**4)*v*dP
             
