@@ -63,10 +63,6 @@ class PointIntegralSolverTest(unittest.TestCase):
             scheme = Scheme(form, u, time)
             info(scheme)
             solver = PointIntegralSolver(scheme)
-            solver.parameters.newton_solver.report = False
-            solver.parameters.newton_solver.absolute_tolerance = 1e-10
-            solver.parameters.newton_solver.newton_tolerance = 1e-5
-            solver.parameters.newton_solver.maximum_iterations = 12
             u_errors = []
             for dt in [0.05, 0.025, 0.0125]:
                 solver.reset()
@@ -95,11 +91,6 @@ class PointIntegralSolverTest(unittest.TestCase):
             info(scheme)
             u_errors = []
             solver = PointIntegralSolver(scheme)
-            solver.parameters.newton_solver.report = False
-            solver.parameters.newton_solver.absolute_tolerance = 1e-10
-            solver.parameters.newton_solver.newton_tolerance = 1e-5
-            #solver.parameters.newton_solver.max_relative_residual = 6e-3
-            solver.parameters.newton_solver.maximum_iterations = 12
             for dt in [0.05, 0.025, 0.0125]:
                 solver.reset()
                 u.interpolate(Constant(1.0))
@@ -124,10 +115,6 @@ class PointIntegralSolverTest(unittest.TestCase):
             scheme = Scheme(form, u)
             info(scheme)
             solver = PointIntegralSolver(scheme)
-            solver.parameters.newton_solver.report = False
-            solver.parameters.newton_solver.absolute_tolerance = 1e-10
-            solver.parameters.newton_solver.newton_tolerance = 1e-5
-            solver.parameters.newton_solver.maximum_iterations = 12
             u_errors = []
             for dt in [0.05, 0.025, 0.0125]:
                 solver.reset()

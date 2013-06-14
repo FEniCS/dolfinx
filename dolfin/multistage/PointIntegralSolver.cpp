@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-06-13
+// Last changed: 2013-06-14
 
 #include <cmath>
 #include <boost/make_shared.hpp>
@@ -688,7 +688,7 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
       _recompute_jacobian = relative_residual >= max_relative_residual;
       
       // We converge too slow
-      if (residual > (kappa*atol*(1 - relative_residual)	\
+      if (residual > (kappa*atol*(1 - relative_residual)		\
 		      /std::pow(relative_residual, max_iterations - newton_iterations)))
       {
 	
@@ -731,7 +731,7 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
     prev_residual = residual;
     newton_iterations++;
     
-  } while(_eta*residual <= kappa*atol);
+  } while(_eta*residual >= kappa*atol);
   
   return converged;
 }
