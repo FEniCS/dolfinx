@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-06-14
+// Last changed: 2013-06-17
 
 #include <cmath>
 #include <boost/make_shared.hpp>
@@ -220,15 +220,17 @@ void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
   // Local counter for jacobian calculations
   unsigned int jacobian_calculations = 0;
 
+  std::size_t max_jacobian_computations = parameters("newton_solver")["maximum_jacobian_computations"];
+
   // Local solution
   std::vector<double>& u = _local_stage_solutions[stage];
 	
   // Grab initial (previous) value of stage solution. It will be used
   // to reset restricted coefficients if NewtonSovler converges too
   // slow. 
-  // FIXME: Here we assume the restricted form coefficients
-  // FIXME: contains the correct values, which they do as we have called 
-  // FIXME: update before entering this method.
+  // NOTE: Here we assume the restricted form coefficients
+  // NOTE: contains the correct values, which they do as we have called 
+  // NOTE: update before entering this method.
   for (unsigned int row=0; row < _system_size; row++)
   {
     _u0[row] = u[row] = _ufcs[stage][0]->w()[_coefficient_index[stage][0]][_local_to_local_dofs[row]];
@@ -240,43 +242,39 @@ void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
   {
     
     // Recompute jacobian if convergence is too slow
-    if (_recompute_jacobian || convergence == too_slow)
+    if (_recompute_jacobian)
     {
       
-      if (jacobian_calculations>1)
-      {
-	error("Newton solver converged too slowly.");
-      }
-
-      // Compute jacobian
-      _compute_jacobian(_jac, _u0, local_vert, *_ufcs[stage][1], cell,
+      //_compute_jacobian(_jac, _u0, local_vert, *_ufcs[stage][1], cell,
+      _compute_jacobian(_jac, u, local_vert, *_ufcs[stage][1], cell,
 			_coefficient_index[stage].size()==2 ?	\
 			_coefficient_index[stage][1] : -1);
       jacobian_calculations += 1;
-
-
-      // Reset stage solution before starting on 
-      for (unsigned int row=0; row < _system_size; row++)
-      {
-	_local_stage_solutions[stage][row] = _u0[row];
-      }
       
     }
     
     // Do a simplified newton solve
-    convergence = _simplified_newton_solve(u, local_vert, *_ufcs[stage][0], 
+    convergence = _simplified_newton_solve(u, vert_ind, *_ufcs[stage][0], 
 					   _coefficient_index[stage][0], cell);
     
-    // If no convergence we
-    if (convergence == diverge)
+    // First time we do not converge and it is the second time around
+    if (convergence != converged && jacobian_calculations > max_jacobian_computations)
     {
-      error("Newton solver in PointIntegralSolver diverged.");
-    }
 
-    // If no convergence we
-    if (convergence == exceeds_max_iter)
-    {
-      error("Newton solver in PointIntegralSolver exeeded maximal iterations.");
+      if (convergence == too_slow)
+	error("Newton solver converged too slowly, after jacobian "\
+	      "has been re-computed %d times.", jacobian_calculations);
+      
+      // If we diverge
+      if (convergence == diverge)
+	error("Newton solver in PointIntegralSolver diverged, after jacobian "\
+	      "has been re-computed %d times.", jacobian_calculations);
+
+      // If we exceed max iterations
+      if (jacobian_calculations > 1 && convergence == exceeds_max_iter)
+	error("Newton solver in PointIntegralSolver exeeded maximal iterations, "\
+	      "after jacobian has been re-computed %d times.", jacobian_calculations);
+
     }
 
   }
@@ -621,7 +619,7 @@ void PointIntegralSolver::_init()
 //-----------------------------------------------------------------------------
 PointIntegralSolver::convergence_criteria_t \
 PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u, 
-					      std::size_t local_vert, 
+					      std::size_t vert_ind, 
 					      UFC& loc_ufc,
 					      unsigned int coefficient_index, 
 					      const Cell& cell)
@@ -634,6 +632,9 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
   const std::size_t max_iterations = newton_solver_params["maximum_iterations"];
   const double max_relative_residual = newton_solver_params["max_relative_residual"];
   const double relaxation = newton_solver_params["relaxation_parameter"];
+  const bool report = newton_solver_params["report"];
+  const unsigned int local_vert = _vertex_map[vert_ind].second;
+
 
   unsigned int newton_iterations = 0;
   double relative_residual = 1.0, residual, prev_residual = 1.0;
@@ -644,7 +645,7 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
   do
   {
 
-    // Tabulate residual solution
+    // Tabulate residual 
     Timer t_impl_tt_F("Implicit stage: tabulate_tensor (F)");
     F_integral.tabulate_tensor(&loc_ufc.A[0], loc_ufc.w(), 
 			       &loc_ufc.cell.vertex_coordinates[0], 
@@ -674,6 +675,10 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
     // Newton_Iterations == 0
     if (newton_iterations == 0) 
     {
+      // On first iteration we need an approximation of eta. We take
+      // the one from previous step and increase it slightly. This is
+      // important for linear problems which only should recquire 1
+      // iteration to converge.
       _eta = _eta > DOLFIN_EPS ? _eta : DOLFIN_EPS;
       _eta = std::pow(_eta, 0.8);
     }
@@ -687,23 +692,32 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
       // If we are not converging fast enough we flag the jacobian to be recomputed
       _recompute_jacobian = relative_residual >= max_relative_residual;
       
-      // We converge too slow
-      if (residual > (kappa*atol*(1 - relative_residual)		\
-		      /std::pow(relative_residual, max_iterations - newton_iterations)))
-      {
-	
-	info("Newton solver converges too slow with relative_residual: %.3e at " \
-	     "iteration %d, residual: %.2e, ", relative_residual, 
-	     newton_iterations, residual);
-	return too_slow;
-      }
-      
       // If we diverge
       if (relative_residual > 1)
       {
-	info("Newton solver diverges with relative_residual: %f.", relative_residual);
+	if (report && vert_ind == 0)
+	  info("Newton solver diverges with relative_residual: %.3f, residual " \
+	       "%.3e, after %d iterations. Recomputing jacobian.", 
+	       relative_residual, residual, newton_iterations);
+	_recompute_jacobian = true;
         return diverge;
       }
+      
+      // We converge too slow 
+      // NOTE: This code only works if we have the possibility to reduce time 
+      // NOTE: step. For now this is not implemented and we therefore 
+      // NOTE: out-comment it.
+      /*if (residual > (kappa*atol*(1 - relative_residual)		\
+		      /std::pow(relative_residual, max_iterations - newton_iterations)))
+      {
+	
+	if (report && vert_ind == 0)
+	  info("Newton solver converges too slow with relative_residual: " \
+	       "%.3e at iteration %d, residual: %.2e.", relative_residual, 
+	       newton_iterations, residual);
+	_recompute_jacobian = true;
+	return too_slow;
+	}*/
       
       // Update eta 
       _eta = relative_residual/(1.0 - relative_residual);
@@ -712,7 +726,11 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
     // No convergence
     if (newton_iterations > max_iterations)
     {
-      info("Newton solver did not converged in %d iterations.", max_iterations);
+      if (report && vert_ind == 0)
+	info("Newton solver did not converged after %d iterations. "  \
+	     "relative_residual: %.3f, residual: %.3e. Recomputing jacobian.", \
+	     max_iterations, relative_residual, residual);
+      _recompute_jacobian = true;
       return exceeds_max_iter;
     }
     
@@ -730,7 +748,7 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
 
     prev_residual = residual;
     newton_iterations++;
-    
+
   } while(_eta*residual >= kappa*atol);
   
   return converged;
