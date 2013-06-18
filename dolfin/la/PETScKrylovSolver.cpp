@@ -38,9 +38,8 @@
 #include "PETScPreconditioner.h"
 #include "PETScUserPreconditioner.h"
 #include "PETScVector.h"
+#include "VectorSpaceBasis.h"
 #include "PETScKrylovSolver.h"
-
-#include <dolfin/common/timing.h>
 
 using namespace dolfin;
 
