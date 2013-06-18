@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-06-04
+// Last changed: 2013-06-18
 
 #ifdef HAS_HDF5
 
@@ -548,6 +548,8 @@ void HDF5File::write_mesh_function(const MeshFunction<T>& meshfunction,
 //-----------------------------------------------------------------------------
 void HDF5File::write(const Function& u, const std::string name)
 {
+  Timer t0("HDF5: write Function");
+
   // Get mesh and dofmap
   dolfin_assert(u.function_space()->mesh());
   const Mesh& mesh = *u.function_space()->mesh();
@@ -600,6 +602,8 @@ void HDF5File::write(const Function& u, const std::string name)
 //-----------------------------------------------------------------------------
 void HDF5File::read(Function& u, const std::string name)
 {
+  Timer t0("HDF5: read Function");
+
   dolfin_assert(hdf5_file_open);
 
   // FIXME: This routine is long and involves a lot of MPI,
