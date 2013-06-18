@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-06-07
+// Last changed: 2013-06-18
 
 #ifdef HAS_HDF5
 
@@ -949,6 +949,8 @@ void HDF5File::read(GenericVector& x, const std::string dataset_name,
 //-----------------------------------------------------------------------------
 void HDF5File::read(Mesh& input_mesh, const std::string mesh_name)
 {
+  Timer t("HDF5: read mesh");
+
   dolfin_assert(hdf5_file_open);
 
   const std::string topology_name = mesh_name + "/topology";
@@ -967,16 +969,6 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name)
                  "read coordinates dataset",
                  "Dataset \"%s\" not found", coordinates_name.c_str());
   }
-
-  read_mesh_repartition(input_mesh, coordinates_name,
-                                   topology_name);
-}
-//-----------------------------------------------------------------------------
-void HDF5File::read_mesh_repartition(Mesh& input_mesh,
-                                     const std::string coordinates_name,
-                                     const std::string topology_name)
-{
-  Timer t("HDF5: read mesh");
 
   // Structure to store local mesh
   LocalMeshData mesh_data;
@@ -1025,9 +1017,19 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
   HDF5Interface::read_dataset(hdf5_file_id, topology_name, cell_range,
                               topology_data);
 
+  // Look for cell indices in dataset, and use if available
   mesh_data.global_cell_indices.reserve(num_local_cells);
-  for (std::size_t i = 0; i < num_local_cells; i++)
-    mesh_data.global_cell_indices.push_back(cell_range.first + i);
+  const std::string cell_indices_name = mesh_name + "/cell_indices";
+  if(HDF5Interface::has_dataset(hdf5_file_id, cell_indices_name))
+  {
+    HDF5Interface::read_dataset(hdf5_file_id, cell_indices_name,
+                                cell_range, mesh_data.global_cell_indices);
+  }
+  else
+  {
+    for (std::size_t i = 0; i < num_local_cells; i++)
+      mesh_data.global_cell_indices.push_back(cell_range.first + i);
+  }
 
   // Copy to boost::multi_array
   mesh_data.cell_vertices.resize(boost::extents[num_local_cells][num_vertices_per_cell]);
