@@ -279,3 +279,6 @@ SWIGINTERNINLINE bool Py_convert_int(PyObject* in, int& value)
 %fragment(SWIG_From_frag(int));
 %fragment(SWIG_From_frag(std::size_t));
 %fragment(SWIG_From_frag(dolfin::la_index));
+%fragment("Py_convert_int");
+%fragment("Py_convert_uint");
+%fragment("Py_convert_std_size_t");
