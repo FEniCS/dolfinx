@@ -86,16 +86,16 @@ class Eval(unittest.TestCase):
           if not has_cgal():
                return
 
-          # FIXME: eval does not work in parallel yet
-          if MPI.num_processes() == 1:
-               f2 = Expression("1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]", degree=2)
-               V2 = FunctionSpace(mesh, 'CG', 2)
-               g = project(f2, V=V2)
-               u3 = f2(x)
-               u4 = g(x)
-               self.assertAlmostEqual(u3, u4, places=5)
-               self.assertRaises(TypeError, g, [0,0,0,0])
-               self.assertRaises(TypeError, g, Point(0,0))
+          x = (mesh.coordinates()[0]+mesh.coordinates()[1])/2
+          f2 = Expression("1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]", degree=2)
+          V2 = FunctionSpace(mesh, 'CG', 2)
+          g0 = interpolate(f2, V=V2)
+          g1 = project(f2, V=V2)
+          u3 = f2(x)
+          u4 = g0(x)
+          u5 = g1(x)
+          self.assertAlmostEqual(u3, u4)
+          self.assertAlmostEqual(u3, u5, 4)
 
      def test_ufl_eval(self):
           class F0(Expression):
