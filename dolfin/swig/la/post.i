@@ -249,7 +249,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     def __getitem__(self, indices):
         from numpy import ndarray, integer
         from types import SliceType
-        if isinstance(indices, (int, integer)):
+        if isinstance(indices, (int, integer, long)):
             return _get_vector_single_item(self, indices)
         elif isinstance(indices, (SliceType, ndarray, list) ):
             return as_backend_type(_get_vector_sub_vector(self, indices))
@@ -259,7 +259,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     def __setitem__(self, indices, values):
         from numpy import ndarray, integer, isscalar
         from types import SliceType
-        if isinstance(indices, (int, integer)):
+        if isinstance(indices, (int, integer, long)):
             if isscalar(values):
                 return _set_vector_items_value(self, indices, values)
             else:
