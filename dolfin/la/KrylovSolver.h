@@ -35,7 +35,7 @@ namespace dolfin
 
   class GenericLinearOperator;
   class GenericVector;
-  class VetorSpaceBasis;
+  class VectorSpaceBasis;
 
   /// This class defines an interface for a Krylov solver. The
   /// approproiate solver is chosen on the basis of the matrix/vector
