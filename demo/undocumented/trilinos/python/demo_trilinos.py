@@ -24,6 +24,8 @@ AMG preconditioner
 # First added:  2008-04-24
 # Last changed: 2008-04-24
 
+from dolfin import *
+
 # Test for Trilinos:
 try:
     from PyTrilinos import Epetra, AztecOO, TriUtils, ML
@@ -31,8 +33,6 @@ except:
     print "You Need to have PyTrilinos with Epetra, AztecOO, TriUtils and ML installed for this demo to run",
     print "Exiting."
     exit()
-
-from dolfin import *
 
 if not has_linear_algebra_backend("Epetra"):
     print "*** Warning: Dolfin is not compiled with Trilinos linear algebra backend"
@@ -100,6 +100,3 @@ interactive()
 # Save solution to file
 file = File("poisson.pvd")
 file << U
-
-
-

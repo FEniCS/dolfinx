@@ -82,9 +82,10 @@ class AbstractBaseTest(object):
             distributed = False
 
         # Test set and access with different integers
-        for t in [int,int0,int16,int32,int64,uint,uint0,uint16,uint32,uint64]:
-            v[t(0)] = 2.0
-            if v.owns_index(t(0)): self.assertAlmostEqual(v[t(0)], 2.0)
+        ind = 2
+        for t in [int,int16,int32,int64,uint,uint0,uint16,uint32,uint64,int0,long]:
+            v[t(ind)] = 2.0
+            if v.owns_index(t(ind)): self.assertAlmostEqual(v[t(ind)], 2.0)
 
         A = v.copy()
         B = as_backend_type(v.copy())
@@ -337,7 +338,7 @@ if MPI.num_processes() == 1:
 if __name__ == "__main__":
 
     # Turn off DOLFIN output
-    set_log_active(False);
+    #set_log_active(False);
 
     print ""
     print "Testing basic PyDOLFIN linear algebra operations"

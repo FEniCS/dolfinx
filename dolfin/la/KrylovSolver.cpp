@@ -28,6 +28,7 @@
 #include "GenericVector.h"
 #include "DefaultFactory.h"
 #include "LinearSolver.h"
+#include "VectorSpaceBasis.h"
 #include "KrylovSolver.h"
 
 using namespace dolfin;
