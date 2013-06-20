@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-05-20
+// Last changed: 2013-06-18
 
 #ifdef HAS_HDF5
 
@@ -104,6 +104,76 @@ void HDF5File::write(const GenericVector& x, const std::string dataset_name)
 
   HDF5Interface::add_attribute(hdf5_file_id, dataset_name, "partition",
                                partitions);
+}
+//-----------------------------------------------------------------------------
+void HDF5File::read(GenericVector& x, const std::string dataset_name,
+                    const bool use_partition_from_file) const
+{
+  dolfin_assert(hdf5_file_open);
+
+  // Check for data set exists
+  if (!HDF5Interface::has_dataset(hdf5_file_id, dataset_name))
+    error("Data set with name \"%s\" does not exist", dataset_name.c_str());
+
+  // Get dataset rank
+  const std::size_t rank = HDF5Interface::dataset_rank(hdf5_file_id,
+                                                       dataset_name);
+  dolfin_assert(rank == 1);
+
+  // Get global dataset size
+  const std::vector<std::size_t> data_size
+      = HDF5Interface::get_dataset_size(hdf5_file_id, dataset_name);
+
+  // Check that rank is 1
+  dolfin_assert(data_size.size() == 1);
+
+  // Check input vector, and re-size if not already sized
+  if (x.size() == 0)
+  {
+    // Resize vector
+    if (use_partition_from_file)
+    {
+      // Get partition from file
+      std::vector<std::size_t> partitions;
+      HDF5Interface::get_attribute(hdf5_file_id, dataset_name, "partition",
+                                   partitions);
+
+      // Check that number of MPI processes matches partitioning
+      if (MPI::num_processes() != partitions.size())
+      {
+        dolfin_error("HDF5File.cpp",
+                     "read vector from file",
+                     "Different number of processes used when writing. Cannot restore partitioning");
+      }
+
+      // Add global size at end of partition vectors
+      partitions.push_back(data_size[0]);
+
+      // Initialise vector
+      const std::size_t process_num = MPI::process_number();
+      const std::pair<std::size_t, std::size_t>
+        local_range(partitions[process_num], partitions[process_num + 1]);
+      x.resize(local_range);
+    }
+    else
+      x.resize(data_size[0]);
+  }
+  else if (x.size() != data_size[0])
+  {
+    dolfin_error("HDF5File.cpp",
+                 "read vector from file",
+                 "Size mis-match between vector in file and input vector");
+  }
+
+  // Get local range
+  const std::pair<std::size_t, std::size_t> local_range = x.local_range();
+
+  // Read data from file
+  std::vector<double> data;
+  HDF5Interface::read_dataset(hdf5_file_id, dataset_name, local_range, data);
+
+  // Set data
+  x.set_local(data);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write(const Mesh& mesh, const std::string name)
@@ -195,6 +265,16 @@ void HDF5File::write(const Mesh& mesh, std::size_t cell_dim,
     dolfin_assert(global_size[0] == mesh.size_global(cell_dim));
     write_data(topology_dataset, topological_data, global_size);
 
+    // For cells, write the global cell index
+    if(cell_dim == mesh.topology().dim())
+    {
+      const std::string cell_index_dataset = name + "/cell_indices";
+      global_size.pop_back();
+      const std::vector<std::size_t>& cells =
+        mesh.topology().global_indices(mesh.topology().dim());
+      write_data(cell_index_dataset, cells, global_size);
+    }
+
     // Add cell type attribute
     HDF5Interface::add_attribute(hdf5_file_id, topology_dataset, "celltype",
                     CellType::type2string((CellType::Type)cell_dim));
@@ -217,7 +297,7 @@ void HDF5File::write(const MeshFunction<std::size_t>& meshfunction,
 }
 //-----------------------------------------------------------------------------
 void HDF5File::read(MeshFunction<std::size_t>& meshfunction,
-                    const std::string name)
+                    const std::string name) const
 {
   read_mesh_function(meshfunction, name);
 }
@@ -228,7 +308,8 @@ void HDF5File::write(const MeshFunction<int>& meshfunction,
   write_mesh_function(meshfunction, name);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::read(MeshFunction<int>& meshfunction, const std::string name)
+void HDF5File::read(MeshFunction<int>& meshfunction,
+                    const std::string name) const
 {
   read_mesh_function(meshfunction, name);
 }
@@ -239,7 +320,8 @@ void HDF5File::write(const MeshFunction<double>& meshfunction,
   write_mesh_function(meshfunction, name);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::read(MeshFunction<double>& meshfunction, const std::string name)
+void HDF5File::read(MeshFunction<double>& meshfunction,
+                    const std::string name) const
 {
   read_mesh_function(meshfunction, name);
 }
@@ -259,7 +341,8 @@ void HDF5File::write(const MeshFunction<bool>& meshfunction,
   write_mesh_function(mf, name);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::read(MeshFunction<bool>& meshfunction, const std::string name)
+void HDF5File::read(MeshFunction<bool>& meshfunction,
+                    const std::string name) const
 {
   const Mesh& mesh = *meshfunction.mesh();
   const std::size_t cell_dim = meshfunction.dim();
@@ -274,7 +357,7 @@ void HDF5File::read(MeshFunction<bool>& meshfunction, const std::string name)
 //-----------------------------------------------------------------------------
 template <typename T>
 void HDF5File::read_mesh_function(MeshFunction<T>& meshfunction,
-                                  const std::string mesh_name)
+                                  const std::string mesh_name) const
 {
   const Mesh& mesh = *meshfunction.mesh();
 
@@ -552,7 +635,7 @@ void HDF5File::write(const MeshValueCollection<std::size_t>& mesh_values,
 }
 //-----------------------------------------------------------------------------
 void HDF5File::read(MeshValueCollection<std::size_t>& mesh_values,
-                    const std::string name)
+                    const std::string name) const
 {
   read_mesh_value_collection(mesh_values, name);
 }
@@ -564,7 +647,7 @@ void HDF5File::write(const MeshValueCollection<double>& mesh_values,
 }
 //-----------------------------------------------------------------------------
 void HDF5File::read(MeshValueCollection<double>& mesh_values,
-                    const std::string name)
+                    const std::string name) const
 {
   read_mesh_value_collection(mesh_values, name);
 }
@@ -572,10 +655,6 @@ void HDF5File::read(MeshValueCollection<double>& mesh_values,
 void HDF5File::write(const MeshValueCollection<bool>& mesh_values,
                      const std::string name)
 {
-  //  dolfin_error("HDF5File.cpp",
-  //               "write bool MeshValueCollection",
-  //               "Not implemented yet");
-
   // HDF5 does not implement bool, use int and copy
 
   MeshValueCollection<int> mvc_int(mesh_values.mesh(), mesh_values.dim());
@@ -593,12 +672,8 @@ void HDF5File::write(const MeshValueCollection<bool>& mesh_values,
 }
 //-----------------------------------------------------------------------------
 void HDF5File::read(MeshValueCollection<bool>& mesh_values,
-                    const std::string name)
+                    const std::string name) const
 {
-  //  dolfin_error("HDF5File.cpp",
-  //               "read bool MeshValueCollection",
-  //               "Not implemented yet");
-
   // HDF5 does not implement bool, use int and copy
 
   MeshValueCollection<int> mvc_int(mesh_values.mesh(), mesh_values.dim());
@@ -651,7 +726,7 @@ void HDF5File::write_mesh_value_collection(const MeshValueCollection<T>& mesh_va
 //-----------------------------------------------------------------------------
 template <typename T>
 void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
-                                          const std::string name)
+                                          const std::string name) const
 {
   dolfin_assert(hdf5_file_open);
   mesh_vc.clear();
@@ -675,12 +750,14 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
                  "open MeshValueCollection dataset",
                  "Dataset \"%s\" not found in file", values_name.c_str());
   }
+
   if (!HDF5Interface::has_dataset(hdf5_file_id, entities_name))
   {
     dolfin_error("HDF5File.cpp",
                  "open MeshValueCollection dataset",
                  "Dataset \"%s\" not found in file", entities_name.c_str());
   }
+
   if (!HDF5Interface::has_dataset(hdf5_file_id, cells_name))
   {
     dolfin_error("HDF5File.cpp",
@@ -867,78 +944,10 @@ void HDF5File::read_mesh_value_collection(MeshValueCollection<T>& mesh_vc,
   }
 }
 //-----------------------------------------------------------------------------
-void HDF5File::read(GenericVector& x, const std::string dataset_name,
-                    const bool use_partition_from_file)
+void HDF5File::read(Mesh& input_mesh, const std::string mesh_name) const
 {
-  dolfin_assert(hdf5_file_open);
+  Timer t("HDF5: read mesh");
 
-  // Check for data set exists
-  if (!HDF5Interface::has_dataset(hdf5_file_id, dataset_name))
-    error("Data set with name \"%s\" does not exist", dataset_name.c_str());
-
-  // Get dataset rank
-  const std::size_t rank = HDF5Interface::dataset_rank(hdf5_file_id,
-                                                       dataset_name);
-  dolfin_assert(rank == 1);
-
-  // Get global dataset size
-  const std::vector<std::size_t> data_size
-      = HDF5Interface::get_dataset_size(hdf5_file_id, dataset_name);
-
-  // Check that rank is 1
-  dolfin_assert(data_size.size() == 1);
-
-  // Check input vector, and re-size if not already sized
-  if (x.size() == 0)
-  {
-    // Resize vector
-    if (use_partition_from_file)
-    {
-      // Get partition from file
-      std::vector<std::size_t> partitions;
-      HDF5Interface::get_attribute(hdf5_file_id, dataset_name, "partition",
-                                   partitions);
-
-      // Check that number of MPI processes matches partitioning
-      if (MPI::num_processes() != partitions.size())
-      {
-        dolfin_error("HDF5File.cpp",
-                     "read vector from file",
-                     "Different number of processes used when writing. Cannot restore partitioning");
-      }
-
-      // Add global size at end of partition vectors
-      partitions.push_back(data_size[0]);
-
-      // Initialise vector
-      const std::size_t process_num = MPI::process_number();
-      const std::pair<std::size_t, std::size_t>
-        local_range(partitions[process_num], partitions[process_num + 1]);
-      x.resize(local_range);
-    }
-    else
-      x.resize(data_size[0]);
-  }
-  else if (x.size() != data_size[0])
-  {
-    dolfin_error("HDF5File.cpp",
-                 "read vector from file",
-                 "Size mis-match between vector in file and input vector");
-  }
-
-  // Get local range
-  const std::pair<std::size_t, std::size_t> local_range = x.local_range();
-
-  // Read data from file
-  std::vector<double> data;
-  HDF5Interface::read_dataset(hdf5_file_id, dataset_name, local_range, data);
-
-  // Set data
-  x.set_local(data);
-}
-//-----------------------------------------------------------------------------
-void HDF5File::read(Mesh& input_mesh, const std::string mesh_name)
-{
   dolfin_assert(hdf5_file_open);
 
   const std::string topology_name = mesh_name + "/topology";
@@ -957,16 +966,6 @@ void HDF5File::read(Mesh& input_mesh, const std::string mesh_name)
                  "read coordinates dataset",
                  "Dataset \"%s\" not found", coordinates_name.c_str());
   }
-
-  read_mesh_repartition(input_mesh, coordinates_name,
-                                   topology_name);
-}
-//-----------------------------------------------------------------------------
-void HDF5File::read_mesh_repartition(Mesh& input_mesh,
-                                     const std::string coordinates_name,
-                                     const std::string topology_name)
-{
-  Timer t("HDF5: read mesh");
 
   // Structure to store local mesh
   LocalMeshData mesh_data;
@@ -1015,9 +1014,19 @@ void HDF5File::read_mesh_repartition(Mesh& input_mesh,
   HDF5Interface::read_dataset(hdf5_file_id, topology_name, cell_range,
                               topology_data);
 
+  // Look for cell indices in dataset, and use if available
   mesh_data.global_cell_indices.reserve(num_local_cells);
-  for (std::size_t i = 0; i < num_local_cells; i++)
-    mesh_data.global_cell_indices.push_back(cell_range.first + i);
+  const std::string cell_indices_name = mesh_name + "/cell_indices";
+  if(HDF5Interface::has_dataset(hdf5_file_id, cell_indices_name))
+  {
+    HDF5Interface::read_dataset(hdf5_file_id, cell_indices_name,
+                                cell_range, mesh_data.global_cell_indices);
+  }
+  else
+  {
+    for (std::size_t i = 0; i < num_local_cells; i++)
+      mesh_data.global_cell_indices.push_back(cell_range.first + i);
+  }
 
   // Copy to boost::multi_array
   mesh_data.cell_vertices.resize(boost::extents[num_local_cells][num_vertices_per_cell]);
