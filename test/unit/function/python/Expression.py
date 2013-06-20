@@ -91,6 +91,11 @@ class Eval(unittest.TestCase):
           V2 = FunctionSpace(mesh, 'CG', 2)
           g0 = interpolate(f2, V=V2)
           g1 = project(f2, V=V2)
+
+          # Update ghost values
+          g0.update()
+          g1.update()
+
           u3 = f2(x)
           u4 = g0(x)
           u5 = g1(x)
@@ -325,7 +330,7 @@ class Instantiation(unittest.TestCase):
           e1 = Expression("sin(x[0])*std::cos(x[1])")
           self.assertAlmostEqual(assemble(e0*dx, mesh=mesh), \
                                  assemble(e1*dx, mesh=mesh))
-     
+
      def test_generic_function_attributes(self):
           tc = Constant(2.0)
           te = Expression("value", value=tc)
@@ -345,7 +350,7 @@ class Instantiation(unittest.TestCase):
           e1 = Expression(["2*t", "-t"], t=1.0)
           e2 = Expression("t", t=te)
           e3 = Expression("t", t=tf)
-          
+
           self.assertAlmostEqual(assemble(inner(e0,e0)*dx, mesh=mesh), \
                                  assemble(inner(e1,e1)*dx, mesh=mesh))
 
@@ -358,13 +363,13 @@ class Instantiation(unittest.TestCase):
           self.assertAlmostEqual(assemble(inner(e0,e0)*dx, mesh=mesh), \
                                  assemble(inner(e1,e1)*dx, mesh=mesh))
           tc.assign(5.0)
-          
+
           self.assertNotEqual(assemble(inner(e2,e2)*dx, mesh=mesh), \
                               assemble(inner(e3,e3)*dx, mesh=mesh))
 
           self.assertAlmostEqual(assemble(e0[0]*dx, mesh=mesh), \
                                  assemble(2*e2*dx, mesh=mesh))
-          
+
           e2.t = e3.t
 
           self.assertEqual(assemble(inner(e2,e2)*dx, mesh=mesh), \
@@ -377,7 +382,7 @@ class Instantiation(unittest.TestCase):
           # Test non-scalar GenericFunction
           f2 = Function(V*V)
           e2.t = f2
-          
+
           self.assertRaises(RuntimeError, lambda : e2(0, 0))
 
           # Test self assignment
@@ -388,16 +393,16 @@ class Instantiation(unittest.TestCase):
           self.assertTrue("value" in te.user_parameters)
           te.user_parameters["value"] = Constant(5.0)
           self.assertEqual(te(0.0), 5.0)
-          
+
           te.user_parameters.update(dict(value=Constant(3.0)))
           self.assertEqual(te(0.0), 3.0)
-          
+
           te.user_parameters.update([("value", Constant(4.0))])
           self.assertEqual(te(0.0), 4.0)
-          
+
           # Test wrong assignment
           self.assertRaises(TypeError, lambda : te.user_parameters.__setitem__("value", 1.0))
           self.assertRaises(KeyError, lambda : te.user_parameters.__setitem__("values", 1.0))
-          
+
 if __name__ == "__main__":
     unittest.main()
