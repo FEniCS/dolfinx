@@ -26,7 +26,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-08
-// Last changed: 2013-05-23
+// Last changed: 2013-06-21
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -56,7 +56,7 @@ namespace dolfin
   class MeshEntity;
   class Point;
   class SubDomain;
-
+  class BoundingBoxTree;
 
   /// A _Mesh_ consists of a set of connected and numbered mesh entities.
   ///
@@ -330,6 +330,15 @@ namespace dolfin
     /// Get mesh (sub)domains.
     const MeshDomains& domains() const
     { return _domains; }
+
+    /// Get bounding box tree for mesh. The bounding box tree is
+    /// initialized to an empty tree upon the first call to this
+    /// function. The bounding box tree can be used to compute
+    /// collisions between the mesh and other objects. It is the
+    /// responsibility of the caller to actually build and use the
+    /// tree. It is stored as a (mutable) member of the mesh to
+    /// enable sharing of the bounding box tree data structure.
+    boost::shared_ptr<BoundingBoxTree> bounding_box_tree();
 
     /// Get intersection operator.
     ///
@@ -809,6 +818,12 @@ namespace dolfin
 
     // Auxiliary mesh data
     MeshData _data;
+
+    // Bounding box tree used to compute collisions between the mesh
+    // and other objects. The tree is initialized to a zero pointer
+    // and is allocated (to an empty tree) when bounding_box_tree()
+    // is called.
+    mutable boost::shared_ptr<BoundingBoxTree> _tree;
 
     // Cell type
     CellType* _cell_type;

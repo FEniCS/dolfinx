@@ -26,7 +26,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-09
-// Last changed: 2013-04-18
+// Last changed: 2013-06-21
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Array.h>
@@ -37,6 +37,7 @@
 #include <dolfin/generation/CSGMeshGenerator.h>
 #include <dolfin/io/File.h>
 #include <dolfin/log/log.h>
+#include <dolfin/geometry/BoundingBoxTree.h>
 #include "BoundaryMesh.h"
 #include "Cell.h"
 #include "Facet.h"
@@ -503,6 +504,16 @@ Mesh::closest_point_and_cell(const Point & point) const
 double Mesh::distance(const Point& point) const
 {
   return _intersection_operator.distance(point);
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<BoundingBoxTree> Mesh::bounding_box_tree()
+{
+  // Allocate tree if necessary
+  if (!_tree)
+    _tree.reset(new BoundingBoxTree());
+
+  dolfin_assert(_tree);
+  return _tree;
 }
 //-----------------------------------------------------------------------------
 IntersectionOperator& Mesh::intersection_operator()
