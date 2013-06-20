@@ -50,7 +50,7 @@ namespace dolfin
     /// Constructor. file_mode should "a" (append), "w" (write) ot "r"
     /// (read).
     HDF5File(const std::string filename, const std::string file_mode,
-             bool use_mpiio = true);
+             bool use_mpiio=true);
 
     /// Destructor
     ~HDF5File();
@@ -60,7 +60,7 @@ namespace dolfin
 
     /// Read vector from file
     void read(GenericVector& x, const std::string dataset_name,
-              const bool use_partition_from_file = true);
+              const bool use_partition_from_file = true) const;
 
 
     /// Write Mesh to file in a format suitable for re-reading
@@ -72,7 +72,7 @@ namespace dolfin
                const std::string name);
 
     /// Read Mesh from file
-    void read(Mesh& mesh, const std::string name);
+    void read(Mesh& mesh, const std::string name) const;
 
     /// Write MeshFunction to file in a format suitable for re-reading
     void write(const MeshFunction<std::size_t>& meshfunction,
@@ -89,17 +89,19 @@ namespace dolfin
     void write(const MeshFunction<bool>& meshfunction, const std::string name);
 
     /// Read MeshFunction from file
-    void read(MeshFunction<std::size_t>& meshfunction, const std::string name);
+    void read(MeshFunction<std::size_t>& meshfunction,
+              const std::string name) const;
 
     /// Read MeshFunction from file
-    void read(MeshFunction<int>& meshfunction, const std::string name);
+    void read(MeshFunction<int>& meshfunction, const std::string name) const;
 
     /// Read MeshFunction from file
-    void read(MeshFunction<double>& meshfunction, const std::string name);
+    void read(MeshFunction<double>& meshfunction,
+              const std::string name) const;
 
     /// Read MeshFunction from file
-    void read(MeshFunction<bool>& meshfunction, const std::string name);
-
+    void read(MeshFunction<bool>& meshfunction,
+              const std::string name) const;
 
     /// Write MeshValueCollection to file
     void write(const MeshValueCollection<std::size_t>& mesh_values,
@@ -115,16 +117,15 @@ namespace dolfin
 
     /// Read MeshValueCollection from file
     void read(MeshValueCollection<std::size_t>& mesh_values,
-              const std::string name);
+              const std::string name) const;
 
     /// Read MeshValueCollection from file
     void read(MeshValueCollection<double>& mesh_values,
-              const std::string name);
+              const std::string name) const;
 
     /// Read MeshValueCollection from file
     void read(MeshValueCollection<bool>& mesh_values,
-              const std::string name);
-
+              const std::string name) const;
 
     /// Check if dataset exists in HDF5 file
     bool has_dataset(const std::string dataset_name) const;
@@ -146,7 +147,7 @@ namespace dolfin
     // Read a MeshFunction from file
     template <typename T>
     void read_mesh_function(MeshFunction<T>& meshfunction,
-                            const std::string name);
+                            const std::string name) const;
 
     // Write a MeshValueCollection to file
     template <typename T>
@@ -156,7 +157,7 @@ namespace dolfin
     // Read a MeshValueCollection from file
     template <typename T>
     void read_mesh_value_collection(MeshValueCollection<T>& mesh_values,
-                                    const std::string name);
+                                    const std::string name) const;
 
     // Write contiguous data to HDF5 data set. Data is flattened into
     // a 1D array, e.g. [x0, y0, z0, x1, y1, z1] for a vector in 3D
@@ -186,7 +187,6 @@ namespace dolfin
                             const std::vector<std::size_t> global_size)
   {
     dolfin_assert(hdf5_file_open);
-
     dolfin_assert(global_size.size() > 0);
 
     // Get number of 'items'
