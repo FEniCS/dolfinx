@@ -200,8 +200,8 @@ namespace dolfin
     std::pair<std::size_t, std::size_t> range(offset,
                                               offset + num_local_items);
 
-    const bool chunking = parameters["chunking"];
     // Write data to HDF5 file
+    const bool chunking = parameters["chunking"];
     HDF5Interface::write_dataset(hdf5_file_id, dataset_name, data,
                                  range, global_size, mpi_io, chunking);
   }
