@@ -53,8 +53,10 @@ cpp_to_python = {
 "unsigned int": "int",
 "uint": "int",
 "dolfin::uint": "int",
-"uint*": "numpy.array(int)",
-"dolfin::uint*": "numpy.array(int)",
+"std::size_t": "int",
+"uint*": "numpy.array(uint)",
+"dolfin::uint*": "numpy.array(uint)",
+"std::size_t*": "numpy.array(uintp)",
 
 "double": "float",
 "double*": "numpy.array(float)",
