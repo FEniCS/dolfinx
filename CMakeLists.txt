@@ -764,61 +764,52 @@ if (CPPUNIT_FOUND)
 endif()
 
 if (DOLFIN_ENABLE_TESTING)
-  # Copy files needed to run tests in build directory
-  file(COPY data demo test DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-    FILES_MATCHING
-    PATTERN "*.py"
-    PATTERN "*.h"
-    PATTERN "*.cpp"
-    PATTERN "*.ufl"
-    PATTERN "*.xml*"
-    PATTERN "*.off"
-    PATTERN "*.inp"
-    PATTERN "*.msh"
-    PATTERN "*.supp"
-    PATTERN "*.rst"
-    PATTERN "*.ele"
-    PATTERN "*.node"
-    PATTERN "*.grid"
-    PATTERN "*.edge"
-    PATTERN "CMakeFiles" EXCLUDE)
+
+  # Add target "run_memorytests" for running memory tests
+  add_custom_target(copy_data_test_demo
+    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data ${CMAKE_CURRENT_BINARY_DIR}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
   # Add target "run_memorytests" for running memory tests
   add_custom_target(run_memorytests
     COMMAND ${PYTHON_EXECUTABLE} "test.py"
+    DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/memory")
 
   # Add target "run_regressiontests" for running regression tests
   add_custom_target(run_regressiontests
     COMMAND ${PYTHON_EXECUTABLE} "test.py"
-    DEPENDS demo
+    DEPENDS copy_data_test_demo demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 
   # Add target "run_systemtests" for running system tests
   add_custom_target(run_systemtests
     COMMAND ${PYTHON_EXECUTABLE} "test.py"
+    DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/system")
 
   # Add target "run_unittests" for running unit tests
   add_custom_target(run_unittests
     COMMAND ${PYTHON_EXECUTABLE} "test.py"
-    DEPENDS test
+    DEPENDS copy_data_test_demo test
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit")
 
   # Add target "run_quicktest" for running only Python unit tests
   add_custom_target(run_quicktest
     COMMAND ${PYTHON_EXECUTABLE} test.py --only-python
+    DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit")
 
   # Add target "run_doctest" for running documentation tests
   add_custom_target(run_doctest
     COMMAND ${PYTHON_EXECUTABLE} test.py
+    DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/documentation")
 
   # Add target "runtests" for running all tests
   add_custom_target(runtests
     ${PYTHON_EXECUTABLE} "test.py"
-    DEPENDS demo test
+    DEPENDS copy_data_test_demo demo test
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
 endif()
 
