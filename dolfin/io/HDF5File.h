@@ -173,12 +173,6 @@ namespace dolfin
                     const std::vector<T>& data,
                     const std::vector<std::size_t> global_size);
 
-    // Reorder values into global order (used by XDMFFile when saving
-    // vertex data)
-    void reorder_values_by_global_indices(const Mesh& mesh,
-                                 std::vector<double>& data,
-                                 std::vector<std::size_t>& global_size) const;
-
     // HDF5 file descriptor/handle
     bool hdf5_file_open;
     hid_t hdf5_file_id;

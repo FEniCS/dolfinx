@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-06-01
-// Last changed: 2013-06-18
+// Last changed: 2013-06-21
 
 #ifdef HAS_HDF5
 
@@ -1239,13 +1239,6 @@ bool HDF5File::has_dataset(const std::string dataset_name) const
 {
   dolfin_assert(hdf5_file_open);
   return HDF5Interface::has_dataset(hdf5_file_id, dataset_name);
-}
-//-----------------------------------------------------------------------------
-void HDF5File::reorder_values_by_global_indices(const Mesh& mesh,
-                                 std::vector<double>& data,
-                                 std::vector<std::size_t>& global_size) const
-{
-  HDF5Utility::reorder_values_by_global_indices(mesh, data, global_size);
 }
 //-----------------------------------------------------------------------------
 
