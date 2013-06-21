@@ -18,7 +18,7 @@
 // Modified by Fredrik Valdmanis, 2011
 //
 // First added:  2009-07-02
-// Last changed: 2013-04-26
+// Last changed: 2013-06-21
 
 #ifndef __GLOBAL_PARAMETERS_H
 #define __GLOBAL_PARAMETERS_H
@@ -49,6 +49,10 @@ namespace dolfin
     static Parameters default_parameters()
     {
       Parameters p("dolfin");
+
+      // FIXME: Temporary parameter used while testing DOLFIN vs CGAL
+      // intersections in the function library.
+      p.add("use_cgal_intersection", true);
 
       // General
       p.add("timer_prefix", "");                             // Prefix for timer tasks
@@ -95,11 +99,11 @@ namespace dolfin
       allowed_partitioning_approaches.insert("PARTITION");
       allowed_partitioning_approaches.insert("REPARTITION");
       allowed_partitioning_approaches.insert("REFINE");
-      
+
       p.add("partitioning_approach",
             "PARTITION",
             allowed_partitioning_approaches);
-      
+
       #ifdef HAS_PARMETIS
       // Repartitioning parameter, determines how strongly to hold on to cells
       // when shifting between processes

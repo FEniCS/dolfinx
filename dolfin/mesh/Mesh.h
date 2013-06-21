@@ -332,13 +332,13 @@ namespace dolfin
     { return _domains; }
 
     /// Get bounding box tree for mesh. The bounding box tree is
-    /// initialized to an empty tree upon the first call to this
+    /// initialized and built upon the first call to this
     /// function. The bounding box tree can be used to compute
     /// collisions between the mesh and other objects. It is the
-    /// responsibility of the caller to actually build and use the
-    /// tree. It is stored as a (mutable) member of the mesh to
-    /// enable sharing of the bounding box tree data structure.
-    boost::shared_ptr<BoundingBoxTree> bounding_box_tree();
+    /// responsibility of the caller to use (and possibly rebuild) the
+    /// tree. It is stored as a (mutable) member of the mesh to enable
+    /// sharing of the bounding box tree data structure.
+    boost::shared_ptr<BoundingBoxTree> bounding_box_tree() const;
 
     /// Get intersection operator.
     ///
@@ -821,8 +821,7 @@ namespace dolfin
 
     // Bounding box tree used to compute collisions between the mesh
     // and other objects. The tree is initialized to a zero pointer
-    // and is allocated (to an empty tree) when bounding_box_tree()
-    // is called.
+    // and is allocated and built when bounding_box_tree() is called.
     mutable boost::shared_ptr<BoundingBoxTree> _tree;
 
     // Cell type

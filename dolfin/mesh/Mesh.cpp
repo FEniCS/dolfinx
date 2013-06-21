@@ -506,13 +506,15 @@ double Mesh::distance(const Point& point) const
   return _intersection_operator.distance(point);
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<BoundingBoxTree> Mesh::bounding_box_tree()
+boost::shared_ptr<BoundingBoxTree> Mesh::bounding_box_tree() const
 {
-  // Allocate tree if necessary
+  // Allocate and build tree if necessary
   if (!_tree)
+  {
     _tree.reset(new BoundingBoxTree());
+    _tree->build(*this);
+  }
 
-  dolfin_assert(_tree);
   return _tree;
 }
 //-----------------------------------------------------------------------------
