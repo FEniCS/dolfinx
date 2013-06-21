@@ -17,7 +17,7 @@
 //
 // Modified by Johan Hoffman 2007
 // Modified by Magnus Vikstrøm 2007
-// Modified by Garth N. Wells 2007-2011
+// Modified by Garth N. Wells 2007-2013
 // Modified by Niclas Jansson 2008
 // Modified by Kristoffer Selim 2008
 // Modified by Andre Massing 2009-2010
@@ -26,39 +26,37 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-08
-// Last changed: 2013-03-06
+// Last changed: 2013-05-23
 
 #ifndef __MESH_H
 #define __MESH_H
 
 #include <string>
 #include <utility>
-#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/Hierarchical.h>
 #include <dolfin/intersection/IntersectionOperator.h>
-#include <dolfin/log/log.h>
 #include <dolfin/ale/MeshDisplacement.h>
 #include "MeshData.h"
+#include "MeshDomains.h"
 #include "MeshGeometry.h"
 #include "MeshConnectivity.h"
 #include "MeshTopology.h"
-#include "MeshDomains.h"
-#include "SubDomain.h"
 
 namespace dolfin
 {
-  class CellType;
   class BoundaryMesh;
-  class GenericFunction;
+  class CellType;
+  class CSGGeometry;
   class Expression;
+  class GenericFunction;
   class LocalMeshData;
   class MeshEntity;
-  template <typename T> class MeshFunction;
+  class Point;
   class SubDomain;
-  class CSGGeometry;
+
 
   /// A _Mesh_ consists of a set of connected and numbered mesh entities.
   ///
@@ -138,7 +136,8 @@ namespace dolfin
     ///         The CSG geometry
     ///     resolution (std::size_t)
     ///         An integer specifying the mesh resolution
-    Mesh(boost::shared_ptr<const CSGGeometry> geometry, std::size_t resolution);
+    Mesh(boost::shared_ptr<const CSGGeometry> geometry,
+         std::size_t resolution);
 
     /// Destructor.
     ~Mesh();
@@ -160,7 +159,8 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    std::size_t num_vertices() const { return _topology.size(0); }
+    std::size_t num_vertices() const
+    { return _topology.size(0); }
 
     /// Get number of edges in mesh.
     ///
@@ -172,7 +172,8 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    std::size_t num_edges() const { return _topology.size(1); }
+    std::size_t num_edges() const
+    { return _topology.size(1); }
 
     /// Get number of faces in mesh.
     ///
@@ -184,7 +185,8 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    std::size_t num_faces() const { return _topology.size(2); }
+    std::size_t num_faces() const
+    { return _topology.size(2); }
 
     /// Get number of facets in mesh.
     ///
@@ -196,7 +198,8 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    std::size_t num_facets() const { return _topology.size(_topology.dim() - 1); }
+    std::size_t num_facets() const
+    { return _topology.size(_topology.dim() - 1); }
 
     /// Get number of cells in mesh.
     ///
@@ -208,7 +211,8 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    std::size_t num_cells() const { return _topology.size(_topology.dim()); }
+    std::size_t num_cells() const
+    { return _topology.size(_topology.dim()); }
 
     /// Get number of entities of given topological dimension.
     ///
@@ -224,7 +228,8 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    std::size_t num_entities(std::size_t d) const { return _topology.size(d); }
+    std::size_t num_entities(std::size_t d) const
+    { return _topology.size(d); }
 
     /// Get vertex coordinates.
     ///
@@ -236,10 +241,12 @@ namespace dolfin
     ///     .. note::
     ///
     ///         No example code available for this function.
-    std::vector<double>& coordinates() { return _geometry.x(); }
+    std::vector<double>& coordinates()
+    { return _geometry.x(); }
 
     /// Return coordinates of all vertices (const version).
-    const std::vector<double>& coordinates() const { return _geometry.x(); }
+    const std::vector<double>& coordinates() const
+    { return _geometry.x(); }
 
     /// Get cell connectivity.
     ///
@@ -349,10 +356,12 @@ namespace dolfin
     /// *Returns*
     ///     _CellType_
     ///         The cell type object associated with the mesh.
-    CellType& type() { dolfin_assert(_cell_type); return *_cell_type; }
+    CellType& type()
+    { dolfin_assert(_cell_type); return *_cell_type; }
 
     /// Get mesh cell type (const version).
-    const CellType& type() const { dolfin_assert(_cell_type); return *_cell_type; }
+    const CellType& type() const
+    { dolfin_assert(_cell_type); return *_cell_type; }
 
     /// Compute entities of given topological dimension.
     ///
@@ -437,11 +446,12 @@ namespace dolfin
     ///
     /// *Returns*
     ///     MeshDisplacement
-    ///         Displacement encapsulated in Expression subclass MeshDisplacement
+    ///         Displacement encapsulated in Expression subclass
+    ///         MeshDisplacement
     boost::shared_ptr<MeshDisplacement> move(BoundaryMesh& boundary);
 
-    /// Move coordinates of mesh according to adjacent mesh with common global
-    /// vertices.
+    /// Move coordinates of mesh according to adjacent mesh with
+    /// common global vertices.
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)
@@ -449,7 +459,8 @@ namespace dolfin
     ///
     /// *Returns*
     ///     MeshDisplacement
-    ///         Displacement encapsulated in Expression subclass MeshDisplacement
+    ///         Displacement encapsulated in Expression subclass
+    ///         MeshDisplacement
     boost::shared_ptr<MeshDisplacement> move(Mesh& mesh);
 
     /// Move coordinates of mesh according to displacement function.
@@ -477,7 +488,8 @@ namespace dolfin
     ///     harmonic_smoothing (bool)
     ///         Flag to turn on harmonics smoothing, default
     ///         value is true.
-    void smooth_boundary(std::size_t num_iterations=1, bool harmonic_smoothing=true);
+    void smooth_boundary(std::size_t num_iterations=1,
+                         bool harmonic_smoothing=true);
 
     /// Snap boundary vertices of mesh to match given sub domain.
     ///
@@ -488,7 +500,8 @@ namespace dolfin
     ///     harmonic_smoothing (bool)
     ///         Flag to turn on harmonics smoothing, default
     ///         value is true.
-    void snap_boundary(const SubDomain& sub_domain, bool harmonic_smoothing=true);
+    void snap_boundary(const SubDomain& sub_domain,
+                       bool harmonic_smoothing=true);
 
     /// Color the cells of the mesh such that no two neighboring cells
     /// share the same color. A colored mesh keeps a
@@ -502,7 +515,7 @@ namespace dolfin
     ///         "facet".
     ///
     /// *Returns*
-    ///     MeshFunction<std::size_t>
+    ///     std::vector<std::size_t>
     ///         The colors as a mesh function over the cells of the mesh.
     const std::vector<std::size_t>& color(std::string coloring_type) const;
 
@@ -517,9 +530,10 @@ namespace dolfin
     ///         specifying what relation makes two mesh entinties neighbors.
     ///
     /// *Returns*
-    ///     MeshFunction<std::size_t>
+    ///     std::vector<std::size_t>
     ///         The colors as a mesh function over entities of the mesh.
-    const std::vector<std::size_t>& color(std::vector<std::size_t> coloring_type) const;
+    const std::vector<std::size_t>&
+      color(std::vector<std::size_t> coloring_type) const;
 
     /// Compute all cells which are intersected by the given point.
     ///
@@ -630,8 +644,10 @@ namespace dolfin
     ///
     /// *Returns*
     ///     std::pair<_Point_, std::size_t>
-    ///         A pair consisting of the closest point and corresponding cell index.
-    std::pair<Point, std::size_t> closest_point_and_cell(const Point& point) const;
+    ///         A pair consisting of the closest point and corresponding
+    ///         cell index.
+    std::pair<Point, std::size_t>
+      closest_point_and_cell(const Point& point) const;
 
     /// Computes the distance between a given point and the mesh
     ///

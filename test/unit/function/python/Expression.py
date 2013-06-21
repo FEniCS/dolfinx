@@ -47,8 +47,10 @@ class Eval(unittest.TestCase):
 
           # Check usergeneration of name and label
           self.assertEqual(f0.name(), "f0")
+          self.assertEqual(str(f0), "f0")
           self.assertEqual(f0.label(), "My expression")
           self.assertEqual(f1.name(), "f1")
+          self.assertEqual(str(f1), "f1")
           self.assertEqual(f1.label(), "User defined expression")
 
           # Check outgeneration of name
@@ -243,6 +245,12 @@ class Instantiation(unittest.TestCase):
           def wrongDefaultType():
                Expression("a", a="1")
 
+          def wrongParameterNames():
+               Expression("str", str=1.0)
+
+          def wrongParameterNames():
+               Expression("user_parameters", user_parameters=1.0)
+
           self.assertRaises(TypeError, noAttributes)
           self.assertRaises(TypeError, noEvalAttribute)
           self.assertRaises(TypeError, wrongEvalAttribute)
@@ -375,6 +383,21 @@ class Instantiation(unittest.TestCase):
           # Test self assignment
           e2.t = e2
           self.assertRaises(RuntimeError, lambda : e2(0, 0))
+
+          # Test user_parameters assignment
+          self.assertTrue("value" in te.user_parameters)
+          te.user_parameters["value"] = Constant(5.0)
+          self.assertEqual(te(0.0), 5.0)
+          
+          te.user_parameters.update(dict(value=Constant(3.0)))
+          self.assertEqual(te(0.0), 3.0)
+          
+          te.user_parameters.update([("value", Constant(4.0))])
+          self.assertEqual(te(0.0), 4.0)
+          
+          # Test wrong assignment
+          self.assertRaises(TypeError, lambda : te.user_parameters.__setitem__("value", 1.0))
+          self.assertRaises(KeyError, lambda : te.user_parameters.__setitem__("values", 1.0))
           
 if __name__ == "__main__":
     unittest.main()

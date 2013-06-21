@@ -111,8 +111,8 @@ del _subdomain_mark_doc_string
 // Macro for declaring MeshFunctions
 //-----------------------------------------------------------------------------
 %define DECLARE_MESHFUNCTION(TYPE, TYPENAME)
-%feature("docstring") dolfin::MeshFunction::__getitem__ "Missing docstring";
-%feature("docstring") dolfin::MeshFunction::__setitem__ "Missing docstring";
+%feature("docstring") dolfin::MeshFunction::_getitem "Missing docstring";
+%feature("docstring") dolfin::MeshFunction::_setitem "Missing docstring";
 
 // Extend MeshFunction interface for get and set items
 %extend dolfin::MeshFunction<TYPE>

@@ -23,13 +23,16 @@ dolfin/ale/Poisson*D.h
 *.log
 
 # Install directory
-local/
+/local
+/local.*
 
-# SWIG generated file
+# SWIG generated files
 dolfin/swig/**/**/*.py
 dolfin/swig/**/**/*.h
 dolfin/swig/**/**/*.cc
 dolfin/swig/**/**/*.cxx
+dolfin/swig/**/**/module.i
+dolfin/swig/**/**/dependencies.txt
 swigimportinfo.py
 
 # Documentation
@@ -98,7 +101,8 @@ Makefile
 install_manifest.txt
 
 # Local build files
-build/
+/build
+/build.*/
 
 # OS X files
 .DS_Store

@@ -70,7 +70,7 @@ bool Facet::exterior() const
 }
 //-----------------------------------------------------------------------------
 std::pair<const Cell, const Cell>
-Facet::adjacent_cells(const MeshFunction<std::size_t>* facet_orientation) const
+Facet::adjacent_cells(const std::vector<std::size_t>* facet_orientation) const
 {
   dolfin_assert(num_entities(dim() + 1) == 2);
 
@@ -80,16 +80,16 @@ Facet::adjacent_cells(const MeshFunction<std::size_t>* facet_orientation) const
   const std::size_t c1 = entities(D)[1];
 
   // Normal ordering
-  if (!facet_orientation || (*facet_orientation)[*this] == c0)
+  if (!facet_orientation || (*facet_orientation)[this->index()] == c0)
     return std::make_pair(Cell(mesh(), c0), Cell(mesh(), c1));
 
   // Sanity check
-  if ((*facet_orientation)[*this] != c1)
+  if ((*facet_orientation)[this->index()] != c1)
   {
     dolfin_error("Facet.cpp",
                  "extract adjacent cells of facet",
                  "Illegal facet orientation specified, cell %d is not a neighbor of facet %d",
-         (*facet_orientation)[*this], index());
+                 (*facet_orientation)[this->index()], index());
   }
 
   // Opposite ordering

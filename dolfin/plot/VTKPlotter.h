@@ -61,96 +61,96 @@ namespace dolfin
   /// Parameters can be adjusted at any time and will take effect on the next
   /// call to the plot() method. The following parameters exist:
   ///
-  /// ============= ============ =============== =================================
-  ///  Name          Value type   Default value              Description
-  /// ============= ============ =============== =================================
-  ///  mode           String        "auto"        For vector valued functions,
-  ///                                             this parameter may be set to
-  ///                                             "glyphs" or "displacement".
-  ///                                             Scalars may be set to "warp" in
-  ///                                             2D only. A value of "color" is
-  ///                                             valid in all cases; for vectors,
-  ///                                             the norms are used. See below for
-  ///                                             a summary of default modes,
-  ///                                             used when set to "auto".
-  ///  interactive    Boolean     False           Enable/disable interactive mode
-  ///                                             for the rendering window.
-  ///                                             For repeated plots of the same
-  ///                                             object (animated plots), this
-  ///                                             parameter should be set to false.
-  ///  wireframe      Boolean     True for        Enable/disable wireframe
-  ///                             meshes, else    rendering of the object.
-  ///                             false
-  ///  title          String      Inherited       The title of the rendering
-  ///                             from the        window
-  ///                             name/label of
-  ///                             the object
-  ///  scale          Double      1.0             Adjusts the scaling of the
-  ///                                             warping and glyphs
-  ///  scalarbar      Boolean     False for       Hide/show the colormapping bar
-  ///                             meshes, else
-  ///                             true
-  ///  axes           Boolean     False           Show X-Y-Z axes.
+  /// ============== ============ ================ ====================================
+  ///  Name           Value type   Default value              Description
+  /// ============== ============ ================ ====================================
+  ///  mode            String        "auto"         For vector valued functions,
+  ///                                               this parameter may be set to
+  ///                                               "glyphs" or "displacement".
+  ///                                               Scalars may be set to "warp" in
+  ///                                               2D only. A value of "color" is
+  ///                                               valid in all cases; for vectors,
+  ///                                               the norms are used. See below for
+  ///                                               a summary of default modes,
+  ///                                               used when set to "auto".
+  ///  interactive     Boolean     False            Enable/disable interactive mode
+  ///                                               for the rendering window.
+  ///                                               For repeated plots of the same
+  ///                                               object (animated plots), this
+  ///                                               parameter should be set to false.
+  ///  wireframe       Boolean     True for         Enable/disable wireframe
+  ///                              meshes, else     rendering of the object.
+  ///                              false
+  ///  title           String      Inherited        The title of the rendering
+  ///                              from the         window
+  ///                              name/label of
+  ///                              the object
+  ///  scale           Double      1.0              Adjusts the scaling of the
+  ///                                               warping and glyphs
+  ///  scalarbar       Boolean     False for        Hide/show the colormapping bar
+  ///                              meshes, else
+  ///                              true
+  ///  axes            Boolean     False            Show X-Y-Z axes.
   ///
-  ///  rescale        Boolean     True            Enable/disable recomputation
-  ///                                             of the scalar to color mapping
-  ///                                             on every iteration when performing
-  ///                                             repeated/animated plots of the same
-  ///                                             data. If both range_min and
-  ///                                             range_max are set, this parameter
-  ///                                             is ignored.
-  ///  range_min      Double                      Set lower range of data values.
-  ///                                             Disables automatic (re-)computation
-  ///                                             of the lower range.
-  ///  range_max      Double                      Set upper range of data values.
-  ///                                             Disables automatic (re-)computation
-  ///                                             of the upper range.
-  ///  elevate        Double      -65.0 for 2D    Set camera elevation.
-  ///                             warped scalars,
-  ///                             0.0 otherwise
-  ///  prefix         String      "dolfin_plot_"  Filename prefix used when
-  ///                                             saving plots to file in
-  ///                                             interactive mode. An integer
-  ///                                             counter is appended after the
-  ///                                             prefix.
-  ///  helptext       Boolean     True            Enable/disable the hover-over
-  ///                                             help-text in interactive
-  ///                                             mode
-  ///  window_width   Integer     600             The width of the plotting window
-  ///                                             in pixels
-  ///  window_height  Integer     400             The height of the plotting window
-  ///                                             in pixels
-  ///  tile_windows   Boolean     True            Automatically tile plot windows.
+  ///  rescale         Boolean     True             Enable/disable recomputation
+  ///                                               of the scalar to color mapping
+  ///                                               on every iteration when performing
+  ///                                               repeated/animated plots of the same
+  ///                                               data. If both range_min and
+  ///                                               range_max are set, this parameter
+  ///                                               is ignored.
+  ///  range_min       Double                       Set lower range of data values.
+  ///                                               Disables automatic (re-)computation
+  ///                                               of the lower range.
+  ///  range_max       Double                       Set upper range of data values.
+  ///                                               Disables automatic (re-)computation
+  ///                                               of the upper range.
+  ///  elevate         Double      -65.0 for 2D     Set camera elevation.
+  ///                              warped scalars,
+  ///                              0.0 otherwise
+  ///  prefix          String      "dolfin_plot_"   Filename prefix used when
+  ///                                               saving plots to file in
+  ///                                               interactive mode. An integer
+  ///                                               counter is appended after the
+  ///                                               prefix.
+  ///  helptext        Boolean     True             Enable/disable the hover-over
+  ///                                               help-text in interactive
+  ///                                               mode
+  ///  window_width    Integer     600              The width of the plotting window
+  ///                                               in pixels
+  ///  window_height   Integer     400              The height of the plotting window
+  ///                                               in pixels
+  ///  tile_windows    Boolean     True             Automatically tile plot windows.
   ///
-  ///  key            String                      Key (id) of the plot window, used to
-  ///                                             decide if a new plotter should be
-  ///                                             created or a current one updated
-  ///                                             when called through the static
-  ///                                             plot() interface (in plot.h).
-  ///                                             If not set, the object's unique
-  ///                                             id (Variable::id) is used.
-  ///  input_keys     String      ""              Synthesize key presses, as if these
-  ///                                             keys are pressed by the user in
-  ///                                             the plot window.
-  ///                                             For example: "ww++m" shows the data
-  ///                                             as large points on a wireframe
-  ///                                             mesh.
-  ///  hide_above     Double                      If either of these are set, scalar
-  ///  hide_below     Double                      values above or below will not be
-  ///                                             shown in the plot.
-  /// ============= ============ =============== =================================
+  ///  key             String                       Key (id) of the plot window, used to
+  ///                                               decide if a new plotter should be
+  ///                                               created or a current one updated
+  ///                                               when called through the static
+  ///                                               plot() interface (in plot.h).
+  ///                                               If not set, the object's unique
+  ///                                               id (Variable::id) is used.
+  ///  input_keys      String      ""               Synthesize key presses, as if these
+  ///                                               keys are pressed by the user in
+  ///                                               the plot window.
+  ///                                               For example: "ww++m" shows the data
+  ///                                               as large points on a wireframe
+  ///                                               mesh.
+  ///  hide_above      Double                       If either of these are set, scalar
+  ///  hide_below      Double                       values above or below will not be
+  ///                                               shown in the plot.
+  /// ============== ============ ================ ====================================
   ///
   /// The default visualization mode for the different plot types are as follows:
   ///
-  /// =========================  ============================ ===================
+  /// =========================  ============================ =====================
   ///  Plot type                  Default visualization mode   Alternatives
-  /// =========================  ============================ ===================
-  ///  Meshes                     Wireframe rendering           None
-  ///  2D scalar functions        Scalar warping                Color mapping
-  ///  3D scalar functions        Color mapping                 None
-  ///  2D/3D vector functions     Glyphs (vector arrows)        Displacements,
-  ///                                                           Color mapping (norm)
-  /// =========================  ============================ ===================
+  /// =========================  ============================ =====================
+  ///  Meshes                     Wireframe rendering          None
+  ///  2D scalar functions        Scalar warping               Color mapping
+  ///  3D scalar functions        Color mapping                None
+  ///  2D/3D vector functions     Glyphs (vector arrows)       Displacements,
+  ///                                                          Color mapping (norm)
+  /// =========================  ============================ =====================
   ///
   /// Expressions and boundary conditions are also visualized according to the
   /// above table.
@@ -253,8 +253,8 @@ namespace dolfin
 
     void add_polygon(const Array<double>& points);
 
-    // Make all plot windows interactive. If really is set, the interactive
-    // mode is entered even if 'Q' has been pressed.
+    /// Make all plot windows interactive. If really is set, the interactive
+    /// mode is entered even if 'Q' has been pressed.
     static void all_interactive(bool really=false);
 
     enum Modifiers

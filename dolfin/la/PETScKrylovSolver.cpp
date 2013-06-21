@@ -38,9 +38,8 @@
 #include "PETScPreconditioner.h"
 #include "PETScUserPreconditioner.h"
 #include "PETScVector.h"
+#include "VectorSpaceBasis.h"
 #include "PETScKrylovSolver.h"
-
-#include <dolfin/common/timing.h>
 
 using namespace dolfin;
 
@@ -233,7 +232,7 @@ void PETScKrylovSolver::set_operators(const boost::shared_ptr<const PETScBaseMat
   dolfin_assert(_P);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_nullspace(const std::vector<const GenericVector*> nullspace)
+void PETScKrylovSolver::set_nullspace(const VectorSpaceBasis& nullspace)
 {
   // Copy vectors
   for (std::size_t i = 0; i < nullspace.size(); ++i)
@@ -262,6 +261,11 @@ void PETScKrylovSolver::set_nullspace(const std::vector<const GenericVector*> nu
   // Set null space
   dolfin_assert(_ksp);
   KSPSetNullSpace(*_ksp, *petsc_nullspace);
+}
+//-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_transpose_nullspace(const VectorSpaceBasis& transpose_nullspace)
+{
+  return; // PETSc doesn't need the transpose nullspace; we've orthogonalised the RHS separately
 }
 //-----------------------------------------------------------------------------
 const PETScBaseMatrix& PETScKrylovSolver::get_operator() const
@@ -537,7 +541,7 @@ void PETScKrylovSolver::write_report(int num_iterations,
 {
   // Get name of solver and preconditioner
   PC pc;
-  #if PETSC_VERSION_RELEASE
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 3
   const KSPType ksp_type;
   const PCType pc_type;
   #else
@@ -551,7 +555,7 @@ void PETScKrylovSolver::write_report(int num_iterations,
   // If using additive Schwarz or block Jacobi, get 'sub' method which is
   // applied to each block
   const std::string pc_type_str = pc_type;
-  #if PETSC_VERSION_RELEASE
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 3
   const KSPType sub_ksp_type;
   const PCType sub_pc_type;
   #else

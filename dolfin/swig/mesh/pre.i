@@ -22,7 +22,7 @@
 // Modified by Johan Hake 2008-2011
 //
 // First added:  2006-09-20
-// Last changed: 2011-11-13
+// Last changed: 2013-05-22
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (pre)
@@ -72,7 +72,6 @@ ALL_VALUES(dolfin::MeshFunction<int>, int)
 ALL_VALUES(dolfin::MeshFunction<bool>, bool)
 ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
 
-
 //-----------------------------------------------------------------------------
 // Ignore methods that is superseded by extended versions
 //-----------------------------------------------------------------------------
@@ -107,6 +106,8 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
 %ignore dolfin::SubsetIterator::operator->;
 %ignore dolfin::SubsetIterator::operator[];
 %ignore dolfin::MeshDomains::operator=;
+%ignore dolfin::MeshDomains::markers(std::size_t) const;
+%ignore dolfin::MeshData::array(std::string) const;
 
 //-----------------------------------------------------------------------------
 // Map increment, decrease and dereference operators for iterators
@@ -241,6 +242,24 @@ MESHENTITYITERATORBASE(Vertex, vertices)
 
 // Include shared_ptr declaration of MeshValueCollection
 %shared_ptr(dolfin::MeshValueCollection<TYPE>)
+
+//-----------------------------------------------------------------------------
+// Ignore MeshFunction constructors that take a Mesh reference
+//-----------------------------------------------------------------------------
+%ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&);
+%ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, std::size_t);
+%ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, std::size_t, const TYPE&);
+%ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, const std::string);
+%ignore dolfin::MeshFunction<TYPE>::MeshFunction(const Mesh&, const MeshValueCollection<T>&);
+
+%ignore dolfin::MeshFunction<TYPE>::init(const Mesh&, std::size_t);
+%ignore dolfin::MeshFunction<TYPE>::init(const Mesh&, std::size_t, const T&);
+
+//-----------------------------------------------------------------------------
+// Ignore MeshValueCollection constructors that take a Mesh reference
+//-----------------------------------------------------------------------------
+%ignore dolfin::MeshValueCollection<TYPE>::MeshValueCollection(const Mesh&, std::size_t);
+
 %enddef
 
 FORWARD_DECLARE_MESHFUNCTIONS(unsigned int, UInt)

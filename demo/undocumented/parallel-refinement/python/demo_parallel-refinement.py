@@ -20,35 +20,29 @@
 
 from dolfin import *
 
-if(MPI.num_processes() == 1):
-    print "This demo is intended to be run in parallel (using mpirun)"
-    print "However, it will also run on a single process"
+# Create mesh
+mesh = UnitSquareMesh(20, 20)
 
-mesh = UnitSquareMesh(20,20)
+# Create MeshFunction to hold cell process rank
+processes = CellFunction('size_t', mesh, MPI.process_number())
 
-# Output cell distribution amongst processes
+# Output cell distribution to VTK file
 file = File("processes.pvd")
-processes = MeshFunction('size_t', mesh, mesh.topology().dim(), MPI.process_number())
 file << processes
 
 # Mark all cells on process 0 for refinement
-marker = MeshFunction('bool', mesh, mesh.topology().dim(), (MPI.process_number() == 0))
+marker = CellFunction('bool', mesh, (MPI.process_number() == 0))
 
-# Do refinement, but keep all new cells on parent process
-parameters['mesh_partitioner'] = 'None'
-mesh2 = refine(mesh, marker)
-processes = MeshFunction('size_t', mesh2, mesh2.topology().dim(), MPI.process_number())
-file << processes
+# Refine mesh, but keep all news cells on parent process
+mesh0 = refine(mesh, marker, False)
 
-# try to find a repartitioning partitioner, and do the previous refinement again
-parameters['partitioning_approach'] = 'REPARTITION'
-if has_parmetis():
-    parameters['mesh_partitioner'] = 'ParMETIS'
-elif has_trilinos():
-    parameters['mesh_partitioner'] = 'Zoltan_PHG'
-else:
-    parameters['mesh_partitioner'] = 'SCOTCH'
+# Create MeshFunction to hold cell process rank for refined mesh
+processes1 = CellFunction('size_t', mesh0, MPI.process_number())
+file << processes1
 
-mesh2 = refine(mesh, marker)
-processes = MeshFunction('size_t', mesh2, mesh2.topology().dim(), MPI.process_number())
-file << processes
+# Refine mesh, but this time repartition the mesh after refinement
+mesh1 = refine(mesh, marker, True)
+
+# Create MeshFunction to hold cell process rank for refined mesh
+processes2 = CellFunction('size_t', mesh1, MPI.process_number())
+file << processes2

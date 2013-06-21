@@ -20,7 +20,7 @@
 // Modified by Andre Massing 2009
 //
 // First added:  2003-11-28
-// Last changed: 2012-10-25
+// Last changed: 2013-05-08
 
 #include <algorithm>
 #include <map>
@@ -469,7 +469,8 @@ std::size_t Function::value_dimension(std::size_t i) const
   return _function_space->element()->value_dimension(i);
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Array<double>& values, const Array<double>& x,
+void Function::eval(Array<double>& values,
+                    const Array<double>& x,
                     const ufc::cell& ufc_cell) const
 {
   dolfin_assert(_function_space);
@@ -502,6 +503,7 @@ void Function::non_matching_eval(Array<double>& values,
   // Alternative 1: Find cell that point (x) intersects
   int id = mesh.intersected_cell(point);
 
+  // Check whether we are allowed to extrapolate to evaluate
   if (id == -1 && !allow_extrapolation)
   {
     dolfin_error("Function.cpp",

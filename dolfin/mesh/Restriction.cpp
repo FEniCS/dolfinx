@@ -56,7 +56,7 @@ Restriction::Restriction(boost::shared_ptr<const MeshFunction<std::size_t> > dom
 const Mesh& Restriction::mesh() const
 {
   dolfin_assert(_domain_markers);
-  return _domain_markers->mesh();
+  return *_domain_markers->mesh();
 }
 //-----------------------------------------------------------------------------
 std::size_t Restriction::dim() const

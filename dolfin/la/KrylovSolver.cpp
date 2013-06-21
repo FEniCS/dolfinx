@@ -28,6 +28,7 @@
 #include "GenericVector.h"
 #include "DefaultFactory.h"
 #include "LinearSolver.h"
+#include "VectorSpaceBasis.h"
 #include "KrylovSolver.h"
 
 using namespace dolfin;
@@ -116,9 +117,14 @@ void KrylovSolver::set_operators(const boost::shared_ptr<const GenericLinearOper
   solver->set_operators(A, P);
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::set_nullspace(const std::vector<const GenericVector*> nullspace)
+void KrylovSolver::set_nullspace(const VectorSpaceBasis& nullspace)
 {
   solver->set_nullspace(nullspace);
+}
+//-----------------------------------------------------------------------------
+void KrylovSolver::set_transpose_nullspace(const VectorSpaceBasis& transpose_nullspace)
+{
+  solver->set_transpose_nullspace(transpose_nullspace);
 }
 //-----------------------------------------------------------------------------
 std::size_t KrylovSolver::solve(GenericVector& x, const GenericVector& b)

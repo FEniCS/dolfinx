@@ -19,7 +19,7 @@
 // Modified by Chris Richardson 2013
 //
 // First added:  2010-02-10
-// Last changed: 2013-04-20
+// Last changed: 2013-04-26
 
 #include <dolfin/log/dolfin_log.h>
 
@@ -37,27 +37,183 @@
 using namespace dolfin;
 
 #ifdef HAS_PARMETIS
+
+namespace dolfin
+{
+  // This class builds a ParMETIS dual graph
+
+  class ParMETISDualGraph
+  {
+  public:
+
+    // Constructor
+    ParMETISDualGraph(const LocalMeshData& mesh_data);
+
+    // Destructor
+    ~ParMETISDualGraph();
+
+    // ParMETIS data
+    std::vector<int> elmdist;
+    std::vector<int> eptr;
+    std::vector<int> eind;
+    int numflag;
+    idx_t* xadj;
+    idx_t* adjncy;
+
+    // Number of partitions (one for each process)
+    int nparts;
+
+    // Strange weight arrays needed by ParMETIS
+    int ncon;
+    std::vector<real_t> tpwgts;
+    std::vector<real_t> ubvec;
+
+    // Prepare remaining arguments for ParMETIS
+    int* elmwgt;
+    int wgtflag;
+    int edgecut;
+
+  };
+}
 //-----------------------------------------------------------------------------
 void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
-                                 const LocalMeshData& mesh_data)
+                                 const LocalMeshData& mesh_data,
+                                 std::string mode)
 {
-  const std::string approach = parameters["partitioning_approach"];
-  
-  if(approach == "PARTITION")
-    partition(cell_partition, mesh_data);
+  // Build dual graph
+  ParMETISDualGraph g(mesh_data);
+
+  dolfin_assert(g.eptr.size() - 1 == mesh_data.cell_vertices.size());
+
+  // Partition graph
+  if (mode == "partition")
+    partition(cell_partition, g);
+  else if (mode == "adaptive_repartition")
+    adaptive_repartition(cell_partition, g);
+  else if (mode == "refine")
+   refine(cell_partition, g);
   else
-    repartition(cell_partition, mesh_data);
+  {
+    dolfin_error("ParMETIS.cpp",
+                 "compute mesh partitioning using ParMETIS",
+                 "partition model %s is unknown. Must be \"partition\", \"adactive_partition\" or \"refine\"", mode.c_str());
+  }
 }
-
-
+//-----------------------------------------------------------------------------
 void ParMETIS::partition(std::vector<std::size_t>& cell_partition,
-                         const LocalMeshData& mesh_data)
+                         ParMETISDualGraph& g)
 {
-  // This function prepares data for ParMETIS calls ParMETIS, and then
-  // collects the results from ParMETIS.
+  Timer timer1("PARALLEL 1b: Compute graph partition (calling ParMETIS)");
 
-  Timer timer0("PARALLEL 1a: Build distributed dual graph (calling ParMETIS)");
+  // Options for ParMETIS
+  int options[3];
+  options[0] = 1;
+  options[1] = 0;
+  options[2] = 15;
 
+  // Check that data arrays are not empty
+  dolfin_assert(!g.tpwgts.empty());
+  dolfin_assert(!g.ubvec.empty());
+
+  // Construct communicator (copy of MPI_COMM_WORLD)
+  MPICommunicator comm;
+
+  // Call ParMETIS to partition graph
+  const std::size_t num_local_cells = g.eptr.size() - 1;
+  std::vector<int> part(num_local_cells);
+  dolfin_assert(!part.empty());
+  int err = ParMETIS_V3_PartKway(g.elmdist.data(), g.xadj, g.adjncy, g.elmwgt,
+                                 NULL, &g.wgtflag, &g.numflag, &g.ncon, &g.nparts,
+                                 g.tpwgts.data(), g.ubvec.data(), options,
+                                 &g.edgecut, part.data(), &(*comm));
+  dolfin_assert(err == METIS_OK);
+
+  // Copy cell partition data
+  cell_partition = std::vector<std::size_t>(part.begin(), part.end());
+}
+//-----------------------------------------------------------------------------
+void ParMETIS::adaptive_repartition(std::vector<std::size_t>& cell_partition,
+                                    ParMETISDualGraph& g)
+{
+  Timer timer1("PARALLEL 1b: Compute graph partition (calling ParMETIS Adaptive Repartition)");
+
+  // Options for ParMETIS
+  int options[4];
+  options[0] = 1;
+  options[1] = 0;
+  options[2] = 15;
+  options[3] = PARMETIS_PSR_UNCOUPLED;
+  // For repartition, PARMETIS_PSR_COUPLED seems to suppress all migration if already balanced.
+  // Try PARMETIS_PSR_UNCOUPLED for better edge cut.
+
+  // Check that data arrays are not empty
+  dolfin_assert(!g.tpwgts.empty());
+  dolfin_assert(!g.ubvec.empty());
+
+  // Construct communicator (copy of MPI_COMM_WORLD)
+  MPICommunicator comm;
+
+  // Call ParMETIS to partition graph
+  const double itr = parameters["ParMETIS_repartitioning_weight"];
+  real_t _itr = itr;
+  std::vector<int> part(g.eptr.size() - 1);
+  std::vector<idx_t> vsize(part.size(), 1);
+  dolfin_assert(!part.empty());
+  int err = ParMETIS_V3_AdaptiveRepart(g.elmdist.data(), g.xadj, g.adjncy,
+                                       g.elmwgt, NULL, vsize.data(), &g.wgtflag,
+                                       &g.numflag, &g.ncon, &g.nparts,
+                                       g.tpwgts.data(), g.ubvec.data(), &_itr,
+                                       options, &g.edgecut, part.data(),
+                                       &(*comm));
+  dolfin_assert(err == METIS_OK);
+
+  // Copy cell partition data
+  cell_partition = std::vector<std::size_t>(part.begin(), part.end());
+}
+//-----------------------------------------------------------------------------
+void ParMETIS::refine(std::vector<std::size_t>& cell_partition,
+                      ParMETISDualGraph& g)
+{
+  Timer timer1("PARALLEL 1b: Compute graph partition (calling ParMETIS Refine)");
+
+  // Get some MPI data
+  const std::size_t process_number = MPI::process_number();
+
+  // Options for ParMETIS
+  int options[4];
+  options[0] = 1;
+  options[1] = 0;
+  options[2] = 15;
+  //options[3] = PARMETIS_PSR_UNCOUPLED;
+  // For repartition, PARMETIS_PSR_COUPLED seems to suppress all migration if already balanced.
+  // Try PARMETIS_PSR_UNCOUPLED for better edge cut.
+
+  // Check that data arrays are not empty
+  dolfin_assert(!g.tpwgts.empty());
+  dolfin_assert(!g.ubvec.empty());
+
+  // Construct communicator (copy of MPI_COMM_WORLD)
+  MPICommunicator comm;
+
+  // Partitioning array to be computed by ParMETIS. Prefill with
+  // process_number.
+  const std::size_t num_local_cells = g.eptr.size() - 1;
+  std::vector<int> part(num_local_cells, process_number);
+  dolfin_assert(!part.empty());
+
+  // Call ParMETIS to partition graph
+  int err = ParMETIS_V3_RefineKway(g.elmdist.data(), g.xadj, g.adjncy, g.elmwgt,
+                                   NULL, &g.wgtflag, &g.numflag, &g.ncon, &g.nparts,
+                                   g.tpwgts.data(), g.ubvec.data(), options,
+                                   &g.edgecut, part.data(), &(*comm));
+  dolfin_assert(err == METIS_OK);
+
+  // Copy cell partition data
+  cell_partition = std::vector<std::size_t>(part.begin(), part.end());
+}
+//-----------------------------------------------------------------------------
+ParMETISDualGraph::ParMETISDualGraph(const LocalMeshData& mesh_data)
+{
   // Get number of processes and process number
   const std::size_t num_processes = MPI::num_processes();
 
@@ -78,13 +234,12 @@ void ParMETIS::partition(std::vector<std::size_t>& cell_partition,
   MPI::all_gather(num_local_cells, num_cells);
 
   // Build elmdist array with cell offsets for all processors
-  std::vector<int> elmdist(num_processes + 1, 0);
+  elmdist.assign(num_processes + 1, 0);
   for (std::size_t i = 1; i < num_processes + 1; ++i)
     elmdist[i] = elmdist[i - 1] + num_cells[i - 1];
 
-  // Build eptr and eind arrays storing cell-vertex connectivity
-  std::vector<int> eptr(num_local_cells + 1);
-  std::vector<int> eind(num_local_cells*num_cell_vertices, 0);
+  eptr.resize(num_local_cells + 1);
+  eind.assign(num_local_cells*num_cell_vertices, 0);
   for (std::size_t i = 0; i < num_local_cells; i++)
   {
     dolfin_assert(mesh_data.cell_vertices[i].size() == num_cell_vertices);
@@ -94,189 +249,54 @@ void ParMETIS::partition(std::vector<std::size_t>& cell_partition,
   }
   eptr[num_local_cells] = num_local_cells*num_cell_vertices;
 
+  dolfin_assert(!eptr.empty());
+  dolfin_assert(!eind.empty());
+
   // Number of nodes shared for dual graph (partition along facets)
   int ncommonnodes = num_cell_vertices - 1;
+  numflag = 0;
+  xadj = 0;
+  adjncy = 0;
 
-  // Number of partitions (one for each process)
-  int nparts = num_processes;
-
-  // Strange weight arrays needed by ParMETIS
-  int ncon = 1;
-  #if PARMETIS_MAJOR_VERSION >= 4
-  std::vector<real_t> tpwgts(ncon*nparts, 1.0/static_cast<real_t>(nparts));
-  std::vector<real_t> ubvec(ncon, 1.05);
-  #else
-  std::vector<float> tpwgts(ncon*nparts, 1.0/static_cast<float>(nparts));
-  std::vector<float> ubvec(ncon, 1.05);
-  #endif
-
-  // Options for ParMETIS, use default
-  int options[3];
-  options[0] = 1;
-  options[1] = 0;
-  options[2] = 15;
-
-  // Partitioning array to be computed by ParMETIS (note bug in manual:
-  // vertices, not cells!)
-  std::vector<int> part(num_local_cells);
-
-  // Prepare remaining arguments for ParMETIS
-  int* elmwgt = 0;
-  int wgtflag = 0;
-  int numflag = 0;
-  int edgecut = 0;
-
-  dolfin_assert(!elmdist.empty());
   dolfin_assert(!eptr.empty());
   dolfin_assert(!eind.empty());
 
   // Construct communicator (copy of MPI_COMM_WORLD)
   MPICommunicator comm;
 
-  // Build dual graph from mesh
-  idx_t* xadj = 0;
-  idx_t* adjncy = 0;
+  // Could use GraphBuilder::compute_dual_graph() instead
   int err = ParMETIS_V3_Mesh2Dual(elmdist.data(), eptr.data(), eind.data(),
                                   &numflag, &ncommonnodes,
                                   &xadj, &adjncy,
                                   &(*comm));
   dolfin_assert(err == METIS_OK);
 
-  timer0.stop();
-
-  Timer timer1("PARALLEL 1b: Compute graph partition (calling ParMETIS)");
-
-  // Call ParMETIS to partition graph
-  dolfin_assert(!tpwgts.empty());
-  dolfin_assert(!ubvec.empty());
-  dolfin_assert(!part.empty());
-  err = ParMETIS_V3_PartKway(elmdist.data(), xadj, adjncy, elmwgt,
-                             NULL, &wgtflag, &numflag, &ncon, &nparts,
-                             tpwgts.data(), ubvec.data(), options,
-                             &edgecut, part.data(), &(*comm));
-  dolfin_assert(err == METIS_OK);
-
-  // Length of xadj = #local nodes + 1
-  // Length of adjncy = xadj[-1]
-
-  METIS_Free(xadj);
-  METIS_Free(adjncy);
-
-  // Copy cell partition data
-  cell_partition = std::vector<std::size_t>(part.begin(), part.end());
-}
-//-----------------------------------------------------------------------------
-void ParMETIS::repartition(std::vector<std::size_t>& cell_partition,
-                           const LocalMeshData& mesh_data)
-{
-  // Recompute partitioning based on existing
-  // Useful when refining mesh etc.
-
-  // Get number of processes and process number
-  const std::size_t num_processes = MPI::num_processes();
-
-  // Get dimensions of local mesh_data
-  const std::size_t num_local_cells = mesh_data.cell_vertices.size();
-
-  // Check that number of local graph nodes (cells) is > 0
-  if (num_local_cells == 0)
-  {
-    dolfin_error("ParMETIS.cpp",
-                 "recompute mesh partitioning using ParMETIS",
-                 "ParMETIS cannot be used if a process has no cells (graph nodes). Use SCOTCH to perform partitioning instead");
-  }
-
-  double tt = time();
-  // Communicate number of cells between all processors
-  std::vector<std::size_t> num_cells;
-  MPI::all_gather(num_local_cells, num_cells);
-  // Build elmdist array with cell offsets for all processors
-  std::vector<int> elmdist(num_processes + 1, 0);
-  for (std::size_t i = 1; i < num_processes + 1; ++i)
-    elmdist[i] = elmdist[i - 1] + num_cells[i - 1];
 
   // Number of partitions (one for each process)
-  int nparts = num_processes;
+  nparts = num_processes;
 
   // Strange weight arrays needed by ParMETIS
-  int ncon = 1;
-  #if PARMETIS_MAJOR_VERSION >= 4
-  std::vector<real_t> tpwgts(ncon*nparts, 1.0/static_cast<real_t>(nparts));
-  std::vector<real_t> ubvec(ncon, 1.05);
-  #else
-  std::vector<float> tpwgts(ncon*nparts, 1.0/static_cast<float>(nparts));
-  std::vector<float> ubvec(ncon, 1.05);
-  #endif
-
-  // Options for ParMETIS
-  int options[4];
-  options[0] = 1;
-  options[1] = 0;
-  options[2] = 15;
-  // PARMETIS_PSR_COUPLED seems to suppress all migration
-  options[3] = PARMETIS_PSR_UNCOUPLED;
-
-  std::vector<int> part(num_local_cells);
+  ncon = 1;
+  tpwgts.assign(ncon*nparts, 1.0/static_cast<real_t>(nparts));
+  ubvec.assign(ncon, 1.05);
 
   // Prepare remaining arguments for ParMETIS
-  int* elmwgt = 0;
-  int wgtflag = 0;
-  int numflag = 0;
-  int edgecut = 0;
-
-  // Construct communicator (copy of MPI_COMM_WORLD)
-  MPICommunicator comm;
-
-  std::vector<std::set<std::size_t> > local_graph;
-  std::set<std::size_t> ghost_vertices;
-
-  // Calculate the dual graph for existing mesh
-  GraphBuilder::compute_dual_graph(mesh_data, local_graph, ghost_vertices);
-  std::vector<idx_t> adjncy;
-  std::vector<idx_t> xadj;
-  xadj.reserve(num_local_cells + 1);
-  xadj.push_back(0);
-
-  for(std::vector<std::set<std::size_t> >::iterator cell_c = local_graph.begin();
-      cell_c != local_graph.end(); ++cell_c)
-  {
-    adjncy.insert(adjncy.end(), cell_c->begin(), cell_c->end());
-    xadj.push_back(adjncy.size());
-  }
-
-  tt = time() - tt;
-  double tt_max = MPI::max(tt);
-  if (MPI::process_number() == 0)
-    info("Time to build (parallel) dual graph: %g", tt_max);
-
-  Timer timer1("PARALLEL 1b: Recompute graph partition (calling ParMETIS)");
-
-  const double itr = parameters["ParMETIS_repartitioning_weight"];
-  real_t _itr = itr;
-  std::vector<idx_t> vsize(xadj.size(), 1);
-
-  // Call ParMETIS to repartition graph
-  dolfin_assert(!tpwgts.empty());
-  dolfin_assert(!ubvec.empty());
-  dolfin_assert(!part.empty());
-  int err = ParMETIS_V3_AdaptiveRepart(elmdist.data(), xadj.data(), adjncy.data(), elmwgt,
-                                       NULL, vsize.data(), &wgtflag, &numflag, &ncon, &nparts,
-                                       tpwgts.data(), ubvec.data(), &_itr, options,
-                                       &edgecut, part.data(), &(*comm));
-  dolfin_assert(err == METIS_OK);
-
-  // Length of xadj = # local nodes + 1
-  // Length of adjncy = xadj[-1]
-
-  //info("Partitioned mesh, edge cut is %d.", edgecut);
-
-  // Copy cell partition data
-  cell_partition = std::vector<std::size_t>(part.begin(), part.end());
+  elmwgt = NULL;
+  wgtflag = 0;
+  edgecut = 0;
+}
+//-----------------------------------------------------------------------------
+ParMETISDualGraph::~ParMETISDualGraph()
+{
+  // Free metis data structures
+  METIS_Free(xadj);
+  METIS_Free(adjncy);
 }
 //-----------------------------------------------------------------------------
 #else
 void ParMETIS::compute_partition(std::vector<std::size_t>& cell_partition,
-                                    const LocalMeshData& data)
+                                 const LocalMeshData& data,
+                                 std::string mode)
 {
   dolfin_error("ParMETIS.cpp",
                "compute mesh partitioning using ParMETIS",

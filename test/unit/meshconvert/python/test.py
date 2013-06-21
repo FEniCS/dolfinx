@@ -25,7 +25,7 @@
 from unittest import TestCase as _TestCase
 import unittest
 import os
-import glob 
+import glob
 import tempfile
 
 from dolfin_utils.meshconvert import meshconvert
@@ -355,7 +355,7 @@ class TriangleTester(_TestCase):
             return
         fname = os.path.join("data", "triangle")
         dfname = fname+".xml"
-        
+
         # Read triangle file and convert to a dolfin xml mesh file
         meshconvert.triangle2xml(fname, dfname)
 
@@ -405,25 +405,31 @@ class TriangleTester(_TestCase):
         # Check that all cells in the two domains are either above or below y=0
         self.assertTrue(all(cell.midpoint().y()<0 for cell in SubsetIterator(cf, 0)))
         self.assertTrue(all(cell.midpoint().y()>0 for cell in SubsetIterator(cf, 1)))
-        
+
         # Check that the areas add up
         self.assertAlmostEqual(area0+area1, total_area)
-        
+
         # Measure the edge length of the two edge domains
-        edge_markers = mesh.domains().facet_domains()
+        #edge_markers = mesh.domains().facet_domains()
+        edge_markers = mesh.domains().markers(mesh.topology().dim()-1)
         self.assertTrue(edge_markers is not None)
-        length0 = reduce(add, (Edge(mesh, e.index()).length() \
-                            for e in SubsetIterator(edge_markers, 0)), 0.0)
-        length1 = reduce(add, (Edge(mesh, e.index()).length() \
-                            for e in SubsetIterator(edge_markers, 1)), 0.0)
-        
+        #length0 = reduce(add, (Edge(mesh, e.index()).length() \
+        #                    for e in SubsetIterator(edge_markers, 0)), 0.0)
+        length0, length1 = 0.0, 0.0
+        for item in edge_markers.items():
+            if item[1] == 0:
+                e = Edge(mesh, int(item[0]))
+                length0 +=  Edge(mesh, int(item[0])).length()
+            elif item [1] == 1:
+                length1 +=  Edge(mesh, int(item[0])).length()
+
         # Total length of all edges and total length of boundary edges
         total_length = reduce(add, (e.length() for e in edges(mesh)), 0.0)
         boundary_length = reduce(add, (Edge(mesh, f.index()).length() \
                           for f in facets(mesh) if f.exterior()), 0.0)
-        
+
         # Check that the edges add up
-        self.assertAlmostEqual(length0+length1, total_length)
+        self.assertAlmostEqual(length0 + length1, total_length)
         self.assertAlmostEqual(length1, boundary_length)
 
         # Clean up
@@ -437,7 +443,7 @@ class DiffPackTester(_TestCase):
             return
         fname = os.path.join("data", "diffpack_tet")
         dfname = fname+".xml"
-        
+
         # Read triangle file and convert to a dolfin xml mesh file
         meshconvert.diffpack2xml(fname+".grid", dfname)
 
@@ -445,8 +451,8 @@ class DiffPackTester(_TestCase):
         mesh = Mesh(dfname)
         self.assertEqual(mesh.num_vertices(), 27)
         self.assertEqual(mesh.num_cells(), 48)
-        self.assertEqual(mesh.domains().markers(3).size(), 48)
-        self.assertEqual(mesh.domains().markers(2).size(), 16)
+        self.assertEqual(len(mesh.domains().markers(3)), 48)
+        self.assertEqual(len(mesh.domains().markers(2)), 16)
 
         mf_basename = dfname.replace(".xml", "_marker_%d.xml")
         for marker, num in [(3, 9), (6, 9), (7, 3), (8, 1)]:
@@ -455,7 +461,7 @@ class DiffPackTester(_TestCase):
             mf = MeshFunction("uint", mesh, mf_name)
             self.assertEqual(sum(mf.array()==marker), num)
             os.unlink(mf_name)
-        
+
         # Clean up
         os.unlink(dfname)
 

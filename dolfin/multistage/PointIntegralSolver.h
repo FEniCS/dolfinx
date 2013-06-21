@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-04-24
+// Last changed: 2013-05-13
 
 #ifndef __POINTINTEGRALSOLVER_H
 #define __POINTINTEGRALSOLVER_H
@@ -58,6 +58,20 @@ namespace dolfin
     /// Return the MultiStageScheme
     boost::shared_ptr<MultiStageScheme> scheme()const
     {return _scheme;}
+
+    /// Default parameter values
+    static Parameters default_parameters()
+    {
+      
+      Parameters p("point_integral_solver");
+
+      // Get default parameters from NewtonSolver
+      p.add(NewtonSolver::default_parameters());
+      p("newton_solver").add("reuse_jacobian", true);
+      p("newton_solver").add("iterations_to_retabulate_jacobian", 4);
+      
+      return p;
+    }
 
   private:
 

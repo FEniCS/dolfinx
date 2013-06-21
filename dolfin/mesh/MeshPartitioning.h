@@ -57,10 +57,15 @@ namespace dolfin
   {
   public:
 
-    /// Build a partitioned mesh based on a local mesh on process 0
+    /// Build a partitioned mesh based from a local mesh on process 0
     static void build_distributed_mesh(Mesh& mesh);
 
-    /// Build a partitioned mesh based on local mesh data that is
+    /// Build a partitioned mesh based from a local mesh on process 0
+    /// with supplied destination processes for each cell
+    static void build_distributed_mesh(Mesh& mesh,
+                                       const std::vector<std::size_t>& cell_partition);
+
+    /// Build a partitioned mesh from local mesh data that is
     /// distributed across processes
     static void build_distributed_mesh(Mesh& mesh, const LocalMeshData& data);
 
@@ -71,8 +76,14 @@ namespace dolfin
 
   private:
 
-    // Create a partitioned mesh based on local mesh data
-    static void partition(Mesh& mesh, const LocalMeshData& data);
+    // Compute cell partitioning for local mesh data. Returns
+    // cell->process vector for cells in LocalMeshData
+    static std::vector<std::size_t> partition_cells(Mesh& mesh,
+                                                    const LocalMeshData& data);
+
+    // Build mesh from local mesh data with a computed partition
+    static void build(Mesh& mesh, const LocalMeshData& data,
+                      const std::vector<std::size_t>& cell_partition);
 
     // This function takes the partition computed by the partitioner
     // (which tells us to which process each of the local cells stored in
@@ -193,7 +204,9 @@ namespace dolfin
     // Get destinations and local cell index at destination for
     // off-process cells
     const std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t> > >
-      entity_hosts = DistributedMeshTools::locate_off_process_entities(off_process_global_cell_entities, D, mesh);
+      entity_hosts
+      = DistributedMeshTools::locate_off_process_entities(off_process_global_cell_entities,
+                                                          D, mesh);
 
     // Number of MPI processes
     const std::size_t num_processes = MPI::num_processes();
@@ -210,23 +223,27 @@ namespace dolfin
       for (std::size_t i = 0; i < ldata.size(); ++i)
         map_of_ldata[ldata[i].first.first].insert(i);
 
-      for (entity_host = entity_hosts.begin(); entity_host != entity_hosts.end(); ++entity_host)
+      for (entity_host = entity_hosts.begin(); entity_host != entity_hosts.end();
+           ++entity_host)
       {
         const std::size_t host_global_cell_index = entity_host->first;
-        const std::set<std::pair<std::size_t, std::size_t> >& processes_data = entity_host->second;
+        const std::set<std::pair<std::size_t, std::size_t> >& processes_data
+          = entity_host->second;
 
         // Loop over local data
         std::map<std::size_t, std::set<std::size_t> >::const_iterator ldata_it
           = map_of_ldata.find(host_global_cell_index);
         if (ldata_it != map_of_ldata.end())
         {
-          for (std::set<std::size_t>::const_iterator it = ldata_it->second.begin(); it != ldata_it->second.end(); it++)
+          for (std::set<std::size_t>::const_iterator it = ldata_it->second.begin();
+               it != ldata_it->second.end(); it++)
           {
             const std::size_t local_entity_index = ldata[*it].first.second;
             const T domain_value = ldata[*it].second;
 
             std::set<std::pair<std::size_t, std::size_t> >::const_iterator process_data;
-            for (process_data = processes_data.begin(); process_data != processes_data.end(); ++process_data)
+            for (process_data = processes_data.begin();
+                 process_data != processes_data.end(); ++process_data)
             {
               const std::size_t proc = process_data->first;
               const std::size_t local_cell_entity = process_data->second;

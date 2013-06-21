@@ -1,4 +1,5 @@
-"""This demo program solves a Poisson problem on a function space that lives on a subset of the mesh."""
+"""This demo program solves a Poisson problem on a function space that
+lives on a subset of the mesh."""
 
 # Copyright (C) 2013 Martin S. Alnaes
 #
@@ -22,8 +23,9 @@
 
 from dolfin import *
 
-# Note that the interface to restricted function spaces is experimental
-# and likely to change somewhat in future dolfin versions.
+# Note that the interface to restricted function spaces is
+# experimental and likely to change somewhat in future dolfin
+# versions.
 
 class Domain (SubDomain):
     def inside(self, x, on_boundary):
@@ -71,6 +73,7 @@ bc = DirichletBC(V, zero, boundary)
 u = Function(V)
 solve(a == L, u, bc)
 
-# Plot solution, note that the restricted function is zero-extended, this may change in future versions
+# Plot solution, note that the restricted function is zero-extended,
+# this may change in future versions
 plot(u)
 interactive()

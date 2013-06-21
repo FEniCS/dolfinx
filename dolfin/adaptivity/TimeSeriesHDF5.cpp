@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-10
-// Last changed: 2013-04-19
+// Last changed: 2013-05-09
 
 #ifdef HAS_HDF5
 
@@ -49,10 +49,10 @@ void TimeSeriesHDF5::store_object(const T& object, double t,
 
   // Check for pre-existing file to append to
   std::string mode = "w";
-  if(File::exists(series_name) && 
+  if(File::exists(series_name) &&
      (_vector_times.size() > 0 || _mesh_times.size() > 0))
     mode = "a";
-    
+
   // Get file handle for low level operations
   HDF5File hdf5_file(series_name, mode);
   const hid_t fid = hdf5_file.hdf5_file_id;
@@ -65,7 +65,8 @@ void TimeSeriesHDF5::store_object(const T& object, double t,
   dolfin_assert(nobjs == times.size());
 
   // Write new dataset (mesh or vector)
-  std::string dataset_name = group_name + "/" + boost::lexical_cast<std::string>(nobjs);
+  std::string dataset_name = group_name + "/"
+    + boost::lexical_cast<std::string>(nobjs);
   hdf5_file.write(object, dataset_name);
 
   // Check that time values are strictly increasing
@@ -83,11 +84,12 @@ void TimeSeriesHDF5::store_object(const T& object, double t,
 
   // Store times
   HDF5Interface::add_attribute(fid, group_name, "times", times);
-  
+
 }
 
 //-----------------------------------------------------------------------------
-TimeSeriesHDF5::TimeSeriesHDF5(std::string name) : _name(name + ".h5"), _cleared(false)
+TimeSeriesHDF5::TimeSeriesHDF5(std::string name) : _name(name + ".h5"),
+  _cleared(false)
 {
   // Set default parameters
   parameters = default_parameters();
@@ -97,11 +99,13 @@ TimeSeriesHDF5::TimeSeriesHDF5(std::string name) : _name(name + ".h5"), _cleared
     // Read from file
     const hid_t hdf5_file_id = HDF5Interface::open_file(_name, "r", true);
 
-    if(HDF5Interface::has_group(hdf5_file_id, "/Vector") && 
+    if(HDF5Interface::has_group(hdf5_file_id, "/Vector") &&
        HDF5Interface::has_attribute(hdf5_file_id, "/Vector", "times"))
       {
-        HDF5Interface::get_attribute(hdf5_file_id, "/Vector", "times", _vector_times);
-        log(PROGRESS, "Found %d vector sample(s) in time series.", _vector_times.size());    
+        HDF5Interface::get_attribute(hdf5_file_id, "/Vector", "times",
+                                     _vector_times);
+        log(PROGRESS, "Found %d vector sample(s) in time series.",
+            _vector_times.size());
         if (!monotone(_vector_times))
         {
           dolfin_error("TimeSeriesHDF5.cpp",
@@ -110,12 +114,14 @@ TimeSeriesHDF5::TimeSeriesHDF5(std::string name) : _name(name + ".h5"), _cleared
                        name.c_str());
         }
       }
-    
+
     if(HDF5Interface::has_group(hdf5_file_id, "/Mesh") &&
        HDF5Interface::has_attribute(hdf5_file_id, "/Mesh", "times"))
     {
-      HDF5Interface::get_attribute(hdf5_file_id, "/Mesh", "times", _mesh_times);
-      log(PROGRESS, "Found %d mesh sample(s) in time series.", _mesh_times.size());
+      HDF5Interface::get_attribute(hdf5_file_id, "/Mesh", "times",
+                                   _mesh_times);
+      log(PROGRESS, "Found %d mesh sample(s) in time series.",
+          _mesh_times.size());
       if (!monotone(_mesh_times))
       {
         dolfin_error("TimeSeries.cpp",
@@ -124,7 +130,7 @@ TimeSeriesHDF5::TimeSeriesHDF5(std::string name) : _name(name + ".h5"), _cleared
                      name.c_str());
       }
     }
-    
+
     HDF5Interface::close_file(hdf5_file_id);
   }
   else
@@ -158,10 +164,11 @@ void TimeSeriesHDF5::store(const Mesh& mesh, double t)
 
   // Store object
   store_object(mesh, t, _mesh_times, _name, "/Mesh");
-  
+
 }
 //-----------------------------------------------------------------------------
-void TimeSeriesHDF5::retrieve(GenericVector& vector, double t, bool interpolate) const
+void TimeSeriesHDF5::retrieve(GenericVector& vector, double t,
+                              bool interpolate) const
 {
   HDF5File hdf5_file(_name, "r");
   const std::size_t zero = 0;
@@ -171,7 +178,8 @@ void TimeSeriesHDF5::retrieve(GenericVector& vector, double t, bool interpolate)
   if (interpolate)
   {
     // Find closest pair
-    const std::pair<std::size_t, std::size_t> index_pair = find_closest_pair(t, _vector_times, _name, "vector");
+    const std::pair<std::size_t, std::size_t> index_pair
+      = find_closest_pair(t, _vector_times, _name, "vector");
     const std::size_t i0 = index_pair.first;
     const std::size_t i1 = index_pair.second;
 
@@ -216,13 +224,15 @@ void TimeSeriesHDF5::retrieve(GenericVector& vector, double t, bool interpolate)
   else
   {
     // Find closest index
-    const std::size_t index = find_closest_index(t, _vector_times, _name, "vector");
+    const std::size_t index = find_closest_index(t, _vector_times, _name,
+                                                 "vector");
 
     log(PROGRESS, "Reading vector at t = %g (close to t = %g).",
         _vector_times[index], t);
 
     // Read vector
-    hdf5_file.read(vector, "/Vector/" + boost::lexical_cast<std::string>(index));
+    hdf5_file.read(vector, "/Vector/"
+                   + boost::lexical_cast<std::string>(index));
   }
 }
 //-----------------------------------------------------------------------------
@@ -260,7 +270,6 @@ void TimeSeriesHDF5::clear()
 std::string TimeSeriesHDF5::str(bool verbose) const
 {
   std::stringstream s;
-
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
@@ -306,30 +315,29 @@ bool TimeSeriesHDF5::monotone(const std::vector<double>& times)
 }
 //-----------------------------------------------------------------------------
 std::size_t TimeSeriesHDF5::find_closest_index(double t,
-                                            const std::vector<double>& times,
-                                            std::string series_name,
-                                            std::string type_name)
+                                               const std::vector<double>& times,
+                                               std::string series_name,
+                                               std::string type_name)
 {
   // Get closest pair
-  const std::pair<std::size_t, std::size_t> index_pair = find_closest_pair(t, times, series_name, type_name);
+  const std::pair<std::size_t, std::size_t> index_pair
+    = find_closest_pair(t, times, series_name, type_name);
   const std::size_t i0 = index_pair.first;
   const std::size_t i1 = index_pair.second;
 
   // Check which is closer
-  const std::size_t i = (std::abs(t - times[i0]) < std::abs(t - times[i1]) ? i0 : i1);
+  const std::size_t i = (std::abs(t - times[i0])
+                         < std::abs(t - times[i1]) ? i0 : i1);
   dolfin_debug2("Using closest value t[%d] = %g", i, times[i]);
 
   return i;
 }
 //-----------------------------------------------------------------------------
 std::pair<std::size_t, std::size_t>
-TimeSeriesHDF5::find_closest_pair(double t,
-                              const std::vector<double>& times,
-                              std::string series_name,
-                              std::string type_name)
+TimeSeriesHDF5::find_closest_pair(double t, const std::vector<double>& times,
+                                  std::string series_name,
+                                  std::string type_name)
 {
-  //for (std::size_t i = 0; i < times.size(); i++) cout << " " << times[i]; cout << endl;
-
   // Must have at least one value stored
   if (times.empty())
   {
@@ -353,9 +361,15 @@ TimeSeriesHDF5::find_closest_pair(double t,
   // larger than t or end of vector if no such item exists.
   std::vector<double>::const_iterator lower;
   if (reversed)
-    lower = std::lower_bound(times.begin(), times.end(), t, std::greater<double>());
+  {
+    lower = std::lower_bound(times.begin(), times.end(), t,
+                             std::greater<double>());
+  }
   else
-    lower = std::lower_bound(times.begin(), times.end(), t, std::less<double>());
+  {
+    lower = std::lower_bound(times.begin(), times.end(), t,
+                             std::less<double>());
+  }
 
   // Set indexlower and upper bound
   std::size_t i0 = 0;

@@ -46,12 +46,40 @@
 %ignore dolfin::SLEPcEigenSolver::get_eigenpair;
 #endif
 
+
+#ifdef HAS_PETSC4PY
+// This must come early.  The petsc4py module defines typemaps which
+// we will later use on %extended classes (in post).  The typemaps
+// must be in scope when swig sees the original class, not the
+// extended definition.
+%include "petsc4py/petsc4py.i"
+// Remove typemaps that check for nullity of pointer and object itself.
+// we only care about the former.
+%define %petsc4py_objreft(Type)
+
+%typemap(check,noblock=1) Type *OUTPUT {
+  if ($1 == PETSC_NULL)
+    %argument_nullref("$type", $symname, $argnum);
+ }
+%apply Type *OUTPUT { Type & }
+%enddef
+
+%petsc4py_objreft(Mat)
+%petsc4py_objreft(Vec)
+%petsc4py_objreft(KSP)
+%petsc4py_objreft(SNES)
+#endif
 //-----------------------------------------------------------------------------
 // Fix problem with missing uBLAS namespace
 //-----------------------------------------------------------------------------
 %inline %{
   namespace boost{ namespace numeric{ namespace ublas{}}}
 %}
+
+//-----------------------------------------------------------------------------
+// Modify VectorSpaceBasis::operator[]
+//-----------------------------------------------------------------------------
+%rename(_sub) dolfin::VectorSpaceBasis::operator[];
 
 //-----------------------------------------------------------------------------
 // Ignore some operator=
@@ -187,8 +215,21 @@
 // PETSc/SLEPc backend
 //-----------------------------------------------------------------------------
 #ifdef HAS_PETSC
+// Only ignore C++ accessors if petsc4py is enabled
+#ifdef HAS_PETSC4PY
+%ignore dolfin::PETScVector::vec() const;
+%ignore dolfin::PETScBaseMatrix::mat() const;
+%ignore dolfin::PETScKrylovSolver::ksp() const;
+%ignore dolfin::PETScLUSolver::ksp() const;
+%ignore dolfin::PETScSNESSolver::snes() const;
+#else
+// Ignore everything
 %ignore dolfin::PETScVector::vec;
 %ignore dolfin::PETScBaseMatrix::mat;
+%ignore dolfin::PETScKrylovSolver::ksp;
+%ignore dolfin::PETScLUSolver::ksp;
+%ignore dolfin::PETScSNESSolver::snes;
+#endif
 #endif
 
 #ifdef HAS_SLEPC
@@ -216,7 +257,8 @@
   {
     Teuchos::RCP<Type> *rcp_ptr;
     int newmem = 0;
-    res = SWIG_ConvertPtrAndOwn($input, (void**)&rcp_ptr, $descriptor(Teuchos::RCP<Type>*), 0, &newmem);
+    res = SWIG_ConvertPtrAndOwn($input, (void**)&rcp_ptr,
+                                $descriptor(Teuchos::RCP<Type>*), 0, &newmem);
     if (!SWIG_IsOK(res))
       SWIG_exception_fail(SWIG_ArgError(res), "in method '$symname', argument $argnum of type '$type'");
     if (rcp_ptr)
@@ -242,7 +284,8 @@
   {
     Teuchos::RCP<Type> *rcp_ptr;
     int newmem = 0;
-    res = SWIG_ConvertPtrAndOwn($input, (void**)&rcp_ptr, $descriptor(Teuchos::RCP<Type>*), 0, &newmem);
+    res = SWIG_ConvertPtrAndOwn($input, (void**)&rcp_ptr,
+                                $descriptor(Teuchos::RCP<Type>*), 0, &newmem);
     if (rcp_ptr && (newmem & SWIG_CAST_NEW_MEMORY))
       delete rcp_ptr;
   }

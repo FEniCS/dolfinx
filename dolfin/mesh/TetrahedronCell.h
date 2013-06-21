@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2008 Anders Logg
+// Copyright (C) 2006-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -20,7 +20,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2010-01-15
+// Last changed: 2013-05-22
 
 #ifndef __TETRAHEDRON_CELL_H
 #define __TETRAHEDRON_CELL_H
@@ -73,6 +73,9 @@ namespace dolfin
     /// Compute diameter of tetrahedron
     double diameter(const MeshEntity& tetrahedron) const;
 
+    /// Compute squared distance to given point
+    double squared_distance(const Cell& cell, const Point& point) const;
+
     /// Compute component i of normal of given facet with respect to the cell
     double normal(const Cell& cell, std::size_t facet, std::size_t i) const;
 
@@ -89,6 +92,9 @@ namespace dolfin
     void order(Cell& cell,
                const std::vector<std::size_t>& local_to_global_vertex_indices) const;
 
+    /// Check whether given point is contained in cell
+    bool contains(const Cell& cell, const Point& point) const;
+
     /// Return description of cell type
     std::string description(bool plural) const;
 
@@ -96,6 +102,14 @@ namespace dolfin
 
     // Find local index of edge i according to ordering convention
     std::size_t find_edge(std::size_t i, const Cell& cell) const;
+
+    // Check whether point is outside region defined by facet ABC.
+    // The fourth vertex is needed to define the orientation.
+    bool point_outside_of_plane(const Point& point,
+                                const Point& A,
+                                const Point& B,
+                                const Point& C,
+                                const Point& D) const;
 
   };
 
