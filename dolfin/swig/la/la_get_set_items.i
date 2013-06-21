@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-04-27
-// Last changed: 2013-04-02
+// Last changed: 2013-06-10
 
 // Enum for comparison functions
 enum DolfinCompareType {dolfin_gt, dolfin_ge, dolfin_lt, dolfin_le, dolfin_eq, dolfin_neq};
@@ -331,16 +331,17 @@ void _set_vector_items_value(dolfin::GenericVector* self, PyObject* op, double v
   {
 
     // If the index is an integer
-    if( op != Py_None and PyInteger_Check(op))
-      self->setitem(Indices::check_index(static_cast<int>(PyInt_AsLong(op)), self->size()), value);
-    else
+    int index;
+    // FIXME: Add a Py_convert_dolfin_la_index
+    if(!Py_convert_int(op, index))
       throw std::runtime_error("index must be either an integer, a slice, a list or a Numpy array of integer");
+
+    self->setitem(Indices::check_index(index, self->size()), value);
   }
   // The op is a Indices
   else
   {
     dolfin::la_index* indices;
-    std::size_t i;
     // Fill the vector using the slice
     try {
       indices = inds->indices();
