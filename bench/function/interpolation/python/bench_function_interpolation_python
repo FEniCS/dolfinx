@@ -47,4 +47,6 @@ tic = time()
 v1 = interpolate(v0, V1)
 t = time() - tic
 
+plot(v1, interactive=True)
+
 print "BENCH: ", t

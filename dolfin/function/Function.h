@@ -398,9 +398,6 @@ namespace dolfin
     // True if extrapolation should be allowed
     bool allow_extrapolation;
 
-    // FIXME: Testing
-    bool use_cgal_intersection;
-
   };
 
 }

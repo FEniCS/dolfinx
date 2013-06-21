@@ -50,10 +50,6 @@ namespace dolfin
     {
       Parameters p("dolfin");
 
-      // FIXME: Temporary parameter used while testing DOLFIN vs CGAL
-      // intersections in the function library.
-      p.add("use_cgal_intersection", true);
-
       // General
       p.add("timer_prefix", "");                             // Prefix for timer tasks
       p.add("allow_extrapolation", false);                   // Allow extrapolation in function interpolation

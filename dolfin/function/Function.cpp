@@ -57,8 +57,7 @@ using namespace dolfin;
 Function::Function(const FunctionSpace& V)
   : Hierarchical<Function>(*this),
     _function_space(reference_to_no_delete_pointer(V)),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
-    use_cgal_intersection(dolfin::parameters["use_cgal_intersection"])
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Check that we don't have a subspace
   if (!V.component().empty())
@@ -74,8 +73,7 @@ Function::Function(const FunctionSpace& V)
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V)
   : Hierarchical<Function>(*this), _function_space(V),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
-    use_cgal_intersection(dolfin::parameters["use_cgal_intersection"])
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Check that we don't have a subspace
   if (!V->component().empty())
@@ -92,8 +90,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    boost::shared_ptr<GenericVector> x)
   : Hierarchical<Function>(*this), _function_space(V), _vector(x),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
-    use_cgal_intersection(dolfin::parameters["use_cgal_intersection"])
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // We do not check for a subspace since this constructor is used for creating
   // subfunctions
@@ -106,8 +103,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 Function::Function(const FunctionSpace& V, std::string filename)
   : Hierarchical<Function>(*this),
     _function_space(reference_to_no_delete_pointer(V)),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
-    use_cgal_intersection(dolfin::parameters["use_cgal_intersection"])
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Check that we don't have a subspace
   if (!V.component().empty())
@@ -137,8 +133,7 @@ Function::Function(const FunctionSpace& V, std::string filename)
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    std::string filename)
   : Hierarchical<Function>(*this), _function_space(V),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
-    use_cgal_intersection(dolfin::parameters["use_cgal_intersection"])
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Check that we don't have a subspace
   if (!V->component().empty())
@@ -167,8 +162,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v)
   : Hierarchical<Function>(*this),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
-    use_cgal_intersection(dolfin::parameters["use_cgal_intersection"])
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Assign data
   *this = v;
@@ -176,8 +170,7 @@ Function::Function(const Function& v)
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v, std::size_t i)
   : Hierarchical<Function>(*this),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
-    use_cgal_intersection(dolfin::parameters["use_cgal_intersection"])
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Copy function space pointer
   this->_function_space = v[i]._function_space;
@@ -382,31 +375,6 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
   // FIXME: Testing
   int ID = 0;
 
-  if (use_cgal_intersection)
-  {
-    int id = mesh.intersected_cell(point);
-
-    // If not found, use the closest cell
-    if (id == -1)
-    {
-      if (allow_extrapolation)
-      {
-        id = mesh.closest_cell(point);
-        cout << "Extrapolating function value at x = " << point << " (not inside domain)." << endl;
-      }
-      else
-      {
-        cout << "Evaluating at x = " << point << endl;
-        dolfin_error("Function.cpp",
-                     "evaluate function at point",
-                     "The point is not inside the domain. Consider setting \"allow_extrapolation\" to allow extrapolation");
-      }
-    }
-
-    ID = id;
-  }
-  else
-  {
     unsigned int id = mesh.bounding_box_tree()->compute_first_entity_collision(point, mesh);
 
     // If not found, use the closest cell
@@ -427,7 +395,6 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
     }
 
     ID = id;
-  }
 
   // Create cell that contains point
   const Cell cell(mesh, ID);
@@ -543,55 +510,6 @@ void Function::non_matching_eval(Array<double>& values,
   // FIXME: Testing
   int ID = 0;
 
-  if (use_cgal_intersection)
-  {
-
-    // Alternative 1: Find cell that point (x) intersects
-    int id = mesh.intersected_cell(point);
-
-    // Check whether we are allowed to extrapolate to evaluate
-    if (id == -1 && !allow_extrapolation)
-    {
-      dolfin_error("Function.cpp",
-                   "evaluate function at point",
-                   "The point is not inside the domain. Consider setting \"allow_extrapolation\" to allow extrapolation");
-    }
-
-    // Alternative 2: Compute closest cell to point (x)
-    if (id == -1 && allow_extrapolation && dim == 2)
-      id = mesh.closest_cell(point);
-
-    // Alternative 3: Compute cell that contains barycenter of ufc_cell
-    // NB: This is slightly heuristic, but should work well for
-    // evaluation of points on refined meshes
-    if (id == -1 && allow_extrapolation)
-    {
-      // Extract vertices of ufc_cell
-      const double * const * vertices = ufc_cell.coordinates;
-
-      Point barycenter;
-      for (std::size_t i = 0; i <= dim; i++)
-      {
-        Point vertex(dim, vertices[i]);
-        barycenter += vertex;
-      }
-      barycenter /= (dim + 1);
-      id = mesh.intersected_cell(barycenter);
-    }
-
-    // Throw error if all alternatives failed.
-    if (id == -1)
-    {
-      dolfin_error("Function.cpp",
-                   "evaluate function at point",
-                   "No matching cell found");
-    }
-
-
-    ID = id;
-  }
-  else
-  {
     // Alternative 1: Find cell that point (x) intersects
     unsigned int id = mesh.bounding_box_tree()->compute_first_entity_collision(point, mesh);
 
@@ -636,7 +554,6 @@ void Function::non_matching_eval(Array<double>& values,
     }
 
     ID = id;
-  }
 
   // Create cell that contains point
   const Cell cell(mesh, ID);
