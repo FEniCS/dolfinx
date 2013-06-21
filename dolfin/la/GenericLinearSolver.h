@@ -29,13 +29,13 @@
 #include <dolfin/log/log.h>
 #include "GenericLinearOperator.h"
 #include "GenericMatrix.h"
-#include "VectorSpaceBasis.h"
 
 namespace dolfin
 {
 
   // Forward declarations
   class GenericVector;
+  class VectorSpaceBasis;
 
   /// This class provides a general solver for linear systems Ax = b.
 
@@ -44,11 +44,13 @@ namespace dolfin
   public:
 
     /// Set operator (matrix)
-    virtual void set_operator(const boost::shared_ptr<const GenericLinearOperator> A) = 0;
+    virtual void
+      set_operator(const boost::shared_ptr<const GenericLinearOperator> A) = 0;
 
     /// Set operator (matrix) and preconditioner matrix
-    virtual void set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
-                               const boost::shared_ptr<const GenericLinearOperator> P)
+    virtual void
+      set_operators(const boost::shared_ptr<const GenericLinearOperator> A,
+                    const boost::shared_ptr<const GenericLinearOperator> P)
     {
       dolfin_error("GenericLinearSolver.h",
                    "set operator and preconditioner for linear solver",
@@ -66,7 +68,8 @@ namespace dolfin
 
     /// Set transpose null space of the operator (matrix). This is used to solve
     /// singular systems
-    virtual void set_transpose_nullspace(const VectorSpaceBasis& transpose_nullspace)
+    virtual void
+      set_transpose_nullspace(const VectorSpaceBasis& transpose_nullspace)
     {
       dolfin_error("GenericLinearSolver.h",
                    "set transpose nullspace for operator",
@@ -75,7 +78,7 @@ namespace dolfin
 
     /// Solve linear system Ax = b
     virtual std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
-                       const GenericVector& b)
+                              const GenericVector& b)
     {
       dolfin_error("GenericLinearSolver.h",
                    "solve linear system",
@@ -93,8 +96,9 @@ namespace dolfin
     }
 
     /// Solve linear system A^Tx = b
-    virtual std::size_t solve_transpose(const GenericLinearOperator& A, GenericVector& x,
-                       const GenericVector& b)
+    virtual std::size_t solve_transpose(const GenericLinearOperator& A,
+                                        GenericVector& x,
+                                        const GenericVector& b)
     {
       dolfin_error("GenericLinearSolver.h",
                    "solve linear system transpose",
@@ -103,7 +107,8 @@ namespace dolfin
     }
 
     /// Solve linear system A^Tx = b
-    virtual std::size_t solve_transpose(GenericVector& x, const GenericVector& b)
+    virtual std::size_t solve_transpose(GenericVector& x,
+                                        const GenericVector& b)
     {
       dolfin_error("GenericLinearSolver.h",
                    "solve linear system transpose",
