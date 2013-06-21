@@ -21,8 +21,14 @@
 // First added:  2012-05-10
 // Last changed: 2013-04-05
 
+#include "CSGCGALMeshGenerator2D.h"
+#include "CSGGeometry.h"
+#include "CSGOperators.h"
+#include "CSGPrimitives2D.h"
+
 #include <vector>
 #include <cmath>
+#include <limits>
 
 #include <dolfin/common/constants.h>
 #include <dolfin/math/basic.h>
@@ -32,10 +38,6 @@
 #include <dolfin/mesh/MeshDomains.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 
-#include "CSGCGALMeshGenerator2D.h"
-#include "CSGGeometry.h"
-#include "CSGOperators.h"
-#include "CSGPrimitives2D.h"
 
 #ifdef HAS_CGAL
 #include "CGALMeshBuilder.h"
@@ -288,6 +290,48 @@ static Nef_polyhedron_2 convertSubTree(const CSGGeometry *geometry)
   return Nef_polyhedron_2();
 }
 //-----------------------------------------------------------------------------
+static void print_edge(CDT::Edge edge)
+{
+  const int i = edge.second;
+  std::cout << "Edge: (" << edge.first->vertex( (i+1)%3 )->point()
+            << "), (" << edge.first->vertex( (i+2)%3 )->point() << ")" << std::endl;
+}
+//-----------------------------------------------------------------------------
+static void print_face(const CDT::Face_handle f)
+{
+    std::cout << "Face:" << std::endl;
+    std::cout << "  " << f->vertex(0)->point() << std::endl;
+    std::cout << "  " << f->vertex(1)->point() << std::endl;
+    std::cout << "  " << f->vertex(2)->point() << std::endl;
+    std::cout << "  " << (f->is_in_domain() ? "In domain" : "Not in domain") << std::endl;
+}
+
+//-----------------------------------------------------------------------------
+// print the faces of a triangulation
+static void print_triangulation(const CDT &cdt)
+{
+  for (  CDT::Finite_faces_iterator it = cdt.finite_faces_begin();
+         it != cdt.finite_faces_end(); ++it)
+  {
+    print_face(it);
+  }
+}
+//-----------------------------------------------------------------------------
+static void print_constrained_edges(const CDT& cdt)
+{
+  std::cout << "-- Constrained edges" << std::endl;
+
+  for (CDT::Finite_edges_iterator it = cdt.finite_edges_begin();
+       it != cdt.finite_edges_end();
+       it++)
+  {
+      if (cdt.is_constrained(*it))
+        print_edge(*it);
+  }
+
+  std::cout << "--" << std::endl;
+}
+//-----------------------------------------------------------------------------
 void explore_subdomain(CDT &ct,
                         CDT::Face_handle start, 
                         std::list<CDT::Face_handle>& other_domains)
@@ -326,10 +370,43 @@ void explore_subdomain(CDT &ct,
   }
 }
 //-----------------------------------------------------------------------------
+static bool point_in_domain(Point_2 p, const Nef_polyhedron_2& domain)
+{
+  Nef_point_2 nef_p(p[0], p[1]);
+
+  // std::cout << "Point " << nef_p << std::endl;
+
+  Nef_polyhedron_2::Object_handle obj = domain.locate(nef_p);
+  Nef_polyhedron_2::Explorer::Face_const_handle f;
+  if (CGAL::assign(f, obj))
+  {
+    Explorer explorer = domain.explorer();
+
+    return explorer.mark(f);
+  }
+  
+  return false;
+}
+//-----------------------------------------------------------------------------
+static bool face_in_domain(CDT::Face_handle f, const Nef_polyhedron_2& domain)
+{
+  Point_2 p0 = f->vertex(0)->point();
+  Point_2 p1 = f->vertex(1)->point();
+  Point_2 p2 = f->vertex(2)->point();
+  Point_2 p( (p0[0] + p1[0] + p2[0]) / 3.0,
+             (p0[1] + p1[1] + p2[1]) / 3.0 );
+
+  return point_in_domain(p, domain);
+}
+
+//-----------------------------------------------------------------------------
+// Set the member in_domain and counter for all faces in the cdt
 void explore_subdomains(CDT& cdt, 
                         const Nef_polyhedron_2& total_domain,
                         const std::vector<std::pair<std::size_t, Nef_polyhedron_2> > &subdomain_geometries)
 {
+  std::cout << "Exploring domains" << std::endl;
+
   // Set counter to -1 for all faces
   for (CDT::Finite_faces_iterator it = cdt.finite_faces_begin(); it != cdt.finite_faces_end(); ++it)
   {
@@ -338,36 +415,36 @@ void explore_subdomains(CDT& cdt,
   }
 
   std::list<CDT::Face_handle> subdomains;
-  const CDT::Face_handle f = cdt.finite_faces_begin();
-  subdomains.push_back(f);
+  subdomains.push_back(cdt.finite_faces_begin());
+
+  //print_face(subdomains.front());
+  //dolfin_assert(face_in_domain(subdomains.front(), total_domain));
 
   while (!subdomains.empty())
   {
     const CDT::Face_handle f = subdomains.front();
     subdomains.pop_front();
 
-    // Construct a nef_polyhedron consisting of a single point
-    // TODO: Is there a better way of querying if points are inside
-    // nef polyhedrons?
-    Point_2 p0 = f->vertex(0)->point();
-    Point_2 p1 = f->vertex(1)->point();
-    Point_2 p2 = f->vertex(2)->point();
-    Nef_point_2 p( (p0[0] + p1[0] + p2[0]) / 3.0,
-                   (p0[1] + p1[1] + p2[1]) / 3.0 );
-
-    Nef_polyhedron_2 p_polyhedron(&p, (&p)+1);
-
     if (f->counter() < 0)
     {
       // Set default marker (0)
       f->set_counter(0);
 
-      // Check if the face is in the total domain
-      f->set_in_domain( !(p_polyhedron*total_domain).is_empty());
+      const Point_2 p0 = f->vertex(0)->point();
+      const Point_2 p1 = f->vertex(1)->point();
+      const Point_2 p2 = f->vertex(2)->point();
+
+      Point_2 p( (p0[0] + p1[0] + p2[0]) / 3.0,
+                 (p0[1] + p1[1] + p2[1]) / 3.0 );
+      std::cout << "Testing point: " << p << std::endl;
+      std::cout << "In domain: " << point_in_domain(p, total_domain) << std::endl;
+
+      // Set the in_domain member (is face in the total domain)
+      f->set_in_domain(point_in_domain(p, total_domain));
 
       for (int i = subdomain_geometries.size(); i > 0; --i)
       {
-        if (!(subdomain_geometries[i-1].second*p_polyhedron).is_empty())
+        if (point_in_domain(p, subdomain_geometries[i-1].second))
         {
           f->set_counter(subdomain_geometries[i-1].first);
           break;
@@ -379,9 +456,10 @@ void explore_subdomains(CDT& cdt,
   }
 }
 //-----------------------------------------------------------------------------
+  // Explore the Nef polyhedron and insert constraints in the triangulation
 void add_subdomain(CDT& cdt, const Nef_polyhedron_2& cgal_geometry)
 {
-  // Explore the Nef polyhedron and insert constraints in the triangulation
+
   Explorer explorer = cgal_geometry.explorer();
   for (Face_const_iterator fit = explorer.faces_begin() ; fit != explorer.faces_end(); fit++)
   {
@@ -397,10 +475,15 @@ void add_subdomain(CDT& cdt, const Nef_polyhedron_2& cgal_geometry)
       Point_2 pa(CGAL::to_double(hafc->vertex()->point().x()),
                  CGAL::to_double(hafc->vertex()->point().y()));
 
+      std::cout << "Inserting point: " << pa << std::endl;
+
       Vertex_handle va = cdt.insert(pa);
           
       Point_2 pb(CGAL::to_double(hafc->next()->vertex()->point().x()),
                  CGAL::to_double(hafc->next()->vertex()->point().y()));
+
+      std::cout << "Inserting point: " << pb << std::endl << std::endl;
+
       Vertex_handle vb = cdt.insert(pb);
 
       cdt.insert_constraint(va, vb);
@@ -413,6 +496,8 @@ void add_subdomain(CDT& cdt, const Nef_polyhedron_2& cgal_geometry)
       Halfedge_around_face_const_circulator hafc1(hit), done1(hit);
       do
       {
+        std::cout << "Inserting hole" << std::endl;
+
         Point_2 pa(CGAL::to_double(hafc1->vertex()->point().x()),
                    CGAL::to_double(hafc1->vertex()->point().y()));
         Vertex_handle va = cdt.insert(pa);
@@ -429,26 +514,116 @@ void add_subdomain(CDT& cdt, const Nef_polyhedron_2& cgal_geometry)
 //-----------------------------------------------------------------------------
 double shortest_constrained_edge(const CDT &cdt)
 {
-  double min_length = 1000.0;
+  double min_length = std::numeric_limits<double>::max();
   for (CDT::Finite_edges_iterator it = cdt.finite_edges_begin();
        it != cdt.finite_edges_end();
        it++)
   {
     if (!cdt.is_constrained(*it))
+      continue;
+
+    // An edge is an std::pair<Face_handle, int>
+    // see CGAL/Triangulation_data_structure_2.h
+    CDT::Face_handle f = it->first;
+    const int i = it->second;
+
+    CDT::Point p1 = f->vertex( (i+1)%3 )->point();
+    CDT::Point p2 = f->vertex( (i+2)%3 )->point();
+
+    min_length = std::min(CGAL::to_double((p1-p2).squared_length()), min_length);
+  }
+
+  return min_length;
+}
+//-----------------------------------------------------------------------------
+void remove_short_edges(CDT& cdt, double threshold)
+{
+  cout << "Removing short edges" << endl;
+
+  threshold *= threshold;
+  std::cout << "Threshold: " << threshold << std::endl;
+
+
+  bool removed = false;
+  do
+  {
+    removed = false;
+
+    for (CDT::Finite_edges_iterator it = cdt.finite_edges_begin();
+         it != cdt.finite_edges_end();
+         it++)
     {
+      // Only care about constrained edges. Unconstrained shorted don't cause
+      // problems here.
+      if (!cdt.is_constrained(*it))
+        continue;
+
       // An edge is an std::pair<Face_handle, int>
       // see CGAL/Triangulation_data_structure_2.h
       CDT::Face_handle f = it->first;
       const int i = it->second;
+        
+      CDT::Point p1 = f->vertex( (i+1)%3 )->point();
+      CDT::Point p2 = f->vertex( (i+2)%3 )->point();
+        
+      if (CGAL::to_double((p1-p2).squared_length()) < threshold)
+      {
+        std::cout << "Found short edge: " << p1 << ", " << p2 << std::endl;
 
-      CDT::Point p1 = f->vertex(i)->point();
-      CDT::Point p2 = f->vertex( (i+1)%3 )->point();
+        // Remove the constraint as this edge will be removed
+        cdt.remove_constraint(f, i);
 
-      min_length = std::min(CGAL::to_double((p1-p2).squared_length()), min_length);
+        CDT::Vertex_handle to_be_removed = f->vertex( (i+1)%3 );
+        CDT::Vertex_handle to_be_kept    = f->vertex( (i+2)%3 );
+        std::cout << "To be removed: " << to_be_removed->point() << std::endl;
+        std::cout << "To be kept: "    << to_be_kept->point() << std::endl;
+
+        // save the vertices to which we should have constrained edges
+        std::vector<Vertex_handle> constraints;
+        CDT::Edge_circulator c = cdt.incident_edges(to_be_removed);
+        CDT::Edge first = *c;
+        do
+        {
+          if (cdt.is_constrained(*c))
+          {
+            std::cout << "Found constrained incident edge" << std::endl;
+            print_edge(*c);
+            cdt.remove_constraint(c->first, c->second);
+
+            const CDT::Face_handle f = c->first;
+            const int i = c->second;
+
+            // Save the opposite vertex (we need to constrain this edge later)
+            if (f->vertex( (i+1)%3) == to_be_removed)
+              constraints.push_back(f->vertex( (i+2)%3 ));
+            else
+              constraints.push_back(f->vertex( (i+1)%3 ));
+   
+            std::cout << "Stored: " << constraints.back()->point() << std::endl;
+         
+          }
+          ++c;
+        } while (*c != first);
+
+        cout << "Number of constrained edges removed: " << constraints.size() << endl;
+
+        // Found short constrained edge to be remove
+        cdt.remove(to_be_removed);
+
+        // Recreate constraints
+        for (std::vector<Vertex_handle>::iterator c_it = constraints.begin();
+             c_it != constraints.end(); ++c_it)
+        {
+          std::cout << "Inserting constraint: " << to_be_kept->point() << ", " << (*c_it)->point() << std::endl;
+          cdt.insert_constraint(to_be_kept, *c_it);
+        }
+
+
+        //removed = true;
+        //break;
+      }
     }
-  }
-
-  return min_length;
+  } while (removed);
 }
 //-----------------------------------------------------------------------------
 void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
@@ -461,21 +636,22 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
 
   add_subdomain(cdt, total_domain);
 
-  std::vector<std::pair<std::size_t, Nef_polyhedron_2> > subdomain_geometries(geometry.subdomains.size());
+
+  std::vector<std::pair<std::size_t, Nef_polyhedron_2> > 
+    subdomain_geometries(geometry.subdomains.size());
 
   // Assuming that the last in the vector contains the entire domain
   // Insert this first and mark the holes
 
   // Add the subdomains to the CDT
-
   std::list<std::pair<std::size_t, boost::shared_ptr<const CSGGeometry> > >::const_reverse_iterator it;
   std::size_t i = geometry.subdomains.size()-1;
-  for (it = geometry.subdomains.rbegin(); 
-       it != geometry.subdomains.rend(); it++)
+  for (it = geometry.subdomains.rbegin(); it != geometry.subdomains.rend(); it++)
   {
     const std::size_t current_index = it->first;
     boost::shared_ptr<const CSGGeometry> current_subdomain = it->second;
-    subdomain_geometries[i] = std::make_pair(current_index, convertSubTree(current_subdomain.get())*total_domain);
+    subdomain_geometries[i] = std::make_pair(current_index, 
+                                             convertSubTree(current_subdomain.get())*total_domain);
     const Nef_polyhedron_2& cgal_geometry = subdomain_geometries[i].second;
 
     add_subdomain(cdt, cgal_geometry-overlaying);
@@ -486,7 +662,9 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   }
 
   cout << "Shortest edge: " << shortest_constrained_edge(cdt) << endl;
-
+  remove_short_edges(cdt, parameters["edge_minimum"]);
+  cout << "Shortest edge: " << shortest_constrained_edge(cdt) << endl;
+  
   explore_subdomains(cdt, total_domain, subdomain_geometries);
 
   // Create mesher
@@ -527,7 +705,8 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
                            points.end(),
                            true); //randomize point order
 
-    const double cell_size = 2.0*sqrt(CGAL::to_double(min_circle.circle().squared_radius()))/mesh_resolution;
+    const double min_radius = CGAL::to_double(min_circle.circle().squared_radius());
+    const double cell_size = 2.0*sqrt(min_radius)/mesh_resolution;
 
 
     Mesh_criteria_2 criteria(parameters["triangle_shape_bound"],
@@ -542,8 +721,12 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
     mesher.set_criteria(criteria);
   }
 
+  print_constrained_edges(cdt);
+
   // Refine CGAL mesh/triangulation
   mesher.refine_mesh();
+
+  print_constrained_edges(cdt);
 
   // Make sure triangulation is valid
   dolfin_assert(cdt.is_valid());
