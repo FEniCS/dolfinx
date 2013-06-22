@@ -28,18 +28,20 @@
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Boolean_set_operations_2.h>
 
-// #include <CGAL/Min_circle_2.h>
-// #include <CGAL/Min_circle_2_traits_2.h>
+#include <CGAL/Min_circle_2.h>
+#include <CGAL/Min_circle_2_traits_2.h>
 
-// Min enclosing circle typedefs
-// typedef CGAL::Min_circle_2_traits_2<Extended_kernel>  Min_Circle_Traits;
-// typedef CGAL::Min_circle_2<Min_Circle_Traits>      Min_circle;
-// typedef CGAL::Circle_2<Extended_kernel> CGAL_Circle;
-
+// Polygon typedefs
 typedef CGAL::Exact_predicates_exact_constructions_kernel Exact_Kernel;
 typedef Exact_Kernel::Point_2                             Point_2;
 typedef CGAL::Polygon_2<Exact_Kernel>                     Polygon_2;
 typedef CGAL::Polygon_with_holes_2<Exact_Kernel>          Polygon_with_holes_2;
+
+// Min enclosing circle typedefs
+typedef CGAL::Min_circle_2_traits_2<Exact_Kernel>  Min_Circle_Traits;
+typedef CGAL::Min_circle_2<Min_Circle_Traits>      Min_circle;
+typedef CGAL::Circle_2<Exact_Kernel> CGAL_Circle;
+
 
 using namespace dolfin;
 
@@ -199,22 +201,18 @@ CSGCGALDomain2D::CSGCGALDomain2D(const CSGGeometry *geometry)
 //-----------------------------------------------------------------------------
 double CSGCGALDomain2D::compute_boundingcircle_radius() const
 {
-    // // Set the cell size criteria according to the mesh_resolution parameter
-    // std::vector<Point_2> points;
-    // for (CDT::Point_iterator it = cdt.points_begin();
-    //      it != cdt.points_end();
-    //      it++)
-    //   points.push_back(*it);
+  std::vector<Point_2> points;
 
-    // Min_circle min_circle (points.begin(),
-    //                        points.end(),
-    //                        true); //randomize point order
+  const Polygon_2 &outer = impl->polygon_list.front().outer_boundary();
+  for (Polygon_2::Vertex_const_iterator vit = outer.vertices_begin(); 
+       vit != outer.vertices_end(); ++vit)
+    points.push_back(*vit);
 
-  // return min_circle.radius();
+  Min_circle min_circle (points.begin(),
+                         points.end(),
+                         true); //randomize point order
 
-  // TODO
-  //dolfin_error("bounding circle", "", "");
-  return 1.0;
+  return sqrt(CGAL::to_double(min_circle.circle().squared_radius()));
 }
 //-----------------------------------------------------------------------------
 CSGCGALDomain2D CSGCGALDomain2D::join(const CSGCGALDomain2D& other) const

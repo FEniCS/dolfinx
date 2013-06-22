@@ -556,7 +556,8 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   if (mesh_resolution > 0)
   {
     const double min_radius = total_domain.compute_boundingcircle_radius();
-    const double cell_size = 2.0*sqrt(min_radius)/mesh_resolution;
+    cout << "Min radius: " << min_radius << endl;
+    const double cell_size = 2.0*min_radius/mesh_resolution;
 
 
     Mesh_criteria_2 criteria(parameters["triangle_shape_bound"],
@@ -571,12 +572,12 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
     mesher.set_criteria(criteria);
   }
 
-  print_constrained_edges(cdt);
+  // print_constrained_edges(cdt);
 
   // Refine CGAL mesh/triangulation
   mesher.refine_mesh();
 
-  print_constrained_edges(cdt);
+  // print_constrained_edges(cdt);
 
   // Make sure triangulation is valid
   dolfin_assert(cdt.is_valid());
