@@ -41,10 +41,6 @@
 
 
 #ifdef HAS_CGAL
-#include "CGALMeshBuilder.h"
-
-#include <CGAL/basic.h>
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
@@ -288,12 +284,27 @@ void explore_subdomains(CDT& cdt,
 void add_subdomain(CDT& cdt, const CSGCGALDomain2D& cgal_geometry)
 {
 
-  // Explorer explorer = cgal_geometry.explorer();
+  std::vector<Point> v;
+  cgal_geometry.get_vertices(v);
 
   // std::cout << "Number of faces:    " << explorer.number_of_faces() << std::endl;
   // std::cout << "Number of vertices: " << explorer.number_of_vertices() << std::endl;
+  std::vector<Point>::iterator it = v.begin();
 
-  // explorer.check_integrity_and_topological_planarity();
+
+  Vertex_handle first = cdt.insert(Point_2(it->x(), it->y()));
+  Vertex_handle prev = first;
+
+  ++it;
+  for(; it != v.end(); ++it)
+  {
+    Vertex_handle current = cdt.insert(Point_2(it->x(), it->y()));
+    cdt.insert_constraint(prev, current);
+    prev = current;
+  }
+
+  cdt.insert_constraint(first, prev);
+
 
   // for (Face_const_iterator fit = explorer.faces_begin() ; fit != explorer.faces_end(); fit++)
   // {
@@ -576,7 +587,6 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   // Clear mesh
   mesh.clear();
 
-  // Get various dimensions
   const std::size_t gdim = cdt.finite_vertices_begin()->point().dimension();
   const std::size_t tdim = cdt.dimension();
   const std::size_t num_vertices = cdt.number_of_vertices();

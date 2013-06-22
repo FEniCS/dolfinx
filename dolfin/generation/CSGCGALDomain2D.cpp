@@ -22,6 +22,7 @@
 #include "CSGPrimitives2D.h"
 #include "CSGOperators.h"
 #include <dolfin/common/constants.h>
+#include <dolfin/mesh/Point.h>
 
 #include <CGAL/basic.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
@@ -212,5 +213,52 @@ double CSGCGALDomain2D::compute_boundingcircle_radius() const
   // return min_circle.radius();
 
   // TODO
+  //dolfin_error("bounding circle", "", "");
   return 1.0;
+}
+//-----------------------------------------------------------------------------
+CSGCGALDomain2D CSGCGALDomain2D::join(const CSGCGALDomain2D& other) const
+{
+  // TODO
+  dolfin_error("join", "", "");
+  return CSGCGALDomain2D();
+}
+//-----------------------------------------------------------------------------
+CSGCGALDomain2D CSGCGALDomain2D::intersect(const CSGCGALDomain2D &other) const
+{
+  // TODO
+  dolfin_error("intersect", "", "");
+  return CSGCGALDomain2D();
+}
+//-----------------------------------------------------------------------------
+CSGCGALDomain2D CSGCGALDomain2D::difference(const CSGCGALDomain2D &other) const
+{
+  // TODO
+  dolfin_error("difference", "", "");
+  return CSGCGALDomain2D();
+}
+//-----------------------------------------------------------------------------
+bool CSGCGALDomain2D::point_in_domain(Point p) const
+{
+  return impl->polygon_list.front().outer_boundary().has_on_bounded_side(Point_2(p.x(), p.y()));
+
+  //TODO: Check holes
+}
+//-----------------------------------------------------------------------------
+void CSGCGALDomain2D::get_vertices(std::vector<Point>& v) const
+{
+  v.clear();
+
+  const Polygon_2 &outer = impl->polygon_list.front().outer_boundary();
+  // typename CGAL::Polygon_2<Kernel, Container>::Vertex_const_iterator  vit;
+
+  // std::cout << "[ " << P.size() << " vertices:";
+  for (Polygon_2::Vertex_const_iterator vit = outer.vertices_begin(); 
+       vit != outer.vertices_end(); ++vit)
+  {
+    v.push_back(Point(CGAL::to_double(vit->x()), 
+                      CGAL::to_double(vit->y())));
+  }
+  //   std::cout << " (" << *vit << ')';
+  // std::cout << " ]" << std::endl;
 }
