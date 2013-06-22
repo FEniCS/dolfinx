@@ -473,7 +473,10 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   // Create empty CGAL triangulation
   CDT cdt;
 
+  // Convert the CSG geometry to a CGAL Polygon
   CSGCGALDomain2D total_domain(&geometry);
+
+  // Empty polygon, will be populated when traversing the subdomains
   CSGCGALDomain2D overlaying;
 
   add_subdomain(cdt, total_domain);
@@ -485,7 +488,8 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   // Assuming that the last in the vector contains the entire domain
   // Insert this first and mark the holes
 
-  // Add the subdomains to the CDT
+  // Add the subdomains to the CDT. Traverse in reverse order to get the latest
+  // added subdomain on top
   std::list<std::pair<std::size_t, boost::shared_ptr<const CSGGeometry> > >::const_reverse_iterator it;
   std::size_t i = geometry.subdomains.size()-1;
   for (it = geometry.subdomains.rbegin(); it != geometry.subdomains.rend(); it++)
@@ -606,8 +610,6 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
     Point p;
     p[0] = cgal_vertex->point()[0];
     p[1] = cgal_vertex->point()[1];
-    if (gdim == 3)
-      p[2] = cgal_vertex->point()[2];
 
     // Add mesh vertex
     mesh_editor.add_vertex(vertex_index, p);
@@ -615,6 +617,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
     // Attach index to vertex and increment
     cgal_vertex->info() = vertex_index++;
   }
+
   dolfin_assert(vertex_index == num_vertices);
 
   // Add cells to mesh
@@ -653,10 +656,6 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   // Assign the markers to the mesh's domain
   boost::shared_ptr<MeshValueCollection<std::size_t> >m = mesh.domains().markers(2);
   *m = mf;
-  
-  // Build DOLFIN mesh from CGAL triangulation
-  // FIXME: Why does this not work correctly?
-  //CGALMeshBuilder::build(mesh, cdt);
 }
 
 #else
