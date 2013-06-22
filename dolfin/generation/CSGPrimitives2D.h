@@ -152,10 +152,10 @@ namespace dolfin
     Type getType() const { return CSGGeometry::Rectangle; }
 
     /// Return first corner
-    Point first_corner() const { return Point(_x0, _y0); }
+    Point first_corner() const { return Point(_x0, _x1); }
 
     /// Return second corner
-    Point second_corner() const { return Point(_x1, _y1); }
+    Point second_corner() const { return Point(_y0, _y1); }
 
   private:
 
