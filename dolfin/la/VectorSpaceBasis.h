@@ -37,7 +37,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    VectorSpaceBasis(std::vector<boost::shared_ptr<GenericVector> > basis);
+    VectorSpaceBasis(const std::vector<boost::shared_ptr<GenericVector> > basis);
 
     /// Destructor
     ~VectorSpaceBasis() {}
@@ -60,7 +60,7 @@ namespace dolfin
   private:
 
     // Basis vectors
-    std::vector<boost::shared_ptr<GenericVector> > _basis;
+    const std::vector<boost::shared_ptr<GenericVector> > _basis;
 
   };
 }
