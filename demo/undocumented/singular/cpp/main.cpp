@@ -96,18 +96,21 @@ int main()
   V.dofmap()->set(*null_space_ptr, 1.0);
   *null_space_ptr *= 1.0/null_space_ptr->norm("l2");
 
-  std::vector<boost::shared_ptr<const GenericVector> > null_space_basis;
+  std::vector<boost::shared_ptr<GenericVector> > null_space_basis;
   null_space_basis.push_back(null_space_ptr);
 
   VectorSpaceBasis null_space(null_space_basis);
   solver.set_nullspace(null_space);
 
-  // In this case, the system is symmetric, so the transpose nullspace is the same
+  // In this case, the system is symmetric, so the transpose nullspace
+  // is the same
   solver.set_transpose_nullspace(null_space);
-  // When solving singular systems, you have to ensure that the RHS b is in the range
-  // of the singular matrix. Since the range is the orthogonal complement of the
-  // transpose nullspace, you have to call the orthogonalize method of the transpose
-  // nullspace object on the RHS:
+
+  // When solving singular systems, you have to ensure that the RHS b
+  // is in the range of the singular matrix. Since the range is the
+  // orthogonal complement of the transpose nullspace, you have to
+  // call the orthogonalize method of the transpose nullspace object
+  // on the RHS:
   null_space.orthogonalize(b);
 
   // Solve
