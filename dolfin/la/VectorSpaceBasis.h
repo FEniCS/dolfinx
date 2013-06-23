@@ -51,8 +51,8 @@ namespace dolfin
     /// Orthogonalize x with respect to basis
     void orthogonalize(GenericVector& x) const;
 
-    /// Size
-    std::size_t size() const;
+    /// Dimension of the basis
+    std::size_t dim() const;
 
     /// Get a particular basis vector
     boost::shared_ptr<const GenericVector> operator[] (std::size_t i) const;

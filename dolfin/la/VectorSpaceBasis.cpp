@@ -79,7 +79,7 @@ void VectorSpaceBasis::orthogonalize(GenericVector& x) const
   }
 }
 //-----------------------------------------------------------------------------
-std::size_t VectorSpaceBasis::size() const
+std::size_t VectorSpaceBasis::dim() const
 {
   return _basis.size();
 }
