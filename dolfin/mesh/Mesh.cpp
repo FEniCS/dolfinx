@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2011 Anders Logg
+// Copyright (C) 2006-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -26,7 +26,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-09
-// Last changed: 2013-04-18
+// Last changed: 2013-06-23
 
 #include <dolfin/ale/ALE.h>
 #include <dolfin/common/Array.h>
@@ -37,6 +37,7 @@
 #include <dolfin/generation/CSGMeshGenerator.h>
 #include <dolfin/io/File.h>
 #include <dolfin/log/log.h>
+#include <dolfin/geometry/BoundingBoxTree.h>
 #include "BoundaryMesh.h"
 #include "Cell.h"
 #include "Facet.h"
@@ -57,7 +58,6 @@ using namespace dolfin;
 Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
                Hierarchical<Mesh>(*this),
                _cell_type(0),
-               _intersection_operator(*this),
                _ordered(false),
                _cell_orientations(0)
 {
@@ -67,7 +67,6 @@ Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"),
 Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
                                Hierarchical<Mesh>(*this),
                                _cell_type(0),
-                               _intersection_operator(*this),
                                _ordered(false),
                                _cell_orientations(0)
 {
@@ -77,7 +76,6 @@ Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"),
 Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
                                    Hierarchical<Mesh>(*this),
                                    _cell_type(0),
-                                   _intersection_operator(*this),
                                    _ordered(false),
                                    _cell_orientations(0)
 {
@@ -90,7 +88,6 @@ Mesh::Mesh(LocalMeshData& local_mesh_data)
                                  : Variable("mesh", "DOLFIN mesh"),
                                    Hierarchical<Mesh>(*this),
                                    _cell_type(0),
-                                   _intersection_operator(*this),
                                    _ordered(false),
                                    _cell_orientations(0)
 {
@@ -101,7 +98,6 @@ Mesh::Mesh(const CSGGeometry& geometry, std::size_t resolution)
   : Variable("mesh", "DOLFIN mesh"),
     Hierarchical<Mesh>(*this),
     _cell_type(0),
-    _intersection_operator(*this),
     _ordered(false),
     _cell_orientations(0)
 
@@ -120,7 +116,6 @@ Mesh::Mesh(boost::shared_ptr<const CSGGeometry> geometry,
   : Variable("mesh", "DOLFIN mesh"),
     Hierarchical<Mesh>(*this),
     _cell_type(0),
-    _intersection_operator(*this),
     _ordered(false),
     _cell_orientations(0)
 {
@@ -270,7 +265,6 @@ void Mesh::clear()
   _data.clear();
   delete _cell_type;
   _cell_type = 0;
-  _intersection_operator.clear();
   _ordered = false;
   _cell_orientations.clear();
 }
@@ -393,126 +387,16 @@ Mesh::color(std::vector<std::size_t> coloring_type) const
   return MeshColoring::color(*_mesh, coloring_type);
 }
 //-----------------------------------------------------------------------------
-void Mesh::intersected_cells(const Point& point,
-                             std::set<std::size_t>& cells) const
+boost::shared_ptr<BoundingBoxTree> Mesh::bounding_box_tree() const
 {
-  // CGAL needs mesh with more than 1 cell
-  if (num_cells() > 1)
-    _intersection_operator.all_intersected_entities(point, cells);
-  else
+  // Allocate and build tree if necessary
+  if (!_tree)
   {
-    // Num cells == 1
-    const Cell cell(*this, 0);
-    if (cell.intersects(point))
-      cells.insert(0);
+    _tree.reset(new BoundingBoxTree());
+    _tree->build(*this);
   }
-}
-//-----------------------------------------------------------------------------
-void Mesh::intersected_cells(const std::vector<Point>& points,
-                             std::set<std::size_t>& cells) const
-{
-  // CGAL needs mesh with more than 1 cell
-  if (num_cells() > 1)
-    _intersection_operator.all_intersected_entities(points, cells);
-  else
-  {
-    // Num cells == 1
-    const Cell cell(*this, 0);
-    for (std::vector<Point>::const_iterator p = points.begin();
-         p != points.end(); ++p)
-    {
-      if (cell.intersects(*p))
-        cells.insert(0);
-    }
-  }
-}
-//-----------------------------------------------------------------------------
-void Mesh::intersected_cells(const MeshEntity & entity,
-                             std::vector<std::size_t>& cells) const
-{
-  // CGAL needs mesh with more than 1 cell
-  if (num_cells() > 1)
-    _intersection_operator.all_intersected_entities(entity, cells);
-  else
-  {
-    // Num cells == 1
-    const Cell cell(*this, 0);
-    if (cell.intersects(entity))
-      cells.push_back(0);
-  }
-}
-//-----------------------------------------------------------------------------
-void Mesh::intersected_cells(const std::vector<MeshEntity>& entities,
-                             std::set<std::size_t>& cells) const
-{
-  // CGAL needs mesh with more than 1 cell
-  if (num_cells() > 1)
-    _intersection_operator.all_intersected_entities(entities, cells);
-  else
-  {
-    // Num cells == 1
-    const Cell cell(*this, 0);
-    for (std::vector<MeshEntity>::const_iterator entity = entities.begin();
-            entity != entities.end(); ++entity)
-    {
-      if (cell.intersects(*entity))
-        cells.insert(0);
-    }
-  }
-}
-//-----------------------------------------------------------------------------
-void Mesh::intersected_cells(const Mesh& another_mesh,
-                             std::set<std::size_t>& cells) const
-{
-  _intersection_operator.all_intersected_entities(another_mesh, cells);
-}
-//-----------------------------------------------------------------------------
-int Mesh::intersected_cell(const Point& point) const
-{
-  // CGAL needs mesh with more than 1 cell
-  if (num_cells() > 1)
-    return _intersection_operator.any_intersected_entity(point);
 
-  // Num cells == 1
-  const Cell cell(*this, 0);
-  return cell.intersects(point) ? 0 : -1;
-}
-//-----------------------------------------------------------------------------
-Point Mesh::closest_point(const Point& point) const
-{
-  return _intersection_operator.closest_point(point);
-}
-//-----------------------------------------------------------------------------
-std::size_t Mesh::closest_cell(const Point & point) const
-{
-  // CGAL exits with an assertion error whilst performing
-  // the closest cell query if num_cells() == 1
-  if (num_cells() > 1)
-    return _intersection_operator.closest_cell(point);
-
-  // Num cells == 1
-  return 0;
-}
-//-----------------------------------------------------------------------------
-std::pair<Point, std::size_t>
-Mesh::closest_point_and_cell(const Point & point) const
-{
-  return _intersection_operator.closest_point_and_cell(point);
-}
-//-----------------------------------------------------------------------------
-double Mesh::distance(const Point& point) const
-{
-  return _intersection_operator.distance(point);
-}
-//-----------------------------------------------------------------------------
-IntersectionOperator& Mesh::intersection_operator()
-{
-  return _intersection_operator;
-}
-//-----------------------------------------------------------------------------
-const IntersectionOperator& Mesh::intersection_operator() const
-{
-  return _intersection_operator;
+  return _tree;
 }
 //-----------------------------------------------------------------------------
 double Mesh::hmin() const

@@ -20,7 +20,7 @@
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2012-01-17
-# Last changed: 2012-07-03
+# Last changed: 2013-06-23
 
 # System imports
 import os
@@ -499,7 +499,7 @@ if __name__ == "__main__":
     module_to_submodules = OrderedDict([\
         ("common", ["common", "parameter", "log"]),
         ("la", ["la", "nls"]),
-        ("mesh", ["mesh", "intersection", "refinement", \
+        ("mesh", ["mesh", "refinement", \
                   "ale", "graph", "geometry", "generation"]),
         ("function", ["function", "math"]),
         ("fem", ["fem", "quadrature", "adaptivity", "multistage"]),
