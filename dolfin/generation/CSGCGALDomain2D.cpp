@@ -249,6 +249,7 @@ CSGCGALDomain2D CSGCGALDomain2D::intersect(const CSGCGALDomain2D &other) const
   CSGCGALDomain2D p;
   // TODO: Handle the cases where existing polygon consists over Polygon_with_holes
   CGAL::intersection(impl->polygon_list.front(), other.impl->polygon_list.front(), std::back_inserter(p.impl->polygon_list));
+  p.impl->polygon_list.pop_front();
   return p;
 }
 //-----------------------------------------------------------------------------
