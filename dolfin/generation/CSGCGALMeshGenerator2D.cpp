@@ -451,40 +451,32 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   // Convert the CSG geometry to a CGAL Polygon
   cout << "Converting geometry to polygon" << endl;
   CSGCGALDomain2D total_domain(&geometry);
+  add_subdomain(cdt, total_domain);
 
   // Empty polygon, will be populated when traversing the subdomains
   CSGCGALDomain2D overlaying;
 
-  add_subdomain(cdt, total_domain);
-
-
   std::vector<std::pair<std::size_t, CSGCGALDomain2D> > 
-    subdomain_geometries(geometry.subdomains.size());
-
-  // Assuming that the last in the vector contains the entire domain
-  // Insert this first and mark the holes
+    subdomain_geometries;
 
   // Add the subdomains to the CDT. Traverse in reverse order to get the latest
   // added subdomain on top
   std::list<std::pair<std::size_t, boost::shared_ptr<const CSGGeometry> > >::const_reverse_iterator it;
-  std::size_t i = geometry.subdomains.size()-1;
+
   for (it = geometry.subdomains.rbegin(); it != geometry.subdomains.rend(); it++)
   {
     const std::size_t current_index = it->first;
     boost::shared_ptr<const CSGGeometry> current_subdomain = it->second;
-    subdomain_geometries[i] = std::make_pair(current_index, 
-                                             //convertSubTree(current_subdomain.get())*total_domain);
-                                             // TODO
-                                             CSGCGALDomain2D());
-    //const CSGCGALDomain2D& cgal_geometry = subdomain_geometries[i].second;
 
-    // TODO
-    //add_subdomain(cdt, cgal_geometry-overlaying);
+    CSGCGALDomain2D cgal_geometry(current_subdomain.get());
+    cgal_geometry.difference(overlaying);
 
-    // TODO
-    //overlaying += cgal_geometry;
+    subdomain_geometries.push_back(std::make_pair(current_index, 
+                                                  cgal_geometry));
 
-    i--;
+    add_subdomain(cdt, cgal_geometry);
+
+    overlaying.join_inplace(cgal_geometry);
   }
 
   cout << "Shortest edge: " << shortest_constrained_edge(cdt) << endl;

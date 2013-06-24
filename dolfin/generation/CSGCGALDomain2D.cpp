@@ -121,7 +121,6 @@ Polygon_2 make_polygon(const Polygon* p)
 CSGCGALDomain2D::CSGCGALDomain2D()
 {
   impl = new CSGCGALDomain2DImpl();
-  impl->polygon_list.push_back(Polygon_with_holes_2());
 }
 //-----------------------------------------------------------------------------
 CSGCGALDomain2D::~CSGCGALDomain2D()
@@ -347,7 +346,7 @@ void CSGCGALDomain2D::get_vertices(std::vector<Point>& v) const
 {
   v.clear();
 
-  dolfin_assert(impl->polygon_list.size() > 0);
+  //dolfin_assert(impl->polygon_list.size() > 0);
   const Polygon_2 &outer = impl->polygon_list.front().outer_boundary();
 
   for (Polygon_2::Vertex_const_iterator vit = outer.vertices_begin(); 
