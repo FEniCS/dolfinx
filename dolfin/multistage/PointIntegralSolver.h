@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-06-17
+// Last changed: 2013-06-24
 
 #ifndef __POINTINTEGRALSOLVER_H
 #define __POINTINTEGRALSOLVER_H
@@ -47,6 +47,9 @@ namespace dolfin
     /// Constructor
     /// FIXME: Include version where one can pass a Solver and/or Parameters
     PointIntegralSolver(boost::shared_ptr<MultiStageScheme> scheme);
+
+    /// Destructor
+    ~PointIntegralSolver();
 
     /// Step solver with time step dt
     void step(double dt);
@@ -181,7 +184,6 @@ namespace dolfin
     std::vector<std::vector<double> > _local_stage_solutions;
 
     // Local solutions
-    std::vector<double> _u0;
     std::vector<double> _F;
     std::vector<double> _y;
     std::vector<double> _dx;
