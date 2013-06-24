@@ -415,5 +415,20 @@ class MeshOrientations(unittest.TestCase):
             mesh.init_cell_orientations(Expression(("x[0]", "x[1]", "x[2]")))
             print mesh.cell_orientations()
 
+
+if MPI.num_processes() > 1:
+    class MeshSharedEntities(unittest.TestCase):
+        def test_shared_entities(self):
+            for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]):
+                dim = ind+1
+                args = [5]*dim
+                mesh = MeshClass(*args)
+                mesh.init()
+
+                # FIXME: Implement a proper test
+                for shared_dim in range(dim):
+                    info("%s dim[%d] %s" % (MeshClass, shared_dim, mesh.topology().shared_entities(shared_dim)))
+
+
 if __name__ == "__main__":
     unittest.main()
