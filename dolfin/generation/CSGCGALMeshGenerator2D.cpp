@@ -281,13 +281,13 @@ void explore_subdomains(CDT& cdt,
 }
 //-----------------------------------------------------------------------------
   // Insert edges from polygon as constraints in the triangulation
-void add_subdomain(CDT& cdt, const CSGCGALDomain2D& cgal_geometry)
+void add_subdomain(CDT& cdt, const CSGCGALDomain2D& cgal_geometry, double threshold)
 {
 
   // Insert the outer boundary of the domain
   {
     std::vector<Point> v;
-    cgal_geometry.get_vertices(v);
+    cgal_geometry.get_vertices(v, threshold);
     std::vector<Point>::const_iterator it = v.begin();
     Vertex_handle first = cdt.insert(Point_2(it->x(), it->y()));
     Vertex_handle prev = first;
@@ -306,7 +306,7 @@ void add_subdomain(CDT& cdt, const CSGCGALDomain2D& cgal_geometry)
   // Insert holes
   {
     std::list<std::vector<Point> > holes;
-    cgal_geometry.get_holes(holes);
+    cgal_geometry.get_holes(holes, threshold);
 
     for (std::list<std::vector<Point> >::const_iterator hit = holes.begin();
          hit != holes.end(); ++hit)
@@ -451,7 +451,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   // Convert the CSG geometry to a CGAL Polygon
   cout << "Converting geometry to polygon" << endl;
   CSGCGALDomain2D total_domain(&geometry);
-  add_subdomain(cdt, total_domain);
+  add_subdomain(cdt, total_domain, parameters["edge_minimum"]);
 
   // Empty polygon, will be populated when traversing the subdomains
   CSGCGALDomain2D overlaying;
@@ -474,7 +474,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
     subdomain_geometries.push_back(std::make_pair(current_index, 
                                                   cgal_geometry));
 
-    add_subdomain(cdt, cgal_geometry);
+    add_subdomain(cdt, cgal_geometry, parameters["edge_minimum"]);
 
     overlaying.join_inplace(cgal_geometry);
   }

@@ -342,23 +342,39 @@ bool CSGCGALDomain2D::point_in_domain(Point p) const
   return false;
 }
 //-----------------------------------------------------------------------------
-void CSGCGALDomain2D::get_vertices(std::vector<Point>& v) const
+void CSGCGALDomain2D::get_vertices(std::vector<Point>& v, 
+                                   double truncate_threshold) const
 {
   v.clear();
+
+  truncate_threshold *= truncate_threshold;
 
   //dolfin_assert(impl->polygon_list.size() > 0);
   const Polygon_2 &outer = impl->polygon_list.front().outer_boundary();
 
-  for (Polygon_2::Vertex_const_iterator vit = outer.vertices_begin(); 
-       vit != outer.vertices_end(); ++vit)
+  Polygon_2::Vertex_const_iterator prev = outer.vertices_begin(); 
+  Polygon_2::Vertex_const_iterator current = prev;
+  ++current;
+  for (; current != outer.vertices_end(); ++current)
   {
-    const double x = CGAL::to_double(vit->x());
-    const double y = CGAL::to_double(vit->y());
+    if ( (*current - *prev).squared_length() < truncate_threshold)
+      continue;
+
+    const double x = CGAL::to_double(current->x());
+    const double y = CGAL::to_double(current->y());
     v.push_back(Point(x, y));
+
+    prev = current;
   }
+  
+  current = outer.vertices_begin();
+  if ( (*current - *prev).squared_length() > truncate_threshold)
+    v.push_back(Point(CGAL::to_double(current->x()), 
+                      CGAL::to_double(current->y())));
 }
 //-----------------------------------------------------------------------------
-void CSGCGALDomain2D::get_holes(std::list<std::vector<Point> >& h) const
+void CSGCGALDomain2D::get_holes(std::list<std::vector<Point> >& h,
+                                double truncate_threshold) const
 {
   h.clear();
 
@@ -371,13 +387,26 @@ void CSGCGALDomain2D::get_holes(std::list<std::vector<Point> >& h) const
       h.push_back(std::vector<Point>());
       std::vector<Point> &v = h.back();
       v.reserve(hit->size());
-      for (Vertex_const_iterator vit = hit->vertices_begin();
-           vit != hit->vertices_end(); ++vit)
+
+      Polygon_2::Vertex_const_iterator prev = hit->vertices_begin(); 
+      Polygon_2::Vertex_const_iterator current = prev;
+      ++current;
+
+      for (; current != hit->vertices_end(); ++current)
       {
-        const double x = CGAL::to_double(vit->x());
-        const double y = CGAL::to_double(vit->y());
+        if ( (*current - *prev).squared_length() < truncate_threshold)
+          continue;
+
+        const double x = CGAL::to_double(current->x());
+        const double y = CGAL::to_double(current->y());
         v.push_back(Point(x, y));
+
+        prev = current;
       }
+      current = hit->vertices_begin();
+      if ( (*current - *prev).squared_length() > truncate_threshold)
+        v.push_back(Point(CGAL::to_double(current->x()), 
+                          CGAL::to_double(current->y())));
     }
   }
 }
