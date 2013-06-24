@@ -55,7 +55,7 @@ namespace dolfin
       p.add("cell_size", 0.25);
       
       // shorter edges in the domain will be collapsed before meshing
-      p.add("edge_minimum", 10e-3);
+      p.add("edge_minimum", 10e-5);
 
       return p;
     }
