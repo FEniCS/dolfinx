@@ -21,7 +21,7 @@
 # Modified by Garth N. Wells 2009-2011
 #
 # First added:  2006-08-09
-# Last changed: 2013-06-06
+# Last changed: 2013-06-23
 
 import sys, os, re
 import platform
@@ -57,7 +57,6 @@ tests = {
     "python-extras":  ["test"],
     "quadrature":     ["BaryCenter"],
     "refinement":     ["test"],
-    "intersection":   ["IntersectionOperator"],
     "geometry":       ["BoundingBoxTree"]
     }
 
