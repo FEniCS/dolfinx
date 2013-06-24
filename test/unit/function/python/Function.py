@@ -217,6 +217,9 @@ class Interface(unittest.TestCase):
         u0.vector()[:] = 1.0
         u1.interpolate(e0)
         u2.interpolate(e1)
+        u0.update()
+        u1.update()
+        u2.update()
         
         p0 = (Vertex(mesh,0).point()+Vertex(mesh,1).point())/2
         x0 = (mesh.coordinates()[0]+mesh.coordinates()[1])/2
@@ -237,7 +240,6 @@ class Interface(unittest.TestCase):
 
         self.assertRaises(TypeError, u0, [0,0,0,0])
         self.assertRaises(TypeError, u0, [0,0])
-        
 
 class ScalarFunctions(unittest.TestCase):
     def test_constant_float_conversion(self):
