@@ -284,23 +284,28 @@ void explore_subdomains(CDT& cdt,
 void add_subdomain(CDT& cdt, const CSGCGALDomain2D& cgal_geometry, double threshold)
 {
 
-  // Insert the outer boundary of the domain
+  // Insert the outer boundaries of the domain
   {
-    std::vector<Point> v;
+    std::list<std::vector<Point> > v;
     cgal_geometry.get_vertices(v, threshold);
-    std::vector<Point>::const_iterator it = v.begin();
-    Vertex_handle first = cdt.insert(Point_2(it->x(), it->y()));
-    Vertex_handle prev = first;
-    ++it;
 
-    for(; it != v.end(); ++it)
+    for (std::list<std::vector<Point> >::const_iterator pit = v.begin();
+         pit != v.end(); ++pit)
     {
-      Vertex_handle current = cdt.insert(Point_2(it->x(), it->y()));
-      cdt.insert_constraint(prev, current);
-      prev = current;
-    }
+      std::vector<Point>::const_iterator it = pit->begin();
+      Vertex_handle first = cdt.insert(Point_2(it->x(), it->y()));
+      Vertex_handle prev = first;
+      ++it;
 
-    cdt.insert_constraint(first, prev);
+      for(; it != pit->end(); ++it)
+      {
+        Vertex_handle current = cdt.insert(Point_2(it->x(), it->y()));
+        cdt.insert_constraint(prev, current);
+        prev = current;
+      }
+
+      cdt.insert_constraint(first, prev);
+    }
   }
 
   // Insert holes

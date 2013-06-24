@@ -342,35 +342,42 @@ bool CSGCGALDomain2D::point_in_domain(Point p) const
   return false;
 }
 //-----------------------------------------------------------------------------
-void CSGCGALDomain2D::get_vertices(std::vector<Point>& v, 
+void CSGCGALDomain2D::get_vertices(std::list<std::vector<Point> >& l, 
                                    double truncate_threshold) const
 {
-  v.clear();
+  l.clear();
 
   truncate_threshold *= truncate_threshold;
 
-  //dolfin_assert(impl->polygon_list.size() > 0);
-  const Polygon_2 &outer = impl->polygon_list.front().outer_boundary();
-
-  Polygon_2::Vertex_const_iterator prev = outer.vertices_begin(); 
-  Polygon_2::Vertex_const_iterator current = prev;
-  ++current;
-  for (; current != outer.vertices_end(); ++current)
+  std::list<Polygon_with_holes_2>::const_iterator pit;
+  for (pit = impl->polygon_list.begin(); pit != impl->polygon_list.end(); ++pit)
   {
-    if ( (*current - *prev).squared_length() < truncate_threshold)
-      continue;
+    const Polygon_2 &outer = pit->outer_boundary();
 
-    const double x = CGAL::to_double(current->x());
-    const double y = CGAL::to_double(current->y());
-    v.push_back(Point(x, y));
+    l.push_back(std::vector<Point>());
+    std::vector<Point> &v = l.back();
+    v.reserve(outer.size());
 
-    prev = current;
-  }
+    Polygon_2::Vertex_const_iterator prev = outer.vertices_begin(); 
+    Polygon_2::Vertex_const_iterator current = prev;
+    ++current;
+    for (; current != outer.vertices_end(); ++current)
+    {
+      if ( (*current - *prev).squared_length() < truncate_threshold)
+        continue;
+
+      const double x = CGAL::to_double(current->x());
+      const double y = CGAL::to_double(current->y());
+      v.push_back(Point(x, y));
+
+      prev = current;
+    }
   
-  current = outer.vertices_begin();
-  if ( (*current - *prev).squared_length() > truncate_threshold)
-    v.push_back(Point(CGAL::to_double(current->x()), 
-                      CGAL::to_double(current->y())));
+    current = outer.vertices_begin();
+    if ( (*current - *prev).squared_length() > truncate_threshold)
+      v.push_back(Point(CGAL::to_double(current->x()), 
+                        CGAL::to_double(current->y())));
+  }
 }
 //-----------------------------------------------------------------------------
 void CSGCGALDomain2D::get_holes(std::list<std::vector<Point> >& h,

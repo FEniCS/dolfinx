@@ -57,9 +57,11 @@ class CSGCGALDomain2D
   // TODO: Replace this with a more C++-ish
   // implementation, ie, take an outputiterator as arugment
   // or define iterator
-  void get_vertices(std::vector<Point>& v, double truncate_threshold) const;
+  void get_vertices(std::list<std::vector<Point> >& v, 
+                    double truncate_threshold) const;
 
-  void get_holes(std::list<std::vector<Point> >& h, double truncate_threshold) const;
+  void get_holes(std::list<std::vector<Point> >& h, 
+                 double truncate_threshold) const;
 
   CSGCGALDomain2DImpl *impl;
 
