@@ -284,85 +284,49 @@ void explore_subdomains(CDT& cdt,
 void add_subdomain(CDT& cdt, const CSGCGALDomain2D& cgal_geometry)
 {
 
-  std::vector<Point> v;
-  cgal_geometry.get_vertices(v);
-
-  // std::cout << "Number of faces:    " << explorer.number_of_faces() << std::endl;
-  // std::cout << "Number of vertices: " << explorer.number_of_vertices() << std::endl;
-  std::vector<Point>::iterator it = v.begin();
-
-
-  Vertex_handle first = cdt.insert(Point_2(it->x(), it->y()));
-  Vertex_handle prev = first;
-
-  ++it;
-  for(; it != v.end(); ++it)
+  // Insert the outer boundary of the domain
   {
-    Vertex_handle current = cdt.insert(Point_2(it->x(), it->y()));
-    cdt.insert_constraint(prev, current);
-    prev = current;
+    std::vector<Point> v;
+    cgal_geometry.get_vertices(v);
+    std::vector<Point>::const_iterator it = v.begin();
+    Vertex_handle first = cdt.insert(Point_2(it->x(), it->y()));
+    Vertex_handle prev = first;
+    ++it;
+
+    for(; it != v.end(); ++it)
+    {
+      Vertex_handle current = cdt.insert(Point_2(it->x(), it->y()));
+      cdt.insert_constraint(prev, current);
+      prev = current;
+    }
+
+    cdt.insert_constraint(first, prev);
   }
 
-  cdt.insert_constraint(first, prev);
+  // Insert holes
+  {
+    std::list<std::vector<Point> > holes;
+    cgal_geometry.get_holes(holes);
 
+    for (std::list<std::vector<Point> >::const_iterator hit = holes.begin();
+         hit != holes.end(); ++hit)
+    {
 
-  // for (Face_const_iterator fit = explorer.faces_begin() ; fit != explorer.faces_end(); fit++)
-  // {
-  //   std::cout << "Inserting face" << std::endl;
+      std::vector<Point>::const_iterator pit = hit->begin();
+      Vertex_handle first = cdt.insert(Point_2(pit->x(), pit->y()));
+      Vertex_handle prev = first;
+      ++pit;
 
-  //   // Skip face if it is not part of polygon
-  //   if (!explorer.mark(fit))
-  //   {
-  //     continue;
-  //   }
+      for(; pit != hit->end(); ++pit)
+      {
+        Vertex_handle current = cdt.insert(Point_2(pit->x(), pit->y()));
+        cdt.insert_constraint(prev, current);
+        prev = current;
+      }
 
-  //   Halfedge_around_face_const_circulator hafc = explorer.face_cycle(fit), done = hafc;
-
-  //   do
-  //   {
-  //     std::cout << "Done:    " << done->vertex()->point() << std::endl;
-  //     std::cout << "Current: " << hafc->vertex()->point() << std::endl;
-
-  //     Point_2 pa(CGAL::to_double(hafc->vertex()->point().x()),
-  //                CGAL::to_double(hafc->vertex()->point().y()));
-  //     // std::cout << "Inserting point: " << hafc->vertex()->point() << std::endl;
-
-
-  //     Vertex_handle va = cdt.insert(pa);
-          
-  //     Point_2 pb(CGAL::to_double(hafc->next()->vertex()->point().x()),
-  //                CGAL::to_double(hafc->next()->vertex()->point().y()));
-
-  //     // std::cout << "Inserting point: " << pb << std::endl << std::endl;
-
-  //     Vertex_handle vb = cdt.insert(pb);
-
-  //     cdt.insert_constraint(va, vb);
-  //     hafc++;
-
-
-  //   } while (hafc != done);
-    
-  //   Hole_const_iterator hit = explorer.holes_begin(fit);
-  //   for (; hit != explorer.holes_end(fit); hit++)
-  //   {
-  //     Halfedge_around_face_const_circulator hafc1(hit), done1(hit);
-  //     do
-  //     {
-  //       std::cout << "Inserting hole" << std::endl;
-
-  //       Point_2 pa(CGAL::to_double(hafc1->vertex()->point().x()),
-  //                  CGAL::to_double(hafc1->vertex()->point().y()));
-  //       Vertex_handle va = cdt.insert(pa);
-        
-  //       Point_2 pb(CGAL::to_double(hafc1->next()->vertex()->point().x()),
-  //                  CGAL::to_double(hafc1->next()->vertex()->point().y()));
-  //       Vertex_handle vb = cdt.insert(pb);
-  //       cdt.insert_constraint(va, vb);
-  //       hafc1++;
-  //     } while (hafc1 != done1);
-  //   }
-  // }
+      cdt.insert_constraint(first, prev);
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 double shortest_constrained_edge(const CDT &cdt)
@@ -485,6 +449,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   CDT cdt;
 
   // Convert the CSG geometry to a CGAL Polygon
+  cout << "Converting geometry to polygon" << endl;
   CSGCGALDomain2D total_domain(&geometry);
 
   // Empty polygon, will be populated when traversing the subdomains

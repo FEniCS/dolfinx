@@ -16,13 +16,14 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-22
-// Last changed: 2013-06-22
+// Last changed: 2013-06-24
 
 #include "CSGCGALDomain2D.h"
 #include "CSGPrimitives2D.h"
 #include "CSGOperators.h"
 #include <dolfin/common/constants.h>
 #include <dolfin/mesh/Point.h>
+#include <dolfin/log/LogStream.h>
 
 #include <CGAL/basic.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
@@ -35,13 +36,15 @@
 typedef CGAL::Exact_predicates_exact_constructions_kernel Exact_Kernel;
 typedef Exact_Kernel::Point_2                             Point_2;
 typedef CGAL::Polygon_2<Exact_Kernel>                     Polygon_2;
+typedef Polygon_2::Vertex_const_iterator                  Vertex_const_iterator;
 typedef CGAL::Polygon_with_holes_2<Exact_Kernel>          Polygon_with_holes_2;
+typedef Polygon_with_holes_2::Hole_const_iterator         Hole_const_iterator;
+
 
 // Min enclosing circle typedefs
 typedef CGAL::Min_circle_2_traits_2<Exact_Kernel>  Min_Circle_Traits;
 typedef CGAL::Min_circle_2<Min_Circle_Traits>      Min_circle;
 typedef CGAL::Circle_2<Exact_Kernel> CGAL_Circle;
-
 
 using namespace dolfin;
 
@@ -118,6 +121,7 @@ Polygon_2 make_polygon(const Polygon* p)
 CSGCGALDomain2D::CSGCGALDomain2D()
 {
   impl = new CSGCGALDomain2DImpl();
+  impl->polygon_list.push_back(Polygon_with_holes_2());
 }
 //-----------------------------------------------------------------------------
 CSGCGALDomain2D::~CSGCGALDomain2D()
@@ -199,6 +203,23 @@ CSGCGALDomain2D::CSGCGALDomain2D(const CSGGeometry *geometry)
   }
 }
 //-----------------------------------------------------------------------------
+CSGCGALDomain2D::CSGCGALDomain2D(const CSGCGALDomain2D &other)
+{
+  impl = new CSGCGALDomain2DImpl();
+  std::copy(other.impl->polygon_list.begin(), other.impl->polygon_list.end(),
+            std::back_inserter(impl->polygon_list));
+}
+//-----------------------------------------------------------------------------
+CSGCGALDomain2D &CSGCGALDomain2D::operator=(const CSGCGALDomain2D &other)
+{
+  impl->polygon_list.clear();
+  std::copy(other.impl->polygon_list.begin(), other.impl->polygon_list.end(),
+            std::back_inserter(impl->polygon_list));
+
+  return *this;
+}
+
+//-----------------------------------------------------------------------------
 double CSGCGALDomain2D::compute_boundingcircle_radius() const
 {
   std::vector<Point_2> points;
@@ -217,46 +238,94 @@ double CSGCGALDomain2D::compute_boundingcircle_radius() const
 //-----------------------------------------------------------------------------
 CSGCGALDomain2D CSGCGALDomain2D::join(const CSGCGALDomain2D& other) const
 {
-  // TODO
-  dolfin_error("join", "", "");
-  return CSGCGALDomain2D();
+  CSGCGALDomain2D p;
+  bool overlap = CGAL::join(impl->polygon_list.front(), other.impl->polygon_list.front(), p.impl->polygon_list.front());
+  dolfin_assert(overlap);
+  return p;
 }
 //-----------------------------------------------------------------------------
 CSGCGALDomain2D CSGCGALDomain2D::intersect(const CSGCGALDomain2D &other) const
 {
-  // TODO
-  dolfin_error("intersect", "", "");
-  return CSGCGALDomain2D();
+  CSGCGALDomain2D p;
+  // TODO: Handle the cases where existing polygon consists over Polygon_with_holes
+  CGAL::intersection(impl->polygon_list.front(), other.impl->polygon_list.front(), std::back_inserter(p.impl->polygon_list));
+  return p;
 }
 //-----------------------------------------------------------------------------
 CSGCGALDomain2D CSGCGALDomain2D::difference(const CSGCGALDomain2D &other) const
 {
-  // TODO
-  dolfin_error("difference", "", "");
-  return CSGCGALDomain2D();
+  CSGCGALDomain2D p;
+  // TODO: Handle the cases where existing polygon consists over Polygon_with_holes
+  CGAL::difference(impl->polygon_list.front(), other.impl->polygon_list.front(), std::back_inserter(p.impl->polygon_list));
+  p.impl->polygon_list.pop_front();
+  return p;
 }
 //-----------------------------------------------------------------------------
 bool CSGCGALDomain2D::point_in_domain(Point p) const
 {
-  return impl->polygon_list.front().outer_boundary().has_on_bounded_side(Point_2(p.x(), p.y()));
+  Point_2 p_(p.x(), p.y());
 
-  //TODO: Check holes
+  std::list<Polygon_with_holes_2>::const_iterator vit;
+  for (vit = impl->polygon_list.begin(); vit != impl->polygon_list.end(); ++vit)
+  {
+    bool point_inside_hole = false;
+    for (Hole_const_iterator hit = vit->holes_begin();
+         hit != vit->holes_end(); ++hit)
+    {
+      if (hit->has_on_bounded_side(p_))
+        point_inside_hole = true;
+    }
+
+    if (!point_inside_hole && 
+        vit->outer_boundary().has_on_bounded_side(p_))
+      return true;
+  }
+
+  return false;
 }
 //-----------------------------------------------------------------------------
 void CSGCGALDomain2D::get_vertices(std::vector<Point>& v) const
 {
   v.clear();
 
+  dolfin_assert(impl->polygon_list.size() > 0);
   const Polygon_2 &outer = impl->polygon_list.front().outer_boundary();
-  // typename CGAL::Polygon_2<Kernel, Container>::Vertex_const_iterator  vit;
 
-  // std::cout << "[ " << P.size() << " vertices:";
   for (Polygon_2::Vertex_const_iterator vit = outer.vertices_begin(); 
        vit != outer.vertices_end(); ++vit)
   {
-    v.push_back(Point(CGAL::to_double(vit->x()), 
-                      CGAL::to_double(vit->y())));
+    const double x = CGAL::to_double(vit->x());
+    const double y = CGAL::to_double(vit->y());
+    v.push_back(Point(x, y));
   }
-  //   std::cout << " (" << *vit << ')';
-  // std::cout << " ]" << std::endl;
+}
+//-----------------------------------------------------------------------------
+void CSGCGALDomain2D::get_holes(std::list<std::vector<Point> >& h) const
+{
+  h.clear();
+
+  std::list<Polygon_with_holes_2>::const_iterator pit;
+  for (pit = impl->polygon_list.begin(); pit != impl->polygon_list.end(); ++pit)
+  {
+    Hole_const_iterator hit;
+    for (hit = pit->holes_begin(); hit != pit->holes_end(); ++hit)
+    {
+      h.push_back(std::vector<Point>());
+      std::vector<Point> &v = h.back();
+      v.reserve(hit->size());
+      for (Vertex_const_iterator vit = hit->vertices_begin();
+           vit != hit->vertices_end(); ++vit)
+      {
+        const double x = CGAL::to_double(vit->x());
+        const double y = CGAL::to_double(vit->y());
+        v.push_back(Point(x, y));
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+bool CSGCGALDomain2D::has_holes() const
+{
+  const Polygon_with_holes_2 &p = impl->polygon_list.front();
+  return p.holes_begin() != p.holes_end();
 }

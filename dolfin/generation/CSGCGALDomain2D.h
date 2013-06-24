@@ -39,8 +39,8 @@ class CSGCGALDomain2D
   ~CSGCGALDomain2D();
 
   // Copy constructor
-  //CSGCGALDomain2D(const CSGCGALDomain2D &other);
-  //CSGCGALDomain2D &operator=(const CSGCGALDomain2D &other);
+  CSGCGALDomain2D(const CSGCGALDomain2D &other);
+  CSGCGALDomain2D &operator=(const CSGCGALDomain2D &other);
 
   // Boolean operators
   CSGCGALDomain2D join(const CSGCGALDomain2D& other) const;
@@ -49,13 +49,15 @@ class CSGCGALDomain2D
 
   bool point_in_domain(Point p) const;
   double compute_boundingcircle_radius() const ;
+  bool has_holes() const;
   
   // TODO: Replace this with a more C++-ish
   // implementation, ie, take an outputiterator as arugment
   // or define iterator
   void get_vertices(std::vector<Point>& v) const;
 
-private:
+  void get_holes(std::list<std::vector<Point> >& h) const;
+
   CSGCGALDomain2DImpl *impl;
 
 };
