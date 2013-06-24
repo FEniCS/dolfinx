@@ -238,28 +238,86 @@ double CSGCGALDomain2D::compute_boundingcircle_radius() const
 //-----------------------------------------------------------------------------
 CSGCGALDomain2D CSGCGALDomain2D::join(const CSGCGALDomain2D& other) const
 {
-  CSGCGALDomain2D p;
-  bool overlap = CGAL::join(impl->polygon_list.front(), other.impl->polygon_list.front(), p.impl->polygon_list.front());
-  dolfin_assert(overlap);
+  CSGCGALDomain2D p(*this);
+  p.join_inplace(other);
   return p;
 }
 //-----------------------------------------------------------------------------
-CSGCGALDomain2D CSGCGALDomain2D::intersect(const CSGCGALDomain2D &other) const
+void CSGCGALDomain2D::join_inplace(const CSGCGALDomain2D& other) const
 {
-  CSGCGALDomain2D p;
-  // TODO: Handle the cases where existing polygon consists over Polygon_with_holes
-  CGAL::intersection(impl->polygon_list.front(), other.impl->polygon_list.front(), std::back_inserter(p.impl->polygon_list));
-  p.impl->polygon_list.pop_front();
+  // Copy all polygons from other to this
+  std::copy(other.impl->polygon_list.begin(), 
+            other.impl->polygon_list.end(),
+            std::back_inserter(impl->polygon_list));
+
+  std::list<Polygon_with_holes_2> tmp;
+  CGAL::join(impl->polygon_list.begin(),
+             impl->polygon_list.end(),
+             std::back_inserter(tmp));
+
+  impl->polygon_list.clear();
+  std::copy(tmp.begin(), 
+            tmp.end(),
+            std::back_inserter(impl->polygon_list));
+}
+//-----------------------------------------------------------------------------
+CSGCGALDomain2D CSGCGALDomain2D::intersect(const CSGCGALDomain2D& other) const
+{
+  CSGCGALDomain2D p(*this);
+  p.intersect_inplace(other);
   return p;
 }
 //-----------------------------------------------------------------------------
-CSGCGALDomain2D CSGCGALDomain2D::difference(const CSGCGALDomain2D &other) const
+void CSGCGALDomain2D::intersect_inplace(const CSGCGALDomain2D &other) const
 {
-  CSGCGALDomain2D p;
-  // TODO: Handle the cases where existing polygon consists over Polygon_with_holes
-  CGAL::difference(impl->polygon_list.front(), other.impl->polygon_list.front(), std::back_inserter(p.impl->polygon_list));
-  p.impl->polygon_list.pop_front();
+  // Copy all polygons from other to this
+  std::copy(other.impl->polygon_list.begin(), 
+            other.impl->polygon_list.end(),
+            std::back_inserter(impl->polygon_list));
+
+  std::list<Polygon_with_holes_2> tmp;
+  CGAL::intersection(impl->polygon_list.begin(),
+                     impl->polygon_list.end(),
+                     std::back_inserter(tmp));
+
+  impl->polygon_list.clear();
+  std::copy(tmp.begin(), 
+            tmp.end(),
+            std::back_inserter(impl->polygon_list));
+}
+//-----------------------------------------------------------------------------
+CSGCGALDomain2D CSGCGALDomain2D::difference(const CSGCGALDomain2D& other) const
+{
+  CSGCGALDomain2D p(*this);
+  p.difference_inplace(other);
   return p;
+}
+//-----------------------------------------------------------------------------
+void CSGCGALDomain2D::difference_inplace(const CSGCGALDomain2D &other) const
+{
+  std::list<Polygon_with_holes_2> tmp;
+
+  std::list<Polygon_with_holes_2>::const_iterator pit1;
+  std::list<Polygon_with_holes_2>::const_iterator pit2;
+
+  for (pit1 = impl->polygon_list.begin(); 
+       pit1 != impl->polygon_list.end();
+       ++pit1)
+  {
+    for (pit2 = other.impl->polygon_list.begin(); 
+         pit2 != other.impl->polygon_list.end();
+         ++pit2)
+    {
+      CGAL::difference(*pit1, 
+                       *pit2,
+                       std::back_inserter(tmp));
+
+    }
+  }
+
+  impl->polygon_list.clear();
+  std::copy(tmp.begin(), tmp.end(),
+            std::back_inserter(impl->polygon_list));
 }
 //-----------------------------------------------------------------------------
 bool CSGCGALDomain2D::point_in_domain(Point p) const

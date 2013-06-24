@@ -44,8 +44,11 @@ class CSGCGALDomain2D
 
   // Boolean operators
   CSGCGALDomain2D join(const CSGCGALDomain2D& other) const;
+  void join_inplace(const CSGCGALDomain2D& other) const;
   CSGCGALDomain2D intersect(const CSGCGALDomain2D &other) const;
+  void intersect_inplace(const CSGCGALDomain2D& other) const;
   CSGCGALDomain2D difference(const CSGCGALDomain2D &other) const;
+  void difference_inplace(const CSGCGALDomain2D& other) const;
 
   bool point_in_domain(Point p) const;
   double compute_boundingcircle_radius() const ;
