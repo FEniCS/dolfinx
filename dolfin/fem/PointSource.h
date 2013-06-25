@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-04-13
-// Last changed: 2011-04-13
+// Last changed: 2013-06-23
 
 #include <boost/shared_ptr.hpp>
 #include <dolfin/geometry/Point.h>

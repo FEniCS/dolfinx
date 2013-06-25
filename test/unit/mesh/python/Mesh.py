@@ -23,7 +23,7 @@
 # Modified by Jan Blechta 2013
 #
 # First added:  2006-08-08
-# Last changed: 2013-02-22
+# Last changed: 2013-06-24
 
 import unittest
 import numpy
@@ -210,105 +210,6 @@ class PyCCInterface(unittest.TestCase):
             """Get cells of mesh"""
             mesh = UnitSquareMesh(5, 5)
             self.assertEqual(MPI.sum(len(mesh.cells())), 50)
-
-
-if MPI.num_processes() == 1:
-    class IntersectionOperator(unittest.TestCase):
-        def testIntersectPoint(self):
-            from numpy import linspace
-            mesh = UnitSquareMesh(10, 10)
-            points = [Point(i+.05,.05) for i in linspace(-.4,1.4,19)]
-            for p in points:
-                if p.x()<0 or p.x()>1:
-                    self.assertTrue(not mesh.intersected_cells(p))
-                else:
-                    self.assertTrue(mesh.intersected_cells(p))
-
-        def testIntersectPoints(self):
-            from numpy import linspace
-            mesh = UnitSquareMesh(10, 10)
-            points = [Point(i+.05,.05) for i in linspace(-.4,1.4,19)]
-            all_intersected_entities = []
-            for p in points:
-                all_intersected_entities.extend(mesh.intersected_cells(p))
-            for i0, i1 in zip(sorted(all_intersected_entities),
-                              sorted(mesh.intersected_cells(points))):
-                self.assertEqual(i0, i1)
-
-        def testIntersectMesh2D(self):
-            pass
-
-        def testIntersectMesh3D(self):
-            pass
-
-        def testIntersectedCellWithSingleCellMesh(self):
-
-            # 2D
-            mesh = UnitTriangleMesh()
-
-            # Point Intersection
-            point = Point(0.3, 0.3)
-            id = mesh.intersected_cell(point)
-            self.assertEqual(id, 0)
-            cells = mesh.intersected_cells([point, point, point])
-            self.assertEqual(len(cells), 1)
-            self.assertEqual(cells[0], 0)
-
-            # Entity intersection
-            v = Vertex(mesh, 0)
-            id = mesh.intersected_cells(v)
-            self.assertEqual(id, 0)
-
-            # No intersection
-            point = Point(1.2, 1.2)
-            id = mesh.intersected_cell(point)
-            self.assertEqual(id, -1)
-            cells = mesh.intersected_cells([point, point, point])
-            self.assertEqual(len(cells), 0)
-
-            # 3D
-            mesh = UnitTetrahedronMesh()
-
-            # Point intersection
-            point = Point(0.3, 0.3, 0.3)
-            id = mesh.intersected_cell(point)
-            self.assertEqual(id, 0)
-            cells = mesh.intersected_cells([point, point, point])
-            self.assertEqual(len(cells), 1)
-            self.assertEqual(cells[0], 0)
-
-            # Entity intersection
-            v = Vertex(mesh, 0)
-            id = mesh.intersected_cells(v)
-            self.assertEqual(id, 0)
-
-            # No intersection
-            point = Point(1.2, 1.2, 1.2)
-            id = mesh.intersected_cell(point)
-            self.assertEqual(id, -1)
-            cells = mesh.intersected_cells([point, point, point])
-            self.assertEqual(len(cells), 0)
-
-        def testClosestCellWithSingleCellMesh(self):
-            mesh = UnitTriangleMesh()
-
-            point = Point(0.3, 0.3)
-            id = mesh.closest_cell(point)
-            self.assertEqual(id, 0)
-
-            point = Point(1.2, 1.2)
-            id = mesh.closest_cell(point)
-            self.assertEqual(id, 0)
-
-            mesh = UnitTetrahedronMesh()
-
-            point = Point(0.3, 0.3, 0.3)
-            id = mesh.closest_cell(point)
-            self.assertEqual(id, 0)
-
-            point = Point(1.2, 1.2, 1.2)
-            id = mesh.closest_cell(point)
-            self.assertEqual(id, 0)
 
 
 if MPI.num_processes() == 1:

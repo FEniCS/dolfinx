@@ -19,9 +19,10 @@
 // Modified by Martin Sandve Alnes, 2008
 // Modified by Johan Hake, 2009
 // Modified by Joachim B. Haga, 2012
+// Modified by Mikael Mortensen, 2013
 //
 // First added:  2007-04-10
-// Last changed: 2012-02-29
+// Last changed: 2013-06-19
 
 #include <map>
 #include <utility>
@@ -634,7 +635,7 @@ void DirichletBC::init_facets() const
 {
   Timer timer("DirichletBC init facets");
 
-  if (_facets.size() > 0)
+  if (MPI::max(_facets.size()) > 0)
     return;
 
   if (_user_sub_domain)
