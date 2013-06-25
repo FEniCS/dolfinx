@@ -66,16 +66,6 @@ namespace dolfin
                    "Not supported by current linear algebra solver backend");
     }
 
-    /// Set transpose null space of the operator (matrix). This is used to solve
-    /// singular systems
-    virtual void
-      set_transpose_nullspace(const VectorSpaceBasis& transpose_nullspace)
-    {
-      dolfin_error("GenericLinearSolver.h",
-                   "set transpose nullspace for operator",
-                   "Not supported by current linear algebra solver backend");
-    }
-
     /// Solve linear system Ax = b
     virtual std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
                               const GenericVector& b)

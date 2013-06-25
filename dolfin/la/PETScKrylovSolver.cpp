@@ -263,13 +263,6 @@ void PETScKrylovSolver::set_nullspace(const VectorSpaceBasis& nullspace)
   KSPSetNullSpace(*_ksp, *petsc_nullspace);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_transpose_nullspace(const VectorSpaceBasis& transpose_nullspace)
-{
-  // PETSc doesn't need the transpose nullspace; we've orthogonalised
-  // the RHS separately
-  return;
-}
-//-----------------------------------------------------------------------------
 const PETScBaseMatrix& PETScKrylovSolver::get_operator() const
 {
   if (!_A)

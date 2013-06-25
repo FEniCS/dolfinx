@@ -68,11 +68,6 @@ namespace dolfin
     /// singular systems
     void set_nullspace(const VectorSpaceBasis& nullspace);
 
-    /// Set transpose null space of the operator (matrix). This is
-    /// used to make sure the right hand side is in the range of
-    /// singular systems
-    void set_transpose_nullspace(const VectorSpaceBasis& transpose_nullspace);
-
     /// Solve linear system Ax = b
     std::size_t solve(GenericVector& x, const GenericVector& b);
 
