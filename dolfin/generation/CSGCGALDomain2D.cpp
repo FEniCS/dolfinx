@@ -294,6 +294,9 @@ CSGCGALDomain2D CSGCGALDomain2D::difference(const CSGCGALDomain2D& other) const
 //-----------------------------------------------------------------------------
 void CSGCGALDomain2D::difference_inplace(const CSGCGALDomain2D &other) const
 {
+  if (other.impl->polygon_list.empty())
+    return;
+
   std::list<Polygon_with_holes_2> tmp;
 
   std::list<Polygon_with_holes_2>::const_iterator pit1;
