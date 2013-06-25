@@ -21,7 +21,7 @@ This is accomplished in this demo by using a Krylov iterative solver
 that removes the component in the null space from the solution vector.
 """
 
-# Copyright (C) 2012 Garth N. Rognes
+# Copyright (C) 2012 Garth N. Wells
 #
 # This file is part of DOLFIN.
 #
@@ -72,19 +72,17 @@ u = Function(V)
 # Create Krylov solver
 solver = KrylovSolver(A, "gmres")
 
-# Create null space basis and attach to Krylov solver
+# Create vector that spans the null space
 null_vec = Vector(u.vector())
 V.dofmap().set(null_vec, 1.0)
 null_vec *= 1.0/null_vec.norm("l2")
+
+# Create null space basis object and attach to Krylov solver
 null_space = VectorSpaceBasis([null_vec])
 solver.set_nullspace(null_space)
 
-# In this case, the system is symmetric, so the transpose nullspace is the same
-solver.set_transpose_nullspace(null_space);
-# When solving singular systems, you have to ensure that the RHS b is in the range
-# of the singular matrix. Since the range is the orthogonal complement of the
-# transpose nullspace, you have to call the orthogonalize method of the transpose
-# nullspace object on the RHS:
+ # Orthogonalize b with respect to the null space (this gurantees that
+ # a solution exists)
 null_space.orthogonalize(b);
 
 # Solve
