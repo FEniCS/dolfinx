@@ -91,10 +91,6 @@ namespace dolfin
     // Solver
     boost::shared_ptr<GenericLinearSolver> solver;
 
-    // Nullspaces and such
-    boost::scoped_ptr<VectorSpaceBasis> _nullspace;
-    boost::scoped_ptr<VectorSpaceBasis> _transpose_nullspace;
-
   };
 }
 

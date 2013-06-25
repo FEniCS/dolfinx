@@ -27,13 +27,13 @@
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
-#include "GenericLinearOperator.h"
-#include "GenericMatrix.h"
 
 namespace dolfin
 {
 
   // Forward declarations
+  class GenericLinearOperator;
+  class GenericMatrix;
   class GenericVector;
   class VectorSpaceBasis;
 
