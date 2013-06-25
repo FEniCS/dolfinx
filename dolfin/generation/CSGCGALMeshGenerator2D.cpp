@@ -27,10 +27,6 @@
 #include "CSGPrimitives2D.h"
 #include "CSGCGALDomain2D.h"
 
-#include <vector>
-#include <cmath>
-#include <limits>
-
 #include <dolfin/common/constants.h>
 #include <dolfin/math/basic.h>
 #include <dolfin/mesh/Mesh.h>
@@ -38,6 +34,12 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshDomains.h>
 #include <dolfin/mesh/MeshValueCollection.h>
+#include <dolfin/log/log.h>
+
+
+#include <vector>
+#include <cmath>
+#include <limits>
 
 
 #ifdef HAS_CGAL
@@ -276,8 +278,6 @@ void explore_subdomains(CDT& cdt,
       explore_subdomain(cdt, f, subdomains);
     }
   }
-
-  std::cout << "Done exploring domains" << std::endl;
 }
 //-----------------------------------------------------------------------------
   // Insert edges from polygon as constraints in the triangulation
@@ -456,6 +456,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   // Convert the CSG geometry to a CGAL Polygon
   cout << "Converting geometry to polygon" << endl;
   CSGCGALDomain2D total_domain(&geometry);
+
   add_subdomain(cdt, total_domain, parameters["edge_minimum"]);
 
   // Empty polygon, will be populated when traversing the subdomains
@@ -468,14 +469,14 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   // added subdomain on top
   std::list<std::pair<std::size_t, boost::shared_ptr<const CSGGeometry> > >::const_reverse_iterator it;
 
-  for (it = geometry.subdomains.rbegin(); it != geometry.subdomains.rend(); it++)
+  for (it = geometry.subdomains.rbegin(); it != geometry.subdomains.rend(); ++it)
   {
     const std::size_t current_index = it->first;
     boost::shared_ptr<const CSGGeometry> current_subdomain = it->second;
 
     CSGCGALDomain2D cgal_geometry(current_subdomain.get());
-    cgal_geometry.difference(overlaying);
-
+    cgal_geometry.difference_inplace(overlaying);
+    
     subdomain_geometries.push_back(std::make_pair(current_index, 
                                                   cgal_geometry));
 
