@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-06-24
+// Last changed: 2013-06-25
 
 #include <cmath>
 #include <boost/make_shared.hpp>
@@ -66,15 +66,42 @@ PointIntegralSolver::~PointIntegralSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PointIntegralSolver::reset()
+void PointIntegralSolver::reset_newton_solver()
 {
   _num_jacobian_computations = 0;
   _eta = parameters("newton_solver")["eta_0"];
   _recompute_jacobian = true;
 }
 //-----------------------------------------------------------------------------
+void PointIntegralSolver::reset_stage_solutions()
+{
+  // Iterate over stage forms
+  for (unsigned int stage=0; stage<_num_stages; stage++)
+  {
+    // Reset global stage solutions
+    *_scheme->stage_solutions()[stage]->vector() = 0.0;
+    
+    // Reset local stage solutions
+    for (unsigned int row=0; row < _system_size; row++)
+      _local_stage_solutions[stage][row] = 0.0;
+    
+  }
+}
+//-----------------------------------------------------------------------------
 void PointIntegralSolver::step(double dt)
 {
+  
+  const bool reset_stage_solutions_ = parameters["reset_stage_solutions"];
+  const bool reset_newton_solver_ = parameters("newton_solver")["reset_each_step"];
+
+  // Check for reseting stage solutions
+  if (reset_stage_solutions_)
+    reset_stage_solutions();
+
+  // Check for reseting newtonsolver for each time step
+  if (reset_newton_solver_)
+    reset_newton_solver();
+
   Timer t_step("PointIntegralSolver::step");
   
   dolfin_assert(dt > 0.0);

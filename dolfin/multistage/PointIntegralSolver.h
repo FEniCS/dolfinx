@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-06-24
+// Last changed: 2013-06-25
 
 #ifndef __POINTINTEGRALSOLVER_H
 #define __POINTINTEGRALSOLVER_H
@@ -67,6 +67,8 @@ namespace dolfin
       
       Parameters p("point_integral_solver");
 
+      p.add("reset_stage_solutions", false);
+
       std::set<std::string> allowed_convergence_criterion;
       allowed_convergence_criterion.insert("residual");
       allowed_convergence_criterion.insert("incremental");
@@ -85,12 +87,16 @@ namespace dolfin
       p("newton_solver").add("eta_0", 1e-10, 1e-15, 1e-5);
       p("newton_solver").add("max_relative_residual", 1e-1, 1e-5, 0.5);
       p("newton_solver")["absolute_tolerance"].set_range(1e-20,1e-1);
+      p("newton_solver").add("reset_each_step", false);
 
       return p;
     }
 
     // Reset newton solver
-    void reset();
+    void reset_newton_solver();
+
+    // Reset stage solutions
+    void reset_stage_solutions();
 
     // Return number of computations of jacobian
     unsigned int num_jacobian_computations() const
