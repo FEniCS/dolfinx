@@ -52,10 +52,11 @@ namespace dolfin
       const std::size_t num_vertices = boost::num_vertices(graph);
       dolfin_assert(num_vertices == colors.size());
 
-      typedef typename boost::graph_traits<T>::vertex_descriptor vert_descriptor;
       typedef typename boost::graph_traits<T>::vertex_iterator vert_iterator;
-      typedef typename boost::graph_traits<T>::vertices_size_type vert_size_type;
-      typedef typename boost::property_map<T, boost::vertex_index_t>::const_type vert_index_map;
+      typedef typename boost::graph_traits<T>::vertices_size_type
+        vert_size_type;
+      typedef typename boost::property_map<T,
+        boost::vertex_index_t>::const_type vert_index_map;
 
       // Resize to hold colors
       colors.resize(num_vertices);
@@ -64,7 +65,8 @@ namespace dolfin
       std::vector<vert_size_type> _colors(num_vertices);
       boost::iterator_property_map<vert_size_type*, vert_index_map>
           color(&_colors.front(), get(boost::vertex_index, graph));
-      const vert_size_type num_colors = sequential_vertex_coloring(graph, color);
+      const vert_size_type num_colors = sequential_vertex_coloring(graph,
+                                                                   color);
 
       // Coppy colors and return
       std::copy(_colors.begin(), _colors.end(), colors.begin());
