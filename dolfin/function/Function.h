@@ -21,7 +21,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2012-10-02
+// Last changed: 2013-06-21
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -199,20 +199,20 @@ namespace dolfin
     ///         Return a linear combination of Functions
     FunctionAXPY operator-(const FunctionAXPY& axpy) const;
 
-    /// Scale operator 
+    /// Scale operator
     ///
     /// *Returns*
     ///     _FunctionAXPY_
     ///         Return a linear combination of Functions
     FunctionAXPY operator*(double scalar) const;
 
-    /// Scale operator 
+    /// Scale operator
     ///
     /// *Returns*
     ///     _FunctionAXPY_
     ///         Return a linear combination of Functions
     FunctionAXPY operator/(double scalar) const;
-    
+
     /// Return shared pointer to function space
     ///
     /// *Returns*
