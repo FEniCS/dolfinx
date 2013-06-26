@@ -122,11 +122,6 @@ void KrylovSolver::set_nullspace(const VectorSpaceBasis& nullspace)
   solver->set_nullspace(nullspace);
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::set_transpose_nullspace(const VectorSpaceBasis& transpose_nullspace)
-{
-  solver->set_transpose_nullspace(transpose_nullspace);
-}
-//-----------------------------------------------------------------------------
 std::size_t KrylovSolver::solve(GenericVector& x, const GenericVector& b)
 {
   dolfin_assert(solver);

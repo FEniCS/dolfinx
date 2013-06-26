@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Garth N. Wells
+// Copyright (C) 2010-2013 Garth N. Wells
 //
 // This file is part of DOLFIN.
 //
@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2011-2012
 //
 // First added:  2010-02-25
-// Last changed: 2012-08-22
+// Last changed: 2013-06-25
 
 #ifdef HAS_TRILINOS
 
@@ -38,12 +38,13 @@
 #include <ml_MultiLevelPreconditioner.h>
 #include <Teuchos_ParameterList.hpp>
 
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/log/log.h>
 #include "EpetraKrylovSolver.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
 #include "GenericVector.h"
 #include "KrylovSolver.h"
+#include "VectorSpaceBasis.h"
 #include "TrilinosPreconditioner.h"
 
 using namespace dolfin;
@@ -60,7 +61,8 @@ const std::map<std::string, int> TrilinosPreconditioner::_preconditioners
                               ("ml_amg",    -1);
 
 // Mapping from preconditioner string to Trilinos
-const std::vector<std::pair<std::string, std::string> > TrilinosPreconditioner::_preconditioners_descr
+const std::vector<std::pair<std::string, std::string> >
+TrilinosPreconditioner::_preconditioners_descr
   = boost::assign::pair_list_of
     ("default",   "default preconditioner")
     ("none",      "No preconditioner")
@@ -132,7 +134,8 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
   AztecOO& _solver = *(solver.aztecoo());
 
   // Set preconditioner
-  if (_preconditioner == "default" || _preconditioner == "ilu" || _preconditioner == "icc")
+  if (_preconditioner == "default" || _preconditioner == "ilu"
+      || _preconditioner == "icc")
   {
     // Get/set some parameters
     const int ilu_fill_level       = parameters("ilu")["fill_level"];
@@ -150,7 +153,8 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
     else
       _preconditioner = "ILU";
     Ifpack ifpack_factory;
-    ifpack_preconditioner.reset(ifpack_factory.Create(_preconditioner, _P, overlap));
+    ifpack_preconditioner.reset(ifpack_factory.Create(_preconditioner, _P,
+                                                      overlap));
     dolfin_assert(ifpack_preconditioner != 0);
 
     // Set any user-provided parameters
@@ -189,31 +193,29 @@ void TrilinosPreconditioner::set_parameters(Teuchos::RCP<Teuchos::ParameterList>
   parameter_ref_keeper = list;
 }
 //-----------------------------------------------------------------------------
-void TrilinosPreconditioner::set_nullspace(const std::vector<const GenericVector*> nullspace)
+void TrilinosPreconditioner::set_nullspace(const VectorSpaceBasis& nullspace)
 {
-  if (nullspace.empty())
-  {
-    // Clear nullspace
-    _nullspace.reset();
-  }
-  else
-  {
-    for (std::size_t i = 0; i < nullspace.size(); ++i)
-    {
-      dolfin_assert(nullspace[i]);
+  // Clear nullspace
+  _nullspace.reset();
 
-      // Get Epetra vector
-      const EpetraVector& v = as_type<const EpetraVector>(*nullspace[i]);
-      dolfin_assert(v.vec());
+  for (std::size_t i = 0; i < nullspace.dim(); ++i)
+  {
+    dolfin_assert(nullspace[i]);
+
+    // Get Epetra vector
+    const EpetraVector& v = as_type<const EpetraVector>(*nullspace[i]);
+    dolfin_assert(v.vec());
 
       // Initialise null space multivector on first pass
-      if (i == 0)
-        _nullspace.reset(new Epetra_MultiVector(v.vec()->Map(), nullspace.size()));
-
-      // Copy data into Epetra_MultiVector object
-      const Epetra_Vector& _v = *(*(v.vec()))(0);
-      *(*_nullspace)(i) = _v;
+    if (i == 0)
+    {
+      _nullspace.reset(new Epetra_MultiVector(v.vec()->Map(),
+                                              nullspace.dim()));
     }
+
+    // Copy data into Epetra_MultiVector object
+    const Epetra_Vector& _v = *(*(v.vec()))(0);
+    *(*_nullspace)(i) = _v;
   }
 }
 //-----------------------------------------------------------------------------
@@ -278,7 +280,8 @@ void TrilinosPreconditioner::set_ml(AztecOO& solver, const Epetra_RowMatrix& P)
   }
 
   // Create preconditioner
-  ml_preconditioner.reset(new ML_Epetra::MultiLevelPreconditioner(P, mlist, true));
+  ml_preconditioner.reset(new ML_Epetra::MultiLevelPreconditioner(P, mlist,
+                                                                  true));
 
   // Set this operator as preconditioner for AztecOO
   solver.SetPrecOperator(ml_preconditioner.get());
