@@ -72,7 +72,8 @@ namespace dolfin
     virtual std::size_t size(std::size_t dim) const;
 
     /// Return local ownership range
-    virtual std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const;
+    virtual std::pair<std::size_t, std::size_t>
+      local_range(std::size_t dim) const;
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
@@ -103,17 +104,20 @@ namespace dolfin
     { dolfin_not_implemented(); }
 
     /// Get block of values
-    virtual void get(double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n,
+    virtual void get(double* block, std::size_t m,
+                     const dolfin::la_index* rows, std::size_t n,
                      const dolfin::la_index* cols) const
     { dolfin_not_implemented(); }
 
     /// Set block of values
-    virtual void set(const double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n,
+    virtual void set(const double* block, std::size_t m,
+                     const dolfin::la_index* rows, std::size_t n,
                      const dolfin::la_index* cols)
     { dolfin_not_implemented(); }
 
     /// Add block of values
-    virtual void add(const double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n,
+    virtual void add(const double* block, std::size_t m,
+                     const dolfin::la_index* rows, std::size_t n,
                      const dolfin::la_index* cols);
 
     /// Add multiple of given matrix (AXPY operation)
@@ -129,7 +133,8 @@ namespace dolfin
                         std::vector<double>& values) const;
 
     /// Set values for given row
-    virtual void setrow(std::size_t row, const std::vector<std::size_t>& columns,
+    virtual void setrow(std::size_t row,
+                        const std::vector<std::size_t>& columns,
                         const std::vector<double>& values)
     { dolfin_not_implemented(); }
 
@@ -236,7 +241,8 @@ namespace dolfin
     std::vector<std::vector<std::pair<std::size_t, double> > > _values;
 
     // Off-process data ([i, j], value)
-    boost::unordered_map<std::pair<std::size_t, std::size_t>, double> off_processs_data;
+    boost::unordered_map<std::pair<std::size_t, std::size_t>, double>
+      off_processs_data;
 
   };
 
@@ -256,9 +262,10 @@ namespace dolfin
                    "creating compressed row storage data",
                    "Cannot create CSR matrix from STLMatrix with column-wise storage.");
     }
-    compressed_storage(vals, cols, row_ptr, local_to_global_row, block, symmetric);
+    compressed_storage(vals, cols, row_ptr, local_to_global_row, block,
+                       symmetric);
   }
-  //-----------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
   template<typename T>
   void STLMatrix::csc(std::vector<double>& vals, std::vector<T>& rows,
                       std::vector<T>& col_ptr,
@@ -274,7 +281,7 @@ namespace dolfin
     }
     compressed_storage(vals, rows, col_ptr, local_to_global_col, block, symmetric);
   }
-  //-----------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
   template<typename T>
   void STLMatrix::compressed_storage(std::vector<double>& vals,
                                      std::vector<T>& cols,
@@ -309,17 +316,19 @@ namespace dolfin
       cols.reserve(_local_nnz);
 
       // Build data structures
-      for (std::size_t local_row = 0; local_row < num_local_rows; local_row += _block_size)
+      for (std::size_t local_row = 0; local_row < num_local_rows;
+           local_row += _block_size)
       {
-        for (std::size_t column = 0; column < _values[local_row].size(); column += _block_size)
+        for (std::size_t column = 0; column < _values[local_row].size();
+             column += _block_size)
         {
           cols.push_back(_values[local_row][column].first/_block_size);
           for (std::size_t b0 = 0; b0 < _block_size; ++b0)
             for (std::size_t b1 = 0; b1 < _block_size; ++b1)
               vals.push_back(_values[local_row + b0][column + b1].second);
         }
-        local_to_global_row.push_back( (_local_range.first + local_row)/_block_size );
-        row_ptr.push_back(row_ptr.back() + _values[local_row].size()/_block_size);
+        local_to_global_row.push_back((_local_range.first + local_row)/_block_size);
+        row_ptr.push_back(row_ptr.back()+_values[local_row].size()/_block_size);
       }
     }
     else
@@ -329,13 +338,17 @@ namespace dolfin
       cols.reserve((_local_nnz - num_local_rows)/2 + num_local_rows);
 
       // Build data structures
-      for (std::size_t local_row = 0; local_row < _values.size(); local_row += _block_size)
+      for (std::size_t local_row = 0; local_row < _values.size();
+           local_row += _block_size)
       {
-        const std::size_t global_row_index = (local_row + _local_range.first)/_block_size;
+        const std::size_t global_row_index
+          = (local_row + _local_range.first)/_block_size;
         std::size_t counter = 0;
-        for (std::size_t column = 0; column < _values[local_row].size(); column += _block_size)
+        for (std::size_t column = 0; column < _values[local_row].size();
+             column += _block_size)
         {
-          const std::size_t index = _values[local_row][column].first/_block_size;
+          const std::size_t index
+            = _values[local_row][column].first/_block_size;
           if (index >= global_row_index)
           {
             cols.push_back(index);
