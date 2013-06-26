@@ -314,10 +314,10 @@ void STLMatrix::getrow(std::size_t row, std::vector<std::size_t>& columns,
   const std::size_t local_row = row - _local_range.first;
   dolfin_assert(local_row < _values.size());
 
+  // Copy row values
   columns.resize(_values[local_row].size());
-
   values.resize(_values[local_row].size());
-  for (std::size_t i = 0; i < _values.size(); ++i)
+  for (std::size_t i = 0; i < _values[local_row].size(); ++i)
   {
     columns[i] = _values[local_row][i].first;
     values[i]  = _values[local_row][i].second;
