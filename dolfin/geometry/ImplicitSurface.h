@@ -22,14 +22,14 @@
 #define __IMPLICITSURFACE_H
 
 #include <string>
+#include <utility>
+#include <vector>
 #include <dolfin/generation/CSGPrimitives3D.h>
+#include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
 
 namespace dolfin
 {
-
-  // Forward declaration
-  class Point;
 
   /// This class is used to define a surface via a function f(x) -> R,
   /// where for a point y on the surface f(y) = 0.
@@ -51,7 +51,8 @@ namespace dolfin
     /// *Example*
     ///     .. code-block:: c++
     ///
-    ///         IsoSurface isosurface(Sphere(Point(0.0, 0.2, 0.4), 1.0), "manifold_with_boundary");
+    ///         IsoSurface isosurface(Sphere(Point(0.0, 0.2, 0.4), 1.0),
+    ///                               "manifold_with_boundary");
     ///
     ImplicitSurface(Sphere s, std::string type);
 
@@ -70,7 +71,6 @@ namespace dolfin
     /// *Returns*
     ///     double
     ///         Isosurface function value.
-    //virtual double value(const Point& point) const = 0;
     virtual double operator()(const Point& point) const = 0;
 
     /// Test whether a point for which f \approx 0 is on the
@@ -81,6 +81,9 @@ namespace dolfin
 
     /// Bounding sphere
     const Sphere sphere;
+
+    /// Polylines
+    std::vector<std::pair<Point, Point> > polylines;
 
     /// Surface type
     const std::string type;

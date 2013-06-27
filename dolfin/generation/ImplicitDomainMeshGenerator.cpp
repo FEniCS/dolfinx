@@ -34,6 +34,7 @@
 
 #include <CGAL/Implicit_surface_3.h>
 #include <CGAL/Implicit_mesh_domain_3.h>
+#include <CGAL/Mesh_domain_with_polyline_features_3.h>
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/geometry/ImplicitSurface.h>
@@ -55,10 +56,9 @@ typedef K::Point_3 Point_3;
 // Call-back function
 typedef boost::function<double (Point_3)> Function;
 
-
-typedef CGAL::Implicit_mesh_domain_3<Function, K> Mesh_domain_test;
-//typedef CGAL::Mesh_domain_with_polyline_features_3<
-//  CGAL::Implicit_mesh_domain_3<Function_test, K_test> > Mesh_domain_test;
+typedef CGAL::Implicit_mesh_domain_3<const Function, K> Mesh_domain_test0;
+typedef CGAL::Mesh_domain_with_polyline_features_3<Mesh_domain_test0>
+Mesh_domain_test;
 
 typedef CGAL::Robust_weighted_circumcenter_filtered_traits_3<K>
 Geom_traits_test;
@@ -132,9 +132,22 @@ void ImplicitDomainMeshGenerator::generate(Mesh& mesh,
                                 surface.sphere.r*surface.sphere.r);
 
     // Domain (Warning: Sphere_3 constructor uses squared radius !)
-    //Implicit_mesh_domain domain(sphere_function, K::Sphere_3(CGAL::ORIGIN, 2.));
-
     Mesh_domain_test domain(f, bounding_sphere, 1.0e-5);
+
+    typedef std::vector<Point_3> Polyline_3;
+    typedef std::list<Polyline_3> Polylines;
+
+    Polyline_3 polyline;
+    polyline.push_back(Point_3(-0.5, 0.0,  0.5));
+    polyline.push_back(Point_3( 0.5, 0.0,  0.5));
+    polyline.push_back(Point_3( 0.5, 0.0, -0.5));
+    polyline.push_back(Point_3(-0.5, 0.0, -0.5));
+    polyline.push_back(polyline.front());
+
+    Polylines polylines;
+    polylines.push_back(polyline);
+
+    domain.add_features(polylines.begin(), polylines.end());
 
     // Mesh criteria
     Mesh_criteria_test criteria(CGAL::parameters::facet_angle=30,
@@ -171,6 +184,19 @@ void ImplicitDomainMeshGenerator::generate_surface(Mesh& mesh,
                                 surface.sphere.r*surface.sphere.r);
 
     Mesh_domain_test domain(f, bounding_sphere, 1.0e-5);
+
+    typedef std::vector<Point_3> Polyline_3;
+    typedef std::list<Polyline_3> Polylines;
+    Polyline_3 polyline;
+    polyline.push_back(Point_3(-0.5, 0.0,  0.5));
+    polyline.push_back(Point_3( 0.5, 0.0,  0.5));
+    polyline.push_back(Point_3( 0.5, 0.0, -0.5));
+    polyline.push_back(Point_3(-0.5, 0.0, -0.5));
+    polyline.push_back(polyline.front());
+
+    Polylines polylines;
+    polylines.push_back(polyline);
+    domain.add_features(polylines.begin(), polylines.end());
 
     // Mesh criteria
     Mesh_criteria_test criteria(CGAL::parameters::facet_angle=30,
