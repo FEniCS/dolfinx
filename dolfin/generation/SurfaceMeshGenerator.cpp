@@ -54,15 +54,19 @@ typedef CGAL::Robust_circumcenter_traits_3<K> Geom_traits;
 
 // CGAL 3D triangulation vertex typedefs (so we can attach vertex indices)
 typedef CGAL::Triangulation_vertex_base_3<Geom_traits> Tvb3test_base;
-typedef CGAL::Triangulation_vertex_base_with_info_3<int, Geom_traits, Tvb3test_base> Tvb3;
-typedef CGAL::Complex_2_in_triangulation_vertex_base_3<Geom_traits, Tvb3> Vb_surface;
+typedef CGAL::Triangulation_vertex_base_with_info_3<int, Geom_traits,
+                                                    Tvb3test_base> Tvb3;
+typedef CGAL::Complex_2_in_triangulation_vertex_base_3<Geom_traits, Tvb3>
+Vb_surface;
 
 // CGAL cell type
 typedef CGAL::Surface_mesh_cell_base_3<Geom_traits> Cb_surface;
-typedef CGAL::Triangulation_cell_base_with_circumcenter_3<Geom_traits, Cb_surface> Cb_with_circumcenter;
+typedef CGAL::Triangulation_cell_base_with_circumcenter_3<Geom_traits,
+                                            Cb_surface> Cb_with_circumcenter;
 
 // CGAL Triangulation
-typedef CGAL::Triangulation_data_structure_3<Vb_surface, Cb_with_circumcenter> Tds_surface;
+typedef CGAL::Triangulation_data_structure_3<Vb_surface, Cb_with_circumcenter>
+Tds_surface;
 typedef CGAL::Delaunay_triangulation_3<Geom_traits, Tds_surface> Tr_surface;
 
 // Mesh criteria
@@ -118,7 +122,8 @@ void SurfaceMeshGenerator::generate(Mesh& mesh, const ImplicitSurface& surface,
     // Create CGAL bounding sphere
     const Point c = surface.sphere.c;
     dolfin_assert(surface.sphere.r > 0.0);
-    Sphere_3 bounding_sphere(Point_3(c[0], c[1], c[2]), surface.sphere.r*surface.sphere.r);
+    Sphere_3 bounding_sphere(Point_3(c[0], c[1], c[2]),
+                             surface.sphere.r*surface.sphere.r);
 
     // Create CGAL implicit surface
     Surface_3 cgal_implicit_surface(f, bounding_sphere);
@@ -165,4 +170,5 @@ void SurfaceMeshGenerator::generate(Mesh& mesh, const ImplicitSurface& surface,
   MeshPartitioning::build_distributed_mesh(mesh);
 }
 //-----------------------------------------------------------------------------
+
 #endif

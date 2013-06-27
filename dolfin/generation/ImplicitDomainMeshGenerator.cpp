@@ -60,21 +60,27 @@ typedef CGAL::Implicit_mesh_domain_3<Function, K> Mesh_domain_test;
 //typedef CGAL::Mesh_domain_with_polyline_features_3<
 //  CGAL::Implicit_mesh_domain_3<Function_test, K_test> > Mesh_domain_test;
 
-typedef CGAL::Robust_weighted_circumcenter_filtered_traits_3<K> Geom_traits_test;
+typedef CGAL::Robust_weighted_circumcenter_filtered_traits_3<K>
+Geom_traits_test;
 
 // CGAL 3D triangulation vertex typedefs
 typedef CGAL::Triangulation_vertex_base_3<Geom_traits_test> Tvb3test_base_test;
-typedef CGAL::Triangulation_vertex_base_with_info_3<int, Geom_traits_test, Tvb3test_base_test> Tvb3test_test;
-typedef CGAL::Mesh_vertex_base_3<Geom_traits_test, Mesh_domain_test, Tvb3test_test> Vertex_base_test;
+typedef CGAL::Triangulation_vertex_base_with_info_3<int, Geom_traits_test,
+                                             Tvb3test_base_test> Tvb3test_test;
+typedef CGAL::Mesh_vertex_base_3<Geom_traits_test, Mesh_domain_test,
+                                 Tvb3test_test> Vertex_base_test;
 
 // CGAL 3D triangulation cell typedefs
 typedef CGAL::Triangulation_cell_base_3<Geom_traits_test> Tcb3test_base_test;
-typedef CGAL::Triangulation_cell_base_with_info_3<int, Geom_traits_test, Tcb3test_base_test> Tcb3test_test;
-typedef CGAL::Mesh_cell_base_3<Geom_traits_test, Mesh_domain_test, Tcb3test_test> Cell_base_test;
+typedef CGAL::Triangulation_cell_base_with_info_3<int, Geom_traits_test,
+                                            Tcb3test_base_test> Tcb3test_test;
+typedef CGAL::Mesh_cell_base_3<Geom_traits_test, Mesh_domain_test,
+                               Tcb3test_test> Cell_base_test;
 
 // CGAL 3D triangulation typedefs
-typedef CGAL::Triangulation_data_structure_3<Vertex_base_test, Cell_base_test> Tds_mesh_test;
-typedef CGAL::Regular_triangulation_3<Geom_traits_test, Tds_mesh_test>             Tr_test;
+typedef CGAL::Triangulation_data_structure_3<Vertex_base_test, Cell_base_test>
+Tds_mesh_test;
+typedef CGAL::Regular_triangulation_3<Geom_traits_test, Tds_mesh_test> Tr_test;
 
 // Triangulation
 //typedef CGAL::Mesh_triangulation_3<Mesh_domain_test>::type Tr_test;
@@ -148,8 +154,8 @@ void ImplicitDomainMeshGenerator::generate(Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 void ImplicitDomainMeshGenerator::generate_surface(Mesh& mesh,
-                                                   const ImplicitSurface& surface,
-                                                   double cell_size)
+                                                const ImplicitSurface& surface,
+                                                double cell_size)
 
 {
   if (MPI::process_number() == 0)
