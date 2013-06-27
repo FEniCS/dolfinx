@@ -19,7 +19,9 @@
 // Last changed: 2013-06-22
 
 #include "CSGGeometry.h"
+
 #include <dolfin/mesh/Point.h>
+#include <boost/scoped_ptr.hpp>
 
 struct CSGCGALDomain2DImpl;
 
@@ -43,12 +45,9 @@ class CSGCGALDomain2D
   CSGCGALDomain2D &operator=(const CSGCGALDomain2D &other);
 
   // Boolean operators
-  CSGCGALDomain2D join(const CSGCGALDomain2D& other) const;
-  void join_inplace(const CSGCGALDomain2D& other) const;
-  CSGCGALDomain2D intersect(const CSGCGALDomain2D &other) const;
-  void intersect_inplace(const CSGCGALDomain2D& other) const;
-  CSGCGALDomain2D difference(const CSGCGALDomain2D &other) const;
-  void difference_inplace(const CSGCGALDomain2D& other) const;
+  void join_inplace(const CSGCGALDomain2D& other);
+  void intersect_inplace(const CSGCGALDomain2D& other);
+  void difference_inplace(const CSGCGALDomain2D& other);
 
   bool point_in_domain(Point p) const;
   double compute_boundingcircle_radius() const ;
@@ -63,7 +62,7 @@ class CSGCGALDomain2D
   void get_holes(std::list<std::vector<Point> >& h, 
                  double truncate_threshold) const;
 
-  CSGCGALDomain2DImpl *impl;
+  boost::scoped_ptr<CSGCGALDomain2DImpl> impl;
 
 };
 
