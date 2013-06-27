@@ -594,42 +594,27 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
 
   dolfin_assert(vertex_index == num_vertices);
 
-  // Add cells to mesh
+  // Add cells to mesh and build domain marker mesh function
+  boost::shared_ptr<MeshValueCollection<std::size_t> > subdomain_marker = mesh.domains().markers(2);
   std::size_t cell_index = 0;
   for (cgal_cell = cdt.finite_faces_begin(); cgal_cell != cdt.finite_faces_end(); ++cgal_cell)
   {
     // Add cell if it is in the domain
     if (cgal_cell->is_in_domain())
     {
-      mesh_editor.add_cell(cell_index++,
+      mesh_editor.add_cell(cell_index,
                            cgal_cell->vertex(0)->info(),
                            cgal_cell->vertex(1)->info(),
                            cgal_cell->vertex(2)->info());
+
+      subdomain_marker->set_value(cell_index, 0, cgal_cell->counter());
+      ++cell_index;
     }
   }
   dolfin_assert(cell_index == num_cells);
 
   // Close mesh editor
   mesh_editor.close();
-
-  MeshFunction<std::size_t> mf(mesh, 2);
-
-  cell_index=0;
-  for (cgal_cell = cdt.finite_faces_begin(); 
-       cgal_cell != cdt.finite_faces_end(); 
-       ++cgal_cell)
-  {
-    // Add cell if it is in the domain
-    if (cgal_cell->is_in_domain())
-    {
-      mf[cell_index] = cgal_cell->counter();
-      cell_index++;
-    }
-  }
-
-  // Assign the markers to the mesh's domain
-  boost::shared_ptr<MeshValueCollection<std::size_t> >m = mesh.domains().markers(2);
-  *m = mf;
 }
 
 #else
