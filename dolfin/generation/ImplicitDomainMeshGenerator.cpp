@@ -50,18 +50,19 @@
 // CGAL kernel typedefs
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 
-// Domain
+// Point
 typedef K::Point_3 Point_3;
+
+typedef CGAL::Robust_weighted_circumcenter_filtered_traits_3<K>
+Geom_traits_test;
 
 // Call-back function
 typedef boost::function<double (Point_3)> Function;
 
+// Mesh domain
 typedef CGAL::Implicit_mesh_domain_3<const Function, K> Mesh_domain_test0;
 typedef CGAL::Mesh_domain_with_polyline_features_3<Mesh_domain_test0>
 Mesh_domain_test;
-
-typedef CGAL::Robust_weighted_circumcenter_filtered_traits_3<K>
-Geom_traits_test;
 
 // CGAL 3D triangulation vertex typedefs
 typedef CGAL::Triangulation_vertex_base_3<Geom_traits_test> Tvb3test_base_test;
@@ -85,12 +86,18 @@ typedef CGAL::Regular_triangulation_3<Geom_traits_test, Tds_mesh_test> Tr_test;
 // Triangulation
 //typedef CGAL::Mesh_triangulation_3<Mesh_domain_test>::type Tr_test;
 
+//typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr_test> C3t3_test;
 typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr_test> C3t3_test;
-//typedef CGAL::Mesh_complex_3_in_triangulation_3<
-//  Tr_test, Mesh_domain::Corner_index, Mesh_domain::Curve_segment_index> C3t3_test;
 
 // Criteria
 typedef CGAL::Mesh_criteria_3<Tr_test> Mesh_criteria_test;
+
+
+
+
+
+
+
 
 
 using namespace dolfin;
@@ -118,6 +125,7 @@ void ImplicitDomainMeshGenerator::generate(Mesh& mesh,
                                            const ImplicitSurface& surface,
                                            double cell_size)
 {
+  /*
   if (MPI::process_number() == 0)
   {
     ImplicitSurfaceWrapper surface_wrapper(surface);
@@ -164,6 +172,7 @@ void ImplicitDomainMeshGenerator::generate(Mesh& mesh,
 
   // Build distributed mesh
   MeshPartitioning::build_distributed_mesh(mesh);
+  */
 }
 //-----------------------------------------------------------------------------
 void ImplicitDomainMeshGenerator::generate_surface(Mesh& mesh,
@@ -187,6 +196,19 @@ void ImplicitDomainMeshGenerator::generate_surface(Mesh& mesh,
 
     typedef std::vector<Point_3> Polyline_3;
     typedef std::list<Polyline_3> Polylines;
+
+    // Create edge that we want to preserve
+    Polylines polylines(1);
+    Polyline_3& polyline = polylines.front();
+    for(int i = 0; i < 360; ++i)
+    {
+      Point_3 p(1, std::cos(i*CGAL_PI/180), std::sin(i*CGAL_PI/180));
+      polyline.push_back(p);
+    }
+    polyline.push_back(polyline.front()); // close the line
+    domain.add_features(polylines.begin(), polylines.end());
+
+    /*
     Polyline_3 polyline;
     polyline.push_back(Point_3(-0.5, 0.0,  0.5));
     polyline.push_back(Point_3( 0.5, 0.0,  0.5));
@@ -197,13 +219,29 @@ void ImplicitDomainMeshGenerator::generate_surface(Mesh& mesh,
     Polylines polylines;
     polylines.push_back(polyline);
     domain.add_features(polylines.begin(), polylines.end());
+    */
 
     // Mesh criteria
+    /*
     Mesh_criteria_test criteria(CGAL::parameters::facet_angle=30,
                                 CGAL::parameters::facet_size=cell_size,
                                 CGAL::parameters::facet_distance=0.1*cell_size,
                                 CGAL::parameters::cell_size=0.0);
+    */
 
+    Mesh_criteria_test criteria(CGAL::parameters::edge_size = 0.15,
+                                CGAL::parameters::facet_angle = 25,
+                                CGAL::parameters::facet_size = cell_size,
+                                //CGAL::parameters::cell_radius_edge_ratio = 2,
+                                CGAL::parameters::cell_size = 0.0);
+
+    /*
+    Mesh_criteria_test criteria(CGAL::parameters::edge_size = 0.15,
+                                CGAL::parameters::facet_angle = 25,
+                                CGAL::parameters::facet_size = 0.15,
+                                CGAL::parameters::cell_radius_edge_ratio = 2,
+                                CGAL::parameters::cell_size = 0.15);
+    */
     // Mesh generation
     C3t3_test c3t3 = CGAL::make_mesh_3<C3t3_test>(domain, criteria);
 

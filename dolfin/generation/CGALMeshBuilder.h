@@ -78,7 +78,8 @@ namespace dolfin
 
     // Get number of cells in Delaunay triangulation (2D)
     template<typename X, typename Y>
-    static std::size_t _num_cells(const CGAL::Constrained_Delaunay_triangulation_2<X, Y>& t)
+    static std::size_t
+      _num_cells(const CGAL::Constrained_Delaunay_triangulation_2<X, Y>& t)
     {
       std::size_t num_cells = 0;
       typename CGAL::Constrained_Delaunay_triangulation_2<X, Y>::Finite_faces_iterator cgal_cell;
