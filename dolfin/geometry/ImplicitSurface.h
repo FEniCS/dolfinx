@@ -73,6 +73,12 @@ namespace dolfin
     ///         Isosurface function value.
     virtual double operator()(const Point& point) const = 0;
 
+    virtual double signed_distance(const Point& point) const
+    {
+      error("ImplicitSurface::signed_distance has not been provided");
+      return 0.0;
+    }
+
     /// Test whether a point for which f \approx 0 is on the
     /// surface. Used for creating open surfaces by discarding with
     /// any artificial closure.
