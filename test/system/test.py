@@ -23,7 +23,7 @@
 # Last changed: 2011-03-09
 
 import os, sys
-from dolfin_utils.commands import getstatusoutput
+from instant import get_status_output
 
 pwd = os.path.dirname(os.path.abspath(__file__))
 
@@ -40,12 +40,13 @@ for test in tests:
     print "Running system test: %s" % test
     print "----------------------------------------------------------------------"
     os.chdir(os.path.join(pwd, test))
-    fail, output = getstatusoutput(command)
+    fail, output = get_status_output(command)
     if fail:
         failed.append(fail)
         print "*** Failed"
         print output
     else:
         print "OK"
+    print
 
 sys.exit(len(failed))

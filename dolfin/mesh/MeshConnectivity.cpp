@@ -51,6 +51,7 @@ const MeshConnectivity& MeshConnectivity::operator= (const MeshConnectivity& con
   _d0 = connectivity._d0;
   _d1 = connectivity._d1;
   _connections = connectivity._connections;
+  _num_global_connections = connectivity._num_global_connections;
   index_to_position = connectivity.index_to_position;
 
   return *this;

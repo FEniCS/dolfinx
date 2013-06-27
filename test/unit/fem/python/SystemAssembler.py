@@ -1,6 +1,6 @@
 """Unit tests for class SystemAssembler"""
 
-# Copyright (C) 2011 Garth N. Wells
+# Copyright (C) 2011-2013 Garth N. Wells, 2013 Jan Blechta
 #
 # This file is part of DOLFIN.
 #
@@ -21,7 +21,7 @@
 # Modified by Anders Logg 2011
 #
 # First added:  2011-10-04
-# Last changed: 2011-10-04
+# Last changed: 2013-06-02
 
 import unittest
 import numpy
@@ -44,7 +44,7 @@ class TestSystemAssembler(unittest.TestCase):
         a = inner(epsilon(v), epsilon(u))*dx
         L = inner(v, f)*dx
 
-        A_frobenius_norm =  4.3969686527582512
+        A_frobenius_norm = 4.3969686527582512
         b_l2_norm = 0.95470326978246278
 
         # Assemble system
@@ -52,23 +52,80 @@ class TestSystemAssembler(unittest.TestCase):
         self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
         self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
 
-        # Test SystemAssembler
+        # SystemAssembler construction
         assembler = SystemAssembler(a, L)
+
+        # Test SystemAssembler for LHS and RHS
         A = Matrix()
         b = Vector()
-
         assembler.assemble(A, b)
         self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
         self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
-        
+
         A = Matrix()
         b = Vector()
-        
+
         assembler.assemble(A)
         self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
-        
+
         assembler.assemble(b)
         self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
+
+    def test_cell_assembly_bc(self):
+
+        mesh = UnitCubeMesh(4, 4, 4)
+        V = FunctionSpace(mesh, "Lagrange", 1)
+        bc = DirichletBC(V, 1.0, "on_boundary")
+
+        u, v = TrialFunction(V), TestFunction(V)
+        f = Constant(10)
+
+        a = inner(grad(u), grad(v))*dx
+        L = inner(f, v)*dx
+
+        A_rescaled_frobenius_norm = 8.6968070656831244
+        b_rescaled_l2_norm = 4.5702716358238176
+
+        # Assemble system
+        #A, b = assemble_system(a, L, bc)
+        #self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
+        #self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
+
+        # Create assembler
+        assembler = SystemAssembler(a, L, bc)
+        assembler.rescale = True
+
+        # Test for assembling A and b via assembler object
+        A, b = Matrix(), Vector()
+        assembler.assemble(A, b)
+        self.assertAlmostEqual(A.norm("frobenius"), A_rescaled_frobenius_norm, 10)
+        self.assertAlmostEqual(b.norm("l2"), b_rescaled_l2_norm, 10)
+
+        # Assemble LHS only (first time)
+        A = Matrix()
+        assembler.assemble(A)
+        self.assertAlmostEqual(A.norm("frobenius"), A_rescaled_frobenius_norm, 10)
+
+        # Assemble LHS only (second time)
+        assembler.assemble(A)
+        self.assertAlmostEqual(A.norm("frobenius"), A_rescaled_frobenius_norm, 10)
+
+        # Assemble RHS only (first time)
+        b = Vector()
+        assembler.assemble(b)
+        self.assertAlmostEqual(b.norm("l2"), b_rescaled_l2_norm, 10)
+
+        # Assemble RHS only (second time time)
+        assembler.assemble(b)
+        self.assertAlmostEqual(b.norm("l2"), b_rescaled_l2_norm, 10)
+
+        # Do not reset sparsity
+        assemble.reset_sparsity = False
+        assembler.assemble(A)
+        self.assertAlmostEqual(A.norm("frobenius"), A_rescaled_frobenius_norm, 10)
+        assembler.assemble(b)
+        self.assertAlmostEqual(b.norm("l2"), b_rescaled_l2_norm, 10)
+
 
     def test_facet_assembly(self):
 
@@ -118,15 +175,57 @@ class TestSystemAssembler(unittest.TestCase):
         assembler.assemble(A, b)
         self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
         self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
-        
+
         A = Matrix()
         b = Vector()
-        
+
         assembler.assemble(A)
         self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
-        
+
         assembler.assemble(b)
         self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
+
+
+    def test_incremental_assembly(self):
+
+        for f in [Constant(0.0), Constant(1e4)]:
+
+            # Laplace/Poisson problem
+            mesh = UnitSquareMesh(20, 20)
+            V = FunctionSpace(mesh, 'CG', 1)
+            u, v = TrialFunction(V), TestFunction(V)
+            a, L = inner(grad(u), grad(v))*dx, f*v*dx
+            uD = Expression("42.0*(2.0*x[0]-1.0)")
+            bc = DirichletBC(V, uD, "on_boundary")
+
+            # Initialize initial guess by some number
+            u = Function(V)
+            x = u.vector()
+            x[:] = 30.0
+            u.update()
+
+            # Assemble incremental system
+            assembler = SystemAssembler(a, -L, bc)
+            A, b = Matrix(), Vector()
+            assembler.assemble(A, b, x)
+
+            # Solve for (negative) increment
+            Dx = Vector(x)
+            Dx.zero()
+            solve(A, Dx, b)
+
+            # Update solution
+            x[:] -= Dx[:]
+            u.update()
+
+            # Check solution
+            u_true = Function(V)
+            solve(a == L, u_true, bc)
+            u.vector()[:] -= u_true.vector()[:]
+            u.update()
+            error = norm(u.vector(), 'linf')
+            self.assertAlmostEqual(error, 0.0)
+
 
 if __name__ == "__main__":
     print ""

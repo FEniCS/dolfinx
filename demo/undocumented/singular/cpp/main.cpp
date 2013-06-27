@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-10-31
-// Last changed: 2012-11-12
+// Last changed: 2013-05-30
 //
 // This demo program illustrates how to solve Poisson's equation
 //
@@ -43,7 +43,6 @@
 #include "Poisson.h"
 
 using namespace dolfin;
-
 
 // Source term (right-hand side)
 class Source : public Expression
@@ -92,15 +91,28 @@ int main()
   // Create Krylov solver
   KrylovSolver solver(A, "gmres");
 
-  // Create null space basis and attach to Krylov solver
-  Vector null_space0(*u.vector());
-  V.dofmap()->set(null_space0, 1.0);
-  std::vector<const GenericVector*> null_space;
-  null_space.push_back(&null_space0);
+  // Create vector that spans null space (normalised)
+  boost::shared_ptr<GenericVector> null_space_ptr(b.copy());
+  V.dofmap()->set(*null_space_ptr, sqrt(1.0/null_space_ptr->size()));
+  std::vector<boost::shared_ptr<GenericVector> > null_space_basis;
+  null_space_basis.push_back(null_space_ptr);
+
+  // Create null space basis object and attach to Krylov solver
+  VectorSpaceBasis null_space(null_space_basis);
   solver.set_nullspace(null_space);
+
+  // Orthogonalize b with respect to the null space (this gurantees
+  // that a solution exists)
+  null_space.orthogonalize(b);
 
   // Solve
   solver.solve(*u.vector(), b);
+
+  // Check residual
+  Vector residual(*u.vector());
+  A->mult(*u.vector(), residual);
+  residual.axpy(-1.0, b);
+  info("Norm of residual: %lf\n", residual.norm("l2"));
 
   // Plot solution
   plot(u);

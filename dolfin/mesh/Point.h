@@ -19,18 +19,14 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-06-12
-// Last changed: 2011-04-13
+// Last changed: 2013-05-29
 
 #ifndef __POINT_H
 #define __POINT_H
 
+#include <cmath>
 #include <iostream>
 #include <dolfin/log/log.h>
-
-#ifdef HAS_CGAL
-#include <CGAL/Bbox_3.h>
-#include <CGAL/Point_3.h>
-#endif
 
 namespace dolfin
 {
@@ -176,23 +172,27 @@ namespace dolfin
     const Point& operator= (const Point& p)
     { _x[0] = p._x[0]; _x[1] = p._x[1]; _x[2] = p._x[2]; return *this; }
 
-    #ifdef HAS_CGAL
-    /// Conversion operator to appropriate CGAL Point_3 class.
-    template <typename Kernel>
-    operator CGAL::Point_3<Kernel>() const
-    { return CGAL::Point_3<Kernel>(_x[0],_x[1],_x[2]); }
-
-    /// Constructor taking a CGAL::Point_3. Allows conversion from
-    /// CGAL Point_3 class to Point class.
-    template <typename Kernel>
-    Point (const CGAL::Point_3<Kernel> & point)
-    { _x[0] = point.x(); _x[1] = point.y(); _x[2] = point.z(); }
-
-    /// Provides a CGAL bounding box, using conversion operator.
-    template <typename Kernel>
-    CGAL::Bbox_3  bbox()
-    { return CGAL::Point_3<Kernel>(*this).bbox(); }
-    #endif
+    /// Compute squared distance to given point
+    ///
+    /// *Arguments*
+    ///     p (_Point_)
+    ///         The point to compute distance to.
+    ///
+    /// *Returns*
+    ///     double
+    ///         The squared distance.
+    ///
+    /// *Example*
+    ///     .. code-block:: c++
+    ///
+    ///         Point p1(0, 4, 0);
+    ///         Point p2(2, 0, 4);
+    ///         info("%g", p1.squared_distance(p2));
+    ///
+    ///     output::
+    ///
+    ///         6
+    double squared_distance(const Point& p) const;
 
     /// Compute distance to given point
     ///
@@ -214,7 +214,8 @@ namespace dolfin
     ///     output::
     ///
     ///         6
-    double distance(const Point& p) const;
+    inline double distance(const Point& p) const
+    { return sqrt(squared_distance(p)); }
 
     /// Compute norm of point representing a vector from the origin
     ///

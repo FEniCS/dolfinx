@@ -18,7 +18,7 @@
 // Modified by Fredrik Valdmanis, 2011
 //
 // First added:  2009-07-02
-// Last changed: 2013-02-26
+// Last changed: 2013-06-21
 
 #ifndef __GLOBAL_PARAMETERS_H
 #define __GLOBAL_PARAMETERS_H
@@ -74,6 +74,7 @@ namespace dolfin
       allowed_mesh_partitioners.insert("SCOTCH");
       allowed_mesh_partitioners.insert("Zoltan_RCB");
       allowed_mesh_partitioners.insert("Zoltan_PHG");
+      allowed_mesh_partitioners.insert("None");
 
       // Set default graph/mesh partitioner
       std::string default_mesh_partitioner = "SCOTCH";
@@ -94,11 +95,11 @@ namespace dolfin
       allowed_partitioning_approaches.insert("PARTITION");
       allowed_partitioning_approaches.insert("REPARTITION");
       allowed_partitioning_approaches.insert("REFINE");
-      
+
       p.add("partitioning_approach",
             "PARTITION",
             allowed_partitioning_approaches);
-      
+
       #ifdef HAS_PARMETIS
       // Repartitioning parameter, determines how strongly to hold on to cells
       // when shifting between processes
@@ -112,8 +113,8 @@ namespace dolfin
 
       // Graph coloring
       std::set<std::string> allowed_coloring_libraries;
-      allowed_mesh_partitioners.insert("Boost");
-      allowed_mesh_partitioners.insert("Zoltan");
+      allowed_coloring_libraries.insert("Boost");
+      allowed_coloring_libraries.insert("Zoltan");
       p.add("graph_coloring_library", "Boost", allowed_coloring_libraries);
 
       // Mesh refinement

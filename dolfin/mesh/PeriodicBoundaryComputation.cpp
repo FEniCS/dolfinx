@@ -142,8 +142,25 @@ std::map<unsigned int, std::pair<unsigned int, unsigned int> >
         }
         else
         {
+          // Let's check the user is going to map all coordinates
+          for (size_t i = 0; i < y.size(); i++)
+          {
+            y[i] = std::numeric_limits<double>::quiet_NaN();
+          }
+
           // Get mapped midpoint (y) of slave entity
           sub_domain.map(_x, _y);
+
+          // Check for NaNs after the map
+          for (size_t i = 0; i < y.size(); i++)
+          {
+            if (std::isnan(y[i]))
+            {
+              dolfin_error("PeriodicBoundaryComputation.cpp",
+                           "periodic boundary mapping",
+                           "Need to set coordinate %d in sub_domain.map", i);
+            }
+          }
 
           // Check if entity lies on a 'slave' boundary
           if (sub_domain.inside(_y, true))

@@ -21,12 +21,11 @@
 # Modified by Garth N. Wells 2009-2011
 #
 # First added:  2006-08-09
-# Last changed: 2012-09-25
+# Last changed: 2013-06-23
 
 import sys, os, re
 import platform
-import instant
-from dolfin_utils.commands import getstatusoutput
+from instant import get_status_output
 from dolfin import has_mpi, has_parmetis, has_scotch, has_linear_algebra_backend
 
 # Tests to run
@@ -35,28 +34,30 @@ tests = {
     "armadillo":      ["test"],
     "adaptivity":     ["errorcontrol", "TimeSeries"],
     "book":           ["chapter_1", "chapter_10"],
-    "fem":            ["solving", "Assembler", "DirichletBC", "DofMap",
-                       "FiniteElement", "Form", "SystemAssembler",
+    "fem":            ["solving", "Assembler", "DirichletBC", "DofMap", \
+                           "FiniteElement", "Form", "SystemAssembler",
                        "PeriodicBC", "manifolds"],
     "multistage":     ["RKSolver", "PointIntegralSolver"],
-    "function":       ["Constant", "Expression", "Function", "FunctionSpace",
-                       "SpecialFunctions"],
-    "io":             ["vtk", "XMLMeshFunction", "XMLMesh",
-                       "XMLMeshValueCollection", "XMLVector", "XMLLocalMeshData",
-                       "XDMF", "HDF5"],
+    "function":       ["Constant", "Expression", "Function", "FunctionSpace", \
+                           "SpecialFunctions"],
+    "io":             ["vtk", "XMLMeshFunction", "XMLMesh", \
+                           "XMLMeshValueCollection", "XMLVector", \
+                           "XMLMeshData", "XMLLocalMeshData", \
+                           "XDMF", "HDF5", "Exodus"],
     "jit":            ["test"],
-    "la":             ["test", "solve", "Matrix", "Scalar", "Vector", "KrylovSolver", "LinearOperator"],
+    "la":             ["test", "solve", "Matrix", "Scalar", "Vector", \
+                           "KrylovSolver", "LinearOperator"],
     "nls":            ["PETScSNESSolver","TAOLinearBoundSolver"],
     "math":           ["test"],
     "meshconvert":    ["test"],
-    "mesh":           ["Edge", "Face", "MeshData", "MeshEditor",
+    "mesh":           ["Cell", "Edge", "Face", "MeshData", "MeshEditor",
                        "MeshFunction", "MeshIterator", "MeshMarkers",
                        "MeshValueCollection", "BoundaryMesh", "Mesh", "SubMesh"],
     "parameter":      ["Parameters"],
     "python-extras":  ["test"],
     "quadrature":     ["BaryCenter"],
     "refinement":     ["test"],
-    "intersection":   ["IntersectionOperator"]
+    "geometry":       ["BoundingBoxTree"]
     }
 
 # FIXME: Graph tests disabled for now since SCOTCH is now required
@@ -100,8 +101,10 @@ for prefix in prefixes:
             elif not  os.path.isfile(os.path.join(test, "cpp", cpptest_executable)):
                 print "This test set does not have a C++ version"
             else:
-                status, output = getstatusoutput("cd %s%scpp && %s .%s%s" % \
-                                   (test, os.path.sep, prefix, os.path.sep, cpptest_executable))
+                os.chdir(os.path.join(test, "cpp"))
+                status, output = get_status_output("%s.%s%s" % \
+                                   (prefix, os.path.sep, cpptest_executable))
+                os.chdir(os.path.join(os.pardir, os.pardir))
                 if status == 0 and "OK" in output:
                     print "OK",
                     match = re.search("OK \((\d+)\)", output)
@@ -115,8 +118,10 @@ for prefix in prefixes:
 
             print "Python:",
             if os.path.isfile(os.path.join(test, "python", subtest + ".py")):
-                status, output = getstatusoutput("cd %s%spython && %s python .%s%s.py" % \
-                                   (test, os.path.sep, prefix, os.path.sep, subtest))
+                os.chdir(os.path.join(test,"python"))
+                status, output = get_status_output("%spython .%s%s.py" % \
+                                   (prefix, os.path.sep, subtest))
+                os.chdir(os.path.join(os.pardir, os.pardir))
                 if status == 0 and "OK" in output:
                     print "OK",
                     match = re.search("Ran (\d+) test", output)

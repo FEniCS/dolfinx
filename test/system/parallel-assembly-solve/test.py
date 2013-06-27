@@ -24,7 +24,7 @@
 # Last changed: 2011-03-12
 
 import sys
-from dolfin_utils.commands import getstatusoutput
+from instant import get_status_output
 from dolfin import has_mpi, has_parmetis
 
 if not (has_mpi() and has_parmetis()):
@@ -35,7 +35,7 @@ if not (has_mpi() and has_parmetis()):
 num_processes = 3
 
 # Run solver.py
-failure, output = getstatusoutput("mpirun -n %d python solver.py" % num_processes)
+failure, output = get_status_output("mpirun -n %d python solver.py" % num_processes)
 if len(sys.argv) > 1 and sys.argv[1] == "--debug":
     print output
 

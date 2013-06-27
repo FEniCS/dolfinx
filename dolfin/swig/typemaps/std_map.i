@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-09-27
-// Last changed: 2013-04-11
+// Last changed: 2013-05-16
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using
@@ -68,6 +68,21 @@ namespace boost
   }
 }
 
+%typemap(out) MAP_TYPE<KEY_TYPE, VALUE_TYPE>&
+ (MAP_TYPE<KEY_TYPE, VALUE_TYPE>::const_iterator it,
+  PyObject* item0, PyObject* item1)
+{
+  // MAP_TYPE<KEY_TYPE, VALUE_TYPE>& (out)
+  $result = PyDict_New();
+  for (it=$1->begin(); it!=$1->end(); ++it){
+    item0 = SWIG_From_dec(KEY_TYPE)(it->first);
+    item1 = SWIG_From_dec(VALUE_TYPE)(it->second);
+    PyDict_SetItem($result, item0, item1);
+    Py_XDECREF(item0);
+    Py_XDECREF(item1);
+  }
+}
+
 %typemap(out) MAP_TYPE<std::pair<KEY_TYPE, KEY_TYPE>, VALUE_TYPE>&
  (MAP_TYPE<std::pair<KEY_TYPE, KEY_TYPE>, VALUE_TYPE>::const_iterator it,
   PyObject* item0, PyObject* item1, PyObject* item2, PyObject* item3)
@@ -79,7 +94,7 @@ namespace boost
     //item1 = SWIG_From_dec(KEY_TYPE)(it->first.second);
     item2 = Py_BuildValue("ii", it->first.first, it->first.second);
     item3 = SWIG_From_dec(VALUE_TYPE)(it->second);
-    
+
     PyDict_SetItem($result, item2, item3);
     //Py_XDECREF(item0);
     //Py_XDECREF(item1);
@@ -97,7 +112,7 @@ namespace boost
   for (it=$1.begin(); it!=$1.end(); ++it){
     item0 = SWIG_From_dec(KEY_TYPE)(it->first);
     item1 = Py_BuildValue("ii", it->second.first, it->second.second);
-    
+
     PyDict_SetItem($result, item0, item1);
     Py_XDECREF(item0);
     Py_XDECREF(item1);

@@ -1,3 +1,4 @@
+
 // Copyright (C) 2012 Patrick E. Farrell
 //
 // This file is part of DOLFIN.
@@ -52,9 +53,7 @@ namespace dolfin
     /// Destructor
     virtual ~PETScSNESSolver();
 
-    /// Solve abstract nonlinear problem :math:`F(x) = 0` under the
-    /// bound constraint :math:'xl \leq x \leq xu' for given
-    /// :math:`F` and Jacobian :math:`\dfrac{\partial F}{\partial x}`.
+    /// Solve a nonlinear variational inequality with bound constraints
     ///
     /// *Arguments*
     ///     nonlinear_function (_NonlinearProblem_)
@@ -65,14 +64,15 @@ namespace dolfin
     ///         The lower bound.
     ///     ub (_GenericVector_)
     ///         The upper bound.
+    ///
     /// *Returns*
     ///     std::pair<std::size_t, bool>
     ///         Pair of number of Newton iterations, and whether
     ///         iteration converged)
     std::pair<std::size_t, bool> solve(NonlinearProblem& nonlinear_problem,
-                                                  GenericVector& x,
-                                                  const GenericVector& lb,
-                                                  const GenericVector& ub);
+                                       GenericVector& x,
+                                       const GenericVector& lb,
+                                       const GenericVector& ub);
 
     /// Solve abstract nonlinear problem :math:`F(x) = 0` for given
     /// :math:`F` and Jacobian :math:`\dfrac{\partial F}{\partial x}`.
@@ -101,6 +101,10 @@ namespace dolfin
 
     Parameters parameters;
 
+    /// Return PETSc SNES pointer
+    boost::shared_ptr<SNES> snes() const
+    { return _snes; }
+
   private:
 
     /// PETSc solver pointer
@@ -110,7 +114,8 @@ namespace dolfin
     void init(const std::string& method);
 
     /// Available solvers
-    static const std::map<std::string, std::pair<std::string, const SNESType> > _methods;
+    static const std::map<std::string,
+      std::pair<std::string, const SNESType> > _methods;
 
     /// The callback for PETSc to compute F, the nonlinear residual
     static PetscErrorCode FormFunction(SNES snes, Vec x, Vec f, void* ctx);

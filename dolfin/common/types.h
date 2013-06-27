@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2008-04-22
-// Last changed: 2012-11-17
+// Last changed: 2013-05-28
 //
 // This file provides DOLFIN typedefs for basic types.
 

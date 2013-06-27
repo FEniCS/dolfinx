@@ -120,6 +120,7 @@ PROBLEM_RENAMES(NonlinearVariational)
 // Modifying the interface of DirichletBC
 //-----------------------------------------------------------------------------
 %rename (_function_space) dolfin::DirichletBC::function_space;
+%ignore dolfin::DirichletBC::set_value(const GenericFunction&);
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of Form

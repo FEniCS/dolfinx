@@ -18,24 +18,22 @@
 // First added:  2011-09-15
 // Last changed: 2011-11-15
 
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/log.h>
 #include "xmlutils.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const pugi::xml_node>
+const pugi::xml_node
   dolfin::get_node(const pugi::xml_node& xml_node, std::string node_name)
 {
   // Check node itself
   if (xml_node.name() == node_name)
-    return reference_to_no_delete_pointer(xml_node);
+    return xml_node;
 
   // Check child
-  boost::shared_ptr<const pugi::xml_node>
-    child_node(new pugi::xml_node(xml_node.child(node_name.c_str())));
-  if (!*child_node)
+  const pugi::xml_node child_node = xml_node.child(node_name.c_str());
+  if (!child_node)
   {
     dolfin_error("xmlutils.cpp",
                  "read DOLFIN XML data",

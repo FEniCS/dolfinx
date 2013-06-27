@@ -21,7 +21,7 @@ This is accomplished in this demo by using a Krylov iterative solver
 that removes the component in the null space from the solution vector.
 """
 
-# Copyright (C) 2012 Garth N. Rognes
+# Copyright (C) 2012 Garth N. Wells
 #
 # This file is part of DOLFIN.
 #
@@ -39,7 +39,7 @@ that removes the component in the null space from the solution vector.
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
 # First added:  2012-10-31
-# Last changed: 2012-11-12
+# Last changed: 2013-05-30
 
 from dolfin import *
 
@@ -72,10 +72,18 @@ u = Function(V)
 # Create Krylov solver
 solver = KrylovSolver(A, "gmres")
 
-# Create null space basis and attach to Krylov solver
-null_space = Vector(u.vector())
-V.dofmap().set(null_space, 1.0)
-solver.set_nullspace([null_space])
+# Create vector that spans the null space
+null_vec = Vector(u.vector())
+V.dofmap().set(null_vec, 1.0)
+null_vec *= 1.0/null_vec.norm("l2")
+
+# Create null space basis object and attach to Krylov solver
+null_space = VectorSpaceBasis([null_vec])
+solver.set_nullspace(null_space)
+
+ # Orthogonalize b with respect to the null space (this gurantees that
+ # a solution exists)
+null_space.orthogonalize(b);
 
 # Solve
 solver.solve(u.vector(), b)

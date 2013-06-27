@@ -18,7 +18,7 @@
 // Modified by Johannes Ring, 2012
 //
 // First Added: 2012-09-21
-// Last Changed: 2012-12-04
+// Last Changed: 2013-05-13
 
 #include <boost/filesystem.hpp>
 
@@ -71,12 +71,12 @@ hid_t HDF5Interface::open_file(const std::string filename, const std::string mod
                    "File does not exist");
     }
 
-    if(mode == "a")
+    if (mode == "a")
     {
       // Open file existing file for append
       file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
     }
-    else if(mode == "r")
+    else if (mode == "r")
     {
       file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, plist_id);
     }
@@ -97,10 +97,59 @@ hid_t HDF5Interface::open_file(const std::string filename, const std::string mod
   return file_id;
 }
 //-----------------------------------------------------------------------------
+void HDF5Interface::close_file(const hid_t hdf5_file_handle)
+{
+  herr_t status = H5Fclose(hdf5_file_handle);
+  dolfin_assert(status != HDF5_FAIL);
+}
+//-----------------------------------------------------------------------------
 void HDF5Interface::flush_file(const hid_t hdf5_file_handle)
 {
   herr_t status = H5Fflush(hdf5_file_handle, H5F_SCOPE_GLOBAL);
   dolfin_assert(status != HDF5_FAIL);
+}
+//-----------------------------------------------------------------------------
+void HDF5Interface::delete_attribute(const hid_t hdf5_file_handle,
+                                     const std::string dataset_name,
+                                     const std::string attribute_name)
+{
+  herr_t status;
+
+  // Open dataset or group by name
+  const hid_t dset_id = H5Oopen(hdf5_file_handle, dataset_name.c_str(),
+                                H5P_DEFAULT);
+  dolfin_assert(dset_id != HDF5_FAIL);
+
+  // Delete attribute by name
+  status = H5Adelete(dset_id, attribute_name.c_str());
+  dolfin_assert(status != HDF5_FAIL);
+
+  // Close dataset or group
+  status = H5Oclose(dset_id);
+  dolfin_assert(status != HDF5_FAIL);
+}
+//-----------------------------------------------------------------------------
+bool HDF5Interface::has_attribute(const hid_t hdf5_file_handle,
+                                  const std::string dataset_name,
+                                  const std::string attribute_name)
+{
+  herr_t status;
+  htri_t has_attr;
+
+  // Open dataset or group by name
+  const hid_t dset_id = H5Oopen(hdf5_file_handle, dataset_name.c_str(),
+                                H5P_DEFAULT);
+  dolfin_assert(dset_id != HDF5_FAIL);
+
+  // Check for attribute by name
+  has_attr = H5Aexists(dset_id, attribute_name.c_str());
+  dolfin_assert(has_attr != HDF5_FAIL);
+
+  // Close dataset or group
+  status = H5Oclose(dset_id);
+  dolfin_assert(status != HDF5_FAIL);
+
+  return (has_attr > 0);
 }
 //-----------------------------------------------------------------------------
 bool HDF5Interface::has_group(const hid_t hdf5_file_handle,
@@ -121,19 +170,40 @@ bool HDF5Interface::has_dataset(const hid_t hdf5_file_handle,
 void HDF5Interface::add_group(const hid_t hdf5_file_handle,
                               const std::string group_name)
 {
-  if (has_group(hdf5_file_handle, group_name))
+  std::string _group_name(group_name);
+
+  // Cannot create the root level group
+  if (_group_name.size() == 0 || _group_name == "/")
     return;
 
-  hid_t group_id_vis = H5Gcreate2(hdf5_file_handle, group_name.c_str(),
-                                  H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  dolfin_assert(group_id_vis != HDF5_FAIL);
+  // Prepend a slash if missing
+  if (_group_name[0] != '/')
+  {
+    _group_name = "/" + _group_name;
+  }
 
-  herr_t status = H5Gclose(group_id_vis);
-  dolfin_assert(status != HDF5_FAIL);
+  // Starting from the root level, check and create groups if needed
+  std::size_t pos = 0;
+  while (pos != std::string::npos)
+  {
+    pos++;
+    pos = _group_name.find('/', pos);
+    const std::string parent_name(_group_name, 0, pos);
+
+    if (!has_group(hdf5_file_handle, parent_name))
+    {
+      hid_t group_id_vis = H5Gcreate2(hdf5_file_handle, parent_name.c_str(),
+                                      H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      dolfin_assert(group_id_vis != HDF5_FAIL);
+
+      herr_t status = H5Gclose(group_id_vis);
+      dolfin_assert(status != HDF5_FAIL);
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 std::size_t HDF5Interface::dataset_rank(const hid_t hdf5_file_handle,
-					 const std::string dataset_name)
+                                        const std::string dataset_name)
 {
   // Open dataset
   const hid_t dset_id = H5Dopen2(hdf5_file_handle, dataset_name.c_str(),
@@ -220,7 +290,7 @@ std::vector<std::string> HDF5Interface::dataset_list(const hid_t hdf5_file_handl
 
   // Iterate through group collecting all dataset names
   std::vector<std::string> list_of_datasets;
-  for(hsize_t i = 0; i < num_datasets; i++)
+  for (hsize_t i = 0; i < num_datasets; i++)
   {
     H5Gget_objname_by_idx(group_id, i, namebuf, HDF5_MAXSTRLEN);
     list_of_datasets.push_back(std::string(namebuf));

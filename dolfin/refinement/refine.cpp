@@ -31,51 +31,66 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::Mesh dolfin::refine(const Mesh& mesh)
+dolfin::Mesh dolfin::refine(const Mesh& mesh, bool redistribute)
 {
   Mesh refined_mesh;
-  refine(refined_mesh, mesh);
+  refine(refined_mesh, mesh, redistribute);
   return refined_mesh;
 }
 //-----------------------------------------------------------------------------
-void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh)
+void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh, bool redistribute)
 {
+  // Topological dimension
+  const std::size_t D = mesh.topology().dim();
+
+  // Dispatch to appropriate refinement function
   if(MPI::num_processes() == 1)
     UniformMeshRefinement::refine(refined_mesh, mesh);
-  else if(mesh.topology().dim() == 2)
-    ParallelRefinement2D::refine(refined_mesh, mesh);
-  else if(mesh.topology().dim() == 3)
-    ParallelRefinement3D::refine(refined_mesh, mesh);
+  else if(D == 2)
+    ParallelRefinement2D::refine(refined_mesh, mesh, redistribute);
+  else if(D == 3)
+    ParallelRefinement3D::refine(refined_mesh, mesh, redistribute);
   else
+  {
     dolfin_error("refine.cpp",
                  "refine mesh",
-                 "Unknown dimension in parallel");
+                 "Cannot refine mesh of topological dimension %d in parallel. Only 2D and 3D supported", D);
+  }
 }
 //-----------------------------------------------------------------------------
 dolfin::Mesh dolfin::refine(const Mesh& mesh,
-                            const MeshFunction<bool>& cell_markers)
+                            const MeshFunction<bool>& cell_markers,
+                            bool redistribute)
 {
   Mesh refined_mesh;
-  refine(refined_mesh, mesh, cell_markers);
+  refine(refined_mesh, mesh, cell_markers, redistribute);
   return refined_mesh;
 }
 //-----------------------------------------------------------------------------
-void dolfin::refine(Mesh& refined_mesh,
-                    const Mesh& mesh,
-                    const MeshFunction<bool>& cell_markers)
+void dolfin::refine(Mesh& refined_mesh, const Mesh& mesh,
+                    const MeshFunction<bool>& cell_markers, bool redistribute)
 {
-  // Call local mesh refinement algorithm or parallel, as appropriate
+  // Topological dimension
+  const std::size_t D = mesh.topology().dim();
+
+  // Dispatch to appropriate refinement function
   if (MPI::num_processes() == 1)
     LocalMeshRefinement::refine(refined_mesh, mesh, cell_markers);
-  else if (mesh.topology().dim() == 2)
-    ParallelRefinement2D::refine(refined_mesh, mesh, cell_markers);
-  else if (mesh.topology().dim() == 3)
-    ParallelRefinement3D::refine(refined_mesh, mesh, cell_markers);
+  else if (D == 2)
+  {
+    ParallelRefinement2D::refine(refined_mesh, mesh, cell_markers,
+                                 redistribute);
+  }
+  else if (D == 3)
+  {
+    ParallelRefinement3D::refine(refined_mesh, mesh, cell_markers,
+                                 redistribute);
+  }
   else
+  {
     dolfin_error("refine.cpp",
                  "refine mesh",
-                 "Unknown dimension in parallel");
-  
-                 
+                 "Cannot refine mesh of topological dimension %d in parallel. Only 2D and 3D supported", D);
+  }
 }
 //-----------------------------------------------------------------------------

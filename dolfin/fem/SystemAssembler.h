@@ -18,7 +18,7 @@
 // Modified by Anders Logg 2008-2011
 //
 // First added:  2009-06-22
-// Last changed: 2013-03-12
+// Last changed: 2013-04-23
 
 #ifndef __SYSTEM_ASSEMBLER_H
 #define __SYSTEM_ASSEMBLER_H
@@ -41,7 +41,7 @@ namespace dolfin
   template<typename T> class MeshFunction;
   class UFC;
 
-  /// This class provides an assembler for systems of the form 
+  /// This class provides an assembler for systems of the form
   /// Ax = b. It differs from the default DOLFIN assembler in that it
   /// applies boundary conditions at the time of assembly, which
   /// preserves any symmetries in A.
@@ -83,13 +83,20 @@ namespace dolfin
     /// Assemble vector b
     void assemble(GenericVector& b);
 
-    /// Assemble system (A, b) (suitable for use inside a (quasi-)
-    /// Newton solver)
+    /// Assemble system (A, b) for (negative) increment dx, where
+    /// x = x0 - dx is solution to system a == -L subject to bcs.
+    /// Suitable for use inside a (quasi-)Newton solver.
     void assemble(GenericMatrix& A, GenericVector& b, const GenericVector& x0);
 
-    /// Assemble vectpr b (suitable for use inside a (quasi-) Newton
-    /// solver)
+    /// Assemble rhs vector b for (negative) increment dx, where
+    /// x = x0 - dx is solution to system a == -L subject to bcs.
+    /// Suitable for use inside a (quasi-)Newton solver.
     void assemble(GenericVector& b, const GenericVector& x0);
+
+    /// Rescale Dirichlet (essential) boundary condition entries in
+    /// assembled system. Should be false if the RHS is assembled
+    /// independently of the LHS.
+    bool rescale;
 
   private:
 
@@ -114,14 +121,15 @@ namespace dolfin
                                                      const Cell& cell1,
                                                      const Cell& cell2,
                                                      const Facet& facet,
-                                                     const MeshFunction<std::size_t>* exterior_facet_domains);
+                                         const MeshFunction<std::size_t>* exterior_facet_domains);
 
     static void cell_wise_assembly(GenericMatrix* A, GenericVector* b,
                                    const Form& a, const Form& L,
                                    UFC& A_ufc, UFC& b_ufc, Scratch& data,
                                    const DirichletBC::Map& boundary_values,
                                    const MeshFunction<std::size_t>* cell_domains,
-                                   const MeshFunction<std::size_t>* exterior_facet_domains);
+                                   const MeshFunction<std::size_t>* exterior_facet_domains,
+                                   const bool rescale );
 
     static void facet_wise_assembly(GenericMatrix* A, GenericVector* b,
                                     const Form& a, const Form& L,
@@ -129,7 +137,8 @@ namespace dolfin
                                     const DirichletBC::Map& boundary_values,
                                     const MeshFunction<std::size_t>* cell_domains,
                                     const MeshFunction<std::size_t>* exterior_facet_domains,
-                                    const MeshFunction<std::size_t>* interior_facet_domains);
+                                    const MeshFunction<std::size_t>* interior_facet_domains,
+                                    const bool rescale);
 
     static void assemble_interior_facet(GenericMatrix* A, GenericVector* b,
                                         UFC& A_ufc, UFC& b_ufc,
@@ -137,7 +146,8 @@ namespace dolfin
                                         const Cell& cell0, const Cell& cell1,
                                         const Facet& facet,
                                         Scratch& data,
-                                        const DirichletBC::Map& boundary_values);
+                                        const DirichletBC::Map& boundary_values,
+                                        const bool rescale);
 
     static void assemble_exterior_facet(GenericMatrix* A, GenericVector* b,
                                         UFC& A_ufc, UFC& b_ufc,
@@ -145,11 +155,13 @@ namespace dolfin
                                         const Form& L,
                                         const Cell& cell, const Facet& facet,
                                         Scratch& data,
-                                        const DirichletBC::Map& boundary_values);
+                                        const DirichletBC::Map& boundary_values,
+                                        const bool rescale);
 
     static void apply_bc(double* A, double* b,
                          const DirichletBC::Map& boundary_values,
-                         const std::vector<const std::vector<dolfin::la_index>* >& global_dofs);
+                         const std::vector<const std::vector<dolfin::la_index>* >& global_dofs,
+                         const bool rescale);
 
     // Class to hold temporary data
     class Scratch

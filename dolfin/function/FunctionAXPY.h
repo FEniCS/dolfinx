@@ -29,22 +29,22 @@ namespace dolfin
 
   class Function;
 
-  /// This class represents a linear combination of functions. It is mostly 
-  /// used as an intermediate class for operations such as u = 3*u0 + 4*u1; 
-  /// where the rhs generates an FunctionAXPY.
+  /// This class represents a linear combination of functions. It is
+  /// mostly used as an intermediate class for operations such as u =
+  /// 3*u0 + 4*u1; where the rhs generates an FunctionAXPY.
   class FunctionAXPY
   {
 
   public:
 
     /// Enum to decide what way AXPY is constructed
-    enum Direction 
-      {
-	ADD_ADD = 0, 
-	SUB_ADD = 1, 
-	ADD_SUB = 2, 
-	SUB_SUB = 3
-      };
+    enum Direction
+    {
+      ADD_ADD = 0,
+      SUB_ADD = 1,
+      ADD_SUB = 2,
+      SUB_SUB = 3
+    };
 
     /// Constructor
     FunctionAXPY(const Function& func, double scalar);
@@ -53,29 +53,32 @@ namespace dolfin
     FunctionAXPY(const FunctionAXPY& axpy, double scalar);
 
     /// Constructor
-    FunctionAXPY(const Function& func0, const Function& func1, Direction direction);
-    
+    FunctionAXPY(const Function& func0, const Function& func1,
+                 Direction direction);
+
     /// Constructor
-    FunctionAXPY(const FunctionAXPY& axpy, const Function& func, Direction direction);
-    
+    FunctionAXPY(const FunctionAXPY& axpy, const Function& func,
+                 Direction direction);
+
     /// Constructor
-    FunctionAXPY(const FunctionAXPY& axpy0, const FunctionAXPY& axpy1, Direction direction);
-    
+    FunctionAXPY(const FunctionAXPY& axpy0, const FunctionAXPY& axpy1,
+                 Direction direction);
+
     /// Constructor
     FunctionAXPY(std::vector<std::pair<double, const Function*> > pairs);
 
     /// Copy constructor
     FunctionAXPY(const FunctionAXPY& axpy);
-    
+
     /// Addition operator
     FunctionAXPY operator+(const Function& func) const;
-    
+
     /// Addition operator
     FunctionAXPY operator+(const FunctionAXPY& axpy) const;
 
     /// Substraction operator
     FunctionAXPY operator-(const Function& func) const;
-    
+
     /// Substraction operator
     FunctionAXPY operator-(const FunctionAXPY& axpy) const;
 
@@ -89,14 +92,14 @@ namespace dolfin
     const std::vector<std::pair<double, const Function*> >& pairs() const;
 
   private:
-    
+
     /// Register another AXPY object
     void _register(const FunctionAXPY& axpy0, double scale);
 
     std::vector<std::pair<double, const Function*> > _pairs;
-    
+
   };
-  
+
 }
 
 #endif

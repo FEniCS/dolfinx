@@ -48,6 +48,7 @@ namespace dolfin
   class PETScPreconditioner;
   class PETScUserPreconditioner;
   class PETScSNESSolver;
+  class VectorSpaceBasis;
 
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b. It is a wrapper for the Krylov solvers
@@ -57,25 +58,29 @@ namespace dolfin
   {
   public:
 
-    /// Create Krylov solver for a particular method and names preconditioner
+    /// Create Krylov solver for a particular method and names
+    /// preconditioner
     PETScKrylovSolver(std::string method = "default",
                       std::string preconditioner = "default");
 
-    /// Create Krylov solver for a particular method and PETScPreconditioner
+    /// Create Krylov solver for a particular method and
+    /// PETScPreconditioner
     PETScKrylovSolver(std::string method, PETScPreconditioner& preconditioner);
 
-    /// Create Krylov solver for a particular method and PETScPreconditioner
-    /// shared_ptr version
+    /// Create Krylov solver for a particular method and
+    /// PETScPreconditioner (shared_ptr version)
     PETScKrylovSolver(std::string method,
 		      boost::shared_ptr<PETScPreconditioner> preconditioner);
 
-    /// Create Krylov solver for a particular method and PETScPreconditioner
-    PETScKrylovSolver(std::string method, PETScUserPreconditioner& preconditioner);
-
-    /// Create Krylov solver for a particular method and PETScPreconditioner
-    /// shared_ptr version
+    /// Create Krylov solver for a particular method and
+    /// PETScPreconditioner
     PETScKrylovSolver(std::string method,
-		      boost::shared_ptr<PETScUserPreconditioner> preconditioner);
+                      PETScUserPreconditioner& preconditioner);
+
+    /// Create Krylov solver for a particular method and
+    /// PETScPreconditioner (shared_ptr version)
+    PETScKrylovSolver(std::string method,
+		    boost::shared_ptr<PETScUserPreconditioner> preconditioner);
 
     /// Create solver from given PETSc KSP pointer
     explicit PETScKrylovSolver(boost::shared_ptr<KSP> ksp);
@@ -99,7 +104,7 @@ namespace dolfin
 
     /// Set null space of the operator (matrix). This is used to solve
     /// singular systems
-    void set_nullspace(const std::vector<const GenericVector*> nullspace);
+    void set_nullspace(const VectorSpaceBasis& nullspace);
 
     /// Get operator (matrix)
     const PETScBaseMatrix& get_operator() const;
@@ -111,10 +116,12 @@ namespace dolfin
     std::size_t solve(PETScVector& x, const PETScVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
-    std::size_t solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+    std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
+                      const GenericVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
-    std::size_t solve(const PETScBaseMatrix& A, PETScVector& x, const PETScVector& b);
+    std::size_t solve(const PETScBaseMatrix& A, PETScVector& x,
+                      const PETScVector& b);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -157,7 +164,8 @@ namespace dolfin
     static const std::map<std::string, const KSPType> _methods;
 
     // Available solvers descriptions
-    static const std::vector<std::pair<std::string, std::string> > _methods_descr;
+    static const std::vector<std::pair<std::string, std::string> >
+      _methods_descr;
 
     // DOLFIN-defined PETScUserPreconditioner
     PETScUserPreconditioner* pc_dolfin;

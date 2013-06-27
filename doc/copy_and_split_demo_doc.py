@@ -17,19 +17,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Garth N. Wells, 2013
+#
 # Utility script for splitting the cpp and python demos into separate
 # directory trees. Ignores cmake files for python.
 
 import sys, os, shutil
-
-# Wrapper for check_output introduced in Python 2.7
-try:
-    from subprocess import check_output
-except:
-    from commands import getstatusoutput
-    def check_output(*args):
-        status, output = getstatusoutput(" ".join(args))
-        return output
+import subprocess
 
 index_template = """
 Collection of documented demos
@@ -108,34 +102,40 @@ def generate_main_index_file(output_dir, language):
     file.write(text)
     file.close()
 
+
 def copy_split_demo_doc(input_dir, cpp_output_dir, python_output_dir):
 
     # Get list of files in demo directories
     try:
-        bzr_files = check_output(["bzr", "ls", "-R", "-V", input_dir])
-        if not bzr_files:
-            # Workaround for when we're not in a bzr repo
-            bzr_files = check_output(["find", input_dir])
-        bzr_files = [f for f in bzr_files.split("\n") if "demo/" in f]
-        for (i, f) in enumerate(bzr_files):
-            if f[-1] == "/":
-                bzr_files[i] = f[:-1]
+
+        # Get root path of git repo
+        git_root  = subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).splitlines()
+
+        # Get list of files tracked by git (relative to git root)
+        git_files = subprocess.check_output(["git", "ls-files", "--full-name", input_dir]).splitlines()
+
+        # Build list with full paths
+        git_files = [os.path.join(git_root[0],  f) for f in git_files]
+
+        if not git_files:
+            # Workaround for when we're not in a git repo
+            git_files = subprocess.check_output(["find", input_dir]).splitlines()
     except:
-        bzr_files = None
+        git_files = None
 
     def ignore_cpp(directory, contents):
         if directory[-3:] == "cpp":
             return contents
-        elif bzr_files is not None:
-            return [c for c in contents if not in_bzr(directory, c, bzr_files)]
+        elif git_files is not None:
+            return [c for c in contents if not in_git(directory, c, git_files, ["cpp"]) ]
         else:
             return []
 
     def ignore_python(directory, contents):
         if directory[-6:] == "python":
             return contents
-        elif bzr_files is not None:
-            return [c for c in contents if not in_bzr(directory, c, bzr_files)]
+        elif git_files is not None:
+            return [c for c in contents if not in_git(directory, c, git_files, ["python"])]
         else:
             return []
 
@@ -159,10 +159,21 @@ def copy_split_demo_doc(input_dir, cpp_output_dir, python_output_dir):
     # In addition, generate main index file for navigating demos
     generate_main_index_file(python_output_dir, "python")
 
-def in_bzr(directory, f, bzr_files):
+
+def in_git(directory, name, git_files, exclude_dirs=[]):
     "Check whether file is version-controlled"
-    f = os.path.join(directory, f)
-    return f in bzr_files
+
+    # Get file full path
+    f = os.path.join(directory, name)
+
+    # Return true if a directory (git doesn't track directories)
+    if os.path.isdir(f):
+        if name in exclude_dirs:
+            return False
+        else:
+            return True
+    return f in git_files
+
 
 if __name__ == "__main__":
 
