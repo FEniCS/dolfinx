@@ -595,7 +595,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   dolfin_assert(vertex_index == num_vertices);
 
   // Add cells to mesh and build domain marker mesh function
-  boost::shared_ptr<MeshValueCollection<std::size_t> > subdomain_marker = mesh.domains().markers(2);
+  MeshDomains &domain_markers = mesh.domains();
   std::size_t cell_index = 0;
   for (cgal_cell = cdt.finite_faces_begin(); cgal_cell != cdt.finite_faces_end(); ++cgal_cell)
   {
@@ -607,7 +607,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
                            cgal_cell->vertex(1)->info(),
                            cgal_cell->vertex(2)->info());
 
-      subdomain_marker->set_value(cell_index, 0, cgal_cell->counter());
+      domain_markers.set_marker(std::make_pair(cell_index, cgal_cell->counter()), 2);
       ++cell_index;
     }
   }

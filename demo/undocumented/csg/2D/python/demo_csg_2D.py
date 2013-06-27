@@ -43,12 +43,11 @@ plot(domain, "2D Geometry (boundary)");
 
 # Generate and plot mesh
 mesh2d = Mesh(domain, 45);
-
-f = File("outmesh.xml")
-f << mesh2d
-
-print "Mesh generated", mesh2d
-plot(mesh2d.domains().cell_domains(), "Subdomains");
 plot(mesh2d, "2D mesh")
+
+# Convert subdomains to mesh function for plotting
+mf = MeshFunction("size_t", mesh2d, 2, mesh2d.domains())
+plot(mf, "Subdomains");
+
 
 interactive();

@@ -60,9 +60,12 @@ int main()
   plot(domain, "2D Geometry (boundary)");
 
   // Generate and plot mesh
-  Mesh mesh2d(domain, 100);
+  boost::shared_ptr<Mesh>  mesh2d(new Mesh(domain, 100));
   plot(mesh2d, "2D mesh");
-  plot(mesh2d.domains().cell_domains(), "Subdomains");
+
+  // Convert mesh domains to mesh function for plotting
+  MeshFunction<std::size_t> mf(mesh2d, 2, mesh2d->domains());
+  plot(mf, "Subdomains");
 
 
   interactive();
