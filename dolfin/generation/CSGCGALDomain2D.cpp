@@ -130,22 +130,31 @@ static void polygon_difference(const std::list<Polygon_with_holes_2> &p1,
     return;
   }
 
-  std::list<Polygon_with_holes_2>::const_iterator pit1;
+  boost::scoped_ptr<std::list<Polygon_with_holes_2> >tmp_result1(new std::list<Polygon_with_holes_2>);
+  boost::scoped_ptr<std::list<Polygon_with_holes_2> >tmp_result2(new std::list<Polygon_with_holes_2>);
+
+  std::copy(p1.begin(), p1.end(), std::back_inserter(*tmp_result1));
+
+  std::list<Polygon_with_holes_2>::const_iterator tmp_it;
   std::list<Polygon_with_holes_2>::const_iterator pit2;
 
-  for (pit1 = p1.begin(); 
-       pit1 != p1.end();
-       ++pit1)
+  for (pit2 = p2.begin(); 
+       pit2 != p2.end();
+       ++pit2)
   {
-    for (pit2 = p2.begin(); 
-         pit2 != p2.end();
-         ++pit2)
+    tmp_result2->clear();
+    for (tmp_it = tmp_result1->begin();
+         tmp_it != tmp_result1->end();
+         ++tmp_it)
     {
-      CGAL::difference(*pit1, 
+      CGAL::difference(*tmp_it, 
                        *pit2,
-                       std::back_inserter(output));
+                       std::back_inserter(*tmp_result2));
     }
+    tmp_result1.swap(tmp_result2);
   }
+
+  std::copy(tmp_result1->begin(), tmp_result1->end(), std::back_inserter(output));
 }
 //-----------------------------------------------------------------------------
 static void polygon_join(const std::list<Polygon_with_holes_2> &p1,
