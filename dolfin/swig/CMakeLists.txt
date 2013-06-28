@@ -46,8 +46,6 @@ list(REVERSE COMBINED_MODULES)
 # Get all orginal interface files
 file(GLOB_RECURSE ORIGINAL_INTERFACE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.i)
 
-message("${ORIGINAL_INTERFACE_FILES} ${ORIGINAL_INTERFACE_FILES}")
-
 # Target to copy all swig files from source to build directory
 add_custom_target(copy_swig_files
   COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-swig-files ${CMAKE_BINARY_DIR}
