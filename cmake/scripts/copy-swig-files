@@ -48,7 +48,7 @@ def copy_data(top_destdir):
         for f in filenames:
             if f[-2:] == ".i":
                 srcfile = os.path.join(dirpath, f)
-                shutil.copy(srcfile, destdir)
+                shutil.copy2(srcfile, destdir)
                 
 if __name__ == "__main__":
     # Expecting a destination argument
