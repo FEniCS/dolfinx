@@ -50,6 +50,13 @@ namespace dolfin
     static void generate_surface(Mesh& mesh, const ImplicitSurface& surface,
                                  double cell_size);
 
+  private:
+
+    // Build CGAL triangulation
+    template<typename X, typename Y>
+    static X build_cgal_triangulation(const ImplicitSurface& surface,
+                                      const Y& mesh_criteria);
+
   };
 
 }

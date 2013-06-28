@@ -93,13 +93,6 @@ typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr_test> C3t3_test;
 typedef CGAL::Mesh_criteria_3<Tr_test> Mesh_criteria_test;
 
 
-
-
-
-
-
-
-
 using namespace dolfin;
 
 // Lightweight class for wrapping callback to ImplicitSurface::operator()
@@ -125,46 +118,16 @@ void ImplicitDomainMeshGenerator::generate(Mesh& mesh,
                                            const ImplicitSurface& surface,
                                            double cell_size)
 {
-  /*
   if (MPI::process_number() == 0)
   {
-    ImplicitSurfaceWrapper surface_wrapper(surface);
-    boost::function<double (Point_3)> f(boost::bind(&ImplicitSurfaceWrapper::f,
-                                                    &surface_wrapper, _1));
-
-
-    // Create CGAL bounding sphere
-    const Point c = surface.sphere.c;
-    dolfin_assert(surface.sphere.r > 0.0);
-    K::Sphere_3 bounding_sphere(Point_3(c[0], c[1], c[2]),
-                                surface.sphere.r*surface.sphere.r);
-
-    // Domain (Warning: Sphere_3 constructor uses squared radius !)
-    Mesh_domain_test domain(f, bounding_sphere, 1.0e-5);
-
-    typedef std::vector<Point_3> Polyline_3;
-    typedef std::list<Polyline_3> Polylines;
-
-    Polyline_3 polyline;
-    polyline.push_back(Point_3(-0.5, 0.0,  0.5));
-    polyline.push_back(Point_3( 0.5, 0.0,  0.5));
-    polyline.push_back(Point_3( 0.5, 0.0, -0.5));
-    polyline.push_back(Point_3(-0.5, 0.0, -0.5));
-    polyline.push_back(polyline.front());
-
-    Polylines polylines;
-    polylines.push_back(polyline);
-
-    domain.add_features(polylines.begin(), polylines.end());
-
     // Mesh criteria
     Mesh_criteria_test criteria(CGAL::parameters::facet_angle=30,
                                 CGAL::parameters::facet_size=0.5*cell_size,
                                 CGAL::parameters::facet_distance=0.1*cell_size,
                                 CGAL::parameters::cell_size=cell_size);
 
-    // Mesh generation
-    C3t3_test c3t3 = CGAL::make_mesh_3<C3t3_test>(domain, criteria);
+    // Build CGAL mesh
+    C3t3_test c3t3 = build_cgal_triangulation<C3t3_test>(surface, criteria);
 
     // Build DOLFIN mesh from CGAL 3D mesh/triangulation
     CGALMeshBuilder::build_from_mesh(mesh, c3t3);
@@ -172,7 +135,6 @@ void ImplicitDomainMeshGenerator::generate(Mesh& mesh,
 
   // Build distributed mesh
   MeshPartitioning::build_distributed_mesh(mesh);
-  */
 }
 //-----------------------------------------------------------------------------
 void ImplicitDomainMeshGenerator::generate_surface(Mesh& mesh,
@@ -182,68 +144,16 @@ void ImplicitDomainMeshGenerator::generate_surface(Mesh& mesh,
 {
   if (MPI::process_number() == 0)
   {
-    ImplicitSurfaceWrapper surface_wrapper(surface);
-    boost::function<double (Point_3)> f(boost::bind(&ImplicitSurfaceWrapper::f,
-                                                    &surface_wrapper, _1));
+    // CGAL mesh paramters
+    Mesh_criteria_test criteria(
+      CGAL::parameters::edge_size = cell_size,
+      CGAL::parameters::facet_angle = 30,
+      CGAL::parameters::facet_size = cell_size,
+      //CGAL::parameters::cell_radius_edge_ratio = 2,
+      CGAL::parameters::cell_size = 0.0);
 
-    // Create CGAL bounding sphere
-    const Point c = surface.sphere.c;
-    dolfin_assert(surface.sphere.r > 0.0);
-    K::Sphere_3 bounding_sphere(Point_3(c[0], c[1], c[2]),
-                                surface.sphere.r*surface.sphere.r);
-
-    Mesh_domain_test domain(f, bounding_sphere, 1.0e-5);
-
-    typedef std::vector<Point_3> Polyline_3;
-    typedef std::list<Polyline_3> Polylines;
-
-    // Create edge that we want to preserve
-    Polylines polylines(1);
-    Polyline_3& polyline = polylines.front();
-    for(int i = 0; i < 360; ++i)
-    {
-      Point_3 p(1, std::cos(i*CGAL_PI/180), std::sin(i*CGAL_PI/180));
-      polyline.push_back(p);
-    }
-    polyline.push_back(polyline.front()); // close the line
-    domain.add_features(polylines.begin(), polylines.end());
-
-    /*
-    Polyline_3 polyline;
-    polyline.push_back(Point_3(-0.5, 0.0,  0.5));
-    polyline.push_back(Point_3( 0.5, 0.0,  0.5));
-    polyline.push_back(Point_3( 0.5, 0.0, -0.5));
-    polyline.push_back(Point_3(-0.5, 0.0, -0.5));
-    polyline.push_back(polyline.front());
-
-    Polylines polylines;
-    polylines.push_back(polyline);
-    domain.add_features(polylines.begin(), polylines.end());
-    */
-
-    // Mesh criteria
-    /*
-    Mesh_criteria_test criteria(CGAL::parameters::facet_angle=30,
-                                CGAL::parameters::facet_size=cell_size,
-                                CGAL::parameters::facet_distance=0.1*cell_size,
-                                CGAL::parameters::cell_size=0.0);
-    */
-
-    Mesh_criteria_test criteria(CGAL::parameters::edge_size = 0.15,
-                                CGAL::parameters::facet_angle = 25,
-                                CGAL::parameters::facet_size = cell_size,
-                                //CGAL::parameters::cell_radius_edge_ratio = 2,
-                                CGAL::parameters::cell_size = 0.0);
-
-    /*
-    Mesh_criteria_test criteria(CGAL::parameters::edge_size = 0.15,
-                                CGAL::parameters::facet_angle = 25,
-                                CGAL::parameters::facet_size = 0.15,
-                                CGAL::parameters::cell_radius_edge_ratio = 2,
-                                CGAL::parameters::cell_size = 0.15);
-    */
-    // Mesh generation
-    C3t3_test c3t3 = CGAL::make_mesh_3<C3t3_test>(domain, criteria);
+    // Build CGAL mesh
+    C3t3_test c3t3 = build_cgal_triangulation<C3t3_test>(surface, criteria);
 
     // Build surface DOLFIN mesh from CGAL 3D mesh/triangulation
     CGALMeshBuilder::build_surface_mesh_c3t3(mesh, c3t3, &surface);
@@ -251,6 +161,46 @@ void ImplicitDomainMeshGenerator::generate_surface(Mesh& mesh,
 
   // Build distributed mesh
   MeshPartitioning::build_distributed_mesh(mesh);
+}
+//-----------------------------------------------------------------------------
+template<typename X, typename Y>
+X ImplicitDomainMeshGenerator::build_cgal_triangulation(const ImplicitSurface& surface,
+                                                        const Y& mesh_criteria)
+{
+  // Wrap implicit surface
+  ImplicitSurfaceWrapper surface_wrapper(surface);
+  boost::function<double (Point_3)> f(boost::bind(&ImplicitSurfaceWrapper::f,
+                                                  &surface_wrapper, _1));
+
+  // Create CGAL bounding sphere
+  const Point c = surface.sphere.c;
+  dolfin_assert(surface.sphere.r > 0.0);
+  K::Sphere_3 bounding_sphere(Point_3(c[0], c[1], c[2]),
+                              surface.sphere.r*surface.sphere.r);
+
+  // Create mesh domain
+  Mesh_domain_test domain(f, bounding_sphere, 1.0e-5);
+
+  // Add polylines (if any)
+  std::list<std::vector<Point_3> > cgal_polylines;
+  std::list<std::vector<Point> >::const_iterator polyline;
+  const std::list<std::vector<Point> >& polylines = surface.polylines;
+  for (polyline = polylines.begin(); polyline != polylines.end(); ++polyline)
+  {
+    std::vector<Point_3> _line;
+    _line.reserve(polyline->size());
+    std::vector<Point>::const_iterator p;
+    for (p = polyline->begin(); p != polyline->end(); ++p)
+      _line.push_back(Point_3(p->x(), p->y(), p->z()));
+
+    cgal_polylines.push_back(_line);
+  }
+
+  // Add polyline features
+  domain.add_features(cgal_polylines.begin(), cgal_polylines.end());
+
+  // Generate CGAL mesh
+  return CGAL::make_mesh_3<X>(domain, mesh_criteria);
 }
 //-----------------------------------------------------------------------------
 

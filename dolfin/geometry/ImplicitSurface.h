@@ -21,6 +21,7 @@
 #ifndef __IMPLICITSURFACE_H
 #define __IMPLICITSURFACE_H
 
+#include <list>
 #include <string>
 #include <utility>
 #include <vector>
@@ -89,7 +90,7 @@ namespace dolfin
     const Sphere sphere;
 
     /// Polylines
-    std::vector<std::pair<Point, Point> > polylines;
+    std::list<std::vector<Point> > polylines;
 
     /// Surface type
     const std::string type;
