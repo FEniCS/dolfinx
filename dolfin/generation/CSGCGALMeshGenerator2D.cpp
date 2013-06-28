@@ -229,8 +229,6 @@ void explore_subdomains(CDT& cdt,
                         const CSGCGALDomain2D& total_domain,
                         const std::vector<std::pair<std::size_t, CSGCGALDomain2D> > &subdomain_geometries)
 {
-  std::cout << "--Exploring domains" << std::endl;
-
   // Set counter to -1 for all faces
   for (CDT::Finite_faces_iterator it = cdt.finite_faces_begin(); it != cdt.finite_faces_end(); ++it)
   {
@@ -260,8 +258,6 @@ void explore_subdomains(CDT& cdt,
 
       Point p( (p0[0] + p1[0] + p2[0]) / 3.0,
                (p0[1] + p1[1] + p2[1]) / 3.0 );
-      std::cout << "Testing point: " << p << std::endl;
-      // std::cout << "In domain: " << point_in_domain(p, total_domain) << std::endl;
 
       // Set the in_domain member (is face in the total domain)
       f->set_in_domain(total_domain.point_in_domain(p));
@@ -358,96 +354,6 @@ double shortest_constrained_edge(const CDT &cdt)
   return min_length;
 }
 //-----------------------------------------------------------------------------
-void remove_short_edges(CDT& cdt, double threshold)
-{
-  cout << "Removing short edges" << endl;
-
-  threshold *= threshold;
-  std::cout << "Threshold: " << threshold << std::endl;
-
-
-  bool removed = false;
-  do
-  {
-    removed = false;
-
-    for (CDT::Finite_edges_iterator it = cdt.finite_edges_begin();
-         it != cdt.finite_edges_end();
-         it++)
-    {
-      // Only care about constrained edges. Unconstrained shorted don't cause
-      // problems here.
-      if (!cdt.is_constrained(*it))
-        continue;
-
-      // An edge is an std::pair<Face_handle, int>
-      // see CGAL/Triangulation_data_structure_2.h
-      CDT::Face_handle f = it->first;
-      const int i = it->second;
-        
-      CDT::Point p1 = f->vertex( (i+1)%3 )->point();
-      CDT::Point p2 = f->vertex( (i+2)%3 )->point();
-        
-      if (CGAL::to_double((p1-p2).squared_length()) < threshold)
-      {
-        std::cout << "Found short edge: " << p1 << ", " << p2 << std::endl;
-
-        // Remove the constraint as this edge will be removed
-        cdt.remove_constraint(f, i);
-
-        CDT::Vertex_handle to_be_removed = f->vertex( (i+1)%3 );
-        CDT::Vertex_handle to_be_kept    = f->vertex( (i+2)%3 );
-        std::cout << "To be removed: " << to_be_removed->point() << std::endl;
-        std::cout << "To be kept: "    << to_be_kept->point() << std::endl;
-
-        // save the vertices to which we should have constrained edges
-        std::vector<Vertex_handle> constraints;
-        CDT::Edge_circulator c = cdt.incident_edges(to_be_removed);
-        CDT::Edge first = *c;
-        do
-        {
-          if (cdt.is_constrained(*c))
-          {
-            std::cout << "Found constrained incident edge" << std::endl;
-            print_edge(*c);
-            cdt.remove_constraint(c->first, c->second);
-
-            const CDT::Face_handle f = c->first;
-            const int i = c->second;
-
-            // Save the opposite vertex (we need to constrain this edge later)
-            if (f->vertex( (i+1)%3) == to_be_removed)
-              constraints.push_back(f->vertex( (i+2)%3 ));
-            else
-              constraints.push_back(f->vertex( (i+1)%3 ));
-   
-            std::cout << "Stored: " << constraints.back()->point() << std::endl;
-         
-          }
-          ++c;
-        } while (*c != first);
-
-        cout << "Number of constrained edges removed: " << constraints.size() << endl;
-
-        // Found short constrained edge to be remove
-        cdt.remove(to_be_removed);
-
-        // Recreate constraints
-        for (std::vector<Vertex_handle>::iterator c_it = constraints.begin();
-             c_it != constraints.end(); ++c_it)
-        {
-          std::cout << "Inserting constraint: " << to_be_kept->point() << ", " << (*c_it)->point() << std::endl;
-          cdt.insert_constraint(to_be_kept, *c_it);
-        }
-
-
-        //removed = true;
-        //break;
-      }
-    }
-  } while (removed);
-}
-//-----------------------------------------------------------------------------
 void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
 {
   // Create empty CGAL triangulation
@@ -485,10 +391,6 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
     overlaying.join_inplace(cgal_geometry);
   }
 
-  cout << "Shortest edge: " << shortest_constrained_edge(cdt) << endl;
-  remove_short_edges(cdt, parameters["edge_minimum"]);
-  cout << "Shortest edge: " << shortest_constrained_edge(cdt) << endl;
-  
   explore_subdomains(cdt, total_domain, subdomain_geometries);
 
   // Create mesher
@@ -519,7 +421,6 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   if (mesh_resolution > 0)
   {
     const double min_radius = total_domain.compute_boundingcircle_radius();
-    cout << "Min radius: " << min_radius << endl;
     const double cell_size = 2.0*min_radius/mesh_resolution;
 
 
