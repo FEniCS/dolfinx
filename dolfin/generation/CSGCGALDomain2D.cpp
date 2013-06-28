@@ -288,10 +288,11 @@ double CSGCGALDomain2D::compute_boundingcircle_radius() const
 {
   std::vector<Point_2> points;
 
-  const Polygon_2 &outer = impl->polygon_list.front().outer_boundary();
-  for (Polygon_2::Vertex_const_iterator vit = outer.vertices_begin(); 
-       vit != outer.vertices_end(); ++vit)
-    points.push_back(*vit);
+  for (std::list<Polygon_with_holes_2>::const_iterator pit = impl->polygon_list.begin();
+       pit != impl->polygon_list.end(); ++pit)
+    for (Polygon_2::Vertex_const_iterator vit = pit->outer_boundary().vertices_begin(); 
+         vit != pit->outer_boundary().vertices_end(); ++vit)
+      points.push_back(*vit);
 
   Min_circle min_circle (points.begin(),
                          points.end(),
