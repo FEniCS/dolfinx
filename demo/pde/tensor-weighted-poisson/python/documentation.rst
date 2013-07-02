@@ -5,7 +5,7 @@
 Tensor Weighted Poisson
 =======================
 
-This demo is implemented in two files; one file, :download:`generate_data.py`, for generating data, and one file, :download:`demo_tensor_weighted_poisson.py`, which contains both the vaiational form and the solver.
+This demo is implemented in two files; one file, :download:`generate_data.py`, for generating data, and one file, :download:`demo_tensor-weighted-poisson.py`, which contains both the vaiational form and the solver.
 
 .. include:: ../common.txt
 
@@ -45,7 +45,7 @@ Next, we want to consider the Dirichlet boundary condition. A simple Python func
 	def boundary(x):
     	return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
 
-Now, the Dirichlet boundary condition can be created using the class :py:class:`DirichletBC <dolfin.cpp.fem.DiricletBC>`. A :py:class:`DirichletBC <dolfin.cpp.fem.DiricletBC>` takes three arguments: the function space the boundary condition applies to, the value of the boundary condition, and the part of the boundary on which the condition applies. In our example, the function space is :math:`V`, the value of the boundary condition :math:`(0.0)` can represented using a :py:class:`Constant <dolfin.functions.constant.Constant>` and the Dirichlet boundary is defined immediately above. The definition of the Dirichlet boundary condition then looks as follows:
+Now, the Dirichlet boundary condition can be created using the class :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>`. A :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>` takes three arguments: the function space the boundary condition applies to, the value of the boundary condition, and the part of the boundary on which the condition applies. In our example, the function space is :math:`V`, the value of the boundary condition :math:`(0.0)` can represented using a :py:class:`Constant <dolfin.functions.constant.Constant>` and the Dirichlet boundary is defined immediately above. The definition of the Dirichlet boundary condition then looks as follows:
 
 .. code-block:: python
 
@@ -72,7 +72,7 @@ With these ingredients, we can write down the bilinear form :math:`a` and the li
 	a = inner(C*grad(u), grad(v))*dx
 	L = f*v*dx
 
-Now, we have specified the bilinear and linear forms and can consider the solution of the variational problem. First, we need to define a :py:class:`Function <dolfin.cpp.function.Function>` :math:`u` to represent the solution. (Upon initialization, it is simply set to the zero function.) A :py:class:`Function <dolfin.cpp.function.Function>` represents a function living in a finite element function space. Next, we can call the solve function with the arguments :math:`a == L`, :math:`u` and :math:`bc` as follows:
+Now, we have specified the bilinear and linear forms and can consider the solution of the variational problem. First, we need to define a :py:class:`Function <dolfin.cpp.function.Function>` :math:`u` to represent the solution. (Upon initialization, it is simply set to the zero function.) A :py:class:`Function <dolfin.cpp.function.Function>` represents a function living in a finite element function space. Next, we can call the :py:meth:`solve <dolfin.cpp.fem.GenericAdaptiveVariationalSolver.solve>` function with the arguments :math:`a == L`, :math:`u` and :math:`bc` as follows:
 
 .. code-block:: python
 
@@ -82,7 +82,7 @@ Now, we have specified the bilinear and linear forms and can consider the soluti
 
 The function :math:`u` will be modified during the call to solve. The default settings for solving a variational problem have been used. However, the solution process can be controlled in much more detail if desired.
 
-A :py:class:`Function <dolfin.cpp.function.Function>` can be manipulated in various ways, in particular, it can be plotted and saved to file. Here, we output the solution to a VTK file (using the suffix .pvd) for later visualization and also plot it using the plot command:
+A :py:class:`Function <dolfin.cpp.function.Function>` can be manipulated in various ways, in particular, it can be plotted and saved to file. Here, we output the solution to a VTK file (using the suffix .pvd) for later visualization and also plot it using the :py:meth:`plot <dolfin.cpp.io.VTKPlotter.plot>` command:
 
 .. code-block:: 
 
