@@ -4,34 +4,16 @@
 
 
 Create CSG geometry
-=======================
+===================
 
-Demonstration of usage of 2D geometries in DOLFIN
+This demo is implemented in a single Python file,
+:download:`demo_csg_2D.py`, and demonstration of usage of 2D geometries in DOLFIN
 
-
-This demo illustrates how to:
-
-* Define CSG geometries 
-* Generate mesh from geometries
-
-The domain looks as follows:
-
-.. image:: ../csg_boundary.png
-	:scale: 75 %
-
-and the mesh:
-
-.. image:: ../csg_mesh.png
-	:scale: 75 %
-
-Problem definition
-------------------------
-
-We do not have any equation in this demo. The demo focuses purely on the geometry and how to generate a mesh from it. 
+.. include:: ../common.txt
 
 
 Implementation
---------------------
+--------------
 
 This description goes through how to make geometries and meshes in DOLFIN.
 
@@ -98,8 +80,9 @@ Finally, we generate a mesh using :py:class:`Mesh <dolfin.cpp.mesh.Mesh>` and pl
 Note that when we create a mesh from a CSG geometry, the resolution must be specified.
 
 Complete code
--------------------
+-------------
 
 .. literalinclude:: demo_csg_2D.py
+   :start-after: # Begin demo
 
 
