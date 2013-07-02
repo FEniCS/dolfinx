@@ -121,7 +121,7 @@ namespace dolfin
     const MatSolverPackage select_solver(std::string& method) const;
 
     // Does an LU solver support Cholesky?
-    const bool solver_has_cholesky(const MatSolverPackage package) const;
+    bool solver_has_cholesky(const MatSolverPackage package) const;
 
     // Initialise solver
     void init_solver(std::string& method);
