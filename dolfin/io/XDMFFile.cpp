@@ -18,7 +18,7 @@
 // Modified by Garth N. Wells, 2012
 //
 // First added:  2012-05-28
-// Last changed: 2013-05-14
+// Last changed: 2013-06-21
 
 #ifdef HAS_HDF5
 
@@ -44,6 +44,7 @@
 #include <dolfin/mesh/Vertex.h>
 #include "HDF5File.h"
 #include "HDF5Interface.h"
+#include "HDF5Utility.h"
 #include "XDMFFile.h"
 
 using namespace dolfin;
@@ -262,7 +263,7 @@ void XDMFFile::operator<< (const std::pair<const Function*, double> ut)
 
   if (vertex_data)
   {
-    hdf5_file->reorder_values_by_global_indices(mesh, data_values, global_size);
+    HDF5Utility::reorder_values_by_global_indices(mesh, data_values, global_size);
     num_total_vertices = global_size[0];
   }
 

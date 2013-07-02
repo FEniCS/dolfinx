@@ -25,10 +25,11 @@
 
 #ifdef HAS_PETSC
 
+#include <vector>
 #include <string>
-
-#include <petscpc.h>
 #include <boost/shared_ptr.hpp>
+#include <petscpc.h>
+
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/la/PETScObject.h>
@@ -41,13 +42,15 @@ namespace dolfin
   // Forward declarations
   class PETScKrylovSolver;
   class PETScSNESSolver;
+  class VectorSpaceBasis;
 
+  /// This class is a wrapper for configuring PETSc
+  /// preconditioners. It does not own a preconditioner. It can take a
+  /// PETScKrylovSolver and set the preconditioner type and
+  /// parameters.
 
-  /// This class is a wrapper for configuring PETSc preconditioners. It does
-  /// not own a preconditioner. It can take a PETScKrylovSolver and set the
-  /// preconditioner type and parameters.
-
-  class PETScPreconditioner : public PETScObject, public GenericPreconditioner, public Variable
+  class PETScPreconditioner : public PETScObject,
+    public GenericPreconditioner, public Variable
   {
   public:
 
@@ -63,7 +66,7 @@ namespace dolfin
     /// Set the (approximate) null space of the preconditioner operator
     /// (matrix). This is required for certain preconditioner types,
     /// e.g. smoothed aggregation multigrid
-    void set_nullspace(const std::vector<const GenericVector*> nullspace);
+    void set_nullspace(const VectorSpaceBasis& nullspace);
 
     /// Return the PETSc null space
     boost::shared_ptr<const MatNullSpace> nullspace() const
@@ -95,7 +98,8 @@ namespace dolfin
     static const std::map<std::string, const PCType> _methods;
 
     // Available preconditioner descriptions
-    static const std::vector<std::pair<std::string, std::string> > _methods_descr;
+    static const std::vector<std::pair<std::string, std::string> >
+      _methods_descr;
 
     // Null space vectors
     std::vector<PETScVector> _nullspace;

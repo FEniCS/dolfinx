@@ -224,7 +224,7 @@ void PETScKrylovSolver::set_operators(const boost::shared_ptr<const GenericLinea
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_operators(const boost::shared_ptr<const PETScBaseMatrix> A,
-                                      const boost::shared_ptr<const PETScBaseMatrix> P)
+                              const boost::shared_ptr<const PETScBaseMatrix> P)
 {
   _A = A;
   _P = P;
@@ -235,7 +235,7 @@ void PETScKrylovSolver::set_operators(const boost::shared_ptr<const PETScBaseMat
 void PETScKrylovSolver::set_nullspace(const VectorSpaceBasis& nullspace)
 {
   // Copy vectors
-  for (std::size_t i = 0; i < nullspace.size(); ++i)
+  for (std::size_t i = 0; i < nullspace.dim(); ++i)
   {
     dolfin_assert(nullspace[i]);
     const PETScVector& x = nullspace[i]->down_cast<PETScVector>();
@@ -245,8 +245,8 @@ void PETScKrylovSolver::set_nullspace(const VectorSpaceBasis& nullspace)
   }
 
   // Get pointers to underlying PETSc objects and normalize vectors
-  std::vector<Vec> petsc_vec(nullspace.size());
-  for (std::size_t i = 0; i < nullspace.size(); ++i)
+  std::vector<Vec> petsc_vec(nullspace.dim());
+  for (std::size_t i = 0; i < nullspace.dim(); ++i)
   {
     petsc_vec[i] = *(_nullspace[i].vec().get());
     PetscReal val = 0.0;
@@ -255,17 +255,12 @@ void PETScKrylovSolver::set_nullspace(const VectorSpaceBasis& nullspace)
 
   // Create null space
   petsc_nullspace.reset(new MatNullSpace, PETScMatNullSpaceDeleter());
-  MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE, nullspace.size(),
+  MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE, nullspace.dim(),
                      petsc_vec.data(), petsc_nullspace.get());
 
   // Set null space
   dolfin_assert(_ksp);
   KSPSetNullSpace(*_ksp, *petsc_nullspace);
-}
-//-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_transpose_nullspace(const VectorSpaceBasis& transpose_nullspace)
-{
-  return; // PETSc doesn't need the transpose nullspace; we've orthogonalised the RHS separately
 }
 //-----------------------------------------------------------------------------
 const PETScBaseMatrix& PETScKrylovSolver::get_operator() const
@@ -333,7 +328,8 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   if (_preconditioner)
   {
     dolfin_assert(_P);
-    boost::shared_ptr<const MatNullSpace> pc_nullspace = _preconditioner->nullspace();
+    boost::shared_ptr<const MatNullSpace> pc_nullspace
+      = _preconditioner->nullspace();
     if (pc_nullspace)
     {
       #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR >= 3
@@ -346,8 +342,10 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     }
   }
 
-  // FIXME: Improve check for re-setting preconditoner, e.g. if parameters change
-  // FIXME: Solve using matrix free matrices fails if no user provided Prec is provided
+  // FIXME: Improve check for re-setting preconditoner, e.g. if
+  //        parameters change
+  // FIXME: Solve using matrix free matrices fails if no user provided
+  //        Prec is provided
   // Set preconditioner if necessary
   if (_preconditioner && !preconditioner_set)
   {
@@ -372,7 +370,8 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   // Set convergence norm type
   if (parameters["convergence_norm_type"].is_set())
   {
-    const std::string convergence_norm_type = parameters["convergence_norm_type"];
+    const std::string convergence_norm_type
+      = parameters["convergence_norm_type"];
     if (convergence_norm_type == "true")
       KSPSetNormType(*_ksp, KSP_NORM_UNPRECONDITIONED);
     else if (convergence_norm_type == "preconditioned")
@@ -498,7 +497,8 @@ void PETScKrylovSolver::set_petsc_operators()
 
   // Get some parameters
   const bool reuse_precon = parameters("preconditioner")["reuse"];
-  const bool same_pattern = parameters("preconditioner")["same_nonzero_pattern"];
+  const bool same_pattern
+    = parameters("preconditioner")["same_nonzero_pattern"];
 
   // Set operators with appropriate option
   if (reuse_precon)

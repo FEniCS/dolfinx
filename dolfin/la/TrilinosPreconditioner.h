@@ -56,10 +56,12 @@ namespace dolfin
   class EpetraKrylovSolver;
   class EpetraMatrix;
   class GenericVector;
+  class VectorSpaceBasis;
 
-  /// This class is a wrapper for configuring Epetra preconditioners. It does
-  /// not own a preconditioner. It can take a EpetraKrylovSolver and set the
-  /// preconditioner type and parameters.
+  /// This class is a wrapper for configuring Epetra
+  /// preconditioners. It does not own a preconditioner. It can take a
+  /// EpetraKrylovSolver and set the preconditioner type and
+  /// parameters.
 
   class TrilinosPreconditioner : public GenericPreconditioner, public Variable
   {
@@ -77,13 +79,14 @@ namespace dolfin
     /// Set the Trilonos preconditioner parameters list
     void set_parameters(boost::shared_ptr<const Teuchos::ParameterList> list);
 
-    /// Set the Trilonos preconditioner parameters list (for use from Python)
+    /// Set the Trilonos preconditioner parameters list (for use from
+    /// Python)
     void set_parameters(Teuchos::RCP<Teuchos::ParameterList> list);
 
     /// Set basis for the null space of the operator. Setting this
     /// is critical to the performance of some preconditioners, e.g. ML.
     /// The vectors spanning the null space are copied.
-    void set_nullspace(const std::vector<const GenericVector*> null_space);
+    void set_nullspace(const VectorSpaceBasis& null_space);
 
     /// Return preconditioner name
     std::string name() const;
@@ -109,7 +112,8 @@ namespace dolfin
     static const std::map<std::string, int> _preconditioners;
 
     // Available named preconditionersdescriptions
-    static const std::vector<std::pair<std::string, std::string> >_preconditioners_descr;
+    static const std::vector<std::pair<std::string, std::string> >
+      _preconditioners_descr;
 
     // The Preconditioner
     boost::shared_ptr<Ifpack_Preconditioner> ifpack_preconditioner;

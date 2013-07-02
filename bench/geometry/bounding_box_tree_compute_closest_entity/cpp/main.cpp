@@ -18,80 +18,36 @@
 // This benchmark measures the performance of compute_entity_collisions.
 //
 // First added:  2013-05-23
-// Last changed: 2013-05-30
+// Last changed: 2013-06-25
 
 #include <vector>
 #include <dolfin.h>
 
 using namespace dolfin;
 
-#define NUM_REPS 10000
-#define SIZE 512
+#define NUM_REPS 1000000
+#define SIZE 64
 
-double bench_cgal(const Mesh& mesh)
+int main(int argc, char* argv[])
 {
-  cout << "Running CGAL bench" << endl;
-
-  // First call
-  std::set<std::size_t> cells;
-  Point point(-1.0, -1.0, 0.0);
-  mesh.closest_cell(point);
-
-  cout << "Built tree, searching for closest point" << endl;
-
-  // Call repeatedly
-  tic();
-  for (int i = 0; i < NUM_REPS; i++)
-  {
-    //unsigned int closest_entity = mesh.closest_cell(point);
-    //cout << closest_entity << " " << mesh.distance(point) << endl;
-    mesh.closest_cell(point);
-    point.coordinates()[1] += 2.0 / static_cast<double>(NUM_REPS);
- }
-
-  return toc();
-}
-
-double bench_dolfin(const Mesh& mesh)
-{
-  cout << "Running DOLFIN bench" << endl;
+  // Create mesh
+  UnitCubeMesh mesh(SIZE, SIZE, SIZE);
 
   // First call
   BoundingBoxTree tree;
   tree.build(mesh);
   Point point(-1.0, -1.0, 0.0);
   tree.compute_closest_entity(point, mesh);
-
   cout << "Built tree, searching for closest point" << endl;
 
   // Call repeatedly
   tic();
   for (int i = 0; i < NUM_REPS; i++)
   {
-    //std::pair<unsigned int, double> ret = tree.compute_closest_entity(point, mesh);
-    //cout << ret.first << " " << ret.second << endl;
     tree.compute_closest_entity(point, mesh);
     point.coordinates()[1] += 2.0 / static_cast<double>(NUM_REPS);
   }
-
-  return toc();
-}
-
-int main(int argc, char* argv[])
-{
-  // Create mesh
-  //UnitCubeMesh mesh(SIZE, SIZE, SIZE);
-  UnitSquareMesh mesh(SIZE, SIZE);
-
-  // Select which benchmark to run
-  bool run_cgal = argc > 1 && strcasecmp(argv[1], "cgal") == 0;
-
-  // Run benchmark
-  double t = 0.0;
-  if (run_cgal)
-    t = bench_cgal(mesh);
-  else
-    t = bench_dolfin(mesh);
+  const double t = toc();
 
   // Report result
   info("BENCH %g", t);

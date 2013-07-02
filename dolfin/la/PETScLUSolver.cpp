@@ -352,7 +352,7 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
   return _methods.find(method)->second;
 }
 //-----------------------------------------------------------------------------
-const bool PETScLUSolver::solver_has_cholesky(const MatSolverPackage package) const
+bool PETScLUSolver::solver_has_cholesky(const MatSolverPackage package) const
 {
   return _methods_cholesky.find(package)->second;
 }
