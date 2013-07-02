@@ -29,6 +29,7 @@ namespace dolfin
 
   // Forward declarations
   class GenericVector;
+  class VectorSpaceBasis;
 
   /// This class provides a common base preconditioners.
 
@@ -41,7 +42,7 @@ namespace dolfin
     /// Set the (approximate) null space of the preconditioner operator
     /// (matrix). This is required for certain preconditioner types,
     /// e.g. smoothed aggregation multigrid
-    virtual void set_nullspace(const std::vector<const GenericVector*> nullspace)
+    virtual void set_nullspace(const VectorSpaceBasis& nullspace)
     {
       dolfin_error("GenericPreconditioner.h",
                    "set nullspace for preconditioner operator",

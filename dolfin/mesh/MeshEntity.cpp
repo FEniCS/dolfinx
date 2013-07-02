@@ -19,7 +19,7 @@
 // Modified by Garth N. Wells, 2012.
 //
 // First added:  2006-05-11
-// Last changed: 2012-06-12
+// Last changed: 2013-06-23
 
 #include <dolfin/log/log.h>
 #include "Mesh.h"
@@ -140,18 +140,6 @@ Point MeshEntity::midpoint() const
   Point p(x, y, z);
   return p;
 }
-//-----------------------------------------------------------------------------
-#ifdef HAS_CGAL
-template <typename K>
-CGAL::Bbox_3 MeshEntity::bbox () const
-{
-  VertexIterator v(*this);
-  CGAL::Bbox_3 box(v->point().bbox<K>());
-  for (++v; !v.end(); ++v)
-    box = box + v->point().bbox<K>();
-  return box;
-}
-#endif
 //-----------------------------------------------------------------------------
 std::string MeshEntity::str(bool verbose) const
 {
