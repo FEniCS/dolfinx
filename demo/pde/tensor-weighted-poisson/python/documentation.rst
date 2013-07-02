@@ -5,7 +5,7 @@
 Tensor Weighted Poisson 
 =======================
 
-This demo is implemented in two files; one file, :download:`demo_tensor-weighted-poisson.py` ,  :download:`generate_data.py` , for generating data, and one file, :download:`demo_tensor-weighted-poisson.py` , which contains both the vaiational form and the solver.
+This demo is implemented in two files; one file, :download:`demo_tensor-weighted-poisson.py` ,  :download:`generate_data.py` , for generating data, and one file, :download:`demo_tensor-weighted-poisson.py` , which contains both the vaiational form and the solver. :download:`generate_data.py`
 
 .. include:: ../common.txt
 
