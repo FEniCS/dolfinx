@@ -2,7 +2,7 @@
 
 .. _demo_pde_tensor-weighted-poisson_python_documentation:
 
-Tensor Weighted Poisson
+Tensor Weighted Poisson 
 =======================
 
 This demo is implemented in two files; one file, :download:`generate_data.py`, for generating data, and one file, :download:`demo_tensor-weighted-poisson.py`, which contains both the vaiational form and the solver.
@@ -12,7 +12,7 @@ This demo is implemented in two files; one file, :download:`generate_data.py`, f
 Implementation
 --------------
 
-This description goes through the implementation (in :download:`demo__tensor-weighted-poisson.py` and :download:`generate_data.py`) of a solver for the above described Poisson equation step-by-step.
+This description goes through the implementation (in :download:`demo_tensor-weighted-poisson.py` and :download:`generate_data.py`) of a solver for the above described Poisson equation step-by-step.
 
 Implementation of generate_data.py
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -84,7 +84,7 @@ The function :math:`u` will be modified during the call to solve. The default se
 
 A :py:class:`Function <dolfin.cpp.function.Function>` can be manipulated in various ways, in particular, it can be plotted and saved to file. Here, we output the solution to a VTK file (using the suffix .pvd) for later visualization and also plot it using the :py:meth:`plot <dolfin.cpp.io.VTKPlotter.plot>` command:
 
-.. code-block:: 
+.. code-block:: python
 
 	# Save solution in VTK format
 	file = File("poisson.pvd")
