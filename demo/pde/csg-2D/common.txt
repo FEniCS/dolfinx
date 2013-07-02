@@ -6,12 +6,12 @@ This demo illustrates how to:
 
 The domain looks as follows:
 
-.. image:: csg_boundary.png
+.. image:: ../csg_boundary.png
 	:scale: 75 %
 
 and the mesh:
 
-.. image:: csg_mesh.png
+.. image:: ../csg_mesh.png
 	:scale: 75 %
 
 Problem definition
