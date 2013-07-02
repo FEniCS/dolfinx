@@ -10,7 +10,7 @@ Implementation
 --------------
 
 
-This description goes through the implementation (in :download:`demo_neumann_poisson.py`) of a solver for the above described Poisson equation step-by-step.
+This description goes through the implementation in :download:`demo_neumann-poisson.py` of a solver for the above described Poisson equation step-by-step.
 
 
 First, the :py:mod:`dolfin` module is imported:
@@ -73,4 +73,5 @@ Complete code
 -------------
 
 .. literalinclude:: demo_neumann-poisson.py
+   :start-after: # Begin demo
 
