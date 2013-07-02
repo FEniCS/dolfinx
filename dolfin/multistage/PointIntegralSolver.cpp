@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-06-25
+// Last changed: 2013-06-28
 
 #include <cmath>
 #include <boost/make_shared.hpp>
@@ -93,6 +93,7 @@ void PointIntegralSolver::step(double dt)
   
   const bool reset_stage_solutions_ = parameters["reset_stage_solutions"];
   const bool reset_newton_solver_ = parameters("newton_solver")["reset_each_step"];
+  const bool enable_debug = parameters["enable_debug_output"];
 
   // Check for reseting stage solutions
   if (reset_stage_solutions_)
@@ -125,7 +126,8 @@ void PointIntegralSolver::step(double dt)
   {
 
     // FIXME: Some debug output
-    std::cout << std::endl << std::endl << "Vertex: " << vert_ind << std::endl;
+    if (enable_debug)
+      std::cout << std::endl << std::endl << "Vertex: " << vert_ind << std::endl;
     
     Timer t_vert("Step: update vert");
 
@@ -141,9 +143,7 @@ void PointIntegralSolver::step(double dt)
     
     // Fill local to global dof map
     for (unsigned int row=0; row < _system_size; row++)
-    {
       _local_to_global_dofs[row] = cell_dofs[_local_to_local_dofs[row]];
-    }
 
     t_vert.stop();
 
@@ -152,27 +152,27 @@ void PointIntegralSolver::step(double dt)
     {
 
       // FIXME: Debug:
-      _scheme->stage_solutions()[stage]->vector()->get_local(&_y[0], 
+      if (enable_debug)
+      {
+	_scheme->stage_solutions()[stage]->vector()->get_local(&_y[0], 
 							     _local_to_global_dofs.size(), 
 							     &_local_to_global_dofs[0]);
       
-      // FIXME: Some debug output
-      std::cout << "Stage solution before solve[" << stage << "]: ";
-      for (unsigned int row=0; row < _system_size; row++)
-      {
-	std::cout << _y[row] << ", ";
-      }
+	// FIXME: Some debug output
+	std::cout << "Stage solution before solve[" << stage << "]: ";
+	for (unsigned int row=0; row < _system_size; row++)
+	  std::cout << _y[row] << ", ";
       
-      std::cout << std::endl;
+	std::cout << std::endl;
 
-      // FIXME: Some debug output
-      std::cout << "Local stage solution before solve[" << stage << "]: ";
-      for (unsigned int row=0; row < _system_size; row++)
-      {
-	std::cout << _local_stage_solutions[stage][row] << ", ";
-      }
+	// FIXME: Some debug output
+	std::cout << "Local stage solution before solve[" << stage << "]: ";
+	for (unsigned int row=0; row < _system_size; row++)
+	  std::cout << _local_stage_solutions[stage][row] << ", ";
       
-      std::cout << std::endl;
+	std::cout << std::endl;
+	
+      }
 
       // Update cell
       Timer t_impl_update("Update_cell");
@@ -194,27 +194,27 @@ void PointIntegralSolver::step(double dt)
       }
 
       // FIXME: Debug:
-      _scheme->stage_solutions()[stage]->vector()->get_local(&_y[0], 
-							     _local_to_global_dofs.size(), 
-							     &_local_to_global_dofs[0]);
-      
-      // FIXME: Some debug output
-      std::cout << "Stage solution after solve[" << stage << "]: ";
-      for (unsigned int row=0; row < _system_size; row++)
+      if (enable_debug)
       {
-	std::cout << _y[row] << ", ";
-      }
+	_scheme->stage_solutions()[stage]->vector()->get_local(&_y[0], 
+							       _local_to_global_dofs.size(), 
+							       &_local_to_global_dofs[0]);
       
-      std::cout << std::endl;
+	// FIXME: Some debug output
+	std::cout << "Stage solution after solve[" << stage << "]: ";
+	for (unsigned int row=0; row < _system_size; row++)
+	  std::cout << _y[row] << ", ";
+      
+	std::cout << std::endl;
 
-      // FIXME: Some debug output
-      std::cout << "Local stage solution after solve[" << stage << "]: ";
-      for (unsigned int row=0; row < _system_size; row++)
-      {
-	std::cout << _local_stage_solutions[stage][row] << ", ";
-      }
+	// FIXME: Some debug output
+	std::cout << "Local stage solution after solve[" << stage << "]: ";
+	for (unsigned int row=0; row < _system_size; row++)
+	  std::cout << _local_stage_solutions[stage][row] << ", ";
       
-      std::cout << std::endl;
+	std::cout << std::endl;
+	
+      }
 
     }
 

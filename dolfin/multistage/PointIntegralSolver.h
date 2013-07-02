@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-06-25
+// Last changed: 2013-06-28
 
 #ifndef __POINTINTEGRALSOLVER_H
 #define __POINTINTEGRALSOLVER_H
@@ -88,6 +88,7 @@ namespace dolfin
       p("newton_solver").add("max_relative_residual", 1e-1, 1e-5, 0.5);
       p("newton_solver")["absolute_tolerance"].set_range(1e-20,1e-1);
       p("newton_solver").add("reset_each_step", false);
+      p.add("enable_debug_output", false);
 
       return p;
     }
