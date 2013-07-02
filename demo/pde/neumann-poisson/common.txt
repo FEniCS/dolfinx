@@ -5,10 +5,10 @@ This demo illustrates how to:
 
 The solution for  :math:`u` in this demo will look as follows:
 
-.. image:: neumann-poisson_u.png
+.. image:: ../neumann-poisson_u.png
     :scale: 75 %
 
-10.1. Equation and problem definition:
+Equation and problem definition:
 --------------------------------------
 
 

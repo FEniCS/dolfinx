@@ -2,13 +2,12 @@
 
 .. _demo_pde_neumann-poisson_python_documentation:
 
-10. Poisson equation with pure Neumann boundary conditions
-==========================================================
+Poisson equation with pure Neumann boundary conditions
+======================================================
 
 .. include:: ../common.txt 
-
-10.2. Implementation
--------------------- 
+Implementation
+--------------
 
 
 This description goes through the implementation (in :download:`demo_neumann_poisson.py`) of a solver for the above described Poisson equation step-by-step.
@@ -70,8 +69,8 @@ To compute the solution we use the bilinear and linear forms, and the boundary c
 	# Plot solution
 	plot(u, interactive=True)
 
-10.3. Complete code
--------------------
+Complete code
+-------------
 
-.. include:: demo_neumann-poisson.py
-	:literal:
+.. literalinclude:: demo_neumann-poisson.py
+

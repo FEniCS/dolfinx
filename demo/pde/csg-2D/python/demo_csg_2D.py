@@ -1,4 +1,4 @@
-# Copyright (C) 2005-2009 Anders Logg
+# Copyright (C) 2012-2013 Benjamin Kehlet
 #
 # This file is part of DOLFIN.
 #
@@ -15,22 +15,33 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# First added:  2005
-# Last changed: 2011-03-09
-#
-# The bilinear form a(u, v) and linear form L(v) for
-# Poisson's equation.
-#
-# Compile this form with FFC: ffc -l dolfin Poisson.ufl.
+# First added:  2012-11-12
+# Last changed: 2013-03-15
 
-V = FiniteElement("Lagrange", triangle, 1)
-R = FiniteElement("R", triangle, 0)
-element = V * R
+from dolfin import *
 
-(u, c) = TrialFunctions(element)
-(v, d) = TestFunctions(element)
-f = Coefficient(V)
-g = Coefficient(V)
+if not has_cgal():
+    print "DOLFIN must be compiled with CGAL to run this demo."
+    exit(0)
 
-a = (inner(grad(u), grad(v)) + c*v + u*d)*dx
-L = f*v*dx + g*v*ds
+
+# Define 2D geometry
+r = Rectangle(0.5, 0.5, 1.5, 1.5);
+c = Circle (1, 1, 1);
+g2d = c - r;
+
+# Test printing
+info("\nCompact output of 2D geometry:");
+info(g2d);
+info("");
+info("\nVerbose output of 2D geometry:");
+info(g2d, True);
+
+# Plot geometry
+plot(g2d, "2D Geometry (boundary)");
+
+# Generate and plot mesh
+mesh2d = Mesh(g2d, 10);
+plot(mesh2d, "2D mesh");
+
+interactive();
