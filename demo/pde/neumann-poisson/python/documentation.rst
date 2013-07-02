@@ -5,6 +5,8 @@
 Poisson equation with pure Neumann boundary conditions
 ======================================================
 
+This demo is implemented in a single Python file, :download:`demo_neumann-poisson.py`, which contains both the variational form and the solver.
+
 .. include:: ../common.txt 
 Implementation
 --------------
