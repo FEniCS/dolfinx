@@ -204,8 +204,12 @@ A :py:class:`Function <dolfin.cpp.function.Function>` can be manipulated in vari
 Complete code
 -------------
 
+demo_tensorweighted-poisson.py:
+
 .. literalinclude:: demo_tensorweighted-poisson.py
    :start-after: # Begin demo
+
+generate_data.py:
 
 .. literalinclude:: generate_data.py
    :start-after: # Begin demo
