@@ -38,7 +38,7 @@ where :math:`V` is a suitable function space and
 .. math::
  
 	a(u, v) &= \int_{\Omega} C \nabla u \cdot \nabla v \, {\rm d} x, \\
-	L(v)    &= \int_{\Omega} f v \, {\rm d} x
+	L(v)    &= \int_{\Omega} f v \, {\rm d} x.
 
 
 The expression :math:`a(u, v)` is the bilinear form and :math:`L(v)` is the linear form. It is assumed that all functions in :math:`V` satisfy the Dirichlet boundary conditions (:math:`u = 0 \ {\rm on} \Gamma_{D}`). 

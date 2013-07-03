@@ -21,7 +21,7 @@ First, the :py:mod:`dolfin` module is imported:
 
 	from dolfin import *
 
-Then, we define a mesh of the domain. As the unit square is a very standard domain, we can use a built-in mesh, provided by the class p:py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`. In order to create a mesh consisting of :math:`32 x 32` squares with each square divided into two triangles, we do as follows 
+Then, we define a mesh of the domain. As the unit square is a very standard domain, we can use a built-in mesh, provided by the class p:py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`. In order to create a mesh consisting of :math:`32 \times 32` squares with each square divided into two triangles, we do as follows 
 
 .. code-block:: python 
 
@@ -42,14 +42,14 @@ To set the values of the mesh functions, we go through all the cells in the mesh
 
 	# Iterate over mesh and set values
 	for cell in cells(mesh):
-    	if cell.midpoint().x() < 0.5:
-        	c00[cell] = 1.0
-        	c01[cell] = 0.3
-        	c11[cell] = 2.0
-    	else:
-        	c00[cell] = 3.0
-        	c01[cell] = 0.5
-        	c11[cell] = 4.0
+	    if cell.midpoint().x() < 0.5:
+		c00[cell] = 1.0
+		c01[cell] = 0.3
+		c11[cell] = 2.0
+	    else:
+		c00[cell] = 3.0
+		c01[cell] = 0.5
+		c11[cell] = 4.0
 
 Create files to store data in a directory called data, and store to file
 
@@ -106,7 +106,7 @@ Next, we want to consider the Dirichlet boundary condition. A simple Python func
 	
 	# Define Dirichlet boundary (x = 0 or x = 1)
 	def boundary(x):
-    	return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
+	    return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPSPS
 
 Now, the Dirichlet boundary condition can be created using the class :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>`. A :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>` takes three arguments: the function space the boundary condition applies to, the value of the boundary condition, and the part of the boundary on which the condition applies. In our example, the function space is :math:`V`, the value of the boundary condition :math:`(0.0)` can represented using a :py:class:`Constant <dolfin.functions.constant.Constant>` and the Dirichlet boundary is defined immediately above. The definition of the Dirichlet boundary condition then looks as follows:
 
@@ -148,7 +148,7 @@ Before we define the conductivity matrix, we create a string containg C++ code f
 	};
 	"""
 
-We define the conductivity matrix by first creating mesh functions from the files we stored in :download:`generate_data.py`. Here, the third argument in :py:class:`MeshFunction <dolfin.cpp.mesh.MeshFunction>` is the path to the data files. Then, we define an expression for the entries in the matrix where we give the C++ code as an argument for optimalization. Finally we use the ufl function as_matrix() to create the matrix consisting of the expressions.
+We define the conductivity matrix by first creating mesh functions from the files we stored in :download:`generate_data.py`. Here, the third argument in :py:class:`MeshFunction <dolfin.cpp.mesh.MeshFunction>` is the path to the data files. Then, we define an expression for the entries in the matrix where we give the C++ code as an argument for optimalization. Finally we use the UFL function as_matrix() to create the matrix consisting of the expressions.
 
 .. code-block:: python
 
