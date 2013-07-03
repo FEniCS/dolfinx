@@ -53,7 +53,7 @@ To set the values of the mesh functions, we go through all the cells in the mesh
 
 Create files to store data in a directory called data, and store to file
 
-..code-block:: python
+.. code-block:: python
 
 	# Create files to store data
 	mesh_file = File("data/mesh.xml.gz")
@@ -69,7 +69,7 @@ Create files to store data in a directory called data, and store to file
 
 Plot the mesh functions using the plot function. 
 
-..code-block:: python  
+.. code-block:: python  
 	# Plot mesh functions
 	plot(c00, title="C00")
 	plot(c01, title="C01")
