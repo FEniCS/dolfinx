@@ -36,8 +36,21 @@ endif()
 
 add_definitions(${DOLFIN_PYTHON_DEFINITIONS})
 
+# Check that swig interface is generated, otherwise re-generate it
+if (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/modules)
+  message(STATUS "")
+  message(STATUS "Generating SWIG interface. This might take some time...")
+  message(STATUS "-------------------------------------------------------")
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-interface ${CMAKE_BINARY_DIR} 
+    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings ${CMAKE_BINARY_DIR}
+    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+endif()
+
 # Get combined modules
-file(GLOB COMBINED_MODULES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/modules/*)
+file(GLOB COMBINED_MODULES RELATIVE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/modules/*)
 
 # Sort and reverse the list so la combined module comes early
 list(SORT COMBINED_MODULES)
@@ -80,20 +93,6 @@ add_custom_target(generate_swig_docstrings_with_debug
   WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
   COMMENT "Generating SWIG docstring files from C++ headers (DEBUG modus)"
   )
-
-# Check that swig interface is generated, otherwise re-generate it
-list(GET COMBINED_MODULES 0 COMBINED_MODULE)
-if (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/${COMBINED_MODULE}/module.i)
-  message(STATUS "")
-  message(STATUS "Generating SWIG interface. This might take some time...")
-  message(STATUS "-------------------------------------------------------")
-  execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-interface ${CMAKE_BINARY_DIR} 
-    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
-  execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings ${CMAKE_BINARY_DIR}
-    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
-endif()
 
 # Iterate over the combined modules and add each as a target
 foreach(COMBINED_MODULE_DIR ${COMBINED_MODULES})
