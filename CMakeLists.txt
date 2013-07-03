@@ -685,61 +685,14 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
         COMPONENT RuntimeExecutables)
 
 #------------------------------------------------------------------------------
-# Add demos and install demo source files and mesh files
-
-# Add demo but do not add to default target
-add_subdirectory(demo EXCLUDE_FROM_ALL)
-
-# Set make program
-if ("${CMAKE_GENERATOR}" STREQUAL "Unix Makefiles")
-  set(MAKE_PROGRAM "$(MAKE)")
-else()
-  set(MAKE_PROGRAM "${CMAKE_MAKE_PROGRAM}")
-endif()
-
-# Add target "demo" for building the demos
-add_custom_target(demo
-  COMMAND ${MAKE_PROGRAM}
-  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
-
-# Install the demo source files
-install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
-        FILES_MATCHING
-        PATTERN "CMakeLists.txt"
-        PATTERN "*.cpp"
-        PATTERN "*.ufl"
-        PATTERN "*.h"
-        PATTERN "*.py"
-        PATTERN "*.xml*"
-        PATTERN "*.off"
-        PATTERN "CMakeFiles" EXCLUDE)
-
-# Install meshes (data directory)
-install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
-
-#------------------------------------------------------------------------------
-# Generate CMakeLists.txt files for tests, bench and demos if not exists
-# FIXME: Generate files in  Build directory instead
-
-set(COPY_DEMO_TEST_DEMO_DATA)
-if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/CMakeLists.txt)
-  message(STATUS "")
-  message(STATUS "Generating CMakeLists.txt files in demo, test and bench directories")
-  message(STATUS "-------------------------------------------------------------------")
-  execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-cmakefiles 
-    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
-  set(COPY_DEMO_TEST_DEMO_DATA TRUE)
-endif()
-
-#------------------------------------------------------------------------------
 # Check if data is downloaded
 
+set(COPY_DEMO_TEST_DEMO_DATA FALSE)
 if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/la/eigenvalue/box_with_dent.xml.gz)
   # FIXME: What if we do not have internet connection
   message(STATUS "")
-  message(STATUS "Download demo and test data. (May take some time)")
-  message(STATUS "------------------------------------------------")
+  message(STATUS "Download demo and test data. (May take some time...)")
+  message(STATUS "----------------------------------------------------")
   execute_process(
     COMMAND ${DOLFIN_SOURCE_DIR}/cmake/scripts/download-demo-data 
     WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
@@ -768,6 +721,62 @@ if (COPY_DEMO_TEST_DEMO_DATA)
     COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data ${CMAKE_CURRENT_BINARY_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 endif()
+
+
+#------------------------------------------------------------------------------
+# Generate CMakeLists.txt files for tests, bench and demos if not exists
+# FIXME: Generate files in Build directory instead?
+# NOTE: We need to call this script after generate-formfiles
+set(CMAKEFILES_NEWLY_GENERATED FALSE)
+set(COPY_DEMO_TEST_DEMO_DATA FALSE)
+if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/CMakeLists.txt)
+  message(STATUS "")
+  message(STATUS "Generating CMakeLists.txt files in demo, test and bench directories")
+  message(STATUS "-------------------------------------------------------------------")
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-cmakefiles 
+    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+  set(COPY_DEMO_TEST_DEMO_DATA TRUE)
+  set(CMAKEFILES_NEWLY_GENERATED TRUE)
+endif()
+
+#------------------------------------------------------------------------------
+# Add demos and install demo source files and mesh files
+
+# NOTE: We cannot add the demo subdirectory if the CMakeFiles have been generated 
+# NOTE: in this run
+if(NOT CMAKEFILES_NEWLY_GENERATED)
+  # Add demo but do not add to default target
+  add_subdirectory(demo EXCLUDE_FROM_ALL)
+endif()
+
+# Set make program
+if ("${CMAKE_GENERATOR}" STREQUAL "Unix Makefiles")
+  set(MAKE_PROGRAM "$(MAKE)")
+else()
+  set(MAKE_PROGRAM "${CMAKE_MAKE_PROGRAM}")
+endif()
+
+# Add target "demo" for building the demos
+add_custom_target(demo
+  COMMAND ${MAKE_PROGRAM}
+  DEPENDS copy_data_test_demo
+  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
+
+# Install the demo source files
+install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
+        FILES_MATCHING
+        PATTERN "CMakeLists.txt"
+        PATTERN "*.cpp"
+        PATTERN "*.ufl"
+        PATTERN "*.h"
+        PATTERN "*.py"
+        PATTERN "*.xml*"
+        PATTERN "*.off"
+        PATTERN "CMakeFiles" EXCLUDE)
+
+# Install meshes (data directory)
+install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
 
 #------------------------------------------------------------------------------
 # Generate documentation

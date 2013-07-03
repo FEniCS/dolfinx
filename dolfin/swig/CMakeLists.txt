@@ -39,8 +39,8 @@ add_definitions(${DOLFIN_PYTHON_DEFINITIONS})
 # Check that swig interface is generated, otherwise re-generate it
 if (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/modules)
   message(STATUS "")
-  message(STATUS "Generating SWIG interface. This might take some time...")
-  message(STATUS "-------------------------------------------------------")
+  message(STATUS "Generating SWIG interface.")
+  message(STATUS "--------------------------")
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-interface ${CMAKE_BINARY_DIR} 
     WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
