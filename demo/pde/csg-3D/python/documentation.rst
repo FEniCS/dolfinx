@@ -52,7 +52,7 @@ Now we have some geometries that we can play with, and the following might seem 
 
 	g3d = box + cone - sphere
 
-This simple line makes a geometry of the box and cone merged, but where we take away the area of the sphere.
+This simple line makes a geometry of the box and cone merged, but where we remove the area of the sphere.
 
 To get information about our new geometry we use the function :py:func:`info <dolfin.cpp.common.info>`. This function takes a string or a DOLFIN object as argument, and optionally we can give a second argument to indicate whether verbose object data should be printed. If the second argument is False (which is default), a one-line summary is printed. If True, verbose and sometimes very exhaustive object data are printed.
 

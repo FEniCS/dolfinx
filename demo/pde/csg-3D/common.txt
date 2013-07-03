@@ -5,7 +5,13 @@ This demo illustrates how to:
 
 The domain looks as follows:
 
-And the mesh looks as follows:
+.. image:: ../csg3D_boundary.png
+	:scale: 75 %
+
+and the mesh:
+
+.. image:: ../csg3D_mesh.png
+	:scale: 75 %
 
 
 Problem definition
