@@ -118,7 +118,7 @@ Now, the Dirichlet boundary condition can be created using the class :py:class:`
 
 Before we define the conductivity matrix, we create a string containg C++ code for evaluation of the conductivity. Later we will use this string when we create an :py:class:`Expression <dolfin.cpp.function.Expression>` containing the entries of the matrix. 
 
-..code-block:: python
+.. code-block:: python
 
 	# Code for C++ evaluation of conductivity
 	conductivity_code = """

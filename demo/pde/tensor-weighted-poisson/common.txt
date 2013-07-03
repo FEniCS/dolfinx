@@ -11,7 +11,7 @@ The data generated for this demo will look as follows
 
 and the solution of :math:`u` will look like
 
-.. image:: ../tensorweighted-poisson_u-png
+.. image:: ../tensorweighted-poisson_u.png
     :scale: 75 %
 
 
