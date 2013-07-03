@@ -25,8 +25,8 @@ Then we check if CGAL is installed, as it is needed to compile this demo:
 .. code-block:: python
 
 	if not has_cgal():
-	print "DOLFIN must be compiled with CGAL to run this demo."
-	exit(0)
+		print "DOLFIN must be compiled with CGAL to run this demo."
+		exit(0)
 
 Now we define 3D geometries. We start with defining a box by sending the coordinates of two opposite corners as arguments to the class in dolfin called :py:class:`Box <dolfin.cpp.mesh.Box>`. 
 
@@ -34,13 +34,13 @@ Now we define 3D geometries. We start with defining a box by sending the coordin
 
 	box = Box(0, 0, 0, 1, 1, 1)
 
-We then use :py:class:`Sphere <dolfin.cpp.mesh.Sphere>` to define a sphere with center at :py:class:`Point <dolfin.cpp.mesh.Point>`(:math:`x,y,z`) and radius given with the second argument
+We then use :py:class:`Sphere <dolfin.cpp.mesh.Sphere>` to define a sphere with center at :py:class:`Point <dolfin.cpp.mesh.Point>` (:math:`x,y,z`) and radius given with the second argument
 
 .. code-block:: python
 	
 	sphere = Sphere(Point(0, 0, 0), 0.3) 
 
-To define a :py:class:`Cone <dolfin.cpp.mesh.Cone>` by four arguments, the first being the center at one end :py:class:`Point <dolfin.cpp.mesh.Point>`(:math:`x_1,y_1,z_1`) and the second being the center at the other end :py:class:`Point <dolfin.cpp.mesh.Point>`(:math:`x_2,y_2,z_2`). The two last arguments gives the radius at the ends. 
+To define a :py:class:`Cone <dolfin.cpp.mesh.Cone>` by four arguments, the first being the center at one end :py:class:`Point <dolfin.cpp.mesh.Point>`(:math:`x_1,y_1,z_1`) and the second being the center at the other end :py:class:`Point <dolfin.cpp.mesh.Point>` (:math:`x_2,y_2,z_2`). The two last arguments gives the radius at the ends. 
 
 .. code-block:: python 
  
@@ -66,7 +66,9 @@ To get information about our new geometry we use the function :py:func:`info <do
 
 To visualize our geometry we :py:meth:`plot <dolfin.cpp.io.VTKPlotter.plot>` it:
 
-..code-block:: python
+.. code-block:: python
+
+	plot(g3d, "3D geometry (surface)")
 
 The second argument is optional, it specifies title of the plot.
 
@@ -84,5 +86,5 @@ Note that when we create a mesh from a CSG geometry, the resolution must be spec
 Complete code
 -------------
 
-.. literalinclude:: demo_csg-3d.py
-	:start-after: # Begin demo
+.. literalinclude:: demo_csg-3D.py
+   :start-after: # Begin demo
