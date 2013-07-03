@@ -40,7 +40,7 @@ We then use :py:class:`Sphere <dolfin.cpp.mesh.Sphere>` to define a sphere with 
 	
 	sphere = Sphere(Point(0, 0, 0), 0.3) 
 
-To define a :py:class:`Cone <dolfin.cpp.mesh.Cone>` by four arguments, the first being the center at one end :py:class:`Point <dolfin.cpp.mesh.Point>`(:math:`x_1,y_1,z_1`) and the second being the center at the other end :py:class:`Point <dolfin.cpp.mesh.Point>` (:math:`x_2,y_2,z_2`). The two last arguments gives the radius at the ends. 
+To define a :py:class:`Cone <dolfin.cpp.mesh.Cone>` by four arguments, the first being the center at one end :py:class:`Point <dolfin.cpp.mesh.Point>` (:math:`x_1,y_1,z_1`) and the second being the center at the other end :py:class:`Point <dolfin.cpp.mesh.Point>` (:math:`x_2,y_2,z_2`). The two last arguments gives the radius at the ends. 
 
 .. code-block:: python 
  
