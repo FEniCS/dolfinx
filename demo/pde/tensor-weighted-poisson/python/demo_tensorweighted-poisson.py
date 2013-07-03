@@ -51,7 +51,7 @@ This demo is dedicated to BF and Marius... ;-)
 from dolfin import *
 
 # Read mesh from file and create function space
-mesh = Mesh("../unitsquare_32_32.xml.gz")
+mesh = Mesh("data/mesh.xml.gz")
 V = FunctionSpace(mesh, "Lagrange", 1)
 
 # Define Dirichlet boundary (x = 0 or x = 1)
@@ -91,9 +91,9 @@ public:
 """
 
 # Define conductivity expression and matrix
-c00 = MeshFunction("double", mesh, "../unitsquare_32_32_c00.xml.gz")
-c01 = MeshFunction("double", mesh, "../unitsquare_32_32_c01.xml.gz")
-c11 = MeshFunction("double", mesh, "../unitsquare_32_32_c11.xml.gz")
+c00 = MeshFunction("double", mesh, "data/c00.xml.gz")
+c01 = MeshFunction("double", mesh, "data/c01.xml.gz")
+c11 = MeshFunction("double", mesh, "data/c11.xml.gz")
 
 c = Expression(cppcode=conductivity_code)
 c.c00 = c00

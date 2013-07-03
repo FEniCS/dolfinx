@@ -20,6 +20,7 @@ used in the demo."""
 #
 # First added:  2009-12-16
 # Last changed: 2009-12-16
+# Begin demo
 
 from dolfin import *
 
@@ -42,12 +43,13 @@ for cell in cells(mesh):
         c01[cell] = 0.5
         c11[cell] = 4.0
 
-# Store to file
-mesh_file = File("mesh.xml.gz")
-c00_file = File("c00.xml.gz")
-c01_file = File("c01.xml.gz")
-c11_file = File("c11.xml.gz")
+# Create files to store data
+mesh_file = File("data/mesh.xml.gz")
+c00_file = File("data/c00.xml.gz")
+c01_file = File("data/c01.xml.gz")
+c11_file = File("data/c11.xml.gz")
 
+# Store to file 
 mesh_file << mesh
 c00_file << c00
 c01_file << c01

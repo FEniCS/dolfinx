@@ -12,14 +12,77 @@ This demo is implemented in two files; one file,  :download:`generate_data.py` ,
 Implementation
 --------------
 
-This description goes through the implementation (in :download:`demo_tensorweighted-poisson.py` and :download:`generate_data.py`) of a solver for the above described Poisson equation step-by-step.
-
 Implementation of generate_data.py
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+First, the :py:mod:`dolfin` module is imported:
+
+.. code-block:: python
+
+	from dolfin import *
+
+Then, we define a mesh of the domain. As the unit square is a very standard domain, we can use a built-in mesh, provided by the class p:py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`. In order to create a mesh consisting of :math:`32 x 32` squares with each square divided into two triangles, we do as follows 
+
+.. code-block:: python 
+
+	mesh = UnitSquareMesh(32, 32)
+
+Now, we create mesh functions to store the values of the conductivity matrix as it varies over the domain. Since the matrix is symmetric, we only create mesh functions for the upper triangular part of the matrix. In :py:class:`MeshFunction <dolfin.cpp.mesh.MeshFunction>` the first argument specifies the type of the mesh function, here we use "double". Other types allowed are "int", "size_t" and "bool". The two following arguments are optional; the first gives the mesh the :py:class:`MeshFunction <dolfin.cpp.mesh.MeshFunction>` is defined on, and the second the topological dimension of the mesh function.
+
+.. code-block:: python
+
+	# Create mesh functions for c00, c01, c11
+	c00 = MeshFunction("double", mesh, 2)
+	c01 = MeshFunction("double", mesh, 2)
+	c11 = MeshFunction("double", mesh, 2)
+
+To set the values of the mesh functions, we go through all the cells in the mesh and check whether the midpoint value of the cell in the x-direction is less than 0.5 or not (in pratice this means that we are checking which half of the unit square the cell is in). Then we set the correct values of the mesh functions, depending on which half we are in.
+
+.. code-block:: python 
+
+	# Iterate over mesh and set values
+	for cell in cells(mesh):
+    	if cell.midpoint().x() < 0.5:
+        	c00[cell] = 1.0
+        	c01[cell] = 0.3
+        	c11[cell] = 2.0
+    	else:
+        	c00[cell] = 3.0
+        	c01[cell] = 0.5
+        	c11[cell] = 4.0
+
+Create files to store data in a directory called data, and store to file
+
+..code-block:: python
+
+	# Create files to store data
+	mesh_file = File("data/mesh.xml.gz")
+	c00_file = File("data/c00.xml.gz")
+	c01_file = File("data/c01.xml.gz")
+	c11_file = File("data/c11.xml.gz")
+
+	# Store to file 
+	mesh_file << mesh
+	c00_file << c00
+	c01_file << c01
+	c11_file << c11
+
+Plot the mesh functions using the plot function. 
+
+..code-block:: python  
+	# Plot mesh functions
+	plot(c00, title="C00")
+	plot(c01, title="C01")
+	plot(c11, title="C11")
+
+	interactive()
 
 
 Implementation of tensor-weighted-poisson.py
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This description goes through the implementation (in :download:`demo_tensorweighted-poisson.py` ) of a solver for the above described Poisson equation step-by-step.
+
 
 First, the :py:mod:`dolfin` module is imported:
 
@@ -53,9 +116,52 @@ Now, the Dirichlet boundary condition can be created using the class :py:class:`
 	u0 = Constant(0.0)
 	bc = DirichletBC(V, u0, boundary)
 
-...Something about C++ expression ...
+Before we define the conductivity matrix, we create a string containg C++ code for evaluation of the conductivity. Later we will use this string when we create an :py:class:`Expression <dolfin.cpp.function.Expression>` containing the entries of the matrix. 
 
-...something about definition of conductivity expression and matrix ...
+..code-block:: python
+
+	# Code for C++ evaluation of conductivity
+	conductivity_code = """
+
+	class Conductivity : public Expression
+	{
+	public:
+
+	  // Create expression with 3 components
+	  Conductivity() : Expression(3) {}
+
+	  // Function for evaluating expression on each cell
+	  void eval(Array<double>& values, const Array<double>& x, const ufc::cell& cell) const
+	  {
+	    const uint D = cell.topological_dimension;
+	    const uint cell_index = cell.index;
+	    values[0] = (*c00)[cell_index];
+	    values[1] = (*c01)[cell_index];
+	    values[2] = (*c11)[cell_index];
+	  }
+
+	  // The data stored in mesh functions
+	  boost::shared_ptr<MeshFunction<double> > c00;
+	  boost::shared_ptr<MeshFunction<double> > c01;
+	  boost::shared_ptr<MeshFunction<double> > c11;
+
+	};
+	"""
+
+We define the conductivity matrix by first creating mesh functions from the files we stored in :download:`generate_data.py`. Here, the third argument in :py:class:`MeshFunction <dolfin.cpp.mesh.MeshFunction>` is the path to the data files. Then, we define an expression for the entries in the matrix where we give the C++ code as an argument for optimalization. Finally we use the ufl function as_matrix() to create the matrix consisting of the expressions.
+
+.. code-block:: python
+
+	# Define conductivity expression and matrix
+	c00 = MeshFunction("double", mesh, "data/c00.xml.gz")
+	c01 = MeshFunction("double", mesh, "data/c01.xml.gz")
+	c11 = MeshFunction("double", mesh, "data/c11.xml.gz")
+
+	c = Expression(cppcode=conductivity_code)
+	c.c00 = c00
+	c.c01 = c01
+	c.c11 = c11
+	C = as_matrix(((c[0], c[1]), (c[1], c[2])))
 
 Next, we want to express the variational problem. First, we need to specify the trial function :math:`u` and the test function :math:`v`, both living in the function space :math:`V`. We do this by defining a :py:func:`TrialFunction <dolfin.functions.function.TrialFunction>` and a :py:func:`TestFunction <dolfin.functions.function.TestFunction>` on the previously defined :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>` :math:`V`.
 
@@ -63,7 +169,7 @@ Further, the source :math:`f` is involved in the variational form, and hence it 
 
 With these ingredients, we can write down the bilinear form :math:`a` and the linear form :math:`L` (using UFL operators). In summary, this reads
 
-.. code-block::
+.. code-block:: python
 	
 	# Define variational problem
 	u = TrialFunction(V)
@@ -99,4 +205,7 @@ Complete code
 -------------
 
 .. literalinclude:: demo_tensorweighted-poisson.py
+   :start-after: # Begin demo
+
+.. literalinclude:: generate_data.py
    :start-after: # Begin demo
