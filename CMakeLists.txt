@@ -718,6 +718,33 @@ install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
 install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
 
 #------------------------------------------------------------------------------
+# Generate CMakeLists.txt files for tests, bench and demos if not exists
+# FIXME: Generate files in  Build directory instead
+
+if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/CMakeLists.txt)
+  message(STATUS "")
+  message(STATUS "Generating CMakeLists.txt files in demo, test and bench directories")
+  message(STATUS "-------------------------------------------------------------------")
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-cmakefiles 
+    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+endif()
+
+
+#------------------------------------------------------------------------------
+# Generate form files for tests, bench, demos and dolfin if not exists
+# FIXME: Generate files in Build directory instead, at least for bench, demo and tests
+
+if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/Poisson.h)
+  message(STATUS "")
+  message(STATUS "Generating form files in demo, test, bench dolfin directories. (May take some time...)")
+  message(STATUS "--------------------------------------------------------------------------------------")
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-form-files 
+    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+endif()
+
+#------------------------------------------------------------------------------
 # Generate documentation
 
 if (DOLFIN_ENABLE_DOCS)
@@ -765,6 +792,17 @@ endif()
 
 if (DOLFIN_ENABLE_TESTING)
 
+  # Check if data is downloaded
+  if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/la/eigenvalue/box_with_dent.xml.gz)
+    # FIXME: What if we do not have internet connection
+    message(STATUS "")
+    message(STATUS "Download demo and test data. (May take some time)")
+    message(STATUS "------------------------------------------------")
+    execute_process(
+      COMMAND ${DOLFIN_SOURCE_DIR}/cmake/scripts/download-demo-data 
+      WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+  endif()
+  
   # Add target "run_memorytests" for running memory tests
   add_custom_target(copy_data_test_demo
     COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data ${CMAKE_CURRENT_BINARY_DIR}
