@@ -45,7 +45,7 @@ where :math:`V` is a suitable function space and
 The expression :math:`a(u, v)` is the bilinear form and :math:`L(v)`
 is the linear form. 
 
-If we make the Ansatz that :math:`u` can be expressed as a linear combination of the basis functions :math:`V`, and we discretize the equation we can write our problem as a linear system:
+If we make the Ansatz that :math:`u` can be expressed as a linear combination of the basis functions :math:`V`, and discretize the equation we can write our problem as a linear system:
 
 .. math:: 
 	AU = b
