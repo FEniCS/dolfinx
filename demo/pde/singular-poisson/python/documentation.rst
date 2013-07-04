@@ -32,7 +32,7 @@ Then, we check that dolfin is configured with the backend called PETSc, since it
 	parameters["linear_algebra_backend"] = "PETSc"
 
 
-We begin by defining a mesh of the domain and a finite element function space :math:`V` relative to this mesh. As the unit square is a very standard domain, we can use a built-in mesh provided by the class :py:class:`UnitSquareMesh <dolfin.cpp.UnitSquareMesh>`. In order to create a mesh consisting of :math:`64 \times 64` squares with each square divided into two triangles,  we do as follows
+We begin by defining a mesh of the domain and a finite element function space :math:`V` relative to this mesh. As the unit square is a very standard domain, we can use a built-in mesh provided by the class :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`. In order to create a mesh consisting of :math:`64 \times 64` squares with each square divided into two triangles,  we do as follows
 
 .. code-block:: python
 
