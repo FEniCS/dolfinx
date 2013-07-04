@@ -120,4 +120,4 @@ Complete code
 -------------
 
 .. literalinclude:: demo_singular.py
-    :start-after: #Begin demo 
+    :start-after: # Begin demo 
