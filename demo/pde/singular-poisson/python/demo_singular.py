@@ -40,6 +40,7 @@ that removes the component in the null space from the solution vector.
 #
 # First added:  2012-10-31
 # Last changed: 2013-05-30
+# Begin demo
 
 from dolfin import *
 
