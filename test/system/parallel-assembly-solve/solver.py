@@ -29,7 +29,7 @@ from dolfin import *
 # Relative tolerance for regression test
 tol = 1e-10
 
-def solve(mesh, degree):
+def test_solve(mesh, degree):
     "Solve on given mesh file and degree of function space."
 
     # Create function space
@@ -44,12 +44,11 @@ def solve(mesh, degree):
     L = v*f*dx - v*g*ds
 
     # Compute solution
-    print "Degree:", degree
     w = Function(V)
     solve(a == L, w)
 
     # Return norm of solution vector
-    return u.vector().norm("l2")
+    return w.vector().norm("l2")
 
 def print_reference(results):
     "Print nicely formatted values for gluing into code as a reference"
@@ -105,11 +104,12 @@ meshes= [(UnitSquareMesh(16, 16), "16x16 unit square"),\
          (UnitCubeMesh(4, 4, 4),  "4x4x4 unit cube")]
 degrees = [1, 2, 3, 4]
 
+
 # Iterate over test cases and collect results
 results = []
 for mesh in meshes:
     for degree in degrees:
-        norm = solve(mesh[0], degree)
+        norm = test_solve(mesh[0], degree)
         results.append((mesh[1], degree, norm))
 
 # Uncomment to print results for use as reference
