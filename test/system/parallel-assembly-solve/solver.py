@@ -20,8 +20,10 @@ parallel assembly/solve."""
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by Garth N. Wells, 2013
+#
 # First added:  2009-08-17
-# Last changed: 2009-08-17
+# Last changed: 2013-07-06
 
 import sys
 from dolfin import *
@@ -33,7 +35,7 @@ def test_solve(mesh, degree):
     "Solve on given mesh file and degree of function space."
 
     # Create function space
-    V = FunctionSpace(mesh, "CG", degree)
+    V = FunctionSpace(mesh, "Lagrange", degree)
 
     # Define variational problem
     v = TestFunction(V)
@@ -65,10 +67,10 @@ def print_reference(results):
 def check_results(results, reference, tol):
     "Compare results with reference"
 
-    status = True
+    status = 0
 
-    if not MPI.process_number() == 0:
-        return
+    #if not MPI.process_number() == 0:
+    #    return status
 
     print "Checking results"
     print "----------------"
@@ -81,7 +83,7 @@ def check_results(results, reference, tol):
             if diff < tol:
                 print "OK",
             else:
-                status = False
+                status = 1
                 print "*** ERROR",
             print "(norm = %.16g, reference = %.16g, relative diff = %.16g)" % (norm, ref, diff)
         else:
