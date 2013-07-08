@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-05-28
+// Last changed: 2013-07-08
 
 #ifndef __BOUNDING_BOX_TREE_H
 #define __BOUNDING_BOX_TREE_H
@@ -26,12 +26,13 @@
 #include <vector>
 #include <limits>
 
+#include <dolfin/mesh/Point.h>
+
 namespace dolfin
 {
 
   // Forward declarations
   class Mesh;
-  class Point;
   class GenericBoundingBoxTree;
 
   /// This class implements a (distributed) axis aligned bounding box
