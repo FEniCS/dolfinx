@@ -16,19 +16,20 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-23
-// Last changed: 2013-05-28
+// Last changed: 2013-07-08
 
 #ifndef __GENERIC_BOUNDING_BOX_TREE_H
 #define __GENERIC_BOUNDING_BOX_TREE_H
 
 #include <vector>
 
+#include <dolfin/mesh/Point.h>
+
 namespace dolfin
 {
 
   class Mesh;
   class MeshEntity;
-  class Point;
 
   /// Base class for bounding box implementations (envelope-letter
   /// design)
