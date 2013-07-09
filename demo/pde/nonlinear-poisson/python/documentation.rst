@@ -61,7 +61,7 @@ The Dirichlet boundary condition can be created using the class :py:class:`Diric
 	g = Constant(1.0)
 	bc = DirichletBC(V, g, DirichletBoundary()) 
 
-Next, we want to express the variational problem. First, we need to specify the function u (which represents the solution), (Upon initialization, it is simply set to the zero function, which will represent the initial guess u_0.) A Function represents a function living in a finite element function space. The test function v is also specified, also living in the function space V. We do this by defining a Function and a TestFunction on the previously defined FunctionSpace V.
+Next, we want to express the variational problem. First, we need to specify the function u (which represents the solution), (Upon initialization, it is simply set to the zero function, which will represent the initial guess :math:`u_0`.) A Function represents a function living in a finite element function space. The test function v is also specified, also living in the function space V. We do this by defining a Function and a TestFunction on the previously defined FunctionSpace V.
 
 Further, the source f is involved in the variational forms, and hence we must specify this. We have f given by a simple mathematical formula, and can be easily declared using the :py:class:`Expression <dolfin.cpp.function.Expression>` class. Note that the strings defining f use C++ syntax since, for efficiency, DOLFIN will generate and compile C++ code for this expression at run-time.
 
@@ -105,5 +105,5 @@ A :py:class:`Function <dolfin.cpp.function.Function>` can be manipulated in vari
 Complete code
 -------------
 
-.. literalinclude:: demo_poisson.py
+.. literalinclude:: demo_nonlinear-poisson.py
    :start-after: # Begin demo
