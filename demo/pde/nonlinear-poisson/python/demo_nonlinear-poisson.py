@@ -42,6 +42,7 @@ This is equivalent to solving the variational problem
 #
 # First added:  2007-11-14
 # Last changed: 2012-11-12
+# Begin demo
 
 from dolfin import *
 
