@@ -27,6 +27,7 @@
 #
 # First added:  2007-11-15
 # Last changed: 2009-11-26
+# Begin demo
 
 from dolfin import *
 
