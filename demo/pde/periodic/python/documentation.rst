@@ -1,5 +1,11 @@
+.. Documentation for the Periodic Poisson demo from DOLFIN.
+
+.. _demo_pde_periodic_python_documentation:
+
+
 Poisson equation with periodic boundary conditions
 ==================================================
+
 This demo is implemented in a single Python file, :download:`demo_periodic.py`, which contains both the variational forms and the solver.
 
 .. include:: ../common.txt
