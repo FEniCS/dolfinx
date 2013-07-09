@@ -7,7 +7,7 @@ The mesh and subdomains look as follows
 
 .. image:: ../plot_mesh.png 
 
-.. image:: ../plot_mesh_boundary.png
+.. image:: ../plot_mesh_boundaries.png
 
 and the solution of u and p, respectively:
 

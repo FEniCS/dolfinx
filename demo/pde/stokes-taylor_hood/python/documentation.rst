@@ -109,3 +109,9 @@ Finally, we can store to file and plot the solutions.
 	plot(u)
 	plot(p)
 	interactive()
+
+Complete code
+-------------
+
+.. literalinclude:: demo_stokes-taylorhood.py 
+	:start-after: # Begin demo
