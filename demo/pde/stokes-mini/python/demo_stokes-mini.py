@@ -25,6 +25,7 @@ src/demo/mesh/subdomains."""
 #
 # First added:  2007-11-16
 # Last changed: 2010-04-01
+# Begin demo
 
 from dolfin import *
 
