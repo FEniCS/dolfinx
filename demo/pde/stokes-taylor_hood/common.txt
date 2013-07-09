@@ -5,11 +5,15 @@ This demo illustrates how to:
 
 The mesh and subdomains look as follows
 
-.. image:: ../plot_mesh.png ../plot_mesh_boundary.png
+.. image:: ../plot_mesh.png 
+
+.. image:: ../plot_mesh_boundary.png
 
 and the solution of u and p, respectively:
 
-.. image:: ../plot_u.png ../plot_p.png
+.. image:: ../plot_u.png 
+
+.. image:: ../plot_p.png
 
 Equation and problem definition
 -------------------------------
