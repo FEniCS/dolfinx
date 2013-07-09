@@ -63,7 +63,7 @@ A 2D mesh is created using the built-in class :py:class:`UnitSquareMesh <dolfin.
 	mesh = UnitSquareMesh(32, 32)
 	V = FunctionSpace(mesh, "CG", 1, constrained_domain=pbc)
 
-Now, we create the Dirichlet boundary condition using the class :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>`. A :py:class:`DirichletBC <:py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>`>` takes three arguments: the function space the boundary condition applies to, the value of the boundary condition, and the part of the boundary on which the condition applies. In our example, the function space is V, the value of the boundary condition (0.0) can represented using a Constant and the Dirichlet boundary is defined by the class DirichletBoundary. The definition of the Dirichlet boundary condition then looks as follows:
+Now, we create the Dirichlet boundary condition using the class :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>`. A :py:class:`DirichletBC <:py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>` takes three arguments: the function space the boundary condition applies to, the value of the boundary condition, and the part of the boundary on which the condition applies. In our example, the function space is V, the value of the boundary condition (0.0) can represented using a Constant and the Dirichlet boundary is defined by the class DirichletBoundary. The definition of the Dirichlet boundary condition then looks as follows:
 
 .. code-block:: python
 
