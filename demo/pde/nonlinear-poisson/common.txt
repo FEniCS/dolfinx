@@ -28,9 +28,9 @@ The Poisson equation is the canonical elliptic partial differential equation. Fo
 
 .. math::
 
-    - \nabla\cdot((1 + u^2) \nabla u(x, y)) &= f(x, y) \,{\rm in}\, \Omega\\
-    u &= 1  \,{\rm on}\, \Gamma_D\\
-    \nabla u\cdot n &= 0 \,{\rm on}\, \Gamma_N
+    - \nabla\cdot((1 + u^2) \nabla u(x, y)) &= f(x, y) \quad {\rm in}\, \Omega\\
+    u &= 1  \quad {\rm on}\, \Gamma_D\\
+    \nabla u\cdot n &= 0 \quad {\rm on}\, \Gamma_N
 
 Here :math:`f` are input data and :math:`n` denotes the outward directed boundary normal. The nonlinear variational form can be written in the canonical form: find :math:`u \in V` such that
 
