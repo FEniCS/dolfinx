@@ -33,13 +33,14 @@ A typical set of boundary conditions on the boundary :math:`\partial \Omega = \G
 
 .. math::
 	u &= u_0 \quad {\rm on} \ \Gamma_{D}, \\
-	\nabla u \cdot n + p n &= g   \quad {\rm on} \ \Gamma_{N}. \\
+	\nabla u \cdot n + p n &= g \,   \quad {\rm on} \ \Gamma_{N}. \\
 
 
 Weak formulation
 ^^^^^^^^^^^^^^^^
 
 The Stokes equations can easily be formulated in a mixed variational form; that is, a form where the two variables, the velocity and the pressure, are approximated simultaneously. Using the abstract framework, we have the problem: find :math:`(u, p) \in W` such that
+
 .. math::
 	a((u, p), (v, q)) = L((v, q))
 
@@ -55,16 +56,16 @@ for all :math:`(v, q) \in W` where
 				&= \int_{\Omega} f \cdot v \, {\rm d} x
     			+ \int_{\partial \Omega_N} g \cdot v \, {\rm d} s. \\
 
-The space :math:`W` should be a mixed (product) function space: math:`W = V \times Q` such that :math`u \in V` and :math:`q \in Q`.
+The space :math:`W` should be a mixed (product) function space :math:`W = V \times Q` such that :math:`u \in V` and :math:`q \in Q`.
 
 Domain and boundary conditions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In this demo, we shall consider the following definitions of the input functions, the domain, and the boundaries:
 
-* :math:`\Omega = [0,1]\times[0,1] \backslash dolphin` (a unit cube)
-* :math:`\Gamma_D = `
-* :math:`\Gamma_N = `
+* :math:`\Omega = [0,1]\times[0,1] \backslash {\rm dolphin}` (a unit cube)
+* :math:`\Gamma_D =`
+* :math:`\Gamma_N =`
 * :math:`u_0 = (- \sin(\pi x_1), 0.0)` for :math:`x_0 = 1` and :math:`u_0 = (0.0, 0.0)` otherwise
 * :math:`f = (0.0, 0.0)`
 * :math:`g = (0.0, 0.0)`
