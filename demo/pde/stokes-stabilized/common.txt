@@ -70,7 +70,7 @@ In this demo, we shall consider the following definitions of the input functions
 * :math:`\Omega = [0,1]\times[0, 1] \backslash {\rm dolphin}` 
 * :math:`\Gamma_D =`
 * :math:`\Gamma_N =`
-* :math:`u_0 = (- \sin(\pi x_1), 0.0) {\rm for} x_0 = 1 {\rm and} u_0 = (0.0, 0.0)` otherwise
+* :math:`u_0 = (- \sin(\pi x_1), 0.0) \, {\rm for} \, x_0 = 1 \, {\rm and} \, u_0 = (0.0, 0.0)` otherwise
 * :math:`f = (0.0, 0.0)`
 * :math:`g = (0.0, 0.0)`
 
