@@ -123,5 +123,5 @@ Finally, we can store to file and plot the solutions.
 Complete code
 -------------
 
-.. literalinclude:: demo_poisson.py
+.. literalinclude:: demo_stokes-mini.py
    :start-after: # Begin demo
