@@ -6,7 +6,7 @@ Stokes problem with Taylor-Hood elements
 ========================================
 This demo is implemented in a single Python file, demo_stokes-iterative.py, which contains both the variational forms and the solver.
 
-..include:: ../common.txt
+.. include:: ../common.txt
 
 Implementation
 --------------
