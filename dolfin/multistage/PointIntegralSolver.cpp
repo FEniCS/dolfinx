@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-06-28
+// Last changed: 2013-07-09
 
 #include <cmath>
 #include <boost/make_shared.hpp>
@@ -54,6 +54,8 @@ PointIntegralSolver::PointIntegralSolver(boost::shared_ptr<MultiStageScheme> sch
   _ufcs(), _coefficient_index(), _recompute_jacobian(true), 
   _jac(), _eta(1e-10), _num_jacobian_computations(0)
 {
+  Timer construct_pis("Construct PointIntegralSolver");
+
   // Set parameters
   parameters = default_parameters();
 
@@ -129,7 +131,7 @@ void PointIntegralSolver::step(double dt)
     if (enable_debug)
       std::cout << std::endl << std::endl << "Vertex: " << vert_ind << std::endl;
     
-    Timer t_vert("Step: update vert");
+    //Timer t_vert("Step: update vert");
 
     // Cell containing vertex
     const Cell cell(_mesh, _vertex_map[vert_ind].first);
@@ -145,7 +147,7 @@ void PointIntegralSolver::step(double dt)
     for (unsigned int row=0; row < _system_size; row++)
       _local_to_global_dofs[row] = cell_dofs[_local_to_local_dofs[row]];
 
-    t_vert.stop();
+    //t_vert.stop();
 
     // Iterate over stage forms
     for (unsigned int stage=0; stage<_num_stages; stage++)
@@ -175,11 +177,11 @@ void PointIntegralSolver::step(double dt)
       }
 
       // Update cell
-      Timer t_impl_update("Update_cell");
+      //Timer t_impl_update("Update_cell");
       //for (unsigned int i=0; i < _ufcs[stage].size(); i++)
       _ufcs[stage][0]->update(cell);
 
-      t_impl_update.stop();
+      //t_impl_update.stop();
 
       // Check if we have an explicit stage (only 1 form)
       if (_ufcs[stage].size()==1)
@@ -218,7 +220,7 @@ void PointIntegralSolver::step(double dt)
 
     }
 
-    Timer t_last_stage("Last stage: tabulate_tensor");
+    //Timer t_last_stage("Last stage: tabulate_tensor");
 
     // Update coeffcients for last stage
     _last_stage_ufc->update(cell);
@@ -238,7 +240,7 @@ void PointIntegralSolver::step(double dt)
     // Update global solution with last stage
     _scheme->solution()->vector()->set(&_y[0], _local_to_global_dofs.size(), 
 				       &_local_to_global_dofs[0]);
-    t_last_stage.stop();
+    //t_last_stage.stop();
     
     //p++;
   }
@@ -251,7 +253,7 @@ void PointIntegralSolver::step(double dt)
 void PointIntegralSolver::_solve_explicit_stage(std::size_t vert_ind, 
 						unsigned int stage)
 {
-  Timer t_expl("Explicit stage");
+  //Timer t_expl("Explicit stage");
 
   // Local vertex ind
   const unsigned int local_vert = _vertex_map[vert_ind].second;
@@ -260,15 +262,15 @@ void PointIntegralSolver::_solve_explicit_stage(std::size_t vert_ind,
   const ufc::point_integral& integral = *_ufcs[stage][0]->default_point_integral;
 
   // Update to current cell
-  Timer t_expl_update("Explicit stage: update_cell");
-  t_expl_update.stop();
+  //Timer t_expl_update("Explicit stage: update_cell");
+  //t_expl_update.stop();
 
   // Tabulate cell tensor
-  Timer t_expl_tt("Explicit stage: tabulate_tensor");
+  //Timer t_expl_tt("Explicit stage: tabulate_tensor");
   integral.tabulate_tensor(&_ufcs[stage][0]->A[0], _ufcs[stage][0]->w(), 
 			   &_ufcs[stage][0]->cell.vertex_coordinates[0], 
 			   local_vert);
-  t_expl_tt.stop();
+  //t_expl_tt.stop();
 
   // Extract vertex dofs from tabulated tensor and put them into the local 
   // stage solution vector
@@ -291,7 +293,7 @@ void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
 						const Cell& cell)
 {
 	
-  Timer t_impl("Implicit stage");
+  //Timer t_impl("Implicit stage");
 	
   // Local vertex ind
   const unsigned int local_vert = _vertex_map[vert_ind].second;
@@ -324,7 +326,8 @@ void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
     
     // Do a simplified newton solve
     convergence = _simplified_newton_solve(u, vert_ind, *_ufcs[stage][0], 
-					   _coefficient_index[stage][0], cell);
+					   _coefficient_index[stage].size()>0 ? \
+					   _coefficient_index[stage][0] : -1, cell);
     
     // First time we do not converge and it is the second time around
     if (convergence != converged && jacobian_calculations > max_jacobian_computations)
@@ -348,7 +351,7 @@ void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
 
   }
 
-  Timer t_impl_set("Implicit stage: set");
+  //Timer t_impl_set("Implicit stage: set");
 
   // Put solution back into global stage solution vector
   _scheme->stage_solutions()[stage]->vector()->set(&u[0], u.size(), 
@@ -395,9 +398,10 @@ void PointIntegralSolver::_compute_jacobian(std::vector<double>& jac,
 					    UFC& loc_ufc, 
 					    const Cell& cell, int coefficient_index)
 {
-  Timer t_impl_update("Update_cell");
+  //Timer _timer_compute_jac("Implicit stage: Compute jacobian");
+  //Timer t_impl_update("Update_cell");
   loc_ufc.update(cell);
-  t_impl_update.stop();
+  //t_impl_update.stop();
 
   const ufc::point_integral& J_integral = *loc_ufc.default_point_integral;
 
@@ -412,23 +416,23 @@ void PointIntegralSolver::_compute_jacobian(std::vector<double>& jac,
   }
 
   // Tabulate Jacobian
-  Timer t_impl_tt_jac("Implicit stage: tabulate_tensor (J)");
+  //Timer t_impl_tt_jac("Implicit stage: tabulate_tensor (J)");
   J_integral.tabulate_tensor(&loc_ufc.A[0], loc_ufc.w(), 
 			     &loc_ufc.cell.vertex_coordinates[0], 
 			     local_vert);
-  t_impl_tt_jac.stop();
+  //t_impl_tt_jac.stop();
 
   // Extract vertex dofs from tabulated tensor
-  Timer t_impl_update_jac("Implicit stage: update_jac");
+  //Timer t_impl_update_jac("Implicit stage: update_jac");
   for (unsigned int row=0; row < _system_size; row++)
     for (unsigned int col=0; col < _system_size; col++)
       jac[row*_system_size + col] = loc_ufc.A[_local_to_local_dofs[row]*
 					      _dof_offset*_system_size +
 					      _local_to_local_dofs[col]];
-  t_impl_update_jac.stop();
+  //t_impl_update_jac.stop();
 
   // LU factorize Jacobian
-  Timer lu_factorize("Implicit stage: LU factorize");
+  //Timer lu_factorize("Implicit stage: LU factorize");
   _lu_factorize(jac);
   _recompute_jacobian = false;
   _num_jacobian_computations += 1;
@@ -690,10 +694,12 @@ PointIntegralSolver::convergence_criteria_t \
 PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u, 
 					      std::size_t vert_ind, 
 					      UFC& loc_ufc,
-					      unsigned int coefficient_index, 
+					      int coefficient_index, 
 					      const Cell& cell)
 {
   
+  //Timer _timer_newton_solve("Implicit stage: Newton solve");
+
   const Parameters& newton_solver_params = parameters("newton_solver");
   const std::string convergence_criterion = newton_solver_params["convergence_criterion"];
   const double kappa = newton_solver_params["kappa"];
@@ -715,11 +721,11 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
   {
 
     // Tabulate residual 
-    Timer t_impl_tt_F("Implicit stage: tabulate_tensor (F)");
+    //Timer t_impl_tt_F("Implicit stage: tabulate_tensor (F)");
     F_integral.tabulate_tensor(&loc_ufc.A[0], loc_ufc.w(), 
 			       &loc_ufc.cell.vertex_coordinates[0], 
 			       local_vert);
-    t_impl_tt_F.stop();
+    //t_impl_tt_F.stop();
   
     // Extract vertex dofs from tabulated tensor, together with the old stage 
     // solution
@@ -727,9 +733,9 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
       _F[row] = loc_ufc.A[_local_to_local_dofs[row]];
 
     // Perform linear solve By forward backward substitution
-    Timer forward_backward_substitution("Implicit stage: fb substituion");
+    //Timer forward_backward_substitution("Implicit stage: fb substituion");
     _forward_backward_subst(_jac, _F, _dx);
-    forward_backward_substitution.stop();
+    //forward_backward_substitution.stop();
 
     // Residual (residual or incremental)
     if (convergence_criterion == "residual")
@@ -812,8 +818,9 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
 	u[i] -= relaxation*_dx[i];
      
     // Put solution back into restricted coefficients before tabulate new residual
-    for (unsigned int row=0; row < _system_size; row++)
-      loc_ufc.w()[coefficient_index][_local_to_local_dofs[row]] = u[row];
+    if (coefficient_index > 0)
+      for (unsigned int row=0; row < _system_size; row++)
+	loc_ufc.w()[coefficient_index][_local_to_local_dofs[row]] = u[row];
 
     prev_residual = residual;
     newton_iterations++;

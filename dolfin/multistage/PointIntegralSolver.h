@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-06-28
+// Last changed: 2013-07-09
 
 #ifndef __POINTINTEGRALSOLVER_H
 #define __POINTINTEGRALSOLVER_H
@@ -156,7 +156,7 @@ namespace dolfin
     convergence_criteria_t _simplified_newton_solve(std::vector<double>& u, 
 						    std::size_t vert_ind, 
 						    UFC& loc_ufc, 
-						    unsigned int coefficient_index, 
+						    int coefficient_index, 
 						    const Cell& cell);
 
     // The MultiStageScheme
