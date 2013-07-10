@@ -684,6 +684,107 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin-get-demos
 	PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
         COMPONENT RuntimeExecutables)
 
+
+#------------------------------------------------------------------------------
+# Generate form files for tests, bench, demos and dolfin if not exists
+# FIXME: Generate files in Build directory instead, at least for bench, demo and tests
+
+set(COPY_DEMO_TEST_DEMO_DATA FALSE)
+if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/Poisson.h)
+  message(STATUS "")
+  message(STATUS "Generating form files in demo, test, bench and dolfin directories. May take some time...")
+  message(STATUS "----------------------------------------------------------------------------------------")
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-form-files 
+    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
+    RESULT_VARIABLE FORM_GENERATION_RESULT
+    OUTPUT_VARIABLE FORM_GENERATION_OUTPUT
+    ERROR_VARIABLE FORM_GENERATION_OUTPUT
+    OUTPUT_QUIET)
+  if (FORM_GENERATION_RESULT)
+
+    # Cleanup so download is triggered next time we run cmake
+    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/Poisson.h)
+      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/Poisson.h)
+    endif()
+
+    message(FATAL_ERROR "Generation of form files failed: \n${FORM_GENERATION_OUTPUT}")
+  endif()
+  set(COPY_DEMO_TEST_DEMO_DATA TRUE)
+endif()
+
+#------------------------------------------------------------------------------
+# Generate CMakeLists.txt files for tests, bench and demos if not exists
+# FIXME: Generate files in Build directory instead?
+# NOTE: We need to call this script after generate-formfiles
+if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/CMakeLists.txt)
+  message(STATUS "")
+  message(STATUS "Generating CMakeLists.txt files in demo, test and bench directories")
+  message(STATUS "-------------------------------------------------------------------")
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-cmakefiles 
+    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
+    RESULT_VARIABLE CMAKE_GENERATION_RESULT
+    OUTPUT_VARIABLE CMAKE_GENERATION_OUTPUT
+    ERROR_VARIABLE CMAKE_GENERATION_OUTPUT
+    OUTPUT_QUIET)
+  if (CMAKE_GENERATION_RESULT)
+
+    # Cleanup so download is triggered next time we run cmake
+    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/CMakeLists.txt)
+      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/pde/poisson/cpp/CMakeLists.txt)
+    endif()
+    message(FATAL_ERROR "Generation of CMakeLists.txt files failed: \n${CMAKE_GENERATION_OUTPUT}")
+  endif()
+
+  set(COPY_DEMO_TEST_DEMO_DATA TRUE)
+endif()
+
+#------------------------------------------------------------------------------
+# Check if data is downloaded
+
+if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/la/eigenvalue/box_with_dent.xml.gz)
+  # FIXME: What if we do not have internet connection
+  message(STATUS "")
+  message(STATUS "Download demo and test data. May take some time...")
+  message(STATUS "--------------------------------------------------")
+  execute_process(
+    COMMAND ${DOLFIN_SOURCE_DIR}/cmake/scripts/download-demo-data 
+    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
+    RESULT_VARIABLE DOWONLOAD_DEMO_DATA_RESULT
+    OUTPUT_VARIABLE DOWONLOAD_DEMO_DATA_OUTPUT
+    ERROR_VARIABLE DOWONLOAD_DEMO_DATA_OUTPUT
+    OUTPUT_QUIET)
+  if (DOWONLOAD_DEMO_DATA_RESULT)
+
+    # Cleanup so download is triggered next time we run cmake
+    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/la/eigenvalue/box_with_dent.xml.gz)
+      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/la/eigenvalue/box_with_dent.xml.gz)
+    endif()
+    message(FATAL_ERROR "Download failed: \n${DOWONLOAD_DEMO_DATA_OUTPUT}")
+  endif()
+  set(COPY_DEMO_TEST_DEMO_DATA TRUE)
+endif()
+
+# If data have been generated or downloaded in the demo/bench/test direcories 
+# we need to copy them to the build directories
+# FIXME: We should probably just generate them directly in the build directory...
+if (COPY_DEMO_TEST_DEMO_DATA)
+  message(STATUS "")
+  message(STATUS "Copying demo and test data to build directory.")
+  message(STATUS "----------------------------------------------")
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data ${CMAKE_CURRENT_BINARY_DIR}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    RESULT_VARIABLE COPY_DEMO_DATA_RESULT
+    OUTPUT_VARIABLE COPY_DEMO_DATA_OUTPUT
+    ERROR_VARIABLE COPY_DEMO_DATA_OUTPUT
+    OUTPUT_QUIET)
+  if (COPY_DEMO_DATA_RESULT)
+    message(FATAL_ERROR "Copy demo data failed: \n${COPY_DEMO_DATA_OUTPUT}")
+  endif()
+endif()
+
 #------------------------------------------------------------------------------
 # Add demos and install demo source files and mesh files
 
@@ -700,6 +801,7 @@ endif()
 # Add target "demo" for building the demos
 add_custom_target(demo
   COMMAND ${MAKE_PROGRAM}
+  DEPENDS copy_data_test_demo
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
 
 # Install the demo source files
@@ -764,61 +866,52 @@ if (CPPUNIT_FOUND)
 endif()
 
 if (DOLFIN_ENABLE_TESTING)
-  # Copy files needed to run tests in build directory
-  file(COPY data demo test DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-    FILES_MATCHING
-    PATTERN "*.py"
-    PATTERN "*.h"
-    PATTERN "*.cpp"
-    PATTERN "*.ufl"
-    PATTERN "*.xml*"
-    PATTERN "*.off"
-    PATTERN "*.inp"
-    PATTERN "*.msh"
-    PATTERN "*.supp"
-    PATTERN "*.rst"
-    PATTERN "*.ele"
-    PATTERN "*.node"
-    PATTERN "*.grid"
-    PATTERN "*.edge"
-    PATTERN "CMakeFiles" EXCLUDE)
+
+  # Add target "run_memorytests" for running memory tests
+  add_custom_target(copy_data_test_demo
+    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data ${CMAKE_CURRENT_BINARY_DIR}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
   # Add target "run_memorytests" for running memory tests
   add_custom_target(run_memorytests
     COMMAND ${PYTHON_EXECUTABLE} "test.py"
+    DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/memory")
 
   # Add target "run_regressiontests" for running regression tests
   add_custom_target(run_regressiontests
     COMMAND ${PYTHON_EXECUTABLE} "test.py"
-    DEPENDS demo
+    DEPENDS copy_data_test_demo demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
 
   # Add target "run_systemtests" for running system tests
   add_custom_target(run_systemtests
     COMMAND ${PYTHON_EXECUTABLE} "test.py"
+    DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/system")
 
   # Add target "run_unittests" for running unit tests
   add_custom_target(run_unittests
     COMMAND ${PYTHON_EXECUTABLE} "test.py"
-    DEPENDS test
+    DEPENDS copy_data_test_demo test
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit")
 
   # Add target "run_quicktest" for running only Python unit tests
   add_custom_target(run_quicktest
     COMMAND ${PYTHON_EXECUTABLE} test.py --only-python
+    DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit")
 
   # Add target "run_doctest" for running documentation tests
   add_custom_target(run_doctest
     COMMAND ${PYTHON_EXECUTABLE} test.py
+    DEPENDS copy_data_test_demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/documentation")
 
   # Add target "runtests" for running all tests
   add_custom_target(runtests
     ${PYTHON_EXECUTABLE} "test.py"
-    DEPENDS demo test
+    DEPENDS copy_data_test_demo demo test
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
 endif()
 
