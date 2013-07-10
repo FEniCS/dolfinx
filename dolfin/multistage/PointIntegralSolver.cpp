@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-02-15
-// Last changed: 2013-07-09
+// Last changed: 2013-07-10
 
 #include <cmath>
 #include <boost/make_shared.hpp>
@@ -295,6 +295,10 @@ void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
 	
   //Timer t_impl("Implicit stage");
 	
+  _recompute_jacobian = _recompute_jacobian || \
+    (parameters("newton_solver")["recompute_jacobian_for_linear_problems"] && \
+     _coefficient_index[stage].size() == 1);
+
   // Local vertex ind
   const unsigned int local_vert = _vertex_map[vert_ind].second;
 
@@ -304,10 +308,15 @@ void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
   // Local counter for jacobian calculations
   unsigned int jacobian_calculations = 0;
 
-  std::size_t max_jacobian_computations = parameters("newton_solver")["maximum_jacobian_computations"];
+  std::size_t max_jacobian_computations = parameters("newton_solver")\
+    ["maximum_jacobian_computations"];
 
   // Local solution
   std::vector<double>& u = _local_stage_solutions[stage];
+  
+  // Update with previous local solution
+  for (unsigned int row=0; row < _system_size; row++)
+    u[row] = _ufcs[stage][0]->w()[_coefficient_index[stage][0]][_local_to_local_dofs[row]];
 	
   // Do until not converged
   while (convergence != converged)
@@ -325,9 +334,8 @@ void PointIntegralSolver::_solve_implicit_stage(std::size_t vert_ind,
     }
     
     // Do a simplified newton solve
-    convergence = _simplified_newton_solve(u, vert_ind, *_ufcs[stage][0], 
-					   _coefficient_index[stage].size()>0 ? \
-					   _coefficient_index[stage][0] : -1, cell);
+    convergence = _simplified_newton_solve(u, vert_ind, *_ufcs[stage][0], \
+					   _coefficient_index[stage][0], cell);
     
     // First time we do not converge and it is the second time around
     if (convergence != converged && jacobian_calculations > max_jacobian_computations)
@@ -635,6 +643,17 @@ void PointIntegralSolver::_init()
 	  }
 	}
       }
+      
+      // Check that nonlinear form includes a coefficient index 
+      // (otherwise it might be some error in the form)
+      if (_coefficient_index[stage].size() == 0)
+      {
+	dolfin_error("PointIntegralSolver.cpp",
+		     "constructing PointIntegralSolver",
+		     "Expecting nonlinear form of stage: %d to be dependent "\
+		     "on the stage solution.", stage);
+      }
+      
     }
   }
   
@@ -745,7 +764,8 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
 
     // Check for residual convergence
     if (residual < atol)
-      return converged;
+      break;
+    //return converged;
 
     // Newton_Iterations == 0
     if (newton_iterations == 0) 
@@ -818,14 +838,17 @@ PointIntegralSolver::_simplified_newton_solve(std::vector<double>& u,
 	u[i] -= relaxation*_dx[i];
      
     // Put solution back into restricted coefficients before tabulate new residual
-    if (coefficient_index > 0)
-      for (unsigned int row=0; row < _system_size; row++)
-	loc_ufc.w()[coefficient_index][_local_to_local_dofs[row]] = u[row];
+    for (unsigned int row=0; row < _system_size; row++)
+      loc_ufc.w()[coefficient_index][_local_to_local_dofs[row]] = u[row];
 
     prev_residual = residual;
     newton_iterations++;
 
   } while(_eta*residual >= kappa*atol);
+  
+  if (report && vert_ind == 0)
+    info("Newton solver converged after %d iterations. relative_residual: %.3f, "\
+	 "residual: %.3e.", newton_iterations, relative_residual, residual);
   
   return converged;
 }
