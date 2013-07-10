@@ -1,19 +1,14 @@
 Automatic regeneration of SWIG interface
 ========================================
 
-The SWIG interface of DOLFIN is partly generated automatically.
+The SWIG interface of DOLFIN is partly generated automatically. If it
+has not been generated it will be generate automatically by the build
+system. Whenever you add a file see, below you need to re-generate the
+swig interface manually, by running:
 
-  * Run cmake/scripts/generate-swig-interface to regenerate the SWIG
-    interface
+  make generate_swig_interface
 
-The SWIG interface should be regenerated whenever new header files are
-included in DOLFIN or new documentation is added in a header file.
-
-generate-swig-interface, is not run, yet, by the build system so all
-generated files need to be committed to the bazaar repository.
-
-  * Commit changed or added files to launchpad whenever
-    generate-swig-interface has been run.
+from the build directory.
 
 Extending the swig interface with new classes or functions
 ==========================================================
