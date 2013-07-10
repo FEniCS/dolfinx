@@ -44,7 +44,7 @@ The Stokes equations can easily be formulated in a mixed variational form; that 
 .. math::
 	a((u, p), (v, q)) = L((v, q))
 
-for all :math:`(v, q) \in W` where
+for all :math:`(v, q) \in W`, where
 
 .. math::
 
@@ -56,7 +56,7 @@ for all :math:`(v, q) \in W` where
 				&= \int_{\Omega} f \cdot v \, {\rm d} x
     			+ \int_{\partial \Omega_N} g \cdot v \, {\rm d} s. \\
 
-The space :math:`W` should be a mixed (product) function space :math:`W = V \times Q` such that :math:`u \in V` and :math:`q \in Q`.
+The space :math:`W` should be a mixed (product) function space :math:`W = V \times Q`, such that :math:`u \in V` and :math:`q \in Q`.
 
 Domain and boundary conditions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

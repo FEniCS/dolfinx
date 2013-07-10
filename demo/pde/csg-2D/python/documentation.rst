@@ -7,7 +7,7 @@ Create CSG geometry
 ===================
 
 This demo is implemented in a single Python file,
-:download:`demo_csg_2D.py`, and demonstration of usage of 2D geometries in DOLFIN
+:download:`demo_csg_2D.py`, and demonstrates use of 2D geometries in DOLFIN.
 
 .. include:: ../common.txt
 
@@ -28,8 +28,8 @@ Then we check if CGAL is installed, as it is needed to compile this demo:
 .. code-block:: python
 
 	if not has_cgal():
-    	print "DOLFIN must be compiled with CGAL to run this demo."
-    	exit(0)
+    		print "DOLFIN must be compiled with CGAL to run this demo."
+    		exit(0)
 
 Now, we define 2D geometries. We create a :py:class:`Rectangle <dolfin.cpp.mesh.Rectangle>` defined by two opposite corners:
 
@@ -77,7 +77,7 @@ Finally, we generate a mesh using :py:class:`Mesh <dolfin.cpp.mesh.Mesh>` and pl
 	mesh2d = Mesh(g2d, 10)
 	plot(mesh2d, title="2D mesh")
 
-Note that when we create a mesh from a CSG geometry, the resolution must be specified.
+Note that when we create a mesh from a CSG geometry, the resolution must be specified. It is given by an integer as a second argument in Mesh.
 
 Complete code
 -------------

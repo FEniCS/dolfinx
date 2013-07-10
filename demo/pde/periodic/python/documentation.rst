@@ -6,7 +6,7 @@
 Poisson equation with periodic boundary conditions
 ==================================================
 
-This demo is implemented in a single Python file, :download:`demo_periodic.py`, which contains both the variational forms and the solver.
+This demo is implemented in a single Python file, :download:`demo_periodic.py`, which contains both the variational form and the solver.
 
 .. include:: ../common.txt
 
@@ -22,7 +22,7 @@ First, the :py:mod:`dolfin` module is imported
 	
 	from dolfin import *
 
-A subclass of :py:class:`Expression <dolfin.cpp.function.Expression>`, Source, is created for the source term f. The function :py:meth:`eval() <dolfin.cpp.fem.BasisFunction.eval>` returns values for a function at the given point x.
+A subclass of :py:class:`Expression <dolfin.cpp.function.Expression>`, Source, is created for the source term :math:`f`. The function :py:meth:`eval() <dolfin.cpp.fem.BasisFunction.eval>` returns values for a function at the given point x.
 
 .. code-block:: python
 	
@@ -61,7 +61,7 @@ The periodic boundary is defined by PeriodicBoundary and we define what is insid
 	# Create periodic boundary condition
 	pbc = PeriodicBoundary()
 
-A 2D mesh is created using the built-in class :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`, and we define a finite element function space relative to this space. Notice the fourth argument of :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>`, it specifies that all functions in V has periodic boundaries.
+A 2D mesh is created using the built-in class :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`, and we define a finite element function space relative to this space. Notice the fourth argument of :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>`, it specifies that all functions in V has periodic boundaries defined by pbc.
 
 .. code-block:: python
 
@@ -78,14 +78,14 @@ Now, we create the Dirichlet boundary condition using the class :py:class:`Diric
 	dbc = DirichletBoundary()
 	bc0 = DirichletBC(V, u0, dbc)
 
-When all the boundary conditions are defined and created we can collect them in a list:
+When all boundary conditions are defined and created we can collect them in a list:
 
 .. code-block:: python
 
 	# Collect boundary conditions
 	bcs = [bc0]
 
-Next, we want to express the variational problem. First, we need to specify the trial function u and the test function v, both living in the function space V. We do this by defining a :py:class:`TrialFunction <dolfin.functions.function.TrialFunction>` and a :py:class:`TestFunction <dolfin.functions.function.TestFunction>` on the previously defined :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>` V. The source function f is created by making an instance of Source. With these ingredients, we can write down the bilinear form a and the linear form L (using UFL operators). In summary, this reads
+Here only the Diriclet boundary condition is put into the list because the periodic boundary condition is already applied in the definition of the function space. Next, we want to express the variational problem. First, we need to specify the trial function u and the test function v, both living in the function space V. We do this by defining a :py:class:`TrialFunction <dolfin.functions.function.TrialFunction>` and a :py:class:`TestFunction <dolfin.functions.function.TestFunction>` on the previously defined :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>` V. The source function f is created by making an instance of Source. With these ingredients, we can write down the bilinear form a and the linear form L (using UFL operators). In summary, this reads
 
 .. code-block:: python
 

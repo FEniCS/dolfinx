@@ -7,7 +7,7 @@
 Nonlinear Poisson equation
 ==========================
 
-This demo is implemented in a single Python file, :download:`demo_nonlinear-poisson.py`, which contains both the variational forms and the solver.
+This demo is implemented in a single Python file, :download:`demo_nonlinear-poisson.py`, which contains both the variational form and the solver.
 
 .. include:: ../common.txt
 
@@ -51,7 +51,7 @@ We then define a mesh of the domain and a finite element function space V relati
 
 	V = FunctionSpace(mesh, "CG", 1)
 	
-The second argument to :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>` is the finite element family, while the third argument specifies the polynomial degree. Thus, in this case, we use 'CG', for Continuous Galerkin, as a synonym for 'Lagrange'.) With degree 1, we simply get the standard linear Lagrange element, which is a triangle with nodes at the three vertices (or in order words, continuous piecewise linear polynomials).
+The second argument to :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>` is the finite element family, while the third argument specifies the polynomial degree. Thus, in this case, we use 'CG', for Continuous Galerkin, as a synonym for 'Lagrange'. With degree 1, we simply get the standard linear Lagrange element, which is a triangle with nodes at the three vertices (or in order words, continuous piecewise linear polynomials).
 
 The Dirichlet boundary condition can be created using the class :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>`. A :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>` takes three arguments: the function space the boundary condition applies to, the value of the boundary condition, and the part of the boundary on which the condition applies. In our example, the function space is V, the value of the boundary condition (1.0) can be represented using a Constant and the Dirichlet boundary is defined above. The definition of the Dirichlet boundary condition then looks as follows:
 
@@ -61,9 +61,9 @@ The Dirichlet boundary condition can be created using the class :py:class:`Diric
 	g = Constant(1.0)
 	bc = DirichletBC(V, g, DirichletBoundary()) 
 
-Next, we want to express the variational problem. First, we need to specify the function u (which represents the solution), (Upon initialization, it is simply set to the zero function, which will represent the initial guess :math:`u_0`.) A Function represents a function living in a finite element function space. The test function v is also specified, also living in the function space V. We do this by defining a Function and a TestFunction on the previously defined FunctionSpace V.
+Next, we want to express the variational problem. First, we need to specify the function u which represents the solution. Upon initialization, it is simply set to the zero function, which will represent the initial guess :math:`u_0`. A Function represents a function living in a finite element function space. The test function :math:`v` is also specified, also living in the function space :math:`V`. We do this by defining a  :py:class:`Function <dolfin.cpp.function.Function>` and a :py:class:`TestFunction <dolfin.functions.function.TestFunction>` on the previously defined :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>`  V.
 
-Further, the source f is involved in the variational forms, and hence we must specify this. We have f given by a simple mathematical formula, and can be easily declared using the :py:class:`Expression <dolfin.cpp.function.Expression>` class. Note that the strings defining f use C++ syntax since, for efficiency, DOLFIN will generate and compile C++ code for this expression at run-time.
+Further, the source :math:`f` is involved in the variational forms, and hence we must specify this. We have :math:`f` given by a simple mathematical formula, and can be easily declared using the :py:class:`Expression <dolfin.cpp.function.Expression>` class. Note that the strings defining f use C++ syntax since, for efficiency, DOLFIN will generate and compile C++ code for this expression at run-time.
 
 By defining the function in this step and ommitting the trial function we tell FEniCS that the comming problem is nonlinear.
 With these ingredients, we can write down the semilinear form F (using UFL operators). In summary, this reads
@@ -84,7 +84,7 @@ Now, we have specified the variational forms and can consider the solution of th
 	solve(F == 0, u, bc, solver_parameters={"newton_solver":
 		                                    {"relative_tolerance": 1e-6}})
 
-The Newton procedure is considered to have converged when the residual :math:`r_n` at iteration n is less than the absolute tolerance or the relative residual :math:`\frac{r_n}{r_0}` is less than the relative tolerance.
+The Newton procedure is considered to have converged when the residual :math:`r_n` at iteration :math:`n` is less than the absolute tolerance or the relative residual :math:`\frac{r_n}{r_0}` is less than the relative tolerance.
 		                                    
 A :py:class:`Function <dolfin.cpp.function.Function>` can be manipulated in various ways, in particular, it can be plotted and saved to file. Here, we output the solution to a VTK file (using the suffix .pvd) for later visualization and also plot it using the plot command:
 

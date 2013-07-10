@@ -14,7 +14,7 @@ and the solution of u and p, respectively:
 Equation and problem definition
 -------------------------------
 
-Strong formulation
+Strong formulation of the problem
 
 .. math::
 	- \nabla \cdot (\nabla u + p I) &= f \quad {\rm in} \ \Omega, \\
@@ -34,7 +34,7 @@ The Stokes equations can easily be formulated in a mixed variational form; that 
 .. math::
 	a((u, p), (v, q)) = L((v, q))
 
-for all :math:`(v, q) \in W` where
+for all :math:`(v, q) \in W`, where
 
 .. math::
 	a((u, p), (v, q))
@@ -49,7 +49,7 @@ The space :math:`W` should be a mixed (product) function space: :math:`W = V \ti
 .. math::	
 	a((u, p), (v, q)) = L((v, q))
 
-for all :math:`(v, q) \in W` where
+for all :math:`(v, q) \in W`, where
 
 .. math::
 	a((u, p), (v, q))
@@ -67,7 +67,7 @@ where :math:`\beta` is some number and h is the mesh cell size.
 In this demo, we shall consider the following definitions of the input functions, the domain, and the boundaries:
 
 
-* :math:`\Omega = [0,1]\times[0, 1] \backslash {\rm dolphin}` 
+* :math:`(\Omega = [0,1]\times[0, 1]) \backslash {\rm dolphin}` 
 * :math:`\Gamma_D =`
 * :math:`\Gamma_N =`
 * :math:`u_0 = (- \sin(\pi x_1), 0.0) \, {\rm for} \, x_0 = 1 \, {\rm and} \, u_0 = (0.0, 0.0)` otherwise

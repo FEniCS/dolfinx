@@ -52,7 +52,7 @@ Now, we need to specify the trial functions (the unknowns) and the test function
 	(u, c) = TrialFunction(W)
 	(v, d) = TestFunctions(W)
 
-In order to define the variational form, it only remains to define the source function :math:`f`. :math:`f` is given by a simple mathematical formula, and can be easily declared using the :py:class:`Expression <dolfin.functions.expression.Expression>` class. Note that the string defining :math:`f` uses C++ syntax since, for efficiency, DOLFIN will generate and compile C++ code for these expressions at run-time.
+In order to define the variational form, it only remains to define the source function :math:`f`. It is given by a simple mathematical formula, and can be easily declared using the :py:class:`Expression <dolfin.functions.expression.Expression>` class. Note that the string defining :math:`f` uses C++ syntax since, for efficiency, DOLFIN will generate and compile C++ code for these expressions at run-time.
 
 
 Since we have natural (Neumann) boundary conditions in this problem, we don´t have to implement boundary conditions. This is because Neumann boundary conditions are default in DOLFIN.

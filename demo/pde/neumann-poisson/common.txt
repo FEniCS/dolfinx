@@ -35,7 +35,6 @@ Our variational form reads: Find :math:`(u, c) \in V \times R` such that
 	a((u, c), (v, d)) = L((v, d)) \quad \forall \ (v, d) \in V \times R,
 
 
-where :math:`V` is a suitable function space, :math:`R` is the space of real numbers and
 
 .. math::
 
@@ -43,7 +42,9 @@ where :math:`V` is a suitable function space, :math:`R` is the space of real num
 						+ \int_{\Omega} cv \, {\rm d} x
 						+ \int_{\Omega} ud \, {\rm d} x, \\
 	L(v)    &= \int_{\Omega} f v \, {\rm d} x
-    	     	+ \int_{\Gamma_{N}} g v \, {\rm d} s.
+    	     	+ \int_{\Gamma_{N}} g v \, {\rm d} s,
+
+:math:`V` is a suitable function space containing :math:`u` and :math:`v`, and :math:`R` is the space of real numbers.
 
 The expression :math:`a(\cdot, \cdot)` is the bilinear form and :math:`L(\cdot)` is the linear form.
 

@@ -4,7 +4,7 @@
 
 Stokes problem with Taylor-Hood elements
 ========================================
-This demo is implemented in a single Python file, :download:`demo_stokes-taylorhood.py`, which contains both the variational forms and the solver.
+This demo is implemented in a single Python file, :download:`demo_stokes-taylorhood.py`, which contains both the variational form and the solver.
 
 .. include:: ../common.txt
 
@@ -39,7 +39,7 @@ Now that we have our mixed function space and marked subdomains defining the bou
 .. code-block:: python
 
 	# No-slip boundary condition for velocity 
-	# x1 = 0, x1 = 1 and around dolfin
+	# x1 = 0, x1 = 1 and around dolphin
 	noslip = Constant((0, 0))
 	bc0 = DirichletBC(W.sub(0), noslip, sub_domains, 0)
 
@@ -69,7 +69,7 @@ The bilinear and linear forms corresponding to the weak mixed formulation of the
 	a = (inner(grad(u), grad(v)) - div(v)*p + q*div(u))*dx
 	L = inner(f, v)*dx
 
-To compute the solution we use the bilinear and linear forms, and the boundary condition, but we also need to create a :py:class:`Function <dolfin.cpp.function.Function>` to store the solution(s). The (full) solution will be stored in w, which we initialize using the :py:class:`MixedFunctionSpace <dolfin.functions.functionspace.MixedFunctionSpace>` W. The actual computation is performed by calling solve with the arguments a, L and bcs. The separate components u and p of the solution can be extracted by calling the split function. Here we use an optional argument True in the split function to specify that we want a deep copy. If no argument is given we will get a shallow copy. We want a deep copy for further computations on the coefficient vectors.
+To compute the solution we use the bilinear and linear forms, and the boundary condition, but we also need to create a :py:class:`Function <dolfin.cpp.function.Function>` to store the solution(s). The (full) solution will be stored in w, which we initialize using the :py:class:`MixedFunctionSpace <dolfin.functions.functionspace.MixedFunctionSpace>` W. The actual computation is performed by calling solve with the arguments a, L, w and bcs. The separate components u and p of the solution can be extracted by calling the split function. Here we use an optional argument True in the split function to specify that we want a deep copy. If no argument is given we will get a shallow copy. We want a deep copy for further computations on the coefficient vectors.
 
 .. code-block:: python
 
@@ -81,7 +81,7 @@ To compute the solution we use the bilinear and linear forms, and the boundary c
 	# (needed for further computation on coefficient vector)
 	(u, p) = w.split(True)
 
-We may be interested in the :math:`L^2` norms of u, and p, they can be calculated and printed by writing
+We may be interested in the :math:`L^2` norms of u and p, they can be calculated and printed by writing
 
 .. code-block:: python
 	

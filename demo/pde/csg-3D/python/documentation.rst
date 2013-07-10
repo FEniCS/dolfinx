@@ -5,14 +5,14 @@
 Create CSG-3D geometry
 ======================
 
-This demo is implemented in a single Python file, :download:`demo_csg-3D.py`, and demonstration of usage of 3D geometries in DOLFIN
+This demo is implemented in a single Python file, :download:`demo_csg-3D.py`, and demonstrates of usage of 3D geometries in DOLFIN.
 
 .. include:: ../common.txt
 
 Implementation
 --------------
 
-This description goes through how to make 3 dimentional geometries and meshes in DOLFIN.
+This description goes through how to make 3-dimentionals geometries and meshes in DOLFIN.
 
 First, the :py:mod:`dolfin` module is imported:
 
@@ -40,7 +40,7 @@ We then use :py:class:`Sphere <dolfin.cpp.mesh.Sphere>` to define a sphere with 
 	
 	sphere = Sphere(Point(0, 0, 0), 0.3) 
 
-To define a :py:class:`Cone <dolfin.cpp.mesh.Cone>` by four arguments, the first being the center at one end :py:class:`Point <dolfin.cpp.mesh.Point>` (:math:`x_1,y_1,z_1`) and the second being the center at the other end :py:class:`Point <dolfin.cpp.mesh.Point>` (:math:`x_2,y_2,z_2`). The two last arguments gives the radius at the ends. 
+We define a :py:class:`Cone <dolfin.cpp.mesh.Cone>` by four arguments, the first being the center at one end :py:class:`Point <dolfin.cpp.mesh.Point>` (:math:`x_1,y_1,z_1`) and the second being the center at the other end :py:class:`Point <dolfin.cpp.mesh.Point>` (:math:`x_2,y_2,z_2`). The two last arguments gives the radius at the ends. 
 
 .. code-block:: python 
  
@@ -80,7 +80,7 @@ Finally, we generate a mesh using :py:class:`Mesh <dolfin.cpp.mesh.Mesh>` and pl
 	info(mesh3d)
 	plot(mesh3d, "3D mesh")
 
-Note that when we create a mesh from a CSG geometry, the resolution must be specified.
+Note that when we create a mesh from a CSG geometry, the resolution must be specified. It is given as an integer as a second argument to mesh.
 
 
 Complete code
