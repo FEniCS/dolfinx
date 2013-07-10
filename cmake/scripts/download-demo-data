@@ -45,7 +45,6 @@ download_mesh demo/undocumented/tensor-weighted-poisson      unitsquare_32_32_c1
 download_mesh demo/undocumented/stokes-taylor-hood/          dolfin_fine.xml.gz
 download_mesh demo/undocumented/stokes-taylor-hood           dolfin_fine_subdomains.xml.gz
 download_mesh demo/undocumented/stokes-taylor-hood           dolfin_fine.xml.gz
-download_mesh demo/undocumented/meshintersection/2D          rotator.xml.gz
 download_mesh demo/undocumented/elastodynamics               dolfin_fine.xml.gz
 download_mesh demo/undocumented/auto-adaptive-navier-stokes  channel_with_flap.xml.gz
 download_mesh demo/undocumented/stokes-mini                  dolfin_fine.xml.gz
