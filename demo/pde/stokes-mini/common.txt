@@ -17,7 +17,7 @@ Equation and problem definition
 -------------------------------
 
 
-Strong formulation
+Strong formulation:
 
 .. math::
 
@@ -34,13 +34,13 @@ A typical set of boundary conditions on the boundary :math:`\partial \Omega = \G
 	u &= u_0 \quad {\rm on} \ \Gamma_{D}, \\
 	\nabla u \cdot n + p n &= g   \quad {\rm on} \ \Gamma_{N}. \\
 
-The Stokes equations can easily be formulated in a mixed variational form; that is, a form where the two variables, the velocity and the pressure, are approximated simultaneously. Using the abstract framework, we have the problem: find :math:`(u, p) \in W` such that
+The Stokes equations can easily be formulated in a mixed variational form; that is, a form where the two variables, the velocity and the pressure, are approximated simultaneously. Using the abstract framework, we have the problem: find :math:`(u, p) \in W`, such that
 
 .. math::
 
 	a((u, p), (v, q)) = L((v, q))
 
-for all :math:`(v, q) \in W` where
+for all :math:`(v, q) \in W`, where
 
 .. math::
 

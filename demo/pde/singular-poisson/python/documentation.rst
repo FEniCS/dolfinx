@@ -98,7 +98,7 @@ We impose our additional constraint by removing the null space component from th
 	null_space = VectorSpaceBasis([null_vec])
 	solver.set_nullspace(null_space)
 
-Orthogonalize b with respect to the null space makes sure that it doesn't contain any component in the null space. 
+Orthogonalization of b with respect to the null space makes sure that it doesn't contain any component in the null space. 
 
 .. code-block:: python
 

@@ -30,7 +30,7 @@ required, for instance
 
 
 
-The most standard variational form of Poisson equation reads: find :math:`u \in V` such that
+The most standard variational form of the Poisson equation reads: find :math:`u \in V` such that
 
 .. math::
    a(u, v) = L(v) \quad \forall \ v \in V,
@@ -45,17 +45,17 @@ where :math:`V` is a suitable function space and
 The expression :math:`a(u, v)` is the bilinear form and :math:`L(v)`
 is the linear form. 
 
-If we make the Ansatz that :math:`u` can be expressed as a linear combination of the basis functions :math:`V`, and discretize the equation we can write our problem as a linear system:
+If we make the Ansatz that :math:`u` can be expressed as a linear combination of the basis functions of :math:`V`, and discretize the equation, we can write our problem as a linear system:
 
 .. math:: 
-	AU = b
+	AU = b,
 
 where :math:`U` gives the coefficient for the basis functions expressing :math:`u`. 
 
 Since we have pure Neumann boundary conditions the matrix :math:`A` is singular, and it therefore exist a vector :math:`e` such that
 
 .. math::
-	Ae=0
+	Ae=0.
 
 span :math:`\{ e \}` is the null space of A, and by removing the components of b that lies in the null space we make the system solvable.  
 

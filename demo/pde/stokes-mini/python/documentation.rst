@@ -2,14 +2,10 @@
 
 .. _demo_pde_stokes-mini_python_documentation:
 
-
-
 Stokes problem with Mini elements
 =================================
 
-This demo is implemented in a single Python file,
-:download:`demo_stokes-mini.py`, which contains both the variational forms
-and the solver.
+This demo is implemented in a single Python file, :download:`demo_stokes-mini.py`, which contains both the variational form and the solver.
 
 .. include:: ../common.txt
 
@@ -17,7 +13,7 @@ Implementation
 --------------
 
 This description goes through the implementation (in
-:download:`demo_stokes-mini.py`) of a ??????????????????
+:download:`demo_stokes-mini.py`) of a solver for the Stokes
 equation step-by-step.
 
 First, the :py:mod:`dolfin` module is imported:
@@ -76,7 +72,7 @@ The bilinear and linear forms corresponding to the weak mixed formulation of the
 	a = (inner(grad(u), grad(v)) - div(v)*p + q*div(u))*dx
 	L = inner(f, v)*dx
 
-To compute the solution we use the bilinear and linear forms, and the boundary condition, but we also need to create a :py:class:`Function <dolfin.cpp.function.Function>` to store the solution(s). The (full) solution will be stored in w, which we initialize using the :py:class:`MixedFunctionSpace <dolfin.functions.functionspace.MixedFunctionSpace>` W. The actual computation is performed by calling solve with the arguments a, L and bcs. The separate components u and p of the solution can be extracted by calling the :py:meth:`split <dolfin.functions.function.Function.split>` function. Here we use an optional argument True in the split function to specify that we want a deep copy. If no argument is given we will get a shallow copy. We want a deep copy for further computations on the coefficient vectors.
+To compute the solution we use the bilinear and linear forms, and the boundary condition, but we also need to create a :py:class:`Function <dolfin.cpp.function.Function>` to store the solution(s). The (full) solution will be stored in w, which we initialize using the :py:class:`MixedFunctionSpace <dolfin.functions.functionspace.MixedFunctionSpace>` W. The actual computation is performed by calling solve with the arguments a, L, w and bcs. The separate components u and p of the solution can be extracted by calling the :py:meth:`split <dolfin.functions.function.Function.split>` function. Here we use an optional argument True in the split function to specify that we want a deep copy. If no argument is given we will get a shallow copy. We want a deep copy for further computations on the coefficient vectors.
 
 .. code-block:: python
 	
@@ -88,7 +84,7 @@ To compute the solution we use the bilinear and linear forms, and the boundary c
 	# (needed for further computation on coefficient vector)
 	(u, p) = w.split(True)
 
-We may be interested in the :math:`L^2` norms of u, and p, they can be calculated and printed by writing
+We may be interested in the :math:`L^2` norms of u and p, they can be calculated and printed by writing
 
 .. code-block:: python
 	
@@ -116,9 +112,6 @@ Finally, we can store to file and plot the solutions.
 	plot(u)
 	plot(p)
 	interactive()
-
-
-
 
 Complete code
 -------------

@@ -25,7 +25,7 @@ In this example, different boundary conditions are prescribed on different parts
 	mesh = Mesh("dolfin_fine.xml.gz")
 	sub_domains = MeshFunction("size_t", mesh, "dolfin_fine_subdomains.xml.gz")
 
-Next, we define a MixedFunctionSpace composed of a VectorFunctionSpace of continuous piecewise quadratics and a FunctionSpace of continuous piecewise linears. (This mixed finite element space is known as the Taylor–Hood elements and is a stable, standard element pair for the Stokes equations.)
+Next, we define a :py:class:`MixedFunctionSpace <dolfin.functions.functionspace.MixedFunctionSpace>` composed of a :py:class:`VectorFunctionSpace <dolfin.functions.functionspace.VectorFunctionSpace>` of continuous piecewise quadratics and a :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>` of continuous piecewise linears. (This mixed finite element space is known as the Taylor–Hood elements and is a stable, standard element pair for the Stokes equations.)
 
 .. code-block:: python
 
@@ -69,7 +69,7 @@ The bilinear and linear forms corresponding to the weak mixed formulation of the
 	a = (inner(grad(u), grad(v)) - div(v)*p + q*div(u))*dx
 	L = inner(f, v)*dx
 
-To compute the solution we use the bilinear and linear forms, and the boundary condition, but we also need to create a :py:class:`Function <dolfin.cpp.function.Function>` to store the solution(s). The (full) solution will be stored in w, which we initialize using the :py:class:`MixedFunctionSpace <dolfin.functions.functionspace.MixedFunctionSpace>` W. The actual computation is performed by calling solve with the arguments a, L, w and bcs. The separate components u and p of the solution can be extracted by calling the split function. Here we use an optional argument True in the split function to specify that we want a deep copy. If no argument is given we will get a shallow copy. We want a deep copy for further computations on the coefficient vectors.
+To compute the solution we use the bilinear and linear forms, and the boundary condition, but we also need to create a :py:class:`Function <dolfin.cpp.function.Function>` to store the solution(s). The (full) solution will be stored in w, which we initialize using the :py:class:`MixedFunctionSpace <dolfin.functions.functionspace.MixedFunctionSpace>` W. The actual computation is performed by calling solve with the arguments a, L, w and bcs. The separate components u and p of the solution can be extracted by calling the :py:meth:`split <dolfin.functions.function.Function.split>` function. Here we use an optional argument True in the split function to specify that we want a deep copy. If no argument is given we will get a shallow copy. We want a deep copy for further computations on the coefficient vectors.
 
 .. code-block:: python
 
