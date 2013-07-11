@@ -24,8 +24,9 @@
 #ifndef __CSG_PRIMITIVES_3D_H
 #define __CSG_PRIMITIVES_3D_H
 
-#include "CSGPrimitive.h"
+#include <cstddef>
 #include <dolfin/geometry/Point.h>
+#include "CSGPrimitive.h"
 
 namespace dolfin
 {
