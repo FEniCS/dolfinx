@@ -19,7 +19,7 @@
 // Modified by Martin Alnes 2008
 //
 // First added:  2007-12-10
-// Last changed: 2011-11-14
+// Last changed: 2013-07-14
 
 #include <string>
 #include <boost/scoped_ptr.hpp>
@@ -156,6 +156,14 @@ const Mesh& Form::mesh() const
     }
   }
 
+  // Extract meshes from markers if any
+  if (_cell_domains)
+    meshes.push_back(_cell_domains->mesh());
+  if (_exterior_facet_domains)
+    meshes.push_back(_exterior_facet_domains->mesh());
+  if (_interior_facet_domains)
+    meshes.push_back(_interior_facet_domains->mesh());
+
   // Check that we have at least one mesh
   if (meshes.empty())
   {
@@ -171,7 +179,7 @@ const Mesh& Form::mesh() const
     {
       dolfin_error("Form.cpp",
                    "extract mesh from form",
-                   "Non-matching meshes for function spaces");
+                   "Non-matching meshes for function spaces and/or measures");
     }
   }
 
