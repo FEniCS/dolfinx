@@ -74,7 +74,7 @@ namespace dolfin
       double r2 = 0.0;
 
       if (x[0] < b[0]) r2 += (x[0] - b[0])*(x[0] - b[0]);
-      if (x[0] > b[3]) r2 += (x[0] - b[3])*(x[0] - b[3]);
+      if (x[0] > b[1]) r2 += (x[0] - b[1])*(x[0] - b[1]);
 
       return r2;
     }
@@ -127,7 +127,7 @@ namespace dolfin
       iterator it = begin;
       const double* p = points[*it].coordinates();
       bbox[0] = p[0];
-      bbox[1] = p[1];
+      bbox[1] = p[0];
 
       // Compute min and max over remaining boxes
       for (; it != end; ++it)
