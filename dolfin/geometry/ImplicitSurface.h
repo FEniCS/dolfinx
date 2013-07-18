@@ -35,6 +35,8 @@ namespace dolfin
   /// This class is used to define a surface via a function f(x) -> R,
   /// where for a point y on the surface f(y) = 0.
 
+  /// WARNING: This class is experimental and likely to change.
+
   class ImplicitSurface
   {
   public:

@@ -33,9 +33,9 @@ namespace dolfin
   class ImplicitSurface;
   class Mesh;
 
-  /// Polyhedral mesh generator that uses CGAL. Volume and surfaces of
-  /// polyhedra (closed surface) can be generated from polyhedra
-  /// defined via polygonal facets.
+  /// Generate surface or volume meshes from implicit representations
+  /// of a domain modelled by the abstract dolfin::ImplicitSurface
+  /// class. CGAL is used for the mesh generation.
 
   class ImplicitDomainMeshGenerator
   {
@@ -54,8 +54,8 @@ namespace dolfin
 
     // Build CGAL triangulation
     template<typename X, typename Y>
-    static X build_cgal_triangulation(const ImplicitSurface& surface,
-                                      const Y& mesh_criteria);
+      static X build_cgal_triangulation(const ImplicitSurface& surface,
+                                        const Y& mesh_criteria);
 
   };
 

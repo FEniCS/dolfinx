@@ -54,48 +54,45 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef K::Point_3 Point_3;
 
 typedef CGAL::Robust_weighted_circumcenter_filtered_traits_3<K>
-Geom_traits_test;
+Geom_traits;
 
 // Call-back function
 typedef boost::function<double (Point_3)> Function;
 
 // Mesh domain
-typedef CGAL::Implicit_mesh_domain_3<const Function, K> Mesh_domain_test0;
-typedef CGAL::Mesh_domain_with_polyline_features_3<Mesh_domain_test0>
-Mesh_domain_test;
+typedef CGAL::Implicit_mesh_domain_3<const Function, K> Mesh_domain0;
+typedef CGAL::Mesh_domain_with_polyline_features_3<Mesh_domain0> Mesh_domain;
 
 // CGAL 3D triangulation vertex typedefs
-typedef CGAL::Triangulation_vertex_base_3<Geom_traits_test> Tvb3test_base_test;
-typedef CGAL::Triangulation_vertex_base_with_info_3<int, Geom_traits_test,
-                                             Tvb3test_base_test> Tvb3test_test;
-typedef CGAL::Mesh_vertex_base_3<Geom_traits_test, Mesh_domain_test,
-                                 Tvb3test_test> Vertex_base_test;
+typedef CGAL::Triangulation_vertex_base_3<Geom_traits> Tvb3_base;
+typedef CGAL::Triangulation_vertex_base_with_info_3<int, Geom_traits,
+                                             Tvb3_base> Tvb3;
+typedef CGAL::Mesh_vertex_base_3<Geom_traits, Mesh_domain,
+                                 Tvb3> Vertex_base;
 
 // CGAL 3D triangulation cell typedefs
-typedef CGAL::Triangulation_cell_base_3<Geom_traits_test> Tcb3test_base_test;
-typedef CGAL::Triangulation_cell_base_with_info_3<int, Geom_traits_test,
-                                            Tcb3test_base_test> Tcb3test_test;
-typedef CGAL::Mesh_cell_base_3<Geom_traits_test, Mesh_domain_test,
-                               Tcb3test_test> Cell_base_test;
+typedef CGAL::Triangulation_cell_base_3<Geom_traits> Tcb3_base;
+typedef CGAL::Triangulation_cell_base_with_info_3<int, Geom_traits,
+                                            Tcb3_base> Tcb3;
+typedef CGAL::Mesh_cell_base_3<Geom_traits, Mesh_domain,
+                               Tcb3> Cell_base;
 
 // CGAL 3D triangulation typedefs
-typedef CGAL::Triangulation_data_structure_3<Vertex_base_test, Cell_base_test>
-Tds_mesh_test;
-typedef CGAL::Regular_triangulation_3<Geom_traits_test, Tds_mesh_test> Tr_test;
+typedef CGAL::Triangulation_data_structure_3<Vertex_base, Cell_base>
+Tds_mesh;
+typedef CGAL::Regular_triangulation_3<Geom_traits, Tds_mesh> Tr;
 
 // Triangulation
-//typedef CGAL::Mesh_triangulation_3<Mesh_domain_test>::type Tr_test;
-
-//typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr_test> C3t3_test;
-typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr_test> C3t3_test;
+typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr> C3t3;
 
 // Criteria
-typedef CGAL::Mesh_criteria_3<Tr_test> Mesh_criteria_test;
+typedef CGAL::Mesh_criteria_3<Tr> Mesh_criteria;
 
 
 using namespace dolfin;
 
-// Lightweight class for wrapping callback to ImplicitSurface::operator()
+// Lightweight class for wrapping callback to
+// ImplicitSurface::operator()
 class ImplicitSurfaceWrapper
 {
 public:
@@ -109,8 +106,9 @@ public:
   }
 
 private:
-  Point _p;
   const ImplicitSurface& _surface;
+  Point _p;
+
 };
 
 //-----------------------------------------------------------------------------
@@ -121,13 +119,13 @@ void ImplicitDomainMeshGenerator::generate(Mesh& mesh,
   if (MPI::process_number() == 0)
   {
     // Mesh criteria
-    Mesh_criteria_test criteria(CGAL::parameters::facet_angle=30,
-                                CGAL::parameters::facet_size=0.5*cell_size,
-                                CGAL::parameters::facet_distance=0.1*cell_size,
-                                CGAL::parameters::cell_size=cell_size);
+    Mesh_criteria criteria(CGAL::parameters::edge_size =cell_size,
+                           CGAL::parameters::facet_angle = 30,
+                           CGAL::parameters::facet_size =cell_size,
+                           CGAL::parameters::cell_size = cell_size);
 
     // Build CGAL mesh
-    C3t3_test c3t3 = build_cgal_triangulation<C3t3_test>(surface, criteria);
+    C3t3 c3t3 = build_cgal_triangulation<C3t3>(surface, criteria);
 
     // Build DOLFIN mesh from CGAL 3D mesh/triangulation
     CGALMeshBuilder::build_from_mesh(mesh, c3t3);
@@ -137,23 +135,22 @@ void ImplicitDomainMeshGenerator::generate(Mesh& mesh,
   MeshPartitioning::build_distributed_mesh(mesh);
 }
 //-----------------------------------------------------------------------------
-void ImplicitDomainMeshGenerator::generate_surface(Mesh& mesh,
-                                                const ImplicitSurface& surface,
-                                                double cell_size)
+void
+ImplicitDomainMeshGenerator::generate_surface(Mesh& mesh,
+                                              const ImplicitSurface& surface,
+                                              double cell_size)
 
 {
   if (MPI::process_number() == 0)
   {
     // CGAL mesh paramters
-    Mesh_criteria_test criteria(
-      CGAL::parameters::edge_size = cell_size,
-      CGAL::parameters::facet_angle = 30,
-      CGAL::parameters::facet_size = cell_size,
-      //CGAL::parameters::cell_radius_edge_ratio = 2,
-      CGAL::parameters::cell_size = 0.0);
+    Mesh_criteria criteria(CGAL::parameters::edge_size = cell_size,
+                           CGAL::parameters::facet_angle = 30,
+                           CGAL::parameters::facet_size = cell_size,
+                           CGAL::parameters::cell_size = 0.0);
 
     // Build CGAL mesh
-    C3t3_test c3t3 = build_cgal_triangulation<C3t3_test>(surface, criteria);
+    C3t3 c3t3 = build_cgal_triangulation<C3t3>(surface, criteria);
 
     // Build surface DOLFIN mesh from CGAL 3D mesh/triangulation
     CGALMeshBuilder::build_surface_mesh_c3t3(mesh, c3t3, &surface);
@@ -179,7 +176,7 @@ X ImplicitDomainMeshGenerator::build_cgal_triangulation(const ImplicitSurface& s
                               surface.sphere.r*surface.sphere.r);
 
   // Create mesh domain
-  Mesh_domain_test domain(f, bounding_sphere, 1.0e-5);
+  Mesh_domain domain(f, bounding_sphere, 1.0e-5);
 
   // Add polylines (if any)
   std::list<std::vector<Point_3> > cgal_polylines;

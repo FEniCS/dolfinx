@@ -80,11 +80,10 @@ typedef GT::Sphere_3 Sphere_3;
 typedef GT::Point_3 Point_3;
 typedef GT::FT FT;
 
-// Call-back function
+// Call-back function for implicit surface
 typedef boost::function<FT (Point_3)> Function;
 
 typedef CGAL::Implicit_surface_3<GT, Function> Surface_3;
-
 
 using namespace dolfin;
 
@@ -95,6 +94,7 @@ public:
   ImplicitSurfaceWrapper(const ImplicitSurface& surface) : _surface(surface) {}
   ~ImplicitSurfaceWrapper() {}
 
+  // Evaluate implicit surface function
   FT f(const Point_3& p)
   {
     _p[0] = p[0]; _p[1] = p[1]; _p[2] = p[2];
@@ -102,8 +102,9 @@ public:
   }
 
 private:
-  Point _p;
   const ImplicitSurface& _surface;
+  Point _p;
+
 };
 
 //-----------------------------------------------------------------------------

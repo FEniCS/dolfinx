@@ -28,61 +28,46 @@ using namespace dolfin;
 
 #ifdef HAS_CGAL
 
-// Class that implicitly defines a warped sphere
+// Implicitly defined warped sphere
 class WarpedSphere : public ImplicitSurface
 {
 public:
 
-  WarpedSphere() : ImplicitSurface(Sphere(Point(0.0, 0.0, 0.0), 2.1), "manifold") {}
-  //WarpedSphere() : ImplicitSurface(Sphere(Point(0.5, 0.5, 0.5), 2.1), "manifold_with_boundary") {}
-  //WarpedSphere() : ImplicitSurface(Sphere(Point(0.5, 0.5, 0.5), 3.1), "manifold") {}
-
-  double operator()(const Point& p) const
+  WarpedSphere() : ImplicitSurface(Sphere(Point(0.0, 0.0, 0.0), 2.1),
+                                   "manifold")
   {
-    const double R = sqrt( p[0]*p[0] + p[1]*p[1] + p[2]*p[2]);
-    const double theta = asin(p[0]/R);
-    //if ( R + 0.05*sin(10.0*theta) < 2.0)
-    //  return -1.0;
-    //else
-    //  return 1.0;
-    return R + 0.05*sin(10.0*theta) - 2.0;
+    // Add polylines
+    std::vector<dolfin::Point> polyline;
+    for (std::size_t i = 0; i < 360; ++i)
+    {
+      const double theta = i*2.0*DOLFIN_PI/360.0;
+      const double R = 2.0 - 0.05*cos(10.0*theta);
+      const double x = R*cos(theta);
+      const double z = R*sin(theta);
+      //Point p(x, 0.0, z);
+      //cout << "Testing    : " << theta << ", " <<  (*this)(p) << endl;
 
-    /*
-    //if ((p[0] > 0.0 && p[0] < 1.0) && (p[1] > 0.0 && p[1] < 0.01) && (p[2] > 0.0 && p[2] < 1.0))
-    if ((p[0] > 0.0 && p[0] < 1.0) && (p[1] > 0.0 && p[1] < 0.01) && (p[2] > 0.0 && p[2] < 1.0))
-      return -1.0;
-    else
-      return 1.0;
-    */
+      polyline.push_back(Point(x, 0.0, z));
+    }
+    polyline.push_back(polyline.front());
+    polylines.push_back(polyline);
   }
 
+  // Function F: x -> R, where F = 0 defines the surface
+  double operator()(const Point& p) const
+  {
+    const double R = sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2]);
+    const double theta = acos(p[0]/R);
+    //cout << "Testing (2): " << theta << endl;
+    return R + 0.05*cos(10.0*theta) - 2.0;
+  }
+
+  // Function that evaluates to true on the surface. Only relevant for
+  // open surfaces.
   bool on_surface(const Point& point) const
-  {
-    if (point[1] > 0.0)
-      return true;
-    else
-      return false;
-  }
+  { return point[1] > 0.0 ? true : false; }
 
 };
-
-/*
-// Class that implicitly defines a cube
-class BubbleCube : public ImplicitSurface
-{
-public:
-
-  BubbleCube() : ImplicitSurface(Sphere(Point(0.0, 0.0, 0.0), 2.1), "manifold") {}
-
-  double operator()(const Point& p) const
-  {
-    const double R = sqrt( p[0]*p[0] + p[1]*p[1] + p[2]*p[2]);
-    const double theta = asin(p[0]/R);
-    return R + 0.05*sin(10.0*theta) - 2.0;
-  }
-
-};
-*/
 
 int main()
 {
@@ -159,17 +144,18 @@ int main()
   //plot(mesh);
   //interactive();
 
+  // Create warped sphere object
   WarpedSphere surface;
-  //SurfaceMeshGenerator::generate(mesh, surface, 30.0, 0.01, 0.01, 10);
-  //plot(mesh);
-  //interactive();
 
-  //ImplicitDomainMeshGenerator::generate(mesh, surface, 0.05);
+  // Generate surface mesh
   ImplicitDomainMeshGenerator::generate_surface(mesh, surface, 0.1);
-  cout << "T-dim: " << mesh.topology().dim() << endl;
-  cout << "Num cells: " << mesh.num_cells() << endl;
-  File file("mesh.pvd");
-  file << mesh;
+  plot(mesh);
+  interactive();
+
+  // Generate volume mesh
+  ImplicitDomainMeshGenerator::generate(mesh, surface, 0.2);
+  File sfile("surface.pvd");
+  sfile << mesh;
   plot(mesh);
   interactive();
 
