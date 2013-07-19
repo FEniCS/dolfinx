@@ -116,46 +116,47 @@ int main()
   faces[3][2] = 2;
 
   // Generate volume mesh (tetrahedral cells)
-  //PolyhedralMeshGenerator::generate(mesh, face_vertices, faces, 0.04);
-  //cout << "Dim: " << mesh.topology().dim() << endl;
-  //plot(mesh);
-  //interactive();
+  PolyhedralMeshGenerator::generate(mesh, face_vertices, faces, 0.04);
+  cout << "Dim: " << mesh.topology().dim() << endl;
+  plot(mesh);
+  interactive();
 
   // Generate surface mesh (triangular cells)
-  //PolyhedralMeshGenerator::generate_surface_mesh(mesh, face_vertices, faces, 0.04);
-  //cout << "Dim: " << mesh.topology().dim() << endl;
-  //plot(mesh);
-  //interactive();
+  PolyhedralMeshGenerator::generate_surface_mesh(mesh, face_vertices, faces, 0.04);
+  cout << "Dim: " << mesh.topology().dim() << endl;
+  plot(mesh);
+  interactive();
 
   // Generate volume mesh from OFF file input (a cube) and plot
-  //PolyhedralMeshGenerator::generate(mesh, "../cube.off", 0.05);
-  //plot(mesh);
-  //interactive();
+  PolyhedralMeshGenerator::generate(mesh, "../cube.off", 0.05);
+  cout << "Dim: " << mesh.topology().dim() << endl;
+  plot(mesh);
+  interactive();
 
   // Generate surface mesh from OFF file input (a cube) and plot
-  //PolyhedralMeshGenerator::generate_surface_mesh(mesh, "../cube.off", 0.05);
-  //plot(mesh);
-  //interactive();
+  PolyhedralMeshGenerator::generate_surface_mesh(mesh, "../cube.off", 0.05);
+  cout << "Dim: " << mesh.topology().dim() << endl;
+  plot(mesh);
+  interactive();
 
   // Generate surface in 3D mesh from OFF file input (a cube) and plot
-  //PolyhedralMeshGenerator::generate_surface_mesh(mesh, "../cube.off", 0.05);em
-  //File file("mesh.pvd");
-  //file << mesh;
-  //plot(mesh);
-  //interactive();
+  PolyhedralMeshGenerator::generate_surface_mesh(mesh, "../cube.off", 0.05);
+  cout << "Dim: " << mesh.topology().dim() << endl;
+  plot(mesh);
+  interactive();
 
   // Create warped sphere object
   WarpedSphere surface;
 
   // Generate surface mesh
   ImplicitDomainMeshGenerator::generate_surface(mesh, surface, 0.1);
+  cout << "Dim: " << mesh.topology().dim() << endl;
   plot(mesh);
   interactive();
 
   // Generate volume mesh
   ImplicitDomainMeshGenerator::generate(mesh, surface, 0.2);
-  File sfile("surface.pvd");
-  sfile << mesh;
+  cout << "Dim: " << mesh.topology().dim() << endl;
   plot(mesh);
   interactive();
 
