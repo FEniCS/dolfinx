@@ -36,7 +36,7 @@ public:
   WarpedSphere() : ImplicitSurface(Sphere(Point(0.0, 0.0, 0.0), 2.1),
                                    "manifold")
   {
-    // Add polylines
+    // Add polyline
     std::vector<dolfin::Point> polyline;
     for (std::size_t i = 0; i < 360; ++i)
     {
@@ -44,9 +44,6 @@ public:
       const double R = 2.0 - 0.05*cos(10.0*theta);
       const double x = R*cos(theta);
       const double z = R*sin(theta);
-      //Point p(x, 0.0, z);
-      //cout << "Testing    : " << theta << ", " <<  (*this)(p) << endl;
-
       polyline.push_back(Point(x, 0.0, z));
     }
     polyline.push_back(polyline.front());
@@ -58,7 +55,6 @@ public:
   {
     const double R = sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2]);
     const double theta = acos(p[0]/R);
-    //cout << "Testing (2): " << theta << endl;
     return R + 0.05*cos(10.0*theta) - 2.0;
   }
 
@@ -87,8 +83,8 @@ int main()
   domain_vertices.push_back(Point(0.0,  0.0));
 
   // Generate 2D mesh and plot
-  //PolygonalMeshGenerator::generate(mesh, domain_vertices, 0.25);
-  //plot(mesh);
+  PolygonalMeshGenerator::generate(mesh, domain_vertices, 0.25);
+  plot(mesh);
 
   // Polyhedron face vertices
   std::vector<Point> face_vertices;
@@ -155,11 +151,10 @@ int main()
   interactive();
 
   // Generate volume mesh
-  ImplicitDomainMeshGenerator::generate(mesh, surface, 0.2);
+  ImplicitDomainMeshGenerator::generate(mesh, surface, 0.15);
   cout << "Dim: " << mesh.topology().dim() << endl;
   plot(mesh);
   interactive();
-
 }
 
 #else
