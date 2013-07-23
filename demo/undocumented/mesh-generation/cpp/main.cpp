@@ -130,16 +130,16 @@ int main()
   interactive();
 
   // Generate surface mesh from OFF file input (a cube) and plot
-  PolyhedralMeshGenerator::generate_surface_mesh(mesh, "../cube.off", 0.05);
-  cout << "Dim: " << mesh.topology().dim() << endl;
-  plot(mesh);
-  interactive();
+  //PolyhedralMeshGenerator::generate_surface_mesh(mesh, "../cube.off", 0.05);
+  //cout << "Dim: " << mesh.topology().dim() << endl;
+  //plot(mesh);
+  //interactive();
 
   // Generate surface in 3D mesh from OFF file input (a cube) and plot
-  PolyhedralMeshGenerator::generate_surface_mesh(mesh, "../cube.off", 0.05);
-  cout << "Dim: " << mesh.topology().dim() << endl;
-  plot(mesh);
-  interactive();
+  //PolyhedralMeshGenerator::generate_surface_mesh(mesh, "../cube.off", 0.05);
+  //cout << "Dim: " << mesh.topology().dim() << endl;
+  //plot(mesh);
+  //interactive();
 
   // Create warped sphere object
   WarpedSphere surface;
