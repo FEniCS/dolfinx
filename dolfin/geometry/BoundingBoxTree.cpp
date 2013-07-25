@@ -19,9 +19,9 @@
 // Last changed: 2013-06-21
 
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/Point.h>
 #include "BoundingBoxTree1D.h"
 #include "BoundingBoxTree2D.h"
 #include "BoundingBoxTree3D.h"

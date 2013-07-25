@@ -28,6 +28,43 @@ using namespace dolfin;
 
 #ifdef HAS_CGAL
 
+// Implicitly defined warped sphere
+class WarpedSphere : public ImplicitSurface
+{
+public:
+
+  WarpedSphere() : ImplicitSurface(Sphere(Point(0.0, 0.0, 0.0), 2.1),
+                                   "manifold")
+  {
+    // Add polyline
+    std::vector<dolfin::Point> polyline;
+    for (std::size_t i = 0; i < 360; ++i)
+    {
+      const double theta = i*2.0*DOLFIN_PI/360.0;
+      const double R = 2.0 - 0.05*cos(10.0*theta);
+      const double x = R*cos(theta);
+      const double z = R*sin(theta);
+      polyline.push_back(Point(x, 0.0, z));
+    }
+    polyline.push_back(polyline.front());
+    polylines.push_back(polyline);
+  }
+
+  // Function F: x -> R, where F = 0 defines the surface
+  double operator()(const Point& p) const
+  {
+    const double R = sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2]);
+    const double theta = acos(p[0]/R);
+    return R + 0.05*cos(10.0*theta) - 2.0;
+  }
+
+  // Function that evaluates to true on the surface. Only relevant for
+  // open surfaces.
+  bool on_surface(const Point& point) const
+  { return point[1] > 0.0 ? true : false; }
+
+};
+
 int main()
 {
   // Create empty mesh
@@ -74,14 +111,50 @@ int main()
   faces[3][1] = 1;
   faces[3][2] = 2;
 
-  // Generate 3D mesh and plot
-  PolyhedralMeshGenerator::generate(mesh, face_vertices, faces, 0.04);
-  plot(mesh);
+  // Generate volume mesh (tetrahedral cells)
+  //PolyhedralMeshGenerator::generate(mesh, face_vertices, faces, 0.04);
+  //cout << "Dim: " << mesh.topology().dim() << endl;
+  //plot(mesh);
+  //interactive();
 
-  // Generate 3D mesh from OFF file input (cube)
-  PolyhedralMeshGenerator::generate(mesh, "../cube.off", 0.05);
-  plot(mesh);
+  // Generate surface mesh (triangular cells)
+  //PolyhedralMeshGenerator::generate_surface_mesh(mesh, face_vertices, faces,
+  //                                               0.04);
+  //cout << "Dim: " << mesh.topology().dim() << endl;
+  //plot(mesh);
+  //interactive();
 
+  // Generate volume mesh from OFF file input (a cube) and plot
+  //PolyhedralMeshGenerator::generate(mesh, "../cube.off", 0.05);
+  //cout << "Dim: " << mesh.topology().dim() << endl;
+  //plot(mesh);
+  //interactive();
+
+  // Generate surface mesh from OFF file input (a cube) and plot
+  //PolyhedralMeshGenerator::generate_surface_mesh(mesh, "../cube.off", 0.05);
+  //cout << "Dim: " << mesh.topology().dim() << endl;
+  //plot(mesh);
+  //interactive();
+
+  // Generate surface in 3D mesh from OFF file input (a cube) and plot
+  //PolyhedralMeshGenerator::generate_surface_mesh(mesh, "../cube.off", 0.05);
+  //cout << "Dim: " << mesh.topology().dim() << endl;
+  //plot(mesh);
+  //interactive();
+
+  // Create warped sphere object
+  WarpedSphere surface;
+
+  // Generate surface mesh
+  ImplicitDomainMeshGenerator::generate_surface(mesh, surface, 0.1);
+  cout << "Dim: " << mesh.topology().dim() << endl;
+  plot(mesh);
+  interactive();
+
+  // Generate volume mesh
+  ImplicitDomainMeshGenerator::generate(mesh, surface, 0.15);
+  cout << "Dim: " << mesh.topology().dim() << endl;
+  plot(mesh);
   interactive();
 }
 
