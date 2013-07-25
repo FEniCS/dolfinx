@@ -32,24 +32,32 @@ namespace dolfin
   // Forward declarations
   class Mesh;
 
-  /// Polyhedral mesh generator that uses CGAL
+  /// Polyhedral mesh generator that uses CGAL. Volume and surfaces of
+  /// polyhedra (closed surface) can be generated from polyhedra
+  /// defined via polygonal facets.
 
   class PolyhedralMeshGenerator
   {
   public:
 
-    /// Create mesh from Object File Format (.off) file
+    /// Create volume mesh from Object File Format (.off) file
     static void generate(Mesh& mesh, const std::string off_file,
                          double cell_size, bool detect_sharp_features=true);
 
-    /// Create mesh from a collection of facets
+    /// Create volume mesh from a collection of facets
     static void generate(Mesh& mesh, const std::vector<Point>& vertices,
+                         const std::vector<std::vector<std::size_t> >& facets,
+                         double cell_size, bool detect_sharp_features=true);
+
+    /// Create surface mesh from a collection of facets
+    static void generate_surface_mesh(Mesh& mesh, const std::vector<Point>& vertices,
                          const std::vector<std::vector<std::size_t> >& facets,
                          double cell_size, bool detect_sharp_features=true);
 
     /// Create a surface mesh from Object File Format (.off) file
     static void generate_surface_mesh(Mesh& mesh, const std::string off_file,
                          double cell_size, bool detect_sharp_features=true);
+
 
   private:
 

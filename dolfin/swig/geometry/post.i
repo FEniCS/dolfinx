@@ -1,5 +1,5 @@
 /* -*- C -*- */
-// Copyright (C) 2013 Anders Logg
+// Copyright (C) 2006-2009 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -16,24 +16,27 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
-// First added:  2013-05-10
-// Last changed: 2013-05-10
-
-// ===========================================================================
-// SWIG directives for the DOLFIN geometry kernel module (pre)
+// Modified by Johan Jansson 2006-2007
+// Modified by Ola Skavhaug 2006-2007
+// Modified by Garth Wells 2007-2010
+// Modified by Johan Hake 2008-2009
 //
-// The directives in this file are applied _before_ the header files of the
+// First added:  2006-09-20
+// Last changed: 2011-03-11
+
+//=============================================================================
+// SWIG directives for the DOLFIN Geometry kernel module (post)
+//
+// The directives in this file are applied _after_ the header files of the
 // modules has been loaded.
-// ===========================================================================
+//=============================================================================
 
 //-----------------------------------------------------------------------------
-// Point ignores
+// Extend Point interface with Python selectors
 //-----------------------------------------------------------------------------
-%ignore dolfin::Point::operator=;
-%ignore dolfin::Point::operator[];
-
-//-----------------------------------------------------------------------------
-// Ignore reference (to FunctionSpaces) constructors of BoundingBoxTree
-//-----------------------------------------------------------------------------
-%ignore dolfin::BoundingBoxTree::BoundingBoxTree(const Mesh&);
-%ignore dolfin::BoundingBoxTree::BoundingBoxTree(const Mesh&, unsigned int);
+%feature("docstring") dolfin::Point::__getitem__ "Missing docstring";
+%feature("docstring") dolfin::Point::__setitem__ "Missing docstring";
+%extend dolfin::Point {
+  double __getitem__(int i) { return (*self)[i]; }
+  void __setitem__(int i, double val) { (*self)[i] = val; }
+}

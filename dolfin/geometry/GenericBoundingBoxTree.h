@@ -22,8 +22,7 @@
 #define __GENERIC_BOUNDING_BOX_TREE_H
 
 #include <vector>
-
-#include <dolfin/mesh/Point.h>
+#include <dolfin/geometry/Point.h>
 
 namespace dolfin
 {
