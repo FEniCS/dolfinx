@@ -52,10 +52,10 @@
 // CGAL kernel typedefs
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 
+typedef CGAL::Robust_weighted_circumcenter_filtered_traits_3<K> Geom_traits;
+
 // CGAL domain typedefs
 typedef CGAL::Polyhedral_mesh_domain_with_features_3<K> Mesh_domain;
-
-typedef CGAL::Robust_weighted_circumcenter_filtered_traits_3<K> Geom_traits;
 
 // CGAL 3D triangulation vertex typedefs
 typedef CGAL::Triangulation_vertex_base_3<Geom_traits> Tvb3test_base;
@@ -69,7 +69,7 @@ typedef CGAL::Mesh_cell_base_3<Geom_traits, Mesh_domain, Tcb3test> Cell_base;
 
 // CGAL 3D triangulation typedefs
 typedef CGAL::Triangulation_data_structure_3<Vertex_base, Cell_base> Tds_mesh;
-typedef CGAL::Regular_triangulation_3<Geom_traits, Tds_mesh>             Tr;
+typedef CGAL::Regular_triangulation_3<Geom_traits, Tds_mesh> Tr;
 
 // CGAL 3D mesh typedef
 typedef CGAL::Mesh_complex_3_in_triangulation_3<
@@ -83,6 +83,7 @@ typedef CGAL::Mesh_polyhedron_3<K>::Type Polyhedron;
 typedef Polyhedron::Facet_iterator Facet_iterator;
 typedef Polyhedron::Halfedge_around_facet_circulator Halfedge_facet_circulator;
 typedef Polyhedron::HalfedgeDS HalfedgeDS;
+
 
 using namespace dolfin;
 
@@ -132,7 +133,6 @@ public:
     // Finalise
     B.end_surface();
   }
-
 private:
 
   const std::vector<Point>& _vertices;
@@ -272,7 +272,8 @@ void PolyhedralMeshGenerator::cgal_generate(Mesh& mesh, T& p,
   const Mesh_criteria criteria(CGAL::parameters::facet_angle = 25,
                                CGAL::parameters::facet_size = cell_size,
                                CGAL::parameters::cell_radius_edge_ratio = 3.0,
-                               CGAL::parameters::edge_size = cell_size);
+                               CGAL::parameters::edge_size = 0.5*cell_size,
+                               CGAL::parameters::cell_size = cell_size);
 
   // Generate CGAL mesh
   C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria);
@@ -311,7 +312,7 @@ void PolyhedralMeshGenerator::cgal_generate_surface_mesh(Mesh& mesh, T& p,
   const Mesh_criteria criteria(CGAL::parameters::facet_angle = 25,
                                CGAL::parameters::facet_size = cell_size,
                                CGAL::parameters::cell_radius_edge = 0,
-                               CGAL::parameters::edge_size=0.1,
+                               CGAL::parameters::edge_size = 0.5*cell_size,
                                CGAL::parameters::cell_size=0);
 
   // Generate CGAL mesh
