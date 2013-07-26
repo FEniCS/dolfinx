@@ -48,18 +48,11 @@ namespace dolfin
     bool has_self_intersections(Polyhedron& p)
     {
       typedef typename Polyhedron::Triangle_3 Triangle;
-      typedef typename std::list<Triangle>::iterator Iterator;
-      typedef typename CGAL::Box_intersection_d::Box_with_handle_d<double,3,Iterator> Box;
       typedef typename std::back_insert_iterator<std::list<Triangle> > OutputIterator;
 
       std::list<Triangle> triangles; // intersecting triangles
       ::self_intersect<Polyhedron::Polyhedron_3, Polyhedron::Kernel,
           OutputIterator>(p, std::back_inserter(triangles));
-
-      // if(triangles.size() != 0)
-      //   cout << triangles.size() << " found." << endl;
-      // else
-      //   cout << "The polyhedron does not self-intersect." << endl;
 
       return triangles.size() > 0;
     }
