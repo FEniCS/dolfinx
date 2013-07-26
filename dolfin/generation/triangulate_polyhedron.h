@@ -50,12 +50,13 @@ class Triangulate_modifier
   typedef typename Polyhedron::Facet_iterator Facet_iterator;
   typedef typename Polyhedron::Facet_handle Facet_handle;
 
-  typedef CGAL::Triangulation_2_filtered_projection_traits_3<Traits>   P_traits;
+  typedef CGAL::Triangulation_2_filtered_projection_traits_3<Traits> P_traits;
 
   typedef CGAL::Triangulation_vertex_base_with_info_2<Halfedge_handle,
-                                                      P_traits>        Vb;
+                                                      P_traits> Vb;
 
-  struct Face_info {
+  struct Face_info
+  {
     typename Polyhedron::Halfedge_handle e[3];
     bool is_external;
   };
