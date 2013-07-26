@@ -10,6 +10,7 @@ Problem definition
 
 We do not have any equation in this demo. The demo focuses purely on the built-in meshes. We will look at the meshes:
 
+* :py:class:`UnitIntervalMesh <dolfin.cpp.mesh.UnitIntervalMesh>
 * :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`
 * :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`  with diagonals to the left
 * :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`  with diagonals that crosses

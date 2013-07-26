@@ -26,45 +26,38 @@
 
 from dolfin import *
 
-if MPI.num_processes() == 1:
-    mesh = UnitIntervalMesh(10)
-    print "Plotting a UnitIntervalMesh"
-    plot(mesh, title="Unit interval")
+
+mesh = UnitIntervalMesh(10)
+print "Plotting a UnitIntervalMesh"
+plot(mesh, title="Unit interval")
 
 mesh = UnitSquareMesh(10, 10)
 print "Plotting a UnitSquareMesh"
-p=plot(mesh, title="Unit square")
-p.write_png("unitsquaremesh")
+plot(mesh, title="Unit square")
 
 mesh = UnitSquareMesh(10, 10, "left")
 print "Plotting a UnitSquareMesh"
-p=plot(mesh, title="Unit square (left)")
-p.write_png("unitsquaremesh_left")
+plot(mesh, title="Unit square (left)")
 
 mesh = UnitSquareMesh(10, 10, "crossed")
 print "Plotting a UnitSquareMesh"
-p=plot(mesh, title="Unit square (crossed)")
-p.write_png("unitsquaremesh_crossed")
+plot(mesh, title="Unit square (crossed)")
 
 mesh = UnitSquareMesh(10, 10, "right/left")
 print "Plotting a UnitSquareMesh"
-p=plot(mesh, title="Unit square (right/left)")
-p.write_png("unitsquaremesh_left_right")
+plot(mesh, title="Unit square (right/left)")
 
 mesh = RectangleMesh(0.0, 0.0, 10.0, 4.0, 10, 10)
 print "Plotting a RectangleMesh"
-p=plot(mesh, title="Rectangle")
-p.write_png("rectanglemesh")
+plot(mesh, title="Rectangle")
 
 mesh = RectangleMesh(-3.0, 2.0, 7.0, 6.0, 10, 10, "right/left")
 print "Plotting a RectangleMesh"
-p=plot(mesh, title="Rectangle (right/left)")
-p.write_png("rectanglemesh_left_right")
+plot(mesh, title="Rectangle (right/left)")
 
 mesh = UnitCircleMesh(20, "right", "rotsumn")
 print "Plotting a UnitCircleMesh"
-p=plot(mesh, title="Unit circle (rotsum)")
-p.write_png("unitcirclemesh_rotsum")
+plot(mesh, title="Unit circle (rotsum)")
 
 #mesh = UnitCircleMesh(20, "left", "sumn")
 #print "Plotting a UnitCircle"
@@ -72,17 +65,14 @@ p.write_png("unitcirclemesh_rotsum")
 
 mesh = UnitCircleMesh(20, "right", "maxn")
 print "Plotting a UnitCircleMesh"
-p=plot(mesh, title="Unit circle (maxn)")
-p.write_png("unitcirclemesh_maxn")
+plot(mesh, title="Unit circle (maxn)")
 
 mesh = UnitCubeMesh(10, 10, 10)
 print "Plotting a UnitCubeMesh"
-p=plot(mesh, title="Unit cube")
-p.write_png("unitcubemesh")
+plot(mesh, title="Unit cube")
 
 mesh = BoxMesh(0.0, 0.0, 0.0, 10.0, 4.0, 2.0, 10, 10, 10)
 print "Plotting a BoxMesh"
-p=plot(mesh, title="Box")
-p.write_png("boxmesh")
+plot(mesh, title="Box")
 
 interactive()

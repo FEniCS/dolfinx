@@ -7,16 +7,108 @@ Test built in meshes
 ====================
 
 This demo is implemented in a single Python file,
-:download:`demo_built-in.py`, and demonstrates use of 2D geometries in DOLFIN.
+:download:`demo_built-in.py`, and demonstrates use of the built in meshes in DOLFIN.
 
 .. include:: ../common.txt
 
 Implementation
 --------------
 
-wueuf
-fjsiefu
-fhej9spf
+First, the :py:mod:`dolfin` module is imported:
+
+.. code-block:: python
+
+	from dolfin import *
+
+The first mesh we make is a mesh over the unit interval :math:`(0,1)`. :py:class:`UnitIntervalMesh <dolfin.cpp.mesh.UnitIntervalMesh>` takes the number of intervals :math:`(nx)` as input argument, and the total number of vertices is therefore :math:`(nx+1)`.
+
+.. code-block:: python
+
+	mesh = UnitIntervalMesh(10)
+	print "Plotting a UnitIntervalMesh"
+	plot(mesh, title="Unit interval")
+
+This produces a mesh looking as follows: 
+
+.. image:: ../unitintervalmesh.png
+	:scale: 75 %
+
+We then make our first version of a mesh on the 2D unit square :math:`[0,1] \times [0,1]`. We must give the number of cells in horizontal and vertical direction as the first two arguments to :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`. There is a third optional argument that indicates the direction of the diagonals, this can be set to "left", "right", "right/left", "left/right", or "crossed". We can also omit this argument and let it use the default direction "right".
+
+.. code-block:: python
+
+	mesh = UnitSquareMesh(10, 10)
+	print "Plotting a UnitSquareMesh"
+	plot(mesh, title="Unit square")
+
+.. image:: ../unitsquaremesh.png
+	:scale: 75 %
+
+Our second version of a mesh on the 2D unit square has diagonals to the left: 
+
+.. code-block:: python
+
+	mesh = UnitSquareMesh(10, 10, "left")
+	print "Plotting a UnitSquareMesh"
+	plot(mesh, title="Unit square (left)")
+
+
+.. image:: ../unitsquaremesh_left.png
+	:scale: 75 %
+
+The third version has diagonals that crosses:
+
+.. code-block:: python
+
+	mesh = UnitSquareMesh(10, 10, "crossed")
+	print "Plotting a UnitSquareMesh"
+	plot(mesh, title="Unit square (crossed)")
+
+.. image:: ../unitsquaremesh_crossed.png
+	:scale: 75 %
+
+and our final version has diagonals to both left and right:
+
+.. code-block:: python
+
+	mesh = UnitSquareMesh(10, 10, "right/left")
+	print "Plotting a UnitSquareMesh"
+	plot(mesh, title="Unit square (right/left)")
+
+
+.. image:: ../unitsquaremesh_left_right.png
+	:scale: 75 %
+
+
+mesh = RectangleMesh(0.0, 0.0, 10.0, 4.0, 10, 10)
+print "Plotting a RectangleMesh"
+plot(mesh, title="Rectangle")
+
+mesh = RectangleMesh(-3.0, 2.0, 7.0, 6.0, 10, 10, "right/left")
+print "Plotting a RectangleMesh"
+plot(mesh, title="Rectangle (right/left)")
+
+mesh = UnitCircleMesh(20, "right", "rotsumn")
+print "Plotting a UnitCircleMesh"
+plot(mesh, title="Unit circle (rotsum)")
+
+#mesh = UnitCircleMesh(20, "left", "sumn")
+#print "Plotting a UnitCircle"
+#plot(mesh, title="Unit circle (sumn)")
+
+mesh = UnitCircleMesh(20, "right", "maxn")
+print "Plotting a UnitCircleMesh"
+plot(mesh, title="Unit circle (maxn)")
+
+mesh = UnitCubeMesh(10, 10, 10)
+print "Plotting a UnitCubeMesh"
+plot(mesh, title="Unit cube")
+
+mesh = BoxMesh(0.0, 0.0, 0.0, 10.0, 4.0, 2.0, 10, 10, 10)
+print "Plotting a BoxMesh"
+plot(mesh, title="Box")
+
+interactive()
 
 
 Complete code
