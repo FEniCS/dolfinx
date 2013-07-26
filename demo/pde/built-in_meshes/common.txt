@@ -1,5 +1,6 @@
 
 This demo illustrates:
+
 * what the built in meshes in dolfin looks like
 
 
@@ -9,13 +10,13 @@ Problem definition
 
 We do not have any equation in this demo. The demo focuses purely on the built-in meshes. We will look at the meshes:
 
-* :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>' 
-* :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>'  with diagonals to the left
-* :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>'  with diagonals that crosses
-* :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>'  with diagonals to both left and right
-* :py:class:`RectangleMesh <dolfin.cpp.mesh.RectangleMesh>'  
-* :py:class:`RectangleMesh <dolfin.cpp.mesh.RectangleMesh>'   with diagonals to both left and right
-* :py:class:`UnitCircleMesh <dolfin.cpp.mesh.UnitCircleMesh>'  
-* :py:class:`UnitCircleMesh <dolfin.cpp.mesh.UnitCircleMesh>'  
-* :py:class:` UnitCubeMesh <dolfin.cpp.mesh.UnitCubeMesh>' 
-* :py:class:` BoxMesh <dolfin.cpp.mesh.BoxMesh>'  
+* :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`
+* :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`  with diagonals to the left
+* :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`  with diagonals that crosses
+* :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`  with diagonals to both left and right
+* :py:class:`RectangleMesh <dolfin.cpp.mesh.RectangleMesh>`  
+* :py:class:`RectangleMesh <dolfin.cpp.mesh.RectangleMesh>`   with diagonals to both left and right
+* :py:class:`UnitCircleMesh <dolfin.cpp.mesh.UnitCircleMesh>`  
+* :py:class:`UnitCircleMesh <dolfin.cpp.mesh.UnitCircleMesh>`  
+* :py:class:`UnitCubeMesh <dolfin.cpp.mesh.UnitCubeMesh>` 
+* :py:class:`BoxMesh <dolfin.cpp.mesh.BoxMesh>`  
