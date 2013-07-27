@@ -112,14 +112,14 @@ int main()
   faces[3][2] = 2;
 
   // Generate volume mesh (tetrahedral cells)
-  PolyhedralMeshGenerator::generate(mesh, face_vertices, faces, 0.04);
+  PolyhedralMeshGenerator::generate(mesh, face_vertices, faces, 0.05);
   cout << "Dim: " << mesh.topology().dim() << endl;
   plot(mesh);
   interactive();
 
   // Generate surface mesh (triangular cells)
   PolyhedralMeshGenerator::generate_surface_mesh(mesh, face_vertices, faces,
-                                                 0.04);
+                                                 0.05);
   cout << "Dim: " << mesh.topology().dim() << endl;
   plot(mesh);
   interactive();
