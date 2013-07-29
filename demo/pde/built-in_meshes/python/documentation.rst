@@ -89,7 +89,17 @@ In the first mesh we use the default direction of the diagonal, and in the secon
 	:scale: 75 %	
 
 
+To create a mesh on the 2D unit circle we use :py:class:`UnitCircleMesh <dolfin.cpp.mesh.UnitCircleMesh>`. The first argument specifies the resolution of the mesh by setting the number of nodes in the semi-circumference. The second argument decides the direction of the diagonals ("left", "right",  "left/right", or "crossed"), this is optional and has the default value "crossed". The third and final argument is also an optional argument, and it specifies the transformation used to transform the square :math:`(-1,1)\times (-1,1)` into the unit circle. There are three possible transformations. The default one ("rotsumn") uses a rotational matrix and is defines as follows:
 
+.. math:: 
+
+	rotsumn:= (|x_r|,|y_r|)\frac{(x_r,y_r)}{\sqrt{x_r^2+y_r^2}}\\
+	(x_r,y_r)=\frac{\sqrt{2}}{2} \begin{bmatrix}
+				\cos(\frac{\pi}{4})&	\sin(\frac{\pi}{4})\\
+				-\sin(\frac{\pi}{4})&   \cos(\frac{\pi}{4})
+				\end{bmatrix} \begin{bmatrix}
+						x & y
+							\end{bmatrix}
 
 .. code-block:: python
 
