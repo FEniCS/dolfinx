@@ -93,12 +93,12 @@ To create a mesh on the 2D unit circle we use :py:class:`UnitCircleMesh <dolfin.
 
 .. math:: 
 
-	rotsumn:= (|x_r|,|y_r|)\frac{(x_r,y_r)}{\sqrt{x_r^2+y_r^2}}\\
-	(x_r,y_r)=\frac{\sqrt{2}}{2} \begin{bmatrix}
+	rotsumn:&= (|x_r|,|y_r|)\frac{(x_r,y_r)}{\sqrt{x_r^2+y_r^2}}\\
+	(x_r,y_r)&=\frac{\sqrt{2}}{2} \begin{bmatrix}
 				\cos(\frac{\pi}{4})&	\sin(\frac{\pi}{4})\\
 				-\sin(\frac{\pi}{4})&   \cos(\frac{\pi}{4})
 				\end{bmatrix} \begin{bmatrix}
-						x & y
+						x \\ y
 							\end{bmatrix}
 
 .. code-block:: python
