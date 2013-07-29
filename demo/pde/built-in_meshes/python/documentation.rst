@@ -33,7 +33,7 @@ This produces a mesh looking as follows:
 .. image:: unitintervalmesh.png
 	:scale: 75 %
 
-We then make our first version of a mesh on the 2D unit square :math:`[0,1] \times [0,1]`. We must give the number of cells in horizontal and vertical direction as the first two arguments to :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`. There is a third optional argument that indicates the direction of the diagonals, this can be set to "left", "right", "right/left", "left/right", or "crossed". We can also omit this argument and let it use the default direction "right".
+We then make our first version of a mesh on the 2D unit square :math:`[0,1] \times [0,1]`. We must give the number of cells in horizontal and vertical direction as the first two arguments to :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`. The third argument is optional and indicates the direction of the diagonals, this can be set to "left", "right", "right/left", "left/right", or "crossed". We can also omit this argument and let it use the default direction "right".
 
 .. code-block:: python
 
@@ -44,7 +44,7 @@ We then make our first version of a mesh on the 2D unit square :math:`[0,1] \tim
 .. image:: unitsquaremesh.png
 	:scale: 75 %
 
-Our second version of a mesh on the 2D unit square has diagonals to the left: 
+Our second version of a mesh on the 2D unit square has diagonals to the left, the third version has diagonals that crosses and our final version has diagonals to both left and right:
 
 .. code-block:: python
 
@@ -52,29 +52,19 @@ Our second version of a mesh on the 2D unit square has diagonals to the left:
 	print "Plotting a UnitSquareMesh"
 	plot(mesh, title="Unit square (left)")
 
-
-.. image:: unitsquaremesh_left.png
-	:scale: 75 %
-
-The third version has diagonals that crosses:
-
-.. code-block:: python
-
 	mesh = UnitSquareMesh(10, 10, "crossed")
 	print "Plotting a UnitSquareMesh"
 	plot(mesh, title="Unit square (crossed)")
-
-.. image:: unitsquaremesh_crossed.png
-	:scale: 75 %
-
-and our final version has diagonals to both left and right:
-
-.. code-block:: python
 
 	mesh = UnitSquareMesh(10, 10, "right/left")
 	print "Plotting a UnitSquareMesh"
 	plot(mesh, title="Unit square (right/left)")
 
+.. image:: unitsquaremesh_left.png
+	:scale: 75 %
+
+.. image:: unitsquaremesh_crossed.png
+	:scale: 75 %
 
 .. image:: unitsquaremesh_left_right.png
 	:scale: 75 %
