@@ -1,7 +1,7 @@
 
 This demo illustrates:
 
-* what the built in meshes in dolfin looks like
+* how to define some of the different built in meshes in dolfin  
 
 
 
