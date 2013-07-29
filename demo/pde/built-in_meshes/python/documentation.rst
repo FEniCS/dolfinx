@@ -79,7 +79,7 @@ and our final version has diagonals to both left and right:
 .. image:: unitsquaremesh_left_right.png
 	:scale: 75 %
 
-The class :py:class:`RectangleMesh <dolfin.cpp.mesh.RectangleMesh>` (:math:`x_0, y_0, x_1 ,y_1, x_n, y_n, direction`) creates a mesh on a rectangle with one corner in :math:`(x_0,y_0)` and the opposite corner in :math:`(x_1,y_1)`. :math:`x_n` and :math:`y_n` gives the number of cells in :math:`x`- and :math:`y`-direction, and as in UnitSquareMesh the direction of the diagonals is given as a final optional argument ("left", "right",  "left/right", or "crossed"). 
+The class :py:class:`RectangleMesh <dolfin.cpp.mesh.RectangleMesh>`( :math:`x_0,y_0,x_1,y_1,x_n,y_n`, direction) creates a mesh on a rectangle with one corner in :math:`(x_0,y_0)` and the opposite corner in :math:`(x_1,y_1)`. :math:`x_n` and :math:`y_n` gives the number of cells in :math:`x`- and :math:`y`-direction, and as in UnitSquareMesh the direction of the diagonals is given as a final optional argument ("left", "right",  "left/right", or "crossed"). 
 In the first mesh we use the default direction of the diagonal, and in the second mesh we use diagonals to both left and right. 
 
 .. code-block:: python
@@ -114,7 +114,7 @@ print "Plotting a UnitCircleMesh"
 plot(mesh, title="Unit circle (maxn)")
 
 
-To make a mesh on the unit cube in 3D :math:`[0,1]\times [0,1]\times [0,1]`, we use :py:class:`UnitCubeMesh <dolfin.cpp.mesh.UnitCubeMesh>`. :py:class:`UnitCubeMesh <dolfin.cpp.mesh.UnitCubeMesh>` takes the number of cells in the :math:`x-`, :math:`y-` and :math:`z-`direction as the only three arguments.
+To make a mesh on the 3D unit cube  :math:`[0,1]\times [0,1]\times [0,1]`, we use :py:class:`UnitCubeMesh <dolfin.cpp.mesh.UnitCubeMesh>`. :py:class:`UnitCubeMesh <dolfin.cpp.mesh.UnitCubeMesh>` takes the number of cells in the :math:`x`-, :math:`y`- and :math:`z`-direction as the only three arguments.
 
 
 .. code-block:: python
@@ -127,7 +127,7 @@ To make a mesh on the unit cube in 3D :math:`[0,1]\times [0,1]\times [0,1]`, we 
 	:scale: 75 %	
 
 
-The last mesh we will demonstrate is on a rectangular prism in 3D. :py:class:`BoxMesh <dolfin.cpp.mesh.BoxMesh>`(:math:`x_0, y_0, z_0, x_1, y_1, z_1, x_n, y_n, z_n`) takes the coordinates of the first corner as the three first arguments, and the coordinates of the opposite corner as the next three arguments, while the last three arguments specifies the number of points in the :math:`x-`, :math:`y-` and :math:`z-`direction. 
+The last mesh we will demonstrate is on a rectangular prism in 3D. :py:class:`BoxMesh <dolfin.cpp.mesh.BoxMesh>`( :math:`x_0,y_0,z_0,x_1,y_1,z_1,x_n,y_n,z_n`) takes the coordinates of the first corner(:math:`x_0,y_0,z_0`) as the three first arguments, the coordinates of the opposite corner (:math:`x_1,y_1,z_1`)  as the next three arguments, while the last three arguments specifies the number of points in the :math:`x`-, :math:`y`- and :math:`z`-direction. 
 
 .. code-block:: python
 	mesh = BoxMesh(0.0, 0.0, 0.0, 10.0, 4.0, 2.0, 10, 10, 10)
