@@ -33,7 +33,7 @@ This produces a mesh looking as follows:
 .. image:: unitintervalmesh.png
 	:scale: 75 %
 
-We then make our first version of a mesh on the 2D unit square :math:`[0,1] \times [0,1]`. We must give the number of cells in horizontal and vertical direction as the first two arguments to :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`. The third argument is optional and indicates the direction of the diagonals, this can be set to "left", "right", "right/left", "left/right", or "crossed". We can also omit this argument and let it use the default direction "right".
+We then make our first version of a mesh on the unit square :math:`[0,1] \times [0,1]`. We must give the number of cells in horizontal and vertical direction as the first two arguments to :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`. There is a third optional argument that indicates the direction of the diagonals, this can be set to "left", "right", "right/left", "left/right", or "crossed". We can also omit this argument and let it use the default direction "right".
 
 .. code-block:: python
 
@@ -44,7 +44,7 @@ We then make our first version of a mesh on the 2D unit square :math:`[0,1] \tim
 .. image:: unitsquaremesh.png
 	:scale: 75 %
 
-Our second version of a mesh on the 2D unit square has diagonals to the left, the third version has diagonals that crosses and our final version has diagonals to both left and right:
+Our second version of a mesh on the unit square has diagonals to the left, the third version has diagonals that crosses and our final version has diagonals to both left and right:
 
 .. code-block:: python
 
@@ -69,8 +69,8 @@ Our second version of a mesh on the 2D unit square has diagonals to the left, th
 .. image:: unitsquaremesh_left_right.png
 	:scale: 65 %
 
-The class :py:class:`RectangleMesh <dolfin.cpp.mesh.RectangleMesh>` ( :math:`x_0,y_0,x_1,y_1,x_n,y_n`, direction) creates a mesh on a rectangle with one corner in :math:`(x_0,y_0)` and the opposite corner in :math:`(x_1,y_1)`. :math:`x_n` and :math:`y_n` gives the number of cells in :math:`x`- and :math:`y`-direction, and as in UnitSquareMesh the direction of the diagonals is given as a final optional argument ("left", "right",  "left/right", or "crossed"). 
-In the first mesh we use the default direction of the diagonal, and in the second mesh we use diagonals to both left and right. 
+The class :py:class:`RectangleMesh <dolfin.cpp.mesh.RectangleMesh>`( :math:`x_0,y_0,x_1,y_1,x_n,y_n`, direction) creates a mesh on a rectangle with one corner in :math:`(x_0,y_0)` and the opposite corner in :math:`(x_1,y_1)`. :math:`x_n` and :math:`y_n` gives the number of cells in :math:`x`- and :math:`y`-direction, and as in UnitSquareMesh the direction of the diagonals is given as a final optional argument ("left", "right",  "left/right", or "crossed"). 
+In the first mesh we use the default direction ("right") of the diagonal, and in the second mesh we use diagonals to both left and right. 
 
 .. code-block:: python
 	 
@@ -89,7 +89,7 @@ In the first mesh we use the default direction of the diagonal, and in the secon
 	:scale: 75 %	
 
 
-To create a mesh on the 2D unit circle we use :py:class:`UnitCircleMesh <dolfin.cpp.mesh.UnitCircleMesh>`. The first argument specifies the resolution of the mesh by setting the number of nodes in the semi-circumference. The second argument decides the direction of the diagonals ("left", "right",  "left/right", or "crossed"), this is optional and has the default value "crossed". The third and final argument is also an optional argument, and it specifies the transformation used to transform the square :math:`(-1,1)\times (-1,1)` into the unit circle. There are three possible transformations. The default one ("rotsumn") uses a rotational matrix and is defines as follows:
+To create a mesh on the unit circle we use :py:class:`UnitCircleMesh <dolfin.cpp.mesh.UnitCircleMesh>`. The first argument specifies the resolution of the mesh by setting the number of nodes in the semi-circumference. The second argument decides the direction of the diagonals ("left", "right",  "left/right", or "crossed"), this is optional and has the default value "crossed". The third and final argument is also an optional argument, and it specifies the transformation used to transform the square :math:`(-1,1)\times (-1,1)` into the unit circle. There are three possible transformations("rotsumn", "maxn", "sumn"). The default one ("rotsumn") uses a rotational matrix and is defines as follows:
 
 .. math:: 
 
@@ -144,7 +144,7 @@ To make a mesh on the 3D unit cube  :math:`[0,1]\times [0,1]\times [0,1]`, we us
 	:scale: 75 %	
 
 
-The last mesh we will demonstrate is on a rectangular prism in 3D. :py:class:`BoxMesh <dolfin.cpp.mesh.BoxMesh>` ( :math:`x_0,y_0,z_0,x_1,y_1,z_1,x_n,y_n,z_n`) takes the coordinates of the first corner(:math:`x_0,y_0,z_0`) as the three first arguments, the coordinates of the opposite corner (:math:`x_1,y_1,z_1`)  as the next three arguments, while the last three arguments specifies the number of points in the :math:`x`-, :math:`y`- and :math:`z`-direction. 
+The last mesh we will demonstrate is on a rectangular prism in 3D. :py:class:`BoxMesh <dolfin.cpp.mesh.BoxMesh>`( :math:`x_0,y_0,z_0,x_1,y_1,z_1,x_n,y_n,z_n`) takes the coordinates of the first corner(:math:`x_0,y_0,z_0`) as the three first arguments, the coordinates of the opposite corner (:math:`x_1,y_1,z_1`)  as the next three arguments, while the last three arguments specifies the number of points in the :math:`x`-, :math:`y`- and :math:`z`-direction. 
 
 .. code-block:: python
 
