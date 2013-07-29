@@ -93,13 +93,21 @@ To create a mesh on the 2D unit circle we use :py:class:`UnitCircleMesh <dolfin.
 
 .. math:: 
 
-	rotsumn:&= (|x_r|,|y_r|)\frac{(x_r,y_r)}{\sqrt{x_r^2+y_r^2}}\\
+	\text{rotsumn}:&= (|x_r|,|y_r|)\frac{(x_r,y_r)}{\sqrt{x_r^2+y_r^2}}\\
 	(x_r,y_r)&=\frac{\sqrt{2}}{2} \begin{bmatrix}
 				\cos(\frac{\pi}{4})&	\sin(\frac{\pi}{4})\\
 				-\sin(\frac{\pi}{4})&   \cos(\frac{\pi}{4})
 				\end{bmatrix} \begin{bmatrix}
 						x \\ y
 							\end{bmatrix}
+
+The second transformation ("maxn") uses the maximum of the norm of :math:`x` and :math:`y` and the definition reads:
+
+.. math::
+
+	\text{maxn}:= \text{max}(|x|,|y|)\frac{(x,y)}{\sqrt{x^2+y^2}}
+
+The last transformation ("sumn") uses the sum of the norms of :math:`x` and :math:`y`, but is doesn't produce a circle, so we won't look at it here.
 
 .. code-block:: python
 
