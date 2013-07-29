@@ -47,8 +47,8 @@ We let :math:`u = u_1 = 1.0` be the Dirichlet condition on the inlet,
 the outlets will have the prescribed values :math:`u = u_2 = 2.0` and :math:`u = u_3 = 3.0`.
 In summary, we have:
 
-* :math:`u = u_0 = 0.0 on \Gamma_{D, 0}` (noslip boundary)
-* :math:`u = u_1 = 1.0 on \Gamma_{D, 1}` (inlet)
-* :math:`u = u_2 = 2.0 on \Gamma_{D, 2}` (outlet 1)
-* :math:`u = u_3 = 3.0 on \Gamma_{D, 3}` (outlet 2)
-* :math:`f = 0.0` (source term)
+* :math:`u = u_0 = 0.0 \text{ on } \Gamma_{D, 0}`  (noslip boundary)
+* :math:`u = u_1 = 1.0 \text{ on } \Gamma_{D, 1}`  (inlet)
+* :math:`u = u_2 = 2.0 \text{ on } \Gamma_{D, 2}`  (outlet 1)
+* :math:`u = u_3 = 3.0 \text{ on } \Gamma_{D, 3}`  (outlet 2)
+* :math:`f = 0.0`  (source term)
