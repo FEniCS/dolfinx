@@ -101,18 +101,23 @@ In the first mesh we use the default direction of the diagonal, and in the secon
 
 
 
-mesh = UnitCircleMesh(20, "right", "rotsumn")
-print "Plotting a UnitCircleMesh"
-plot(mesh, title="Unit circle (rotsum)")
+.. code-block:: python
 
-#mesh = UnitCircleMesh(20, "left", "sumn")
-#print "Plotting a UnitCircle"
-#plot(mesh, title="Unit circle (sumn)")
+	mesh = UnitCircleMesh(20, "right", "rotsumn")
+	print "Plotting a UnitCircleMesh"
+	plot(mesh, title="Unit circle (rotsum)")
 
-mesh = UnitCircleMesh(20, "right", "maxn")
-print "Plotting a UnitCircleMesh"
-plot(mesh, title="Unit circle (maxn)")
+.. image:: unitcirclemesh_rotsum.png
+	:scale: 75 %	
 
+.. code-block:: python
+
+	mesh = UnitCircleMesh(20, "right", "maxn")
+	print "Plotting a UnitCircleMesh"
+	plot(mesh, title="Unit circle (maxn)")
+
+.. image:: unitcirclemesh_maxn.png
+	:scale: 75 %	
 
 To make a mesh on the 3D unit cube  :math:`[0,1]\times [0,1]\times [0,1]`, we use :py:class:`UnitCubeMesh <dolfin.cpp.mesh.UnitCubeMesh>`. :py:class:`UnitCubeMesh <dolfin.cpp.mesh.UnitCubeMesh>` takes the number of cells in the :math:`x`-, :math:`y`- and :math:`z`-direction as the only three arguments.
 
