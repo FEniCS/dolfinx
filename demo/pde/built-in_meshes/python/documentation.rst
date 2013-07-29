@@ -125,6 +125,7 @@ To make a mesh on the 3D unit cube  :math:`[0,1]\times [0,1]\times [0,1]`, we us
 The last mesh we will demonstrate is on a rectangular prism in 3D. :py:class:`BoxMesh <dolfin.cpp.mesh.BoxMesh>` ( :math:`x_0,y_0,z_0,x_1,y_1,z_1,x_n,y_n,z_n`) takes the coordinates of the first corner(:math:`x_0,y_0,z_0`) as the three first arguments, the coordinates of the opposite corner (:math:`x_1,y_1,z_1`)  as the next three arguments, while the last three arguments specifies the number of points in the :math:`x`-, :math:`y`- and :math:`z`-direction. 
 
 .. code-block:: python
+
 	mesh = BoxMesh(0.0, 0.0, 0.0, 10.0, 4.0, 2.0, 10, 10, 10)
 	print "Plotting a BoxMesh"
 	plot(mesh, title="Box")
