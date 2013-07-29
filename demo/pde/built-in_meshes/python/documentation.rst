@@ -3,11 +3,11 @@
 .. _demo_pde_built-in_meshes_python_documentation:
 
 
-Test built in meshes
+Built-in meshes
 ====================
 
 This demo is implemented in a single Python file,
-:download:`demo_built-in.py`, and demonstrates use of the built in meshes in DOLFIN.
+:download:`demo_built-in.py`, and demonstrates use of the built-in meshes in DOLFIN.
 
 .. include:: ../common.txt
 
