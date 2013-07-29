@@ -101,13 +101,7 @@ To create a mesh on the 2D unit circle we use :py:class:`UnitCircleMesh <dolfin.
 						x \\ y
 							\end{bmatrix}
 
-The second transformation ("maxn") uses the maximum of the norm of :math:`x` and :math:`y` and the definition reads:
 
-.. math::
-
-	\text{maxn}:= \text{max}(|x|,|y|)\frac{(x,y)}{\sqrt{x^2+y^2}}
-
-The last transformation ("sumn") uses the sum of the norms of :math:`x` and :math:`y`, but is doesn't produce a circle, so we won't look at it here.
 
 .. code-block:: python
 
@@ -118,6 +112,13 @@ The last transformation ("sumn") uses the sum of the norms of :math:`x` and :mat
 .. image:: unitcirclemesh_rotsum.png
 	:scale: 75 %	
 
+
+The second transformation ("maxn") uses the maximum of the norm of :math:`x` and :math:`y` and the definition reads:
+
+.. math::
+
+	\text{maxn}:= \text{max}(|x|,|y|)\frac{(x,y)}{\sqrt{x^2+y^2}}
+
 .. code-block:: python
 
 	mesh = UnitCircleMesh(20, "right", "maxn")
@@ -126,6 +127,9 @@ The last transformation ("sumn") uses the sum of the norms of :math:`x` and :mat
 
 .. image:: unitcirclemesh_maxn.png
 	:scale: 75 %	
+
+
+The last transformation ("sumn") uses the sum of the norms of :math:`x` and :math:`y`, but is doesn't produce a circle, so we won't look at it here.
 
 To make a mesh on the 3D unit cube  :math:`[0,1]\times [0,1]\times [0,1]`, we use :py:class:`UnitCubeMesh <dolfin.cpp.mesh.UnitCubeMesh>`. :py:class:`UnitCubeMesh <dolfin.cpp.mesh.UnitCubeMesh>` takes the number of cells in the :math:`x`-, :math:`y`- and :math:`z`-direction as the only three arguments.
 
