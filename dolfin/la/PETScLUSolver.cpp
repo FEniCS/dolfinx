@@ -186,7 +186,8 @@ std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   return solve(x, b, false);
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b, bool transpose)
+std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b,
+                                 bool transpose)
 {
   dolfin_assert(_ksp);
   dolfin_assert(_A);
@@ -238,20 +239,16 @@ std::size_t PETScLUSolver::solve(GenericVector& x, const GenericVector& b, bool 
 
   // Solve linear system
   if (!transpose)
-  {
     KSPSolve(*_ksp, *_b.vec(), *_x.vec());
-  }
   else
-  {
     KSPSolveTranspose(*_ksp, *_b.vec(), *_x.vec());
-  }
 
   return 1;
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScLUSolver::solve(const GenericLinearOperator& A,
-                                  GenericVector& x,
-                                  const GenericVector& b)
+                                 GenericVector& x,
+                                 const GenericVector& b)
 {
   return solve(as_type<const PETScMatrix>(require_matrix(A)),
                as_type<PETScVector>(x),
@@ -259,26 +256,31 @@ std::size_t PETScLUSolver::solve(const GenericLinearOperator& A,
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
-                                  const PETScVector& b)
+                                 const PETScVector& b)
 {
   boost::shared_ptr<const PETScMatrix> Atmp(&A, NoDeleter());
   set_operator(Atmp);
   return solve(x, b);
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScLUSolver::solve_transpose(GenericVector& x, const GenericVector& b)
+std::size_t PETScLUSolver::solve_transpose(GenericVector& x,
+                                           const GenericVector& b)
 {
 return solve(x, b, true);
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScLUSolver::solve_transpose(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b)
+std::size_t PETScLUSolver::solve_transpose(const GenericLinearOperator& A,
+                                           GenericVector& x,
+                                           const GenericVector& b)
 {
   return solve_transpose(as_type<const PETScMatrix>(require_matrix(A)),
-               as_type<PETScVector>(x),
-               as_type<const PETScVector>(b));
+                         as_type<PETScVector>(x),
+                         as_type<const PETScVector>(b));
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScLUSolver::solve_transpose(const PETScMatrix& A, PETScVector& x, const PETScVector& b)
+std::size_t PETScLUSolver::solve_transpose(const PETScMatrix& A,
+                                           PETScVector& x,
+                                           const PETScVector& b)
 {
   boost::shared_ptr<const PETScMatrix> _A(&A, NoDeleter());
   set_operator(_A);
@@ -328,6 +330,8 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
       method = "pastix";
       #elif PETSC_HAVE_SUPERLU
       method = "superlu";
+      #elif PETSC_HAVE_SUPERLU_DIST
+      method = "superlu_dist";
       #else
       method = "petsc";
       warning("Using PETSc native LU solver. Consider configuring PETSc with an efficient LU solver (e.g. UMFPACK, MUMPS).");

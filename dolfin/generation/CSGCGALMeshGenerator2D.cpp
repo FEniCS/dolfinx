@@ -70,7 +70,8 @@ typedef Nef_polyhedron_2::Explorer Explorer;
 typedef Explorer::Face_const_iterator Face_const_iterator;
 typedef Explorer::Hole_const_iterator Hole_const_iterator;
 typedef Explorer::Vertex_const_iterator Vertex_const_iterator;
-typedef Explorer::Halfedge_around_face_const_circulator Halfedge_around_face_const_circulator;
+typedef Explorer::Halfedge_around_face_const_circulator
+           Halfedge_around_face_const_circulator;
 typedef Explorer::Vertex_const_handle Vertex_const_handle;
 typedef Explorer::Halfedge_const_handle Halfedge_const_handle;
 
@@ -85,14 +86,16 @@ typedef CGAL::Circle_2<Extended_kernel> CGAL_Circle;
 
 template <class Gt,
           class Fb >
-class Enriched_face_base_2 : public Fb {
+class Enriched_face_base_2 : public Fb
+{
 public:
   typedef Gt Geom_traits;
   typedef typename Fb::Vertex_handle Vertex_handle;
   typedef typename Fb::Face_handle Face_handle;
 
   template < typename TDS2 >
-  struct Rebind_TDS {
+  struct Rebind_TDS
+  {
     typedef typename Fb::template Rebind_TDS<TDS2>::Other Fb2;
     typedef Enriched_face_base_2<Gt,Fb2> Other;
   };
@@ -103,17 +106,11 @@ protected:
 public:
   Enriched_face_base_2(): Fb(), status(-1) {}
 
-  Enriched_face_base_2(Vertex_handle v0,
-                       Vertex_handle v1,
-                       Vertex_handle v2)
+  Enriched_face_base_2(Vertex_handle v0, Vertex_handle v1, Vertex_handle v2)
     : Fb(v0,v1,v2), status(-1) {}
 
-  Enriched_face_base_2(Vertex_handle v0,
-                       Vertex_handle v1,
-                       Vertex_handle v2,
-                       Face_handle n0,
-                       Face_handle n1,
-                       Face_handle n2)
+  Enriched_face_base_2(Vertex_handle v0, Vertex_handle v1, Vertex_handle v2,
+                       Face_handle n0, Face_handle n1, Face_handle n2)
     : Fb(v0,v1,v2,n0,n1,n2), status(-1) {}
 
   inline
@@ -284,12 +281,12 @@ static Nef_polyhedron_2 convertSubTree(const CSGGeometry *geometry)
 // Taken from examples/Triangulation_2/polygon_triangulation.cpp in the
 // CGAL source tree.
 //
-// Explore set of facets connected with non constrained edges,
-// and attribute to each such set a counter.
-// We start from facets incident to the infinite vertex, with a counter
-// set to 0. Then we recursively consider the non-explored facets incident
-// to constrained edges bounding the former set and increase thecounter by 1.
-// Facets in the domain are those with an odd nesting level.
+// Explore set of facets connected with non constrained edges, and
+// attribute to each such set a counter.  We start from facets
+// incident to the infinite vertex, with a counter set to 0. Then we
+// recursively consider the non-explored facets incident to
+// constrained edges bounding the former set and increase thecounter
+// by 1.  Facets in the domain are those with an odd nesting level.
 void mark_domains(CDT& ct,
                   CDT::Face_handle start,
                   int index,
@@ -327,8 +324,11 @@ void mark_domains(CDT& ct,
 //-----------------------------------------------------------------------------
 void mark_domains(CDT& cdt)
 {
-  for (CDT::All_faces_iterator it = cdt.all_faces_begin(); it != cdt.all_faces_end(); ++it)
+  for (CDT::All_faces_iterator it = cdt.all_faces_begin();
+       it != cdt.all_faces_end(); ++it)
+  {
     it->set_counter(-1);
+  }
 
   int index = 0;
   std::list<CDT::Edge> border;
@@ -350,21 +350,26 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   // Create empty CGAL triangulation
   CDT cdt;
 
-  // Explore the Nef polyhedron and insert constraints in the triangulation
+  // Explore the Nef polyhedron and insert constraints in the
+  // triangulation
   Explorer explorer = cgal_geometry.explorer();
-  for (Face_const_iterator fit = explorer.faces_begin() ; fit != explorer.faces_end(); fit++)
+  for (Face_const_iterator fit = explorer.faces_begin() ;
+       fit != explorer.faces_end(); fit++)
   {
     // Skip face if it is not part of polygon
     if (!explorer.mark(fit))
       continue;
 
-    Halfedge_around_face_const_circulator hafc = explorer.face_cycle(fit), done(hafc);
+    Halfedge_around_face_const_circulator hafc
+      = explorer.face_cycle(fit), done(hafc);
     do
     {
-      Vertex_handle va = cdt.insert(Point_2(to_double(hafc->vertex()->point().x()),
-                                            to_double(hafc->vertex()->point().y())));
-      Vertex_handle vb = cdt.insert(Point_2(to_double(hafc->next()->vertex()->point().x()),
-                                            to_double(hafc->next()->vertex()->point().y())));
+      Vertex_handle va
+        = cdt.insert(Point_2(to_double(hafc->vertex()->point().x()),
+                             to_double(hafc->vertex()->point().y())));
+      Vertex_handle vb
+        = cdt.insert(Point_2(to_double(hafc->next()->vertex()->point().x()),
+                             to_double(hafc->next()->vertex()->point().y())));
       cdt.insert_constraint(va, vb);
       hafc++;
     } while (hafc != done);
@@ -375,10 +380,12 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
       Halfedge_around_face_const_circulator hafc1(hit), done1(hit);
       do
       {
-        Vertex_handle va = cdt.insert(Point_2(to_double(hafc1->vertex()->point().x()),
-                                              to_double(hafc1->vertex()->point().y())));
-        Vertex_handle vb = cdt.insert(Point_2(to_double(hafc1->next()->vertex()->point().x()),
-                                              to_double(hafc1->next()->vertex()->point().y())));
+        Vertex_handle va
+          = cdt.insert(Point_2(to_double(hafc1->vertex()->point().x()),
+                               to_double(hafc1->vertex()->point().y())));
+        Vertex_handle vb
+          = cdt.insert(Point_2(to_double(hafc1->next()->vertex()->point().x()),
+                            to_double(hafc1->next()->vertex()->point().y())));
         cdt.insert_constraint(va, vb);
         hafc1++;
       } while (hafc1 != done1);
@@ -425,18 +432,18 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
                            points.end(),
                            true); //randomize point order
 
-    const double cell_size = 2.0*sqrt(CGAL::to_double(min_circle.circle().squared_radius()))/mesh_resolution;
-
+    const double cell_size
+      = 2.0*sqrt(CGAL::to_double(min_circle.circle().squared_radius()))/mesh_resolution;
 
     Mesh_criteria_2 criteria(parameters["triangle_shape_bound"],
                              cell_size);
     mesher.set_criteria(criteria);
-  } 
+  }
   else
   {
     // Set shape and size criteria
     Mesh_criteria_2 criteria(parameters["triangle_shape_bound"],
-                           parameters["cell_size"]);
+                             parameters["cell_size"]);
     mesher.set_criteria(criteria);
   }
 
@@ -457,7 +464,8 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   // Count valid cells
   std::size_t num_cells = 0;
   CDT::Finite_faces_iterator cgal_cell;
-  for (cgal_cell = cdt.finite_faces_begin(); cgal_cell != cdt.finite_faces_end(); ++cgal_cell)
+  for (cgal_cell = cdt.finite_faces_begin();
+       cgal_cell != cdt.finite_faces_end(); ++cgal_cell)
   {
     // Add cell if it is in the domain
     if (cgal_cell->is_in_domain())
@@ -495,7 +503,8 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
 
   // Add cells to mesh
   std::size_t cell_index = 0;
-  for (cgal_cell = cdt.finite_faces_begin(); cgal_cell != cdt.finite_faces_end(); ++cgal_cell)
+  for (cgal_cell = cdt.finite_faces_begin();
+       cgal_cell != cdt.finite_faces_end(); ++cgal_cell)
   {
     // Add cell if it is in the domain
     if (cgal_cell->is_in_domain())
