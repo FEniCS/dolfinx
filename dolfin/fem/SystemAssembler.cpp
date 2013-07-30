@@ -173,24 +173,26 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
   const MeshFunction<std::size_t>* cell_domains = _a->cell_domains().get();
   if (cell_domains != _L->cell_domains().get())
   {
-    warning("Bilinear and linear forms do not have same cell facet subdomains in SystemAssembler. \
-Taking subdomains from bilinear form");
+    warning("Bilinear and linear forms do not have same cell facet subdomains in \
+SystemAssembler. Taking subdomains from bilinear form");
   }
 
   // Get exterior facet domains
-  const MeshFunction<std::size_t>* exterior_facet_domains = _a->exterior_facet_domains().get();
+  const MeshFunction<std::size_t>* exterior_facet_domains
+    = _a->exterior_facet_domains().get();
   if (exterior_facet_domains != _L->exterior_facet_domains().get())
   {
-    warning("Bilinear and linear forms do not have same exterior facet subdomains in SystemAssembler. \
-Taking subdomains from bilinear form");
+    warning("Bilinear and linear forms do not have same exterior facet subdomains in \
+SystemAssembler. Taking subdomains from bilinear form");
   }
 
   // Get interior facet domains
-  const MeshFunction<std::size_t>* interior_facet_domains = _a->interior_facet_domains().get();
+  const MeshFunction<std::size_t>* interior_facet_domains
+    = _a->interior_facet_domains().get();
   if (interior_facet_domains != _L->interior_facet_domains().get())
   {
-    warning("Bilinear and linear forms do not have same interior facet subdomains in SystemAssembler. \
-Taking subdomains from bilinear form");
+    warning("Bilinear and linear forms do not have same interior facet subdomains in \
+SystemAssembler. Taking subdomains from bilinear form");
   }
 
   // Check forms
@@ -212,7 +214,8 @@ Taking subdomains from bilinear form");
   // FIXME: This may update coefficients twice. Checked for shared coefficients
 
   // Update off-process coefficients for a
-  std::vector<boost::shared_ptr<const GenericFunction> > coefficients = _a->coefficients();
+  std::vector<boost::shared_ptr<const GenericFunction> > coefficients
+    = _a->coefficients();
   for (std::size_t i = 0; i < coefficients.size(); ++i)
     coefficients[i]->update();
 
@@ -246,8 +249,10 @@ Taking subdomains from bilinear form");
   if (x0)
   {
     if (MPI::num_processes() > 1)
-      warning("Parallel symmetric assembly over interior facets for nonlinear problems is untested");
-
+    {
+      warning("Parallel symmetric assembly over interior facets for nonlinear \
+problems is untested");
+    }
     dolfin_assert(x0->size() == _a->function_space(1)->dofmap()->global_dimension());
 
     const std::size_t num_bc_dofs = boundary_values.size();
@@ -315,12 +320,12 @@ Taking subdomains from bilinear form");
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::cell_wise_assembly(GenericMatrix* A, GenericVector* b,
-                                         const Form& a, const Form& L,
-                                         UFC& A_ufc, UFC& b_ufc, Scratch& data,
-                                         const DirichletBC::Map& boundary_values,
-                                         const MeshFunction<std::size_t>* cell_domains,
-                                         const MeshFunction<std::size_t>* exterior_facet_domains,
-                                         const bool rescale)
+                       const Form& a, const Form& L,
+                       UFC& A_ufc, UFC& b_ufc, Scratch& data,
+                       const DirichletBC::Map& boundary_values,
+                       const MeshFunction<std::size_t>* cell_domains,
+                       const MeshFunction<std::size_t>* exterior_facet_domains,
+                       const bool rescale)
 {
   // FIXME: We can used some std::vectors or array pointers for the A and b
   // related terms to cut down on code repetition.
@@ -659,16 +664,31 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
   }
 }
 //-----------------------------------------------------------------------------
+bool SystemAssembler::has_bc(const DirichletBC::Map& boundary_values,
+                             const std::vector<dolfin::la_index>& dofs)
+{
+  // Loop over dofs and check if bc is applied
+  std::vector<dolfin::la_index>::const_iterator dof;
+  for (dof = dofs.begin(); dof != dofs.end(); ++dof)
+  {
+    DirichletBC::Map::const_iterator bc_value = boundary_values.find(*dof);
+    if (bc_value != boundary_values.end())
+      return true;
+  }
+
+  return false;
+}
+//-----------------------------------------------------------------------------
 void SystemAssembler::assemble_interior_facet(GenericMatrix* A,
-                                              GenericVector* b,
-                                              UFC& A_ufc, UFC& b_ufc,
-                                              const Form& a, const Form& L,
-                                              const Cell& cell0,
-                                              const Cell& cell1,
-                                              const Facet& facet,
-                                              Scratch& data,
-                                              const DirichletBC::Map& boundary_values,
-                                              const bool rescale)
+                                        GenericVector* b,
+                                        UFC& A_ufc, UFC& b_ufc,
+                                        const Form& a, const Form& L,
+                                        const Cell& cell0,
+                                        const Cell& cell1,
+                                        const Facet& facet,
+                                        Scratch& data,
+                                        const DirichletBC::Map& boundary_values,
+                                        const bool rescale)
 {
   const std::size_t D = cell0.mesh().topology().dim();
 
@@ -807,14 +827,14 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix* A,
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble_exterior_facet(GenericMatrix* A,
-                                              GenericVector* b,
-                                              UFC& A_ufc, UFC& b_ufc,
-                                              const Form& a, const Form& L,
-                                              const Cell& cell,
-                                              const Facet& facet,
-                                              Scratch& data,
-                                              const DirichletBC::Map& boundary_values,
-                                              const bool rescale)
+                                        GenericVector* b,
+                                        UFC& A_ufc, UFC& b_ufc,
+                                        const Form& a, const Form& L,
+                                        const Cell& cell,
+                                        const Facet& facet,
+                                        Scratch& data,
+                                        const DirichletBC::Map& boundary_values,
+                                        const bool rescale)
 {
   const std::size_t local_facet = cell.index(facet);
 

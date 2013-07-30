@@ -121,23 +121,23 @@ namespace dolfin
                                                      const Cell& cell1,
                                                      const Cell& cell2,
                                                      const Facet& facet,
-                                         const MeshFunction<std::size_t>* exterior_facet_domains);
+                      const MeshFunction<std::size_t>* exterior_facet_domains);
 
     static void cell_wise_assembly(GenericMatrix* A, GenericVector* b,
                                    const Form& a, const Form& L,
                                    UFC& A_ufc, UFC& b_ufc, Scratch& data,
                                    const DirichletBC::Map& boundary_values,
-                                   const MeshFunction<std::size_t>* cell_domains,
-                                   const MeshFunction<std::size_t>* exterior_facet_domains,
-                                   const bool rescale );
+                       const MeshFunction<std::size_t>* cell_domains,
+                       const MeshFunction<std::size_t>* exterior_facet_domains,
+                       const bool rescale );
 
     static void facet_wise_assembly(GenericMatrix* A, GenericVector* b,
                                     const Form& a, const Form& L,
                                     UFC& A_ufc, UFC& b_ufc, Scratch& data,
                                     const DirichletBC::Map& boundary_values,
-                                    const MeshFunction<std::size_t>* cell_domains,
-                                    const MeshFunction<std::size_t>* exterior_facet_domains,
-                                    const MeshFunction<std::size_t>* interior_facet_domains,
+                       const MeshFunction<std::size_t>* cell_domains,
+                       const MeshFunction<std::size_t>* exterior_facet_domains,
+                       const MeshFunction<std::size_t>* interior_facet_domains,
                                     const bool rescale);
 
     static void assemble_interior_facet(GenericMatrix* A, GenericVector* b,
@@ -160,8 +160,13 @@ namespace dolfin
 
     static void apply_bc(double* A, double* b,
                          const DirichletBC::Map& boundary_values,
-                         const std::vector<const std::vector<dolfin::la_index>* >& global_dofs,
+         const std::vector<const std::vector<dolfin::la_index>* >& global_dofs,
                          const bool rescale);
+
+    // Return true if cell has an Dirichlet/essential boundary
+    // condition applied
+    static bool has_bc(const DirichletBC::Map& boundary_values,
+                       const std::vector<dolfin::la_index>& dofs);
 
     // Class to hold temporary data
     class Scratch
