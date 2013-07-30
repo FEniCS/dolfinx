@@ -456,10 +456,26 @@ boost::shared_ptr<GenericDofMap>
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<GenericDofMap>
-  DofMap::collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
+  DofMap::collapse(boost::unordered_map<std::size_t, std::size_t>&
+                   collapsed_map,
                    const Mesh& mesh) const
 {
-  return boost::shared_ptr<GenericDofMap>(new DofMap(collapsed_map, *this, mesh));
+  return boost::shared_ptr<GenericDofMap>(new DofMap(collapsed_map,
+                                                     *this, mesh));
+}
+//-----------------------------------------------------------------------------
+std::vector<dolfin::la_index> DofMap::dofs() const
+{
+  std::vector<la_index> tmp;
+  tmp.reserve(_dofmap.size()*max_cell_dimension());
+  std::vector<std::vector<dolfin::la_index> >::const_iterator cell_dofs;
+  for (cell_dofs = _dofmap.begin(); cell_dofs != _dofmap.end(); ++cell_dofs)
+    tmp.insert(tmp.end(), cell_dofs->begin(), cell_dofs->end());
+
+  // Copy into a set
+  std::set<la_index> dof_set(tmp.begin(), tmp.end());
+
+  return std::vector<la_index>(dof_set.begin(), dof_set.end());
 }
 //-----------------------------------------------------------------------------
 void DofMap::set(GenericVector& x, double value) const

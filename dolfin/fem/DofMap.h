@@ -93,7 +93,8 @@ namespace dolfin
   private:
 
     // Create a sub-dofmap (a view) from parent_dofmap
-    DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& component,
+    DofMap(const DofMap& parent_dofmap,
+           const std::vector<std::size_t>& component,
            const Mesh& mesh);
 
     // Create a collapsed dofmap from parent_dofmap
@@ -356,8 +357,11 @@ namespace dolfin
     ///     DofMap
     ///         The collapsed dofmap.
     boost::shared_ptr<GenericDofMap>
-          collapse(boost::unordered_map<std::size_t, std::size_t>& collapsed_map,
-                   const Mesh& mesh) const;
+          collapse(boost::unordered_map<std::size_t, std::size_t>&
+                   collapsed_map, const Mesh& mesh) const;
+
+    // FIXME: Document
+    std::vector<dolfin::la_index> dofs() const;
 
     /// Set dof entries in vector to a specified value. Parallel layout
     /// of vector must be consistent with dof map range.
