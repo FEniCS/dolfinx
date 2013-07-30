@@ -464,13 +464,22 @@ boost::shared_ptr<GenericDofMap>
                                                      *this, mesh));
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::la_index> DofMap::dofs() const
+std::vector<dolfin::la_index> DofMap::dofs(std::size_t r0, std::size_t r1) const
 {
   std::vector<la_index> tmp;
   tmp.reserve(_dofmap.size()*max_cell_dimension());
   std::vector<std::vector<dolfin::la_index> >::const_iterator cell_dofs;
   for (cell_dofs = _dofmap.begin(); cell_dofs != _dofmap.end(); ++cell_dofs)
-    tmp.insert(tmp.end(), cell_dofs->begin(), cell_dofs->end());
+  {
+    for (std::size_t i = 0; i < cell_dofs->size(); ++i)
+    {
+      const std::size_t dof = (*cell_dofs)[i];
+      if (dof >= r0 && dof < r1)
+        tmp.push_back(dof);
+    }
+
+    //tmp.insert(tmp.end(), cell_dofs->begin(), cell_dofs->end());
+  }
 
   // Copy into a set
   std::set<la_index> dof_set(tmp.begin(), tmp.end());
