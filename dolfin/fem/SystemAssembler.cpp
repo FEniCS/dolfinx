@@ -379,6 +379,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix* A, GenericVector* b,
   Progress p("Assembling system (cell-wise)", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
+    // FIXME: Move this to avoid reset when not required
     // Reset cell tensor and vector
     std::fill(data.Ae.begin(), data.Ae.end(), 0.0);
     std::fill(data.be.begin(), data.be.end(), 0.0);
@@ -392,7 +393,10 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix* A, GenericVector* b,
     }
 
     // Compute cell tensor for A
-    if (A_cell_integral)
+    dolfin_assert(a_dofs[1]);
+    bool compute_Ae = (A && A_cell_integral)
+                       || (A_cell_integral && has_bc(boundary_values, *(a_dofs[1])));
+    if (compute_Ae)
     {
       // Update to current cell
       A_ufc.update(*cell);
