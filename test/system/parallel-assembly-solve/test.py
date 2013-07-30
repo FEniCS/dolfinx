@@ -19,23 +19,27 @@
 #
 # Modified by Johan Hake
 # Modified by Johannes Ring 2011
+# Modified by Garth N. Wells 2013
 #
 # First added:  2009-08-17
-# Last changed: 2011-03-12
+# Last changed: 2013-07-06
 
 import sys
-from instant import get_status_output
-from dolfin import has_mpi, has_parmetis
+import subprocess
+from dolfin import has_mpi, has_parmetis, has_scotch
 
-if not (has_mpi() and has_parmetis()):
-    print "DOLFIN has not been compiled with mpi and Parmetis. Test is not run."
+if not (has_mpi()):
+    print "DOLFIN has not been compiled with MPI. Test is not run."
+    sys.exit(0)
+elif not (has_parmetis() or has_scotch()):
+    print "DOLFIN has not been compiled with ParMETIS or SCOTCH. Test is not run."
     sys.exit(0)
 
 # Number of processes
 num_processes = 3
 
 # Run solver.py
-failure, output = get_status_output("mpirun -n %d python solver.py" % num_processes)
+output = subprocess.check_output(['mpirun', '-np', str(num_processes), 'python', 'solver.py'])
 if len(sys.argv) > 1 and sys.argv[1] == "--debug":
     print output
 

@@ -24,7 +24,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
 endif()
 
 # Set common include directoris
-include_directories(${PYTHON_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
+include_directories(${PYTHON_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR} ${CMAKE_BINARY_DIR})
 
 # Set numpy version define
 set(DOLFIN_PYTHON_DEFINITIONS -DNUMPY_VERSION_MAJOR=${NUMPY_VERSION_MAJOR} -DNUMPY_VERSION_MINOR=${NUMPY_VERSION_MINOR} -DNUMPY_VERSION_MICRO=${NUMPY_VERSION_MICRO})
@@ -36,16 +36,67 @@ endif()
 
 add_definitions(${DOLFIN_PYTHON_DEFINITIONS})
 
+# Check that swig interface is generated, otherwise re-generate it
+if (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/modules)
+  message(STATUS "")
+  message(STATUS "Generating SWIG interface.")
+  message(STATUS "--------------------------")
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-interface ${CMAKE_BINARY_DIR} 
+    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings ${CMAKE_BINARY_DIR}
+    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
+endif()
+
 # Get combined modules
-file(GLOB COMBINED_MODULES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/modules/*)
+file(GLOB COMBINED_MODULES RELATIVE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/modules/*)
 
 # Sort and reverse the list so la combined module comes early
 list(SORT COMBINED_MODULES)
 list(REVERSE COMBINED_MODULES)
 
+# Get all orginal interface files
+file(GLOB_RECURSE ORIGINAL_INTERFACE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.i)
+
+# Target to copy all swig files from source to build directory
+add_custom_target(copy_swig_files
+  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-swig-files ${CMAKE_BINARY_DIR}
+  DEPENDS ${ORIGINAL_INTERFACE_FILES}
+  )
+
+# Target to generate all swig interface files
+add_custom_target(generate_swig_files
+  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-interface ${CMAKE_BINARY_DIR} 
+  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings ${CMAKE_BINARY_DIR}
+  WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
+  COMMENT "Generating all SWIG interface files"
+  )
+
+# Target to generate swig interface files
+add_custom_target(generate_swig_interface
+  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-interface ${CMAKE_BINARY_DIR} 
+  WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
+  COMMENT "Generating SWIG interface files"
+  )
+
+# Target to generate swig docstring files
+add_custom_target(generate_swig_docstrings
+  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings ${CMAKE_BINARY_DIR}
+  WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
+  COMMENT "Generating SWIG docstring files from C++ headers"
+  )
+
+# Target to generate swig docstring files with debug
+add_custom_target(generate_swig_docstrings_with_debug
+  COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-swig-docstrings ${CMAKE_BINARY_DIR} DEBUG
+  WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
+  COMMENT "Generating SWIG docstring files from C++ headers (DEBUG modus)"
+  )
+
 # Iterate over the combined modules and add each as a target
 foreach(COMBINED_MODULE_DIR ${COMBINED_MODULES})
-  add_subdirectory(${COMBINED_MODULE_DIR})
+  add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/${COMBINED_MODULE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/${COMBINED_MODULE_DIR})
 endforeach()
 
 # List of files which should not be installed

@@ -111,6 +111,9 @@
 %shared_ptr(dolfin::Constant)
 %shared_ptr(dolfin::MeshCoordinates)
 
+// geometry
+%shared_ptr(dolfin::BoundingBoxTree)
+
 // mesh
 %shared_ptr(dolfin::Hierarchical<dolfin::Mesh>)
 %shared_ptr(dolfin::Mesh)

@@ -21,7 +21,6 @@
 // This class is capable of converting a 3D dolfin::CSGGeometry to a
 // CGAL::Polyhedron_3
 
-
 #ifndef __CSG_GEOMETRY_TO_CGAL_CONVERTER_H
 #define __CSG_GEOMETRY_TO_CGAL_CONVERTER_H
 
@@ -36,7 +35,8 @@ namespace dolfin
   class GeometryToCGALConverter
   {
   public:
-    static void convert(const CSGGeometry& geometry, csg::Polyhedron_3& p, bool remove_degenerated=true);
+    static void convert(const CSGGeometry& geometry, csg::Polyhedron_3& p,
+                        bool remove_degenerated=true);
   };
 }
 

@@ -69,7 +69,8 @@ std::string Circle::str(bool verbose) const
 //-----------------------------------------------------------------------------
 // Ellipse
 //-----------------------------------------------------------------------------
-Ellipse::Ellipse(double x0, double x1, double a, double b, std::size_t fragments)
+Ellipse::Ellipse(double x0, double x1, double a, double b,
+                 std::size_t fragments)
   : _x0(x0), _x1(x1), _a(a), _b(b), _fragments(fragments)
 {
   if (_a < DOLFIN_EPS || _b < DOLFIN_EPS)

@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2012-01-20
-// Last changed: 2013-03-06
+// Last changed: 2013-07-08
 
 //=============================================================================
 // Forward declarations of common types in DOLFIN needed for template
@@ -42,6 +42,7 @@ namespace dolfin
   class IntersectionOperator;
   class Vertex;
   class Mesh;
+  class Point;
   class MeshEntity;
   class LocalMeshData;
   template<typename T> class MeshFunction;

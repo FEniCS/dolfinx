@@ -30,11 +30,6 @@ if [ "$BRANCH" = "master" ]; then
     ln -sf $BUILDDIR build
 fi
 
-# Generate files that need generating before building
-if [ ! -d $INSTALLDIR ]; then
-    cmake/scripts/generate-all
-fi
-
 # Configure
 mkdir -p $BUILDDIR
 cd $BUILDDIR

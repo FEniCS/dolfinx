@@ -19,7 +19,7 @@
 // Last changed: 2013-06-23
 
 #include <boost/shared_ptr.hpp>
-#include <dolfin/mesh/Point.h>
+#include <dolfin/geometry/Point.h>
 
 namespace dolfin
 {
