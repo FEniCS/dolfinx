@@ -393,7 +393,6 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix* A, GenericVector* b,
     }
 
     // Compute cell tensor for A
-    dolfin_assert(a_dofs[1]);
     bool compute_Ae = (A && A_cell_integral)
                        || (A_cell_integral && has_bc(boundary_values, *(a_dofs[1])));
     if (compute_Ae)
