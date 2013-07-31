@@ -173,8 +173,8 @@ void SystemAssembler::assemble(GenericMatrix* A, GenericVector* b,
   const MeshFunction<std::size_t>* cell_domains = _a->cell_domains().get();
   if (cell_domains != _L->cell_domains().get())
   {
-    warning("Bilinear and linear forms do not have same cell facet subdomains in \
-SystemAssembler. Taking subdomains from bilinear form");
+    warning("Bilinear and linear forms do not have same cell facet subdomains \
+in SystemAssembler. Taking subdomains from bilinear form");
   }
 
   // Get exterior facet domains
@@ -182,8 +182,8 @@ SystemAssembler. Taking subdomains from bilinear form");
     = _a->exterior_facet_domains().get();
   if (exterior_facet_domains != _L->exterior_facet_domains().get())
   {
-    warning("Bilinear and linear forms do not have same exterior facet subdomains in \
-SystemAssembler. Taking subdomains from bilinear form");
+    warning("Bilinear and linear forms do not have same exterior facet \
+subdomains in SystemAssembler. Taking subdomains from bilinear form");
   }
 
   // Get interior facet domains
@@ -191,8 +191,8 @@ SystemAssembler. Taking subdomains from bilinear form");
     = _a->interior_facet_domains().get();
   if (interior_facet_domains != _L->interior_facet_domains().get())
   {
-    warning("Bilinear and linear forms do not have same interior facet subdomains in \
-SystemAssembler. Taking subdomains from bilinear form");
+    warning("Bilinear and linear forms do not have same interior facet \
+subdomains in SystemAssembler. Taking subdomains from bilinear form");
   }
 
   // Check forms
@@ -211,7 +211,8 @@ SystemAssembler. Taking subdomains from bilinear form");
                  "expected forms (a, L) to share a FunctionSpace");
   }
 
-  // FIXME: This may update coefficients twice. Checked for shared coefficients
+  // FIXME: This may update coefficients twice. Checked for shared
+  //        coefficients
 
   // Update off-process coefficients for a
   std::vector<boost::shared_ptr<const GenericFunction> > coefficients
@@ -245,7 +246,8 @@ SystemAssembler. Taking subdomains from bilinear form");
       _bcs[i]->gather(boundary_values);
   }
 
-  // Modify boundary values for incremental (typically nonlinear) problems
+  // Modify boundary values for incremental (typically nonlinear)
+  // problems
   if (x0)
   {
     if (MPI::num_processes() > 1)
@@ -327,8 +329,8 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix* A, GenericVector* b,
                        const MeshFunction<std::size_t>* exterior_facet_domains,
                        const bool rescale)
 {
-  // FIXME: We can used some std::vectors or array pointers for the A and b
-  // related terms to cut down on code repetition.
+  // FIXME: We can used some std::vectors or array pointers for the A
+  // and b related terms to cut down on code repetition.
 
   // Extract mesh
   const Mesh& mesh = a.mesh();
@@ -392,9 +394,17 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix* A, GenericVector* b,
       b_cell_integral = b_ufc.get_cell_integral(domain);
     }
 
-    // Compute cell tensor for A
+    // Get local-to-global dof maps for cell
+    a_dofs[0] = &(a_dofmaps[0]->cell_dofs(cell->index()));
+    a_dofs[1] = &(a_dofmaps[1]->cell_dofs(cell->index()));
+    L_dofs[0] = &(L_dofmaps[0]->cell_dofs(cell->index()));
+
+    // Check if element matrix is required
+    dolfin_assert(a_dofs[1]);
     bool compute_Ae = (A && A_cell_integral)
-                       || (A_cell_integral && has_bc(boundary_values, *(a_dofs[1])));
+                       || (A_cell_integral && has_bc(boundary_values,
+                                                     *(a_dofs[1])));
+    // Compute cell tensor for A
     if (compute_Ae)
     {
       // Update to current cell
@@ -474,11 +484,6 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix* A, GenericVector* b,
         }
       }
     }
-
-    // Get local-to-global dof maps for cell
-    a_dofs[0] = &(a_dofmaps[0]->cell_dofs(cell->index()));
-    a_dofs[1] = &(a_dofmaps[1]->cell_dofs(cell->index()));
-    L_dofs[0] = &(L_dofmaps[0]->cell_dofs(cell->index()));
 
     dolfin_assert(L_dofs[0] == a_dofs[1]);
 
