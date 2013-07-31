@@ -145,19 +145,9 @@ namespace dolfin
                        const MeshFunction<std::size_t>* interior_facet_domains,
                                     const bool rescale);
 
-    static void assemble_interior_facet(GenericMatrix* A, GenericVector* b,
-                                        UFC& A_ufc, UFC& b_ufc,
-                                        const Form& a, const Form& L,
-                                        const Cell& cell0, const Cell& cell1,
-                                        const Facet& facet,
-                                        Scratch& data,
-                                        const DirichletBC::Map& boundary_values,
-                                        const bool rescale);
-
     static void assemble_exterior_facet(GenericMatrix* A, GenericVector* b,
                                         UFC& A_ufc, UFC& b_ufc,
-                                        const Form& a,
-                                        const Form& L,
+                                        const Form& a, const Form& L,
                                         const Cell& cell, const Facet& facet,
                                         Scratch& data,
                                         const DirichletBC::Map& boundary_values,
