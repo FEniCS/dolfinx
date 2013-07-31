@@ -29,6 +29,11 @@
 #include "DirichletBC.h"
 #include "AssemblerBase.h"
 
+namespace ufc
+{
+  class cell_integral;
+}
+
 namespace dolfin
 {
 
@@ -167,6 +172,12 @@ namespace dolfin
     // condition applied
     static bool has_bc(const DirichletBC::Map& boundary_values,
                        const std::vector<dolfin::la_index>& dofs);
+
+    // Return true if element matrix is required
+    static bool cell_matrix_required(const GenericMatrix* A,
+                                     const ufc::cell_integral* integral,
+                                     const DirichletBC::Map& boundary_values,
+                                     const std::vector<dolfin::la_index>& dofs);
 
     // Class to hold temporary data
     class Scratch

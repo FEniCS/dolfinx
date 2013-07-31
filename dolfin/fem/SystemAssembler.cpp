@@ -255,7 +255,7 @@ subdomains in SystemAssembler. Taking subdomains from bilinear form");
       warning("Parallel symmetric assembly over interior facets for nonlinear \
 problems is untested");
     }
-    dolfin_assert(x0->size() == _a->function_space(1)->dofmap()->global_dimension());
+    dolfin_assert(x0->size()==_a->function_space(1)->dofmap()->global_dimension());
 
     const std::size_t num_bc_dofs = boundary_values.size();
     std::vector<dolfin::la_index> bc_indices;
@@ -399,13 +399,9 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix* A, GenericVector* b,
     a_dofs[1] = &(a_dofmaps[1]->cell_dofs(cell->index()));
     L_dofs[0] = &(L_dofmaps[0]->cell_dofs(cell->index()));
 
-    // Check if element matrix is required
+    // Compute cell tensor for A (if required)
     dolfin_assert(a_dofs[1]);
-    bool compute_Ae = (A && A_cell_integral)
-                       || (A_cell_integral && has_bc(boundary_values,
-                                                     *(a_dofs[1])));
-    // Compute cell tensor for A
-    if (compute_Ae)
+    if (cell_matrix_required(A, A_cell_integral, boundary_values, *a_dofs[1]))
     {
       // Update to current cell
       A_ufc.update(*cell);
@@ -456,8 +452,13 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix* A, GenericVector* b,
         // Extract local facet index
         const std::size_t local_facet = cell->index(*facet);
 
+        // Determine of Ae needs to be computed
+        const bool compute_Ae = (A && A_exterior_facet_integral)
+          || (A_exterior_facet_integral && has_bc(boundary_values,
+                                        *(a_dofs[1])));
+
         // Add exterior facet tensor for A
-        if (A_exterior_facet_integral)
+        if (compute_Ae)
         {
           // Update to current cell
           A_ufc.update(*cell, local_facet);
@@ -705,7 +706,8 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix* A,
   {
     dolfin_error("SystemAssembler.cpp",
                  "assemble system",
-                 "User-defined facet orientation is not supported by system assembler");
+                 "User-defined facet orientation is not supported by system \
+assembler");
   }
 
   const std::size_t cell0_index = cell0.index();
@@ -734,7 +736,7 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix* A,
   if (A_ufc.form.has_interior_facet_integrals())
     compute_tensor_on_one_interior_facet(a, A_ufc, cell0, cell1, facet, 0);
 
-  // Compute facet contribution to
+  // Compute facet contribution to b
   if (b_ufc.form.has_interior_facet_integrals())
     compute_tensor_on_one_interior_facet(L, b_ufc, cell0, cell1, facet, 0);
 
@@ -914,6 +916,19 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix* A,
     A->add(data.Ae.data(), a_dofs);
   if (b)
     b->add(data.be.data(), L_dofs);
+}
+//-----------------------------------------------------------------------------
+inline bool SystemAssembler::cell_matrix_required(const GenericMatrix* A,
+                                          const ufc::cell_integral* integral,
+                                          const DirichletBC::Map& boundary_values,
+                                          const std::vector<dolfin::la_index>& dofs)
+{
+  if (A && integral)
+    return true;
+  else if (integral && has_bc(boundary_values, dofs))
+    return true;
+  else
+    return false;
 }
 //-----------------------------------------------------------------------------
 SystemAssembler::Scratch::Scratch(const Form& a, const Form& L)
