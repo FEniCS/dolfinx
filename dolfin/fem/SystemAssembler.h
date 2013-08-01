@@ -159,7 +159,7 @@ namespace dolfin
 
     // Return true if element matrix is required
     static bool cell_matrix_required(const GenericTensor* A,
-                                     const ufc::cell_integral* integral,
+                                     const void* integral,
                                      const DirichletBC::Map& boundary_values,
                                      const std::vector<dolfin::la_index>& dofs);
 
