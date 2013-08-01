@@ -93,10 +93,6 @@ class TestSystemAssembler(unittest.TestCase):
 
         # Create assembler
         assembler = SystemAssembler(a, L, bc)
-        assembler.rescale = False
-
-        #A_frobenius_norm = 8.6968070656831244
-        #b_l2_norm = 4.5702716358238176
 
         # Test for assembling A and b via assembler object
         A, b = Matrix(), Vector()

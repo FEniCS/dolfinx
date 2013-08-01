@@ -117,13 +117,6 @@ namespace dolfin
 
     class Scratch;
 
-    static void compute_tensor_on_one_interior_facet(const Form& a,
-                                                     UFC& ufc,
-                                                     const Cell& cell0,
-                                                     const Cell& cell1,
-                                                     const Facet& facet,
-                      const MeshFunction<std::size_t>* exterior_facet_domains);
-
     static void
       cell_wise_assembly(boost::array<GenericTensor*, 2>& tensors,
                          boost::array<UFC*, 2>& ufc,
