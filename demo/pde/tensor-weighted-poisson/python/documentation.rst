@@ -189,9 +189,9 @@ Finally we use the UFL function as_matrix() to create the matrix consisting of t
 .. code-block:: python
 
 	# Define conductivity expression and matrix
-	c00 = MeshFunction("double", mesh, "data/c00.xml.gz")
-	c01 = MeshFunction("double", mesh, "data/c01.xml.gz")
-	c11 = MeshFunction("double", mesh, "data/c11.xml.gz")
+	c00 = MeshFunction("double", mesh, "c00.xml.gz")
+	c01 = MeshFunction("double", mesh, "c01.xml.gz")
+	c11 = MeshFunction("double", mesh, "c11.xml.gz")
 
 	c = Expression(cppcode=conductivity_code)
 	c.c00 = c00
