@@ -624,40 +624,39 @@ assembler");
                                      ufc[form]->cell1.vertex_coordinates.data(),
                                      local_facet[0], local_facet[1]);
         }
-      }
 
-      // If we have local facet 0 for cell[i], compute cell
-      // contribution
-      for (std::size_t c = 0; c < num_cells; ++c)
-      {
-        if (local_facet[c] == 0)
+        // If we have local facet 0 for cell[i], compute cell
+        // contribution
+        for (std::size_t c = 0; c < num_cells; ++c)
         {
-          if (cell_integrals[0])
+          if (local_facet[c] == 0)
           {
-            ufc[0]->update(cell[c]);
-            cell_integrals[0]->tabulate_tensor(ufc[0]->A.data(), ufc[0]->w(),
-                                        ufc[0]->cell.vertex_coordinates.data(),
-                                        ufc[0]->cell.orientation);
-            const std::size_t nn = cell_dofs[0][c][0]->size();
-            const std::size_t mm = cell_dofs[0][c][1]->size();
-            for (std::size_t i = 0; i < mm; i++)
+            if (cell_integrals[form])
             {
-              for (std::size_t j = 0; j < nn; j++)
+              ufc[form]->update(cell[c]);
+              cell_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
+                                                    ufc[form]->w(),
+                                                 ufc[form]->cell.vertex_coordinates.data(),
+                                                 ufc[form]->cell.orientation);
+              const std::size_t nn = cell_dofs[form][c][0]->size();
+              if (form == 0)
               {
-                ufc[0]->macro_A[2*nn*mm*c + num_cells*i*nn + nn*c + j]
-                  += ufc[0]->A[i*nn + j];
+                const std::size_t mm = cell_dofs[form][c][1]->size();
+                for (std::size_t i = 0; i < mm; i++)
+                {
+                  for (std::size_t j = 0; j < nn; j++)
+                  {
+                    ufc[form]->macro_A[2*nn*mm*c + num_cells*i*nn + nn*c + j]
+                      += ufc[form]->A[i*nn + j];
+                  }
+                }
+              }
+              else
+              {
+                for (std::size_t i = 0; i < cell_dofs[form][c][0]->size(); i++)
+                  ufc[form]->macro_A[nn*c + i] += ufc[form]->A[i];
               }
             }
-          }
-
-          if (cell_integrals[1])
-          {
-            ufc[1]->update(cell[c]);
-            cell_integrals[1]->tabulate_tensor(ufc[1]->A.data(), ufc[1]->w(),
-                                       ufc[1]->cell.vertex_coordinates.data(),
-                                       ufc[1]->cell.orientation);
-            for (std::size_t i = 0; i < cell_dofs[1][c][0]->size(); i++)
-              ufc[1]->macro_A[cell_dofs[1][c][0]->size()*c + i] += ufc[1]->A[i];
           }
         }
       }
