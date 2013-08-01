@@ -21,7 +21,7 @@
 // Modified by Martin Alnaes 2013
 //
 // First added:  2009-06-22
-// Last changed: 2013-04-18
+// Last changed: 2013-08-01
 
 #include <armadillo>
 #include <boost/array.hpp>
@@ -48,7 +48,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 SystemAssembler::SystemAssembler(const Form& a, const Form& L)
-  : rescale(false), _a(reference_to_no_delete_pointer(a)),
+  : _a(reference_to_no_delete_pointer(a)),
     _L(reference_to_no_delete_pointer(L))
 {
   // Check arity of forms
@@ -57,7 +57,7 @@ SystemAssembler::SystemAssembler(const Form& a, const Form& L)
 //-----------------------------------------------------------------------------
 SystemAssembler::SystemAssembler(const Form& a, const Form& L,
                                  const DirichletBC& bc)
-  : rescale(false), _a(reference_to_no_delete_pointer(a)),
+  : _a(reference_to_no_delete_pointer(a)),
     _L(reference_to_no_delete_pointer(L))
 {
   // Check arity of forms
@@ -69,7 +69,7 @@ SystemAssembler::SystemAssembler(const Form& a, const Form& L,
 //-----------------------------------------------------------------------------
 SystemAssembler::SystemAssembler(const Form& a, const Form& L,
                                  const std::vector<const DirichletBC*> bcs)
-  : rescale(false), _a(reference_to_no_delete_pointer(a)),
+  : _a(reference_to_no_delete_pointer(a)),
     _L(reference_to_no_delete_pointer(L)), _bcs(bcs)
 {
   // Check arity of forms
@@ -78,7 +78,7 @@ SystemAssembler::SystemAssembler(const Form& a, const Form& L,
 //-----------------------------------------------------------------------------
 SystemAssembler::SystemAssembler(boost::shared_ptr<const Form> a,
                                  boost::shared_ptr<const Form> L)
-  : rescale(false), _a(a), _L(L)
+  : _a(a), _L(L)
 {
   // Check arity of forms
   check_arity(_a, _L);
@@ -87,7 +87,7 @@ SystemAssembler::SystemAssembler(boost::shared_ptr<const Form> a,
 SystemAssembler::SystemAssembler(boost::shared_ptr<const Form> a,
                                  boost::shared_ptr<const Form> L,
                                  const DirichletBC& bc)
-  : rescale(false), _a(a), _L(L)
+  : _a(a), _L(L)
 {
   // Check arity of forms
   check_arity(_a, _L);
@@ -99,7 +99,7 @@ SystemAssembler::SystemAssembler(boost::shared_ptr<const Form> a,
 SystemAssembler::SystemAssembler(boost::shared_ptr<const Form> a,
                                  boost::shared_ptr<const Form> L,
                                  const std::vector<const DirichletBC*> bcs)
-  : rescale(false), _a(a), _L(L), _bcs(bcs)
+  : _a(a), _L(L), _bcs(bcs)
 {
   // Check arity of forms
   check_arity(_a, _L);
@@ -291,7 +291,7 @@ problems is untested");
   {
     // Assemble cell-wise (no interior facet integrals)
     cell_wise_assembly(tensors, ufc, data, boundary_values,
-                       cell_domains, exterior_facet_domains, rescale);
+                       cell_domains, exterior_facet_domains);
   }
   else
   {
@@ -315,7 +315,7 @@ problems is untested");
     // Assemble facet-wise (including cell assembly)
     facet_wise_assembly(tensors, ufc, data, boundary_values,
                         cell_domains, exterior_facet_domains,
-                        interior_facet_domains, rescale);
+                        interior_facet_domains);
   }
 
   // Finalise assembly
@@ -334,8 +334,7 @@ SystemAssembler::cell_wise_assembly(boost::array<GenericTensor*, 2>& tensors,
                                     Scratch& data,
                                     const DirichletBC::Map& boundary_values,
                                     const MeshFunction<std::size_t>* cell_domains,
-                                    const MeshFunction<std::size_t>* exterior_facet_domains,
-                                    const bool rescale)
+                                    const MeshFunction<std::size_t>* exterior_facet_domains)
 {
   // Extract mesh
   const Mesh& mesh = ufc[0]->dolfin_form.mesh();
@@ -480,7 +479,7 @@ SystemAssembler::cell_wise_assembly(boost::array<GenericTensor*, 2>& tensors,
 
     // Modify local matrix/element for Dirichlet boundary conditions
     apply_bc(data.Ae[0].data(), data.Ae[1].data(), boundary_values,
-             *cell_dofs[0][0], *cell_dofs[0][1], rescale);
+             *cell_dofs[0][0], *cell_dofs[0][1]);
 
     // Add entries to global tensor
     for (std::size_t form = 0; form < 2; ++form)
@@ -500,8 +499,7 @@ SystemAssembler::facet_wise_assembly(boost::array<GenericTensor*, 2>& tensors,
                                      const DirichletBC::Map& boundary_values,
                       const MeshFunction<std::size_t>* cell_domains,
                       const MeshFunction<std::size_t>* exterior_facet_domains,
-                      const MeshFunction<std::size_t>* interior_facet_domains,
-                      const bool rescale)
+                      const MeshFunction<std::size_t>* interior_facet_domains)
 {
   // Extract mesh
   const Mesh& mesh = ufc[0]->dolfin_form.mesh();
@@ -668,7 +666,7 @@ assembler");
 
       // Modify local tensor for bcs
       apply_bc(ufc[0]->macro_A.data(), ufc[1]->macro_A.data(), boundary_values,
-               macro_dofs[0][0], macro_dofs[0][1], rescale);
+               macro_dofs[0][0], macro_dofs[0][1]);
 
       // Add entries to global tensor
       if (tensors[0])
@@ -758,7 +756,7 @@ assembler");
 
       // Modify local matrix/element for Dirichlet boundary conditions
       apply_bc(data.Ae[0].data(), data.Ae[1].data(), boundary_values,
-               *dofs[0][0], *dofs[0][1], rescale);
+               *dofs[0][0], *dofs[0][1]);
 
       // Add entries to global tensor
       if (tensors[0])
@@ -803,10 +801,9 @@ void SystemAssembler::compute_tensor_on_one_interior_facet(const Form& a,
 }
 //-----------------------------------------------------------------------------
 inline void SystemAssembler::apply_bc(double* A, double* b,
-         const DirichletBC::Map& boundary_values,
-         const std::vector<dolfin::la_index>& global_dofs0,
-         const std::vector<dolfin::la_index>& global_dofs1,
-         const bool rescale)
+                                      const DirichletBC::Map& boundary_values,
+                                      const std::vector<dolfin::la_index>& global_dofs0,
+                                      const std::vector<dolfin::la_index>& global_dofs1)
 {
   dolfin_assert(A);
   dolfin_assert(b);
@@ -829,25 +826,12 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
       // Modify RHS (subtract (bc_column(A))*bc_val from b)
       _b -= _A.row(i)*bc_value->second;
 
-      // Get measure of size of RHS components
-      const double b_norm = arma::norm(_b, 1)/_b.size();
-
       // Zero column
       _A.row(i).fill(0.0);
 
-      // Place 1 on diagonal and bc on RHS (i th row ). Rescale to avoid
-      // distortion of RHS norm.
-      if (!rescale || std::abs(bc_value->second) < (b_norm + DOLFIN_EPS))
-      {
-        _b(i)    = bc_value->second;
-        _A(i, i) = 1.0;
-      }
-      else
-      {
-        dolfin_assert(std::abs(bc_value->second) > 0.0);
-        _b(i)    = b_norm;
-        _A(i, i) = b_norm/bc_value->second;
-      }
+      // Place 1 on diagonal and bc on RHS (i th row ).
+      _b(i)    = bc_value->second;
+      _A(i, i) = 1.0;
     }
   }
 }

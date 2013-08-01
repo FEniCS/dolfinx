@@ -99,11 +99,6 @@ namespace dolfin
     /// Suitable for use inside a (quasi-)Newton solver.
     void assemble(GenericVector& b, const GenericVector& x0);
 
-    /// Rescale Dirichlet (essential) boundary condition entries in
-    /// assembled system. Should be false if the RHS is assembled
-    /// independently of the LHS.
-    bool rescale;
-
   private:
 
     // Check form arity
@@ -129,28 +124,27 @@ namespace dolfin
                                                      const Facet& facet,
                       const MeshFunction<std::size_t>* exterior_facet_domains);
 
-    static void cell_wise_assembly(boost::array<GenericTensor*, 2>& tensors,
-                                   boost::array<UFC*, 2>& ufc,
-                                   Scratch& data,
-                                   const DirichletBC::Map& boundary_values,
-                       const MeshFunction<std::size_t>* cell_domains,
-                       const MeshFunction<std::size_t>* exterior_facet_domains,
-                       const bool rescale );
+    static void
+      cell_wise_assembly(boost::array<GenericTensor*, 2>& tensors,
+                         boost::array<UFC*, 2>& ufc,
+                         Scratch& data,
+                         const DirichletBC::Map& boundary_values,
+                         const MeshFunction<std::size_t>* cell_domains,
+                       const MeshFunction<std::size_t>* exterior_facet_domains);
 
-    static void facet_wise_assembly(boost::array<GenericTensor*, 2>& tensors,
-                                    boost::array<UFC*, 2>& ufc,
-                                    Scratch& data,
-                                    const DirichletBC::Map& boundary_values,
-                       const MeshFunction<std::size_t>* cell_domains,
-                       const MeshFunction<std::size_t>* exterior_facet_domains,
-                       const MeshFunction<std::size_t>* interior_facet_domains,
-                                    const bool rescale);
+    static void
+    facet_wise_assembly(boost::array<GenericTensor*, 2>& tensors,
+                        boost::array<UFC*, 2>& ufc,
+                        Scratch& data,
+                        const DirichletBC::Map& boundary_values,
+                        const MeshFunction<std::size_t>* cell_domains,
+                        const MeshFunction<std::size_t>* exterior_facet_domains,
+                       const MeshFunction<std::size_t>* interior_facet_domains);
 
     static void apply_bc(double* A, double* b,
                          const DirichletBC::Map& boundary_values,
                          const std::vector<dolfin::la_index>& global_dofs0,
-                         const std::vector<dolfin::la_index>& global_dofs1,
-                         const bool rescale);
+                         const std::vector<dolfin::la_index>& global_dofs1);
 
     // Return true if cell has an Dirichlet/essential boundary
     // condition applied
