@@ -148,7 +148,8 @@ namespace dolfin
 
     static void apply_bc(double* A, double* b,
                          const DirichletBC::Map& boundary_values,
-         const std::vector<const std::vector<dolfin::la_index>* >& global_dofs,
+                         const std::vector<dolfin::la_index>& global_dofs0,
+                         const std::vector<dolfin::la_index>& global_dofs1,
                          const bool rescale);
 
     // Return true if cell has an Dirichlet/essential boundary
