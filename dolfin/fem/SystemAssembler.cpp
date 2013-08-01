@@ -694,65 +694,45 @@ assembler");
       // Get local index of facet with respect to the cell
       const std::size_t local_facet = cell.index(*facet);
 
-      // Update UFC objects
-      ufc[0]->update(cell, local_facet);
-      ufc[1]->update(cell, local_facet);
-
-      // Reset some temp data
-      std::fill(ufc[0]->A.begin(), ufc[0]->A.end(), 0.0);
-      std::fill(ufc[1]->A.begin(), ufc[1]->A.end(), 0.0);
-
       // Initialize macro element matrix/vector to zero
       data.zero_cell();
 
-      exterior_facet_integrals[0]=ufc[0]->default_exterior_facet_integral.get();
-      if (exterior_facet_integrals[0])
+      // Loop over lhs and then rhs facet contributions
+      for (std::size_t form = 0; form < 2; ++form)
       {
-        ufc[0]->update(cell, local_facet);
-        exterior_facet_integrals[0]->tabulate_tensor(ufc[0]->A.data(),
-                                                     ufc[0]->w(),
-                                        ufc[0]->cell.vertex_coordinates.data(),
-                                        local_facet);
-        for (std::size_t i = 0; i < data.Ae[0].size(); i++)
-          data.Ae[0][i] += ufc[0]->A[i];
-      }
+        // Update UFC object
+        ufc[form]->update(cell, local_facet);
 
-      exterior_facet_integrals[1]
-        = ufc[1]->default_exterior_facet_integral.get();
-      if (exterior_facet_integrals[1])
-      {
-        ufc[1]->update(cell, local_facet);
-        exterior_facet_integrals[1]->tabulate_tensor(ufc[1]->A.data(),
-                                                     ufc[1]->w(),
-                                        ufc[1]->cell.vertex_coordinates.data(),
-                                        local_facet);
-        for (std::size_t i = 0; i < data.Ae[1].size(); i++)
-          data.Ae[1][i] += ufc[1]->A[i];
-      }
+        // Reset some temp data
+        std::fill(ufc[form]->A.begin(), ufc[form]->A.end(), 0.0);
 
-      // If we have local facet 0, assemble cell integral
-      if (local_facet == 0)
-      {
-        cell_integrals[0] = ufc[0]->default_cell_integral.get();
-        if (cell_integrals[0])
+        exterior_facet_integrals[form]
+          = ufc[form]->default_exterior_facet_integral.get();
+        if (exterior_facet_integrals[form])
         {
-          ufc[0]->update(cell);
-          cell_integrals[0]->tabulate_tensor(ufc[0]->A.data(), ufc[0]->w(),
-                                        ufc[0]->cell.vertex_coordinates.data(),
-                                        ufc[0]->cell.orientation);
-          for (std::size_t i = 0; i < data.Ae[0].size(); i++)
-            data.Ae[0][i] += ufc[0]->A[i];
+          ufc[form]->update(cell, local_facet);
+          exterior_facet_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
+                                                       ufc[form]->w(),
+                                                       ufc[form]->cell.vertex_coordinates.data(),
+                                                       local_facet);
+          for (std::size_t i = 0; i < data.Ae[form].size(); i++)
+            data.Ae[form][i] += ufc[form]->A[i];
         }
 
-        cell_integrals[1] = ufc[1]->default_cell_integral.get();
-        if (cell_integrals[1])
+        // If we have local facet 0, assemble cell integral
+        if (local_facet == 0)
         {
-          ufc[1]->update(cell);
-          cell_integrals[1]->tabulate_tensor(ufc[1]->A.data(), ufc[1]->w(),
-                                        ufc[1]->cell.vertex_coordinates.data(),
-                                        ufc[1]->cell.orientation);
-          for (std::size_t i = 0; i < data.Ae[1].size(); i++)
-            data.Ae[1][i] += ufc[1]->A[i];
+          cell_integrals[form] = ufc[form]->default_cell_integral.get();
+          if (cell_integrals[form])
+          {
+            ufc[form]->update(cell);
+            cell_integrals[form]->tabulate_tensor(ufc[form]->A.data(),
+                                                  ufc[form]->w(),
+                                        ufc[form]->cell.vertex_coordinates.data(),
+                                        ufc[form]->cell.orientation);
+            for (std::size_t i = 0; i < data.Ae[form].size(); i++)
+              data.Ae[form][i] += ufc[form]->A[i];
+          }
         }
       }
 
