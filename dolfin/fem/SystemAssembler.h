@@ -25,6 +25,7 @@
 
 #include <map>
 #include <vector>
+#include <boost/array.hpp>
 #include <boost/shared_ptr.hpp>
 #include "DirichletBC.h"
 #include "AssemblerBase.h"
@@ -123,35 +124,27 @@ namespace dolfin
 
     static void compute_tensor_on_one_interior_facet(const Form& a,
                                                      UFC& ufc,
+                                                     const Cell& cell0,
                                                      const Cell& cell1,
-                                                     const Cell& cell2,
                                                      const Facet& facet,
                       const MeshFunction<std::size_t>* exterior_facet_domains);
 
     static void cell_wise_assembly(GenericMatrix* A, GenericVector* b,
-                                   const Form& a, const Form& L,
-                                   UFC& A_ufc, UFC& b_ufc, Scratch& data,
+                                   boost::array<UFC*, 2>& ufc,
+                                   Scratch& data,
                                    const DirichletBC::Map& boundary_values,
                        const MeshFunction<std::size_t>* cell_domains,
                        const MeshFunction<std::size_t>* exterior_facet_domains,
                        const bool rescale );
 
     static void facet_wise_assembly(GenericMatrix* A, GenericVector* b,
-                                    const Form& a, const Form& L,
-                                    UFC& A_ufc, UFC& b_ufc, Scratch& data,
+                                    boost::array<UFC*, 2>& ufc,
+                                    Scratch& data,
                                     const DirichletBC::Map& boundary_values,
                        const MeshFunction<std::size_t>* cell_domains,
                        const MeshFunction<std::size_t>* exterior_facet_domains,
                        const MeshFunction<std::size_t>* interior_facet_domains,
                                     const bool rescale);
-
-    static void assemble_exterior_facet(GenericMatrix* A, GenericVector* b,
-                                        UFC& A_ufc, UFC& b_ufc,
-                                        const Form& a, const Form& L,
-                                        const Cell& cell, const Facet& facet,
-                                        Scratch& data,
-                                        const DirichletBC::Map& boundary_values,
-                                        const bool rescale);
 
     static void apply_bc(double* A, double* b,
                          const DirichletBC::Map& boundary_values,

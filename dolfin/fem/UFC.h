@@ -74,11 +74,13 @@ namespace dolfin
     const double* const * w() const
     { return &w_pointer[0]; }
 
-    /// Pointer to coefficient data. Used to support UFC interface. None const version
-    double* * w() 
+    /// Pointer to coefficient data. Used to support UFC
+    /// interface. None const version
+    double* * w()
     { return &w_pointer[0]; }
 
-    /// Pointer to macro element coefficient data. Used to support UFC interface.
+    /// Pointer to macro element coefficient data. Used to support UFC
+    /// interface.
     const double* const * macro_w() const
     { return &macro_w_pointer[0]; }
 
@@ -87,16 +89,22 @@ namespace dolfin
     // Finite elements for coefficients
     std::vector<FiniteElement> coefficient_elements;
 
-    // Cell integrals (access through get_cell_integral to get proper fallback to default)
+    // Cell integrals (access through get_cell_integral to get proper
+    // fallback to default)
     std::vector<boost::shared_ptr<ufc::cell_integral> > cell_integrals;
 
-    // Exterior facet integrals (access through get_exterior_facet_integral to get proper fallback to default)
-    std::vector<boost::shared_ptr<ufc::exterior_facet_integral> > exterior_facet_integrals;
+    // Exterior facet integrals (access through
+    // get_exterior_facet_integral to get proper fallback to default)
+    std::vector<boost::shared_ptr<ufc::exterior_facet_integral> >
+      exterior_facet_integrals;
 
-    // Interior facet integrals (access through get_interior_facet_integral to get proper fallback to default)
-    std::vector<boost::shared_ptr<ufc::interior_facet_integral> > interior_facet_integrals;
+    // Interior facet integrals (access through
+    // get_interior_facet_integral to get proper fallback to default)
+    std::vector<boost::shared_ptr<ufc::interior_facet_integral> >
+      interior_facet_integrals;
 
-    // Point integrals (access through get_point_integral to get proper fallback to default)
+    // Point integrals (access through get_point_integral to get
+    // proper fallback to default)
     std::vector<boost::shared_ptr<ufc::point_integral> > point_integrals;
 
   public:
@@ -105,15 +113,18 @@ namespace dolfin
     boost::shared_ptr<ufc::cell_integral> default_cell_integral;
 
     // Default exterior facet integral
-    boost::shared_ptr<ufc::exterior_facet_integral> default_exterior_facet_integral;
+    boost::shared_ptr<ufc::exterior_facet_integral>
+      default_exterior_facet_integral;
 
     // Default interior facet integral
-    boost::shared_ptr<ufc::interior_facet_integral> default_interior_facet_integral;
+    boost::shared_ptr<ufc::interior_facet_integral>
+      default_interior_facet_integral;
 
     // Default point integral
     boost::shared_ptr<ufc::point_integral> default_point_integral;
 
-    /// Get cell integral over a given domain, falling back to the default if necessary
+    /// Get cell integral over a given domain, falling back to the
+    /// default if necessary
     ufc::cell_integral * get_cell_integral(std::size_t domain)
     {
       if (domain < form.num_cell_domains())
@@ -125,33 +136,37 @@ namespace dolfin
       return default_cell_integral.get();
     }
 
-    /// Get exterior facet integral over a given domain, falling back to the 
-    /// default if necessary
-    ufc::exterior_facet_integral * get_exterior_facet_integral(std::size_t domain)
+    /// Get exterior facet integral over a given domain, falling back
+    /// to the default if necessary
+    ufc::exterior_facet_integral*
+      get_exterior_facet_integral(std::size_t domain)
     {
       if (domain < form.num_exterior_facet_domains())
       {
-        ufc::exterior_facet_integral * integral = exterior_facet_integrals[domain].get();
+        ufc::exterior_facet_integral* integral
+          = exterior_facet_integrals[domain].get();
         if (integral)
           return integral;
       }
       return default_exterior_facet_integral.get();
     }
 
-    /// Get interior facet integral over a given domain, falling back to the 
-    /// default if necessary
-    ufc::interior_facet_integral * get_interior_facet_integral(std::size_t domain)
+    /// Get interior facet integral over a given domain, falling back
+    /// to the default if necessary
+    ufc::interior_facet_integral*
+      get_interior_facet_integral(std::size_t domain)
     {
       if (domain < form.num_interior_facet_domains())
       {
-        ufc::interior_facet_integral * integral = interior_facet_integrals[domain].get();
+        ufc::interior_facet_integral* integral
+          = interior_facet_integrals[domain].get();
         if (integral)
           return integral;
       }
       return default_interior_facet_integral.get();
     }
 
-    /// Get point integral over a given domain, falling back to the 
+    /// Get point integral over a given domain, falling back to the
     /// default if necessary
     ufc::point_integral * get_point_integral(std::size_t domain)
     {
@@ -188,18 +203,22 @@ namespace dolfin
 
   private:
 
-    // Coefficients (std::vector<double*> is used to interface with UFC)
+    // Coefficients (std::vector<double*> is used to interface with
+    // UFC)
     std::vector<std::vector<double> > _w;
     std::vector<double*> w_pointer;
 
-    // Coefficients on macro element (std::vector<double*> is used to interface with UFC)
+    // Coefficients on macro element (std::vector<double*> is used to
+    // interface with UFC)
     std::vector<std::vector<double> > _macro_w;
     std::vector<double*> macro_w_pointer;
 
     // Coefficient functions
     const std::vector<boost::shared_ptr<const GenericFunction> > coefficients;
 
-    // The form
+  public:
+
+    /// The form
     const Form& dolfin_form;
 
   };
