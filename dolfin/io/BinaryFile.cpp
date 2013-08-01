@@ -90,7 +90,8 @@ void BinaryFile::operator>> (Mesh& mesh)
   //t.num_entities.resize(D + 1);
   //read_array(D + 1, t.num_entities.data());
 
-  t.num_entities = std::vector<unsigned int>(t_num_entities.begin(), t_num_entities.end());
+  t.num_entities = std::vector<unsigned int>(t_num_entities.begin(),
+                                             t_num_entities.end());
 
   t.connectivity.resize(D + 1);
   for (std::size_t i = 0; i <= D; i++)
@@ -168,7 +169,8 @@ void BinaryFile::operator<< (const Mesh& mesh)
   write_uint(D);
   if (_store_connectivity)
   {
-    std::vector<std::size_t> t_num_entities(t.num_entities.begin(), t.num_entities.end());
+    std::vector<std::size_t> t_num_entities(t.num_entities.begin(),
+                                            t.num_entities.end());
     write_array(D + 1, t_num_entities.data());
   }
   else
@@ -281,7 +283,8 @@ void BinaryFile::close_write()
 std::size_t BinaryFile::read_uint()
 {
   std::size_t value = 0;
-  boost::iostreams::read(ifilter, (char*) &value, (std::streamsize) sizeof(std::size_t));
+  boost::iostreams::read(ifilter, (char*) &value,
+                         (std::streamsize) sizeof(std::size_t));
   return value;
 }
 //-----------------------------------------------------------------------------
@@ -289,34 +292,25 @@ template <typename T>
 void BinaryFile::read_array(std::size_t n, T* values)
 {
   for (std::size_t i = 0; i < n; ++i)
-    boost::iostreams::read(ifilter, (char*) (values + i), (std::streamsize) sizeof(T));
+  {
+    boost::iostreams::read(ifilter, (char*) (values + i),
+                           (std::streamsize) sizeof(T));
+  }
 }
-//-----------------------------------------------------------------------------
-/*
-void BinaryFile::read_array(std::size_t n, double* values)
-{
-  for (std::size_t i = 0; i < n; ++i)
-    boost::iostreams::read(ifilter, (char*) (values + i), (std::streamsize) sizeof(double));
-}
-*/
 //-----------------------------------------------------------------------------
 void BinaryFile::write_uint(std::size_t value)
 {
-  boost::iostreams::write(ofilter, (char*) &value, (std::streamsize) sizeof(std::size_t));
+  boost::iostreams::write(ofilter, (char*) &value,
+                          (std::streamsize) sizeof(std::size_t));
 }
 //-----------------------------------------------------------------------------
 template <typename T>
 void BinaryFile::write_array(std::size_t n, const T* values)
 {
   for (std::size_t i = 0; i < n; ++i)
-    boost::iostreams::write(ofilter, (char*) &values[i], (std::streamsize) sizeof(T));
+  {
+    boost::iostreams::write(ofilter, (char*) &values[i],
+                            (std::streamsize) sizeof(T));
+  }
 }
-//-----------------------------------------------------------------------------
-/*
-void BinaryFile::write_array(std::size_t n, const double* values)
-{
-  for (std::size_t i = 0; i < n; ++i)
-    boost::iostreams::write(ofilter, (char*) &values[i], (std::streamsize) sizeof(double));
-}
-*/
 //-----------------------------------------------------------------------------
