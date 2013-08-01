@@ -522,7 +522,6 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix* A, GenericVector* b,
   mesh.init(D - 1);
   mesh.init(D - 1, D);
 
-
   // Facet orientation not supported
   if (mesh.data().exists("facet_orientation", D - 1))
   {
@@ -533,17 +532,15 @@ assembler");
   }
 
   // Form ranks
-  const std::size_t a_rank = a.rank();
-  const std::size_t L_rank = L.rank();
+  //const std::size_t a_rank = a.rank();
+  //const std::size_t L_rank = L.rank();
 
   // Collect pointers to dof maps
   std::vector<const GenericDofMap*> a_dofmaps;
-  for (std::size_t i = 0; i < a_rank; ++i)
+  for (std::size_t i = 0; i < 2; ++i)
     a_dofmaps.push_back(a.function_space(i)->dofmap().get());
-
   std::vector<const GenericDofMap*> L_dofmaps;
-  for (std::size_t i = 0; i < L_rank; ++i)
-    L_dofmaps.push_back(L.function_space(i)->dofmap().get());
+  L_dofmaps.push_back(L.function_space(0)->dofmap().get());
 
   // Cell dofmaps
   std::vector<std::vector<const std::vector<dolfin::la_index>* > >
@@ -562,9 +559,11 @@ assembler");
   Progress p("Assembling system (facet-wise)", mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
+    // Number of cells sharing facet
     const std::size_t num_cells = facet->num_entities(mesh.topology().dim());
 
     // Interior facet
+    //if (num_cells == 1 || num_cells == 2)
     if (num_cells == 2)
     {
       for (std::size_t c = 0; c < num_cells; ++c)
@@ -588,30 +587,54 @@ assembler");
       std::fill(b_ufc.macro_A.begin(), b_ufc.macro_A.end(), 0.0);
 
       // Tabulate dofs for cell0 and cell1
-      for (std::size_t i = 0; i < num_cells; ++i)
+      std::size_t num_dofs_a[2] = {0, 0};
+      std::size_t num_dofs_L = 0;
+      for (std::size_t c = 0; c < num_cells; ++c)
       {
-        cell_dofs_a[i][0] = &(a.function_space(0)->dofmap()->cell_dofs(cell_index[i]));
-        cell_dofs_a[i][1] = &(a.function_space(1)->dofmap()->cell_dofs(cell_index[i]));
-        cell_dofs_L[i]    = &(a.function_space(1)->dofmap()->cell_dofs(cell_index[i]));
+        for (int d = 0; d < 2; ++d)
+        {
+          cell_dofs_a[c][d]
+            = &(a.function_space(d)->dofmap()->cell_dofs(cell_index[c]));
+          num_dofs_a[d] +=  cell_dofs_a[c][d]->size();
+        }
+        cell_dofs_L[c]
+          = &(L.function_space(0)->dofmap()->cell_dofs(cell_index[c]));
+        num_dofs_L += cell_dofs_L[c]->size();
       }
 
+      // Resize macro dof vector
+      a_macro_dofs[0].resize(num_dofs_a[0]);
+      a_macro_dofs[1].resize(num_dofs_a[1]);
+      L_macro_dofs[0].resize(num_dofs_L);
+
       // Cell integrals
-      const ufc::cell_integral* A_cell_integral = A_ufc.default_cell_integral.get();
-      const ufc::cell_integral* b_cell_integral = b_ufc.default_cell_integral.get();
+      const ufc::cell_integral* A_cell_integral
+        = A_ufc.default_cell_integral.get();
+      const ufc::cell_integral* b_cell_integral
+        = b_ufc.default_cell_integral.get();
 
       // Compute facet contribution to A
-      if (A_ufc.form.has_interior_facet_integrals())
-        compute_tensor_on_one_interior_facet(a, A_ufc, cell[0], cell[1], *facet, NULL);
+      if (num_cells == 2 && A_ufc.form.has_interior_facet_integrals())
+      {
+        compute_tensor_on_one_interior_facet(a, A_ufc, cell[0], cell[1],
+                                             *facet, NULL);
+      }
 
       // Compute facet contribution to b
-      if (b_ufc.form.has_interior_facet_integrals())
-        compute_tensor_on_one_interior_facet(L, b_ufc, cell[0], cell[1], *facet, NULL);
+      if (num_cells == 2 && b_ufc.form.has_interior_facet_integrals())
+      {
+        compute_tensor_on_one_interior_facet(L, b_ufc, cell[0], cell[1],
+                                             *facet, NULL);
+      }
 
       // If we have local facet 0 for cell[i], compute cell contribution
       for (std::size_t c = 0; c < num_cells; ++c)
       {
         if (local_facet[c] == 0)
         {
+          //if (num_cells == 1)
+          //  cout << "!!!!!!!!!!: " << c << endl;
+
           if (A_cell_integral)
           {
             A_ufc.update(cell[c]);
@@ -621,8 +644,13 @@ assembler");
             const std::size_t nn = cell_dofs_a[c][0]->size();
             const std::size_t mm = cell_dofs_a[c][1]->size();
             for (std::size_t i = 0; i < mm; i++)
+            {
               for (std::size_t j = 0; j < nn; j++)
-                A_ufc.macro_A[2*nn*mm*c + 2*i*nn + nn*c + j] += A_ufc.A[i*nn+j];
+              {
+                A_ufc.macro_A[2*nn*mm*c + num_cells*i*nn + nn*c + j]
+                  += A_ufc.A[i*nn + j];
+              }
+            }
           }
 
           if (b_cell_integral)
@@ -636,11 +664,6 @@ assembler");
           }
         }
       }
-
-      // Resize macro dof vector
-      a_macro_dofs[0].resize(cell_dofs_a[0][0]->size() + cell_dofs_a[1][0]->size());
-      a_macro_dofs[1].resize(cell_dofs_a[0][1]->size() + cell_dofs_a[1][1]->size());
-      L_macro_dofs[0].resize(cell_dofs_L[0]->size() + cell_dofs_L[1]->size());
 
       // Tabulate dofs on macro element
       for (std::size_t c = 0; c < num_cells; ++c)
