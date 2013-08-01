@@ -1,4 +1,4 @@
-# Copyright (C) 2007-2011 Anders Logg
+# Copyright (C) 2012-2013 Benjamin Kehlet
 #
 # This file is part of DOLFIN.
 #
@@ -15,10 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# First added:  2007-08-16
-# Last changed: 2012-11-12
-
-# Begin demo
+# First added:  2012-11-12
+# Last changed: 2013-03-15
 
 from dolfin import *
 
