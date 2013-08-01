@@ -129,7 +129,7 @@ namespace dolfin
                                                      const Facet& facet,
                       const MeshFunction<std::size_t>* exterior_facet_domains);
 
-    static void cell_wise_assembly(GenericMatrix* A, GenericVector* b,
+    static void cell_wise_assembly(boost::array<GenericTensor*, 2>& tensors,
                                    boost::array<UFC*, 2>& ufc,
                                    Scratch& data,
                                    const DirichletBC::Map& boundary_values,
@@ -137,7 +137,7 @@ namespace dolfin
                        const MeshFunction<std::size_t>* exterior_facet_domains,
                        const bool rescale );
 
-    static void facet_wise_assembly(GenericMatrix* A, GenericVector* b,
+    static void facet_wise_assembly(boost::array<GenericTensor*, 2>& tensors,
                                     boost::array<UFC*, 2>& ufc,
                                     Scratch& data,
                                     const DirichletBC::Map& boundary_values,
@@ -157,7 +157,7 @@ namespace dolfin
                        const std::vector<dolfin::la_index>& dofs);
 
     // Return true if element matrix is required
-    static bool cell_matrix_required(const GenericMatrix* A,
+    static bool cell_matrix_required(const GenericTensor* A,
                                      const ufc::cell_integral* integral,
                                      const DirichletBC::Map& boundary_values,
                                      const std::vector<dolfin::la_index>& dofs);
@@ -173,8 +173,7 @@ namespace dolfin
 
       void zero_cell();
 
-      std::vector<double> Ae;
-      std::vector<double> be;
+      boost::array<std::vector<double>, 2> Ae;
 
     };
 
