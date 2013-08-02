@@ -20,6 +20,9 @@
 #
 # This program generates a mesh for a polygonal domain that is
 # represented by a list of its vertices.
+# Modified 02-08-2013 Solveig Masvie
+# Begin demo
+
 
 from dolfin import *
 
@@ -45,21 +48,8 @@ domain_vertices = [Point(0.0, 0.0),
 PolygonalMeshGenerator.generate(mesh, domain_vertices, 0.25);
 plot(mesh, interactive=True)
 
-# Polyhedron face vertices
-face_vertices = [Point(0.0, 0.0, 0.0),
-                 Point(0.0, 0.0, 1.0),
-                 Point(0.0, 1.0, 0.0),
-                 Point(1.0, 0.0, 0.0)]
-
-# Polyhedron faces (of a tetrahedron)
-face0 = [3, 2, 1]
-face1 = [0, 3, 1]
-face2 = [0, 2, 3]
-face3 = [0, 1, 2]
-faces = [face0, face1, face2, face3]
-
-# Generate 3D mesh and plot
-PolyhedralMeshGenerator.generate(mesh, face_vertices, faces, 0.05)
+# Generate 3D mesh from OFF file input (tetrahedron)
+PolyhedralMeshGenerator.generate(mesh, "../tetrahedron.off", 0.05)
 plot(mesh, interactive=True)
 
 # Generate 3D mesh from OFF file input (cube)

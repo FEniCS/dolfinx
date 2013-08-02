@@ -1,0 +1,13 @@
+This demo illustrates how to:
+
+* generate 2D mesh of a polygon
+* generate 3D mesh of a polyhedral using .off files
+
+
+Equation and problem definition
+-------------------------------
+
+We do not have any equation in this demo. The demo focuses purely on generating meshes. In this demo we will use the following classes in dolfin:
+
+* :py:class:`PolygonalMeshGenerator <dolfin.cpp.mesh.PolygonalMeshGenerator>`
+* :py:class:`PolyhedralMeshGenerator <dolfin.cpp.mesh.PolyhedralMeshGenerator
