@@ -714,6 +714,20 @@ void PETScPreconditioner::set_coordinates(const std::vector<double>& x,
   gdim = dim;
 }
 //-----------------------------------------------------------------------------
+void PETScPreconditioner::set_fieldsplit(const std::vector<
+                                      std::vector<dolfin::la_index> >& fields)
+{
+  std::vector<IS> index_sets(fields.size());
+  //IS index_sets[2];
+  for (std::size_t i = 0; i < fields.size(); ++i)
+  {
+    IS* tmp = index_sets.data();
+    ISCreateGeneral(PETSC_COMM_WORLD, fields[i].size(), fields[i].data(),
+                    PETSC_OWN_POINTER, &tmp[i]);
+//                    PETSC_OWN_POINTER, &index_sets[i]);
+  }
+}
+//-----------------------------------------------------------------------------
 std::string PETScPreconditioner::str(bool verbose) const
 {
   std::stringstream s;
