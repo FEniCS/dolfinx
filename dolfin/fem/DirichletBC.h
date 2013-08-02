@@ -323,7 +323,6 @@ namespace dolfin
     void get_boundary_values(Map& boundary_values,
                              std::string method="default") const;
 
-
     /// Get boundary values from neighbour processes. If a method other than
     /// "pointwise" is used, this is necessary to ensure all boundary dofs are
     /// marked on all processes.
