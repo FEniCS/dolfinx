@@ -21,7 +21,7 @@
 // Modified by Kristoffer Selim 2008
 //
 // First added:  2006-06-05
-// Last changed: 2013-05-22
+// Last changed: 2013-08-02
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -696,10 +696,10 @@ bool TetrahedronCell::contains(const Cell& cell, const Point& point) const
   const double x3 = inv_det*( d13*b1 - d23*b2 + d33*b3);
 
   // Check if point is inside cell
-  return (x1 > -DOLFIN_EPS &&
-          x2 > -DOLFIN_EPS &&
-          x3 > -DOLFIN_EPS &&
-          x1 + x2 + x3 < 1.0 + DOLFIN_EPS);
+  return (x1 >= -DOLFIN_EPS_LARGE &&
+          x2 >= -DOLFIN_EPS_LARGE &&
+          x3 >= -DOLFIN_EPS_LARGE &&
+          x1 + x2 + x3 <= 1.0 + DOLFIN_EPS_LARGE);
 }
 //-----------------------------------------------------------------------------
 std::string TetrahedronCell::description(bool plural) const
