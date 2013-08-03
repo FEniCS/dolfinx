@@ -466,8 +466,11 @@ boost::shared_ptr<GenericDofMap>
 //-----------------------------------------------------------------------------
 std::vector<dolfin::la_index> DofMap::dofs(std::size_t r0, std::size_t r1) const
 {
-  std::vector<la_index> tmp;
-  tmp.reserve(_dofmap.size()*max_cell_dimension());
+  // Creat vector to hold dofs
+  std::vector<la_index> _dofs;
+  _dofs.reserve(_dofmap.size()*max_cell_dimension());
+
+  // Insert all dofs into a vector (will contain duplicates)
   std::vector<std::vector<dolfin::la_index> >::const_iterator cell_dofs;
   for (cell_dofs = _dofmap.begin(); cell_dofs != _dofmap.end(); ++cell_dofs)
   {
@@ -475,16 +478,17 @@ std::vector<dolfin::la_index> DofMap::dofs(std::size_t r0, std::size_t r1) const
     {
       const std::size_t dof = (*cell_dofs)[i];
       if (dof >= r0 && dof < r1)
-        tmp.push_back(dof);
+        _dofs.push_back(dof);
     }
-
-    //tmp.insert(tmp.end(), cell_dofs->begin(), cell_dofs->end());
   }
 
-  // Copy into a set
-  std::set<la_index> dof_set(tmp.begin(), tmp.end());
+  // Sort dofs (required to later remove duplicates)
+  std::sort(_dofs.begin(), _dofs.end());
 
-  return std::vector<la_index>(dof_set.begin(), dof_set.end());
+  // Remove duplicates
+  _dofs.erase(std::unique(_dofs.begin(), _dofs.end() ), _dofs.end());
+
+  return _dofs;
 }
 //-----------------------------------------------------------------------------
 void DofMap::set(GenericVector& x, double value) const

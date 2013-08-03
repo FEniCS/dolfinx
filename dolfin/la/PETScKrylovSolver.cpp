@@ -117,9 +117,6 @@ Parameters PETScKrylovSolver::default_parameters()
   Parameters p(KrylovSolver::default_parameters());
   p.rename("petsc_krylov_solver");
 
-  // Preconditioing side
-  p.add("preconditioner_side", "left");
-
   // Norm type used in covergence test
   std::set<std::string> allowed_norm_types;
   allowed_norm_types.insert("preconditioned");
@@ -128,7 +125,7 @@ Parameters PETScKrylovSolver::default_parameters()
   p.add("convergence_norm_type", allowed_norm_types);
 
   // Control PETSc performance profiling
-  p.add("profile", false);
+  p.add<bool>("profile");
 
   return p;
 }
@@ -387,12 +384,15 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
         _A->size(0), _A->size(1));
   }
 
-  const bool profile_performance = parameters["profile"];
-  if (profile_performance)
+  if (parameters["profile"].is_set())
   {
-    PetscLogBegin();
-    KSPSolve(*_ksp, *b.vec(), *x.vec());
-    PetscLogView(PETSC_VIEWER_STDOUT_WORLD);
+    const bool profile_performance = parameters["profile"];
+    if (profile_performance)
+    {
+      PetscLogBegin();
+      KSPSolve(*_ksp, *b.vec(), *x.vec());
+      PetscLogView(PETSC_VIEWER_STDOUT_WORLD);
+    }
   }
   else
     KSPSolve(*_ksp, *b.vec(), *x.vec());

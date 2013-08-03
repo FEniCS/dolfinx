@@ -725,18 +725,22 @@ void PETScPreconditioner::set_fieldsplit(PETScKrylovSolver& solver,
 
   // Get PETSc PC pointer
   PC pc;
+  dolfin_assert(solver.ksp());
   KSPGetPC(*(solver.ksp()), &pc);
 
-  // Creare index sets
-  std::vector<IS> index_sets(fields.size());
+  // Add split for each field
   for (std::size_t i = 0; i < fields.size(); ++i)
   {
-    IS* tmp = index_sets.data();
+    // Create IndexSet
+    IS is;
     ISCreateGeneral(PETSC_COMM_WORLD, fields[i].size(), fields[i].data(),
-                    PETSC_OWN_POINTER, &tmp[i]);
-//                    PETSC_OWN_POINTER, &index_sets[i]);
+                    PETSC_USE_POINTER, &is);
 
-    PCFieldSplitSetIS(pc, split_names[i].c_str(), tmp[i]);
+    // Add split
+    PCFieldSplitSetIS(pc, split_names[i].c_str(), is);
+
+    // Clean up IndexSet
+    ISDestroy(&is);
   }
 }
 //-----------------------------------------------------------------------------
