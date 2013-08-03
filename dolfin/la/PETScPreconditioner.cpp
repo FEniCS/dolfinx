@@ -714,17 +714,29 @@ void PETScPreconditioner::set_coordinates(const std::vector<double>& x,
   gdim = dim;
 }
 //-----------------------------------------------------------------------------
-void PETScPreconditioner::set_fieldsplit(const std::vector<
-                                      std::vector<dolfin::la_index> >& fields)
+void PETScPreconditioner::set_fieldsplit(PETScKrylovSolver& solver,
+                    const std::vector<std::vector<dolfin::la_index> >& fields,
+                    const std::vector<std::string>& split_names)
 {
+  dolfin_assert(fields.size() == split_names.size());
+
+  if (fields.empty())
+    return;
+
+  // Get PETSc PC pointer
+  PC pc;
+  KSPGetPC(*(solver.ksp()), &pc);
+
+  // Creare index sets
   std::vector<IS> index_sets(fields.size());
-  //IS index_sets[2];
   for (std::size_t i = 0; i < fields.size(); ++i)
   {
     IS* tmp = index_sets.data();
     ISCreateGeneral(PETSC_COMM_WORLD, fields[i].size(), fields[i].data(),
                     PETSC_OWN_POINTER, &tmp[i]);
 //                    PETSC_OWN_POINTER, &index_sets[i]);
+
+    PCFieldSplitSetIS(pc, split_names[i].c_str(), tmp[i]);
   }
 }
 //-----------------------------------------------------------------------------
