@@ -1,3 +1,4 @@
+ - CMake now takes care of calling the correct generate-foo script if so needed.
  - Feature: Add new built-in computational geometry library (BoundingBoxTree)
  - Feature: Add support for setting name and label to an Expression when constructed
  - Feature: Add support for passing a scalar GenericFunction as default value to a CompiledExpression

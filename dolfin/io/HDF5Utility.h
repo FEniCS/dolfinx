@@ -17,7 +17,7 @@
 //
 //
 // First added:  2013-05-07
-// Last changed: 2013-05-09
+// Last changed: 2013-06-18
 
 #ifndef __DOLFIN_HDF5UTILITY_H
 #define __DOLFIN_HDF5UTILITY_H
@@ -27,8 +27,11 @@
 #include <string>
 #include <vector>
 
+#include "dolfin/common/types.h"
+
 namespace dolfin
 {
+  class GenericDofMap;
   class Mesh;
 
   /// This class contains some algorithms which do not explicitly
@@ -39,11 +42,42 @@ namespace dolfin
   {
   public:
 
+    /// Generate two vectors, in the range of "vector_range" 
+    /// of the global DOFs.
+    /// global_cells is a list of cells which point to the DOF (non-unique)
+    /// and remote_local_dofi is the pertinent local_dof of the cell.
+    /// input_cells is a list of cells held on this process, and
+    /// input_cell_dofs/x_cell_dofs list their local_dofs.
+
+    static void map_gdof_to_cell(const std::vector<std::size_t>& input_cells,
+                          const std::vector<dolfin::la_index>& input_cell_dofs,
+                          const std::vector<std::size_t>& x_cell_dofs,
+                          const std::pair<dolfin::la_index, dolfin::la_index>
+                          vector_range,
+                          std::vector<std::size_t>& global_cells,
+                          std::vector<std::size_t>& remote_local_dofi);
+
+    /// Given the cell dof index specified
+    /// as (process, local_cell_index, local_cell_dof_index)
+    /// get the global_dof index from that location, and return it for all
+    /// DOFs in the range of "vector_range"
+    static void get_global_dof(
+         const std::vector<std::pair<std::size_t, std::size_t> >& cell_ownership,
+         const std::vector<std::size_t>& remote_local_dofi,
+         const std::pair<std::size_t, std::size_t> vector_range,
+         const GenericDofMap& dofmap,
+         std::vector<dolfin::la_index>& global_dof);
+
+    /// Get cell owners for an arbitrary set of cells.
+    /// Returns (process, local index) pairs
+    static std::vector<std::pair<std::size_t, std::size_t> >
+      cell_owners(const Mesh&mesh, const std::vector<std::size_t> cells);
+
     /// Get mapping of cells in the assigned global range of the
     /// current process to remote process and remote local index.
-    static void compute_global_mapping(std::vector<std::pair<std::size_t,
-                                       std::size_t> >& global_owner,
-                                       const Mesh& mesh);
+    static void cell_owners_in_range(std::vector<std::pair<std::size_t,
+                                     std::size_t> >& global_owner,
+                                     const Mesh& mesh);
 
     /// Convert LocalMeshData structure to a Mesh, used when running
     /// in serial

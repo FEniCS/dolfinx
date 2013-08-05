@@ -20,7 +20,7 @@
 // Modified by Andre Massing 2009
 //
 // First added:  2003-11-28
-// Last changed: 2013-05-08
+// Last changed: 2013-06-21
 
 #include <algorithm>
 #include <map>
@@ -36,6 +36,7 @@
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/UFC.h>
+#include <dolfin/geometry/Point.h>
 #include <dolfin/io/File.h>
 #include <dolfin/io/XMLFile.h>
 #include <dolfin/la/GenericVector.h>
@@ -43,9 +44,9 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/mesh/Point.h>
 #include <dolfin/mesh/Restriction.h>
 #include <dolfin/parameter/GlobalParameters.h>
+#include <dolfin/geometry/BoundingBoxTree.h>
 #include "Expression.h"
 #include "FunctionSpace.h"
 #include "Function.h"
@@ -370,27 +371,33 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
   // Find the cell that contains x
   const double* _x = x.data();
   const Point point(mesh.geometry().dim(), _x);
-  int id = mesh.intersected_cell(point);
 
-  // If not found, use the closest cell
-  if (id == -1)
-  {
-    if (allow_extrapolation)
+  // FIXME: Testing
+  int ID = 0;
+
+    unsigned int id = mesh.bounding_box_tree()->compute_first_entity_collision(point, mesh);
+
+    // If not found, use the closest cell
+    if (id == std::numeric_limits<unsigned int>::max())
     {
-      id = mesh.closest_cell(point);
-      cout << "Extrapolating function value at x = " << point << " (not inside domain)." << endl;
+      if (allow_extrapolation)
+      {
+        id = mesh.bounding_box_tree()->compute_closest_entity(point, mesh).first;
+        cout << "Extrapolating function value at x = " << point << " (not inside domain)." << endl;
+      }
+      else
+      {
+        cout << "Evaluating at x = " << point << endl;
+        dolfin_error("Function.cpp",
+                     "evaluate function at point",
+                     "The point is not inside the domain. Consider setting \"allow_extrapolation\" to allow extrapolation");
+      }
     }
-    else
-    {
-      cout << "Evaluating at x = " << point << endl;
-      dolfin_error("Function.cpp",
-                   "evaluate function at point",
-                   "The point is not inside the domain. Consider setting \"allow_extrapolation\" to allow extrapolation");
-    }
-  }
+
+    ID = id;
 
   // Create cell that contains point
-  const Cell cell(mesh, id);
+  const Cell cell(mesh, ID);
   const UFCCell ufc_cell(cell);
 
   // Call evaluate function
@@ -500,49 +507,56 @@ void Function::non_matching_eval(Array<double>& values,
   const std::size_t dim = mesh.geometry().dim();
   const Point point(dim, _x);
 
-  // Alternative 1: Find cell that point (x) intersects
-  int id = mesh.intersected_cell(point);
+  // FIXME: Testing
+  int ID = 0;
 
-  // Check whether we are allowed to extrapolate to evaluate
-  if (id == -1 && !allow_extrapolation)
-  {
-    dolfin_error("Function.cpp",
-                 "evaluate function at point",
-                 "The point is not inside the domain. Consider setting \"allow_extrapolation\" to allow extrapolation");
-  }
+    // Alternative 1: Find cell that point (x) intersects
+    unsigned int id = mesh.bounding_box_tree()->compute_first_entity_collision(point, mesh);
 
-  // Alternative 2: Compute closest cell to point (x)
-  if (id == -1 && allow_extrapolation && dim == 2)
-    id = mesh.closest_cell(point);
-
-  // Alternative 3: Compute cell that contains barycenter of ufc_cell
-  // NB: This is slightly heuristic, but should work well for
-  // evaluation of points on refined meshes
-  if (id == -1 && allow_extrapolation)
-  {
-    // Extract vertices of ufc_cell
-    const double * const * vertices = ufc_cell.coordinates;
-
-    Point barycenter;
-    for (std::size_t i = 0; i <= dim; i++)
+    // Check whether we are allowed to extrapolate to evaluate
+    if (id == std::numeric_limits<unsigned int>::max() && !allow_extrapolation)
     {
-      Point vertex(dim, vertices[i]);
-      barycenter += vertex;
+      dolfin_error("Function.cpp",
+                   "evaluate function at point",
+                   "The point is not inside the domain. Consider setting \"allow_extrapolation\" to allow extrapolation");
     }
-    barycenter /= (dim + 1);
-    id = mesh.intersected_cell(barycenter);
-  }
 
-  // Throw error if all alternatives failed.
-  if (id == -1)
-  {
-    dolfin_error("Function.cpp",
-                 "evaluate function at point",
-                 "No matching cell found");
-  }
+    // FIXME: Remove dim == 2 here!
+
+    // Alternative 2: Compute closest cell to point (x)
+    if (id == std::numeric_limits<unsigned int>::max() && allow_extrapolation && dim == 2)
+      id = mesh.bounding_box_tree()->compute_closest_entity(point, mesh).first;
+
+    // Alternative 3: Compute cell that contains barycenter of ufc_cell
+    // NB: This is slightly heuristic, but should work well for
+    // evaluation of points on refined meshes
+    if (id == std::numeric_limits<unsigned int>::max() && allow_extrapolation)
+    {
+      // Extract vertices of ufc_cell
+      const double * const * vertices = ufc_cell.coordinates;
+
+      Point barycenter;
+      for (std::size_t i = 0; i <= dim; i++)
+      {
+        Point vertex(dim, vertices[i]);
+        barycenter += vertex;
+      }
+      barycenter /= (dim + 1);
+      id = mesh.bounding_box_tree()->compute_first_entity_collision(barycenter, mesh);
+    }
+
+    // Throw error if all alternatives failed
+    if (id == std::numeric_limits<unsigned int>::max())
+    {
+      dolfin_error("Function.cpp",
+                   "evaluate function at point",
+                   "No matching cell found");
+    }
+
+    ID = id;
 
   // Create cell that contains point
-  const Cell cell(mesh, id);
+  const Cell cell(mesh, ID);
   const UFCCell new_ufc_cell(cell);
 
   // Call evaluate function

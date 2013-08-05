@@ -22,7 +22,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2013-05-26
+// Last changed: 2013-08-02
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -514,9 +514,9 @@ bool TriangleCell::contains(const Cell& cell, const Point& point) const
   const double x2 = inv_det*(-a12*b1 + a11*b2);
 
   // Check if point is inside
-  return (x1 > -DOLFIN_EPS &&
-          x2 > -DOLFIN_EPS &&
-          x1 + x2 < 1.0 + DOLFIN_EPS);
+  return (x1 >= -DOLFIN_EPS_LARGE &&
+          x2 >= -DOLFIN_EPS_LARGE &&
+          x1 + x2 <= 1.0 + DOLFIN_EPS_LARGE);
 }
 //-----------------------------------------------------------------------------
 std::string TriangleCell::description(bool plural) const

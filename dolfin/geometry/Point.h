@@ -28,11 +28,6 @@
 #include <iostream>
 #include <dolfin/log/log.h>
 
-#ifdef HAS_CGAL
-#include <CGAL/Bbox_3.h>
-#include <CGAL/Point_3.h>
-#endif
-
 namespace dolfin
 {
   /// A Point represents a point in :math:`\mathbb{R}^3` with
@@ -176,24 +171,6 @@ namespace dolfin
     /// Assignment operator
     const Point& operator= (const Point& p)
     { _x[0] = p._x[0]; _x[1] = p._x[1]; _x[2] = p._x[2]; return *this; }
-
-    #ifdef HAS_CGAL
-    /// Conversion operator to appropriate CGAL Point_3 class.
-    template <typename Kernel>
-    operator CGAL::Point_3<Kernel>() const
-    { return CGAL::Point_3<Kernel>(_x[0],_x[1],_x[2]); }
-
-    /// Constructor taking a CGAL::Point_3. Allows conversion from
-    /// CGAL Point_3 class to Point class.
-    template <typename Kernel>
-    Point (const CGAL::Point_3<Kernel> & point)
-    { _x[0] = point.x(); _x[1] = point.y(); _x[2] = point.z(); }
-
-    /// Provides a CGAL bounding box, using conversion operator.
-    template <typename Kernel>
-    CGAL::Bbox_3  bbox()
-    { return CGAL::Point_3<Kernel>(*this).bbox(); }
-    #endif
 
     /// Compute squared distance to given point
     ///
