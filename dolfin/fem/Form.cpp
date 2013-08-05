@@ -143,6 +143,14 @@ const Mesh& Form::mesh() const
   if (_mesh)
     meshes.push_back(_mesh);
 
+  // Extract meshes from markers if any
+  if (_cell_domains)
+    meshes.push_back(_cell_domains->mesh());
+  if (_exterior_facet_domains)
+    meshes.push_back(_exterior_facet_domains->mesh());
+  if (_interior_facet_domains)
+    meshes.push_back(_interior_facet_domains->mesh());
+
   // Extract meshes from coefficients. Note that this is only done
   // when we don't already have a mesh sine it may otherwise conflict
   // with existing meshes (if coefficient is defined on another mesh).
@@ -155,14 +163,6 @@ const Mesh& Form::mesh() const
         meshes.push_back(function->function_space()->mesh());
     }
   }
-
-  // Extract meshes from markers if any
-  if (_cell_domains)
-    meshes.push_back(_cell_domains->mesh());
-  if (_exterior_facet_domains)
-    meshes.push_back(_exterior_facet_domains->mesh());
-  if (_interior_facet_domains)
-    meshes.push_back(_interior_facet_domains->mesh());
 
   // Check that we have at least one mesh
   if (meshes.empty())
