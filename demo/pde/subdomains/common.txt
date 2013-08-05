@@ -15,3 +15,8 @@ Thus, we have
 	\Gamma_{\mathrm{inflow}} &= (1, y), \\
 	\Gamma_{\mathrm{outflow}} &= (0, y), \\
 	\Gamma_{\mathrm{noslip}} &= \partial \Omega \backslash (\Gamma_{\mathrm{inflow}} \cup \Gamma_{\mathrm{outflow}}). \\
+
+The mesh with marked boundaries looks as follows:
+
+.. image:: ../plot_subdomains.png
+	:scale: 75%
