@@ -73,15 +73,18 @@ The geometry for the next two meshes are described by .off-files. It is easy to 
 ::
 
 	OFF
-	Number_of_vertices Number_of_faces Number_of_edges
-	x0 y0 z0
+	Number_of_vertices(n) Number_of_faces(q) Number_of_edges
 	x1 y1 z1
 	x2 y2 z2
 	...
-	number_of_vertices_on_face1 vertice1 vertice2 vertice3 ...
-	number_of_vertices_on_face2 vertice1 vertice2 vertice3 ...
-	number_of_vertices_on_face3 vertice1 vertice2 vertice3 ...
 	...
+	xn yn zn
+	number_of_vertices_on_face_1(m) vertice_1 vertice_2 vertice_3 ... vertice_m
+	number_of_vertices_on_face_2(k) vertice_1 vertice_2 vertice_3 ... vertice_k
+	number_of_vertices_on_face_3(l) vertice_1 vertice_2 vertice_3 ... vertice_l
+	...
+	...
+	number_of_vertices_on_face_q(i) vertice_1 vertice_2 vertice_3 ... vertice_i
 
 We send the empty mesh, the off-file and the resolution (cell size) to :py:class:`PolyhedralMeshGenerator <dolfin.cpp.mesh.PolyhedralMeshGenerator>` 
 

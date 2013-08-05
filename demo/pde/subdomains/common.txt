@@ -1,0 +1,17 @@
+Problem definition
+------------------
+
+In this demo we focus on how to mark sub domains, so we do not have any equations to solve. 
+The mesh we will work on is a unit square where the shape of a dolphin is removed from the middle of the square. 
+This mesh and the sub domain markers produced by this demo program are the ones used
+for the Stokes demo programs.
+We will mark the boundaries so that the boundary to the right (x = 1) is inflow, 
+the boundary to the left (x = 0) is outflow, and the top, bottom and the interior boundary 
+around the dolphin will be noslip.
+Thus, we have 
+
+.. math::
+	\partial \Omega = \Gamma_{\mathrm{inflow}} \cup \Gamma_{\mathrm{outflow}} \cup \Gamma_{\mathrm{noslip}}, \\
+	\Gamma_{\mathrm{inflow}} = (1, y), \\
+	\Gamma_{\mathrm{outflow}} = (0, y), \\
+	\Gamma_{\mathrm{noslip}} = \partial \Omega \backslash (\Gamma_{\mathrm{inflow}} \cup \Gamma_{\mathrm{outflow}}). \\
