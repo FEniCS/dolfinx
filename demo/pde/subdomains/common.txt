@@ -19,4 +19,4 @@ Thus, we have
 The mesh with marked boundaries looks as follows:
 
 .. image:: ../plot_subdomains.png
-	:scale: 60%
+	:scale: 75%
