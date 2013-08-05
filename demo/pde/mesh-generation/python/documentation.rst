@@ -36,7 +36,7 @@ We create an empty mesh using :py:class:`Mesh <dolfin.cpp.mesh.Mesh>`. We need t
 	# Create empty Mesh
 	mesh = Mesh()
 
-We are now ready to make the geometries. We start with a polygon and define is by making a list of its vertices. We need a closed contour, so the last point is positioned at the same place as the first. We represent the points with instances of :py:class:`Point <dolfin.cpp.mesh.Point>`. Since we want a 2D geometry we use the default value, 0, for z.  
+We are now ready to make the geometries. We start with a polygon and define it by making a list of its vertices. We need a closed contour, so the first and the last element in the list is the same point. We represent the points with instances of :py:class:`Point <dolfin.cpp.mesh.Point>`. Since we want a 2D geometry we use the default value, 0, for z.  
 
 .. code-block:: python
 
@@ -70,16 +70,18 @@ The geometry for the next two meshes are described by .off-files. It is easy to 
 * On line three we start listing the vertices, one vertice described by its coordinate (three numbers) on each line. 
 * The last part of the file describes the faces (facets, sides) of the geometry. One face is described on one line where the first number says how many vertices we need to represent the face (in a cube we need four, but in a tetrahedral we need three). We then list the vertices describing the face, we use the vertices defined above and start our "indexing" at 0. 
 
-OFF
-Number_of_vertices Number_of_faces Number_of_edges
-x0 y0 z0
-x1 y1 z1
-x2 y2 z2
-...
-number_of_vertices_on_face1 vertice1 vertice2 vertice3 ...
-number_of_vertices_on_face2 vertice1 vertice2 vertice3 ...
-number_of_vertices_on_face3 vertice1 vertice2 vertice3 ...
-...
+::
+
+	OFF
+	Number_of_vertices Number_of_faces Number_of_edges
+	x0 y0 z0
+	x1 y1 z1
+	x2 y2 z2
+	...
+	number_of_vertices_on_face1 vertice1 vertice2 vertice3 ...
+	number_of_vertices_on_face2 vertice1 vertice2 vertice3 ...
+	number_of_vertices_on_face3 vertice1 vertice2 vertice3 ...
+	...
 
 We send the empty mesh, the off-file and the resolution (cell size) to :py:class:`PolyhedralMeshGenerator <dolfin.cpp.mesh.PolyhedralMeshGenerator>` 
 
@@ -93,7 +95,7 @@ We send the empty mesh, the off-file and the resolution (cell size) to :py:class
 	PolyhedralMeshGenerator.generate(mesh, "../cube.off", 0.05)
 	plot(mesh, interactive=True)
 
-.. image:: plot_tetrahedronlmesh.png
+.. image:: plot_tetrahedronmesh.png
 	:scale: 75 %
 
 .. image:: plot_cubemesh.png
