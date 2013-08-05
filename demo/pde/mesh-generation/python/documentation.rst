@@ -104,5 +104,5 @@ We send the empty mesh, the off-file and the resolution (cell size) to :py:class
 Complete code
 -------------
 
-.. literalinclude:: demo_mesh_generaton.py
+.. literalinclude:: demo_mesh_generation.py
    :start-after: # Begin demo
