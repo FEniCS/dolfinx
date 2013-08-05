@@ -19,7 +19,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-06-12
-// Last changed: 2013-05-29
+// Last changed: 2013-08-05
 
 #ifndef __POINT_H
 #define __POINT_H
@@ -156,6 +156,10 @@ namespace dolfin
     /// Subtract given point
     const Point& operator-= (const Point& p)
     { _x[0] -= p._x[0]; _x[1] -= p._x[1]; _x[2] -= p._x[2]; return *this; }
+
+    /// Unary minus
+    Point operator- ()
+    { Point p(-_x[0], -_x[1], -_x[2]); return p; }
 
     /// Multiplication with scalar
     Point operator* (double a) const
