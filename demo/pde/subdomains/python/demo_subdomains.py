@@ -27,6 +27,7 @@ for the Stokes demo programs.
 #
 # First added:  2007-11-15
 # Last changed: 2011-01-25
+# Begin demo
 
 from dolfin import *
 
