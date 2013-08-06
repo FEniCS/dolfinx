@@ -16,11 +16,11 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-22
-// Last changed: 2013-06-22
+// Last changed: 2013-08-06
 
 #include "CSGGeometry.h"
 
-#include <dolfin/mesh/Point.h>
+#include <dolfin/geometry/Point.h>
 #include <boost/scoped_ptr.hpp>
 
 struct CSGCGALDomain2DImpl;
@@ -51,7 +51,6 @@ class CSGCGALDomain2D
 
   bool point_in_domain(Point p) const;
   double compute_boundingcircle_radius() const ;
-  bool has_holes() const;
   
   // TODO: Replace this with a more C++-ish
   // implementation, ie, take an outputiterator as arugment
@@ -65,7 +64,4 @@ class CSGCGALDomain2D
   boost::scoped_ptr<CSGCGALDomain2DImpl> impl;
 
 };
-
-//CSGCGALDomain2D convertGeometry(const 
-
 }

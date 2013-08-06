@@ -19,7 +19,7 @@
 // Modified by Benjamin Kehlet 2012-2013
 //
 // First added:  2012-05-10
-// Last changed: 2013-06-22
+// Last changed: 2013-08-06
 
 #include "CSGCGALMeshGenerator2D.h"
 #include "CSGGeometry.h"

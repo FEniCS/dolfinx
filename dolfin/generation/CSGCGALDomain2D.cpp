@@ -16,23 +16,21 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-06-22
-// Last changed: 2013-06-24
+// Last changed: 2013-08-06
 
 #include "CSGCGALDomain2D.h"
 #include "CSGPrimitives2D.h"
 #include "CSGOperators.h"
 #include <dolfin/common/constants.h>
-#include <dolfin/mesh/Point.h>
 #include <dolfin/log/LogStream.h>
 
 #include <CGAL/basic.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Boolean_set_operations_2.h>
+#include <CGAL/Polygon_set_2.h>
 
 #include <CGAL/Min_circle_2.h>
 #include <CGAL/Min_circle_2_traits_2.h>
-
-#include <boost/range/join.hpp>
 
 // Polygon typedefs
 typedef CGAL::Exact_predicates_exact_constructions_kernel Exact_Kernel;
@@ -41,7 +39,7 @@ typedef CGAL::Polygon_2<Exact_Kernel>                     Polygon_2;
 typedef Polygon_2::Vertex_const_iterator                  Vertex_const_iterator;
 typedef CGAL::Polygon_with_holes_2<Exact_Kernel>          Polygon_with_holes_2;
 typedef Polygon_with_holes_2::Hole_const_iterator         Hole_const_iterator;
-
+typedef CGAL::Polygon_set_2<Exact_Kernel>                 Polygon_set_2;
 
 // Min enclosing circle typedefs
 typedef CGAL::Min_circle_2_traits_2<Exact_Kernel>  Min_Circle_Traits;
@@ -52,7 +50,11 @@ using namespace dolfin;
 
 struct CSGCGALDomain2DImpl
 {
-  std::list<Polygon_with_holes_2> polygon_list;
+  Polygon_set_2 polygon_set;
+
+  CSGCGALDomain2DImpl(){}
+  CSGCGALDomain2DImpl(const Polygon_set_2& p)
+    : polygon_set(p) {}
 };
 //-----------------------------------------------------------------------------
 Polygon_2 make_circle(const Circle* c)
@@ -115,72 +117,6 @@ Polygon_2 make_polygon(const Polygon* p)
   return Polygon_2(pts.begin(), pts.end());
 }
 //-----------------------------------------------------------------------------
-static void polygon_difference(const std::list<Polygon_with_holes_2> &p1,
-                               const std::list<Polygon_with_holes_2> &p2,
-                               std::list<Polygon_with_holes_2> &output)
-{
-  if (p2.empty())
-  {
-    std::copy(p1.begin(), p1.end(), std::back_inserter(output));
-    return;
-  }
-
-  boost::scoped_ptr<std::list<Polygon_with_holes_2> >tmp_result1(new std::list<Polygon_with_holes_2>);
-  boost::scoped_ptr<std::list<Polygon_with_holes_2> >tmp_result2(new std::list<Polygon_with_holes_2>);
-
-  std::copy(p1.begin(), p1.end(), std::back_inserter(*tmp_result1));
-
-  std::list<Polygon_with_holes_2>::const_iterator tmp_it;
-  std::list<Polygon_with_holes_2>::const_iterator pit2;
-
-  for (pit2 = p2.begin(); 
-       pit2 != p2.end();
-       ++pit2)
-  {
-    tmp_result2->clear();
-    for (tmp_it = tmp_result1->begin();
-         tmp_it != tmp_result1->end();
-         ++tmp_it)
-    {
-      CGAL::difference(*tmp_it, 
-                       *pit2,
-                       std::back_inserter(*tmp_result2));
-    }
-    tmp_result1.swap(tmp_result2);
-  }
-
-  std::copy(tmp_result1->begin(), tmp_result1->end(), std::back_inserter(output));
-}
-//-----------------------------------------------------------------------------
-static void polygon_join(const std::list<Polygon_with_holes_2> &p1,
-                         const std::list<Polygon_with_holes_2> &p2,
-                         std::list<Polygon_with_holes_2> &output)
-{
-  boost::range::joined_range<const std::list<Polygon_with_holes_2>, const std::list<Polygon_with_holes_2> >
-    joined_iterator = boost::range::join(p1, p2);
-
-  CGAL::join(joined_iterator.begin(),
-             joined_iterator.end(),
-             std::back_inserter(output));
-}
-//-----------------------------------------------------------------------------
-static void polygon_intersect(const std::list<Polygon_with_holes_2> &p1,
-                              const std::list<Polygon_with_holes_2> &p2,
-                              std::list<Polygon_with_holes_2> &output)
-{
-  for (std::list<Polygon_with_holes_2>::const_iterator pit1=p1.begin();
-       pit1 != p1.end(); ++pit1)
-  {
-    for (std::list<Polygon_with_holes_2>::const_iterator pit2=p2.begin();
-         pit2 != p2.end(); ++pit2)
-    {
-      CGAL::intersection(*pit1,
-                         *pit2,
-                         std::back_inserter(output));
-    }
-  }
-}
-//-----------------------------------------------------------------------------
 CSGCGALDomain2D::CSGCGALDomain2D()
   : impl(new CSGCGALDomain2DImpl)
 {
@@ -203,10 +139,9 @@ CSGCGALDomain2D::CSGCGALDomain2D(const CSGGeometry *geometry)
 
       CSGCGALDomain2D a(u->_g0.get());
       CSGCGALDomain2D b(u->_g1.get());
-    
-      polygon_join(a.impl->polygon_list,
-                   b.impl->polygon_list,
-                   impl->polygon_list);
+
+      impl.swap(a.impl);
+      impl->polygon_set.join(b.impl->polygon_set);    
       break;
     }
     case CSGGeometry::Intersection:
@@ -217,9 +152,8 @@ CSGCGALDomain2D::CSGCGALDomain2D(const CSGGeometry *geometry)
       CSGCGALDomain2D a(u->_g0.get());
       CSGCGALDomain2D b(u->_g1.get());
       
-      polygon_intersect(a.impl->polygon_list,
-                        b.impl->polygon_list,
-                        impl->polygon_list);
+      impl.swap(a.impl);
+      impl->polygon_set.intersection(b.impl->polygon_set);
       break;
     }
     case CSGGeometry::Difference:
@@ -229,37 +163,36 @@ CSGCGALDomain2D::CSGCGALDomain2D(const CSGGeometry *geometry)
       CSGCGALDomain2D a(u->_g0.get());
       CSGCGALDomain2D b(u->_g1.get());
       
-      polygon_difference(a.impl->polygon_list,
-                         b.impl->polygon_list,
-                         impl->polygon_list);
+      impl.swap(a.impl);
+      impl->polygon_set.difference(b.impl->polygon_set);
       break;
     }
     case CSGGeometry::Circle:
     {
       const Circle* c = dynamic_cast<const Circle*>(geometry);
       dolfin_assert(c);
-      impl->polygon_list.push_back(Polygon_with_holes_2(make_circle(c)));
+      impl->polygon_set.insert(make_circle(c));
       break;
     }
     case CSGGeometry::Ellipse:
     {
       const Ellipse* c = dynamic_cast<const Ellipse*>(geometry);
       dolfin_assert(c);
-      impl->polygon_list.push_back(Polygon_with_holes_2(make_ellipse(c)));
+      impl->polygon_set.insert(make_ellipse(c));
       break;
     }
     case CSGGeometry::Rectangle:
     {
       const Rectangle* r = dynamic_cast<const Rectangle*>(geometry);
       dolfin_assert(r);
-      impl->polygon_list.push_back(Polygon_with_holes_2(make_rectangle(r)));
+      impl->polygon_set.insert(make_rectangle(r));
       break;
     }
     case CSGGeometry::Polygon:
     {
       const Polygon* p = dynamic_cast<const Polygon*>(geometry);
       dolfin_assert(p);
-      impl->polygon_list.push_back(Polygon_with_holes_2(make_polygon(p)));
+      impl->polygon_set.insert(make_polygon(p));
       break;
     }
     default:
@@ -270,27 +203,28 @@ CSGCGALDomain2D::CSGCGALDomain2D(const CSGGeometry *geometry)
 }
 //-----------------------------------------------------------------------------
 CSGCGALDomain2D::CSGCGALDomain2D(const CSGCGALDomain2D &other)
-  : impl(new CSGCGALDomain2DImpl)
+ : impl(new CSGCGALDomain2DImpl(other.impl->polygon_set))
 {
-  std::copy(other.impl->polygon_list.begin(), other.impl->polygon_list.end(),
-            std::back_inserter(impl->polygon_list));
 }
 //-----------------------------------------------------------------------------
 CSGCGALDomain2D &CSGCGALDomain2D::operator=(const CSGCGALDomain2D &other)
 {
-  impl->polygon_list.clear();
-  std::copy(other.impl->polygon_list.begin(), other.impl->polygon_list.end(),
-            std::back_inserter(impl->polygon_list));
+  boost::scoped_ptr<CSGCGALDomain2DImpl> tmp(new CSGCGALDomain2DImpl(other.impl->polygon_set));
+  
+  impl.swap(tmp);
 
   return *this;
 }
 //-----------------------------------------------------------------------------
 double CSGCGALDomain2D::compute_boundingcircle_radius() const
 {
+  std::list<Polygon_with_holes_2> polygon_list;
+  impl->polygon_set.polygons_with_holes(std::back_inserter(polygon_list));
+
   std::vector<Point_2> points;
 
-  for (std::list<Polygon_with_holes_2>::const_iterator pit = impl->polygon_list.begin();
-       pit != impl->polygon_list.end(); ++pit)
+  for (std::list<Polygon_with_holes_2>::const_iterator pit = polygon_list.begin();
+       pit != polygon_list.end(); ++pit)
     for (Polygon_2::Vertex_const_iterator vit = pit->outer_boundary().vertices_begin(); 
          vit != pit->outer_boundary().vertices_end(); ++vit)
       points.push_back(*vit);
@@ -304,55 +238,23 @@ double CSGCGALDomain2D::compute_boundingcircle_radius() const
 //-----------------------------------------------------------------------------
 void CSGCGALDomain2D::join_inplace(const CSGCGALDomain2D& other)
 {
-  CSGCGALDomain2DImpl *newImpl = new CSGCGALDomain2DImpl;
-  polygon_join(impl->polygon_list,
-               other.impl->polygon_list,
-               newImpl->polygon_list);
-  impl.reset(newImpl);
+  impl->polygon_set.join(other.impl->polygon_set);
 }
 //-----------------------------------------------------------------------------
 void CSGCGALDomain2D::difference_inplace(const CSGCGALDomain2D& other)
 {
-  if (impl->polygon_list.empty())
-    return;
-
-  CSGCGALDomain2DImpl *newImpl = new CSGCGALDomain2DImpl;
-  polygon_difference(impl->polygon_list,
-                     other.impl->polygon_list,
-                     newImpl->polygon_list);
-  impl.reset(newImpl);
+  impl->polygon_set.difference(other.impl->polygon_set);
 }
 //-----------------------------------------------------------------------------
 void CSGCGALDomain2D::intersect_inplace(const CSGCGALDomain2D &other)
 {
-  CSGCGALDomain2DImpl *newImpl = new CSGCGALDomain2DImpl;
-  polygon_intersect(impl->polygon_list,
-                    other.impl->polygon_list,
-                    newImpl->polygon_list);
-  impl.reset(newImpl);
+  impl->polygon_set.intersection(other.impl->polygon_set);
 }
 //-----------------------------------------------------------------------------
 bool CSGCGALDomain2D::point_in_domain(Point p) const
 {
-  Point_2 p_(p.x(), p.y());
-
-  std::list<Polygon_with_holes_2>::const_iterator vit;
-  for (vit = impl->polygon_list.begin(); vit != impl->polygon_list.end(); ++vit)
-  {
-    bool point_inside_hole = false;
-    for (Hole_const_iterator hit = vit->holes_begin();
-         hit != vit->holes_end(); ++hit)
-    {
-      if (hit->has_on_bounded_side(p_))
-        point_inside_hole = true;
-    }
-
-    if (!point_inside_hole && 
-        vit->outer_boundary().has_on_bounded_side(p_))
-      return true;
-  }
-
-  return false;
+  const Point_2 p_(p.x(), p.y());
+  return impl->polygon_set.oriented_side(p_) == CGAL::ON_POSITIVE_SIDE;
 }
 //-----------------------------------------------------------------------------
 void CSGCGALDomain2D::get_vertices(std::list<std::vector<Point> >& l, 
@@ -362,8 +264,11 @@ void CSGCGALDomain2D::get_vertices(std::list<std::vector<Point> >& l,
 
   truncate_threshold *= truncate_threshold;
 
+  std::list<Polygon_with_holes_2> polygon_list;
+  impl->polygon_set.polygons_with_holes(std::back_inserter(polygon_list));
+  
   std::list<Polygon_with_holes_2>::const_iterator pit;
-  for (pit = impl->polygon_list.begin(); pit != impl->polygon_list.end(); ++pit)
+  for (pit = polygon_list.begin(); pit != polygon_list.end(); ++pit)
   {
     const Polygon_2 &outer = pit->outer_boundary();
 
@@ -398,8 +303,11 @@ void CSGCGALDomain2D::get_holes(std::list<std::vector<Point> >& h,
 {
   h.clear();
 
+  std::list<Polygon_with_holes_2> polygon_list;
+  impl->polygon_set.polygons_with_holes(std::back_inserter(polygon_list));
+
   std::list<Polygon_with_holes_2>::const_iterator pit;
-  for (pit = impl->polygon_list.begin(); pit != impl->polygon_list.end(); ++pit)
+  for (pit = polygon_list.begin(); pit != polygon_list.end(); ++pit)
   {
     Hole_const_iterator hit;
     for (hit = pit->holes_begin(); hit != pit->holes_end(); ++hit)
@@ -429,10 +337,4 @@ void CSGCGALDomain2D::get_holes(std::list<std::vector<Point> >& h,
                           CGAL::to_double(current->y())));
     }
   }
-}
-//-----------------------------------------------------------------------------
-bool CSGCGALDomain2D::has_holes() const
-{
-  const Polygon_with_holes_2 &p = impl->polygon_list.front();
-  return p.holes_begin() != p.holes_end();
 }
