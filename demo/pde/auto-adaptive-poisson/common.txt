@@ -10,7 +10,7 @@ The two solutions for u in this demo will look as follows, where the left are un
 Equation and problem definition
 -------------------------------
 
-The Poisson equation is the canonical elliptic partial differential equation. For a domain :math:`\Omega \subset \mathbb{R}^n` with boundary Math:`\partial \Omega = \Gamma_{D} \cup \Gamma_{N}`, the Poisson equation with particular boundary conditions reads:
+The Poisson equation is the canonical elliptic partial differential equation. For a domain :math:`\Omega \subset \mathbb{R}^n` with boundary :math:`\partial \Omega = \Gamma_{D} \cup \Gamma_{N}`, the Poisson equation with particular boundary conditions reads:
 
 
 .. math::
