@@ -54,10 +54,11 @@ struct CSGCGALDomain2DImpl
 {
   std::list<Polygon_with_holes_2> polygon_list;
 };
-
+//-----------------------------------------------------------------------------
 Polygon_2 make_circle(const Circle* c)
 {
   std::vector<Point_2> pts;
+  pts.reserve(c->fragments());
 
   for (std::size_t i = 0; i < c->fragments(); i++)
   {
@@ -87,12 +88,6 @@ Polygon_2 make_ellipse(const Ellipse* e)
 //-----------------------------------------------------------------------------
 Polygon_2 make_rectangle(const Rectangle* r)
 {
-  // const double x0 = std::min(r->first_corner().x(), r->first_corner().y());
-  // const double y0 = std::max(r->first_corner().x(), r->first_corner().y());
-
-  // const double x1 = std::min(r->second_corner().x(), r->second_corner().y());
-  // const double y1 = std::max(r->second_corner().x(), r->second_corner().y());
-
   const double x0 = std::min(r->first_corner().x(), r->second_corner().x());
   const double y0 = std::min(r->first_corner().y(), r->second_corner().y());
 
@@ -162,10 +157,10 @@ static void polygon_join(const std::list<Polygon_with_holes_2> &p1,
                          std::list<Polygon_with_holes_2> &output)
 {
   boost::range::joined_range<const std::list<Polygon_with_holes_2>, const std::list<Polygon_with_holes_2> >
-    r = boost::range::join(p1, p2);
+    joined_iterator = boost::range::join(p1, p2);
 
-  CGAL::join(r.begin(),
-             r.end(),
+  CGAL::join(joined_iterator.begin(),
+             joined_iterator.end(),
              std::back_inserter(output));
 }
 //-----------------------------------------------------------------------------
@@ -199,8 +194,6 @@ CSGCGALDomain2D::~CSGCGALDomain2D()
 CSGCGALDomain2D::CSGCGALDomain2D(const CSGGeometry *geometry)
 : impl(new CSGCGALDomain2DImpl)
 {
-
-
   switch (geometry->getType()) 
   {
     case CSGGeometry::Union:
@@ -208,7 +201,6 @@ CSGCGALDomain2D::CSGCGALDomain2D(const CSGGeometry *geometry)
       const CSGUnion *u = dynamic_cast<const CSGUnion*>(geometry);
       dolfin_assert(u);
 
-      // TODO: Optimize this to avoid copying
       CSGCGALDomain2D a(u->_g0.get());
       CSGCGALDomain2D b(u->_g1.get());
     
