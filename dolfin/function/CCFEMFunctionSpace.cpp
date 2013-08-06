@@ -20,6 +20,7 @@
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/geometry/BoundingBoxTree.h>
 #include "FunctionSpace.h"
 #include "CCFEMFunctionSpace.h"
 
@@ -66,5 +67,14 @@ void CCFEMFunctionSpace::build()
     log(PROGRESS, "dim(V_%d) = %d", i, d);
   }
   log(PROGRESS, "Total dimension is %d.", _dim);
+
+  // Build bounding box trees for all meshes
+  _trees.clear();
+  for (std::size_t i = 0; i < _function_spaces.size(); i++)
+  {
+    boost::shared_ptr<BoundingBoxTree> tree(new BoundingBoxTree());
+    tree->build(*_function_spaces[i]->mesh());
+    _trees.push_back(tree);
+  }
 }
 //-----------------------------------------------------------------------------

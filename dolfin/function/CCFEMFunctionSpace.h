@@ -29,6 +29,7 @@ namespace dolfin
 
   // Forward declarations
   class FunctionSpace;
+  class BoundingBoxTree;
 
   /// This class represents a cut and composite finite element
   /// function space (CCFEM) defined on one or more possibly
@@ -72,11 +73,14 @@ namespace dolfin
 
   private:
 
+    // Total dimension (sum of parts)
+    std::size_t _dim;
+
     // List of function spaces
     std::vector<boost::shared_ptr<const FunctionSpace> > _function_spaces;
 
-    // Total dimension (sum of parts)
-    std::size_t _dim;
+    // List of bounding box trees for meshes
+    std::vector<boost::shared_ptr<BoundingBoxTree> > _trees;
 
   };
 
