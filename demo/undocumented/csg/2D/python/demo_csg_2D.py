@@ -26,22 +26,28 @@ if not has_cgal():
 
 
 # Define 2D geometry
-r = Rectangle(0.5, 0.5, 1.5, 1.5);
-c = Circle (1, 1, 1);
-g2d = c - r;
+domain = Rectangle(0., 0., 5., 5.) - Rectangle(2., 1.25, 3., 1.75) - Circle(1, 4, .25) - Circle(4, 4, .25)
+domain.set_subdomain(1, Rectangle(1., 1., 4., 3.))
+domain.set_subdomain(2, Rectangle(2., 2., 3., 4.))
+
 
 # Test printing
 info("\nCompact output of 2D geometry:");
-info(g2d);
+info(domain);
 info("");
 info("\nVerbose output of 2D geometry:");
-info(g2d, True);
+info(domain, True);
 
 # Plot geometry
-plot(g2d, "2D Geometry (boundary)");
+plot(domain, "2D Geometry (boundary)");
 
 # Generate and plot mesh
-mesh2d = Mesh(g2d, 10);
-plot(mesh2d, "2D mesh");
+mesh2d = Mesh(domain, 45);
+plot(mesh2d, "2D mesh")
 
-interactive();
+# Convert subdomains to mesh function for plotting
+mf = MeshFunction("size_t", mesh2d, 2, mesh2d.domains())
+plot(mf, "Subdomains")
+
+
+interactive()
