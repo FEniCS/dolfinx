@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 #include "GenericLinearSolver.h"
 
 namespace dolfin
@@ -34,9 +35,11 @@ namespace dolfin
 
   class GenericLinearOperator;
   class GenericVector;
+  class VectorSpaceBasis;
 
-  /// This class defines an interface for a Krylov solver. The approproiate solver
-  /// is chosen on the basis of the matrix/vector type.
+  /// This class defines an interface for a Krylov solver. The
+  /// approproiate solver is chosen on the basis of the matrix/vector
+  /// type.
 
   class KrylovSolver : public GenericLinearSolver
   {
@@ -63,7 +66,7 @@ namespace dolfin
 
     /// Set null space of the operator (matrix). This is used to solve
     /// singular systems
-    void set_nullspace(const std::vector<const GenericVector*> nullspace);
+    void set_nullspace(const VectorSpaceBasis& nullspace);
 
     /// Solve linear system Ax = b
     std::size_t solve(GenericVector& x, const GenericVector& b);

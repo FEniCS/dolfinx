@@ -22,7 +22,7 @@
 // Modified by Johan Hake 2008-2011
 //
 // First added:  2006-09-20
-// Last changed: 2011-11-13
+// Last changed: 2013-05-22
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (pre)
@@ -90,8 +90,6 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
 // Misc ignores
 //-----------------------------------------------------------------------------
 %ignore dolfin::MeshEditor::open(Mesh&, CellType::Type, std::size_t, std::size_t);
-%ignore dolfin::Point::operator=;
-%ignore dolfin::Point::operator[];
 %ignore dolfin::Mesh::operator=;
 %ignore dolfin::MeshData::operator=;
 %ignore dolfin::MeshFunction::operator=;
@@ -99,6 +97,7 @@ ALL_VALUES(dolfin::MeshFunction<std::size_t>, size_t)
 %ignore dolfin::MeshValueCollection::operator=;
 %ignore dolfin::MeshGeometry::operator=;
 %ignore dolfin::MeshTopology::operator=;
+%ignore dolfin::MeshTopology::shared_entities(unsigned int) const;
 %ignore dolfin::MeshValueCollection::operator=;
 %ignore dolfin::MeshConnectivity::operator=;
 %ignore dolfin::MeshConnectivity::set;
@@ -256,6 +255,11 @@ MESHENTITYITERATORBASE(Vertex, vertices)
 
 %ignore dolfin::MeshFunction<TYPE>::init(const Mesh&, std::size_t);
 %ignore dolfin::MeshFunction<TYPE>::init(const Mesh&, std::size_t, const T&);
+
+//-----------------------------------------------------------------------------
+// Ignore MeshValueCollection constructors that take a Mesh reference
+//-----------------------------------------------------------------------------
+%ignore dolfin::MeshValueCollection<TYPE>::MeshValueCollection(const Mesh&, std::size_t);
 
 %enddef
 

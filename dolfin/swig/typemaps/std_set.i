@@ -17,7 +17,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2009-11-27
-// Last changed: 2013-04-04
+// Last changed: 2013-06-24
 
 //=============================================================================
 // In this file we declare some typemaps for the std::set type
@@ -114,11 +114,8 @@ SET_SPECIFIC_OUT_TYPEMAP_OF_PRIMITIVES(std::set, TYPE, NUMPY_TYPE)
   TYPE* data = static_cast<TYPE*>(PyArray_DATA(ret));
 
   int i = 0;
-  for (SET_TYPE<TYPE>::const_iterator it = $1->begin(); it != $1->end(); ++it)
-  {
+  for (SET_TYPE<TYPE>::const_iterator it = $1->begin(); it != $1->end(); it++, i++)
     data[i] = *it;
-    ++i;
-  }
 
   // Append the output to $result
   $result = PyArray_Return(ret);

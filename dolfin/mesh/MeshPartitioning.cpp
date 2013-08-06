@@ -33,6 +33,7 @@
 #include <dolfin/log/log.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/geometry/Point.h>
 #include <dolfin/graph/ParMETIS.h>
 #include <dolfin/graph/SCOTCH.h>
 #include <dolfin/graph/ZoltanPartition.h>
@@ -48,7 +49,6 @@
 #include "MeshFunction.h"
 #include "MeshTopology.h"
 #include "MeshValueCollection.h"
-#include "Point.h"
 #include "Vertex.h"
 #include "MeshPartitioning.h"
 
@@ -184,10 +184,10 @@ void MeshPartitioning::build(Mesh& mesh, const LocalMeshData& mesh_data,
              mesh_data.num_global_vertices);
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::distribute_cells(const LocalMeshData& mesh_data,
-                                   const std::vector<std::size_t>& cell_partition,
-                                   std::vector<std::size_t>& global_cell_indices,
-                                   boost::multi_array<std::size_t, 2>& cell_vertices)
+void  MeshPartitioning::distribute_cells(const LocalMeshData& mesh_data,
+                            const std::vector<std::size_t>& cell_partition,
+                            std::vector<std::size_t>& global_cell_indices,
+                            boost::multi_array<std::size_t, 2>& cell_vertices)
 {
   // This function takes the partition computed by the partitioner
   // (which tells us to which process each of the local cells stored in
@@ -231,7 +231,10 @@ void MeshPartitioning::distribute_cells(const LocalMeshData& mesh_data,
   // Count number of received cells
   std::size_t num_new_local_cells = 0;
   for (std::size_t p = 0; p < received_cell_vertices.size(); ++p)
-    num_new_local_cells += received_cell_vertices[p].size()/(num_cell_vertices + 1);
+  {
+    num_new_local_cells
+      += received_cell_vertices[p].size()/(num_cell_vertices + 1);
+  }
 
   // Put mesh_data back into mesh_data.cell_vertices
   cell_vertices.resize(boost::extents[num_new_local_cells][num_cell_vertices]);
@@ -311,7 +314,7 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
     for (std::size_t i = 0; i < received_vertex_indices[p].size(); ++i)
     {
       dolfin_assert(received_vertex_indices[p][i] >= local_vertex_range.first
-                    && received_vertex_indices[p][i] < local_vertex_range.second);
+                 && received_vertex_indices[p][i] < local_vertex_range.second);
       const std::size_t location
         = received_vertex_indices[p][i] - local_vertex_range.first;
       for (std::size_t j = 0; j < gdim; ++j)
@@ -339,7 +342,8 @@ void MeshPartitioning::distribute_vertices(const LocalMeshData& mesh_data,
   std::size_t v = 0;
   for (std::size_t p = 0; p < num_processes; ++p)
   {
-    for (std::size_t i = 0; i < received_vertex_coordinates[p].size(); i += gdim)
+    for (std::size_t i = 0; i < received_vertex_coordinates[p].size();
+         i += gdim)
     {
       for (std::size_t j = 0; j < gdim; ++j)
         vertex_coordinates[v][j] = received_vertex_coordinates[p][i + j];
@@ -451,8 +455,10 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     std::vector<std::size_t> intersection(std::min(global_vertex_send.size(),
                                                    global_vertex_recv.size()));
     std::vector<std::size_t>::iterator intersection_end
-      = std::set_intersection(global_vertex_send.begin(), global_vertex_send.end(),
-                              global_vertex_recv.begin(), global_vertex_recv.end(),
+      = std::set_intersection(global_vertex_send.begin(),
+                              global_vertex_send.end(),
+                              global_vertex_recv.begin(),
+                              global_vertex_recv.end(),
                               intersection.begin());
 
     // Fill shared vertices information
@@ -475,8 +481,8 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
                                           const LocalMeshData& local_data)
 {
   // Local domain data
-  const std::map<std::size_t, std::vector< std::pair<std::pair<std::size_t, std::size_t>,
-                                                     std::size_t> > >&
+  const std::map<std::size_t,  std::vector<
+    std::pair<std::pair<std::size_t, std::size_t>, std::size_t> > >&
     domain_data = local_data.domain_data;
 
   if (domain_data.empty())
@@ -486,9 +492,11 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
   const std::size_t D = mesh.topology().dim();
   mesh.domains().init(D);
 
-  std::map<std::size_t, std::vector< std::pair<std::pair<std::size_t, std::size_t>,
-                                               std::size_t> > >::const_iterator dim_data;
-  for (dim_data = domain_data.begin(); dim_data != domain_data.end(); ++dim_data)
+  std::map<std::size_t, std::vector<
+    std::pair<std::pair<std::size_t, std::size_t>,
+              std::size_t> > >::const_iterator dim_data;
+  for (dim_data = domain_data.begin(); dim_data != domain_data.end();
+       ++dim_data)
   {
     // Get mesh value collection used for marking
     const std::size_t dim = dim_data->first;
@@ -497,11 +505,12 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
     mesh.init(dim);
 
     // Create empty MeshValueCollection
-    MeshValueCollection<std::size_t> mvc(dim);
+    MeshValueCollection<std::size_t> mvc(mesh, dim);
 
     // Get domain data
     const std::vector<std::pair<std::pair<std::size_t, std::size_t>,
-                                std::size_t> >& local_value_data = dim_data->second;
+                                std::size_t> >& local_value_data
+                                = dim_data->second;
 
     // Build mesh value vollection
     build_mesh_value_collection(mesh, local_value_data, mvc);
@@ -513,7 +522,8 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
     // Get map from mes domains
     std::map<std::size_t, std::size_t>& markers = mesh.domains().markers(dim);
 
-    std::map<std::pair<std::size_t, std::size_t>, std::size_t>::const_iterator it;
+    std::map<std::pair<std::size_t, std::size_t>,
+             std::size_t>::const_iterator it;
     for (it = values.begin(); it != values.end(); ++it)
     {
       const std::size_t cell_index = it->first.first;
@@ -523,7 +533,6 @@ void MeshPartitioning::build_mesh_domains(Mesh& mesh,
       const MeshEntity e(mesh, dim, cell.entities(dim)[local_entity_index]);
       markers[e.index()] = it->second;
     }
-
   }
 }
 //-----------------------------------------------------------------------------

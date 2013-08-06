@@ -31,15 +31,15 @@
 
 #include "pugixml.hpp"
 
-#include "dolfin/common/Array.h"
 #include "dolfin/common/MPI.h"
+#include "dolfin/common/NoDeleter.h"
+#include "dolfin/geometry/Point.h"
 #include "dolfin/la/GenericVector.h"
 #include "dolfin/mesh/Cell.h"
 #include "dolfin/mesh/CellType.h"
 #include "dolfin/mesh/Mesh.h"
 #include "dolfin/mesh/MeshData.h"
 #include "dolfin/mesh/MeshEditor.h"
-#include "dolfin/mesh/Point.h"
 #include "dolfin/mesh/Vertex.h"
 #include "dolfin/mesh/MeshFunction.h"
 #include "XMLMeshFunction.h"
@@ -285,7 +285,8 @@ void XMLMesh::read_domains(MeshDomains& domains, const Mesh& mesh,
     mesh.init(dim);
 
     // Read data into a mesh value collection
-    MeshValueCollection<std::size_t> mvc(dim);
+    boost::shared_ptr<const Mesh> _mesh = reference_to_no_delete_pointer(mesh);
+    MeshValueCollection<std::size_t> mvc(_mesh);
     XMLMeshValueCollection::read(mvc, type, *it);
 
     // Get mesh value collection data
@@ -497,10 +498,10 @@ void XMLMesh::write_domains(const Mesh& mesh, const MeshDomains& domains,
     {
       const std::map<std::size_t, std::size_t>& domain = domains.markers(d);
 
-      MeshValueCollection<std::size_t> collection(d);
+      MeshValueCollection<std::size_t> collection(mesh, d);
       std::map<std::size_t, std::size_t>::const_iterator it;
       for (it = domain.begin(); it != domain.end(); ++it)
-        collection.set_value(it->first, it->second, mesh);
+        collection.set_value(it->first, it->second);
       XMLMeshValueCollection::write(collection, "uint", domains_node);
     }
   }

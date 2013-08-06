@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2012 Anders Logg
+// Copyright (C) 2006-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -26,7 +26,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-05-08
-// Last changed: 2013-03-06
+// Last changed: 2013-06-23
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -37,7 +37,6 @@
 
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/Hierarchical.h>
-#include <dolfin/intersection/IntersectionOperator.h>
 #include <dolfin/ale/MeshDisplacement.h>
 #include "MeshData.h"
 #include "MeshDomains.h"
@@ -56,7 +55,7 @@ namespace dolfin
   class MeshEntity;
   class Point;
   class SubDomain;
-
+  class BoundingBoxTree;
 
   /// A _Mesh_ consists of a set of connected and numbered mesh entities.
   ///
@@ -331,15 +330,14 @@ namespace dolfin
     const MeshDomains& domains() const
     { return _domains; }
 
-    /// Get intersection operator.
-    ///
-    /// *Returns*
-    ///     _IntersectionOperator_
-    ///         The intersection operator object associated with the mesh.
-    IntersectionOperator& intersection_operator();
-
-    /// Return intersection operator (const version);
-    const IntersectionOperator& intersection_operator() const;
+    /// Get bounding box tree for mesh. The bounding box tree is
+    /// initialized and built upon the first call to this
+    /// function. The bounding box tree can be used to compute
+    /// collisions between the mesh and other objects. It is the
+    /// responsibility of the caller to use (and possibly rebuild) the
+    /// tree. It is stored as a (mutable) member of the mesh to enable
+    /// sharing of the bounding box tree data structure.
+    boost::shared_ptr<BoundingBoxTree> bounding_box_tree() const;
 
     /// Get mesh data.
     ///
@@ -535,131 +533,6 @@ namespace dolfin
     const std::vector<std::size_t>&
       color(std::vector<std::size_t> coloring_type) const;
 
-    /// Compute all cells which are intersected by the given point.
-    ///
-    /// *Arguments*
-    ///     point (_Point_)
-    ///         A _Point_ object.
-    ///
-    ///     cells (std::set<std::size_t>)
-    ///         A set of indices of all intersected cells.
-    void intersected_cells(const Point& point,
-                           std::set<std::size_t>& cells) const;
-
-    /// Compute all cells which are intersected by any of a vector of points.
-    ///
-    /// *Arguments*
-    ///     points (std::vector<_Point_>)
-    ///         A vector of _Point_ objects.
-    ///
-    ///     cells (std::set<std::size_t>)
-    ///         A set of indices of all intersected cells.
-    void intersected_cells(const std::vector<Point>& points,
-                           std::set<std::size_t>& cells) const;
-
-    /// Compute all cells which are intersected by the given entity.
-    ///
-    /// *Arguments*
-    ///     entity (_MeshEntity_)
-    ///         A _MeshEntity_ object.
-    ///
-    ///     cells (std::vector<std::size_t>)
-    ///         A vector of indices of all intersected cells.
-    void intersected_cells(const MeshEntity& entity,
-                           std::vector<std::size_t>& cells) const;
-
-    /// Compute all cells which are intersected by any of a vector of entities.
-    ///
-    /// *Arguments*
-    ///     entities (std::vector<_MeshEntity_>)
-    ///         A vector of _MeshEntity_ objects.
-    ///
-    ///     cells (std::set<std::size_t>)
-    ///         A vector of indices of all intersected cells.
-    void intersected_cells(const std::vector<MeshEntity>& entities,
-                           std::set<std::size_t>& cells) const;
-
-    /// Compute all cells which are intersected by the given mesh.
-    ///
-    /// *Arguments*
-    ///     mesh (_Mesh_)
-    ///         A _Mesh_ object.
-    ///
-    ///     cells (std::set<std::size_t>)
-    ///         A set of indices of all intersected cells.
-    void intersected_cells(const Mesh& mesh,
-                           std::set<std::size_t>& cells) const;
-
-    /// Find the cell (if any) containing the given point. If the point
-    /// is contained in several cells, the first cell is returned.
-    ///
-    /// *Arguments*
-    ///     point (_Point_)
-    ///         A _Point_ object.
-    ///
-    /// *Returns*
-    ///     int
-    ///         The index of the cell containing the point. If no cell
-    ///         is found, the return value is -1.
-    int intersected_cell(const Point& point) const;
-
-    /// Find the point in the mesh closest to the given point.
-    ///
-    /// *Arguments*
-    ///     point (_Point_)
-    ///         A _Point_ object.
-    ///
-    /// *Returns*
-    ///     _Point_
-    ///         The closest point.
-    Point closest_point(const Point& point) const;
-
-    /// Find the cell in the mesh closest to the given point.
-    ///
-    /// *Arguments*
-    ///     point (_Point_)
-    ///         A _Point_ object.
-    ///
-    /// *Returns*
-    ///     std::size_t
-    ///         The index of the closest cell.
-    ///
-    /// *Example*
-    ///     .. code-block:: c++
-    ///
-    ///         UnitSquare mesh(1, 1);
-    ///         Point point(0.0, 2.0);
-    ///         info("%d", mesh.closest_cell(point));
-    ///
-    ///     output::
-    ///
-    ///         1
-    std::size_t closest_cell(const Point& point) const;
-
-    /// Find the point and corresponding cell closest to the given point.
-    ///
-    /// *Arguments*
-    ///     point (_Point_)
-    ///         A _Point_ object.
-    ///
-    /// *Returns*
-    ///     std::pair<_Point_, std::size_t>
-    ///         A pair consisting of the closest point and corresponding
-    ///         cell index.
-    std::pair<Point, std::size_t>
-      closest_point_and_cell(const Point& point) const;
-
-    /// Computes the distance between a given point and the mesh
-    ///
-    /// *Arguments*
-    ///     point (_Point_)
-    ///         A _Point_ object.
-    ///
-    /// *Returns*
-    ///     double
-    ///         The distance to the mesh.
-    double distance(const Point& point) const;
-
     /// Compute minimum cell diameter.
     ///
     /// *Returns*
@@ -810,11 +683,13 @@ namespace dolfin
     // Auxiliary mesh data
     MeshData _data;
 
+    // Bounding box tree used to compute collisions between the mesh
+    // and other objects. The tree is initialized to a zero pointer
+    // and is allocated and built when bounding_box_tree() is called.
+    mutable boost::shared_ptr<BoundingBoxTree> _tree;
+
     // Cell type
     CellType* _cell_type;
-
-    // Intersection detector
-    IntersectionOperator _intersection_operator;
 
     // True if mesh has been ordered
     mutable bool _ordered;

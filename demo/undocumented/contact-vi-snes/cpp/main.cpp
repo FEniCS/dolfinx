@@ -19,11 +19,12 @@
 // Modified by Johannes Ring 2013
 //
 // First added:  2012-09-03
-// Last changed: 2013-04-19
+// Last changed: 2013-06-06
 //
-// This demo program uses of the interface to TAO solver for variational
-// inequalities to solve a contact mechanics problems in FEniCS.
-// The example considers a heavy elastic circle in a box of the same size.
+// This demo program uses of the interface to TAO solver for
+// variational inequalities to solve a contact mechanics problems in
+// FEniCS.  The example considers a heavy elastic circle in a box of
+// the same size.
 
 #include <dolfin.h>
 #include "HyperElasticity.h"

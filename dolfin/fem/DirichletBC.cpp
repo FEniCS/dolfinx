@@ -19,9 +19,10 @@
 // Modified by Martin Sandve Alnes, 2008
 // Modified by Johan Hake, 2009
 // Modified by Joachim B. Haga, 2012
+// Modified by Mikael Mortensen, 2013
 //
 // First added:  2007-04-10
-// Last changed: 2012-02-29
+// Last changed: 2013-06-19
 
 #include <map>
 #include <utility>
@@ -35,6 +36,7 @@
 #include <dolfin/function/Constant.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/GenericFunction.h>
+#include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
@@ -43,7 +45,6 @@
 #include <dolfin/mesh/MeshDomains.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshValueCollection.h>
-#include <dolfin/mesh/Point.h>
 #include <dolfin/mesh/Restriction.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
@@ -634,7 +635,7 @@ void DirichletBC::init_facets() const
 {
   Timer timer("DirichletBC init facets");
 
-  if (_facets.size() > 0)
+  if (MPI::max(_facets.size()) > 0)
     return;
 
   if (_user_sub_domain)

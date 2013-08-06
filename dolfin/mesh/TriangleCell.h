@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2008 Anders Logg
+// Copyright (C) 2006-2013 Anders Logg
 //
 // This file is part of DOLFIN.
 //
@@ -19,7 +19,7 @@
 // Modified by Jan Blechta 2013
 //
 // First added:  2006-06-05
-// Last changed: 2013-02-21
+// Last changed: 2013-05-22
 
 #ifndef __TRIANGLE_CELL_H
 #define __TRIANGLE_CELL_H
@@ -67,6 +67,18 @@ namespace dolfin
     /// Compute 2.*inradius/circumradius for given triangle
     virtual double radius_ratio(const Cell& triangle) const;
 
+    /// Compute squared distance to given point
+    double squared_distance(const Cell& cell, const Point& point) const;
+
+    /// Compute squared distance to given point. This version takes
+    /// the three vertex coordinates as 3D points. This makes it
+    /// possible to reuse this function for computing the (squared)
+    /// distance to a tetrahedron.
+    static double squared_distance(const Point& point,
+                                   const Point& a,
+                                   const Point& b,
+                                   const Point& c);
+
     /// Compute component i of normal of given facet with respect to the cell
     double normal(const Cell& cell, std::size_t facet, std::size_t i) const;
 
@@ -82,6 +94,9 @@ namespace dolfin
     /// Order entities locally
     void order(Cell& cell,
                const std::vector<std::size_t>& local_to_global_vertex_indices) const;
+
+    /// Check whether given point is contained in cell
+    bool contains(const Cell& cell, const Point& point) const;
 
     /// Return description of cell type
     std::string description(bool plural) const;
