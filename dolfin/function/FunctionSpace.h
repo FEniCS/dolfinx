@@ -20,7 +20,7 @@
 // Modified by Ola Skavhaug 2009
 //
 // First added:  2008-09-11
-// Last changed: 2013-08-05
+// Last changed: 2013-08-06
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H

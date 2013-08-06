@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2013-08-05
+// Last changed: 2013-08-06
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -26,7 +26,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-CCFEMFunctionSpace::CCFEMFunctionSpace()
+CCFEMFunctionSpace::CCFEMFunctionSpace() : _dim(0)
 {
   // Do nothing
 }
@@ -34,6 +34,11 @@ CCFEMFunctionSpace::CCFEMFunctionSpace()
 CCFEMFunctionSpace::~CCFEMFunctionSpace()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+std::size_t CCFEMFunctionSpace::dim() const
+{
+  return _dim;
 }
 //-----------------------------------------------------------------------------
 void CCFEMFunctionSpace::add(boost::shared_ptr<const FunctionSpace> function_space)
@@ -51,7 +56,15 @@ void CCFEMFunctionSpace::add(const FunctionSpace& function_space)
 void CCFEMFunctionSpace::build()
 {
   log(PROGRESS, "Building CCFEM function space.");
+
+  // Compute total dimension
+  _dim = 0;
   for (std::size_t i = 0; i < _function_spaces.size(); i++)
-    log(PROGRESS, "dim(V_%d) = %d", i, _function_spaces[i]->dim());
+  {
+    const std::size_t d = _function_spaces[i]->dim();
+    _dim += d;
+    log(PROGRESS, "dim(V_%d) = %d", i, d);
+  }
+  log(PROGRESS, "Total dimension is %d.", _dim);
 }
 //-----------------------------------------------------------------------------

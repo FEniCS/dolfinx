@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-08-05
-// Last changed: 2013-08-05
+// Last changed: 2013-08-06
 
 #ifndef __CCFEM_FUNCTION_SPACE_H
 #define __CCFEM_FUNCTION_SPACE_H
@@ -46,6 +46,13 @@ namespace dolfin
     /// Destructor
     ~CCFEMFunctionSpace();
 
+    /// Return dimension of CCFEM function space
+    ///
+    /// *Returns*
+    ///     std::size_t
+    ///         The dimension of the CCFEM function space.
+    std::size_t dim() const;
+
     /// Add function space (shared pointer version)
     ///
     /// *Arguments*
@@ -67,6 +74,9 @@ namespace dolfin
 
     // List of function spaces
     std::vector<boost::shared_ptr<const FunctionSpace> > _function_spaces;
+
+    // Total dimension (sum of parts)
+    std::size_t _dim;
 
   };
 
