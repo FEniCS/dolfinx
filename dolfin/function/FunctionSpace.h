@@ -20,7 +20,7 @@
 // Modified by Ola Skavhaug 2009
 //
 // First added:  2008-09-11
-// Last changed: 2012-11-02
+// Last changed: 2013-08-05
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -47,6 +47,7 @@ namespace dolfin
   class GenericFunction;
   class GenericVector;
   template <typename T> class MeshFunction;
+
 
   /// This class represents a finite element function space defined by
   /// a mesh, a finite element, and a local-to-global mapping of the
