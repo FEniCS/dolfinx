@@ -60,7 +60,7 @@ int main()
   plot(domain, "2D Geometry (boundary)");
 
   // Generate and plot mesh
-  boost::shared_ptr<Mesh>  mesh2d(new Mesh(domain, 100));
+  boost::shared_ptr<Mesh>  mesh2d(new Mesh(domain, 45));
   plot(mesh2d, "2D mesh");
 
   // Convert mesh domains to mesh function for plotting
