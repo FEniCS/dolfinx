@@ -159,7 +159,6 @@ static void print_face(const CDT::Face_handle f)
     std::cout << "  " << f->vertex(2)->point() << std::endl;
     std::cout << "  " << (f->is_in_domain() ? "In domain" : "Not in domain") << std::endl;
 }
-
 //-----------------------------------------------------------------------------
 // print the faces of a triangulation
 static void print_triangulation(const CDT &cdt)
@@ -360,7 +359,7 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   CDT cdt;
 
   // Convert the CSG geometry to a CGAL Polygon
-  cout << "Converting geometry to polygon" << endl;
+  log(TRACE, "Converting geometry to CGAL polygon");
   CSGCGALDomain2D total_domain(&geometry);
 
   add_subdomain(cdt, total_domain, parameters["edge_minimum"]);
@@ -374,6 +373,9 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   // Add the subdomains to the CDT. Traverse in reverse order to get the latest
   // added subdomain on top
   std::list<std::pair<std::size_t, boost::shared_ptr<const CSGGeometry> > >::const_reverse_iterator it;
+
+  if (!geometry.subdomains.empty())
+    log(TRACE, "Processing subdomains");
 
   for (it = geometry.subdomains.rbegin(); it != geometry.subdomains.rend(); ++it)
   {
@@ -392,6 +394,8 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
   }
 
   explore_subdomains(cdt, total_domain, subdomain_geometries);
+
+  log(TRACE, "Refining mesh");
 
   // Create mesher
   CGAL_Mesher_2 mesher(cdt);
@@ -436,12 +440,8 @@ void CSGCGALMeshGenerator2D::generate(Mesh& mesh)
     mesher.set_criteria(criteria);
   }
 
-  // print_constrained_edges(cdt);
-
   // Refine CGAL mesh/triangulation
   mesher.refine_mesh();
-
-  // print_constrained_edges(cdt);
 
   // Make sure triangulation is valid
   dolfin_assert(cdt.is_valid());
