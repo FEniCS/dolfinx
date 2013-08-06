@@ -28,7 +28,7 @@ We begin by defining a mesh of the domain and a finite element function space V 
 The second argument to :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>` is the finite element family, while the third argument specifies the polynomial degree. Thus, in this case, our space V consists of first-order, continuous Lagrange finite element functions (or in order words, continuous piecewise linear polynomials).
 
 Next, we want to consider the Dirichlet boundary condition. In our case, we want to say that the points (x, y) such that x = 0 or x = 1 are inside on the inside of :math:`\Gamma_D`. (Note that because of rounding-off errors, it is often wise to instead specify :math:`x <
-\epsilon` or _math:`x > 1 - \epsilon` where :math:`\epsilon` is a small number (such as machine precision).)
+\epsilon` or :math:`x > 1 - \epsilon` where :math:`\epsilon` is a small number (such as machine precision).)
 
 
 .. code-block:: python
@@ -98,4 +98,4 @@ Complete code
 -------------
 
 .. literalinclude:: demo_auto-adaptive_poisson.py
-	:start after: # Begin demo
+	:start-after: # Begin demo
