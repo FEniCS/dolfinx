@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-05-28
+// Last changed: 2013-08-06
 
 #ifndef __BOUNDING_BOX_TREE_H
 #define __BOUNDING_BOX_TREE_H
@@ -74,7 +74,7 @@ namespace dolfin
     ///         The geometric dimension.
     void build(const std::vector<Point>& points, std::size_t gdim);
 
-    /// Compute all collisions between bounding boxes and given _Point_.
+    /// Compute all collisions between bounding boxes and _Point_.
     ///
     /// *Returns*
     ///     std::vector<unsigned int>
@@ -88,7 +88,21 @@ namespace dolfin
     std::vector<unsigned int>
     compute_collisions(const Point& point) const;
 
-    /// Compute all collisions between entities and given _Point_.
+    /// Compute all collisions between bounding boxes and _BoundingBoxTree_.
+    ///
+    /// *Returns*
+    ///     std::vector<unsigned int>
+    ///         A list of local indices for entities contained in
+    ///         (leaf) bounding boxes that collide with (intersect)
+    ///         the given bounding box tree.
+    ///
+    /// *Arguments*
+    ///     tree (_BoundingBoxTree_)
+    ///         The bounding box tree.
+    std::vector<unsigned int>
+    compute_collisions(const BoundingBoxTree& tree) const;
+
+    /// Compute all collisions between entities and _Point_.
     ///
     /// *Returns*
     ///     std::vector<unsigned int>
@@ -103,7 +117,7 @@ namespace dolfin
     std::vector<unsigned int>
     compute_entity_collisions(const Point& point, const Mesh& mesh) const;
 
-    /// Compute first collision between bounding boxes and given _Point_.
+    /// Compute first collision between bounding boxes and _Point_.
     ///
     /// *Returns*
     ///     unsigned int
@@ -118,7 +132,7 @@ namespace dolfin
     unsigned int
     compute_first_collision(const Point& point) const;
 
-    /// Compute first collision between entities and given _Point_.
+    /// Compute first collision between entities and _Point_.
     ///
     /// *Returns*
     ///     unsigned int
@@ -135,7 +149,7 @@ namespace dolfin
     unsigned int
     compute_first_entity_collision(const Point& point, const Mesh& mesh) const;
 
-    /// Compute closest entity to given _Point_.
+    /// Compute closest entity to _Point_.
     ///
     /// *Returns*
     ///     unsigned int
@@ -154,7 +168,7 @@ namespace dolfin
     std::pair<unsigned int, double>
     compute_closest_entity(const Point& point, const Mesh& mesh) const;
 
-    /// Compute closest point to given _Point_. This function assumes
+    /// Compute closest point to _Point_. This function assumes
     /// that the tree has been built for a point cloud.
     ///
     /// Developer note: This function should not be confused with

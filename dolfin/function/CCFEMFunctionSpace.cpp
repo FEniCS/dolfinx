@@ -58,9 +58,12 @@ void CCFEMFunctionSpace::build()
 {
   log(PROGRESS, "Building CCFEM function space.");
 
+  // Get number of spaces
+  const std::size_t num_spaces = _function_spaces.size();
+
   // Compute total dimension
   _dim = 0;
-  for (std::size_t i = 0; i < _function_spaces.size(); i++)
+  for (std::size_t i = 0; i < num_spaces; i++)
   {
     const std::size_t d = _function_spaces[i]->dim();
     _dim += d;
@@ -69,12 +72,23 @@ void CCFEMFunctionSpace::build()
   log(PROGRESS, "Total dimension is %d.", _dim);
 
   // Build bounding box trees for all meshes
+  log(PROGRESS, "Building bounding box trees for all meshes.");
   _trees.clear();
-  for (std::size_t i = 0; i < _function_spaces.size(); i++)
+  for (std::size_t i = 0; i < num_spaces; i++)
   {
     boost::shared_ptr<BoundingBoxTree> tree(new BoundingBoxTree());
     tree->build(*_function_spaces[i]->mesh());
     _trees.push_back(tree);
+  }
+
+  // Compute collisions between all meshes
+  for (std::size_t i = 0; i < num_spaces; i++)
+  {
+    for (std::size_t j = i + 1; j < num_spaces; j++)
+    {
+      log(PROGRESS, "Computing collisions for mesh %d overlapped by mesh %d.", i, j);
+      _trees[i]->compute_collisions(*_trees[j]);
+    }
   }
 }
 //-----------------------------------------------------------------------------

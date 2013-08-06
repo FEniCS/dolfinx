@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-09
-// Last changed: 2013-06-21
+// Last changed: 2013-08-06
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -105,6 +105,17 @@ BoundingBoxTree::compute_collisions(const Point& point) const
   // Delegate call to implementation
   dolfin_assert(_tree);
   return _tree->compute_collisions(point);
+}
+//-----------------------------------------------------------------------------
+std::vector<unsigned int>
+BoundingBoxTree::compute_collisions(const BoundingBoxTree& tree) const
+{
+  // Check that tree has been built
+  check_built();
+
+  // Delegate call to implementation
+  dolfin_assert(_tree);
+  return _tree->compute_collisions(tree);
 }
 //-----------------------------------------------------------------------------
 std::vector<unsigned int>

@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-05-02
-// Last changed: 2013-05-28
+// Last changed: 2013-08-06
 
 // Define a maximum dimension used for a local array in the recursive
 // build function. Speeds things up compared to allocating it in each
@@ -105,6 +105,18 @@ GenericBoundingBoxTree::compute_collisions(const Point& point) const
   // Call recursive find function
   std::vector<unsigned int> entities;
   compute_collisions(point, _bboxes.size() - 1, entities);
+
+  return entities;
+}
+//-----------------------------------------------------------------------------
+std::vector<unsigned int>
+GenericBoundingBoxTree::compute_collisions(const BoundingBoxTree& tree) const
+{
+  // Call recursive find function
+  std::vector<unsigned int> entities;
+  //compute_collisions(point, _bboxes.size() - 1, entities);
+
+  cout << "tree-tree collision not implemented" << endl;
 
   return entities;
 }

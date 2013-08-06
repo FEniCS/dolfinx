@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-23
-// Last changed: 2013-05-28
+// Last changed: 2013-08-06
 
 #ifndef __GENERIC_BOUNDING_BOX_TREE_H
 #define __GENERIC_BOUNDING_BOX_TREE_H
@@ -49,25 +49,28 @@ namespace dolfin
     /// Build bounding box tree for point cloud
     void build(const std::vector<Point>& points);
 
-    /// Compute all collisions between bounding boxes and given _Point_
+    /// Compute all collisions between bounding boxes and _Point_
     std::vector<unsigned int> compute_collisions(const Point& point) const;
 
-    /// Compute all collisions between entities and given _Point_
+    /// Compute all collisions between bounding boxes and _BoundingBoxTree_
+    std::vector<unsigned int> compute_collisions(const BoundingBoxTree& tree) const;
+
+    /// Compute all collisions between entities and _Point_
     std::vector<unsigned int> compute_entity_collisions(const Point& point,
                                                         const Mesh& mesh) const;
 
-    /// Compute first collision between bounding boxes and given _Point_
+    /// Compute first collision between bounding boxes and _Point_
     unsigned int compute_first_collision(const Point& point) const;
 
-    /// Compute first collision between entities and given _Point_
+    /// Compute first collision between entities and _Point_
     unsigned int compute_first_entity_collision(const Point& point,
                                               const Mesh& mesh) const;
 
-    /// Compute closest entity and distance to given _Point_
+    /// Compute closest entity and distance to _Point_
     std::pair<unsigned int, double> compute_closest_entity(const Point& point,
                                                            const Mesh& mesh) const;
 
-    /// Compute closest point and distance to given _Point_
+    /// Compute closest point and distance to _Point_
     std::pair<unsigned int, double> compute_closest_point(const Point& point) const;
 
   protected:
