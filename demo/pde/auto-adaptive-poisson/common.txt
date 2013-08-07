@@ -91,9 +91,9 @@ We use the :math:`D\ddot{a}rfler` marking as the mesh marking procedure.
 
 In this demo, we shall consider the following definitions of the input functions, the domain, and the boundaries:
 
-* :math:`\Omega = [0,1] \times [0,1] ` (a unit square)
-* :math:`\Gamma_{D} = \{(0, y) \cup (1, y) \subset \partial \Omega\} ` (Dirichlet boundary)
-* :math:`\Gamma_{N} = \{(x, 0) \cup (x, 1) \subset \partial \Omega\} ` (Neumann boundary)
-* :math:`g = \sin(5x) ` (normal derivative)
-* :math:`f = 10\exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.02) ` (source term)
+* :math:`\Omega = [0,1] \times [0,1]\,` (a unit square)
+* :math:`\Gamma_{D} = \{(0, y) \cup (1, y) \subset \partial \Omega\}\,` (Dirichlet boundary)
+* :math:`\Gamma_{N} = \{(x, 0) \cup (x, 1) \subset \partial \Omega\}\,` (Neumann boundary)
+* :math:`g = \sin(5x)\,` (normal derivative)
+* :math:`f = 10\exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.02)\,` (source term)
 
