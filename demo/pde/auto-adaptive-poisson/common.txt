@@ -6,6 +6,12 @@ This demo illustrates how to:
 
 The two solutions for u in this demo will look as follows, where the left are unrefined while the right are the refined solution:
 
+.. image:: ../u_unrefined.png
+    :scale: 75 %
+
+.. image:: ../u_refined.png
+    :scale: 75 %
+
 
 Equation and problem definition
 -------------------------------
