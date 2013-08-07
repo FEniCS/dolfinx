@@ -73,14 +73,14 @@ Then define the goal functional
     # Define goal functional (quantity of interest)
     M = u*dx()
 
-Next we specify the error tolerance
+Next we specify the error tolerance for when the refinement shall stop
 
 .. code-block:: python
 
     # Define error tolerance
     tol = 1.e-5
 
-Now, we have specified the variational forms and can consider the solution of the variational problem. First, we define the :py:class:`LinearVariationalProblem <dolfin.cpp.fem.LinearVariationalProblem>` function with the arguments a, L, u and bc. Next we send this problem to the :py:class:`AdaptiveLinearVariationalSolver <dolfin.cpp.fem.AdaptiveLinearVariationalSolver>` together with the goal functional, and then set the elements in the dual problem to continous Galerkin. At last we solve the problem with the defined tolerance and saves the summary for visualization in plot, the implementation is as follows:
+Now, we have specified the variational forms and can consider the solution of the variational problem. First, we define the :py:class:`LinearVariationalProblem <dolfin.cpp.fem.LinearVariationalProblem>` function with the arguments a, L, u and bc. Next we send this problem to the :py:class:`AdaptiveLinearVariationalSolver <dolfin.cpp.fem.AdaptiveLinearVariationalSolver>` together with the goal functional, and then set the elements in the dual problem to continous Galerkin, note that one may choose several adaptations in the error control. At last we solve the problem with the defined tolerance and saves the summary for visualization in plot, the implementation is as follows:
 
 .. code-block:: python
 

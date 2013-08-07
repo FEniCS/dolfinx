@@ -4,7 +4,7 @@ This demo illustrates how to:
 * Define Goal functional
 * Use AdaptiveLinearVariationalSolver
 
-The two solutions for u in this demo will look as follows, where the left are unrefined while the right are refined:
+The two solutions for u in this demo will look as follows, where the left are unrefined while the right are the refined solution:
 
 
 Equation and problem definition
@@ -43,7 +43,7 @@ The above definitions is that of the continuous problem, in the actual computer 
 
     a(u_h, v) = L(v) \quad \forall \ v \in \hat{V}_h,
 
-which we will call the discrete primal problem, where :math:`V_h` and :math:`\hat{V_h}'` are finite dimensional subspaces. In this demo we will use goal oriented adaptive error control, where we derive an :math:`\textit{a posteriori}` error estimate and error indicators which are described below. We define a goal functional :math:`\mathcal{M} : V \rightarrow \mathbb{R}`, which expresses the localized physical properties of the solution of a simulation. The objective of goal oriented adaptive error control is to minimize computational work to obtain a given level of accuracy in :math:`\mathcal{M}`.
+which we will call the discrete primal problem, where :math:`V_h` and :math:`\hat{V_h}'` are finite dimensional subspaces. In this demo we will use goal oriented adaptive error control, where we derive #an :math:`\textit{a posteriori}` error estimate and error indicators which are described below. We define a #goal functional :math:`\mathcal{M} : V \rightarrow \mathbb{R}`, which expresses the localized physical #properties of the solution of a simulation. The objective of goal oriented adaptive error control is to #minimize computational work to obtain a given level of accuracy in :math:`\mathcal{M}`.
 
 The weak residual is defined as 
 
@@ -79,6 +79,9 @@ and by Galerkin orthogonality we have :math:`r(z) = r(z - v_h) \forall v_h \in \
 .. math::
 
     \mathcal{M}(u) = \int_{\Omega}  u dx.
+
+
+We use the :math:`D\ddot{a}rfler` marking as the mesh marking procedure.
 
 In this demo, we shall consider the following definitions of the input functions, the domain, and the boundaries:
 
