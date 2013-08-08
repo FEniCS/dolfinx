@@ -33,7 +33,7 @@ This produces a mesh looking as follows:
 .. image:: unitintervalmesh.png
 	:scale: 75 %
 
-We then make our first version of a mesh on the unit square :math:`[0,1] \times [0,1]`. We must give the number of cells in horizontal and vertical direction as the first two arguments to :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`. There is a third optional argument that indicates the direction of the diagonals, this can be set to "left", "right", "right/left", "left/right", or "crossed". We can also omit this argument and let it use the default direction "right".
+We then make our first version of a mesh on the unit square :math:`[0,1] \times [0,1]`. We must give the number of cells in horizontal and vertical direction as the first two arguments to :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`. There is a third optional argument that indicates the direction of the diagonals, this can be set to "left", "right", "right/left", "left/right", or "crossed". We can also omit this argument and thereby use the default direction "right".
 
 .. code-block:: python
 
@@ -69,7 +69,7 @@ Our second version of a mesh on the unit square has diagonals to the left, the t
 .. image:: unitsquaremesh_left_right.png
 	:scale: 65 %
 
-The class :py:class:`RectangleMesh <dolfin.cpp.mesh.RectangleMesh>` ( :math:`x_0,y_0,x_1,y_1,x_n,y_n`, direction) creates a mesh on a rectangle with one corner in :math:`(x_0,y_0)` and the opposite corner in :math:`(x_1,y_1)`. :math:`x_n` and :math:`y_n` gives the number of cells in :math:`x`- and :math:`y`-direction, and as in UnitSquareMesh the direction of the diagonals is given as a final optional argument ("left", "right",  "left/right", or "crossed"). 
+The class :py:class:`RectangleMesh <dolfin.cpp.mesh.RectangleMesh>` ( :math:`x_0,y_0,x_1,y_1,n_x,n_y`, direction) creates a mesh on a rectangle with one corner in :math:`(x_0,y_0)` and the opposite corner in :math:`(x_1,y_1)`. :math:`n_x` and :math:`n_y` gives the number of cells in :math:`x`- and :math:`y`-direction, and as in UnitSquareMesh the direction of the diagonals is given as a final optional argument ("left", "right",  "left/right", or "crossed"). 
 In the first mesh we use the default direction ("right") of the diagonal, and in the second mesh we use diagonals to both left and right. 
 
 .. code-block:: python
@@ -144,7 +144,7 @@ To make a mesh on the 3D unit cube  :math:`[0,1]\times [0,1]\times [0,1]`, we us
 	:scale: 75 %	
 
 
-The last mesh we will demonstrate is on a rectangular prism in 3D. :py:class:`BoxMesh <dolfin.cpp.mesh.BoxMesh>` ( :math:`x_0,y_0,z_0,x_1,y_1,z_1,x_n,y_n,z_n`) takes the coordinates of the first corner(:math:`x_0,y_0,z_0`) as the three first arguments, the coordinates of the opposite corner (:math:`x_1,y_1,z_1`)  as the next three arguments, while the last three arguments specifies the number of points in the :math:`x`-, :math:`y`- and :math:`z`-direction. 
+Finally we will demonstrate a mesh on a rectangular prism in 3D. :py:class:`BoxMesh <dolfin.cpp.mesh.BoxMesh>` ( :math:`x_0,y_0,z_0,x_1,y_1,z_1,x_n,y_n,z_n`) takes the coordinates of the first corner(:math:`x_0,y_0,z_0`) as the three first arguments, the coordinates of the opposite corner (:math:`x_1,y_1,z_1`)  as the next three arguments, while the last three arguments specifies the number of points in the :math:`x`-, :math:`y`- and :math:`z`-direction. 
 
 .. code-block:: python
 
@@ -155,7 +155,7 @@ The last mesh we will demonstrate is on a rectangular prism in 3D. :py:class:`Bo
 .. image:: boxmesh.png
 	:scale: 75 %	
 
-By calling :py:meth:`interactive <dolfin.cpp.io.VTKPlotter.interactive>` we are allowed to resize, move and rotate the plot.
+By calling :py:meth:`interactive <dolfin.cpp.io.VTKPlotter.interactive>` we are allowed to resize, move and rotate the plots.
 
 .. code-block:: python 
 

@@ -1,8 +1,8 @@
 This demo illustrates how to:
 
-*
-*
-*
+* Use meshes with boundary indicators
+* Solve the Poisson equation with Diriclet boundary values
+
 
 The solution for :math:`u` in this demo will look as follows:
 

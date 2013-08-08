@@ -22,7 +22,7 @@ First, the :py:mod:`dolfin` module is imported:
 	from dolfin import *
 
 Then, we define a mesh of the domain. As the unit square is a very standard domain, we can use a built-in mesh, 
-provided by the class p:py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`. 
+provided by the class :py:class:`UnitSquareMesh <dolfin.cpp.mesh.UnitSquareMesh>`. 
 In order to create a mesh consisting of :math:`32 \times 32` squares with each square divided into two triangles, 
 we do as follows 
 

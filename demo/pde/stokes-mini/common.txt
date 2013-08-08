@@ -45,9 +45,9 @@ for all :math:`(v, q) \in W`, where
 .. math::
 
 	a((u, p), (v, q))
-				&= \int_{\Omega} \nabla u \cdot \nabla v
+				&= \int_{\Omega} [\nabla u \cdot \nabla v
                  + \nabla \cdot v \ p
-                 + \nabla \cdot u \ q \, {\rm d} x, \\
+                 + \nabla \cdot u \ q] \, {\rm d} x, \\
 	L((v, q))
 				&= \int_{\Omega} f \cdot v \, {\rm d} x
     			+ \int_{\partial \Omega_N} g \cdot v \, {\rm d} s. \\

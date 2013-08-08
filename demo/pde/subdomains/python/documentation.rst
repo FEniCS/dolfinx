@@ -9,8 +9,6 @@ Marking subdomains of a mesh
 This demo is implemented in a single Python file,
 :download:`demo_subdomains.py`
 
-This demo illustrates how to mark sub domains of a mesh and store 
-the sub domain markers as a mesh function to DOLFIN XML files and VTK files.
 
 .. include:: ../common.txt
 

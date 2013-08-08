@@ -43,6 +43,7 @@ and the above constraint.
 #
 # First added:  2010-05-10
 # Last changed: 2012-11-12
+# Begin demo
 
 from dolfin import *
 

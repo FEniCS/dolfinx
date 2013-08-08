@@ -46,6 +46,7 @@ This demo is dedicated to BF and Marius... ;-)
 #
 # First added:  2009-12-16
 # Last changed: 2011-06-28
+# Begin demo
 
 from dolfin import *
 

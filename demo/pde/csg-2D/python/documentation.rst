@@ -3,8 +3,8 @@
 .. _demo_pde_csg-2D_python_documentation:
 
 
-Create CSG geometry
-===================
+Create CSG 2D-geometry
+======================
 
 This demo is implemented in a single Python file,
 :download:`demo_csg_2D.py`, and demonstrates use of 2D geometries in DOLFIN.
@@ -15,7 +15,7 @@ This demo is implemented in a single Python file,
 Implementation
 --------------
 
-This description goes through how to make geometries and meshes in DOLFIN.
+This description goes through the implementation in :download:`demo_csg_2D.py` that shows how to make geometries and meshes in DOLFIN.
 
 First, the :py:mod:`dolfin` module is imported:
 
@@ -39,6 +39,7 @@ We create a :py:class:`Rectangle <dolfin.cpp.mesh.Rectangle>` defined by two opp
 	r = Rectangle(0.5, 0.5, 1.5, 1.5)
 
 where the first two arguments represents the first corner, and the last two arguments represents the opposite corner. 
+
 A :py:class:`Circle <dolfin.cpp.mesh.Circle>`  may be defined by:
 
 .. code-block:: python
@@ -74,7 +75,7 @@ To visualize our geometry we :py:func:`plot <dolfin.common.plotting.plot>` it:
 	# Plot geometry
 	plot(g2d, "2D Geometry (boundary)")
 
-The second argument is optional, it specifies title of the plot.
+The second argument is optional, it specifies the title of the plot.
 
 Finally, we generate a mesh using :py:class:`Mesh <dolfin.cpp.mesh.Mesh>` and plot it.
 

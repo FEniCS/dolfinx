@@ -30,7 +30,7 @@ We begin by defining a mesh of the domain and a finite element function space V 
     mesh = UnitSquareMesh(8, 8)
     V = FunctionSpace(mesh, "Lagrange", 1)
     
-The second argument to :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>` is the finite element family, while the third argument specifies the polynomial degree. Thus, in this case, our space V consists of first-order, continuous Lagrange finite element functions (or in order words, continuous piecewise linear polynomials).
+The second argument to :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>`, "Lagrange", is the finite element family, while the third argument specifies the polynomial degree. Thus, in this case, our space V consists of first-order, continuous Lagrange finite element functions (or in order words, continuous piecewise linear polynomials).
 
 Next, we want to consider the Dirichlet boundary condition. In our case, we want to say that the points (x, y) such that x = 0 or x = 1 are inside on the inside of :math:`\Gamma_D`. (Note that because of rounding-off errors, it is often wise to instead specify :math:`x <
 \epsilon` or :math:`x > 1 - \epsilon` where :math:`\epsilon` is a small number (such as machine precision).)
@@ -80,7 +80,7 @@ Next we specify the error tolerance for when the refinement shall stop
     # Define error tolerance
     tol = 1.e-5
 
-Now, we have specified the variational forms and can consider the solution of the variational problem. First, we define the :py:class:`LinearVariationalProblem <dolfin.cpp.fem.LinearVariationalProblem>` function with the arguments a, L, u and bc. Next we send this problem to the :py:class:`AdaptiveLinearVariationalSolver <dolfin.cpp.fem.AdaptiveLinearVariationalSolver>` together with the goal functional, and then set the elements in the dual problem to continous Galerkin, note that one may choose several adaptations in the error control. At last we solve the problem with the defined tolerance and saves the summary for visualization in plot, the implementation is as follows:
+Now, we have specified the variational forms and can consider the solution of the variational problem. First, we define the :py:class:`LinearVariationalProblem <dolfin.cpp.fem.LinearVariationalProblem>` function with the arguments a, L, u and bc. Next we send this problem to the :py:class:`AdaptiveLinearVariationalSolver <dolfin.cpp.fem.AdaptiveLinearVariationalSolver>` together with the goal functional. Note that one may also choose several adaptations in the error control. At last we solve the problem with the defined tolerance and saves the summary for visualization in plot, the implementation is as follows:
 
 .. code-block:: python
 

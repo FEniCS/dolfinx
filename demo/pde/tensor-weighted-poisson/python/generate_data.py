@@ -20,6 +20,7 @@ used in the demo."""
 #
 # First added:  2009-12-16
 # Last changed: 2009-12-16
+# Begin demo
 
 from dolfin import *
 

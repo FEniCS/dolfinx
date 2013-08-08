@@ -1,11 +1,10 @@
 This demo illustrates how to:
 
-* Solve a nonlinear partial differential equation (in this case a nonlinear variant og Poisson's equation)
+* Solve a nonlinear partial differential equation (in this case a nonlinear variant of Poisson's equation)
 * Create and apply Dirichlet boundary conditions
-* Define Expressions
-* Define a FunctionSpace
-* Create a SubDomain
-* The solution for u in this demo will look as follows:
+* Define :py:class:`Expression <dolfin.cpp.function.Expression>`
+* Define a :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>`
+* Create a :py:class:`SubDomain <dolfin.cpp.mesh.SubDomain>`
 
 The solution for :math:`u` in this demo will look as follows:
 
@@ -50,9 +49,10 @@ Linearizing the semilinear form :math:`F` around :math:`u = u_h`, we obtain
 
 .. math::
 
-	F'(u_h;\delta u,v) = \int_\Omega (\delta u\nabla u_h)\cdot\nabla v + ((1+u_h)\nabla\delta u)\nabla v dx
+	F'(u_h;\delta u,v) = \int_\Omega [(\delta u\nabla u_h)\cdot\nabla v + ((1+u_h)\nabla\delta u)\nabla v] dx
 	
-We note that for each fixed :math:`u_h`, :math:`a = F'(u_h;\,\cdot\,,\,\cdot\,)` is a bilinear form and :math:`L = F(u_h;\,\cdot\,,\,\cdot\,)` is a linear form. In each Newton iteration, we thus solve a linear variational problem of the canonical form: find :math:`\delta u \in V_{h,0}` such that
+We note that for each fixed :math:`u_h`, :math:`a = F'(u_h;\,\cdot\,,\,\cdot\,)` is a bilinear form and :math:`L = F(u_h;\,\cdot\,,\,\cdot\,)` is a linear form. In each Newton iteration, we thus solve a linear variational problem of the canonical form:
+find :math:`\delta u \in V_{h,0}` such that
 
 .. math::
 

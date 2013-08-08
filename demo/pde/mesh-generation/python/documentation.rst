@@ -36,8 +36,7 @@ We create an empty mesh using :py:class:`Mesh <dolfin.cpp.mesh.Mesh>`. We need t
 	# Create empty Mesh
 	mesh = Mesh()
 
-We are now ready to make the geometries. We start with a polygon and define it by making a list of its vertices. We need a closed contour, so the first and the last element in the list is the same point. We represent the points with instances of :py:class:`Point <dolfin.cpp.mesh.Point>`. Since we want a 2D geometry we use the default value, 0, for z.  
-
+We are now ready to make the geometries. We start with a polygon and define it by making a list of its vertices. We need a closed contour, so the first and the last element in the list is the same point. We represent the points with instances of :py:class:`Point <dolfin.cpp.mesh.Point>`. :py:class:`Point <dolfin.cpp.mesh.Point>` takes :math:`(x,y,z)` as arguments, but since they all have default value 0, and we have a 2D-geometry, we can omit :math:`z`. 
 .. code-block:: python
 
 	# Create list of polygonal domain vertices

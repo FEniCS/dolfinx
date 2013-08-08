@@ -2,17 +2,17 @@
 
 .. _demo_pde_csg_3D_python_documentation:
 
-Create CSG-3D geometry
+Create CSG 3D-geometry
 ======================
 
-This demo is implemented in a single Python file, :download:`demo_csg-3D.py`, and demonstrates of usage of 3D geometries in DOLFIN.
+This demo is implemented in a single Python file, :download:`demo_csg-3D.py`, and demonstrates usage of 3D geometries in DOLFIN.
 
 .. include:: ../common.txt
 
 Implementation
 --------------
 
-This description goes through how to make 3-dimentionals geometries and meshes in DOLFIN.
+This description goes through how to make 3-dimentionals geometries and meshes in DOLFIN, as implemented in :download:`demo_csg-3D.py`.  
 
 First, the :py:mod:`dolfin` module is imported:
 
@@ -28,25 +28,25 @@ Then we check if CGAL is installed, as it is needed to compile this demo:
 		print "DOLFIN must be compiled with CGAL to run this demo."
 		exit(0)
 
-Now we define 3D geometries. We start with defining a box by sending the coordinates of two opposite corners as arguments to the class in dolfin called :py:class:`Box <dolfin.cpp.mesh.Box>`. 
+Now we define 3D geometries. We start with defining a box by sending the coordinates of two opposite corners as arguments to the class :py:class:`Box <dolfin.cpp.mesh.Box>`. 
 
 .. code-block:: python
 
 	box = Box(0, 0, 0, 1, 1, 1)
 
-We then use :py:class:`Sphere <dolfin.cpp.mesh.Sphere>` to define a sphere with center at :py:class:`Point <dolfin.cpp.mesh.Point>` (:math:`x,y,z`) and radius given with the second argument
+We create a sphere by sending the center and radius to :py:class:`Sphere <dolfin.cpp.mesh.Sphere>`. The center :math:`(x_0, y_0, z_0)` is represented by an instance of :py:class:`Point <dolfin.cpp.mesh.Point>`.
 
 .. code-block:: python
 	
 	sphere = Sphere(Point(0, 0, 0), 0.3) 
 
-We define a :py:class:`Cone <dolfin.cpp.mesh.Cone>` by four arguments, the first being the center at one end :py:class:`Point <dolfin.cpp.mesh.Point>` (:math:`x_1,y_1,z_1`) and the second being the center at the other end :py:class:`Point <dolfin.cpp.mesh.Point>` (:math:`x_2,y_2,z_2`). The two last arguments gives the radius at the ends. 
+We define a :py:class:`Cone <dolfin.cpp.mesh.Cone>` by four arguments, the center at one end :py:class:`Point <dolfin.cpp.mesh.Point>` (:math:`x_1,y_1,z_1`), the center at the other end :py:class:`Point <dolfin.cpp.mesh.Point>` (:math:`x_2,y_2,z_2`), and the radius at these points.
 
 .. code-block:: python 
  
 	cone = Cone(Point(0, 0, -1), Point(0, 0, 1), 1., .5)
 
-Now we have some geometries that we can play with, and the following might seem like magic, but trust me it works!
+Now we have some geometries that we can play with:
 
 .. code-block:: python 
 

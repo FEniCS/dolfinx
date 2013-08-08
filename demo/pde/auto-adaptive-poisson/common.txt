@@ -1,4 +1,6 @@
-This demo illustrates how to:
+In this demo we will use goal oriented adaptivity and error control which applies a duality technique to derive error estimates taken directly from the computed solution which then are used to weight local residuals. To this end we derive an :math:`\textit{a posteriori}` error estimates and error indicators. We define a goal functional :math:`\mathcal{M} : V \rightarrow \mathbb{R}`, which expresses the localized physical properties of the solution of a simulation. The objective of goal oriented adaptive error control is to minimize computational work to obtain a given level of accuracy in :math:`\mathcal{M}`.
+
+We will thus illustrate how to:
 
 * Solve a linear partial differential equation with an auto adaptive mesh refinement
 * Define Goal functional
@@ -55,7 +57,7 @@ The weak residual is defined as
 
 .. math::
   
-    r(v) = L(v)  a(u_h, v)
+    r(v) = L(v) - a(u_h, v)
 
 By Galerkin orthogonality, we have
 
@@ -68,26 +70,26 @@ which means that the residual vanishes for all functions in :math:`\hat{V}_{h}`.
 
 .. math::
 
-    \eta = \left| \mathcal{M}(u) - \mathcal{u_h} \right| \leq \textit{tol}
+    \eta = \left| \mathcal{M}(u_h) - \mathcal{u_h} \right| \leq \textit{tol}
 
 Next we derive an :math:`\textit{a posteriori}` error estimate for the magnitude :math:`\eta`, by defining the discrete dual variational problem 
 
 find :math:`z_h \in V_h^*` such that :math:`a^*(z_h,v) = \mathcal{v}, \quad \forall v \in \hat{V}_h^*`.
 
-Here :math:`V^*, \hat{V}_h^*` are the dual trial- and test spaces and :math:`a^* : V^* \times \hat{V}^* \rightarrow \mathbb{R}` is the adjoint of :math:`a` so that :math:`a^*(u,v) = a(v,u)`.
+Here :math:`V^*, \hat{V}_h^*` are the dual trial- and test spaces and :math:`a^* : V^* \times \hat{V}^* \rightarrow \mathbb{R}` is the adjoint of :math:`a` such that :math:`a^*(u,v) = a(v,u)`.
 
 .. math::
 
     \mathcal{M}(u) - \mathcal{u_h} = a^*(z, u - u_h) = a(u - u_h, z) = a(u,z) - a(u_h,z) = L(z) - a(u_h,z) = r(z)
     
-and by Galerkin orthogonality we have :math:`r(z) = r(z - v_h)\,\, \forall v_h \in \hat{V}_h`. Note that the residual vanishes if :math:`z \in \hat{V}_h^*` and has to either be approximated in a higher order element space or one may use an extrapolation. The choice of goal functional depends on what properties you are interested in, if one is interested in the total energy flux, a suitable choice would be :math:`\mathcal{M}(u) =  \int_{\partial \Omega} \partial_n u dS`, wheras here we are more interested in the average of the solution in the inner domain :math:`\Omega` and the goal functional is thus defined as
+and by Galerkin orthogonality we have :math:`r(z) = r(z - v_h)\,\, \forall v_h \in \hat{V}_h`. Note that the residual vanishes if :math:`z \in \hat{V}_h^*` and has to either be approximated in a higher order element space or one may use an extrapolation. The choice of goal functional depends on what properties you are interested in, if one is interested in the total energy flux, a suitable choice would be :math:`\mathcal{M}(u) =  \int_{\partial \Omega} \partial_n u\,dS`, wheras here we are more interested in the average of the solution in the inner domain :math:`\Omega` and the goal functional is thus defined as
 
 .. math::
 
     \mathcal{M}(u) = \int_{\Omega}  u dx.
 
 
-We use the :math:`D\ddot{a}rfler` marking as the mesh marking procedure.
+We use the :math:`D\ddot{o}rfler` marking as the mesh marking procedure.
 
 In this demo, we shall consider the following definitions of the input functions, the domain, and the boundaries:
 

@@ -54,7 +54,7 @@ Now that we have our mixed function space and marked subdomains defining the bou
 	# Collect boundary conditions
 	bcs = [bc0, bc1, bc2]
 
-Here, we have given four arguments in call of :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>`. The first specifies the :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>`. Since we have a :py:class:`MixedFunctionSpace <dolfin.functions.functionspace.MixedFunctionSpace>`, we write system.sub(0) for the :py:class:`VectorFunctionSpace <dolfin.functions.functionspace.VectorFunctionSpace>`, and system.sub(1) for the :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>`. The second argument specifies the value on the Dirichlet boundary. The two last ones specifies the marking of the subdomains; sub_domains contains the subdomain markers and the number given as the last argument is the subdomain index.
+Here, we have given four arguments to :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>`. The first specifies the :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>`. Since we have a :py:class:`MixedFunctionSpace <dolfin.functions.functionspace.MixedFunctionSpace>`, we write system.sub(0) for the :py:class:`VectorFunctionSpace <dolfin.functions.functionspace.VectorFunctionSpace>`, and system.sub(1) for the :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>`. The second argument specifies the value on the Dirichlet boundary. The two last ones specifies the marking of the subdomains; sub_domains contains the subdomain markers and the number given as the last argument is the subdomain index.
 
 The bilinear and linear forms corresponding to the stabilized weak mixed formulation of the Stokes equations are defined as follows:
 

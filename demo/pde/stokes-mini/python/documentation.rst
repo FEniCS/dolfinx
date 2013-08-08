@@ -59,7 +59,7 @@ Now that we have our mixed function space and marked subdomains defining the bou
 	# Collect boundary conditions
 	bcs = [bc0, bc1, bc2]
 
-Here, we have given four arguments in call of :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>`. The first specifies the :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>`. Since we have a :py:class:`MixedFunctionSpace <dolfin.functions.functionspace.MixedFunctionSpace>`, we write W.sub(0) for the function space V, and W.sub(1) for Q. The second argument specifies the value on the Dirichlet boundary. The two last ones specifies the marking of the subdomains; sub_domains contains the subdomain markers and the number given as the last argument is the subdomain index.
+Here, we have given four arguments in the call of :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>`. The first specifies the :py:class:`FunctionSpace <dolfin.cpp.function.FunctionSpace>`. Since we have a :py:class:`MixedFunctionSpace <dolfin.functions.functionspace.MixedFunctionSpace>`, we write W.sub(0) for the function space V, and W.sub(1) for Q. The second argument specifies the value on the Dirichlet boundary. The two last ones specifies the marking of the subdomains; sub_domains contains the subdomain markers and the number given as the last argument is the subdomain index.
 
 The bilinear and linear forms corresponding to the weak mixed formulation of the Stokes equations are defined as follows:
 
@@ -91,7 +91,7 @@ We may be interested in the :math:`L^2` norms of u and p, they can be calculated
 	print "Norm of velocity coefficient vector: %.15g" % u.vector().norm("l2")
 	print "Norm of pressure coefficient vector: %.15g" % p.vector().norm("l2")
 
-One can also split functions using shallow copies (which is enough when we just plotting the result) by writing
+One can also split functions using shallow copies (which is enough when we just plot the result) by writing
 
 .. code-block:: python
 	

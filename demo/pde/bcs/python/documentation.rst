@@ -26,7 +26,7 @@ First, the :py:mod:`dolfin` module is imported:
 	from dolfin import *
 
 Then, we import the mesh and create a finite element function space :math:`V` realtive to this mesh, 
-in this case we create a :py:class:`FunctionSpace<dolfin.functions.functionspace.FunctionSpace>` ``V`` consisting of continuous piecewise linear polynomials.
+in this case we create a :py:class:`FunctionSpace<dolfin.functions.functionspace.FunctionSpace>` ``V`` consisting of continuous piecewise linear polynomials. 
 
 .. code-block:: python
 
@@ -34,9 +34,7 @@ in this case we create a :py:class:`FunctionSpace<dolfin.functions.functionspace
 	mesh = Mesh("../aneurysm.xml.gz")
 	V = FunctionSpace(mesh, "CG", 1)
 
-Now, we define the trial function :math:`u` and the test function :math:`v`, both living in the function space :math:`V`, 
-and our variational problem. 
-:math:`u` and :math:`u` are defined using the classes 
+Now, we define the trial function u and the test function v, both living in the function space ``V``. We also define our variational problem, a and L. u and v are defined using the classes 
 :py:class:`TrialFunction <dolfin.functions.function.TrialFunction>` and 
 :py:class:`TestFunction<dolfin.functions.function.TrialFunction>`, 
 respetively, on the :py:class:`FunctionSpace<dolfin.functions.functionspace.FunctionSpace>` ``V``.
@@ -74,7 +72,7 @@ Then we use the class :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>` to de
 :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>` takes three arguments, the first one is our function space ``V``, 
 the next is the boundary condition value and the third is the subdomain indicator which is information stored in the mesh.
 
-At this point we are ready to create a Function ``u`` to store the solution and call the solve function with the arguments
+At this point we are ready to create a :py:class:`Function <dolfin.cpp.function.Function>` ``u`` to store the solution and call the solve function with the arguments
 ``a == L``, ``u``, ``[bc0, bc1, bc2, bc3]``, as follows:
 
 .. code-block:: python

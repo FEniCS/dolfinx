@@ -55,7 +55,7 @@ Now,we want to define the variational problem, but first we need to specify the 
 This can be done using :py:class:`TrialFunctions<dolfin.functions.function.TrialFunction>` 
 and :py:class:`TestFunctions <dolfin.functions.function.TestFunction>`.
 It only remains to define the source function :math:`f`, before we define the bilinear and linear forms. 
-It is given by a simple mathematical formula, and can be easily declared using the 
+It is given by a simple mathematical formula, and can easily be declared using the 
 :py:class:`Expression <dolfin.functions.expression.Expression>` class. 
 Note that the string defining ``f`` uses C++ syntax since, for efficiency, 
 DOLFIN will generate and compile C++ code for these expressions at run-time.
@@ -74,7 +74,7 @@ The following code shows how this is done and defines the variational problem:
 Since we have natural (Neumann) boundary conditions in this problem, we don´t have to implement boundary conditions. 
 This is because Neumann boundary conditions are default in DOLFIN.
 
-To compute the solution we use the bilinear and linear forms, and the boundary condition, but we also need to create a 
+To compute the solution we use the bilinear form, the linear forms, and the boundary condition, but we also need to create a 
 :py:class:`Function <dolfin.functions.function.Function>` to store the solution(s). 
 The (full) solution will be stored in ``w``, which we initialize using the 
 :py:class:`FunctionSpace<dolfin.functions.functionspace.FunctionSpace>` ``W``. 

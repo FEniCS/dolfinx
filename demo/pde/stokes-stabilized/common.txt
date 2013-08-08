@@ -1,8 +1,7 @@
 
 This demo illustrates how to:
 
-* lala
-* lala
+* Solve Stokes equation using a stabilized variational form 
 
 and the solution of u and p, respectively:
 

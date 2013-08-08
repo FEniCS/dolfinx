@@ -1,3 +1,10 @@
+
+This demo illustrates:
+
+* How to mark sub domains of a mesh 
+* How to store sub domain markers as a mesh function to DOLFIN XML files and VTK files.
+
+
 Problem definition
 ------------------
 
