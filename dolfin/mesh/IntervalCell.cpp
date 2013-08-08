@@ -20,7 +20,7 @@
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2006-06-05
-// Last changed: 2013-05-22
+// Last changed: 2013-08-02
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -272,8 +272,8 @@ bool IntervalCell::contains(const Cell& cell, const Point& point) const
   const double x1 = geometry.point(vertices[1])[0];
   const double x = point.x();
 
-  return ((x > x0 - DOLFIN_EPS && x < x1 + DOLFIN_EPS) ||
-          (x > x1 - DOLFIN_EPS && x < x0 + DOLFIN_EPS));
+  return ((x >= x0 - DOLFIN_EPS_LARGE && x <= x1 + DOLFIN_EPS_LARGE) ||
+          (x >= x1 - DOLFIN_EPS_LARGE && x <= x0 + DOLFIN_EPS_LARGE));
 }
 //-----------------------------------------------------------------------------
 std::string IntervalCell::description(bool plural) const
