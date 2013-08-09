@@ -19,6 +19,9 @@
 // Last changed: 2013-08-06
 
 #include "CSGCGALDomain2D.h"
+
+#ifdef HAS_CGAL
+
 #include "CSGPrimitives2D.h"
 #include "CSGOperators.h"
 #include <dolfin/common/constants.h>
@@ -338,3 +341,5 @@ void CSGCGALDomain2D::get_holes(std::list<std::vector<Point> >& h,
     }
   }
 }
+
+#endif

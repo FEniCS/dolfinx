@@ -18,6 +18,8 @@
 // First added:  2013-06-22
 // Last changed: 2013-08-06
 
+#ifdef HAS_CGAL
+
 #include "CSGGeometry.h"
 
 #include <dolfin/geometry/Point.h>
@@ -65,3 +67,5 @@ class CSGCGALDomain2D
 
 };
 }
+
+#endif

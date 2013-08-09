@@ -61,12 +61,7 @@ namespace dolfin
     }
 
   private:
-
-    #ifdef HAS_CGAL
-    //std::vector<boost::shared_ptr<const CSGGeometry> > subdomains;
     const CSGGeometry &geometry;
-    #endif
-
   };
 
 }
