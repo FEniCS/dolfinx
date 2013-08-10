@@ -112,15 +112,18 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   dolfin_assert(tensor_layout.rank() == 2);
   const std::size_t M = tensor_layout.size(0);
   const std::size_t N = tensor_layout.size(1);
-  const std::pair<std::size_t, std::size_t> row_range = tensor_layout.local_range(0);
-  const std::pair<std::size_t, std::size_t> col_range = tensor_layout.local_range(1);
+  const std::pair<std::size_t, std::size_t> row_range
+    = tensor_layout.local_range(0);
+  const std::pair<std::size_t, std::size_t> col_range
+    = tensor_layout.local_range(1);
   const std::size_t m = row_range.second - row_range.first;
   const std::size_t n = col_range.second - col_range.first;
   dolfin_assert(M > 0 && N > 0 && m > 0 && n > 0);
 
   // Get sparsity pattern
   dolfin_assert(tensor_layout.sparsity_pattern());
-  const GenericSparsityPattern& sparsity_pattern = *tensor_layout.sparsity_pattern();
+  const GenericSparsityPattern& sparsity_pattern
+    = *tensor_layout.sparsity_pattern();
 
   // Create matrix (any old matrix is destroyed automatically)
   if (_A && !_A.unique())
@@ -162,7 +165,8 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     // Allocate space (using data from sparsity pattern)
 
     // Copy number of non-zeros to PetscInt type
-    const std::vector<PetscInt> _num_nonzeros(num_nonzeros.begin(), num_nonzeros.end());
+    const std::vector<PetscInt> _num_nonzeros(num_nonzeros.begin(),
+                                              num_nonzeros.end());
     MatSeqAIJSetPreallocation(*_A, 0, _num_nonzeros.data());
 
     // Set column indices
@@ -186,7 +190,7 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
     if (_use_gpu)
     {
       not_working_in_parallel("Due to limitations in PETSc, "
-          "distributed PETSc Cusp matrices");
+                              "distributed PETSc Cusp matrices");
     }
 
     // FIXME: Try using MatStashSetInitialSize to optimise performance
@@ -215,12 +219,14 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
       MatSetBlockSize(*_A, tensor_layout.block_size);
 
     // Allocate space (using data from sparsity pattern)
-    const std::vector<PetscInt> _num_nonzeros_diagonal(num_nonzeros_diagonal.begin(),
-                                                       num_nonzeros_diagonal.end());
-    const std::vector<PetscInt> _num_nonzeros_off_diagonal(num_nonzeros_off_diagonal.begin(),
-                                                           num_nonzeros_off_diagonal.end());
+    const std::vector<PetscInt>
+      _num_nonzeros_diagonal(num_nonzeros_diagonal.begin(),
+                             num_nonzeros_diagonal.end());
+    const std::vector<PetscInt>
+      _num_nonzeros_off_diagonal(num_nonzeros_off_diagonal.begin(),
+                                 num_nonzeros_off_diagonal.end());
     MatMPIAIJSetPreallocation(*_A, 0, _num_nonzeros_diagonal.data(),
-                                   0, _num_nonzeros_off_diagonal.data());
+                              0, _num_nonzeros_off_diagonal.data());
   }
 
   // Set some options
@@ -235,23 +241,26 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   #endif
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::get(double* block, std::size_t m, const dolfin::la_index* rows,
-                                     std::size_t n, const dolfin::la_index* cols) const
+void PETScMatrix::get(double* block,
+                      std::size_t m, const dolfin::la_index* rows,
+                      std::size_t n, const dolfin::la_index* cols) const
 {
   // Get matrix entries (must be on this process)
   dolfin_assert(_A);
   MatGetValues(*_A, m, rows, n, cols, block);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set(const double* block, std::size_t m, const dolfin::la_index* rows,
-                                           std::size_t n, const dolfin::la_index* cols)
+void PETScMatrix::set(const double* block,
+                      std::size_t m, const dolfin::la_index* rows,
+                      std::size_t n, const dolfin::la_index* cols)
 {
   dolfin_assert(_A);
   MatSetValues(*_A, m, rows, n, cols, block, INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::add(const double* block, std::size_t m, const dolfin::la_index* rows,
-                                           std::size_t n, const dolfin::la_index* cols)
+void PETScMatrix::add(const double* block,
+                      std::size_t m, const dolfin::la_index* rows,
+                      std::size_t n, const dolfin::la_index* cols)
 {
   dolfin_assert(_A);
   MatSetValues(*_A, m, rows, n, cols, block, ADD_VALUES);
@@ -442,16 +451,6 @@ void PETScMatrix::apply(std::string mode)
                  "apply changes to PETSc matrix",
                  "Unknown apply mode \"%s\"", mode.c_str());
   }
-
-  /*
-  PetscInt nodes = 0;
-  Mat Adiag;
-  MatGetDiagonalBlock(*_A, &Adiag);
-  MatInodeGetInodeSizes(Adiag, &nodes, PETSC_NULL, PETSC_NULL);
-  PetscInt m(0), n(0);
-  MatGetSize(Adiag, &m, &n);
-  cout << "***** Inode count: " << MPI::sum(nodes) << ", " << m << ", " << n << endl;
-  */
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero()
@@ -536,7 +535,6 @@ std::string PETScMatrix::str(bool verbose) const
     return "<Uninitialized PETScMatrix>";
 
   std::stringstream s;
-
   if (verbose)
   {
     warning("Verbose output for PETScMatrix not implemented, calling PETSc MatView directly.");

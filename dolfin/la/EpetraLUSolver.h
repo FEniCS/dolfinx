@@ -68,19 +68,23 @@ namespace dolfin
     std::size_t solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b
-    std::size_t solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+    std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
+                      const GenericVector& b);
 
     /// Solve linear system Ax = b
-    std::size_t solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);
+    std::size_t solve(const EpetraMatrix& A, EpetraVector& x,
+                      const EpetraVector& b);
 
     /// Solve linear system A^Tx = b
     std::size_t solve_transpose(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system A^Tx = b
-    std::size_t solve_transpose(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+    std::size_t solve_transpose(const GenericLinearOperator& A,
+                                GenericVector& x, const GenericVector& b);
 
     /// Solve linear system A^Tx = b
-    std::size_t solve_transpose(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);
+    std::size_t solve_transpose(const EpetraMatrix& A, EpetraVector& x,
+                                const EpetraVector& b);
 
     /// Return a list of available solver methods
     static std::vector<std::pair<std::string, std::string> > methods();

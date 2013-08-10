@@ -52,9 +52,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A)
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A, const PETScMatrix& B)
-   : _A(reference_to_no_delete_pointer(A)),
-     _B(reference_to_no_delete_pointer(B))
-
+  : _A(reference_to_no_delete_pointer(A)), _B(reference_to_no_delete_pointer(B))
 {
   dolfin_assert(A.size(0) == A.size(1));
   dolfin_assert(B.size(0) == A.size(0));
@@ -70,7 +68,8 @@ SLEPcEigenSolver::SLEPcEigenSolver(const PETScMatrix& A, const PETScMatrix& B)
     EPSCreate(PETSC_COMM_SELF, &eps);
 }
 //-----------------------------------------------------------------------------
-SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A) : _A(A)
+SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A)
+  : _A(A)
 {
   dolfin_assert(A->size(0) == A->size(1));
 
@@ -85,7 +84,8 @@ SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A) : _A(
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(boost::shared_ptr<const PETScMatrix> A,
-                         boost::shared_ptr<const PETScMatrix> B) : _A(A), _B(B)
+                                   boost::shared_ptr<const PETScMatrix> B)
+  : _A(A), _B(B)
 
 {
   dolfin_assert(A->size(0) == A->size(1));
@@ -150,7 +150,6 @@ void SLEPcEigenSolver::solve(std::size_t n)
     EPSView(eps, PETSC_VIEWER_STDOUT_SELF);
   }
 
-
   // Solve
   EPSSolve(eps);
 
@@ -189,7 +188,8 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
   get_eigenpair(lr, lc, r, c, 0);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, std::size_t i) const
+void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc,
+                                      std::size_t i) const
 {
   const dolfin::la_index ii = static_cast<dolfin::la_index>(i);
 

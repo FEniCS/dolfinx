@@ -129,7 +129,8 @@ void PETScLinearOperator::init_layout(const GenericVector& x,
 
   // Initialize PETSc matrix
   _A.reset(new Mat, PETScMatrixDeleter());
-  MatCreateShell(PETSC_COMM_WORLD, m_local, n_local, M, N, (void*) this, _A.get());
+  MatCreateShell(PETSC_COMM_WORLD, m_local, n_local, M, N, (void*) this,
+                 _A.get());
   MatShellSetOperation(*_A, MATOP_MULT, (void (*)()) usermult);
 }
 //-----------------------------------------------------------------------------
