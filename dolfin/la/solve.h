@@ -37,7 +37,8 @@ namespace dolfin
   class GenericVector;
 
   /// Solve linear system Ax = b
-  std::size_t solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b,
+  std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
+                    const GenericVector& b,
                     std::string method = "lu",
                     std::string preconditioner = "none");
 
@@ -74,17 +75,21 @@ namespace dolfin
   /// Return available linear algebra backends
   std::vector<std::pair<std::string, std::string> > linear_algebra_backends();
 
-  /// Return a list of available solver methods for current linear algebra backend
+  /// Return a list of available solver methods for current linear
+  /// algebra backend
   std::vector<std::pair<std::string, std::string> > linear_solver_methods();
 
   /// Return a list of available LU methods for current linear algebra backend
   std::vector<std::pair<std::string, std::string> > lu_solver_methods();
 
-  /// Return a list of available Krylov methods for current linear algebra backend
+  /// Return a list of available Krylov methods for current linear
+  /// algebra backend
   std::vector<std::pair<std::string, std::string> > krylov_solver_methods();
 
-  /// Return a list of available preconditioners for current linear algebra backend
-  std::vector<std::pair<std::string, std::string> > krylov_solver_preconditioners();
+  /// Return a list of available preconditioners for current linear
+  /// algebra backend
+  std::vector<std::pair<std::string, std::string> >
+    krylov_solver_preconditioners();
 
   /// Compute residual ||Ax - b||
   double residual(const GenericLinearOperator& A, const GenericVector& x,

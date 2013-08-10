@@ -67,7 +67,7 @@ PETScVector::PETScVector(std::string type, bool use_gpu)
 #endif
 
   // Empty ghost indices vector
-  const std::vector<std::size_t> ghost_indices;
+  const std::vector<la_index> ghost_indices;
 
   // Trivial range
   const std::pair<std::size_t, std::size_t> range(0, 0);
@@ -91,7 +91,7 @@ PETScVector::PETScVector(std::size_t N, std::string type, bool use_gpu)
 #endif
 
   // Empty ghost indices vector
-  const std::vector<std::size_t> ghost_indices;
+  const std::vector<la_index> ghost_indices;
 
   if (type == "global")
   {
@@ -119,7 +119,7 @@ PETScVector::PETScVector(std::size_t N, std::string type, bool use_gpu)
 PETScVector::PETScVector(const GenericSparsityPattern& sparsity_pattern)
   : _use_gpu(false)
 {
-  std::vector<std::size_t> ghost_indices;
+  std::vector<la_index> ghost_indices;
   resize(sparsity_pattern.local_range(0), ghost_indices);
 }
 //-----------------------------------------------------------------------------
@@ -225,12 +225,12 @@ void PETScVector::resize(std::size_t N)
 void PETScVector::resize(std::pair<std::size_t, std::size_t> range)
 {
   // Create empty ghost indices vector
-  std::vector<std::size_t> ghost_indices;
+  std::vector<la_index> ghost_indices;
   resize(range, ghost_indices);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::resize(std::pair<std::size_t, std::size_t> range,
-                         const std::vector<std::size_t>& ghost_indices)
+                         const std::vector<la_index>& ghost_indices)
 {
   // FIXME: Can this check be made robust? Need to avoid parallel lock-up.
   //        Cannot just check size because range may change.
@@ -344,8 +344,8 @@ void PETScVector::get_local(double* block, std::size_t m,
         local_rows[i] = rows[i] - n0;
       else
       {
-        boost::unordered_map<std::size_t, std::size_t>::const_iterator local_index
-          = ghost_global_to_local.find(rows[i]);
+        boost::unordered_map<std::size_t, std::size_t>::const_iterator
+          local_index = ghost_global_to_local.find(rows[i]);
         dolfin_assert(local_index != ghost_global_to_local.end());
         local_rows[i] = local_index->second + local_size;
       }
@@ -802,7 +802,7 @@ void PETScVector::gather_on_zero(std::vector<double>& x) const
 }
 //-----------------------------------------------------------------------------
 void PETScVector::_init(std::pair<std::size_t, std::size_t> range,
-                        const std::vector<std::size_t>& ghost_indices,
+                        const std::vector<la_index>& ghost_indices,
                         bool distributed)
 {
   // Create vector
@@ -844,14 +844,15 @@ void PETScVector::_init(std::pair<std::size_t, std::size_t> range,
     ghost_global_to_local.clear();
 
     // Copy ghost indices
-    const std::vector<PetscInt> _ghost_indices(ghost_indices.begin(), ghost_indices.end());
-
     VecCreateGhost(PETSC_COMM_WORLD, local_size, PETSC_DECIDE,
-                   ghost_indices.size(), _ghost_indices.data(), _x.get());
+                   ghost_indices.size(), ghost_indices.data(), _x.get());
 
     // Build global-to-local map for ghost indices
     for (std::size_t i = 0; i < ghost_indices.size(); ++i)
-      ghost_global_to_local.insert(std::pair<std::size_t, std::size_t>(ghost_indices[i], i));
+    {
+      ghost_global_to_local.insert(std::pair<std::size_t,
+                                             std::size_t>(ghost_indices[i], i));
+    }
 
     // Create ghost view
     x_ghosted.reset(new Vec(0), PETScVectorDeleter());

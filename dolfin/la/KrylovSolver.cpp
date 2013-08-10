@@ -47,7 +47,8 @@ Parameters KrylovSolver::default_parameters()
   p.add("error_on_nonconvergence", true);
   p.add("nonzero_initial_guess",   false);
 
-  // FIXME: This should be removed, see https://bugs.launchpad.net/dolfin/+bug/988494
+  // FIXME: This should be removed, see
+  // https://bugs.launchpad.net/dolfin/+bug/988494
   p.add("use_petsc_cusp_hack", false);
 
   // GMRES options
@@ -87,8 +88,7 @@ KrylovSolver::KrylovSolver(std::string method, std::string preconditioner)
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(boost::shared_ptr<const GenericLinearOperator> A,
-                           std::string method,
-                           std::string preconditioner)
+                           std::string method, std::string preconditioner)
 {
   // Initialize solver
   init(method, preconditioner);
@@ -132,8 +132,9 @@ std::size_t KrylovSolver::solve(GenericVector& x, const GenericVector& b)
   return solver->solve(x, b);
 }
 //-----------------------------------------------------------------------------
-std::size_t KrylovSolver::solve(const GenericLinearOperator& A, GenericVector& x,
-                                 const GenericVector& b)
+std::size_t KrylovSolver::solve(const GenericLinearOperator& A,
+                                GenericVector& x,
+                                const GenericVector& b)
 {
   dolfin_assert(solver);
   //check_dimensions(A, x, b);
