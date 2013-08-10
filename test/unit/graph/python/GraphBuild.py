@@ -1,4 +1,4 @@
-"""Unit tests for graph coloring"""
+"""Unit tests for graph building"""
 
 # Copyright (C) 2013 Garth N. Wells
 #
@@ -32,7 +32,9 @@ class GraphBuilding(unittest.TestCase):
         D = mesh.topology().dim()
         GraphBuilder.local_graph(mesh, D, 0)
         GraphBuilder.local_graph(mesh, D, 1)
+        GraphBuilder.local_graph(mesh, 2, D)
         GraphBuilder.local_graph(mesh, 1, D)
+        GraphBuilder.local_graph(mesh, 0, D)
 
 if __name__ == "__main__":
     unittest.main()

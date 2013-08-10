@@ -1,4 +1,4 @@
-"""Unit tests for graph coloring"""
+"""Unit tests for mesh coloring"""
 
 # Copyright (C) 2013 Garth N. Wells
 #
@@ -23,9 +23,9 @@
 import unittest
 from dolfin import *
 
-class GraphColoring(unittest.TestCase):
+class MeshColoring(unittest.TestCase):
 
-    def test_by_vertex_coloring(self):
+    def test_by_entity_cell_coloring(self):
         """Color mesh cells by connections."""
 
         # Get coloring libraries

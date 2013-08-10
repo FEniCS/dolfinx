@@ -47,7 +47,7 @@ ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
   Zoltan_Initialize(argc, argv, &version);
 
   // Create Zoltan object
-  Zoltan zoltan;
+  Zoltan zoltan(MPI_COMM_SELF);
 
   // Set parameters
   zoltan.Set_Param( "NUM_GID_ENTRIES", "1");  // global ID is single integer
