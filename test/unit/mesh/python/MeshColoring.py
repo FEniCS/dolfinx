@@ -26,7 +26,7 @@ from dolfin import *
 class GraphColoring(unittest.TestCase):
 
     def test_by_vertex_coloring(self):
-        """Color mesh cells by vertex connections."""
+        """Color mesh cells by connections."""
 
         # Get coloring libraries
         coloring_libraries =  parameters.get_range("graph_coloring_library")
@@ -34,6 +34,8 @@ class GraphColoring(unittest.TestCase):
             parameters["graph_coloring_library"] = coloring_library
             mesh = UnitCubeMesh(16, 16, 16)
             mesh.color("vertex")
+            mesh.color("edge")
+            mesh.color("facet")
 
 if __name__ == "__main__":
     unittest.main()
