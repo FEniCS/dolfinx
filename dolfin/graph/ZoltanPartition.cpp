@@ -34,8 +34,9 @@ using namespace dolfin;
 #ifdef HAS_TRILINOS
 
 //-----------------------------------------------------------------------------
-void ZoltanPartition::compute_partition_phg(std::vector<std::size_t>& cell_partition,
-                                        const LocalMeshData& mesh_data)
+void
+ZoltanPartition::compute_partition_phg(std::vector<std::size_t>& cell_partition,
+                                       const LocalMeshData& mesh_data)
 {
   Timer timer0("Partition graph (calling Zoltan PHG)");
 

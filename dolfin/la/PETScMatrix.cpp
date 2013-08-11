@@ -268,8 +268,8 @@ void PETScMatrix::init(const TensorLayout& tensor_layout)
   #endif
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::get(double* block, std::size_t m,
-                      const dolfin::la_index* rows,
+void PETScMatrix::get(double* block,
+                      std::size_t m, const dolfin::la_index* rows,
                       std::size_t n, const dolfin::la_index* cols) const
 {
   // Get matrix entries (must be on this process)
@@ -278,8 +278,9 @@ void PETScMatrix::get(double* block, std::size_t m,
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetValues");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set(const double* block, std::size_t m, const dolfin::la_index* rows,
-                                           std::size_t n, const dolfin::la_index* cols)
+void PETScMatrix::set(const double* block,
+                      std::size_t m, const dolfin::la_index* rows,
+                      std::size_t n, const dolfin::la_index* cols)
 {
   dolfin_assert(_A);
   PetscErrorCode ierr = MatSetValues(*_A, m, rows, n, cols, block,
@@ -287,8 +288,9 @@ void PETScMatrix::set(const double* block, std::size_t m, const dolfin::la_index
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatSetValues");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::add(const double* block, std::size_t m, const dolfin::la_index* rows,
-                                           std::size_t n, const dolfin::la_index* cols)
+void PETScMatrix::add(const double* block,
+                      std::size_t m, const dolfin::la_index* rows,
+                      std::size_t n, const dolfin::la_index* cols)
 {
   dolfin_assert(_A);
   PetscErrorCode ierr = MatSetValues(*_A, m, rows, n, cols, block, ADD_VALUES);
@@ -510,16 +512,6 @@ void PETScMatrix::apply(std::string mode)
                  "apply changes to PETSc matrix",
                  "Unknown apply mode \"%s\"", mode.c_str());
   }
-
-  /*
-  PetscInt nodes = 0;
-  Mat Adiag;
-  MatGetDiagonalBlock(*_A, &Adiag);
-  MatInodeGetInodeSizes(Adiag, &nodes, PETSC_NULL, PETSC_NULL);
-  PetscInt m(0), n(0);
-  MatGetSize(Adiag, &m, &n);
-  cout << "***** Inode count: " << MPI::sum(nodes) << ", " << m << ", " << n << endl;
-  */
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero()
@@ -615,7 +607,6 @@ std::string PETScMatrix::str(bool verbose) const
     return "<Uninitialized PETScMatrix>";
 
   std::stringstream s;
-
   if (verbose)
   {
     warning("Verbose output for PETScMatrix not implemented, calling PETSc MatView directly.");

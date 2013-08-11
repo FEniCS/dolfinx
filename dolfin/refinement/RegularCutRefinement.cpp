@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2011-02-07
-// Last changed: 2012-09-27
+// Last changed: 2013-08-02
 
 #include <vector>
 
@@ -639,7 +639,7 @@ RegularCutRefinement::find_bisection_edges(const Cell& cell,
       dot_product /= edge_0.length() * edge_1.length();
 
       // Bisection edge found if dot product is small
-      if (std::abs(std::abs(dot_product) - 1.0) < 100.0 * DOLFIN_EPS)
+      if (std::abs(std::abs(dot_product) - 1.0) < DOLFIN_EPS_LARGE)
         return std::make_pair(i, j);
     }
   }

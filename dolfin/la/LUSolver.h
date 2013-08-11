@@ -63,10 +63,12 @@ namespace dolfin
     std::size_t solve_transpose(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system
-    std::size_t solve(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+    std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
+                      const GenericVector& b);
 
     /// Solve linear system
-    std::size_t solve_transpose(const GenericLinearOperator& A, GenericVector& x, const GenericVector& b);
+    std::size_t solve_transpose(const GenericLinearOperator& A,
+                                GenericVector& x, const GenericVector& b);
 
     /// Default parameter values
     static Parameters default_parameters()

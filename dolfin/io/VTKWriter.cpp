@@ -89,7 +89,8 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   if (rank == 0)
   {
     fp << "<CellData  Scalars=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  format=\""<< encode_string <<"\">";
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  format=\""
+       << encode_string <<"\">";
   }
   else if (rank == 1)
   {
@@ -100,7 +101,8 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
                    "Don't know how to handle vector function with dimension other than 2 or 3");
     }
     fp << "<CellData  Vectors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">";
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name()
+       << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">";
   }
   else if (rank == 2)
   {
@@ -111,7 +113,8 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
                    "Don't know how to handle tensor function with dimension other than 4 or 9");
     }
     fp << "<CellData  Tensors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">";
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name()
+       << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">";
   }
 
   // Allocate memory for function values at cell centres
@@ -142,8 +145,10 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   if (!binary)
     fp << ascii_cell_data(mesh, offset, values, data_dim, rank);
   else
-    fp << base64_cell_data(mesh, offset, values, data_dim, rank, compress) << std::endl;
-
+  {
+    fp << base64_cell_data(mesh, offset, values, data_dim, rank, compress)
+       << std::endl;
+  }
   fp << "</DataArray> " << std::endl;
   fp << "</CellData> " << std::endl;
 }
@@ -162,7 +167,8 @@ std::string VTKWriter::ascii_cell_data(const Mesh& mesh,
     if (rank == 1 && data_dim == 2)
     {
       // Append 0.0 to 2D vectors to make them 3D
-      ss << values[*cell_offset] << "  " << values[*cell_offset + 1] << " " << 0.0;
+      ss << values[*cell_offset] << "  " << values[*cell_offset + 1] << " "
+         << 0.0;
     }
     else if (rank == 2 && data_dim == 4)
     {
@@ -193,7 +199,8 @@ std::string VTKWriter::ascii_cell_data(const Mesh& mesh,
 std::string VTKWriter::base64_cell_data(const Mesh& mesh,
                                         const std::vector<std::size_t>& offset,
                                         const std::vector<double>& values,
-                                        std::size_t data_dim, std::size_t rank, bool compress)
+                                        std::size_t data_dim, std::size_t rank,
+                                        bool compress)
 {
   const std::size_t num_cells = mesh.num_cells();
 
@@ -242,7 +249,8 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, std::size_t cell_dim,
 
   // Write vertex positions
   file << "<Points>" << std::endl;
-  file << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\"" << "ascii" << "\">";
+  file << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\""
+       << "ascii" << "\">";
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     Point p = v->point();
@@ -252,7 +260,8 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, std::size_t cell_dim,
 
   // Write cell connectivity
   file << "<Cells>" << std::endl;
-  file << "<DataArray  type=\"UInt32\"  Name=\"connectivity\"  format=\"" << "ascii" << "\">";
+  file << "<DataArray  type=\"UInt32\"  Name=\"connectivity\"  format=\""
+       << "ascii" << "\">";
   for (MeshEntityIterator c(mesh, cell_dim); !c.end(); ++c)
   {
     for (VertexIterator v(*c); !v.end(); ++v)
@@ -262,13 +271,15 @@ void VTKWriter::write_ascii_mesh(const Mesh& mesh, std::size_t cell_dim,
   file << "</DataArray>" << std::endl;
 
   // Write offset into connectivity array for the end of each cell
-  file << "<DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\"" << "ascii" << "\">";
+  file << "<DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\"" << "ascii"
+       << "\">";
   for (std::size_t offsets = 1; offsets <= num_cells; offsets++)
     file << offsets*num_cell_vertices << " ";
   file << "</DataArray>" << std::endl;
 
   // Write cell type
-  file << "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"" << "ascii" << "\">";
+  file << "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"" << "ascii"
+       << "\">";
   for (std::size_t types = 0; types < num_cells; types++)
     file << _vtk_cell_type << " ";
   file  << "</DataArray>" << std::endl;
@@ -299,7 +310,8 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, std::size_t cell_dim,
 
   // Write vertex positions
   file << "<Points>" << std::endl;
-  file << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\"" << "binary" << "\">" << std::endl;
+  file << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\""
+       << "binary" << "\">" << std::endl;
   std::vector<double> vertex_data(3*mesh.num_vertices());
   std::vector<double>::iterator vertex_entry = vertex_data.begin();
   for (VertexIterator v(mesh); !v.end(); ++v)
@@ -315,7 +327,8 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, std::size_t cell_dim,
 
   // Write cell connectivity
   file << "<Cells>" << std::endl;
-  file << "<DataArray  type=\"UInt32\"  Name=\"connectivity\"  format=\"" << "binary" << "\">" << std::endl;
+  file << "<DataArray  type=\"UInt32\"  Name=\"connectivity\"  format=\""
+       << "binary" << "\">" << std::endl;
   const int size = num_cells*num_cell_vertices;
   std::vector<boost::uint32_t> cell_data(size);
   std::vector<boost::uint32_t>::iterator cell_entry = cell_data.begin();
@@ -330,7 +343,8 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, std::size_t cell_dim,
   file << "</DataArray>" << std::endl;
 
   // Write offset into connectivity array for the end of each cell
-  file << "<DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\"" << "binary" << "\">" << std::endl;
+  file << "<DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\""
+       << "binary" << "\">" << std::endl;
   std::vector<boost::uint32_t> offset_data(num_cells*num_cell_vertices);
   std::vector<boost::uint32_t>::iterator offset_entry = offset_data.begin();
   for (std::size_t offsets = 1; offsets <= num_cells; offsets++)
@@ -341,7 +355,8 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, std::size_t cell_dim,
   file << "</DataArray>" << std::endl;
 
   // Write cell type
-  file << "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"" << "binary" << "\">" << std::endl;
+  file << "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"" << "binary"
+       << "\">" << std::endl;
   std::vector<boost::uint8_t> type_data(num_cells);
   std::vector<boost::uint8_t>::iterator type_entry = type_data.begin();
   for (std::size_t types = 0; types < num_cells; types++)
@@ -357,7 +372,8 @@ void VTKWriter::write_base64_mesh(const Mesh& mesh, std::size_t cell_dim,
   file.close();
 }
 //----------------------------------------------------------------------------
-boost::uint8_t VTKWriter::vtk_cell_type(const Mesh& mesh, std::size_t cell_dim)
+boost::uint8_t VTKWriter::vtk_cell_type(const Mesh& mesh,
+                                        std::size_t cell_dim)
 {
   // Get cell type
   CellType::Type cell_type = mesh.type().cell_type();

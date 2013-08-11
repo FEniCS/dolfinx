@@ -58,7 +58,8 @@ namespace dolfin
     virtual std::size_t size(std::size_t dim) const = 0;
 
     /// Return local ownership range
-    virtual std::pair<std::size_t, std::size_t> local_range(std::size_t dim) const = 0;
+    virtual std::pair<std::size_t, std::size_t>
+      local_range(std::size_t dim) const = 0;
 
     /// Get block of values
     virtual void get(double* block, const dolfin::la_index* num_rows,
@@ -76,12 +77,21 @@ namespace dolfin
     { add(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Add block of values
-    virtual void add(const double* block, const std::vector<const std::vector<dolfin::la_index>* >& rows)
-    { add(block, (rows[0])->size(), &(*rows[0])[0], (rows[1])->size(), &(*rows[1])[0]); }
+    virtual void
+      add(const double* block,
+          const std::vector<const std::vector<dolfin::la_index>* >& rows)
+    {
+      add(block, (rows[0])->size(), &(*rows[0])[0], (rows[1])->size(),
+          &(*rows[1])[0]);
+    }
 
     /// Add block of values
-    virtual void add(const double* block, const std::vector<std::vector<dolfin::la_index> >& rows)
-    { add(block, rows[0].size(), &(rows[0])[0], rows[1].size(), &(rows[1])[0]); }
+    virtual void add(const double* block,
+                     const std::vector<std::vector<dolfin::la_index> >& rows)
+    {
+      add(block, rows[0].size(), &(rows[0])[0], rows[1].size(),
+          &(rows[1])[0]);
+    }
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero() = 0;
@@ -107,16 +117,19 @@ namespace dolfin
     virtual void resize(GenericVector& z, std::size_t dim) const = 0;
 
     /// Get block of values
-    virtual void get(double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n,
-                     const dolfin::la_index* cols) const = 0;
+    virtual void get(double* block,
+                     std::size_t m, const dolfin::la_index* rows,
+                     std::size_t n, const dolfin::la_index* cols) const = 0;
 
     /// Set block of values
-    virtual void set(const double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n,
-                     const dolfin::la_index* cols) = 0;
+    virtual void set(const double* block,
+                     std::size_t m, const dolfin::la_index* rows,
+                     std::size_t n, const dolfin::la_index* cols) = 0;
 
     /// Add block of values
-    virtual void add(const double* block, std::size_t m, const dolfin::la_index* rows, std::size_t n,
-                     const dolfin::la_index* cols) = 0;
+    virtual void add(const double* block,
+                     std::size_t m, const dolfin::la_index* rows,
+                     std::size_t n, const dolfin::la_index* cols) = 0;
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A,
@@ -130,7 +143,8 @@ namespace dolfin
                         std::vector<double>& values) const = 0;
 
     /// Set values for given row on local process
-    virtual void setrow(std::size_t row, const std::vector<std::size_t>& columns,
+    virtual void setrow(std::size_t row,
+                        const std::vector<std::size_t>& columns,
                         const std::vector<double>& values) = 0;
 
     /// Set given rows to zero
@@ -195,12 +209,14 @@ namespace dolfin
     { double value(0); get(&value, 1, &i, 1, &j); return value; }
 
     /// Get value of given entry
-    virtual double getitem(std::pair<dolfin::la_index, dolfin::la_index> ij) const
+    virtual double getitem(std::pair<dolfin::la_index,
+                           dolfin::la_index> ij) const
     { double value(0); get(&value, 1, &ij.first, 1, &ij.second); return value; }
 
     /// Set given entry to value. apply("insert") should be called before using
     /// using the object.
-    virtual void setitem(std::pair<dolfin::la_index, dolfin::la_index> ij, double value)
+    virtual void setitem(std::pair<dolfin::la_index, dolfin::la_index> ij,
+                         double value)
     { set(&value, 1, &ij.first, 1, &ij.second); }
 
     /// Insert one on the diagonal for all zero rows

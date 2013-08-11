@@ -81,15 +81,17 @@ const std::map<std::string, const MatSolverPackage> PETScLUSolver::_methods
                               #endif
                               ("petsc",        MAT_SOLVER_PETSC);
 //-----------------------------------------------------------------------------
-const std::map<const MatSolverPackage, const bool> PETScLUSolver::_methods_cholesky
-  = boost::assign::map_list_of(MAT_SOLVER_UMFPACK,      false)
+const std::map<const MatSolverPackage, const bool>
+PETScLUSolver::_methods_cholesky
+= boost::assign::map_list_of(MAT_SOLVER_UMFPACK,      false)
                               (MAT_SOLVER_MUMPS,        true)
                               (MAT_SOLVER_PASTIX,       true)
                               (MAT_SOLVER_SUPERLU,      false)
                               (MAT_SOLVER_SUPERLU_DIST, false)
                               (MAT_SOLVER_PETSC,        true);
 //-----------------------------------------------------------------------------
-const std::vector<std::pair<std::string, std::string> > PETScLUSolver::_methods_descr
+const std::vector<std::pair<std::string, std::string> >
+PETScLUSolver::_methods_descr
   = boost::assign::pair_list_of("default", "default LU solver")
                                #if PETSC_HAVE_UMFPACK
                                ("umfpack", "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)")

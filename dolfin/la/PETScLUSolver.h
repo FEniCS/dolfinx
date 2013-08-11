@@ -73,14 +73,16 @@ namespace dolfin
     std::size_t solve(GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b
-    std::size_t solve(GenericVector& x, const GenericVector& b, bool transpose);
+    std::size_t solve(GenericVector& x, const GenericVector& b,
+                      bool transpose);
 
     /// Solve linear system Ax = b
     std::size_t solve(const GenericLinearOperator& A, GenericVector& x,
                       const GenericVector& b);
 
     /// Solve linear system Ax = b
-    std::size_t solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b);
+    std::size_t solve(const PETScMatrix& A, PETScVector& x,
+                      const PETScVector& b);
 
     /// Solve linear system A^Tx = b
     std::size_t solve_transpose(GenericVector& x, const GenericVector& b);
