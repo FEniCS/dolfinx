@@ -84,7 +84,7 @@ ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
     colors[i] = _colors[i] - 1;
 
   // Count number of unique colors
-  std::set<std::size_t> colors_set(colors.begin(), colors.end());
+  const std::set<std::size_t> colors_set(colors.begin(), colors.end());
 
   return colors_set.size();
 }
