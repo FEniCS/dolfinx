@@ -93,22 +93,22 @@ PETScLUSolver::_methods_cholesky
 const std::vector<std::pair<std::string, std::string> >
 PETScLUSolver::_methods_descr
   = boost::assign::pair_list_of("default", "default LU solver")
-                               #if PETSC_HAVE_UMFPACK
-                               ("umfpack", "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)")
-                               #endif
-                               #if PETSC_HAVE_MUMPS
-                               ("mumps", "MUMPS (MUltifrontal Massively Parallel Sparse direct Solver)")
-                               #endif
-                               #if PETSC_HAVE_PASTIX
-                               ("pastix", "PaStiX (Parallel Sparse matriX package)")
-                               #endif
-                               #if PETSC_HAVE_SUPERLU
-                               ("superlu", "SuperLU")
-                               #endif
-                               #if PETSC_HAVE_SUPERLU_DIST
-                               ("superlu_dist", "Parallel SuperLU")
-                               #endif
-                               ("petsc", "PETSc builtin LU solver");
+    #if PETSC_HAVE_UMFPACK
+    ("umfpack", "UMFPACK (Unsymmetric MultiFrontal sparse LU factorization)")
+    #endif
+    #if PETSC_HAVE_MUMPS
+    ("mumps", "MUMPS (MUltifrontal Massively Parallel Sparse direct Solver)")
+    #endif
+    #if PETSC_HAVE_PASTIX
+    ("pastix", "PaStiX (Parallel Sparse matriX package)")
+    #endif
+    #if PETSC_HAVE_SUPERLU
+    ("superlu", "SuperLU")
+    #endif
+    #if PETSC_HAVE_SUPERLU_DIST
+    ("superlu_dist", "Parallel SuperLU")
+    #endif
+    ("petsc", "PETSc builtin LU solver");
 
 //-----------------------------------------------------------------------------
 std::vector<std::pair<std::string, std::string> >
@@ -354,11 +354,11 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
     else
     {
       #if PETSC_HAVE_MUMPS
-      method = "mumps";
+      method = "superlu_dist";
       #elif PETSC_HAVE_PASTIX
       method = "pastix";
       #elif PETSC_HAVE_SUPERLU_DIST
-      method = "superlu_dist";
+      method = "mumps";
       #else
       dolfin_error("PETScLUSolver.cpp",
                    "solve linear system using PETSc LU solver",
