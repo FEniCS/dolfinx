@@ -24,6 +24,8 @@
 #include <iostream>
 #include <vector>
 
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/compressed_sparse_row_graph.hpp>
 #include <boost/graph/sequential_vertex_coloring.hpp>
 #include <dolfin/graph/Graph.h>
 
@@ -40,13 +42,46 @@ namespace dolfin
   public:
 
     /// Compute vertex colors
+    template<typename ColorType>
     static std::size_t compute_local_vertex_coloring(const Graph& graph,
-                                              std::vector<std::size_t>& colors);
+                                     std::vector<ColorType>& colors)
+    {
+      // Typedef for Boost compressed sparse row graph
+      typedef boost::compressed_sparse_row_graph<boost::directedS,
+        boost::property<boost::vertex_color_t, ColorType> > BoostGraph;
+
+      // Number of vertices
+      const std::size_t n = graph.size();
+
+      // Count number of edges
+      Graph::const_iterator vertex;
+      std::size_t num_edges = 0;
+      for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
+        num_edges += vertex->size();
+
+      // Build list of graph edges
+      std::vector<std::pair<std::size_t, std::size_t> > edges;
+      edges.reserve(num_edges);
+      graph_set_type::const_iterator edge;
+      for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
+        for (edge = vertex->begin(); edge != vertex->end(); ++edge)
+          edges.push_back(std::make_pair(vertex - graph.begin(), *edge));
+
+      // Build Boost graph
+      const BoostGraph g(boost::edges_are_unsorted_multi_pass,
+                         edges.begin(), edges.end(), n);
+
+      // Resize vector to hold colors
+      colors.resize(n);
+
+      // Perform coloring
+      return compute_local_vertex_coloring(g, colors);
+    }
 
     /// Compute vertex colors
-    template<typename T>
+    template<typename T, typename ColorType>
     static std::size_t compute_local_vertex_coloring(const T& graph,
-                                            std::vector<std::size_t>& colors)
+                                            std::vector<ColorType>& colors)
     {
       // Number of vertices in graph
       const std::size_t num_vertices = boost::num_vertices(graph);
