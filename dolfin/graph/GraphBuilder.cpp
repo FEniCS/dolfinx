@@ -69,6 +69,12 @@ Graph GraphBuilder::local_graph(const Mesh& mesh, const GenericDofMap& dofmap0,
 Graph GraphBuilder::local_graph(const Mesh& mesh,
                                 const std::vector<std::size_t>& coloring_type)
 {
+  // Initialise mesh
+  for (std::size_t i = 0; i < coloring_type.size(); ++i)
+    mesh.init(coloring_type[i]);
+  for (std::size_t i = 1; i < coloring_type.size(); ++i)
+    mesh.init(coloring_type[i - 1], coloring_type[i]);
+
   // Check coloring type
   dolfin_assert(coloring_type.size() >= 2);
   dolfin_assert(coloring_type.front() == coloring_type.back());
@@ -81,9 +87,11 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
   for (MeshEntityIterator vertex_entity(mesh, coloring_type[0]);
        !vertex_entity.end(); ++vertex_entity)
   {
+    const std::size_t vertex_entity_index = vertex_entity->index();
+
     boost::unordered_set<std::size_t> entity_list0;
     boost::unordered_set<std::size_t> entity_list1;
-    entity_list0.insert(vertex_entity->index());
+    entity_list0.insert(vertex_entity_index);
 
     // Build list of entities, moving between levels
     for (std::size_t level = 1; level < coloring_type.size(); ++level)
@@ -104,8 +112,8 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
     }
 
     // Add edges to graph
-    const std::size_t vertex_entity_index = vertex_entity->index();
-    graph[vertex_entity_index].insert(entity_list0.begin(), entity_list0.end());
+    graph[vertex_entity_index].insert(entity_list0.begin(),
+                                      entity_list0.end());
   }
 
   return graph;
@@ -134,7 +142,8 @@ Graph GraphBuilder::local_graph(const Mesh& mesh,
       for (MeshEntityIterator neighbor(*entity, dim0); !neighbor.end();
            ++neighbor)
       {
-        graph[colored_entity_index].insert(neighbor->index());
+        if (colored_entity_index != neighbor->index())
+          graph[colored_entity_index].insert(neighbor->index());
       }
     }
   }
@@ -176,8 +185,8 @@ void GraphBuilder::compute_local_dual_graph(const LocalMeshData& mesh_data,
   local_graph.resize(num_local_cells);
   facet_cell_map.clear();
 
-  // Compute local edges (cell-cell connections) using global (internal
-  // to this function, not the user numbering) numbering
+  // Compute local edges (cell-cell connections) using global
+  // (internal to this function, not the user numbering) numbering
 
   // Get offset for this process
   const std::size_t cell_offset = MPI::global_offset(num_local_cells, true);
@@ -236,8 +245,8 @@ void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
 {
   Timer timer("Compute non-local dual graph");
 
-  // At this stage facet_cell map only contains facets->cells with edge
-  // facets either interprocess or external boundaries
+  // At this stage facet_cell map only contains facets->cells with
+  // edge facets either interprocess or external boundaries
 
   // List of cell vertices
   const boost::multi_array<std::size_t, 2>& cell_vertices
@@ -249,8 +258,8 @@ void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
   dolfin_assert(num_local_cells == cell_vertices.shape()[0]);
   dolfin_assert(num_vertices_per_cell == cell_vertices.shape()[1]);
 
-  // Compute local edges (cell-cell connections) using global (internal
-  // to this function, not the user numbering) numbering
+  // Compute local edges (cell-cell connections) using global
+  // (internal to this function, not the user numbering) numbering
 
   // Get offset for this process
   const std::size_t offset = MPI::global_offset(num_local_cells, true);
@@ -292,7 +301,8 @@ void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
   MatchMap matchmap;
 
   // Look for matches to send back to other processes
-  std::pair<std::vector<std::size_t>, std::pair<std::size_t, std::size_t> > key;
+  std::pair<std::vector<std::size_t>,
+            std::pair<std::size_t, std::size_t> > key;
   key.first.resize(num_vertices_per_facet);
   for (std::size_t p = 0; p < num_processes; ++p)
   {
@@ -310,7 +320,8 @@ void GraphBuilder::compute_nonlocal_dual_graph(const LocalMeshData& mesh_data,
       // Perform map insertion/look-up
       std::pair<MatchMap::iterator, bool> data = matchmap.insert(key);
 
-      // If data is already in the map, extract data and remove from map
+      // If data is already in the map, extract data and remove from
+      // map
       if (!data.second)
       {
         // Found a match of two facets - send back to owners

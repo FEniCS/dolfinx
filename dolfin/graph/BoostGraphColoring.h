@@ -64,9 +64,14 @@ namespace dolfin
       edges.reserve(num_edges);
       graph_set_type::const_iterator edge;
       for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
+      {
         for (edge = vertex->begin(); edge != vertex->end(); ++edge)
-          edges.push_back(std::make_pair(vertex - graph.begin(), *edge));
-
+        {
+          const std::size_t vertex_index = vertex - graph.begin();
+          if (vertex_index != *edge)
+            edges.push_back(std::make_pair(vertex_index, *edge));
+        }
+      }
       // Build Boost graph
       const BoostGraph g(boost::edges_are_unsorted_multi_pass,
                          edges.begin(), edges.end(), n);
