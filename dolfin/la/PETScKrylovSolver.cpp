@@ -110,8 +110,7 @@ void PETScKrylovSolver::set_options_prefix(std::string prefix)
 {
   dolfin_assert(_ksp);
   PetscErrorCode ierr = KSPSetOptionsPrefix(*_ksp, prefix.c_str());
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetOptionsPrefix");
 }
 //-----------------------------------------------------------------------------
 Parameters PETScKrylovSolver::default_parameters()
@@ -416,8 +415,8 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   }
   else
   {
-   ierr =  KSPSolve(*_ksp, *b.vec(), *x.vec());
-   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolve");
+    ierr =  KSPSolve(*_ksp, *b.vec(), *x.vec());
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSolve");
   }
 
   // Get the number of iterations
@@ -427,7 +426,8 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
 
   // Check if the solution converged and print error/warning if not converged
   KSPConvergedReason reason;
-  KSPGetConvergedReason(*_ksp, &reason);
+  ierr = KSPGetConvergedReason(*_ksp, &reason);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPGetConvergedReason");
   if (reason < 0)
   {
     // Get solver residual norm
@@ -481,7 +481,8 @@ std::string PETScKrylovSolver::str(bool verbose) const
   {
     warning("Verbose output for PETScKrylovSolver not implemented, calling \
 PETSc KSPView directly.");
-    KSPView(*_ksp, PETSC_VIEWER_STDOUT_WORLD);
+    PetscErrorCode ierr = KSPView(*_ksp, PETSC_VIEWER_STDOUT_WORLD);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "KSPView");
   }
   else
     s << "<PETScKrylovSolver>";
@@ -517,7 +518,8 @@ void PETScKrylovSolver::init(const std::string& method)
   }
 
   // Set some options
-  KSPSetFromOptions(*_ksp);
+  ierr = KSPSetFromOptions(*_ksp);
+  if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetFromOptions");
 
   // Set solver type
   if (method != "default")
@@ -572,7 +574,7 @@ void PETScKrylovSolver::set_petsc_options()
   PetscBool petsc_nonzero_guess = PETSC_FALSE;
   if (nonzero_guess)
     petsc_nonzero_guess = PETSC_TRUE;
-  KSPSetInitialGuessNonzero(*_ksp, petsc_nonzero_guess);
+  ierr = KSPSetInitialGuessNonzero(*_ksp, petsc_nonzero_guess);
   if (ierr != 0) petsc_error(ierr, __FILE__, "KSPSetInitialGuessNonzero");
 
   // Monitor convergence
