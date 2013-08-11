@@ -40,7 +40,8 @@ std::size_t PETScBaseMatrix::size(std::size_t dim) const
   if (_A)
   {
     PetscInt m(0), n(0);
-    MatGetSize(*_A, &m, &n);
+    PetscErrorCode ierr = MatGetSize(*_A, &m, &n);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "MetGetSize");
     if (dim == 0)
       return m;
     else
@@ -50,7 +51,8 @@ std::size_t PETScBaseMatrix::size(std::size_t dim) const
     return 0;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, std::size_t> PETScBaseMatrix::local_range(std::size_t dim) const
+std::pair<std::size_t, std::size_t>
+PETScBaseMatrix::local_range(std::size_t dim) const
 {
   dolfin_assert(dim <= 1);
   if (dim == 1)
@@ -63,7 +65,8 @@ std::pair<std::size_t, std::size_t> PETScBaseMatrix::local_range(std::size_t dim
   if (_A)
   {
     PetscInt m(0), n(0);
-    MatGetOwnershipRange(*_A, &m, &n);
+    PetscErrorCode ierr = MatGetOwnershipRange(*_A, &m, &n);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetOwnershipRange");
     return std::make_pair(m, n);
   }
   else
@@ -74,6 +77,8 @@ void PETScBaseMatrix::resize(GenericVector& z, std::size_t dim) const
 {
   dolfin_assert(_A);
 
+  PetscErrorCode ierr;
+
   // Downcast vector
   PETScVector& _z = as_type<PETScVector>(z);
 
@@ -83,9 +88,15 @@ void PETScBaseMatrix::resize(GenericVector& z, std::size_t dim) const
   // Create new PETSc vector
   boost::shared_ptr<Vec> x(new Vec(0), PETScVectorDeleter());
   if (dim == 0)
-    MatGetVecs(*_A, PETSC_NULL, x.get());
+  {
+    ierr = MatGetVecs(*_A, PETSC_NULL, x.get());
+    if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetVecs");
+  }
   else if (dim == 1)
-    MatGetVecs(*_A, x.get(), PETSC_NULL);
+  {
+    ierr = MatGetVecs(*_A, x.get(), PETSC_NULL);
+    if (ierr != 0) petsc_error(ierr, __FILE__, "MatGetVecs");
+  }
   else
   {
     dolfin_error("PETScBaseMatrix.cpp",
