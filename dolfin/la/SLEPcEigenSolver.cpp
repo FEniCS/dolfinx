@@ -163,7 +163,7 @@ void SLEPcEigenSolver::solve(std::size_t n)
   dolfin::la_index num_iterations = 0;
   EPSGetIterationNumber(eps, &num_iterations);
 
-  const EPSType eps_type = 0;
+  EPSType eps_type = NULL;
   EPSGetType(eps, &eps_type);
   log(PROGRESS, "Eigenvalue solver (%s) converged in %d iterations.",
       eps_type, num_iterations);
