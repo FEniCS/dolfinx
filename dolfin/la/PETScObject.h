@@ -48,8 +48,8 @@ namespace dolfin
                             std::string petsc_function)
     {
       dolfin_error(filename,
-                   "calling PETSc function: " + petsc_function,
-                   "PETSc error code is: %d", error_code);
+               "successfully call PETSc function '" + petsc_function + "'",
+                "PETSc error code is: %d", error_code);
     }
 
   };
