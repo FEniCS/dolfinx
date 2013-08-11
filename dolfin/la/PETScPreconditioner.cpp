@@ -731,7 +731,7 @@ void PETScPreconditioner::set_nullspace(const VectorSpaceBasis& nullspace)
 
   // Create null space
   petsc_nullspace.reset(new MatNullSpace, PETScMatNullSpaceDeleter());
-  PetscErrorCore ierr;
+  PetscErrorCode ierr;
   ierr = MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE, nullspace.dim(),
                             petsc_vec.data(), petsc_nullspace.get());
   if (ierr != 0) petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
