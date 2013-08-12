@@ -110,15 +110,19 @@ GenericBoundingBoxTree::compute_collisions(const Point& point) const
 }
 //-----------------------------------------------------------------------------
 std::vector<unsigned int>
-GenericBoundingBoxTree::compute_collisions(const BoundingBoxTree& tree) const
+GenericBoundingBoxTree::compute_collisions(const GenericBoundingBoxTree& tree) const
 {
   // Call recursive find function
-  std::vector<unsigned int> entities;
-  //compute_collisions(point, _bboxes.size() - 1, entities);
+  std::vector<unsigned int> entities_this;
+  std::vector<unsigned int> entities_other;
+  compute_collisions(tree,
+                     _bboxes.size() - 1,
+                     tree._bboxes.size() - 1,
+                     entities_this,
+                     entities_other);
 
-  cout << "tree-tree collision not implemented" << endl;
-
-  return entities;
+  // FIXME: Change return data to return both lists
+  return entities_this;
 }
 //-----------------------------------------------------------------------------
 std::vector<unsigned int>
@@ -370,6 +374,16 @@ GenericBoundingBoxTree::compute_collisions(const Point& point,
     compute_collisions(point, bbox.child_0, entities);
     compute_collisions(point, bbox.child_1, entities);
   }
+}
+//-----------------------------------------------------------------------------
+void
+GenericBoundingBoxTree::compute_collisions(const GenericBoundingBoxTree& other,
+                                           unsigned int node_this,
+                                           unsigned int node_other,
+                                           std::vector<unsigned int>& entities_this,
+                                           std::vector<unsigned int>& entities_other) const
+{
+  cout << "calling recursive function" << endl;
 }
 //-----------------------------------------------------------------------------
 void

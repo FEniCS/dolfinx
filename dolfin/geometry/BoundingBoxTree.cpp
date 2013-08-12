@@ -115,7 +115,8 @@ BoundingBoxTree::compute_collisions(const BoundingBoxTree& tree) const
 
   // Delegate call to implementation
   dolfin_assert(_tree);
-  return _tree->compute_collisions(tree);
+  dolfin_assert(tree._tree);
+  return _tree->compute_collisions(*tree._tree);
 }
 //-----------------------------------------------------------------------------
 std::vector<unsigned int>

@@ -53,7 +53,7 @@ namespace dolfin
     std::vector<unsigned int> compute_collisions(const Point& point) const;
 
     /// Compute all collisions between bounding boxes and _BoundingBoxTree_
-    std::vector<unsigned int> compute_collisions(const BoundingBoxTree& tree) const;
+    std::vector<unsigned int> compute_collisions(const GenericBoundingBoxTree& tree) const;
 
     /// Compute all collisions between entities and _Point_
     std::vector<unsigned int> compute_entity_collisions(const Point& point,
@@ -114,12 +114,19 @@ namespace dolfin
     // Compute point search tree if not already done
     void build_point_search_tree(const Mesh& mesh) const;
 
-    /// Compute collisions (recursive)
+    /// Compute collisions with point (recursive)
     void compute_collisions(const Point& point,
                             unsigned int node,
                             std::vector<unsigned int>& entities) const;
 
-    /// Compute entity collisions (recursive)
+    /// Compute collisions with tree (recursive)
+    void compute_collisions(const GenericBoundingBoxTree& other,
+                            unsigned int node_this,
+                            unsigned int node_other,
+                            std::vector<unsigned int>& entities_this,
+                            std::vector<unsigned int>& entities_other) const;
+
+    /// Compute entity collisions with point (recursive)
     void compute_entity_collisions(const Point& point,
                                    unsigned int node,
                                    std::vector<unsigned int>& entities,
@@ -193,7 +200,7 @@ namespace dolfin
     }
 
     // Check whether bounding box is a leaf node
-    bool is_leaf(const BBox& bbox, unsigned int node) const
+    inline bool is_leaf(const BBox& bbox, unsigned int node) const
     {
       // Leaf nodes are marked by setting child_0 equal to the node itself
       return bbox.child_0 == node;
