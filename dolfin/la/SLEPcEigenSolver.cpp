@@ -163,7 +163,11 @@ void SLEPcEigenSolver::solve(std::size_t n)
   dolfin::la_index num_iterations = 0;
   EPSGetIterationNumber(eps, &num_iterations);
 
+  #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR < 4
+  const EPSType eps_type = NULL;
+  #else
   EPSType eps_type = NULL;
+  #endif
   EPSGetType(eps, &eps_type);
   log(PROGRESS, "Eigenvalue solver (%s) converged in %d iterations.",
       eps_type, num_iterations);
