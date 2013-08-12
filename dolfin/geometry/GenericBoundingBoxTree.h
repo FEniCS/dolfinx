@@ -16,7 +16,7 @@
 // along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 //
 // First added:  2013-04-23
-// Last changed: 2013-08-06
+// Last changed: 2013-08-12
 
 #ifndef __GENERIC_BOUNDING_BOX_TREE_H
 #define __GENERIC_BOUNDING_BOX_TREE_H
@@ -99,60 +99,81 @@ namespace dolfin
     // Clear existing data if any
     void clear();
 
+    //--- Recursive build functions ---
+
     // Build bounding box tree for entities (recursive)
-    unsigned int build(const std::vector<double>& leaf_bboxes,
-                       const std::vector<unsigned int>::iterator& begin,
-                       const std::vector<unsigned int>::iterator& end,
-                       std::size_t gdim);
+    unsigned int _build(const std::vector<double>& leaf_bboxes,
+                        const std::vector<unsigned int>::iterator& begin,
+                        const std::vector<unsigned int>::iterator& end,
+                        std::size_t gdim);
 
     // Build bounding box tree for points (recursive)
-    unsigned int build(const std::vector<Point>& points,
-                       const std::vector<unsigned int>::iterator& begin,
-                       const std::vector<unsigned int>::iterator& end,
-                       std::size_t gdim);
+    unsigned int _build(const std::vector<Point>& points,
+                        const std::vector<unsigned int>::iterator& begin,
+                        const std::vector<unsigned int>::iterator& end,
+                        std::size_t gdim);
+
+    //--- Recursive search functions ---
+
+    // Note that these functions are made static for consistency as
+    // some of them need to deal with more than tree.
+
+    /// Compute collisions with point (recursive)
+    static void
+    _compute_collisions(const GenericBoundingBoxTree& tree,
+                        const Point& point,
+                        unsigned int node,
+                        std::vector<unsigned int>& entities);
+
+    /// Compute collisions with tree (recursive)
+    static void
+    _compute_collisions(const GenericBoundingBoxTree& other,
+                        unsigned int node_this,
+                        unsigned int node_other,
+                        std::vector<unsigned int>& entities_this,
+                        std::vector<unsigned int>& entities_other);
+
+    /// Compute entity collisions with point (recursive)
+    static void
+    _compute_entity_collisions(const GenericBoundingBoxTree& tree,
+                               const Point& point,
+                               unsigned int node,
+                               std::vector<unsigned int>& entities,
+                               const Mesh& mesh);
+
+    /// Compute first collision (recursive)
+    static unsigned int
+    _compute_first_collision(const GenericBoundingBoxTree& tree,
+                             const Point& point,
+                             unsigned int node);
+
+    /// Compute first entity collision (recursive)
+    static unsigned int
+    _compute_first_entity_collision(const GenericBoundingBoxTree& tree,
+                                    const Point& point,
+                                    unsigned int node,
+                                    const Mesh& mesh);
+
+    /// Compute closest entity (recursive)
+    static void _compute_closest_entity(const GenericBoundingBoxTree& tree,
+                                        const Point& point,
+                                        unsigned int node,
+                                        const Mesh& mesh,
+                                        unsigned int& closest_entity,
+                                        double& R2);
+
+    /// Compute closest point (recursive)
+    static void
+    _compute_closest_point(const GenericBoundingBoxTree& tree,
+                           const Point& point,
+                           unsigned int node,
+                           unsigned int& closest_point,
+                           double& R2);
+
+    //--- Utility functions ---
 
     // Compute point search tree if not already done
     void build_point_search_tree(const Mesh& mesh) const;
-
-    /// Compute collisions with point (recursive)
-    void compute_collisions(const Point& point,
-                            unsigned int node,
-                            std::vector<unsigned int>& entities) const;
-
-    /// Compute collisions with tree (recursive)
-    void compute_collisions(const GenericBoundingBoxTree& other,
-                            unsigned int node_this,
-                            unsigned int node_other,
-                            std::vector<unsigned int>& entities_this,
-                            std::vector<unsigned int>& entities_other) const;
-
-    /// Compute entity collisions with point (recursive)
-    void compute_entity_collisions(const Point& point,
-                                   unsigned int node,
-                                   std::vector<unsigned int>& entities,
-                                   const Mesh& mesh) const;
-
-    /// Compute first collision (recursive)
-    unsigned int compute_first_collision(const Point& point,
-                                         unsigned int node) const;
-
-    /// Compute first entity collision (recursive)
-    unsigned int compute_first_entity_collision(const Point& point,
-                                                unsigned int node,
-                                                const Mesh& mesh) const;
-
-    /// Compute closest entity (recursive)
-    void compute_closest_entity(const Point& point,
-                                unsigned int node,
-                                const Mesh& mesh,
-                                unsigned int& closest_entity,
-                                double& R2) const;
-
-    /// Compute closest point (recursive)
-    void compute_closest_point(const Point& point,
-                               unsigned int node,
-                               unsigned int& closest_point,
-                               double& R2) const;
 
     // Compute bounding box of mesh entity
     void compute_bbox_of_entity(double* b,
