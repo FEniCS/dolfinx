@@ -19,6 +19,7 @@
 #include <dolfin/la/GenericLUSolver.h>
 #include <dolfin/la/GenericPreconditioner.h>
 
+#include <dolfin/la/petsc_settings.h>
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/la/PETScBaseMatrix.h>
 #include <dolfin/la/uBLASFactory.h>
