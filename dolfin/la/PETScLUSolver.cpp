@@ -354,11 +354,11 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& method) const
     else
     {
       #if PETSC_HAVE_MUMPS
-      method = "superlu_dist";
+      method = "mumps";
       #elif PETSC_HAVE_PASTIX
       method = "pastix";
       #elif PETSC_HAVE_SUPERLU_DIST
-      method = "mumps";
+      method = "superlu_dist";
       #else
       dolfin_error("PETScLUSolver.cpp",
                    "solve linear system using PETSc LU solver",
